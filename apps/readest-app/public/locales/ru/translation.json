@@ -436,7 +436,6 @@
   "Terms of Service": "Условия использования",
   "Privacy Policy": "Политика конфиденциальности",
   "Disable Double Click": "Отключить двойной клик",
-  "TTS not supported for this document": "TTS не поддерживается для этого документа",
   "Reset Password": "Сбросить пароль",
   "Reading Progress Style": "Стиль прогресса чтения",
   "Page Number": "Номер страницы",
@@ -2706,5 +2705,9 @@
   "Book Info": "Сведения о книге",
   "QR Code": "QR-код",
   "Links to this passage in Readest": "Ссылка на этот отрывок в Readest",
-  "via {{app}}": "через {{app}}"
+  "via {{app}}": "через {{app}}",
+  "Daily TTS limit reached. Upgrade your plan or try again tomorrow.": "Достигнут дневной лимит TTS. Обновите план или повторите попытку завтра.",
+  "Pro": "Pro",
+  "Plus": "Plus",
+  "TTS not available for this page": "TTS недоступен для этой страницы"
 }

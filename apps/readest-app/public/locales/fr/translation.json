@@ -432,7 +432,6 @@
   "Terms of Service": "Conditions d'utilisation",
   "Privacy Policy": "Politique de confidentialité",
   "Disable Double Click": "Désactiver le double-clic",
-  "TTS not supported for this document": "TTS non pris en charge pour ce document",
   "Reset Password": "Nouveau mot de passe",
   "Reading Progress Style": "Style de progression",
   "Page Number": "Numéro de page",
@@ -2642,5 +2641,9 @@
   "Book Info": "Infos du livre",
   "QR Code": "Code QR",
   "Links to this passage in Readest": "Renvoie vers ce passage dans Readest",
-  "via {{app}}": "via {{app}}"
+  "via {{app}}": "via {{app}}",
+  "Daily TTS limit reached. Upgrade your plan or try again tomorrow.": "Limite TTS quotidienne atteinte. Améliorez votre abonnement ou réessayez demain.",
+  "Pro": "Pro",
+  "Plus": "Plus",
+  "TTS not available for this page": "TTS non disponible pour cette page"
 }

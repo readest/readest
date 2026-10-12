@@ -725,7 +725,6 @@
   "Readwise sync failed: {{error}}": "Falha na sincronização com o Readwise: {{error}}",
   "Translating...": "Traduzindo...",
   "Please log in to use advanced TTS features": "Faça login para usar recursos avançados de TTS",
-  "TTS not supported for this document": "TTS não suportado para este documento",
   "Expires in {{count}} days_one": "Expira em 1 dia",
   "Expires in {{count}} days_many": "Expira em {{count}} dias",
   "Expires in {{count}} days_other": "Expira em {{count}} dias",
@@ -2642,5 +2641,9 @@
   "Book Info": "Informações do livro",
   "QR Code": "Código QR",
   "Links to this passage in Readest": "Leva a este trecho no Readest",
-  "via {{app}}": "via {{app}}"
+  "via {{app}}": "via {{app}}",
+  "Daily TTS limit reached. Upgrade your plan or try again tomorrow.": "Limite diário de TTS atingido. Atualize seu plano ou tente novamente amanhã.",
+  "Pro": "Pro",
+  "Plus": "Plus",
+  "TTS not available for this page": "TTS não disponível para esta página"
 }

@@ -436,7 +436,6 @@
   "Terms of Service": "Умови обслуговування",
   "Privacy Policy": "Політика конфіденційності",
   "Disable Double Click": "Вимкнути подвійне натискання",
-  "TTS not supported for this document": "TTS не підтримується в цьому документі",
   "Reset Password": "Скинути пароль",
   "Reading Progress Style": "Стиль проґресу читання",
   "Page Number": "Номер сторінки",
@@ -2706,5 +2705,9 @@
   "Book Info": "Інформація про книгу",
   "QR Code": "QR-код",
   "Links to this passage in Readest": "Посилання на цей уривок у Readest",
-  "via {{app}}": "через {{app}}"
+  "via {{app}}": "через {{app}}",
+  "Daily TTS limit reached. Upgrade your plan or try again tomorrow.": "Досягнуто щоденного ліміту TTS. Оновіть план або спробуйте знову завтра.",
+  "Pro": "Pro",
+  "Plus": "Plus",
+  "TTS not available for this page": "TTS недоступний для цієї сторінки"
 }

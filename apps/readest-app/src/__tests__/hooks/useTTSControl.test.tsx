@@ -1261,3 +1261,45 @@ describe('useTTSControl gap control (handleSetSentenceGap / handleSupportsGapCon
     expect(controller.setParagraphGap).toHaveBeenCalledWith(0.24);
   });
 });
+
+describe('useTTSControl quota toast', () => {
+  beforeEach(() => {
+    ttsControllerInstances.length = 0;
+    pendingInitResolvers.length = 0;
+    mockSessionManager.claim.mockClear();
+    mockSessionManager.getSessionByHash.mockReturnValue(null);
+    mockSessionManager.getActiveSession.mockReturnValue(null);
+  });
+
+  afterEach(() => {
+    cleanup();
+  });
+
+  const startSession = async () => {
+    render(<Harness />);
+    await act(async () => {
+      const p = eventDispatcher.dispatch('tts-speak', { bookKey: 'book-1' });
+      for (let i = 0; i < 10; i++) await Promise.resolve();
+      while (pendingInitResolvers.length > 0) pendingInitResolvers.shift()!();
+      await p;
+    });
+    await act(async () => {
+      for (let i = 0; i < 5; i++) await Promise.resolve();
+    });
+  };
+
+  it('shows a toast when the premium TTS quota is exceeded', async () => {
+    await startSession();
+    const controller = ttsControllerInstances[0] as {
+      addEventListener: ReturnType<typeof vi.fn>;
+    };
+    const call = controller.addEventListener.mock.calls.find(
+      (args: unknown[]) => args[0] === 'tts-quota-exceeded',
+    );
+    expect(call).toBeDefined();
+    const dispatchSpy = vi.spyOn(eventDispatcher, 'dispatch');
+    (call![1] as () => void)();
+    expect(dispatchSpy).toHaveBeenCalledWith('toast', expect.objectContaining({ type: 'error' }));
+    dispatchSpy.mockRestore();
+  });
+});

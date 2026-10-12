@@ -122,4 +122,43 @@ describe('TTSDownloader', () => {
     expect(result.completed).not.toContain(1);
     expect(enumerator.enumerateSection).not.toHaveBeenCalledWith(1);
   });
+  test('hands each section to a windowed warmer before warming it', async () => {
+    enumerated[0] = [sentence(0, 'A.'), sentence(1, 'B.')];
+    enumerated[1] = [sentence(0, 'C.')];
+    const order: string[] = [];
+    const prefetchSentences = vi.fn(async (sentences: { lang: string; text: string }[]) => {
+      order.push(`prefetch:${sentences.map((s) => s.text).join(',')}`);
+    });
+    vi.mocked(warmer.warmSentence).mockImplementation(async (_s, _o, _l, text) => {
+      order.push(`warm:${text}`);
+      return true;
+    });
+    const signal = new AbortController().signal;
+    await new TTSDownloader(enumerator, { ...warmer, prefetchSentences }).download(
+      [0, 1],
+      undefined,
+      signal,
+    );
+    expect(order).toEqual(['prefetch:A.,B.', 'warm:A.', 'warm:B.', 'prefetch:C.', 'warm:C.']);
+    expect(prefetchSentences).toHaveBeenCalledWith(
+      [
+        { lang: 'en', text: 'A.' },
+        { lang: 'en', text: 'B.' },
+      ],
+      signal,
+    );
+  });
+
+  test('a fatal synthesis failure (quota) ends the whole download', async () => {
+    const { SpeechSynthesisFatalError } = await import('@/services/tts/providers/types');
+    enumerated[0] = [sentence(0, 'A.'), sentence(1, 'B.')];
+    enumerated[1] = [sentence(0, 'C.')];
+    vi.mocked(warmer.warmSentence).mockRejectedValueOnce(
+      new SpeechSynthesisFatalError('DAILY_QUOTA_EXCEEDED'),
+    );
+    await expect(new TTSDownloader(enumerator, warmer).download([0, 1])).rejects.toThrow(
+      'DAILY_QUOTA_EXCEEDED',
+    );
+    expect(warmer.warmSentence).toHaveBeenCalledTimes(1);
+  });
 });

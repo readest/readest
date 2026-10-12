@@ -18,6 +18,10 @@ val tauriProperties = Properties().apply {
 android {
     compileSdk = 36
     namespace = "com.bilingify.readest"
+    if (project.findProperty("penFlavor") == "booxPen") {
+        // The BOOX Pen SDK and its mmkv dependency both bundle libc++_shared.
+        packaging.jniLibs.pickFirsts.add("lib/*/libc++_shared.so")
+    }
     val keystorePropertiesFile = rootProject.file("keystore.properties")
     val keystoreProperties = Properties()
     if (keystorePropertiesFile.exists()) {
@@ -50,6 +54,10 @@ android {
         versionName = tauriProperties.getProperty("tauri.android.versionName", "1.0")
         val storeFlavor = project.findProperty("storeFlavor")?.toString() ?: "foss"
         missingDimensionStrategy("store", storeFlavor)
+        // Handwriting (issue #3673): -PpenFlavor=booxPen links the BOOX Pen SDK
+        // (plugins/tauri-plugin-native-bridge/android/README-pen.md).
+        val penFlavor = project.findProperty("penFlavor")?.toString() ?: "genericPen"
+        missingDimensionStrategy("pen", penFlavor)
         // Android Auto ships to the FOSS/GitHub builds only. Play's Auto
         // review rejected version code 11020 for inconsistent in-car audio and
         // blocked the entire release (#5038, #5235), so the Play build resolves
@@ -137,15 +145,31 @@ fun findLlvmStrip(): File {
         ?: throw GradleException("$llvmStripExecutable not found; looked in $ndkRoots")
 }
 
+// The BOOX Pen SDK's prebuilt libraries ship stripped, and llvm-strip rejects them.
+val prestrippedLibs =
+    if (project.findProperty("penFlavor") == "booxPen") listOf("libneo_pen.so", "libc++.so") else emptyList()
+
 tasks.configureEach {
     if (!name.startsWith("strip") || !name.endsWith("ReleaseDebugSymbols")) return@configureEach
     doLast {
         val llvmStrip = findLlvmStrip()
-        outputs.files.asFileTree.matching { include("**/*.so") }.forEach { lib ->
+        val libs = outputs.files.asFileTree.matching {
+            include("**/*.so")
+            prestrippedLibs.forEach { exclude("**/$it") }
+        }
+        libs.forEach { lib ->
             providers.exec {
                 commandLine(llvmStrip.absolutePath, "--strip-all", lib.absolutePath)
             }.result.get().assertNormalExitValue()
         }
+    }
+}
+
+// The BOOX pen flavor's SDK is served only from BOOX's Maven host
+// (plugins/tauri-plugin-native-bridge/android/README-pen.md).
+if (project.findProperty("penFlavor") == "booxPen") {
+    repositories {
+        maven { url = uri("https://repo.boox.com/repository/maven-public/") }
     }
 }
 

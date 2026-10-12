@@ -47,6 +47,7 @@ export interface TTSAudioBufferSourceNode {
 
 export interface TTSAudioContext {
   readonly currentTime: number;
+  readonly outputLatency?: number;
   readonly state: string; // 'running' | 'suspended' | 'interrupted' | 'closed'
   readonly destination: unknown;
   onstatechange: (() => void) | null;
@@ -287,8 +288,11 @@ export class WebAudioPlayer implements TTSAudioPlayer {
     console.log(
       `[TTS] schedule ${generation}:${chunk.index} at ${start.toFixed(2)} dur ${buffer.duration.toFixed(2)}`,
     );
-    if (chunk.index === 0) {
-      session.onEvent({ type: 'chunk-start', chunkIndex: 0 });
+    // The first chunk, or one whose predecessor already ended while its audio
+    // was still being fetched: no onended is left to announce it.
+    const previous = session.chunks[chunk.index - 1];
+    if (!previous || previous.ended) {
+      session.onEvent({ type: 'chunk-start', chunkIndex: chunk.index });
     }
   }
 
@@ -372,13 +376,17 @@ export class WebAudioPlayer implements TTSAudioPlayer {
     if (!session || session.generation !== generation || !ctx) return null;
     const first = session.chunks[0];
     if (!first) return null;
-    const t = ctx.currentTime;
+    // What the speakers play now: the clock runs ahead of them by the output
+    // latency, which would light each word before it is heard.
+    const t = ctx.currentTime - (ctx.outputLatency ?? 0);
     let active = first;
     for (const chunk of session.chunks) {
       if (chunk.startTime <= t) active = chunk;
       else break;
     }
-    const within = Math.min(Math.max(t - active.startTime, 0), active.duration);
+    // Negative only before the first chunk starts, so its first word waits
+    // for its audio instead of lighting during the pause before it.
+    const within = Math.min(t - active.startTime, active.duration);
     return {
       chunkIndex: active.index,
       mediaTimeSec: active.timing.trimStartSec + within * active.timing.mediaScale,

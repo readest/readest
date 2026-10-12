@@ -424,7 +424,6 @@
   "Terms of Service": "服務條款",
   "Privacy Policy": "隱私政策",
   "Disable Double Click": "禁用雙擊",
-  "TTS not supported for this document": "TTS 不支援此文件",
   "Reset Password": "重設密碼",
   "Reading Progress Style": "閱讀進度樣式",
   "Page Number": "頁碼",
@@ -2514,5 +2513,9 @@
   "Book Info": "書籍資訊",
   "QR Code": "QR 碼",
   "Links to this passage in Readest": "連結到 Readest 中的這段文字",
-  "via {{app}}": "來自 {{app}}"
+  "via {{app}}": "來自 {{app}}",
+  "Daily TTS limit reached. Upgrade your plan or try again tomorrow.": "已達到每日 TTS 限制。請升級您的方案或明天再試。",
+  "Pro": "Pro",
+  "Plus": "Plus",
+  "TTS not available for this page": "此頁面無法使用 TTS"
 }

@@ -19,7 +19,7 @@ import urllib.request
 from datetime import datetime, timezone
 
 DEFAULT_API_BASE = 'https://web.readest.com/api'
-DEFAULT_SUPABASE_URL = 'https://readest.supabase.co'
+DEFAULT_SUPABASE_URL = 'https://vbsyxfusjjqdxkjqlysc.supabase.co'
 # Public anon key, same one readest.koplugin ships (base64-encoded in main.lua).
 DEFAULT_ANON_KEY = (
     'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.'

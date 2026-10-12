@@ -54,6 +54,8 @@ interface ViewState {
   ocrEnabled: boolean;
   /* Empty uses book metadata; otherwise a session-only OCR language override. */
   ocrLanguage: string;
+  /* True while drawing mode is on for this view; session-only. */
+  drawingEnabled: boolean;
   syncing: boolean;
   gridInsets: Insets | null;
   /* True while the reader is showing a position requested by an external
@@ -82,6 +84,7 @@ interface ReaderStore {
   setBottomBarTab: (tab: string) => void;
   setBookmarkRibbonVisibility: (key: string, visible: boolean) => void;
   setTTSEnabled: (key: string, enabled: boolean) => void;
+  setDrawingEnabled: (key: string, enabled: boolean) => void;
   setAutoScrollEnabled: (key: string, enabled: boolean) => void;
   setOcrEnabled: (key: string, enabled: boolean) => void;
   setOcrLanguage: (key: string, language: string) => void;
@@ -200,6 +203,7 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
           autoScrollEnabled: false,
           ocrEnabled: false,
           ocrLanguage: '',
+          drawingEnabled: false,
           syncing: false,
           gridInsets: null,
           previewMode: false,
@@ -383,6 +387,7 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
             autoScrollEnabled: false,
             ocrEnabled: false,
             ocrLanguage: '',
+            drawingEnabled: false,
             syncing: false,
             gridInsets: null,
             previewMode: false,
@@ -409,6 +414,7 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
             autoScrollEnabled: false,
             ocrEnabled: false,
             ocrLanguage: '',
+            drawingEnabled: false,
             syncing: false,
             gridInsets: null,
             previewMode: false,
@@ -552,6 +558,17 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
         [key]: {
           ...state.viewStates[key]!,
           ttsEnabled: enabled,
+        },
+      },
+    })),
+
+  setDrawingEnabled: (key: string, enabled: boolean) =>
+    set((state) => ({
+      viewStates: {
+        ...state.viewStates,
+        [key]: {
+          ...state.viewStates[key]!,
+          drawingEnabled: enabled,
         },
       },
     })),

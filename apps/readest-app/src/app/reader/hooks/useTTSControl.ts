@@ -381,6 +381,13 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
         timeout: 5000,
       });
     };
+    const handleQuotaExceeded = () => {
+      eventDispatcher.dispatch('toast', {
+        message: _('Daily TTS limit reached. Upgrade your plan or try again tomorrow.'),
+        type: 'error',
+        timeout: 5000,
+      });
+    };
 
     const stopPageFollow = () => {
       if (pageFollowTimerRef.current === null) return;
@@ -631,6 +638,7 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
     };
 
     ttsController.addEventListener('tts-need-auth', handleNeedAuth);
+    ttsController.addEventListener('tts-quota-exceeded', handleQuotaExceeded);
     ttsController.addEventListener('tts-highlight-mark', handleHighlightMark);
     ttsController.addEventListener('tts-highlight-word', handleHighlightWord);
     ttsController.addEventListener('tts-position', handlePosition);
@@ -642,6 +650,7 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
     return () => {
       stopPageFollow();
       ttsController.removeEventListener('tts-need-auth', handleNeedAuth);
+      ttsController.removeEventListener('tts-quota-exceeded', handleQuotaExceeded);
       ttsController.removeEventListener('tts-highlight-mark', handleHighlightMark);
       ttsController.removeEventListener('tts-highlight-word', handleHighlightWord);
       ttsController.removeEventListener('tts-position', handlePosition);
@@ -1053,7 +1062,7 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
         setShowIndicator(false);
         setIsPlaying(false);
         eventDispatcher.dispatch('toast', {
-          message: _('TTS not supported for this document'),
+          message: _('TTS not available for this page'),
           type: 'error',
         });
         console.error(error);

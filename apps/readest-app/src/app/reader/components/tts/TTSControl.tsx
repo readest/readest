@@ -40,7 +40,13 @@ const TTSControl: React.FC<TTSControlProps> = ({ bookKey, gridInsets }) => {
   const hasTimeline = tts.ttsClientsInited && tts.handleSupportsPlaybackInfo();
   const audioTransport = tts.ttsClientsInited && tts.audioTransport;
   const miniPlayerMounted = tts.showIndicator && !showPlayerSheet;
-  const miniPlayerVisible = useMiniPlayerAutoHide(bookKey, playerStyle, miniPlayerMounted);
+  const buffering = !tts.ttsClientsInited || tts.buffering;
+  const miniPlayerVisible = useMiniPlayerAutoHide(
+    bookKey,
+    playerStyle,
+    miniPlayerMounted,
+    buffering,
+  );
 
   useEffect(() => {
     if (tts.showBackToCurrentTTSLocation) {
@@ -105,7 +111,7 @@ const TTSControl: React.FC<TTSControlProps> = ({ bookKey, gridInsets }) => {
         <TTSMiniPlayer
           bookKey={bookKey}
           isPlaying={tts.isPlaying}
-          buffering={!tts.ttsClientsInited || tts.buffering}
+          buffering={buffering}
           isEink={isEink}
           visible={miniPlayerVisible}
           hasTimeline={hasTimeline}

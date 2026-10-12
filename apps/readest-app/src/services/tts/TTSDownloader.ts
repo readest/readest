@@ -44,6 +44,14 @@ export interface CacheWarmer {
   // Force any newly-completed sections to compact into packs now (and push,
   // if pack sync is on) rather than waiting for the debounced timer.
   compactCache(): Promise<void>;
+  // Windowed engines: announce a whole section up front so it synthesizes in
+  // a few large requests; warmSentence then picks each sentence up as it
+  // arrives. A fatal failure (e.g. quota) thrown by warmSentence ends the
+  // download.
+  prefetchSentences?(
+    sentences: { lang: string; text: string }[],
+    signal?: AbortSignal,
+  ): Promise<void>;
 }
 
 export interface SectionDownloadProgress {
@@ -91,6 +99,11 @@ export class TTSDownloader {
       await this.#warmer.registerSectionManifest(
         sectionIndex,
         sentences.map((s) => s.label),
+      );
+
+      await this.#warmer.prefetchSentences?.(
+        sentences.map(({ lang, text }) => ({ lang, text })),
+        signal,
       );
 
       let synthesized = 0;

@@ -305,6 +305,7 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
               onToggle={handleToggleDropdown}
             >
               <QuickActionMenu
+                bookKey={bookKey}
                 selectedAction={viewSettings.annotationQuickAction}
                 onActionSelect={handleAnnotationQuickActionSelect}
               />

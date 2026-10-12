@@ -2271,6 +2271,78 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
             }
         }
     }
+
+    // Handwriting (issue #3673). Vendor stylus SDKs stay behind
+    // PenInputController; see PenInputController.kt.
+    private val penController: PenInputController by lazy { PenInputControllerFactory.create() }
+
+    @Command
+    fun query_pen_capabilities(invoke: Invoke) {
+        val ret = JSObject()
+        ret.put("isBoox", penController.isBooxDevice())
+        ret.put("rawDrawing", penController.canRawDraw())
+        invoke.resolve(ret)
+    }
+
+    @InvokeArg
+    class StartRawDrawingArgs {
+        var left: Double = 0.0
+        var top: Double = 0.0
+        var width: Double = 0.0
+        var height: Double = 0.0
+        var strokeWidth: Double = 1.0
+        var strokeColor: String = "#000000"
+    }
+
+    /** Region and stroke width arrive in CSS px; the pen SDK works in view px. */
+    @Command
+    fun start_raw_drawing(invoke: Invoke) {
+        val args = invoke.parseArgs(StartRawDrawingArgs::class.java)
+        val webView = webViewRef ?: return invoke.reject("WebView not ready")
+        val density = webView.resources.displayMetrics.density
+        val color = try {
+            android.graphics.Color.parseColor(args.strokeColor)
+        } catch (_: IllegalArgumentException) {
+            android.graphics.Color.BLACK
+        }
+        activity.runOnUiThread {
+            penController.start(
+                webView,
+                PenRegion(
+                    (args.left * density).toFloat(),
+                    (args.top * density).toFloat(),
+                    (args.width * density).toFloat(),
+                    (args.height * density).toFloat(),
+                ),
+                (args.strokeWidth * density).toFloat(),
+                color,
+            ) { points, kind -> emitPenBatch(points, kind, density) }
+            invoke.resolve()
+        }
+    }
+
+    @Command
+    fun stop_raw_drawing(invoke: Invoke) {
+        activity.runOnUiThread {
+            penController.stop()
+            invoke.resolve()
+        }
+    }
+
+    private fun emitPenBatch(points: List<PenPoint>, kind: PenEventKind, density: Float) {
+        val arr = JSArray()
+        for (p in points) {
+            val o = JSObject()
+            o.put("x", p.x / density)
+            o.put("y", p.y / density)
+            o.put("pressure", p.pressure)
+            arr.put(o)
+        }
+        val payload = JSObject()
+        payload.put("kind", kind.name)
+        payload.put("points", arr)
+        triggerEvent("pen-stroke-batch", payload)
+    }
 }
 
 @app.tauri.annotation.InvokeArg

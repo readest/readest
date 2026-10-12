@@ -551,7 +551,6 @@
   "Previous Sentence": "משפט קודם",
   "Next Sentence": "משפט הבא",
   "Please log in to use advanced TTS features": "אנא התחבר כדי להשתמש בתכונות TTS מתקדמות",
-  "TTS not supported for this document": "TTS אינו נתמך עבור מסמך זה",
   "No Timeout": "ללא הגבלת זמן",
   "{{value}} minute": "דקה {{value}}",
   "{{value}} minutes": "{{value}} דקות",
@@ -2642,5 +2641,9 @@
   "Book Info": "פרטי הספר",
   "QR Code": "קוד QR",
   "Links to this passage in Readest": "קישור לקטע הזה ב-Readest",
-  "via {{app}}": "דרך {{app}}"
+  "via {{app}}": "דרך {{app}}",
+  "Daily TTS limit reached. Upgrade your plan or try again tomorrow.": "הגעת למגבלת ה-TTS היומית. שדרג את התוכנית שלך או נסה שוב מחר.",
+  "Pro": "Pro",
+  "Plus": "Plus",
+  "TTS not available for this page": "TTS אינו זמין עבור עמוד זה"
 }

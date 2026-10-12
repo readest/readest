@@ -20,6 +20,7 @@ import { type BottomCornerRadii, getCellCornerRadii, NO_CORNERS } from '../utils
 import SearchResultsNav from './sidebar/SearchResultsNav';
 import BooknotesNav from './sidebar/BooknotesNav';
 import FoliateViewer from './FoliateViewer';
+import HandwritingOverlay from './handwriting/HandwritingOverlay';
 import SectionInfo from './SectionInfo';
 import HeaderBar from './HeaderBar';
 import PageNavigationButtons from './PageNavigationButtons';
@@ -309,6 +310,8 @@ const BookCellInner: React.FC<BookCellProps> = ({
           />
         )}
       </div>
+      {/* After the page chrome so it can't paint over ink near the edges. */}
+      <HandwritingOverlay bookKey={bookKey} gridInsets={gridInsets} />
       <BookmarkPullDown bookKey={bookKey} ribbonHidden={!!hoveredBookKey} slideRef={slideRef} />
       <PageNavigationButtons bookKey={bookKey} isDropdownOpen={isDropdownOpen} />
       <SearchResultsNav bookKey={bookKey} gridInsets={gridInsets} />

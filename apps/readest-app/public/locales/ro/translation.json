@@ -644,7 +644,6 @@
   "Readwise sync failed: {{error}}": "Sincronizarea Readwise a eșuat: {{error}}",
   "Translating...": "Se traduce...",
   "Please log in to use advanced TTS features": "Vă rugăm să vă conectați pentru a utiliza funcțiile TTS avansate",
-  "TTS not supported for this document": "TTS nu este acceptat pentru acest document",
   "Delete Your Account?": "Ștergeți contul dvs.?",
   "This action cannot be undone. All your data in the cloud will be permanently deleted.": "Această acțiune nu poate fi anulată. Toate datele dvs. din cloud vor fi șterse permanent.",
   "Delete Permanently": "Șterge definitiv",
@@ -2642,5 +2641,9 @@
   "Book Info": "Informații carte",
   "QR Code": "Cod QR",
   "Links to this passage in Readest": "Trimite la acest pasaj în Readest",
-  "via {{app}}": "prin {{app}}"
+  "via {{app}}": "prin {{app}}",
+  "Daily TTS limit reached. Upgrade your plan or try again tomorrow.": "Limita zilnică TTS a fost atinsă. Faceți upgrade la planul dvs. sau încercați din nou mâine.",
+  "Pro": "Pro",
+  "Plus": "Plus",
+  "TTS not available for this page": "TTS nu este disponibil pentru această pagină"
 }

@@ -988,7 +988,6 @@
   "Readwise sync failed: {{error}}": "Readwise-ის სინქრონიზაცია ვერ მოხერხდა: {{error}}",
   "Translating...": "მიმდინარეობს თარგმნა...",
   "Please log in to use advanced TTS features": "გაფართოებული TTS ფუნქციების გამოსაყენებლად გთხოვთ, შეხვიდეთ",
-  "TTS not supported for this document": "TTS არ არის მხარდაჭერილი ამ დოკუმენტისთვის",
   "Section {{index}}": "სექცია {{index}}",
   "Expires in {{count}} days_one": "ვადა იწურება {{count}} დღეში",
   "Expires in {{count}} days_other": "ვადა იწურება {{count}} დღეში",
@@ -2578,5 +2577,9 @@
   "Book Info": "წიგნის ინფორმაცია",
   "QR Code": "QR კოდი",
   "Links to this passage in Readest": "ბმული ამ მონაკვეთზე Readest-ში",
-  "via {{app}}": "{{app}}-ის მეშვეობით"
+  "via {{app}}": "{{app}}-ის მეშვეობით",
+  "Daily TTS limit reached. Upgrade your plan or try again tomorrow.": "TTS-ის დღიური ლიმიტი ამოიწურა. განაახლეთ გეგმა ან სცადეთ ხვალ.",
+  "Pro": "Pro",
+  "Plus": "Plus",
+  "TTS not available for this page": "TTS მიუწვდომელია ამ გვერდისთვის"
 }

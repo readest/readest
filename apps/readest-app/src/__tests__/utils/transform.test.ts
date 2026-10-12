@@ -10,6 +10,55 @@ import {
 import { BookConfig, BookNote, Book } from '@/types/book';
 import { DBBookConfig, DBBookNote } from '@/types/records';
 
+describe('transformBookNoteToDB with handwriting', () => {
+  const ink: BookNote = {
+    bookHash: 'abc123',
+    id: 'ink-1',
+    type: 'ink',
+    cfi: 'epubcfi(/6/4!/4/2,/1:0,/1:5)',
+    text: 'marked words',
+    note: '',
+    ink: [
+      {
+        id: 's1',
+        color: '#facc15',
+        width: 0.03,
+        tool: 'marker',
+        anchor: 'epubcfi(/6/4!/4/2,/1:0,/1:5)',
+        shape: 'flow',
+        points: [
+          [0.1, 0.5, 0.42],
+          [0.9, 0.5],
+        ],
+      },
+    ],
+    createdAt: 1700000000000,
+    updatedAt: 1700000001000,
+  };
+
+  it('carries the strokes in the ink column, both ways', () => {
+    const db = transformBookNoteToDB(ink, 'user1');
+    expect(db.ink).toEqual(ink.ink);
+    expect(transformBookNoteFromDB(db).ink).toEqual(ink.ink);
+  });
+
+  it('leaves the ink column alone for other notes', () => {
+    const db = transformBookNoteToDB({ ...ink, type: 'annotation', ink: undefined }, 'user1');
+    // An absent key is not sent, so an upsert never clears stored strokes.
+    expect('ink' in JSON.parse(JSON.stringify(db))).toBe(false);
+    expect(transformBookNoteFromDB({ ...db, ink: null }).ink).toBeUndefined();
+  });
+
+  it('pulls a row without strokes without a key that would wipe local strokes', () => {
+    // A server whose database predates the column returns no ink; merging the
+    // pulled note over the local one must keep the local strokes.
+    const { ink: _ink, ...row } = transformBookNoteToDB(ink, 'user1');
+    const pulled = transformBookNoteFromDB(row);
+    expect('ink' in pulled).toBe(false);
+    expect({ ...ink, ...pulled }.ink).toEqual(ink.ink);
+  });
+});
+
 describe('transformBookNoteToDB with xpointer fields', () => {
   it('round-trips the reserved Notebook type and Markdown content', () => {
     const note: BookNote = {

@@ -461,6 +461,10 @@ export function mergeRestyledAnnotation(existing: BookNote, restyled: BookNote):
 
 export type AnnotationFilterKind = 'all' | 'notes';
 
+/** Highlights, notes and handwriting: what the annotations hub lists. */
+export const isAnnotationEntry = (note: BookNote) =>
+  note.type === 'annotation' || note.type === 'ink';
+
 export interface BooknoteFilter {
   kind: AnnotationFilterKind;
   query: string;
@@ -480,7 +484,7 @@ export function filterBooknotes(notes: BookNote[], filter: BooknoteFilter): Book
   const lowercaseQuery = filter.query.trim().toLowerCase();
   return notes.filter((note) => {
     if (note.deletedAt) return false;
-    if (note.type !== 'annotation') return false;
+    if (!isAnnotationEntry(note)) return false;
     if (kind === 'notes' && !note.note) return false;
     if (note.color && excludedColors?.includes(note.color)) return false;
     if (note.style && excludedStyles?.includes(note.style)) return false;
@@ -531,7 +535,7 @@ export function summarizeAnnotationHub(notes: BookNote[]): AnnotationHubCounts {
   let annotations = 0;
   for (const note of notes) {
     if (note.deletedAt) continue;
-    if (note.type === 'annotation') annotations += 1;
+    if (isAnnotationEntry(note)) annotations += 1;
   }
   return { annotations };
 }
