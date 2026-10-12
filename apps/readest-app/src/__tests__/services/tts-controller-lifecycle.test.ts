@@ -196,6 +196,28 @@ describe('TTSController lifecycle', () => {
     expect(controller.terminated).toBe(true);
   });
 
+  test('a buffered speech failure pauses without advancing or ending the session', async () => {
+    const ended = vi.fn();
+    const errors = vi.fn();
+    const forward = vi.spyOn(controller, 'forward');
+    controller.addEventListener('tts-session-ended', ended);
+    controller.addEventListener('tts-playback-error', errors);
+    (controller.ttsClient.speak as ReturnType<typeof vi.fn>).mockImplementation(
+      async function* (): AsyncIterable<TTSMessageEvent> {
+        yield { code: 'error', message: 'Edge TTS is unavailable.' };
+      },
+    );
+
+    await controller.speak('<speak>hello</speak>');
+    await flushMicrotasks();
+
+    expect(controller.state).toBe('forward-paused');
+    expect(controller.terminated).toBe(false);
+    expect(ended).not.toHaveBeenCalled();
+    expect(errors).toHaveBeenCalledTimes(1);
+    expect(forward).not.toHaveBeenCalled();
+  });
+
   test('a new speak resets terminated', async () => {
     ttsNextReturns = [undefined];
     controller.state = 'playing';

@@ -60,6 +60,7 @@ export class TTSSessionManager extends EventTarget {
   #meta: TTSSessionMeta | null = null;
   #onStateChange: ((e: Event) => void) | null = null;
   #onSessionEnded: ((e: Event) => void) | null = null;
+  #onPlaybackError: ((e: Event) => void) | null = null;
   #onHighlightMark: ((e: Event) => void) | null = null;
   #lastRelayedState: 'playing' | 'paused' | null = null;
   #statsRecorder: TtsStatsRecorder | null = null;
@@ -355,6 +356,15 @@ export class TTSSessionManager extends EventTarget {
       const { reason } = (e as CustomEvent<{ reason: 'ended' | 'error' }>).detail;
       void this.stopActive(reason);
     };
+    this.#onPlaybackError = () => {
+      const session = this.#session;
+      if (!session || session.controller !== controller) return;
+      eventDispatcher.dispatch('toast', {
+        message: _('Edge TTS is unavailable. Reading paused. Try again or choose a system voice.'),
+        type: 'error',
+        timeout: 6000,
+      });
+    };
     this.#onHighlightMark = (e: Event) => {
       const { cfi } = (e as CustomEvent<{ cfi: string }>).detail;
       this.#statsRecorder?.onMark(cfi);
@@ -362,6 +372,7 @@ export class TTSSessionManager extends EventTarget {
     };
     controller.addEventListener('tts-state-change', this.#onStateChange);
     controller.addEventListener('tts-session-ended', this.#onSessionEnded);
+    controller.addEventListener('tts-playback-error', this.#onPlaybackError);
     controller.addEventListener('tts-highlight-mark', this.#onHighlightMark);
   }
 
@@ -376,11 +387,15 @@ export class TTSSessionManager extends EventTarget {
     if (this.#onSessionEnded) {
       controller.removeEventListener('tts-session-ended', this.#onSessionEnded);
     }
+    if (this.#onPlaybackError) {
+      controller.removeEventListener('tts-playback-error', this.#onPlaybackError);
+    }
     if (this.#onHighlightMark) {
       controller.removeEventListener('tts-highlight-mark', this.#onHighlightMark);
     }
     this.#onStateChange = null;
     this.#onSessionEnded = null;
+    this.#onPlaybackError = null;
     this.#onHighlightMark = null;
   }
 

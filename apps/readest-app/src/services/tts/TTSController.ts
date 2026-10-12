@@ -1735,6 +1735,7 @@ export class TTSController extends EventTarget {
           signal,
         );
         let lastCode;
+        let lastErrorMessage: string | undefined;
         // A step mode switched on mid-paragraph still has to stop where the
         // sentence now sounding ends: on its 'end' (engines that speak mark by
         // mark), or else at the next sentence's boundary.
@@ -1751,7 +1752,7 @@ export class TTSController extends EventTarget {
         // waits on the network; the next paragraphs should not).
         const preloadTimer = setTimeout(preloadNext, PRELOAD_NEXT_AFTER_MS);
         signal.addEventListener('abort', () => clearTimeout(preloadTimer), { once: true });
-        for await (const { code, mark } of iter) {
+        for await (const { code, mark, message } of iter) {
           // Anything the iterator yields means the client is done waiting:
           // 'boundary' is the first audible chunk, 'end'/'error' resolve the
           // wait the other way.
@@ -1761,6 +1762,7 @@ export class TTSController extends EventTarget {
             return;
           }
           lastCode = code;
+          if (code === 'error') lastErrorMessage = message;
           if (oneTime || this.state !== 'playing') continue;
           // Once this paragraph is audible: stepping through the next ones is
           // synchronous DOM work that would otherwise sit in the pause before it.
@@ -1824,14 +1826,20 @@ export class TTSController extends EventTarget {
           this.state === 'playing' &&
           !oneTime
         ) {
-          // A buffered client (Edge/Web) reported a synthesis error that
-          // survived its retries: offline with this sentence uncached, or a
-          // persistent service failure, with no online fallback available.
-          // Stop cleanly rather than skip to the end of the book or leave the
-          // controls wedged in 'playing'.
+          // Edge can fail after cached sentences have played. Keep the player
+          // and reading position so Play can retry without advancing through
+          // uncached text. The iterator has already stopped its audio session.
           resolve();
-          this.#terminate('error');
-          await this.stop();
+          if (this.ttsClient === this.ttsEdgeClient) {
+            this.state = 'forward-paused';
+            this.#syncAudioKeepAlive();
+            this.dispatchEvent(
+              new CustomEvent('tts-playback-error', { detail: { message: lastErrorMessage } }),
+            );
+          } else {
+            this.#terminate('error');
+            await this.stop();
+          }
         }
         resolve();
       } catch (e) {

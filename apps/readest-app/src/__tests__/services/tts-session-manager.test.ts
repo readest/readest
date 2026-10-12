@@ -194,6 +194,23 @@ describe('TTSSessionManager', () => {
     expect(sessionEvents.at(-1)?.reason).toBe('stopped');
   });
 
+  test('an Edge playback error shows a notice while keeping the session', () => {
+    const toasts: Array<{ message: string; type: string }> = [];
+    const onToast = (e: CustomEvent) => toasts.push(e.detail);
+    eventDispatcher.on('toast', onToast as never);
+    try {
+      claim();
+      controller.emitState('forward-paused');
+      controller.dispatchEvent(new CustomEvent('tts-playback-error'));
+      expect(manager.getActiveSession()).not.toBeNull();
+      expect(playbackStates.at(-1)?.state).toBe('paused');
+      expect(toasts.at(-1)).toMatchObject({ type: 'error' });
+      expect(toasts.at(-1)?.message).toContain('Edge TTS is unavailable');
+    } finally {
+      eventDispatcher.off('toast', onToast as never);
+    }
+  });
+
   test('sleep timer fires stopActive and is cleared by it', async () => {
     vi.useFakeTimers();
     claim();

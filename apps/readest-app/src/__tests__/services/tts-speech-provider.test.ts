@@ -27,7 +27,10 @@ vi.mock('@/libs/edgeTTS', async (importOriginal) => {
 });
 
 import { EdgeSpeechProvider } from '@/services/tts/providers/edge';
-import { SpeechSynthesisPermanentError } from '@/services/tts/providers/types';
+import {
+  SpeechSynthesisFatalError,
+  SpeechSynthesisPermanentError,
+} from '@/services/tts/providers/types';
 
 describe('EdgeSpeechProvider', () => {
   beforeEach(() => {
@@ -112,6 +115,30 @@ describe('EdgeSpeechProvider', () => {
         new AbortController().signal,
       ),
     ).rejects.toThrow('network error');
+  });
+
+  test('stops at the first cache miss after a failed Edge startup probe', async () => {
+    h.create.mockRejectedValueOnce(new Error('WebSocket rejected'));
+    const provider = new EdgeSpeechProvider();
+    await expect(provider.init()).resolves.toBe(false);
+    h.createAudioData.mockRejectedValueOnce(new Error('WebSocket rejected'));
+    await expect(
+      provider.synthesize(
+        { lang: 'en', text: 'hello', voice: 'en-US-AriaNeural', pitch: 1.0 },
+        new AbortController().signal,
+      ),
+    ).rejects.toBeInstanceOf(SpeechSynthesisFatalError);
+  });
+
+  test('treats an Edge HTTP 403 as a session failure even after a successful probe', async () => {
+    const provider = await initializedProvider();
+    h.createAudioData.mockRejectedValueOnce(new Error('WebSocket error occurred: HTTP 403'));
+    await expect(
+      provider.synthesize(
+        { lang: 'en', text: 'hello', voice: 'en-US-AriaNeural', pitch: 1.0 },
+        new AbortController().signal,
+      ),
+    ).rejects.toBeInstanceOf(SpeechSynthesisFatalError);
   });
 
   test('exposes the static Edge voice list', async () => {
