@@ -159,6 +159,8 @@ const SCHEMA = [
 
 // Batch accessed_at updates: reads must not each cost a synchronous write.
 const TOUCH_FLUSH_LIMIT = 64;
+// Rows per multi-row statement, under SQLite's oldest 999-parameter limit.
+const BATCH_ROWS = 300;
 
 // importPack stores synced packs under a fingerprint prefixed with this, so a
 // pack adopted from another device never equals the local manifest
@@ -295,6 +297,25 @@ export class SqliteTTSCacheStore implements TTSCacheStore {
     }
   }
 
+  // Which of these keys have audio cached, in a few queries (a download
+  // checks a whole section at once).
+  async cachedKeys(keys: string[]): Promise<Set<string>> {
+    await this.#ensureSchema();
+    const cached = new Set<string>();
+    for (let start = 0; start < keys.length; start += BATCH_ROWS * 3) {
+      const batch = keys.slice(start, start + BATCH_ROWS * 3);
+      const rows = await this.#db.select<DatabaseRow & { key: string }>(
+        // A row a deleted pack left without audio (and without a pack) is a miss.
+        `SELECT key FROM entries
+          WHERE key IN (${batch.map(() => '?').join(', ')})
+            AND (audio IS NOT NULL OR pack_id IS NOT NULL)`,
+        batch,
+      );
+      for (const row of rows) cached.add(row.key);
+    }
+    return cached;
+  }
+
   async put(
     key: string,
     entry: TTSCacheEntry,
@@ -347,11 +368,14 @@ export class SqliteTTSCacheStore implements TTSCacheStore {
     // (section, ordinal) primary key. UPSERT keeps each ordinal unique and
     // preserves a key already recorded for an unchanged mark; a trailing
     // DELETE trims ordinals left over from a shorter new manifest.
-    for (let i = 0; i < marks.length; i++) {
+    // Many rows per statement: each is a round trip to the database worker.
+    for (let start = 0; start < marks.length; start += BATCH_ROWS) {
+      const batch = marks.slice(start, start + BATCH_ROWS);
       await this.#db.execute(
-        `INSERT INTO manifest_marks (section, ordinal, mark, key) VALUES (?, ?, ?, NULL)
+        `INSERT INTO manifest_marks (section, ordinal, mark, key)
+         VALUES ${batch.map(() => '(?, ?, ?, NULL)').join(', ')}
          ON CONFLICT(section, ordinal) DO UPDATE SET mark = excluded.mark`,
-        [section, i, marks[i]!],
+        batch.flatMap((mark, i) => [section, start + i, mark]),
       );
     }
     await this.#db.execute('DELETE FROM manifest_marks WHERE section = ? AND ordinal >= ?', [

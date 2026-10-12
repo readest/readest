@@ -28,6 +28,9 @@ export interface TTSCacheStore {
   // Open the backing store ahead of the first lookup (no-op if it cannot yet).
   open?(): Promise<void>;
   get(key: string): Promise<TTSCacheEntry | null>;
+  // Which of these keys are cached, in one lookup (a download checks a whole
+  // section at once).
+  cachedKeys?(keys: string[]): Promise<Set<string>>;
   put(
     key: string,
     entry: TTSCacheEntry,
@@ -153,6 +156,14 @@ export class CachingProvider implements SpeechProvider {
   ): Promise<void> {
     const uncached: SpeechSynthesisRequest[] = [];
     const toFill: SpeechSynthesisRequest[] = [];
+    // A caller that needs no cached audio back (a download) checks the whole
+    // batch in one lookup instead of reading each sentence.
+    const cachedKeys =
+      this.#store.cachedKeys && !options?.onDelivered
+        ? await this.#store
+            .cachedKeys(reqs.map((req) => computeTTSCacheKey(this.#inner.id, req)))
+            .catch(() => new Set<string>()) // Unreadable store: treat as uncached.
+        : null;
     for (const req of reqs) {
       const key = computeTTSCacheKey(this.#inner.id, req);
       // Already being filled: still forwarded, so the provider can raise a
@@ -161,15 +172,19 @@ export class CachingProvider implements SpeechProvider {
         uncached.push(req);
         continue;
       }
-      try {
-        const cached = this.#recent.get(key) ?? (await this.#store.get(key));
-        if (cached) {
-          this.#remember(key, cached);
-          options?.onDelivered?.(req, { audio: cached.audio, boundaries: cached.boundaries });
-          continue;
+      if (cachedKeys) {
+        if (this.#recent.has(key) || cachedKeys.has(key)) continue;
+      } else {
+        try {
+          const cached = this.#recent.get(key) ?? (await this.#store.get(key));
+          if (cached) {
+            this.#remember(key, cached);
+            options?.onDelivered?.(req, { audio: cached.audio, boundaries: cached.boundaries });
+            continue;
+          }
+        } catch {
+          // Unreadable store: treat as uncached.
         }
-      } catch {
-        // Unreadable store: treat as uncached.
       }
       uncached.push(req);
       toFill.push(req);

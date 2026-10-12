@@ -6,6 +6,7 @@ import { readNDJSON } from '@/utils/ndjson';
 import { estimateSentenceSeconds } from '../ttsDuration';
 import type { TTSVoice } from '../types';
 import {
+  DAILY_QUOTA_EXCEEDED,
   type PrefetchOptions,
   type SpeechProvider,
   SpeechSynthesisFatalError,
@@ -26,15 +27,15 @@ import {
 //   current paragraph is waiting on fill a window before background preloads
 //   of later paragraphs, never mixing languages. A window frees the lane as
 //   soon as its last sentence arrives.
-// - download: chapter downloads, up to 64 sentences per window, submitted as
-//   durable jobs that any worker may run (/api/tts/readest/jobs), up to four
-//   at a time, and collected when done. A server without jobs (off Workers)
-//   gets streamed windows instead, one at a time, like listening.
+// - download: chapter downloads, in windows of up to 2000 characters (about
+//   two minutes of audio, so progress moves often and work spreads across
+//   workers), submitted as durable jobs that any worker may run
+//   (/api/tts/readest/jobs), up to four at a time, and collected when done.
+//   A server without jobs (off Workers) gets streamed windows instead, one
+//   at a time, like listening.
 // A sentence stays requested while any caller that asked for it is still
 // interested; once every such signal is aborted it is withdrawn, and a window
 // nobody wants any more is aborted, which cancels its GPU job server-side.
-
-export const DAILY_QUOTA_EXCEEDED = 'DAILY_QUOTA_EXCEEDED';
 
 const LISTEN_WINDOW_SIZES = [1, 4, 8];
 const LISTEN_WINDOW_CHARS = 2000;
@@ -42,10 +43,17 @@ const LISTEN_WINDOW_SEC = 20;
 // A window of background preloads only: nobody waits on it, so it may carry
 // more audio, amortizing the per-request overhead and batching on the GPU.
 const LISTEN_BACKGROUND_WINDOW_SEC = 60;
+// The most sentences a download window may hold (the route's limit).
 const DOWNLOAD_WINDOW_SENTENCES = 64;
-const DOWNLOAD_WINDOW_CHARS = 12000;
+const DOWNLOAD_WINDOW_CHARS = 2000;
 const DOWNLOAD_JOBS = 4;
 const BUSY_RETRY_MS = 5000;
+// After a quota refusal, ask the server again no sooner than this: a retry,
+// an upgrade or a new day may have made room.
+const QUOTA_RECHECK_MS = 60_000;
+// Refusals within this long of the last notice (a toast's lifetime) are one
+// notice: a download refuses many sentences at once.
+const QUOTA_NOTICE_MS = 5_000;
 // Route codes that will fail again for the same sentences.
 const PERMANENT_CODES = new Set(['UNKNOWN_VOICE', 'VOICE_TIER_REQUIRED', 'INVALID_INPUT']);
 // Job codes worth submitting the window again for: another device of the user
@@ -114,7 +122,9 @@ export class ReadestVoiceProvider implements SpeechProvider {
 
   readonly #events: EventTarget | undefined;
   #voices: Promise<TTSVoice[]> | null = null;
-  #quotaExhausted = false;
+  // When the server last refused for quota (0: not refused).
+  #quotaExhaustedAt = 0;
+  #quotaNoticeAt = 0;
   #warmupFired = false;
   // Whether the server runs download jobs (null: not known yet, so one
   // download goes out at a time); without them downloads stream.
@@ -142,7 +152,7 @@ export class ReadestVoiceProvider implements SpeechProvider {
 
   async init(): Promise<boolean> {
     // A new session (or day) may have fresh quota.
-    this.#quotaExhausted = false;
+    this.#quotaExhaustedAt = 0;
     const voices = await this.getAllVoices();
     this.#voices = null; // the next init asks again (plan or catalog may change)
     return voices.length > 0;
@@ -164,7 +174,8 @@ export class ReadestVoiceProvider implements SpeechProvider {
     signal: AbortSignal,
     options?: PrefetchOptions,
   ): Promise<SpeechSynthesisResult> {
-    if (this.#quotaExhausted) {
+    if (this.#quotaExhausted()) {
+      this.#noticeQuota();
       return Promise.reject(new SpeechSynthesisFatalError(DAILY_QUOTA_EXCEEDED));
     }
     // No Readest voice for this sentence's language: skip it rather than read
@@ -204,7 +215,7 @@ export class ReadestVoiceProvider implements SpeechProvider {
     signal: AbortSignal,
     options?: PrefetchOptions,
   ): void {
-    if (this.#quotaExhausted || signal.aborted) return;
+    if (this.#quotaExhausted() || signal.aborted) return;
     const background = lane === 'listen' && !!options?.background;
     const onDelivered = options?.onDelivered;
     for (const req of reqs) {
@@ -512,13 +523,23 @@ export class ReadestVoiceProvider implements SpeechProvider {
     }
   }
 
-  // Every further request would be refused too: fail everything and tell the
-  // user once. init() (a new session) clears it.
+  #quotaExhausted() {
+    return Date.now() - this.#quotaExhaustedAt < QUOTA_RECHECK_MS;
+  }
+
+  // Tells the user why a request was refused (tts-quota-exceeded), once per
+  // burst of refusals.
+  #noticeQuota() {
+    if (Date.now() - this.#quotaNoticeAt < QUOTA_NOTICE_MS) return;
+    this.#quotaNoticeAt = Date.now();
+    this.#events?.dispatchEvent(new CustomEvent('tts-quota-exceeded'));
+  }
+
+  // Further requests would be refused too for a while: fail everything and
+  // tell the user. init() (a new session) clears it.
   #exhaustQuota() {
-    if (!this.#quotaExhausted) {
-      this.#quotaExhausted = true;
-      this.#events?.dispatchEvent(new CustomEvent('tts-quota-exceeded'));
-    }
+    this.#noticeQuota();
+    this.#quotaExhaustedAt = Date.now();
     const fatal = new SpeechSynthesisFatalError(DAILY_QUOTA_EXCEEDED);
     for (const lane of Object.values(this.#lanes)) {
       lane.queue = [];

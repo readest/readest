@@ -15,8 +15,8 @@ describe('getTTSQuota', () => {
   afterEach(() => vi.unstubAllEnvs());
 
   it('returns per-plan daily character quotas', () => {
-    expect(getTTSQuota('plus')).toBe(100 * 1024);
-    expect(getTTSQuota('pro')).toBe(300 * 1024);
+    expect(getTTSQuota('plus')).toBe(500_000);
+    expect(getTTSQuota('pro')).toBe(1_000_000);
     expect(getTTSQuota('free')).toBe(0);
     expect(getTTSQuota('purchase')).toBe(0);
   });

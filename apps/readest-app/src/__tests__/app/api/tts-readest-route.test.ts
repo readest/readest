@@ -106,6 +106,12 @@ describe('POST /api/tts/readest', () => {
     expect(await res.json()).toEqual({ ok: true });
   });
 
+  it('accepts a plain value, as the next dev platform proxy answers RPC calls', async () => {
+    m.service.warmup.mockReturnValueOnce(undefined);
+    const res = await POST(req('POST', { warmup: true }));
+    expect(await res.json()).toEqual({ ok: true });
+  });
+
   it('is gated like GET', async () => {
     m.getSubscriptionPlan.mockReturnValue('free');
     expect((await POST(req('POST', { warmup: true }))).status).toBe(403);

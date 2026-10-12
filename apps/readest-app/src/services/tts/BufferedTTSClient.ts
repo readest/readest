@@ -717,17 +717,19 @@ export class BufferedTTSClient implements TTSClient {
 
   // Chapter downloads: hand a windowed provider the whole section on the
   // download lane (cached sentences are filtered out by CachingProvider).
+  // Whether it did: its sentences then arrive in windows, in any order.
   async prefetchSentences(
     sentences: { lang: string; text: string }[],
     signal?: AbortSignal,
-  ): Promise<void> {
-    if (!this.provider.prefetch) return;
+  ): Promise<boolean> {
+    if (!this.provider.prefetch) return false;
     const reqs: SpeechSynthesisRequest[] = [];
     for (const { lang, text } of sentences) {
       const voice = await this.getVoiceIdFromLang(lang);
       reqs.push({ lang, text, voice, pitch: this.#pitch });
     }
     this.provider.prefetch(reqs, 'download', signal ?? new AbortController().signal);
+    return true;
   }
 
   // Synthesize one sentence into the cache (a hit is a no-op) and record its

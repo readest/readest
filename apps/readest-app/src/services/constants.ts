@@ -1041,8 +1041,8 @@ export const DEFAULT_DAILY_TRANSLATION_QUOTA: UserDailyTranslationQuota = {
 
 export const DEFAULT_DAILY_TTS_QUOTA: UserDailyTTSQuota = {
   free: 0,
-  plus: 100 * 1024,
-  pro: 300 * 1024,
+  plus: 500_000,
+  pro: 1_000_000,
   purchase: 0,
 };
 

@@ -326,13 +326,14 @@ describe('BufferedTTSClient with a windowed provider', () => {
       const prefetch = vi.fn();
       const client = await start(makeProvider({ prefetch }));
       const signal = new AbortController().signal;
-      await client.prefetchSentences(
+      const windowed = await client.prefetchSentences(
         [
           { lang: 'en', text: 'A.' },
           { lang: 'en', text: 'B.' },
         ],
         signal,
       );
+      expect(windowed).toBe(true);
       expect(prefetch).toHaveBeenCalledWith(
         [
           { lang: 'en', text: 'A.', voice: 'v1', pitch: 1 },

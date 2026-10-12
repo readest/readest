@@ -95,7 +95,7 @@ describe('POST /jobs', () => {
       lang: 'en-US',
       segments: body.segments,
       engines: ['kokoro', 'omnivoice'],
-      quotaLeft: 300 * 1024 - 1_000,
+      quotaLeft: 1_000_000 - 1_000,
     });
   });
 
