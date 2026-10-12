@@ -4,6 +4,7 @@ import { TTSDownloadManager } from '@/services/tts/ttsDownloadManager';
 import type { TTSController } from '@/services/tts/TTSController';
 import type { DownloadChapter } from '@/services/tts/downloadChapters';
 import type { SectionDownloadProgress } from '@/services/tts/TTSDownloader';
+import { SpeechSynthesisFatalError } from '@/services/tts/providers/types';
 
 const QUEUE_KEY = 'readest_tts_download_queue';
 
@@ -117,12 +118,75 @@ describe('TTSDownloadManager', () => {
     expect(downloader.download.mock.calls[1]![0]).toEqual([0]);
   });
 
+  test('retries a failed chapter 3 times, waiting longer each time, then shows it failed', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    try {
+      const { downloader, controller } = makeController();
+      downloader.download.mockRejectedValue(new Error('offline'));
+      const manager = new TTSDownloadManager();
+      manager.attachController('book', () => controller);
+      manager.queueChapter('book', chapter('a', 0, 1));
+      const item = () => useTTSDownloadStore.getState().itemForChapter('book', 'a');
+
+      await vi.advanceTimersByTimeAsync(0);
+      expect(downloader.download).toHaveBeenCalledTimes(1);
+      expect(item()?.status).toBe('pending');
+      await vi.advanceTimersByTimeAsync(9_999);
+      expect(downloader.download).toHaveBeenCalledTimes(1);
+      await vi.advanceTimersByTimeAsync(1);
+      expect(downloader.download).toHaveBeenCalledTimes(2);
+      await vi.advanceTimersByTimeAsync(20_000);
+      expect(downloader.download).toHaveBeenCalledTimes(3);
+      await vi.advanceTimersByTimeAsync(30_000);
+      expect(downloader.download).toHaveBeenCalledTimes(4);
+      expect(item()).toMatchObject({ status: 'failed', error: 'offline' });
+      await vi.advanceTimersByTimeAsync(60_000);
+      expect(downloader.download).toHaveBeenCalledTimes(4);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  test('a failure that would only repeat (quota) is not retried', async () => {
+    const { downloader, controller } = makeController();
+    downloader.download.mockRejectedValue(new SpeechSynthesisFatalError('DAILY_QUOTA_EXCEEDED'));
+    const manager = new TTSDownloadManager();
+    manager.attachController('book', () => controller);
+    manager.queueChapter('book', chapter('a', 0, 1));
+
+    await vi.waitFor(() =>
+      expect(useTTSDownloadStore.getState().itemForChapter('book', 'a')).toMatchObject({
+        status: 'failed',
+        error: 'DAILY_QUOTA_EXCEEDED',
+      }),
+    );
+    expect(downloader.download).toHaveBeenCalledTimes(1);
+  });
+
+  test('cancelling a chapter waiting to retry drops it for good', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    try {
+      const { downloader, controller } = makeController();
+      downloader.download.mockRejectedValue(new Error('offline'));
+      const manager = new TTSDownloadManager();
+      manager.attachController('book', () => controller);
+      manager.queueChapter('book', chapter('a', 0, 1));
+      await vi.advanceTimersByTimeAsync(0);
+      manager.cancelItem('book:a');
+      await vi.advanceTimersByTimeAsync(60_000);
+      expect(downloader.download).toHaveBeenCalledTimes(1);
+      expect(useTTSDownloadStore.getState().itemForChapter('book', 'a')).toBeUndefined();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   test('a failed chapter can be retried by queueing it again', async () => {
     const { downloader, controller, packed } = makeController();
     let calls = 0;
     downloader.download.mockImplementation(async (sections: number[]) => {
       calls++;
-      if (calls === 1) throw new Error('offline');
+      if (calls === 1) throw new SpeechSynthesisFatalError('DAILY_QUOTA_EXCEEDED');
       for (const section of sections) packed.add(section);
       return { completed: [...sections], skipped: [], synthesized: 0 };
     });
@@ -284,8 +348,12 @@ describe('TTSDownloadManager', () => {
     manager.attachController('book', () => controller);
     manager.queueChapter('book', chapter('a', 0, 1));
 
+    // The failed run is set to run again.
     await vi.waitFor(() =>
-      expect(useTTSDownloadStore.getState().itemForChapter('book', 'a')?.status).toBe('failed'),
+      expect(useTTSDownloadStore.getState().itemForChapter('book', 'a')).toMatchObject({
+        status: 'pending',
+        retries: 1,
+      }),
     );
     expect(cancelDownloadSections).not.toHaveBeenCalled();
   });
@@ -391,17 +459,22 @@ describe('TTSDownloadManager', () => {
     );
   });
 
-  test('keeps an incomplete resolved download as failed so it can be retried', async () => {
-    const { downloader, controller, cancelDownloadSections } = makeController();
-    downloader.download.mockResolvedValue({ completed: [], skipped: [0], synthesized: 0 });
-    const manager = new TTSDownloadManager();
-    manager.attachController('book', () => controller);
-    manager.queueChapter('book', chapter('a', 0, 1));
+  test('keeps an incomplete resolved download as failed after its retries', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    try {
+      const { downloader, controller, cancelDownloadSections } = makeController();
+      downloader.download.mockResolvedValue({ completed: [], skipped: [0], synthesized: 0 });
+      const manager = new TTSDownloadManager();
+      manager.attachController('book', () => controller);
+      manager.queueChapter('book', chapter('a', 0, 1));
 
-    await vi.waitFor(() =>
-      expect(useTTSDownloadStore.getState().itemForChapter('book', 'a')?.status).toBe('failed'),
-    );
-    expect(cancelDownloadSections).toHaveBeenCalledWith([0]);
+      await vi.advanceTimersByTimeAsync(60_000);
+      expect(downloader.download).toHaveBeenCalledTimes(4);
+      expect(useTTSDownloadStore.getState().itemForChapter('book', 'a')?.status).toBe('failed');
+      expect(cancelDownloadSections).toHaveBeenCalledWith([0]);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   test('repairs a pinned section whose durable pack is missing', async () => {

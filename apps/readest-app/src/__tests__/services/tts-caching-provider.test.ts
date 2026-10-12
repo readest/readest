@@ -238,6 +238,27 @@ describe('CachingProvider.prefetch', () => {
     });
   });
 
+  test('checks a whole download against the cache in one lookup', async () => {
+    const { inner, deliver } = windowed();
+    const store = Object.assign(new MemoryStore(), {
+      cachedKeys: vi.fn(async (keys: string[]) => new Set(keys.filter((k) => store.map.has(k)))),
+    });
+    const provider = new CachingProvider(inner, store);
+    const cached = provider.synthesize(req('b'), signal());
+    await flush();
+    deliver('b');
+    await cached;
+    store.get.mockClear();
+    const s = signal();
+    provider.prefetch!([req('a'), req('b'), req('c')], 'download', s);
+    await flush();
+    expect(store.cachedKeys).toHaveBeenCalledTimes(1);
+    expect(inner.prefetch).toHaveBeenCalledWith([req('a'), req('c')], 'download', s, undefined);
+    // Handed off before any per-sentence read (only the fills read after).
+    const forwarded = vi.mocked(inner.prefetch!).mock.invocationCallOrder[0]!;
+    expect(store.get.mock.invocationCallOrder.every((order) => order > forwarded)).toBe(true);
+  });
+
   test('persists a delivered sentence without a later synthesize call', async () => {
     const { inner, deliver } = windowed();
     const store = new MemoryStore();

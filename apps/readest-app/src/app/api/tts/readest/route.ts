@@ -18,8 +18,10 @@ export async function POST(request: NextRequest) {
   const body = (await request.json().catch(() => null)) as { warmup?: unknown } | null;
   if (body?.warmup !== true) return errorResponse('INVALID_INPUT', 400);
   // Best effort: the voice picker does not wait on it.
-  await gate.ctx.service.warmup().catch((error) => {
+  try {
+    await gate.ctx.service.warmup();
+  } catch (error) {
     console.warn('Readest Voice warmup failed:', error);
-  });
+  }
   return NextResponse.json({ ok: true });
 }

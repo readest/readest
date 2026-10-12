@@ -91,7 +91,9 @@ export interface ReadestVoiceService {
 let verified: Promise<boolean> | null = null;
 
 const checkContract = (service: ReadestVoiceService): Promise<boolean> =>
-  (verified ??= service.contractVersion().then(
+  // Promise.resolve: under next dev the platform proxy answers RPC calls
+  // with plain values.
+  (verified ??= Promise.resolve(service.contractVersion()).then(
     (version) => {
       if (version === CONTRACT_VERSION) return true;
       console.error(

@@ -51,6 +51,9 @@ export class SpeechSynthesisFatalError extends Error {
   }
 }
 
+// The fatal error's message when the daily synthesis quota is used up.
+export const DAILY_QUOTA_EXCEEDED = 'DAILY_QUOTA_EXCEEDED';
+
 // Who a prefetch serves: live listening or a chapter download. Windowed
 // providers admit and size the two differently.
 export type TTSLane = 'listen' | 'download';

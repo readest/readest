@@ -126,6 +126,19 @@ describe('TTSChaptersView', () => {
     expect(downloads.downloadChapter).toHaveBeenCalledWith(chapters[1]);
   });
 
+  test('a chapter that ran out of daily quota says so', () => {
+    const item = { ...makeItem('b', 'failed'), error: 'DAILY_QUOTA_EXCEEDED' };
+    render(
+      <TTSChaptersView
+        downloads={makeDownloads(withItems([item]))}
+        activeSectionIndex={null}
+        isEink={false}
+      />,
+    );
+    expect(screen.getByText('Quota Exceeded')).toBeTruthy();
+    expect(screen.queryByText('Download failed')).toBeNull();
+  });
+
   test('download all skips when every chapter is complete', () => {
     const downloads = makeDownloads({ statusOf: vi.fn().mockReturnValue('complete') });
     render(<TTSChaptersView downloads={downloads} activeSectionIndex={null} isEink={false} />);

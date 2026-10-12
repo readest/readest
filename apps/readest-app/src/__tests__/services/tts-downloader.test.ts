@@ -56,7 +56,7 @@ describe('TTSDownloader', () => {
     expect(warmer.manifests).toEqual([{ section: 2, labels: ['0:s0', '0:s1', '0:s2'] }]);
     expect(warmer.warmed.map((w) => w.text)).toEqual(['a', 'b', 'c']);
     expect(warmer.compacts).toBe(1);
-    expect(progress).toEqual(['1/3', '2/3', '3/3']);
+    expect(progress).toEqual(['0/3', '1/3', '2/3', '3/3']);
     expect(result.completed).toEqual([2]);
   });
 
@@ -128,6 +128,7 @@ describe('TTSDownloader', () => {
     const order: string[] = [];
     const prefetchSentences = vi.fn(async (sentences: { lang: string; text: string }[]) => {
       order.push(`prefetch:${sentences.map((s) => s.text).join(',')}`);
+      return true;
     });
     vi.mocked(warmer.warmSentence).mockImplementation(async (_s, _o, _l, text) => {
       order.push(`warm:${text}`);
@@ -147,6 +148,47 @@ describe('TTSDownloader', () => {
       ],
       signal,
     );
+  });
+
+  test('counts the sentences of a windowed warmer as they arrive, in any order', async () => {
+    enumerated[0] = [sentence(0, 'A.'), sentence(1, 'B.'), sentence(2, 'C.')];
+    const arrive = new Map<string, (ok: boolean) => void>();
+    vi.mocked(warmer.warmSentence).mockImplementation(
+      (_s, _o, _l, text) => new Promise((resolve) => arrive.set(text, resolve)),
+    );
+    const prefetchSentences = vi.fn(async () => true);
+    const progress: string[] = [];
+    const done = new TTSDownloader(enumerator, { ...warmer, prefetchSentences }).download(
+      [0],
+      (p) => progress.push(`${p.done}/${p.total} ${p.synthesized}`),
+    );
+    const flush = () => new Promise((r) => setTimeout(r, 0));
+    await flush();
+    // The total shows at once, before any sentence arrives.
+    expect(progress).toEqual(['0/3 0']);
+    // Every sentence is waited on at once: a later window may finish first.
+    expect([...arrive.keys()]).toEqual(['A.', 'B.', 'C.']);
+    arrive.get('C.')!(true);
+    await flush();
+    expect(progress).toEqual(['0/3 0', '1/3 1']);
+    // A sentence that failed is not in the cache: progress counts cached ones.
+    arrive.get('A.')!(false);
+    arrive.get('B.')!(true);
+    const result = await done;
+    expect(progress).toEqual(['0/3 0', '1/3 1', '2/3 2']);
+    expect(result).toEqual({ completed: [], skipped: [0], synthesized: 2 });
+  });
+
+  test('a fatal synthesis failure (quota) ends a windowed download too', async () => {
+    const { SpeechSynthesisFatalError } = await import('@/services/tts/providers/types');
+    enumerated[0] = [sentence(0, 'A.'), sentence(1, 'B.')];
+    vi.mocked(warmer.warmSentence).mockRejectedValue(
+      new SpeechSynthesisFatalError('DAILY_QUOTA_EXCEEDED'),
+    );
+    const prefetchSentences = vi.fn(async () => true);
+    await expect(
+      new TTSDownloader(enumerator, { ...warmer, prefetchSentences }).download([0]),
+    ).rejects.toThrow('DAILY_QUOTA_EXCEEDED');
   });
 
   test('a fatal synthesis failure (quota) ends the whole download', async () => {

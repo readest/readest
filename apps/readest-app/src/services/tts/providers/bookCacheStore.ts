@@ -198,6 +198,11 @@ export class BookTTSCacheStore implements TTSCacheStore {
     return opened ? opened.store.get(key) : null;
   }
 
+  async cachedKeys(keys: string[]): Promise<Set<string>> {
+    const opened = await this.#open();
+    return opened ? opened.store.cachedKeys(keys) : new Set();
+  }
+
   async put(
     key: string,
     entry: TTSCacheEntry,

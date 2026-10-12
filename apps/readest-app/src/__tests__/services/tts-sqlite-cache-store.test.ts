@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, test } from 'vitest';
+import { beforeEach, describe, expect, test, vi } from 'vitest';
 
 import { NodeDatabaseService } from '@/services/database/nodeDatabaseService';
 import { SqliteTTSCacheStore } from '@/services/tts/providers/sqliteCacheStore';
@@ -22,6 +22,31 @@ describe('SqliteTTSCacheStore', () => {
     let now = startAt;
     return new SqliteTTSCacheStore(db, { budgetBytes, now: () => now++ });
   };
+
+  test('registers a long section in a few statements, keeping recorded keys', async () => {
+    const store = makeStore(1024 * 1024);
+    const marks = Array.from({ length: 300 }, (_, i) => `0:s${i}`);
+    await store.registerSectionMarks(4, marks);
+    await store.put('key7', entry(8));
+    await store.recordMarkKey(4, 7, 'key7');
+    // Each statement is a round trip to the database worker: a chapter
+    // must not cost one per sentence.
+    const execute = vi.spyOn(db, 'execute');
+    await store.registerSectionMarks(4, [...marks.slice(0, 250), 'changed']);
+    expect(execute.mock.calls.length).toBeLessThanOrEqual(5);
+    const status = (await store.getSectionStatuses()).get(4);
+    expect(status).toMatchObject({ total: 251, recorded: 1 });
+  });
+
+  test('tells which keys are cached in one query, however many', async () => {
+    const store = makeStore(1024 * 1024);
+    await store.put('a', entry(8));
+    await store.put('b', entry(8));
+    const keys = ['a', 'b', 'c', ...Array.from({ length: 1500 }, (_, i) => `k${i}`)];
+    const select = vi.spyOn(db, 'select');
+    expect(await store.cachedKeys(keys)).toEqual(new Set(['a', 'b']));
+    expect(select.mock.calls.length).toBeLessThanOrEqual(3);
+  });
 
   test('round-trips audio, boundaries, and duration', async () => {
     const store = makeStore(1024 * 1024);

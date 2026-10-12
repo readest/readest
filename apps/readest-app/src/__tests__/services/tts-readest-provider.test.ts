@@ -471,6 +471,55 @@ describe('errors', () => {
     expect(m.fetchWithAuth.mock.calls.filter(([, i]) => i.method === 'POST')).toHaveLength(2);
   });
 
+  it('tells the user again when a later request is refused for quota', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    try {
+      const quota = vi.fn();
+      events.addEventListener('tts-quota-exceeded', quota);
+      m.fetchWithAuth.mockImplementation(async (_url: string, init: RequestInit) => {
+        if (init.method === 'POST') throw new Error('DAILY_QUOTA_EXCEEDED');
+        return Response.json({ voices: VOICES });
+      });
+      const signal = new AbortController().signal;
+      await expect(provider.synthesize(req('A.'), signal)).rejects.toThrow();
+      await expect(provider.synthesize(req('B.'), signal)).rejects.toThrow();
+      // One toast for a burst of refusals (a download refuses many at once).
+      expect(quota).toHaveBeenCalledTimes(1);
+      // Play pressed again later: refused without a request, but not silently.
+      vi.setSystemTime(Date.now() + 10_000);
+      await expect(provider.synthesize(req('C.'), signal)).rejects.toThrow();
+      expect(quota).toHaveBeenCalledTimes(2);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('asks the server again a minute after a quota rejection (retry, upgrade, new day)', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    try {
+      m.fetchWithAuth.mockImplementation(async (_url: string, init: RequestInit) => {
+        if (init.method === 'POST') throw new Error('DAILY_QUOTA_EXCEEDED');
+        return Response.json({ voices: VOICES });
+      });
+      const signal = new AbortController().signal;
+      await expect(provider.synthesize(req('A.'), signal)).rejects.toBeInstanceOf(
+        SpeechSynthesisFatalError,
+      );
+      await expect(provider.synthesize(req('B.'), signal)).rejects.toBeInstanceOf(
+        SpeechSynthesisFatalError,
+      );
+      const posts = () => m.fetchWithAuth.mock.calls.filter(([, i]) => i.method === 'POST');
+      expect(posts()).toHaveLength(1);
+      vi.setSystemTime(Date.now() + 60_000);
+      await expect(provider.synthesize(req('C.'), signal)).rejects.toBeInstanceOf(
+        SpeechSynthesisFatalError,
+      );
+      expect(posts()).toHaveLength(2);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it.each([
     'UNKNOWN_VOICE',
     'VOICE_TIER_REQUIRED',
@@ -536,16 +585,24 @@ describe('download jobs', () => {
   });
   const all = () => jobs!;
 
-  it('submits windows of up to 64 sentences as jobs, four at a time', async () => {
-    provider.prefetch(reqs(300), 'download', new AbortController().signal);
-    await flush();
-    expect(all().map((j) => j.body.segments.length)).toEqual([64, 64, 64, 64]);
+  it('submits jobs of up to 2000 characters, four at a time', async () => {
+    // 900-character sentences: two fit in a window, a third would not.
+    const long = Array.from({ length: 10 }, (_, i) => req(`${'a'.repeat(898)}${i}.`));
+    provider.prefetch(long, 'download', new AbortController().signal);
+    await flush(6);
+    expect(all().map((j) => j.body.segments.length)).toEqual([2, 2, 2, 2]);
     expect(all()[0]!.body).toMatchObject({ lane: 'download', lang: 'en-US' });
     expect(windows).toHaveLength(0);
 
     all()[1]!.complete();
     await flush();
-    expect(all().map((j) => j.body.segments.length)).toEqual([64, 64, 64, 64, 44]);
+    expect(all().map((j) => j.body.segments.length)).toEqual([2, 2, 2, 2, 2]);
+  });
+
+  it('caps a job at the 64 sentences a window may hold', async () => {
+    provider.prefetch(reqs(100), 'download', new AbortController().signal);
+    await flush(6);
+    expect(all().map((j) => j.body.segments.length)).toEqual([64, 36]);
   });
 
   it('resolves sentences from the result once the job is done, polling meanwhile', async () => {

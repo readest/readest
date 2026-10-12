@@ -182,8 +182,8 @@ describe('window validation', () => {
 
 describe('quota and admission', () => {
   it('counts the uncharged download jobs of the user against the quota', async () => {
-    m.getCurrentUsage.mockResolvedValue(50 * 1024);
-    m.service.admitWindow.mockResolvedValue({ acquired: true, pendingChars: 50 * 1024 });
+    m.getCurrentUsage.mockResolvedValue(250_000);
+    m.service.admitWindow.mockResolvedValue({ acquired: true, pendingChars: 250_000 });
     const res = await POST(post(listen(seg('s0', 'a'.repeat(200)))));
     expect(res.status).toBe(429);
     expect(await res.json()).toEqual({ error: 'DAILY_QUOTA_EXCEEDED' });
@@ -191,7 +191,7 @@ describe('quota and admission', () => {
   });
 
   it('429s when the window would exceed the daily quota, and gives the slot back', async () => {
-    m.getCurrentUsage.mockResolvedValue(100 * 1024 - 100);
+    m.getCurrentUsage.mockResolvedValue(500_000 - 100);
     const res = await POST(post(listen(seg('s0', 'a'.repeat(200)))));
     expect(res.status).toBe(429);
     expect(await res.json()).toEqual({ error: 'DAILY_QUOTA_EXCEEDED' });
