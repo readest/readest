@@ -166,15 +166,21 @@ export class NativeAudioPlayer implements TTSAudioPlayer {
 
   async pauseContext(): Promise<void> {
     this.#userPaused = true;
-    this.#cache.playing = false;
+    // Freeze where the clock has got to, not at the last poll: dropping back
+    // to it would step the word highlight backwards on pause.
+    const now = performance.now();
+    if (this.#cache.playing) {
+      this.#cache.mediaSec += ((now - this.#cache.at) / 1000) * this.#rate;
+    }
+    this.#cache = { ...this.#cache, playing: false, at: now };
     await invoke('plugin:native-tts|playout_control', { payload: { action: 'pause' } });
   }
 
   async resumeContext(): Promise<void> {
     this.#userPaused = false;
     await invoke('plugin:native-tts|playout_control', { payload: { action: 'resume' } });
-    this.#cache.playing = true;
-    this.#cache.at = performance.now();
+    // Like a chunk start: the clock runs again once a poll sees AVPlayer playing.
+    void this.#poll();
   }
 
   isUserPaused(): boolean {

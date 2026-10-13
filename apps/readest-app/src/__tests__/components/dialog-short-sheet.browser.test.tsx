@@ -62,6 +62,28 @@ describe('Dialog on a phone', () => {
     expect(visibleCloseButtons()).toHaveLength(0);
   });
 
+  it('keeps a content-height sheet short when a drag asks it for full height', async () => {
+    // The drag handlers set an inline height of 100%; the caller's
+    // !important height wins, so the sheet never expands to need the back
+    // button or the status bar padding.
+    await page.viewport(390, 844);
+    render(
+      <Dialog
+        isOpen
+        title='Delete bookshelf?'
+        boxClassName='h-auto! max-h-[80vh]!'
+        onClose={vi.fn()}
+      >
+        <p>Your books will stay in the library.</p>
+      </Dialog>,
+    );
+    await expect.poll(() => getComputedStyle(box()).paddingTop).toBe('0px');
+    box().style.height = '100%';
+    expect(box().offsetHeight).toBeLessThan(
+      (document.querySelector('dialog') as HTMLElement).clientHeight,
+    );
+  });
+
   it('has no back button on a sheet snapped short of the screen', async () => {
     await page.viewport(390, 844);
     render(
