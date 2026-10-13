@@ -2735,5 +2735,6 @@
   "{{count}} voices available_few": "Na voljo so {{count}} glasovi",
   "{{count}} voices available_other": "Na voljo je {{count}} glasov",
   "Multilingual": "Večjezični",
-  "Expressive": "Izrazni"
+  "Expressive": "Izrazni",
+  "Show Page Thumbnails": "Prikaži sličice strani"
 }

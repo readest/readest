@@ -2605,5 +2605,6 @@
   "{{count}} voices available_one": "{{count}} ta ovoz mavjud",
   "{{count}} voices available_other": "{{count}} ta ovoz mavjud",
   "Multilingual": "Koʻp tilli",
-  "Expressive": "Ifodali"
+  "Expressive": "Ifodali",
+  "Show Page Thumbnails": "Sahifa eskizlarini ko'rsatish"
 }

@@ -2540,5 +2540,6 @@
   "Use your own OpenAI-compatible speech service": "རང་གི་ OpenAI དང་མཐུན་པའི་སྐད་སྒྲའི་ཞབས་ཞུ་བེད་སྤྱོད།",
   "{{count}} voices available_other": "སྒྲ་གདངས་ {{count}} ཡོད།",
   "Multilingual": "སྐད་རིགས་མང་པོ།",
-  "Expressive": "མྱོང་ཚོར་ལྡན་པ།"
+  "Expressive": "མྱོང་ཚོར་ལྡན་པ།",
+  "Show Page Thumbnails": "ཤོག་ངོས་ཀྱི་པར་ཆུང་སྟོན།"
 }

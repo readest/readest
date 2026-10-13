@@ -2605,5 +2605,6 @@
   "{{count}} voices available_one": "{{count}} Stimme verfügbar",
   "{{count}} voices available_other": "{{count}} Stimmen verfügbar",
   "Multilingual": "Mehrsprachig",
-  "Expressive": "Ausdrucksstark"
+  "Expressive": "Ausdrucksstark",
+  "Show Page Thumbnails": "Seitenvorschaubilder anzeigen"
 }

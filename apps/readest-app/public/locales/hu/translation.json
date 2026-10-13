@@ -2605,5 +2605,6 @@
   "{{count}} voices available_one": "{{count}} hang érhető el",
   "{{count}} voices available_other": "{{count}} hang érhető el",
   "Multilingual": "Többnyelvű",
-  "Expressive": "Kifejező"
+  "Expressive": "Kifejező",
+  "Show Page Thumbnails": "Oldalbélyegképek megjelenítése"
 }

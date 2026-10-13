@@ -2865,5 +2865,6 @@
   "{{count}} voices available_many": "{{count}} صوتًا متاحًا",
   "{{count}} voices available_other": "{{count}} صوت متاح",
   "Multilingual": "متعدد اللغات",
-  "Expressive": "معبّر"
+  "Expressive": "معبّر",
+  "Show Page Thumbnails": "إظهار الصور المصغرة للصفحات"
 }
