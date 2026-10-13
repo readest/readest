@@ -59,6 +59,7 @@ vi.mock('@/app/reader/hooks/usePagination', () => ({ usePagination: () => ({}) }
 vi.mock('@/app/reader/hooks/useProgressSync', () => ({ useProgressSync: () => {} }));
 vi.mock('@/app/reader/hooks/useABSProgressSync', () => ({ useABSProgressSync: () => {} }));
 vi.mock('@/app/reader/hooks/useProgressAutoSave', () => ({ useProgressAutoSave: () => {} }));
+vi.mock('@/app/reader/hooks/useXRayAutoUpdate', () => ({ useXRayAutoUpdate: () => {} }));
 vi.mock('@/app/reader/hooks/useAutoSaveBookCover', () => ({ useBookCoverAutoSave: () => {} }));
 vi.mock('@/app/reader/hooks/useFileSync', () => ({ useFileSync: () => {} }));
 vi.mock('@/app/reader/hooks/useTextTranslation', () => ({ useTextTranslation: () => {} }));
