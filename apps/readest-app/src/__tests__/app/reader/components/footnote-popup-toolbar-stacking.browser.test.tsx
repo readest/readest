@@ -58,6 +58,7 @@ vi.mock('@/app/reader/utils/annotatorUtil', () => ({
 }));
 vi.mock('@/utils/style', () => ({
   applyLinkHitArea: () => {},
+  keepTextAlignment: () => {},
   getBaseFontFamily: () => 'serif',
   getBaseFontSize: () => 16,
   getStyles: () => '',

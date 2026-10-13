@@ -49,6 +49,7 @@ vi.mock('@/app/reader/hooks/useFoliateEvents', () => ({ useFoliateEvents: () => 
 // The popup's stylesheet is beside the point here; these tests are about the box.
 vi.mock('@/utils/style', () => ({
   applyLinkHitArea: () => {},
+  keepTextAlignment: () => {},
   getBaseFontFamily: () => 'serif',
   getBaseFontSize: () => 16,
   getStyles: () => '',

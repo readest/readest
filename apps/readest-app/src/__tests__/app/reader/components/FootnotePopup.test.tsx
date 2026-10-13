@@ -92,6 +92,7 @@ vi.mock('@/store/customFontStore', () => ({
 
 vi.mock('@/utils/style', () => ({
   applyLinkHitArea: hoisted.applyLinkHitArea,
+  keepTextAlignment: () => {},
   getBaseFontFamily: () => '"Reader Font", serif',
   getBaseFontSize: () => 22,
   getFootnoteStyles: () => '',
