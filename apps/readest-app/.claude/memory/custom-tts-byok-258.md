@@ -1,6 +1,6 @@
 ---
 name: custom-tts-byok-258
-description: "Issue #258 custom OpenAI-compatible TTS (BYOK, premium) + voice picker/Readest Voice listing rework — PR #6746 OPEN; migration 027 + API deploy before clients"
+description: "Issue #258 custom OpenAI-compatible TTS (BYOK, premium) + voice picker/Readest Voice listing rework — MERGED #6746 (9bafc1112); migration 027 + API deploy before clients"
 metadata:
   node_type: memory
   type: project
@@ -22,3 +22,6 @@ Readest Voice stability (chrox: "assume the service is always on, it's premium")
 PR #6746 opened 2026-10-13 (3 commits on origin/main a5b93c806). Dev builds route Readest Voice to production (getReadestVoiceAPIBaseUrl). Locked Readest voices are tappable -> profile/login. Groups marked + named when holding the current voice.
 
 2026-10-13 Xiaomi (368b0948) check of bd105c626: no Readest group for a signed-out reader because PROD lacks `?all=1` (old route 403 NOT_AUTHENTICATED) and no saved catalog -> empty group hidden. Seeded `readest-voice-catalog` showed greyed Plus/Pro voices; tap -> /auth?redirect. chrox's rule: Readest Voice engine init must NEVER check locks, always available; gate only on use (setVoice/setLang/fallback/server). Pushed 6e79c8fa9 (init always true; picker warmup only with a playable voice). Custom TTS + the Edge->custom 503 still unverified on device (phone signed out; custom needs premium). Kokoro handled 10 concurrent requests fine (not the 503 source).
+
+MERGED 2026-10-13 as 9bafc1112; worktree removed. Still open: prod migration 027 + web deploy before the next app release; custom TTS + Edge->custom 503 not device-verified.
+2026-10-13: chrox confirmed migration 027 + web deploy are live; prod GET /api/tts/readest?all=1 signed-out = 200, 27 voices (19 plus, 8 pro). Only open item: custom TTS + Edge->custom 503 device check.
