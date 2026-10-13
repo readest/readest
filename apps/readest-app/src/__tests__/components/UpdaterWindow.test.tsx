@@ -146,21 +146,31 @@ describe('UpdaterContent — auto-translated changelog', () => {
     expect(installPackage).not.toHaveBeenCalled();
   });
 
-  it('downloads the APK built for this device ABI', async () => {
+  // The manifest as release.yml publishes it after the per-ABI split, including
+  // the android-universal alias kept for pre-split clients.
+  const SPLIT_MANIFEST = {
+    version: '0.11.20',
+    platforms: {
+      'android-arm64': { url: 'https://example.com/Readest_0.11.20_arm64.apk' },
+      'android-armv7': { url: 'https://example.com/Readest_0.11.20_armv7.apk' },
+      'android-legacy': { url: 'https://example.com/Readest_0.11.20_legacy.apk' },
+      'android-universal': { url: 'https://example.com/Readest_0.11.20_armv7.apk' },
+    },
+  };
+
+  it.each([
+    ['aarch64', 'arm64'],
+    ['arm', 'armv7'],
+    ['x86_64', 'legacy'],
+    ['x86', 'legacy'],
+  ])('on %s downloads the %s APK', async (arch, abi) => {
     mockOS = 'android';
-    mockArch = 'arm';
+    mockArch = arch;
     vi.spyOn(console, 'error').mockImplementation(() => {});
     vi.mocked(tauriDownload).mockRejectedValueOnce(new Error('stop'));
     vi.mocked(window.fetch).mockResolvedValueOnce({
       ok: true,
-      json: async () => ({
-        version: '0.11.20',
-        platforms: {
-          'android-arm64': { url: 'https://example.com/arm64.apk' },
-          'android-armv7': { url: 'https://example.com/armv7.apk' },
-          'android-legacy': { url: 'https://example.com/legacy.apk' },
-        },
-      }),
+      json: async () => SPLIT_MANIFEST,
     } as Response);
 
     render(<UpdaterContent latestVersion='0.11.20' />);
@@ -168,8 +178,8 @@ describe('UpdaterContent — auto-translated changelog', () => {
 
     await waitFor(() => expect(tauriDownload).toHaveBeenCalledOnce());
     expect(vi.mocked(tauriDownload).mock.calls[0]!.slice(0, 2)).toEqual([
-      'https://example.com/armv7.apk',
-      '/cache/Readest_0.11.20_armv7.apk',
+      `https://example.com/Readest_0.11.20_${abi}.apk`,
+      `/cache/Readest_0.11.20_${abi}.apk`,
     ]);
   });
 
