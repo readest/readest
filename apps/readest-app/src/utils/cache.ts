@@ -38,8 +38,14 @@ export const getCacheEntries = async (
   sources: CacheSource[],
 ): Promise<CacheEntry[]> => {
   const entries: CacheEntry[] = [];
+  const scannedDirs = new Set<string>();
   for (const source of sources) {
     try {
+      // Two bases can share a directory (Android's Temp is its app cache), and
+      // scanning it twice would double-count and double-delete every file.
+      const dir = await appService.resolveFilePath(source.dir, source.base);
+      if (scannedDirs.has(dir)) continue;
+      scannedDirs.add(dir);
       const files = await appService.readDirectory(source.dir, source.base);
       for (const file of files) {
         entries.push({

@@ -8,9 +8,8 @@
 // native player their existing path directly.
 
 import { addPluginListener, invoke, PluginListener } from '@tauri-apps/api/core';
-import { appCacheDir, join, tempDir } from '@tauri-apps/api/path';
+import { appCacheDir, join } from '@tauri-apps/api/path';
 import { BaseDirectory, remove, writeFile } from '@tauri-apps/plugin-fs';
-import { getOSPlatform } from '@/utils/misc';
 
 interface PlayoutPosition {
   session: number;
@@ -247,13 +246,10 @@ export class NativeNarrationPlayer {
     }
     const name = `mo-narration-${hashHref(href)}.${fileExtension(href)}`;
     const bytes = new Uint8Array(await blob.arrayBuffer());
-    // Older Android versions can resolve Temp to the unwritable /data/local/tmp.
-    // AppCache resolves through Android's Context.getCacheDir on every version.
-    const useAppCache = getOSPlatform() === 'android';
-    const baseDir = useAppCache ? BaseDirectory.AppCache : BaseDirectory.Temp;
-    await writeFile(name, bytes, { baseDir });
-    const directory = useAppCache ? await appCacheDir() : await tempDir();
-    const path = await join(directory, name);
+    // App cache, not Temp: older Android versions resolve Temp to the
+    // unwritable /data/local/tmp.
+    await writeFile(name, bytes, { baseDir: BaseDirectory.AppCache });
+    const path = await join(await appCacheDir(), name);
     this.#stagedHref = href;
     this.#stagedPath = path;
     this.#ownsStagedPath = true;
