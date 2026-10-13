@@ -229,15 +229,23 @@ const TTSPlayerSheet = ({
   const pauseAfterSentence = viewSettings?.ttsPauseAfterSentence ?? false;
   const coverImage = book?.coverImageUrl && !coverFailed ? book.coverImageUrl : null;
   const resize = usePlayerResize();
+  // Storage is best-effort (it throws when the browser blocks it): the size
+  // still works for this session, it just isn't remembered.
   const [lyricFontSize, setLyricFontSize] = useState(() => {
-    const stored = Number(localStorage.getItem(LYRIC_FONT_SIZE_KEY));
-    return LYRIC_FONT_SIZES.includes(stored) ? stored : DEFAULT_LYRIC_FONT_SIZE;
+    try {
+      const stored = Number(localStorage.getItem(LYRIC_FONT_SIZE_KEY));
+      return LYRIC_FONT_SIZES.includes(stored) ? stored : DEFAULT_LYRIC_FONT_SIZE;
+    } catch {
+      return DEFAULT_LYRIC_FONT_SIZE;
+    }
   });
   const stepLyricFontSize = (step: 1 | -1) => {
     const next = LYRIC_FONT_SIZES[LYRIC_FONT_SIZES.indexOf(lyricFontSize) + step];
     if (next === undefined) return;
     setLyricFontSize(next);
-    localStorage.setItem(LYRIC_FONT_SIZE_KEY, String(next));
+    try {
+      localStorage.setItem(LYRIC_FONT_SIZE_KEY, String(next));
+    } catch {}
   };
 
   const lyrics = useTTSLyrics({

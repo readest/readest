@@ -81,7 +81,10 @@ export const usePlayerResize = () => {
     const next = lastRef.current;
     if (!next) return;
     setSize(next);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+    // Best-effort, like the read: blocked storage keeps the size for this session.
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+    } catch {}
   };
 
   return {

@@ -514,6 +514,42 @@ describe('TTSPlayerSheet', () => {
     expect(again.closest<HTMLElement>('[data-lyric-sheet]')!.style.fontSize).toBe('12px');
   });
 
+  test('blocked storage leaves the lyric size and player size working in memory', async () => {
+    const blocked = () => {
+      throw new DOMException('blocked', 'SecurityError');
+    };
+    const getItem = vi.spyOn(Storage.prototype, 'getItem').mockImplementation(blocked);
+    const setItem = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(blocked);
+    try {
+      render(
+        <TTSPlayerSheet
+          {...makeProps({
+            supportsLyrics: true,
+            onGetLyrics: vi
+              .fn()
+              .mockResolvedValue({ sectionIndex: 0, lines: ['Down the rabbit hole.'] }),
+          })}
+        />,
+      );
+      const line = await waitFor(() => screen.getByText('Down the rabbit hole.'));
+      const sheet = line.closest<HTMLElement>('[data-lyric-sheet]')!;
+      expect(sheet.style.fontSize).toBe('14px');
+      fireEvent.click(screen.getByRole('button', { name: 'Increase font size' }));
+      expect(sheet.style.fontSize).toBe('16px');
+
+      const box = screen.getByRole('dialog');
+      box.getBoundingClientRect = () => ({ width: 420, height: 500 }) as DOMRect;
+      const grip = box.querySelector<HTMLElement>('[data-tts-player-resize]')!;
+      fireEvent.pointerDown(grip, { clientX: 500, clientY: 500, pointerId: 1, button: 0 });
+      fireEvent.pointerMove(grip, { clientX: 550, clientY: 560, pointerId: 1 });
+      fireEvent.pointerUp(grip, { clientX: 550, clientY: 560, pointerId: 1 });
+      expect(box.style.getPropertyValue('--tts-player-w')).toBe('520px');
+    } finally {
+      getItem.mockRestore();
+      setItem.mockRestore();
+    }
+  });
+
   test('a section with nothing to transcribe keeps the cover player', async () => {
     getBookData.mockReturnValue({
       book: { title: 'Alice in Wonderland', coverImageUrl: 'blob:cover' },
