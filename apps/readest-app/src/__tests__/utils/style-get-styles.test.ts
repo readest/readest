@@ -832,6 +832,17 @@ describe('getColorStyles branches (via getStyles)', () => {
     );
   });
 
+  it('keeps overriding text colors over a background texture, with transparent fills (#6712)', () => {
+    const vs = makeViewSettings({ overrideColor: true, backgroundTextureId: 'leaves' });
+    const theme = makeThemeCode({ isDarkMode: true, bg: '#1a1a1a', fg: '#e0e0e0' });
+    const css = getStyles(vs, theme);
+    const block = css.match(/section, aside, blockquote[^{]*\{([^}]*)\}/)![1]!;
+    expect(block).toContain('background-color: transparent !important');
+    expect(block).toContain('color: #e0e0e0 !important');
+    expect(block).toContain('border-color: #e0e0e0 !important');
+    expect(css).toMatch(/pre, span \{[^}]*background-color: transparent !important/);
+  });
+
   it('makes svg/img backgrounds transparent when overrideColor is true', () => {
     const vs = makeViewSettings({ overrideColor: true });
     const theme = makeThemeCode();

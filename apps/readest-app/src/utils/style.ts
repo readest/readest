@@ -335,6 +335,9 @@ const getColorStyles = (
 ) => {
   const { bg, fg, primary, isDarkMode } = themeCode;
   const hasBackgroundTexture = !!backgroundTextureId && backgroundTextureId !== 'none';
+  // Over a background texture, Override Book Color still forces the text
+  // colors but fills backgrounds with transparent so the texture shows (#6712).
+  const overrideBg = hasBackgroundTexture ? 'transparent' : bg;
   const colorStyles = `
     html {
       --bg-texture-id: ${backgroundTextureId};
@@ -360,12 +363,12 @@ const getColorStyles = (
     }
     section, aside, blockquote, article, nav, header, footer, main, figure,
     div, p, font, h1, h2, h3, h4, h5, h6, li, span {
-      ${overrideColor && !hasBackgroundTexture ? `background-color: ${bg} !important;` : ''}
-      ${overrideColor && !hasBackgroundTexture ? `color: ${fg} !important;` : ''}
-      ${overrideColor && !hasBackgroundTexture ? `border-color: ${fg} !important;` : ''}
+      ${overrideColor ? `background-color: ${overrideBg} !important;` : ''}
+      ${overrideColor ? `color: ${fg} !important;` : ''}
+      ${overrideColor ? `border-color: ${fg} !important;` : ''}
     }
     pre, span { /* inline code blocks */
-      ${overrideColor ? `background-color: ${bg} !important;` : ''}
+      ${overrideColor ? `background-color: ${overrideBg} !important;` : ''}
     }
     a:any-link {
       ${overrideColor ? `color: ${primary} !important;` : isDarkMode ? `color: lightblue;` : ''}
