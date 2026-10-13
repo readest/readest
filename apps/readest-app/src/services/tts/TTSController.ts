@@ -180,6 +180,9 @@ export class TTSController extends EventTarget {
   // "stop at end of chapter" sleep-timer mode. Gates only the loop's own
   // continuation (see forward()'s isAutoAdvance), never user navigation.
   stopAtChapterEnd: boolean = false;
+  // Word mode tints the sounding sentence under the spoken word. Off on e-ink:
+  // a translucent fill is a gray smear there and repaints every sentence.
+  sentenceTint: boolean = true;
   // Sentence-by-sentence mode (#5233): park on the next sentence after each
   // one instead of reading on. Like A-B repeat it steps by sentence mark, so a
   // paired audiobook (whose marks are chapters) ignores both.
@@ -217,6 +220,9 @@ export class TTSController extends EventTarget {
   // until it aborts, so a voice change or stop must withdraw them.
   #preloadAbort = new AbortController();
   #ttsDoc: Document | null = null;
+  // Bumped whenever a different document is read: the lyric sheet's identity,
+  // since a section read in chunks changes document but not section index.
+  #ttsDocSheet = 0;
   #ttsGranularity: TTSGranularity = 'sentence';
   #skipInlineAnnotations = false;
 
@@ -482,6 +488,7 @@ export class TTSController extends EventTarget {
     }
     this.#tts = newTts;
     this.view.tts = newTts;
+    if (this.#ttsDoc !== doc) this.#ttsDocSheet++;
     this.#ttsDoc = doc;
     if (narration) {
       this.#mediaOverlaySection = narration;
@@ -706,6 +713,13 @@ export class TTSController extends EventTarget {
     const raw = await section.createDocument();
     const doc = await transformTTSSectionDocument(this.view.book, section.id, raw);
     const html = doc.querySelector('html');
+    // As the view does when it renders a page (foliate view.js #onLoad): a page
+    // with no lang attribute is read in the book's language, even when it has
+    // an xml:lang. Preloads must name the language the live read will, or their
+    // audio is cached under keys playback never looks up.
+    if (html && !html.getAttribute('lang') && this.view.language?.canonical) {
+      html.setAttribute('lang', this.view.language.canonical);
+    }
     const lang = html?.getAttribute('lang') || html?.getAttribute('xml:lang') || '';
     if (html && !isValidLang(lang) && this.ttsLang) {
       html.setAttribute('lang', this.ttsLang);
@@ -868,6 +882,7 @@ export class TTSController extends EventTarget {
     this.#sectionTimeline = null;
     this.#timelineSectionIndex = -1;
     this.#currentSentenceIndex = -1;
+    if (this.#ttsDoc !== doc) this.#ttsDocSheet++;
     this.#ttsDoc = doc;
 
     const existing = this.#getTts();
@@ -1171,7 +1186,7 @@ export class TTSController extends EventTarget {
 
   // The sentences of the section now playing, as display lines. Section-scoped
   // exactly like the scrubber: one chapter is one lyric sheet.
-  async getLyrics(): Promise<{ sectionIndex: number; lines: string[] } | null> {
+  async getLyrics(): Promise<{ sectionIndex: number; sheet: number; lines: string[] } | null> {
     if (!this.supportsLyrics()) return null;
     const timeline = await this.ensureTimeline();
     if (!timeline || timeline.length === 0) return null;
@@ -1179,7 +1194,7 @@ export class TTSController extends EventTarget {
     for (let i = 0; i < timeline.length; i++) {
       lines.push(normalizeLyricText(timeline.sentenceAt(i)?.text ?? ''));
     }
-    return { sectionIndex: this.#ttsSectionIndex, lines };
+    return { sectionIndex: this.#ttsSectionIndex, sheet: this.#ttsDocSheet, lines };
   }
 
   // Ordinal of the sentence now sounding, or -1 while nothing is located —
@@ -2374,6 +2389,7 @@ export class TTSController extends EventTarget {
           cfi,
           kind,
           sectionIndex: this.#ttsSectionIndex,
+          sheet: this.#ttsDocSheet,
           sequence: ++ttsPositionSequence,
         },
       }),
@@ -2471,7 +2487,7 @@ export class TTSController extends EventTarget {
     const content = this.#getPrimaryContent();
     const overlayer = content?.overlayer;
     overlayer?.remove(SENTENCE_KEY);
-    if (!content?.doc || content.index !== this.#ttsSectionIndex) return;
+    if (!this.sentenceTint || !content?.doc || content.index !== this.#ttsSectionIndex) return;
     try {
       const cfi = this.view.getCFI(content.index, range);
       const visibleRange = this.view.resolveCFI(cfi).anchor(content.doc);
