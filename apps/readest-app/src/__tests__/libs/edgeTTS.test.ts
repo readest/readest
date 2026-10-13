@@ -332,3 +332,13 @@ describe('parseAudioMetadataBody', () => {
     ).toEqual([]);
   });
 });
+
+describe('generateSecMsGec', () => {
+  test('matches a v2 token captured from Edge (rany2/edge-tts#492)', async () => {
+    const { generateSecMsGec } = await import('@/libs/edgeTTS');
+    // 2026-10-13T10:40:00Z, start of a 5-minute window
+    expect(await generateSecMsGec(1791888000 * 1000)).toBe(
+      '492D7694A183A45E-56E821F95D4579C5B7C7E33DC7303FF379EC36D510213555BBBB9EB17EF15876',
+    );
+  });
+});
