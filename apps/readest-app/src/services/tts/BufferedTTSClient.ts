@@ -218,9 +218,11 @@ export class BufferedTTSClient implements TTSClient {
     const preferredVoice = this.voices.find((v) => v.id === preferredVoiceId && !v.disabled);
     if (preferredVoice) return preferredVoice.id;
 
-    const availableVoices = ((await this.getVoices(lang))[0]?.voices || []).filter(
-      (v) => !v.disabled,
-    );
+    // Every group: a provider grouping its voices (one group per custom
+    // service) may have them in a later one.
+    const availableVoices = (await this.getVoices(lang))
+      .flatMap((group) => group.voices)
+      .filter((v) => !v.disabled);
     const picked = this.provider.pickDefaultVoice?.(availableVoices);
     if (this.provider.sameLanguageVoicesOnly) return picked || availableVoices[0]?.id || '';
     return (

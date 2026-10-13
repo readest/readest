@@ -53,6 +53,13 @@ describe('customTTSAdapter', () => {
     expect(unpacked).toEqual({ ...service, reincarnation: 'r1' });
   });
 
+  test('carries a cleared API key as empty', () => {
+    const packed = customTTSAdapter.pack({ ...service, apiKey: '' });
+    expect(packed['apiKey']).toBe('');
+    const unpacked = customTTSAdapter.unpackRow(row(packed, { replica_id: 's-1' }), '');
+    expect(unpacked!.apiKey).toBe('');
+  });
+
   test('rejects rows without a name, base URL or model', () => {
     const { id: _id, ...fields } = service;
     for (const missing of ['name', 'baseUrl', 'model']) {

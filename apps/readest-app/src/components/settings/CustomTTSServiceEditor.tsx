@@ -158,7 +158,9 @@ const CustomTTSServiceEditor: React.FC<CustomTTSServiceEditorProps> = ({ service
             type='password'
             className={inputClass}
             value={draft.apiKey ?? ''}
-            onChange={(e) => update({ apiKey: e.target.value || undefined })}
+            // A cleared key stays '' rather than undefined: it syncs, so
+            // other devices drop it too.
+            onChange={(e) => update({ apiKey: e.target.value })}
             placeholder={_('Optional for local servers')}
             autoComplete='off'
           />

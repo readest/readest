@@ -70,6 +70,12 @@ describe('customTTSStore', () => {
     expect(service!.apiKey).toBe('sk-local');
   });
 
+  it('drops the local apiKey when another device cleared it', () => {
+    useCustomTTSStore.setState({ services: [remote({ apiKey: 'sk-local' })] });
+    useCustomTTSStore.getState().applyRemoteService(remote({ apiKey: '' }));
+    expect(useCustomTTSStore.getState().services[0]!.apiKey).toBe('');
+  });
+
   it('lists enabled services, reading settings before the store hydrates', () => {
     useSettingsStore.getState().settings.customTTSServices = [
       remote({ id: 'a' }),

@@ -56,6 +56,17 @@ describe('BufferedTTSClient over custom TTS services', () => {
     expect(await client.getVoiceIdFromLang('zh')).toBe('a:nova');
   });
 
+  it('falls back to a voice of any service that reads the book language', async () => {
+    // Service b lists first but has no German voice; service a's read any language.
+    const provider = new OpenAICompatibleSpeechProvider(
+      () => [service('b'), service('a')],
+      async () => true,
+    );
+    const client = new BufferedTTSClient(provider);
+    await client.init();
+    expect(await client.getVoiceIdFromLang('de')).toBe('a:nova');
+  });
+
   it('reads every language with the chosen multilingual voice', async () => {
     const provider = new OpenAICompatibleSpeechProvider(
       () => [service('a'), service('b')],
