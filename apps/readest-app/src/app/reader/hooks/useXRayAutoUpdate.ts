@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 
 import { useEnv } from '@/context/EnvContext';
-import type { AISettings } from '@/services/ai/types';
+import { hasXRayCredentials as hasCredentials } from '@/services/ai/xray/utils';
 import { XRayScheduler } from '@/services/ai/xray/XRayScheduler';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useBookProgress } from '@/store/readerProgressStore';
@@ -67,10 +67,4 @@ export const useXRayAutoUpdate = (bookKey: string): void => {
       },
     });
   }, [aiSettings, appService, bookDoc, bookHash, progress?.location]);
-};
-
-const hasCredentials = (settings: AISettings): boolean => {
-  if (settings.provider === 'ai-gateway') return !!settings.aiGatewayApiKey;
-  if (settings.provider === 'openrouter') return !!settings.openrouterApiKey;
-  return true;
 };

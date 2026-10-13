@@ -1,4 +1,6 @@
 import { extractTermContext } from './lexrank';
+import { getContentMd5 } from '@/utils/misc';
+import { normalizeXRayText as normalize } from './utils';
 import type { ReedyXRaySource, XRaySourceSlice } from './source/ReedyXRaySource';
 import type { XRayStore } from './storage/XRayStore';
 import type {
@@ -21,7 +23,7 @@ export class XRaySnapshotService {
 
   async getSnapshot(bookHash: string, currentCfi: string): Promise<XRaySnapshot> {
     const source = await this.source.readThrough(bookHash, currentCfi);
-    return this.snapshotForSource(source);
+    return mergeBatches(source, await this.batchesForSource(source));
   }
 
   async lookup(
@@ -34,7 +36,9 @@ export class XRaySnapshotService {
     const displayTerm = term.normalize('NFKC').trim().replace(/\s+/g, ' ');
     const key = normalize(displayTerm);
     if (!key) return emptyLookup(displayTerm, source.maxPositionIndex);
-    const cacheKey = JSON.stringify([normalize(language), key]);
+    const batches = await this.batchesForSource(source);
+    // Late writes must stay tied to the snapshot that produced them, including after a reset.
+    const cacheKey = JSON.stringify([normalize(language), key, getContentMd5(batches)]);
 
     const cached = await this.store.getLookup(
       cacheKey,
@@ -44,7 +48,7 @@ export class XRaySnapshotService {
     );
     if (cached) return cached;
 
-    const snapshot = await this.snapshotForSource(source);
+    const snapshot = mergeBatches(source, batches);
     const matchedEntity = snapshot.entities.find((entity) =>
       [entity.name, ...entity.aliases].some((name) => normalize(name) === key),
     );
@@ -62,11 +66,10 @@ export class XRaySnapshotService {
     return result;
   }
 
-  private async snapshotForSource(source: XRaySourceSlice): Promise<XRaySnapshot> {
-    const batches = (
+  private async batchesForSource(source: XRaySourceSlice): Promise<XRayExtractionBatch[]> {
+    return (
       await this.store.listBatches(source.fingerprint.bookHash, source.maxPositionIndex)
     ).filter((batch) => batch.fingerprint.contentHash === source.fingerprint.contentHash);
-    return mergeBatches(source, batches);
   }
 }
 
@@ -310,9 +313,6 @@ const emptyLookup = (term: string, maxPositionIndex: number): XRayLookupResult =
   source: 'none',
   maxPositionIndex,
 });
-
-const normalize = (value: string): string =>
-  value.normalize('NFKC').trim().replace(/\s+/g, ' ').toLocaleLowerCase();
 
 const uniqueStrings = (values: readonly string[]): string[] => {
   const seen = new Set<string>();

@@ -179,7 +179,7 @@ describe('XRaySnapshotService', () => {
   it('invalidates fallback lookups when extraction adds an entity, then reuses the new cache', async () => {
     const sourceUnit = unit(0, 'Alice arrived at the station.');
     const readThrough = vi.fn().mockResolvedValue(sourceSlice([sourceUnit]));
-    const listBatches = vi.spyOn(store, 'listBatches');
+    const saveLookup = vi.spyOn(store, 'saveLookup');
     const service = new XRaySnapshotService({ readThrough }, store);
 
     await expect(service.lookup(BOOK_HASH, 'at-first', 'Al', 'en')).resolves.toMatchObject({
@@ -203,13 +203,13 @@ describe('XRaySnapshotService', () => {
     expect(extracted.summary).toContain('A traveler.');
 
     await expect(service.lookup(BOOK_HASH, 'at-first', 'al', 'en')).resolves.toEqual(extracted);
-    expect(listBatches).toHaveBeenCalledTimes(2);
+    expect(saveLookup).toHaveBeenCalledTimes(2);
   });
 
   it('falls back to bounded LexRank context when no extracted entity matches', async () => {
     const sourceUnit = unit(
       0,
-      'The brass key opened the cellar. The key had belonged to the old caretaker.',
+      'The ｂｒａｓｓ\u00a0\u00a0key opened the cellar. The key had belonged to the old caretaker.',
     );
     const service = new XRaySnapshotService(
       { readThrough: vi.fn().mockResolvedValue(sourceSlice([sourceUnit])) },
@@ -219,16 +219,48 @@ describe('XRaySnapshotService', () => {
     const result = await service.lookup(BOOK_HASH, 'at-first', 'brass key', 'en');
 
     expect(result.source).toBe('lexrank');
-    expect(result.summary).toContain('brass key');
+    expect(result.summary).toContain('ｂｒａｓｓ\u00a0\u00a0key');
     expect(result.evidence).toEqual([
       expect.objectContaining({
         unitId: sourceUnit.unitId,
-        exactQuote: expect.stringContaining('brass key'),
+        exactQuote: expect.stringContaining('ｂｒａｓｓ\u00a0\u00a0key'),
         positionIndex: 0,
         inferred: false,
       }),
     ]);
     expect(result.maxPositionIndex).toBe(0);
+  });
+
+  it.each([false, true])('refreshes lookups after a concurrent commit, reset=%s', async (reset) => {
+    const sourceUnit = unit(0, 'Alice arrived at the station.');
+    const state = {
+      fingerprint,
+      maxPositionIndex: 0,
+      lastBatchId: 'batch-0',
+      updatedAt: 1_000,
+      version: 1,
+    };
+    if (reset) {
+      await store.commitBatch(batch(sourceUnit, entity(sourceUnit, 'An old description.')), state);
+    }
+    const service = new XRaySnapshotService(
+      { readThrough: vi.fn().mockResolvedValue(sourceSlice([sourceUnit])) },
+      store,
+    );
+    const listBatches = store.listBatches.bind(store);
+    vi.spyOn(store, 'listBatches').mockImplementationOnce(async (...args) => {
+      const batches = await listBatches(...args);
+      const otherStore = new XRayStore(db);
+      if (reset) await otherStore.clearBook(BOOK_HASH);
+      await otherStore.commitBatch(batch(sourceUnit, entity(sourceUnit, 'A traveler.')), state);
+      return batches;
+    });
+
+    await service.lookup(BOOK_HASH, 'at-first', 'Alice', 'en');
+    const fresh = await service.lookup(BOOK_HASH, 'at-first', 'Alice', 'en');
+    expect(fresh.source).toBe('entity');
+    expect(fresh.summary).toContain('A traveler.');
+    await expect(service.lookup(BOOK_HASH, 'at-first', 'Alice', 'en')).resolves.toEqual(fresh);
   });
 
   it('keeps fallback lookup caches separate for each language', async () => {

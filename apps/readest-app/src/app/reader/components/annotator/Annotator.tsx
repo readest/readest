@@ -25,6 +25,7 @@ import { useCustomDictionaryStore } from '@/store/customDictionaryStore';
 import { isSystemDictionaryEnabled } from '@/services/dictionaries/registry';
 import { invokeSystemDictionary } from '@/services/dictionaries/systemDictionary';
 import { buildSelectionContext } from '@/services/dictionaries/contextDictionary';
+import { hasXRayCredentials } from '@/services/ai/xray/utils';
 import type { DictionarySelectionContext } from '@/services/dictionaries/types';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
@@ -294,6 +295,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
     appService?.appPlatform === 'tauri' &&
     !!settings.aiSettings?.enabled &&
     !!settings.aiSettings.reedy?.enabled &&
+    hasXRayCredentials(settings.aiSettings) &&
     !!progress?.location;
   // For the ✓ (global) toggle in HighlightOptions: figure out whether
   // the booknote anchored at the current selection is currently global,

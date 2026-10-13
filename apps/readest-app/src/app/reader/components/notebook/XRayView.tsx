@@ -15,7 +15,7 @@ import {
 
 import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
-import type { AISettings } from '@/services/ai/types';
+import { hasXRayCredentials as hasCredentials } from '@/services/ai/xray/utils';
 import type { XRaySourceStatus } from '@/services/ai/xray/source/ReedyXRaySource';
 import type {
   XRayClaimStatus,
@@ -602,12 +602,6 @@ const claimStatusLabel = (
     suspected: _('Suspected'),
   };
   return labels[status];
-};
-
-const hasCredentials = (settings: AISettings): boolean => {
-  if (settings.provider === 'ai-gateway') return !!settings.aiGatewayApiKey;
-  if (settings.provider === 'openrouter') return !!settings.openrouterApiKey;
-  return true;
 };
 
 export default XRayView;

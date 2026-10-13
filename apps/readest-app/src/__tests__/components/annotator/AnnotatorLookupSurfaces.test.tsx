@@ -55,7 +55,12 @@ const h = vi.hoisted(() => ({
 }));
 
 const settings = {
-  aiSettings: { enabled: false, reedy: { enabled: false } },
+  aiSettings: {
+    enabled: false,
+    reedy: { enabled: false },
+    provider: 'ai-gateway',
+    aiGatewayApiKey: '',
+  },
   globalReadSettings: {
     highlightStyle: 'highlight',
     highlightStyles: { highlight: 'yellow', underline: 'green', squiggly: 'blue' },
@@ -317,6 +322,7 @@ beforeEach(() => {
   h.appService.appPlatform = 'web';
   settings.aiSettings.enabled = false;
   settings.aiSettings.reedy.enabled = false;
+  settings.aiSettings.aiGatewayApiKey = '';
   h.actions = null;
   h.book = { format: 'EPUB', isFixedLayout: false };
   h.foliateHandlers = null;
@@ -337,8 +343,15 @@ describe('a lookup surface survives the selection it is anchored to being republ
     h.appService.appPlatform = 'tauri';
     settings.aiSettings.enabled = true;
     settings.aiSettings.reedy.enabled = true;
-    render(<Annotator bookKey='book-1' contentInsets={{ top: 0, right: 0, bottom: 0, left: 0 }} />);
+    const { rerender } = render(
+      <Annotator bookKey='book-1' contentInsets={{ top: 0, right: 0, bottom: 0, left: 0 }} />,
+    );
     await selectText();
+    expect(screen.queryByRole('button', { name: 'X-Ray' })).toBeNull();
+    settings.aiSettings.aiGatewayApiKey = 'test-key';
+    rerender(
+      <Annotator bookKey='book-1' contentInsets={{ top: 0, right: 0, bottom: 0, left: 0 }} />,
+    );
 
     act(() => screen.getByRole('button', { name: 'X-Ray' }).click());
     expect(await screen.findByTestId('xray-surface')).toBeTruthy();

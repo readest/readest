@@ -1,3 +1,5 @@
+import { normalizeXRayText } from './utils';
+
 const STOPWORDS: Record<string, readonly string[]> = {
   en: [
     'a',
@@ -182,11 +184,11 @@ export const rankSentences = (
 ): RankedSentence[] => {
   const sentences = splitSentences(text, language);
   const scores = lexRankScores(sentences, language, options);
-  const variants = termVariants.map((variant) => variant.trim().toLowerCase()).filter(Boolean);
+  const variants = termVariants.map(normalizeXRayText).filter(Boolean);
   return sentences
     .map((sentence, index) => {
       const positionBoost = 1 + (1 - index / Math.max(sentences.length, 1)) * 0.12;
-      const lower = sentence.toLowerCase();
+      const lower = normalizeXRayText(sentence);
       const termBoost = variants.some((variant) => lower.includes(variant)) ? 1.18 : 1;
       return { sentence, index, score: scores[index]! * positionBoost * termBoost };
     })
@@ -201,10 +203,10 @@ export const extractTermContext = (
 ): string[] => {
   const sentences = splitSentences(text, language);
   if (sentences.length === 0) return [];
-  const variants = termVariants.map((variant) => variant.trim().toLowerCase()).filter(Boolean);
+  const variants = termVariants.map(normalizeXRayText).filter(Boolean);
   const ranked = rankSentences(text, language, variants).filter((item) => {
     if (variants.length === 0) return true;
-    const lower = item.sentence.toLowerCase();
+    const lower = normalizeXRayText(item.sentence);
     return variants.some((variant) => lower.includes(variant));
   });
   const selected = ranked.slice(0, options.maxSentences ?? 4);
