@@ -16,10 +16,10 @@ describe('transformStylesheet', () => {
   const VERTICAL = false;
 
   describe('text-align center + text-indent 0', () => {
-    it('adds !important to both text-align and text-indent when both present in same rule', () => {
+    it('adds !important only to text-indent when both present in same rule', () => {
       const css = '.centered { text-align: center; text-indent: 0; }';
       const result = transformStylesheet(css, VW, VH, VERTICAL);
-      expect(result).toContain('text-align: center !important');
+      expect(result).not.toContain('text-align: center !important');
       expect(result).toContain('text-indent: 0 !important');
     });
 
