@@ -4,6 +4,12 @@ vi.mock('@/services/sync/replicaPublish', () => ({
   publishReplicaDelete: vi.fn(),
   publishReplicaUpsert: vi.fn(),
 }));
+vi.mock('@/services/sync/replicaBinaryUpload', async () => {
+  const actual = await vi.importActual<typeof import('@/services/sync/replicaBinaryUpload')>(
+    '@/services/sync/replicaBinaryUpload',
+  );
+  return { ...actual, queueReplicaBinaryDelete: vi.fn() };
+});
 vi.mock('@/utils/md5', async () => {
   const actual = await vi.importActual<typeof import('@/utils/md5')>('@/utils/md5');
   return {
@@ -25,6 +31,7 @@ import { CustomFont } from '@/styles/fonts';
 import { SystemSettings } from '@/types/settings';
 import { EnvConfigType } from '@/services/environment';
 import { publishReplicaUpsert } from '@/services/sync/replicaPublish';
+import { queueReplicaBinaryDelete } from '@/services/sync/replicaBinaryUpload';
 
 const mockPublishReplicaUpsert = vi.mocked(publishReplicaUpsert);
 
@@ -205,6 +212,17 @@ describe('customFontStore', () => {
       const removed = useCustomFontStore.getState().getFont(font.id);
       expect(removed?.blobUrl).toBeUndefined();
       expect(removed?.loaded).toBe(false);
+    });
+
+    test('queues deletion of the synced font file from the cloud', () => {
+      const font = useCustomFontStore
+        .getState()
+        .addFont('bundle/Test.ttf', { contentId: 'font-hash', bundleDir: 'bundle' });
+      useCustomFontStore.getState().removeFont(font.id);
+      expect(vi.mocked(queueReplicaBinaryDelete)).toHaveBeenCalledWith(
+        'font',
+        expect.objectContaining({ id: font.id, contentId: 'font-hash' }),
+      );
     });
   });
 
@@ -433,6 +451,26 @@ describe('customFontStore', () => {
       const result = await useCustomFontStore.getState().loadFont(envConfig, font.id);
       expect(result.blobUrl).toBe('blob:existing');
       expect(envConfig.getAppService).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('loadAllFonts', () => {
+    test('skips cloud-only fonts that have not been downloaded', async () => {
+      useCustomFontStore
+        .getState()
+        .setFonts([
+          makeFont({ id: 'local', name: 'Local', path: 'local/Local.ttf' }),
+          makeFont({ id: 'cloud', name: 'Cloud', path: 'cloud/Cloud.ttf', unavailable: true }),
+        ]);
+      const openFile = vi.fn().mockRejectedValue(new Error('read failed'));
+      const envConfig = {
+        getAppService: vi.fn().mockResolvedValue({ openFile }),
+      } as unknown as EnvConfigType;
+
+      await useCustomFontStore.getState().loadAllFonts(envConfig);
+
+      expect(openFile).toHaveBeenCalledTimes(1);
+      expect(openFile).toHaveBeenCalledWith('local/Local.ttf', 'Fonts');
     });
   });
 

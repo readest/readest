@@ -4,6 +4,8 @@ vi.mock('@/services/transferManager', () => ({
   transferManager: {
     isReady: vi.fn(),
     queueReplicaUpload: vi.fn(),
+    queueReplicaDownload: vi.fn(),
+    queueReplicaDelete: vi.fn(),
   },
 }));
 
@@ -13,16 +15,24 @@ vi.mock('@/utils/access', () => ({
 
 import { transferManager } from '@/services/transferManager';
 import { getAccessToken } from '@/utils/access';
-import { queueDictionaryBinaryUpload } from '@/services/sync/replicaBinaryUpload';
+import {
+  queueDictionaryBinaryUpload,
+  queueReplicaBinaryDelete,
+  queueReplicaBinaryDownload,
+} from '@/services/sync/replicaBinaryUpload';
 import { clearReplicaAdapters, registerReplicaAdapter } from '@/services/sync/replicaRegistry';
 import { dictionaryAdapter } from '@/services/sync/adapters/dictionary';
+import { fontAdapter } from '@/services/sync/adapters/font';
 import { useSettingsStore } from '@/store/settingsStore';
 import type { ImportedDictionary } from '@/services/dictionaries/types';
+import type { CustomFont } from '@/styles/fonts';
 import type { AppService } from '@/types/system';
 import type { SystemSettings } from '@/types/settings';
 
 const mockIsReady = transferManager.isReady as ReturnType<typeof vi.fn>;
 const mockQueueReplicaUpload = transferManager.queueReplicaUpload as ReturnType<typeof vi.fn>;
+const mockQueueReplicaDownload = transferManager.queueReplicaDownload as ReturnType<typeof vi.fn>;
+const mockQueueReplicaDelete = transferManager.queueReplicaDelete as ReturnType<typeof vi.fn>;
 const mockGetAccessToken = getAccessToken as ReturnType<typeof vi.fn>;
 
 const makeFakeAppService = (sizes: Record<string, number>) => ({
@@ -48,6 +58,7 @@ beforeEach(() => {
   mockGetAccessToken.mockResolvedValue('mock-token');
   clearReplicaAdapters();
   registerReplicaAdapter(dictionaryAdapter);
+  registerReplicaAdapter(fontAdapter);
 });
 
 afterEach(() => {
@@ -198,5 +209,61 @@ describe('queueDictionaryBinaryUpload', () => {
     } finally {
       useSettingsStore.setState({ settings: prevSettings });
     }
+  });
+});
+
+const baseFont = (overrides: Partial<CustomFont> = {}): CustomFont => ({
+  id: 'font-bundle',
+  contentId: 'font-hash',
+  name: 'Inter Regular',
+  family: 'Inter',
+  bundleDir: 'font-bundle',
+  path: 'font-bundle/Inter-Regular.ttf',
+  byteSize: 1234,
+  ...overrides,
+});
+
+describe('queueReplicaBinaryDownload', () => {
+  test('queues the record files for download from the cloud', async () => {
+    mockIsReady.mockReturnValue(true);
+    mockQueueReplicaDownload.mockReturnValue('t-download');
+
+    const result = await queueReplicaBinaryDownload('font', baseFont());
+
+    expect(result).toBe('t-download');
+    expect(mockQueueReplicaDownload).toHaveBeenCalledWith(
+      'font',
+      'font-hash',
+      'Inter Regular',
+      [{ logical: 'Inter-Regular.ttf', lfp: 'font-bundle/Inter-Regular.ttf', byteSize: 1234 }],
+      'Fonts',
+    );
+  });
+
+  test('no-ops when user is not authenticated', async () => {
+    mockIsReady.mockReturnValue(true);
+    mockGetAccessToken.mockResolvedValue(null);
+    expect(await queueReplicaBinaryDownload('font', baseFont())).toBe(null);
+    expect(mockQueueReplicaDownload).not.toHaveBeenCalled();
+  });
+});
+
+describe('queueReplicaBinaryDelete', () => {
+  test('queues the record files for deletion from the cloud', async () => {
+    mockIsReady.mockReturnValue(true);
+    mockQueueReplicaDelete.mockReturnValue('t-delete');
+
+    const result = await queueReplicaBinaryDelete('font', baseFont());
+
+    expect(result).toBe('t-delete');
+    expect(mockQueueReplicaDelete).toHaveBeenCalledWith('font', 'font-hash', 'Inter Regular', [
+      'Inter-Regular.ttf',
+    ]);
+  });
+
+  test('no-ops for a legacy record without contentId', async () => {
+    mockIsReady.mockReturnValue(true);
+    expect(await queueReplicaBinaryDelete('font', baseFont({ contentId: undefined }))).toBe(null);
+    expect(mockQueueReplicaDelete).not.toHaveBeenCalled();
   });
 });
