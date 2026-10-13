@@ -1248,6 +1248,9 @@ export const useTextSelector = (
     // press (#6574): the webview's differs per engine and offers "Copy image
     // address" for a blob URL nobody can use (#6558).
     if (openImageMenu(event as MouseEvent, isTouch)) event.preventDefault();
+    // The desktop webview's own menu (Back / Refresh / Print...) has no place in
+    // the reading area (#6668); the web build keeps the browser's for extensions.
+    if (appService?.isDesktopApp) event.preventDefault();
     if (isTouch) {
       event.preventDefault();
       event.stopPropagation();
