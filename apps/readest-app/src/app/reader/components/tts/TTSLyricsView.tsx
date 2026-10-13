@@ -113,7 +113,8 @@ const TTSLyricsView = ({
   useEffect(() => {
     if (seekIndex !== null || pending !== null) return;
     const el = scrollerRef.current;
-    if (!el || activeIndex < 0) return;
+    // The spoken index can arrive before the chapter's lines load.
+    if (!el || activeIndex < 0 || activeIndex >= lines.length) return;
     // Nothing to aim at until the lines have been measured: scrolling on the
     // pre-measure pass would just land at zero.
     if (centersRef.current.length !== lines.length) return;
