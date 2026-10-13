@@ -18,6 +18,9 @@ const h = vi.hoisted(() => ({
   // The Readest server never answers (init and voice list hang).
   readestHang: false,
   readestVoices: [] as TTSVoice[],
+  customClient: null as Record<string, unknown> | null,
+  customInit: true,
+  customArgs: [] as unknown[],
 }));
 
 function mockClient(name: string): TTSClient {
@@ -92,6 +95,22 @@ vi.mock('@/services/tts/BufferedTTSClient', () => ({
     this: Record<string, unknown>,
     ...args: unknown[]
   ) {
+    if ((args[0] as { id: string }).id === 'custom-tts') {
+      Object.assign(this, mockClient('custom-tts'), bufferedExtras());
+      (this['init'] as ReturnType<typeof vi.fn>).mockImplementation(async function (this: {
+        initialized: boolean;
+      }) {
+        this.initialized = h.customInit;
+        return h.customInit;
+      });
+      (this['getAllVoices'] as ReturnType<typeof vi.fn>).mockResolvedValue(CUSTOM_VOICES);
+      (this['getVoices'] as ReturnType<typeof vi.fn>).mockResolvedValue([
+        { id: 'custom-tts:svc', name: 'My TTS', voices: CUSTOM_VOICES },
+      ]);
+      h.customClient = this;
+      h.customArgs = args;
+      return;
+    }
     h.bufferedArgs.push(args);
     Object.assign(this, mockClient('readest-tts'), bufferedExtras());
     (this['init'] as ReturnType<typeof vi.fn>).mockImplementation(async function (this: {
@@ -110,6 +129,13 @@ vi.mock('@/services/tts/BufferedTTSClient', () => ({
 vi.mock('@/services/tts/providers/readest', () => ({
   ReadestVoiceProvider: vi.fn().mockImplementation(function (this: Record<string, unknown>) {
     Object.assign(this, { id: 'readest-tts', warmup: h.warmup });
+  }),
+}));
+vi.mock('@/services/tts/providers/openaiCompatible', () => ({
+  OpenAICompatibleSpeechProvider: vi.fn().mockImplementation(function (
+    this: Record<string, unknown>,
+  ) {
+    Object.assign(this, { id: 'custom-tts' });
   }),
 }));
 vi.mock('@/services/tts/providers/bookCacheStore', async (orig) => ({
@@ -132,6 +158,7 @@ import { TTSUtils } from '@/services/tts/TTSUtils';
 import { CachingProvider } from '@/services/tts/providers/cache';
 import { createBookTTSCacheStore } from '@/services/tts/providers/bookCacheStore';
 
+const CUSTOM_VOICES = [{ id: 'svc:nova', name: 'nova', lang: '' }];
 const READEST_VOICES = [{ id: 'kokoro:af_heart', name: 'Heart', lang: 'en-US' }];
 const view = {
   renderer: { primaryIndex: 0, getContents: vi.fn().mockReturnValue([]) },
@@ -143,6 +170,7 @@ const appService = { isAndroidApp: false, isIOSApp: false } as unknown as AppSer
 
 let controller: TTSController;
 const readest = () => h.readestClient as unknown as TTSClient & ReturnType<typeof bufferedExtras>;
+const custom = () => h.customClient as unknown as TTSClient & ReturnType<typeof bufferedExtras>;
 const edge = () => controller.ttsEdgeClient as unknown as ReturnType<typeof bufferedExtras>;
 
 beforeEach(() => {
@@ -150,6 +178,7 @@ beforeEach(() => {
   h.bufferedArgs = [];
   h.readestInit = true;
   h.readestVoices = READEST_VOICES;
+  h.customInit = true;
   h.warmup.mockReset();
   vi.mocked(TTSUtils.getPreferredClient).mockReturnValue(null);
   vi.mocked(createBookTTSCacheStore).mockClear();
@@ -211,6 +240,7 @@ describe('init', () => {
 
 describe('voices', () => {
   test('lists the Readest group after native and before Edge, and warms the worker', async () => {
+    h.customInit = false;
     await controller.init();
     vi.mocked(readest().getVoices).mockResolvedValue([
       { id: 'readest-tts', name: 'Readest Voice', voices: READEST_VOICES },
@@ -306,5 +336,63 @@ describe('downloads follow the active synthetic engine', () => {
     expect(readest().beginDownloadSections).toHaveBeenCalledWith([1]);
     expect(controller.canDownload()).toBe(true);
     expect(readest().canDownload).toHaveBeenCalled();
+  });
+});
+
+describe('custom TTS services', () => {
+  test('share the per-book cache store and are never the default engine', async () => {
+    expect(controller.ttsCustomClient).toBe(custom());
+    expect(h.customArgs[0]).toBeInstanceOf(CachingProvider);
+    expect((h.customArgs[0] as CachingProvider).id).toBe('custom-tts');
+    await controller.init();
+    expect(custom().init).toHaveBeenCalled();
+    expect(controller.ttsClient.name).toBe('edge-tts');
+    vi.mocked(TTSUtils.getPreferredClient).mockReturnValue('custom-tts');
+    await controller.init();
+    expect(controller.ttsClient).toBe(custom());
+  });
+
+  test('list their groups right after narration, for any language', async () => {
+    await controller.init();
+    vi.mocked(readest().getVoices).mockResolvedValue([
+      { id: 'readest-tts', name: 'Readest Voice', voices: READEST_VOICES },
+    ]);
+    vi.mocked(controller.ttsEdgeClient.getVoices).mockResolvedValue([
+      { id: 'edge-tts', name: 'Edge TTS', voices: [] },
+    ]);
+    const groups = await controller.getVoices('de');
+    expect(groups.map((g) => g.id)).toEqual(['custom-tts:svc', 'readest-tts', 'edge-tts']);
+  });
+
+  test('are hidden when unavailable (free plan, no services)', async () => {
+    h.customInit = false;
+    await controller.init();
+    const groups = await controller.getVoices('en');
+    expect(groups.map((g) => g.id)).not.toContain('custom-tts:svc');
+  });
+
+  test('a custom voice selects the custom client, which keeps it for any language', async () => {
+    await controller.init();
+    await controller.setVoice('svc:nova', 'en');
+    expect(controller.ttsClient).toBe(custom());
+    expect(TTSUtils.setPreferredClient).toHaveBeenCalledWith('custom-tts');
+    expect(custom().setVoice).toHaveBeenCalledWith('svc:nova');
+    await controller.setLang('ja');
+    expect(controller.ttsClient).toBe(custom());
+  });
+
+  test('settings, downloads and shutdown fan out to the custom client', async () => {
+    await controller.init();
+    await controller.setVoice('svc:nova', 'en');
+    await controller.setPrimaryLang('en');
+    controller.setSentenceGap(0.2);
+    controller.setParagraphGap(0.5);
+    await controller.clearDownloads();
+    await controller.shutdown();
+    expect(custom().setPrimaryLang).toHaveBeenCalledWith('en');
+    expect(custom().setSentenceGap).toHaveBeenCalledWith(0.2);
+    expect(custom().setParagraphGap).toHaveBeenCalledWith(0.5);
+    expect(custom().clearDownloads).toHaveBeenCalledTimes(1);
+    expect(custom().shutdown).toHaveBeenCalled();
   });
 });

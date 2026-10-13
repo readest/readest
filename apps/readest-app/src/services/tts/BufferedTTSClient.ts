@@ -844,6 +844,11 @@ export class BufferedTTSClient implements TTSClient {
   async getVoices(lang: string) {
     const locale = lang === 'en' ? getUserLocale(lang) || lang : lang;
     const voices = await this.getAllVoices();
+    if (this.provider.groupVoices) {
+      return this.provider
+        .groupVoices(voices)
+        .map((group) => ({ ...group, disabled: !this.initialized }));
+    }
     // Match by primary language so the voice set stays the same across a book
     // whose sections mix region variants (e.g. en-US front matter and en-GB
     // body text); the requested locale's voices sort first. See #4033.

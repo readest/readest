@@ -289,6 +289,7 @@ export const DEFAULT_SYSTEM_SETTINGS: Partial<SystemSettings> = {
     opds_catalog: true,
     abs_server: true,
     custom_translator: true,
+    custom_tts: true,
     settings: true,
   },
 };

@@ -11,6 +11,17 @@ const state = vi.hoisted(() => ({
     ttsHighlightOptions: { style: 'highlight', color: '#808080' },
     ttsSkipInlineAnnotations: false,
   } as unknown as ViewSettings,
+  token: null as string | null,
+  user: null as { id: string } | null,
+  push: vi.fn(),
+}));
+
+vi.mock('@/context/AuthContext', () => ({
+  useAuth: () => ({ token: state.token, user: state.user }),
+}));
+
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ push: state.push }),
 }));
 
 vi.mock('@/hooks/useTranslation', () => ({
@@ -30,16 +41,17 @@ vi.mock('@/store/readerStore', () => ({
   useReaderStore: () => ({ getViewSettings: () => state.viewSettings }),
 }));
 
-vi.mock('@/store/settingsStore', () => ({
-  useSettingsStore: () => ({
+vi.mock('@/store/settingsStore', () => {
+  const store = {
     settings: {
       globalViewSettings: state.viewSettings,
       globalReadSettings: { customTtsHighlightColors: [] },
     },
     setSettings: vi.fn(),
     saveSettings: vi.fn(),
-  }),
-}));
+  };
+  return { useSettingsStore: Object.assign(() => store, { getState: () => store }) };
+});
 
 vi.mock('@/hooks/useResetSettings', () => ({
   useResetViewSettings: () => vi.fn(),
@@ -104,5 +116,50 @@ describe('TTSPanel inline reading annotations', () => {
     render(<TTSPanel bookKey='book-1' onRegisterReset={vi.fn()} />);
 
     expect(screen.queryByText('Skip Parenthetical Readings')).toBeNull();
+  });
+});
+
+const encode = (part: object) => Buffer.from(JSON.stringify(part)).toString('base64url');
+const sessionToken = (claims: object) => `${encode({ alg: 'none' })}.${encode(claims)}.sig`;
+
+const getCustomServicesRow = () =>
+  screen.getByText('Custom TTS Services').closest('button') as HTMLButtonElement;
+
+// Custom TTS services are premium: free and signed-out readers see the row
+// with a Premium badge that routes to the upgrade page or sign-in.
+describe('TTSPanel custom TTS services premium gate', () => {
+  beforeEach(() => {
+    state.token = null;
+    state.user = null;
+    state.push.mockReset();
+  });
+
+  afterEach(cleanup);
+
+  it('sends a signed-out reader to sign in', () => {
+    render(<TTSPanel bookKey='book-1' onRegisterReset={vi.fn()} />);
+    expect(getCustomServicesRow().textContent).toContain('Premium');
+    fireEvent.click(getCustomServicesRow());
+    expect(state.push).toHaveBeenCalledWith(expect.stringMatching(/^\/auth\?redirect=/));
+  });
+
+  it('sends a free user to the plans page', () => {
+    state.token = sessionToken({ plan: 'free' });
+    state.user = { id: 'u' };
+    render(<TTSPanel bookKey='book-1' onRegisterReset={vi.fn()} />);
+    fireEvent.click(getCustomServicesRow());
+    expect(state.push).toHaveBeenCalledWith(expect.stringMatching(/^\/user\?redirect=/));
+    expect(screen.queryByText('Add TTS Service')).toBeNull();
+  });
+
+  it('opens the services page for Full Customization', () => {
+    state.token = sessionToken({ plan: 'free', customization_purchased: true });
+    state.user = { id: 'u' };
+    render(<TTSPanel bookKey='book-1' onRegisterReset={vi.fn()} />);
+    expect(getCustomServicesRow().textContent).not.toContain('Premium');
+    fireEvent.click(getCustomServicesRow());
+    expect(state.push).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByText('Add TTS Service'));
+    expect(screen.getByLabelText('Base URL')).toBeTruthy();
   });
 });

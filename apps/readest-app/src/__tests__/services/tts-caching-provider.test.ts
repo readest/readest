@@ -145,6 +145,16 @@ describe('CachingProvider', () => {
     expect(store.put).toHaveBeenCalledTimes(1);
   });
 
+  test('a changed cache scope misses audio cached under the old one', async () => {
+    let scope = 'model-a';
+    provider = new CachingProvider(makeInner({ ...inner, cacheScope: () => scope }), store);
+    await provider.synthesize(req(), signal());
+    scope = 'model-b';
+    await provider.synthesize(req(), signal());
+    expect(inner.synthesize).toHaveBeenCalledTimes(2);
+    expect(store.map.size).toBe(2);
+  });
+
   test('cache hit never reaches the inner provider', async () => {
     await provider.synthesize(req(), signal());
     const result = await provider.synthesize(req(), signal());
