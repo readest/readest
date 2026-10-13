@@ -1,0 +1,336 @@
+# Korean translation for the Readest calibre plugin.
+# Copyright (C) 2026 Bilingify LLC
+# This file is distributed under the same license as the Readest calibre plugin.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Readest calibre plugin\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-13 11:32+0000\n"
+"PO-Revision-Date: 2026-10-13 11:32+0000\n"
+"Last-Translator: Bilingify LLC\n"
+"Language-Team: Korean\n"
+"Language: ko\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#: __init__.py:16
+msgid "Push selected books and their metadata into your Readest cloud library. Re-pushing a book updates its existing entry instead of creating a duplicate."
+msgstr "선택한 책과 메타데이터를 Readest 클라우드 라이브러리로 푸시합니다. 같은 책을 다시 푸시하면 중복 항목을 만들지 않고 기존 항목을 업데이트합니다."
+
+#: config.py:36
+msgid "Not logged in."
+msgstr "로그인하지 않았습니다."
+
+#: config.py:42
+msgid "Include custom columns in pushed metadata"
+msgstr "푸시하는 메타데이터에 사용자 지정 열 포함"
+
+#: config.py:51
+msgid "Only change this if you run a self-hosted Readest server."
+msgstr "자체 호스팅 Readest 서버를 운영하는 경우에만 변경하세요."
+
+#: config.py:36 ui.py:136
+msgid "Logged in as %s."
+msgstr "%s으로 로그인했습니다."
+
+#: config.py:47
+msgid "API server:"
+msgstr "API 서버:"
+
+#: config.py:38
+msgid "Use the Readest toolbar menu to log in or out."
+msgstr "로그인하거나 로그아웃하려면 Readest 도구 모음 메뉴를 사용하세요."
+
+#: dialogs.py:250
+msgid "Push to Readest"
+msgstr "Readest로 푸시"
+
+#: dialogs.py:252
+msgid "Push to Readest failed"
+msgstr "Readest로 푸시 실패"
+
+#: dialogs.py:264
+msgid "Readest status"
+msgstr "Readest 상태"
+
+#: dialogs.py:266
+msgid "Readest status check failed"
+msgstr "Readest 상태 확인 실패"
+
+#: dialogs.py:66
+msgid "Log in to Readest"
+msgstr "Readest에 로그인"
+
+#: dialogs.py:74
+msgid "Email:"
+msgstr "이메일:"
+
+#: dialogs.py:75
+msgid "Password:"
+msgstr "비밀번호:"
+
+#: dialogs.py:78
+msgid "Log in"
+msgstr "로그인"
+
+#: dialogs.py:104
+msgid "Logging in…"
+msgstr "로그인 중…"
+
+#: dialogs.py:124
+msgid "Waiting for the browser login to complete…"
+msgstr "브라우저 로그인 완료를 기다리는 중…"
+
+#: dialogs.py:222
+msgid "Unknown"
+msgstr "알 수 없음"
+
+#: dialogs.py:255
+msgid "Pushing %d book to your Readest library…"
+msgid_plural "Pushing %d books to your Readest library…"
+msgstr[0] "책 %d권을 Readest 라이브러리로 푸시하는 중…"
+
+#: dialogs.py:269
+msgid "Checking %d book against your Readest library…"
+msgid_plural "Checking %d books against your Readest library…"
+msgstr[0] "책 %d권을 Readest 라이브러리와 대조하는 중…"
+
+#: dialogs.py:82
+msgid "Or sign in with your browser:"
+msgstr "또는 브라우저로 로그인:"
+
+#: dialogs.py:102
+msgid "Please enter both email and password."
+msgstr "이메일과 비밀번호를 모두 입력하세요."
+
+#: dialogs.py:136
+msgid "Login failed: the browser callback carried no session."
+msgstr "로그인 실패: 브라우저 콜백에 세션이 없습니다."
+
+#: dialogs.py:198
+msgid "Book"
+msgstr "책"
+
+#: dialogs.py:198
+msgid "Status"
+msgstr "상태"
+
+#: dialogs.py:198
+msgid "Details"
+msgstr "세부 정보"
+
+#: dialogs.py:243
+msgid "Canceling…"
+msgstr "취소 중…"
+
+#: dialogs.py:121
+msgid "Browser login timed out. Try again."
+msgstr "브라우저 로그인이 시간 초과되었습니다. 다시 시도하세요."
+
+#: dialogs.py:130 dialogs.py:109 dialogs.py:143
+msgid "Login failed: %s"
+msgstr "로그인 실패: %s"
+
+#: oauth.py:36 oauth.py:47
+msgid "Readest Login"
+msgstr "Readest 로그인"
+
+#: oauth.py:37
+msgid "Completing login…"
+msgstr "로그인 완료 중…"
+
+#: oauth.py:48
+msgid "Login complete. You can close this tab and return to calibre."
+msgstr "로그인이 완료되었습니다. 이 탭을 닫고 calibre으로 돌아가세요."
+
+#: ui.py:32 ui.py:135
+msgid "Readest"
+msgstr "Readest"
+
+#: ui.py:34
+msgid "Push selected books and metadata to your Readest library"
+msgstr "선택한 책과 메타데이터를 Readest 라이브러리로 푸시"
+
+#: ui.py:94
+msgid "Select the books to push to Readest."
+msgstr "Readest로 푸시할 책을 선택하세요."
+
+#: ui.py:97
+msgid "Select the books to check against Readest."
+msgstr "Readest 라이브러리와 대조할 책을 선택하세요."
+
+#: ui.py:103
+msgid "No books selected"
+msgstr "선택한 책이 없습니다"
+
+#: ui.py:40
+msgid "Push selected books to Readest"
+msgstr "선택한 책을 Readest로 푸시"
+
+#: ui.py:46
+msgid "Check Readest status"
+msgstr "Readest 상태 확인"
+
+#: ui.py:52
+msgid "Log in to Readest…"
+msgstr "Readest에 로그인…"
+
+#: ui.py:57
+msgid "Log out"
+msgstr "로그아웃"
+
+#: ui.py:62
+msgid "Customize plugin…"
+msgstr "플러그인 사용자 지정…"
+
+#: ui.py:85
+msgid "Log out (%s)"
+msgstr "로그아웃(%s)"
+
+#: ui.py:136
+msgid "your Readest account"
+msgstr "Readest 계정"
+
+#: worker.py:46
+msgid "Uploaded"
+msgstr "업로드됨"
+
+#: worker.py:47
+msgid "Replaced"
+msgstr "대체됨"
+
+#: worker.py:48
+msgid "Updated"
+msgstr "업데이트됨"
+
+#: worker.py:49
+msgid "Up to date"
+msgstr "최신 상태"
+
+#: worker.py:50 worker.py:61
+msgid "Failed"
+msgstr "실패"
+
+#: worker.py:57
+msgid "In Readest"
+msgstr "Readest에 있음"
+
+#: worker.py:58
+msgid "Metadata differs"
+msgstr "메타데이터가 다름"
+
+#: worker.py:59
+msgid "Out of date"
+msgstr "오래됨"
+
+#: worker.py:60
+msgid "Not in Readest"
+msgstr "Readest에 없음"
+
+#: worker.py:210
+msgid "No Readest-supported format (EPUB, PDF, ...)"
+msgstr "Readest 지원 형식(EPUB, PDF 등)이 없습니다"
+
+#: worker.py:213
+msgid "Book file is missing from the calibre library"
+msgstr "calibre 라이브러리에 책 파일이 없습니다"
+
+#: worker.py:277
+msgid "Nothing to push."
+msgstr "푸시할 항목이 없습니다."
+
+#: worker.py:406
+msgid "Nothing to check."
+msgstr "대조할 항목이 없습니다."
+
+#: worker.py:158
+msgid "Please log in to Readest first. (%s)"
+msgstr "먼저 Readest에 로그인하세요. (%s)"
+
+#: worker.py:160
+msgid "Could not reach Readest: %s"
+msgstr "Readest에 연결할 수 없음: %s"
+
+#: worker.py:252 worker.py:390
+msgid "Canceled."
+msgstr "취소되었습니다."
+
+#: worker.py:258
+msgid "Readest storage quota exceeded — push stopped."
+msgstr "Readest 저장 공간 할당량을 초과했습니다—푸시를 중지합니다."
+
+#: worker.py:262
+msgid "Session expired — please log in again."
+msgstr "세션이 만료되었습니다—다시 로그인하세요."
+
+#: api.py:243
+msgid "Login failed"
+msgstr "로그인 실패"
+
+#: api.py:254 api.py:272 api.py:286
+msgid "Not logged in"
+msgstr "로그인하지 않았습니다"
+
+#: api.py:263
+msgid "Session expired, please log in again"
+msgstr "세션이 만료되었습니다. 다시 로그인하세요"
+
+#: api.py:312
+msgid "Not authenticated"
+msgstr "인증되지 않았습니다"
+
+#: api.py:318
+msgid "Request failed (%s)"
+msgstr "요청 실패 (%s)"
+
+#: api.py:402
+msgid "Upload failed (%s)"
+msgstr "업로드 실패 (%s)"
+
+#: worker.py:57
+msgid "%d uploaded"
+msgid_plural "%d uploaded"
+msgstr[0] "업로드됨 %d권"
+
+#: worker.py:58
+msgid "%d replaced"
+msgid_plural "%d replaced"
+msgstr[0] "대체됨 %d권"
+
+#: worker.py:59
+msgid "%d updated"
+msgid_plural "%d updated"
+msgstr[0] "업데이트됨 %d권"
+
+#: worker.py:60
+msgid "%d up to date"
+msgid_plural "%d up to date"
+msgstr[0] "최신 상태 %d권"
+
+#: worker.py:61
+msgid "%d failed"
+msgid_plural "%d failed"
+msgstr[0] "실패 %d권"
+
+#: worker.py:76
+msgid "%d in Readest"
+msgid_plural "%d in Readest"
+msgstr[0] "Readest에 있음 %d권"
+
+#: worker.py:77
+msgid "%d metadata differs"
+msgid_plural "%d metadata differs"
+msgstr[0] "메타데이터가 다름 %d권"
+
+#: worker.py:78
+msgid "%d out of date"
+msgid_plural "%d out of date"
+msgstr[0] "오래됨 %d권"
+
+#: worker.py:79
+msgid "%d not in Readest"
+msgid_plural "%d not in Readest"
+msgstr[0] "Readest에 없음 %d권"

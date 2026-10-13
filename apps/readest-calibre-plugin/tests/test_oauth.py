@@ -6,6 +6,7 @@ import urllib.request
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
+import oauth  # noqa: E402
 from oauth import OAuthCallbackServer, build_authorize_url, parse_callback_query  # noqa: E402
 
 
@@ -38,6 +39,18 @@ class ParseCallbackQueryTest(unittest.TestCase):
 
     def test_missing_tokens(self):
         self.assertEqual(parse_callback_query(''), {})
+
+
+class PageTest(unittest.TestCase):
+    def test_translated_text_is_escaped(self):
+        original = oauth._
+        oauth._ = lambda text: 'Fertig & <zurück>'
+        try:
+            page = oauth.done_page()
+        finally:
+            oauth._ = original
+        self.assertIn('Fertig &amp; &lt;zurück&gt;', page)
+        self.assertNotIn('<zurück>', page)
 
 
 class CallbackServerTest(unittest.TestCase):

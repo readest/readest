@@ -1,0 +1,347 @@
+# Translations template for the Readest calibre plugin.
+# Copyright (C) 2026 Bilingify LLC
+# This file is distributed under the same license as the Readest calibre plugin.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Readest calibre plugin\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-13 16:24+0000\n"
+"PO-Revision-Date: \n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: __init__.py:16
+msgid "Push selected books and their metadata into your Readest cloud library. Re-pushing a book updates its existing entry instead of creating a duplicate."
+msgstr ""
+
+#: api.py:254 api.py:272 api.py:286
+msgid "Not logged in"
+msgstr ""
+
+#: api.py:312
+msgid "Not authenticated"
+msgstr ""
+
+#: api.py:402
+msgid "Upload failed (%s)"
+msgstr ""
+
+#: api.py:243
+msgid "Login failed"
+msgstr ""
+
+#: api.py:263
+msgid "Session expired, please log in again"
+msgstr ""
+
+#: api.py:318
+msgid "Request failed (%s)"
+msgstr ""
+
+#: config.py:36
+msgid "Not logged in."
+msgstr ""
+
+#: config.py:39
+msgid "Include custom columns in pushed metadata"
+msgstr ""
+
+#: config.py:47
+msgid "Only change this if you run a self-hosted Readest server."
+msgstr ""
+
+#: config.py:36 ui.py:136
+msgid "Logged in as %s."
+msgstr ""
+
+#: config.py:43
+msgid "API server:"
+msgstr ""
+
+#: config.py:37
+msgid "Use the Readest toolbar menu to log in or out."
+msgstr ""
+
+#: dialogs.py:248
+msgid "Push to Readest"
+msgstr ""
+
+#: dialogs.py:250
+msgid "Push to Readest failed"
+msgstr ""
+
+#: dialogs.py:262
+msgid "Readest status"
+msgstr ""
+
+#: dialogs.py:264
+msgid "Readest status check failed"
+msgstr ""
+
+#: dialogs.py:66
+msgid "Log in to Readest"
+msgstr ""
+
+#: dialogs.py:74
+msgid "Email:"
+msgstr ""
+
+#: dialogs.py:75
+msgid "Password:"
+msgstr ""
+
+#: dialogs.py:78
+msgid "Log in"
+msgstr ""
+
+#: dialogs.py:104
+msgid "Logging in…"
+msgstr ""
+
+#: dialogs.py:124
+msgid "Waiting for the browser login to complete…"
+msgstr ""
+
+#: dialogs.py:220
+msgid "Unknown"
+msgstr ""
+
+#: dialogs.py:253
+msgid "Pushing %d book to your Readest library…"
+msgid_plural "Pushing %d books to your Readest library…"
+msgstr[0] ""
+msgstr[1] ""
+
+#: dialogs.py:267
+msgid "Checking %d book against your Readest library…"
+msgid_plural "Checking %d books against your Readest library…"
+msgstr[0] ""
+msgstr[1] ""
+
+#: dialogs.py:82
+msgid "Or sign in with your browser:"
+msgstr ""
+
+#: dialogs.py:102
+msgid "Please enter both email and password."
+msgstr ""
+
+#: dialogs.py:135
+msgid "Login failed: the browser callback carried no session."
+msgstr ""
+
+#: dialogs.py:196
+msgid "Book"
+msgstr ""
+
+#: dialogs.py:196
+msgid "Status"
+msgstr ""
+
+#: dialogs.py:196
+msgid "Details"
+msgstr ""
+
+#: dialogs.py:241
+msgid "Canceling…"
+msgstr ""
+
+#: dialogs.py:121
+msgid "Browser login timed out. Try again."
+msgstr ""
+
+#: dialogs.py:130 dialogs.py:109 dialogs.py:141
+msgid "Login failed: %s"
+msgstr ""
+
+#: oauth.py:37 oauth.py:48
+msgid "Readest Login"
+msgstr ""
+
+#: oauth.py:38
+msgid "Completing login…"
+msgstr ""
+
+#: oauth.py:49
+msgid "Login complete. You can close this tab and return to calibre."
+msgstr ""
+
+#: ui.py:32 ui.py:135
+msgid "Readest"
+msgstr ""
+
+#: ui.py:34
+msgid "Push selected books and metadata to your Readest library"
+msgstr ""
+
+#: ui.py:94
+msgid "Select the books to push to Readest."
+msgstr ""
+
+#: ui.py:97
+msgid "Select the books to check against Readest."
+msgstr ""
+
+#: ui.py:103
+msgid "No books selected"
+msgstr ""
+
+#: ui.py:40
+msgid "Push selected books to Readest"
+msgstr ""
+
+#: ui.py:46
+msgid "Check Readest status"
+msgstr ""
+
+#: ui.py:52
+msgid "Log in to Readest…"
+msgstr ""
+
+#: ui.py:57
+msgid "Log out"
+msgstr ""
+
+#: ui.py:62
+msgid "Customize plugin…"
+msgstr ""
+
+#: ui.py:85
+msgid "Log out (%s)"
+msgstr ""
+
+#: ui.py:136
+msgid "your Readest account"
+msgstr ""
+
+#: worker.py:46
+msgid "Uploaded"
+msgstr ""
+
+#: worker.py:47
+msgid "Replaced"
+msgstr ""
+
+#: worker.py:48
+msgid "Updated"
+msgstr ""
+
+#: worker.py:49
+msgid "Up to date"
+msgstr ""
+
+#: worker.py:50 worker.py:71
+msgid "Failed"
+msgstr ""
+
+#: worker.py:67
+msgid "In Readest"
+msgstr ""
+
+#: worker.py:68
+msgid "Metadata differs"
+msgstr ""
+
+#: worker.py:69
+msgid "Out of date"
+msgstr ""
+
+#: worker.py:70
+msgid "Not in Readest"
+msgstr ""
+
+#: worker.py:57
+msgid "%d uploaded"
+msgid_plural "%d uploaded"
+msgstr[0] ""
+msgstr[1] ""
+
+#: worker.py:58
+msgid "%d replaced"
+msgid_plural "%d replaced"
+msgstr[0] ""
+msgstr[1] ""
+
+#: worker.py:59
+msgid "%d updated"
+msgid_plural "%d updated"
+msgstr[0] ""
+msgstr[1] ""
+
+#: worker.py:60
+msgid "%d up to date"
+msgid_plural "%d up to date"
+msgstr[0] ""
+msgstr[1] ""
+
+#: worker.py:61
+msgid "%d failed"
+msgid_plural "%d failed"
+msgstr[0] ""
+msgstr[1] ""
+
+#: worker.py:76
+msgid "%d in Readest"
+msgid_plural "%d in Readest"
+msgstr[0] ""
+msgstr[1] ""
+
+#: worker.py:77
+msgid "%d metadata differs"
+msgid_plural "%d metadata differs"
+msgstr[0] ""
+msgstr[1] ""
+
+#: worker.py:78
+msgid "%d out of date"
+msgid_plural "%d out of date"
+msgstr[0] ""
+msgstr[1] ""
+
+#: worker.py:79
+msgid "%d not in Readest"
+msgid_plural "%d not in Readest"
+msgstr[0] ""
+msgstr[1] ""
+
+#: worker.py:228
+msgid "No Readest-supported format (EPUB, PDF, ...)"
+msgstr ""
+
+#: worker.py:231
+msgid "Book file is missing from the calibre library"
+msgstr ""
+
+#: worker.py:293
+msgid "Nothing to push."
+msgstr ""
+
+#: worker.py:422
+msgid "Nothing to check."
+msgstr ""
+
+#: worker.py:176
+msgid "Please log in to Readest first. (%s)"
+msgstr ""
+
+#: worker.py:178
+msgid "Could not reach Readest: %s"
+msgstr ""
+
+#: worker.py:268 worker.py:406
+msgid "Canceled."
+msgstr ""
+
+#: worker.py:274
+msgid "Readest storage quota exceeded — push stopped."
+msgstr ""
+
+#: worker.py:278
+msgid "Session expired — please log in again."
+msgstr ""

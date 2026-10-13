@@ -1,0 +1,336 @@
+# Simplified Chinese translation for the Readest calibre plugin.
+# Copyright (C) 2026 Bilingify LLC
+# This file is distributed under the same license as the Readest calibre plugin.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Readest calibre plugin\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-13 11:32+0000\n"
+"PO-Revision-Date: 2026-10-13 11:32+0000\n"
+"Last-Translator: Bilingify LLC\n"
+"Language-Team: Simplified Chinese\n"
+"Language: zh_CN\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#: __init__.py:16
+msgid "Push selected books and their metadata into your Readest cloud library. Re-pushing a book updates its existing entry instead of creating a duplicate."
+msgstr "将选中的书籍及其元数据推送到您的 Readest 云端书库。再次推送同一本书会更新已有条目，而不会创建重复项。"
+
+#: config.py:36
+msgid "Not logged in."
+msgstr "尚未登录。"
+
+#: config.py:42
+msgid "Include custom columns in pushed metadata"
+msgstr "在推送的元数据中包含自定义列"
+
+#: config.py:51
+msgid "Only change this if you run a self-hosted Readest server."
+msgstr "仅在您运行自托管 Readest 服务器时才修改此项。"
+
+#: config.py:36 ui.py:136
+msgid "Logged in as %s."
+msgstr "已登录：%s。"
+
+#: config.py:47
+msgid "API server:"
+msgstr "API 服务器："
+
+#: config.py:38
+msgid "Use the Readest toolbar menu to log in or out."
+msgstr "请使用 Readest 工具栏菜单进行登录或退出登录。"
+
+#: dialogs.py:250
+msgid "Push to Readest"
+msgstr "推送到 Readest"
+
+#: dialogs.py:252
+msgid "Push to Readest failed"
+msgstr "推送到 Readest 失败"
+
+#: dialogs.py:264
+msgid "Readest status"
+msgstr "Readest 状态"
+
+#: dialogs.py:266
+msgid "Readest status check failed"
+msgstr "Readest 状态检查失败"
+
+#: dialogs.py:66
+msgid "Log in to Readest"
+msgstr "登录 Readest"
+
+#: dialogs.py:74
+msgid "Email:"
+msgstr "邮箱："
+
+#: dialogs.py:75
+msgid "Password:"
+msgstr "密码："
+
+#: dialogs.py:78
+msgid "Log in"
+msgstr "登录"
+
+#: dialogs.py:104
+msgid "Logging in…"
+msgstr "正在登录…"
+
+#: dialogs.py:124
+msgid "Waiting for the browser login to complete…"
+msgstr "正在等待浏览器登录完成…"
+
+#: dialogs.py:222
+msgid "Unknown"
+msgstr "未知"
+
+#: dialogs.py:255
+msgid "Pushing %d book to your Readest library…"
+msgid_plural "Pushing %d books to your Readest library…"
+msgstr[0] "正在推送 %d 本书到 Readest 书库…"
+
+#: dialogs.py:269
+msgid "Checking %d book against your Readest library…"
+msgid_plural "Checking %d books against your Readest library…"
+msgstr[0] "正在核对 %d 本书与 Readest 书库…"
+
+#: dialogs.py:82
+msgid "Or sign in with your browser:"
+msgstr "或通过浏览器登录："
+
+#: dialogs.py:102
+msgid "Please enter both email and password."
+msgstr "请输入邮箱和密码。"
+
+#: dialogs.py:136
+msgid "Login failed: the browser callback carried no session."
+msgstr "登录失败：浏览器回调未携带会话信息。"
+
+#: dialogs.py:198
+msgid "Book"
+msgstr "书籍"
+
+#: dialogs.py:198
+msgid "Status"
+msgstr "状态"
+
+#: dialogs.py:198
+msgid "Details"
+msgstr "详情"
+
+#: dialogs.py:243
+msgid "Canceling…"
+msgstr "正在取消…"
+
+#: dialogs.py:121
+msgid "Browser login timed out. Try again."
+msgstr "浏览器登录超时，请重试。"
+
+#: dialogs.py:130 dialogs.py:109 dialogs.py:143
+msgid "Login failed: %s"
+msgstr "登录失败：%s"
+
+#: oauth.py:36 oauth.py:47
+msgid "Readest Login"
+msgstr "Readest 登录"
+
+#: oauth.py:37
+msgid "Completing login…"
+msgstr "正在完成登录…"
+
+#: oauth.py:48
+msgid "Login complete. You can close this tab and return to calibre."
+msgstr "登录完成，您可以关闭此标签页并返回 calibre。"
+
+#: ui.py:32 ui.py:135
+msgid "Readest"
+msgstr "Readest"
+
+#: ui.py:34
+msgid "Push selected books and metadata to your Readest library"
+msgstr "推送选中书籍及其元数据到 Readest 书库"
+
+#: ui.py:94
+msgid "Select the books to push to Readest."
+msgstr "请选择要推送到 Readest 的书籍。"
+
+#: ui.py:97
+msgid "Select the books to check against Readest."
+msgstr "请选择要与 Readest 核对的书籍。"
+
+#: ui.py:103
+msgid "No books selected"
+msgstr "未选中任何书籍"
+
+#: ui.py:40
+msgid "Push selected books to Readest"
+msgstr "推送选中书籍到 Readest"
+
+#: ui.py:46
+msgid "Check Readest status"
+msgstr "检查 Readest 状态"
+
+#: ui.py:52
+msgid "Log in to Readest…"
+msgstr "登录 Readest…"
+
+#: ui.py:57
+msgid "Log out"
+msgstr "退出登录"
+
+#: ui.py:62
+msgid "Customize plugin…"
+msgstr "自定义插件…"
+
+#: ui.py:85
+msgid "Log out (%s)"
+msgstr "退出登录（%s）"
+
+#: ui.py:136
+msgid "your Readest account"
+msgstr "您的 Readest 账户"
+
+#: worker.py:46
+msgid "Uploaded"
+msgstr "已上传"
+
+#: worker.py:47
+msgid "Replaced"
+msgstr "已替换"
+
+#: worker.py:48
+msgid "Updated"
+msgstr "已更新"
+
+#: worker.py:49
+msgid "Up to date"
+msgstr "已是最新"
+
+#: worker.py:50 worker.py:61
+msgid "Failed"
+msgstr "失败"
+
+#: worker.py:57
+msgid "In Readest"
+msgstr "已在 Readest"
+
+#: worker.py:58
+msgid "Metadata differs"
+msgstr "元数据有差异"
+
+#: worker.py:59
+msgid "Out of date"
+msgstr "已过期"
+
+#: worker.py:60
+msgid "Not in Readest"
+msgstr "不在 Readest"
+
+#: worker.py:210
+msgid "No Readest-supported format (EPUB, PDF, ...)"
+msgstr "没有 Readest 支持的格式（EPUB、PDF 等）"
+
+#: worker.py:213
+msgid "Book file is missing from the calibre library"
+msgstr "书籍文件在 calibre 书库中缺失"
+
+#: worker.py:277
+msgid "Nothing to push."
+msgstr "没有可推送的内容。"
+
+#: worker.py:406
+msgid "Nothing to check."
+msgstr "没有可核对的内容。"
+
+#: worker.py:158
+msgid "Please log in to Readest first. (%s)"
+msgstr "请先登录 Readest。（%s）"
+
+#: worker.py:160
+msgid "Could not reach Readest: %s"
+msgstr "无法连接 Readest：%s"
+
+#: worker.py:252 worker.py:390
+msgid "Canceled."
+msgstr "已取消。"
+
+#: worker.py:258
+msgid "Readest storage quota exceeded — push stopped."
+msgstr "Readest 存储配额已用尽——推送已停止。"
+
+#: worker.py:262
+msgid "Session expired — please log in again."
+msgstr "会话已过期——请重新登录。"
+
+#: api.py:243
+msgid "Login failed"
+msgstr "登录失败"
+
+#: api.py:254 api.py:272 api.py:286
+msgid "Not logged in"
+msgstr "尚未登录"
+
+#: api.py:263
+msgid "Session expired, please log in again"
+msgstr "会话已过期，请重新登录"
+
+#: api.py:312
+msgid "Not authenticated"
+msgstr "未通过身份验证"
+
+#: api.py:318
+msgid "Request failed (%s)"
+msgstr "请求失败（%s）"
+
+#: api.py:402
+msgid "Upload failed (%s)"
+msgstr "上传失败（%s）"
+
+#: worker.py:57
+msgid "%d uploaded"
+msgid_plural "%d uploaded"
+msgstr[0] "%d 本已上传"
+
+#: worker.py:58
+msgid "%d replaced"
+msgid_plural "%d replaced"
+msgstr[0] "%d 本已替换"
+
+#: worker.py:59
+msgid "%d updated"
+msgid_plural "%d updated"
+msgstr[0] "%d 本已更新"
+
+#: worker.py:60
+msgid "%d up to date"
+msgid_plural "%d up to date"
+msgstr[0] "%d 本已是最新"
+
+#: worker.py:61
+msgid "%d failed"
+msgid_plural "%d failed"
+msgstr[0] "%d 本失败"
+
+#: worker.py:76
+msgid "%d in Readest"
+msgid_plural "%d in Readest"
+msgstr[0] "%d 本已在 Readest"
+
+#: worker.py:77
+msgid "%d metadata differs"
+msgid_plural "%d metadata differs"
+msgstr[0] "%d 本元数据有差异"
+
+#: worker.py:78
+msgid "%d out of date"
+msgid_plural "%d out of date"
+msgstr[0] "%d 本已过期"
+
+#: worker.py:79
+msgid "%d not in Readest"
+msgid_plural "%d not in Readest"
+msgstr[0] "%d 本不在 Readest"

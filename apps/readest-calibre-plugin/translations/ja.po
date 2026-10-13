@@ -1,0 +1,336 @@
+# Japanese translation for the Readest calibre plugin.
+# Copyright (C) 2026 Bilingify LLC
+# This file is distributed under the same license as the Readest calibre plugin.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Readest calibre plugin\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-13 11:32+0000\n"
+"PO-Revision-Date: 2026-10-13 11:32+0000\n"
+"Last-Translator: Bilingify LLC\n"
+"Language-Team: Japanese\n"
+"Language: ja\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#: __init__.py:16
+msgid "Push selected books and their metadata into your Readest cloud library. Re-pushing a book updates its existing entry instead of creating a duplicate."
+msgstr "選択した書籍とそのメタデータを Readest クラウドライブラリにプッシュします。同じ書籍を再度プッシュすると、重複を作成せず既存のエントリを更新します。"
+
+#: config.py:36
+msgid "Not logged in."
+msgstr "ログインしていません。"
+
+#: config.py:42
+msgid "Include custom columns in pushed metadata"
+msgstr "プッシュするメタデータにカスタム列を含める"
+
+#: config.py:51
+msgid "Only change this if you run a self-hosted Readest server."
+msgstr "セルフホストの Readest サーバーを使用している場合のみ変更してください。"
+
+#: config.py:36 ui.py:136
+msgid "Logged in as %s."
+msgstr "%s としてログインしました。"
+
+#: config.py:47
+msgid "API server:"
+msgstr "API サーバー:"
+
+#: config.py:38
+msgid "Use the Readest toolbar menu to log in or out."
+msgstr "ログイン・ログアウトには Readest ツールバーメニューを使用してください。"
+
+#: dialogs.py:250
+msgid "Push to Readest"
+msgstr "Readest にプッシュ"
+
+#: dialogs.py:252
+msgid "Push to Readest failed"
+msgstr "Readest へのプッシュに失敗しました"
+
+#: dialogs.py:264
+msgid "Readest status"
+msgstr "Readest の状態"
+
+#: dialogs.py:266
+msgid "Readest status check failed"
+msgstr "Readest の状態確認に失敗しました"
+
+#: dialogs.py:66
+msgid "Log in to Readest"
+msgstr "Readest にログイン"
+
+#: dialogs.py:74
+msgid "Email:"
+msgstr "メールアドレス:"
+
+#: dialogs.py:75
+msgid "Password:"
+msgstr "パスワード:"
+
+#: dialogs.py:78
+msgid "Log in"
+msgstr "ログイン"
+
+#: dialogs.py:104
+msgid "Logging in…"
+msgstr "ログイン中…"
+
+#: dialogs.py:124
+msgid "Waiting for the browser login to complete…"
+msgstr "ブラウザログインの完了を待機しています…"
+
+#: dialogs.py:222
+msgid "Unknown"
+msgstr "不明"
+
+#: dialogs.py:255
+msgid "Pushing %d book to your Readest library…"
+msgid_plural "Pushing %d books to your Readest library…"
+msgstr[0] "%d 冊を Readest ライブラリにプッシュしています…"
+
+#: dialogs.py:269
+msgid "Checking %d book against your Readest library…"
+msgid_plural "Checking %d books against your Readest library…"
+msgstr[0] "%d 冊を Readest ライブラリと照合しています…"
+
+#: dialogs.py:82
+msgid "Or sign in with your browser:"
+msgstr "またはブラウザでログイン:"
+
+#: dialogs.py:102
+msgid "Please enter both email and password."
+msgstr "メールアドレスとパスワードの両方を入力してください。"
+
+#: dialogs.py:136
+msgid "Login failed: the browser callback carried no session."
+msgstr "ログイン失敗: ブラウザのコールバックにセッションが含まれていません。"
+
+#: dialogs.py:198
+msgid "Book"
+msgstr "書籍"
+
+#: dialogs.py:198
+msgid "Status"
+msgstr "状態"
+
+#: dialogs.py:198
+msgid "Details"
+msgstr "詳細"
+
+#: dialogs.py:243
+msgid "Canceling…"
+msgstr "キャンセル中…"
+
+#: dialogs.py:121
+msgid "Browser login timed out. Try again."
+msgstr "ブラウザログインがタイムアウトしました。もう一度お試しください。"
+
+#: dialogs.py:130 dialogs.py:109 dialogs.py:143
+msgid "Login failed: %s"
+msgstr "ログイン失敗: %s"
+
+#: oauth.py:36 oauth.py:47
+msgid "Readest Login"
+msgstr "Readest ログイン"
+
+#: oauth.py:37
+msgid "Completing login…"
+msgstr "ログインを完了しています…"
+
+#: oauth.py:48
+msgid "Login complete. You can close this tab and return to calibre."
+msgstr "ログインが完了しました。このタブを閉じて calibre に戻ってください。"
+
+#: ui.py:32 ui.py:135
+msgid "Readest"
+msgstr "Readest"
+
+#: ui.py:34
+msgid "Push selected books and metadata to your Readest library"
+msgstr "選択した書籍とメタデータを Readest ライブラリにプッシュ"
+
+#: ui.py:94
+msgid "Select the books to push to Readest."
+msgstr "Readest にプッシュする書籍を選択してください。"
+
+#: ui.py:97
+msgid "Select the books to check against Readest."
+msgstr "Readest と照合する書籍を選択してください。"
+
+#: ui.py:103
+msgid "No books selected"
+msgstr "書籍が選択されていません"
+
+#: ui.py:40
+msgid "Push selected books to Readest"
+msgstr "選択した書籍を Readest にプッシュ"
+
+#: ui.py:46
+msgid "Check Readest status"
+msgstr "Readest の状態を確認"
+
+#: ui.py:52
+msgid "Log in to Readest…"
+msgstr "Readest にログイン…"
+
+#: ui.py:57
+msgid "Log out"
+msgstr "ログアウト"
+
+#: ui.py:62
+msgid "Customize plugin…"
+msgstr "プラグインをカスタマイズ…"
+
+#: ui.py:85
+msgid "Log out (%s)"
+msgstr "ログアウト（%s）"
+
+#: ui.py:136
+msgid "your Readest account"
+msgstr "Readest アカウント"
+
+#: worker.py:46
+msgid "Uploaded"
+msgstr "アップロード済み"
+
+#: worker.py:47
+msgid "Replaced"
+msgstr "置き換え済み"
+
+#: worker.py:48
+msgid "Updated"
+msgstr "更新済み"
+
+#: worker.py:49
+msgid "Up to date"
+msgstr "最新"
+
+#: worker.py:50 worker.py:61
+msgid "Failed"
+msgstr "失敗"
+
+#: worker.py:57
+msgid "In Readest"
+msgstr "Readest 内にあり"
+
+#: worker.py:58
+msgid "Metadata differs"
+msgstr "メタデータが異なる"
+
+#: worker.py:59
+msgid "Out of date"
+msgstr "古い"
+
+#: worker.py:60
+msgid "Not in Readest"
+msgstr "Readest 内になし"
+
+#: worker.py:210
+msgid "No Readest-supported format (EPUB, PDF, ...)"
+msgstr "Readest 対応フォーマット（EPUB、PDF など）がありません"
+
+#: worker.py:213
+msgid "Book file is missing from the calibre library"
+msgstr "書籍ファイルが calibre ライブラリにありません"
+
+#: worker.py:277
+msgid "Nothing to push."
+msgstr "プッシュするものがありません。"
+
+#: worker.py:406
+msgid "Nothing to check."
+msgstr "照合するものがありません。"
+
+#: worker.py:158
+msgid "Please log in to Readest first. (%s)"
+msgstr "まず Readest にログインしてください。(%s)"
+
+#: worker.py:160
+msgid "Could not reach Readest: %s"
+msgstr "Readest に接続できません: %s"
+
+#: worker.py:252 worker.py:390
+msgid "Canceled."
+msgstr "キャンセルしました。"
+
+#: worker.py:258
+msgid "Readest storage quota exceeded — push stopped."
+msgstr "Readest のストレージ容量を超過しました—プッシュを停止します。"
+
+#: worker.py:262
+msgid "Session expired — please log in again."
+msgstr "セッションの有効期限が切れました—再度ログインしてください。"
+
+#: api.py:243
+msgid "Login failed"
+msgstr "ログイン失敗"
+
+#: api.py:254 api.py:272 api.py:286
+msgid "Not logged in"
+msgstr "ログインしていません"
+
+#: api.py:263
+msgid "Session expired, please log in again"
+msgstr "セッションの有効期限が切れました。再度ログインしてください"
+
+#: api.py:312
+msgid "Not authenticated"
+msgstr "認証されていません"
+
+#: api.py:318
+msgid "Request failed (%s)"
+msgstr "リクエスト失敗 (%s)"
+
+#: api.py:402
+msgid "Upload failed (%s)"
+msgstr "アップロード失敗 (%s)"
+
+#: worker.py:57
+msgid "%d uploaded"
+msgid_plural "%d uploaded"
+msgstr[0] "アップロード済み %d 冊"
+
+#: worker.py:58
+msgid "%d replaced"
+msgid_plural "%d replaced"
+msgstr[0] "置き換え済み %d 冊"
+
+#: worker.py:59
+msgid "%d updated"
+msgid_plural "%d updated"
+msgstr[0] "更新済み %d 冊"
+
+#: worker.py:60
+msgid "%d up to date"
+msgid_plural "%d up to date"
+msgstr[0] "最新 %d 冊"
+
+#: worker.py:61
+msgid "%d failed"
+msgid_plural "%d failed"
+msgstr[0] "失敗 %d 冊"
+
+#: worker.py:76
+msgid "%d in Readest"
+msgid_plural "%d in Readest"
+msgstr[0] "Readest 内にあり %d 冊"
+
+#: worker.py:77
+msgid "%d metadata differs"
+msgid_plural "%d metadata differs"
+msgstr[0] "メタデータが異なる %d 冊"
+
+#: worker.py:78
+msgid "%d out of date"
+msgid_plural "%d out of date"
+msgstr[0] "古い %d 冊"
+
+#: worker.py:79
+msgid "%d not in Readest"
+msgid_plural "%d not in Readest"
+msgstr[0] "Readest 内になし %d 冊"

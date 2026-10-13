@@ -93,6 +93,37 @@ dependencies and are covered by unit tests:
 make test    # python3 -m unittest discover -s tests
 ```
 
+### Translations
+
+The plugin UI is localized with gettext: user-visible strings in the source
+are wrapped in `_()` (singular) or `ngettext(singular, plural, n)` (plural),
+and each module that uses them calls `load_translations()` at the top — that
+is the hook calibre provides for plugins. calibre then picks the language
+from *Preferences → Interface → Look & feel → Language* (or the
+`CALIBRE_OVERRIDE_LANG` environment variable) and loads
+`translations/<lang>.mo` from the plugin zip, falling back from e.g. `de_DE`
+to `de`. English is the source language, so there is no `en` catalog.
+
+Translations live in `translations/` as standard `.po` files (`readest.pot`
+is the template); the compiled `.mo` files are committed alongside them so
+`make zip` needs nothing but `zip`. After changing strings in the source:
+
+```sh
+make pot    # refresh translations/readest.pot from the source
+# edit translations/*.po (or: python3 scripts/i18n.py new LANG for a new one)
+make mo     # validate and compile every .po to its .mo
+make test
+```
+
+`translations/` holds catalogs for German, Spanish, French, Italian, Japanese,
+Korean, Polish, Portuguese (Portugal and Brazil), Russian, and Chinese
+(Simplified, Traditional, and Hong Kong); other languages show the English
+text. To try one without changing calibre's UI language:
+
+```sh
+CALIBRE_OVERRIDE_LANG=ja calibre
+```
+
 The wire protocol mirrors what the Readest apps and `readest.koplugin` use:
 Supabase auth (`/auth/v1`), `GET/POST /api/sync` for library rows, and
 `POST /api/storage/upload` + presigned PUT for file blobs.
