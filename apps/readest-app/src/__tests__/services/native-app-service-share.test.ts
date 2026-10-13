@@ -184,6 +184,18 @@ describe('NativeAppService.saveFile share gating', () => {
     expect(shareFileMock.mock.calls[0]![0]).toBe('file:///tmp/shared/%E4%B8%89%E4%BD%93%20(1).md');
   });
 
+  // An iOS "Open with" book keeps its decoded `file://` URI as its file path.
+  test('does not re-wrap a file URI on iOS', async () => {
+    const service = await loadServiceWithOS('ios');
+    await service.saveFile('My Book.epub', null, {
+      share: true,
+      filePath: 'file:///private/var/Inbox/My Book.epub',
+    });
+
+    expect(shareFileMock.mock.calls[0]![0]).toBe('file:///private/var/Inbox/My%20Book.epub');
+    expect(removeMock).toHaveBeenCalledWith('/tmp/My Book.epub');
+  });
+
   // The iOS plugin copies the file to `<tmp>/<name>` and silently keeps an
   // existing copy, so a second export of the same book shared the first one.
   test('clears the plugin copy of a previous share on iOS', async () => {

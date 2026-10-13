@@ -921,6 +921,8 @@ export class NativeAppService extends BaseAppService {
           }
         }
         if (this.isIOSApp) {
+          // An "Open with" book keeps its already-decoded `file://` URI as its path.
+          shareablePath = shareablePath.replace(/^file:\/\//, '');
           // The iOS plugin copies the file to `<tmp>/<name>` and keeps any copy
           // already there, which would share a previous export of the same name.
           const pluginCopy = await this.resolveFilePath(getFilename(shareablePath), 'Temp');
