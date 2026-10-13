@@ -78,6 +78,7 @@ const NotebookTabNavigation: React.FC<NotebookTabNavigationProps> = ({
     }
     if (nextIndex === null) return;
     event.preventDefault();
+    event.stopPropagation();
     onTabChange(tabs[nextIndex]!);
     event.currentTarget.parentElement
       ?.querySelectorAll<HTMLButtonElement>('button')

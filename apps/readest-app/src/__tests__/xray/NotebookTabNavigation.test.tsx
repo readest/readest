@@ -50,8 +50,12 @@ describe('NotebookTabNavigation', () => {
     expect(screen.getByRole('tab', { name: 'AI' }).tabIndex).toBe(-1);
 
     notes.focus();
+    const readerKeyDown = vi.fn();
+    window.addEventListener('keydown', readerKeyDown);
     fireEvent.keyDown(notes, { key: 'ArrowRight' });
+    window.removeEventListener('keydown', readerKeyDown);
 
+    expect(readerKeyDown).not.toHaveBeenCalled();
     expect(onTabChange).toHaveBeenCalledWith('ai');
     await waitFor(() =>
       expect(document.activeElement).toBe(screen.getByRole('tab', { name: 'AI' })),
