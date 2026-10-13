@@ -1305,7 +1305,9 @@ class NativeTTSPlugin: Plugin, AVSpeechSynthesizerDelegate {
           session: self.playoutSession,
           index: self.playoutCurrentIndex,
           positionMs: seconds.isFinite ? seconds * 1000.0 : 0,
-          playing: (self.playoutPlayer?.rate ?? 0) != 0
+          // Not `rate != 0`: the rate is set while a new item is still
+          // opening, and a clock run from there gets ahead of the audio.
+          playing: self.playoutPlayer?.timeControlStatus == .playing
         ))
     }
   }

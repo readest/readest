@@ -75,6 +75,31 @@ describe('NativeAudioPlayer', () => {
     await player.shutdown();
   });
 
+  test('holds the clock at a chunk start until the native player reports it playing', async () => {
+    // AVPlayer can take a few hundred ms to open the next item. A clock run
+    // ahead from the event lights the second word, then the next poll pulls it
+    // back to the first.
+    let now = 1000;
+    vi.spyOn(performance, 'now').mockImplementation(() => now);
+    const position = { session: 7, index: 0, positionMs: 0, playing: false };
+    vi.mocked(invoke).mockImplementation(async (cmd: string) => {
+      if (cmd === 'plugin:native-tts|playout_control') return { session: 7 } as unknown;
+      if (cmd === 'plugin:native-tts|playout_position') return position as unknown;
+      return undefined as unknown;
+    });
+    const events: WebAudioPlayerEvent[] = [];
+    const { player, generation } = await startedPlayer(events);
+    vi.mocked(invoke).mockClear();
+
+    playoutEvents!({ type: 'chunk-start', session: 7, index: 0 });
+    expect(invoke).toHaveBeenCalledWith('plugin:native-tts|playout_position');
+    await Promise.resolve();
+    now += 400;
+    expect(player.getPlaybackPosition(generation)).toEqual({ chunkIndex: 0, mediaTimeSec: 0 });
+    await player.shutdown();
+    vi.mocked(performance.now).mockRestore();
+  });
+
   test('events from a stale native session are ignored', async () => {
     const events: WebAudioPlayerEvent[] = [];
     const { player, generation } = await startedPlayer(events);

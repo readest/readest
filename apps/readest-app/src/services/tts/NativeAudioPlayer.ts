@@ -219,12 +219,11 @@ export class NativeAudioPlayer implements TTSAudioPlayer {
     }
     if (event.type === 'chunk-start' && typeof event.index === 'number') {
       session.currentIndex = event.index;
-      this.#cache = {
-        index: event.index,
-        mediaSec: 0,
-        playing: !this.#userPaused,
-        at: performance.now(),
-      };
+      // The event fires as the item is handed to AVPlayer, which may take a few
+      // hundred ms to open it. Hold the clock until a poll sees it playing:
+      // extrapolating from here would light a word early, then step back.
+      this.#cache = { index: event.index, mediaSec: 0, playing: false, at: performance.now() };
+      void this.#poll();
       if (session.scheduled - (session.currentIndex + 1) < MAX_PENDING) {
         const waiters = session.waiters;
         session.waiters = [];
