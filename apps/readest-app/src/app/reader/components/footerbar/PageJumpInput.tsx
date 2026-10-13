@@ -35,7 +35,7 @@ const PageJumpInput: React.FC<PageJumpInputProps> = ({ bookKey, showFraction, cl
   const [draft, setDraft] = useState('');
   const [selectLength, setSelectLength] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
-  const lastPageInfoRef = useRef<PageInfo | null>(null);
+  const [lastPageInfo, setLastPageInfo] = useState<PageInfo | null>(null);
 
   useEffect(() => {
     if (!editing) return;
@@ -57,14 +57,18 @@ const PageJumpInput: React.FC<PageJumpInputProps> = ({ bookKey, showFraction, cl
 
   const { section, pageinfo } = progress || {};
   const livePageInfo = bookData?.isFixedLayout ? section : pageinfo;
-  if (livePageInfo && livePageInfo.total > 0 && livePageInfo.current >= 0) {
-    lastPageInfoRef.current = livePageInfo;
-  }
+  const liveValid = !!livePageInfo && livePageInfo.total > 0 && livePageInfo.current >= 0;
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (liveValid) setLastPageInfo(livePageInfo);
+  }, [liveValid, livePageInfo]);
+
   // Keep showing the last valid page while a relocation briefly reports an
   // invalid one: unmounting the label widens the progress slider under a
   // dragging cursor, which jumps somewhere else and brings the label back,
   // looping into a jitter (#6646).
-  const pageInfo = lastPageInfoRef.current;
+  const pageInfo = liveValid ? livePageInfo : lastPageInfo;
   if (!pageInfo) return null;
 
   const progressFraction = (pageInfo.current + 1) / pageInfo.total;
