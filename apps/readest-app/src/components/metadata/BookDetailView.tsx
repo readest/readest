@@ -29,6 +29,7 @@ import {
   formatPublisher,
   formatTitle,
   getContributorNames,
+  getSeriesIndex,
 } from '@/utils/book';
 import { isFeedBook } from '@/services/rss/feedBookUrl';
 import { saveSysSettings } from '@/helpers/settings';
@@ -442,7 +443,7 @@ const BookDetailView: React.FC<BookDetailViewProps> = ({
                 <div className='overflow-hidden pe-1 text-end'>
                   <span className='font-bold'>{_('Series Index')}</span>
                   <p className='text-neutral-content text-sm'>
-                    {metadata?.seriesIndex || _('Unknown')}
+                    {getSeriesIndex(metadata?.seriesIndex) ?? _('Unknown')}
                   </p>
                 </div>
               </div>

@@ -23,6 +23,7 @@ import {
   getPrimaryLanguage,
   getMetadataHash,
   getStableMetadataHash,
+  parseSeriesPosition,
 } from '@/utils/book';
 import type { BookNav } from '@/services/nav';
 import { partialMD5, md5 } from '@/utils/md5';
@@ -744,7 +745,7 @@ export async function importBook(
       const series = Array.isArray(belongsTo) ? belongsTo[0] : belongsTo;
       if (series) {
         book.metadata.series = formatTitle(series.name);
-        book.metadata.seriesIndex = parseFloat(series.position || '0');
+        book.metadata.seriesIndex = parseSeriesPosition(series.position);
         if (series.total) book.metadata.seriesTotal = parseInt(series.total, 10);
       }
     }
@@ -1225,7 +1226,7 @@ export async function refreshBookMetadata(fs: FileSystem, book: Book): Promise<b
       const series = Array.isArray(belongsTo) ? belongsTo[0] : belongsTo;
       if (series) {
         book.metadata.series = formatTitle(series.name);
-        book.metadata.seriesIndex = parseFloat(series.position || '0');
+        book.metadata.seriesIndex = parseSeriesPosition(series.position);
         if (series.total) book.metadata.seriesTotal = parseInt(series.total, 10);
       }
     }

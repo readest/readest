@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
-import { formatSeries, getBookDataAttributes, markBookDeleted } from '@/utils/book';
+import {
+  formatSeries,
+  getBookDataAttributes,
+  markBookDeleted,
+  parseSeriesPosition,
+} from '@/utils/book';
 import type { Book } from '@/types/book';
 
 describe('formatSeries', () => {
@@ -19,8 +24,9 @@ describe('formatSeries', () => {
     expect(formatSeries('  The Expanse  ')).toBe('The Expanse');
   });
 
-  it('appends the series number when a positive index is present', () => {
+  it('appends the series number when an index is present', () => {
     expect(formatSeries('Harry Potter', 3)).toBe('Harry Potter #3');
+    expect(formatSeries('Star Wars', 0)).toBe('Star Wars #0');
     expect(formatSeries('  The Expanse  ', 2)).toBe('The Expanse #2');
   });
 
@@ -28,8 +34,8 @@ describe('formatSeries', () => {
     expect(formatSeries('The Expanse', 1.5)).toBe('The Expanse #1.5');
   });
 
-  it('omits the number when the index is zero or not a finite number', () => {
-    expect(formatSeries('Harry Potter', 0)).toBe('Harry Potter');
+  it('omits the number when the index is negative or not a finite number', () => {
+    expect(formatSeries('Harry Potter', -1)).toBe('Harry Potter');
     expect(formatSeries('Harry Potter', Number.NaN)).toBe('Harry Potter');
   });
 
@@ -38,6 +44,21 @@ describe('formatSeries', () => {
     // devices; the badge must not drop the index for those books.
     expect(formatSeries('Harry Potter', '2' as unknown as number)).toBe('Harry Potter #2');
     expect(formatSeries('Harry Potter', 'abc' as unknown as number)).toBe('Harry Potter');
+  });
+});
+
+describe('parseSeriesPosition', () => {
+  it('parses a numeric position, including zero', () => {
+    expect(parseSeriesPosition('2')).toBe(2);
+    expect(parseSeriesPosition('1.5')).toBe(1.5);
+    expect(parseSeriesPosition('0')).toBe(0);
+    expect(parseSeriesPosition(0)).toBe(0);
+  });
+
+  it('returns undefined for a missing or unparsable position', () => {
+    expect(parseSeriesPosition(undefined)).toBeUndefined();
+    expect(parseSeriesPosition('')).toBeUndefined();
+    expect(parseSeriesPosition(Number.NaN)).toBeUndefined();
   });
 });
 
@@ -72,13 +93,14 @@ describe('getBookDataAttributes (#5776)', () => {
     ).toBe(1.5);
   });
 
-  it('omits the index when it is missing, zero (the unknown-position default) or not finite', () => {
-    // readerStore fills a missing calibre:series_index with parseFloat('0'),
-    // so 0 means "no position", matching formatSeries.
-    expect(getBookDataAttributes('T', { series: 'S' })['data-book-series-index']).toBeUndefined();
+  it('keeps a zero index (a prequel numbered #0)', () => {
     expect(
       getBookDataAttributes('T', { series: 'S', seriesIndex: 0 })['data-book-series-index'],
-    ).toBeUndefined();
+    ).toBe(0);
+  });
+
+  it('omits the index when it is missing or not finite', () => {
+    expect(getBookDataAttributes('T', { series: 'S' })['data-book-series-index']).toBeUndefined();
     expect(
       getBookDataAttributes('T', { series: 'S', seriesIndex: Number.NaN })[
         'data-book-series-index'

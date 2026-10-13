@@ -177,15 +177,19 @@ export const formatDescription = (description?: string | LanguageMap) => {
 };
 
 /**
- * The series position, or undefined when the book has none. Tolerates the two
- * shapes found in real libraries: readerStore/bookService default a missing
- * calibre:series_index to 0 (so 0 means "no position"), and indices edited
- * before the metadata form coerced numbers were persisted (and synced) as
- * strings like "2".
+ * The series position, or undefined when the book has none. 0 is a real
+ * position (a prequel numbered #0). Tolerates indices edited before the
+ * metadata form coerced numbers, persisted (and synced) as strings like "2".
  */
 export const getSeriesIndex = (seriesIndex?: number | string): number | undefined => {
   const index = typeof seriesIndex === 'string' ? parseFloat(seriesIndex) : seriesIndex;
-  return typeof index === 'number' && Number.isFinite(index) && index > 0 ? index : undefined;
+  return typeof index === 'number' && Number.isFinite(index) && index >= 0 ? index : undefined;
+};
+
+/** A parsed `belongsTo` series position; undefined (not 0) when the book has none. */
+export const parseSeriesPosition = (position?: string | number): number | undefined => {
+  const index = parseFloat(String(position ?? ''));
+  return Number.isFinite(index) ? index : undefined;
 };
 
 export const formatSeries = (series?: string, seriesIndex?: number) => {
