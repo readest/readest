@@ -217,6 +217,7 @@
     "allow-upload-file",
     "allow-get-environment-variable",
     "allow-get-executable-dir",
+    "allow-reveal-item-in-dir",
     "allow-set-webview-info",
     "allow-get-webview-version",
     "allow-is-updater-disabled",

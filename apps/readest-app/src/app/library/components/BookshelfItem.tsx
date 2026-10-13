@@ -6,7 +6,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useLongPress } from '@/hooks/useLongPress';
 import { Menu, MenuItem } from '@tauri-apps/api/menu';
 import { LogicalPosition } from '@tauri-apps/api/dpi';
-import { revealItemInDir } from '@tauri-apps/plugin-opener';
+import { invoke } from '@tauri-apps/api/core';
 import { eventDispatcher } from '@/utils/event';
 import { openExternalUrl } from '@/utils/open';
 import { getBookGoodreadsQuery, getGoodreadsSearchUrl } from '@/utils/goodreads';
@@ -220,7 +220,7 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
         text: _(fileRevealLabel),
         action: async () => {
           const folder = `${settings.localBooksDir}/${book.hash}`;
-          revealItemInDir(folder);
+          invoke('reveal_item_in_dir', { path: folder });
         },
       },
       searchGoodreads: {
