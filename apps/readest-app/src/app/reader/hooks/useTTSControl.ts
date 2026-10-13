@@ -306,7 +306,10 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
     const tryAdopt = async (): Promise<boolean> => {
       if (cancelled || isStartingTTSRef.current) return false;
       const view = getView(bookKey);
-      if (!view) return false;
+      // A remount under the same key (back from another route) still holds the
+      // previous, detached view until the new one opens: highlights drawn
+      // there never show.
+      if (!view?.isConnected) return false;
       isStartingTTSRef.current = true;
       try {
         const controller = sessionController;

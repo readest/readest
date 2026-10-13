@@ -53,6 +53,8 @@ const TTSLyricsView = ({
   const centersRef = useRef<number[]>([]);
   const heightsRef = useRef<number[]>([]);
   const seekingRef = useRef(false);
+  // Whether the view has parked on the spoken line since it opened.
+  const followedRef = useRef(false);
   const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [seekIndex, setSeekIndex] = useState<number | null>(null);
@@ -111,7 +113,8 @@ const TTSLyricsView = ({
   useEffect(() => {
     if (seekIndex !== null || pending !== null) return;
     const el = scrollerRef.current;
-    if (!el || activeIndex < 0) return;
+    // The spoken index can arrive before the chapter's lines load.
+    if (!el || activeIndex < 0 || activeIndex >= lines.length) return;
     // Nothing to aim at until the lines have been measured: scrolling on the
     // pre-measure pass would just land at zero.
     if (centersRef.current.length !== lines.length) return;
@@ -122,15 +125,18 @@ const TTSLyricsView = ({
       el.clientHeight,
     );
     // Glide between neighbouring sentences the way a music player does, but
-    // land a long move outright: opening onto the middle of a chapter, or
-    // jumping chapters, is thousands of pixels, and animating that is a blur
-    // past text nobody is reading. E-ink cannot animate at all — a smooth
+    // land the first move and any long one outright: opening the player, or
+    // jumping chapters, should show the spoken line at once, not a scroll
+    // through text nobody is reading. E-ink cannot animate at all — a smooth
     // scroll there is a stutter of full refreshes.
+    const opening = !followedRef.current;
+    followedRef.current = true;
     const distance = Math.abs(top - el.scrollTop);
     // Already parked there — re-issuing the scroll would only re-arm an
     // animation over nothing.
     if (distance < 1) return;
-    el.scrollTo?.({ top, behavior: distance > el.clientHeight * 2 || isEink ? 'auto' : 'smooth' });
+    const instant = opening || distance > el.clientHeight * 2 || isEink;
+    el.scrollTo?.({ top, behavior: instant ? 'auto' : 'smooth' });
   }, [activeIndex, seekIndex, pending, isEink, geometry, halfHeight, lines]);
 
   const clearIdleTimer = () => {
