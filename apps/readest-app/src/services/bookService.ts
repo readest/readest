@@ -371,7 +371,9 @@ const migratePairedAudiobook = async (
 };
 
 /**
- * Merge duplicate book entries that share the same metaHash and format as `book`.
+ * Merge duplicate book entries that share the same metaHash and format as `book`,
+ * or its stable hash when given (a calibre/pandoc build re-mints its uuid, so
+ * two versions of one book differ in metaHash; issue #5959).
  * Finds all other matching books in the array, selects the base config with the
  * largest reading progress page number, merges booknotes from all configs
  * (deduplicating by id, latest updatedAt wins), and returns the duplicates for
@@ -386,16 +388,23 @@ export async function mergeBooks(
   books: Book[],
   book: Book,
   lookupIndex?: BookLookupIndex,
+  stableHash?: string,
 ): Promise<BookMergeResult | undefined> {
   if (!book.metaHash) return undefined;
 
   const metaKey = `${book.metaHash}:${book.format}`;
-  const duplicates = lookupIndex
-    ? (lookupIndex.byMetaKey.get(metaKey) ?? []).filter((b) => !b.deletedAt && b !== book)
+  const stableKey = stableHash ? `${stableHash}:${book.format}` : undefined;
+  const candidates = lookupIndex
+    ? [
+        ...(lookupIndex.byMetaKey.get(metaKey) ?? []),
+        ...((stableKey && lookupIndex.byStableKey.get(stableKey)) || []),
+      ]
     : books.filter(
         (b) =>
-          b.metaHash === book.metaHash && b.format === book.format && !b.deletedAt && b !== book,
+          b.format === book.format &&
+          (b.metaHash === book.metaHash || (!!stableHash && getStableBookHash(b) === stableHash)),
       );
+  const duplicates = [...new Set(candidates)].filter((b) => !b.deletedAt && b !== book);
   if (duplicates.length === 0) return undefined;
 
   const allCandidates = [book, ...duplicates];
@@ -641,12 +650,8 @@ export async function importBook(
       : books.find((b) => b.hash === hash);
     let metaHashMatch = false;
     let oldBookDir: string | undefined;
-    // The hash hit a tombstone row: this import un-deletes a retired version,
-    // which must coexist with the live row instead of deduping against it.
-    let resurrectedFromTombstone = false;
     if (existingBook) {
       rememberBookState(existingBook);
-      resurrectedFromTombstone = !!existingBook.deletedAt;
       if (!transient) {
         existingBook.deletedAt = null;
         existingBook.fileSyncDeletionRequestedAt = null;
@@ -685,12 +690,10 @@ export async function importBook(
           existingBook.updatedAt = Date.now();
         }
       }
-      // A resurrected row skips aggregation: with an unchanged metaHash the
-      // live row shares its identity, and mergeBooks would retire that newer
-      // version as a "duplicate" — restoring a retired version must coexist
-      // with it, not replace it.
-      if (existingBook && !resurrectedFromTombstone) {
-        mergeResult = await mergeBooks(fs, books, existingBook, lookupIndex);
+      // One book, last import wins: re-importing a retired version un-deletes
+      // its row above, and the live version is merged into it here.
+      if (existingBook) {
+        mergeResult = await mergeBooks(fs, books, existingBook, lookupIndex, stableHash);
         bestConfigData = mergeResult?.configData;
       }
     }
@@ -846,6 +849,9 @@ export async function importBook(
       const config: Partial<BookConfig> = JSON.parse(configData);
       config.bookHash = hash;
       config.metaHash = metaHash;
+      // The notes now belong to a new hash: push them all again, or peers that
+      // match by the new hash/metaHash never receive the older ones.
+      config.lastSyncedAtNotes = 0;
       if (config.audiobook && audiobookSourceHash) {
         config.audiobook = await migratePairedAudiobook(
           fs,
@@ -934,7 +940,7 @@ export async function importBook(
       books.push(retiredTombstone);
       // Resolve the retired hash to the tombstone for the rest of the session
       // (library/page.tsx reuses one index across a batch): a later import of
-      // that hash must resurrect the tombstone, not refresh the re-keyed row.
+      // that hash must un-delete the tombstone and merge the re-keyed row in.
       if (lookupIndex) {
         lookupIndex.byHash.set(retiredTombstone.hash, retiredTombstone);
       }
@@ -945,7 +951,8 @@ export async function importBook(
     // pointing at files that were just deleted.
     const cleanupDirectories = new Set<string>();
     for (const duplicate of mergeResult?.duplicates ?? []) {
-      duplicate.deletedAt = Date.now();
+      // Stamp updatedAt too, or the retirement loses row-level LWW at peers.
+      duplicate.deletedAt = duplicate.updatedAt = Date.now();
       cleanupDirectories.add(getDir(duplicate));
     }
     if (metaHashMatch && oldBookDir && oldBookDir !== getDir(book)) {
