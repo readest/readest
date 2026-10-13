@@ -8,6 +8,7 @@ import {
   useState,
   type Ref,
 } from 'react';
+import { createPortal } from 'react-dom';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   DndContext,
@@ -21,6 +22,9 @@ import { SortableContext, arrayMove, rectSortingStrategy, useSortable } from '@d
 import { CSS } from '@dnd-kit/utilities';
 import {
   MdAdd,
+  MdArrowBackIosNew,
+  MdArrowForwardIos,
+  MdClose,
   MdCollectionsBookmark,
   MdEdit,
   MdHistory,
@@ -44,6 +48,7 @@ import { useBookshelfDate } from '@/hooks/useBookshelfDate';
 import { useEnsureSettingsLoaded } from '@/hooks/useEnsureSettingsLoaded';
 import { useEnv } from '@/context/EnvContext';
 import { eventDispatcher } from '@/utils/event';
+import { getDirFromUILanguage } from '@/utils/rtl';
 import { getGlobalBookshelfSort, resolveBookshelfSort } from '@/services/bookshelves/sorting';
 import { resolveBookshelfGroupBy } from '@/services/bookshelves/grouping';
 import { ensureLibraryGroupByType } from '../utils/libraryUtils';
@@ -233,7 +238,14 @@ const clearWidgetRequestParams = (
 export interface BookshelvesEditorHandle {
   flush: () => Promise<boolean>;
 }
-export function BookshelvesEditor({ ref }: { ref?: Ref<BookshelvesEditorHandle> }) {
+export function BookshelvesEditor({
+  ref,
+  tabsSlot,
+}: {
+  ref?: Ref<BookshelvesEditorHandle>;
+  // The dialog header, where the shelf tabs stand in for a title.
+  tabsSlot?: HTMLElement | null;
+}) {
   const _ = useTranslation();
   const { envConfig } = useEnv();
   const router = useRouter();
@@ -530,104 +542,104 @@ export function BookshelvesEditor({ ref }: { ref?: Ref<BookshelvesEditorHandle> 
     ),
     [],
   );
+  const tabs = (
+    <div
+      ref={tabsRef}
+      className='group/bookshelf-tabs bg-base-100 z-20 flex min-w-0 shrink-0 flex-wrap items-center justify-center gap-2 py-2'
+      role='group'
+      aria-label={_('Bookshelves')}
+    >
+      <div aria-hidden className='hidden min-w-16 flex-1 sm:block' />
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        accessibility={{
+          announcements: {
+            onDragStart: ({ active }) => _('Picked up {{name}}.', { name: tabName(active.id) }),
+            onDragOver: ({ active, over }) =>
+              over
+                ? _('{{name}}: position {{position}}.', {
+                    name: tabName(active.id),
+                    position: draft.findIndex((s) => s.id === over.id) + 1,
+                  })
+                : undefined,
+            onDragEnd: ({ active }) => _('Dropped {{name}}.', { name: tabName(active.id) }),
+            onDragCancel: () => _('Reordering cancelled.'),
+          },
+          screenReaderInstructions: {
+            draggable: _(
+              'Drag to reorder, or use Alt + Left or Right arrow keys. Press F2 to rename.',
+            ),
+          },
+        }}
+        onDragEnd={({ active, over }) => {
+          if (over && active.id !== over.id)
+            move(
+              String(active.id),
+              draft.findIndex((s) => s.id === over.id),
+            );
+        }}
+      >
+        <SortableContext items={draft.map((s) => s.id)} strategy={rectSortingStrategy}>
+          {draft.map((s, index) => (
+            <BookshelfTab
+              key={s.id}
+              shelf={s}
+              selected={s.id === selectedId}
+              onSelect={() => setSelectedId(s.id)}
+              onMove={(direction) => move(s.id, index + direction)}
+              onRename={(name) =>
+                setDraft((shelves) =>
+                  shelves.map((current) => (current.id === s.id ? { ...current, name } : current)),
+                )
+              }
+            />
+          ))}
+        </SortableContext>
+      </DndContext>
+      <button
+        type='button'
+        data-bookshelf-control
+        aria-label={_('Add bookshelf')}
+        title={_('Add bookshelf')}
+        className='btn btn-ghost eink-bordered border-base-200 h-11 min-h-11 w-11 shrink-0 rounded-full border px-0 focus-visible:ring-2 focus-visible:ring-base-content/15'
+        onClick={() => {
+          let number = 1;
+          while (draft.some((s) => s.name === _('New bookshelf {{number}}', { number }))) number++;
+          const shelf = createBookshelf(_('New bookshelf {{number}}', { number }));
+          const index = draft.findIndex((s) => s.id === RECENT_BOOKSHELF_ID) + 1;
+          setDraft([...draft.slice(0, index), shelf, ...draft.slice(index)]);
+          setSelectedId(shelf.id);
+        }}
+      >
+        <MdAdd aria-hidden className='h-5 w-5' />
+      </button>
+      <div
+        ref={statusRef}
+        className='flex min-h-5 min-w-16 flex-1 basis-full items-center justify-end gap-2 text-end text-sm sm:basis-0'
+      >
+        <p
+          role={error || validation ? 'alert' : 'status'}
+          aria-label={_('Bookshelf status')}
+          className={error || validation ? 'text-error' : 'text-base-content/65'}
+        >
+          {error || validation || (saving ? _('Saving...') : savedNotice ? _('Saved') : '')}
+        </p>
+        {error && (
+          <button
+            type='button'
+            className='btn btn-ghost eink-bordered h-11 min-h-11'
+            onClick={() => void flush()}
+          >
+            {_('Retry')}
+          </button>
+        )}
+      </div>
+    </div>
+  );
   return (
     <fieldset className='flex h-full min-h-0 min-w-0 flex-col gap-4'>
-      <div
-        ref={tabsRef}
-        className='group/bookshelf-tabs bg-base-100 z-20 flex min-w-0 shrink-0 flex-wrap items-center justify-center gap-2 py-2'
-        role='group'
-        aria-label={_('Bookshelves')}
-      >
-        <div aria-hidden className='hidden min-w-16 flex-1 sm:block' />
-        <DndContext
-          sensors={sensors}
-          collisionDetection={closestCenter}
-          accessibility={{
-            announcements: {
-              onDragStart: ({ active }) => _('Picked up {{name}}.', { name: tabName(active.id) }),
-              onDragOver: ({ active, over }) =>
-                over
-                  ? _('{{name}}: position {{position}}.', {
-                      name: tabName(active.id),
-                      position: draft.findIndex((s) => s.id === over.id) + 1,
-                    })
-                  : undefined,
-              onDragEnd: ({ active }) => _('Dropped {{name}}.', { name: tabName(active.id) }),
-              onDragCancel: () => _('Reordering cancelled.'),
-            },
-            screenReaderInstructions: {
-              draggable: _(
-                'Drag to reorder, or use Alt + Left or Right arrow keys. Press F2 to rename.',
-              ),
-            },
-          }}
-          onDragEnd={({ active, over }) => {
-            if (over && active.id !== over.id)
-              move(
-                String(active.id),
-                draft.findIndex((s) => s.id === over.id),
-              );
-          }}
-        >
-          <SortableContext items={draft.map((s) => s.id)} strategy={rectSortingStrategy}>
-            {draft.map((s, index) => (
-              <BookshelfTab
-                key={s.id}
-                shelf={s}
-                selected={s.id === selectedId}
-                onSelect={() => setSelectedId(s.id)}
-                onMove={(direction) => move(s.id, index + direction)}
-                onRename={(name) =>
-                  setDraft((shelves) =>
-                    shelves.map((current) =>
-                      current.id === s.id ? { ...current, name } : current,
-                    ),
-                  )
-                }
-              />
-            ))}
-          </SortableContext>
-        </DndContext>
-        <button
-          type='button'
-          data-bookshelf-control
-          aria-label={_('Add bookshelf')}
-          title={_('Add bookshelf')}
-          className='btn btn-ghost eink-bordered border-base-200 h-11 min-h-11 w-11 shrink-0 rounded-full border px-0 focus-visible:ring-2 focus-visible:ring-base-content/15'
-          onClick={() => {
-            let number = 1;
-            while (draft.some((s) => s.name === _('New bookshelf {{number}}', { number })))
-              number++;
-            const shelf = createBookshelf(_('New bookshelf {{number}}', { number }));
-            const index = draft.findIndex((s) => s.id === RECENT_BOOKSHELF_ID) + 1;
-            setDraft([...draft.slice(0, index), shelf, ...draft.slice(index)]);
-            setSelectedId(shelf.id);
-          }}
-        >
-          <MdAdd aria-hidden className='h-5 w-5' />
-        </button>
-        <div
-          ref={statusRef}
-          className='flex min-h-5 min-w-16 flex-1 basis-full items-center justify-end gap-2 text-end text-sm sm:basis-0'
-        >
-          <p
-            role={error || validation ? 'alert' : 'status'}
-            aria-label={_('Bookshelf status')}
-            className={error || validation ? 'text-error' : 'text-base-content/65'}
-          >
-            {error || validation || (saving ? _('Saving...') : savedNotice ? _('Saved') : '')}
-          </p>
-          {error && (
-            <button
-              type='button'
-              className='btn btn-ghost eink-bordered h-11 min-h-11'
-              onClick={() => void flush()}
-            >
-              {_('Retry')}
-            </button>
-          )}
-        </div>
-      </div>
+      {tabsSlot ? createPortal(tabs, tabsSlot) : tabs}
       <div className='grid min-h-0 min-w-0 flex-1 grid-rows-2 gap-4 lg:grid-cols-2 lg:grid-rows-1 lg:gap-6'>
         <OverlayScrollbarsComponent
           role='region'
@@ -969,15 +981,42 @@ export default function BookshelvesDialog() {
   // Library page, and its settings load, already has). Without this, opening
   // cold shows only built-in shelves and Edit can't find a custom one.
   const settingsHydrated = useEnsureSettingsLoaded();
+  const [tabsSlot, setTabsSlot] = useState<HTMLDivElement | null>(null);
+  const [isRtl] = useState(() => getDirFromUILanguage() === 'rtl');
   return (
     <Dialog
       isOpen={open}
+      // Names the dialog for assistive technology; the shelf tabs replace it
+      // on screen.
       title={_('Manage Bookshelves')}
+      header={
+        // Top-aligned: on narrow screens the tab row wraps its status line
+        // underneath, and the close buttons belong beside the tabs.
+        <div className='flex w-full min-w-0 items-start gap-2'>
+          <button
+            type='button'
+            aria-label={_('Close')}
+            onClick={() => void close()}
+            className='btn btn-ghost btn-circle mt-3.5 flex h-8 min-h-8 w-8 shrink-0 hover:bg-transparent focus:outline-hidden sm:hidden'
+          >
+            {isRtl ? <MdArrowForwardIos size={22} /> : <MdArrowBackIosNew size={22} />}
+          </button>
+          <div ref={setTabsSlot} className='min-w-0 flex-1' />
+          <button
+            type='button'
+            aria-label={_('Close')}
+            onClick={() => void close()}
+            className='bg-base-300/65 btn btn-ghost btn-circle mt-[1.125rem] hidden h-6 min-h-6 w-6 shrink-0 focus:outline-hidden sm:flex'
+          >
+            <MdClose aria-hidden className='h-4 w-4' />
+          </button>
+        </div>
+      }
       onClose={() => void close()}
       fullScreen
       contentClassName='min-h-0 flex-1 overflow-hidden! sm:px-6!'
     >
-      {open && settingsHydrated && <BookshelvesEditor ref={editor} />}
+      {open && settingsHydrated && <BookshelvesEditor ref={editor} tabsSlot={tabsSlot} />}
     </Dialog>
   );
 }

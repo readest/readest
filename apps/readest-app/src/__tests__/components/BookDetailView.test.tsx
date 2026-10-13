@@ -223,9 +223,14 @@ describe('BookDetailView file path row', () => {
 });
 
 describe('BookDetailView page count', () => {
-  // The page count is only known once the book has been laid out by the
-  // reader, so it rides on book.progress ([current, total]) instead of being
-  // computed at import time (#5516).
+  // An opened book carries the reader's total in book.progress ([current,
+  // total], #5516); before that, the count recorded at import stands in (#6662).
+  it('shows the import-time page count of a book that has never been opened', () => {
+    const { getByText } = renderView({ book: makeBook({ pageCount: 212 }) });
+
+    expect(getByText('212')).toBeTruthy();
+  });
+
   it('shows the total page count of an opened book', () => {
     const { getByText } = renderView({ book: makeBook({ progress: [42, 317] }) });
 

@@ -160,6 +160,10 @@ export interface Book {
   // library can badge it without opening the file. Derived from the file on
   // every import, like `format` — not user data, so it needs no LWW timestamp.
   hasNarration?: boolean;
+  // The page total the reader will lay out, counted from the file at import so
+  // an unopened book can show and sort by it (#6662). Like `hasNarration`, it is
+  // re-derived on every import; once opened, `progress[1]` holds the same total.
+  pageCount?: number;
   duration?: number; // total audio length in seconds (ABS audiobooks)
   // Marks this ABS stub as a podcast show or ebook rather than an audiobook.
   // Audio books remain unmarked (absMediaType undefined).

@@ -1,9 +1,11 @@
-import { BookMetadata, CalibreCustomColumn, EXTS } from '@/libs/document';
+import { BookDoc, BookMetadata, CalibreCustomColumn, EXTS } from '@/libs/document';
 import {
   Book,
   BOOK_CONFIG_SCHEMA_VERSION,
   BookConfig,
+  BookFormat,
   BookProgress,
+  FIXED_LAYOUT_FORMATS,
   WritingMode,
 } from '@/types/book';
 import { SUPPORTED_LANGS } from '@/services/constants';
@@ -12,6 +14,21 @@ import { getStorageType } from './storage';
 import { getDirFromLanguage } from './rtl';
 import { code6392to6391, isValidLang, normalizedLangCode } from './lang';
 import { md5 } from './md5';
+
+// Mirrors the totals the reader stores in book.progress[1]: one page per
+// section for fixed layout, otherwise foliate's SectionProgress location count
+// (1500 bytes of linear section text a page).
+export const getBookDocPageCount = (bookDoc: BookDoc, format: BookFormat): number | undefined => {
+  const sections = bookDoc.sections ?? [];
+  if (bookDoc.rendition?.layout === 'pre-paginated' || FIXED_LAYOUT_FORMATS.has(format)) {
+    return sections.length || undefined;
+  }
+  const size = sections.reduce((sum, s) => sum + (s.linear !== 'no' && s.size > 0 ? s.size : 0), 0);
+  return Math.ceil(size / 1500) || undefined;
+};
+
+export const getBookPageCount = (book: Book): number | undefined =>
+  book.progress?.[1] || book.pageCount || undefined;
 
 export const getDir = (book: Book) => {
   return `${book.hash}`;

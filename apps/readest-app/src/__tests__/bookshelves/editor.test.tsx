@@ -58,16 +58,19 @@ vi.mock('@/components/Dialog', () => ({
   default: ({
     isOpen,
     title,
+    header,
     children,
     onClose,
   }: {
     isOpen: boolean;
     title: string;
+    header?: React.ReactNode;
     children: React.ReactNode;
     onClose: () => void;
   }) =>
     isOpen ? (
       <div role='dialog' aria-label={title}>
+        {header && <div data-testid='dialog-header'>{header}</div>}
         <button type='button' aria-label={`Close ${title}`} onClick={onClose}>
           Close
         </button>
@@ -117,6 +120,20 @@ afterEach(async () => {
   vi.unstubAllGlobals();
 });
 describe('bookshelf editor', () => {
+  it('shows the shelf tabs in the dialog header in place of a title', async () => {
+    render(<BookshelvesDialog />);
+    await act(async () => {
+      await eventDispatcher.dispatch('show-bookshelves');
+    });
+
+    const header = screen.getByTestId('dialog-header');
+    expect(within(header).getByRole('group', { name: 'Bookshelves' })).toBeTruthy();
+    expect(within(header).getByRole('button', { name: 'Default' })).toBeTruthy();
+    expect(within(header).queryByText('Manage Bookshelves')).toBeNull();
+    // The title still names the dialog for assistive technology.
+    expect(screen.getByRole('dialog', { name: 'Manage Bookshelves' })).toBeTruthy();
+  });
+
   it('remembers the selected shelf when the dialog is reopened after a remount', async () => {
     const { unmount } = render(<BookshelvesDialog />);
     await act(async () => {
