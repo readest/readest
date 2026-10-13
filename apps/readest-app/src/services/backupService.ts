@@ -93,9 +93,9 @@ export const BACKUP_SETTINGS_BLACKLIST = [
 
 /**
  * Credential dot-paths stripped from backups unless `includeCredentials`
- * is set. OPDS catalog, Audiobookshelf server and custom translator
- * credentials live inside the `opdsCatalogs` / `absServers` /
- * `customTranslators` arrays and are handled separately in
+ * is set. OPDS catalog, Audiobookshelf server, custom translator and custom
+ * TTS credentials live inside the `opdsCatalogs` / `absServers` /
+ * `customTranslators` / `customTTSServices` arrays and are handled separately in
  * `sanitizeSettingsForBackup`.
  */
 export const BACKUP_SETTINGS_CREDENTIAL_FIELDS = [
@@ -181,6 +181,13 @@ export function sanitizeSettingsForBackup(
       clone.customTranslators = clone.customTranslators.map((translator) => {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { apiKey: _apiKey, ...rest } = translator;
+        return rest;
+      });
+    }
+    if (Array.isArray(clone.customTTSServices)) {
+      clone.customTTSServices = clone.customTTSServices.map((service) => {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { apiKey: _apiKey, ...rest } = service;
         return rest;
       });
     }

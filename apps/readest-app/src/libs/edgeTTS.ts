@@ -6,6 +6,7 @@ import { LRUCache } from '@/utils/lru';
 import { genSSML } from '@/utils/ssml';
 import { fetchWithAuth } from '@/utils/fetch';
 import { getAPIBaseUrl, isTauriAppPlatform } from '@/services/environment';
+import type { TTSVoice } from '@/services/tts/types';
 
 // Cloudflare Workers expose a global `WebSocketPair` that is not available in
 // browsers or Node.js. The Node `ws` package (used transitively via
@@ -324,7 +325,15 @@ const genVoiceList = (voices: Record<string, string[]>) => {
   return Object.entries(voices).flatMap(([lang, voices]) => {
     return voices.map((id) => {
       const name = id.replace(`${lang}-`, '').replace('Neural', '');
-      return { name, id, lang };
+      const variant = name.match(/(Multilingual|Expressive)$/)?.[1];
+      return variant
+        ? {
+            name: name.slice(0, -variant.length),
+            id,
+            lang,
+            variant: variant.toLowerCase() as TTSVoice['variant'],
+          }
+        : { name, id, lang };
     });
   });
 };

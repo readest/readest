@@ -287,6 +287,28 @@ describe('EdgeSpeechTTS on Cloudflare Workers', () => {
   });
 });
 
+describe('EdgeSpeechTTS.voices', () => {
+  test('a multilingual or expressive voice is named without the suffix, which becomes its variant', async () => {
+    const { EdgeSpeechTTS } = await import('@/libs/edgeTTS');
+    const byId = (id: string) => EdgeSpeechTTS.voices.find((v) => v.id === id)!;
+    expect(byId('en-US-AndrewMultilingualNeural')).toEqual({
+      id: 'en-US-AndrewMultilingualNeural',
+      name: 'Andrew',
+      lang: 'en-US',
+      variant: 'multilingual',
+    });
+    expect(byId('en-IN-NeerjaExpressiveNeural')).toMatchObject({
+      name: 'Neerja',
+      variant: 'expressive',
+    });
+    expect(byId('en-US-AndrewNeural')).toEqual({
+      id: 'en-US-AndrewNeural',
+      name: 'Andrew',
+      lang: 'en-US',
+    });
+  });
+});
+
 describe('parseAudioMetadataBody', () => {
   test('extracts WordBoundary entries from an audio.metadata body', async () => {
     const { parseAudioMetadataBody } = await import('@/libs/edgeTTS');

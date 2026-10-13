@@ -9,7 +9,8 @@ const m = vi.hoisted(() => ({
 vi.mock('@/utils/fetch', () => ({ fetchWithAuth: m.fetchWithAuth }));
 vi.mock('@/services/environment', async (orig) => ({
   ...(await orig<typeof import('@/services/environment')>()),
-  getAPIBaseUrl: () => 'https://web.test/api',
+  getAPIBaseUrl: () => 'https://dev.test/api',
+  getReadestVoiceAPIBaseUrl: () => 'https://web.test/api',
 }));
 vi.mock('@/utils/access', async (orig) => ({
   ...(await orig<typeof import('@/utils/access')>()),
@@ -152,6 +153,7 @@ let events: EventTarget;
 let provider: ReadestVoiceProvider;
 
 beforeEach(() => {
+  localStorage.clear();
   for (const fn of Object.values(m)) fn.mockReset();
   m.getAccessToken.mockResolvedValue('tok');
   m.getSubscriptionPlan.mockReturnValue('plus');
@@ -168,31 +170,97 @@ afterEach(() => {
 });
 
 describe('voices and init', () => {
-  it('makes no request without a token or without a TTS plan', async () => {
+  it('lists every voice to every reader, greying out what the plan lacks', async () => {
+    const catalog = [
+      ...VOICES,
+      { id: 'omnivoice:clara', name: 'Clara', lang: 'en-US', tier: 'pro' },
+    ];
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(Response.json({ voices: catalog }));
+    m.fetchWithAuth.mockResolvedValue(Response.json({ voices: catalog }));
+    // Signed out: no auth needed for the catalog, nothing playable, yet the
+    // engine is available: a voice is gated only when it is picked.
     m.getAccessToken.mockResolvedValue(null);
-    expect(await provider.getAllVoices()).toEqual([]);
-    expect(await provider.init()).toBe(false);
+    const signedOut = new ReadestVoiceProvider(events);
+    expect((await signedOut.getAllVoices()).map((v) => [v.id, !!v.disabled])).toEqual([
+      ['kokoro:af_heart', true],
+      ['omnivoice:clara', true],
+    ]);
+    expect(await signedOut.init()).toBe(true);
+    expect(fetchMock).toHaveBeenCalledWith('https://web.test/api/tts/readest?all=1');
+    // Plus: the Pro voice stays visible but greyed out.
     m.getAccessToken.mockResolvedValue('tok');
-    m.getSubscriptionPlan.mockReturnValue('purchase');
-    const other = new ReadestVoiceProvider(events);
-    expect(await other.getAllVoices()).toEqual([]);
-    expect(await other.init()).toBe(false);
-    expect(m.fetchWithAuth).not.toHaveBeenCalled();
-  });
-
-  it('fetches the plan voices once for getAllVoices + init', async () => {
-    expect(await provider.getAllVoices()).toEqual(VOICES);
-    expect(await provider.init()).toBe(true);
-    expect(m.fetchWithAuth).toHaveBeenCalledTimes(1);
-    expect(m.fetchWithAuth).toHaveBeenCalledWith('https://web.test/api/tts/readest', {
+    m.getSubscriptionPlan.mockReturnValue('plus');
+    const plus = new ReadestVoiceProvider(events);
+    expect((await plus.getAllVoices()).map((v) => [v.id, !!v.disabled])).toEqual([
+      ['kokoro:af_heart', false],
+      ['omnivoice:clara', true],
+    ]);
+    expect(await plus.init()).toBe(true);
+    expect(m.fetchWithAuth).toHaveBeenCalledWith('https://web.test/api/tts/readest?all=1', {
       method: 'GET',
     });
   });
 
-  it('treats a failing voices request (kill switch, lapsed plan) as unavailable', async () => {
+  it('fetches the voices once for getAllVoices + init', async () => {
+    expect(await provider.getAllVoices()).toEqual(VOICES);
+    expect(await provider.init()).toBe(true);
+    expect(m.fetchWithAuth).toHaveBeenCalledTimes(1);
+  });
+
+  it('lists nothing when the server cannot answer and no voices were saved', async () => {
     m.fetchWithAuth.mockRejectedValueOnce(new Error('NOT_CONFIGURED'));
     expect(await provider.getAllVoices()).toEqual([]);
-    expect(await provider.init()).toBe(false);
+    expect(await provider.init()).toBe(true);
+  });
+
+  it('keeps the last voices when a later listing fails (offline, cold server)', async () => {
+    expect(await provider.getAllVoices()).toEqual(VOICES);
+    m.fetchWithAuth.mockRejectedValue(new TypeError('Failed to fetch'));
+    const next = new ReadestVoiceProvider(events);
+    expect(await next.getAllVoices()).toEqual(VOICES);
+    expect(await next.init()).toBe(true);
+  });
+
+  it('answers from the saved voices at once and refreshes them in the background', async () => {
+    await provider.getAllVoices();
+    let answer!: (res: Response) => void;
+    m.fetchWithAuth.mockImplementation(() => new Promise<Response>((r) => (answer = r)));
+    const next = new ReadestVoiceProvider(events);
+    // The server has not answered: the saved list still lists at once.
+    expect(await next.getAllVoices()).toEqual(VOICES);
+    const fresh = [...VOICES, { id: 'kokoro:am_adam', name: 'Adam', lang: 'en-US', tier: 'plus' }];
+    answer(Response.json({ voices: fresh }));
+    await flush();
+    m.fetchWithAuth.mockRejectedValue(new TypeError('Failed to fetch'));
+    expect(await new ReadestVoiceProvider(events).getAllVoices()).toEqual(fresh);
+  });
+
+  it('keeps the saved voices whatever error the server answers', async () => {
+    await provider.getAllVoices();
+    m.fetchWithAuth.mockRejectedValue(new Error('NOT_CONFIGURED'));
+    await new ReadestVoiceProvider(events).getAllVoices();
+    await flush();
+    expect(await new ReadestVoiceProvider(events).getAllVoices()).toEqual(VOICES);
+  });
+
+  it('orders voices Plus before Pro, each by name', () => {
+    const v = (name: string, tier: 'plus' | 'pro', lang = 'en-US') => ({
+      id: name,
+      name,
+      lang,
+      tier,
+    });
+    const sorted = [
+      v('Clara', 'pro'),
+      v('Emma', 'plus', 'en-GB'),
+      v('Arthur', 'pro', 'en-GB'),
+      v('Bella', 'plus'),
+    ]
+      .sort((a, b) => provider.compareVoices(a, b))
+      .map((voice) => voice.name);
+    expect(sorted).toEqual(['Bella', 'Emma', 'Arthur', 'Clara']);
   });
 
   it('fires the warmup at most once', async () => {

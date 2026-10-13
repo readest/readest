@@ -23,6 +23,7 @@ import {
   findCustomTranslator,
   findTranslationPrompt,
 } from '@/store/customTranslatorStore';
+import { useCustomTTSStore, findCustomTTSService } from '@/store/customTTSStore';
 import { transferManager } from '@/services/transferManager';
 import { getReplicaSync, subscribeReplicaSyncReady } from '@/services/sync/replicaSync';
 import { dictionaryAdapter } from '@/services/sync/adapters/dictionary';
@@ -34,6 +35,7 @@ import {
   customTranslatorAdapter,
   translationPromptAdapter,
 } from '@/services/sync/adapters/customTranslator';
+import { customTTSAdapter } from '@/services/sync/adapters/customTTS';
 import { settingsAdapter, type SettingsRemoteRecord } from '@/services/sync/adapters/settings';
 import {
   applyRemoteSettings,
@@ -61,6 +63,7 @@ import type { CustomTexture } from '@/styles/textures';
 import type { OPDSCatalog } from '@/types/opds';
 import type { ABSServer } from '@/types/audiobookshelf';
 import type { CustomTranslator, TranslationPrompt } from '@/types/translation';
+import type { CustomTTSService } from '@/types/customTTS';
 import type { Hlc, ReplicaRow } from '@/types/replica';
 import type { SystemSettings } from '@/types/settings';
 
@@ -72,6 +75,7 @@ export type ReplicaKind =
   | 'abs_server'
   | 'custom_translator'
   | 'translation_prompt'
+  | 'custom_tts'
   | 'settings'
   | 'bookshelf';
 
@@ -321,6 +325,16 @@ const translationPromptPullConfig: ReplicaPullConfig<TranslationPrompt> = {
   softDeleteByContentId: (id) => useCustomTranslatorStore.getState().softDeletePrompt(id),
 };
 
+const customTTSPullConfig: ReplicaPullConfig<CustomTTSService> = {
+  kind: 'custom_tts',
+  // metadata-only — no baseDir
+  adapter: customTTSAdapter,
+  findByContentId: findCustomTTSService,
+  hydrateLocalStore: (envConfig) => useCustomTTSStore.getState().loadCustomTTSServices(envConfig),
+  applyRemote: (s) => useCustomTTSStore.getState().applyRemoteService(s),
+  softDeleteByContentId: (id) => useCustomTTSStore.getState().softDeleteService(id),
+};
+
 const settingsPullConfig = (envConfig: EnvConfigType): ReplicaPullConfig<SettingsRemoteRecord> => ({
   kind: 'settings',
   // metadata-only — no baseDir
@@ -462,6 +476,18 @@ const runPullForKind = async (
           service,
           envConfig,
           translationPromptPullConfig,
+          pullOpts,
+          pullOverride,
+        ),
+      );
+      return;
+    case 'custom_tts':
+      await replicaPullAndApply(
+        buildReplicaPullDeps(
+          ctx.manager,
+          service,
+          envConfig,
+          customTTSPullConfig,
           pullOpts,
           pullOverride,
         ),

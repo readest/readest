@@ -31,8 +31,8 @@ const CATALOG = [
   { id: 'omnivoice:clara', engine: 'omnivoice', name: 'Clara', langs: ['en-US'] },
 ];
 
-const req = (method: 'GET' | 'POST', body?: unknown) =>
-  new NextRequest('https://web.readest.com/api/tts/readest', {
+const req = (method: 'GET' | 'POST', body?: unknown, query = '') =>
+  new NextRequest(`https://web.readest.com/api/tts/readest${query}`, {
     method,
     headers: { authorization: 'Bearer tok', 'Content-Type': 'application/json' },
     body: body === undefined ? undefined : JSON.stringify(body),
@@ -65,11 +65,15 @@ describe('GET /api/tts/readest', () => {
     expect(await res.json()).toEqual({ error: 'NOT_AUTHENTICATED' });
   });
 
-  it('503s when the Readest Voice service or the catalog is missing', async () => {
-    m.getVoiceService.mockResolvedValueOnce(null);
-    expect((await GET(req('GET'))).status).toBe(503);
+  it('lists without checking the voice service, which is always on', async () => {
+    m.getVoiceService.mockResolvedValue(null);
+    expect((await GET(req('GET'))).status).toBe(200);
+    expect(m.getVoiceService).not.toHaveBeenCalled();
+  });
+
+  it('503s CATALOG_UNAVAILABLE when the catalog cannot be read', async () => {
     m.getCatalog.mockResolvedValueOnce(null);
-    expect((await GET(req('GET'))).status).toBe(503);
+    expect(await (await GET(req('GET'))).json()).toEqual({ error: 'CATALOG_UNAVAILABLE' });
   });
 
   it.each(['free', 'purchase'])('403s PLAN_REQUIRED for %s', async (plan) => {
@@ -88,6 +92,34 @@ describe('GET /api/tts/readest', () => {
         { id: 'kokoro:af_heart', name: 'Heart', lang: 'en-US', tier: 'plus' },
         { id: 'omnivoice:clara', name: 'Clara', lang: 'en-US', tier: 'pro' },
       ],
+    });
+  });
+});
+
+describe('GET /api/tts/readest?all=1', () => {
+  it('lists every offered voice with its plan, signed in or not', async () => {
+    m.validateUserAndToken.mockResolvedValue({});
+    m.getSubscriptionPlan.mockReturnValue('free');
+    const res = await GET(req('GET', undefined, '?all=1'));
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({
+      voices: [
+        { id: 'kokoro:af_heart', name: 'Heart', lang: 'en-US', tier: 'plus' },
+        { id: 'omnivoice:clara', name: 'Clara', lang: 'en-US', tier: 'pro' },
+      ],
+    });
+  });
+
+  it('lists without checking the voice service, which is always on', async () => {
+    m.getVoiceService.mockResolvedValue(null);
+    expect((await GET(req('GET', undefined, '?all=1'))).status).toBe(200);
+    expect(m.getVoiceService).not.toHaveBeenCalled();
+  });
+
+  it('503s CATALOG_UNAVAILABLE when the catalog cannot be read', async () => {
+    m.getCatalog.mockResolvedValueOnce(null);
+    expect(await (await GET(req('GET', undefined, '?all=1'))).json()).toEqual({
+      error: 'CATALOG_UNAVAILABLE',
     });
   });
 });

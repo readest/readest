@@ -63,6 +63,17 @@ function makeSettings(overrides: Partial<SystemSettings> = {}): SystemSettings {
         updatedAt: 1,
       },
     ],
+    customTTSServices: [
+      {
+        id: 'tts-1',
+        name: 'My TTS',
+        baseUrl: 'https://tts.example.com/v1',
+        apiKey: 'tts-secret',
+        model: 'tts-1',
+        addedAt: 1,
+        updatedAt: 1,
+      },
+    ],
     kosync: {
       enabled: true,
       serverUrl: 'https://kosync.example',
@@ -249,6 +260,8 @@ describe('sanitizeSettingsForBackup - credentials', () => {
     expect(out.opdsCatalogs[0]!.password).toBeUndefined();
     expect(out.customTranslators![0]!.apiKey).toBeUndefined();
     expect(out.customTranslators![0]!.baseUrl).toBe('https://api.example.com/v1');
+    expect(out.customTTSServices![0]!.apiKey).toBeUndefined();
+    expect(out.customTTSServices![0]!.baseUrl).toBe('https://tts.example.com/v1');
   });
 
   it('keeps non-credential OPDS catalog fields when stripping credentials', () => {
@@ -268,6 +281,7 @@ describe('sanitizeSettingsForBackup - credentials', () => {
     expect(out.opdsCatalogs[0]!.username).toBe('opds-user');
     expect(out.opdsCatalogs[0]!.password).toBe('opds-pass');
     expect(out.customTranslators![0]!.apiKey).toBe('tr-secret');
+    expect(out.customTTSServices![0]!.apiKey).toBe('tts-secret');
   });
 
   it('still strips blacklist fields even when credentials are included', () => {

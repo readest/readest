@@ -19,7 +19,7 @@ type Page =
   | { kind: 'translator'; id?: string }
   | { kind: 'prompt'; id?: string; template?: string };
 
-const AddButton: React.FC<{ label: string; onClick: () => void }> = ({ label, onClick }) => (
+export const AddButton: React.FC<{ label: string; onClick: () => void }> = ({ label, onClick }) => (
   <button
     type='button'
     onClick={onClick}

@@ -471,6 +471,18 @@ describe('TTSController', () => {
       const result = await c.getVoices('en');
       expect(result).toEqual(nativeVoices);
     });
+
+    test('lists Edge before the system voices, and Web last', async () => {
+      const c = new TTSController(createMockAppService(true), mockView);
+      await c.init();
+      const group = (id: string): TTSVoicesGroup[] => [
+        { id, name: id, voices: [{ id: `${id}-1`, name: id, lang: 'en-US' }] },
+      ];
+      vi.mocked(c.ttsNativeClient!.getVoices).mockResolvedValue(group('native'));
+      vi.mocked(c.ttsEdgeClient.getVoices).mockResolvedValue(group('edge'));
+      vi.mocked(c.ttsWebClient.getVoices).mockResolvedValue(group('web'));
+      expect((await c.getVoices('en')).map((g) => g.id)).toEqual(['edge', 'native', 'web']);
+    });
   });
 
   describe('getVoiceId', () => {

@@ -90,16 +90,25 @@ export class CachingProvider implements SpeechProvider {
   // Present only for a windowed inner provider: callers feature-detect it to
   // choose windowed prefetch over synthesizing preloads.
   readonly prefetch?: SpeechProvider['prefetch'];
+  readonly groupVoices?: SpeechProvider['groupVoices'];
+  readonly compareVoices?: SpeechProvider['compareVoices'];
 
   constructor(inner: SpeechProvider, store: TTSCacheStore) {
     this.#inner = inner;
     this.#store = store;
     if (inner.prefetch) this.prefetch = this.#prefetch.bind(this);
+    if (inner.groupVoices) this.groupVoices = inner.groupVoices.bind(inner);
+    if (inner.compareVoices) this.compareVoices = inner.compareVoices.bind(inner);
     store.onImported?.((keys) => this.#onImported(keys));
   }
 
   get id(): string {
     return this.#inner.id;
+  }
+
+  #key(req: SpeechSynthesisRequest): string {
+    const scope = this.#inner.cacheScope?.(req);
+    return computeTTSCacheKey(scope ? `${this.#inner.id}#${scope}` : this.#inner.id, req);
   }
 
   get label(): string {
@@ -168,11 +177,11 @@ export class CachingProvider implements SpeechProvider {
     const cachedKeys =
       this.#store.cachedKeys && !options?.onDelivered
         ? await this.#store
-            .cachedKeys(reqs.map((req) => computeTTSCacheKey(this.#inner.id, req)))
+            .cachedKeys(reqs.map((req) => this.#key(req)))
             .catch(() => new Set<string>()) // Unreadable store: treat as uncached.
         : null;
     for (const req of reqs) {
-      const key = computeTTSCacheKey(this.#inner.id, req);
+      const key = this.#key(req);
       // Already being filled: still forwarded, so the provider can raise a
       // preload's priority once its paragraph starts.
       if (this.#inflight.has(key)) {
@@ -213,7 +222,7 @@ export class CachingProvider implements SpeechProvider {
     if (this.#inner.cacheable === false) {
       return this.#inner.synthesize(req, signal, options);
     }
-    const key = computeTTSCacheKey(this.#inner.id, req);
+    const key = this.#key(req);
     const pending = this.#inflight.get(key);
     if (pending) {
       // Joiners get their own buffer: decodeAudioData detaches its input.
@@ -296,7 +305,7 @@ export class CachingProvider implements SpeechProvider {
     }
     const keyed = sentences.map(({ ordinal, req }) => ({
       ordinal,
-      key: computeTTSCacheKey(this.#inner.id, req),
+      key: this.#key(req),
     }));
     try {
       const stored = await this.#store.cachedKeys(keyed.map(({ key }) => key));
@@ -320,7 +329,7 @@ export class CachingProvider implements SpeechProvider {
   // record its cache key so the section can compact once fully covered.
   async recordMark(section: number, ordinal: number, req: SpeechSynthesisRequest): Promise<void> {
     if (this.#inner.cacheable === false) return;
-    const key = computeTTSCacheKey(this.#inner.id, req);
+    const key = this.#key(req);
     await this.#store.recordMarkKey?.(section, ordinal, key).catch((err) => {
       console.warn('TTS cache mark recording failed', err);
     });

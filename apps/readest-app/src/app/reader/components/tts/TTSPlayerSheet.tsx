@@ -12,6 +12,7 @@ import {
   MdPlayArrow,
   MdOutlineFileDownload,
   MdChevronRight,
+  MdExpandMore,
   MdSkipNext,
   MdSkipPrevious,
 } from 'react-icons/md';
@@ -183,6 +184,15 @@ const TTSPlayerSheet = ({
   const [voiceGroups, setVoiceGroups] = useState<TTSVoicesGroup[]>([]);
   const [rate, setRate] = useState(viewSettings?.ttsRate ?? 1.0);
   const [selectedVoice, setSelectedVoice] = useState('');
+  // The voice list is an accordion: at most one group open. Until the reader
+  // taps a header, the group of the voice in use (else the first) is open;
+  // tapping the open header folds it (null: all folded).
+  const [pickedGroup, setPickedGroup] = useState<string | null | undefined>(undefined);
+  const openGroup =
+    pickedGroup !== undefined
+      ? pickedGroup
+      : (voiceGroups.find((group) => group.voices.some((voice) => voice.id === selectedVoice))
+          ?.id ?? voiceGroups[0]?.id);
   const timerLabel = useCountdownLabel(timeoutTimestamp);
   const iconSize18 = useResponsiveSize(18);
   const iconSize24 = useResponsiveSize(24);
@@ -320,16 +330,16 @@ const TTSPlayerSheet = ({
   // Entitled users drill into the per-chapter download view; everyone else is
   // routed to the upgrade page (or sign-in), the sheet closing first so the
   // navigation isn't hidden behind it.
+  // Signed in, to the plans on the user page; signed out, to sign in first.
+  const handleUpgrade = () => {
+    onClose();
+    if (user) navigateToProfile(router);
+    else navigateToLogin(router);
+  };
+
   const handleOpenDownloads = () => {
-    if (isDownloadPremium) {
-      setView('chapters');
-    } else if (user) {
-      onClose();
-      navigateToProfile(router);
-    } else {
-      onClose();
-      navigateToLogin(router);
-    }
+    if (isDownloadPremium) setView('chapters');
+    else handleUpgrade();
   };
 
   const timeoutOptions = getTTSTimeoutOptions(_);
@@ -417,7 +427,12 @@ const TTSPlayerSheet = ({
       snapHeight={showLyrics ? 0.8 : 0.65}
       title={_('Read Aloud')}
       header={header}
-      boxClassName='sm:h-auto! sm:max-h-[85%]! sm:w-[420px]! sm:min-w-0!'
+      // The voice list keeps one height, so folding a group never resizes the
+      // sheet; the other views fit their content.
+      boxClassName={clsx(
+        'sm:max-h-[85%]! sm:w-[420px]! sm:min-w-0!',
+        view === 'voice' ? 'sm:h-[85%]!' : 'sm:h-auto!',
+      )}
       contentClassName='px-4! sm:px-4! mt-[-4px]'
       onClose={onClose}
     >
@@ -685,46 +700,83 @@ const TTSPlayerSheet = ({
       )}
       {view === 'voice' && (
         <div className='flex w-full flex-col pb-4'>
-          {voiceGroups.map((voiceGroup) => (
-            <div key={voiceGroup.id}>
-              <div className='text-base-content/60 px-2 py-1 text-sm sm:text-xs'>
-                {/* A single-voice group (a book's own narrator) would otherwise
-                    read "Narration: 1 voices". */}
-                {voiceGroup.voices.length === 1
-                  ? _(voiceGroup.name)
-                  : _('{{engine}}: {{count}} voices', {
-                      engine: _(voiceGroup.name),
-                      count: voiceGroup.voices.length,
-                    })}
-              </div>
-              {voiceGroup.voices.map((voice) => (
+          {voiceGroups.map((voiceGroup) => {
+            const collapsed = voiceGroup.id !== openGroup;
+            // The group holding the voice in use stands out, and names it
+            // while folded (open, its check mark already shows it).
+            const current = voiceGroup.voices.find((voice) => voice.id === selectedVoice);
+            return (
+              <div key={voiceGroup.id}>
                 <button
-                  key={`${voiceGroup.id}-${voice.id}`}
                   type='button'
-                  disabled={voice.disabled}
-                  onClick={() => handleSelectVoice(voice.id, voice.lang)}
-                  className='flex w-full items-center gap-2 rounded-lg px-2 py-2 text-start'
-                >
-                  <span className='flex h-6 w-6 items-center justify-center'>
-                    {selectedVoice === voice.id && <MdCheck className='text-base-content' />}
-                  </span>
-                  <span
-                    className={clsx(
-                      'overflow-hidden text-ellipsis text-base sm:text-sm',
-                      voice.disabled && 'text-base-content/40',
-                    )}
-                  >
-                    {_(voice.name)}
-                  </span>
-                  {voice.tier && (
-                    <span className='badge badge-sm badge-ghost shrink-0'>
-                      {voice.tier === 'pro' ? _('Pro') : _('Plus')}
-                    </span>
+                  aria-expanded={!collapsed}
+                  onClick={() => setPickedGroup(collapsed ? voiceGroup.id : null)}
+                  className={clsx(
+                    'flex w-full items-center gap-1 px-2 py-1 text-start text-sm sm:text-xs',
+                    current ? 'text-base-content font-semibold' : 'text-base-content/60',
                   )}
+                >
+                  <span className='flex-1'>
+                    {/* A single-voice group (a book's own narrator) would otherwise
+                      read "Narration: 1 voices". */}
+                    {voiceGroup.voices.length === 1
+                      ? _(voiceGroup.name)
+                      : _('{{engine}}: {{count}} voices', {
+                          engine: _(voiceGroup.name),
+                          count: voiceGroup.voices.length,
+                        })}
+                  </span>
+                  {collapsed && current && (
+                    <span className='max-w-[50%] shrink-0 truncate'>{_(current.name)}</span>
+                  )}
+                  <MdExpandMore
+                    className={clsx('shrink-0', collapsed && '-rotate-90 rtl:rotate-90')}
+                  />
                 </button>
-              ))}
-            </div>
-          ))}
+                {!collapsed &&
+                  voiceGroup.voices.map((voice) => (
+                    <button
+                      key={`${voiceGroup.id}-${voice.id}`}
+                      type='button'
+                      // A premium voice the plan lacks stays tappable: it
+                      // leads to the upgrade instead of speaking.
+                      disabled={voice.disabled && !voice.tier}
+                      onClick={() =>
+                        voice.disabled ? handleUpgrade() : handleSelectVoice(voice.id, voice.lang)
+                      }
+                      className='flex w-full items-center gap-2 rounded-lg px-2 py-2 text-start'
+                    >
+                      <span className='flex h-6 w-6 items-center justify-center'>
+                        {selectedVoice === voice.id && <MdCheck className='text-base-content' />}
+                      </span>
+                      <span
+                        className={clsx(
+                          'overflow-hidden text-ellipsis text-base sm:text-sm',
+                          voice.disabled && 'text-base-content/40',
+                        )}
+                      >
+                        {_(voice.name)}
+                      </span>
+                      {voice.variant && (
+                        <span className='badge badge-sm badge-ghost ms-auto shrink-0'>
+                          {voice.variant === 'multilingual' ? _('Multilingual') : _('Expressive')}
+                        </span>
+                      )}
+                      {voice.tier && (
+                        <span
+                          className={clsx(
+                            'badge badge-sm badge-ghost shrink-0',
+                            !voice.variant && 'ms-auto',
+                          )}
+                        >
+                          {voice.tier === 'pro' ? _('Pro') : _('Plus')}
+                        </span>
+                      )}
+                    </button>
+                  ))}
+              </div>
+            );
+          })}
         </div>
       )}
       {view === 'timer' && (

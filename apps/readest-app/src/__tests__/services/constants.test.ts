@@ -259,6 +259,7 @@ describe('services/constants', () => {
         opds_catalog: true,
         abs_server: true,
         custom_translator: true,
+        custom_tts: true,
         settings: true,
       });
     });
