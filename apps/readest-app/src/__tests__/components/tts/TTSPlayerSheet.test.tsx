@@ -239,6 +239,13 @@ describe('TTSPlayerSheet', () => {
     expect(screen.queryByText('Read Aloud')).toBeNull();
   });
 
+  test('play/pause is the theme-neutral contrast button, not the accent CTA', () => {
+    render(<TTSPlayerSheet {...makeProps()} />);
+    const toggle = screen.getByRole('button', { name: /^(Play|Pause)$/ });
+    expect(toggle.className).toContain('btn-contrast');
+    expect(toggle.className).not.toContain('btn-primary');
+  });
+
   test('resolves the chapter label from the ranged TTS section metadata', () => {
     const props = makeProps();
     render(
