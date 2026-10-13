@@ -179,14 +179,15 @@ describe('voices and init', () => {
       .spyOn(globalThis, 'fetch')
       .mockResolvedValue(Response.json({ voices: catalog }));
     m.fetchWithAuth.mockResolvedValue(Response.json({ voices: catalog }));
-    // Signed out: no auth needed for the catalog, nothing playable.
+    // Signed out: no auth needed for the catalog, nothing playable, yet the
+    // engine is available: a voice is gated only when it is picked.
     m.getAccessToken.mockResolvedValue(null);
     const signedOut = new ReadestVoiceProvider(events);
     expect((await signedOut.getAllVoices()).map((v) => [v.id, !!v.disabled])).toEqual([
       ['kokoro:af_heart', true],
       ['omnivoice:clara', true],
     ]);
-    expect(await signedOut.init()).toBe(false);
+    expect(await signedOut.init()).toBe(true);
     expect(fetchMock).toHaveBeenCalledWith('https://web.test/api/tts/readest?all=1');
     // Plus: the Pro voice stays visible but greyed out.
     m.getAccessToken.mockResolvedValue('tok');
@@ -211,11 +212,11 @@ describe('voices and init', () => {
   it('lists nothing when the server cannot answer and no voices were saved', async () => {
     m.fetchWithAuth.mockRejectedValueOnce(new Error('NOT_CONFIGURED'));
     expect(await provider.getAllVoices()).toEqual([]);
-    expect(await provider.init()).toBe(false);
+    expect(await provider.init()).toBe(true);
   });
 
   it('keeps the last voices when a later listing fails (offline, cold server)', async () => {
-    expect(await provider.init()).toBe(true);
+    expect(await provider.getAllVoices()).toEqual(VOICES);
     m.fetchWithAuth.mockRejectedValue(new TypeError('Failed to fetch'));
     const next = new ReadestVoiceProvider(events);
     expect(await next.getAllVoices()).toEqual(VOICES);
@@ -223,7 +224,7 @@ describe('voices and init', () => {
   });
 
   it('answers from the saved voices at once and refreshes them in the background', async () => {
-    await provider.init();
+    await provider.getAllVoices();
     let answer!: (res: Response) => void;
     m.fetchWithAuth.mockImplementation(() => new Promise<Response>((r) => (answer = r)));
     const next = new ReadestVoiceProvider(events);
@@ -237,7 +238,7 @@ describe('voices and init', () => {
   });
 
   it('keeps the saved voices whatever error the server answers', async () => {
-    await provider.init();
+    await provider.getAllVoices();
     m.fetchWithAuth.mockRejectedValue(new Error('NOT_CONFIGURED'));
     await new ReadestVoiceProvider(events).getAllVoices();
     await flush();

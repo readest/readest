@@ -261,7 +261,7 @@ describe('voices', () => {
   });
 
   test('shows the Readest group greyed out to readers whose plan lacks it', async () => {
-    h.readestInit = false;
+    h.readestVoices = READEST_VOICES.map((voice) => ({ ...voice, disabled: true }));
     await controller.init();
     const locked = READEST_VOICES.map((voice) => ({ ...voice, disabled: true }));
     vi.mocked(readest().getVoices).mockResolvedValue([
@@ -282,6 +282,14 @@ describe('book language', () => {
     expect(controller.ttsClient.name).toBe('edge-tts');
     // The choice itself is kept for books Readest Voice can read.
     expect(TTSUtils.setPreferredClient).not.toHaveBeenCalled();
+  });
+
+  test('a remembered Readest choice yields to Edge when the plan lacks every voice', async () => {
+    h.readestVoices = READEST_VOICES.map((voice) => ({ ...voice, disabled: true }));
+    vi.mocked(TTSUtils.getPreferredClient).mockReturnValue('readest-tts');
+    await controller.init();
+    await controller.setLang('en-US');
+    expect(controller.ttsClient.name).toBe('edge-tts');
   });
 
   test('keeps Readest Voice for a language it can voice', async () => {

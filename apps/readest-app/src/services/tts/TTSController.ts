@@ -2232,8 +2232,9 @@ export class TTSController extends EventTarget {
       (await this.ttsReadestClient.getAllVoices()).length > 0
         ? (await this.ttsReadestClient.getVoices(lang)).filter((group) => group.voices.length > 0)
         : [];
-    // The picker is open: boot a GPU worker so the first window is warm.
-    if (this.ttsReadestClient.initialized && ttsReadestVoices.length > 0) {
+    // The picker is open: boot a GPU worker so the first window is warm, but
+    // only for a reader whose plan has a Readest voice to play.
+    if (ttsReadestVoices.some((group) => group.voices.some((voice) => !voice.disabled))) {
       this.#readestProvider.warmup();
     }
     // The book's own narrator leads the list when there is one: it is the best

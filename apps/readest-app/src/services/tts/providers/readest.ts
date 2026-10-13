@@ -172,12 +172,13 @@ export class ReadestVoiceProvider implements SpeechProvider {
     return this.#voices;
   }
 
+  // Available to every reader, on any plan: a voice the plan lacks is listed
+  // disabled and gated only when it is picked or played.
   async init(): Promise<boolean> {
     // A new session (or day) may have fresh quota.
     this.#quotaExhaustedAt = 0;
-    const voices = await this.getAllVoices();
-    this.#voices = null; // the next init asks again (plan or catalog may change)
-    return voices.some((voice) => !voice.disabled);
+    this.#voices = null; // the next listing asks again (plan or catalog may change)
+    return true;
   }
 
   // Plus voices before Pro ones, each by name.
