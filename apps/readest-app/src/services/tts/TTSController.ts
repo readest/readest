@@ -209,9 +209,10 @@ export class TTSController extends EventTarget {
   // chunk (see BufferedTTSClient/MediaOverlayClient), so it is the only signal
   // needed here. Surfaced as isBuffering() for the player's spinner.
   #awaitingAudio = false;
-  // Opening paragraphs (raw SSML) of the section after the current one, for
-  // windowed engines' preloads across a chapter end; built once per section.
-  #nextSectionOpening: { index: number; ssmls: Promise<string[]> } | null = null;
+  // Opening paragraphs (raw SSML) of what is read after the current document
+  // (the next chunk of a chunked section, else the next section), for preloads
+  // across its end; built once per document read.
+  #nextOpening: { after: Document | null; ssmls: Promise<string[]> } | null = null;
   // Signal for queued background preloads: a windowed provider keeps them
   // until it aborts, so a voice change or stop must withdraw them.
   #preloadAbort = new AbortController();
@@ -1646,16 +1647,22 @@ export class TTSController extends EventTarget {
       tts.prev();
     }
 
-    // The chapter ends inside the budget: carry on into the next one, so a
-    // chapter change finds its opening already synthesized.
+    // The document read ends inside the budget: carry on into what follows, so
+    // moving on finds its opening already synthesized. In a chunked section
+    // that is the next chunk, long before the chapter ends.
     const budgetLeft = () =>
       rawSsmls.length < maxCount && (!byDuration || seconds < PRELOAD_AHEAD_SEC);
     if ((byDuration || capabilities.preloadsAudio) && sectionEnded && budgetLeft()) {
-      const nextIndex = this.#ttsSectionIndex + 1;
-      if (this.#nextSectionOpening?.index !== nextIndex) {
-        this.#nextSectionOpening = { index: nextIndex, ssmls: this.#sectionOpening(nextIndex) };
+      if (!this.#nextOpening || this.#nextOpening.after !== this.#ttsDoc) {
+        const chunkAnchor = this.#adjacentChunkAnchor(1);
+        this.#nextOpening = {
+          after: this.#ttsDoc,
+          ssmls: chunkAnchor
+            ? this.#sectionOpening(this.#ttsSectionIndex, chunkAnchor)
+            : this.#sectionOpening(this.#ttsSectionIndex + 1),
+        };
       }
-      for (const ssml of await this.#nextSectionOpening.ssmls) {
+      for (const ssml of await this.#nextOpening.ssmls) {
         if (!budgetLeft()) break;
         rawSsmls.push(ssml);
         seconds += estimate(ssml);
@@ -1679,7 +1686,9 @@ export class TTSController extends EventTarget {
   // Up to about PRELOAD_AHEAD_SEC of a section's opening paragraphs as raw
   // SSML, from a throwaway TTS over a fresh document (never the live one), the
   // same way the live session will produce them so preloads match playback.
-  async #sectionOpening(sectionIndex: number): Promise<string[]> {
+  // `from` starts at a chunk instead: chunk documents keep the full section's
+  // element indices, so its anchor resolves in the fresh document too.
+  async #sectionOpening(sectionIndex: number, from?: (doc: Document) => Range): Promise<string[]> {
     const section = this.view.book.sections?.[sectionIndex];
     if (!section?.createDocument) return [];
     try {
@@ -1690,7 +1699,8 @@ export class TTSController extends EventTarget {
       const voiceId = this.ttsClient.getVoiceId();
       const ssmls: string[] = [];
       let seconds = 0;
-      for (let raw = tts.start(); raw && ssmls.length < PRELOAD_MAX_PARAGRAPHS; raw = tts.next()) {
+      const first = from ? tts.from(from(doc)) : tts.start();
+      for (let raw = first; raw && ssmls.length < PRELOAD_MAX_PARAGRAPHS; raw = tts.next()) {
         ssmls.push(raw);
         const text = raw.replace(/<[^>]*>/g, ' ');
         seconds += estimateSentenceSeconds(text, this.ttsLang || 'en', voiceId);
@@ -1698,7 +1708,7 @@ export class TTSController extends EventTarget {
       }
       return ssmls;
     } catch (err) {
-      console.warn('TTS preload of the next section failed', sectionIndex, err);
+      console.warn('TTS preload of an upcoming opening failed', sectionIndex, err);
       return [];
     }
   }

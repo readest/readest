@@ -1523,6 +1523,39 @@ describe('TTSController', () => {
       expect(controller.state).toBe('playing');
     });
 
+    test('preloads the opening of the next chunk, not of the next section', async () => {
+      await arriveAtChunkEnd(0);
+      const section0 = (
+        mockView.book as unknown as { sections: { createDocument: ReturnType<typeof vi.fn> }[] }
+      ).sections[0]!;
+      section0.createDocument.mockResolvedValue(
+        new DOMParser().parseFromString(
+          '<html><body><p>Chunk 0.</p><p>Chunk 1.</p><p>Chunk 2.</p></body></html>',
+          'text/html',
+        ),
+      );
+      controller.ttsClient.getCapabilities = vi.fn().mockReturnValue({
+        wordBoundaries: true,
+        mediaClock: true,
+        gapControl: true,
+        liveRateChange: false,
+        preloadsAudio: true,
+      }) as unknown as typeof controller.ttsClient.getCapabilities;
+      const { TTS } = await import('foliate-js/tts.js');
+      vi.mocked(controller.ttsClient.speak).mockClear();
+
+      await controller.preloadNextSSML();
+
+      expect(sectionOpened(1)).toBe(false);
+      const opening = vi.mocked(TTS).mock.results.at(-1)!.value as {
+        from: ReturnType<typeof vi.fn>;
+      };
+      const [range] = opening.from.mock.calls[0]! as [Range];
+      expect(range.startContainer.textContent).toBe('Chunk 1.');
+      const preloaded = vi.mocked(controller.ttsClient.speak).mock.calls.map(([ssml]) => ssml);
+      expect(preloaded[0]).toContain('A');
+    });
+
     test('stop at end of chapter does not stop between chunks', async () => {
       await arriveAtChunkEnd(1);
       controller.stopAtChapterEnd = true;
