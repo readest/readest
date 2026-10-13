@@ -116,13 +116,14 @@ const parseSpineSizes = (
   sizes: Record<string, number>,
 ): Pick<SectionItem, 'size' | 'linear'>[] => {
   const opf = new DOMParser().parseFromString(opfXml, 'application/xml');
+  // Like foliate's childGetter: ignore the namespace if the OPF never declares it.
+  const useNS = opf.lookupNamespaceURI(null) === OPF_NS || !!opf.lookupPrefix(OPF_NS);
+  const elements = (name: string) =>
+    useNS ? opf.getElementsByTagNameNS(OPF_NS, name) : opf.getElementsByTagName(name);
   const hrefs = new Map(
-    Array.from(opf.getElementsByTagNameNS(OPF_NS, 'item'), (item) => [
-      item.getAttribute('id'),
-      item.getAttribute('href'),
-    ]),
+    Array.from(elements('item'), (item) => [item.getAttribute('id'), item.getAttribute('href')]),
   );
-  return Array.from(opf.getElementsByTagNameNS(OPF_NS, 'itemref')).flatMap((itemref) => {
+  return Array.from(elements('itemref')).flatMap((itemref) => {
     const href = hrefs.get(itemref.getAttribute('idref'));
     if (href == null) return [];
     const linear = itemref.getAttribute('linear') ?? '';

@@ -51,6 +51,12 @@ describe('tryNativeParseEpub page count (#6662)', () => {
     expect(getBookDocPageCount(bookDoc, 'EPUB')).toBe(3);
   });
 
+  it('reads the spine of an OPF that declares no namespace, as foliate does', async () => {
+    const bookDoc = await parse(opf().replace(' xmlns="http://www.idpf.org/2007/opf"', ''));
+
+    expect(getBookDocPageCount(bookDoc, 'EPUB')).toBe(3);
+  });
+
   it('counts one page per spine entry for a fixed-layout EPUB', async () => {
     const bookDoc = await parse(opf('<meta property="rendition:layout">pre-paginated</meta>'));
 
