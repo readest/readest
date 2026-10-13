@@ -15,8 +15,8 @@ pnpm build-web             # Build Next.js for web deployment
 
 # Testing (see [docs/testing.md](docs/testing.md) for full details)
 pnpm test                  # Unit tests (vitest + jsdom)
-pnpm test -- src/__tests__/utils/misc.test.ts  # Run a single test file
-pnpm test -- --watch       # Watch mode
+pnpm test --run src/__tests__/utils/misc.test.ts  # Run only these files (no `--`: it would run more than them)
+pnpm test --watch          # Watch mode
 pnpm test:browser          # Browser tests (Chromium via Playwright)
 pnpm tauri:dev:test        # Start Tauri app with webdriver
 pnpm test:tauri            # Run Tauri integration tests

@@ -301,7 +301,7 @@ suite soft-skips without it:
 
 ```bash
 curl -sLO https://github.com/IDPF/epub3-samples/releases/download/20230704/moby-dick-mo.epub
-READEST_MO_EPUB=$PWD/moby-dick-mo.epub pnpm test -- media-overlay-real-epub
+READEST_MO_EPUB=$PWD/moby-dick-mo.epub pnpm test --run media-overlay-real-epub
 ```
 
 [Moby-Dick MO](https://github.com/IDPF/epub3-samples) is the canonical W3C sample
