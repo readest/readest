@@ -61,3 +61,14 @@ if (typeof HTMLMediaElement !== 'undefined') {
   HTMLMediaElement.prototype.pause = () => {};
   HTMLMediaElement.prototype.load = () => {};
 }
+
+// Unit tests never reach the Readest Voice API: a controller built for a
+// signed-out reader would otherwise fetch the voice catalog over the network.
+// Tests that exercise the request spy on fetch themselves.
+if (typeof globalThis.fetch === 'function') {
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = (input, init) =>
+    String(input instanceof Request ? input.url : input).includes('/tts/readest')
+      ? Promise.resolve(Response.json({ error: 'NOT_CONFIGURED' }, { status: 503 }))
+      : realFetch(input, init);
+}

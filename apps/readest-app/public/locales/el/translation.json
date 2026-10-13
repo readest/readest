@@ -2597,10 +2597,13 @@
   "Add TTS Service": "Προσθήκη υπηρεσίας TTS",
   "Use your own API key with an OpenAI-compatible speech service. Requests go directly from this device to the service.": "Χρησιμοποιήστε το δικό σας κλειδί API με μια υπηρεσία ομιλίας συμβατή με OpenAI. Τα αιτήματα πηγαίνουν απευθείας από αυτή τη συσκευή στην υπηρεσία.",
   "Voices": "Φωνές",
-  "Separate voices with commas. Leave empty for the standard OpenAI voices.": "Διαχωρίστε τις φωνές με κόμματα. Αφήστε κενό για τις τυπικές φωνές του OpenAI.",
   "Instructions": "Οδηγίες",
   "Optional, for models that accept a speaking style": "Προαιρετικό, για μοντέλα που δέχονται στυλ ομιλίας",
   "Delete TTS Service": "Διαγραφή υπηρεσίας TTS",
   "Read aloud with your own OpenAI-compatible speech service, such as OpenAI or a self-hosted Kokoro server. Its voices appear in the voice list for every book.": "Ανάγνωση φωναχτά με τη δική σας υπηρεσία ομιλίας συμβατή με OpenAI, όπως το OpenAI ή έναν αυτοφιλοξενούμενο διακομιστή Kokoro. Οι φωνές της εμφανίζονται στη λίστα φωνών κάθε βιβλίου.",
-  "Use your own OpenAI-compatible speech service": "Χρησιμοποιήστε τη δική σας υπηρεσία ομιλίας συμβατή με OpenAI"
+  "Use your own OpenAI-compatible speech service": "Χρησιμοποιήστε τη δική σας υπηρεσία ομιλίας συμβατή με OpenAI",
+  "{{count}} voices available_one": "{{count}} διαθέσιμη φωνή",
+  "{{count}} voices available_other": "{{count}} διαθέσιμες φωνές",
+  "Multilingual": "Πολύγλωσση",
+  "Expressive": "Εκφραστική"
 }

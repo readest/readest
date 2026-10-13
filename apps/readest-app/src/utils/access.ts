@@ -244,6 +244,10 @@ export const TTS_PLANS: readonly UserPlan[] = ['plus', 'pro'];
 
 export const isTTSInPlan = (plan: UserPlan): boolean => TTS_PLANS.includes(plan);
 
+/** A Readest Voice tier: Plus unlocks its voices, Pro unlocks both tiers. */
+export const isVoiceTierInPlan = (tier: 'plus' | 'pro', plan: UserPlan): boolean =>
+  tier === 'plus' ? isTTSInPlan(plan) : plan === 'pro';
+
 export const getTTSQuota = (plan: UserPlan): number => {
   const fixedQuota = parseInt(process.env['TTS_FIXED_QUOTA'] ?? '0');
   return fixedQuota || DEFAULT_DAILY_TTS_QUOTA[plan] || 0;

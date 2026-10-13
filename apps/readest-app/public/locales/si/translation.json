@@ -2597,10 +2597,13 @@
   "Add TTS Service": "TTS සේවාවක් එක් කරන්න",
   "Use your own API key with an OpenAI-compatible speech service. Requests go directly from this device to the service.": "OpenAI-අනුකූල කථන සේවාවක් සමඟ ඔබේම API යතුර භාවිත කරන්න. ඉල්ලීම් මෙම උපාංගයෙන් සෘජුවම සේවාවට යයි.",
   "Voices": "හඬ",
-  "Separate voices with commas. Leave empty for the standard OpenAI voices.": "හඬ කොමා මගින් වෙන් කරන්න. සම්මත OpenAI හඬ සඳහා හිස්ව තබන්න.",
   "Instructions": "උපදෙස්",
   "Optional, for models that accept a speaking style": "විකල්ප, කථන විලාසයක් පිළිගන්නා ආකෘති සඳහා",
   "Delete TTS Service": "TTS සේවාව මකන්න",
   "Read aloud with your own OpenAI-compatible speech service, such as OpenAI or a self-hosted Kokoro server. Its voices appear in the voice list for every book.": "OpenAI හෝ ස්වයං-සත්කාරක Kokoro සේවාදායකයක් වැනි ඔබේම OpenAI-අනුකූල කථන සේවාවෙන් හඬ නගා කියවන්න. එහි හඬ සෑම පොතකම හඬ ලැයිස්තුවේ දිස් වේ.",
-  "Use your own OpenAI-compatible speech service": "ඔබේම OpenAI-අනුකූල කථන සේවාව භාවිත කරන්න"
+  "Use your own OpenAI-compatible speech service": "ඔබේම OpenAI-අනුකූල කථන සේවාව භාවිත කරන්න",
+  "{{count}} voices available_one": "හඬ {{count}}ක් ලබා ගත හැක",
+  "{{count}} voices available_other": "හඬ {{count}}ක් ලබා ගත හැක",
+  "Multilingual": "බහුභාෂා",
+  "Expressive": "ප්‍රකාශනශීලී"
 }

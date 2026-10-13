@@ -87,6 +87,9 @@ export interface SpeechProvider {
   // Engine-specific default-voice policy for a language's candidate list
   // (already filtered and sorted); return undefined to accept the first.
   pickDefaultVoice?(voices: TTSVoice[]): string | undefined;
+  // The order the picker lists a language's voices in. Absent: the reader's
+  // locale first, then by name.
+  compareVoices?(a: TTSVoice, b: TTSVoice): number;
   // Multilingual voices, offered whatever the book's language, in groups the
   // picker shows separately (one per configured service). Absent: one group
   // of the voices that match the book's language.

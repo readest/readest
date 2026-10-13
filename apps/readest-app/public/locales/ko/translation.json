@@ -2533,10 +2533,12 @@
   "Add TTS Service": "TTS 서비스 추가",
   "Use your own API key with an OpenAI-compatible speech service. Requests go directly from this device to the service.": "OpenAI 호환 음성 서비스에 자신의 API 키를 사용합니다. 요청은 이 기기에서 서비스로 직접 전송됩니다.",
   "Voices": "음성",
-  "Separate voices with commas. Leave empty for the standard OpenAI voices.": "음성은 쉼표로 구분하세요. 비워 두면 OpenAI 표준 음성을 사용합니다.",
   "Instructions": "지시문",
   "Optional, for models that accept a speaking style": "선택 사항, 말하기 스타일을 지원하는 모델용",
   "Delete TTS Service": "TTS 서비스 삭제",
   "Read aloud with your own OpenAI-compatible speech service, such as OpenAI or a self-hosted Kokoro server. Its voices appear in the voice list for every book.": "OpenAI나 자체 호스팅 Kokoro 서버 같은 자신의 OpenAI 호환 음성 서비스로 소리 내어 읽습니다. 해당 음성은 모든 책의 음성 목록에 표시됩니다.",
-  "Use your own OpenAI-compatible speech service": "자신의 OpenAI 호환 음성 서비스 사용"
+  "Use your own OpenAI-compatible speech service": "자신의 OpenAI 호환 음성 서비스 사용",
+  "{{count}} voices available_other": "사용 가능한 음성 {{count}}개",
+  "Multilingual": "다국어",
+  "Expressive": "표현력"
 }

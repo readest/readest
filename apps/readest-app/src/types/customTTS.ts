@@ -10,8 +10,6 @@ export interface CustomTTSService {
   baseUrl: string;
   apiKey?: string;
   model: string;
-  /** Voice names offered by the service; empty means the standard OpenAI voices. */
-  voices?: string[];
   /** Style instructions for models that take them (e.g. gpt-4o-mini-tts). */
   instructions?: string;
   disabled?: boolean;

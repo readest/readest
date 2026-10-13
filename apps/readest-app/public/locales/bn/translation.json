@@ -2597,10 +2597,13 @@
   "Add TTS Service": "TTS পরিষেবা যোগ করুন",
   "Use your own API key with an OpenAI-compatible speech service. Requests go directly from this device to the service.": "OpenAI-সামঞ্জস্যপূর্ণ ভয়েস পরিষেবার সঙ্গে নিজের API কী ব্যবহার করুন। অনুরোধগুলি সরাসরি এই ডিভাইস থেকে পরিষেবায় যায়।",
   "Voices": "কণ্ঠস্বর",
-  "Separate voices with commas. Leave empty for the standard OpenAI voices.": "কণ্ঠস্বরগুলি কমা দিয়ে আলাদা করুন। স্ট্যান্ডার্ড OpenAI কণ্ঠস্বরের জন্য খালি রাখুন।",
   "Instructions": "নির্দেশনা",
   "Optional, for models that accept a speaking style": "ঐচ্ছিক, যে মডেলগুলি কথা বলার ধরন গ্রহণ করে তাদের জন্য",
   "Delete TTS Service": "TTS পরিষেবা মুছুন",
   "Read aloud with your own OpenAI-compatible speech service, such as OpenAI or a self-hosted Kokoro server. Its voices appear in the voice list for every book.": "OpenAI বা স্ব-হোস্ট করা Kokoro সার্ভারের মতো নিজের OpenAI-সামঞ্জস্যপূর্ণ ভয়েস পরিষেবা দিয়ে উচ্চস্বরে পড়ুন। এর কণ্ঠস্বরগুলি প্রতিটি বইয়ের কণ্ঠস্বর তালিকায় দেখা যায়।",
-  "Use your own OpenAI-compatible speech service": "নিজের OpenAI-সামঞ্জস্যপূর্ণ ভয়েস পরিষেবা ব্যবহার করুন"
+  "Use your own OpenAI-compatible speech service": "নিজের OpenAI-সামঞ্জস্যপূর্ণ ভয়েস পরিষেবা ব্যবহার করুন",
+  "{{count}} voices available_one": "{{count}}টি ভয়েস উপলব্ধ",
+  "{{count}} voices available_other": "{{count}}টি ভয়েস উপলব্ধ",
+  "Multilingual": "বহুভাষিক",
+  "Expressive": "অভিব্যক্তিপূর্ণ"
 }

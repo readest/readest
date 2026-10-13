@@ -2725,10 +2725,15 @@
   "Add TTS Service": "Добавить сервис TTS",
   "Use your own API key with an OpenAI-compatible speech service. Requests go directly from this device to the service.": "Используйте собственный ключ API с сервисом речи, совместимым с OpenAI. Запросы отправляются напрямую с этого устройства в сервис.",
   "Voices": "Голоса",
-  "Separate voices with commas. Leave empty for the standard OpenAI voices.": "Разделяйте голоса запятыми. Оставьте пустым для стандартных голосов OpenAI.",
   "Instructions": "Инструкции",
   "Optional, for models that accept a speaking style": "Необязательно, для моделей, принимающих стиль речи",
   "Delete TTS Service": "Удалить сервис TTS",
   "Read aloud with your own OpenAI-compatible speech service, such as OpenAI or a self-hosted Kokoro server. Its voices appear in the voice list for every book.": "Читайте вслух с помощью собственного сервиса речи, совместимого с OpenAI, например OpenAI или собственного сервера Kokoro. Его голоса появляются в списке голосов для каждой книги.",
-  "Use your own OpenAI-compatible speech service": "Используйте собственный сервис речи, совместимый с OpenAI"
+  "Use your own OpenAI-compatible speech service": "Используйте собственный сервис речи, совместимый с OpenAI",
+  "{{count}} voices available_one": "Доступен {{count}} голос",
+  "{{count}} voices available_few": "Доступно {{count}} голоса",
+  "{{count}} voices available_many": "Доступно {{count}} голосов",
+  "{{count}} voices available_other": "Доступно {{count}} голоса",
+  "Multilingual": "Многоязычный",
+  "Expressive": "Выразительный"
 }

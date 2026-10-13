@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { getTTSQuota, isTTSInPlan, TTS_PLANS } from '@/utils/access';
+import { getTTSQuota, isTTSInPlan, isVoiceTierInPlan, TTS_PLANS } from '@/utils/access';
 
 describe('TTS plan gating', () => {
   it('includes exactly plus and pro', () => {
@@ -8,6 +8,17 @@ describe('TTS plan gating', () => {
     expect(isTTSInPlan('pro')).toBe(true);
     expect(isTTSInPlan('free')).toBe(false);
     expect(isTTSInPlan('purchase')).toBe(false);
+  });
+});
+
+describe('isVoiceTierInPlan', () => {
+  it('unlocks Plus voices for Plus and Pro, Pro voices for Pro only', () => {
+    expect(
+      ['free', 'purchase', 'plus', 'pro'].map((p) => isVoiceTierInPlan('plus', p as never)),
+    ).toEqual([false, false, true, true]);
+    expect(
+      ['free', 'purchase', 'plus', 'pro'].map((p) => isVoiceTierInPlan('pro', p as never)),
+    ).toEqual([false, false, false, true]);
   });
 });
 

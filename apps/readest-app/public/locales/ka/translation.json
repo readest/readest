@@ -2597,10 +2597,13 @@
   "Add TTS Service": "TTS სერვისის დამატება",
   "Use your own API key with an OpenAI-compatible speech service. Requests go directly from this device to the service.": "გამოიყენეთ საკუთარი API გასაღები OpenAI-თან თავსებად მეტყველების სერვისთან. მოთხოვნები პირდაპირ ამ მოწყობილობიდან მიდის სერვისთან.",
   "Voices": "ხმები",
-  "Separate voices with commas. Leave empty for the standard OpenAI voices.": "გამოყავით ხმები მძიმეებით. დატოვეთ ცარიელი OpenAI-ის სტანდარტული ხმებისთვის.",
   "Instructions": "ინსტრუქციები",
   "Optional, for models that accept a speaking style": "არასავალდებულო, მოდელებისთვის, რომლებიც იღებენ მეტყველების სტილს",
   "Delete TTS Service": "TTS სერვისის წაშლა",
   "Read aloud with your own OpenAI-compatible speech service, such as OpenAI or a self-hosted Kokoro server. Its voices appear in the voice list for every book.": "წაიკითხეთ ხმამაღლა საკუთარი OpenAI-თან თავსებადი მეტყველების სერვისით, მაგალითად OpenAI-ით ან თვითონ განთავსებული Kokoro სერვერით. მისი ხმები ჩანს ყველა წიგნის ხმების სიაში.",
-  "Use your own OpenAI-compatible speech service": "გამოიყენეთ საკუთარი OpenAI-თან თავსებადი მეტყველების სერვისი"
+  "Use your own OpenAI-compatible speech service": "გამოიყენეთ საკუთარი OpenAI-თან თავსებადი მეტყველების სერვისი",
+  "{{count}} voices available_one": "ხელმისაწვდომია {{count}} ხმა",
+  "{{count}} voices available_other": "ხელმისაწვდომია {{count}} ხმა",
+  "Multilingual": "მრავალენოვანი",
+  "Expressive": "ექსპრესიული"
 }

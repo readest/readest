@@ -13,7 +13,6 @@ const service: CustomTTSService = {
   baseUrl: 'http://127.0.0.1:8880/v1',
   apiKey: 'sk-secret',
   model: 'kokoro',
-  voices: ['af_bella', 'am_adam'],
   instructions: 'Calm.',
   disabled: true,
   addedAt: 1700000000000,
@@ -54,12 +53,10 @@ describe('customTTSAdapter', () => {
     expect(unpacked).toEqual({ ...service, reincarnation: 'r1' });
   });
 
-  test('rejects rows without a name, base URL or model, and drops non-string voices', () => {
+  test('rejects rows without a name, base URL or model', () => {
     const { id: _id, ...fields } = service;
     for (const missing of ['name', 'baseUrl', 'model']) {
       expect(customTTSAdapter.unpackRow(row({ ...fields, [missing]: undefined }), '')).toBeNull();
     }
-    const unpacked = customTTSAdapter.unpackRow(row({ ...fields, voices: ['a', 3, null] }), '');
-    expect(unpacked!.voices).toEqual(['a']);
   });
 });

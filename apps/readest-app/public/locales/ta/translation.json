@@ -2597,10 +2597,13 @@
   "Add TTS Service": "TTS சேவையைச் சேர்",
   "Use your own API key with an OpenAI-compatible speech service. Requests go directly from this device to the service.": "OpenAI-இணக்கமான பேச்சு சேவையுடன் உங்கள் சொந்த API விசையைப் பயன்படுத்துங்கள். கோரிக்கைகள் இந்தச் சாதனத்திலிருந்து நேரடியாகச் சேவைக்குச் செல்லும்.",
   "Voices": "குரல்கள்",
-  "Separate voices with commas. Leave empty for the standard OpenAI voices.": "குரல்களைக் காற்புள்ளிகளால் பிரிக்கவும். நிலையான OpenAI குரல்களுக்குக் காலியாக விடவும்.",
   "Instructions": "வழிமுறைகள்",
   "Optional, for models that accept a speaking style": "விருப்பத்தேர்வு, பேச்சு பாணியை ஏற்கும் மாதிரிகளுக்கு",
   "Delete TTS Service": "TTS சேவையை நீக்கு",
   "Read aloud with your own OpenAI-compatible speech service, such as OpenAI or a self-hosted Kokoro server. Its voices appear in the voice list for every book.": "OpenAI அல்லது சுயமாக ஹோஸ்ட் செய்த Kokoro சேவையகம் போன்ற உங்கள் சொந்த OpenAI-இணக்கமான பேச்சு சேவையுடன் உரக்கப் படியுங்கள். அதன் குரல்கள் ஒவ்வொரு புத்தகத்தின் குரல் பட்டியலிலும் தோன்றும்.",
-  "Use your own OpenAI-compatible speech service": "உங்கள் சொந்த OpenAI-இணக்கமான பேச்சு சேவையைப் பயன்படுத்துங்கள்"
+  "Use your own OpenAI-compatible speech service": "உங்கள் சொந்த OpenAI-இணக்கமான பேச்சு சேவையைப் பயன்படுத்துங்கள்",
+  "{{count}} voices available_one": "{{count}} குரல் கிடைக்கிறது",
+  "{{count}} voices available_other": "{{count}} குரல்கள் கிடைக்கின்றன",
+  "Multilingual": "பன்மொழி",
+  "Expressive": "உணர்ச்சிமிக்க"
 }

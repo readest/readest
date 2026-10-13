@@ -2597,10 +2597,13 @@
   "Add TTS Service": "TTS hizmeti ekle",
   "Use your own API key with an OpenAI-compatible speech service. Requests go directly from this device to the service.": "OpenAI uyumlu bir konuşma hizmetiyle kendi API anahtarınızı kullanın. İstekler doğrudan bu cihazdan hizmete gider.",
   "Voices": "Sesler",
-  "Separate voices with commas. Leave empty for the standard OpenAI voices.": "Sesleri virgülle ayırın. Standart OpenAI sesleri için boş bırakın.",
   "Instructions": "Talimatlar",
   "Optional, for models that accept a speaking style": "İsteğe bağlı, konuşma stili kabul eden modeller için",
   "Delete TTS Service": "TTS hizmetini sil",
   "Read aloud with your own OpenAI-compatible speech service, such as OpenAI or a self-hosted Kokoro server. Its voices appear in the voice list for every book.": "OpenAI veya kendi barındırdığınız bir Kokoro sunucusu gibi kendi OpenAI uyumlu konuşma hizmetinizle sesli okuyun. Sesleri her kitabın ses listesinde görünür.",
-  "Use your own OpenAI-compatible speech service": "Kendi OpenAI uyumlu konuşma hizmetinizi kullanın"
+  "Use your own OpenAI-compatible speech service": "Kendi OpenAI uyumlu konuşma hizmetinizi kullanın",
+  "{{count}} voices available_one": "{{count}} ses kullanılabilir",
+  "{{count}} voices available_other": "{{count}} ses kullanılabilir",
+  "Multilingual": "Çok dilli",
+  "Expressive": "Etkileyici"
 }

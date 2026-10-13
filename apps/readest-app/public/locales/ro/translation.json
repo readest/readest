@@ -2661,10 +2661,14 @@
   "Add TTS Service": "Adaugă serviciu TTS",
   "Use your own API key with an OpenAI-compatible speech service. Requests go directly from this device to the service.": "Folosește propria cheie API cu un serviciu de vorbire compatibil cu OpenAI. Cererile merg direct de pe acest dispozitiv la serviciu.",
   "Voices": "Voci",
-  "Separate voices with commas. Leave empty for the standard OpenAI voices.": "Separă vocile prin virgule. Lasă gol pentru vocile standard OpenAI.",
   "Instructions": "Instrucțiuni",
   "Optional, for models that accept a speaking style": "Opțional, pentru modelele care acceptă un stil de vorbire",
   "Delete TTS Service": "Șterge serviciul TTS",
   "Read aloud with your own OpenAI-compatible speech service, such as OpenAI or a self-hosted Kokoro server. Its voices appear in the voice list for every book.": "Citește cu voce tare cu propriul serviciu de vorbire compatibil cu OpenAI, cum ar fi OpenAI sau un server Kokoro găzduit de tine. Vocile sale apar în lista de voci a fiecărei cărți.",
-  "Use your own OpenAI-compatible speech service": "Folosește propriul serviciu de vorbire compatibil cu OpenAI"
+  "Use your own OpenAI-compatible speech service": "Folosește propriul serviciu de vorbire compatibil cu OpenAI",
+  "{{count}} voices available_one": "{{count}} voce disponibilă",
+  "{{count}} voices available_few": "{{count}} voci disponibile",
+  "{{count}} voices available_other": "{{count}} de voci disponibile",
+  "Multilingual": "Multilingv",
+  "Expressive": "Expresiv"
 }

@@ -2533,10 +2533,12 @@
   "Add TTS Service": "新增語音朗讀服務",
   "Use your own API key with an OpenAI-compatible speech service. Requests go directly from this device to the service.": "使用你自己的 API 金鑰連接相容 OpenAI 的語音服務。請求會直接從本裝置傳送到該服務。",
   "Voices": "聲音",
-  "Separate voices with commas. Leave empty for the standard OpenAI voices.": "多個聲音以逗號分隔。留空則使用 OpenAI 的標準聲音。",
   "Instructions": "指令",
   "Optional, for models that accept a speaking style": "選填，用於支援朗讀風格的模型",
   "Delete TTS Service": "刪除語音朗讀服務",
   "Read aloud with your own OpenAI-compatible speech service, such as OpenAI or a self-hosted Kokoro server. Its voices appear in the voice list for every book.": "使用你自己的相容 OpenAI 的語音服務朗讀，例如 OpenAI 或自架的 Kokoro 伺服器。其聲音會出現在每本書的聲音清單中。",
-  "Use your own OpenAI-compatible speech service": "使用你自己的相容 OpenAI 的語音服務"
+  "Use your own OpenAI-compatible speech service": "使用你自己的相容 OpenAI 的語音服務",
+  "{{count}} voices available_other": "可用語音 {{count}} 個",
+  "Multilingual": "多語言",
+  "Expressive": "富有表現力"
 }

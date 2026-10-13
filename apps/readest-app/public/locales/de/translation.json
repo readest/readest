@@ -2597,10 +2597,13 @@
   "Add TTS Service": "TTS-Dienst hinzufügen",
   "Use your own API key with an OpenAI-compatible speech service. Requests go directly from this device to the service.": "Verwende deinen eigenen API-Schlüssel mit einem OpenAI-kompatiblen Sprachdienst. Anfragen gehen direkt von diesem Gerät an den Dienst.",
   "Voices": "Stimmen",
-  "Separate voices with commas. Leave empty for the standard OpenAI voices.": "Stimmen durch Kommas trennen. Leer lassen für die Standardstimmen von OpenAI.",
   "Instructions": "Anweisungen",
   "Optional, for models that accept a speaking style": "Optional, für Modelle, die einen Sprechstil akzeptieren",
   "Delete TTS Service": "TTS-Dienst löschen",
   "Read aloud with your own OpenAI-compatible speech service, such as OpenAI or a self-hosted Kokoro server. Its voices appear in the voice list for every book.": "Lies mit deinem eigenen OpenAI-kompatiblen Sprachdienst vor, etwa OpenAI oder einem selbst gehosteten Kokoro-Server. Seine Stimmen erscheinen in der Stimmenliste jedes Buchs.",
-  "Use your own OpenAI-compatible speech service": "Eigenen OpenAI-kompatiblen Sprachdienst verwenden"
+  "Use your own OpenAI-compatible speech service": "Eigenen OpenAI-kompatiblen Sprachdienst verwenden",
+  "{{count}} voices available_one": "{{count}} Stimme verfügbar",
+  "{{count}} voices available_other": "{{count}} Stimmen verfügbar",
+  "Multilingual": "Mehrsprachig",
+  "Expressive": "Ausdrucksstark"
 }

@@ -2853,10 +2853,17 @@
   "Add TTS Service": "إضافة خدمة TTS",
   "Use your own API key with an OpenAI-compatible speech service. Requests go directly from this device to the service.": "استخدم مفتاح API الخاص بك مع خدمة كلام متوافقة مع OpenAI. تُرسل الطلبات مباشرة من هذا الجهاز إلى الخدمة.",
   "Voices": "الأصوات",
-  "Separate voices with commas. Leave empty for the standard OpenAI voices.": "افصل بين الأصوات بفواصل. اتركه فارغًا لاستخدام أصوات OpenAI القياسية.",
   "Instructions": "التعليمات",
   "Optional, for models that accept a speaking style": "اختياري، للنماذج التي تقبل أسلوب تحدث",
   "Delete TTS Service": "حذف خدمة TTS",
   "Read aloud with your own OpenAI-compatible speech service, such as OpenAI or a self-hosted Kokoro server. Its voices appear in the voice list for every book.": "اقرأ بصوت عالٍ باستخدام خدمة الكلام المتوافقة مع OpenAI الخاصة بك، مثل OpenAI أو خادم Kokoro مستضاف ذاتيًا. تظهر أصواتها في قائمة الأصوات لكل كتاب.",
-  "Use your own OpenAI-compatible speech service": "استخدم خدمة الكلام المتوافقة مع OpenAI الخاصة بك"
+  "Use your own OpenAI-compatible speech service": "استخدم خدمة الكلام المتوافقة مع OpenAI الخاصة بك",
+  "{{count}} voices available_zero": "لا توجد أصوات متاحة",
+  "{{count}} voices available_one": "صوت واحد متاح",
+  "{{count}} voices available_two": "صوتان متاحان",
+  "{{count}} voices available_few": "{{count}} أصوات متاحة",
+  "{{count}} voices available_many": "{{count}} صوتًا متاحًا",
+  "{{count}} voices available_other": "{{count}} صوت متاح",
+  "Multilingual": "متعدد اللغات",
+  "Expressive": "معبّر"
 }

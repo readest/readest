@@ -125,6 +125,14 @@ describe('CachingProvider', () => {
     expect(strict.sameLanguageVoicesOnly).toBe(true);
   });
 
+  test("lists voices in the inner provider's order", () => {
+    const compareVoices = vi.fn(() => -1);
+    const sorted = new CachingProvider(makeInner({ compareVoices }), store);
+    sorted.compareVoices!({ id: 'a', name: 'A', lang: 'en' }, { id: 'b', name: 'B', lang: 'en' });
+    expect(compareVoices).toHaveBeenCalled();
+    expect(new CachingProvider(makeInner(), store).compareVoices).toBeUndefined();
+  });
+
   test('init starts opening the store, so the first lookup does not pay for it', async () => {
     const opening = Object.assign(new MemoryStore(), {
       open: vi.fn().mockResolvedValue(undefined),

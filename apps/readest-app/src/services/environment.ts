@@ -44,6 +44,11 @@ const isWebDevMode = () => process.env['NODE_ENV'] === 'development' && isWebApp
 // for production build or tauri app use the production Web API
 export const getAPIBaseUrl = () => (isWebDevMode() ? '/api' : `${getBaseUrl()}/api`);
 
+// Readest Voice synthesizes on the production GPU service, which a local dev
+// server cannot reach: its routes use the production Web API even under
+// `pnpm dev-web` (a self-hosted apiBaseUrl still applies).
+export const getReadestVoiceAPIBaseUrl = () => `${getBaseUrl()}/api`;
+
 // For Node.js API that currently not supported in some edge runtimes
 export const getNodeAPIBaseUrl = () => (isWebDevMode() ? '/api' : `${getNodeBaseUrl()}/api`);
 

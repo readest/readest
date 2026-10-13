@@ -4,7 +4,7 @@ import { isSameLang } from '@/utils/lang';
 import { NativeAudioPlayer } from './NativeAudioPlayer';
 import { TTSClient, TTSCapabilities, TTSMessageEvent } from './TTSClient';
 import { TTSWordBoundary } from '@/libs/edgeTTS';
-import { TTSGranularity, TTSMark, TTSVoice, TTSVoicesGroup } from './types';
+import { MULTILINGUAL_LANG, TTSGranularity, TTSMark, TTSVoice, TTSVoicesGroup } from './types';
 import { AppService } from '@/types/system';
 import { parseSSMLMarks } from '@/utils/ssml';
 import { DEFAULT_PARAGRAPH_GAP_SEC, TTSController } from './TTSController';
@@ -210,11 +210,17 @@ export class BufferedTTSClient implements TTSClient {
   };
 
   getVoiceIdFromLang = async (lang: string) => {
-    const preferredVoiceId = TTSUtils.getPreferredVoice(this.name, lang);
-    const preferredVoice = this.voices.find((v) => v.id === preferredVoiceId);
+    // A multilingual voice is remembered under its own language and reads any.
+    const preferredVoiceId =
+      TTSUtils.getPreferredVoice(this.name, lang) ??
+      TTSUtils.getPreferredVoice(this.name, MULTILINGUAL_LANG);
+    // A voice the plan lacks (listed, disabled) is never spoken with.
+    const preferredVoice = this.voices.find((v) => v.id === preferredVoiceId && !v.disabled);
     if (preferredVoice) return preferredVoice.id;
 
-    const availableVoices = (await this.getVoices(lang))[0]?.voices || [];
+    const availableVoices = ((await this.getVoices(lang))[0]?.voices || []).filter(
+      (v) => !v.disabled,
+    );
     const picked = this.provider.pickDefaultVoice?.(availableVoices);
     if (this.provider.sameLanguageVoicesOnly) return picked || availableVoices[0]?.id || '';
     return (
@@ -835,10 +841,11 @@ export class BufferedTTSClient implements TTSClient {
   }
 
   async getAllVoices(): Promise<TTSVoice[]> {
-    this.voices.forEach((voice) => {
-      voice.disabled = !this.initialized;
-    });
-    return this.voices;
+    // Initialized, each voice keeps the provider's own flag (a voice the plan
+    // lacks stays disabled); otherwise none is usable.
+    return this.initialized
+      ? this.voices
+      : this.voices.map((voice) => ({ ...voice, disabled: true }));
   }
 
   async getVoices(lang: string) {
@@ -857,7 +864,11 @@ export class BufferedTTSClient implements TTSClient {
     const voicesGroup: TTSVoicesGroup = {
       id: this.name,
       name: this.provider.label,
-      voices: filteredVoices.sort(TTSUtils.sortVoicesPreferLocaleFunc(locale)),
+      voices: filteredVoices.sort(
+        this.provider.compareVoices
+          ? (a, b) => this.provider.compareVoices!(a, b)
+          : TTSUtils.sortVoicesPreferLocaleFunc(locale),
+      ),
       disabled: !this.initialized || filteredVoices.length === 0,
     };
 

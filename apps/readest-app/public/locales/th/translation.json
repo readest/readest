@@ -2533,10 +2533,12 @@
   "Add TTS Service": "เพิ่มบริการ TTS",
   "Use your own API key with an OpenAI-compatible speech service. Requests go directly from this device to the service.": "ใช้คีย์ API ของคุณเองกับบริการเสียงพูดที่เข้ากันได้กับ OpenAI คำขอจะส่งจากอุปกรณ์นี้ไปยังบริการโดยตรง",
   "Voices": "เสียง",
-  "Separate voices with commas. Leave empty for the standard OpenAI voices.": "คั่นเสียงด้วยเครื่องหมายจุลภาค เว้นว่างไว้เพื่อใช้เสียงมาตรฐานของ OpenAI",
   "Instructions": "คำสั่ง",
   "Optional, for models that accept a speaking style": "ไม่บังคับ สำหรับโมเดลที่รองรับสไตล์การพูด",
   "Delete TTS Service": "ลบบริการ TTS",
   "Read aloud with your own OpenAI-compatible speech service, such as OpenAI or a self-hosted Kokoro server. Its voices appear in the voice list for every book.": "อ่านออกเสียงด้วยบริการเสียงพูดที่เข้ากันได้กับ OpenAI ของคุณเอง เช่น OpenAI หรือเซิร์ฟเวอร์ Kokoro ที่โฮสต์เอง เสียงของบริการจะปรากฏในรายการเสียงของหนังสือทุกเล่ม",
-  "Use your own OpenAI-compatible speech service": "ใช้บริการเสียงพูดที่เข้ากันได้กับ OpenAI ของคุณเอง"
+  "Use your own OpenAI-compatible speech service": "ใช้บริการเสียงพูดที่เข้ากันได้กับ OpenAI ของคุณเอง",
+  "{{count}} voices available_other": "มี {{count}} เสียงให้ใช้งาน",
+  "Multilingual": "หลายภาษา",
+  "Expressive": "แสดงอารมณ์"
 }

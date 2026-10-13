@@ -231,6 +231,17 @@ describe('environment', () => {
     });
   });
 
+  // ── getReadestVoiceAPIBaseUrl ──────────────────────────────────
+  describe('getReadestVoiceAPIBaseUrl', () => {
+    test('uses the production Web API even in web development mode', async () => {
+      env['NODE_ENV'] = 'development';
+      env['NEXT_PUBLIC_APP_PLATFORM'] = 'web';
+      delete env['NEXT_PUBLIC_API_BASE_URL'];
+      const { getReadestVoiceAPIBaseUrl } = await import('@/services/environment');
+      expect(getReadestVoiceAPIBaseUrl()).toBe('https://web.readest.com/api');
+    });
+  });
+
   // ── getNodeAPIBaseUrl ──────────────────────────────────────────
   describe('getNodeAPIBaseUrl', () => {
     test('returns /api in web development mode', async () => {

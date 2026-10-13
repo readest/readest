@@ -91,12 +91,14 @@ export class CachingProvider implements SpeechProvider {
   // choose windowed prefetch over synthesizing preloads.
   readonly prefetch?: SpeechProvider['prefetch'];
   readonly groupVoices?: SpeechProvider['groupVoices'];
+  readonly compareVoices?: SpeechProvider['compareVoices'];
 
   constructor(inner: SpeechProvider, store: TTSCacheStore) {
     this.#inner = inner;
     this.#store = store;
     if (inner.prefetch) this.prefetch = this.#prefetch.bind(this);
     if (inner.groupVoices) this.groupVoices = inner.groupVoices.bind(inner);
+    if (inner.compareVoices) this.compareVoices = inner.compareVoices.bind(inner);
     store.onImported?.((keys) => this.#onImported(keys));
   }
 

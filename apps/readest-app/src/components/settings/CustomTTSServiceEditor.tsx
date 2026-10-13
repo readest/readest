@@ -3,12 +3,7 @@ import { PiSpinner } from 'react-icons/pi';
 import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useCustomTTSStore } from '@/store/customTTSStore';
-import {
-  customVoiceId,
-  getServiceVoices,
-  OpenAICompatibleSpeechProvider,
-  OPENAI_TTS_VOICES,
-} from '@/services/tts/providers/openaiCompatible';
+import { OpenAICompatibleSpeechProvider } from '@/services/tts/providers/openaiCompatible';
 import type { CustomTTSService } from '@/types/customTTS';
 import { BoxedList, SettingLabel, SettingsSwitchRow } from './primitives';
 import SubPageHeader from './SubPageHeader';
@@ -22,12 +17,6 @@ const BASE_URL_PRESETS = [
 const MODEL_PRESETS = ['gpt-4o-mini-tts', 'tts-1', 'tts-1-hd', 'kokoro'];
 
 type Draft = Omit<CustomTTSService, 'id' | 'addedAt' | 'updatedAt'>;
-
-const parseVoices = (text: string) =>
-  text
-    .split(/[,\n]/)
-    .map((v) => v.trim())
-    .filter(Boolean);
 
 const Field: React.FC<{ id: string; label: string; children: React.ReactNode }> = ({
   id,
@@ -53,48 +42,49 @@ const CustomTTSServiceEditor: React.FC<CustomTTSServiceEditorProps> = ({ service
   const [draft, setDraft] = useState<Draft>(
     service ?? { name: '', baseUrl: BASE_URL_PRESETS[0]!, model: MODEL_PRESETS[0]! },
   );
-  const [voicesText, setVoicesText] = useState((service?.voices ?? []).join(', '));
   const [testing, setTesting] = useState(false);
   const [error, setError] = useState('');
+  const [voiceCount, setVoiceCount] = useState<number | null>(null);
 
   const canSave = !!draft.name.trim() && !!draft.baseUrl.trim() && !!draft.model.trim();
 
   const update = (patch: Partial<Draft>) => {
     setDraft((d) => ({ ...d, ...patch }));
     setError('');
+    setVoiceCount(null);
   };
 
-  const cleaned = (): Draft => {
-    const voices = parseVoices(voicesText);
-    return {
-      ...draft,
-      name: draft.name.trim(),
-      baseUrl: draft.baseUrl.trim(),
-      model: draft.model.trim(),
-      voices: voices.length ? voices : undefined,
-      instructions: draft.instructions?.trim() || undefined,
-    };
-  };
+  const cleaned = (): Draft => ({
+    ...draft,
+    name: draft.name.trim(),
+    baseUrl: draft.baseUrl.trim(),
+    model: draft.model.trim(),
+    instructions: draft.instructions?.trim() || undefined,
+  });
 
-  // Speaks a short sample with the first voice, straight from this device.
+  // Lists the service's voices and speaks a short sample with the first one,
+  // straight from this device.
   const handleTest = async () => {
     setTesting(true);
     setError('');
+    setVoiceCount(null);
     try {
       const test: CustomTTSService = { ...cleaned(), id: 'test', addedAt: 0, updatedAt: 0 };
       const provider = new OpenAICompatibleSpeechProvider(
         () => [test],
         async () => true,
       );
+      const voices = await provider.getAllVoices();
       const { audio } = await provider.synthesize(
         {
           lang: 'en',
           text: _('Hello! This is how this voice sounds.'),
-          voice: customVoiceId(test.id, getServiceVoices(test)[0]!),
+          voice: voices[0]!.id,
           pitch: 1,
         },
         new AbortController().signal,
       );
+      setVoiceCount(voices.length);
       const url = URL.createObjectURL(new Blob([audio], { type: 'audio/mpeg' }));
       const player = new Audio(url);
       player.onended = () => URL.revokeObjectURL(url);
@@ -189,22 +179,6 @@ const CustomTTSServiceEditor: React.FC<CustomTTSServiceEditorProps> = ({ service
             ))}
           </datalist>
         </Field>
-        <Field id='tts-voices' label={_('Voices')}>
-          <input
-            id='tts-voices'
-            type='text'
-            className={inputClass}
-            value={voicesText}
-            onChange={(e) => {
-              setVoicesText(e.target.value);
-              setError('');
-            }}
-            placeholder={OPENAI_TTS_VOICES.join(', ')}
-          />
-          <p className='text-base-content/60 text-xs'>
-            {_('Separate voices with commas. Leave empty for the standard OpenAI voices.')}
-          </p>
-        </Field>
         <Field id='tts-instructions' label={_('Instructions')}>
           <textarea
             id='tts-instructions'
@@ -224,6 +198,11 @@ const CustomTTSServiceEditor: React.FC<CustomTTSServiceEditorProps> = ({ service
 
       <div className='flex flex-col gap-3 px-4'>
         {error && <p className='text-error break-words text-sm'>{error}</p>}
+        {voiceCount !== null && (
+          <p className='text-base-content/70 text-sm'>
+            {_('{{count}} voices available', { count: voiceCount })}
+          </p>
+        )}
         <div className='flex justify-end gap-2'>
           <button
             type='button'

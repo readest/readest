@@ -2597,10 +2597,13 @@
   "Add TTS Service": "TTS-dienst toevoegen",
   "Use your own API key with an OpenAI-compatible speech service. Requests go directly from this device to the service.": "Gebruik je eigen API-sleutel met een OpenAI-compatibele spraakdienst. Verzoeken gaan rechtstreeks van dit apparaat naar de dienst.",
   "Voices": "Stemmen",
-  "Separate voices with commas. Leave empty for the standard OpenAI voices.": "Scheid stemmen met komma’s. Laat leeg voor de standaardstemmen van OpenAI.",
   "Instructions": "Instructies",
   "Optional, for models that accept a speaking style": "Optioneel, voor modellen die een spreekstijl accepteren",
   "Delete TTS Service": "TTS-dienst verwijderen",
   "Read aloud with your own OpenAI-compatible speech service, such as OpenAI or a self-hosted Kokoro server. Its voices appear in the voice list for every book.": "Lees voor met je eigen OpenAI-compatibele spraakdienst, zoals OpenAI of een zelfgehoste Kokoro-server. De stemmen verschijnen in de stemmenlijst van elk boek.",
-  "Use your own OpenAI-compatible speech service": "Gebruik je eigen OpenAI-compatibele spraakdienst"
+  "Use your own OpenAI-compatible speech service": "Gebruik je eigen OpenAI-compatibele spraakdienst",
+  "{{count}} voices available_one": "{{count}} stem beschikbaar",
+  "{{count}} voices available_other": "{{count}} stemmen beschikbaar",
+  "Multilingual": "Meertalig",
+  "Expressive": "Expressief"
 }

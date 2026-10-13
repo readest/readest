@@ -2661,10 +2661,14 @@
   "Add TTS Service": "Añadir servicio de TTS",
   "Use your own API key with an OpenAI-compatible speech service. Requests go directly from this device to the service.": "Usa tu propia clave API con un servicio de voz compatible con OpenAI. Las solicitudes van directamente desde este dispositivo al servicio.",
   "Voices": "Voces",
-  "Separate voices with commas. Leave empty for the standard OpenAI voices.": "Separa las voces con comas. Déjalo vacío para usar las voces estándar de OpenAI.",
   "Instructions": "Instrucciones",
   "Optional, for models that accept a speaking style": "Opcional, para modelos que aceptan un estilo de habla",
   "Delete TTS Service": "Eliminar servicio de TTS",
   "Read aloud with your own OpenAI-compatible speech service, such as OpenAI or a self-hosted Kokoro server. Its voices appear in the voice list for every book.": "Lee en voz alta con tu propio servicio de voz compatible con OpenAI, como OpenAI o un servidor Kokoro autoalojado. Sus voces aparecen en la lista de voces de cada libro.",
-  "Use your own OpenAI-compatible speech service": "Usa tu propio servicio de voz compatible con OpenAI"
+  "Use your own OpenAI-compatible speech service": "Usa tu propio servicio de voz compatible con OpenAI",
+  "{{count}} voices available_one": "{{count}} voz disponible",
+  "{{count}} voices available_many": "{{count}} voces disponibles",
+  "{{count}} voices available_other": "{{count}} voces disponibles",
+  "Multilingual": "Multilingüe",
+  "Expressive": "Expresiva"
 }

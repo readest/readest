@@ -7,7 +7,7 @@
 
 import { getAIFetch } from '@/services/ai/utils/httpFetch';
 import type { CustomTTSService } from '@/types/customTTS';
-import type { TTSVoice, TTSVoicesGroup } from '../types';
+import { MULTILINGUAL_LANG, type TTSVoice, type TTSVoicesGroup } from '../types';
 import {
   type SpeechProvider,
   SpeechSynthesisFatalError,
@@ -32,6 +32,9 @@ export const OPENAI_TTS_VOICES = [
   'verse',
 ];
 
+// How long a service gets to list its voices before the standard names stand in.
+const VOICE_LIST_TIMEOUT_MS = 5000;
+
 // Statuses that no later request can get past (bad key, wrong URL or model).
 const FATAL_STATUSES = new Set([401, 403, 404]);
 // Statuses worth retrying; any other 4xx is about this sentence.
@@ -39,8 +42,45 @@ const TRANSIENT_STATUSES = new Set([408, 409, 425, 429]);
 
 export const customVoiceId = (serviceId: string, voice: string) => `${serviceId}:${voice}`;
 
-export const getServiceVoices = (service: CustomTTSService): string[] =>
-  service.voices?.length ? service.voices : OPENAI_TTS_VOICES;
+const endpoint = (service: CustomTTSService, path: string) =>
+  `${service.baseUrl.replace(/\/+$/, '')}${path}`;
+
+const authHeaders = (service: CustomTTSService): Record<string, string> =>
+  service.apiKey ? { Authorization: `Bearer ${service.apiKey}` } : {};
+
+// `{ voices: [...] }` of names (Kokoro-FastAPI) or of `{ id, name }` objects.
+const parseVoiceList = (body: unknown): string[] => {
+  const list = (body as { voices?: unknown } | null)?.voices;
+  if (!Array.isArray(list)) return [];
+  return list.flatMap((item: unknown) => {
+    if (typeof item === 'string') return [item];
+    const { id, name } = (item ?? {}) as { id?: unknown; name?: unknown };
+    if (typeof id === 'string') return [id];
+    return typeof name === 'string' ? [name] : [];
+  });
+};
+
+// The voices a service offers, from GET {baseUrl}/audio/voices. OpenAI itself
+// has no such endpoint, so a service that lists nothing gets its standard voices.
+export const fetchServiceVoices = async (service: CustomTTSService): Promise<string[]> => {
+  // A timer rather than AbortSignal.timeout: tauriFetch rejects unhandled when
+  // a finished request is aborted.
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), VOICE_LIST_TIMEOUT_MS);
+  try {
+    const res = await getAIFetch()(endpoint(service, '/audio/voices'), {
+      headers: authHeaders(service),
+      signal: controller.signal,
+    });
+    const voices = res.ok ? parseVoiceList(await res.json()) : [];
+    if (voices.length) return voices;
+  } catch {
+    // Unreachable or not JSON: fall through to the standard voices.
+  } finally {
+    clearTimeout(timer);
+  }
+  return OPENAI_TTS_VOICES;
+};
 
 const abortError = () => new DOMException('Aborted', 'AbortError');
 
@@ -61,12 +101,14 @@ export class OpenAICompatibleSpeechProvider implements SpeechProvider {
   }
 
   async getAllVoices(): Promise<TTSVoice[]> {
-    // The services are multilingual: a voice carries no language.
-    return this.getServices().flatMap((service) =>
-      getServiceVoices(service).map((voice) => ({
+    if (!(await this.init())) return [];
+    const services = this.getServices();
+    const lists = await Promise.all(services.map(fetchServiceVoices));
+    return services.flatMap((service, i) =>
+      lists[i]!.map((voice) => ({
         id: customVoiceId(service.id, voice),
         name: voice,
-        lang: '',
+        lang: MULTILINGUAL_LANG,
       })),
     );
   }
@@ -98,12 +140,9 @@ export class OpenAICompatibleSpeechProvider implements SpeechProvider {
     const onAbort = () => controller.abort();
     signal.addEventListener('abort', onAbort, { once: true });
     try {
-      const res = await getAIFetch()(`${service.baseUrl.replace(/\/+$/, '')}/audio/speech`, {
+      const res = await getAIFetch()(endpoint(service, '/audio/speech'), {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(service.apiKey ? { Authorization: `Bearer ${service.apiKey}` } : {}),
-        },
+        headers: { 'Content-Type': 'application/json', ...authHeaders(service) },
         body: JSON.stringify({
           model: service.model,
           input: req.text,

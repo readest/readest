@@ -2597,10 +2597,13 @@
   "Add TTS Service": "TTS-szolgáltatás hozzáadása",
   "Use your own API key with an OpenAI-compatible speech service. Requests go directly from this device to the service.": "Használd a saját API-kulcsodat egy OpenAI-kompatibilis beszédszolgáltatással. A kérések közvetlenül erről az eszközről mennek a szolgáltatáshoz.",
   "Voices": "Hangok",
-  "Separate voices with commas. Leave empty for the standard OpenAI voices.": "A hangokat vesszővel válaszd el. Hagyd üresen az OpenAI szabványos hangjaihoz.",
   "Instructions": "Utasítások",
   "Optional, for models that accept a speaking style": "Nem kötelező; beszédstílust elfogadó modellekhez",
   "Delete TTS Service": "TTS-szolgáltatás törlése",
   "Read aloud with your own OpenAI-compatible speech service, such as OpenAI or a self-hosted Kokoro server. Its voices appear in the voice list for every book.": "Felolvasás a saját OpenAI-kompatibilis beszédszolgáltatásoddal, például az OpenAI-jal vagy egy saját üzemeltetésű Kokoro-szerverrel. A hangjai minden könyv hanglistájában megjelennek.",
-  "Use your own OpenAI-compatible speech service": "Saját OpenAI-kompatibilis beszédszolgáltatás használata"
+  "Use your own OpenAI-compatible speech service": "Saját OpenAI-kompatibilis beszédszolgáltatás használata",
+  "{{count}} voices available_one": "{{count}} hang érhető el",
+  "{{count}} voices available_other": "{{count}} hang érhető el",
+  "Multilingual": "Többnyelvű",
+  "Expressive": "Kifejező"
 }

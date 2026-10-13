@@ -110,7 +110,6 @@ const customTTSFieldsSchema = z
     name: fieldEnvelopeSchema.optional(),
     baseUrl: fieldEnvelopeSchema.optional(),
     model: fieldEnvelopeSchema.optional(),
-    voices: fieldEnvelopeSchema.optional(),
     instructions: fieldEnvelopeSchema.optional(),
     disabled: fieldEnvelopeSchema.optional(),
     addedAt: fieldEnvelopeSchema.optional(),

@@ -2597,10 +2597,13 @@
   "Add TTS Service": "افزودن سرویس TTS",
   "Use your own API key with an OpenAI-compatible speech service. Requests go directly from this device to the service.": "از کلید API خودتان با یک سرویس گفتار سازگار با OpenAI استفاده کنید. درخواست‌ها مستقیماً از این دستگاه به سرویس ارسال می‌شوند.",
   "Voices": "صداها",
-  "Separate voices with commas. Leave empty for the standard OpenAI voices.": "صداها را با کاما جدا کنید. برای صداهای استاندارد OpenAI خالی بگذارید.",
   "Instructions": "دستورالعمل‌ها",
   "Optional, for models that accept a speaking style": "اختیاری، برای مدل‌هایی که سبک گفتار را می‌پذیرند",
   "Delete TTS Service": "حذف سرویس TTS",
   "Read aloud with your own OpenAI-compatible speech service, such as OpenAI or a self-hosted Kokoro server. Its voices appear in the voice list for every book.": "با سرویس گفتار سازگار با OpenAI خودتان، مانند OpenAI یا یک سرور Kokoro خودمیزبان، بلندخوانی کنید. صداهای آن در فهرست صداهای هر کتاب نمایش داده می‌شوند.",
-  "Use your own OpenAI-compatible speech service": "از سرویس گفتار سازگار با OpenAI خودتان استفاده کنید"
+  "Use your own OpenAI-compatible speech service": "از سرویس گفتار سازگار با OpenAI خودتان استفاده کنید",
+  "{{count}} voices available_one": "{{count}} صدا در دسترس است",
+  "{{count}} voices available_other": "{{count}} صدا در دسترس است",
+  "Multilingual": "چندزبانه",
+  "Expressive": "رسا"
 }

@@ -2533,10 +2533,12 @@
   "Add TTS Service": "読み上げサービスを追加",
   "Use your own API key with an OpenAI-compatible speech service. Requests go directly from this device to the service.": "OpenAI 互換の音声サービスで自分の API キーを使用します。リクエストはこのデバイスから直接サービスに送信されます。",
   "Voices": "音声",
-  "Separate voices with commas. Leave empty for the standard OpenAI voices.": "音声はカンマで区切ります。空欄の場合は OpenAI の標準音声を使用します。",
   "Instructions": "指示",
   "Optional, for models that accept a speaking style": "省略可。話し方のスタイルを指定できるモデル向け",
   "Delete TTS Service": "読み上げサービスを削除",
   "Read aloud with your own OpenAI-compatible speech service, such as OpenAI or a self-hosted Kokoro server. Its voices appear in the voice list for every book.": "OpenAI や自己ホストの Kokoro サーバーなど、自分の OpenAI 互換音声サービスで読み上げます。その音声はすべての本の音声リストに表示されます。",
-  "Use your own OpenAI-compatible speech service": "自分の OpenAI 互換音声サービスを使用"
+  "Use your own OpenAI-compatible speech service": "自分の OpenAI 互換音声サービスを使用",
+  "{{count}} voices available_other": "{{count}} 個の音声が利用可能",
+  "Multilingual": "多言語",
+  "Expressive": "表現豊か"
 }

@@ -253,14 +253,15 @@ describe('voices', () => {
     expect(h.warmup).toHaveBeenCalledTimes(1);
   });
 
-  test('hides the Readest group entirely when unavailable (free plan, kill switch)', async () => {
+  test('shows the Readest group greyed out to readers whose plan lacks it', async () => {
     h.readestInit = false;
     await controller.init();
+    const locked = READEST_VOICES.map((voice) => ({ ...voice, disabled: true }));
     vi.mocked(readest().getVoices).mockResolvedValue([
-      { id: 'readest-tts', name: 'Readest Voice', voices: READEST_VOICES, disabled: true },
+      { id: 'readest-tts', name: 'Readest Voice', voices: locked, disabled: true },
     ]);
     const groups = await controller.getVoices('en');
-    expect(groups.map((g) => g.id)).not.toContain('readest-tts');
+    expect(groups.find((g) => g.id === 'readest-tts')?.voices).toEqual(locked);
     expect(h.warmup).not.toHaveBeenCalled();
   });
 });
@@ -307,6 +308,16 @@ describe('setVoice', () => {
     expect(controller.ttsClient).toBe(readest());
     expect(TTSUtils.setPreferredClient).toHaveBeenCalledWith('readest-tts');
     expect(readest().setVoice).toHaveBeenCalledWith('kokoro:af_heart');
+  });
+
+  test('a voice the plan lacks never selects Readest Voice', async () => {
+    h.readestVoices = [
+      ...READEST_VOICES,
+      { id: 'omnivoice:clara', name: 'Clara', lang: 'en-US', disabled: true },
+    ];
+    await controller.init();
+    await controller.setVoice('omnivoice:clara', 'en');
+    expect(controller.ttsClient).not.toBe(readest());
   });
 });
 

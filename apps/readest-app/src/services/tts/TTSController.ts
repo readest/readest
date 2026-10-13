@@ -2190,7 +2190,7 @@ export class TTSController extends EventTarget {
     // choice stays remembered for books it can read.
     if (
       this.ttsClient === this.ttsReadestClient &&
-      !this.ttsReadestVoices.some((voice) => isSameLang(voice.lang, lang))
+      !this.ttsReadestVoices.some((voice) => !voice.disabled && isSameLang(voice.lang, lang))
     ) {
       this.ttsClient = this.ttsEdgeClient.initialized ? this.ttsEdgeClient : this.ttsWebClient;
     }
@@ -2219,13 +2219,14 @@ export class TTSController extends EventTarget {
     const ttsWebVoices = await this.ttsWebClient.getVoices(lang);
     const ttsEdgeVoices = await this.ttsEdgeClient.getVoices(lang);
     const ttsNativeVoices = (await this.ttsNativeClient?.getVoices(lang)) ?? [];
-    // Unavailable (free plan, kill switch) hides the group entirely: no dead
-    // premium entry in the picker.
-    const ttsReadestVoices = this.ttsReadestClient.initialized
-      ? (await this.ttsReadestClient.getVoices(lang)).filter((group) => group.voices.length > 0)
-      : [];
+    // Listed for every reader, the voices their plan lacks greyed out; hidden
+    // only when there is no catalog (kill switch, offline).
+    const ttsReadestVoices =
+      (await this.ttsReadestClient.getAllVoices()).length > 0
+        ? (await this.ttsReadestClient.getVoices(lang)).filter((group) => group.voices.length > 0)
+        : [];
     // The picker is open: boot a GPU worker so the first window is warm.
-    if (ttsReadestVoices.some((group) => group.voices.length > 0)) {
+    if (this.ttsReadestClient.initialized && ttsReadestVoices.length > 0) {
       this.#readestProvider.warmup();
     }
     // The book's own narrator leads the list when there is one: it is the best
@@ -2241,9 +2242,9 @@ export class TTSController extends EventTarget {
     const voicesGroups = [
       ...narrationVoices,
       ...ttsCustomVoices,
-      ...ttsNativeVoices,
       ...ttsReadestVoices,
       ...ttsEdgeVoices,
+      ...ttsNativeVoices,
       ...ttsWebVoices,
     ];
     return voicesGroups;
@@ -2283,7 +2284,7 @@ export class TTSController extends EventTarget {
     const useReadestTTS =
       voiceId !== '' &&
       this.ttsReadestClient.initialized &&
-      this.ttsReadestVoices.some((voice) => voice.id === voiceId);
+      this.ttsReadestVoices.some((voice) => voice.id === voiceId && !voice.disabled);
     const useEdgeTTS = !!this.ttsEdgeVoices.find(
       (voice) => (voiceId === '' || voice.id === voiceId) && !voice.disabled,
     );
