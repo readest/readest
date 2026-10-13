@@ -385,6 +385,25 @@ fn restore_main_window_state(window: &tauri::WebviewWindow) {
     }
 }
 
+/// Re-applies the main window's saved maximized and fullscreen state on Linux,
+/// now that the window is shown.
+///
+/// The main window is created hidden, and the window-state plugin maximizes
+/// it before showing it. On X11 a window changes those states by asking the
+/// window manager with a `_NET_WM_STATE` client message, which the window
+/// manager ignores while the window is still unmapped — so the window always
+/// came back at its restored size, never maximized (#6657). Asked again after
+/// the plugin's `show()`, the request reaches the window manager after the
+/// map, as it does for a window created visible.
+#[cfg(target_os = "linux")]
+fn restore_main_window_maximized<R: tauri::Runtime>(window: &tauri::WebviewWindow<R>) {
+    use tauri_plugin_window_state::{StateFlags, WindowExt};
+
+    if let Err(e) = window.restore_state(StateFlags::MAXIMIZED | StateFlags::FULLSCREEN) {
+        log::error!("Failed to restore the main window's maximized state: {e}");
+    }
+}
+
 // Pure decision for whether the in-app updater should be hidden. Kept
 // dependency-free so it can be unit tested for every platform combination.
 //
@@ -1005,6 +1024,8 @@ pub fn run() {
                 let _main_window = win_builder.build().unwrap();
                 #[cfg(windows)]
                 restore_main_window_state(&_main_window);
+                #[cfg(target_os = "linux")]
+                restore_main_window_maximized(&_main_window);
                 // The window is created hidden and the state-restore show is
                 // suppressed (see restore_main_window_state): the frontend
                 // signals once the theme is applied — WebView2 has painted
