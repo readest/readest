@@ -2,7 +2,7 @@ import { describe, expect, test, vi } from 'vitest';
 
 import type { Book, BookConfig } from '@/types/book';
 import { FileSyncEngine } from '@/services/sync/file/engine';
-import type { FileSyncProvider } from '@/services/sync/file/provider';
+import { FileSyncError, type FileSyncProvider } from '@/services/sync/file/provider';
 import type { LocalStore } from '@/services/sync/file/localStore';
 import type { RemoteBookConfig, RemoteLibraryIndex } from '@/services/sync/file/wire';
 
@@ -63,6 +63,19 @@ const fakeStore = (opts: Partial<LocalStore> = {}): LocalStore => ({
 });
 
 describe('FileSyncEngine.pushBookFile — streaming upload', () => {
+  test('retries a rejected stream and preserves its final diagnostic', async () => {
+    const failure = new FileSyncError('Server storage full', 'UNKNOWN', 507);
+    const uploadStream = vi.fn().mockRejectedValue(failure);
+    const engine = new FileSyncEngine(
+      fakeProvider({ uploadStream }),
+      fakeStore({
+        resolveLocalBookPath: async () => ({ path: '/local/book.pdf', size: 100 }),
+      }),
+    );
+    await expect(engine.pushBookFile(makeBook('h1'))).rejects.toBe(failure);
+    expect(uploadStream).toHaveBeenCalledTimes(2);
+  });
+
   test('streams via provider.uploadStream when remote is missing', async () => {
     const uploadStream = vi.fn(async () => true);
     const provider = fakeProvider({ head: async () => null, uploadStream });

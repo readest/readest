@@ -8,6 +8,7 @@ import { useBookDataStore } from '@/store/bookDataStore';
 import { FIXED_LAYOUT_FORMATS } from '@/types/book';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useDeviceControlStore } from '@/store/deviceStore';
+import { useThemeStore } from '@/store/themeStore';
 import { eventDispatcher } from '@/utils/event';
 import type { FooterBarProps, NavigationHandlers, FooterBarChildProps } from './types';
 import { debounce } from '@/utils/debounce';
@@ -28,6 +29,7 @@ const FooterBar: React.FC<FooterBarProps> = ({
 }) => {
   const _ = useTranslation();
   const { appService } = useEnv();
+  const isIPhoneDuo = useThemeStore((s) => s.isIPhoneDuo);
   const { getConfig, setConfig, getBookData } = useBookDataStore();
   const { hoveredBookKey, setHoveredBookKey, bottomBarTab, setBottomBarTab } = useReaderStore();
   const { getView, getViewState, getProgress, getViewSettings } = useReaderStore();
@@ -197,7 +199,7 @@ const FooterBar: React.FC<FooterBarProps> = ({
   const footerBarRef = useRef<HTMLDivElement>(null);
   useSpatialNavigation(footerBarRef, isVisible);
 
-  const forceMobileLayout = isForcedMobileLayout(appService?.isMobile);
+  const forceMobileLayout = isForcedMobileLayout(appService?.isMobile, isIPhoneDuo);
 
   const commonProps: FooterBarChildProps = {
     bookKey,
@@ -225,7 +227,7 @@ const FooterBar: React.FC<FooterBarProps> = ({
     !isSideBarVisible && appService?.hasRoundedWindow && 'rounded-window-bottom-left',
     isHoveredAnim && 'hover-bar-anim',
     !forceMobileLayout &&
-      (needHorizontalScroll ? 'sm:!bottom-3 sm:!h-10 sm:justify-end' : 'sm:justify-center'),
+      (needHorizontalScroll ? 'sm:bottom-3! sm:h-10! sm:justify-end' : 'sm:justify-center'),
     isVisible
       ? 'pointer-events-auto translate-y-0 opacity-100'
       : forceMobileLayout
@@ -243,7 +245,7 @@ const FooterBar: React.FC<FooterBarProps> = ({
         tabIndex={-1}
         className={clsx(
           'absolute bottom-0 left-0 z-10 flex h-[52px] w-full',
-          needHorizontalScroll && 'sm:!bottom-3 sm:!h-7',
+          needHorizontalScroll && 'sm:bottom-3! sm:h-7!',
           isMobile || pointerInDoc ? 'pointer-events-none' : '',
         )}
         onMouseEnter={() => !isMobile && setHoveredBookKey(bookKey)}

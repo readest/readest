@@ -14,7 +14,7 @@ Implements [readest/readest#4863](https://github.com/readest/readest/issues/4863
 - **Metadata included and embedded**: title, authors, series, tags,
   description, publisher, language, identifiers — and optionally calibre
   custom columns. Metadata is written both to the Readest library entry
-  (custom columns under `customColumns`) and into the uploaded file's OPF
+  (custom columns under `calibreColumns`) and into the uploaded file's OPF
   (calibre's own embedding, so custom columns travel as
   `calibre:user_metadata`). Your calibre library files are never modified —
   embedding happens on a temporary copy.

@@ -35,6 +35,11 @@ describe('isAllowedKind', () => {
     expect(isAllowedKind('opds_catalog')).toBe(true);
   });
 
+  test('allows custom_translator + translation_prompt (metadata-only)', () => {
+    expect(KIND_ALLOWLIST['custom_translator']?.binary).toBe(false);
+    expect(KIND_ALLOWLIST['translation_prompt']?.binary).toBe(false);
+  });
+
   test('rejects arbitrary strings', () => {
     expect(isAllowedKind('arbitrary')).toBe(false);
     expect(isAllowedKind('')).toBe(false);
@@ -95,6 +100,27 @@ describe('validateRow', () => {
   test('accepts a valid dictionary row', () => {
     const result = validateRow(baseRow());
     expect(result.ok).toBe(true);
+  });
+
+  test('accepts custom_translator with an encrypted apiKey and a translation_prompt row', () => {
+    const cipher = { c: 'ct', i: 'iv', s: 'salt', alg: 'AES-GCM', h: 'hash' };
+    const translator = baseRow({
+      kind: 'custom_translator',
+      fields_jsonb: {
+        type: { v: 'openai-compatible', t: HLC_A, s: 'dev-a' },
+        name: { v: 'My LLM', t: HLC_A, s: 'dev-a' },
+        apiKey: { v: cipher, t: HLC_A, s: 'dev-a' },
+      },
+    });
+    expect(validateRow(translator).ok).toBe(true);
+    const prompt = baseRow({
+      kind: 'translation_prompt',
+      fields_jsonb: {
+        name: { v: 'Literary', t: HLC_A, s: 'dev-a' },
+        systemPrompt: { v: 'Translate.', t: HLC_A, s: 'dev-a' },
+      },
+    });
+    expect(validateRow(prompt).ok).toBe(true);
   });
 
   test('rejects unknown kind', () => {

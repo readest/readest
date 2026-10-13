@@ -37,4 +37,12 @@ describe('Ribbon', () => {
 
     expect(ribbon.style.height).toBe('92px'); // 48px safe-area top + 44px header bar
   });
+
+  it('keeps the same width on every screen size (#6599)', () => {
+    const { container } = render(<Ribbon />);
+    const ribbon = container.querySelector('.ribbon') as HTMLElement;
+
+    expect(ribbon.style.width).toBe('24px');
+    expect([...ribbon.classList].some((c) => /(^|:)w-/.test(c))).toBe(false);
+  });
 });

@@ -9,7 +9,7 @@ import { join } from 'path';
 
 describe.concurrent('jieba-wasm', () => {
   beforeAll(async () => {
-    const wasmPath = join(process.cwd(), 'public/vendor/jieba/jieba_rs_wasm_bg.wasm');
+    const wasmPath = join(process.cwd(), 'node_modules/jieba-wasm/pkg/web/jieba_rs_wasm_bg.wasm');
     const wasmBuffer = await readFile(wasmPath);
     await init({ module_or_path: wasmBuffer });
   });

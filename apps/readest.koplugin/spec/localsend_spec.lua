@@ -181,3 +181,40 @@ describe("readest_localsend dispatch", function()
         end)
     end)
 end)
+
+describe("readest_localsend startService without a free port", function()
+    local stubs = require("spec.koreader_stubs")
+    local Helper = require("library.localsend_helper")
+    local logger = require("logger")
+    local LocalSend = require("readest_localsend")
+    local orig_pick, orig_warn
+    local warnings
+
+    before_each(function()
+        stubs.reset()
+        warnings = {}
+        orig_pick, orig_warn = Helper.pickPort, logger.warn
+        Helper.pickPort = function() return nil, "Cannot assign requested address" end
+        logger.warn = function(msg) table.insert(warnings, msg) end
+        LocalSend.available = true
+        LocalSend.plugin = { settings = { library_download_dir = "/books" } }
+    end)
+
+    after_each(function()
+        Helper.pickPort, logger.warn = orig_pick, orig_warn
+        LocalSend.available = false
+        LocalSend.plugin = nil
+    end)
+
+    it("logs the reason instead of showing a message on an automatic start", function()
+        LocalSend:startService(true)
+        assert.equals(0, #stubs.UIManager._shown)
+        assert.is_false(LocalSend.running)
+        assert.truthy(table.concat(warnings, "\n"):find("Cannot assign requested address", 1, true))
+    end)
+
+    it("still tells the user when they start it themselves", function()
+        LocalSend:startService()
+        assert.equals(1, #stubs.UIManager._shown)
+    end)
+end)

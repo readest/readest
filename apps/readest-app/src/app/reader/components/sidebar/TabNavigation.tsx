@@ -8,6 +8,7 @@ import { LuMessageSquare } from 'react-icons/lu';
 import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useSettingsStore } from '@/store/settingsStore';
+import { useThemeStore } from '@/store/themeStore';
 import { isForcedMobileLayout } from '../../utils/mobileLayout';
 
 const TabNavigation: React.FC<{
@@ -17,9 +18,10 @@ const TabNavigation: React.FC<{
   const _ = useTranslation();
   const { appService } = useEnv();
   const { settings } = useSettingsStore();
+  const isIPhoneDuo = useThemeStore((s) => s.isIPhoneDuo);
   const aiEnabled = settings?.aiSettings?.enabled ?? false;
 
-  const forceMobileLayout = isForcedMobileLayout(appService?.isMobile);
+  const forceMobileLayout = isForcedMobileLayout(appService?.isMobile, isIPhoneDuo);
   const isMobile = forceMobileLayout || window.innerWidth < 640 || window.innerHeight < 640;
   const tabs = ['toc', 'annotations', 'bookmarks', ...(aiEnabled ? ['history'] : [])];
 

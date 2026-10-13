@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, cleanup, act } from '@testing-library/react';
-import type { MouseEvent as ReactMouseEvent } from 'react';
+import type { MouseEvent as ReactMouseEvent, TouchEvent as ReactTouchEvent } from 'react';
 
 import { useDrag } from '@/hooks/useDrag';
 
@@ -25,6 +25,24 @@ const startMouseDrag = (api: Api, clientX = 100) => {
 const fireWindowMouse = (type: string, clientX: number, clientY = 0) => {
   act(() => {
     window.dispatchEvent(new MouseEvent(type, { clientX, clientY, bubbles: true }));
+  });
+};
+
+const startTouchDrag = (api: Api, clientY = 0) => {
+  act(() => {
+    api.handleDragStart({ touches: [{ clientX: 0, clientY }] } as unknown as ReactTouchEvent);
+  });
+};
+
+// jsdom has no Touch/TouchEvent constructors; the hook only reads
+// touches[0] / changedTouches[0], so a plain Event with the fields grafted on is
+// a faithful stand-in.
+const fireWindowTouch = (type: string, clientY: number) => {
+  act(() => {
+    const event = new Event(type, { bubbles: true });
+    const touch = { clientX: 0, clientY };
+    Object.assign(event, { touches: [touch], changedTouches: [touch] });
+    window.dispatchEvent(event);
   });
 };
 
@@ -66,5 +84,39 @@ describe('useDrag', () => {
     // No further resizing after release.
     fireWindowMouse('mousemove', 200);
     expect(onMove).toHaveBeenCalledTimes(1);
+  });
+
+  // The system can take a touch away mid-drag — an edge-swipe back gesture, the
+  // notification shade, an incoming call. Only `touchend` used to tear the drag
+  // down, so a cancel left the viewport-wide shield installed and every tap
+  // afterwards landed on it instead of the app.
+  it('tears the drag down when the system cancels the touch', () => {
+    const { getApi, onMove, onEnd } = setup();
+    startTouchDrag(getApi());
+    fireWindowTouch('touchmove', 60);
+    expect(onMove).toHaveBeenCalledTimes(1);
+    expect(getShield()).not.toBeNull();
+
+    fireWindowTouch('touchcancel', 60);
+
+    expect(getShield()).toBeNull();
+    expect(document.body.style.userSelect).toBe('');
+    expect(onEnd).toHaveBeenCalledTimes(1);
+    // Consumers must be able to tell a cancel from a release: a cancelled drag
+    // is not a decision, so it must not be read as one.
+    expect(onEnd.mock.calls[0]![0]!.canceled).toBe(true);
+
+    // No further dragging after the cancel.
+    fireWindowTouch('touchmove', 200);
+    expect(onMove).toHaveBeenCalledTimes(1);
+  });
+
+  it('reports a released drag as not cancelled', () => {
+    const { getApi, onEnd } = setup();
+    startMouseDrag(getApi());
+
+    fireWindowMouse('mouseup', 150);
+
+    expect(onEnd.mock.calls[0]![0]!.canceled).toBe(false);
   });
 });

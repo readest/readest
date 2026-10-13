@@ -59,6 +59,14 @@ FROM docker.io/library/node:24-slim@sha256:24dc26ef1e3c3690f27ebc4136c9c186c3133
 ENV NODE_ENV=production
 ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
+# This image is the self-hosted artifact — web.readest.com runs on
+# Cloudflare/Vercel, never on it — so premium features are unlocked by default
+# rather than left to the operator's compose file. `compose.yaml` passes
+# `SELF_HOSTED: ${SELF_HOSTED:-true}`, but that line only landed in #5996: a
+# compose file copied before it survives every `docker compose pull`, so the
+# container came up gated with nothing on screen to explain why (#6093).
+# An operator running a hosted service that sells plans sets SELF_HOSTED=false.
+ENV SELF_HOSTED=true
 WORKDIR /app
 # Monorepo-rooted standalone tree: server.js + hoisted, traced node_modules.
 COPY --from=build --chown=node:node /app/apps/readest-app/.next/standalone ./

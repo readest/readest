@@ -25,8 +25,8 @@ describe('Quota — reset indicator', () => {
     vi.useRealTimers();
   });
 
-  it('renders "x% used" and "Resets in h hr m min" when resetAt is set with showProgress', () => {
-    // Reset 13 hr 30 min from now (next UTC midnight).
+  it('renders "x% used" and "Resets in 13h 30m" when resetAt is set with showProgress', () => {
+    // Reset 13h 30m from now (next UTC midnight).
     const resetAt = new Date('2026-05-08T00:00:00Z').getTime();
     render(
       <Quota
@@ -45,7 +45,7 @@ describe('Quota — reset indicator', () => {
     );
 
     expect(screen.getByText('25% used')).toBeTruthy();
-    expect(screen.getByText('Resets in 13 hr 30 min')).toBeTruthy();
+    expect(screen.getByText('Resets in 13h 30m')).toBeTruthy();
   });
 
   it('does not render reset row when resetAt is missing', () => {
@@ -88,7 +88,7 @@ describe('Quota — reset indicator', () => {
     expect(screen.queryByText(/Resets in/)).toBeNull();
   });
 
-  it('clamps the countdown to 0 hr 0 min when resetAt is in the past', () => {
+  it('clamps the countdown to 0m when resetAt is in the past', () => {
     const resetAt = new Date('2026-05-07T09:00:00Z').getTime(); // 1.5 hr ago
     render(
       <Quota
@@ -106,6 +106,6 @@ describe('Quota — reset indicator', () => {
       />,
     );
 
-    expect(screen.getByText('Resets in 0 hr 0 min')).toBeTruthy();
+    expect(screen.getByText('Resets in 0m')).toBeTruthy();
   });
 });

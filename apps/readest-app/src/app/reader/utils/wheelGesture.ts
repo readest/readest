@@ -103,7 +103,29 @@ export const createWheelGestureDetector = (options: WheelGestureOptions = {}) =>
     flipped = false;
   };
 
-  return { feed, reset };
+  /**
+   * Mark the current gesture as handled by native scrolling (a zoomed or
+   * fit-width page scrolling within itself), so the rest of it — including
+   * the ticks that land once the page reaches its edge — can't flip the page.
+   */
+  const suppress = (timeStamp: number) => {
+    accumX = 0;
+    accumY = 0;
+    lastTime = timeStamp;
+    flipped = true;
+  };
+
+  return { feed, reset, suppress };
+};
+
+/** Whether a scroll box still has room to scroll natively by `deltaY`. */
+export const hasScrollRoomY = (
+  el: { scrollTop: number; scrollHeight: number; clientHeight: number },
+  deltaY: number,
+) => {
+  if (deltaY > 0) return el.scrollTop + el.clientHeight < el.scrollHeight - 1;
+  if (deltaY < 0) return el.scrollTop > 1;
+  return false;
 };
 
 export type WheelGestureDetector = ReturnType<typeof createWheelGestureDetector>;

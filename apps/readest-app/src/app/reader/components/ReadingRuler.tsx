@@ -281,7 +281,6 @@ const ReadingRuler: React.FC<ReadingRulerProps> = ({
   // Cap the dynamic band at (lines + 1) line heights so a tall element (e.g. a
   // full-page image) inside the block doesn't expand the band to cover all of it.
   const maxBandSize = calculateReadingRulerSize(lines + 1, viewSettings, bookFormat);
-  const baseColor = READING_RULER_COLORS[color] || READING_RULER_COLORS['yellow'];
 
   const clampPosition = useCallback(
     (pos: number, dimension: number) =>
@@ -1092,6 +1091,21 @@ const ReadingRuler: React.FC<ReadingRulerProps> = ({
     WebkitBackdropFilter: cssFilter,
   };
 
+  // Black-and-white e-ink renders every hue as the same gray, so the band's
+  // backdrop tint buys no color there and only costs contrast on the very text
+  // being read. Fall back to the colorless band on those panels; color e-ink
+  // can still show the tint the reader picked.
+  const isEink = !!viewSettings.isEink;
+  const tintBand = color !== 'transparent' && !(isEink && !viewSettings.isColorEink);
+  const bandStyle = tintBand ? backdropFilterStyle : { backgroundColor: 'transparent' };
+  // E-ink has no hover or shadow cues, so the band always needs a crisp 1px
+  // boundary; the translucent outline used on color displays washes out there.
+  const bandOutlineClass = isEink
+    ? 'border-base-content border'
+    : tintBand
+      ? ''
+      : 'border-base-content/55 border';
+
   // Animation transition for smooth auto-positioning
   const getTransitionStyle = (property: 'left' | 'top' | 'width' | 'height') =>
     shouldAnimate ? `${property} 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)` : 'none';
@@ -1137,18 +1151,14 @@ const ReadingRuler: React.FC<ReadingRulerProps> = ({
         <div
           className={clsx(
             'ruler pointer-events-none absolute bottom-0 top-0 my-2 rounded-2xl',
-            color === 'transparent' ? 'border-base-content/55 border' : '',
+            bandOutlineClass,
           )}
           style={{
             left: `${renderPosPct}%`,
             width: `${effectiveBandSize}px`,
             transform: 'translateX(-50%)',
             transition: getTransitionStyle('left'),
-            ...(color === 'transparent'
-              ? {
-                  backgroundColor: baseColor,
-                }
-              : backdropFilterStyle),
+            ...bandStyle,
           }}
         >
           {/* Keep the ruler body pass-through so text inside stays selectable. */}
@@ -1227,17 +1237,14 @@ const ReadingRuler: React.FC<ReadingRulerProps> = ({
 
         {/* Column band */}
         <div
-          className={clsx(
-            'ruler pointer-events-none absolute rounded-2xl',
-            color === 'transparent' ? 'border-base-content/55 border' : '',
-          )}
+          className={clsx('ruler pointer-events-none absolute rounded-2xl', bandOutlineClass)}
           style={{
             left: `${bandLeft}px`,
             top: `${bandTop}px`,
             width: `${bandWidth}px`,
             height: `${bandHeight}px`,
             transition: bandTransition,
-            ...(color === 'transparent' ? { backgroundColor: baseColor } : backdropFilterStyle),
+            ...bandStyle,
           }}
         >
           <div
@@ -1286,18 +1293,14 @@ const ReadingRuler: React.FC<ReadingRulerProps> = ({
       <div
         className={clsx(
           'ruler pointer-events-none absolute left-0 right-0 mx-2 rounded-2xl',
-          color === 'transparent' ? 'border-base-content/55 border' : '',
+          bandOutlineClass,
         )}
         style={{
           top: `${currentPosition}%`,
           height: `${effectiveBandSize}px`,
           transform: 'translateY(-50%)',
           transition: getTransitionStyle('top'),
-          ...(color === 'transparent'
-            ? {
-                backgroundColor: baseColor,
-              }
-            : backdropFilterStyle),
+          ...bandStyle,
         }}
       >
         <div

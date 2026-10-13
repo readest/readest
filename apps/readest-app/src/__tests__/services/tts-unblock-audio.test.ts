@@ -32,6 +32,17 @@ describe('unblockAudio', () => {
     spy.mockRestore();
   });
 
+  test('does not create the keep-alive element on desktop Tauri', () => {
+    // Desktop Tauri drives the OS media controls natively; a playing element
+    // would register the webview's own competing session (WebView2 SMTC).
+    vi.mocked(getOSPlatform).mockReturnValue('windows');
+    vi.mocked(isTauriAppPlatform).mockReturnValue(true);
+    const spy = vi.spyOn(document, 'createElement');
+    unblockAudio();
+    expect(spy).not.toHaveBeenCalledWith('audio');
+    spy.mockRestore();
+  });
+
   test('creates the keep-alive element on other platforms', () => {
     // Desktop Chromium only surfaces hardware media keys while an
     // HTMLMediaElement is playing; iOS Safari (web) still needs it against

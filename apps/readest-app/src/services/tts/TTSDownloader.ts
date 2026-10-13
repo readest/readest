@@ -44,6 +44,17 @@ export interface CacheWarmer {
   // Force any newly-completed sections to compact into packs now (and push,
   // if pack sync is on) rather than waiting for the debounced timer.
   compactCache(): Promise<void>;
+  // Windowed engines: announce a whole section up front so it synthesizes in
+  // a few large requests; warmSentence then picks each sentence up as it
+  // arrives. Resolves whether the section was handed off. A fatal failure
+  // (e.g. quota) thrown by warmSentence ends the download.
+  prefetchSentences?(
+    sentences: { lang: string; text: string }[],
+    signal?: AbortSignal,
+  ): Promise<boolean>;
+  // The ordinals of this section's sentences already in the cache, with
+  // their marks recorded (in a few queries for the whole section).
+  cachedSentences?(section: number, sentences: DownloadableSentence[]): Promise<Set<number>>;
 }
 
 export interface SectionDownloadProgress {
@@ -88,29 +99,56 @@ export class TTSDownloader {
         continue;
       }
 
+      // The total shows at once; preparing the section can take a while.
+      onProgress?.({ sectionIndex, total: sentences.length, done: 0, synthesized: 0 });
+
       await this.#warmer.registerSectionManifest(
         sectionIndex,
         sentences.map((s) => s.label),
       );
 
+      // Progress counts sentences in the cache. Those already there (an
+      // earlier run, listening, a synced pack) count at once and are not
+      // synthesized again, so a retry resumes instead of starting over.
+      const cached = (await this.#warmer.cachedSentences?.(sectionIndex, sentences)) ?? new Set();
+      const missing = sentences.filter((s) => !cached.has(s.ordinal));
+      let done = sentences.length - missing.length;
       let synthesized = 0;
+      const report = () =>
+        onProgress?.({ sectionIndex, total: sentences.length, done, synthesized });
+      if (done > 0) report();
+      const warm = async (s: DownloadableSentence) => {
+        const ok = await this.#warmer.warmSentence(sectionIndex, s.ordinal, s.lang, s.text, signal);
+        if (ok) {
+          done++;
+          synthesized++;
+          report();
+        }
+        return ok;
+      };
+
+      const windowed = await this.#warmer.prefetchSentences?.(
+        missing.map(({ lang, text }) => ({ lang, text })),
+        signal,
+      );
+
       let failed = false;
       let aborted = false;
-      for (let done = 0; done < sentences.length; done++) {
-        if (signal?.aborted) {
-          aborted = true;
-          break;
+      if (windowed) {
+        // Windows run several at a time and may finish in any order: wait on
+        // every sentence at once, so progress moves as soon as any window is
+        // done.
+        const results = await Promise.all(missing.map(warm));
+        aborted = !!signal?.aborted;
+        failed = results.includes(false);
+      } else {
+        for (const s of missing) {
+          if (signal?.aborted) {
+            aborted = true;
+            break;
+          }
+          if (!(await warm(s))) failed = true;
         }
-        const s = sentences[done]!;
-        const ok = await this.#warmer.warmSentence(sectionIndex, s.ordinal, s.lang, s.text, signal);
-        if (ok) synthesized++;
-        else failed = true;
-        onProgress?.({
-          sectionIndex,
-          total: sentences.length,
-          done: done + 1,
-          synthesized,
-        });
       }
 
       // Compact whatever completed. A section left partial by an abort or an

@@ -42,6 +42,113 @@ const getProductFeature = (productId: string): QuotaFeature | undefined => {
   return undefined;
 };
 
+// Only Plus and Pro are sold on a recurring interval; `purchase` is one-time
+// and `free` has no price to compare.
+const SUBSCRIPTION_TIERS: UserPlan[] = ['plus', 'pro'];
+
+/**
+ * Which billing intervals the store front may offer. Yearly only appears once
+ * the store actually returns a yearly price for a subscription tier, so this
+ * ships safely ahead of the Stripe prices / App Store / Play SKUs existing.
+ */
+export const getSubscriptionIntervals = (availablePlans: AvailablePlan[]): PlanInterval[] => {
+  const hasYearly = availablePlans.some(
+    (plan) => plan.interval === 'year' && SUBSCRIPTION_TIERS.includes(plan.plan),
+  );
+  return hasYearly ? ['month', 'year'] : ['month'];
+};
+
+/**
+ * The headline discount for paying yearly, as a whole percentage off twelve
+ * monthly payments. Returns the largest saving across tiers, or `null` when no
+ * tier has both intervals priced or the yearly price saves nothing — the badge
+ * is then omitted rather than claiming a discount that isn't there.
+ */
+export const getYearlySavingsPercent = (availablePlans: AvailablePlan[]): number | null => {
+  let best: number | null = null;
+  for (const tier of SUBSCRIPTION_TIERS) {
+    const monthly = availablePlans.find((p) => p.plan === tier && p.interval === 'month');
+    const yearly = availablePlans.find((p) => p.plan === tier && p.interval === 'year');
+    if (!monthly?.price || !yearly?.price) continue;
+    const saving = Math.floor((1 - yearly.price / (monthly.price * 12)) * 100);
+    if (saving > 0 && (best === null || saving > best)) {
+      best = saving;
+    }
+  }
+  return best;
+};
+
+/**
+ * A user who already holds a Stripe subscription must change it through the
+ * billing portal: a second checkout session would leave both subscriptions
+ * running and bill them twice. `purchase` means storage add-ons with no
+ * subscription behind them, so those users still go to checkout.
+ */
+export const shouldUseBillingPortal = (userPlan: UserPlan, planType: PlanType): boolean =>
+  planType === 'subscription' && (userPlan === 'plus' || userPlan === 'pro');
+
+/**
+ * Per-tier accent. The store front is the one surface that is actively selling,
+ * so it carries colour the rest of the app deliberately does not.
+ *
+ * Every colour is `not-eink:` guarded: on e-ink none of it applies and the card
+ * falls back to the neutral + 1px border treatment, which is the only thing
+ * that reads on those screens. The hues avoid `blue`/`red` on purpose —
+ * globals.css flattens `[class*='text-blue']` to base-content AND
+ * `font-weight: normal`, which would silently un-bold the price.
+ */
+export type PlanAccent = {
+  header: string;
+  border: string;
+  current: string;
+  price: string;
+  check: string;
+  cta: string;
+  tile: string;
+};
+
+const PLAN_ACCENTS: Record<UserPlan, PlanAccent> = {
+  free: {
+    header: 'not-eink:bg-slate-100',
+    border: 'not-eink:border-slate-400',
+    current: 'not-eink:bg-slate-200 not-eink:text-slate-700',
+    price: '',
+    check: 'not-eink:text-slate-500',
+    cta: '',
+    tile: '',
+  },
+  plus: {
+    header: 'not-eink:bg-sky-50',
+    border: 'not-eink:border-sky-400',
+    current: 'not-eink:bg-sky-100 not-eink:text-sky-900',
+    price: 'not-eink:text-sky-700',
+    check: 'not-eink:text-sky-600',
+    cta: 'not-eink:border-sky-600 not-eink:bg-sky-600 not-eink:hover:border-sky-700 not-eink:hover:bg-sky-700 not-eink:text-white',
+    tile: '',
+  },
+  pro: {
+    header: 'not-eink:bg-violet-50',
+    border: 'not-eink:border-violet-400',
+    current: 'not-eink:bg-violet-100 not-eink:text-violet-900',
+    price: 'not-eink:text-violet-700',
+    check: 'not-eink:text-violet-600',
+    cta: 'not-eink:border-violet-200 not-eink:bg-violet-50 not-eink:text-violet-700 not-eink:hover:bg-violet-100',
+    tile: '',
+  },
+  purchase: {
+    header: 'not-eink:bg-emerald-50',
+    border: 'not-eink:border-emerald-400',
+    current: 'not-eink:bg-emerald-100 not-eink:text-emerald-900',
+    price: 'not-eink:text-emerald-700',
+    check: 'not-eink:text-emerald-600',
+    cta: '',
+    tile: 'not-eink:bg-emerald-50 not-eink:text-emerald-700 not-eink:hover:bg-emerald-100',
+  },
+};
+
+export const getPlanAccent = (plan: UserPlan): PlanAccent =>
+  PLAN_ACCENTS[plan] ?? PLAN_ACCENTS.free;
+
 export function getPlanDetails(
   planCode: UserPlan,
   availablePlans: (AvailablePlan & StripeAvailablePlan)[],
@@ -69,8 +176,8 @@ export function getPlanDetails(
         name: _('Lifetime Plan'),
         plan: planCode,
         type: 'purchase',
-        color: 'bg-green-100 text-green-800',
-        hintColor: 'text-green-800/75',
+        color: 'not-eink:bg-emerald-100 not-eink:text-emerald-800 eink-bordered',
+        hintColor: 'text-base-content/60',
         price: availablePlan?.price || 1999,
         currency,
         productId: availablePlan?.productId,
@@ -103,8 +210,8 @@ export function getPlanDetails(
         name: _('Free Plan'),
         plan: planCode,
         type: 'subscription',
-        color: 'bg-gray-200 text-gray-800',
-        hintColor: 'text-gray-800/75',
+        color: 'not-eink:bg-slate-200 not-eink:text-slate-800 eink-bordered',
+        hintColor: 'text-base-content/60',
         price: 0,
         currency,
         productId: availablePlan?.productId,
@@ -151,9 +258,9 @@ export function getPlanDetails(
         name: _('Plus Plan'),
         plan: planCode,
         type: 'subscription',
-        color: 'bg-blue-200 text-blue-800',
-        hintColor: 'text-blue-800/75',
-        price: availablePlan?.price || 499,
+        color: 'not-eink:bg-sky-100 not-eink:text-sky-800 eink-bordered',
+        hintColor: 'text-base-content/60',
+        price: availablePlan?.price || (interval === 'year' ? 3999 : 499),
         currency,
         productId: availablePlan?.productId,
         interval: interval === 'month' ? _('month') : _('year'),
@@ -186,6 +293,16 @@ export function getPlanDetails(
             ),
           },
           {
+            // Plus and Pro carry the premium feature set that the Full
+            // Customization unlock sells separately, so the tier should say so.
+            // Reuses the existing key rather than a new phrasing: it is already
+            // translated in every locale.
+            label: _('Unlock All Customization Options'),
+            description: _(
+              'Unlock additional themes, fonts, layout options and read aloud, translators, cloud storage services.',
+            ),
+          },
+          {
             label: _('Priority Support'),
             description: _(
               'Enjoy faster responses and dedicated assistance whenever you need help.',
@@ -202,9 +319,9 @@ export function getPlanDetails(
         name: _('Pro Plan'),
         plan: planCode,
         type: 'subscription',
-        color: 'bg-purple-200 text-purple-800',
-        hintColor: 'text-purple-800/75',
-        price: availablePlan?.price || 999,
+        color: 'not-eink:bg-violet-100 not-eink:text-violet-800 eink-bordered',
+        hintColor: 'text-base-content/60',
+        price: availablePlan?.price || (interval === 'year' ? 7999 : 999),
         currency,
         productId: availablePlan?.productId,
         interval: interval === 'month' ? _('month') : _('year'),

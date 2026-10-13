@@ -113,15 +113,15 @@ describe('ABSClient', () => {
         jsonResponse(200, {
           total: 3,
           results: [
-            { id: 'a', mediaType: 'book', media: { metadata: {} } },
-            { id: 'b', mediaType: 'book', media: { metadata: {} } },
+            { id: 'a', mediaType: 'book', media: { metadata: {}, numAudioFiles: 1 } },
+            { id: 'b', mediaType: 'book', media: { metadata: {}, numAudioFiles: 1 } },
           ],
         }),
       )
       .mockResolvedValueOnce(
         jsonResponse(200, {
           total: 3,
-          results: [{ id: 'c', mediaType: 'book', media: { metadata: {} } }],
+          results: [{ id: 'c', mediaType: 'book', media: { metadata: {}, numAudioFiles: 1 } }],
         }),
       );
     const items = await client.getLibraryItems('l1');
@@ -130,6 +130,58 @@ describe('ABSClient', () => {
       '/api/libraries/l1/items?limit=100&page=0',
     );
     expect(String(fetchMock.mock.calls[1]![0])).toContain('page=1');
+  });
+
+  it('expands audio-less book items to discover primary ebooks', async () => {
+    fetchMock
+      .mockResolvedValueOnce(
+        jsonResponse(200, {
+          total: 1,
+          results: [{ id: 'ebook1', mediaType: 'book', media: { metadata: {}, numAudioFiles: 0 } }],
+        }),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse(200, {
+          id: 'ebook1',
+          mediaType: 'book',
+          media: { metadata: {}, numAudioFiles: 0, ebookFile: { ino: '1', ebookFormat: 'epub' } },
+        }),
+      );
+
+    const items = await client.getLibraryItems('l1');
+
+    expect(items[0]!.media.ebookFile).toEqual({ ino: '1', ebookFormat: 'epub' });
+    expect(fetchMock.mock.calls[1]![0]).toBe('http://abs.local:13378/api/items/ebook1?expanded=1');
+  });
+
+  it('bounds expanded-item requests for large libraries', async () => {
+    let active = 0;
+    let maxActive = 0;
+    fetchMock.mockImplementation(async (url: string) => {
+      active++;
+      maxActive = Math.max(maxActive, active);
+      await Promise.resolve();
+      active--;
+      if (url.includes('/api/libraries/')) {
+        return jsonResponse(200, {
+          total: 9,
+          results: Array.from({ length: 9 }, (_, i) => ({
+            id: `ebook${i}`,
+            mediaType: 'book',
+            media: { metadata: {}, numAudioFiles: 0 },
+          })),
+        });
+      }
+      return jsonResponse(200, {
+        mediaType: 'book',
+        media: { metadata: {}, numAudioFiles: 0, ebookFile: { ino: url, ebookFormat: 'epub' } },
+      });
+    });
+
+    const items = await client.getLibraryItems('l1');
+
+    expect(items).toHaveLength(9);
+    expect(maxActive).toBeLessThanOrEqual(8);
   });
 
   it('openPlaybackSession posts to the book play path when no episodeId is given', async () => {

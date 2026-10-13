@@ -190,7 +190,25 @@ describe('usePagination hardware DOM bindings', () => {
 
     expect(event.defaultPrevented).toBe(true);
     expect(view.next).toHaveBeenCalledTimes(1);
-    expect(postMessage).not.toHaveBeenCalled();
+    expect(postMessage).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'iframe-keydown', handled: true }),
+      '*',
+    );
+
+    const recorder = document.createElement('div');
+    recorder.dataset['shortcutRecording'] = 'true';
+    document.body.appendChild(recorder);
+    handleKeydown(
+      'book-1',
+      new KeyboardEvent('keydown', {
+        key: 'ArrowRight',
+        code: 'ArrowRight',
+        ctrlKey: true,
+        cancelable: true,
+      }),
+    );
+    recorder.remove();
+    expect(view.next).toHaveBeenCalledTimes(1);
     postMessage.mockRestore();
   });
 

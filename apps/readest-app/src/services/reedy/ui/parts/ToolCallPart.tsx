@@ -51,14 +51,14 @@ export function ToolCallPart({ part }: { part: Extract<ReedyMessagePart, { type:
         <div className='mt-1.5 space-y-1'>
           <div>
             <div className='text-base-content/40 mb-0.5 text-[10px] uppercase'>args</div>
-            <pre className='bg-base-300/40 max-h-40 overflow-auto rounded px-1.5 py-1 font-mono text-[10px] whitespace-pre-wrap'>
+            <pre className='bg-base-300/40 max-h-40 overflow-auto rounded-sm px-1.5 py-1 font-mono text-[10px] whitespace-pre-wrap'>
               {safeStringify(part.args)}
             </pre>
           </div>
           {part.state === 'ok' && part.result !== undefined && (
             <div>
               <div className='text-base-content/40 mb-0.5 text-[10px] uppercase'>result</div>
-              <pre className='bg-base-300/40 max-h-60 overflow-auto rounded px-1.5 py-1 font-mono text-[10px] whitespace-pre-wrap'>
+              <pre className='bg-base-300/40 max-h-60 overflow-auto rounded-sm px-1.5 py-1 font-mono text-[10px] whitespace-pre-wrap'>
                 {safeStringify(part.result)}
               </pre>
             </div>
@@ -68,7 +68,7 @@ export function ToolCallPart({ part }: { part: Extract<ReedyMessagePart, { type:
               <div className='text-error mb-0.5 text-[10px] uppercase'>
                 error · {part.error.kind}
               </div>
-              <pre className='text-error/80 bg-base-300/40 rounded px-1.5 py-1 font-mono text-[10px] whitespace-pre-wrap'>
+              <pre className='text-error/80 bg-base-300/40 rounded-sm px-1.5 py-1 font-mono text-[10px] whitespace-pre-wrap'>
                 {part.error.message}
               </pre>
             </div>

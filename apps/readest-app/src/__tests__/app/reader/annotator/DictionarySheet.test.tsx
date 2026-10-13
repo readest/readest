@@ -19,7 +19,12 @@ import {
 } from '@testing-library/react';
 import type { ReactNode } from 'react';
 
-import type { DictionaryProvider, DictionaryLookupOutcome } from '@/services/dictionaries/types';
+import type {
+  DictionaryLookupContext,
+  DictionaryLookupOutcome,
+  DictionaryProvider,
+  DictionarySelectionContext,
+} from '@/services/dictionaries/types';
 import { BUILTIN_WEB_SEARCH_IDS } from '@/services/dictionaries/types';
 import type { ImportedDictionary } from '@/services/dictionaries/types';
 import type { BaseDir } from '@/types/system';
@@ -90,6 +95,27 @@ vi.mock('@/services/tts/wordPronouncer', () => ({
 const mockOpenUrl = vi.fn().mockResolvedValue(undefined);
 vi.mock('@tauri-apps/plugin-opener', () => ({
   openUrl: (...args: unknown[]) => mockOpenUrl(...args),
+}));
+
+// Blob -> data URL conversion needs a real `fetch` for `blob:` URLs, which
+// jsdom doesn't provide; the viewer only cares that it receives a data URL.
+const mockConvertBlobUrlToDataUrl = vi.fn(async (src: string) => `data:image/png;base64,${src}`);
+vi.mock('@/libs/document', async () => {
+  const actual = await vi.importActual<typeof import('@/libs/document')>('@/libs/document');
+  return {
+    ...actual,
+    convertBlobUrlToDataUrl: (src: string) => mockConvertBlobUrlToDataUrl(src),
+  };
+});
+
+// Thin stand-in for the reader's full-screen image viewer.
+vi.mock('@/app/reader/components/ImageViewer', () => ({
+  default: ({ src, onClose }: { src: string | null; onClose: () => void }) =>
+    src ? (
+      <div data-testid='dict-image-viewer' data-src={src}>
+        <button type='button' aria-label='Close image viewer' onClick={onClose} />
+      </div>
+    ) : null,
 }));
 
 vi.mock('@/services/environment', async () => {
@@ -204,6 +230,53 @@ const buildSlowProvider = (abortObserver: { aborted: boolean }): DictionaryProvi
   },
 });
 
+// Mimics the MDict provider's rendering: the entry body lives in a shadow
+// root, so a click's `target` is retargeted to the host and only the composed
+// path names the image that was actually tapped.
+const buildShadowImageProvider = (): DictionaryProvider => ({
+  id: 'shadow-img',
+  kind: 'mdict',
+  label: 'Shadow Image Dict',
+  async lookup(word, ctx) {
+    const host = document.createElement('div');
+    host.setAttribute('data-testid', 'img-shadow-host');
+    ctx.container.appendChild(host);
+    const shadow = host.attachShadow({ mode: 'open' });
+    const img = document.createElement('img');
+    img.setAttribute('src', 'blob:test/pic-1');
+    shadow.appendChild(img);
+    const linked = document.createElement('a');
+    linked.setAttribute('href', 'https://example.com/more');
+    const linkedImg = document.createElement('img');
+    linkedImg.setAttribute('src', 'blob:test/pic-2');
+    linked.appendChild(linkedImg);
+    shadow.appendChild(linked);
+    // OALD9 wraps its illustrations in a hrefless `<a class="topic no-href">`,
+    // so the wrapper is markup, not a link, and must not swallow the tap.
+    const hrefless = document.createElement('a');
+    hrefless.className = 'topic no-href';
+    const heldImg = document.createElement('img');
+    heldImg.setAttribute('src', 'blob:test/pic-3');
+    hrefless.appendChild(heldImg);
+    shadow.appendChild(hrefless);
+    // OALD9 ships each illustration twice inside `<div class="ox-enlarge">`: a
+    // hidden full-resolution copy followed by the `thumb` that is laid out.
+    const pair = document.createElement('a');
+    pair.className = 'topic no-href';
+    const fullsize = document.createElement('img');
+    fullsize.setAttribute('src', 'blob:test/pic-fullsize');
+    fullsize.style.display = 'none';
+    Object.defineProperty(fullsize, 'naturalWidth', { value: 720 });
+    const thumb = document.createElement('img');
+    thumb.className = 'thumb';
+    thumb.setAttribute('src', 'blob:test/pic-thumb');
+    Object.defineProperty(thumb, 'naturalWidth', { value: 100 });
+    pair.append(fullsize, thumb);
+    shadow.appendChild(pair);
+    return { ok: true, headword: word, sourceLabel: 'Shadow Image Dict' };
+  },
+});
+
 const buildEmptyProvider = (id: string, label: string): DictionaryProvider => ({
   id,
   kind: 'stardict',
@@ -241,6 +314,7 @@ const renderSheet = (
   props: Partial<{
     word: string;
     lang: string;
+    selection: DictionarySelectionContext;
     onDismiss: () => void;
     onManage: () => void;
   }> = {},
@@ -249,6 +323,7 @@ const renderSheet = (
     <DictionarySheet
       word={props.word ?? 'hello'}
       lang={props.lang}
+      selection={props.selection}
       onDismiss={props.onDismiss ?? (() => {})}
       onManage={props.onManage}
     />,
@@ -268,6 +343,7 @@ const resetStoreToEmpty = () => {
 beforeEach(() => {
   providersForNextRender.length = 0;
   mockOpenUrl.mockClear();
+  mockConvertBlobUrlToDataUrl.mockClear();
   resetStoreToEmpty();
 });
 
@@ -359,6 +435,27 @@ describe('DictionarySheet — concurrent lookup', () => {
 });
 
 describe('DictionarySheet — query normalization', () => {
+  it.each([
+    ['Café', 'cafe'],
+    ['rūpa', 'rupa'],
+    ['niño', 'nino'],
+    ['café', 'cafe\u0301'],
+    ['cafe\u0301', 'café'],
+  ])('resolves %s against the stored headword %s', async (word, headword) => {
+    providersForNextRender.push(buildExactProvider(headword));
+    renderSheet({ word });
+    await waitFor(() => screen.getByText(`def for ${headword}`));
+  });
+
+  it('keeps an accented exact match ahead of folding', async () => {
+    const exact = buildExactProvider('café');
+    const spy = vi.spyOn(exact, 'lookup');
+    providersForNextRender.push(exact);
+    renderSheet({ word: 'café' });
+    await waitFor(() => screen.getByText('Exact Match'));
+    expect(spy).toHaveBeenCalledTimes(1);
+  });
+
   it('resolves a lowercase-stored entry from a capitalized selection', async () => {
     const exact = buildExactProvider('hello');
     const spy = vi.spyOn(exact, 'lookup');
@@ -416,6 +513,32 @@ describe('DictionarySheet — expand / collapse', () => {
 
     fireEvent.click(screen.getByTestId('dict-card'));
     await waitFor(() => expect(expanded()).toBe('true'));
+  });
+
+  it('keeps a tap that lands before the auto-expand effects settle', async () => {
+    providersForNextRender.push(buildRealStarDictProvider());
+    renderSheet({ word: 'hello' });
+
+    // Tap the moment the card first renders expanded, before React flushes
+    // that render's effects: the pending auto-expand pass must not undo it.
+    const card = () => screen.queryByTestId('dict-card');
+    let tapped = false;
+    const observer = new MutationObserver(() => {
+      if (tapped || card()?.getAttribute('aria-expanded') !== 'true') return;
+      tapped = true;
+      card()!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
+    observer.observe(screen.getByTestId('dialog-body'), {
+      attributes: true,
+      attributeFilter: ['aria-expanded'],
+      subtree: true,
+    });
+    await waitFor(() => expect(tapped).toBe(true));
+    observer.disconnect();
+
+    await waitFor(() => expect(card()?.getAttribute('aria-expanded')).toBe('false'));
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(card()?.getAttribute('aria-expanded')).toBe('false');
   });
 
   it('defaults to collapsed when more than 3 providers have results', async () => {
@@ -476,6 +599,61 @@ describe('DictionarySheet — in-content navigation', () => {
     fireEvent.click(screen.getByLabelText('Back'));
     await waitFor(() => expect(screen.getByTestId('dict-title').textContent).toBe('hello'));
     expect(screen.queryByLabelText('Back')).toBeNull();
+  });
+});
+
+describe('DictionarySheet — selection context (#5544)', () => {
+  it('hands the selection context to providers for the selected word only', async () => {
+    const seen: Record<string, DictionaryLookupContext['selection']> = {};
+    const nav = buildNavProvider('world');
+    providersForNextRender.push({
+      ...nav,
+      lookup: (word, ctx) => {
+        seen[word] = ctx.selection;
+        return nav.lookup(word, ctx);
+      },
+    });
+    const selection = { before: 'Say', after: 'to everyone.', targetLang: 'fr' };
+    renderSheet({ word: 'hello', selection });
+
+    const navLink = await waitFor(() => screen.getByTestId('nav-link'));
+    expect(seen['hello']).toEqual(selection);
+
+    await act(async () => {
+      fireEvent.click(navLink);
+    });
+    await waitFor(() => expect('world' in seen).toBe(true));
+    expect(seen['world']).toBeUndefined();
+  });
+});
+
+describe('DictionarySheet — republished selection (#5544)', () => {
+  it('does not restart lookups when the same selection context arrives as a new object', async () => {
+    let calls = 0;
+    const nav = buildNavProvider('world');
+    providersForNextRender.push({
+      ...nav,
+      lookup: (word, ctx) => {
+        calls++;
+        return nav.lookup(word, ctx);
+      },
+    });
+    const { rerender } = renderSheet({
+      word: 'hello',
+      selection: { before: 'Say', after: 'now.' },
+    });
+    await waitFor(() => screen.getByTestId('nav-link'));
+    expect(calls).toBe(1);
+
+    rerender(
+      <DictionarySheet
+        word='hello'
+        selection={{ before: 'Say', after: 'now.' }}
+        onDismiss={() => {}}
+      />,
+    );
+    await act(async () => {});
+    expect(calls).toBe(1);
   });
 });
 
@@ -586,5 +764,142 @@ describe('DictionarySheet — abort on unmount', () => {
     await waitFor(() => {
       expect(observer.aborted).toBe(true);
     });
+  });
+});
+
+describe('DictionarySheet - image zoom', () => {
+  it('opens the full-screen viewer when an image in a shadow-rendered entry is tapped (#6018)', async () => {
+    providersForNextRender.push(buildShadowImageProvider());
+    renderSheet({ word: 'hello' });
+
+    const host = await waitFor(() => {
+      const el = screen.getByTestId('img-shadow-host');
+      if (!el.shadowRoot) throw new Error('shadow root not attached');
+      return el;
+    });
+    const img = host.shadowRoot!.querySelector('img[src="blob:test/pic-1"]') as HTMLImageElement;
+
+    fireEvent.click(img);
+
+    const viewer = await waitFor(() => screen.getByTestId('dict-image-viewer'));
+    expect(viewer.getAttribute('data-src')).toBe('data:image/png;base64,blob:test/pic-1');
+
+    fireEvent.click(screen.getByLabelText('Close image viewer'));
+    await waitFor(() => expect(screen.queryByTestId('dict-image-viewer')).toBeNull());
+  });
+
+  it('leaves an image wrapped in a link to the link handler', async () => {
+    providersForNextRender.push(buildShadowImageProvider());
+    renderSheet({ word: 'hello' });
+
+    const host = await waitFor(() => {
+      const el = screen.getByTestId('img-shadow-host');
+      if (!el.shadowRoot) throw new Error('shadow root not attached');
+      return el;
+    });
+    const linkedImg = host.shadowRoot!.querySelector(
+      'img[src="blob:test/pic-2"]',
+    ) as HTMLImageElement;
+
+    fireEvent.click(linkedImg);
+
+    await act(async () => {});
+    expect(screen.queryByTestId('dict-image-viewer')).toBeNull();
+    expect(mockConvertBlobUrlToDataUrl).not.toHaveBeenCalled();
+  });
+
+  it('zooms an image wrapped in an anchor that has no href (#6018)', async () => {
+    providersForNextRender.push(buildShadowImageProvider());
+    renderSheet({ word: 'hello' });
+
+    const host = await waitFor(() => {
+      const el = screen.getByTestId('img-shadow-host');
+      if (!el.shadowRoot) throw new Error('shadow root not attached');
+      return el;
+    });
+    const heldImg = host.shadowRoot!.querySelector(
+      'img[src="blob:test/pic-3"]',
+    ) as HTMLImageElement;
+
+    fireEvent.click(heldImg);
+
+    const viewer = await waitFor(() => screen.getByTestId('dict-image-viewer'));
+    expect(viewer.getAttribute('data-src')).toBe('data:image/png;base64,blob:test/pic-3');
+  });
+
+  it('zooms the hidden full-resolution twin, not the thumbnail (#6018)', async () => {
+    providersForNextRender.push(buildShadowImageProvider());
+    renderSheet({ word: 'hello' });
+
+    const host = await waitFor(() => {
+      const el = screen.getByTestId('img-shadow-host');
+      if (!el.shadowRoot) throw new Error('shadow root not attached');
+      return el;
+    });
+    const thumb = host.shadowRoot!.querySelector('img.thumb') as HTMLImageElement;
+
+    fireEvent.click(thumb);
+
+    const viewer = await waitFor(() => screen.getByTestId('dict-image-viewer'));
+    expect(viewer.getAttribute('data-src')).toBe('data:image/png;base64,blob:test/pic-fullsize');
+  });
+});
+
+describe('DictionarySheet — auto-play pronunciation fan-out (#6265)', () => {
+  const buildRecordingProvider = (
+    id: string,
+    seen: { id: string; autoPlay: boolean | undefined }[],
+  ): DictionaryProvider => ({
+    id,
+    kind: 'mdict',
+    label: id,
+    async lookup(word, ctx): Promise<DictionaryLookupOutcome> {
+      seen.push({ id, autoPlay: ctx.autoPlayPronunciation });
+      ctx.container.textContent = `${id}:${word}`;
+      return { ok: true, headword: word };
+    },
+  });
+
+  it('arms auto-play on the first MDict provider only, so concurrent lookups cannot interrupt each other', async () => {
+    const seen: { id: string; autoPlay: boolean | undefined }[] = [];
+    useCustomDictionaryStore.setState({
+      dictionaries: [],
+      settings: {
+        providerOrder: ['mdict:first', 'mdict:second'],
+        providerEnabled: { 'mdict:first': true, 'mdict:second': true },
+        webSearches: [],
+        autoPlayPronunciation: true,
+      },
+    });
+    providersForNextRender.push(
+      buildRecordingProvider('mdict:first', seen),
+      buildRecordingProvider('mdict:second', seen),
+    );
+
+    renderSheet({ word: 'hello' });
+    await waitFor(() => expect(seen).toHaveLength(2));
+
+    // They share one module-scoped <audio>, so arming both lets whichever
+    // resolves its bytes last cut off the other.
+    expect(seen.find((s) => s.id === 'mdict:first')?.autoPlay).toBe(true);
+    expect(seen.find((s) => s.id === 'mdict:second')?.autoPlay).toBe(false);
+  });
+
+  it('arms nothing while the setting is off', async () => {
+    const seen: { id: string; autoPlay: boolean | undefined }[] = [];
+    useCustomDictionaryStore.setState({
+      dictionaries: [],
+      settings: {
+        providerOrder: ['mdict:first'],
+        providerEnabled: { 'mdict:first': true },
+        webSearches: [],
+      },
+    });
+    providersForNextRender.push(buildRecordingProvider('mdict:first', seen));
+
+    renderSheet({ word: 'hello' });
+    await waitFor(() => expect(seen).toHaveLength(1));
+
+    expect(seen[0]!.autoPlay).toBe(false);
   });
 });

@@ -8,6 +8,11 @@ import { loadEnvFile } from './vitest.env.mts';
 // Load .env and .env.web so browser tests have the same env as the web app.
 const env = { ...loadEnvFile('.env'), ...loadEnvFile('.env.web') };
 
+// Matches both wordings Chromium has used for the benign resize notice:
+// "ResizeObserver loop limit exceeded" (older) and "ResizeObserver loop
+// completed with undelivered notifications." (current).
+const RESIZE_OBSERVER_NOTICE = /ResizeObserver loop/;
+
 export default defineConfig({
   plugins: [tsconfigPaths(), react()],
   define: {
@@ -18,8 +23,10 @@ export default defineConfig({
     alias: {
       // The @pdfjs alias from tsconfig only resolves within the app's own
       // source files.  foliate-js/pdf.js lives outside that scope, so Vite
-      // needs an explicit alias to find the vendored pdfjs build.
-      '@pdfjs': resolve(import.meta.dirname, 'public/vendor/pdfjs'),
+      // needs an explicit alias to reach pdfjs-dist. It points at the real
+      // package rather than a copy under `public/`: a module the bundler
+      // imports must not be published too, or Tauri embeds it twice (#6368).
+      '@pdfjs': resolve(import.meta.dirname, '../../packages/foliate-js/node_modules/pdfjs-dist/legacy/build'),
     },
   },
   optimizeDeps: {
@@ -30,6 +37,13 @@ export default defineConfig({
       '@tauri-apps/api/path',
       '@tauri-apps/api/core',
       '@testing-library/react',
+      '@dnd-kit/core',
+      '@dnd-kit/sortable',
+      '@dnd-kit/utilities',
+      '@radix-ui/react-tooltip',
+      'react-virtuoso',
+      'react-icons/lia',
+      'next/image',
       '@zip.js/zip.js',
       'franc-min',
       'iso-639-2',
@@ -53,8 +67,18 @@ export default defineConfig({
   },
   test: {
     include: ['src/**/*.browser.test.ts', 'src/**/*.browser.test.tsx'],
-    onConsoleLog(_log, type) {
+    onConsoleLog(log, type) {
       if (type === 'stdout') return false;
+      // Chromium reports the benign "ResizeObserver loop ..." notice as an
+      // ErrorEvent carrying only `message` and no `error`. @vitest/browser's
+      // error catcher console.errors exactly that shape (see its
+      // error-catcher.js: `console.error(e.message ? new Error(e.message) : e)`),
+      // so it cannot be filtered with `onUnhandledError` — it never reaches
+      // that hook. Paginated layouts fire it constantly and it buried the CI
+      // log under ~1.1k copies. The notice only means observations were
+      // deferred to the next frame; nothing is dropped and nothing is
+      // actionable.
+      if (RESIZE_OBSERVER_NOTICE.test(log)) return false;
     },
     browser: {
       enabled: true,

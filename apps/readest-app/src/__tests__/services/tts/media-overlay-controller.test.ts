@@ -38,6 +38,14 @@ const makeMockClient = (name: string, mediaClock: boolean): TTSClient => ({
   getSpeakingLang: vi.fn().mockReturnValue('en'),
 });
 
+const mediaProxy = vi.hoisted(() => ({
+  getMediaProxyBase: vi.fn(async (): Promise<string | null> => null),
+}));
+vi.mock('@/services/audiobook/mediaProxy', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/services/audiobook/mediaProxy')>();
+  return { ...actual, getMediaProxyBase: mediaProxy.getMediaProxyBase };
+});
+
 vi.mock('@/services/tts/WebSpeechClient', () => ({
   WebSpeechClient: vi.fn().mockImplementation(function (this: Record<string, unknown>) {
     Object.assign(this, makeMockClient('web-speech', false));
@@ -349,6 +357,34 @@ describe('narration selection', () => {
     // Nothing local exists to open or resolve for a streamed pairing.
     expect(appService.openFile).not.toHaveBeenCalled();
     expect(appService.resolveFilePath).not.toHaveBeenCalled();
+    useABSServerStore.setState({ servers: [] });
+  });
+
+  // #6216: the WebView / ExoPlayer cannot trust a self-signed server that the
+  // API client accepted, so on native the tracks stream through the loopback
+  // media proxy, the live token still inside the wrapped URL.
+  test('streams an Audiobookshelf pairing through the media proxy when one is available', async () => {
+    useABSServerStore.setState({
+      servers: [{ id: 'srv1', name: 'Home', url: 'http://abs.local/', accessToken: 'tok-1' }],
+    });
+    mediaProxy.getMediaProxyBase.mockResolvedValue('http://127.0.0.1:41234/s3cret');
+    const controller = new TTSController(
+      { appPlatform: 'tauri', isMobileApp: false } as unknown as AppService,
+      makePairedView(),
+    );
+    controller.pairedAudiobook = ABS_PAIRED_AUDIOBOOK;
+    const attachSource = vi.spyOn(controller.ttsMediaOverlayClient, 'attachSource');
+
+    await controller.init();
+
+    const source = attachSource.mock.calls.at(-1)?.[0];
+    const proxied = (path: string) =>
+      `http://127.0.0.1:41234/s3cret/media?u=${encodeURIComponent(`http://abs.local${path}?token=tok-1`)}`;
+    await expect(source?.resolveTracks?.('abs://srv1/item1')).resolves.toMatchObject([
+      { url: proxied('/api/items/item1/file/1') },
+      { url: proxied('/api/items/item1/file/2') },
+    ]);
+    mediaProxy.getMediaProxyBase.mockResolvedValue(null);
     useABSServerStore.setState({ servers: [] });
   });
 

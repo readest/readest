@@ -112,8 +112,8 @@ export function FeedsView({ onClose }: FeedsViewProps) {
         isOpen={true}
         title={liveFeed ? liveFeed.title : _('Feeds')}
         onClose={onClose}
-        bgClassName='sm:!bg-black/75'
-        boxClassName='sm:min-w-[520px] sm:w-3/4 sm:h-[85%] sm:!max-w-screen-sm'
+        bgClassName='sm:bg-black/75!'
+        boxClassName='sm:min-w-[520px] sm:w-3/4 sm:h-[85%] sm:max-w-(--breakpoint-sm)!'
       >
         <div className='bg-base-100 relative flex flex-col overflow-y-auto pb-4'>
           {liveFeed ? (
@@ -194,7 +194,7 @@ export function FeedsView({ onClose }: FeedsViewProps) {
                         <div className='flex items-center gap-2 px-4 py-3'>
                           <button
                             type='button'
-                            className='hover:bg-base-200 flex min-w-0 flex-1 cursor-pointer flex-col gap-0.5 rounded text-start transition-colors'
+                            className='hover:bg-base-200 flex min-w-0 flex-1 cursor-pointer flex-col gap-0.5 rounded-sm text-start transition-colors'
                             onClick={() => setSelectedFeed(feed)}
                           >
                             <div className='flex items-center gap-2'>

@@ -18,3 +18,13 @@ export const scaleGapForRate = (baseGapSec: number, rate: number): number => {
   // with any way to get them back (#5414).
   return Math.round((baseGapSec / Math.pow(rate, RATE_EXPONENT)) * 100) / 100;
 };
+
+// A question, exclamation or trailing-off ellipsis gets a longer pause than a
+// period, the way a narrator lets it land (#6412). The factor applies to the
+// already rate-scaled gap, so it shrinks with the rate like the gap itself.
+// Closing quotes and brackets are skipped so `"Really?"` still counts.
+const EMPHATIC_END_RE = /(?:[?!…‽？！]|\.\.\.)["'”’»›)\]}）」』》\s]*$/u;
+const EMPHATIC_GAP_FACTOR = 2;
+
+export const gapAfterSentence = (gapSec: number, text: string): number =>
+  EMPHATIC_END_RE.test(text) ? gapSec * EMPHATIC_GAP_FACTOR : gapSec;

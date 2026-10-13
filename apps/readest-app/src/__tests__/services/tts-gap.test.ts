@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 
-import { scaleGapForRate } from '@/services/tts/gap';
+import { gapAfterSentence, scaleGapForRate } from '@/services/tts/gap';
 
 describe('scaleGapForRate', () => {
   test('leaves the base gap untouched at 1.0x', () => {
@@ -32,5 +32,29 @@ describe('scaleGapForRate', () => {
   test('a non-positive rate falls back to the base gap', () => {
     expect(scaleGapForRate(0.15, 0)).toBe(0.15);
     expect(scaleGapForRate(0.15, -1)).toBe(0.15);
+  });
+});
+
+describe('gapAfterSentence', () => {
+  test('keeps the base gap after a period or no end punctuation', () => {
+    expect(gapAfterSentence(0.15, 'It was late.')).toBe(0.15);
+    expect(gapAfterSentence(0.15, 'Chapter One')).toBe(0.15);
+    expect(gapAfterSentence(0.15, '夜が明けた。')).toBe(0.15);
+  });
+
+  test('pauses a beat longer after a question, exclamation or ellipsis', () => {
+    expect(gapAfterSentence(0.15, 'Who is there?')).toBe(0.3);
+    expect(gapAfterSentence(0.15, 'Run!')).toBe(0.3);
+    expect(gapAfterSentence(0.15, 'And then…')).toBe(0.3);
+    expect(gapAfterSentence(0.15, 'And then...')).toBe(0.3);
+    expect(gapAfterSentence(0.15, '本当に？')).toBe(0.3);
+  });
+
+  test('looks past closing quotes, brackets and trailing whitespace', () => {
+    expect(gapAfterSentence(0.15, '"Are you sure?" ')).toBe(0.3);
+    expect(gapAfterSentence(0.15, '“Stop!”\n')).toBe(0.3);
+    expect(gapAfterSentence(0.15, '(Or was it?)')).toBe(0.3);
+    expect(gapAfterSentence(0.15, '「行こう！」')).toBe(0.3);
+    expect(gapAfterSentence(0.15, '"It was late."')).toBe(0.15);
   });
 });

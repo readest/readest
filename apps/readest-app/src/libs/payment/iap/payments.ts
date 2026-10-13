@@ -1,11 +1,14 @@
 import { createSupabaseAdminClient } from '@/utils/supabase';
 import { updateUserStorage } from '@/libs/payment/storage';
 
-type PaymentRefKey = 'apple_original_transaction_id' | 'google_purchase_token';
+type PaymentRefKey =
+  | 'apple_original_transaction_id'
+  | 'google_purchase_token'
+  | 'stripe_payment_intent_id';
 
 /**
  * Mark a one-time purchase as refunded and recompute the user's purchased
- * storage. Used by the App Store / Google Play webhooks when a non-subscription
+ * storage. Used by the App Store / Google Play / Stripe webhooks when a non-subscription
  * purchase (e.g. a storage add-on) is refunded or voided.
  */
 export async function markPaymentRefunded(userId: string, column: PaymentRefKey, value: string) {

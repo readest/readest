@@ -41,6 +41,9 @@ vi.mock('@/services/tts/WebSpeechClient', () => ({
   }),
 }));
 vi.mock('@/services/tts/EdgeTTSClient', () => ({
+  // constants.ts imports this named const from the same module; the mock
+  // factory replaces the whole module, so it must re-export it too.
+  DEFAULT_SENTENCE_GAP_SEC: 0.15,
   EdgeTTSClient: vi.fn().mockImplementation(function (this: Record<string, unknown>) {
     Object.assign(this, makeMockClient('edge-tts'));
   }),
@@ -142,6 +145,22 @@ describe('TTSController lifecycle', () => {
     controller.state = 'playing';
     await controller.forward();
     expect(mockTtsInstances[0]!.next).toHaveBeenCalled();
+  });
+
+  test('a replaced controller shutting down leaves the new one its view', async () => {
+    const replacement = new TTSController(null, view);
+    await replacement.init();
+    await replacement.initViewTTS(0);
+    const owned = view.tts;
+    expect(owned).not.toBeNull();
+    const overlayer = view.renderer.getContents()[0]!.overlayer as unknown as {
+      remove: ReturnType<typeof vi.fn>;
+    };
+    overlayer.remove.mockClear();
+    // The first (superseded) controller is torn down after the new one took over.
+    await controller.shutdown();
+    expect(view.tts).toBe(owned);
+    expect(overlayer.remove).not.toHaveBeenCalled();
   });
 
   test('state changes dispatch tts-state-change once per actual change, on a microtask', async () => {

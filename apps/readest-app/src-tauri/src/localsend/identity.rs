@@ -5,6 +5,7 @@
 use anyhow::Context;
 use localsend::crypto::cert::fingerprint_from_cert_der;
 use localsend::discovery::DeviceIdentity;
+use localsend::http::dto::RegisterDto;
 use localsend::http::dto_v2::RegisterDtoV2;
 use localsend::http::server::TlsConfig;
 use localsend::http::state::ClientInfo;
@@ -135,6 +136,25 @@ impl Identity {
         }
     }
 
+    /// The register payload this device sends to a peer directly, as the
+    /// presence hello (its real port) or goodbye (`DEPARTURE_PORT`).
+    ///
+    /// Derived from the same identity as [`Self::register_dto`], because a
+    /// register replaces the peer's stored device: a field missing here is a
+    /// field the peer loses until its next probe re-confirms us.
+    pub fn client_register_dto(&self, port: u16) -> RegisterDto {
+        RegisterDto {
+            alias: self.alias.clone(),
+            version: PROTOCOL_VERSION_V2.to_string(),
+            device_model: Some(self.device_model.clone()),
+            device_type: Some(device_type()),
+            token: self.fingerprint.clone(),
+            port,
+            protocol: ProtocolType::Https,
+            has_web_interface: false,
+        }
+    }
+
     pub fn multicast_device(&self, port: u16) -> MulticastDevice {
         MulticastDevice {
             alias: self.alias.clone(),
@@ -163,6 +183,36 @@ mod tests {
         assert_eq!(a.fingerprint, b.fingerprint);
         assert!(!a.fingerprint.is_empty());
         assert!(a.cert_pem.contains("BEGIN CERTIFICATE"));
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn client_register_dto_carries_the_same_identity_as_the_announce() {
+        // A register REPLACES the peer's stored device, so any field this
+        // drops is a field peers lose. Dropping `device_type` made an iPhone
+        // draw as a computer for a beat after every unlock.
+        let dir = std::env::temp_dir().join(format!("ls-crd-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let _ = std::fs::remove_file(dir.join("identity.pem"));
+        let id = Identity::load_or_generate(&dir, "Phone".into(), "iOS".into()).unwrap();
+
+        let announced = id.register_dto(53318);
+        let sent = id.client_register_dto(53318);
+
+        assert_eq!(sent.alias, announced.alias);
+        assert_eq!(sent.version, announced.version);
+        assert_eq!(sent.device_model, announced.device_model);
+        assert_eq!(sent.device_type, announced.device_type);
+        assert!(sent.device_type.is_some(), "peers key their icon off this");
+        assert_eq!(sent.token, announced.fingerprint);
+        assert_eq!(sent.port, announced.port);
+        assert_eq!(sent.protocol, announced.protocol);
+        assert_eq!(sent.has_web_interface, announced.download);
+
+        // The goodbye differs from the hello in the port and nothing else.
+        let bye = id.client_register_dto(0);
+        assert_eq!(bye.port, 0);
+        assert_eq!(bye.device_type, announced.device_type);
         let _ = std::fs::remove_dir_all(&dir);
     }
 

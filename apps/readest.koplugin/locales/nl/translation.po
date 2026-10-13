@@ -17,6 +17,36 @@ msgstr "Readest"
 msgid "Keeps your KOReader and Readest devices in sync."
 msgstr "Houdt je KOReader- en Readest-apparaten gesynchroniseerd."
 
+msgid "Downloading %1 of %2…"
+msgstr "%1 van %2 wordt gedownload…"
+
+msgid "%1 MB downloaded"
+msgstr "%1 MB gedownload"
+
+msgid "No downloads in progress."
+msgstr "Geen actieve downloads."
+
+msgid "Run in background"
+msgstr "Op de achtergrond uitvoeren"
+
+msgid "Cancel download"
+msgstr "Download annuleren"
+
+msgid "Download cancelled. %1 of %2 downloaded."
+msgstr "Download geannuleerd. %1 van %2 gedownload."
+
+msgid "Downloaded %1 of %2 (skipped %3)."
+msgstr "%1 van %2 gedownload (%3 overgeslagen)."
+
+msgid "Downloaded %1 of %2."
+msgstr "%1 van %2 gedownload."
+
+msgid "Set Home folder in File Manager first to enable downloads."
+msgstr "Stel eerst de Home-map in de bestandsbeheerder in om downloads in te schakelen."
+
+msgid "No books to download."
+msgstr "Geen boeken om te downloaden."
+
 msgid "Library view"
 msgstr "Bibliotheekweergave"
 
@@ -68,8 +98,14 @@ msgstr "Oplopend"
 msgid "Actions"
 msgstr "Acties"
 
+msgid "Sync now"
+msgstr "Nu synchroniseren"
+
 msgid "Download all books"
 msgstr "Alle boeken downloaden"
+
+msgid "Download progress"
+msgstr "Downloadvoortgang"
 
 msgid "Rescan library"
 msgstr "Bibliotheek opnieuw scannen"
@@ -104,6 +140,12 @@ msgstr "Doorzoek bibliotheek"
 msgid "Search title or author"
 msgstr "Zoek op titel of auteur"
 
+msgid "Books synced"
+msgstr "Boeken gesynchroniseerd"
+
+msgid "Books sync failed"
+msgstr "Synchronisatie van boeken mislukt"
+
 msgid "Cover Browser plugin required for full Library rendering. Falling back to plain list."
 msgstr "Cover Browser-plug-in vereist voor volledige bibliotheekweergave. Terug naar gewone lijst."
 
@@ -116,18 +158,6 @@ msgstr "Dit boek van Readest downloaden?"
 msgid "Download"
 msgstr "Downloaden"
 
-msgid "Set Home folder in File Manager first to enable downloads."
-msgstr "Stel eerst de Home-map in de bestandsbeheerder in om downloads in te schakelen."
-
-msgid "Downloading…"
-msgstr "Bezig met downloaden …"
-
-msgid "Cloud copy unavailable."
-msgstr "Cloud-kopie niet beschikbaar."
-
-msgid "Download failed."
-msgstr "Downloaden mislukt."
-
 msgid "No cover available on Readest."
 msgstr "Geen omslag beschikbaar op Readest."
 
@@ -137,20 +167,8 @@ msgstr "Omslag downloaden mislukt."
 msgid "Could not delete the file."
 msgstr "Kon het bestand niet verwijderen."
 
-msgid "No books to download."
-msgstr "Geen boeken om te downloaden."
-
-msgid "Downloading %1 of %2…"
-msgstr "%1 van %2 wordt gedownload…"
-
-msgid "Download cancelled. %1 of %2 downloaded."
-msgstr "Download geannuleerd. %1 van %2 gedownload."
-
-msgid "Downloaded %1 of %2 (skipped %3)."
-msgstr "%1 van %2 gedownload (%3 overgeslagen)."
-
-msgid "Downloaded %1 of %2."
-msgstr "%1 van %2 gedownload."
+msgid "Download group"
+msgstr "Groep downloaden"
 
 msgid "Removing from cloud…"
 msgstr "Verwijderen uit cloud …"
@@ -287,23 +305,14 @@ msgstr "Statistieken nu pushen"
 msgid "Pull stats now"
 msgstr "Statistieken nu pullen"
 
-msgid "Push books now"
-msgstr "Boeken nu pushen"
-
-msgid "Pull books now"
-msgstr "Boeken nu pullen"
-
-msgid "Receive via LocalSend"
-msgstr "Ontvangen via LocalSend"
-
-msgid "Upload current book to Readest"
-msgstr "Huidig boek uploaden naar Readest"
-
 msgid "Push reading progress now"
 msgstr "Leesvoortgang nu verzenden"
 
 msgid "Pull reading progress now"
 msgstr "Leesvoortgang nu ophalen"
+
+msgid "Upload current book to Readest"
+msgstr "Huidig boek uploaden naar Readest"
 
 msgid "Push annotations now"
 msgstr "Aantekeningen nu verzenden"
@@ -317,6 +326,9 @@ msgstr "Alle aantekeningen volledig synchroniseren"
 msgid "Sync info"
 msgstr "Synchronisatie-info"
 
+msgid "Receive via Nearby BookDrop"
+msgstr "Ontvangen via Nearby BookDrop"
+
 msgid "Check for update (v%1)"
 msgstr "Controleer op update (v%1)"
 
@@ -325,9 +337,6 @@ msgstr "Controleer op update"
 
 msgid "Please login first"
 msgstr "Meld eerst aan"
-
-msgid "Please configure Readest settings first"
-msgstr "Configureer eerst de Readest-instellingen"
 
 msgid "(none)"
 msgstr "(geen)"
@@ -350,26 +359,20 @@ msgstr "Synchronisatie-info"
 msgid "Library not initialized"
 msgstr "Bibliotheek niet geïnitialiseerd"
 
-msgid "Books synced"
-msgstr "Boeken gesynchroniseerd"
-
-msgid "Books sync failed"
-msgstr "Synchronisatie van boeken mislukt"
-
 msgid "Set a Readest download folder or a KOReader home folder first."
 msgstr "Stel eerst een Readest-downloadmap of een KOReader-startmap in."
 
-msgid "LocalSend error: could not find a free port."
-msgstr "LocalSend-fout: geen vrije poort gevonden."
+msgid "Nearby BookDrop error: could not find a free port."
+msgstr "Nearby BookDrop-fout: geen vrije poort gevonden."
 
-msgid "LocalSend failed to start."
-msgstr "LocalSend kon niet worden gestart."
+msgid "Nearby BookDrop failed to start."
+msgstr "Nearby BookDrop kon niet worden gestart."
 
-msgid "Starting LocalSend…"
-msgstr "LocalSend wordt gestart…"
+msgid "Starting Nearby BookDrop…"
+msgstr "Nearby BookDrop wordt gestart…"
 
-msgid "LocalSend will start when Wi-Fi connects."
-msgstr "LocalSend start zodra Wi-Fi verbinding maakt."
+msgid "Nearby BookDrop will start when Wi-Fi connects."
+msgstr "Nearby BookDrop start zodra Wi-Fi verbinding maakt."
 
 msgid "… and %1 more"
 msgstr "… en nog %1"
@@ -386,23 +389,23 @@ msgstr "Weigeren"
 msgid "Receiving %1 file(s) from %2…"
 msgstr "%1 bestand(en) van %2 ontvangen…"
 
-msgid "LocalSend: received %1 file(s), %2 failed."
-msgstr "LocalSend: %1 bestand(en) ontvangen, %2 mislukt."
+msgid "Nearby BookDrop: received %1 file(s), %2 failed."
+msgstr "Nearby BookDrop: %1 bestand(en) ontvangen, %2 mislukt."
 
-msgid "LocalSend transfer cancelled."
-msgstr "LocalSend-overdracht geannuleerd."
+msgid "Nearby BookDrop transfer cancelled."
+msgstr "Nearby BookDrop-overdracht geannuleerd."
 
-msgid "LocalSend: received %1 file(s)."
-msgstr "LocalSend: %1 bestand(en) ontvangen."
+msgid "Nearby BookDrop: received %1 file(s)."
+msgstr "Nearby BookDrop: %1 bestand(en) ontvangen."
 
-msgid "LocalSend not available on this device"
-msgstr "LocalSend niet beschikbaar op dit apparaat"
+msgid "Nearby BookDrop not available on this device"
+msgstr "Nearby BookDrop niet beschikbaar op dit apparaat"
 
 msgid "Scanning for nearby devices…"
 msgstr "Zoeken naar apparaten in de buurt…"
 
-msgid "No nearby devices found. Make sure the other device has LocalSend/Readest open."
-msgstr "Geen apparaten in de buurt gevonden. Zorg dat op het andere apparaat LocalSend/Readest geopend is."
+msgid "No nearby devices found. Make sure the other device has Nearby BookDrop or LocalSend open."
+msgstr "Geen apparaten in de buurt gevonden. Zorg dat op het andere apparaat Nearby BookDrop of LocalSend geopend is."
 
 msgid "Rescan"
 msgstr "Opnieuw zoeken"
@@ -428,11 +431,11 @@ msgstr "Overdracht geannuleerd."
 msgid "Send failed: %1"
 msgstr "Verzenden mislukt: %1"
 
-msgid "LocalSend error: %1"
-msgstr "LocalSend-fout: %1"
+msgid "Nearby BookDrop error: %1"
+msgstr "Nearby BookDrop-fout: %1"
 
-msgid "LocalSend off"
-msgstr "LocalSend uit"
+msgid "Nearby BookDrop off"
+msgstr "Nearby BookDrop uit"
 
 msgid "Visible as %1"
 msgstr "Zichtbaar als %1"
@@ -500,9 +503,6 @@ msgstr "Volledige synchronisatie: alle aantekeningen worden opgehaald…"
 msgid "Pulling annotations..."
 msgstr "Aantekeningen worden opgehaald…"
 
-msgid "Authentication failed, please login again"
-msgstr "Authenticatie mislukt, meld opnieuw aan"
-
 msgid "Failed to pull annotations"
 msgstr "Aantekeningen ophalen mislukt"
 
@@ -511,6 +511,12 @@ msgstr "Geen nieuwe aantekeningen gevonden"
 
 msgid "%1 annotations pulled"
 msgstr "%1 aantekeningen opgehaald"
+
+msgid "Your Readest session has expired. Please log in again."
+msgstr "Je Readest-sessie is verlopen. Meld je opnieuw aan."
+
+msgid "Authentication failed, please login again"
+msgstr "Authenticatie mislukt, meld opnieuw aan"
 
 msgid "Login"
 msgstr "Aanmelden"
@@ -557,8 +563,65 @@ msgstr "Leesvoortgang ophalen mislukt"
 msgid "Reading progress synchronized"
 msgstr "Leesvoortgang gesynchroniseerd"
 
+msgid "Saved reading position cannot be used with this copy of the book"
+msgstr "De opgeslagen leespositie kan niet worden gebruikt met dit exemplaar van het boek"
+
 msgid "No saved reading progress found for this book"
 msgstr "Geen opgeslagen leesvoortgang gevonden voor dit boek"
+
+msgid "Sync was cancelled."
+msgstr "Synchronisatie geannuleerd."
+
+msgid "The connection timed out. Please try again."
+msgstr "Er is een time-out opgetreden bij de verbinding. Probeer het opnieuw."
+
+msgid "The network is unreachable. Please check the internet connection."
+msgstr "Het netwerk is onbereikbaar. Controleer de internetverbinding."
+
+msgid "The server could not be found. Please check the internet connection."
+msgstr "De server kan niet worden gevonden. Controleer de internetverbinding."
+
+msgid "The server refused the connection. Please try again later."
+msgstr "De server heeft de verbinding geweigerd. Probeer het later opnieuw."
+
+msgid "The connection was interrupted. Please try again."
+msgstr "De verbinding is onderbroken. Probeer het opnieuw."
+
+msgid "A secure connection to the server could not be established."
+msgstr "Er kon geen beveiligde verbinding met de server worden gemaakt."
+
+msgid "Authentication failed. Please log in again."
+msgstr "Authenticatie mislukt. Log opnieuw in."
+
+msgid "The account changed during sync."
+msgstr "Het account is tijdens de synchronisatie gewijzigd."
+
+msgid "The file was not found in the cloud."
+msgstr "Het bestand is niet gevonden in de cloud."
+
+msgid "The local file is missing."
+msgstr "Het lokale bestand ontbreekt."
+
+msgid "An internal error occurred. Please try again."
+msgstr "Er is een interne fout opgetreden. Probeer het opnieuw."
+
+msgid "Access denied."
+msgstr "Toegang geweigerd."
+
+msgid "Not found on the server."
+msgstr "Niet gevonden op de server."
+
+msgid "The file is too large."
+msgstr "Het bestand is te groot."
+
+msgid "Too many requests. Please try again later."
+msgstr "Te veel verzoeken. Probeer het later opnieuw."
+
+msgid "The server is temporarily unavailable. Please try again later."
+msgstr "De server is tijdelijk niet beschikbaar. Probeer het later opnieuw."
+
+msgid "The request failed. Please try again."
+msgstr "Het verzoek is mislukt. Probeer het opnieuw."
 
 msgid "Reading statistics are up to date"
 msgstr "Leesstatistieken zijn up-to-date"

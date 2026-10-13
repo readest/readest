@@ -75,34 +75,107 @@ test.describe('Annotation', () => {
     await expect(reader.popupTool('Highlight')).toBeVisible();
   });
 
-  // The instant dictionary is the other side of the #5213 boundary: the word was
-  // tapped to be looked up, not selected, so the lookup owns the gesture end to
-  // end — nothing is left to highlight or copy afterwards.
-  test('the instant dictionary drops the selection and dismisses clean (#5585)', async ({
+  // The instant dictionary drops the selection only for as long as the lookup is
+  // up: iOS paints its native selection handles and blue highlight above web
+  // content, i.e. on top of the popup (#5585). Dismissing hands the word back,
+  // or there is no route left to highlighting or copying it — with a quick
+  // action armed, re-selecting the word just opens the dictionary again (#6213).
+  // That hand-back is opt-in (#6454).
+  test('the instant dictionary hands the selection back when it closes (#6213)', async ({
     openBook,
   }) => {
+    const reader = await openBook();
+
+    await reader.setQuickAction('Dictionary');
+    await reader.setKeepSelectionAfterLookup(true);
+    const word = await reader.selectWord();
+
+    await expect(reader.dictionaryPopup).toBeVisible();
+    await expect(reader.annotationPopup).toBeHidden();
+    expect(await reader.selectedSectionText()).toBe('');
+
+    await reader.page.keyboard.press('Escape');
+
+    await expect(reader.dictionaryPopup).toBeHidden();
+    await expect(reader.annotationPopup).toBeVisible();
+    expect(await reader.selectedSectionText()).toBe(word);
+  });
+
+  // By default the dismiss goes straight back to reading: readers who look up
+  // word after word would otherwise close a toolbar after every lookup (#6454).
+  test('the instant dictionary dismisses clean by default (#6454)', async ({ openBook }) => {
     const reader = await openBook();
 
     await reader.setQuickAction('Dictionary');
     await reader.selectWord();
 
     await expect(reader.dictionaryPopup).toBeVisible();
-    await expect(reader.annotationPopup).toBeHidden();
-    // iOS paints its native selection handles and blue highlight above web
-    // content, i.e. on top of the popup, so the lookup deselects as it opens.
-    expect(await reader.selectedSectionText()).toBe('');
 
     await reader.page.keyboard.press('Escape');
 
     await expect(reader.dictionaryPopup).toBeHidden();
-    // No live selection left, so the dismiss has no toolbar to return to.
     await expect(reader.annotationPopup).toBeHidden();
+    expect(await reader.selectedSectionText()).toBe('');
   });
 
   // Tapping a highlight (or holding one out with Instant Highlight) opens its
   // range editor: app-drawn handles in a fixed overlay painted after the lookup
   // popups, so they floated on top of the dictionary (#5815). A lookup hides
   // them; they come back only with the toolbar.
+  // #5815 unmounts the handles for the lookup popups, but the reason they were
+  // ever on top is that both layers were z-50 in one stacking context, so the
+  // tie broke on DOM order and the range editors are rendered last. Any surface
+  // that forgets to join that gate — the note editor did — gets handles drawn
+  // over it. The selection toolbar is the exception: it opens against the
+  // selection, so it overlaps the handles hanging off it, and the handles must
+  // keep those pixels or the covered part of a handle stops dragging and fires
+  // a tool button instead. Pin both halves of that order, read off the live DOM.
+  test('draws the range-edit handles above the selection toolbar', async ({ openBook }) => {
+    const reader = await openBook();
+
+    await reader.selectText();
+    await reader.highlightSelection();
+    await reader.dismissPopup();
+    await reader.clickHighlight();
+
+    await expect(reader.annotationPopup).toBeVisible();
+    await expect(reader.rangeHandles).toHaveCount(2);
+
+    const layers = await reader.page.evaluate(() => {
+      const zIndexOf = (el: Element | null | undefined) =>
+        el ? getComputedStyle(el).zIndex : null;
+      // Find each band by what actually makes it one — the nearest ancestor
+      // that sets a z-index — rather than by the wrapper's positioning class.
+      // `div.fixed` used to stand in for that, and it silently stopped
+      // matching the toolbar when its wrapper became `absolute` (it has to
+      // be: the popup's coordinates are book-cell relative, so a fixed
+      // wrapper anchors it to the viewport and drags it off the selection).
+      // Reading the z-index directly pins the bands this test cares about
+      // without caring how either layer is positioned.
+      const layerOf = (el: Element | null | undefined) => {
+        for (let node = el?.parentElement; node; node = node.parentElement) {
+          const z = getComputedStyle(node).zIndex;
+          if (z !== 'auto') return z;
+        }
+        return null;
+      };
+      const handle = document.querySelector('[data-testid="selection-handle"]');
+      const popup = document.querySelector('.selection-popup');
+      return {
+        handles: layerOf(handle),
+        toolbar: layerOf(popup),
+        // Where the lookup popups and the note editor sheet sit. They unmount
+        // the handles, but the layer they share must still outrank them.
+        popupLayer: zIndexOf(popup),
+      };
+    });
+
+    expect(layers.handles).not.toBeNull();
+    expect(layers.toolbar).not.toBeNull();
+    expect(Number(layers.toolbar)).toBeLessThan(Number(layers.handles));
+    expect(Number(layers.handles)).toBeLessThan(Number(layers.popupLayer));
+  });
+
   test('hides the range-edit handles while the dictionary popup is open (#5815)', async ({
     openBook,
   }) => {
@@ -150,6 +223,45 @@ test.describe('Annotation', () => {
 
     await reader.openAnnotationsTab();
     await expect(reader.annotationItems.getByText(noteText)).toBeVisible();
+  });
+
+  test('keeps the note bubble on restyle and removes it on toolbar delete (#6540)', async ({
+    openBook,
+  }) => {
+    const reader = await openBook();
+    const noteBubbles = reader.foliateView.locator('svg > g:has(line)');
+    const clickHighlight = async () => {
+      // Restyling appends the highlight after its bubble, so target the
+      // highlight explicitly instead of whichever SVG path comes first.
+      await reader.foliateView
+        .locator('svg > g:not(:has(line)) path')
+        .first()
+        .evaluate((node) => {
+          const path = node as SVGPathElement;
+          const box = path.getBBox();
+          const doc = path.ownerSVGElement?.parentElement?.querySelector('iframe')?.contentDocument;
+          if (!doc) throw new Error('highlight overlay has no section document');
+          doc.body.dispatchEvent(
+            new MouseEvent('click', { clientX: box.x + 4, clientY: box.y + 4, bubbles: true }),
+          );
+        });
+    };
+
+    await reader.selectText();
+    await reader.addNote('A note whose bubble must follow its highlight');
+    await expect(reader.noteEditor).toBeHidden();
+    await expect(noteBubbles).toHaveCount(1);
+
+    await clickHighlight();
+    await reader.selectHighlightColor('green');
+    await expect(noteBubbles).toHaveCount(1);
+
+    await clickHighlight();
+    await reader.popupTool('Delete Highlight').click();
+
+    await expect(noteBubbles).toHaveCount(0);
+    await reader.openAnnotationsTab();
+    await expect(reader.annotationItems).toHaveCount(0);
   });
 
   test('copies a link to the highlight once Copy Link is enabled', async ({

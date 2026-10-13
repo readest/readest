@@ -8,40 +8,13 @@ import { KoSyncProgress } from '@/services/sync/KOSyncClient';
  * native position format, e.g. `/body/DocFragment[11]/body/div/p[3]/text().0`.
  *
  * Servers other than KOReader — notably Kavita's KOReader-compatible sync
- * endpoint — also emit `/body/DocFragment[...]` XPointers that Readest CAN
- * resolve positionally, but their `percentage` is computed from their own
- * pagination, not CREngine's. See {@link isReportedByKOReader}: the drift
- * correction in xcfi (`resolveSpineSectionIndex`) must only trust that
- * percentage as a CREngine↔foliate drift signal when the report actually
- * comes from KOReader.
+ * endpoint — also emit `/body/DocFragment[...]` XPointers, and Readest resolves
+ * every one of them the same way: through the XPointer's own `DocFragment[N]`.
+ * A server's `percentage` never picks the section (see `getCFIFromXPointer`),
+ * so no server sniffing is needed here.
  */
 export const isXPointerProgress = (progress?: string): boolean =>
   !!progress && progress.startsWith('/body');
-
-/**
- * Whether a KOSync progress report can be trusted to carry a CREngine-style
- * `percentage` (i.e. computed from KOReader/CREngine's own pagination).
- *
- * This matters for {@link resolveRemoteLocalFraction}: it forwards `percentage`
- * into xcfi's `resolveSpineSectionIndex` as an anchor to correct CREngine's
- * DocFragment↔spine-section drift (Bug A). That correction assumes `percentage`
- * and the XPointer's `DocFragment[N]` both originate from the same CREngine
- * pagination. Servers that merely imitate the CREngine XPointer format (e.g.
- * Kavita) compute `percentage` from their OWN pagination, which routinely
- * disagrees with foliate-js's byte-size-based section table — feeding it into
- * the drift correction re-anchors to the wrong chapter instead of the correct
- * one the XPointer's nominal DocFragment already pointed to (#5109).
- *
- * KOReader itself doesn't self-identify in the KOSync protocol, so absence of
- * a contradicting `device` string is treated as "trust it" (the common case).
- * Only a `device` we can positively attribute to a non-KOReader implementation
- * disables the anchor.
- */
-export const isReportedByKOReader = (remote: KoSyncProgress): boolean => {
-  const device = remote.device?.toLowerCase() ?? '';
-  const knownNonKOReaderSources = ['kavita', 'komga', 'stump', 'calibre-web'];
-  return !knownNonKOReaderSources.some((source) => device.includes(source));
-};
 
 /**
  * Remote reading completion as a 0–1 fraction suitable for
@@ -101,19 +74,7 @@ export const resolveRemoteLocalFraction = async (
     // Resolve against the XPointer's own spine section; the converter loads the
     // correct off-screen document when it differs from the primary view.
     const content = view.renderer.getContents().find((x) => x.index === view.renderer.primaryIndex);
-    // Pass the server-reported percentage so xcfi can correct CREngine↔foliate
-    // DocFragment drift (Bug A) when picking the target spine section — but
-    // only when the report actually comes from KOReader (#5109): a look-alike
-    // server's percentage isn't computed from CREngine's pagination and must
-    // not be used to override the XPointer's own nominal section.
-    const driftAnchorPercentage = isReportedByKOReader(remote) ? remote.percentage : undefined;
-    const cfi = await getCFIFromXPointer(
-      remote.progress!,
-      content?.doc,
-      content?.index,
-      bookDoc,
-      driftAnchorPercentage,
-    );
+    const cfi = await getCFIFromXPointer(remote.progress!, content?.doc, content?.index, bookDoc);
     const progress = await view.getCFIProgress(cfi);
     const fraction = progress?.fraction;
     if (typeof fraction !== 'number' || !Number.isFinite(fraction)) {

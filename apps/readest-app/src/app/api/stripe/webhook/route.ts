@@ -4,8 +4,9 @@ import {
   getStripe,
   createOrUpdateSubscription,
   createOrUpdatePayment,
-  getHighestActivePlan,
 } from '@/libs/payment/stripe/server';
+import { resolveUserPlan } from '@/libs/payment/entitlements';
+import { markPaymentRefunded } from '@/libs/payment/iap/payments';
 import { createSupabaseAdminClient } from '@/utils/supabase';
 
 export async function POST(request: NextRequest) {
@@ -65,6 +66,10 @@ export async function POST(request: NextRequest) {
       case 'customer.subscription.deleted':
         await handleSubscriptionCancelled(event.data.object);
         break;
+
+      case 'charge.refunded':
+        await handleChargeRefunded(event.data.object);
+        break;
     }
 
     return NextResponse.json({ received: true });
@@ -79,6 +84,27 @@ async function handleSuccessfulPayment(session: Stripe.Checkout.Session, userId:
   const customerId = session.customer as string;
 
   await createOrUpdatePayment(userId, customerId, session.id);
+}
+
+// Only a full refund revokes; a partial refund leaves the purchase in place.
+// Charges without a payments row (subscription invoices) are ignored.
+async function handleChargeRefunded(charge: Stripe.Charge) {
+  const paymentIntentId =
+    typeof charge.payment_intent === 'string' ? charge.payment_intent : charge.payment_intent?.id;
+  if (!charge.refunded || !paymentIntentId) return;
+
+  const supabase = createSupabaseAdminClient();
+  const { data: payment, error } = await supabase
+    .from('payments')
+    .select('user_id')
+    .eq('stripe_payment_intent_id', paymentIntentId)
+    .maybeSingle();
+
+  // Throw so the webhook answers 500 and Stripe retries the refund.
+  if (error) throw new Error(`Failed to look up refunded payment: ${error.message}`);
+  if (!payment?.user_id) return;
+
+  await markPaymentRefunded(payment.user_id, 'stripe_payment_intent_id', paymentIntentId);
 }
 
 async function handleSuccessfulSubscription(session: Stripe.Checkout.Session, userId: string) {
@@ -196,10 +222,13 @@ async function handleSubscriptionCancelled(subscription: Stripe.Subscription) {
     .single();
 
   if (subscriptionData?.user_id) {
-    // The user may still hold other active subscriptions (e.g. cancelling the
-    // old Plus subscription after upgrading to Pro). Reflect the highest plan
-    // that remains active rather than always dropping to free.
-    const plan = await getHighestActivePlan(getStripe(), subscriptionData.stripe_customer_id);
+    // The user may still hold other active subscriptions — another Stripe one
+    // (e.g. cancelling the old Plus after upgrading to Pro), or a Google Play
+    // / App Store one they migrated to. Reflect the highest plan that remains
+    // entitled anywhere rather than always dropping to free.
+    const plan = await resolveUserPlan(subscriptionData.user_id, {
+      stripeCustomerId: subscriptionData.stripe_customer_id,
+    });
     await supabase
       .from('plans')
       .update({

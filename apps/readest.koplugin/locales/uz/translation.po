@@ -17,6 +17,36 @@ msgstr "Readest"
 msgid "Keeps your KOReader and Readest devices in sync."
 msgstr "KOReader va Readest qurilmalaringizni sinxronlashda saqlaydi."
 
+msgid "Downloading %1 of %2…"
+msgstr "%2 tadan %1-si yuklab olinmoqda…"
+
+msgid "%1 MB downloaded"
+msgstr "%1 MB yuklab olindi"
+
+msgid "No downloads in progress."
+msgstr "Yuklab olishlar bajarilmayapti."
+
+msgid "Run in background"
+msgstr "Fonda bajarish"
+
+msgid "Cancel download"
+msgstr "Yuklab olishni bekor qilish"
+
+msgid "Download cancelled. %1 of %2 downloaded."
+msgstr "Yuklab olish bekor qilindi. %2 tadan %1 tasi yuklab olindi."
+
+msgid "Downloaded %1 of %2 (skipped %3)."
+msgstr "%2 tadan %1 tasi yuklab olindi (%3 tasi oʻtkazib yuborildi)."
+
+msgid "Downloaded %1 of %2."
+msgstr "%2 tadan %1 tasi yuklab olindi."
+
+msgid "Set Home folder in File Manager first to enable downloads."
+msgstr "Yuklab olishlarni yoqish uchun avval Fayl menejerida bosh sahifa jildini belgilang."
+
+msgid "No books to download."
+msgstr "Yuklab olish uchun kitob yoʻq."
+
 msgid "Library view"
 msgstr "Kutubxona koʻrinishi"
 
@@ -68,8 +98,14 @@ msgstr "Oʻsish boʻyicha"
 msgid "Actions"
 msgstr "Amallar"
 
+msgid "Sync now"
+msgstr "Hozir sinxronlash"
+
 msgid "Download all books"
 msgstr "Barcha kitoblarni yuklab olish"
+
+msgid "Download progress"
+msgstr "Yuklab olish jarayoni"
 
 msgid "Rescan library"
 msgstr "Kutubxonani qayta skanerlash"
@@ -104,6 +140,12 @@ msgstr "Kutubxonada qidirish"
 msgid "Search title or author"
 msgstr "Sarlavha yoki muallif boʻyicha qidirish"
 
+msgid "Books synced"
+msgstr "Kitoblar sinxronlandi"
+
+msgid "Books sync failed"
+msgstr "Kitoblarni sinxronlab boʻlmadi"
+
 msgid "Cover Browser plugin required for full Library rendering. Falling back to plain list."
 msgstr "Toʻliq kutubxona koʻrinishi uchun Cover Browser plagini talab qilinadi. Oddiy roʻyxatga oʻtilmoqda."
 
@@ -116,18 +158,6 @@ msgstr "Ushbu kitobni Readest-dan yuklab olasizmi?"
 msgid "Download"
 msgstr "Yuklab olish"
 
-msgid "Set Home folder in File Manager first to enable downloads."
-msgstr "Yuklab olishlarni yoqish uchun avval Fayl menejerida bosh sahifa jildini belgilang."
-
-msgid "Downloading…"
-msgstr "Yuklab olinmoqda…"
-
-msgid "Cloud copy unavailable."
-msgstr "Bulutdagi nusxa mavjud emas."
-
-msgid "Download failed."
-msgstr "Yuklab olib boʻlmadi."
-
 msgid "No cover available on Readest."
 msgstr "Readest-da muqova mavjud emas."
 
@@ -137,20 +167,8 @@ msgstr "Muqovani yuklab olib boʻlmadi."
 msgid "Could not delete the file."
 msgstr "Faylni oʻchirib boʻlmadi."
 
-msgid "No books to download."
-msgstr "Yuklab olish uchun kitob yoʻq."
-
-msgid "Downloading %1 of %2…"
-msgstr "%2 tadan %1-si yuklab olinmoqda…"
-
-msgid "Download cancelled. %1 of %2 downloaded."
-msgstr "Yuklab olish bekor qilindi. %2 tadan %1 tasi yuklab olindi."
-
-msgid "Downloaded %1 of %2 (skipped %3)."
-msgstr "%2 tadan %1 tasi yuklab olindi (%3 tasi oʻtkazib yuborildi)."
-
-msgid "Downloaded %1 of %2."
-msgstr "%2 tadan %1 tasi yuklab olindi."
+msgid "Download group"
+msgstr "Guruhni yuklab olish"
 
 msgid "Removing from cloud…"
 msgstr "Bulutdan olib tashlanmoqda…"
@@ -287,23 +305,14 @@ msgstr "Statistikani hozir yuborish"
 msgid "Pull stats now"
 msgstr "Statistikani hozir olish"
 
-msgid "Push books now"
-msgstr "Kitoblarni hozir yuborish"
-
-msgid "Pull books now"
-msgstr "Kitoblarni hozir olish"
-
-msgid "Receive via LocalSend"
-msgstr "LocalSend orqali qabul qilish"
-
-msgid "Upload current book to Readest"
-msgstr "Joriy kitobni Readest-ga yuklash"
-
 msgid "Push reading progress now"
 msgstr "Oʻqish jarayonini hozir yuborish"
 
 msgid "Pull reading progress now"
 msgstr "Oʻqish jarayonini hozir olish"
+
+msgid "Upload current book to Readest"
+msgstr "Joriy kitobni Readest-ga yuklash"
 
 msgid "Push annotations now"
 msgstr "Izohlarni hozir yuborish"
@@ -317,6 +326,9 @@ msgstr "Barcha izohlarni toʻliq sinxronlash"
 msgid "Sync info"
 msgstr "Sinxronlash maʼlumoti"
 
+msgid "Receive via Nearby BookDrop"
+msgstr "Nearby BookDrop orqali qabul qilish"
+
 msgid "Check for update (v%1)"
 msgstr "Yangilanishni tekshirish (v%1)"
 
@@ -325,9 +337,6 @@ msgstr "Yangilanishni tekshirish"
 
 msgid "Please login first"
 msgstr "Iltimos, avval tizimga kiring"
-
-msgid "Please configure Readest settings first"
-msgstr "Iltimos, avval Readest sozlamalarini sozlang"
 
 msgid "(none)"
 msgstr "(yoʻq)"
@@ -350,26 +359,20 @@ msgstr "Sinxronlash maʼlumoti"
 msgid "Library not initialized"
 msgstr "Kutubxona ishga tushirilmagan"
 
-msgid "Books synced"
-msgstr "Kitoblar sinxronlandi"
-
-msgid "Books sync failed"
-msgstr "Kitoblarni sinxronlab boʻlmadi"
-
 msgid "Set a Readest download folder or a KOReader home folder first."
 msgstr "Avval Readest yuklab olish jildini yoki KOReader asosiy jildini belgilang."
 
-msgid "LocalSend error: could not find a free port."
-msgstr "LocalSend xatosi: bo'sh port topilmadi."
+msgid "Nearby BookDrop error: could not find a free port."
+msgstr "Nearby BookDrop xatosi: bo'sh port topilmadi."
 
-msgid "LocalSend failed to start."
-msgstr "LocalSend ishga tushmadi."
+msgid "Nearby BookDrop failed to start."
+msgstr "Nearby BookDrop ishga tushmadi."
 
-msgid "Starting LocalSend…"
-msgstr "LocalSend ishga tushirilmoqda…"
+msgid "Starting Nearby BookDrop…"
+msgstr "Nearby BookDrop ishga tushirilmoqda…"
 
-msgid "LocalSend will start when Wi-Fi connects."
-msgstr "Wi-Fi ulanganda LocalSend ishga tushadi."
+msgid "Nearby BookDrop will start when Wi-Fi connects."
+msgstr "Wi-Fi ulanganda Nearby BookDrop ishga tushadi."
 
 msgid "… and %1 more"
 msgstr "… va yana %1 ta"
@@ -386,23 +389,23 @@ msgstr "Rad etish"
 msgid "Receiving %1 file(s) from %2…"
 msgstr "%2 dan %1 ta fayl qabul qilinmoqda…"
 
-msgid "LocalSend: received %1 file(s), %2 failed."
-msgstr "LocalSend: %1 ta fayl qabul qilindi, %2 tasi muvaffaqiyatsiz."
+msgid "Nearby BookDrop: received %1 file(s), %2 failed."
+msgstr "Nearby BookDrop: %1 ta fayl qabul qilindi, %2 tasi muvaffaqiyatsiz."
 
-msgid "LocalSend transfer cancelled."
-msgstr "LocalSend uzatishi bekor qilindi."
+msgid "Nearby BookDrop transfer cancelled."
+msgstr "Nearby BookDrop uzatishi bekor qilindi."
 
-msgid "LocalSend: received %1 file(s)."
-msgstr "LocalSend: %1 ta fayl qabul qilindi."
+msgid "Nearby BookDrop: received %1 file(s)."
+msgstr "Nearby BookDrop: %1 ta fayl qabul qilindi."
 
-msgid "LocalSend not available on this device"
-msgstr "Bu qurilmada LocalSend mavjud emas"
+msgid "Nearby BookDrop not available on this device"
+msgstr "Bu qurilmada Nearby BookDrop mavjud emas"
 
 msgid "Scanning for nearby devices…"
 msgstr "Yaqin-atrofdagi qurilmalar qidirilmoqda…"
 
-msgid "No nearby devices found. Make sure the other device has LocalSend/Readest open."
-msgstr "Yaqin-atrofda qurilma topilmadi. Boshqa qurilmada LocalSend/Readest ochiqligiga ishonch hosil qiling."
+msgid "No nearby devices found. Make sure the other device has Nearby BookDrop or LocalSend open."
+msgstr "Yaqin-atrofda qurilma topilmadi. Boshqa qurilmada Nearby BookDrop yoki LocalSend ochiqligiga ishonch hosil qiling."
 
 msgid "Rescan"
 msgstr "Qayta qidirish"
@@ -428,11 +431,11 @@ msgstr "Uzatish bekor qilindi."
 msgid "Send failed: %1"
 msgstr "Yuborish muvaffaqiyatsiz: %1"
 
-msgid "LocalSend error: %1"
-msgstr "LocalSend xatosi: %1"
+msgid "Nearby BookDrop error: %1"
+msgstr "Nearby BookDrop xatosi: %1"
 
-msgid "LocalSend off"
-msgstr "LocalSend o'chiq"
+msgid "Nearby BookDrop off"
+msgstr "Nearby BookDrop o'chiq"
 
 msgid "Visible as %1"
 msgstr "%1 sifatida ko'rinadi"
@@ -500,9 +503,6 @@ msgstr "Toʻliq sinxronlash: barcha izohlar olinmoqda..."
 msgid "Pulling annotations..."
 msgstr "Izohlar olinmoqda..."
 
-msgid "Authentication failed, please login again"
-msgstr "Autentifikatsiya muvaffaqiyatsiz tugadi, qayta tizimga kiring"
-
 msgid "Failed to pull annotations"
 msgstr "Izohlarni olib boʻlmadi"
 
@@ -511,6 +511,12 @@ msgstr "Yangi izohlar topilmadi"
 
 msgid "%1 annotations pulled"
 msgstr "%1 ta izoh olindi"
+
+msgid "Your Readest session has expired. Please log in again."
+msgstr "Readest sessiyangiz muddati tugadi. Qayta tizimga kiring."
+
+msgid "Authentication failed, please login again"
+msgstr "Autentifikatsiya muvaffaqiyatsiz tugadi, qayta tizimga kiring"
 
 msgid "Login"
 msgstr "Kirish"
@@ -557,8 +563,65 @@ msgstr "Oʻqish jarayonini olib boʻlmadi"
 msgid "Reading progress synchronized"
 msgstr "Oʻqish jarayoni sinxronlandi"
 
+msgid "Saved reading position cannot be used with this copy of the book"
+msgstr "Saqlangan o'qish joyini kitobning ushbu nusxasi bilan ishlatib bo'lmaydi"
+
 msgid "No saved reading progress found for this book"
 msgstr "Ushbu kitob uchun saqlangan oʻqish jarayoni topilmadi"
+
+msgid "Sync was cancelled."
+msgstr "Sinxronlash bekor qilindi."
+
+msgid "The connection timed out. Please try again."
+msgstr "Ulanish vaqti tugadi. Qaytadan urinib ko'ring."
+
+msgid "The network is unreachable. Please check the internet connection."
+msgstr "Tarmoqqa ulanib bo'lmayapti. Internet aloqasini tekshiring."
+
+msgid "The server could not be found. Please check the internet connection."
+msgstr "Server topilmadi. Internet aloqasini tekshiring."
+
+msgid "The server refused the connection. Please try again later."
+msgstr "Server ulanishni rad etdi. Keyinroq qaytadan urinib ko'ring."
+
+msgid "The connection was interrupted. Please try again."
+msgstr "Ulanish uzildi. Qaytadan urinib ko'ring."
+
+msgid "A secure connection to the server could not be established."
+msgstr "Server bilan xavfsiz ulanish o'rnatib bo'lmadi."
+
+msgid "Authentication failed. Please log in again."
+msgstr "Autentifikatsiya muvaffaqiyatsiz tugadi. Qaytadan kiring."
+
+msgid "The account changed during sync."
+msgstr "Sinxronlash vaqtida hisob o'zgardi."
+
+msgid "The file was not found in the cloud."
+msgstr "Fayl bulutda topilmadi."
+
+msgid "The local file is missing."
+msgstr "Mahalliy fayl mavjud emas."
+
+msgid "An internal error occurred. Please try again."
+msgstr "Ichki xatolik yuz berdi. Qaytadan urinib ko'ring."
+
+msgid "Access denied."
+msgstr "Kirish rad etildi."
+
+msgid "Not found on the server."
+msgstr "Serverda topilmadi."
+
+msgid "The file is too large."
+msgstr "Fayl juda katta."
+
+msgid "Too many requests. Please try again later."
+msgstr "So'rovlar juda ko'p. Keyinroq qaytadan urinib ko'ring."
+
+msgid "The server is temporarily unavailable. Please try again later."
+msgstr "Server vaqtincha mavjud emas. Keyinroq qaytadan urinib ko'ring."
+
+msgid "The request failed. Please try again."
+msgstr "So'rov bajarilmadi. Qaytadan urinib ko'ring."
 
 msgid "Reading statistics are up to date"
 msgstr "Oʻqish statistikasi eng songgi holatda"

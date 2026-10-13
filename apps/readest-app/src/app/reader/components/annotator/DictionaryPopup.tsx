@@ -9,10 +9,12 @@ import {
   DictionaryResultsHeader,
   DictionaryResultsBody,
 } from './DictionaryResultsView';
+import type { DictionarySelectionContext } from '@/services/dictionaries/types';
 
 interface DictionaryPopupProps {
   word: string;
   lang?: string;
+  selection?: DictionarySelectionContext;
   position: Position;
   trianglePosition: Position;
   popupWidth: number;
@@ -29,6 +31,7 @@ interface DictionaryPopupProps {
 const DictionaryPopup: React.FC<DictionaryPopupProps> = ({
   word,
   lang,
+  selection,
   position,
   trianglePosition,
   popupWidth,
@@ -36,7 +39,7 @@ const DictionaryPopup: React.FC<DictionaryPopupProps> = ({
   onDismiss,
   onManage,
 }) => {
-  const state = useDictionaryResults({ word, lang });
+  const state = useDictionaryResults({ word, lang, selection });
   return (
     <Popup
       width={popupWidth}

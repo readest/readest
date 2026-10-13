@@ -5,7 +5,7 @@ import path from 'node:path';
 // Submodules skipped during worktree setup (shared via symlinks or pre-built)
 const SKIPPED_SUBMODULES = [
   'apps/readest-app/.claude/skills/gstack', // shared via .claude symlink
-  'packages/simplecc-wasm', // built assets already in public/vendor
+  'packages/simplecc-wasm', // committed dist/web is copied in below
 ];
 
 const arg = process.argv[2];
@@ -289,6 +289,16 @@ const dstVendor = path.join(dstAppDir, 'public', 'vendor');
 if (fs.existsSync(srcVendor) && !fs.existsSync(dstVendor)) {
   console.error('\n--- Copying public/vendor ---');
   fs.cpSync(srcVendor, dstVendor, { recursive: true });
+}
+
+// `packages/simplecc-wasm` is a skipped submodule (SKIPPED_SUBMODULES), but the
+// @simplecc alias resolves straight into its committed `dist/web`, so the new
+// worktree needs that directory to build.
+const srcSimplecc = path.join(repoRoot, 'packages', 'simplecc-wasm', 'dist');
+const dstSimplecc = path.join(worktreePath, 'packages', 'simplecc-wasm', 'dist');
+if (fs.existsSync(srcSimplecc) && !fs.existsSync(dstSimplecc)) {
+  console.error('\n--- Copying packages/simplecc-wasm/dist ---');
+  fs.cpSync(srcSimplecc, dstSimplecc, { recursive: true });
 }
 
 // Print path to stdout -- allows: cd $(pnpm worktree:new <arg>)

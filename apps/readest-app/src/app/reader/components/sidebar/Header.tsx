@@ -42,7 +42,9 @@ const SidebarHeader: React.FC<{
         >
           <MdArrowBackIosNew size={iconSize22} />
         </button>
-        <div className='hidden sm:flex'>
+        {/* ms-1.5 matches the px-1.5 of the header bar's tool scroller, so the
+            toggler does not shift when the sidebar opens over it. */}
+        <div className='hidden sm:ms-1.5 sm:flex'>
           <SidebarToggler bookKey={bookKey} />
         </div>
       </div>
@@ -64,7 +66,7 @@ const SidebarHeader: React.FC<{
             window.innerWidth < 640 ? 'dropdown-end' : 'dropdown-center',
             'dropdown-bottom',
           )}
-          menuClassName={clsx('no-triangle mt-1', window.innerWidth < 640 ? '' : '!relative')}
+          menuClassName={clsx('no-triangle mt-1', window.innerWidth < 640 ? '' : 'relative!')}
           buttonClassName='btn btn-ghost h-8 min-h-8 w-8 p-0'
           containerClassName='h-8'
           toggleButton={<MdOutlineMenu className='fill-base-content' />}

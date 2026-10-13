@@ -158,4 +158,19 @@ describe('importBook config preservation (issue #5716)', () => {
 
     expect(configWrites(fs)).toHaveLength(1);
   });
+
+  it('does not copy a restored book file onto itself', async () => {
+    const fs = service.getFs();
+    const bookPath = `${BOOK_HASH}/Test Book.epub`;
+    fs.getPrefix.mockResolvedValue('/data/Books');
+    fs.openFile.mockResolvedValue(
+      new File(['content'], 'Test Book.epub', { type: 'application/epub+zip' }),
+    );
+    fs.exists.mockImplementation(async (path: string) => path === bookPath);
+
+    await service.importBook(`/data/Books/${bookPath}`, [], { overwrite: true });
+
+    expect(fs.copyFile).not.toHaveBeenCalled();
+    expect(fs.writeFile.mock.calls.some((call) => call[0] === bookPath)).toBe(false);
+  });
 });

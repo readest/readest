@@ -51,6 +51,23 @@
 - `src/store/trafficLightStore.ts`
 - `src/hooks/useTrafficLight.ts`
 
+### mix-blend-mode does NOT cross the iframe boundary in WebKit (#5790/#5930/#5943)
+
+An element with `mix-blend-mode` that sits OUTSIDE an `<iframe>` blends against
+the iframe's painted content in **Chromium** (Android WebView, WebView2, web)
+but NOT in **WebKit** (Safari, WKWebView on macOS/iOS), where it degrades to
+`normal`. Probed directly in Chrome 152 vs Safari 18.6.
+
+This is why the reader's annotation overlay (`Overlayer` SVG, a sibling of the
+content iframe) rendered PDF highlights correctly on Apple platforms and wrong
+everywhere else. WebKitGTK behaves like Chromium here per the #5790 reporter
+(Flathub build reproduced).
+
+**How to apply:** never rely on `mix-blend-mode` across an iframe boundary for
+anything load-bearing, and never verify such an effect on macOS/iOS alone: the
+Apple result is the degraded path, so it looks right when the CSS is wrong.
+Related: [[overlayer-blend-mode-follows-page-not-theme-5790]].
+
 ## Linux
 
 ### WebKitGTK Issues
@@ -102,3 +119,12 @@ className="not-eink:text-primary not-eink:opacity-60"
 - #4885 iOS brightness lock · [#4917 iOS share .txt stuck](ios-share-txt-stuck-supportstext.md)
 - [#3049 SteamOS Gaming Mode import dead](steamos-gamescope-file-dialog-3049.md) MERGED #5475; no FileChooser portal in gamescope; toast BEFORE dialog
 - [#1217 FireOS import no-op](fireos-import-activity-recreation-1217.md) MERGED #5531 · [iOS .txt/.md share sheet lost](ios-txt-share-sheet-tauri211-fileassoc.md) MERGED #5415
+- [Android launch crash: widget 1px cover](widget-thumbnail-degenerate-cover-crash.md) MERGED #5874; fatal every launch…
+- [#6355 iOS 16 toggle/range crash](ios16-color-mix-currentcolor-crash-6355.md) MERGED #6497 (ec556de87)…
+- [iOS <=16 fonts.ready WebContent crash](ios16-fonts-ready-webcontent-crash.md) MERGED #5654 + foliate#71; poll…
+- [#6434 PostHog opt-out traffic](posthog-telemetry-optout-6434.md) MERGED 2fd17538b…
+- [#5876 empty-library data location](migrate-data-empty-library-scan-guard-5876.md) MERGED #5878; fix = `dirScanned`…
+- [Linux is CEF-only](linux-cef-only-runtime-6218.md) MERGED #6218 (95117b03f)…
+- [iOS sync tauri::command = watchdog kill](ios-sync-command-run-mobile-plugin-deadlock.md) MERGED #5947; parks the MAIN…
+- [#6291 backup slow + stops on screen sleep](backup-keep-awake-6291.md) keep-awake + Rust…
+- [#6375 iOS backup stuck at 0%](ios-backup-share-sheet-6375.md) iOS save-dialog URL unwritable…

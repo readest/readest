@@ -2,7 +2,8 @@
 
 import clsx from 'clsx';
 import { useState, useEffect, useCallback } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
+import { useAppRouter } from '@/hooks/useAppRouter';
 import { useEnv } from '@/context/EnvContext';
 import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/hooks/useTheme';
@@ -12,10 +13,10 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useUserActions } from '@/hooks/useUserActions';
 import { useAvailablePlans } from '@/hooks/useAvailablePlans';
 import type { PlanType } from '@/types/quota';
-import { navigateToLibrary } from '@/utils/nav';
+import { navigateBackFromProfile } from '@/utils/nav';
 import { eventDispatcher } from '@/utils/event';
 import { isTauriAppPlatform } from '@/services/environment';
-import { getPlanDetails } from './utils/plan';
+import { getPlanDetails, shouldUseBillingPortal } from './utils/plan';
 import { Toast } from '@/components/Toast';
 import {
   purchaseIAPProduct,
@@ -33,6 +34,7 @@ import {
   handleStripeCheckoutError,
   getSubscriptionSuccessUrl as getStripeSubscriptionSuccessUrl,
   type StripeAvailablePlan,
+  type StripePortalFlow,
 } from '@/libs/payment/stripe/client';
 import LegalLinks from '@/components/LegalLinks';
 import Spinner from '@/components/Spinner';
@@ -55,7 +57,7 @@ type CheckoutState = {
 
 const ProfilePage = () => {
   const _ = useTranslation();
-  const router = useRouter();
+  const router = useAppRouter();
   const { appService } = useEnv();
   const { token, user, refresh } = useAuth();
   const { safeAreaInsets, isRoundedWindow } = useThemeStore();
@@ -84,15 +86,16 @@ const ProfilePage = () => {
     if (isAuthenticated) return;
 
     const timer = setTimeout(() => {
-      router.push('/auth?redirect=/library');
+      const redirect = searchParams?.get('redirect') || '/library';
+      router.push(`/auth?redirect=${encodeURIComponent(redirect)}`);
     }, 1000);
 
     return () => clearTimeout(timer);
-  }, [mounted, user, token, appService, router]);
+  }, [mounted, user, token, appService, router, searchParams]);
 
   useTheme({ systemUIVisible: false });
 
-  const { quotas, userProfilePlan = 'free' } = useQuotaStats();
+  const { quotas, userProfilePlan = 'free', customizationPurchased } = useQuotaStats();
   const {
     handleLogout,
     handleResetPassword,
@@ -125,12 +128,20 @@ const ProfilePage = () => {
     } else if (showSyncManager) {
       setShowSyncManager(false);
     } else {
-      navigateToLibrary(router);
+      navigateBackFromProfile(router, searchParams?.get('redirect'));
     }
   };
 
   const handleStripeSubscribe = async (productId?: string, planType: PlanType = 'subscription') => {
     if (!productId) return;
+
+    // Someone who already holds a subscription changes plan or billing period
+    // in the billing portal. Opening a second checkout session would leave the
+    // old subscription running alongside the new one and bill them twice.
+    if (shouldUseBillingPortal(userProfilePlan, planType)) {
+      await openStripePortal('subscription_update');
+      return;
+    }
 
     setLoading(true);
     try {
@@ -238,10 +249,10 @@ const ProfilePage = () => {
     setLoading(false);
   };
 
-  const handleManageSubscription = async () => {
+  const openStripePortal = async (flow?: StripePortalFlow) => {
     setLoading(true);
     try {
-      const url = await createStripePortalSession();
+      const url = await createStripePortalSession(flow);
       await redirectToStripePortal(url);
     } catch (error) {
       console.error('Error creating portal session:', error);
@@ -253,6 +264,8 @@ const ProfilePage = () => {
       setLoading(false);
     }
   };
+
+  const handleManageSubscription = () => openStripePortal();
 
   const handleDeleteWithMessage = () => {
     handleConfirmDelete(_('Failed to delete user. Please try again later.'));
@@ -358,10 +371,11 @@ const ProfilePage = () => {
                   </div>
                 ) : (
                   <>
-                    <div className='flex flex-col gap-y-8 sm:px-6'>
+                    <div className='flex flex-col gap-y-8 px-2 sm:px-6'>
                       <PlansComparison
                         availablePlans={availablePlans}
                         userPlan={userProfilePlan}
+                        customizationPurchased={customizationPurchased}
                         onSubscribe={
                           appService.hasIAP && iapAvailable
                             ? handleIAPSubscribe

@@ -8,6 +8,7 @@ import {
   MdCheckCircleOutline,
   MdOutlineCloudDownload,
   MdWifiTethering,
+  MdLabelOutline,
 } from 'react-icons/md';
 import { IoShareSocialOutline } from 'react-icons/io5';
 import { LuFolderPlus } from 'react-icons/lu';
@@ -29,6 +30,7 @@ interface SelectModeActionsProps {
   canDownload?: boolean;
   onOpen: () => void;
   onGroup: () => void;
+  onTag: () => void;
   onDetails: () => void;
   onStatus: () => void;
   // Queues every cloud-only book in the selection, groups included (#5244).
@@ -58,6 +60,7 @@ const SelectModeActions: React.FC<SelectModeActionsProps> = ({
   canDownload = false,
   onOpen,
   onGroup,
+  onTag,
   onDetails,
   onStatus,
   onDownload,
@@ -131,6 +134,17 @@ const SelectModeActions: React.FC<SelectModeActionsProps> = ({
           <div>{_('Group')}</div>
         </button>
         <button
+          onClick={onTag}
+          disabled={!hasSelection}
+          className={clsx(
+            'flex flex-col items-center justify-center gap-1',
+            !hasSelection && 'btn-disabled opacity-50',
+          )}
+        >
+          <MdLabelOutline />
+          <div>{_('Tag')}</div>
+        </button>
+        <button
           onClick={onStatus}
           className={clsx(
             'flex flex-col items-center justify-center gap-1',
@@ -154,9 +168,6 @@ const SelectModeActions: React.FC<SelectModeActionsProps> = ({
           onClick={onDownload}
           className={clsx(
             'flex flex-col items-center justify-center gap-1',
-            // Heads the second row on narrow viewports; everything after it
-            // (Send / Delete / Cancel) then flows behind it.
-            'max-[500px]:col-start-1',
             !canDownload && 'btn-disabled opacity-50',
           )}
         >

@@ -8,6 +8,7 @@ import {
   addToolToToolbar,
   removeToolFromToolbar,
   reorderToolbar,
+  shouldShowHighlightOptions,
   supportsProofread,
 } from '@/utils/annotationToolbar';
 
@@ -65,7 +66,14 @@ describe('annotationToolbar helpers', () => {
       'tts',
       'proofread',
       'share',
+      'quotecard',
     ]);
+  });
+
+  test('quotecard is opt-in and offered even when text share is unavailable', () => {
+    expect(DEFAULT_ANNOTATION_TOOLBAR_ITEMS).not.toContain('quotecard');
+    expect(getAvailableToolTypes(DEFAULT_ANNOTATION_TOOLBAR_ITEMS, false)).toContain('quotecard');
+    expect(getToolbarToolTypes(['copy', 'quotecard'], false)).toEqual(['copy', 'quotecard']);
   });
 
   test('getAvailableToolTypes hides share when !canShare', () => {
@@ -113,5 +121,39 @@ describe('supportsProofread', () => {
 
   test('excludes a book whose format is not known yet', () => {
     expect(supportsProofread(undefined)).toBe(false);
+  });
+});
+
+describe('shouldShowHighlightOptions (#5983)', () => {
+  const toolbarWithHighlight = DEFAULT_ANNOTATION_TOOLBAR_ITEMS;
+  const toolbarWithoutHighlight = removeToolFromToolbar(
+    DEFAULT_ANNOTATION_TOOLBAR_ITEMS,
+    'highlight',
+  );
+
+  test('shown for a fresh selection when the highlight tool is on the toolbar', () => {
+    expect(shouldShowHighlightOptions(toolbarWithHighlight, {})).toBe(true);
+  });
+
+  test('hidden for a fresh selection when the highlight tool is off the toolbar', () => {
+    expect(shouldShowHighlightOptions(toolbarWithoutHighlight, {})).toBe(false);
+  });
+
+  test('always shown for an already-annotated selection', () => {
+    expect(shouldShowHighlightOptions(toolbarWithoutHighlight, { annotated: true })).toBe(true);
+  });
+
+  test('hidden for a popup-window selection without a CFI, which cannot anchor a highlight', () => {
+    expect(shouldShowHighlightOptions(toolbarWithHighlight, { popup: true })).toBe(false);
+  });
+
+  test('shown for a popup-window selection that carries a CFI', () => {
+    expect(
+      shouldShowHighlightOptions(toolbarWithHighlight, { popup: true, cfi: 'epubcfi(/6/4!/4/2)' }),
+    ).toBe(true);
+  });
+
+  test('hidden with no selection', () => {
+    expect(shouldShowHighlightOptions(toolbarWithHighlight, null)).toBe(false);
   });
 });

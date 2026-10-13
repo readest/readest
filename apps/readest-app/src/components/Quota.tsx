@@ -1,6 +1,7 @@
 import clsx from 'clsx';
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
+import { formatDuration } from '@/utils/duration';
 
 type QuotaProps = {
   quotas: {
@@ -45,8 +46,6 @@ const Quota: React.FC<QuotaProps> = ({ quotas, showProgress, className, labelCla
         const totalMinutes = showResetRow
           ? Math.floor(Math.max(0, quota.resetAt! - now) / 60_000)
           : 0;
-        const resetHours = Math.floor(totalMinutes / 60);
-        const resetMinutes = totalMinutes % 60;
 
         return (
           <div key={quota.name} className='w-full'>
@@ -85,12 +84,7 @@ const Quota: React.FC<QuotaProps> = ({ quotas, showProgress, className, labelCla
                 )}
               >
                 <span>{_('{{percentage}}% used', { percentage: usagePercentageRounded })}</span>
-                <span>
-                  {_('Resets in {{hours}} hr {{minutes}} min', {
-                    hours: resetHours,
-                    minutes: resetMinutes,
-                  })}
-                </span>
+                <span>{_('Resets in {{time}}', { time: formatDuration(totalMinutes, _) })}</span>
               </div>
             )}
           </div>

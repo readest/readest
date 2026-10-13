@@ -30,8 +30,9 @@ interface AcceptableWebSocket {
 
 type UpgradeResponse = Response & { webSocket?: AcceptableWebSocket };
 
-const EDGE_SPEECH_URL =
-  'wss://speech.platform.bing.com/consumer/speech/synthesize/readaloud/edge/v1';
+// speech.platform.bing.com now rejects the handshake with 403 in many regions
+// (rany2/edge-tts#490); Edge Read Aloud moved to api.msedgeservices.com.
+const EDGE_SPEECH_URL = 'wss://api.msedgeservices.com/tts/cognitiveservices/websocket/v1';
 const EDGE_API_TOKEN = '6A5AA1D4EAFF4E9FB37E23D68491D6F4';
 const CHROMIUM_FULL_VERSION = '143.0.3650.75';
 const CHROMIUM_MAJOR_VERSION = CHROMIUM_FULL_VERSION.split('.')[0];
@@ -403,7 +404,7 @@ export class EdgeSpeechTTS {
     const connectId = randomMd5();
     const params = new URLSearchParams({
       ConnectionId: connectId,
-      TrustedClientToken: EDGE_API_TOKEN,
+      'Ocp-Apim-Subscription-Key': EDGE_API_TOKEN,
       'Sec-MS-GEC': await generateSecMsGec(),
       'Sec-MS-GEC-Version': `1-${CHROMIUM_FULL_VERSION}`,
     });

@@ -1,4 +1,5 @@
 import { BookNote } from '@/types/book';
+import { nextBooknoteStamp } from '@/utils/booknoteStamp';
 
 export interface UpdateBooknoteNoteTextResult {
   booknotes: BookNote[];
@@ -11,8 +12,9 @@ export interface UpdateBooknoteNoteTextResult {
  * `booknoteId`. Returns a new booknotes array — `booknotes` itself is never
  * mutated. Blank/whitespace-only `noteText` is normalized to an empty
  * string; non-blank text is stored exactly as given, with no trimming.
- * `now` is the caller-supplied timestamp for `updatedAt`, keeping this
- * function deterministic and independent of when it happens to run.
+ * `now` is the caller-supplied timestamp for `updatedAt` (raised just past
+ * the record's own `updatedAt` when that is later), keeping this function
+ * deterministic and independent of when it happens to run.
  *
  * Matches by `id` alone — intentionally agnostic to `BookNote['type']`, so
  * it updates the `note` field of a bookmark or excerpt record exactly like
@@ -39,7 +41,7 @@ export function updateBooknoteNoteText(
   const updatedBooknote: BookNote = {
     ...existingBooknote,
     note: normalizedNoteText,
-    updatedAt: now,
+    updatedAt: nextBooknoteStamp(existingBooknote, now),
   };
 
   return {

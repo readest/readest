@@ -122,7 +122,7 @@ const defaultComponents = memoizeMarkdownComponents({
     return (
       <code
         className={cn(
-          !isCodeBlock && 'bg-muted rounded border px-1 py-0.5 font-mono text-sm',
+          !isCodeBlock && 'bg-muted rounded-sm border px-1 py-0.5 font-mono text-sm',
           className,
         )}
         {...props}

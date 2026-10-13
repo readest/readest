@@ -1,8 +1,15 @@
 import { Book, BookConfig, BookNote, HardcoverBookLink } from '@/types/book';
 import { getContentMd5 } from '@/utils/misc';
-import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
 import { isTauriAppPlatform } from '@/services/environment';
+import { TokenEndpointError, type TokenSet } from '@/services/sync/providers/oauth/tokenEndpoint';
 import { HardcoverSyncMapStore } from './HardcoverSyncMapStore';
+import { getRateLimitGate, MAX_WAIT_MS, parseRetryAfterMs, RateLimitGate } from './rateLimit';
+import {
+  HardcoverOAuthError,
+  platformFetch,
+  refreshHardcoverTokens,
+  sleep,
+} from './hardcoverOAuth';
 import {
   QUERY_GET_USER_ID,
   QUERY_SEARCH_BOOKS,
@@ -16,10 +23,16 @@ import {
   MUTATION_UPDATE_JOURNAL,
 } from './hardcover-graphql';
 
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+/** Where OAuth tokens live between clients, so a refresh by one is seen by the others. */
+export interface HardcoverTokenStore {
+  load(): TokenSet | undefined;
+  /** `previous` is the session the refresh started from; stale results should be dropped. */
+  save(tokens: TokenSet, previous: TokenSet): void | Promise<void>;
+}
 
 type HardcoverSettingsLike = {
   accessToken: string;
+  oauth?: TokenSet;
 };
 
 type BookContext = {
@@ -97,21 +110,98 @@ const rowFlags = (row: BookRow) => ({
   onShelf: (row.user_books?.length ?? 0) > 0,
 });
 
+type UserRow = { id: number; account_privacy_setting_id?: number | null };
+
+// Journal write queued for a batched request; a null journalId means insert.
+type JournalOp = {
+  journalId: number | null;
+  payload: Record<string, unknown>;
+  payloadHash: string;
+  noteIds: string[];
+};
+
+/** This book cannot sync to Hardcover (no match, or no page count), not a sync failure. */
+export class HardcoverUnmatchedError extends Error {}
+
+/** The token was refused and could not be renewed; the user must reconnect. */
+export class HardcoverAuthError extends Error {}
+
 export class HardcoverClient {
-  private minRequestIntervalMs = 1150;
   private directEndpoint = 'https://api.hardcover.app/v1/graphql';
   private proxyEndpoint = '/api/hardcover/graphql';
   private token: string;
+  private oauth: TokenSet | null;
+  // The tokens last known to be in the store; stays behind `oauth` until a save succeeds.
+  private persisted: TokenSet | null;
+  private refreshInFlight: Promise<void> | null = null;
   private mapStore: HardcoverSyncMapStore;
   private userId: number | null = null;
-  private lastRequestTime = 0;
-  private requestQueue: Promise<void> = Promise.resolve();
+  // Visibility for new journal entries: the account's default, private until it is known.
+  // Updates leave it alone so a visibility changed on Hardcover sticks.
+  private privacySettingId = 3;
+  private gate: RateLimitGate;
 
-  constructor(settings: HardcoverSettingsLike, mapStore: HardcoverSyncMapStore) {
-    // Normalize token: Hardcover expects "Bearer <jwt>"; accept both formats
-    const raw = settings.accessToken.trim();
-    this.token = raw.startsWith('Bearer ') ? raw : `Bearer ${raw}`;
+  constructor(
+    settings: HardcoverSettingsLike,
+    mapStore: HardcoverSyncMapStore,
+    private tokenStore?: HardcoverTokenStore,
+  ) {
+    this.oauth = this.persisted = settings.oauth ?? null;
+    this.token = this.toBearer(this.oauth?.accessToken ?? settings.accessToken);
     this.mapStore = mapStore;
+    this.gate = getRateLimitGate(this.token);
+  }
+
+  // Hardcover expects "Bearer <jwt>"; accept both formats
+  private toBearer(raw: string) {
+    const t = raw.trim();
+    return t.startsWith('Bearer ') ? t : `Bearer ${t}`;
+  }
+
+  // The server may have rotated the refresh token, so a failed save is logged and retried on
+  // the next request instead of failing the sync. `persisted` keeps the stale-save guard honest.
+  private async persist() {
+    if (!this.tokenStore || !this.oauth || this.oauth === this.persisted) return;
+    try {
+      await this.tokenStore.save(this.oauth, this.persisted!);
+      this.persisted = this.oauth;
+    } catch (e) {
+      console.error('[Hardcover] failed to persist refreshed tokens', e);
+    }
+  }
+
+  // Single-flight so concurrent requests share one refresh (the refresh token may rotate).
+  private refreshOAuth(): Promise<void> {
+    this.refreshInFlight ??= (async () => {
+      try {
+        // Another client (or tab) may have refreshed since this one was built; the refresh
+        // token may rotate, so adopt the stored tokens before spending ours.
+        const latest = this.tokenStore?.load();
+        if (latest && latest.accessToken !== this.oauth!.accessToken) {
+          this.oauth = this.persisted = latest;
+          this.token = this.toBearer(latest.accessToken);
+          if (Date.now() < latest.expiresAt) return;
+        }
+        this.oauth = await refreshHardcoverTokens(this.oauth!);
+        this.token = this.toBearer(this.oauth.accessToken);
+        await this.persist();
+      } catch (error) {
+        // No refresh token, a 401, or a 400 rejecting the grant (Hardcover answers an unknown or
+        // revoked refresh token with `invalid_grant`) means the login is dead. Other 400s
+        // (malformed request), 5xx and network errors are not fixed by reconnecting.
+        const dead =
+          (error instanceof HardcoverOAuthError && error.code === 'no_refresh_token') ||
+          (error instanceof TokenEndpointError &&
+            (error.status === 401 ||
+              (error.status === 400 &&
+                (error.code === 'invalid_grant' || error.code === 'invalid_token'))));
+        if (dead) throw new HardcoverAuthError(error.message);
+        throw error;
+      } finally {
+        this.refreshInFlight = null;
+      }
+    })();
+    return this.refreshInFlight;
   }
 
   private get endpoint() {
@@ -165,54 +255,67 @@ export class HardcoverClient {
     return `${normalizedCfi}|${text}`;
   }
 
-  private async throttleRequest() {
-    const queued = this.requestQueue
-      .catch(() => undefined)
-      .then(async () => {
-        const now = Date.now();
-        const elapsed = now - this.lastRequestTime;
-        if (elapsed < this.minRequestIntervalMs) {
-          await sleep(this.minRequestIntervalMs - elapsed);
-        }
-        this.lastRequestTime = Date.now();
+  private async post(body: unknown, retries = 3, backoffMs = 2000): Promise<unknown> {
+    await this.persist();
+    if (this.oauth?.refreshToken && Date.now() >= this.oauth.expiresAt) await this.refreshOAuth();
+
+    const send = async () => {
+      await this.gate.wait();
+      const res = await platformFetch(this.endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          authorization: this.token,
+        },
+        body: JSON.stringify(body),
       });
-
-    this.requestQueue = queued;
-    await queued;
-  }
-
-  private async request<TVariables, TData>(
-    query: string,
-    variables: TVariables,
-    retries = 3,
-    backoffMs = 2000,
-  ): Promise<TData> {
-    await this.throttleRequest();
-
-    const fetchFn = isTauriAppPlatform() ? tauriFetch : window.fetch;
-    const res = await fetchFn(this.endpoint, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        authorization: this.token,
-      },
-      body: JSON.stringify({ query, variables }),
-    });
+      this.gate.update(res.headers);
+      return res;
+    };
+    let res = await send();
+    if (res.status === 401 && this.oauth?.refreshToken) {
+      await this.refreshOAuth();
+      res = await send();
+    }
 
     if (res.status === 429) {
-      if (retries > 0) {
-        console.warn(`[Hardcover] 429 Rate Limit hit. Retrying in ${backoffMs}ms...`);
-        await sleep(backoffMs);
-        return this.request(query, variables, retries - 1, backoffMs * 2);
+      const waitMs = parseRetryAfterMs(res.headers.get('Retry-After')) ?? backoffMs;
+      this.gate.blockFor(waitMs);
+      if (retries <= 0 || waitMs > MAX_WAIT_MS) {
+        throw new Error('Hardcover Rate Limit (429) Exceeded and exhausted retries');
       }
-      throw new Error('Hardcover Rate Limit (429) Exceeded and exhausted retries');
+      console.warn(`[Hardcover] 429 Rate Limit hit. Retrying in ${waitMs}ms...`);
+      return this.post(body, retries - 1, backoffMs * 2);
     }
+    // 503 ("temporarily unavailable, safe to retry") backs off and retries.
+    if (res.status === 503 && retries > 0) {
+      console.warn(`[Hardcover] 503 Retrying in ${backoffMs}ms...`);
+      await sleep(backoffMs);
+      return this.post(body, retries - 1, backoffMs * 2);
+    }
+
+    if (res.status === 401) throw new HardcoverAuthError('Hardcover token was rejected');
 
     if (!res.ok) {
-      throw new Error(`Hardcover API Error: ${res.status} ${res.statusText}`);
+      // e.g. 403 insufficient_scope names the missing scope in the body.
+      const error = await res.json().catch(() => null);
+      const detail = [
+        error?.error,
+        error?.error_description,
+        error?.scope && `scope: ${error.scope}`,
+      ]
+        .filter(Boolean)
+        .join(' — ');
+      throw new Error(
+        `Hardcover API Error: ${res.status} ${res.statusText}${detail ? `: ${detail}` : ''}`,
+      );
     }
 
-    const json = await res.json();
+    return res.json();
+  }
+
+  private async request<TVariables, TData>(query: string, variables: TVariables): Promise<TData> {
+    const json = (await this.post({ query, variables })) as { data?: TData; errors?: unknown };
     if (json.errors) {
       throw new Error(`GraphQL Errors: ${JSON.stringify(json.errors)}`);
     }
@@ -220,30 +323,27 @@ export class HardcoverClient {
     return json.data as TData;
   }
 
-  async validateToken(): Promise<{ valid: boolean; isNetworkError?: boolean }> {
-    try {
-      await this.authenticate();
-      return { valid: true };
-    } catch (error) {
-      const msg = String(error instanceof Error ? error.message : error);
-      if (/Failed to fetch|NetworkError|network/i.test(msg)) {
-        return { valid: false, isNetworkError: true };
-      }
-      return { valid: false };
+  /** Several operations in one request; each result carries its own `data` or `errors`. */
+  private async requestBatch<TData>(operations: Array<{ query: string; variables: unknown }>) {
+    const json = await this.post(operations);
+    if (!Array.isArray(json) || json.length !== operations.length) {
+      throw new Error(`Hardcover batch response mismatch: ${JSON.stringify(json)}`);
     }
+    return json as Array<{ data?: TData; errors?: unknown }>;
   }
 
   private async authenticate() {
     if (this.userId) return;
-    const data = await this.request<
-      Record<string, never>,
-      { me: { id: number } | Array<{ id: number }> }
-    >(QUERY_GET_USER_ID, {});
+    const data = await this.request<Record<string, never>, { me: UserRow | UserRow[] }>(
+      QUERY_GET_USER_ID,
+      {},
+    );
     const me = Array.isArray(data.me) ? data.me[0] : data.me;
     if (!me?.id) {
       throw new Error('Invalid Hardcover token: user ID not found');
     }
     this.userId = me.id;
+    this.privacySettingId = me.account_privacy_setting_id ?? this.privacySettingId;
   }
 
   private normalizeIdentifier(identifier: string): string {
@@ -548,7 +648,7 @@ export class HardcoverClient {
     const context = await this.ensureBookInLibrary(book, config.hardcover);
     const userBook = context?.userBook;
     if (!context || !userBook) {
-      throw new Error('Unable to resolve this book in Hardcover');
+      throw new HardcoverUnmatchedError('Unable to resolve this book in Hardcover');
     }
     const link: HardcoverBookLink = { bookId: context.bookId, title: context.title };
 
@@ -565,7 +665,7 @@ export class HardcoverClient {
     if (progressPages === null) {
       // Nothing can be scaled onto Hardcover's pages, so nothing is sent; the
       // caller must not report (or remember) a sync that never happened.
-      throw new Error('Hardcover has no page count for this book');
+      throw new HardcoverUnmatchedError('Hardcover has no page count for this book');
     }
     const activeRead = userBook.user_book_reads?.[0];
     const startedAt = this.formatDay(new Date(book.createdAt || Date.now()));
@@ -620,35 +720,21 @@ export class HardcoverClient {
       possible: totalPages || Math.max(boundedPage, 1),
       percent,
       action_at: this.formatDate(new Date(note.updatedAt || note.createdAt || Date.now())),
-      privacy_setting_id: 3,
     };
   }
 
-  private async insertJournal(
-    context: BookContext,
-    payload: Record<string, unknown>,
-  ): Promise<number> {
-    const data = await this.request<
-      Record<string, unknown>,
-      { insert_reading_journal?: { id?: number; errors?: unknown } }
-    >(MUTATION_INSERT_JOURNAL, {
-      book_id: context.bookId,
-      edition_id: context.editionId,
-      ...payload,
-    });
-
-    const id = data.insert_reading_journal?.id;
-    if (!id) {
-      throw new Error('Hardcover insert_reading_journal returned no id');
-    }
-    return id;
-  }
-
-  private async updateJournal(journalId: number, payload: Record<string, unknown>): Promise<void> {
-    await this.request(MUTATION_UPDATE_JOURNAL, {
-      id: journalId,
-      ...payload,
-    });
+  private journalRequest(context: BookContext, op: JournalOp) {
+    return op.journalId === null
+      ? {
+          query: MUTATION_INSERT_JOURNAL,
+          variables: {
+            book_id: context.bookId,
+            edition_id: context.editionId,
+            privacy_setting_id: this.privacySettingId,
+            ...op.payload,
+          },
+        }
+      : { query: MUTATION_UPDATE_JOURNAL, variables: { id: op.journalId, ...op.payload } };
   }
 
   private isMissingJournalError(error: unknown): boolean {
@@ -660,13 +746,52 @@ export class HardcoverClient {
     );
   }
 
+  /** Sends ops in batches sized to the quota, saving each result as it is known; a batch's first failure is thrown after its results are saved. */
+  private async sendJournalOps(
+    context: BookContext,
+    ops: JournalOp[],
+    save: (op: JournalOp, id: number) => Promise<void>,
+  ): Promise<void> {
+    let queue = ops;
+    while (queue.length) {
+      // Re-sized every round: the quota left shrinks as batches (and retries) are sent.
+      const batch = queue.slice(0, this.gate.batchSize);
+      const rest = queue.slice(batch.length);
+      const results = await this.requestBatch<{ insert_reading_journal?: { id?: number } }>(
+        batch.map((op) => this.journalRequest(context, op)),
+      );
+      const retry: JournalOp[] = [];
+      let failure: Error | null = null;
+
+      for (const [i, op] of batch.entries()) {
+        const { data, errors } = results[i]!;
+        if (errors) {
+          const error = new Error(`GraphQL Errors: ${JSON.stringify(errors)}`);
+          // A journal deleted on Hardcover is re-created.
+          if (op.journalId !== null && this.isMissingJournalError(error)) {
+            retry.push({ ...op, journalId: null });
+          } else {
+            failure ??= error;
+          }
+          continue;
+        }
+        const id = op.journalId ?? data?.insert_reading_journal?.id;
+        if (id) await save(op, id);
+        else failure ??= new Error('Hardcover insert_reading_journal returned no id');
+      }
+
+      if (failure) throw failure;
+      queue = [...rest, ...retry];
+    }
+  }
+
   async syncBookNotes(
     book: Book,
     config: BookConfig,
   ): Promise<{ inserted: number; updated: number; skipped: number; link: HardcoverBookLink }> {
     const context = await this.ensureBookInLibrary(book, config.hardcover);
     if (!context) {
-      throw new Error('Unable to resolve this book in Hardcover');
+      throw new HardcoverUnmatchedError('Unable to resolve this book in Hardcover');
     }
     const link: HardcoverBookLink = { bookId: context.bookId, title: context.title };
 
@@ -702,6 +827,14 @@ export class HardcoverClient {
     let updated = 0;
     let skipped = 0;
 
+    // The client (and this store) outlives a sync, and re-linking the book clears the mappings
+    // through another store, so read them fresh instead of trusting the in-memory copy.
+    await this.mapStore.loadForBook(book.hash);
+
+    // Classify first, then send the journal writes in batches.
+    const pending: JournalOp[] = [];
+    const pendingInserts = new Map<string, JournalOp>();
+
     try {
       for (const note of notes) {
         const payload = this.buildJournalPayload(note, config, context);
@@ -710,7 +843,9 @@ export class HardcoverClient {
           continue;
         }
 
-        const payloadHash = getContentMd5(payload);
+        // Visibility isn't hashed, so changing it doesn't rewrite entries; the fixed 3
+        // keeps hashes saved before it was configurable valid.
+        const payloadHash = getContentMd5({ ...payload, privacy_setting_id: 3 });
         const existing = await this.mapStore.getMapping(book.hash, note.id);
 
         if (!existing) {
@@ -726,9 +861,16 @@ export class HardcoverClient {
             continue;
           }
 
-          const journalId = await this.insertJournal(context, payload);
-          await this.mapStore.upsertMapping(book.hash, note.id, journalId, payloadHash);
-          inserted += 1;
+          const queued = pendingInserts.get(payloadHash);
+          if (queued) {
+            queued.noteIds.push(note.id);
+            skipped += 1;
+            continue;
+          }
+
+          const op = { journalId: null, payload, payloadHash, noteIds: [note.id] };
+          pending.push(op);
+          pendingInserts.set(payloadHash, op);
           continue;
         }
 
@@ -737,24 +879,23 @@ export class HardcoverClient {
           continue;
         }
 
-        try {
-          await this.updateJournal(existing.hardcover_journal_id, payload);
-          await this.mapStore.upsertMapping(
-            book.hash,
-            note.id,
-            existing.hardcover_journal_id,
-            payloadHash,
-          );
-          updated += 1;
-        } catch (error) {
-          if (!this.isMissingJournalError(error)) {
-            throw error;
-          }
-          const journalId = await this.insertJournal(context, payload);
-          await this.mapStore.upsertMapping(book.hash, note.id, journalId, payloadHash);
-          inserted += 1;
-        }
+        pending.push({
+          journalId: existing.hardcover_journal_id,
+          payload,
+          payloadHash,
+          noteIds: [note.id],
+        });
       }
+
+      const save = async (op: JournalOp, id: number) => {
+        for (const noteId of op.noteIds) {
+          await this.mapStore.upsertMapping(book.hash, noteId, id, op.payloadHash);
+        }
+        if (op.journalId === null) inserted += 1;
+        else updated += 1;
+      };
+
+      await this.sendJournalOps(context, pending, save);
     } finally {
       await this.mapStore.flush();
     }

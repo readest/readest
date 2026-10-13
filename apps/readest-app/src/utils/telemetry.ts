@@ -34,13 +34,46 @@ export const captureEvent = (event: string, properties?: Record<string, unknown>
   }
 };
 
+// Boot records the decision before PostHog starts; `applyPostHogConsent`
+// hands it to the SDK once init has set the project token. A consent call
+// before init would be stored under a token-less key that nothing reads.
 export const optInTelemetry = () => {
   localStorage.setItem(TELEMETRY_OPT_OUT_KEY, 'false');
   setTelemetryDecision('opt-in');
-  posthog.opt_in_capturing();
+  if (posthog.__loaded) posthog.opt_in_capturing();
 };
 export const optOutTelemetry = () => {
   localStorage.setItem(TELEMETRY_OPT_OUT_KEY, 'true');
   setTelemetryDecision('opt-out');
-  posthog.opt_out_capturing();
+  if (posthog.__loaded) posthog.opt_out_capturing();
+};
+
+/**
+ * Apply the recorded decision to PostHog right after init. This runs on every
+ * boot, so an opt-in is restored without the SDK's default `$opt_in` event.
+ */
+export const applyPostHogConsent = () => {
+  if (getTelemetryDecision() === 'opt-in') {
+    posthog.opt_in_capturing({ captureEventName: false });
+  } else {
+    posthog.opt_out_capturing();
+  }
+};
+
+/**
+ * Line PostHog's consent up with the saved setting. The switch can change
+ * from the settings panel, the command palette, or another window, so this
+ * runs on every boot. It enforces an opt-out only: a recorded opt-out stays
+ * even when the settings file says enabled, because a failed or interrupted
+ * settings save must not re-enable capture. Turning telemetry back on goes
+ * through the explicit controls, which update both stores.
+ *
+ * Returns the effective setting, so the caller can switch a stale `true` in
+ * the settings file off and the settings panel shows what is in effect.
+ */
+export const reconcileTelemetryConsent = (telemetryEnabled: boolean) => {
+  if (!telemetryEnabled && !hasOptedOutTelemetry()) {
+    optOutTelemetry();
+  }
+  return !hasOptedOutTelemetry();
 };

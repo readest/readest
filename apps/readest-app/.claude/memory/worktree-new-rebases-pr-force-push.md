@@ -38,3 +38,18 @@ only one commit was mine.
 Rebasing the contributor's branch onto main is a separate, history-rewriting
 decision — leave it to the user. Related: [[worktree-rebase-submodule-drift]],
 [[worktree-rm-deinits-shared-git-config]], [[feedback_pr_rebase]].
+
+**Two more traps (seen on #6325, 2026-09-28):**
+- A leftover local `pr-<N>` branch from an earlier review makes `worktree:new <N>`
+  die with `! [rejected] ... -> pr-<N> (non-fast-forward)` once the contributor
+  force-pushes. Check it isn't checked out and holds only their commits
+  (`git log --format='%h %an' pr-<N> --not FETCH_HEAD origin/main`), then
+  `git branch -D pr-<N>` and rerun. Delete both `pr-<N>` branches after merging.
+- The fork remote the script adds is an `https://` URL, which fails here
+  (`send-pack: unexpected disconnect`). Push to the SSH URL instead:
+  `git push --no-verify git@github.com:<owner>/readest.git <tmp>:<head-branch>`
+  (see [[git-push-socks-proxy]]).
+
+**Merge-conflict PRs (#6518, 2026-10-01):** to fix conflicts without a force push, branch from the fork head (`git fetch <fork> <branch>; git checkout -B pr-N-merge FETCH_HEAD`) and `git merge origin/main`, then push to the fork over SSH. Locale conflicts are usually both sides appending keys: do a per-key 3-way JSON merge from index stages `:1:`/`:2:`/`:3:`, then confirm `pnpm i18n:extract` gives no diff. An existing `../readest-pr-N` worktree makes `worktree:new N` die with "refusing to fetch into branch checked out"; reuse it, and if it never finished setup, init the submodules from `.git/modules` by hand (the plugin's Cargo workspace also needs turso, webview-upgrade and packages/tauri).
+
+**Rebase conflict mid-setup (#6612, 2026-10-04):** if the PR conflicts with main, `worktree:new N` dies at `git rebase origin/main`, leaving the worktree mid-rebase with no submodules, deps or .env. Recover: `git rebase --abort; git checkout pr-N; git merge origin/main`, then run the rest of `scripts/worktree-new.ts` by hand (copy everything from "Repoint submodule URLs" on into a scratch .ts with `repoRoot`/`worktreePath`/`gitStdio` hardcoded, skip the Android gen re-init but keep `genDir`, and run it with `npx tsx`). Single-file tests need `pnpm test <path>`, because bare `npx vitest` skips the dotenv files and fails with `InvalidCharacterError`.

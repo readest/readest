@@ -58,6 +58,7 @@ export const MigrateDataWindow = () => {
   const [filesToMigrate, setFilesToMigrate] = useState<FileItem[]>([]);
   const [currentDirFileCount, setCurrentDirFileCount] = useState('');
   const [currentDirFileSize, setCurrentDirFileSize] = useState(0);
+  const [dirScanned, setDirScanned] = useState(false);
   const [androidNewDirs, setAndroidNewDirs] = useState<{ path: string; label: string }[]>([]);
 
   useEffect(() => {
@@ -86,12 +87,14 @@ export const MigrateDataWindow = () => {
     try {
       if (!appService) return;
 
+      setDirScanned(false);
       const dataDir = await appService.resolveFilePath('', 'Data');
       setCurrentDataDir(dataDir);
       const files = await appService.readDirectory(dataDir, 'None');
       setFilesToMigrate(files);
       setCurrentDirFileCount(files.length.toLocaleString());
       setCurrentDirFileSize(files.reduce((acc, file) => acc + file.size, 0));
+      setDirScanned(true);
     } catch (error) {
       console.error('Error loading current data directory:', error);
     }
@@ -185,7 +188,13 @@ export const MigrateDataWindow = () => {
   };
 
   const handleStartMigration = async () => {
-    if (!appService || !currentDataDir || !newDataDir || !filesToMigrate.length) return;
+    // An empty library leaves `filesToMigrate` legitimately empty (#5876): the
+    // copy/verify loops below no-op, but the new location must still be
+    // persisted, so the file count is not part of this guard. `dirScanned`
+    // keeps that apart from a failed scan, where the list is empty because
+    // `readDirectory` rejected and the delete below would wipe the old
+    // directory without having copied anything.
+    if (!appService || !currentDataDir || !newDataDir || !dirScanned) return;
 
     setMigrationStatus('migrating');
     setErrorMessage('');
@@ -270,7 +279,7 @@ export const MigrateDataWindow = () => {
       : 0;
 
   const canStartMigration =
-    newDataDir && newDataDir !== currentDataDir && migrationStatus === 'idle';
+    newDataDir && newDataDir !== currentDataDir && migrationStatus === 'idle' && dirScanned;
 
   const osPlatform = getOSPlatform();
   const fileRevealLabel =
@@ -282,7 +291,7 @@ export const MigrateDataWindow = () => {
       isOpen={isOpen}
       title={_('Change Data Location')}
       onClose={handleClose}
-      boxClassName='sm:!w-[520px] sm:!max-w-screen-sm sm:h-auto'
+      boxClassName='sm:w-[520px]! sm:max-w-(--breakpoint-sm)! sm:h-auto'
     >
       {isOpen && (
         <div className='migrate-data-dir-content flex flex-col gap-6 px-6 py-4'>
@@ -296,7 +305,7 @@ export const MigrateDataWindow = () => {
               className='bg-base-200 flex w-full items-center gap-2 rounded-lg p-3'
               onClick={() => handleRevealDir(currentDataDir)}
             >
-              <RiFolderOpenLine className='text-base-content/70 h-4 w-4 flex-shrink-0' />
+              <RiFolderOpenLine className='text-base-content/70 h-4 w-4 shrink-0' />
               <span className='text-base-content/80 break-all text-start font-mono text-sm'>
                 {currentDataDir || _('Loading...')}
               </span>
@@ -325,7 +334,7 @@ export const MigrateDataWindow = () => {
                 className='bg-primary/10 border-primary/20 flex w-full items-center gap-2 rounded-lg border p-3'
                 onClick={() => handleRevealDir(newDataDir)}
               >
-                <RiFolderOpenLine className='text-primary h-4 w-4 flex-shrink-0' />
+                <RiFolderOpenLine className='text-primary h-4 w-4 shrink-0' />
                 <span className='text-primary break-all text-start font-mono text-sm'>
                   {newDataDir}
                 </span>
@@ -343,7 +352,7 @@ export const MigrateDataWindow = () => {
                 <div
                   className={clsx(
                     'folder-menu dropdown-content no-triangle left-0',
-                    'border-base-300 !bg-base-200 z-20 mt-1 max-w-[90vw] shadow-2xl',
+                    'border-base-300 bg-base-200! z-20 mt-1 max-w-[90vw] shadow-2xl',
                   )}
                 >
                   {androidNewDirs.map((dir) => (
@@ -447,7 +456,7 @@ export const MigrateDataWindow = () => {
           {canStartMigration && (
             <div className='bg-warning/10 border-warning/20 rounded-lg border p-3'>
               <div className='flex items-start gap-2'>
-                <RiErrorWarningFill className='text-warning mt-0.5 h-4 w-4 flex-shrink-0' />
+                <RiErrorWarningFill className='text-warning mt-0.5 h-4 w-4 shrink-0' />
                 <div className='space-y-1'>
                   <p className='text-base-content text-sm font-medium'>{_('Important Notice')}</p>
                   <p className='text-base-content/80 text-sm'>

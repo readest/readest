@@ -6,6 +6,7 @@ export interface ReadestRuntimeConfig {
   storageFixedQuota?: number;
   translationFixedQuota?: number;
   fontBaseUrl?: string;
+  selfHosted?: boolean;
 }
 
 declare global {
@@ -33,6 +34,11 @@ export const getServerRuntimeConfig = (): ReadestRuntimeConfig => ({
   // the published image can be configured without rebuilding.
   objectStorageType:
     process.env['OBJECT_STORAGE_TYPE'] ?? process.env['NEXT_PUBLIC_OBJECT_STORAGE_TYPE'],
+  // A self-hosted deployment unlocks every premium feature: there is no store
+  // to buy from, and the operator already runs the infrastructure the paywall
+  // funds.
+  selfHosted:
+    (process.env['SELF_HOSTED'] || process.env['NEXT_PUBLIC_SELF_HOSTED']) === 'true' || undefined,
   storageFixedQuota: (() => {
     const raw =
       process.env['STORAGE_FIXED_QUOTA'] ?? process.env['NEXT_PUBLIC_STORAGE_FIXED_QUOTA'];

@@ -43,8 +43,8 @@ export function useTransferQueue(libraryLoaded = true, delayInit = 0) {
     return transferManager.queueUpload(book, priority);
   }, []);
 
-  const queueDownload = useCallback((book: Book, priority?: number) => {
-    return transferManager.queueDownload(book, priority);
+  const queueDownload = useCallback((book: Book, priority?: number, isBackground?: boolean) => {
+    return transferManager.queueDownload(book, priority, isBackground);
   }, []);
 
   const queueBatchUploads = useCallback((books: Book[], priority?: number) => {

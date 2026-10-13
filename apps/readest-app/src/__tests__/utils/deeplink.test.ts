@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { buildAnnotationUrl } from '../../utils/deeplink';
+import {
+  buildAnnotationUrl,
+  parseWidgetEditShelfDeepLink,
+  parseWidgetGroupDeepLink,
+} from '../../utils/deeplink';
 
 describe('buildAnnotationUrl', () => {
   const link = { bookHash: 'abc', noteId: 'n1', cfi: '/6/4!/4/2' };
@@ -24,5 +28,38 @@ describe('buildAnnotationUrl', () => {
   it('omits the cfi query when no cfi is provided', () => {
     const url = buildAnnotationUrl({ bookHash: 'abc', noteId: 'n1' }, 'app');
     expect(url).toBe('readest://book/abc/annotation/n1');
+  });
+});
+
+describe('widget group deep link', () => {
+  it('parses a group link into its axis and decoded group id', () => {
+    expect(parseWidgetGroupDeepLink('readest://widget-group/series/a1b2%20c3')).toEqual({
+      groupBy: 'series',
+      groupId: 'a1b2 c3',
+    });
+    expect(parseWidgetGroupDeepLink('readest://widget-group/series')).toBeNull();
+    // Malformed percent-encoding is rejected, not thrown.
+    expect(parseWidgetGroupDeepLink('readest://widget-group/series/a%')).toBeNull();
+  });
+
+  it('only accepts the readest:// scheme, never the web host', () => {
+    expect(parseWidgetGroupDeepLink('https://web.readest.com/o/widget-group/series/x')).toBeNull();
+  });
+});
+
+describe('widget edit-shelf deep link', () => {
+  it('parses the decoded shelf id', () => {
+    expect(parseWidgetEditShelfDeepLink('readest://widget-edit-shelf/a1b2%20c3')).toEqual({
+      shelfId: 'a1b2 c3',
+    });
+    expect(parseWidgetEditShelfDeepLink('readest://widget-edit-shelf/')).toBeNull();
+    // Malformed percent-encoding is rejected, not thrown.
+    expect(parseWidgetEditShelfDeepLink('readest://widget-edit-shelf/a%')).toBeNull();
+  });
+
+  it('only accepts the readest:// scheme, never the web host', () => {
+    expect(
+      parseWidgetEditShelfDeepLink('https://web.readest.com/o/widget-edit-shelf/x'),
+    ).toBeNull();
   });
 });

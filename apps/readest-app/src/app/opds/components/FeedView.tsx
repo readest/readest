@@ -1,10 +1,10 @@
 'use client';
 
-import { useMemo, useCallback } from 'react';
-import { VirtuosoGrid } from 'react-virtuoso';
+import { useMemo, useCallback, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import { VirtuosoGrid, type GridStateSnapshot, type VirtuosoGridHandle } from 'react-virtuoso';
 import { IoAdd, IoChevronBack, IoChevronForward, IoFilter } from 'react-icons/io5';
 import { useTranslation } from '@/hooks/useTranslation';
-import { OPDSFeed, OPDSGenericLink } from '@/types/opds';
+import { OPDSFeed, OPDSGenericLink, OPDSPublication } from '@/types/opds';
 import { PublicationCard } from './PublicationCard';
 import { NavigationCard } from './NavigationCard';
 import { GroupCarousel } from './GroupCarousel';
@@ -19,11 +19,79 @@ interface FeedViewProps {
   onGenerateCachedImageUrl: (url: string, cacheVersion?: string) => Promise<string>;
   isOPDSCatalog: (type?: string) => boolean;
   onAddCatalog?: () => void;
+  /** Identifies the feed; its scroll position survives remounts (open a book, come back). */
+  scrollKey?: string;
 }
 
 const gridClassName = 'grid grid-cols-3 gap-4 px-4 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6';
 const navigationClassName =
   'grid grid-cols-2 gap-4 px-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 max-[450px]:grid-cols-1';
+
+// Module-scoped so the position outlives FeedView while a publication is open.
+// It is only restored onto the same entries it was saved from.
+const savedScrollTops = new Map<string, { entryKeys: string; scrollTop: number }>();
+
+interface PublicationsGridProps {
+  publications: OPDSPublication[];
+  scrollKey?: string;
+  itemContent: (index: number) => ReactNode;
+}
+
+function PublicationsGrid({ publications, scrollKey, itemContent }: PublicationsGridProps) {
+  const grid = useRef<VirtuosoGridHandle>(null);
+  const entryKeys = useMemo(
+    () => publications.map((pub) => pub.metadata.id ?? pub.metadata.title ?? '').join('\n'),
+    [publications],
+  );
+  const [restoreTop] = useState(() => {
+    const saved = scrollKey === undefined ? undefined : savedScrollTops.get(scrollKey);
+    return saved?.entryKeys === entryKeys ? saved.scrollTop : 0;
+  });
+  // Tracking starts once the saved offset is applied, and stops on unmount:
+  // removing the scroller from the DOM fires a last scroll at offset 0, and the
+  // grid reports 0 before it has laid out, neither of which is a real position.
+  const latest = useRef({ scrollKey, entryKeys, tracking: false });
+  useLayoutEffect(() => {
+    latest.current.scrollKey = scrollKey;
+    latest.current.entryKeys = entryKeys;
+  });
+  useLayoutEffect(() => {
+    const current = latest.current;
+    return () => {
+      current.tracking = false;
+    };
+  }, []);
+
+  // VirtuosoGrid cannot restore a snapshot onto a list it has not laid out yet,
+  // so the offset is applied once the first items are measured.
+  const handleReadyStateChanged = useCallback(
+    (ready: boolean) => {
+      if (!ready || latest.current.tracking) return;
+      if (restoreTop > 0) grid.current?.scrollTo({ top: restoreTop });
+      latest.current.tracking = true;
+    },
+    [restoreTop],
+  );
+
+  const handleStateChanged = useCallback((state: GridStateSnapshot) => {
+    const { scrollKey, entryKeys, tracking } = latest.current;
+    if (tracking && scrollKey !== undefined) {
+      savedScrollTops.set(scrollKey, { entryKeys, scrollTop: state.scrollTop });
+    }
+  }, []);
+
+  return (
+    <VirtuosoGrid
+      ref={grid}
+      style={{ height: '100%' }}
+      totalCount={publications.length}
+      listClassName={gridClassName}
+      itemContent={itemContent}
+      readyStateChanged={handleReadyStateChanged}
+      stateChanged={handleStateChanged}
+    />
+  );
+}
 
 export function FeedView({
   feed,
@@ -33,6 +101,7 @@ export function FeedView({
   onPublicationSelect,
   onGenerateCachedImageUrl,
   onAddCatalog,
+  scrollKey,
 }: FeedViewProps) {
   const _ = useTranslation();
   const linksByRel = useMemo(() => groupByArray(feed.links, (link) => link.rel), [feed.links]);
@@ -76,7 +145,7 @@ export function FeedView({
   return (
     <div className='flex h-full flex-col'>
       {/* Header */}
-      <div className='opds-header flex-shrink-0 px-4 py-6'>
+      <div className='opds-header shrink-0 px-4 py-6'>
         {feed.metadata?.title && <h1 className='mb-2 text-xl font-bold'>{feed.metadata.title}</h1>}
         {feed.metadata?.subtitle && (
           <p className='text-base-content/70 text-sm'>{feed.metadata.subtitle}</p>
@@ -86,7 +155,7 @@ export function FeedView({
       <div className='flex min-h-0 flex-1 gap-6'>
         {/* Facets Sidebar */}
         {hasFacets && (
-          <aside className='hidden w-64 flex-shrink-0 overflow-y-auto lg:block'>
+          <aside className='hidden w-64 shrink-0 overflow-y-auto lg:block'>
             <div className='px-4'>
               {onAddCatalog && (
                 <div className='mb-4'>
@@ -119,7 +188,7 @@ export function FeedView({
                           <li key={linkIndex}>
                             <button
                               onClick={() => handleNavigationClick(href)}
-                              className={`w-full rounded px-3 py-1.5 text-left text-sm transition-colors ${
+                              className={`w-full rounded-sm px-3 py-1.5 text-left text-sm transition-colors ${
                                 isActive
                                   ? 'bg-primary text-primary-content font-medium'
                                   : 'hover:bg-base-200'
@@ -149,7 +218,7 @@ export function FeedView({
         <div className='flex min-w-0 flex-1 flex-col'>
           {/* Navigation Items */}
           {feed.navigation && feed.navigation.length > 0 && (
-            <section className='opds-navigation flex-shrink-0 pb-6'>
+            <section className='opds-navigation shrink-0 pb-6'>
               <div className={navigationClassName}>
                 {feed.navigation.map((item, index: number) => (
                   <NavigationCard
@@ -167,10 +236,10 @@ export function FeedView({
           {/* Publications Grid - Takes remaining space */}
           {feed.publications && feed.publications.length > 0 && (
             <section className='opds-publications min-h-0 flex-1'>
-              <VirtuosoGrid
-                style={{ height: '100%' }}
-                totalCount={feed.publications.length}
-                listClassName={gridClassName}
+              <PublicationsGrid
+                key={scrollKey}
+                publications={feed.publications}
+                scrollKey={scrollKey}
                 itemContent={itemContent}
               />
             </section>
@@ -178,7 +247,7 @@ export function FeedView({
 
           {/* Groups */}
           {feed.groups?.map((group, groupIndex: number) => (
-            <section key={groupIndex} className={`flex-shrink-0 ${useCarousel ? 'mb-6' : 'mb-12'}`}>
+            <section key={groupIndex} className={`shrink-0 ${useCarousel ? 'mb-6' : 'mb-12'}`}>
               {group.metadata && (
                 <div
                   className={`flex items-center justify-between px-4 ${useCarousel ? 'mb-2' : 'mb-4'}`}
@@ -268,7 +337,7 @@ export function FeedView({
 
           {/* Pagination */}
           {pagination.some((links) => links && links.length > 0) && (
-            <nav className='flex flex-shrink-0 justify-center gap-2 py-4'>
+            <nav className='flex shrink-0 justify-center gap-2 py-4'>
               <button
                 onClick={() => handlePaginationClick(pagination[0])}
                 disabled={!pagination[0]}

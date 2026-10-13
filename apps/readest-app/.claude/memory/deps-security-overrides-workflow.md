@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: reference
   originSessionId: c61e7dd2-4033-4bd1-8f32-22056e4ef322
-  modified: 2026-08-05T15:27:02.648Z
+  modified: 2026-10-02T18:00:36.444Z
 ---
 
 Fixing transitive npm Dependabot security alerts (manifest `pnpm-lock.yaml`).
@@ -19,9 +19,13 @@ Dependabot scans; alerts report manifest `pnpm-lock.yaml` = this root lockfile.
 **`packages/tauri-plugins` is a SEPARATE project**, not part of the main pnpm
 workspace. It's a git submodule (`tauri-plugins-workspace`) with its OWN
 `pnpm-lock.yaml` and its own `package.json` `pnpm.overrides` +
-`minimumReleaseAge: 4320`. The `minimumReleaseAge` (3-day age gate) applies ONLY
-there — the main monorepo has NO age gate, so `^X` specs resolve to the very
-latest matching version. Dependabot does not scan the tauri-plugins lockfile.
+`minimumReleaseAge: 4320` (3 days). The main monorepo sets none, BUT pnpm 11's
+BUILT-IN default is `minimum-release-age: 24*60` (1 day, non-strict; seen in
+pnpm/dist/pnpm.mjs 2026-10-02). So a range resolves to the newest version >1 day
+old, while a direct spec only a <1-day-old release satisfies is still allowed
+(non-strict). Result: `"ai": "^6.0.300"` (22h old) locked 6.0.300 for the app
+but 6.0.299 for a transitive `^6.0.42` = duplicate copies. Target versions >1 day
+old. Dependabot does not scan the tauri-plugins lockfile.
 `pnpm-workspace.yaml` `packages:` = `apps/*`, send-email worker, extensions,
 `packages/foliate-js` (NOT tauri-plugins).
 
@@ -78,12 +82,26 @@ Next's page-export type check. The Cloudflare path is
 Running it on 2026-07-26 surfaced a break that predated the bump — see
 [[nextjs-page-export-webpack-only-check]].
 
-**Unfixable alerts (still true 2026-08-05):** `@ai-sdk/provider-utils` (#236) has no patched
-release for the 3.x line and 3.0.25 is exact-pinned in `patchedDependencies`. The 3.x copy
-enters via `@assistant-ui/react-ai-sdk@1.1.21` (exact pin) -> `@ai-sdk/react@2` -> `ai@5`;
-killing it needs `@assistant-ui/react-ai-sdk@1.4.x`, which requires `ai@^7` +
-`@ai-sdk/react@^4` while the app depends directly on `@ai-sdk/react ^3.0.49` — a framework
-migration, not a security bump. Cargo.lock alerts #12 glib 0.18.5 (gtk-rs 0.18 stack under
+**2026-10-02 sweep — MERGED PR #6573 (306940369), 29 alerts -> 0 open:** next 16.3.3->16.3.8 (critical next/og RCE),
+dompurify 3.4.16, vitest family 4.1.11, raised overrides (undici, brace-expansion 1/2/5,
+sharp, js-yaml, fast-uri) + NEW `baseline-browser-mapping`. `@ai-sdk/provider-utils` 4.x
+is EXACT-pinned by `ai` / `@ai-sdk/react` / `@ai-sdk/openai-compatible`, so fix it by
+bumping those three to releases sharing one provider-utils (ai 6.0.299, react 3.0.302,
+openai-compatible 2.0.81 -> 4.0.57), then RENAME + REGENERATE
+`patches/@ai-sdk__provider-utils@<v>.patch` (iOS lookbehind; old line offsets don't carry
+over; build it with `git diff --no-index` on the unpacked tarball) + the
+`patchedDependencies` key. Then run `pnpm build && pnpm check:all` (lookbehind scan of the
+Tauri bundle).
+**Stale nested copies trap:** after bumping direct deps, `@assistant-ui/react-ai-sdk` and
+`ai-sdk-ollama` kept the OLD ai/react/provider-utils even though their ranges accepted the
+new ones. `pnpm update -r --depth Infinity <pkgs>`, `--fix-lockfile`, `--resolution-only`
+all no-op ("Already up to date"), and deleting snapshot entries by hand is ignored too.
+`pnpm dedupe` fixes it but churns dozens of unrelated packages. WORKS: add TEMPORARY exact
+overrides (`'ai@6': 6.0.299`, `'@ai-sdk/react@3': 3.0.302`, provider-utils, provider,
+gateway), `pnpm install`, remove them, `pnpm install` again: the deduped versions stick
+and `--frozen-lockfile` passes.
+Earlier (2026-08-05) the 3.x provider-utils copy was unfixable; gone now that
+react-ai-sdk 1.2.0 uses ai@6. Cargo.lock alerts #12 glib 0.18.5 (gtk-rs 0.18 stack under
 webkit2gtk/wry), #94/#95 nix 0.19.1 (via third-party `tauri-plugin-device-info` ->
 `battery`), #173 rand 0.7.3 (via `kuchikiki@0.8.8-speedreader` -> `selectors@0.24` ->
 `phf_generator@0.8`) are all transitive through crates we do not control. Verify dependents

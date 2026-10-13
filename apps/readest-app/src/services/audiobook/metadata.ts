@@ -3,6 +3,8 @@ import type { IChapter } from 'music-metadata';
 import type { AudiobookChapter } from '@/types/book';
 import { getBaseFilename } from '@/utils/path';
 
+type ChapterSource = Pick<IChapter, 'title' | 'start' | 'end' | 'timeScale'>;
+
 export interface ParsedAudiobookFile {
   id: string;
   name: string;
@@ -21,14 +23,20 @@ export const buildAudiobookChapters = (
   fileId: string,
   fileName: string,
   duration: number,
-  sourceChapters: Pick<IChapter, 'title' | 'start' | 'end' | 'timeScale'>[],
+  sourceChapters: ChapterSource[],
+  fallbackLabel?: string,
 ): AudiobookChapter[] => {
   const starts = sourceChapters.map((chapter) => chapterTime(chapter.start, chapter.timeScale));
   const chapters = sourceChapters.flatMap((chapter, index) => {
     const start = starts[index] ?? null;
     const explicitEnd = chapterTime(chapter.end, chapter.timeScale);
-    const end = explicitEnd ?? starts[index + 1] ?? duration;
-    if (start === null || end === null || end <= start) return [];
+    const rawEnd = explicitEnd ?? starts[index + 1] ?? duration;
+    if (start === null || rawEnd === null) return [];
+    // Clamping to the audio keeps a misread timescale from seeking past the
+    // end, and leaves a chapter starting at or after it with no room, so the
+    // check below drops it.
+    const end = Math.min(rawEnd, duration);
+    if (end <= start) return [];
 
     return [
       {
@@ -46,7 +54,7 @@ export const buildAudiobookChapters = (
     {
       id: `${fileId}:0`,
       fileId,
-      label: getBaseFilename(fileName),
+      label: fallbackLabel?.trim() || getBaseFilename(fileName),
       start: 0,
       end: duration,
     },
@@ -75,10 +83,8 @@ export const parseAudiobookFile = async (
     file.name,
     duration,
     metadata.format.chapters ?? [],
+    metadata.common.title,
   );
-  if (!metadata.format.chapters?.length && metadata.common.title?.trim()) {
-    chapters[0]!.label = metadata.common.title.trim();
-  }
 
   const title = metadata.common.album?.trim() || metadata.common.work?.trim() || undefined;
   const narrator =

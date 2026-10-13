@@ -5,6 +5,7 @@ import {
   getBookSortValue,
   compareSortValues,
   createBookSorter,
+  getProgressPercentage,
 } from '@/app/library/utils/libraryUtils';
 import { Book } from '@/types/book';
 import { LibrarySortByType } from '@/types/settings';
@@ -17,6 +18,7 @@ import { BookMetadata } from '@/libs/document';
  * - getBookSortValue
  * - compareSortValues
  * - createBookSorter (additional sort-by cases: Author, Format, Series, Published, default)
+ * - getProgressPercentage
  */
 
 const createMockBook = (
@@ -354,5 +356,18 @@ describe('createBookSorter - additional cases', () => {
       'Halfway',
       'Almost done',
     ]);
+  });
+});
+
+describe('getProgressPercentage', () => {
+  it.each([
+    [undefined, null],
+    [[0, 0], null],
+    [[1, 1], 100], // a total of 1 means finished
+    [[1, 3], 33],
+    [[2, 3], 67],
+  ] as const)('maps progress %j to %j', (progress, expected) => {
+    const book = createMockBook({ progress: progress as [number, number] | undefined });
+    expect(getProgressPercentage(book)).toBe(expected);
   });
 });

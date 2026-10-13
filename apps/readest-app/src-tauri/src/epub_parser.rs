@@ -565,9 +565,11 @@ struct ManifestItem {
 /// `parse_opf_cover_inputs` and consumed by `resolve_cover_path`.
 #[derive(Debug, Default)]
 struct OpfCoverInputs {
-    /// id → manifest item. Needed for the `<meta name="cover" content="id">`
-    /// legacy shorthand and for the `properties="cover-image"` lookup.
-    manifest: std::collections::HashMap<String, ManifestItem>,
+    /// (id, manifest item) in document order, so every cover heuristic picks
+    /// the same item foliate-js's `manifest.find` would. Needed for the
+    /// `<meta name="cover" content="id">` legacy shorthand and for the
+    /// `properties="cover-image"` lookup.
+    manifest: Vec<(String, ManifestItem)>,
     /// Value of the legacy `<meta name="cover" content="...">` element, if
     /// present. EPUB2 publishers used this to point at the cover manifest
     /// item by id.
@@ -591,8 +593,7 @@ fn parse_opf_cover_inputs(bytes: &[u8]) -> Result<OpfCoverInputs, String> {
     let mut in_manifest = false;
 
     let process_manifest_item =
-        |attrs: &[(Vec<u8>, Vec<u8>)],
-         manifest: &mut std::collections::HashMap<String, ManifestItem>| {
+        |attrs: &[(Vec<u8>, Vec<u8>)], manifest: &mut Vec<(String, ManifestItem)>| {
             let mut id = String::new();
             let mut item = ManifestItem::default();
             for (k, v) in attrs {
@@ -605,7 +606,7 @@ fn parse_opf_cover_inputs(bytes: &[u8]) -> Result<OpfCoverInputs, String> {
                 }
             }
             if !id.is_empty() {
-                manifest.insert(id, item);
+                manifest.push((id, item));
             }
         };
 
@@ -671,13 +672,22 @@ fn parse_opf_cover_inputs(bytes: &[u8]) -> Result<OpfCoverInputs, String> {
 // ---------------------------------------------------------------------------
 // Cover resolution
 // ---------------------------------------------------------------------------
+/// Manifest item by id. On a (malformed) duplicate id the last one wins, as
+/// in foliate-js's `manifestById` map.
+fn manifest_item<'a>(manifest: &'a [(String, ManifestItem)], id: &str) -> Option<&'a ManifestItem> {
+    manifest
+        .iter()
+        .rfind(|(i, _)| i == id)
+        .map(|(_, item)| item)
+}
+
 fn resolve_cover_path(
-    manifest: &std::collections::HashMap<String, ManifestItem>,
+    manifest: &[(String, ManifestItem)],
     cover_id: &Option<String>,
     opf_path: &str,
 ) -> Option<String> {
     // 1) properties="cover-image" (EPUB3)
-    for item in manifest.values() {
+    for (_, item) in manifest {
         if item
             .properties
             .split_ascii_whitespace()
@@ -686,10 +696,17 @@ fn resolve_cover_path(
             return Some(resolve_relative(opf_path, &item.href));
         }
     }
-    // 2) <meta name="cover" content="<id>"/> -> manifest[id] (EPUB2)
+    // 2) <meta name="cover" content="<id>"/> -> manifest[id] (EPUB2). Some
+    //    producers put the image's href in `content` instead of its id.
     if let Some(id) = cover_id {
-        if let Some(item) = manifest.get(id) {
+        if let Some(item) = manifest_item(manifest, id) {
             return Some(resolve_relative(opf_path, &item.href));
+        }
+        let path = resolve_relative(opf_path, id);
+        if manifest.iter().any(|(_, item)| {
+            item.media_type.starts_with("image/") && resolve_relative(opf_path, &item.href) == path
+        }) {
+            return Some(path);
         }
     }
     // 3) Heuristic: image item whose id/href contains "cover".
@@ -704,12 +721,9 @@ fn resolve_cover_path(
     //   pass 2 (fallback): if pass 1 found nothing (e.g. the EPUB only ships
     //                      SVG covers), allow SVG so we don't lose covers on
     //                      odd-but-valid EPUBs. `nav` is still excluded.
-    fn pick(
-        manifest: &std::collections::HashMap<String, ManifestItem>,
-        allow_svg: bool,
-    ) -> Option<&ManifestItem> {
+    fn pick(manifest: &[(String, ManifestItem)], allow_svg: bool) -> Option<&ManifestItem> {
         let mut best: Option<&ManifestItem> = None;
-        for item in manifest.values() {
+        for (_, item) in manifest {
             if !item.media_type.starts_with("image/") {
                 continue;
             }
@@ -832,16 +846,17 @@ fn strip_xml_bom(bytes: &[u8]) -> Cow<'_, [u8]> {
         let little_endian = bytes[0] == 0xFF && bytes[1] == 0xFE;
         if big_endian || little_endian {
             let body = &bytes[2..];
-            // chunks_exact silently drops a trailing odd byte, which is what
-            // we want — a malformed UTF-16 stream still produces a best-
+            // A trailing odd byte lands in the ignored remainder, which is
+            // what we want — a malformed UTF-16 stream still produces a best-
             // effort UTF-8 transcoding rather than failing the whole import.
-            let units: Vec<u16> = body
-                .chunks_exact(2)
-                .map(|c| {
+            let (pairs, _odd_tail) = body.as_chunks::<2>();
+            let units: Vec<u16> = pairs
+                .iter()
+                .map(|&pair| {
                     if big_endian {
-                        u16::from_be_bytes([c[0], c[1]])
+                        u16::from_be_bytes(pair)
                     } else {
-                        u16::from_le_bytes([c[0], c[1]])
+                        u16::from_le_bytes(pair)
                     }
                 })
                 .collect();
@@ -873,7 +888,6 @@ mod tests {
     use crate::parser_common::COVER_MAX_LONG_EDGE;
     use image::GenericImageView;
     use md5::{Digest, Md5};
-    use std::collections::HashMap;
     use std::io::Cursor;
 
     #[test]
@@ -900,11 +914,11 @@ mod tests {
         let inputs = parse_opf_cover_inputs(xml).expect("opf parses");
         assert_eq!(inputs.cover_id.as_deref(), Some("cover-img"));
         assert_eq!(inputs.manifest.len(), 3);
-        let cover = inputs.manifest.get("cover-img").expect("cover entry");
+        let cover = manifest_item(&inputs.manifest, "cover-img").expect("cover entry");
         assert_eq!(cover.href, "images/cover.jpg");
         assert_eq!(cover.media_type, "image/jpeg");
         assert!(cover.properties.is_empty());
-        let nav = inputs.manifest.get("nav").expect("nav entry");
+        let nav = manifest_item(&inputs.manifest, "nav").expect("nav entry");
         assert_eq!(nav.properties, "nav");
     }
 
@@ -953,7 +967,7 @@ mod tests {
         let inputs = parse_opf_cover_inputs(xml).expect("opf parses");
         assert_eq!(inputs.cover_id.as_deref(), Some("cover-image"));
         assert_eq!(inputs.manifest.len(), 2);
-        let cover = inputs.manifest.get("cover-image").expect("cover entry");
+        let cover = manifest_item(&inputs.manifest, "cover-image").expect("cover entry");
         assert_eq!(cover.href, "images/cover.jpg");
         assert_eq!(cover.media_type, "image/jpeg");
         assert_eq!(cover.properties, "cover-image");
@@ -1000,48 +1014,114 @@ mod tests {
 
     #[test]
     fn cover_resolution_prefers_epub3_properties() {
-        let mut manifest = HashMap::new();
-        manifest.insert(
+        let mut manifest = Vec::new();
+        manifest.push((
             "img1".into(),
             ManifestItem {
                 href: "img/foo.jpg".into(),
                 media_type: "image/jpeg".into(),
                 properties: "cover-image".into(),
             },
-        );
-        manifest.insert(
+        ));
+        manifest.push((
             "img2".into(),
             ManifestItem {
                 href: "img/bar.jpg".into(),
                 media_type: "image/jpeg".into(),
                 properties: String::new(),
             },
-        );
+        ));
         let p = resolve_cover_path(&manifest, &None, "OEBPS/content.opf").unwrap();
         assert_eq!(p, "OEBPS/img/foo.jpg");
     }
 
     #[test]
     fn cover_resolution_falls_back_to_meta_cover() {
-        let mut manifest = HashMap::new();
-        manifest.insert(
+        let mut manifest = Vec::new();
+        manifest.push((
             "cov".into(),
             ManifestItem {
                 href: "images/c.png".into(),
                 media_type: "image/png".into(),
                 properties: String::new(),
             },
-        );
-        manifest.insert(
+        ));
+        manifest.push((
             "other".into(),
             ManifestItem {
                 href: "images/o.png".into(),
                 media_type: "image/png".into(),
                 properties: String::new(),
             },
-        );
+        ));
         let p = resolve_cover_path(&manifest, &Some("cov".into()), "content.opf").unwrap();
         assert_eq!(p, "images/c.png");
+    }
+
+    #[test]
+    fn cover_resolution_accepts_meta_cover_href() {
+        // FB2 converters write the image href, not its manifest id, into
+        // `<meta name="cover" content>`.
+        let mut manifest = Vec::new();
+        for (id, href) in [
+            ("pic_1.jpg", "images/pic_1.jpg"),
+            ("back", "images/backcover.jpg"),
+        ] {
+            manifest.push((
+                id.into(),
+                ManifestItem {
+                    href: href.into(),
+                    media_type: "image/jpeg".into(),
+                    properties: String::new(),
+                },
+            ));
+        }
+        let p = resolve_cover_path(
+            &manifest,
+            &Some("images/pic_1.jpg".into()),
+            "OEBPS/Content.opf",
+        )
+        .unwrap();
+        assert_eq!(p, "OEBPS/images/pic_1.jpg");
+    }
+
+    #[test]
+    fn cover_resolution_ignores_meta_cover_href_to_non_image() {
+        // An href naming the XHTML cover page must not win over the image.
+        let mut manifest = Vec::new();
+        for (id, href, media_type) in [
+            ("cover", "cover.xhtml", "application/xhtml+xml"),
+            ("img", "images/cover.jpg", "image/jpeg"),
+        ] {
+            manifest.push((
+                id.into(),
+                ManifestItem {
+                    href: href.into(),
+                    media_type: media_type.into(),
+                    properties: String::new(),
+                },
+            ));
+        }
+        let p = resolve_cover_path(&manifest, &Some("cover.xhtml".into()), "OEBPS/content.opf")
+            .unwrap();
+        assert_eq!(p, "OEBPS/images/cover.jpg");
+    }
+
+    #[test]
+    fn cover_heuristic_falls_back_to_first_image_in_manifest_order() {
+        let mut manifest = Vec::new();
+        for n in 1..=20 {
+            manifest.push((
+                format!("pic_{n}"),
+                ManifestItem {
+                    href: format!("images/pic_{n}.jpg"),
+                    media_type: "image/jpeg".into(),
+                    properties: String::new(),
+                },
+            ));
+        }
+        let p = resolve_cover_path(&manifest, &None, "OEBPS/content.opf").unwrap();
+        assert_eq!(p, "OEBPS/images/pic_1.jpg");
     }
 
     #[test]
@@ -1050,23 +1130,23 @@ mod tests {
         // SVG sitting next to a JPEG must NOT be picked: SVGs in EPUBs are
         // typically the cover *page* (a wrapper xhtml/svg), not the actual
         // cover image.
-        let mut manifest = HashMap::new();
-        manifest.insert(
+        let mut manifest = Vec::new();
+        manifest.push((
             "cov-svg".into(),
             ManifestItem {
                 href: "images/cover.svg".into(),
                 media_type: "image/svg+xml".into(),
                 properties: String::new(),
             },
-        );
-        manifest.insert(
+        ));
+        manifest.push((
             "cov-jpg".into(),
             ManifestItem {
                 href: "images/cover.jpg".into(),
                 media_type: "image/jpeg".into(),
                 properties: String::new(),
             },
-        );
+        ));
         let p = resolve_cover_path(&manifest, &None, "OEBPS/content.opf").unwrap();
         assert_eq!(p, "OEBPS/images/cover.jpg");
     }
@@ -1075,23 +1155,23 @@ mod tests {
     fn cover_heuristic_falls_back_to_svg_when_only_svg_present() {
         // Edge-case EPUBs that ship only an SVG cover must still resolve a
         // cover path — pass-2 of the heuristic re-runs with SVG allowed.
-        let mut manifest = HashMap::new();
-        manifest.insert(
+        let mut manifest = Vec::new();
+        manifest.push((
             "cov-svg".into(),
             ManifestItem {
                 href: "images/cover.svg".into(),
                 media_type: "image/svg+xml".into(),
                 properties: String::new(),
             },
-        );
-        manifest.insert(
+        ));
+        manifest.push((
             "ch1".into(),
             ManifestItem {
                 href: "text/ch1.xhtml".into(),
                 media_type: "application/xhtml+xml".into(),
                 properties: String::new(),
             },
-        );
+        ));
         let p = resolve_cover_path(&manifest, &None, "OEBPS/content.opf").unwrap();
         assert_eq!(p, "OEBPS/images/cover.svg");
     }
@@ -1101,23 +1181,23 @@ mod tests {
         // Defensive: even though `nav` belongs on xhtml per spec, properties
         // is a token list and we never want to pick a nav-tagged item as a
         // cover. The non-nav image must win.
-        let mut manifest = HashMap::new();
-        manifest.insert(
+        let mut manifest = Vec::new();
+        manifest.push((
             "weird-nav".into(),
             ManifestItem {
                 href: "images/cover.jpg".into(),
                 media_type: "image/jpeg".into(),
                 properties: "nav".into(),
             },
-        );
-        manifest.insert(
+        ));
+        manifest.push((
             "real".into(),
             ManifestItem {
                 href: "images/other.jpg".into(),
                 media_type: "image/jpeg".into(),
                 properties: String::new(),
             },
-        );
+        ));
         let p = resolve_cover_path(&manifest, &None, "OEBPS/content.opf").unwrap();
         assert_eq!(p, "OEBPS/images/other.jpg");
     }
@@ -1342,6 +1422,19 @@ mod tests {
     }
 
     #[test]
+    fn strip_xml_bom_utf16_drops_trailing_odd_byte() {
+        // A malformed UTF-16 stream with a dangling byte must still decode
+        // the complete code units instead of failing the import.
+        let mut bytes = vec![0xFF, 0xFE];
+        for ch in "<a/>".encode_utf16() {
+            bytes.extend_from_slice(&ch.to_le_bytes());
+        }
+        bytes.push(0x3C);
+        let stripped = strip_xml_bom(&bytes);
+        assert_eq!(stripped.as_ref(), b"<a/>");
+    }
+
+    #[test]
     fn parse_opf_cover_inputs_tolerates_utf8_bom() {
         // Real-world EPUBs from some Windows toolchains ship the OPF with a
         // UTF-8 BOM; without strip_xml_bom quick-xml emits a stray Text
@@ -1362,7 +1455,7 @@ mod tests {
         );
         let inputs = parse_opf_cover_inputs(&bytes).expect("opf parses through BOM");
         assert_eq!(inputs.cover_id.as_deref(), Some("cv"));
-        assert!(inputs.manifest.contains_key("cv"));
+        assert!(manifest_item(&inputs.manifest, "cv").is_some());
     }
 
     #[test]

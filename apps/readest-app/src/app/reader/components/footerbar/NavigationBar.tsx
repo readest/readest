@@ -18,6 +18,8 @@ interface NavigationBarProps {
   actionTab: string;
   gridInsets: Insets;
   forceMobileLayout: boolean;
+  // Keeps the row clear of iPhone Duo's side status strip (#6307).
+  insetStyle?: React.CSSProperties;
   onSetActionTab: (tab: string) => void;
 }
 
@@ -26,6 +28,7 @@ export const NavigationBar: React.FC<NavigationBarProps> = ({
   actionTab,
   gridInsets,
   forceMobileLayout,
+  insetStyle,
   onSetActionTab,
 }) => {
   const isMobile = forceMobileLayout || window.innerWidth < 640 || window.innerHeight < 640;
@@ -50,6 +53,7 @@ export const NavigationBar: React.FC<NavigationBarProps> = ({
         paddingBottom: appService?.isAndroidApp
           ? `calc(env(safe-area-inset-bottom) + 16px)`
           : navPadding,
+        ...insetStyle,
       }}
     >
       {isSideBarVisible && isSideBarPinned ? null : (

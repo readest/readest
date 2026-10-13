@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { gzipSync } from 'node:zlib';
 
 import { createStarDictProvider } from '@/services/dictionaries/providers/starDictProvider';
+import { buildLookupCandidates } from '@/services/dictionaries/lookupCandidates';
 import type { ImportedDictionary } from '@/services/dictionaries/types';
 import type { BaseDir } from '@/types/system';
 
@@ -205,6 +206,42 @@ describe('starDictProvider', () => {
     expect(outcome.ok).toBe(true);
     expect(container.querySelector('h1')?.textContent).toBe('apple');
     expect(container.querySelector('pre')?.textContent).toBe('a fruit');
+  });
+
+  it.each([
+    'headword',
+    'synonym',
+  ])('resolves Unicode and accent variants through the %s index', async (index) => {
+    for (const [query, stored] of [
+      ['café', 'cafe\u0301'],
+      ['cafe\u0301', 'café'],
+      ['Rūpa', 'rupa'],
+    ]) {
+      const files = buildBundle(
+        [
+          { word: 'apple', text: 'a fruit' },
+          { word: index === 'headword' ? stored! : 'definition', text: 'matched definition' },
+          { word: 'zebra', text: 'an animal' },
+        ],
+        index === 'synonym' ? [{ word: stored!, idxIndex: 1 }] : [],
+      );
+      const provider = createStarDictProvider({ dict: buildDict(files), fs: makeFs(files) });
+      const container = document.createElement('div');
+      let matched = false;
+      for (const candidate of buildLookupCandidates(query!, 'fr')) {
+        const outcome = await provider.lookup(candidate, {
+          signal: new AbortController().signal,
+          container,
+        });
+        if (outcome.ok) {
+          matched = true;
+          break;
+        }
+        expect(outcome.reason).toBe('empty');
+      }
+      expect(matched).toBe(true);
+      expect(container.querySelector('pre')?.textContent).toBe('matched definition');
+    }
   });
 
   it('shares the parsed instance across consecutive lookups', async () => {

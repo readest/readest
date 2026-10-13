@@ -78,7 +78,7 @@ const SearchOptions: React.FC<SearchOptionsProps> = ({
         // line. `.dropdown-content` sizes the box to its content and caps it at
         // the viewport; the max-height keeps a tall menu scrollable in landscape.
         'max-h-[calc(100vh-96px)] overflow-y-auto',
-        isEink ? 'bordercolor-content border-base-content !bg-base-100 border' : '',
+        isEink ? 'bordercolor-content border-base-content bg-base-100! border' : '',
         menuClassName,
       )}
     >

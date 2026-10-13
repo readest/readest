@@ -13,11 +13,10 @@ const RELEASE_BRIGHTNESS = -1;
  * releases control back to the system when the reader closes or the user
  * switches "System Screen Brightness" back on.
  *
- * The native bridge hands brightness back to the system on background and drops
- * the override on foreground, so the system value always wins across a
- * background trip; this hook re-applies the manual brightness on foreground
- * (the reader component does not unmount when the app is sent to the home
- * screen), while system mode is left at whatever the system now shows.
+ * The native bridge hands the manual brightness back to the system on
+ * background and re-applies it on foreground; this hook also re-applies it on
+ * foreground (the reader component does not unmount when the app is sent to the
+ * home screen), while system mode is left at whatever the system now shows.
  */
 export const useScreenBrightness = () => {
   const { appService } = useEnv();
@@ -48,8 +47,7 @@ export const useScreenBrightness = () => {
     if (!hasScreenBrightness) return;
     const onVisibilityChange = () => {
       if (document.visibilityState !== 'visible') return;
-      // The native bridge drops the override on foreground, so re-apply the
-      // manual brightness here; in system mode we leave it at the system value.
+      // Re-apply the manual brightness; in system mode keep the system value.
       if (!autoScreenBrightness && screenBrightness >= 0) {
         setScreenBrightness(screenBrightness / 100);
       }

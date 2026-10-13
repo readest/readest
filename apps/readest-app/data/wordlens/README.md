@@ -32,7 +32,7 @@ for p in es-en fr-en de-en pt-en it-en ru-en en-es en-fr en-de en-pt en-ru; do c
 # Source-language lemmatization lists (michmech) — used to lemmatize X→en source words
 for c in es fr de pt it ru; do curl -sL -o lemmatization-$c.txt https://raw.githubusercontent.com/michmech/lemmatization-lists/master/lemmatization-$c.txt; done
 
-# en→vi and en→hu: WikDict publishes neither Vietnamese nor Hungarian, so the glosses come
+# en→vi, en→hu and en→ar: WikDict publishes none of these, so the glosses come
 # from the kaikki.org raw wiktextract dump of the English Wiktionary (CC-BY-SA-4.0) — ~2.8 GB
 # gzipped. It holds EVERY language section (English is ~1/4 of the lines); the build gunzips
 # it on the fly and keeps only the `lang_code: en` entries, so do not inflate it (~17 GB).
@@ -82,21 +82,25 @@ for tgt in es fr de pt ru; do
   node scripts/build-wordlens-data.mjs build-wikdict en "$tgt" /tmp/ww-data/en_50k.txt "/tmp/ww-data/en-$tgt.sqlite3" 20000
 done
 
-# en→vi, en→hu: no WikDict dictionary exists, so use the kaikki `build` mode instead — it
-# reads the target-language `translations` off each English Wiktionary entry. Same
+# en→vi, en→hu, en→ar: no WikDict dictionary exists, so use the kaikki `build` mode instead —
+# it reads the target-language `translations` off each English Wiktionary entry. Same
 # lemmatization (en-en table) and same output shape as the WikDict pairs. Pass the .gz
 # as is; each build streams the whole dump (5 to 7 min). The raw dump keeps Wiktionary page
 # order, so the first translation is the primary sense; the deprecated post-processed file
-# re-sorted senses (it glossed `bear` as "đầu cơ giá xuống" before "gấu").
-for tgt in vi hu; do
+# re-sorted senses (it glossed `bear` as "đầu cơ giá xuống" before "gấu"). Romanizations
+# are dropped (the hint is read by a native speaker) and translations tagged as a regional
+# variety ("Egyptian-Arabic") are skipped, so en→ar stays Modern Standard Arabic.
+for tgt in vi hu ar; do
   node scripts/build-wordlens-data.mjs build en "$tgt" /tmp/ww-data/en_50k.txt /tmp/ww-data/raw-wiktextract-data.jsonl.gz 20000
 done
 ```
-> **vi and hu are en-target only.** Vietnamese words are multi-syllable with spaces *inside*
+> **vi, hu and ar are en-target only.** Vietnamese words are multi-syllable with spaces *inside*
 > the word ("học sinh"), so the planner's whitespace tokenizer would gloss syllables, not
 > words. Hungarian is agglutinative, so its surface forms ("házaimban") need a lemmatizer,
-> and michmech publishes no Hungarian list. Both need that missing piece before a `vi-en` or
-> `hu-en` pack would gloss anything useful — deferred, like ja/ko/th. (The Vietnamese
+> and michmech publishes no Hungarian list. Arabic book text is unvocalized and carries
+> clitics (و/ال/ب) glued to the word, so it needs a morphological analyzer before lookups
+> could hit the vocalized Wiktionary headwords. Each needs that missing piece before a
+> `vi-en`, `hu-en` or `ar-en` pack would gloss anything useful — deferred, like ja/ko/th. (The Vietnamese
 > Wiktionary's own raw dump, https://kaikki.org/viwiktionary/raw-wiktextract-data.jsonl.gz
 > at ~33 MB, could widen `en-vi` from its English section, but its "past participle of X"
 > form-of glosses need a new build mode plus cleanup — also deferred.)

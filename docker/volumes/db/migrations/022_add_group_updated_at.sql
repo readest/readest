@@ -1,0 +1,46 @@
+-- Migration 022: Add `group_updated_at` to books
+--
+-- Field-level last-writer-wins for group membership (group_id + group_name).
+-- The books row's updated_at is stamped by operations that have nothing to do
+-- with grouping — most importantly an UPLOAD, which bumps updated_at so the
+-- new uploaded_at reaches peers — so whole-row LWW let a device holding a
+-- never-grouped copy of a row win and erase the group for the whole fleet
+-- (issue #5911: a clean install restored stale ungrouped cloud rows, then a
+-- WebDAV Full Sync published them over the grouped ones and every other device
+-- pulled the emptied rows). A dedicated per-field timestamp lets the merge
+-- resolve group membership independently — the same hazard the 015
+-- reading_status_updated_at (#4634), 017 cover_updated_at (#4544) and 018
+-- metadata_updated_at (#5438) fixes addressed.
+--
+-- Additive + nullable. NULL is treated as epoch 0 (oldest) by the merge, but
+-- unlike the three above, an unstamped TIE does NOT fall back to the row
+-- winner: the side that actually has a group wins. On a tie an absent group is
+-- ambiguous — "never grouped" and "ungrouped by a client too old to stamp" are
+-- indistinguishable, and every legacy row is unstamped — so preserving the
+-- group is the only safe reading. Erasing a real group is unrecoverable;
+-- losing an un-group is not, and the next stamped edit resolves it.
+-- Old clients ignore the column, so they never break.
+
+-- DELIBERATELY NOT BACKFILLED. Two reasons, and the second is the load-bearing
+-- one:
+--
+--   * `updated_at` is not when the group was set. It is bumped by page turns and
+--     by uploads (that is the whole defect), so copying it into group_updated_at
+--     would fabricate a grouping edit that never happened. Backfilling EVERY row
+--     that way is actively harmful: an ungrouped row an upload pushed to `now`
+--     would outrank a genuinely grouped peer and re-create #5911 permanently,
+--     with a stamp the merge now trusts. Migrations 015 / 017 / 018 added their
+--     clocks the same way — nullable, unfilled, NULL read as epoch 0.
+--   * A server backfill cannot reach the copy that actually broke. #5911 was
+--     reported against WebDAV, whose rows live in library.json on each device
+--     and in the provider's own storage; no migration touches those. Legacy data
+--     has to be safe under the MERGE, not under a one-off UPDATE, or it is only
+--     safe for Readest Cloud users.
+--
+-- The unstamped-tie rule above is what makes the legacy fleet safe, and it works
+-- identically on both backends: two unstamped rows tie, so the side that has a
+-- group wins and the group survives. Rows only ever gain a stamp from a real
+-- grouping edit, which is the only event that should set one.
+
+ALTER TABLE public.books
+  ADD COLUMN IF NOT EXISTS group_updated_at timestamp with time zone NULL;

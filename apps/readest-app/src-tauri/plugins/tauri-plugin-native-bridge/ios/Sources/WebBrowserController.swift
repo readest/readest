@@ -6,6 +6,7 @@ import WebKit
 final class WebBrowserArgs: Decodable {
   let url: String
   let downloadDir: String
+  let captureScript: String
   let background: String?
   let foreground: String?
   let isEink: Bool?
@@ -29,6 +30,11 @@ struct WebBrowserDownloadEvent {
   let filename: String
   let success: Bool
   let error: String?
+}
+
+struct WebBrowserPage {
+  let url: String
+  let html: String
 }
 
 /// Full-screen in-app browser (#5775): a header bar (close, back, title +
@@ -64,9 +70,10 @@ final class WebBrowserController: UIViewController, WKNavigationDelegate, WKUIDe
   private var downloadPaths: [ObjectIdentifier: (url: URL, path: URL)] = [:]
   private var openBookHash: String?
   private var finished = false
+  private var capturing = false
 
   var onDownload: ((WebBrowserDownloadEvent) -> Void)?
-  var onFinish: ((String?) -> Void)?
+  var onFinish: ((String?, WebBrowserPage?) -> Void)?
 
   init(args: WebBrowserArgs) {
     self.args = args
@@ -286,6 +293,10 @@ final class WebBrowserController: UIViewController, WKNavigationDelegate, WKUIDe
 
   private func buildMenu() -> UIMenu {
     var actions: [UIAction] = []
+    actions.append(
+      UIAction(title: args.label("clipPage", "Clip Page"), image: UIImage(systemName: "doc.badge.plus")) {
+        [weak self] _ in self?.capturePage()
+      })
     if webView?.canGoForward == true {
       actions.append(
         UIAction(
@@ -380,6 +391,22 @@ final class WebBrowserController: UIViewController, WKNavigationDelegate, WKUIDe
   }
   @objc private func openTapped() { finish(openBookHash) }
 
+  private func capturePage() {
+    guard !finished, !capturing else { return }
+    capturing = true
+    webView.evaluateJavaScript(args.captureScript) { [weak self] value, error in
+      guard let self = self, !self.finished else { return }
+      self.capturing = false
+      guard error == nil, let page = value as? [String: String],
+        let url = page["url"], let html = page["html"], !html.isEmpty
+      else {
+        self.setStatus(state: "failed", filename: self.args.label("clipPage", "Clip Page"), bookHash: nil)
+        return
+      }
+      self.finish(nil, page: WebBrowserPage(url: url, html: html))
+    }
+  }
+
   /// Remove cookies/storage for the current site only. The data store is
   /// app-wide and shared with Readest's own webview, so never clear all.
   private func signOutOfSite() {
@@ -396,14 +423,14 @@ final class WebBrowserController: UIViewController, WKNavigationDelegate, WKUIDe
     }
   }
 
-  private func finish(_ hash: String?) {
+  private func finish(_ hash: String?, page: WebBrowserPage? = nil) {
     if finished { return }
     finished = true
     bannerHideWork?.cancel()
     webView.stopLoading()
     webView.navigationDelegate = nil
     webView.uiDelegate = nil
-    dismiss(animated: true) { [onFinish] in onFinish?(hash) }
+    dismiss(animated: true) { [onFinish] in onFinish?(hash, page) }
   }
 
   // MARK: - WKNavigationDelegate

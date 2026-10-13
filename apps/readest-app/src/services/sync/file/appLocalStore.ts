@@ -72,8 +72,12 @@ export const createAppLocalStore = ({
     const source = await resolveLocalSource(appService, book);
     if (!source) return null;
     const file = await appService.openFile(source.path, source.base);
-    const bytes = await file.arrayBuffer();
-    return { bytes, size: bytes.byteLength };
+    try {
+      const bytes = await file.arrayBuffer();
+      return { bytes, size: bytes.byteLength };
+    } finally {
+      await (file as File & { close?: () => Promise<void> }).close?.();
+    }
   },
 
   resolveLocalBookPath: async (book) => {
@@ -111,8 +115,12 @@ export const createAppLocalStore = ({
     const fp = getCoverFilename(book);
     if (!(await appService.exists(fp, 'Books'))) return null;
     const file = await appService.openFile(fp, 'Books');
-    const bytes = await file.arrayBuffer();
-    return { bytes, size: bytes.byteLength };
+    try {
+      const bytes = await file.arrayBuffer();
+      return { bytes, size: bytes.byteLength };
+    } finally {
+      await (file as File & { close?: () => Promise<void> }).close?.();
+    }
   },
 
   saveBookCover: async (book, bytes) => {

@@ -8,7 +8,10 @@ const initJieba = async (): Promise<void> => {
   if (!initPromise) {
     initPromise = (async () => {
       try {
-        await init('/vendor/jieba/jieba_rs_wasm_bg.wasm');
+        // No path: the glue falls back to `new URL('jieba_rs_wasm_bg.wasm',
+        // import.meta.url)`, the copy the bundler already emits. Pointing it at
+        // a public/vendor copy instead shipped the 4MB WASM twice.
+        await init();
         initialized = true;
       } catch (e) {
         initPromise = null;

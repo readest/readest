@@ -434,6 +434,9 @@ describe('getLanguageInfo', () => {
 
     const jaInfo = getLanguageInfo('ja');
     expect(jaInfo.isCJK).toBe(true);
+
+    const koInfo = getLanguageInfo('ko');
+    expect(koInfo.isCJK).toBe(true);
   });
 
   it('should detect RTL direction for Arabic', () => {

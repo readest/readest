@@ -109,10 +109,11 @@ end
 
 -- Picks a free local port by binding an ephemeral port and closing it right
 -- away (small TOCTOU race, acceptable here: the helper binds moments
--- later). pcall-guarded; nil on any failure (e.g. luasocket unavailable).
+-- later). pcall-guarded; nil + the error on any failure (e.g. luasocket
+-- unavailable).
 function M.pickPort()
     local ok, socket = pcall(require, "socket")
-    if not ok then return nil end
+    if not ok then return nil, socket end
     local ok2, port = pcall(function()
         local s = assert(socket.tcp())
         assert(s:bind("127.0.0.1", 0))
@@ -120,7 +121,7 @@ function M.pickPort()
         s:close()
         return tonumber(p)
     end)
-    if not ok2 then return nil end
+    if not ok2 then return nil, port end
     return port
 end
 

@@ -11,6 +11,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useMetadataEdit } from './useMetadataEdit';
 import { DeleteAction } from '@/types/system';
 import { eventDispatcher } from '@/utils/event';
+import { isAbsOfflineCapable } from '@/utils/audiobook';
 import { isWebAppPlatform } from '@/services/environment';
 import DeleteConfirmAlert from '@/components/DeleteConfirmAlert';
 import Dialog from '@/components/Dialog';
@@ -30,6 +31,8 @@ interface BookDetailModalProps {
   handleBookDeleteLocalCopy?: (book: Book) => void;
   handleBookPurge?: (book: Book) => void;
   handleBookMetadataUpdate?: (book: Book, updatedMetadata: BookMetadata, tags: string[]) => void;
+  handleBookOfflineDownload?: (book: Book) => void;
+  offlinePremiumLabel?: string;
   onMetadataValueClick?: (type: 'tag' | 'subject', value: string) => void;
 }
 
@@ -55,6 +58,8 @@ const BookDetailModal: React.FC<BookDetailModalProps> = ({
   handleBookDeleteLocalCopy,
   handleBookPurge,
   handleBookMetadataUpdate,
+  handleBookOfflineDownload,
+  offlinePremiumLabel,
   onMetadataValueClick,
 }) => {
   const _ = useTranslation();
@@ -222,6 +227,11 @@ const BookDetailModal: React.FC<BookDetailModalProps> = ({
     }
   };
 
+  const handleOfflineDownload = () => {
+    handleClose();
+    handleBookOfflineDownload?.(book);
+  };
+
   const handleReupload = async () => {
     handleClose();
     if (handleBookUpload) {
@@ -247,7 +257,7 @@ const BookDetailModal: React.FC<BookDetailModalProps> = ({
             editMode ? 'sm:min-w-[600px] sm:max-w-[600px]' : 'sm:min-w-[480px] sm:max-w-[480px]',
             'sm:h-auto sm:max-h-[90%]',
           )}
-          contentClassName='!px-6 !py-4'
+          contentClassName='px-6! py-4!'
         >
           <div className='flex w-full select-text items-start justify-center'>
             {editMode && bookMeta ? (
@@ -284,6 +294,12 @@ const BookDetailModal: React.FC<BookDetailModalProps> = ({
                 onUpload={handleBookUpload ? handleReupload : undefined}
                 onShare={handleShare}
                 onExport={handleBookExport}
+                onDownloadOffline={
+                  handleBookOfflineDownload && isAbsOfflineCapable(book)
+                    ? handleOfflineDownload
+                    : undefined
+                }
+                offlinePremiumLabel={offlinePremiumLabel}
                 onMetadataValueClick={onMetadataValueClick}
               />
             )}

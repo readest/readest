@@ -40,6 +40,28 @@ export interface DictionaryLookupContext {
   bg?: string;
   /** Theme foreground color (e.g. `#1a1a1a`). Forwarded into shadow-scoped CSS. */
   fg?: string;
+  /**
+   * Play the entry's own pronunciation audio as soon as it renders, instead of
+   * waiting for a tap on the speaker (#6265). Only providers that ship audio
+   * inside the bundle (MDict + its companion `.mdd`) act on this.
+   */
+  autoPlayPronunciation?: boolean;
+  /**
+   * Where the looked-up text was selected in the book (#5544). Only the AI
+   * context dictionary reads it; absent for words reached by in-popup links.
+   */
+  selection?: DictionarySelectionContext;
+}
+
+export interface DictionarySelectionContext {
+  /** Text right before the selection (its paragraph and the previous one). */
+  before: string;
+  /** Text right after the selection (its paragraph and the next one). */
+  after: string;
+  bookTitle?: string;
+  bookAuthor?: string;
+  /** Language to explain the selection in: the book's translation target. */
+  targetLang?: string;
 }
 
 export type DictionaryLookupOutcome =
@@ -204,12 +226,26 @@ export interface DictionarySettings {
    * `font-size` rules and the MDict shadow `::part(dict-content)` rule alike.
    */
   fontScale?: number;
+  /**
+   * Play a looked-up word's pronunciation automatically instead of waiting for
+   * a tap on the speaker icon (#6265). Off by default. Only dictionaries that
+   * carry their own audio (MDict bundles with a companion `.mdd`) can honour
+   * it; nothing is spoken when the entry has no recording.
+   */
+  autoPlayPronunciation?: boolean;
+  /**
+   * Custom translator (OpenAI-compatible) the context dictionary asks
+   * (#5544). Unset or stale ids fall back to the first available one.
+   */
+  contextTranslatorId?: string;
 }
 
 /** Stable ids for the built-in providers. */
 export const BUILTIN_PROVIDER_IDS = {
   wiktionary: 'builtin:wiktionary',
   wikipedia: 'builtin:wikipedia',
+  /** AI explanation of the selection in its passage, via a custom LLM translator (#5544). */
+  context: 'builtin:context',
   /**
    * "Sentinel" id for the OS-native dictionary (macOS Dictionary.app via the
    * `dict://` URL scheme; iOS `UIReferenceLibraryViewController`; Android

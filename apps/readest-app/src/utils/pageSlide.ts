@@ -29,6 +29,12 @@ export class PageSlideRenderer {
   private edgeShadow: HTMLDivElement | null = null;
   private shadowRtl: boolean | null = null;
   private width = 0;
+  /** Push moves the incoming page beside this sheet, so it casts no shadow. */
+  private readonly withEdgeShadow: boolean;
+
+  constructor({ edgeShadow = true }: { edgeShadow?: boolean } = {}) {
+    this.withEdgeShadow = edgeShadow;
+  }
   // A prepared canvas no longer has its source bitmap. Once the browser loses
   // its 2D backing store, even a later context restoration cannot reconstruct
   // the outgoing page, so force the controller to recapture it.
@@ -74,21 +80,23 @@ export class PageSlideRenderer {
       pointerEvents: 'none',
     });
 
-    const edgeShadow = document.createElement('div');
-    edgeShadow.dataset['pageSlideShadow'] = '';
-    Object.assign(edgeShadow.style, {
-      position: 'absolute',
-      top: '0',
-      bottom: '0',
-      width: `${EDGE_SHADOW_WIDTH_PX}px`,
-      pointerEvents: 'none',
-    });
-
-    sheet.append(canvas, edgeShadow);
+    sheet.append(canvas);
+    if (this.withEdgeShadow) {
+      const edgeShadow = document.createElement('div');
+      edgeShadow.dataset['pageSlideShadow'] = '';
+      Object.assign(edgeShadow.style, {
+        position: 'absolute',
+        top: '0',
+        bottom: '0',
+        width: `${EDGE_SHADOW_WIDTH_PX}px`,
+        pointerEvents: 'none',
+      });
+      sheet.append(edgeShadow);
+      this.edgeShadow = edgeShadow;
+    }
     container.appendChild(sheet);
     this.canvas = canvas;
     this.sheet = sheet;
-    this.edgeShadow = edgeShadow;
     this.updateShadowDirection(false);
   }
 

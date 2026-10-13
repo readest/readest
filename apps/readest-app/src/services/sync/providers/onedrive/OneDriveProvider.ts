@@ -18,14 +18,7 @@ import {
 } from '@/services/sync/file/provider';
 import { tauriDownload, tauriUpload } from '@/utils/transfer';
 import type { ProgressHandler } from '@/utils/transfer';
-import {
-  childrenUrl,
-  contentUrl,
-  createChildUrl,
-  deleteItemUrl,
-  itemUrl,
-  uploadSessionUrl,
-} from './graphRest';
+import { childrenUrl, contentUrl, deleteItemUrl, itemUrl, uploadSessionUrl } from './graphRest';
 
 export interface OneDriveAuth {
   getAccessToken(): Promise<string>;
@@ -61,10 +54,8 @@ const MS_PER_SEC = 1000;
 
 /** Graph error codes that are transient even under a 403 (throttling). */
 const THROTTLE_CODES = new Set(['activityLimitReached', 'quotaLimitReached']);
-/** Graph error code that makes a folder-create idempotent (already exists). */
-const NAME_EXISTS_CODE = 'nameAlreadyExists';
 
-type OneDriveOperation = 'read' | 'head' | 'list' | 'write' | 'create folder' | 'delete';
+type OneDriveOperation = 'read' | 'head' | 'list' | 'write' | 'delete';
 
 interface GraphItem {
   name?: string;
@@ -130,15 +121,8 @@ const wrap = async <T>(fn: () => Promise<T>): Promise<T> => {
   }
 };
 
-const splitSegments = (path: string): string[] => path.split('/').filter((s) => s.length > 0);
 const joinAbs = (parent: string, name: string): string =>
   parent === '/' || parent === '' ? `/${name}` : `${parent}/${name}`;
-const parentOf = (path: string): string => {
-  const segs = splitSegments(path);
-  segs.pop();
-  return segs.length ? `/${segs.join('/')}` : '/';
-};
-const nameOf = (path: string): string => splitSegments(path).pop() ?? '';
 
 const toFileEntry = (parentPath: string, item: GraphItem): FileEntry => {
   const isDirectory = item.folder !== undefined;
@@ -224,9 +208,12 @@ class OneDriveProviderImpl {
     });
     await this.ensureOk(res, 'write', path);
   }
-  async ensureDir(paths: string[]): Promise<void> {
-    for (const path of paths) await this.createFolder(path);
-  }
+  /**
+   * No-op: PUT `:/content` and `:/createUploadSession` create any missing
+   * parent folders themselves, and Graph answers 400 invalidRequest to a
+   * folder-create POSTed to a `special/approot` children collection (#6427).
+   */
+  async ensureDir(_paths: string[]): Promise<void> {}
   async deleteDir(path: string): Promise<void> {
     const res = await this.authedFetch(deleteItemUrl(path), HTTP_DELETE);
     if (res.status === HTTP_NOT_FOUND) return;
@@ -307,24 +294,6 @@ class OneDriveProviderImpl {
     if (res.status === HTTP_NOT_FOUND) return null;
     await this.ensureOk(res, 'read', path);
     return res;
-  }
-
-  /** Create one folder (idempotent: 409 nameAlreadyExists is success). */
-  private async createFolder(path: string): Promise<void> {
-    const res = await this.authedFetch(createChildUrl(parentOf(path)), HTTP_POST, {
-      headers: { [CONTENT_TYPE_HEADER]: JSON_CONTENT_TYPE },
-      body: JSON.stringify({
-        name: nameOf(path),
-        folder: {},
-        '@microsoft.graph.conflictBehavior': 'fail',
-      }),
-    });
-    if (res.status === HTTP_CONFLICT) {
-      const code = await readGraphErrorCode(res);
-      if (code === NAME_EXISTS_CODE) return;
-      throw new GraphHttpError(res.status, code, `OneDrive create folder failed for ${path}`);
-    }
-    await this.ensureOk(res, 'create folder', path);
   }
 
   private async authedFetch(url: string, method: string, init?: RequestInit): Promise<Response> {

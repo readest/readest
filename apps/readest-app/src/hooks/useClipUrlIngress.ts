@@ -10,7 +10,7 @@ import { convertToEpubWithWorker } from '@/services/send/conversion/conversionWo
 import { clipPageWithSignInFallback, isClipCancelled } from '@/services/send/clipSignIn';
 import type { ConvertedBook } from '@/services/send/conversion/types';
 import { eventDispatcher } from '@/utils/event';
-import { parseAnnotationDeepLink } from '@/utils/deeplink';
+import { parseAnnotationDeepLink, parseDeviceLinkDeepLink } from '@/utils/deeplink';
 import { parseShareDeepLink } from '@/utils/share';
 import { useTranslation } from './useTranslation';
 
@@ -70,7 +70,8 @@ async function convertSharedHtml(url: string, htmlFile: string): Promise<Convert
  *
  * Filter rules — only act on URLs that are:
  *   - http(s) (not file://, content://, readest://, blob:, data:)
- *   - NOT an annotation deep link (those go to useOpenAnnotationLink)
+ *   - NOT an annotation deep link (those go to useOpenLaunchLinks)
+ *   - NOT a reader sign-in link (those go to useOpenDeviceLink)
  *
  * Failures surface as toasts. Successful clips show "Saving article…"
  * then "Saved to your library." once `ingestFile` completes.
@@ -118,6 +119,11 @@ export function useClipUrlIngress() {
         }
         if (options.groupId) ingested.groupId = options.groupId;
         if (options.groupName) ingested.groupName = options.groupName;
+        if (options.groupId || options.groupName) {
+          // Group membership merges on its own clock (#5911).
+          ingested.updatedAt = Date.now();
+          ingested.groupUpdatedAt = ingested.updatedAt;
+        }
         await useLibraryStore.getState().updateBooks(envConfig, [ingested]);
         eventDispatcher.dispatch('toast', {
           type: 'success',
@@ -182,13 +188,16 @@ export function useClipUrlIngress() {
       // to other consumers (or aren't shareable URLs).
       if (!/^https?:\/\//i.test(url)) return;
       // Annotation deep links can come over https (web.readest.com).
-      // Skip them — useOpenAnnotationLink owns that path.
+      // Skip them — useOpenLaunchLinks owns that path.
       if (parseAnnotationDeepLink(url)) return;
       // Share links (https://web.readest.com/s/{token}) also arrive over https.
       // Skip them — useOpenShareLink owns that path. Without this guard the
       // share landing URL is run through the article clipper instead of
       // importing the shared book.
       if (parseShareDeepLink(url)) return;
+      // Reader sign-in links (https://web.readest.com/link?code=…) open the
+      // /link page; useOpenDeviceLink owns that path.
+      if (parseDeviceLinkDeepLink(url)) return;
       void clipAndImport(url);
     };
 

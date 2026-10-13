@@ -1,5 +1,5 @@
 import { BookNote } from '@/types/book';
-import { FoliateView } from '@/types/view';
+import { FoliateView, NOTE_PREFIX } from '@/types/view';
 
 /**
  * Synthetic-cfi marker. We embed it in the value/cfi of additional overlays
@@ -261,24 +261,29 @@ export function expandGlobalAnnotation(
       continue;
     }
 
-    const value = makeSyntheticValue(note, index, occ);
+    const synthetic = makeSyntheticValue(note, index, occ);
     occ += 1;
 
-    try {
-      // Drive the same draw pipeline foliate uses internally, but
-      // without going through `resolveNavigation(value)` (which would
-      // fail on our synthetic, non-CFI value).
-      const draw = (func: unknown, opts?: unknown) => overlayer.add(value, range, func, opts);
-      const annotationForDraw = { ...note, cfi, value };
-      const target = view as unknown as EventTarget;
-      target.dispatchEvent(
-        new CustomEvent('draw-annotation', {
-          detail: { draw, annotation: annotationForDraw, doc, range },
-        }),
-      );
-      added.push(value);
-    } catch (err) {
-      console.warn('Failed to add global annotation overlay', { note: note.id, err });
+    // A note rides along on every occurrence as a bubble (#6186), so it can
+    // be opened wherever the annotated name or term appears.
+    const values = note.note?.trim() ? [synthetic, `${NOTE_PREFIX}${synthetic}`] : [synthetic];
+    for (const value of values) {
+      try {
+        // Drive the same draw pipeline foliate uses internally, but
+        // without going through `resolveNavigation(value)` (which would
+        // fail on our synthetic, non-CFI value).
+        const draw = (func: unknown, opts?: unknown) => overlayer.add(value, range, func, opts);
+        const annotationForDraw = { ...note, cfi, value };
+        const target = view as unknown as EventTarget;
+        target.dispatchEvent(
+          new CustomEvent('draw-annotation', {
+            detail: { draw, annotation: annotationForDraw, doc, range },
+          }),
+        );
+        added.push(value);
+      } catch (err) {
+        console.warn('Failed to add global annotation overlay', { note: note.id, err });
+      }
     }
   }
 
@@ -333,8 +338,8 @@ function rangeNodePathHash(node: Node): string {
 }
 
 /**
- * Remove every synthetic overlay this note may have laid down across
- * currently-rendered sections. We hit the overlayer directly (same
+ * Remove every synthetic overlay (highlight and note bubble) this note may
+ * have laid down across currently-rendered sections. We hit the overlayer directly (same
  * reason as `expandGlobalAnnotation` — a synthetic `value` cannot
  * survive `resolveNavigation`). `overlayer.remove()` is a no-op for
  * unknown keys, so over-iterating up to `maxOccurrencesPerSection` is
@@ -361,6 +366,7 @@ export function removeGlobalAnnotationOverlays(
       const value = makeSyntheticValue(note, index, i);
       try {
         overlayer.remove(value);
+        overlayer.remove(`${NOTE_PREFIX}${value}`);
       } catch {
         // ignore — best-effort cleanup
       }

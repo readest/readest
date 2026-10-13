@@ -6,7 +6,7 @@ import { useAppRouter } from '@/hooks/useAppRouter';
 const transitionRouter = { push: vi.fn(), replace: vi.fn(), back: vi.fn() };
 const plainRouter = { push: vi.fn(), replace: vi.fn(), back: vi.fn() };
 
-vi.mock('next-view-transitions', () => ({
+vi.mock('@/components/ViewTransitions', () => ({
   useTransitionRouter: () => transitionRouter,
 }));
 vi.mock('next/navigation', () => ({

@@ -2,17 +2,23 @@ import clsx from 'clsx';
 import React from 'react';
 import { useThemeStore } from '@/store/themeStore';
 
+// One width on every screen (#6599): a breakpoint width made the ribbon look
+// different on a foldable's cover and inner displays.
+export const RIBBON_WIDTH = 24;
+
 const Ribbon: React.FC = () => {
-  const { safeAreaInsets } = useThemeStore();
+  const { safeAreaInsets, isIPhoneDuo } = useThemeStore();
 
   // z-20 keeps the ribbon above the scrolled-mode `notch-area` mask (z-10 in
   // SectionInfo) so its upper safe-area half isn't covered.
   return (
     <div
-      className={clsx(
-        'ribbon pointer-events-none absolute right-0 top-0 z-20 flex w-8 justify-center sm:w-6',
-      )}
+      className={clsx('ribbon pointer-events-none absolute right-0 top-0 z-20 flex justify-center')}
       style={{
+        // Keep clear of the Duo cover display's camera cutout, reported as a
+        // right inset (#6307).
+        ...(isIPhoneDuo ? { right: `${safeAreaInsets?.right || 0}px` } : {}),
+        width: `${RIBBON_WIDTH}px`,
         height: `${(safeAreaInsets?.top || 0) + 44}px`,
       }}
     >

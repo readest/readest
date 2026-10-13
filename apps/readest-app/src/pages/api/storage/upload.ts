@@ -90,13 +90,27 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ error: 'Missing file info' });
     }
 
-    const { usage, quota } = getStoragePlanData(token);
+    // `quota` is an entitlement — it only moves on purchase or refund, so
+    // reading it from the token is fine. `usage` is a live counter: the claim
+    // is frozen when the access token is minted, so authorising against it
+    // measured every upload in that window against the same stale baseline
+    // and let an account keep uploading past its quota until the token
+    // refreshed. Read the counter the trigger maintains instead, and fall
+    // back to the claim rather than to zero if the row can't be read.
+    const { usage: claimUsage, quota } = getStoragePlanData(token);
+    const supabase = createSupabaseAdminClient();
+    const { data: planRow } = await supabase
+      .from('plans')
+      .select('storage_usage_bytes')
+      .eq('id', user.id)
+      .single();
+    const usage = planRow?.storage_usage_bytes ?? claimUsage;
+
     if (usage + fileSize > quota + STORAGE_QUOTA_GRACE_BYTES) {
       return res.status(403).json({ error: 'Insufficient storage quota', usage });
     }
 
     const fileKey = `${user.id}/${fileName}`;
-    const supabase = createSupabaseAdminClient();
     const { data: existingRecord, error: fetchError } = await supabase
       .from('files')
       .select('*')

@@ -47,6 +47,7 @@
       ';color:' +
       BG +
       ';font-weight:600;cursor:pointer;}' +
+      '.clip{min-height:32px;}' +
       '.sep{width:1px;height:20px;background:rgba(128,128,128,.35);margin:0 2px;}'
     );
   }
@@ -92,6 +93,12 @@
     refs.reload = button('reload', '↻', 'Reload', function () {
       location.reload();
     });
+    refs.clip = el('button', 'open clip', label('clipPage', 'Clip Page'));
+    refs.clip.type = 'button';
+    refs.clip.onclick = function () {
+      refs.clip.disabled = true;
+      navigate('capture');
+    };
     refs.status = el('span', 'status');
     refs.statusText = el('span', 'status-text');
     refs.open = el('button', 'open', label('open', 'Open'));
@@ -106,6 +113,7 @@
     pill.appendChild(refs.back);
     pill.appendChild(refs.forward);
     pill.appendChild(refs.reload);
+    pill.appendChild(refs.clip);
     pill.appendChild(refs.status);
     pill.appendChild(el('span', 'sep'));
     pill.appendChild(refs.close);
@@ -124,6 +132,7 @@
   function setStatus(status) {
     install();
     if (!refs.status) return;
+    if (status.state === 'failed') refs.clip.disabled = false;
     if (state.hideTimer) {
       clearTimeout(state.hideTimer);
       state.hideTimer = null;

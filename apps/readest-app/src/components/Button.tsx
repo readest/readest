@@ -20,7 +20,7 @@ const Button: React.FC<ButtonProps> = ({ icon, onClick, disabled = false, label,
         // page (#5401), so every one of these carries the halo.
         'touch-target btn btn-ghost h-8 min-h-8 w-8 p-0',
         appService?.isMobileApp && 'hover:bg-transparent',
-        disabled && 'cursor-default !bg-transparent opacity-50',
+        disabled && 'cursor-default bg-transparent! opacity-50',
         className,
       )}
       title={label}

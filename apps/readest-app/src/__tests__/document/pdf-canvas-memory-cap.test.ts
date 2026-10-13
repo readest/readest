@@ -237,3 +237,43 @@ describe('PDF raster sharpness on desktop (#5251)', () => {
     expect(renderDpr).toBeLessThan(dpr);
   });
 });
+
+describe('PDF image decode cap (#6521)', () => {
+  // Scanned scores ship 1-bit pages of ~9000x12000 px. pdf.js turns each into a
+  // full-size RGBA bitmap (~430 MB) that iOS keeps in the WebKit GPU process,
+  // which jetsam kills past ~300 MB; after three kills WebKit tears the page down
+  // and the reader reloads to the library. pdf.js downscales images above
+  // `canvasMaxAreaInBytes`, so mobile WebViews must pass a cap.
+  const getDocumentOptions = async () => {
+    const { pdfjsLib } = globalThis as unknown as {
+      pdfjsLib: { getDocument: { mock: { calls: [Record<string, unknown>][] } } };
+    };
+    const { calls } = pdfjsLib.getDocument.mock;
+    return calls[calls.length - 1]![0];
+  };
+
+  it('caps decoded image area on a mobile WebView', async () => {
+    await renderPageCanvas(2, 1, { userAgent: IPAD_UA, maxTouchPoints: 5 });
+    const { canvasMaxAreaInBytes, useWorkerFetch } = await getDocumentOptions();
+    expect(canvasMaxAreaInBytes).toBeGreaterThan(0);
+    // Well under one 9000x12000 page decoded to RGBA.
+    expect(canvasMaxAreaInBytes).toBeLessThan(9000 * 12000 * 4);
+    // The page fetches decoder data: a blob: worker can't reach tauri:// on iOS.
+    expect(useWorkerFetch).toBe(false);
+  });
+
+  it('leaves pdf.js defaults alone on desktop', async () => {
+    await renderPageCanvas(2, 1);
+    const { canvasMaxAreaInBytes, useWorkerFetch } = await getDocumentOptions();
+    expect(canvasMaxAreaInBytes).toBeUndefined();
+    expect(useWorkerFetch).toBeUndefined();
+  });
+
+  it('passes absolute decoder URLs, which a blob: worker can still resolve', async () => {
+    await renderPageCanvas(2, 1, { userAgent: IPAD_UA, maxTouchPoints: 5 });
+    const { wasmUrl, cMapUrl, standardFontDataUrl } = await getDocumentOptions();
+    for (const url of [wasmUrl, cMapUrl, standardFontDataUrl]) {
+      expect(String(url)).toMatch(/^[a-z]+:\/\/[^/]+\/vendor\/pdfjs\//);
+    }
+  });
+});

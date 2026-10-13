@@ -5,7 +5,6 @@ import { useReaderStore } from '@/store/readerStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useTTSControl } from '@/app/reader/hooks/useTTSControl';
 import { useTTSDownloads } from '@/app/reader/hooks/useTTSDownloads';
-import { useBookProgress } from '@/store/readerProgressStore';
 import { Insets } from '@/types/misc';
 import { eventDispatcher } from '@/utils/event';
 import TTSMiniPlayer from './TTSMiniPlayer';
@@ -32,8 +31,13 @@ const TTSControl: React.FC<TTSControlProps> = ({ bookKey, gridInsets }) => {
     onRequestHidePanel: () => setShowPlayerSheet(false),
   });
 
-  const downloads = useTTSDownloads(bookKey, tts.getController, showPlayerSheet);
-  const activeSectionIndex = useBookProgress(bookKey)?.index ?? null;
+  const downloads = useTTSDownloads(
+    bookKey,
+    tts.getController,
+    showPlayerSheet,
+    tts.ttsClientsInited,
+  );
+  const activeSectionIndex = tts.ttsSectionIndex;
 
   const viewSettings = getViewSettings(bookKey);
   const isEink = viewSettings?.isEink ?? false;
@@ -41,7 +45,13 @@ const TTSControl: React.FC<TTSControlProps> = ({ bookKey, gridInsets }) => {
   const hasTimeline = tts.ttsClientsInited && tts.handleSupportsPlaybackInfo();
   const audioTransport = tts.ttsClientsInited && tts.audioTransport;
   const miniPlayerMounted = tts.showIndicator && !showPlayerSheet;
-  const miniPlayerVisible = useMiniPlayerAutoHide(bookKey, playerStyle, miniPlayerMounted);
+  const buffering = !tts.ttsClientsInited || tts.buffering;
+  const miniPlayerVisible = useMiniPlayerAutoHide(
+    bookKey,
+    playerStyle,
+    miniPlayerMounted,
+    buffering,
+  );
 
   useEffect(() => {
     if (tts.showBackToCurrentTTSLocation) {
@@ -62,10 +72,9 @@ const TTSControl: React.FC<TTSControlProps> = ({ bookKey, gridInsets }) => {
     }
   }, [tts.showBackToCurrentTTSLocation]);
 
+  // The full player opens whenever the mini player shows, even while the
+  // clients initialize: it fills in its voices once they are ready.
   const handleExpand = () => {
-    // The mini player mounts as soon as the session starts; the full sheet
-    // needs initialized clients (voices, timeline), so ignore taps until then.
-    if (!tts.ttsClientsInited) return;
     tts.refreshTtsLang();
     setShowPlayerSheet(true);
   };
@@ -106,6 +115,7 @@ const TTSControl: React.FC<TTSControlProps> = ({ bookKey, gridInsets }) => {
         <TTSMiniPlayer
           bookKey={bookKey}
           isPlaying={tts.isPlaying}
+          buffering={buffering}
           isEink={isEink}
           visible={miniPlayerVisible}
           hasTimeline={hasTimeline}
@@ -121,10 +131,11 @@ const TTSControl: React.FC<TTSControlProps> = ({ bookKey, gridInsets }) => {
           onGetPlaybackInfo={tts.handleGetPlaybackInfo}
         />
       )}
-      {tts.ttsClientsInited && showPlayerSheet && (
+      {showPlayerSheet && (
         <TTSPlayerSheet
           bookKey={bookKey}
           isOpen={showPlayerSheet}
+          clientsReady={tts.ttsClientsInited}
           ttsLang={tts.ttsLang}
           isPlaying={tts.isPlaying}
           hasTimeline={hasTimeline}
@@ -136,6 +147,9 @@ const TTSControl: React.FC<TTSControlProps> = ({ bookKey, gridInsets }) => {
           onTogglePlay={tts.handleTogglePlay}
           onBackward={tts.handleBackward}
           onForward={tts.handleForward}
+          loopState={tts.loopState}
+          onToggleLoop={tts.handleToggleLoop}
+          onGetLyricLoopRange={tts.handleGetLyricLoopRange}
           onSetRate={tts.handleSetRate}
           onGetVoices={tts.handleGetVoices}
           onSetVoice={tts.handleSetVoice}
@@ -144,6 +158,12 @@ const TTSControl: React.FC<TTSControlProps> = ({ bookKey, gridInsets }) => {
           onSeek={tts.handleSeekTo}
           onSeekPreview={tts.handleSeekPreview}
           onGetPlaybackInfo={tts.handleGetPlaybackInfo}
+          supportsLyrics={tts.supportsLyrics}
+          buffering={tts.buffering}
+          onGetLyrics={tts.handleGetLyrics}
+          onGetActiveIndex={tts.handleGetLyricActiveIndex}
+          onGetLyricPage={tts.handleGetLyricPage}
+          onPlayFromLyric={tts.handlePlayFromLyric}
           downloads={downloads}
           activeSectionIndex={activeSectionIndex}
         />

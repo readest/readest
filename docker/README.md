@@ -9,8 +9,8 @@
 | **kong**        | `kong:2.8.1`                | api gateway routing requests to supabase services |
 | **auth**        | `supabase/gotrue:v2.185.0`  | auth service (email, JWT)                         |
 | **rest**        | `postgrest/postgrest:v14.3` | psql rest api                                     |
-| **minio**       | `minio/minio`               | s3 storage                                        |
-| **minio-setup** | `minio/mc`                  | helper container to create s3 buckets             |
+| **minio**       | `quay.io/minio/minio`       | s3 storage                                        |
+| **minio-setup** | `quay.io/minio/mc`          | helper container to create s3 buckets             |
 
 ### Exposed ports
 
@@ -50,8 +50,15 @@ docker compose up -d
 ```
 
 this pulls `${READEST_IMAGE}` (default: `ghcr.io/readest/readest:latest`) instead of building the client locally.
-the web client now reads `SUPABASE_PUBLIC_URL`, `SUPABASE_ANON_KEY`, `API_BASE_URL`, `OBJECT_STORAGE_TYPE`, `STORAGE_FIXED_QUOTA`, and `TRANSLATION_FIXED_QUOTA` from runtime
+the web client now reads `SUPABASE_PUBLIC_URL`, `SUPABASE_ANON_KEY`, `API_BASE_URL`, `OBJECT_STORAGE_TYPE`, `SELF_HOSTED`, `STORAGE_FIXED_QUOTA`, and `TRANSLATION_FIXED_QUOTA` from runtime
 container env, so custom self-hosted values work with pulled images.
+
+`SELF_HOSTED` unlocks every premium feature — third-party cloud sync (WebDAV,
+Google Drive, S3, OneDrive), offline Read Aloud downloads, Send to Readest —
+with or without a signed-in user. the image defaults it to `true`, so a pulled
+image is unlocked even if your `compose.yaml` predates the variable. set
+`SELF_HOSTED=false` in `docker/.env` only if you run a hosted service that sells
+the plans.
 
 if you prefer Docker Hub, set `READEST_IMAGE` in `docker/.env`, for example:
 

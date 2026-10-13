@@ -7,6 +7,7 @@ import {
   VerifyPurchaseParams,
 } from '@/libs/payment/iap/google/verifier';
 import { processPurchaseData, VerifiedPurchase } from '@/libs/payment/iap/google/server';
+import { isConsumablePurchase } from '@/libs/payment/iap/utils';
 import { IAPError } from '@/libs/payment/iap/types';
 
 const iapVerificationSchema = z.object({
@@ -65,15 +66,29 @@ export async function POST(request: Request) {
     try {
       purchase = await processPurchaseData(user, verifyParams, verificationResult);
       if (verificationResult.purchaseType === 'product') {
-        // One-time products (storage add-ons) are consumables: consuming
-        // (which implicitly acknowledges) lets the user repurchase the SKU.
         const productData = verificationResult.purchaseData as ProductPurchase;
-        if (productData.purchaseState === 0 && productData.consumptionState === 0) {
-          try {
-            await googleIAPVerifier.consumeProductPurchase(verifyParams);
-            purchase.acknowledgementState = 1;
-          } catch (consumeError) {
-            console.error('Failed to consume purchase:', consumeError);
+        if (productData.purchaseState === 0) {
+          if (isConsumablePurchase(productId)) {
+            // Storage add-ons stack, so consuming (which implicitly
+            // acknowledges) is what lets the SKU be bought again.
+            if (productData.consumptionState === 0) {
+              try {
+                await googleIAPVerifier.consumeProductPurchase(verifyParams);
+                purchase.acknowledgementState = 1;
+              } catch (consumeError) {
+                console.error('Failed to consume purchase:', consumeError);
+              }
+            }
+          } else if (productData.acknowledgementState === 0) {
+            // A permanent unlock must not be consumed, or it could be bought
+            // twice. It still has to be acknowledged: Play auto-refunds an
+            // unacknowledged purchase after three days.
+            try {
+              await googleIAPVerifier.acknowledgePurchase(verifyParams);
+              purchase.acknowledgementState = 1;
+            } catch (ackError) {
+              console.error('Failed to acknowledge purchase:', ackError);
+            }
           }
         }
       } else if (verificationResult.purchaseData?.acknowledgementState === 0) {

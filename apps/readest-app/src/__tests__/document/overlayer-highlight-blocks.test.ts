@@ -127,6 +127,43 @@ describe('Overlayer rect splitting across block types', () => {
     }
   });
 
+  it('only examines the nodes around the range in a flat document', () => {
+    // A single-file book, or a chunk of one (foliate-js section-chunks.js):
+    // thousands of blocks right under <body>. A sentence range that ends
+    // before the next block has <body> as its common ancestor, and comparing
+    // a node with a range costs as much as the node's index among its
+    // siblings, so examining every child of <body> is quadratic.
+    const blocks = 2000;
+    document.body.innerHTML = Array.from(
+      { length: blocks },
+      (_, i) => `<p id="b${i}">Block ${i}.</p>`,
+    ).join('');
+    const range = document.createRange();
+    range.setStart(textNode('b100'), 0);
+    range.setEndBefore(byId('b101'));
+    expect(range.commonAncestorContainer).toBe(document.body);
+
+    let compared = 0;
+    const proto = Range.prototype as unknown as Record<string, (...args: unknown[]) => unknown>;
+    const originals = ['intersectsNode', 'comparePoint'].map((name) => {
+      const orig = proto[name]!;
+      proto[name] = function (this: Range, ...args: unknown[]) {
+        compared++;
+        return orig.apply(this, args);
+      };
+      return [name, orig] as const;
+    });
+    try {
+      const { draw } = drawSpy();
+      new Overlayer(document).add('tts', range, draw);
+    } finally {
+      for (const [name, orig] of originals) proto[name] = orig;
+    }
+
+    expect(covered).toEqual(['Block 100.']);
+    expect(compared).toBeLessThan(20);
+  });
+
   it('does not double-draw text of paragraphs nested inside list items', () => {
     document.body.innerHTML = `
       <section>

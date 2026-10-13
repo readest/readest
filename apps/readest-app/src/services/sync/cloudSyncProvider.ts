@@ -99,6 +99,20 @@ export const setCachedUserPlan = (plan: UserPlan | undefined): void => {
 
 export const getCachedUserPlan = (): UserPlan => cachedUserPlan;
 
+/**
+ * Cached alongside the plan for the same reason: premium access is now the
+ * plan OR an outright Full Customization purchase, and a storage-only buyer
+ * reports the `purchase` plan without being entitled. Defaults to false, the
+ * restrictive side.
+ */
+let cachedCustomizationPurchased = false;
+
+export const setCachedCustomizationPurchased = (purchased: boolean | undefined): void => {
+  cachedCustomizationPurchased = purchased ?? false;
+};
+
+export const getCachedCustomizationPurchased = (): boolean => cachedCustomizationPurchased;
+
 export interface CloudSyncGate {
   /** Readest Cloud syncs the library channels (rows, progress, notes, files). */
   readest: boolean;
@@ -116,12 +130,13 @@ export interface CloudSyncGate {
 export const resolveCloudSyncGate = (
   settings: SystemSettings | null | undefined,
   plan: UserPlan = cachedUserPlan,
+  customizationPurchased: boolean = cachedCustomizationPurchased,
 ): CloudSyncGate => {
   const backends = getEnabledFileSyncBackends(settings);
   return {
     readest: isReadestCloudEnabled(settings),
     backends,
-    paused: backends.length > 0 && !isCloudSyncAllowed(plan),
+    paused: backends.length > 0 && !isCloudSyncAllowed(plan, customizationPurchased),
   };
 };
 

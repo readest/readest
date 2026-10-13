@@ -5,7 +5,9 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import WindowButtons from '@/components/WindowButtons';
 
 const startDragging = vi.fn().mockResolvedValue(undefined);
+const startPointerWindowMove = vi.fn().mockResolvedValue(undefined);
 let hasWindowBar = false;
+let pointerWindowControls = false;
 
 vi.mock('@/context/EnvContext', () => ({
   useEnv: () => ({ appService: { hasWindowBar } }),
@@ -17,6 +19,11 @@ vi.mock('@/hooks/useTranslation', () => ({
 
 vi.mock('@/services/environment', () => ({
   isTauriAppPlatform: () => true,
+  needsPointerWindowControls: () => pointerWindowControls,
+}));
+
+vi.mock('@/utils/windowPointerDrag', () => ({
+  startPointerWindowMove: (e: MouseEvent) => startPointerWindowMove(e),
 }));
 
 vi.mock('@tauri-apps/api/window', () => ({
@@ -73,5 +80,20 @@ describe('WindowButtons', () => {
     });
 
     expect(startDragging).toHaveBeenCalledOnce();
+  });
+
+  it('drives the drag from pointer events where the runtime cannot (Linux CEF)', async () => {
+    hasWindowBar = true;
+    pointerWindowControls = true;
+    startDragging.mockClear();
+    render(<WindowButtonsHarness />);
+
+    await act(async () => {
+      fireEvent.mouseDown(screen.getByTestId('header'), { buttons: 1, detail: 1 });
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+
+    expect(startPointerWindowMove).toHaveBeenCalledOnce();
+    expect(startDragging).not.toHaveBeenCalled();
   });
 });

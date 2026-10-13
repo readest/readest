@@ -1,65 +1,72 @@
+import clsx from 'clsx';
 import { useTranslation } from '@/hooks/useTranslation';
-import { PlanDetails } from '../utils/plan';
+import { PlanType } from '@/types/quota';
+import { PlanAccent, PlanDetails } from '../utils/plan';
 
 interface PlanActionButtonProps {
   plan: PlanDetails;
+  accent: PlanAccent;
   isUserPlan: boolean;
-  comingSoon?: boolean;
+  recommended?: boolean;
   upgradable?: boolean;
-  onSubscribe: (priceId?: string) => void;
-  onSelectPlan: (index: number) => void;
+  canSwitchInterval?: boolean;
+  onSubscribe: (priceId?: string, planType?: PlanType) => void;
 }
 
 const PlanActionButton: React.FC<PlanActionButtonProps> = ({
   plan,
+  accent,
   isUserPlan,
-  comingSoon,
+  recommended,
   upgradable,
+  canSwitchInterval,
   onSubscribe,
-  onSelectPlan,
 }) => {
   const _ = useTranslation();
 
   if (upgradable && plan.plan !== 'free' && !isUserPlan) {
-    if (comingSoon) {
-      return (
-        <button
-          disabled
-          className='w-full cursor-default rounded-lg bg-gray-200 px-6 py-3 font-semibold text-gray-500'
-        >
-          {_('Coming Soon')}
-        </button>
-      );
-    }
     return (
       <button
         onClick={() => onSubscribe(plan.productId)}
-        className='w-full rounded-lg bg-blue-600 px-6 py-3 font-semibold text-white transition-colors hover:bg-blue-700'
+        className={clsx(
+          'btn w-full',
+          // btn-primary and btn-contrast collapse to the same solid fill under
+          // [data-eink], so the secondary tiers use a plain bordered button —
+          // the recommendation stays legible on monochrome screens too.
+          recommended ? 'btn-primary' : 'eink-bordered',
+          accent.cta,
+        )}
       >
         {_('Upgrade to {{plan}}', { plan: _(plan.name) })}
       </button>
     );
   }
 
-  if (plan.plan === 'free' && isUserPlan) {
-    return (
-      <button
-        onClick={() => onSelectPlan(1)}
-        className='w-full rounded-lg bg-blue-600 px-6 py-3 font-semibold text-white transition-colors hover:bg-blue-700'
-      >
-        {_('Upgrade to Plus or Pro')}
-      </button>
-    );
-  }
-
   if (isUserPlan) {
     return (
-      <button
-        disabled
-        className='w-full cursor-default rounded-lg bg-green-100 px-6 py-3 font-semibold text-green-700'
-      >
-        {_('Current Plan')}
-      </button>
+      <div className='flex flex-col gap-2'>
+        {/* Not a <button disabled>: daisyUI washes disabled buttons out to a
+            near-invisible grey. This is a status chip, so it keeps the tier's
+            own colour and the button's geometry. */}
+        <div
+          aria-disabled='true'
+          className={clsx('btn eink-bordered pointer-events-none w-full', accent.current)}
+        >
+          {_('Current Plan')}
+        </div>
+        {/* The account's billing interval isn't carried on the session token, so
+            this stays neutrally worded rather than claiming which one they are
+            on. It routes to the Stripe portal, which swaps the subscription in
+            place instead of stacking a second one. */}
+        {canSwitchInterval && plan.plan !== 'free' && plan.productId && (
+          <button
+            onClick={() => onSubscribe(plan.productId)}
+            className='btn btn-ghost btn-sm text-base-content/70 hover:text-base-content w-full font-normal'
+          >
+            {_('Change billing period')}
+          </button>
+        )}
+      </div>
     );
   }
 

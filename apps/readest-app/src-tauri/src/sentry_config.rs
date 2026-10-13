@@ -114,8 +114,9 @@ pub fn is_mobi_cover_panic_frame(function: &str) -> bool {
     function.contains("mobi_parser::extract_cover")
 }
 
-/// The WebView (engine, major-version), set once at startup when the app reports
-/// its User-Agent. Stored globally so `before_send` can tag every event — the
+/// The WebView engine + version, set once at startup — the version prefers the
+/// runtime's own query and falls back to the major parsed from the User-Agent.
+/// Stored globally so `before_send` can tag every event — the
 /// browser context integration doesn't run for events forwarded from the webview.
 static WEBVIEW_INFO: std::sync::OnceLock<(String, String)> = std::sync::OnceLock::new();
 

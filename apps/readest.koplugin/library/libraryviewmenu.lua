@@ -114,11 +114,18 @@ function M.show(opts)
 
             -- Actions
             { { text = _("Actions"), enabled = false } },
+            { { text = _("Sync now"), callback = opts.on_sync } },
             {
                 {
                     text = _("Download all books"),
                     callback = function()
                         require("library.librarywidget").downloadAll()
+                    end,
+                },
+                {
+                    text = _("Download progress"),
+                    callback = function()
+                        require("library.downloadqueue").show()
                     end,
                 },
             },

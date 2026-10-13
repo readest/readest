@@ -260,13 +260,36 @@ describe('Vertical-rl pagination (browser)', () => {
     expect(paginator.page).toBe(page);
   });
 
-  it('still pages forward on the legacy upward swipe for vertical books', async () => {
+  it.each([
+    false,
+    true,
+  ])('reserves vertical swipes for toolbars (animated=%s)', async (animated) => {
     await setup(verticalBook);
+    if (animated) paginator.setAttribute('animated', '');
+    await paginator.next();
     const page = paginator.page;
-    // Finger moves up: vy/dy positive.
-    paginator.snap(0, 1.2, 0, 150, 120);
-    await waitForPage(paginator, page + 1);
-    expect(paginator.page).toBe(page + 1);
+    for (const direction of [-1, 1]) {
+      paginator.snap(0, direction * 1.2, 0, direction * 150, 120);
+      await wait(400);
+      expect(paginator.page).toBe(page);
+    }
+  });
+
+  it('settles a Push drag that becomes a vertical toolbar swipe with a sideways lift', async () => {
+    await setup(verticalBook);
+    paginator.setAttribute('animated', '');
+    const page = paginator.page;
+    fireTouch('touchstart', 400, 450);
+    fireTouch('touchmove', 430, 450);
+    await wait(16);
+    expect(viewTransform()?.m41 ?? 0).toBeGreaterThan(0);
+    fireTouch('touchmove', 430, 250);
+    await wait(16);
+    fireTouch('touchmove', 450, 250);
+    fireTouch('touchend', 450, 250);
+    await wait(500);
+    expect(paginator.page).toBe(page);
+    expect(viewTransform()?.m41 ?? 0).toBe(0);
   });
 
   it('keeps leftward-swipe-to-advance for horizontal ltr books', async () => {

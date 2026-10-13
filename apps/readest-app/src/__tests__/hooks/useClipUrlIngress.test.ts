@@ -93,6 +93,16 @@ describe('useClipUrlIngress deep-link routing', () => {
     expect(invokeMock).not.toHaveBeenCalled();
   });
 
+  it('does NOT run the article clipper on reader sign-in links', async () => {
+    renderHook(() => useClipUrlIngress());
+    await eventDispatcher.dispatch('app-incoming-url', {
+      urls: ['https://web.readest.com/link?code=RQGF-WDCF'],
+    });
+    await Promise.resolve();
+    // Sign-in links belong to useOpenDeviceLink, which opens the /link page.
+    expect(invokeMock).not.toHaveBeenCalled();
+  });
+
   it('still clips ordinary article URLs', async () => {
     renderHook(() => useClipUrlIngress());
     await eventDispatcher.dispatch('app-incoming-url', {

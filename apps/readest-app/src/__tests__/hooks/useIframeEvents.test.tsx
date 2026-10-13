@@ -19,11 +19,19 @@ vi.mock('@/utils/event', () => ({
 
 import { useMouseEvent } from '@/app/reader/hooks/useIframeEvents';
 
-function dispatchWheelMessage(bookKey: string, deltaY = 100) {
+function dispatchWheelMessage(bookKey: string, deltaY = 100, nativeScrollY = false) {
   // useMouseEvent listens on `message`, not `window.postMessage` directly,
   // so we dispatch a MessageEvent manually for synchronous delivery.
   const event = new MessageEvent('message', {
-    data: { bookKey, type: 'iframe-wheel', deltaY, deltaX: 0, deltaMode: 0, ctrlKey: false },
+    data: {
+      bookKey,
+      type: 'iframe-wheel',
+      deltaY,
+      deltaX: 0,
+      deltaMode: 0,
+      ctrlKey: false,
+      nativeScrollY,
+    },
   });
   window.dispatchEvent(event);
 }
@@ -83,6 +91,38 @@ describe('useMouseEvent wheel handling', () => {
     // they must not turn a page.
     dispatchWheelMessage('book-1', 3);
     dispatchWheelMessage('book-1', 4);
+
+    expect(handler).not.toHaveBeenCalled();
+  });
+
+  test('a wheel the page scrolls natively does not flip (#6552)', () => {
+    const handler = vi.fn();
+
+    function Wrapper() {
+      useMouseEvent('book-1', handler as unknown as Parameters<typeof useMouseEvent>[1]);
+      return null;
+    }
+
+    render(<Wrapper />);
+    dispatchWheelMessage('book-1', 120, true);
+
+    expect(handler).not.toHaveBeenCalled();
+  });
+
+  test('a gesture that scrolled the page to its edge does not flip on reaching it (#6552)', () => {
+    const handler = vi.fn();
+
+    function Wrapper() {
+      useMouseEvent('book-1', handler as unknown as Parameters<typeof useMouseEvent>[1]);
+      return null;
+    }
+
+    render(<Wrapper />);
+    // The first tick scrolls the page to its bottom; the rest of the same
+    // gesture (or trackpad momentum) lands at the edge and must not turn it.
+    dispatchWheelMessage('book-1', 120, true);
+    dispatchWheelMessage('book-1', 120);
+    dispatchWheelMessage('book-1', 120);
 
     expect(handler).not.toHaveBeenCalled();
   });

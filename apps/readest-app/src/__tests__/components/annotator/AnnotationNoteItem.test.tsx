@@ -68,12 +68,15 @@ const makeBooknote = (overrides: Partial<BookNote> = {}): BookNote => ({
   ...overrides,
 });
 
+const onEdit = vi.fn();
+
 const renderItem = (note: BookNote = makeBooknote()) => {
   h.booknotes = [note];
   return render(
     <AnnotationNoteItem
       bookKey='test'
       note={note}
+      onEdit={onEdit}
       isVertical={false}
       popupHeight={120}
       onDismiss={() => {}}
@@ -106,36 +109,16 @@ describe('AnnotationNoteItem', () => {
     expect(h.setSideBarVisible).toHaveBeenCalledWith(true);
   });
 
-  it('clicking the edit icon enters edit mode without opening the sidebar', () => {
-    renderItem();
+  it('hands the note to the shared editor instead of editing in place', () => {
+    const note = makeBooknote();
+    renderItem(note);
 
     fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
 
-    const textbox = screen.getByRole('textbox') as HTMLTextAreaElement;
-    expect(textbox.value).toBe('Gryphon');
+    expect(onEdit).toHaveBeenCalledWith(note);
+    // The card stays as it is: the editor is the popup's job now, and the
+    // sidebar must not open underneath it.
+    expect(screen.queryByRole('textbox')).toBeNull();
     expect(h.setSideBarVisible).not.toHaveBeenCalled();
-  });
-
-  it('saving an edit persists the new note text', () => {
-    renderItem();
-
-    fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
-    fireEvent.change(screen.getByRole('textbox'), { target: { value: 'updated note' } });
-    fireEvent.click(screen.getByText('Save'));
-
-    expect(h.updateBooknotes).toHaveBeenCalledTimes(1);
-    expect((h.booknotes[0] as BookNote).note).toBe('updated note');
-    expect(h.saveConfig).toHaveBeenCalledTimes(1);
-  });
-
-  it('cancelling an edit discards the draft without persisting', () => {
-    renderItem();
-
-    fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
-    fireEvent.change(screen.getByRole('textbox'), { target: { value: 'discarded' } });
-    fireEvent.click(screen.getByText('Cancel'));
-
-    expect(h.updateBooknotes).not.toHaveBeenCalled();
-    screen.getByText('Gryphon');
   });
 });

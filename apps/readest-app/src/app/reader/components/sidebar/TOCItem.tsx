@@ -30,7 +30,21 @@ export interface FlatTOCItem {
   depth: number;
   index: number;
   isExpanded?: boolean;
+  // Owns pages whose thumbnails unfold beneath it (see computeTOCPageRanges).
+  hasPages?: boolean;
 }
+
+// A row of page thumbnails shown under an unfolded TOC item.
+export interface PageThumbnailsItem {
+  isPageThumbnails: true;
+  depth: number;
+  pages: number[];
+}
+
+export type TOCListItem = FlatTOCItem | PageThumbnailsItem;
+
+export const isPageThumbnailsItem = (item: TOCDisplayItem): item is PageThumbnailsItem =>
+  'isPageThumbnails' in item;
 
 // Synthetic row injected right under the active TOC item to surface the
 // current reading page (see buildTOCDisplayItems).
@@ -40,7 +54,7 @@ export interface CurrentPositionItem {
   page: number;
 }
 
-export type TOCDisplayItem = FlatTOCItem | CurrentPositionItem;
+export type TOCDisplayItem = TOCListItem | CurrentPositionItem;
 
 export const isCurrentPositionItem = (item: TOCDisplayItem): item is CurrentPositionItem =>
   'isCurrentPosition' in item;
@@ -50,20 +64,20 @@ export const isCurrentPositionItem = (item: TOCDisplayItem): item is CurrentPosi
 // section. The row sits one level deeper than the active item. Inserting it
 // *after* the active item leaves that item's index untouched, so the auto-scroll
 // logic in TOCView keeps targeting the right row.
-export const buildTOCDisplayItems = (
-  flatItems: FlatTOCItem[],
+export const buildTOCDisplayItems = <T extends TOCListItem>(
+  flatItems: T[],
   activeHref: string | null,
   currentPage: number | null | undefined,
-): TOCDisplayItem[] => {
+): (T | CurrentPositionItem)[] => {
   if (!activeHref || currentPage == null) return flatItems;
-  const activeIndex = flatItems.findIndex((f) => f.item.href === activeHref);
+  const activeIndex = flatItems.findIndex((f) => 'item' in f && f.item.href === activeHref);
   if (activeIndex === -1) return flatItems;
   const currentRow: CurrentPositionItem = {
     isCurrentPosition: true,
     depth: flatItems[activeIndex]!.depth + 1,
     page: currentPage,
   };
-  const result: TOCDisplayItem[] = flatItems.slice();
+  const result: (T | CurrentPositionItem)[] = flatItems.slice();
   result.splice(activeIndex + 1, 0, currentRow);
   return result;
 };
@@ -77,6 +91,7 @@ const TOCItemView = React.memo<{
   onItemClick: (item: TOCItem) => void;
 }>(({ flatItem, itemSize, isActive, onToggleExpand, onItemClick }) => {
   const { item, depth } = flatItem;
+  const expandable = !!item.subitems || !!flatItem.hasPages;
 
   const pageNumber = item.location
     ? item.location.current + 1
@@ -114,7 +129,7 @@ const TOCItemView = React.memo<{
       onKeyDown={item.href ? (e) => e.key === 'Enter' && handleClickItem(e) : undefined}
       aria-label={ariaLabel}
       aria-current={isActive ? 'page' : undefined}
-      aria-expanded={item.subitems ? (flatItem.isExpanded ? 'true' : 'false') : undefined}
+      aria-expanded={expandable ? (flatItem.isExpanded ? 'true' : 'false') : undefined}
       aria-selected={isActive ? 'true' : 'false'}
       data-href={item.href ? getContentMd5(item.href) : undefined}
       className={clsx(
@@ -125,7 +140,7 @@ const TOCItemView = React.memo<{
         paddingInlineStart: `${(depth + 1) * 12}px`,
       }}
     >
-      {item.subitems && (
+      {expandable && (
         <button
           onClick={handleToggleExpand}
           onKeyDown={(e) => {

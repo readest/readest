@@ -3,6 +3,7 @@ import clsx from 'clsx';
 import { MdGraphicEq } from 'react-icons/md';
 import { useTranslation } from '@/hooks/useTranslation';
 import { formatBytes } from '@/utils/book';
+import { DAILY_QUOTA_EXCEEDED } from '@/services/tts/providers/types';
 import DownloadBadge from './DownloadBadge';
 import type { UseTTSDownloadsResult } from '@/app/reader/hooks/useTTSDownloads';
 
@@ -113,7 +114,9 @@ const TTSChaptersView: React.FC<TTSChaptersViewProps> = ({
               : item?.status === 'pending'
                 ? _('Waiting…')
                 : item?.status === 'failed'
-                  ? _('Download failed')
+                  ? item.error === DAILY_QUOTA_EXCEEDED
+                    ? _('Quota Exceeded')
+                    : _('Download failed')
                   : status === 'complete'
                     ? _('Downloaded')
                     : status === 'partial'

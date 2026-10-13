@@ -1,6 +1,7 @@
 import { AppService } from '@/types/system';
 import { READEST_NODE_BASE_URL, READEST_WEB_BASE_URL } from './constants';
 import { getRuntimeConfig } from './runtimeConfig';
+import { getOSPlatform } from '@/utils/misc';
 
 declare global {
   interface Window {
@@ -19,6 +20,17 @@ export const getBaseUrl = () =>
   READEST_WEB_BASE_URL;
 export const getNodeBaseUrl = () =>
   process.env['NEXT_PUBLIC_NODE_BASE_URL'] ?? READEST_NODE_BASE_URL;
+
+/**
+ * Whether window move/resize has to be driven from JS with pointer events.
+ * Linux runs on CEF, where the mouse press is owned by Chromium's X
+ * connection: the runtime's `startDragging` (`_NET_WM_MOVERESIZE` from winit's
+ * connection) is refused by the window manager, and the undecorated window has
+ * no native resize borders either. Every other platform keeps the runtime's
+ * own drag.
+ */
+export const needsPointerWindowControls = () =>
+  isTauriAppPlatform() && typeof navigator !== 'undefined' && getOSPlatform() === 'linux';
 
 export const isMacPlatform = () =>
   typeof window !== 'undefined' && /Mac|iPod|iPhone|iPad/.test(navigator.platform);

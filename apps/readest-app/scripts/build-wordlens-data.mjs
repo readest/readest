@@ -605,17 +605,29 @@ export function extractXToEn(jsonlText, sourceCode) {
 
 // Merge an English-headword entry's target-language translations into the map.
 // Gathers sense-level translations then top-level ones; keeps t.code === target
-// with a t.word; value = `${word} (${roman})` when a roman field is present.
+// with a t.word. The `roman` transliteration is dropped: the hint is read by a
+// native speaker of the target language. A translation tagged as a regional
+// variety of that language ("Egyptian-Arabic", "Hijazi-Arabic" — Wiktionary
+// nests dialects under the language with the dialect as a tag) is skipped so
+// the gloss stays in the standard written language. A word that mixes Latin
+// letters into another script ("سِلْك m شُعَاع", "Hijazi Arabic وحش") is a
+// translation-template artifact — a gender marker, "or", "imperfective:", an
+// inline dialect label — and is skipped too; a pure-Latin target (vi, hu) never
+// trips this.
+const LATIN = /\p{Script=Latin}/u;
+const NON_LATIN_LETTER = /(?!\p{Script=Latin})\p{L}/u;
+const mixesScripts = (word) => LATIN.test(word) && NON_LATIN_LETTER.test(word);
+
 function mergeEnToXEntry(obj, targetCode, glossMap) {
   if (!obj || !obj.word) return;
   if (obj.lang_code !== 'en') return;
   const collected = [];
   const consider = (t) => {
     if (!t || t.code !== targetCode || !t.word) return;
+    if (t.lang && (t.tags ?? []).some((tag) => String(tag).endsWith(`-${t.lang}`))) return;
     const word = String(t.word).trim();
-    if (!word) return;
-    const value = t.roman ? `${word} (${String(t.roman).trim()})` : word;
-    if (!collected.includes(value)) collected.push(value);
+    if (!word || mixesScripts(word)) return;
+    if (!collected.includes(word)) collected.push(word);
   };
   const senses = Array.isArray(obj.senses) ? obj.senses : [];
   for (const sense of senses) {
@@ -633,6 +645,26 @@ function mergeEnToXEntry(obj, targetCode, glossMap) {
   glossMap.set(key, existing);
 }
 
+// Wiktionary files the odd editorial note where a translation belongs ("not
+// known in Arabic lands" under honesty's plant sense). It only reads as a gloss
+// in the wrong script, so once the map's dominant script is non-Latin, every
+// sense without a non-Latin letter is dropped (a headword left with none goes
+// too). A Latin-script target (vi, hu) is left as is — nothing to tell apart.
+export function dropOffScriptSenses(glossMap) {
+  let latin = 0;
+  let other = 0;
+  for (const senses of glossMap.values()) {
+    for (const s of senses) NON_LATIN_LETTER.test(s) ? other++ : latin++;
+  }
+  if (other <= latin) return glossMap;
+  for (const [key, senses] of glossMap) {
+    const kept = senses.filter((s) => NON_LATIN_LETTER.test(s));
+    if (kept.length) glossMap.set(key, kept);
+    else glossMap.delete(key);
+  }
+  return glossMap;
+}
+
 // en→X gloss map from in-memory JSONL text (used by tests). headword → words.
 export function extractEnToX(jsonlText, targetCode) {
   const glossMap = new Map();
@@ -646,7 +678,7 @@ export function extractEnToX(jsonlText, targetCode) {
     }
     mergeEnToXEntry(obj, targetCode, glossMap);
   }
-  return glossMap;
+  return dropOffScriptSenses(glossMap);
 }
 
 // WikDict (DBnary/Wiktionary, CC-BY-SA-3.0): rows from the `simple_translation`
@@ -734,7 +766,7 @@ export async function extractXToEnStream(path, sourceCode) {
 export async function extractEnToXStream(path, targetCode) {
   const glossMap = new Map();
   await streamJsonl(path, (obj) => mergeEnToXEntry(obj, targetCode, glossMap));
-  return glossMap;
+  return dropOffScriptSenses(glossMap);
 }
 
 // Assemble a pack in the GlossIndexData shape from a frequency list + gloss map.

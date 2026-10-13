@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useEnv } from '@/context/EnvContext';
-import type { PositionResolver } from '@/services/bookorbit/annotationExchange';
+import type { ChapterResolver, PositionResolver } from '@/services/bookorbit/annotationExchange';
 import { BookOrbitClient } from '@/services/bookorbit/BookOrbitClient';
 import { BookOrbitSyncStore } from '@/services/bookorbit/BookOrbitSyncStore';
-import { runBookOrbitNotesPass } from '@/services/bookorbit/notesPass';
+import { isBookOrbitPassEnabled, runBookOrbitNotesPass } from '@/services/bookorbit/notesPass';
 import { SYNC_NOTES_INTERVAL_SEC } from '@/services/constants';
+import { findTocItemBS } from '@/services/nav';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useSettingsStore } from '@/store/settingsStore';
@@ -17,9 +18,10 @@ import { XCFI, getCFIFromXPointer, getXPointerFromCFI } from '@/utils/xcfi';
 import { useWindowActiveChanged } from './useWindowActiveChanged';
 
 /**
- * Bidirectional highlight/bookmark sync with a BookOrbit server, mounted
- * beside useNotesSync. Positions are exchanged as KOReader xpointers, so
- * fixed-layout formats are skipped (same constraint as the koplugin path).
+ * Per-book BookOrbit pass, mounted beside useNotesSync: match-check (lists an
+ * unmatched book for manual linking), bidirectional highlight/bookmark sync
+ * and the reading-status push. Positions are exchanged as KOReader xpointers,
+ * so fixed-layout formats are skipped (same constraint as the koplugin path).
  */
 export const useBookOrbitNotesSync = (bookKey: string) => {
   const _ = useTranslation();
@@ -38,16 +40,7 @@ export const useBookOrbitNotesSync = (bookKey: string) => {
 
   const client = useMemo(() => {
     const bookorbit = settings.bookorbit;
-    if (
-      !bookorbit.enabled ||
-      !bookorbit.syncNotes ||
-      !bookorbit.serverUrl ||
-      !bookorbit.username ||
-      !bookorbit.userkey
-    ) {
-      return null;
-    }
-    return new BookOrbitClient(bookorbit);
+    return isBookOrbitPassEnabled(bookorbit) ? new BookOrbitClient(bookorbit) : null;
   }, [settings]);
 
   const populateXPointers = useCallback(
@@ -87,6 +80,18 @@ export const useBookOrbitNotesSync = (bookKey: string) => {
       return enriched;
     },
     [bookKey, getBookData, getView],
+  );
+
+  // Resolve a note's chapter label from the book's table of contents. The
+  // local note model stores no chapter, and BookOrbit files the annotation
+  // under the chapter that arrives on the wire, so it is resolved here.
+  const chapterForNote: ChapterResolver = useCallback(
+    (note: BookNote) => {
+      const bookDoc = getBookData(bookKey)?.bookDoc;
+      const toc = bookDoc?.toc ?? [];
+      return findTocItemBS(toc, note.cfi)?.label ?? null;
+    },
+    [bookKey, getBookData],
   );
 
   const resolvePosition: PositionResolver = useCallback(
@@ -174,7 +179,7 @@ export const useBookOrbitNotesSync = (bookKey: string) => {
     if (!client || !store) return;
     const { settings } = useSettingsStore.getState();
     const bookorbit = settings.bookorbit;
-    if (!bookorbit.enabled || !bookorbit.syncNotes) return;
+    if (!isBookOrbitPassEnabled(bookorbit)) return;
 
     const bookData = getBookData(bookKey);
     const book = bookData?.book;
@@ -199,14 +204,21 @@ export const useBookOrbitNotesSync = (bookKey: string) => {
         mergeNotes,
         resolvePosition,
         populateXPointers,
+        chapterForNote,
+        syncNotes: bookorbit.syncNotes,
         syncBookStates: bookorbit.syncBookStates,
         now: () => Date.now(),
         onUnmatched: () => {
           if (unmatchedHinted.current) return;
           unmatchedHinted.current = true;
-          eventDispatcher.dispatch('hint', {
-            bookKey,
-            message: _('Book not found in the BookOrbit library'),
+          // Until it is linked, BookOrbit rejects this book's progress and
+          // stats too, so this needs to be seen, not a 2-second header hint.
+          eventDispatcher.dispatch('toast', {
+            type: 'warning',
+            timeout: 8000,
+            message: _(
+              'Book not found in BookOrbit. Link it under Unmatched KOReader Books in BookOrbit to sync it.',
+            ),
           });
         },
       });
@@ -215,7 +227,17 @@ export const useBookOrbitNotesSync = (bookKey: string) => {
     } finally {
       passRunning.current = false;
     }
-  }, [bookKey, client, getBookData, getConfig, mergeNotes, resolvePosition, populateXPointers, _]);
+  }, [
+    bookKey,
+    client,
+    getBookData,
+    getConfig,
+    mergeNotes,
+    resolvePosition,
+    populateXPointers,
+    chapterForNote,
+    _,
+  ]);
 
   const runPassRef = useRef(runPass);
   useEffect(() => {

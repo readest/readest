@@ -1,4 +1,4 @@
-import type { ViewSettings } from '@/types/book';
+import type { ConvertChineseVariant, ViewSettings } from '@/types/book';
 import type { AppService } from '@/types/system';
 import type { ProgressHandler } from '@/utils/transfer';
 import { canTokenizeSource, getRankCutoff } from '@/services/wordlens/difficulty';
@@ -6,6 +6,7 @@ import { loadGlossIndex } from '@/services/wordlens/glossPacks';
 import { planGlosses } from '@/services/wordlens/planner';
 import { buildSectionTextModel, applyGlosses, clearGlosses } from '@/app/reader/utils/wordlensRuby';
 import { cutZh, isJiebaReady, initJieba } from '@/utils/jieba';
+import { initSimpleCC, runSimpleCC } from '@/utils/simplecc';
 
 /** Normalize a book language tag to its 2-letter base source code, or null. */
 export const toWordLensSource = (lang?: string | null): string | null => {
@@ -14,10 +15,26 @@ export const toWordLensSource = (lang?: string | null): string | null => {
   return base || null;
 };
 
+/**
+ * The en-zh pack stores Simplified glosses (ECDICT), and a Traditional hint
+ * (zh-TW / zh-HK / zh-MO / zh-Hant) resolves to that same pack by base code.
+ * Rather than ship a second pack per script, convert the glosses at render time
+ * with the bundled OpenCC tables: Taiwan gets its phrase table (软件 → 軟體),
+ * Hong Kong / Macau the HK table, plain zh-Hant the character-only conversion.
+ */
+export const glossChineseVariant = (hintTag: string): ConvertChineseVariant | null => {
+  const subtags = hintTag.toLowerCase().split('-');
+  if (subtags[0] !== 'zh') return null;
+  const region = subtags[subtags.length - 1]; // zh-TW and zh-Hant-TW both end in tw
+  if (region === 'tw') return 's2twp';
+  if (region === 'hk' || region === 'mo') return 's2hk';
+  return subtags.includes('hant') ? 's2t' : null;
+};
+
 interface RefreshContext {
   appService: AppService;
   bookLang?: string | null;
-  /** App UI language base code, used as the hint when none is selected. */
+  /** App UI locale (full tag, e.g. zh-TW), used as the hint when none is selected. */
   appLang: string;
   /**
    * Whether the reader may silently download an uncached pack. Threaded to
@@ -52,7 +69,8 @@ export const refreshSectionGlosses = async (
     if (!viewSettings.wordLensEnabled) return;
     const source = toWordLensSource(ctx.bookLang);
     if (!source || !canTokenizeSource(source)) return;
-    const hint = (viewSettings.wordLensHintLang || ctx.appLang).toLowerCase().split('-')[0] || '';
+    const hintTag = viewSettings.wordLensHintLang || ctx.appLang;
+    const hint = hintTag.toLowerCase().split('-')[0] || '';
     // Same-language packs (e.g. en-en monolingual) are allowed; availability is
     // decided by the manifest — loadGlossIndex returns null when no pack exists.
     if (!hint) return;
@@ -66,6 +84,11 @@ export const refreshSectionGlosses = async (
       void initJieba();
       return;
     }
+    const zhVariant = glossChineseVariant(hintTag);
+    if (zhVariant) {
+      await initSimpleCC();
+      if (refreshGen.get(doc) !== myGen) return;
+    }
     const model = buildSectionTextModel(doc);
     const occ = planGlosses(model.text, index, {
       sourceLang: source,
@@ -73,6 +96,7 @@ export const refreshSectionGlosses = async (
       cutZh: source === 'zh' ? cutZh : undefined,
       monolingual: hint === source, // en-en: gloss is a build-formatted definition
     });
+    if (zhVariant) for (const o of occ) o.gloss = runSimpleCC(o.gloss, zhVariant);
     if (occ.length) applyGlosses(doc, model, occ);
   } catch (err) {
     console.warn('[wordlens] refresh failed', err);

@@ -1,9 +1,29 @@
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
 local socketutil = require("socketutil")
+local sporeResponse = require("readest_sporeresponse")
+local SyncError = require("readest_syncerror")
 
 -- Sync operation timeouts
 local SYNC_TIMEOUTS = { 5, 10 }
+local RETRY_TIMEOUTS = { 10, 20 }
+local READ_METHODS = { pullChanges = true, pullBooks = true, getDownloadUrl = true, listFiles = true }
+local response_seq = 0
+local swept_stale_responses = false
+
+-- LuaSec reports TLS handshake timeouts as "wantread"/"wantwrite";
+-- Spore wraps these strings with a source location. Only retry transport
+-- failures on read-only RPCs, never an HTTP error or an ambiguous write.
+local function isTransientTransportError(err)
+    local response = sporeResponse(err)
+    if response then
+        return response.status == 0 and (response.readest_timeout
+            or (type(response.body) == "table" and response.body.error == "timeout")) or false
+    end
+    if type(err) ~= "string" then return false end
+    local code = err:match("([^%s:]+)%s*$")
+    return code == "wantread" or code == "wantwrite" or code == "timeout"
+end
 
 local ReadestSyncClient = {
     service_spec = nil,
@@ -32,40 +52,16 @@ function ReadestSyncClient:init()
     -- Readest Bearer token auth middleware
     package.loaded["Spore.Middleware.ReadestAuth"] = {}
     require("Spore.Middleware.ReadestAuth").call = function(args, req)
-        if self.access_token then
-            req.headers["authorization"] = "Bearer " .. self.access_token
+        if args.access_token then
+            req.headers["authorization"] = "Bearer " .. args.access_token
         else
             logger.err("ReadestSyncClient:access_token is not set, cannot authenticate")
             return false, "Access token is required for Readest API"
         end
     end
     
-    package.loaded["Spore.Middleware.AsyncHTTP"] = {}
-    require("Spore.Middleware.AsyncHTTP").call = function(args, req)
-        -- disable async http if Turbo looper is missing
-        if not UIManager.looper then return end
-        req:finalize()
-        local result
-        require("httpclient"):new():request({
-            url = req.url,
-            method = req.method,
-            body = req.env.spore.payload,
-            on_headers = function(headers)
-                for header, value in pairs(req.headers) do
-                    if type(header) == "string" then
-                        headers:add(header, value)
-                    end
-                end
-            end,
-        }, function(res)
-            result = res
-            -- Turbo HTTP client uses code instead of status
-            -- change to status so that Spore can understand
-            result.status = res.code
-            coroutine.resume(args.thread)
-        end)
-        return coroutine.create(function() coroutine.yield(result) end)
-    end
+    package.loaded["Spore.Middleware.AsyncHTTP"] = require("readest_asynchttp")
+
 end
 
 -- Internal: prepare the Spore client with our standard middleware stack.
@@ -74,29 +70,139 @@ function ReadestSyncClient:_prepare()
     self.client:reset_middlewares()
     self.client:enable("Format.JSON")
     self.client:enable("ReadestHeaders", {})
-    self.client:enable("ReadestAuth", {})
+    self.client:enable("ReadestAuth", { access_token = self.access_token })
 end
 
 -- Internal: dispatch a Spore RPC and invoke `callback(success, body, status)`
 -- when the async response arrives. The status is forwarded so callers can
 -- distinguish 401/403/404 from generic failure (codex round 1 finding 15).
-function ReadestSyncClient:_dispatch(name, args, callback)
-    self:_prepare()
-    socketutil:set_timeout(SYNC_TIMEOUTS[1], SYNC_TIMEOUTS[2])
-    local co = coroutine.create(function()
-        local ok, res = pcall(function()
-            return self.client[name](self.client, args)
+-- Without Turbo, Spore performs blocking TLS/HTTP even inside a coroutine.
+-- Run only the RPC in a child; callbacks always run in the UI process.
+function ReadestSyncClient:_dispatchInSubprocess(name, args, timeouts, receive, options)
+    local FFIUtil = require("ffi/util")
+    local json = require("json")
+    -- Stats/notes responses can exceed a pipe buffer; a response file
+    -- avoids deadlocking a child while the parent waits for its exit.
+    -- Not os.tmpname: /tmp is unwritable for the app on Android and a
+    -- small, often full tmpfs on Kindle. The settings dir already holds
+    -- the access token, so the response is no less private there.
+    local settings_dir = require("datastorage"):getSettingsDir()
+    -- A request dispatched while KOReader exits never reaches its poll, so
+    -- its file outlives the run. Nothing from this run exists before the
+    -- first request: remove whatever earlier runs left behind.
+    if not swept_stale_responses then
+        swept_stale_responses = true
+        local lfs = require("libs/libkoreader-lfs")
+        pcall(function()
+            for name in lfs.dir(settings_dir) do
+                if name:match("^readest_sync_%d+_%d+%.json$") then
+                    os.remove(settings_dir .. "/" .. name)
+                end
+            end
         end)
-        if ok then
-            callback(res.status == 200, res.body, res.status)
-        else
-            logger.dbg("ReadestSyncClient:" .. name .. " failure:", res)
-            callback(false, res and res.body or nil, res and res.status or nil)
-        end
+    end
+    response_seq = response_seq + 1
+    local result_path = string.format("%s/readest_sync_%d_%d.json",
+        settings_dir, os.time(), response_seq)
+    local created = io.open(result_path, "wb")
+    if not created then receive(false, "cannot create sync response file"); return end
+    created:close()
+    local pid = FFIUtil.runInSubProcess(function()
+        -- No exceptions may escape, and _exit avoids inherited graphics
+        -- driver destructors on Android (same rule as background covers).
+        pcall(function()
+            local ok, res = pcall(function()
+                self:_prepare()
+                socketutil:set_timeout(timeouts[1], timeouts[2])
+                return self.client[name](self.client, args)
+            end)
+            -- Do not serialize Spore's request object: it includes auth headers.
+            local raw, reason = sporeResponse(res)
+            local response = raw and { status = raw.status, body = raw.body,
+                readest_timeout = raw.readest_timeout, reason = reason } or tostring(res)
+            local f = assert(io.open(result_path, "wb"))
+            f:write(json.encode({ ok = ok, response = response }))
+            f:close()
+        end)
+        local ffi = require("ffi")
+        pcall(ffi.cdef, "void _exit(int status);")
+        ffi.C._exit(0)
     end)
-    self.client:enable("AsyncHTTP", {thread = co})
+    if not pid then
+        os.remove(result_path)
+        receive(false, "cannot start sync worker")
+        return
+    end
+
+    -- Bound every RPC, including DNS stalls. Refreshes pass a longer
+    -- deadline: the auth coordinator releases UI waiters separately, and a
+    -- late rotation must still be received unless the worker is truly stuck.
+    local deadline = os.time() + (options and options.deadline or timeouts[2] + 5)
+    local timed_out = false
+    local poll
+    poll = function()
+        if not FFIUtil.isSubProcessDone(pid) then
+            if not timed_out and os.time() >= deadline then
+                timed_out = true
+                FFIUtil.terminateSubProcess(pid)
+            end
+            UIManager:scheduleIn(0.1, poll)
+            return
+        end
+        local f = io.open(result_path, "rb")
+        local data = f and f:read("*a")
+        if f then f:close() end
+        os.remove(result_path)
+        if timed_out then receive(false, "timeout"); return end
+        local ok, result = pcall(json.decode, data or "")
+        if ok and type(result) == "table" and type(result.ok) == "boolean" then
+            receive(result.ok, result.response)
+        else
+            receive(false, "sync worker returned no response")
+        end
+    end
+    UIManager:scheduleIn(0.1, poll)
+end
+
+function ReadestSyncClient:_dispatch(name, args, callback, retried)
+    local timeouts = retried and RETRY_TIMEOUTS or SYNC_TIMEOUTS
+    local function receive(ok, res)
+        local response, reason = sporeResponse(res)
+        if not retried and READ_METHODS[name] and isTransientTransportError(res) then
+            logger.dbg("ReadestSyncClient:" .. name .. " transient transport timeout; retrying once")
+            UIManager:scheduleIn(1, function()
+                self:_dispatch(name, args, callback, true)
+            end)
+        elseif ok and response then
+            callback(response.status == 200, response.body, response.status)
+        else
+            response = response or {}
+            local body = response.body
+            -- Keep transport errors (timeout, TLS, DNS) and Spore's reason so
+            -- failure messages can say what went wrong.
+            if type(body) ~= "table" then
+                local text = type(body) == "string" and body ~= "" and not body:match("^%s*<") and body
+                body = { error = text or reason or tostring(res) }
+            elseif reason and body.reason == nil then
+                body.reason = reason
+            end
+            -- Do not log `res`: Spore's request object carries auth headers.
+            logger.warn("ReadestSyncClient:" .. name .. " failed:", SyncError.describe(body, response.status))
+            callback(false, body, response.status)
+        end
+    end
+    if not UIManager.looper then
+        self:_dispatchInSubprocess(name, args, timeouts, receive)
+        return
+    end
+    self:_prepare()
+    socketutil:set_timeout(timeouts[1], timeouts[2])
+    local co = coroutine.create(function()
+        receive(pcall(function() return self.client[name](self.client, args) end))
+    end)
+    self.client:enable("AsyncHTTP", {thread = co, timeout = timeouts[2] + 5})
     coroutine.resume(co)
-    if UIManager.looper then UIManager:setInputTimeout() end
+    UIManager:setInputTimeout()
     socketutil:reset_timeout()
 end
 

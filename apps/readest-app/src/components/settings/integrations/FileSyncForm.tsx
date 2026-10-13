@@ -9,6 +9,7 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { useLibraryStore } from '@/store/libraryStore';
 import { useFileSyncStore } from '@/store/fileSyncStore';
 import { eventDispatcher } from '@/utils/event';
+import { formatSyncFailure } from '@/services/sync/file/syncResult';
 import { FileSyncEngine } from '@/services/sync/file/engine';
 import { FileSyncError } from '@/services/sync/file/provider';
 import { createAppLocalStore } from '@/services/sync/file/appLocalStore';
@@ -47,7 +48,7 @@ interface FileSyncFormProps {
 /**
  * Translate a sync-time error into a user-facing string. Backend-neutral: the
  * provider maps every failure to a {@link FileSyncError} with a normalised `code`
- * so we never show a raw English `e.message`.
+ * for the brief toast; the persistent report retains the underlying diagnostic.
  */
 const formatSyncError = (_: TranslationFunc, e: unknown): string => {
   if (e instanceof FileSyncError) {
@@ -162,20 +163,10 @@ const FileSyncForm: React.FC<FileSyncFormProps> = ({
         },
       });
 
-      await persist({ lastSyncedAt: Date.now() });
-      // A completed run heals the provider's health surfaces (the Cloud Sync
-      // chooser row, the SettingsMenu sync row) — otherwise a pre-restart
-      // failure keeps reading "Sync failed" after a successful manual sync.
-      setLastError(kind, null);
-      if (result.failures > 0) {
-        eventDispatcher.dispatch('toast', {
-          type: 'warning',
-          message: _('Sync finished with {{failed}} failure(s). {{ok}} ok.', {
-            failed: result.failures,
-            ok: Math.max(0, result.totalBooks - result.failures),
-          }),
-        });
-      } else {
+      const failure = formatSyncFailure(result, _);
+      setLastError(kind, failure);
+      if (!failure) {
+        await persist({ lastSyncedAt: Date.now() });
         eventDispatcher.dispatch('toast', {
           type: 'info',
           message: _('{{count}} book(s) synced', { count: result.booksSynced }),

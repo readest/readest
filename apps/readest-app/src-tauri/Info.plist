@@ -5,7 +5,7 @@
     <key>ITSAppUsesNonExemptEncryption</key>
     <false/>
     <key>NSLocalNetworkUsageDescription</key>
-    <string>Readest uses the local network to discover nearby devices and transfer books with LocalSend.</string>
+    <string>Readest uses the local network to discover nearby devices and transfer books with Nearby BookDrop.</string>
     <key>NSUbiquitousContainers</key>
     <dict>
       <key>iCloud.com.bilingify.readest</key>
@@ -23,7 +23,7 @@
     <key>LSSupportsOpeningDocumentsInPlace</key>
     <false/>
     <key>UIViewControllerBasedStatusBarAppearance</key>
-    <false/>
+    <true/>
     <key>UIHomeIndicatorAutoHidden</key>
     <true/>
     <key>UIRequiresFullScreen</key>

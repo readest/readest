@@ -65,6 +65,31 @@ const migrations: Record<SchemaType, MigrationEntry[]> = {
       `,
     },
   ],
+  'notion-sync': [
+    {
+      name: '2026083001_notion_sync_mappings',
+      sql: `
+        CREATE TABLE IF NOT EXISTS notion_book_pages (
+          target_id TEXT NOT NULL,
+          book_hash TEXT NOT NULL,
+          page_id TEXT NOT NULL,
+          title TEXT NOT NULL,
+          PRIMARY KEY (target_id, book_hash)
+        );
+
+        CREATE TABLE IF NOT EXISTS notion_note_mappings (
+          target_id TEXT NOT NULL,
+          book_hash TEXT NOT NULL,
+          note_id TEXT NOT NULL,
+          payload_hash TEXT NOT NULL,
+          block_ids TEXT NOT NULL,
+          stale_block_ids TEXT NOT NULL,
+          synced_at INTEGER NOT NULL,
+          PRIMARY KEY (target_id, book_hash, note_id)
+        );
+      `,
+    },
+  ],
   // The embeddings table is created lazily by BookIndexer because its
   // vector32(<dim>) column needs the active embedding model's dim, which
   // isn't known at migration time. Tantivy FTS lives on the chunks.text

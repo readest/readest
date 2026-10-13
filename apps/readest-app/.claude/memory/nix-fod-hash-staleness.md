@@ -14,4 +14,47 @@ metadata:
 
 **How to apply:** MERGED #5779 (2026-08-19): fixed the #5778 staleness (hash `sha256-0gMtrfX+s3cOPGrl1cmmAMwvk0jMVezm3j+oJqvlhb8=`) and added `.github/workflows/nix-deps-check.yml`: on PRs touching pnpm-lock.yaml/Cargo.lock/nix files it builds `.#default.pnpmDeps .#default.tursoPluginDeps .#default.cargoDeps` WITHOUT the readest cachix substituter, so a stale hash fails pre-merge printing `specified:`/`got:`. That run is also THE way to compute a new hash — no local nix/Linux/docker needed (user explicitly banned docker AND OrbStack for this; do not reach for either): push the PR, read `got:` from the failing check, commit it. You do NOT need to blank the hash first; the stale value mismatches naturally once substitution is off. Un-bumped hash on main fails differently (cachix serves old store → offline-tarball error, no `got:` printed). cargoHash could be eliminated entirely via `rustPlatform.importCargoLock` (Cargo.lock has 1 git dep: readest/localsend); pnpm has no official no-hash fetcher. Related: [[build-ci-recipes]].
 
+Third hit 2026-08-26: PR #5893 (TypeScript 7 + Next 16.3) changed pnpm-lock.yaml; the fod-hashes job failed in 5m17s with `specified: sha256-jQoa1YvCJU2bmEkr70u8MENxS1cGb2ahai53TfI6DQE=` / `got: sha256-zEq7gAPixg8P9DeRtEKS0rCVlphJfBSVl7LOvvAQj+g=`, bumped in `40bda11b9`. Recipe holds exactly: push first, then read `got:`. Fastest way to the value is `gh run view --repo readest/readest --job <job-id> --log-failed | grep -iE "specified:|got:"` -- the run-level `--log-failed` also works but the job id from the PR check URL is more direct. There is no local nix on chrox's Mac (`which nix` = not found), so this cannot be pre-computed before opening the PR.
+
 Second hit 2026-08-25: PR #5865 changed Cargo.lock (image crate `webp` feature -> image-webp); the fod-hashes PR check failed with specified/got, cargoHash bumped in `50d57e30d` from the got: line, check green in one round.
+
+Fourth hit 2026-09-06: PR #6081 (tauri fork bump, Cargo.lock + pnpm-lock.yaml
+both changed) failed fod-hashes on cargoHash first (`got:` sha256-5uavqv6V...),
+and only after that bump did the next run report pnpmDeps (`got:`
+sha256-E6z6mXT4...): `nix build` stopped at the first FOD failure. dcf5d1e9a
+added `--keep-going` to the `nix-deps-check.yml` build so ONE run now prints
+every stale hash; still expect one push per unknown hash, never precompute.
+Both bumped in dcf5d1e9a + 555c887bf. GOTCHA: this PR's head is
+`chrox/readest-app:dev` (remote `chrox`), NOT `readest/readest:dev`; a push to
+`origin dev` created a stray branch on the main repo (deleted right away).
+Check `gh pr view N --json isCrossRepository,headRepositoryOwner` before pushing.
+
+Fifth hit 2026-09-29 (NEW failure shape): #6457 added crates (souvlaki) to
+`Cargo.lock` ONLY. Nix vendors `Cargo.cef.lock` (package.nix copies it over
+Cargo.lock), so `fod-hashes` PASSED on the PR (cef lock unchanged = same FOD)
+and main's `Build with Nix` failed late with `no matching package named
+souvlaki found`. RULE: any PR adding/removing crates must regenerate
+`Cargo.cef.lock` too (recipe in [[tauri-fork-bump-workspace-exclude-swift-rs]]:
+swap in, `cargo metadata --config .cargo/cef.toml` from src-tauri, copy back),
+THEN read the new cargoHash from fod-hashes. Fixed in PR #6459.
+
+Sixth hit 2026-10-02 (NEW failure shape: VACUOUS PASS): PR #6573 changed only
+pnpm-lock.yaml, yet `fod-hashes` PASSED with the stale hash. Its log shows
+`copying path '/nix/store/...-readest-pnpm-deps' from 'https://cache.nixos.org'`:
+an FOD's store path = name + declared hash only, and cache.nixos.org already held
+`readest-pnpm-deps` for main's hash (nixpkgs packages readest), so Nix substituted
+the OLD output and never ran the fetcher (PR MERGED 306940369 with the blank-then-got: hash). Dropping the readest cachix does not
+help. RULE: whenever pnpm-lock.yaml changes, set `hash = "";` FIRST, push, read
+`got:` from the failing fod-hashes run, then commit the real hash. The old "no
+need to blank" advice above is WRONG now. Workflow hardening (e.g. a
+`nix build --check` pass on the FOD attrs) NOT done.
+
+Seventh hit 2026-10-09 (NEW failure shape: RELEASE AGE): #6686 added
+`music-metadata@12.1.0` (published the day before) to pnpm-lock.yaml. With the
+hash blanked (PR #6688, draft), `fod-hashes` failed with
+`ERR_PNPM_MINIMUM_RELEASE_AGE_VIOLATION`: the fetcher's pnpm 11.9.0 enforces its
+default one-day minimumReleaseAge (nothing in the repo sets it), so NO `got:` is
+printed until the newest locked package is a day old. Do not add a
+minimumReleaseAgeExclude (supply-chain policy bypass). Re-run the fod-hashes job
+after the cutoff (`gh run rerun <run> --failed`), then commit the `got:` hash.
+Resolved: rerun at cutoff+6 min printed `got:`; #6688 MERGED 3f45c2333 (2026-10-09).

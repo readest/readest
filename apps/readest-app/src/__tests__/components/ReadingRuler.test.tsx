@@ -662,4 +662,60 @@ describe('ReadingRuler', () => {
       expect(rulerTop()).toBeGreaterThan(before);
     });
   });
+  describe('band presentation', () => {
+    const renderRuler = (settings: ViewSettings, color: 'transparent' | 'yellow') =>
+      render(
+        <ReadingRuler
+          bookKey='book-1'
+          isVertical={false}
+          rtl={false}
+          lines={2}
+          position={33}
+          opacity={0.5}
+          color={color}
+          bookFormat='EPUB'
+          viewSettings={settings}
+          gridInsets={{ top: 0, right: 0, bottom: 0, left: 0 }}
+        />,
+      );
+
+    it('tints the band with a backdrop filter on color displays', () => {
+      const { container } = renderRuler(viewSettings, 'yellow');
+      const ruler = container.querySelector('.ruler') as HTMLDivElement;
+
+      expect(ruler.getAttribute('style')).toContain('sepia');
+      expect(ruler.className).not.toContain('border');
+    });
+
+    it('outlines the colorless band on color displays', () => {
+      const { container } = renderRuler(viewSettings, 'transparent');
+      const ruler = container.querySelector('.ruler') as HTMLDivElement;
+
+      expect(ruler.getAttribute('style')).not.toContain('sepia');
+      expect(ruler.className).toContain('border-base-content/55');
+    });
+
+    it('drops the backdrop tint and outlines the band on e-ink', () => {
+      const einkSettings = { ...viewSettings, isEink: true } as ViewSettings;
+      const { container } = renderRuler(einkSettings, 'yellow');
+      const ruler = container.querySelector('.ruler') as HTMLDivElement;
+
+      expect(ruler.getAttribute('style')).not.toContain('sepia');
+      expect(ruler.className).toContain('border-base-content');
+      expect(ruler.className).not.toContain('border-base-content/55');
+    });
+
+    it('keeps the tint on color e-ink, still outlining the band', () => {
+      const colorEinkSettings = {
+        ...viewSettings,
+        isEink: true,
+        isColorEink: true,
+      } as ViewSettings;
+      const { container } = renderRuler(colorEinkSettings, 'yellow');
+      const ruler = container.querySelector('.ruler') as HTMLDivElement;
+
+      expect(ruler.getAttribute('style')).toContain('sepia');
+      expect(ruler.className).toContain('border-base-content');
+    });
+  });
 });

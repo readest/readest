@@ -24,11 +24,14 @@ vi.mock('@/store/settingsStore', () => ({
 const stores = vi.hoisted(() => ({
   saveConfig: vi.fn(),
   updateBooknotes: vi.fn(() => ({})),
+  booknotes: [] as BookNote[],
+  isFixedLayout: true,
 }));
 
 vi.mock('@/store/bookDataStore', () => ({
   useBookDataStore: () => ({
-    getConfig: () => ({ booknotes: [] }),
+    getConfig: () => ({ booknotes: stores.booknotes }),
+    getBookData: () => ({ isFixedLayout: stores.isFixedLayout }),
     saveConfig: stores.saveConfig,
     updateBooknotes: stores.updateBooknotes,
   }),
@@ -44,12 +47,14 @@ vi.mock('@/store/readerStore', () => ({
     getProgress: () => ({ page: 1 }),
   }),
 }));
-vi.mock('@/app/reader/utils/annotatorUtil', () => ({
+vi.mock('@/app/reader/utils/annotatorUtil', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/app/reader/utils/annotatorUtil')>()),
   toParentViewportPoint: (_doc: Document, x: number, y: number) => ({ x, y }),
 }));
 
 import { useInstantAnnotation } from '@/app/reader/hooks/useInstantAnnotation';
 import type { TextSelection } from '@/utils/sel';
+import type { BookNote } from '@/types/book';
 
 let p1: HTMLElement;
 let p2: HTMLElement;
@@ -65,16 +70,17 @@ const setup = () => {
     captured.selection = s;
   });
   const setEditingAnnotation = vi.fn();
+  const getAnnotationText = vi.fn(async (range: Range) => range.toString());
   const hook = renderHook(() =>
     useInstantAnnotation({
       bookKey: 'book-1',
-      getAnnotationText: vi.fn(async () => 'text'),
+      getAnnotationText,
       setSelection: setSelection as never,
       setEditingAnnotation: setEditingAnnotation as never,
       setExternalDragPoint: vi.fn(),
     }),
   );
-  return { ...hook, captured, setSelection, setEditingAnnotation };
+  return { ...hook, captured, setSelection, setEditingAnnotation, getAnnotationText };
 };
 
 const pointer = (x: number, y: number) =>
@@ -82,6 +88,8 @@ const pointer = (x: number, y: number) =>
 
 beforeEach(() => {
   vi.clearAllMocks();
+  stores.booknotes = [];
+  stores.isFixedLayout = true;
   scrolled = false;
   p1 = document.createElement('p');
   p1.textContent = 'first page text here';
@@ -193,7 +201,7 @@ describe('useInstantAnnotation hold-a-word engage and commit', () => {
     const editing = setEditingAnnotation.mock.lastCall?.[0];
     expect(editing?.color).toBeTruthy();
     expect(captured.selection?.annotated).toBe(true);
-    expect(captured.selection?.text).toBe('text');
+    expect(captured.selection?.text).toBe('first');
   });
 
   test('a drag after engage still commits and closes (no editor left open)', async () => {
@@ -226,5 +234,163 @@ describe('useInstantAnnotation hold-a-word engage and commit', () => {
     );
 
     expect(handled).toBe(false);
+  });
+});
+
+// Dragging exactly over an existing highlight resolves to its cfi and updates
+// that record in place: a restyle, which must not wipe the note it carries.
+describe('useInstantAnnotation over an existing highlight', () => {
+  test('a drag over a noted highlight keeps its note', async () => {
+    stores.booknotes = [
+      {
+        id: 'old',
+        type: 'annotation',
+        cfi: 'cfi',
+        style: 'underline',
+        color: 'red',
+        text: 'text',
+        note: 'keep me',
+        createdAt: 1,
+        updatedAt: 1,
+      },
+    ];
+    const { result } = setup();
+
+    result.current.handleInstantAnnotationPointerDown(document, 0, pointer(10, 10));
+    result.current.handleInstantAnnotationPointerMove(document, 0, pointer(60, 10));
+    await result.current.handleInstantAnnotationPointerUp(document, 0, pointer(60, 10));
+
+    const saved = (stores.updateBooknotes.mock.lastCall as unknown as [string, BookNote[]])[1];
+    expect(saved).toHaveLength(1);
+    expect(saved[0]).toMatchObject({ id: 'old', note: 'keep me', style: 'highlight' });
+  });
+});
+
+// A PDF page's text layer drops its `.selecting` state on pointerup before the
+// release reaches us, so the release point no longer resolves to the text the
+// drag ended on but to the bare layer element at an arbitrary child offset.
+// The release must commit what the preview showed, not re-resolve that point.
+describe('useInstantAnnotation release commits the previewed range', () => {
+  test('a release that resolves to the text layer itself keeps the dragged range', async () => {
+    const { result, getAnnotationText } = setup();
+
+    result.current.handleInstantAnnotationPointerDown(document, 0, pointer(10, 10));
+    result.current.handleInstantAnnotationPointerMove(document, 0, pointer(60, 10));
+    (document as unknown as { caretPositionFromPoint: unknown }).caretPositionFromPoint = () => ({
+      offsetNode: p1,
+      offset: 0,
+    });
+    const handled = await result.current.handleInstantAnnotationPointerUp(
+      document,
+      0,
+      pointer(60, 10),
+    );
+
+    expect(handled).toBe(true);
+    expect(getAnnotationText.mock.lastCall?.[0].toString()).toBe('first page');
+  });
+
+  // The start page's part survives a release over another page: in a spread
+  // or after a corner turn the pointerup lands in a document the start
+  // position doesn't belong to, which used to drop the whole highlight.
+  test('a release in another page document commits the start page part', async () => {
+    const { result, getAnnotationText } = setup();
+    const otherPage = document.implementation.createHTMLDocument('page 2');
+
+    result.current.handleInstantAnnotationPointerDown(document, 0, pointer(10, 10));
+    result.current.handleInstantAnnotationPointerMove(document, 0, pointer(60, 10));
+    const handled = await result.current.handleInstantAnnotationPointerUp(
+      otherPage,
+      1,
+      pointer(60, 10),
+    );
+
+    expect(handled).toBe(true);
+    expect(getAnnotationText.mock.lastCall?.[0].toString()).toBe('first page');
+    expect(stores.updateBooknotes).toHaveBeenCalled();
+  });
+
+  // An end point given as the text's container, past the text node, follows
+  // the start: comparing the nodes alone ranks a container before its own
+  // text and flipped (or collapsed) the range.
+  test('an end point on the container after the text does not flip the range', () => {
+    const { result, captured } = setup();
+    (document as unknown as { caretPositionFromPoint: unknown }).caretPositionFromPoint = (
+      x: number,
+    ) => (x < 40 ? { offsetNode: t1, offset: 2 } : { offsetNode: p1, offset: 1 });
+
+    result.current.handleInstantAnnotationPointerDown(document, 0, pointer(10, 10));
+    result.current.handleInstantAnnotationPointerMove(document, 0, pointer(60, 10));
+
+    expect(captured.selection?.range?.startContainer).toBe(t1);
+    expect(captured.selection?.range?.toString()).toBe('first page text here');
+  });
+});
+
+describe('useInstantAnnotation drag leaving the start page', () => {
+  // The drag keeps reporting to the start page once the pointer is over
+  // another one, and the browser clamps that point back onto this page's text.
+  test('a move outside the page keeps the last preview', () => {
+    const { result, captured } = setup();
+
+    result.current.handleInstantAnnotationPointerDown(document, 0, pointer(10, 10));
+    result.current.handleInstantAnnotationPointerMove(document, 0, pointer(60, 10));
+    const previewed = captured.selection?.range;
+    (document as unknown as { caretPositionFromPoint: unknown }).caretPositionFromPoint = () => ({
+      offsetNode: t1,
+      offset: 0,
+    });
+    const drawn = result.current.handleInstantAnnotationPointerMove(
+      document,
+      0,
+      pointer(window.innerWidth + 200, 10),
+    );
+
+    expect(drawn).toBe(false);
+    expect(captured.selection?.range).toBe(previewed);
+  });
+
+  // A reflowable section is one document for every page, so a point past its
+  // frame (the corner the dwell turn holds) still extends the range onto the
+  // clamped text.
+  test('a reflowable drag past the frame still extends the preview', () => {
+    stores.isFixedLayout = false;
+    const { result, captured } = setup();
+
+    result.current.handleInstantAnnotationPointerDown(document, 0, pointer(10, 10));
+    const drawn = result.current.handleInstantAnnotationPointerMove(
+      document,
+      0,
+      pointer(60, window.innerHeight + 50),
+    );
+
+    expect(drawn).toBe(true);
+    expect(captured.selection?.range?.startContainer).toBe(t1);
+  });
+
+  // A turn re-renders a PDF page's text layer, detaching the start: nothing
+  // can be extended from it, and the release commits the cfi the preview had.
+  test('a re-rendered start page keeps the preview and commits it', async () => {
+    const { result, setSelection, getAnnotationText } = setup();
+
+    result.current.handleInstantAnnotationPointerDown(document, 0, pointer(10, 10));
+    result.current.handleInstantAnnotationPointerMove(document, 0, pointer(60, 10));
+    p1.remove();
+    setSelection.mockClear();
+    h.view.getCFI.mockClear();
+    result.current.reapplyInstantAnnotation();
+
+    expect(setSelection).not.toHaveBeenCalled();
+    const handled = await result.current.handleInstantAnnotationPointerUp(
+      document,
+      0,
+      pointer(60, 10),
+    );
+    // Removing the page's text collapsed the live range: the committed text
+    // comes from what the preview covered.
+    expect(handled).toBe(true);
+    expect(h.view.getCFI).not.toHaveBeenCalled();
+    expect(getAnnotationText.mock.lastCall?.[0].toString()).toBe('first page');
+    expect(stores.updateBooknotes).toHaveBeenCalled();
   });
 });

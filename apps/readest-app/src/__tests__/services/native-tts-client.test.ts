@@ -51,3 +51,23 @@ describe('NativeTTSClient.stop', () => {
     expect(settled).toBe(true);
   });
 });
+
+describe('NativeTTSClient voice filtering', () => {
+  test('excludes Apple novelty and Eloquence voices, retaining normal and non-Apple voices', async () => {
+    const voices = [
+      { id: 'com.apple.speech.synthesis.voice.BadNews', name: 'Bad News', lang: 'en-US' },
+      { id: 'com.apple.eloquence.en-US.Eddy', name: 'Eddy (United States)', lang: 'en-US' },
+      { id: 'com.apple.voice.super-compact.en-US.Samantha', name: 'Samantha', lang: 'en-US' },
+      { id: 'com.apple.voice.enhanced.en-US.Samantha', name: 'Samantha (Enhanced)', lang: 'en-US' },
+      { id: 'com.apple.ttsbundle.siri_Aaron_en-US_compact', name: 'Aaron', lang: 'en-US' },
+      { id: 'android-voice-1', name: 'Eddy', lang: 'en-US' },
+    ];
+    vi.mocked(invoke).mockResolvedValue({ voices });
+    const client = new NativeTTSClient();
+    expect((await client.getAllVoices()).map((voice) => voice.id)).toEqual(
+      voices.slice(2).map((voice) => voice.id),
+    );
+    const groups = await client.getVoices('en');
+    expect(groups.flatMap((group) => group.voices)).toHaveLength(4);
+  });
+});

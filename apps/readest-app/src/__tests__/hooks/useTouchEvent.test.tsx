@@ -95,6 +95,7 @@ describe('useTouchEvent pinch vs two-finger scroll', () => {
     cancelLayeredTurnTouch('book-1');
     cleanup();
     vi.clearAllMocks();
+    vi.unstubAllEnvs();
   });
 
   test('two fingers moving in the same direction (scroll) do not zoom', () => {
@@ -174,6 +175,37 @@ describe('useTouchEvent pinch vs two-finger scroll', () => {
         'start',
         'move',
       ]);
+    } finally {
+      unregister();
+    }
+  });
+
+  // A fixed-layout book pinch-zooms, so its second finger takes the pinch
+  // branch instead of the reflowable multi-touch latch. That branch must still
+  // cancel a captured drag the first finger already claimed, or the curl
+  // overlay is stranded mid-turn (readest#6239).
+  test('cancels a claimed fixed-layout drag when a second finger starts a pinch', () => {
+    mocks.getBookData.mockReturnValue({ isFixedLayout: true });
+    mocks.getViewSettings.mockReturnValue({
+      zoomLevel: 100,
+      zoomMode: 'fit-page',
+      scrolled: false,
+      vertical: false,
+    });
+    mocks.getView.mockReturnValue({ renderer: { pinchZoom: vi.fn(), pinchEnd: vi.fn() } });
+    const details: TouchDetail[] = [];
+    const unregister = registerTouchInterceptor('fixed-layout-multitouch-test', (_bk, detail) => {
+      details.push(detail);
+      return detail.phase === 'move' || detail.phase === 'cancel';
+    });
+
+    try {
+      const h = renderTouchHook();
+      h.current.onTouchStart(touchEvent([touch(200, 300)], 100));
+      h.current.onTouchMove(touchEvent([touch(180, 300)], 116));
+
+      h.current.onTouchStart(touchEvent([touch(180, 300), touch(260, 300)], 132));
+      expect(details.map(({ phase }) => phase)).toEqual(['start', 'move', 'cancel']);
     } finally {
       unregister();
     }
@@ -419,6 +451,91 @@ describe('useTouchEvent pinch vs two-finger scroll', () => {
     } finally {
       unregister();
     }
+  });
+
+  // PDF, CBZ/CBR and fixed-layout EPUB ride the same captured pipeline
+  // (readest#6239), so their turns own the toolbar the same way.
+  test('defers captured-turn toolbar changes on a fixed-layout book', () => {
+    vi.stubEnv('NEXT_PUBLIC_APP_PLATFORM', 'tauri');
+    mocks.hoveredBookKey = 'book-1';
+    mocks.getBookData.mockReturnValue({ isFixedLayout: true });
+    mocks.getViewSettings.mockReturnValue({
+      zoomLevel: 100,
+      zoomMode: 'fit-page',
+      scrolled: false,
+      vertical: false,
+      pageTurnStyle: 'curl',
+      animated: true,
+      isEink: false,
+      disableSwipe: false,
+    });
+    mocks.getView.mockReturnValue({
+      renderer: {
+        getAttribute: (name: string) => (name === 'captured-turn-style' ? 'curl' : null),
+      },
+    });
+    const h = renderTouchHook();
+
+    h.current.onTouchStart(touchEvent([touch(10, 300)], 100));
+    h.current.onTouchMove(touchEvent([touch(60, 300)], 132));
+
+    expect(mocks.setHoveredBookKey).not.toHaveBeenCalled();
+  });
+
+  test('defers captured-push toolbar changes on a fixed-layout book', () => {
+    vi.stubEnv('NEXT_PUBLIC_APP_PLATFORM', 'tauri');
+    mocks.hoveredBookKey = 'book-1';
+    mocks.getBookData.mockReturnValue({ isFixedLayout: true });
+    mocks.getViewSettings.mockReturnValue({
+      zoomLevel: 100,
+      zoomMode: 'fit-page',
+      scrolled: false,
+      vertical: false,
+      pageTurnStyle: 'push',
+      animated: true,
+      isEink: false,
+      disableSwipe: false,
+    });
+    mocks.getView.mockReturnValue({
+      renderer: {
+        getAttribute: (name: string) => (name === 'captured-turn-style' ? 'push' : null),
+      },
+    });
+    const h = renderTouchHook();
+
+    h.current.onTouchStart(touchEvent([touch(10, 300)], 100));
+    h.current.onTouchMove(touchEvent([touch(60, 300)], 132));
+
+    expect(mocks.setHoveredBookKey).not.toHaveBeenCalled();
+  });
+
+  // A zoomed or fit-width fixed layout pans instead of turning, so the swipe is
+  // not a layered turn and the toolbar hides the ordinary way.
+  test('hides the toolbar normally on a panning fixed-layout book', () => {
+    vi.stubEnv('NEXT_PUBLIC_APP_PLATFORM', 'tauri');
+    mocks.hoveredBookKey = 'book-1';
+    mocks.getBookData.mockReturnValue({ isFixedLayout: true });
+    mocks.getViewSettings.mockReturnValue({
+      zoomLevel: 150,
+      zoomMode: 'fit-page',
+      scrolled: false,
+      vertical: false,
+      pageTurnStyle: 'curl',
+      animated: true,
+      isEink: false,
+      disableSwipe: false,
+    });
+    mocks.getView.mockReturnValue({
+      renderer: {
+        getAttribute: (name: string) => (name === 'captured-turn-style' ? 'curl' : null),
+      },
+    });
+    const h = renderTouchHook();
+
+    h.current.onTouchStart(touchEvent([touch(10, 300)], 100));
+    h.current.onTouchMove(touchEvent([touch(60, 300)], 132));
+
+    expect(mocks.setHoveredBookKey).toHaveBeenCalledWith(null);
   });
 
   test('does not let a forwarded iframe start erase an earlier raw claim', () => {
@@ -735,5 +852,62 @@ describe('useTouchEvent swipe-up bar toggle on fixed-layout', () => {
     swipeUp(h);
 
     expect(mocks.setHoveredBookKey).toHaveBeenCalledWith('book-1');
+  });
+});
+
+// Vertical books used to page along the block axis, so a swipe up there was a
+// page turn and could not also toggle the bars. They now page with horizontal
+// swipes like every other book (readest#624), which leaves the vertical swipe
+// free for the same toggle.
+describe('useTouchEvent swipe-up bar toggle on vertical writing', () => {
+  const swipeUp = (h: { current: Handlers }) => {
+    h.current.onTouchStart(touchEvent([touch(100, 500)], 0));
+    h.current.onTouchMove(touchEvent([touch(100, 300)], 50));
+    h.current.onTouchEnd(touchEvent([], 100));
+  };
+
+  beforeEach(() => {
+    mocks.hoveredBookKey = null;
+    mocks.getBookData.mockReturnValue({ isFixedLayout: false });
+    mocks.getView.mockReturnValue({ renderer: {} });
+    mocks.getViewSettings.mockReturnValue({ zoomLevel: 100, scrolled: false, vertical: true });
+  });
+
+  afterEach(() => {
+    cleanup();
+    vi.clearAllMocks();
+  });
+
+  test('swipe up shows the bars on a vertical book', () => {
+    const h = renderTouchHook();
+    swipeUp(h);
+
+    expect(mocks.setHoveredBookKey).toHaveBeenCalledWith('book-1');
+  });
+
+  test('swipe up hides the bars again on a vertical book', () => {
+    mocks.hoveredBookKey = 'book-1';
+    const h = renderTouchHook();
+
+    h.current.onTouchStart(touchEvent([touch(100, 500)], 0));
+    h.current.onTouchMove(touchEvent([touch(100, 300)], 50));
+    // A vertical move is not a page turn any more, so it must not hide the bars
+    // mid-gesture — on device that re-rendered the hook and the touchend toggle
+    // then read the bars as hidden and showed them again.
+    expect(mocks.setHoveredBookKey).not.toHaveBeenCalled();
+
+    h.current.onTouchEnd(touchEvent([], 100));
+    expect(mocks.setHoveredBookKey).toHaveBeenCalledTimes(1);
+    expect(mocks.setHoveredBookKey).toHaveBeenCalledWith(null);
+  });
+
+  test('a horizontal page-turn swipe still hides the bars on a vertical book', () => {
+    mocks.hoveredBookKey = 'book-1';
+    const h = renderTouchHook();
+
+    h.current.onTouchStart(touchEvent([touch(300, 500)], 0));
+    h.current.onTouchMove(touchEvent([touch(100, 505)], 50));
+
+    expect(mocks.setHoveredBookKey).toHaveBeenCalledWith(null);
   });
 });

@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import {
+  absNarrationTracks,
   absPreviewClip,
   buildAbsPairingSource,
   listPairableAbsBooks,
@@ -175,6 +176,28 @@ describe('absPreviewClip', () => {
     useABSServerStore.setState({ servers: [] });
 
     expect(absPreviewClip(source, 120)).toBeNull();
+  });
+
+  // #6216: on native the media element cannot trust a self-signed server the
+  // API client accepted, so both the narration tracks and the wizard preview
+  // stream through the loopback media proxy when one is given.
+  it('routes tracks and the preview through the media proxy when given its base', () => {
+    const { source } = buildAbsPairingSource(item, 'srv1');
+    const base = 'http://127.0.0.1:41234/s3cret';
+    const proxied = (path: string) =>
+      `${base}/media?u=${encodeURIComponent(`http://abs.local:13378${path}?token=tok`)}`;
+
+    expect(absNarrationTracks(source, base)).toEqual([
+      { url: proxied('/api/items/item1/file/1'), startOffset: 0, duration: 100 },
+      { url: proxied('/api/items/item1/file/2'), startOffset: 100, duration: 50 },
+    ]);
+    expect(absPreviewClip(source, 120, base)).toMatchObject({
+      url: proxied('/api/items/item1/file/2'),
+    });
+    expect(absNarrationTracks(source, null)).toMatchObject([
+      { url: 'http://abs.local:13378/api/items/item1/file/1?token=tok' },
+      { url: 'http://abs.local:13378/api/items/item1/file/2?token=tok' },
+    ]);
   });
 });
 

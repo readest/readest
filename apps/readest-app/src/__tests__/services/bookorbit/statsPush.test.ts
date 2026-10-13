@@ -27,6 +27,9 @@ const makeStats = (events: PageStatEvent[], cursor = 0) => {
   };
 };
 
+const countEvents = (books: PageStatsBookWire[]): number =>
+  books.reduce((total, book) => total + book.events.length, 0);
+
 describe('pushStatsToBookOrbit', () => {
   it('groups events by book hash and advances the cursor on success', async () => {
     const events = [
@@ -110,5 +113,107 @@ describe('pushStatsToBookOrbit', () => {
     expect(calls[0]!).toHaveLength(50);
     // Cursor sits at the end of the first successful chunk only.
     expect(stats.cursors['bookorbit-push']).toBe(1050);
+  });
+
+  it('limits requests to 500 events across fewer than 50 books and advances per chunk', async () => {
+    const events = Array.from({ length: 1200 }, (_, i) =>
+      makeEvent({ bookMd5: `book-${i % 11}`, page: i + 1, startTime: i + 1 }),
+    );
+    const stats = makeStats(events);
+    const calls: PageStatsBookWire[][] = [];
+    const client = {
+      uploadPageStats: vi.fn(async (books: PageStatsBookWire[]) => {
+        calls.push(books);
+      }),
+    };
+
+    await pushStatsToBookOrbit(stats, client);
+
+    expect(calls.map(countEvents)).toEqual([500, 500, 200]);
+    expect(stats.setCursor.mock.calls.map(([, value]) => value)).toEqual([500, 1000, 1200]);
+  });
+
+  it('uploads an exact 500-event batch in one request', async () => {
+    const events = Array.from({ length: 500 }, (_, i) =>
+      makeEvent({ bookMd5: `book-${i % 10}`, page: i + 1, startTime: i + 1 }),
+    );
+    const stats = makeStats(events);
+    const calls: PageStatsBookWire[][] = [];
+    const client = {
+      uploadPageStats: vi.fn(async (books: PageStatsBookWire[]) => {
+        calls.push(books);
+      }),
+    };
+
+    await pushStatsToBookOrbit(stats, client);
+
+    expect(calls.map(countEvents)).toEqual([500]);
+    expect(stats.setCursor).toHaveBeenCalledOnce();
+    expect(stats.cursors['bookorbit-push']).toBe(500);
+  });
+
+  it('moves a whole startTime group to the next request at the 500-event boundary', async () => {
+    const events = [
+      ...Array.from({ length: 499 }, (_, i) => makeEvent({ page: i + 1, startTime: i + 1 })),
+      makeEvent({ page: 500, startTime: 1000 }),
+      makeEvent({ page: 501, startTime: 1000 }),
+    ];
+    const stats = makeStats(events);
+    const calls: PageStatsBookWire[][] = [];
+    const client = {
+      uploadPageStats: vi.fn(async (books: PageStatsBookWire[]) => {
+        calls.push(books);
+      }),
+    };
+
+    await pushStatsToBookOrbit(stats, client);
+
+    expect(calls.map(countEvents)).toEqual([499, 2]);
+    expect(stats.setCursor.mock.calls.map(([, value]) => value)).toEqual([499, 1000]);
+  });
+
+  it('splits an oversized startTime group without advancing its cursor until it completes', async () => {
+    const events = Array.from({ length: 501 }, (_, i) =>
+      makeEvent({ page: i + 1, startTime: 1000 }),
+    );
+    const stats = makeStats(events);
+    const calls: PageStatsBookWire[][] = [];
+    const client = {
+      uploadPageStats: vi.fn(async (books: PageStatsBookWire[]) => {
+        calls.push(books);
+        if (calls.length === 2) throw new Error('server down');
+      }),
+    };
+
+    await expect(pushStatsToBookOrbit(stats, client)).rejects.toThrow('server down');
+    expect(calls.map(countEvents)).toEqual([500, 1]);
+    expect(stats.setCursor).not.toHaveBeenCalled();
+
+    await pushStatsToBookOrbit(stats, client);
+
+    // With no partial cursor, the first slice is retried. BookOrbit deduplicates
+    // those events by book, device, page, and startTime.
+    expect(calls.map(countEvents)).toEqual([500, 1, 500, 1]);
+    expect(stats.setCursor.mock.calls.map(([, value]) => value)).toEqual([1000]);
+  });
+
+  it('keeps an oversized multi-book startTime group within both server limits', async () => {
+    const events = Array.from({ length: 501 }, (_, i) =>
+      makeEvent({ bookMd5: `book-${i % 60}`, page: i + 1, startTime: 1000 }),
+    );
+    const stats = makeStats(events);
+    const calls: PageStatsBookWire[][] = [];
+    const client = {
+      uploadPageStats: vi.fn(async (books: PageStatsBookWire[]) => {
+        calls.push(books);
+      }),
+    };
+
+    await pushStatsToBookOrbit(stats, client);
+
+    expect(calls.every((books) => books.length <= 50)).toBe(true);
+    expect(calls.every((books) => countEvents(books) <= 500)).toBe(true);
+    expect(calls.reduce((total, books) => total + countEvents(books), 0)).toBe(501);
+    expect(stats.setCursor.mock.calls.map(([, value]) => value)).toEqual([1000]);
   });
 });

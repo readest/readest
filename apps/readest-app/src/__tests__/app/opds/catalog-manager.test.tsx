@@ -1,5 +1,6 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
+import * as sortable from '@dnd-kit/sortable';
 
 import { CatalogManager } from '@/app/opds/components/CatalogManager';
 import { useCustomOPDSStore } from '@/store/customOPDSStore';
@@ -70,6 +71,7 @@ beforeEach(() => {
 afterEach(() => {
   vi.useRealTimers();
   cleanup();
+  vi.restoreAllMocks();
 });
 
 describe('CatalogManager auto-download confirmation (#5746)', () => {
@@ -134,6 +136,23 @@ describe('CatalogManager auto-download confirmation (#5746)', () => {
 });
 
 describe('CatalogManager drag-to-reorder (#5746)', () => {
+  test('preserves catalog dimensions when dragging over a differently sized card', () => {
+    seed([
+      makeCatalog({ id: 'c1', contentId: 'c1', name: 'One' }),
+      makeCatalog({ id: 'c2', contentId: 'c2', name: 'Two' }),
+    ]);
+    const useSortable = sortable.useSortable;
+    vi.spyOn(sortable, 'useSortable').mockImplementation((options) => ({
+      ...useSortable(options),
+      transform: { x: 12, y: 24, scaleX: 0.5, scaleY: 1.5 },
+    }));
+    render(<CatalogManager />);
+    const card = screen
+      .getAllByRole('button', { name: 'Drag to reorder' })[0]!
+      .closest<HTMLElement>('.card')!;
+    expect(card.style.transform).toContain('translate3d(12px, 24px, 0)');
+    expect(card.style.transform).not.toContain('scale');
+  });
   test('renders a drag handle on every catalog card', () => {
     seed([
       makeCatalog({ id: 'c1', contentId: 'c1', name: 'One', url: 'https://one.example/opds' }),

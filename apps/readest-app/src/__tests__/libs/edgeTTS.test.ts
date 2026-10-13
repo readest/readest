@@ -113,7 +113,14 @@ describe('EdgeSpeechTTS on Cloudflare Workers', () => {
     const call = fetchSpy.mock.calls[0]!;
     const calledUrl = call[0] as string | URL;
     const calledInit = call[1] as RequestInit;
-    expect(String(calledUrl)).toContain('https://speech.platform.bing.com/');
+    // speech.platform.bing.com now rejects the handshake with 403 in many
+    // regions; Edge Read Aloud moved to api.msedgeservices.com, which takes
+    // the client token as Ocp-Apim-Subscription-Key.
+    expect(String(calledUrl)).toContain(
+      'https://api.msedgeservices.com/tts/cognitiveservices/websocket/v1?',
+    );
+    expect(String(calledUrl)).toContain('Ocp-Apim-Subscription-Key=');
+    expect(String(calledUrl)).not.toContain('TrustedClientToken=');
     expect(String(calledUrl)).not.toContain('wss://');
     const headers = calledInit.headers as Record<string, string>;
     expect(headers['Upgrade']).toBe('websocket');

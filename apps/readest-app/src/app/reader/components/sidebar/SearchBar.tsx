@@ -97,7 +97,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ isVisible, bookKey, onHideSearchB
     localStorage.removeItem(historyStorageKey);
   };
 
-  const view = getView(bookKey)!;
+  const view = getView(bookKey);
   // Reader search runs against the same per-book search.db the library page
   // uses; the session caches the opened book and index handle across queries.
   const searchSessionRef = useRef<LibrarySearchSession | null>(null);
@@ -206,7 +206,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ isVisible, bookKey, onHideSearchB
       setSearchProgress(bookKey, 0);
       setSearchStatus(bookKey, 'searching');
       setSearchError(bookKey, null);
-      view.clearSearch();
+      getView(bookKey)?.clearSearch();
 
       // progress is null until the book emits its first relocate event, so a
       // search fired right after opening has no current section to scope to.
@@ -288,8 +288,9 @@ const SearchBar: React.FC<SearchBarProps> = ({ isVisible, bookKey, onHideSearchB
 
         // Replay the resolved matches through the view so every CFI gets its
         // search highlight; the view does no searching of its own here.
-        if (!stopped() && results.length > 0) {
-          for await (const item of view.search({ ...searchConfig, query: term, results })) {
+        const currentView = getView(bookKey);
+        if (!stopped() && currentView && results.length > 0) {
+          for await (const item of currentView.search({ ...searchConfig, query: term, results })) {
             if (stopped()) return;
             if (item === 'done') break;
           }
@@ -310,6 +311,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ isVisible, bookKey, onHideSearchB
       bookData,
       appService,
       getConfig,
+      getView,
       setSearchResults,
       setSearchProgress,
       setSearchError,
@@ -356,7 +358,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ isVisible, bookKey, onHideSearchB
                 ? _('Words to find near each other')
                 : _('Search...')
           }
-          className='search-input w-full bg-transparent p-2 pr-0 ps-10 font-sans text-sm font-light focus:outline-none'
+          className='search-input w-full bg-transparent p-2 pr-0 ps-10 font-sans text-sm font-light focus:outline-hidden'
         />
 
         {searchTerm && (
@@ -381,10 +383,10 @@ const SearchBar: React.FC<SearchBarProps> = ({ isVisible, bookKey, onHideSearchB
               window.innerWidth < 640 ? 'dropdown-end' : 'dropdown-center',
               'dropdown-bottom',
             )}
-            menuClassName={clsx('no-triangle mt-1', window.innerWidth < 640 ? '' : '!relative')}
+            menuClassName={clsx('no-triangle mt-1', window.innerWidth < 640 ? '' : 'relative!')}
             buttonClassName={clsx(
               'btn btn-ghost h-8 min-h-8 w-8 p-0 rounded-none rounded-r-lg',
-              viewSettings?.isEink ? '!bg-transparent hover:!bg-transparent' : '',
+              viewSettings?.isEink ? 'bg-transparent! hover:bg-transparent!' : '',
             )}
             toggleButton={<FaChevronDown size={iconSize12} className='text-base-content/50' />}
           >
@@ -403,7 +405,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ isVisible, bookKey, onHideSearchB
         <div className='relative flex'>
           <div
             className={clsx(
-              'from-base-200 pointer-events-none absolute left-0 top-0 h-full w-3 bg-gradient-to-r to-transparent',
+              'from-base-200 pointer-events-none absolute left-0 top-0 h-full w-3 bg-linear-to-r to-transparent',
               viewSettings?.isEink ? 'hidden' : '',
             )}
             aria-hidden='true'
@@ -416,7 +418,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ isVisible, bookKey, onHideSearchB
               <button
                 key={index}
                 onClick={() => handleHistoryClick(term)}
-                className='hover:bg-base-200/20 text-base-content/70 bg-base-100 max-w-[60%] flex-shrink-0 whitespace-nowrap rounded-full px-3 py-0.5 text-xs'
+                className='hover:bg-base-200/20 text-base-content/70 bg-base-100 max-w-[60%] shrink-0 whitespace-nowrap rounded-full px-3 py-0.5 text-xs'
               >
                 <p className='truncate'>{term}</p>
               </button>
@@ -424,7 +426,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ isVisible, bookKey, onHideSearchB
           </div>
           <div
             className={clsx(
-              'from-base-200 pointer-events-none absolute right-6 top-0 h-full w-6 bg-gradient-to-l to-transparent',
+              'from-base-200 pointer-events-none absolute right-6 top-0 h-full w-6 bg-linear-to-l to-transparent',
               viewSettings?.isEink ? 'hidden' : '',
             )}
             aria-hidden='true'
@@ -432,7 +434,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ isVisible, bookKey, onHideSearchB
           <button
             onClick={handleClearHistory}
             className={clsx(
-              'text-base-content/50 hover:text-base-content/80 flex-shrink-0 items-center',
+              'text-base-content/50 hover:text-base-content/80 shrink-0 items-center',
               'flex h-6 min-h-6 w-8 min-w-8 items-center justify-center p-0',
             )}
             title={_('Clear search history')}

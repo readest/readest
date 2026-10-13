@@ -2,6 +2,7 @@ import AVFoundation
 import MediaPlayer
 import Tauri
 import UIKit
+import WebKit
 import os
 
 private let keepAliveLog = Logger(subsystem: "com.bilingify.readest", category: "TTSKeepAlive")
@@ -36,6 +37,10 @@ struct UpdateCarPlayStateArgs: Decodable {
   let active: Bool?
   let title: String?
   let author: String?
+}
+
+struct UpdateMediaLibraryArgs: Decodable {
+  let booksJson: String
 }
 
 class UpdateMediaSessionStateArgs: Decodable {
@@ -116,6 +121,22 @@ struct GetVoicesResponse: Encodable {
 /// `NativeTTSClient` drives both platforms through the same plugin command and
 /// `tts_events` channel contract.
 class NativeTTSPlugin: Plugin, AVSpeechSynthesizerDelegate {
+  override func load(webview: WKWebView) {
+    DispatchQueue.main.async {
+      let scenes = UIApplication.shared.connectedScenes
+      guard scenes.contains(where: {
+        $0.session.role.rawValue == "CPTemplateApplicationSceneSessionRoleApplication"
+      }), !scenes.contains(where: { $0 is UIWindowScene }), webview.bounds.isEmpty else { return }
+      // A car-only launch has no phone scene to size the reader. Pagination
+      // still needs a viewport before it can initialize the book for TTS.
+      let frame = UIScreen.main.bounds
+      webview.window?.frame = frame
+      webview.superview?.frame = frame
+      webview.frame = frame
+      webview.layoutIfNeeded()
+    }
+  }
+
   private let synthesizer = AVSpeechSynthesizer()
 
   // App-level controls. `rate` arrives pre-curved by the JS client (see
@@ -479,6 +500,25 @@ class NativeTTSPlugin: Plugin, AVSpeechSynthesizerDelegate {
     }
   }
 
+  @objc public func update_media_library(_ invoke: Invoke) {
+    do {
+      let args = try invoke.parseArgs(UpdateMediaLibraryArgs.self)
+      let data = Data(args.booksJson.utf8)
+      guard try JSONSerialization.jsonObject(with: data) is [[String: Any]] else {
+        invoke.reject("Invalid car media library")
+        return
+      }
+      UserDefaults.standard.set(data, forKey: "readest.carplay.books")
+      DispatchQueue.main.async {
+        NotificationCenter.default.post(
+          name: Notification.Name("readestCarPlayStateChanged"), object: nil)
+      }
+      invoke.resolve()
+    } catch {
+      invoke.reject("Failed to update CarPlay library: \(error.localizedDescription)")
+    }
+  }
+
   // CarPlay-only signal. Deliberately does NOT touch MPRemoteCommandCenter,
   // the audio session, or MPNowPlayingInfoCenter (those stay owned by the
   // WebView navigator.mediaSession path, see #4676). It only records the
@@ -628,11 +668,30 @@ class NativeTTSPlugin: Plugin, AVSpeechSynthesizerDelegate {
         .contains(.shouldResume)
       let wasForwarded = interruptionForwarded
       interruptionForwarded = false
-      keepAliveLog.log("interruption ended shouldResume=\(shouldResume) forwarded=\(wasForwarded)")
-      guard wasForwarded, shouldResume else { return }
+      // The system paused the playout player while it was playing, and JS
+      // never paused it: the webview never ran the forwarded pause because
+      // its content process is suspended while the native player alone
+      // carries the audio (an audiobook in CarPlay with the phone locked,
+      // #6444), or the .began fell inside the self-op window. The play event
+      // below would sit in the same queue, so the player has to be restarted
+      // here. Index -1 means the item already ended (inter-sentence gap);
+      // restarting it would replay its end and advance twice.
+      let resumeNatively =
+        playoutStarted && playoutCurrentIndex != -1 && playoutPlayer?.currentItem != nil
+        && playoutPlayer?.rate == 0
+      keepAliveLog.log(
+        "interruption ended shouldResume=\(shouldResume) forwarded=\(wasForwarded) native=\(resumeNatively)"
+      )
+      guard shouldResume, wasForwarded || resumeNatively else { return }
       // The interruption deactivated our session; reclaim before resuming.
       claimAudioSession()
-      triggerMediaSession("media-session-play")
+      if resumeNatively {
+        playoutPlayer?.rate = playoutRate
+        setKeepAlivePlaying(true)
+      }
+      if wasForwarded {
+        triggerMediaSession("media-session-play")
+      }
     @unknown default:
       break
     }
@@ -991,6 +1050,11 @@ class NativeTTSPlugin: Plugin, AVSpeechSynthesizerDelegate {
   private var playoutCurrentIndex = -1
   private var playoutRate: Float = 1.0
   private var playoutPlaying = false
+  // Playback was actually started by us (resume / Edge advance) and not paused
+  // since. playoutPlaying alone is set up front by start-session, before a
+  // continuous item has ever been played. A system interruption pauses the
+  // player without touching this, so it means "playing when interrupted".
+  private var playoutStarted = false
   private var playoutSessionEnded = false
   private var playoutPendingAdvance = false
   private var playoutGapTimer: Timer?
@@ -1022,10 +1086,12 @@ class NativeTTSPlugin: Plugin, AVSpeechSynthesizerDelegate {
           invoke.resolve(PlayoutControlResponse(session: nil))
         case "pause":
           self.playoutPlaying = false
+          self.playoutStarted = false
           self.playoutPlayer?.pause()
           invoke.resolve(PlayoutControlResponse(session: nil))
         case "resume":
           self.playoutPlaying = true
+          self.playoutStarted = true
           if self.playoutPendingAdvance {
             self.playoutPendingAdvance = false
             self.playoutAdvance()
@@ -1347,6 +1413,7 @@ class NativeTTSPlugin: Plugin, AVSpeechSynthesizerDelegate {
     playoutPlayer?.replaceCurrentItem(with: playerItem)
     if playoutPlaying {
       playoutPlayer?.playImmediately(atRate: playoutRate)
+      playoutStarted = true
     }
     emitPlayoutEvent("chunk-start", index: item.index)
   }
@@ -1394,6 +1461,7 @@ class NativeTTSPlugin: Plugin, AVSpeechSynthesizerDelegate {
     playoutSessionEnded = false
     playoutPendingAdvance = false
     playoutPlaying = false
+    playoutStarted = false
     playoutLoadedPath = nil
   }
 

@@ -240,10 +240,14 @@ the adapters under `src/services/annotation`, `src/services/nav`,
 features (annotations sync, navigation, content transforms, vertical/Warichu
 support, classic mode overlays, etc.).
 
-PDF rendering goes through `pdfjs-dist`, which is copied into
-`public/vendor/pdfjs` at build time (`pnpm setup-pdfjs`). Chinese conversion
-uses `simplecc-wasm` (`public/vendor/simplecc`), and Chinese segmentation uses
-`jieba-wasm` (`public/vendor/jieba`).
+PDF rendering goes through `pdfjs-dist`. Only what the reader fetches by URL at
+runtime is copied into `public/vendor/pdfjs` (`pnpm setup-pdfjs`): the worker,
+the WASM decoders, cmaps, standard fonts and the layer CSS. Everything the
+bundler imports resolves straight from `packages/` — `@pdfjs` at
+`packages/foliate-js/node_modules/pdfjs-dist`, `@simplecc` at
+`packages/simplecc-wasm/dist/web` — and is never copied into `public/`, since
+Tauri embeds every published file and would ship it twice. Chinese segmentation
+uses `jieba-wasm` straight from `node_modules` for the same reason.
 
 ### 3.4 Service worker and offline
 
@@ -527,7 +531,9 @@ is small and focused:
 ```
 lib.rs              -> command registration, scope grants, deep links, builder
 main.rs             -> entrypoint
-clip_url.rs         -> clipboard URL extraction
+clip_url.rs         -> rendered web-page capture
+browser_fetch.rs    -> resource requests using the browser session
+browser_cookies_macos.rs -> access to the WebKit cookie store
 dir_scanner.rs      -> recursive directory scan (used by library import)
 transfer_file.rs    -> chunked upload/download for big files
 discord_rpc.rs      -> Discord Rich Presence (desktop only)
@@ -535,8 +541,16 @@ android/, macos/,
 windows/            -> per-platform glue
 ```
 
-Everything else is delegated to **Tauri plugins**, mostly bundled in
-`packages/tauri-plugins/plugins`:
+Novel imports and browser-session resource requests reject explicit private IPs
+and local hostnames; native HTTP redirects are checked again before fetching.
+This is a URL guard, not a network sandbox: DNS/proxy resolution and browser
+navigation redirects remain platform-managed. Cancelling a novel import returns
+to its preview immediately; an in-flight rendered capture finishes its bounded
+native cleanup before the next queued capture starts. Desktop capture listeners
+are owned by the command and released on completion, cancellation, or timeout.
+
+Everything else is delegated to **Tauri plugins**, mostly the published
+`tauri-plugin-*` crates:
 
 - standard plugins: `fs`, `dialog`, `http`, `opener`, `os`, `process`, `shell`,
   `cli`, `deep-link`, `haptics`, `log`, `updater`, `websocket`, `oauth`,

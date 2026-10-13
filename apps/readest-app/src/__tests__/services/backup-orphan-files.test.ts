@@ -124,4 +124,23 @@ describe('addBackupEntriesToZip - only live library books are exported (#5837)',
 
     expect(names.filter((n) => n.includes('/'))).toEqual([`${LIVE_HASH}/book.epub`]);
   });
+
+  // Offline Audiobookshelf audio is re-downloadable and can run to gigabytes,
+  // which backup would read into memory file by file (#6256).
+  it('leaves offline Audiobookshelf audio out of the backup', async () => {
+    const absFiles: FileItem[] = [
+      { path: `${LIVE_HASH}/cover.png`, size: 200 },
+      { path: `${LIVE_HASH}/abs-offline/1-01.mp3`, size: 7_000_000 },
+      { path: `${LIVE_HASH}\\abs-offline\\manifest.json`, size: 900 },
+    ];
+    const { writer, names } = makeCapturingWriter();
+
+    await addBackupEntriesToZip(
+      writer,
+      makeAppService([makeBook({ hash: LIVE_HASH, format: 'ABS' })], absFiles),
+      {},
+    );
+
+    expect(names.filter((n) => n.includes('/'))).toEqual([`${LIVE_HASH}/cover.png`]);
+  });
 });

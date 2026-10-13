@@ -167,6 +167,22 @@ describe('EdgeTTSClient Web Audio playback', () => {
     await done;
   });
 
+  test('a question is followed by a longer pause than a period', async () => {
+    parsedMarks = [
+      { name: '0', text: 'Who is there?', language: 'en' },
+      { name: '1', text: 'Nobody answered.', language: 'en' },
+    ];
+    const client = await startClient();
+    await client.setRate(1); // default gap 0.15s, doubled after the question
+    const { done } = collectSpeak(client, new AbortController().signal);
+    await flush();
+    await flush();
+    const [first, second] = ctx().sources;
+    expect(second!.startedAt! - first!.endTime).toBeCloseTo(0.3, 5);
+    await ctx().advanceTo(5);
+    await done;
+  });
+
   test('the gap it is given is scheduled as-is at a faster rate', async () => {
     const client = await startClient();
     await client.setRate(2);

@@ -43,12 +43,13 @@ const setup = ({
   progressStyle = 'fraction',
   isFixedLayout = false,
   pageList = undefined as unknown,
+  pageItem = undefined as unknown,
   showFraction = false,
 } = {}) => {
   mocks.state.progress = {
     pageinfo: { current: 93, next: 94, total: 251 },
     section: { current: 4, total: 30 },
-    pageItem: undefined,
+    pageItem,
   };
   mocks.state.viewSettings = { progressStyle };
   mocks.state.bookData = { isFixedLayout, bookDoc: { pageList } };
@@ -168,5 +169,34 @@ describe('PageJumpInput', () => {
     fireEvent.keyDown(input, { key: 'Enter' });
     expect(mocks.view.goTo).toHaveBeenCalledWith('ch01.html#p2');
     expect(mocks.view.goToFraction).not.toHaveBeenCalled();
+  });
+
+  it('shows the final PDF label with the physical page total (#5951)', () => {
+    const labels = [
+      'i',
+      'ii',
+      'iii',
+      'iv',
+      '1',
+      '2',
+      '3',
+      '4',
+      '٤',
+      '٥',
+      '٦',
+      '٧',
+      ' Long Label - 11',
+      ' Long Label - 12',
+      ' Long Label - 13',
+      ' Long Label - 14',
+    ];
+    const pageList = labels.map((label, index) => ({ label, href: String(index), index }));
+    const { input } = setup({
+      progressStyle: 'reference',
+      pageList,
+      pageItem: pageList[15],
+    });
+
+    expect(input.value).toBe('Long Label - 14 / 16');
   });
 });

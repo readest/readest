@@ -39,6 +39,7 @@ const DEFAULT_DICTIONARY_SETTINGS: DictionarySettings = {
     BUILTIN_PROVIDER_IDS.systemDictionary,
     BUILTIN_PROVIDER_IDS.wiktionary,
     BUILTIN_PROVIDER_IDS.wikipedia,
+    BUILTIN_PROVIDER_IDS.context,
     ...BUILTIN_WEB_ORDER,
   ],
   providerEnabled: {
@@ -48,6 +49,9 @@ const DEFAULT_DICTIONARY_SETTINGS: DictionarySettings = {
     [BUILTIN_PROVIDER_IDS.systemDictionary]: false,
     [BUILTIN_PROVIDER_IDS.wiktionary]: true,
     [BUILTIN_PROVIDER_IDS.wikipedia]: true,
+    // Opt-in: it needs an OpenAI-compatible custom translator and spends
+    // the user's own API tokens on every lookup.
+    [BUILTIN_PROVIDER_IDS.context]: false,
     [BUILTIN_WEB_SEARCH_IDS.google]: false,
     [BUILTIN_WEB_SEARCH_IDS.urban]: false,
     [BUILTIN_WEB_SEARCH_IDS.merriamWebster]: false,
@@ -55,6 +59,7 @@ const DEFAULT_DICTIONARY_SETTINGS: DictionarySettings = {
   },
   webSearches: [],
   fontScale: 1,
+  autoPlayPronunciation: false,
 };
 
 interface DictionaryStoreState {
@@ -118,6 +123,10 @@ interface DictionaryStoreState {
   setDefaultProviderId(id: string | undefined): void;
   /** Set the dictionary popup font-size multiplier (#4443). */
   setFontScale(scale: number): void;
+  /** Auto-play a looked-up word's bundled pronunciation audio (#6265). */
+  setAutoPlayPronunciation(enabled: boolean): void;
+  /** Pick the custom translator the context dictionary asks (#5544). */
+  setContextTranslatorId(id: string): void;
 
   /** Add a custom web search (id is generated). Appended + enabled by default. */
   addWebSearch(name: string, urlTemplate: string): WebSearchEntry;
@@ -445,6 +454,18 @@ export const useCustomDictionaryStore = create<DictionaryStoreState>((set, get) 
     }));
   },
 
+  setAutoPlayPronunciation: (enabled) => {
+    set((state) => ({
+      settings: { ...state.settings, autoPlayPronunciation: enabled },
+    }));
+  },
+
+  setContextTranslatorId: (id) => {
+    set((state) => ({
+      settings: { ...state.settings, contextTranslatorId: id },
+    }));
+  },
+
   addWebSearch: (name, urlTemplate) => {
     const trimmedName = name.trim();
     const trimmedUrl = urlTemplate.trim();
@@ -627,6 +648,10 @@ export const useCustomDictionaryStore = create<DictionaryStoreState>((set, get) 
         defaultProviderId: persistedSettings.defaultProviderId,
         webSearches: persistedSettings.webSearches ?? [],
         fontScale: persistedSettings.fontScale ?? DEFAULT_DICTIONARY_SETTINGS.fontScale,
+        autoPlayPronunciation:
+          persistedSettings.autoPlayPronunciation ??
+          DEFAULT_DICTIONARY_SETTINGS.autoPlayPronunciation,
+        contextTranslatorId: persistedSettings.contextTranslatorId,
       };
       set({ dictionaries, settings: settingsMerged });
     } catch (error) {

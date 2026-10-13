@@ -2,7 +2,6 @@ import { describe, expect, test } from 'vitest';
 import {
   childrenUrl,
   contentUrl,
-  createChildUrl,
   deleteItemUrl,
   encodeGraphPath,
   itemUrl,
@@ -37,11 +36,6 @@ describe('graphRest', () => {
     expect(childrenUrl('/')).toBe(
       `${APPROOT}/children?$select=name,size,cTag,file,folder&$top=200`,
     );
-  });
-
-  test('createChildUrl targets the parent children collection', () => {
-    expect(createChildUrl('/Readest')).toBe(`${APPROOT}:/Readest:/children`);
-    expect(createChildUrl('/')).toBe(`${APPROOT}/children`);
   });
 
   test('deleteItemUrl + uploadSessionUrl + meUrl', () => {

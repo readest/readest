@@ -5,7 +5,8 @@ import { useEnv } from '@/context/EnvContext';
 import { useReaderStore } from '@/store/readerStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useBookDataStore } from '@/store/bookDataStore';
-import { toParentViewportPoint } from '../utils/annotatorUtil';
+import { mergeRestyledAnnotation, toParentViewportPoint } from '../utils/annotatorUtil';
+import { nextBooknoteStamp } from '@/utils/booknoteStamp';
 import { uniqueId } from '@/utils/misc';
 
 interface UseInstantAnnotationProps {
@@ -25,7 +26,7 @@ export const useInstantAnnotation = ({
 }: UseInstantAnnotationProps) => {
   const { envConfig } = useEnv();
   const { settings } = useSettingsStore();
-  const { getConfig, saveConfig, updateBooknotes } = useBookDataStore();
+  const { getConfig, getBookData, saveConfig, updateBooknotes } = useBookDataStore();
   const { getView, getViewsById, getViewSettings, getProgress } = useReaderStore();
 
   const startPointRef = useRef<Point | null>(null);
@@ -40,6 +41,15 @@ export const useInstantAnnotation = ({
   // held position after an auto page-turn without waiting for the next move.
   const lastEndPointRef = useRef<Point | null>(null);
   const previewAnnotationRef = useRef<BookNote | null>(null);
+  // The range the preview last drew, with its cfi and a copy of what it covered:
+  // what a release after a drag commits (see handleInstantAnnotationPointerUp).
+  // A PDF re-renders the page's text layer on a page turn, which collapses the
+  // live range, so the cfi and the text are taken from these instead.
+  const previewRangeRef = useRef<{
+    range: Range;
+    cfi: string;
+    contents: DocumentFragment;
+  } | null>(null);
   const annotationIdRef = useRef<string>(uniqueId());
   // The word previewed when the still hold engaged: a release without a drag
   // commits exactly this range. Cleared once any drag repaints the preview.
@@ -134,16 +144,14 @@ export const useInstantAnnotation = ({
     ) => {
       const newRange = doc.createRange();
       try {
-        const positionComparison = startPos.node.compareDocumentPosition(endPos.node);
-        const needsSwap =
-          positionComparison & Node.DOCUMENT_POSITION_PRECEDING ||
-          (startPos.node === endPos.node && startPos.offset > endPos.offset);
-
-        if (needsSwap) {
+        // Order the ends by boundary point, not by node: a node comparison
+        // ranks an element before the text inside it, so an end point on the
+        // text's container (a PDF text layer past its last line) flipped the
+        // range.
+        newRange.setStart(startPos.node, startPos.offset);
+        if (newRange.comparePoint(endPos.node, endPos.offset) < 0) {
           newRange.setStart(endPos.node, endPos.offset);
-          newRange.setEnd(startPos.node, startPos.offset);
         } else {
-          newRange.setStart(startPos.node, startPos.offset);
           newRange.setEnd(endPos.node, endPos.offset);
         }
 
@@ -167,17 +175,37 @@ export const useInstantAnnotation = ({
   // resolving the start coords when the down point did not land on a text node.
   const buildRangeFromAnchor = useCallback(
     (doc: Document, endPoint: Point) => {
+      // A drag keeps reporting to the page it started on once the pointer is
+      // over another page, and the browser clamps such a point back onto this
+      // page's text. Resolve nothing there, so the preview stays where the
+      // pointer left the page instead of jumping to unrelated lines. Only a
+      // fixed-layout page is its own document: a reflowable section spans
+      // every page, and the clamped point is how a drag reaches its corner.
+      const win = doc.defaultView;
+      if (
+        getBookData(bookKey)?.isFixedLayout &&
+        win &&
+        (endPoint.x < 0 ||
+          endPoint.y < 0 ||
+          endPoint.x > win.innerWidth ||
+          endPoint.y > win.innerHeight)
+      ) {
+        return null;
+      }
       const endPos = findPositionAtPoint(doc, endPoint.x, endPoint.y);
-      if (!endPos) return null;
       const startPos =
         startPosRef.current ??
         (startPointRef.current
           ? findPositionAtPoint(doc, startPointRef.current.x, startPointRef.current.y)
           : null);
-      if (!startPos) return null;
+      // Both ends must lie in this page's content: a page hidden by a turn
+      // resolves any point to its document node, and a turn re-renders a PDF
+      // page's text layer, detaching the start; neither can extend the range.
+      if (!endPos || !startPos || !doc.body?.contains(endPos.node)) return null;
+      if (!doc.body.contains(startPos.node)) return null;
       return rangeFromPositions(doc, startPos, endPos);
     },
-    [findPositionAtPoint, rangeFromPositions],
+    [bookKey, getBookData, findPositionAtPoint, rangeFromPositions],
   );
 
   const createAnnotation = useCallback((cfi: string, text?: string) => {
@@ -198,8 +226,8 @@ export const useInstantAnnotation = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Store a finished annotation in the booknotes (updating an existing record
-  // with the same cfi in place, keeping its id) and save. Returns the record
+  // Store a finished annotation in the booknotes (restyling an existing record
+  // with the same cfi in place, keeping its id and note) and save. Returns the record
   // as stored, so callers that keep referring to it (the range editor) hold
   // the persisted identity.
   const persistAnnotation = useCallback(
@@ -213,11 +241,11 @@ export const useInstantAnnotation = ({
 
       let stored: BookNote;
       if (existingIndex !== -1) {
+        const existing = annotations[existingIndex]!;
         stored = {
-          ...annotations[existingIndex]!,
-          ...annotation,
+          ...mergeRestyledAnnotation(existing, annotation),
           page: progress.page,
-          id: annotations[existingIndex]!.id,
+          updatedAt: nextBooknoteStamp(existing),
         };
         annotations[existingIndex] = stored;
       } else {
@@ -249,6 +277,7 @@ export const useInstantAnnotation = ({
       const views = getViewsById(bookKey.split('-')[0]!);
       views.forEach((v) => v?.addAnnotation(annotation));
       previewAnnotationRef.current = annotation;
+      previewRangeRef.current = { range: newRange, cfi, contents: newRange.cloneContents() };
 
       const progress = getProgress(bookKey);
       setEditingAnnotation(annotation);
@@ -286,6 +315,7 @@ export const useInstantAnnotation = ({
       startDocRef.current = doc;
       startIndexRef.current = index;
       previewAnnotationRef.current = null;
+      previewRangeRef.current = null;
       annotationIdRef.current = uniqueId();
       engageRangeRef.current = null;
       dragPaintedRef.current = false;
@@ -386,8 +416,19 @@ export const useInstantAnnotation = ({
       const startPoint = startPointRef.current;
       const heldWordRange = engageRangeRef.current;
 
-      // Build before clearing the anchor (it reads startPosRef).
-      const newRange = buildRangeFromAnchor(doc, endPoint);
+      // After a drag, commit what the preview showed instead of resolving the
+      // release point again. The release lands where the last move did, but a
+      // PDF text layer drops its `.selecting` state first, so that point then
+      // resolves to the bare layer and the range ran from the page top; and a
+      // release over another page's document can't resolve against the start
+      // page at all, which dropped the whole highlight. Build the fallback
+      // before clearing the anchor (it reads startPosRef).
+      const previewed = dragPaintedRef.current ? previewRangeRef.current : null;
+      let newRange = previewed?.range ?? buildRangeFromAnchor(doc, endPoint);
+      if (previewed?.range.collapsed) {
+        newRange = doc.createRange();
+        newRange.selectNodeContents(previewed.contents);
+      }
 
       startPointRef.current = null;
       startPosRef.current = null;
@@ -444,7 +485,7 @@ export const useInstantAnnotation = ({
       }
 
       const text = await getAnnotationText(newRange);
-      const cfi = view.getCFI(index, newRange);
+      const cfi = previewed?.cfi ?? view.getCFI(index, newRange);
 
       if (!text || !cfi || text.trim().length === 0) {
         clearInstantAnnotationState();

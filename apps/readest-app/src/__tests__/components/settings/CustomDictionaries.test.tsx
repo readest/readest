@@ -10,17 +10,20 @@
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import * as sortable from '@dnd-kit/sortable';
 
 import CustomDictionaries from '@/components/settings/CustomDictionaries';
 import { useCustomDictionaryStore } from '@/store/customDictionaryStore';
 import { BUILTIN_PROVIDER_IDS } from '@/services/dictionaries/types';
 import type { DictionarySettings } from '@/services/dictionaries/types';
 import { eventDispatcher } from '@/utils/event';
+import { useCustomTranslatorStore } from '@/store/customTranslatorStore';
+import type { CustomTranslator } from '@/types/translation';
 
 // Per-test platform control. `isSystemDictionaryEnabled` (real, from the
 // registry) reads `isSystemDictionarySupported`, so toggling these flips both
 // the row visibility and the lock gate the component now relies on.
-const platform = vi.hoisted(() => ({ supported: false, available: false }));
+const platform = vi.hoisted(() => ({ supported: false, available: false, premium: true }));
 const mocks = vi.hoisted(() => ({
   importDictionaries: vi.fn(),
   selectFiles: vi.fn(),
@@ -40,6 +43,14 @@ vi.mock('@/context/EnvContext', () => ({
     appService: { importDictionaries: mocks.importDictionaries },
     envConfig: {},
   }),
+}));
+
+vi.mock('@/context/AuthContext', () => ({
+  useAuth: () => ({ token: 'token', user: null }),
+}));
+
+vi.mock('@/utils/access', () => ({
+  isCustomTranslatorAllowed: () => platform.premium,
 }));
 
 vi.mock('@/hooks/useFileSelector', () => ({
@@ -78,18 +89,37 @@ const enabledSystemSettings: DictionarySettings = {
   webSearches: [],
 };
 
+// Provider rows use the compact `toggle-sm`; the panel's own preference
+// switches (SettingsSwitchRow) use the default size, so this stays scoped to
+// the sortable provider list as more switches are added below it.
 const getToggles = (container: HTMLElement) =>
-  Array.from(container.querySelectorAll<HTMLInputElement>('input[type="checkbox"]'));
+  Array.from(container.querySelectorAll<HTMLInputElement>('input[type="checkbox"].toggle-sm'));
 
 beforeEach(() => {
   platform.supported = false;
   platform.available = false;
+  platform.premium = true;
+  useCustomTranslatorStore.setState({ translators: [], loaded: true });
   mocks.importDictionaries.mockReset();
   mocks.selectFiles.mockReset();
 });
 
 afterEach(() => {
   cleanup();
+  vi.restoreAllMocks();
+});
+
+it('preserves dictionary row dimensions when dragging over a differently sized row', () => {
+  seedSettings(enabledSystemSettings);
+  const useSortable = sortable.useSortable;
+  vi.spyOn(sortable, 'useSortable').mockImplementation((options) => ({
+    ...useSortable(options),
+    transform: { x: 12, y: 24, scaleX: 0.5, scaleY: 1.5 },
+  }));
+  render(<CustomDictionaries onBack={() => {}} />);
+  const row = screen.getAllByRole('button', { name: 'Drag to reorder' })[0]!.parentElement!;
+  expect(row.style.transform).toContain('translate3d(12px, 24px, 0)');
+  expect(row.style.transform).not.toContain('scale');
 });
 
 describe('CustomDictionaries — system-dictionary lock', () => {
@@ -192,5 +222,77 @@ describe('CustomDictionaries — import progress', () => {
         }),
       ),
     );
+  });
+});
+
+describe('CustomDictionaries — auto-play pronunciation (#6265)', () => {
+  const baseSettings: DictionarySettings = {
+    providerOrder: [BUILTIN_PROVIDER_IDS.wiktionary],
+    providerEnabled: { [BUILTIN_PROVIDER_IDS.wiktionary]: true },
+    webSearches: [],
+  };
+
+  it('reflects the stored setting and persists a toggle', async () => {
+    const saveCustomDictionaries = vi.fn().mockResolvedValue(undefined);
+    seedSettings({ ...baseSettings, autoPlayPronunciation: false });
+    useCustomDictionaryStore.setState({ saveCustomDictionaries });
+
+    render(<CustomDictionaries onBack={() => {}} />);
+    const toggle = screen.getByRole('checkbox', { name: 'Auto-play Pronunciation' });
+    expect((toggle as HTMLInputElement).checked).toBe(false);
+
+    await act(async () => {
+      fireEvent.click(toggle);
+    });
+
+    expect(useCustomDictionaryStore.getState().settings.autoPlayPronunciation).toBe(true);
+    expect(saveCustomDictionaries).toHaveBeenCalled();
+  });
+});
+
+describe('CustomDictionaries — context dictionary (#5544)', () => {
+  const llm = (id: string): CustomTranslator => ({
+    id,
+    type: 'openai-compatible',
+    name: `LLM ${id}`,
+    addedAt: 1,
+    updatedAt: 1,
+  });
+  const contextSettings: DictionarySettings = {
+    providerOrder: [BUILTIN_PROVIDER_IDS.context],
+    providerEnabled: { [BUILTIN_PROVIDER_IDS.context]: false },
+    webSearches: [],
+  };
+
+  it('cannot be enabled until an OpenAI-compatible translator exists', () => {
+    seedSettings(contextSettings);
+    const { container } = render(<CustomDictionaries onBack={() => {}} />);
+    expect(screen.getByText('Context Dictionary')).toBeTruthy();
+    expect(screen.queryByText('AI')).toBeNull();
+    expect(getToggles(container)[0]!.disabled).toBe(true);
+    expect(screen.getByText(/Add an OpenAI-compatible translator/)).toBeTruthy();
+    expect(screen.queryByRole('combobox', { name: 'AI Translator' })).toBeNull();
+  });
+
+  it('cannot be enabled without premium', () => {
+    platform.premium = false;
+    useCustomTranslatorStore.setState({ translators: [llm('a')], loaded: true });
+    seedSettings(contextSettings);
+    const { container } = render(<CustomDictionaries onBack={() => {}} />);
+    expect(getToggles(container)[0]!.disabled).toBe(true);
+  });
+
+  it('lets the user pick which translator answers', async () => {
+    useCustomTranslatorStore.setState({ translators: [llm('a'), llm('b')], loaded: true });
+    seedSettings(contextSettings);
+    const { container } = render(<CustomDictionaries onBack={() => {}} />);
+    expect(getToggles(container)[0]!.disabled).toBe(false);
+
+    const select = screen.getByRole('combobox', { name: 'AI Translator' }) as HTMLSelectElement;
+    expect(select.value).toBe('a');
+    await act(async () => {
+      fireEvent.change(select, { target: { value: 'b' } });
+    });
+    expect(useCustomDictionaryStore.getState().settings.contextTranslatorId).toBe('b');
   });
 });

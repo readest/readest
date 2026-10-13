@@ -12,7 +12,7 @@ metadata:
 
 Opt-in is entirely the two lists in `src/utils/annotationToolbar.ts`: a type in `ALL_ANNOTATION_TOOL_TYPES` but NOT in `DEFAULT_ANNOTATION_TOOLBAR_ITEMS` never renders in the popup, while `getAvailableToolTypes` (canonical-order complement of the visible list) surfaces it in the Customize Toolbar "Available" tray for default AND already-customized users. `share` uses the same trick (#4014). No extra flag or gating code is needed for a new opt-in tool.
 
-`handleCopyLink` in Annotator.tsx: cfi = `selection.cfi || view.getCFI(...)`; noteId = first non-deleted booknote at that cfi, else `uniqueId()`. Deep-link resolution (`useOpenAnnotationLink`, the `/o` landing page) navigates off the **cfi** only and the noteId merely has to be present, so a plain unhighlighted selection still yields a working position link. Link form follows `noteExportConfig.linkType` ('app' on tauri, 'web' elsewhere).
+`handleCopyLink` in Annotator.tsx: cfi = `selection.cfi || view.getCFI(...)`; noteId = first non-deleted booknote at that cfi, else `uniqueId()`. Deep-link resolution (`useOpenLaunchLinks`, the `/o` landing page) navigates off the **cfi** only and the noteId merely has to be present, so a plain unhighlighted selection still yields a working position link. Link form follows `noteExportConfig.linkType` ('app' on tauri, 'web' elsewhere).
 
 `tooltip` in the `annotationToolButtons` registry is ONLY rendered for quick actions (QuickActionMenu). Non-quick-action entries (annotate, proofread, copylink) carry dead i18n keys by existing convention.
 

@@ -6,7 +6,7 @@ import {
   findAnnotationAtCfi,
   getAnnotationOverlayColor,
   mergeRestyledAnnotation,
-  summarizeAnnotations,
+  summarizeAnnotationHub,
 } from '@/app/reader/utils/annotatorUtil';
 import { BookNote, BooknoteGroup } from '@/types/book';
 import { NOTE_PREFIX } from '@/types/view';
@@ -82,6 +82,27 @@ describe('mergeRestyledAnnotation', () => {
     expect(merged.global).toBe(true);
     expect(merged.createdAt).toBe(100);
     expect(merged.updatedAt).toBe(200);
+  });
+
+  // A restyle keeps the cfi, so the sync anchors already on the record stay
+  // valid; dropping them made the next push treat the note as never synced.
+  it('keeps fields of the existing record that the restyle does not set', () => {
+    const existing = makeNote({
+      id: 'a',
+      xpointer0: '/body/DocFragment[3]/body/p[2]/text().0',
+      xpointer1: '/body/DocFragment[3]/body/p[2]/text().4',
+      bookHash: 'hash',
+      metaHash: 'meta',
+    });
+    const restyled = makeNote({ id: 'tmp', style: 'underline' });
+    const merged = mergeRestyledAnnotation(existing, restyled);
+    expect(merged).toMatchObject({
+      xpointer0: existing.xpointer0,
+      xpointer1: existing.xpointer1,
+      bookHash: 'hash',
+      metaHash: 'meta',
+      style: 'underline',
+    });
   });
 });
 
@@ -187,35 +208,40 @@ describe('filterExportGroups', () => {
   });
 });
 
-describe('summarizeAnnotations', () => {
-  it('splits live annotations into highlights and notes', () => {
-    const counts = summarizeAnnotations([
+describe('summarizeAnnotationHub', () => {
+  it('counts live annotations without double-counting noted annotations', () => {
+    const counts = summarizeAnnotationHub([
       makeNote({ id: 'a' }),
       makeNote({ id: 'b', note: 'thought' }),
       makeNote({ id: 'c' }),
     ]);
-    expect(counts).toEqual({ highlights: 2, notes: 1 });
+    expect(counts).toEqual({ annotations: 3 });
   });
 
-  it('ignores tombstoned annotations', () => {
-    const counts = summarizeAnnotations([
+  it('ignores tombstoned source material', () => {
+    const counts = summarizeAnnotationHub([
       makeNote({ id: 'a' }),
       makeNote({ id: 'b', deletedAt: 2 }),
-      makeNote({ id: 'c', note: 'thought', deletedAt: 3 }),
+      makeNote({ id: 'c', type: 'excerpt' }),
+      makeNote({ id: 'd', type: 'excerpt', deletedAt: 3 }),
     ]);
-    expect(counts).toEqual({ highlights: 1, notes: 0 });
+    expect(counts).toEqual({ annotations: 1 });
   });
 
-  it('splits on body truthiness so the counts agree with the Notes filter chip', () => {
-    // filterBooknotes partitions on `note.note` without trimming, so a
-    // whitespace-only body lands in the Notes bucket on both sides.
+  it('keeps the With notes filter as a subset of the annotation total', () => {
     const notes = [makeNote({ note: '   ' })];
-    expect(summarizeAnnotations(notes)).toEqual({ highlights: 0, notes: 1 });
+    expect(summarizeAnnotationHub(notes)).toEqual({ annotations: 1 });
     expect(filterBooknotes(notes, { kind: 'notes', query: '' }).length).toBe(1);
   });
 
   it('returns zeroes for an empty list', () => {
-    expect(summarizeAnnotations([])).toEqual({ highlights: 0, notes: 0 });
+    expect(summarizeAnnotationHub([])).toEqual({ annotations: 0 });
+  });
+
+  it('excludes the notebook document', () => {
+    expect(
+      summarizeAnnotationHub([makeNote({ id: 'notebook', type: 'notebook', note: '# Notes' })]),
+    ).toEqual({ annotations: 0 });
   });
 });
 

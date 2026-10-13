@@ -12,7 +12,7 @@ import { foldValue } from '@/utils/containsSearch';
  * Bump SEARCH_INDEX_VERSION whenever text extraction or folding changes so
  * stale caches rebuild on the next search.
  */
-export const SEARCH_INDEX_VERSION = 1;
+export const SEARCH_INDEX_VERSION = 2;
 
 // Maximal folding (caseless + diacriticless) with the default locale: any
 // occurrence under any stricter search config folds into an occurrence in

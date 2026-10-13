@@ -153,3 +153,78 @@ describe('/api/google/iap-verify consumption', () => {
     expect(mocks.consumeProductPurchase).not.toHaveBeenCalled();
   });
 });
+
+// Storage add-ons stack, so Play must consume them to allow repurchase. A
+// permanent unlock must NOT be consumed, or the buyer can be charged for it
+// again. It still has to be acknowledged, or Play auto-refunds after 3 days.
+describe('/api/google/iap-verify permanent unlocks', () => {
+  const unlockParams = {
+    ...verifyParams,
+    productId: 'com.bilingify.readest.customization.purchase',
+    purchaseToken: 'customization-token-1',
+  };
+
+  beforeEach(() => {
+    mocks.validateUserAndToken.mockReset();
+    mocks.verifyPurchase.mockReset();
+    mocks.acknowledgePurchase.mockReset();
+    mocks.consumeProductPurchase.mockReset();
+    mocks.processPurchaseData.mockReset();
+
+    mocks.validateUserAndToken.mockResolvedValue({
+      user: { id: 'user-1', email: 'u@example.com' },
+      token: 'test-token',
+    });
+    mocks.acknowledgePurchase.mockResolvedValue(undefined);
+    mocks.consumeProductPurchase.mockResolvedValue(undefined);
+    mocks.processPurchaseData.mockResolvedValue({
+      platform: 'android',
+      status: 'active',
+      productId: unlockParams.productId,
+      orderId: unlockParams.orderId,
+    });
+  });
+
+  it('acknowledges the unlock instead of consuming it', async () => {
+    mocks.verifyPurchase.mockResolvedValue({
+      success: true,
+      status: 'active',
+      purchaseType: 'product',
+      purchaseData: { purchaseState: 0, consumptionState: 0, acknowledgementState: 0 },
+    });
+
+    const response = await postVerify(unlockParams);
+
+    expect(response.status).toBe(200);
+    expect(mocks.consumeProductPurchase).not.toHaveBeenCalled();
+    expect(mocks.acknowledgePurchase).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not acknowledge an unlock twice', async () => {
+    mocks.verifyPurchase.mockResolvedValue({
+      success: true,
+      status: 'active',
+      purchaseType: 'product',
+      purchaseData: { purchaseState: 0, consumptionState: 0, acknowledgementState: 1 },
+    });
+
+    await postVerify(unlockParams);
+
+    expect(mocks.consumeProductPurchase).not.toHaveBeenCalled();
+    expect(mocks.acknowledgePurchase).not.toHaveBeenCalled();
+  });
+
+  it('leaves a pending unlock alone', async () => {
+    mocks.verifyPurchase.mockResolvedValue({
+      success: true,
+      status: 'cancelled',
+      purchaseType: 'product',
+      purchaseData: { purchaseState: 2, consumptionState: 0, acknowledgementState: 0 },
+    });
+
+    await postVerify(unlockParams);
+
+    expect(mocks.consumeProductPurchase).not.toHaveBeenCalled();
+    expect(mocks.acknowledgePurchase).not.toHaveBeenCalled();
+  });
+});

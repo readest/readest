@@ -7,6 +7,7 @@ import type { UserPlan } from '@/types/quota';
 
 const validateUserMock = vi.fn();
 const getUserProfilePlanMock = vi.fn();
+const getCustomizationPurchasedMock = vi.fn();
 vi.mock('@/utils/access', async () => {
   // Reach the real module so `isEmailInPlan` keeps the production logic
   // (we test it directly below) while patching the two functions the
@@ -16,6 +17,7 @@ vi.mock('@/utils/access', async () => {
     ...actual,
     validateUserAndToken: (...args: unknown[]) => validateUserMock(...args),
     getUserProfilePlan: (...args: unknown[]) => getUserProfilePlanMock(...args),
+    getCustomizationPurchased: (...args: unknown[]) => getCustomizationPurchasedMock(...args),
   };
 });
 
@@ -89,6 +91,7 @@ function makeReq(method: 'GET' | 'POST', body?: unknown): NextApiRequest {
 beforeEach(() => {
   validateUserMock.mockReset();
   getUserProfilePlanMock.mockReset();
+  getCustomizationPurchasedMock.mockReset().mockReturnValue(false);
   supabaseTouched.mockReset();
   validateUserMock.mockResolvedValue({
     user: { id: 'user-1', email: 'u@example.com' },
@@ -98,13 +101,13 @@ beforeEach(() => {
 
 describe('isEmailInPlan helper', () => {
   test('allows plus, pro, and lifetime (purchase)', () => {
-    expect(isEmailInPlan('plus')).toBe(true);
-    expect(isEmailInPlan('pro')).toBe(true);
-    expect(isEmailInPlan('purchase')).toBe(true);
+    expect(isEmailInPlan('plus', false)).toBe(true);
+    expect(isEmailInPlan('pro', false)).toBe(true);
+    expect(isEmailInPlan('purchase', false)).toBe(false);
   });
 
   test('blocks the free tier', () => {
-    expect(isEmailInPlan('free')).toBe(false);
+    expect(isEmailInPlan('free', false)).toBe(false);
   });
 });
 
@@ -135,11 +138,7 @@ describe('/api/send/address — plan gate', () => {
     expect(supabaseTouched).not.toHaveBeenCalled();
   });
 
-  test.each<UserPlan>([
-    'plus',
-    'pro',
-    'purchase',
-  ])('lets %s users through the gate', async (plan) => {
+  test.each<UserPlan>(['plus', 'pro'])('lets %s users through the gate', async (plan) => {
     getUserProfilePlanMock.mockReturnValue(plan);
     const res = makeRes();
     await addressHandler(makeReq('GET'), res as unknown as NextApiResponse);
@@ -174,8 +173,38 @@ describe('/api/send/senders — plan gate', () => {
     expect(supabaseTouched).not.toHaveBeenCalled();
   });
 
-  test.each<UserPlan>(['plus', 'pro', 'purchase'])('lets %s users past the gate', async (plan) => {
+  test.each<UserPlan>(['plus', 'pro'])('lets %s users past the gate', async (plan) => {
     getUserProfilePlanMock.mockReturnValue(plan);
+    const res = makeRes();
+    await sendersHandler(makeReq('GET'), res as unknown as NextApiResponse);
+    expect(supabaseTouched).toHaveBeenCalled();
+    expect(res._status).not.toBe(403);
+  });
+
+  // `purchase` means "holds some one-time purchase", which is how a
+  // storage-only buyer presents. Entitlement now rides on the customization
+  // claim, so the plan alone is not enough.
+  test('refuses a storage-only buyer reporting the purchase plan', async () => {
+    getUserProfilePlanMock.mockReturnValue('purchase' satisfies UserPlan);
+    getCustomizationPurchasedMock.mockReturnValue(false);
+    const res = makeRes();
+    await sendersHandler(makeReq('GET'), res as unknown as NextApiResponse);
+    expect(res._status).toBe(403);
+    expect(supabaseTouched).not.toHaveBeenCalled();
+  });
+
+  test('lets a grandfathered buyer through on the customization claim', async () => {
+    getUserProfilePlanMock.mockReturnValue('purchase' satisfies UserPlan);
+    getCustomizationPurchasedMock.mockReturnValue(true);
+    const res = makeRes();
+    await sendersHandler(makeReq('GET'), res as unknown as NextApiResponse);
+    expect(supabaseTouched).toHaveBeenCalled();
+    expect(res._status).not.toBe(403);
+  });
+
+  test('lets a free user who bought Full Customization through', async () => {
+    getUserProfilePlanMock.mockReturnValue('free' satisfies UserPlan);
+    getCustomizationPurchasedMock.mockReturnValue(true);
     const res = makeRes();
     await sendersHandler(makeReq('GET'), res as unknown as NextApiResponse);
     expect(supabaseTouched).toHaveBeenCalled();

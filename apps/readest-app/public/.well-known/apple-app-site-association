@@ -21,6 +21,10 @@
           {
             "/": "/clip*",
             "comment": "Matches Share-Extension URL handoff: /clip?url=..."
+          },
+          {
+            "/": "/link",
+            "comment": "Matches CrossPoint reader sign-in links: /link?code=..."
           }
         ]
       }

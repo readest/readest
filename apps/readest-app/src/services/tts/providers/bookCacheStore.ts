@@ -109,6 +109,19 @@ const createNativePackFs = (dir: string): TTSPackFs => ({
   },
 });
 
+// The per-book store every synthetic engine of one reader shares: each opens
+// the same `cache.db`, and OPFS sync access handles are exclusive, so two
+// stores on one book would fight. Entries are namespaced by provider id.
+// Null when there is no app context or the user turned the cache off.
+export const createBookTTSCacheStore = (
+  appService: AppService | null | undefined,
+  getBookHash: () => string | null,
+): BookTTSCacheStore | null => {
+  const cacheConfig = getTTSCacheConfig();
+  if (!appService || !cacheConfig.enabled) return null;
+  return new BookTTSCacheStore(appService, getBookHash, cacheConfig.budgetMB * 1024 * 1024);
+};
+
 export class BookTTSCacheStore implements TTSCacheStore {
   #appService: AppService;
   // The book key lands on the controller after construction (init()), so the
@@ -118,6 +131,7 @@ export class BookTTSCacheStore implements TTSCacheStore {
   #opening: Promise<{ db: DatabaseService; store: SqliteTTSCacheStore } | null> | null = null;
   #closing: Promise<void> | null = null;
   #compactTimer: ReturnType<typeof setTimeout> | null = null;
+  readonly #importListeners = new Set<(keys: string[]) => void>();
 
   constructor(appService: AppService, getBookHash: () => string | null, budgetBytes: number) {
     this.#appService = appService;
@@ -151,6 +165,10 @@ export class BookTTSCacheStore implements TTSCacheStore {
         // 'tts-cache' has no registered migrations; the store owns its DDL.
         const db = await this.#appService.openDatabase('tts-cache', `${dir}/cache.db`, 'Cache');
         const store = new SqliteTTSCacheStore(db, { budgetBytes: this.#budgetBytes, packFs });
+        // Before the pull below, so its imports reach the listeners.
+        store.onImported((keys) => {
+          for (const listener of this.#importListeners) listener(keys);
+        });
         // Reconcile the durable marker before a cross-book sweep. A crash can
         // occur between pinning SQLite rows and writing the marker; the next
         // open repairs that gap before eviction is allowed to inspect it.
@@ -176,9 +194,22 @@ export class BookTTSCacheStore implements TTSCacheStore {
     return this.#opening;
   }
 
+  onImported(listener: (keys: string[]) => void): void {
+    this.#importListeners.add(listener);
+  }
+
+  async open(): Promise<void> {
+    await this.#open();
+  }
+
   async get(key: string): Promise<TTSCacheEntry | null> {
     const opened = await this.#open();
     return opened ? opened.store.get(key) : null;
+  }
+
+  async cachedKeys(keys: string[]): Promise<Set<string>> {
+    const opened = await this.#open();
+    return opened ? opened.store.cachedKeys(keys) : new Set();
   }
 
   async put(
@@ -200,6 +231,11 @@ export class BookTTSCacheStore implements TTSCacheStore {
   async recordMarkKey(section: number, ordinal: number, key: string): Promise<void> {
     const opened = await this.#open();
     await opened?.store.recordMarkKey(section, ordinal, key);
+  }
+
+  async recordMarkKeys(section: number, marks: { ordinal: number; key: string }[]): Promise<void> {
+    const opened = await this.#open();
+    await opened?.store.recordMarkKeys(section, marks);
   }
 
   async beginDownloadSections(sections: number[]): Promise<void> {

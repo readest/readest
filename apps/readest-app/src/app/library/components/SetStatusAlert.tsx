@@ -60,7 +60,7 @@ const SetStatusAlert: React.FC<SetStatusAlertProps> = ({
         className={clsx(
           'flex w-auto max-w-[90vw] flex-col gap-3',
           'border-base-content/10 bg-base-200/95 rounded-2xl border p-4',
-          'shadow-lg backdrop-blur-sm',
+          'shadow-lg backdrop-blur-xs',
         )}
       >
         {/* Header with close button for small screens */}
@@ -86,7 +86,7 @@ const SetStatusAlert: React.FC<SetStatusAlertProps> = ({
               key={label}
               className={clsx(
                 'flex items-center gap-2 rounded-full border px-4 py-2',
-                'shadow-sm transition-all duration-200 ease-out active:scale-[0.97]',
+                'shadow-xs transition-all duration-200 ease-out active:scale-[0.97]',
                 className,
               )}
               onClick={() => onUpdateStatus(status)}
@@ -97,7 +97,7 @@ const SetStatusAlert: React.FC<SetStatusAlertProps> = ({
           <button
             className={clsx(
               'hidden items-center gap-2 rounded-full border px-4 py-2',
-              'not-eink:bg-base-300 not-eink:text-base-content not-eink:border-base-content/10 not-eink:shadow-sm',
+              'not-eink:bg-base-300 not-eink:text-base-content not-eink:border-base-content/10 not-eink:shadow-xs',
               'eink-bordered',
               'transition-all duration-200 ease-out active:scale-[0.97]',
               'sm:flex',

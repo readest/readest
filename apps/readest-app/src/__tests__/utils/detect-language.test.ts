@@ -185,6 +185,16 @@ describe('detectLanguage - Result Tests', () => {
         expect(result).toBe('en');
       });
     });
+
+    // franc returns "und" for short CJK headers such as a TXT title line.
+    // Falling back to "en" there means the Chinese chapter regexps never run.
+    // See issue #6172.
+    it('should fall back to script detection when franc cannot classify CJK text', () => {
+      expect(detectLanguage('万国之国')).toBe('zh');
+      expect(detectLanguage('三体')).toBe('zh');
+      expect(detectLanguage('こんにちは')).toBe('ja');
+      expect(detectLanguage('한글 제목')).toBe('ko');
+    });
   });
 
   describe('mixed content', () => {

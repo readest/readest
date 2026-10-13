@@ -17,3 +17,16 @@ schemars = "0.8"
 [build-dependencies]
 tauri-plugin = { version = "2", features = ["build"] }
 schemars = "0.8"
+
+[target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
+souvlaki = { version = "0.8", default-features = false, features = ["use_zbus"] }
+serde_json = "1"
+base64 = "0.22"
+
+[target.'cfg(target_os = "macos")'.dependencies]
+objc2 = "0.6"
+objc2-foundation = { version = "0.3", features = ["NSDictionary", "NSString", "NSValue"] }
+objc2-app-kit = { version = "0.3", features = ["NSImage"] }
+objc2-core-foundation = { version = "0.3", features = ["CFCGTypes"] }
+objc2-media-player = { version = "0.3", features = ["MPNowPlayingInfoCenter", "MPMediaItem", "block2", "objc2-app-kit", "objc2-core-foundation"] }
+block2 = "0.6"

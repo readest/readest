@@ -18,6 +18,8 @@ export type TTSVoice = {
   name: string;
   lang: string;
   disabled?: boolean;
+  // Premium voices: the plan that unlocks them, shown as a badge.
+  tier?: 'plus' | 'pro';
 };
 
 export type TTSVoicesGroup = {

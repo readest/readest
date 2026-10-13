@@ -59,14 +59,15 @@ describe('pickFresherMetadata (issue #5438)', () => {
 });
 
 describe('getBookWithUpdatedMetadata stamps metadataUpdatedAt', () => {
-  it('sets metadataUpdatedAt alongside updatedAt on a metadata edit', () => {
+  it('sets metadataUpdatedAt and leaves updatedAt (Date Read) alone (#6414)', () => {
     const before = Date.now();
-    const updated = getBookWithUpdatedMetadata(book({}), {
+    const original = book({});
+    const updated = getBookWithUpdatedMetadata(original, {
       title: 'New',
       author: 'A',
       language: 'sv',
     });
     expect(updated.metadataUpdatedAt).toBeGreaterThanOrEqual(before);
-    expect(updated.metadataUpdatedAt).toBe(updated.updatedAt);
+    expect(updated.updatedAt).toBe(original.updatedAt);
   });
 });

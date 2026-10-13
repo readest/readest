@@ -110,9 +110,9 @@ describe('importBook TXT ClosableFile lifecycle', () => {
   let service: TestAppService;
   let mockClose: ReturnType<typeof vi.fn>;
 
-  const makeSourceTxt = (): ClosableFile => {
+  const makeSourceTxt = (name = 'novel.txt'): ClosableFile => {
     mockClose = vi.fn(async () => undefined);
-    const file = new File(['chapter one\n\nhello'], 'novel.txt', {
+    const file = new File(['chapter one\n\nhello'], name, {
       type: 'text/plain',
     }) as ClosableFile;
     file.close = mockClose as ClosableFile['close'];
@@ -187,5 +187,18 @@ describe('importBook TXT ClosableFile lifecycle', () => {
 
     await expect(service.importBook('/library/novel.txt', [])).rejects.toThrow();
     expect(mockClose).toHaveBeenCalledTimes(1);
+  });
+  // Issue #5959: once the pickers stop dropping "novel.txt (1)", the importer
+  // has to recognise it as a TXT too, or it reaches the document loader as an
+  // unknown binary and fails with "Unsupported or corrupted book file".
+  it('converts a TXT whose duplicate-download marker landed after the extension', async () => {
+    // `fs.openFile` reports the on-disk name, marker and all.
+    const source = makeSourceTxt('novel.txt (1)');
+    service.getFs().openFile.mockResolvedValue(source);
+
+    const result = await service.importBook('/library/novel.txt (1)', []);
+
+    expect(result).not.toBeNull();
+    expect(mockConvert).toHaveBeenCalledTimes(1);
   });
 });

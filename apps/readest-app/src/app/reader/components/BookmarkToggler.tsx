@@ -12,6 +12,7 @@ import Button from '@/components/Button';
 import { getCurrentPage } from '@/utils/book';
 import { eventDispatcher } from '@/utils/event';
 import { isCfiInLocation } from '@/utils/cfi';
+import { nextBooknoteStamp } from '@/utils/booknoteStamp';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 
 interface BookmarkTogglerProps {
@@ -57,8 +58,8 @@ const BookmarkToggler: React.FC<BookmarkTogglerProps> = ({ bookKey }) => {
         (item) => item.type === 'bookmark' && item.cfi === cfi,
       );
       if (existingBookmark) {
+        existingBookmark.updatedAt = nextBooknoteStamp(existingBookmark);
         existingBookmark.deletedAt = null;
-        existingBookmark.updatedAt = Date.now();
         existingBookmark.text = bookmark.text;
         existingBookmark.page = bookmark.page;
       } else {
@@ -72,7 +73,7 @@ const BookmarkToggler: React.FC<BookmarkTogglerProps> = ({ bookKey }) => {
       setIsBookmarked(false);
       bookmarks.forEach((item) => {
         if (item.type === 'bookmark' && isCfiInLocation(item.cfi, cfi)) {
-          item.deletedAt = Date.now();
+          item.deletedAt = nextBooknoteStamp(item);
         }
       });
       const updatedConfig = updateBooknotes(bookKey, bookmarks);

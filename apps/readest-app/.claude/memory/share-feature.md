@@ -49,7 +49,7 @@ See "Critical Files (modify or create)" table in the plan. Key starting points:
 - `src/utils/share.ts` (new) — `buildShareUrl(token)`, `parseShareDeepLink(url)`
 - Dialog reference: `src/components/Dialog.tsx`, `BookDetailModal.tsx`
 - Landing reference: `src/app/o/page.tsx` (lift `Card`, `BrandHeader`, `PageFooter` to `src/components/landing/`)
-- Deeplink hook reference: `src/hooks/useOpenAnnotationLink.ts`, `useOpenWithBooks.ts`
+- Deeplink hook reference: `src/hooks/useOpenLaunchLinks.ts`, `useOpenWithBooks.ts`
 - App-level upload entry: `appService.uploadBook(book)` at `src/services/appService.ts:269` (NOT `cloudService.uploadBook` — lower-level fn)
 
 ## Resolved bugs (2026-06-18, dev branch) — cover + Android import

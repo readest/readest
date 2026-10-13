@@ -77,6 +77,7 @@ const setup = () => {
 
 let currentSel: Selection | null = null;
 const doc = {
+  documentElement: document.createElement('html'),
   getSelection: () => currentSel,
   createRange: () => ({
     setStart: () => {},
@@ -187,4 +188,17 @@ describe('touch selectionchange defers to the gesture end (toolbar flash)', () =
 
     expect(setSelection).toHaveBeenCalled();
   });
+});
+
+test('native touch lifecycle defers the popup without DOM pointer events (#6226)', async () => {
+  const { result, setSelection } = setup();
+  result.current.handleTouchStart();
+  setDocSelection(true);
+  result.current.handleSelectionchange(doc, 0);
+  await flush();
+  expect(setSelection).not.toHaveBeenCalled();
+
+  result.current.handleTouchEnd(doc, 0);
+  await flush();
+  expect(setSelection).toHaveBeenCalledTimes(1);
 });

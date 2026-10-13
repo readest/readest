@@ -1,0 +1,16 @@
+---
+name: fixed-layout-push-turn
+description: "Push animation for PDF/CBZ/fixed-layout via the captured pipeline's third style (PagePushRenderer) — design, the idle-shift bug the prepared surface exposed on device, and how to verify push with CDP"
+metadata:
+  type: project
+---
+
+Follow-up to [[fixed-layout-page-curl-6239]] / [[fixed-layout-turn-evicts-touched-frame]]. chrox: "curl and slide for PDFs work now, but Push has no animation effect." Branch `feat/fixed-layout-push-turn` (stacked on `fix/fixed-layout-turn-evicts-touched-frame`, worktree `/Users/chrox/dev/readest-fix-fixed-layout-turn-evicts-touched-frame`), commit 0ffea44ee, **MERGED to readest main as #6251 (5c316f416)** 2026-09-17. Device: idle-shift fix + tap-push VERIFIED on Xiaomi (62fps/550ms, 0 janks); drag commit/cancel want a real-finger pass (CDP synthetic drags chop into flicks — index jumped 10→68, NOT reproducible by finger).
+
+**Why there was nothing:** `fixed-layout.js` has no strip — `#showSpread` toggles wrapper visibility — so Push on FXL was an instant swap; `getCapturedTurnStyle` returned null for `'push'`. EPUB Push is the paginator's own finger-tracked strip scroll (`#scrollTo` → `slideTurnAnimation`).
+
+**Design (approved):** Push = the captured pipeline's third style, **fixed-layout only** (reflowable keeps the paginator's native push). `src/utils/pagePush.ts` `PagePushRenderer` composes `PageSlideRenderer({ edgeShadow: false })` for the outgoing sheet and translates a **push target** (host callback `getPushTarget` → the cell's `foliate-view`) in from the other side: sheet `−p·w`, live `(1−p)·w`, mirrored by `rendererRtl`. `animateSettle` runs a twin WAAPI animation on the live view with the same sampled keyframes and returns the sheet's (what the controller listens on). Gates: `CapturedTurnStyle` + `'push'`, `RELEASE_SETTLE_CONFIG.push` = slide's, `isLayeredTurnCandidate` accepts `'push'`, and the slide's flat-start/velocity-projection branches became `style !== 'curl'`. The gridcell is `overflow-hidden`, so the pushed-in view clips; header/footer stay put like the paginator's push (only the strip moves).
+
+**Bug caught on device (never in tests until added):** the prepared warm surface calls `render(0)` while the reader is IDLE — and the push renderer set the live view to `translate3d(+W)` → the page vanished off-screen after every turn (samples: dispose cleared it, then the re-prepare shifted it again). Rule: **at progress 0 leave the live view untouched** (`''`); only `progress > 0` moves it. The cancel settle's keyframes still end at +W under the opaque flat sheet, and the terminal `render(0)` clears it before `navigate(!forward)`. Tests: `page-push.browser.test.ts` "leaves the live view alone at progress 0", `captured-turn.browser.test.ts` "does not shift the live view while a push surface is merely prepared".
+
+**Verifying push via CDP:** `foliate-view.style.transform` is the tell — must be `''` whenever idle (warm surface present at `0.004/true`), `translate3d((1−p)·W)` mid-drag with the sheet at `−p·W` (edge gap 0 forward; mirrored backward). A hold-then-release below 50 % always CANCELS for slide/push (release velocity 0 after `RELEASE_PAUSE_THRESHOLD_MS`) — to script a commit, drag past ~60 % (x 80→340). Tap-push pacing on the Xiaomi: 59 frames/524 ms, avg 8.6 ms, 0 frames >33 ms — same as curl/slide.

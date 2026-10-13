@@ -9,14 +9,14 @@ import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { formatAuthors, formatTitle } from '@/utils/book';
 import BookCover from '@/components/BookCover';
 import BookCoverViewer, { useBookCoverViewer } from '@/components/BookCoverViewer';
+import { useDefaultBookshelfCovers } from '@/hooks/useDefaultBookshelfCovers';
 import { useBookDataStore } from '@/store/bookDataStore';
-import { useSettingsStore } from '@/store/settingsStore';
 import { useSidebarStore } from '@/store/sidebarStore';
 
 const BookCard = ({ book }: { book: Book }) => {
   const { title, author } = book;
   const _ = useTranslation();
-  const { settings } = useSettingsStore();
+  const { skeuomorphicCovers } = useDefaultBookshelfCovers();
   const { isDarkMode } = useThemeStore();
   const iconSize18 = useResponsiveSize(18);
   const bookCoverRef = useRef<HTMLButtonElement | null>(null);
@@ -38,7 +38,7 @@ const BookCard = ({ book }: { book: Book }) => {
         type='button'
         aria-label={_('View Book Cover')}
         className={clsx(
-          'me-4 aspect-[28/41] max-h-16 w-[15%] max-w-12 overflow-hidden rounded-sm shadow-md',
+          'me-4 aspect-[28/41] max-h-16 w-[15%] max-w-12 overflow-hidden rounded-xs shadow-md',
           isDarkMode ? 'mix-blend-screen' : 'mix-blend-multiply',
         )}
         onClick={openCoverViewer}
@@ -47,8 +47,8 @@ const BookCard = ({ book }: { book: Book }) => {
           book={book}
           mode='list'
           coverFit='crop'
-          showSpine={settings.librarySkeuomorphicCovers}
-          imageClassName='rounded-sm'
+          showSpine={skeuomorphicCovers}
+          imageClassName='rounded-xs'
           onImageError={() => (bookCoverRef.current!.style.display = 'none')}
         />
       </button>

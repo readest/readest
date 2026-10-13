@@ -35,6 +35,8 @@ const NotebookTabNavigation: React.FC<NotebookTabNavigationProps> = ({
       : ['notes', 'ai']
     : [];
 
+  if (tabs.length === 0) return null;
+
   const getTabLabel = (tab: NotebookTab) => {
     switch (tab) {
       case 'notes':

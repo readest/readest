@@ -29,4 +29,19 @@ export async function partialMD5(file: File): Promise<string> {
   return hasher.hex();
 }
 
+/**
+ * md5 of the whole file, read in chunks so a large book is never held in
+ * memory twice. Far more expensive than `partialMD5`, so hash a book at most
+ * once.
+ */
+export async function fullMD5(file: File): Promise<string> {
+  const chunkSize = 4 * 1024 * 1024;
+  const hasher = md5.create();
+  for (let start = 0; start < file.size; start += chunkSize) {
+    const chunk = await file.slice(start, start + chunkSize).arrayBuffer();
+    hasher.update(new Uint8Array(chunk));
+  }
+  return hasher.hex();
+}
+
 export { md5 };

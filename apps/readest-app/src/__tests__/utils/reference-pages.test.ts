@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { getReferencePageInfo, resolveReferencePageCount } from '@/utils/progress';
 
 const makePageList = (labels: string[]) => labels.map((label) => ({ label, href: '#' }));
+const makeIndexedPageList = (labels: string[]) =>
+  labels.map((label, index) => ({ label, href: String(index), index }));
 
 describe('getReferencePageInfo', () => {
   describe('with a page list from the book (issue #672)', () => {
@@ -86,6 +88,34 @@ describe('getReferencePageInfo', () => {
         referencePageCount: 999,
       });
       expect(info).toEqual({ current: '2', total: 3 });
+    });
+
+    it('uses the physical count for a complete indexed PDF page list (#5951)', () => {
+      const pageList = makeIndexedPageList([
+        'i',
+        'ii',
+        'iii',
+        'iv',
+        '1',
+        '2',
+        '3',
+        '4',
+        '٤',
+        '٥',
+        '٦',
+        '٧',
+        ' Long Label - 11',
+        ' Long Label - 12',
+        ' Long Label - 13',
+        ' Long Label - 14',
+      ]);
+      const info = getReferencePageInfo({
+        pageList,
+        pageItem: pageList[15],
+        fraction: 1,
+        referencePageCount: 0,
+      });
+      expect(info).toEqual({ current: 'Long Label - 14', total: 16 });
     });
   });
 

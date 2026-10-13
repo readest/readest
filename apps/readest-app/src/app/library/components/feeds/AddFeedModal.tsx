@@ -59,7 +59,7 @@ const AddFeedModal: React.FC<AddFeedModalProps> = ({ isOpen, onClose, onSubmit }
       isOpen={isOpen}
       onClose={onClose}
       title={_('Add Feed')}
-      boxClassName='sm:!w-[480px] sm:!max-w-[480px] sm:!h-auto sm:!max-h-[80vh]'
+      boxClassName='sm:w-[480px]! sm:max-w-[480px]! sm:h-auto! sm:max-h-[80vh]!'
     >
       <div className='flex flex-col gap-4 pb-6 pt-2'>
         <p className='text-base-content/60 text-sm leading-relaxed'>
@@ -68,7 +68,7 @@ const AddFeedModal: React.FC<AddFeedModalProps> = ({ isOpen, onClose, onSubmit }
         <input
           type='url'
           autoFocus
-          className='input input-bordered eink-bordered placeholder:text-base-content/35 w-full'
+          className='input eink-bordered placeholder:text-base-content/35 w-full'
           placeholder='https://example.com/feed.xml'
           value={url}
           disabled={submitting}

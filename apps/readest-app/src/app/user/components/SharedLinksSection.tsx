@@ -49,7 +49,7 @@ const ShareCover: React.FC<{ token: string; alt: string }> = ({ token, alt }) =>
   const [failed, setFailed] = useState(false);
   if (failed) {
     return (
-      <div className='border-base-300 bg-base-200 flex h-14 w-10 shrink-0 items-center justify-center rounded border'>
+      <div className='border-base-300 bg-base-200 flex h-14 w-10 shrink-0 items-center justify-center rounded-sm border'>
         <IoBookOutline className='text-base-content/40 h-5 w-5' aria-hidden='true' />
       </div>
     );
@@ -60,7 +60,7 @@ const ShareCover: React.FC<{ token: string; alt: string }> = ({ token, alt }) =>
       src={`/api/share/${encodeURIComponent(token)}/cover`}
       alt={alt}
       onError={() => setFailed(true)}
-      className='border-base-300 bg-base-200 h-14 w-10 shrink-0 rounded border object-cover'
+      className='border-base-300 bg-base-200 h-14 w-10 shrink-0 rounded-sm border object-cover'
       loading='lazy'
     />
   );
@@ -330,7 +330,7 @@ const SharedLinksSection: React.FC = () => {
                       <PiDotsThreeVerticalBold className='h-4 w-4' aria-hidden='true' />
                     }
                   >
-                    <Menu className='dropdown-content bg-base-100 rounded-box z-[1] w-44 border p-1 shadow'>
+                    <Menu className='dropdown-content bg-base-100 rounded-box z-[1] w-44 border p-1 shadow-sm'>
                       <MenuItem
                         label={_('Revoke share')}
                         Icon={IoTrashOutline}

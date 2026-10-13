@@ -1,17 +1,24 @@
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useEnv } from '@/context/EnvContext';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useBookDataStore } from '@/store/bookDataStore';
+import { useHardcoverSyncStore } from '@/store/hardcoverSyncStore';
 import { useBookProgress } from '@/store/readerProgressStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { eventDispatcher } from '@/utils/event';
 import { debounce } from '@/utils/debounce';
-import { HardcoverClient, HardcoverSyncMapStore } from '@/services/hardcover';
+import {
+  HardcoverClient,
+  HardcoverSyncMapStore,
+  HardcoverAuthError,
+  HardcoverUnmatchedError,
+  isHardcoverConnected,
+  createHardcoverTokenStore,
+} from '@/services/hardcover';
 import { BookNote, HardcoverBookLink } from '@/types/book';
 
-// Hardcover throttles its API hard (≈1 req/1.15s), and the "currently reading"
-// status + reading-session progress it tracks doesn't need second-by-second
-// accuracy, so the auto-sync debounce is deliberately coarse.
+// The "currently reading" status + reading-session progress Hardcover tracks
+// doesn't need second-by-second accuracy, so the auto-sync debounce is coarse.
 const HARDCOVER_SYNC_DEBOUNCE_MS = 10000;
 
 interface PushOptions {
@@ -41,14 +48,25 @@ export const useHardcoverSync = (bookKey: string) => {
     [envConfig],
   );
 
+  // One client (and map store) per book, so progress and notes pushes share
+  // the cached user id and note mappings; rebuilt when the token changes.
+  const clientRef = useRef<{ token: string; client: HardcoverClient } | null>(null);
+  const notesQueueRef = useRef<Promise<void>>(Promise.resolve());
+
   const getClient = useCallback(async () => {
     const { settings } = useSettingsStore.getState();
-    if (!settings.hardcover?.enabled || !settings.hardcover?.accessToken) {
+    const hardcover = settings.hardcover;
+    if (!hardcover?.enabled || !isHardcoverConnected(hardcover)) {
       return null;
     }
+    const token = hardcover.oauth?.accessToken ?? hardcover.accessToken;
     const appService = await envConfig.getAppService();
-    const mapStore = new HardcoverSyncMapStore(appService);
-    return new HardcoverClient(settings.hardcover, mapStore);
+    if (clientRef.current?.token !== token) {
+      const mapStore = new HardcoverSyncMapStore(appService);
+      const tokenStore = createHardcoverTokenStore(envConfig);
+      clientRef.current = { token, client: new HardcoverClient(hardcover, mapStore, tokenStore) };
+    }
+    return clientRef.current.client;
   }, [envConfig]);
 
   // Remember which Hardcover book a sync resolved to (#5846): the book menu
@@ -67,69 +85,88 @@ export const useHardcoverSync = (bookKey: string) => {
     [bookKey, envConfig, getConfig, saveConfig, setConfig],
   );
 
+  // Notes pushes run one at a time: overlapping ones would each see the other's
+  // inserts as missing and duplicate journal entries.
   const pushNotes = useCallback(
     async (options?: PushOptions) => {
-      const silent = options?.silent ?? false;
-      const config = getConfig(bookKey);
-      const book = getBookData(bookKey)?.book;
-      if (!config || !book) return;
-
-      const eligibleNotes = (config.booknotes ?? []).filter(
-        (note: BookNote) =>
-          (note.type === 'annotation' || note.type === 'excerpt') && !note.deletedAt,
-      );
-
-      if (eligibleNotes.length === 0) {
-        if (!silent) {
-          eventDispatcher.dispatch('toast', {
-            message: _('No annotations or excerpts to sync for this book.'),
-            type: 'info',
-          });
-        }
-        return;
-      }
-
-      const client = await getClient();
-      if (!client) {
-        if (!silent) {
-          eventDispatcher.dispatch('toast', {
-            message: _('Configure Hardcover in Settings first.'),
-            type: 'info',
-          });
-        }
-        return;
-      }
-
+      const previous = notesQueueRef.current;
+      let release = () => {};
+      notesQueueRef.current = new Promise<void>((resolve) => (release = resolve));
+      await previous;
       try {
-        const result = await client.syncBookNotes(book, config);
-        await rememberLink(result.link);
-        await updateLastSyncedAt(Date.now());
-        if (!silent) {
-          eventDispatcher.dispatch('toast', {
-            message:
-              result.inserted === 0 && result.updated === 0
-                ? _('No new Hardcover note changes to sync.')
-                : _(
-                    'Hardcover synced: {{inserted}} new, {{updated}} updated, {{skipped}} unchanged',
-                    {
-                      inserted: result.inserted,
-                      updated: result.updated,
-                      skipped: result.skipped,
-                    },
-                  ),
-            type: result.inserted === 0 && result.updated === 0 ? 'info' : 'success',
-          });
+        const silent = options?.silent ?? false;
+        const config = getConfig(bookKey);
+        const book = getBookData(bookKey)?.book;
+        if (!config || !book) return;
+
+        const eligibleNotes = (config.booknotes ?? []).filter(
+          (note: BookNote) =>
+            (note.type === 'annotation' || note.type === 'excerpt') && !note.deletedAt,
+        );
+
+        if (eligibleNotes.length === 0) {
+          if (!silent) {
+            eventDispatcher.dispatch('toast', {
+              message: _('No annotations or excerpts to sync for this book.'),
+              type: 'info',
+            });
+          }
+          return;
         }
-      } catch (error) {
-        console.error('Hardcover notes sync failed:', error);
-        if (!silent) {
-          eventDispatcher.dispatch('toast', {
-            message: _('Hardcover notes sync failed: {{error}}', {
-              error: error instanceof Error ? error.message : String(error),
-            }),
-            type: 'error',
-          });
+
+        const client = await getClient();
+        if (!client) {
+          if (!silent) {
+            eventDispatcher.dispatch('toast', {
+              message: _('Configure Hardcover in Settings first.'),
+              type: 'info',
+            });
+          }
+          return;
         }
+
+        const { begin, end } = useHardcoverSyncStore.getState();
+        let failure: string | null = null;
+        begin(bookKey);
+        try {
+          const result = await client.syncBookNotes(book, config);
+          await rememberLink(result.link);
+          await updateLastSyncedAt(Date.now());
+          if (!silent) {
+            eventDispatcher.dispatch('toast', {
+              message:
+                result.inserted === 0 && result.updated === 0
+                  ? _('No new Hardcover note changes to sync.')
+                  : _(
+                      'Hardcover synced: {{inserted}} new, {{updated}} updated, {{skipped}} unchanged',
+                      {
+                        inserted: result.inserted,
+                        updated: result.updated,
+                        skipped: result.skipped,
+                      },
+                    ),
+              type: result.inserted === 0 && result.updated === 0 ? 'info' : 'success',
+            });
+          }
+        } catch (error) {
+          console.error('Hardcover notes sync failed:', error);
+          const message = error instanceof Error ? error.message : String(error);
+          // A book Hardcover cannot sync is not a broken sync.
+          if (!(error instanceof HardcoverUnmatchedError)) failure = message;
+          if (!silent) {
+            eventDispatcher.dispatch('toast', {
+              message:
+                error instanceof HardcoverAuthError
+                  ? _('Authentication failed. Reconnect in Settings.')
+                  : _('Hardcover notes sync failed: {{error}}', { error: message }),
+              type: 'error',
+            });
+          }
+        } finally {
+          end(bookKey, failure);
+        }
+      } finally {
+        release();
       }
     },
     [_, bookKey, getBookData, getClient, getConfig, rememberLink, updateLastSyncedAt],
@@ -153,6 +190,9 @@ export const useHardcoverSync = (bookKey: string) => {
         return;
       }
 
+      const { begin, end } = useHardcoverSyncStore.getState();
+      let failure: string | null = null;
+      begin(bookKey);
       try {
         const link = await client.pushProgress(book, config);
         await rememberLink(link);
@@ -165,14 +205,20 @@ export const useHardcoverSync = (bookKey: string) => {
         }
       } catch (error) {
         console.error('Hardcover progress sync failed:', error);
+        const message = error instanceof Error ? error.message : String(error);
+        // A book Hardcover cannot sync is not a broken sync.
+        if (!(error instanceof HardcoverUnmatchedError)) failure = message;
         if (!silent) {
           eventDispatcher.dispatch('toast', {
-            message: _('Hardcover progress sync failed: {{error}}', {
-              error: error instanceof Error ? error.message : String(error),
-            }),
+            message:
+              error instanceof HardcoverAuthError
+                ? _('Authentication failed. Reconnect in Settings.')
+                : _('Hardcover progress sync failed: {{error}}', { error: message }),
             type: 'error',
           });
         }
+      } finally {
+        end(bookKey, failure);
       }
     },
     [_, bookKey, getBookData, getClient, getConfig, rememberLink, updateLastSyncedAt],
@@ -205,12 +251,12 @@ export const useHardcoverSync = (bookKey: string) => {
   useEffect(() => {
     const handlePushNotes = async (event: CustomEvent) => {
       if (event.detail.bookKey !== bookKey) return;
-      await pushNotes();
+      await pushNotes({ silent: event.detail.silent });
     };
 
     const handlePushProgress = async (event: CustomEvent) => {
       if (event.detail.bookKey !== bookKey) return;
-      await pushProgress();
+      await pushProgress({ silent: event.detail.silent });
     };
 
     eventDispatcher.on('hardcover-push-notes', handlePushNotes);
@@ -223,17 +269,16 @@ export const useHardcoverSync = (bookKey: string) => {
   }, [bookKey, pushNotes, pushProgress]);
 
   // Flush any pending auto-push when the book closes (ReaderContent dispatches
-  // 'sync-book-progress' before teardown) or when the user taps the manual
-  // cloud Sync button — so a quick close doesn't drop the pending push.
+  // 'flush-hardcover-sync' before teardown) so a quick close doesn't drop it.
   useEffect(() => {
     const handleFlush = (event: CustomEvent) => {
       if (event.detail.bookKey !== bookKey) return;
       debouncedAutoPushProgress.flush();
       debouncedAutoPushNotes.flush();
     };
-    eventDispatcher.on('sync-book-progress', handleFlush);
+    eventDispatcher.on('flush-hardcover-sync', handleFlush);
     return () => {
-      eventDispatcher.off('sync-book-progress', handleFlush);
+      eventDispatcher.off('flush-hardcover-sync', handleFlush);
     };
   }, [bookKey, debouncedAutoPushProgress, debouncedAutoPushNotes]);
 

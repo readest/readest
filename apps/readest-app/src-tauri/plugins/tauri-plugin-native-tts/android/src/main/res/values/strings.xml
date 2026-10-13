@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Strings rendered by the media browse service (Android Auto / Automotive).
+  They cannot come from Readest's JS i18n catalogue: the service serves the
+  browse tree while the WebView may not be running at all, and a cold Auto
+  bind happens before any page has loaded. Translations belong in
+  res/values-<locale>/strings.xml alongside this file.
+-->
+<resources>
+    <string name="readest_auto_library_root">Library</string>
+    <plurals name="readest_auto_library_count">
+        <item quantity="one">%d book</item>
+        <item quantity="other">%d books</item>
+    </plurals>
+    <string name="readest_auto_selection_failed">Couldn\'t open this book</string>
+</resources>

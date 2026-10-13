@@ -198,10 +198,11 @@ end
 -- on_progress: optional function(scanned_dirs, found_books)
 --
 -- Runs the recursive walk inside a forked subprocess via
--- FFIUtil.runInSubProcess (the same pattern KOReader's filemanagerfilesearcher.lua
--- uses for its dismissable scan, see :130-210). The subprocess returns a
--- list of {file_path, hash, title, author} structs; the parent upserts each
--- one in chunks so the UI stays responsive.
+-- Trapper:dismissableRunInSubprocess (the same pattern KOReader's
+-- filemanagerfilesearcher.lua uses for its dismissable scan), so it must be
+-- called from within Trapper:wrap. The subprocess returns a list of
+-- {file_path, hash, title, author} structs; the parent upserts them in one
+-- transaction.
 --
 -- If `home_dir` is empty/nil we skip with a warning — this is the
 -- "user hasn't picked a Books folder yet" path, handled at the UI level
@@ -213,7 +214,7 @@ function M.fullSidecarWalk(opts, on_progress)
     end
 
     local lfs = require("libs/libkoreader-lfs")
-    local FFIUtil = require("ffi/util")
+    local Trapper = require("ui/trapper")
 
     -- Fork: walk the tree in the child, return the slim summary table.
     local child_fn = function()
@@ -250,31 +251,38 @@ function M.fullSidecarWalk(opts, on_progress)
         return results
     end
 
-    local results = FFIUtil.runInSubProcess(child_fn)
-    if type(results) ~= "table" then
-        logger.warn("ReadestLibrary fullSidecarWalk: subprocess returned non-table")
+    -- runInSubProcess only returns the child's pid; this helper also
+    -- carries the child's return value back and reaps it.
+    local completed, results = Trapper:dismissableRunInSubprocess(child_fn)
+    if not completed or type(results) ~= "table" then
+        logger.warn("ReadestLibrary fullSidecarWalk: walk dismissed or returned no results")
         return 0
     end
 
     local store = opts.store
     local count = 0
-    for _, p in ipairs(results) do
-        if p.hash then
-            store:upsertBook({
-                hash          = p.hash,
-                title         = p.title or p.file_path:match("([^/]+)%.[^.]+$") or "Untitled",
-                author        = p.author,
-                file_path     = p.file_path,
-                local_present = 1,
-            })
-            count = count + 1
-            if on_progress and count % 50 == 0 then
-                on_progress(count)
+    store.db:exec("BEGIN;")
+    local ok, err = pcall(function()
+        for _, p in ipairs(results) do
+            if p.hash then
+                store:upsertBook({
+                    hash          = p.hash,
+                    title         = p.title or p.file_path:match("([^/]+)%.[^.]+$") or "Untitled",
+                    author        = p.author,
+                    file_path     = p.file_path,
+                    local_present = 1,
+                })
+                count = count + 1
+                if on_progress and count % 50 == 0 then
+                    on_progress(count)
+                end
             end
         end
-    end
+    end)
+    store.db:exec(ok and "COMMIT;" or "ROLLBACK;")
+    if not ok then error(err) end
     if on_progress then on_progress(count) end
-    logger.dbg("ReadestLibrary fullSidecarWalk: indexed " .. count .. " books")
+    logger.info("ReadestLibrary fullSidecarWalk: indexed " .. count .. " books")
     return count
 end
 

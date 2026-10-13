@@ -571,6 +571,7 @@ describe('ingestFile', () => {
     const lookupIndex = {
       byHash: new Map(),
       byMetaKey: new Map(),
+      byStableKey: new Map(),
       byFilePath: new Map([[sourcePath.toLowerCase(), existing]]),
     } as unknown as Parameters<typeof ingestFile>[0]['lookupIndex'];
     const book = await ingestFile(
@@ -612,6 +613,7 @@ describe('ingestFile', () => {
     const lookupIndex = {
       byHash: new Map(),
       byMetaKey: new Map(),
+      byStableKey: new Map(),
       byFilePath: new Map([[sourcePath, existing]]),
     } as unknown as Parameters<typeof ingestFile>[0]['lookupIndex'];
     await ingestFile(

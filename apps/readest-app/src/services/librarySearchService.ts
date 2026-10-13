@@ -15,7 +15,12 @@ import { findFuzzyMatches, MAX_FUZZY_QUERY_LENGTH } from '@/utils/fuzzySearch';
 import type { LibrarySearchWorkerMatch } from '@/utils/librarySearchWorkerProtocol';
 import { findNearbyMatches } from '@/utils/nearbySearch';
 import { createRejectFilter } from '@/utils/node';
-import { compileSearchRegex, filterWholeWordMatches, findRegexMatches } from '@/utils/textSearch';
+import {
+  compileSearchRegex,
+  filterWholeWordMatches,
+  findRegexMatches,
+  stripSoftHyphens,
+} from '@/utils/textSearch';
 import { BookFileNotFoundError } from './errors';
 import {
   beginSearchIndex,
@@ -528,6 +533,18 @@ export async function* searchLibraryBooks(
     locale: string,
     limit: number,
   ): Promise<SectionMatchOutcome> => {
+    const softHyphens = stripSoftHyphens(text);
+    if (softHyphens) {
+      const outcome = await matchSectionText(book, sectionIndex, softHyphens.text, locale, limit);
+      return {
+        ...outcome,
+        matches: outcome.matches.map((match) => ({
+          ...match,
+          ...softHyphens.toSource(match),
+          runs: match.runs.map(softHyphens.toSource),
+        })),
+      };
+    }
     if (usesSearchWorker) {
       const payload = {
         sectionKey: `${book.hash}:${book.updatedAt}:${sectionIndex}`,

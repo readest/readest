@@ -3,6 +3,7 @@ import {
   buildRemotePayload,
   parseRemotePayload,
   parseRemoteLibraryIndex,
+  stripDeviceLocalFields,
 } from '@/services/sync/file/wire';
 import type { Book, BookConfig } from '@/types/book';
 
@@ -39,6 +40,28 @@ describe('wire envelope (frozen)', () => {
     expect(p.config).toEqual({ progress: [3, 10], location: 'loc', xpointer: 'xp', updatedAt: 42 });
     // Device-local fields never travel.
     expect('viewSettings' in p.config).toBe(false);
+  });
+
+  test('preserves a reserved Notebook record through the frozen wire envelope', () => {
+    const notebookConfig: BookConfig = {
+      ...config,
+      booknotes: [
+        {
+          id: 'notebook',
+          type: 'notebook',
+          cfi: 'epubcfi(/6/2)',
+          note: '# Notes',
+          createdAt: 10,
+          updatedAt: 20,
+        },
+      ],
+    };
+
+    const parsed = parseRemotePayload(
+      JSON.stringify(buildRemotePayload(book, notebookConfig, 'dev-1')),
+    );
+
+    expect(parsed?.booknotes).toEqual(notebookConfig.booknotes);
   });
 
   // Issue #5716. The count stands in for the book's own page list, so it is
@@ -90,5 +113,11 @@ describe('wire envelope (frozen)', () => {
       JSON.stringify({ schemaVersion: 1, books: [book], updatedAt: 5 }),
     );
     expect(legacy?.uploadedHashes).toBeUndefined();
+  });
+
+  // An offline Audiobookshelf download lives on this device only (#6256).
+  test('stripDeviceLocalFields drops the offline-download stamp', () => {
+    const stripped = stripDeviceLocalFields({ ...book, format: 'ABS', absDownloadedAt: 7 });
+    expect(stripped).not.toHaveProperty('absDownloadedAt');
   });
 });

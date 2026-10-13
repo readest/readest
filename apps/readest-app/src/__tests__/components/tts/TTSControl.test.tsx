@@ -46,15 +46,29 @@ vi.mock('@/store/readerProgressStore', () => ({
 
 vi.mock('@/app/reader/components/tts/TTSMiniPlayer', () => ({
   __esModule: true,
-  default: ({ onExpand }: { onExpand: () => void }) => (
-    <div data-testid='mini-player' onClick={onExpand} />
+  default: ({ onExpand, buffering }: { onExpand: () => void; buffering: boolean }) => (
+    <div data-testid='mini-player' aria-busy={buffering} onClick={onExpand} />
   ),
 }));
 
 vi.mock('@/app/reader/components/tts/TTSPlayerSheet', () => ({
   __esModule: true,
-  default: ({ isOpen }: { isOpen: boolean }) =>
-    isOpen ? <div data-testid='player-sheet' /> : null,
+  default: ({
+    isOpen,
+    activeSectionIndex,
+    clientsReady,
+  }: {
+    isOpen: boolean;
+    activeSectionIndex: number | null;
+    clientsReady: boolean;
+  }) =>
+    isOpen ? (
+      <div
+        data-testid='player-sheet'
+        data-active-section={activeSectionIndex}
+        data-ready={String(clientsReady)}
+      />
+    ) : null,
 }));
 
 import TTSControl from '@/app/reader/components/tts/TTSControl';
@@ -65,10 +79,12 @@ describe('TTSControl', () => {
   beforeEach(() => {
     Object.assign(ttsState, {
       isPlaying: true,
+      buffering: false,
       ttsLang: 'en',
       ttsClientsInited: true,
       showIndicator: true,
       showBackToCurrentTTSLocation: false,
+      ttsSectionIndex: 2,
       getController: () => null,
       timeoutOption: 0,
       timeoutTimestamp: 0,
@@ -114,10 +130,23 @@ describe('TTSControl', () => {
     Object.assign(ttsState, { showIndicator: true, ttsClientsInited: false });
     render(<TTSControl bookKey='b1' gridInsets={gridInsets} />);
     expect(screen.getByTestId('mini-player')).toBeTruthy();
-    // Expanding needs initialized clients; taps are ignored until then.
+    // The full player opens whenever the mini player shows, even while the
+    // clients initialize (it fills in once they are ready).
     fireEvent.click(screen.getByTestId('mini-player'));
-    expect(screen.queryByTestId('player-sheet')).toBeNull();
-    expect(screen.getByTestId('mini-player')).toBeTruthy();
+    expect(screen.getByTestId('player-sheet').getAttribute('data-ready')).toBe('false');
+    expect(screen.queryByTestId('mini-player')).toBeNull();
+  });
+
+  test('shows loading throughout initialization, then follows audio buffering', () => {
+    Object.assign(ttsState, { ttsClientsInited: false, buffering: false });
+    const { rerender } = render(<TTSControl bookKey='b1' gridInsets={gridInsets} />);
+    expect(screen.getByTestId('mini-player').getAttribute('aria-busy')).toBe('true');
+    ttsState['ttsClientsInited'] = true;
+    rerender(<TTSControl bookKey='b1' gridInsets={gridInsets} />);
+    expect(screen.getByTestId('mini-player').getAttribute('aria-busy')).toBe('false');
+    ttsState['buffering'] = true;
+    rerender(<TTSControl bookKey='b1' gridInsets={gridInsets} />);
+    expect(screen.getByTestId('mini-player').getAttribute('aria-busy')).toBe('true');
   });
 
   test('expanding the mini player opens the sheet and hides the mini player', () => {
@@ -126,6 +155,12 @@ describe('TTSControl', () => {
     expect(screen.getByTestId('player-sheet')).toBeTruthy();
     // The two surfaces never show at the same time.
     expect(screen.queryByTestId('mini-player')).toBeNull();
+  });
+
+  test('passes the TTS session section to the chapters indicator', () => {
+    render(<TTSControl bookKey='b1' gridInsets={gridInsets} />);
+    fireEvent.click(screen.getByTestId('mini-player'));
+    expect(screen.getByTestId('player-sheet').getAttribute('data-active-section')).toBe('2');
   });
 
   test('shows the back-to-TTS-location pill when reading has drifted', () => {

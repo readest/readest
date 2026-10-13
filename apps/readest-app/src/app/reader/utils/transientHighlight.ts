@@ -1,5 +1,6 @@
 import type { FoliateView } from '@/types/view';
 import { Overlayer } from 'foliate-js/overlayer.js';
+import { SENTENCE_CONTAINER, getSentenceBounds } from '@/utils/sentence';
 
 // resolveNavigation's anchor is typed as returning a Range, but for hash
 // hrefs foliate resolves to the target Element (and 0 for section-only
@@ -20,7 +21,6 @@ type TransientHighlightOverlayer = {
   remove: (key: string) => void;
 };
 
-const SENTENCE_CONTAINER = 'p, li, blockquote, dd, dt, h1, h2, h3, h4, h5, h6';
 const HIGHLIGHT_KEY = 'transient-highlight';
 const HIGHLIGHT_COLOR = '#808080';
 
@@ -50,8 +50,20 @@ const getTextPosition = (root: Element, offset: number) => {
 // Footnote ids often sit on an empty inline marker (<a id="fn1"/>); the
 // enclosing block is what the reader needs to see highlighted.
 const getBlockRange = (doc: Document, el: Element) => {
-  let root = el.closest(SENTENCE_CONTAINER) ?? el;
-  if (!root.textContent?.trim() && root.parentElement) root = root.parentElement;
+  let root: Element | null = el.closest(SENTENCE_CONTAINER) ?? el;
+  if (!root.textContent?.trim()) {
+    const parent = root.parentElement;
+    if (parent && parent !== doc.body) {
+      root = parent;
+    } else {
+      // Never widen to the whole section: books converted from MOBI mark each
+      // target with an empty <p> right under <body>, and painting the body of a
+      // multi-megabyte section froze the reader. Take the block that follows.
+      do root = root.nextElementSibling;
+      while (root && !root.textContent?.trim());
+    }
+  }
+  if (!root) return null;
   const range = doc.createRange();
   range.selectNodeContents(root);
   return range;
@@ -67,41 +79,14 @@ const getTargetHighlight = async (view: TransientHighlightView, target: string) 
     const resolved = anchor(doc);
     if (!resolved || typeof resolved === 'number') return null;
     if (!('startContainer' in resolved)) {
-      return { overlayer, range: getBlockRange(doc, resolved) };
+      const range = getBlockRange(doc, resolved);
+      return range ? { overlayer, range } : null;
     }
     const range = resolved;
-    const startElement =
-      range.startContainer.nodeType === 1
-        ? (range.startContainer as Element)
-        : range.startContainer.parentElement;
-    const root = startElement?.closest(SENTENCE_CONTAINER) ?? startElement;
-    if (!root?.contains(range.endContainer)) return { overlayer, range };
+    const bounds = getSentenceBounds(range);
+    if (!bounds) return { overlayer, range };
 
-    const before = doc.createRange();
-    before.selectNodeContents(root);
-    before.setEnd(range.startContainer, range.startOffset);
-    const matchStart = before.toString().length;
-    const matchEnd = matchStart + range.toString().length;
-    const text = root.textContent ?? '';
-    const segmentationText = text.replace(/\s/g, ' ');
-    const locale = doc.documentElement.lang || undefined;
-    const segments = Array.from(
-      new Intl.Segmenter(locale, { granularity: 'sentence' }).segment(segmentationText),
-    );
-    const startSegment = segments.find(
-      ({ index: start, segment }) => start <= matchStart && matchStart < start + segment.length,
-    );
-    const endOffset = Math.max(matchStart, matchEnd - 1);
-    const endSegment = segments.find(
-      ({ index: start, segment }) => start <= endOffset && endOffset < start + segment.length,
-    );
-    if (!startSegment || !endSegment) return { overlayer, range };
-
-    const rawStart = startSegment.index;
-    const rawEnd = endSegment.index + endSegment.segment.length;
-    const selectedText = text.slice(rawStart, rawEnd);
-    const sentenceStart = rawStart + selectedText.search(/\S|$/);
-    const sentenceEnd = rawEnd - (selectedText.length - selectedText.trimEnd().length);
+    const { root, start: sentenceStart, end: sentenceEnd } = bounds;
     const start = getTextPosition(root, sentenceStart);
     const end = getTextPosition(root, sentenceEnd);
     if (!start || !end) return { overlayer, range };

@@ -2,11 +2,23 @@ import clsx from 'clsx';
 import React, { useEffect, useRef, useState } from 'react';
 import { useThemeStore } from '@/store/themeStore';
 import { eventDispatcher } from '@/utils/event';
+import { getHorizontalInsetStyle } from '@/utils/insets';
 
 export type ToastType = 'info' | 'success' | 'warning' | 'error';
 
+// The top bar a `toast-top` toast has to clear, plus the gap daisyUI 4 drew as
+// `.toast` padding. daisyUI 5 moved that padding into the insets, which the
+// `top` below overrides, so the toast carries the gap itself.
+const TOP_BAR_HEIGHT = 44;
+const TOAST_GAP = 16;
+// daisyUI's `.toast-end` gap (`inset-inline-end: 1rem`), which the inline
+// `right` below re-applies on top of the safe-area inset.
+const TOAST_EDGE_GAP = 16;
+// `sm:toast-end` is only active from Tailwind's `sm` breakpoint.
+const TOAST_SM_BREAKPOINT = 640;
+
 export const Toast = () => {
-  const { safeAreaInsets } = useThemeStore();
+  const { safeAreaInsets, isIPhoneDuo } = useThemeStore();
   const [toastMessage, setToastMessage] = useState('');
   const [toastType, setToastType] = useState<ToastType>('info');
   const [toastTimeout, setToastTimeout] = useState(5000);
@@ -118,29 +130,39 @@ export const Toast = () => {
     toastMessage && (
       <div
         data-capture-invalidating-overlay='true'
+        // Keep daisyUI's content-sized width, but retain the desktop cap
+        // without allowing it to override the mobile viewport gutters.
         className={clsx(
-          'toast z-[130] w-auto max-w-screen-sm transition-all duration-300',
+          'toast z-[130] max-w-[min(var(--breakpoint-sm),calc(100vw-2rem))] transition-all duration-300',
           toastClassMap[toastType],
           isVisible ? 'scale-100 opacity-100' : 'scale-95 opacity-0',
         )}
         style={{
           top: toastClassMap[toastType].includes('toast-top')
-            ? `${(safeAreaInsets?.top || 0) + 44}px`
+            ? `${(safeAreaInsets?.top || 0) + TOP_BAR_HEIGHT + TOAST_GAP}px`
             : undefined,
+          // Keep a trailing toast clear of a right-side status strip (iPhone
+          // Duo, #6307). Below `sm` the toast is centered, so leave `right`
+          // unset there or it fights `toast-center`.
+          right:
+            toastClassMap[toastType].includes('toast-end') &&
+            window.innerWidth >= TOAST_SM_BREAKPOINT
+              ? getHorizontalInsetStyle(safeAreaInsets, isIPhoneDuo, TOAST_EDGE_GAP).paddingRight
+              : undefined,
         }}
       >
         <div
           className={clsx(
-            'alert flex items-center gap-3 shadow-2xl backdrop-blur-sm',
+            'alert flex items-center gap-3 shadow-2xl backdrop-blur-xs',
             'min-h-0 rounded-2xl px-5 py-4',
-            'not-eink:bg-gradient-to-r border-0',
+            'not-eink:bg-linear-to-r border-0',
             alertClassMap[toastType],
             'eink:bg-base-100 eink:border eink:border-base-content',
             toastType !== 'info' && 'text-white',
           )}
         >
           {/* Icon */}
-          <div className='flex-shrink-0'>{iconMap[toastType]}</div>
+          <div className='shrink-0'>{iconMap[toastType]}</div>
 
           {/* Message */}
           <span
@@ -165,7 +187,7 @@ export const Toast = () => {
           <button
             onClick={handleDismiss}
             className={clsx(
-              'flex-shrink-0 rounded-lg p-1 transition-colors',
+              'shrink-0 rounded-lg p-1 transition-colors',
               toastType === 'info'
                 ? 'hover:bg-base-300 hidden'
                 : 'hover:bg-white/20 active:bg-white/30',

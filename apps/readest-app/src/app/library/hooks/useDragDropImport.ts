@@ -10,11 +10,11 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { LibraryGroupByType } from '@/types/settings';
 import { ensureLibraryGroupByType } from '../utils/libraryUtils';
 import { BOOK_ACCEPT_FORMATS, SUPPORTED_BOOK_EXTS } from '@/services/constants';
+import { hasAllowedExtension } from '@/hooks/useFileSelector';
 import { useSearchParams } from 'next/navigation';
 
 const hasSupportedBookExt = (name: string) => {
-  const ext = name.split('.').pop()?.toLowerCase();
-  return ext ? SUPPORTED_BOOK_EXTS.includes(ext) : false;
+  return hasAllowedExtension(name, SUPPORTED_BOOK_EXTS);
 };
 
 export const useDragDropImport = () => {

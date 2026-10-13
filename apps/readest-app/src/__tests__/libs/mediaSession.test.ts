@@ -17,7 +17,12 @@ vi.mock('@tauri-apps/api/core', () => ({
 }));
 
 import { invoke, addPluginListener, type PluginListener } from '@tauri-apps/api/core';
-import { getMediaSession, IOSCompositeMediaSession, TauriMediaSession } from '@/libs/mediaSession';
+import {
+  getMediaSession,
+  IOSCompositeMediaSession,
+  TauriMediaSession,
+  type MediaSessionState,
+} from '@/libs/mediaSession';
 import { getOSPlatform } from '@/utils/misc';
 import { isTauriAppPlatform } from '@/services/environment';
 
@@ -84,6 +89,20 @@ describe('getMediaSession', () => {
     expect(getMediaSession()).toBeInstanceOf(TauriMediaSession);
   });
 
+  // Desktop webviews can't be trusted with media keys: WKWebView never becomes
+  // the macOS Now Playing app, and WebView2's routing hinges on a playing
+  // media element (#6433). The plugin drives the OS media controls instead.
+  test.each([
+    'macos',
+    'windows',
+    'linux',
+  ])('returns TauriMediaSession on %s Tauri (native OS media controls)', (platform) => {
+    vi.mocked(getOSPlatform).mockReturnValue(platform as ReturnType<typeof getOSPlatform>);
+    vi.mocked(isTauriAppPlatform).mockReturnValue(true);
+    setNavigatorMediaSession(true);
+    expect(getMediaSession()).toBeInstanceOf(TauriMediaSession);
+  });
+
   test('falls back to navigator.mediaSession on the web', () => {
     vi.mocked(getOSPlatform).mockReturnValue('macos');
     vi.mocked(isTauriAppPlatform).mockReturnValue(false);
@@ -106,6 +125,45 @@ describe('getMediaSession', () => {
 describe('TauriMediaSession.setActive', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(getOSPlatform).mockReturnValue('android');
+  });
+
+  test('registers transport listeners before notification permission settles', async () => {
+    let releasePermission!: () => void;
+    vi.mocked(addPluginListener).mockResolvedValue({
+      unregister: vi.fn(),
+    } as unknown as PluginListener);
+    vi.mocked(invoke).mockImplementation(async (cmd: string) => {
+      if (cmd === 'plugin:native-tts|checkPermissions') {
+        await new Promise<void>((resolve) => {
+          releasePermission = resolve;
+        });
+        return { postNotification: 'granted' } as unknown;
+      }
+      return undefined as unknown;
+    });
+
+    const session = new TauriMediaSession();
+    const activation = session.setActive({ active: true, sessionId: 'book-1' });
+
+    await vi.waitFor(() => expect(releasePermission).toBeTypeOf('function'));
+    expect(addPluginListener).toHaveBeenCalled();
+    releasePermission();
+    await activation;
+  });
+
+  test('skips the notification permission on desktop', async () => {
+    vi.mocked(getOSPlatform).mockReturnValue('macos');
+    vi.mocked(invoke).mockResolvedValue(undefined);
+
+    const session = new TauriMediaSession();
+    await session.setActive({ active: true });
+
+    expect(invoke).toHaveBeenCalledWith(
+      'plugin:native-tts|set_media_session_active',
+      expect.anything(),
+    );
+    expect(invoke).not.toHaveBeenCalledWith('plugin:native-tts|checkPermissions');
   });
 
   test('requests POST_NOTIFICATIONS whenever the session activates', async () => {
@@ -127,6 +185,63 @@ describe('TauriMediaSession.setActive', () => {
     expect(invoke).toHaveBeenCalledWith('plugin:native-tts|requestPermissions', {
       permissions: ['postNotification'],
     });
+  });
+
+  test('resolves and keeps wiring listeners when the native activation fails', async () => {
+    // TTSMediaBridge calls this as `void bind(...)`, so a rejection here is an
+    // unhandled rejection AND skips action-handler registration, leaving the
+    // session with no transport controls at all. Starting the foreground
+    // service can legitimately fail (ForegroundServiceStartNotAllowedException
+    // while backgrounded); degrade rather than throw.
+    const unregister = vi.fn();
+    vi.mocked(addPluginListener).mockResolvedValue({
+      unregister,
+    } as unknown as PluginListener);
+    vi.mocked(invoke).mockImplementation(async (cmd: string) => {
+      if (cmd === 'plugin:native-tts|set_media_session_active') {
+        throw new Error('ForegroundServiceStartNotAllowedException');
+      }
+      if (cmd === 'plugin:native-tts|checkPermissions') {
+        return { postNotification: 'granted' } as unknown;
+      }
+      return undefined as unknown;
+    });
+
+    const session = new TauriMediaSession();
+    await expect(session.setActive({ active: true, sessionId: 'book-1' })).resolves.toBeUndefined();
+    expect(addPluginListener).toHaveBeenCalled();
+  });
+
+  test('unregisters the partial set when listener registration fails midway', async () => {
+    // Listeners are only published to `eventListeners` once the whole sequence
+    // succeeds, so the ones registered before a failure were unreachable and
+    // leaked, and `eventListenerInited` stayed true, blocking any retry.
+    const unregister = vi.fn();
+    let registrations = 0;
+    vi.mocked(addPluginListener).mockImplementation(async () => {
+      registrations += 1;
+      if (registrations === 3) throw new Error('plugin channel closed');
+      return { unregister } as unknown as PluginListener;
+    });
+    vi.mocked(invoke).mockImplementation(async (cmd: string) => {
+      if (cmd === 'plugin:native-tts|checkPermissions') {
+        return { postNotification: 'granted' } as unknown;
+      }
+      return undefined as unknown;
+    });
+
+    const session = new TauriMediaSession();
+    await session.setActive({ active: true, sessionId: 'book-1' });
+
+    // The two that did register are cleaned up rather than orphaned.
+    expect(unregister).toHaveBeenCalledTimes(2);
+
+    // ...and the session is still retryable: a later activation registers again
+    // instead of short-circuiting on a stale "already initialized" flag.
+    vi.mocked(addPluginListener).mockResolvedValue({ unregister } as unknown as PluginListener);
+    const before = vi.mocked(addPluginListener).mock.calls.length;
+    await session.setActive({ active: true, sessionId: 'book-2' });
+    expect(vi.mocked(addPluginListener).mock.calls.length).toBeGreaterThan(before);
   });
 
   test('still activates the native session when the permission request throws', async () => {
@@ -164,6 +279,80 @@ describe('TauriMediaSession.setActive', () => {
       'plugin:native-tts|requestPermissions',
       expect.anything(),
     );
+  });
+
+  test('tags native updates and teardown with the active playback session', async () => {
+    const unregister = vi.fn();
+    vi.mocked(addPluginListener).mockResolvedValue({ unregister } as unknown as PluginListener);
+    vi.mocked(invoke).mockImplementation(async (cmd: string) => {
+      if (cmd === 'plugin:native-tts|checkPermissions') {
+        return { postNotification: 'granted' } as unknown;
+      }
+      return undefined as unknown;
+    });
+
+    const session = new TauriMediaSession();
+    await session.setActive({ active: true, sessionId: 'book-session' });
+    await session.updateMetadata({ title: 'New book' });
+    await session.updatePlaybackState({ playing: true });
+    await session.setActive({ active: false });
+
+    expect(invoke).toHaveBeenCalledWith('plugin:native-tts|update_media_session_metadata', {
+      payload: { title: 'New book', sessionId: 'book-session' },
+    });
+    expect(invoke).toHaveBeenCalledWith('plugin:native-tts|update_media_session_state', {
+      payload: { playing: true, sessionId: 'book-session' },
+    });
+    expect(invoke).toHaveBeenCalledWith('plugin:native-tts|set_media_session_active', {
+      payload: { active: false, sessionId: 'book-session' },
+    });
+  });
+
+  test('a stale teardown cannot unregister replacement session listeners', async () => {
+    const oldUnregisters: ReturnType<typeof vi.fn>[] = [];
+    const newUnregisters: ReturnType<typeof vi.fn>[] = [];
+    let listenerCount = 0;
+    vi.mocked(addPluginListener).mockImplementation(async () => {
+      const unregister = vi.fn().mockResolvedValue(undefined);
+      (listenerCount++ < 8 ? oldUnregisters : newUnregisters).push(unregister);
+      return { unregister } as unknown as PluginListener;
+    });
+
+    let releaseOldTeardown!: () => void;
+    let reportOldTeardown!: () => void;
+    const oldTeardownStarted = new Promise<void>((resolve) => {
+      reportOldTeardown = resolve;
+    });
+    vi.mocked(invoke).mockImplementation(async (cmd: string, args?: unknown) => {
+      if (cmd === 'plugin:native-tts|checkPermissions') {
+        return { postNotification: 'granted' } as unknown;
+      }
+      const payload = (args as { payload?: MediaSessionState } | undefined)?.payload;
+      if (cmd === 'plugin:native-tts|set_media_session_active' && payload?.active === false) {
+        reportOldTeardown();
+        await new Promise<void>((resolve) => {
+          releaseOldTeardown = resolve;
+        });
+      }
+      return undefined as unknown;
+    });
+
+    const session = new TauriMediaSession();
+    await session.setActive({ active: true, sessionId: 'old-session' });
+    const staleTeardown = session.setActive({ active: false, sessionId: 'old-session' });
+    await oldTeardownStarted;
+    await session.setActive({ active: true, sessionId: 'new-session' });
+    releaseOldTeardown();
+    await staleTeardown;
+    await session.updateMetadata({ title: 'Replacement' });
+
+    expect(oldUnregisters).toHaveLength(8);
+    expect(oldUnregisters.every((unregister) => unregister.mock.calls.length === 1)).toBe(true);
+    expect(newUnregisters).toHaveLength(8);
+    expect(newUnregisters.every((unregister) => unregister.mock.calls.length === 0)).toBe(true);
+    expect(invoke).toHaveBeenLastCalledWith('plugin:native-tts|update_media_session_metadata', {
+      payload: { title: 'Replacement', sessionId: 'new-session' },
+    });
   });
 });
 

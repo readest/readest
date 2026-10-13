@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useEnv } from '@/context/EnvContext';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
@@ -47,6 +47,15 @@ export type SettingsPanelType =
 export type SettingsPanelPanelProp = {
   bookKey: string;
   onRegisterReset: (resetFn: () => void) => void;
+};
+
+// Where Settings was left, kept for this app run only so reopening the dialog
+// returns to the same spot on the same panel.
+let savedScroll: { panel: SettingsPanelType; top: number } | null = null;
+
+// Test-only reset for the module-level runtime cache.
+export const resetSettingsScrollPosition = () => {
+  savedScroll = null;
 };
 
 type TabConfig = {
@@ -143,6 +152,123 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     }
     return 'Font' as SettingsPanelType;
   });
+
+  useLayoutEffect(() => {
+    const panel = panelRef.current;
+    const scroller = panel?.closest<HTMLElement>('[data-overlayscrollbars-contents]');
+    if (!panel || !scroller) return;
+    // Cleanup records the panel being left, so only a fresh open of the same
+    // panel restores; switching tabs starts the new panel at the top.
+    const top = savedScroll?.panel === activePanel ? savedScroll.top : 0;
+
+    // OverlayScrollbars initializes deferred, so on open the scroller cannot
+    // take a position yet. Hide the panel until it becomes the viewport.
+    let observer: MutationObserver | null = null;
+    const apply = () => {
+      if (!scroller.hasAttribute('data-overlayscrollbars-viewport')) return false;
+      scroller.scrollTop = top;
+      panel.style.visibility = '';
+      observer?.disconnect();
+      observer = null;
+      return true;
+    };
+    if (!apply() && top) {
+      panel.style.visibility = 'hidden';
+      observer = new MutationObserver(apply);
+      observer.observe(scroller, { attributeFilter: ['data-overlayscrollbars-viewport'] });
+    }
+
+    return () => {
+      if (observer) observer.disconnect();
+      else savedScroll = { panel: activePanel, top: scroller.scrollTop };
+      panel.style.visibility = '';
+    };
+  }, [activePanel]);
+
+  // Android WebView does not rubber-band nested scrollers. Move only the
+  // Settings content at its edges; the header and sheet stay in place.
+  useEffect(() => {
+    const panel = panelRef.current;
+    if (!panel || !appService?.isAndroidApp) return;
+    let pull: { x: number; y: number; edge: number; viewport: HTMLElement } | null = null;
+
+    const finish = () => {
+      pull = null;
+      panel.style.transition = 'transform 0.3s cubic-bezier(0.22, 1, 0.36, 1)';
+      panel.style.transform = '';
+    };
+    const start = (event: TouchEvent) => {
+      finish();
+      if (
+        event.touches.length !== 1 ||
+        document.documentElement.dataset['eink'] === 'true' ||
+        window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      )
+        return;
+      const target = event.target as HTMLElement;
+      if (target.closest('input, textarea, select, [contenteditable]')) return;
+      // A nested scroller keeps its own gestures.
+      for (let el: HTMLElement | null = target; el && el !== panel; el = el.parentElement) {
+        const style = getComputedStyle(el);
+        if (
+          (el.scrollHeight > el.clientHeight && /auto|scroll/.test(style.overflowY)) ||
+          (el.scrollWidth > el.clientWidth && /auto|scroll/.test(style.overflowX))
+        )
+          return;
+      }
+      const viewport = panel.closest<HTMLElement>('[data-overlayscrollbars-viewport]');
+      if (!viewport || viewport.scrollHeight <= viewport.clientHeight) return;
+      const edge =
+        viewport.scrollTop <= 0
+          ? 1
+          : viewport.scrollTop >= viewport.scrollHeight - viewport.clientHeight - 1
+            ? -1
+            : 0;
+      if (!edge) return;
+      const touch = event.touches[0]!;
+      pull = { x: touch.clientX, y: touch.clientY, edge, viewport };
+    };
+    const move = (event: TouchEvent) => {
+      if (!pull) return;
+      if (event.touches.length !== 1) {
+        finish();
+        return;
+      }
+      const touch = event.touches[0]!;
+      const dx = touch.clientX - pull.x;
+      const dy = touch.clientY - pull.y;
+      if (Math.max(Math.abs(dx), Math.abs(dy)) < 8) return;
+      if (Math.abs(dx) > Math.abs(dy) || dy * pull.edge <= 0) {
+        finish();
+        return;
+      }
+      const { viewport, edge } = pull;
+      if (
+        edge === 1
+          ? viewport.scrollTop > 0
+          : viewport.scrollTop < viewport.scrollHeight - viewport.clientHeight - 1
+      ) {
+        finish();
+        return;
+      }
+      if (event.cancelable) event.preventDefault();
+      const offset = edge * 96 * (1 - Math.exp((-0.35 * Math.abs(dy)) / 96));
+      panel.style.transition = 'none';
+      panel.style.transform = `translateY(${offset}px)`;
+    };
+    panel.addEventListener('touchstart', start, { passive: true });
+    panel.addEventListener('touchmove', move, { passive: false });
+    panel.addEventListener('touchend', finish);
+    panel.addEventListener('touchcancel', finish);
+    return () => {
+      panel.removeEventListener('touchstart', start);
+      panel.removeEventListener('touchmove', move);
+      panel.removeEventListener('touchend', finish);
+      panel.removeEventListener('touchcancel', finish);
+      panel.style.transition = '';
+      panel.style.transform = '';
+    };
+  }, [appService?.isAndroidApp, activePanel]);
 
   // Clear the deep-link request after the initial render has consumed it,
   // so the next dialog open doesn't stick on the same panel. Effect runs
@@ -352,8 +478,8 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       // inside RSVP shows on top instead of behind it (#3235), and below the
       // modal layer (z-120) so a modal opened from inside Settings (e.g. Add
       // OPDS Catalog) renders on top. !important beats the Dialog's hardcoded z-50.
-      className='modal-open !z-[110]'
-      bgClassName={bookKey ? 'sm:!bg-black/20' : 'sm:!bg-black/50'}
+      className='modal-open z-[110]!'
+      bgClassName={bookKey ? 'sm:bg-black/20!' : 'sm:bg-black/50!'}
       boxClassName={clsx(
         'sm:min-w-[520px] overflow-hidden not-eink:bg-base-200',
         appService?.isMobile && 'sm:max-w-[90%] sm:w-3/4',
@@ -371,7 +497,7 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
               aria-label={_('Close')}
               onClick={handleClose}
               className={
-                'btn btn-ghost btn-circle absolute left-3 flex h-8 min-h-8 w-8 hover:bg-transparent focus:outline-none'
+                'btn btn-ghost btn-circle absolute left-3 flex h-8 min-h-8 w-8 hover:bg-transparent focus:outline-hidden'
               }
             >
               {isRtl ? <MdArrowForwardIos /> : <MdArrowBackIosNew />}

@@ -13,6 +13,10 @@ const EPUB_URL = new URL('../fixtures/data/repro-4379.epub', import.meta.url).hr
 // duokan-bleed handling makes it). The pinned image must not resolve its
 // height:100% against the zero-height wrapper, or the cover renders blank.
 const EPUB_5263_URL = new URL('../fixtures/data/repro-5263.epub', import.meta.url).href;
+// repro-6513: the cover spine item carries `duokan-page-fullscreen` and the book
+// packs a tall `cover~slim.png` (200x444) beside `cover.png` (200x300) for
+// phone-shaped screens.
+const EPUB_6513_URL = new URL('../fixtures/data/repro-6513.epub', import.meta.url).href;
 
 let book: BookDoc;
 
@@ -69,11 +73,11 @@ describe('Paginator Duokan fullscreen cover (#4379)', () => {
     await import('foliate-js/paginator.js');
   }, 30000);
 
-  const createPaginator = () => {
+  const createPaginator = (width = 800, height = 600) => {
     const el = document.createElement('foliate-paginator') as Renderer;
     Object.assign(el.style, {
-      width: '800px',
-      height: '600px',
+      width: `${width}px`,
+      height: `${height}px`,
       position: 'absolute',
       left: '0',
       top: '0',
@@ -197,5 +201,24 @@ describe('Paginator Duokan fullscreen cover (#4379)', () => {
     // The letterbox background is tied to the pinned fullscreen treatment and
     // must not stick to the normally flowing image in scrolled mode.
     expect(img!.style.getPropertyValue('background-color')).toBe('');
+  });
+
+  it('shows the ~slim cover variant on a tall page and the standard one on a wide page (#6513)', async () => {
+    const slimBook = await loadEPUB(EPUB_6513_URL);
+    paginator = createPaginator(400, 900);
+    paginator.open(slimBook);
+
+    const stabilized = waitForStabilized(paginator);
+    await paginator.goTo({ index: 0 });
+    await stabilized;
+
+    const img = getCoverImg(paginator);
+    expect(img).toBeTruthy();
+    await waitForImgLoaded(img!);
+    expect(img!.naturalHeight).toBe(444);
+
+    // Rotating to a wide page brings the standard cover back.
+    Object.assign(paginator.style, { width: '900px', height: '600px' });
+    await expect.poll(() => img!.naturalHeight, { timeout: 5000 }).toBe(300);
   });
 });

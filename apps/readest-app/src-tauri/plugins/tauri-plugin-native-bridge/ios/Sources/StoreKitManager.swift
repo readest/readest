@@ -32,7 +32,8 @@ class StoreKitManager: NSObject, SKProductsRequestDelegate, SKPaymentTransaction
   }
 
   func purchase(
-    product: SKProduct, completion: @escaping (Result<SKPaymentTransaction, Error>) -> Void
+    product: SKProduct, appAccountToken: String? = nil,
+    completion: @escaping (Result<SKPaymentTransaction, Error>) -> Void
   ) {
     guard SKPaymentQueue.canMakePayments() else {
       completion(
@@ -42,7 +43,14 @@ class StoreKitManager: NSObject, SKProductsRequestDelegate, SKPaymentTransaction
       return
     }
     purchaseHandler = completion
-    let payment = SKPayment(product: product)
+    let payment = SKMutablePayment(product: product)
+    // StoreKit 1 surfaces `applicationUsername` as the transaction's
+    // `appAccountToken`, which is how a purchase is attributed to a user
+    // server-side. The App Store only propagates it when it is a valid UUID,
+    // so send nothing rather than a malformed value.
+    if let token = appAccountToken, UUID(uuidString: token) != nil {
+      payment.applicationUsername = token
+    }
     SKPaymentQueue.default().add(payment)
   }
 

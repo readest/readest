@@ -270,7 +270,7 @@ export default function AppLockDialog() {
                   'h-10 rounded-lg px-4 text-sm font-medium',
                   'text-base-content hover:bg-base-200',
                   'transition-colors duration-150',
-                  'focus-visible:ring-base-content/15 focus-visible:outline-none focus-visible:ring-2',
+                  'focus-visible:ring-base-content/15 focus-visible:outline-hidden focus-visible:ring-2',
                   'disabled:cursor-not-allowed disabled:opacity-60',
                   'disabled:hover:bg-transparent',
                 )}
@@ -283,7 +283,7 @@ export default function AppLockDialog() {
                 className={clsx(
                   'btn btn-primary',
                   'h-10 min-h-10 rounded-lg border-0 px-5 text-sm font-medium',
-                  'focus-visible:ring-primary/40 focus-visible:outline-none focus-visible:ring-2',
+                  'focus-visible:ring-primary/40 focus-visible:outline-hidden focus-visible:ring-2',
                   busy && 'opacity-60',
                 )}
               >

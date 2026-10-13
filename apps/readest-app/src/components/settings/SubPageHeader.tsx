@@ -46,14 +46,11 @@ const SubPageHeader: React.FC<SubPageHeaderProps> = ({
           <button
             type='button'
             onClick={onBack}
-            className='hover:text-primary transition-colors duration-150 focus-visible:underline focus-visible:outline-none'
+            className='hover:text-primary transition-colors duration-150 focus-visible:underline focus-visible:outline-hidden'
           >
             {parentLabel}
           </button>
-          <MdChevronRight
-            aria-hidden='true'
-            className='text-base-content/40 h-5 w-5 flex-shrink-0'
-          />
+          <MdChevronRight aria-hidden='true' className='text-base-content/40 h-5 w-5 shrink-0' />
           <span className='text-base-content/70 truncate'>{currentLabel}</span>
         </div>
         {rightSlot}

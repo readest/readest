@@ -62,8 +62,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const totalFiles = allFileStats.length;
     const totalSize = allFileStats.reduce((sum, file) => sum + (file.file_size || 0), 0);
 
-    // Get storage plan data
-    const { usage, quota } = getStoragePlanData(token);
+    // `quota` is an entitlement and is fine to read from the token. `usage`
+    // there is a claim frozen at token-mint time, so reporting it would show a
+    // figure that disagrees with the totalSize this endpoint just summed from
+    // the files table. Report the live sum.
+    const { quota } = getStoragePlanData(token);
+    const usage = totalSize;
     const usagePercentage = quota > 0 ? Math.round((usage / quota) * 100) : 0;
 
     // Get stats grouped by book_hash

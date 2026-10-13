@@ -21,6 +21,83 @@ const DEF_PREFIX = FOOTNOTE_PREFIX_ID;
 const REF_PREFIX = `${FOOTNOTE_PREFIX_ID}ref-`;
 
 const FENCE_RE = /^ {0,3}(`{3,}|~{3,})/;
+const FOOTNOTE_DEF_RE = /^\[\^[^\]\n]+\]:/;
+
+const stripFootnoteContinuationIndent = (line: string): string | null => {
+  let column = 0;
+  let offset = 0;
+  while (offset < line.length && column < 4) {
+    if (line[offset] === ' ') column++;
+    else if (line[offset] === '\t') column += 4 - (column % 4);
+    else break;
+    offset++;
+  }
+  return column >= 4 ? line.slice(offset) : null;
+};
+
+// marked-footnote strips either four spaces or a tab from captured continuation
+// lines, but its block tokenizer only captures the four-space form. Obsidian
+// commonly writes the equivalent indentation with tabs, so expand leading tabs
+// only while inside a footnote definition. Tabs elsewhere remain ordinary
+// indented code.
+export const normalizeFootnoteDefinitionIndent = (src: string): string => {
+  if (!src.includes('\t')) return src;
+
+  const lines = src.split('\n');
+  let inDefinition = false;
+  let closingFence: RegExp | null = null;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i]!;
+
+    if (closingFence) {
+      const fenceLine = inDefinition ? stripFootnoteContinuationIndent(line) : line;
+      if (fenceLine !== null && closingFence.test(fenceLine)) {
+        closingFence = null;
+        if (inDefinition) lines[i] = `    ${fenceLine}`;
+      }
+      continue;
+    }
+
+    if (FOOTNOTE_DEF_RE.test(line)) {
+      inDefinition = true;
+      continue;
+    }
+
+    if (inDefinition) {
+      if (/^[ \t]/.test(line)) {
+        const fenceLine = stripFootnoteContinuationIndent(line);
+        const fence = fenceLine === null ? null : FENCE_RE.exec(fenceLine);
+        if (fence) {
+          const marker = fence[1]!;
+          closingFence = new RegExp(`^ {0,3}\\${marker[0]}{${marker.length},}[ \\t]*\\r?$`);
+        }
+        if (/^[ \t]*\t/.test(line)) {
+          let column = 0;
+          let offset = 0;
+          while (offset < line.length) {
+            if (line[offset] === ' ') column++;
+            else if (line[offset] === '\t') column += 4 - (column % 4);
+            else break;
+            offset++;
+          }
+          lines[i] = `${' '.repeat(column)}${line.slice(offset)}`;
+        }
+        continue;
+      }
+      if (!line.trim()) continue;
+      inDefinition = false;
+    }
+
+    const fence = FENCE_RE.exec(line);
+    if (fence) {
+      const marker = fence[1]!;
+      closingFence = new RegExp(`^ {0,3}\\${marker[0]}{${marker.length},}[ \\t]*\\r?$`);
+    }
+  }
+
+  return lines.join('\n');
+};
 
 // Rewrite Pandoc/Obsidian inline notes `^[text]` into a reference plus a
 // definition appended to the source, so marked-footnote sees one uniform

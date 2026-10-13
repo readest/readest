@@ -24,6 +24,7 @@ CREATE TABLE public.books (
   metadata_updated_at timestamp with time zone NULL,
   group_id text NULL,
   group_name text NULL,
+  group_updated_at timestamp with time zone NULL,
   metadata json NULL,
   CONSTRAINT books_pkey PRIMARY KEY (user_id, book_hash),
   CONSTRAINT books_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users (id) ON DELETE CASCADE
@@ -94,6 +95,7 @@ CREATE TABLE public.book_notes (
   note text NULL,
   page integer NULL,
   global boolean NULL,
+  ink jsonb NULL,
   created_at timestamp with time zone NULL DEFAULT now(),
   updated_at timestamp with time zone NULL DEFAULT now(),
   deleted_at timestamp with time zone NULL,

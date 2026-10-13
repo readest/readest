@@ -283,8 +283,10 @@ describe('Page turn styles (browser)', () => {
       fireTouch('touchmove', x, 300);
       await wait(16);
     }
-    // Mid-drag: the transition exists, is paused, and its progress tracks the
-    // finger (~180px of total travel on an 800px-wide page).
+    // Mid-drag: once captured, the transition is paused and its progress
+    // tracks the finger (~180px of total travel on an 800px-wide page).
+    // Capture is async and slow on CI runners, so wait for it.
+    await vi.waitFor(() => expect(phases).toContain('ready'));
     const anims = scrubbedAnimations();
     expect(anims.length).toBeGreaterThan(0);
     expect(anims.every((a) => a.playState === 'paused')).toBe(true);
@@ -298,6 +300,15 @@ describe('Page turn styles (browser)', () => {
     await wait(30);
     const timeB = Number(anims[0]!.currentTime);
     expect(timeB).toBeGreaterThan(timeA);
+    // Carry the drag past halfway, then rest past the 80ms release-pause
+    // threshold so the release commits on distance alone: the wait for
+    // capture above already makes the flick velocity timing-dependent.
+    for (let i = 0; i < 4; i++) {
+      x -= 60;
+      fireTouch('touchmove', x, 300);
+      await wait(16);
+    }
+    await wait(96);
 
     fireTouch('touchend', x, 300);
     const t0 = performance.now();
@@ -744,6 +755,7 @@ describe('Page turn styles (browser)', () => {
       fireTouch('touchmove', x, 300);
       await wait(16);
     }
+    await vi.waitFor(() => expect(phases).toContain('ready'));
     expect(scrubbedAnimations().length).toBeGreaterThan(0);
     // Finger returns, rests, lifts: cancel.
     for (let i = 0; i < 5; i++) {

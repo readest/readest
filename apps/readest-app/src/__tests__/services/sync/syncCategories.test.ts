@@ -222,13 +222,23 @@ describe('isSyncCategoryEnabled', () => {
   });
 });
 
+describe('translator category', () => {
+  test('one toggle gates both custom_translator and translation_prompt kinds', () => {
+    expect(isSyncCategoryEnabled('translation_prompt')).toBe(true);
+    setSettings({ syncCategories: { custom_translator: false } });
+    expect(isSyncCategoryEnabled('custom_translator')).toBe(false);
+    expect(isSyncCategoryEnabled('translation_prompt')).toBe(false);
+  });
+});
+
 describe('SYNC_CATEGORIES', () => {
-  test('covers all eleven user-facing categories (incl. settings + stats + credentials)', () => {
+  test('covers all twelve user-facing categories (incl. settings + stats + credentials)', () => {
     expect([...SYNC_CATEGORIES].sort()).toEqual(
       [
         'abs_server',
         'book',
         'credentials',
+        'custom_translator',
         'dictionary',
         'font',
         'note',

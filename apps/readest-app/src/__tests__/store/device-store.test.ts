@@ -186,7 +186,14 @@ describe('deviceStore', () => {
       vi.mocked(setScreenBrightness).mockResolvedValue({ success: true });
 
       await useDeviceControlStore.getState().setScreenBrightness(0.5);
-      expect(setScreenBrightness).toHaveBeenCalledWith({ brightness: 0.5 });
+      expect(setScreenBrightness).toHaveBeenCalledWith({ brightness: 0.5, persist: false });
+    });
+
+    test('asks the bridge to write through to the system when persisting', async () => {
+      const { setScreenBrightness } = await import('@/utils/bridge');
+      vi.mocked(setScreenBrightness).mockResolvedValue({ success: true });
+      await useDeviceControlStore.getState().setScreenBrightness(0.5, true);
+      expect(setScreenBrightness).toHaveBeenCalledWith({ brightness: 0.5, persist: true });
     });
   });
 

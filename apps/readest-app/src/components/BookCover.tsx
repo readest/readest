@@ -1,13 +1,15 @@
 import clsx from 'clsx';
 import Image from 'next/image';
-import { memo, useEffect, useRef, useState } from 'react';
+import { createContext, memo, useContext, useEffect, useRef, useState } from 'react';
 import { Book } from '@/types/book';
 import { LibraryCoverFitType, LibraryViewModeType } from '@/types/settings';
 import { formatAuthors, formatTitle } from '@/utils/book';
 import { getInitializedAppService } from '@/services/environment';
 import { observeCoverForThumbnail } from '@/services/coverThumbnailService';
+import { useDefaultBookshelfCovers } from '@/hooks/useDefaultBookshelfCovers';
 import { useLibraryStore } from '@/store/libraryStore';
-import { useSettingsStore } from '@/store/settingsStore';
+
+export const HideBookCoversContext = createContext<boolean | undefined>(undefined);
 
 interface BookCoverProps {
   book: Book;
@@ -45,7 +47,9 @@ const BookCover: React.FC<BookCoverProps> = memo<BookCoverProps>(
     const usableThumbnail = matchingThumbnail === failedThumbnailUrl ? null : matchingThumbnail;
     const metadataCoverImageUrl = book.metadata?.coverImageUrl || null;
     const coverImageUrl = metadataCoverImageUrl || usableThumbnail || book.coverImageUrl || null;
-    const hideCovers = useSettingsStore((state) => state.settings.libraryHideCovers);
+    const shelfHideCovers = useContext(HideBookCoversContext);
+    const defaultShelfCovers = useDefaultBookshelfCovers();
+    const hideCovers = shelfHideCovers ?? defaultShelfCovers.hideCovers;
     const displayCoverUrl = hideCovers ? null : coverImageUrl;
 
     const shouldShowSpine = showSpine && !hideCovers && imageLoaded && !imageError;
@@ -71,10 +75,15 @@ const BookCover: React.FC<BookCoverProps> = memo<BookCoverProps>(
       onImageError?.();
     };
 
-    useEffect(() => {
+    // Reset during render, not in an effect: a cached cover can report `load`
+    // before a mount effect runs, and the effect would then hide the spine for
+    // good (a carousel remounts covers as they scroll back into view).
+    const [prevCoverImageUrl, setPrevCoverImageUrl] = useState(coverImageUrl);
+    if (coverImageUrl !== prevCoverImageUrl) {
+      setPrevCoverImageUrl(coverImageUrl);
       setImageLoaded(false);
       setImageError(false);
-    }, [coverImageUrl]);
+    }
 
     useEffect(() => {
       setFailedThumbnailUrl(null);
@@ -137,7 +146,7 @@ const BookCover: React.FC<BookCoverProps> = memo<BookCoverProps>(
           <div className={clsx('flex h-full w-full justify-start')}>
             <div
               className={clsx(
-                'flex h-full max-h-full items-end',
+                'flex h-full max-h-full',
                 mode === 'grid' ? 'items-end' : 'items-center',
               )}
             >

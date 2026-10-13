@@ -11,7 +11,9 @@ describe('fixed-layout paginated page-turn scroll reset', () => {
         elementWidth: 800,
         containerWidth: 800,
         scrollTop: 1200,
+        scrollLeft: 0,
         pageTurn: true,
+        lockPanX: false,
       }),
     ).toEqual({ scrollLeft: 0, scrollTop: 0 });
   });
@@ -22,7 +24,9 @@ describe('fixed-layout paginated page-turn scroll reset', () => {
         elementWidth: 800,
         containerWidth: 800,
         scrollTop: 1200,
+        scrollLeft: 0,
         pageTurn: false,
+        lockPanX: false,
       }),
     ).toEqual({ scrollLeft: 0, scrollTop: 1200 });
   });
@@ -33,7 +37,53 @@ describe('fixed-layout paginated page-turn scroll reset', () => {
         elementWidth: 1200,
         containerWidth: 800,
         scrollTop: 0,
+        scrollLeft: 0,
         pageTurn: true,
+        lockPanX: false,
+      }),
+    ).toEqual({ scrollLeft: 200, scrollTop: 0 });
+  });
+});
+
+describe('fixed-layout horizontal pan lock (#5976)', () => {
+  it('keeps the current horizontal offset on a page turn when locked', () => {
+    // The reader panned a zoomed page so its wide side margins fall outside the
+    // viewport. Turning the page must land on the same column of the new page
+    // instead of snapping back to the centre.
+    expect(
+      computePaginatedScroll({
+        elementWidth: 1200,
+        containerWidth: 800,
+        scrollTop: 900,
+        scrollLeft: 340,
+        pageTurn: true,
+        lockPanX: true,
+      }),
+    ).toEqual({ scrollLeft: 340, scrollTop: 0 });
+  });
+
+  it('keeps the current horizontal offset on a re-render when locked', () => {
+    expect(
+      computePaginatedScroll({
+        elementWidth: 1200,
+        containerWidth: 800,
+        scrollTop: 900,
+        scrollLeft: 340,
+        pageTurn: false,
+        lockPanX: true,
+      }),
+    ).toEqual({ scrollLeft: 340, scrollTop: 900 });
+  });
+
+  it('still re-centers when the lock is off', () => {
+    expect(
+      computePaginatedScroll({
+        elementWidth: 1200,
+        containerWidth: 800,
+        scrollTop: 0,
+        scrollLeft: 340,
+        pageTurn: true,
+        lockPanX: false,
       }),
     ).toEqual({ scrollLeft: 200, scrollTop: 0 });
   });

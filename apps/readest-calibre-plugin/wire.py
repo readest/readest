@@ -105,6 +105,49 @@ def _clean(value):
     return value
 
 
+def _jsonable(value):
+    if hasattr(value, 'isoformat'):
+        return value.isoformat()
+    if isinstance(value, (list, tuple)):
+        return [_jsonable(v) for v in value]
+    if isinstance(value, (str, int, float, bool)) or value is None:
+        return value
+    return str(value)
+
+
+def calibre_columns(user_metadata):
+    """Custom columns as BookMetadata.calibreColumns (libs/document.ts).
+
+    `user_metadata` maps '#label' to calibre's field metadata (name, datatype,
+    '#value#', '#extra#'), as Metadata.get_all_user_metadata() does. The records
+    match what foliate-js parses from the OPF's calibre:user_metadata, so a
+    pushed row and a locally parsed file agree, and empty values are dropped
+    the same way.
+    """
+    columns = []
+    for key, fm in (user_metadata or {}).items():
+        datatype = fm.get('datatype') or 'text'
+        value = _jsonable(fm.get('#value#'))
+        if (
+            value in (None, '', [])
+            or (datatype == 'datetime' and str(value).startswith('0101-01-01'))
+            or (datatype == 'rating' and not value)
+        ):
+            continue
+        label = key.lstrip('#')
+        column = {
+            'label': label,
+            'name': fm.get('name') or label,
+            'datatype': datatype,
+            'value': value,
+        }
+        extra = _jsonable(fm.get('#extra#'))
+        if extra is not None:
+            column['extra'] = extra
+        columns.append(column)
+    return columns
+
+
 def build_metadata(book):
     """BookMetadata JSON for the books row (libs/document.ts::BookMetadata).
 
@@ -140,7 +183,7 @@ def build_metadata(book):
     if book.get('uuid'):
         optional['identifier'] = 'urn:uuid:%s' % book['uuid']
     if book.get('custom_columns'):
-        optional['customColumns'] = book['custom_columns']
+        optional['calibreColumns'] = book['custom_columns']
     for key, value in optional.items():
         if value not in (None, '', []):
             meta[key] = value

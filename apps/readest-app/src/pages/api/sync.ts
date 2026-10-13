@@ -134,7 +134,18 @@ export function resolveMetadataMerge(
   const clientMs = ms(client.metadata_updated_at);
   const serverMs = ms(server.metadata_updated_at);
   const clientWins = clientMs === serverMs ? clientRowWins : clientMs > serverMs;
-  return pickMetadataFields(clientWins ? client : server);
+  const winner = clientWins ? client : server;
+  const loser = clientWins ? server : client;
+  const fields = pickMetadataFields(winner);
+  // An absent `metadata` blob means "this device never had one" — a cloud-shelf
+  // row, a file-sync discovery row, an old client — never "the user cleared
+  // it": nothing in the app empties book.metadata, the editor only edits fields
+  // inside it. So it must never overwrite a copy that has one, on any clock.
+  // Without this a metadata-less peer erased every book's description for the
+  // whole fleet (#5912). title/author are NOT NULL columns and need no such
+  // guard.
+  fields.metadata = fields.metadata ?? loser.metadata;
+  return fields;
 }
 
 /**
@@ -150,6 +161,57 @@ export const bookMetadataChanged = (
   a.author !== b.author ||
   (a.metadata ?? null) !== (b.metadata ?? null) ||
   JSON.stringify(a.tags ?? null) !== JSON.stringify(b.tags ?? null);
+
+type BookGroupFields = Pick<DBBook, 'group_id' | 'group_name' | 'group_updated_at'>;
+
+const pickGroupFields = (b: BookGroupFields): BookGroupFields => ({
+  group_id: b.group_id,
+  group_name: b.group_name,
+  group_updated_at: b.group_updated_at,
+});
+
+const hasGroup = (b: BookGroupFields): boolean => !!b.group_id || !!b.group_name;
+
+/**
+ * Field-level last-writer-wins for a books row's group membership (group_id +
+ * group_name). Grouping shares the row with page-turn progress AND with
+ * uploads — `cloudService.uploadBook` bumps updated_at so the fresh
+ * uploaded_at reaches peers — so the group must resolve on its own clock or a
+ * device holding a never-grouped copy clobbers it. Issue #5911, the same
+ * hazard as #4634 / #4544 / #5438.
+ *
+ * A tie does NOT follow the row winner, unlike the three merges above. On
+ * equal stamps the side that HAS a group wins, because an absent group is
+ * ambiguous — "never grouped" and "ungrouped by a client too old to stamp"
+ * look identical, and every legacy row is unstamped (0 === 0). Only when both
+ * sides agree about having a group does the row winner decide. A real removal
+ * still propagates: it carries a newer group_updated_at and wins on step one.
+ */
+export function resolveGroupMerge(
+  client: BookGroupFields,
+  server: BookGroupFields,
+  clientRowWins: boolean,
+): BookGroupFields {
+  const clientMs = ms(client.group_updated_at);
+  const serverMs = ms(server.group_updated_at);
+  if (clientMs !== serverMs) return pickGroupFields(clientMs > serverMs ? client : server);
+  if (hasGroup(client) !== hasGroup(server)) {
+    return pickGroupFields(hasGroup(client) ? client : server);
+  }
+  return pickGroupFields(clientRowWins ? client : server);
+}
+
+/**
+ * Value-level change check for the propagation no-op guard: a timestamp-only
+ * difference on the same group must not rewrite the server row (mirrors
+ * readingStatusChanged / bookMetadataChanged).
+ */
+export const bookGroupChanged = (
+  a: Omit<BookGroupFields, 'group_updated_at'>,
+  b: Omit<BookGroupFields, 'group_updated_at'>,
+): boolean =>
+  (a.group_id ?? null) !== (b.group_id ?? null) ||
+  (a.group_name ?? null) !== (b.group_name ?? null);
 
 // Epoch ms of a row's latest change. A delete counts: KOReader's tombstones
 // keep the highlight's original updated_at (the plugin never bumps it on
@@ -690,6 +752,9 @@ export async function POST(req: NextRequest) {
                   | 'cover_updated_at'
                   | 'metadata'
                   | 'metadata_updated_at'
+                  | 'group_id'
+                  | 'group_name'
+                  | 'group_updated_at'
                 >
               > &
               Pick<DBBook, 'title' | 'author' | 'tags'>;
@@ -699,6 +764,8 @@ export async function POST(req: NextRequest) {
             const cover = resolveCoverMerge(clientBook, serverBook);
             // The metadata group likewise merges on its own clock (issue #5438).
             const meta = resolveMetadataMerge(clientBook, serverBook, clientIsNewer);
+            // Group membership likewise merges on its own clock (issue #5911).
+            const group = resolveGroupMerge(clientBook, serverBook, clientIsNewer);
             if (clientIsNewer) {
               // Client wins the row; graft the fresher status + cover +
               // metadata onto it (server's may be the newer one even though
@@ -712,6 +779,9 @@ export async function POST(req: NextRequest) {
               clientBook.tags = meta.tags;
               clientBook.metadata = meta.metadata;
               clientBook.metadata_updated_at = meta.metadata_updated_at;
+              clientBook.group_id = group.group_id;
+              clientBook.group_name = group.group_name;
+              clientBook.group_updated_at = group.group_updated_at;
               toUpdate.push(clientBook);
             } else {
               // Only rewrite when a resolved field VALUE differs from the
@@ -723,7 +793,8 @@ export async function POST(req: NextRequest) {
               );
               const coverChanged = (cover.cover_hash ?? null) !== (serverBook.cover_hash ?? null);
               const metadataChanged = bookMetadataChanged(meta, serverBook);
-              if (statusChanged || coverChanged || metadataChanged) {
+              const groupChanged = bookGroupChanged(group, serverBook);
+              if (statusChanged || coverChanged || metadataChanged || groupChanged) {
                 // Server wins the row, but the client's status, cover and/or
                 // metadata is the fresher one. Graft the fresher fields onto
                 // the server row and leave updated_at untouched; the
@@ -744,6 +815,9 @@ export async function POST(req: NextRequest) {
                 propagated.tags = meta.tags;
                 propagated.metadata = meta.metadata;
                 propagated.metadata_updated_at = meta.metadata_updated_at;
+                propagated.group_id = group.group_id;
+                propagated.group_name = group.group_name;
+                propagated.group_updated_at = group.group_updated_at;
                 toUpdate.push(propagated);
               } else {
                 batchAuthoritativeRecords.push(serverData);

@@ -1,5 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import { formatKeyForDisplay, filterPlatformKeys, matchesShortcut } from '../../utils/shortcutKeys';
+import {
+  formatKeyForDisplay,
+  filterPlatformKeys,
+  getShortcutFromKeyboardEvent,
+  getShortcutFromMouseEvent,
+  matchesShortcut,
+  normalizeShortcut,
+} from '../../utils/shortcutKeys';
 
 const evt = (
   key: string,
@@ -20,8 +27,8 @@ const evt = (
 
 describe('formatKeyForDisplay', () => {
   describe('Mac platform', () => {
-    it('maps ctrl to ⌘', () => {
-      expect(formatKeyForDisplay('ctrl+f', true)).toBe('⌘F');
+    it('maps ctrl to ⌃', () => {
+      expect(formatKeyForDisplay('ctrl+f', true)).toBe('⌃F');
     });
 
     it('maps cmd to ⌘', () => {
@@ -179,5 +186,38 @@ describe('matchesShortcut', () => {
 
   it('returns false for an empty key list', () => {
     expect(matchesShortcut(evt('p', { shiftKey: true }), [])).toBe(false);
+  });
+});
+
+describe('shortcut recording', () => {
+  it('records layout-aware keyboard keys and auxiliary mouse buttons', () => {
+    expect(getShortcutFromKeyboardEvent(evt('ö', { ctrlKey: true }))).toBe('ctrl+ö');
+    expect(getShortcutFromKeyboardEvent(evt('+', { shiftKey: true }))).toBe('shift+plus');
+    expect(
+      getShortcutFromKeyboardEvent(
+        new KeyboardEvent('keydown', { key: 'P', ctrlKey: true, shiftKey: true }),
+      ),
+    ).toBe('ctrl+shift+P');
+    expect(
+      getShortcutFromKeyboardEvent({
+        ...evt('@', { ctrlKey: true, altKey: true }),
+        altGraphKey: true,
+      }),
+    ).toBe('altgr+@');
+
+    expect(getShortcutFromMouseEvent({ button: 3 })).toBe('MouseX1');
+    expect(getShortcutFromMouseEvent({ button: 4, ctrlKey: true })).toBe('ctrl+MouseX2');
+    expect(getShortcutFromMouseEvent({ button: 1 })).toBeNull();
+
+    expect(formatKeyForDisplay('shift+plus', false)).toBe('Shift++');
+    expect(formatKeyForDisplay('MouseX1', false)).toBe('Mouse X1');
+    expect(matchesShortcut(evt('+', { shiftKey: true }), ['shift+plus'])).toBe(true);
+    expect(matchesShortcut(evt('+', { shiftKey: true }), ['shift+='])).toBe(true);
+    expect(normalizeShortcut('shift+=')).toBe(normalizeShortcut('shift+plus'));
+    expect(
+      matchesShortcut({ ...evt('@', { ctrlKey: true, altKey: true }), altGraphKey: true }, [
+        'altgr+@',
+      ]),
+    ).toBe(true);
   });
 });

@@ -191,3 +191,10 @@ customRootDir vs default baseDir), `boox.sh` / `repro.sh` wrappers, `deadlock.mj
 probe). Boox CDP on local port 9224, Xiaomi on 9223. Dev APK `pnpm dev-android` = release + `--features devtools`.
 Related: [[sync-clock-skew-lastsynced-5661]], [[reference-page-count-sync-5716]],
 [[resize-anchor-drift-5808]], [[feedback-always-verify-on-xiaomi]].
+
+**Follow-up #6615 MERGED (349ac45ba, 2026-10-04) UNRELEASED:** the sibling-fraction pull counted a DELETED book's
+cloud config (non-purge deletes keep book_configs so a same-file re-download resumes) -> a newly imported
+copy (same metaHash, new hash) jumped to the deleted copy's position on EVERY open, even after going back.
+Fix: `applyRemoteProgress` drops siblings whose book is `deletedAt` in the library (exact-hash config always
+counts). REJECTED by chrox: "sibling must be newer than the exact config" rule (breaks #5859: the new copy
+saves page 1 on first open, so the old sibling would never count). No unit test / device run (chrox call).

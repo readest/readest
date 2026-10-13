@@ -59,7 +59,11 @@ export const createStripeCheckoutSession = async (
   });
 
   if (!response.ok) {
-    throw new Error('Failed to create Stripe checkout session');
+    const detail = await response
+      .json()
+      .then((data) => data?.message as string | undefined)
+      .catch(() => undefined);
+    throw new Error(detail || 'Failed to create Stripe checkout session');
   }
 
   return response.json();
@@ -77,7 +81,14 @@ export const redirectToStripeCheckout = async (url?: string): Promise<void> => {
   }
 };
 
-export const createStripePortalSession = async () => {
+/**
+ * `subscription_update` deep-links the portal to its plan picker, which is how
+ * an existing subscriber changes billing period without stacking a second
+ * subscription.
+ */
+export type StripePortalFlow = 'subscription_update';
+
+export const createStripePortalSession = async (flow?: StripePortalFlow) => {
   const token = await getAccessToken();
 
   const response = await fetch(WEB_STRIPE_PORTAL_URL, {
@@ -86,6 +97,7 @@ export const createStripePortalSession = async () => {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${token}`,
     },
+    body: JSON.stringify(flow ? { flow } : {}),
   });
 
   const data = await response.json();

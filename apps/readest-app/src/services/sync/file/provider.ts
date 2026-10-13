@@ -62,12 +62,18 @@ export interface FileSyncProvider {
   /** List immediate children of a directory. Throws on non-2xx. */
   list(path: string): Promise<FileEntry[]>;
 
-  /** PUT text. Parent directories must already exist (see {@link ensureDir}). */
+  /** PUT text. Call {@link ensureDir} for the parent directories first. */
   writeText(path: string, body: string, contentType?: string): Promise<void>;
-  /** PUT binary. Parent directories must already exist. */
+  /** PUT binary. Call {@link ensureDir} for the parent directories first. */
   writeBinary(path: string, body: ArrayBuffer, contentType?: string): Promise<void>;
 
-  /** Create each directory in `paths` (top-down). Idempotent. */
+  /**
+   * Prepare each directory in `paths` (top-down) so a later write beneath it
+   * succeeds. Idempotent. Providers whose writes need no separately created
+   * parent may no-op: S3 has no directories, and OneDrive's path-addressed
+   * PUT and upload session create missing parents (observed on live Graph,
+   * #6427). An empty directory is not guaranteed to exist on its own.
+   */
   ensureDir(paths: string[]): Promise<void>;
   /** Recursively delete a directory subtree. A missing dir is success. */
   deleteDir(path: string): Promise<void>;

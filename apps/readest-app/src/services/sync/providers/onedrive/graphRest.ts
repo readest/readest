@@ -39,12 +39,6 @@ export const childrenUrl = (path: string): string => {
   return `${base}?$select=${CHILD_SELECT}&$top=${LIST_PAGE_SIZE}`;
 };
 
-/** Children-collection URL to POST a new child into (root => no colon form). */
-export const createChildUrl = (parentPath: string): string => {
-  const enc = encodeGraphPath(parentPath);
-  return enc ? `${APPROOT}:/${enc}:/children` : `${APPROOT}/children`;
-};
-
 /** Delete URL for an item addressed by path. */
 export const deleteItemUrl = (path: string): string => `${APPROOT}:/${encodeGraphPath(path)}`;
 

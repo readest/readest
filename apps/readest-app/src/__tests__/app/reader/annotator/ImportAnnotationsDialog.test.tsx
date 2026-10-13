@@ -36,6 +36,7 @@ describe('ImportAnnotationsDialog', () => {
         isOpen
         onClose={vi.fn()}
         onImportMoonReader={vi.fn()}
+        onImportReadEra={vi.fn()}
         onImportReadest={vi.fn()}
       />,
     );
@@ -43,6 +44,7 @@ describe('ImportAnnotationsDialog', () => {
     expect(screen.getByRole('dialog', { name: 'Import Annotations' })).toBeTruthy();
     expect(screen.getByText('Readest')).toBeTruthy();
     expect(screen.getByText('Moon+ Reader')).toBeTruthy();
+    expect(screen.getByText('ReadEra')).toBeTruthy();
   });
 
   it('invokes onImportMoonReader when the Moon+ Reader row is clicked', () => {
@@ -52,12 +54,29 @@ describe('ImportAnnotationsDialog', () => {
         isOpen
         onClose={vi.fn()}
         onImportMoonReader={onImportMoonReader}
+        onImportReadEra={vi.fn()}
         onImportReadest={vi.fn()}
       />,
     );
 
     fireEvent.click(screen.getByText('Moon+ Reader'));
     expect(onImportMoonReader).toHaveBeenCalledTimes(1);
+  });
+
+  it('invokes onImportReadEra when the ReadEra row is clicked', () => {
+    const onImportReadEra = vi.fn();
+    render(
+      <ImportAnnotationsDialog
+        isOpen
+        onClose={vi.fn()}
+        onImportMoonReader={vi.fn()}
+        onImportReadEra={onImportReadEra}
+        onImportReadest={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getByText('ReadEra'));
+    expect(onImportReadEra).toHaveBeenCalledTimes(1);
   });
 
   it('invokes onImportReadest when the Readest row is clicked', () => {
@@ -67,6 +86,7 @@ describe('ImportAnnotationsDialog', () => {
         isOpen
         onClose={vi.fn()}
         onImportMoonReader={vi.fn()}
+        onImportReadEra={vi.fn()}
         onImportReadest={onImportReadest}
       />,
     );

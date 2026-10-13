@@ -218,6 +218,12 @@ export async function ingestFile(
   if (opts.groupId !== undefined) {
     book.groupId = opts.groupId;
     book.groupName = opts.groupName;
+    book.updatedAt = Date.now();
+    // Group membership merges on its own clock (#5911); stamp it or a peer
+    // that never learned about this group wins the row and clears it. The
+    // empty-string "demote to root" case must be stamped too — an unstamped
+    // ungrouped row is read as "never knew about the group" and loses.
+    book.groupUpdatedAt = book.updatedAt;
   }
 
   const tag = opts.subjectTag?.trim();

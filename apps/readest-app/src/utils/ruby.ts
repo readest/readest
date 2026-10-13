@@ -71,21 +71,38 @@ export const isMutedRubyNode = (node: Node): boolean => {
   return !!reading && isSpokenReading(reading);
 };
 
-const rubyAncestor = (node: Node): Element | null => {
+/**
+ * The `<ruby>` around `node`, but ONLY when `node` sits in a reading TTS
+ * actually speaks. Anywhere else the range is already anchored on the base,
+ * which paints on its own.
+ */
+const spokenReadingRuby = (node: Node): Element | null => {
   const el = node.nodeType === Node.ELEMENT_NODE ? (node as Element) : node.parentElement;
-  return el?.closest?.('ruby') ?? null;
+  const rt = el?.closest?.('rt');
+  if (!rt || !isSpokenReading(rt)) return null;
+  return rt.closest('ruby');
 };
 
 /**
- * Widen a range that starts or ends inside a `<ruby>` so it covers the whole
- * element. TTS ranges are anchored on the text it speaks, which for a Japanese
- * book is now the `<rt>` reading — and the overlayer never paints `<rt>`, so an
- * unexpanded range would highlight nothing at all. Expanding puts the highlight
- * on the base the reader is actually looking at.
+ * Widen a range that starts or ends inside a spoken `<rt>` so it covers the
+ * whole `<ruby>`. TTS ranges are anchored on the text it speaks, which for a
+ * Japanese book is the `<rt>` reading — and the overlayer never paints `<rt>`,
+ * so an unexpanded range would highlight nothing at all. Expanding puts the
+ * highlight on the base the reader is actually looking at.
+ *
+ * Gloss ruby (WordLens, pinyin, emphasis dots) is deliberately NOT expanded:
+ * there the base is what TTS speaks and what the range already covers, and
+ * widening it is actively destructive for the injected kind. A WordLens gloss
+ * carries `cfi-skip`, so the element contributes no CFI step — setStartBefore
+ * and setEndAfter then resolve to the SAME position and collapse the range to
+ * nothing, e.g. `/4/2/4,/1:13,/1:20` ("manuals") becoming `/4/2,/4,/4` (""),
+ * which the overlayer draws as an empty highlight. That is why word-granularity
+ * TTS skipped every glossed word while sentence granularity was fine: sentence
+ * ranges rarely begin or end inside a ruby, so they never hit the expansion.
  */
 export const expandRangeOverRuby = (range: Range): Range => {
-  const startRuby = rubyAncestor(range.startContainer);
-  const endRuby = rubyAncestor(range.endContainer);
+  const startRuby = spokenReadingRuby(range.startContainer);
+  const endRuby = spokenReadingRuby(range.endContainer);
   if (!startRuby && !endRuby) return range;
   const expanded = range.cloneRange();
   if (startRuby) expanded.setStartBefore(startRuby);

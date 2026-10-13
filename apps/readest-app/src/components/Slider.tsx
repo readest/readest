@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 interface SliderProps {
   label: string;
@@ -44,8 +44,6 @@ const Slider: React.FC<SliderProps> = ({
   positionToValue,
 }) => {
   const [value, setValue] = useState(initialValue);
-  const [isRtl, setIsRtl] = useState(false);
-  const sliderRef = useRef<HTMLDivElement>(null);
 
   // Default linear mapping functions
   const defaultValueToPosition = (val: number, minVal: number, maxVal: number) => {
@@ -69,42 +67,43 @@ const Slider: React.FC<SliderProps> = ({
   };
 
   useEffect(() => {
-    let node: HTMLElement | null = sliderRef.current;
-    while (node) {
-      if (node.getAttribute('dir') === 'rtl') {
-        setIsRtl(true);
-        break;
-      }
-      node = node.parentElement;
-    }
-  }, []);
-
-  useEffect(() => {
     setValue(initialValue);
   }, [initialValue]);
 
-  const percentage = valueToPos(value, min, max);
-  const visualPercentage = (percentage / 100) * 95;
+  const percentage = Math.max(0, Math.min(100, valueToPos(value, min, max)));
+  const thumbRadius = heightPx / 2;
+  const thumbOffset = Math.abs((0.5 - percentage / 100) * heightPx);
+  const thumbPosition =
+    percentage <= 0
+      ? `${thumbRadius}px`
+      : percentage >= 100
+        ? `calc(100% - ${thumbRadius}px)`
+        : `calc(${percentage}% ${percentage < 50 ? '+' : '-'} ${thumbOffset}px)`;
+  const fillWidth =
+    percentage <= 0
+      ? '0px'
+      : percentage >= 100
+        ? '100%'
+        : `max(calc(${percentage}% + ${(1 - percentage / 100) * heightPx}px), ${heightPx}px)`;
 
+  // The track, the fill and the thumb are placed with logical properties, so the
+  // browser mirrors them from the inherited direction — the same source the
+  // native range input reads. Resolving the direction in JS instead (a one-shot
+  // ancestor walk for dir='rtl') went stale: the reader's footer bar derives its
+  // dir from viewSettings.rtl, which FoliateViewer only computes once the first
+  // document loads, and the panels are mounted before that. The input mirrored
+  // and the visuals did not, so the thumb ran away from the drag (#6157).
   return (
-    <div
-      ref={sliderRef}
-      aria-label={label}
-      className={`slider bg-base-200 mx-auto w-full rounded-xl ${className}`}
-      dir={isRtl ? 'rtl' : undefined}
-    >
+    <div aria-label={label} className={`slider bg-base-200 mx-auto w-full rounded-xl ${className}`}>
       <div className='relative' style={{ height: `${heightPx}px` }}>
         {/* Background track */}
         <div className='bg-base-300/40 absolute h-full w-full rounded-full'></div>
         {/* Filled portion */}
         <div
-          className='bg-base-300 absolute h-full rounded-full'
+          className='slider-fill bg-base-300 absolute h-full rounded-full'
           style={{
-            width:
-              visualPercentage > 0
-                ? `max(calc(${visualPercentage}% + ${heightPx / 2}px), ${heightPx}px)`
-                : '0px',
-            [isRtl ? 'right' : 'left']: 0,
+            width: fillWidth,
+            insetInlineStart: 0,
           }}
         ></div>
         {/* Min/Max labels */}
@@ -114,10 +113,14 @@ const Slider: React.FC<SliderProps> = ({
         </div>
         {/* Thumb bubble */}
         <div
-          className='pointer-events-none absolute top-0 z-10'
+          className='slider-thumb pointer-events-none absolute top-0 z-10'
           style={{
-            [isRtl ? 'right' : 'left']: `max(${heightPx / 2}px, calc(${visualPercentage}%))`,
-            transform: isRtl ? 'translateX(calc(50%))' : 'translateX(calc(-50%))',
+            insetInlineStart: thumbPosition,
+            // The bubble is exactly `heightPx` wide, so a negative start margin
+            // centers it on `thumbPosition`. `transform: translateX(-50%)` would
+            // do the same but has no logical form, and would have to flip sign
+            // by hand for right-to-left.
+            marginInlineStart: `-${thumbRadius}px`,
             height: '100%',
           }}
         >

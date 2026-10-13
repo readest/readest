@@ -6,6 +6,7 @@
  * headword heading plus an HTML body, following the Slob/StarDict rendering
  * conventions.
  */
+import { liftDarkTextColors } from '@/utils/style';
 import type { DictionaryProvider, ImportedDictionary } from '../types';
 import type { DictionaryFileOpener } from './starDictProvider';
 import { BglReader } from '../bglReader';
@@ -78,6 +79,7 @@ export const createBglProvider = ({
           div.className = 'mt-2 text-sm';
           ctx.container.appendChild(div);
         }
+        if (ctx.isDarkMode) liftDarkTextColors(ctx.container);
         return {
           ok: true,
           headword: entries[0]!.headword,

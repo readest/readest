@@ -17,8 +17,15 @@ serde = "1.0"
 thiserror = "2"
 schemars = "0.8"
 
+[features]
+# The Linux CEF runtime (`pnpm tauri`): screenshots go through the CEF
+# browser's DevTools protocol. Outside that build the root Cargo.toml
+# resolves `tauri-runtime-cef` to an empty stub that is never compiled.
+cef = ["dep:tauri-runtime-cef"]
+
 [dev-dependencies]
 serde_json = "1"
+base64 = "0.22"
 
 [build-dependencies]
 tauri-plugin = { version = "2", features = ["build"] }
@@ -48,11 +55,21 @@ block = "0.1.6"
 # arrive base64-encoded and are decoded back to bytes in mobile.rs.
 base64 = "0.22"
 
+[target.'cfg(any(windows, target_os = "linux"))'.dependencies]
+# DevTools `Page.captureScreenshot` for the mesh page-curl texture (#555)
+# answers in JSON with the image base64-encoded.
+base64 = "0.22"
+serde_json = "1"
+
 [target.'cfg(target_os = "windows")'.dependencies]
 windows-native-keyring-store = "1"
+# WebView2 DevTools protocol calls; kept on the versions wry uses.
+webview2-com = "0.38"
+windows-core = "0.61"
 
 [target.'cfg(target_os = "linux")'.dependencies]
 # `vendored` statically links libdbus + openssl so we don't depend on
 # the host distribution's versions, mirroring the previous
 # `sync-secret-service` feature on keyring v3.
 dbus-secret-service-keyring-store = { version = "1", features = ["crypto-rust", "vendored"] }
+tauri-runtime-cef = { version = "0.1", optional = true }

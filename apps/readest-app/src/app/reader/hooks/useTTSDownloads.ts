@@ -40,9 +40,13 @@ export const useTTSDownloads = (
   bookKey: string,
   getController: () => TTSController | null,
   isOpen: boolean,
+  // The session's clients are initialized, so its engine and voice are
+  // chosen: a download started earlier would use the default engine.
+  clientsReady: boolean,
 ): UseTTSDownloadsResult => {
   const _ = useTranslation();
   const { getBookData } = useBookDataStore();
+  const [chapters, setChapters] = useState<DownloadChapter[]>([]);
   const [statuses, setStatuses] = useState<Map<number, SectionCacheStatus>>(new Map());
   const [cacheBytes, setCacheBytes] = useState(0);
   const [clearing, setClearing] = useState(false);
@@ -62,30 +66,38 @@ export const useTTSDownloads = (
   // Bind the book to the manager while a download-capable session is live so
   // queued items — including rows restored from a previous session — process.
   useEffect(() => {
-    if (!supported) return;
+    if (!supported || !clientsReady) return;
     ttsDownloadManager.attachController(bookHash, getController);
     return () => ttsDownloadManager.detachController(bookHash);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [supported, bookHash]);
+  }, [supported, clientsReady, bookHash]);
 
-  const chapters = useMemo(() => {
-    if (!controller) return [];
+  useEffect(() => {
+    let cancelled = false;
+    setChapters([]);
+    if (!controller) return;
     const toc = getBookData(bookKey)?.bookDoc?.toc ?? [];
     const view = controller.view;
     const sectionCount = view?.book?.sections?.length ?? 0;
-    if (!sectionCount) return [];
-    return deriveDownloadChapters(
+    if (!sectionCount) return;
+    // PDF destinations resolve asynchronously; never start this work during render.
+    void deriveDownloadChapters(
       toc,
-      (href) => {
+      async (href) => {
         try {
-          return view.resolveNavigation(href)?.index ?? null;
+          return (await view.resolveNavigation(href))?.index ?? null;
         } catch {
           return null;
         }
       },
       sectionCount,
       (n) => _('Section {{index}}', { index: n }),
-    );
+    ).then((nextChapters) => {
+      if (!cancelled) setChapters(nextChapters);
+    });
+    return () => {
+      cancelled = true;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bookKey, controller, isOpen]);
 

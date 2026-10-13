@@ -1,10 +1,12 @@
 # Windows Thumbnail Provider for Readest
 
-This crate provides Windows Explorer thumbnail support for eBook files when Readest is set as the default application.
+This crate provides Windows Explorer thumbnail and preview pane support for eBook files when Readest is set as the default application.
 
 ## Features
 
 - **Automatic Cover Extraction**: Extracts cover images from EPUB, MOBI, AZW, AZW3, FB2, CBZ, CBR files
+- **PDF Rendering**: Renders PDF pages with `Windows.Data.Pdf`, the PDF engine built into Windows 10+
+- **Preview Pane**: `IPreviewHandler` shows PDF pages (mouse wheel, scrollbar, arrow / Page Up / Page Down / Home / End turn pages) and the cover of other formats
 - **Readest Branding**: Adds a small Readest icon overlay at the bottom-right corner
 - **Smart Caching**: Caches generated thumbnails for faster subsequent loads
 - **File Association Aware**: Only shows thumbnails when Readest is the default app for the file type
@@ -19,6 +21,7 @@ This crate provides Windows Explorer thumbnail support for eBook files when Read
 | AZW3/KF8   | `.azw3`, `.kf8`         | KF8 format cover             |
 | FB2        | `.fb2`                  | `<binary>` coverpage element |
 | Comic Book | `.cbz`, `.cbr`          | First image in archive       |
+| PDF        | `.pdf`                  | First page                   |
 | Plain Text | `.txt`                  | Generated placeholder        |
 
 ## Building
@@ -115,8 +118,9 @@ This generates a thumbnail with the Readest overlay at the specified size.
 
 ## COM Details
 
-- **CLSID**: `{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}`
+- **CLSID**: `{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}` (one class serves both handlers)
 - **Shell Thumbnail Handler GUID**: `{e357fccd-a995-4576-b01f-234630154e96}`
+- **Shell Preview Handler GUID**: `{8895b1c6-b41f-4c1c-a562-0d564250836f}`, hosted by `prevhost.exe` (AppID `{6d2b5079-2f0b-48dd-ab7f-97cec514d30b}`)
 - **Threading Model**: Apartment
 
 ## How It Works
@@ -128,6 +132,8 @@ This generates a thumbnail with the Readest overlay at the specified size.
 5. If Readest is NOT the default, it returns `S_FALSE` to let Windows use other handlers
 
 This ensures thumbnails only appear for files the user has associated with Readest.
+
+The installer claims an extension's thumbnail or preview slot only when it is empty or already Readest's, and the uninstaller only removes Readest's own entries, so handlers from other apps (e.g. Edge's PDF previewer, Adobe, SumatraPDF) are left alone.
 
 ## License
 

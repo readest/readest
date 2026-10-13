@@ -10,12 +10,17 @@ vi.mock('@tauri-apps/api/event', () => ({
   TauriEvent: { WINDOW_FOCUS: 'tauri://focus' },
 }));
 
+vi.mock('@tauri-apps/api/core', () => ({
+  invoke: vi.fn().mockResolvedValue(undefined),
+}));
+
 vi.mock('@tauri-apps/plugin-process', () => ({
   exit: vi.fn(),
 }));
 
 vi.mock('@tauri-apps/plugin-os', () => ({
   type: vi.fn(),
+  version: vi.fn(),
 }));
 
 vi.mock('@/utils/event', () => ({
@@ -23,12 +28,16 @@ vi.mock('@/utils/event', () => ({
 }));
 
 import { getCurrentWindow } from '@tauri-apps/api/window';
-import { type as osType } from '@tauri-apps/plugin-os';
+import { invoke } from '@tauri-apps/api/core';
+import { type as osType, version as osVersion } from '@tauri-apps/plugin-os';
+import { useTrafficLightStore } from '@/store/trafficLightStore';
+import type { AppService } from '@/types/system';
 import {
   formatAppWindowTitle,
   tauriHandleOnCloseWindow,
   tauriHandleToggleFullScreen,
   tauriSetWindowTitle,
+  windowNeedsClientOutline,
 } from '@/utils/window';
 
 type CloseHandler = (event: { preventDefault: () => void }) => Promise<void> | void;
@@ -138,6 +147,24 @@ function makeFullscreenWindow({
 }
 
 describe('tauriHandleToggleFullScreen', () => {
+  test.each([
+    'android',
+    'ios',
+  ] as const)('does not invoke desktop fullscreen commands on %s', async (platform) => {
+    vi.mocked(osType).mockReturnValue(platform);
+    const win = makeFullscreenWindow({ isFullscreen: false, isMaximized: false });
+    win.isFullscreen.mockRejectedValue(new Error('Plugin window not initialized'));
+    vi.mocked(getCurrentWindow).mockReturnValue(
+      win as unknown as ReturnType<typeof getCurrentWindow>,
+    );
+
+    await expect(tauriHandleToggleFullScreen()).resolves.toBeUndefined();
+
+    expect(getCurrentWindow).not.toHaveBeenCalled();
+    expect(win.isFullscreen).not.toHaveBeenCalled();
+    expect(win.setFullscreen).not.toHaveBeenCalled();
+  });
+
   test('enters fullscreen when the window is maximized (Phosh / Windows-maximized case)', async () => {
     // On Phosh the window is always maximized, and on Windows users often run
     // maximized. The fullscreen button must still enter fullscreen instead of
@@ -220,5 +247,54 @@ describe('tauriSetWindowTitle', () => {
     await tauriSetWindowTitle();
 
     expect(win.setTitle).toHaveBeenCalledWith('Readest');
+  });
+
+  test('sets the title natively where the window has traffic lights', async () => {
+    // Setting the title makes AppKit re-lay out the title bar, which restores
+    // the standard container and drops the buttons to their default spot (or
+    // back on screen when the reader had hidden them). A correction sent from
+    // JS lands an IPC round-trip later, after that default has been painted,
+    // so the native command sets the title and re-applies the layout in one
+    // main-thread pass (#6222).
+    const win = makeTitledWindow();
+    useTrafficLightStore.setState({ appService: { hasTrafficLight: true } as AppService });
+
+    await tauriSetWindowTitle('The Hobbit');
+
+    expect(invoke).toHaveBeenCalledWith('set_window_title', { title: 'Readest - The Hobbit' });
+    expect(win.setTitle).not.toHaveBeenCalled();
+  });
+
+  test('sets the title through the window API elsewhere', async () => {
+    const win = makeTitledWindow();
+    useTrafficLightStore.setState({ appService: { hasTrafficLight: false } as AppService });
+
+    await tauriSetWindowTitle('The Hobbit');
+
+    expect(win.setTitle).toHaveBeenCalledWith('Readest - The Hobbit');
+    expect(invoke).not.toHaveBeenCalled();
+  });
+});
+
+describe('windowNeedsClientOutline', () => {
+  const onWindows = { isWindowsApp: true } as AppService;
+  const elsewhere = { isWindowsApp: false } as AppService;
+
+  test('asks for a client outline on Windows 10, whose native frame is asymmetric', () => {
+    vi.mocked(osVersion).mockReturnValue('10.0.19045');
+    expect(windowNeedsClientOutline(onWindows)).toBe(true);
+  });
+
+  test('leaves the native frame alone on Windows 11 and an unreadable build', () => {
+    vi.mocked(osVersion).mockReturnValue('10.0.22631');
+    expect(windowNeedsClientOutline(onWindows)).toBe(false);
+
+    vi.mocked(osVersion).mockReturnValue('10.0');
+    expect(windowNeedsClientOutline(onWindows)).toBe(false);
+  });
+
+  test('never reads the OS version off Windows, where the plugin is unavailable', () => {
+    expect(windowNeedsClientOutline(elsewhere)).toBe(false);
+    expect(osVersion).not.toHaveBeenCalled();
   });
 });

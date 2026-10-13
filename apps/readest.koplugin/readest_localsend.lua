@@ -1,5 +1,6 @@
--- LocalSend receive support: this device announces itself on the LAN and
--- accepts files from Readest apps (or any LocalSend sender). Receive-only.
+-- Nearby BookDrop (LocalSend protocol) receive support: this device
+-- announces itself on the LAN and accepts files from Readest apps (or any
+-- LocalSend sender). Receive-only.
 --
 -- Module singleton: KOReader instantiates the plugin per context (reader /
 -- FileManager) but the helper process + its control socket are process-
@@ -73,7 +74,7 @@ function LocalSend:init(plugin)
     -- Re-attach after a context switch: the service kept running while the
     -- previous plugin instance (and its poll task) went away.
     if self.available and plugin.settings.localsend_enabled and NetworkMgr:isConnected() then
-        self:startService()
+        self:startService(true)
     end
 end
 
@@ -89,26 +90,29 @@ function LocalSend:downloadDir()
     return dir
 end
 
-function LocalSend:startService()
+-- `automatic` is set when the plugin starts the service on its own (launch,
+-- wake, Wi-Fi connect) rather than on a user action: a failure is logged
+-- instead of shown, so it can't pop up on every launch.
+function LocalSend:startService(automatic)
     if not self.available then return end
     if self.running and self.sock then
         self:schedulePoll()
         return
     end
+    local function fail(text, detail)
+        logger.warn("ReadestLocalSend: " .. text .. (detail and (": " .. tostring(detail)) or ""))
+        if not automatic then
+            UIManager:show(InfoMessage:new{ text = text, timeout = 3 })
+        end
+    end
     local dir = self:downloadDir()
     if not dir then
-        UIManager:show(InfoMessage:new{
-            text = _("Set a Readest download folder or a KOReader home folder first."),
-            timeout = 3,
-        })
+        fail(_("Set a Readest download folder or a KOReader home folder first."))
         return
     end
-    local port = Helper.pickPort()
+    local port, port_err = Helper.pickPort()
     if not port then
-        UIManager:show(InfoMessage:new{
-            text = _("LocalSend error: could not find a free port."),
-            timeout = 3,
-        })
+        fail(_("Nearby BookDrop error: could not find a free port."), port_err)
         return
     end
     -- Best-effort: on a device with a default-DROP firewall (e.g. Kindle)
@@ -119,13 +123,9 @@ function LocalSend:startService()
     Helper.spawn(self.binpath, port)
     local sock, err = Helper.connect(port, 3)
     if not sock then
-        logger.warn("ReadestLocalSend: connect failed: " .. tostring(err))
         os.execute("pkill -f localsend-helper >/dev/null 2>&1")
         Firewall.close()
-        UIManager:show(InfoMessage:new{
-            text = _("LocalSend failed to start."),
-            timeout = 3,
-        })
+        fail(_("Nearby BookDrop failed to start."), err)
         return
     end
     self.sock = sock
@@ -142,7 +142,7 @@ function LocalSend:startService()
     })
     self.running = true
     self:schedulePoll()
-    UIManager:show(InfoMessage:new{ text = _("Starting LocalSend…"), timeout = 2 })
+    UIManager:show(InfoMessage:new{ text = _("Starting Nearby BookDrop…"), timeout = 2 })
 end
 
 function LocalSend:stopService()
@@ -165,7 +165,7 @@ function LocalSend:toggle()
             self:startService()
         else
             UIManager:show(InfoMessage:new{
-                text = _("LocalSend will start when Wi-Fi connects."),
+                text = _("Nearby BookDrop will start when Wi-Fi connects."),
                 timeout = 3,
             })
         end
@@ -287,11 +287,11 @@ end
 function LocalSend:onReceiveEnd(ev)
     local text
     if (ev.failed or 0) > 0 then
-        text = T(_("LocalSend: received %1 file(s), %2 failed."), ev.received or 0, ev.failed)
+        text = T(_("Nearby BookDrop: received %1 file(s), %2 failed."), ev.received or 0, ev.failed)
     elseif ev.reason == "cancelled" then
-        text = _("LocalSend transfer cancelled.")
+        text = _("Nearby BookDrop transfer cancelled.")
     else
-        text = T(_("LocalSend: received %1 file(s)."), ev.received or 0)
+        text = T(_("Nearby BookDrop: received %1 file(s)."), ev.received or 0)
     end
     UIManager:show(InfoMessage:new{ text = text, timeout = 4 })
     local LibraryWidget = require("library.librarywidget")
@@ -308,14 +308,14 @@ end
 
 -- ── Send ───────────────────────────────────────────────────────────
 --
--- File-menu entry point (main.lua's "Send with LocalSend" button). Needs
--- the service running for discovery, then scans passively for a couple of
--- seconds before showing whatever landed in device_list — there's no
--- explicit "scan complete" signal from the helper.
+-- File-menu entry point (main.lua's "Send to nearby Readest devices"
+-- button). Needs the service running for discovery, then scans passively
+-- for a couple of seconds before showing whatever landed in device_list —
+-- there's no explicit "scan complete" signal from the helper.
 function LocalSend:sendFile(path)
     if not self.available then
         UIManager:show(InfoMessage:new{
-            text = _("LocalSend not available on this device"),
+            text = _("Nearby BookDrop not available on this device"),
             timeout = 3,
         })
         return
@@ -347,7 +347,7 @@ function LocalSend:showDevicePicker()
     if #devices == 0 then
         self.pending_send = nil
         UIManager:show(InfoMessage:new{
-            text = _("No nearby devices found. Make sure the other device has LocalSend/Readest open."),
+            text = _("No nearby devices found. Make sure the other device has Nearby BookDrop or LocalSend open."),
             timeout = 3,
         })
         return
@@ -467,7 +467,7 @@ LocalSend.handlers = {
     -- from the one helper process this socket is connected to).
     error = function(_self, ev)
         UIManager:show(InfoMessage:new{
-            text = T(_("LocalSend error: %1"), ev.message or "?"),
+            text = T(_("Nearby BookDrop error: %1"), ev.message or "?"),
             timeout = 5,
         })
         _self:stopService()
@@ -476,11 +476,11 @@ LocalSend.handlers = {
 
 function LocalSend:statusText()
     if not self.available then
-        return _("LocalSend not available on this device")
+        return _("Nearby BookDrop not available on this device")
     end
     local status = self.status_cache
     if not self.running or next(status) == nil then
-        return _("LocalSend off")
+        return _("Nearby BookDrop off")
     end
     local octet
     for __, ip in ipairs(status.localIps or {}) do

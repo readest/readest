@@ -3,6 +3,8 @@ import type { PageStatsBookWire } from './types';
 
 /** Books per page-stats request — the server rejects more than 50. */
 const MAX_BOOKS_PER_REQUEST = 50;
+/** Events per page-stats request — the server rejects more than 500 in total. */
+const MAX_EVENTS_PER_REQUEST = 500;
 
 export interface StatsPushDb {
   getCursor(key: 'bookorbit-push'): Promise<number>;
@@ -34,9 +36,9 @@ const toWireBooks = (events: PageStatEvent[]): PageStatsBookWire[] => {
 
 /**
  * Pushes page-stat events newer than the bookorbit cursor, chunked to at most
- * 50 distinct books per request. The cursor advances per successful chunk and
- * a chunk never splits a startTime, so an interrupted push resumes without
- * dropping same-second events. Mirrors pushStats in statsSync.ts.
+ * 50 distinct books and 500 events per request. The cursor advances after each
+ * successful chunk that completes a startTime, so an interrupted push resumes
+ * without dropping same-second events. Mirrors pushStats in statsSync.ts.
  */
 export const pushStatsToBookOrbit = async (
   stats: StatsPushDb,
@@ -53,25 +55,35 @@ export const pushStatsToBookOrbit = async (
   while (i < events.length) {
     const hashes = new Set<string>();
     let end = i;
-    while (end < events.length) {
+    while (end < events.length && end - i < MAX_EVENTS_PER_REQUEST) {
       const event = events[end]!;
       if (!hashes.has(event.bookMd5) && hashes.size === MAX_BOOKS_PER_REQUEST) {
-        // A 51st book only starts a new chunk on a fresh startTime; a
-        // same-second event stays with its second so the cursor never
-        // splits it.
-        if (end > i && events[end - 1]!.startTime === event.startTime) {
-          hashes.add(event.bookMd5);
-          end++;
-          continue;
-        }
         break;
       }
       hashes.add(event.bookMd5);
       end++;
     }
+
+    // Prefer moving a whole startTime group to the next request. If the group
+    // itself exceeds either server limit, make progress with a bounded slice
+    // but withhold the cursor until the final slice succeeds. A failed later
+    // slice then retries the group instead of silently dropping its tail;
+    // BookOrbit deduplicates the already accepted events.
+    if (end < events.length && events[end - 1]!.startTime === events[end]!.startTime) {
+      const splitStartTime = events[end]!.startTime;
+      let groupStart = end - 1;
+      while (groupStart > i && events[groupStart - 1]!.startTime === splitStartTime) {
+        groupStart--;
+      }
+      if (groupStart > i) end = groupStart;
+    }
+
     const chunk = events.slice(i, end);
     await client.uploadPageStats(toWireBooks(chunk));
-    await stats.setCursor('bookorbit-push', chunk[chunk.length - 1]!.startTime);
+    const lastStartTime = chunk[chunk.length - 1]!.startTime;
+    if (end === events.length || events[end]!.startTime !== lastStartTime) {
+      await stats.setCursor('bookorbit-push', lastStartTime);
+    }
     i = end;
   }
 };

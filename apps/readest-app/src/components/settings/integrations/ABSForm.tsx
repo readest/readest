@@ -2,7 +2,7 @@ import clsx from 'clsx';
 import React, { useEffect, useState } from 'react';
 import { MdCloudSync } from 'react-icons/md';
 import { useEnv } from '@/context/EnvContext';
-import type { EnvConfigType } from '@/services/environment';
+import { isWebAppPlatform, type EnvConfigType } from '@/services/environment';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useABSServerStore } from '@/store/absServerStore';
 import { useLibraryStore } from '@/store/libraryStore';
@@ -15,7 +15,7 @@ import type { AppService } from '@/types/system';
 import { parseAbsFilePath } from '@/utils/audiobook';
 import { eventDispatcher } from '@/utils/event';
 import SubPageHeader from '../SubPageHeader';
-import { BoxedList, NavigationRow, SectionTitle, SettingsSwitchRow } from '../primitives';
+import { BoxedList, NavigationRow, SectionTitle, SettingsSwitchRow, Tips } from '../primitives';
 
 interface ABSFormProps {
   onBack: () => void;
@@ -34,8 +34,10 @@ const isValidAbsUrl = (url: string): boolean => /^https?:\/\//i.test(url);
 const ABSForm: React.FC<ABSFormProps> = ({ onBack }) => {
   const _ = useTranslation();
   const { envConfig, appService } = useEnv();
+  const isWeb = isWebAppPlatform();
   const servers = useABSServerStore((state) => state.servers).filter((server) => !server.deletedAt);
   const [activeServerId, setActiveServerId] = useState<string | null>(null);
+  const [webOrigin, setWebOrigin] = useState('');
 
   const [url, setUrl] = useState('');
   const [username, setUsername] = useState('');
@@ -44,6 +46,10 @@ const ABSForm: React.FC<ABSFormProps> = ({ onBack }) => {
   const [connectError, setConnectError] = useState('');
 
   const activeServer = servers.find((server) => server.id === activeServerId);
+
+  useEffect(() => {
+    if (isWeb) setWebOrigin(window.location.origin);
+  }, [isWeb]);
 
   const handleConnect = async () => {
     const trimmedUrl = normalizeAbsUrl(url);
@@ -156,7 +162,7 @@ const ABSForm: React.FC<ABSFormProps> = ({ onBack }) => {
                   id='abs-server-url'
                   type='text'
                   placeholder='http://audiobookshelf.local:13378'
-                  className='input input-bordered eink-bordered h-11 w-full text-sm focus:outline-none'
+                  className='input eink-bordered h-11 w-full text-sm focus:outline-hidden'
                   spellCheck='false'
                   value={url}
                   onChange={(e) => {
@@ -174,7 +180,7 @@ const ABSForm: React.FC<ABSFormProps> = ({ onBack }) => {
                   id='abs-username'
                   type='text'
                   placeholder={_('Your Username')}
-                  className='input input-bordered eink-bordered h-11 w-full text-sm focus:outline-none'
+                  className='input eink-bordered h-11 w-full text-sm focus:outline-hidden'
                   spellCheck='false'
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
@@ -190,7 +196,7 @@ const ABSForm: React.FC<ABSFormProps> = ({ onBack }) => {
                   id='abs-password'
                   type='password'
                   placeholder={_('Your Password')}
-                  className='input input-bordered eink-bordered h-11 w-full text-sm focus:outline-none'
+                  className='input eink-bordered h-11 w-full text-sm focus:outline-hidden'
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   autoComplete='current-password'
@@ -206,7 +212,7 @@ const ABSForm: React.FC<ABSFormProps> = ({ onBack }) => {
                   className={clsx(
                     'btn btn-contrast',
                     'h-10 min-h-10 rounded-lg border-0 px-5 text-sm font-medium',
-                    'focus-visible:ring-base-content/40 focus-visible:outline-none focus-visible:ring-2',
+                    'focus-visible:ring-base-content/40 focus-visible:outline-hidden focus-visible:ring-2',
                     isConnecting && 'opacity-60',
                   )}
                 >
@@ -218,6 +224,25 @@ const ABSForm: React.FC<ABSFormProps> = ({ onBack }) => {
                 </button>
               </div>
             </form>
+            {isWeb && webOrigin && (
+              <Tips>
+                <li>
+                  {_(
+                    'Using Readest on the web? Add {{origin}} to Allowed CORS Origins in your Audiobookshelf server settings.',
+                    { origin: webOrigin },
+                  )}{' '}
+                  <a
+                    href='https://audiobookshelf.org/docs/documentation/server-management/cors/'
+                    target='_blank'
+                    rel='noopener noreferrer'
+                    className='link link-primary'
+                  >
+                    {_('View the Audiobookshelf CORS setup guide')}
+                  </a>
+                  .
+                </li>
+              </Tips>
+            )}
           </div>
         </div>
       )}
@@ -339,7 +364,7 @@ const ABSServerDetail: React.FC<ABSServerDetailProps> = ({
       <button
         type='button'
         onClick={onBack}
-        className='text-base-content/70 hover:text-primary -mt-2 px-4 text-[0.85em] transition-colors duration-150 focus-visible:underline focus-visible:outline-none'
+        className='text-base-content/70 hover:text-primary -mt-2 px-4 text-[0.85em] transition-colors duration-150 focus-visible:underline focus-visible:outline-hidden'
       >
         {_('All Servers')}
       </button>
@@ -351,7 +376,7 @@ const ABSServerDetail: React.FC<ABSServerDetailProps> = ({
         <input
           id='abs-server-name'
           type='text'
-          className='input input-bordered eink-bordered h-11 w-full text-sm focus:outline-none'
+          className='input eink-bordered h-11 w-full text-sm focus:outline-hidden'
           value={name}
           onChange={(e) => setName(e.target.value)}
           onBlur={handleNameBlur}
@@ -365,7 +390,7 @@ const ABSServerDetail: React.FC<ABSServerDetailProps> = ({
         <input
           type='text'
           disabled
-          className='input input-bordered eink-bordered h-11 w-full text-sm opacity-70'
+          className='input eink-bordered h-11 w-full text-sm opacity-70'
           value={server.url}
         />
       </div>
@@ -427,7 +452,7 @@ const ABSServerDetail: React.FC<ABSServerDetailProps> = ({
             'h-9 rounded-lg px-4 text-sm font-medium',
             'text-error hover:bg-error/10',
             'transition-colors duration-150',
-            'focus-visible:ring-error/40 focus-visible:outline-none focus-visible:ring-2',
+            'focus-visible:ring-error/40 focus-visible:outline-hidden focus-visible:ring-2',
             isRemoving && 'opacity-60',
           )}
         >

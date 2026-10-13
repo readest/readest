@@ -90,6 +90,43 @@ describe('SqliteTTSCacheStore pack compaction', () => {
     expect(bytes[80]).toBe(3);
   });
 
+  test('a queued compaction retries after a preceding database query fails', async () => {
+    await cacheSection(3, ['m1'], ['k1']);
+    const error = new Error('Database query failed');
+    vi.spyOn(db, 'select').mockRejectedValueOnce(error);
+
+    const results = await Promise.allSettled([store.compact(), store.compact()]);
+
+    expect(results).toEqual([
+      { status: 'rejected', reason: error },
+      { status: 'fulfilled', value: 1 },
+    ]);
+    expect((await packFs.list()).filter((name) => name.endsWith('.mp3'))).toHaveLength(1);
+    expect(await store.get('k1')).toMatchObject(sentence(1));
+  });
+
+  test('queued compaction includes sections completed during an earlier run', async () => {
+    await cacheSection(3, ['m1'], ['k1']);
+    const writing = Promise.withResolvers<void>();
+    const resume = Promise.withResolvers<void>();
+    const write = packFs.write.bind(packFs);
+    vi.spyOn(packFs, 'write').mockImplementationOnce(async (name, data) => {
+      writing.resolve();
+      await resume.promise;
+      await write(name, data);
+    });
+    const first = store.compact();
+    await writing.promise;
+    await cacheSection(4, ['m2'], ['k2']);
+    const second = store.compact();
+    resume.resolve();
+
+    expect(await Promise.all([first, second])).toEqual([1, 1]);
+    expect((await packFs.list()).filter((name) => name.endsWith('.mp3'))).toHaveLength(2);
+    expect(await store.get('k1')).toMatchObject(sentence(1));
+    expect(await store.get('k2')).toMatchObject(sentence(1));
+  });
+
   test('a section sharing a sentence key with an already-packed section still packs (regression)', async () => {
     // Section A packs first, adopting the shared key k1 into its pack. From
     // then on k1's entry is pack-backed (audio NULL pointing at pack A).
@@ -735,7 +772,11 @@ describe('SqliteTTSCacheStore pack portability', () => {
       now: () => clock.t++,
       packFs: otherFs,
     });
+    const imported = vi.fn();
+    other.onImported(imported);
     expect(await other.importPack(bytes.slice().buffer as ArrayBuffer, sidecar)).toBe(true);
+    // Whoever still waits on these sentences can stop synthesizing them.
+    expect(imported).toHaveBeenCalledWith(['k1', 'k2']);
 
     const got = await other.get('k2');
     expect(got).not.toBeNull();
@@ -743,6 +784,26 @@ describe('SqliteTTSCacheStore pack portability', () => {
     expect(got!.boundaries).toEqual(BOUNDARIES);
     // Re-import is a no-op.
     expect(await other.importPack(bytes.slice().buffer as ArrayBuffer, sidecar)).toBe(false);
+    expect(imported).toHaveBeenCalledTimes(1);
+  });
+
+  test('a packed sentence counts as cached only while its pack file is there', async () => {
+    const sidecar = await readSidecar();
+    const bytes = packFs.files.get(await packName())!;
+    const otherDb = await NodeDatabaseService.open(':memory:');
+    const otherFs = new FakePackFs();
+    const other = new SqliteTTSCacheStore(otherDb, {
+      budgetBytes: 1024 * 1024,
+      now: () => clock.t++,
+      packFs: otherFs,
+    });
+    expect(await other.importPack(bytes.slice().buffer as ArrayBuffer, sidecar)).toBe(true);
+    expect(await other.cachedKeys(['k1', 'k2'])).toEqual(new Set(['k1', 'k2']));
+
+    // The pack file is gone (cleared storage): a download must synthesize
+    // these again instead of counting them done.
+    for (const name of await otherFs.list()) await otherFs.remove(name);
+    expect(await other.cachedKeys(['k1', 'k2'])).toEqual(new Set());
   });
 
   test('importPack rejects a sidecar that does not match the bytes', async () => {

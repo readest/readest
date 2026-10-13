@@ -18,15 +18,26 @@ import { useLibraryStore } from '@/store/libraryStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { DEFAULT_SYSTEM_SETTINGS } from '@/services/constants';
 
+// When set, the mock image reports `load` while it mounts, like a cached cover
+// that the browser finishes before React flushes the mount's passive effects.
+let loadOnMount = false;
+
 vi.mock('next/image', () => ({
   __esModule: true,
   default: (props: Record<string, unknown>) => {
+    const onLoad = props['onLoad'] as
+      | ((e: { currentTarget: HTMLImageElement }) => void)
+      | undefined;
+    const ref = (img: HTMLImageElement | null) => {
+      if (img && loadOnMount) onLoad?.({ currentTarget: img });
+    };
     // biome-ignore lint/a11y/useAltText: test mock; alt comes from spread props
-    return <img {...props} />;
+    return <img {...props} ref={ref} />;
   },
 }));
 
 beforeEach(() => {
+  loadOnMount = false;
   requestCoverThumbnailMock.mockClear();
   useLibraryStore.setState({
     coverThumbnails: new Map(),
@@ -208,6 +219,13 @@ describe('BookCover', () => {
       'https://example.com/full-size-cover.jpg',
     );
     expect(container.querySelector('.fallback-cover')?.classList.contains('invisible')).toBe(true);
+  });
+
+  it('keeps the spine when a cached cover loads before the mount effects run', () => {
+    loadOnMount = true;
+    const { container } = render(<BookCover book={makeBook()} coverFit='crop' showSpine />);
+
+    expect(container.querySelector('.book-spine')?.classList.contains('visible')).toBe(true);
   });
 
   it('waits for the viewport prefetch margin before requesting optimization', () => {

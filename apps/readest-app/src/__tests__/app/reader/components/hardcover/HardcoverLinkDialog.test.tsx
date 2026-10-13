@@ -55,6 +55,8 @@ vi.mock('@/services/hardcover', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/services/hardcover')>();
   return {
     pickAutoMatch: actual.pickAutoMatch,
+    isHardcoverConnected: actual.isHardcoverConnected,
+    createHardcoverTokenStore: vi.fn(),
     HardcoverClient: class {
       searchBooks(query: string) {
         return h.searchBooks(query);
