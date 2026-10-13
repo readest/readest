@@ -656,7 +656,7 @@ describe('TTSPlayerSheet', () => {
     render(<TTSPlayerSheet {...makeProps({ onGetVoices: vi.fn().mockResolvedValue(groups) })} />);
     fireEvent.click(screen.getByLabelText('Voice'));
     const row = (name: string) => screen.getAllByText(name).at(-1)!.closest('button')!;
-    expect((await waitFor(() => row('Xiaoyu'))).disabled).toBe(true);
+    expect((await waitFor(() => row('Xiaoyu'))).innerHTML).toContain('text-base-content/40');
     expect(screen.getByText('Pro').className).toContain('ms-auto');
     fireEvent.click(screen.getByRole('button', { name: /Edge TTS/ }));
     expect(row('Ava').textContent).toBe('AvaMultilingual');
@@ -697,6 +697,56 @@ describe('TTSPlayerSheet', () => {
     expect(edge.className).toContain('font-semibold');
     expect(kokoro.textContent).not.toContain('af_heart');
     expect(kokoro.className).not.toContain('font-semibold');
+  });
+
+  test('a Readest voice the plan lacks sends the reader to upgrade', async () => {
+    const groups = [
+      {
+        id: 'readest-tts',
+        name: 'Readest Voice',
+        voices: [
+          {
+            id: 'omnivoice:clara',
+            name: 'Clara',
+            lang: 'en-US',
+            tier: 'pro' as const,
+            disabled: true,
+          },
+        ],
+      },
+    ];
+    const props = makeProps({ onGetVoices: vi.fn().mockResolvedValue(groups) });
+    render(<TTSPlayerSheet {...props} />);
+    fireEvent.click(screen.getByLabelText('Voice'));
+    fireEvent.click(await waitFor(() => screen.getByRole('button', { name: /^ClaraPro$/ })));
+    expect(props.onSetVoice).not.toHaveBeenCalled();
+    expect(routerPush).toHaveBeenCalledWith(expect.stringMatching(/^\/user\?redirect=/));
+    expect(props.onClose).toHaveBeenCalled();
+  });
+
+  test('a signed-out reader tapping a Readest voice is sent to sign in', async () => {
+    mockAuth.user = null;
+    const groups = [
+      {
+        id: 'readest-tts',
+        name: 'Readest Voice',
+        voices: [
+          {
+            id: 'kokoro:af_heart',
+            name: 'Heart',
+            lang: 'en-US',
+            tier: 'plus' as const,
+            disabled: true,
+          },
+        ],
+      },
+    ];
+    const props = makeProps({ onGetVoices: vi.fn().mockResolvedValue(groups) });
+    render(<TTSPlayerSheet {...props} />);
+    fireEvent.click(screen.getByLabelText('Voice'));
+    fireEvent.click(await waitFor(() => screen.getByRole('button', { name: /^HeartPlus$/ })));
+    expect(props.onSetVoice).not.toHaveBeenCalled();
+    expect(routerPush).toHaveBeenCalledWith(expect.stringMatching(/^\/auth/));
   });
 
   test('reopening the sheet returns to the main view', async () => {

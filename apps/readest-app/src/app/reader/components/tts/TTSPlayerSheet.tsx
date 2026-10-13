@@ -330,16 +330,16 @@ const TTSPlayerSheet = ({
   // Entitled users drill into the per-chapter download view; everyone else is
   // routed to the upgrade page (or sign-in), the sheet closing first so the
   // navigation isn't hidden behind it.
+  // Signed in, to the plans on the user page; signed out, to sign in first.
+  const handleUpgrade = () => {
+    onClose();
+    if (user) navigateToProfile(router);
+    else navigateToLogin(router);
+  };
+
   const handleOpenDownloads = () => {
-    if (isDownloadPremium) {
-      setView('chapters');
-    } else if (user) {
-      onClose();
-      navigateToProfile(router);
-    } else {
-      onClose();
-      navigateToLogin(router);
-    }
+    if (isDownloadPremium) setView('chapters');
+    else handleUpgrade();
   };
 
   const timeoutOptions = getTTSTimeoutOptions(_);
@@ -738,8 +738,12 @@ const TTSPlayerSheet = ({
                     <button
                       key={`${voiceGroup.id}-${voice.id}`}
                       type='button'
-                      disabled={voice.disabled}
-                      onClick={() => handleSelectVoice(voice.id, voice.lang)}
+                      // A premium voice the plan lacks stays tappable: it
+                      // leads to the upgrade instead of speaking.
+                      disabled={voice.disabled && !voice.tier}
+                      onClick={() =>
+                        voice.disabled ? handleUpgrade() : handleSelectVoice(voice.id, voice.lang)
+                      }
                       className='flex w-full items-center gap-2 rounded-lg px-2 py-2 text-start'
                     >
                       <span className='flex h-6 w-6 items-center justify-center'>
