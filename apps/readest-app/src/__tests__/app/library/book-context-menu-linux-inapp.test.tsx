@@ -28,8 +28,11 @@ vi.mock('@tauri-apps/api/window', () => ({
   }),
 }));
 
-vi.mock('@tauri-apps/plugin-opener', () => ({
-  revealItemInDir: vi.fn(),
+const invokeSpy = vi.hoisted(() => vi.fn(async () => {}));
+
+vi.mock('@tauri-apps/api/core', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@tauri-apps/api/core')>()),
+  invoke: invokeSpy,
 }));
 
 const appService = vi.hoisted(() => ({
@@ -150,6 +153,19 @@ describe('library context menu on Linux desktop (issue #5360)', () => {
 
     expect(props.handleShowDetailsBook).toHaveBeenCalledWith(book);
     expect(screen.queryByRole('menuitem')).toBeNull();
+  });
+
+  it('reveals the book folder through the app command (issue #6660)', async () => {
+    renderItem();
+
+    openContextMenu();
+
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Reveal in Folder' }));
+
+    // The opener plugin's own command panics on Linux (see file_reveal.rs).
+    await vi.waitFor(() =>
+      expect(invokeSpy).toHaveBeenCalledWith('reveal_item_in_dir', { path: '/books/hash-1' }),
+    );
   });
 
   it('dismisses the menu when clicking outside', async () => {

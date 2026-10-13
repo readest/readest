@@ -35,6 +35,8 @@ mod discord_rpc;
 #[cfg(any(target_os = "android", test))]
 mod eink_identity;
 mod epub_parser;
+#[cfg(desktop)]
+mod file_reveal;
 #[cfg(all(target_os = "linux", any(feature = "cef", test)))]
 mod linux_display;
 #[cfg(all(target_os = "linux", any(feature = "cef", test)))]
@@ -643,6 +645,8 @@ pub fn run() {
             upload_file,
             get_environment_variable,
             get_executable_dir,
+            #[cfg(desktop)]
+            file_reveal::reveal_item_in_dir,
             set_webview_info,
             get_webview_version,
             #[cfg(desktop)]

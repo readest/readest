@@ -11,7 +11,7 @@ import { relaunch } from '@tauri-apps/plugin-process';
 import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useSettingsStore } from '@/store/settingsStore';
-import { revealItemInDir } from '@tauri-apps/plugin-opener';
+import { invoke } from '@tauri-apps/api/core';
 import { DATA_SUBDIR } from '@/services/constants';
 import { FileItem } from '@/types/system';
 import { getDirPath } from '@/utils/path';
@@ -269,7 +269,7 @@ export const MigrateDataWindow = () => {
 
   const handleRevealDir = (dataDir: string) => {
     if (dataDir && appService?.isDesktopApp) {
-      revealItemInDir(dataDir);
+      invoke('reveal_item_in_dir', { path: dataDir });
     }
   };
 
