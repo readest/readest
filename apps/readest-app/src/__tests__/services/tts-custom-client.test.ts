@@ -12,7 +12,7 @@ import { TTSUtils } from '@/services/tts/TTSUtils';
 import { MULTILINGUAL_LANG } from '@/services/tts/types';
 import type { CustomTTSService } from '@/types/customTTS';
 
-const VOICES: Record<string, string[]> = { a: ['nova', 'onyx'], b: ['af_bella'] };
+const VOICES: Record<string, string[]> = { a: ['nova', 'onyx'], b: ['af_bella', 'zf_xiaobei'] };
 
 const service = (id: string): CustomTTSService => ({
   id,
@@ -29,7 +29,7 @@ fetchMock.mockImplementation(async (url: string) => {
 });
 
 describe('BufferedTTSClient over custom TTS services', () => {
-  it('offers one voice group per service for any book language', async () => {
+  it("offers each service's voices for the book language, and its multilingual ones", async () => {
     const services = [service('a'), service('b')];
     const provider = new OpenAICompatibleSpeechProvider(
       () => services,
@@ -39,14 +39,21 @@ describe('BufferedTTSClient over custom TTS services', () => {
     const client = new BufferedTTSClient(new CachingProvider(provider, store));
     expect(await client.init()).toBe(true);
     expect(client.name).toBe('custom-tts');
-    for (const lang of ['en', 'ja', 'de']) {
-      const groups = await client.getVoices(lang);
-      expect(groups.map((g) => [g.id, g.name, g.voices.map((v) => v.id), g.disabled])).toEqual([
-        ['custom-tts:a', 'Service a', ['a:nova', 'a:onyx'], false],
-        ['custom-tts:b', 'Service b', ['b:af_bella'], false],
-      ]);
-    }
-    expect(await client.getVoiceIdFromLang('ja')).toBe('a:nova');
+    const ids = async (lang: string) =>
+      (await client.getVoices(lang)).map((g) => [g.id, g.voices.map((v) => v.id), g.disabled]);
+    expect(await ids('en')).toEqual([
+      ['custom-tts:a', ['a:nova', 'a:onyx'], false],
+      ['custom-tts:b', ['b:af_bella'], false],
+    ]);
+    expect(await ids('zh-CN')).toEqual([
+      ['custom-tts:a', ['a:nova', 'a:onyx'], false],
+      ['custom-tts:b', ['b:zf_xiaobei'], false],
+    ]);
+    expect(await ids('de')).toEqual([
+      ['custom-tts:a', ['a:nova', 'a:onyx'], false],
+      ['custom-tts:b', [], false],
+    ]);
+    expect(await client.getVoiceIdFromLang('zh')).toBe('a:nova');
   });
 
   it('reads every language with the chosen multilingual voice', async () => {
@@ -56,12 +63,12 @@ describe('BufferedTTSClient over custom TTS services', () => {
     );
     const client = new BufferedTTSClient(provider);
     await client.init();
-    const bella = (await client.getAllVoices()).find((v) => v.id === 'b:af_bella')!;
-    expect(bella.lang).toBe(MULTILINGUAL_LANG);
+    const onyx = (await client.getAllVoices()).find((v) => v.id === 'a:onyx')!;
+    expect(onyx.lang).toBe(MULTILINGUAL_LANG);
     // What the voice picker does: remember the voice under its own language.
-    TTSUtils.setPreferredVoice(client.name, bella.lang, bella.id);
+    TTSUtils.setPreferredVoice(client.name, onyx.lang, onyx.id);
     for (const lang of ['en', 'ja', 'es']) {
-      expect(await client.getVoiceIdFromLang(lang)).toBe('b:af_bella');
+      expect(await client.getVoiceIdFromLang(lang)).toBe('a:onyx');
     }
   });
 

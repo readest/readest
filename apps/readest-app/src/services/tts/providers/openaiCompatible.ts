@@ -48,21 +48,47 @@ const endpoint = (service: CustomTTSService, path: string) =>
 const authHeaders = (service: CustomTTSService): Record<string, string> =>
   service.apiKey ? { Authorization: `Bearer ${service.apiKey}` } : {};
 
-// `{ voices: [...] }` of names (Kokoro-FastAPI) or of `{ id, name }` objects.
-const parseVoiceList = (body: unknown): string[] => {
+interface ListedVoice {
+  name: string;
+  lang?: string;
+}
+
+// Kokoro names a voice by language and gender (`zf_xiaobei`: Mandarin, female).
+const KOKORO_LANGS: Record<string, string> = {
+  a: 'en-US',
+  b: 'en-GB',
+  e: 'es-ES',
+  f: 'fr-FR',
+  h: 'hi-IN',
+  i: 'it-IT',
+  j: 'ja-JP',
+  p: 'pt-BR',
+  z: 'zh-CN',
+};
+
+// A voice's language: the one the service states, else the one a Kokoro name
+// carries, else any (OpenAI's voices speak every language).
+const voiceLang = ({ name, lang }: ListedVoice): string =>
+  lang ?? (/^[a-z][fm]_/.test(name) ? KOKORO_LANGS[name[0]!] : undefined) ?? MULTILINGUAL_LANG;
+
+// `{ voices: [...] }` of names (Kokoro-FastAPI) or of `{ id, name, lang }`
+// objects (`language` also read).
+const parseVoiceList = (body: unknown): ListedVoice[] => {
   const list = (body as { voices?: unknown } | null)?.voices;
   if (!Array.isArray(list)) return [];
   return list.flatMap((item: unknown) => {
-    if (typeof item === 'string') return [item];
-    const { id, name } = (item ?? {}) as { id?: unknown; name?: unknown };
-    if (typeof id === 'string') return [id];
-    return typeof name === 'string' ? [name] : [];
+    if (typeof item === 'string') return [{ name: item }];
+    const { id, name, lang, language } = (item ?? {}) as Record<string, unknown>;
+    const voice = typeof id === 'string' ? id : typeof name === 'string' ? name : null;
+    if (!voice) return [];
+    const stated = typeof lang === 'string' ? lang : typeof language === 'string' ? language : '';
+    return [stated ? { name: voice, lang: stated } : { name: voice }];
   });
 };
 
 // The voices a service offers, from GET {baseUrl}/audio/voices. OpenAI itself
 // has no such endpoint, so a service that lists nothing gets its standard voices.
-export const fetchServiceVoices = async (service: CustomTTSService): Promise<string[]> => {
+const fetchServiceVoices = async (service: CustomTTSService): Promise<ListedVoice[]> => {
   // A timer rather than AbortSignal.timeout: tauriFetch rejects unhandled when
   // a finished request is aborted.
   const controller = new AbortController();
@@ -79,7 +105,7 @@ export const fetchServiceVoices = async (service: CustomTTSService): Promise<str
   } finally {
     clearTimeout(timer);
   }
-  return OPENAI_TTS_VOICES;
+  return OPENAI_TTS_VOICES.map((name) => ({ name }));
 };
 
 const abortError = () => new DOMException('Aborted', 'AbortError');
@@ -106,9 +132,9 @@ export class OpenAICompatibleSpeechProvider implements SpeechProvider {
     const lists = await Promise.all(services.map(fetchServiceVoices));
     return services.flatMap((service, i) =>
       lists[i]!.map((voice) => ({
-        id: customVoiceId(service.id, voice),
-        name: voice,
-        lang: MULTILINGUAL_LANG,
+        id: customVoiceId(service.id, voice.name),
+        name: voice.name,
+        lang: voiceLang(voice),
       })),
     );
   }

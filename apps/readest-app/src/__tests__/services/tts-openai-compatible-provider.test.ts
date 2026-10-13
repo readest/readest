@@ -72,6 +72,20 @@ describe('OpenAICompatibleSpeechProvider', () => {
     expect(init.headers.Authorization).toBe('Bearer sk-test');
   });
 
+  it("tells a Kokoro voice's language from its name; others read any language", async () => {
+    fetchMock.mockResolvedValue(
+      Response.json({ voices: ['af_heart', 'bm_george', 'zf_xiaobei', 'jm_kumo', 'nova'] }),
+    );
+    const voices = await provider.getAllVoices();
+    expect(voices.map((v) => [v.name, v.lang])).toEqual([
+      ['af_heart', 'en-US'],
+      ['bm_george', 'en-GB'],
+      ['zf_xiaobei', 'zh-CN'],
+      ['jm_kumo', 'ja-JP'],
+      ['nova', 'mul'],
+    ]);
+  });
+
   it('falls back to the standard OpenAI voices when the listing fails', async () => {
     fetchMock.mockRejectedValue(new TypeError('Failed to fetch'));
     const voices = await provider.getAllVoices();

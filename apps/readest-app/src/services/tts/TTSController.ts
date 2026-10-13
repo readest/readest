@@ -9,6 +9,7 @@ import * as CFI from 'foliate-js/epubcfi.js';
 import { Overlayer } from 'foliate-js/overlayer.js';
 import { adjacentChunkAnchor } from 'foliate-js/section-chunks.js';
 import {
+  MULTILINGUAL_LANG,
   TTSGranularity,
   TTSHighlightGranularity,
   TTSHighlightOptions,
@@ -2188,9 +2189,15 @@ export class TTSController extends EventTarget {
     // Readest Voice is a remembered choice, never a default: for a book in a
     // language it has no voice for, the default engine reads instead, and the
     // choice stays remembered for books it can read.
+    // Custom services likewise, unless a voice of theirs reads any language.
+    const speaks = (voices: TTSVoice[]) =>
+      voices.some(
+        (voice) =>
+          !voice.disabled && (voice.lang === MULTILINGUAL_LANG || isSameLang(voice.lang, lang)),
+      );
     if (
-      this.ttsClient === this.ttsReadestClient &&
-      !this.ttsReadestVoices.some((voice) => !voice.disabled && isSameLang(voice.lang, lang))
+      (this.ttsClient === this.ttsReadestClient && !speaks(this.ttsReadestVoices)) ||
+      (this.ttsClient === this.ttsCustomClient && !speaks(this.ttsCustomVoices))
     ) {
       this.ttsClient = this.ttsEdgeClient.initialized ? this.ttsEdgeClient : this.ttsWebClient;
     }

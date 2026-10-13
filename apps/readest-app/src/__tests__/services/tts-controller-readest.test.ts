@@ -20,6 +20,7 @@ const h = vi.hoisted(() => ({
   readestVoices: [] as TTSVoice[],
   customClient: null as Record<string, unknown> | null,
   customInit: true,
+  customVoices: null as TTSVoice[] | null,
   customArgs: [] as unknown[],
 }));
 
@@ -103,7 +104,9 @@ vi.mock('@/services/tts/BufferedTTSClient', () => ({
         this.initialized = h.customInit;
         return h.customInit;
       });
-      (this['getAllVoices'] as ReturnType<typeof vi.fn>).mockResolvedValue(CUSTOM_VOICES);
+      (this['getAllVoices'] as ReturnType<typeof vi.fn>).mockImplementation(
+        async () => h.customVoices ?? CUSTOM_VOICES,
+      );
       (this['getVoices'] as ReturnType<typeof vi.fn>).mockResolvedValue([
         { id: 'custom-tts:svc', name: 'My TTS', voices: CUSTOM_VOICES },
       ]);
@@ -158,7 +161,10 @@ import { TTSUtils } from '@/services/tts/TTSUtils';
 import { CachingProvider } from '@/services/tts/providers/cache';
 import { createBookTTSCacheStore } from '@/services/tts/providers/bookCacheStore';
 
-const CUSTOM_VOICES = [{ id: 'svc:nova', name: 'nova', lang: '' }];
+const CUSTOM_VOICES = [
+  { id: 'svc:nova', name: 'nova', lang: 'mul' },
+  { id: 'kok:af_heart', name: 'af_heart', lang: 'en-US' },
+];
 const READEST_VOICES = [{ id: 'kokoro:af_heart', name: 'Heart', lang: 'en-US' }];
 const view = {
   renderer: { primaryIndex: 0, getContents: vi.fn().mockReturnValue([]) },
@@ -179,6 +185,7 @@ beforeEach(() => {
   h.readestInit = true;
   h.readestVoices = READEST_VOICES;
   h.customInit = true;
+  h.customVoices = null;
   h.warmup.mockReset();
   vi.mocked(TTSUtils.getPreferredClient).mockReturnValue(null);
   vi.mocked(createBookTTSCacheStore).mockClear();
@@ -390,6 +397,16 @@ describe('custom TTS services', () => {
     expect(custom().setVoice).toHaveBeenCalledWith('svc:nova');
     await controller.setLang('ja');
     expect(controller.ttsClient).toBe(custom());
+  });
+
+  test('a service without a voice for the book language yields to the default engine', async () => {
+    h.customVoices = [CUSTOM_VOICES[1]!];
+    await controller.init();
+    await controller.setVoice('kok:af_heart', 'en-US');
+    await controller.setLang('en-GB');
+    expect(controller.ttsClient).toBe(custom());
+    await controller.setLang('ja');
+    expect(controller.ttsClient.name).toBe('edge-tts');
   });
 
   test('settings, downloads and shutdown fan out to the custom client', async () => {

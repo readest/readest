@@ -852,8 +852,10 @@ export class BufferedTTSClient implements TTSClient {
     const locale = lang === 'en' ? getUserLocale(lang) || lang : lang;
     const voices = await this.getAllVoices();
     if (this.provider.groupVoices) {
+      // Each group offers the book language's voices and the multilingual ones.
+      const spoken = voices.filter((v) => v.lang === MULTILINGUAL_LANG || isSameLang(v.lang, lang));
       return this.provider
-        .groupVoices(voices)
+        .groupVoices(spoken)
         .map((group) => ({ ...group, disabled: !this.initialized }));
     }
     // Match by primary language so the voice set stays the same across a book
