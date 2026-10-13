@@ -25,6 +25,7 @@ CREATE TABLE public.books (
   group_id text NULL,
   group_name text NULL,
   group_updated_at timestamp with time zone NULL,
+  page_count integer NULL,
   metadata json NULL,
   CONSTRAINT books_pkey PRIMARY KEY (user_id, book_hash),
   CONSTRAINT books_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users (id) ON DELETE CASCADE
