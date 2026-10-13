@@ -1616,7 +1616,8 @@ export class TTSController extends EventTarget {
     // A windowed engine takes preloads as hints it batches on a GPU worker that
     // is slower than an online voice: keep about three minutes of upcoming
     // paragraphs requested, however short they are, so the buffer never drains.
-    const byDuration = !!this.ttsClient.getCapabilities().windowedPrefetch;
+    const capabilities = this.ttsClient.getCapabilities();
+    const byDuration = !!capabilities.windowedPrefetch;
     const maxCount = byDuration ? PRELOAD_MAX_PARAGRAPHS : count;
     const voiceId = this.ttsClient.getVoiceId();
     let seconds = 0;
@@ -1647,13 +1648,15 @@ export class TTSController extends EventTarget {
 
     // The chapter ends inside the budget: carry on into the next one, so a
     // chapter change finds its opening already synthesized.
-    if (byDuration && sectionEnded && seconds < PRELOAD_AHEAD_SEC) {
+    const budgetLeft = () =>
+      rawSsmls.length < maxCount && (!byDuration || seconds < PRELOAD_AHEAD_SEC);
+    if ((byDuration || capabilities.preloadsAudio) && sectionEnded && budgetLeft()) {
       const nextIndex = this.#ttsSectionIndex + 1;
       if (this.#nextSectionOpening?.index !== nextIndex) {
         this.#nextSectionOpening = { index: nextIndex, ssmls: this.#sectionOpening(nextIndex) };
       }
       for (const ssml of await this.#nextSectionOpening.ssmls) {
-        if (seconds >= PRELOAD_AHEAD_SEC || rawSsmls.length >= maxCount) break;
+        if (!budgetLeft()) break;
         rawSsmls.push(ssml);
         seconds += estimate(ssml);
       }

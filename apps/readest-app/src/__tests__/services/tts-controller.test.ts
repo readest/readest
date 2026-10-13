@@ -2165,7 +2165,32 @@ describe('TTSController', () => {
       expect(preloaded[1]).toContain('hello');
     });
 
-    test('other clients never preload past the chapter', async () => {
+    test('a client whose preloads synthesize audio preloads into the next chapter too', async () => {
+      // Edge TTS and custom services buffer what they preload: without this, a
+      // chapter change starts with nothing synthesized and the listener waits.
+      mockView.tts = {
+        next: vi.fn().mockReturnValueOnce('<speak>last</speak>').mockReturnValue(undefined),
+        prev: vi.fn(),
+        doc: {},
+      } as unknown as FoliateView['tts'];
+      controller.ttsClient.getCapabilities = vi.fn().mockReturnValue({
+        wordBoundaries: true,
+        mediaClock: true,
+        gapControl: true,
+        liveRateChange: false,
+        preloadsAudio: true,
+      }) as unknown as typeof controller.ttsClient.getCapabilities;
+
+      await controller.preloadNextSSML();
+
+      const preloaded = vi.mocked(controller.ttsClient.speak).mock.calls.map(([ssml]) => ssml);
+      expect(preloaded[0]).toContain('last');
+      expect(preloaded[1]).toContain('hello');
+      // Still the usual handful, not a windowed engine's minutes.
+      expect(preloaded.length).toBeLessThanOrEqual(4);
+    });
+
+    test('clients whose preloads do nothing never preload past the chapter', async () => {
       mockView.tts = {
         next: vi.fn().mockReturnValueOnce('<speak>last</speak>').mockReturnValue(undefined),
         prev: vi.fn(),

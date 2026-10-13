@@ -896,6 +896,7 @@ export class BufferedTTSClient implements TTSClient {
       // controller.
       scheduledGaps: !(this.#player instanceof NativeAudioPlayer),
       windowedPrefetch: !!this.provider.prefetch,
+      preloadsAudio: true,
     };
   }
 
