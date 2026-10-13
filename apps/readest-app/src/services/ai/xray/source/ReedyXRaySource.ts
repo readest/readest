@@ -86,25 +86,34 @@ export class ReedyXRaySource {
     const status = this.statusFromMeta(bookHash, await connection.reedy.getBookMeta(bookHash));
     if (status.kind !== 'ready') throw unavailableError(status);
 
-    const rows = await connection.db.select<ChunkRow>(
-      `SELECT id, section_index, start_cfi, end_cfi, position_index, text
-       FROM reedy_book_chunks
-       WHERE book_hash = ?
-       ORDER BY position_index`,
-      [bookHash],
-    );
-
     const units: XRaySourceUnit[] = [];
-    for (const row of rows) {
-      if (CFI.compare(row.end_cfi, currentCfi) > 0) break;
-      units.push({
-        unitId: row.id,
-        startCfi: row.start_cfi,
-        endCfi: row.end_cfi,
-        sectionIndex: row.section_index,
-        positionIndex: row.position_index,
-        text: row.text,
-      });
+    const pageSize = 200;
+    let after = -1;
+    let reachedBound = false;
+    while (!reachedBound) {
+      const rows = await connection.db.select<ChunkRow>(
+        `SELECT id, section_index, start_cfi, end_cfi, position_index, text
+         FROM reedy_book_chunks
+         WHERE book_hash = ? AND position_index > ?
+         ORDER BY position_index LIMIT ?`,
+        [bookHash, after, pageSize],
+      );
+      for (const row of rows) {
+        if (CFI.compare(row.end_cfi, currentCfi) > 0) {
+          reachedBound = true;
+          break;
+        }
+        units.push({
+          unitId: row.id,
+          startCfi: row.start_cfi,
+          endCfi: row.end_cfi,
+          sectionIndex: row.section_index,
+          positionIndex: row.position_index,
+          text: row.text,
+        });
+        after = row.position_index;
+      }
+      if (rows.length < pageSize) break;
     }
 
     const finalStatus = this.statusFromMeta(bookHash, await connection.reedy.getBookMeta(bookHash));

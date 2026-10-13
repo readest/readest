@@ -133,16 +133,20 @@ describe('ReedyXRaySource', () => {
   });
 
   it('reads only complete chunks at or before the current CFI', async () => {
-    await reedy.upsertBookMeta(indexedMeta());
+    await reedy.upsertBookMeta(indexedMeta({ chunkCount: 201 }));
     const first = chunk('chunk-0', 0, 0, 10);
-    const second = chunk('chunk-1', 1, 11, 20);
-    await reedy.insertChunks([second, first]);
+    await reedy.insertChunks(
+      Array.from({ length: 201 }, (_, index) =>
+        chunk(`chunk-${index}`, index, index * 11, index * 11 + 10),
+      ).reverse(),
+    );
+    const select = vi.spyOn(db, 'select');
 
     const source = new ReedyXRaySource(db, reedy, MODEL_ID);
     await expect(source.readThrough(BOOK_HASH, 'epubcfi(/6/2!/4/2/1:15)')).resolves.toEqual({
       fingerprint: {
         bookHash: BOOK_HASH,
-        contentHash: 'embedding-a:2:2:1000',
+        contentHash: 'embedding-a:2:201:1000',
       },
       units: [
         {
@@ -156,7 +160,15 @@ describe('ReedyXRaySource', () => {
       ],
       maxPositionIndex: 0,
     });
-  });
+    const later = await source.readThrough(BOOK_HASH, 'epubcfi(/6/2!/4/2/1:2210)');
+    expect(later.units).toHaveLength(201);
+    expect(later.maxPositionIndex).toBe(200);
+    for (const [index, [sql]] of select.mock.calls.entries()) {
+      if (!sql.includes('FROM reedy_book_chunks')) continue;
+      const rows = await select.mock.results[index]!.value;
+      expect(rows.length).toBeLessThanOrEqual(200);
+    }
+  }, 10_000);
 
   it('rejects a read when the Reedy index changes during the query', async () => {
     await reedy.insertChunks([chunk('chunk-0', 0, 0, 10)]);
