@@ -108,6 +108,9 @@ export const fontAdapter: ReplicaAdapter<CustomFont> = {
 
   binary: {
     localBaseDir: 'Fonts',
+    // A font is often wanted on one device only (#6654); the Custom Fonts
+    // panel downloads a family when the user taps it.
+    downloadOnDemand: true,
     enumerateFiles: singleFileBinaryEnumerator,
   },
 };

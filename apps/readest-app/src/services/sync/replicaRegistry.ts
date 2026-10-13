@@ -3,6 +3,12 @@ import type { BaseDir, FileSystem } from '@/types/system';
 
 export interface BinaryCapability<T> {
   localBaseDir: BaseDir;
+  /**
+   * When true, pulled rows land as `unavailable` placeholders and the
+   * binaries are fetched only when the user asks for them (via
+   * `queueReplicaBinaryDownload`), instead of on every device.
+   */
+  downloadOnDemand?: boolean;
   enumerateFiles(replica: T): { logical: string; lfp: string; byteSize: number }[];
 }
 

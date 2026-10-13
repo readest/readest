@@ -272,7 +272,7 @@ const applyRow = async <T extends ReplicaLocalRecord>(
     }
     return;
   }
-  if (!deps.adapter.binary) return;
+  if (!deps.adapter.binary || deps.adapter.binary.downloadOnDemand) return;
 
   // Skip the download queue if every manifest file is already on disk
   // under the resolved bundle dir. Refresh-the-page is a no-op rather

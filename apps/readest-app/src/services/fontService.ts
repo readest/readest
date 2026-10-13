@@ -62,7 +62,10 @@ export async function importFont(
 }
 
 export async function deleteFont(fs: FileSystem, font: CustomFont): Promise<void> {
-  await fs.removeFile(font.path, 'Fonts');
+  // A cloud-only font (never downloaded here) has no file on disk.
+  if (await fs.exists(font.path, 'Fonts')) {
+    await fs.removeFile(font.path, 'Fonts');
+  }
   // Also remove the per-font bundle dir if it's now empty. Legacy fonts
   // without bundleDir live at the flat `Fonts/<filename>` path; nothing
   // extra to clean up there.

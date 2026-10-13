@@ -25,11 +25,13 @@ vi.mock('@/services/sync/passphraseGate', () => ({
 import { replicaPullAndApply, type PullAndApplyDeps } from '@/services/sync/replicaPullAndApply';
 import { dictionaryAdapter } from '@/services/sync/adapters/dictionary';
 import { opdsCatalogAdapter } from '@/services/sync/adapters/opdsCatalog';
+import { fontAdapter } from '@/services/sync/adapters/font';
 import { hlcPack } from '@/libs/crdt';
 import { SyncError } from '@/libs/errors';
 import type { CipherEnvelope, Hlc, Manifest, ReplicaRow } from '@/types/replica';
 import type { ImportedDictionary } from '@/services/dictionaries/types';
 import type { OPDSCatalog } from '@/types/opds';
+import type { CustomFont } from '@/styles/fonts';
 import { useSettingsStore } from '@/store/settingsStore';
 import type { SystemSettings } from '@/types/settings';
 
@@ -569,5 +571,86 @@ describe('replicaPullAndApply credentials category gate (opds adapter)', () => {
     const applied = (deps.applyRemote as ReturnType<typeof vi.fn>).mock.calls[0]![0] as OPDSCatalog;
     expect(applied.username).toBe('plain');
     expect(applied.password).toBe('plain');
+  });
+});
+
+describe('replicaPullAndApply (font adapter, download on demand)', () => {
+  const fontRow = (overrides: Partial<ReplicaRow> = {}): ReplicaRow =>
+    baseRow({
+      kind: 'font',
+      replica_id: 'font-hash',
+      fields_jsonb: {
+        name: { v: 'Inter Regular', t: hlcPack(NOW, 0, DEV) as Hlc, s: DEV },
+        family: { v: 'Inter', t: hlcPack(NOW, 1, DEV) as Hlc, s: DEV },
+        byteSize: { v: 1234, t: hlcPack(NOW, 2, DEV) as Hlc, s: DEV },
+      },
+      manifest_jsonb: manifest(['Inter-Regular.ttf']),
+      ...overrides,
+    });
+
+  const makeFontDeps = () => {
+    const deps = {
+      adapter: fontAdapter,
+      pull: vi.fn(async () => [] as ReplicaRow[]),
+      findByContentId: vi.fn((_id: string): CustomFont | undefined => undefined),
+      applyRemote: vi.fn<(record: CustomFont) => void>(),
+      softDeleteByContentId: vi.fn(),
+      createBundleDir: vi.fn(async () => 'font-bundle'),
+      queueReplicaDownload: vi.fn(() => 'transfer-id-1'),
+      filesExist: vi.fn(async () => false),
+      queueLocalBinaryUpload: vi.fn(async (_record: CustomFont) => {}),
+    } satisfies PullAndApplyDeps<CustomFont>;
+    return deps;
+  };
+
+  test('applies a new font as an unavailable placeholder without queueing a download', async () => {
+    const deps = makeFontDeps();
+    deps.pull.mockResolvedValue([fontRow()]);
+
+    await replicaPullAndApply(deps);
+
+    expect(deps.applyRemote).toHaveBeenCalledWith(
+      expect.objectContaining({
+        contentId: 'font-hash',
+        family: 'Inter',
+        path: 'font-bundle/Inter-Regular.ttf',
+        unavailable: true,
+      }),
+    );
+    expect(deps.queueReplicaDownload).not.toHaveBeenCalled();
+  });
+
+  test('does not re-download a known font whose binary is missing locally', async () => {
+    const deps = makeFontDeps();
+    deps.findByContentId.mockReturnValue({
+      id: 'font-bundle',
+      contentId: 'font-hash',
+      name: 'Inter Regular',
+      bundleDir: 'font-bundle',
+      path: 'font-bundle/Inter-Regular.ttf',
+      unavailable: true,
+    });
+    deps.pull.mockResolvedValue([fontRow()]);
+
+    await replicaPullAndApply(deps);
+
+    expect(deps.queueReplicaDownload).not.toHaveBeenCalled();
+  });
+
+  test('still pushes local binaries when the server row has no manifest yet', async () => {
+    const deps = makeFontDeps();
+    const local: CustomFont = {
+      id: 'font-bundle',
+      contentId: 'font-hash',
+      name: 'Inter Regular',
+      bundleDir: 'font-bundle',
+      path: 'font-bundle/Inter-Regular.ttf',
+    };
+    deps.findByContentId.mockReturnValue(local);
+    deps.pull.mockResolvedValue([fontRow({ manifest_jsonb: null })]);
+
+    await replicaPullAndApply(deps);
+
+    expect(deps.queueLocalBinaryUpload).toHaveBeenCalledWith(local);
   });
 });
