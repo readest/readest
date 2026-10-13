@@ -7,9 +7,9 @@ VERSION = $(shell python3 -c "from sync_version import app_version; \
 ZIP = dist/$(NAME)-$(VERSION).calibre-plugin.zip
 
 FILES = __init__.py api.py config.py dialogs.py oauth.py ui.py wire.py worker.py \
-	plugin-import-name-readest.txt images/icon.png
+	plugin-import-name-readest.txt images/icon.png translations/*.mo
 
-.PHONY: zip version test install clean
+.PHONY: zip version pot mo test install clean
 
 zip: $(ZIP)
 
@@ -22,6 +22,21 @@ $(ZIP): $(FILES) | version
 	rm -f $(ZIP)
 	zip -q $(ZIP) $(FILES)
 	@echo Built $(ZIP)
+
+# Compile translations/*.po into the .mo files calibre loads at runtime.
+# Keep the compiled .mo files in git: the release workflow only runs `make zip`.
+mo:
+	@python3 scripts/i18n.py compile
+
+# Refresh translations/readest.pot after adding or changing _()/ngettext()
+# strings in the source.
+pot:
+	@python3 scripts/i18n.py extract
+
+# A stale .mo would ship untranslated strings, so recompile when its .po (or
+# the compiler) is newer.
+translations/%.mo: translations/%.po scripts/i18n.py
+	@python3 scripts/i18n.py compile
 
 test:
 	python3 -m unittest discover -s tests

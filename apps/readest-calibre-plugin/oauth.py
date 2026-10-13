@@ -14,21 +14,39 @@ import threading
 import urllib.parse
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
+try:
+    load_translations()
+except NameError:
+    # Running outside calibre's plugin loader (unit tests): no translations.
+    def _(text):
+        return text
+
 PROVIDERS = ('google', 'apple', 'github', 'discord')
 
-LANDING_PAGE = b"""<!DOCTYPE html>
-<html><head><title>Readest Login</title></head><body>
-<p>Completing login&hellip;</p>
-<script>
-  var hash = window.location.hash.replace(/^#/, '');
-  window.location.replace('/callback?' + hash);
-</script>
-</body></html>"""
 
-DONE_PAGE = b"""<!DOCTYPE html>
-<html><head><title>Readest Login</title></head><body>
-<p>Login complete. You can close this tab and return to calibre.</p>
-</body></html>"""
+def _page(title, body, extra=''):
+    return (
+        '<!DOCTYPE html>\n<html><head><title>%s</title></head><body>\n%s%s</body></html>'
+        % (title, body, extra)
+    )
+
+
+def landing_page():
+    return _page(
+        _('Readest Login'),
+        '<p>%s</p>' % _('Completing login…'),
+        '<script>\n'
+        "  var hash = window.location.hash.replace(/^#/, '');\n"
+        "  window.location.replace('/callback?' + hash);\n"
+        '</script>',
+    )
+
+
+def done_page():
+    return _page(
+        _('Readest Login'),
+        '<p>%s</p>' % _('Login complete. You can close this tab and return to calibre.'),
+    )
 
 
 def build_authorize_url(supabase_url, provider, port):
@@ -59,14 +77,16 @@ class _Handler(BaseHTTPRequestHandler):
         parsed = urllib.parse.urlparse(self.path)
         if parsed.path == '/callback':
             tokens = parse_callback_query(parsed.query)
-            self._respond(DONE_PAGE)
+            self._respond(done_page())
             if tokens:
                 self.server.oauth_result = tokens
                 self.server.oauth_event.set()
         else:
-            self._respond(LANDING_PAGE)
+            self._respond(landing_page())
 
     def _respond(self, page):
+        if isinstance(page, str):
+            page = page.encode('utf-8')
         self.send_response(200)
         self.send_header('Content-Type', 'text/html; charset=utf-8')
         self.send_header('Content-Length', str(len(page)))
