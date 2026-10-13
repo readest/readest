@@ -271,6 +271,16 @@ const getPathResolver = ({
         };
       case 'Temp':
       default:
+        // Older Android versions resolve Temp to the unwritable /data/local/tmp;
+        // newer ones resolve it to the app cache, so use the app cache everywhere.
+        if (OS_TYPE === 'android') {
+          return {
+            baseDir: BaseDirectory.AppCache,
+            basePrefix: appCacheDir,
+            fp: path,
+            base,
+          };
+        }
         return {
           baseDir: BaseDirectory.Temp,
           basePrefix: tempDir,

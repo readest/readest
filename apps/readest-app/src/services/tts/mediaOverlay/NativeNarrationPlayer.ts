@@ -8,7 +8,7 @@
 // native player their existing path directly.
 
 import { addPluginListener, invoke, PluginListener } from '@tauri-apps/api/core';
-import { join, tempDir } from '@tauri-apps/api/path';
+import { appCacheDir, join } from '@tauri-apps/api/path';
 import { BaseDirectory, remove, writeFile } from '@tauri-apps/plugin-fs';
 
 interface PlayoutPosition {
@@ -246,8 +246,10 @@ export class NativeNarrationPlayer {
     }
     const name = `mo-narration-${hashHref(href)}.${fileExtension(href)}`;
     const bytes = new Uint8Array(await blob.arrayBuffer());
-    await writeFile(name, bytes, { baseDir: BaseDirectory.Temp });
-    const path = await join(await tempDir(), name);
+    // App cache, not Temp: older Android versions resolve Temp to the
+    // unwritable /data/local/tmp.
+    await writeFile(name, bytes, { baseDir: BaseDirectory.AppCache });
+    const path = await join(await appCacheDir(), name);
     this.#stagedHref = href;
     this.#stagedPath = path;
     this.#ownsStagedPath = true;
