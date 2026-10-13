@@ -9,11 +9,13 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { NotebookTab } from '@/store/notebookStore';
 
 interface NotebookTabNavigationProps {
+  idPrefix: string;
   activeTab: NotebookTab;
   onTabChange: (tab: NotebookTab) => void;
 }
 
 const NotebookTabNavigation: React.FC<NotebookTabNavigationProps> = ({
+  idPrefix,
   activeTab,
   onTabChange,
 }) => {
@@ -84,7 +86,8 @@ const NotebookTabNavigation: React.FC<NotebookTabNavigationProps> = ({
   };
 
   return (
-    <nav
+    <div
+      role='tablist'
       className={clsx(
         'bottom-tab border-base-300/50 bg-base-200/20 flex min-h-[52px] w-full border-t',
         appService?.hasRoundedWindow && 'rounded-window-bottom-right',
@@ -96,9 +99,13 @@ const NotebookTabNavigation: React.FC<NotebookTabNavigationProps> = ({
         <button
           type='button'
           key={tab}
-          aria-pressed={activeTab === tab}
+          role='tab'
+          id={`${idPrefix}-${tab}`}
+          aria-selected={activeTab === tab}
+          aria-controls={`${idPrefix}-${tab}-panel`}
+          tabIndex={activeTab === tab ? 0 : -1}
           className={clsx(
-            'm-1.5 flex-1 cursor-pointer rounded-lg p-2 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-base-content/15',
+            'm-1.5 flex-1 cursor-pointer rounded-lg p-2 transition-colors duration-200 active:bg-base-300/85 focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-current focus-visible:outline-offset-2',
             activeTab === tab && 'bg-base-300/85',
           )}
           onClick={() => onTabChange(tab)}
@@ -109,7 +116,7 @@ const NotebookTabNavigation: React.FC<NotebookTabNavigationProps> = ({
           <div className='m-0 flex h-6 items-center p-0'>{getTabIcon(tab)}</div>
         </button>
       ))}
-    </nav>
+    </div>
   );
 };
 

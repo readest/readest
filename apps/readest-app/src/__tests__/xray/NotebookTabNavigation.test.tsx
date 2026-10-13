@@ -30,24 +30,31 @@ describe('NotebookTabNavigation', () => {
   it('leaves a saved X-Ray tab when the current platform cannot render it', async () => {
     const onTabChange = vi.fn();
 
-    render(<NotebookTabNavigation activeTab='xray' onTabChange={onTabChange} />);
+    render(
+      <NotebookTabNavigation idPrefix='notebook' activeTab='xray' onTabChange={onTabChange} />,
+    );
 
-    expect(screen.queryByRole('button', { name: 'X-Ray' })).toBeNull();
+    expect(screen.queryByRole('tab', { name: 'X-Ray' })).toBeNull();
     await waitFor(() => expect(onTabChange).toHaveBeenCalledWith('ai'));
   });
 
   it('moves focus and selection through the grouped controls with arrow keys', async () => {
     mocks.appService.appPlatform = 'tauri';
     const onTabChange = vi.fn();
-    render(<NotebookTabNavigation activeTab='notes' onTabChange={onTabChange} />);
-    const notes = screen.getByRole('button', { name: 'Notes' });
+    render(
+      <NotebookTabNavigation idPrefix='notebook' activeTab='notes' onTabChange={onTabChange} />,
+    );
+    const notes = screen.getByRole('tab', { name: 'Notes', selected: true });
+    expect(notes.tabIndex).toBe(0);
+    expect(notes.getAttribute('aria-controls')).toBe('notebook-notes-panel');
+    expect(screen.getByRole('tab', { name: 'AI' }).tabIndex).toBe(-1);
 
     notes.focus();
     fireEvent.keyDown(notes, { key: 'ArrowRight' });
 
     expect(onTabChange).toHaveBeenCalledWith('ai');
     await waitFor(() =>
-      expect(document.activeElement).toBe(screen.getByRole('button', { name: 'AI' })),
+      expect(document.activeElement).toBe(screen.getByRole('tab', { name: 'AI' })),
     );
   });
 
@@ -56,9 +63,11 @@ describe('NotebookTabNavigation', () => {
     mocks.settings.aiSettings.reedy.enabled = false;
     const onTabChange = vi.fn();
 
-    render(<NotebookTabNavigation activeTab='xray' onTabChange={onTabChange} />);
+    render(
+      <NotebookTabNavigation idPrefix='notebook' activeTab='xray' onTabChange={onTabChange} />,
+    );
 
-    expect(screen.queryByRole('button', { name: 'X-Ray' })).toBeNull();
+    expect(screen.queryByRole('tab', { name: 'X-Ray' })).toBeNull();
     await waitFor(() => expect(onTabChange).toHaveBeenCalledWith('ai'));
   });
 });

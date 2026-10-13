@@ -1308,7 +1308,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
       // answering it with the toolbar (or, worse, re-running the quick action)
       // closed the surface on the frame it opened (#6018). Nothing can select
       // new text while one of these is up — they all sit over the page.
-      if (showDictionaryPopup || showDeepLPopup || showProofreadPopup) return;
+      if (showDictionaryPopup || showXRayPopup || showDeepLPopup || showProofreadPopup) return;
 
       const { enableAnnotationQuickActions, annotationQuickAction } = viewSettings;
       if (wantWordLensDict) {

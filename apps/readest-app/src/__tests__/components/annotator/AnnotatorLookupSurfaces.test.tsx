@@ -17,8 +17,11 @@ import { act, cleanup, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { eventDispatcher } from '@/utils/event';
 import type { TextSelection } from '@/utils/sel';
+import type { ComponentProps } from 'react';
+import type AnnotationPopup from '@/app/reader/components/annotator/AnnotationPopup';
 
 const h = vi.hoisted(() => ({
+  appService: { appPlatform: 'web' },
   actions: null as null | Record<string, () => boolean>,
   config: { booknotes: [] as unknown[], viewSettings: {} },
   viewSettings: {
@@ -52,6 +55,7 @@ const h = vi.hoisted(() => ({
 }));
 
 const settings = {
+  aiSettings: { enabled: false, reedy: { enabled: false } },
   globalReadSettings: {
     highlightStyle: 'highlight',
     highlightStyles: { highlight: 'yellow', underline: 'green', squiggly: 'blue' },
@@ -65,7 +69,7 @@ vi.mock('@/hooks/useShortcuts', () => ({
 }));
 
 vi.mock('@/context/EnvContext', () => ({
-  useEnv: () => ({ envConfig: {}, appService: {} }),
+  useEnv: () => ({ envConfig: {}, appService: h.appService }),
 }));
 
 vi.mock('@/hooks/useTranslation', () => ({
@@ -124,7 +128,11 @@ vi.mock('@/store/readerStore', () => {
 
 vi.mock('@/store/readerProgressStore', () => ({
   getBookProgress: () => ({ page: 1 }),
-  useBookProgress: () => ({ page: 1, sectionHref: 'chapter.xhtml' }),
+  useBookProgress: () => ({
+    page: 1,
+    sectionHref: 'chapter.xhtml',
+    location: 'epubcfi(/6/2!/4/2)',
+  }),
 }));
 
 vi.mock('@/store/notebookStore', () => ({
@@ -234,7 +242,18 @@ vi.mock('@/app/reader/components/annotator/ImportAnnotationsDialog', () => ({
   default: () => null,
 }));
 vi.mock('@/app/reader/components/annotator/AnnotationPopup', () => ({
-  default: () => <div data-testid='annotation-toolbar' />,
+  default: ({ buttons }: Pick<ComponentProps<typeof AnnotationPopup>, 'buttons'>) => (
+    <div data-testid='annotation-toolbar'>
+      {buttons.map((button) => (
+        <button type='button' key={button.tooltipText} onClick={button.onClick}>
+          {button.tooltipText}
+        </button>
+      ))}
+    </div>
+  ),
+}));
+vi.mock('@/app/reader/components/annotator/XRayPopup', () => ({
+  default: ({ term }: { term: string }) => <div data-testid='xray-surface'>{term.trim()}</div>,
 }));
 // The dismiss button stands in for the popup's close / backdrop tap, so a test
 // can drive the route back out of the lookup. Each surface reads its text the
@@ -295,6 +314,9 @@ const republishSelectionWithSuppressedHandles = async () => {
 };
 
 beforeEach(() => {
+  h.appService.appPlatform = 'web';
+  settings.aiSettings.enabled = false;
+  settings.aiSettings.reedy.enabled = false;
   h.actions = null;
   h.book = { format: 'EPUB', isFixedLayout: false };
   h.foliateHandlers = null;
@@ -311,6 +333,21 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('a lookup surface survives the selection it is anchored to being republished', () => {
+  test('X-Ray stays open when the native handles are suppressed', async () => {
+    h.appService.appPlatform = 'tauri';
+    settings.aiSettings.enabled = true;
+    settings.aiSettings.reedy.enabled = true;
+    render(<Annotator bookKey='book-1' contentInsets={{ top: 0, right: 0, bottom: 0, left: 0 }} />);
+    await selectText();
+
+    act(() => screen.getByRole('button', { name: 'X-Ray' }).click());
+    expect(await screen.findByTestId('xray-surface')).toBeTruthy();
+
+    await republishSelectionWithSuppressedHandles();
+
+    expect(screen.queryByTestId('xray-surface')).toBeTruthy();
+    expect(screen.queryByTestId('annotation-toolbar')).toBeNull();
+  });
   test.each([
     ['onDictionarySelection', 'dictionary-surface'],
     ['onTranslateSelection', 'translator-surface'],
