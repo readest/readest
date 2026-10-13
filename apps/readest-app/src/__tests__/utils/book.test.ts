@@ -3,10 +3,13 @@ import { describe, expect, it } from 'vitest';
 import {
   formatSeries,
   getBookDataAttributes,
+  getBookDocPageCount,
+  getBookPageCount,
   markBookDeleted,
   parseSeriesPosition,
 } from '@/utils/book';
 import type { Book } from '@/types/book';
+import type { BookDoc } from '@/libs/document';
 
 describe('formatSeries', () => {
   it('returns an empty string when there is no series name', () => {
@@ -212,5 +215,57 @@ describe('markBookDeleted', () => {
     markBookDeleted(book, 200, false);
     expect(book.deletedAt).toBe(200);
     expect(book.progress).toEqual([3, 10]);
+  });
+});
+
+describe('getBookDocPageCount (#6662)', () => {
+  const doc = (sections: { size: number; linear?: string }[], layout?: string) =>
+    ({ sections, rendition: { layout } }) as unknown as BookDoc;
+
+  it('counts reflowable pages the way the reader does: 1500 bytes of linear text a page', () => {
+    expect(getBookDocPageCount(doc([{ size: 2000 }, { size: 1100 }]), 'EPUB')).toBe(3);
+  });
+
+  it('leaves non-linear sections out of a reflowable count', () => {
+    expect(getBookDocPageCount(doc([{ size: 1500 }, { size: 9000, linear: 'no' }]), 'EPUB')).toBe(
+      1,
+    );
+  });
+
+  it('counts one page per section for fixed-layout books', () => {
+    const sections = [{ size: 10 }, { size: 10 }, { size: 10, linear: 'no' }];
+    expect(getBookDocPageCount(doc(sections, 'pre-paginated'), 'EPUB')).toBe(3);
+    expect(getBookDocPageCount(doc(sections), 'PDF')).toBe(3);
+    expect(getBookDocPageCount(doc(sections), 'CBZ')).toBe(3);
+  });
+
+  it('is unknown when the document exposes no sections', () => {
+    expect(getBookDocPageCount(doc([]), 'EPUB')).toBeUndefined();
+    expect(getBookDocPageCount(doc([{ size: 0 }]), 'EPUB')).toBeUndefined();
+  });
+});
+
+describe('getBookPageCount (#6662)', () => {
+  const book = (overrides: Partial<Book>) =>
+    ({
+      hash: 'h',
+      format: 'EPUB',
+      title: '',
+      author: '',
+      createdAt: 0,
+      updatedAt: 0,
+      ...overrides,
+    }) as Book;
+
+  it('prefers the total the reader laid out', () => {
+    expect(getBookPageCount(book({ progress: [3, 120], pageCount: 118 }))).toBe(120);
+  });
+
+  it('falls back to the count recorded at import for an unopened book', () => {
+    expect(getBookPageCount(book({ pageCount: 118 }))).toBe(118);
+  });
+
+  it('is unknown when neither is set', () => {
+    expect(getBookPageCount(book({}))).toBeUndefined();
   });
 });

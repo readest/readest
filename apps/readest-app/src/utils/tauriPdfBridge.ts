@@ -22,6 +22,7 @@ interface RustParsedPdfMetadata {
   partialMd5: string;
   info: RustPdfInfo;
   xmp?: number[] | Uint8Array | null;
+  pageCount?: number;
 }
 
 interface NativePdfCover {
@@ -45,13 +46,15 @@ const coverFromBase64 = (cover?: NativePdfCover): Blob | null => {
   return new Blob([bytes], { type: cover.coverMime });
 };
 
-const buildBookDocStub = (metadata: BookMetadata, cover: Blob | null): BookDoc =>
+// One placeholder section per page: the import-time page count of a PDF is
+// its section count, as in the reader.
+const buildBookDocStub = (metadata: BookMetadata, pageCount: number, cover: Blob | null): BookDoc =>
   ({
     metadata,
     rendition: {},
     dir: 'ltr',
     toc: [],
-    sections: [],
+    sections: Array.from({ length: pageCount }, () => ({ size: 0, linear: '' })),
     splitTOCHref: () => [null, null],
     getCover: async () => cover,
   }) as unknown as BookDoc;
@@ -106,6 +109,7 @@ export const tryNativeParsePdf = async (
     partialMd5: rust?.partialMd5,
     bookDoc: buildBookDocStub(
       pdfMetadataModule.parsePDFMetadata({ info: rust?.info, xmp: rust?.xmp }),
+      rust?.pageCount ?? 0,
       cover,
     ),
   };

@@ -27,6 +27,8 @@ export default function BookshelfFilterEditor({
   const helpButtonRef = useRef<HTMLButtonElement>(null);
   const addRuleRef = useRef<HTMLButtonElement>(null);
   const valuesId = useId();
+  const builtInFields = fields.filter((f) => !f.id.startsWith('calibre:'));
+  const calibreFields = fields.filter((f) => f.id.startsWith('calibre:'));
   const changeChild = (index: number, node: BookshelfRule | BookshelfFilterGroup) =>
     onChange({
       ...group,
@@ -132,11 +134,22 @@ export default function BookshelfFilterEditor({
                         })}
                       </option>
                     )}
-                    {fields.map((field) => (
+                    {builtInFields.map((field) => (
                       <option key={field.id} value={field.id}>
-                        {field.id.startsWith('calibre:') ? field.label : _(field.label)}
+                        {_(field.label)}
                       </option>
                     ))}
+                    {calibreFields.length > 0 && (
+                      // Calibre columns can share a built-in field's name
+                      // ("Pages"), so they get their own group.
+                      <optgroup label='Calibre'>
+                        {calibreFields.map((field) => (
+                          <option key={field.id} value={field.id}>
+                            {field.label}
+                          </option>
+                        ))}
+                      </optgroup>
+                    )}
                   </select>
                   <select
                     aria-label={_('Filter comparison')}
