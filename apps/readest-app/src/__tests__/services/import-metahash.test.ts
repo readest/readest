@@ -345,6 +345,41 @@ describe('importBook metaHash deduplication', () => {
     expect(books.filter((b) => !b.deletedAt)).toHaveLength(1);
   });
 
+  // The restored row was deleted when the batch's index was built, so it is in
+  // neither byMetaKey nor byStableKey. A third build in the same batch must
+  // still find it and update it, not shelve a second card.
+  it('a later build in the same batch updates the restored row', async () => {
+    const metaHash = getMetadataHash(TEST_METADATA);
+    const liveBook = makeBook({ hash: 'new-hash-456', metaHash });
+    const tombstone = makeBook({
+      hash: 'old-hash-123',
+      metaHash,
+      deletedAt: Date.now() - 5000,
+    });
+    const books: Book[] = [liveBook, tombstone];
+    const lookupIndex = buildBookLookupIndex(books);
+
+    mockPartialMD5.mockResolvedValue('old-hash-123');
+    setupMockBookDoc();
+    await service.importBook(
+      new File(['old content'], 'test.epub', { type: 'application/epub+zip' }),
+      books,
+      { lookupIndex },
+    );
+
+    mockPartialMD5.mockResolvedValue('newest-hash-789');
+    setupMockBookDoc();
+    const result = await service.importBook(
+      new File(['newest content'], 'test.epub', { type: 'application/epub+zip' }),
+      books,
+      { lookupIndex },
+    );
+
+    expect(result).toBe(tombstone);
+    expect(tombstone.hash).toBe('newest-hash-789');
+    expect(books.filter((b) => !b.deletedAt)).toHaveLength(1);
+  });
+
   // The migrated config carries the old hash's notes sync watermark, so notes
   // older than it would never be pushed under the new hash, and a peer whose
   // metaHash differs (a fresh uuid per build) would never see them.

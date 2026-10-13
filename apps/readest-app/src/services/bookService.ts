@@ -96,6 +96,21 @@ export function buildBookLookupIndex(books: Book[], osPlatform?: OsPlatform): Bo
   return { byHash, byMetaKey, byStableKey, byFilePath };
 }
 
+function indexBookKeys(
+  lookupIndex: BookLookupIndex,
+  book: Book,
+  metaHash: string | undefined,
+  stableHash: string | undefined,
+) {
+  const add = (map: Map<string, Book[]>, key: string) => {
+    const list = map.get(key);
+    if (!list) map.set(key, [book]);
+    else if (!list.includes(book)) list.push(book);
+  };
+  if (metaHash) add(lookupIndex.byMetaKey, `${metaHash}:${book.format}`);
+  if (stableHash) add(lookupIndex.byStableKey, `${stableHash}:${book.format}`);
+}
+
 /**
  * Normalize an absolute file path into a stable map key for `byFilePath`.
  *
@@ -653,6 +668,11 @@ export async function importBook(
     if (existingBook) {
       rememberBookState(existingBook);
       if (!transient) {
+        // A deleted row was left out of the metadata indexes when they were
+        // built; add it back so later imports in this batch can match it.
+        if (existingBook.deletedAt && lookupIndex) {
+          indexBookKeys(lookupIndex, existingBook, metaHash, stableHash);
+        }
         existingBook.deletedAt = null;
         existingBook.fileSyncDeletionRequestedAt = null;
       }
@@ -892,18 +912,7 @@ export async function importBook(
         books.push(book);
         if (lookupIndex) {
           lookupIndex.byHash.set(book.hash, book);
-          if (book.metaHash) {
-            const key = `${book.metaHash}:${book.format}`;
-            const list = lookupIndex.byMetaKey.get(key);
-            if (list) list.push(book);
-            else lookupIndex.byMetaKey.set(key, [book]);
-          }
-          if (stableHash) {
-            const key = `${stableHash}:${book.format}`;
-            const list = lookupIndex.byStableKey.get(key);
-            if (list) list.push(book);
-            else lookupIndex.byStableKey.set(key, [book]);
-          }
+          indexBookKeys(lookupIndex, book, book.metaHash, stableHash);
         }
       }
     } else if (metaHashMatch && oldBookDir && oldBookDir !== getDir(book)) {
