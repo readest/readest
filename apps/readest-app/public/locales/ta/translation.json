@@ -2605,5 +2605,6 @@
   "{{count}} voices available_one": "{{count}} குரல் கிடைக்கிறது",
   "{{count}} voices available_other": "{{count}} குரல்கள் கிடைக்கின்றன",
   "Multilingual": "பன்மொழி",
-  "Expressive": "உணர்ச்சிமிக்க"
+  "Expressive": "உணர்ச்சிமிக்க",
+  "Show Page Thumbnails": "பக்க சிறுபடங்களைக் காட்டு"
 }

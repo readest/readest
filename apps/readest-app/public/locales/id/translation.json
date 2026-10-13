@@ -2540,5 +2540,6 @@
   "Use your own OpenAI-compatible speech service": "Gunakan layanan ucapan kompatibel OpenAI milik Anda sendiri",
   "{{count}} voices available_other": "{{count}} suara tersedia",
   "Multilingual": "Multibahasa",
-  "Expressive": "Ekspresif"
+  "Expressive": "Ekspresif",
+  "Show Page Thumbnails": "Tampilkan Gambar Mini Halaman"
 }

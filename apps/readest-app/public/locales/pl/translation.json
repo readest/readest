@@ -2735,5 +2735,6 @@
   "{{count}} voices available_many": "{{count}} dostępnych głosów",
   "{{count}} voices available_other": "{{count}} dostępnego głosu",
   "Multilingual": "Wielojęzyczny",
-  "Expressive": "Ekspresyjny"
+  "Expressive": "Ekspresyjny",
+  "Show Page Thumbnails": "Pokaż miniatury stron"
 }

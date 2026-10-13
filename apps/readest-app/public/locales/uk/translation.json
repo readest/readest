@@ -2735,5 +2735,6 @@
   "{{count}} voices available_many": "Доступно {{count}} голосів",
   "{{count}} voices available_other": "Доступно {{count}} голосу",
   "Multilingual": "Багатомовний",
-  "Expressive": "Виразний"
+  "Expressive": "Виразний",
+  "Show Page Thumbnails": "Показувати мініатюри сторінок"
 }

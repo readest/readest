@@ -2735,5 +2735,6 @@
   "{{count}} voices available_many": "Доступно {{count}} голосов",
   "{{count}} voices available_other": "Доступно {{count}} голоса",
   "Multilingual": "Многоязычный",
-  "Expressive": "Выразительный"
+  "Expressive": "Выразительный",
+  "Show Page Thumbnails": "Показывать миниатюры страниц"
 }

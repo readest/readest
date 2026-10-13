@@ -74,14 +74,16 @@ const TOCView: React.FC<{
   const { getView, getViewSettings, getProgress } = useReaderStore();
   const { sideBarBookKey, isSideBarVisible } = useSidebarStore();
   const progress = getProgress(bookKey);
-  const isEink = !!getViewSettings(bookKey)?.isEink;
+  const viewSettings = getViewSettings(bookKey);
+  const isEink = !!viewSettings?.isEink;
 
   // Fixed-layout formats that can render pages (PDF) unfold page thumbnails
-  // under each TOC item.
+  // under each TOC item, unless the reader turned them off for this book.
+  const showThumbnails = !!bookDoc.getPageThumbnail && viewSettings?.showTOCThumbnails !== false;
   const totalPages = bookDoc.sections.length;
   const pageRanges = useMemo(
-    () => (bookDoc.getPageThumbnail ? computeTOCPageRanges(toc, totalPages) : undefined),
-    [bookDoc, toc, totalPages],
+    () => (showThumbnails ? computeTOCPageRanges(toc, totalPages) : undefined),
+    [showThumbnails, toc, totalPages],
   );
   const currentPage = pageRanges ? progress?.section?.current : undefined;
 

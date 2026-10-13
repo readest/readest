@@ -2540,5 +2540,6 @@
   "Use your own OpenAI-compatible speech service": "使用你自己的兼容 OpenAI 的语音服务",
   "{{count}} voices available_other": "可用语音 {{count}} 个",
   "Multilingual": "多语言",
-  "Expressive": "富有表现力"
+  "Expressive": "富有表现力",
+  "Show Page Thumbnails": "显示页面缩略图"
 }

@@ -2540,5 +2540,6 @@
   "Use your own OpenAI-compatible speech service": "자신의 OpenAI 호환 음성 서비스 사용",
   "{{count}} voices available_other": "사용 가능한 음성 {{count}}개",
   "Multilingual": "다국어",
-  "Expressive": "표현력"
+  "Expressive": "표현력",
+  "Show Page Thumbnails": "페이지 썸네일 표시"
 }

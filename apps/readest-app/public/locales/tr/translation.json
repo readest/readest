@@ -2605,5 +2605,6 @@
   "{{count}} voices available_one": "{{count}} ses kullanılabilir",
   "{{count}} voices available_other": "{{count}} ses kullanılabilir",
   "Multilingual": "Çok dilli",
-  "Expressive": "Etkileyici"
+  "Expressive": "Etkileyici",
+  "Show Page Thumbnails": "Sayfa Küçük Resimlerini Göster"
 }

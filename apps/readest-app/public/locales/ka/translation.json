@@ -2605,5 +2605,6 @@
   "{{count}} voices available_one": "ხელმისაწვდომია {{count}} ხმა",
   "{{count}} voices available_other": "ხელმისაწვდომია {{count}} ხმა",
   "Multilingual": "მრავალენოვანი",
-  "Expressive": "ექსპრესიული"
+  "Expressive": "ექსპრესიული",
+  "Show Page Thumbnails": "გვერდის მინიატურების ჩვენება"
 }

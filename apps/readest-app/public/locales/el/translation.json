@@ -2605,5 +2605,6 @@
   "{{count}} voices available_one": "{{count}} διαθέσιμη φωνή",
   "{{count}} voices available_other": "{{count}} διαθέσιμες φωνές",
   "Multilingual": "Πολύγλωσση",
-  "Expressive": "Εκφραστική"
+  "Expressive": "Εκφραστική",
+  "Show Page Thumbnails": "Εμφάνιση μικρογραφιών σελίδων"
 }
