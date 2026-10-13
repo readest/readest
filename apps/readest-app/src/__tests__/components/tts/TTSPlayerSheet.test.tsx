@@ -32,7 +32,7 @@ vi.mock('@/components/Dialog', () => ({
     boxClassName?: string;
   }) =>
     isOpen ? (
-      <div role='dialog' data-box-class={boxClassName}>
+      <div role='dialog' className='modal-box' data-box-class={boxClassName}>
         {header}
         {children}
       </div>
@@ -239,6 +239,40 @@ describe('TTSPlayerSheet', () => {
     expect(screen.queryByText('Read Aloud')).toBeNull();
   });
 
+  test('a corner grip resizes the player on desktop and the size is kept', () => {
+    localStorage.removeItem('ttsPlayerSize');
+    render(<TTSPlayerSheet {...makeProps()} />);
+    const box = screen.getByRole('dialog');
+    box.getBoundingClientRect = () => ({ width: 420, height: 500 }) as DOMRect;
+    const grip = box.querySelector<HTMLElement>('[data-tts-player-resize]')!;
+    expect(grip).toBeTruthy();
+
+    // The box is centered, so it grows on both sides: twice the pointer's
+    // travel keeps the corner under the pointer.
+    fireEvent.pointerDown(grip, { clientX: 500, clientY: 500, pointerId: 1, button: 0 });
+    fireEvent.pointerMove(grip, { clientX: 550, clientY: 560, pointerId: 1 });
+    fireEvent.pointerUp(grip, { clientX: 550, clientY: 560, pointerId: 1 });
+    expect(box.style.getPropertyValue('--tts-player-w')).toBe('520px');
+    expect(box.style.getPropertyValue('--tts-player-h')).toBe('620px');
+    expect(box.dataset['boxClass']).toContain('sm:w-[var(--tts-player-w,420px)]!');
+
+    // Dragged past the window's edges it fills the window: full screen.
+    fireEvent.pointerDown(grip, { clientX: 500, clientY: 500, pointerId: 1, button: 0 });
+    fireEvent.pointerMove(grip, { clientX: 5000, clientY: 5000, pointerId: 1 });
+    fireEvent.pointerUp(grip, { clientX: 5000, clientY: 5000, pointerId: 1 });
+    expect(box.style.getPropertyValue('--tts-player-w')).toBe(`${window.innerWidth}px`);
+    expect(box.style.getPropertyValue('--tts-player-h')).toBe(`${window.innerHeight}px`);
+    expect(box.dataset['boxClass']).not.toContain('sm:max-h-[85%]!');
+    // Dialog caps a desktop box at 600px wide; the player must outgrow that.
+    expect(box.dataset['boxClass']).toContain('sm:max-w-full!');
+
+    cleanup();
+    render(<TTSPlayerSheet {...makeProps()} />);
+    expect(screen.getByRole('dialog').style.getPropertyValue('--tts-player-w')).toBe(
+      `${window.innerWidth}px`,
+    );
+  });
+
   test('play/pause is the theme-neutral contrast button, not the accent CTA', () => {
     render(<TTSPlayerSheet {...makeProps()} />);
     const toggle = screen.getByRole('button', { name: /^(Play|Pause)$/ });
@@ -439,6 +473,45 @@ describe('TTSPlayerSheet', () => {
     await waitFor(() => expect(screen.getByText('Down the rabbit hole.')).toBeTruthy());
     // The artwork steps aside into a thumbnail so the transcript gets the room.
     expect(container.querySelector('img')?.className).toContain('h-12');
+  });
+
+  test('A−/A+ step the lyric font size and the choice is kept', async () => {
+    localStorage.removeItem('ttsLyricsFontSize');
+    const props = makeProps({
+      supportsLyrics: true,
+      onGetLyrics: vi.fn().mockResolvedValue({ sectionIndex: 0, lines: ['Down the rabbit hole.'] }),
+    });
+    render(<TTSPlayerSheet {...props} />);
+    const line = await waitFor(() => screen.getByText('Down the rabbit hole.'));
+    const sheet = () => line.closest<HTMLElement>('[data-lyric-sheet]')!;
+    expect(sheet().style.fontSize).toBe('14px');
+    // Clear of the desktop close button in the top-end corner.
+    expect(
+      screen.getByRole('button', { name: 'Increase font size' }).parentElement!.className,
+    ).toContain('sm:me-8');
+    // Bottom-aligned with the cover thumbnail.
+    expect(
+      screen.getByRole('button', { name: 'Increase font size' }).parentElement!.className,
+    ).toContain('self-end');
+    // Plain icons, no round background, so the glyphs sit on the cover's bottom edge.
+    expect(screen.getByRole('button', { name: 'Increase font size' }).className).not.toContain(
+      'btn-circle',
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Increase font size' }));
+    expect(sheet().style.fontSize).toBe('16px');
+    fireEvent.click(screen.getByRole('button', { name: 'Decrease font size' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Decrease font size' }));
+    expect(sheet().style.fontSize).toBe('12px');
+    // The smallest step disables A− rather than going on shrinking.
+    expect(
+      (screen.getByRole('button', { name: 'Decrease font size' }) as HTMLButtonElement).disabled,
+    ).toBe(true);
+
+    cleanup();
+    render(<TTSPlayerSheet {...props} />);
+    const again = await waitFor(() => screen.getByText('Down the rabbit hole.'));
+    expect(again.closest<HTMLElement>('[data-lyric-sheet]')!.style.fontSize).toBe('12px');
   });
 
   test('a section with nothing to transcribe keeps the cover player', async () => {
@@ -693,8 +766,8 @@ describe('TTSPlayerSheet', () => {
     expect(screen.queryByRole('button', { name: 'Guy' })).toBeNull();
     // A fixed height while choosing a voice: folding never resizes the sheet.
     const boxClass = () => screen.getByRole('dialog').getAttribute('data-box-class');
-    expect(boxClass()).toContain('sm:h-[85%]!');
-    expect(boxClass()).not.toContain('sm:h-auto!');
+    expect(boxClass()).toContain('sm:h-[var(--tts-player-h,85%)]!');
+    expect(boxClass()).not.toContain('sm:h-[var(--tts-player-h,auto)]!');
     // Tapping the open group folds it: at most one group is open.
     fireEvent.click(kokoro);
     expect([kokoro, edge].map((h) => h.getAttribute('aria-expanded'))).toEqual(['false', 'false']);
