@@ -15,6 +15,8 @@ import {
   MdExpandMore,
   MdSkipNext,
   MdSkipPrevious,
+  MdTextDecrease,
+  MdTextIncrease,
 } from 'react-icons/md';
 import { RiForward30Line, RiReplay15Line, RiVoiceAiFill } from 'react-icons/ri';
 import { TbArrowBarToRight } from 'react-icons/tb';
@@ -44,6 +46,7 @@ import TTSScrubber from './TTSScrubber';
 import TTSLyricsView from './TTSLyricsView';
 import BufferingRing from './BufferingRing';
 import { TTSLyrics, useTTSLyrics } from './useTTSLyrics';
+import { usePlayerResize } from './usePlayerResize';
 import SpeedRuler, { formatRate } from './SpeedRuler';
 import TTSChaptersView from './TTSChaptersView';
 import { TTS_STOP_AT_CHAPTER_END } from '@/services/tts/TTSSessionManager';
@@ -115,6 +118,11 @@ type TTSPlayerSheetProps = {
   downloads: UseTTSDownloadsResult;
   activeSectionIndex: number | null;
 };
+
+// Lyric line sizes (px) the A−/A+ buttons step through; 14 is the old text-sm.
+const LYRIC_FONT_SIZES = [12, 14, 16, 18, 20, 24, 28, 32, 38];
+const DEFAULT_LYRIC_FONT_SIZE = 14;
+const LYRIC_FONT_SIZE_KEY = 'ttsLyricsFontSize';
 
 // Full player sheet: cover, chapter, scrubber, transport, and one compact
 // row of speed / voice / sleep-timer buttons that drill into in-sheet
@@ -220,6 +228,25 @@ const TTSPlayerSheet = ({
   const isEink = viewSettings?.isEink ?? false;
   const pauseAfterSentence = viewSettings?.ttsPauseAfterSentence ?? false;
   const coverImage = book?.coverImageUrl && !coverFailed ? book.coverImageUrl : null;
+  const resize = usePlayerResize();
+  // Storage is best-effort (it throws when the browser blocks it): the size
+  // still works for this session, it just isn't remembered.
+  const [lyricFontSize, setLyricFontSize] = useState(() => {
+    try {
+      const stored = Number(localStorage.getItem(LYRIC_FONT_SIZE_KEY));
+      return LYRIC_FONT_SIZES.includes(stored) ? stored : DEFAULT_LYRIC_FONT_SIZE;
+    } catch {
+      return DEFAULT_LYRIC_FONT_SIZE;
+    }
+  });
+  const stepLyricFontSize = (step: 1 | -1) => {
+    const next = LYRIC_FONT_SIZES[LYRIC_FONT_SIZES.indexOf(lyricFontSize) + step];
+    if (next === undefined) return;
+    setLyricFontSize(next);
+    try {
+      localStorage.setItem(LYRIC_FONT_SIZE_KEY, String(next));
+    } catch {}
+  };
 
   const lyrics = useTTSLyrics({
     bookKey,
@@ -428,10 +455,11 @@ const TTSPlayerSheet = ({
       title={_('Read Aloud')}
       header={header}
       // The voice list keeps one height, so folding a group never resizes the
-      // sheet; the other views fit their content.
+      // sheet; the other views fit their content. A size dragged out with the
+      // corner grip (usePlayerResize) overrides both, up to the whole window.
       boxClassName={clsx(
-        'sm:max-h-[85%]! sm:w-[420px]! sm:min-w-0!',
-        view === 'voice' ? 'sm:h-[85%]!' : 'sm:h-auto!',
+        'sm:max-h-[min(var(--tts-player-h,85%),100%)]! sm:w-[var(--tts-player-w,420px)]! sm:min-w-0! sm:max-w-full!',
+        view === 'voice' ? 'sm:h-[var(--tts-player-h,85%)]!' : 'sm:h-[var(--tts-player-h,auto)]!',
       )}
       contentClassName='px-4! sm:px-4! mt-[-4px]'
       onClose={onClose}
@@ -446,7 +474,7 @@ const TTSPlayerSheet = ({
             // The lyric sheet is the one element here that can take whatever
             // height is left, so it claims it — and the transport below stays
             // put instead of being pushed into a scroll.
-            showLyrics && 'h-full sm:h-auto',
+            showLyrics && (resize.sized ? 'h-full' : 'h-full sm:h-auto'),
           )}
         >
           {/* With lyrics the artwork steps aside into a thumbnail row so the
@@ -483,9 +511,36 @@ const TTSPlayerSheet = ({
                 </span>
               )}
             </div>
+            {showLyrics && (
+              // sm:me-8 clears the desktop close button in the box's top-end corner.
+              <div className='flex shrink-0 items-center self-end sm:me-8'>
+                {(
+                  [
+                    [-1, _('Decrease font size'), MdTextDecrease],
+                    [1, _('Increase font size'), MdTextIncrease],
+                  ] as const
+                ).map(([step, label, Icon]) => (
+                  <button
+                    key={step}
+                    type='button'
+                    aria-label={label}
+                    title={label}
+                    disabled={
+                      LYRIC_FONT_SIZES[LYRIC_FONT_SIZES.indexOf(lyricFontSize) + step] === undefined
+                    }
+                    onClick={() => stepLyricFontSize(step)}
+                    className='text-base-content/70 hover:text-base-content disabled:text-base-content/25 flex items-end px-1.5 pt-2 leading-none'
+                  >
+                    <Icon size={iconSize18} />
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
           {showLyrics && (
             <TTSLyricsView
+              fill={resize.sized}
+              fontSize={lyricFontSize}
               lines={lyrics.lines}
               activeIndex={lyrics.activeIndex}
               loopRange={loopRange}
@@ -565,7 +620,7 @@ const TTSPlayerSheet = ({
               </button>
               <button
                 type='button'
-                className='btn btn-primary btn-circle relative mx-2 h-14 min-h-14 w-14'
+                className='btn btn-contrast btn-circle relative mx-2 h-14 min-h-14 w-14'
                 aria-label={isPlaying ? _('Pause') : _('Play')}
                 aria-busy={buffering}
                 onClick={onTogglePlay}
@@ -796,6 +851,23 @@ const TTSPlayerSheet = ({
           ))}
         </div>
       )}
+      {/* Pointer-only affordance in the box's bottom-end corner (it is the
+          containing block: the body wrapper is not positioned). */}
+      <div
+        {...resize.gripProps}
+        data-tts-player-resize
+        aria-hidden
+        className='text-base-content/40 absolute bottom-1 end-1 z-20 hidden h-4 w-4 cursor-nwse-resize touch-none sm:block rtl:cursor-nesw-resize'
+      >
+        <svg viewBox='0 0 16 16' className='h-full w-full rtl:-scale-x-100'>
+          <path
+            d='M15 6 6 15M15 11l-4 4'
+            stroke='currentColor'
+            strokeWidth='1.5'
+            strokeLinecap='round'
+          />
+        </svg>
+      </div>
     </Dialog>
   );
 };

@@ -171,7 +171,7 @@ function BookshelfTab({
                 ? _('{{name}} · Drag to reorder', { name })
                 : _('{{name}} (disabled) · Drag to reorder', { name })
             }
-            className={`btn btn-ghost h-11 min-h-11 min-w-0 cursor-grab touch-pan-x select-none focus-visible:ring-2 focus-visible:ring-base-content/15 active:cursor-grabbing flex-1 px-3 ${selected ? 'eink:underline eink:underline-offset-4' : 'group-data-[collapsed=true]/bookshelf-tabs:w-11 group-data-[collapsed=true]/bookshelf-tabs:flex-none group-data-[collapsed=true]/bookshelf-tabs:px-0'}`}
+            className={`btn btn-ghost h-11 min-h-11 min-w-0 cursor-grab touch-pan-x select-none focus-visible:ring-2 focus-visible:ring-base-content/15 active:cursor-grabbing flex-1 px-3 ${selected ? 'eink:underline eink:underline-offset-4 max-sm:w-11 max-sm:flex-none max-sm:px-0' : 'group-data-[collapsed=true]/bookshelf-tabs:w-11 group-data-[collapsed=true]/bookshelf-tabs:flex-none group-data-[collapsed=true]/bookshelf-tabs:px-0'}`}
             onClick={onSelect}
             onDoubleClick={rename}
             onTouchStartCapture={(e) => {
@@ -195,7 +195,8 @@ function BookshelfTab({
             <span
               className={
                 selected
-                  ? 'truncate'
+                  ? // Phones title the dialog with it instead.
+                    'truncate max-sm:sr-only'
                   : 'truncate group-data-[collapsed=true]/bookshelf-tabs:sr-only'
               }
             >
@@ -545,7 +546,7 @@ export function BookshelvesEditor({
   const tabs = (
     <div
       ref={tabsRef}
-      className='group/bookshelf-tabs bg-base-100 z-20 flex min-w-0 shrink-0 flex-wrap items-center justify-center gap-2 py-2'
+      className='group/bookshelf-tabs bg-base-100 z-20 flex min-w-0 shrink-0 basis-full flex-wrap items-center justify-center gap-2 py-2 sm:grow sm:basis-0'
       role='group'
       aria-label={_('Bookshelves')}
     >
@@ -639,7 +640,19 @@ export function BookshelvesEditor({
   );
   return (
     <fieldset className='flex h-full min-h-0 min-w-0 flex-col gap-4'>
-      {tabsSlot ? createPortal(tabs, tabsSlot) : tabs}
+      {tabsSlot
+        ? createPortal(
+            <>
+              <div className='pointer-events-none absolute inset-x-12 top-0 flex h-11 items-center justify-center sm:hidden'>
+                <span data-bookshelf-title className='line-clamp-1 text-center font-bold'>
+                  {tabName(selectedId)}
+                </span>
+              </div>
+              {tabs}
+            </>,
+            tabsSlot,
+          )
+        : tabs}
       <div className='grid min-h-0 min-w-0 flex-1 grid-rows-2 gap-4 lg:grid-cols-2 lg:grid-rows-1 lg:gap-6'>
         <OverlayScrollbarsComponent
           role='region'
@@ -990,18 +1003,20 @@ export default function BookshelvesDialog() {
       // on screen.
       title={_('Manage Bookshelves')}
       header={
-        // Top-aligned: on narrow screens the tab row wraps its status line
-        // underneath, and the close buttons belong beside the tabs.
-        <div className='flex w-full min-w-0 items-start gap-2'>
+        // Phones title the dialog with the selected shelf beside the back button
+        // and give the tabs their own centered row below. Wider screens put the
+        // tabs in the title bar, top-aligned beside the close button so the tab
+        // row can wrap its status line underneath.
+        <div className='flex w-full min-w-0 flex-wrap items-start gap-x-2 sm:flex-nowrap'>
           <button
             type='button'
             aria-label={_('Close')}
             onClick={() => void close()}
-            className='btn btn-ghost btn-circle mt-3.5 flex h-8 min-h-8 w-8 shrink-0 hover:bg-transparent focus:outline-hidden sm:hidden'
+            className='btn btn-ghost btn-circle my-1.5 flex h-8 min-h-8 w-8 shrink-0 hover:bg-transparent focus:outline-hidden sm:hidden'
           >
             {isRtl ? <MdArrowForwardIos size={22} /> : <MdArrowBackIosNew size={22} />}
           </button>
-          <div ref={setTabsSlot} className='min-w-0 flex-1' />
+          <div ref={setTabsSlot} className='contents' />
           <button
             type='button'
             aria-label={_('Close')}

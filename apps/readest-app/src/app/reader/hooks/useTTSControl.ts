@@ -831,6 +831,7 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
   useEffect(() => {
     const ttsHighlightOptions = viewSettings?.ttsHighlightOptions;
     if (ttsControllerRef.current && ttsHighlightOptions) {
+      ttsControllerRef.current.sentenceTint = !viewSettings!.isEink;
       ttsControllerRef.current.updateHighlightOptions(
         getTTSHighlightOptions(
           ttsHighlightOptions,
@@ -1038,6 +1039,7 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
           void ttsController.shutdown();
           return;
         }
+        ttsController.sentenceTint = !viewSettings.isEink;
         ttsController.updateHighlightOptions(
           getTTSHighlightOptions(
             viewSettings.ttsHighlightOptions,
