@@ -51,6 +51,16 @@ STATUS_LABELS = {
 }
 PUSH_ORDER = ('uploaded', 'replaced', 'updated', 'skipped', 'failed')
 
+# The summary line gives each status its own plural message, so translators
+# control agreement and word order.
+PUSH_SUMMARY = {
+    'uploaded': lambda n: ngettext('%d uploaded', '%d uploaded', n) % n,
+    'replaced': lambda n: ngettext('%d replaced', '%d replaced', n) % n,
+    'updated': lambda n: ngettext('%d updated', '%d updated', n) % n,
+    'skipped': lambda n: ngettext('%d up to date', '%d up to date', n) % n,
+    'failed': lambda n: ngettext('%d failed', '%d failed', n) % n,
+}
+
 # A status check reports plan_push's actions verbatim, so its keys are the
 # plan names rather than the past-tense push outcomes.
 CHECK_LABELS = {
@@ -61,6 +71,14 @@ CHECK_LABELS = {
     'failed': _('Failed'),
 }
 CHECK_ORDER = ('skip', 'update', 'replace', 'new', 'failed')
+
+CHECK_SUMMARY = {
+    'skip': lambda n: ngettext('%d in Readest', '%d in Readest', n) % n,
+    'update': lambda n: ngettext('%d metadata differs', '%d metadata differs', n) % n,
+    'replace': lambda n: ngettext('%d out of date', '%d out of date', n) % n,
+    'new': lambda n: ngettext('%d not in Readest', '%d not in Readest', n) % n,
+    'failed': PUSH_SUMMARY['failed'],
+}
 
 # Every push outcome except a failure leaves the book present in the cloud.
 PUSHED_MARK = PLAN_MARKS['skip']
@@ -232,10 +250,8 @@ class _CloudWorker(QThread):
             '',
         )
 
-    def _summary(self, counts, labels, order, empty):
-        parts = ', '.join(
-            '%d %s' % (counts[key], labels[key]) for key in order if key in counts
-        )
+    def _summary(self, counts, summary, order, empty):
+        parts = ', '.join(summary[key](counts[key]) for key in order if key in counts)
         return parts or empty
 
 
@@ -274,7 +290,7 @@ class PushWorker(_CloudWorker):
 
         self.done.emit(
             'failed' not in counts,
-            self._summary(counts, STATUS_LABELS, PUSH_ORDER, _('Nothing to push.')),
+            self._summary(counts, PUSH_SUMMARY, PUSH_ORDER, _('Nothing to push.')),
         )
 
     def _upload(self, file_name, fileobj, size, book_hash):
@@ -403,5 +419,5 @@ class StatusWorker(_CloudWorker):
 
         self.done.emit(
             'failed' not in counts,
-            self._summary(counts, CHECK_LABELS, CHECK_ORDER, _('Nothing to check.')),
+            self._summary(counts, CHECK_SUMMARY, CHECK_ORDER, _('Nothing to check.')),
         )

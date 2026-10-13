@@ -115,9 +115,10 @@ make mo     # validate and compile every .po to its .mo
 make test
 ```
 
-Every language calibre itself ships is translated: `translations/` holds one
-catalog per directory of calibre's own language pack, 100 in total. To try one
-without changing calibre's UI language:
+`translations/` holds catalogs for German, Spanish, French, Italian, Japanese,
+Korean, Polish, Portuguese (Portugal and Brazil), Russian, and Chinese
+(Simplified, Traditional, and Hong Kong); other languages show the English
+text. To try one without changing calibre's UI language:
 
 ```sh
 CALIBRE_OVERRIDE_LANG=ja calibre

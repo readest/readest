@@ -265,3 +265,72 @@ msgstr "Readest のストレージ容量を超過しました—プッシュを�
 #: worker.py:262
 msgid "Session expired — please log in again."
 msgstr "セッションの有効期限が切れました—再度ログインしてください。"
+
+#: api.py:243
+msgid "Login failed"
+msgstr "ログイン失敗"
+
+#: api.py:254 api.py:272 api.py:286
+msgid "Not logged in"
+msgstr "ログインしていません"
+
+#: api.py:263
+msgid "Session expired, please log in again"
+msgstr "セッションの有効期限が切れました。再度ログインしてください"
+
+#: api.py:312
+msgid "Not authenticated"
+msgstr "認証されていません"
+
+#: api.py:318
+msgid "Request failed (%s)"
+msgstr "リクエスト失敗 (%s)"
+
+#: api.py:402
+msgid "Upload failed (%s)"
+msgstr "アップロード失敗 (%s)"
+
+#: worker.py:57
+msgid "%d uploaded"
+msgid_plural "%d uploaded"
+msgstr[0] "アップロード済み %d 冊"
+
+#: worker.py:58
+msgid "%d replaced"
+msgid_plural "%d replaced"
+msgstr[0] "置き換え済み %d 冊"
+
+#: worker.py:59
+msgid "%d updated"
+msgid_plural "%d updated"
+msgstr[0] "更新済み %d 冊"
+
+#: worker.py:60
+msgid "%d up to date"
+msgid_plural "%d up to date"
+msgstr[0] "最新 %d 冊"
+
+#: worker.py:61
+msgid "%d failed"
+msgid_plural "%d failed"
+msgstr[0] "失敗 %d 冊"
+
+#: worker.py:76
+msgid "%d in Readest"
+msgid_plural "%d in Readest"
+msgstr[0] "Readest 内にあり %d 冊"
+
+#: worker.py:77
+msgid "%d metadata differs"
+msgid_plural "%d metadata differs"
+msgstr[0] "メタデータが異なる %d 冊"
+
+#: worker.py:78
+msgid "%d out of date"
+msgid_plural "%d out of date"
+msgstr[0] "古い %d 冊"
+
+#: worker.py:79
+msgid "%d not in Readest"
+msgid_plural "%d not in Readest"
+msgstr[0] "Readest 内になし %d 冊"

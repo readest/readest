@@ -153,31 +153,31 @@ msgid "your Readest account"
 msgstr "il tuo account Readest"
 
 msgid "Uploaded"
-msgstr "caricato"
+msgstr "Caricato"
 
 msgid "Replaced"
-msgstr "sostituito"
+msgstr "Sostituito"
 
 msgid "Updated"
-msgstr "aggiornato"
+msgstr "Aggiornato"
 
 msgid "Up to date"
-msgstr "aggiornato"
+msgstr "Già aggiornato"
 
 msgid "Failed"
-msgstr "non riuscito"
+msgstr "Non riuscito"
 
 msgid "In Readest"
-msgstr "in Readest"
+msgstr "In Readest"
 
 msgid "Metadata differs"
-msgstr "metadati diversi"
+msgstr "Metadati diversi"
 
 msgid "Out of date"
-msgstr "obsoleto"
+msgstr "Obsoleto"
 
 msgid "Not in Readest"
-msgstr "non in Readest"
+msgstr "Non in Readest"
 
 msgid "No Readest-supported format (EPUB, PDF, ...)"
 msgstr "Nessun formato supportato da Readest (EPUB, PDF, ...)"
@@ -205,3 +205,66 @@ msgstr "Quota di archiviazione Readest superata — invio interrotto."
 
 msgid "Session expired — please log in again."
 msgstr "Sessione scaduta — accedi di nuovo."
+
+msgid "Login failed"
+msgstr "Accesso non riuscito"
+
+msgid "Not logged in"
+msgstr "Accesso non effettuato"
+
+msgid "Session expired, please log in again"
+msgstr "Sessione scaduta, accedi di nuovo"
+
+msgid "Not authenticated"
+msgstr "Non autenticato"
+
+msgid "Request failed (%s)"
+msgstr "Richiesta non riuscita (%s)"
+
+msgid "Upload failed (%s)"
+msgstr "Caricamento non riuscito (%s)"
+
+msgid "%d uploaded"
+msgid_plural "%d uploaded"
+msgstr[0] "%d caricato"
+msgstr[1] "%d caricati"
+
+msgid "%d replaced"
+msgid_plural "%d replaced"
+msgstr[0] "%d sostituito"
+msgstr[1] "%d sostituiti"
+
+msgid "%d updated"
+msgid_plural "%d updated"
+msgstr[0] "%d aggiornato"
+msgstr[1] "%d aggiornati"
+
+msgid "%d up to date"
+msgid_plural "%d up to date"
+msgstr[0] "%d già aggiornato"
+msgstr[1] "%d già aggiornati"
+
+msgid "%d failed"
+msgid_plural "%d failed"
+msgstr[0] "%d non riuscito"
+msgstr[1] "%d non riusciti"
+
+msgid "%d in Readest"
+msgid_plural "%d in Readest"
+msgstr[0] "%d in Readest"
+msgstr[1] "%d in Readest"
+
+msgid "%d metadata differs"
+msgid_plural "%d metadata differs"
+msgstr[0] "%d con metadati diversi"
+msgstr[1] "%d con metadati diversi"
+
+msgid "%d out of date"
+msgid_plural "%d out of date"
+msgstr[0] "%d obsoleto"
+msgstr[1] "%d obsoleti"
+
+msgid "%d not in Readest"
+msgid_plural "%d not in Readest"
+msgstr[0] "%d non in Readest"
+msgstr[1] "%d non in Readest"

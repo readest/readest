@@ -169,7 +169,7 @@ msgid "In Readest"
 msgstr "已在 Readest"
 
 msgid "Metadata differs"
-msgstr "metadata 不同"
+msgstr "Metadata 不同"
 
 msgid "Out of date"
 msgstr "已過時"
@@ -203,3 +203,57 @@ msgstr "已超出 Readest 儲存空間限額 — 已停止發送。"
 
 msgid "Session expired — please log in again."
 msgstr "工作階段已過期 — 請重新登入。"
+
+msgid "Login failed"
+msgstr "登入失敗"
+
+msgid "Not logged in"
+msgstr "尚未登入"
+
+msgid "Session expired, please log in again"
+msgstr "工作階段已過期，請重新登入"
+
+msgid "Not authenticated"
+msgstr "未經驗證"
+
+msgid "Request failed (%s)"
+msgstr "要求失敗（%s）"
+
+msgid "Upload failed (%s)"
+msgstr "上載失敗（%s）"
+
+msgid "%d uploaded"
+msgid_plural "%d uploaded"
+msgstr[0] "%d 本已上載"
+
+msgid "%d replaced"
+msgid_plural "%d replaced"
+msgstr[0] "%d 本已取代"
+
+msgid "%d updated"
+msgid_plural "%d updated"
+msgstr[0] "%d 本已更新"
+
+msgid "%d up to date"
+msgid_plural "%d up to date"
+msgstr[0] "%d 本已是最新"
+
+msgid "%d failed"
+msgid_plural "%d failed"
+msgstr[0] "%d 本失敗"
+
+msgid "%d in Readest"
+msgid_plural "%d in Readest"
+msgstr[0] "%d 本已在 Readest"
+
+msgid "%d metadata differs"
+msgid_plural "%d metadata differs"
+msgstr[0] "%d 本 metadata 不同"
+
+msgid "%d out of date"
+msgid_plural "%d out of date"
+msgstr[0] "%d 本已過時"
+
+msgid "%d not in Readest"
+msgid_plural "%d not in Readest"
+msgstr[0] "%d 本不在 Readest"

@@ -91,15 +91,15 @@ msgstr "Неизвестно"
 #: dialogs.py:255
 msgid "Pushing %d book to your Readest library…"
 msgid_plural "Pushing %d books to your Readest library…"
-msgstr[0] "Отправка %d книга в библиотеку Readest…"
-msgstr[1] "Отправка %d книги в библиотеку Readest…"
+msgstr[0] "Отправка %d книги в библиотеку Readest…"
+msgstr[1] "Отправка %d книг в библиотеку Readest…"
 msgstr[2] "Отправка %d книг в библиотеку Readest…"
 
 #: dialogs.py:269
 msgid "Checking %d book against your Readest library…"
 msgid_plural "Checking %d books against your Readest library…"
-msgstr[0] "Сверка %d книга с библиотекой Readest…"
-msgstr[1] "Сверка %d книги с библиотекой Readest…"
+msgstr[0] "Сверка %d книги с библиотекой Readest…"
+msgstr[1] "Сверка %d книг с библиотекой Readest…"
 msgstr[2] "Сверка %d книг с библиотекой Readest…"
 
 #: dialogs.py:82
@@ -269,3 +269,90 @@ msgstr "Превышена квота хранилища Readest — отпра�
 #: worker.py:262
 msgid "Session expired — please log in again."
 msgstr "Сессия истекла — войдите снова."
+
+#: api.py:243
+msgid "Login failed"
+msgstr "Ошибка входа"
+
+#: api.py:254 api.py:272 api.py:286
+msgid "Not logged in"
+msgstr "Вы не вошли"
+
+#: api.py:263
+msgid "Session expired, please log in again"
+msgstr "Сессия истекла, войдите снова"
+
+#: api.py:312
+msgid "Not authenticated"
+msgstr "Не выполнен вход"
+
+#: api.py:318
+msgid "Request failed (%s)"
+msgstr "Ошибка запроса (%s)"
+
+#: api.py:402
+msgid "Upload failed (%s)"
+msgstr "Ошибка загрузки (%s)"
+
+#: worker.py:57
+msgid "%d uploaded"
+msgid_plural "%d uploaded"
+msgstr[0] "%d отправлена"
+msgstr[1] "%d отправлены"
+msgstr[2] "%d отправлено"
+
+#: worker.py:58
+msgid "%d replaced"
+msgid_plural "%d replaced"
+msgstr[0] "%d заменена"
+msgstr[1] "%d заменены"
+msgstr[2] "%d заменено"
+
+#: worker.py:59
+msgid "%d updated"
+msgid_plural "%d updated"
+msgstr[0] "%d обновлена"
+msgstr[1] "%d обновлены"
+msgstr[2] "%d обновлено"
+
+#: worker.py:60
+msgid "%d up to date"
+msgid_plural "%d up to date"
+msgstr[0] "%d актуальна"
+msgstr[1] "%d актуальны"
+msgstr[2] "%d актуально"
+
+#: worker.py:61
+msgid "%d failed"
+msgid_plural "%d failed"
+msgstr[0] "%d с ошибкой"
+msgstr[1] "%d с ошибкой"
+msgstr[2] "%d с ошибкой"
+
+#: worker.py:76
+msgid "%d in Readest"
+msgid_plural "%d in Readest"
+msgstr[0] "%d в Readest"
+msgstr[1] "%d в Readest"
+msgstr[2] "%d в Readest"
+
+#: worker.py:77
+msgid "%d metadata differs"
+msgid_plural "%d metadata differs"
+msgstr[0] "%d с другими метаданными"
+msgstr[1] "%d с другими метаданными"
+msgstr[2] "%d с другими метаданными"
+
+#: worker.py:78
+msgid "%d out of date"
+msgid_plural "%d out of date"
+msgstr[0] "%d устарела"
+msgstr[1] "%d устарели"
+msgstr[2] "%d устарело"
+
+#: worker.py:79
+msgid "%d not in Readest"
+msgid_plural "%d not in Readest"
+msgstr[0] "%d нет в Readest"
+msgstr[1] "%d нет в Readest"
+msgstr[2] "%d нет в Readest"

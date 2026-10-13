@@ -265,3 +265,72 @@ msgstr "Readest 存储配额已用尽——推送已停止。"
 #: worker.py:262
 msgid "Session expired — please log in again."
 msgstr "会话已过期——请重新登录。"
+
+#: api.py:243
+msgid "Login failed"
+msgstr "登录失败"
+
+#: api.py:254 api.py:272 api.py:286
+msgid "Not logged in"
+msgstr "尚未登录"
+
+#: api.py:263
+msgid "Session expired, please log in again"
+msgstr "会话已过期，请重新登录"
+
+#: api.py:312
+msgid "Not authenticated"
+msgstr "未通过身份验证"
+
+#: api.py:318
+msgid "Request failed (%s)"
+msgstr "请求失败（%s）"
+
+#: api.py:402
+msgid "Upload failed (%s)"
+msgstr "上传失败（%s）"
+
+#: worker.py:57
+msgid "%d uploaded"
+msgid_plural "%d uploaded"
+msgstr[0] "%d 本已上传"
+
+#: worker.py:58
+msgid "%d replaced"
+msgid_plural "%d replaced"
+msgstr[0] "%d 本已替换"
+
+#: worker.py:59
+msgid "%d updated"
+msgid_plural "%d updated"
+msgstr[0] "%d 本已更新"
+
+#: worker.py:60
+msgid "%d up to date"
+msgid_plural "%d up to date"
+msgstr[0] "%d 本已是最新"
+
+#: worker.py:61
+msgid "%d failed"
+msgid_plural "%d failed"
+msgstr[0] "%d 本失败"
+
+#: worker.py:76
+msgid "%d in Readest"
+msgid_plural "%d in Readest"
+msgstr[0] "%d 本已在 Readest"
+
+#: worker.py:77
+msgid "%d metadata differs"
+msgid_plural "%d metadata differs"
+msgstr[0] "%d 本元数据有差异"
+
+#: worker.py:78
+msgid "%d out of date"
+msgid_plural "%d out of date"
+msgstr[0] "%d 本已过期"
+
+#: worker.py:79
+msgid "%d not in Readest"
+msgid_plural "%d not in Readest"
+msgstr[0] "%d 本不在 Readest"

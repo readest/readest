@@ -265,3 +265,72 @@ msgstr "Readest 저장 공간 할당량을 초과했습니다—푸시를 중지
 #: worker.py:262
 msgid "Session expired — please log in again."
 msgstr "세션이 만료되었습니다—다시 로그인하세요."
+
+#: api.py:243
+msgid "Login failed"
+msgstr "로그인 실패"
+
+#: api.py:254 api.py:272 api.py:286
+msgid "Not logged in"
+msgstr "로그인하지 않았습니다"
+
+#: api.py:263
+msgid "Session expired, please log in again"
+msgstr "세션이 만료되었습니다. 다시 로그인하세요"
+
+#: api.py:312
+msgid "Not authenticated"
+msgstr "인증되지 않았습니다"
+
+#: api.py:318
+msgid "Request failed (%s)"
+msgstr "요청 실패 (%s)"
+
+#: api.py:402
+msgid "Upload failed (%s)"
+msgstr "업로드 실패 (%s)"
+
+#: worker.py:57
+msgid "%d uploaded"
+msgid_plural "%d uploaded"
+msgstr[0] "업로드됨 %d권"
+
+#: worker.py:58
+msgid "%d replaced"
+msgid_plural "%d replaced"
+msgstr[0] "대체됨 %d권"
+
+#: worker.py:59
+msgid "%d updated"
+msgid_plural "%d updated"
+msgstr[0] "업데이트됨 %d권"
+
+#: worker.py:60
+msgid "%d up to date"
+msgid_plural "%d up to date"
+msgstr[0] "최신 상태 %d권"
+
+#: worker.py:61
+msgid "%d failed"
+msgid_plural "%d failed"
+msgstr[0] "실패 %d권"
+
+#: worker.py:76
+msgid "%d in Readest"
+msgid_plural "%d in Readest"
+msgstr[0] "Readest에 있음 %d권"
+
+#: worker.py:77
+msgid "%d metadata differs"
+msgid_plural "%d metadata differs"
+msgstr[0] "메타데이터가 다름 %d권"
+
+#: worker.py:78
+msgid "%d out of date"
+msgid_plural "%d out of date"
+msgstr[0] "오래됨 %d권"
+
+#: worker.py:79
+msgid "%d not in Readest"
+msgid_plural "%d not in Readest"
+msgstr[0] "Readest에 없음 %d권"

@@ -14,7 +14,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+"Plural-Forms: nplurals=3; plural=(n==1 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
 
 msgid "Push selected books and their metadata into your Readest cloud library. Re-pushing a book updates its existing entry instead of creating a duplicate."
 msgstr "Wysyła wybrane książki i ich metadane do Twojej biblioteki Readest w chmurze. Ponowne wysłanie książki aktualizuje istniejący wpis zamiast tworzyć duplikat."
@@ -155,31 +155,31 @@ msgid "your Readest account"
 msgstr "Twoje konto Readest"
 
 msgid "Uploaded"
-msgstr "przesłana"
+msgstr "Przesłana"
 
 msgid "Replaced"
-msgstr "zastąpiona"
+msgstr "Zastąpiona"
 
 msgid "Updated"
-msgstr "zaktualizowana"
+msgstr "Zaktualizowana"
 
 msgid "Up to date"
-msgstr "aktualna"
+msgstr "Aktualna"
 
 msgid "Failed"
-msgstr "nie udała się"
+msgstr "Nie udała się"
 
 msgid "In Readest"
-msgstr "w Readest"
+msgstr "W Readest"
 
 msgid "Metadata differs"
-msgstr "metadane różnią się"
+msgstr "Metadane różnią się"
 
 msgid "Out of date"
-msgstr "nieaktualna"
+msgstr "Nieaktualna"
 
 msgid "Not in Readest"
-msgstr "nie ma w Readest"
+msgstr "Nie ma w Readest"
 
 msgid "No Readest-supported format (EPUB, PDF, ...)"
 msgstr "Brak formatu obsługiwanego przez Readest (EPUB, PDF, ...)"
@@ -207,3 +207,75 @@ msgstr "Przekroczono limit miejsca w Readest — wysyłanie przerwane."
 
 msgid "Session expired — please log in again."
 msgstr "Sesja wygasła — zaloguj się ponownie."
+
+msgid "Login failed"
+msgstr "Logowanie nie udało się"
+
+msgid "Not logged in"
+msgstr "Nie zalogowano"
+
+msgid "Session expired, please log in again"
+msgstr "Sesja wygasła, zaloguj się ponownie"
+
+msgid "Not authenticated"
+msgstr "Brak uwierzytelnienia"
+
+msgid "Request failed (%s)"
+msgstr "Żądanie nie powiodło się (%s)"
+
+msgid "Upload failed (%s)"
+msgstr "Przesyłanie nie powiodło się (%s)"
+
+msgid "%d uploaded"
+msgid_plural "%d uploaded"
+msgstr[0] "%d przesłana"
+msgstr[1] "%d przesłane"
+msgstr[2] "%d przesłanych"
+
+msgid "%d replaced"
+msgid_plural "%d replaced"
+msgstr[0] "%d zastąpiona"
+msgstr[1] "%d zastąpione"
+msgstr[2] "%d zastąpionych"
+
+msgid "%d updated"
+msgid_plural "%d updated"
+msgstr[0] "%d zaktualizowana"
+msgstr[1] "%d zaktualizowane"
+msgstr[2] "%d zaktualizowanych"
+
+msgid "%d up to date"
+msgid_plural "%d up to date"
+msgstr[0] "%d aktualna"
+msgstr[1] "%d aktualne"
+msgstr[2] "%d aktualnych"
+
+msgid "%d failed"
+msgid_plural "%d failed"
+msgstr[0] "%d nieudana"
+msgstr[1] "%d nieudane"
+msgstr[2] "%d nieudanych"
+
+msgid "%d in Readest"
+msgid_plural "%d in Readest"
+msgstr[0] "%d w Readest"
+msgstr[1] "%d w Readest"
+msgstr[2] "%d w Readest"
+
+msgid "%d metadata differs"
+msgid_plural "%d metadata differs"
+msgstr[0] "%d z innymi metadanymi"
+msgstr[1] "%d z innymi metadanymi"
+msgstr[2] "%d z innymi metadanymi"
+
+msgid "%d out of date"
+msgid_plural "%d out of date"
+msgstr[0] "%d nieaktualna"
+msgstr[1] "%d nieaktualne"
+msgstr[2] "%d nieaktualnych"
+
+msgid "%d not in Readest"
+msgid_plural "%d not in Readest"
+msgstr[0] "%d nieobecna w Readest"
+msgstr[1] "%d nieobecne w Readest"
+msgstr[2] "%d nieobecnych w Readest"

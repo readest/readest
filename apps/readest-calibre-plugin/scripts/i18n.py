@@ -4,13 +4,13 @@
 calibre loads a plugin's translations from `translations/<lang>.mo` inside the
 plugin zip, where `<lang>` is the UI language code from calibre's
 Preferences -> Look & Feel (see calibre.customize.zipplugin.load_translations).
-The `.po` files in `translations/` are the source of truth and ship in the
-zip; this script extracts msgids from the plugin source into `readest.pot`
-and compiles every `.po` to its `.mo`.
+The `.po` files in `translations/` are the source of truth; this script
+extracts msgids from the plugin source into `readest.pot` and compiles each
+`.po` to the `.mo` that ships in the zip.
 
 Usage:
     python3 scripts/i18n.py extract        # refresh translations/readest.pot
-    python3 scripts/i18n.py compile        # .po -> .mo for every language
+    python3 scripts/i18n.py compile [LANG ...]  # .po -> .mo (default: every language)
     python3 scripts/i18n.py new LANG       # scaffold translations/LANG.po
 
 Marking strings in the source: wrap user-visible text in `_()` (singular) or
@@ -228,6 +228,8 @@ def parse_po(path):
     parts = None
     field = None
     part = None
+    fuzzy = False
+    next_fuzzy = False
 
     def end_entry():
         nonlocal msgid, msgid_plural, parts, header_text
@@ -237,6 +239,9 @@ def parse_po(path):
             header_text = parts[0] if parts else ''
             header.update(_parse_header(header_text))
         else:
+            # Like msgfmt, a fuzzy translation is treated as untranslated.
+            if fuzzy:
+                parts = [''] * len(parts or [])
             entries.append((msgid, msgid_plural, parts or []))
         msgid = None
         msgid_plural = None
@@ -244,6 +249,8 @@ def parse_po(path):
 
     for lineno, raw in enumerate(lines, 1):
         line = raw.strip()
+        if line.startswith('#,') and 'fuzzy' in line:
+            next_fuzzy = True
         if not line or line.startswith('#'):
             if not line:
                 end_entry()
@@ -273,6 +280,7 @@ def parse_po(path):
         if keyword == 'msgid':
             end_entry()
             msgid, msgid_plural, parts = value, None, None
+            fuzzy, next_fuzzy = next_fuzzy, False
             field = 'msgid'
         elif keyword == 'msgid_plural':
             msgid_plural, field = value, 'msgid_plural'
@@ -345,23 +353,30 @@ def _placeholders(text):
     return sorted(_PLACEHOLDER_RE.findall(text))
 
 
-def cmd_compile():
+def cmd_compile(langs=()):
+    """Compile `langs` (default: every .po) to .mo.
+
+    A catalog with errors gets no .mo, so make keeps it stale and fails again
+    on the next run instead of shipping it. Messages missing from a catalog
+    only warn: calibre shows them in English.
+    """
     pot_path = os.path.join(TRANSLATIONS_DIR, POT_NAME)
     _, _, pot_entries = parse_po(pot_path)
-    expected = {}
-    for msgid, plural, _ in pot_entries:
-        expected[msgid] = plural
+    expected = {msgid for msgid, _, _ in pot_entries}
 
-    problems = []
-    for name in sorted(os.listdir(TRANSLATIONS_DIR)):
-        if not name.endswith('.po'):
-            continue
+    names = [lang + '.po' for lang in langs] or sorted(
+        name for name in os.listdir(TRANSLATIONS_DIR) if name.endswith('.po')
+    )
+    failed = []
+    for name in names:
         lang = name[:-3]
         path = os.path.join(TRANSLATIONS_DIR, name)
         header, header_text, entries = parse_po(path)
+        errors = []
+        warnings = []
         if header.get('Language', lang) != lang:
-            problems.append('%s: header Language %r does not match the file name'
-                            % (name, header.get('Language')))
+            errors.append('header Language %r does not match the file name'
+                          % header.get('Language'))
         nplurals = 2
         forms = header.get('Plural-Forms', '')
         match = re.search(r'nplurals\s*=\s*(\d+)', forms)
@@ -372,49 +387,46 @@ def cmd_compile():
         seen = set()
         untranslated = 0
         for msgid, plural, parts in entries:
-            if msgid == '':
-                continue
             if msgid in seen:
-                problems.append('%s: duplicate msgid %r' % (name, msgid))
+                errors.append('duplicate msgid %r' % msgid)
             seen.add(msgid)
             if plural is None:
-                msgstr = parts[0] if parts else ''
-                if not msgstr:
-                    untranslated += 1
-                if _placeholders(msgid) != _placeholders(msgstr):
-                    problems.append('%s: %r placeholders differ between msgid and msgstr'
-                                    % (name, msgid))
-            else:
-                if len(parts) != nplurals:
-                    problems.append('%s: %r has %d forms, Plural-Forms says %d'
-                                    % (name, msgid, len(parts), nplurals))
-                msgstr = '\x00'.join(parts)
-                if not any(parts):
-                    untranslated += 1
-            catalog[msgid + '\x00' + plural if plural else msgid] = msgstr
+                parts = parts[:1] or ['']
+            elif len(parts) != nplurals:
+                errors.append('%r has %d forms, Plural-Forms says %d'
+                              % (msgid, len(parts), nplurals))
+            # gettext returns an empty msgstr as-is, so leave untranslated
+            # messages out of the .mo and let them fall back to English.
+            if not all(parts):
+                untranslated += 1
+                continue
+            # A form that drops or adds a placeholder raises TypeError at the
+            # `%` that formats it in the plugin.
+            if any(_placeholders(text) != _placeholders(plural or msgid) for text in parts):
+                errors.append('%r placeholders differ between msgid and msgstr' % msgid)
+            catalog[msgid + '\x00' + plural if plural else msgid] = '\x00'.join(parts)
 
-        missing = sorted(set(expected) - seen)
+        missing = sorted(expected - seen)
         if missing:
-            problems.append('%s: %d message(s) missing, first: %r'
-                            % (name, len(missing), missing[0]))
-        extra = sorted(seen - set(expected))
+            warnings.append('%d message(s) missing, first: %r' % (len(missing), missing[0]))
+        extra = sorted(seen - expected)
         if extra:
-            problems.append('%s: %d message(s) not in the .pot, first: %r'
-                            % (name, len(extra), extra[0]))
+            warnings.append('%d message(s) not in the .pot, first: %r' % (len(extra), extra[0]))
+        for warning in warnings:
+            print('warning: %s: %s' % (name, warning))
+        for error in errors:
+            print('error: %s: %s' % (name, error))
+        if errors:
+            failed.append(name)
+            continue
 
-        mo_path = os.path.join(TRANSLATIONS_DIR, lang + '.mo')
-        with open(mo_path, 'wb') as handle:
+        with open(os.path.join(TRANSLATIONS_DIR, lang + '.mo'), 'wb') as handle:
             handle.write(generate_mo(catalog))
-        state = '%d messages, %d untranslated' % (len(seen), untranslated)
-        print('%s.mo: %s' % (lang, state))
+        print('%s.mo: %d messages, %d untranslated' % (lang, len(seen), untranslated))
 
-    if problems:
-        print('')
-        for problem in problems:
-            print('warning: %s' % problem)
-        raise SystemExit(1)
-    print('compiled %d language(s)' % len([n for n in os.listdir(TRANSLATIONS_DIR)
-                                           if n.endswith('.po')]))
+    if failed:
+        raise SystemExit('not compiled: %s' % ', '.join(failed))
+    print('compiled %d language(s)' % len(names))
 
 
 def cmd_new(lang):
@@ -448,7 +460,7 @@ def main(argv):
     if command == 'extract':
         cmd_extract()
     elif command == 'compile':
-        cmd_compile()
+        cmd_compile(argv[2:])
     else:
         if len(argv) != 3:
             print('usage: i18n.py new LANG')

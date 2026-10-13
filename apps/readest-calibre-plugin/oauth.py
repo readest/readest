@@ -12,6 +12,7 @@ fragment as query parameters to /callback. Standard-library only.
 
 import threading
 import urllib.parse
+from html import escape
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
 try:
@@ -24,17 +25,17 @@ except NameError:
 PROVIDERS = ('google', 'apple', 'github', 'discord')
 
 
-def _page(title, body, extra=''):
+def _page(title, text, script=''):
     return (
-        '<!DOCTYPE html>\n<html><head><title>%s</title></head><body>\n%s%s</body></html>'
-        % (title, body, extra)
+        '<!DOCTYPE html>\n<html><head><title>%s</title></head><body>\n<p>%s</p>%s</body></html>'
+        % (escape(title), escape(text), script)
     )
 
 
 def landing_page():
     return _page(
         _('Readest Login'),
-        '<p>%s</p>' % _('Completing login…'),
+        _('Completing login…'),
         '<script>\n'
         "  var hash = window.location.hash.replace(/^#/, '');\n"
         "  window.location.replace('/callback?' + hash);\n"
@@ -45,7 +46,7 @@ def landing_page():
 def done_page():
     return _page(
         _('Readest Login'),
-        '<p>%s</p>' % _('Login complete. You can close this tab and return to calibre.'),
+        _('Login complete. You can close this tab and return to calibre.'),
     )
 
 

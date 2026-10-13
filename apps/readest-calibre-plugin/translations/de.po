@@ -267,3 +267,81 @@ msgstr "Readest-Speicherkontingent überschritten — Upload gestoppt."
 #: worker.py:262
 msgid "Session expired — please log in again."
 msgstr "Sitzung abgelaufen — bitte melden Sie sich erneut an."
+
+#: api.py:243
+msgid "Login failed"
+msgstr "Anmeldung fehlgeschlagen"
+
+#: api.py:254 api.py:272 api.py:286
+msgid "Not logged in"
+msgstr "Nicht angemeldet"
+
+#: api.py:263
+msgid "Session expired, please log in again"
+msgstr "Sitzung abgelaufen, bitte melden Sie sich erneut an"
+
+#: api.py:312
+msgid "Not authenticated"
+msgstr "Nicht authentifiziert"
+
+#: api.py:318
+msgid "Request failed (%s)"
+msgstr "Anfrage fehlgeschlagen (%s)"
+
+#: api.py:402
+msgid "Upload failed (%s)"
+msgstr "Hochladen fehlgeschlagen (%s)"
+
+#: worker.py:57
+msgid "%d uploaded"
+msgid_plural "%d uploaded"
+msgstr[0] "%d hochgeladen"
+msgstr[1] "%d hochgeladen"
+
+#: worker.py:58
+msgid "%d replaced"
+msgid_plural "%d replaced"
+msgstr[0] "%d ersetzt"
+msgstr[1] "%d ersetzt"
+
+#: worker.py:59
+msgid "%d updated"
+msgid_plural "%d updated"
+msgstr[0] "%d aktualisiert"
+msgstr[1] "%d aktualisiert"
+
+#: worker.py:60
+msgid "%d up to date"
+msgid_plural "%d up to date"
+msgstr[0] "%d aktuell"
+msgstr[1] "%d aktuell"
+
+#: worker.py:61
+msgid "%d failed"
+msgid_plural "%d failed"
+msgstr[0] "%d fehlgeschlagen"
+msgstr[1] "%d fehlgeschlagen"
+
+#: worker.py:76
+msgid "%d in Readest"
+msgid_plural "%d in Readest"
+msgstr[0] "%d in Readest"
+msgstr[1] "%d in Readest"
+
+#: worker.py:77
+msgid "%d metadata differs"
+msgid_plural "%d metadata differs"
+msgstr[0] "%d mit abweichenden Metadaten"
+msgstr[1] "%d mit abweichenden Metadaten"
+
+#: worker.py:78
+msgid "%d out of date"
+msgid_plural "%d out of date"
+msgstr[0] "%d veraltet"
+msgstr[1] "%d veraltet"
+
+#: worker.py:79
+msgid "%d not in Readest"
+msgid_plural "%d not in Readest"
+msgstr[0] "%d nicht in Readest"
+msgstr[1] "%d nicht in Readest"
