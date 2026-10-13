@@ -8,7 +8,7 @@
  */
 
 import { describe, it, expect, afterEach, vi } from 'vitest';
-import { render, cleanup } from '@testing-library/react';
+import { render, cleanup, fireEvent } from '@testing-library/react';
 import { page } from 'vitest/browser';
 
 vi.mock('@/hooks/useTranslation', () => ({
@@ -62,26 +62,37 @@ describe('Dialog on a phone', () => {
     expect(visibleCloseButtons()).toHaveLength(0);
   });
 
-  it('keeps a content-height sheet short when a drag asks it for full height', async () => {
-    // The drag handlers set an inline height of 100%; the caller's
-    // !important height wins, so the sheet never expands to need the back
-    // button or the status bar padding.
+  it('keeps a content-height sheet short after it is dragged up', async () => {
+    // Releasing an upward drag takes a sheet to full height: the handlers set
+    // an inline height of 100%, which the caller's !important height outranks,
+    // so the sheet stays short and needs neither the back button nor the
+    // status bar padding.
     await page.viewport(390, 844);
+    const onClose = vi.fn();
     render(
       <Dialog
         isOpen
         title='Delete bookshelf?'
         boxClassName='h-auto! max-h-[80vh]!'
-        onClose={vi.fn()}
+        onClose={onClose}
       >
         <p>Your books will stay in the library.</p>
       </Dialog>,
     );
     await expect.poll(() => getComputedStyle(box()).paddingTop).toBe('0px');
-    box().style.height = '100%';
+    const handle = document.querySelector('.drag-handle') as HTMLElement;
+    const y = handle.getBoundingClientRect().top + 4;
+    fireEvent.mouseDown(handle, { clientY: y });
+    fireEvent.mouseMove(window, { clientY: y - 300 });
+    fireEvent.mouseUp(window, { clientY: y - 300 });
+
+    await expect.poll(() => box().style.height).toBe('100%');
+    expect(onClose).not.toHaveBeenCalled();
     expect(box().offsetHeight).toBeLessThan(
       (document.querySelector('dialog') as HTMLElement).clientHeight,
     );
+    expect(getComputedStyle(box()).paddingTop).toBe('0px');
+    expect(visibleCloseButtons()).toHaveLength(0);
   });
 
   it('has no back button on a sheet snapped short of the screen', async () => {
