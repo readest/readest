@@ -24,6 +24,7 @@ describe('NotebookTabNavigation', () => {
   afterEach(cleanup);
   beforeEach(() => {
     mocks.appService.appPlatform = 'web';
+    mocks.settings.aiSettings.enabled = true;
     mocks.settings.aiSettings.reedy.enabled = true;
   });
 
@@ -73,5 +74,15 @@ describe('NotebookTabNavigation', () => {
 
     expect(screen.queryByRole('tab', { name: 'X-Ray' })).toBeNull();
     await waitFor(() => expect(onTabChange).toHaveBeenCalledWith('ai'));
+  });
+
+  it('returns to notes when AI is disabled', async () => {
+    mocks.settings.aiSettings.enabled = false;
+    const onTabChange = vi.fn();
+
+    render(<NotebookTabNavigation idPrefix='notebook' activeTab='ai' onTabChange={onTabChange} />);
+
+    expect(screen.queryByRole('tablist')).toBeNull();
+    await waitFor(() => expect(onTabChange).toHaveBeenCalledWith('notes'));
   });
 });

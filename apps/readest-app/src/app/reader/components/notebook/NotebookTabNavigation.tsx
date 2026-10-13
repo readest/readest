@@ -29,6 +29,7 @@ const NotebookTabNavigation: React.FC<NotebookTabNavigationProps> = ({
 
   useEffect(() => {
     if (activeTab === 'xray' && !xrayEnabled) onTabChange(aiEnabled ? 'ai' : 'notes');
+    else if (activeTab === 'ai' && !aiEnabled) onTabChange('notes');
   }, [activeTab, aiEnabled, onTabChange, xrayEnabled]);
 
   const tabs: NotebookTab[] = aiEnabled
