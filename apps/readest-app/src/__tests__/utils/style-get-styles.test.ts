@@ -479,6 +479,42 @@ describe('getLayoutStyles branches (via getStyles)', () => {
 });
 
 // ---------------------------------------------------------------------------
+// CJK widow/orphan lift under Use Book Layout
+// ---------------------------------------------------------------------------
+// The paragraph chunk lifts widows/orphans to 1 for CJK via `:lang(zh)…`, but
+// Use Book Layout skips that chunk wholesale and takes the lift with it — a
+// CJK book mislabeled `en` (#6672) then falls back to the UA default of 2 and
+// the page-bottom gap returns. A zero-specificity root fallback ships in
+// every mode: inert where the chunk is present, and scoped to `html:lang()`
+// so book-declared values on html/body reach the paragraphs by inheritance
+// instead of being stomped by a direct declaration (which beats any inherited
+// value regardless of specificity).
+describe('CJK widow/orphan lift (via getStyles)', () => {
+  const theme = makeThemeCode();
+  const whereRule = (css: string) =>
+    css.match(/:where\(html:lang\(zh\), html:lang\(ja\), html:lang\(ko\)\)\s*\{([^}]*)\}/)?.[1] ??
+    '';
+
+  it('ships the zero-specificity fallback even when Use Book Layout skips the paragraph chunk', () => {
+    const css = getStyles(makeViewSettings({ useBookLayout: true }), theme);
+    // the chunk's own class-strength lift is gone…
+    expect(css).not.toMatch(/(^|\n)\s*:lang\(zh\), :lang\(ja\), :lang\(ko\)\s*\{/);
+    // …but the fallback itself survives at zero specificity, on the roots only
+    const rule = whereRule(css);
+    expect(rule).toContain('widows: 1');
+    expect(rule).toContain('orphans: 1');
+  });
+
+  it('keeps the chunk lift and the zero-specificity fallback when Use Book Layout is off', () => {
+    const css = getStyles(makeViewSettings({ useBookLayout: false }), theme);
+    expect(css).toMatch(/(^|\n)\s*:lang\(zh\), :lang\(ja\), :lang\(ko\)\s*\{/);
+    const rule = whereRule(css);
+    expect(rule).toContain('widows: 1');
+    expect(rule).toContain('orphans: 1');
+  });
+});
+
+// ---------------------------------------------------------------------------
 // getColorStyles branches
 // ---------------------------------------------------------------------------
 describe('getColorStyles branches (via getStyles)', () => {
