@@ -154,6 +154,24 @@ describe('NativeAppService.saveFile share gating', () => {
     expect(mkdirMock).toHaveBeenCalled();
   });
 
+  // Regression (#6713): Android 10 resolves Tauri's Temp dir to the
+  // unwritable /data/local/tmp, so Temp files must live in the app cache.
+  test('stages Temp files in the app cache on Android', async () => {
+    const service = await loadServiceWithOS('android');
+    const bytes = new Uint8Array([1, 2, 3]).buffer;
+    await service.saveFile('image.png', bytes, { share: true, mimeType: 'image/png' });
+
+    expect(shareFileMock.mock.calls[0]![0]).toBe('/tmp/app-cache/shared/image.png');
+  });
+
+  test('keeps Temp files in the temp dir on iOS', async () => {
+    const service = await loadServiceWithOS('ios');
+    const bytes = new Uint8Array([1, 2, 3]).buffer;
+    await service.saveFile('image.png', bytes, { share: true, mimeType: 'image/png' });
+
+    expect(shareFileMock.mock.calls[0]![0]).toBe('/tmp/shared/image.png');
+  });
+
   // The book "Send" flow hands an already-on-disk file straight to the share
   // sheet via `filePath` and passes `null` content so nothing gets re-buffered
   // into memory. The file at `filePath` must be shared verbatim without any
