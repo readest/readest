@@ -56,7 +56,8 @@ Fixing locally, in worktrees, needs no approval.
 
 Start each tick by querying `drafts` for `status == "approved"`. A card
 still in `sending` means a run stopped mid-send: don't send it again, report
-it. For each approved card:
+it. Cards with `kind: "social"` belong to the social loop: skip them. For
+each other approved card:
 
 1. Re-read the thread. Its state first: a PR card (`kind: "pr"`) whose PR
    is merged or closed is dropped (`status: "dropped"`, `staleReason` naming
