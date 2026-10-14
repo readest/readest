@@ -51,8 +51,8 @@ Put it in a bucket when the evidence supports it:
 Look ahead past the window's end for follow-ups; look back for older lessons
 the window repeats.
 
-Also read the Reply Desk (https://claude.ai/artifact/1HeqnCW2ey2T7BsE17NVLg,
-`drafts` decided in the window): each `note`, each `edited` that differs from
+Also read the Reply Desk (`replyDesk` in the loops' `config.json`, see the
+triage skill; `drafts` decided in the window): each `note`, each `edited` that differs from
 `draft`, and each dropped draft is the maintainer correcting the loop. The
 same correction on separate days is a lesson like any other.
 
