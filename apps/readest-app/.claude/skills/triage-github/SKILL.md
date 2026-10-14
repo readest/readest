@@ -210,8 +210,9 @@ drafts; the nightly review turns repeated feedback into lessons.
 
 One document per thread, id = the thread number (`pr-<N>` and
 `foliate-js-<N>` for merge cards; a newer draft for the same
-thread replaces a `pending` or `stale` one; never touch an `approved` or
-`sent` one). Fields: `repo` (default `readest/readest`), `number`, `kind`
+thread replaces a `pending` or `stale` one; never touch an `approved`,
+`sending` or `sent` one: a follow-up after a sent card gets id `<N>-2`,
+`<N>-3`, …). Fields: `repo` (default `readest/readest`), `number`, `kind`
 (`issue`|`pr`), `title`, `url`,
 `author`, `lastComment` `{author, at, text}` (excerpt), `verdict`,
 `verdictLabel`, `summary` (one line), `decision` (what the maintainer must
