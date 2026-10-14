@@ -29,26 +29,28 @@ export class EdgeSpeechProvider implements SpeechProvider {
   // fallback policy (auth state lives there); the provider just takes the
   // protocol to probe with.
   async init(protocol: EDGE_TTS_PROTOCOL = 'wss'): Promise<boolean> {
-    this.#protocol = protocol;
-    this.#tts = new EdgeSpeechTTS(protocol);
+    const tts = new EdgeSpeechTTS(protocol);
+    if (!this.#tts) {
+      this.#tts = tts;
+      this.#protocol = protocol;
+    }
     let timeout: ReturnType<typeof setTimeout> | undefined;
     try {
       // Initialization gates every engine and the player controls. In
       // particular, a native WebSocket can hang before its audio timer starts.
-      return await Promise.race([
-        this.#tts
-          .create({
-            lang: 'en',
-            text: 'test',
-            voice: 'en-US-AriaNeural',
-            rate: 1.0,
-            pitch: 1.0,
-          })
+      const available = await Promise.race([
+        tts
+          .create({ lang: 'en', text: 'test', voice: 'en-US-AriaNeural', rate: 1.0, pitch: 1.0 })
           .then(() => true),
         new Promise<false>((resolve) => {
           timeout = setTimeout(() => resolve(false), 5000);
         }),
       ]);
+      if (available) {
+        this.#tts = tts;
+        this.#protocol = protocol;
+      }
+      return available;
     } catch {
       return false;
     } finally {
@@ -79,26 +81,34 @@ export class EdgeSpeechProvider implements SpeechProvider {
       });
       return { audio: data, boundaries };
     } catch (err) {
+      let failure = err;
       // The startup probe may pass even when a later WebSocket fails.
       // Re-synthesize that same sentence through the authenticated route.
       if (!signal.aborted && isWss && this.canUseHttps()) {
-        this.#httpsFallback ??= this.init('https');
+        this.#httpsFallback ??= this.init('https').then((available) => {
+          if (!available) this.#httpsFallback = null;
+          return available;
+        });
         if (await this.#httpsFallback) {
-          const { data, boundaries } = await this.#tts!.createAudioData({
-            lang: req.lang,
-            text: req.text,
-            voice: req.voice,
-            rate: 1.0,
-            pitch: req.pitch,
-          });
-          return { audio: data, boundaries };
+          try {
+            const { data, boundaries } = await this.#tts!.createAudioData({
+              lang: req.lang,
+              text: req.text,
+              voice: req.voice,
+              rate: 1.0,
+              pitch: req.pitch,
+            });
+            return { audio: data, boundaries };
+          } catch (fallbackError) {
+            failure = fallbackError;
+          }
         }
       }
       // Permanent for this sentence: Edge answered without audio frames.
-      if (err instanceof Error && err.message === 'No audio data received.') {
-        throw new SpeechSynthesisPermanentError(err.message, { cause: err });
+      if (failure instanceof Error && failure.message === 'No audio data received.') {
+        throw new SpeechSynthesisPermanentError(failure.message, { cause: failure });
       }
-      throw err;
+      throw failure;
     }
   }
 

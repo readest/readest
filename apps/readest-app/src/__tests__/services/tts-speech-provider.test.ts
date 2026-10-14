@@ -6,6 +6,7 @@ const h = vi.hoisted(() => ({
   createAudioData: vi.fn(),
   create: vi.fn(),
   lastConstructedProtocol: '' as string,
+  audioProtocols: [] as string[],
 }));
 
 vi.mock('@/libs/edgeTTS', async (importOriginal) => {
@@ -17,11 +18,14 @@ vi.mock('@/libs/edgeTTS', async (importOriginal) => {
         { id: 'en-US-AriaNeural', name: 'Aria', lang: 'en-US' },
         { id: 'fr-FR-DeniseNeural', name: 'Denise', lang: 'fr-FR' },
       ];
-      constructor(protocol: string) {
+      constructor(private readonly protocol: string) {
         h.lastConstructedProtocol = protocol;
       }
       create = h.create;
-      createAudioData = h.createAudioData;
+      createAudioData = (...args: Parameters<typeof h.createAudioData>) => {
+        h.audioProtocols.push(this.protocol);
+        return h.createAudioData(...args);
+      };
     },
   };
 });
@@ -32,6 +36,7 @@ import { SpeechSynthesisPermanentError } from '@/services/tts/providers/types';
 describe('EdgeSpeechProvider', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    h.audioProtocols.length = 0;
     h.createAudioData.mockResolvedValue({
       data: new ArrayBuffer(4),
       boundaries: [{ offset: 0, duration: 1_000_000, text: 'hello' }],
@@ -142,6 +147,39 @@ describe('EdgeSpeechProvider', () => {
       ),
     ).rejects.toThrow('WebSocket closed before audio completed.');
     expect(h.create).toHaveBeenCalledTimes(1);
+  });
+
+  test('keeps WSS after a failed HTTPS probe and retries the probe later', async () => {
+    const provider = new EdgeSpeechProvider(() => true);
+    await provider.init();
+    h.create.mockRejectedValueOnce(new Error('HTTPS unavailable'));
+    h.createAudioData
+      .mockRejectedValueOnce(new Error('WSS unavailable'))
+      .mockRejectedValueOnce(new Error('WSS unavailable'));
+    const req = { lang: 'en', text: 'keep reading', voice: 'en-US-AriaNeural', pitch: 1.0 };
+    const signal = new AbortController().signal;
+
+    await expect(provider.synthesize(req, signal)).rejects.toThrow('WSS unavailable');
+    await expect(provider.synthesize(req, signal)).resolves.toMatchObject({
+      audio: expect.any(ArrayBuffer),
+    });
+    expect(h.create).toHaveBeenCalledTimes(3);
+    expect(h.audioProtocols).toEqual(['wss', 'wss', 'https']);
+  });
+
+  test('classifies a no-audio response from the HTTPS retry as permanent', async () => {
+    const provider = new EdgeSpeechProvider(() => true);
+    await provider.init();
+    h.createAudioData
+      .mockRejectedValueOnce(new Error('WSS unavailable'))
+      .mockRejectedValueOnce(new Error('No audio data received.'));
+
+    await expect(
+      provider.synthesize(
+        { lang: 'en', text: 'keep reading', voice: 'en-US-AriaNeural', pitch: 1.0 },
+        new AbortController().signal,
+      ),
+    ).rejects.toBeInstanceOf(SpeechSynthesisPermanentError);
   });
 
   test('exposes the static Edge voice list', async () => {
