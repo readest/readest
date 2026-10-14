@@ -16,20 +16,75 @@ Read these first, every tick (they change while the loop runs):
 [LESSONS.md](../../../LESSONS.md), [acceptance](../../rules/acceptance.md)
 and [contributors](../../../docs/contributors.md).
 
+Nothing reaches GitHub without the maintainer's approval. Every comment,
+review, close and merge below is drafted to the **Reply Desk**
+(https://claude.ai/artifact/1HeqnCW2ey2T7BsE17NVLg, collection `drafts`,
+through the `ArtifactData` tool) and done only after it is approved there.
+Fixing locally, in worktrees, needs no approval.
+
+## Send what was approved
+
+Start each tick by querying `drafts` for `status == "approved"`. For each:
+
+1. Re-read the thread. If someone other than us commented after the draft's
+   `createdAt`, don't post: set `status: "stale"`, a one-line `staleReason`
+   naming the new comment, a fresh `draft` that answers it, `edited: null`,
+   and a new `createdAt`. It goes back to the maintainer.
+2. If `sendWith` is `fix-pr`, push the `fix.branch` and open its PR first,
+   then add `Fix: #<PR>` to the end of the reply.
+3. Post `edited ?? draft` exactly, from a file: `gh issue comment N
+   --body-file`, `gh pr comment`, or `gh pr review N --request-changes
+   --body-file` when `verdict` is `request-changes`. Then do `then`: `close`
+   closes the thread; `merge` runs `gh pr merge N --squash
+   --match-head-commit <headSha>`, and fails safely if the head moved.
+4. Update the draft: `status: "sent"`, `sentAt`, `sentUrl` (the comment's
+   URL). Pin every write with `if_version`.
+
+A non-empty `note`, and any difference between `draft` and `edited`, is the
+maintainer's feedback on how the loop writes. Follow it in this tick's new
+drafts; the nightly review turns repeated feedback into lessons.
+
+## Drafting
+
+One document per thread, id = the thread number (a newer draft for the same
+thread replaces a `pending` or `stale` one; never touch an `approved` or
+`sent` one). Fields: `number`, `kind` (`issue`|`pr`), `title`, `url`,
+`author`, `lastComment` `{author, at, text}` (excerpt), `verdict`,
+`verdictLabel`, `summary` (one line), `decision` (what the maintainer must
+decide, or null), `fix` (`{branch, commit, run[], notRun[]}` or null),
+`sendWith` (`next-tick`|`fix-pr`), `then` (`close`|`merge`|null),
+`headSha` (for `merge`), `draft`, `edited: null`, `note: ""`,
+`status: "pending"`, `order`, `createdAt`. Write all of a tick's drafts in
+one `batch`. The replies are posted as the maintainer: never say "the
+maintainer will decide"; say what happens next in the first person plural.
+
 ## 0. What changed
 
 State lives in `${XDG_STATE_HOME:-$HOME/.local/state}/readest-loops/github.json`
-(`{"since": "<ISO time>"}`). Missing means the last 24 hours. Record the time
+(`{"since": "<ISO time>"}`). Missing means the last 3 days. Record the time
 you start, and write it back only when the tick finishes.
 
+Only threads created in the last 3 days are the loop's. Older ones are the
+maintainer's backlog, mostly large feature requests: leave them alone even
+when they get a new comment.
+
 ```bash
-gh search issues --repo readest/readest --include-prs --updated ">=$SINCE" --limit 100 \
-  --json number,title,isPullRequest,state,author,updatedAt,url
+CREATED=$(date -u -d '3 days ago' +%Y-%m-%d)
+gh search issues --repo readest/readest --include-prs --created ">=$CREATED" \
+  --updated ">=$SINCE" --limit 100 \
+  --json number,title,isPullRequest,state,author,createdAt,updatedAt,url
 ```
 
-Skip a thread whose newest comment is already ours and has no reply. Read every
-other thread to its last comment before acting: a reporter may have put the
-request on hold, answered a question or said a fix didn't work.
+Skip a closed thread, and one whose newest comment is already ours and has no
+reply. Read every other thread to its last comment before acting: a reporter
+may have put the request on hold, answered a question or said a fix didn't
+work. Use `gh issue view N --json body,comments` and `gh pr view N --json ...`
+(plain `gh issue view` fails on the deprecated Projects-classic field), and
+`gh api graphql` for a PR's `reviewThreads` to see which findings are still
+unresolved.
+
+Hand independent issues to parallel forks, each in its own worktree and on
+its own dev-server port.
 
 ## 1. Issues
 
@@ -50,7 +105,10 @@ Decide one of these for each issue, then act:
    writing code (LESSONS.md, "Reading the report"). If you can't, say what you
    tried and ask; don't ship a guess.
 2. `pnpm worktree:new fix/<slug>` — never work in the main checkout; other
-   sessions share it.
+   sessions share it. If the script stops early, finish by hand: restore
+   `src-tauri/gen/android` with `git checkout --`, and copy `public/vendor`
+   and `packages/simplecc-wasm/dist` from the main checkout before
+   `pnpm lint`.
 3. Follow `.agents/rules/test-first.md`: a failing test first. Grep for every
    sibling of the bug and fix them in the same change.
 4. Meet every item in [acceptance](../../rules/acceptance.md); list what you
@@ -95,6 +153,7 @@ acceptance.md), a draft, or one whose own new test fails.
 
 ## 3. Report
 
-End the tick with a short list: what was fixed (PR links), merged, closed,
-asked, and anything waiting for the maintainer (product decisions, harm stops,
-proposed blocks). Then write the new `since`.
+End the tick with a short list: what was sent from the desk, what was fixed
+locally, how many drafts now wait on the desk, and anything waiting for the
+maintainer (product decisions, harm stops, proposed blocks). Then write the
+new `since`.

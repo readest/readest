@@ -44,6 +44,11 @@ evidence supports it:
 Look ahead past the window's end for follow-ups; look back for older lessons
 the window repeats.
 
+Also read the Reply Desk (https://claude.ai/artifact/1HeqnCW2ey2T7BsE17NVLg,
+`drafts` decided in the window): each `note`, each `edited` that differs from
+`draft`, and each dropped draft is the maintainer correcting the loop. The
+same correction on separate days is a lesson like any other.
+
 ## 2. Write the lessons
 
 Each lesson in LESSONS.md is a one-sentence rule, then the evidence:
