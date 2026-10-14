@@ -111,7 +111,9 @@ draft) and each foliate-js PR it depends on (all of them by `$OWNER`):
    only if `git status --porcelain --ignore-submodules=all` prints nothing
    and its `HEAD` is the merged PR's head sha. Then `pnpm worktree:rm
    <branch>` and `git branch -D <branch>`. A worktree with changes or extra
-   commits is kept and listed in the report. Then check every commit's author
+   commits is kept and listed in the report.
+
+   Still open: check every commit's author
    (`gh api repos/<repo>/pulls/N/commits --jq '.[].author.login'`): one
    that isn't `$OWNER` stops here (see Trust boundary).
 
