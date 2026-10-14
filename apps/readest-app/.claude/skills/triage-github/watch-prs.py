@@ -88,7 +88,7 @@ def check(repo, n, me, seen):
         if st["context"] == "CodeRabbit" and st["state"] != "pending" and f"cr:{head}" not in done:
             done.add(f"cr:{head}")
             if not first:
-                emit(f"CODERABBIT_DONE {key} head={head[:9]} {st['state']}: {st.get('description', '')[:80]}")
+                emit(f"CODERABBIT_DONE {key} head={head[:9]} {st['state']}: {(st.get('description') or '')[:80]}")
 
     items = [("REVIEW", r) for r in gh(f"repos/{repo}/pulls/{n}/reviews?per_page=100")]
     items += [("REVIEW_COMMENT", c) for c in gh(f"repos/{repo}/pulls/{n}/comments?per_page=100")]
@@ -113,7 +113,12 @@ def check(repo, n, me, seen):
 
 def main():
     os.makedirs(STATE, exist_ok=True)
-    me = subprocess.run(["gh", "api", "user", "--jq", ".login"], capture_output=True, text=True).stdout.strip()
+    who = subprocess.run(["gh", "api", "user", "--jq", ".login"], capture_output=True, text=True, timeout=60)
+    me = who.stdout.strip()
+    if who.returncode != 0 or not me:
+        # Without the owner's login every PR would look foreign; stop rather than mislabel them.
+        emit(f"WATCH_ERROR cannot read the gh login: {(who.stderr.strip().splitlines() or ['no output'])[0][:200]}")
+        sys.exit(1)
     once = "--once" in sys.argv
     errors = {}
     while True:
