@@ -108,12 +108,11 @@ draft) and each foliate-js PR it depends on (all of them by `$OWNER`):
    merged it and when), take it off the watch list, and skip the steps
    below. A merged PR also gets its worktree removed, so they don't pile
    up: only a worktree the loop made (the `fix.branch` of a sent card),
-   only if `git status --porcelain --ignore-submodules=all` prints nothing,
-   its `HEAD` is the merged PR's head sha, and no submodule holds local work
-   (`git submodule status --recursive` shows no line starting with `+`, and
-   `git submodule foreach --quiet --recursive 'git status --porcelain'`
-   prints nothing): a submodule commit or edit, like a foliate-js fix, would
-   be lost. Ignored files are expected (node_modules, copied .env files,
+   only if `git status --porcelain` prints nothing (it also reports a
+   submodule at another commit, a staged submodule pointer and changes
+   inside a submodule, so a foliate-js fix can't be lost; don't pass
+   `--ignore-submodules`) and its `HEAD` is the merged PR's head sha.
+   Ignored files are expected (node_modules, copied .env files,
    public/vendor) and don't count. Then `pnpm worktree:rm
    <branch>` and `git branch -D <branch>`. A worktree with changes or extra
    commits is kept and listed in the report.
