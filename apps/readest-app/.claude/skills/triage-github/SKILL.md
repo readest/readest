@@ -67,7 +67,9 @@ draft) and each foliate-js PR it depends on:
      `chore(deps): move foliate-js to the merged readest/foliate-js#N`, and
      push. Edit the PR body's first line to `Depends on
      readest/foliate-js#N (merged, submodule at <short sha>).` The bump is
-     part of the reviewed change, so it needs no card of its own.
+     part of the reviewed change, so it needs no card of its own. (`gh pr
+     edit` fails on the Projects-classic field; edit a body with `gh api -X
+     PATCH repos/<repo>/pulls/N -F body=@file`.)
    - Closed without merging: stop, and list it for the maintainer.
 2. **CI.** Read the check runs on the current head from the API
    (`gh api repos/<repo>/commits/<head>/check-runs`; `gh pr checks --json`
