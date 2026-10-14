@@ -71,9 +71,13 @@ when they get a new comment.
 ```bash
 CREATED=$(date -u -d '3 days ago' +%Y-%m-%d)
 gh search issues --repo readest/readest --include-prs --created ">=$CREATED" \
-  --updated ">=$SINCE" --limit 100 \
+  --updated ">=${SINCE%%T*}" --limit 100 \
   --json number,title,isPullRequest,state,author,createdAt,updatedAt,url
 ```
+
+GitHub search takes dates only: a full timestamp in `--updated` silently
+matches nothing. Filter `updatedAt >= SINCE` on the result, and ignore an
+update that is only our own comment.
 
 Skip a closed thread, and one whose newest comment is already ours and has no
 reply. Read every other thread to its last comment before acting: a reporter
