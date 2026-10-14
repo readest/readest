@@ -182,10 +182,13 @@ const FoliateViewer: React.FC<{
   // open, so listeners left on its transformTarget would keep the closed view,
   // its iframes and their listeners alive, one more set per open (#6710).
   const removeTransformListenersRef = useRef<(() => void) | null>(null);
+  const unmountedRef = useRef(false);
 
   // A pending anti-flash timer must not fire setNavigating on an unmounted component.
   useEffect(() => {
+    unmountedRef.current = false;
     return () => {
+      unmountedRef.current = true;
       removeTransformListenersRef.current?.();
       if (navSpinnerTimerRef.current) clearTimeout(navSpinnerTimerRef.current);
       if (librarySearchHighlightTimerRef.current) {
@@ -807,6 +810,8 @@ const FoliateViewer: React.FC<{
         book.transformTarget?.removeEventListener('load', handleTransformLoad);
         book.transformTarget?.removeEventListener('data', handleTransformData);
       };
+      // The reader can close while view.open() is pending; its cleanup has run.
+      if (unmountedRef.current) removeTransformListenersRef.current();
       view.renderer.setStyles?.(getStyles(viewSettings, undefined, getLoadedFonts()));
       applyTranslationStyle(viewSettings);
 

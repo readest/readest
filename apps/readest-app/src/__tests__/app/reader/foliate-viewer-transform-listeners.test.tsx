@@ -3,8 +3,9 @@ import { expect, it, vi } from 'vitest';
 import type { ComponentProps } from 'react';
 import FoliateViewer from '@/app/reader/components/FoliateViewer';
 
-const { readerState } = vi.hoisted(() => {
+const { readerState, openGate } = vi.hoisted(() => {
   return {
+    openGate: { pending: null as Promise<void> | null, started: false },
     readerState: {
       setProgress: vi.fn(),
       getViewState: () => ({}),
@@ -41,6 +42,8 @@ vi.mock('@/types/view', () => ({
     return Object.assign(view, {
       open: async (book: unknown) => {
         view.book = book;
+        openGate.started = true;
+        await openGate.pending;
       },
       init: async () => {},
       goToFraction: async () => {},
@@ -96,7 +99,7 @@ vi.mock('@/app/reader/components/TableViewer', () => ({ default: () => null }));
 // #6710: the book document outlives the reader (bookDataStore caches it for
 // the next open), so a listener the view adds to its transformTarget keeps
 // that closed view, its iframes and their listeners alive, one more per open.
-it('removes its transformTarget listeners when the reader closes', async () => {
+function setup() {
   const transformTarget = new EventTarget();
   const live = new Set<EventListenerOrEventListenerObject>();
   const add = transformTarget.addEventListener.bind(transformTarget);
@@ -116,9 +119,29 @@ it('removes its transformTarget listeners when the reader closes', async () => {
     gridInsets: { top: 0, right: 0, bottom: 0, left: 0 },
     contentInsets: { top: 0, right: 0, bottom: 0, left: 0 },
   } as unknown as ComponentProps<typeof FoliateViewer>;
+  return { live, props };
+}
 
+it('removes its transformTarget listeners when the reader closes', async () => {
+  openGate.pending = null;
+  const { live, props } = setup();
   const { unmount } = render(<FoliateViewer {...props} />);
   await waitFor(() => expect(live.size).toBeGreaterThan(0));
   unmount();
+  expect(live.size).toBe(0);
+});
+
+it('leaves no transformTarget listeners when the reader closes while the book is opening', async () => {
+  let finishOpen = () => {};
+  openGate.pending = new Promise<void>((resolve) => {
+    finishOpen = resolve;
+  });
+  openGate.started = false;
+  const { live, props } = setup();
+  const { unmount } = render(<FoliateViewer {...props} />);
+  await waitFor(() => expect(openGate.started).toBe(true));
+  unmount();
+  finishOpen();
+  await new Promise((resolve) => setTimeout(resolve, 0));
   expect(live.size).toBe(0);
 });
