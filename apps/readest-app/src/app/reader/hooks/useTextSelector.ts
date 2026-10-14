@@ -19,6 +19,7 @@ import {
   rangeFromAnchorToPoint,
   repairJumpedSelectionRange,
   TextSelection,
+  trimNoteMarkersFromWordRange,
   trimRangeWhitespaceAroundPoint,
 } from '@/utils/sel';
 import { Corner, useAutoPageTurn } from './useAutoPageTurn';
@@ -138,6 +139,15 @@ export const useTextSelector = (
   // the finger position the Android hyphen repair rebuilds from.
   const pointerPos = useRef<{ x: number; y: number } | null>(null);
   const mouseDoubleClickRef = useRef<{ x: number; y: number; moved: boolean } | null>(null);
+  // A touch press that starts with nothing selected and doesn't move is a
+  // long-press: the selection it leaves is the browser's word selection.
+  const touchPressRef = useRef<{ x: number; y: number; moved: boolean } | null>(null);
+  // The live range a word gesture normalized. Re-applying it fires a
+  // selectionchange that must publish the same normalized selection.
+  const wordGestureRef = useRef<{
+    range: Range;
+    trimPoint?: { node: Node; offset: number } | null;
+  } | null>(null);
 
   // Android hyphen selection-bounds bug (#1553): the selection anchor captured
   // at the first selectionchange of a touch gesture, plus whether that initial
@@ -470,9 +480,25 @@ export const useTextSelector = (
     rebuildRange = false,
     handlesSuppressed = false,
     trimPoint?: { node: Node; offset: number } | null,
+    wordGesture = false,
   ) => {
     isTextSelected.current = true;
     const liveRange = sel.getRangeAt(0);
+    const lastGesture = wordGestureRef.current;
+    if (wordGesture) {
+      wordGestureRef.current = { range: liveRange.cloneRange(), trimPoint };
+    } else if (
+      lastGesture &&
+      liveRange.startContainer === lastGesture.range.startContainer &&
+      liveRange.startOffset === lastGesture.range.startOffset &&
+      liveRange.endContainer === lastGesture.range.endContainer &&
+      liveRange.endOffset === lastGesture.range.endOffset
+    ) {
+      trimPoint = lastGesture.trimPoint;
+      wordGesture = true;
+    } else {
+      wordGestureRef.current = null;
+    }
     if (rebuildRange) {
       sel.removeAllRanges();
       sel.addRange(liveRange);
@@ -492,8 +518,9 @@ export const useTextSelector = (
     // Selection.getRangeAt() returns the live, associated Range by reference.
     // Clone only for double-click normalization so native touch paths retain
     // their established Range behavior and browser handles stay untouched.
-    const range = trimPoint ? liveRange.cloneRange() : liveRange;
+    const range = trimPoint || wordGesture ? liveRange.cloneRange() : liveRange;
     if (trimPoint) trimRangeWhitespaceAroundPoint(range, trimPoint.node, trimPoint.offset);
+    if (wordGesture) trimNoteMarkersFromWordRange(range);
     const progress = getProgress(bookKey);
     setSelection({
       key: bookKey,
@@ -678,6 +705,11 @@ export const useTextSelector = (
   const handlePointerDown = (doc: Document, index: number, ev: PointerEvent) => {
     beginSelectionDrag();
     lastPointerType.current = ev.pointerType;
+    const isTouchPress = ev.pointerType === 'touch' || ev.pointerType === 'pen';
+    touchPressRef.current =
+      isTouchPress && !isValidSelection(doc.getSelection() as Selection)
+        ? { x: ev.clientX, y: ev.clientY, moved: false }
+        : null;
     if (appService?.isAndroidApp && ev.pointerType === 'touch') {
       doc.documentElement.classList.add(LINK_TOUCH_HOLD_CLASS);
     }
@@ -737,6 +769,10 @@ export const useTextSelector = (
         DOUBLE_CLICK_DRAG_MOVE_PX
     ) {
       doubleClick.moved = true;
+    }
+    const press = touchPressRef.current;
+    if (press && Math.hypot(ev.clientX - press.x, ev.clientY - press.y) > INSTANT_HOLD_MOVE_PX) {
+      press.moved = true;
     }
     const hold = imageHold.current;
     if (hold && Math.hypot(ev.clientX - hold.x, ev.clientY - hold.y) > INSTANT_HOLD_MOVE_PX) {
@@ -977,6 +1013,8 @@ export const useTextSelector = (
     endSelectionDrag();
     const mouseDoubleClick = mouseDoubleClickRef.current;
     mouseDoubleClickRef.current = null;
+    const touchPress = touchPressRef.current;
+    touchPressRef.current = null;
     dragAnchorRef.current = null;
 
     // Cross-page drag (#5809): the release ends the drag; commit the per-page
@@ -1048,13 +1086,17 @@ export const useTextSelector = (
       ) {
         trimPoint = getCaretPointFromPoint(doc, mouseDoubleClick.x, mouseDoubleClick.y);
       }
+      const stillTouchPress =
+        !!touchPress &&
+        !touchPress.moved &&
+        (ev?.pointerType === 'touch' || ev?.pointerType === 'pen');
 
       // iOS no longer needs a special path: the native plugin
       // (ContextMenuSuppressor) suppresses the system selection menu, so
       // iOS selections go through the same path as desktop.
       if (isPointerInside) {
         isUpToPopup.current = true;
-        makeSelection(sel, index, true, false, trimPoint);
+        makeSelection(sel, index, true, false, trimPoint, !!trimPoint || stillTouchPress);
       } else if (appService?.isAndroidApp) {
         isUpToPopup.current = false;
       }
