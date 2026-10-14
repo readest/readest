@@ -26,11 +26,13 @@ import { RemoteBookConfig } from './wire';
  * `useNotesSync.ts` so users get the same semantics regardless of which
  * sync backend produced the row.
  *
- * A note is keyed by `id`. When the same id exists on both sides we keep
- * whichever side has the larger updatedAt; ties go to the side whose
- * `deletedAt` is more recent (which usually means the deletion came after
- * the creation/edit).
+ * A note is keyed by `id`. When the same id exists on both sides the side
+ * with the latest change, max(updatedAt, deletedAt), wins, and an exact tie
+ * goes to a tombstone: a note edited or restored after a remote deletion
+ * survives it, and a deletion made after a remote edit sticks (#6762).
  */
+const latestChangeAt = (note: BookNote) => Math.max(note.updatedAt ?? 0, note.deletedAt ?? 0);
+
 export const mergeNotes = (local: BookNote[], remote: BookNote[]): BookNote[] => {
   const byId = new Map<string, BookNote>();
   for (const n of local) byId.set(n.id, n);
@@ -40,15 +42,13 @@ export const mergeNotes = (local: BookNote[], remote: BookNote[]): BookNote[] =>
       byId.set(r.id, r);
       continue;
     }
-    const lUpdated = l.updatedAt ?? 0;
-    const rUpdated = r.updatedAt ?? 0;
-    const lDeleted = l.deletedAt ?? 0;
-    const rDeleted = r.deletedAt ?? 0;
-    if (rUpdated > lUpdated || rDeleted > lDeleted) {
-      byId.set(r.id, { ...l, ...r });
-    } else {
-      byId.set(r.id, { ...r, ...l });
-    }
+    const lAt = latestChangeAt(l);
+    const rAt = latestChangeAt(r);
+    const remoteWins = rAt > lAt || (rAt === lAt && !!r.deletedAt && !l.deletedAt);
+    const [winner, loser] = remoteWins ? [r, l] : [l, r];
+    // Pin the winner's deletedAt so a live winner never inherits the loser's
+    // tombstone through a key it doesn't carry.
+    byId.set(r.id, { ...loser, ...winner, deletedAt: winner.deletedAt });
   }
   return Array.from(byId.values());
 };
