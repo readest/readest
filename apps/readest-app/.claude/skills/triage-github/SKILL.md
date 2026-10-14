@@ -38,7 +38,14 @@ Start each tick by querying `drafts` for `status == "approved"`. For each:
    closes the thread; `merge` runs `gh pr merge N --squash
    --match-head-commit <headSha>`, and fails safely if the head moved.
 4. Update the draft: `status: "sent"`, `sentAt`, `sentUrl` (the comment's
-   URL). Pin every write with `if_version`.
+   URL). Pin every write with `if_version`. Every timestamp you write
+   (`sentAt`, `createdAt`) comes from GitHub's API or `date -u`, never an
+   estimate: the stale check compares them.
+
+A fix that changes `packages/foliate-js` needs its own PR on
+readest/foliate-js first (push to the GitHub URL; the worktree's `origin` is
+the local modules repo). That repo squash-merges, so the readest PR says it
+depends on it and moves the submodule to the merged commit before merging.
 
 A non-empty `note`, and any difference between `draft` and `edited`, is the
 maintainer's feedback on how the loop writes. Follow it in this tick's new
