@@ -105,7 +105,8 @@ read community PRs, so it proposes no blocks.
 ## 5. Ship
 
 Set `reviewed-through` to the window's last sha, commit LESSONS.md (and any
-promoted rule) as `chore(agent): lessons from <date range>`, open the PR, and
+promoted rule) as `chore(agent): lessons from <date range>`, open the PR
+(description as in the triage skill's "PR description"), and
 add it to the triage loop's watch list: it merges only through an approved
 Reply Desk merge card. Report: commits reviewed, lessons added, lessons
 promoted, cleanup PRs.

@@ -288,11 +288,30 @@ Decide one of these for each issue, then act:
 4. Meet every item in [acceptance](../../rules/acceptance.md); list what you
    didn't run.
 5. Write its card with `sendWith: "fix-pr"`. The branch is pushed and the
-   PR opened (Conventional Commits title, body with what was run, at which
-   commit, and what fails without the change) only when that card is
-   approved. The PR review workflow in CLAUDE.md applies while it is open.
+   PR opened (Conventional Commits title, description as below) only when
+   that card is approved. The PR review workflow in CLAUDE.md applies while
+   it is open.
 6. Follow it under "Follow the loop's open PRs"; it merges only through an
    approved merge card.
+
+### PR description
+
+Write it for GitHub; don't copy the commit message. A commit body is
+hard-wrapped for git, and GitHub shows every line break in a description as
+a forced break, mid-sentence.
+
+- First line: `Closes #N.`, or `Part of #N.` when the issue stays open (say
+  what is left). Add `Depends on readest/foliate-js#N.` when it applies.
+- `## Problem`: what the user saw, and why it happened.
+- `## Fix`: what changed, and what stays the same.
+- `## Verification`: what was run and what it printed, starting with the
+  test that fails without the change; then `Not run:` items.
+- One paragraph or bullet per line, never wrapped. Code, paths, settings
+  and identifiers in backticks.
+- One blank line, then
+  `🤖 Generated with [Claude Code](https://claude.com/claude-code)`.
+
+The reporter's credit stays in the commit body.
 
 Releases are the maintainer's: Readest ships through app stores, so a reply
 says the fix lands in the next release, never names a version that isn't out.
