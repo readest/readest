@@ -111,7 +111,8 @@ draft) and each foliate-js PR it depends on (all of them by `$OWNER`):
    only if `git status --porcelain` prints nothing (it also reports a
    submodule at another commit, a staged submodule pointer and changes
    inside a submodule, so a foliate-js fix can't be lost; don't pass
-   `--ignore-submodules`) and its `HEAD` is the merged PR's head sha.
+   `--ignore-submodules`) and both its `HEAD` and `git rev-parse <branch>`
+   are the merged PR's head sha.
    Ignored files are expected (node_modules, copied .env files,
    public/vendor) and don't count. Then `pnpm worktree:rm
    <branch>` and `git branch -D <branch>`. A worktree with changes or extra
