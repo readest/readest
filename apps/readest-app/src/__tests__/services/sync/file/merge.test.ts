@@ -57,6 +57,26 @@ describe('mergeNotes (element-set CRDT)', () => {
     expect(out.find((n) => n.id === 'a')!.deletedAt).toBe(9);
   });
 
+  // Latest change wins, the rule native sync's useNotesSync applies (#6762).
+  test('a live note changed after the remote deletion survives it', () => {
+    const remote = note('a', 5, 10);
+    const { deletedAt: _omit, ...live } = note('a', 20);
+    const out = mergeNotes([live], [remote]).find((n) => n.id === 'a')!;
+    expect(out.deletedAt).toBeFalsy();
+    expect(out.updatedAt).toBe(20);
+  });
+
+  test('a remote note changed after the local deletion brings it back', () => {
+    const { deletedAt: _omit, ...live } = note('a', 20);
+    const out = mergeNotes([note('a', 5, 10)], [live]).find((n) => n.id === 'a')!;
+    expect(out.deletedAt).toBeFalsy();
+  });
+
+  test('a deletion made after the other side changed the note sticks', () => {
+    expect(mergeNotes([note('a', 5, 30)], [note('a', 20)])[0]!.deletedAt).toBe(30);
+    expect(mergeNotes([note('a', 20)], [note('a', 5, 30)])[0]!.deletedAt).toBe(30);
+  });
+
   test('idempotent on identical input (id set + field values stable)', () => {
     const a = [note('a', 1), note('b', 2)];
     const once = mergeNotes(a, a);

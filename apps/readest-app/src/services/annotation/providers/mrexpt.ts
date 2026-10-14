@@ -41,6 +41,10 @@ export interface MrexptMergeResult {
  * - An existing note is updated only when the incoming copy is newer.
  * - An unchanged duplicate is left untouched and reported in neither count,
  *   so callers can reliably tell "nothing new" from "imported N".
+ *
+ * Every note the import adds or changes is stamped with the import time: it is
+ * this device's change now, so sync pushes it and a remote deletion made
+ * before the import can't undo it (#6762).
  */
 export const mergeImportedBookNotes = (
   existing: BookNote[],
@@ -53,24 +57,26 @@ export const mergeImportedBookNotes = (
   let added = 0;
   let updated = 0;
 
+  const importedAt = Date.now();
   for (const note of incoming) {
     const prev = byId.get(note.id);
     if (!prev) {
-      byId.set(note.id, note);
+      const fresh: BookNote = { ...note, updatedAt: importedAt };
+      byId.set(note.id, fresh);
       added += 1;
-      applied.push(note);
+      applied.push(fresh);
     } else if (prev.deletedAt) {
       const resurrected: BookNote = {
         ...prev,
         ...note,
         deletedAt: null,
-        updatedAt: Date.now(),
+        updatedAt: importedAt,
       };
       byId.set(note.id, resurrected);
       added += 1;
       applied.push(resurrected);
     } else if (prev.updatedAt < note.updatedAt) {
-      const merged: BookNote = { ...prev, ...note };
+      const merged: BookNote = { ...prev, ...note, updatedAt: importedAt };
       byId.set(note.id, merged);
       updated += 1;
       applied.push(merged);
