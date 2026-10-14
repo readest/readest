@@ -54,9 +54,9 @@ Fixing locally, in worktrees, needs no approval.
 
 ## Send what was approved
 
-Start each tick by querying `drafts` for `status == "approved"`. A card
-still in `sending` means a run stopped mid-send: don't send it again, report
-it. Cards with `kind: "social"` belong to the social loop: skip them. For
+Start each tick by querying `drafts` for `status in ["approved",
+"sending"]`. A card still in `sending` means a run stopped mid-send: don't
+send it again, report it. Cards with `kind: "social"` belong to the social loop: skip them. For
 each other approved card:
 
 1. Re-read the thread. Its state first: a PR card (`kind: "pr"`) whose PR
@@ -173,8 +173,8 @@ draft) and each foliate-js PR it depends on (all of them by `$OWNER`):
 
 The watcher only sees GitHub, so approvals on the Reply Desk are picked up by
 a second, light job: every 5 minutes, off the main tick's minutes
-(`4-59/5 * * * *`), query `drafts` for `status == "approved"`; if there are
-none, stop; otherwise run "Send what was approved" (and the Trust boundary)
+(`4-59/5 * * * *`), query `drafts` for `status in ["approved", "sending"]`;
+if there are none, stop; otherwise run "Send what was approved" (and the Trust boundary)
 for those cards only. That keeps the wait after an approval to about five
 minutes without running a full tick.
 
