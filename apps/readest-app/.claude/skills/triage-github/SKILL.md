@@ -64,8 +64,11 @@ Start each tick by querying `drafts` for `status == "approved"`. For each:
    --body-file`, `gh pr comment`, or `gh pr review N --request-changes
    --body-file` when `verdict` is `request-changes`. Then do `then`: `close`
    closes the thread; `merge` runs `gh pr merge N --repo <repo> --squash
-   --match-head-commit <headSha>`, and fails safely if the head moved. Every
-   `gh` call uses the card's `repo`.
+   --match-head-commit <headSha>`, and fails safely if the head moved. If
+   the card has a `newTitle`, retitle the issue with it exactly:
+   `gh api -X PATCH repos/<repo>/issues/N -f title=<newTitle>` (`gh issue
+   edit` fails on the Projects-classic field). Every `gh` call uses the
+   card's `repo`.
 4. Update the draft: `status: "sent"`, `sentAt`, `sentUrl` (the comment's
    URL). Pin every write with `if_version`. Every timestamp you write
    (`sentAt`, `createdAt`) comes from GitHub's API or `date -u`, never an
@@ -187,10 +190,16 @@ thread replaces a `pending` or `stale` one; never touch an `approved` or
 `verdictLabel`, `summary` (one line), `decision` (what the maintainer must
 decide, or null), `fix` (`{branch, commit, run[], notRun[]}` or null),
 `sendWith` (`next-tick`|`fix-pr`), `then` (`close`|`merge`|null),
-`headSha` (for `merge`), `draft`, `edited: null`, `note: ""`,
+`headSha` (for `merge`), `newTitle`, `draft`, `edited: null`, `note: ""`,
 `status: "pending"`, `order`, `createdAt`. Write all of a tick's drafts in
 one `batch`. The replies are posted as the maintainer: never say "the
 maintainer will decide"; say what happens next in the first person plural.
+
+An issue whose title isn't in English gets `newTitle`: the title translated
+to English, keeping the template's prefix (`FR:`, `Bug:`) once and dropping
+a doubled one (`FR: FEATURE REQUEST`), and keeping code such as `<sup>`
+in backticks. It is applied when the card is approved, together with the
+reply, which stays in the reporter's language. Otherwise `newTitle: null`.
 
 ## 0. What changed
 
