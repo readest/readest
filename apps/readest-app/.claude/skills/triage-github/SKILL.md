@@ -106,7 +106,12 @@ draft) and each foliate-js PR it depends on (all of them by `$OWNER`):
    PRs on GitHub. Read the PR's state first. Merged or closed: drop any
    `pending` card for it (`status: "dropped"`, `staleReason` naming who
    merged it and when), take it off the watch list, and skip the steps
-   below. Then check every commit's author
+   below. A merged PR also gets its worktree removed, so they don't pile
+   up: only a worktree the loop made (the `fix.branch` of a sent card),
+   only if `git status --porcelain --ignore-submodules=all` prints nothing
+   and its `HEAD` is the merged PR's head sha. Then `pnpm worktree:rm
+   <branch>` and `git branch -D <branch>`. A worktree with changes or extra
+   commits is kept and listed in the report. Then check every commit's author
    (`gh api repos/<repo>/pulls/N/commits --jq '.[].author.login'`): one
    that isn't `$OWNER` stops here (see Trust boundary).
 
