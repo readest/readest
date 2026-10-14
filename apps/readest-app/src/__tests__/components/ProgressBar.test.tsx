@@ -79,8 +79,12 @@ vi.mock('@/utils/event', () => ({
   eventDispatcher: { dispatchSync: () => false },
 }));
 
+let statusInfoProps: Record<string, unknown> | null = null;
 vi.mock('@/app/reader/components/StatusInfo.tsx', () => ({
-  default: () => null,
+  default: (props: Record<string, unknown>) => {
+    statusInfoProps = props;
+    return null;
+  },
 }));
 
 const baseSettings: ViewSettings = {
@@ -787,5 +791,40 @@ describe('ProgressBar — pages left on every page turn (#6442)', () => {
       '11',
       '10',
     ]);
+  });
+});
+
+// #6794: a custom header/footer text color reached every footer item except the
+// battery percentage, which kept the theme's text color.
+describe('ProgressBar — battery percentage follows a custom footer color (#6794)', () => {
+  const settings = (overrides: Partial<ViewSettings>) => {
+    currentViewSettings = {
+      ...baseSettings,
+      showCurrentBatteryStatus: true,
+      showBatteryPercentage: true,
+      ...overrides,
+    } as ViewSettings;
+  };
+
+  beforeEach(() => {
+    statusInfoProps = null;
+  });
+
+  it('lets the battery percentage inherit a custom footer text color', () => {
+    settings({ isEink: false, headerFooterTextColor: '#806000' });
+    renderProgressBar();
+    expect(statusInfoProps?.['inheritTextColor']).toBe(true);
+  });
+
+  it('keeps the themed percentage when no custom color is set', () => {
+    settings({ isEink: false, headerFooterTextColor: '' });
+    renderProgressBar();
+    expect(statusInfoProps?.['inheritTextColor']).toBe(false);
+  });
+
+  it('keeps the eink percentage treatment even with a custom color', () => {
+    settings({ isEink: true, headerFooterTextColor: '#806000' });
+    renderProgressBar();
+    expect(statusInfoProps?.['inheritTextColor']).toBe(false);
   });
 });
