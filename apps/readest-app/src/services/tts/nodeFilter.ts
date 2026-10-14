@@ -23,7 +23,12 @@ export const createTTSNodeFilter = () => {
         tokens: ['footnote', 'endnote', 'note', 'rearnote'],
       },
     ],
-    contents: [{ tag: 'a', content: /^[\[\(]?[\*\d]+[\)\]]?$/ }],
+    // Note markers: a linked one, or a bare superscript such as <sup>17</sup>
+    // (#6790). A superscript with letters (1<sup>st</sup>) is still read.
+    contents: [
+      { tag: 'a', content: /^[\[\(]?[\*\d]+[\)\]]?$/ },
+      { tag: 'sup', content: /^\s*[\[\(]?[\*\d†‡§]+[\)\]]?\s*$/ },
+    ],
   });
   // Ruby is decided per base-run/reading pair rather than by tag name: a kana
   // <rt> is spoken in place of the kanji it annotates, anything else keeps the
