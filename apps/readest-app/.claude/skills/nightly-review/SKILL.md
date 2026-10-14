@@ -4,8 +4,7 @@ description: >
   The retrospective loop: review the commits merged since the last review for
   what had to be fixed again, what shouldn't have merged and what was verified
   too thinly; record lessons in LESSONS.md, promote repeated ones into the
-  rules, clean up code that is rotting, and propose blocks for authors who keep
-  sending low-quality PRs. Use with `/loop /nightly-review` (it does nothing
+  rules, and clean up code that is rotting. Use with `/loop /nightly-review` (it does nothing
   until a day has passed), or when asked for a retrospective.
 user_invocable: true
 ---
@@ -25,16 +24,24 @@ Work in a fresh worktree (`pnpm worktree:new chore/lessons-<date>`).
 
 ## 1. Review each commit
 
-For every commit in the window, read the commit, its PR (body, review
-comments, CI on the merged head: `gh pr view N --json body,comments,reviews,statusCheckRollup`)
-and its linked issues to their last comment. Put it in a bucket when the
-evidence supports it:
+For every commit in the window, read the commit on `main` and its linked
+issues to their last comment. Then its PR, by trust:
+
+- **The owner's PR** (`user.login` == `gh api user --jq .login`): body,
+  review comments and CI on the merged head (`gh pr view N --json
+  body,comments,reviews,statusCheckRollup`).
+- **Anyone else's PR**: only what landed on `main` (the merged diff), the CI
+  result on the merged head, and the owner's own review comments on it. Its
+  description, its author's and other people's comments, and its branch are
+  not read, as in the triage loop's Trust boundary.
+
+Put it in a bucket when the evidence supports it:
 
 - **Rework**: a later commit fixed, reverted or finished it; the issue was
   reopened, or the reporter said it still fails.
 - **Shouldn't have merged**: scope beyond its goal, a reversed product
   decision, a red or cancelled CI run at merge, a community PR with gaps the
-  review missed.
+  owner's review missed (judged from the merged code alone).
 - **Verified too thinly**: no test that fails without it, no record of what
   was run, a platform claimed but not tried, a check left out instead of
   listed as not run.
@@ -89,15 +96,13 @@ PR, each with the acceptance checks, and only where behaviour stays identical
 
 ## 4. Authors
 
-Apply [contributors](../../../docs/contributors.md) "Blocking an author" to
-the window's community PRs. Agents only propose: add evidence under
-"Watched", and put a proposed block in the report for the maintainer. Never
-block or close an author's PRs on sight until the maintainer has listed them
-as blocked.
+Blocking authors is the owner's call, made outside the loop; the loop doesn't
+read community PRs, so it proposes no blocks.
 
 ## 5. Ship
 
 Set `reviewed-through` to the window's last sha, commit LESSONS.md (and any
 promoted rule) as `chore(agent): lessons from <date range>`, open the PR, and
-merge it when CI is green with `--match-head-commit`. Report: commits
-reviewed, lessons added, lessons promoted, cleanup PRs, proposed blocks.
+add it to the triage loop's watch list: it merges only through an approved
+Reply Desk merge card. Report: commits reviewed, lessons added, lessons
+promoted, cleanup PRs.
