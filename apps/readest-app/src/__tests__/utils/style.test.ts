@@ -37,16 +37,29 @@ describe('transformStylesheet', () => {
   });
 
   describe('white-space nowrap', () => {
-    it('adds overflow clip !important when no overflow is set', () => {
+    // A nowrapped line must not spill past the column into the margin or the
+    // next page, so it is clipped along the line. Clipping the other axis too
+    // cut off whatever rises above or hangs below the line box, such as a
+    // top-aligned footnote icon in a <sup> on the first line (#6797).
+    it('clips a nowrapped element along the line only', () => {
       const css = '.nowrap { white-space: nowrap; }';
       const result = transformStylesheet(css, VW, VH, VERTICAL);
-      expect(result).toContain('overflow: clip !important');
+      expect(result).toContain('overflow-x: clip !important');
+      expect(result).not.toContain('overflow-y: clip');
+      expect(result).not.toMatch(/[^-]overflow: clip/);
     });
 
-    it('does not add overflow clip when overflow is already set', () => {
+    it('clips a nowrapped element vertically in vertical writing', () => {
+      const css = '.nowrap { white-space: nowrap; }';
+      const result = transformStylesheet(css, VW, VH, true);
+      expect(result).toContain('overflow-y: clip !important');
+      expect(result).not.toContain('overflow-x: clip');
+    });
+
+    it('does not add a clip when overflow is already set', () => {
       const css = '.nowrap { white-space: nowrap; overflow: hidden; }';
       const result = transformStylesheet(css, VW, VH, VERTICAL);
-      expect(result).not.toContain('overflow: clip !important');
+      expect(result).not.toContain('clip !important');
     });
   });
 

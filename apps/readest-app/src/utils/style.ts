@@ -1252,12 +1252,15 @@ export const transformStylesheet = (
     return match;
   });
 
-  // clip nowrapped elements
+  // Clip nowrapped elements along the line, so a long line can't spill past
+  // the column. The other axis stays visible: clipping it cut off whatever
+  // rises above the line box, like a top-aligned footnote icon (#6797).
+  const nowrapClip = vertical ? 'overflow-y: clip !important;' : 'overflow-x: clip !important;';
   css = css.replace(ruleRegex, (match, selector, block) => {
     const hasWhiteSpaceNowrap = /white-space\s*:\s*nowrap\s*[;$]/.test(block);
     if (hasWhiteSpaceNowrap) {
       if (!/overflow\s*:/.test(block)) {
-        block = block.replace(/}$/, ' overflow: clip !important; }');
+        block = block.replace(/}$/, ` ${nowrapClip} }`);
       }
       return selector + block;
     }
