@@ -19,12 +19,17 @@ export class EdgeSpeechProvider implements SpeechProvider {
   readonly cacheable = true;
 
   #tts: EdgeSpeechTTS | null = null;
+  #protocol: EDGE_TTS_PROTOCOL = 'wss';
+  #httpsFallback: Promise<boolean> | null = null;
+
+  constructor(private readonly canUseHttps: () => boolean = () => false) {}
 
   // The wss transport is free but intermittently blocked; the https fallback
   // goes through the authenticated proxy route. The Edge client owns the
   // fallback policy (auth state lives there); the provider just takes the
   // protocol to probe with.
   async init(protocol: EDGE_TTS_PROTOCOL = 'wss'): Promise<boolean> {
+    this.#protocol = protocol;
     this.#tts = new EdgeSpeechTTS(protocol);
     let timeout: ReturnType<typeof setTimeout> | undefined;
     try {
@@ -57,9 +62,10 @@ export class EdgeSpeechProvider implements SpeechProvider {
 
   async synthesize(
     req: SpeechSynthesisRequest,
-    _signal: AbortSignal,
+    signal: AbortSignal,
   ): Promise<SpeechSynthesisResult> {
     const tts = this.#tts;
+    const isWss = this.#protocol === 'wss';
     if (!tts) throw new Error('EdgeSpeechProvider not initialized');
     try {
       // Rate pinned to 1.0: keeps the audio cache rate-independent; the
@@ -73,6 +79,21 @@ export class EdgeSpeechProvider implements SpeechProvider {
       });
       return { audio: data, boundaries };
     } catch (err) {
+      // The startup probe may pass even when a later WebSocket fails.
+      // Re-synthesize that same sentence through the authenticated route.
+      if (!signal.aborted && isWss && this.canUseHttps()) {
+        this.#httpsFallback ??= this.init('https');
+        if (await this.#httpsFallback) {
+          const { data, boundaries } = await this.#tts!.createAudioData({
+            lang: req.lang,
+            text: req.text,
+            voice: req.voice,
+            rate: 1.0,
+            pitch: req.pitch,
+          });
+          return { audio: data, boundaries };
+        }
+      }
       // Permanent for this sentence: Edge answered without audio frames.
       if (err instanceof Error && err.message === 'No audio data received.') {
         throw new SpeechSynthesisPermanentError(err.message, { cause: err });

@@ -179,7 +179,7 @@ describe('EdgeTTSClient', () => {
       expect(callCount).toBe(2);
     });
 
-    test('wss failure does not fall back to https on Tauri even when authenticated', async () => {
+    test('wss failure falls back to https on Tauri when authenticated', async () => {
       tauriPlatform = true;
       const mockController = {
         isAuthenticated: true,
@@ -188,16 +188,12 @@ describe('EdgeTTSClient', () => {
       const c = new EdgeTTSClient(mockController);
 
       let callCount = 0;
-      createBehavior = () => {
-        callCount++;
-        return Promise.reject(new Error('offline'));
-      };
+      createBehavior = () =>
+        ++callCount === 1 ? Promise.reject(new Error('wss failed')) : Promise.resolve(undefined);
 
       const result = await c.init();
-      expect(result).toBe(false);
-      // Only the wss probe ran: the /api/tts/edge proxy must not be requested
-      // from the Tauri app (its native wss transport is the only Edge path).
-      expect(callCount).toBe(1);
+      expect(result).toBe(true);
+      expect(callCount).toBe(2);
     });
 
     test('wss failure dispatches tts-need-auth when not authenticated', async () => {

@@ -114,6 +114,36 @@ describe('EdgeSpeechProvider', () => {
     ).rejects.toThrow('network error');
   });
 
+  test('retries a failed sentence through HTTPS after a successful WSS probe', async () => {
+    const provider = new EdgeSpeechProvider(() => true);
+    await provider.init();
+    h.createAudioData.mockRejectedValueOnce(new Error('WebSocket closed before audio completed.'));
+
+    const result = await provider.synthesize(
+      { lang: 'en', text: 'keep reading', voice: 'en-US-AriaNeural', pitch: 1.0 },
+      new AbortController().signal,
+    );
+
+    expect(h.lastConstructedProtocol).toBe('https');
+    expect(h.create).toHaveBeenCalledTimes(2);
+    expect(h.createAudioData).toHaveBeenCalledTimes(2);
+    expect(result.audio.byteLength).toBe(4);
+  });
+
+  test('does not use HTTPS when the user is signed out', async () => {
+    const provider = new EdgeSpeechProvider(() => false);
+    await provider.init();
+    h.createAudioData.mockRejectedValueOnce(new Error('WebSocket closed before audio completed.'));
+
+    await expect(
+      provider.synthesize(
+        { lang: 'en', text: 'keep reading', voice: 'en-US-AriaNeural', pitch: 1.0 },
+        new AbortController().signal,
+      ),
+    ).rejects.toThrow('WebSocket closed before audio completed.');
+    expect(h.create).toHaveBeenCalledTimes(1);
+  });
+
   test('exposes the static Edge voice list', async () => {
     const provider = await initializedProvider();
     const voices = await provider.getAllVoices();
