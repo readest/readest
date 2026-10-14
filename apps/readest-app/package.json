@@ -272,6 +272,7 @@
     "react-server-dom-webpack": "^19.2.8",
     "serwist": "^9.3.0",
     "tailwindcss": "^4.3.3",
+    "tsx": "4.21.0",
     "typescript": "^7.0.2",
     "vinext": "^0.0.21",
     "vite": "^7.3.3",
