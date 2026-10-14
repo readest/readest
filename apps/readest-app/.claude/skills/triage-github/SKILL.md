@@ -53,6 +53,11 @@ the local modules repo). The readest PR body starts with
 Every tick, for each open readest PR the loop opened (the `prUrl` of a `sent`
 draft) and each foliate-js PR it depends on:
 
+0. **Still open?** The maintainer also merges and closes PRs on GitHub. Read
+   the PR's state first. Merged or closed: drop any `pending` card for it
+   (`status: "dropped"`, `staleReason` naming who merged it and when), take
+   it off the watch list, and skip the steps below.
+
 1. **Dependency.** If the body says `Depends on readest/foliate-js#N`, read
    `gh pr view N --repo readest/foliate-js --json state,mergeCommit`.
    - Open: the readest PR waits. Treat the foliate-js PR like any loop PR
@@ -113,6 +118,26 @@ draft) and each foliate-js PR it depends on:
    the merge comment). If the head moves before approval, the card is
    stale: rewrite it for the new head. Merge only through an approved card:
    `gh pr merge N --repo <repo> --squash --match-head-commit <headSha>`.
+
+### Watcher
+
+Between ticks, `watch-prs.py` (next to this file) wakes the loop as soon as
+something happens on a followed PR. It reads the PR list from
+`${XDG_STATE_HOME:-$HOME/.local/state}/readest-loops/watch.json`
+(`[{"repo": "readest/readest", "number": N}]`) on every pass, and remembers
+what it reported in `watch-seen.json`.
+
+- Opening a PR (readest or foliate-js) adds it to `watch.json`; a merged or
+  closed PR comes off it.
+- Keep one Monitor running: `python3 <this dir>/watch-prs.py`, description
+  `readest loop PRs: CI, reviews, merges`, `timeout_ms: 1800000`. When it
+  expires, or a tick finds none running, arm it again.
+- Its events: `CI_DONE <pr> head=<sha> green|red <checks> [skipped=...]`,
+  `CODERABBIT_DONE`, `REVIEW`, `REVIEW_COMMENT`, `COMMENT` (anyone but us),
+  `CLOSED <pr> merged=true|false`, and `WATCH_ERROR` (a failed read: look
+  into it, never treat it as quiet). Handle each by running the steps above
+  for that PR only. A red CI or a new review is worth a push notification
+  to the maintainer.
 
 A non-empty `note`, and any difference between `draft` and `edited`, is the
 maintainer's feedback on how the loop writes. Follow it in this tick's new
