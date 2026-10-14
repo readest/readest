@@ -56,6 +56,28 @@ describe('transformStylesheet', () => {
       expect(result).not.toContain('overflow-x: clip');
     });
 
+    // A nowrapped rule that sizes its own box (height, max-height, line clamp)
+    // may rely on the box clipping its content, so it keeps the old clip on
+    // both axes; only unsized nowrapped elements let content rise past the line.
+    it('keeps clipping both axes when the rule sets its own height', () => {
+      for (const sizing of ['height: 2em', 'max-height: 3em', '-webkit-line-clamp: 2']) {
+        const css = `.box { white-space: nowrap; ${sizing}; }`;
+        const result = transformStylesheet(css, VW, VH, VERTICAL);
+        expect(result).toContain('overflow: clip !important');
+        expect(result).not.toContain('overflow-x: clip');
+      }
+    });
+
+    it('treats line-height and min-height as unsized (the #6797 rule)', () => {
+      const css =
+        '.adapt-poem-c { text-indent: 0; text-align: center; font-size: 1.0em; ' +
+        'margin: 0.85em auto; word-break: break-all; white-space: nowrap; ' +
+        'letter-spacing: normal; line-height: 1.7; min-height: 1em; }';
+      const result = transformStylesheet(css, VW, VH, VERTICAL);
+      expect(result).toContain('overflow-x: clip !important');
+      expect(result).not.toMatch(/[^-]overflow: clip/);
+    });
+
     it('does not add a clip when overflow is already set', () => {
       const css = '.nowrap { white-space: nowrap; overflow: hidden; }';
       const result = transformStylesheet(css, VW, VH, VERTICAL);
