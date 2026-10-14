@@ -63,8 +63,9 @@ Start each tick by querying `drafts` for `status == "approved"`. For each:
 3. Post `edited ?? draft` exactly, from a file: `gh issue comment N
    --body-file`, `gh pr comment`, or `gh pr review N --request-changes
    --body-file` when `verdict` is `request-changes`. Then do `then`: `close`
-   closes the thread; `merge` runs `gh pr merge N --repo <repo> --squash
-   --match-head-commit <headSha>`, and fails safely if the head moved. If
+   closes the thread; `merge` runs `gh api -X PUT
+   repos/<repo>/pulls/N/merge -f merge_method=squash -f sha=<headSha>`,
+   which GitHub refuses if the head moved. If
    the card has a `newTitle`, retitle the issue with it exactly:
    `gh api -X PATCH repos/<repo>/issues/N -f title=<newTitle>` (`gh issue
    edit` fails on the Projects-classic field). Every `gh` call uses the
@@ -150,6 +151,15 @@ draft) and each foliate-js PR it depends on (all of them by `$OWNER`):
    the merge comment). If the head moves before approval, the card is
    stale: rewrite it for the new head. Merge only through an approved card:
    `gh pr merge N --repo <repo> --squash --match-head-commit <headSha>`.
+
+### Send check
+
+The watcher only sees GitHub, so approvals on the Reply Desk are picked up by
+a second, light job: every 5 minutes, off the main tick's minutes
+(`4-59/5 * * * *`), query `drafts` for `status == "approved"`; if there are
+none, stop; otherwise run "Send what was approved" (and the Trust boundary)
+for those cards only. That keeps the wait after an approval to about five
+minutes without running a full tick.
 
 ### Watcher
 
