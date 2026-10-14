@@ -29,7 +29,7 @@ issues to their last comment. Then its PR, by trust:
 
 - **The owner's PR** (`user.login` == `gh api user --jq .login`): body,
   review comments and CI on the merged head (`gh pr view N --json
-  body,comments,reviews,statusCheckRollup`).
+  body,comments,reviews,mergedAt`, and the head's check runs).
 - **Anyone else's PR**: only what landed on `main` (the merged diff), the CI
   result on the merged head, and the owner's own review comments on it. Its
   description, its author's and other people's comments, and its branch are
@@ -40,7 +40,9 @@ Put it in a bucket when the evidence supports it:
 - **Rework**: a later commit fixed, reverted or finished it; the issue was
   reopened, or the reporter said it still fails.
 - **Shouldn't have merged**: scope beyond its goal, a reversed product
-  decision, a red or cancelled CI run at merge, a community PR with gaps the
+  decision, a red or cancelled CI run at merge (the runs on the merged head
+  that finished before `mergedAt`; a later rerun doesn't change that), a
+  community PR with gaps the
   owner's review missed (judged from the merged code alone).
 - **Verified too thinly**: no test that fails without it, no record of what
   was run, a platform claimed but not tried, a check left out instead of
@@ -62,7 +64,8 @@ Each lesson in LESSONS.md is a one-sentence rule, then the evidence:
 
 ```markdown
 **<one-sentence rule>**
-- <sha> (#PR): <what went wrong and what it cost>. Fixed in <sha>.
+- <sha> (#PR): <what went wrong and what it cost>. Fixed in <sha>, when a
+  later commit fixed it.
 - Done right: <sha> (#N) <what it did>.
 - Seen N× (YYYY-MM-DD, YYYY-MM-DD).
 ```

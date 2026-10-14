@@ -4,10 +4,12 @@ A change is merged only when it shows each of these. Say which were run and
 what they printed, in the commit body or on the PR. A check that wasn't run is
 listed as not run, never left out.
 
-1. **A test that fails without the change.** Put the old code back and run
-   the new test: it must fail on an assertion that names the behavior. A
-   type error or a skipped test doesn't count. Say which test and what it
-   failed with, then restore the change and see it pass.
+1. **A test that fails without the change**, for a change in behavior. Put
+   the old code back and run the new test: it must fail on an assertion that
+   names the behavior. A type error or a skipped test doesn't count. Say
+   which test and what it failed with, then restore the change and see it
+   pass. A change with no behavior to test (docs, config, agent files) says
+   how it was checked instead.
 2. **The checks in verification.md**, on the change merged onto current
    `origin/main`.
 3. **Real use on the reporter's surface.** Reproduce the report in the app on
@@ -20,14 +22,16 @@ listed as not run, never left out.
 A PR is merged only at the head that was reviewed:
 `gh pr merge <N> --squash --match-head-commit <sha>`, after a comment saying
 what was run at that sha. A test that fails on `main` is a bug to fix now, in
-its own commit; "fails the same on main" is not a baseline.
+its own PR; "fails the same on main" is not a baseline.
 
 Product decisions are the maintainer's. A change that reverses one (a
 behavior, a layout, a default the maintainer chose) is left for the maintainer,
 however good its reason.
 
 A commit body says how it was verified and which test fails without it, and
-credits the reporter (`Reported by <name> on Discord`). When a commit answers
+credits the reporter by the public name they posted under (`Reported by
+<their GitHub login> on GitHub`, or the handle on their public post), never
+an email or account id. When a commit answers
 the maintainer's feedback, its subject quotes it: `fix(reader): ... (owner: <their words>)`.
 
 ## Moved from LESSONS.md

@@ -54,15 +54,26 @@ Fixing locally, in worktrees, needs no approval.
 
 ## Send what was approved
 
-Start each tick by querying `drafts` for `status == "approved"`. For each:
+Start each tick by querying `drafts` for `status == "approved"`. A card
+still in `sending` means a run stopped mid-send: don't send it again, report
+it. For each approved card:
 
-1. Re-read the thread. If someone other than us commented after the draft's
-   `createdAt`, don't post: set `status: "stale"`, a one-line `staleReason`
-   naming the new comment, a fresh `draft` that answers it, `edited: null`,
-   and a new `createdAt`. It goes back to the maintainer.
-2. If `sendWith` is `fix-pr`, push the `fix.branch` and open its PR first,
-   then add `Fix: #<PR>` to the end of the reply.
-3. Post `edited ?? draft` exactly, from a file: `gh issue comment N
+1. Re-read the thread. Its state first: a PR card (`kind: "pr"`) whose PR
+   is merged or closed is dropped (`status: "dropped"`, `staleReason` naming
+   who and when). Then new comments after the draft's `createdAt`:
+   - On an issue, any new comment: don't post. Set `status: "stale"`, a
+     one-line `staleReason` naming the comment, a fresh `draft` that answers
+     it, `edited: null` and a new `createdAt`. It goes back to the
+     maintainer.
+   - On a PR, only CodeRabbit's or the owner's comments count that way.
+     Anyone else's comment is not read: set `status: "stale"` with a
+     `staleReason` naming only its author, and leave the draft as it is.
+2. Claim the card: set `status: "sending"`, pinned with `if_version`.
+   Nothing on GitHub is touched before that write succeeds.
+3. If `sendWith` is `fix-pr`, push the `fix.branch` and open its PR first,
+   record its URL in `prUrl`, then add `Fix: #<PR>` to the end of the
+   reply.
+4. Post `edited ?? draft` exactly, from a file: `gh issue comment N
    --body-file`, `gh pr comment`, or `gh pr review N --request-changes
    --body-file` when `verdict` is `request-changes`. Then do `then`: `close`
    closes the thread; `merge` runs `gh api -X PUT
@@ -72,8 +83,11 @@ Start each tick by querying `drafts` for `status == "approved"`. For each:
    `gh api -X PATCH repos/<repo>/issues/N -f title=<newTitle>` (`gh issue
    edit` fails on the Projects-classic field). Every `gh` call uses the
    card's `repo`.
-4. Update the draft: `status: "sent"`, `sentAt`, `sentUrl` (the comment's
-   URL). Pin every write with `if_version`. Every timestamp you write
+5. Update the draft: `status: "sent"`, `sentAt`, `sentUrl` (the comment's
+   URL). If an action failed, set `status: "stale"` instead, with a
+   `staleReason` saying what was done and what failed, so it goes back to
+   the maintainer and is never retried on its own. Pin every write with
+   `if_version`. Every timestamp you write
    (`sentAt`, `createdAt`) comes from GitHub's API or `date -u`, never an
    estimate: the stale check compares them.
 
@@ -202,8 +216,9 @@ thread replaces a `pending` or `stale` one; never touch an `approved` or
 `verdictLabel`, `summary` (one line), `decision` (what the maintainer must
 decide, or null), `fix` (`{branch, commit, run[], notRun[]}` or null),
 `sendWith` (`next-tick`|`fix-pr`), `then` (`close`|`merge`|null),
-`headSha` (for `merge`), `newTitle`, `draft`, `edited: null`, `note: ""`,
-`status: "pending"`, `order`, `createdAt`. Write all of a tick's drafts in
+`headSha` (for `merge`), `newTitle`, `prUrl` (set when its PR is opened),
+`draft`, `edited: null`, `note: ""`, `status: "pending"`, `order`,
+`createdAt`. Write all of a tick's drafts in
 one `batch`. The replies are posted as the maintainer: never say "the
 maintainer will decide"; say what happens next in the first person plural.
 
@@ -272,9 +287,10 @@ Decide one of these for each issue, then act:
    sibling of the bug and fix them in the same change.
 4. Meet every item in [acceptance](../../rules/acceptance.md); list what you
    didn't run.
-5. Open the PR (Conventional Commits title, body with what was run, at which
-   commit, and what fails without the change). The PR review workflow in
-   CLAUDE.md applies while it is open.
+5. Write its card with `sendWith: "fix-pr"`. The branch is pushed and the
+   PR opened (Conventional Commits title, body with what was run, at which
+   commit, and what fails without the change) only when that card is
+   approved. The PR review workflow in CLAUDE.md applies while it is open.
 6. Follow it under "Follow the loop's open PRs"; it merges only through an
    approved merge card.
 

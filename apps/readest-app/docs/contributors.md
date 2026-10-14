@@ -25,8 +25,9 @@ review until the maintainer has looked:
   binary, a minified or encoded blob, or code built from a string at runtime.
 - It adds a third-party relay, API reseller, affiliate link or advertisement.
 
-Say which line stopped it in the review. Don't run the PR's code on a machine
-with real accounts until the maintainer has cleared it.
+Say which line stopped it in the review. Run a community PR's code only in a
+sandbox with no credentials or personal files, and only after any stop above
+is cleared.
 
 ## Close without a full review
 
