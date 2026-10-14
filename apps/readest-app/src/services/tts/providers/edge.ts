@@ -49,6 +49,7 @@ export class EdgeSpeechProvider implements SpeechProvider {
       if (available) {
         this.#tts = tts;
         this.#protocol = protocol;
+        if (protocol === 'wss') this.#httpsFallback = null;
       }
       return available;
     } catch {
@@ -66,6 +67,11 @@ export class EdgeSpeechProvider implements SpeechProvider {
     req: SpeechSynthesisRequest,
     signal: AbortSignal,
   ): Promise<SpeechSynthesisResult> {
+    // An authenticated session can end while this provider is using HTTPS.
+    // Return to the direct route before sending any more text.
+    if (this.#protocol === 'https' && !this.canUseHttps()) {
+      if (!(await this.init('wss'))) throw new Error('Edge TTS is unavailable.');
+    }
     const tts = this.#tts;
     const isWss = this.#protocol === 'wss';
     if (!tts) throw new Error('EdgeSpeechProvider not initialized');
@@ -89,7 +95,7 @@ export class EdgeSpeechProvider implements SpeechProvider {
           if (!available) this.#httpsFallback = null;
           return available;
         });
-        if (await this.#httpsFallback) {
+        if ((await this.#httpsFallback) && !signal.aborted && this.canUseHttps()) {
           try {
             const { data, boundaries } = await this.#tts!.createAudioData({
               lang: req.lang,

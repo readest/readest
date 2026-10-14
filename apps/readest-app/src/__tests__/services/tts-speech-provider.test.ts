@@ -182,6 +182,57 @@ describe('EdgeSpeechProvider', () => {
     ).rejects.toBeInstanceOf(SpeechSynthesisPermanentError);
   });
 
+  test('uses WSS again after sign-out from an HTTPS session', async () => {
+    let signedIn = true;
+    const provider = new EdgeSpeechProvider(() => signedIn);
+    await provider.init();
+    h.createAudioData.mockRejectedValueOnce(new Error('WSS unavailable'));
+    const req = { lang: 'en', text: 'keep reading', voice: 'en-US-AriaNeural', pitch: 1.0 };
+    const signal = new AbortController().signal;
+    await provider.synthesize(req, signal);
+
+    signedIn = false;
+    await provider.synthesize(req, signal);
+    expect(h.create).toHaveBeenCalledTimes(3);
+    expect(h.audioProtocols).toEqual(['wss', 'https', 'wss']);
+  });
+
+  test('rechecks HTTPS after WSS becomes active again', async () => {
+    const provider = new EdgeSpeechProvider(() => true);
+    await provider.init();
+    h.createAudioData.mockRejectedValueOnce(new Error('WSS unavailable'));
+    const req = { lang: 'en', text: 'keep reading', voice: 'en-US-AriaNeural', pitch: 1.0 };
+    const signal = new AbortController().signal;
+    await provider.synthesize(req, signal);
+
+    await provider.init('wss');
+    h.createAudioData.mockRejectedValueOnce(new Error('WSS unavailable again'));
+    await provider.synthesize(req, signal);
+    expect(h.create).toHaveBeenCalledTimes(4);
+    expect(h.audioProtocols).toEqual(['wss', 'https', 'wss', 'https']);
+  });
+
+  test('does not send a sentence over HTTPS after cancellation during its probe', async () => {
+    const provider = new EdgeSpeechProvider(() => true);
+    await provider.init();
+    let finishProbe!: () => void;
+    h.create.mockImplementationOnce(
+      () => new Promise<Response>((resolve) => (finishProbe = () => resolve(new Response()))),
+    );
+    h.createAudioData.mockRejectedValueOnce(new Error('WSS unavailable'));
+    const controller = new AbortController();
+    const pending = provider.synthesize(
+      { lang: 'en', text: 'keep reading', voice: 'en-US-AriaNeural', pitch: 1.0 },
+      controller.signal,
+    );
+
+    await vi.waitFor(() => expect(h.create).toHaveBeenCalledTimes(2));
+    controller.abort();
+    finishProbe();
+    await expect(pending).rejects.toThrow('WSS unavailable');
+    expect(h.audioProtocols).toEqual(['wss']);
+  });
+
   test('exposes the static Edge voice list', async () => {
     const provider = await initializedProvider();
     const voices = await provider.getAllVoices();
