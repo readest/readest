@@ -333,6 +333,10 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
         // caret only clears a selection reported before. On touch devices the
         // caret a tap on a highlight drops lands after the click that opened
         // its toolbar, and used to close it again (#6395).
+        // A selection is settled — ready for the Annotator's quick action —
+        // once no pointer is down: on release, or for a touch selection, after
+        // the system long-press took over the gesture (#6804).
+        let pointerDown = false;
         const report = (tap: boolean) => {
           if (!doc.defaultView) return; // popup already torn down
           const sel = doc.getSelection();
@@ -353,6 +357,7 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
             cfi: getPopupCfi?.(range),
             href: footnoteHrefRef.current?.split('#')[0],
             getPopupCfi,
+            quickAction: tap || !pointerDown,
           });
         };
         let selectionTimer: ReturnType<typeof setTimeout> | null = null;
@@ -360,7 +365,14 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
           if (selectionTimer) clearTimeout(selectionTimer);
           selectionTimer = setTimeout(() => report(false), 250);
         });
+        doc.addEventListener('pointerdown', () => {
+          pointerDown = true;
+        });
+        doc.addEventListener('pointercancel', () => {
+          pointerDown = false;
+        });
         doc.addEventListener('pointerup', () => {
+          pointerDown = false;
           if (selectionTimer) clearTimeout(selectionTimer);
           report(true);
         });

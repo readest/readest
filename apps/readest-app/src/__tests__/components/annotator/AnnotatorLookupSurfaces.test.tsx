@@ -577,3 +577,64 @@ describe('the instant dictionary dismisses clean unless told to keep the selecti
     expect(screen.queryByTestId('annotation-toolbar')).toBeNull();
   });
 });
+
+// #6804: a selection made in the footnote popup reaches the Annotator through
+// `footnote-selection`, not the section listeners that latch isTextSelected, so
+// the quick action never ran there and only the toolbar opened.
+describe('quick actions run on a selection made in the footnote popup', () => {
+  const selectInPopup = async (detail: Record<string, unknown> = {}) => {
+    if (!document.querySelector('#gridcell-book-1')) {
+      const gridCell = document.createElement('div');
+      gridCell.id = 'gridcell-book-1';
+      document.body.append(gridCell);
+    }
+    const paragraph = document.createElement('p');
+    paragraph.textContent = 'fortune';
+    document.body.append(paragraph);
+    const range = document.createRange();
+    range.selectNodeContents(paragraph);
+    await act(async () => {
+      await eventDispatcher.dispatch('footnote-selection', {
+        key: 'book-1',
+        range,
+        index: 3,
+        cfi: 'epubcfi(/6/2!/4/2)',
+        ...detail,
+      });
+    });
+  };
+
+  beforeEach(() => {
+    // Nothing is selected in the book's own sections.
+    h.isTextSelected.current = false;
+    h.viewSettings.enableAnnotationQuickActions = true;
+    h.viewSettings.annotationQuickAction = 'dictionary';
+  });
+
+  test('a settled popup selection runs the quick action', async () => {
+    render(<Annotator bookKey='book-1' contentInsets={{ top: 0, right: 0, bottom: 0, left: 0 }} />);
+    await selectInPopup({ quickAction: true });
+
+    expect(screen.getByTestId('dictionary-surface').dataset['word']).toBe('fortune');
+    expect(screen.queryByTestId('annotation-toolbar')).toBeNull();
+  });
+
+  test('a report taken mid-drag still opens the toolbar', async () => {
+    render(<Annotator bookKey='book-1' contentInsets={{ top: 0, right: 0, bottom: 0, left: 0 }} />);
+    await selectInPopup();
+
+    expect(screen.queryByTestId('dictionary-surface')).toBeNull();
+    expect(screen.getByTestId('annotation-toolbar')).toBeTruthy();
+  });
+
+  // Instant highlighting paints from the section pointer handlers, which the
+  // popup document doesn't have, and read-aloud is disabled for popup
+  // selections: both keep the toolbar.
+  test.each(['highlight', 'tts'])('the %s quick action keeps the toolbar', async (action) => {
+    h.viewSettings.annotationQuickAction = action;
+    render(<Annotator bookKey='book-1' contentInsets={{ top: 0, right: 0, bottom: 0, left: 0 }} />);
+    await selectInPopup({ quickAction: true });
+
+    expect(screen.getByTestId('annotation-toolbar')).toBeTruthy();
+  });
+});
