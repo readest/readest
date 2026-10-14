@@ -323,6 +323,38 @@ describe('TTS', () => {
       expect(combined).not.toContain('Transformed footnote');
     });
 
+    // #6790: an unlinked note marker such as <sup>17</sup> interrupts the
+    // sentence it sits in, like the linked markers the <a> rule skips.
+    it('should not read a bare superscript note marker', () => {
+      const doc = createHTMLDoc('<p>他停下了脚步<sup>17</sup>，然后转身离开。</p>');
+      const tts = new TTS(doc, textWalker, ttsNodeFilter, highlight, 'word');
+      const combined = collectBlocks(tts).join(' ');
+
+      expect(combined).toContain('他停下了脚步');
+      expect(combined).toContain('然后转身离开');
+      expect(combined).not.toContain('17');
+    });
+
+    it('should not read bracketed or starred superscript note markers', () => {
+      for (const marker of ['[3]', '(12)', '*', '†']) {
+        const doc = createHTMLDoc(`<p>Before the mark<sup>${marker}</sup> and after it.</p>`);
+        const tts = new TTS(doc, textWalker, ttsNodeFilter, highlight, 'word');
+        const combined = collectBlocks(tts).join(' ');
+
+        expect(combined).toContain('Before the mark');
+        expect(combined).toContain('and after it');
+        expect(combined).not.toContain(marker);
+      }
+    });
+
+    it('should still read superscripts that carry words', () => {
+      const doc = createHTMLDoc('<p>It was the 1<sup>st</sup> of May.</p>');
+      const tts = new TTS(doc, textWalker, ttsNodeFilter, highlight, 'word');
+      const combined = collectBlocks(tts).join(' ');
+
+      expect(combined).toContain('st');
+    });
+
     it('should not read duokan footnote content', () => {
       const doc = createHTMLDoc(
         '<p>Real text.</p>' + '<div class="duokan-footnote-content"><p>Duokan footnote.</p></div>',
