@@ -518,8 +518,7 @@ fn read_by_name<R: Read + Seek>(zip: &mut ZipArchive<R>, name: &str) -> Result<V
     let mut entry = zip
         .by_name(name)
         .map_err(|e| format!("entry {name}: {e}"))?;
-    let declared = entry.size();
-    read_capped(&mut entry, declared, MAX_ZIP_ENTRY_BYTES).map_err(|e| format!("read {name}: {e}"))
+    read_capped(&mut entry, MAX_ZIP_ENTRY_BYTES).map_err(|e| format!("read {name}: {e}"))
 }
 
 /// Upper bound on any single entry read into memory (container.xml, OPF,
@@ -527,11 +526,10 @@ fn read_by_name<R: Read + Seek>(zip: &mut ZipArchive<R>, name: &str) -> Result<V
 /// or bomb entry fails the import instead of exhausting memory.
 const MAX_ZIP_ENTRY_BYTES: u64 = 128 * 1024 * 1024;
 
-/// Read at most `limit` bytes, erroring past it. `declared` is the size the
-/// zip header claims; it only sizes the initial buffer, never trusted beyond
-/// `limit`.
-fn read_capped(reader: impl Read, declared: u64, limit: u64) -> Result<Vec<u8>, String> {
-    let mut buf = Vec::with_capacity(declared.min(limit) as usize);
+/// Read at most `limit` bytes, erroring past it. The buffer grows with the
+/// bytes actually read; the size the zip header declares is never trusted.
+fn read_capped(reader: impl Read, limit: u64) -> Result<Vec<u8>, String> {
+    let mut buf = Vec::new();
     reader
         .take(limit + 1)
         .read_to_end(&mut buf)
@@ -1521,16 +1519,16 @@ mod tests {
     }
 
     #[test]
-    fn read_capped_ignores_an_oversized_declared_size() {
-        // A header can declare any size; it must not drive the allocation.
-        let bytes = read_capped(&b"hello"[..], u64::MAX, 16).expect("small entry reads");
+    fn read_capped_allocates_for_the_bytes_read() {
+        let bytes = read_capped(&b"hello"[..], 1 << 20).expect("small entry reads");
         assert_eq!(bytes, b"hello");
+        assert!(bytes.capacity() < 1 << 20);
     }
 
     #[test]
     fn read_capped_rejects_entries_over_the_limit() {
-        assert!(read_capped(&[0u8; 17][..], 0, 16).is_err());
-        assert_eq!(read_capped(&[0u8; 16][..], 0, 16).unwrap().len(), 16);
+        assert!(read_capped(&[0u8; 17][..], 16).is_err());
+        assert_eq!(read_capped(&[0u8; 16][..], 16).unwrap().len(), 16);
     }
 
     #[test]
