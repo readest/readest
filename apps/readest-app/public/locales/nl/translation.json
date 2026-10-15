@@ -2606,5 +2606,7 @@
   "{{count}} voices available_other": "{{count}} stemmen beschikbaar",
   "Multilingual": "Meertalig",
   "Expressive": "Expressief",
-  "Show Page Thumbnails": "Paginaminiaturen weergeven"
+  "Show Page Thumbnails": "Paginaminiaturen weergeven",
+  "Allow Self-Signed Certificate": "Zelfondertekend certificaat toestaan",
+  "Skips certificate checks for this server, so only turn it on if you trust it": "Slaat de certificaatcontrole voor deze server over, dus zet dit alleen aan als je de server vertrouwt"
 }

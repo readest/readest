@@ -2606,5 +2606,7 @@
   "{{count}} voices available_other": "{{count}} ses kullanılabilir",
   "Multilingual": "Çok dilli",
   "Expressive": "Etkileyici",
-  "Show Page Thumbnails": "Sayfa Küçük Resimlerini Göster"
+  "Show Page Thumbnails": "Sayfa Küçük Resimlerini Göster",
+  "Allow Self-Signed Certificate": "Kendinden imzalı sertifikaya izin ver",
+  "Skips certificate checks for this server, so only turn it on if you trust it": "Bu sunucu için sertifika denetimini atlar, bu yüzden yalnızca güveniyorsanız açın"
 }

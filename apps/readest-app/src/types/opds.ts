@@ -32,6 +32,12 @@ export interface OPDSCatalog {
   customHeaders?: Record<string, string>;
   autoDownload?: boolean;
   /**
+   * Accept a self-signed or mismatched TLS certificate from this catalog on
+   * native requests. Unset on catalogs saved before the option existed, which
+   * keep accepting them; see `allowsSelfSignedCert`.
+   */
+  allowSelfSignedCert?: boolean;
+  /**
    * Stable cross-device identifier derived from the URL. Used as the
    * replica_id so two devices that import the same OPDS URL converge to a
    * single row instead of duplicating. Absent on legacy entries imported

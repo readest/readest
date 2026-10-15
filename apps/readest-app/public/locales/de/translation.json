@@ -2606,5 +2606,7 @@
   "{{count}} voices available_other": "{{count}} Stimmen verfügbar",
   "Multilingual": "Mehrsprachig",
   "Expressive": "Ausdrucksstark",
-  "Show Page Thumbnails": "Seitenvorschaubilder anzeigen"
+  "Show Page Thumbnails": "Seitenvorschaubilder anzeigen",
+  "Allow Self-Signed Certificate": "Selbstsigniertes Zertifikat erlauben",
+  "Skips certificate checks for this server, so only turn it on if you trust it": "Überspringt die Zertifikatsprüfung für diesen Server, daher nur aktivieren, wenn du ihm vertraust"
 }

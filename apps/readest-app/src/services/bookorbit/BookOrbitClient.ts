@@ -3,6 +3,7 @@ import type { BookOrbitProxyPayload } from '@/types/bookorbit';
 import type { BookOrbitSettings } from '@/types/settings';
 import { isLanAddress } from '@/utils/network';
 import { normalizeCustomHeaders } from '@/utils/customHeaders';
+import { allowsSelfSignedCert, tlsFetchOptions } from '@/utils/tls';
 import { getAppVersion } from '@/utils/version';
 import { getAPIBaseUrl, isTauriAppPlatform } from '../environment';
 import { formatKoDatetime } from './noteMapping';
@@ -81,10 +82,7 @@ export class BookOrbitClient {
         method,
         headers,
         body,
-        danger: {
-          acceptInvalidCerts: true,
-          acceptInvalidHostnames: true,
-        },
+        ...tlsFetchOptions(allowsSelfSignedCert(this.config)),
       });
     }
 

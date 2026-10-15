@@ -2606,5 +2606,7 @@
   "{{count}} voices available_other": "{{count}} διαθέσιμες φωνές",
   "Multilingual": "Πολύγλωσση",
   "Expressive": "Εκφραστική",
-  "Show Page Thumbnails": "Εμφάνιση μικρογραφιών σελίδων"
+  "Show Page Thumbnails": "Εμφάνιση μικρογραφιών σελίδων",
+  "Allow Self-Signed Certificate": "Αποδοχή αυτο-υπογεγραμμένου πιστοποιητικού",
+  "Skips certificate checks for this server, so only turn it on if you trust it": "Παραλείπει τον έλεγχο πιστοποιητικού για αυτόν τον διακομιστή, οπότε ενεργοποιήστε το μόνο αν τον εμπιστεύεστε"
 }

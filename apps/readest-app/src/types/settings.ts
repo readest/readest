@@ -108,6 +108,12 @@ export interface KOSyncSettings {
    * Off by default, matching KOReader.
    */
   sendMetadata?: boolean;
+  /**
+   * Accept a self-signed or mismatched TLS certificate from this server on
+   * native requests. Unset on settings saved before the option existed, which
+   * keep accepting them; see `allowsSelfSignedCert`.
+   */
+  allowSelfSignedCert?: boolean;
 }
 
 export interface BookOrbitSettings {
@@ -135,6 +141,12 @@ export interface BookOrbitSettings {
    * option existed keep the automatic pushes they already had.
    */
   autoSync?: boolean;
+  /**
+   * Accept a self-signed or mismatched TLS certificate from this server on
+   * native requests. Unset on settings saved before the option existed, which
+   * keep accepting them; see `allowsSelfSignedCert`.
+   */
+  allowSelfSignedCert?: boolean;
 }
 
 export interface ReadwiseSettings {

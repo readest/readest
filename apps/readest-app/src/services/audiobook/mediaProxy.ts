@@ -1,8 +1,8 @@
 // Loopback media proxy for streaming audiobook tracks on native platforms.
 //
 // The ABS API client fetches through the Tauri HTTP plugin with invalid
-// certificates accepted, so a self-hosted server behind a self-signed HTTPS
-// proxy connects and syncs fine. The WebView's <audio> element enforces the
+// certificates accepted for a server the user opted in, so a self-hosted
+// server behind a self-signed HTTPS proxy connects and syncs fine. The WebView's <audio> element enforces the
 // platform's TLS trust instead and aborts the track request before a single
 // byte leaves the device: the server logs the playback session but never a
 // file request, and the player shows "Playback interrupted" (#6216). Routing
@@ -21,6 +21,7 @@ import { isTauriAppPlatform } from '@/services/environment';
 import { useABSServerStore } from '@/store/absServerStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { getOSPlatform } from '@/utils/misc';
+import { allowsSelfSignedCert } from '@/utils/tls';
 
 /**
  * The `scheme://host:port` origins of every live Audiobookshelf server, from
@@ -28,21 +29,28 @@ import { getOSPlatform } from '@/utils/misc';
  * `findABSServerById` resolves a book's server from. The player route can open
  * before the store is hydrated from settings, so reading only the store would
  * leave the allowlist empty and the proxy would refuse the very track the user
- * just opened.
+ * just opened. `selfSigned` lists the origins opted into self-signed
+ * certificates; the store's copy wins over a possibly stale persisted one.
  */
-const absServerOrigins = (): string[] => {
+const absServerOrigins = (): { origins: string[]; selfSigned: string[] } => {
   const stored = useABSServerStore.getState().servers;
   const persisted = useSettingsStore.getState().settings?.absServers ?? [];
   const origins = new Set<string>();
+  const selfSigned = new Set<string>();
   for (const server of [...stored, ...persisted]) {
     if (server.deletedAt) continue;
+    let origin: string;
     try {
-      origins.add(new URL(server.url).origin);
+      origin = new URL(server.url).origin;
     } catch {
       // A malformed stored URL simply isn't allowlisted.
+      continue;
     }
+    if (origins.has(origin)) continue;
+    origins.add(origin);
+    if (allowsSelfSignedCert(server)) selfSigned.add(origin);
   }
-  return [...origins];
+  return { origins: [...origins], selfSigned: [...selfSigned] };
 };
 
 /** A server the proxy may reach that is not an Audiobookshelf instance. */
@@ -55,6 +63,8 @@ export interface MediaProxyGrant {
    * reaches the DOM and a refreshed token leaves the track URL untouched.
    */
   authorization?: string;
+  /** The server accepts a self-signed certificate (see `allowsSelfSignedCert`). */
+  allowSelfSignedCert?: boolean;
 }
 
 /**
@@ -71,10 +81,11 @@ export interface MediaProxyGrant {
 export const getMediaProxyBase = async (grant?: MediaProxyGrant): Promise<string | null> => {
   if (!isTauriAppPlatform() || getOSPlatform() === 'ios') return null;
   try {
-    const origins = absServerOrigins();
+    const { origins, selfSigned } = absServerOrigins();
     if (grant) origins.push(grant.origin);
+    if (grant?.allowSelfSignedCert) selfSigned.push(grant.origin);
     const auth = grant?.authorization ? { [grant.origin]: grant.authorization } : undefined;
-    return await invoke<string>('get_media_proxy_base', { origins, auth });
+    return await invoke<string>('get_media_proxy_base', { origins, auth, selfSigned });
   } catch (error) {
     console.warn('[ABS] media proxy unavailable, streaming tracks directly:', error);
     return null;

@@ -43,7 +43,11 @@ const refresh = async (): Promise<void> => {
   if (!client || !origin) return;
   try {
     await client.refreshAccessToken();
-    await getMediaProxyBase({ origin, authorization: `Bearer ${client.accessToken}` });
+    await getMediaProxyBase({
+      origin,
+      authorization: `Bearer ${client.accessToken}`,
+      allowSelfSignedCert: client.allowSelfSignedCert,
+    });
   } catch {
     // A server that is briefly unreachable keeps the token it has; the next
     // tick tries again.
@@ -72,6 +76,7 @@ export const openBookOrbitMediaProxy = async (
   const base = await getMediaProxyBase({
     origin,
     authorization: `Bearer ${client.accessToken}`,
+    allowSelfSignedCert: client.allowSelfSignedCert,
   });
   if (!base) return null;
 

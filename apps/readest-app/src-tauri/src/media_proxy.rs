@@ -1,9 +1,9 @@
 // Loopback HTTP proxy that streams Audiobookshelf tracks to the WebView's
 // `<audio>` element through the app's own HTTP client (#6216).
 //
-// The ABS API client (tauri-plugin-http) accepts invalid certificates, so a
-// self-hosted server behind a self-signed HTTPS reverse proxy connects and
-// syncs. The WebView media element applies the platform's TLS trust instead:
+// The ABS API client (tauri-plugin-http) accepts invalid certificates for a
+// server the user opted in, so a self-hosted server behind a self-signed HTTPS
+// reverse proxy connects and syncs. The WebView media element applies the platform's TLS trust instead:
 // its track request died in the TLS handshake, the server logged the playback
 // session but never a file request, and the player showed "Playback
 // interrupted". A custom URI scheme can't bridge this - Android's WebView
@@ -51,9 +51,18 @@ type ProxyBody = BoxBody<Bytes, std::io::Error>;
 // is expected.
 const HEADER_TIMEOUT: Duration = Duration::from_secs(10);
 
+/// How the proxy may reach one upstream origin.
+#[derive(Clone, Debug, Default, PartialEq)]
+struct Grant {
+    /// `Authorization` header to send there (None for a server that
+    /// authenticates another way).
+    auth: Option<String>,
+    /// The user opted this server into self-signed/mismatched certificates.
+    self_signed: bool,
+}
+
 /// The upstream origins (`scheme://host:port`) the proxy is allowed to reach,
-/// each mapped to the `Authorization` header to send there (None for a server
-/// that authenticates another way). Shared between the command (which extends
+/// each mapped to how to reach it. Shared between the command (which extends
 /// it) and every connection (which reads it). Grows as servers are added
 /// mid-session; never shrinks, which is harmless - a removed server's token
 /// stops working anyway.
@@ -63,7 +72,7 @@ const HEADER_TIMEOUT: Duration = Duration::from_secs(10);
 /// BookOrbit's asset route is bearer-only, and a URL handed to a media element
 /// ends up in the DOM. Re-registering with a refreshed token also leaves the
 /// URL untouched, so a token expiring mid-track does not interrupt playback.
-type Origins = Arc<RwLock<HashMap<String, Option<String>>>>;
+type Origins = Arc<RwLock<HashMap<String, Grant>>>;
 
 struct Proxy {
     base: String,
@@ -74,52 +83,93 @@ static PROXY: OnceCell<Proxy> = OnceCell::const_new();
 
 /// Base URL (`http://127.0.0.1:<port>/<secret>`) of the media proxy, started
 /// on first use and kept for the life of the process. `origins` are the
-/// configured server origins the caller may stream from, and `auth` the
-/// `Authorization` header to send to any of them that needs one. Both are
-/// merged into the allowlist on every call, so a server added mid-session is
-/// reachable without restarting the proxy and a refreshed token replaces the
-/// one it supersedes.
+/// configured server origins the caller may stream from, `auth` the
+/// `Authorization` header to send to any of them that needs one, and
+/// `self_signed` the origins the user opted into self-signed certificates. All
+/// are merged into the allowlist on every call, so a server added mid-session
+/// is reachable without restarting the proxy, a refreshed token replaces the
+/// one it supersedes, and a changed certificate choice takes effect.
 #[tauri::command]
 pub async fn get_media_proxy_base(
     origins: Vec<String>,
     auth: Option<HashMap<String, String>>,
+    self_signed: Option<Vec<String>>,
 ) -> Result<String, String> {
     let proxy = PROXY
         .get_or_try_init(|| async {
             let origins: Origins = Arc::new(RwLock::new(HashMap::new()));
-            let base = start(build_client()?, origins.clone()).await?;
+            let base = start(Clients::new()?, origins.clone()).await?;
             Ok::<_, String>(Proxy { base, origins })
         })
         .await?;
     if let Ok(mut allow) = proxy.origins.write() {
-        for origin in origins {
-            allow.entry(origin).or_insert(None);
-        }
-        for (origin, header) in auth.unwrap_or_default() {
-            allow.insert(origin, Some(header));
-        }
+        register(
+            &mut allow,
+            origins,
+            auth.unwrap_or_default(),
+            self_signed.unwrap_or_default(),
+        );
     }
     Ok(proxy.base.clone())
 }
 
-/// The same TLS policy as the ABS API client: self-signed and mismatched
-/// certificates are accepted because the user explicitly pointed the app at
-/// this server. Redirects are disabled so a response cannot bounce the request
-/// to an origin outside the allowlist; a connect timeout keeps a blackholed
-/// upstream from parking the proxy task (and the WebView request) forever.
-fn build_client() -> Result<reqwest::Client, String> {
-    reqwest::Client::builder()
-        .danger_accept_invalid_certs(true)
-        .danger_accept_invalid_hostnames(true)
-        .redirect(reqwest::redirect::Policy::none())
-        .connect_timeout(Duration::from_secs(10))
-        .build()
-        .map_err(|e| format!("media proxy: client: {e}"))
+/// Merge one call's origins into the allowlist. Every listed origin's
+/// certificate choice is replaced, so turning the option off takes effect.
+fn register(
+    allow: &mut HashMap<String, Grant>,
+    origins: Vec<String>,
+    auth: HashMap<String, String>,
+    self_signed: Vec<String>,
+) {
+    for origin in origins {
+        let lenient = self_signed.contains(&origin);
+        allow.entry(origin).or_default().self_signed = lenient;
+    }
+    for (origin, header) in auth {
+        allow.entry(origin).or_default().auth = Some(header);
+    }
+}
+
+/// One client per TLS policy, matching the API clients: certificates are
+/// verified unless the user opted the server into self-signed ones. Redirects
+/// are disabled so a response cannot bounce the request to an origin outside
+/// the allowlist; a connect timeout keeps a blackholed upstream from parking
+/// the proxy task (and the WebView request) forever.
+#[derive(Clone)]
+struct Clients {
+    verified: reqwest::Client,
+    self_signed: reqwest::Client,
+}
+
+impl Clients {
+    fn new() -> Result<Self, String> {
+        let build = |accept_invalid: bool| {
+            reqwest::Client::builder()
+                .danger_accept_invalid_certs(accept_invalid)
+                .danger_accept_invalid_hostnames(accept_invalid)
+                .redirect(reqwest::redirect::Policy::none())
+                .connect_timeout(Duration::from_secs(10))
+                .build()
+                .map_err(|e| format!("media proxy: client: {e}"))
+        };
+        Ok(Self {
+            verified: build(false)?,
+            self_signed: build(true)?,
+        })
+    }
+
+    fn for_grant(&self, grant: &Grant) -> &reqwest::Client {
+        if grant.self_signed {
+            &self.self_signed
+        } else {
+            &self.verified
+        }
+    }
 }
 
 /// Binds a fresh listener on 127.0.0.1 and serves it on the current tokio
 /// runtime. Returns the base URL including the secret path segment.
-async fn start(client: reqwest::Client, origins: Origins) -> Result<String, String> {
+async fn start(clients: Clients, origins: Origins) -> Result<String, String> {
     let listener = TcpListener::bind(("127.0.0.1", 0))
         .await
         .map_err(|e| format!("media proxy: bind: {e}"))?;
@@ -141,14 +191,14 @@ async fn start(client: reqwest::Client, origins: Origins) -> Result<String, Stri
                 }
             };
             let secret = secret.clone();
-            let client = client.clone();
+            let clients = clients.clone();
             let origins = origins.clone();
             tokio::spawn(async move {
                 let service = service_fn(move |req| {
                     let secret = secret.clone();
-                    let client = client.clone();
+                    let clients = clients.clone();
                     let origins = origins.clone();
-                    async move { Ok::<_, Infallible>(handle(req, &secret, &client, &origins).await) }
+                    async move { Ok::<_, Infallible>(handle(req, &secret, &clients, &origins).await) }
                 });
                 if let Err(e) = http1::Builder::new()
                     .serve_connection(TokioIo::new(stream), service)
@@ -169,10 +219,10 @@ async fn start(client: reqwest::Client, origins: Origins) -> Result<String, Stri
 async fn handle(
     req: Request<Incoming>,
     secret: &str,
-    client: &reqwest::Client,
+    clients: &Clients,
     origins: &Origins,
 ) -> Response<ProxyBody> {
-    match forward(req, secret, client, origins).await {
+    match forward(req, secret, clients, origins).await {
         Ok(response) => response,
         Err(status) => empty(status),
     }
@@ -203,13 +253,9 @@ fn target_url(query: Option<&str>) -> Option<Url> {
     ok.then_some(url)
 }
 
-/// The credential to use for `url`, or None when its origin is not one the
-/// proxy may reach. The UUID secret authenticates the caller; this authorizes
-/// the destination. `Some(None)` is an allowed origin that needs no header.
-fn origin_credential(
-    url: &Url,
-    origins: &RwLock<HashMap<String, Option<String>>>,
-) -> Option<Option<String>> {
+/// How to reach `url`, or None when its origin is not one the proxy may reach.
+/// The UUID secret authenticates the caller; this authorizes the destination.
+fn origin_grant(url: &Url, origins: &RwLock<HashMap<String, Grant>>) -> Option<Grant> {
     match origins.read() {
         Ok(allow) => allow.get(&url.origin().ascii_serialization()).cloned(),
         Err(_) => None,
@@ -240,7 +286,7 @@ async fn send_with_timeout(
 async fn forward(
     req: Request<Incoming>,
     secret: &str,
-    client: &reqwest::Client,
+    clients: &Clients,
     origins: &Origins,
 ) -> Result<Response<ProxyBody>, StatusCode> {
     if req.method() != Method::GET {
@@ -250,7 +296,7 @@ async fn forward(
         return Err(StatusCode::NOT_FOUND);
     }
     let target = target_url(req.uri().query()).ok_or(StatusCode::BAD_REQUEST)?;
-    let Some(credential) = origin_credential(&target, origins) else {
+    let Some(grant) = origin_grant(&target, origins) else {
         log::warn!(
             "media proxy: refused an off-allowlist origin: {}",
             target.origin().ascii_serialization()
@@ -259,8 +305,8 @@ async fn forward(
     };
     let host = target.host_str().unwrap_or_default().to_owned();
 
-    let mut upstream = client.get(target.clone());
-    if let Some(value) = credential {
+    let mut upstream = clients.for_grant(&grant).get(target.clone());
+    if let Some(value) = grant.auth {
         upstream = upstream.header(AUTHORIZATION, value);
     }
     if let Some(range) = req.headers().get(RANGE) {
@@ -407,9 +453,16 @@ mod tests {
     /// ignores the shell's proxy env.
     async fn spawn_proxy(allow: &[String]) -> String {
         let origins: Origins = Arc::new(RwLock::new(
-            allow.iter().map(|o| (o.clone(), None)).collect(),
+            allow
+                .iter()
+                .map(|o| (o.clone(), Grant::default()))
+                .collect(),
         ));
-        start(test_client(), origins).await.unwrap()
+        let clients = Clients {
+            verified: test_client(),
+            self_signed: test_client(),
+        };
+        start(clients, origins).await.unwrap()
     }
 
     fn test_client() -> reqwest::Client {
@@ -599,28 +652,33 @@ mod tests {
 
     #[test]
     fn origin_allowed_matches_scheme_host_and_port() {
-        let allow: RwLock<HashMap<String, Option<String>>> =
-            RwLock::new(HashMap::from([("https://abs.example".to_string(), None)]));
+        let allow: RwLock<HashMap<String, Grant>> = RwLock::new(HashMap::from([(
+            "https://abs.example".to_string(),
+            Grant::default(),
+        )]));
         let allowed = Url::parse("https://abs.example/api/items/i1/file/2?token=t").unwrap();
         let other_port = Url::parse("https://abs.example:8443/api/items/i1/file/2").unwrap();
         let other_host = Url::parse("https://evil.example/api/items/i1/file/2").unwrap();
         let other_scheme = Url::parse("http://abs.example/api/items/i1/file/2").unwrap();
 
-        assert!(origin_credential(&allowed, &allow).is_some());
-        assert!(origin_credential(&other_port, &allow).is_none());
-        assert!(origin_credential(&other_host, &allow).is_none());
-        assert!(origin_credential(&other_scheme, &allow).is_none());
+        assert!(origin_grant(&allowed, &allow).is_some());
+        assert!(origin_grant(&other_port, &allow).is_none());
+        assert!(origin_grant(&other_host, &allow).is_none());
+        assert!(origin_grant(&other_scheme, &allow).is_none());
     }
 
     /// BookOrbit's asset route is bearer-only, so the credential travels with
     /// the origin rather than in the loopback URL a media element is given.
     #[test]
     fn a_registered_origin_carries_its_authorization() {
-        let allow: RwLock<HashMap<String, Option<String>>> = RwLock::new(HashMap::from([
-            ("https://abs.example".to_string(), None),
+        let allow: RwLock<HashMap<String, Grant>> = RwLock::new(HashMap::from([
+            ("https://abs.example".to_string(), Grant::default()),
             (
                 "http://books.example:13380".to_string(),
-                Some("Bearer jwt".to_string()),
+                Grant {
+                    auth: Some("Bearer jwt".to_string()),
+                    self_signed: false,
+                },
             ),
         ]));
         let bookorbit =
@@ -628,10 +686,33 @@ mod tests {
         let abs = Url::parse("https://abs.example/api/items/i1/file/2?token=t").unwrap();
 
         assert_eq!(
-            origin_credential(&bookorbit, &allow),
-            Some(Some("Bearer jwt".to_string()))
+            origin_grant(&bookorbit, &allow).and_then(|g| g.auth),
+            Some("Bearer jwt".to_string())
         );
         // An allowed origin that authenticates another way sends no header.
-        assert_eq!(origin_credential(&abs, &allow), Some(None));
+        assert_eq!(origin_grant(&abs, &allow), Some(Grant::default()));
+    }
+
+    /// Certificates are verified unless the caller lists the origin as opted
+    /// in, and every call replaces the choice so turning it off sticks.
+    #[test]
+    fn register_tracks_each_origins_certificate_choice() {
+        let mut allow = HashMap::new();
+        let abs = "https://abs.example".to_string();
+        let home = "https://home.example".to_string();
+        register(
+            &mut allow,
+            vec![abs.clone(), home.clone()],
+            HashMap::from([(home.clone(), "Bearer t".to_string())]),
+            vec![home.clone()],
+        );
+        assert!(!allow[&abs].self_signed);
+        assert!(allow[&home].self_signed);
+        assert_eq!(allow[&home].auth.as_deref(), Some("Bearer t"));
+
+        register(&mut allow, vec![home.clone()], HashMap::new(), vec![]);
+        assert!(!allow[&home].self_signed);
+        // The token registered earlier survives a call that doesn't resend it.
+        assert_eq!(allow[&home].auth.as_deref(), Some("Bearer t"));
     }
 }

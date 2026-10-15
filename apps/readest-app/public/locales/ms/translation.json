@@ -2541,5 +2541,7 @@
   "{{count}} voices available_other": "{{count}} suara tersedia",
   "Multilingual": "Pelbagai bahasa",
   "Expressive": "Ekspresif",
-  "Show Page Thumbnails": "Tunjukkan Lakaran Kecil Halaman"
+  "Show Page Thumbnails": "Tunjukkan Lakaran Kecil Halaman",
+  "Allow Self-Signed Certificate": "Benarkan Sijil Tandatangan Sendiri",
+  "Skips certificate checks for this server, so only turn it on if you trust it": "Melangkau semakan sijil untuk pelayan ini, jadi hidupkan hanya jika anda mempercayainya"
 }

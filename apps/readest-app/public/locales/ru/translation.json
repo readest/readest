@@ -2736,5 +2736,7 @@
   "{{count}} voices available_other": "Доступно {{count}} голоса",
   "Multilingual": "Многоязычный",
   "Expressive": "Выразительный",
-  "Show Page Thumbnails": "Показывать миниатюры страниц"
+  "Show Page Thumbnails": "Показывать миниатюры страниц",
+  "Allow Self-Signed Certificate": "Разрешить самоподписанный сертификат",
+  "Skips certificate checks for this server, so only turn it on if you trust it": "Отключает проверку сертификата для этого сервера, поэтому включайте, только если доверяете ему"
 }
