@@ -49,6 +49,12 @@ const EINK_MODELS: &[&str] = &[
     "max lumi",
 ];
 
+/// Model tokens too short or too collide-prone to trust from an unknown OEM:
+/// "a9" also matches the Samsung Galaxy A9 line and "nova" the Huawei nova
+/// line. They only count when a known e-ink manufacturer matched, which is
+/// how their real devices (Hisense A9, BOOX Nova) are identified anyway.
+const EINK_AMBIGUOUS_MODELS: &[&str] = &["a9", "nova"];
+
 /// Match the device identity fields against the known e-ink whitelists.
 ///
 /// Some readers report the SoC vendor (e.g. `QUALCOMM`) as the manufacturer and
@@ -63,7 +69,10 @@ pub fn is_eink_identity(manufacturer: &str, brand: &str, model: &str, device: &s
     for eink_manufacturer in EINK_MANUFACTURERS {
         if brands.contains(eink_manufacturer) {
             // Special case for manufacturers that make both e-ink and non-e-ink devices
-            if *eink_manufacturer == "hisense" || *eink_manufacturer == "xiaomi" {
+            if *eink_manufacturer == "hisense"
+                || *eink_manufacturer == "xiaomi"
+                || *eink_manufacturer == "amazon"
+            {
                 // Need to also check the model for these manufacturers
                 if EINK_MODELS
                     .iter()
@@ -77,9 +86,12 @@ pub fn is_eink_identity(manufacturer: &str, brand: &str, model: &str, device: &s
         }
     }
 
-    // Check if model matches known e-ink models
+    // Check if model matches known e-ink models, minus the ambiguous tokens
+    // that also name mainstream phones and are therefore only trusted when a
+    // known e-ink manufacturer matched above.
     EINK_MODELS
         .iter()
+        .filter(|eink_model| !EINK_AMBIGUOUS_MODELS.contains(eink_model))
         .any(|eink_model| model.contains(eink_model) || device.contains(eink_model))
 }
 
@@ -105,7 +117,35 @@ mod tests {
     fn detects_regular_eink_brands() {
         assert!(is_eink_identity("onyx", "boox", "palma", "musu"));
         assert!(is_eink_identity("", "tolino", "tab7", "ntx_6"));
-        assert!(is_eink_identity("amazon", "amazon", "kinds3", "walleye"));
+        assert!(is_eink_identity(
+            "amazon",
+            "amazon",
+            "kindle paperwhite",
+            "walleye"
+        ));
+    }
+
+    /// Mixed-lineup brands must not match their non-e-ink devices: Amazon
+    /// Fire tablets are LCD, the Galaxy A9 is an AMOLED phone, and the Huawei
+    /// nova line only shares its name with the BOOX Nova.
+    #[test]
+    fn rejects_non_eink_devices_of_matched_brands() {
+        assert!(!is_eink_identity("amazon", "amazon", "kfonki", "firehd8"));
+        assert!(!is_eink_identity("samsung", "samsung", "sm-a920f", "a920f"));
+        assert!(!is_eink_identity(
+            "someoem",
+            "somebrand",
+            "galaxy a9",
+            "a920f"
+        ));
+        assert!(!is_eink_identity("huawei", "huawei", "nam-lx9", "nova12"));
+    }
+
+    /// Ambiguous model tokens still count when a known e-ink manufacturer
+    /// matched: the Hisense A9 is detected through the gated path.
+    #[test]
+    fn ambiguous_models_count_for_gated_vendors() {
+        assert!(is_eink_identity("hisense", "hisense", "a9", "a9"));
     }
 
     /// An unknown OEM still matches when the model carries a known e-ink name.
