@@ -243,6 +243,8 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
     settings.globalReadSettings.highlightStyles[selectedStyle],
   );
   const androidTouchEndRef = useRef(false);
+  // Whether a finger is down, from the iOS native touch observer.
+  const iosTouchActiveRef = useRef(false);
   // Holds a quick action that fired while the user is still touching the screen
   // (Android long-press selects text via selectionchange before touchend). The
   // pending action runs on touchend so popups don't open under an active touch.
@@ -603,6 +605,13 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
       const restored = popupRestoredRangeRef.current;
       popupRestoredRangeRef.current = null;
       if (restored && isSameRange(restored, detail.range)) return;
+      // Nothing can select new text while the instant dictionary is up, so a
+      // popup selection now is iOS re-confirming the one the lookup dropped;
+      // drop it again so its handles don't sit on the lookup.
+      if (instantLookupDeselectedRef.current) {
+        detail.range.startContainer.ownerDocument?.getSelection()?.removeAllRanges();
+        return;
+      }
       // A click on an overlay drawn in the popup: a highlight opens the
       // toolbar in its annotated state (Delete Highlight + style options) with
       // its range handles (#6390), a note bubble opens the note view — like
@@ -914,16 +923,23 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
     // Release/cancel must clear a pending dwell even if a page turn unloaded
     // the section the gesture began in.
     if (ev.type === 'touchcancel') {
+      iosTouchActiveRef.current = false;
       handleTouchCancel();
       return;
     }
     if (appService?.isIOSApp) {
-      if (ev.type === 'touchstart') handleTouchStart();
-      else if (ev.type === 'touchmove' && doc) {
+      if (ev.type === 'touchstart') {
+        iosTouchActiveRef.current = true;
+        handleTouchStart();
+      } else if (ev.type === 'touchmove' && doc) {
         // Native events also cover popup controls: hide only for a drag
         // that has actually changed the book selection.
         if (handleNativeTouchMove(ev.x, ev.y, doc)) setShowAnnotPopup(false);
-      } else if (ev.type === 'touchend') handleTouchEnd(doc, index);
+      } else if (ev.type === 'touchend') {
+        iosTouchActiveRef.current = false;
+        handleTouchEnd(doc, index);
+        flushDeferredAction(deferredQuickActionRef.current);
+      }
       return;
     }
     if (!doc || index === undefined) return;
@@ -1264,10 +1280,14 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
     };
     // On Android, a long-press fires selectionchange (and this handler) while
     // the finger is still down. Defer until touchend so popups aren't dismissed
-    // by the in-progress touch (closes #3935).
+    // by the in-progress touch (closes #3935). An iOS footnote-popup selection
+    // also settles with the finger down, and iOS re-confirms it (handles and
+    // all) on release, so it waits for the release too; a book selection on
+    // iOS is already published at touchend.
     runOrDeferAction(
       deferredQuickActionRef.current,
-      !!appService?.isAndroidApp && !androidTouchEndRef.current,
+      (!!appService?.isAndroidApp && !androidTouchEndRef.current) ||
+        (!!appService?.isIOSApp && !!selection?.popup && iosTouchActiveRef.current),
       runAction,
     );
   };

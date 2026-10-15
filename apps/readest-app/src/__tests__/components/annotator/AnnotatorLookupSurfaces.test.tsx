@@ -38,6 +38,8 @@ const h = vi.hoisted(() => ({
   deselect: vi.fn(),
   restoreSelectionRange: vi.fn(() => true),
   isTextSelected: { current: true },
+  appService: {} as { isIOSApp?: boolean },
+  onNativeTouch: null as null | ((ev: { type: string; x: number; y: number }) => void),
   // Swapped per test: the fixed-layout branch of `onLoad` used to wire PDF-only
   // listeners, so a regression there is only visible with this on.
   book: { format: 'EPUB', isFixedLayout: false },
@@ -65,7 +67,7 @@ vi.mock('@/hooks/useShortcuts', () => ({
 }));
 
 vi.mock('@/context/EnvContext', () => ({
-  useEnv: () => ({ envConfig: {}, appService: {} }),
+  useEnv: () => ({ envConfig: {}, appService: h.appService }),
 }));
 
 vi.mock('@/hooks/useTranslation', () => ({
@@ -172,7 +174,12 @@ vi.mock('@/app/reader/hooks/useFoliateEvents', () => ({
   },
 }));
 vi.mock('@/app/reader/hooks/useRendererInputListeners', () => ({
-  useRendererInputListeners: () => {},
+  useRendererInputListeners: (
+    _view: unknown,
+    opts: { onNativeTouch?: (ev: { type: string; x: number; y: number }) => void },
+  ) => {
+    h.onNativeTouch = opts.onNativeTouch ?? null;
+  },
 }));
 
 vi.mock('@/app/reader/hooks/useTextSelector', () => ({
@@ -296,6 +303,8 @@ const republishSelectionWithSuppressedHandles = async () => {
 
 beforeEach(() => {
   h.actions = null;
+  h.appService = {};
+  h.onNativeTouch = null;
   h.book = { format: 'EPUB', isFixedLayout: false };
   h.foliateHandlers = null;
   h.config.booknotes = [];
@@ -656,6 +665,32 @@ describe('quick actions run on a selection made in the footnote popup', () => {
     await selectInPopup({ quickAction: true });
 
     expect(screen.getByTestId('dictionary-surface')).toBeTruthy();
+  });
+
+  // iOS settles a popup selection with the finger still down and re-confirms
+  // it, handles and all, on release: the lookup must wait for the release.
+  test('on iOS the quick action waits for the finger to lift', async () => {
+    h.appService = { isIOSApp: true };
+    render(<Annotator bookKey='book-1' contentInsets={{ top: 0, right: 0, bottom: 0, left: 0 }} />);
+    act(() => h.onNativeTouch?.({ type: 'touchstart', x: 0, y: 0 }));
+    await selectInPopup({ quickAction: true });
+    expect(screen.queryByTestId('dictionary-surface')).toBeNull();
+
+    await act(async () => h.onNativeTouch?.({ type: 'touchend', x: 0, y: 0 }));
+
+    expect(screen.getByTestId('dictionary-surface').dataset['word']).toBe('fortune');
+    expect(document.getSelection()?.rangeCount).toBe(0);
+  });
+
+  test('a popup selection re-confirmed under the lookup is dropped again', async () => {
+    render(<Annotator bookKey='book-1' contentInsets={{ top: 0, right: 0, bottom: 0, left: 0 }} />);
+    await selectInPopup({ quickAction: true });
+    expect(document.getSelection()?.rangeCount).toBe(0);
+
+    await selectInPopup({ quickAction: true });
+
+    expect(document.getSelection()?.rangeCount).toBe(0);
+    expect(screen.getByTestId('dictionary-surface').dataset['word']).toBe('fortune');
   });
 
   test('a report taken mid-drag still opens the toolbar', async () => {

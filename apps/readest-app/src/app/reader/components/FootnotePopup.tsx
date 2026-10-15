@@ -516,6 +516,18 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
     }
   }, [showPopup]);
 
+  // FoliateViewer lifts the iOS instant-highlight selection suppression while
+  // the popup is up, so its text can be selected.
+  useEffect(() => {
+    eventDispatcher.dispatch('footnote-popup-shown', { key: bookKey, shown: showPopup });
+  }, [bookKey, showPopup]);
+  useEffect(
+    () => () => {
+      eventDispatcher.dispatch('footnote-popup-shown', { key: bookKey, shown: false });
+    },
+    [bookKey],
+  );
+
   // A tap on a highlighted link opens the highlight's toolbar at the same word
   // as this popup; tell it which side is taken so the two don't stack (#6390).
   const anchorDir = showPopup ? (trianglePosition?.dir ?? null) : null;
