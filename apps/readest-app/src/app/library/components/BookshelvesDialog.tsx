@@ -382,11 +382,11 @@ export function BookshelvesEditor({
   const selectedGroupBy = resolveBookshelfGroupBy(selected, globalGroupBy);
   const useGlobalSort = selected.useGlobalSort !== false;
   const selectedSort = resolveBookshelfSort(selected, globalSort);
-  const fields = useMemo(() => discoverBookshelfFields(library), [library]);
   const books = useMemo(
     () => library.filter((b) => !b.deletedAt && !isAbsBookOrphaned(b)),
     [library, servers, settings],
   );
+  const fields = useMemo(() => discoverBookshelfFields(books), [books]);
   const previewDefinitions = useMemo(
     () =>
       debounced.map((s) => ({
