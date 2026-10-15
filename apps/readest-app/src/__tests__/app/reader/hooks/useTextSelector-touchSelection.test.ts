@@ -95,7 +95,7 @@ const setDocSelection = (valid: boolean) => {
     isCollapsed: !valid,
     rangeCount: valid ? 1 : 0,
     toString: () => (valid ? 'selected text' : ''),
-    getRangeAt: () => ({}) as Range,
+    getRangeAt: () => document.createRange(),
   } as unknown as Selection;
 };
 

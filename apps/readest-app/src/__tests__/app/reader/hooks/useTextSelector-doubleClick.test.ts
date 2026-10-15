@@ -365,22 +365,78 @@ describe('useTextSelector word selection next to a footnote marker', () => {
     document.body.removeChild(container);
   });
 
+  // A handle drag starts from an existing selection.
   test('a selection dragged onto the marker keeps it (#6566)', async () => {
     const setSelection = vi.fn();
     const { result } = setup(setSelection);
     const { container, sel, doc } = markerDoc();
+    const word = document.createRange();
+    word.setStart(container.firstChild!, 4);
+    word.setEnd(container.firstChild!, 7);
     sel.removeAllRanges();
+    sel.addRange(word);
     result.current.handlePointerDown(doc, 0, touch(10, 50));
-    result.current.handlePointerMove(doc, 0, touch(50, 50));
     const pre = document.createRange();
     pre.setStart(container.firstChild!, 4);
     pre.setEnd(container.querySelector('a')!.firstChild!, 1);
     makeRangeVisibleAt(pre);
+    sel.removeAllRanges();
     sel.addRange(pre);
     await result.current.handlePointerUp(doc, 0, touch(50, 50));
 
     const arg = setSelection.mock.calls[0]![0] as TextSelection;
     expect(arg.text).toBe('fox1');
+    document.body.removeChild(container);
+  });
+
+  test('a long-press that goes on to drag onto the marker keeps it', async () => {
+    const setSelection = vi.fn();
+    const { result } = setup(setSelection);
+    const { container, sel, doc } = markerDoc();
+    sel.removeAllRanges();
+    result.current.handlePointerDown(doc, 0, touch(10, 50));
+    const word = document.createRange();
+    word.setStart(container.firstChild!, 0);
+    word.setEnd(container.firstChild!, 3);
+    sel.addRange(word);
+    result.current.handleSelectionchange(doc, 0);
+    const pre = document.createRange();
+    pre.setStart(container.firstChild!, 0);
+    pre.setEnd(container.querySelector('a')!.firstChild!, 1);
+    makeRangeVisibleAt(pre);
+    sel.removeAllRanges();
+    sel.addRange(pre);
+    await result.current.handlePointerUp(doc, 0, touch(50, 50));
+
+    const last = setSelection.mock.calls.at(-1)![0] as TextSelection;
+    expect(last.text).toBe('The fox1');
+    document.body.removeChild(container);
+  });
+
+  // Android publishes the long-press selection from selectionchange while the
+  // finger is down; the release comes from the native bridge with no event.
+  test('an Android long-press looks up the word without the marker', async () => {
+    h.appService = { isAndroidApp: true, isMobile: true };
+    h.osPlatform = 'android';
+    const setSelection = vi.fn();
+    const { result } = setup(setSelection);
+    const { container, sel, doc } = markerDoc();
+    sel.removeAllRanges();
+    result.current.handlePointerDown(doc, 0, touch());
+    const pre = document.createRange();
+    pre.setStart(container.firstChild!, 4);
+    pre.setEnd(container.querySelector('a')!.firstChild!, 1);
+    makeRangeVisibleAt(pre);
+    sel.addRange(pre);
+    result.current.handleSelectionchange(doc, 0);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    await result.current.handlePointerUp(doc, 0);
+
+    expect(sel.toString()).toBe('fox1');
+    expect(setSelection).toHaveBeenCalled();
+    for (const [arg] of setSelection.mock.calls) {
+      expect((arg as TextSelection).text).toBe('fox');
+    }
     document.body.removeChild(container);
   });
 });
