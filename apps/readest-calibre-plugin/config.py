@@ -6,6 +6,11 @@ from qt.core import QCheckBox, QLabel, QLineEdit, QVBoxLayout, QWidget
 
 from calibre_plugins.readest.api import DEFAULT_API_BASE, DEFAULT_SUPABASE_URL
 
+try:
+    load_translations()
+except NameError:
+    pass
+
 prefs = JSONConfig('plugins/readest')
 
 prefs.defaults['api_base'] = DEFAULT_API_BASE
@@ -28,18 +33,18 @@ class ConfigWidget(QWidget):
         self.setLayout(layout)
 
         account = prefs['user_email']
-        status = ('Logged in as %s.' % account) if account else 'Not logged in.'
-        layout.addWidget(QLabel(status + ' Use the Readest toolbar menu to log in or out.'))
+        status = (_('Logged in as %s.') % account) if account else _('Not logged in.')
+        layout.addWidget(QLabel(status + ' ' + _('Use the Readest toolbar menu to log in or out.')))
 
-        self.custom_columns_checkbox = QCheckBox('Include custom columns in pushed metadata')
+        self.custom_columns_checkbox = QCheckBox(_('Include custom columns in pushed metadata'))
         self.custom_columns_checkbox.setChecked(bool(prefs['include_custom_columns']))
         layout.addWidget(self.custom_columns_checkbox)
 
-        layout.addWidget(QLabel('API server:'))
+        layout.addWidget(QLabel(_('API server:')))
         self.api_base_edit = QLineEdit(self)
         self.api_base_edit.setText(prefs['api_base'])
         self.api_base_edit.setToolTip(
-            'Only change this if you run a self-hosted Readest server.'
+            _('Only change this if you run a self-hosted Readest server.')
         )
         layout.addWidget(self.api_base_edit)
 

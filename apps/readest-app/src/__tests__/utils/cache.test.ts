@@ -240,9 +240,19 @@ describe('getCacheStats', () => {
 });
 
 describe('getCacheEntries', () => {
+  // Each base resolves to its own directory unless a test maps it elsewhere.
+  const makeCacheFs = (
+    readDirectory: ReturnType<typeof vi.fn>,
+    dirs: Partial<Record<string, string>> = {},
+  ): AppService =>
+    ({
+      readDirectory,
+      resolveFilePath: async (path: string, base: string) => `${dirs[base] ?? `/${base}`}/${path}`,
+    }) as unknown as AppService;
+
   it('reads the Cache base root with base-relative paths', async () => {
     const readDirectory = vi.fn().mockResolvedValue(makeFiles('x.json', 'y.epub'));
-    const appService = { readDirectory } as unknown as AppService;
+    const appService = makeCacheFs(readDirectory);
 
     const entries = await getCacheEntries(appService, [{ base: 'Cache', dir: '' }]);
 
@@ -255,7 +265,7 @@ describe('getCacheEntries', () => {
 
   it('prefixes a non-root source dir so paths are directly deletable (iOS Inbox)', async () => {
     const readDirectory = vi.fn().mockResolvedValue(makeFiles('book.epub'));
-    const appService = { readDirectory } as unknown as AppService;
+    const appService = makeCacheFs(readDirectory);
 
     const entries = await getCacheEntries(appService, [
       { base: 'None', dir: '/var/mobile/.../Documents/Inbox' },
@@ -272,7 +282,7 @@ describe('getCacheEntries', () => {
       .fn()
       .mockResolvedValueOnce(makeFiles('cache.json'))
       .mockRejectedValueOnce(new Error('no inbox'));
-    const appService = { readDirectory } as unknown as AppService;
+    const appService = makeCacheFs(readDirectory);
 
     const entries = await getCacheEntries(appService, [
       { base: 'Cache', dir: '' },
@@ -280,6 +290,19 @@ describe('getCacheEntries', () => {
     ]);
 
     expect(entries).toEqual([{ base: 'Cache', path: 'cache.json', size: 10 }]);
+  });
+
+  it('scans a directory once when two sources resolve to it (Android Cache and Temp)', async () => {
+    const readDirectory = vi.fn().mockResolvedValue(makeFiles('narration.mp4'));
+    const appService = makeCacheFs(readDirectory, { Cache: '/cache', Temp: '/cache' });
+
+    const entries = await getCacheEntries(appService, [
+      { base: 'Cache', dir: '' },
+      { base: 'Temp', dir: '' },
+    ]);
+
+    expect(readDirectory).toHaveBeenCalledTimes(1);
+    expect(entries).toEqual([{ base: 'Cache', path: 'narration.mp4', size: 10 }]);
   });
 });
 

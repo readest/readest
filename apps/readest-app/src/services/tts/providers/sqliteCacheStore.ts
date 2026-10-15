@@ -159,6 +159,8 @@ const SCHEMA = [
 
 // Batch accessed_at updates: reads must not each cost a synchronous write.
 const TOUCH_FLUSH_LIMIT = 64;
+// Rows per multi-row statement, under SQLite's oldest 999-parameter limit.
+const BATCH_ROWS = 300;
 
 // importPack stores synced packs under a fingerprint prefixed with this, so a
 // pack adopted from another device never equals the local manifest
@@ -173,6 +175,7 @@ const CURRENT_PACK_PREDICATE = `(p.fingerprint = m.fingerprint OR p.fingerprint 
 export class SqliteTTSCacheStore implements TTSCacheStore {
   #db: DatabaseService;
   #budgetBytes: number;
+  readonly #importListeners = new Set<(keys: string[]) => void>();
   #now: () => number;
   #packFs: TTSPackFs | null;
   #ready: Promise<void> | null = null;
@@ -295,6 +298,38 @@ export class SqliteTTSCacheStore implements TTSCacheStore {
     }
   }
 
+  // Which of these keys have audio cached, in a few queries (a download
+  // checks a whole section at once).
+  async cachedKeys(keys: string[]): Promise<Set<string>> {
+    await this.#ensureSchema();
+    const cached = new Set<string>();
+    // Packed rows count only while their pack file is there (one listing);
+    // a missing file is a miss, as get() would find.
+    let packFiles: Set<string> | null = null;
+    for (let start = 0; start < keys.length; start += BATCH_ROWS * 3) {
+      const batch = keys.slice(start, start + BATCH_ROWS * 3);
+      // A row a deleted pack left without audio (and without a pack) is a miss.
+      const rows = await this.#db.select<
+        DatabaseRow & { key: string; loose: number; path: string | null }
+      >(
+        `SELECT e.key, e.audio IS NOT NULL AS loose, p.path
+           FROM entries e LEFT JOIN packs p ON p.id = e.pack_id
+          WHERE e.key IN (${batch.map(() => '?').join(', ')})
+            AND (e.audio IS NOT NULL OR e.pack_id IS NOT NULL)`,
+        batch,
+      );
+      for (const row of rows) {
+        if (!row.loose) {
+          if (!row.path || !this.#packFs) continue;
+          packFiles ??= new Set(await this.#packFs.list().catch(() => []));
+          if (!packFiles.has(row.path)) continue;
+        }
+        cached.add(row.key);
+      }
+    }
+    return cached;
+  }
+
   async put(
     key: string,
     entry: TTSCacheEntry,
@@ -347,11 +382,14 @@ export class SqliteTTSCacheStore implements TTSCacheStore {
     // (section, ordinal) primary key. UPSERT keeps each ordinal unique and
     // preserves a key already recorded for an unchanged mark; a trailing
     // DELETE trims ordinals left over from a shorter new manifest.
-    for (let i = 0; i < marks.length; i++) {
+    // Many rows per statement: each is a round trip to the database worker.
+    for (let start = 0; start < marks.length; start += BATCH_ROWS) {
+      const batch = marks.slice(start, start + BATCH_ROWS);
       await this.#db.execute(
-        `INSERT INTO manifest_marks (section, ordinal, mark, key) VALUES (?, ?, ?, NULL)
+        `INSERT INTO manifest_marks (section, ordinal, mark, key)
+         VALUES ${batch.map(() => '(?, ?, ?, NULL)').join(', ')}
          ON CONFLICT(section, ordinal) DO UPDATE SET mark = excluded.mark`,
-        [section, i, marks[i]!],
+        batch.flatMap((mark, i) => [section, start + i, mark]),
       );
     }
     await this.#db.execute('DELETE FROM manifest_marks WHERE section = ? AND ordinal >= ?', [
@@ -370,6 +408,23 @@ export class SqliteTTSCacheStore implements TTSCacheStore {
       section,
       ordinal,
     ]);
+  }
+  // recordMarkKey for many ordinals of a section, in a few statements.
+  async recordMarkKeys(section: number, marks: { ordinal: number; key: string }[]): Promise<void> {
+    await this.#ensureSchema();
+    for (let start = 0; start < marks.length; start += BATCH_ROWS) {
+      const batch = marks.slice(start, start + BATCH_ROWS);
+      await this.#db.execute(
+        `UPDATE manifest_marks
+            SET key = CASE ordinal ${batch.map(() => 'WHEN ? THEN ?').join(' ')} END
+          WHERE section = ? AND ordinal IN (${batch.map(() => '?').join(', ')})`,
+        [
+          ...batch.flatMap(({ ordinal, key }) => [ordinal, key]),
+          section,
+          ...batch.map(({ ordinal }) => ordinal),
+        ],
+      );
+    }
   }
 
   // Explicit downloads are durable user data, not disposable warm-cache
@@ -791,11 +846,22 @@ export class SqliteTTSCacheStore implements TTSCacheStore {
     if (existing.length) return false;
     if (sidecar.totalSize > this.#budgetBytes) return false;
     if (!(await this.#evictUntilFits(sidecar.totalSize, ''))) return false;
-    return this.#adoptPack(
+    const adopted = await this.#adoptPack(
       new Uint8Array(data),
       sidecar,
       `${IMPORTED_FINGERPRINT_PREFIX}${sidecar.keysFingerprint}`,
     );
+    if (adopted) {
+      const keys = sidecar.entries.map((entry) => entry.key);
+      for (const listener of this.#importListeners) listener(keys);
+    }
+    return adopted;
+  }
+
+  // Told the keys an imported pack brought, so a sentence still waiting to
+  // be synthesized need not be.
+  onImported(listener: (keys: string[]) => void): void {
+    this.#importListeners.add(listener);
   }
 
   // Per-section download status for the podcast UI. `recorded` is the count

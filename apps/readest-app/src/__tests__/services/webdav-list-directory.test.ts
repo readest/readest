@@ -99,3 +99,22 @@ describe('listDirectory metadata parsing', () => {
     expect(entry.created).toBeUndefined();
   });
 });
+
+describe('listDirectory href decoding', () => {
+  test('decodes XML entities in an rclone-style href', async () => {
+    const fileResponse = `
+      <D:response>
+        <D:href>/books/Health%20&amp;%20Life.epub</D:href>
+        <D:propstat>
+          <D:prop><D:resourcetype/></D:prop>
+          <D:status>HTTP/1.1 200 OK</D:status>
+        </D:propstat>
+      </D:response>`;
+    fetchMock.mockResolvedValueOnce(new Response(multistatus(fileResponse), { status: 207 }));
+
+    const entries = await listDirectory(config, '/books');
+    expect(entries).toHaveLength(1);
+    expect(entries[0]!.name).toBe('Health & Life.epub');
+    expect(entries[0]!.path).toBe('/books/Health & Life.epub');
+  });
+});

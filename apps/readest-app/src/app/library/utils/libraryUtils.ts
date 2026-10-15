@@ -7,6 +7,7 @@ import {
 import {
   formatAuthors,
   formatTitle,
+  getBookPageCount,
   getContributorNames,
   isCurrentlyReadingBook,
 } from '@/utils/book';
@@ -478,6 +479,8 @@ const compareBookByKey = (
       return a.format.localeCompare(b.format, uiLanguage || navigator.language);
     case LibrarySortByType.Progress:
       return getBookReadRatio(a) - getBookReadRatio(b);
+    case LibrarySortByType.Pages:
+      return (getBookPageCount(a) ?? 0) - (getBookPageCount(b) ?? 0);
     case LibrarySortByType.Series: {
       // Group by series name first so books of the same series stay consecutive,
       // then order within a series by index. Comparing index alone would interleave
@@ -901,6 +904,9 @@ export const getBookSortValue = (book: Book, sortBy: LibrarySortByType): number 
     case LibrarySortByType.Progress:
       return getBookReadRatio(book);
 
+    case LibrarySortByType.Pages:
+      return getBookPageCount(book) ?? 0;
+
     case LibrarySortByType.Published: {
       const published = book.metadata?.published;
       if (!published) return 0;
@@ -967,6 +973,10 @@ export const getGroupSortValue = (
     case LibrarySortByType.Progress:
       // Return the most-progressed book's read ratio
       return Math.max(...books.map((b) => getBookReadRatio(b)));
+
+    case LibrarySortByType.Pages:
+      // Return the group's total page count
+      return books.reduce((sum, b) => sum + (getBookPageCount(b) ?? 0), 0);
 
     case LibrarySortByType.Published: {
       // Return the most recent published date

@@ -1,11 +1,12 @@
 import type { TTSWordBoundary } from '@/libs/edgeTTS';
-import { getAPIBaseUrl } from '@/services/environment';
-import { getAccessToken, getSubscriptionPlan, isTTSInPlan } from '@/utils/access';
+import { getReadestVoiceAPIBaseUrl } from '@/services/environment';
+import { getAccessToken, getSubscriptionPlan, isVoiceTierInPlan } from '@/utils/access';
 import { fetchWithAuth } from '@/utils/fetch';
 import { readNDJSON } from '@/utils/ndjson';
 import { estimateSentenceSeconds } from '../ttsDuration';
 import type { TTSVoice } from '../types';
 import {
+  DAILY_QUOTA_EXCEEDED,
   type PrefetchOptions,
   type SpeechProvider,
   SpeechSynthesisFatalError,
@@ -26,15 +27,15 @@ import {
 //   current paragraph is waiting on fill a window before background preloads
 //   of later paragraphs, never mixing languages. A window frees the lane as
 //   soon as its last sentence arrives.
-// - download: chapter downloads, up to 64 sentences per window, submitted as
-//   durable jobs that any worker may run (/api/tts/readest/jobs), up to four
-//   at a time, and collected when done. A server without jobs (off Workers)
-//   gets streamed windows instead, one at a time, like listening.
+// - download: chapter downloads, in windows of up to 2000 characters (about
+//   two minutes of audio, so progress moves often and work spreads across
+//   workers), submitted as durable jobs that any worker may run
+//   (/api/tts/readest/jobs), up to two at a time, and collected when done.
+//   A server without jobs (off Workers) gets streamed windows instead, one
+//   at a time, like listening.
 // A sentence stays requested while any caller that asked for it is still
 // interested; once every such signal is aborted it is withdrawn, and a window
 // nobody wants any more is aborted, which cancels its GPU job server-side.
-
-export const DAILY_QUOTA_EXCEEDED = 'DAILY_QUOTA_EXCEEDED';
 
 const LISTEN_WINDOW_SIZES = [1, 4, 8];
 const LISTEN_WINDOW_CHARS = 2000;
@@ -42,10 +43,19 @@ const LISTEN_WINDOW_SEC = 20;
 // A window of background preloads only: nobody waits on it, so it may carry
 // more audio, amortizing the per-request overhead and batching on the GPU.
 const LISTEN_BACKGROUND_WINDOW_SEC = 60;
+// The most sentences a download window may hold (the route's limit).
 const DOWNLOAD_WINDOW_SENTENCES = 64;
-const DOWNLOAD_WINDOW_CHARS = 12000;
-const DOWNLOAD_JOBS = 4;
+const DOWNLOAD_WINDOW_CHARS = 2000;
+// Download jobs in flight per app: enough to keep two workers busy (the
+// GPU endpoint runs at most two) without one download taking every worker.
+const DOWNLOAD_JOBS = 2;
 const BUSY_RETRY_MS = 5000;
+// After a quota refusal, ask the server again no sooner than this: a retry,
+// an upgrade or a new day may have made room.
+const QUOTA_RECHECK_MS = 60_000;
+// Refusals within this long of the last notice (a toast's lifetime) are one
+// notice: a download refuses many sentences at once.
+const QUOTA_NOTICE_MS = 5_000;
 // Route codes that will fail again for the same sentences.
 const PERMANENT_CODES = new Set(['UNKNOWN_VOICE', 'VOICE_TIER_REQUIRED', 'INVALID_INPUT']);
 // Job codes worth submitting the window again for: another device of the user
@@ -104,6 +114,26 @@ const newLane = (name: TTSLane): Lane => ({
   retryTimer: null,
 });
 
+const SAVED_CATALOG_KEY = 'readest-voice-catalog';
+
+const readSavedCatalog = (): TTSVoice[] | null => {
+  try {
+    const raw = localStorage.getItem(SAVED_CATALOG_KEY);
+    const voices = raw ? (JSON.parse(raw) as unknown) : null;
+    return Array.isArray(voices) ? (voices as TTSVoice[]) : null;
+  } catch {
+    return null;
+  }
+};
+
+const saveCatalog = (voices: TTSVoice[]) => {
+  try {
+    localStorage.setItem(SAVED_CATALOG_KEY, JSON.stringify(voices));
+  } catch {
+    // Storage unavailable: the next session asks the server again.
+  }
+};
+
 export class ReadestVoiceProvider implements SpeechProvider {
   readonly id = 'readest-tts';
   readonly label = 'Readest Voice';
@@ -114,7 +144,9 @@ export class ReadestVoiceProvider implements SpeechProvider {
 
   readonly #events: EventTarget | undefined;
   #voices: Promise<TTSVoice[]> | null = null;
-  #quotaExhausted = false;
+  // When the server last refused for quota (0: not refused).
+  #quotaExhaustedAt = 0;
+  #quotaNoticeAt = 0;
   #warmupFired = false;
   // Whether the server runs download jobs (null: not known yet, so one
   // download goes out at a time); without them downloads stream.
@@ -140,19 +172,26 @@ export class ReadestVoiceProvider implements SpeechProvider {
     return this.#voices;
   }
 
+  // Available to every reader, on any plan: a voice the plan lacks is listed
+  // disabled and gated only when it is picked or played.
   async init(): Promise<boolean> {
     // A new session (or day) may have fresh quota.
-    this.#quotaExhausted = false;
-    const voices = await this.getAllVoices();
-    this.#voices = null; // the next init asks again (plan or catalog may change)
-    return voices.length > 0;
+    this.#quotaExhaustedAt = 0;
+    this.#voices = null; // the next listing asks again (plan or catalog may change)
+    return true;
+  }
+
+  // Plus voices before Pro ones, each by name.
+  compareVoices(a: TTSVoice, b: TTSVoice): number {
+    const rank = (voice: TTSVoice) => (voice.tier === 'pro' ? 1 : 0);
+    return rank(a) - rank(b) || a.name.localeCompare(b.name);
   }
 
   // Boots a worker when the voice picker opens; once per provider.
   warmup(): void {
     if (this.#warmupFired) return;
     this.#warmupFired = true;
-    fetchWithAuth(`${getAPIBaseUrl()}/tts/readest`, {
+    fetchWithAuth(`${getReadestVoiceAPIBaseUrl()}/tts/readest`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ warmup: true }),
@@ -164,7 +203,8 @@ export class ReadestVoiceProvider implements SpeechProvider {
     signal: AbortSignal,
     options?: PrefetchOptions,
   ): Promise<SpeechSynthesisResult> {
-    if (this.#quotaExhausted) {
+    if (this.#quotaExhausted()) {
+      this.#noticeQuota();
       return Promise.reject(new SpeechSynthesisFatalError(DAILY_QUOTA_EXCEEDED));
     }
     // No Readest voice for this sentence's language: skip it rather than read
@@ -204,7 +244,7 @@ export class ReadestVoiceProvider implements SpeechProvider {
     signal: AbortSignal,
     options?: PrefetchOptions,
   ): void {
-    if (this.#quotaExhausted || signal.aborted) return;
+    if (this.#quotaExhausted() || signal.aborted) return;
     const background = lane === 'listen' && !!options?.background;
     const onDelivered = options?.onDelivered;
     for (const req of reqs) {
@@ -212,6 +252,7 @@ export class ReadestVoiceProvider implements SpeechProvider {
       let entry = this.#entries.get(entryKey(req));
       if (entry) {
         this.#want(entry, signal);
+        if (lane === 'download') this.#takeListenPreload(entry);
         if (!background) entry.background = false;
       } else {
         entry = this.#enqueue(req, this.#lanes[lane], signal, background, false);
@@ -225,6 +266,22 @@ export class ReadestVoiceProvider implements SpeechProvider {
     this.#pumpAll();
   }
 
+  // The cache has the sentence now (a synced pack arrived): settle it, drop
+  // it from windows not sent yet, and cancel a window left with nothing to
+  // deliver, so no worker synthesizes it again.
+  fulfill(req: SpeechSynthesisRequest, result: SpeechSynthesisResult): void {
+    const entry = this.#entries.get(entryKey(req));
+    if (!entry || entry.settled) return;
+    entry.settled = true;
+    entry.resolve(result);
+    for (const lane of Object.values(this.#lanes)) {
+      lane.queue = lane.queue.filter((e) => e !== entry);
+      for (const window of lane.inflight) {
+        if (window.entries.every((e) => e.settled)) window.controller.abort();
+      }
+    }
+  }
+
   async shutdown(): Promise<void> {
     for (const lane of Object.values(this.#lanes)) {
       if (lane.retryTimer) clearTimeout(lane.retryTimer);
@@ -236,19 +293,39 @@ export class ReadestVoiceProvider implements SpeechProvider {
     this.#entries.clear();
   }
 
+  // Every offered voice, for readers on any plan: the ones the plan lacks stay
+  // listed but disabled, so the picker shows what an upgrade unlocks. The
+  // service is always on: the last list the server gave answers at once and
+  // outlives any failed or slow request (offline, cold server).
   async #fetchVoices(): Promise<TTSVoice[]> {
+    const token = await getAccessToken();
+    const refreshed = this.#fetchCatalog(token);
+    const catalog = readSavedCatalog() ?? (await refreshed) ?? [];
+    const plan = token ? getSubscriptionPlan(token) : 'free';
+    return catalog.map((voice) =>
+      voice.tier && isVoiceTierInPlan(voice.tier, plan) ? voice : { ...voice, disabled: true },
+    );
+  }
+
+  // The server's list, saved for next time; null when it could not say.
+  async #fetchCatalog(token: string | null): Promise<TTSVoice[] | null> {
+    const url = `${getReadestVoiceAPIBaseUrl()}/tts/readest?all=1`;
     try {
-      const token = await getAccessToken();
-      // Cheap local gate; the route re-checks the plan on every request.
-      if (!token || !isTTSInPlan(getSubscriptionPlan(token))) return [];
-      const res = await fetchWithAuth(`${getAPIBaseUrl()}/tts/readest`, { method: 'GET' });
+      // Signed in, the server answers even before it knows `all` (with the
+      // plan's voices); signed out, the catalog needs no auth.
+      const res = token ? await fetchWithAuth(url, { method: 'GET' }) : await fetch(url);
+      if (!res.ok) {
+        const body = (await res.json().catch(() => null)) as { error?: unknown } | null;
+        throw new Error(typeof body?.error === 'string' ? body.error : `HTTP ${res.status}`);
+      }
       const data = (await res.json()) as { voices?: TTSVoice[] };
-      return Array.isArray(data.voices)
+      const voices = Array.isArray(data.voices)
         ? data.voices.map(({ id, name, lang, tier }) => ({ id, name, lang, tier }))
         : [];
+      saveCatalog(voices);
+      return voices;
     } catch {
-      // 503 kill switch, 403 lapsed plan, offline: the engine is unavailable.
-      return [];
+      return null;
     }
   }
 
@@ -281,6 +358,18 @@ export class ReadestVoiceProvider implements SpeechProvider {
     else lane.queue.push(entry);
     this.#want(entry, signal);
     return entry;
+  }
+
+  // A download of the chapter being read finds its sentences queued as
+  // listening preloads, which the listen lane serves a window at a time. Ones
+  // only queued in the background go out as download jobs instead; what the
+  // listener waits on, or a window already carries, stays.
+  #takeListenPreload(entry: Entry) {
+    const listen = this.#lanes.listen;
+    const index = listen.queue.indexOf(entry);
+    if (index < 0 || !entry.background) return;
+    listen.queue.splice(index, 1);
+    this.#lanes.download.queue.push(entry);
   }
 
   #want(entry: Entry, signal: AbortSignal) {
@@ -403,7 +492,7 @@ export class ReadestVoiceProvider implements SpeechProvider {
       const body = job
         ? await this.#collectJob(request, controller.signal)
         : (
-            await fetchWithAuth(`${getAPIBaseUrl()}/tts/readest/stream`, {
+            await fetchWithAuth(`${getReadestVoiceAPIBaseUrl()}/tts/readest/stream`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: request,
@@ -485,7 +574,7 @@ export class ReadestVoiceProvider implements SpeechProvider {
   // The result is the NDJSON a stream window sends. Nobody wanting the window
   // any more cancels the job, so its worker stops too.
   async #collectJob(request: string, signal: AbortSignal) {
-    const jobs = `${getAPIBaseUrl()}/tts/readest/jobs`;
+    const jobs = `${getReadestVoiceAPIBaseUrl()}/tts/readest/jobs`;
     const submitted = await fetchWithAuth(jobs, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -512,13 +601,23 @@ export class ReadestVoiceProvider implements SpeechProvider {
     }
   }
 
-  // Every further request would be refused too: fail everything and tell the
-  // user once. init() (a new session) clears it.
+  #quotaExhausted() {
+    return Date.now() - this.#quotaExhaustedAt < QUOTA_RECHECK_MS;
+  }
+
+  // Tells the user why a request was refused (tts-quota-exceeded), once per
+  // burst of refusals.
+  #noticeQuota() {
+    if (Date.now() - this.#quotaNoticeAt < QUOTA_NOTICE_MS) return;
+    this.#quotaNoticeAt = Date.now();
+    this.#events?.dispatchEvent(new CustomEvent('tts-quota-exceeded'));
+  }
+
+  // Further requests would be refused too for a while: fail everything and
+  // tell the user. init() (a new session) clears it.
   #exhaustQuota() {
-    if (!this.#quotaExhausted) {
-      this.#quotaExhausted = true;
-      this.#events?.dispatchEvent(new CustomEvent('tts-quota-exceeded'));
-    }
+    this.#noticeQuota();
+    this.#quotaExhaustedAt = Date.now();
     const fatal = new SpeechSynthesisFatalError(DAILY_QUOTA_EXCEEDED);
     for (const lane of Object.values(this.#lanes)) {
       lane.queue = [];

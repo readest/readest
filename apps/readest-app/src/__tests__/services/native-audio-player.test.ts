@@ -75,6 +75,31 @@ describe('NativeAudioPlayer', () => {
     await player.shutdown();
   });
 
+  test('holds the clock at a chunk start until the native player reports it playing', async () => {
+    // AVPlayer can take a few hundred ms to open the next item. A clock run
+    // ahead from the event lights the second word, then the next poll pulls it
+    // back to the first.
+    let now = 1000;
+    vi.spyOn(performance, 'now').mockImplementation(() => now);
+    const position = { session: 7, index: 0, positionMs: 0, playing: false };
+    vi.mocked(invoke).mockImplementation(async (cmd: string) => {
+      if (cmd === 'plugin:native-tts|playout_control') return { session: 7 } as unknown;
+      if (cmd === 'plugin:native-tts|playout_position') return position as unknown;
+      return undefined as unknown;
+    });
+    const events: WebAudioPlayerEvent[] = [];
+    const { player, generation } = await startedPlayer(events);
+    vi.mocked(invoke).mockClear();
+
+    playoutEvents!({ type: 'chunk-start', session: 7, index: 0 });
+    expect(invoke).toHaveBeenCalledWith('plugin:native-tts|playout_position');
+    await Promise.resolve();
+    now += 400;
+    expect(player.getPlaybackPosition(generation)).toEqual({ chunkIndex: 0, mediaTimeSec: 0 });
+    await player.shutdown();
+    vi.mocked(performance.now).mockRestore();
+  });
+
   test('events from a stale native session are ignored', async () => {
     const events: WebAudioPlayerEvent[] = [];
     const { player, generation } = await startedPlayer(events);
@@ -140,6 +165,38 @@ describe('NativeAudioPlayer', () => {
     expect(player.isUserPaused()).toBe(false);
     expect(controlCalls.some((c) => c.action === 'resume')).toBe(true);
     await player.shutdown();
+  });
+
+  test('pausing freezes the clock where it is, and resuming waits for the player', async () => {
+    let now = 1000;
+    vi.spyOn(performance, 'now').mockImplementation(() => now);
+    let position = { session: 7, index: 0, positionMs: 1000, playing: true };
+    vi.mocked(invoke).mockImplementation(async (cmd: string) => {
+      if (cmd === 'plugin:native-tts|playout_control') return { session: 7 } as unknown;
+      if (cmd === 'plugin:native-tts|playout_position') return position as unknown;
+      return undefined as unknown;
+    });
+    const events: WebAudioPlayerEvent[] = [];
+    const { player, generation } = await startedPlayer(events);
+    playoutEvents!({ type: 'chunk-start', session: 7, index: 0 });
+    await Promise.resolve();
+    await Promise.resolve();
+
+    // 200ms past the last poll: pausing must not drop back to the polled 1.0s.
+    now += 200;
+    await player.pauseContext();
+    expect(player.getPlaybackPosition(generation)?.mediaTimeSec).toBeCloseTo(1.2);
+
+    // AVPlayer is not rendering yet when the resume command returns.
+    position = { session: 7, index: 0, positionMs: 1200, playing: false };
+    vi.mocked(invoke).mockClear();
+    await player.resumeContext();
+    expect(invoke).toHaveBeenCalledWith('plugin:native-tts|playout_position');
+    await Promise.resolve();
+    now += 400;
+    expect(player.getPlaybackPosition(generation)?.mediaTimeSec).toBeCloseTo(1.2);
+    await player.shutdown();
+    vi.mocked(performance.now).mockRestore();
   });
 
   test('rate changes are applied live', async () => {

@@ -37,6 +37,8 @@ pub struct ParsedPdfMetadata {
     pub partial_md5: String,
     pub info: PdfInfo,
     pub xmp: Option<Vec<u8>>,
+    /// `/Count` of the page tree root, for the import-time page count.
+    pub page_count: u32,
 }
 
 #[tauri::command]
@@ -211,6 +213,7 @@ fn parse_pdf_metadata_file(mut source: File) -> Result<ParsedPdfMetadata, String
         partial_md5,
         info,
         xmp,
+        page_count: document.num_pages(),
     })
 }
 
@@ -241,6 +244,7 @@ mod tests {
             .windows(b"Metadata Series".len())
             .any(|w| w == b"Metadata Series")));
         assert!(!parsed.partial_md5.is_empty());
+        assert!(parsed.page_count > 0);
     }
 
     #[test]

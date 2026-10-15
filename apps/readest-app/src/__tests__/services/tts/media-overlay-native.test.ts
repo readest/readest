@@ -9,12 +9,12 @@ vi.mock('@tauri-apps/api/core', () => ({
 }));
 
 vi.mock('@tauri-apps/api/path', () => ({
-  tempDir: vi.fn(async () => '/tmp'),
+  appCacheDir: vi.fn(async () => '/cache'),
   join: vi.fn(async (...parts: string[]) => parts.join('/')),
 }));
 
 vi.mock('@tauri-apps/plugin-fs', () => ({
-  BaseDirectory: { Temp: 1 },
+  BaseDirectory: { Temp: 1, AppCache: 2 },
   writeFile: vi.fn(async () => undefined),
   remove: vi.fn(async () => undefined),
 }));

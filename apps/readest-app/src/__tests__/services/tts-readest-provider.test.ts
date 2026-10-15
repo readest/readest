@@ -9,7 +9,8 @@ const m = vi.hoisted(() => ({
 vi.mock('@/utils/fetch', () => ({ fetchWithAuth: m.fetchWithAuth }));
 vi.mock('@/services/environment', async (orig) => ({
   ...(await orig<typeof import('@/services/environment')>()),
-  getAPIBaseUrl: () => 'https://web.test/api',
+  getAPIBaseUrl: () => 'https://dev.test/api',
+  getReadestVoiceAPIBaseUrl: () => 'https://web.test/api',
 }));
 vi.mock('@/utils/access', async (orig) => ({
   ...(await orig<typeof import('@/utils/access')>()),
@@ -152,6 +153,7 @@ let events: EventTarget;
 let provider: ReadestVoiceProvider;
 
 beforeEach(() => {
+  localStorage.clear();
   for (const fn of Object.values(m)) fn.mockReset();
   m.getAccessToken.mockResolvedValue('tok');
   m.getSubscriptionPlan.mockReturnValue('plus');
@@ -168,31 +170,97 @@ afterEach(() => {
 });
 
 describe('voices and init', () => {
-  it('makes no request without a token or without a TTS plan', async () => {
+  it('lists every voice to every reader, greying out what the plan lacks', async () => {
+    const catalog = [
+      ...VOICES,
+      { id: 'omnivoice:clara', name: 'Clara', lang: 'en-US', tier: 'pro' },
+    ];
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(Response.json({ voices: catalog }));
+    m.fetchWithAuth.mockResolvedValue(Response.json({ voices: catalog }));
+    // Signed out: no auth needed for the catalog, nothing playable, yet the
+    // engine is available: a voice is gated only when it is picked.
     m.getAccessToken.mockResolvedValue(null);
-    expect(await provider.getAllVoices()).toEqual([]);
-    expect(await provider.init()).toBe(false);
+    const signedOut = new ReadestVoiceProvider(events);
+    expect((await signedOut.getAllVoices()).map((v) => [v.id, !!v.disabled])).toEqual([
+      ['kokoro:af_heart', true],
+      ['omnivoice:clara', true],
+    ]);
+    expect(await signedOut.init()).toBe(true);
+    expect(fetchMock).toHaveBeenCalledWith('https://web.test/api/tts/readest?all=1');
+    // Plus: the Pro voice stays visible but greyed out.
     m.getAccessToken.mockResolvedValue('tok');
-    m.getSubscriptionPlan.mockReturnValue('purchase');
-    const other = new ReadestVoiceProvider(events);
-    expect(await other.getAllVoices()).toEqual([]);
-    expect(await other.init()).toBe(false);
-    expect(m.fetchWithAuth).not.toHaveBeenCalled();
-  });
-
-  it('fetches the plan voices once for getAllVoices + init', async () => {
-    expect(await provider.getAllVoices()).toEqual(VOICES);
-    expect(await provider.init()).toBe(true);
-    expect(m.fetchWithAuth).toHaveBeenCalledTimes(1);
-    expect(m.fetchWithAuth).toHaveBeenCalledWith('https://web.test/api/tts/readest', {
+    m.getSubscriptionPlan.mockReturnValue('plus');
+    const plus = new ReadestVoiceProvider(events);
+    expect((await plus.getAllVoices()).map((v) => [v.id, !!v.disabled])).toEqual([
+      ['kokoro:af_heart', false],
+      ['omnivoice:clara', true],
+    ]);
+    expect(await plus.init()).toBe(true);
+    expect(m.fetchWithAuth).toHaveBeenCalledWith('https://web.test/api/tts/readest?all=1', {
       method: 'GET',
     });
   });
 
-  it('treats a failing voices request (kill switch, lapsed plan) as unavailable', async () => {
+  it('fetches the voices once for getAllVoices + init', async () => {
+    expect(await provider.getAllVoices()).toEqual(VOICES);
+    expect(await provider.init()).toBe(true);
+    expect(m.fetchWithAuth).toHaveBeenCalledTimes(1);
+  });
+
+  it('lists nothing when the server cannot answer and no voices were saved', async () => {
     m.fetchWithAuth.mockRejectedValueOnce(new Error('NOT_CONFIGURED'));
     expect(await provider.getAllVoices()).toEqual([]);
-    expect(await provider.init()).toBe(false);
+    expect(await provider.init()).toBe(true);
+  });
+
+  it('keeps the last voices when a later listing fails (offline, cold server)', async () => {
+    expect(await provider.getAllVoices()).toEqual(VOICES);
+    m.fetchWithAuth.mockRejectedValue(new TypeError('Failed to fetch'));
+    const next = new ReadestVoiceProvider(events);
+    expect(await next.getAllVoices()).toEqual(VOICES);
+    expect(await next.init()).toBe(true);
+  });
+
+  it('answers from the saved voices at once and refreshes them in the background', async () => {
+    await provider.getAllVoices();
+    let answer!: (res: Response) => void;
+    m.fetchWithAuth.mockImplementation(() => new Promise<Response>((r) => (answer = r)));
+    const next = new ReadestVoiceProvider(events);
+    // The server has not answered: the saved list still lists at once.
+    expect(await next.getAllVoices()).toEqual(VOICES);
+    const fresh = [...VOICES, { id: 'kokoro:am_adam', name: 'Adam', lang: 'en-US', tier: 'plus' }];
+    answer(Response.json({ voices: fresh }));
+    await flush();
+    m.fetchWithAuth.mockRejectedValue(new TypeError('Failed to fetch'));
+    expect(await new ReadestVoiceProvider(events).getAllVoices()).toEqual(fresh);
+  });
+
+  it('keeps the saved voices whatever error the server answers', async () => {
+    await provider.getAllVoices();
+    m.fetchWithAuth.mockRejectedValue(new Error('NOT_CONFIGURED'));
+    await new ReadestVoiceProvider(events).getAllVoices();
+    await flush();
+    expect(await new ReadestVoiceProvider(events).getAllVoices()).toEqual(VOICES);
+  });
+
+  it('orders voices Plus before Pro, each by name', () => {
+    const v = (name: string, tier: 'plus' | 'pro', lang = 'en-US') => ({
+      id: name,
+      name,
+      lang,
+      tier,
+    });
+    const sorted = [
+      v('Clara', 'pro'),
+      v('Emma', 'plus', 'en-GB'),
+      v('Arthur', 'pro', 'en-GB'),
+      v('Bella', 'plus'),
+    ]
+      .sort((a, b) => provider.compareVoices(a, b))
+      .map((voice) => voice.name);
+    expect(sorted).toEqual(['Bella', 'Emma', 'Arthur', 'Clara']);
   });
 
   it('fires the warmup at most once', async () => {
@@ -471,6 +539,55 @@ describe('errors', () => {
     expect(m.fetchWithAuth.mock.calls.filter(([, i]) => i.method === 'POST')).toHaveLength(2);
   });
 
+  it('tells the user again when a later request is refused for quota', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    try {
+      const quota = vi.fn();
+      events.addEventListener('tts-quota-exceeded', quota);
+      m.fetchWithAuth.mockImplementation(async (_url: string, init: RequestInit) => {
+        if (init.method === 'POST') throw new Error('DAILY_QUOTA_EXCEEDED');
+        return Response.json({ voices: VOICES });
+      });
+      const signal = new AbortController().signal;
+      await expect(provider.synthesize(req('A.'), signal)).rejects.toThrow();
+      await expect(provider.synthesize(req('B.'), signal)).rejects.toThrow();
+      // One toast for a burst of refusals (a download refuses many at once).
+      expect(quota).toHaveBeenCalledTimes(1);
+      // Play pressed again later: refused without a request, but not silently.
+      vi.setSystemTime(Date.now() + 10_000);
+      await expect(provider.synthesize(req('C.'), signal)).rejects.toThrow();
+      expect(quota).toHaveBeenCalledTimes(2);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('asks the server again a minute after a quota rejection (retry, upgrade, new day)', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    try {
+      m.fetchWithAuth.mockImplementation(async (_url: string, init: RequestInit) => {
+        if (init.method === 'POST') throw new Error('DAILY_QUOTA_EXCEEDED');
+        return Response.json({ voices: VOICES });
+      });
+      const signal = new AbortController().signal;
+      await expect(provider.synthesize(req('A.'), signal)).rejects.toBeInstanceOf(
+        SpeechSynthesisFatalError,
+      );
+      await expect(provider.synthesize(req('B.'), signal)).rejects.toBeInstanceOf(
+        SpeechSynthesisFatalError,
+      );
+      const posts = () => m.fetchWithAuth.mock.calls.filter(([, i]) => i.method === 'POST');
+      expect(posts()).toHaveLength(1);
+      vi.setSystemTime(Date.now() + 60_000);
+      await expect(provider.synthesize(req('C.'), signal)).rejects.toBeInstanceOf(
+        SpeechSynthesisFatalError,
+      );
+      expect(posts()).toHaveLength(2);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it.each([
     'UNKNOWN_VOICE',
     'VOICE_TIER_REQUIRED',
@@ -536,16 +653,80 @@ describe('download jobs', () => {
   });
   const all = () => jobs!;
 
-  it('submits windows of up to 64 sentences as jobs, four at a time', async () => {
-    provider.prefetch(reqs(300), 'download', new AbortController().signal);
-    await flush();
-    expect(all().map((j) => j.body.segments.length)).toEqual([64, 64, 64, 64]);
+  it('submits jobs of up to 2000 characters, two at a time', async () => {
+    // 900-character sentences: two fit in a window, a third would not.
+    const long = Array.from({ length: 10 }, (_, i) => req(`${'a'.repeat(898)}${i}.`));
+    provider.prefetch(long, 'download', new AbortController().signal);
+    await flush(6);
+    expect(all().map((j) => j.body.segments.length)).toEqual([2, 2]);
     expect(all()[0]!.body).toMatchObject({ lane: 'download', lang: 'en-US' });
     expect(windows).toHaveLength(0);
 
     all()[1]!.complete();
     await flush();
-    expect(all().map((j) => j.body.segments.length)).toEqual([64, 64, 64, 64, 44]);
+    expect(all().map((j) => j.body.segments.length)).toEqual([2, 2, 2]);
+  });
+
+  it('caps a job at the 64 sentences a window may hold', async () => {
+    provider.prefetch(reqs(100), 'download', new AbortController().signal);
+    await flush(6);
+    expect(all().map((j) => j.body.segments.length)).toEqual([64, 36]);
+  });
+
+  it('takes over sentences only queued as listening preloads, as download jobs', async () => {
+    const listen = new AbortController().signal;
+    // Playback is busy with the sentence it waits on; later ones queue up.
+    provider.synthesize(req('Now.'), listen).catch(() => {});
+    provider.prefetch(reqs(10, 'P'), 'listen', listen, { background: true });
+    await flush();
+    expect(windows.map(texts)).toEqual([['Now.']]);
+
+    provider.prefetch(reqs(10, 'P'), 'download', new AbortController().signal);
+    await flush(6);
+    expect(all().map((j) => j.body.segments.map((seg) => seg.text))).toEqual([
+      reqs(10, 'P').map((r) => r.text),
+    ]);
+    // The next listen window no longer carries them.
+    windows[0]!.completeAll();
+    await flush();
+    expect(windows).toHaveLength(1);
+  });
+
+  it('leaves a sentence a listen window already carries to that window', async () => {
+    const listen = new AbortController().signal;
+    provider.prefetch([req('P0.')], 'listen', listen, { background: true });
+    await flush();
+    expect(windows.map(texts)).toEqual([['P0.']]);
+    provider.prefetch([req('P0.')], 'download', new AbortController().signal);
+    await flush(6);
+    expect(all()).toHaveLength(0);
+  });
+
+  it('drops sentences the cache filled meanwhile, cancelling a job left with nothing to do', async () => {
+    // 900-character sentences: two per window, two windows sent, three queued.
+    const long = Array.from({ length: 10 }, (_, i) => req(`${'a'.repeat(898)}${i}.`));
+    const delivered: string[] = [];
+    provider.prefetch(long, 'download', new AbortController().signal, {
+      onDelivered: (r) => delivered.push(r.text.slice(-2)),
+    });
+    await flush(6);
+    expect(all()).toHaveLength(2);
+    // A synced pack arrives with the first window's and the last queued
+    // window's sentences.
+    const cached = { audio: new ArrayBuffer(4), boundaries: B };
+    for (const i of [0, 1, 8, 9]) provider.fulfill!(long[i]!, cached);
+    await flush();
+    expect(delivered).toEqual(['0.', '1.', '8.', '9.']);
+    expect(all()[0]!.deleted).toBe(true);
+    expect(all()[1]!.deleted).toBe(false);
+    // Run the rest: the fulfilled queued window is never sent.
+    for (let round = 0; round < 4; round++) {
+      for (const job of all()) if (!job.deleted) job.complete();
+      await flush();
+    }
+    const sent = all().flatMap((j) => j.body.segments.map((seg) => seg.text.slice(-2)));
+    expect(sent).not.toContain('8.');
+    expect(sent).toContain('7.');
   });
 
   it('resolves sentences from the result once the job is done, polling meanwhile', async () => {

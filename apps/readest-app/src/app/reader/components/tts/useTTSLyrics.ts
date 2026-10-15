@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { eventDispatcher } from '@/utils/event';
 
-export type TTSLyrics = { sectionIndex: number; lines: string[] };
+// `sheet` names the document the lines come from: a section read in chunks
+// has one sheet per chunk, under the same section index.
+export type TTSLyrics = { sectionIndex: number; sheet?: number; lines: string[] };
 
 // The spoken line moves on sentence boundaries and 'tts-position' delivers
 // those, so this poll is only a backstop for a position event missed while the
@@ -63,6 +65,7 @@ export const useTTSLyrics = ({
             prev &&
             next &&
             prev.sectionIndex === next.sectionIndex &&
+            prev.sheet === next.sheet &&
             prev.lines.length === next.lines.length
               ? prev
               : usable
@@ -96,16 +99,20 @@ export const useTTSLyrics = ({
   }, [onGetActiveIndex]);
 
   const sectionIndex = lyrics?.sectionIndex;
+  const sheet = lyrics?.sheet;
   useEffect(() => {
     if (!enabled) return;
     refreshState();
     const handler = (event: CustomEvent) => {
-      const detail = event.detail as { bookKey?: string; sectionIndex?: number };
+      const detail = event.detail as { bookKey?: string; sectionIndex?: number; sheet?: number };
       if (detail.bookKey !== bookKey) return;
       refreshState();
-      // A chapter change is the only thing that replaces the sheet, and the
-      // position event is the first place it shows up.
-      if (detail.sectionIndex !== undefined && detail.sectionIndex !== sectionIndex) {
+      // A chapter (or chunk) change is the only thing that replaces the sheet,
+      // and the position event is the first place it shows up.
+      if (
+        (detail.sectionIndex !== undefined && detail.sectionIndex !== sectionIndex) ||
+        (detail.sheet !== undefined && detail.sheet !== sheet)
+      ) {
         void loadLyrics();
       }
     };
@@ -115,7 +122,7 @@ export const useTTSLyrics = ({
       eventDispatcher.off('tts-position', handler);
       clearInterval(interval);
     };
-  }, [bookKey, enabled, refreshState, loadLyrics, sectionIndex]);
+  }, [bookKey, enabled, refreshState, loadLyrics, sectionIndex, sheet]);
 
   return { lines: lyrics?.lines ?? NO_LINES, unavailable, activeIndex };
 };

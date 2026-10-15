@@ -37,6 +37,9 @@ export interface TTSCapabilities {
   // immediate syntheses: the controller keeps minutes of upcoming paragraphs
   // requested instead of a fixed handful.
   windowedPrefetch?: boolean;
+  // A preload synthesizes and keeps the audio, so preloading the next
+  // chapter's opening pays off; engines that ignore preloads skip that work.
+  preloadsAudio?: boolean;
 }
 
 export interface TTSClient {

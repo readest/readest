@@ -10,8 +10,8 @@ Runs tests in a **jsdom** environment. No browser or Tauri runtime required.
 
 ```bash
 pnpm test                                       # Run all unit tests
-pnpm test -- src/__tests__/utils/misc.test.ts   # Run a single file
-pnpm test -- --watch                            # Watch mode
+pnpm test --run src/__tests__/utils/misc.test.ts  # Run only these files (no `--`)
+pnpm test --watch                               # Watch mode
 ```
 
 - **Config:** `vitest.config.mts`

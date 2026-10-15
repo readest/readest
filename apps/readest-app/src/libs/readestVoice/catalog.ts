@@ -1,5 +1,5 @@
 import type { UserPlan } from '@/types/quota';
-import { isTTSInPlan } from '@/utils/access';
+import { isVoiceTierInPlan } from '@/utils/access';
 
 // Readest Voice catalog: server-owned data exported by the TTS worker
 // (scripts/export_catalog.py) and uploaded with each worker release, so adding
@@ -30,8 +30,6 @@ export const ENGINE_MIN_PLAN: Record<string, 'plus' | 'pro'> = {
   kokoro: 'plus',
   omnivoice: 'pro',
 };
-const PLAN_TIER: Record<UserPlan, number> = { free: 0, purchase: 0, plus: 1, pro: 2 };
-const MIN_PLAN_TIER: Record<'plus' | 'pro', number> = { plus: 1, pro: 2 };
 
 let cached: { voices: CatalogVoice[]; fetchedAt: number } | null = null;
 
@@ -67,22 +65,28 @@ export const getCatalog = async (): Promise<CatalogVoice[] | null> => {
 
 export const isVoiceInPlan = (voice: CatalogVoice, plan: UserPlan): boolean => {
   const minPlan = ENGINE_MIN_PLAN[voice.engine];
-  return !!minPlan && isTTSInPlan(plan) && PLAN_TIER[plan] >= MIN_PLAN_TIER[minPlan];
+  return !!minPlan && isVoiceTierInPlan(minPlan, plan);
 };
 
 // One row per (voice, language): multilingual voices appear under each
 // language they are listed for, as the per-language voice picker expects.
+const toPlanVoices = (voices: CatalogVoice[]): PlanVoice[] =>
+  voices.flatMap((voice) =>
+    voice.langs.map((lang) => ({
+      id: voice.id,
+      name: voice.name,
+      lang,
+      tier: ENGINE_MIN_PLAN[voice.engine]!,
+    })),
+  );
+
 export const voicesForPlan = (catalog: CatalogVoice[], plan: UserPlan): PlanVoice[] =>
-  catalog
-    .filter((voice) => isVoiceInPlan(voice, plan))
-    .flatMap((voice) =>
-      voice.langs.map((lang) => ({
-        id: voice.id,
-        name: voice.name,
-        lang,
-        tier: ENGINE_MIN_PLAN[voice.engine]!,
-      })),
-    );
+  toPlanVoices(catalog.filter((voice) => isVoiceInPlan(voice, plan)));
+
+// Every voice some plan unlocks, for readers on any plan: the picker greys
+// out the ones theirs lacks.
+export const offeredVoices = (catalog: CatalogVoice[]): PlanVoice[] =>
+  toPlanVoices(catalog.filter((voice) => !!ENGINE_MIN_PLAN[voice.engine]));
 
 export const findVoice = (catalog: CatalogVoice[], id: string): CatalogVoice | undefined =>
   catalog.find((voice) => voice.id === id);

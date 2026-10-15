@@ -11,6 +11,11 @@ from calibre_plugins.readest.config import prefs, save_tokens
 from calibre_plugins.readest.dialogs import LoginDialog, PushDialog, StatusDialog
 from calibre_plugins.readest.wire import merge_marks
 
+try:
+    load_translations()
+except NameError:
+    pass
+
 
 def make_client():
     return ReadestClient(
@@ -24,37 +29,37 @@ def make_client():
 class ReadestInterfacePlugin(InterfaceAction):
     name = 'Readest Sync'
     action_spec = (
-        'Readest',
+        _('Readest'),
         None,
-        'Push selected books and metadata to your Readest library',
+        _('Push selected books and metadata to your Readest library'),
         None,
     )
 
     def genesis(self):
         self.push_action = self.create_action(
-            spec=('Push selected books to Readest', None, None, None),
+            spec=(_('Push selected books to Readest'), None, None, None),
             attr='Push selected books to Readest',
         )
         self.push_action.triggered.connect(self.push_selected)
 
         self.check_action = self.create_action(
-            spec=('Check Readest status', None, None, None),
+            spec=(_('Check Readest status'), None, None, None),
             attr='Check Readest status of selected books',
         )
         self.check_action.triggered.connect(self.check_selected)
 
         self.login_action = self.create_action(
-            spec=('Log in to Readest…', None, None, None), attr='Log in to Readest'
+            spec=(_('Log in to Readest…'), None, None, None), attr='Log in to Readest'
         )
         self.login_action.triggered.connect(self.login)
 
         self.logout_action = self.create_action(
-            spec=('Log out', None, None, None), attr='Log out from Readest'
+            spec=(_('Log out'), None, None, None), attr='Log out from Readest'
         )
         self.logout_action.triggered.connect(self.logout)
 
         self.config_action = self.create_action(
-            spec=('Customize plugin…', None, None, None), attr='Customize Readest plugin'
+            spec=(_('Customize plugin…'), None, None, None), attr='Customize Readest plugin'
         )
         self.config_action.triggered.connect(self.show_config)
 
@@ -77,7 +82,7 @@ class ReadestInterfacePlugin(InterfaceAction):
         self.login_action.setVisible(not logged_in)
         self.logout_action.setVisible(logged_in)
         if logged_in and email:
-            self.logout_action.setText('Log out (%s)' % email)
+            self.logout_action.setText(_('Log out (%s)') % email)
         selected = len(self.selected_book_ids()) > 0
         self.push_action.setEnabled(selected)
         self.check_action.setEnabled(selected)
@@ -86,16 +91,16 @@ class ReadestInterfacePlugin(InterfaceAction):
         return self.gui.library_view.get_selected_ids()
 
     def push_selected(self):
-        self.run_on_selection(PushDialog, 'Select the books to push to Readest.')
+        self.run_on_selection(PushDialog, _('Select the books to push to Readest.'))
 
     def check_selected(self):
-        self.run_on_selection(StatusDialog, 'Select the books to check against Readest.')
+        self.run_on_selection(StatusDialog, _('Select the books to check against Readest.'))
 
     def run_on_selection(self, dialog_class, no_selection_message):
         book_ids = self.selected_book_ids()
         if not book_ids:
             return error_dialog(
-                self.gui, 'No books selected', no_selection_message, show=True
+                self.gui, _('No books selected'), no_selection_message, show=True
             )
         if not prefs['tokens'] and not self.login():
             return
@@ -127,8 +132,8 @@ class ReadestInterfacePlugin(InterfaceAction):
         prefs['user_email'] = user.get('email')
         info_dialog(
             self.gui,
-            'Readest',
-            'Logged in as %s.' % (user.get('email') or 'your Readest account'),
+            _('Readest'),
+            _('Logged in as %s.') % (user.get('email') or _('your Readest account')),
             show=True,
         )
         return True

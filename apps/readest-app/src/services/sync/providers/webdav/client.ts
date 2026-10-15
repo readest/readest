@@ -233,13 +233,18 @@ const splitResponses = (xml: string): string[] => {
   return responses;
 };
 
+const XML_ENTITIES: Record<string, string> = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'" };
+
 /**
  * Decode the path returned in `<href>`. WebDAV servers may return a fully
  * qualified URL or a server-absolute path; both branches resolve to a path
  * with leading slash and percent-decoded segments.
  */
 const decodeHref = (href: string, serverOrigin: string): string => {
-  let raw = href.trim();
+  // Servers such as rclone XML-escape the href, e.g. `&` arrives as `&amp;`.
+  let raw = href
+    .trim()
+    .replace(/&(amp|lt|gt|quot|apos);/g, (_, name: string) => XML_ENTITIES[name]!);
   if (/^https?:\/\//i.test(raw)) {
     try {
       raw = new URL(raw).pathname;

@@ -726,14 +726,20 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
     // mode over a long session. They are registered once per view via
     // useRendererInputListeners below. Popup repositioning on scroll is already
     // handled by the dedicated effect further down.
+    //
+    // Every listener below is a function of its own for this page. On Android
+    // and Windows each page iframe runs its own Sentry, which caches its
+    // listener wrapper on the function: a function shared by two pages would
+    // run through the first page's wrapper, which goes dead once that page
+    // unloads.
     const opts = { passive: false };
-    detail.doc?.addEventListener('touchstart', handleTouchStart, opts);
+    detail.doc?.addEventListener('touchstart', () => handleTouchStart(), opts);
     detail.doc?.addEventListener('touchmove', handleTouchmove, opts);
     // Bound to the section so a selectionchange deferred during the drag can
     // be processed (and the popup shown once) when the gesture ends.
     detail.doc?.addEventListener('touchend', handleTouchEnd.bind(null, doc, index));
     if (!appService?.isIOSApp && !appService?.isAndroidApp) {
-      detail.doc?.addEventListener('touchcancel', handleTouchCancel);
+      detail.doc?.addEventListener('touchcancel', () => handleTouchCancel());
     }
     // Re-arm the instant quick action at the start of each gesture. Android does
     // this via the native-touch touchstart above; iOS/desktop have no such path,
@@ -754,7 +760,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
         opts,
       );
     }
-    detail.doc?.addEventListener('mousedown', handleMouseDown);
+    detail.doc?.addEventListener('mousedown', (ev: MouseEvent) => handleMouseDown(ev));
     detail.doc?.addEventListener('pointerdown', handlePointerDown.bind(null, doc, index), opts);
     detail.doc?.addEventListener('pointermove', handlePointerMove.bind(null, doc, index), opts);
     detail.doc?.addEventListener('pointercancel', handlePointerCancel.bind(null, doc, index));
@@ -770,7 +776,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
     // (#5821). PDF selections now take the same path as every other format.
 
     // Disable the default context menu on mobile devices (selection handles suffice)
-    detail.doc?.addEventListener('contextmenu', handleContextmenu);
+    detail.doc?.addEventListener('contextmenu', (ev: Event) => handleContextmenu(ev));
   };
 
   const onCreateOverlay = (event: Event) => {

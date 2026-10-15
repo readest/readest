@@ -1,0 +1,358 @@
+# Russian translation for the Readest calibre plugin.
+# Copyright (C) 2026 Bilingify LLC
+# This file is distributed under the same license as the Readest calibre plugin.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Readest calibre plugin\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-13 11:32+0000\n"
+"PO-Revision-Date: 2026-10-13 11:32+0000\n"
+"Last-Translator: Bilingify LLC\n"
+"Language-Team: Russian\n"
+"Language: ru\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+
+#: __init__.py:16
+msgid "Push selected books and their metadata into your Readest cloud library. Re-pushing a book updates its existing entry instead of creating a duplicate."
+msgstr "Отправьте выбранные книги и их метаданные в облачную библиотеку Readest. Повторная отправка книги обновляет существующую запись, а не создаёт дубликат."
+
+#: config.py:36
+msgid "Not logged in."
+msgstr "Вы не вошли."
+
+#: config.py:42
+msgid "Include custom columns in pushed metadata"
+msgstr "Включать пользовательские столбцы в отправляемые метаданные"
+
+#: config.py:51
+msgid "Only change this if you run a self-hosted Readest server."
+msgstr "Изменяйте только при использовании собственного сервера Readest."
+
+#: config.py:36 ui.py:136
+msgid "Logged in as %s."
+msgstr "Вы вошли как %s."
+
+#: config.py:47
+msgid "API server:"
+msgstr "Сервер API:"
+
+#: config.py:38
+msgid "Use the Readest toolbar menu to log in or out."
+msgstr "Используйте меню Readest на панели инструментов для входа и выхода."
+
+#: dialogs.py:250
+msgid "Push to Readest"
+msgstr "Отправка в Readest"
+
+#: dialogs.py:252
+msgid "Push to Readest failed"
+msgstr "Не удалось отправить в Readest"
+
+#: dialogs.py:264
+msgid "Readest status"
+msgstr "Статус Readest"
+
+#: dialogs.py:266
+msgid "Readest status check failed"
+msgstr "Не удалось проверить статус Readest"
+
+#: dialogs.py:66
+msgid "Log in to Readest"
+msgstr "Вход в Readest"
+
+#: dialogs.py:74
+msgid "Email:"
+msgstr "Эл. почта:"
+
+#: dialogs.py:75
+msgid "Password:"
+msgstr "Пароль:"
+
+#: dialogs.py:78
+msgid "Log in"
+msgstr "Войти"
+
+#: dialogs.py:104
+msgid "Logging in…"
+msgstr "Выполняется вход…"
+
+#: dialogs.py:124
+msgid "Waiting for the browser login to complete…"
+msgstr "Ожидание завершения входа через браузер…"
+
+#: dialogs.py:222
+msgid "Unknown"
+msgstr "Неизвестно"
+
+#: dialogs.py:255
+msgid "Pushing %d book to your Readest library…"
+msgid_plural "Pushing %d books to your Readest library…"
+msgstr[0] "Отправка %d книги в библиотеку Readest…"
+msgstr[1] "Отправка %d книг в библиотеку Readest…"
+msgstr[2] "Отправка %d книг в библиотеку Readest…"
+
+#: dialogs.py:269
+msgid "Checking %d book against your Readest library…"
+msgid_plural "Checking %d books against your Readest library…"
+msgstr[0] "Сверка %d книги с библиотекой Readest…"
+msgstr[1] "Сверка %d книг с библиотекой Readest…"
+msgstr[2] "Сверка %d книг с библиотекой Readest…"
+
+#: dialogs.py:82
+msgid "Or sign in with your browser:"
+msgstr "Или войдите через браузер:"
+
+#: dialogs.py:102
+msgid "Please enter both email and password."
+msgstr "Введите адрес эл. почты и пароль."
+
+#: dialogs.py:136
+msgid "Login failed: the browser callback carried no session."
+msgstr "Ошибка входа: обратный вызов браузера не содержал сессии."
+
+#: dialogs.py:198
+msgid "Book"
+msgstr "Книга"
+
+#: dialogs.py:198
+msgid "Status"
+msgstr "Статус"
+
+#: dialogs.py:198
+msgid "Details"
+msgstr "Подробности"
+
+#: dialogs.py:243
+msgid "Canceling…"
+msgstr "Отмена…"
+
+#: dialogs.py:121
+msgid "Browser login timed out. Try again."
+msgstr "Время ожидания входа через браузер истекло. Попробуйте снова."
+
+#: dialogs.py:130 dialogs.py:109 dialogs.py:143
+msgid "Login failed: %s"
+msgstr "Ошибка входа: %s"
+
+#: oauth.py:36 oauth.py:47
+msgid "Readest Login"
+msgstr "Вход в Readest"
+
+#: oauth.py:37
+msgid "Completing login…"
+msgstr "Завершение входа…"
+
+#: oauth.py:48
+msgid "Login complete. You can close this tab and return to calibre."
+msgstr "Вход выполнен. Можете закрыть эту вкладку и вернуться в calibre."
+
+#: ui.py:32 ui.py:135
+msgid "Readest"
+msgstr "Readest"
+
+#: ui.py:34
+msgid "Push selected books and metadata to your Readest library"
+msgstr "Отправить выбранные книги и метаданные в библиотеку Readest"
+
+#: ui.py:94
+msgid "Select the books to push to Readest."
+msgstr "Выберите книги для отправки в Readest."
+
+#: ui.py:97
+msgid "Select the books to check against Readest."
+msgstr "Выберите книги для сверки с Readest."
+
+#: ui.py:103
+msgid "No books selected"
+msgstr "Книги не выбраны"
+
+#: ui.py:40
+msgid "Push selected books to Readest"
+msgstr "Отправить выбранные книги в Readest"
+
+#: ui.py:46
+msgid "Check Readest status"
+msgstr "Проверить статус Readest"
+
+#: ui.py:52
+msgid "Log in to Readest…"
+msgstr "Войти в Readest…"
+
+#: ui.py:57
+msgid "Log out"
+msgstr "Выйти"
+
+#: ui.py:62
+msgid "Customize plugin…"
+msgstr "Настроить плагин…"
+
+#: ui.py:85
+msgid "Log out (%s)"
+msgstr "Выйти (%s)"
+
+#: ui.py:136
+msgid "your Readest account"
+msgstr "ваша учётная запись Readest"
+
+#: worker.py:46
+msgid "Uploaded"
+msgstr "Отправлено"
+
+#: worker.py:47
+msgid "Replaced"
+msgstr "Заменено"
+
+#: worker.py:48
+msgid "Updated"
+msgstr "Обновлено"
+
+#: worker.py:49
+msgid "Up to date"
+msgstr "Актуально"
+
+#: worker.py:50 worker.py:61
+msgid "Failed"
+msgstr "Ошибка"
+
+#: worker.py:57
+msgid "In Readest"
+msgstr "В Readest"
+
+#: worker.py:58
+msgid "Metadata differs"
+msgstr "Метаданные отличаются"
+
+#: worker.py:59
+msgid "Out of date"
+msgstr "Устарело"
+
+#: worker.py:60
+msgid "Not in Readest"
+msgstr "Нет в Readest"
+
+#: worker.py:210
+msgid "No Readest-supported format (EPUB, PDF, ...)"
+msgstr "Нет поддерживаемого Readest формата (EPUB, PDF, ...)"
+
+#: worker.py:213
+msgid "Book file is missing from the calibre library"
+msgstr "Файл книги отсутствует в библиотеке calibre"
+
+#: worker.py:277
+msgid "Nothing to push."
+msgstr "Нечего отправлять."
+
+#: worker.py:406
+msgid "Nothing to check."
+msgstr "Нечего проверять."
+
+#: worker.py:158
+msgid "Please log in to Readest first. (%s)"
+msgstr "Сначала войдите в Readest. (%s)"
+
+#: worker.py:160
+msgid "Could not reach Readest: %s"
+msgstr "Не удалось связаться с Readest: %s"
+
+#: worker.py:252 worker.py:390
+msgid "Canceled."
+msgstr "Отменено."
+
+#: worker.py:258
+msgid "Readest storage quota exceeded — push stopped."
+msgstr "Превышена квота хранилища Readest — отправка остановлена."
+
+#: worker.py:262
+msgid "Session expired — please log in again."
+msgstr "Сессия истекла — войдите снова."
+
+#: api.py:243
+msgid "Login failed"
+msgstr "Ошибка входа"
+
+#: api.py:254 api.py:272 api.py:286
+msgid "Not logged in"
+msgstr "Вы не вошли"
+
+#: api.py:263
+msgid "Session expired, please log in again"
+msgstr "Сессия истекла, войдите снова"
+
+#: api.py:312
+msgid "Not authenticated"
+msgstr "Не выполнен вход"
+
+#: api.py:318
+msgid "Request failed (%s)"
+msgstr "Ошибка запроса (%s)"
+
+#: api.py:402
+msgid "Upload failed (%s)"
+msgstr "Ошибка загрузки (%s)"
+
+#: worker.py:57
+msgid "%d uploaded"
+msgid_plural "%d uploaded"
+msgstr[0] "%d отправлена"
+msgstr[1] "%d отправлены"
+msgstr[2] "%d отправлено"
+
+#: worker.py:58
+msgid "%d replaced"
+msgid_plural "%d replaced"
+msgstr[0] "%d заменена"
+msgstr[1] "%d заменены"
+msgstr[2] "%d заменено"
+
+#: worker.py:59
+msgid "%d updated"
+msgid_plural "%d updated"
+msgstr[0] "%d обновлена"
+msgstr[1] "%d обновлены"
+msgstr[2] "%d обновлено"
+
+#: worker.py:60
+msgid "%d up to date"
+msgid_plural "%d up to date"
+msgstr[0] "%d актуальна"
+msgstr[1] "%d актуальны"
+msgstr[2] "%d актуально"
+
+#: worker.py:61
+msgid "%d failed"
+msgid_plural "%d failed"
+msgstr[0] "%d с ошибкой"
+msgstr[1] "%d с ошибкой"
+msgstr[2] "%d с ошибкой"
+
+#: worker.py:76
+msgid "%d in Readest"
+msgid_plural "%d in Readest"
+msgstr[0] "%d в Readest"
+msgstr[1] "%d в Readest"
+msgstr[2] "%d в Readest"
+
+#: worker.py:77
+msgid "%d metadata differs"
+msgid_plural "%d metadata differs"
+msgstr[0] "%d с другими метаданными"
+msgstr[1] "%d с другими метаданными"
+msgstr[2] "%d с другими метаданными"
+
+#: worker.py:78
+msgid "%d out of date"
+msgid_plural "%d out of date"
+msgstr[0] "%d устарела"
+msgstr[1] "%d устарели"
+msgstr[2] "%d устарело"
+
+#: worker.py:79
+msgid "%d not in Readest"
+msgid_plural "%d not in Readest"
+msgstr[0] "%d нет в Readest"
+msgstr[1] "%d нет в Readest"
+msgstr[2] "%d нет в Readest"

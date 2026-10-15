@@ -194,6 +194,7 @@ describe('updater', () => {
 
     test('checks Android update via fetch when OS is android', async () => {
       mockOsType.mockReturnValue('android');
+      mockOsArch.mockReturnValue('aarch64');
       mockAppVersion = '1.0.0';
 
       mockTauriFetch.mockResolvedValue({
@@ -210,15 +211,16 @@ describe('updater', () => {
       expect(mockSetUpdaterWindowVisible).toHaveBeenCalledWith(true, '2.0.0', '1.0.0');
     });
 
-    test('Android check with android-universal platform', async () => {
+    test('Android check with android-armv7 platform on an armv7 device', async () => {
       mockOsType.mockReturnValue('android');
+      mockOsArch.mockReturnValue('arm');
       mockAppVersion = '1.0.0';
 
       mockTauriFetch.mockResolvedValue({
         json: () =>
           Promise.resolve({
             version: '2.0.0',
-            platforms: { 'android-universal': {} },
+            platforms: { 'android-armv7': {} },
           }),
       });
 
@@ -226,6 +228,48 @@ describe('updater', () => {
 
       expect(result).toBe(true);
       expect(mockSetUpdaterWindowVisible).toHaveBeenCalled();
+    });
+
+    test('Android arm64 device is offered the update from a per-ABI manifest', async () => {
+      mockOsType.mockReturnValue('android');
+      mockOsArch.mockReturnValue('aarch64');
+      mockAppVersion = '1.0.0';
+
+      mockTauriFetch.mockResolvedValue({
+        json: () =>
+          Promise.resolve({
+            version: '2.0.0',
+            platforms: {
+              'android-arm64': {},
+              'android-armv7': {},
+              'android-legacy': {},
+              'android-universal': {},
+            },
+          }),
+      });
+
+      const result = await checkForAppUpdates(dummyTranslate, false);
+
+      expect(result).toBe(true);
+      expect(mockSetUpdaterWindowVisible).toHaveBeenCalledWith(true, '2.0.0', '1.0.0');
+    });
+
+    test('Android shows no update when the manifest lacks this ABI', async () => {
+      mockOsType.mockReturnValue('android');
+      mockOsArch.mockReturnValue('x86_64');
+      mockAppVersion = '1.0.0';
+
+      mockTauriFetch.mockResolvedValue({
+        json: () =>
+          Promise.resolve({
+            version: '2.0.0',
+            platforms: { 'android-arm64': {}, 'android-armv7': {} },
+          }),
+      });
+
+      await checkForAppUpdates(dummyTranslate, false);
+
+      expect(mockSetUpdaterWindowVisible).not.toHaveBeenCalled();
     });
 
     test('Android returns false when version is not newer', async () => {
@@ -431,7 +475,9 @@ describe('updater', () => {
 describe('getNightlyPlatformKey', () => {
   test('android', () => {
     expect(getNightlyPlatformKey('android', 'aarch64', false, false)).toBe('android-arm64');
-    expect(getNightlyPlatformKey('android', 'x86_64', false, false)).toBe('android-universal');
+    expect(getNightlyPlatformKey('android', 'arm', false, false)).toBe('android-armv7');
+    expect(getNightlyPlatformKey('android', 'x86_64', false, false)).toBe('android-legacy');
+    expect(getNightlyPlatformKey('android', 'x86', false, false)).toBe('android-legacy');
   });
   test('windows nsis vs portable', () => {
     expect(getNightlyPlatformKey('windows', 'x86_64', false, false)).toBe('windows-x86_64');
@@ -483,6 +529,31 @@ describe('resolveNightlyUpdate', () => {
     const r = await resolveNightlyUpdate('0.11.4-2026061406', platformKey, fetchFn as never);
     expect(r?.version).toBe('0.11.5');
     expect(r?.endpoint).not.toContain('nightly');
+  });
+
+  test('resolves the arm64 APK for an arm64 Android nightly', async () => {
+    const key = getNightlyPlatformKey('android', 'aarch64', false, false)!;
+    const apk = (abi: string) => ({
+      url: `https://x/Readest_0.11.4-2026061406_${abi}.apk`,
+      signature: abi,
+    });
+    const fetchFn = vi.fn(async (url: string) =>
+      url.includes('nightly')
+        ? mkRes({
+            version: '0.11.4-2026061406',
+            platforms: {
+              'android-arm64': apk('arm64'),
+              'android-armv7': apk('armv7'),
+              'android-legacy': apk('legacy'),
+              'android-universal': apk('armv7'),
+            },
+          })
+        : mkRes({ version: '0.11.4', platforms: {} }),
+    );
+    const r = await resolveNightlyUpdate('0.11.4', key, fetchFn as never);
+    expect(r?.platformKey).toBe('android-arm64');
+    expect(r?.url).toBe('https://x/Readest_0.11.4-2026061406_arm64.apk');
+    expect(r?.signature).toBe('arm64');
   });
 
   test('ignores a manifest missing the current platform key', async () => {

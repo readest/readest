@@ -15,10 +15,29 @@ export interface AudiobookClock {
   destroy(): void;
 }
 
+/**
+ * The `crossOrigin` a media element needs to load a URL. The web app is
+ * cross-origin isolated (COEP: require-corp, see middleware.ts), which blocks
+ * media from another origin unless the element requests it with CORS. The
+ * desktop and mobile apps are not isolated and keep the default request mode.
+ *
+ * The platform check is an inline of isWebAppPlatform(): importing
+ * @/services/environment here pulls the app-service graph into the TTS
+ * controller's unit tests (MediaOverlayClient precedent).
+ */
+export const mediaCrossOrigin = (url: string): 'anonymous' | null => {
+  if (process.env['NEXT_PUBLIC_APP_PLATFORM'] !== 'web') return null;
+  const { protocol, origin } = new URL(url, globalThis.location.href);
+  return /^https?:$/.test(protocol) && origin !== globalThis.location.origin ? 'anonymous' : null;
+};
+
 export class HtmlAudioClock implements AudiobookClock {
   #audio: HTMLAudioElement;
+  #cors: boolean;
 
-  constructor() {
+  /** `cors: false` keeps every track in the default request mode (OPDS catalogs). */
+  constructor({ cors = true }: { cors?: boolean } = {}) {
+    this.#cors = cors;
     this.#audio = new Audio();
     this.#audio.preload = 'auto';
     // Speed changes must not raise the narrator's pitch (MediaOverlayClient precedent).
@@ -47,6 +66,7 @@ export class HtmlAudioClock implements AudiobookClock {
 
   async load(url: string, startAt: number): Promise<void> {
     const rate = this.#audio.playbackRate;
+    this.#audio.crossOrigin = this.#cors ? mediaCrossOrigin(url) : null;
     this.#audio.src = url;
     this.#audio.load();
     this.#audio.playbackRate = rate; // src reset clears rate on some engines

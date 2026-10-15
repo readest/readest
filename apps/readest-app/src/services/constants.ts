@@ -289,6 +289,7 @@ export const DEFAULT_SYSTEM_SETTINGS: Partial<SystemSettings> = {
     opds_catalog: true,
     abs_server: true,
     custom_translator: true,
+    custom_tts: true,
     settings: true,
   },
 };
@@ -475,6 +476,7 @@ export const DEFAULT_VIEW_CONFIG: ViewConfig = {
   sideBarTab: 'toc',
   uiLanguage: '',
   sortedTOC: false,
+  showTOCThumbnails: true,
 
   doubleBorder: false,
   borderColor: 'red',
@@ -1041,8 +1043,8 @@ export const DEFAULT_DAILY_TRANSLATION_QUOTA: UserDailyTranslationQuota = {
 
 export const DEFAULT_DAILY_TTS_QUOTA: UserDailyTTSQuota = {
   free: 0,
-  plus: 100 * 1024,
-  pro: 300 * 1024,
+  plus: 500_000,
+  pro: 1_000_000,
   purchase: 0,
 };
 

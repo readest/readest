@@ -20,6 +20,7 @@ import {
   getFootnoteStyles,
   getStyles,
   getThemeCode,
+  keepTextAlignment,
 } from '@/utils/style';
 import { getPopupPosition, getPosition, Position } from '@/utils/sel';
 import { getPopupBounds, offsetPosition, PopupBounds } from '@/utils/insets';
@@ -318,6 +319,7 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
       popupView.addEventListener('load', (e: CustomEvent) => {
         const { doc, index } = e.detail as { doc: Document; index: number };
         const bookData = getBookData(bookKey)!;
+        keepTextAlignment(doc);
         mountAdditionalFonts(doc, isCJKLang(bookData.book?.primaryLanguage));
         getLoadedFonts().forEach((font) => {
           mountCustomFont(doc, font);

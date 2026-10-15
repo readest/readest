@@ -99,7 +99,7 @@ const DesktopFooterBar: React.FC<FooterBarChildProps> = ({
         label={_('Go Forward')}
         disabled={!view?.history.canGoForward}
       />
-      {progressValid && <PageJumpInput bookKey={bookKey} className='mx-2 text-sm' />}
+      <PageJumpInput bookKey={bookKey} className='mx-2 text-sm' />
       <input
         ref={rangeInputRef}
         type='range'

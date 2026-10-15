@@ -1,5 +1,20 @@
 {
   "releases": {
+    "0.12.16": {
+      "date": "2026-10-14",
+      "notes": [
+        "Text-to-Speech: Added Readest Voice premium read-aloud voices for Plus and Pro, you can now connect your own OpenAI-compatible voice service, and Edge voices work again",
+        "Annotations: You can now handwrite and draw on your pages, and share passages as quote card images",
+        "Library: Books now show their page count with a new Pages sort and filter that syncs across devices, and numbered titles sort in natural order",
+        "Sync: Custom fonts download when you need them and can be removed from the cloud, custom theme edits now sync, and deleted books no longer come back",
+        "Sync: KOReader progress sync and WebDAV sync are more reliable, and signing out only logs out the current device",
+        "Reading: Very large or link-heavy chapters no longer freeze the reader, and fixed layout issues with headings, blockquotes, footnotes, and background textures",
+        "Audiobooks: Audiobookshelf playback now works in the web app, chapters are detected more reliably, and you can pair audiobooks with books streamed from Audiobookshelf",
+        "Linux: Fixed a freeze with two open windows, the main window reopens maximized, and Reveal in Folder works again",
+        "PDF: You can hide page thumbnails in the PDF table of contents",
+        "More: The share sheet opens again on iOS 16, with polish for the drawing tools, bottom sheets, and bookshelf header"
+      ]
+    },
     "0.12.12": {
       "date": "2026-10-05",
       "notes": [

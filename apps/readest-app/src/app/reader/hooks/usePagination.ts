@@ -334,16 +334,27 @@ export const usePagination = (
             } else {
               windowStartX = window.screenX;
             }
+            // A page-filling image or table in a two-page spread fills only its
+            // column, so the zones are measured on that column; the spread's
+            // own center falls on the gutter (#6745).
+            const columnCount =
+              msg.data.media && !bookData.isFixedLayout && !viewSettings.vertical
+                ? (viewRef.current?.renderer.columnCount ?? 1)
+                : 1;
+            const zoneWidth = viewRect.width / columnCount;
             const viewStartX = windowStartX + viewRect.left;
-            const viewCenterX = viewStartX + viewRect.width / 2;
+            const column = Math.floor((screenX - viewStartX) / zoneWidth);
+            const zoneStartX =
+              viewStartX + Math.max(0, Math.min(column, columnCount - 1)) * zoneWidth;
+            const zoneCenterX = zoneStartX + zoneWidth / 2;
             const consumed = eventDispatcher.dispatchSync('iframe-single-click', {
               bookKey,
               windowX: msg.data.windowX,
               windowY: msg.data.windowY,
             });
             if (!consumed) {
-              const centerStartX = viewStartX + viewRect.width * 0.375;
-              const centerEndX = viewStartX + viewRect.width * 0.625;
+              const centerStartX = zoneStartX + zoneWidth * 0.375;
+              const centerEndX = zoneStartX + zoneWidth * 0.625;
               if (
                 viewSettings.disableClick! ||
                 (screenX >= centerStartX && screenX <= centerEndX)
@@ -368,7 +379,7 @@ export const usePagination = (
               }
 
               const side: PaginationSide =
-                screenX >= viewCenterX
+                screenX >= zoneCenterX
                   ? viewSettings.fullscreenClickArea
                     ? 'down'
                     : viewSettings.swapClickArea

@@ -146,8 +146,9 @@ interface ABSRefreshResponse {
  * owning its own copy of that logic. On the web platform, API calls hit
  * the ABS server directly and rely on its opt-in CORS support (the
  * `ALLOW_CORS=1` env var or the `allowedOrigins` server setting must
- * cover the Readest web origin). Media and cover URLs are also direct —
- * `<audio>`/`<img>` element fetches aren't subject to CORS anyway.
+ * cover the Readest web origin). Media and cover URLs are also direct.
+ * Audio relies on the same setting: the web app is cross-origin isolated,
+ * so the media element requests a track with CORS (see `mediaCrossOrigin`).
  * Media URLs are built by `openAudiobook`'s
  * `resolveUrl` closure (it re-reads the store's live access token on every
  * track load, which a client-captured copy could not do); the client only

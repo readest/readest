@@ -70,6 +70,22 @@
   </supports>
 
   <releases>
+    <release version="0.12.16" date="2026-10-14">
+      <description>
+        <ul>
+          <li>Text-to-Speech: Added Readest Voice premium read-aloud voices for Plus and Pro, you can now connect your own OpenAI-compatible voice service, and Edge voices work again</li>
+          <li>Annotations: You can now handwrite and draw on your pages, and share passages as quote card images</li>
+          <li>Library: Books now show their page count with a new Pages sort and filter that syncs across devices, and numbered titles sort in natural order</li>
+          <li>Sync: Custom fonts download when you need them and can be removed from the cloud, custom theme edits now sync, and deleted books no longer come back</li>
+          <li>Sync: KOReader progress sync and WebDAV sync are more reliable, and signing out only logs out the current device</li>
+          <li>Reading: Very large or link-heavy chapters no longer freeze the reader, and fixed layout issues with headings, blockquotes, footnotes, and background textures</li>
+          <li>Audiobooks: Audiobookshelf playback now works in the web app, chapters are detected more reliably, and you can pair audiobooks with books streamed from Audiobookshelf</li>
+          <li>Linux: Fixed a freeze with two open windows, the main window reopens maximized, and Reveal in Folder works again</li>
+          <li>PDF: You can hide page thumbnails in the PDF table of contents</li>
+          <li>More: The share sheet opens again on iOS 16, with polish for the drawing tools, bottom sheets, and bookshelf header</li>
+        </ul>
+      </description>
+    </release>
     <release version="0.12.12" date="2026-10-05">
       <description>
         <ul>
@@ -204,23 +220,6 @@
           <li>Sync: Books without a reading status no longer jump back to the top after every sync</li>
           <li>Sync: Your per-device reading view settings now stay local instead of syncing between devices</li>
           <li>OPDS: Fixed the Add Catalog dialog appearing behind Settings on mobile</li>
-        </ul>
-      </description>
-    </release>
-    <release version="0.11.10" date="2026-06-19">
-      <description>
-        <ul>
-          <li>Reading: Added Word Lens, which shows a quick translation above difficult words as you read</li>
-          <li>Reading: Added real page numbers from the book's own page list, and the current page now appears under the active chapter in the table of contents</li>
-          <li>Reading: Added Webtoon Mode for seamless, gap-free scrolling through comics and image books, and you can now tap an image or table to open it full-screen</li>
-          <li>Reading Stats: Track your reading time and pages, now synced across your devices and with KOReader</li>
-          <li>Library: Unlock the app with your fingerprint or Face ID, browse books by series in list view, search any title on Goodreads</li>
-          <li>Integrations: Hardcover progress and notes sync automatically, OPDS catalogs gained search and richer descriptions</li>
-          <li>Text-to-Speech: Words are highlighted one at a time as they're read aloud, with read-along following you through paragraph and speed reading modes</li>
-          <li>Speed Reading: Added a start delay, word-by-word stepping, dictionary lookups, keyboard shortcuts, and your reading font now styles the focused word</li>
-          <li>Dictionary: Word variations now resolve to their base forms, with more reliable system dictionary lookups on Android and iOS</li>
-          <li>Annotations: Customize the highlight toolbar, share selected text to other apps, and highlights now render correctly over bulleted lists</li>
-          <li>Platform: Added an opt-in nightly update channel for early access to new features, plus faster, smoother reading and many platform fixes</li>
         </ul>
       </description>
     </release>

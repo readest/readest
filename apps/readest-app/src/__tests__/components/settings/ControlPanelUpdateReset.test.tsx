@@ -17,6 +17,7 @@ const defaultViewSettings = getDefaultViewSettings({
 const appService = {
   isMobileApp: false,
   hasUpdater: true,
+  supportsViewTransitionGroup: true,
   getDefaultViewSettings: () => defaultViewSettings,
   saveSettings: async (settings: SystemSettings) => {
     localStorage.setItem(storageKey, JSON.stringify(settings));
@@ -143,5 +144,32 @@ describe('Behavior update settings reset', () => {
     await act(async () => registerReset.mock.calls[0]![0]());
 
     expect(savedSettings()).toMatchObject({ autoCheckUpdates: false, updateChannel: 'nightly' });
+  });
+});
+
+describe('Behavior animation reset', () => {
+  it.each([
+    'slide',
+    'curl',
+  ] as const)('restores the push animation style from %s', async (style) => {
+    useSettingsStore.setState({
+      settings: {
+        ...useSettingsStore.getState().settings,
+        globalViewSettings: { ...defaultViewSettings, animated: true, pageTurnStyle: style },
+      },
+    });
+    const registerReset = vi.fn<(reset: () => void) => void>();
+    render(<ControlPanel bookKey='' onRegisterReset={registerReset} />);
+    const styleSelect = () =>
+      screen.getByRole<HTMLSelectElement>('combobox', { name: 'Animation Style' });
+    expect(styleSelect().value).toBe(style);
+
+    await act(async () => registerReset.mock.calls[0]![0]());
+
+    expect(styleSelect().value).toBe('push');
+    expect(savedSettings().globalViewSettings).toMatchObject({
+      animated: false,
+      pageTurnStyle: 'push',
+    });
   });
 });

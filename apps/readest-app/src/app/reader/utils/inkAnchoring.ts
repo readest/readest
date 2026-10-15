@@ -106,7 +106,8 @@ export const createInkAnchoring = (
 ): InkAnchoring | null => {
   const doc = view.renderer.getContents().find((c) => c.index === sectionIndex)?.doc;
   const frame = doc?.defaultView?.frameElement;
-  if (!doc || !frame) return null;
+  // A re-attached view's section frame reloads, its document briefly rootless.
+  if (!doc?.documentElement || !frame) return null;
 
   // Section document coordinates <-> main-window coordinates.
   const frameRect = frame.getBoundingClientRect();

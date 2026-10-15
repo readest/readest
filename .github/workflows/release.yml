@@ -23,7 +23,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: setup node
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v6
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v6
       - name: get version
         run: echo "PACKAGE_VERSION=$(node -p "require('./apps/readest-app/package.json').version")" >> $GITHUB_ENV
       - name: get release
@@ -285,7 +285,7 @@ jobs:
         uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
 
       - name: setup node
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v6
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v6
         with:
           node-version: 24
           cache: pnpm
@@ -317,9 +317,23 @@ jobs:
       fail-fast: false
       matrix:
         config:
+          # One APK per ABI group; `arch` names the APK and its updater key
+          # (android-<arch>, see src/helpers/updater.ts::getAndroidPlatformKey).
           - os: ubuntu-latest
             release: android
-            rust_target: aarch64-linux-android,armv7-linux-androideabi,i686-linux-android,x86_64-linux-android
+            arch: arm64
+            rust_target: aarch64-linux-android
+            android_args: '-t aarch64'
+          - os: ubuntu-latest
+            release: android
+            arch: armv7
+            rust_target: armv7-linux-androideabi
+            android_args: '-t armv7'
+          - os: ubuntu-latest
+            release: android
+            arch: legacy
+            rust_target: i686-linux-android,x86_64-linux-android
+            android_args: '-t i686 -t x86_64'
           - os: ubuntu-22.04
             release: linux
             arch: x86_64
@@ -348,8 +362,8 @@ jobs:
             args: '--target aarch64-pc-windows-msvc --bundles nsis'
 
     runs-on: ${{ matrix.config.os }}
-    # The Android build alone runs ~60min and its step is capped at 90 below;
-    # the job backstop leaves room for setup and signing on top of that.
+    # An Android build is capped at 90 below; the job backstop leaves room for
+    # setup and signing on top of that.
     timeout-minutes: ${{ matrix.config.release == 'android' && 110 || 90 }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -361,7 +375,7 @@ jobs:
         uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
 
       - name: setup node
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v6
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v6
         with:
           node-version: 24
           cache: pnpm
@@ -482,7 +496,7 @@ jobs:
           echo "SENTRY_PROJECT=readest" >> .env.local
           cp .env.local apps/readest-app/.env.local
 
-      - name: build and upload Android apks
+      - name: build and upload Android apk
         if: matrix.config.release == 'android'
         timeout-minutes: 90
         env:
@@ -506,13 +520,9 @@ jobs:
 
           popd
           version=${{ needs.get-release.outputs.release_version }}
-          apk_path=src-tauri/gen/android/app/build/outputs/apk/universal/release
-          universial_apk=Readest_${version}_universal.apk
-          arm64_apk=Readest_${version}_arm64.apk
-          pnpm tauri android build
-          cp ${apk_path}/app-universal-release.apk $universial_apk
-          pnpm tauri android build -t aarch64
-          cp ${apk_path}/app-universal-release.apk $arm64_apk
+          apk=Readest_${version}_${{ matrix.config.arch }}.apk
+          pnpm tauri android build ${{ matrix.config.android_args }}
+          cp src-tauri/gen/android/app/build/outputs/apk/universal/release/app-universal-release.apk $apk
 
           # Sentry symbolicates Rust panics from these: the APK ships the
           # library stripped (see gen/android/app/build.gradle.kts), while
@@ -523,60 +533,17 @@ jobs:
               ../../target/*/release/libreadestlib.so || echo "::warning::Sentry debug file upload failed"
           fi
 
-          echo "Uploading $universial_apk to GitHub release"
-          gh release upload ${{ needs.get-release.outputs.release_tag }} $universial_apk --clobber
-          echo "Uploading $arm64_apk to GitHub release"
-          gh release upload ${{ needs.get-release.outputs.release_tag }} $arm64_apk --clobber
-          echo "Uploading signatures to GitHub release"
-          pnpm tauri signer sign $universial_apk
-          pnpm tauri signer sign $arm64_apk
-          gh release upload ${{ needs.get-release.outputs.release_tag }} $universial_apk.sig --clobber
-          gh release upload ${{ needs.get-release.outputs.release_tag }} $arm64_apk.sig --clobber
+          echo "Uploading $apk to GitHub release"
+          gh release upload ${{ needs.get-release.outputs.release_tag }} $apk --clobber
+          echo "Uploading signature to GitHub release"
+          pnpm tauri signer sign $apk
+          gh release upload ${{ needs.get-release.outputs.release_tag }} $apk.sig --clobber
 
-      - name: attest Android apks
+      - name: attest Android apk
         if: matrix.config.release == 'android'
         uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
         with:
-          subject-path: |
-            apps/readest-app/Readest_${{ needs.get-release.outputs.release_version }}_universal.apk
-            apps/readest-app/Readest_${{ needs.get-release.outputs.release_version }}_arm64.apk
-
-      - name: download and update latest.json for Android release
-        if: matrix.config.release == 'android'
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          cd apps/readest-app/
-          # Use -f so curl fails on HTTP errors instead of writing the 404 body
-          # ("Not Found") into latest.json and clobbering the release asset with
-          # invalid JSON, which then breaks tauri-action's updater merge on every
-          # subsequent build.
-          if ! curl -fsSL https://github.com/readest/readest/releases/latest/download/latest.json -o latest.json; then
-            echo "::error::Failed to download existing latest.json; aborting to avoid clobbering the release asset."
-            exit 1
-          fi
-          if ! jq empty latest.json 2>/dev/null; then
-            echo "::error::Existing latest.json is not valid JSON; aborting."
-            exit 1
-          fi
-
-          version=${{ needs.get-release.outputs.release_version }}
-          universial_apk_url="https://github.com/readest/readest/releases/download/${{ needs.get-release.outputs.release_tag }}/Readest_${version}_universal.apk"
-          arm64_apk_url="https://github.com/readest/readest/releases/download/${{ needs.get-release.outputs.release_tag }}/Readest_${version}_arm64.apk"
-
-          universial_sig=$(cat Readest_${version}_universal.apk.sig)
-          arm64_sig=$(cat Readest_${version}_arm64.apk.sig)
-
-          jq --arg url "$universial_apk_url" \
-              --arg sig "$universial_sig" \
-              '.platforms["android-universal"] = {signature: $sig, url: $url}' latest.json > tmp.$$.json && mv tmp.$$.json latest.json
-
-          jq --arg url "$arm64_apk_url" \
-              --arg sig "$arm64_sig" \
-              '.platforms["android-arm64"] = {signature: $sig, url: $url}' latest.json > tmp.$$.json && mv tmp.$$.json latest.json
-
-          echo "Uploading updated latest.json to GitHub release"
-          gh release upload ${{ needs.get-release.outputs.release_tag }} latest.json --clobber
+          subject-path: apps/readest-app/Readest_${{ needs.get-release.outputs.release_version }}_${{ matrix.config.arch }}.apk
 
       - uses: tauri-apps/tauri-action@1deb371b0cd8bd54025b384f1cd735e725c4060f # v1.0.0
         id: tauri
@@ -744,8 +711,56 @@ jobs:
           echo "Uploading updated latest.json to GitHub release"
           gh release upload ${{ needs.get-release.outputs.release_tag }} latest.json --clobber
 
-  upload-to-r2:
+  # Runs once after every build leg, so the three Android legs (and the
+  # desktop legs that also rewrite latest.json) never race on the asset.
+  update-android-latest-json:
     needs: [get-release, build-tauri]
+    if: ${{ !cancelled() }}
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: download and update latest.json for Android release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          # Use -f so curl fails on HTTP errors instead of writing the 404 body
+          # ("Not Found") into latest.json and clobbering the release asset with
+          # invalid JSON, which then breaks tauri-action's updater merge on every
+          # subsequent build.
+          if ! curl -fsSL https://github.com/readest/readest/releases/latest/download/latest.json -o latest.json; then
+            echo "::error::Failed to download existing latest.json; aborting to avoid clobbering the release asset."
+            exit 1
+          fi
+          if ! jq empty latest.json 2>/dev/null; then
+            echo "::error::Existing latest.json is not valid JSON; aborting."
+            exit 1
+          fi
+
+          tag=${{ needs.get-release.outputs.release_tag }}
+          version=${{ needs.get-release.outputs.release_version }}
+          gh release download "$tag" --pattern "Readest_${version}_*.apk.sig"
+
+          for arch in arm64 armv7 legacy; do
+            apk=Readest_${version}_${arch}.apk
+            # A separate assignment so a missing .sig fails the step (set -e).
+            sig=$(cat ${apk}.sig)
+            jq --arg url "https://github.com/readest/readest/releases/download/${tag}/${apk}" \
+                --arg sig "$sig" \
+                --arg key "android-${arch}" \
+                '.platforms[$key] = {signature: $sig, url: $url}' latest.json > tmp.$$.json && mv tmp.$$.json latest.json
+          done
+          # Clients released before the per-ABI split look up android-universal
+          # on every non-arm64 device; most of those are armv7.
+          jq '.platforms["android-universal"] = .platforms["android-armv7"]' latest.json > tmp.$$.json && mv tmp.$$.json latest.json
+
+          echo "Uploading updated latest.json to GitHub release"
+          gh release upload "$tag" latest.json --clobber
+
+  upload-to-r2:
+    needs: [get-release, build-tauri, update-android-latest-json]
     permissions:
       contents: read
     uses: ./.github/workflows/upload-to-r2.yml

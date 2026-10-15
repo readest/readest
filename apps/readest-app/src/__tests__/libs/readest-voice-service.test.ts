@@ -43,6 +43,12 @@ describe('getVoiceService', () => {
     expect(await (await load()).getVoiceService()).toBeNull();
   });
 
+  it('accepts a plain value, as the next dev platform proxy answers RPC calls', async () => {
+    const service = { contractVersion: vi.fn().mockReturnValue(1) };
+    m.env = { READEST_VOICE: service };
+    expect(await (await load()).getVoiceService()).toBe(service);
+  });
+
   it('checks again after a failed version call', async () => {
     const service = {
       contractVersion: vi.fn().mockRejectedValueOnce(new Error('down')).mockResolvedValue(1),

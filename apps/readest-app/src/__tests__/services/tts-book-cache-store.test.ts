@@ -95,6 +95,18 @@ describe('BookTTSCacheStore', () => {
     expect(openDatabase).toHaveBeenCalledWith('tts-cache', 'tts-cache/hash123/cache.db', 'Cache');
   });
 
+  test('forwards the keys a synced pack brought, from before its pull starts', async () => {
+    const register = vi.spyOn(SqliteTTSCacheStore.prototype, 'onImported');
+    const store = new BookTTSCacheStore(appService, () => 'hash123', 1024 * 1024);
+    const imported = vi.fn();
+    store.onImported(imported);
+    await store.open();
+    expect(register).toHaveBeenCalledTimes(1);
+    register.mock.calls[0]![0](['k1']);
+    expect(imported).toHaveBeenCalledWith(['k1']);
+    register.mockRestore();
+  });
+
   test('an open failure degrades to a no-op cache', async () => {
     openDatabase.mockRejectedValue(new Error('locked'));
     const store = new BookTTSCacheStore(appService, () => 'hash123', 1024 * 1024);

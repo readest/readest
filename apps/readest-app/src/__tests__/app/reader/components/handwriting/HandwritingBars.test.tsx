@@ -72,6 +72,15 @@ describe('drawing bars', () => {
     expect(props.onClose).toHaveBeenCalled();
   });
 
+  it('fills the bottom safe area with its own background instead of floating above it', () => {
+    const { container } = render(<HandwritingDock {...dockProps()} bottomInset={34} />);
+    const dock = container.firstElementChild as HTMLElement;
+    expect(dock.className).toContain('bottom-0');
+    expect(dock.className).toContain('box-content');
+    expect(dock.style.bottom).toBe('');
+    expect(dock.style.paddingBottom).toBe('34px');
+  });
+
   it('offers the pen, marker and eraser side by side', () => {
     const props = dockProps();
     render(<HandwritingDock {...props} />);

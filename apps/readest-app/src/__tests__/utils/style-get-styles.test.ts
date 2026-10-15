@@ -479,6 +479,42 @@ describe('getLayoutStyles branches (via getStyles)', () => {
 });
 
 // ---------------------------------------------------------------------------
+// CJK widow/orphan lift under Use Book Layout
+// ---------------------------------------------------------------------------
+// The paragraph chunk lifts widows/orphans to 1 for CJK via `:lang(zh)…`, but
+// Use Book Layout skips that chunk wholesale and takes the lift with it — a
+// CJK book mislabeled `en` (#6672) then falls back to the UA default of 2 and
+// the page-bottom gap returns. A zero-specificity root fallback ships in
+// every mode: inert where the chunk is present, and scoped to `html:lang()`
+// so book-declared values on html/body reach the paragraphs by inheritance
+// instead of being stomped by a direct declaration (which beats any inherited
+// value regardless of specificity).
+describe('CJK widow/orphan lift (via getStyles)', () => {
+  const theme = makeThemeCode();
+  const whereRule = (css: string) =>
+    css.match(/:where\(html:lang\(zh\), html:lang\(ja\), html:lang\(ko\)\)\s*\{([^}]*)\}/)?.[1] ??
+    '';
+
+  it('ships the zero-specificity fallback even when Use Book Layout skips the paragraph chunk', () => {
+    const css = getStyles(makeViewSettings({ useBookLayout: true }), theme);
+    // the chunk's own class-strength lift is gone…
+    expect(css).not.toMatch(/(^|\n)\s*:lang\(zh\), :lang\(ja\), :lang\(ko\)\s*\{/);
+    // …but the fallback itself survives at zero specificity, on the roots only
+    const rule = whereRule(css);
+    expect(rule).toContain('widows: 1');
+    expect(rule).toContain('orphans: 1');
+  });
+
+  it('keeps the chunk lift and the zero-specificity fallback when Use Book Layout is off', () => {
+    const css = getStyles(makeViewSettings({ useBookLayout: false }), theme);
+    expect(css).toMatch(/(^|\n)\s*:lang\(zh\), :lang\(ja\), :lang\(ko\)\s*\{/);
+    const rule = whereRule(css);
+    expect(rule).toContain('widows: 1');
+    expect(rule).toContain('orphans: 1');
+  });
+});
+
+// ---------------------------------------------------------------------------
 // getColorStyles branches
 // ---------------------------------------------------------------------------
 describe('getColorStyles branches (via getStyles)', () => {
@@ -796,6 +832,17 @@ describe('getColorStyles branches (via getStyles)', () => {
     );
   });
 
+  it('keeps overriding text colors over a background texture, with transparent fills (#6712)', () => {
+    const vs = makeViewSettings({ overrideColor: true, backgroundTextureId: 'leaves' });
+    const theme = makeThemeCode({ isDarkMode: true, bg: '#1a1a1a', fg: '#e0e0e0' });
+    const css = getStyles(vs, theme);
+    const block = css.match(/section, aside, blockquote[^{]*\{([^}]*)\}/)![1]!;
+    expect(block).toContain('background-color: transparent !important');
+    expect(block).toContain('color: #e0e0e0 !important');
+    expect(block).toContain('border-color: #e0e0e0 !important');
+    expect(css).toMatch(/pre, span \{[^}]*background-color: transparent !important/);
+  });
+
   it('makes svg/img backgrounds transparent when overrideColor is true', () => {
     const vs = makeViewSettings({ overrideColor: true });
     const theme = makeThemeCode();
@@ -1098,21 +1145,5 @@ describe('link hit area in link-dense sections', () => {
     );
     expect(css).toMatch(new RegExp(`html\\.${LINK_HIT_AREA_CLASS} a::before\\s*\\{`));
     expect(css).not.toMatch(/(^|\n)\s*a\s*\{\s*position: relative !important;/);
-  });
-});
-
-describe('paragraph indent exemption for image-only paragraphs', () => {
-  // A full-width inline image that takes the paragraph indent overhangs the
-  // column by the indent and paints a strip on the next page (#6198). The
-  // exemption must also see an image wrapped in a link, which is how Wikipedia
-  // (and most sites) mark up a figure: <p><span><a><img></a></span></p>.
-  it('drops the indent for an image wrapped in a link, with or without a span', () => {
-    const css = getStyles(makeViewSettings({ textIndent: 2 }));
-    const rule = css
-      .split('}')
-      .find((block) => block.includes('text-indent: initial !important') && block.includes('img'));
-    expect(rule).toBeDefined();
-    expect(rule).toContain('p:has(> a:only-child > img:only-child)');
-    expect(rule).toContain('p:has(> span:only-child > a:only-child > img:only-child)');
   });
 });

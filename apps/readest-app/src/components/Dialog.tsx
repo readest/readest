@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import React, { ReactNode, useEffect, useRef, useState } from 'react';
+import React, { ReactNode, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { OverlayScrollbarsComponent } from 'overlayscrollbars-react';
 import 'overlayscrollbars/overlayscrollbars.css';
 import { MdArrowBackIosNew, MdArrowForwardIos } from 'react-icons/md';
@@ -97,6 +97,9 @@ const Dialog: React.FC<DialogProps> = ({
   const { systemUIVisible, statusBarHeight, safeAreaInsets, isIPhoneDuo } = useThemeStore();
   const { acquireBackKeyInterception, releaseBackKeyInterception } = useDeviceControlStore();
   const [isFullHeightInMobile, setIsFullHeightInMobile] = useState(!snapHeight);
+  // A mobile sheet sized by its content (a confirmation) rests at the bottom,
+  // short of the screen's top, like a snapped one.
+  const [isContentHeightSheet, setIsContentHeightSheet] = useState(false);
   const [isRtl] = useState(() => getDirFromUILanguage() === 'rtl');
   const dialogRef = useRef<HTMLDialogElement>(null);
   // Where the finger sits relative to the sheet's top edge, so the sheet slides
@@ -158,6 +161,21 @@ const Dialog: React.FC<DialogProps> = ({
     const timer = setTimeout(() => setIsBodyHoldOver(true), CLOSE_TRANSITION_MS);
     return () => clearTimeout(timer);
   }, [isOpen]);
+
+  useLayoutEffect(() => {
+    const dialog = dialogRef.current;
+    const box = dialog?.querySelector<HTMLElement>('.modal-box');
+    if (!isOpen || !isMobile || fullScreen || snapHeight || !dialog || !box) {
+      setIsContentHeightSheet(false);
+      return;
+    }
+    setIsContentHeightSheet(box.offsetHeight < dialog.clientHeight);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, fullScreen, snapHeight]);
+
+  // Only a sheet covering the screen clears the status bar and offers a back
+  // button; a shorter one is dismissed by its handle, backdrop or own actions.
+  const isFullHeightSheet = !isContentHeightSheet && (fullScreen || isFullHeightInMobile);
 
   const handleKeyDown = (event: KeyboardEvent | CustomEvent) => {
     // A nested confirmation owns dismissal until it closes.
@@ -400,7 +418,7 @@ const Dialog: React.FC<DialogProps> = ({
         )}
         style={{
           paddingTop:
-            appService?.hasSafeAreaInset && (fullScreen || isFullHeightInMobile)
+            appService?.hasSafeAreaInset && isFullHeightSheet
               ? `${Math.max(safeAreaInsets?.top || 0, systemUIVisible ? statusBarHeight : 0)}px`
               : '0px',
           paddingBottom:
@@ -443,9 +461,10 @@ const Dialog: React.FC<DialogProps> = ({
                 aria-hidden={!isOpen}
                 onClick={onClose}
                 disabled={!dismissible}
-                className={
-                  'btn btn-ghost btn-circle flex h-8 min-h-8 w-8 hover:bg-transparent focus:outline-hidden disabled:bg-transparent sm:hidden'
-                }
+                className={clsx(
+                  'btn btn-ghost btn-circle h-8 min-h-8 w-8 hover:bg-transparent focus:outline-hidden disabled:bg-transparent sm:hidden',
+                  isFullHeightSheet ? 'flex' : 'hidden',
+                )}
               >
                 {isRtl ? (
                   <MdArrowForwardIos size={iconSize22} />

@@ -84,7 +84,7 @@ const HandwritingOverlay: React.FC<HandwritingOverlayProps> = ({ bookKey, gridIn
       />
       {hw.enabled && (
         <HandwritingDock
-          bottom={gridInsets.bottom}
+          bottomInset={gridInsets.bottom}
           erasing={hw.erasing}
           onToggleErase={() => hw.setErasing(!hw.erasing)}
           onUndo={hw.undo}
