@@ -593,6 +593,8 @@ describe('quick actions run on a selection made in the footnote popup', () => {
     document.body.append(paragraph);
     const range = document.createRange();
     range.selectNodeContents(paragraph);
+    document.getSelection()?.removeAllRanges();
+    document.getSelection()?.addRange(range);
     await act(async () => {
       await eventDispatcher.dispatch('footnote-selection', {
         key: 'book-1',
@@ -617,6 +619,22 @@ describe('quick actions run on a selection made in the footnote popup', () => {
 
     expect(screen.getByTestId('dictionary-surface').dataset['word']).toBe('fortune');
     expect(screen.queryByTestId('annotation-toolbar')).toBeNull();
+  });
+
+  // The system selection handles are drawn above the lookup, so the instant
+  // dictionary drops the popup selection; the cleared report it echoes back
+  // must not close the lookup.
+  test('the instant dictionary drops the popup selection and stays open', async () => {
+    render(<Annotator bookKey='book-1' contentInsets={{ top: 0, right: 0, bottom: 0, left: 0 }} />);
+    await selectInPopup({ quickAction: true });
+    expect(document.getSelection()?.rangeCount).toBe(0);
+
+    await act(async () => {
+      await eventDispatcher.dispatch('footnote-selection', { key: 'book-1' });
+      await new Promise((resolve) => setTimeout(resolve, 600));
+    });
+
+    expect(screen.getByTestId('dictionary-surface').dataset['word']).toBe('fortune');
   });
 
   test('a report taken mid-drag still opens the toolbar', async () => {

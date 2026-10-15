@@ -132,6 +132,12 @@ import { convertReadEraDocToBookNotes } from '@/services/annotation/providers/re
 
 const ZERO_INSETS: Insets = { top: 0, right: 0, bottom: 0, left: 0 };
 
+const isSameRange = (a: Range, b: Range) =>
+  a.startContainer === b.startContainer &&
+  a.startOffset === b.startOffset &&
+  a.endContainer === b.endContainer &&
+  a.endOffset === b.endOffset;
+
 const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?: Insets }> = ({
   bookKey,
   contentInsets,
@@ -564,6 +570,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
   // detail without a range means the selection was cleared or the surface
   // closed.
   const footnoteSelectionEpochRef = useRef(0);
+  const popupRestoredRangeRef = useRef<Range | null>(null);
   useEffect(() => {
     const onFootnoteSelection = async (event: CustomEvent) => {
       const detail = event.detail as {
@@ -584,9 +591,18 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
       // cleared or newer selection must not be overwritten by stale state.
       const epoch = ++footnoteSelectionEpochRef.current;
       if (!detail.range) {
-        if (selectionIsPopupRef.current) handleDismissPopup();
+        // The instant dictionary clears the popup selection as it opens; that
+        // report must not close the lookup.
+        if (selectionIsPopupRef.current && !instantLookupDeselectedRef.current) {
+          handleDismissPopup();
+        }
         return;
       }
+      // The range the lookup dismiss handed back (keepSelectionAfterLookup) is
+      // already the selection; reporting it again would rerun the lookup.
+      const restored = popupRestoredRangeRef.current;
+      popupRestoredRangeRef.current = null;
+      if (restored && isSameRange(restored, detail.range)) return;
       // A click on an overlay drawn in the popup: a highlight opens the
       // toolbar in its annotated state (Delete Highlight + style options) with
       // its range handles (#6390), a note bubble opens the note view — like
@@ -1215,6 +1231,12 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
             isTextSelected.current = false;
             instantLookupDeselectedRef.current = true;
             view?.deselect();
+            // A popup selection lives in the popup's own document, out of
+            // view.deselect()'s reach; its cleared report is ignored while the
+            // lookup is up (onFootnoteSelection).
+            if (selection.popup) {
+              selection.range.startContainer.ownerDocument?.getSelection()?.removeAllRanges();
+            }
           } else {
             handleShowAnnotPopup();
           }
@@ -2627,6 +2649,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
         selection &&
         restoreSelectionRange(selection.range)
       ) {
+        if (selection.popup) popupRestoredRangeRef.current = selection.range.cloneRange();
         isTextSelected.current = true;
         // `quickActionHandled` rides along with the selection from here on, so a
         // later republish of it (handleHighlight stamps `annotated`) can't be
