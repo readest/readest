@@ -753,13 +753,11 @@ const getParagraphLayoutStyles = (
   dd.aligned-justify, div.aligned-justify {
     ${!justify && overrideLayout ? 'text-align: initial !important;' : ''};
   }
-  /* An image that is the paragraph's whole content must not take the indent:
-     sized to the column, it would overhang by the indent and paint a strip on
-     the next page (#6198). applyImageStyle marks such paragraphs, since
-     :only-child ignores text and would also match a footnote icon in text. */
-  p.image-only,
-  p:has(> img:not(.has-text-siblings)),
-  p:has(> a:first-child + img:last-child) {
+  /* An image that starts a paragraph must not take the indent: sized to the
+     column, it would overhang by the indent and paint a strip on the next page
+     (#6198). applyImageStyle marks such paragraphs; selectors can't see text,
+     so :only-child also matched a footnote icon inside text. */
+  p.leading-image {
     text-indent: initial !important;
   }
   blockquote[align="center"], div[align="center"],
@@ -1689,7 +1687,13 @@ export const applyImageStyle = (document: Document) => {
         : NaN;
     const noEnlarge = img.getAttribute('zy-enlarge-src') === 'none';
     const paragraph = img.closest('p');
-    const imageOnlyParagraph = paragraph && !paragraph.textContent?.trim() ? paragraph : null;
+    let leadingImageParagraph: HTMLParagraphElement | null = null;
+    if (paragraph) {
+      const before = document.createRange();
+      before.setStart(paragraph, 0);
+      before.setEndBefore(img);
+      if (!before.toString().trim()) leadingImageParagraph = paragraph;
+    }
 
     let inlineWithText = false;
     let keepBaseline = false;
@@ -1719,7 +1723,7 @@ export const applyImageStyle = (document: Document) => {
       inlineWithText,
       keepBaseline,
       noEnlarge,
-      imageOnlyParagraph,
+      leadingImageParagraph,
     };
   });
 
@@ -1730,9 +1734,9 @@ export const applyImageStyle = (document: Document) => {
     inlineWithText,
     keepBaseline,
     noEnlarge,
-    imageOnlyParagraph,
+    leadingImageParagraph,
   } of plans) {
-    imageOnlyParagraph?.classList.add('image-only');
+    leadingImageParagraph?.classList.add('leading-image');
     if (!isNaN(percentWidth)) {
       img.style.width = `${(percentWidth / 100) * window.innerWidth}px`;
       img.removeAttribute('width');
