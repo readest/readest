@@ -71,7 +71,9 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
   const setTTSEnabled = useReaderStore((s) => s.setTTSEnabled);
   const { getMergedRules } = useProofreadStore();
 
-  const [ttsLang, setTtsLang] = useState<string>('en');
+  const [ttsLang, setTtsLang] = useState<string>(
+    () => getBookData(bookKey)?.book?.primaryLanguage || 'en',
+  );
   const [ttsSectionIndex, setTtsSectionIndex] = useState<number | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
