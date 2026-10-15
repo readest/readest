@@ -627,11 +627,36 @@ describe('quick actions run on a selection made in the footnote popup', () => {
     expect(screen.getByTestId('annotation-toolbar')).toBeTruthy();
   });
 
-  // Instant highlighting paints from the section pointer handlers, which the
-  // popup document doesn't have, and read-aloud is disabled for popup
-  // selections: both keep the toolbar.
-  test.each(['highlight', 'tts'])('the %s quick action keeps the toolbar', async (action) => {
-    h.viewSettings.annotationQuickAction = action;
+  // The popup document has no instant annotating, so the highlight quick
+  // action highlights the settled selection itself.
+  test('the highlight quick action highlights the popup selection', async () => {
+    h.viewSettings.annotationQuickAction = 'highlight';
+    render(<Annotator bookKey='book-1' contentInsets={{ top: 0, right: 0, bottom: 0, left: 0 }} />);
+    await selectInPopup({ quickAction: true });
+
+    expect(h.updateBooknotes).toHaveBeenCalled();
+    const booknotes = h.updateBooknotes.mock.calls.at(-1)![1] as {
+      cfi: string;
+      style?: string;
+    }[];
+    expect(booknotes).toContainEqual(
+      expect.objectContaining({ cfi: 'epubcfi(/6/2!/4/2)', style: 'highlight' }),
+    );
+    expect(screen.queryByTestId('annotation-toolbar')).toBeNull();
+  });
+
+  test('a highlight quick action mid-drag still opens the toolbar', async () => {
+    h.viewSettings.annotationQuickAction = 'highlight';
+    render(<Annotator bookKey='book-1' contentInsets={{ top: 0, right: 0, bottom: 0, left: 0 }} />);
+    await selectInPopup();
+
+    expect(h.updateBooknotes).not.toHaveBeenCalled();
+    expect(screen.getByTestId('annotation-toolbar')).toBeTruthy();
+  });
+
+  // Read-aloud is disabled for popup selections, so it keeps the toolbar.
+  test('the tts quick action keeps the toolbar', async () => {
+    h.viewSettings.annotationQuickAction = 'tts';
     render(<Annotator bookKey='book-1' contentInsets={{ top: 0, right: 0, bottom: 0, left: 0 }} />);
     await selectInPopup({ quickAction: true });
 

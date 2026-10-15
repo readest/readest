@@ -634,11 +634,10 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
       const text = await getAnnotationText(detail.range);
       if (epoch !== footnoteSelectionEpochRef.current) return;
       // A settled footnote-popup selection runs the quick action like one made
-      // in the book (#6804). Highlight paints from the section pointer
-      // handlers and read-aloud is off for popup selections, so those two keep
-      // the toolbar.
+      // in the book (#6804). Read-aloud is off for popup selections, so it
+      // keeps the toolbar.
       const quickAction = getViewSettings(bookKey)?.annotationQuickAction;
-      if (detail.quickAction && quickAction !== 'highlight' && quickAction !== 'tts') {
+      if (detail.quickAction && quickAction !== 'tts') {
         isTextSelected.current = true;
       }
       setSelection({
@@ -1190,7 +1189,10 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
           handleDismissPopupAndSelection();
           break;
         case 'highlight':
-          // highlight is already applied in instant annotating
+          // In the book, instant annotating already applied the highlight. The
+          // footnote popup has no instant annotating, so highlight its
+          // selection here, as the toolbar's highlight button does.
+          if (selection?.popup) handleHighlight();
           handleDismissPopupAndSelection();
           break;
         case 'search':
