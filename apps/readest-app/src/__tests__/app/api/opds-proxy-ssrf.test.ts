@@ -160,6 +160,27 @@ describe('OPDS proxy response isolation', () => {
     expect(res.headers.get('Content-Type')).toBe('application/octet-stream');
   });
 
+  it.each([
+    401, 404,
+  ])('drops the compressed length and encoding from a decoded error body (%s)', async (status) => {
+    // fetch has already decoded the body; the upstream headers describe the
+    // compressed bytes.
+    fetchSpy.mockResolvedValueOnce(
+      new Response('Not found', {
+        status,
+        headers: {
+          'Content-Type': 'text/plain',
+          'Content-Encoding': 'gzip',
+          'Content-Length': '999',
+        },
+      }),
+    );
+    const res = await GET(proxyReq('https://feeds.example.com/missing'));
+    expect(res.headers.get('Content-Encoding')).toBeNull();
+    expect(res.headers.get('Content-Length')).not.toBe('999');
+    expect(await res.text()).toBe('Not found');
+  });
+
   it('does not expose an upstream JavaScript MIME type', async () => {
     fetchSpy.mockResolvedValueOnce(
       new Response('evil()', {
