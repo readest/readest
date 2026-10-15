@@ -2606,5 +2606,7 @@
   "{{count}} voices available_other": "{{count}} आवाज़ें उपलब्ध हैं",
   "Multilingual": "बहुभाषी",
   "Expressive": "अभिव्यंजक",
-  "Show Page Thumbnails": "पृष्ठ थंबनेल दिखाएँ"
+  "Show Page Thumbnails": "पृष्ठ थंबनेल दिखाएँ",
+  "Allow Self-Signed Certificate": "स्व-हस्ताक्षरित प्रमाणपत्र की अनुमति दें",
+  "Skips certificate checks for this server, so only turn it on if you trust it": "इस सर्वर के लिए प्रमाणपत्र जाँच छोड़ देता है, इसलिए इसे तभी चालू करें जब आप उस पर भरोसा करते हों"
 }

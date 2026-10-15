@@ -12,6 +12,7 @@ import {
   normalizeCustomHeaders,
   serializeCustomHeaders,
 } from '@/utils/customHeaders';
+import { tlsFetchOptions } from '@/utils/tls';
 
 const OPDS_PROXY_URL = `${getAPIBaseUrl()}/opds/proxy`;
 const NODE_OPDS_PROXY_URL = `${getNodeAPIBaseUrl()}/opds/proxy`;
@@ -242,6 +243,7 @@ export const probeAuth = async (
   password?: string,
   useProxy = false,
   customHeaders: CustomHeaders = {},
+  allowSelfSignedCert = false,
 ): Promise<string | null> => {
   const {
     url: cleanUrl,
@@ -272,7 +274,7 @@ export const probeAuth = async (
   const res = await fetch(fetchURL, {
     method: 'HEAD',
     headers,
-    danger: { acceptInvalidCerts: true, acceptInvalidHostnames: true },
+    ...tlsFetchOptions(allowSelfSignedCert),
   });
 
   // Check if authentication is required
@@ -356,6 +358,7 @@ export const fetchWithAuth = async (
   useProxy = false,
   options: RequestInit = {},
   customHeaders: CustomHeaders = {},
+  allowSelfSignedCert = false,
 ): Promise<Response> => {
   const {
     url: cleanUrl,
@@ -394,7 +397,7 @@ export const fetchWithAuth = async (
     ...options,
     method: options.method || 'GET',
     headers,
-    danger: { acceptInvalidCerts: true, acceptInvalidHostnames: true },
+    ...tlsFetchOptions(allowSelfSignedCert),
   });
 
   // Calibre in 'digest' (or 'auto' over http) mode rejects a Basic
@@ -410,7 +413,7 @@ export const fetchWithAuth = async (
         ...options,
         method: options.method || 'GET',
         headers: baseHeaders,
-        danger: { acceptInvalidCerts: true, acceptInvalidHostnames: true },
+        ...tlsFetchOptions(allowSelfSignedCert),
       },
     );
   }
@@ -444,7 +447,7 @@ export const fetchWithAuth = async (
           ...options,
           method: options.method || 'GET',
           headers: useProxy ? headers : { ...headers, Authorization: authHeader },
-          danger: { acceptInvalidCerts: true, acceptInvalidHostnames: true },
+          ...tlsFetchOptions(allowSelfSignedCert),
         });
       }
     }

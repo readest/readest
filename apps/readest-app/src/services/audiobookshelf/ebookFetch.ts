@@ -19,11 +19,13 @@ import { buildAbsEbookUrl } from '@/utils/audiobook';
  */
 export const createAbsEbookFetcher = (server: ABSServer, itemId: string): typeof fetch => {
   const liveServer = () => findABSServerById(server.id) ?? server;
-  const read = (init?: RequestInit) =>
-    absFetch(buildAbsEbookUrl(liveServer(), itemId), {
+  const read = (init?: RequestInit) => {
+    const current = liveServer();
+    return absFetch(current, buildAbsEbookUrl(current, itemId), {
       method: init?.method,
       headers: Object.fromEntries(new Headers(init?.headers)),
     });
+  };
   return async (_input, init) => {
     const res = await read(init);
     if (res.status !== 401) return res;

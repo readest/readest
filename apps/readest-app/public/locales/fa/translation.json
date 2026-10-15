@@ -2606,5 +2606,7 @@
   "{{count}} voices available_other": "{{count}} صدا در دسترس است",
   "Multilingual": "چندزبانه",
   "Expressive": "رسا",
-  "Show Page Thumbnails": "نمایش تصاویر کوچک صفحات"
+  "Show Page Thumbnails": "نمایش تصاویر کوچک صفحات",
+  "Allow Self-Signed Certificate": "اجازه به گواهی خودامضا",
+  "Skips certificate checks for this server, so only turn it on if you trust it": "بررسی گواهی را برای این سرور نادیده می‌گیرد، پس فقط در صورت اعتماد آن را روشن کنید"
 }

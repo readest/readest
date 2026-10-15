@@ -2671,5 +2671,7 @@
   "{{count}} voices available_other": "{{count}} de voci disponibile",
   "Multilingual": "Multilingv",
   "Expressive": "Expresiv",
-  "Show Page Thumbnails": "Afișează miniaturile paginilor"
+  "Show Page Thumbnails": "Afișează miniaturile paginilor",
+  "Allow Self-Signed Certificate": "Permite certificat autosemnat",
+  "Skips certificate checks for this server, so only turn it on if you trust it": "Omite verificarea certificatului pentru acest server, așa că activează doar dacă ai încredere în el"
 }

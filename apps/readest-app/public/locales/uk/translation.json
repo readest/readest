@@ -2736,5 +2736,7 @@
   "{{count}} voices available_other": "Доступно {{count}} голосу",
   "Multilingual": "Багатомовний",
   "Expressive": "Виразний",
-  "Show Page Thumbnails": "Показувати мініатюри сторінок"
+  "Show Page Thumbnails": "Показувати мініатюри сторінок",
+  "Allow Self-Signed Certificate": "Дозволити самопідписаний сертифікат",
+  "Skips certificate checks for this server, so only turn it on if you trust it": "Вимикає перевірку сертифіката для цього сервера, тож вмикайте, лише якщо довіряєте йому"
 }

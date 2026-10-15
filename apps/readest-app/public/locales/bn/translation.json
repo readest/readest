@@ -2606,5 +2606,7 @@
   "{{count}} voices available_other": "{{count}}টি ভয়েস উপলব্ধ",
   "Multilingual": "বহুভাষিক",
   "Expressive": "অভিব্যক্তিপূর্ণ",
-  "Show Page Thumbnails": "পৃষ্ঠার থাম্বনেইল দেখান"
+  "Show Page Thumbnails": "পৃষ্ঠার থাম্বনেইল দেখান",
+  "Allow Self-Signed Certificate": "স্ব-স্বাক্ষরিত সার্টিফিকেট অনুমতি দিন",
+  "Skips certificate checks for this server, so only turn it on if you trust it": "এই সার্ভারের সার্টিফিকেট যাচাই এড়িয়ে যায়, তাই কেবল বিশ্বাস করলে চালু করুন"
 }

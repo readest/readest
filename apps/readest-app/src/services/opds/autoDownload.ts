@@ -6,6 +6,7 @@ import { getFileExtFromMimeType } from '@/libs/document';
 import { needsProxy, getProxiedURL, probeAuth, probeFilename } from '@/app/opds/utils/opdsReq';
 import { resolveURL, parseMediaType, getFileExtFromPath } from '@/app/opds/utils/opdsUtils';
 import { normalizeCustomHeaders } from '@/utils/customHeaders';
+import { allowsSelfSignedCert } from '@/utils/tls';
 import { READEST_OPDS_USER_AGENT } from '@/services/constants';
 import { applyOPDSCover } from './cover';
 import { applyOPDSMetadata } from './metadata';
@@ -65,6 +66,7 @@ async function downloadAndImport(
   const username = catalog.username ?? '';
   const password = catalog.password ?? '';
   const customHeaders = normalizeCustomHeaders(catalog.customHeaders);
+  const allowSelfSignedCert = allowsSelfSignedCert(catalog);
   const useProxy = needsProxy(url);
 
   let downloadUrl = useProxy ? getProxiedURL(url, '', true, customHeaders) : url;
@@ -75,7 +77,14 @@ async function downloadAndImport(
   };
 
   if (username || password) {
-    const authHeader = await probeAuth(url, username, password, useProxy, customHeaders);
+    const authHeader = await probeAuth(
+      url,
+      username,
+      password,
+      useProxy,
+      customHeaders,
+      allowSelfSignedCert,
+    );
     if (authHeader) {
       if (!useProxy) {
         headers['Authorization'] = authHeader;
@@ -108,12 +117,11 @@ async function downloadAndImport(
     url: downloadUrl,
     headers,
     singleThreaded: true,
-    // Same self-signed/private-CA workaround as the manual download path
-    // (#2871): the native downloader's rustls validation ignores the OS
-    // trust store, so without this flag auto-download fails the TLS
-    // handshake on servers where feed browsing and manual download work
-    // (#4988).
-    skipSslVerification: true,
+    // Same per-catalog self-signed/private-CA opt-in as the manual download
+    // path (#2871): the native downloader's rustls validation ignores the OS
+    // trust store, so without it auto-download fails the TLS handshake on
+    // servers where feed browsing and manual download work (#4988).
+    skipSslVerification: allowSelfSignedCert,
   });
 
   const probedFilename = await probeFilename(responseHeaders);
@@ -142,6 +150,7 @@ async function downloadAndImport(
         username,
         password,
         customHeaders,
+        allowSelfSignedCert,
       });
     } catch (error) {
       console.warn(`[OPDS] failed to apply the feed cover for "${item.title}":`, error);

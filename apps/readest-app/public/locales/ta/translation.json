@@ -2606,5 +2606,7 @@
   "{{count}} voices available_other": "{{count}} குரல்கள் கிடைக்கின்றன",
   "Multilingual": "பன்மொழி",
   "Expressive": "உணர்ச்சிமிக்க",
-  "Show Page Thumbnails": "பக்க சிறுபடங்களைக் காட்டு"
+  "Show Page Thumbnails": "பக்க சிறுபடங்களைக் காட்டு",
+  "Allow Self-Signed Certificate": "சுய கையொப்பமிட்ட சான்றிதழை அனுமதி",
+  "Skips certificate checks for this server, so only turn it on if you trust it": "இந்த சேவையகத்திற்கான சான்றிதழ் சரிபார்ப்பைத் தவிர்க்கும், எனவே நம்பினால் மட்டும் இயக்கவும்"
 }

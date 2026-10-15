@@ -2541,5 +2541,7 @@
   "{{count}} voices available_other": "Có {{count}} giọng đọc",
   "Multilingual": "Đa ngôn ngữ",
   "Expressive": "Biểu cảm",
-  "Show Page Thumbnails": "Hiển thị hình thu nhỏ trang"
+  "Show Page Thumbnails": "Hiển thị hình thu nhỏ trang",
+  "Allow Self-Signed Certificate": "Cho phép chứng chỉ tự ký",
+  "Skips certificate checks for this server, so only turn it on if you trust it": "Bỏ qua kiểm tra chứng chỉ cho máy chủ này, vì vậy chỉ bật khi bạn tin tưởng máy chủ"
 }

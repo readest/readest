@@ -2736,5 +2736,7 @@
   "{{count}} voices available_other": "Na voljo je {{count}} glasov",
   "Multilingual": "Večjezični",
   "Expressive": "Izrazni",
-  "Show Page Thumbnails": "Prikaži sličice strani"
+  "Show Page Thumbnails": "Prikaži sličice strani",
+  "Allow Self-Signed Certificate": "Dovoli samopodpisano potrdilo",
+  "Skips certificate checks for this server, so only turn it on if you trust it": "Preskoči preverjanje potrdila za ta strežnik, zato ga vklopite le, če mu zaupate"
 }

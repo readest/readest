@@ -5,8 +5,8 @@ const mocks = vi.hoisted(() => ({
   invoke: vi.fn(),
   isTauriAppPlatform: vi.fn(() => false),
   getOSPlatform: vi.fn((): OsPlatform => 'android'),
-  servers: [] as Array<{ url: string; deletedAt?: number }>,
-  settingsServers: [] as Array<{ url: string; deletedAt?: number }>,
+  servers: [] as Array<{ url: string; deletedAt?: number; allowSelfSignedCert?: boolean }>,
+  settingsServers: [] as Array<{ url: string; deletedAt?: number; allowSelfSignedCert?: boolean }>,
 }));
 
 vi.mock('@tauri-apps/api/core', () => ({ invoke: mocks.invoke }));
@@ -78,6 +78,29 @@ describe('getMediaProxyBase (#6216)', () => {
     expect(mocks.invoke).toHaveBeenCalledTimes(2);
     expect(mocks.invoke).toHaveBeenLastCalledWith('get_media_proxy_base', {
       origins: ['https://abs.example:8443', 'http://192.168.2.3:13378'],
+      // Saved before the option existed, so both keep accepting self-signed certs.
+      selfSigned: ['https://abs.example:8443', 'http://192.168.2.3:13378'],
+    });
+  });
+
+  it("forwards each server's certificate choice, preferring the live store copy", async () => {
+    mocks.servers = [
+      { url: 'https://verified.example', allowSelfSignedCert: false },
+      { url: 'https://home.example', allowSelfSignedCert: true },
+    ];
+    // A stale persisted copy must not re-enable what the store turned off.
+    mocks.settingsServers = [{ url: 'https://verified.example' }];
+    mocks.invoke.mockResolvedValue('http://127.0.0.1:41234/s3cret');
+    const { getMediaProxyBase: fresh } = await import('@/services/audiobook/mediaProxy');
+
+    await fresh({ origin: 'https://books.example', authorization: 'Bearer t' });
+    await fresh({ origin: 'https://lab.example', allowSelfSignedCert: true });
+    expect(mocks.invoke.mock.calls[0]![1]).toMatchObject({
+      origins: ['https://verified.example', 'https://home.example', 'https://books.example'],
+      selfSigned: ['https://home.example'],
+    });
+    expect(mocks.invoke.mock.calls[1]![1]).toMatchObject({
+      selfSigned: ['https://home.example', 'https://lab.example'],
     });
   });
 
@@ -96,6 +119,7 @@ describe('getMediaProxyBase (#6216)', () => {
     await fresh();
     expect(mocks.invoke).toHaveBeenLastCalledWith('get_media_proxy_base', {
       origins: ['https://abs.example:8443', 'http://192.168.2.3:13378'],
+      selfSigned: ['https://abs.example:8443', 'http://192.168.2.3:13378'],
     });
   });
 

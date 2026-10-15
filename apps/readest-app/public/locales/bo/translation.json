@@ -2541,5 +2541,7 @@
   "{{count}} voices available_other": "སྒྲ་གདངས་ {{count}} ཡོད།",
   "Multilingual": "སྐད་རིགས་མང་པོ།",
   "Expressive": "མྱོང་ཚོར་ལྡན་པ།",
-  "Show Page Thumbnails": "ཤོག་ངོས་ཀྱི་པར་ཆུང་སྟོན།"
+  "Show Page Thumbnails": "ཤོག་ངོས་ཀྱི་པར་ཆུང་སྟོན།",
+  "Allow Self-Signed Certificate": "རང་མཚན་རྟགས་ཀྱི་ལག་ཁྱེར་ལ་ཆོག་མཆན་སྤྲོད།",
+  "Skips certificate checks for this server, so only turn it on if you trust it": "ཞབས་ཞུ་འཕྲུལ་ཆས་འདིའི་ལག་ཁྱེར་ཞིབ་བཤེར་བྱེད་མི་འགྲོ། ཡིད་ཆེས་ཡོད་ན་མ་གཏོགས་ཁ་མ་ཕྱེ།"
 }

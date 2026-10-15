@@ -2671,5 +2671,7 @@
   "{{count}} voices available_other": "{{count}} vozes disponíveis",
   "Multilingual": "Multilíngue",
   "Expressive": "Expressiva",
-  "Show Page Thumbnails": "Mostrar miniaturas das páginas"
+  "Show Page Thumbnails": "Mostrar miniaturas das páginas",
+  "Allow Self-Signed Certificate": "Permitir certificado autoassinado",
+  "Skips certificate checks for this server, so only turn it on if you trust it": "Ignora a verificação de certificado deste servidor, então ative apenas se confiar nele"
 }
