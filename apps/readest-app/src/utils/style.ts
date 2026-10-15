@@ -755,10 +755,9 @@ const getParagraphLayoutStyles = (
   }
   /* An image that is the paragraph's whole content must not take the indent:
      sized to the column, it would overhang by the indent and paint a strip on
-     the next page (#6198). Linked images (<a><img>, <span><a><img>) included. */
-  p:has(> img:only-child), p:has(> span:only-child > img:only-child),
-  p:has(> a:only-child > img:only-child),
-  p:has(> span:only-child > a:only-child > img:only-child),
+     the next page (#6198). applyImageStyle marks such paragraphs, since
+     :only-child ignores text and would also match a footnote icon in text. */
+  p.image-only,
   p:has(> img:not(.has-text-siblings)),
   p:has(> a:first-child + img:last-child) {
     text-indent: initial !important;
@@ -1689,6 +1688,8 @@ export const applyImageStyle = (document: Document) => {
         ? parseFloat(heightAttr)
         : NaN;
     const noEnlarge = img.getAttribute('zy-enlarge-src') === 'none';
+    const paragraph = img.closest('p');
+    const imageOnlyParagraph = paragraph && !paragraph.textContent?.trim() ? paragraph : null;
 
     let inlineWithText = false;
     let keepBaseline = false;
@@ -1718,6 +1719,7 @@ export const applyImageStyle = (document: Document) => {
       inlineWithText,
       keepBaseline,
       noEnlarge,
+      imageOnlyParagraph,
     };
   });
 
@@ -1728,7 +1730,9 @@ export const applyImageStyle = (document: Document) => {
     inlineWithText,
     keepBaseline,
     noEnlarge,
+    imageOnlyParagraph,
   } of plans) {
+    imageOnlyParagraph?.classList.add('image-only');
     if (!isNaN(percentWidth)) {
       img.style.width = `${(percentWidth / 100) * window.innerWidth}px`;
       img.removeAttribute('width');

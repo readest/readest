@@ -604,6 +604,31 @@ describe('applyImageStyle', () => {
       expect(img.style.pointerEvents).toBe('');
     });
   });
+
+  // :only-child ignores text nodes, so a selector like
+  // p:has(> a:only-child > img:only-child) also matched a body paragraph with
+  // a footnote icon (<a class="duokan-footnote"><img></a>) and dropped its
+  // indent.
+  it('exempts image-only paragraphs from the indent, not text paragraphs with an inline image', () => {
+    document.body.innerHTML = `
+      <p id="figure"><img src="a.png"/></p>
+      <p id="linked"><a href="#"><img src="a.png"/></a></p>
+      <p id="wrapped"><span><a href="#"><img src="a.png"/></a></span></p>
+      <p id="footnote">Text<a class="duokan-footnote" href="#"><img src="n.png"/></a>more text</p>
+      <p id="footnote-end">Text<a class="duokan-footnote" href="#"><img src="n.png"/></a></p>
+      <p id="icon">Text<span><img src="i.png"/></span></p>
+    `;
+    applyImageStyle(document);
+
+    const css = getStyles(makeViewSettings({ textIndent: 2 }));
+    const block = css
+      .split('}')
+      .find((b) => b.includes('text-indent: initial !important') && b.includes('img'))!;
+    const selector = block.slice(block.lastIndexOf('*/') + 2, block.indexOf('{'));
+    const exempt = Array.from(document.querySelectorAll(selector)).map((p) => p.id);
+
+    expect(exempt).toEqual(['figure', 'linked', 'wrapped']);
+  });
 });
 
 describe('applyLinkHitArea', () => {
