@@ -54,16 +54,13 @@ beforeEach(() => {
   getUploadSignedUrlMock.mockReset().mockResolvedValue('https://r2/upload');
   getDownloadSignedUrlMock.mockReset().mockResolvedValue('https://r2/download');
 
-  // Minimal chainable Supabase stub: the no-existing-record lookup then the
-  // insert, both ending in `.single()`.
-  const single = vi
-    .fn()
-    .mockResolvedValueOnce({ data: null, error: { code: 'PGRST116' } })
-    .mockResolvedValueOnce({ data: { file_size: 12345 }, error: null });
-  const builder: Record<string, unknown> = {};
-  for (const m of ['select', 'eq', 'limit', 'insert']) builder[m] = () => builder;
-  builder['single'] = single;
-  createSupabaseAdminClientMock.mockReset().mockReturnValue({ from: () => builder });
+  // The quota reservation RPC records a fresh row for the key.
+  createSupabaseAdminClientMock.mockReset().mockReturnValue({
+    rpc: vi.fn().mockResolvedValue({
+      data: { allowed: true, usage: 0, file_size: 12345, inserted: true, file_id: 'f1' },
+      error: null,
+    }),
+  });
 });
 
 describe('POST /api/storage/upload — fileName traversal guard', () => {
