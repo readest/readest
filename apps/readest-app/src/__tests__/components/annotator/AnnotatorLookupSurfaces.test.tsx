@@ -637,6 +637,27 @@ describe('quick actions run on a selection made in the footnote popup', () => {
     expect(screen.getByTestId('dictionary-surface').dataset['word']).toBe('fortune');
   });
 
+  // The quick action runs once per gesture; a press in the popup must re-arm
+  // it, or only the first popup selection ran it (iOS).
+  test('a new gesture in the popup runs the quick action again', async () => {
+    render(<Annotator bookKey='book-1' contentInsets={{ top: 0, right: 0, bottom: 0, left: 0 }} />);
+    await selectInPopup({ quickAction: true });
+    await act(async () => {
+      screen.getByTestId('dictionary-dismiss').click();
+    });
+    expect(screen.queryByTestId('dictionary-surface')).toBeNull();
+
+    await act(async () => {
+      await eventDispatcher.dispatch('footnote-pointerdown', {
+        key: 'book-1',
+        pointerType: 'mouse',
+      });
+    });
+    await selectInPopup({ quickAction: true });
+
+    expect(screen.getByTestId('dictionary-surface')).toBeTruthy();
+  });
+
   test('a report taken mid-drag still opens the toolbar', async () => {
     render(<Annotator bookKey='book-1' contentInsets={{ top: 0, right: 0, bottom: 0, left: 0 }} />);
     await selectInPopup();

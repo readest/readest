@@ -365,8 +365,14 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
           if (selectionTimer) clearTimeout(selectionTimer);
           selectionTimer = setTimeout(() => report(false), 250);
         });
-        doc.addEventListener('pointerdown', () => {
+        doc.addEventListener('pointerdown', (ev: PointerEvent) => {
           pointerDown = true;
+          // A new gesture re-arms the Annotator's quick action, as a pointerdown
+          // in the book does; without it only the first popup selection ran it.
+          eventDispatcher.dispatch('footnote-pointerdown', {
+            key: bookKey,
+            pointerType: ev.pointerType,
+          });
         });
         doc.addEventListener('pointercancel', () => {
           pointerDown = false;

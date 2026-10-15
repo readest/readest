@@ -668,9 +668,19 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
         getPopupCfi: detail.getPopupCfi,
       });
     };
+    // A gesture in the popup re-arms the quick action like a pointerdown in
+    // the book (see onLoad); Android re-arms from the native touchstart.
+    const onFootnotePointerdown = (event: CustomEvent) => {
+      const detail = event.detail as { key: string; pointerType?: string };
+      if (detail.key !== bookKey || appService?.isAndroidApp) return;
+      beginGesture(deferredQuickActionRef.current);
+      pointerDownTimeRef.current = detail.pointerType === 'mouse' ? 0 : Date.now();
+    };
     eventDispatcher.on('footnote-selection', onFootnoteSelection);
+    eventDispatcher.on('footnote-pointerdown', onFootnotePointerdown);
     return () => {
       eventDispatcher.off('footnote-selection', onFootnoteSelection);
+      eventDispatcher.off('footnote-pointerdown', onFootnotePointerdown);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bookKey]);
