@@ -15,6 +15,7 @@ const KOTLIN_PATH =
 
 const LISTS = ['EINK_MANUFACTURERS', 'EINK_MODELS', 'EINK_AMBIGUOUS_MODELS'];
 
+/** Extract the quoted, non-empty entries from a captured list block. */
 function quotedStrings(block) {
   // Strip // line comments first: a commented-out entry ("onyx",) must not
   // count as active on one side while still active on the other.
@@ -22,6 +23,7 @@ function quotedStrings(block) {
   return [...active.matchAll(/"([^"]+)"/g)].map((match) => match[1]);
 }
 
+/** Extract one `NAME: &[&str] = &[...]` whitelist from the Rust source. */
 function extractRustList(source, name) {
   // Two layouts: the multi-line form (opening delimiter followed by a
   // newline; entry comments may contain brackets, so the closing bracket is
@@ -38,6 +40,7 @@ function extractRustList(source, name) {
   return quotedStrings(match[1]);
 }
 
+/** Extract one `NAME = listOf(...)` whitelist from the Kotlin port. */
 function extractKotlinList(source, name) {
   // Same anchoring as the Rust extractor, with parens instead of brackets.
   const multi = source.match(new RegExp(`\\b${name}\\s*=\\s*listOf\\(\\r?\\n([\\s\\S]*?)\\r?\\n\\)`));
@@ -47,6 +50,7 @@ function extractKotlinList(source, name) {
   return quotedStrings(match[1]);
 }
 
+/** Entries present on only one side, labeled `rust-only` / `kotlin-only`. */
 function drift(rust, kotlin) {
   return [
     ...rust.filter((entry) => !kotlin.includes(entry)).map((entry) => `rust-only: "${entry}"`),
