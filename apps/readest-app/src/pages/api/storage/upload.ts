@@ -17,6 +17,21 @@ import {
 // unlike `temp/` objects they are durable and their URLs never rotate.
 const PUBLIC_MEDIA_KINDS = ['book_covers'];
 
+// Media and temp uploads are book cover images in the public bucket; they are
+// not metered, so cap them well above any real cover instead.
+const MAX_PUBLIC_IMAGE_BYTES = 20 * 1024 * 1024;
+
+const isValidFileSize = (size: unknown): size is number =>
+  Number.isSafeInteger(size) && (size as number) > 0;
+
+type Reservation = {
+  allowed: boolean;
+  usage: number;
+  file_size?: number;
+  inserted?: boolean;
+  file_id?: string;
+};
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   await runMiddleware(req, res, corsAllMethods);
 
@@ -37,6 +52,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   // namespace (GHSA-mfmj-2frf-vhgw).
   if (!isSafeObjectKeyName(fileName)) {
     return res.status(400).json({ error: 'Invalid fileName' });
+  }
+
+  if (!isValidFileSize(fileSize)) {
+    return res.status(400).json({ error: 'Invalid fileSize' });
+  }
+  if ((media || temp) && fileSize > MAX_PUBLIC_IMAGE_BYTES) {
+    return res.status(413).json({ error: 'File too large' });
   }
 
   if (media) {
@@ -86,75 +108,48 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    if (!fileName || !fileSize) {
-      return res.status(400).json({ error: 'Missing file info' });
-    }
-
-    // `quota` is an entitlement — it only moves on purchase or refund, so
-    // reading it from the token is fine. `usage` is a live counter: the claim
-    // is frozen when the access token is minted, so authorising against it
-    // measured every upload in that window against the same stale baseline
-    // and let an account keep uploading past its quota until the token
-    // refreshed. Read the counter the trigger maintains instead, and fall
-    // back to the claim rather than to zero if the row can't be read.
-    const { usage: claimUsage, quota } = getStoragePlanData(token);
-    const supabase = createSupabaseAdminClient();
-    const { data: planRow } = await supabase
-      .from('plans')
-      .select('storage_usage_bytes')
-      .eq('id', user.id)
-      .single();
-    const usage = planRow?.storage_usage_bytes ?? claimUsage;
-
-    if (usage + fileSize > quota + STORAGE_QUOTA_GRACE_BYTES) {
-      return res.status(403).json({ error: 'Insufficient storage quota', usage });
-    }
-
+    // Check the quota and record the file in one database call: done as
+    // separate steps, concurrent requests all measured themselves against the
+    // same usage. `quota` is an entitlement and safe to read from the token;
+    // usage is computed live under a per-user lock (the token's usage claim
+    // is frozen when the token is minted).
+    const { quota } = getStoragePlanData(token);
     const fileKey = `${user.id}/${fileName}`;
-    const { data: existingRecord, error: fetchError } = await supabase
-      .from('files')
-      .select('*')
-      .eq('user_id', user.id)
-      .eq('file_key', fileKey)
-      .limit(1)
-      .single();
-
-    if (fetchError && fetchError.code !== 'PGRST116') {
-      return res.status(500).json({ error: fetchError.message });
+    const supabase = createSupabaseAdminClient();
+    const { data, error: reserveError } = await supabase.rpc('reserve_storage_upload', {
+      p_user_id: user.id,
+      p_file_key: fileKey,
+      p_file_size: fileSize,
+      p_quota: quota + STORAGE_QUOTA_GRACE_BYTES,
+      p_book_hash: bookHash ?? null,
+      p_replica_kind: replicaKind ?? null,
+      p_replica_id: replicaId ?? null,
+    });
+    if (reserveError || !data) {
+      return res.status(500).json({ error: reserveError?.message ?? 'Reservation failed' });
     }
-    let objSize = fileSize;
-    if (existingRecord) {
-      objSize = existingRecord.file_size;
-    } else {
-      const { data: inserted, error: insertError } = await supabase
-        .from('files')
-        .insert([
-          {
-            user_id: user.id,
-            book_hash: bookHash ?? null,
-            replica_kind: replicaKind ?? null,
-            replica_id: replicaId ?? null,
-            file_key: fileKey,
-            file_size: fileSize,
-          },
-        ])
-        .select()
-        .single();
-      console.log('Inserted record:', inserted);
-      if (insertError) return res.status(500).json({ error: insertError.message });
+    const reservation = data as Reservation;
+    if (!reservation.allowed) {
+      return res
+        .status(403)
+        .json({ error: 'Insufficient storage quota', usage: reservation.usage });
     }
 
     try {
-      const uploadUrl = await getUploadSignedUrl(fileKey, objSize, 1800);
+      const uploadUrl = await getUploadSignedUrl(fileKey, reservation.file_size ?? fileSize, 1800);
 
       res.status(200).json({
         uploadUrl,
         fileKey,
-        usage: usage + fileSize,
+        usage: reservation.usage + fileSize,
         quota,
       });
     } catch (error) {
       console.error('Error creating presigned post:', error);
+      // Don't leave a row behind for an upload that can never happen.
+      if (reservation.inserted && reservation.file_id) {
+        await supabase.from('files').delete().eq('id', reservation.file_id);
+      }
       res.status(500).json({ error: 'Could not create presigned post' });
     }
   } catch (error) {
