@@ -55,6 +55,7 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
   const [isUpdating, setIsUpdating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const requestId = useRef(0);
+  const updateController = useRef<AbortController | null>(null);
   const currentCfi = progress?.location ?? '';
 
   const load = useCallback(
@@ -100,9 +101,11 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
   );
 
   useEffect(() => {
+    setIsUpdating(false);
     void load();
     return () => {
       requestId.current += 1;
+      updateController.current?.abort();
     };
   }, [load]);
 
@@ -121,21 +124,35 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
   }, [load, status?.kind]);
 
   const update = async (): Promise<void> => {
-    if (!appService || !bookDoc || !currentCfi || !aiSettings?.reedy?.enabled) return;
+    if (
+      !appService ||
+      !bookDoc ||
+      !currentCfi ||
+      !aiSettings?.enabled ||
+      !aiSettings.reedy?.enabled ||
+      !hasCredentials(aiSettings)
+    )
+      return;
+    updateController.current?.abort();
+    const controller = new AbortController();
+    updateController.current = controller;
     setIsUpdating(true);
     setError(null);
     try {
       const { getXRayService } = await import('@/services/ai/xray/XRayService');
       const service = await getXRayService(appService, aiSettings);
+      controller.signal.throwIfAborted();
       const result = await service.updateForProgress({
         bookHash,
         currentCfi,
+        signal: controller.signal,
         metadata: {
           title: formatTitle(bookDoc.metadata.title),
           description: bookDoc.metadata.description,
           subject: getContributorNames(bookDoc.metadata.subject),
         },
       });
+      controller.signal.throwIfAborted();
       if (result.kind === 'updated') {
         void eventDispatcher.dispatch('xray-updated', {
           bookHash,
@@ -145,9 +162,10 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
         await load(false);
       }
     } catch {
-      setError(_('X-Ray update failed.'));
+      if (!controller.signal.aborted) setError(_('X-Ray update failed.'));
     } finally {
-      setIsUpdating(false);
+      if (!controller.signal.aborted) setIsUpdating(false);
+      if (updateController.current === controller) updateController.current = null;
     }
   };
 

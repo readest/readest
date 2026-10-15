@@ -2,10 +2,12 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import XRayView from '@/app/reader/components/notebook/XRayView';
+import type { XRayProgressUpdate, XRayProgressUpdateResult } from '@/services/ai/xray/XRayService';
 
 const mocks = vi.hoisted(() => ({
   getSnapshot: vi.fn(),
   getStatus: vi.fn(),
+  updateForProgress: vi.fn<(update: XRayProgressUpdate) => Promise<XRayProgressUpdateResult>>(),
   goTo: vi.fn(),
   currentCfi: 'epubcfi(/6/2!/4/2/1:20)',
   appService: { appPlatform: 'tauri' },
@@ -37,6 +39,7 @@ vi.mock('@/services/ai/xray/XRayService', () => ({
     Promise.resolve({
       getSnapshot: mocks.getSnapshot,
       getStatus: mocks.getStatus,
+      updateForProgress: mocks.updateForProgress,
     }),
 }));
 
@@ -81,7 +84,12 @@ describe('XRayView', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.currentCfi = 'epubcfi(/6/2!/4/2/1:20)';
-    mocks.aiSettings.reedy.enabled = true;
+    mocks.aiSettings = {
+      ...mocks.aiSettings,
+      enabled: true,
+      provider: 'ollama',
+      reedy: { enabled: true },
+    };
     mocks.getStatus.mockResolvedValue({
       kind: 'ready',
       fingerprint: { bookHash: 'booka', contentHash: 'index-1' },
@@ -152,5 +160,33 @@ describe('XRayView', () => {
     await waitFor(() =>
       expect(document.activeElement).toBe(screen.getByRole('tab', { name: 'Timeline 0' })),
     );
+  });
+
+  it.each([
+    'closing the panel',
+    'disabling AI',
+    'changing providers',
+  ])('cancels manual extraction when %s', async (action) => {
+    mocks.updateForProgress.mockReturnValue(new Promise(() => {}));
+    const rendered = render(<XRayView bookKey='booka-view' />);
+    await screen.findByText('Alice');
+    fireEvent.click(screen.getByRole('button', { name: 'Update X-Ray' }));
+    await waitFor(() => expect(mocks.updateForProgress).toHaveBeenCalledTimes(1));
+    const { signal } = mocks.updateForProgress.mock.calls[0]![0];
+    expect(signal).toBeDefined();
+    expect(signal?.aborted).toBe(false);
+
+    if (action === 'closing the panel') {
+      rendered.unmount();
+    } else {
+      mocks.aiSettings = {
+        ...mocks.aiSettings,
+        enabled: action !== 'disabling AI',
+        provider: action === 'changing providers' ? 'openrouter' : 'ollama',
+      };
+      rendered.rerender(<XRayView bookKey='booka-view' />);
+    }
+
+    expect(signal?.aborted).toBe(true);
   });
 });

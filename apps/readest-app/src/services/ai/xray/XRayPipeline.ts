@@ -83,8 +83,10 @@ export class XRayPipeline {
     currentCfi: string,
     options: XRayUpdateOptions,
   ): Promise<XRayUpdateResult> {
+    options.signal?.throwIfAborted();
     const source = await this.source.readThrough(bookHash, currentCfi);
     let state = await this.store.getState(bookHash);
+    options.signal?.throwIfAborted();
 
     if (
       state &&
@@ -117,12 +119,13 @@ export class XRayPipeline {
     let batchCount = 0;
 
     for (let offset = 0; offset < pendingUnits.length; offset += this.maxUnitsPerBatch) {
-      if (options.signal?.aborted) throw new Error('X-Ray extraction aborted');
+      options.signal?.throwIfAborted();
       const units = pendingUnits.slice(offset, offset + this.maxUnitsPerBatch);
       const minPositionIndex = units[0]!.positionIndex;
       const maxPositionIndex = units.at(-1)!.positionIndex;
       const batchId = batchKey(source.fingerprint, minPositionIndex, maxPositionIndex);
       const extracted = await this.model.extract({ units, genre, signal: options.signal });
+      options.signal?.throwIfAborted();
       const output = validateXRayExtraction(extracted, units, maxPositionIndex);
       const batch: XRayExtractionBatch = {
         batchId,

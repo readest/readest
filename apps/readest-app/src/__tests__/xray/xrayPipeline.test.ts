@@ -220,4 +220,26 @@ describe('XRayPipeline', () => {
       fingerprint: fingerprint('index-2'),
     });
   });
+
+  it('discards canceled model output and skips canceled queued updates', async () => {
+    const controller = new AbortController();
+    const readThrough = vi.fn().mockResolvedValue(slice('index-1', [0]));
+    const extract = vi.fn<XRayExtractionModel['extract']>(async ({ units, signal }) => {
+      expect(signal).toBe(controller.signal);
+      controller.abort();
+      return extractionFor(units);
+    });
+    const pipeline = new XRayPipeline({ readThrough }, store, { extract });
+    const options = { signal: controller.signal };
+    const results = await Promise.allSettled([
+      pipeline.update(BOOK_HASH, 'current', options),
+      pipeline.update(BOOK_HASH, 'current', options),
+    ]);
+
+    expect(results.map((result) => result.status)).toEqual(['rejected', 'rejected']);
+    expect(readThrough).toHaveBeenCalledTimes(1);
+    expect(extract).toHaveBeenCalledTimes(1);
+    await expect(store.listBatches(BOOK_HASH, 0)).resolves.toEqual([]);
+    await expect(store.getState(BOOK_HASH)).resolves.toMatchObject({ maxPositionIndex: -1 });
+  });
 });
