@@ -370,6 +370,25 @@ describe('bookshelf editor', () => {
       unit: undefined,
     });
   });
+  it('suggests filter values only from books still in the library', () => {
+    const [first] = useLibraryStore.getState().library;
+    act(() =>
+      useLibraryStore.setState({
+        library: [
+          { ...first!, hash: 'live', author: 'Live Author' },
+          { ...first!, hash: 'gone', author: 'Removed Author', deletedAt: 1 },
+        ],
+      }),
+    );
+    render(<BookshelvesEditor />);
+    fireEvent.click(screen.getByRole('button', { name: 'Add bookshelf' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Add condition' }));
+    fireEvent.change(screen.getByLabelText('Filter field'), { target: { value: 'author' } });
+    const suggested = Array.from(document.querySelectorAll('datalist option'), (o) =>
+      o.getAttribute('value'),
+    );
+    expect(suggested).toEqual(['Live Author']);
+  });
   it('inherits grouping and retains each shelf’s independent choice', async () => {
     render(<BookshelvesEditor />);
     const grouping = screen.getByRole('group', { name: 'Grouping' });
