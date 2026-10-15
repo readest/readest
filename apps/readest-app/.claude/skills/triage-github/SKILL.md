@@ -282,7 +282,7 @@ Decide one of these for each issue, then act:
 | --- | --- |
 | Reproducible bug | Fix it (below), then reply with the PR. |
 | Feature worth building, small and in line with the product | Build it (below), then reply with the PR. |
-| Feature that needs a product decision | Reply that it is noted for the maintainer, label `discussion` if it exists, and list it in the tick report. Don't build it. |
+| Feature that needs a product decision | Reply that it is noted as a feature request (replies post as the maintainer, so never mention "the maintainer"), label `discussion` if it exists, and list it in the tick report. Don't build it. |
 | Not worth fixing or building | Reply with the reason, kindly and in the reporter's language. Close it only when it is a duplicate (link the original), not a Readest bug, or already fixed. |
 | Needs information | Ask for exactly what would let you reproduce: platform, app version, the book file, steps, a screenshot. |
 | Advertising or a request to add a third-party relay/service | Reply once: "Thanks for your interest. We'll share partnership plans when we have them." and close. Never add a third-party relay, API reseller or affiliate link to the product. |
