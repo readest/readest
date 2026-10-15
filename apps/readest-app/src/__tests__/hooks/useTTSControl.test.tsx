@@ -1098,6 +1098,7 @@ describe('useTTSControl handleHighlightMark cross-section navigation', () => {
 
     beforeEach(() => {
       editor = document.createElement('textarea');
+      editor.setAttribute('data-note-editor', '');
       document.body.appendChild(editor);
       editor.focus();
     });
@@ -1192,6 +1193,24 @@ describe('useTTSControl handleHighlightMark cross-section navigation', () => {
         await onSectionChange(0);
       });
       expect(mockView.renderer.goTo).toHaveBeenCalledTimes(1);
+    });
+
+    it('keeps following while a text field that is not a note editor has focus', async () => {
+      const handler = await setupAndCaptureHighlightHandler();
+      mockView.resolveCFI.mockReturnValue({ index: 0, anchor: () => new Range() });
+      const templateField = document.createElement('textarea');
+      document.body.appendChild(templateField);
+      templateField.focus();
+
+      try {
+        await act(async () => {
+          handler(new CustomEvent('tts-highlight-mark', { detail: { cfi: 'epubcfi(/6/4!/4/2)' } }));
+        });
+
+        expect(mockView.renderer.scrollToAnchor).toHaveBeenCalledTimes(1);
+      } finally {
+        templateField.remove();
+      }
     });
 
     it('follows again once the note editor loses focus', async () => {

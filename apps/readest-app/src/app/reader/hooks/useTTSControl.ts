@@ -54,9 +54,9 @@ const TTS_BUFFERING_POLL_MS = 400;
 
 // Following the voice turns the page and focuses the spoken text inside the
 // book's iframe, which takes the caret (and an IME composition) out of a note
-// being typed and closes its popup (#6837). The view holds still while a text
-// area in the app has focus; the next mark catches up once it loses focus.
-const isTypingNote = () => document.activeElement instanceof HTMLTextAreaElement;
+// being typed and closes its popup (#6837). The view holds still while a note
+// editor has focus; the next mark catches up once it loses focus.
+const isTypingNote = () => !!document.activeElement?.hasAttribute('data-note-editor');
 
 export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProps) => {
   const _ = useTranslation();
