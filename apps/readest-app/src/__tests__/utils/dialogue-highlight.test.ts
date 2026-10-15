@@ -381,6 +381,32 @@ describe('manageDialogueHighlight', () => {
     expect(spans).toEqual(['‘I don’t know,’', '‘It’s fine.’']);
   });
 
+  it('wraps a quote longer than 500 characters', () => {
+    const speech =
+      'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. '
+        .repeat(5)
+        .trim();
+    const quotes = [
+      `“${speech}”`,
+      `„${speech}“`,
+      `"${speech}"`,
+      `«${speech}»`,
+      `「${speech}」`,
+      `『${speech}』`,
+    ];
+    const doc = makeDoc(quotes.map((q) => `<p>${q}</p>`).join(''));
+    manageDialogueHighlight(doc, makeViewSettings({ dialogueHighlight: true }));
+    const spans = [...doc.querySelectorAll(`.${DIALOGUE_SPAN_CLASS}`)].map((s) => s.textContent);
+    expect(spans).toEqual(quotes);
+  });
+
+  it('does not let an unclosed quote swallow the next one', () => {
+    const doc = makeDoc(`<p>“Wait, she said.</p><p>He answered “fine” and left.</p>`);
+    manageDialogueHighlight(doc, makeViewSettings({ dialogueHighlight: true }));
+    const spans = [...doc.querySelectorAll(`.${DIALOGUE_SPAN_CLASS}`)].map((s) => s.textContent);
+    expect(spans).toEqual(['“fine”']);
+  });
+
   it('does not pair a stray ASCII quote with one in a later paragraph', () => {
     const doc = makeDoc(`<p>The 5" screen was small.</p><p>He said "hi" and left.</p>`);
     manageDialogueHighlight(doc, makeViewSettings({ dialogueHighlight: true }));

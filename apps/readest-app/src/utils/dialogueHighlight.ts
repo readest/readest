@@ -27,8 +27,13 @@ export const isDialogueHighlightActive = (viewSettings: ViewSettings): boolean =
 // blocks, and every pair except ASCII "" may cross it: ASCII quotes don't say
 // which side they open, so a stray inch mark (5" screen) would otherwise flip
 // the pairing and tint the narration instead of the dialogue.
+//
+// Quotes have no length limit: each pair stops at its next opening mark (ASCII
+// "" at the end of the block), so an unclosed quote can't swallow the next
+// one. Only ‘’ keeps a cap: a mis-curled apostrophe (‘80s) opens a quote
+// that nothing closes.
 const DIALOGUE_PATTERN =
-  /“[^“”]{1,500}?[”"]|„[^„“]{1,500}?[“"]|"[^"\n]{1,500}?"|«[^«»]{1,500}?[»]|「[^「」]{1,500}?[」]|『[^『』]{1,500}?[』]|‘(?:[^‘’]|’(?=\p{L})){1,300}?’(?!\p{L})/gu;
+  /“[^“”]+?[”"]|„[^„“]+?[“"]|"[^"\n]+?"|«[^«»]+?[»]|「[^「」]+?[」]|『[^『』]+?[』]|‘(?:[^‘’]|’(?=\p{L})){1,300}?’(?!\p{L})/gu;
 
 // Paragraph-leading dashes marking dialogue lines (French/Russian/CJK style).
 // The ASCII hyphen is left out: it leads list items in converted text.
