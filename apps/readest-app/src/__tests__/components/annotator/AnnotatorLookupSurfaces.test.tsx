@@ -21,7 +21,7 @@ import type { ComponentProps } from 'react';
 import type AnnotationPopup from '@/app/reader/components/annotator/AnnotationPopup';
 
 const h = vi.hoisted(() => ({
-  appService: { appPlatform: 'web' },
+  appService: {} as { appPlatform?: string; isIOSApp?: boolean },
   actions: null as null | Record<string, () => boolean>,
   config: { booknotes: [] as unknown[], viewSettings: {} },
   viewSettings: {
@@ -41,7 +41,6 @@ const h = vi.hoisted(() => ({
   deselect: vi.fn(),
   restoreSelectionRange: vi.fn(() => true),
   isTextSelected: { current: true },
-  appService: {} as { isIOSApp?: boolean },
   onNativeTouch: null as null | ((ev: { type: string; x: number; y: number }) => void),
   // Swapped per test: the fixed-layout branch of `onLoad` used to wire PDF-only
   // listeners, so a regression there is only visible with this on.
