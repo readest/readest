@@ -99,8 +99,10 @@ const SECTION_DOCUMENT_TYPES = ['application/xhtml+xml', 'text/html', 'image/svg
 // A spine section loads as a top-level document in the reader iframe. Any type
 // the sanitizers don't handle (XML, missing, unknown) could still render as an
 // active document, so only passive media types pass through; the rest is text.
+// A `+xml` subtype renders as an XML document whatever its top-level type.
 export const getSectionDocumentType = (type: string) =>
-  SECTION_DOCUMENT_TYPES.includes(type) || /^(image|audio|video)\//.test(type)
+  SECTION_DOCUMENT_TYPES.includes(type) ||
+  (/^(image|audio|video)\//.test(type) && !type.endsWith('+xml'))
     ? type
     : 'text/plain';
 

@@ -30,7 +30,15 @@ describe('getSectionDocumentType', () => {
   });
 
   it('serves XML, missing and unknown section types as plain text', () => {
-    for (const type of ['text/xml', 'application/xml', 'application/mathml+xml', '', 'foo/bar']) {
+    for (const type of [
+      'text/xml',
+      'application/xml',
+      'application/mathml+xml',
+      'image/x-chapter+xml',
+      'video/x-foo+xml',
+      '',
+      'foo/bar',
+    ]) {
       expect(getSectionDocumentType(type)).toBe('text/plain');
     }
   });
