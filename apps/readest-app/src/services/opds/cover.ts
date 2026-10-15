@@ -81,7 +81,7 @@ export const applyOPDSCover = async ({
   customHeaders = {},
 }: ApplyOPDSCoverParams): Promise<boolean> => {
   const useProxy = needsProxy(coverUrl);
-  let downloadUrl = useProxy ? getProxiedURL(coverUrl, '', true, customHeaders) : coverUrl;
+  const downloadUrl = useProxy ? getProxiedURL(coverUrl, true, customHeaders) : coverUrl;
   const headers: Record<string, string> = {
     'User-Agent': READEST_OPDS_USER_AGENT,
     Accept: 'image/*',
@@ -90,10 +90,7 @@ export const applyOPDSCover = async ({
   if (username || password) {
     const authHeader = await probeAuth(coverUrl, username, password, useProxy, customHeaders);
     if (authHeader) {
-      if (!useProxy) {
-        headers['Authorization'] = authHeader;
-      }
-      downloadUrl = useProxy ? getProxiedURL(coverUrl, authHeader, true, customHeaders) : coverUrl;
+      headers['Authorization'] = authHeader;
     }
   }
 

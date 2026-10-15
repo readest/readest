@@ -2,6 +2,7 @@ import { READEST_OPDS_USER_AGENT } from '@/services/constants';
 import { NextRequest, NextResponse } from 'next/server';
 import { deserializeCustomHeaders } from '@/utils/customHeaders';
 import { isBlockedHost } from '@/utils/network';
+import { publicFetch } from '@/utils/publicFetch';
 
 // Cap redirect hops so the SSRF host check below can re-run on every one.
 const MAX_REDIRECTS = 5;
@@ -70,7 +71,9 @@ async function fetchFollowingRedirects(
     if (!isPrivateHostAllowed() && isBlockedHost(parsed.hostname)) {
       throw new SsrfBlockedError('This URL is not allowed');
     }
-    const response = await fetch(currentUrl, { ...init, headers, redirect: 'manual' });
+    const response = isPrivateHostAllowed()
+      ? await fetch(currentUrl, { ...init, headers, redirect: 'manual' })
+      : await publicFetch(currentUrl, { ...init, headers });
     if (response.status >= 300 && response.status < 400 && response.headers.has('location')) {
       const nextUrl = new URL(response.headers.get('location')!, currentUrl);
       if (nextUrl.origin !== parsed.origin) {
@@ -107,7 +110,9 @@ async function handleRequest(request: NextRequest, method: 'GET' | 'HEAD') {
   );
   const encodedUrl = fullUrl.substring(urlParamStart, urlParamEnd);
   const url = decodeURIComponent(encodedUrl);
-  const auth = request.nextUrl.searchParams.get('auth');
+  // Clients send the catalog credential as a request header; older clients
+  // still put it in the `auth` query parameter.
+  const auth = request.headers.get('authorization') || request.nextUrl.searchParams.get('auth');
   const stream = request.nextUrl.searchParams.get('stream');
   const customHeaders = deserializeCustomHeaders(request.nextUrl.searchParams.get('headers'));
 

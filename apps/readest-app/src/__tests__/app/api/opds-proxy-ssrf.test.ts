@@ -197,6 +197,21 @@ describe('OPDS proxy response isolation', () => {
     expect(sent[1]?.get('X-Api-Key')).toBeNull();
     expect(sent[2]?.get('Authorization')).toBeNull();
   });
+  it('takes the catalog credential from the Authorization request header', async () => {
+    const sent: Headers[] = [];
+    fetchSpy.mockImplementation(async (_url: string, init: RequestInit) => {
+      sent.push(new Headers(init.headers));
+      return new Response('<feed/>', { headers: { 'Content-Type': 'application/atom+xml' } });
+    });
+    const res = await GET(
+      new NextRequest(proxyReq('https://feeds.example.com/feed').url, {
+        headers: { Authorization: 'Basic secret' },
+      }),
+    );
+    expect(sent[0]?.get('Authorization')).toBe('Basic secret');
+    expect(res.headers.get('Cache-Control')).toBe('no-store');
+  });
+
   it.each(['HEAD', 'stream'])('isolates %s responses as well', async (mode) => {
     fetchSpy.mockResolvedValueOnce(
       new Response('evil()', {

@@ -35,7 +35,18 @@ describe('isLanAddress — hardened ranges (previously bypassable)', () => {
     expect(isLanAddress('http://[::ffff:7f00:1]/')).toBe(true);
   });
 
+  it('blocks internal names written as fully-qualified names with a trailing dot', () => {
+    expect(isLanAddress('http://localhost.:8080/')).toBe(true);
+    expect(isLanAddress('http://foo.localhost./')).toBe(true);
+    expect(isLanAddress('http://metadata.google.internal./')).toBe(true);
+    expect(isLanAddress('http://box.lan../')).toBe(true);
+    expect(isLanAddress('http://intranet./')).toBe(true);
+    expect(isBlockedHost('LOCALHOST.')).toBe(true);
+    expect(isBlockedHost('.')).toBe(true);
+  });
+
   it('still allows ordinary public catalogs', () => {
+    expect(isLanAddress('https://opds.example.com./feed')).toBe(false);
     expect(isLanAddress('https://sync.koreader.rocks')).toBe(false);
     expect(isLanAddress('https://8.8.8.8')).toBe(false);
     expect(isLanAddress('https://opds.example.com/feed')).toBe(false);

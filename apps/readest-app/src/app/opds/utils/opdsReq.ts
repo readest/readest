@@ -100,7 +100,6 @@ const getProxyBaseUrl = (url: string): string => {
  */
 export const getProxiedURL = (
   url: string,
-  auth: string = '',
   stream = false,
   customHeaders: CustomHeaders = {},
 ): string => {
@@ -109,9 +108,6 @@ export const getProxiedURL = (
     const params = new URLSearchParams();
     params.append('url', cleanUrl);
     params.append('stream', `${stream}`);
-    if (auth) {
-      params.append('auth', auth);
-    }
     const serializedHeaders = serializeCustomHeaders(customHeaders);
     if (serializedHeaders) {
       params.append('headers', serializedHeaders);
@@ -258,9 +254,7 @@ export const probeAuth = async (
     return null;
   }
 
-  const fetchURL = useProxy
-    ? getProxiedURL(cleanUrl, '', false, normalizedCustomHeaders)
-    : cleanUrl;
+  const fetchURL = useProxy ? getProxiedURL(cleanUrl, false, normalizedCustomHeaders) : cleanUrl;
   const headers: Record<string, string> = withOriginSuppressed({
     'User-Agent': READEST_OPDS_USER_AGENT,
     Accept: 'application/atom+xml, application/xml, text/xml, */*',
@@ -375,9 +369,7 @@ export const fetchWithAuth = async (
   const preemptiveAuth =
     finalUsername && finalPassword ? createBasicAuth(finalUsername, finalPassword) : null;
 
-  const fetchURL = useProxy
-    ? getProxiedURL(cleanUrl, preemptiveAuth || '', false, normalizedCustomHeaders)
-    : cleanUrl;
+  const fetchURL = useProxy ? getProxiedURL(cleanUrl, false, normalizedCustomHeaders) : cleanUrl;
   const baseHeaders: Record<string, string> = withOriginSuppressed({
     'User-Agent': READEST_OPDS_USER_AGENT,
     Accept: 'application/atom+xml, application/xml, text/xml, */*',
@@ -386,7 +378,7 @@ export const fetchWithAuth = async (
   });
   const headers: Record<string, string> = {
     ...baseHeaders,
-    ...(preemptiveAuth && !useProxy ? { Authorization: preemptiveAuth } : {}),
+    ...(preemptiveAuth ? { Authorization: preemptiveAuth } : {}),
   };
 
   const fetch = isTauriAppPlatform() ? tauriFetch : window.fetch;
@@ -404,15 +396,12 @@ export const fetchWithAuth = async (
   // surface the WWW-Authenticate challenge and let the retry below negotiate
   // the scheme the server actually wants.
   if (res.status === 400 && preemptiveAuth) {
-    res = await fetch(
-      useProxy ? getProxiedURL(cleanUrl, '', false, normalizedCustomHeaders) : fetchURL,
-      {
-        ...options,
-        method: options.method || 'GET',
-        headers: baseHeaders,
-        danger: { acceptInvalidCerts: true, acceptInvalidHostnames: true },
-      },
-    );
+    res = await fetch(fetchURL, {
+      ...options,
+      method: options.method || 'GET',
+      headers: baseHeaders,
+      danger: { acceptInvalidCerts: true, acceptInvalidHostnames: true },
+    });
   }
 
   // Handle authentication if needed
@@ -437,13 +426,10 @@ export const fetchWithAuth = async (
       // Skip the retry when it would just repeat the preemptive Basic header
       // we already sent (the credentials are simply wrong in that case).
       if (authHeader && authHeader !== preemptiveAuth) {
-        const finalUrl = useProxy
-          ? getProxiedURL(cleanUrl, authHeader, false, normalizedCustomHeaders)
-          : fetchURL;
-        res = await fetch(finalUrl, {
+        res = await fetch(fetchURL, {
           ...options,
           method: options.method || 'GET',
-          headers: useProxy ? headers : { ...headers, Authorization: authHeader },
+          headers: { ...headers, Authorization: authHeader },
           danger: { acceptInvalidCerts: true, acceptInvalidHostnames: true },
         });
       }
