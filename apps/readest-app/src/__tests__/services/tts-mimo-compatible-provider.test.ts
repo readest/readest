@@ -18,12 +18,16 @@ const service = (overrides: Partial<CustomTTSService> = {}): CustomTTSService =>
 });
 
 const req = (voice: string, text = '你好，世界。') => ({
-  lang: 'zh-CN', text, voice: `mimo:${voice}`, pitch: 1,
+  lang: 'zh-CN',
+  text,
+  voice: `mimo:${voice}`,
+  pitch: 1,
 });
 
-const response = (bytes: number[]) => Response.json({
-  choices: [{ message: { audio: { data: btoa(String.fromCharCode(...bytes)) } } }],
-});
+const response = (bytes: number[]) =>
+  Response.json({
+    choices: [{ message: { audio: { data: btoa(String.fromCharCode(...bytes)) } } }],
+  });
 
 describe('Xiaomi MiMo native TTS compatibility', () => {
   let current: CustomTTSService;
@@ -89,7 +93,8 @@ describe('Xiaomi MiMo native TTS compatibility', () => {
 
   it('reports a successful response without audio as an error', async () => {
     fetchMock.mockResolvedValue(Response.json({ choices: [{ message: {} }] }));
-    await expect(provider.synthesize(req('冰糖'), new AbortController().signal))
-      .rejects.toThrow('MiMo returned no audio data');
+    await expect(provider.synthesize(req('冰糖'), new AbortController().signal)).rejects.toThrow(
+      'MiMo returned no audio data',
+    );
   });
 });
