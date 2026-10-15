@@ -166,6 +166,30 @@ async function handleRequest(request: NextRequest, method: 'GET' | 'HEAD') {
 
     clearTimeout(timeout);
 
+    // Headers that must NOT be forwarded as-is when we proxy the body:
+    //  - content-encoding: fetch() has already decoded gzip/br/deflate, so
+    //    the body the client receives is plain. Forwarding the original
+    //    Content-Encoding makes the browser try to decode it again, which
+    //    truncates or empties the response. This was the cause of
+    //    Content-Length: 0 / 0-byte downloads from Calibre and similar.
+    //  - content-length: must match the bytes we actually emit (post-decode).
+    //    We set the right value below where we know it.
+    //  - transfer-encoding / connection / keep-alive: hop-by-hop headers,
+    //    must not cross the proxy boundary.
+    const excludedHeaders = new Set([
+      'content-encoding',
+      'content-length',
+      'transfer-encoding',
+      'connection',
+      'keep-alive',
+    ]);
+
+    // Upstream headers for the error path, minus the ones the decoded body
+    // invalidates.
+    const upstreamHeaders = Object.fromEntries(
+      [...response.headers.entries()].filter(([key]) => !excludedHeaders.has(key.toLowerCase())),
+    );
+
     if (!response.ok) {
       console.error(`[OPDS Proxy] HTTP ${response.status} for ${url}`);
       if (method === 'HEAD') {
@@ -173,7 +197,7 @@ async function handleRequest(request: NextRequest, method: 'GET' | 'HEAD') {
           return new NextResponse(null, {
             status: 403,
             headers: {
-              ...Object.fromEntries(response.headers.entries()),
+              ...upstreamHeaders,
               'Cache-Control': 'no-store',
               'Access-Control-Allow-Origin': '*',
               'Access-Control-Allow-Methods': 'GET, HEAD, OPTIONS',
@@ -189,7 +213,7 @@ async function handleRequest(request: NextRequest, method: 'GET' | 'HEAD') {
         return new NextResponse(data, {
           status: 403,
           headers: {
-            ...Object.fromEntries(response.headers.entries()),
+            ...upstreamHeaders,
             'Cache-Control': 'no-store',
             'Access-Control-Allow-Origin': '*',
             'Access-Control-Allow-Methods': 'GET, HEAD, OPTIONS',
@@ -200,7 +224,7 @@ async function handleRequest(request: NextRequest, method: 'GET' | 'HEAD') {
       return new NextResponse(data, {
         status: response.status,
         headers: {
-          ...Object.fromEntries(response.headers.entries()),
+          ...upstreamHeaders,
           'Cache-Control': 'no-store',
           'Access-Control-Allow-Origin': '*',
           'Access-Control-Allow-Methods': 'GET, HEAD, OPTIONS',
@@ -221,24 +245,6 @@ async function handleRequest(request: NextRequest, method: 'GET' | 'HEAD') {
         `transfer-encoding=${transferEncoding ?? '(none)'} ` +
         `content-disposition=${upstreamContentDisposition ?? '(none)'}`,
     );
-
-    // Headers that must NOT be forwarded as-is when we proxy the body:
-    //  - content-encoding: fetch() has already decoded gzip/br/deflate, so
-    //    the body the client receives is plain. Forwarding the original
-    //    Content-Encoding makes the browser try to decode it again, which
-    //    truncates or empties the response. This was the cause of
-    //    Content-Length: 0 / 0-byte downloads from Calibre and similar.
-    //  - content-length: must match the bytes we actually emit (post-decode).
-    //    We set the right value below where we know it.
-    //  - transfer-encoding / connection / keep-alive: hop-by-hop headers,
-    //    must not cross the proxy boundary.
-    const excludedHeaders = new Set([
-      'content-encoding',
-      'content-length',
-      'transfer-encoding',
-      'connection',
-      'keep-alive',
-    ]);
 
     // Use a Headers object so name comparison is case-insensitive — this
     // prevents the `content-type` (lowercase from Headers.entries) and
