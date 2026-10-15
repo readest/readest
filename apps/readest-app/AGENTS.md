@@ -79,7 +79,21 @@ Project-related agent context lives under `.agents/`, which is a symlink to `.cl
 
 ## Project Rules
 
-Rules are in `.agents/rules/`: test-first, typescript, verification.
+Rules are in `.agents/rules/`: test-first, typescript, verification, acceptance.
+
+### Lessons
+
+Before changing code, read LESSONS.md: what recent merged work got wrong and the rule that would have caught it. The `nightly-review` loop keeps it current; a lesson seen on 3 days moves into `.agents/rules/acceptance.md`.
+
+@LESSONS.md
+
+### Community PRs
+
+Before reviewing a community PR, read [docs/contributors.md](docs/contributors.md): what stops a review for possible harm, what is closed unreviewed, and who is blocked or watched.
+
+### Maintenance loops
+
+Three loops run in parallel, each in its own session: `/loop /triage-github` (issues and PRs), `/loop /watch-social` (X, Discord, Reddit) and `/loop /nightly-review` (lessons, cleanup, author blocks). The maintainer reviews UI/UX and product decisions.
 
 ### Implementation Scope
 

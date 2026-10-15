@@ -202,6 +202,7 @@ const BookItem: React.FC<BookItemProps> = ({
       >
         <div className={clsx('min-w-0 flex-1', mode === 'list' && 'flex flex-col gap-1')}>
           <h4
+            title={book.title}
             className={clsx(
               'overflow-hidden text-ellipsis font-semibold',
               mode === 'grid' && 'block whitespace-nowrap text-xs',

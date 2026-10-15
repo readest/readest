@@ -433,6 +433,7 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
             isVertical={isVertical}
             isEink={isEink}
             className={pillClass || undefined}
+            inheritTextColor={!!textColor}
             style={pillStyle}
           />
         )}

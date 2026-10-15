@@ -753,14 +753,11 @@ const getParagraphLayoutStyles = (
   dd.aligned-justify, div.aligned-justify {
     ${!justify && overrideLayout ? 'text-align: initial !important;' : ''};
   }
-  /* An image that is the paragraph's whole content must not take the indent:
-     sized to the column, it would overhang by the indent and paint a strip on
-     the next page (#6198). Linked images (<a><img>, <span><a><img>) included. */
-  p:has(> img:only-child), p:has(> span:only-child > img:only-child),
-  p:has(> a:only-child > img:only-child),
-  p:has(> span:only-child > a:only-child > img:only-child),
-  p:has(> img:not(.has-text-siblings)),
-  p:has(> a:first-child + img:last-child) {
+  /* An image that starts a paragraph must not take the indent: sized to the
+     column, it would overhang by the indent and paint a strip on the next page
+     (#6198). applyImageStyle marks such paragraphs; selectors can't see text,
+     so :only-child also matched a footnote icon inside text. */
+  p.leading-image {
     text-indent: initial !important;
   }
   blockquote[align="center"], div[align="center"],
@@ -1252,12 +1249,18 @@ export const transformStylesheet = (
     return match;
   });
 
-  // clip nowrapped elements
+  // Clip nowrapped elements along the line, so a long line can't spill past
+  // the column. The other axis stays visible: clipping it cut off whatever
+  // rises above the line box, like a top-aligned footnote icon (#6797). A rule
+  // that sizes its own box keeps the clip on both axes.
+  const lineClip = vertical ? 'overflow-y: clip !important;' : 'overflow-x: clip !important;';
   css = css.replace(ruleRegex, (match, selector, block) => {
     const hasWhiteSpaceNowrap = /white-space\s*:\s*nowrap\s*[;$]/.test(block);
     if (hasWhiteSpaceNowrap) {
       if (!/overflow\s*:/.test(block)) {
-        block = block.replace(/}$/, ' overflow: clip !important; }');
+        const sizesBox = /(?:^|[;{\s])(?:max-)?height\s*:|line-clamp\s*:/.test(block);
+        const clip = sizesBox ? 'overflow: clip !important;' : lineClip;
+        block = block.replace(/}$/, ` ${clip} }`);
       }
       return selector + block;
     }
@@ -1683,6 +1686,14 @@ export const applyImageStyle = (document: Document) => {
         ? parseFloat(heightAttr)
         : NaN;
     const noEnlarge = img.getAttribute('zy-enlarge-src') === 'none';
+    const paragraph = img.closest('p');
+    let leadingImageParagraph: HTMLParagraphElement | null = null;
+    if (paragraph) {
+      const before = document.createRange();
+      before.setStart(paragraph, 0);
+      before.setEndBefore(img);
+      if (!before.toString().trim()) leadingImageParagraph = paragraph;
+    }
 
     let inlineWithText = false;
     let keepBaseline = false;
@@ -1712,6 +1723,7 @@ export const applyImageStyle = (document: Document) => {
       inlineWithText,
       keepBaseline,
       noEnlarge,
+      leadingImageParagraph,
     };
   });
 
@@ -1722,7 +1734,9 @@ export const applyImageStyle = (document: Document) => {
     inlineWithText,
     keepBaseline,
     noEnlarge,
+    leadingImageParagraph,
   } of plans) {
+    leadingImageParagraph?.classList.add('leading-image');
     if (!isNaN(percentWidth)) {
       img.style.width = `${(percentWidth / 100) * window.innerWidth}px`;
       img.removeAttribute('width');
