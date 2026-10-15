@@ -7,6 +7,7 @@
     "test:lua": "pnpm --filter @readest/readest-app test:lua",
     "lint": "pnpm --filter @readest/readest-app lint",
     "lint:lua": "pnpm --filter @readest/readest-app lint:lua",
+    "check:eink-identity": "node scripts/check-eink-identity-sync.mjs",
     "tauri": "pnpm --filter @readest/readest-app tauri",
     "dev-web": "pnpm --filter @readest/readest-app dev-web",
     "prepare": "husky",
