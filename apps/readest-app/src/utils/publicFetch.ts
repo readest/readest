@@ -10,7 +10,13 @@ export type PublicFetchInit = {
   headers?: HeadersInit;
   body?: string | null;
   signal?: AbortSignal;
+  /** Give up when the socket sees no traffic for this long. */
+  idleTimeoutMs?: number;
 };
+
+// Matches undici's default headers/body timeouts, which the platform fetch
+// applied before requests moved to node:http.
+const DEFAULT_IDLE_TIMEOUT_MS = 300_000;
 
 type LookupAll = (
   hostname: string,
@@ -110,6 +116,9 @@ export async function fetchWithLookup(
           }),
         );
       },
+    );
+    request.setTimeout(init.idleTimeoutMs ?? DEFAULT_IDLE_TIMEOUT_MS, () =>
+      request.destroy(Object.assign(new Error('Request timed out'), { code: 'ETIMEDOUT' })),
     );
     request.on('error', reject);
     request.end(init.body ?? undefined);

@@ -88,7 +88,9 @@ describe('fetchWithLookup', () => {
 
   beforeAll(async () => {
     server = http.createServer((req, res) => {
-      if (req.url === '/redirect') {
+      if (req.url === '/stall') {
+        return; // accept the request and never answer
+      } else if (req.url === '/redirect') {
         res.writeHead(302, { Location: '/target' });
         res.end();
       } else if (req.url === '/gzip') {
@@ -117,7 +119,10 @@ describe('fetchWithLookup', () => {
     base = `http://localhost:${(server.address() as AddressInfo).port}`;
   });
 
-  afterAll(() => new Promise<void>((resolve) => server.close(() => resolve())));
+  afterAll(() => {
+    server.closeAllConnections();
+    return new Promise<void>((resolve) => server.close(() => resolve()));
+  });
 
   it('sends the method, headers and body and returns status, headers and body', async () => {
     const res = await fetchWithLookup(
@@ -160,6 +165,12 @@ describe('fetchWithLookup', () => {
     await expect(
       fetchWithLookup(`${base}/plain`, { signal: controller.signal }, dns.lookup),
     ).rejects.toThrow();
+  });
+
+  it('gives up on a server that stops responding', async () => {
+    await expect(
+      fetchWithLookup(`${base}/stall`, { idleTimeoutMs: 50 }, dns.lookup),
+    ).rejects.toThrow(/timed out/);
   });
 
   it('refuses to connect when the resolver reports an internal address', async () => {
