@@ -20,6 +20,12 @@ export async function POST(req: Request): Promise<Response> {
         headers: { 'Content-Type': 'application/json' },
       });
     }
+    if (system !== undefined && typeof system !== 'string') {
+      return new Response(JSON.stringify({ error: 'Invalid system prompt' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
 
     const inputChars = JSON.stringify(messages).length + (system?.length ?? 0);
     if (messages.length > MAX_MESSAGES || inputChars > MAX_INPUT_CHARS) {

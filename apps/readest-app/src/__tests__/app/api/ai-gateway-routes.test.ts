@@ -51,6 +51,18 @@ describe('AI gateway routes', () => {
     expect(createGatewayMock).not.toHaveBeenCalled();
   });
 
+  it('chat rejects a non-string system prompt', async () => {
+    const res = await chatPOST(
+      post('chat', {
+        messages: [{ role: 'user', content: 'hi' }],
+        system: { text: 'x'.repeat(600_000) },
+        apiKey: 'user-key',
+      }),
+    );
+    expect(res.status).toBe(400);
+    expect(streamTextMock).not.toHaveBeenCalled();
+  });
+
   it('chat uses the caller key', async () => {
     const res = await chatPOST(
       post('chat', { messages: [{ role: 'user', content: 'hi' }], apiKey: 'user-key' }),
