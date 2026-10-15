@@ -20,7 +20,15 @@ function quotedStrings(block) {
 }
 
 function extractRustList(source, name) {
-  const match = source.match(new RegExp(`${name}\\s*:\\s*&\\[&str\\]\\s*=\\s*&\\[([\\s\\S]*?)\\]`));
+  // Two layouts: the multi-line form whose entry comments may contain
+  // brackets (so the closing bracket is anchored to a line start), and the
+  // one-line form `&["a9", "nova"]`.
+  const multi = source.match(
+    new RegExp(`${name}\\s*:\\s*&\\[&str\\]\\s*=\\s*&\\[([\\s\\S]*?\\n)\\]`),
+  );
+  const single =
+    multi ? null : source.match(new RegExp(`${name}\\s*:\\s*&\\[&str\\]\\s*=\\s*&\\[([^\\]\\n]*)\\]`));
+  const match = multi ?? single;
   if (!match) throw new Error(`list "${name}" not found in ${RUST_PATH}`);
   return quotedStrings(match[1]);
 }
