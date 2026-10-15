@@ -16,15 +16,20 @@ const KOTLIN_PATH =
 const LISTS = ['EINK_MANUFACTURERS', 'EINK_MODELS', 'EINK_AMBIGUOUS_MODELS'];
 
 function quotedStrings(block) {
-  return [...block.matchAll(/"([^"]+)"/g)].map((match) => match[1]);
+  // Strip // line comments first: a commented-out entry ("onyx",) must not
+  // count as active on one side while still active on the other.
+  const active = block.replace(/\/\/.*$/gm, '');
+  return [...active.matchAll(/"([^"]+)"/g)].map((match) => match[1]);
 }
 
 function extractRustList(source, name) {
-  // Two layouts: the multi-line form whose entry comments may contain
-  // brackets (so the closing bracket is anchored to a line start), and the
-  // one-line form `&["a9", "nova"]`.
+  // Two layouts: the multi-line form (opening delimiter followed by a
+  // newline; entry comments may contain brackets, so the closing bracket is
+  // anchored to a line start) and the one-line form `&["a9", "nova"]`.
+  // Anchoring the opening delimiter keeps a multi-line match from starting
+  // at a completed single-line declaration.
   const multi = source.match(
-    new RegExp(`${name}\\s*:\\s*&\\[&str\\]\\s*=\\s*&\\[([\\s\\S]*?\\n)\\]`),
+    new RegExp(`${name}\\s*:\\s*&\\[&str\\]\\s*=\\s*&\\[\\r?\\n([\\s\\S]*?)\\r?\\n\\]`),
   );
   const single =
     multi ? null : source.match(new RegExp(`${name}\\s*:\\s*&\\[&str\\]\\s*=\\s*&\\[([^\\]\\n]*)\\]`));
@@ -34,11 +39,8 @@ function extractRustList(source, name) {
 }
 
 function extractKotlinList(source, name) {
-  // Two layouts exist: the multi-line form whose entry comments may contain
-  // parens (so the closing paren is anchored to a line start — a non-greedy
-  // match to the next ")" would truncate at a comment), and the one-line
-  // form `listOf("a9", "nova")`.
-  const multi = source.match(new RegExp(`\\b${name}\\s*=\\s*listOf\\(([\\s\\S]*?\\n)\\)`));
+  // Same anchoring as the Rust extractor, with parens instead of brackets.
+  const multi = source.match(new RegExp(`\\b${name}\\s*=\\s*listOf\\(\\r?\\n([\\s\\S]*?)\\r?\\n\\)`));
   const single = multi ? null : source.match(new RegExp(`\\b${name}\\s*=\\s*listOf\\(([^)\\n]*)\\)`));
   const match = multi ?? single;
   if (!match) throw new Error(`list "${name}" not found in ${KOTLIN_PATH}`);

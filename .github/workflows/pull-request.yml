@@ -56,8 +56,10 @@ jobs:
           filters: |
             tauri:
               - 'apps/readest-app/src-tauri/**'
+      # Unconditional: the check must also run when its own source
+      # (scripts/check-eink-identity-sync.mjs) changes, which the tauri
+      # paths-filter above does not match.
       - name: e-ink identity whitelist sync (Rust vs Kotlin)
-        if: steps.changes.outputs.tauri == 'true'
         run: node scripts/check-eink-identity-sync.mjs
       - name: setup sccache
         if: steps.changes.outputs.tauri == 'true'
