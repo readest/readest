@@ -129,6 +129,18 @@ describe('POST /api/storage/upload — quota reservation', () => {
     expect(deleteEqMock).not.toHaveBeenCalled();
   });
 
+  it('does not count a re-uploaded file twice in the reported usage', async () => {
+    rpcMock.mockResolvedValue({
+      data: { allowed: true, usage: 400 * MB, file_size: 10 * MB, inserted: false },
+      error: null,
+    });
+
+    const res = await post({ fileName: 'Readest/Books/hash.epub', fileSize: 10 * MB });
+
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json.mock.calls[0]![0]).toMatchObject({ usage: 400 * MB });
+  });
+
   it('releases a fresh reservation when signing fails', async () => {
     rpcMock.mockResolvedValue({
       data: { allowed: true, usage: 0, file_size: 999, inserted: true, file_id: 'f1' },
