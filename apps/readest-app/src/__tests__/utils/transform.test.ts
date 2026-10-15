@@ -496,3 +496,27 @@ describe('transformBook metadataUpdatedAt (issue #5438)', () => {
     expect(back.metadataUpdatedAt).toBeNull();
   });
 });
+
+describe('book page count', () => {
+  const book: Book = {
+    hash: 'h',
+    format: 'EPUB',
+    title: 'T',
+    author: 'A',
+    createdAt: 1,
+    updatedAt: 2,
+  };
+
+  it('pushes the import-time page count so peers get it without the file', () => {
+    expect(transformBookToDB({ ...book, pageCount: 212 }, 'u').page_count).toBe(212);
+    expect(transformBookToDB(book, 'u').page_count).toBeNull();
+  });
+
+  it('pulls the page count, and leaves the key off a row without one', () => {
+    const row = transformBookToDB(book, 'u');
+    expect(transformBookFromDB({ ...row, page_count: 212 }).pageCount).toBe(212);
+    // A key holding undefined would wipe the local count in the pull merge's
+    // `{ ...local, ...remote }` spread.
+    expect('pageCount' in transformBookFromDB({ ...row, page_count: null })).toBe(false);
+  });
+});

@@ -14,7 +14,7 @@
 //   simply degrade word highlighting to sentence highlighting.
 
 import type { TTSWordBoundary } from '@/libs/edgeTTS';
-import type { TTSVoice } from '../types';
+import type { TTSVoice, TTSVoicesGroup } from '../types';
 
 export interface SpeechSynthesisRequest {
   lang: string;
@@ -87,6 +87,13 @@ export interface SpeechProvider {
   // Engine-specific default-voice policy for a language's candidate list
   // (already filtered and sorted); return undefined to accept the first.
   pickDefaultVoice?(voices: TTSVoice[]): string | undefined;
+  // The order the picker lists a language's voices in. Absent: the reader's
+  // locale first, then by name.
+  compareVoices?(a: TTSVoice, b: TTSVoice): number;
+  // Multilingual voices, offered whatever the book's language, in groups the
+  // picker shows separately (one per configured service). Absent: one group
+  // of the voices that match the book's language.
+  groupVoices?(voices: TTSVoice[]): Omit<TTSVoicesGroup, 'disabled'>[];
   // Last-resort voice when nothing matched and no voice was ever selected.
   readonly fallbackVoiceId?: string;
   // Never voice a sentence with a voice of another language: when a language
@@ -96,6 +103,10 @@ export interface SpeechProvider {
   // Whether synthesized audio may be persisted. Some services forbid
   // storing their output; CachingProvider bypasses the store when false.
   readonly cacheable?: boolean;
+  // Settings outside the request that change the audio for the same voice
+  // (a user-edited model or style prompt): part of the cache key, so editing
+  // them never replays audio made under the old settings.
+  cacheScope?(req: SpeechSynthesisRequest): string;
   // Release provider resources (network handles, cache databases) when the
   // owning client shuts down.
   shutdown?(): Promise<void>;

@@ -15,8 +15,8 @@ pnpm build-web             # Build Next.js for web deployment
 
 # Testing (see [docs/testing.md](docs/testing.md) for full details)
 pnpm test                  # Unit tests (vitest + jsdom)
-pnpm test -- src/__tests__/utils/misc.test.ts  # Run a single test file
-pnpm test -- --watch       # Watch mode
+pnpm test --run src/__tests__/utils/misc.test.ts  # Run only these files (no `--`: it would run more than them)
+pnpm test --watch          # Watch mode
 pnpm test:browser          # Browser tests (Chromium via Playwright)
 pnpm tauri:dev:test        # Start Tauri app with webdriver
 pnpm test:tauri            # Run Tauri integration tests
@@ -79,7 +79,21 @@ Project-related agent context lives under `.agents/`, which is a symlink to `.cl
 
 ## Project Rules
 
-Rules are in `.agents/rules/`: test-first, typescript, verification.
+Rules are in `.agents/rules/`: test-first, typescript, verification, acceptance.
+
+### Lessons
+
+Before changing code, read LESSONS.md: what recent merged work got wrong and the rule that would have caught it. The `nightly-review` loop keeps it current; a lesson seen on 3 days moves into `.agents/rules/acceptance.md`.
+
+@LESSONS.md
+
+### Community PRs
+
+Before reviewing a community PR, read [docs/contributors.md](docs/contributors.md): what stops a review for possible harm, what is closed unreviewed, and who is blocked or watched.
+
+### Maintenance loops
+
+Three loops run in parallel, each in its own session: `/loop /triage-github` (issues and PRs), `/loop /watch-social` (X, Discord, Reddit) and `/loop /nightly-review` (lessons, cleanup, author blocks). The maintainer reviews UI/UX and product decisions.
 
 ### Implementation Scope
 

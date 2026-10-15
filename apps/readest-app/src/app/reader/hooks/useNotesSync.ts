@@ -176,7 +176,10 @@ export const useNotesSync = (bookKey: string) => {
         }
       },
       SYNC_NOTES_INTERVAL_SEC * 1000,
-      { emitLast: false },
+      // A highlight made inside the interval must still go out once it ends:
+      // without the trailing call it waited for the next highlight or for the
+      // book to be reopened on this device (#6762).
+      { emitLast: true },
     ),
     [syncNotes],
   );

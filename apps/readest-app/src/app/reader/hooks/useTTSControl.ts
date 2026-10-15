@@ -4,6 +4,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useThemeStore } from '@/store/themeStore';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useReaderStore } from '@/store/readerStore';
+import { getEnabledCustomTTSServices } from '@/store/customTTSStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useBookProgress } from '@/store/readerProgressStore';
 import { useProofreadStore } from '@/store/proofreadStore';
@@ -305,7 +306,10 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
     const tryAdopt = async (): Promise<boolean> => {
       if (cancelled || isStartingTTSRef.current) return false;
       const view = getView(bookKey);
-      if (!view) return false;
+      // A remount under the same key (back from another route) still holds the
+      // previous, detached view until the new one opens: highlights drawn
+      // there never show.
+      if (!view?.isConnected) return false;
       isStartingTTSRef.current = true;
       try {
         const controller = sessionController;
@@ -827,6 +831,7 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
   useEffect(() => {
     const ttsHighlightOptions = viewSettings?.ttsHighlightOptions;
     if (ttsControllerRef.current && ttsHighlightOptions) {
+      ttsControllerRef.current.sentenceTint = !viewSettings!.isEink;
       ttsControllerRef.current.updateHighlightOptions(
         getTTSHighlightOptions(
           ttsHighlightOptions,
@@ -989,6 +994,7 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
           handleSectionChange,
         );
         ttsController.setSkipInlineAnnotations(viewSettings.ttsSkipInlineAnnotations ?? false);
+        ttsController.setCustomTTSServices(getEnabledCustomTTSServices);
         // The constructor takes the view directly (attachView, which also binds
         // this, only runs on the background-session reattach path), so set the
         // book key here or the per-book audio cache never gets a hash to open.
@@ -1033,6 +1039,7 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
           void ttsController.shutdown();
           return;
         }
+        ttsController.sentenceTint = !viewSettings.isEink;
         ttsController.updateHighlightOptions(
           getTTSHighlightOptions(
             viewSettings.ttsHighlightOptions,

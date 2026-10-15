@@ -89,6 +89,17 @@ describe('PageJumpInput', () => {
     expect(queryByRole('textbox')).toBeNull();
   });
 
+  it('keeps the last label while progress is momentarily invalid (#6646)', () => {
+    const { input, rerender, getByRole } = setup();
+    mocks.state.progress = {
+      pageinfo: { current: Number.NaN, next: Number.NaN, total: 251 },
+      section: { current: 0, total: 30 },
+    };
+    rerender(<PageJumpInput bookKey='book1' />);
+    expect(getByRole('textbox', { name: 'Go to Page' })).toBe(input);
+    expect(input.value).toBe('94 / 251');
+  });
+
   it('keeps the same text on focus so the layout stays stable', () => {
     const { input } = setup();
     fireEvent.focus(input);

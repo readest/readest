@@ -7,6 +7,7 @@ vi.mock('@tauri-apps/api/core', () => ({ invoke: invokeMock }));
 vi.mock('@/services/environment', () => ({ isTauriAppPlatform: () => true }));
 
 import { tryNativeParsePdf } from '@/utils/tauriPdfBridge';
+import { getBookDocPageCount } from '@/utils/book';
 
 const XMP = `<?xpacket begin=""?>
 <x:xmpmeta xmlns:x="adobe:ns:meta/">
@@ -41,6 +42,7 @@ describe('tryNativeParsePdf', () => {
             subject: bytes('Info Subject'),
           },
           xmp: bytes(XMP),
+          pageCount: 7,
         };
       }
       if (command === 'render_pdf_cover') {
@@ -51,6 +53,16 @@ describe('tryNativeParsePdf', () => {
       }
       throw new Error(`Unexpected command: ${command}`);
     });
+  });
+
+  it('carries the native page count as one section per page (#6662)', async () => {
+    const parsed = await tryNativeParsePdf(
+      '/storage/emulated/0/Books/example.pdf',
+      undefined,
+      'android',
+    );
+
+    expect(getBookDocPageCount(parsed!.bookDoc, 'PDF')).toBe(7);
   });
 
   it('gets metadata from Rust and the first-page cover from Android without a JS File read', async () => {

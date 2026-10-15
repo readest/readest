@@ -920,6 +920,17 @@ export class NativeAppService extends BaseAppService {
             await writeFile(shareablePath, new Uint8Array(content));
           }
         }
+        if (this.isIOSApp) {
+          // An "Open with" book keeps its already-decoded `file://` URI as its path.
+          shareablePath = shareablePath.replace(/^file:\/\//, '');
+          // The iOS plugin copies the file to `<tmp>/<name>` and keeps any copy
+          // already there, which would share a previous export of the same name.
+          const pluginCopy = await this.resolveFilePath(getFilename(shareablePath), 'Temp');
+          if (pluginCopy !== shareablePath) await remove(pluginCopy).catch(() => {});
+          // It also parses the path with `URL(string:)`, which on iOS 16 fails
+          // on a space or non-ASCII character, so hand it an encoded file URL.
+          shareablePath = `file://${shareablePath.split('/').map(encodeURIComponent).join('/')}`;
+        }
         try {
           await shareFile(shareablePath, {
             mimeType: options?.mimeType || 'application/octet-stream',

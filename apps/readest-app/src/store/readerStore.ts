@@ -23,7 +23,12 @@ import type { FileSystem } from '@/types/system';
 import { isFeedBookUrl, parseFeedBookUrl } from '@/services/rss/feedBookUrl';
 import { openFeedBookDoc } from '@/services/rss/feedReader';
 import { computeBookNav, hydrateBookNav, isBookNavCacheCurrent, updateToc } from '@/services/nav';
-import { formatTitle, getMetadataHash, getPrimaryLanguage } from '@/utils/book';
+import {
+  formatTitle,
+  getMetadataHash,
+  getPrimaryLanguage,
+  parseSeriesPosition,
+} from '@/utils/book';
 import { getBaseFilename } from '@/utils/path';
 import { SUPPORTED_LANGNAMES } from '@/services/constants';
 import { useSettingsStore } from './settingsStore';
@@ -341,7 +346,7 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
         if (series) {
           book.metadata.series = book.metadata.series ?? formatTitle(series.name);
           book.metadata.seriesIndex =
-            book.metadata.seriesIndex ?? parseFloat(series.position || '0');
+            book.metadata.seriesIndex ?? parseSeriesPosition(series.position);
           book.metadata.seriesTotal =
             book.metadata.seriesTotal ?? (series.total ? parseInt(series.total, 10) : undefined);
         }

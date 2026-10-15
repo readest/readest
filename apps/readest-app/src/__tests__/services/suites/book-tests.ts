@@ -1,6 +1,8 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { Book, BookNote } from '@/types/book';
 import { AppService } from '@/types/system';
+import { DocumentLoader } from '@/libs/document';
+import { SectionProgress } from 'foliate-js/progress.js';
 
 function makeFakeBook(overrides: Partial<Book> = {}): Book {
   return {
@@ -132,6 +134,18 @@ export function bookTests(
       expect(content.book.hash).toBe(book!.hash);
       expect(content.file).toBeDefined();
       expect(content.file.size).toBeGreaterThan(0);
+    });
+
+    it('should record at import the page count the reader shows (#6662)', async () => {
+      const service = getService();
+      const books: Book[] = [];
+      const book = await service.importBook(await getBookFile('sample-alice.epub'), books);
+
+      const content = await service.loadBookContent(book!);
+      const { book: bookDoc } = await new DocumentLoader(content.file).open();
+      const { location } = new SectionProgress(bookDoc.sections, 1500, 1600).getProgress(0, 0);
+      expect(book!.pageCount).toBeGreaterThan(0);
+      expect(book!.pageCount).toBe(location.total);
     });
 
     it('should throw when loading content for non-existent book', async () => {

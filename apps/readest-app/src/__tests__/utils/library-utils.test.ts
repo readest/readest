@@ -952,6 +952,35 @@ describe('createGroupSorter', () => {
 });
 
 describe('createBookSorter', () => {
+  it('sorts by page count, using the import-time count for unopened books (#6662)', () => {
+    const books = [
+      createMockBook({ title: 'opened', progress: [10, 300] }),
+      createMockBook({ title: 'unknown' }),
+      createMockBook({ title: 'unopened', pageCount: 120 }),
+    ];
+    const titles = (ascending: boolean) =>
+      books
+        .sort(createBookSorter(LibrarySortByType.Pages, 'en', 'none', ascending))
+        .map((book) => book.title);
+
+    expect(titles(true)).toEqual(['unknown', 'unopened', 'opened']);
+    expect(titles(false)).toEqual(['opened', 'unopened', 'unknown']);
+  });
+
+  it('orders groups by their total page count (#6662)', () => {
+    const group = (name: string, pages: number[]) => ({
+      id: name,
+      name,
+      displayName: name,
+      books: pages.map((pageCount) => createMockBook({ pageCount })),
+      updatedAt: 0,
+    });
+    const groups = [group('long', [400, 300]), group('short', [100, 50])];
+
+    groups.sort(createGroupSorter(LibrarySortByType.Pages, 'en'));
+    expect(groups.map((g) => g.name)).toEqual(['short', 'long']);
+  });
+
   it.each([true, false])('sorts numbered titles naturally (ascending: %s)', (ascending) => {
     const books = [22, 1, 12, 3].map((index) => createMockBook({ title: `Volume ${index}` }));
     const expected = ['Volume 1', 'Volume 3', 'Volume 12', 'Volume 22'];

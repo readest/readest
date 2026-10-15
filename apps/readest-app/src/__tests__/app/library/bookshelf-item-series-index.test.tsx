@@ -69,16 +69,18 @@ describe('series index on grid cards inside a series group (#6347)', () => {
     expect(screen.getByRole('button', { name: "Caliban's War #2" })).toBeTruthy();
   });
 
+  it('badges a zero series index', () => {
+    renderItem({ item: { ...book, metadata: { ...book.metadata!, seriesIndex: 0 } } });
+    expect(lastSeriesIndex()).toBe(0);
+    expect(screen.getByRole('button', { name: "Caliban's War #0" })).toBeTruthy();
+  });
+
   it.each([
     ['outside a series group', { showSeriesIndex: false }],
     ['in list view', { mode: 'list' as const }],
     [
       'without a series index',
       { item: { ...book, metadata: { ...book.metadata!, seriesIndex: undefined } } },
-    ],
-    [
-      'for a zero series index',
-      { item: { ...book, metadata: { ...book.metadata!, seriesIndex: 0 } } },
     ],
   ])('keeps the plain title %s', (_label, overrides) => {
     renderItem(overrides);

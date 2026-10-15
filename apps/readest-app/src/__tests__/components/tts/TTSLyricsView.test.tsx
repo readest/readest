@@ -152,6 +152,28 @@ describe('TTSLyricsView', () => {
     );
   });
 
+  test('opens onto the spoken line outright, then glides to the next', () => {
+    // Line 2 is only half a viewport down, yet opening the player must not
+    // animate the scroll to it.
+    const { rerender } = renderView({ activeIndex: 2 });
+    expect(scroller().scrollTo).toHaveBeenLastCalledWith(
+      expect.objectContaining({ top: 100, behavior: 'auto' }),
+    );
+    rerender(<TTSLyricsView {...defaults} activeIndex={3} />);
+    expect(scroller().scrollTo).toHaveBeenLastCalledWith(
+      expect.objectContaining({ top: 140, behavior: 'smooth' }),
+    );
+  });
+
+  test('still opens outright when the lines arrive after the spoken index', () => {
+    // The spoken index is known at once; the chapter's lines load after it.
+    const { rerender } = renderView({ lines: [], activeIndex: 2 });
+    rerender(<TTSLyricsView {...defaults} activeIndex={2} />);
+    expect(scroller().scrollTo).toHaveBeenLastCalledWith(
+      expect.objectContaining({ top: 100, behavior: 'auto' }),
+    );
+  });
+
   test('does not animate the follow scroll on e-ink', () => {
     const { rerender } = renderView({ activeIndex: 0, isEink: true });
     // Past the initial snap: every later move stays instant too.

@@ -195,10 +195,20 @@ describe('useTextSelector image context menu (#6558)', () => {
     delete (document as { getImageAt?: unknown }).getImageAt;
   });
 
-  test('leaves the native menu to text', () => {
+  test('leaves the browser menu to text on the web', () => {
     listen();
     document.body.innerHTML = '<p>plain text</p>';
     expect(rightClick(document.querySelector('p')!).defaultPrevented).toBe(false);
+    expect(imageMenus()).toEqual([]);
+  });
+
+  // readest/readest#6668: the webview's own menu (Back / Reload / Inspect...)
+  // has no place in the desktop app's reading area.
+  test('suppresses the webview menu on text in the desktop app', () => {
+    h.appService = { isDesktopApp: true, isMobile: false };
+    listen();
+    document.body.innerHTML = '<p>plain text</p>';
+    expect(rightClick(document.querySelector('p')!).defaultPrevented).toBe(true);
     expect(imageMenus()).toEqual([]);
   });
 });

@@ -19,6 +19,7 @@ vi.mock('@/store/themeStore', () => ({
 }));
 
 const mockView = {
+  isConnected: true,
   book: { primaryLanguage: 'en', sections: [{ id: 0 }] },
   renderer: {
     getContents: () => [{ index: 0, doc: document as unknown as Document }],
@@ -157,6 +158,7 @@ vi.mock('@/services/tts', () => ({
       updateHighlightOptions: vi.fn(),
       setHighlightGranularity: vi.fn(),
       setSkipInlineAnnotations: vi.fn(),
+      setCustomTTSServices: vi.fn(),
       setLang: vi.fn(),
       setRate: vi.fn(),
       setSentenceGap: vi.fn(),
@@ -1214,42 +1216,45 @@ describe('useTTSControl background session lifecycle', () => {
     expect(mockSessionManager.stopActive).toHaveBeenCalledWith('replaced');
   });
 
+  const makeLiveController = () => ({
+    kind: 'tts',
+    state: 'playing',
+    terminated: false,
+    isViewAttached: false,
+    shutdown: vi.fn(),
+    detachView: vi.fn(),
+    attachView: vi.fn().mockResolvedValue(undefined),
+    getSpeakingLang: vi.fn().mockReturnValue('en'),
+    getCurrentHighlightCfi: vi.fn().mockReturnValue(null),
+    getCurrentPlaybackCfi: vi.fn().mockReturnValue(null),
+    getSectionIndex: vi.fn().mockReturnValue(0),
+    isSoundingSentenceOnScreen: vi.fn().mockReturnValue(false),
+    getSpokenSentence: vi.fn().mockReturnValue(null),
+    updateHighlightOptions: vi.fn(),
+    setHighlightGranularity: vi.fn(),
+    setSkipInlineAnnotations: vi.fn(),
+    setCustomTTSServices: vi.fn(),
+    drawLoopRange: vi.fn(),
+    getVoiceId: vi.fn().mockReturnValue(''),
+    setTargetLang: vi.fn(),
+    setLang: vi.fn(),
+    setRate: vi.fn(),
+    pause: vi.fn().mockResolvedValue(true),
+    resume: vi.fn().mockResolvedValue(true),
+    start: vi.fn().mockResolvedValue(undefined),
+    stop: vi.fn().mockResolvedValue(undefined),
+    forward: vi.fn().mockResolvedValue(undefined),
+    backward: vi.fn().mockResolvedValue(undefined),
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    redispatchPosition: vi.fn(),
+    usesAudioTransport: vi.fn().mockReturnValue(false),
+    supportsLyrics: vi.fn().mockReturnValue(true),
+    isBuffering: vi.fn().mockReturnValue(false),
+  });
+
   it('adopts a live session for the same book without constructing a controller', async () => {
-    const liveController = {
-      kind: 'tts',
-      state: 'playing',
-      terminated: false,
-      isViewAttached: false,
-      shutdown: vi.fn(),
-      detachView: vi.fn(),
-      attachView: vi.fn().mockResolvedValue(undefined),
-      getSpeakingLang: vi.fn().mockReturnValue('en'),
-      getCurrentHighlightCfi: vi.fn().mockReturnValue(null),
-      getCurrentPlaybackCfi: vi.fn().mockReturnValue(null),
-      getSectionIndex: vi.fn().mockReturnValue(0),
-      isSoundingSentenceOnScreen: vi.fn().mockReturnValue(false),
-      getSpokenSentence: vi.fn().mockReturnValue(null),
-      updateHighlightOptions: vi.fn(),
-      setHighlightGranularity: vi.fn(),
-      setSkipInlineAnnotations: vi.fn(),
-      drawLoopRange: vi.fn(),
-      getVoiceId: vi.fn().mockReturnValue(''),
-      setTargetLang: vi.fn(),
-      setLang: vi.fn(),
-      setRate: vi.fn(),
-      pause: vi.fn().mockResolvedValue(true),
-      resume: vi.fn().mockResolvedValue(true),
-      start: vi.fn().mockResolvedValue(undefined),
-      stop: vi.fn().mockResolvedValue(undefined),
-      forward: vi.fn().mockResolvedValue(undefined),
-      backward: vi.fn().mockResolvedValue(undefined),
-      addEventListener: vi.fn(),
-      removeEventListener: vi.fn(),
-      redispatchPosition: vi.fn(),
-      usesAudioTransport: vi.fn().mockReturnValue(false),
-      supportsLyrics: vi.fn().mockReturnValue(true),
-      isBuffering: vi.fn().mockReturnValue(false),
-    };
+    const liveController = makeLiveController();
     mockSessionManager.getSessionByHash.mockReturnValue({
       bookHash: 'book',
       bookKey: 'book-old',
@@ -1269,6 +1274,37 @@ describe('useTTSControl background session lifecycle', () => {
       expect.objectContaining({ bookKey: 'book-1' }),
     );
     expect(liveController.setSkipInlineAnnotations).toHaveBeenCalledWith(false);
+  });
+
+  // Back from another route the reader remounts under the same book key; the
+  // store still holds the previous, detached view until the new one opens.
+  // Attaching to that one would draw every highlight off screen.
+  it('waits for the view on screen instead of adopting into a detached one', async () => {
+    const liveController = makeLiveController();
+    mockSessionManager.getSessionByHash.mockReturnValue({
+      bookHash: 'book',
+      bookKey: 'book-1',
+      controller: liveController,
+    });
+    mockView.isConnected = false;
+    try {
+      render(<Harness />);
+      await act(async () => {
+        for (let i = 0; i < 10; i++) await Promise.resolve();
+      });
+      expect(liveController.attachView).not.toHaveBeenCalled();
+
+      mockView.isConnected = true;
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 350));
+      });
+      expect(liveController.attachView).toHaveBeenCalledWith(
+        mockView,
+        expect.objectContaining({ bookKey: 'book-1' }),
+      );
+    } finally {
+      mockView.isConnected = true;
+    }
   });
 });
 

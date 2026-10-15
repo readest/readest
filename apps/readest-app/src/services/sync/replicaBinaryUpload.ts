@@ -1,5 +1,5 @@
 import { transferManager } from '@/services/transferManager';
-import { getReplicaAdapter } from './replicaRegistry';
+import { getReplicaAdapter, type BinaryCapability } from './replicaRegistry';
 import { isSyncCategoryEnabled } from './syncCategories';
 import { getAccessToken } from '@/utils/access';
 import type { AppService, BaseDir } from '@/types/system';
@@ -33,6 +33,22 @@ interface ReplicaBinaryRecord {
 }
 
 /**
+ * Shared gate for binary transfers: the record's binary capability, or
+ * null when the kind's sync category is off, the record is legacy (no
+ * contentId), the user is signed out, or TransferManager isn't ready.
+ */
+const getTransferableBinary = async <T extends ReplicaBinaryRecord>(
+  kind: string,
+  record: T,
+): Promise<BinaryCapability<T> | null> => {
+  if (!isSyncCategoryEnabled(kind)) return null;
+  if (!record.contentId) return null;
+  if (!(await getAccessToken())) return null;
+  if (!transferManager.isReady()) return null;
+  return getReplicaAdapter<T>(kind)?.binary ?? null;
+};
+
+/**
  * Queue a replica's binary files for upload via TransferManager.
  * Generic across kinds — uses the adapter registry to dispatch:
  *   - adapter.binary.enumerateFiles to list the per-record files
@@ -61,16 +77,11 @@ export const queueReplicaBinaryUpload = async <T extends ReplicaBinaryRecord>(
   record: T,
   appService: AppService,
 ): Promise<string | null> => {
-  if (!isSyncCategoryEnabled(kind)) return null;
-  if (!record.contentId) return null;
-  if (!(await getAccessToken())) return null;
-  if (!transferManager.isReady()) return null;
+  const binary = await getTransferableBinary<T>(kind, record);
+  if (!binary) return null;
+  const base = binary.localBaseDir;
 
-  const adapter = getReplicaAdapter<T>(kind);
-  if (!adapter?.binary) return null;
-  const base = adapter.binary.localBaseDir;
-
-  const enumerated = adapter.binary.enumerateFiles(record);
+  const enumerated = binary.enumerateFiles(record);
   if (enumerated.length === 0) return null;
 
   const files: ReplicaTransferFile[] = await Promise.all(
@@ -81,9 +92,44 @@ export const queueReplicaBinaryUpload = async <T extends ReplicaBinaryRecord>(
     })),
   );
 
-  return transferManager.queueReplicaUpload(kind, record.contentId, record.name, files, base, {
+  return transferManager.queueReplicaUpload(kind, record.contentId!, record.name, files, base, {
     reincarnation: record.reincarnation,
   });
+};
+
+/**
+ * Fetch a replica's binaries from the cloud on request, for kinds whose
+ * adapter sets `downloadOnDemand`. Completion fires the kind's download
+ * handler (registered in replicaBootstrap), which activates the record.
+ */
+export const queueReplicaBinaryDownload = async <T extends ReplicaBinaryRecord>(
+  kind: string,
+  record: T,
+): Promise<string | null> => {
+  const binary = await getTransferableBinary<T>(kind, record);
+  if (!binary) return null;
+  return transferManager.queueReplicaDownload(
+    kind,
+    record.contentId!,
+    record.name,
+    binary.enumerateFiles(record),
+    binary.localBaseDir,
+  );
+};
+
+/**
+ * Delete a replica's binaries from the cloud. Pair with
+ * `publishReplicaDelete`: the tombstone removes the row, this removes the
+ * files it pointed at so they stop counting against cloud storage.
+ */
+export const queueReplicaBinaryDelete = async <T extends ReplicaBinaryRecord>(
+  kind: string,
+  record: T,
+): Promise<string | null> => {
+  const binary = await getTransferableBinary<T>(kind, record);
+  if (!binary) return null;
+  const filenames = binary.enumerateFiles(record).map((f) => f.logical);
+  return transferManager.queueReplicaDelete(kind, record.contentId!, record.name, filenames);
 };
 
 /**

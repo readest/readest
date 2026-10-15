@@ -44,7 +44,8 @@ interface HandwritingDockProps {
   onClose: () => void;
   tool: InkTool;
   onSelectTool: (tool: InkTool) => void;
-  bottom?: number;
+  /** Bottom safe-area inset, filled with the dock's own background. */
+  bottomInset?: number;
 }
 
 /** Replaces the reader footer while drawing: tools, history, paging, save and close. */
@@ -63,7 +64,7 @@ export const HandwritingDock: React.FC<HandwritingDockProps> = ({
   onClose,
   tool,
   onSelectTool,
-  bottom = 0,
+  bottomInset = 0,
 }) => {
   const _ = useTranslation();
   const [optionsOpen, setOptionsOpen] = useState(false);
@@ -75,7 +76,10 @@ export const HandwritingDock: React.FC<HandwritingDockProps> = ({
     };
 
   return (
-    <div className={clsx(BAR, 'h-13 justify-between border-t px-3')} style={{ bottom }}>
+    <div
+      className={clsx(BAR, 'bottom-0 box-content h-13 justify-between border-t px-3')}
+      style={{ paddingBottom: bottomInset }}
+    >
       {optionsOpen && (
         <div className='eink-bordered bg-base-100 border-base-300/50 not-eink:shadow-md absolute bottom-full start-3 mb-2 rounded-2xl border px-3 py-2'>
           <HandwritingOptions

@@ -117,7 +117,7 @@ const FormField: React.FC<FormFieldProps> = ({
         {type === 'input' ? (
           <input
             type={isNumber ? 'number' : 'text'}
-            min={1}
+            min={0}
             value={value}
             onChange={(e) => onFieldChange(field, e.target.value)}
             placeholder={isLocked ? '' : placeholder}

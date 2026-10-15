@@ -125,6 +125,14 @@ describe('CachingProvider', () => {
     expect(strict.sameLanguageVoicesOnly).toBe(true);
   });
 
+  test("lists voices in the inner provider's order", () => {
+    const compareVoices = vi.fn(() => -1);
+    const sorted = new CachingProvider(makeInner({ compareVoices }), store);
+    sorted.compareVoices!({ id: 'a', name: 'A', lang: 'en' }, { id: 'b', name: 'B', lang: 'en' });
+    expect(compareVoices).toHaveBeenCalled();
+    expect(new CachingProvider(makeInner(), store).compareVoices).toBeUndefined();
+  });
+
   test('init starts opening the store, so the first lookup does not pay for it', async () => {
     const opening = Object.assign(new MemoryStore(), {
       open: vi.fn().mockResolvedValue(undefined),
@@ -143,6 +151,16 @@ describe('CachingProvider', () => {
     expect(result.boundaries).toEqual(BOUNDARIES);
     expect(inner.synthesize).toHaveBeenCalledTimes(1);
     expect(store.put).toHaveBeenCalledTimes(1);
+  });
+
+  test('a changed cache scope misses audio cached under the old one', async () => {
+    let scope = 'model-a';
+    provider = new CachingProvider(makeInner({ ...inner, cacheScope: () => scope }), store);
+    await provider.synthesize(req(), signal());
+    scope = 'model-b';
+    await provider.synthesize(req(), signal());
+    expect(inner.synthesize).toHaveBeenCalledTimes(2);
+    expect(store.map.size).toBe(2);
   });
 
   test('cache hit never reaches the inner provider', async () => {

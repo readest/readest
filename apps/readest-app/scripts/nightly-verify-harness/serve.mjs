@@ -38,8 +38,9 @@ export const ALL_KEYS = [
   'windows-aarch64-portable',
   'linux-x86_64-appimage',
   'linux-aarch64-appimage',
-  'android-universal',
   'android-arm64',
+  'android-armv7',
+  'android-legacy',
 ];
 
 export const baseVersion = () => JSON.parse(fs.readFileSync(PKG, 'utf8')).version.split('-')[0];

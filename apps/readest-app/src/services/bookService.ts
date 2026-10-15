@@ -23,6 +23,8 @@ import {
   getPrimaryLanguage,
   getMetadataHash,
   getStableMetadataHash,
+  parseSeriesPosition,
+  getBookDocPageCount,
 } from '@/utils/book';
 import type { BookNav } from '@/services/nav';
 import { partialMD5, md5 } from '@/utils/md5';
@@ -94,6 +96,21 @@ export function buildBookLookupIndex(books: Book[], osPlatform?: OsPlatform): Bo
     }
   }
   return { byHash, byMetaKey, byStableKey, byFilePath };
+}
+
+function indexBookKeys(
+  lookupIndex: BookLookupIndex,
+  book: Book,
+  metaHash: string | undefined,
+  stableHash: string | undefined,
+) {
+  const add = (map: Map<string, Book[]>, key: string) => {
+    const list = map.get(key);
+    if (!list) map.set(key, [book]);
+    else if (!list.includes(book)) list.push(book);
+  };
+  if (metaHash) add(lookupIndex.byMetaKey, `${metaHash}:${book.format}`);
+  if (stableHash) add(lookupIndex.byStableKey, `${stableHash}:${book.format}`);
 }
 
 /**
@@ -371,7 +388,9 @@ const migratePairedAudiobook = async (
 };
 
 /**
- * Merge duplicate book entries that share the same metaHash and format as `book`.
+ * Merge duplicate book entries that share the same metaHash and format as `book`,
+ * or its stable hash when given (a calibre/pandoc build re-mints its uuid, so
+ * two versions of one book differ in metaHash; issue #5959).
  * Finds all other matching books in the array, selects the base config with the
  * largest reading progress page number, merges booknotes from all configs
  * (deduplicating by id, latest updatedAt wins), and returns the duplicates for
@@ -386,16 +405,23 @@ export async function mergeBooks(
   books: Book[],
   book: Book,
   lookupIndex?: BookLookupIndex,
+  stableHash?: string,
 ): Promise<BookMergeResult | undefined> {
   if (!book.metaHash) return undefined;
 
   const metaKey = `${book.metaHash}:${book.format}`;
-  const duplicates = lookupIndex
-    ? (lookupIndex.byMetaKey.get(metaKey) ?? []).filter((b) => !b.deletedAt && b !== book)
+  const stableKey = stableHash ? `${stableHash}:${book.format}` : undefined;
+  const candidates = lookupIndex
+    ? [
+        ...(lookupIndex.byMetaKey.get(metaKey) ?? []),
+        ...((stableKey && lookupIndex.byStableKey.get(stableKey)) || []),
+      ]
     : books.filter(
         (b) =>
-          b.metaHash === book.metaHash && b.format === book.format && !b.deletedAt && b !== book,
+          b.format === book.format &&
+          (b.metaHash === book.metaHash || (!!stableHash && getStableBookHash(b) === stableHash)),
       );
+  const duplicates = [...new Set(candidates)].filter((b) => !b.deletedAt && b !== book);
   if (duplicates.length === 0) return undefined;
 
   const allCandidates = [book, ...duplicates];
@@ -504,6 +530,11 @@ export async function importBook(
   let openedSource: ClosableFile | undefined;
   let rollbackBook: Book | undefined;
   let rollbackSnapshot: Book | undefined;
+  // Set on a metaHash re-key: a deletedAt row carrying the hash the row is
+  // leaving behind. deletedAt/updatedAt are stamped when the row is appended
+  // past the rollback point below, so the deletion carries the commit's clock
+  // — a peer touching the book mid-import must still lose LWW to it.
+  let retiredTombstone: Book | undefined;
   const rememberBookState = (book: Book) => {
     if (rollbackBook) return;
     rollbackBook = book;
@@ -639,6 +670,11 @@ export async function importBook(
     if (existingBook) {
       rememberBookState(existingBook);
       if (!transient) {
+        // A deleted row was left out of the metadata indexes when they were
+        // built; add it back so later imports in this batch can match it.
+        if (existingBook.deletedAt && lookupIndex) {
+          indexBookKeys(lookupIndex, existingBook, metaHash, stableHash);
+        }
         existingBook.deletedAt = null;
         existingBook.fileSyncDeletionRequestedAt = null;
       }
@@ -676,8 +712,10 @@ export async function importBook(
           existingBook.updatedAt = Date.now();
         }
       }
+      // One book, last import wins: re-importing a retired version un-deletes
+      // its row above, and the live version is merged into it here.
       if (existingBook) {
-        mergeResult = await mergeBooks(fs, books, existingBook, lookupIndex);
+        mergeResult = await mergeBooks(fs, books, existingBook, lookupIndex, stableHash);
         bestConfigData = mergeResult?.configData;
       }
     }
@@ -695,6 +733,7 @@ export async function importBook(
       // property of the file, so it is re-derived on every (re)import rather
       // than synced as user data.
       hasNarration: hasMediaOverlays(loadedBook) || undefined,
+      pageCount: getBookDocPageCount(loadedBook, format),
       metadata: loadedBook.metadata,
       createdAt: existingBook ? existingBook.createdAt : Date.now(),
       uploadedAt: existingBook ? existingBook.uploadedAt : null,
@@ -708,13 +747,23 @@ export async function importBook(
       const series = Array.isArray(belongsTo) ? belongsTo[0] : belongsTo;
       if (series) {
         book.metadata.series = formatTitle(series.name);
-        book.metadata.seriesIndex = parseFloat(series.position || '0');
+        book.metadata.seriesIndex = parseSeriesPosition(series.position);
         if (series.total) book.metadata.seriesTotal = parseInt(series.total, 10);
       }
     }
     // update book metadata when reimporting the same book
     if (existingBook && metaHashMatch) {
-      // MetaHash match (different file, same book): override metadata and hash
+      // MetaHash match (different file, same book): override metadata and hash.
+      // Re-keying the row retires the old hash, so leave a deletedAt tombstone
+      // for it — the same treatment mergeBooks gives duplicates — so sync
+      // peers drop their old-hash rows instead of re-adding them as live cards
+      // whose file no longer exists. The tombstone is pushed below, past the
+      // rollback point, so a failed import cannot strand one for a hash that
+      // is live again.
+      const retiredHash = existingBook.hash;
+      if (retiredHash && retiredHash !== hash) {
+        retiredTombstone = { ...existingBook, hash: retiredHash };
+      }
       existingBook.hash = hash;
       existingBook.format = book.format;
       existingBook.metaHash = metaHash;
@@ -723,6 +772,7 @@ export async function importBook(
       existingBook.author = book.author;
       existingBook.primaryLanguage = book.primaryLanguage;
       existingBook.metadata = book.metadata;
+      existingBook.pageCount = book.pageCount;
       existingBook.uploadedAt = null;
       existingBook.downloadedAt = Date.now();
     } else if (existingBook) {
@@ -736,6 +786,7 @@ export async function importBook(
       existingBook.author = book.author;
       existingBook.primaryLanguage = book.primaryLanguage;
       existingBook.metadata = book.metadata;
+      existingBook.pageCount = book.pageCount;
       existingBook.metadataUpdatedAt = existingBook.updatedAt;
       existingBook.downloadedAt = Date.now();
     }
@@ -823,6 +874,9 @@ export async function importBook(
       const config: Partial<BookConfig> = JSON.parse(configData);
       config.bookHash = hash;
       config.metaHash = metaHash;
+      // The notes now belong to a new hash: push them all again, or peers that
+      // match by the new hash/metaHash never receive the older ones.
+      config.lastSyncedAtNotes = 0;
       if (config.audiobook && audiobookSourceHash) {
         config.audiobook = await migratePairedAudiobook(
           fs,
@@ -863,18 +917,7 @@ export async function importBook(
         books.push(book);
         if (lookupIndex) {
           lookupIndex.byHash.set(book.hash, book);
-          if (book.metaHash) {
-            const key = `${book.metaHash}:${book.format}`;
-            const list = lookupIndex.byMetaKey.get(key);
-            if (list) list.push(book);
-            else lookupIndex.byMetaKey.set(key, [book]);
-          }
-          if (stableHash) {
-            const key = `${stableHash}:${book.format}`;
-            const list = lookupIndex.byStableKey.get(key);
-            if (list) list.push(book);
-            else lookupIndex.byStableKey.set(key, [book]);
-          }
+          indexBookKeys(lookupIndex, book, book.metaHash, stableHash);
         }
       }
     } else if (metaHashMatch && oldBookDir && oldBookDir !== getDir(book)) {
@@ -904,13 +947,26 @@ export async function importBook(
     // to a directory whose retirement may already have started.
     rollbackBook = undefined;
     rollbackSnapshot = undefined;
+    if (retiredTombstone) {
+      const now = Date.now();
+      retiredTombstone.deletedAt = now;
+      retiredTombstone.updatedAt = now;
+      books.push(retiredTombstone);
+      // Resolve the retired hash to the tombstone for the rest of the session
+      // (library/page.tsx reuses one index across a batch): a later import of
+      // that hash must un-delete the tombstone and merge the re-keyed row in.
+      if (lookupIndex) {
+        lookupIndex.byHash.set(retiredTombstone.hash, retiredTombstone);
+      }
+    }
 
     // The target config and its paired audio are durable. Duplicate and old
     // hash directories can now be retired without leaving a surviving config
     // pointing at files that were just deleted.
     const cleanupDirectories = new Set<string>();
     for (const duplicate of mergeResult?.duplicates ?? []) {
-      duplicate.deletedAt = Date.now();
+      // Stamp updatedAt too, or the retirement loses row-level LWW at peers.
+      duplicate.deletedAt = duplicate.updatedAt = Date.now();
       cleanupDirectories.add(getDir(duplicate));
     }
     if (metaHashMatch && oldBookDir && oldBookDir !== getDir(book)) {
@@ -1146,7 +1202,7 @@ export async function fetchBookDetails(
 
 /**
  * Refresh metadata for a single book by re-opening and re-parsing its file.
- * Updates series info, language, and other metadata fields without modifying
+ * Updates series info, language, page count, and other metadata fields without modifying
  * user-edited titles or reading progress.
  * Returns true if the metadata was successfully refreshed.
  */
@@ -1167,6 +1223,8 @@ export async function refreshBookMetadata(fs: FileSystem, book: Book): Promise<b
     if (primaryLanguage) {
       book.primaryLanguage = primaryLanguage;
     }
+    // Books imported before #6662 have no import-time page count; fill it in.
+    book.pageCount = getBookDocPageCount(bookDoc, book.format);
 
     // Update series info from metadata
     if (book.metadata?.belongsTo?.series) {
@@ -1174,7 +1232,7 @@ export async function refreshBookMetadata(fs: FileSystem, book: Book): Promise<b
       const series = Array.isArray(belongsTo) ? belongsTo[0] : belongsTo;
       if (series) {
         book.metadata.series = formatTitle(series.name);
-        book.metadata.seriesIndex = parseFloat(series.position || '0');
+        book.metadata.seriesIndex = parseSeriesPosition(series.position);
         if (series.total) book.metadata.seriesTotal = parseInt(series.total, 10);
       }
     }

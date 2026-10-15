@@ -27,6 +27,7 @@ const SORT_BY_ORDER: LibrarySortByType[] = [
   LibrarySortByType.Title,
   LibrarySortByType.Author,
   LibrarySortByType.Format,
+  LibrarySortByType.Pages,
   LibrarySortByType.Series,
   LibrarySortByType.Updated,
   LibrarySortByType.Created,

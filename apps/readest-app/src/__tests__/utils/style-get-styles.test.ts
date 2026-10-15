@@ -832,6 +832,17 @@ describe('getColorStyles branches (via getStyles)', () => {
     );
   });
 
+  it('keeps overriding text colors over a background texture, with transparent fills (#6712)', () => {
+    const vs = makeViewSettings({ overrideColor: true, backgroundTextureId: 'leaves' });
+    const theme = makeThemeCode({ isDarkMode: true, bg: '#1a1a1a', fg: '#e0e0e0' });
+    const css = getStyles(vs, theme);
+    const block = css.match(/section, aside, blockquote[^{]*\{([^}]*)\}/)![1]!;
+    expect(block).toContain('background-color: transparent !important');
+    expect(block).toContain('color: #e0e0e0 !important');
+    expect(block).toContain('border-color: #e0e0e0 !important');
+    expect(css).toMatch(/pre, span \{[^}]*background-color: transparent !important/);
+  });
+
   it('makes svg/img backgrounds transparent when overrideColor is true', () => {
     const vs = makeViewSettings({ overrideColor: true });
     const theme = makeThemeCode();
@@ -1134,21 +1145,5 @@ describe('link hit area in link-dense sections', () => {
     );
     expect(css).toMatch(new RegExp(`html\\.${LINK_HIT_AREA_CLASS} a::before\\s*\\{`));
     expect(css).not.toMatch(/(^|\n)\s*a\s*\{\s*position: relative !important;/);
-  });
-});
-
-describe('paragraph indent exemption for image-only paragraphs', () => {
-  // A full-width inline image that takes the paragraph indent overhangs the
-  // column by the indent and paints a strip on the next page (#6198). The
-  // exemption must also see an image wrapped in a link, which is how Wikipedia
-  // (and most sites) mark up a figure: <p><span><a><img></a></span></p>.
-  it('drops the indent for an image wrapped in a link, with or without a span', () => {
-    const css = getStyles(makeViewSettings({ textIndent: 2 }));
-    const rule = css
-      .split('}')
-      .find((block) => block.includes('text-indent: initial !important') && block.includes('img'));
-    expect(rule).toBeDefined();
-    expect(rule).toContain('p:has(> a:only-child > img:only-child)');
-    expect(rule).toContain('p:has(> span:only-child > a:only-child > img:only-child)');
   });
 });

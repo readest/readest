@@ -105,6 +105,20 @@ const customTranslatorFieldsSchema = z
   })
   .catchall(fieldEnvelopeWithCipher);
 
+const customTTSFieldsSchema = z
+  .object({
+    name: fieldEnvelopeSchema.optional(),
+    baseUrl: fieldEnvelopeSchema.optional(),
+    model: fieldEnvelopeSchema.optional(),
+    instructions: fieldEnvelopeSchema.optional(),
+    disabled: fieldEnvelopeSchema.optional(),
+    addedAt: fieldEnvelopeSchema.optional(),
+    updatedAt: fieldEnvelopeSchema.optional(),
+    // Encrypted-credential field, omitted when the publisher was locked.
+    apiKey: fieldEnvelopeWithCipher.optional(),
+  })
+  .catchall(fieldEnvelopeWithCipher);
+
 const translationPromptFieldsSchema = z
   .object({
     name: fieldEnvelopeSchema.optional(),
@@ -185,6 +199,13 @@ export const KIND_ALLOWLIST: Record<string, KindSpec> = {
     maxSchemaVersion: 1,
     maxRowsPerUser: 100,
     fields: translationPromptFieldsSchema,
+    binary: false,
+  },
+  custom_tts: {
+    minSchemaVersion: 1,
+    maxSchemaVersion: 1,
+    maxRowsPerUser: 50,
+    fields: customTTSFieldsSchema,
     binary: false,
   },
   settings: {

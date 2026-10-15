@@ -413,6 +413,12 @@ const colorPanelItems = [
     section: 'TTS',
   },
   {
+    id: 'settings.tts.customServices',
+    labelKey: _('Custom TTS Services'),
+    keywords: ['tts', 'custom', 'voice', 'api key', 'openai', 'kokoro', 'speech', 'byok'],
+    section: 'TTS',
+  },
+  {
     id: 'settings.tts.playerStyle',
     labelKey: _('TTS Player Style'),
     keywords: ['tts', 'player', 'mini', 'style', 'cover', 'full', 'minimal'],

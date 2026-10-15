@@ -95,7 +95,7 @@ const BookDetailEdit: React.FC<BookDetailEditProps> = ({
       field: 'seriesIndex',
       label: _('Series Index'),
       isNumber: true,
-      value: String(metadata.seriesIndex || ''),
+      value: String(metadata.seriesIndex ?? ''),
       placeholder: _('Enter series index'),
     },
     {
