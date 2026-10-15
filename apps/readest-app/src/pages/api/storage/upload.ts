@@ -141,7 +141,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       res.status(200).json({
         uploadUrl,
         fileKey,
-        usage: reservation.usage + fileSize,
+        usage: reservation.usage + (reservation.inserted ? fileSize : 0),
         quota,
       });
     } catch (error) {
