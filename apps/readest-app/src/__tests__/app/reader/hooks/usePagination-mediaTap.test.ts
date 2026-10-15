@@ -66,11 +66,13 @@ const setup = (columnCount = 1) => {
   const { result } = renderHook(() =>
     usePagination(BOOK_KEY, { current: view as unknown as FoliateView }, { current: container }),
   );
-  const tap = async (screenX: number) => {
+  // The reader's iframe handlers post from the app window itself.
+  const tap = async (screenX: number, source: MessageEventSource | null = window) => {
     await act(async () => {
       await result.current.handlePageFlip(
         new MessageEvent('message', {
           data: { bookKey: BOOK_KEY, type: 'iframe-single-click', screenX, media: MEDIA },
+          source,
         }),
       );
     });
@@ -109,6 +111,15 @@ describe('usePagination tap on a page-filling image (#6424)', () => {
     );
     expect(h.setHoveredBookKey).not.toHaveBeenCalled();
     expect(view.next).not.toHaveBeenCalled();
+  });
+
+  test('media attached by a message from another window is not opened', async () => {
+    const { tap } = setup();
+    const frame = document.createElement('iframe');
+    document.body.appendChild(frame);
+    await tap(500, frame.contentWindow);
+    frame.remove();
+    expect(postSpy).not.toHaveBeenCalled();
   });
 
   test('with tap-to-turn disabled, a tap anywhere opens the viewer', async () => {
