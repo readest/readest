@@ -14,6 +14,8 @@ export const SCROLL_WRAPPER_FIT_CLASS = 'scroll-wrapper-fit';
 // scroll itself (its box reports no overflow) — it's wrapped instead.
 const SCROLLABLE_SELECTOR = `.${SCROLL_WRAPPER_CLASS}`;
 const SCROLL_WRAPPER_TOLERANCE_PX = 4;
+// How far a link's enlarged hit area (LINK_HIT_AREA_CLASS in ./style.ts) reaches past it.
+export const LINK_HIT_AREA_PX = 10;
 const SCROLL_WRAPPER_TOUCH_SCROLL_FLAG = 'data-readest-scroll-wrapper-touch-scroll';
 
 const canScrollX = (el: Element) => el.scrollWidth - el.clientWidth > SCROLL_WRAPPER_TOLERANCE_PX;
@@ -33,8 +35,10 @@ export const findScrollableBox = (target: EventTarget | null): HTMLElement | nul
   if (!target || !('closest' in target)) return null;
   let el: Element | null = (target as Element).closest(SCROLLABLE_SELECTOR);
   while (el) {
+    // A fit wrapper is overflow:visible and can't scroll, whatever its scroll sizes say.
+    const fits = el.classList.contains(SCROLL_WRAPPER_FIT_CLASS);
     // Either axis: a tall code block scrolls vertically though it fits horizontally.
-    if (canScrollX(el) || canScrollY(el)) return el as HTMLElement;
+    if (!fits && (canScrollX(el) || canScrollY(el))) return el as HTMLElement;
     el = el.parentElement?.closest(SCROLLABLE_SELECTOR) ?? null;
   }
   return null;
@@ -220,9 +224,20 @@ const hoistNegativeMargins = (
 /**
  * Toggle SCROLL_WRAPPER_FIT_CLASS: a table within tolerance of its column fits
  * (overflow:visible — not a scroll container), a wider one stays overflow:auto.
+ *
+ * A link's enlarged hit area is an absolutely positioned box that counts in the
+ * wrapper's scrollWidth, so a right-aligned link in the last column made a table
+ * that fits scroll by a few pixels (#6857). Overflow no wider than that hit area
+ * still fits when the table's own box is within the column.
  */
 export const updateTableFit = (wrapper: HTMLElement) => {
-  const fits = wrapper.scrollWidth - wrapper.clientWidth <= SCROLL_WRAPPER_TOLERANCE_PX;
+  const overflow = wrapper.scrollWidth - wrapper.clientWidth;
+  const table = wrapper.querySelector<HTMLElement>(':scope > table');
+  const fits =
+    overflow <= SCROLL_WRAPPER_TOLERANCE_PX ||
+    (overflow <= LINK_HIT_AREA_PX + SCROLL_WRAPPER_TOLERANCE_PX &&
+      !!table?.querySelector('a') &&
+      table.offsetWidth - wrapper.clientWidth <= SCROLL_WRAPPER_TOLERANCE_PX);
   wrapper.classList.toggle(SCROLL_WRAPPER_FIT_CLASS, fits);
 };
 
