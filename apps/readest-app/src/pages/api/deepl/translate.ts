@@ -12,6 +12,9 @@ import { UsageStatsManager } from '@/utils/usage';
 
 const DEFAULT_DEEPL_FREE_API = 'https://api-free.deepl.com/v2/translate';
 const DEFAULT_DEEPL_PRO_API = 'https://api.deepl.com/v2/translate';
+// Clients send one paragraph, one selection or a short list of release notes per request.
+const MAX_TEXT_ITEMS = 100;
+const MAX_TEXT_CHARS = 50_000;
 
 interface KVNamespace {
   get(key: string): Promise<string | null>;
@@ -112,33 +115,56 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
     source_lang: sourceLang = 'AUTO',
     target_lang: targetLang = 'EN',
     use_cache: useCache = false,
-  }: { text: string[]; source_lang: string; target_lang: string; use_cache: boolean } = req.body;
+  }: { text: unknown; source_lang: string; target_lang: string; use_cache: boolean } = req.body;
+
+  if (!Array.isArray(text) || !text.every((item): item is string => typeof item === 'string')) {
+    return res.status(400).json({ error: 'Invalid text' });
+  }
+  if (
+    text.length > MAX_TEXT_ITEMS ||
+    text.reduce((sum, item) => sum + item.length, 0) > MAX_TEXT_CHARS
+  ) {
+    return res.status(413).json({ error: 'Too much text' });
+  }
 
   try {
-    const translations = await Promise.all(
+    const cached = await Promise.all(
       text.map(async (singleText) => {
-        if (!singleText?.trim()) {
+        if (!singleText.trim() || !useCache || !hasKVCache) return null;
+        try {
+          const cacheKey = generateCacheKey(singleText, sourceLang, targetLang);
+          return await env['TRANSLATIONS_KV']!.get(cacheKey);
+        } catch (cacheError) {
+          console.error('Cache retrieval error:', cacheError);
+          return null;
+        }
+      }),
+    );
+
+    // Check the quota for the whole request up front so one request can't
+    // overshoot it by fanning out parallel upstream calls.
+    const uncachedChars = text.reduce(
+      (sum, singleText, i) => (singleText.trim() && !cached[i] ? sum + singleText.length : sum),
+      0,
+    );
+    if (uncachedChars > 0) {
+      if (!user || !token) return res.status(401).json({ error: ErrorCodes.UNAUTHORIZED });
+      await checkDailyUsage(user.id, token, uncachedChars);
+    }
+
+    const translations = await Promise.all(
+      text.map(async (singleText, i) => {
+        if (!singleText.trim()) {
           return { text: '', daily_usage: 0 };
         }
-        if (useCache && hasKVCache) {
-          try {
-            const cacheKey = generateCacheKey(singleText, sourceLang, targetLang);
-            const cachedTranslation = await env['TRANSLATIONS_KV']!.get(cacheKey);
-
-            if (cachedTranslation) {
-              return {
-                text: cachedTranslation,
-                daily_usage: 0,
-                detected_source_language: sourceLang,
-              };
-            }
-          } catch (cacheError) {
-            console.error('Cache retrieval error:', cacheError);
-          }
+        const cachedTranslation = cached[i];
+        if (cachedTranslation) {
+          return {
+            text: cachedTranslation,
+            daily_usage: 0,
+            detected_source_language: sourceLang,
+          };
         }
-
-        if (!user || !token) return res.status(401).json({ error: ErrorCodes.UNAUTHORIZED });
-        await checkDailyUsage(user?.id, token, singleText.length);
 
         return await callDeepLAPI(
           singleText,
