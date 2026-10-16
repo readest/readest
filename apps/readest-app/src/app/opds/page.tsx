@@ -587,7 +587,7 @@ export default function BrowserPage() {
           const password = passwordRef.current || '';
           const customHeaders = customHeadersRef.current;
           const useProxy = needsProxy(url);
-          let downloadUrl = useProxy ? getProxiedURL(url, '', true, customHeaders) : url;
+          const downloadUrl = useProxy ? getProxiedURL(url, true, customHeaders) : url;
           const headers: Record<string, string> = {
             'User-Agent': READEST_OPDS_USER_AGENT,
             Accept: '*/*',
@@ -596,10 +596,7 @@ export default function BrowserPage() {
           if (username || password) {
             const authHeader = await probeAuth(url, username, password, useProxy, customHeaders);
             if (authHeader) {
-              if (!useProxy) {
-                headers['Authorization'] = authHeader;
-              }
-              downloadUrl = useProxy ? getProxiedURL(url, authHeader, true, customHeaders) : url;
+              headers['Authorization'] = authHeader;
             }
           }
 
@@ -844,7 +841,7 @@ export default function BrowserPage() {
         Object.keys(customHeaders).length === 0 &&
         !needsNativeImageFetch(url)
       ) {
-        return needsProxy(url) ? getProxiedURL(url, '', true) : url;
+        return needsProxy(url) ? getProxiedURL(url, true) : url;
       }
 
       const cachedKey = getOPDSImageCacheFilename(url, cacheVersion);
@@ -854,17 +851,14 @@ export default function BrowserPage() {
         return await appService.getImageURL(cachedPath);
       } else {
         const useProxy = needsProxy(url);
-        let downloadUrl = useProxy ? getProxiedURL(url, '', true, customHeaders) : url;
+        const downloadUrl = useProxy ? getProxiedURL(url, true, customHeaders) : url;
         const headers: Record<string, string> = {
           ...(!useProxy ? customHeaders : {}),
         };
         if (username || password) {
           const authHeader = await probeAuth(url, username, password, useProxy, customHeaders);
           if (authHeader) {
-            if (!useProxy) {
-              headers['Authorization'] = authHeader;
-            }
-            downloadUrl = useProxy ? getProxiedURL(url, authHeader, true, customHeaders) : url;
+            headers['Authorization'] = authHeader;
           }
         }
         await downloadFile({

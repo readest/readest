@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { corsAllMethods, runMiddleware } from '@/utils/cors';
 import { isLanAddress } from '@/utils/network';
+import { publicFetch } from '@/utils/publicFetch';
 import { KoSyncProxyPayload } from '@/types/kosync';
 
 const validEndpoints = [
@@ -62,7 +63,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     let body = clientBody ? JSON.stringify(clientBody) : null;
     let response: Response;
     for (let hop = 0; ; hop++) {
-      response = await fetch(targetUrl, {
+      response = await publicFetch(targetUrl, {
         method: requestMethod,
         headers: {
           ...clientHeaders,
@@ -70,7 +71,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           'Content-Type': 'application/json',
         },
         body,
-        redirect: 'manual',
       });
       const location = response.headers.get('location');
       if (![301, 302, 303, 307, 308].includes(response.status) || !location) break;

@@ -148,6 +148,26 @@ describe('applyOPDSCover', () => {
     );
   });
 
+  it('sends the credential to the web proxy as a header, not in the proxied URL', async () => {
+    vi.mocked(needsProxy).mockReturnValue(true);
+    vi.mocked(probeAuth).mockResolvedValue('Basic dXNlcjpwYXNz');
+
+    await applyOPDSCover({
+      appService: createMockAppService(),
+      book: createBook(),
+      coverUrl: 'https://cwa.example.com/cover/1',
+      username: 'user',
+      password: 'pass',
+    });
+
+    expect(vi.mocked(getProxiedURL).mock.calls.flat()).not.toContain('Basic dXNlcjpwYXNz');
+    expect(downloadFile).toHaveBeenCalledWith(
+      expect.objectContaining({
+        headers: expect.objectContaining({ Authorization: 'Basic dXNlcjpwYXNz' }),
+      }),
+    );
+  });
+
   it('keeps the extracted cover when the OPDS cover fails to download', async () => {
     vi.mocked(downloadFile).mockRejectedValue(new Error('404 Not Found'));
     const appService = createMockAppService();

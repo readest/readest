@@ -67,7 +67,7 @@ async function downloadAndImport(
   const customHeaders = normalizeCustomHeaders(catalog.customHeaders);
   const useProxy = needsProxy(url);
 
-  let downloadUrl = useProxy ? getProxiedURL(url, '', true, customHeaders) : url;
+  const downloadUrl = useProxy ? getProxiedURL(url, true, customHeaders) : url;
   const headers: Record<string, string> = {
     'User-Agent': READEST_OPDS_USER_AGENT,
     Accept: '*/*',
@@ -77,10 +77,7 @@ async function downloadAndImport(
   if (username || password) {
     const authHeader = await probeAuth(url, username, password, useProxy, customHeaders);
     if (authHeader) {
-      if (!useProxy) {
-        headers['Authorization'] = authHeader;
-      }
-      downloadUrl = useProxy ? getProxiedURL(url, authHeader, true, customHeaders) : url;
+      headers['Authorization'] = authHeader;
     }
   }
 
