@@ -831,6 +831,9 @@ export class ComicTextDetector {
     if (this.#terminated)
       return Promise.reject(new Error('Comic text detector has been terminated'));
     if (this.#sessionPromise) return this.#sessionPromise;
+    runtime.env.wasm.numThreads = globalThis.crossOriginIsolated
+      ? Math.min(8, Math.ceil((navigator.hardwareConcurrency || 1) / 2))
+      : 1;
     runtime.env.wasm.proxy = typeof document !== 'undefined';
     runtime.env.wasm.wasmPaths = '/vendor/onnxruntime/';
     const sessionPromise = fetchVerifiedModelAsset({
