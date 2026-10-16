@@ -36,7 +36,10 @@ describe('Xiaomi MiMo native TTS compatibility', () => {
   beforeEach(() => {
     fetchMock.mockReset();
     current = service();
-    provider = new OpenAICompatibleSpeechProvider(() => [current], async () => true);
+    provider = new OpenAICompatibleSpeechProvider(
+      () => [current],
+      async () => true,
+    );
   });
 
   it('lists the eight MiMo voices without calling the nonexistent /audio/voices', async () => {
