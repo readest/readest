@@ -703,6 +703,9 @@ function M.open(opts, internal)
 
     menu = Menu:new{
         name             = "readest_library",
+        -- CoverBrowser's list and mosaic items format authors through
+        -- `menu.ui.bookinfo` since KOReader #16148 (#6823).
+        ui               = opts.ui,
         is_borderless    = true,
         is_popout        = false,
         covers_fullscreen = true,
