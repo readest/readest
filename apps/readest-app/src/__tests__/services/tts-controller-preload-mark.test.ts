@@ -136,6 +136,24 @@ describe('TTSController look-ahead keeps the sentence being read (#6850)', () =>
     expect(tts.getLastRange()?.toString().trim()).toBe('Three.');
   });
 
+  // A windowed engine looks ahead by duration, across many paragraphs.
+  test('next sentence after a long windowed look-ahead stays in the paragraph', async () => {
+    const paragraphs = Array.from({ length: 8 }, (_, i) => `<p>P${i}a. P${i}b.</p>`).join('');
+    const { controller, tts } = await startOn(`<p>One. Two. Three.</p>${paragraphs}`);
+    vi.mocked(controller.ttsClient.getCapabilities).mockReturnValue({
+      wordBoundaries: false,
+      mediaClock: false,
+      gapControl: false,
+      liveRateChange: false,
+      windowedPrefetch: true,
+    });
+
+    await controller.preloadNextSSML();
+    await controller.forward(true);
+
+    expect(tts.getLastRange()?.toString().trim()).toBe('Three.');
+  });
+
   test('previous sentence after a preload stays in the paragraph', async () => {
     const { controller, tts } = await startOn('<p>One. Two. Three.</p><p>Four. Five.</p>');
 
