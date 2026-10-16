@@ -763,6 +763,16 @@ export async function importBook(
       const retiredHash = existingBook.hash;
       if (retiredHash && retiredHash !== hash) {
         retiredTombstone = { ...existingBook, hash: retiredHash };
+        // Finished is the one status that asserts about the retired file's
+        // content ("read to the end of those bytes"), and the reader's
+        // automatic status never demotes, so park the row unread the same way
+        // the manual "Mark as Unread" does — progress, location and notes
+        // stay. Stamp the field's LWW timestamp, or a peer still holding the
+        // retired status wins it back on the next sync.
+        if (existingBook.readingStatus === 'finished') {
+          existingBook.readingStatus = 'unread';
+          existingBook.readingStatusUpdatedAt = Date.now();
+        }
       }
       existingBook.hash = hash;
       existingBook.format = book.format;
