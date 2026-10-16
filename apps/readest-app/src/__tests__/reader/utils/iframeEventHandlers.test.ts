@@ -292,11 +292,20 @@ describe('single-tap opens image gallery / table zoom in reflowable books (#4584
     cell.appendChild(anchor);
     table.appendChild(cell);
 
-    tap(handlers, false, anchor);
+    // The same tap as `tap`, keeping the click so foliate's link handler gets it
+    const { handleClick, handleClickCapture, handleMousedown, handleMouseup } = handlers;
+    const click = mouseEvent({ target: anchor });
+    handleMousedown('book-1', mouseEvent());
+    handleMouseup('book-1', mouseEvent());
+    handleClickCapture('book-1', click);
+    handleClick('book-1', { current: false }, false, false, click);
+    vi.advanceTimersByTime(260);
 
     const types = postedMessages().map((m) => m['type']);
     expect(types).not.toContain('iframe-open-media');
     expect(types).not.toContain('iframe-single-click');
+    expect(click.preventDefault).not.toHaveBeenCalled();
+    expect(click.stopImmediatePropagation).not.toHaveBeenCalled();
   });
 
   test('reflowable: tap on a table wrapped in a link still opens the table zoom', async () => {
