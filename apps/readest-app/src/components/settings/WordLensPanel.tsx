@@ -17,6 +17,11 @@ import {
 } from '@/services/wordlens/difficulty';
 import { toWordLensSource } from '@/app/reader/utils/wordlensSection';
 import {
+  deleteWordLensGlossaryEntry,
+  saveWordLensGlossaryEntry,
+} from '@/services/wordlens/customGlossary';
+import type { WordLensGlossaryEntry, WordLensGlossaryScope } from '@/types/book';
+import {
   deletePack,
   ensurePack,
   fetchManifest,
@@ -72,6 +77,64 @@ const WordLensPanel: React.FC<WordLensPanelProps> = ({ bookKey, onBack }) => {
   const [resolving, setResolving] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [progress, setProgress] = useState<number | null>(null);
+  const [glossaryTerm, setGlossaryTerm] = useState('');
+  const [glossaryDefinition, setGlossaryDefinition] = useState('');
+  const [glossaryScope, setGlossaryScope] = useState<WordLensGlossaryScope>('global');
+  const [editingId, setEditingId] = useState<string | null>(null);
+
+  const bookHash = bookData?.book?.hash || bookKey.split('-')[0] || '';
+  const seriesName = bookData?.book?.metadata?.series?.trim() || '';
+  const glossaryEntries: WordLensGlossaryEntry[] = [
+    ...(settings.globalViewSettings?.wordLensGlossary ?? []).filter(
+      (entry) => entry.scope === 'global' || entry.scope === 'series',
+    ),
+    ...(viewSettings.wordLensGlossary ?? []).filter(
+      (entry) => entry.scope === 'book' && entry.bookHash === bookHash,
+    ),
+  ];
+
+  const scopeLabel = (entry: WordLensGlossaryEntry) => {
+    if (entry.scope === 'book') return _('This book');
+    if (entry.scope === 'series') return entry.series || _('This series');
+    return _('Global');
+  };
+
+  const resetGlossaryForm = () => {
+    setGlossaryTerm('');
+    setGlossaryDefinition('');
+    setGlossaryScope('global');
+    setEditingId(null);
+  };
+
+  const handleSaveGlossary = async () => {
+    const saved = await saveWordLensGlossaryEntry(envConfig, bookKey, {
+      id: editingId ?? undefined,
+      term: glossaryTerm,
+      definition: glossaryDefinition,
+      scope: editingId
+        ? (glossaryEntries.find((entry) => entry.id === editingId)?.scope ?? glossaryScope)
+        : glossaryScope,
+    });
+    if (saved) resetGlossaryForm();
+  };
+
+  const handleEditGlossary = (entry: WordLensGlossaryEntry) => {
+    setEditingId(entry.id);
+    setGlossaryTerm(entry.term);
+    setGlossaryDefinition(entry.definition);
+    setGlossaryScope(entry.scope);
+  };
+
+  const handleDeleteGlossary = (id: string) => {
+    void deleteWordLensGlossaryEntry(envConfig, bookKey, id);
+    if (editingId === id) resetGlossaryForm();
+  };
+
+  useEffect(() => {
+    if (glossaryScope === 'book' && !bookData?.book) {
+      setGlossaryScope('global');
+    }
+  }, [glossaryScope, bookData?.book]);
 
   // Fetch the manifest once on mount to filter the hint-language selector and
   // resolve the data-pack row. If it fails, the selector falls back to the full
@@ -405,6 +468,90 @@ const WordLensPanel: React.FC<WordLensPanelProps> = ({ bookKey, onBack }) => {
           checked={autoDownload}
           onChange={handleToggleAutoDownload}
         />
+      </BoxedList>
+
+      <BoxedList
+        title={_('Glossary')}
+        description={_(
+          'Custom hints shown with Word Lens. The full definition is kept; the hint above the word is shortened to fit.',
+        )}
+        data-setting-id='settings.wordlens.glossary'
+      >
+        <div className='flex flex-col gap-2 px-4 py-3'>
+          <input
+            type='text'
+            value={glossaryTerm}
+            onChange={(event) => setGlossaryTerm(event.target.value)}
+            placeholder={_('Term')}
+            aria-label={_('Term')}
+            className='input input-sm input-bordered w-full'
+          />
+          <input
+            type='text'
+            value={glossaryDefinition}
+            onChange={(event) => setGlossaryDefinition(event.target.value)}
+            placeholder={_('Definition')}
+            aria-label={_('Definition')}
+            className='input input-sm input-bordered w-full'
+          />
+          <div className='flex items-center justify-between gap-2'>
+            <select
+              aria-label={_('Scope')}
+              value={glossaryScope}
+              disabled={!!editingId}
+              onChange={(event) => setGlossaryScope(event.target.value as WordLensGlossaryScope)}
+              className='select select-sm select-bordered max-w-[60%]'
+            >
+              <option value='global'>{_('Global')}</option>
+              <option value='book' disabled={!bookData?.book}>
+                {_('This book')}
+              </option>
+              <option value='series' disabled={!seriesName}>
+                {_('This series')}
+              </option>
+            </select>
+            <div className='flex gap-2'>
+              {editingId && (
+                <button type='button' onClick={resetGlossaryForm} className='btn btn-ghost btn-sm'>
+                  {_('Cancel')}
+                </button>
+              )}
+              <button
+                type='button'
+                onClick={() => void handleSaveGlossary()}
+                disabled={!glossaryTerm.trim() || !glossaryDefinition.trim()}
+                className='btn btn-contrast btn-sm'
+              >
+                {editingId ? _('Save') : _('Add')}
+              </button>
+            </div>
+          </div>
+        </div>
+        {glossaryEntries.map((entry) => (
+          <div key={entry.id} className='flex items-start justify-between gap-3 px-4 py-3'>
+            <div className='min-w-0'>
+              <div className='truncate text-sm font-medium'>{entry.term}</div>
+              <div className='text-base-content/70 line-clamp-2 text-xs'>{entry.definition}</div>
+              <div className='text-base-content/50 mt-1 text-xs'>{scopeLabel(entry)}</div>
+            </div>
+            <div className='flex shrink-0 gap-1'>
+              <button
+                type='button'
+                onClick={() => handleEditGlossary(entry)}
+                className='btn btn-ghost btn-xs'
+              >
+                {_('Edit')}
+              </button>
+              <button
+                type='button'
+                onClick={() => handleDeleteGlossary(entry.id)}
+                className='btn btn-ghost btn-xs'
+              >
+                {_('Delete')}
+              </button>
+            </div>
+          </div>
+        ))}
       </BoxedList>
     </div>
   );

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import type { ViewSettings } from '@/types/book';
+import type { ViewSettings, WordLensGlossaryEntry } from '@/types/book';
 import type { AppService } from '@/types/system';
 
 // Mock the pack loader: it's the boundary we assert the gate reaches. Resolving
@@ -109,5 +109,67 @@ describe('refreshSectionGlosses Traditional Chinese hints', () => {
     expect(await glossOf('', 'zh-TW')).toBe('s2twp:电脑');
     expect(await glossOf('', 'zh-Hant-TW')).toBe('s2twp:电脑'); // Android / iOS locale shape
     expect(await glossOf('', 'zh-Hans-CN')).toBe('电脑');
+  });
+});
+
+const glossaryEntry = (term: string, definition: string): WordLensGlossaryEntry => ({
+  id: term,
+  term,
+  definition,
+  scope: 'global',
+});
+
+describe('refreshSectionGlosses custom glossary', () => {
+  it('applies a custom hint when the pack is missing', async () => {
+    const doc = document.implementation.createHTMLDocument('t');
+    doc.body.innerHTML = '<p>The fox</p>';
+    await refreshSectionGlosses(
+      doc,
+      viewSettings(),
+      ctx({ globalGlossary: [glossaryEntry('fox', 'an animal')] }),
+    );
+    expect(mockedLoad).toHaveBeenCalled();
+    expect(doc.querySelector('ruby.wl-gloss > rt')?.textContent).toBe('an animal');
+  });
+
+  it('applies a custom hint without loading a pack when no hint language resolves', async () => {
+    const doc = document.implementation.createHTMLDocument('t');
+    doc.body.innerHTML = '<p>The fox</p>';
+    await refreshSectionGlosses(
+      doc,
+      viewSettings(),
+      ctx({ appLang: '', globalGlossary: [glossaryEntry('fox', 'an animal')] }),
+    );
+    expect(mockedLoad).not.toHaveBeenCalled();
+    expect(doc.querySelector('ruby.wl-gloss > rt')?.textContent).toBe('an animal');
+  });
+
+  it('lets the custom definition replace the pack hint for the same word', async () => {
+    mockedLoad.mockResolvedValue({
+      lookup: (word: string) =>
+        word.toLowerCase() === 'computer' ? { rank: 99999, gloss: '电脑' } : null,
+    } as unknown as GlossIndex);
+    const doc = document.implementation.createHTMLDocument('t');
+    doc.body.innerHTML = '<p>The computer</p>';
+    await refreshSectionGlosses(
+      doc,
+      viewSettings({ wordLensHintLang: 'zh' }),
+      ctx({ globalGlossary: [glossaryEntry('computer', 'a machine I own')] }),
+    );
+    const hints = [...doc.querySelectorAll('ruby.wl-gloss > rt')].map((node) => node.textContent);
+    expect(hints).toEqual(['a machine I own']);
+    expect(mockedConvert).not.toHaveBeenCalled();
+  });
+
+  it('does not gloss custom entries while Word Lens is off', async () => {
+    const doc = document.implementation.createHTMLDocument('t');
+    doc.body.innerHTML = '<p>The fox</p>';
+    await refreshSectionGlosses(
+      doc,
+      viewSettings({ wordLensEnabled: false }),
+      ctx({ globalGlossary: [glossaryEntry('fox', 'an animal')] }),
+    );
+    expect(doc.querySelector('ruby.wl-gloss')).toBeNull();
+    expect(mockedLoad).not.toHaveBeenCalled();
   });
 });
