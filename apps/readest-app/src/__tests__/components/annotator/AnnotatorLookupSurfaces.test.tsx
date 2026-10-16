@@ -591,14 +591,14 @@ describe('the instant dictionary dismisses clean unless told to keep the selecti
 // `footnote-selection`, not the section listeners that latch isTextSelected, so
 // the quick action never ran there and only the toolbar opened.
 describe('quick actions run on a selection made in the footnote popup', () => {
-  const selectInPopup = async (detail: Record<string, unknown> = {}) => {
+  const selectInPopup = async (detail: Record<string, unknown> = {}, word = 'fortune') => {
     if (!document.querySelector('#gridcell-book-1')) {
       const gridCell = document.createElement('div');
       gridCell.id = 'gridcell-book-1';
       document.body.append(gridCell);
     }
     const paragraph = document.createElement('p');
-    paragraph.textContent = 'fortune';
+    paragraph.textContent = word;
     document.body.append(paragraph);
     const range = document.createRange();
     range.selectNodeContents(paragraph);
@@ -691,6 +691,43 @@ describe('quick actions run on a selection made in the footnote popup', () => {
 
     expect(document.getSelection()?.rangeCount).toBe(0);
     expect(screen.getByTestId('dictionary-surface').dataset['word']).toBe('fortune');
+  });
+
+  // On desktop the lookup leaves the rest of the popup clickable: a new press
+  // there is the reader's next gesture, not iOS re-confirming the dropped
+  // selection, so it looks up the next word or closes the lookup (#6869).
+  const pressInPopup = async () => {
+    await act(async () => {
+      await eventDispatcher.dispatch('footnote-pointerdown', {
+        key: 'book-1',
+        pointerType: 'mouse',
+      });
+    });
+  };
+
+  test('a word selected in the popup under the lookup is looked up', async () => {
+    render(<Annotator bookKey='book-1' contentInsets={{ top: 0, right: 0, bottom: 0, left: 0 }} />);
+    await selectInPopup({ quickAction: true });
+    expect(screen.getByTestId('dictionary-surface').dataset['word']).toBe('fortune');
+
+    await pressInPopup();
+    await selectInPopup({ quickAction: true }, 'lanterns');
+
+    expect(screen.getByTestId('dictionary-surface').dataset['word']).toBe('lanterns');
+  });
+
+  test('a click on empty space in the popup closes the lookup', async () => {
+    render(<Annotator bookKey='book-1' contentInsets={{ top: 0, right: 0, bottom: 0, left: 0 }} />);
+    await selectInPopup({ quickAction: true });
+    expect(screen.getByTestId('dictionary-surface')).toBeTruthy();
+
+    await pressInPopup();
+    await act(async () => {
+      await eventDispatcher.dispatch('footnote-selection', { key: 'book-1' });
+      await new Promise((resolve) => setTimeout(resolve, 600));
+    });
+
+    expect(screen.queryByTestId('dictionary-surface')).toBeNull();
   });
 
   test('a report taken mid-drag still opens the toolbar', async () => {
