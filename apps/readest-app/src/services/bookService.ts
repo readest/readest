@@ -497,6 +497,23 @@ export interface ImportBookInternalOptions extends ImportBookOptions {
   osPlatform?: OsPlatform;
 }
 
+/**
+ * Import a book file (path, remote URL, content URI or in-memory File) into
+ * the library, deduplicating against existing entries.
+ *
+ * Identity is the file's partialMD5 hash. An exact-hash hit is refreshed in
+ * place — only file-derived metadata is overridden, reading data is kept. A
+ * new hash whose metadata matches an existing book (metaHash, or the
+ * uuid-stripping stableHash for builds that re-mint their identifier, #5959)
+ * re-keys that row instead: file-derived metadata and pageCount are
+ * overridden, the merged best config (progress, location, notes, paired
+ * audio) migrates to the incoming hash's directory, a `finished` reading
+ * status is parked back to `unread` because it asserted about the retired
+ * file's content, and a deletedAt tombstone retires the old hash so sync
+ * peers drop it (#6703). Transient imports skip all of this and are never
+ * persisted. Resolves to the surviving row and rejects if the file cannot
+ * be opened.
+ */
 export async function importBook(
   fs: FileSystem,
   // file might be:
