@@ -767,11 +767,17 @@ export async function importBook(
         // content ("read to the end of those bytes"), and the reader's
         // automatic status never demotes, so park the row unread the same way
         // the manual "Mark as Unread" does — progress, location and notes
-        // stay. Stamp the field's LWW timestamp, or a peer still holding the
-        // retired status wins it back on the next sync.
+        // stay. Stamp strictly ahead of the retired status, not just now: a
+        // peer may have stamped it with a clock ahead of this device, and
+        // both status merges (the file-sync strict >, the cloud pull's
+        // pickFresherReadingStatus) would then hand the win back to finished
+        // on the next sync.
         if (existingBook.readingStatus === 'finished') {
           existingBook.readingStatus = 'unread';
-          existingBook.readingStatusUpdatedAt = Date.now();
+          existingBook.readingStatusUpdatedAt = Math.max(
+            (existingBook.readingStatusUpdatedAt ?? 0) + 1,
+            Date.now(),
+          );
         }
       }
       existingBook.hash = hash;

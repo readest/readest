@@ -264,6 +264,32 @@ describe('importBook metaHash deduplication', () => {
     expect(tombstone?.readingStatus).toBe('finished');
   });
 
+  // A peer may have stamped the finished status with a clock ahead of this
+  // device. The flip must land strictly ahead of the retired stamp, or the
+  // field-level sync merges (the file-sync side compares with a strict >)
+  // restore finished on the next pull.
+  it('keeps the unread stamp ahead of a future-dated finished status', async () => {
+    const futureStamp = Date.now() + 3_600_000;
+    const existingBook = makeBook({
+      hash: 'old-hash-123',
+      metaHash: getMetadataHash(TEST_METADATA),
+      readingStatus: 'finished',
+      readingStatusUpdatedAt: futureStamp,
+    });
+    const books: Book[] = [existingBook];
+
+    mockPartialMD5.mockResolvedValue('new-hash-456');
+    setupMockBookDoc();
+
+    await service.importBook(
+      new File(['new content'], 'test.epub', { type: 'application/epub+zip' }),
+      books,
+    );
+
+    expect(existingBook.readingStatus).toBe('unread');
+    expect(existingBook.readingStatusUpdatedAt!).toBeGreaterThan(futureStamp);
+  });
+
   it('keeps the finished status when the same bytes are re-imported', async () => {
     const existingBook = makeBook({
       hash: 'old-hash-123',
