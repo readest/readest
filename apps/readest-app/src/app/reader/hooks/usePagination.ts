@@ -360,8 +360,9 @@ export const usePagination = (
                 (screenX >= centerStartX && screenX <= centerEndX)
               ) {
                 // A page-filling image/table leaves nowhere else to tap for
-                // its viewer, so the center opens it (#6424).
-                if (msg.data.media) {
+                // its viewer, so the center opens it (#6424). Only media
+                // from the reader's own handlers, which post from this window.
+                if (msg.data.media && msg.source === window) {
                   window.postMessage(
                     { type: 'iframe-open-media', bookKey, ...msg.data.media },
                     '*',
