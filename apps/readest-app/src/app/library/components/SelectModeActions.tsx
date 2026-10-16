@@ -9,6 +9,7 @@ import {
   MdOutlineCloudDownload,
   MdWifiTethering,
   MdLabelOutline,
+  MdArchive,
 } from 'react-icons/md';
 import { IoShareSocialOutline } from 'react-icons/io5';
 import { LuFolderPlus } from 'react-icons/lu';
@@ -45,6 +46,7 @@ interface SelectModeActionsProps {
   // works on every Tauri platform (no OS share sheet involved).
   sendNearbyEnabled?: boolean;
   onSendNearby?: () => void;
+  onPack?: () => void;
   onDelete: () => void;
   onCancel: () => void;
   // Reports the popup's rendered height (including its safe-area padding) so the
@@ -67,6 +69,7 @@ const SelectModeActions: React.FC<SelectModeActionsProps> = ({
   onSend,
   sendNearbyEnabled = false,
   onSendNearby,
+  onPack,
   onDelete,
   onCancel,
   onHeightChange,
@@ -196,6 +199,18 @@ const SelectModeActions: React.FC<SelectModeActionsProps> = ({
           >
             <MdWifiTethering />
             <div>{_('Nearby')}</div>
+          </button>
+        )}
+        {onPack && (
+          <button
+            onClick={onPack}
+            className={clsx(
+              'flex flex-col items-center justify-center gap-1',
+              (!hasSelection || !hasValidBooks) && 'btn-disabled opacity-50',
+            )}
+          >
+            <MdArchive />
+            <div>{_('Pack')}</div>
           </button>
         )}
         <button

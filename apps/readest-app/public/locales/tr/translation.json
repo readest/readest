@@ -1,4 +1,9 @@
 {
+  "Pack": "Paketle",
+  "Creating package for {{count}} book(s)...": "{{count}} kitap paketleniyor...",
+  "Exported {{filename}}": "{{filename}} dışa aktarıldı",
+  "No local files available to pack": "Paketlenecek yerel dosya bulunamadı",
+  "Failed to export package": "Paket dışa aktarılamadı",
   "On hold": "Askıda",
   "Mark as On hold": "Askıda olarak işaretle",
   "(detected)": "(algılandı)",
