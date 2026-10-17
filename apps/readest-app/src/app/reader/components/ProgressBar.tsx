@@ -11,6 +11,7 @@ import { useBookDataStore } from '@/store/bookDataStore';
 import {
   formatNumber,
   formatProgress,
+  formatProgressPercent,
   getChapterTickFractions,
   getChapterEndLocation,
   getReferencePageInfo,
@@ -98,7 +99,15 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
       : null;
   const progressInfo = referenceInfo
     ? `${referenceInfo.current}${isVertical ? ' · ' : ' / '}${referenceInfo.total}`
-    : formatProgress(pageInfo?.current, pageInfo?.total, template, localize, lang);
+    : template === '{percent}%'
+      ? formatProgressPercent(
+          progress?.fraction,
+          pageInfo?.current,
+          pageInfo?.total,
+          localize,
+          lang,
+        )
+      : formatProgress(pageInfo?.current, pageInfo?.total, template, localize, lang);
 
   // Sticky progress bar is horizontal-only; vertical mode keeps its side footer.
   const stickyBarActive = viewSettings.showStickyProgressBar && !isVertical;
