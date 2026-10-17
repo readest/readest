@@ -74,6 +74,27 @@ describe('parseSSMLLang', () => {
     const ssml = ssmlNoLang('<mark name="0"/>안녕하세요');
     expect(parseSSMLLang(ssml)).toBe('ko');
   });
+
+  it('should detect Turkish from text when no lang and no primaryLang', () => {
+    const ssml = ssmlNoLang(
+      '<mark name="0"/>Bu kitap bir zamanlar çok uzak bir ülkede yaşayan küçük bir prensin hikayesini anlatıyor.',
+    );
+    expect(parseSSMLLang(ssml)).toBe('tr');
+  });
+
+  it('should detect Spanish from text when no lang and no primaryLang', () => {
+    const ssml = ssmlNoLang(
+      '<mark name="0"/>Este es un ejemplo de texto en español para probar la detección de idioma.',
+    );
+    expect(parseSSMLLang(ssml)).toBe('es');
+  });
+
+  it('should detect German from text when no lang and no primaryLang', () => {
+    const ssml = ssmlNoLang(
+      '<mark name="0"/>Dies ist ein Beispieltext auf Deutsch für die Spracherkennung.',
+    );
+    expect(parseSSMLLang(ssml)).toBe('de');
+  });
 });
 
 describe('parseSSMLMarks', () => {
@@ -166,6 +187,15 @@ describe('parseSSMLMarks', () => {
       const { marks } = parseSSMLMarks(ssml);
 
       expect(marks[0]!.language).toBe('ko');
+    });
+
+    it('should detect Turkish language from text when no lang and no primaryLang', () => {
+      const ssml = ssmlNoLang(
+        '<mark name="0"/>Bu kitap bir zamanlar çok uzak bir ülkede yaşayan küçük bir prensin hikayesini anlatıyor.',
+      );
+      const { marks } = parseSSMLMarks(ssml);
+
+      expect(marks[0]!.language).toBe('tr');
     });
   });
 
