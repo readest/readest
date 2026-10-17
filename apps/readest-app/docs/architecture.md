@@ -523,6 +523,17 @@ End-to-end pipeline:
    (`src/services/send/inboxDrainer.ts`) imports it into the library through
    the standard ingest service.
 
+### 6.12 OCR plugin
+
+`src/plugins/ocr` bundles Tesseract and Japanese manga recognition behind the
+shared Worker protocol. It loads engines and pinned models on demand. The reader
+sends image URLs or transfers PDF page bitmaps and receives text blocks with
+coordinates and writing direction. Image preparation and inference run in the
+plugin worker; page scheduling, session caching, overlays, selection and dictionary
+actions stay in the reader. Cancellation drops stale results, and disabling OCR
+terminates the worker. Older webviews without 2D `OffscreenCanvas` load the same
+plugin engine on the main thread. The plugin ships with the app during early testing.
+
 ## 7. Native shell (`src-tauri`)
 
 The Tauri host is shared by desktop and mobile. The Rust side (`src-tauri/src`)

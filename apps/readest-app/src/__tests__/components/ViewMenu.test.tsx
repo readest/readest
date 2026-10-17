@@ -38,6 +38,9 @@ const currentViewSettings = {
 };
 
 const mockRecreateViewer = vi.fn();
+const mockSetOcrEnabled = vi.fn();
+const mockSetOcrLanguage = vi.fn();
+const mockViewState = { ocrEnabled: false, ocrLanguage: '' };
 const mockSaveViewSettings = vi.fn().mockResolvedValue(undefined);
 
 vi.mock('next/navigation', () => ({
@@ -59,9 +62,11 @@ vi.mock('@/store/readerStore', () => ({
   useReaderStore: () => ({
     getView: () => mockView,
     getViewSettings: () => currentViewSettings,
-    getViewState: () => ({}),
+    getViewState: () => mockViewState,
     getProgress: () => null,
     setViewSettings: vi.fn(),
+    setOcrEnabled: mockSetOcrEnabled,
+    setOcrLanguage: mockSetOcrLanguage,
     recreateViewer: mockRecreateViewer,
   }),
 }));
@@ -93,6 +98,12 @@ vi.mock('@/services/constants', () => ({
   MAX_CONTRAST: 200,
   MIN_CONTRAST: 50,
   CONTRAST_STEP: 10,
+  TRANSLATED_LANGS: {
+    en: 'English',
+    es: 'Español',
+    ja: '日本語',
+    'zh-CN': '简体中文',
+  },
 }));
 vi.mock('@/utils/style', () => ({ getStyles: vi.fn() }));
 vi.mock('@/utils/nav', () => ({ navigateToLogin: vi.fn() }));
@@ -112,6 +123,7 @@ describe('ViewMenu right-to-left pages toggle', () => {
     mockBookData.bookDoc.rendition = { layout: 'pre-paginated' };
     currentViewSettings.writingMode = 'auto';
     currentViewSettings.vertical = false;
+    mockViewState.ocrEnabled = false;
   });
 
   afterEach(() => {
@@ -168,6 +180,22 @@ describe('ViewMenu right-to-left pages toggle', () => {
       expect(mockView.book.dir).toBe('ltr');
       expect(mockRecreateViewer).toHaveBeenCalledWith(expect.anything(), 'book-1');
     });
+  });
+
+  it('closes the menu when toggling text recognition', () => {
+    const setIsDropdownOpen = vi.fn();
+
+    const { rerender } = render(
+      <ViewMenu bookKey='book-1' setIsDropdownOpen={setIsDropdownOpen} />,
+    );
+
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Recognize Text - OFF' }));
+
+    expect(mockSetOcrEnabled).toHaveBeenCalledWith('book-1', true);
+    expect(setIsDropdownOpen).toHaveBeenCalledWith(false);
+    mockViewState.ocrEnabled = true;
+    rerender(<ViewMenu bookKey='book-1' setIsDropdownOpen={setIsDropdownOpen} />);
+    expect(screen.getByRole('menuitem', { name: 'Recognize Text - ON' })).toBeTruthy();
   });
 });
 
