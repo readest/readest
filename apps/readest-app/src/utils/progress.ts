@@ -92,7 +92,8 @@ export function formatProgressPercent(
     return formatProgress(current, total, '{percent}%', localize, language, fractionDigits);
   }
   const atEnd = current !== undefined && current + 1 >= total;
-  const digits = !atEnd && total > 100 ? fractionDigits : 0;
+  if (atEnd) return '100%';
+  const digits = total > 100 ? fractionDigits : 0;
   const percent = Math.min(100, Math.max(0, fraction * 100));
   return `${percent.toFixed(digits)}%`;
 }

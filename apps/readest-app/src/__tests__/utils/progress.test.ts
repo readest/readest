@@ -98,6 +98,8 @@ describe('formatProgressPercent', () => {
 
   it('shows exactly 100% on the last page even with a sub-1 fraction', () => {
     expect(formatProgressPercent(0.999, 999, 1000)).toBe('100%');
+    // 0.99 would round to 99% at 0 decimals — the last-page rule must win
+    expect(formatProgressPercent(0.99, 79, 80)).toBe('100%');
   });
 
   it('clamps the fraction into 0-100', () => {
