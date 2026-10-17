@@ -5,13 +5,20 @@ import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 const h = vi.hoisted(() => ({
   config: { viewSettings: { sideBarTab: 'toc' } },
   setConfig: vi.fn(),
+  liveSettings: null as Record<string, unknown> | null,
+  getViewSettings: vi.fn(),
+  setViewSettings: vi.fn(),
   setHoveredBookKey: vi.fn(),
   setSearchBarVisible: vi.fn(),
   setSideBarVisible: vi.fn(),
 }));
 
 vi.mock('@/store/readerStore', () => ({
-  useReaderStore: () => ({ setHoveredBookKey: h.setHoveredBookKey }),
+  useReaderStore: () => ({
+    setHoveredBookKey: h.setHoveredBookKey,
+    getViewSettings: h.getViewSettings,
+    setViewSettings: h.setViewSettings,
+  }),
 }));
 
 vi.mock('@/store/sidebarStore', () => ({
@@ -75,6 +82,8 @@ describe('SidebarContent tab transitions', () => {
     vi.useFakeTimers();
     h.config.viewSettings.sideBarTab = 'toc';
     vi.clearAllMocks();
+    h.liveSettings = { sideBarTab: 'toc', ttsLocation: 'epubcfi(/6/4!/4/2)' };
+    h.getViewSettings.mockImplementation(() => h.liveSettings);
   });
 
   afterEach(() => {
@@ -138,5 +147,30 @@ describe('SidebarContent tab transitions', () => {
     act(() => vi.advanceTimersByTime(300));
     expect(h.setConfig).not.toHaveBeenCalled();
     expect(screen.getByText('bookmark content')).toBeTruthy();
+  });
+
+  test('keeps the live view settings in step so a later TTS write cannot restore the old tab', () => {
+    render(<SidebarContent bookDoc={{ toc: [] } as never} sideBarBookKey='book-1' />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'annotations tab' }));
+    expect(h.setViewSettings).not.toHaveBeenCalled();
+
+    act(() => vi.advanceTimersByTime(300));
+    expect(h.setViewSettings).toHaveBeenCalledOnce();
+    expect(h.setViewSettings).toHaveBeenCalledWith('book-1', {
+      sideBarTab: 'annotations',
+      ttsLocation: 'epubcfi(/6/4!/4/2)',
+    });
+  });
+
+  test('leaves the live view settings alone when the view is not open', () => {
+    h.liveSettings = null;
+    render(<SidebarContent bookDoc={{ toc: [] } as never} sideBarBookKey='book-1' />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'annotations tab' }));
+    act(() => vi.advanceTimersByTime(300));
+
+    expect(h.setConfig).toHaveBeenCalledOnce();
+    expect(h.setViewSettings).not.toHaveBeenCalled();
   });
 });

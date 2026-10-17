@@ -18,7 +18,7 @@ const SidebarContent: React.FC<{
   bookDoc: BookDoc;
   sideBarBookKey: string;
 }> = ({ bookDoc, sideBarBookKey }) => {
-  const { setHoveredBookKey } = useReaderStore();
+  const { setHoveredBookKey, getViewSettings, setViewSettings } = useReaderStore();
   const { setSideBarVisible, setSearchBarVisible } = useSidebarStore();
   const { getConfig, setConfig } = useBookDataStore();
   const { settings } = useSettingsStore();
@@ -77,6 +77,13 @@ const SidebarContent: React.FC<{
         setConfig(sideBarBookKey, {
           viewSettings: { ...latestConfig.viewSettings, sideBarTab: tab },
         });
+      }
+      // The live reader view keeps its own copy of the view settings, and
+      // writers such as the TTS highlight handler save that copy back over the
+      // book config. Update it too, or the next such write restores the old tab.
+      const liveSettings = getViewSettings(sideBarBookKey);
+      if (liveSettings) {
+        setViewSettings(sideBarBookKey, { ...liveSettings, sideBarTab: tab });
       }
     }, 300);
   };
