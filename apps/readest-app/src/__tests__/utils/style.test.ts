@@ -319,6 +319,22 @@ describe('transformStylesheet', () => {
       const result = transformStylesheet(css, VW, VH, VERTICAL);
       expect(result).toContain('color: var(--theme-fg-color)');
     });
+
+    it('replaces black written with an alpha digit', () => {
+      for (const black of ['#000f', '#000000ff']) {
+        const result = transformStylesheet(`.text { color: ${black}; }`, VW, VH, VERTICAL);
+        expect(result).toContain('color: var(--theme-fg-color);');
+      }
+    });
+
+    // `#000` matched the start of `#0000FF`, leaving `var(--theme-fg-color)0FF`,
+    // which is invalid when computed, so the link fell back to the text color (#6858)
+    it('keeps a color that only starts like black', () => {
+      for (const color of ['#0000FF', '#000080', '#0001', '#00000080']) {
+        const result = transformStylesheet(`a { color: ${color}; }`, VW, VH, VERTICAL);
+        expect(result).toContain(`color: ${color};`);
+      }
+    });
   });
 
   describe('fixed-layout documents', () => {
