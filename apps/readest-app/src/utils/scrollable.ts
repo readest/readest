@@ -14,7 +14,9 @@ export const SCROLL_WRAPPER_FIT_CLASS = 'scroll-wrapper-fit';
 // scroll itself (its box reports no overflow) — it's wrapped instead.
 const SCROLLABLE_SELECTOR = `.${SCROLL_WRAPPER_CLASS}`;
 const SCROLL_WRAPPER_TOLERANCE_PX = 4;
-// How far a link's enlarged hit area (LINK_HIT_AREA_CLASS in ./style.ts) reaches past it.
+// Set on <html> when links get an enlarged hit area (applyLinkHitArea in ./style.ts),
+// which reaches this far past each link.
+export const LINK_HIT_AREA_CLASS = 'link-hit-area';
 export const LINK_HIT_AREA_PX = 10;
 const SCROLL_WRAPPER_TOUCH_SCROLL_FLAG = 'data-readest-scroll-wrapper-touch-scroll';
 
@@ -232,13 +234,25 @@ const hoistNegativeMargins = (
  */
 export const updateTableFit = (wrapper: HTMLElement) => {
   const overflow = wrapper.scrollWidth - wrapper.clientWidth;
+  wrapper.classList.toggle(
+    SCROLL_WRAPPER_FIT_CLASS,
+    overflow <= SCROLL_WRAPPER_TOLERANCE_PX || overflowIsLinkHitArea(wrapper, overflow),
+  );
+};
+
+// The overflow is a link's hit area when hit areas are on, the table itself fits,
+// and a link's hit area reaches past the wrapper's right edge by that much.
+const overflowIsLinkHitArea = (wrapper: HTMLElement, overflow: number) => {
+  if (overflow > LINK_HIT_AREA_PX + SCROLL_WRAPPER_TOLERANCE_PX) return false;
+  if (!wrapper.ownerDocument.documentElement.classList.contains(LINK_HIT_AREA_CLASS)) return false;
   const table = wrapper.querySelector<HTMLElement>(':scope > table');
-  const fits =
-    overflow <= SCROLL_WRAPPER_TOLERANCE_PX ||
-    (overflow <= LINK_HIT_AREA_PX + SCROLL_WRAPPER_TOLERANCE_PX &&
-      !!table?.querySelector('a') &&
-      table.offsetWidth - wrapper.clientWidth <= SCROLL_WRAPPER_TOLERANCE_PX);
-  wrapper.classList.toggle(SCROLL_WRAPPER_FIT_CLASS, fits);
+  if (!table || table.offsetWidth - wrapper.clientWidth > SCROLL_WRAPPER_TOLERANCE_PX) return false;
+  const right = wrapper.getBoundingClientRect().left + wrapper.clientLeft + wrapper.clientWidth;
+  return [...table.querySelectorAll('a')].some(
+    (a) =>
+      a.getBoundingClientRect().right + LINK_HIT_AREA_PX - right >=
+      overflow - SCROLL_WRAPPER_TOLERANCE_PX,
+  );
 };
 
 /**

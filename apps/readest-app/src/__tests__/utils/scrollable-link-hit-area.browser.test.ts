@@ -45,6 +45,14 @@ const BODY = `
     <td class="right"><a href="https://duckduckgo.com/?q=Hemigrammus+erythrozonus">duckduckgo.com</a></td>
   </tr></tbody></table>
 `;
+// The same table with the link in the first cell and something else in the last
+// cell sticking out 8px: that overflow isn't the link's and must stay scrollable.
+const BODY_OTHER_OVERFLOW = `
+  <table><tbody><tr>
+    <td><a href="https://duckduckgo.com/">Glowlight Tetra</a></td>
+    <td class="right"><span style="position: relative; left: 8px">duckduckgo.com</span></td>
+  </tr></tbody></table>
+`;
 
 const poll = async (fn: () => boolean, timeout = 2000) => {
   const start = Date.now();
@@ -57,7 +65,7 @@ const poll = async (fn: () => boolean, timeout = 2000) => {
 
 let iframe: HTMLIFrameElement | null = null;
 
-const loadSection = async (extraCss = '') => {
+const loadSection = async (extraCss = '', { body = BODY, hitArea = true } = {}) => {
   iframe = document.createElement('iframe');
   iframe.style.cssText = 'width: 500px; height: 600px; border: 0';
   document.body.appendChild(iframe);
@@ -65,10 +73,10 @@ const loadSection = async (extraCss = '') => {
   doc.open();
   doc.write(
     `<!doctype html><html><head><style>${BOOK_CSS}${extraCss}</style>` +
-      `<style>${getStyles(viewSettings)}</style></head><body>${BODY}</body></html>`,
+      `<style>${getStyles(viewSettings)}</style></head><body>${body}</body></html>`,
   );
   doc.close();
-  applyLinkHitArea(doc);
+  if (hitArea) applyLinkHitArea(doc);
   applyScrollableStyle(doc);
   const wrapper = doc.querySelector<HTMLElement>(`.${SCROLL_WRAPPER_CLASS}`)!;
   await poll(() => wrapper.classList.contains(SCROLL_WRAPPER_FIT_CLASS));
@@ -94,6 +102,22 @@ describe('table fit with enlarged link hit areas (#6857)', () => {
   it('still scrolls a table a few pixels wider than its column', async () => {
     const { wrapper } = await loadSection('table { min-width: calc(100% + 8px); }');
     expect(wrapper.querySelector('table')!.offsetWidth).toBeGreaterThan(wrapper.clientWidth + 4);
+
+    expect(wrapper.classList.contains(SCROLL_WRAPPER_FIT_CLASS), 'table marked fit').toBe(false);
+  });
+
+  it('keeps overflow that is not a link hit area scrollable', async () => {
+    const { wrapper } = await loadSection('', { body: BODY_OTHER_OVERFLOW });
+    expect(wrapper.scrollWidth - wrapper.clientWidth).toBeGreaterThan(4);
+
+    expect(wrapper.classList.contains(SCROLL_WRAPPER_FIT_CLASS), 'table marked fit').toBe(false);
+  });
+
+  it('gives no hit-area allowance in a document without enlarged hit areas', async () => {
+    const { wrapper } = await loadSection('a { position: relative; left: 8px; }', {
+      hitArea: false,
+    });
+    expect(wrapper.scrollWidth - wrapper.clientWidth).toBeGreaterThan(4);
 
     expect(wrapper.classList.contains(SCROLL_WRAPPER_FIT_CLASS), 'table marked fit').toBe(false);
   });

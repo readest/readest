@@ -19,7 +19,12 @@ import { isDialogueHighlightActive } from './dialogueHighlight';
 import { readStoredAmbientIsDarkMode } from './ambientLight';
 import { INLINE_FORMATTING_SELECTOR } from './inlineTags';
 import { getOSPlatform } from './misc';
-import { LINK_HIT_AREA_PX, SCROLL_WRAPPER_CLASS, SCROLL_WRAPPER_FIT_CLASS } from './scrollable';
+import {
+  LINK_HIT_AREA_CLASS,
+  LINK_HIT_AREA_PX,
+  SCROLL_WRAPPER_CLASS,
+  SCROLL_WRAPPER_FIT_CLASS,
+} from './scrollable';
 
 /**
  * Build the resolved CSS font-family lists (serif / sans-serif / monospace)
@@ -470,7 +475,7 @@ const getColorStyles = (
 
 export const LINK_TOUCH_HOLD_CLASS = 'link-touch-hold';
 export const TEXT_SELECTED_CLASS = 'text-selected';
-export const LINK_HIT_AREA_CLASS = 'link-hit-area';
+export { LINK_HIT_AREA_CLASS };
 export const MAX_ENLARGED_LINKS = 1000;
 
 const getPageLayoutStyles = (
