@@ -8,21 +8,8 @@ import { SYNC_NOTES_INTERVAL_SEC } from '@/services/constants';
 import { throttle } from '@/utils/throttle';
 import { getXPointerFromCFI, getCFIFromXPointer, XCFI } from '@/utils/xcfi';
 import { getIndexFromCfi } from '@/utils/cfi';
+import { incomingNoteWins } from '@/utils/booknoteStamp';
 import { removeBookNoteOverlays } from '../utils/annotatorUtil';
-
-const latestChangeAt = (note: BookNote) => Math.max(note.updatedAt, note.deletedAt ?? 0);
-
-// Latest change wins, the same rule the server's dedupeLatest applies across
-// duplicate rows, so a highlight edited after a remote deletion survives and a
-// deletion made after a remote edit sticks. A tie goes to the tombstone.
-const incomingWins = (existing: BookNote, incoming: BookNote) => {
-  const existingAt = latestChangeAt(existing);
-  const incomingAt = latestChangeAt(incoming);
-  return (
-    incomingAt > existingAt ||
-    (incomingAt === existingAt && !!incoming.deletedAt && !existing.deletedAt)
-  );
-};
 
 export const useNotesSync = (bookKey: string) => {
   const { user } = useAuth();
@@ -199,7 +186,7 @@ export const useNotesSync = (bookKey: string) => {
       const oldNotes = config?.booknotes ?? [];
       const existingNote = oldNotes.find((oldNote) => oldNote.id === note.id);
       if (existingNote) {
-        if (incomingWins(existingNote, note)) {
+        if (incomingNoteWins(existingNote, note)) {
           // A tombstone from KOReader carries no cfi; keep the local anchor or
           // setConfig discards the note instead of recording the deletion. The
           // winner's deletedAt is pinned either way so a newer live note does
@@ -235,7 +222,7 @@ export const useNotesSync = (bookKey: string) => {
           // local copy, which is the one holding the cfi it was drawn with,
           // unless the local note was edited after that deletion.
           const local = oldNotes.find((oldNote) => oldNote.id === note.id);
-          if (local?.type === 'annotation' && !local.deletedAt && incomingWins(local, note)) {
+          if (local?.type === 'annotation' && !local.deletedAt && incomingNoteWins(local, note)) {
             getViewsById(bookKey.split('-')[0]!).forEach((v) => removeBookNoteOverlays(v, local));
             // Stamp the deletion as this device's own change so the next push
             // tombstones the duplicate row under its book hash as well.
