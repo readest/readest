@@ -50,6 +50,14 @@ interface ProgressBarProps {
   hidden?: boolean;
 }
 
+/**
+ * The in-page footer overlay: the book's bottom margin band carries the
+ * progress readout, remaining time/pages and clock/battery as a 3-zone row.
+ * The percent style reads the continuous fraction (formatProgressPercent)
+ * while page-number/reference styles keep foliate's location pair; the strip
+ * is display-only (subscribes to the progress store, never writes it), and
+ * taps toggle the info's visibility without touching settings (#5293).
+ */
 const ProgressBar: React.FC<ProgressBarProps> = ({
   bookKey,
   horizontalGap,
