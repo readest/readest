@@ -6,10 +6,10 @@ import type { Transformer } from './types';
 // `<style>` blocks and `style` attributes never reach it (#6873).
 const toColumnBreaks = (css: string) =>
   css
-    .replace(/(?<![\w-])page-break-before\s*:/gi, '-webkit-column-break-before:')
+    .replace(/(^|[^\w-])page-break-before\s*:/gi, '$1-webkit-column-break-before:')
     .replace(
-      /(?<![\w-])break-before\s*:\s*(avoid-)?page/gi,
-      (_, avoid) => `break-before: ${avoid ?? ''}column`,
+      /(^|[^\w-])break-before\s*:\s*(avoid-)?page/gi,
+      (_, before, avoid) => `${before}break-before: ${avoid ?? ''}column`,
     );
 
 export const styleTransformer: Transformer = {
