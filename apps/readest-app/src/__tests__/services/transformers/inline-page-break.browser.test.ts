@@ -63,6 +63,18 @@ describe('styleTransformer page breaks', () => {
     expect(column).toBe(1);
   });
 
+  test('a custom property named like a page break is left alone', async () => {
+    const html = await transform(
+      '<p style="--page-break-before: column; break-before: var(--page-break-before)">b</p>',
+    );
+    expect(html).toContain('--page-break-before: column; break-before: var(--page-break-before)');
+  });
+
+  test('text that reads like a style attribute is left alone', async () => {
+    const text = '<pre> style="page-break-before: always"</pre>';
+    expect(await transform(text)).toBe(text);
+  });
+
   test('a paragraph without a break stays in the first column', async () => {
     const column = await columnOfTarget('', '<p>a</p><p id="target" style="color: red">b</p>');
     expect(column).toBe(0);

@@ -6,9 +6,9 @@ import type { Transformer } from './types';
 // `<style>` blocks and `style` attributes never reach it (#6873).
 const toColumnBreaks = (css: string) =>
   css
-    .replace(/page-break-before\s*:/gi, '-webkit-column-break-before:')
+    .replace(/(?<![\w-])page-break-before\s*:/gi, '-webkit-column-break-before:')
     .replace(
-      /break-before\s*:\s*(avoid-)?page/gi,
+      /(?<![\w-])break-before\s*:\s*(avoid-)?page/gi,
       (_, avoid) => `break-before: ${avoid ?? ''}column`,
     );
 
@@ -38,8 +38,11 @@ export const styleTransformer: Transformer = {
       result = result.replace(full, `<style${attrs}>${toColumnBreaks(transformed)}</style>`);
     }
 
-    result = result.replace(/(\sstyle\s*=\s*)("[^"]*"|'[^']*')/gi, (attr, name, value) =>
-      /break-before/i.test(value) ? name + toColumnBreaks(value) : attr,
+    // Only `style` attributes inside opening tags, not text that reads like one.
+    result = result.replace(/<[a-z][^>"']*(?:(?:"[^"]*"|'[^']*')[^>"']*)*>/gi, (tag) =>
+      tag.replace(/(\sstyle\s*=\s*)("[^"]*"|'[^']*')/gi, (attr, name, value) =>
+        /break-before/i.test(value) ? name + toColumnBreaks(value) : attr,
+      ),
     );
 
     return result;
