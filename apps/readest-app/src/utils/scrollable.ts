@@ -241,18 +241,21 @@ export const updateTableFit = (wrapper: HTMLElement) => {
 };
 
 // The overflow is a link's hit area when hit areas are on, the table itself fits,
-// and a link's hit area reaches past the wrapper's right edge by that much.
+// and a link's hit area reaches past the wrapper's edge by that much.
 const overflowIsLinkHitArea = (wrapper: HTMLElement, overflow: number) => {
   if (overflow > LINK_HIT_AREA_PX + SCROLL_WRAPPER_TOLERANCE_PX) return false;
   if (!wrapper.ownerDocument.documentElement.classList.contains(LINK_HIT_AREA_CLASS)) return false;
   const table = wrapper.querySelector<HTMLElement>(':scope > table');
   if (!table || table.offsetWidth - wrapper.clientWidth > SCROLL_WRAPPER_TOLERANCE_PX) return false;
-  const right = wrapper.getBoundingClientRect().left + wrapper.clientLeft + wrapper.clientWidth;
-  return [...table.querySelectorAll('a')].some(
-    (a) =>
-      a.getBoundingClientRect().right + LINK_HIT_AREA_PX - right >=
-      overflow - SCROLL_WRAPPER_TOLERANCE_PX,
-  );
+  // Only overflow past the end edge scrolls: the right one, or the left one in RTL.
+  const rtl = wrapper.ownerDocument.defaultView?.getComputedStyle(wrapper).direction === 'rtl';
+  const left = wrapper.getBoundingClientRect().left + wrapper.clientLeft;
+  const right = left + wrapper.clientWidth;
+  return [...table.querySelectorAll('a')].some((a) => {
+    const rect = a.getBoundingClientRect();
+    const past = rtl ? left - rect.left : rect.right - right;
+    return past + LINK_HIT_AREA_PX >= overflow - SCROLL_WRAPPER_TOLERANCE_PX;
+  });
 };
 
 /**

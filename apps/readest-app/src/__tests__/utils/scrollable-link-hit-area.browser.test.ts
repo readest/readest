@@ -65,14 +65,14 @@ const poll = async (fn: () => boolean, timeout = 2000) => {
 
 let iframe: HTMLIFrameElement | null = null;
 
-const loadSection = async (extraCss = '', { body = BODY, hitArea = true } = {}) => {
+const loadSection = async (extraCss = '', { body = BODY, hitArea = true, dir = 'ltr' } = {}) => {
   iframe = document.createElement('iframe');
   iframe.style.cssText = 'width: 500px; height: 600px; border: 0';
   document.body.appendChild(iframe);
   const doc = iframe.contentDocument!;
   doc.open();
   doc.write(
-    `<!doctype html><html><head><style>${BOOK_CSS}${extraCss}</style>` +
+    `<!doctype html><html dir="${dir}"><head><style>${BOOK_CSS}${extraCss}</style>` +
       `<style>${getStyles(viewSettings)}</style></head><body>${body}</body></html>`,
   );
   doc.close();
@@ -97,6 +97,16 @@ describe('table fit with enlarged link hit areas (#6857)', () => {
 
     expect(wrapper.classList.contains(SCROLL_WRAPPER_FIT_CLASS), 'table marked fit').toBe(true);
     expect(doc.defaultView!.getComputedStyle(wrapper).overflowX).toBe('visible');
+  });
+
+  it('does the same for a link at the left edge of a right-to-left table', async () => {
+    const { wrapper } = await loadSection(
+      'td:last-child { padding-left: 0; } .right { text-align: left; }',
+      { dir: 'rtl' },
+    );
+    expect(wrapper.scrollWidth - wrapper.clientWidth).toBeGreaterThan(4);
+
+    expect(wrapper.classList.contains(SCROLL_WRAPPER_FIT_CLASS), 'table marked fit').toBe(true);
   });
 
   it('still scrolls a table a few pixels wider than its column', async () => {
