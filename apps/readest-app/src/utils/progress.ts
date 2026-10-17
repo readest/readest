@@ -67,6 +67,37 @@ export function formatProgress(
   }
 }
 
+/**
+ * The '{percent}%' readout driven by the continuous reading fraction instead
+ * of the page pair. The pair is foliate's location estimate floored to a
+ * size-per-location grid, so a percent derived from it stays put for several
+ * page turns and always reads low by up to one grid cell; the fraction is the
+ * same position before that flooring (chapter-local layout interpolated,
+ * section sizes byte-weighted). The display semantics are unchanged: still the
+ * book-level percent, with the same decimals rule as formatProgress (one
+ * decimal only mid-book on books with more than 100 locations, integer
+ * elsewhere, exactly 100% on the last page). Before the first relocate has
+ * populated `fraction`, falls back to the pair-based percent.
+ */
+export function formatProgressPercent(
+  fraction: number | undefined,
+  current: number | undefined,
+  total: number | undefined,
+  localize: boolean = false,
+  language: string = 'en',
+  fractionDigits: number = 1,
+): string {
+  if (total === undefined || total <= 0) return '';
+  if (fraction === undefined || !Number.isFinite(fraction)) {
+    return formatProgress(current, total, '{percent}%', localize, language, fractionDigits);
+  }
+  const atEnd = current !== undefined && current + 1 >= total;
+  if (atEnd) return '100%';
+  const digits = total > 100 ? fractionDigits : 0;
+  const percent = Math.min(100, Math.max(0, fraction * 100));
+  return `${percent.toFixed(digits)}%`;
+}
+
 export interface ReferencePageItem {
   label?: string;
   index?: number;
