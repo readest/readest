@@ -75,6 +75,11 @@ describe('styleTransformer page breaks', () => {
     expect(await transform(text)).toBe(text);
   });
 
+  test('another attribute whose value mentions a style is left alone', async () => {
+    const text = `<p title="Use style='page-break-before: always'">b</p>`;
+    expect(await transform(text)).toBe(text);
+  });
+
   test('a paragraph without a break stays in the first column', async () => {
     const column = await columnOfTarget('', '<p>a</p><p id="target" style="color: red">b</p>');
     expect(column).toBe(0);

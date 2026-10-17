@@ -39,9 +39,12 @@ export const styleTransformer: Transformer = {
     }
 
     // Only `style` attributes inside opening tags, not text that reads like one.
+    // Walking every quoted attribute keeps `style=` inside another value untouched.
     result = result.replace(/<[a-z][^>"']*(?:(?:"[^"]*"|'[^']*')[^>"']*)*>/gi, (tag) =>
-      tag.replace(/(\sstyle\s*=\s*)("[^"]*"|'[^']*')/gi, (attr, name, value) =>
-        /break-before/i.test(value) ? name + toColumnBreaks(value) : attr,
+      tag.replace(/(\s([\w:.-]+)\s*=\s*)("[^"]*"|'[^']*')/g, (attr, prefix, name, value) =>
+        name.toLowerCase() === 'style' && /break-before/i.test(value)
+          ? prefix + toColumnBreaks(value)
+          : attr,
       ),
     );
 
