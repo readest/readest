@@ -75,6 +75,7 @@ describe('Paginator navigation and a focused text field (browser)', () => {
     for (let i = 0; i < 50 && !paginator.getContents().some((c) => c.index === index); i++) {
       await new Promise((r) => setTimeout(r, 50));
     }
+    expect(paginator.getContents().some((c) => c.index === index)).toBe(true);
   };
 
   it('leaves focus in a text field focused while moving to a loaded section', async () => {
