@@ -42,6 +42,8 @@
             overlays = [ fenix.overlays.default ];
           };
 
+          linuxDependencies = pkgs.callPackage ./nix/dependencies.nix { };
+
           # ABI of the Android 34 emulator image. avdmanager only accepts an
           # image that is installed in the SDK, and the emulator only runs
           # images that match the host CPU, so both the SDK package list and
@@ -50,7 +52,9 @@
           # android-nixpkgs spells the x86_64 ABI as `x86-64` in attribute names.
           androidImageSuffix = lib.replaceStrings [ "_" ] [ "-" ] androidAbi;
 
-          toolchain = with pkgs.fenix.complete; [
+          # Match CI's stable compiler. Older rustix releases probe internal
+          # compiler attributes that recent nightly toolchains have removed.
+          toolchain = with pkgs.fenix.stable; [
             cargo
             clippy
             rust-src
@@ -91,9 +95,12 @@
             gst_all_1.gst-plugins-base
             gst_all_1.gst-plugins-good
             gst_all_1.gst-plugins-bad
-          ] ++ (optionals (!isDarwin) [
-            webkitgtk_4_1
-          ]) ++ (optionals isDarwin [
+          ] ++ (optionals (!isDarwin) (
+            [ webkitgtk_4_1 ]
+              # Expose CEF and dynamically loaded X11 libraries through the
+              # shell's LD_LIBRARY_PATH, using the same lists as the package.
+              ++ lib.unique (linuxDependencies.cef ++ linuxDependencies.x11)
+          )) ++ (optionals isDarwin [
             darwin.libiconv
           ]);
 
@@ -181,10 +188,10 @@
                       fi
                   '';
                   extraTargets = with pkgs.fenix.targets; [
-                    aarch64-linux-android.latest.rust-std
-                    armv7-linux-androideabi.latest.rust-std
-                    i686-linux-android.latest.rust-std
-                    x86_64-linux-android.latest.rust-std
+                    aarch64-linux-android.stable.rust-std
+                    armv7-linux-androideabi.stable.rust-std
+                    i686-linux-android.stable.rust-std
+                    x86_64-linux-android.stable.rust-std
                   ];
                   extraNativeBuildInputs = [
                     android-sdk
