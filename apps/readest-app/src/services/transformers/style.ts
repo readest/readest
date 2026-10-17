@@ -1,6 +1,17 @@
 import { transformStylesheet } from '@/utils/style';
 import type { Transformer } from './types';
 
+// In paginated mode each column is a page, and a `page` break doesn't break a
+// column. foliate-js rewrites these to column breaks in linked stylesheets;
+// `<style>` blocks and `style` attributes never reach it (#6873).
+const toColumnBreaks = (css: string) =>
+  css
+    .replace(/page-break-before\s*:/gi, '-webkit-column-break-before:')
+    .replace(
+      /break-before\s*:\s*(avoid-)?page/gi,
+      (_, avoid) => `break-before: ${avoid ?? ''}column`,
+    );
+
 export const styleTransformer: Transformer = {
   name: 'style',
 
@@ -24,8 +35,12 @@ export const styleTransformer: Transformer = {
         ctx.height || window.innerHeight,
         ctx.viewSettings.vertical,
       );
-      result = result.replace(full, `<style${attrs}>${transformed}</style>`);
+      result = result.replace(full, `<style${attrs}>${toColumnBreaks(transformed)}</style>`);
     }
+
+    result = result.replace(/(\sstyle\s*=\s*)("[^"]*"|'[^']*')/gi, (attr, name, value) =>
+      /break-before/i.test(value) ? name + toColumnBreaks(value) : attr,
+    );
 
     return result;
   },
