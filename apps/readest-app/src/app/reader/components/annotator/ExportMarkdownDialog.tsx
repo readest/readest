@@ -25,6 +25,7 @@ import {
 } from '@/app/reader/utils/annotatorUtil';
 import { renderNoteTemplate, formatBlockQuote } from '@/utils/note';
 import { getPublicCoverUrl } from '@/utils/cover';
+import { sanitizeNoteHtml } from '@/app/reader/utils/noteMarkdown';
 import {
   AnnotationLinkType,
   buildAnnotationAppUrl,
@@ -455,7 +456,7 @@ const ExportMarkdownDialog: React.FC<ExportMarkdownDialogProps> = ({
   // Convert markdown to HTML for preview
   const htmlPreview = useMemo(() => {
     if (!markdownPreview || isJson) return '';
-    const html = marked.parse(markdownPreview) as string;
+    const html = sanitizeNoteHtml(marked.parse(markdownPreview) as string);
     return (
       html
         .replace(/<a href=/g, '<a target="_blank" rel="noopener noreferrer" href=')

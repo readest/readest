@@ -21,6 +21,26 @@ const DOCTYPE_XHTML11 = `<!DOCTYPE html PUBLIC
 const RLM_HALF_SPACE_REGEX =
   /([\u0600-\u065F\u066A-\u06EF\u06FA-\u06FF\uFB50-\uFDFF\uFE70-\uFEFC])(\u200F+)(?=[\u0600-\u065F\u066A-\u06EF\u06FA-\u06FF\uFB50-\uFDFF\uFE70-\uFEFC])/gu;
 
+// DOMPurify's default URI allowlist plus the blob: and data: URLs that book
+// resources are loaded from.
+const BOOK_URI_REGEXP =
+  /^(?:(?:(?:f|ht)tps?|mailto|tel|callto|sms|cid|xmpp|blob|data):|[^a-z]|[a-z+.\-]+(?:[^a-z+.\-:]|$))/i;
+
+// Without data:, DOMPurify keeps data: URLs only on media tags (img, SVG image,
+// source, ...), so a data: link can't navigate the app window.
+const FRAGMENT_URI_REGEXP =
+  /^(?:(?:(?:f|ht)tps?|mailto|tel|callto|sms|cid|xmpp|blob):|[^a-z]|[a-z+.\-]+(?:[^a-z+.\-:]|$))/i;
+
+// Markup copied out of a book document into the app window (the table viewer,
+// paragraph mode) would run there with the app's privileges, and a `<style>`
+// would restyle the whole app, so it is sanitized again on the way in.
+export const sanitizeBookFragment = (html: string) =>
+  DOMPurify.sanitize(html, {
+    FORBID_TAGS: ['script', 'style', 'iframe', 'object', 'embed', 'form', 'input'],
+    FORBID_ATTR: ['srcdoc'],
+    ALLOWED_URI_REGEXP: FRAGMENT_URI_REGEXP,
+  });
+
 export const sanitizerTransformer: Transformer = {
   name: 'sanitizer',
 
@@ -38,8 +58,7 @@ export const sanitizerTransformer: Transformer = {
       WHOLE_DOCUMENT: true,
       FORBID_TAGS: ['script', 'iframe', 'object', 'embed'],
       FORBID_ATTR: ['srcdoc'],
-      ALLOWED_URI_REGEXP:
-        /^(?:(?:(?:f|ht)tps?|mailto|tel|callto|sms|cid|xmpp|blob|data):|[^a-z]|[a-z+.\-]+(?:[^a-z+.\-:]|$))/i,
+      ALLOWED_URI_REGEXP: BOOK_URI_REGEXP,
       ADD_TAGS: ['link', 'meta'],
       ADD_ATTR: (attributeName: string) => {
         const attrWhitelist = [
@@ -88,6 +107,23 @@ export const sanitizerTransformer: Transformer = {
     return serialized;
   },
 };
+
+// Manifest media types are hand-written: compare the bare lowercase type so
+// `Application/XHTML+xml; charset=utf-8` is still sanitized as XHTML.
+export const normalizeMediaType = (type: string | null | undefined) =>
+  (type ?? '').split(';')[0]!.trim().toLowerCase();
+
+const SECTION_DOCUMENT_TYPES = ['application/xhtml+xml', 'text/html', 'image/svg+xml'];
+
+// A spine section loads as a top-level document in the reader iframe. Any type
+// the sanitizers don't handle (XML, missing, unknown) could still render as an
+// active document, so only passive media types pass through; the rest is text.
+// A `+xml` subtype renders as an XML document whatever its top-level type.
+export const getSectionDocumentType = (type: string) =>
+  SECTION_DOCUMENT_TYPES.includes(type) ||
+  (/^(image|audio|video)\//.test(type) && !type.endsWith('+xml'))
+    ? type
+    : 'text/plain';
 
 // SVG spine sections are active documents too. Keep the SVG root/namespace;
 // the XHTML transformer adds HTML wrappers that cannot be used for SVG blobs.

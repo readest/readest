@@ -497,6 +497,23 @@ export interface ImportBookInternalOptions extends ImportBookOptions {
   osPlatform?: OsPlatform;
 }
 
+/**
+ * Import a book file (path, remote URL, content URI or in-memory File) into
+ * the library, deduplicating against existing entries.
+ *
+ * Identity is the file's partialMD5 hash. An exact-hash hit is refreshed in
+ * place — only file-derived metadata is overridden, reading data is kept. A
+ * new hash whose metadata matches an existing book (metaHash, or the
+ * uuid-stripping stableHash for builds that re-mint their identifier, #5959)
+ * re-keys that row instead: file-derived metadata and pageCount are
+ * overridden, the merged best config (progress, location, notes, paired
+ * audio) migrates to the incoming hash's directory, a `finished` reading
+ * status is parked back to `unread` because it asserted about the retired
+ * file's content, and a deletedAt tombstone retires the old hash so sync
+ * peers drop it (#6703). Transient imports skip all of this and are never
+ * persisted. Resolves to the surviving row and rejects if the file cannot
+ * be opened.
+ */
 export async function importBook(
   fs: FileSystem,
   // file might be:
@@ -763,6 +780,22 @@ export async function importBook(
       const retiredHash = existingBook.hash;
       if (retiredHash && retiredHash !== hash) {
         retiredTombstone = { ...existingBook, hash: retiredHash };
+        // Finished is the one status that asserts about the retired file's
+        // content ("read to the end of those bytes"), and the reader's
+        // automatic status never demotes, so park the row unread the same way
+        // the manual "Mark as Unread" does — progress, location and notes
+        // stay. Stamp strictly ahead of the retired status, not just now: a
+        // peer may have stamped it with a clock ahead of this device, and
+        // both status merges (the file-sync strict >, the cloud pull's
+        // pickFresherReadingStatus) would then hand the win back to finished
+        // on the next sync.
+        if (existingBook.readingStatus === 'finished') {
+          existingBook.readingStatus = 'unread';
+          existingBook.readingStatusUpdatedAt = Math.max(
+            (existingBook.readingStatusUpdatedAt ?? 0) + 1,
+            Date.now(),
+          );
+        }
       }
       existingBook.hash = hash;
       existingBook.format = book.format;
