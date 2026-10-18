@@ -44,6 +44,7 @@ const h = vi.hoisted(() => ({
   // Swapped per test: the fixed-layout branch of `onLoad` used to wire PDF-only
   // listeners, so a regression there is only visible with this on.
   book: { format: 'EPUB', isFixedLayout: false },
+  bookLanguage: (): string | string[] | undefined => 'en',
   // `onLoad` and friends, captured from the `useFoliateEvents` call so a test can
   // fire a section load and drive the listeners it registers on the section doc.
   foliateHandlers: null as null | Record<string, (event: Event) => void>,
@@ -102,7 +103,7 @@ vi.mock('@/store/bookDataStore', () => {
     saveConfig: h.saveConfig,
     getBookData: () => ({
       book: { format: h.book.format, primaryLanguage: 'en' },
-      bookDoc: { metadata: { language: 'en' } },
+      bookDoc: { metadata: { language: h.bookLanguage() } },
       isFixedLayout: h.book.isFixedLayout,
     }),
     updateBooknotes: h.updateBooknotes,
@@ -257,15 +258,15 @@ vi.mock('@/app/reader/components/annotator/AnnotationPopup', () => ({
 // way the real one does on every render, so rendering one without a word fails
 // the same way (#6419).
 vi.mock('@/app/reader/components/annotator/DictionaryPopup', () => ({
-  default: ({ word, onDismiss }: { word: string; onDismiss: () => void }) => (
-    <div data-testid='dictionary-surface' data-word={word.trim()}>
+  default: ({ word, lang, onDismiss }: { word: string; lang?: string; onDismiss: () => void }) => (
+    <div data-testid='dictionary-surface' data-word={word.trim()} data-language={lang}>
       <button type='button' data-testid='dictionary-dismiss' onClick={onDismiss} />
     </div>
   ),
 }));
 vi.mock('@/app/reader/components/annotator/DictionarySheet', () => ({
-  default: ({ word, onDismiss }: { word: string; onDismiss: () => void }) => (
-    <div data-testid='dictionary-surface' data-word={word.trim()}>
+  default: ({ word, lang, onDismiss }: { word: string; lang?: string; onDismiss: () => void }) => (
+    <div data-testid='dictionary-surface' data-word={word.trim()} data-language={lang}>
       <button type='button' data-testid='dictionary-dismiss' onClick={onDismiss} />
     </div>
   ),
@@ -281,7 +282,7 @@ vi.mock('@/app/reader/components/annotator/ProofreadPopup', () => ({
 
 import Annotator from '@/app/reader/components/annotator/Annotator';
 
-const selectText = async (ocr = false) => {
+const selectText = async (ocr = false, language?: string) => {
   // The selection effect needs the book's grid cell to measure against.
   if (!document.querySelector('#gridcell-book-1')) {
     const gridCell = document.createElement('div');
@@ -291,6 +292,7 @@ const selectText = async (ocr = false) => {
   const paragraph = document.createElement('p');
   paragraph.textContent = 'selected text';
   if (ocr) paragraph.setAttribute('data-readest-ocr-layer', '');
+  if (language) paragraph.lang = language;
   document.body.append(paragraph);
   const range = document.createRange();
   range.selectNodeContents(paragraph);
@@ -316,6 +318,7 @@ beforeEach(() => {
   h.appService = {};
   h.onNativeTouch = null;
   h.book = { format: 'EPUB', isFixedLayout: false };
+  h.bookLanguage = () => 'en';
   h.foliateHandlers = null;
   h.config.booknotes = [];
   h.isTextSelected.current = true;
@@ -329,6 +332,28 @@ beforeEach(() => {
 });
 
 afterEach(cleanup);
+
+test('keeps dictionary language fallback specific to OCR selections', async () => {
+  h.bookLanguage = () => undefined;
+  const { rerender } = render(
+    <Annotator bookKey='book-1' contentInsets={{ top: 0, right: 0, bottom: 0, left: 0 }} />,
+  );
+  await selectText();
+  act(() => h.actions?.['onDictionarySelection']?.());
+  expect(screen.getByTestId('dictionary-surface').dataset['language']).toBeUndefined();
+
+  h.bookLanguage = () => ['fr', 'en'];
+  rerender(<Annotator bookKey='book-1' contentInsets={{ top: 0, right: 0, bottom: 0, left: 0 }} />);
+  expect(screen.getByTestId('dictionary-surface').dataset['language']).toBe('fr');
+
+  await selectText(true, 'ja');
+  act(() => h.actions?.['onDictionarySelection']?.());
+  expect(screen.getByTestId('dictionary-surface').dataset['language']).toBe('ja');
+
+  await selectText(true);
+  act(() => h.actions?.['onDictionarySelection']?.());
+  expect(screen.getByTestId('dictionary-surface').dataset['language']).toBe('fr');
+});
 
 describe('a lookup surface survives the selection it is anchored to being republished', () => {
   test.each([

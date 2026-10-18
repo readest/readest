@@ -2776,10 +2776,13 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
   const editedNoteText =
     config.booknotes?.find((annotation) => annotation.id === noteEditorTarget?.annotationId)
       ?.note || '';
-  const metadataLanguage = getPrimaryLanguage(bookData.bookDoc?.metadata.language);
-  const dictionaryLanguage = selection
-    ? getOcrRangeLanguage(selection.range, metadataLanguage)
-    : metadataLanguage;
+  const metadataLanguage = bookData.bookDoc?.metadata.language;
+  const dictionaryLanguage =
+    selection && selectionIsOcr
+      ? getOcrRangeLanguage(selection.range, getPrimaryLanguage(metadataLanguage))
+      : Array.isArray(metadataLanguage)
+        ? metadataLanguage[0]
+        : metadataLanguage;
 
   return (
     <div ref={containerRef} role='toolbar' tabIndex={-1}>
