@@ -89,6 +89,12 @@ const PRELOAD_AHEAD_SEC = 180;
 const PRELOAD_MAX_PARAGRAPHS = 40;
 // Preload the next paragraphs this long after a paragraph starts at the latest.
 const PRELOAD_NEXT_AFTER_MS = 500;
+
+const isSameRange = (a: Range, b: Range) =>
+  a.startContainer.ownerDocument === b.startContainer.ownerDocument &&
+  a.compareBoundaryPoints(Range.START_TO_START, b) === 0 &&
+  a.compareBoundaryPoints(Range.END_TO_END, b) === 0;
+
 // An engine that does not answer in time (a server that never replies, a
 // voice list that never loads) is unavailable for this session: one stuck
 // engine must not hold up the others, the player sheet, or the next start.
@@ -234,6 +240,9 @@ export class TTSController extends EventTarget {
   #speakWordOffsets: (TTSWordOffset | null)[] = [];
   #speakWordRanges: (Range | null | undefined)[] = [];
   #suppressMarkHighlight = false;
+  // The mark dispatchSpeakMark last set on the live TTS, so a look-ahead that
+  // steps the TTS can put the sentence being read back (#6850).
+  #lastSetMark: { name: string; range: Range } | null = null;
   // True while the current chunk is highlighted word-by-word, with the most
   // recently highlighted word range. Lets re-highlights (e.g. on page relocate)
   // re-apply the word instead of redrawing the whole sentence over it.
@@ -1647,6 +1656,7 @@ export class TTSController extends EventTarget {
       estimateSentenceSeconds(ssml.replace(/<[^>]*>/g, ' '), this.ttsLang || 'en', voiceId);
     const rawSsmls: string[] = [];
     let sectionEnded = false;
+    const reading = tts.getLastRange();
     for (let i = 0; i < maxCount; i++) {
       const ssml = tts.next();
       if (!ssml) {
@@ -1660,6 +1670,15 @@ export class TTSController extends EventTarget {
     }
     for (let i = 0; i < rawSsmls.length; i++) {
       tts.prev();
+    }
+    // next() and prev() forget the sentence being read, even when there is no
+    // next block. Put it back, or "next sentence" starts from no sentence and
+    // skips the rest of the block: in a chapter that is one block, the chapter.
+    const last = this.#lastSetMark;
+    if (reading && last && isSameRange(last.range, reading)) {
+      this.#suppressMarkHighlight = true;
+      tts.setMark(last.name);
+      this.#suppressMarkHighlight = false;
     }
 
     // The document read ends inside the budget: carry on into what follows, so
@@ -2432,6 +2451,7 @@ export class TTSController extends EventTarget {
         this.#suppressMarkHighlight = wordMode;
         const range = this.#getTts()?.setMark(mark.name);
         this.#suppressMarkHighlight = false;
+        if (range) this.#lastSetMark = { name: mark.name, range };
         this.#speakWordsArmed = !!range;
         if (wordMode && range) {
           // The previous sentence's last word is no longer sounding.

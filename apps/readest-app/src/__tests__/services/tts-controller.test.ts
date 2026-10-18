@@ -2159,6 +2159,7 @@ describe('TTSController', () => {
           .mockReturnValue(undefined),
         prev: vi.fn(),
         doc: {},
+        getLastRange: vi.fn(),
       } as unknown as FoliateView['tts'];
 
       await controller.preloadNextSSML(1);
@@ -2178,6 +2179,7 @@ describe('TTSController', () => {
           .mockReturnValue(undefined),
         prev: vi.fn(),
         doc: {},
+        getLastRange: vi.fn(),
       } as unknown as FoliateView['tts'];
       controller.setSkipInlineAnnotations(true);
 
@@ -2197,6 +2199,7 @@ describe('TTSController', () => {
         next: vi.fn().mockReturnValue(paragraph),
         prev: vi.fn(),
         doc: {},
+        getLastRange: vi.fn(),
       } as unknown as FoliateView['tts'];
       controller.ttsClient.getCapabilities = vi.fn().mockReturnValue({
         wordBoundaries: true,
@@ -2218,6 +2221,7 @@ describe('TTSController', () => {
         next: vi.fn().mockReturnValueOnce('<speak>last</speak>').mockReturnValue(undefined),
         prev: vi.fn(),
         doc: {},
+        getLastRange: vi.fn(),
       } as unknown as FoliateView['tts'];
       controller.ttsClient.getCapabilities = vi.fn().mockReturnValue({
         wordBoundaries: true,
@@ -2241,6 +2245,7 @@ describe('TTSController', () => {
         next: vi.fn().mockReturnValueOnce('<speak>last</speak>').mockReturnValue(undefined),
         prev: vi.fn(),
         doc: {},
+        getLastRange: vi.fn(),
       } as unknown as FoliateView['tts'];
       controller.ttsClient.getCapabilities = vi.fn().mockReturnValue({
         wordBoundaries: true,
@@ -2267,6 +2272,7 @@ describe('TTSController', () => {
         next: vi.fn().mockReturnValueOnce('<speak>last</speak>').mockReturnValue(undefined),
         prev: vi.fn(),
         doc: {},
+        getLastRange: vi.fn(),
       } as unknown as FoliateView['tts'];
       (mockView as unknown as { language: object }).language = { isCJK: true, canonical: 'zh' };
       const sections = (
@@ -2300,6 +2306,7 @@ describe('TTSController', () => {
         next: vi.fn().mockReturnValueOnce('<speak>last</speak>').mockReturnValue(undefined),
         prev: vi.fn(),
         doc: {},
+        getLastRange: vi.fn(),
       } as unknown as FoliateView['tts'];
       const sections = (
         mockView.book as unknown as { sections: { createDocument: ReturnType<typeof vi.fn> }[] }
@@ -2317,6 +2324,7 @@ describe('TTSController', () => {
         next: vi.fn().mockReturnValue(`<speak>${'a'.repeat(450)}</speak>`),
         prev: vi.fn(),
         doc: {},
+        getLastRange: vi.fn(),
       } as unknown as FoliateView['tts'];
 
       await controller.preloadNextSSML();
@@ -2332,6 +2340,7 @@ describe('TTSController', () => {
         next: vi.fn().mockReturnValueOnce('<speak>one</speak>').mockReturnValue(undefined),
         prev: vi.fn(),
         doc: {},
+        getLastRange: vi.fn(),
       } as unknown as FoliateView['tts'];
       await controller.preloadNextSSML(1);
       const [, signal] = vi.mocked(controller.ttsClient.speak).mock.calls[0]!;
@@ -2348,6 +2357,7 @@ describe('TTSController', () => {
         next: vi.fn().mockReturnValueOnce('<speak>one</speak>').mockReturnValue(undefined),
         prev: vi.fn(),
         doc: {},
+        getLastRange: vi.fn(),
       } as unknown as FoliateView['tts'];
       await controller.preloadNextSSML(1);
       const [, signal] = vi.mocked(controller.ttsClient.speak).mock.calls[0]!;
@@ -2364,6 +2374,7 @@ describe('TTSController', () => {
         next: vi.fn().mockReturnValueOnce('<speak>one</speak>').mockReturnValue(undefined),
         prev: vi.fn(),
         doc: {},
+        getLastRange: vi.fn(),
       } as unknown as FoliateView['tts'];
       await controller.preloadNextSSML(1);
       const [, signal] = vi.mocked(controller.ttsClient.speak).mock.calls[0]!;
@@ -2384,6 +2395,7 @@ describe('TTSController', () => {
           .mockReturnValue(undefined),
         prev: vi.fn(),
         doc: {},
+        getLastRange: vi.fn(),
       } as unknown as FoliateView['tts'];
       const order: string[] = [];
       vi.mocked(controller.ttsClient.speak).mockImplementation((ssml: string) => {
@@ -2420,6 +2432,7 @@ describe('TTSController', () => {
           callOrder.push('prev');
         }),
         doc: {},
+        getLastRange: vi.fn(),
       } as unknown as FoliateView['tts'];
 
       // Use preprocessCallback to detect when async processing happens

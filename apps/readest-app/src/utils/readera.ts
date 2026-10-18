@@ -3,7 +3,9 @@
  *
  * A ReadEra backup is a plain zip whose `library.json` carries the whole
  * library: one entry per document with its metadata, reading position,
- * highlights (`citations`) and `bookmarks`. The book files themselves are not
+ * highlights (`citations`) and `bookmarks`. Newer ReadEra versions split the
+ * documents across `docs_1.json`, `docs_2.json`, … instead, each a plain array
+ * of the same entries. The book files themselves are not
  * part of the backup, so an import can only attach data to books the user
  * already has in Readest — hence the title/author matching below, and the
  * `doc_md5` fallback for the books it cannot name.
@@ -152,8 +154,9 @@ export const parseReadEraBackup = (content: string): ReadEraDoc[] | null => {
 };
 
 /**
- * Read `library.json` out of a ReadEra backup archive. Returns null when the
- * archive is not a ReadEra backup (or not a zip at all).
+ * Read `library.json` out of a ReadEra backup archive, or join the
+ * `docs_N.json` files of a newer backup into the same `{ docs }` shape.
+ * Returns null when the archive is not a ReadEra backup (or not a zip at all).
  */
 export const extractReadEraLibrary = async (data: ArrayBuffer): Promise<string | null> => {
   const { configureZip } = await import('./zip');
@@ -167,8 +170,20 @@ export const extractReadEraLibrary = async (data: ArrayBuffer): Promise<string |
         !item.directory &&
         (item.filename === 'library.json' || item.filename.endsWith('/library.json')),
     );
-    if (!entry || entry.directory) return null;
-    return await entry.getData(new TextWriter());
+    if (entry && !entry.directory) return await entry.getData(new TextWriter());
+    const docsNumber = (name: string) => Number(/(?:^|\/)docs_(\d+)\.json$/.exec(name)?.[1]);
+    const parts = entries
+      .filter((item) => docsNumber(item.filename) >= 0)
+      .sort((a, b) => docsNumber(a.filename) - docsNumber(b.filename));
+    if (!parts.length) return null;
+    const docs: unknown[] = [];
+    for (const part of parts) {
+      if (part.directory) continue;
+      const parsed: unknown = JSON.parse(await part.getData(new TextWriter()));
+      if (!Array.isArray(parsed)) return null;
+      docs.push(...parsed);
+    }
+    return JSON.stringify({ docs });
   } catch {
     return null;
   } finally {

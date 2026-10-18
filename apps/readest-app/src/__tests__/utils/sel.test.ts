@@ -763,6 +763,92 @@ describe('sel utilities', () => {
     });
   });
 
+  // #6803: a native word selection runs a word into the footnote marker
+  // right after it (letters followed by digits are one word), so the
+  // dictionary looked up "fox1".
+  describe('trimNoteMarkersFromWordRange', () => {
+    const select = (html: string, from: string, to: string) => {
+      const container = document.createElement('p');
+      container.innerHTML = html;
+      document.body.appendChild(container);
+      const find = (text: string) => {
+        const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT);
+        for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+          const i = n.textContent!.indexOf(text);
+          if (i >= 0) return { node: n, i };
+        }
+        throw new Error(`no ${text}`);
+      };
+      const start = find(from);
+      const end = find(to);
+      const range = document.createRange();
+      range.setStart(start.node, start.i);
+      range.setEnd(end.node, end.i + to.length);
+      return { container, range };
+    };
+
+    it.each([
+      [
+        'a linked noteref',
+        'The fox<sup><a epub:type="noteref" href="#n1">1</a></sup> jumps',
+        'fox',
+        '1',
+      ],
+      ['a bare superscript number', 'The fox<sup>12</sup> jumps', 'fox', '12'],
+      ['a bracketed marker link', 'The fox<a href="#n1">[3]</a> jumps', 'fox', '[3]'],
+      ['a starred superscript', 'The fox<sup>*</sup> jumps', 'fox', '*'],
+    ])('drops %s after the word', async (_, html, from, to) => {
+      const { container, range } = select(html, from, to);
+      const { trimNoteMarkersFromWordRange } = await import('@/utils/sel');
+
+      expect(trimNoteMarkersFromWordRange(range)).toBe(true);
+      expect(range.toString()).toBe('fox');
+      document.body.removeChild(container);
+    });
+
+    it('drops a marker that comes before the word', async () => {
+      const { container, range } = select('See <sup>2</sup>fox here', '2', 'fox');
+      const { trimNoteMarkersFromWordRange } = await import('@/utils/sel');
+
+      expect(trimNoteMarkersFromWordRange(range)).toBe(true);
+      expect(range.toString()).toBe('fox');
+      document.body.removeChild(container);
+    });
+
+    it('drops a marker when the range ends on the parent after it', async () => {
+      const container = document.createElement('p');
+      container.innerHTML = 'The fox<sup><a href="#n1">1</a></sup>';
+      document.body.appendChild(container);
+      const range = document.createRange();
+      range.setStart(container.firstChild!, 4);
+      range.setEnd(container, 2);
+      const { trimNoteMarkersFromWordRange } = await import('@/utils/sel');
+
+      expect(range.toString()).toBe('fox1');
+      expect(trimNoteMarkersFromWordRange(range)).toBe(true);
+      expect(range.toString()).toBe('fox');
+      document.body.removeChild(container);
+    });
+
+    it('keeps a superscript that carries letters', async () => {
+      const { container, range } = select('the 1<sup>st</sup> of May', '1', 'st');
+      const { trimNoteMarkersFromWordRange } = await import('@/utils/sel');
+
+      expect(trimNoteMarkersFromWordRange(range)).toBe(false);
+      expect(range.toString()).toBe('1st');
+      document.body.removeChild(container);
+    });
+
+    it('keeps a selection that is only the marker', async () => {
+      const { container, range } = select('The fox<sup>1</sup> jumps', '1', '1');
+      const { trimNoteMarkersFromWordRange } = await import('@/utils/sel');
+
+      expect(trimNoteMarkersFromWordRange(range)).toBe(false);
+      expect(range.toString()).toBe('1');
+      document.body.removeChild(container);
+    });
+  });
+
   describe('trimRangeWhitespaceAroundPoint', () => {
     it.each([
       ['world\u00a0', 'world'],
