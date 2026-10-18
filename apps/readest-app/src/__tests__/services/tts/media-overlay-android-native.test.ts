@@ -27,7 +27,7 @@ import type { BookDoc } from '@/libs/document';
 import type { TTSController } from '@/services/tts/TTSController';
 import {
   loadMediaOverlaySection,
-  type MediaOverlaySection,
+  MediaOverlaySection,
 } from '@/services/tts/mediaOverlay/MediaOverlaySection';
 import { MediaOverlayClient } from '@/services/tts/mediaOverlay/MediaOverlayClient';
 
@@ -101,5 +101,26 @@ describe('MediaOverlayClient on Android Tauri', () => {
     expect(controlCalls.find((call) => call['action'] === 'load')?.['path']).toBe(
       '/books/hash/audiobook/book.m4b',
     );
+  });
+  test('prepares embedded audio through native extraction without loading a blob', async () => {
+    await setup();
+    const loadBlob = vi.fn(async () => {
+      throw new Error('recording crossed the WebView');
+    });
+    const resolveNarrationPath = vi.fn(async (href: string) => `/cache/${href}`);
+    client.attachBook({ loadBlob, resolveNarrationPath } as unknown as BookDoc);
+    const utterance = client.speak(section.ssmlForBlock(0)!, new AbortController().signal);
+    await utterance.next();
+    await client.preloadSection(
+      new MediaOverlaySection(
+        section.pars.map((par) => ({ ...par, audioHref: 'next.m4b' })),
+        'en',
+      ),
+    );
+    expect(controlCalls.find((call) => call['action'] === 'queue-next')).toMatchObject({
+      path: '/cache/next.m4b',
+    });
+    expect(loadBlob).not.toHaveBeenCalled();
+    expect(writeFile).not.toHaveBeenCalled();
   });
 });

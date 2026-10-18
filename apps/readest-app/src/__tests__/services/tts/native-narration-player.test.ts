@@ -100,6 +100,21 @@ describe('NativeNarrationPlayer', () => {
     expect(remove).toHaveBeenCalledTimes(2);
   });
 
+  test('queues an extracted native file without copying it through the WebView', async () => {
+    const player = new NativeNarrationPlayer();
+    await player.loadPath('current.mp4', '/cache/current.mp4');
+    await player.preload('next.mp4', async () => '/cache/extracted-next.mp4');
+    await player.queuePrepared(21, 0, 60);
+    expect(controlCalls.at(-1)).toMatchObject({
+      action: 'queue-next',
+      path: '/cache/extracted-next.mp4',
+    });
+    expect(await player.loadPrepared('next.mp4')).toBe(true);
+    await player.shutdown();
+    expect(writeFile).not.toHaveBeenCalled();
+    expect(remove).not.toHaveBeenCalled();
+  });
+
   test('shutdown removes a preparation that finishes after release', async () => {
     const player = new NativeNarrationPlayer();
     let complete!: (blob: Blob) => void;
@@ -128,6 +143,44 @@ describe('NativeNarrationPlayer', () => {
     await player.shutdown();
   });
 
+  test('stages current and upcoming recordings with bounded bridge writes', async () => {
+    const bytes = Uint8Array.from({ length: 1024 * 1024 + 17 }, (_, i) => i % 251);
+    const blob = new Blob([bytes]);
+    // Reading the entire recording creates another large allocation before IPC.
+    vi.spyOn(blob, 'arrayBuffer').mockRejectedValue(new Error('whole-file allocation'));
+    const written: Uint8Array[] = [];
+    vi.mocked(writeFile).mockImplementation(async (_path, data) => {
+      expect(data).toBeInstanceOf(ReadableStream);
+      const reader = (data as ReadableStream<Uint8Array>).getReader();
+      const chunks: Uint8Array[] = [];
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        expect(value.byteLength).toBeLessThanOrEqual(256 * 1024);
+        chunks.push(value);
+      }
+      const result = new Uint8Array(chunks.reduce((size, chunk) => size + chunk.length, 0));
+      let offset = 0;
+      for (const chunk of chunks) {
+        result.set(chunk, offset);
+        offset += chunk.length;
+      }
+      written.push(result);
+    });
+    const player = new NativeNarrationPlayer();
+    try {
+      await player.load('current.mp4', blob);
+      await player.preload('next.mp4', async () => blob);
+      expect(written).toHaveLength(2);
+      for (const result of written) {
+        expect(result.byteLength).toBe(bytes.byteLength);
+        expect(result.every((byte, index) => byte === bytes[index])).toBe(true);
+      }
+    } finally {
+      await player.shutdown();
+    }
+  });
+
   test('stages embedded narration in the app cache', async () => {
     // Android 10 resolves Temp to /data/local/tmp, which ordinary apps cannot write.
     vi.mocked(writeFile).mockImplementation(async (_path, _bytes, options) => {
@@ -142,7 +195,9 @@ describe('NativeNarrationPlayer', () => {
     try {
       await player.load('Audio/ch1.mp4', blob);
       const name = vi.mocked(writeFile).mock.calls[0]![0];
-      expect(writeFile).toHaveBeenCalledWith(name, bytes, { baseDir: BaseDirectory.AppCache });
+      expect(writeFile).toHaveBeenCalledWith(name, expect.any(ReadableStream), {
+        baseDir: BaseDirectory.AppCache,
+      });
       expect(controlCalls.find((call) => call['action'] === 'load')?.['path']).toBe(
         `${directory}/${name}`,
       );

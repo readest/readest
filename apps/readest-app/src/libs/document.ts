@@ -143,6 +143,7 @@ export interface BookDoc {
   // manifest items.
   loadText?(href: string): Promise<string | null>;
   loadBlob?(href: string): Promise<Blob>;
+  resolveNarrationPath?(href: string): Promise<string | null>;
   // EPUB 3 `media:*` package metadata, used to name the narrator.
   media?: { narrator?: string; duration?: number };
 }
@@ -602,6 +603,13 @@ export class DocumentLoader {
         } else {
           const { EPUB } = await import('foliate-js/epub.js');
           book = await new EPUB(loader).init();
+          if (this.nativeFilePath) {
+            const filePath = this.nativeFilePath;
+            const { nativeNarrationPath } = await import('@/utils/tauriEpubBridge');
+            Object.assign(book, {
+              resolveNarrationPath: (href: string) => nativeNarrationPath(filePath, href),
+            });
+          }
           format = 'EPUB';
         }
       } else if (await this.isPDF()) {

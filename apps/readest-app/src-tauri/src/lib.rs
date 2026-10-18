@@ -675,6 +675,7 @@ pub fn run() {
             dir_scanner::read_dir,
             backup_zip::write_backup_zip,
             backup_zip::extract_backup_zip,
+            epub_parser::extract_epub_audio,
             epub_parser::parse_epub_metadata,
             epub_parser::extract_epub_cover_full,
             epub_parser::parse_epub_full,

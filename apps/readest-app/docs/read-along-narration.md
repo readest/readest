@@ -281,7 +281,10 @@ reader's own highlight style.
   `getChunkProgress()`, so engines without one (Web Speech) keep the old
   behaviour: a sentence straddling a page break waits for the next mark.
 - **Mobile Tauri** plays narration through `NativeNarrationPlayer`: AVPlayer on
-  iOS and ExoPlayer on Android. Paired audiobooks are streamed directly from
+  iOS and ExoPlayer on Android. Embedded recordings in local EPUBs are extracted
+  directly into the app cache by Rust, then queued by path. Audio bytes stay
+  outside the WebView; the blob fallback writes in bounded chunks. Paired
+  audiobooks are streamed directly from
   their local path, or by `http(s)` URL for an Audiobookshelf pairing (through
   the loopback media proxy on Android). Desktop Tauri streams its asset URL
   through `HTMLAudioElement`, an Audiobookshelf pairing through the proxy; web

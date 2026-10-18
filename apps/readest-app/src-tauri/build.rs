@@ -50,6 +50,7 @@ fn main() {
             "parse_epub_metadata",
             "extract_epub_cover_full",
             "parse_epub_full",
+            "extract_epub_audio",
             "get_comic_page_sizes",
             "parse_mobi_metadata",
             "extract_mobi_cover_full",

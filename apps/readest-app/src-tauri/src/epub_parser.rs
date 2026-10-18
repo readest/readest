@@ -87,6 +87,67 @@ pub struct ParsedEpubMetadata {
     pub sizes: HashMap<String, u64>,
 }
 
+// Extract recordings without ferrying their bytes through a mobile WebView.
+#[tauri::command]
+pub async fn extract_epub_audio<R: tauri::Runtime>(
+    app: tauri::AppHandle<R>,
+    file_path: String,
+    entry_path: String,
+) -> Result<String, String> {
+    use tauri::Manager;
+    let cache = app.path().app_cache_dir().map_err(|e| e.to_string())?;
+    tauri::async_runtime::spawn_blocking(move || {
+        extract_epub_audio_sync(Path::new(&file_path), &entry_path, &cache)
+            .map(|path| path.to_string_lossy().into_owned())
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+
+fn extract_epub_audio_sync(
+    source: &Path,
+    entry_path: &str,
+    cache: &Path,
+) -> Result<std::path::PathBuf, String> {
+    use std::hash::{Hash, Hasher};
+    let file = File::open(source).map_err(|e| e.to_string())?;
+    let metadata = file.metadata().map_err(|e| e.to_string())?;
+    let mut key = std::collections::hash_map::DefaultHasher::new();
+    source.hash(&mut key);
+    metadata.len().hash(&mut key);
+    metadata.modified().ok().hash(&mut key);
+    entry_path.hash(&mut key);
+    let mut zip = ZipArchive::new(file).map_err(|e| e.to_string())?;
+    let decoded = percent_decode(entry_path.as_bytes()).decode_utf8_lossy();
+    let name = if zip.index_for_name(entry_path).is_some() {
+        entry_path
+    } else {
+        decoded.as_ref()
+    };
+    let mut entry = zip.by_name(name).map_err(|e| e.to_string())?;
+    let extension = Path::new(name)
+        .extension()
+        .and_then(|s| s.to_str())
+        .filter(|s| s.len() <= 5 && s.chars().all(|c| c.is_ascii_alphanumeric()))
+        .unwrap_or("audio");
+    std::fs::create_dir_all(cache).map_err(|e| e.to_string())?;
+    let output = cache.join(format!("mo-epub-{:x}.{extension}", key.finish()));
+    if output.metadata().is_ok_and(|m| m.len() == entry.size()) {
+        return Ok(output);
+    }
+    let temporary = cache.join(format!("mo-epub-{}.part", uuid::Uuid::new_v4()));
+    let result = (|| {
+        let mut destination = File::create(&temporary).map_err(|e| e.to_string())?;
+        std::io::copy(&mut entry, &mut destination).map_err(|e| e.to_string())?;
+        std::fs::rename(&temporary, &output).map_err(|e| e.to_string())?;
+        Ok(output)
+    })();
+    if result.is_err() {
+        let _ = std::fs::remove_file(temporary);
+    }
+    result
+}
+
 #[tauri::command]
 pub async fn parse_epub_metadata(file_path: String) -> Result<ParsedEpubMetadata, String> {
     // The body is CPU+IO bound: zip central-directory parse, OPF parse,
@@ -1530,5 +1591,35 @@ mod tests {
         // md5 = 1576a94d6cb334dd126cb1c27f19e0f2.
         assert_eq!(hash, "1576a94d6cb334dd126cb1c27f19e0f2");
         let _ = std::fs::remove_file(path);
+    }
+    #[test]
+    fn narration_extracts_to_cache_and_reuses_complete_files() {
+        use std::io::Write;
+        let directory = std::env::temp_dir().join(uuid::Uuid::new_v4().to_string());
+        std::fs::create_dir_all(&directory).unwrap();
+        let source = directory.join("book.epub");
+        let mut writer = zip::ZipWriter::new(File::create(&source).unwrap());
+        writer
+            .start_file(
+                "Audio/intro one.mp4",
+                zip::write::SimpleFileOptions::default(),
+            )
+            .unwrap();
+        writer.write_all(&vec![42; 1024 * 1024 + 17]).unwrap();
+        writer.finish().unwrap();
+        let cache = directory.join("cache");
+        let path = extract_epub_audio_sync(&source, "Audio/intro%20one.mp4", &cache).unwrap();
+        assert_eq!(std::fs::read(&path).unwrap(), vec![42; 1024 * 1024 + 17]);
+        let modified = path.metadata().unwrap().modified().unwrap();
+        assert_eq!(
+            extract_epub_audio_sync(&source, "Audio/intro%20one.mp4", &cache).unwrap(),
+            path
+        );
+        assert_eq!(path.metadata().unwrap().modified().unwrap(), modified);
+        std::fs::write(&path, b"incomplete").unwrap();
+        extract_epub_audio_sync(&source, "Audio/intro%20one.mp4", &cache).unwrap();
+        assert_eq!(path.metadata().unwrap().len(), 1024 * 1024 + 17);
+        assert!(extract_epub_audio_sync(&source, "missing.mp4", &cache).is_err());
+        std::fs::remove_dir_all(directory).unwrap();
     }
 }

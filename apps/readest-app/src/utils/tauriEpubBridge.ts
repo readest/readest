@@ -306,3 +306,12 @@ export const tryNativePrefetchEpub = async (
     return null;
   }
 };
+
+// Keep long recordings on the native side of the WebView bridge.
+export const nativeNarrationPath = async (
+  filePath: string,
+  entryPath: string,
+): Promise<string | null> => {
+  if (!isEligibleEpubPath(filePath)) return null;
+  return invoke<string>('extract_epub_audio', { filePath, entryPath });
+};

@@ -42,6 +42,25 @@ const fileExtension = (href: string): string => {
   return /^[a-z0-9]{2,5}$/.test(ext) ? ext : 'mp3';
 };
 
+// Android's WebView bridge can expand one binary invoke into a much larger
+// transient payload. Bound each write while staging long chapter recordings.
+const stageRecording = (name: string, blob: Blob): Promise<void> => {
+  let offset = 0;
+  const stream = new ReadableStream<Uint8Array>({
+    async pull(controller) {
+      if (offset >= blob.size) {
+        controller.close();
+        return;
+      }
+      const end = Math.min(offset + 256 * 1024, blob.size);
+      const bytes = new Uint8Array(await blob.slice(offset, end).arrayBuffer());
+      offset = end;
+      controller.enqueue(bytes);
+    },
+  });
+  return writeFile(name, stream, { baseDir: BaseDirectory.AppCache });
+};
+
 export class NativeNarrationPlayer {
   #nativeSession: Promise<number> | null = null;
   #resolvedSession: number | null = null;
@@ -54,6 +73,7 @@ export class NativeNarrationPlayer {
   #prepared: {
     href: string;
     path: string | null;
+    owned: boolean;
     promise: Promise<string>;
     boundary: number | null;
     end: number;
@@ -154,11 +174,12 @@ export class NativeNarrationPlayer {
 
   // Extract and write one upcoming member without touching the live native
   // session. Loading it through AVPlayer here would interrupt the current file.
-  async preload(href: string, loadBlob: () => Promise<Blob>): Promise<void> {
+  async preload(href: string, loadBlob: () => Promise<Blob | string>): Promise<void> {
     if (this.#stagedHref === href || this.#prepared) return;
     const entry = {
       href,
       path: null as string | null,
+      owned: true,
       promise: Promise.resolve(''),
       boundary: null as number | null,
       end: 0,
@@ -169,9 +190,13 @@ export class NativeNarrationPlayer {
     const name = `mo-narration-${hashHref(href)}-next-${++this.#prepareId}.${fileExtension(href)}`;
     entry.promise = (async () => {
       const blob = await loadBlob();
-      const bytes = new Uint8Array(await blob.arrayBuffer());
+      if (typeof blob === 'string') {
+        entry.owned = false;
+        entry.path = blob;
+        return blob;
+      }
       const path = await join(await appCacheDir(), name);
-      await writeFile(name, bytes, { baseDir: BaseDirectory.AppCache });
+      await stageRecording(name, blob);
       if (this.#prepared !== entry) {
         await remove(path).catch(() => undefined);
         throw new Error('Narration preparation cancelled');
@@ -228,14 +253,14 @@ export class NativeNarrationPlayer {
       this.#href = href;
       this.#stagedHref = href;
       this.#stagedPath = path;
-      this.#ownsStagedPath = true;
+      this.#ownsStagedPath = entry.owned;
       this.#cache = entry.cache;
       if (owned && previous && previous !== path) await remove(previous).catch(() => undefined);
       return true;
     }
     // Foreground navigation before the queued boundary is a real seek.
     await this.loadPath(href, path, startSec);
-    this.#ownsStagedPath = true;
+    this.#ownsStagedPath = entry.owned;
     return true;
   }
 
@@ -249,7 +274,7 @@ export class NativeNarrationPlayer {
   #discardPrepared(): void {
     const entry = this.#prepared;
     this.#prepared = null;
-    if (entry?.path) void remove(entry.path).catch(() => undefined);
+    if (entry?.path && entry.owned) void remove(entry.path).catch(() => undefined);
   }
 
   // Paired audiobooks already live as ordinary files under Books/<hash>.
@@ -375,10 +400,9 @@ export class NativeNarrationPlayer {
       await remove(this.#stagedPath).catch(() => undefined);
     }
     const name = `mo-narration-${hashHref(href)}.${fileExtension(href)}`;
-    const bytes = new Uint8Array(await blob.arrayBuffer());
     // App cache, not Temp: older Android versions resolve Temp to the
     // unwritable /data/local/tmp.
-    await writeFile(name, bytes, { baseDir: BaseDirectory.AppCache });
+    await stageRecording(name, blob);
     const path = await join(await appCacheDir(), name);
     this.#stagedHref = href;
     this.#stagedPath = path;

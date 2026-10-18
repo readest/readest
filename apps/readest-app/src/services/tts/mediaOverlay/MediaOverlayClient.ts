@@ -223,6 +223,7 @@ export class MediaOverlayClient implements TTSClient {
       book?.loadBlob
         ? {
             narrator: book.media?.narrator,
+            resolvePath: book.resolveNarrationPath?.bind(book),
             loadBlob: (href) => book.loadBlob!(href),
           }
         : null,
@@ -332,11 +333,13 @@ export class MediaOverlayClient implements TTSClient {
       // replaces the AVPlayer item. Do not call #releaseAudio (that aborts).
       this.#cancelHandover();
       const joined = this.#player.queuedStarted;
-      if (path) {
-        await this.#player.loadPath(href, path, 0);
-      } else if (!(await this.#player.loadPrepared(href, 0))) {
-        const blob = audioBlobWithType(href, await source.loadBlob(href));
-        await this.#player.load(href, blob, 0);
+      if (!(await this.#player.loadPrepared(href, 0))) {
+        if (path) {
+          await this.#player.loadPath(href, path, 0);
+        } else {
+          const blob = audioBlobWithType(href, await source.loadBlob(href));
+          await this.#player.load(href, blob, 0);
+        }
       }
       this.#player.playbackRate = this.#rate;
       if (!joined) this.#player.pause();
@@ -407,8 +410,11 @@ export class MediaOverlayClient implements TTSClient {
     // without replacing its current item or changing the live session.
     if (this.#native) {
       const source = this.#source;
-      if (source && !source.resolvePath && !source.resolveTracks) {
-        await this.#player?.preload(href, () => source.loadBlob(href));
+      if (source && !source.resolveTracks) {
+        await this.#player?.preload(
+          href,
+          async () => (await source.resolvePath?.(href).catch(() => null)) ?? source.loadBlob(href),
+        );
       }
       return;
     }
