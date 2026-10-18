@@ -1073,7 +1073,7 @@
   }
 
   /* an unfocused title-bar search field drags the window (WindowButtons) */
-  input.window-drag-input:not(:focus) {
+  [data-window-drag] input.window-drag-input:not(:focus) {
     cursor: default;
   }
 

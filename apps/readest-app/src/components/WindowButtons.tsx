@@ -197,6 +197,8 @@ const WindowButtons: React.FC<WindowButtonsProps> = ({
     const headerElement = headerRef?.current;
     if (!headerElement) return;
 
+    // Lets CSS style a window-drag-input only where it really drags the window.
+    headerElement.setAttribute('data-window-drag', '');
     headerElement.addEventListener('mousedown', handleMouseDown);
     headerElement.addEventListener('pointerdown', handlePointerDown);
     headerElement.addEventListener('pointermove', handlePointerMove);
@@ -204,6 +206,7 @@ const WindowButtons: React.FC<WindowButtonsProps> = ({
     headerElement.addEventListener('pointercancel', handlePointerUp);
 
     return () => {
+      headerElement.removeAttribute('data-window-drag');
       headerElement.removeEventListener('mousedown', handleMouseDown);
       headerElement.removeEventListener('pointerdown', handlePointerDown);
       headerElement.removeEventListener('pointermove', handlePointerMove);

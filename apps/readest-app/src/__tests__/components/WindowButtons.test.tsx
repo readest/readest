@@ -115,6 +115,29 @@ describe('WindowButtons', () => {
   });
 
   describe('search field in the title bar', () => {
+    it('marks the header as draggable only while its drag listener is installed', () => {
+      render(<SearchFieldHarness />);
+      expect(screen.getByTestId('header').hasAttribute('data-window-drag')).toBe(false);
+      cleanup();
+
+      hasWindowBar = true;
+      const Toggle = ({ mounted }: { mounted: boolean }) => {
+        const headerRef = useRef<HTMLDivElement>(null);
+        return (
+          <>
+            <div ref={headerRef} data-testid='header' />
+            {mounted && <WindowButtons headerRef={headerRef} />}
+          </>
+        );
+      };
+      const { rerender } = render(<Toggle mounted />);
+      expect(screen.getByTestId('header').hasAttribute('data-window-drag')).toBe(true);
+
+      // Library select mode unmounts WindowButtons while the search field stays.
+      rerender(<Toggle mounted={false} />);
+      expect(screen.getByTestId('header').hasAttribute('data-window-drag')).toBe(false);
+    });
+
     it('drags the window from an unfocused search field once the pointer moves', async () => {
       hasWindowBar = true;
       render(<SearchFieldHarness />);
