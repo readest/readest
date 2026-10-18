@@ -105,6 +105,9 @@ export const useOpenMediaEvent = (
   handleTablePress: (html: string) => void,
 ) => {
   const handleOpenMedia = (msg: MessageEvent) => {
+    // The producers post from the app window itself; the table viewer renders
+    // the markup it is handed, so a message from any other window is ignored.
+    if (msg.source !== window) return;
     if (msg.data && msg.data.bookKey === bookKey && msg.data.type === 'iframe-open-media') {
       if (msg.data.elementType === 'image') {
         handleImagePress(msg.data.src);
