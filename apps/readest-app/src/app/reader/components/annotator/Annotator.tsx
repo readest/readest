@@ -700,6 +700,11 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
     const onFootnotePointerdown = (event: CustomEvent) => {
       const detail = event.detail as { key: string; pointerType?: string };
       if (detail.key !== bookKey || appService?.isAndroidApp) return;
+      // A new press is the reader's next gesture, not iOS re-confirming the
+      // selection the instant dictionary dropped: on desktop the rest of the
+      // popup stays clickable under the lookup, and a word selected or a click
+      // on empty space there must look it up or close the lookup (#6869).
+      instantLookupDeselectedRef.current = false;
       beginGesture(deferredQuickActionRef.current);
       pointerDownTimeRef.current = detail.pointerType === 'mouse' ? 0 : Date.now();
     };

@@ -161,7 +161,7 @@ export function Navigation({
             onChange={handleSearchChange}
             spellCheck='false'
             className={clsx(
-              'input rounded-selector h-9 w-full pl-10 pr-4 sm:h-7',
+              'window-drag-input input rounded-selector h-9 w-full pl-10 pr-4 sm:h-7',
               viewSettings?.isEink
                 ? 'border-1 border-base-content focus:border-base-content'
                 : 'bg-base-300/45 border-none',
