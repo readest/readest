@@ -2018,6 +2018,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
     // attribute footnotes) has nothing to attach to.
     if (selection.popup && !selection.cfi) return;
     setShowAnnotPopup(false);
+    setShowXRayPopup(false);
     void suppressNativeSelectionHandles();
     setShowProofreadPopup(true);
 

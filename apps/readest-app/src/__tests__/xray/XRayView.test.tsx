@@ -115,12 +115,27 @@ describe('XRayView', () => {
     });
   });
 
-  it('renders the bounded entity explorer', async () => {
-    render(<XRayView bookKey='booka-view' />);
+  it('keeps the bounded entity explorer open while reading forward', async () => {
+    const rendered = render(<XRayView bookKey='booka-view' />);
 
-    expect(await screen.findByText('Alice')).toBeTruthy();
+    const entity = await screen.findByText('Alice');
     expect(screen.getByText('A determined investigator.')).toBeTruthy();
     expect(screen.getByText('Read through position 2')).toBeTruthy();
+
+    const card = entity.closest('details');
+    expect(card).not.toBeNull();
+    card?.setAttribute('open', '');
+    mocks.getSnapshot.mockReturnValueOnce(new Promise(() => {}));
+    mocks.currentCfi = 'epubcfi(/6/2!/4/2/1:30)';
+    rendered.rerender(<XRayView bookKey='booka-view' />);
+
+    expect(screen.queryByText('Alice')).toBe(entity);
+    expect(card?.isConnected).toBe(true);
+    expect(card?.open).toBe(true);
+    expect(screen.queryByLabelText('Loading X-Ray')).toBeNull();
+    await waitFor(() =>
+      expect(mocks.getSnapshot).toHaveBeenLastCalledWith('booka', mocks.currentCfi),
+    );
   });
 
   it('does not open X-Ray services when Reedy is disabled', async () => {
@@ -138,7 +153,7 @@ describe('XRayView', () => {
 
     mocks.currentCfi = 'epubcfi(/6/2!/4/2/1:10)';
     mocks.getSnapshot.mockRejectedValue(new Error('Reedy index changed'));
-    rendered.rerender(<XRayView bookKey='booka-view-earlier' />);
+    rendered.rerender(<XRayView bookKey='booka-view' />);
 
     expect((await screen.findByRole('alert')).textContent).toBe('Failed to load X-Ray');
     expect(screen.queryByText('Alice')).toBeNull();
@@ -188,5 +203,6 @@ describe('XRayView', () => {
     }
 
     expect(signal?.aborted).toBe(true);
+    expect(screen.queryByText('Alice')).toBeNull();
   });
 });

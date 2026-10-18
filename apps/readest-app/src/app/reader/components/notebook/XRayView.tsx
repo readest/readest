@@ -1,6 +1,7 @@
 'use client';
 
 import clsx from 'clsx';
+import * as CFI from 'foliate-js/epubcfi.js';
 import React, { useCallback, useDeferredValue, useEffect, useRef, useState } from 'react';
 import {
   LuBookOpen,
@@ -58,47 +59,45 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
   const updateController = useRef<AbortController | null>(null);
   const currentCfi = progress?.location ?? '';
 
-  const load = useCallback(
-    async (showLoading = true): Promise<void> => {
-      if (
-        !appService ||
-        appService.appPlatform !== 'tauri' ||
-        !aiSettings?.enabled ||
-        !aiSettings.reedy?.enabled ||
-        !hasCredentials(aiSettings) ||
-        !bookHash ||
-        !currentCfi
-      ) {
-        setIsLoading(false);
-        return;
-      }
-      const id = ++requestId.current;
-      if (showLoading) {
-        setIsLoading(true);
-        setStatus(null);
-        setSnapshot(null);
-        setSnapshotCfi(null);
-      }
-      setError(null);
-      try {
-        const { getXRayService } = await import('@/services/ai/xray/XRayService');
-        const service = await getXRayService(appService, aiSettings);
-        const nextStatus = await service.getStatus(bookHash);
-        const nextSnapshot =
-          nextStatus.kind === 'ready' ? await service.getSnapshot(bookHash, currentCfi) : null;
-        if (id !== requestId.current) return;
-        setStatus(nextStatus);
-        setSnapshot(nextSnapshot);
-        setSnapshotCfi(nextSnapshot ? currentCfi : null);
-      } catch {
-        if (id !== requestId.current) return;
-        setError(_('Failed to load X-Ray'));
-      } finally {
-        if (id === requestId.current) setIsLoading(false);
-      }
-    },
-    [_, aiSettings, appService, bookHash, currentCfi],
-  );
+  const load = useCallback(async (): Promise<void> => {
+    if (
+      !appService ||
+      appService.appPlatform !== 'tauri' ||
+      !aiSettings?.enabled ||
+      !aiSettings.reedy?.enabled ||
+      !hasCredentials(aiSettings) ||
+      !bookHash ||
+      !currentCfi
+    ) {
+      setIsLoading(false);
+      return;
+    }
+    const id = ++requestId.current;
+    setError(null);
+    try {
+      const { getXRayService } = await import('@/services/ai/xray/XRayService');
+      const service = await getXRayService(appService, aiSettings);
+      const nextStatus = await service.getStatus(bookHash);
+      const nextSnapshot =
+        nextStatus.kind === 'ready' ? await service.getSnapshot(bookHash, currentCfi) : null;
+      if (id !== requestId.current) return;
+      setStatus(nextStatus);
+      setSnapshot(nextSnapshot);
+      setSnapshotCfi(nextSnapshot ? currentCfi : null);
+    } catch {
+      if (id !== requestId.current) return;
+      setError(_('Failed to load X-Ray'));
+    } finally {
+      if (id === requestId.current) setIsLoading(false);
+    }
+  }, [_, aiSettings, appService, bookHash, currentCfi]);
+
+  useEffect(() => {
+    setIsLoading(true);
+    setStatus(null);
+    setSnapshot(null);
+    setSnapshotCfi(null);
+  }, [aiSettings, appService, bookHash]);
 
   useEffect(() => {
     setIsUpdating(false);
@@ -111,7 +110,7 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
 
   useEffect(() => {
     const handleUpdate = (event: CustomEvent) => {
-      if (event.detail?.bookHash === bookHash) void load(false);
+      if (event.detail?.bookHash === bookHash) void load();
     };
     eventDispatcher.on('xray-updated', handleUpdate);
     return () => eventDispatcher.off('xray-updated', handleUpdate);
@@ -119,7 +118,7 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
 
   useEffect(() => {
     if (status?.kind !== 'indexing') return;
-    const timer = setTimeout(() => void load(false), 1_500);
+    const timer = setTimeout(() => void load(), 1_500);
     return () => clearTimeout(timer);
   }, [load, status?.kind]);
 
@@ -159,7 +158,7 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
           maxPositionIndex: result.maxPositionIndex,
         });
       } else if (result.kind === 'unavailable') {
-        await load(false);
+        await load();
       }
     } catch {
       if (!controller.signal.aborted) setError(_('X-Ray update failed.'));
@@ -173,7 +172,8 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
     if (evidence.inferred || !evidence.startCfi) return;
     getView(bookKey)?.goTo(evidence.startCfi);
   };
-  const snapshot = snapshotCfi === currentCfi ? loadedSnapshot : null;
+  const snapshot =
+    currentCfi && snapshotCfi && CFI.compare(currentCfi, snapshotCfi) >= 0 ? loadedSnapshot : null;
 
   if (appService?.appPlatform !== 'tauri') {
     return null;

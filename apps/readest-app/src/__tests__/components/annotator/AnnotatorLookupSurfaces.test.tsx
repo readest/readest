@@ -368,6 +368,10 @@ describe('a lookup surface survives the selection it is anchored to being republ
 
     expect(screen.queryByTestId('xray-surface')).toBeTruthy();
     expect(screen.queryByTestId('annotation-toolbar')).toBeNull();
+
+    act(() => h.actions?.['onProofreadSelection']?.());
+    expect(screen.queryByTestId('proofread-surface')).toBeTruthy();
+    expect(screen.queryByTestId('xray-surface')).toBeNull();
   });
   test.each([
     ['onDictionarySelection', 'dictionary-surface'],
