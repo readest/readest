@@ -9,7 +9,7 @@ import {
   withOriginSuppressed,
 } from '@/app/opds/utils/opdsReq';
 import { normalizeCustomHeaders } from '@/utils/customHeaders';
-import { allowsSelfSignedCert, tlsFetchOptions } from '@/utils/tls';
+import { allowsSelfSignedCertAt, tlsFetchOptions } from '@/utils/tls';
 import { trackWidePages, type WidePagesOptions } from '@/utils/spread';
 import type { BookFormat } from '@/types/book';
 import type { BookDoc, BookMetadata } from '@/libs/document';
@@ -42,13 +42,13 @@ export const createPseStreamPageLoader = (data: PseStreamData) => {
   const username = catalog?.username || '';
   const password = catalog?.password || '';
   const customHeaders = normalizeCustomHeaders(catalog?.customHeaders);
-  const allowSelfSignedCert = allowsSelfSignedCert(catalog ?? {});
   let authHeaderPromise: Promise<string | null> | null = null;
 
   return async (pageIndex: number): Promise<Blob> => {
     let url = data.url.replace(PAGE_NUMBER_PATTERN, pageIndex.toString());
     url = url.replace(MAX_WIDTH_PATTERN, DEFAULT_MAX_WIDTH);
     const useProxy = needsProxy(url);
+    const allowSelfSignedCert = allowsSelfSignedCertAt(catalog ?? {}, url);
 
     if (!authHeaderPromise) {
       authHeaderPromise =

@@ -6,7 +6,7 @@ import { getFileExtFromMimeType } from '@/libs/document';
 import { needsProxy, getProxiedURL, probeAuth, probeFilename } from '@/app/opds/utils/opdsReq';
 import { resolveURL, parseMediaType, getFileExtFromPath } from '@/app/opds/utils/opdsUtils';
 import { normalizeCustomHeaders } from '@/utils/customHeaders';
-import { allowsSelfSignedCert } from '@/utils/tls';
+import { allowsSelfSignedCertAt } from '@/utils/tls';
 import { READEST_OPDS_USER_AGENT } from '@/services/constants';
 import { applyOPDSCover } from './cover';
 import { applyOPDSMetadata } from './metadata';
@@ -66,7 +66,7 @@ async function downloadAndImport(
   const username = catalog.username ?? '';
   const password = catalog.password ?? '';
   const customHeaders = normalizeCustomHeaders(catalog.customHeaders);
-  const allowSelfSignedCert = allowsSelfSignedCert(catalog);
+  const allowSelfSignedCert = allowsSelfSignedCertAt(catalog, url);
   const useProxy = needsProxy(url);
 
   let downloadUrl = useProxy ? getProxiedURL(url, '', true, customHeaders) : url;
@@ -143,14 +143,15 @@ async function downloadAndImport(
   // Best effort: a failure here must not fail an otherwise good import.
   if (item.coverHref) {
     try {
+      const coverUrl = resolveURL(item.coverHref, item.baseURL);
       await applyOPDSCover({
         appService,
         book,
-        coverUrl: resolveURL(item.coverHref, item.baseURL),
+        coverUrl,
         username,
         password,
         customHeaders,
-        allowSelfSignedCert,
+        allowSelfSignedCert: allowsSelfSignedCertAt(catalog, coverUrl),
       });
     } catch (error) {
       console.warn(`[OPDS] failed to apply the feed cover for "${item.title}":`, error);

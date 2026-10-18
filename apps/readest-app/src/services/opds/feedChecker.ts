@@ -14,7 +14,7 @@ import { isWebAppPlatform } from '@/services/environment';
 import { fetchWithAuth } from '@/app/opds/utils/opdsReq';
 import { resolveURL, looksLikeXMLContent, parseOPDSXML } from '@/app/opds/utils/opdsUtils';
 import { normalizeCustomHeaders } from '@/utils/customHeaders';
-import { allowsSelfSignedCert } from '@/utils/tls';
+import { allowsSelfSignedCertAt } from '@/utils/tls';
 import { getOPDSCoverHref } from './cover';
 import { classifyAcquisitionLink, pickPreferredLink } from './formats';
 import { getOPDSBookMetadata } from './metadata';
@@ -148,7 +148,7 @@ async function fetchFeed(
   username: string,
   password: string,
   customHeaders: Record<string, string>,
-  allowSelfSignedCert: boolean,
+  catalog: OPDSCatalog,
 ): Promise<{ feed: OPDSFeed; baseURL: string } | null> {
   const useProxy = isWebAppPlatform();
   const res = await fetchWithAuth(
@@ -158,7 +158,7 @@ async function fetchFeed(
     useProxy,
     {},
     customHeaders,
-    allowSelfSignedCert,
+    allowsSelfSignedCertAt(catalog, url),
   );
   if (!res.ok) {
     console.error(`OPDS sync: failed to fetch ${url}: ${res.status} ${res.statusText}`);
@@ -185,7 +185,7 @@ async function fetchFeed(
       : null;
     if (link?.getAttribute('href')) {
       const resolvedURL = resolveURL(link.getAttribute('href')!, responseURL);
-      return fetchFeed(resolvedURL, username, password, customHeaders, allowSelfSignedCert);
+      return fetchFeed(resolvedURL, username, password, customHeaders, catalog);
     }
   } else {
     try {
@@ -339,7 +339,7 @@ async function crawlFeeds(
       ctx.username,
       ctx.password,
       ctx.customHeaders,
-      allowsSelfSignedCert(ctx.catalog),
+      ctx.catalog,
     );
     fetches++;
     if (!next) continue;
@@ -374,9 +374,8 @@ export async function checkFeedForNewItems(
   const username = catalog.username ?? '';
   const password = catalog.password ?? '';
   const visited = new Set<string>([catalog.url]);
-  const allowSelfSignedCert = allowsSelfSignedCert(catalog);
 
-  const root = await fetchFeed(catalog.url, username, password, customHeaders, allowSelfSignedCert);
+  const root = await fetchFeed(catalog.url, username, password, customHeaders, catalog);
   if (!root) return [];
 
   const ctx: CrawlContext = {
@@ -393,13 +392,7 @@ export async function checkFeedForNewItems(
   if (newestURL) {
     if (!visited.has(newestURL)) {
       visited.add(newestURL);
-      const newest = await fetchFeed(
-        newestURL,
-        username,
-        password,
-        customHeaders,
-        allowSelfSignedCert,
-      );
+      const newest = await fetchFeed(newestURL, username, password, customHeaders, catalog);
       if (newest && feedHasContent(newest.feed)) return crawlFeeds(newest, ctx);
     }
     // Broken or empty "by newest" feed: fall back to the root feed's own

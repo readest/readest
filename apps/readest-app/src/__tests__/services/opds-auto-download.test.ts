@@ -180,6 +180,30 @@ describe('OPDS auto-download orchestrator', () => {
     }
   });
 
+  it("verifies a download the feed points at on another origin, whatever the catalog's choice", async () => {
+    vi.mocked(checkFeedForNewItems).mockResolvedValue([
+      {
+        entryId: 'urn:shelf:1',
+        title: 'Issue 1',
+        acquisitionHref: 'https://cdn.example.net/dl/1.epub',
+        mimeType: 'application/epub+zip',
+        baseURL: 'https://shelf.example.com/opds',
+      },
+    ]);
+    const catalog: OPDSCatalog = {
+      id: 'cat-1',
+      name: 'Shelf',
+      url: 'https://shelf.example.com/opds',
+      autoDownload: true,
+      allowSelfSignedCert: true,
+    };
+
+    await syncSubscribedCatalogs([catalog], appService, []);
+    expect(vi.mocked(downloadFile).mock.calls[0]![0]).toMatchObject({
+      skipSslVerification: false,
+    });
+  });
+
   it('applies the feed-provided cover to the imported book (issue #5270)', async () => {
     const catalogs: OPDSCatalog[] = [
       {

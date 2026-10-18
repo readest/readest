@@ -29,10 +29,10 @@ const data = {
   author: 'Author',
 };
 
-const fetchedInit = async () => {
+const fetchedInit = async (url = data.url) => {
   const fetch = vi.fn(async () => ({ ok: true, blob: async () => new Blob() }));
   vi.stubGlobal('fetch', fetch);
-  await createPseStreamPageLoader(data)(0);
+  await createPseStreamPageLoader({ ...data, url })(0);
   return (fetch.mock.calls[0] as unknown as [string, RequestInit])[1];
 };
 
@@ -44,6 +44,16 @@ describe('createPseStreamPageLoader certificate choice', () => {
 
   it('accepts self-signed certificates for a feed opened without a saved catalog', async () => {
     expect(await fetchedInit()).toHaveProperty('danger');
+  });
+
+  // The choice covers the catalog's own origin only: a page URL the feed
+  // points at on another host is verified.
+  it("applies a catalog's choice to its own origin only", async () => {
+    h.catalogs = [{ id: 'catalog-1', url: 'https://library.example.com/opds' }];
+    expect(await fetchedInit()).toHaveProperty('danger');
+    expect(await fetchedInit('https://cdn.example.net/page/{pageNumber}')).not.toHaveProperty(
+      'danger',
+    );
   });
 
   it('verifies certificates for a catalog that turned the option off', async () => {
