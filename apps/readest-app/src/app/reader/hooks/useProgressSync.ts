@@ -168,7 +168,13 @@ export const useProgressSync = (bookKey: string) => {
           const content = contents.find((x) => x.index === primaryIndex) ?? contents[0];
           if (content && !FIXED_LAYOUT_FORMATS.has(book.format)) {
             const { doc, index } = content;
-            const xpointerResult = await getXPointerFromCFI(config.location!, doc, index || 0);
+            const xpointerResult = await getXPointerFromCFI(
+              config.location!,
+              doc,
+              index || 0,
+              getBookData(bookKey)?.bookDoc ?? undefined,
+              book.format,
+            );
             config.xpointer = xpointerResult.xpointer;
           }
         } catch (error) {

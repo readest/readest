@@ -6,7 +6,7 @@ import { useBookDataStore } from '@/store/bookDataStore';
 import { useReaderStore } from '@/store/readerStore';
 import { SYNC_NOTES_INTERVAL_SEC } from '@/services/constants';
 import { throttle } from '@/utils/throttle';
-import { getXPointerFromCFI, getCFIFromXPointer, XCFI } from '@/utils/xcfi';
+import { getXPointerFromCFI, getCFIFromXPointer, getCFIFromXPointerRange } from '@/utils/xcfi';
 import { getIndexFromCfi } from '@/utils/cfi';
 import { removeBookNoteOverlays } from '../utils/annotatorUtil';
 
@@ -55,6 +55,7 @@ export const useNotesSync = (bookKey: string) => {
               content.doc,
               content.index || 0,
               bookData.bookDoc ?? undefined,
+              bookData.book?.format,
             );
             enriched.push({
               ...note,
@@ -95,12 +96,11 @@ export const useNotesSync = (bookKey: string) => {
         try {
           let cfi: string | undefined;
           if (note.xpointer1) {
-            const spineIndex = XCFI.extractSpineIndex(note.xpointer0);
-            const doc = await bookData.bookDoc?.sections?.[spineIndex]?.createDocument();
-            if (doc) {
-              const converter = new XCFI(doc, spineIndex);
-              cfi = converter.xPointerToCFI(note.xpointer0, note.xpointer1);
-            }
+            cfi = await getCFIFromXPointerRange(
+              note.xpointer0,
+              note.xpointer1,
+              bookData.bookDoc ?? undefined,
+            );
           } else {
             const contents = view?.renderer.getContents() ?? [];
             const primaryIndex = view?.renderer.primaryIndex;
