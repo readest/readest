@@ -66,6 +66,13 @@ const MAX_CONSECUTIVE_SKIPS = 3;
 const PREFETCH_AHEAD_MARKS = 32;
 const PREFETCH_AHEAD_SEC = 180;
 const PRELOAD_AHEAD_SEC = 60;
+const PREPARED_OPENINGS = 8;
+
+interface PreparedChunk {
+  buffer: TTSAudioBuffer;
+  trimStartSec: number;
+  trimmedDurationSec: number;
+}
 
 interface ChunkMeta {
   mark: TTSMark;
@@ -135,6 +142,7 @@ export class BufferedTTSClient implements TTSClient {
   // skipping to the end. A user-initiated restart builds a fresh client, so it
   // starts at 0 there too.
   #consecutiveSkips = 0;
+  #preparedOpenings = new Map<string, Promise<PreparedChunk>>();
 
   constructor(
     provider: SpeechProvider,
@@ -394,6 +402,10 @@ export class BufferedTTSClient implements TTSClient {
       try {
         const audio = await this.#synthesizeWithRetry(mark.language, mark.text, voiceId, signal);
         if (audio) this.#recordDurations(voiceId, mark.text, audio.boundaries);
+        if (audio && i === 0 && !signal.aborted) {
+          const req = { lang: mark.language, text: mark.text, voice: voiceId, pitch: this.#pitch };
+          await this.#prepareOpening(req, audio.data);
+        }
       } catch (err) {
         console.warn('Error preloading mark', i, err);
       }
@@ -524,13 +536,10 @@ export class BufferedTTSClient implements TTSClient {
         }
 
         const webPlayer = this.#player;
-        let prepared: {
-          buffer: TTSAudioBuffer;
-          trimStartSec: number;
-          trimmedDurationSec: number;
-        };
+        let prepared: PreparedChunk;
         try {
-          prepared = await this.#prepareChunkBuffer(webPlayer, audio.data, rate);
+          prepared = await (this.#takePreparedOpening(req, rate) ??
+            this.#prepareChunkBuffer(webPlayer, audio.data, rate));
         } catch (error) {
           // Malformed MP3 must not dead-end the session: same UX as no-audio.
           console.warn('Failed to decode TTS audio for:', mark.text, error);
@@ -565,11 +574,37 @@ export class BufferedTTSClient implements TTSClient {
     }
   }
 
+  #openingKey(req: SpeechSynthesisRequest, rate: number): string {
+    return JSON.stringify([req.lang, req.voice, req.pitch, req.text, rate]);
+  }
+
+  async #prepareOpening(req: SpeechSynthesisRequest, data: ArrayBuffer): Promise<void> {
+    if (!(this.#player instanceof WebAudioPlayer)) return;
+    const key = this.#openingKey(req, this.#rate);
+    if (this.#preparedOpenings.has(key)) return;
+    const prepared = this.#prepareChunkBuffer(this.#player, data.slice(0), this.#rate);
+    this.#preparedOpenings.set(key, prepared);
+    prepared.catch(() => this.#preparedOpenings.delete(key));
+    for (const oldest of this.#preparedOpenings.keys()) {
+      if (this.#preparedOpenings.size <= PREPARED_OPENINGS) break;
+      this.#preparedOpenings.delete(oldest);
+    }
+    await prepared.catch(() => {});
+  }
+
+  #takePreparedOpening(req: SpeechSynthesisRequest, rate: number): Promise<PreparedChunk> | null {
+    const key = this.#openingKey(req, rate);
+    const prepared = this.#preparedOpenings.get(key);
+    if (!prepared) return null;
+    this.#preparedOpenings.delete(key);
+    return prepared;
+  }
+
   async #prepareChunkBuffer(
     player: WebAudioPlayer,
     data: ArrayBuffer,
     rate: number,
-  ): Promise<{ buffer: TTSAudioBuffer; trimStartSec: number; trimmedDurationSec: number }> {
+  ): Promise<PreparedChunk> {
     // decodeAudioData resamples to the context rate (44.1/48kHz on real
     // devices, not the stream's 24kHz) — all math below must use the decoded
     // buffer's sampleRate.
@@ -914,6 +949,7 @@ export class BufferedTTSClient implements TTSClient {
 
   async shutdown(): Promise<void> {
     await this.stopInternal();
+    this.#preparedOpenings.clear();
     await this.#player.shutdown();
     await this.provider.shutdown?.();
     this.initialized = false;
