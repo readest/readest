@@ -1,8 +1,9 @@
 import clsx from 'clsx';
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useKeyDownActions } from '@/hooks/useKeyDownActions';
 import { Insets } from '@/types/misc';
+import { sanitizeBookFragment } from '@/services/transformers/sanitizer';
 import ZoomControls from './ZoomControls';
 
 interface TableViewerProps {
@@ -27,6 +28,7 @@ const TableViewer: React.FC<TableViewerProps> = ({ gridInsets, html, isDarkMode,
   const containerRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const zoomLabelTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const safeHtml = useMemo(() => (html ? sanitizeBookFragment(html) : ''), [html]);
 
   // Escape (desktop) and Android Back key → close the viewer.
   useKeyDownActions({ onCancel: onClose });
@@ -221,7 +223,7 @@ const TableViewer: React.FC<TableViewerProps> = ({ gridInsets, html, isDarkMode,
             color: isDarkMode ? '#ffffff' : '#000000',
             padding: '24px',
           }}
-          dangerouslySetInnerHTML={{ __html: html }}
+          dangerouslySetInnerHTML={{ __html: safeHtml }}
         />
       </div>
 

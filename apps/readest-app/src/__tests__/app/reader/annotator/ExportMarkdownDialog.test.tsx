@@ -176,3 +176,47 @@ describe('ExportMarkdownDialog highlight context', () => {
     );
   });
 });
+
+describe('ExportMarkdownDialog preview', () => {
+  beforeEach(() => {
+    h.appService = {};
+    h.bookData = { bookDoc: {} };
+  });
+
+  afterEach(() => {
+    cleanup();
+  });
+
+  // Titles, highlighted text and notes come from book files and annotation
+  // imports, so markup inside them must not reach the rendered preview live.
+  it('renders markup from book data and notes inert', () => {
+    const hostile: Record<string, BooknoteGroup> = {
+      'chapter.xhtml': {
+        ...booknoteGroups['chapter.xhtml']!,
+        booknotes: [
+          {
+            ...booknoteGroups['chapter.xhtml']!.booknotes[0]!,
+            text: '<img src=x onerror="window.__pwned=1">',
+            note: '<svg onload="window.__pwned=2"></svg><script>window.__pwned=3</script>',
+          },
+        ],
+      },
+    };
+    const { container } = render(
+      <ExportMarkdownDialog
+        bookKey='book-1'
+        isOpen
+        bookHash='hash'
+        bookTitle='<iframe srcdoc="<script>parent.__pwned=4</script>"></iframe>'
+        bookAuthor='Author'
+        bookFormat='EPUB'
+        booknoteGroups={hostile}
+        onCancel={vi.fn()}
+        onExport={vi.fn()}
+      />,
+    );
+
+    expect(container.querySelector('img')).not.toBeNull();
+    expect(container.querySelector('[onerror], [onload], script, iframe')).toBeNull();
+  });
+});
