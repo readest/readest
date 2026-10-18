@@ -29,28 +29,41 @@ import { allowsSelfSignedCert } from '@/utils/tls';
  * `findABSServerById` resolves a book's server from. The player route can open
  * before the store is hydrated from settings, so reading only the store would
  * leave the allowlist empty and the proxy would refuse the very track the user
- * just opened. `selfSigned` lists the origins opted into self-signed
- * certificates; the store's copy wins over a possibly stale persisted one.
+ * just opened. `strict` lists the origins a server verifies certificates for;
+ * a server's store copy wins over a possibly stale persisted one.
  */
-const absServerOrigins = (): { origins: string[]; selfSigned: string[] } => {
+const absServerOrigins = (): { origins: Set<string>; strict: Set<string> } => {
   const stored = useABSServerStore.getState().servers;
   const persisted = useSettingsStore.getState().settings?.absServers ?? [];
+  const seen = new Set<string>();
   const origins = new Set<string>();
-  const selfSigned = new Set<string>();
+  const strict = new Set<string>();
   for (const server of [...stored, ...persisted]) {
     if (server.deletedAt) continue;
-    let origin: string;
+    let url: URL;
     try {
-      origin = new URL(server.url).origin;
+      url = new URL(server.url);
     } catch {
       // A malformed stored URL simply isn't allowlisted.
       continue;
     }
-    if (origins.has(origin)) continue;
-    origins.add(origin);
-    if (allowsSelfSignedCert(server)) selfSigned.add(origin);
+    if (seen.has(url.href)) continue;
+    seen.add(url.href);
+    origins.add(url.origin);
+    if (!allowsSelfSignedCert(server)) strict.add(url.origin);
   }
-  return { origins: [...origins], selfSigned: [...selfSigned] };
+  return { origins, strict };
+};
+
+/** The BookOrbit server's origin when the user verifies its certificate. */
+const strictBookOrbitOrigin = (): string | null => {
+  const bookorbit = useSettingsStore.getState().settings?.bookorbit;
+  if (!bookorbit?.serverUrl || !bookorbit.password || allowsSelfSignedCert(bookorbit)) return null;
+  try {
+    return new URL(bookorbit.serverUrl).origin;
+  } catch {
+    return null;
+  }
 };
 
 /** A server the proxy may reach that is not an Audiobookshelf instance. */
@@ -81,11 +94,23 @@ export interface MediaProxyGrant {
 export const getMediaProxyBase = async (grant?: MediaProxyGrant): Promise<string | null> => {
   if (!isTauriAppPlatform() || getOSPlatform() === 'ios') return null;
   try {
-    const { origins, selfSigned } = absServerOrigins();
-    if (grant) origins.push(grant.origin);
-    if (grant?.allowSelfSignedCert) selfSigned.push(grant.origin);
+    // A certificate belongs to the origin, so servers sharing one share its
+    // policy: an origin any of them verifies is verified for all of them, in
+    // every call, so one server's opt-in never loosens another's.
+    const { origins, strict } = absServerOrigins();
+    const bookOrbitStrict = strictBookOrbitOrigin();
+    if (bookOrbitStrict) strict.add(bookOrbitStrict);
+    if (grant) {
+      origins.add(grant.origin);
+      if (!grant.allowSelfSignedCert) strict.add(grant.origin);
+    }
+    const selfSigned = [...origins].filter((origin) => !strict.has(origin));
     const auth = grant?.authorization ? { [grant.origin]: grant.authorization } : undefined;
-    return await invoke<string>('get_media_proxy_base', { origins, auth, selfSigned });
+    return await invoke<string>('get_media_proxy_base', {
+      origins: [...origins],
+      auth,
+      selfSigned,
+    });
   } catch (error) {
     console.warn('[ABS] media proxy unavailable, streaming tracks directly:', error);
     return null;
