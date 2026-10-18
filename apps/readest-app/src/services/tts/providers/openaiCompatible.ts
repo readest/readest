@@ -43,17 +43,11 @@ const MIMO_VOICES: ListedVoice[] = [
   ...['Mia', 'Chloe', 'Milo', 'Dean'].map((name) => ({ name, lang: 'en-US' })),
 ];
 
-// Only route requests to the native MiMo API when configured for its official
-// endpoint. Other services (including user-hosted converters) retain OpenAI TTS.
+// MiMo serves speech only from chat completions, so any service on its host
+// (whatever the model) uses them; a proxy elsewhere keeps the OpenAI route.
 const isMiMoService = (service: CustomTTSService): boolean => {
-  if (service.model !== 'mimo-v2.5-tts') return false;
   try {
-    const url = new URL(service.baseUrl);
-    return (
-      url.protocol === 'https:' &&
-      url.hostname === 'api.xiaomimimo.com' &&
-      url.pathname.replace(/\/+$/, '') === '/v1'
-    );
+    return /(^|\.)xiaomimimo\.com$/.test(new URL(service.baseUrl).hostname);
   } catch {
     return false;
   }
@@ -139,11 +133,10 @@ const decodeMiMoAudio = async (res: Response): Promise<ArrayBuffer> => {
     choices?: { message?: { audio?: { data?: unknown } } }[];
   };
   const data = body.choices?.[0]?.message?.audio?.data;
-  if (typeof data !== 'string' || !data) throw new Error('MiMo returned no audio data');
-  const binary = atob(data);
-  const bytes = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-  return bytes.buffer as ArrayBuffer;
+  const binary = atob(typeof data === 'string' ? data : '');
+  const bytes = Uint8Array.from(binary, (c) => c.charCodeAt(0));
+  if (!bytes.length) throw new Error('MiMo returned no audio data');
+  return bytes.buffer;
 };
 
 const abortError = () => new DOMException('Aborted', 'AbortError');
@@ -205,7 +198,10 @@ export class OpenAICompatibleSpeechProvider implements SpeechProvider {
     const onAbort = () => controller.abort();
     signal.addEventListener('abort', onAbort, { once: true });
     try {
-      const path = isMiMo ? '/chat/completions' : '/audio/speech';
+      // MiMo's endpoint is known, so the path typed into its base URL is ignored.
+      const url = isMiMo
+        ? new URL('/v1/chat/completions', service.baseUrl).href
+        : endpoint(service, '/audio/speech');
       const body = isMiMo
         ? {
             model: service.model,
@@ -222,7 +218,7 @@ export class OpenAICompatibleSpeechProvider implements SpeechProvider {
             response_format: 'mp3',
             ...(service.instructions ? { instructions: service.instructions } : {}),
           };
-      const res = await getAIFetch()(endpoint(service, path), {
+      const res = await getAIFetch()(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...authHeaders(service) },
         body: JSON.stringify(body),

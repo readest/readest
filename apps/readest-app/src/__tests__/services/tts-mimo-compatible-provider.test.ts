@@ -94,6 +94,39 @@ describe('Xiaomi MiMo native TTS compatibility', () => {
     expect(fetchMock.mock.calls[0]![0]).toBe('https://custom-proxy.example.com/v1/audio/speech');
   });
 
+  it('sends every model on the MiMo host to chat completions', async () => {
+    current.baseUrl = 'https://api.xiaomimimo.com/v1';
+    current.model = 'mimo-v2.6-tts';
+    fetchMock.mockResolvedValue(response([1, 2, 3]));
+    await provider.synthesize(req('冰糖'), new AbortController().signal);
+    expect(fetchMock.mock.calls[0]![0]).toBe('https://api.xiaomimimo.com/v1/chat/completions');
+  });
+
+  it('reaches MiMo chat completions whatever path the base URL carries', async () => {
+    for (const baseUrl of [
+      'https://api.xiaomimimo.com',
+      'https://api.xiaomimimo.com/v1/chat/completions',
+      'https://api.xiaomimimo.com/v1/audio/speech',
+      'https://api.xiaomimimo.com/v1?client=readest',
+    ]) {
+      current.baseUrl = baseUrl;
+      fetchMock.mockResolvedValueOnce(response([1, 2, 3]));
+      await provider.synthesize(req('冰糖'), new AbortController().signal);
+      expect(fetchMock.mock.lastCall![0], baseUrl).toBe(
+        'https://api.xiaomimimo.com/v1/chat/completions',
+      );
+    }
+  });
+
+  it('reports audio data that decodes to nothing as an error', async () => {
+    fetchMock.mockResolvedValue(
+      Response.json({ choices: [{ message: { audio: { data: '    ' } } }] }),
+    );
+    await expect(provider.synthesize(req('冰糖'), new AbortController().signal)).rejects.toThrow(
+      'MiMo returned no audio data',
+    );
+  });
+
   it('reports a successful response without audio as an error', async () => {
     fetchMock.mockResolvedValue(Response.json({ choices: [{ message: {} }] }));
     await expect(provider.synthesize(req('冰糖'), new AbortController().signal)).rejects.toThrow(
