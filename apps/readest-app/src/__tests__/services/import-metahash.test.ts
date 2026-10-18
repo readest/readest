@@ -229,6 +229,118 @@ describe('importBook metaHash deduplication', () => {
     expect(books.filter((b) => !b.deletedAt)).toHaveLength(1);
   });
 
+  // A finished badge asserts about the retired file's content, and the
+  // reader's automatic status never demotes (only unread→reading and
+  // ≥100%→finished), so a finished book re-keyed to an updated build would
+  // stay badged Finished forever. Park it unread the same way the manual
+  // "Mark as Unread" does: a field-only flip — position, notes and progress
+  // stay, so opening the new build resumes where the old one left off.
+  it('parks a finished book as unread when an updated build re-keys it', async () => {
+    const existingBook = makeBook({
+      hash: 'old-hash-123',
+      metaHash: getMetadataHash(TEST_METADATA),
+      readingStatus: 'finished',
+      readingStatusUpdatedAt: Date.now() - 60000,
+      progress: [10, 10],
+    });
+    const books: Book[] = [existingBook];
+
+    mockPartialMD5.mockResolvedValue('new-hash-456');
+    setupMockBookDoc();
+    const stampBefore = Date.now();
+
+    await service.importBook(
+      new File(['new content'], 'test.epub', { type: 'application/epub+zip' }),
+      books,
+    );
+
+    expect(existingBook.hash).toBe('new-hash-456');
+    expect(existingBook.readingStatus).toBe('unread');
+    // Fresh field-LWW stamp, or a peer holding the retired status wins it back.
+    expect(existingBook.readingStatusUpdatedAt).toBeGreaterThanOrEqual(stampBefore);
+    expect(existingBook.progress).toEqual([10, 10]);
+    // The tombstone keeps the pre-import status for the retired hash.
+    const tombstone = books.find((b) => b.hash === 'old-hash-123');
+    expect(tombstone?.readingStatus).toBe('finished');
+  });
+
+  // A peer may have stamped the finished status with a clock ahead of this
+  // device. The flip must land strictly ahead of the retired stamp, or the
+  // field-level sync merges (the file-sync side compares with a strict >)
+  // restore finished on the next pull.
+  it('keeps the unread stamp ahead of a future-dated finished status', async () => {
+    const futureStamp = Date.now() + 3_600_000;
+    const existingBook = makeBook({
+      hash: 'old-hash-123',
+      metaHash: getMetadataHash(TEST_METADATA),
+      readingStatus: 'finished',
+      readingStatusUpdatedAt: futureStamp,
+    });
+    const books: Book[] = [existingBook];
+
+    mockPartialMD5.mockResolvedValue('new-hash-456');
+    setupMockBookDoc();
+
+    await service.importBook(
+      new File(['new content'], 'test.epub', { type: 'application/epub+zip' }),
+      books,
+    );
+
+    expect(existingBook.readingStatus).toBe('unread');
+    expect(existingBook.readingStatusUpdatedAt!).toBeGreaterThan(futureStamp);
+  });
+
+  it('keeps the finished status when the same bytes are re-imported', async () => {
+    const existingBook = makeBook({
+      hash: 'old-hash-123',
+      metaHash: getMetadataHash(TEST_METADATA),
+      readingStatus: 'finished',
+      readingStatusUpdatedAt: Date.now() - 60000,
+    });
+    const books: Book[] = [existingBook];
+
+    mockPartialMD5.mockResolvedValue('old-hash-123');
+    setupMockBookDoc();
+
+    await service.importBook(
+      new File(['same content'], 'test.epub', { type: 'application/epub+zip' }),
+      books,
+    );
+
+    expect(existingBook.readingStatus).toBe('finished');
+  });
+
+  it('leaves reading and abandoned statuses alone across a re-key', async () => {
+    const metaHash = getMetadataHash(TEST_METADATA);
+    const readingBook = makeBook({
+      hash: 'hash-reading',
+      metaHash,
+      readingStatus: 'reading',
+      progress: [50, 200],
+    });
+    const abandonedBook = makeBook({
+      hash: 'hash-abandoned',
+      metaHash,
+      readingStatus: 'abandoned',
+    });
+    const books: Book[] = [readingBook, abandonedBook];
+
+    mockPartialMD5.mockResolvedValue('new-hash-456');
+    setupMockBookDoc();
+
+    await service.importBook(
+      new File(['new content'], 'test.epub', { type: 'application/epub+zip' }),
+      books,
+    );
+
+    expect(readingBook.hash).toBe('new-hash-456');
+    expect(readingBook.readingStatus).toBe('reading');
+    expect(readingBook.progress).toEqual([50, 200]);
+    // The duplicate is retired but its parked status is not rewritten.
+    expect(abandonedBook.deletedAt).toBeTruthy();
+    expect(abandonedBook.readingStatus).toBe('abandoned');
+  });
+
   it('strands no tombstone when the import fails before the rollback point', async () => {
     const metaHash = getMetadataHash(TEST_METADATA);
     const existingBook = makeBook({ hash: 'old-hash-123', metaHash });
