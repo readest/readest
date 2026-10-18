@@ -2868,5 +2868,5 @@
   "Expressive": "معبّر",
   "Show Page Thumbnails": "إظهار الصور المصغرة للصفحات",
   "Allow Self-Signed Certificate": "السماح بالشهادة الموقّعة ذاتيًا",
-  "Skips certificate checks for this server, so only turn it on if you trust it": "يتخطى التحقق من الشهادة لهذا الخادم، لذا لا تفعّله إلا إذا كنت تثق به"
+  "Skips certificate checks for this server. Turn it off if the server has a valid certificate": "يتخطى التحقق من الشهادة لهذا الخادم. أوقف تشغيله إذا كانت لدى الخادم شهادة صالحة"
 }

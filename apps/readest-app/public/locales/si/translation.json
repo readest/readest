@@ -2608,5 +2608,5 @@
   "Expressive": "ප්‍රකාශනශීලී",
   "Show Page Thumbnails": "පිටු සිඟිති රූ පෙන්වන්න",
   "Allow Self-Signed Certificate": "ස්වයං-අත්සන් කළ සහතිකයට ඉඩ දෙන්න",
-  "Skips certificate checks for this server, so only turn it on if you trust it": "මෙම සේවාදායකය සඳහා සහතික පරීක්ෂාව මඟ හරියි, එබැවින් ඔබ විශ්වාස කරන්නේ නම් පමණක් සක්‍රිය කරන්න"
+  "Skips certificate checks for this server. Turn it off if the server has a valid certificate": "මෙම සේවාදායකය සඳහා සහතික පරීක්ෂාව මඟ හරියි. සේවාදායකයට වලංගු සහතිකයක් තිබේ නම් එය අක්‍රිය කරන්න"
 }

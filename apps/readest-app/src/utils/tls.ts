@@ -1,8 +1,7 @@
 /**
- * Per-server opt-in for self-signed or mismatched TLS certificates on native
- * requests (KOSync, BookOrbit, OPDS, Audiobookshelf). Servers added since the
- * option existed store an explicit choice, off by default. A server saved
- * before it has no value and keeps the lenient behavior it shipped with, so an
+ * Per-server choice to accept self-signed or mismatched TLS certificates on
+ * native requests (KOSync, BookOrbit, OPDS, Audiobookshelf). It is on unless
+ * the user turns it off, as every server was before the option existed, so an
  * upgrade doesn't cut off a working self-hosted setup.
  */
 export interface SelfSignedCertOption {

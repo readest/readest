@@ -2608,5 +2608,5 @@
   "Expressive": "अभिव्यंजक",
   "Show Page Thumbnails": "पृष्ठ थंबनेल दिखाएँ",
   "Allow Self-Signed Certificate": "स्व-हस्ताक्षरित प्रमाणपत्र की अनुमति दें",
-  "Skips certificate checks for this server, so only turn it on if you trust it": "इस सर्वर के लिए प्रमाणपत्र जाँच छोड़ देता है, इसलिए इसे तभी चालू करें जब आप उस पर भरोसा करते हों"
+  "Skips certificate checks for this server. Turn it off if the server has a valid certificate": "इस सर्वर के लिए प्रमाणपत्र जाँच छोड़ देता है। यदि सर्वर के पास वैध प्रमाणपत्र है तो इसे बंद करें"
 }

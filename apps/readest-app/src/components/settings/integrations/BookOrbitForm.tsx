@@ -48,9 +48,9 @@ const BookOrbitForm: React.FC<BookOrbitFormProps> = ({ onBack }) => {
     formatCustomHeadersInput(settings.bookorbit.customHeaders),
   );
   const [headerError, setHeaderError] = useState('');
-  // A new connection verifies certificates unless the user opts out.
+  // A connection accepts self-signed certificates unless the user turns it off.
   const [allowSelfSignedCert, setAllowSelfSignedCert] = useState(
-    settings.bookorbit.allowSelfSignedCert ?? false,
+    allowsSelfSignedCert(settings.bookorbit),
   );
 
   useEffect(() => {

@@ -38,17 +38,17 @@ beforeEach(() => {
 
 describe('customOPDSStore', () => {
   describe('addCatalog', () => {
-    test('verifies TLS certificates for a newly added catalog unless asked not to', () => {
+    test('allows self-signed certificates for a newly added catalog unless asked not to', () => {
       const store = useCustomOPDSStore.getState();
       const plain = store.addCatalog({ id: 'a', name: 'A', url: 'https://a.example.com/opds' });
-      const lenient = store.addCatalog({
+      const strict = store.addCatalog({
         id: 'b',
         name: 'B',
         url: 'https://b.example.com/opds',
-        allowSelfSignedCert: true,
+        allowSelfSignedCert: false,
       });
-      expect(plain.allowSelfSignedCert).toBe(false);
-      expect(lenient.allowSelfSignedCert).toBe(true);
+      expect(plain.allowSelfSignedCert).toBe(true);
+      expect(strict.allowSelfSignedCert).toBe(false);
     });
 
     test('mints a contentId from the URL when one is not provided', () => {

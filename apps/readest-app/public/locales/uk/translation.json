@@ -2738,5 +2738,5 @@
   "Expressive": "Виразний",
   "Show Page Thumbnails": "Показувати мініатюри сторінок",
   "Allow Self-Signed Certificate": "Дозволити самопідписаний сертифікат",
-  "Skips certificate checks for this server, so only turn it on if you trust it": "Вимикає перевірку сертифіката для цього сервера, тож вмикайте, лише якщо довіряєте йому"
+  "Skips certificate checks for this server. Turn it off if the server has a valid certificate": "Пропускає перевірку сертифіката для цього сервера. Вимкніть, якщо сервер має дійсний сертифікат"
 }

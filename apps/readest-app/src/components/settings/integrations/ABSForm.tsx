@@ -46,7 +46,7 @@ const ABSForm: React.FC<ABSFormProps> = ({ onBack }) => {
   const [password, setPassword] = useState('');
   const [isConnecting, setIsConnecting] = useState(false);
   const [connectError, setConnectError] = useState('');
-  const [allowSelfSignedCert, setAllowSelfSignedCert] = useState(false);
+  const [allowSelfSignedCert, setAllowSelfSignedCert] = useState(true);
 
   const activeServer = servers.find((server) => server.id === activeServerId);
 

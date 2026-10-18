@@ -2615,5 +2615,5 @@
   "Within {{count}} words_one": "{{count}} kelime içinde",
   "Within {{count}} words_other": "{{count}} kelime içinde",
   "Allow Self-Signed Certificate": "Kendinden imzalı sertifikaya izin ver",
-  "Skips certificate checks for this server, so only turn it on if you trust it": "Bu sunucu için sertifika denetimini atlar, bu yüzden yalnızca güveniyorsanız açın"
+  "Skips certificate checks for this server. Turn it off if the server has a valid certificate": "Bu sunucu için sertifika denetimini atlar. Sunucunun geçerli bir sertifikası varsa kapatın"
 }

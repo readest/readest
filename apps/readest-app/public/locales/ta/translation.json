@@ -2608,5 +2608,5 @@
   "Expressive": "உணர்ச்சிமிக்க",
   "Show Page Thumbnails": "பக்க சிறுபடங்களைக் காட்டு",
   "Allow Self-Signed Certificate": "சுய கையொப்பமிட்ட சான்றிதழை அனுமதி",
-  "Skips certificate checks for this server, so only turn it on if you trust it": "இந்த சேவையகத்திற்கான சான்றிதழ் சரிபார்ப்பைத் தவிர்க்கும், எனவே நம்பினால் மட்டும் இயக்கவும்"
+  "Skips certificate checks for this server. Turn it off if the server has a valid certificate": "இந்த சேவையகத்திற்கான சான்றிதழ் சரிபார்ப்பைத் தவிர்க்கிறது. சேவையகத்தில் செல்லுபடியான சான்றிதழ் இருந்தால் இதை முடக்கவும்"
 }

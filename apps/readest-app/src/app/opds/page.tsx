@@ -143,7 +143,7 @@ export default function BrowserPage() {
   const usernameRef = useRef<string | null | undefined>(undefined);
   const passwordRef = useRef<string | null | undefined>(undefined);
   const customHeadersRef = useRef<Record<string, string>>({});
-  const allowSelfSignedCertRef = useRef(false);
+  const allowSelfSignedCertRef = useRef(true);
   const startURLRef = useRef<string | null | undefined>(undefined);
   const loadingOPDSRef = useRef(false);
   const historyIndexRef = useRef(-1);
@@ -412,8 +412,8 @@ export default function BrowserPage() {
         passwordRef.current = null;
       }
       customHeadersRef.current = normalizeCustomHeaders(catalog?.customHeaders);
-      // An ad-hoc URL opened without a saved catalog verifies certificates.
-      allowSelfSignedCertRef.current = catalog ? allowsSelfSignedCert(catalog) : false;
+      // An ad-hoc URL opened without a saved catalog accepts self-signed certificates.
+      allowSelfSignedCertRef.current = allowsSelfSignedCert(catalog ?? {});
       if (libraryLoaded) {
         lastLoadedKeyRef.current = loadKey;
         loadOPDS(url);

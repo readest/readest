@@ -2738,5 +2738,5 @@
   "Expressive": "Ekspresyjny",
   "Show Page Thumbnails": "Pokaż miniatury stron",
   "Allow Self-Signed Certificate": "Zezwalaj na certyfikat z podpisem własnym",
-  "Skips certificate checks for this server, so only turn it on if you trust it": "Pomija sprawdzanie certyfikatu dla tego serwera, więc włącz tylko, jeśli mu ufasz"
+  "Skips certificate checks for this server. Turn it off if the server has a valid certificate": "Pomija sprawdzanie certyfikatu dla tego serwera. Wyłącz, jeśli serwer ma ważny certyfikat"
 }

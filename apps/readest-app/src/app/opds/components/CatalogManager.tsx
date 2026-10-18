@@ -124,7 +124,7 @@ const EMPTY_NEW_CATALOG = {
   customHeadersInput: '',
   proxyConsent: false,
   autoDownload: false,
-  allowSelfSignedCert: false,
+  allowSelfSignedCert: true,
 };
 
 interface CatalogCardProps {
@@ -864,7 +864,7 @@ export function CatalogManager({ inSubPage = false }: CatalogManagerProps = {}) 
                         <span className='text-sm'>{_('Allow Self-Signed Certificate')}</span>
                         <p className='text-base-content/60 text-xs'>
                           {_(
-                            'Skips certificate checks for this server, so only turn it on if you trust it',
+                            'Skips certificate checks for this server. Turn it off if the server has a valid certificate',
                           )}
                         </p>
                       </div>

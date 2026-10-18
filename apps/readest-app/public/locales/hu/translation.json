@@ -2608,5 +2608,5 @@
   "Expressive": "Kifejező",
   "Show Page Thumbnails": "Oldalbélyegképek megjelenítése",
   "Allow Self-Signed Certificate": "Önaláírt tanúsítvány engedélyezése",
-  "Skips certificate checks for this server, so only turn it on if you trust it": "Kihagyja a tanúsítvány ellenőrzését ennél a szervernél, ezért csak akkor kapcsold be, ha megbízol benne"
+  "Skips certificate checks for this server. Turn it off if the server has a valid certificate": "Kihagyja a tanúsítvány ellenőrzését ennél a kiszolgálónál. Kapcsold ki, ha a kiszolgálónak érvényes tanúsítványa van"
 }

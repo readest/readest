@@ -9,8 +9,9 @@ interface SelfSignedCertSwitchProps {
 }
 
 /**
- * Per-server opt-in for self-signed or mismatched TLS certificates. Native
- * only: on the web the browser enforces TLS and the choice has no effect.
+ * Per-server choice to accept self-signed or mismatched TLS certificates, on
+ * unless turned off. Native only: on the web the browser enforces TLS and the
+ * choice has no effect.
  */
 const SelfSignedCertSwitch: React.FC<SelfSignedCertSwitchProps> = ({ checked, onChange }) => {
   const _ = useTranslation();
@@ -18,7 +19,7 @@ const SelfSignedCertSwitch: React.FC<SelfSignedCertSwitchProps> = ({ checked, on
   return (
     <BoxedList
       description={_(
-        'Skips certificate checks for this server, so only turn it on if you trust it',
+        'Skips certificate checks for this server. Turn it off if the server has a valid certificate',
       )}
     >
       <SettingsSwitchRow

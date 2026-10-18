@@ -2608,5 +2608,5 @@
   "Expressive": "Uttrycksfull",
   "Show Page Thumbnails": "Visa sidminiatyrer",
   "Allow Self-Signed Certificate": "Tillåt självsignerat certifikat",
-  "Skips certificate checks for this server, so only turn it on if you trust it": "Hoppar över certifikatkontrollen för den här servern, så slå bara på det om du litar på den"
+  "Skips certificate checks for this server. Turn it off if the server has a valid certificate": "Hoppar över certifikatkontrollen för den här servern. Stäng av det om servern har ett giltigt certifikat"
 }

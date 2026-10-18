@@ -2738,5 +2738,5 @@
   "Expressive": "Выразительный",
   "Show Page Thumbnails": "Показывать миниатюры страниц",
   "Allow Self-Signed Certificate": "Разрешить самоподписанный сертификат",
-  "Skips certificate checks for this server, so only turn it on if you trust it": "Отключает проверку сертификата для этого сервера, поэтому включайте, только если доверяете ему"
+  "Skips certificate checks for this server. Turn it off if the server has a valid certificate": "Пропускает проверку сертификата для этого сервера. Отключите, если у сервера действительный сертификат"
 }

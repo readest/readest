@@ -2543,5 +2543,5 @@
   "Expressive": "แสดงอารมณ์",
   "Show Page Thumbnails": "แสดงภาพขนาดย่อของหน้า",
   "Allow Self-Signed Certificate": "อนุญาตใบรับรองที่ลงนามด้วยตนเอง",
-  "Skips certificate checks for this server, so only turn it on if you trust it": "ข้ามการตรวจสอบใบรับรองสำหรับเซิร์ฟเวอร์นี้ จึงควรเปิดเฉพาะเมื่อคุณเชื่อถือเซิร์ฟเวอร์นี้"
+  "Skips certificate checks for this server. Turn it off if the server has a valid certificate": "ข้ามการตรวจสอบใบรับรองของเซิร์ฟเวอร์นี้ ปิดตัวเลือกนี้หากเซิร์ฟเวอร์มีใบรับรองที่ถูกต้อง"
 }

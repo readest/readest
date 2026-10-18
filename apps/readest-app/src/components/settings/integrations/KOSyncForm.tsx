@@ -40,9 +40,9 @@ const KOSyncForm: React.FC<KOSyncFormProps> = ({ onBack }) => {
     formatCustomHeadersInput(settings.kosync.customHeaders),
   );
   const [headerError, setHeaderError] = useState('');
-  // A new connection verifies certificates unless the user opts out.
+  // A connection accepts self-signed certificates unless the user turns it off.
   const [allowSelfSignedCert, setAllowSelfSignedCert] = useState(
-    settings.kosync.allowSelfSignedCert ?? false,
+    allowsSelfSignedCert(settings.kosync),
   );
 
   useEffect(() => {

@@ -2543,5 +2543,5 @@
   "Expressive": "富有表现力",
   "Show Page Thumbnails": "显示页面缩略图",
   "Allow Self-Signed Certificate": "允许自签名证书",
-  "Skips certificate checks for this server, so only turn it on if you trust it": "将跳过此服务器的证书校验，请仅在信任该服务器时开启"
+  "Skips certificate checks for this server. Turn it off if the server has a valid certificate": "将跳过此服务器的证书校验。如果服务器有有效证书，请关闭此选项"
 }

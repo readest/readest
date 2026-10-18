@@ -2673,5 +2673,5 @@
   "Expressive": "Expresiv",
   "Show Page Thumbnails": "Afișează miniaturile paginilor",
   "Allow Self-Signed Certificate": "Permite certificat autosemnat",
-  "Skips certificate checks for this server, so only turn it on if you trust it": "Omite verificarea certificatului pentru acest server, așa că activează doar dacă ai încredere în el"
+  "Skips certificate checks for this server. Turn it off if the server has a valid certificate": "Omite verificarea certificatului pentru acest server. Dezactivează opțiunea dacă serverul are un certificat valid"
 }

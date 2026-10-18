@@ -2543,5 +2543,5 @@
   "Expressive": "표현력",
   "Show Page Thumbnails": "페이지 썸네일 표시",
   "Allow Self-Signed Certificate": "자체 서명 인증서 허용",
-  "Skips certificate checks for this server, so only turn it on if you trust it": "이 서버의 인증서 확인을 건너뛰므로 신뢰하는 경우에만 켜세요"
+  "Skips certificate checks for this server. Turn it off if the server has a valid certificate": "이 서버의 인증서 확인을 건너뜁니다. 서버에 유효한 인증서가 있으면 끄세요"
 }

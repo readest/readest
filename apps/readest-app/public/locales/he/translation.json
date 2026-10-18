@@ -2673,5 +2673,5 @@
   "Expressive": "אקספרסיבי",
   "Show Page Thumbnails": "הצג תמונות ממוזערות של עמודים",
   "Allow Self-Signed Certificate": "אפשר אישור בחתימה עצמית",
-  "Skips certificate checks for this server, so only turn it on if you trust it": "מדלג על בדיקת האישור עבור שרת זה, לכן הפעילו רק אם אתם סומכים עליו"
+  "Skips certificate checks for this server. Turn it off if the server has a valid certificate": "מדלג על בדיקת האישור עבור שרת זה. כבה זאת אם לשרת יש אישור תקף"
 }
