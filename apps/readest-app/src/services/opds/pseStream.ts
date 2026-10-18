@@ -42,7 +42,7 @@ export const createPseStreamPageLoader = (data: PseStreamData) => {
   const username = catalog?.username || '';
   const password = catalog?.password || '';
   const customHeaders = normalizeCustomHeaders(catalog?.customHeaders);
-  const allowSelfSignedCert = catalog ? allowsSelfSignedCert(catalog) : false;
+  const allowSelfSignedCert = allowsSelfSignedCert(catalog ?? {});
   let authHeaderPromise: Promise<string | null> | null = null;
 
   return async (pageIndex: number): Promise<Blob> => {

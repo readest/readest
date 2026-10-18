@@ -101,14 +101,15 @@ describe('getMediaProxyBase (#6216)', () => {
     mocks.invoke.mockResolvedValue('http://127.0.0.1:41234/s3cret');
     const { getMediaProxyBase: fresh } = await import('@/services/audiobook/mediaProxy');
 
+    // A grant that doesn't say accepts self-signed certificates, like a server.
     await fresh({ origin: 'https://books.example', authorization: 'Bearer t' });
-    await fresh({ origin: 'https://lab.example', allowSelfSignedCert: true });
+    await fresh({ origin: 'https://lab.example', allowSelfSignedCert: false });
     expect(mocks.invoke.mock.calls[0]![1]).toMatchObject({
       origins: ['https://verified.example', 'https://home.example', 'https://books.example'],
-      selfSigned: ['https://home.example'],
+      selfSigned: ['https://home.example', 'https://books.example'],
     });
     expect(mocks.invoke.mock.calls[1]![1]).toMatchObject({
-      selfSigned: ['https://home.example', 'https://lab.example'],
+      selfSigned: ['https://home.example'],
     });
   });
 
@@ -119,6 +120,21 @@ describe('getMediaProxyBase (#6216)', () => {
     mocks.servers = [
       { url: 'https://home.example/abs-a', allowSelfSignedCert: true },
       { url: 'https://home.example/abs-b', allowSelfSignedCert: false },
+    ];
+    mocks.invoke.mockResolvedValue('http://127.0.0.1:41234/s3cret');
+    const { getMediaProxyBase: fresh } = await import('@/services/audiobook/mediaProxy');
+
+    await fresh();
+    expect(mocks.invoke).toHaveBeenLastCalledWith('get_media_proxy_base', {
+      origins: ['https://home.example'],
+      selfSigned: [],
+    });
+  });
+
+  it('weighs every live store entry, even two spellings of one URL', async () => {
+    mocks.servers = [
+      { url: 'https://home.example', allowSelfSignedCert: true },
+      { url: 'https://home.example/', allowSelfSignedCert: false },
     ];
     mocks.invoke.mockResolvedValue('http://127.0.0.1:41234/s3cret');
     const { getMediaProxyBase: fresh } = await import('@/services/audiobook/mediaProxy');

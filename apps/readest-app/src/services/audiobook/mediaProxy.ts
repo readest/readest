@@ -19,6 +19,7 @@
 import { invoke } from '@tauri-apps/api/core';
 import { isTauriAppPlatform } from '@/services/environment';
 import { useABSServerStore } from '@/store/absServerStore';
+import type { ABSServer } from '@/types/audiobookshelf';
 import { useSettingsStore } from '@/store/settingsStore';
 import { getOSPlatform } from '@/utils/misc';
 import { allowsSelfSignedCert } from '@/utils/tls';
@@ -35,22 +36,31 @@ import { allowsSelfSignedCert } from '@/utils/tls';
 const absServerOrigins = (): { origins: Set<string>; strict: Set<string> } => {
   const stored = useABSServerStore.getState().servers;
   const persisted = useSettingsStore.getState().settings?.absServers ?? [];
-  const seen = new Set<string>();
-  const origins = new Set<string>();
-  const strict = new Set<string>();
-  for (const server of [...stored, ...persisted]) {
-    if (server.deletedAt) continue;
-    let url: URL;
+  const liveUrl = (server: ABSServer): URL | null => {
+    if (server.deletedAt) return null;
     try {
-      url = new URL(server.url);
+      return new URL(server.url);
     } catch {
       // A malformed stored URL simply isn't allowlisted.
-      continue;
+      return null;
     }
-    if (seen.has(url.href)) continue;
-    seen.add(url.href);
+  };
+  const origins = new Set<string>();
+  const strict = new Set<string>();
+  const add = (url: URL, server: ABSServer) => {
     origins.add(url.origin);
     if (!allowsSelfSignedCert(server)) strict.add(url.origin);
+  };
+  const storedUrls = new Set<string>();
+  for (const server of stored) {
+    const url = liveUrl(server);
+    if (!url) continue;
+    storedUrls.add(url.href);
+    add(url, server);
+  }
+  for (const server of persisted) {
+    const url = liveUrl(server);
+    if (url && !storedUrls.has(url.href)) add(url, server);
   }
   return { origins, strict };
 };
@@ -102,7 +112,7 @@ export const getMediaProxyBase = async (grant?: MediaProxyGrant): Promise<string
     if (bookOrbitStrict) strict.add(bookOrbitStrict);
     if (grant) {
       origins.add(grant.origin);
-      if (!grant.allowSelfSignedCert) strict.add(grant.origin);
+      if (!allowsSelfSignedCert(grant)) strict.add(grant.origin);
     }
     const selfSigned = [...origins].filter((origin) => !strict.has(origin));
     const auth = grant?.authorization ? { [grant.origin]: grant.authorization } : undefined;

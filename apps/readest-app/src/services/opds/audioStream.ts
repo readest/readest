@@ -108,7 +108,7 @@ export const resolveOpdsAudioAuth = async (
   // what made the server answer 401 and the WebView pop its own Basic-auth
   // dialog, asking for the credentials the user already gave us (#6224).
   const origin = originOf(catalog?.url ?? '');
-  const allowSelfSignedCert = catalog ? allowsSelfSignedCert(catalog) : false;
+  const allowSelfSignedCert = allowsSelfSignedCert(catalog ?? {});
   const hasCredentials = !!(username || password);
   if (!hasCredentials) {
     return { authHeader: null, customHeaders, hasCredentials: false, origin, allowSelfSignedCert };

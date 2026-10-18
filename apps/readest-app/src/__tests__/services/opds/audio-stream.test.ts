@@ -281,7 +281,9 @@ describe('credential scoping', () => {
     expect((await resolveOpdsAudioAuth('cat-1', CATALOG)).allowSelfSignedCert).toBe(false);
     h.catalog = { id: 'cat-1', url: CATALOG };
     expect((await resolveOpdsAudioAuth('cat-1', CATALOG)).allowSelfSignedCert).toBe(true);
+    // A feed opened without a saved catalog has made no choice either.
     h.catalog = undefined;
+    expect((await resolveOpdsAudioAuth('cat-1', CATALOG)).allowSelfSignedCert).toBe(true);
   });
 
   // The auth probe is itself a credentialed request against a feed-chosen URL.
