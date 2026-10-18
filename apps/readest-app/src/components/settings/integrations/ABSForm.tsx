@@ -100,7 +100,7 @@ const ABSForm: React.FC<ABSFormProps> = ({ onBack }) => {
 
       setUrl('');
       setUsername('');
-      setAllowSelfSignedCert(false);
+      setAllowSelfSignedCert(true);
       setActiveServerId(added.id);
     } catch {
       setConnectError(
