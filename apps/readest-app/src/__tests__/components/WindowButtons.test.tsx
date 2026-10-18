@@ -138,6 +138,22 @@ describe('WindowButtons', () => {
       expect(screen.getByTestId('header').hasAttribute('data-window-drag')).toBe(false);
     });
 
+    it('drops a press on the search field whose release was missed', async () => {
+      hasWindowBar = true;
+      render(<SearchFieldHarness />);
+      const input = screen.getByRole('textbox', { name: 'Search' });
+
+      await act(async () => {
+        fireEvent.mouseDown(input, { buttons: 1, detail: 1, screenX: 100, screenY: 10 });
+        // The mouseup happened outside the window; the next move has no button down.
+        fireEvent.mouseMove(window, { buttons: 0, screenX: 140, screenY: 10 });
+        fireEvent.mouseMove(window, { buttons: 1, screenX: 180, screenY: 10 });
+        await flush();
+      });
+
+      expect(startDragging).not.toHaveBeenCalled();
+    });
+
     it('drags the window from an unfocused search field once the pointer moves', async () => {
       hasWindowBar = true;
       render(<SearchFieldHarness />);

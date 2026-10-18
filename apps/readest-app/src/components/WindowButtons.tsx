@@ -83,6 +83,11 @@ const WindowButtons: React.FC<WindowButtonsProps> = ({
   const handleDragInputMouseDown = (input: HTMLInputElement, e: MouseEvent) => {
     e.preventDefault();
     const onMove = (move: MouseEvent) => {
+      // The release was missed (e.g. outside the window): drop the press.
+      if ((move.buttons & 1) === 0) {
+        stop();
+        return;
+      }
       const dx = Math.abs(move.screenX - e.screenX);
       const dy = Math.abs(move.screenY - e.screenY);
       if (dx > DRAG_INPUT_THRESHOLD || dy > DRAG_INPUT_THRESHOLD) {
