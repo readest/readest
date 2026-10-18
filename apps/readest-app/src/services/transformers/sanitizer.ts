@@ -26,6 +26,11 @@ const RLM_HALF_SPACE_REGEX =
 const BOOK_URI_REGEXP =
   /^(?:(?:(?:f|ht)tps?|mailto|tel|callto|sms|cid|xmpp|blob|data):|[^a-z]|[a-z+.\-]+(?:[^a-z+.\-:]|$))/i;
 
+// Without data:, DOMPurify keeps data: URLs only on media tags (img, SVG image,
+// source, ...), so a data: link can't navigate the app window.
+const FRAGMENT_URI_REGEXP =
+  /^(?:(?:(?:f|ht)tps?|mailto|tel|callto|sms|cid|xmpp|blob):|[^a-z]|[a-z+.\-]+(?:[^a-z+.\-:]|$))/i;
+
 // Markup copied out of a book document into the app window (the table viewer,
 // paragraph mode) would run there with the app's privileges, and a `<style>`
 // would restyle the whole app, so it is sanitized again on the way in.
@@ -33,7 +38,7 @@ export const sanitizeBookFragment = (html: string) =>
   DOMPurify.sanitize(html, {
     FORBID_TAGS: ['script', 'style', 'iframe', 'object', 'embed', 'form', 'input'],
     FORBID_ATTR: ['srcdoc'],
-    ALLOWED_URI_REGEXP: BOOK_URI_REGEXP,
+    ALLOWED_URI_REGEXP: FRAGMENT_URI_REGEXP,
   });
 
 export const sanitizerTransformer: Transformer = {

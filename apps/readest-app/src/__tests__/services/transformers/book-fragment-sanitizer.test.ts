@@ -20,4 +20,21 @@ describe('sanitizeBookFragment', () => {
     expect(root.querySelector('img')?.getAttribute('src')).toBe('blob:http://localhost/abc');
     expect(root.querySelector('[onerror], script, style, iframe, meta')).toBeNull();
   });
+
+  it('keeps data: URLs on images but not on links', () => {
+    const svg =
+      'data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%2F%3E';
+    const html = sanitizeBookFragment(
+      `<a href="${svg}">link</a><img src="data:image/png;base64,AAAA">` +
+        '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">' +
+        `<image xlink:href="${svg}"/><a xlink:href="${svg}"><text>t</text></a></svg>`,
+    );
+    const root = document.createElement('div');
+    root.innerHTML = html;
+
+    expect(root.querySelector('a')?.hasAttribute('href')).toBe(false);
+    expect(root.querySelector('svg a')?.hasAttribute('xlink:href')).toBe(false);
+    expect(root.querySelector('img')?.getAttribute('src')).toBe('data:image/png;base64,AAAA');
+    expect(root.querySelector('image')?.getAttribute('xlink:href')).toBe(svg);
+  });
 });
