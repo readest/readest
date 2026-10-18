@@ -9,6 +9,7 @@ android {
 
     defaultConfig {
         minSdk = 21
+        targetSdk = 36 // Also gives the generated instrumentation APK a current target.
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles("consumer-rules.pro")

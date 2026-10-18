@@ -52,7 +52,9 @@ class FakeAudio {
   // HtmlAudioClock (the per-track player behind a multi-track source) calls
   // these on the element; a plain narration element never does.
   load(): void {}
-  removeAttribute(): void {}
+  removeAttribute(name: string): void {
+    if (name === 'src') this.src = '';
+  }
 
   #emit(type: string): void {
     for (const fn of [...(this.#listeners.get(type) ?? [])]) fn();
@@ -212,6 +214,100 @@ describe('MediaOverlayClient capabilities', () => {
     expect(audio().src).toBe('http://asset.localhost/books/ch1.mp3');
     expect(loadBlob).not.toHaveBeenCalled();
     expect(createObjectURL).not.toHaveBeenCalled();
+  });
+
+  test('preloads the next split member without replacing the audible member', async () => {
+    await setup(par('w1', 0, 1) + par('w2', 1, 2) + par('w3', 2, 3) + par('p2', 0, 3, 'ch2.mp3'));
+    const signal = new AbortController().signal;
+    const current = client.speak(section.ssmlForBlock(0)!, signal);
+    await current.next();
+
+    const firstAudio = audio();
+    const preload = client.speak(section.ssmlForBlock(1)!, signal, true);
+    await preload.next();
+
+    expect(FakeAudio.instances).toHaveLength(2);
+    expect(firstAudio.paused).toBe(false);
+    expect(FakeAudio.instances[1]!.src).toBe('blob:audio');
+    expect(book.loadBlob).toHaveBeenCalledTimes(2);
+
+    await client.stop(true);
+    const next = client.speak(section.ssmlForBlock(1)!, signal);
+    expect((await next.next()).value).toMatchObject({ code: 'boundary' });
+    expect(firstAudio.paused).toBe(true);
+    expect(FakeAudio.instances[1]!.playCalls).toBe(1);
+  });
+
+  test('a controller handover preserves the member that already started at EOF', async () => {
+    await setup(par('w1', 0, 1) + par('w2', 1, 2) + par('w3', 2, 3) + par('p2', 0, 3, 'ch2.mp3'));
+    const signal = new AbortController().signal;
+    const current = client.speak(section.ssmlForBlock(0)!, signal);
+    await current.next();
+    const first = FakeAudio.instances[0]!;
+    await client.speak(section.ssmlForBlock(1)!, signal, true).next();
+    first.advanceTo(3);
+    for await (const _ of current);
+    await client.stop(true);
+    expect(FakeAudio.instances[1]!.paused).toBe(false);
+    await client.speak(section.ssmlForBlock(1)!, signal).next();
+    expect(FakeAudio.instances).toHaveLength(2);
+    expect(FakeAudio.instances[1]!.playCalls).toBe(1);
+  });
+
+  test('block completion starts a queued member before section navigation can block the main thread', async () => {
+    await setup(par('w1', 0, 1) + par('w2', 1, 2) + par('w3', 2, 3) + par('p2', 0, 3, 'ch2.mp3'));
+    const signal = new AbortController().signal;
+    const current = client.speak(section.ssmlForBlock(0)!, signal);
+    await current.next();
+    await client.speak(section.ssmlForBlock(1)!, signal, true).next();
+    // The controller's completion check can win a timer turn over the queue's
+    // backstop; no timeupdate has been delivered yet.
+    FakeAudio.instances[0]!.currentTime = 3;
+    for await (const _ of current);
+    expect(FakeAudio.instances[1]!.paused).toBe(false);
+  });
+
+  test('keeps only one standby file and shares concurrent preloads', async () => {
+    await setup();
+    const signal = new AbortController().signal;
+    await client.speak(section.ssmlForBlock(0)!, signal).next();
+    const [next] = await makeSection(par('p2', 0, 3, 'ch2.mp3'));
+    const [later] = await makeSection(par('p2', 0, 3, 'ch3.mp3'));
+    await Promise.all([client.preloadSection(next), client.preloadSection(next)]);
+    await client.preloadSection(later);
+    expect(book.loadBlob).toHaveBeenCalledTimes(2);
+    expect(FakeAudio.instances).toHaveLength(2);
+    expect(FakeAudio.instances[0]!.paused).toBe(false);
+  });
+
+  test('shutdown releases both media elements and their object URLs', async () => {
+    await setup();
+    await client.speak(section.ssmlForBlock(0)!, new AbortController().signal).next();
+    const [next] = await makeSection(par('p2', 0, 3, 'ch2.mp3'));
+    await client.preloadSection(next);
+    await client.shutdown();
+    expect(FakeAudio.instances.every((element) => element.paused && !element.src)).toBe(true);
+    expect(revokeObjectURL).toHaveBeenCalledTimes(2);
+  });
+
+  test('a preload finishing after shutdown cannot resurrect playback', async () => {
+    await setup();
+    await client.speak(section.ssmlForBlock(0)!, new AbortController().signal).next();
+    let finish!: (blob: Blob) => void;
+    vi.mocked(book.loadBlob!).mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finish = resolve;
+        }),
+    );
+    const [next] = await makeSection(par('p2', 0, 3, 'ch2.mp3'));
+    const loading = client.preloadSection(next);
+    await vi.waitFor(() => expect(finish).toBeDefined());
+    await client.shutdown();
+    finish(new Blob([new Uint8Array(8)]));
+    await loading;
+    expect(FakeAudio.instances.every((element) => element.paused && !element.src)).toBe(true);
+    expect(revokeObjectURL).toHaveBeenCalledTimes(2);
   });
 
   // A recording split across files (an Audiobookshelf item) is one timeline
@@ -456,7 +552,7 @@ describe('MediaOverlayClient playback', () => {
     const iter = client.speak(section.ssmlForBlock(0)!, new AbortController().signal);
     await iter.next();
 
-    const firstFile = audio();
+    const firstFile = FakeAudio.instances[0]!;
     const pending = iter.next();
     firstFile.advanceTo(1);
     await pending;
@@ -683,9 +779,9 @@ describe('MediaOverlayClient playback', () => {
     expect(createObjectURL.mock.calls[0]![0].type).toBe('audio/flac');
   });
 
-  // Also from end-to-end playback: preloadNextSSML(4) and playback all asked for
-  // the same chapter file before any load finished, so five elements were built
-  // and each one's release revoked the previous URL mid-load.
+  // Also from end-to-end playback: preloadNextSSML(4) and playback can ask for
+  // the same chapter file before any load finishes, so one load must still be
+  // shared.
   test('concurrent requests for the same file share a single load', async () => {
     await setup();
     const signal = new AbortController().signal;
@@ -708,7 +804,7 @@ describe('MediaOverlayClient playback', () => {
     expect(revokeObjectURL).not.toHaveBeenCalled();
   });
 
-  test('preloading never swaps the element out from under live playback', async () => {
+  test('preloading never swaps the active element out from under live playback', async () => {
     // Block 0 plays ch1.mp3; block 1 is a different file. Preload of block 1
     // runs concurrently with playback and must not touch the playing element.
     await setup(par('w1', 0, 1) + par('w2', 1, 2) + par('w3', 2, 3) + par('p2', 0, 4, 'ch2.mp3'));
@@ -719,7 +815,7 @@ describe('MediaOverlayClient playback', () => {
     const preload = client.speak(section.ssmlForBlock(1)!, new AbortController().signal, true);
     for await (const _ of preload);
 
-    expect(audio()).toBe(playing);
+    expect(FakeAudio.instances).toHaveLength(2);
     expect(playing.paused).toBe(false);
     expect(revokeObjectURL).not.toHaveBeenCalled();
   });

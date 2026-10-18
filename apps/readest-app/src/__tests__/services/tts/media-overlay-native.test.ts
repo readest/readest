@@ -107,6 +107,95 @@ afterEach(async () => {
 });
 
 describe('MediaOverlayClient on iOS Tauri', () => {
+  test('prepares the next embedded file while native playback keeps running', async () => {
+    await setup();
+    const signal = new AbortController().signal;
+    await client.speak(section.ssmlForBlock(0)!, signal).next();
+    const callsBefore = controlCalls.length;
+    const next = {
+      pars: [{ audioHref: 'OEBPS/ch2.mp4', clipBegin: 0, clipEnd: 3 }],
+    } as unknown as MediaOverlaySection;
+    await client.preloadSection(next);
+    expect(writeFile).toHaveBeenCalledTimes(2);
+    expect(controlCalls.slice(callsBefore).every((call) => call['action'] === 'queue-next')).toBe(
+      true,
+    );
+  });
+
+  test('adopts a prepared native member without extracting or writing it again', async () => {
+    await setup();
+    const loadBlob = vi.fn(async () => new Blob([new Uint8Array(8)]));
+    client.attachSource({ loadBlob });
+    const signal = new AbortController().signal;
+    await client.speak(section.ssmlForBlock(0)!, signal).next();
+    const href = 'OEBPS/ch2.mp4';
+    await client.preloadSection({ pars: [{ audioHref: href }] } as unknown as MediaOverlaySection);
+    await client.stop(true);
+    for (const par of section.pars) par.audioHref = href;
+    expect((await client.speak(section.ssmlForBlock(0)!, signal).next()).value).toMatchObject({
+      code: 'boundary',
+    });
+    expect(loadBlob).toHaveBeenCalledTimes(2);
+    expect(writeFile).toHaveBeenCalledTimes(2);
+    expect(controlCalls.filter((call) => call['action'] === 'load').at(-1)?.['path']).toContain(
+      '-next-',
+    );
+  });
+
+  test('queues the prepared section before the current native file finishes', async () => {
+    await setup();
+    await client.speak(section.ssmlForBlock(0)!, new AbortController().signal).next();
+    await client.preloadSection({
+      pars: [{ audioHref: 'OEBPS/ch2.mp4', clipBegin: 2, clipEnd: 8 }],
+    } as unknown as MediaOverlaySection);
+    expect(controlCalls).toContainEqual(
+      expect.objectContaining({ action: 'queue-next', atMs: 3000, positionMs: 2000, endMs: 8000 }),
+    );
+  });
+
+  test('joins an already playing native member after delayed page navigation without a pause or rewind', async () => {
+    await setup();
+    const signal = new AbortController().signal;
+    const current = client.speak(section.ssmlForBlock(0)!, signal);
+    await current.next();
+    const href = 'OEBPS/ch2.mp4';
+    await client.preloadSection({
+      pars: [{ audioHref: href, clipBegin: 2, clipEnd: 9 }],
+    } as unknown as MediaOverlaySection);
+    const path = controlCalls.find((call) => call['action'] === 'queue-next')!['path'];
+    playoutEvents!({ type: 'segment-start', session: 7, path, positionMs: 6500 });
+    for await (const _ of current);
+    await client.stop(true);
+    for (const [index, par] of section.pars.entries()) {
+      par.audioHref = href;
+      par.clipBegin = 2 + index;
+      par.clipEnd = 3 + index;
+    }
+    const before = controlCalls.length;
+    expect((await client.speak(section.ssmlForBlock(0)!, signal).next()).value).toMatchObject({
+      code: 'boundary',
+    });
+    expect(
+      controlCalls
+        .slice(before)
+        .some((call) => ['load', 'pause', 'seek'].includes(String(call['action']))),
+    ).toBe(false);
+    expect(client.getChunkPosition()).toBe(1);
+  });
+
+  test('a chapter stop prepares the file without scheduling automatic playback', async () => {
+    await setup();
+    await client.speak(section.ssmlForBlock(0)!, new AbortController().signal).next();
+    await client.preloadSection(
+      {
+        pars: [{ audioHref: 'next.mp4', clipBegin: 0, clipEnd: 3 }],
+      } as unknown as MediaOverlaySection,
+      false,
+    );
+    expect(writeFile).toHaveBeenCalledTimes(2);
+    expect(controlCalls.some((call) => call['action'] === 'queue-next')).toBe(false);
+  });
+
   test('stages the chapter and drives the native playout instead of an element', async () => {
     await setup();
     const iter = client.speak(section.ssmlForBlock(0)!, new AbortController().signal);

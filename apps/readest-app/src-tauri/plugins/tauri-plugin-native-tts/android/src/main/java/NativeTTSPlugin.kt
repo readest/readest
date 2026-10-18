@@ -125,6 +125,8 @@ class PlayoutControlArgs {
     var rate: Double? = null
     var path: String? = null
     var positionMs: Double? = null
+    var atMs: Double? = null
+    var endMs: Double? = null
 }
 
 @TauriPlugin(
@@ -155,6 +157,7 @@ class NativeTTSPlugin(private val activity: Activity) : Plugin(activity) {
     // audiobooks. The WebView cannot expose Android app-private files as a
     // seekable Blob without first reading the whole file into memory; ExoPlayer
     // can seek and stream the original file path directly.
+    private var narrationQueue: ContinuousNarrationQueue? = null
     private var playoutPlayer: ExoPlayer? = null
     private var playoutSession = 0
     private var playoutCurrentIndex = -1
@@ -688,8 +691,19 @@ class NativeTTSPlugin(private val activity: Activity) : Plugin(activity) {
                             invoke.resolve(JSObject().apply { put("session", playoutSession) })
                         }
                     }
+                    "queue-next" -> {
+                        val path = requireNotNull(args.path)
+                        val at = requireNotNull(args.atMs)
+                        val end = requireNotNull(args.endMs)
+                        requireNotNull(narrationQueue).queue(path, (args.positionMs ?: 0.0).toLong(), end.toLong(), at.toLong())
+                        invoke.resolve(JSObject().apply { put("session", playoutSession) })
+                    }
+                    "cancel-next" -> {
+                        narrationQueue?.cancelNext()
+                        invoke.resolve(JSObject().apply { put("session", playoutSession) })
+                    }
                     "seek" -> {
-                        playoutPlayer?.seekTo((args.positionMs ?: 0.0).coerceAtLeast(0.0).toLong())
+                        narrationQueue?.seek((args.positionMs ?: 0.0).coerceAtLeast(0.0).toLong())
                         invoke.resolve(JSObject().apply { put("session", JSONObject.NULL) })
                     }
                     else -> invoke.reject("Unknown playout action: $action")
@@ -707,14 +721,25 @@ class NativeTTSPlugin(private val activity: Activity) : Plugin(activity) {
             invoke.resolve(JSObject().apply {
                 put("session", playoutSession)
                 put("index", playoutCurrentIndex)
-                put("positionMs", player?.currentPosition ?: 0L)
+                put("positionMs", narrationQueue?.positionMs ?: player?.currentPosition ?: 0L)
+                put("path", narrationQueue?.path ?: JSONObject.NULL)
                 put("playing", player?.isPlaying ?: false)
             })
         }
     }
 
     private fun ensurePlayoutPlayer(): ExoPlayer {
-        return playoutPlayer ?: ExoPlayer.Builder(activity).build().also { player ->
+        return playoutPlayer ?: ContinuousNarrationQueue(activity).also { queue ->
+            narrationQueue = queue
+            queue.onTransition = { path, position ->
+                playoutLoadedPath = path
+                playoutCurrentIndex = 0
+                trigger("playout_events", JSObject().apply {
+                    put("type", "segment-start"); put("session", playoutSession)
+                    put("path", path); put("positionMs", position)
+                })
+            }
+        }.player.also { player ->
             player.addListener(playoutListener)
             player.setPlaybackSpeed(playoutRate)
             playoutPlayer = player
@@ -722,25 +747,9 @@ class NativeTTSPlugin(private val activity: Activity) : Plugin(activity) {
     }
 
     private fun loadContinuousFile(path: String, positionMs: Double) {
-        // A paired Audiobookshelf audiobook streams its tracks by URL, the
-        // same way the iOS playout player already accepts http(s) paths.
-        val uri = if (path.startsWith("http://") || path.startsWith("https://")) {
-            Uri.parse(path)
-        } else {
-            val file = File(path)
-            require(file.isFile) { "Narration file not found: $path" }
-            Uri.fromFile(file)
-        }
         val player = ensurePlayoutPlayer()
-        val startMs = positionMs.coerceAtLeast(0.0).toLong()
-
-        if (playoutLoadedPath == path && player.currentMediaItem != null) {
-            player.seekTo(startMs)
-        } else {
-            player.setMediaItem(MediaItem.fromUri(uri), startMs)
-            player.prepare()
-            playoutLoadedPath = path
-        }
+        narrationQueue!!.load(path, positionMs.coerceAtLeast(0.0).toLong())
+        playoutLoadedPath = path
         // Loading and resuming are separate operations, matching the web and
         // iOS clocks used by MediaOverlayClient.
         player.pause()
@@ -750,8 +759,7 @@ class NativeTTSPlugin(private val activity: Activity) : Plugin(activity) {
 
     private fun abortPlayout() {
         playoutCurrentIndex = -1
-        playoutPlayer?.stop()
-        playoutPlayer?.clearMediaItems()
+        narrationQueue?.stop()
         playoutLoadedPath = null
     }
 

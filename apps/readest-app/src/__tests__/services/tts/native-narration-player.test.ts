@@ -77,6 +77,57 @@ describe('NativeNarrationPlayer', () => {
     await player.shutdown();
   });
 
+  test('stages the next file without changing the live session, then adopts it without writing again', async () => {
+    const player = new NativeNarrationPlayer();
+    const blob = new Blob([new Uint8Array(4)]);
+    await player.load('ch1.mp4', blob);
+    await player.play();
+    const controls = controlCalls.length;
+    const loadBlob = vi.fn(async () => blob);
+    await player.preload('ch2.mp4', loadBlob);
+    await player.preload('ch3.mp4', loadBlob);
+    expect(controlCalls).toHaveLength(controls);
+    expect(player.href).toBe('ch1.mp4');
+    expect(player.paused).toBe(false);
+    expect(writeFile).toHaveBeenCalledTimes(2);
+    expect(loadBlob).toHaveBeenCalledOnce();
+
+    expect(await player.loadPrepared('ch2.mp4', 4)).toBe(true);
+    expect(writeFile).toHaveBeenCalledTimes(2);
+    expect(controlCalls.at(-1)).toMatchObject({ action: 'load', positionMs: 4000 });
+    expect(remove).toHaveBeenCalledTimes(1);
+    await player.shutdown();
+    expect(remove).toHaveBeenCalledTimes(2);
+  });
+
+  test('shutdown removes a preparation that finishes after release', async () => {
+    const player = new NativeNarrationPlayer();
+    let complete!: (blob: Blob) => void;
+    const preparation = player.preload(
+      'next.mp4',
+      () =>
+        new Promise((resolve) => {
+          complete = resolve;
+        }),
+    );
+    await player.shutdown();
+    complete(new Blob([new Uint8Array(4)]));
+    await preparation;
+    expect(remove).toHaveBeenCalledOnce();
+    expect(await player.loadPrepared('next.mp4')).toBe(false);
+    expect(controlCalls.some((call) => call['action'] === 'load')).toBe(false);
+  });
+
+  test('a failed speculative extraction can be retried', async () => {
+    const player = new NativeNarrationPlayer();
+    await player.preload('next.mp4', async () => {
+      throw new Error('read failed');
+    });
+    await player.preload('next.mp4', async () => new Blob([new Uint8Array(4)]));
+    expect(await player.loadPrepared('next.mp4')).toBe(true);
+    await player.shutdown();
+  });
+
   test('stages embedded narration in the app cache', async () => {
     // Android 10 resolves Temp to /data/local/tmp, which ordinary apps cannot write.
     vi.mocked(writeFile).mockImplementation(async (_path, _bytes, options) => {

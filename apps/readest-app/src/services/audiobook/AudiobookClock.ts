@@ -64,6 +64,10 @@ export class HtmlAudioClock implements AudiobookClock {
     return this.#audio.paused;
   }
 
+  get ended() {
+    return this.#audio.ended;
+  }
+
   async load(url: string, startAt: number): Promise<void> {
     const rate = this.#audio.playbackRate;
     this.#audio.crossOrigin = this.#cors ? mediaCrossOrigin(url) : null;

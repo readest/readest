@@ -650,6 +650,43 @@ describe('narration mark source and timeline', () => {
     expect(controller.supportsPlaybackInfo()).toBe(true);
   });
 
+  test('preloads across unnarrated sections without navigating or changing the active marks', async () => {
+    const view = makeView([true, false, true]);
+    const controller = new TTSController(null, view);
+    await controller.init();
+    await controller.initViewTTS(0);
+    const active = view.tts;
+    const preload = vi
+      .spyOn(controller.ttsMediaOverlayClient, 'preloadSection')
+      .mockResolvedValue();
+    const navigate = vi.fn();
+    controller.onSectionChange = navigate;
+    view.tts!.start();
+
+    await controller.preloadNextSSML();
+
+    expect(preload).toHaveBeenCalledOnce();
+    expect(preload.mock.calls[0]![0]!.pars).toHaveLength(2);
+    expect(view.book.sections[1]!.createDocument).not.toHaveBeenCalled();
+    expect(view.book.sections[2]!.createDocument).toHaveBeenCalledOnce();
+    expect(navigate).not.toHaveBeenCalled();
+    expect(view.tts).toBe(active);
+    expect(view.tts!.resume()).toContain('First narrated sentence.');
+  });
+
+  test('a failed speculative section read does not fail the active narration', async () => {
+    const view = makeView([true, true]);
+    const controller = new TTSController(null, view);
+    await controller.init();
+    await controller.initViewTTS(0);
+    vi.mocked(view.book.sections[1]!.createDocument).mockRejectedValue(new Error('unavailable'));
+    const preload = vi.spyOn(controller.ttsMediaOverlayClient, 'preloadSection');
+    view.tts!.start();
+    await expect(controller.preloadNextSSML()).resolves.toBeUndefined();
+    expect(preload).not.toHaveBeenCalled();
+    expect(view.tts!.resume()).toContain('First narrated sentence.');
+  });
+
   test('the timeline uses the recording exact durations, needing no estimates', async () => {
     const controller = new TTSController(null, makeView([true]));
     await controller.init();

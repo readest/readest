@@ -140,6 +140,8 @@ pub struct PlayoutControlRequest {
     pub path: Option<String>,
     // Seek target for actions "load" and "seek", in milliseconds.
     pub position_ms: Option<f64>,
+    pub at_ms: Option<f64>,
+    pub end_ms: Option<f64>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -155,4 +157,5 @@ pub struct PlayoutPositionResponse {
     pub index: i32,
     pub position_ms: f64,
     pub playing: bool,
+    pub path: Option<String>,
 }

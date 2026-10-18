@@ -163,7 +163,7 @@ Embedded Media Overlay support lives in `src/services/tts/mediaOverlay/`:
 | `parseSmil.ts` | Pure SMIL parsing: `parseSmilClock` (SMIL clock values) and `parseSmil` (walks `<body>`/`<seq>`/`<par>` in document order, resolving hrefs against the SMIL file). |
 | `MediaOverlaySection.ts` | Per-section index: resolves each par's text fragment to a DOM `Range` in the section document, groups pars into blocks by nearest block-level ancestor, and builds the SSML the controller consumes. |
 | `MediaOverlayTTS.ts` | Stands in for foliate's `TTS`. Same navigation surface (`start`/`resume`/`next`/`prev`/`nextMark`/`prevMark`/`from`/`setMark`/`getLastRange`), but marks come from the par list. |
-| `MediaOverlayClient.ts` | `implements TTSClient`. Plays clips off one `HTMLMediaElement`, emitting a `boundary` as each par becomes audible. |
+| `MediaOverlayClient.ts` | `implements TTSClient`. Prepares and queues recorded clips across browser/native clocks, emitting a `boundary` as each par becomes audible. |
 
 Separate audiobooks reuse the same client and mark iterator. The additional
 pieces are `src/services/audiobook/` (metadata, positional mapping, and local
@@ -199,6 +199,20 @@ Consequences of that shape:
   only for a genuine discontinuity - session start, a sentence skip, a scrub, or
   a new audio file where the publisher split the recording - decided from the
   element's own position rather than from bookkeeping.
+- **Split recordings use the same queued handover on every platform.** The
+  current recording and one upcoming member are prepared together. The current
+  clip's end and the upcoming clip's start come from the SMIL reading order;
+  the audio player starts the upcoming recording at that boundary, independently
+  of the controller's next utterance or a section/page navigation. Web and
+  desktop use a standby HTML audio clock and media-clock events with a 10 ms
+  foreground polling backstop. Apple uses `AVQueuePlayer`; Android uses an
+  ExoPlayer playlist with a native-clock message for clips ending before the
+  physical file end. These remove file loading and page navigation from the
+  handover, without claiming sample-accurate browser scheduling. The next
+  member retains its original-file time frame, so a delayed page turn joins
+  playback in progress instead of seeking back and replaying its opening.
+  Pause, seek, stop and voice changes cancel or hold the queue, and chapter-stop
+  and sentence-step modes do not automatically queue across their stop points.
 - **The scrubber is exact.** `TimelineSentence.duration` carries
   `clipEnd - clipBegin` and outranks the measured/estimated duration tiers in
   `SectionTimeline`, so a narrated chapter reports the recording's real length
@@ -319,3 +333,25 @@ Verified end to end against two very different real books:
   330 MB container, no `media:narrator` (hence the "Book narration" fallback),
   4 unnarrated front-matter sections. Its computed chapter timeline came out at
   2966.8s against the book's declared `media:duration` of 2966.79s.
+
+### Native queue checks
+
+`src/__tests__/services/tts/audio-handover.test.ts` and the Media Overlay client,
+controller and native-player suites cover queue boundaries, delayed section
+navigation, pause, stop, nonzero offsets, cleanup and chapter-stop behaviour.
+`media-overlay-gapless.browser.test.ts` uses real Chromium audio decoding and
+checks that the next recording starts before the section handover is claimed.
+
+The Apple adapter has a standalone AVFoundation check that also runs on macOS:
+
+```sh
+cd src-tauri/plugins/tauri-plugin-native-tts/ios
+swiftc Sources/ContinuousNarrationQueue.swift Tests/CheckNarrationQueue.swift -o /tmp/check-narration-queue
+/tmp/check-narration-queue
+```
+
+Android's `ContinuousNarrationQueueTest.kt` runs on a connected device through
+the native-tts module's `connectedDebugAndroidTest` task. Select that module
+explicitly; running the task at the root also installs unrelated library test
+runners. These adapter checks exercise real native playback, but do not replace
+an iPhone/iPad app check of background playback, interruptions and audio routing.

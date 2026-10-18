@@ -4,6 +4,7 @@ export interface NarrationClock {
   currentTime: number;
   playbackRate: number;
   readonly paused: boolean;
+  readonly ended?: boolean;
   play(): Promise<void>;
   pause(): void;
   addEventListener(type: 'ended' | 'error' | 'timeupdate', fn: () => void): void;

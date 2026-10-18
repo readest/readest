@@ -1635,6 +1635,40 @@ export class TTSController extends EventTarget {
     for await (const _ of iter);
   }
 
+  // Foliate's next() preloader only sees blocks in the current section. A
+  // Storyteller read-along can put the next words in a new XHTML/SMIL section,
+  // so prepare that section's first audio member as well; otherwise the
+  // section handover still waits for a fresh EPUB read at the exact boundary.
+  async #preloadFollowingNarrationSection(signal: AbortSignal): Promise<void> {
+    if (!this.narrationActive || this.#ttsSectionIndex < 0) return;
+    const view = this.view;
+    const currentIndex = this.#ttsSectionIndex;
+    const nextIndex = this.#findNarratedSection(view.book, currentIndex + 1, 1);
+    if (nextIndex < 0) return;
+    const section = this.view.book.sections?.[nextIndex];
+    if (!section?.createDocument) return;
+    try {
+      const doc = this.#getLiveSectionDoc(nextIndex) ?? (await this.#createSectionDoc(section));
+      const narration = await this.#loadNarrationSection(this.view, nextIndex, doc);
+      if (
+        signal?.aborted ||
+        this.view !== view ||
+        this.#ttsSectionIndex !== currentIndex ||
+        !this.narrationActive
+      )
+        return;
+      if (narration)
+        await this.ttsMediaOverlayClient.preloadSection(
+          narration,
+          !this.stopAtChapterEnd && !this.#stepsBySentence(),
+        );
+    } catch (error) {
+      // A failed speculative preload must never stop the section currently
+      // playing; the normal section initializer will report a real failure.
+      console.warn('[TTS] narration section preload failed', nextIndex, error);
+    }
+  }
+
   async preloadNextSSML(count: number = 4) {
     const tts = this.#getTts();
     if (!tts) return;
@@ -1714,6 +1748,9 @@ export class TTSController extends EventTarget {
     const { signal } = this.#preloadAbort;
     for (const ssml of ssmls) {
       await this.preloadSSML(ssml, signal);
+    }
+    if (sectionEnded && !signal.aborted && this.#getTts() === tts) {
+      await this.#preloadFollowingNarrationSection(signal);
     }
   }
 
@@ -1826,6 +1863,7 @@ export class TTSController extends EventTarget {
         // A step mode speaks one sentence per utterance, so the engine stops
         // exactly where the sentence does.
         const stepped = !oneTime && this.#stepsBySentence();
+        this.ttsMediaOverlayClient.setAutoQueue(!oneTime && !stepped);
         if (!oneTime) {
           if (!plainText || marks.length === 0) {
             resolve();

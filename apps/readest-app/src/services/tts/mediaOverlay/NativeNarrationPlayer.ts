@@ -16,12 +16,15 @@ interface PlayoutPosition {
   index: number;
   positionMs: number;
   playing: boolean;
+  path?: string;
 }
 
 interface PlayoutEvent {
   type: string;
   session: number;
   index?: number;
+  path?: string;
+  positionMs?: number;
 }
 
 // Matches NativeAudioPlayer: the JS clock is extrapolated between polls, so
@@ -48,6 +51,16 @@ export class NativeNarrationPlayer {
   #stagedPath: string | null = null;
   #stagedHref: string | null = null;
   #ownsStagedPath = false;
+  #prepared: {
+    href: string;
+    path: string | null;
+    promise: Promise<string>;
+    boundary: number | null;
+    end: number;
+    started: boolean;
+    cache: { mediaSec: number; playing: boolean; at: number };
+  } | null = null;
+  #prepareId = 0;
   #rate = 1;
   #userPaused = true;
   #ended = false;
@@ -66,6 +79,7 @@ export class NativeNarrationPlayer {
 
   // Extrapolated media time between native polls (AVPlayer item time).
   get currentTime(): number {
+    if (this.#prepared?.started) return this.#prepared.boundary!;
     const elapsed = this.#cache.playing
       ? ((performance.now() - this.#cache.at) / 1000) * this.#rate
       : 0;
@@ -116,6 +130,7 @@ export class NativeNarrationPlayer {
   // Forget the native session id after another engine (Edge) aborted the shared
   // AVPlayer. Keeps the staged chapter file so the next load() is cheap.
   invalidateSession(): void {
+    this.#discardPrepared();
     this.#userPaused = true;
     this.#cache.playing = false;
     this.#href = null;
@@ -131,9 +146,110 @@ export class NativeNarrationPlayer {
   // Stage the chapter blob once per href, then load (or seek) on the native
   // player. Large MO files stay on disk — never base64 through the plugin.
   async load(href: string, blob: Blob, startSec = 0): Promise<void> {
+    this.#discardPrepared();
     await this.ensureReady();
     const path = await this.#stageBlob(href, blob);
     await this.#loadResolvedPath(href, path, startSec);
+  }
+
+  // Extract and write one upcoming member without touching the live native
+  // session. Loading it through AVPlayer here would interrupt the current file.
+  async preload(href: string, loadBlob: () => Promise<Blob>): Promise<void> {
+    if (this.#stagedHref === href || this.#prepared) return;
+    const entry = {
+      href,
+      path: null as string | null,
+      promise: Promise.resolve(''),
+      boundary: null as number | null,
+      end: 0,
+      started: false,
+      cache: { mediaSec: 0, playing: false, at: 0 },
+    };
+    this.#prepared = entry;
+    const name = `mo-narration-${hashHref(href)}-next-${++this.#prepareId}.${fileExtension(href)}`;
+    entry.promise = (async () => {
+      const blob = await loadBlob();
+      const bytes = new Uint8Array(await blob.arrayBuffer());
+      const path = await join(await appCacheDir(), name);
+      await writeFile(name, bytes, { baseDir: BaseDirectory.AppCache });
+      if (this.#prepared !== entry) {
+        await remove(path).catch(() => undefined);
+        throw new Error('Narration preparation cancelled');
+      }
+      entry.path = path;
+      return path;
+    })();
+    try {
+      await entry.promise;
+    } catch {
+      if (this.#prepared === entry) this.#prepared = null;
+    }
+  }
+
+  get queued(): boolean {
+    return this.#prepared?.boundary !== null && !!this.#prepared;
+  }
+  get queuedStarted(): boolean {
+    return !!this.#prepared?.started;
+  }
+
+  async queuePrepared(at: number, start: number, end: number): Promise<void> {
+    const entry = this.#prepared;
+    if (!entry || entry.boundary !== null) return;
+    const path = await entry.promise.catch(() => null);
+    if (!path || this.#prepared !== entry) return;
+    entry.boundary = at;
+    entry.end = end;
+    entry.cache = { mediaSec: start, playing: false, at: performance.now() };
+    try {
+      await invoke('plugin:native-tts|playout_control', {
+        payload: {
+          action: 'queue-next',
+          path,
+          atMs: at * 1000,
+          positionMs: start * 1000,
+          endMs: end * 1000,
+        },
+      });
+    } catch {
+      entry.boundary = null;
+    }
+  }
+
+  async loadPrepared(href: string, startSec = 0): Promise<boolean> {
+    const entry = this.#prepared;
+    if (entry?.href !== href) return false;
+    const path = await entry.promise.catch(() => null);
+    if (!path || this.#prepared !== entry) return false;
+    this.#prepared = null;
+    if (entry.started) {
+      const previous = this.#stagedPath;
+      const owned = this.#ownsStagedPath;
+      this.#href = href;
+      this.#stagedHref = href;
+      this.#stagedPath = path;
+      this.#ownsStagedPath = true;
+      this.#cache = entry.cache;
+      if (owned && previous && previous !== path) await remove(previous).catch(() => undefined);
+      return true;
+    }
+    // Foreground navigation before the queued boundary is a real seek.
+    await this.loadPath(href, path, startSec);
+    this.#ownsStagedPath = true;
+    return true;
+  }
+
+  cancelQueued(): void {
+    this.#discardPrepared();
+    void invoke('plugin:native-tts|playout_control', { payload: { action: 'cancel-next' } }).catch(
+      () => {},
+    );
+  }
+
+  #discardPrepared(): void {
+    const entry = this.#prepared;
+    this.#prepared = null;
+    if (entry?.path) void remove(entry.path).catch(() => undefined);
   }
 
   // Paired audiobooks already live as ordinary files under Books/<hash>.
@@ -170,6 +286,12 @@ export class NativeNarrationPlayer {
 
   async seek(seconds: number): Promise<void> {
     if (!this.#nativeSession) return;
+    const restoreCurrent = this.#prepared?.started && this.#href && this.#stagedPath;
+    this.cancelQueued();
+    if (restoreCurrent) {
+      await this.#loadResolvedPath(this.#href!, this.#stagedPath!, seconds);
+      return;
+    }
     await this.#nativeSession;
     this.#ended = false;
     this.#cache = {
@@ -187,13 +309,20 @@ export class NativeNarrationPlayer {
     this.#ended = false;
     await this.ensureReady();
     await invoke('plugin:native-tts|playout_control', { payload: { action: 'resume' } });
-    this.#cache.playing = true;
-    this.#cache.at = performance.now();
+    const cache = this.#prepared?.started ? this.#prepared.cache : this.#cache;
+    cache.playing = true;
+    cache.at = performance.now();
     this.#startPolling();
   }
 
   pause(): void {
     const mediaSec = this.currentTime;
+    if (this.#prepared?.started) {
+      const cache = this.#prepared.cache;
+      cache.mediaSec += cache.playing ? ((performance.now() - cache.at) / 1000) * this.#rate : 0;
+      cache.playing = false;
+      cache.at = performance.now();
+    }
     this.#userPaused = true;
     this.#cache = { mediaSec, playing: false, at: performance.now() };
     this.#stopPolling();
@@ -211,6 +340,7 @@ export class NativeNarrationPlayer {
   }
 
   async release(): Promise<void> {
+    this.#discardPrepared();
     this.pause();
     this.#href = null;
     this.#stopPolling();
@@ -269,9 +399,29 @@ export class NativeNarrationPlayer {
     }
   }
 
+  #recordTransition(path: string, seconds: number, playing: boolean): void {
+    const entry = this.#prepared;
+    if (!entry || entry.path !== path || entry.boundary === null) return;
+    entry.started = true;
+    entry.cache = {
+      mediaSec: seconds,
+      playing: playing && !this.#userPaused,
+      at: performance.now(),
+    };
+    this.#ended = false;
+  }
+
   #onNativeEvent(event: PlayoutEvent): void {
     if (this.#resolvedSession !== null && event.session !== this.#resolvedSession) return;
-    if (event.type === 'ended') {
+    if (event.type === 'segment-start' && event.path) {
+      this.#recordTransition(event.path, (event.positionMs ?? 0) / 1000, true);
+    } else if (event.type === 'ended') {
+      if (this.#prepared?.started)
+        this.#prepared.cache = {
+          mediaSec: this.#prepared.end,
+          playing: false,
+          at: performance.now(),
+        };
       this.#ended = true;
       this.#cache.playing = false;
       for (const fn of [...this.#endedListeners]) fn();
@@ -307,7 +457,9 @@ export class NativeNarrationPlayer {
     try {
       const pos = await invoke<PlayoutPosition>('plugin:native-tts|playout_position');
       if (pos.session !== this.#resolvedSession) return;
-      if (pos.index >= 0) {
+      if (pos.path && pos.path === this.#prepared?.path) {
+        this.#recordTransition(pos.path, pos.positionMs / 1000, pos.playing);
+      } else if (pos.index >= 0) {
         this.#cache = {
           mediaSec: pos.positionMs / 1000,
           playing: pos.playing && !this.#userPaused,

@@ -76,6 +76,8 @@ struct PlayoutControlArgs: Decodable {
   let rate: Double?
   let path: String?
   let positionMs: Double?
+  let atMs: Double?
+  let endMs: Double?
 }
 
 struct PlayoutEnqueueResponse: Encodable {
@@ -93,6 +95,7 @@ struct PlayoutPositionResponse: Encodable {
   let index: Int
   let positionMs: Double
   let playing: Bool
+  let path: String?
 }
 
 // MARK: - Command responses (camelCase, re-decoded by the Rust models)
@@ -1060,9 +1063,8 @@ class NativeTTSPlugin: Plugin, AVSpeechSynthesizerDelegate {
   private var playoutGapTimer: Timer?
   private var playoutItemEndObserver: NSObjectProtocol?
   // Path of the continuous file currently loaded via "load" (Media Overlay).
+  private var narrationQueue: ContinuousNarrationQueue?
   private var playoutLoadedPath: String?
-  private var playoutItemFailedObserver: NSObjectProtocol?
-  private var playoutItemStatusObserver: NSKeyValueObservation?
 
   @objc public func playout_control(_ invoke: Invoke) {
     do {
@@ -1117,6 +1119,20 @@ class NativeTTSPlugin: Plugin, AVSpeechSynthesizerDelegate {
             invoke.reject("playout load: invalid URL")
             return
           }
+          invoke.resolve(PlayoutControlResponse(session: self.playoutSession))
+        case "queue-next":
+          guard let path = args.path, let at = args.atMs, let end = args.endMs,
+                let queue = self.narrationQueue else {
+            invoke.reject("narration queue requires a current item and clip bounds")
+            return
+          }
+          do {
+            try queue.queue(path: path, start: (args.positionMs ?? 0) / 1000,
+                            end: end / 1000, after: at / 1000)
+            invoke.resolve(PlayoutControlResponse(session: self.playoutSession))
+          } catch { invoke.reject("narration queue: \(error.localizedDescription)") }
+        case "cancel-next":
+          self.narrationQueue?.cancelNext()
           invoke.resolve(PlayoutControlResponse(session: self.playoutSession))
         case "seek":
           let positionMs = args.positionMs ?? 0
@@ -1192,80 +1208,44 @@ class NativeTTSPlugin: Plugin, AVSpeechSynthesizerDelegate {
   // query needs no header injection. Returns false if `path` is a malformed
   // remote URL; callers must invoke.reject in that case.
   private func loadContinuousFile(path: String, startMs: Double) -> Bool {
-    // A prior Edge queue would fight continuous playback; clear it without
-    // tearing down the session id the JS side is bound to.
     playoutGapTimer?.invalidate()
     playoutGapTimer = nil
     playoutPendingAdvance = false
-    for item in playoutQueue where item.owned {
-      try? FileManager.default.removeItem(at: item.url)
-    }
+    for item in playoutQueue where item.owned { try? FileManager.default.removeItem(at: item.url) }
     playoutQueue.removeAll()
     playoutSessionEnded = false
-
-    // Same path already loaded: seek in place so paragraph handovers and
-    // discontinuity seeks don't rebuild the item (audible glitch). Playback
-    // stays under JS control (play/pause) — do not auto-resume here.
-    let alreadyLoaded =
-      playoutLoadedPath == path && playoutPlayer?.currentItem != nil && playoutCurrentIndex == 0
-    playoutLoadedPath = path
-    if alreadyLoaded {
-      seekPlayout(toMs: startMs)
-      return true
-    }
-
-    if playoutPlayer == nil {
-      let player = AVPlayer()
-      player.allowsExternalPlayback = false
-      playoutPlayer = player
-    }
-    bindNowPlayingSession(to: playoutPlayer!)
-    let url: URL
-    if path.hasPrefix("http://") || path.hasPrefix("https://") {
-      guard let remote = URL(string: path) else { return false }
-      url = remote
-    } else {
-      url = URL(fileURLWithPath: path)
-    }
-    let playerItem = AVPlayerItem(url: url)
-    playerItem.audioTimePitchAlgorithm = .timeDomain
     if let observer = playoutItemEndObserver {
       NotificationCenter.default.removeObserver(observer)
+      playoutItemEndObserver = nil
     }
-    clearContinuousObservers()
-    playoutItemEndObserver = NotificationCenter.default.addObserver(
-      forName: .AVPlayerItemDidPlayToEndTime, object: playerItem, queue: .main
-    ) { [weak self] _ in
-      self?.playoutContinuousEnded()
+    if narrationQueue == nil {
+      playoutPlayer?.pause()
+      let queue = ContinuousNarrationQueue()
+      queue.onTransition = { [weak self] path, position in
+        guard let self = self else { return }
+        self.playoutLoadedPath = path
+        self.playoutCurrentIndex = 0
+        self.trigger("playout_events", data: ["type": "segment-start", "session": self.playoutSession,
+                                        "path": path, "positionMs": position * 1000])
+      }
+      queue.onEnded = { [weak self] in self?.playoutContinuousEnded() }
+      queue.onError = { [weak self] in self?.playoutContinuousFailed() }
+      narrationQueue = queue
+      playoutPlayer = queue.player
     }
-    // A staged file that cannot be decoded (or has gone missing) never moves
-    // the clock, and JS has no other way to learn: without this its waitUntil
-    // sits on a dead item forever instead of surfacing a playback error.
-    playoutItemFailedObserver = NotificationCenter.default.addObserver(
-      forName: .AVPlayerItemFailedToPlayToEndTime, object: playerItem, queue: .main
-    ) { [weak self] _ in
-      self?.playoutContinuousFailed()
-    }
-    playoutItemStatusObserver = playerItem.observe(\.status, options: [.new]) {
-      [weak self] item, _ in
-      guard item.status == .failed else { return }
-      DispatchQueue.main.async { self?.playoutContinuousFailed() }
-    }
-    playoutCurrentIndex = 0
-    playoutPlayer?.replaceCurrentItem(with: playerItem)
-    let startSec = max(0, startMs / 1000.0)
-    if startSec > 0 {
-      let time = CMTime(seconds: startSec, preferredTimescale: 600)
-      playoutPlayer?.seek(to: time, toleranceBefore: .zero, toleranceAfter: .zero)
-    }
-    // Intentionally not auto-playing: Media Overlay JS calls resume after seek,
-    // matching HTMLAudioElement where load and play are separate steps.
-    emitPlayoutEvent("chunk-start", index: 0)
-    return true
+    do {
+      try narrationQueue!.load(path: path, start: max(0, startMs / 1000))
+      playoutLoadedPath = path
+      playoutCurrentIndex = 0
+      bindNowPlayingSession(to: narrationQueue!.player)
+      emitPlayoutEvent("chunk-start", index: 0)
+      return true
+    } catch { return false }
   }
 
   private func seekPlayout(toMs positionMs: Double) {
     let seconds = max(0, positionMs / 1000.0)
+    if let queue = narrationQueue { queue.seek(to: seconds); return }
     let time = CMTime(seconds: seconds, preferredTimescale: 600)
     playoutPlayer?.seek(
       to: time, toleranceBefore: .zero, toleranceAfter: .zero)
@@ -1284,22 +1264,10 @@ class NativeTTSPlugin: Plugin, AVSpeechSynthesizerDelegate {
     emitPlayoutEvent("error", index: 0)
   }
 
-  // The continuous item's failure observers. Torn down whenever the current
-  // item is replaced — including by an Edge advance, which brings its own end
-  // observer but must not inherit these.
-  private func clearContinuousObservers() {
-    if let observer = playoutItemFailedObserver {
-      NotificationCenter.default.removeObserver(observer)
-      playoutItemFailedObserver = nil
-    }
-    playoutItemStatusObserver?.invalidate()
-    playoutItemStatusObserver = nil
-  }
-
   @objc public func playout_position(_ invoke: Invoke) {
     DispatchQueue.main.async {
       let time = self.playoutPlayer?.currentTime()
-      let seconds = time.map { CMTimeGetSeconds($0) } ?? 0
+      let seconds = self.narrationQueue?.positionSeconds ?? time.map { CMTimeGetSeconds($0) } ?? 0
       invoke.resolve(
         PlayoutPositionResponse(
           session: self.playoutSession,
@@ -1307,7 +1275,8 @@ class NativeTTSPlugin: Plugin, AVSpeechSynthesizerDelegate {
           positionMs: seconds.isFinite ? seconds * 1000.0 : 0,
           // Not `rate != 0`: the rate is set while a new item is still
           // opening, and a clock run from there gets ahead of the audio.
-          playing: self.playoutPlayer?.timeControlStatus == .playing
+          playing: self.playoutPlayer?.timeControlStatus == .playing,
+          path: self.narrationQueue?.path
         ))
     }
   }
@@ -1375,6 +1344,11 @@ class NativeTTSPlugin: Plugin, AVSpeechSynthesizerDelegate {
   }
 
   private func playoutAdvance() {
+    if let queue = narrationQueue {
+      queue.stop()
+      narrationQueue = nil
+      playoutPlayer = nil
+    }
     playoutGapTimer?.invalidate()
     playoutGapTimer = nil
     guard !playoutQueue.isEmpty else {
@@ -1405,7 +1379,6 @@ class NativeTTSPlugin: Plugin, AVSpeechSynthesizerDelegate {
     if let observer = playoutItemEndObserver {
       NotificationCenter.default.removeObserver(observer)
     }
-    clearContinuousObservers()
     playoutLoadedPath = nil
     playoutItemEndObserver = NotificationCenter.default.addObserver(
       forName: .AVPlayerItemDidPlayToEndTime, object: playerItem, queue: .main
@@ -1446,13 +1419,14 @@ class NativeTTSPlugin: Plugin, AVSpeechSynthesizerDelegate {
   }
 
   private func abortPlayout() {
+    narrationQueue?.stop()
+    narrationQueue = nil
     playoutGapTimer?.invalidate()
     playoutGapTimer = nil
     if let observer = playoutItemEndObserver {
       NotificationCenter.default.removeObserver(observer)
       playoutItemEndObserver = nil
     }
-    clearContinuousObservers()
     playoutPlayer?.pause()
     playoutPlayer?.replaceCurrentItem(with: nil)
     for item in playoutQueue where item.owned {
