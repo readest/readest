@@ -3,6 +3,7 @@ package com.readest.native_tts
 import android.content.Context
 import android.net.Uri
 import android.os.Looper
+import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
@@ -65,10 +66,18 @@ internal class ContinuousNarrationQueue(context: Context) {
         player.addMediaItem(item)
         // Physical file ends advance seamlessly through ExoPlayer's playlist.
         // A SMIL clip can end earlier; schedule that cut on the native clock too.
+        val cutAtMs = afterMs - offsetMs
         boundary = player.createMessage { _, _ ->
-            if (player.currentMediaItem === outgoing && next === pending) player.seekToNextMediaItem()
+            // ExoPlayer clamps messages beyond EOF to the final sample. A
+            // seek there flushes buffered audio instead of joining the files.
+            // Read duration here too: it can still be unknown when queued.
+            val durationMs = player.duration
+            if (player.currentMediaItem === outgoing && next === pending &&
+                (durationMs == C.TIME_UNSET || cutAtMs < durationMs)) {
+                player.seekToNextMediaItem()
+            }
         }.setLooper(Looper.getMainLooper())
-            .setPosition(player.currentMediaItemIndex, afterMs - offsetMs).send()
+            .setPosition(player.currentMediaItemIndex, cutAtMs).send()
     }
 
     fun cancelNext() {

@@ -1,5 +1,7 @@
 package com.readest.native_tts
 
+import androidx.media3.common.MediaItem
+import androidx.media3.common.Player
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import java.io.File
@@ -59,6 +61,34 @@ class ContinuousNarrationQueueTest {
             queue.seek(50)
             assertEquals(50L, queue.positionMs)
         }
+    }
+
+    @Test fun aRoundedFileEndUsesTheNaturalPlaylistTransition() {
+        val ready = CountDownLatch(1)
+        val transitioned = CountDownLatch(1)
+        val transitionReason = AtomicInteger(-1)
+        instrumentation.runOnMainSync {
+            queue.player.addListener(object : Player.Listener {
+                override fun onPlaybackStateChanged(state: Int) {
+                    if (state == Player.STATE_READY) ready.countDown()
+                }
+                override fun onMediaItemTransition(item: MediaItem?, reason: Int) {
+                    if (item?.localConfiguration?.uri?.lastPathSegment == second.name) {
+                        transitionReason.set(reason)
+                        transitioned.countDown()
+                    }
+                }
+            })
+            queue.load(first.absolutePath, 0)
+        }
+        assertTrue("First recording did not prepare", ready.await(8, TimeUnit.SECONDS))
+        instrumentation.runOnMainSync {
+            // SMIL can round up from the physical audio duration by 1 ms.
+            queue.queue(second.absolutePath, 0, 1000, queue.player.duration + 1)
+            queue.player.play()
+        }
+        assertTrue("Native queue did not advance", transitioned.await(8, TimeUnit.SECONDS))
+        assertEquals("An EOF seek flushes already-buffered audio", Player.MEDIA_ITEM_TRANSITION_REASON_AUTO, transitionReason.get())
     }
 
     @Test fun cancellingOrSeekingCannotPlayTheOldQueuedMember() {
