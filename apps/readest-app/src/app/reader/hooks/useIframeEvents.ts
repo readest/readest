@@ -354,7 +354,14 @@ export const useTouchEvent = (bookKey: string) => {
       }
       const currentDist = getTouchDistance(t0, t1);
       if (initialPinchDistRef.current > 0) {
-        const ratio = currentDist / initialPinchDistRef.current;
+        const rawRatio = currentDist / initialPinchDistRef.current;
+        // Clamp the live preview to the same bounds the release commits, so the
+        // page never previews past the zoom limit.
+        const committed = Math.max(
+          MIN_ZOOM_LEVEL,
+          Math.min(MAX_ZOOM_LEVEL, Math.round(initialZoomRef.current * rawRatio)),
+        );
+        const ratio = committed / initialZoomRef.current;
         lastPinchRatioRef.current = ratio;
         const renderer = getView(bookKey)?.renderer;
         renderer?.pinchZoom?.(ratio);
