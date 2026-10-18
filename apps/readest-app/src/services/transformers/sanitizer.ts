@@ -89,6 +89,23 @@ export const sanitizerTransformer: Transformer = {
   },
 };
 
+// Manifest media types are hand-written: compare the bare lowercase type so
+// `Application/XHTML+xml; charset=utf-8` is still sanitized as XHTML.
+export const normalizeMediaType = (type: string | null | undefined) =>
+  (type ?? '').split(';')[0]!.trim().toLowerCase();
+
+const SECTION_DOCUMENT_TYPES = ['application/xhtml+xml', 'text/html', 'image/svg+xml'];
+
+// A spine section loads as a top-level document in the reader iframe. Any type
+// the sanitizers don't handle (XML, missing, unknown) could still render as an
+// active document, so only passive media types pass through; the rest is text.
+// A `+xml` subtype renders as an XML document whatever its top-level type.
+export const getSectionDocumentType = (type: string) =>
+  SECTION_DOCUMENT_TYPES.includes(type) ||
+  (/^(image|audio|video)\//.test(type) && !type.endsWith('+xml'))
+    ? type
+    : 'text/plain';
+
 // SVG spine sections are active documents too. Keep the SVG root/namespace;
 // the XHTML transformer adds HTML wrappers that cannot be used for SVG blobs.
 export function sanitizeSvg(content: string): string {
