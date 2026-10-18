@@ -970,6 +970,7 @@ function ReadestSync:openLibrary()
         settings  = self.settings,
         sync_path = self.path,
         sync_auth = SyncAuth,
+        ui        = self.ui,
     })
 end
 

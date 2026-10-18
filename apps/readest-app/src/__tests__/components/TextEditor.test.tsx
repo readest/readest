@@ -57,4 +57,12 @@ describe('TextEditor', () => {
     expect(editor.value).toBe('The last accepted notebook value');
     expect(editor.style.height).toBe('');
   });
+
+  // Read Aloud holds the view still while a note editor has focus (#6837).
+  it('marks its text area as a note editor', () => {
+    render(<TextEditor value='' onChange={vi.fn()} ariaLabel='Annotation note' />);
+
+    const editor = screen.getByRole('textbox', { name: 'Annotation note' });
+    expect(editor.hasAttribute('data-note-editor')).toBe(true);
+  });
 });

@@ -18,6 +18,7 @@ import { getCachedEinkRefreshSupported, refreshEinkScreen } from '@/utils/bridge
 import { isTauriAppPlatform } from '@/services/environment';
 import { tauriGetWindowLogicalPosition } from '@/utils/window';
 import { getReadingRulerMoveDirection } from '../utils/readingRuler';
+import { isPageOverflowing } from '../utils/pageOverflow';
 import { useTouchInterceptor } from './useTouchInterceptor';
 
 export type ScrollSource = 'touch' | 'mouse';
@@ -362,7 +363,15 @@ export const usePagination = (
                 // A page-filling image/table leaves nowhere else to tap for
                 // its viewer, so the center opens it (#6424). Only media
                 // from the reader's own handlers, which post from this window.
-                if (msg.data.media && msg.source === window) {
+                // A fixed-layout page that runs past the viewport hides its
+                // title, the other way to the toolbar, so the center keeps the
+                // toolbar (#6866).
+                const titleHidden =
+                  bookData.isFixedLayout &&
+                  !viewSettings.vertical &&
+                  !!viewRef.current &&
+                  isPageOverflowing(viewRef.current.renderer);
+                if (msg.data.media && msg.source === window && !titleHidden) {
                   window.postMessage(
                     { type: 'iframe-open-media', bookKey, ...msg.data.media },
                     '*',

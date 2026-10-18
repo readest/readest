@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
+  extractReadEraLibrary,
   findReadEraDocByFileMd5,
   findReadEraDocForBook,
   getReadEraFileMd5,
@@ -125,6 +126,45 @@ describe('parseReadEraBackup', () => {
     expect(parseReadEraBackup('not json')).toBeNull();
     expect(parseReadEraBackup('{"annotations":[]}')).toBeNull();
     expect(parseReadEraBackup('[]')).toBeNull();
+  });
+});
+
+const zip = async (files: Record<string, string>): Promise<ArrayBuffer> => {
+  const { configureZip } = await import('@/utils/zip');
+  await configureZip();
+  const { BlobWriter, TextReader, ZipWriter } = await import('@zip.js/zip.js');
+  const writer = new ZipWriter(new BlobWriter('application/zip'));
+  for (const [name, content] of Object.entries(files)) {
+    await writer.add(name, new TextReader(content));
+  }
+  return (await writer.close()).arrayBuffer();
+};
+
+describe('extractReadEraLibrary', () => {
+  it('reads a backup whose documents are split across docs_N.json files', async () => {
+    const sequel = {
+      ...littlePrince,
+      uri: 'sha-1:sequel',
+      data: { ...littlePrince.data, doc_title: 'Sequel' },
+    };
+    const data = await zip({
+      'meta.json': '{"appname":"ReadEra Premium - 26.09.29+2320"}',
+      'colls.json': '[]',
+      'docs_2.json': JSON.stringify([sequel]),
+      'docs_1.json': JSON.stringify([littlePrince]),
+    });
+    const docs = parseReadEraBackup((await extractReadEraLibrary(data))!);
+    expect(docs?.map((doc) => doc.title)).toEqual(['The Little Prince', 'Sequel']);
+    expect(docs?.[0]?.citations).toHaveLength(1);
+  });
+
+  it('still reads a backup with a single library.json', async () => {
+    const data = await zip({ 'library.json': backup([littlePrince]) });
+    expect(parseReadEraBackup((await extractReadEraLibrary(data))!)).toHaveLength(1);
+  });
+
+  it('returns null for a zip that is not a ReadEra backup', async () => {
+    expect(await extractReadEraLibrary(await zip({ 'notes.json': '[]' }))).toBeNull();
   });
 });
 
