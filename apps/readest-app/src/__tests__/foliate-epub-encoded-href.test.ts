@@ -185,3 +185,26 @@ describe('EPUB hrefs that percent-encode reserved characters (#5097)', () => {
     }
   });
 });
+
+// #6855: a link out of the book kept only its origin and path. Hrefs inside the
+// book drop the query, since a zip entry name has none, and so did every
+// external URL, so "https://duckduckgo.com/?q=Readest+review" opened as
+// "https://duckduckgo.com/".
+describe('external links in a chapter (#6855)', () => {
+  it('keeps the query and fragment of an external URL', async () => {
+    const { sections } = await openEpub({
+      'META-INF/container.xml': CONTAINER,
+      'OEBPS/content.opf': opf([{ id: 'chapter1', href: 'Text/ch1.html' }]),
+      'OEBPS/Text/ch1.html': chapter('Chapter 1'),
+    });
+
+    expect(sections[0]!.resolveHref('https://duckduckgo.com/?q=Readest+review')).toBe(
+      'https://duckduckgo.com/?q=Readest+review',
+    );
+    expect(sections[0]!.resolveHref('https://example.com/a?b=1&c=2#top')).toBe(
+      'https://example.com/a?b=1&c=2#top',
+    );
+    // a link inside the book still resolves to its zip entry, without a query
+    expect(sections[0]!.resolveHref('ch2.html?x=1#n1')).toBe('OEBPS/Text/ch2.html#n1');
+  });
+});

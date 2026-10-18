@@ -19,7 +19,12 @@ import { isDialogueHighlightActive } from './dialogueHighlight';
 import { readStoredAmbientIsDarkMode } from './ambientLight';
 import { INLINE_FORMATTING_SELECTOR } from './inlineTags';
 import { getOSPlatform } from './misc';
-import { SCROLL_WRAPPER_CLASS, SCROLL_WRAPPER_FIT_CLASS } from './scrollable';
+import {
+  LINK_HIT_AREA_CLASS,
+  LINK_HIT_AREA_PX,
+  SCROLL_WRAPPER_CLASS,
+  SCROLL_WRAPPER_FIT_CLASS,
+} from './scrollable';
 
 /**
  * Build the resolved CSS font-family lists (serif / sans-serif / monospace)
@@ -372,6 +377,9 @@ const getColorStyles = (
     }
     a:any-link {
       ${overrideColor ? `color: ${primary} !important;` : isDarkMode ? `color: lightblue;` : ''}
+    }
+    /* left off hovered links, so a book's own a:hover style applies (#6859) */
+    a:any-link:where(:not(:hover)) {
       text-decoration: ${isEink ? 'underline' : 'none'};
     }
     body.pbg {
@@ -470,7 +478,7 @@ const getColorStyles = (
 
 export const LINK_TOUCH_HOLD_CLASS = 'link-touch-hold';
 export const TEXT_SELECTED_CLASS = 'text-selected';
-export const LINK_HIT_AREA_CLASS = 'link-hit-area';
+export { LINK_HIT_AREA_CLASS };
 export const MAX_ENLARGED_LINKS = 1000;
 
 const getPageLayoutStyles = (
@@ -528,7 +536,7 @@ const getPageLayoutStyles = (
   html.${LINK_HIT_AREA_CLASS} a::before {
     content: '';
     position: absolute;
-    inset: -10px;
+    inset: -${LINK_HIT_AREA_PX}px;
   }
   /* the enlarged area swallows the text around a link, so a selection dragged
      next to a footnote marker snaps away (#6566); set while text is selected */
@@ -1549,8 +1557,11 @@ export const transformStylesheet = (
     })
     .replace(/([\s;])font-weight\s*:\s*normal/gi, '$1font-weight: var(--font-weight)')
     .replace(/([\s;])color\s*:\s*black/gi, '$1color: var(--theme-fg-color)')
-    .replace(/([\s;])color\s*:\s*#000000/gi, '$1color: var(--theme-fg-color)')
-    .replace(/([\s;])color\s*:\s*#000/gi, '$1color: var(--theme-fg-color)')
+    // the whole hex value, or `#000` would also match the start of `#0000FF` (#6858)
+    .replace(
+      /([\s;])color\s*:\s*#(?:000f?|000000(?:ff)?)(?![0-9a-f])/gi,
+      '$1color: var(--theme-fg-color)',
+    )
     .replace(/([\s;])color\s*:\s*rgb\(0,\s*0,\s*0\)/gi, '$1color: var(--theme-fg-color)');
 
   const { isDarkMode, bg } = getThemeCode();
