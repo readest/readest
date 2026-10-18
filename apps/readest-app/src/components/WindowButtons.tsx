@@ -102,9 +102,12 @@ const WindowButtons: React.FC<WindowButtonsProps> = ({
     const stop = () => {
       window.removeEventListener('mousemove', onMove, true);
       window.removeEventListener('mouseup', onUp, true);
+      window.removeEventListener('blur', stop);
     };
     window.addEventListener('mousemove', onMove, true);
     window.addEventListener('mouseup', onUp, true);
+    // Losing focus mid-press (e.g. Alt+Tab) can swallow the release.
+    window.addEventListener('blur', stop);
   };
 
   const handleMouseDown = async (e: MouseEvent) => {

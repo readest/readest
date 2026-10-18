@@ -154,6 +154,22 @@ describe('WindowButtons', () => {
       expect(startDragging).not.toHaveBeenCalled();
     });
 
+    it('drops a pending search-field press when the window loses focus', async () => {
+      hasWindowBar = true;
+      render(<SearchFieldHarness />);
+      const input = screen.getByRole('textbox', { name: 'Search' });
+
+      await act(async () => {
+        fireEvent.mouseDown(input, { buttons: 1, detail: 1, screenX: 100, screenY: 10 });
+        // e.g. Alt+Tab mid-press; a later press elsewhere comes back with the button down.
+        fireEvent.blur(window);
+        fireEvent.mouseMove(window, { buttons: 1, screenX: 180, screenY: 10 });
+        await flush();
+      });
+
+      expect(startDragging).not.toHaveBeenCalled();
+    });
+
     it('drags the window from an unfocused search field once the pointer moves', async () => {
       hasWindowBar = true;
       render(<SearchFieldHarness />);
