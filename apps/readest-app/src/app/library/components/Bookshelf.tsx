@@ -59,6 +59,7 @@ import ModalPortal from '@/components/ModalPortal';
 import BookshelfItem from './BookshelfItem';
 import SelectModeActions from './SelectModeActions';
 import ShareBookDialog from './ShareBookDialog';
+import { createCollectionPack } from '@/services/pack/packService';
 import { useAuth } from '@/context/AuthContext';
 import GroupingModal from './GroupingModal';
 import TaggingModal from './TaggingModal';
@@ -656,6 +657,54 @@ const Bookshelf: React.FC<BookshelfProps> = ({
     eventDispatcher.dispatch('localsend-send-books', { books });
   };
 
+  const handlePackSelectedBooks = async () => {
+    if (!appService) return;
+    const ids = expandBookshelfSelection(getSelectedBooks(), sortedBookshelfItems);
+    const books = ids
+      .map((id) => filteredBooks.find((book) => book.hash === id))
+      .filter((book): book is Book => !!book);
+    if (books.length === 0) return;
+
+    setShowSelectModeActions(false);
+    handleSetSelectMode(false);
+
+    eventDispatcher.dispatch('toast', {
+      type: 'info',
+      message: _('Creating package for {{count}} book(s)...', { count: books.length }),
+      timeout: 3000,
+    });
+
+    try {
+      const collectionName = manualGroupName || (books[0]?.groupName ?? undefined);
+      const result = await createCollectionPack(appService, books, collectionName);
+      if (!result) {
+        eventDispatcher.dispatch('toast', {
+          type: 'warning',
+          message: _('No local files available to pack'),
+          timeout: 3000,
+        });
+        return;
+      }
+
+      await appService.saveFile(result.filename, result.data, {
+        mimeType: 'application/x-readestpack',
+      });
+
+      eventDispatcher.dispatch('toast', {
+        type: 'success',
+        message: _('Exported {{filename}}', { filename: result.filename }),
+        timeout: 3000,
+      });
+    } catch (err) {
+      console.error('Failed to create book pack:', err);
+      eventDispatcher.dispatch('toast', {
+        type: 'error',
+        message: _('Failed to export package'),
+        timeout: 3000,
+      });
+    }
+  };
+
   const updateBooksStatus = async (status: ReadingStatus | undefined) => {
     const selectedIds = getSelectedBooks();
     const booksToUpdate: Book[] = [];
@@ -1035,6 +1084,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
           onStatus={showStatusSelection}
           onDownload={downloadSelectedBooks}
           onSend={sendSelectedBook}
+          onPack={handlePackSelectedBooks}
           onDelete={deleteSelectedBooks}
           onCancel={() => handleSetSelectMode(false)}
         />

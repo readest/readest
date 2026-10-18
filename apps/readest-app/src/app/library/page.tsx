@@ -34,7 +34,13 @@ import { eventDispatcher } from '@/utils/event';
 import { transferManager } from '@/services/transferManager';
 import { purgeCloudBookData } from '@/services/purgeCloudBookData';
 import { isReadestCloudStorageActive } from '@/services/sync/cloudSyncProvider';
-import { getFilename, getFolderImportGroupName, joinScannedPath } from '@/utils/path';
+import {
+  getFileExtension,
+  getFilename,
+  getFolderImportGroupName,
+  joinScannedPath,
+} from '@/utils/path';
+import { extractCollectionPack, isReadestPackFile } from '@/services/pack/packService';
 import { parseOpenWithFiles } from '@/helpers/openWith';
 import { getInitializedAppService, isTauriAppPlatform } from '@/services/environment';
 import { checkForAppUpdates, checkAppReleaseNotes } from '@/helpers/updater';
@@ -608,6 +614,59 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
       for (const file of openWithFiles) {
         console.log('Open with book:', file);
         try {
+          const fileName = typeof file === 'string' ? getFilename(file) : (file as File).name;
+          const ext = getFileExtension(fileName).toLowerCase();
+
+          if (isReadestPackFile(fileName) || ext === 'zip') {
+            try {
+              let buffer: ArrayBuffer | null = null;
+              if (typeof file === 'string') {
+                const raw = await appService.readFile(file, 'None', 'binary');
+                if (typeof raw !== 'string') buffer = raw as ArrayBuffer;
+              } else if ((file as unknown) instanceof File) {
+                buffer = await (file as unknown as File).arrayBuffer();
+              }
+
+              if (buffer) {
+                const pack = await extractCollectionPack(buffer);
+                const isPack =
+                  isReadestPackFile(fileName) || pack?.manifest?.format === 'readestpack';
+                if (pack && pack.files.length > 0 && isPack) {
+                  const targetGroupId = pack.collectionName
+                    ? getGroupId(pack.collectionName) || pack.collectionName
+                    : undefined;
+                  for (const innerFile of pack.files) {
+                    try {
+                      const book = await ingestFile(
+                        {
+                          file: innerFile,
+                          books: libraryBooks,
+                          transient: false,
+                          groupId: targetGroupId,
+                          groupName: pack.collectionName,
+                          forceUpload: !!appService.isMobile && !!user,
+                        },
+                        { appService, settings, isLoggedIn: !!user },
+                      );
+                      if (book) {
+                        bookIds.push(book.hash);
+                      }
+                    } catch (err) {
+                      console.warn(
+                        'Failed to import pack entry during open-with:',
+                        innerFile.name,
+                        err,
+                      );
+                    }
+                  }
+                  continue;
+                }
+              }
+            } catch (err) {
+              console.warn('Failed to extract pack during open-with:', err);
+            }
+          }
+
           const temp = appService.isMobile ? false : !settings.autoImportBooksOnOpen;
           // A file shared into Readest on mobile (the OS share-sheet) is a
           // "Send to Readest" capture — force it to the cloud so it syncs to
@@ -968,7 +1027,57 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     const appBooksPrefix: string | null =
       useSettingsStore.getState().settings.localBooksDir || null;
 
-    const processFile = async (selectedFile: SelectedFile): Promise<Book | null> => {
+    interface SelectedFileWithGroup extends SelectedFile {
+      groupIdOverride?: string;
+    }
+
+    const effectiveFiles: SelectedFileWithGroup[] = [];
+
+    for (const selectedFile of files) {
+      const fileName =
+        selectedFile.name ||
+        (selectedFile.file ? selectedFile.file.name : getFilename(selectedFile.path || ''));
+      const ext = getFileExtension(fileName).toLowerCase();
+
+      if (isReadestPackFile(fileName) || ext === 'zip') {
+        try {
+          let buffer: ArrayBuffer | null = null;
+          if (selectedFile.file) {
+            buffer = await selectedFile.file.arrayBuffer();
+          } else if (selectedFile.path && appService) {
+            const raw = await appService.readFile(selectedFile.path, 'None', 'binary');
+            if (typeof raw !== 'string') {
+              buffer = raw as ArrayBuffer;
+            }
+          }
+
+          if (buffer) {
+            const pack = await extractCollectionPack(buffer);
+            const isPack = isReadestPackFile(fileName) || pack?.manifest?.format === 'readestpack';
+            if (pack && pack.files.length > 0 && isPack) {
+              let packGroupId: string | undefined;
+              if ((!groupId || groupId === '') && pack.collectionName) {
+                const existingGroup = getGroupId(pack.collectionName);
+                packGroupId = existingGroup || pack.collectionName;
+              }
+              for (const innerFile of pack.files) {
+                effectiveFiles.push({
+                  file: innerFile,
+                  name: innerFile.name,
+                  groupIdOverride: packGroupId,
+                });
+              }
+              continue;
+            }
+          }
+        } catch (err) {
+          console.warn('Failed to unpack archive during import:', err);
+        }
+      }
+      effectiveFiles.push(selectedFile);
+    }
+
+    const processFile = async (selectedFile: SelectedFileWithGroup): Promise<Book | null> => {
       const file = selectedFile.file || selectedFile.path;
       if (!file) return null;
       if (!appService) return null;
@@ -979,12 +1088,14 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
         //                  basePath (Import-from-Folder "keep" mode).
         //   - '' (empty) → caller explicitly wants the library root.
         //   - any string → caller explicitly wants that group.
-        // Distinguishing '' from undefined matters for re-imports of an
-        // already-known book: without it, a falsy check would silently
-        // keep the existingBook's stale groupId/groupName from a prior
-        // import instead of moving the book to the root.
-        let resolvedGroupId = groupId;
-        let resolvedGroupName = groupId !== undefined ? getGroupName(groupId) : undefined;
+        // If this entry was extracted from a pack that specified a collection name,
+        // use its groupIdOverride.
+        let resolvedGroupId =
+          selectedFile.groupIdOverride !== undefined ? selectedFile.groupIdOverride : groupId;
+        let resolvedGroupName =
+          resolvedGroupId !== undefined
+            ? getGroupName(resolvedGroupId) || resolvedGroupId
+            : undefined;
         if (resolvedGroupId === undefined && path && basePath) {
           resolvedGroupName = getFolderImportGroupName(path, basePath);
           resolvedGroupId = getGroupId(resolvedGroupName);
@@ -1039,7 +1150,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     // A true worker pool (not the old barrier batches of 4): a slow file no
     // longer stalls three finished siblings, and each completed book streams
     // into the store immediately so the shelf renders incrementally.
-    await runWithConcurrency(files, IMPORT_CONCURRENCY, async (selectedFile) => {
+    await runWithConcurrency(effectiveFiles, IMPORT_CONCURRENCY, async (selectedFile) => {
       const book = await processFile(selectedFile);
       if (book) {
         await updateBooks(envConfig, [book], { skipSave: true });

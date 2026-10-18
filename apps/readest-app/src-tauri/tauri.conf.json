@@ -181,6 +181,15 @@
         "mimeType": "text/markdown",
         "role": "Viewer",
         "rank": "Alternate"
+      },
+      {
+        "name": "Readest Book Package",
+        "ext": ["readestpack"],
+        "contentTypes": ["com.readest.pack"],
+        "description": "Readest Book Package",
+        "mimeType": "application/x-readestpack",
+        "role": "Viewer",
+        "rank": "Owner"
       }
     ],
     "createUpdaterArtifacts": true
