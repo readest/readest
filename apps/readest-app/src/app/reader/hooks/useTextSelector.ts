@@ -19,6 +19,7 @@ import {
   rangeFromAnchorToPoint,
   repairJumpedSelectionRange,
   TextSelection,
+  trimNoteMarkersFromWordRange,
   trimRangeWhitespaceAroundPoint,
 } from '@/utils/sel';
 import { Corner, useAutoPageTurn } from './useAutoPageTurn';
@@ -138,6 +139,17 @@ export const useTextSelector = (
   // the finger position the Android hyphen repair rebuilds from.
   const pointerPos = useRef<{ x: number; y: number } | null>(null);
   const mouseDoubleClickRef = useRef<{ x: number; y: number; moved: boolean } | null>(null);
+  // A touch gesture that starts with nothing selected and whose selection
+  // appears in one step made the browser's word selection (long-press or
+  // double-tap). A handle drag starts from a selection; a long-press that goes
+  // on to drag changes the range again. `range` is the first selection seen.
+  const touchWordGestureRef = useRef<{ range: Range | null; changed: boolean } | null>(null);
+  // The live range a word gesture normalized. Re-applying it fires a
+  // selectionchange that must publish the same normalized selection.
+  const wordGestureRef = useRef<{
+    range: Range;
+    trimPoint?: { node: Node; offset: number } | null;
+  } | null>(null);
 
   // Android hyphen selection-bounds bug (#1553): the selection anchor captured
   // at the first selectionchange of a touch gesture, plus whether that initial
@@ -464,15 +476,42 @@ export const useTextSelector = (
     return sel && sel.toString().trim().length > 0 && sel.rangeCount > 0;
   };
 
+  const isSameRange = (a: Range, b: Range) =>
+    a.startContainer === b.startContainer &&
+    a.startOffset === b.startOffset &&
+    a.endContainer === b.endContainer &&
+    a.endOffset === b.endOffset;
+
+  // Feed the current selection to the touch word-gesture check and report
+  // whether it is still the one-step word selection.
+  const isTouchWordSelection = (sel: Selection) => {
+    const gesture = touchWordGestureRef.current;
+    if (!gesture || !isValidSelection(sel)) return false;
+    const range = sel.getRangeAt(0);
+    if (!gesture.range) gesture.range = range.cloneRange();
+    else if (!isSameRange(range, gesture.range)) gesture.changed = true;
+    return !gesture.changed;
+  };
+
   const makeSelection = async (
     sel: Selection,
     index: number,
     rebuildRange = false,
     handlesSuppressed = false,
     trimPoint?: { node: Node; offset: number } | null,
+    wordGesture = false,
   ) => {
     isTextSelected.current = true;
     const liveRange = sel.getRangeAt(0);
+    const lastGesture = wordGestureRef.current;
+    if (wordGesture) {
+      wordGestureRef.current = { range: liveRange.cloneRange(), trimPoint };
+    } else if (lastGesture && isSameRange(liveRange, lastGesture.range)) {
+      trimPoint = lastGesture.trimPoint;
+      wordGesture = true;
+    } else {
+      wordGestureRef.current = null;
+    }
     if (rebuildRange) {
       sel.removeAllRanges();
       sel.addRange(liveRange);
@@ -492,8 +531,9 @@ export const useTextSelector = (
     // Selection.getRangeAt() returns the live, associated Range by reference.
     // Clone only for double-click normalization so native touch paths retain
     // their established Range behavior and browser handles stay untouched.
-    const range = trimPoint ? liveRange.cloneRange() : liveRange;
+    const range = trimPoint || wordGesture ? liveRange.cloneRange() : liveRange;
     if (trimPoint) trimRangeWhitespaceAroundPoint(range, trimPoint.node, trimPoint.offset);
+    if (wordGesture) trimNoteMarkersFromWordRange(range);
     const progress = getProgress(bookKey);
     setSelection({
       key: bookKey,
@@ -678,6 +718,11 @@ export const useTextSelector = (
   const handlePointerDown = (doc: Document, index: number, ev: PointerEvent) => {
     beginSelectionDrag();
     lastPointerType.current = ev.pointerType;
+    const isTouchPress = ev.pointerType === 'touch' || ev.pointerType === 'pen';
+    touchWordGestureRef.current =
+      isTouchPress && !isValidSelection(doc.getSelection() as Selection)
+        ? { range: null, changed: false }
+        : null;
     if (appService?.isAndroidApp && ev.pointerType === 'touch') {
       doc.documentElement.classList.add(LINK_TOUCH_HOLD_CLASS);
     }
@@ -1054,7 +1099,7 @@ export const useTextSelector = (
       // iOS selections go through the same path as desktop.
       if (isPointerInside) {
         isUpToPopup.current = true;
-        makeSelection(sel, index, true, false, trimPoint);
+        makeSelection(sel, index, true, false, trimPoint, !!trimPoint || isTouchWordSelection(sel));
       } else if (appService?.isAndroidApp) {
         isUpToPopup.current = false;
       }
@@ -1098,7 +1143,7 @@ export const useTextSelector = (
       if (selectionPosition.current === null) {
         selectionPosition.current = view?.renderer?.containerPosition ?? null;
       }
-      makeSelection(sel, index, false);
+      makeSelection(sel, index, false, false, null, isTouchWordSelection(sel));
     } else if (isTextSelected.current) {
       handleDismissPopup();
       isTextSelected.current = false;
@@ -1135,6 +1180,8 @@ export const useTextSelector = (
     // Echo of our own programmatic selection writes (handle suppression or a
     // custom-handle drag) — not user input.
     if (programmaticSelectionRef.current) return;
+    // Every step counts, including ones deferred or skipped below.
+    const touchWordGesture = isTouchWordSelection(sel);
 
     // Available on iOS, Android and Desktop, fired when the selection is changed.
     // On Android native app, this is the primary way to detect text selection.
@@ -1197,7 +1244,7 @@ export const useTextSelector = (
         // section (#873-related Android regression).
         selectionPosition.current = view?.renderer?.containerPosition ?? null;
       }
-      makeSelection(sel, index, false);
+      makeSelection(sel, index, false, false, null, touchWordGesture);
     } else {
       // Selection cleared (e.g. clicking outside the selection).
       // Dismiss immediately on all platforms.

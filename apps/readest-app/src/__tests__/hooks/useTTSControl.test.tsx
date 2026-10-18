@@ -303,6 +303,7 @@ vi.mock('@/utils/ttsTime', () => ({
 
 // Imports must come AFTER vi.mock calls so they pick up the mocked modules.
 import { useTTSControl } from '@/app/reader/hooks/useTTSControl';
+import { TTSController } from '@/services/tts';
 import { ttsMediaBridge } from '@/services/tts/ttsMediaBridge';
 import { eventDispatcher } from '@/utils/event';
 import { pageBreakFraction } from '@/utils/ttsPageFollow';
@@ -1086,6 +1087,143 @@ describe('useTTSControl handleHighlightMark cross-section navigation', () => {
     handler(new CustomEvent('tts-highlight-word', { detail: { cfi: 'epubcfi(/6/4!/4/2)' } }));
 
     expect(mockView.renderer.scrollToAnchor).toHaveBeenCalledWith(wordRange);
+  });
+
+  // Following the voice focuses the spoken text inside the book's iframe and
+  // turns the page, which takes the caret (and an IME composition) out of a
+  // note being typed and closes its popup (#6837). While a host text area has
+  // focus the view holds still; the saved location still advances.
+  describe('while a note is being typed (#6837)', () => {
+    let editor: HTMLTextAreaElement;
+
+    beforeEach(() => {
+      editor = document.createElement('textarea');
+      editor.setAttribute('data-note-editor', '');
+      document.body.appendChild(editor);
+      editor.focus();
+    });
+
+    afterEach(() => {
+      editor.remove();
+    });
+
+    it('does not scroll to the next sentence but still saves its location', async () => {
+      const handler = await setupAndCaptureHighlightHandler();
+      mockView.resolveCFI.mockReturnValue({ index: 0, anchor: () => new Range() });
+
+      await act(async () => {
+        handler(new CustomEvent('tts-highlight-mark', { detail: { cfi: 'epubcfi(/6/4!/4/2)' } }));
+      });
+
+      expect(mockView.renderer.scrollToAnchor).not.toHaveBeenCalled();
+      expect(mockViewSettings.ttsLocation).toBe('epubcfi(/6/4!/4/2)');
+      expect(document.activeElement).toBe(editor);
+    });
+
+    it('does not navigate to a sentence in the next section', async () => {
+      const handler = await setupAndCaptureHighlightHandler();
+      mockView.resolveCFI.mockReturnValue({ index: 1, anchor: () => new Range() });
+
+      await act(async () => {
+        handler(new CustomEvent('tts-highlight-mark', { detail: { cfi: 'epubcfi(/6/8!/4/2)' } }));
+      });
+
+      expect(mockView.goTo).not.toHaveBeenCalled();
+    });
+
+    it('does not follow a word off the page', async () => {
+      const handler = await setupAndCaptureHighlightHandler('tts-highlight-word');
+      const wordRange = {
+        compareBoundaryPoints: vi.fn().mockReturnValueOnce(1).mockReturnValueOnce(0),
+      } as unknown as Range;
+      mockProgress.range = {} as Range;
+      mockView.resolveCFI.mockReturnValue({ index: 0, anchor: () => wordRange });
+
+      handler(new CustomEvent('tts-highlight-word', { detail: { cfi: 'epubcfi(/6/4!/4/2)' } }));
+
+      expect(mockView.renderer.scrollToAnchor).not.toHaveBeenCalled();
+    });
+
+    it('does not turn the page for a sentence that started before typing', async () => {
+      editor.blur();
+      vi.useFakeTimers();
+      try {
+        const handler = await setupAndCaptureHighlightHandler();
+        const controller = ttsControllerInstances[0] as unknown as {
+          getSentenceProgress: ReturnType<typeof vi.fn>;
+          state: string;
+        };
+        controller.state = 'playing';
+        vi.mocked(pageBreakFraction).mockReturnValue(0.75);
+        mockView.renderer.end = 528;
+        mockView.resolveCFI.mockReturnValue({ index: 0, anchor: () => new Range() });
+        controller.getSentenceProgress.mockReturnValue(0);
+
+        await act(async () => {
+          handler(new CustomEvent('tts-highlight-mark', { detail: { cfi: 'epubcfi(/6/4!/4/2)' } }));
+        });
+
+        editor.focus();
+        controller.getSentenceProgress.mockReturnValue(0.8);
+        await act(async () => {
+          await vi.advanceTimersByTimeAsync(400);
+        });
+        expect(mockView.renderer.next).not.toHaveBeenCalled();
+      } finally {
+        mockView.renderer.end = 0;
+        mockView.renderer.next = vi.fn();
+        vi.useRealTimers();
+      }
+    });
+
+    it('does not move the view to the next section the voice starts', async () => {
+      await setupAndCaptureHighlightHandler();
+      const onSectionChange = vi.mocked(TTSController).mock.calls.at(-1)![4] as (
+        index: number,
+      ) => Promise<void>;
+      mockView.renderer.goTo.mockClear();
+
+      await act(async () => {
+        await onSectionChange(0);
+      });
+      expect(mockView.renderer.goTo).not.toHaveBeenCalled();
+
+      editor.blur();
+      await act(async () => {
+        await onSectionChange(0);
+      });
+      expect(mockView.renderer.goTo).toHaveBeenCalledTimes(1);
+    });
+
+    it('keeps following while a text field that is not a note editor has focus', async () => {
+      const handler = await setupAndCaptureHighlightHandler();
+      mockView.resolveCFI.mockReturnValue({ index: 0, anchor: () => new Range() });
+      const templateField = document.createElement('textarea');
+      document.body.appendChild(templateField);
+      templateField.focus();
+
+      try {
+        await act(async () => {
+          handler(new CustomEvent('tts-highlight-mark', { detail: { cfi: 'epubcfi(/6/4!/4/2)' } }));
+        });
+
+        expect(mockView.renderer.scrollToAnchor).toHaveBeenCalledTimes(1);
+      } finally {
+        templateField.remove();
+      }
+    });
+
+    it('follows again once the note editor loses focus', async () => {
+      const handler = await setupAndCaptureHighlightHandler();
+      mockView.resolveCFI.mockReturnValue({ index: 0, anchor: () => new Range() });
+      editor.blur();
+
+      await act(async () => {
+        handler(new CustomEvent('tts-highlight-mark', { detail: { cfi: 'epubcfi(/6/4!/4/2)' } }));
+      });
+
+      expect(mockView.renderer.scrollToAnchor).toHaveBeenCalledTimes(1);
+    });
   });
 });
 

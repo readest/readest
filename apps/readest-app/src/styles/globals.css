@@ -1072,6 +1072,11 @@
     display: none;
   }
 
+  /* an unfocused title-bar search field drags the window (WindowButtons) */
+  [data-window-drag] input.window-drag-input:not(:focus) {
+    cursor: default;
+  }
+
   [data-eink='true'] input.search-input,
   [data-eink='true'] input.search-input:focus {
     border-width: 1px !important;

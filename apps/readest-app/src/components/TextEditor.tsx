@@ -135,6 +135,8 @@ const TextEditor = forwardRef<TextEditorRef, TextEditorProps>(
           'content font-size-sm',
           className,
         )}
+        // Read Aloud stops following the voice while a note editor has focus.
+        data-note-editor=''
         dir='auto'
         rows={minRows}
         spellCheck={spellCheck}
