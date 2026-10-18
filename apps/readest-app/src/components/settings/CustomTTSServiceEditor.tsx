@@ -3,7 +3,10 @@ import { PiSpinner } from 'react-icons/pi';
 import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useCustomTTSStore } from '@/store/customTTSStore';
-import { OpenAICompatibleSpeechProvider } from '@/services/tts/providers/openaiCompatible';
+import {
+  OpenAICompatibleSpeechProvider,
+  speechEndpoint,
+} from '@/services/tts/providers/openaiCompatible';
 import type { CustomTTSService } from '@/types/customTTS';
 import { BoxedList, SettingLabel, SettingsSwitchRow } from './primitives';
 import SubPageHeader from './SubPageHeader';
@@ -68,8 +71,8 @@ const CustomTTSServiceEditor: React.FC<CustomTTSServiceEditorProps> = ({ service
     setTesting(true);
     setError('');
     setVoiceCount(null);
+    const test: CustomTTSService = { ...cleaned(), id: 'test', addedAt: 0, updatedAt: 0 };
     try {
-      const test: CustomTTSService = { ...cleaned(), id: 'test', addedAt: 0, updatedAt: 0 };
       const provider = new OpenAICompatibleSpeechProvider(
         () => [test],
         async () => true,
@@ -90,7 +93,9 @@ const CustomTTSServiceEditor: React.FC<CustomTTSServiceEditorProps> = ({ service
       player.onended = () => URL.revokeObjectURL(url);
       await player.play();
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      // The URL it tried, so a wrong base URL is easy to spot.
+      const message = err instanceof Error ? err.message : String(err);
+      setError(`${message}\n${speechEndpoint(test)}`);
     } finally {
       setTesting(false);
     }
@@ -199,7 +204,7 @@ const CustomTTSServiceEditor: React.FC<CustomTTSServiceEditorProps> = ({ service
       </BoxedList>
 
       <div className='flex flex-col gap-3 px-4'>
-        {error && <p className='text-error break-words text-sm'>{error}</p>}
+        {error && <p className='text-error whitespace-pre-line break-words text-sm'>{error}</p>}
         {voiceCount !== null && (
           <p className='text-base-content/70 text-sm'>
             {_('{{count}} voices available', { count: voiceCount })}

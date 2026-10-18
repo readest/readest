@@ -60,8 +60,15 @@ const TRANSIENT_STATUSES = new Set([408, 409, 425, 429]);
 
 export const customVoiceId = (serviceId: string, voice: string) => `${serviceId}:${voice}`;
 
+// A base URL pasted with the endpoint on it (`…/v1/audio/speech`) works too.
 const endpoint = (service: CustomTTSService, path: string) =>
-  `${service.baseUrl.replace(/\/+$/, '')}${path}`;
+  `${service.baseUrl.replace(/(\/audio\/(speech|voices))?\/*$/, '')}${path}`;
+
+// MiMo's endpoint is known, so the path typed into its base URL is ignored.
+export const speechEndpoint = (service: CustomTTSService) =>
+  isMiMoService(service)
+    ? new URL('/v1/chat/completions', service.baseUrl).href
+    : endpoint(service, '/audio/speech');
 
 const authHeaders = (service: CustomTTSService): Record<string, string> =>
   service.apiKey ? { Authorization: `Bearer ${service.apiKey}` } : {};
@@ -198,10 +205,6 @@ export class OpenAICompatibleSpeechProvider implements SpeechProvider {
     const onAbort = () => controller.abort();
     signal.addEventListener('abort', onAbort, { once: true });
     try {
-      // MiMo's endpoint is known, so the path typed into its base URL is ignored.
-      const url = isMiMo
-        ? new URL('/v1/chat/completions', service.baseUrl).href
-        : endpoint(service, '/audio/speech');
       const body = isMiMo
         ? {
             model: service.model,
@@ -218,7 +221,7 @@ export class OpenAICompatibleSpeechProvider implements SpeechProvider {
             response_format: 'mp3',
             ...(service.instructions ? { instructions: service.instructions } : {}),
           };
-      const res = await getAIFetch()(url, {
+      const res = await getAIFetch()(speechEndpoint(service), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...authHeaders(service) },
         body: JSON.stringify(body),
