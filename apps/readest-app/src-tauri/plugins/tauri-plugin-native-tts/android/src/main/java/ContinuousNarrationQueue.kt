@@ -68,12 +68,13 @@ internal class ContinuousNarrationQueue(context: Context) {
         // A SMIL clip can end earlier; schedule that cut on the native clock too.
         val cutAtMs = afterMs - offsetMs
         boundary = player.createMessage { _, _ ->
-            // ExoPlayer clamps messages beyond EOF to the final sample. A
-            // seek there flushes buffered audio instead of joining the files.
+            // SMIL and container durations can round independently by 1 ms.
+            // A seek at that rounded EOF flushes already-buffered audio, so
+            // leave the natural playlist transition in charge within 1 ms.
             // Read duration here too: it can still be unknown when queued.
             val durationMs = player.duration
             if (player.currentMediaItem === outgoing && next === pending &&
-                (durationMs == C.TIME_UNSET || cutAtMs < durationMs)) {
+                (durationMs == C.TIME_UNSET || cutAtMs < durationMs - 1)) {
                 player.seekToNextMediaItem()
             }
         }.setLooper(Looper.getMainLooper())

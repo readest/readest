@@ -354,10 +354,11 @@ swiftc Sources/ContinuousNarrationQueue.swift Tests/CheckNarrationQueue.swift -o
 ```
 
 Android's `ContinuousNarrationQueueTest.kt` runs on a connected device through
-the native-tts module's `connectedDebugAndroidTest` task. A SMIL boundary at or
-beyond the physical file end must use the natural playlist transition: ExoPlayer
-clamps an end-of-file message to the last sample, where an explicit seek would
-flush already-buffered audio. Earlier clip ends still use a timed native cut. Select that module
-explicitly; running the task at the root also installs unrelated library test
-runners. These adapter checks exercise real native playback, but do not replace
-an iPhone/iPad app check of background playback, interruptions and audio routing.
+the native-tts module's `connectedDebugAndroidTest` task. A SMIL boundary within
+1 ms of, or beyond, the physical file end uses the natural playlist transition:
+SMIL and container durations can round independently in either direction. An
+explicit seek at that rounded end flushes already-buffered audio. Earlier clip
+ends still use a timed native cut. Select that module explicitly; running the
+task at the root also installs unrelated library test runners. These adapter
+checks exercise real native playback, but do not replace an iPhone/iPad app
+check of background playback, interruptions and audio routing.

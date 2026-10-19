@@ -64,6 +64,14 @@ class ContinuousNarrationQueueTest {
     }
 
     @Test fun aRoundedFileEndUsesTheNaturalPlaylistTransition() {
+        assertNaturalEndTransition(1)
+    }
+
+    @Test fun aFileEndRoundedDownUsesTheNaturalPlaylistTransition() {
+        assertNaturalEndTransition(-1)
+    }
+
+    private fun assertNaturalEndTransition(roundingMs: Long) {
         val ready = CountDownLatch(1)
         val transitioned = CountDownLatch(1)
         val transitionReason = AtomicInteger(-1)
@@ -83,8 +91,8 @@ class ContinuousNarrationQueueTest {
         }
         assertTrue("First recording did not prepare", ready.await(8, TimeUnit.SECONDS))
         instrumentation.runOnMainSync {
-            // SMIL can round up from the physical audio duration by 1 ms.
-            queue.queue(second.absolutePath, 0, 1000, queue.player.duration + 1)
+            // SMIL and container duration can round in either direction by 1 ms.
+            queue.queue(second.absolutePath, 0, 1000, queue.player.duration + roundingMs)
             queue.player.play()
         }
         assertTrue("Native queue did not advance", transitioned.await(8, TimeUnit.SECONDS))
