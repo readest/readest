@@ -222,6 +222,9 @@ export class TTSController extends EventTarget {
   // (the next chunk of a chunked section, else the next section), for preloads
   // across its end; built once per document read.
   #nextOpening: { after: Document | null; ssmls: Promise<string[]> } | null = null;
+  // Sections already handed to #prefetchFullSection this session: preloadNext
+  // fires per paragraph, so this keeps the full-chapter fetch to one run.
+  #fullSectionPrefetchDone = new Set<number>();
   // Signal for queued background preloads: a windowed provider keeps them
   // until it aborts, so a voice change or stop must withdraw them.
   #preloadAbort = new AbortController();
@@ -1686,6 +1689,15 @@ export class TTSController extends EventTarget {
     // that is the next chunk, long before the chapter ends.
     const budgetLeft = () =>
       rawSsmls.length < maxCount && (!byDuration || seconds < PRELOAD_AHEAD_SEC);
+    // Queue a full-section prefetch of the next chapter while the current
+    // one still plays, so the transition finds every sentence cached.
+    if (sectionEnded) {
+      const nextIndex = this.#ttsSectionIndex + 1;
+      if (nextIndex < (this.view.book.sections?.length ?? 0) && !this.#fullSectionPrefetchDone.has(nextIndex)) {
+        this.#fullSectionPrefetchDone.add(nextIndex);
+        void this.#prefetchFullSection(nextIndex);
+      }
+    }
     if ((byDuration || capabilities.preloadsAudio) && sectionEnded && budgetLeft()) {
       if (!this.#nextOpening || this.#nextOpening.after !== this.#ttsDoc) {
         const chunkAnchor = this.#adjacentChunkAnchor(1);
@@ -1722,7 +1734,11 @@ export class TTSController extends EventTarget {
   // same way the live session will produce them so preloads match playback.
   // `from` starts at a chunk instead: chunk documents keep the full section's
   // element indices, so its anchor resolves in the fresh document too.
-  async #sectionOpening(sectionIndex: number, from?: (doc: Document) => Range): Promise<string[]> {
+  async #sectionOpening(
+    sectionIndex: number,
+    from?: (doc: Document) => Range,
+    maxSeconds: number = PRELOAD_AHEAD_SEC,
+  ): Promise<string[]> {
     const section = this.view.book.sections?.[sectionIndex];
     if (!section?.createDocument) return [];
     try {
@@ -1738,12 +1754,32 @@ export class TTSController extends EventTarget {
         ssmls.push(raw);
         const text = raw.replace(/<[^>]*>/g, ' ');
         seconds += estimateSentenceSeconds(text, this.ttsLang || 'en', voiceId);
-        if (seconds >= PRELOAD_AHEAD_SEC) break;
+        if (seconds >= maxSeconds) break;
       }
       return ssmls;
     } catch (err) {
       console.warn('TTS preload of an upcoming opening failed', sectionIndex, err);
       return [];
+    }
+  }
+
+  // Synthesize an entire section's sentences into the cache on the background
+  // preload signal, with no duration budget: the chapter-level cache fills
+  // while the current chapter still plays. CachingProvider skips cached
+  // sentences, so overlapping calls stay cheap.
+  async #prefetchFullSection(sectionIndex: number): Promise<void> {
+    const section = this.view.book.sections?.[sectionIndex];
+    if (!section?.createDocument) return;
+    try {
+      const rawSsmls = await this.#sectionOpening(sectionIndex, undefined, Infinity);
+      const { signal } = this.#preloadAbort;
+      for (const raw of rawSsmls) {
+        if (signal.aborted) return;
+        const ssml = await this.#preprocessSSML(raw);
+        if (ssml) await this.preloadSSML(ssml, signal);
+      }
+    } catch (err) {
+      console.warn('TTS full-section prefetch failed', sectionIndex, err);
     }
   }
 
