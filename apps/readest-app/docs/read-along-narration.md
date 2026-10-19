@@ -339,6 +339,10 @@ Verified end to end against two very different real books:
 
 ### Native queue checks
 
+See the [chapter-handover investigation and validation report](read-along-gapless-validation.md)
+for the reproduced failures, regression coverage, Android capture results and
+the outstanding iOS device checks.
+
 `src/__tests__/services/tts/audio-handover.test.ts` and the Media Overlay client,
 controller and native-player suites cover queue boundaries, delayed section
 navigation, pause, stop, nonzero offsets, cleanup and chapter-stop behaviour.

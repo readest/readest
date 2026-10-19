@@ -41,7 +41,14 @@ class ContinuousNarrationQueueTest {
     @Test fun queuedBoundaryAdvancesWithoutAWebViewAndPreservesPauseAndRate() {
         val transitioned = CountDownLatch(1)
         var position = -1.0
+        val transitionReason = AtomicInteger(-1)
         instrumentation.runOnMainSync {
+            queue.player.addListener(object : Player.Listener {
+                override fun onMediaItemTransition(item: MediaItem?, reason: Int) {
+                    if (item?.localConfiguration?.uri?.lastPathSegment == second.name)
+                        transitionReason.set(reason)
+                }
+            })
             queue.onTransition = { path, time ->
                 assertEquals(second.absolutePath, path)
                 position = time
@@ -56,6 +63,9 @@ class ContinuousNarrationQueueTest {
         assertTrue("Native queue did not advance", transitioned.await(8, TimeUnit.SECONDS))
         assertTrue("Queued clip lost its original-file position: $position", position >= 200 && position < 600)
         instrumentation.runOnMainSync {
+            assertEquals("An earlier clip must still cut before EOF", Player.MEDIA_ITEM_TRANSITION_REASON_SEEK, transitionReason.get())
+        }
+        instrumentation.runOnMainSync {
             assertEquals(1.5f, queue.player.playbackParameters.speed, 0.001f)
             queue.player.pause()
             queue.seek(50)
@@ -65,6 +75,10 @@ class ContinuousNarrationQueueTest {
 
     @Test fun aRoundedFileEndUsesTheNaturalPlaylistTransition() {
         assertNaturalEndTransition(1)
+    }
+
+    @Test fun anExactFileEndUsesTheNaturalPlaylistTransition() {
+        assertNaturalEndTransition(0)
     }
 
     @Test fun aFileEndRoundedDownUsesTheNaturalPlaylistTransition() {
