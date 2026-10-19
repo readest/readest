@@ -769,6 +769,42 @@ describe('yandexProvider', () => {
     expect(sessionCalls()).toHaveLength(1);
   });
 
+  it('honours an HTTP-date Retry-After value', async () => {
+    mockTauriFetch.mockImplementation(async (url) => {
+      if (String(url).includes('/sessions')) return sessionResponse() as unknown as Response;
+      if (translateCalls().length === 1) {
+        return rateLimited(new Date(Date.now() + 1000).toUTCString());
+      }
+      return {
+        ok: true,
+        status: 200,
+        json: async () => ({ code: 200, text: ['Bonjour'] }),
+      } as unknown as Response;
+    });
+
+    const { yandexProvider } = await import('@/services/translators/providers/yandex');
+    const startedAt = Date.now();
+    await expect(yandexProvider.translate(['Hello'], 'en', 'fr')).resolves.toEqual(['Bonjour']);
+    // The date is at most a second away, so the 5 s fallback delay was not used.
+    expect(Date.now() - startedAt).toBeLessThan(4000);
+    expect(translateCalls()).toHaveLength(2);
+  });
+
+  it('keeps a long run of short clauses within the request budget', async () => {
+    mockYandexFlow((text) => ({ code: 200, text: [text] }));
+    const text = 'word, '.repeat(1000);
+
+    const { yandexProvider } = await import('@/services/translators/providers/yandex');
+    const [result] = await yandexProvider.translate([text], 'en', 'ru');
+
+    const sent = translateCalls().map(
+      (call) => new URLSearchParams(call[1]?.body as string).get('text') ?? '',
+    );
+    expect(sent.length).toBeLessThanOrEqual(29);
+    expect(sent.join('')).toBe(text);
+    expect(result).toBe(text);
+  });
+
   it('gives up after a bounded number of rate-limit retries', async () => {
     mockTauriFetch.mockImplementation(async (url) => {
       if (String(url).includes('/sessions')) return sessionResponse() as unknown as Response;

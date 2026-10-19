@@ -53,25 +53,29 @@ export function splitTextIntoChunks(text: string, maxLength: number): string[] {
 }
 
 /**
- * Splits one sentence longer than `maxLength` at the clause boundary (`, ` `; ` or a
- * closing quote; never a colon, which introduces a quotation) nearest its middle.
+ * Splits one sentence longer than `maxLength` at clause boundaries (`, ` `; ` or a
+ * closing quote; never a colon, which introduces a quotation) into roughly equal pieces.
  * Pieces keep their trailing whitespace, so joining them restores the input.
  */
 function splitAtClauses(text: string, maxLength: number): string[] {
-  if (text.length <= maxLength) return [text];
   const boundary = /(?:[,;]["”’']?|[”’"])\s+/g;
-  let best = -1;
-  for (const match of text.matchAll(boundary)) {
-    const end = match.index + match[0].length;
-    if (end < text.length && Math.abs(end - text.length / 2) < Math.abs(best - text.length / 2)) {
-      best = end;
+  const pieces: string[] = [];
+  let rest = text;
+  while (rest.length > maxLength) {
+    // Aim for the fewest equal pieces that fit, so long runs of short clauses are not
+    // over-split into many tiny requests.
+    const target = rest.length / Math.ceil(rest.length / maxLength);
+    let best = -1;
+    for (const match of rest.matchAll(boundary)) {
+      const end = match.index + match[0].length;
+      if (end < rest.length && Math.abs(end - target) < Math.abs(best - target)) best = end;
     }
+    if (best <= 0) break;
+    pieces.push(rest.slice(0, best));
+    rest = rest.slice(best);
   }
-  if (best <= 0) return [text];
-  return [
-    ...splitAtClauses(text.slice(0, best), maxLength),
-    ...splitAtClauses(text.slice(best), maxLength),
-  ];
+  pieces.push(rest);
+  return pieces;
 }
 
 /**

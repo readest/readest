@@ -147,8 +147,13 @@ async function withRequestSignal<T>(
 const retryAfterMs = (response: Response) => {
   const header = response.headers.get('Retry-After');
   const seconds = header ? Number(header) : Number.NaN;
-  return Number.isFinite(seconds) && seconds >= 0
-    ? Math.min(seconds * 1000, MAX_RETRY_AFTER_MS)
+  if (Number.isFinite(seconds) && seconds >= 0) {
+    return Math.min(seconds * 1000, MAX_RETRY_AFTER_MS);
+  }
+  // Retry-After may also be an HTTP-date.
+  const delayMs = (header ? Date.parse(header) : Number.NaN) - Date.now();
+  return Number.isFinite(delayMs) && delayMs >= 0
+    ? Math.min(delayMs, MAX_RETRY_AFTER_MS)
     : DEFAULT_RETRY_AFTER_MS;
 };
 
