@@ -437,7 +437,12 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
             config: {
               ...bookData.config,
               updatedAt: Date.now(),
-              viewSettings,
+              // The sidebar tab is written to the book config only, so keep
+              // it rather than the live copy's stale value (#6836).
+              viewSettings: {
+                ...viewSettings,
+                sideBarTab: bookData.config?.viewSettings?.sideBarTab ?? viewSettings.sideBarTab,
+              },
             },
           },
         },
