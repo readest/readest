@@ -94,7 +94,8 @@ export class NativeNarrationPlayer {
   }
 
   get paused(): boolean {
-    return this.#userPaused || !this.#cache.playing;
+    const cache = this.#prepared?.started ? this.#prepared.cache : this.#cache;
+    return this.#userPaused || !cache.playing;
   }
 
   // Extrapolated media time between native polls (AVPlayer item time).

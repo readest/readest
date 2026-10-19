@@ -71,6 +71,9 @@ export interface TTSClient {
   getSectionDurations?(section: number): Promise<Map<number, number>>;
   getVoiceId(): string;
   getSpeakingLang(): string;
+  // Whether audio continues through a block/section handover, even before the
+  // next speak iterator reports its first mark. Absent for utterance engines.
+  isAudioPlaying?(): boolean;
   // Playback position within the currently audible sentence, in trimmed media
   // seconds at rate 1.0, clamped to [0, sentenceDuration]. Only meaningful
   // when capabilities.mediaClock is true; the section timeline treats absence

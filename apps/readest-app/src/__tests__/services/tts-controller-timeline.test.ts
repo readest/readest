@@ -357,6 +357,34 @@ describe('TTSController lyrics', () => {
     await vi.waitFor(() => expect(controller.isBuffering()).toBe(false));
   });
 
+  test('a rolling recording does not buffer while the next block waits for its first mark', async () => {
+    await controller.ensureTimeline();
+    let release!: () => void;
+    const ready = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const isAudioPlaying = vi.fn(() => true);
+    Object.assign(controller.ttsClient, { isAudioPlaying });
+    vi.mocked(controller.ttsClient.speak).mockImplementation(
+      async function* (_ssml, _signal, preload) {
+        if (preload) return;
+        await ready;
+        yield { code: 'boundary', mark: '0' };
+      },
+    );
+    await controller.seekToLyric(1);
+    await vi.waitFor(() => expect(controller.state).toBe('playing'));
+    expect(controller.isBuffering(), 'audio is already playing during the block handover').toBe(
+      false,
+    );
+    isAudioPlaying.mockReturnValue(false);
+    expect(controller.isBuffering(), 'a genuinely silent wait must still show buffering').toBe(
+      true,
+    );
+    release();
+    await vi.waitFor(() => expect(controller.isBuffering()).toBe(false));
+  });
+
   test('isBuffering stays false while the session is not playing', async () => {
     await controller.ensureTimeline();
     controller.state = 'playing';

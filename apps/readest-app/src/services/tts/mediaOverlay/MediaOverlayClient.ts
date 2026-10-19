@@ -706,6 +706,11 @@ export class MediaOverlayClient implements TTSClient {
     yield { code: 'end', message: 'Narration finished' };
   }
 
+  isAudioPlaying(): boolean {
+    const clock = this.#queuedHandover?.started ? this.#nextAudio?.clock : this.#audio?.clock;
+    return !this.#userPaused && !!clock && !clock.paused;
+  }
+
   async pause(): Promise<boolean> {
     this.#userPaused = true;
     this.#cancelHandover();

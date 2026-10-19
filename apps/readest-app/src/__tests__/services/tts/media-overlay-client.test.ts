@@ -248,6 +248,10 @@ describe('MediaOverlayClient capabilities', () => {
     first.advanceTo(3);
     for await (const _ of current);
     await client.stop(true);
+    expect(
+      client.isAudioPlaying?.(),
+      'the standby recording is audible before section adoption',
+    ).toBe(true);
     expect(FakeAudio.instances[1]!.paused).toBe(false);
     await client.speak(section.ssmlForBlock(1)!, signal).next();
     expect(FakeAudio.instances).toHaveLength(2);

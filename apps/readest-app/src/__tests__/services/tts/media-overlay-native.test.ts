@@ -102,6 +102,7 @@ beforeEach(() => {
 
 afterEach(async () => {
   await client?.shutdown();
+  vi.useRealTimers();
   vi.unstubAllEnvs();
   vi.unstubAllGlobals();
 });
@@ -154,6 +155,7 @@ describe('MediaOverlayClient on iOS Tauri', () => {
   });
 
   test('joins an already playing native member after delayed page navigation without a pause or rewind', async () => {
+    vi.useFakeTimers();
     await setup();
     const signal = new AbortController().signal;
     const current = client.speak(section.ssmlForBlock(0)!, signal);
@@ -163,9 +165,21 @@ describe('MediaOverlayClient on iOS Tauri', () => {
       pars: [{ audioHref: href, clipBegin: 2, clipEnd: 9 }],
     } as unknown as MediaOverlaySection);
     const path = controlCalls.find((call) => call['action'] === 'queue-next')!['path'];
+    const invokeOriginal = vi.mocked(invoke).getMockImplementation()!;
+    vi.mocked(invoke).mockImplementation(async (cmd, args) =>
+      cmd === 'plugin:native-tts|playout_position'
+        ? { session: 7, index: 0, positionMs: 3000, playing: false }
+        : invokeOriginal(cmd, args),
+    );
+    await vi.advanceTimersByTimeAsync(250);
+    vi.mocked(invoke).mockImplementation(invokeOriginal);
     playoutEvents!({ type: 'segment-start', session: 7, path, positionMs: 6500 });
     for await (const _ of current);
     await client.stop(true);
+    expect(
+      client.isAudioPlaying?.(),
+      'the native queued item is already audible during navigation',
+    ).toBe(true);
     for (const [index, par] of section.pars.entries()) {
       par.audioHref = href;
       par.clipBegin = 2 + index;

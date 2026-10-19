@@ -1219,7 +1219,7 @@ export class TTSController extends EventTarget {
   // Playing, but nothing audible yet: synthesis, network, decode, or a
   // recording still loading. Drives the spinner in the lyric play button.
   isBuffering(): boolean {
-    return this.#awaitingAudio && this.state === 'playing';
+    return this.#awaitingAudio && this.state === 'playing' && !this.ttsClient.isAudioPlaying?.();
   }
 
   // Start speaking at a lyric line. Unlike the scrubber's seek this always

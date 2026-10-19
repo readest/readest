@@ -83,6 +83,7 @@ test('a decoded standby file is reused at a real section handover', async () => 
   await vi.waitFor(() => expect(elements[1]!.currentTime).toBeGreaterThan(0));
 
   await client.stop(true);
+  expect(client.isAudioPlaying()).toBe(true);
   client.setSection(second);
   const next = client.speak(second.ssmlForBlock(0)!, signal);
   expect((await next.next()).value).toMatchObject({ code: 'boundary' });
@@ -92,5 +93,6 @@ test('a decoded standby file is reused at a real section handover', async () => 
   expect(elements[1]!.paused).toBe(false);
   await vi.waitFor(() => expect(elements[1]!.currentTime).toBeGreaterThan(0));
   await client.pause();
+  expect(client.isAudioPlaying()).toBe(false);
   expect(elements[1]!.paused).toBe(true);
 });
