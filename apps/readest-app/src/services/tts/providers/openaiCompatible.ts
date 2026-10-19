@@ -32,6 +32,21 @@ export const OPENAI_TTS_VOICES = [
   'verse',
 ];
 
+// Known voices for chat-completions TTS services that expose no voice list
+// (e.g. Xiaomi MiMo). The endpoint probe still runs first; these stand in
+// only when it fails, so a service that does list voices stays authoritative.
+export const CHAT_TTS_VOICES = [
+  'mimo_default',
+  '冰糖',
+  '茉莉',
+  '苏打',
+  '白桦',
+  'Mia',
+  'Chloe',
+  'Milo',
+  'Dean',
+];
+
 // How long a service gets to list its voices before the standard names stand in.
 const VOICE_LIST_TIMEOUT_MS = 5000;
 
@@ -105,7 +120,8 @@ const fetchServiceVoices = async (service: CustomTTSService): Promise<ListedVoic
   } finally {
     clearTimeout(timer);
   }
-  return OPENAI_TTS_VOICES.map((name) => ({ name }));
+  const fallback = service.format === 'chat' ? CHAT_TTS_VOICES : OPENAI_TTS_VOICES;
+  return fallback.map((name) => ({ name }));
 };
 
 const abortError = () => new DOMException('Aborted', 'AbortError');
@@ -149,7 +165,7 @@ export class OpenAICompatibleSpeechProvider implements SpeechProvider {
 
   cacheScope(req: SpeechSynthesisRequest): string {
     const service = this.#resolve(req.voice)?.service;
-    return JSON.stringify([service?.baseUrl, service?.model, service?.instructions]);
+    return JSON.stringify([service?.baseUrl, service?.model, service?.format, service?.instructions]);
   }
 
   async synthesize(
@@ -166,16 +182,29 @@ export class OpenAICompatibleSpeechProvider implements SpeechProvider {
     const onAbort = () => controller.abort();
     signal.addEventListener('abort', onAbort, { once: true });
     try {
-      const res = await getAIFetch()(endpoint(service, '/audio/speech'), {
+      const isChat = service.format === 'chat';
+      const path = isChat ? '/chat/completions' : '/audio/speech';
+      const body = isChat
+        ? {
+            model: service.model,
+            messages: [
+              { role: 'user', content: service.instructions || '请朗读以下内容' },
+              { role: 'assistant', content: req.text },
+            ],
+            modalities: ['text', 'audio'],
+            audio: { voice, format: 'mp3' },
+          }
+        : {
+            model: service.model,
+            input: req.text,
+            voice,
+            response_format: 'mp3',
+            ...(service.instructions ? { instructions: service.instructions } : {}),
+          };
+      const res = await getAIFetch()(endpoint(service, path), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...authHeaders(service) },
-        body: JSON.stringify({
-          model: service.model,
-          input: req.text,
-          voice,
-          response_format: 'mp3',
-          ...(service.instructions ? { instructions: service.instructions } : {}),
-        }),
+        body: JSON.stringify(body),
         signal: controller.signal,
       });
       if (!res.ok) {
@@ -186,6 +215,21 @@ export class OpenAICompatibleSpeechProvider implements SpeechProvider {
           throw new SpeechSynthesisPermanentError(message);
         }
         throw new Error(message);
+      }
+      if (isChat) {
+        const data = (await res.json()) as {
+          choices?: { message?: { audio?: { data?: string } } }[];
+        };
+        const b64 = data.choices?.[0]?.message?.audio?.data;
+        if (!b64) {
+          throw new SpeechSynthesisPermanentError(
+            `${service.name}: no audio in chat response`,
+          );
+        }
+        const bin = atob(b64);
+        const bytes = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+        return { audio: bytes.buffer, boundaries: [] };
       }
       return { audio: await res.arrayBuffer(), boundaries: [] };
     } finally {

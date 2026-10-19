@@ -10,6 +10,8 @@ export interface CustomTTSService {
   baseUrl: string;
   apiKey?: string;
   model: string;
+  /** 'openai' (default): POST {baseUrl}/audio/speech. 'chat': TTS via chat completions. */
+  format?: 'openai' | 'chat';
   /** Style instructions for models that take them (e.g. gpt-4o-mini-tts). */
   instructions?: string;
   disabled?: boolean;

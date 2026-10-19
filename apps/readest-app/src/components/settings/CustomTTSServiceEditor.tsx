@@ -11,10 +11,11 @@ import SubPageHeader from './SubPageHeader';
 const BASE_URL_PRESETS = [
   'https://api.openai.com/v1',
   'https://api.siliconflow.cn/v1',
+  'https://api.xiaomimimo.com/v1',
   'http://127.0.0.1:8880/v1',
 ];
 
-const MODEL_PRESETS = ['gpt-4o-mini-tts', 'tts-1', 'tts-1-hd', 'kokoro'];
+const MODEL_PRESETS = ['gpt-4o-mini-tts', 'tts-1', 'tts-1-hd', 'kokoro', 'mimo-v2.5-tts'];
 
 type Draft = Omit<CustomTTSService, 'id' | 'addedAt' | 'updatedAt'>;
 
@@ -40,7 +41,12 @@ const CustomTTSServiceEditor: React.FC<CustomTTSServiceEditorProps> = ({ service
   const _ = useTranslation();
   const { envConfig } = useEnv();
   const [draft, setDraft] = useState<Draft>(
-    service ?? { name: '', baseUrl: BASE_URL_PRESETS[0]!, model: MODEL_PRESETS[0]! },
+    service ?? {
+      name: '',
+      baseUrl: BASE_URL_PRESETS[0]!,
+      model: MODEL_PRESETS[0]!,
+      format: 'openai',
+    },
   );
   const [testing, setTesting] = useState(false);
   const [error, setError] = useState('');
@@ -151,6 +157,17 @@ const CustomTTSServiceEditor: React.FC<CustomTTSServiceEditorProps> = ({ service
               <option key={url} value={url} />
             ))}
           </datalist>
+        </Field>
+        <Field id='tts-format' label={_('API Format')}>
+          <select
+            id='tts-format'
+            className='select select-sm eink-bordered w-full'
+            value={draft.format ?? 'openai'}
+            onChange={(e) => update({ format: e.target.value as 'openai' | 'chat' })}
+          >
+            <option value='openai'>{_('OpenAI Audio Speech')}</option>
+            <option value='chat'>{_('Chat Completions (e.g. Xiaomi MiMo)')}</option>
+          </select>
         </Field>
         <Field id='tts-api-key' label={_('API Key')}>
           <input

@@ -23,8 +23,10 @@ const toService = (id: string, get: (key: string) => unknown): CustomTTSService 
   };
   const apiKey = str(get('apiKey'));
   const instructions = str(get('instructions'));
+  const format = str(get('format'));
   if (apiKey !== undefined) service.apiKey = apiKey;
   if (instructions !== undefined) service.instructions = instructions;
+  if (format === 'chat') service.format = 'chat';
   if (get('disabled') === true) service.disabled = true;
   return service;
 };
@@ -42,6 +44,7 @@ export const customTTSAdapter: ReplicaAdapter<CustomTTSService> = {
       updatedAt: s.updatedAt,
     };
     if (s.instructions !== undefined) fields['instructions'] = s.instructions;
+    if (s.format !== undefined) fields['format'] = s.format;
     if (s.disabled !== undefined) fields['disabled'] = s.disabled;
     // Plaintext here; replicaCryptoMiddleware encrypts (or drops) it.
     if (s.apiKey !== undefined) fields['apiKey'] = s.apiKey;
