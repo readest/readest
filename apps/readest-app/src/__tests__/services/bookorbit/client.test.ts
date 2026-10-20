@@ -8,6 +8,7 @@ const server: BookOrbitTarget = {
   username: 'admin',
   password: 'pw',
   accessToken: 'stale-token',
+  allowSelfSignedCert: true,
 };
 
 const manifest = {
@@ -118,5 +119,24 @@ describe('BookOrbitClient', () => {
     expect(url).toBe('http://localhost:13380/api/v1/audiobooks/9/playback-state');
     expect(init.method).toBe('PUT');
     expect(JSON.parse(init.body)).toMatchObject({ assetId: 'aud_x', positionMs: 1234 });
+  });
+});
+
+describe('BookOrbitClient (API) – TLS certificate checks', () => {
+  it('relaxes certificate checks only when the server allows self-signed certs', async () => {
+    fetchMock.mockResolvedValue(json(manifest));
+    const onTokensUpdated = vi.fn();
+
+    await new BookOrbitClient(
+      { ...server, allowSelfSignedCert: false },
+      { onTokensUpdated },
+    ).getManifest(9);
+    await new BookOrbitClient(
+      { ...server, allowSelfSignedCert: true },
+      { onTokensUpdated },
+    ).getManifest(9);
+
+    expect(fetchMock.mock.calls[0]![1]).not.toHaveProperty('danger');
+    expect(fetchMock.mock.calls[1]![1]).toHaveProperty('danger');
   });
 });

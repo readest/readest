@@ -2606,5 +2606,7 @@
   "{{count}} voices available_other": "{{count}} ta ovoz mavjud",
   "Multilingual": "Koʻp tilli",
   "Expressive": "Ifodali",
-  "Show Page Thumbnails": "Sahifa eskizlarini ko'rsatish"
+  "Show Page Thumbnails": "Sahifa eskizlarini ko'rsatish",
+  "Allow Self-Signed Certificate": "O‘zi imzolagan sertifikatga ruxsat berish",
+  "Skips certificate checks for this server. Turn it off if the server has a valid certificate": "Ushbu server uchun sertifikat tekshiruvini o‘tkazib yuboradi. Serverda haqiqiy sertifikat bo‘lsa, uni o‘chiring"
 }

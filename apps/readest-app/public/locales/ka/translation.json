@@ -2606,5 +2606,7 @@
   "{{count}} voices available_other": "ხელმისაწვდომია {{count}} ხმა",
   "Multilingual": "მრავალენოვანი",
   "Expressive": "ექსპრესიული",
-  "Show Page Thumbnails": "გვერდის მინიატურების ჩვენება"
+  "Show Page Thumbnails": "გვერდის მინიატურების ჩვენება",
+  "Allow Self-Signed Certificate": "თვითხელმოწერილი სერტიფიკატის დაშვება",
+  "Skips certificate checks for this server. Turn it off if the server has a valid certificate": "გამოტოვებს ამ სერვერის სერტიფიკატის შემოწმებას. გამორთეთ, თუ სერვერს აქვს მოქმედი სერტიფიკატი"
 }

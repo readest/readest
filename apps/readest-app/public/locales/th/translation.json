@@ -2541,5 +2541,7 @@
   "{{count}} voices available_other": "มี {{count}} เสียงให้ใช้งาน",
   "Multilingual": "หลายภาษา",
   "Expressive": "แสดงอารมณ์",
-  "Show Page Thumbnails": "แสดงภาพขนาดย่อของหน้า"
+  "Show Page Thumbnails": "แสดงภาพขนาดย่อของหน้า",
+  "Allow Self-Signed Certificate": "อนุญาตใบรับรองที่ลงนามด้วยตนเอง",
+  "Skips certificate checks for this server. Turn it off if the server has a valid certificate": "ข้ามการตรวจสอบใบรับรองของเซิร์ฟเวอร์นี้ ปิดตัวเลือกนี้หากเซิร์ฟเวอร์มีใบรับรองที่ถูกต้อง"
 }

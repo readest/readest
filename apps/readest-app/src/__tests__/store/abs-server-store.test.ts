@@ -26,6 +26,17 @@ describe('absServerStore', () => {
     } as unknown as ReturnType<typeof useSettingsStore.getState>);
   });
 
+  it('addServer allows self-signed certificates for a new server unless asked not to', () => {
+    const store = useABSServerStore.getState();
+    expect(store.addServer({ name: 'A', url: 'https://a.example.com' }).allowSelfSignedCert).toBe(
+      true,
+    );
+    expect(
+      store.addServer({ name: 'B', url: 'https://b.example.com', allowSelfSignedCert: false })
+        .allowSelfSignedCert,
+    ).toBe(false);
+  });
+
   it('addServer computes contentId from normalized url and mints a reincarnation token', () => {
     const server = useABSServerStore.getState().addServer({
       name: 'Home',

@@ -2541,5 +2541,7 @@
   "{{count}} voices available_other": "사용 가능한 음성 {{count}}개",
   "Multilingual": "다국어",
   "Expressive": "표현력",
-  "Show Page Thumbnails": "페이지 썸네일 표시"
+  "Show Page Thumbnails": "페이지 썸네일 표시",
+  "Allow Self-Signed Certificate": "자체 서명 인증서 허용",
+  "Skips certificate checks for this server. Turn it off if the server has a valid certificate": "이 서버의 인증서 확인을 건너뜁니다. 서버에 유효한 인증서가 있으면 끄세요"
 }

@@ -308,3 +308,24 @@ describe('ABSClient on the web platform', () => {
     expect(sentHeaders['Origin']).toBeUndefined();
   });
 });
+
+describe('ABSClient – TLS certificate checks', () => {
+  it('relaxes certificate checks only when the server allows self-signed certs', async () => {
+    const fetchMock = vi.fn(async () => jsonResponse(200, { libraries: [] }));
+    vi.stubGlobal('fetch', fetchMock);
+    const onTokensUpdated = vi.fn();
+
+    await new ABSClient(
+      { ...server, allowSelfSignedCert: false },
+      { onTokensUpdated },
+    ).getLibraries();
+    await new ABSClient(
+      { ...server, allowSelfSignedCert: true },
+      { onTokensUpdated },
+    ).getLibraries();
+
+    expect((fetchMock.mock.calls[0] as unknown[])[1]).not.toHaveProperty('danger');
+    expect((fetchMock.mock.calls[1] as unknown[])[1]).toHaveProperty('danger');
+    vi.unstubAllGlobals();
+  });
+});

@@ -72,6 +72,11 @@ import { findExistingBookForPublication } from './utils/findExistingBook';
 import Dialog from '@/components/Dialog';
 import { uniqueId } from '@/utils/misc';
 import { getHorizontalInsetStyle } from '@/utils/insets';
+import {
+  allowsSelfSignedCert,
+  allowsSelfSignedCertAt,
+  type SelfSignedCertOption,
+} from '@/utils/tls';
 
 type ViewMode = 'feed' | 'publication' | 'search' | 'loading' | 'error';
 
@@ -142,6 +147,8 @@ export default function BrowserPage() {
   const usernameRef = useRef<string | null | undefined>(undefined);
   const passwordRef = useRef<string | null | undefined>(undefined);
   const customHeadersRef = useRef<Record<string, string>>({});
+  // The saved catalog whose certificate choice applies (to its own origin).
+  const certOwnerRef = useRef<SelfSignedCertOption & { url?: string }>({});
   const startURLRef = useRef<string | null | undefined>(undefined);
   const loadingOPDSRef = useRef(false);
   const historyIndexRef = useRef(-1);
@@ -227,7 +234,15 @@ export default function BrowserPage() {
         const username = usernameRef.current || '';
         const password = passwordRef.current || '';
         const customHeaders = customHeadersRef.current;
-        const res = await fetchWithAuth(url, username, password, useProxy, {}, customHeaders);
+        const res = await fetchWithAuth(
+          url,
+          username,
+          password,
+          useProxy,
+          {},
+          customHeaders,
+          allowsSelfSignedCertAt(certOwnerRef.current, url),
+        );
 
         if (!res.ok) {
           if (isSearch && res.status === 404) {
@@ -402,6 +417,9 @@ export default function BrowserPage() {
         passwordRef.current = null;
       }
       customHeadersRef.current = normalizeCustomHeaders(catalog?.customHeaders);
+      // An ad-hoc URL opened without a saved catalog accepts self-signed
+      // certificates; a saved catalog's choice covers its own origin only.
+      certOwnerRef.current = catalog ?? {};
       if (libraryLoaded) {
         lastLoadedKeyRef.current = loadKey;
         loadOPDS(url);
@@ -505,7 +523,15 @@ export default function BrowserPage() {
         const username = usernameRef.current || '';
         const password = passwordRef.current || '';
         const customHeaders = customHeadersRef.current;
-        const res = await fetchWithAuth(url, username, password, useProxy, {}, customHeaders);
+        const res = await fetchWithAuth(
+          url,
+          username,
+          password,
+          useProxy,
+          {},
+          customHeaders,
+          allowsSelfSignedCertAt(certOwnerRef.current, url),
+        );
         if (!res.ok) return null;
         const text = await res.text();
         return parsePublicationDocument(text, res.url);
@@ -594,7 +620,14 @@ export default function BrowserPage() {
             ...(!useProxy ? customHeaders : {}),
           };
           if (username || password) {
-            const authHeader = await probeAuth(url, username, password, useProxy, customHeaders);
+            const authHeader = await probeAuth(
+              url,
+              username,
+              password,
+              useProxy,
+              customHeaders,
+              allowsSelfSignedCertAt(certOwnerRef.current, url),
+            );
             if (authHeader) {
               if (!useProxy) {
                 headers['Authorization'] = authHeader;
@@ -617,7 +650,7 @@ export default function BrowserPage() {
             url: downloadUrl,
             headers,
             singleThreaded: true,
-            skipSslVerification: true,
+            skipSslVerification: allowsSelfSignedCertAt(certOwnerRef.current, url),
             onProgress,
           });
           const probedFilename = await probeFilename(responseHeaders);
@@ -651,6 +684,10 @@ export default function BrowserPage() {
                   username,
                   password,
                   customHeaders,
+                  allowSelfSignedCert: allowsSelfSignedCertAt(
+                    certOwnerRef.current,
+                    resolveURL(publicationCoverHref, state.baseURL),
+                  ),
                 });
               } catch (coverError) {
                 console.warn('OPDS: failed to apply the feed cover:', coverError);
@@ -678,6 +715,7 @@ export default function BrowserPage() {
                         username: settings.bookorbit!.username,
                         password: settings.bookorbit!.password,
                         customHeaders: settings.bookorbit!.customHeaders,
+                        allowSelfSignedCert: allowsSelfSignedCert(settings.bookorbit!),
                       },
                       { onTokensUpdated: () => {} },
                     ).getManifest(id),
@@ -802,6 +840,10 @@ export default function BrowserPage() {
                 username: usernameRef.current || '',
                 password: passwordRef.current || '',
                 customHeaders: customHeadersRef.current,
+                allowSelfSignedCert: allowsSelfSignedCertAt(
+                  certOwnerRef.current,
+                  resolveURL(publicationCoverHref, state.baseURL),
+                ),
               });
             } catch (coverError) {
               console.warn('OPDS: failed to apply the feed cover:', coverError);
@@ -859,7 +901,14 @@ export default function BrowserPage() {
           ...(!useProxy ? customHeaders : {}),
         };
         if (username || password) {
-          const authHeader = await probeAuth(url, username, password, useProxy, customHeaders);
+          const authHeader = await probeAuth(
+            url,
+            username,
+            password,
+            useProxy,
+            customHeaders,
+            allowsSelfSignedCertAt(certOwnerRef.current, url),
+          );
           if (authHeader) {
             if (!useProxy) {
               headers['Authorization'] = authHeader;
@@ -873,7 +922,7 @@ export default function BrowserPage() {
           cfp: '',
           url: downloadUrl,
           singleThreaded: true,
-          skipSslVerification: true,
+          skipSslVerification: allowsSelfSignedCertAt(certOwnerRef.current, url),
           headers,
         });
         return await appService.getImageURL(cachedPath);
@@ -1113,6 +1162,7 @@ export default function BrowserPage() {
       password: passwordRef.current || undefined,
       customHeaders: customHeadersRef.current,
       autoDownload: catalog?.autoDownload || false,
+      allowSelfSignedCert: allowsSelfSignedCert(certOwnerRef.current),
     });
 
     useCustomOPDSStore.getState().saveCustomOPDSCatalogs(envConfig);

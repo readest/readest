@@ -6,6 +6,7 @@ import { KoSyncProxyPayload } from '@/types/kosync';
 import { isLanAddress } from '@/utils/network';
 import { getUserLang, makeSafeFilename } from '@/utils/misc';
 import { normalizeCustomHeaders } from '@/utils/customHeaders';
+import { allowsSelfSignedCert, tlsFetchOptions } from '@/utils/tls';
 import { getAPIBaseUrl, isTauriAppPlatform } from '../environment';
 
 const getContributorName = (contributor: unknown): string => {
@@ -98,10 +99,7 @@ export class KOSyncClient {
             ...Object.fromEntries(headers.entries()),
           },
           body,
-          danger: {
-            acceptInvalidCerts: true,
-            acceptInvalidHostnames: true,
-          },
+          ...tlsFetchOptions(allowsSelfSignedCert(this.config)),
         });
       }
 

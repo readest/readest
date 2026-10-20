@@ -151,6 +151,8 @@ export const useCustomOPDSStore = create<OPDSStoreState>((set, get) => ({
       input.reincarnation ?? existing?.reincarnation ?? Math.random().toString(36).slice(2);
     const catalog: OPDSCatalog = {
       ...input,
+      // A catalog accepts self-signed certificates unless the user turns it off.
+      allowSelfSignedCert: input.allowSelfSignedCert ?? true,
       contentId,
       addedAt: input.addedAt ?? existing?.addedAt ?? Date.now(),
       deletedAt: undefined,

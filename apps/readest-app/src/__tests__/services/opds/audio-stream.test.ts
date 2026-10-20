@@ -28,18 +28,26 @@ const { buildOpdsAudioUrl, canStreamOpdsAudio, needsAudioAuth, opdsAudioBlocker 
 
 const CATALOG = 'https://books.example.com/opds/7/download?fileId=8';
 const ORIGIN = 'https://books.example.com';
-const open = { authHeader: null, customHeaders: {}, hasCredentials: false, origin: ORIGIN };
+const open = {
+  authHeader: null,
+  customHeaders: {},
+  hasCredentials: false,
+  origin: ORIGIN,
+  allowSelfSignedCert: false,
+};
 const authed = {
   authHeader: 'Basic abc',
   customHeaders: {},
   hasCredentials: true,
   origin: ORIGIN,
+  allowSelfSignedCert: false,
 };
 const headered = {
   authHeader: null,
   customHeaders: { 'CF-Access-Client-Id': 'x' },
   hasCredentials: false,
   origin: ORIGIN,
+  allowSelfSignedCert: false,
 };
 
 describe('buildOpdsAudioUrl', () => {
@@ -241,6 +249,41 @@ describe('credential scoping', () => {
 
     expect(calls[0]!.headers['CF-Access-Client-Id']).toBeUndefined();
     vi.unstubAllGlobals();
+  });
+
+  it('relaxes TLS checks only for the catalog that allows self-signed certs', async () => {
+    const inits: Record<string, unknown>[] = [];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (_url: string, init: Record<string, unknown>) => {
+        inits.push(init);
+        return { ok: true, arrayBuffer: async () => new ArrayBuffer(0) } as unknown as Response;
+      }),
+    );
+    const { fetchOpdsAudioBlob } = await import('@/services/opds/audioStream');
+    const lenient = { ...authed, allowSelfSignedCert: true };
+
+    await fetchOpdsAudioBlob(CATALOG, { ...authed, allowSelfSignedCert: false }, 'audio/mpeg');
+    await fetchOpdsAudioBlob(CATALOG, lenient, 'audio/mpeg');
+    await fetchOpdsAudioBlob('https://evil.example.net/track.mp3', lenient, 'audio/mpeg');
+
+    expect(inits[0]).not.toHaveProperty('danger');
+    expect(inits[1]).toHaveProperty('danger');
+    expect(inits[2]).not.toHaveProperty('danger');
+    vi.unstubAllGlobals();
+  });
+
+  it("carries the catalog's certificate choice into the session auth", async () => {
+    vi.resetModules();
+    h.catalog = { id: 'cat-1', url: CATALOG, allowSelfSignedCert: false };
+    const { resolveOpdsAudioAuth } = await import('@/services/opds/audioStream');
+
+    expect((await resolveOpdsAudioAuth('cat-1', CATALOG)).allowSelfSignedCert).toBe(false);
+    h.catalog = { id: 'cat-1', url: CATALOG };
+    expect((await resolveOpdsAudioAuth('cat-1', CATALOG)).allowSelfSignedCert).toBe(true);
+    // A feed opened without a saved catalog has made no choice either.
+    h.catalog = undefined;
+    expect((await resolveOpdsAudioAuth('cat-1', CATALOG)).allowSelfSignedCert).toBe(true);
   });
 
   // The auth probe is itself a credentialed request against a feed-chosen URL.
