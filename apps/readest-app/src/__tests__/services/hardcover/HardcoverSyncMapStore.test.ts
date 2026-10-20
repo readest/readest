@@ -189,9 +189,11 @@ describe('HardcoverSyncMapStore', () => {
     expect(await store.getMapping('book-b', 'note-1')).not.toBeNull();
   });
 
-  test('migrates legacy localStorage entries into the database on load', async () => {
+  test.each([
+    'legacy-note',
+    'note:with:colon',
+  ])('migrates legacy localStorage entry for %s into the database on load', async (noteId) => {
     const bookHash = 'legacy-book';
-    const noteId = 'legacy-note';
     const legacyRow: HardcoverSyncMapRow = {
       book_hash: bookHash,
       note_id: noteId,
@@ -220,6 +222,40 @@ describe('HardcoverSyncMapStore', () => {
 
     const result = await store.getMapping(bookHash, noteId);
     expect(result).toEqual(legacyRow);
+  });
+
+  test.each([
+    { bookHash: 'other-book', noteId: 'legacy-note' },
+    { bookHash: 'legacy-book', noteId: 'other-note' },
+  ])('preserves conflicting legacy identity $bookHash/$noteId without writing', async (identity) => {
+    const bookHash = 'legacy-book';
+    const key = `hardcover-note-mapping:${bookHash}:legacy-note`;
+    const existing: HardcoverSyncMapRow = {
+      book_hash: identity.bookHash,
+      note_id: identity.noteId,
+      hardcover_journal_id: 111,
+      payload_hash: 'existing-payload',
+      synced_at: 1,
+    };
+    const rowKey = makeRowKey(identity.bookHash, identity.noteId);
+    mockDb.rows.set(rowKey, existing);
+    const raw = JSON.stringify({ ...existing, hardcover_journal_id: 999 });
+    window.localStorage.setItem(key, raw);
+
+    const outcome = await store.loadForBook(bookHash).then(
+      () => null,
+      (error: unknown) => error,
+    );
+
+    expect(mockDb.rows.get(rowKey)).toEqual(existing);
+    expect(window.localStorage.getItem(key)).toBe(raw);
+    expect(outcome).toBeInstanceOf(Error);
+    expect((outcome as Error).message).toMatch(/identity/);
+    expect(mockDb.execute).not.toHaveBeenCalled();
+    expect(mockDb.select).not.toHaveBeenCalled();
+    expect(mockDb.close).toHaveBeenCalledOnce();
+    await expect(store.getMapping(bookHash, 'legacy-note')).rejects.toThrow(/identity/);
+    expect(mockDb.execute).not.toHaveBeenCalled();
   });
 
   test('retains a legacy mapping after a failed write and retries on the same store', async () => {

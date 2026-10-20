@@ -97,6 +97,10 @@ export class HardcoverSyncMapStore {
         window.localStorage.removeItem(key);
         continue;
       }
+      // Keep identity conflicts for recovery without overwriting another mapping.
+      if (row.book_hash !== bookHash || key !== `${prefix}${row.note_id}`) {
+        throw new Error('Legacy Hardcover mapping identity does not match its storage key');
+      }
       // Preserve the legacy mapping and abort sync if persistence fails.
       await this.upsertRow(db, row);
       window.localStorage.removeItem(key);
