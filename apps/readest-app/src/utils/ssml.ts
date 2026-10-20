@@ -1,11 +1,5 @@
 import { TTSMark } from '@/services/tts/types';
-import {
-  code6392to6391,
-  detectLanguage,
-  inferLangFromScript,
-  isSameLang,
-  isValidLang,
-} from './lang';
+import { code6392to6391, inferLangFromScript, isSameLang, isValidLang } from './lang';
 
 const cleanTextContent = (text: string) =>
   text.replace(/\r\n/g, '  ').replace(/\r/g, ' ').replace(/\n/g, ' ').trimStart();
@@ -56,23 +50,7 @@ export const parseSSMLLang = (ssml: string, primaryLang?: string): string => {
     lang = primaryLang.split('-')[0]!.toLowerCase();
   }
   const textWithoutLangTags = ssml.replace(/<lang[^>]*>.*?<\/lang>/gs, '');
-  const scriptInferred = inferLangFromScript(textWithoutLangTags, lang);
-  if (scriptInferred !== lang) {
-    return scriptInferred;
-  }
-  // When language is still default English, but primaryLang is not explicitly set
-  // (e.g. PDFs or untagged EPUBs where primaryLanguage defaulted to 'en'),
-  // use language detection on the text sample to identify the actual content language.
-  if (isDefaultEnglish && (!primaryLang || primaryLang.split('-')[0] === 'en')) {
-    const textContent = textWithoutLangTags.replace(/<[^>]+>/g, ' ').trim();
-    if (textContent.length >= 20) {
-      const detected = detectLanguage(textContent);
-      if (detected && isValidLang(detected) && detected !== 'und') {
-        return detected;
-      }
-    }
-  }
-  return lang;
+  return inferLangFromScript(textWithoutLangTags, lang);
 };
 
 const isValidMark = (mark: string) => {

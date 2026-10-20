@@ -25,6 +25,7 @@ import { genSSMLRaw, parseSSMLLang } from '@/utils/ssml';
 import { throttle } from '@/utils/throttle';
 import { isCfiInLocation } from '@/utils/cfi';
 import { getLocale } from '@/utils/misc';
+import { getPDFSpeechLang } from '@/utils/lang';
 import { estimateTTSTime } from '@/utils/ttsTime';
 import { pageBreakFraction } from '@/utils/ttsPageFollow';
 import { getTextSubRange, rangeTextExcludingInert } from '@/services/tts/wordHighlight';
@@ -71,9 +72,7 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
   const setTTSEnabled = useReaderStore((s) => s.setTTSEnabled);
   const { getMergedRules } = useProofreadStore();
 
-  const [ttsLang, setTtsLang] = useState<string>(
-    () => getBookData(bookKey)?.book?.primaryLanguage || 'en',
-  );
+  const [ttsLang, setTtsLang] = useState<string>('en');
   const [ttsSectionIndex, setTtsSectionIndex] = useState<number | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
@@ -967,7 +966,13 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
         }
       }
 
-      const primaryLang = bookData.book.primaryLanguage;
+      const primaryLang =
+        bookData.book.format === 'PDF'
+          ? getPDFSpeechLang(
+              bookData.book.primaryLanguage,
+              currentSection?.doc.body?.textContent || '',
+            )
+          : bookData.book.primaryLanguage;
 
       if (ttsControllerRef.current) {
         ttsControllerRef.current.stop();
