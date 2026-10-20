@@ -385,7 +385,8 @@ describe('manageDialogueHighlight', () => {
     const doc = makeDoc(
       `<p>‘Fetch a bunch o’ rope, and be quick about it.’</p>` +
         `<p>He said, ‘We’re goin’ home.’</p>` +
-        `<p>‘The lads’ boots are wet,’ she said. ‘Rock ’n’ roll!’</p>`,
+        `<p>‘The lads’ boots are wet,’ she said. ‘Rock ’n’ roll!’</p>` +
+        `<p>‘We’re goin’—now!’</p>`,
     );
     manageDialogueHighlight(doc, makeViewSettings({ dialogueHighlight: true }));
     const spans = [...doc.querySelectorAll(`.${DIALOGUE_SPAN_CLASS}`)].map((s) => s.textContent);
@@ -394,6 +395,7 @@ describe('manageDialogueHighlight', () => {
       '‘We’re goin’ home.’',
       '‘The lads’ boots are wet,’',
       '‘Rock ’n’ roll!’',
+      '‘We’re goin’—now!’',
     ]);
   });
 
@@ -403,7 +405,8 @@ describe('manageDialogueHighlight', () => {
         `<p>They called it ‘progress’ and moved on, ‘Fine.’</p>` +
         `<p>‘Wait’ he said.</p><p>‘Go.’</p>` +
         `<p>He said ‘no’, then left.</p>` +
-        `<p>Type ‘end’ then “’” to close it.</p>`,
+        `<p>Type ‘end’ then “’” to close it.</p>` +
+        `<p>Type ‘end’ then "’" to close it.</p>`,
     );
     manageDialogueHighlight(doc, makeViewSettings({ dialogueHighlight: true }));
     const spans = [...doc.querySelectorAll(`.${DIALOGUE_SPAN_CLASS}`)].map((s) => s.textContent);
@@ -416,6 +419,8 @@ describe('manageDialogueHighlight', () => {
       '‘no’',
       '‘end’',
       '“’”',
+      '‘end’',
+      '"’"',
     ]);
   });
 
