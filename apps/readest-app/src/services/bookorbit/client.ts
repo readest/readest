@@ -14,7 +14,7 @@ import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
 import { withOriginSuppressed } from '@/app/opds/utils/opdsReq';
 import { isTauriAppPlatform } from '@/services/environment';
 import { normalizeCustomHeaders } from '@/utils/customHeaders';
-import { tlsFetchOptions } from '@/utils/tls';
+import { tlsFetch } from '@/utils/tls';
 import type { BookOrbitSettings } from '@/types/settings';
 import { isSupportedManifest } from './manifest';
 import type { BookOrbitManifest } from './manifest';
@@ -85,12 +85,16 @@ const boFetch = (
   allowSelfSignedCert: boolean,
 ): Promise<Response> => {
   const doFetch = isTauriAppPlatform() ? tauriFetch : window.fetch;
-  return doFetch(url, {
-    method: init.method ?? 'GET',
-    headers: withOriginSuppressed(init.headers ?? {}),
-    body: init.body,
-    ...tlsFetchOptions(allowSelfSignedCert),
-  });
+  return tlsFetch(
+    doFetch,
+    url,
+    {
+      method: init.method ?? 'GET',
+      headers: withOriginSuppressed(init.headers ?? {}),
+      body: init.body,
+    },
+    allowSelfSignedCert,
+  );
 };
 
 export class BookOrbitClient {

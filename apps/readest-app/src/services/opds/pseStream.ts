@@ -9,7 +9,7 @@ import {
   withOriginSuppressed,
 } from '@/app/opds/utils/opdsReq';
 import { normalizeCustomHeaders } from '@/utils/customHeaders';
-import { allowsSelfSignedCertAt, tlsFetchOptions } from '@/utils/tls';
+import { allowsSelfSignedCertAt, tlsFetch } from '@/utils/tls';
 import { trackWidePages, type WidePagesOptions } from '@/utils/spread';
 import type { BookFormat } from '@/types/book';
 import type { BookDoc, BookMetadata } from '@/libs/document';
@@ -65,7 +65,7 @@ export const createPseStreamPageLoader = (data: PseStreamData) => {
       ...(!useProxy && authHeader ? { Authorization: authHeader } : {}),
     });
     const fetch = isTauriAppPlatform() ? tauriFetch : window.fetch;
-    const res = await fetch(fetchURL, { headers, ...tlsFetchOptions(allowSelfSignedCert) });
+    const res = await tlsFetch(fetch, fetchURL, { headers }, allowSelfSignedCert);
     if (!res.ok) {
       throw new Error(`Failed to fetch page ${pageIndex}: ${res.statusText}`);
     }

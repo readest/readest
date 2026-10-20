@@ -194,6 +194,97 @@ pub struct ProgressPayload {
     transfer_speed: u64,
 }
 
+/// Redirect policy for a client that accepts invalid certificates: it follows
+/// hops within the origin the user allowed and stops at the first hop off it,
+/// which `send` continues on a verified client.
+fn same_origin_redirects(url: &str) -> reqwest::redirect::Policy {
+    let origin = reqwest::Url::parse(url).ok().map(|url| url.origin());
+    reqwest::redirect::Policy::custom(move |attempt| {
+        if attempt.previous().len() > 10 {
+            attempt.error("too many redirects")
+        } else if Some(attempt.url().origin()) == origin {
+            attempt.follow()
+        } else {
+            attempt.stop()
+        }
+    })
+}
+
+fn request(
+    client: &reqwest::Client,
+    url: &str,
+    body: Option<&String>,
+    headers: &HashMap<String, String>,
+) -> reqwest::RequestBuilder {
+    let mut request = match body {
+        Some(body) => client.post(url).body(body.clone()),
+        None => client.get(url),
+    };
+    for (key, value) in headers {
+        request = request.header(key, value);
+    }
+    request
+}
+
+/// Sends a request through `client`. With `verified` (the request accepts
+/// invalid certificates), a redirect off the origin is followed on the
+/// verified client and without credentials, as reqwest does for any
+/// cross-host redirect.
+async fn send(
+    client: &reqwest::Client,
+    verified: Option<&reqwest::Client>,
+    url: &str,
+    body: Option<&String>,
+    headers: &HashMap<String, String>,
+) -> Result<reqwest::Response> {
+    use reqwest::StatusCode;
+
+    let response = request(client, url, body, headers).send().await?;
+    let status = response.status();
+    let Some(verified) = verified else {
+        return Ok(response);
+    };
+    if !matches!(
+        status,
+        StatusCode::MOVED_PERMANENTLY
+            | StatusCode::FOUND
+            | StatusCode::SEE_OTHER
+            | StatusCode::TEMPORARY_REDIRECT
+            | StatusCode::PERMANENT_REDIRECT
+    ) {
+        return Ok(response);
+    }
+    let Some(next) = response
+        .headers()
+        .get(reqwest::header::LOCATION)
+        .and_then(|location| location.to_str().ok())
+        .and_then(|location| response.url().join(location).ok())
+    else {
+        return Ok(response);
+    };
+    let keeps_body = matches!(
+        status,
+        StatusCode::TEMPORARY_REDIRECT | StatusCode::PERMANENT_REDIRECT
+    );
+    let headers: HashMap<String, String> = headers
+        .iter()
+        .filter(|(key, _)| {
+            !["authorization", "cookie", "proxy-authorization"]
+                .iter()
+                .any(|name| key.eq_ignore_ascii_case(name))
+        })
+        .map(|(key, value)| (key.clone(), value.clone()))
+        .collect();
+    Ok(request(
+        verified,
+        next.as_str(),
+        body.filter(|_| keeps_body),
+        &headers,
+    )
+    .send()
+    .await?)
+}
+
 #[command]
 #[allow(clippy::too_many_arguments)] // Tauri command surface mirrors the JS caller's options.
 pub async fn download_file<R: tauri::Runtime>(
@@ -215,31 +306,33 @@ pub async fn download_file<R: tauri::Runtime>(
 
     const PART_SIZE: u64 = 1024 * 1024;
 
-    let client = reqwest::ClientBuilder::new()
-        .danger_accept_invalid_certs(skip_ssl_verification.unwrap_or(false))
-        .danger_accept_invalid_hostnames(skip_ssl_verification.unwrap_or(false))
-        .build()?;
+    let relaxed = skip_ssl_verification.unwrap_or(false);
+    let client = if relaxed {
+        reqwest::ClientBuilder::new()
+            .danger_accept_invalid_certs(true)
+            .danger_accept_invalid_hostnames(true)
+            .redirect(same_origin_redirects(url))
+            .build()?
+    } else {
+        reqwest::Client::new()
+    };
+    let verified = if relaxed {
+        Some(reqwest::Client::new())
+    } else {
+        None
+    };
     let force_single = single_threaded.unwrap_or(false);
 
     async fn single_threaded_download(
         client: &reqwest::Client,
+        verified: Option<&reqwest::Client>,
         url: &str,
         file_path: &Path,
         headers: &HashMap<String, String>,
         body: &Option<String>,
         on_progress: Channel<ProgressPayload>,
     ) -> Result<HashMap<String, String>> {
-        let mut request = if let Some(body) = body {
-            client.post(url).body(body.clone())
-        } else {
-            client.get(url)
-        };
-
-        for (key, value) in headers {
-            request = request.header(key, value);
-        }
-
-        let response = request.send().await?;
+        let response = send(client, verified, url, body.as_ref(), headers).await?;
         if !response.status().is_success() {
             return Err(Error::HttpErrorCode(
                 response.status().as_u16(),
@@ -274,16 +367,22 @@ pub async fn download_file<R: tauri::Runtime>(
     }
 
     if force_single {
-        return single_threaded_download(&client, url, file_path, &headers, &body, on_progress)
-            .await;
+        return single_threaded_download(
+            &client,
+            verified.as_ref(),
+            url,
+            file_path,
+            &headers,
+            &body,
+            on_progress,
+        )
+        .await;
     }
 
     // Check if server supports range requests
-    let mut range_req = client.get(url).header("Range", "bytes=0-0");
-    for (key, value) in headers.iter() {
-        range_req = range_req.header(key, value);
-    }
-    let range_resp = range_req.send().await?;
+    let mut range_headers = headers.clone();
+    range_headers.insert("Range".into(), "bytes=0-0".into());
+    let range_resp = send(&client, verified.as_ref(), url, None, &range_headers).await?;
     let accept_ranges = range_resp
         .headers()
         .get("accept-ranges")
@@ -306,8 +405,16 @@ pub async fn download_file<R: tauri::Runtime>(
     }
 
     if !accept_ranges || total == 0 {
-        return single_threaded_download(&client, url, file_path, &headers, &body, on_progress)
-            .await;
+        return single_threaded_download(
+            &client,
+            verified.as_ref(),
+            url,
+            file_path,
+            &headers,
+            &body,
+            on_progress,
+        )
+        .await;
     }
 
     // Multi-part download with range access
@@ -321,6 +428,7 @@ pub async fn download_file<R: tauri::Runtime>(
     stream::iter(0..part_count)
         .for_each_concurrent(8, |i| {
             let client = client.clone();
+            let verified = verified.clone();
             let file = Arc::clone(&file);
             let progress = Arc::clone(&progress);
             let headers = headers.clone();
@@ -332,12 +440,10 @@ pub async fn download_file<R: tauri::Runtime>(
                 let end = min(start + PART_SIZE - 1, total - 1);
                 let range_header = format!("bytes={start}-{end}");
 
-                let mut req = client.get(&url).header("Range", range_header);
-                for (key, value) in headers {
-                    req = req.header(key, value);
-                }
+                let mut headers = headers;
+                headers.insert("Range".into(), range_header);
 
-                let resp = match req.send().await {
+                let resp = match send(&client, verified.as_ref(), &url, None, &headers).await {
                     Ok(r) => r,
                     Err(_) => return,
                 };
@@ -437,9 +543,11 @@ fn file_to_body(channel: Channel<ProgressPayload>, file: File, file_len: u64) ->
 mod tests {
     use super::{
         has_disallowed_components, is_within_app_storage, is_within_data_dir, resolve_path,
-        resolve_request,
+        resolve_request, same_origin_redirects, send,
     };
+    use std::collections::HashMap;
     use std::path::{Path, PathBuf};
+    use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
     #[test]
     fn data_dir_authorizes_custom_library_locations() {
@@ -551,5 +659,65 @@ mod tests {
         assert!(!has_disallowed_components(
             "C:\\Users\\x\\AppData\\Roaming\\Readest\\Books\\h.epub"
         ));
+    }
+
+    #[tokio::test]
+    async fn relaxed_download_verifies_a_redirect_to_another_origin() {
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let port = listener.local_addr().unwrap().port();
+        let server = tokio::spawn(async move {
+            let mut requests = Vec::new();
+            for step in 0..3 {
+                let (mut stream, _) = listener.accept().await.unwrap();
+                let mut bytes = vec![0; 4096];
+                let count = stream.read(&mut bytes).await.unwrap();
+                requests.push(String::from_utf8_lossy(&bytes[..count]).to_lowercase());
+                let response = match step {
+                    0 => "HTTP/1.1 302 Found\r\nLocation: /moved\r\nContent-Length: 0\r\nConnection: close\r\n\r\n".to_string(),
+                    1 => format!("HTTP/1.1 302 Found\r\nLocation: http://cdn.example.org:{port}/book\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"),
+                    _ => "HTTP/1.1 200 OK\r\nContent-Length: 4\r\nConnection: close\r\n\r\nbook".to_string(),
+                };
+                stream.write_all(response.as_bytes()).await.unwrap();
+            }
+            requests
+        });
+        let url = format!("http://books.example.org:{port}/get");
+        let client = |agent: &str| {
+            reqwest::Client::builder()
+                .resolve("books.example.org", ([127, 0, 0, 1], port).into())
+                .resolve("cdn.example.org", ([127, 0, 0, 1], port).into())
+                .no_proxy()
+                .user_agent(agent)
+        };
+        let relaxed = client("relaxed")
+            .redirect(same_origin_redirects(&url))
+            .build()
+            .unwrap();
+        let verified = client("verified").build().unwrap();
+        let headers = HashMap::from([
+            ("Authorization".to_string(), "Basic dTpw".to_string()),
+            ("X-Device".to_string(), "reader".to_string()),
+        ]);
+
+        let response = send(&relaxed, Some(&verified), &url, None, &headers)
+            .await
+            .unwrap();
+
+        assert_eq!(response.text().await.unwrap(), "book");
+        let requests = server.await.unwrap();
+        assert!(
+            requests[0].starts_with("get /get ") && requests[0].contains("user-agent: relaxed")
+        );
+        assert!(
+            requests[1].starts_with("get /moved ") && requests[1].contains("user-agent: relaxed")
+        );
+        assert!(requests[2].starts_with("get /book "));
+        assert!(
+            requests[2].contains("user-agent: verified"),
+            "{}",
+            requests[2]
+        );
+        assert!(!requests[2].contains("authorization:"));
+        assert!(requests[2].contains("x-device: reader"));
     }
 }

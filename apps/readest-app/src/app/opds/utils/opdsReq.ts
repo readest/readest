@@ -12,7 +12,7 @@ import {
   normalizeCustomHeaders,
   serializeCustomHeaders,
 } from '@/utils/customHeaders';
-import { tlsFetchOptions } from '@/utils/tls';
+import { tlsFetch } from '@/utils/tls';
 
 const OPDS_PROXY_URL = `${getAPIBaseUrl()}/opds/proxy`;
 const NODE_OPDS_PROXY_URL = `${getNodeAPIBaseUrl()}/opds/proxy`;
@@ -271,11 +271,7 @@ export const probeAuth = async (
 
   // Probe with HEAD request
   const fetch = isTauriAppPlatform() ? tauriFetch : window.fetch;
-  const res = await fetch(fetchURL, {
-    method: 'HEAD',
-    headers,
-    ...tlsFetchOptions(allowSelfSignedCert),
-  });
+  const res = await tlsFetch(fetch, fetchURL, { method: 'HEAD', headers }, allowSelfSignedCert);
 
   // Check if authentication is required
   if (res.status === 401 || res.status === 403) {
@@ -393,12 +389,12 @@ export const fetchWithAuth = async (
   };
 
   const fetch = isTauriAppPlatform() ? tauriFetch : window.fetch;
-  let res = await fetch(fetchURL, {
-    ...options,
-    method: options.method || 'GET',
-    headers,
-    ...tlsFetchOptions(allowSelfSignedCert),
-  });
+  let res = await tlsFetch(
+    fetch,
+    fetchURL,
+    { ...options, method: options.method || 'GET', headers },
+    allowSelfSignedCert,
+  );
 
   // Calibre in 'digest' (or 'auto' over http) mode rejects a Basic
   // Authorization header outright with 400 "Unsupported authentication
@@ -407,14 +403,11 @@ export const fetchWithAuth = async (
   // surface the WWW-Authenticate challenge and let the retry below negotiate
   // the scheme the server actually wants.
   if (res.status === 400 && preemptiveAuth) {
-    res = await fetch(
+    res = await tlsFetch(
+      fetch,
       useProxy ? getProxiedURL(cleanUrl, '', false, normalizedCustomHeaders) : fetchURL,
-      {
-        ...options,
-        method: options.method || 'GET',
-        headers: baseHeaders,
-        ...tlsFetchOptions(allowSelfSignedCert),
-      },
+      { ...options, method: options.method || 'GET', headers: baseHeaders },
+      allowSelfSignedCert,
     );
   }
 
@@ -443,12 +436,16 @@ export const fetchWithAuth = async (
         const finalUrl = useProxy
           ? getProxiedURL(cleanUrl, authHeader, false, normalizedCustomHeaders)
           : fetchURL;
-        res = await fetch(finalUrl, {
-          ...options,
-          method: options.method || 'GET',
-          headers: useProxy ? headers : { ...headers, Authorization: authHeader },
-          ...tlsFetchOptions(allowSelfSignedCert),
-        });
+        res = await tlsFetch(
+          fetch,
+          finalUrl,
+          {
+            ...options,
+            method: options.method || 'GET',
+            headers: useProxy ? headers : { ...headers, Authorization: authHeader },
+          },
+          allowSelfSignedCert,
+        );
       }
     }
   }

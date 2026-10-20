@@ -34,7 +34,7 @@ import { isTauriAppPlatform } from '@/services/environment';
 import { useSettingsStore } from '@/store/settingsStore';
 import { normalizeCustomHeaders } from '@/utils/customHeaders';
 import { id3TagSize, parseMp3Duration } from '@/utils/mp3Duration';
-import { allowsSelfSignedCert, tlsFetchOptions } from '@/utils/tls';
+import { allowsSelfSignedCert, tlsFetch } from '@/utils/tls';
 import type { CustomHeaders } from '@/utils/customHeaders';
 
 export interface OpdsAudioAuth {
@@ -87,8 +87,8 @@ const trackHeaders = (href: string, auth: OpdsAudioAuth): Record<string, string>
 };
 
 /** The catalog's certificate choice covers its own origin only, like its credentials. */
-const trackTlsOptions = (href: string, auth: OpdsAudioAuth) =>
-  tlsFetchOptions(auth.allowSelfSignedCert && (!auth.origin || originOf(href) === auth.origin));
+const trackAllowsSelfSignedCert = (href: string, auth: OpdsAudioAuth) =>
+  auth.allowSelfSignedCert && (!auth.origin || originOf(href) === auth.origin);
 
 /** Resolve the catalog's credentials once, for every track in a session. */
 export const resolveOpdsAudioAuth = async (
@@ -169,7 +169,7 @@ export const fetchOpdsAudioBlob = async (
 ): Promise<Blob> => {
   const headers = withOriginSuppressed(trackHeaders(href, auth));
   const doFetch = isTauriAppPlatform() ? tauriFetch : window.fetch;
-  const res = await doFetch(href, { headers, ...trackTlsOptions(href, auth) });
+  const res = await tlsFetch(doFetch, href, { headers }, trackAllowsSelfSignedCert(href, auth));
   if (!res.ok) throw new Error(`Failed to fetch audio: ${res.status} ${res.statusText}`);
   return new Blob([await res.arrayBuffer()], { type: mimeType });
 };
@@ -203,11 +203,12 @@ const readRange = async (
       Range: `bytes=${start}-${start + length - 1}`,
     });
     const doFetch = isTauriAppPlatform() ? tauriFetch : window.fetch;
-    const res = await doFetch(url, {
-      headers,
-      signal: controller.signal,
-      ...trackTlsOptions(url, auth),
-    });
+    const res = await tlsFetch(
+      doFetch,
+      url,
+      { headers, signal: controller.signal },
+      trackAllowsSelfSignedCert(url, auth),
+    );
     if (!res.ok) return null;
 
     // `Content-Range: bytes 0-16383/31255480` carries the real total; a server
