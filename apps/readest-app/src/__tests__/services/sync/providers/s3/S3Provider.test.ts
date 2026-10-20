@@ -168,6 +168,34 @@ describe('S3Provider — transport', () => {
     ]);
   });
 
+  // Regression: bucket-root listings request `/<bucket>/` with a
+  // trailing slash. MinIO canonicalizes a bucket-only path with the
+  // slash appended in its SigV4 verification, so a listing signed
+  // over `/<bucket>` fails with SignatureDoesNotMatch; AWS S3 and R2
+  // accept the trailing-slash form. Invariant: the path on the wire
+  // is the path that was signed.
+  test('lists the bucket root over a trailing-slash path that matches the signed path', async () => {
+    const h = makeS3();
+    h.fetchMock.mockResolvedValueOnce(xml(emptyList));
+
+    await h.provider.list('/');
+    const listUrl = h.url(0);
+    expect(new URL(listUrl).pathname).toBe('/readest/');
+    expect(listUrl).toContain('list-type=2');
+    expect(new URL(listUrl).pathname).toBe(
+      new AwsV4Signer({ url: listUrl, method: 'GET', service: 's3', ...config }).encodedPath,
+    );
+  });
+
+  test('deleteDir scans the bucket root with the same trailing slash', async () => {
+    const h = makeS3();
+    h.fetchMock.mockResolvedValueOnce(xml(emptyList));
+
+    await h.provider.deleteDir('/');
+    expect(new URL(h.url(0)).pathname).toBe('/readest/');
+    expect(h.url(0)).toContain('list-type=2');
+  });
+
   test('writeText PUTs the body with its content type; ensureDir never fetches', async () => {
     const h = makeS3();
     await h.provider.ensureDir(['/Readest', '/Readest/books']);
