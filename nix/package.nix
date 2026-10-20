@@ -1,5 +1,6 @@
 { stdenv
 , version ? "0.0.0-git"
+, callPackage
 , rustPlatform
 , pnpm_11
 , fetchPnpmDeps
@@ -21,29 +22,11 @@
 , gst_all_1
 , fetchurl
 , runCommand
-  # Runtime dependencies of the CEF distribution (libcef.so and the ANGLE
-  # libraries), resolved by autoPatchelfHook.
-, nss
-, nspr
-, at-spi2-core
-, dbus
-, cups
-, expat
-, alsa-lib
-, libgbm
-, libxkbcommon
-, udev
-, libx11
-, libxcomposite
-, libxdamage
-, libxext
-, libxfixes
-, libxrandr
-, libxcb
-, libxcursor
-, libxi
 ,
 }:
+let
+  linuxDependencies = callPackage ./dependencies.nix { };
+in
 rustPlatform.buildRustPackage (finalAttrs: {
   inherit version;
   pname = "readest";
@@ -72,11 +55,11 @@ rustPlatform.buildRustPackage (finalAttrs: {
       };
     in
     # Linux builds on the CEF runtime, like `pnpm tauri build` on Linux
-    # (apps/readest-app/scripts/tauri.mjs): the CEF dependency graph is pinned
-    # in Cargo.cef.lock, and src-tauri/.cargo/cef.toml holds the Linux-only
-    # `[patch.crates-io]` that takes tauri and its plugins from the feat/cef
-    # branches. Cargo only reads a file named config.toml, so both are put in
-    # place here, where cargoDeps (fetchCargoVendor) and the build see them.
+      # (apps/readest-app/scripts/tauri.mjs): the CEF dependency graph is pinned
+      # in Cargo.cef.lock, and src-tauri/.cargo/cef.toml holds the Linux-only
+      # `[patch.crates-io]` that takes tauri and its plugins from the feat/cef
+      # branches. Cargo only reads a file named config.toml, so both are put in
+      # place here, where cargoDeps (fetchCargoVendor) and the build see them.
     runCommand "readest-source" { } ''
       cp -r ${tree} $out
       chmod -R u+w $out
@@ -121,7 +104,7 @@ rustPlatform.buildRustPackage (finalAttrs: {
     # Regenerate whenever pnpm-lock.yaml changes: the nix-deps-check workflow
     # fails on pull requests that change the lockfile and prints the expected
     # hash in its log.
-    hash = "sha256-LPm50VC7KU1wysxSUxwFZ7pNZutULct05NB5WgjmTws=";
+    hash = "sha256-eOWraOZIFcFsP+uRfyILudyR44WTMj9yB8Ae8GwNvo0=";
     pnpmInstallFlags = [
       # Increase number of fetch attempts to work around timeout issues on slow
       # networks: "TimeoutError: The operation was aborted due to timeout".
@@ -134,7 +117,7 @@ rustPlatform.buildRustPackage (finalAttrs: {
   };
 
   cargoRoot = "../..";
-  cargoHash = "sha256-tPd67GAyyVxwMtVRdjEy/GL9e9p6twTVqD3Xd6OlvO0=";
+  cargoHash = "sha256-jID/RwLjS7IrvbrlP46NlW227fJjgM6CdVtdXFA/9b0=";
 
   buildAndTestSubdir = "src-tauri";
 
@@ -145,16 +128,9 @@ rustPlatform.buildRustPackage (finalAttrs: {
   # Rust unit tests run in the pull-request workflow (`pnpm test:rust`).
   doCheck = false;
 
-  # winit's X11 backend dlopens Xlib, Xcursor, Xi, Xrandr and xkbcommon at run
-  # time (x11-dl, xkbcommon-dl), which autoPatchelf cannot see; put them on
-  # the RUNPATH so dlopen finds them.
-  runtimeDependencies = [
-    libx11
-    libxcursor
-    libxi
-    libxrandr
-    libxkbcommon
-  ];
+  # The shared X11 list includes dlopen dependencies that autoPatchelf cannot
+  # discover; put them on the RUNPATH so they are available at run time.
+  runtimeDependencies = linuxDependencies.x11;
 
   postPatch = ''
     substituteInPlace src-tauri/tauri.conf.json \
@@ -198,24 +174,7 @@ rustPlatform.buildRustPackage (finalAttrs: {
     librsvg
     openssl
     glib-networking
-    # libcef.so
-    nss
-    nspr
-    at-spi2-core
-    dbus
-    cups
-    expat
-    alsa-lib
-    libgbm
-    libxkbcommon
-    udev
-    libx11
-    libxcomposite
-    libxdamage
-    libxext
-    libxfixes
-    libxrandr
-    libxcb
+  ] ++ linuxDependencies.cef ++ [
     # TTS
     gst_all_1.gstreamer
     gst_all_1.gst-plugins-base

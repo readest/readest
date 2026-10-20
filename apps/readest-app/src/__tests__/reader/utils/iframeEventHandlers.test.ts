@@ -281,6 +281,48 @@ describe('single-tap opens image gallery / table zoom in reflowable books (#4584
     expect(media['html']).toBe(table.outerHTML);
   });
 
+  // #6856: the table zoom covered the place a link in the table leads to.
+  test('reflowable: tap on a link inside a table follows the link, not the table zoom', async () => {
+    const handlers = await importHandlers();
+    const table = document.createElement('table');
+    const cell = document.createElement('td');
+    const anchor = document.createElement('a');
+    anchor.href = '#chapter-3';
+    anchor.textContent = 'Chapter 3';
+    cell.appendChild(anchor);
+    table.appendChild(cell);
+
+    // The same tap as `tap`, keeping the click so foliate's link handler gets it
+    const { handleClick, handleClickCapture, handleMousedown, handleMouseup } = handlers;
+    const click = mouseEvent({ target: anchor });
+    handleMousedown('book-1', mouseEvent());
+    handleMouseup('book-1', mouseEvent());
+    handleClickCapture('book-1', click);
+    handleClick('book-1', { current: false }, false, false, click);
+    vi.advanceTimersByTime(260);
+
+    const types = postedMessages().map((m) => m['type']);
+    expect(types).not.toContain('iframe-open-media');
+    expect(types).not.toContain('iframe-single-click');
+    expect(click.preventDefault).not.toHaveBeenCalled();
+    expect(click.stopImmediatePropagation).not.toHaveBeenCalled();
+  });
+
+  test('reflowable: tap on a table wrapped in a link still opens the table zoom', async () => {
+    const handlers = await importHandlers();
+    const anchor = document.createElement('a');
+    anchor.href = 'https://example.com';
+    const table = document.createElement('table');
+    const cell = document.createElement('td');
+    table.appendChild(cell);
+    anchor.appendChild(table);
+
+    tap(handlers, false, cell);
+
+    const media = postedMessages().find((m) => m['type'] === 'iframe-open-media')!;
+    expect(media['elementType']).toBe('table');
+  });
+
   test('fixed-layout: tap on an image keeps tap-to-turn, carrying the image for the center tap', async () => {
     const handlers = await importHandlers();
     const img = document.createElement('img');

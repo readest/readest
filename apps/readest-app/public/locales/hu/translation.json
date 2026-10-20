@@ -2606,5 +2606,7 @@
   "{{count}} voices available_other": "{{count}} hang érhető el",
   "Multilingual": "Többnyelvű",
   "Expressive": "Kifejező",
-  "Show Page Thumbnails": "Oldalbélyegképek megjelenítése"
+  "Show Page Thumbnails": "Oldalbélyegképek megjelenítése",
+  "Allow Self-Signed Certificate": "Önaláírt tanúsítvány engedélyezése",
+  "Skips certificate checks for this server. Turn it off if the server has a valid certificate": "Kihagyja a tanúsítvány ellenőrzését ennél a kiszolgálónál. Kapcsold ki, ha a kiszolgálónak érvényes tanúsítványa van"
 }

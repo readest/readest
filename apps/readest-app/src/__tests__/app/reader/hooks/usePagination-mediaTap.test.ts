@@ -54,9 +54,16 @@ const MEDIA = { elementType: 'image', src: 'blob:http://localhost/cover' };
 // A tap on an image that fills the page arrives as a plain single click with the
 // media attached (#6424): the tap zone decides between turning the page and
 // opening the viewer.
-const setup = (columnCount = 1) => {
+const setup = (columnCount = 1, renderer: Record<string, unknown> = {}) => {
   const view = {
-    renderer: { scrolled: false, columnCount },
+    renderer: {
+      scrolled: false,
+      columnCount,
+      scrollHeight: 800,
+      clientHeight: 800,
+      getAttribute: () => null,
+      ...renderer,
+    },
     book: { dir: 'ltr' as const, rendition: {} },
     next: vi.fn(),
     prev: vi.fn(),
@@ -66,11 +73,13 @@ const setup = (columnCount = 1) => {
   const { result } = renderHook(() =>
     usePagination(BOOK_KEY, { current: view as unknown as FoliateView }, { current: container }),
   );
-  const tap = async (screenX: number) => {
+  // The reader's iframe handlers post from the app window itself.
+  const tap = async (screenX: number, source: MessageEventSource | null = window) => {
     await act(async () => {
       await result.current.handlePageFlip(
         new MessageEvent('message', {
           data: { bookKey: BOOK_KEY, type: 'iframe-single-click', screenX, media: MEDIA },
+          source,
         }),
       );
     });
@@ -109,6 +118,15 @@ describe('usePagination tap on a page-filling image (#6424)', () => {
     );
     expect(h.setHoveredBookKey).not.toHaveBeenCalled();
     expect(view.next).not.toHaveBeenCalled();
+  });
+
+  test('media attached by a message from another window is not opened', async () => {
+    const { tap } = setup();
+    const frame = document.createElement('iframe');
+    document.body.appendChild(frame);
+    await tap(500, frame.contentWindow);
+    frame.remove();
+    expect(postSpy).not.toHaveBeenCalled();
   });
 
   test('with tap-to-turn disabled, a tap anywhere opens the viewer', async () => {
@@ -157,5 +175,48 @@ describe('usePagination tap on a page-filling image in a two-column spread (#674
     await tap(250);
     expect(view.prev).toHaveBeenCalledTimes(1);
     expect(postSpy).not.toHaveBeenCalled();
+  });
+});
+
+// A fixed-layout page that runs past the viewport hides the title, the other
+// way to show the toolbar, so the center tap shows it there (#6866).
+describe('usePagination center tap on an overflowing fixed-layout page (#6866)', () => {
+  test('a scrolled comic page toggles the toolbar instead of opening the viewer', async () => {
+    h.viewSettings = { scrolled: true };
+    h.bookData = { isFixedLayout: true };
+    const { tap } = setup(1, { scrolled: true, scrollHeight: 9000 });
+    await tap(500);
+    expect(h.setHoveredBookKey).toHaveBeenCalledWith(BOOK_KEY);
+    expect(postSpy).not.toHaveBeenCalled();
+  });
+
+  test('a zoomed page that pans vertically toggles the toolbar', async () => {
+    h.bookData = { isFixedLayout: true };
+    const { tap } = setup(1, { scrollHeight: 1600 });
+    await tap(500);
+    expect(h.setHoveredBookKey).toHaveBeenCalledWith(BOOK_KEY);
+    expect(postSpy).not.toHaveBeenCalled();
+  });
+
+  test('a fixed-layout page that fits still opens the viewer', async () => {
+    h.bookData = { isFixedLayout: true };
+    const { tap } = setup();
+    await tap(500);
+    expect(postSpy).toHaveBeenCalledWith(
+      { type: 'iframe-open-media', bookKey: BOOK_KEY, ...MEDIA },
+      '*',
+    );
+    expect(h.setHoveredBookKey).not.toHaveBeenCalled();
+  });
+
+  test('vertical writing keeps its title, so the center still opens the viewer', async () => {
+    h.viewSettings = { scrolled: true, vertical: true };
+    h.bookData = { isFixedLayout: true };
+    const { tap } = setup(1, { scrolled: true, scrollHeight: 9000 });
+    await tap(500);
+    expect(postSpy).toHaveBeenCalledWith(
+      { type: 'iframe-open-media', bookKey: BOOK_KEY, ...MEDIA },
+      '*',
+    );
   });
 });

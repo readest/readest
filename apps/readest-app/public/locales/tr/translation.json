@@ -279,8 +279,8 @@
   "Disable Translation": "Çeviriyi Devre Dışı Bırak",
   "Scroll": "Kaydır",
   "Overlap Pixels": "Örtüşen Pikseller",
-  "System Language": "System Dili",
-  "Security": "Security",
+  "System Language": "Sistem Dili",
+  "Security": "Güvenlik",
   "Allow JavaScript": "JavaScript'e İzin Ver",
   "Enable only if you trust the file.": "Yalnızca dosyaya güveniyorsanız etkinleştirin.",
   "Sort TOC by Page": "İçindekileri Sayfaya Göre Sırala",
@@ -2606,5 +2606,14 @@
   "{{count}} voices available_other": "{{count}} ses kullanılabilir",
   "Multilingual": "Çok dilli",
   "Expressive": "Etkileyici",
-  "Show Page Thumbnails": "Sayfa Küçük Resimlerini Göster"
+  "Show Page Thumbnails": "Sayfa Küçük Resimlerini Göster",
+  "Show recently read": "Son okunanları göster",
+  "{{count}} Highlights_one": "{{count}} vurgu",
+  "{{count}} Highlights_other": "{{count}} vurgu",
+  "{{count}} Notes_one": "{{count}} not",
+  "{{count}} Notes_other": "{{count}} not",
+  "Within {{count}} words_one": "{{count}} kelime içinde",
+  "Within {{count}} words_other": "{{count}} kelime içinde",
+  "Allow Self-Signed Certificate": "Kendinden imzalı sertifikaya izin ver",
+  "Skips certificate checks for this server. Turn it off if the server has a valid certificate": "Bu sunucu için sertifika denetimini atlar. Sunucunun geçerli bir sertifikası varsa kapatın"
 }

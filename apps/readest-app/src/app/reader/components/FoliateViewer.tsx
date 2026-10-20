@@ -80,7 +80,11 @@ import { getDirFromUILanguage } from '@/utils/rtl';
 import { isTauriAppPlatform } from '@/services/environment';
 import { TransformContext } from '@/services/transformers/types';
 import { transformContent } from '@/services/transformService';
-import { sanitizeSvg } from '@/services/transformers/sanitizer';
+import {
+  getSectionDocumentType,
+  normalizeMediaType,
+  sanitizeSvg,
+} from '@/services/transformers/sanitizer';
 import { lockScreenOrientation, setSelectionSuppressed } from '@/utils/bridge';
 import { useTextTranslation } from '../hooks/useTextTranslation';
 import { useBookCoverAutoSave } from '../hooks/useAutoSaveBookCover';
@@ -328,6 +332,10 @@ const FoliateViewer: React.FC<{
         .then((data) => {
           const viewSettings = getViewSettings(bookKey);
           const bookData = getBookData(bookKey);
+          const section = bookData?.bookDoc?.sections?.find((s) => s.id === detail.name);
+          const type = normalizeMediaType(detail.type);
+          // the loader reads the type after the data resolves
+          detail.type = section ? getSectionDocumentType(type) : type;
           if (viewSettings && detail.type === 'text/css')
             return transformStylesheet(
               data,
@@ -351,7 +359,7 @@ const FoliateViewer: React.FC<{
               userLocale: getLocale(),
               content: data,
               sectionHref: detail.name,
-              sectionCfi: bookData.bookDoc?.sections?.find((s) => s.id === detail.name)?.cfi,
+              sectionCfi: section?.cfi,
               transformers: [
                 'epubSwitch',
                 'style',
@@ -994,16 +1002,31 @@ const FoliateViewer: React.FC<{
     }
   };
 
+  // The suppression below covers the whole web view, footnote popup included,
+  // where instant highlighting has no hold gesture: a popup selection is made
+  // with the system long-press and highlighted by the quick action (#6804).
+  // The popup's overlay keeps touches off the book while it is open.
+  const [footnotePopupShown, setFootnotePopupShown] = useState(false);
+  useEffect(() => {
+    const onFootnotePopupShown = (event: CustomEvent) => {
+      const detail = event.detail as { key: string; shown: boolean };
+      if (detail.key === bookKey) setFootnotePopupShown(detail.shown);
+    };
+    eventDispatcher.on('footnote-popup-shown', onFootnotePopupShown);
+    return () => eventDispatcher.off('footnote-popup-shown', onFootnotePopupShown);
+  }, [bookKey]);
+
   // iOS: the system long-press selection would race the instant-highlight
   // hold — WebKit consults selectability before any touch handler runs, so
   // JS-level suppression cannot win. Suppress it natively while the highlight
-  // quick action owns the gesture; restore when the mode turns off or the
-  // reader closes.
+  // quick action owns the gesture; restore when the mode turns off, a footnote
+  // popup opens, or the reader closes.
   useEffect(() => {
     if (!appService?.isIOSApp) return;
     const suppressed =
       !!viewSettings?.enableAnnotationQuickActions &&
-      viewSettings?.annotationQuickAction === 'highlight';
+      viewSettings?.annotationQuickAction === 'highlight' &&
+      !footnotePopupShown;
     setSelectionSuppressed({ target: 'gesture', suppressed }).catch(() => {});
     return () => {
       if (suppressed) {
@@ -1015,6 +1038,7 @@ const FoliateViewer: React.FC<{
     appService?.isIOSApp,
     viewSettings?.enableAnnotationQuickActions,
     viewSettings?.annotationQuickAction,
+    footnotePopupShown,
   ]);
 
   // Android (#5427): useTextSelector keeps the system selection toolbar

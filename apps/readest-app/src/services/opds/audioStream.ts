@@ -34,6 +34,7 @@ import { isTauriAppPlatform } from '@/services/environment';
 import { useSettingsStore } from '@/store/settingsStore';
 import { normalizeCustomHeaders } from '@/utils/customHeaders';
 import { id3TagSize, parseMp3Duration } from '@/utils/mp3Duration';
+import { allowsSelfSignedCert, tlsFetch } from '@/utils/tls';
 import type { CustomHeaders } from '@/utils/customHeaders';
 
 export interface OpdsAudioAuth {
@@ -47,6 +48,8 @@ export interface OpdsAudioAuth {
    * this one.
    */
   origin: string;
+  /** The catalog accepts a self-signed certificate (see `allowsSelfSignedCert`). */
+  allowSelfSignedCert: boolean;
 }
 
 const originOf = (url: string): string => {
@@ -83,6 +86,10 @@ const trackHeaders = (href: string, auth: OpdsAudioAuth): Record<string, string>
   };
 };
 
+/** The catalog's certificate choice covers its own origin only, like its credentials. */
+const trackAllowsSelfSignedCert = (href: string, auth: OpdsAudioAuth) =>
+  auth.allowSelfSignedCert && (!auth.origin || originOf(href) === auth.origin);
+
 /** Resolve the catalog's credentials once, for every track in a session. */
 export const resolveOpdsAudioAuth = async (
   catalogId: string,
@@ -101,9 +108,10 @@ export const resolveOpdsAudioAuth = async (
   // what made the server answer 401 and the WebView pop its own Basic-auth
   // dialog, asking for the credentials the user already gave us (#6224).
   const origin = originOf(catalog?.url ?? '');
+  const allowSelfSignedCert = allowsSelfSignedCert(catalog ?? {});
   const hasCredentials = !!(username || password);
   if (!hasCredentials) {
-    return { authHeader: null, customHeaders, hasCredentials: false, origin };
+    return { authHeader: null, customHeaders, hasCredentials: false, origin, allowSelfSignedCert };
   }
 
   let authHeader: string | null = null;
@@ -111,7 +119,14 @@ export const resolveOpdsAudioAuth = async (
     // The probe is itself a credentialed request, against a URL the feed chose,
     // so it gets the same origin check as the track requests below.
     if (origin && originOf(probeUrl) !== origin) throw new Error('foreign track origin');
-    authHeader = await probeAuth(probeUrl, username, password, needsProxy(probeUrl), customHeaders);
+    authHeader = await probeAuth(
+      probeUrl,
+      username,
+      password,
+      needsProxy(probeUrl),
+      customHeaders,
+      allowSelfSignedCert,
+    );
   } catch {
     // The probe is an optimisation for servers that want Digest; Basic is the
     // right answer for everything else and costs nothing to assume.
@@ -122,6 +137,7 @@ export const resolveOpdsAudioAuth = async (
     customHeaders,
     hasCredentials: true,
     origin,
+    allowSelfSignedCert,
   };
 };
 
@@ -153,10 +169,7 @@ export const fetchOpdsAudioBlob = async (
 ): Promise<Blob> => {
   const headers = withOriginSuppressed(trackHeaders(href, auth));
   const doFetch = isTauriAppPlatform() ? tauriFetch : window.fetch;
-  const res = await doFetch(href, {
-    headers,
-    danger: { acceptInvalidCerts: true, acceptInvalidHostnames: true },
-  });
+  const res = await tlsFetch(doFetch, href, { headers }, trackAllowsSelfSignedCert(href, auth));
   if (!res.ok) throw new Error(`Failed to fetch audio: ${res.status} ${res.statusText}`);
   return new Blob([await res.arrayBuffer()], { type: mimeType });
 };
@@ -190,11 +203,12 @@ const readRange = async (
       Range: `bytes=${start}-${start + length - 1}`,
     });
     const doFetch = isTauriAppPlatform() ? tauriFetch : window.fetch;
-    const res = await doFetch(url, {
-      headers,
-      signal: controller.signal,
-      danger: { acceptInvalidCerts: true, acceptInvalidHostnames: true },
-    });
+    const res = await tlsFetch(
+      doFetch,
+      url,
+      { headers, signal: controller.signal },
+      trackAllowsSelfSignedCert(url, auth),
+    );
     if (!res.ok) return null;
 
     // `Content-Range: bytes 0-16383/31255480` carries the real total; a server

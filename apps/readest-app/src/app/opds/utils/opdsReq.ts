@@ -12,6 +12,7 @@ import {
   normalizeCustomHeaders,
   serializeCustomHeaders,
 } from '@/utils/customHeaders';
+import { tlsFetch } from '@/utils/tls';
 
 const OPDS_PROXY_URL = `${getAPIBaseUrl()}/opds/proxy`;
 const NODE_OPDS_PROXY_URL = `${getNodeAPIBaseUrl()}/opds/proxy`;
@@ -238,6 +239,7 @@ export const probeAuth = async (
   password?: string,
   useProxy = false,
   customHeaders: CustomHeaders = {},
+  allowSelfSignedCert = false,
 ): Promise<string | null> => {
   const {
     url: cleanUrl,
@@ -263,11 +265,7 @@ export const probeAuth = async (
 
   // Probe with HEAD request
   const fetch = isTauriAppPlatform() ? tauriFetch : window.fetch;
-  const res = await fetch(fetchURL, {
-    method: 'HEAD',
-    headers,
-    danger: { acceptInvalidCerts: true, acceptInvalidHostnames: true },
-  });
+  const res = await tlsFetch(fetch, fetchURL, { method: 'HEAD', headers }, allowSelfSignedCert);
 
   // Check if authentication is required
   if (res.status === 401 || res.status === 403) {
@@ -350,6 +348,7 @@ export const fetchWithAuth = async (
   useProxy = false,
   options: RequestInit = {},
   customHeaders: CustomHeaders = {},
+  allowSelfSignedCert = false,
 ): Promise<Response> => {
   const {
     url: cleanUrl,
@@ -382,12 +381,12 @@ export const fetchWithAuth = async (
   };
 
   const fetch = isTauriAppPlatform() ? tauriFetch : window.fetch;
-  let res = await fetch(fetchURL, {
-    ...options,
-    method: options.method || 'GET',
-    headers,
-    danger: { acceptInvalidCerts: true, acceptInvalidHostnames: true },
-  });
+  let res = await tlsFetch(
+    fetch,
+    fetchURL,
+    { ...options, method: options.method || 'GET', headers },
+    allowSelfSignedCert,
+  );
 
   // Calibre in 'digest' (or 'auto' over http) mode rejects a Basic
   // Authorization header outright with 400 "Unsupported authentication
@@ -396,12 +395,12 @@ export const fetchWithAuth = async (
   // surface the WWW-Authenticate challenge and let the retry below negotiate
   // the scheme the server actually wants.
   if (res.status === 400 && preemptiveAuth) {
-    res = await fetch(fetchURL, {
-      ...options,
-      method: options.method || 'GET',
-      headers: baseHeaders,
-      danger: { acceptInvalidCerts: true, acceptInvalidHostnames: true },
-    });
+    res = await tlsFetch(
+      fetch,
+      fetchURL,
+      { ...options, method: options.method || 'GET', headers: baseHeaders },
+      allowSelfSignedCert,
+    );
   }
 
   // Handle authentication if needed
@@ -426,12 +425,16 @@ export const fetchWithAuth = async (
       // Skip the retry when it would just repeat the preemptive Basic header
       // we already sent (the credentials are simply wrong in that case).
       if (authHeader && authHeader !== preemptiveAuth) {
-        res = await fetch(fetchURL, {
-          ...options,
-          method: options.method || 'GET',
-          headers: { ...headers, Authorization: authHeader },
-          danger: { acceptInvalidCerts: true, acceptInvalidHostnames: true },
-        });
+        res = await tlsFetch(
+          fetch,
+          fetchURL,
+          {
+            ...options,
+            method: options.method || 'GET',
+            headers: { ...headers, Authorization: authHeader },
+          },
+          allowSelfSignedCert,
+        );
       }
     }
   }

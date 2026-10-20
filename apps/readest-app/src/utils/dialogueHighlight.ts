@@ -27,8 +27,23 @@ export const isDialogueHighlightActive = (viewSettings: ViewSettings): boolean =
 // blocks, and every pair except ASCII "" may cross it: ASCII quotes don't say
 // which side they open, so a stray inch mark (5" screen) would otherwise flip
 // the pairing and tint the narration instead of the dialogue.
+//
+// Each pair stops at its next opening mark (ASCII "" at the end of the block),
+// so an unclosed quote can't swallow the next one. ‘’ is capped at 300
+// characters, since a mis-curled apostrophe (‘80s) opens a quote that nothing
+// closes; every quote is capped at MAX_QUOTE_LENGTH in case a malformed book
+// pairs two marks pages apart.
 const DIALOGUE_PATTERN =
-  /“[^“”]{1,500}?[”"]|„[^„“]{1,500}?[“"]|"[^"\n]{1,500}?"|«[^«»]{1,500}?[»]|「[^「」]{1,500}?[」]|『[^『』]{1,500}?[』]|‘(?:[^‘’]|’(?=\p{L})){1,300}?’(?!\p{L})/gu;
+  /“[^“”]+?[”"]|„[^„“]+?[“"]|"[^"\n]+?"|«[^«»]+?[»]|「[^「」]+?[」]|『[^『』]+?[』]|‘(?:[^‘’]|’(?=\p{L})){1,300}?’(?!\p{L})/gu;
+
+// A quote holding inner quotes in the same marks (“my spiritual “children”;
+// my dog”). Only within one paragraph: across paragraphs an opening mark
+// with no close usually starts the next paragraph of a long speech, not a
+// nested quote.
+const NESTED_DIALOGUE_PATTERN =
+  /“[^“”\n]*(?:“[^“”\n]*”[^“”\n]*)+”|„[^„“\n]*(?:„[^„“\n]*“[^„“\n]*)+“|«[^«»\n]*(?:«[^«»\n]*»[^«»\n]*)+»/gu;
+
+const MAX_QUOTE_LENGTH = 2048;
 
 // Paragraph-leading dashes marking dialogue lines (French/Russian/CJK style).
 // The ASCII hyphen is left out: it leads list items in converted text.
@@ -78,11 +93,19 @@ const collectEntries = (doc: Document): { entries: TextEntry[]; text: string } =
 type Region = { start: number; end: number };
 
 const findRegions = (text: string): Region[] => {
-  DIALOGUE_PATTERN.lastIndex = 0;
   const raw: Region[] = [];
-  let match: RegExpExecArray | null;
-  while ((match = DIALOGUE_PATTERN.exec(text))) {
-    raw.push({ start: match.index, end: match.index + match[0].length });
+  for (const pattern of [DIALOGUE_PATTERN, NESTED_DIALOGUE_PATTERN]) {
+    pattern.lastIndex = 0;
+    let match: RegExpExecArray | null;
+    while ((match = pattern.exec(text))) {
+      // Too long: rescan from the next character, so quotes inside the
+      // rejected span are still found.
+      if (match[0].length > MAX_QUOTE_LENGTH) {
+        pattern.lastIndex = match.index + 1;
+        continue;
+      }
+      raw.push({ start: match.index, end: match.index + match[0].length });
+    }
   }
   // Drop nested/overlapping regions, keeping the outermost-earliest: the tint
   // is identical, so one span covering both is enough.

@@ -2736,5 +2736,7 @@
   "{{count}} voices available_other": "{{count}} dostępnego głosu",
   "Multilingual": "Wielojęzyczny",
   "Expressive": "Ekspresyjny",
-  "Show Page Thumbnails": "Pokaż miniatury stron"
+  "Show Page Thumbnails": "Pokaż miniatury stron",
+  "Allow Self-Signed Certificate": "Zezwalaj na certyfikat z podpisem własnym",
+  "Skips certificate checks for this server. Turn it off if the server has a valid certificate": "Pomija sprawdzanie certyfikatu dla tego serwera. Wyłącz, jeśli serwer ma ważny certyfikat"
 }

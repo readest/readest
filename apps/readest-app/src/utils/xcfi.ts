@@ -4,6 +4,7 @@
  */
 
 import { BookDoc } from '@/libs/document';
+import { BookFormat } from '@/types/book';
 import { parse, fake, collapse, fromRange, toRange, toElement } from 'foliate-js/epubcfi.js';
 
 type XPointer = {
@@ -20,13 +21,37 @@ type XPointerTarget = {
   point?: { node: Text; offset: number };
 };
 
+/**
+ * crengine reads FB2 natively, so an FB2 XPointer starts at the FictionBook
+ * root and keeps the FB2 tag names: `/FictionBook/body[1]/section[3]/p[9]`.
+ * `root` is the section document's element that `path` names: a child of the
+ * first <body>, which foliate makes a section of its own, or a notes <body>.
+ */
+type FB2Anchor = { root: Element; path: string };
+
 export class XCFI {
   private document: Document;
   private spineItemIndex: number;
+  private fb2?: FB2Anchor;
 
-  constructor(htmlDocument: Document, spineIndex: number = 0) {
+  constructor(htmlDocument: Document, spineIndex: number = 0, fb2?: FB2Anchor) {
     this.document = htmlDocument;
     this.spineItemIndex = spineIndex;
+    this.fb2 = fb2;
+  }
+
+  /**
+   * The FB2 tag foliate converted an element from: foliate renames the tags
+   * (`title` -> `header`, `epigraph` -> `blockquote`, `v` -> `div`, ...) but
+   * keeps the original name as the element's first class.
+   */
+  static fb2TagName(element: Element): string {
+    if (element.localName === 'img') return 'image';
+    return element.classList[0] ?? element.localName;
+  }
+
+  private tagOf(element: Element): string {
+    return this.fb2 ? XCFI.fb2TagName(element) : element.tagName.toLowerCase();
   }
 
   static extractSpineIndex(cfiOrXPath: string): number {
@@ -217,7 +242,7 @@ export class XCFI {
     // Format: /tag[idx].N — offset directly on the last element segment, with
     // no `text()` step at all. Must be checked before the plain-path fallback
     // since the trailing `.N` is not a valid tag/index segment on its own.
-    const elementOffsetMatch = xpointer.match(/^(.*\/\w+(?:\[\d+\])?)\.(\d+)$/);
+    const elementOffsetMatch = xpointer.match(/^(.*\/[\w-]+(?:\[\d+\])?)\.(\d+)$/);
     if (elementOffsetMatch) {
       const elementPath = elementOffsetMatch[1]!;
       const textOffset = parseInt(elementOffsetMatch[2]!, 10);
@@ -378,23 +403,26 @@ export class XCFI {
   }
 
   private resolveXPointerPath(path: string): Element | null {
-    const pathMatch = path.match(/^\/body\/DocFragment(?:\[\d+\])?\/body(.*)$/);
-    if (!pathMatch) {
-      throw new Error(`Invalid XPointer format: ${path}`);
+    let current: Element;
+    let segments: string[];
+    if (this.fb2) {
+      // The pointer's leading steps name the anchor (`body` or `body[1]` alike).
+      current = this.fb2.root;
+      segments = path.split('/').filter(Boolean);
+      segments = segments.slice(this.fb2.path.split('/').filter(Boolean).length);
+    } else {
+      const pathMatch = path.match(/^\/body\/DocFragment(?:\[\d+\])?\/body(.*)$/);
+      if (!pathMatch) {
+        throw new Error(`Invalid XPointer format: ${path}`);
+      }
+      current = this.document.body;
+      segments = pathMatch[1]!.split('/').filter(Boolean);
     }
 
-    const elementPath = pathMatch[1]!;
-    let current: Element = this.document.body;
-
-    if (!elementPath || elementPath === '') {
-      return current;
-    }
-
-    const segments = elementPath.split('/').filter(Boolean);
     for (const segment of segments) {
       // Match both formats: tag[index] or just tag
-      const segmentWithIndexMatch = segment.match(/^(\w+)\[(\d+)\]$/);
-      const segmentWithoutIndexMatch = segment.match(/^(\w+)$/);
+      const segmentWithIndexMatch = segment.match(/^([\w-]+)\[(\d+)\]$/);
+      const segmentWithoutIndexMatch = segment.match(/^([\w-]+)$/);
 
       let tagName: string;
       let index: number;
@@ -417,7 +445,7 @@ export class XCFI {
       // cfi-inert nodes and hoists cfi-skip wrappers, so a layout-only wrapper
       // doesn't shift indices relative to KOReader's wrapper-less DOM.
       const children = this.effectiveChildren(current).filter(
-        (child) => child.tagName.toLowerCase() === tagName?.toLowerCase(),
+        (child) => this.tagOf(child) === tagName?.toLowerCase(),
       );
 
       if (index >= children.length) {
@@ -568,9 +596,11 @@ export class XCFI {
   private buildXPointerPath(targetElement: Element): string {
     const pathParts: string[] = [];
     let current: Element | null = targetElement;
+    if (this.fb2 && !this.fb2.root.contains(targetElement)) return this.fb2.path;
+    const top = this.fb2?.root ?? this.document.documentElement;
 
     // Build path from target back to root
-    while (current && current !== this.document.documentElement) {
+    while (current && current !== top) {
       // A cfi-skip wrapper contributes no path segment: it is hoisted away, so
       // just continue from its parent (matches KOReader's wrapper-less DOM).
       if (XCFI.isCfiSkip(current)) {
@@ -580,7 +610,7 @@ export class XCFI {
       const parent: Element | null = current.parentElement;
       if (!parent) break;
 
-      const tagName = current.tagName.toLowerCase();
+      const tagName = this.tagOf(current);
       // Count preceding siblings with the same tag name among the effective
       // (cfi-inert removed, cfi-skip hoisted) children of the nearest non-skip
       // ancestor, so a layout-only wrapper doesn't shift the index.
@@ -588,7 +618,7 @@ export class XCFI {
       let siblingIndex = 0;
       let totalSameTagSiblings = 0;
       for (const sibling of siblings) {
-        if (sibling.tagName.toLowerCase() === tagName) {
+        if (this.tagOf(sibling) === tagName) {
           if (sibling === current) {
             siblingIndex = totalSameTagSiblings;
           }
@@ -605,6 +635,8 @@ export class XCFI {
       }
       current = parent;
     }
+
+    if (this.fb2) return [this.fb2.path, ...pathParts].join('/');
 
     let xpointer = `/body/DocFragment[${this.spineItemIndex + 1}]`;
     if (pathParts.length > 0 && pathParts[0]!.startsWith('body')) {
@@ -720,12 +752,34 @@ export class XCFI {
  * with heavy back matter (#5980: Notes + Index are 44% of spine bytes) it sits
  * a whole chapter away from where the byte-size table puts it.
  */
-export const getCFIFromXPointer = async (
+export const getCFIFromXPointer = (
   xpointer: string,
   doc?: Document,
   index?: number,
   bookDoc?: BookDoc,
+) => convertXPointer(xpointer, undefined, doc, index, bookDoc);
+
+/** CFI of a KOReader range (a highlight's pos0..pos1), read in its own section. */
+export const getCFIFromXPointerRange = (start: string, end: string, bookDoc?: BookDoc) =>
+  convertXPointer(start, end, undefined, undefined, bookDoc);
+
+const convertXPointer = async (
+  xpointer: string,
+  endXPointer: string | undefined,
+  doc?: Document,
+  index?: number,
+  bookDoc?: BookDoc,
 ) => {
+  if (xpointer.startsWith('/FictionBook')) {
+    if (!bookDoc) throw new Error('FB2 XPointer conversion needs the book.');
+    const fb2Index = await getFB2SectionIndex(xpointer, bookDoc);
+    const sectionDoc =
+      index === fb2Index && doc ? doc : await bookDoc.sections?.[fb2Index]?.createDocument();
+    if (!sectionDoc) throw new Error('Failed to load document for XPointer conversion.');
+    const anchor = await getFB2Anchor(sectionDoc, fb2Index, bookDoc);
+    return new XCFI(sectionDoc, fb2Index, anchor).xPointerToCFI(xpointer, endXPointer);
+  }
+
   const xSpineIndex = XCFI.extractSpineIndex(xpointer);
   let converter: XCFI;
   if (index === xSpineIndex && doc) {
@@ -736,28 +790,85 @@ export const getCFIFromXPointer = async (
     converter = new XCFI(sectionDoc, xSpineIndex);
   }
 
-  const cfi = converter.xPointerToCFI(xpointer);
+  const cfi = converter.xPointerToCFI(xpointer, endXPointer);
   return cfi;
 };
 
+/** `format` picks the XPointer form: crengine reads FB2 natively (see FB2Anchor). */
 export const getXPointerFromCFI = async (
   cfi: string,
   doc?: Document,
   index?: number,
   bookDoc?: BookDoc,
+  format?: BookFormat,
 ): Promise<XPointer> => {
   const xSpineIndex = XCFI.extractSpineIndex(cfi);
-  let converter: XCFI;
-  if (index === xSpineIndex && doc) {
-    converter = new XCFI(doc, index || 0);
-  } else {
-    const doc = await bookDoc?.sections?.[xSpineIndex]?.createDocument();
-    if (!doc) throw new Error('Failed to load document for CFI conversion.');
-    converter = new XCFI(doc, xSpineIndex || 0);
-  }
+  const sectionDoc =
+    index === xSpineIndex && doc ? doc : await bookDoc?.sections?.[xSpineIndex]?.createDocument();
+  if (!sectionDoc) throw new Error('Failed to load document for CFI conversion.');
 
-  const xpointer = converter.cfiToXPointer(cfi);
-  return xpointer;
+  let anchor: FB2Anchor | undefined;
+  if (format === 'FB2' || format === 'FBZ') {
+    if (!bookDoc) throw new Error('FB2 XPointer conversion needs the book.');
+    anchor = await getFB2Anchor(sectionDoc, xSpineIndex, bookDoc);
+  }
+  return new XCFI(sectionDoc, xSpineIndex, anchor).cfiToXPointer(cfi);
+};
+
+/**
+ * foliate makes a section of each child of the first FB2 <body> (an image, the
+ * body's title and epigraphs, then its sections) and one more per notes body.
+ * crengine counts each tag apart (`section[N]` skips the title before it), so
+ * the mapping needs the FB2 tag of every first-body section, read once per book.
+ */
+const fb2RootTags = new WeakMap<BookDoc, Promise<string[]>>();
+
+const getFB2Root = (doc: Document): Element => {
+  const root = Array.from(doc.body.children).find((el) => !el.hasAttribute('cfi-inert'));
+  if (!root) throw new Error('FB2 section has no content.');
+  return root;
+};
+
+const getFB2RootTags = (bookDoc: BookDoc): Promise<string[]> => {
+  let tags = fb2RootTags.get(bookDoc);
+  if (!tags) {
+    const sections = bookDoc.sections.filter((section) => section.linear !== 'no');
+    tags = Promise.all(
+      sections.map(async (section) => XCFI.fb2TagName(getFB2Root(await section.createDocument()))),
+    );
+    fb2RootTags.set(bookDoc, tags);
+  }
+  return tags;
+};
+
+const getFB2Anchor = async (doc: Document, index: number, bookDoc: BookDoc): Promise<FB2Anchor> => {
+  const root = getFB2Root(doc);
+  const tags = await getFB2RootTags(bookDoc);
+  if (index >= tags.length) {
+    return { root, path: `/FictionBook/body[${index - tags.length + 2}]` };
+  }
+  const tag = tags[index]!;
+  const nth = tags.slice(0, index + 1).filter((t) => t === tag).length;
+  const step = tags.filter((t) => t === tag).length > 1 ? `${tag}[${nth}]` : tag;
+  const body = tags.length < bookDoc.sections.length ? 'body[1]' : 'body';
+  return { root, path: `/FictionBook/${body}/${step}` };
+};
+
+const getFB2SectionIndex = async (xpointer: string, bookDoc: BookDoc): Promise<number> => {
+  const match = xpointer.match(/^\/FictionBook\/body(?:\[(\d+)\])?(?:\/([\w-]+)(?:\[(\d+)\])?)?/);
+  if (!match) throw new Error(`Unsupported FB2 XPointer: ${xpointer}`);
+  const tags = await getFB2RootTags(bookDoc);
+  const body = match[1] ? parseInt(match[1], 10) : 1;
+  if (body > 1) {
+    const index = tags.length + body - 2;
+    if (index >= bookDoc.sections.length) throw new Error(`FB2 body ${body} not found`);
+    return index;
+  }
+  const [, , tag, nth] = match;
+  let count = 0;
+  const index = tags.findIndex((t) => t === tag && ++count === (nth ? parseInt(nth, 10) : 1));
+  if (index < 0) throw new Error(`FB2 XPointer section not found: ${xpointer}`);
+  return index;
 };
 
 // Koreader sometimes cannot recognize totally valid XPointer.

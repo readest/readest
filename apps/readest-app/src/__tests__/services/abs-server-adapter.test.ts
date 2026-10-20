@@ -19,6 +19,30 @@ const HLC = '00000000000-00000000-dev' as Hlc;
 const env = <T>(v: T): FieldEnvelope<T> => ({ v, t: HLC, s: 'dev' });
 
 describe('absServerAdapter', () => {
+  it('syncs the self-signed certificate choice, including an explicit false', () => {
+    for (const allowSelfSignedCert of [true, false]) {
+      const fields = absServerAdapter.pack({ ...server, allowSelfSignedCert });
+      expect(fields['allowSelfSignedCert']).toBe(allowSelfSignedCert);
+      expect(absServerAdapter.unpack(fields).allowSelfSignedCert).toBe(allowSelfSignedCert);
+      const row = {
+        user_id: 'u',
+        kind: 'abs_server',
+        replica_id: computeAbsServerContentId(server.url),
+        fields_jsonb: {
+          name: env(server.name),
+          url: env(server.url),
+          allowSelfSignedCert: env(allowSelfSignedCert),
+        },
+        manifest_jsonb: null,
+        deleted_at_ts: null,
+        reincarnation: null,
+        updated_at_ts: HLC,
+        schema_version: 1,
+      } as ReplicaRow;
+      expect(absServerAdapter.unpackRow(row, '')?.allowSelfSignedCert).toBe(allowSelfSignedCert);
+    }
+  });
+
   it('pack/unpack round-trips every synced field', () => {
     const fields = absServerAdapter.pack(server);
     const back = absServerAdapter.unpack(fields);

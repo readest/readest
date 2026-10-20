@@ -9,6 +9,7 @@ import {
   withOriginSuppressed,
 } from '@/app/opds/utils/opdsReq';
 import { normalizeCustomHeaders } from '@/utils/customHeaders';
+import { allowsSelfSignedCertAt, tlsFetch } from '@/utils/tls';
 import { trackWidePages, type WidePagesOptions } from '@/utils/spread';
 import type { BookFormat } from '@/types/book';
 import type { BookDoc, BookMetadata } from '@/libs/document';
@@ -47,11 +48,12 @@ export const createPseStreamPageLoader = (data: PseStreamData) => {
     let url = data.url.replace(PAGE_NUMBER_PATTERN, pageIndex.toString());
     url = url.replace(MAX_WIDTH_PATTERN, DEFAULT_MAX_WIDTH);
     const useProxy = needsProxy(url);
+    const allowSelfSignedCert = allowsSelfSignedCertAt(catalog ?? {}, url);
 
     if (!authHeaderPromise) {
       authHeaderPromise =
         username || password
-          ? probeAuth(url, username, password, useProxy, customHeaders)
+          ? probeAuth(url, username, password, useProxy, customHeaders, allowSelfSignedCert)
           : Promise.resolve(null);
     }
     const authHeader = await authHeaderPromise;
@@ -63,10 +65,7 @@ export const createPseStreamPageLoader = (data: PseStreamData) => {
       ...(authHeader ? { Authorization: authHeader } : {}),
     });
     const fetch = isTauriAppPlatform() ? tauriFetch : window.fetch;
-    const res = await fetch(fetchURL, {
-      headers,
-      danger: { acceptInvalidCerts: true, acceptInvalidHostnames: true },
-    });
+    const res = await tlsFetch(fetch, fetchURL, { headers }, allowSelfSignedCert);
     if (!res.ok) {
       throw new Error(`Failed to fetch page ${pageIndex}: ${res.statusText}`);
     }

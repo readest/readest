@@ -125,6 +125,21 @@ describe('checkFeedForNewItems directory crawl (#4272)', () => {
     expect(ramonaItem.baseURL).toBe(RAMONA_URL);
   });
 
+  // The catalog's certificate choice covers its own origin only: a sub-feed
+  // it links to on another host is fetched with certificate checks.
+  it("applies the catalog's certificate choice to its own origin only", async () => {
+    const MIRROR_URL = 'https://mirror.example.net/Kids/Ramona/?opds';
+    feeds[BASE] = feedXML('Kids', dirEntry('Ramona', MIRROR_URL));
+    feeds[MIRROR_URL] = feedXML('Ramona', bookEntry('urn:uuid:ramona-1', 'Ramona.epub', '/r.epub'));
+
+    await checkFeedForNewItems(makeCatalog(), emptyState());
+
+    const allowedFor = (url: string) =>
+      vi.mocked(fetchWithAuth).mock.calls.find((call) => call[0] === url)?.[6];
+    expect(allowedFor(BASE)).toBe(true);
+    expect(allowedFor(MIRROR_URL)).toBe(false);
+  });
+
   it('crawls a folder that contains only subfolders (no top-level books)', async () => {
     feeds[BASE] = feedXML(
       'Kids',

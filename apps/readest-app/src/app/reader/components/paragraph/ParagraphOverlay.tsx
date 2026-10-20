@@ -25,6 +25,7 @@ import { getBaseFontFamily } from '@/utils/style';
 import { loadShortcuts } from '@/helpers/shortcuts';
 import { matchesShortcut } from '@/utils/shortcutKeys';
 import TTSFollowIndicator, { TtsSyncStatus } from '../tts/TTSFollowIndicator';
+import { sanitizeBookFragment } from '@/services/transformers/sanitizer';
 import { buildTtsHighlightCssText } from './paragraphTts';
 import {
   getRangeOffsetsInParagraph,
@@ -82,7 +83,7 @@ const AnimatedParagraph: React.FC<{
   // would rebuild the clone's DOM on every render — throwing away a selection
   // made in it (#6200) and the ranges the TTS highlight holds. One object per
   // paragraph keeps the DOM until the paragraph itself changes.
-  const innerHtml = useMemo(() => ({ __html: html }), [html]);
+  const innerHtml = useMemo(() => ({ __html: sanitizeBookFragment(html) }), [html]);
 
   useEffect(() => {
     setIsReady(false);

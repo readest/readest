@@ -384,5 +384,26 @@ describe('opdsReq', () => {
       const headers = init.headers as Record<string, string>;
       expect(headers['Origin']).toBe('');
     });
+
+    it('verifies TLS certificates unless the catalog allows self-signed ones', async () => {
+      tauriFetchMock.mockResolvedValue(makeResponse({ status: 200, body: '<feed/>' }));
+      const url = 'https://opds.example.com/feed';
+
+      await fetchWithAuth(url, 'alice', 's3cret', false);
+      await probeAuth(url, 'alice', 's3cret', false);
+      for (const call of tauriFetchMock.mock.calls) {
+        expect(call[1]).not.toHaveProperty('danger');
+      }
+
+      tauriFetchMock.mockClear();
+      await fetchWithAuth(url, 'alice', 's3cret', false, {}, {}, true);
+      await probeAuth(url, 'alice', 's3cret', false, {}, true);
+      expect(tauriFetchMock).toHaveBeenCalledTimes(2);
+      for (const call of tauriFetchMock.mock.calls) {
+        expect(call[1]).toMatchObject({
+          danger: { acceptInvalidCerts: true, acceptInvalidHostnames: true },
+        });
+      }
+    });
   });
 });

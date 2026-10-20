@@ -319,3 +319,29 @@ describe('KOSyncClient.updateProgress – document metadata', () => {
     expect(metadata['title']).toBe('A Title the Reader Edited');
   });
 });
+
+describe('KOSyncClient – TLS certificate checks', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  const requestInit = async (overrides: Partial<KOSyncSettings>) => {
+    const fetchMock = setFetch(() => jsonResponse(200, { percentage: 0.5 }));
+    await new KOSyncClient(makeConfig({ userkey: 'key', ...overrides })).getProgress(makeBook());
+    return fetchMock.mock.calls[0]![1] as Record<string, unknown>;
+  };
+
+  it('verifies certificates for a server that does not allow self-signed ones', async () => {
+    expect(await requestInit({ allowSelfSignedCert: false })).not.toHaveProperty('danger');
+  });
+
+  it('accepts self-signed certificates when the server allows them', async () => {
+    expect(await requestInit({ allowSelfSignedCert: true })).toMatchObject({
+      danger: { acceptInvalidCerts: true, acceptInvalidHostnames: true },
+    });
+  });
+
+  it('keeps accepting them for a server saved before the option existed', async () => {
+    expect(await requestInit({})).toHaveProperty('danger');
+  });
+});

@@ -720,6 +720,68 @@ export const trimRangeWhitespaceAroundPoint = (
   return true;
 };
 
+// A footnote marker right after a word joins it in a native word selection
+// (letters followed by digits make one word), so a double-click or long-press
+// on "fox¹" picked "fox1" (#6803). Markers are a noteref link or a superscript
+// or link holding only a marker, as Read Aloud skips them.
+const NOTE_MARKER_TEXT = /^\s*[[(]?[*\d\u2020\u2021\u00a7]+[)\]]?\s*$/;
+
+const isNoteMarker = (el: Element): boolean => {
+  if (!NOTE_MARKER_TEXT.test(el.textContent ?? '')) return false;
+  const type = el.getAttribute('epub:type') ?? '';
+  return (
+    el.localName === 'sup' ||
+    (el.localName === 'a' && el.hasAttribute('href')) ||
+    /\bnoteref\b/.test(type) ||
+    el.getAttribute('role') === 'doc-noteref'
+  );
+};
+
+const outermostNoteMarker = (node: Node): Element | null => {
+  let marker: Element | null = null;
+  for (
+    let el = node.nodeType === Node.ELEMENT_NODE ? (node as Element) : node.parentElement;
+    el;
+    el = el.parentElement
+  ) {
+    if (isNoteMarker(el)) marker = el;
+    else if (marker) break;
+  }
+  return marker;
+};
+
+const markerAtBoundary = (container: Node, offset: number, side: 'start' | 'end') => {
+  if (container.nodeType === Node.ELEMENT_NODE) {
+    const child = container.childNodes[side === 'end' ? offset - 1 : offset];
+    return child?.nodeType === Node.ELEMENT_NODE && isNoteMarker(child as Element)
+      ? (child as Element)
+      : null;
+  }
+  return outermostNoteMarker(container);
+};
+
+// Drop a footnote marker from either end of a word selection. Only for a
+// captured Range snapshot (see trimRangeWhitespaceAroundPoint); a selection
+// that is nothing but the marker is left as it is.
+export const trimNoteMarkersFromWordRange = (range: Range): boolean => {
+  const trimmed = range.cloneRange();
+  let changed = false;
+  const endMarker = markerAtBoundary(range.endContainer, range.endOffset, 'end');
+  if (endMarker && !endMarker.contains(range.startContainer)) {
+    trimmed.setEndBefore(endMarker);
+    changed = true;
+  }
+  const startMarker = markerAtBoundary(range.startContainer, range.startOffset, 'start');
+  if (startMarker && !startMarker.contains(range.endContainer)) {
+    trimmed.setStartAfter(startMarker);
+    changed = true;
+  }
+  if (!changed || trimmed.collapsed || !trimmed.toString().trim()) return false;
+  range.setStart(trimmed.startContainer, trimmed.startOffset);
+  range.setEnd(trimmed.endContainer, trimmed.endOffset);
+  return true;
+};
+
 // --- Android hyphenation selection-bounds bug (issue #1553) -----------------
 //
 // Blink's `LayoutSelection::ComputePaintingSelectionStateForCursor` compares

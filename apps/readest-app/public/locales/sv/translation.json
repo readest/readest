@@ -2606,5 +2606,7 @@
   "{{count}} voices available_other": "{{count}} röster tillgängliga",
   "Multilingual": "Flerspråkig",
   "Expressive": "Uttrycksfull",
-  "Show Page Thumbnails": "Visa sidminiatyrer"
+  "Show Page Thumbnails": "Visa sidminiatyrer",
+  "Allow Self-Signed Certificate": "Tillåt självsignerat certifikat",
+  "Skips certificate checks for this server. Turn it off if the server has a valid certificate": "Hoppar över certifikatkontrollen för den här servern. Stäng av det om servern har ett giltigt certifikat"
 }

@@ -63,6 +63,8 @@ interface ApplyOPDSCoverParams {
   username?: string;
   password?: string;
   customHeaders?: Record<string, string>;
+  /** The catalog accepts a self-signed certificate (see `allowsSelfSignedCert`). */
+  allowSelfSignedCert?: boolean;
 }
 
 /**
@@ -79,6 +81,7 @@ export const applyOPDSCover = async ({
   username = '',
   password = '',
   customHeaders = {},
+  allowSelfSignedCert = false,
 }: ApplyOPDSCoverParams): Promise<boolean> => {
   const useProxy = needsProxy(coverUrl);
   const downloadUrl = useProxy ? getProxiedURL(coverUrl, true, customHeaders) : coverUrl;
@@ -88,7 +91,14 @@ export const applyOPDSCover = async ({
     ...(!useProxy ? customHeaders : {}),
   };
   if (username || password) {
-    const authHeader = await probeAuth(coverUrl, username, password, useProxy, customHeaders);
+    const authHeader = await probeAuth(
+      coverUrl,
+      username,
+      password,
+      useProxy,
+      customHeaders,
+      allowSelfSignedCert,
+    );
     if (authHeader) {
       headers['Authorization'] = authHeader;
     }
@@ -103,8 +113,8 @@ export const applyOPDSCover = async ({
       url: downloadUrl,
       headers,
       singleThreaded: true,
-      // Same self-signed/private-CA workaround the book download uses (#4988).
-      skipSslVerification: true,
+      // Same per-catalog self-signed/private-CA opt-in the book download uses (#4988).
+      skipSslVerification: allowSelfSignedCert,
     });
     const bytes = (await appService.readFile(tmpPath, 'None', 'binary')) as ArrayBuffer;
     if (!bytes?.byteLength) return false;
