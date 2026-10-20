@@ -85,6 +85,19 @@ describe('makeHtmlBook', () => {
     expect(book.metadata.language).toBe('de');
   });
 
+  it('detects the language of the article when the page declares none', async () => {
+    const polish =
+      '<p>Był piękny letni dzień, kiedy po raz pierwszy zobaczyłem morze. ' +
+      'Szliśmy razem przez las, a potem długo siedzieliśmy na plaży i rozmawialiśmy ' +
+      'o wszystkim, co wydarzyło się w ciągu ostatnich lat w naszym małym mieście.</p>';
+    const html = page(`<article><h1>Rozdział</h1>${polish.repeat(3)}</article>`).replace(
+      ' lang="de"',
+      '',
+    );
+    const book = await make(html);
+    expect(book.metadata.language).toBe('pl');
+  });
+
   it('titles the book after the file when the page has no title', async () => {
     const body = `<article>${prose()}<p>Plain text with no heading.</p>${prose()}</article>`;
     const book = await make(page(body, ''), 'saved-page.htm');
