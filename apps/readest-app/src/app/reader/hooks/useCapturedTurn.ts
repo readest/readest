@@ -395,14 +395,15 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
       getColumnCount: () =>
         getViewSettings(bookKey)?.vertical ? 1 : (view.renderer.columnCount ?? 1),
       // The leaf's back shows the incoming column, captured under the overlay
-      // behind a native cover. Only iOS has the cover so far; elsewhere the
-      // back is theme paper.
-      coverRegion: getInitializedAppService()?.isIOSApp
-        ? async (rect) => {
-            const { token } = await coverWebviewRegion(rect);
-            return () => uncoverWebviewRegion({ token });
-          }
-        : undefined,
+      // behind a native cover on iOS and Android. The same cover protects
+      // the full previous-page capture for a backward curl.
+      coverRegion:
+        getInitializedAppService()?.isIOSApp || getInitializedAppService()?.isAndroidApp
+          ? async (rect) => {
+              const { token } = await coverWebviewRegion(rect);
+              return () => uncoverWebviewRegion({ token });
+            }
+          : undefined,
       preparePixelCapture: async () => {
         const transientVisible =
           document.querySelector(CAPTURE_INVALIDATING_OVERLAY_SELECTOR) !== null;

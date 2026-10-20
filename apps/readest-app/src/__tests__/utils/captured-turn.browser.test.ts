@@ -76,6 +76,32 @@ describe('CapturedPageTurn (browser)', () => {
     expect(host.querySelector('canvas')).toBeNull();
   });
 
+  it('returns a previous sheet around the same spine instead of switching to RTL', async () => {
+    const render = vi.spyOn(PageCurlRenderer.prototype, 'render');
+    try {
+      expect(await controller.beginDrag(false, false, 'curl')).toBe(true);
+      controller.moveDrag(0.4, 0.5);
+      expect(render.mock.calls.at(-1)?.[2]).toBe(false);
+      expect(capture).toHaveBeenCalledTimes(2);
+      expect(navigate).toHaveBeenCalledWith(false);
+      await controller.endDrag(false);
+      expect(navigate.mock.calls.map(([forward]) => forward)).toEqual([false, true]);
+    } finally {
+      render.mockRestore();
+    }
+  });
+
+  it('restores the current page if the returning sheet cannot be captured', async () => {
+    capture
+      .mockResolvedValueOnce(await makePngBuffer())
+      .mockRejectedValueOnce(new Error('previous frame unavailable'));
+    await expect(controller.beginDrag(false, false, 'curl')).rejects.toThrow(
+      'previous frame unavailable',
+    );
+    expect(navigate.mock.calls.map(([forward]) => forward)).toEqual([false, true]);
+    expect(host.querySelector('canvas')).toBeNull();
+  });
+
   it('notifies the host after the covering frame is mounted and before navigation', async () => {
     const onCovered = vi.fn<NonNullable<CapturedTurnHost['onCovered']>>(async (style) => {
       expect(style).toBe('curl');
@@ -962,7 +988,7 @@ describe('CapturedPageTurn (browser)', () => {
     expect(host.querySelector('canvas')).toBeNull();
   });
 
-  it('draws the host backdrop on the back of the curling page', async () => {
+  it('uses the neutral eBoox paper back even when the host supplies a backdrop', async () => {
     const paper = document.createElement('canvas');
     paper.width = W;
     paper.height = H;
@@ -979,8 +1005,8 @@ describe('CapturedPageTurn (browser)', () => {
     expect(getBackdrop).toHaveBeenCalledOnce();
     withBackdrop.moveDrag(0.45, 0.5);
 
-    // The wrapped-over back face shows the red page mixed toward the dark
-    // theme paper — the hardcoded whitened back would read near-white here.
+    // The back retains the red printing with the neutral grey paper tint,
+    // independently of the separately supplied host backdrop.
     const canvas = host.querySelector('canvas')!;
     const gl = canvas.getContext('webgl')!;
     const dpr = canvas.width / W;
@@ -995,7 +1021,9 @@ describe('CapturedPageTurn (browser)', () => {
       px,
     );
     expect(px[3]).toBe(255);
-    expect(px[0]).toBeLessThan(100);
+    expect(px[0]).toBeGreaterThan(100);
+    expect(px[1]).toBeGreaterThan(35);
+    expect(px[1]).toBeLessThan(100);
     withBackdrop.dispose();
   });
 
@@ -1746,12 +1774,12 @@ describe('CapturedPageTurn two-column curl (browser)', () => {
     expect(overlay()).toBeNull();
   });
 
-  it('lands a backward leaf on the right column', async () => {
+  it('captures the returning spread without switching the spine side', async () => {
     await makeController().turn(false, false, 'curl');
     await vi.waitFor(() => expect(uncover).toHaveBeenCalledTimes(1));
     expect(navigate).toHaveBeenCalledWith(false);
-    expect(capture.mock.calls[1]![0]).toEqual(rightHalf);
-    expect(coverRegion).toHaveBeenCalledWith(rightHalf);
+    expect(capture.mock.calls[1]![0]).toEqual({ x: 10, y: 20, width: W, height: H });
+    expect(coverRegion).toHaveBeenCalledWith({ x: 10, y: 20, width: W, height: H });
   });
 
   it('lands an rtl forward leaf on the right column', async () => {

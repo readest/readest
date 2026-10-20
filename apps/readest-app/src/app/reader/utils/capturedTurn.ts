@@ -19,9 +19,9 @@ import { PageSlideRenderer, type PageSlideSettleOptions } from '@/utils/pageSlid
  * be prepared before a gesture; web and desktop builds can use browser View
  * Transitions for the slide.
  *
- * Backward turns run the same pipeline mirrored: the current page curls or
- * slides away from the spine edge, revealing the previous page underneath —
- * the same "old page recedes" choreography the View Transitions turns use.
+ * A backward curl returns the previous sheet around the same book spine.
+ * It captures that sheet underneath the outgoing cover before reversing the
+ * deformation. Slide and push keep their mirrored outgoing-page motion.
  *
  * The controller only orchestrates DOM + rendering; the host callbacks
  * supply the platform pieces (native capture, instant navigation,
@@ -106,6 +106,7 @@ interface TurnRenderer {
   setColumns?(columns: number): void;
   /** The incoming inner column shown on the back of a two-column leaf. */
   setIncoming?(source: TexImageSource | null): void;
+  setReturning?(source: TexImageSource): void;
   /** Whether an idle GPU surface survived context eviction. */
   isUsable?(): boolean;
   render(progress: number, grab: CurlGrab, rtl: boolean): void;
@@ -163,6 +164,7 @@ interface ActiveTurn {
   forward: boolean;
   /** Renderer-space mirror flag (spine side of the turn), not book direction. */
   rendererRtl: boolean;
+  waitingForReturning: boolean;
   /** Page columns in the captured bitmap (2 = one leaf hinged at the spine). */
   columns: number;
   /** In-flight capture of the incoming column for the leaf's back, if any. */
@@ -740,10 +742,10 @@ export class CapturedPageTurn {
       renderer,
       style,
       forward,
-      // Forward: the page moves out from its outer edge toward the spine
-      // (left for LTR books). Backward: the mirror image — it recedes over
-      // the outer edge, revealing the previous page.
-      rendererRtl: forward ? rtl : !rtl,
+      // Book direction fixes the curl's spine. Backward changes the sheet
+      // and reverses its deformation, rather than mirroring the book.
+      rendererRtl: style === 'curl' ? rtl : forward ? rtl : !rtl,
+      waitingForReturning: style === 'curl' && !forward,
       columns: style === 'curl' && (this.#host.getColumnCount?.() ?? 1) >= 2 ? 2 : 1,
       incoming: null,
       progress: 0,
@@ -793,7 +795,14 @@ export class CapturedPageTurn {
       }
       await this.#host.navigate(forward);
       if (this.#disposed || this.#active !== active) return null;
-      if (active.columns === 2 && this.#host.coverRegion) {
+      if (active.waitingForReturning) {
+        try {
+          await this.#captureReturning(active, captureRect);
+        } catch (error) {
+          if (this.#active === active) await this.#host.navigate(!forward);
+          throw error;
+        }
+      } else if (active.columns === 2 && this.#host.coverRegion) {
         // Runs alongside the turn; a failure simply leaves the paper back.
         active.incoming = this.#captureIncoming(active, captureRect).catch(() => {});
       }
@@ -817,6 +826,47 @@ export class CapturedPageTurn {
 
   #grab(active: ActiveTurn) {
     return { x: active.rendererRtl ? 0 : 1, y: active.grabY };
+  }
+
+  async #captureReturning(active: ActiveTurn, rect: CaptureRect) {
+    const uncover = await this.#host.coverRegion?.(rect);
+    let image: ArrayBuffer | ImageBitmap | null = null;
+    const check = () => {
+      if (this.#active !== active || this.#host.isCaptureAllowed?.() === false) {
+        throw new Error('Previous page capture was invalidated');
+      }
+    };
+    try {
+      check();
+      active.overlay.style.visibility = 'hidden';
+      await waitForPaint();
+      const restorePixels = await this.#host.preparePixelCapture?.();
+      try {
+        check();
+        image = await this.#host.capture(rect);
+      } finally {
+        await restorePixels?.();
+      }
+      check();
+      const bitmap = await decodeCapture(image);
+      image = null;
+      try {
+        check();
+        active.renderer.setReturning?.(bitmap);
+        active.waitingForReturning = false;
+        active.renderer.render(active.progress, this.#grab(active), active.rendererRtl);
+      } finally {
+        bitmap.close();
+      }
+    } finally {
+      discardCapture(image);
+      active.overlay.style.visibility = '';
+      await waitForPaint();
+      await uncover?.();
+    }
+    if (this.#active === active && active.waitingForReturning) {
+      throw new Error('Previous page capture was invalidated');
+    }
   }
 
   /**
@@ -878,7 +928,9 @@ export class CapturedPageTurn {
   #applyDragSession(active: ActiveTurn, session: DragSession) {
     active.progress = session.progress;
     active.grabY = session.grabY;
-    active.renderer.render(active.progress, this.#grab(active), active.rendererRtl);
+    if (!active.waitingForReturning) {
+      active.renderer.render(active.progress, this.#grab(active), active.rendererRtl);
+    }
   }
 
   async #ensurePreparedSurface(

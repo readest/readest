@@ -37,6 +37,10 @@ import android.os.Looper
 import android.os.ParcelFileDescriptor
 import android.util.Base64
 import android.view.PixelCopy
+import android.view.Gravity
+import android.widget.ImageView
+import android.widget.PopupWindow
+import android.graphics.drawable.ColorDrawable
 import android.webkit.WebView
 import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
@@ -177,6 +181,11 @@ class CaptureWebviewRegionArgs {
 }
 
 @InvokeArg
+class UncoverWebviewRegionArgs {
+    var token: Int = 0
+}
+
+@InvokeArg
 class UpdateBookshelfWidgetTtsArgs {
     var active: Boolean = false
     var playing: Boolean = false
@@ -255,6 +264,8 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
     // Cancelled in onDestroy so in-flight work can't resolve into — or leak —
     // a dead Activity.
     private val pluginScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+    private var pageCoverToken = 0
+    private val pageCovers = mutableMapOf<Int, Pair<PopupWindow, Bitmap>>()
 
     // Held while the LocalSend service runs so multicast discovery
     // announcements are delivered; most Android devices filter multicast
@@ -315,6 +326,11 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
     }
 
     override fun onDestroy() {
+        pageCovers.values.forEach { (popup, bitmap) ->
+            popup.dismiss()
+            bitmap.recycle()
+        }
+        pageCovers.clear()
         stopAmbientLightUpdatesInternal()
         inputManager?.unregisterInputDeviceListener(gamepadInputListener)
         inputManager = null
@@ -2269,6 +2285,87 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
                 // Thrown when the rect falls outside the window bounds.
                 invoke.reject("Capture region out of bounds: ${e.message}")
             }
+        }
+    }
+
+    /** A separate window freezes the visible page while PixelCopy reads the
+     * activity window underneath. A View overlay would be captured again. */
+    @Command
+    fun cover_webview_region(invoke: Invoke) {
+        val args = invoke.parseArgs(CaptureWebviewRegionArgs::class.java)
+        activity.runOnUiThread {
+            val webView = webViewRef
+            if (webView == null || activity.isFinishing || activity.isDestroyed) {
+                invoke.reject("WebView not available")
+                return@runOnUiThread
+            }
+            val density = webView.resources.displayMetrics.density
+            val location = IntArray(2)
+            webView.getLocationInWindow(location)
+            val left = location[0] + (args.x * density).roundToInt()
+            val top = location[1] + (args.y * density).roundToInt()
+            val width = (args.width * density).roundToInt()
+            val height = (args.height * density).roundToInt()
+            if (width <= 0 || height <= 0) {
+                invoke.reject("Empty cover region")
+                return@runOnUiThread
+            }
+            val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+            try {
+                PixelCopy.request(activity.window, Rect(left, top, left + width, top + height),
+                    bitmap, { result ->
+                        if (result != PixelCopy.SUCCESS || activity.isFinishing || activity.isDestroyed) {
+                            bitmap.recycle()
+                            invoke.reject("Page cover capture failed: $result")
+                            return@request
+                        }
+                        try {
+                            val image = ImageView(activity).apply {
+                                setImageBitmap(bitmap)
+                                scaleType = ImageView.ScaleType.FIT_XY
+                            }
+                            val popup = PopupWindow(image, width, height, false).apply {
+                                animationStyle = 0
+                                enterTransition = null
+                                exitTransition = null
+                                isTouchable = false
+                                isClippingEnabled = false
+                                setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+                                if (Build.VERSION.SDK_INT >= 29) setIsLaidOutInScreen(true)
+                            }
+                            val screen = IntArray(2)
+                            webView.getLocationOnScreen(screen)
+                            popup.showAtLocation(webView, Gravity.TOP or Gravity.LEFT,
+                                screen[0] + (args.x * density).roundToInt(),
+                                screen[1] + (args.y * density).roundToInt())
+                            val token = ++pageCoverToken
+                            pageCovers[token] = Pair(popup, bitmap)
+                            // Resolve after the popup's first draw, before JS
+                            // removes its covering canvas for the next capture.
+                            image.postOnAnimation { image.postOnAnimation {
+                                invoke.resolve(JSObject().put("token", token))
+                            } }
+                        } catch (error: Exception) {
+                            bitmap.recycle()
+                            invoke.reject("Cannot cover page: ${error.message}")
+                        }
+                    }, Handler(Looper.getMainLooper()))
+            } catch (error: IllegalArgumentException) {
+                bitmap.recycle()
+                invoke.reject("Cover region out of bounds: ${error.message}")
+            }
+        }
+    }
+
+    @Command
+    fun uncover_webview_region(invoke: Invoke) {
+        val args = invoke.parseArgs(UncoverWebviewRegionArgs::class.java)
+        activity.runOnUiThread {
+            pageCovers.remove(args.token)?.let { (popup, bitmap) ->
+                popup.dismiss()
+                bitmap.recycle()
+            }
+            invoke.resolve()
         }
     }
 
