@@ -24,14 +24,6 @@ const MAX_PUBLIC_IMAGE_BYTES = 20 * 1024 * 1024;
 const isValidFileSize = (size: unknown): size is number =>
   Number.isSafeInteger(size) && (size as number) > 0;
 
-type Reservation = {
-  allowed: boolean;
-  usage: number;
-  file_size?: number;
-  inserted?: boolean;
-  file_id?: string;
-};
-
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   await runMiddleware(req, res, corsAllMethods);
 
@@ -108,48 +100,72 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    // Check the quota and record the file in one database call: done as
-    // separate steps, concurrent requests all measured themselves against the
-    // same usage. `quota` is an entitlement and safe to read from the token;
-    // usage is computed live under a per-user lock (the token's usage claim
-    // is frozen when the token is minted).
-    const { quota } = getStoragePlanData(token);
+    const { usage: claimUsage, quota } = getStoragePlanData(token);
     const fileKey = `${user.id}/${fileName}`;
     const supabase = createSupabaseAdminClient();
-    const { data, error: reserveError } = await supabase.rpc('reserve_storage_upload', {
-      p_user_id: user.id,
-      p_file_key: fileKey,
-      p_file_size: fileSize,
-      p_quota: quota + STORAGE_QUOTA_GRACE_BYTES,
-      p_book_hash: bookHash ?? null,
-      p_replica_kind: replicaKind ?? null,
-      p_replica_id: replicaId ?? null,
-    });
-    if (reserveError || !data) {
-      return res.status(500).json({ error: reserveError?.message ?? 'Reservation failed' });
+    const { data: existingRecord, error: fetchError } = await supabase
+      .from('files')
+      .select('file_size')
+      .eq('user_id', user.id)
+      .eq('file_key', fileKey)
+      .limit(1)
+      .maybeSingle();
+    if (fetchError) return res.status(500).json({ error: fetchError.message });
+
+    // A re-upload is signed with the recorded size and adds nothing to usage.
+    // A new file's row is its reservation: insert it first, then check the
+    // quota. The trigger on `files` has already added the row to
+    // `plans.storage_usage_bytes`, so the counter includes this upload and
+    // every one committed before it; checking before the insert let
+    // concurrent requests all pass against the same usage. The token's usage
+    // claim is frozen when the token is minted, so it is only the fallback
+    // where there is no `plans` row.
+    let objSize = fileSize;
+    let insertedId: string | null = null;
+    if (existingRecord) {
+      objSize = existingRecord.file_size;
+    } else {
+      const { data: inserted, error: insertError } = await supabase
+        .from('files')
+        .insert([
+          {
+            user_id: user.id,
+            book_hash: bookHash ?? null,
+            replica_kind: replicaKind ?? null,
+            replica_id: replicaId ?? null,
+            file_key: fileKey,
+            file_size: fileSize,
+          },
+        ])
+        .select('id')
+        .single();
+      if (insertError) return res.status(500).json({ error: insertError.message });
+      insertedId = inserted.id;
     }
-    const reservation = data as Reservation;
-    if (!reservation.allowed) {
-      return res
-        .status(403)
-        .json({ error: 'Insufficient storage quota', usage: reservation.usage });
+
+    const { data: planRow } = await supabase
+      .from('plans')
+      .select('storage_usage_bytes')
+      .eq('id', user.id)
+      .single();
+    const usage = planRow?.storage_usage_bytes ?? claimUsage + (insertedId ? fileSize : 0);
+    const dropReservation = async () => {
+      if (insertedId) await supabase.from('files').delete().eq('id', insertedId);
+    };
+
+    if (insertedId && usage > quota + STORAGE_QUOTA_GRACE_BYTES) {
+      await dropReservation();
+      return res.status(403).json({ error: 'Insufficient storage quota', usage: usage - fileSize });
     }
 
     try {
-      const uploadUrl = await getUploadSignedUrl(fileKey, reservation.file_size ?? fileSize, 1800);
+      const uploadUrl = await getUploadSignedUrl(fileKey, objSize, 1800);
 
-      res.status(200).json({
-        uploadUrl,
-        fileKey,
-        usage: reservation.usage + (reservation.inserted ? fileSize : 0),
-        quota,
-      });
+      res.status(200).json({ uploadUrl, fileKey, usage, quota });
     } catch (error) {
       console.error('Error creating presigned post:', error);
       // Don't leave a row behind for an upload that can never happen.
-      if (reservation.inserted && reservation.file_id) {
-        await supabase.from('files').delete().eq('id', reservation.file_id);
-      }
+      await dropReservation();
       res.status(500).json({ error: 'Could not create presigned post' });
     }
   } catch (error) {

@@ -54,13 +54,17 @@ beforeEach(() => {
   getUploadSignedUrlMock.mockReset().mockResolvedValue('https://r2/upload');
   getDownloadSignedUrlMock.mockReset().mockResolvedValue('https://r2/download');
 
-  // The quota reservation RPC records a fresh row for the key.
-  createSupabaseAdminClientMock.mockReset().mockReturnValue({
-    rpc: vi.fn().mockResolvedValue({
-      data: { allowed: true, usage: 0, file_size: 12345, inserted: true, file_id: 'f1' },
-      error: null,
-    }),
-  });
+  // Minimal chainable Supabase stub: no existing record, then the insert and
+  // the usage read, both ending in `.single()`.
+  const single = vi
+    .fn()
+    .mockResolvedValueOnce({ data: { id: 'f1' }, error: null })
+    .mockResolvedValueOnce({ data: { storage_usage_bytes: 12345 }, error: null });
+  const builder: Record<string, unknown> = {};
+  for (const m of ['select', 'eq', 'limit', 'insert']) builder[m] = () => builder;
+  builder['maybeSingle'] = vi.fn().mockResolvedValue({ data: null, error: null });
+  builder['single'] = single;
+  createSupabaseAdminClientMock.mockReset().mockReturnValue({ from: () => builder });
 });
 
 describe('POST /api/storage/upload — fileName traversal guard', () => {
