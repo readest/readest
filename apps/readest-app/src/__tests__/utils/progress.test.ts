@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { getChapterTickFractions } from '@/utils/progress';
+import { formatProgressPercent, getChapterTickFractions } from '@/utils/progress';
 import type { TOCItem } from '@/libs/document';
 
 const toc = (href: string, subitems?: TOCItem[]): TOCItem =>
@@ -84,5 +84,42 @@ describe('getChapterTickFractions', () => {
     expect(getChapterTickFractions(view, [])).toEqual([]);
     expect(getChapterTickFractions(view, null)).toEqual([]);
     expect(getChapterTickFractions(makeView([], {}), [toc('ch1.xhtml')])).toEqual([]);
+  });
+});
+
+describe('formatProgressPercent', () => {
+  it('formats the continuous fraction, one decimal mid-book on large books', () => {
+    expect(formatProgressPercent(0.3456, 344, 1000)).toBe('34.6%');
+  });
+
+  it('rounds to an integer percent on small books (100 locations or fewer)', () => {
+    expect(formatProgressPercent(0.3456, 34, 80)).toBe('35%');
+  });
+
+  it('shows exactly 100% on the last page even with a sub-1 fraction', () => {
+    expect(formatProgressPercent(0.999, 999, 1000)).toBe('100%');
+    // 0.99 would round to 99% at 0 decimals — the last-page rule must win
+    expect(formatProgressPercent(0.99, 79, 80)).toBe('100%');
+  });
+
+  it('never rounds up to 100% before the last page', () => {
+    expect(formatProgressPercent(0.9996, 990, 1000)).toBe('99.9%');
+    expect(formatProgressPercent(0.996, 50, 80)).toBe('99%');
+  });
+
+  it('clamps the fraction into 0-100', () => {
+    expect(formatProgressPercent(1.2, 99, 100)).toBe('100%');
+    expect(formatProgressPercent(-0.1, 0, 1000)).toBe('0.0%');
+  });
+
+  it('falls back to the page-pair percent before the first relocate reports a fraction', () => {
+    expect(formatProgressPercent(undefined, 344, 1000)).toBe('34.5%');
+    expect(formatProgressPercent(undefined, 34, 80)).toBe('44%');
+    expect(formatProgressPercent(NaN, 344, 1000)).toBe('34.5%');
+  });
+
+  it('returns an empty string without a valid total', () => {
+    expect(formatProgressPercent(0.5, 0, undefined)).toBe('');
+    expect(formatProgressPercent(0.5, 0, 0)).toBe('');
   });
 });
