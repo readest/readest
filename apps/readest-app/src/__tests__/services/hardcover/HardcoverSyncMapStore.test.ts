@@ -222,6 +222,91 @@ describe('HardcoverSyncMapStore', () => {
     expect(result).toEqual(legacyRow);
   });
 
+  test('retains a legacy mapping after a failed write and retries on the same store', async () => {
+    const bookHash = 'legacy-book';
+    const noteId = 'legacy-note';
+    const row: HardcoverSyncMapRow = {
+      book_hash: bookHash,
+      note_id: noteId,
+      hardcover_journal_id: 999,
+      payload_hash: 'legacy-hash',
+      synced_at: 12345,
+    };
+    const key = `hardcover-note-mapping:${bookHash}:${noteId}`;
+    const raw = JSON.stringify(row);
+    window.localStorage.setItem(key, raw);
+    const error = new Error('database write failed');
+    mockDb.execute.mockRejectedValueOnce(error);
+
+    await expect(store.loadForBook(bookHash)).rejects.toThrow(error);
+    expect(window.localStorage.getItem(key)).toBe(raw);
+    expect(mockDb.rows.size).toBe(0);
+    expect(mockDb.select).not.toHaveBeenCalled();
+    expect(mockDb.close).toHaveBeenCalledTimes(1);
+
+    expect(await store.getMapping(bookHash, noteId)).toEqual(row);
+    expect(window.localStorage.getItem(key)).toBeNull();
+    expect(mockDb.rows.get(makeRowKey(bookHash, noteId))).toEqual(row);
+    expect(mockDb.execute).toHaveBeenCalledTimes(2);
+
+    const freshStore = new HardcoverSyncMapStore(mockAppService);
+    expect(await freshStore.getMapping(bookHash, noteId)).toEqual(row);
+    expect(mockDb.execute).toHaveBeenCalledTimes(2);
+  });
+
+  test('preserves failed and unattempted rows when migration fails partway through', async () => {
+    const bookHash = 'legacy-book';
+    const rows = ['note-1', 'note-2', 'note-3'].map((noteId, index) => ({
+      book_hash: bookHash,
+      note_id: noteId,
+      hardcover_journal_id: index + 1,
+      payload_hash: `payload-${index}`,
+      synced_at: index,
+    }));
+    const keys = rows.map((row) => `hardcover-note-mapping:${bookHash}:${row.note_id}`);
+    rows.forEach((row, index) => window.localStorage.setItem(keys[index]!, JSON.stringify(row)));
+    const execute = mockDb.execute.getMockImplementation()!;
+    mockDb.execute.mockImplementationOnce(execute).mockRejectedValueOnce(new Error('write failed'));
+
+    await expect(store.loadForBook(bookHash)).rejects.toThrow('write failed');
+    expect(window.localStorage.getItem(keys[0]!)).toBeNull();
+    expect(window.localStorage.getItem(keys[1]!)).toBe(JSON.stringify(rows[1]));
+    expect(window.localStorage.getItem(keys[2]!)).toBe(JSON.stringify(rows[2]));
+    expect(mockDb.rows.size).toBe(1);
+
+    await store.loadForBook(bookHash);
+    expect(mockDb.rows.size).toBe(3);
+    expect(window.localStorage.length).toBe(0);
+    for (const row of rows) {
+      expect(await store.getMapping(bookHash, row.note_id)).toEqual(row);
+    }
+    expect(mockDb.execute).toHaveBeenCalledTimes(4);
+  });
+
+  test('still discards malformed JSON while migrating other legacy entries', async () => {
+    const errorLog = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const badKey = 'hardcover-note-mapping:legacy-book:bad-note';
+    const goodKey = 'hardcover-note-mapping:legacy-book:good-note';
+    const row: HardcoverSyncMapRow = {
+      book_hash: 'legacy-book',
+      note_id: 'good-note',
+      hardcover_journal_id: 123,
+      payload_hash: 'payload',
+      synced_at: 1,
+    };
+    window.localStorage.setItem(badKey, '{bad json');
+    window.localStorage.setItem(goodKey, JSON.stringify(row));
+    try {
+      await store.loadForBook('legacy-book');
+      expect(errorLog).toHaveBeenCalledOnce();
+      expect(window.localStorage.getItem(badKey)).toBeNull();
+      expect(window.localStorage.getItem(goodKey)).toBeNull();
+      expect(await store.getMapping('legacy-book', 'good-note')).toEqual(row);
+    } finally {
+      errorLog.mockRestore();
+    }
+  });
+
   test('legacy migration is skipped when window.localStorage is unavailable', async () => {
     vi.stubGlobal('window', {});
 

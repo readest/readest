@@ -79,18 +79,22 @@ export class HardcoverSyncMapStore {
         window.localStorage.removeItem(key);
         continue;
       }
+      let row: HardcoverSyncMapRow;
       try {
-        const row = JSON.parse(raw) as HardcoverSyncMapRow;
-        await this.upsertRow(db, row);
+        row = JSON.parse(raw) as HardcoverSyncMapRow;
       } catch (error) {
         console.error('Failed to migrate Hardcover mapping from localStorage:', error);
+        window.localStorage.removeItem(key);
+        continue;
       }
+      // Preserve the legacy mapping and abort sync if persistence fails.
+      await this.upsertRow(db, row);
       window.localStorage.removeItem(key);
     }
   }
 
   async loadForBook(bookHash: string): Promise<void> {
-    this.loadedBookHash = bookHash;
+    this.loadedBookHash = null;
     this.mappings.clear();
     this.modified = false;
 
@@ -107,6 +111,7 @@ export class HardcoverSyncMapStore {
         this.mappings.set(row.note_id, row);
       }
     });
+    this.loadedBookHash = bookHash;
   }
 
   async flush(): Promise<void> {
