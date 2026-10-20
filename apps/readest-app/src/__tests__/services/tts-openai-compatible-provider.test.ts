@@ -129,6 +129,23 @@ describe('OpenAICompatibleSpeechProvider', () => {
     });
   });
 
+  it('accepts a base URL pasted with the endpoint on it', async () => {
+    for (const baseUrl of [
+      'https://tts.example.com/v1/audio/speech',
+      'https://tts.example.com/v1/audio/voices/',
+    ]) {
+      services = [service({ baseUrl })];
+      fetchMock.mockReset();
+      fetchMock.mockImplementation(async () => audioResponse());
+      await provider.getAllVoices();
+      await provider.synthesize(req('s1:nova'), new AbortController().signal);
+      expect(fetchMock.mock.calls.map(([url]) => url)).toEqual([
+        'https://tts.example.com/v1/audio/voices',
+        'https://tts.example.com/v1/audio/speech',
+      ]);
+    }
+  });
+
   it('sends no Authorization header without a key', async () => {
     services = [service({ apiKey: undefined })];
     fetchMock.mockResolvedValue(audioResponse());
