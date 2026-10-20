@@ -75,11 +75,17 @@ const rects = (): Rect[] =>
 
 // Previews `ratio` on the shown pages, then releases and commits the zoom.
 const pinch = (host: Renderer, ratio: number) => {
+  const baseline = rects();
   host.pinchZoom(ratio);
   const preview = rects();
   host.pinchEnd();
   host.setAttribute('scale-factor', String(ratio * 100));
-  return { preview, committed: rects() };
+  const committed = rects();
+  // The pinch has to have zoomed, or matching rects prove nothing.
+  baseline.forEach((rect, i) => {
+    expect(committed[i]!.width).toBeCloseTo(rect.width * ratio, 0);
+  });
+  return { preview, committed };
 };
 
 const expectSameRects = (actual: Rect[], expected: Rect[]) => {
