@@ -939,18 +939,22 @@ const getMobiLayout = (bookDoc: BookDoc): Promise<MobiLayout> => {
   let layout = mobiLayouts.get(bookDoc);
   if (!layout) {
     layout = (async () => {
-      const docs = await Promise.all(bookDoc.sections.map((section) => section.createDocument()));
-      const counts = docs.map((doc) => {
+      // One section at a time, so each parsed document can be collected before
+      // the next is parsed.
+      const counts: Map<string, number>[] = [];
+      let guide = false;
+      for (const [i, section] of bookDoc.sections.entries()) {
+        const doc = await section.createDocument();
         const count = new Map<string, number>();
         for (const child of Array.from(doc.body.children)) {
+          // The HTML parser moves a <head><guide> into <body>, where crengine
+          // instead opened a body of its own before the book's <body>.
+          if (i === 0 && child.localName === 'guide') guide = true;
           if (child.hasAttribute('cfi-inert') || isFileposAnchor(child)) continue;
           count.set(child.localName, (count.get(child.localName) ?? 0) + 1);
         }
-        return count;
-      });
-      // The HTML parser moves a <head><guide> into <body>, where crengine
-      // instead opened a body of its own before the book's <body>.
-      const guide = Array.from(docs[0]?.body.children ?? []).some((el) => el.localName === 'guide');
+        counts.push(count);
+      }
       return { path: guide ? '/html/body/body' : '/html/body', counts };
     })();
     mobiLayouts.set(bookDoc, layout);
