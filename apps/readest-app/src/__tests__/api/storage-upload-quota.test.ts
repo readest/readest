@@ -35,7 +35,11 @@ vi.mock('@/utils/object', async (orig) => {
 // trigger maintains. Every call yields first, so concurrent requests interleave
 // between round trips as they do against the real server.
 type FileRow = { id: string; user_id: string; file_key: string; file_size: number };
-const db = { files: [] as FileRow[], usage: 0, hasPlan: true };
+const db = {
+  files: [] as FileRow[],
+  usage: 0,
+  planError: null as { code: string; message: string } | null,
+};
 
 const query = (table: string) => {
   let op: 'select' | 'insert' | 'delete' = 'select';
@@ -44,9 +48,9 @@ const query = (table: string) => {
   const run = async (single: 'single' | 'maybe' | false) => {
     await new Promise((r) => setTimeout(r, 0));
     if (table === 'plans') {
-      return db.hasPlan
-        ? { data: { storage_usage_bytes: db.usage }, error: null }
-        : { data: null, error: { code: 'PGRST116', message: 'no rows' } };
+      return db.planError
+        ? { data: null, error: db.planError }
+        : { data: { storage_usage_bytes: db.usage }, error: null };
     }
     if (op === 'insert') {
       const row = { ...rows[0]!, id: `f${db.files.length + 1}` };
@@ -131,7 +135,7 @@ const seed = (fileKey: string, fileSize: number) => {
 beforeEach(() => {
   db.files = [];
   db.usage = 0;
-  db.hasPlan = true;
+  db.planError = null;
   validateUserAndTokenMock.mockReset().mockResolvedValue({ user: { id: 'user-1' }, token: 'tok' });
   getUploadSignedUrlMock.mockReset().mockResolvedValue('https://r2/upload');
   getDownloadSignedUrlMock.mockReset().mockResolvedValue('https://r2/download');
@@ -214,13 +218,29 @@ describe('POST /api/storage/upload — quota', () => {
     expect(db.files).toHaveLength(1);
   });
 
-  it('falls back to the token claim plus the new file without a plans row', async () => {
-    db.hasPlan = false;
+  // No `plans` row for this user (PGRST116), or no `plans` table at all, as on
+  // self-hosted servers (PGRST205; 42P01 from older PostgREST).
+  it.each([
+    'PGRST116',
+    'PGRST205',
+    '42P01',
+  ])('falls back to the token claim plus the new file without a plans row (%s)', async (code) => {
+    db.planError = { code, message: 'no plan' };
     getStoragePlanDataMock.mockReturnValue({ usage: QUOTA - 5 * MB, quota: QUOTA });
 
     const res = await post({ fileName: 'Readest/Books/hash.epub', fileSize: 10 * MB });
 
     expect(statusOf(res)).toBe(403);
+    expect(db.files).toHaveLength(0);
+  });
+
+  it('fails closed and drops its row when the usage read fails', async () => {
+    db.planError = { code: '57014', message: 'canceling statement due to statement timeout' };
+
+    const res = await post({ fileName: 'Readest/Books/hash.epub', fileSize: 10 * MB });
+
+    expect(statusOf(res)).toBe(500);
+    expect(getUploadSignedUrlMock).not.toHaveBeenCalled();
     expect(db.files).toHaveLength(0);
   });
 

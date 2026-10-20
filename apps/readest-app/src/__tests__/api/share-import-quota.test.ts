@@ -43,7 +43,7 @@ type FileRow = {
   file_size: number;
   deleted_at: string | null;
 };
-const db = { files: [] as FileRow[] };
+const db = { files: [] as FileRow[], planError: null as { code: string; message: string } | null };
 const usage = () =>
   db.files.filter((f) => f.deleted_at === null).reduce((n, f) => n + f.file_size, 0);
 
@@ -52,7 +52,11 @@ const query = (table: string) => {
   let payload: Partial<FileRow> = {};
   const filters: Record<string, unknown> = {};
   const run = async () => {
-    if (table === 'plans') return { data: { storage_usage_bytes: usage() }, error: null };
+    if (table === 'plans') {
+      return db.planError
+        ? { data: null, error: db.planError }
+        : { data: { storage_usage_bytes: usage() }, error: null };
+    }
     if (op === 'insert') {
       const row = { deleted_at: null, ...payload, id: `f${db.files.length + 1}` } as FileRow;
       db.files.push(row);
@@ -110,6 +114,7 @@ const seed = (row: Partial<FileRow>) =>
 
 beforeEach(() => {
   db.files = [];
+  db.planError = null;
   copyObjectMock.mockReset().mockResolvedValue(undefined);
   // A stale snapshot: the token claims the account is empty.
   getStoragePlanDataMock.mockReset().mockReturnValue({ usage: 0, quota: 1000 });
@@ -152,6 +157,26 @@ describe('POST /api/share/[token]/import — quota', () => {
     expect(res.status).toBe(402);
     expect(db.files.find((f) => f.book_hash === 'hash')!.deleted_at).toBe(deletedAt);
     expect(usage()).toBe(950);
+  });
+
+  it('fails closed without copying when the usage read fails', async () => {
+    db.planError = { code: '57014', message: 'canceling statement due to statement timeout' };
+
+    const res = await importShare();
+
+    expect(res.status).toBe(500);
+    expect(copyObjectMock).not.toHaveBeenCalled();
+    expect(db.files).toHaveLength(0);
+  });
+
+  it('falls back to the token claim without a plans table', async () => {
+    db.planError = { code: 'PGRST205', message: 'no table' };
+    getStoragePlanDataMock.mockReturnValue({ usage: 950, quota: 1000 });
+
+    const res = await importShare();
+
+    expect(res.status).toBe(402);
+    expect(db.files).toHaveLength(0);
   });
 
   it('restores a deleted copy that fits', async () => {

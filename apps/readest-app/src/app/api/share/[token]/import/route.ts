@@ -74,11 +74,16 @@ export async function POST(request: Request, { params }: RouteParams) {
   // frozen when the token is minted, so it is only the fallback.
   const { usage: claimUsage, quota } = getStoragePlanData(jwt);
   const quotaExceeded = async () => {
-    const { data: planRow } = await supabase
+    const { data: planRow, error: planError } = await supabase
       .from('plans')
       .select('storage_usage_bytes')
       .eq('id', user.id)
       .single();
+    // Only a missing row or a missing `plans` table (self-hosted) falls back;
+    // any other failure refuses rather than pass on the stale claim.
+    if (planError && !['PGRST116', 'PGRST205', '42P01'].includes(planError.code)) {
+      return NextResponse.json({ error: 'Could not read storage usage' }, { status: 500 });
+    }
     const usage: number = planRow?.storage_usage_bytes ?? claimUsage + share.bookSize;
     if (usage <= quota + STORAGE_QUOTA_GRACE_BYTES) return null;
     return NextResponse.json(
