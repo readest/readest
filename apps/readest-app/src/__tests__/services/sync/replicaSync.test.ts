@@ -5,7 +5,8 @@ import {
   initReplicaSync,
   isReplicaSyncReady,
 } from '@/services/sync/replicaSync';
-import { __resetSettledEventsForTests } from '@/utils/event';
+import { __resetSettledEventsForTests, eventDispatcher } from '@/utils/event';
+import { SyncError } from '@/libs/errors';
 import { InMemoryHlcStore } from '@/libs/hlcStore';
 import type { ReplicaRow, Hlc } from '@/types/replica';
 import type { CursorStore } from '@/services/sync/replicaSyncManager';
@@ -64,6 +65,45 @@ describe('replicaSync singleton', () => {
     });
     expect(b).toBe(a);
     expect(b.deviceId).toBe('dev-a');
+  });
+
+  // #6881: a device clock a few minutes off made the server refuse every
+  // bookshelf, font, dictionary and settings change, and nothing said so.
+  test('tells the user when the server refuses changes for the device clock', async () => {
+    const dispatch = vi.spyOn(eventDispatcher, 'dispatch');
+    const client = {
+      ...makeFakeClient(),
+      push: vi.fn(async () => {
+        throw new SyncError('CLOCK_SKEW', 'row timestamp too far from server time', {
+          status: 409,
+        });
+      }),
+    };
+    const ctx = initReplicaSync({
+      deviceId: 'dev-a',
+      cursorStore: makeMemoryCursorStore(),
+      hlcStore: new InMemoryHlcStore(),
+      client: client as never,
+    });
+    const t = ctx.hlc.next();
+    ctx.manager.markDirty({
+      user_id: 'u1',
+      kind: 'dictionary',
+      replica_id: 'd1',
+      fields_jsonb: { name: { v: 'd1', t, s: 'dev-a' } },
+      manifest_jsonb: null,
+      deleted_at_ts: null,
+      reincarnation: null,
+      updated_at_ts: t,
+      schema_version: 1,
+    });
+    await ctx.manager.flush();
+
+    expect(dispatch).toHaveBeenCalledWith('toast', {
+      type: 'error',
+      message: expect.stringContaining('clock'),
+    });
+    dispatch.mockRestore();
   });
 
   test('hlc.next() persists snapshot to the injected store', () => {

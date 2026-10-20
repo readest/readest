@@ -35,6 +35,8 @@ export interface ReplicaSyncManagerOpts {
   /** Called at push time: returns the row to actually send, or null to skip it. */
   prepareRow?: (row: ReplicaRow) => Promise<ReplicaRow | null>;
   onAcknowledged?: (row: ReplicaRow) => void;
+  /** Called once per push batch in which the server refused rows for the device clock. */
+  onClockSkew?: () => void;
 }
 
 interface DirtyKey {
@@ -172,6 +174,11 @@ export class ReplicaSyncManager {
 
     const pushed: number[] = [];
     let deferred: unknown = null;
+    let clockSkewed = false;
+    const reject = (err: unknown, row: ReplicaRow) => {
+      this.rejectedRows.add(row);
+      if (isSyncError(err) && err.code === 'CLOCK_SKEW') clockSkewed = true;
+    };
     try {
       await this.opts.client.push(snapshot);
       snapshot.forEach((_, i) => pushed.push(i));
@@ -205,7 +212,7 @@ export class ReplicaSyncManager {
             continue;
           }
           if (indexes.length === 1) {
-            if (isRowRejection(kindErr)) this.rejectedRows.add(queued[indexes[0]!]!);
+            if (isRowRejection(kindErr)) reject(kindErr, queued[indexes[0]!]!);
             else deferred ??= kindErr;
             continue;
           }
@@ -216,7 +223,7 @@ export class ReplicaSyncManager {
             pushed.push(i);
           } catch (rowErr) {
             if (isUnknownKindError(rowErr)) this.unsupportedKinds.add(kind);
-            else if (isRowRejection(rowErr)) this.rejectedRows.add(queued[i]!);
+            else if (isRowRejection(rowErr)) reject(rowErr, queued[i]!);
             else deferred ??= rowErr;
           }
         }
@@ -230,6 +237,7 @@ export class ReplicaSyncManager {
         this.dirty.delete(snapshotKeys[i]!);
       }
     }
+    if (clockSkewed) this.opts.onClockSkew?.();
     if (deferred) throw deferred;
   }
 
