@@ -27,34 +27,76 @@ vi.spyOn(console, 'warn').mockImplementation(() => {});
 vi.spyOn(console, 'log').mockImplementation(() => {});
 
 const DECODE_SEC = 0.5;
-const audioBytes = (text: string) => (text.startsWith('Short') ? 48000 : 144000);
 const GAP_SEC = 0.2;
 const flush = async () => {
   for (let i = 0; i < 20; i++) await new Promise((r) => setTimeout(r, 0));
 };
 
-describe('paragraph boundary on cache hits', () => {
-  let client: InstanceType<typeof import('@/services/tts/BufferedTTSClient').BufferedTTSClient>;
-  let ctx: FakeAudioContext;
+// The audio carries its sentence's text, so the fake decoder can record which
+// sentences were decoded.
+const encodeAudio = (text: string) => {
+  const bytes = new Uint8Array(text.startsWith('Short') ? 48000 : 144000);
+  bytes.set(new TextEncoder().encode(text));
+  return bytes.buffer;
+};
+let decoded: string[] = [];
+let decodeSec = 0;
+let decodeGate: Promise<void> | null = null;
 
-  beforeEach(async () => {
+class DecodingAudioContext extends FakeAudioContext {
+  override decodeImpl = async (data: ArrayBuffer) => {
+    decoded.push(new TextDecoder().decode(new Uint8Array(data)).split('\0')[0]!);
+    if (decodeGate) await decodeGate;
+    this.currentTime += decodeSec;
+    const samples = new Float32Array(data.byteLength / 2);
+    for (let i = 0; i < samples.length; i++) samples[i] = 0.3 * Math.sin(i / 8);
+    return new FakeAudioBuffer(samples, this.sampleRate);
+  };
+}
+
+describe('first sentences prepared ahead', () => {
+  let client: InstanceType<typeof import('@/services/tts/BufferedTTSClient').BufferedTTSClient>;
+
+  beforeEach(() => {
     vi.resetModules();
     localStorage.clear();
     FakeAudioContext.instances = [];
-    vi.stubGlobal('AudioContext', FakeAudioContext);
+    decoded = [];
+    decodeSec = 0;
+    decodeGate = null;
+    vi.stubGlobal('AudioContext', DecodingAudioContext);
     vi.stubGlobal('requestAnimationFrame', () => 1);
     vi.stubGlobal('cancelAnimationFrame', () => {});
+  });
+
+  afterEach(() => vi.unstubAllGlobals());
+
+  // A windowed provider (Readest Voice) takes preloads as prefetch hints and
+  // hands the audio back through onDelivered.
+  // `held` sentences arrive only when released; requests for one share its
+  // audio, as a windowed provider shares one synthesis between them.
+  const makeClient = async (windowed = false, held = new Map<string, Promise<void>>()) => {
     await import('@/services/tts/EdgeTTSClient');
     const { BufferedTTSClient } = await import('@/services/tts/BufferedTTSClient');
+    const synthesize = async (req: { text: string }): Promise<SpeechSynthesisResult> => {
+      await held.get(req.text);
+      return {
+        audio: encodeAudio(req.text),
+        boundaries: [{ offset: 0, duration: 1e7, text: req.text }],
+      };
+    };
     const provider: SpeechProvider = {
       id: 'mem',
       label: 'Mem',
-      cacheable: true,
       init: async () => true,
       getAllVoices: async () => [{ id: 'v1', name: 'Voice 1', lang: 'en-US' }],
-      synthesize: async (req): Promise<SpeechSynthesisResult> => ({
-        audio: new ArrayBuffer(audioBytes(req.text)),
-        boundaries: [{ offset: 0, duration: (audioBytes(req.text) / 48000) * 1e7, text: req.text }],
+      synthesize,
+      ...(windowed && {
+        prefetch: (reqs, _lane, _signal, options) => {
+          for (const req of reqs) {
+            void synthesize(req).then((result) => options?.onDelivered?.(req, result));
+          }
+        },
       }),
     };
     const controller = {
@@ -66,18 +108,6 @@ describe('paragraph boundary on cache hits', () => {
     await client.init();
     await client.setRate(1.5);
     client.setParagraphGap(GAP_SEC);
-  });
-
-  afterEach(() => vi.unstubAllGlobals());
-
-  const installSlowDecode = () => {
-    ctx = FakeAudioContext.instances.at(-1)!;
-    ctx.decodeImpl = async (data) => {
-      ctx.currentTime += DECODE_SEC;
-      const samples = new Float32Array(data.byteLength / 2);
-      for (let i = 0; i < samples.length; i++) samples[i] = 0.3 * Math.sin(i / 8);
-      return new FakeAudioBuffer(samples, ctx.sampleRate);
-    };
   };
 
   const run = (marks: typeof parsedMarks, preload = false) => {
@@ -90,38 +120,47 @@ describe('paragraph boundary on cache hits', () => {
     return { codes, done };
   };
 
+  // What the controller does: preload the paragraph, then speak it.
+  const speak = async (marks: typeof parsedMarks) => {
+    await run(marks, true).done;
+    return run(marks);
+  };
+
   const para = (p: string) => [
     { name: `${p}0`, text: `${p} one.`, language: 'en' },
     { name: `${p}1`, text: `${p} two.`, language: 'en' },
   ];
 
-  test('the pause between paragraphs is the scheduled gap, not decode time', async () => {
-    const a = run(para('A'));
-    await flush();
-    installSlowDecode();
-    const pre = run(para('B'), true);
-    await pre.done;
-    await flush();
-    const aSources = () => ctx.sources.slice();
-    let lastEnd = 0;
-    for (let i = 0; i < 50 && !a.codes.includes('end'); i++) {
-      const pending = ctx.sources.filter((s) => !s.endedFired && !s.stopped);
-      const t = Math.max(ctx.currentTime, ...pending.map((s) => s.endTime));
-      await ctx.advanceTo(t);
+  test.each([
+    ['an online voice', false],
+    ['a windowed voice', true],
+  ])(
+    '%s: the pause between paragraphs is the scheduled gap, not decode time',
+    async (_, windowed) => {
+      await makeClient(windowed);
+      const a = run(para('A'));
       await flush();
-    }
-    await a.done;
-    lastEnd = Math.max(...aSources().map((s) => s.endTime));
-    const before = ctx.sources.length;
-    await run(para('B'), true).done;
-    run(para('B'));
-    await flush();
-    const firstB = ctx.sources[before]!;
-    const pause = firstB.startedAt! - lastEnd;
-    expect(pause).toBeCloseTo(GAP_SEC, 2);
-  }, 30_000);
+      const ctx = FakeAudioContext.instances.at(-1)!;
+      decodeSec = DECODE_SEC;
+      await run(para('B'), true).done;
+      await flush();
+      for (let i = 0; i < 50 && !a.codes.includes('end'); i++) {
+        const pending = ctx.sources.filter((s) => !s.endedFired && !s.stopped);
+        await ctx.advanceTo(Math.max(ctx.currentTime, ...pending.map((s) => s.endTime)));
+        await flush();
+      }
+      await a.done;
+      const lastEnd = Math.max(...ctx.sources.map((s) => s.endTime));
+      const before = ctx.sources.length;
+      await speak(para('B'));
+      await flush();
+      expect(ctx.sources[before]!.startedAt! - lastEnd).toBeCloseTo(GAP_SEC, 2);
+    },
+    30_000,
+  );
 
   test('no gap longer than the scheduled pauses after a run of short paragraphs', async () => {
+    await makeClient();
     client.setSentenceGap(0.1);
     const long = (p: string, n: number) =>
       Array.from({ length: n }, (_, i) => ({
@@ -131,14 +170,13 @@ describe('paragraph boundary on cache hits', () => {
       }));
     const short = (p: string) => [{ name: `${p}0`, text: `Short ${p}.`, language: 'en' }];
     const paragraphs = [long('A', 6), short('B'), short('C'), short('D'), short('E'), long('F', 6)];
-    let ctxReady = false;
+    let ctx: FakeAudioContext | undefined;
     for (let p = 0; p < paragraphs.length; p++) {
-      await run(paragraphs[p]!, true).done;
-      const session = run(paragraphs[p]!);
-      if (!ctxReady) {
+      const session = await speak(paragraphs[p]!);
+      if (!ctx) {
         await flush();
-        installSlowDecode();
-        ctxReady = true;
+        ctx = FakeAudioContext.instances.at(-1)!;
+        decodeSec = DECODE_SEC;
       }
       let preloaded = false;
       for (let step = 0; step < 2000 && !session.codes.includes('end'); step++) {
@@ -153,7 +191,7 @@ describe('paragraph boundary on cache hits', () => {
       }
       await session.done;
     }
-    const played = ctx.sources
+    const played = ctx!.sources
       .filter((s) => s.startedAt !== null && s.endedFired)
       .sort((a, b) => a.startedAt! - b.startedAt!);
     let worst = 0;
@@ -163,4 +201,77 @@ describe('paragraph boundary on cache hits', () => {
     expect(played.length).toBe(16);
     expect(worst).toBeLessThanOrEqual(GAP_SEC + 0.01);
   }, 60_000);
+
+  test('preload finishes without waiting for the first sentence to be prepared', async () => {
+    await makeClient();
+    decodeGate = new Promise(() => {});
+    const preload = run(para('B'), true);
+    await flush();
+    expect(decoded).toEqual(['B one.']);
+    expect(preload.codes).toEqual(['end']);
+  });
+
+  test('keeps the nearest paragraphs when more are preloaded than it holds', async () => {
+    await makeClient();
+    const paragraphs = Array.from({ length: 10 }, (_, i) => para(`P${i}`));
+    for (const p of paragraphs) await run(p, true).done;
+    await flush();
+    decoded = [];
+    await speak(paragraphs[0]!);
+    await flush();
+    expect(decoded).not.toContain('P0 one.');
+  });
+
+  test("only a paragraph's first sentence takes a prepared chunk", async () => {
+    await makeClient();
+    const a = [
+      { name: 'A0', text: 'A one.', language: 'en' },
+      { name: 'A1', text: 'B one.', language: 'en' },
+    ];
+    await run(a, true).done;
+    await run(para('B'), true).done;
+    await flush();
+    await speak(a);
+    await flush();
+    decoded = [];
+    await speak(para('B'));
+    await flush();
+    expect(decoded).not.toContain('B one.');
+  });
+
+  test('a first sentence delivered as its paragraph starts leaves later ones prepared', async () => {
+    let release = () => {};
+    const held = new Map([['B one.', new Promise<void>((r) => (release = r))]]);
+    await makeClient(true, held);
+    await run(para('B'), true).done;
+    await run(para('C'), true).done;
+    await flush();
+    await speak(para('B'));
+    await flush();
+    release();
+    await flush();
+    decoded = [];
+    await speak(para('C'));
+    await flush();
+    expect(decoded).not.toContain('C one.');
+  });
+
+  test('a handover keeps what was prepared, any other stop drops it', async () => {
+    await makeClient();
+    await run(para('B'), true).done;
+    await flush();
+    await client.stop(true);
+    decoded = [];
+    await speak(para('B'));
+    await flush();
+    expect(decoded).not.toContain('B one.');
+
+    await run(para('C'), true).done;
+    await flush();
+    await client.stop();
+    decoded = [];
+    await speak(para('C'));
+    await flush();
+    expect(decoded).toContain('C one.');
+  });
 });

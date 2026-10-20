@@ -66,7 +66,7 @@ const MAX_CONSECUTIVE_SKIPS = 3;
 const PREFETCH_AHEAD_MARKS = 32;
 const PREFETCH_AHEAD_SEC = 180;
 const PRELOAD_AHEAD_SEC = 60;
-const PREPARED_OPENINGS = 8;
+const MAX_PREPARED_CHUNKS = 8;
 
 interface PreparedChunk {
   buffer: TTSAudioBuffer;
@@ -142,7 +142,11 @@ export class BufferedTTSClient implements TTSClient {
   // skipping to the end. A user-initiated restart builds a fresh client, so it
   // starts at 0 there too.
   #consecutiveSkips = 0;
-  #preparedOpenings = new Map<string, Promise<PreparedChunk>>();
+  // Upcoming paragraphs' first sentences, decoded and time-stretched while the
+  // current one plays, in reading order (see #prepareAhead).
+  #preparedChunks = new Map<string, Promise<PreparedChunk>>();
+  // The prepared key of the playing paragraph's first sentence: no longer ahead.
+  #playingParagraphKey: string | null = null;
 
   constructor(
     provider: SpeechProvider,
@@ -382,9 +386,13 @@ export class BufferedTTSClient implements TTSClient {
     if (this.provider.prefetch) {
       const reqs = await this.#requestsFor(await this.#marksAhead(marks, 0, PRELOAD_AHEAD_SEC));
       if (reqs.length && !signal.aborted) {
+        const first = reqs[0];
         this.provider.prefetch(reqs, 'listen', signal, {
           background: true,
-          onDelivered: this.#onPrefetchDelivered,
+          onDelivered: (req, result) => {
+            this.#onPrefetchDelivered(req, result);
+            if (req === first && !signal.aborted) this.#prepareAhead(req, result.audio);
+          },
         });
       }
       yield { code: 'end', message: 'Preload finished' } as TTSMessageEvent;
@@ -404,7 +412,7 @@ export class BufferedTTSClient implements TTSClient {
         if (audio) this.#recordDurations(voiceId, mark.text, audio.boundaries);
         if (audio && i === 0 && !signal.aborted) {
           const req = { lang: mark.language, text: mark.text, voice: voiceId, pitch: this.#pitch };
-          await this.#prepareOpening(req, audio.data);
+          this.#prepareAhead(req, audio.data);
         }
       } catch (err) {
         console.warn('Error preloading mark', i, err);
@@ -464,6 +472,7 @@ export class BufferedTTSClient implements TTSClient {
           voice: voiceId,
           pitch: this.#pitch,
         };
+        if (index === 0) this.#playingParagraphKey = this.#preparedKey(req, rate);
         let audio: { data: ArrayBuffer; boundaries: TTSWordBoundary[] } | undefined;
         try {
           audio = await this.#synthesizeWithRetry(mark.language, mark.text, voiceId, signal);
@@ -538,8 +547,8 @@ export class BufferedTTSClient implements TTSClient {
         const webPlayer = this.#player;
         let prepared: PreparedChunk;
         try {
-          prepared = await (this.#takePreparedOpening(req, rate) ??
-            this.#prepareChunkBuffer(webPlayer, audio.data, rate));
+          const ahead = index === 0 ? this.#takePrepared(req, rate) : null;
+          prepared = await (ahead ?? this.#prepareChunkBuffer(webPlayer, audio.data, rate));
         } catch (error) {
           // Malformed MP3 must not dead-end the session: same UX as no-audio.
           console.warn('Failed to decode TTS audio for:', mark.text, error);
@@ -574,29 +583,39 @@ export class BufferedTTSClient implements TTSClient {
     }
   }
 
-  #openingKey(req: SpeechSynthesisRequest, rate: number): string {
+  #preparedKey(req: SpeechSynthesisRequest, rate: number): string {
     return JSON.stringify([req.lang, req.voice, req.pitch, req.text, rate]);
   }
 
-  async #prepareOpening(req: SpeechSynthesisRequest, data: ArrayBuffer): Promise<void> {
-    if (!(this.#player instanceof WebAudioPlayer)) return;
-    const key = this.#openingKey(req, this.#rate);
-    if (this.#preparedOpenings.has(key)) return;
-    const prepared = this.#prepareChunkBuffer(this.#player, data.slice(0), this.#rate);
-    this.#preparedOpenings.set(key, prepared);
-    prepared.catch(() => this.#preparedOpenings.delete(key));
-    for (const oldest of this.#preparedOpenings.keys()) {
-      if (this.#preparedOpenings.size <= PREPARED_OPENINGS) break;
-      this.#preparedOpenings.delete(oldest);
-    }
-    await prepared.catch(() => {});
+  // Prepare a preloaded paragraph's first sentence now, so the paragraph
+  // doesn't open on decode and time-stretch. Preloads come in reading order:
+  // once full, the nearest paragraphs are the ones kept.
+  #prepareAhead(req: SpeechSynthesisRequest, data: ArrayBuffer): void {
+    const player = this.#player;
+    if (!(player instanceof WebAudioPlayer)) return;
+    if (this.#preparedChunks.size >= MAX_PREPARED_CHUNKS) return;
+    const key = this.#preparedKey(req, this.#rate);
+    // A windowed preload can deliver a first sentence only as its paragraph
+    // starts: added then, it would sit after the paragraphs that follow it.
+    if (key === this.#playingParagraphKey || this.#preparedChunks.has(key)) return;
+    // decodeAudioData detaches its input, which may be a cache's own copy.
+    const prepared = this.#prepareChunkBuffer(player, data.slice(0), this.#rate);
+    this.#preparedChunks.set(key, prepared);
+    prepared.catch(() => {
+      if (this.#preparedChunks.get(key) === prepared) this.#preparedChunks.delete(key);
+    });
   }
 
-  #takePreparedOpening(req: SpeechSynthesisRequest, rate: number): Promise<PreparedChunk> | null {
-    const key = this.#openingKey(req, rate);
-    const prepared = this.#preparedOpenings.get(key);
+  // A paragraph's prepared first sentence, used once. Whatever was prepared
+  // before it belongs to paragraphs already passed.
+  #takePrepared(req: SpeechSynthesisRequest, rate: number): Promise<PreparedChunk> | null {
+    const key = this.#preparedKey(req, rate);
+    const prepared = this.#preparedChunks.get(key);
     if (!prepared) return null;
-    this.#preparedOpenings.delete(key);
+    for (const passed of this.#preparedChunks.keys()) {
+      this.#preparedChunks.delete(passed);
+      if (passed === key) break;
+    }
     return prepared;
   }
 
@@ -677,7 +696,12 @@ export class BufferedTTSClient implements TTSClient {
     return true;
   }
 
-  async stop() {
+  async stop(handover = false) {
+    // A handover (the next paragraph starting) keeps what was prepared for it.
+    if (!handover) {
+      this.#preparedChunks.clear();
+      this.#playingParagraphKey = null;
+    }
     await this.stopInternal();
   }
 
@@ -949,7 +973,7 @@ export class BufferedTTSClient implements TTSClient {
 
   async shutdown(): Promise<void> {
     await this.stopInternal();
-    this.#preparedOpenings.clear();
+    this.#preparedChunks.clear();
     await this.#player.shutdown();
     await this.provider.shutdown?.();
     this.initialized = false;
