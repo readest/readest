@@ -82,6 +82,16 @@ export class HardcoverSyncMapStore {
       let row: HardcoverSyncMapRow;
       try {
         row = JSON.parse(raw) as HardcoverSyncMapRow;
+        if (
+          !row ||
+          typeof row.book_hash !== 'string' ||
+          typeof row.note_id !== 'string' ||
+          typeof row.payload_hash !== 'string' ||
+          !Number.isFinite(row.hardcover_journal_id) ||
+          !Number.isFinite(row.synced_at)
+        ) {
+          throw new Error('Invalid legacy Hardcover mapping');
+        }
       } catch (error) {
         console.error('Failed to migrate Hardcover mapping from localStorage:', error);
         window.localStorage.removeItem(key);

@@ -283,7 +283,16 @@ describe('HardcoverSyncMapStore', () => {
     expect(mockDb.execute).toHaveBeenCalledTimes(4);
   });
 
-  test('still discards malformed JSON while migrating other legacy entries', async () => {
+  test.each([
+    '{bad json',
+    'null',
+    '[]',
+    '{}',
+    '42',
+    '"text"',
+    '{"book_hash":"legacy-book","note_id":"bad-note","hardcover_journal_id":"123","payload_hash":"payload","synced_at":1}',
+    '{"book_hash":"legacy-book","note_id":"bad-note","hardcover_journal_id":123,"payload_hash":"payload","synced_at":"yesterday"}',
+  ])('discards invalid legacy data %s while migrating other entries', async (raw) => {
     const errorLog = vi.spyOn(console, 'error').mockImplementation(() => {});
     const badKey = 'hardcover-note-mapping:legacy-book:bad-note';
     const goodKey = 'hardcover-note-mapping:legacy-book:good-note';
@@ -294,7 +303,7 @@ describe('HardcoverSyncMapStore', () => {
       payload_hash: 'payload',
       synced_at: 1,
     };
-    window.localStorage.setItem(badKey, '{bad json');
+    window.localStorage.setItem(badKey, raw);
     window.localStorage.setItem(goodKey, JSON.stringify(row));
     try {
       await store.loadForBook('legacy-book');
@@ -302,6 +311,7 @@ describe('HardcoverSyncMapStore', () => {
       expect(window.localStorage.getItem(badKey)).toBeNull();
       expect(window.localStorage.getItem(goodKey)).toBeNull();
       expect(await store.getMapping('legacy-book', 'good-note')).toEqual(row);
+      expect(mockDb.execute).toHaveBeenCalledTimes(1);
     } finally {
       errorLog.mockRestore();
     }
