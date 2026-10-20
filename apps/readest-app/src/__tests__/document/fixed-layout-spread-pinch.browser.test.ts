@@ -116,6 +116,8 @@ describe('fixed-layout paginated pinch', () => {
     const host = await mount(1000, 600, 'left');
     await host.goToSpread(0, 'right');
     await new Promise((r) => setTimeout(r, 100));
+    // The blank slot keeps its box, so both are laid out.
+    expect(shownPages()).toHaveLength(2);
 
     const { preview, committed } = pinch(host, 2);
     expectSameRects(committed, preview);
