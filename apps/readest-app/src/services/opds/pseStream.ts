@@ -58,11 +58,11 @@ export const createPseStreamPageLoader = (data: PseStreamData) => {
     }
     const authHeader = await authHeaderPromise;
 
-    const fetchURL = useProxy ? getProxiedURL(url, authHeader || '', true, customHeaders) : url;
+    const fetchURL = useProxy ? getProxiedURL(url, true, customHeaders) : url;
     const headers: Record<string, string> = withOriginSuppressed({
       'User-Agent': READEST_OPDS_USER_AGENT,
       ...(!useProxy ? customHeaders : {}),
-      ...(!useProxy && authHeader ? { Authorization: authHeader } : {}),
+      ...(authHeader ? { Authorization: authHeader } : {}),
     });
     const fetch = isTauriAppPlatform() ? tauriFetch : window.fetch;
     const res = await tlsFetch(fetch, fetchURL, { headers }, allowSelfSignedCert);

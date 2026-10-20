@@ -69,7 +69,7 @@ async function downloadAndImport(
   const allowSelfSignedCert = allowsSelfSignedCertAt(catalog, url);
   const useProxy = needsProxy(url);
 
-  let downloadUrl = useProxy ? getProxiedURL(url, '', true, customHeaders) : url;
+  const downloadUrl = useProxy ? getProxiedURL(url, true, customHeaders) : url;
   const headers: Record<string, string> = {
     'User-Agent': READEST_OPDS_USER_AGENT,
     Accept: '*/*',
@@ -86,10 +86,7 @@ async function downloadAndImport(
       allowSelfSignedCert,
     );
     if (authHeader) {
-      if (!useProxy) {
-        headers['Authorization'] = authHeader;
-      }
-      downloadUrl = useProxy ? getProxiedURL(url, authHeader, true, customHeaders) : url;
+      headers['Authorization'] = authHeader;
     }
   }
 
