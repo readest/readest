@@ -10,7 +10,7 @@ import { RiDashboardLine, RiTranslate } from 'react-icons/ri';
 import { VscSymbolColor } from 'react-icons/vsc';
 import { PiDotsThreeVerticalBold, PiRobot, PiSpeakerHigh } from 'react-icons/pi';
 import { LiaHandPointerSolid } from 'react-icons/lia';
-import { IoAccessibilityOutline, IoStatsChart } from 'react-icons/io5';
+import { IoAccessibilityOutline } from 'react-icons/io5';
 import {
   MdArrowBackIosNew,
   MdArrowForwardIos,
@@ -33,7 +33,6 @@ import LangPanel from './LangPanel';
 import MiscPanel from './MiscPanel';
 import AIPanel from './AIPanel';
 import TTSPanel from './TTSPanel';
-import StatsPanel from './StatsPanel';
 
 export type SettingsPanelType =
   | 'Font'
@@ -44,7 +43,6 @@ export type SettingsPanelType =
   | 'Language'
   | 'AI'
   | 'Integrations'
-  | 'Stats'
   | 'Custom';
 export type SettingsPanelPanelProp = {
   bookKey: string;
@@ -121,11 +119,6 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       tab: 'Integrations',
       icon: RiShareLine,
       label: _('Integrations'),
-    },
-    {
-      tab: 'Stats',
-      icon: IoStatsChart,
-      label: _('Stats'),
     },
     {
       tab: 'AI',
@@ -313,7 +306,6 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     Language: null,
     AI: null,
     Integrations: null,
-    Stats: null,
     Custom: null,
   });
 
@@ -348,7 +340,6 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
         language: 'Language',
         ai: 'AI',
         integrations: 'Integrations',
-        stats: 'Stats',
         custom: 'Custom',
       };
       const panelKey = parts[1]?.toLowerCase();
@@ -609,7 +600,6 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
         )}
         {activePanel === 'AI' && <AIPanel />}
         {activePanel === 'Integrations' && <IntegrationsPanel />}
-        {activePanel === 'Stats' && <StatsPanel />}
         {activePanel === 'Custom' && (
           <MiscPanel
             bookKey={bookKey}

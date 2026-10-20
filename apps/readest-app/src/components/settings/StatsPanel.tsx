@@ -1,4 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import clsx from 'clsx';
+import { MdChevronLeft, MdChevronRight } from 'react-icons/md';
 import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
 import { StatisticsDb } from '@/services/statistics/statisticsDb';
@@ -11,6 +13,9 @@ import {
 import { formatReadingTime } from '@/utils/formatReadingTime';
 import { BoxedList, SettingsRow } from './primitives';
 import ReadingHeatmap from './ReadingHeatmap';
+import ReadingTrendsChart from './ReadingTrendsChart';
+
+type StatsTab = 'progress' | 'activities';
 
 // ── Skeleton placeholder ─────────────────────────────────────────────
 
@@ -21,10 +26,10 @@ const SkeletonRow: React.FC = () => (
   </div>
 );
 
-const SkeletonHeatmap: React.FC = () => (
-  <div className='flex flex-col gap-2 p-4'>
+const SkeletonCard: React.FC = () => (
+  <div className='flex flex-col gap-2 p-3 sm:p-4'>
     <div className='bg-base-200 h-4 w-24 animate-pulse rounded' />
-    <div className='bg-base-200 h-[110px] w-full animate-pulse rounded-lg' />
+    <div className='bg-base-200 h-[180px] w-full animate-pulse rounded-lg' />
   </div>
 );
 
@@ -34,6 +39,9 @@ const StatsPanel: React.FC = () => {
   const _ = useTranslation();
   const { appService } = useEnv();
 
+  const [activeTab, setActiveTab] = useState<StatsTab>('progress');
+  const currentYear = new Date().getFullYear();
+  const [selectedYear, setSelectedYear] = useState(currentYear);
   const [loading, setLoading] = useState(true);
   const [streak, setStreak] = useState<StreakInfo | null>(null);
   const [overall, setOverall] = useState<OverallStats | null>(null);
@@ -45,12 +53,19 @@ const StatsPanel: React.FC = () => {
       const statsDb = await StatisticsDb.open(appService);
       const service = new ReadingStatsService(statsDb);
 
-      // Heatmap range: ~52 weeks back from today.
-      const endDate = new Date();
-      const startDate = new Date();
-      startDate.setDate(startDate.getDate() - 365);
-      const startISO = `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, '0')}-${String(startDate.getDate()).padStart(2, '0')}`;
-      const endISO = `${endDate.getFullYear()}-${String(endDate.getMonth() + 1).padStart(2, '0')}-${String(endDate.getDate()).padStart(2, '0')}`;
+      let startISO: string;
+      let endISO: string;
+
+      if (activeTab === 'activities') {
+        startISO = `${selectedYear}-01-01`;
+        endISO = `${selectedYear}-12-31`;
+      } else {
+        const endDate = new Date();
+        const startDate = new Date();
+        startDate.setDate(startDate.getDate() - 365);
+        startISO = `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, '0')}-${String(startDate.getDate()).padStart(2, '0')}`;
+        endISO = `${endDate.getFullYear()}-${String(endDate.getMonth() + 1).padStart(2, '0')}-${String(endDate.getDate()).padStart(2, '0')}`;
+      }
 
       const [streakInfo, overallStats, daily] = await Promise.all([
         service.getStreakInfo(),
@@ -66,7 +81,7 @@ const StatsPanel: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [appService]);
+  }, [appService, selectedYear, activeTab]);
 
   useEffect(() => {
     loadStats();
@@ -75,14 +90,84 @@ const StatsPanel: React.FC = () => {
   // ── Render ──────────────────────────────────────────────────────────
 
   return (
-    <div className='settings-content my-4 w-full space-y-6'>
-      {/* Panel header */}
-      <div className='w-full'>
-        <h2 className='mb-1.5 text-lg font-semibold tracking-tight'>{_('Reading Stats')}</h2>
-        <p className='text-base-content/70 text-sm leading-relaxed'>
-          {_('Track your reading habits and streaks')}
-        </p>
+    <div className='settings-content my-2 w-full space-y-5'>
+      {/* ── Top Tabs: Progress & Activities (like Strava/Fitness UI) ── */}
+      <div className='flex border-b border-base-200 w-full mb-3'>
+        <button
+          type='button'
+          onClick={() => setActiveTab('progress')}
+          className={clsx(
+            'flex-1 pb-2.5 text-center text-sm font-bold transition-colors relative cursor-pointer',
+            activeTab === 'progress'
+              ? 'text-base-content font-bold'
+              : 'text-base-content/50 hover:text-base-content/80',
+          )}
+        >
+          {_('Progress')}
+          {activeTab === 'progress' && (
+            <span className='absolute bottom-0 inset-x-0 h-0.5 bg-primary' />
+          )}
+        </button>
+        <button
+          type='button'
+          onClick={() => setActiveTab('activities')}
+          className={clsx(
+            'flex-1 pb-2.5 text-center text-sm font-bold transition-colors relative cursor-pointer',
+            activeTab === 'activities'
+              ? 'text-base-content font-bold'
+              : 'text-base-content/50 hover:text-base-content/80',
+          )}
+        >
+          {_('Activities')}
+          {activeTab === 'activities' && (
+            <span className='absolute bottom-0 inset-x-0 h-0.5 bg-primary' />
+          )}
+        </button>
       </div>
+
+      {/* ── Tab Content ───────────────────────────────────────────── */}
+      {activeTab === 'progress' ? (
+        <div className='w-full'>
+          <div className='card eink-bordered border-base-200 bg-base-100 border p-3.5 sm:p-5'>
+            {loading ? <SkeletonCard /> : <ReadingTrendsChart data={dailyData} />}
+          </div>
+        </div>
+      ) : (
+        <div className='w-full'>
+          <div className='mb-2 flex items-center justify-between ps-4 pe-2'>
+            <span className='text-base-content/65 text-[0.8em] font-semibold tracking-wider uppercase'>
+              {_('READING ACTIVITY')}
+            </span>
+            <div className='flex items-center gap-1 text-xs'>
+              <button
+                type='button'
+                onClick={() => setSelectedYear((y) => y - 1)}
+                className='btn btn-ghost btn-xs h-6 w-6 min-h-6 p-0 rounded-full'
+                aria-label={_('Previous Year')}
+              >
+                <MdChevronLeft size={16} />
+              </button>
+              <span className='text-base-content/80 font-semibold tabular-nums'>
+                {selectedYear}
+              </span>
+              <button
+                type='button'
+                onClick={() => setSelectedYear((y) => y + 1)}
+                disabled={selectedYear >= currentYear}
+                className='btn btn-ghost btn-xs h-6 w-6 min-h-6 p-0 rounded-full disabled:opacity-30'
+                aria-label={_('Next Year')}
+              >
+                <MdChevronRight size={16} />
+              </button>
+            </div>
+          </div>
+          <div className='card eink-bordered border-base-200 bg-base-100 border'>
+            <div className='p-2.5 sm:p-4'>
+              {loading ? <SkeletonCard /> : <ReadingHeatmap data={dailyData} year={selectedYear} />}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Streak Summary ────────────────────────────────────────── */}
       <BoxedList title={_('STREAK')}>
@@ -105,13 +190,6 @@ const StatsPanel: React.FC = () => {
             </SettingsRow>
           </>
         )}
-      </BoxedList>
-
-      {/* ── Contribution Heatmap ──────────────────────────────────── */}
-      <BoxedList title={_('READING ACTIVITY')} innerClassName='ps-0!'>
-        <div className='p-4'>
-          {loading ? <SkeletonHeatmap /> : <ReadingHeatmap data={dailyData} />}
-        </div>
       </BoxedList>
 
       {/* ── Reading Summary ───────────────────────────────────────── */}

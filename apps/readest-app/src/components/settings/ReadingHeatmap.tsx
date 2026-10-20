@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { formatReadingTime } from '@/utils/formatReadingTime';
 import type { DailyReading } from '@/services/statistics/readingStatsService';
@@ -7,8 +7,8 @@ import type { DailyReading } from '@/services/statistics/readingStatsService';
 interface ReadingHeatmapProps {
   /** Daily reading data for the heatmap range. */
   data: DailyReading[];
-  /** Number of weeks to display. @default 26 on narrow, 52 on wide */
-  weeks?: number;
+  /** Calendar year to display. Defaults to current year. */
+  year?: number;
 }
 
 // ── Intensity levels (GitHub uses 5: 0 = none, 1–4 = quartiles) ────
@@ -25,10 +25,31 @@ const LEVEL_CLASSES: Record<Level, string> = {
 
 const DAY_LABELS = ['', 'M', '', 'W', '', 'F', ''] as const;
 
+interface CellData {
+  date: string;
+  seconds: number;
+  level: Level;
+  dayOfWeek: number;
+  isInHalf: boolean;
+  isFuture: boolean;
+}
+
+interface MonthLabel {
+  label: string;
+  weekIndex: number;
+}
+
+interface HalfYearGrid {
+  weeks: CellData[][];
+  monthLabels: MonthLabel[];
+}
+
 // ── Component ────────────────────────────────────────────────────────
 
-const ReadingHeatmap: React.FC<ReadingHeatmapProps> = ({ data, weeks: weeksProp }) => {
+const ReadingHeatmap: React.FC<ReadingHeatmapProps> = ({ data, year: yearProp }) => {
   const _ = useTranslation();
+  const year = yearProp ?? new Date().getFullYear();
+
   const [tooltip, setTooltip] = useState<{
     x: number;
     y: number;
@@ -36,11 +57,38 @@ const ReadingHeatmap: React.FC<ReadingHeatmapProps> = ({ data, weeks: weeksProp 
     seconds: number;
   } | null>(null);
 
-  // Determine week count based on viewport width if not provided.
-  const weeks = weeksProp ?? (typeof window !== 'undefined' && window.innerWidth < 640 ? 20 : 52);
+  const [isMobile, setIsMobile] = useState(false);
 
-  const { grid, monthLabels } = useMemo(() => {
-    // Build a lookup from date string → total seconds.
+  useEffect(() => {
+    const update = () => {
+      setIsMobile(window.innerWidth < 640);
+    };
+    update();
+    window.addEventListener('resize', update);
+    return () => window.removeEventListener('resize', update);
+  }, []);
+
+  const colWidth = isMobile ? 11 : 15;
+
+  const monthNames = useMemo(
+    () => [
+      _('Jan'),
+      _('Feb'),
+      _('Mar'),
+      _('Apr'),
+      _('May'),
+      _('Jun'),
+      _('Jul'),
+      _('Aug'),
+      _('Sep'),
+      _('Oct'),
+      _('Nov'),
+      _('Dec'),
+    ],
+    [_],
+  );
+
+  const { half1, half2 } = useMemo(() => {
     const readingMap = new Map<string, number>();
     for (const d of data) {
       readingMap.set(d.date, d.totalSeconds);
@@ -60,83 +108,83 @@ const ReadingHeatmap: React.FC<ReadingHeatmapProps> = ({ data, weeks: weeksProp 
       q3: pct(0.75),
     };
 
-    // Build the grid: weeks × 7 days. End date = today (column-last, row = day-of-week).
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const totalDays = weeks * 7;
 
-    // Find the start date: go back (totalDays - 1) days, then align to the
-    // nearest previous Sunday (column start).
-    const start = new Date(today);
-    start.setDate(start.getDate() - (totalDays - 1));
-    // Align to Sunday (day 0).
-    const startDow = start.getDay();
-    start.setDate(start.getDate() - startDow);
+    const buildHalf = (startMonth: number, endMonth: number): HalfYearGrid => {
+      const startDate = new Date(year, startMonth, 1);
+      const isLeapYear = (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
+      const daysInEndMonth = endMonth === 5 ? 30 : endMonth === 1 ? (isLeapYear ? 29 : 28) : 31;
+      const endDate = new Date(year, endMonth, daysInEndMonth);
 
-    // Recount from aligned start to today.
-    const alignedTotalDays =
-      Math.floor((today.getTime() - start.getTime()) / (24 * 60 * 60 * 1000)) + 1;
-    const alignedWeeks = Math.ceil(alignedTotalDays / 7);
+      // Align first week to Sunday.
+      const startAligned = new Date(startDate);
+      startAligned.setDate(startAligned.getDate() - startAligned.getDay());
 
-    const gridData: {
-      date: string;
-      seconds: number;
-      level: Level;
-      dayOfWeek: number;
-      weekIndex: number;
-      isInRange: boolean;
-    }[][] = [];
+      // Align last week to Saturday.
+      const endAligned = new Date(endDate);
+      endAligned.setDate(endAligned.getDate() + (6 - endAligned.getDay()));
 
-    const months: { label: string; weekIndex: number }[] = [];
-    const monthNames = [
-      _('Jan'),
-      _('Feb'),
-      _('Mar'),
-      _('Apr'),
-      _('May'),
-      _('Jun'),
-      _('Jul'),
-      _('Aug'),
-      _('Sep'),
-      _('Oct'),
-      _('Nov'),
-      _('Dec'),
-    ];
-    let lastMonth = -1;
+      const totalDays =
+        Math.round((endAligned.getTime() - startAligned.getTime()) / (24 * 60 * 60 * 1000)) + 1;
+      const numWeeks = Math.ceil(totalDays / 7);
 
-    for (let w = 0; w < alignedWeeks; w++) {
-      const week: (typeof gridData)[number] = [];
-      for (let d = 0; d < 7; d++) {
-        const cellDate = new Date(start);
-        cellDate.setDate(start.getDate() + w * 7 + d);
+      const weeks: CellData[][] = [];
+      const monthLabels: MonthLabel[] = [];
+      let lastMonthAdded = -1;
 
-        const iso = `${cellDate.getFullYear()}-${String(cellDate.getMonth() + 1).padStart(2, '0')}-${String(cellDate.getDate()).padStart(2, '0')}`;
-        const seconds = readingMap.get(iso) ?? 0;
-        const isInRange = cellDate <= today;
+      for (let w = 0; w < numWeeks; w++) {
+        const week: CellData[] = [];
+        for (let d = 0; d < 7; d++) {
+          const cellDate = new Date(startAligned);
+          cellDate.setDate(startAligned.getDate() + w * 7 + d);
 
-        // Determine level.
-        let level: Level = 0;
-        if (seconds > 0 && isInRange) {
-          if (seconds >= t.q3) level = 4;
-          else if (seconds >= t.q2) level = 3;
-          else if (seconds >= t.q1) level = 2;
-          else level = 1;
+          const isInHalf =
+            cellDate.getFullYear() === year &&
+            cellDate.getMonth() >= startMonth &&
+            cellDate.getMonth() <= endMonth;
+          const isFuture = cellDate > today;
+
+          const iso = `${cellDate.getFullYear()}-${String(cellDate.getMonth() + 1).padStart(2, '0')}-${String(cellDate.getDate()).padStart(2, '0')}`;
+          const seconds = readingMap.get(iso) ?? 0;
+
+          let level: Level = 0;
+          if (isInHalf && !isFuture && seconds > 0) {
+            if (seconds >= t.q3) level = 4;
+            else if (seconds >= t.q2) level = 3;
+            else if (seconds >= t.q1) level = 2;
+            else level = 1;
+          }
+
+          week.push({
+            date: iso,
+            seconds,
+            level,
+            dayOfWeek: d,
+            isInHalf,
+            isFuture,
+          });
+
+          // Check for month label placement.
+          if (isInHalf) {
+            const m = cellDate.getMonth();
+            if (m !== lastMonthAdded) {
+              monthLabels.push({ label: monthNames[m]!, weekIndex: w });
+              lastMonthAdded = m;
+            }
+          }
         }
-
-        week.push({ date: iso, seconds, level, dayOfWeek: d, weekIndex: w, isInRange });
-
-        // Track month labels (first cell of each new month).
-        const month = cellDate.getMonth();
-        if (d === 0 && month !== lastMonth && isInRange) {
-          months.push({ label: monthNames[month]!, weekIndex: w });
-          lastMonth = month;
-        }
+        weeks.push(week);
       }
-      gridData.push(week);
-    }
 
-    return { grid: gridData, monthLabels: months };
-  }, [data, weeks, _]);
+      return { weeks, monthLabels };
+    };
+
+    return {
+      half1: buildHalf(0, 5), // Jan - Jun
+      half2: buildHalf(6, 11), // Jul - Dec
+    };
+  }, [data, year, monthNames]);
 
   const handleCellInteraction = (
     e: React.MouseEvent | React.TouchEvent,
@@ -156,7 +204,95 @@ const ReadingHeatmap: React.FC<ReadingHeatmapProps> = ({ data, weeks: weeksProp 
 
   const formatDate = (iso: string) => {
     const d = new Date(`${iso}T00:00:00`);
-    return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+    return d.toLocaleDateString(undefined, {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    });
+  };
+
+  const renderHalfGrid = (half: HalfYearGrid, ariaTitle: string) => {
+    return (
+      <div className='w-full overflow-x-auto scrollbar-none'>
+        {/* Month labels */}
+        <div
+          className='flex text-[0.65em] sm:text-[0.7em] text-base-content/50 mb-1'
+          style={{ paddingInlineStart: isMobile ? '20px' : '24px' }}
+        >
+          {half.monthLabels.map((m, i) => (
+            <span
+              key={`${m.label}-${i}`}
+              className='shrink-0'
+              style={{
+                width:
+                  i < half.monthLabels.length - 1
+                    ? `${((half.monthLabels[i + 1]?.weekIndex ?? half.weeks.length) - m.weekIndex) * colWidth}px`
+                    : 'auto',
+              }}
+            >
+              {m.label}
+            </span>
+          ))}
+        </div>
+
+        <div className='flex gap-[2px]' aria-label={ariaTitle}>
+          {/* Day-of-week labels */}
+          <div className='flex flex-col gap-[2px] pe-0.5 text-[0.6em] sm:text-[0.65em] text-base-content/50'>
+            {DAY_LABELS.map((label, i) => (
+              <div
+                key={i}
+                className='flex h-[9px] w-[18px] sm:h-[13px] sm:w-[22px] items-center justify-end'
+              >
+                {label}
+              </div>
+            ))}
+          </div>
+
+          {/* Grid of cells */}
+          <div className='flex gap-[2px]'>
+            {half.weeks.map((week, wi) => (
+              <div key={wi} className='flex flex-col gap-[2px]'>
+                {week.map((cell) => {
+                  if (!cell.isInHalf) {
+                    return (
+                      <div
+                        key={cell.date}
+                        className='h-[9px] w-[9px] sm:h-[13px] sm:w-[13px] invisible'
+                        aria-hidden='true'
+                      />
+                    );
+                  }
+
+                  if (cell.isFuture) {
+                    return (
+                      <div
+                        key={cell.date}
+                        className='h-[9px] w-[9px] sm:h-[13px] sm:w-[13px] rounded-[2px] bg-base-200/40 opacity-40'
+                        aria-hidden='true'
+                      />
+                    );
+                  }
+
+                  return (
+                    <div
+                      key={cell.date}
+                      className={clsx(
+                        'h-[9px] w-[9px] sm:h-[13px] sm:w-[13px] rounded-[2px] cursor-pointer transition-colors duration-150',
+                        LEVEL_CLASSES[cell.level],
+                      )}
+                      onMouseEnter={(e) => handleCellInteraction(e, cell.date, cell.seconds)}
+                      onTouchStart={(e) => handleCellInteraction(e, cell.date, cell.seconds)}
+                      aria-label={`${formatDate(cell.date)}: ${formatReadingTime(cell.seconds)}`}
+                    />
+                  );
+                })}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -166,76 +302,24 @@ const ReadingHeatmap: React.FC<ReadingHeatmapProps> = ({ data, weeks: weeksProp 
       role='img'
       aria-label={_('Reading activity heatmap')}
     >
-      {/* Month labels */}
-      <div
-        className='flex text-[0.7em] text-base-content/50 mb-1'
-        style={{ paddingInlineStart: '28px' }}
-      >
-        {monthLabels.map((m, i) => (
-          <span
-            key={`${m.label}-${i}`}
-            className='shrink-0'
-            style={{
-              // Position each month label at its week column.
-              // Cell size ≈ 13px + 2px gap = 15px per column.
-              width:
-                i < monthLabels.length - 1
-                  ? `${((monthLabels[i + 1]?.weekIndex ?? grid.length) - m.weekIndex) * 15}px`
-                  : 'auto',
-            }}
-          >
-            {m.label}
-          </span>
-        ))}
-      </div>
+      <div className='flex flex-col gap-3 sm:gap-4'>
+        {/* Top: January to June */}
+        {renderHalfGrid(half1, _('January to June'))}
 
-      <div className='flex gap-0.5'>
-        {/* Day-of-week labels */}
-        <div className='flex flex-col gap-0.5 pe-1 text-[0.65em] text-base-content/50'>
-          {DAY_LABELS.map((label, i) => (
-            <div key={i} className='flex h-[13px] w-[20px] items-center justify-end'>
-              {label}
-            </div>
-          ))}
-        </div>
-
-        {/* Grid of cells */}
-        <div className='flex gap-0.5 overflow-hidden'>
-          {grid.map((week, wi) => (
-            <div key={wi} className='flex flex-col gap-0.5'>
-              {week.map((cell) => (
-                <div
-                  key={cell.date}
-                  className={clsx(
-                    'h-[13px] w-[13px] rounded-[2px] transition-colors duration-150',
-                    cell.isInRange ? LEVEL_CLASSES[cell.level] : 'bg-transparent',
-                    cell.isInRange && 'cursor-pointer',
-                  )}
-                  onMouseEnter={(e) =>
-                    cell.isInRange && handleCellInteraction(e, cell.date, cell.seconds)
-                  }
-                  onTouchStart={(e) =>
-                    cell.isInRange && handleCellInteraction(e, cell.date, cell.seconds)
-                  }
-                  aria-label={
-                    cell.isInRange
-                      ? `${formatDate(cell.date)}: ${formatReadingTime(cell.seconds)}`
-                      : undefined
-                  }
-                />
-              ))}
-            </div>
-          ))}
-        </div>
+        {/* Next: July to December */}
+        {renderHalfGrid(half2, _('July to December'))}
       </div>
 
       {/* Legend */}
-      <div className='mt-2 flex items-center justify-end gap-1 text-[0.65em] text-base-content/50'>
+      <div className='mt-2.5 flex items-center justify-end gap-1 text-[0.65em] text-base-content/50'>
         <span>{_('Less')}</span>
         {([0, 1, 2, 3, 4] as Level[]).map((level) => (
           <div
             key={level}
-            className={clsx('h-[11px] w-[11px] rounded-[2px]', LEVEL_CLASSES[level])}
+            className={clsx(
+              'h-[9px] w-[9px] sm:h-[11px] sm:w-[11px] rounded-[2px]',
+              LEVEL_CLASSES[level],
+            )}
           />
         ))}
         <span>{_('More')}</span>

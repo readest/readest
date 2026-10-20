@@ -8,6 +8,8 @@ import { MdCloudSync, MdSync, MdSyncProblem, MdOutlineSensors } from 'react-icon
 import { useAppRouter } from '@/hooks/useAppRouter';
 import { isTauriAppPlatform, isWebAppPlatform } from '@/services/environment';
 import { DOWNLOAD_READEST_URL } from '@/services/constants';
+import { IoStatsChart } from 'react-icons/io5';
+import { setReadingStatsDialogVisible } from '@/components/ReadingStatsDialog';
 import { setBackupDialogVisible } from '@/app/library/components/BackupWindow';
 import { setCacheManagerDialogVisible } from '@/app/library/components/CacheManagerWindow';
 import { useAuth } from '@/context/AuthContext';
@@ -222,6 +224,11 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
     }
   };
 
+  const openReadingStats = () => {
+    setIsDropdownOpen?.(false);
+    setReadingStatsDialogVisible(true);
+  };
+
   const openSettingsDialog = () => {
     setIsDropdownOpen?.(false);
     setSettingsDialogOpen(true);
@@ -413,6 +420,7 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
         }
         onClick={cycleThemeMode}
       />
+      <MenuItem label={_('Reading Stats')} Icon={IoStatsChart} onClick={openReadingStats} />
       <MenuItem label={_('Settings')} Icon={PiGear} onClick={openSettingsDialog} />
       <hr aria-hidden='true' className='border-base-200 my-1' />
       <MenuItem label={_('Advanced Settings')}>
