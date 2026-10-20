@@ -307,20 +307,15 @@ pub async fn download_file<R: tauri::Runtime>(
     const PART_SIZE: u64 = 1024 * 1024;
 
     let relaxed = skip_ssl_verification.unwrap_or(false);
-    let client = if relaxed {
-        reqwest::ClientBuilder::new()
-            .danger_accept_invalid_certs(true)
-            .danger_accept_invalid_hostnames(true)
-            .redirect(same_origin_redirects(url))
-            .build()?
-    } else {
-        reqwest::Client::new()
-    };
-    let verified = if relaxed {
-        Some(reqwest::Client::new())
-    } else {
-        None
-    };
+    let mut builder = reqwest::ClientBuilder::new()
+        .danger_accept_invalid_certs(relaxed)
+        .danger_accept_invalid_hostnames(relaxed);
+    let mut verified = None;
+    if relaxed {
+        builder = builder.redirect(same_origin_redirects(url));
+        verified = Some(reqwest::Client::new());
+    }
+    let client = builder.build()?;
     let force_single = single_threaded.unwrap_or(false);
 
     async fn single_threaded_download(
