@@ -194,22 +194,6 @@ pub struct ProgressPayload {
     transfer_speed: u64,
 }
 
-/// Redirect policy for a client that accepts invalid certificates: it follows
-/// hops within the origin the user allowed and stops at the first hop off it,
-/// which `send` continues on a verified client.
-fn same_origin_redirects(url: &str) -> reqwest::redirect::Policy {
-    let origin = reqwest::Url::parse(url).ok().map(|url| url.origin());
-    reqwest::redirect::Policy::custom(move |attempt| {
-        if attempt.previous().len() > 10 {
-            attempt.error("too many redirects")
-        } else if Some(attempt.url().origin()) == origin {
-            attempt.follow()
-        } else {
-            attempt.stop()
-        }
-    })
-}
-
 fn request(
     client: &reqwest::Client,
     url: &str,
@@ -227,9 +211,10 @@ fn request(
 }
 
 /// Sends a request through `client`. With `verified` (the request accepts
-/// invalid certificates), a redirect off the origin is followed on the
-/// verified client and without credentials, as reqwest does for any
-/// cross-host redirect.
+/// invalid certificates and `client` follows no redirects), redirects are
+/// followed here hop by hop: hops within the origin stay on `client`, and the
+/// first hop to another origin continues on the verified client without
+/// credentials, as reqwest does for any cross-host redirect.
 async fn send(
     client: &reqwest::Client,
     verified: Option<&reqwest::Client>,
@@ -239,50 +224,57 @@ async fn send(
 ) -> Result<reqwest::Response> {
     use reqwest::StatusCode;
 
-    let response = request(client, url, body, headers).send().await?;
-    let status = response.status();
     let Some(verified) = verified else {
-        return Ok(response);
+        return Ok(request(client, url, body, headers).send().await?);
     };
-    if !matches!(
-        status,
-        StatusCode::MOVED_PERMANENTLY
-            | StatusCode::FOUND
-            | StatusCode::SEE_OTHER
-            | StatusCode::TEMPORARY_REDIRECT
-            | StatusCode::PERMANENT_REDIRECT
-    ) {
-        return Ok(response);
-    }
-    let Some(next) = response
-        .headers()
-        .get(reqwest::header::LOCATION)
-        .and_then(|location| location.to_str().ok())
-        .and_then(|location| response.url().join(location).ok())
-    else {
-        return Ok(response);
-    };
-    let keeps_body = matches!(
-        status,
-        StatusCode::TEMPORARY_REDIRECT | StatusCode::PERMANENT_REDIRECT
-    );
-    let headers: HashMap<String, String> = headers
-        .iter()
-        .filter(|(key, _)| {
-            !["authorization", "cookie", "proxy-authorization"]
+    let start = reqwest::Url::parse(url).map_err(|e| Error::ContentLength(e.to_string()))?;
+    let mut url = start.clone();
+    // A request is a POST exactly when it carries a body (see `request`).
+    let mut body = body;
+    for _ in 0..=10 {
+        let response = request(client, url.as_str(), body, headers).send().await?;
+        let status = response.status();
+        if !matches!(
+            status,
+            StatusCode::MOVED_PERMANENTLY
+                | StatusCode::FOUND
+                | StatusCode::SEE_OTHER
+                | StatusCode::TEMPORARY_REDIRECT
+                | StatusCode::PERMANENT_REDIRECT
+        ) {
+            return Ok(response);
+        }
+        let Some(next) = response
+            .headers()
+            .get(reqwest::header::LOCATION)
+            .and_then(|location| location.to_str().ok())
+            .and_then(|location| url.join(location).ok())
+        else {
+            return Ok(response);
+        };
+        if !matches!(
+            status,
+            StatusCode::TEMPORARY_REDIRECT | StatusCode::PERMANENT_REDIRECT
+        ) {
+            body = None;
+        }
+        url = next;
+        if url.origin() != start.origin() {
+            let headers: HashMap<String, String> = headers
                 .iter()
-                .any(|name| key.eq_ignore_ascii_case(name))
-        })
-        .map(|(key, value)| (key.clone(), value.clone()))
-        .collect();
-    Ok(request(
-        verified,
-        next.as_str(),
-        body.filter(|_| keeps_body),
-        &headers,
-    )
-    .send()
-    .await?)
+                .filter(|(key, _)| {
+                    !["authorization", "cookie", "proxy-authorization"]
+                        .iter()
+                        .any(|name| key.eq_ignore_ascii_case(name))
+                })
+                .map(|(key, value)| (key.clone(), value.clone()))
+                .collect();
+            return Ok(request(verified, url.as_str(), body, &headers)
+                .send()
+                .await?);
+        }
+    }
+    Err(Error::ContentLength("too many redirects".into()))
 }
 
 #[command]
@@ -312,7 +304,7 @@ pub async fn download_file<R: tauri::Runtime>(
         .danger_accept_invalid_hostnames(relaxed);
     let mut verified = None;
     if relaxed {
-        builder = builder.redirect(same_origin_redirects(url));
+        builder = builder.redirect(reqwest::redirect::Policy::none());
         verified = Some(reqwest::Client::new());
     }
     let client = builder.build()?;
@@ -538,7 +530,7 @@ fn file_to_body(channel: Channel<ProgressPayload>, file: File, file_len: u64) ->
 mod tests {
     use super::{
         has_disallowed_components, is_within_app_storage, is_within_data_dir, resolve_path,
-        resolve_request, same_origin_redirects, send,
+        resolve_request, send,
     };
     use std::collections::HashMap;
     use std::path::{Path, PathBuf};
@@ -656,27 +648,36 @@ mod tests {
         ));
     }
 
-    #[tokio::test]
-    async fn relaxed_download_verifies_a_redirect_to_another_origin() {
+    /// Serves one response per connection on 127.0.0.1 and returns the
+    /// requests it received, lowercased.
+    async fn serve(
+        responses: impl FnOnce(u16) -> Vec<String> + Send + 'static,
+    ) -> (u16, tokio::task::JoinHandle<Vec<String>>) {
         let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
         let port = listener.local_addr().unwrap().port();
         let server = tokio::spawn(async move {
             let mut requests = Vec::new();
-            for step in 0..3 {
+            for response in responses(port) {
                 let (mut stream, _) = listener.accept().await.unwrap();
                 let mut bytes = vec![0; 4096];
                 let count = stream.read(&mut bytes).await.unwrap();
                 requests.push(String::from_utf8_lossy(&bytes[..count]).to_lowercase());
-                let response = match step {
-                    0 => "HTTP/1.1 302 Found\r\nLocation: /moved\r\nContent-Length: 0\r\nConnection: close\r\n\r\n".to_string(),
-                    1 => format!("HTTP/1.1 302 Found\r\nLocation: http://cdn.example.org:{port}/book\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"),
-                    _ => "HTTP/1.1 200 OK\r\nContent-Length: 4\r\nConnection: close\r\n\r\nbook".to_string(),
-                };
                 stream.write_all(response.as_bytes()).await.unwrap();
             }
             requests
         });
-        let url = format!("http://books.example.org:{port}/get");
+        (port, server)
+    }
+
+    fn redirect(status: &str, location: &str) -> String {
+        format!("HTTP/1.1 {status}\r\nLocation: {location}\r\nContent-Length: 0\r\nConnection: close\r\n\r\n")
+    }
+
+    const BOOK: &str = "HTTP/1.1 200 OK\r\nContent-Length: 4\r\nConnection: close\r\n\r\nbook";
+
+    /// The download's relaxed and verified clients, told apart by user agent,
+    /// with books.example.org and cdn.example.org both on the test server.
+    fn clients(port: u16) -> (reqwest::Client, reqwest::Client) {
         let client = |agent: &str| {
             reqwest::Client::builder()
                 .resolve("books.example.org", ([127, 0, 0, 1], port).into())
@@ -684,11 +685,27 @@ mod tests {
                 .no_proxy()
                 .user_agent(agent)
         };
-        let relaxed = client("relaxed")
-            .redirect(same_origin_redirects(&url))
-            .build()
-            .unwrap();
-        let verified = client("verified").build().unwrap();
+        (
+            client("relaxed")
+                .redirect(reqwest::redirect::Policy::none())
+                .build()
+                .unwrap(),
+            client("verified").build().unwrap(),
+        )
+    }
+
+    #[tokio::test]
+    async fn relaxed_download_verifies_a_redirect_to_another_origin() {
+        let (port, server) = serve(|port| {
+            vec![
+                redirect("302 Found", "/moved"),
+                redirect("302 Found", &format!("http://cdn.example.org:{port}/book")),
+                BOOK.to_string(),
+            ]
+        })
+        .await;
+        let url = format!("http://books.example.org:{port}/get");
+        let (relaxed, verified) = clients(port);
         let headers = HashMap::from([
             ("Authorization".to_string(), "Basic dTpw".to_string()),
             ("X-Device".to_string(), "reader".to_string()),
@@ -714,5 +731,40 @@ mod tests {
         );
         assert!(!requests[2].contains("authorization:"));
         assert!(requests[2].contains("x-device: reader"));
+    }
+
+    #[tokio::test]
+    async fn relaxed_download_keeps_a_post_turned_get_across_origins() {
+        let (port, server) = serve(|port| {
+            vec![
+                redirect("303 See Other", "/done"),
+                redirect(
+                    "307 Temporary Redirect",
+                    &format!("http://cdn.example.org:{port}/book"),
+                ),
+                BOOK.to_string(),
+            ]
+        })
+        .await;
+        let url = format!("http://books.example.org:{port}/export");
+        let (relaxed, verified) = clients(port);
+        let body = "{\"token\":\"secret\"}".to_string();
+
+        let response = send(
+            &relaxed,
+            Some(&verified),
+            &url,
+            Some(&body),
+            &HashMap::new(),
+        )
+        .await
+        .unwrap();
+
+        assert_eq!(response.text().await.unwrap(), "book");
+        let requests = server.await.unwrap();
+        assert!(requests[0].starts_with("post /export "));
+        assert!(requests[1].starts_with("get /done "));
+        assert!(requests[2].starts_with("get /book "), "{}", requests[2]);
+        assert!(!requests[2].contains("secret"));
     }
 }
