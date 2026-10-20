@@ -966,14 +966,6 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
         }
       }
 
-      const primaryLang =
-        bookData.book.format === 'PDF'
-          ? getPDFSpeechLang(
-              bookData.book.primaryLanguage,
-              currentSection?.doc.body?.textContent || '',
-            )
-          : bookData.book.primaryLanguage;
-
       if (ttsControllerRef.current) {
         ttsControllerRef.current.stop();
         ttsControllerRef.current = null;
@@ -1054,6 +1046,14 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
           void ttsController.shutdown();
           return;
         }
+        const speechSection = view.renderer.getContents().find((x) => x.index === ttsFromIndex);
+        const primaryLang =
+          bookData.book.format === 'PDF'
+            ? getPDFSpeechLang(
+                bookData.book.primaryLanguage,
+                speechSection?.doc.body?.textContent || '',
+              )
+            : bookData.book.primaryLanguage;
         ttsController.sentenceTint = !viewSettings.isEink;
         ttsController.updateHighlightOptions(
           getTTSHighlightOptions(
