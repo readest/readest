@@ -268,10 +268,13 @@ describe('PDF raster maps 1:1 onto device pixels (#6928)', () => {
   it('keeps the CSS box at the display size when a phone clamps the render dpr', async () => {
     // Android at dpr 2.625 renders at MAX_RENDER_DPR, so the bitmap can't map
     // 1:1 onto the screen anyway; the box stays the page box.
-    const { canvas, displayW } = await renderPageCanvas(2.625, zoom, {
+    const { canvas, displayW, renderDpr } = await renderPageCanvas(2.625, zoom, {
       userAgent: 'Mozilla/5.0 (Linux; Android 16) AppleWebKit/537.36 Mobile Safari/537.36',
       maxTouchPoints: 5,
     });
+    expect(renderDpr).toBeCloseTo(MAX_RENDER_DPR, 2);
+    expect(canvas.width).toBe(Math.floor(PAGE_W * zoom * MAX_RENDER_DPR));
+    expect(canvas.height).toBe(Math.floor(PAGE_H * zoom * MAX_RENDER_DPR));
     expect(displayW).toBeCloseTo(PAGE_W * zoom, 6);
     expect(parseFloat(canvas.style.height)).toBeCloseTo(PAGE_H * zoom, 6);
   });
