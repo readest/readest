@@ -2543,5 +2543,6 @@
   "Expressive": "แสดงอารมณ์",
   "Show Page Thumbnails": "แสดงภาพขนาดย่อของหน้า",
   "Allow Self-Signed Certificate": "อนุญาตใบรับรองที่ลงนามด้วยตนเอง",
-  "Skips certificate checks for this server. Turn it off if the server has a valid certificate": "ข้ามการตรวจสอบใบรับรองของเซิร์ฟเวอร์นี้ ปิดตัวเลือกนี้หากเซิร์ฟเวอร์มีใบรับรองที่ถูกต้อง"
+  "Skips certificate checks for this server. Turn it off if the server has a valid certificate": "ข้ามการตรวจสอบใบรับรองของเซิร์ฟเวอร์นี้ ปิดตัวเลือกนี้หากเซิร์ฟเวอร์มีใบรับรองที่ถูกต้อง",
+  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "การเปลี่ยนแปลงบางส่วนไม่ได้ซิงค์เพราะนาฬิกาของอุปกรณ์นี้ไม่ตรง ตั้งวันที่และเวลาเป็นอัตโนมัติ แล้วลองอีกครั้ง"
 }

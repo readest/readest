@@ -2608,5 +2608,6 @@
   "Expressive": "رسا",
   "Show Page Thumbnails": "نمایش تصاویر کوچک صفحات",
   "Allow Self-Signed Certificate": "اجازه به گواهی خودامضا",
-  "Skips certificate checks for this server. Turn it off if the server has a valid certificate": "بررسی گواهی این سرور را نادیده می‌گیرد. اگر سرور گواهی معتبر دارد، آن را خاموش کنید"
+  "Skips certificate checks for this server. Turn it off if the server has a valid certificate": "بررسی گواهی این سرور را نادیده می‌گیرد. اگر سرور گواهی معتبر دارد، آن را خاموش کنید",
+  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "برخی تغییرات همگام‌سازی نشدند، چون ساعت این دستگاه درست نیست. تاریخ و زمان را روی تنظیم خودکار بگذارید و دوباره امتحان کنید."
 }

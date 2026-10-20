@@ -1,7 +1,10 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { HlcGenerator, hlcPack } from '@/libs/crdt';
 import { SyncError } from '@/libs/errors';
-import { ReplicaSyncManager } from '@/services/sync/replicaSyncManager';
+import {
+  ReplicaSyncManager,
+  type ReplicaSyncManagerOpts,
+} from '@/services/sync/replicaSyncManager';
 import type { Hlc, ReplicaRow } from '@/types/replica';
 
 const NOW = 1_700_000_000_000;
@@ -29,7 +32,10 @@ const makeFakeClient = () => ({
   ),
 });
 
-const makeManager = (clientOverrides: Partial<ReturnType<typeof makeFakeClient>> = {}) => {
+const makeManager = (
+  clientOverrides: Partial<ReturnType<typeof makeFakeClient>> = {},
+  opts: Partial<ReplicaSyncManagerOpts> = {},
+) => {
   const client = { ...makeFakeClient(), ...clientOverrides };
   const hlc = new HlcGenerator(DEV, () => NOW);
   const cursors = new Map<string, Hlc>();
@@ -43,6 +49,7 @@ const makeManager = (clientOverrides: Partial<ReturnType<typeof makeFakeClient>>
         cursors.set(k, v);
       },
     },
+    ...opts,
   });
   return { manager, client, hlc, cursors };
 };
@@ -320,6 +327,39 @@ describe('ReplicaSyncManager.markDirty + flush', () => {
     manager.markDirty({ ...bad });
     await manager.flush();
     expect(client.push.mock.calls[0]![0]!.map((r) => r.replica_id)).toEqual(['bad']);
+  });
+
+  // #6881: with the device clock a few minutes off, every bookshelf, font,
+  // dictionary and settings change was refused and dropped without a word.
+  test('reports clock-skew rejections once per push, and nothing else', async () => {
+    const client = {
+      ...makeFakeClient(),
+      push: vi.fn(async (rows: ReplicaRow[]): Promise<ReplicaRow[]> => {
+        if (rows.some((r) => r.replica_id.startsWith('skewed'))) {
+          throw new SyncError('CLOCK_SKEW', 'row timestamp too far from server time', {
+            status: 409,
+          });
+        }
+        if (rows.some((r) => r.replica_id === 'invalid')) {
+          throw new SyncError('VALIDATION', 'rows[0] is invalid', { status: 400 });
+        }
+        return rows;
+      }),
+    };
+    const onClockSkew = vi.fn();
+    const { manager } = makeManager(client, { onClockSkew });
+    manager.markDirty(makeRow('skewed-1'));
+    manager.markDirty(makeRow('skewed-2'));
+    manager.markDirty(makeRow('good'));
+
+    await manager.flush();
+    expect(onClockSkew).toHaveBeenCalledOnce();
+
+    // A refusal for any other reason doesn't blame the clock.
+    onClockSkew.mockClear();
+    manager.markDirty(makeRow('invalid'));
+    await manager.flush();
+    expect(onClockSkew).not.toHaveBeenCalled();
   });
 
   test('VALIDATION on a multi-row kind retries row by row so the good rows land', async () => {
