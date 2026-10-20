@@ -1,5 +1,6 @@
 { stdenv
 , version ? "0.0.0-git"
+, callPackage
 , rustPlatform
 , pnpm_11
 , fetchPnpmDeps
@@ -21,29 +22,11 @@
 , gst_all_1
 , fetchurl
 , runCommand
-  # Runtime dependencies of the CEF distribution (libcef.so and the ANGLE
-  # libraries), resolved by autoPatchelfHook.
-, nss
-, nspr
-, at-spi2-core
-, dbus
-, cups
-, expat
-, alsa-lib
-, libgbm
-, libxkbcommon
-, udev
-, libx11
-, libxcomposite
-, libxdamage
-, libxext
-, libxfixes
-, libxrandr
-, libxcb
-, libxcursor
-, libxi
 ,
 }:
+let
+  linuxDependencies = callPackage ./dependencies.nix { };
+in
 rustPlatform.buildRustPackage (finalAttrs: {
   inherit version;
   pname = "readest";
@@ -72,11 +55,11 @@ rustPlatform.buildRustPackage (finalAttrs: {
       };
     in
     # Linux builds on the CEF runtime, like `pnpm tauri build` on Linux
-    # (apps/readest-app/scripts/tauri.mjs): the CEF dependency graph is pinned
-    # in Cargo.cef.lock, and src-tauri/.cargo/cef.toml holds the Linux-only
-    # `[patch.crates-io]` that takes tauri and its plugins from the feat/cef
-    # branches. Cargo only reads a file named config.toml, so both are put in
-    # place here, where cargoDeps (fetchCargoVendor) and the build see them.
+      # (apps/readest-app/scripts/tauri.mjs): the CEF dependency graph is pinned
+      # in Cargo.cef.lock, and src-tauri/.cargo/cef.toml holds the Linux-only
+      # `[patch.crates-io]` that takes tauri and its plugins from the feat/cef
+      # branches. Cargo only reads a file named config.toml, so both are put in
+      # place here, where cargoDeps (fetchCargoVendor) and the build see them.
     runCommand "readest-source" { } ''
       cp -r ${tree} $out
       chmod -R u+w $out
@@ -145,16 +128,9 @@ rustPlatform.buildRustPackage (finalAttrs: {
   # Rust unit tests run in the pull-request workflow (`pnpm test:rust`).
   doCheck = false;
 
-  # winit's X11 backend dlopens Xlib, Xcursor, Xi, Xrandr and xkbcommon at run
-  # time (x11-dl, xkbcommon-dl), which autoPatchelf cannot see; put them on
-  # the RUNPATH so dlopen finds them.
-  runtimeDependencies = [
-    libx11
-    libxcursor
-    libxi
-    libxrandr
-    libxkbcommon
-  ];
+  # The shared X11 list includes dlopen dependencies that autoPatchelf cannot
+  # discover; put them on the RUNPATH so they are available at run time.
+  runtimeDependencies = linuxDependencies.x11;
 
   postPatch = ''
     substituteInPlace src-tauri/tauri.conf.json \
@@ -198,24 +174,7 @@ rustPlatform.buildRustPackage (finalAttrs: {
     librsvg
     openssl
     glib-networking
-    # libcef.so
-    nss
-    nspr
-    at-spi2-core
-    dbus
-    cups
-    expat
-    alsa-lib
-    libgbm
-    libxkbcommon
-    udev
-    libx11
-    libxcomposite
-    libxdamage
-    libxext
-    libxfixes
-    libxrandr
-    libxcb
+  ] ++ linuxDependencies.cef ++ [
     # TTS
     gst_all_1.gstreamer
     gst_all_1.gst-plugins-base
