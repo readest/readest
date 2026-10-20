@@ -128,6 +128,25 @@ describe('useTouchEvent pinch vs two-finger scroll', () => {
     expect(dispatched![1].zoomLevel).toBeGreaterThan(100);
   });
 
+  test('clamps the live pinch preview to the maximum zoom level', () => {
+    const h = renderTouchHook();
+    // 100px apart at 100% zoom.
+    h.current.onTouchStart(touchEvent([touch(150, 300), touch(250, 300)], 0));
+    // First move confirms the pinch and re-baselines separation to 160px.
+    h.current.onTouchMove(touchEvent([touch(120, 300), touch(280, 300)], 16));
+    // Then spread to 1440px — a raw 9x ratio, well past the 500% cap.
+    h.current.onTouchMove(touchEvent([touch(-520, 300), touch(920, 300)], 32));
+    h.current.onTouchEnd(touchEvent([], 48));
+
+    // Every preview frame stays at or below the cap (500 / 100 = 5x).
+    for (const call of pinchZoom.mock.calls) {
+      expect(call[0]).toBeLessThanOrEqual(5);
+    }
+    expect(pinchZoom.mock.calls.at(-1)![0]).toBeCloseTo(5);
+    const dispatched = mocks.dispatch.mock.calls.find((c) => c[0] === 'pinch-zoom');
+    expect(dispatched![1].zoomLevel).toBe(500);
+  });
+
   test('tiny finger jitter below the deadzone does not zoom', () => {
     const h = renderTouchHook();
     h.current.onTouchStart(touchEvent([touch(150, 300), touch(250, 300)], 0));
