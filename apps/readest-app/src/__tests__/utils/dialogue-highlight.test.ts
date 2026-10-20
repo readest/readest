@@ -381,6 +381,44 @@ describe('manageDialogueHighlight', () => {
     expect(spans).toEqual(['‘I don’t know,’', '‘It’s fine.’']);
   });
 
+  it('keeps a word-final apostrophe inside single-quoted dialogue', () => {
+    const doc = makeDoc(
+      `<p>‘Fetch a bunch o’ rope, and be quick about it.’</p>` +
+        `<p>He said, ‘We’re goin’ home.’</p>` +
+        `<p>‘The lads’ boots are wet,’ she said. ‘Rock ’n’ roll!’</p>`,
+    );
+    manageDialogueHighlight(doc, makeViewSettings({ dialogueHighlight: true }));
+    const spans = [...doc.querySelectorAll(`.${DIALOGUE_SPAN_CLASS}`)].map((s) => s.textContent);
+    expect(spans).toEqual([
+      '‘Fetch a bunch o’ rope, and be quick about it.’',
+      '‘We’re goin’ home.’',
+      '‘The lads’ boots are wet,’',
+      '‘Rock ’n’ roll!’',
+    ]);
+  });
+
+  it('still closes a single quote after a letter when no later quote closes it', () => {
+    const doc = makeDoc(
+      `<p>‘Hello’ she said, and walked off.</p>` +
+        `<p>They called it ‘progress’ and moved on, ‘Fine.’</p>` +
+        `<p>‘Wait’ he said.</p><p>‘Go.’</p>` +
+        `<p>He said ‘no’, then left.</p>` +
+        `<p>Type ‘end’ then “’” to close it.</p>`,
+    );
+    manageDialogueHighlight(doc, makeViewSettings({ dialogueHighlight: true }));
+    const spans = [...doc.querySelectorAll(`.${DIALOGUE_SPAN_CLASS}`)].map((s) => s.textContent);
+    expect(spans).toEqual([
+      '‘Hello’',
+      '‘progress’',
+      '‘Fine.’',
+      '‘Wait’',
+      '‘Go.’',
+      '‘no’',
+      '‘end’',
+      '“’”',
+    ]);
+  });
+
   it('wraps a quote longer than 500 characters', () => {
     const speech =
       'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. '
