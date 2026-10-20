@@ -78,6 +78,10 @@ export function formatProgress(
  * decimal only mid-book on books with more than 100 locations, integer
  * elsewhere, exactly 100% on the last page). Before the first relocate has
  * populated `fraction`, falls back to the pair-based percent.
+ *
+ * Reflowable books only: for fixed-layout books foliate weights `fraction` by
+ * section byte size (image sizes in a CBZ), so callers pass `undefined` there
+ * to keep the page-count percent.
  */
 export function formatProgressPercent(
   fraction: number | undefined,
@@ -94,7 +98,10 @@ export function formatProgressPercent(
   const atEnd = current !== undefined && current + 1 >= total;
   if (atEnd) return '100%';
   const digits = total > 100 ? fractionDigits : 0;
-  const percent = Math.min(100, Math.max(0, fraction * 100));
+  // Only the last page reads 100%: cap below it so rounding (e.g. 99.96 at one
+  // decimal) cannot print "100.0%" a page early.
+  const maxPercent = 100 - 10 ** -digits;
+  const percent = Math.min(maxPercent, Math.max(0, fraction * 100));
   return `${percent.toFixed(digits)}%`;
 }
 

@@ -86,7 +86,14 @@ const PageJumpInput: React.FC<PageJumpInputProps> = ({ bookKey, showFraction, cl
   const displayText = referenceInfo
     ? `${referenceInfo.current} / ${referenceInfo.total}`
     : template === '{percent}%'
-      ? formatProgressPercent(progress?.fraction, pageInfo.current, pageInfo.total, false, 'en', 0)
+      ? formatProgressPercent(
+          bookData?.isFixedLayout ? undefined : progress?.fraction,
+          pageInfo.current,
+          pageInfo.total,
+          false,
+          'en',
+          0,
+        )
       : formatProgress(pageInfo.current, pageInfo.total, template, false, 'en', 0);
 
   const total = referenceInfo ? referenceInfo.total : pageInfo.total;

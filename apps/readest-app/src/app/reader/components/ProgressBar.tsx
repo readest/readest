@@ -109,7 +109,7 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
     ? `${referenceInfo.current}${isVertical ? ' · ' : ' / '}${referenceInfo.total}`
     : template === '{percent}%'
       ? formatProgressPercent(
-          progress?.fraction,
+          bookData?.isFixedLayout ? undefined : progress?.fraction,
           pageInfo?.current,
           pageInfo?.total,
           localize,

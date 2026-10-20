@@ -102,6 +102,11 @@ describe('formatProgressPercent', () => {
     expect(formatProgressPercent(0.99, 79, 80)).toBe('100%');
   });
 
+  it('never rounds up to 100% before the last page', () => {
+    expect(formatProgressPercent(0.9996, 990, 1000)).toBe('99.9%');
+    expect(formatProgressPercent(0.996, 50, 80)).toBe('99%');
+  });
+
   it('clamps the fraction into 0-100', () => {
     expect(formatProgressPercent(1.2, 99, 100)).toBe('100%');
     expect(formatProgressPercent(-0.1, 0, 1000)).toBe('0.0%');

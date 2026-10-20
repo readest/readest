@@ -158,6 +158,31 @@ describe('ProgressBar — fixed-layout remaining pages', () => {
   });
 });
 
+describe('ProgressBar — percent readout', () => {
+  // A location pair of 2/5 reads 60%; the continuous fraction says 45%.
+  const setupPercent = (isFixedLayout: boolean) => {
+    currentViewSettings = {
+      ...baseSettings,
+      progressStyle: 'percentage',
+      showProgressInfo: true,
+    } as ViewSettings;
+    currentProgress = { ...makeProgress(2, 5), fraction: 0.45 } as BookProgress;
+    currentBookData = { isFixedLayout };
+  };
+
+  it('reads the continuous fraction for reflowable books', () => {
+    setupPercent(false);
+    const { container } = renderProgressBar();
+    expect(container.querySelector('.progress-info-label')?.textContent).toBe('45%');
+  });
+
+  it('keeps the page-count percent for fixed-layout books (fraction is byte-weighted)', () => {
+    setupPercent(true);
+    const { container } = renderProgressBar();
+    expect(container.querySelector('.progress-info-label')?.textContent).toBe('60%');
+  });
+});
+
 describe('ProgressBar — remaining time and pages together', () => {
   it.each([
     ['in book', true],
