@@ -45,6 +45,12 @@ import {
 import { eventDispatcher } from '@/utils/event';
 import { setMulticastLock } from '@/utils/bridge';
 import { resolveBookSendFile } from '@/services/localsend/bookFile';
+import {
+  createCollectionPack,
+  extractCollectionPack,
+  isReadestPackFile,
+  READEST_PACK_MIME,
+} from '@/services/pack/packService';
 import type { Book } from '@/types/book';
 import DevicePickerDialog from './DevicePickerDialog';
 import ReceiveRequestDialog from './ReceiveRequestDialog';
@@ -78,6 +84,14 @@ const LocalSendManager: React.FC = () => {
 
   const pendingRequest = useLocalSendStore((state) => state.pendingRequest);
   const [sendFiles, setSendFiles] = useState<SendFileInput[] | null>(null);
+  const pendingTempSendFileRef = useRef<string | null>(null);
+
+  const cleanupTempSendFile = useCallback(async () => {
+    if (pendingTempSendFileRef.current && appService) {
+      await appService.deleteFile(pendingTempSendFileRef.current, 'None').catch(() => {});
+      pendingTempSendFileRef.current = null;
+    }
+  }, [appService]);
 
   // Pairing entitlement, checked at receive time so a lapsed plan brings the
   // confirmation dialogs back while the pairing records stay intact.
@@ -210,8 +224,38 @@ const LocalSendManager: React.FC = () => {
   useEffect(() => {
     const onSendBooks = async (event: CustomEvent) => {
       if (!appService) return;
-      const { books } = event.detail as { books: Book[] };
+      const { books, asPack, collectionName } = event.detail as {
+        books: Book[];
+        asPack?: boolean;
+        collectionName?: string;
+      };
       if (!books?.length) return;
+
+      if (asPack) {
+        try {
+          const result = await createCollectionPack(appService, books, collectionName);
+          if (!result) {
+            toast(_('No local files available to pack'), 'warning');
+            return;
+          }
+          const tempFileName = `temp-send-${Date.now()}-${result.filename}`;
+          await appService.writeFile(tempFileName, 'None', result.data);
+          const resolvedPath = await appService.resolveFilePath(tempFileName, 'None');
+          pendingTempSendFileRef.current = tempFileName;
+          setSendFiles([
+            {
+              path: resolvedPath,
+              fileName: result.filename,
+              mimeType: READEST_PACK_MIME,
+            },
+          ]);
+        } catch (err) {
+          console.error('Failed to create pack for Nearby transfer:', err);
+          toast(_('Failed to create pack'), 'error');
+        }
+        return;
+      }
+
       const resolved: SendFileInput[] = [];
       for (const book of books) {
         const file = await resolveBookSendFile(book, appService);
@@ -241,6 +285,58 @@ const LocalSendManager: React.FC = () => {
       if (!owned || !appService) return;
       if (payload.error || !payload.path) return; // failures are summarized on receive-end
       try {
+        if (isReadestPackFile(payload.fileName)) {
+          const raw = await appService.readFile(payload.path, 'None', 'binary');
+          if (typeof raw !== 'string') {
+            const pack = await extractCollectionPack(raw as ArrayBuffer);
+            if (pack && pack.files.length > 0) {
+              const { getGroupId, updateBooks } = useLibraryStore.getState();
+              const collectionName = pack.collectionName?.trim() || undefined;
+              const resolvedGroupId = collectionName
+                ? getGroupId(collectionName) || collectionName
+                : undefined;
+              const importedBooks: Book[] = [];
+
+              for (const innerFile of pack.files) {
+                try {
+                  const book = await ingestFile(
+                    {
+                      file: innerFile,
+                      books: useLibraryStore.getState().library,
+                      groupId: resolvedGroupId,
+                      groupName: collectionName,
+                      forceCopy: true,
+                    },
+                    {
+                      appService,
+                      settings: useSettingsStore.getState().settings,
+                      isLoggedIn: !!userRef.current,
+                    },
+                  );
+                  if (book) importedBooks.push(book);
+                } catch (err) {
+                  console.error('Failed to ingest book from pack:', err);
+                }
+              }
+
+              if (importedBooks.length > 0) {
+                await updateBooks(envConfig, importedBooks);
+                if (collectionName) {
+                  toast(
+                    _('Restored collection "{{name}}" ({{count}} books)', {
+                      name: collectionName,
+                      count: importedBooks.length,
+                    }),
+                    'success',
+                  );
+                }
+              }
+            }
+          }
+          await appService.deleteFile(payload.path, 'None').catch(() => {});
+          return;
+        }
+
         const { library } = useLibraryStore.getState();
         const book = await ingestFile(
           { file: payload.path, books: library, forceCopy: true },
@@ -335,6 +431,7 @@ const LocalSendManager: React.FC = () => {
         listen<SendEnd>(LOCALSEND_EVENTS.sendEnd, (event) => {
           const sendState = store().sendState;
           store().sendEnded();
+          void cleanupTempSendFile();
           if (!sendState) return; // another window's transfer
           const { status, error, filesSent } = event.payload;
           if (status === 'sent') {
@@ -434,7 +531,15 @@ const LocalSendManager: React.FC = () => {
           }}
         />
       )}
-      {sendFiles && <DevicePickerDialog files={sendFiles} onClose={() => setSendFiles(null)} />}
+      {sendFiles && (
+        <DevicePickerDialog
+          files={sendFiles}
+          onClose={() => {
+            setSendFiles(null);
+            void cleanupTempSendFile();
+          }}
+        />
+      )}
       <TransferProgressCard onCancelReceive={(id) => void cancelLocalSendReceive(id)} />
     </>
   );

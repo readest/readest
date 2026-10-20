@@ -242,9 +242,19 @@ export async function extractCollectionPack(
       } else {
         try {
           const jsonText = await manifestEntry.getData(new TextWriter());
-          const parsed = JSON.parse(jsonText);
-          if (parsed && parsed.format === 'readestpack') {
-            manifest = parsed;
+          const parsed: unknown = JSON.parse(jsonText);
+          if (
+            parsed &&
+            typeof parsed === 'object' &&
+            (parsed as { format?: unknown }).format === 'readestpack' &&
+            Array.isArray((parsed as { books?: unknown }).books)
+          ) {
+            const candidate = parsed as ReadestPackManifest;
+            const name = candidate.collection?.name;
+            if (candidate.collection && (typeof name !== 'string' || !name.trim())) {
+              candidate.collection = undefined;
+            }
+            manifest = candidate;
           }
         } catch (err) {
           console.warn('Failed to parse pack manifest:', err);

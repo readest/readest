@@ -175,5 +175,39 @@ describe('packService', () => {
       expect(extracted?.collectionName).toBeUndefined();
       expect(extracted?.files.length).toBe(3);
     });
+
+    it('safely handles and sanitizes invalid collection.name in manifest', async () => {
+      await configureZip();
+      const { BlobWriter, Uint8ArrayReader, ZipWriter } = await import('@zip.js/zip.js');
+
+      const blobWriter = new BlobWriter('application/zip');
+      const zipWriter = new ZipWriter(blobWriter);
+
+      // Add manifest with invalid collection.name (object instead of string)
+      const invalidManifest = {
+        format: 'readestpack',
+        version: 1,
+        collection: { name: { invalid: 123 } },
+        books: [{ id: 'b1', filename: 'book1.epub' }],
+      };
+
+      await zipWriter.add(
+        'readest-manifest.json',
+        new Uint8ArrayReader(new TextEncoder().encode(JSON.stringify(invalidManifest))),
+      );
+      await zipWriter.add(
+        'book1.epub',
+        new Uint8ArrayReader(new TextEncoder().encode('epub content')),
+      );
+
+      await zipWriter.close();
+      const blob = await blobWriter.getData();
+      const buffer = await blob.arrayBuffer();
+
+      const extracted = await extractCollectionPack(buffer);
+      expect(extracted).not.toBeNull();
+      expect(extracted?.collectionName).toBeUndefined();
+      expect(extracted?.files.length).toBe(1);
+    });
   });
 });

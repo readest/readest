@@ -648,7 +648,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
                         },
                         { appService, settings, isLoggedIn: !!user },
                       );
-                      if (book) {
+                      if (book && bookIds.length === 0) {
                         bookIds.push(book.hash);
                       }
                     } catch (err) {
@@ -1213,13 +1213,14 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     const existingPaths = collectKnownSourcePaths(library, osPlatform);
     for (const key of autoImportFailedPathsRef.current) existingPaths.add(key);
     const newFiles: SelectedFile[] = [];
+    const watchedExts = SUPPORTED_BOOK_EXTS.filter((ext) => ext !== 'readestpack');
     for (const folder of folders) {
       try {
         if (!autoImportGrantedFoldersRef.current.has(folder)) {
           await appService.allowPathsInScopes?.([folder], true);
           autoImportGrantedFoldersRef.current.add(folder);
         }
-        const items = await appService.readDirectory(folder, 'None', SUPPORTED_BOOK_EXTS);
+        const items = await appService.readDirectory(folder, 'None', watchedExts);
         const entries = items
           .filter((item) => !isInHiddenDir(item.path))
           .map((item) => ({
@@ -1227,7 +1228,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
             size: item.size,
           }));
         const fresh = selectNewImportableFiles(entries, {
-          extensions: SUPPORTED_BOOK_EXTS,
+          extensions: watchedExts,
           minSizeBytes: AUTO_IMPORT_MIN_SIZE_BYTES,
           existingPaths,
           osPlatform,

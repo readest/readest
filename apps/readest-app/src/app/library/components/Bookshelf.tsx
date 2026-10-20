@@ -21,6 +21,7 @@ import { useMedianPageDurationsSecs } from '@/hooks/useMedianPageDurationSecs';
 import { useBookshelfDate } from '@/hooks/useBookshelfDate';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { navigateToLibrary, navigateToReader, showReaderWindow } from '@/utils/nav';
+import { isMd5 } from '@/utils/md5';
 import {
   createBookFilter,
   createBookSorter,
@@ -645,16 +646,35 @@ const Bookshelf: React.FC<BookshelfProps> = ({
   };
 
   const sendSelectedNearby = () => {
-    // Group ids in the selection simply don't match any book hash and drop
-    // out; LocalSendManager resolves the files and reports unavailable books.
-    const ids = getSelectedBooks();
+    const rawIds = getSelectedBooks();
+    const ids = expandBookshelfSelection(rawIds, sortedBookshelfItems);
     const books = ids
       .map((id) => filteredBooks.find((book) => book.hash === id))
       .filter((book): book is Book => !!book);
     if (books.length === 0) return;
     setShowSelectModeActions(false);
     handleSetSelectMode(false);
-    eventDispatcher.dispatch('localsend-send-books', { books });
+
+    // If the selection targets a collection/group (browsing a group, selected a group item,
+    // or all selected books belong to the same group), package as a .readestpack so
+    // the receiver restores the complete collection structure.
+    const hasGroupSelected = rawIds.some((id) => !isMd5(id));
+    const commonGroup =
+      manualGroupName ||
+      (books[0]?.groupName && books.every((b) => b.groupName === books[0]?.groupName)
+        ? books[0]?.groupName
+        : undefined);
+    const shouldPack = Boolean(
+      hasGroupSelected || manualGroupName || (books.length > 1 && commonGroup),
+    );
+    const collectionName =
+      manualGroupName || (hasGroupSelected ? books[0]?.groupName : commonGroup);
+
+    eventDispatcher.dispatch('localsend-send-books', {
+      books,
+      asPack: shouldPack,
+      collectionName,
+    });
   };
 
   const handlePackSelectedBooks = async () => {
@@ -684,6 +704,16 @@ const Bookshelf: React.FC<BookshelfProps> = ({
           timeout: 3000,
         });
         return;
+      }
+
+      if (result.count < books.length) {
+        eventDispatcher.dispatch('toast', {
+          type: 'warning',
+          message: _('{{count}} book(s) omitted (file not available locally)', {
+            count: books.length - result.count,
+          }),
+          timeout: 4000,
+        });
       }
 
       await appService.saveFile(result.filename, result.data, {
