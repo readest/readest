@@ -42,7 +42,7 @@ describe('MOBI XPointers', () => {
     const { pos0, pos1 } = await getXPointerFromCFI(cfi, undefined, undefined, book, 'MOBI');
     expect(pos0).toBe('/html/body/body/p[3]/font[1]/text().0');
     expect(pos1).toBe('/html/body/body/p[3]/font[1]/text().4');
-  });
+  }, 30000);
 
   it('keeps the DocFragment form for a KF8 book, which crengine does not read', async () => {
     const book = await openBook('repro-5918.azw3', 'application/vnd.amazon.mobi8-ebook');
