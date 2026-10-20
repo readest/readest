@@ -125,7 +125,7 @@ describe('PDF spread canvas seam (#4587)', () => {
     // fractional ideal size. Truncated and left to drive layout, it produced the
     // seam.
     expect(Number.isInteger(canvas.width)).toBe(true);
-    expect(canvas.width).not.toBe(bitmapWidth);
+    expect(canvas.width).toBe(Math.ceil(bitmapWidth));
 
     // The fix: the canvas has an explicit CSS box that covers the whole page box
     // (here rounded up to the next device pixel, so the raster also maps 1:1 onto
