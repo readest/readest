@@ -10,6 +10,10 @@ describe('isXPointerProgress', () => {
     expect(isXPointerProgress('/FictionBook/body[1]/section[3]/p[9]/text().322')).toBe(true);
   });
 
+  it('accepts the html-rooted XPointers crengine writes for MOBI', () => {
+    expect(isXPointerProgress('/html/body/body/div[8]/p[152]/text().596')).toBe(true);
+  });
+
   it('rejects non-XPointer progress strings', () => {
     expect(isXPointerProgress('epubcfi(/6/14!/4/2/2)')).toBe(false);
     expect(isXPointerProgress('50')).toBe(false);

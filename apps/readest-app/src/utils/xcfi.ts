@@ -27,17 +27,35 @@ type XPointerTarget = {
  * `root` is the section document's element that `path` names: a child of the
  * first <body>, which foliate makes a section of its own, or a notes <body>.
  */
-type FB2Anchor = { root: Element; path: string };
+type FB2Anchor = { kind: 'fb2'; root: Element; path: string };
+
+/**
+ * crengine reads a MOBI book (the Mobipocket format, not KF8) as one HTML
+ * document, so its XPointers start at `/html/body`, or `/html/body/body` when
+ * a `<guide>` in `<head>` made crengine open a body before the book's own.
+ * foliate splits the book into a section at each `<mbp:pagebreak>`. `root` is
+ * the section's `<body>`, whose children crengine numbers across the whole
+ * book: `before` counts each tag in the earlier sections, `total` in the book.
+ */
+type MobiAnchor = {
+  kind: 'mobi';
+  root: Element;
+  path: string;
+  before: Map<string, number>;
+  total: Map<string, number>;
+};
+
+type Anchor = FB2Anchor | MobiAnchor;
 
 export class XCFI {
   private document: Document;
   private spineItemIndex: number;
-  private fb2?: FB2Anchor;
+  private anchor?: Anchor;
 
-  constructor(htmlDocument: Document, spineIndex: number = 0, fb2?: FB2Anchor) {
+  constructor(htmlDocument: Document, spineIndex: number = 0, anchor?: Anchor) {
     this.document = htmlDocument;
     this.spineItemIndex = spineIndex;
-    this.fb2 = fb2;
+    this.anchor = anchor;
   }
 
   /**
@@ -51,7 +69,7 @@ export class XCFI {
   }
 
   private tagOf(element: Element): string {
-    return this.fb2 ? XCFI.fb2TagName(element) : element.tagName.toLowerCase();
+    return this.anchor?.kind === 'fb2' ? XCFI.fb2TagName(element) : element.tagName.toLowerCase();
   }
 
   static extractSpineIndex(cfiOrXPath: string): number {
@@ -405,11 +423,16 @@ export class XCFI {
   private resolveXPointerPath(path: string): Element | null {
     let current: Element;
     let segments: string[];
-    if (this.fb2) {
+    if (this.anchor?.kind === 'mobi') {
+      const pathMatch = path.match(/^\/html\/body(?:\/body)?(.*)$/);
+      if (!pathMatch) throw new Error(`Invalid MOBI XPointer format: ${path}`);
+      current = this.anchor.root;
+      segments = pathMatch[1]!.split('/').filter(Boolean);
+    } else if (this.anchor) {
       // The pointer's leading steps name the anchor (`body` or `body[1]` alike).
-      current = this.fb2.root;
+      current = this.anchor.root;
       segments = path.split('/').filter(Boolean);
-      segments = segments.slice(this.fb2.path.split('/').filter(Boolean).length);
+      segments = segments.slice(this.anchor.path.split('/').filter(Boolean).length);
     } else {
       const pathMatch = path.match(/^\/body\/DocFragment(?:\[\d+\])?\/body(.*)$/);
       if (!pathMatch) {
@@ -419,7 +442,7 @@ export class XCFI {
       segments = pathMatch[1]!.split('/').filter(Boolean);
     }
 
-    for (const segment of segments) {
+    for (const [depth, segment] of segments.entries()) {
       // Match both formats: tag[index] or just tag
       const segmentWithIndexMatch = segment.match(/^([\w-]+)\[(\d+)\]$/);
       const segmentWithoutIndexMatch = segment.match(/^([\w-]+)$/);
@@ -439,6 +462,11 @@ export class XCFI {
         index = 0;
       } else {
         throw new Error(`Invalid XPointer segment: ${segment}`);
+      }
+      // A MOBI section's top-level elements are numbered across the book.
+      if (depth === 0 && this.anchor?.kind === 'mobi') {
+        index -= this.anchor.before.get(tagName.toLowerCase()) ?? 0;
+        if (index < 0) throw new Error(`Element ${segment} is in an earlier section`);
       }
 
       // Find child elements with matching tag name. effectiveChildren drops
@@ -584,6 +612,7 @@ export class XCFI {
     const result: Element[] = [];
     for (const child of Array.from(parent.children)) {
       if (XCFI.isCfiInert(child)) continue;
+      if (this.anchor?.kind === 'mobi' && isFileposAnchor(child)) continue;
       if (XCFI.isCfiSkip(child)) result.push(...this.effectiveChildren(child));
       else result.push(child);
     }
@@ -596,8 +625,8 @@ export class XCFI {
   private buildXPointerPath(targetElement: Element): string {
     const pathParts: string[] = [];
     let current: Element | null = targetElement;
-    if (this.fb2 && !this.fb2.root.contains(targetElement)) return this.fb2.path;
-    const top = this.fb2?.root ?? this.document.documentElement;
+    if (this.anchor && !this.anchor.root.contains(targetElement)) return this.anchor.path;
+    const top = this.anchor?.root ?? this.document.documentElement;
 
     // Build path from target back to root
     while (current && current !== top) {
@@ -614,7 +643,8 @@ export class XCFI {
       // Count preceding siblings with the same tag name among the effective
       // (cfi-inert removed, cfi-skip hoisted) children of the nearest non-skip
       // ancestor, so a layout-only wrapper doesn't shift the index.
-      const siblings = this.effectiveChildren(XCFI.skipTransparentParent(parent));
+      const container = XCFI.skipTransparentParent(parent);
+      const siblings = this.effectiveChildren(container);
       let siblingIndex = 0;
       let totalSameTagSiblings = 0;
       for (const sibling of siblings) {
@@ -624,6 +654,11 @@ export class XCFI {
           }
           totalSameTagSiblings++;
         }
+      }
+      // A MOBI section's top-level elements are numbered across the book.
+      if (this.anchor?.kind === 'mobi' && container === this.anchor.root) {
+        siblingIndex += this.anchor.before.get(tagName) ?? 0;
+        totalSameTagSiblings = this.anchor.total.get(tagName) ?? totalSameTagSiblings;
       }
 
       // Format as tag[index] (0-based for CREngine)
@@ -636,7 +671,7 @@ export class XCFI {
       current = parent;
     }
 
-    if (this.fb2) return [this.fb2.path, ...pathParts].join('/');
+    if (this.anchor) return [this.anchor.path, ...pathParts].join('/');
 
     let xpointer = `/body/DocFragment[${this.spineItemIndex + 1}]`;
     if (pathParts.length > 0 && pathParts[0]!.startsWith('body')) {
@@ -779,6 +814,15 @@ const convertXPointer = async (
     const anchor = await getFB2Anchor(sectionDoc, fb2Index, bookDoc);
     return new XCFI(sectionDoc, fb2Index, anchor).xPointerToCFI(xpointer, endXPointer);
   }
+  if (xpointer.startsWith('/html/')) {
+    if (!bookDoc || !isMobiBook(bookDoc)) throw new Error('Not a MOBI book: ' + xpointer);
+    const mobiIndex = await getMobiSectionIndex(xpointer, bookDoc);
+    const sectionDoc =
+      index === mobiIndex && doc ? doc : await bookDoc.sections[mobiIndex]?.createDocument();
+    if (!sectionDoc) throw new Error('Failed to load document for XPointer conversion.');
+    const anchor = await getMobiAnchor(sectionDoc, mobiIndex, bookDoc);
+    return new XCFI(sectionDoc, mobiIndex, anchor).xPointerToCFI(xpointer, endXPointer);
+  }
 
   const xSpineIndex = XCFI.extractSpineIndex(xpointer);
   let converter: XCFI;
@@ -794,7 +838,7 @@ const convertXPointer = async (
   return cfi;
 };
 
-/** `format` picks the XPointer form: crengine reads FB2 natively (see FB2Anchor). */
+/** `format` picks the XPointer form: crengine reads FB2 and MOBI natively (see Anchor). */
 export const getXPointerFromCFI = async (
   cfi: string,
   doc?: Document,
@@ -807,10 +851,12 @@ export const getXPointerFromCFI = async (
     index === xSpineIndex && doc ? doc : await bookDoc?.sections?.[xSpineIndex]?.createDocument();
   if (!sectionDoc) throw new Error('Failed to load document for CFI conversion.');
 
-  let anchor: FB2Anchor | undefined;
+  let anchor: Anchor | undefined;
   if (format === 'FB2' || format === 'FBZ') {
     if (!bookDoc) throw new Error('FB2 XPointer conversion needs the book.');
     anchor = await getFB2Anchor(sectionDoc, xSpineIndex, bookDoc);
+  } else if (bookDoc && isMobiBook(bookDoc)) {
+    anchor = await getMobiAnchor(sectionDoc, xSpineIndex, bookDoc);
   }
   return new XCFI(sectionDoc, xSpineIndex, anchor).cfiToXPointer(cfi);
 };
@@ -845,13 +891,13 @@ const getFB2Anchor = async (doc: Document, index: number, bookDoc: BookDoc): Pro
   const root = getFB2Root(doc);
   const tags = await getFB2RootTags(bookDoc);
   if (index >= tags.length) {
-    return { root, path: `/FictionBook/body[${index - tags.length + 2}]` };
+    return { kind: 'fb2', root, path: `/FictionBook/body[${index - tags.length + 2}]` };
   }
   const tag = tags[index]!;
   const nth = tags.slice(0, index + 1).filter((t) => t === tag).length;
   const step = tags.filter((t) => t === tag).length > 1 ? `${tag}[${nth}]` : tag;
   const body = tags.length < bookDoc.sections.length ? 'body[1]' : 'body';
-  return { root, path: `/FictionBook/${body}/${step}` };
+  return { kind: 'fb2', root, path: `/FictionBook/${body}/${step}` };
 };
 
 const getFB2SectionIndex = async (xpointer: string, bookDoc: BookDoc): Promise<number> => {
@@ -868,6 +914,77 @@ const getFB2SectionIndex = async (xpointer: string, bookDoc: BookDoc): Promise<n
   let count = 0;
   const index = tags.findIndex((t) => t === tag && ++count === (nth ? parseInt(nth, 10) : 1));
   if (index < 0) throw new Error(`FB2 XPointer section not found: ${xpointer}`);
+  return index;
+};
+
+/** The empty `<a id="fileposN">` foliate adds for each MOBI link target; crengine has none. */
+const isFileposAnchor = (element: Element): boolean =>
+  element.localName === 'a' && element.id.startsWith('filepos') && !element.hasChildNodes();
+
+/**
+ * A book foliate opened with its MOBI reader for the Mobipocket format (MOBI6
+ * in foliate), the part crengine reads. Its KF8 reader keeps the KF8 header;
+ * crengine doesn't read KF8, so such a book keeps the DocFragment form.
+ */
+const isMobiBook = (bookDoc: BookDoc): boolean => {
+  const headers = (bookDoc as { mobi?: { headers?: { kf8?: unknown } } }).mobi?.headers;
+  return !!headers && !headers.kf8;
+};
+
+/** Per section, how many top-level elements of each tag it holds, read once per book. */
+type MobiLayout = { path: string; counts: Map<string, number>[] };
+const mobiLayouts = new WeakMap<BookDoc, Promise<MobiLayout>>();
+
+const getMobiLayout = (bookDoc: BookDoc): Promise<MobiLayout> => {
+  let layout = mobiLayouts.get(bookDoc);
+  if (!layout) {
+    layout = (async () => {
+      const docs = await Promise.all(bookDoc.sections.map((section) => section.createDocument()));
+      const counts = docs.map((doc) => {
+        const count = new Map<string, number>();
+        for (const child of Array.from(doc.body.children)) {
+          if (child.hasAttribute('cfi-inert') || isFileposAnchor(child)) continue;
+          count.set(child.localName, (count.get(child.localName) ?? 0) + 1);
+        }
+        return count;
+      });
+      // The HTML parser moves a <head><guide> into <body>, where crengine
+      // instead opened a body of its own before the book's <body>.
+      const guide = Array.from(docs[0]?.body.children ?? []).some((el) => el.localName === 'guide');
+      return { path: guide ? '/html/body/body' : '/html/body', counts };
+    })();
+    mobiLayouts.set(bookDoc, layout);
+  }
+  return layout;
+};
+
+const getMobiAnchor = async (
+  doc: Document,
+  index: number,
+  bookDoc: BookDoc,
+): Promise<MobiAnchor> => {
+  const { path, counts } = await getMobiLayout(bookDoc);
+  const before = new Map<string, number>();
+  const total = new Map<string, number>();
+  counts.forEach((count, i) => {
+    for (const [tag, n] of count) {
+      total.set(tag, (total.get(tag) ?? 0) + n);
+      if (i < index) before.set(tag, (before.get(tag) ?? 0) + n);
+    }
+  });
+  return { kind: 'mobi', root: doc.body, path, before, total };
+};
+
+const getMobiSectionIndex = async (xpointer: string, bookDoc: BookDoc): Promise<number> => {
+  const match = xpointer.match(/^\/html\/body(?:\/body)?(?:\/([\w-]+)(?:\[(\d+)\])?)?/);
+  if (!match) throw new Error(`Unsupported MOBI XPointer: ${xpointer}`);
+  const [, tag, nth] = match;
+  if (!tag) return 0;
+  const { counts } = await getMobiLayout(bookDoc);
+  let seen = 0;
+  const target = nth ? parseInt(nth, 10) : 1;
+  const index = counts.findIndex((count) => (seen += count.get(tag) ?? 0) >= target);
+  if (index < 0) throw new Error(`MOBI XPointer section not found: ${xpointer}`);
   return index;
 };
 
