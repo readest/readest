@@ -1,7 +1,7 @@
 import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
 import { isTauriAppPlatform } from '@/services/environment';
 import { runWithConcurrency } from '@/utils/concurrency';
-import { allowsSelfSignedCert, tlsFetchOptions } from '@/utils/tls';
+import { allowsSelfSignedCert, tlsFetch } from '@/utils/tls';
 import type {
   ABSLibrary,
   ABSLibraryItem,
@@ -104,12 +104,16 @@ export const absFetch = (
   init: ABSRequestOptions = {},
 ): Promise<Response> => {
   const fetch = isTauriAppPlatform() ? tauriFetch : window.fetch;
-  return fetch(url, {
-    method: init.method ?? 'GET',
-    headers: withOriginSuppressed(init.headers ?? {}),
-    body: init.body,
-    ...tlsFetchOptions(allowsSelfSignedCert(server)),
-  });
+  return tlsFetch(
+    fetch,
+    url,
+    {
+      method: init.method ?? 'GET',
+      headers: withOriginSuppressed(init.headers ?? {}),
+      body: init.body,
+    },
+    allowsSelfSignedCert(server),
+  );
 };
 
 /** Fields accepted by PATCH /api/me/progress/:libraryItemId; ABS merges what is sent. */
