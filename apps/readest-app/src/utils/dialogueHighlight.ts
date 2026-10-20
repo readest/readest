@@ -21,9 +21,9 @@ export const isDialogueHighlightActive = (viewSettings: ViewSettings): boolean =
 //
 // Curly ‘’ is kept, but ’ is also the curly apostrophe, so a ’ between two
 // letters (don’t, it’s) continues the quote instead of closing it. A
-// word-final apostrophe (o’ rope, goin’ home, the lads’ boots) looks like a
-// closing quote, so it continues the quote only when a ’ after punctuation
-// other than a quote mark (it.’ / wet,’) closes it later in the same
+// word-final apostrophe (o’ rope, goin’ home, goin’—now, the lads’ boots)
+// looks like a closing quote, so it continues the quote only when a ’ after
+// punctuation other than a quote mark (it.’ / wet,’) closes it later in the same
 // paragraph; otherwise the ’ after the word closes it as before (‘Hello’ she
 // said).
 //
@@ -39,7 +39,7 @@ export const isDialogueHighlightActive = (viewSettings: ViewSettings): boolean =
 // closes; every quote is capped at MAX_QUOTE_LENGTH in case a malformed book
 // pairs two marks pages apart.
 const DIALOGUE_PATTERN =
-  /“[^“”]+?[”"]|„[^„“]+?[“"]|"[^"\n]+?"|«[^«»]+?[»]|「[^「」]+?[」]|『[^『』]+?[』]|‘(?:[^‘’\n]|’(?=\p{L})|\p{L}’(?=\s)){0,300}?(?![‘’“”„«»「」『』])\p{P}’(?!\p{L})|‘(?:[^‘’]|’(?=\p{L})){1,300}?’(?!\p{L})/gu;
+  /“[^“”]+?[”"]|„[^„“]+?[“"]|"[^"\n]+?"|«[^«»]+?[»]|「[^「」]+?[」]|『[^『』]+?[』]|‘(?:[^‘’\n]|’(?=\p{L})|\p{L}’(?=[\s\p{Pd}])){0,300}?(?![‘’“”„«»「」『』"'])\p{P}’(?!\p{L})|‘(?:[^‘’]|’(?=\p{L})){1,300}?’(?!\p{L})/gu;
 
 // A quote holding inner quotes in the same marks (“my spiritual “children”;
 // my dog”). Only within one paragraph: across paragraphs an opening mark
