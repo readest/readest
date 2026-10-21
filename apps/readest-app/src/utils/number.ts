@@ -36,9 +36,9 @@ export const localizeNumber = (num: number, language: string, isIndex = false): 
 
   if (!isIndex) {
     if (isTraditional) {
-      result = result.replace(/^貳$/, '兩').replace(/(?<!拾)貳(?=[佰仟萬億])/g, '兩');
+      result = result.replace(/^貳$/, '兩').replace(/(^|[^拾])貳(?=[佰仟萬億])/g, '$1兩');
     } else {
-      result = result.replace(/^二$/, '两').replace(/(?<!十)二(?=[百千万亿])/g, '两');
+      result = result.replace(/^二$/, '两').replace(/(^|[^十])二(?=[百千万亿])/g, '$1两');
     }
   }
 
