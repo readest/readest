@@ -18,6 +18,7 @@ const mocks = vi.hoisted(() => ({
   getSessionByHash: vi.fn(() => null as { bookKey: string; controller: unknown } | null),
   controllerCtor: vi.fn(),
   getOSPlatform: vi.fn((): OsPlatform => 'macos'),
+  isIPadOS: vi.fn(() => false),
   isTauriAppPlatform: vi.fn(() => false),
   loadAbsOfflineManifest: vi.fn(async () => null as unknown),
   getMediaProxyBase: vi.fn(async (): Promise<string | null> => null),
@@ -75,7 +76,7 @@ vi.mock('@/services/audiobook/AudiobookController', () => ({
 
 vi.mock('@/utils/misc', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/utils/misc')>();
-  return { ...actual, getOSPlatform: mocks.getOSPlatform };
+  return { ...actual, getOSPlatform: mocks.getOSPlatform, isIPadOS: mocks.isIPadOS };
 });
 
 vi.mock('@/services/environment', async (importOriginal) => {
@@ -145,6 +146,7 @@ describe('openAudiobookSession', () => {
     mocks.getMe.mockResolvedValue({ mediaProgress: [] });
     mocks.syncerBegin.mockResolvedValue(42);
     mocks.getOSPlatform.mockReturnValue('macos');
+    mocks.isIPadOS.mockReturnValue(false);
     mocks.isTauriAppPlatform.mockReturnValue(false);
     mocks.getMediaProxyBase.mockResolvedValue(null);
     useABSServerStore.setState({ servers: [server] });
@@ -237,6 +239,18 @@ describe('openAudiobookSession', () => {
 
   it('uses NativeAudiobookClock on iOS Tauri', async () => {
     mocks.getOSPlatform.mockReturnValue('ios');
+    mocks.isTauriAppPlatform.mockReturnValue(true);
+
+    const result = await openAudiobookSession({ appService, book });
+    expect(result).not.toBeNull();
+
+    const [, clock] = mocks.controllerCtor.mock.calls[0]!;
+    expect(clock).toBeInstanceOf(NativeAudiobookClock);
+  });
+
+  // iPadOS sends a desktop user agent, so the OS reads as macOS there (#6974).
+  it('uses NativeAudiobookClock on an iPad in the Tauri app', async () => {
+    mocks.isIPadOS.mockReturnValue(true);
     mocks.isTauriAppPlatform.mockReturnValue(true);
 
     const result = await openAudiobookSession({ appService, book });
@@ -410,6 +424,7 @@ describe('openAudiobookSession - podcast episodes', () => {
     mocks.syncerBegin.mockResolvedValue(42);
     mocks.readLocalLastPlayedAt.mockReturnValue(0);
     mocks.getOSPlatform.mockReturnValue('macos');
+    mocks.isIPadOS.mockReturnValue(false);
     mocks.isTauriAppPlatform.mockReturnValue(false);
     mocks.getMediaProxyBase.mockResolvedValue(null);
     useABSServerStore.setState({ servers: [server] });

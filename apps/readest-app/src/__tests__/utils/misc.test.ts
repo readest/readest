@@ -1,6 +1,44 @@
 import fc from 'fast-check';
-import { describe, it, expect } from 'vitest';
-import { makeSafeFilename } from '../../utils/misc';
+import { afterEach, describe, it, expect, vi } from 'vitest';
+import { isIPadOS, makeSafeFilename } from '../../utils/misc';
+
+// iPadOS sends a desktop user agent, so an iPad reads as a Mac by user agent
+// alone (#6974); its touch points tell it apart.
+describe('isIPadOS', () => {
+  const IPAD_UA =
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko)';
+
+  const stubNavigator = (userAgent: string, maxTouchPoints: number) => {
+    vi.spyOn(navigator, 'userAgent', 'get').mockReturnValue(userAgent);
+    Object.defineProperty(navigator, 'maxTouchPoints', {
+      value: maxTouchPoints,
+      configurable: true,
+    });
+  };
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    delete (navigator as unknown as { maxTouchPoints?: number }).maxTouchPoints;
+  });
+
+  it('is true for a desktop user agent with touch points', () => {
+    stubNavigator(IPAD_UA, 5);
+    expect(isIPadOS()).toBe(true);
+  });
+
+  it('is false on a Mac, which has no touch points', () => {
+    stubNavigator(IPAD_UA, 0);
+    expect(isIPadOS()).toBe(false);
+  });
+
+  it('is false for an iPhone, whose user agent already says so', () => {
+    stubNavigator(
+      'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko)',
+      5,
+    );
+    expect(isIPadOS()).toBe(false);
+  });
+});
 
 describe('makeSafeFilename', () => {
   describe('Basic sanitization', () => {

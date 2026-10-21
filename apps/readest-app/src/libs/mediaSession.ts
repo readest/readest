@@ -1,5 +1,5 @@
 import { isTauriAppPlatform } from '@/services/environment';
-import { getOSPlatform } from '@/utils/misc';
+import { getOSPlatform, isIPadOS } from '@/utils/misc';
 import { invoke } from '@tauri-apps/api/core';
 import { addPluginListener, PluginListener, PermissionState } from '@tauri-apps/api/core';
 
@@ -414,7 +414,7 @@ export function getMediaSession() {
   // native session drives the plugin — mirrored into navigator.mediaSession
   // because WebKit ALSO registers a page client once audioSession type
   // 'playback' is declared (see IOSCompositeMediaSession).
-  if (platform === 'ios' && isTauriAppPlatform()) {
+  if (isTauriAppPlatform() && (platform === 'ios' || isIPadOS())) {
     if ('mediaSession' in navigator) {
       return new IOSCompositeMediaSession(navigator.mediaSession);
     }

@@ -1,4 +1,4 @@
-import { getOSPlatform, getUserLocale } from '@/utils/misc';
+import { getOSPlatform, getUserLocale, isIPadOS } from '@/utils/misc';
 import { isTauriAppPlatform } from '@/services/environment';
 import { isSameLang } from '@/utils/lang';
 import { NativeAudioPlayer } from './NativeAudioPlayer';
@@ -128,7 +128,7 @@ export class BufferedTTSClient implements TTSClient {
   // WebKit's GPU process under a session the app cannot own. Everywhere else
   // the gapless WSOLA WebAudio pipeline stays.
   #player: WebAudioPlayer | NativeAudioPlayer =
-    getOSPlatform() === 'ios' && isTauriAppPlatform()
+    isTauriAppPlatform() && (getOSPlatform() === 'ios' || isIPadOS())
       ? new NativeAudioPlayer()
       : new WebAudioPlayer();
   #activeGeneration: number | null = null;

@@ -19,9 +19,12 @@ vi.mock('@tauri-apps/plugin-fs', () => ({
   remove: vi.fn(async () => undefined),
 }));
 
+const platform = vi.hoisted(() => ({ os: 'ios', iPad: false }));
+
 vi.mock('@/utils/misc', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/utils/misc')>()),
-  getOSPlatform: () => 'ios',
+  getOSPlatform: () => platform.os,
+  isIPadOS: () => platform.iPad,
 }));
 
 import { addPluginListener, invoke, type PluginListener } from '@tauri-apps/api/core';
@@ -104,6 +107,8 @@ afterEach(async () => {
   await client?.shutdown();
   vi.unstubAllEnvs();
   vi.unstubAllGlobals();
+  platform.os = 'ios';
+  platform.iPad = false;
 });
 
 describe('MediaOverlayClient on iOS Tauri', () => {
@@ -119,6 +124,18 @@ describe('MediaOverlayClient on iOS Tauri', () => {
     expect(actions).toContain('resume');
     const load = controlCalls.find((c) => c['action'] === 'load');
     expect(load?.['path']).toMatch(/mo-narration-.*\.mp4$/);
+  });
+
+  // iPadOS sends a desktop user agent, so the OS reads as macOS there (#6974).
+  test('takes the native path on an iPad too', async () => {
+    platform.os = 'macos';
+    platform.iPad = true;
+    await setup();
+    const iter = client.speak(section.ssmlForBlock(0)!, new AbortController().signal);
+    const first = await iter.next();
+
+    expect(first.value).toEqual({ code: 'boundary', mark: '0', message: 'narration' });
+    expect(controlCalls.map((c) => c['action'])).toContain('start-session');
   });
 
   test('a native playback failure ends the utterance instead of hanging on it', async () => {

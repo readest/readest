@@ -20,7 +20,7 @@ import { findABSServerById, useABSServerStore } from '@/store/absServerStore';
 import { ttsSessionManager } from '@/services/tts/TTSSessionManager';
 import type { TTSMediaBridgeMeta } from '@/services/tts/ttsMediaBridge';
 import { buildAbsMediaUrl, parseAbsFilePath } from '@/utils/audiobook';
-import { getOSPlatform, stubTranslation as _, uniqueId } from '@/utils/misc';
+import { getOSPlatform, isIPadOS, stubTranslation as _, uniqueId } from '@/utils/misc';
 import { isTauriAppPlatform } from '@/services/environment';
 import { eventDispatcher } from '@/utils/event';
 import type { AppService } from '@/types/system';
@@ -36,7 +36,7 @@ import type {
 // iOS Tauri must use the app-process AVPlayer (mirrors MediaOverlayClient's
 // NativeNarrationPlayer split): WebKit HTMLMediaElement / WebAudio cannot own
 // the app's non-mixable audio session.
-const isIOSTauri = (): boolean => isTauriAppPlatform() && getOSPlatform() === 'ios';
+const isIOSTauri = (): boolean => isTauriAppPlatform() && (getOSPlatform() === 'ios' || isIPadOS());
 
 // Android's WebView cannot seek media served by a custom scheme (Chromium
 // 40739128), so a downloaded track plays through the same native ExoPlayer

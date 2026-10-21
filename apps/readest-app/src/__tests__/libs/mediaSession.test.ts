@@ -4,6 +4,7 @@ import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
 // pin a platform without touching the real user agent / env.
 vi.mock('@/utils/misc', () => ({
   getOSPlatform: vi.fn(),
+  isIPadOS: vi.fn(() => false),
 }));
 vi.mock('@/services/environment', () => ({
   isTauriAppPlatform: vi.fn(),
@@ -23,7 +24,7 @@ import {
   TauriMediaSession,
   type MediaSessionState,
 } from '@/libs/mediaSession';
-import { getOSPlatform } from '@/utils/misc';
+import { getOSPlatform, isIPadOS } from '@/utils/misc';
 import { isTauriAppPlatform } from '@/services/environment';
 
 const setNavigatorMediaSession = (present: boolean) => {
@@ -53,6 +54,16 @@ describe('getMediaSession', () => {
     // either; an unfed WebKit client renders a bare "localhost" card with
     // dead buttons. The composite feeds both.
     vi.mocked(getOSPlatform).mockReturnValue('ios');
+    vi.mocked(isTauriAppPlatform).mockReturnValue(true);
+    setNavigatorMediaSession(true);
+
+    expect(getMediaSession()).toBeInstanceOf(IOSCompositeMediaSession);
+  });
+
+  // iPadOS sends a desktop user agent, so the OS reads as macOS there (#6974).
+  test('returns the composite session on an iPad in the Tauri app', () => {
+    vi.mocked(getOSPlatform).mockReturnValue('macos');
+    vi.mocked(isIPadOS).mockReturnValueOnce(true);
     vi.mocked(isTauriAppPlatform).mockReturnValue(true);
     setNavigatorMediaSession(true);
 
