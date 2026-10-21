@@ -1,3 +1,4 @@
+import type { InkTool } from '@/services/handwriting/model';
 import type { BookshelfState } from './bookshelf';
 import { CustomTheme } from '@/styles/themes';
 import { CustomFont } from '@/styles/fonts';
@@ -7,6 +8,7 @@ import { OPDSCatalog } from './opds';
 import { WebSource } from './webSource';
 import { ABSServer } from './audiobookshelf';
 import type { CustomTranslator, TranslationPrompt } from './translation';
+import type { CustomTTSService } from './customTTS';
 import type { AISettings } from '@/services/ai/types';
 import type { NotebookTab } from '@/store/notebookStore';
 import type { DictionarySettings, ImportedDictionary } from '@/services/dictionaries/types';
@@ -23,6 +25,7 @@ export const LibrarySortByType = {
   Format: 'format',
   Published: 'published',
   Progress: 'progress',
+  Pages: 'pages',
   TimeRemaining: 'timeRemaining',
 } as const;
 
@@ -76,6 +79,14 @@ export interface ReadSettings {
   defaultHighlightLabels: Partial<Record<HighlightColor, string>>;
   customTtsHighlightColors: string[];
   customThemes: CustomTheme[];
+
+  /** Ink color and pen width for the handwriting tool, remembered per install. */
+  handwritingColor: string;
+  handwritingWidth: number;
+  /** The drawing tool last used, and the marker's own color and width. */
+  handwritingTool: InkTool;
+  handwritingMarkerColor: string;
+  handwritingMarkerWidth: number;
 }
 
 export interface KOSyncSettings {
@@ -97,6 +108,12 @@ export interface KOSyncSettings {
    * Off by default, matching KOReader.
    */
   sendMetadata?: boolean;
+  /**
+   * Accept a self-signed or mismatched TLS certificate from this server on
+   * native requests. Unset on settings saved before the option existed, which
+   * keep accepting them; see `allowsSelfSignedCert`.
+   */
+  allowSelfSignedCert?: boolean;
 }
 
 export interface BookOrbitSettings {
@@ -124,6 +141,12 @@ export interface BookOrbitSettings {
    * option existed keep the automatic pushes they already had.
    */
   autoSync?: boolean;
+  /**
+   * Accept a self-signed or mismatched TLS certificate from this server on
+   * native requests. Unset on settings saved before the option existed, which
+   * keep accepting them; see `allowsSelfSignedCert`.
+   */
+  allowSelfSignedCert?: boolean;
 }
 
 export interface ReadwiseSettings {
@@ -365,6 +388,7 @@ export type SyncCategory =
   | 'opds_catalog'
   | 'abs_server'
   | 'custom_translator'
+  | 'custom_tts'
   | 'settings'
   | 'credentials'
   | 'stats';
@@ -379,6 +403,7 @@ export const SYNC_CATEGORIES: readonly SyncCategory[] = [
   'opds_catalog',
   'abs_server',
   'custom_translator',
+  'custom_tts',
   'settings',
   'stats',
   'credentials',
@@ -528,6 +553,8 @@ export interface SystemSettings {
   customTranslators?: CustomTranslator[];
   /** User translation prompts; synced as `translation_prompt`. */
   translationPrompts?: TranslationPrompt[];
+  /** User OpenAI-compatible speech services; synced as `custom_tts`. */
+  customTTSServices?: CustomTTSService[];
   /** Saved sites for the "From Web Browser" import (#5775). Device-local. */
   webSources?: WebSource[];
   metadataSeriesCollapsed: boolean;

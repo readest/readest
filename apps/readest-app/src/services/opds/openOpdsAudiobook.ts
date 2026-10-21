@@ -178,8 +178,11 @@ export const openOpdsAudiobookSession = async (input: {
   recordDuration(appService, book.hash, totalDuration);
   const saveProgress = makeProgressSaver(appService, book.hash, totalDuration);
 
+  // No CORS mode here: a catalog that plays on the web app today does so
+  // through a Cross-Origin-Resource-Policy header, which a CORS request would
+  // not satisfy.
   const clock = streamable
-    ? new HtmlAudioClock()
+    ? new HtmlAudioClock({ cors: false })
     : new BlobAudioClock((href) =>
         fetchOpdsAudioBlob(href, auth, mimeByHref.get(href) ?? 'audio/mpeg'),
       );

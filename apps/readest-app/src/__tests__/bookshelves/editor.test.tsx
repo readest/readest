@@ -58,16 +58,19 @@ vi.mock('@/components/Dialog', () => ({
   default: ({
     isOpen,
     title,
+    header,
     children,
     onClose,
   }: {
     isOpen: boolean;
     title: string;
+    header?: React.ReactNode;
     children: React.ReactNode;
     onClose: () => void;
   }) =>
     isOpen ? (
       <div role='dialog' aria-label={title}>
+        {header && <div data-testid='dialog-header'>{header}</div>}
         <button type='button' aria-label={`Close ${title}`} onClick={onClose}>
           Close
         </button>
@@ -117,6 +120,20 @@ afterEach(async () => {
   vi.unstubAllGlobals();
 });
 describe('bookshelf editor', () => {
+  it('shows the shelf tabs in the dialog header in place of a title', async () => {
+    render(<BookshelvesDialog />);
+    await act(async () => {
+      await eventDispatcher.dispatch('show-bookshelves');
+    });
+
+    const header = screen.getByTestId('dialog-header');
+    expect(within(header).getByRole('group', { name: 'Bookshelves' })).toBeTruthy();
+    expect(within(header).getByRole('button', { name: 'Default' })).toBeTruthy();
+    expect(within(header).queryByText('Manage Bookshelves')).toBeNull();
+    // The title still names the dialog for assistive technology.
+    expect(screen.getByRole('dialog', { name: 'Manage Bookshelves' })).toBeTruthy();
+  });
+
   it('remembers the selected shelf when the dialog is reopened after a remount', async () => {
     const { unmount } = render(<BookshelvesDialog />);
     await act(async () => {
@@ -352,6 +369,25 @@ describe('bookshelf editor', () => {
       value: '2025-01-01',
       unit: undefined,
     });
+  });
+  it('suggests filter values only from books still in the library', () => {
+    const [first] = useLibraryStore.getState().library;
+    act(() =>
+      useLibraryStore.setState({
+        library: [
+          { ...first!, hash: 'live', author: 'Live Author' },
+          { ...first!, hash: 'gone', author: 'Removed Author', deletedAt: 1 },
+        ],
+      }),
+    );
+    render(<BookshelvesEditor />);
+    fireEvent.click(screen.getByRole('button', { name: 'Add bookshelf' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Add condition' }));
+    fireEvent.change(screen.getByLabelText('Filter field'), { target: { value: 'author' } });
+    const suggested = Array.from(document.querySelectorAll('datalist option'), (o) =>
+      o.getAttribute('value'),
+    );
+    expect(suggested).toEqual(['Live Author']);
   });
   it('inherits grouping and retains each shelf’s independent choice', async () => {
     render(<BookshelvesEditor />);

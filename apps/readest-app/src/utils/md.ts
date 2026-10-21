@@ -1,5 +1,6 @@
 import { Marked } from 'marked';
 import markedFootnote from 'marked-footnote';
+import markedKatex from 'marked-katex-extension';
 
 import type { BookDoc, BookMetadata } from '@/libs/document';
 import { buildHtmlBook } from './htmlBook';
@@ -17,9 +18,16 @@ import { sanitizeHtml } from './sanitize';
 // A scoped parser: `marked` itself is a shared singleton also imported by the
 // annotation note renderer and the export dialog, and must not gain footnote
 // parsing as a side effect.
-const markdown = new Marked({ gfm: true }).use(markedFootnote({ prefixId: FOOTNOTE_PREFIX_ID }), {
-  hooks: { preprocess: (src) => expandInlineFootnotes(normalizeFootnoteDefinitionIndent(src)) },
-});
+// Math uses the same KaTeX setup as annotation notes (app/reader/utils/noteMarkdown.ts):
+// MathML output, since no KaTeX stylesheet is loaded in the book, and
+// `nonStandard` so CJK text like `（记为 $N_T$）` renders (issue #6870).
+const markdown = new Marked({ gfm: true }).use(
+  markedFootnote({ prefixId: FOOTNOTE_PREFIX_ID }),
+  markedKatex({ throwOnError: false, output: 'mathml', nonStandard: true }),
+  {
+    hooks: { preprocess: (src) => expandInlineFootnotes(normalizeFootnoteDefinitionIndent(src)) },
+  },
+);
 
 export async function makeMarkdownBook(file: File): Promise<BookDoc> {
   const text = await file.text();
@@ -37,10 +45,10 @@ export async function makeMarkdownBook(file: File): Promise<BookDoc> {
   const title = frontmatter.title || file.name.replace(/\.(?:md|markdown)$/i, '');
 
   return buildHtmlBook(
-    sanitizeHtml(rawHtml),
+    sanitizeHtml(rawHtml, { mathMl: true }),
     {
       author: '',
-      language: 'en',
+      language: '',
       ...frontmatter,
       title,
       // A frontmatter identifier — an explicit one, else the ISBN — makes the

@@ -95,11 +95,11 @@ describe('bookshelf editor responsive layout', () => {
             rows.set(top, [...(rows.get(top) || []), bounds]);
           }
           expect(rows.size).toBeGreaterThan(1);
-          const bounds = tabs.getBoundingClientRect();
+          // Centered on the screen, not just within the slot beside the back button.
           for (const row of rows.values()) {
             const start = Math.min(...row.map((control) => control.left));
             const end = Math.max(...row.map((control) => control.right));
-            expect((start + end) / 2).toBeCloseTo((bounds.left + bounds.right) / 2, 0);
+            expect((start + end) / 2).toBeCloseTo(document.documentElement.clientWidth / 2, 0);
           }
         };
         await waitFor(expectCenteredRows);
@@ -110,6 +110,28 @@ describe('bookshelf editor responsive layout', () => {
       });
     }
   }
+  it('titles the page with the selected shelf on phones so the tabs and + fit one row', async () => {
+    await page.viewport(414, 900);
+    const { getByRole, getByText } = render(<BookshelvesDialog />);
+    await act(async () => {
+      await eventDispatcher.dispatch('show-bookshelves');
+    });
+    const tabs = getByRole('group', { name: 'Bookshelves' });
+    const tops = new Set(
+      Array.from(tabs.querySelectorAll('[data-bookshelf-control]'), (control) =>
+        Math.round(control.getBoundingClientRect().top),
+      ),
+    );
+    expect(tops.size).toBe(1);
+    fireEvent.click(getByRole('button', { name: 'Default' }));
+    const title = getByText('Default', { selector: '[data-bookshelf-title]' });
+    expect(title.getBoundingClientRect().bottom).toBeLessThanOrEqual(
+      tabs.getBoundingClientRect().top,
+    );
+    fireEvent.click(getByRole('button', { name: /^Audiobooks/ }));
+    await waitFor(() => expect(title.textContent).toBe('Audiobooks'));
+  });
+
   it('previews skeuomorphic covers for books and groups using the shelf setting', async () => {
     await page.viewport(1440, 900);
     useLibraryStore.setState({
@@ -437,7 +459,8 @@ describe('bookshelf editor responsive layout', () => {
     await page.viewport(390, 900);
     await waitFor(() => expect(defaultTab.getBoundingClientRect().width).toBe(44));
     expect(finished.getBoundingClientRect().width).toBe(44);
-    expect(recent.getBoundingClientRect().width).toBeGreaterThan(44);
+    // The selected shelf titles the dialog on phones instead.
+    expect(recent.getBoundingClientRect().width).toBe(44);
     await page.viewport(1100, 900);
     await waitFor(() => expect(defaultTab.getBoundingClientRect().width).toBeGreaterThan(44));
     for (let i = 0; i < 4; i++) {
@@ -471,7 +494,8 @@ describe('bookshelf editor responsive layout', () => {
       expect(inactive.title).toContain('Default');
       expect(getByRole('button', { name: 'Add bookshelf' }).getBoundingClientRect().width).toBe(44);
       await userEvent.click(inactive);
-      expect(inactive.getBoundingClientRect().width).toBeGreaterThan(44);
+      if (width < 600) expect(inactive.getBoundingClientRect().width).toBe(44);
+      else expect(inactive.getBoundingClientRect().width).toBeGreaterThan(44);
       const recentWidth = getByRole('button', { name: /^Recently read/ }).getBoundingClientRect()
         .width;
       if (width < 600) expect(recentWidth).toBe(44);

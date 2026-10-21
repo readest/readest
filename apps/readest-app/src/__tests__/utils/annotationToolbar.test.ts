@@ -66,7 +66,14 @@ describe('annotationToolbar helpers', () => {
       'tts',
       'proofread',
       'share',
+      'quotecard',
     ]);
+  });
+
+  test('quotecard is opt-in and offered even when text share is unavailable', () => {
+    expect(DEFAULT_ANNOTATION_TOOLBAR_ITEMS).not.toContain('quotecard');
+    expect(getAvailableToolTypes(DEFAULT_ANNOTATION_TOOLBAR_ITEMS, false)).toContain('quotecard');
+    expect(getToolbarToolTypes(['copy', 'quotecard'], false)).toEqual(['copy', 'quotecard']);
   });
 
   test('getAvailableToolTypes hides share when !canShare', () => {

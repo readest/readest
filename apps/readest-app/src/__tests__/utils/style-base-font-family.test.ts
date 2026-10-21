@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 
-import { getBaseFontFamily } from '@/utils/style';
+import { getBaseFontFamily, getFontFamilies } from '@/utils/style';
 import { ViewSettings } from '@/types/book';
 import { DEFAULT_BOOK_FONT } from '@/services/constants';
 
@@ -43,5 +43,16 @@ describe('getBaseFontFamily', () => {
     });
     const family = getBaseFontFamily(vs);
     expect(family).toContain('"Source Han Serif CN"');
+  });
+});
+
+describe('getFontFamilies', () => {
+  it('resolves both the serif and sans-serif chains from the font settings', () => {
+    const vs = makeFontSettings({ serifFont: 'Bitter', sansSerifFont: 'Roboto' });
+    const { serif, sans } = getFontFamilies(vs);
+    expect(serif.startsWith('"Bitter"')).toBe(true);
+    expect(serif.endsWith(', serif')).toBe(true);
+    expect(sans.startsWith('"Roboto"')).toBe(true);
+    expect(sans.endsWith(', sans-serif')).toBe(true);
   });
 });

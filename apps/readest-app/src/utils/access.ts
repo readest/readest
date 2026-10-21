@@ -1,7 +1,11 @@
 import { jwtDecode } from 'jwt-decode';
 import { supabase } from '@/utils/supabase';
 import { UserPlan } from '@/types/quota';
-import { DEFAULT_DAILY_TRANSLATION_QUOTA, DEFAULT_STORAGE_QUOTA } from '@/services/constants';
+import {
+  DEFAULT_DAILY_TRANSLATION_QUOTA,
+  DEFAULT_DAILY_TTS_QUOTA,
+  DEFAULT_STORAGE_QUOTA,
+} from '@/services/constants';
 import { isWebAppPlatform } from '@/services/environment';
 import { getDailyUsage } from '@/services/translators/utils';
 import { getRuntimeConfig } from '@/services/runtimeConfig';
@@ -194,6 +198,13 @@ export const isCustomTranslatorAllowed = (token: string | null | undefined): boo
     ? isCustomizationAllowed(getUserProfilePlan(token), getCustomizationPurchased(token))
     : isSelfHosted();
 
+/**
+ * Custom TTS services (the user's own OpenAI-compatible speech endpoint) are
+ * premium on the same terms as custom translators: requests go straight from
+ * the device, so this is a client-side gate.
+ */
+export const isCustomTTSAllowed = isCustomTranslatorAllowed;
+
 export const STORAGE_QUOTA_GRACE_BYTES = 10 * 1024 * 1024; // 10 MB grace
 
 export const getStoragePlanData = (token: string) => {
@@ -221,6 +232,25 @@ export const getTranslationQuota = (plan: UserPlan): number => {
   return (
     fixedQuota || DEFAULT_DAILY_TRANSLATION_QUOTA[plan] || DEFAULT_DAILY_TRANSLATION_QUOTA['free']
   );
+};
+
+/**
+ * Plans that include the self-hosted premium TTS engine ("Readest Voice"):
+ * Plus and Pro subscriptions only. Unlike EMAIL_IN_PLANS / CLOUD_SYNC_PLANS
+ * this deliberately excludes `purchase` (lifetime): synthesis has a recurring
+ * per-character GPU cost that a one-time purchase does not fund.
+ */
+export const TTS_PLANS: readonly UserPlan[] = ['plus', 'pro'];
+
+export const isTTSInPlan = (plan: UserPlan): boolean => TTS_PLANS.includes(plan);
+
+/** A Readest Voice tier: Plus unlocks its voices, Pro unlocks both tiers. */
+export const isVoiceTierInPlan = (tier: 'plus' | 'pro', plan: UserPlan): boolean =>
+  tier === 'plus' ? isTTSInPlan(plan) : plan === 'pro';
+
+export const getTTSQuota = (plan: UserPlan): number => {
+  const fixedQuota = parseInt(process.env['TTS_FIXED_QUOTA'] ?? '0');
+  return fixedQuota || DEFAULT_DAILY_TTS_QUOTA[plan] || 0;
 };
 
 export const getTranslationPlanData = (token: string) => {
@@ -271,11 +301,17 @@ export const validateUserAndToken = async (authHeader: string | null | undefined
   if (!authHeader) return {};
 
   const token = authHeader.replace('Bearer ', '');
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser(token);
-
-  if (error || !user) return {};
-  return { user, token };
+  // getClaims verifies asymmetric (ES256) tokens locally against the cached JWKS, so API
+  // routes skip a GET /auth/v1/user round trip per request. HS256 tokens (legacy secret,
+  // self-hosted) still fall back to getUser inside getClaims.
+  try {
+    const { data, error } = await supabase.auth.getClaims(token);
+    const claims = data?.claims;
+    // The anon and service-role keys are JWTs too.
+    if (error || claims?.role !== 'authenticated' || !claims.sub) return {};
+    return { user: { id: claims.sub, email: claims.email }, token };
+  } catch {
+    // getClaims throws, rather than returns, an error for expired tokens.
+    return {};
+  }
 };

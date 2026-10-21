@@ -502,6 +502,8 @@ describe('field operators', () => {
     ['progress', 'number', 'gte', 25, true],
     ['progress', 'number', 'lt', 25, false],
     ['progress', 'number', 'lte', 25, true],
+    ['pages', 'number', 'gte', 100, true],
+    ['pages', 'number', 'gt', 100, false],
     ['created', 'date', 'equals', '2025-06-15', true],
     ['created', 'date', 'gt', '2025-06-14', true],
     ['created', 'date', 'lte', '2025-06-15', true],
@@ -518,6 +520,17 @@ describe('field operators', () => {
         children: [{ type: 'rule', field, kind, operator, value }],
       }),
     ).toBe(expected);
+  });
+  it('filters an unopened book by the page count recorded at import (#6662)', () => {
+    const pages = (b: Book) =>
+      matchBookshelfFilter(b, {
+        type: 'group',
+        match: 'all',
+        children: [{ type: 'rule', field: 'pages', kind: 'number', operator: 'gt', value: 100 }],
+      });
+    expect(pages({ ...book('Long'), pageCount: 340 })).toBe(true);
+    expect(pages({ ...book('Short'), pageCount: 40 })).toBe(false);
+    expect(pages(book('Unknown'))).toBe(false);
   });
   // A book without the field satisfies a negated condition: "Tags does not
   // contain kids" must keep untagged books rather than hide them.

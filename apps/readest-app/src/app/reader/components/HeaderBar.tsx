@@ -15,6 +15,7 @@ import { useTrafficLightStore } from '@/store/trafficLightStore';
 import { useTrafficLight } from '@/hooks/useTrafficLight';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { useSpatialNavigation } from '@/app/reader/hooks/useSpatialNavigation';
+import { useWindowFocusRestore } from '@/app/reader/hooks/useWindowFocusRestore';
 import { getHighlightColorHex } from '../utils/annotatorUtil';
 import { annotationToolQuickActions } from './annotator/AnnotationTools';
 import { AnnotationToolType } from '@/types/annotator';
@@ -91,6 +92,7 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
 
   const docs = view?.renderer.getContents() ?? [];
   const pointerInDoc = docs.some(({ doc }) => doc?.body?.style.cursor === 'pointer');
+  const isWindowFocusRestore = useWindowFocusRestore();
 
   const enableAnnotationQuickActions = viewSettings?.enableAnnotationQuickActions;
   const annotationQuickActionButton =
@@ -239,7 +241,9 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
           // (#6307); clear it without losing the header's own ps-4/pr-4 padding.
           ...getHorizontalInsetStyle(insets, isIPhoneDuo, 16),
         }}
-        onFocus={() => !appService?.isMobile && setHoveredBookKey(bookKey)}
+        onFocus={() =>
+          !appService?.isMobile && !isWindowFocusRestore() && setHoveredBookKey(bookKey)
+        }
         onMouseLeave={(e) => {
           if (!appService?.isMobile && isMouseOutsideHeader(e.clientX, e.clientY)) {
             setHoveredBookKey('');
@@ -305,6 +309,7 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
               onToggle={handleToggleDropdown}
             >
               <QuickActionMenu
+                bookKey={bookKey}
                 selectedAction={viewSettings.annotationQuickAction}
                 onActionSelect={handleAnnotationQuickActionSelect}
               />

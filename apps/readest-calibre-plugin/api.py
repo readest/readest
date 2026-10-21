@@ -18,8 +18,15 @@ import urllib.parse
 import urllib.request
 from datetime import datetime, timezone
 
+try:
+    load_translations()
+except NameError:
+    # Running outside calibre's plugin loader (unit tests): no translations.
+    def _(text):
+        return text
+
 DEFAULT_API_BASE = 'https://web.readest.com/api'
-DEFAULT_SUPABASE_URL = 'https://readest.supabase.co'
+DEFAULT_SUPABASE_URL = 'https://vbsyxfusjjqdxkjqlysc.supabase.co'
 # Public anon key, same one readest.koplugin ships (base64-encoded in main.lua).
 DEFAULT_ANON_KEY = (
     'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.'
@@ -233,7 +240,7 @@ class ReadestClient:
             body={'email': email, 'password': password},
         )
         if status != 200 or not isinstance(parsed, dict):
-            raise ReadestAPIError(self._error_message(parsed, payload, 'Login failed'), status)
+            raise ReadestAPIError(self._error_message(parsed, payload, _('Login failed')), status)
         self._store_tokens(parsed)
         return parsed.get('user') or {}
 
@@ -244,7 +251,7 @@ class ReadestClient:
     def refresh(self):
         refresh_token = self.tokens and self.tokens.get('refresh_token')
         if not refresh_token:
-            raise AuthRequiredError('Not logged in')
+            raise AuthRequiredError(_('Not logged in'))
         status, parsed, payload = self._request(
             'POST',
             self.supabase_url + '/auth/v1/token?grant_type=refresh_token',
@@ -253,7 +260,7 @@ class ReadestClient:
         )
         if status != 200 or not isinstance(parsed, dict):
             raise AuthRequiredError(
-                self._error_message(parsed, payload, 'Session expired, please log in again'),
+                self._error_message(parsed, payload, _('Session expired, please log in again')),
                 status,
             )
         self._store_tokens(parsed)
@@ -262,7 +269,7 @@ class ReadestClient:
         # Mirrors readest_syncauth.lua: refresh once less than half the TTL
         # remains; a token past its final minute is unusable without refresh.
         if not self.tokens or not self.tokens.get('access_token'):
-            raise AuthRequiredError('Not logged in')
+            raise AuthRequiredError(_('Not logged in'))
         expires_at = self.tokens.get('expires_at') or 0
         expires_in = self.tokens.get('expires_in') or 3600
         if expires_at < time.time() + max(60, expires_in / 2):
@@ -276,7 +283,7 @@ class ReadestClient:
             'GET', self.supabase_url + '/auth/v1/user', headers
         )
         if status != 200 or not isinstance(parsed, dict):
-            raise AuthRequiredError(self._error_message(parsed, payload, 'Not logged in'), status)
+            raise AuthRequiredError(self._error_message(parsed, payload, _('Not logged in')), status)
         return parsed
 
     def sign_out(self):
@@ -302,13 +309,13 @@ class ReadestClient:
         }
         status, parsed, payload = self._request(method, self.api_base + path, headers, body=body)
         if status in (401, 403):
-            message = self._error_message(parsed, payload, 'Not authenticated')
+            message = self._error_message(parsed, payload, _('Not authenticated'))
             if 'quota' in message.lower():
                 raise QuotaExceededError(message, status)
             raise AuthRequiredError(message, status)
         if status != 200:
             raise ReadestAPIError(
-                self._error_message(parsed, payload, 'Request failed (%s)' % status), status
+                self._error_message(parsed, payload, _('Request failed (%s)') % status), status
             )
         return parsed
 
@@ -392,7 +399,7 @@ class ReadestClient:
         )
         status, payload = self.transport(request, UPLOAD_TIMEOUT)
         if status not in (200, 201, 204):
-            message = 'Upload failed (%s)' % status
+            message = _('Upload failed (%s)') % status
             if payload:
                 # S3/R2 error responses are XML; surface the <Code> tag.
                 text = payload.decode('utf-8', 'replace')

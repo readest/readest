@@ -29,6 +29,7 @@ import {
 import { useSettingsStore } from '@/store/settingsStore';
 import type { SystemSettings } from '@/types/settings';
 import type { EnvConfigType } from '@/services/environment';
+import type { CustomTheme } from '@/styles/themes';
 
 const baseHighlight = {
   customThemes: [],
@@ -107,6 +108,62 @@ afterEach(() => {
 });
 
 describe('publishSettingsIfChanged', () => {
+  test.each([
+    'startup',
+    'published',
+    'remote',
+  ] as const)('publishes in-place custom theme changes after a %s snapshot', async (source) => {
+    const settings = makeSettings();
+    settings.globalReadSettings.customThemes = [];
+    await publishSettingsIfChanged(settings);
+    if (source === 'startup') {
+      __resetSettingsSyncForTests();
+      initSettingsSync(settings);
+    } else if (source === 'remote') {
+      applyRemoteSettings(makeEnvConfig(), {
+        name: 'singleton',
+        patch: {
+          globalReadSettings: { customThemes: [] },
+        } as unknown as Partial<SystemSettings>,
+      });
+    }
+    const current = source === 'remote' ? useSettingsStore.getState().settings : settings;
+    await publishSettingsIfChanged(current);
+    publishMock.mockClear();
+
+    const theme: CustomTheme = {
+      name: 'custom',
+      label: 'Custom',
+      colors: {
+        light: { bg: '#ffffff', fg: '#000000', primary: '#0066cc' },
+        dark: { bg: '#000000', fg: '#ffffff', primary: '#0066cc' },
+      },
+    };
+    // saveCustomTheme pushes into the live array, then reuses that settings object.
+    current.globalReadSettings.customThemes.push(theme);
+    await publishSettingsIfChanged(current);
+    expect(publishMock).toHaveBeenCalledTimes(1);
+    expect(publishMock.mock.calls[0]![1].patch.globalReadSettings.customThemes).toEqual([theme]);
+    publishMock.mockClear();
+
+    theme.colors.dark.bg = '#112233';
+    await publishSettingsIfChanged(current);
+    expect(publishMock).toHaveBeenCalledTimes(1);
+    expect(
+      publishMock.mock.calls[0]![1].patch.globalReadSettings.customThemes[0].colors.dark.bg,
+    ).toBe('#112233');
+    publishMock.mockClear();
+
+    current.globalReadSettings.customThemes.splice(0, 1);
+    await publishSettingsIfChanged(current);
+    expect(publishMock).toHaveBeenCalledTimes(1);
+    expect(publishMock.mock.calls[0]![1].patch.globalReadSettings.customThemes).toEqual([]);
+    publishMock.mockClear();
+
+    await publishSettingsIfChanged(current);
+    expect(publishMock).not.toHaveBeenCalled();
+  });
+
   test('first call publishes every populated whitelisted field', async () => {
     await publishSettingsIfChanged(makeSettings());
     expect(publishMock).toHaveBeenCalledTimes(1);

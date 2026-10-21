@@ -168,6 +168,26 @@ describe('makeMarkdownBook', () => {
     expect(doc.querySelector('h1')?.getAttribute('id')).toBeTruthy();
   });
 
+  it('renders $$ display and $ inline math as MathML (issue #6870)', async () => {
+    const book = await make(
+      '是 $\\sqrt{12}$ 倍（记为 $N_T$）。然后有：\n\n$$\n\\text{年化} = \\sqrt{N_T} \\times x\n$$\n',
+    );
+    const doc = await book.sections[0]!.createDocument();
+    expect(doc.querySelector('parsererror')).toBeNull();
+    const maths = [...doc.getElementsByTagNameNS('http://www.w3.org/1998/Math/MathML', 'math')];
+    expect(maths.map((m) => m.getAttribute('display'))).toEqual([null, null, 'block']);
+    expect(doc.body.textContent).not.toContain('$');
+  });
+
+  it('strips script and event handlers inside math', async () => {
+    const book = await make(
+      '$x$ <math><mi onclick="alert(1)">y</mi><script>alert(1)</script></math>\n',
+    );
+    const doc = await book.sections[0]!.createDocument();
+    expect(doc.querySelector('script')).toBeNull();
+    expect(doc.querySelector('[onclick]')).toBeNull();
+  });
+
   it('resolves the title from frontmatter, then the filename', async () => {
     const fm = await make('---\ntitle: From Front\nauthor: Jane Doe\n---\n\n# Ignored\n');
     expect(fm.metadata.title).toBe('From Front');
@@ -256,6 +276,26 @@ describe('makeMarkdownBook', () => {
     expect(book.metadata.language).toBe('en');
     expect(book.metadata.author).toBe('');
     expect(await book.getCover()).toBeNull();
+  });
+
+  it('detects the language of the text when the frontmatter names none', async () => {
+    const book = await make(
+      '# Rozdział pierwszy\n\n' +
+        'Był piękny letni dzień, kiedy po raz pierwszy zobaczyłem morze. ' +
+        'Szliśmy razem przez las, a potem długo siedzieliśmy na plaży i rozmawialiśmy ' +
+        'o wszystkim, co wydarzyło się w ciągu ostatnich lat w naszym małym mieście.\n',
+      'Opowiadanie.md',
+    );
+    expect(book.metadata.language).toBe('pl');
+  });
+
+  it('keeps the frontmatter language over the detected one', async () => {
+    const book = await make(
+      '---\nlanguage: fr\n---\n\n' +
+        'Był piękny letni dzień, kiedy po raz pierwszy zobaczyłem morze. ' +
+        'Szliśmy razem przez las, a potem długo siedzieliśmy na plaży.\n',
+    );
+    expect(book.metadata.language).toBe('fr');
   });
 
   it('creates object URLs lazily and revokes every one on destroy', async () => {

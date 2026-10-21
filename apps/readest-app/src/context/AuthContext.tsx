@@ -96,7 +96,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       await supabase.auth.refreshSession();
     } catch {
     } finally {
-      await supabase.auth.signOut();
+      await supabase.auth.signOut({ scope: 'local' });
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       setToken(null);

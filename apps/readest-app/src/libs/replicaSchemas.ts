@@ -62,6 +62,7 @@ const opdsCatalogFieldsSchema = z
     customHeaders: fieldEnvelopeSchema.optional(),
     autoDownload: fieldEnvelopeSchema.optional(),
     disabled: fieldEnvelopeSchema.optional(),
+    allowSelfSignedCert: fieldEnvelopeSchema.optional(),
     addedAt: fieldEnvelopeSchema.optional(),
     sortOrder: fieldEnvelopeSchema.optional(),
     // Encrypted-credential fields. The CRDT envelope wraps a cipher
@@ -79,6 +80,7 @@ const absServerFieldsSchema = z
     addedAt: fieldEnvelopeSchema.optional(),
     libraryIds: fieldEnvelopeSchema.optional(),
     disabled: fieldEnvelopeSchema.optional(),
+    allowSelfSignedCert: fieldEnvelopeSchema.optional(),
     serverVersion: fieldEnvelopeSchema.optional(),
     // Encrypted-credential fields. The CRDT envelope wraps a cipher
     // envelope as `v` when the publishing device had its CryptoSession
@@ -97,6 +99,20 @@ const customTranslatorFieldsSchema = z
     baseUrl: fieldEnvelopeSchema.optional(),
     model: fieldEnvelopeSchema.optional(),
     temperature: fieldEnvelopeSchema.optional(),
+    disabled: fieldEnvelopeSchema.optional(),
+    addedAt: fieldEnvelopeSchema.optional(),
+    updatedAt: fieldEnvelopeSchema.optional(),
+    // Encrypted-credential field, omitted when the publisher was locked.
+    apiKey: fieldEnvelopeWithCipher.optional(),
+  })
+  .catchall(fieldEnvelopeWithCipher);
+
+const customTTSFieldsSchema = z
+  .object({
+    name: fieldEnvelopeSchema.optional(),
+    baseUrl: fieldEnvelopeSchema.optional(),
+    model: fieldEnvelopeSchema.optional(),
+    instructions: fieldEnvelopeSchema.optional(),
     disabled: fieldEnvelopeSchema.optional(),
     addedAt: fieldEnvelopeSchema.optional(),
     updatedAt: fieldEnvelopeSchema.optional(),
@@ -185,6 +201,13 @@ export const KIND_ALLOWLIST: Record<string, KindSpec> = {
     maxSchemaVersion: 1,
     maxRowsPerUser: 100,
     fields: translationPromptFieldsSchema,
+    binary: false,
+  },
+  custom_tts: {
+    minSchemaVersion: 1,
+    maxSchemaVersion: 1,
+    maxRowsPerUser: 50,
+    fields: customTTSFieldsSchema,
     binary: false,
   },
   settings: {

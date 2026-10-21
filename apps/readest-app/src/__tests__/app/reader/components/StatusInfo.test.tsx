@@ -57,3 +57,19 @@ describe('StatusInfo battery percentage legibility', () => {
     expect(knockout.parentElement?.style.clipPath).toBe('inset(0px 17.15px 0px 0px)');
   });
 });
+
+describe('StatusInfo battery percentage with a custom footer color (#6794)', () => {
+  it('inherits the footer color instead of the theme text color', () => {
+    batteryLevel = 90;
+    const { container } = render(
+      <div style={{ color: '#806000' }}>
+        <StatusInfo {...baseProps} isEink={false} inheritTextColor />
+      </div>,
+    );
+    const percentage = container.querySelector('.battery-percentage') as HTMLElement;
+
+    expect(percentage.textContent).toBe('90');
+    expect(percentage.classList.contains('text-base-content')).toBe(false);
+    expect(percentage.style.color).toBe('');
+  });
+});

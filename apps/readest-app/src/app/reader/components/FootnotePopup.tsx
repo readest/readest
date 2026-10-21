@@ -20,6 +20,7 @@ import {
   getFootnoteStyles,
   getStyles,
   getThemeCode,
+  keepTextAlignment,
 } from '@/utils/style';
 import { getPopupPosition, getPosition, Position } from '@/utils/sel';
 import { getPopupBounds, offsetPosition, PopupBounds } from '@/utils/insets';
@@ -318,6 +319,7 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
       popupView.addEventListener('load', (e: CustomEvent) => {
         const { doc, index } = e.detail as { doc: Document; index: number };
         const bookData = getBookData(bookKey)!;
+        keepTextAlignment(doc);
         mountAdditionalFonts(doc, isCJKLang(bookData.book?.primaryLanguage));
         getLoadedFonts().forEach((font) => {
           mountCustomFont(doc, font);
@@ -331,6 +333,10 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
         // caret only clears a selection reported before. On touch devices the
         // caret a tap on a highlight drops lands after the click that opened
         // its toolbar, and used to close it again (#6395).
+        // A selection is settled — ready for the Annotator's quick action —
+        // once no pointer is down: on release, or for a touch selection, after
+        // the system long-press took over the gesture (#6804).
+        let pointerDown = false;
         const report = (tap: boolean) => {
           if (!doc.defaultView) return; // popup already torn down
           const sel = doc.getSelection();
@@ -351,6 +357,7 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
             cfi: getPopupCfi?.(range),
             href: footnoteHrefRef.current?.split('#')[0],
             getPopupCfi,
+            quickAction: tap || !pointerDown,
           });
         };
         let selectionTimer: ReturnType<typeof setTimeout> | null = null;
@@ -358,7 +365,20 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
           if (selectionTimer) clearTimeout(selectionTimer);
           selectionTimer = setTimeout(() => report(false), 250);
         });
+        doc.addEventListener('pointerdown', (ev: PointerEvent) => {
+          pointerDown = true;
+          // A new gesture re-arms the Annotator's quick action, as a pointerdown
+          // in the book does; without it only the first popup selection ran it.
+          eventDispatcher.dispatch('footnote-pointerdown', {
+            key: bookKey,
+            pointerType: ev.pointerType,
+          });
+        });
+        doc.addEventListener('pointercancel', () => {
+          pointerDown = false;
+        });
         doc.addEventListener('pointerup', () => {
+          pointerDown = false;
           if (selectionTimer) clearTimeout(selectionTimer);
           report(true);
         });
@@ -495,6 +515,18 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
       containerRef.current?.focus();
     }
   }, [showPopup]);
+
+  // FoliateViewer lifts the iOS instant-highlight selection suppression while
+  // the popup is up, so its text can be selected.
+  useEffect(() => {
+    eventDispatcher.dispatch('footnote-popup-shown', { key: bookKey, shown: showPopup });
+  }, [bookKey, showPopup]);
+  useEffect(
+    () => () => {
+      eventDispatcher.dispatch('footnote-popup-shown', { key: bookKey, shown: false });
+    },
+    [bookKey],
+  );
 
   // A tap on a highlighted link opens the highlight's toolbar at the same word
   // as this popup; tell it which side is taken so the two don't stack (#6390).

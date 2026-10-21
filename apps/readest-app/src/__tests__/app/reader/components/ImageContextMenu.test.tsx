@@ -73,6 +73,14 @@ describe('ImageContextMenu (#6558)', () => {
     ]);
   });
 
+  // On iOS the menu opens under the finger still holding the image, and
+  // WebKit's long-press selection would then select the item's label.
+  test('keeps its labels out of text selection', async () => {
+    render(<ImageContextMenu bookKey='book-1' />);
+    await openMenu();
+    expect(screen.getByText('Copy Image').closest('.no-context-menu')).not.toBeNull();
+  });
+
   test('copies the image to the clipboard as a PNG', async () => {
     render(<ImageContextMenu bookKey='book-1' />);
     await openMenu();

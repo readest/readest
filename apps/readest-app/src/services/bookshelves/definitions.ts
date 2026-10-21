@@ -58,6 +58,7 @@ export const BOOKSHELF_SORT_LABELS: Record<LibrarySortByType, string> = {
   series: _('Series'),
   size: _('Size'),
   format: _('Format'),
+  pages: _('Pages'),
   published: _('Date Published'),
   progress: _('Progress Read'),
   timeRemaining: _('Time Remaining'),

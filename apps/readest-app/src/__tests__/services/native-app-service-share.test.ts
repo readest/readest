@@ -7,6 +7,7 @@ const mkdirMock = vi.fn().mockResolvedValue(undefined);
 const saveDialogMock = vi.fn().mockResolvedValue('/tmp/exported.md');
 const shareFileMock = vi.fn().mockResolvedValue(undefined);
 const copyURIToPathMock = vi.fn().mockResolvedValue({ success: true });
+const removeMock = vi.fn().mockResolvedValue(undefined);
 
 vi.mock('@tauri-apps/plugin-os', () => ({
   type: () => osTypeMock(),
@@ -20,7 +21,7 @@ vi.mock('@tauri-apps/plugin-fs', () => ({
   writeTextFile: (...args: unknown[]) => writeTextFileMock(...args),
   writeFile: (...args: unknown[]) => writeFileMock(...args),
   readDir: vi.fn().mockResolvedValue([]),
-  remove: vi.fn().mockResolvedValue(undefined),
+  remove: (...args: unknown[]) => removeMock(...args),
   copyFile: vi.fn().mockResolvedValue(undefined),
   stat: vi.fn().mockResolvedValue({ size: 0 }),
   BaseDirectory: {},
@@ -91,6 +92,7 @@ describe('NativeAppService.saveFile share gating', () => {
     saveDialogMock.mockClear();
     shareFileMock.mockClear();
     copyURIToPathMock.mockClear();
+    removeMock.mockClear();
   });
 
   test('uses a unique cache path for same-named content-provider files', async () => {
@@ -152,6 +154,58 @@ describe('NativeAppService.saveFile share gating', () => {
     expect(writeFileMock).toHaveBeenCalledWith(sharedPath, expect.any(Uint8Array));
     // The subdirectory is created before writing.
     expect(mkdirMock).toHaveBeenCalled();
+  });
+
+  // Regression (#6713): Android 10 resolves Tauri's Temp dir to the
+  // unwritable /data/local/tmp, so Temp files must live in the app cache.
+  test('stages Temp files in the app cache on Android', async () => {
+    const service = await loadServiceWithOS('android');
+    const bytes = new Uint8Array([1, 2, 3]).buffer;
+    await service.saveFile('image.png', bytes, { share: true, mimeType: 'image/png' });
+
+    expect(shareFileMock.mock.calls[0]![0]).toBe('/tmp/app-cache/shared/image.png');
+  });
+
+  test('keeps Temp files in the temp dir on iOS', async () => {
+    const service = await loadServiceWithOS('ios');
+    const bytes = new Uint8Array([1, 2, 3]).buffer;
+    await service.saveFile('image.png', bytes, { share: true, mimeType: 'image/png' });
+
+    expect(shareFileMock.mock.calls[0]![0]).toBe('file:///tmp/shared/image.png');
+  });
+
+  // Regression (#6719): the iOS plugin parses the path with `URL(string:)`,
+  // which on iOS 16 returns nil for a space or non-ASCII character, so the
+  // share sheet never opened. It gets a percent-encoded file URL instead.
+  test('hands iOS a percent-encoded file URL', async () => {
+    const service = await loadServiceWithOS('ios');
+    await service.saveFile('三体 (1).md', 'notes', { share: true, mimeType: 'text/markdown' });
+
+    expect(shareFileMock.mock.calls[0]![0]).toBe('file:///tmp/shared/%E4%B8%89%E4%BD%93%20(1).md');
+  });
+
+  // An iOS "Open with" book keeps its decoded `file://` URI as its file path.
+  test('does not re-wrap a file URI on iOS', async () => {
+    const service = await loadServiceWithOS('ios');
+    await service.saveFile('My Book.epub', null, {
+      share: true,
+      filePath: 'file:///private/var/Inbox/My Book.epub',
+    });
+
+    expect(shareFileMock.mock.calls[0]![0]).toBe('file:///private/var/Inbox/My%20Book.epub');
+    expect(removeMock).toHaveBeenCalledWith('/tmp/My Book.epub');
+  });
+
+  // The iOS plugin copies the file to `<tmp>/<name>` and silently keeps an
+  // existing copy, so a second export of the same book shared the first one.
+  test('clears the plugin copy of a previous share on iOS', async () => {
+    const service = await loadServiceWithOS('ios');
+    await service.saveFile('notes.md', 'hello', { share: true, mimeType: 'text/markdown' });
+
+    expect(removeMock).toHaveBeenCalledWith('/tmp/notes.md');
+    expect(removeMock.mock.invocationCallOrder[0]).toBeLessThan(
+      shareFileMock.mock.invocationCallOrder[0]!,
+    );
   });
 
   // The book "Send" flow hands an already-on-disk file straight to the share

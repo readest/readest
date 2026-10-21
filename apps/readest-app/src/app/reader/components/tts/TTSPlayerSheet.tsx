@@ -12,8 +12,11 @@ import {
   MdPlayArrow,
   MdOutlineFileDownload,
   MdChevronRight,
+  MdExpandMore,
   MdSkipNext,
   MdSkipPrevious,
+  MdTextDecrease,
+  MdTextIncrease,
 } from 'react-icons/md';
 import { RiForward30Line, RiReplay15Line, RiVoiceAiFill } from 'react-icons/ri';
 import { TbArrowBarToRight } from 'react-icons/tb';
@@ -43,6 +46,7 @@ import TTSScrubber from './TTSScrubber';
 import TTSLyricsView from './TTSLyricsView';
 import BufferingRing from './BufferingRing';
 import { TTSLyrics, useTTSLyrics } from './useTTSLyrics';
+import { usePlayerResize } from './usePlayerResize';
 import SpeedRuler, { formatRate } from './SpeedRuler';
 import TTSChaptersView from './TTSChaptersView';
 import { TTS_STOP_AT_CHAPTER_END } from '@/services/tts/TTSSessionManager';
@@ -93,6 +97,8 @@ type TTSPlayerSheetProps = {
   onToggleLoop: () => void;
   onGetLyricLoopRange: () => { start: number; end: number } | null;
   onSetRate: (rate: number) => void;
+  // The TTS clients finished initializing: until then there are no voices.
+  clientsReady: boolean;
   onGetVoices: (lang: string) => Promise<TTSVoicesGroup[]>;
   onSetVoice: (voice: string, lang: string) => void;
   onGetVoiceId: () => string;
@@ -112,6 +118,11 @@ type TTSPlayerSheetProps = {
   downloads: UseTTSDownloadsResult;
   activeSectionIndex: number | null;
 };
+
+// Lyric line sizes (px) the A−/A+ buttons step through; 14 is the old text-sm.
+const LYRIC_FONT_SIZES = [12, 14, 16, 18, 20, 24, 28, 32, 38];
+const DEFAULT_LYRIC_FONT_SIZE = 14;
+const LYRIC_FONT_SIZE_KEY = 'ttsLyricsFontSize';
 
 // Full player sheet: cover, chapter, scrubber, transport, and one compact
 // row of speed / voice / sleep-timer buttons that drill into in-sheet
@@ -134,6 +145,7 @@ const TTSPlayerSheet = ({
   onToggleLoop,
   onGetLyricLoopRange,
   onSetRate,
+  clientsReady,
   onGetVoices,
   onSetVoice,
   onGetVoiceId,
@@ -180,6 +192,15 @@ const TTSPlayerSheet = ({
   const [voiceGroups, setVoiceGroups] = useState<TTSVoicesGroup[]>([]);
   const [rate, setRate] = useState(viewSettings?.ttsRate ?? 1.0);
   const [selectedVoice, setSelectedVoice] = useState('');
+  // The voice list is an accordion: at most one group open. Until the reader
+  // taps a header, the group of the voice in use (else the first) is open;
+  // tapping the open header folds it (null: all folded).
+  const [pickedGroup, setPickedGroup] = useState<string | null | undefined>(undefined);
+  const openGroup =
+    pickedGroup !== undefined
+      ? pickedGroup
+      : (voiceGroups.find((group) => group.voices.some((voice) => voice.id === selectedVoice))
+          ?.id ?? voiceGroups[0]?.id);
   const timerLabel = useCountdownLabel(timeoutTimestamp);
   const iconSize18 = useResponsiveSize(18);
   const iconSize24 = useResponsiveSize(24);
@@ -207,6 +228,25 @@ const TTSPlayerSheet = ({
   const isEink = viewSettings?.isEink ?? false;
   const pauseAfterSentence = viewSettings?.ttsPauseAfterSentence ?? false;
   const coverImage = book?.coverImageUrl && !coverFailed ? book.coverImageUrl : null;
+  const resize = usePlayerResize();
+  // Storage is best-effort (it throws when the browser blocks it): the size
+  // still works for this session, it just isn't remembered.
+  const [lyricFontSize, setLyricFontSize] = useState(() => {
+    try {
+      const stored = Number(localStorage.getItem(LYRIC_FONT_SIZE_KEY));
+      return LYRIC_FONT_SIZES.includes(stored) ? stored : DEFAULT_LYRIC_FONT_SIZE;
+    } catch {
+      return DEFAULT_LYRIC_FONT_SIZE;
+    }
+  });
+  const stepLyricFontSize = (step: 1 | -1) => {
+    const next = LYRIC_FONT_SIZES[LYRIC_FONT_SIZES.indexOf(lyricFontSize) + step];
+    if (next === undefined) return;
+    setLyricFontSize(next);
+    try {
+      localStorage.setItem(LYRIC_FONT_SIZE_KEY, String(next));
+    } catch {}
+  };
 
   const lyrics = useTTSLyrics({
     bookKey,
@@ -241,10 +281,21 @@ const TTSPlayerSheet = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
+  // Opened while the clients initialized: pick up the voice once they are
+  // ready, without leaving the view the user is on.
+  useEffect(() => {
+    if (isOpen && clientsReady) setSelectedVoice(onGetVoiceId());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clientsReady]);
+
   useEffect(() => {
     if (!isOpen) return;
+    // A request superseded by a newer one (the clients became ready, the
+    // language changed) must not overwrite its result.
+    let current = true;
     const fetchVoices = async () => {
       const groups = await onGetVoices(ttsLang);
+      if (!current) return;
       const voicesCount = groups.reduce((acc, group) => acc + group.voices.length, 0);
       if (!groups || voicesCount === 0) {
         setVoiceGroups([
@@ -259,8 +310,11 @@ const TTSPlayerSheet = ({
       }
     };
     fetchVoices();
+    return () => {
+      current = false;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, ttsLang]);
+  }, [isOpen, ttsLang, clientsReady]);
 
   const handleSelectRate = (value: number) => {
     setRate(value);
@@ -303,16 +357,16 @@ const TTSPlayerSheet = ({
   // Entitled users drill into the per-chapter download view; everyone else is
   // routed to the upgrade page (or sign-in), the sheet closing first so the
   // navigation isn't hidden behind it.
+  // Signed in, to the plans on the user page; signed out, to sign in first.
+  const handleUpgrade = () => {
+    onClose();
+    if (user) navigateToProfile(router);
+    else navigateToLogin(router);
+  };
+
   const handleOpenDownloads = () => {
-    if (isDownloadPremium) {
-      setView('chapters');
-    } else if (user) {
-      onClose();
-      navigateToProfile(router);
-    } else {
-      onClose();
-      navigateToLogin(router);
-    }
+    if (isDownloadPremium) setView('chapters');
+    else handleUpgrade();
   };
 
   const timeoutOptions = getTTSTimeoutOptions(_);
@@ -400,7 +454,13 @@ const TTSPlayerSheet = ({
       snapHeight={showLyrics ? 0.8 : 0.65}
       title={_('Read Aloud')}
       header={header}
-      boxClassName='sm:h-auto! sm:max-h-[85%]! sm:w-[420px]! sm:min-w-0!'
+      // The voice list keeps one height, so folding a group never resizes the
+      // sheet; the other views fit their content. A size dragged out with the
+      // corner grip (usePlayerResize) overrides both, up to the whole window.
+      boxClassName={clsx(
+        'sm:max-h-[min(var(--tts-player-h,85%),100%)]! sm:w-[var(--tts-player-w,420px)]! sm:min-w-0! sm:max-w-full!',
+        view === 'voice' ? 'sm:h-[var(--tts-player-h,85%)]!' : 'sm:h-[var(--tts-player-h,auto)]!',
+      )}
       contentClassName='px-4! sm:px-4! mt-[-4px]'
       onClose={onClose}
     >
@@ -414,7 +474,7 @@ const TTSPlayerSheet = ({
             // The lyric sheet is the one element here that can take whatever
             // height is left, so it claims it — and the transport below stays
             // put instead of being pushed into a scroll.
-            showLyrics && 'h-full sm:h-auto',
+            showLyrics && (resize.sized ? 'h-full' : 'h-full sm:h-auto'),
           )}
         >
           {/* With lyrics the artwork steps aside into a thumbnail row so the
@@ -451,9 +511,36 @@ const TTSPlayerSheet = ({
                 </span>
               )}
             </div>
+            {showLyrics && (
+              // sm:me-8 clears the desktop close button in the box's top-end corner.
+              <div className='flex shrink-0 items-center self-end sm:me-8'>
+                {(
+                  [
+                    [-1, _('Decrease font size'), MdTextDecrease],
+                    [1, _('Increase font size'), MdTextIncrease],
+                  ] as const
+                ).map(([step, label, Icon]) => (
+                  <button
+                    key={step}
+                    type='button'
+                    aria-label={label}
+                    title={label}
+                    disabled={
+                      LYRIC_FONT_SIZES[LYRIC_FONT_SIZES.indexOf(lyricFontSize) + step] === undefined
+                    }
+                    onClick={() => stepLyricFontSize(step)}
+                    className='text-base-content/70 hover:text-base-content disabled:text-base-content/25 flex items-end px-1.5 pt-2 leading-none'
+                  >
+                    <Icon size={iconSize18} />
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
           {showLyrics && (
             <TTSLyricsView
+              fill={resize.sized}
+              fontSize={lyricFontSize}
               lines={lyrics.lines}
               activeIndex={lyrics.activeIndex}
               loopRange={loopRange}
@@ -509,6 +596,7 @@ const TTSPlayerSheet = ({
                 title={prevLargeLabel}
                 aria-label={prevLargeLabel}
                 onClick={() => onBackward(false)}
+                disabled={!clientsReady}
               >
                 {audioTransport ? (
                   <MdSkipPrevious size={iconSize24} />
@@ -522,6 +610,7 @@ const TTSPlayerSheet = ({
                 title={prevSmallLabel}
                 aria-label={prevSmallLabel}
                 onClick={() => onBackward(true)}
+                disabled={!clientsReady}
               >
                 {audioTransport ? (
                   <RiReplay15Line size={iconSize24} />
@@ -531,10 +620,11 @@ const TTSPlayerSheet = ({
               </button>
               <button
                 type='button'
-                className='btn btn-primary btn-circle relative mx-2 h-14 min-h-14 w-14'
+                className='btn btn-contrast btn-circle relative mx-2 h-14 min-h-14 w-14'
                 aria-label={isPlaying ? _('Pause') : _('Play')}
                 aria-busy={buffering}
                 onClick={onTogglePlay}
+                disabled={!clientsReady}
               >
                 {isPlaying ? (
                   <MdOutlinePause size={iconSize32} />
@@ -551,6 +641,7 @@ const TTSPlayerSheet = ({
                 title={nextSmallLabel}
                 aria-label={nextSmallLabel}
                 onClick={() => onForward(true)}
+                disabled={!clientsReady}
               >
                 {audioTransport ? (
                   <RiForward30Line size={iconSize24} />
@@ -564,6 +655,7 @@ const TTSPlayerSheet = ({
                 title={nextLargeLabel}
                 aria-label={nextLargeLabel}
                 onClick={() => onForward(false)}
+                disabled={!clientsReady}
               >
                 {audioTransport ? (
                   <MdSkipNext size={iconSize24} />
@@ -663,41 +755,83 @@ const TTSPlayerSheet = ({
       )}
       {view === 'voice' && (
         <div className='flex w-full flex-col pb-4'>
-          {voiceGroups.map((voiceGroup) => (
-            <div key={voiceGroup.id}>
-              <div className='text-base-content/60 px-2 py-1 text-sm sm:text-xs'>
-                {/* A single-voice group (a book's own narrator) would otherwise
-                    read "Narration: 1 voices". */}
-                {voiceGroup.voices.length === 1
-                  ? _(voiceGroup.name)
-                  : _('{{engine}}: {{count}} voices', {
-                      engine: _(voiceGroup.name),
-                      count: voiceGroup.voices.length,
-                    })}
-              </div>
-              {voiceGroup.voices.map((voice) => (
+          {voiceGroups.map((voiceGroup) => {
+            const collapsed = voiceGroup.id !== openGroup;
+            // The group holding the voice in use stands out, and names it
+            // while folded (open, its check mark already shows it).
+            const current = voiceGroup.voices.find((voice) => voice.id === selectedVoice);
+            return (
+              <div key={voiceGroup.id}>
                 <button
-                  key={`${voiceGroup.id}-${voice.id}`}
                   type='button'
-                  disabled={voice.disabled}
-                  onClick={() => handleSelectVoice(voice.id, voice.lang)}
-                  className='flex w-full items-center gap-2 rounded-lg px-2 py-2 text-start'
+                  aria-expanded={!collapsed}
+                  onClick={() => setPickedGroup(collapsed ? voiceGroup.id : null)}
+                  className={clsx(
+                    'flex w-full items-center gap-1 px-2 py-1 text-start text-sm sm:text-xs',
+                    current ? 'text-base-content font-semibold' : 'text-base-content/60',
+                  )}
                 >
-                  <span className='flex h-6 w-6 items-center justify-center'>
-                    {selectedVoice === voice.id && <MdCheck className='text-base-content' />}
+                  <span className='flex-1'>
+                    {/* A single-voice group (a book's own narrator) would otherwise
+                      read "Narration: 1 voices". */}
+                    {voiceGroup.voices.length === 1
+                      ? _(voiceGroup.name)
+                      : _('{{engine}}: {{count}} voices', {
+                          engine: _(voiceGroup.name),
+                          count: voiceGroup.voices.length,
+                        })}
                   </span>
-                  <span
-                    className={clsx(
-                      'overflow-hidden text-ellipsis text-base sm:text-sm',
-                      voice.disabled && 'text-base-content/40',
-                    )}
-                  >
-                    {_(voice.name)}
-                  </span>
+                  {collapsed && current && (
+                    <span className='max-w-[50%] shrink-0 truncate'>{_(current.name)}</span>
+                  )}
+                  <MdExpandMore
+                    className={clsx('shrink-0', collapsed && '-rotate-90 rtl:rotate-90')}
+                  />
                 </button>
-              ))}
-            </div>
-          ))}
+                {!collapsed &&
+                  voiceGroup.voices.map((voice) => (
+                    <button
+                      key={`${voiceGroup.id}-${voice.id}`}
+                      type='button'
+                      // A premium voice the plan lacks stays tappable: it
+                      // leads to the upgrade instead of speaking.
+                      disabled={voice.disabled && !voice.tier}
+                      onClick={() =>
+                        voice.disabled ? handleUpgrade() : handleSelectVoice(voice.id, voice.lang)
+                      }
+                      className='flex w-full items-center gap-2 rounded-lg px-2 py-2 text-start'
+                    >
+                      <span className='flex h-6 w-6 items-center justify-center'>
+                        {selectedVoice === voice.id && <MdCheck className='text-base-content' />}
+                      </span>
+                      <span
+                        className={clsx(
+                          'overflow-hidden text-ellipsis text-base sm:text-sm',
+                          voice.disabled && 'text-base-content/40',
+                        )}
+                      >
+                        {_(voice.name)}
+                      </span>
+                      {voice.variant && (
+                        <span className='badge badge-sm badge-ghost ms-auto shrink-0'>
+                          {voice.variant === 'multilingual' ? _('Multilingual') : _('Expressive')}
+                        </span>
+                      )}
+                      {voice.tier && (
+                        <span
+                          className={clsx(
+                            'badge badge-sm badge-ghost shrink-0',
+                            !voice.variant && 'ms-auto',
+                          )}
+                        >
+                          {voice.tier === 'pro' ? _('Pro') : _('Plus')}
+                        </span>
+                      )}
+                    </button>
+                  ))}
+              </div>
+            );
+          })}
         </div>
       )}
       {view === 'timer' && (
@@ -717,6 +851,23 @@ const TTSPlayerSheet = ({
           ))}
         </div>
       )}
+      {/* Pointer-only affordance in the box's bottom-end corner (it is the
+          containing block: the body wrapper is not positioned). */}
+      <div
+        {...resize.gripProps}
+        data-tts-player-resize
+        aria-hidden
+        className='text-base-content/40 absolute bottom-1 end-1 z-20 hidden h-4 w-4 cursor-nwse-resize touch-none sm:block rtl:cursor-nesw-resize'
+      >
+        <svg viewBox='0 0 16 16' className='h-full w-full rtl:-scale-x-100'>
+          <path
+            d='M15 6 6 15M15 11l-4 4'
+            stroke='currentColor'
+            strokeWidth='1.5'
+            strokeLinecap='round'
+          />
+        </svg>
+      </div>
     </Dialog>
   );
 };

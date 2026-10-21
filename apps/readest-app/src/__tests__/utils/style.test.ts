@@ -16,10 +16,10 @@ describe('transformStylesheet', () => {
   const VERTICAL = false;
 
   describe('text-align center + text-indent 0', () => {
-    it('adds !important to both text-align and text-indent when both present in same rule', () => {
+    it('adds !important only to text-indent when both present in same rule', () => {
       const css = '.centered { text-align: center; text-indent: 0; }';
       const result = transformStylesheet(css, VW, VH, VERTICAL);
-      expect(result).toContain('text-align: center !important');
+      expect(result).not.toContain('text-align: center !important');
       expect(result).toContain('text-indent: 0 !important');
     });
 
@@ -37,16 +37,51 @@ describe('transformStylesheet', () => {
   });
 
   describe('white-space nowrap', () => {
-    it('adds overflow clip !important when no overflow is set', () => {
+    // A nowrapped line must not spill past the column into the margin or the
+    // next page, so it is clipped along the line. Clipping the other axis too
+    // cut off whatever rises above or hangs below the line box, such as a
+    // top-aligned footnote icon in a <sup> on the first line (#6797).
+    it('clips a nowrapped element along the line only', () => {
       const css = '.nowrap { white-space: nowrap; }';
       const result = transformStylesheet(css, VW, VH, VERTICAL);
-      expect(result).toContain('overflow: clip !important');
+      expect(result).toContain('overflow-x: clip !important');
+      expect(result).not.toContain('overflow-y: clip');
+      expect(result).not.toMatch(/[^-]overflow: clip/);
     });
 
-    it('does not add overflow clip when overflow is already set', () => {
+    it('clips a nowrapped element vertically in vertical writing', () => {
+      const css = '.nowrap { white-space: nowrap; }';
+      const result = transformStylesheet(css, VW, VH, true);
+      expect(result).toContain('overflow-y: clip !important');
+      expect(result).not.toContain('overflow-x: clip');
+    });
+
+    // A nowrapped rule that sizes its own box (height, max-height, line clamp)
+    // may rely on the box clipping its content, so it keeps the old clip on
+    // both axes; only unsized nowrapped elements let content rise past the line.
+    it('keeps clipping both axes when the rule sets its own height', () => {
+      for (const sizing of ['height: 2em', 'max-height: 3em', '-webkit-line-clamp: 2']) {
+        const css = `.box { white-space: nowrap; ${sizing}; }`;
+        const result = transformStylesheet(css, VW, VH, VERTICAL);
+        expect(result).toContain('overflow: clip !important');
+        expect(result).not.toContain('overflow-x: clip');
+      }
+    });
+
+    it('treats line-height and min-height as unsized (the #6797 rule)', () => {
+      const css =
+        '.adapt-poem-c { text-indent: 0; text-align: center; font-size: 1.0em; ' +
+        'margin: 0.85em auto; word-break: break-all; white-space: nowrap; ' +
+        'letter-spacing: normal; line-height: 1.7; min-height: 1em; }';
+      const result = transformStylesheet(css, VW, VH, VERTICAL);
+      expect(result).toContain('overflow-x: clip !important');
+      expect(result).not.toMatch(/[^-]overflow: clip/);
+    });
+
+    it('does not add a clip when overflow is already set', () => {
       const css = '.nowrap { white-space: nowrap; overflow: hidden; }';
       const result = transformStylesheet(css, VW, VH, VERTICAL);
-      expect(result).not.toContain('overflow: clip !important');
+      expect(result).not.toContain('clip !important');
     });
   });
 
@@ -283,6 +318,22 @@ describe('transformStylesheet', () => {
       const css = '.text { color: rgb(0, 0, 0); }';
       const result = transformStylesheet(css, VW, VH, VERTICAL);
       expect(result).toContain('color: var(--theme-fg-color)');
+    });
+
+    it('replaces black written with an alpha digit', () => {
+      for (const black of ['#000f', '#000000ff']) {
+        const result = transformStylesheet(`.text { color: ${black}; }`, VW, VH, VERTICAL);
+        expect(result).toContain('color: var(--theme-fg-color);');
+      }
+    });
+
+    // `#000` matched the start of `#0000FF`, leaving `var(--theme-fg-color)0FF`,
+    // which is invalid when computed, so the link fell back to the text color (#6858)
+    it('keeps a color that only starts like black', () => {
+      for (const color of ['#0000FF', '#000080', '#0001', '#00000080']) {
+        const result = transformStylesheet(`a { color: ${color}; }`, VW, VH, VERTICAL);
+        expect(result).toContain(`color: ${color};`);
+      }
     });
   });
 

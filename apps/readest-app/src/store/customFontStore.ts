@@ -10,6 +10,7 @@ import {
 import { useSettingsStore } from './settingsStore';
 import { getReplicaPersistEnv } from '@/services/sync/replicaPersist';
 import { publishReplicaDelete, publishReplicaUpsert } from '@/services/sync/replicaPublish';
+import { queueReplicaBinaryDelete } from '@/services/sync/replicaBinaryUpload';
 import { FONT_KIND } from '@/services/sync/adapters/font';
 import { computeFontContentId } from '@/services/fontService';
 import { migrateLegacyReplicas } from '@/services/sync/migrateLegacy';
@@ -19,8 +20,10 @@ const publishFontUpsert = (font: CustomFont): void => {
   void publishReplicaUpsert(FONT_KIND, font, font.contentId, font.reincarnation);
 };
 
-const publishFontDelete = (contentId: string): void => {
-  void publishReplicaDelete(FONT_KIND, contentId);
+const publishFontDelete = (font: CustomFont): void => {
+  if (!font.contentId) return;
+  void publishReplicaDelete(FONT_KIND, font.contentId);
+  void queueReplicaBinaryDelete(FONT_KIND, font);
 };
 
 interface FontStoreState {
@@ -154,7 +157,7 @@ export const useCustomFontStore = create<FontStoreState>((set, get) => ({
     set((state) => ({
       fonts: [...state.fonts],
     }));
-    if (font.contentId) publishFontDelete(font.contentId);
+    publishFontDelete(font);
     return result;
   },
 
@@ -316,8 +319,10 @@ export const useCustomFontStore = create<FontStoreState>((set, get) => ({
   },
 
   loadAllFonts: async (envConfig) => {
+    // Cloud-only fonts have no file on disk until the user downloads them.
     const fontIds = get()
       .getAvailableFonts()
+      .filter((font) => !font.unavailable)
       .map((font) => font.id);
     return await get().loadFonts(envConfig, fontIds);
   },

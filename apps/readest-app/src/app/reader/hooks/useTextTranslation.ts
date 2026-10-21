@@ -378,7 +378,9 @@ export function useTextTranslation(
 
   const translateElement = async (el: HTMLElement) => {
     if (!enabled.current) return;
-    const text = el.textContent?.replaceAll('\n', '').trim();
+    // The payload's text leaves out ruby readings and injected nodes.
+    const payload = extractSourcePayload(el);
+    const text = payload.text.replaceAll('\n', '').trim();
     if (!text) return;
 
     if (el.classList.contains('translation-target')) {
@@ -395,7 +397,6 @@ export function useTextTranslation(
       // tags for us; otherwise send bare text. Markup is split at run
       // boundaries so a long formatted paragraph still keeps its formatting
       // instead of falling back — each chunk is well-formed on its own.
-      const payload = extractSourcePayload(el);
       const markupChunks =
         translatorPreservesMarkup && payload.hasMarkup
           ? splitMarkupIntoChunks(payload.html, MAX_MARKUP_PAYLOAD_CHARS, splitTextIntoChunks)

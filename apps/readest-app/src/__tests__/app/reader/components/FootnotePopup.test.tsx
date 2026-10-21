@@ -92,6 +92,7 @@ vi.mock('@/store/customFontStore', () => ({
 
 vi.mock('@/utils/style', () => ({
   applyLinkHitArea: hoisted.applyLinkHitArea,
+  keepTextAlignment: () => {},
   getBaseFontFamily: () => '"Reader Font", serif',
   getBaseFontSize: () => 22,
   getFootnoteStyles: () => '',
@@ -382,6 +383,39 @@ describe('FootnotePopup jump to location', () => {
       await settle();
 
       expect(cleared()).toBe(1);
+    });
+
+    // #6804: the Annotator runs the quick action only on a settled selection —
+    // released, not one still being dragged out with the pointer held down.
+    const reportedQuickAction = (dispatch: { mock: { calls: unknown[][] } }) =>
+      dispatch.mock.calls
+        .filter(
+          ([name, detail]) => name === 'footnote-selection' && (detail as { range?: Range }).range,
+        )
+        .map(([, detail]) => (detail as { quickAction?: boolean }).quickAction);
+
+    it('marks a selection settled when the pointer is released', async () => {
+      const { doc, dispatch } = await loadPopupDoc();
+
+      doc.dispatchEvent(new Event('pointerdown'));
+      doc.getSelection()!.selectAllChildren(doc.body.firstChild!);
+      doc.dispatchEvent(new Event('selectionchange'));
+      await settle();
+      doc.dispatchEvent(new Event('pointerup'));
+
+      expect(reportedQuickAction(dispatch)).toEqual([false, true]);
+    });
+
+    it('marks a selection made with no pointer held settled', async () => {
+      const { doc, dispatch } = await loadPopupDoc();
+
+      doc.dispatchEvent(new Event('pointerdown'));
+      doc.dispatchEvent(new Event('pointercancel'));
+      doc.getSelection()!.selectAllChildren(doc.body.firstChild!);
+      doc.dispatchEvent(new Event('selectionchange'));
+      await settle();
+
+      expect(reportedQuickAction(dispatch)).toEqual([true]);
     });
 
     // A tap elsewhere in the note is how a highlight's toolbar gets dismissed.

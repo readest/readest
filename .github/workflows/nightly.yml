@@ -50,9 +50,23 @@ jobs:
       fail-fast: false
       matrix:
         config:
+          # One APK per ABI group; `arch` names the APK and its updater key
+          # (android-<arch>, see src/helpers/updater.ts::getAndroidPlatformKey).
           - os: ubuntu-latest
             release: android
-            rust_target: aarch64-linux-android,armv7-linux-androideabi,i686-linux-android,x86_64-linux-android
+            arch: arm64
+            rust_target: aarch64-linux-android
+            android_args: '-t aarch64'
+          - os: ubuntu-latest
+            release: android
+            arch: armv7
+            rust_target: armv7-linux-androideabi
+            android_args: '-t armv7'
+          - os: ubuntu-latest
+            release: android
+            arch: legacy
+            rust_target: i686-linux-android,x86_64-linux-android
+            android_args: '-t i686 -t x86_64'
           - os: ubuntu-22.04
             release: linux
             arch: x86_64
@@ -97,7 +111,7 @@ jobs:
         uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
 
       - name: setup node
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v6
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v6
         with:
           node-version: 24
           cache: pnpm
@@ -234,11 +248,10 @@ jobs:
       # `pnpm tauri android init` + `git checkout .` reverts tracked files
       # (including package.json), so the nightly version MUST be patched AFTER
       # the checkout. Mirrors release.yml's android build/signing steps.
-      - name: build and sign Android apks
+      - name: build and sign Android apk
         if: matrix.config.release == 'android'
         shell: bash
-        # Two full Android builds (universal + arm64) run ~50-60min and sometimes
-        # exceed 75. Stays under the job backstop above.
+        # Stays under the job backstop above.
         timeout-minutes: 90
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -263,13 +276,9 @@ jobs:
           echo "storeFile=$RUNNER_TEMP/keystore.jks" >> keystore.properties
           popd
 
-          apk_path=src-tauri/gen/android/app/build/outputs/apk/universal/release
-          universal_apk=Readest_${version}_universal.apk
-          arm64_apk=Readest_${version}_arm64.apk
-          pnpm tauri android build
-          cp ${apk_path}/app-universal-release.apk $universal_apk
-          pnpm tauri android build -t aarch64
-          cp ${apk_path}/app-universal-release.apk $arm64_apk
+          apk=Readest_${version}_${{ matrix.config.arch }}.apk
+          pnpm tauri android build ${{ matrix.config.android_args }}
+          cp src-tauri/gen/android/app/build/outputs/apk/universal/release/app-universal-release.apk $apk
 
           # Sentry symbolicates Rust panics from these: the APK ships the
           # library stripped (see gen/android/app/build.gradle.kts), while
@@ -280,8 +289,7 @@ jobs:
               ../../target/*/release/libreadestlib.so || echo "::warning::Sentry debug file upload failed"
           fi
 
-          pnpm tauri signer sign $universal_apk
-          pnpm tauri signer sign $arm64_apk
+          pnpm tauri signer sign $apk
 
       # ──────────────────────────── DESKTOP ────────────────────────────
       # Linux ships on the CEF runtime: `pnpm tauri` (mirrors release.yml; see
@@ -432,8 +440,14 @@ jobs:
           case "$release" in
             android)
               # Signed in the android step; basenames already version-stamped.
-              add_entry "apps/readest-app/Readest_${version}_universal.apk" "Readest_${version}_universal.apk" "android-universal"
-              add_entry "apps/readest-app/Readest_${version}_arm64.apk"     "Readest_${version}_arm64.apk"     "android-arm64"
+              apk="Readest_${version}_${arch}.apk"
+              add_entry "apps/readest-app/$apk" "$apk" "android-${arch}"
+              # Clients released before the per-ABI split look up
+              # android-universal on every non-arm64 device; most are armv7.
+              if [ "$arch" = "armv7" ]; then
+                jq '.platforms["android-universal"] = .platforms["android-armv7"]' "$frag" > "$frag.tmp" && mv "$frag.tmp" "$frag"
+                echo "fragment += android-universal -> $apk"
+              fi
               ;;
             macos)
               # Universal updater bundle: bundle/macos/Readest.app.tar.gz (no

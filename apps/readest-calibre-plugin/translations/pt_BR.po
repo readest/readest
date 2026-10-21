@@ -1,0 +1,270 @@
+# Portuguese (Brazil) translation for the Readest calibre plugin.
+# Copyright (C) 2026 Bilingify LLC
+# This file is distributed under the same license as the Readest calibre plugin.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Readest calibre plugin\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-13 12:37+0000\n"
+"PO-Revision-Date: 2026-10-13 22:40+0000\n"
+"Last-Translator: Bilingify LLC\n"
+"Language-Team: Portuguese (Brazil)\n"
+"Language: pt_BR\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+msgid "Push selected books and their metadata into your Readest cloud library. Re-pushing a book updates its existing entry instead of creating a duplicate."
+msgstr "Envie os livros selecionados e seus metadados para sua biblioteca na nuvem Readest. Reenviar um livro atualiza a entrada existente em vez de criar uma duplicata."
+
+msgid "Not logged in."
+msgstr "Não conectado."
+
+msgid "Include custom columns in pushed metadata"
+msgstr "Incluir colunas personalizadas nos metadados enviados"
+
+msgid "Only change this if you run a self-hosted Readest server."
+msgstr "Altere isto somente se você executar um servidor Readest auto-hospedado."
+
+msgid "Logged in as %s."
+msgstr "Conectado como %s."
+
+msgid "API server:"
+msgstr "Servidor de API:"
+
+msgid "Use the Readest toolbar menu to log in or out."
+msgstr "Use o menu Readest da barra de ferramentas para entrar ou sair."
+
+msgid "Push to Readest"
+msgstr "Enviar para o Readest"
+
+msgid "Push to Readest failed"
+msgstr "Falha ao enviar para o Readest"
+
+msgid "Readest status"
+msgstr "Situação do Readest"
+
+msgid "Readest status check failed"
+msgstr "Falha na verificação da situação do Readest"
+
+msgid "Log in to Readest"
+msgstr "Entrar no Readest"
+
+msgid "Email:"
+msgstr "E-mail:"
+
+msgid "Password:"
+msgstr "Senha:"
+
+msgid "Log in"
+msgstr "Entrar"
+
+msgid "Logging in…"
+msgstr "Entrando…"
+
+msgid "Waiting for the browser login to complete…"
+msgstr "Aguardando a conclusão do login no navegador…"
+
+msgid "Unknown"
+msgstr "Desconhecido"
+
+msgid "Pushing %d book to your Readest library…"
+msgid_plural "Pushing %d books to your Readest library…"
+msgstr[0] "Enviando %d livro para sua biblioteca Readest…"
+msgstr[1] "Enviando %d livros para sua biblioteca Readest…"
+
+msgid "Checking %d book against your Readest library…"
+msgid_plural "Checking %d books against your Readest library…"
+msgstr[0] "Verificando %d livro na sua biblioteca Readest…"
+msgstr[1] "Verificando %d livros na sua biblioteca Readest…"
+
+msgid "Or sign in with your browser:"
+msgstr "Ou entre com seu navegador:"
+
+msgid "Please enter both email and password."
+msgstr "Informe o e-mail e a senha."
+
+msgid "Login failed: the browser callback carried no session."
+msgstr "Falha no login: o retorno do navegador não trouxe nenhuma sessão."
+
+msgid "Book"
+msgstr "Livro"
+
+msgid "Status"
+msgstr "Situação"
+
+msgid "Details"
+msgstr "Detalhes"
+
+msgid "Canceling…"
+msgstr "Cancelando…"
+
+msgid "Browser login timed out. Try again."
+msgstr "O login no navegador expirou. Tente novamente."
+
+msgid "Login failed: %s"
+msgstr "Falha no login: %s"
+
+msgid "Readest Login"
+msgstr "Entrar no Readest"
+
+msgid "Completing login…"
+msgstr "Concluindo o login…"
+
+msgid "Login complete. You can close this tab and return to calibre."
+msgstr "Login concluído. Você pode fechar esta aba e voltar ao calibre."
+
+msgid "Readest"
+msgstr "Readest"
+
+msgid "Push selected books and metadata to your Readest library"
+msgstr "Enviar os livros selecionados e metadados para sua biblioteca Readest"
+
+msgid "Select the books to push to Readest."
+msgstr "Selecione os livros a enviar para o Readest."
+
+msgid "Select the books to check against Readest."
+msgstr "Selecione os livros a verificar no Readest."
+
+msgid "No books selected"
+msgstr "Nenhum livro selecionado"
+
+msgid "Push selected books to Readest"
+msgstr "Enviar os livros selecionados para o Readest"
+
+msgid "Check Readest status"
+msgstr "Verificar a situação do Readest"
+
+msgid "Log in to Readest…"
+msgstr "Entrar no Readest…"
+
+msgid "Log out"
+msgstr "Sair"
+
+msgid "Customize plugin…"
+msgstr "Personalizar o plugin…"
+
+msgid "Log out (%s)"
+msgstr "Sair (%s)"
+
+msgid "your Readest account"
+msgstr "sua conta Readest"
+
+msgid "Uploaded"
+msgstr "Enviado"
+
+msgid "Replaced"
+msgstr "Substituído"
+
+msgid "Updated"
+msgstr "Atualizado"
+
+msgid "Up to date"
+msgstr "Em dia"
+
+msgid "Failed"
+msgstr "Falhou"
+
+msgid "In Readest"
+msgstr "No Readest"
+
+msgid "Metadata differs"
+msgstr "Metadados diferentes"
+
+msgid "Out of date"
+msgstr "Desatualizado"
+
+msgid "Not in Readest"
+msgstr "Não está no Readest"
+
+msgid "No Readest-supported format (EPUB, PDF, ...)"
+msgstr "Nenhum formato suportado pelo Readest (EPUB, PDF, ...)"
+
+msgid "Book file is missing from the calibre library"
+msgstr "O arquivo do livro está ausente na biblioteca do calibre"
+
+msgid "Nothing to push."
+msgstr "Nada para enviar."
+
+msgid "Nothing to check."
+msgstr "Nada para verificar."
+
+msgid "Please log in to Readest first. (%s)"
+msgstr "Entre no Readest primeiro. (%s)"
+
+msgid "Could not reach Readest: %s"
+msgstr "Não foi possível alcançar o Readest: %s"
+
+msgid "Canceled."
+msgstr "Cancelado."
+
+msgid "Readest storage quota exceeded — push stopped."
+msgstr "Cota de armazenamento do Readest excedida — envio interrompido."
+
+msgid "Session expired — please log in again."
+msgstr "Sessão expirada — entre novamente."
+
+msgid "Login failed"
+msgstr "Falha no login"
+
+msgid "Not logged in"
+msgstr "Não conectado"
+
+msgid "Session expired, please log in again"
+msgstr "Sessão expirada, entre novamente"
+
+msgid "Not authenticated"
+msgstr "Não autenticado"
+
+msgid "Request failed (%s)"
+msgstr "Falha na solicitação (%s)"
+
+msgid "Upload failed (%s)"
+msgstr "Falha no envio (%s)"
+
+msgid "%d uploaded"
+msgid_plural "%d uploaded"
+msgstr[0] "%d enviado"
+msgstr[1] "%d enviados"
+
+msgid "%d replaced"
+msgid_plural "%d replaced"
+msgstr[0] "%d substituído"
+msgstr[1] "%d substituídos"
+
+msgid "%d updated"
+msgid_plural "%d updated"
+msgstr[0] "%d atualizado"
+msgstr[1] "%d atualizados"
+
+msgid "%d up to date"
+msgid_plural "%d up to date"
+msgstr[0] "%d em dia"
+msgstr[1] "%d em dia"
+
+msgid "%d failed"
+msgid_plural "%d failed"
+msgstr[0] "%d falhou"
+msgstr[1] "%d falharam"
+
+msgid "%d in Readest"
+msgid_plural "%d in Readest"
+msgstr[0] "%d no Readest"
+msgstr[1] "%d no Readest"
+
+msgid "%d metadata differs"
+msgid_plural "%d metadata differs"
+msgstr[0] "%d com metadados diferentes"
+msgstr[1] "%d com metadados diferentes"
+
+msgid "%d out of date"
+msgid_plural "%d out of date"
+msgstr[0] "%d desatualizado"
+msgstr[1] "%d desatualizados"
+
+msgid "%d not in Readest"
+msgid_plural "%d not in Readest"
+msgstr[0] "%d não está no Readest"
+msgstr[1] "%d não estão no Readest"

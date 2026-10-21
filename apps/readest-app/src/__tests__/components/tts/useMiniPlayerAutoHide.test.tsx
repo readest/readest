@@ -42,6 +42,81 @@ describe('useMiniPlayerAutoHide', () => {
     expect(result.current).toBe(false);
   });
 
+  it('keeps the full player up while buffering, then hides 5s after audio starts', () => {
+    // A cold GPU worker can take far longer than 5s for the first sentence: the
+    // spinning play button must stay in sight until something is heard.
+    let buffering = true;
+    const { result, rerender } = renderHook(() =>
+      useMiniPlayerAutoHide(BOOK, 'full', true, buffering),
+    );
+    act(() => {
+      vi.advanceTimersByTime(30_000);
+    });
+    expect(result.current).toBe(true);
+
+    buffering = false;
+    rerender();
+    act(() => {
+      vi.advanceTimersByTime(4999);
+    });
+    expect(result.current).toBe(true);
+    act(() => {
+      vi.advanceTimersByTime(1);
+    });
+    expect(result.current).toBe(false);
+  });
+
+  it('leaves a hidden full player hidden through a brief stall between paragraphs', () => {
+    let buffering = false;
+    const { result, rerender } = renderHook(() =>
+      useMiniPlayerAutoHide(BOOK, 'full', true, buffering),
+    );
+    act(() => {
+      vi.advanceTimersByTime(5000);
+    });
+    expect(result.current).toBe(false);
+
+    buffering = true;
+    rerender();
+    act(() => {
+      vi.advanceTimersByTime(499);
+    });
+    buffering = false;
+    rerender();
+    expect(result.current).toBe(false);
+    act(() => {
+      vi.advanceTimersByTime(10_000);
+    });
+    expect(result.current).toBe(false);
+  });
+
+  it('brings a hidden full player back once a stall lasts 500ms, then hides it 5s after audio resumes', () => {
+    let buffering = false;
+    const { result, rerender } = renderHook(() =>
+      useMiniPlayerAutoHide(BOOK, 'full', true, buffering),
+    );
+    act(() => {
+      vi.advanceTimersByTime(5000);
+    });
+    buffering = true;
+    rerender();
+    act(() => {
+      vi.advanceTimersByTime(500);
+    });
+    expect(result.current).toBe(true);
+
+    buffering = false;
+    rerender();
+    act(() => {
+      vi.advanceTimersByTime(4999);
+    });
+    expect(result.current).toBe(true);
+    act(() => {
+      vi.advanceTimersByTime(1);
+    });
+    expect(result.current).toBe(false);
+  });
+
   it('keeps the full player up for as long as the toolbar is shown', () => {
     setHovered(BOOK);
     const { result } = renderHook(() => useMiniPlayerAutoHide(BOOK, 'full', true));

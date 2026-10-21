@@ -9,6 +9,7 @@ import * as CFI from 'foliate-js/epubcfi.js';
 import { Overlayer } from 'foliate-js/overlayer.js';
 import { adjacentChunkAnchor } from 'foliate-js/section-chunks.js';
 import {
+  MULTILINGUAL_LANG,
   TTSGranularity,
   TTSHighlightGranularity,
   TTSHighlightOptions,
@@ -20,13 +21,20 @@ import { expandRangeOverRuby } from '@/utils/ruby';
 import { WebSpeechClient } from './WebSpeechClient';
 import { NativeTTSClient } from './NativeTTSClient';
 import { EdgeTTSClient } from './EdgeTTSClient';
+import { BufferedTTSClient } from './BufferedTTSClient';
+import { createBookTTSCacheStore } from './providers/bookCacheStore';
+import { CachingProvider } from './providers/cache';
+import { ReadestVoiceProvider } from './providers/readest';
+import { OpenAICompatibleSpeechProvider } from './providers/openaiCompatible';
+import type { CustomTTSService } from '@/types/customTTS';
+import { getAccessToken, isCustomTTSAllowed } from '@/utils/access';
 import { SectionTimeline, TimelineSentence } from './SectionTimeline';
-import { hydrateProvisionalDurations } from './ttsDuration';
+import { estimateSentenceSeconds, hydrateProvisionalDurations } from './ttsDuration';
 import { DownloadableSentence, SectionEnumerator, TTSDownloader } from './TTSDownloader';
 import { TTSUtils } from './TTSUtils';
 import { TTSClient } from './TTSClient';
 import { startAudioKeepAlive, stopAudioKeepAlive } from './WebAudioPlayer';
-import { isValidLang } from '@/utils/lang';
+import { isSameLang, isValidLang } from '@/utils/lang';
 import { normalizeLyricText } from '@/utils/ttsLyrics';
 import {
   computeWordOffsets,
@@ -75,6 +83,37 @@ let ttsPositionSequence = 0;
 // consecutive failures so a wholly-unusable engine still stops gracefully
 // instead of silently racing to the end of the book. See #4613, #4408.
 const TTS_NATIVE_SPEAK_MAX_CONSECUTIVE_ERRORS = 5;
+// Windowed engines (TTSCapabilities.windowedPrefetch): preload upcoming
+// paragraphs until about this much estimated audio, at most this many.
+const PRELOAD_AHEAD_SEC = 180;
+const PRELOAD_MAX_PARAGRAPHS = 40;
+// Preload the next paragraphs this long after a paragraph starts at the latest.
+const PRELOAD_NEXT_AFTER_MS = 500;
+
+const isSameRange = (a: Range, b: Range) =>
+  a.startContainer.ownerDocument === b.startContainer.ownerDocument &&
+  a.compareBoundaryPoints(Range.START_TO_START, b) === 0 &&
+  a.compareBoundaryPoints(Range.END_TO_END, b) === 0;
+
+// An engine that does not answer in time (a server that never replies, a
+// voice list that never loads) is unavailable for this session: one stuck
+// engine must not hold up the others, the player sheet, or the next start.
+const ENGINE_INIT_TIMEOUT_MS = 15_000;
+
+const withinEngineTimeout = <T>(work: Promise<T>, fallback: T): Promise<T> =>
+  new Promise<T>((resolve) => {
+    const timer = setTimeout(() => resolve(fallback), ENGINE_INIT_TIMEOUT_MS);
+    work.then(
+      (value) => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      () => {
+        clearTimeout(timer);
+        resolve(fallback);
+      },
+    );
+  });
 
 type TTSState =
   | 'stopped'
@@ -100,6 +139,9 @@ const SEEK_PREVIEW_KEY = 'tts-seek-preview';
 // The A-B repeat span, tinted under the spoken highlight.
 const LOOP_KEY = 'tts-loop';
 const LOOP_TINT_OPACITY = '0.12';
+// In word mode, the sounding sentence tinted under the spoken word.
+const SENTENCE_KEY = 'tts-sentence';
+const SENTENCE_TINT_OPACITY = '0.2';
 
 // Hook-supplied callbacks rebound on view attach: the constructor-captured
 // closures belong to whichever reader hook created the controller and die
@@ -118,11 +160,13 @@ export interface TTSViewBindings {
 // stop/init overhead allows, which reads as no pause at all.
 export const DEFAULT_PARAGRAPH_GAP_SEC = 0.3;
 
-const drawLoopTint = (rects: DOMRectList, options: Record<string, unknown>) => {
+const drawTint = (opacity: string) => (rects: DOMRectList, options: Record<string, unknown>) => {
   const g = Overlayer.highlight(rects, options);
-  g.style.opacity = LOOP_TINT_OPACITY;
+  g.style.opacity = opacity;
   return g;
 };
+const drawLoopTint = drawTint(LOOP_TINT_OPACITY);
+const drawSentenceTint = drawTint(SENTENCE_TINT_OPACITY);
 
 export class TTSController extends EventTarget {
   // PlaybackSource tag: the media bridge and the session manager consume this
@@ -142,6 +186,9 @@ export class TTSController extends EventTarget {
   // "stop at end of chapter" sleep-timer mode. Gates only the loop's own
   // continuation (see forward()'s isAutoAdvance), never user navigation.
   stopAtChapterEnd: boolean = false;
+  // Word mode tints the sounding sentence under the spoken word. Off on e-ink:
+  // a translucent fill is a gray smear there and repaints every sentence.
+  sentenceTint: boolean = true;
   // Sentence-by-sentence mode (#5233): park on the next sentence after each
   // one instead of reading on. Like A-B repeat it steps by sentence mark, so a
   // paired audiobook (whose marks are chapters) ignores both.
@@ -171,7 +218,17 @@ export class TTSController extends EventTarget {
   // chunk (see BufferedTTSClient/MediaOverlayClient), so it is the only signal
   // needed here. Surfaced as isBuffering() for the player's spinner.
   #awaitingAudio = false;
+  // Opening paragraphs (raw SSML) of what is read after the current document
+  // (the next chunk of a chunked section, else the next section), for preloads
+  // across its end; built once per document read.
+  #nextOpening: { after: Document | null; ssmls: Promise<string[]> } | null = null;
+  // Signal for queued background preloads: a windowed provider keeps them
+  // until it aborts, so a voice change or stop must withdraw them.
+  #preloadAbort = new AbortController();
   #ttsDoc: Document | null = null;
+  // Bumped whenever a different document is read: the lyric sheet's identity,
+  // since a section read in chunks changes document but not section index.
+  #ttsDocSheet = 0;
   #ttsGranularity: TTSGranularity = 'sentence';
   #skipInlineAnnotations = false;
 
@@ -183,6 +240,9 @@ export class TTSController extends EventTarget {
   #speakWordOffsets: (TTSWordOffset | null)[] = [];
   #speakWordRanges: (Range | null | undefined)[] = [];
   #suppressMarkHighlight = false;
+  // The mark dispatchSpeakMark last set on the live TTS, so a look-ahead that
+  // steps the TTS can put the sentence being read back (#6850).
+  #lastSetMark: { name: string; range: Range } | null = null;
   // True while the current chunk is highlighted word-by-word, with the most
   // recently highlighted word range. Lets re-highlights (e.g. on page relocate)
   // re-apply the word instead of redrawing the whole sentence over it.
@@ -216,10 +276,22 @@ export class TTSController extends EventTarget {
   ttsClient: TTSClient;
   ttsWebClient: TTSClient;
   ttsEdgeClient: EdgeTTSClient;
+  // Readest Voice (premium, Plus/Pro): never the default engine, only chosen
+  // by picking one of its voices.
+  ttsReadestClient: BufferedTTSClient;
+  #readestProvider: ReadestVoiceProvider;
+  // The user's own OpenAI-compatible services (premium, BYOK): like Readest
+  // Voice, never the default engine, only chosen by picking one of its voices.
+  ttsCustomClient: BufferedTTSClient;
+  // Supplied by the reader (setCustomTTSServices) so the controller stays free
+  // of store imports.
+  #customTTSServices: () => CustomTTSService[] = () => [];
   ttsNativeClient: TTSClient | null = null;
   ttsMediaOverlayClient: MediaOverlayClient;
   ttsWebVoices: TTSVoice[] = [];
   ttsEdgeVoices: TTSVoice[] = [];
+  ttsReadestVoices: TTSVoice[] = [];
+  ttsCustomVoices: TTSVoice[] = [];
   ttsNativeVoices: TTSVoice[] = [];
   ttsTargetLang: string = '';
 
@@ -234,7 +306,29 @@ export class TTSController extends EventTarget {
   ) {
     super();
     this.ttsWebClient = new WebSpeechClient(this);
-    this.ttsEdgeClient = new EdgeTTSClient(this, appService);
+    // One per-book cache store for every synthetic engine: they share the
+    // book's cache.db (see createBookTTSCacheStore). The book key lands in
+    // init(), after this constructor, hence the lazy resolver.
+    const cacheStore = createBookTTSCacheStore(
+      appService,
+      () => this.bookKey?.split('-')[0] || null,
+    );
+    this.ttsEdgeClient = new EdgeTTSClient(this, appService, cacheStore);
+    this.#readestProvider = new ReadestVoiceProvider(this);
+    this.ttsReadestClient = new BufferedTTSClient(
+      cacheStore ? new CachingProvider(this.#readestProvider, cacheStore) : this.#readestProvider,
+      this,
+      appService,
+    );
+    const customProvider = new OpenAICompatibleSpeechProvider(
+      () => this.#customTTSServices(),
+      async () => isCustomTTSAllowed(await getAccessToken()),
+    );
+    this.ttsCustomClient = new BufferedTTSClient(
+      cacheStore ? new CachingProvider(customProvider, cacheStore) : customProvider,
+      this,
+      appService,
+    );
     // Native TTS is backed by Android TextToSpeech and iOS AVSpeechSynthesizer.
     // TODO: implement native TTS client for desktop platforms.
     if (appService?.isAndroidApp || appService?.isIOSApp) {
@@ -403,6 +497,7 @@ export class TTSController extends EventTarget {
     }
     this.#tts = newTts;
     this.view.tts = newTts;
+    if (this.#ttsDoc !== doc) this.#ttsDocSheet++;
     this.#ttsDoc = doc;
     if (narration) {
       this.#mediaOverlaySection = narration;
@@ -419,15 +514,34 @@ export class TTSController extends EventTarget {
 
   async init() {
     const availableClients = [];
-    if (await this.ttsEdgeClient.init()) {
+    // Started together: each can take seconds (Edge synthesizes a probe
+    // sentence, system TTS waits for its voices), and play waits on them all.
+    // Results are still taken in priority order.
+    const readestReady = withinEngineTimeout(this.ttsReadestClient.init(), false);
+    const customReady = withinEngineTimeout(this.ttsCustomClient.init(), false);
+    const edgeReady = withinEngineTimeout(this.ttsEdgeClient.init(), false);
+    const nativeReady = this.ttsNativeClient
+      ? withinEngineTimeout(this.ttsNativeClient.init(), false)
+      : undefined;
+    const webReady = withinEngineTimeout(this.ttsWebClient.init(), false);
+    if (await edgeReady) {
       availableClients.push(this.ttsEdgeClient);
     }
-    if (this.ttsNativeClient && (await this.ttsNativeClient.init())) {
+    if (this.ttsNativeClient && (await nativeReady)) {
       availableClients.push(this.ttsNativeClient);
-      this.ttsNativeVoices = await this.ttsNativeClient.getAllVoices();
+      this.ttsNativeVoices = await withinEngineTimeout(this.ttsNativeClient.getAllVoices(), []);
     }
-    if (await this.ttsWebClient.init()) {
+    if (await webReady) {
       availableClients.push(this.ttsWebClient);
+    }
+    // Last: Readest Voice is never the default, only a remembered choice.
+    const readestOk = await readestReady;
+    if (readestOk) {
+      availableClients.push(this.ttsReadestClient);
+    }
+    const customOk = await customReady;
+    if (customOk) {
+      availableClients.push(this.ttsCustomClient);
     }
     this.ttsClient = availableClients[0] || this.ttsWebClient;
     const preferredClientName = TTSUtils.getPreferredClient();
@@ -439,8 +553,14 @@ export class TTSController extends EventTarget {
         this.ttsClient = preferredClient;
       }
     }
-    this.ttsWebVoices = await this.ttsWebClient.getAllVoices();
-    this.ttsEdgeVoices = await this.ttsEdgeClient.getAllVoices();
+    // An engine whose init failed or timed out has no voices to list.
+    [this.ttsWebVoices, this.ttsEdgeVoices, this.ttsReadestVoices, this.ttsCustomVoices] =
+      await Promise.all([
+        withinEngineTimeout(this.ttsWebClient.getAllVoices(), []),
+        withinEngineTimeout(this.ttsEdgeClient.getAllVoices(), []),
+        readestOk ? withinEngineTimeout(this.ttsReadestClient.getAllVoices(), []) : [],
+        customOk ? this.ttsCustomClient.getAllVoices() : [],
+      ]);
 
     // A book that ships its own narration should be read by its narrator, not
     // synthesized — that is the whole point of having the recording. The
@@ -602,6 +722,13 @@ export class TTSController extends EventTarget {
     const raw = await section.createDocument();
     const doc = await transformTTSSectionDocument(this.view.book, section.id, raw);
     const html = doc.querySelector('html');
+    // As the view does when it renders a page (foliate view.js #onLoad): a page
+    // with no lang attribute is read in the book's language, even when it has
+    // an xml:lang. Preloads must name the language the live read will, or their
+    // audio is cached under keys playback never looks up.
+    if (html && !html.getAttribute('lang') && this.view.language?.canonical) {
+      html.setAttribute('lang', this.view.language.canonical);
+    }
     const lang = html?.getAttribute('lang') || html?.getAttribute('xml:lang') || '';
     if (html && !isValidLang(lang) && this.ttsLang) {
       html.setAttribute('lang', this.ttsLang);
@@ -649,6 +776,7 @@ export class TTSController extends EventTarget {
     const contents = this.view.renderer.getContents() as { overlayer?: Overlayer }[];
     for (const { overlayer } of contents) {
       overlayer?.remove(HIGHLIGHT_KEY);
+      overlayer?.remove(SENTENCE_KEY);
       overlayer?.remove(SEEK_PREVIEW_KEY);
     }
   }
@@ -660,6 +788,11 @@ export class TTSController extends EventTarget {
 
   setHighlightGranularity(granularity: TTSHighlightGranularity) {
     this.#highlightGranularity = granularity;
+  }
+
+  // The user's enabled custom TTS services, read live; set before init().
+  setCustomTTSServices(getServices: () => CustomTTSService[]) {
+    this.#customTTSServices = getServices;
   }
 
   setSkipInlineAnnotations(enabled: boolean) {
@@ -758,6 +891,7 @@ export class TTSController extends EventTarget {
     this.#sectionTimeline = null;
     this.#timelineSectionIndex = -1;
     this.#currentSentenceIndex = -1;
+    if (this.#ttsDoc !== doc) this.#ttsDocSheet++;
     this.#ttsDoc = doc;
 
     const existing = this.#getTts();
@@ -925,13 +1059,21 @@ export class TTSController extends EventTarget {
   // document + TTS instance per section, so it never disturbs live playback,
   // and labels sentences identically to ensureTimeline so packs written here
   // and by playback share one manifest.
+  // Downloads synthesize with the engine the reader listens with: Readest
+  // Voice or a custom service when one is active, Edge otherwise.
+  #downloadClient(): BufferedTTSClient {
+    if (this.ttsClient === this.ttsReadestClient) return this.ttsReadestClient;
+    if (this.ttsClient === this.ttsCustomClient) return this.ttsCustomClient;
+    return this.ttsEdgeClient;
+  }
+
   canDownload(): boolean {
-    return this.ttsEdgeClient.canDownload();
+    return this.#downloadClient().canDownload();
   }
 
   getTTSDownloader(): TTSDownloader | null {
-    const edge = this.ttsEdgeClient;
-    if (!edge.canDownload()) return null;
+    const client = this.#downloadClient();
+    if (!client.canDownload()) return null;
     const enumerator: SectionEnumerator = {
       enumerateSection: async (sectionIndex: number) => {
         const sections = this.view.book.sections;
@@ -945,7 +1087,7 @@ export class TTSController extends EventTarget {
           const { textWalker } = await import('foliate-js/text-walker.js');
           const nodeFilter = createTTSNodeFilter();
           let granularity: TTSGranularity = this.view.language.isCJK ? 'sentence' : 'word';
-          const supported = edge.getGranularities();
+          const supported = client.getGranularities();
           if (!supported.includes(granularity)) granularity = supported[0]!;
 
           // getSentences enumerates EVERY segment; parseSSMLMarks drops the
@@ -995,32 +1137,32 @@ export class TTSController extends EventTarget {
         }
       },
     };
-    return new TTSDownloader(enumerator, edge);
+    return new TTSDownloader(enumerator, client);
   }
 
   // Per-section download status keyed by section index, for the podcast UI.
   async getSectionCacheStatuses() {
-    return this.ttsEdgeClient.getSectionCacheStatuses();
+    return this.#downloadClient().getSectionCacheStatuses();
   }
 
   async getCacheBytes() {
-    return this.ttsEdgeClient.getCacheBytes();
+    return this.#downloadClient().getCacheBytes();
   }
 
   async beginDownloadSections(sections: number[]) {
-    await this.ttsEdgeClient.beginDownloadSections(sections);
+    await this.#downloadClient().beginDownloadSections(sections);
   }
 
   async completeDownloadSections(sections: number[]) {
-    await this.ttsEdgeClient.completeDownloadSections(sections);
+    await this.#downloadClient().completeDownloadSections(sections);
   }
 
   async cancelDownloadSections(sections: number[]) {
-    await this.ttsEdgeClient.cancelDownloadSections(sections);
+    await this.#downloadClient().cancelDownloadSections(sections);
   }
 
   async clearDownloads() {
-    await this.ttsEdgeClient.clearDownloads();
+    await this.#downloadClient().clearDownloads();
   }
 
   // Whether the active client can ever produce a timeline — it needs a real
@@ -1053,7 +1195,7 @@ export class TTSController extends EventTarget {
 
   // The sentences of the section now playing, as display lines. Section-scoped
   // exactly like the scrubber: one chapter is one lyric sheet.
-  async getLyrics(): Promise<{ sectionIndex: number; lines: string[] } | null> {
+  async getLyrics(): Promise<{ sectionIndex: number; sheet: number; lines: string[] } | null> {
     if (!this.supportsLyrics()) return null;
     const timeline = await this.ensureTimeline();
     if (!timeline || timeline.length === 0) return null;
@@ -1061,7 +1203,7 @@ export class TTSController extends EventTarget {
     for (let i = 0; i < timeline.length; i++) {
       lines.push(normalizeLyricText(timeline.sentenceAt(i)?.text ?? ''));
     }
-    return { sectionIndex: this.#ttsSectionIndex, lines };
+    return { sectionIndex: this.#ttsSectionIndex, sheet: this.#ttsDocSheet, lines };
   }
 
   // Ordinal of the sentence now sounding, or -1 while nothing is located —
@@ -1126,6 +1268,8 @@ export class TTSController extends EventTarget {
   // client (same as supportsPlaybackInfo/supportsGapControl's comparison).
   setSentenceGap(sec: number): void {
     this.ttsEdgeClient.setSentenceGap(sec);
+    this.ttsReadestClient.setSentenceGap(sec);
+    this.ttsCustomClient.setSentenceGap(sec);
   }
 
   // Universal (not Edge-only) paragraph-to-paragraph gap, in wall-clock
@@ -1136,6 +1280,8 @@ export class TTSController extends EventTarget {
     // The buffered client needs it too: it schedules this pause as silence on
     // its own audio clock rather than letting #delayParagraphGap sleep for it.
     this.ttsEdgeClient.setParagraphGap(sec);
+    this.ttsReadestClient.setParagraphGap(sec);
+    this.ttsCustomClient.setParagraphGap(sec);
   }
 
   // Abortable delay inserted before auto-advancing to the next paragraph.
@@ -1176,6 +1322,10 @@ export class TTSController extends EventTarget {
     if (!this.ttsClient.getCapabilities().mediaClock) return null;
     const timeline = this.#sectionTimeline;
     if (!timeline || this.#timelineSectionIndex !== this.#ttsSectionIndex) return null;
+    // A client whose voices load asynchronously resolves its voice only when
+    // the first sentence plays, after the timeline was built: measured
+    // durations are keyed by that voice. A no-op once they match.
+    timeline.setVoice(this.ttsClient.getVoiceId());
     const duration = timeline.getDuration();
     if (!Number.isFinite(duration) || duration <= 0) return null;
     let index = this.#currentSentenceIndex;
@@ -1188,7 +1338,8 @@ export class TTSController extends EventTarget {
     return {
       position: timeline.positionAt(index, within),
       duration,
-      measuredFraction: timeline.getMeasuredFraction(),
+      // The buffer bar: how far synthesized audio reaches past this sentence.
+      measuredFraction: timeline.getBufferedFraction(index),
     };
   }
 
@@ -1487,20 +1638,69 @@ export class TTSController extends EventTarget {
   async preloadNextSSML(count: number = 4) {
     const tts = this.#getTts();
     if (!tts) return;
+    // A windowed engine takes preloads as hints it batches on a GPU worker that
+    // is slower than an online voice: keep about three minutes of upcoming
+    // paragraphs requested, however short they are, so the buffer never drains.
+    const capabilities = this.ttsClient.getCapabilities();
+    const byDuration = !!capabilities.windowedPrefetch;
+    const maxCount = byDuration ? PRELOAD_MAX_PARAGRAPHS : count;
+    const voiceId = this.ttsClient.getVoiceId();
+    let seconds = 0;
 
     // Gather all next SSMLs and rewind synchronously to avoid a race condition:
     // tts.next() replaces TTS.#ranges (used by setMark() during playback).
     // If async gaps exist between next()/prev() calls, a concurrent #speak()
     // can dispatch marks against the wrong #ranges, causing incorrect highlights
     // and accidental page turns.
+    const estimate = (ssml: string) =>
+      estimateSentenceSeconds(ssml.replace(/<[^>]*>/g, ' '), this.ttsLang || 'en', voiceId);
     const rawSsmls: string[] = [];
-    for (let i = 0; i < count; i++) {
+    let sectionEnded = false;
+    const reading = tts.getLastRange();
+    for (let i = 0; i < maxCount; i++) {
       const ssml = tts.next();
-      if (!ssml) break;
+      if (!ssml) {
+        sectionEnded = true;
+        break;
+      }
       rawSsmls.push(ssml);
+      if (!byDuration) continue;
+      seconds += estimate(ssml);
+      if (seconds >= PRELOAD_AHEAD_SEC) break;
     }
     for (let i = 0; i < rawSsmls.length; i++) {
       tts.prev();
+    }
+    // next() and prev() forget the sentence being read, even when there is no
+    // next block. Put it back, or "next sentence" starts from no sentence and
+    // skips the rest of the block: in a chapter that is one block, the chapter.
+    const last = this.#lastSetMark;
+    if (reading && last && isSameRange(last.range, reading)) {
+      this.#suppressMarkHighlight = true;
+      tts.setMark(last.name);
+      this.#suppressMarkHighlight = false;
+    }
+
+    // The document read ends inside the budget: carry on into what follows, so
+    // moving on finds its opening already synthesized. In a chunked section
+    // that is the next chunk, long before the chapter ends.
+    const budgetLeft = () =>
+      rawSsmls.length < maxCount && (!byDuration || seconds < PRELOAD_AHEAD_SEC);
+    if ((byDuration || capabilities.preloadsAudio) && sectionEnded && budgetLeft()) {
+      if (!this.#nextOpening || this.#nextOpening.after !== this.#ttsDoc) {
+        const chunkAnchor = this.#adjacentChunkAnchor(1);
+        this.#nextOpening = {
+          after: this.#ttsDoc,
+          ssmls: chunkAnchor
+            ? this.#sectionOpening(this.#ttsSectionIndex, chunkAnchor)
+            : this.#sectionOpening(this.#ttsSectionIndex + 1),
+        };
+      }
+      for (const ssml of await this.#nextOpening.ssmls) {
+        if (!budgetLeft()) break;
+        rawSsmls.push(ssml);
+        seconds += estimate(ssml);
+      }
     }
 
     const ssmls: string[] = [];
@@ -1509,7 +1709,42 @@ export class TTSController extends EventTarget {
       if (!ssml) break;
       ssmls.push(ssml);
     }
-    await Promise.all(ssmls.map((ssml) => this.preloadSSML(ssml, new AbortController().signal)));
+    // In reading order, one after another: a windowed provider queues preloads
+    // as they arrive, so the paragraph read next must reach it first.
+    const { signal } = this.#preloadAbort;
+    for (const ssml of ssmls) {
+      await this.preloadSSML(ssml, signal);
+    }
+  }
+
+  // Up to about PRELOAD_AHEAD_SEC of a section's opening paragraphs as raw
+  // SSML, from a throwaway TTS over a fresh document (never the live one), the
+  // same way the live session will produce them so preloads match playback.
+  // `from` starts at a chunk instead: chunk documents keep the full section's
+  // element indices, so its anchor resolves in the fresh document too.
+  async #sectionOpening(sectionIndex: number, from?: (doc: Document) => Range): Promise<string[]> {
+    const section = this.view.book.sections?.[sectionIndex];
+    if (!section?.createDocument) return [];
+    try {
+      const doc = await this.#createSectionDoc(section);
+      const { TTS } = await import('foliate-js/tts.js');
+      const { textWalker } = await import('foliate-js/text-walker.js');
+      const tts = new TTS(doc, textWalker, createTTSNodeFilter(), () => {}, this.#ttsGranularity);
+      const voiceId = this.ttsClient.getVoiceId();
+      const ssmls: string[] = [];
+      let seconds = 0;
+      const first = from ? tts.from(from(doc)) : tts.start();
+      for (let raw = first; raw && ssmls.length < PRELOAD_MAX_PARAGRAPHS; raw = tts.next()) {
+        ssmls.push(raw);
+        const text = raw.replace(/<[^>]*>/g, ' ');
+        seconds += estimateSentenceSeconds(text, this.ttsLang || 'en', voiceId);
+        if (seconds >= PRELOAD_AHEAD_SEC) break;
+      }
+      return ssmls;
+    } catch (err) {
+      console.warn('TTS preload of an upcoming opening failed', sectionIndex, err);
+      return [];
+    }
   }
 
   async #preprocessSSML(ssml?: string) {
@@ -1614,6 +1849,16 @@ export class TTSController extends EventTarget {
         let sentenceMark: string | undefined;
         let sentenceRange: Range | undefined;
         let stepAfter: { range?: Range; advance: boolean } | null = null;
+        let preloadedNext = false;
+        const preloadNext = () => {
+          if (preloadedNext || oneTime || signal.aborted) return;
+          preloadedNext = true;
+          void this.preloadNextSSML();
+        };
+        // Or once this paragraph is slow to become audible (uncached audio
+        // waits on the network; the next paragraphs should not).
+        const preloadTimer = setTimeout(preloadNext, PRELOAD_NEXT_AFTER_MS);
+        signal.addEventListener('abort', () => clearTimeout(preloadTimer), { once: true });
         for await (const { code, mark } of iter) {
           // Anything the iterator yields means the client is done waiting:
           // 'boundary' is the first audible chunk, 'end'/'error' resolve the
@@ -1625,6 +1870,10 @@ export class TTSController extends EventTarget {
           }
           lastCode = code;
           if (oneTime || this.state !== 'playing') continue;
+          // Once this paragraph is audible: stepping through the next ones is
+          // synchronous DOM work that would otherwise sit in the pause before it.
+          clearTimeout(preloadTimer);
+          preloadNext();
           if (code === 'end') {
             const range = this.#getTts()?.getLastRange();
             if (this.#stopsAfter(range)) {
@@ -1848,10 +2097,7 @@ export class TTSController extends EventTarget {
         }
       })
       .catch((e) => this.error(e));
-    if (!oneTime) {
-      this.preloadNextSSML();
-      this.dispatchSpeakMark();
-    }
+    if (!oneTime) this.dispatchSpeakMark();
   }
 
   play() {
@@ -1874,7 +2120,6 @@ export class TTSController extends EventTarget {
       this.resume();
     }
     this.#speak(ssml);
-    this.preloadNextSSML();
   }
 
   async pause() {
@@ -1891,8 +2136,15 @@ export class TTSController extends EventTarget {
     await this.ttsClient.resume().catch((e) => this.error(e));
   }
 
+  #withdrawPreloads() {
+    this.#preloadAbort.abort();
+    this.#preloadAbort = new AbortController();
+  }
+
   async stop(handover = false) {
     this.#awaitingAudio = false;
+    // A handover (the next paragraph starting) keeps them: they are its audio.
+    if (!handover) this.#withdrawPreloads();
     if (this.#currentSpeakAbortController) {
       this.#currentSpeakAbortController.abort();
     }
@@ -1977,16 +2229,32 @@ export class TTSController extends EventTarget {
     } else {
       await this.#handleNavigationWithSSML(ssml, isPlaying);
     }
-    if (isPlaying && !byMark) this.preloadNextSSML();
   }
 
   async setLang(lang: string) {
     this.ttsLang = lang;
+    // Readest Voice is a remembered choice, never a default: for a book in a
+    // language it has no voice for, the default engine reads instead, and the
+    // choice stays remembered for books it can read.
+    // Custom services likewise, unless a voice of theirs reads any language.
+    const speaks = (voices: TTSVoice[]) =>
+      voices.some(
+        (voice) =>
+          !voice.disabled && (voice.lang === MULTILINGUAL_LANG || isSameLang(voice.lang, lang)),
+      );
+    if (
+      (this.ttsClient === this.ttsReadestClient && !speaks(this.ttsReadestVoices)) ||
+      (this.ttsClient === this.ttsCustomClient && !speaks(this.ttsCustomVoices))
+    ) {
+      this.ttsClient = this.ttsEdgeClient.initialized ? this.ttsEdgeClient : this.ttsWebClient;
+    }
     this.setPrimaryLang(lang);
   }
 
   async setPrimaryLang(lang: string) {
     if (this.ttsEdgeClient.initialized) this.ttsEdgeClient.setPrimaryLang(lang);
+    if (this.ttsReadestClient.initialized) this.ttsReadestClient.setPrimaryLang(lang);
+    if (this.ttsCustomClient.initialized) this.ttsCustomClient.setPrimaryLang(lang);
     if (this.ttsWebClient.initialized) this.ttsWebClient.setPrimaryLang(lang);
     if (this.ttsNativeClient?.initialized) this.ttsNativeClient?.setPrimaryLang(lang);
     if (this.ttsMediaOverlayClient.initialized) this.ttsMediaOverlayClient.setPrimaryLang(lang);
@@ -2005,16 +2273,33 @@ export class TTSController extends EventTarget {
     const ttsWebVoices = await this.ttsWebClient.getVoices(lang);
     const ttsEdgeVoices = await this.ttsEdgeClient.getVoices(lang);
     const ttsNativeVoices = (await this.ttsNativeClient?.getVoices(lang)) ?? [];
+    // Listed for every reader, the voices their plan lacks greyed out; hidden
+    // only when there is no catalog (kill switch, offline).
+    const ttsReadestVoices =
+      (await this.ttsReadestClient.getAllVoices()).length > 0
+        ? (await this.ttsReadestClient.getVoices(lang)).filter((group) => group.voices.length > 0)
+        : [];
+    // The picker is open: boot a GPU worker so the first window is warm, but
+    // only for a reader whose plan has a Readest voice to play.
+    if (ttsReadestVoices.some((group) => group.voices.some((voice) => !voice.disabled))) {
+      this.#readestProvider.warmup();
+    }
     // The book's own narrator leads the list when there is one: it is the best
     // voice available for that book by a wide margin.
     const narrationVoices = this.narrationAvailable
       ? await this.ttsMediaOverlayClient.getVoices(lang)
       : [];
+    // Services the user set up themselves come next, hidden when unavailable.
+    const ttsCustomVoices = this.ttsCustomClient.initialized
+      ? (await this.ttsCustomClient.getVoices(lang)).filter((group) => group.voices.length > 0)
+      : [];
 
     const voicesGroups = [
       ...narrationVoices,
-      ...ttsNativeVoices,
+      ...ttsCustomVoices,
+      ...ttsReadestVoices,
       ...ttsEdgeVoices,
+      ...ttsNativeVoices,
       ...ttsWebVoices,
     ];
     return voicesGroups;
@@ -2022,6 +2307,7 @@ export class TTSController extends EventTarget {
 
   async setVoice(voiceId: string, lang: string) {
     this.state = 'setvoice-paused';
+    this.#withdrawPreloads();
 
     // Switching into or out of narration changes the mark source, not just the
     // engine: the current section's TTS instance has to be rebuilt.
@@ -2043,13 +2329,30 @@ export class TTSController extends EventTarget {
       return;
     }
 
+    // Never for the engine-default voice (''): Edge and native treat it as
+    // "any enabled voice", and matching it here would move a paying reader who
+    // never chose Readest Voice onto it.
+    const useCustomTTS =
+      voiceId !== '' &&
+      this.ttsCustomClient.initialized &&
+      this.ttsCustomVoices.some((voice) => voice.id === voiceId);
+    const useReadestTTS =
+      voiceId !== '' &&
+      this.ttsReadestClient.initialized &&
+      this.ttsReadestVoices.some((voice) => voice.id === voiceId && !voice.disabled);
     const useEdgeTTS = !!this.ttsEdgeVoices.find(
       (voice) => (voiceId === '' || voice.id === voiceId) && !voice.disabled,
     );
     const useNativeTTS = !!this.ttsNativeVoices.find(
       (voice) => (voiceId === '' || voice.id === voiceId) && !voice.disabled,
     );
-    if (useEdgeTTS) {
+    if (useCustomTTS) {
+      this.ttsClient = this.ttsCustomClient;
+      await this.ttsClient.setRate(this.ttsRate);
+    } else if (useReadestTTS) {
+      this.ttsClient = this.ttsReadestClient;
+      await this.ttsClient.setRate(this.ttsRate);
+    } else if (useEdgeTTS) {
       this.ttsClient = this.ttsEdgeClient;
       await this.ttsClient.setRate(this.ttsRate);
     } else if (useNativeTTS) {
@@ -2105,6 +2408,7 @@ export class TTSController extends EventTarget {
           cfi,
           kind,
           sectionIndex: this.#ttsSectionIndex,
+          sheet: this.#ttsDocSheet,
           sequence: ++ttsPositionSequence,
         },
       }),
@@ -2142,11 +2446,18 @@ export class TTSController extends EventTarget {
         // (no boundaries) is drawn later in prepareSpeakWords. When the user
         // forces sentence granularity we keep the sentence highlight, so don't
         // suppress it.
-        this.#suppressMarkHighlight =
+        const wordMode =
           this.ttsClient.getCapabilities().wordBoundaries && this.#highlightGranularity === 'word';
+        this.#suppressMarkHighlight = wordMode;
         const range = this.#getTts()?.setMark(mark.name);
         this.#suppressMarkHighlight = false;
+        if (range) this.#lastSetMark = { name: mark.name, range };
         this.#speakWordsArmed = !!range;
+        if (wordMode && range) {
+          // The previous sentence's last word is no longer sounding.
+          this.#getPrimaryContent()?.overlayer?.remove(HIGHLIGHT_KEY);
+          this.#drawSentenceTint(range);
+        }
         if (this.#sectionTimeline && range) {
           // Keep the timeline honest as measurements land, then locate the
           // audible sentence for position reporting.
@@ -2189,6 +2500,24 @@ export class TTSController extends EventTarget {
     this.#lastSpeakWordRange = null;
   }
 
+  // Word mode tints the sentence as soon as its mark is dispatched, before its
+  // audio may be ready, and keeps it until the next sentence: the tint is where
+  // the reader is, the word highlight is what is sounding now.
+  #drawSentenceTint(range: Range) {
+    const content = this.#getPrimaryContent();
+    const overlayer = content?.overlayer;
+    overlayer?.remove(SENTENCE_KEY);
+    if (!this.sentenceTint || !content?.doc || content.index !== this.#ttsSectionIndex) return;
+    try {
+      const cfi = this.view.getCFI(content.index, range);
+      const visibleRange = this.view.resolveCFI(cfi).anchor(content.doc);
+      if (!visibleRange) return;
+      overlayer?.add(SENTENCE_KEY, visibleRange, drawSentenceTint, { color: this.options.color });
+    } catch (e) {
+      console.error('Failed to tint sentence', e);
+    }
+  }
+
   // Re-apply the active highlight after the view relocates (page turn,
   // re-render). In word mode this re-draws the current word so the sentence
   // never reappears over it; otherwise it re-draws the sentence.
@@ -2196,19 +2525,21 @@ export class TTSController extends EventTarget {
     if (!this.#attached) return;
     if (this.ttsClient.getCapabilities().textHighlight === false) return;
     if (this.#wordHighlightActive && this.#lastSpeakWordRange) {
+      if (this.#speakWordBaseRange) this.#drawSentenceTint(this.#speakWordBaseRange);
       this.#getHighlighter()(this.#lastSpeakWordRange.cloneRange());
       return;
     }
     // Word mode during playback: between a sentence's mark and its first word
-    // boundary there is nothing word-level to re-draw yet, and re-drawing the
-    // sentence here is exactly the whole-sentence flash word mode suppresses
-    // at setMark. Draw nothing; the next word boundary paints momentarily.
-    // Paused/stopped states keep the sentence re-draw (navigation UX).
+    // boundary only the sentence tint shows; re-drawing the full sentence here
+    // is exactly the flash word mode suppresses at setMark. Paused/stopped
+    // states keep the sentence re-draw (navigation UX).
     if (
       this.state === 'playing' &&
       this.ttsClient.getCapabilities().wordBoundaries &&
       this.#highlightGranularity === 'word'
     ) {
+      const range = this.#getTts()?.getLastRange();
+      if (range) this.#drawSentenceTint(range);
       return;
     }
     const range = this.#getTts()?.getLastRange();
@@ -2326,10 +2657,9 @@ export class TTSController extends EventTarget {
       this.#wordHighlightActive = false;
       this.#getHighlighter()(range.cloneRange());
     } else {
-      // Highlight the first word immediately so the suppressed sentence
-      // highlight never appears before playback reaches the first boundary.
+      // The first word lights when its audio does; until then the sentence
+      // tint drawn at mark dispatch shows where reading is.
       this.#wordHighlightActive = true;
-      this.dispatchSpeakWord(0);
     }
   }
 
@@ -2377,7 +2707,10 @@ export class TTSController extends EventTarget {
   async shutdown() {
     stopAudioKeepAlive();
     await this.stop();
-    this.#clearAllHighlights();
+    // A controller replaced by a newer session leaves that session's text
+    // and highlights on the shared view alone.
+    const ownsView = !this.view.tts || this.view.tts === this.#tts;
+    if (ownsView) this.#clearAllHighlights();
     this.#ttsSectionIndex = -1;
     this.#sectionTimeline = null;
     this.#timelineSectionIndex = -1;
@@ -2385,12 +2718,18 @@ export class TTSController extends EventTarget {
     this.#ttsDoc = null;
     this.#tts = null;
     this.#mediaOverlaySection = null;
-    this.view.tts = null;
+    if (ownsView) this.view.tts = null;
     if (this.ttsWebClient.initialized) {
       await this.ttsWebClient.shutdown();
     }
     if (this.ttsEdgeClient.initialized) {
       await this.ttsEdgeClient.shutdown();
+    }
+    if (this.ttsReadestClient.initialized) {
+      await this.ttsReadestClient.shutdown();
+    }
+    if (this.ttsCustomClient.initialized) {
+      await this.ttsCustomClient.shutdown();
     }
     if (this.ttsNativeClient?.initialized) {
       await this.ttsNativeClient.shutdown();

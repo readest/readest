@@ -1,0 +1,105 @@
+{
+  "epub": "sample-kosync-onebody.fb2",
+  "fb2": true,
+  "dom_version": 20240114,
+  "every": 1,
+  "word_count": 19,
+  "fragments": [],
+  "words": [
+    {
+      "xp": "/FictionBook/body/title/p/text().0",
+      "text": "One",
+      "xp_end": "/FictionBook/body/title/p/text().3"
+    },
+    {
+      "xp": "/FictionBook/body/title/p/text().4",
+      "text": "Body",
+      "xp_end": "/FictionBook/body/title/p/text().8"
+    },
+    {
+      "xp": "/FictionBook/body/title/p/text().9",
+      "text": "Sample",
+      "xp_end": "/FictionBook/body/title/p/text().15"
+    },
+    {
+      "xp": "/FictionBook/body/section[1]/title/p/text().0",
+      "text": "Chapter",
+      "xp_end": "/FictionBook/body/section[1]/title/p/text().7"
+    },
+    {
+      "xp": "/FictionBook/body/section[1]/title/p/text().8",
+      "text": "One",
+      "xp_end": "/FictionBook/body/section[1]/title/p/text().11"
+    },
+    {
+      "xp": "/FictionBook/body/section[1]/p/text().0",
+      "text": "The",
+      "xp_end": "/FictionBook/body/section[1]/p/text().3"
+    },
+    {
+      "xp": "/FictionBook/body/section[1]/p/text().4",
+      "text": "only",
+      "xp_end": "/FictionBook/body/section[1]/p/text().8"
+    },
+    {
+      "xp": "/FictionBook/body/section[1]/p/text().9",
+      "text": "body",
+      "xp_end": "/FictionBook/body/section[1]/p/text().13"
+    },
+    {
+      "xp": "/FictionBook/body/section[1]/p/text().14",
+      "text": "has",
+      "xp_end": "/FictionBook/body/section[1]/p/text().17"
+    },
+    {
+      "xp": "/FictionBook/body/section[1]/p/text().18",
+      "text": "no",
+      "xp_end": "/FictionBook/body/section[1]/p/text().20"
+    },
+    {
+      "xp": "/FictionBook/body/section[1]/p/text().21",
+      "text": "notes",
+      "xp_end": "/FictionBook/body/section[1]/p/text().26"
+    },
+    {
+      "xp": "/FictionBook/body/section[2]/title/p/text().0",
+      "text": "Chapter",
+      "xp_end": "/FictionBook/body/section[2]/title/p/text().7"
+    },
+    {
+      "xp": "/FictionBook/body/section[2]/title/p/text().8",
+      "text": "Two",
+      "xp_end": "/FictionBook/body/section[2]/title/p/text().11"
+    },
+    {
+      "xp": "/FictionBook/body/section[2]/p/text().0",
+      "text": "A",
+      "xp_end": "/FictionBook/body/section[2]/p/text().1"
+    },
+    {
+      "xp": "/FictionBook/body/section[2]/p/text().2",
+      "text": "second",
+      "xp_end": "/FictionBook/body/section[2]/p/text().8"
+    },
+    {
+      "xp": "/FictionBook/body/section[2]/p/text().9",
+      "text": "chapter",
+      "xp_end": "/FictionBook/body/section[2]/p/text().16"
+    },
+    {
+      "xp": "/FictionBook/body/section[2]/p/text().17",
+      "text": "follows",
+      "xp_end": "/FictionBook/body/section[2]/p/text().24"
+    },
+    {
+      "xp": "/FictionBook/body/section[2]/p/text().25",
+      "text": "the",
+      "xp_end": "/FictionBook/body/section[2]/p/text().28"
+    },
+    {
+      "xp": "/FictionBook/body/section[2]/p/text().29",
+      "text": "first",
+      "xp_end": "/FictionBook/body/section[2]/p/text().34"
+    }
+  ]
+}

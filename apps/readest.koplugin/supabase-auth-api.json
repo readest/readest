@@ -1,5 +1,5 @@
 {
-  "base_url": "https://readest.supabase.co/auth/v1/",
+  "base_url": "https://vbsyxfusjjqdxkjqlysc.supabase.co/auth/v1/",
   "name": "supabase-auth-api",
   "methods": {
     "sign_in_password": {

@@ -232,13 +232,14 @@ describe('translator category', () => {
 });
 
 describe('SYNC_CATEGORIES', () => {
-  test('covers all twelve user-facing categories (incl. settings + stats + credentials)', () => {
+  test('covers all thirteen user-facing categories (incl. settings + stats + credentials)', () => {
     expect([...SYNC_CATEGORIES].sort()).toEqual(
       [
         'abs_server',
         'book',
         'credentials',
         'custom_translator',
+        'custom_tts',
         'dictionary',
         'font',
         'note',

@@ -113,6 +113,29 @@ describe('useTTSLyrics', () => {
     await waitFor(() => expect(result.current.lines).toEqual(['Next chapter.']));
   });
 
+  test('reloads the sheet when playback moves to the next chunk of the same section', async () => {
+    // A section too big to lay out whole is read chunk by chunk, each its own
+    // sheet: the section index stays put while the lines (here as many) change.
+    const onGetLyrics = vi
+      .fn()
+      .mockResolvedValueOnce({ sectionIndex: 3, sheet: 1, lines })
+      .mockResolvedValueOnce({ sectionIndex: 3, sheet: 2, lines: ['Four.', 'Five.', 'Six.'] });
+    const { result } = renderHook(() =>
+      useTTSLyrics({ bookKey: 'b', enabled: true, onGetLyrics, onGetActiveIndex: () => 0 }),
+    );
+    await waitFor(() => expect(result.current.lines).toEqual(lines));
+
+    await act(async () => {
+      await eventDispatcher.dispatch('tts-position', { bookKey: 'b', sectionIndex: 3, sheet: 1 });
+    });
+    expect(onGetLyrics).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      await eventDispatcher.dispatch('tts-position', { bookKey: 'b', sectionIndex: 3, sheet: 2 });
+    });
+    await waitFor(() => expect(result.current.lines).toEqual(['Four.', 'Five.', 'Six.']));
+  });
+
   test('runs a chapter change that arrived while a fetch was still out', async () => {
     let releaseFirst: ((value: TTSLyricsResult) => void) | null = null;
     const onGetLyrics = vi

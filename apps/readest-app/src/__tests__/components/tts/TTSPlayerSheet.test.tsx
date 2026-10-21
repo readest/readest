@@ -1,6 +1,7 @@
 import React from 'react';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import {
+  act,
   cleanup,
   fireEvent,
   render,
@@ -23,13 +24,15 @@ vi.mock('@/components/Dialog', () => ({
     isOpen,
     header,
     children,
+    boxClassName,
   }: {
     isOpen: boolean;
     header?: React.ReactNode;
     children: React.ReactNode;
+    boxClassName?: string;
   }) =>
     isOpen ? (
-      <div role='dialog'>
+      <div role='dialog' className='modal-box' data-box-class={boxClassName}>
         {header}
         {children}
       </div>
@@ -126,6 +129,7 @@ const makeProps = (overrides: Record<string, unknown> = {}) => ({
   onToggleLoop: vi.fn(),
   onGetLyricLoopRange: vi.fn().mockReturnValue(null),
   onSetRate: vi.fn(),
+  clientsReady: true,
   onGetVoices: vi.fn().mockResolvedValue(voiceGroups),
   onSetVoice: vi.fn(),
   onGetVoiceId: vi.fn().mockReturnValue('ava'),
@@ -186,6 +190,40 @@ describe('TTSPlayerSheet', () => {
     vi.clearAllMocks();
   });
 
+  test('opened while the clients initialize, it loads the voices once they are ready', async () => {
+    const props = makeProps({
+      clientsReady: false,
+      onGetVoices: vi.fn().mockResolvedValue([]),
+      onGetVoiceId: vi.fn().mockReturnValue(''),
+    });
+    const { rerender } = render(<TTSPlayerSheet {...props} />);
+    // Transport waits for the clients: a pause now would be undone by startup.
+    expect((screen.getByLabelText('Previous Paragraph') as HTMLButtonElement).disabled).toBe(true);
+    props.onGetVoices.mockResolvedValue(voiceGroups);
+    props.onGetVoiceId.mockReturnValue('ava');
+    rerender(<TTSPlayerSheet {...props} clientsReady />);
+    expect(await waitFor(() => screen.getByText('Ava'))).toBeTruthy();
+    expect(props.onGetVoices).toHaveBeenCalledTimes(2);
+    expect((screen.getByLabelText('Previous Paragraph') as HTMLButtonElement).disabled).toBe(false);
+  });
+
+  test('a voice list that arrives after a newer one is discarded', async () => {
+    let answerEarly: (groups: typeof voiceGroups) => void = () => {};
+    const props = makeProps({
+      clientsReady: false,
+      onGetVoices: vi
+        .fn()
+        .mockImplementationOnce(() => new Promise((r) => (answerEarly = r)))
+        .mockResolvedValue(voiceGroups),
+    });
+    const { rerender } = render(<TTSPlayerSheet {...props} />);
+    rerender(<TTSPlayerSheet {...props} clientsReady />);
+    expect(await waitFor(() => screen.getByText('Ava'))).toBeTruthy();
+    // The request made before the clients were ready answers last, empty.
+    await act(async () => answerEarly([]));
+    expect(screen.getByText('Ava')).toBeTruthy();
+  });
+
   test('shows title, chapter, scrubber, and transport on the main view', async () => {
     render(<TTSPlayerSheet {...makeProps()} />);
     expect(screen.getByText('Alice in Wonderland')).toBeTruthy();
@@ -199,6 +237,47 @@ describe('TTSPlayerSheet', () => {
     expect(await waitFor(() => screen.getByText('Ava'))).toBeTruthy(); // voice button caption
     // The main view carries no header label (vertical space).
     expect(screen.queryByText('Read Aloud')).toBeNull();
+  });
+
+  test('a corner grip resizes the player on desktop and the size is kept', () => {
+    localStorage.removeItem('ttsPlayerSize');
+    render(<TTSPlayerSheet {...makeProps()} />);
+    const box = screen.getByRole('dialog');
+    box.getBoundingClientRect = () => ({ width: 420, height: 500 }) as DOMRect;
+    const grip = box.querySelector<HTMLElement>('[data-tts-player-resize]')!;
+    expect(grip).toBeTruthy();
+
+    // The box is centered, so it grows on both sides: twice the pointer's
+    // travel keeps the corner under the pointer.
+    fireEvent.pointerDown(grip, { clientX: 500, clientY: 500, pointerId: 1, button: 0 });
+    fireEvent.pointerMove(grip, { clientX: 550, clientY: 560, pointerId: 1 });
+    fireEvent.pointerUp(grip, { clientX: 550, clientY: 560, pointerId: 1 });
+    expect(box.style.getPropertyValue('--tts-player-w')).toBe('520px');
+    expect(box.style.getPropertyValue('--tts-player-h')).toBe('620px');
+    expect(box.dataset['boxClass']).toContain('sm:w-[var(--tts-player-w,420px)]!');
+
+    // Dragged past the window's edges it fills the window: full screen.
+    fireEvent.pointerDown(grip, { clientX: 500, clientY: 500, pointerId: 1, button: 0 });
+    fireEvent.pointerMove(grip, { clientX: 5000, clientY: 5000, pointerId: 1 });
+    fireEvent.pointerUp(grip, { clientX: 5000, clientY: 5000, pointerId: 1 });
+    expect(box.style.getPropertyValue('--tts-player-w')).toBe(`${window.innerWidth}px`);
+    expect(box.style.getPropertyValue('--tts-player-h')).toBe(`${window.innerHeight}px`);
+    expect(box.dataset['boxClass']).not.toContain('sm:max-h-[85%]!');
+    // Dialog caps a desktop box at 600px wide; the player must outgrow that.
+    expect(box.dataset['boxClass']).toContain('sm:max-w-full!');
+
+    cleanup();
+    render(<TTSPlayerSheet {...makeProps()} />);
+    expect(screen.getByRole('dialog').style.getPropertyValue('--tts-player-w')).toBe(
+      `${window.innerWidth}px`,
+    );
+  });
+
+  test('play/pause is the theme-neutral contrast button, not the accent CTA', () => {
+    render(<TTSPlayerSheet {...makeProps()} />);
+    const toggle = screen.getByRole('button', { name: /^(Play|Pause)$/ });
+    expect(toggle.className).toContain('btn-contrast');
+    expect(toggle.className).not.toContain('btn-primary');
   });
 
   test('resolves the chapter label from the ranged TTS section metadata', () => {
@@ -396,6 +475,81 @@ describe('TTSPlayerSheet', () => {
     expect(container.querySelector('img')?.className).toContain('h-12');
   });
 
+  test('A−/A+ step the lyric font size and the choice is kept', async () => {
+    localStorage.removeItem('ttsLyricsFontSize');
+    const props = makeProps({
+      supportsLyrics: true,
+      onGetLyrics: vi.fn().mockResolvedValue({ sectionIndex: 0, lines: ['Down the rabbit hole.'] }),
+    });
+    render(<TTSPlayerSheet {...props} />);
+    const line = await waitFor(() => screen.getByText('Down the rabbit hole.'));
+    const sheet = () => line.closest<HTMLElement>('[data-lyric-sheet]')!;
+    expect(sheet().style.fontSize).toBe('14px');
+    // Clear of the desktop close button in the top-end corner.
+    expect(
+      screen.getByRole('button', { name: 'Increase font size' }).parentElement!.className,
+    ).toContain('sm:me-8');
+    // Bottom-aligned with the cover thumbnail.
+    expect(
+      screen.getByRole('button', { name: 'Increase font size' }).parentElement!.className,
+    ).toContain('self-end');
+    // Plain icons, no round background, so the glyphs sit on the cover's bottom edge.
+    expect(screen.getByRole('button', { name: 'Increase font size' }).className).not.toContain(
+      'btn-circle',
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Increase font size' }));
+    expect(sheet().style.fontSize).toBe('16px');
+    fireEvent.click(screen.getByRole('button', { name: 'Decrease font size' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Decrease font size' }));
+    expect(sheet().style.fontSize).toBe('12px');
+    // The smallest step disables A− rather than going on shrinking.
+    expect(
+      (screen.getByRole('button', { name: 'Decrease font size' }) as HTMLButtonElement).disabled,
+    ).toBe(true);
+
+    cleanup();
+    render(<TTSPlayerSheet {...props} />);
+    const again = await waitFor(() => screen.getByText('Down the rabbit hole.'));
+    expect(again.closest<HTMLElement>('[data-lyric-sheet]')!.style.fontSize).toBe('12px');
+  });
+
+  test('blocked storage leaves the lyric size and player size working in memory', async () => {
+    const blocked = () => {
+      throw new DOMException('blocked', 'SecurityError');
+    };
+    const getItem = vi.spyOn(Storage.prototype, 'getItem').mockImplementation(blocked);
+    const setItem = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(blocked);
+    try {
+      render(
+        <TTSPlayerSheet
+          {...makeProps({
+            supportsLyrics: true,
+            onGetLyrics: vi
+              .fn()
+              .mockResolvedValue({ sectionIndex: 0, lines: ['Down the rabbit hole.'] }),
+          })}
+        />,
+      );
+      const line = await waitFor(() => screen.getByText('Down the rabbit hole.'));
+      const sheet = line.closest<HTMLElement>('[data-lyric-sheet]')!;
+      expect(sheet.style.fontSize).toBe('14px');
+      fireEvent.click(screen.getByRole('button', { name: 'Increase font size' }));
+      expect(sheet.style.fontSize).toBe('16px');
+
+      const box = screen.getByRole('dialog');
+      box.getBoundingClientRect = () => ({ width: 420, height: 500 }) as DOMRect;
+      const grip = box.querySelector<HTMLElement>('[data-tts-player-resize]')!;
+      fireEvent.pointerDown(grip, { clientX: 500, clientY: 500, pointerId: 1, button: 0 });
+      fireEvent.pointerMove(grip, { clientX: 550, clientY: 560, pointerId: 1 });
+      fireEvent.pointerUp(grip, { clientX: 550, clientY: 560, pointerId: 1 });
+      expect(box.style.getPropertyValue('--tts-player-w')).toBe('520px');
+    } finally {
+      getItem.mockRestore();
+      setItem.mockRestore();
+    }
+  });
+
   test('a section with nothing to transcribe keeps the cover player', async () => {
     getBookData.mockReturnValue({
       book: { title: 'Alice in Wonderland', coverImageUrl: 'blob:cover' },
@@ -537,7 +691,8 @@ describe('TTSPlayerSheet', () => {
     const props = makeProps({ onGetVoices: vi.fn().mockResolvedValue(narrationGroups) });
     render(<TTSPlayerSheet {...props} />);
     fireEvent.click(screen.getByLabelText('Voice'));
-    fireEvent.click(await waitFor(() => screen.getByText('Jane Reader')));
+    fireEvent.click(await waitFor(() => screen.getByRole('button', { name: /Narration/ })));
+    fireEvent.click(screen.getByText('Jane Reader'));
 
     expect(props.onSetVoice).toHaveBeenCalledWith('media-overlay', 'en');
     expect(viewSettings['ttsVoice']).toBe('media-overlay');
@@ -564,6 +719,152 @@ describe('TTSPlayerSheet', () => {
     expect(viewSettings['ttsUseNarration']).toBeUndefined();
   });
 
+  test('premium voices show the plan that unlocks them', async () => {
+    const groups = [
+      {
+        id: 'readest',
+        name: 'Readest Voice',
+        voices: [
+          { id: 'kokoro:zf_001', name: 'Zifang', lang: 'zh-CN', tier: 'plus' as const },
+          { id: 'omnivoice:xiaoyu', name: 'Xiaoyu', lang: 'zh-CN', tier: 'pro' as const },
+        ],
+      },
+      ...voiceGroups,
+    ];
+    render(<TTSPlayerSheet {...makeProps({ onGetVoices: vi.fn().mockResolvedValue(groups) })} />);
+    fireEvent.click(screen.getByLabelText('Voice'));
+    fireEvent.click(await waitFor(() => screen.getByRole('button', { name: /Readest Voice/ })));
+    const row = (name: string) => screen.getByText(name).closest('button')!;
+    expect((await waitFor(() => row('Xiaoyu'))).textContent).toBe('XiaoyuPro');
+    expect(row('Zifang').textContent).toBe('ZifangPlus');
+    fireEvent.click(screen.getByRole('button', { name: /Edge TTS/ }));
+    expect(row('Guy').textContent).toBe('Guy');
+  });
+
+  test('badges sit at the row end; a multilingual voice is badged, a locked one greyed', async () => {
+    const groups = [
+      {
+        id: 'readest',
+        name: 'Readest Voice',
+        voices: [
+          {
+            id: 'omnivoice:xiaoyu',
+            name: 'Xiaoyu',
+            lang: 'zh-CN',
+            tier: 'pro' as const,
+            disabled: true,
+          },
+        ],
+      },
+      {
+        id: 'edge-tts',
+        name: 'Edge TTS',
+        voices: [
+          {
+            id: 'en-US-AvaMultilingualNeural',
+            name: 'Ava',
+            lang: 'en-US',
+            variant: 'multilingual' as const,
+          },
+        ],
+      },
+    ];
+    render(<TTSPlayerSheet {...makeProps({ onGetVoices: vi.fn().mockResolvedValue(groups) })} />);
+    fireEvent.click(screen.getByLabelText('Voice'));
+    const row = (name: string) => screen.getAllByText(name).at(-1)!.closest('button')!;
+    expect((await waitFor(() => row('Xiaoyu'))).innerHTML).toContain('text-base-content/40');
+    expect(screen.getByText('Pro').className).toContain('ms-auto');
+    fireEvent.click(screen.getByRole('button', { name: /Edge TTS/ }));
+    expect(row('Ava').textContent).toBe('AvaMultilingual');
+    expect(screen.getByText('Multilingual').className).toContain('ms-auto');
+  });
+
+  test('voice groups form an accordion opened on the current voice, foldable', async () => {
+    const groups = [
+      { id: 'custom', name: 'Kokoro', voices: [{ id: 'k1', name: 'af_heart', lang: 'mul' }] },
+      ...voiceGroups,
+    ];
+    const props = makeProps({
+      onGetVoices: vi.fn().mockResolvedValue(groups),
+      onGetVoiceId: vi.fn().mockReturnValue('guy'),
+    });
+    render(<TTSPlayerSheet {...props} />);
+    fireEvent.click(screen.getByLabelText('Voice'));
+    const kokoro = await waitFor(() => screen.getByRole('button', { name: /Kokoro/ }));
+    const edge = screen.getByRole('button', { name: /Edge TTS/ });
+    // The group of the voice in use opens, and only it.
+    expect([kokoro, edge].map((h) => h.getAttribute('aria-expanded'))).toEqual(['false', 'true']);
+    expect(screen.getByText('Guy')).toBeTruthy();
+    expect(screen.queryByText('af_heart')).toBeNull();
+    fireEvent.click(kokoro);
+    expect([kokoro, edge].map((h) => h.getAttribute('aria-expanded'))).toEqual(['true', 'false']);
+    expect(screen.getByText('af_heart')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Guy' })).toBeNull();
+    // A fixed height while choosing a voice: folding never resizes the sheet.
+    const boxClass = () => screen.getByRole('dialog').getAttribute('data-box-class');
+    expect(boxClass()).toContain('sm:h-[var(--tts-player-h,85%)]!');
+    expect(boxClass()).not.toContain('sm:h-[var(--tts-player-h,auto)]!');
+    // Tapping the open group folds it: at most one group is open.
+    fireEvent.click(kokoro);
+    expect([kokoro, edge].map((h) => h.getAttribute('aria-expanded'))).toEqual(['false', 'false']);
+    expect(screen.queryByText('af_heart')).toBeNull();
+    // Folded, the group of the voice in use still shows it, and stands out.
+    expect(edge.textContent).toContain('Guy');
+    expect(edge.className).toContain('font-semibold');
+    expect(kokoro.textContent).not.toContain('af_heart');
+    expect(kokoro.className).not.toContain('font-semibold');
+  });
+
+  test('a Readest voice the plan lacks sends the reader to upgrade', async () => {
+    const groups = [
+      {
+        id: 'readest-tts',
+        name: 'Readest Voice',
+        voices: [
+          {
+            id: 'omnivoice:clara',
+            name: 'Clara',
+            lang: 'en-US',
+            tier: 'pro' as const,
+            disabled: true,
+          },
+        ],
+      },
+    ];
+    const props = makeProps({ onGetVoices: vi.fn().mockResolvedValue(groups) });
+    render(<TTSPlayerSheet {...props} />);
+    fireEvent.click(screen.getByLabelText('Voice'));
+    fireEvent.click(await waitFor(() => screen.getByRole('button', { name: /^ClaraPro$/ })));
+    expect(props.onSetVoice).not.toHaveBeenCalled();
+    expect(routerPush).toHaveBeenCalledWith(expect.stringMatching(/^\/user\?redirect=/));
+    expect(props.onClose).toHaveBeenCalled();
+  });
+
+  test('a signed-out reader tapping a Readest voice is sent to sign in', async () => {
+    mockAuth.user = null;
+    const groups = [
+      {
+        id: 'readest-tts',
+        name: 'Readest Voice',
+        voices: [
+          {
+            id: 'kokoro:af_heart',
+            name: 'Heart',
+            lang: 'en-US',
+            tier: 'plus' as const,
+            disabled: true,
+          },
+        ],
+      },
+    ];
+    const props = makeProps({ onGetVoices: vi.fn().mockResolvedValue(groups) });
+    render(<TTSPlayerSheet {...props} />);
+    fireEvent.click(screen.getByLabelText('Voice'));
+    fireEvent.click(await waitFor(() => screen.getByRole('button', { name: /^HeartPlus$/ })));
+    expect(props.onSetVoice).not.toHaveBeenCalled();
+    expect(routerPush).toHaveBeenCalledWith(expect.stringMatching(/^\/auth/));
+  });
+
   test('reopening the sheet returns to the main view', async () => {
     const props = makeProps();
     const { rerender } = render(<TTSPlayerSheet {...props} />);
@@ -572,6 +873,6 @@ describe('TTSPlayerSheet', () => {
     rerender(<TTSPlayerSheet {...props} isOpen={false} />);
     rerender(<TTSPlayerSheet {...props} isOpen={true} />);
     expect(screen.getByLabelText('Previous Paragraph')).toBeTruthy();
-    expect(screen.queryByText('Guy')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Guy' })).toBeNull();
   });
 });

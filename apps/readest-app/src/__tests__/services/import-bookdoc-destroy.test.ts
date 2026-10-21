@@ -241,4 +241,23 @@ describe('importBook BookDoc lifecycle', () => {
     expect(refreshed).toBe(true);
     expect(bookDoc.destroy).toHaveBeenCalledTimes(1);
   });
+
+  it('fills in the page count of a book imported before it was recorded (#6662)', async () => {
+    const bookDoc = setupMockBookDoc();
+    Object.assign(bookDoc, { sections: [{ size: 1 }, { size: 1 }, { size: 1 }] });
+    const fs = service.getFs();
+    fs.exists.mockResolvedValue(true);
+    fs.openFile.mockResolvedValue(new File(['pdf content'], 'test.pdf'));
+    const book: Book = {
+      hash: 'hash-abc',
+      format: 'PDF',
+      title: 'Test Book',
+      author: 'Test Author',
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    };
+
+    expect(await refreshBookMetadata(service.getFs() as never, book)).toBe(true);
+    expect(book.pageCount).toBe(3);
+  });
 });

@@ -213,7 +213,7 @@ const downloadAbsCover = async (
       url: client.buildCoverUrl(itemId),
       headers: { Accept: 'image/*' },
       singleThreaded: true,
-      skipSslVerification: true,
+      skipSslVerification: client.allowSelfSignedCert,
     });
     const bytes = (await appService.readFile(tmpPath, 'None', 'binary')) as ArrayBuffer;
     if (!bytes?.byteLength) return false;

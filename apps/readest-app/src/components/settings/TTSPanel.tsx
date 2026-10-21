@@ -1,5 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useEnv } from '@/context/EnvContext';
+import { useAuth } from '@/context/AuthContext';
+import { useAppRouter } from '@/hooks/useAppRouter';
+import { useKeyDownActions } from '@/hooks/useKeyDownActions';
+import { isCustomTTSAllowed } from '@/utils/access';
+import { navigateToLogin, navigateToProfile } from '@/utils/nav';
 import { useReaderStore } from '@/store/readerStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useResetViewSettings } from '@/hooks/useResetSettings';
@@ -13,12 +18,23 @@ import {
   TTSPlayerStyle,
 } from '@/services/tts/types';
 import { getTTSCacheConfig, setTTSCacheConfig } from '@/services/tts/providers/bookCacheStore';
-import { BoxedList, SettingsRow, SettingsSelect, SettingsSwitchRow } from './primitives';
+import {
+  BoxedList,
+  NavigationRow,
+  SettingsRow,
+  SettingsSelect,
+  SettingsSwitchRow,
+} from './primitives';
+import CustomTTSServices from './CustomTTSServices';
 import TTSHighlightStyleEditor, { TTSHighlightStyle } from './theme/TTSHighlightStyleEditor';
 
 const TTSPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset }) => {
   const _ = useTranslation();
   const { envConfig } = useEnv();
+  const router = useAppRouter();
+  const { token, user } = useAuth();
+  const hasPremium = isCustomTTSAllowed(token);
+  const [showCustomServices, setShowCustomServices] = useState(false);
   const { getViewSettings } = useReaderStore();
   const { settings, setSettings, saveSettings } = useSettingsStore();
   const viewSettings = getViewSettings(bookKey) || settings.globalViewSettings;
@@ -109,6 +125,20 @@ const TTSPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ttsSkipInlineAnnotations]);
 
+  // Android Back / Esc steps back to this panel instead of closing Settings.
+  useKeyDownActions({
+    enabled: showCustomServices,
+    onCancel: () => setShowCustomServices(false),
+  });
+
+  // Custom TTS services are premium: everyone else is routed to the plans page
+  // (or sign-in) instead of the sub-page.
+  const handleOpenCustomServices = () => {
+    if (hasPremium) setShowCustomServices(true);
+    else if (user) navigateToProfile(router);
+    else navigateToLogin(router);
+  };
+
   const handleTTSStyleChange = (style: TTSHighlightStyle) => {
     setTtsHighlightStyle(style);
     saveViewSettings(envConfig, bookKey, 'ttsHighlightOptions', {
@@ -144,8 +174,26 @@ const TTSPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset }
     setTtsHighlightGranularity(granularity);
   };
 
+  if (showCustomServices) {
+    return (
+      <div className='w-full'>
+        <CustomTTSServices onBack={() => setShowCustomServices(false)} />
+      </div>
+    );
+  }
+
   return (
     <div className='my-4 w-full space-y-6'>
+      <BoxedList title={_('Voices')} cardClassName='overflow-hidden'>
+        <NavigationRow
+          title={_('Custom TTS Services')}
+          status={_('Use your own OpenAI-compatible speech service')}
+          badge={hasPremium ? undefined : _('Premium')}
+          onClick={handleOpenCustomServices}
+          data-setting-id='settings.tts.customServices'
+        />
+      </BoxedList>
+
       <TTSHighlightStyleEditor
         granularity={ttsHighlightGranularity}
         style={ttsHighlightStyle}

@@ -39,7 +39,7 @@ end
 local SUPABAE_ANON_KEY_BASE64 = "ZXlKaGJHY2lPaUpJVXpJMU5pSXNJblI1Y0NJNklrcFhWQ0o5LmV5SnBjM01pT2lKemRYQmhZbUZ6WlNJc0luSmxaaUk2SW5aaWMzbDRablZ6YW1weFpIaHJhbkZzZVhOaklpd2ljbTlzWlNJNkltRnViMjRpTENKcFlYUWlPakUzTXpReE1qTTJOekVzSW1WNGNDSTZNakEwT1RZNU9UWTNNWDAuM1U1VXFhb3VfMVNnclZlMWVvOXJBcGMwdUtqcWhwUWRVWGh2d1VIbVVmZw=="
 
 ReadestSync.default_settings = {
-    supabase_url = "https://readest.supabase.co",
+    supabase_url = "https://vbsyxfusjjqdxkjqlysc.supabase.co",
     supabase_anon_key = sha2.base64_to_bin(SUPABAE_ANON_KEY_BASE64),
     auto_sync = false,
     user_email = nil,
@@ -61,6 +61,11 @@ function ReadestSync:init()
     self.settings = G_reader_settings:readSetting("readest_sync", self.default_settings)
     if self.settings.localsend_enabled == nil then
         self.settings.localsend_enabled = true
+    end
+    -- The URL is saved with the rest of the settings, so move installs off
+    -- the former vanity host before it is retired.
+    if self.settings.supabase_url == "https://readest.supabase.co" then
+        self.settings.supabase_url = self.default_settings.supabase_url
     end
 
     local meta = dofile(self.path .. "/_meta.lua")
@@ -965,6 +970,7 @@ function ReadestSync:openLibrary()
         settings  = self.settings,
         sync_path = self.path,
         sync_auth = SyncAuth,
+        ui        = self.ui,
     })
 end
 

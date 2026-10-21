@@ -1,5 +1,6 @@
 import clsx from 'clsx';
 import React from 'react';
+import { PiScribbleLoop } from 'react-icons/pi';
 
 import { AnnotationToolType } from '@/types/annotator';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -9,6 +10,8 @@ import MenuItem from '@/components/MenuItem';
 import Menu from '@/components/Menu';
 
 interface QuickActionMenuProps {
+  /** The book to draw on; offers Draw among the tools when given. */
+  bookKey?: string;
   menuClassName?: string;
   selectedAction?: AnnotationToolType | null;
   onActionSelect: (action: AnnotationToolType) => void;
@@ -16,6 +19,7 @@ interface QuickActionMenuProps {
 }
 
 const QuickActionMenu: React.FC<QuickActionMenuProps> = ({
+  bookKey,
   menuClassName,
   selectedAction,
   onActionSelect,
@@ -64,6 +68,16 @@ const QuickActionMenu: React.FC<QuickActionMenuProps> = ({
           onClick={() => handleActionClick(button.type)}
         />
       ))}
+      {bookKey && (
+        <MenuItem
+          label={_('Instant {{action}}', { action: _('Draw') })}
+          Icon={PiScribbleLoop}
+          onClick={() => {
+            eventDispatcher.dispatch('handwriting', { action: 'toggle', bookKey });
+            setIsDropdownOpen?.(false);
+          }}
+        />
+      )}
     </Menu>
   );
 };

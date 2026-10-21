@@ -31,7 +31,12 @@ const TTSControl: React.FC<TTSControlProps> = ({ bookKey, gridInsets }) => {
     onRequestHidePanel: () => setShowPlayerSheet(false),
   });
 
-  const downloads = useTTSDownloads(bookKey, tts.getController, showPlayerSheet);
+  const downloads = useTTSDownloads(
+    bookKey,
+    tts.getController,
+    showPlayerSheet,
+    tts.ttsClientsInited,
+  );
   const activeSectionIndex = tts.ttsSectionIndex;
 
   const viewSettings = getViewSettings(bookKey);
@@ -40,7 +45,13 @@ const TTSControl: React.FC<TTSControlProps> = ({ bookKey, gridInsets }) => {
   const hasTimeline = tts.ttsClientsInited && tts.handleSupportsPlaybackInfo();
   const audioTransport = tts.ttsClientsInited && tts.audioTransport;
   const miniPlayerMounted = tts.showIndicator && !showPlayerSheet;
-  const miniPlayerVisible = useMiniPlayerAutoHide(bookKey, playerStyle, miniPlayerMounted);
+  const buffering = !tts.ttsClientsInited || tts.buffering;
+  const miniPlayerVisible = useMiniPlayerAutoHide(
+    bookKey,
+    playerStyle,
+    miniPlayerMounted,
+    buffering,
+  );
 
   useEffect(() => {
     if (tts.showBackToCurrentTTSLocation) {
@@ -61,10 +72,9 @@ const TTSControl: React.FC<TTSControlProps> = ({ bookKey, gridInsets }) => {
     }
   }, [tts.showBackToCurrentTTSLocation]);
 
+  // The full player opens whenever the mini player shows, even while the
+  // clients initialize: it fills in its voices once they are ready.
   const handleExpand = () => {
-    // The mini player mounts as soon as the session starts; the full sheet
-    // needs initialized clients (voices, timeline), so ignore taps until then.
-    if (!tts.ttsClientsInited) return;
     tts.refreshTtsLang();
     setShowPlayerSheet(true);
   };
@@ -105,7 +115,7 @@ const TTSControl: React.FC<TTSControlProps> = ({ bookKey, gridInsets }) => {
         <TTSMiniPlayer
           bookKey={bookKey}
           isPlaying={tts.isPlaying}
-          buffering={!tts.ttsClientsInited || tts.buffering}
+          buffering={buffering}
           isEink={isEink}
           visible={miniPlayerVisible}
           hasTimeline={hasTimeline}
@@ -121,10 +131,11 @@ const TTSControl: React.FC<TTSControlProps> = ({ bookKey, gridInsets }) => {
           onGetPlaybackInfo={tts.handleGetPlaybackInfo}
         />
       )}
-      {tts.ttsClientsInited && showPlayerSheet && (
+      {showPlayerSheet && (
         <TTSPlayerSheet
           bookKey={bookKey}
           isOpen={showPlayerSheet}
+          clientsReady={tts.ttsClientsInited}
           ttsLang={tts.ttsLang}
           isPlaying={tts.isPlaying}
           hasTimeline={hasTimeline}

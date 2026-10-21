@@ -1,6 +1,7 @@
 import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
 import { isTauriAppPlatform } from '@/services/environment';
 import { runWithConcurrency } from '@/utils/concurrency';
+import { allowsSelfSignedCert, tlsFetch } from '@/utils/tls';
 import type {
   ABSLibrary,
   ABSLibraryItem,
@@ -93,17 +94,26 @@ export interface ABSRequestOptions {
 
 /**
  * Platform fetch carrying the transport options every ABS request needs: the
- * tauri http client on native (LAN servers, self-signed certs accepted) with
- * the Origin header suppressed, `window.fetch` on the web.
+ * tauri http client on native (LAN servers, self-signed certs accepted when
+ * the server allows them) with the Origin header suppressed, `window.fetch` on
+ * the web.
  */
-export const absFetch = (url: string, init: ABSRequestOptions = {}): Promise<Response> => {
+export const absFetch = (
+  server: ABSServer,
+  url: string,
+  init: ABSRequestOptions = {},
+): Promise<Response> => {
   const fetch = isTauriAppPlatform() ? tauriFetch : window.fetch;
-  return fetch(url, {
-    method: init.method ?? 'GET',
-    headers: withOriginSuppressed(init.headers ?? {}),
-    body: init.body,
-    danger: { acceptInvalidCerts: true, acceptInvalidHostnames: true },
-  });
+  return tlsFetch(
+    fetch,
+    url,
+    {
+      method: init.method ?? 'GET',
+      headers: withOriginSuppressed(init.headers ?? {}),
+      body: init.body,
+    },
+    allowsSelfSignedCert(server),
+  );
 };
 
 /** Fields accepted by PATCH /api/me/progress/:libraryItemId; ABS merges what is sent. */
@@ -146,8 +156,9 @@ interface ABSRefreshResponse {
  * owning its own copy of that logic. On the web platform, API calls hit
  * the ABS server directly and rely on its opt-in CORS support (the
  * `ALLOW_CORS=1` env var or the `allowedOrigins` server setting must
- * cover the Readest web origin). Media and cover URLs are also direct —
- * `<audio>`/`<img>` element fetches aren't subject to CORS anyway.
+ * cover the Readest web origin). Media and cover URLs are also direct.
+ * Audio relies on the same setting: the web app is cross-origin isolated,
+ * so the media element requests a track with CORS (see `mediaCrossOrigin`).
  * Media URLs are built by `openAudiobook`'s
  * `resolveUrl` closure (it re-reads the store's live access token on every
  * track load, which a client-captured copy could not do); the client only
@@ -165,8 +176,13 @@ export class ABSClient {
     this.#onTokensUpdated = callbacks.onTokensUpdated;
   }
 
+  /** Whether this server accepts a self-signed certificate (see `allowsSelfSignedCert`). */
+  get allowSelfSignedCert(): boolean {
+    return allowsSelfSignedCert(this.#server);
+  }
+
   async #fetch(path: string, init: ABSRequestOptions = {}): Promise<Response> {
-    return absFetch(`${this.#base}${path}`, {
+    return absFetch(this.#server, `${this.#base}${path}`, {
       method: init.method,
       headers: {
         Accept: 'application/json',

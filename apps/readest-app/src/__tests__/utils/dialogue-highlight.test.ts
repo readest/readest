@@ -381,6 +381,98 @@ describe('manageDialogueHighlight', () => {
     expect(spans).toEqual(['‘I don’t know,’', '‘It’s fine.’']);
   });
 
+  it('keeps a word-final apostrophe inside single-quoted dialogue', () => {
+    const doc = makeDoc(
+      `<p>‘Fetch a bunch o’ rope, and be quick about it.’</p>` +
+        `<p>He said, ‘We’re goin’ home.’</p>` +
+        `<p>‘The lads’ boots are wet,’ she said. ‘Rock ’n’ roll!’</p>` +
+        `<p>‘We’re goin’—now!’</p>`,
+    );
+    manageDialogueHighlight(doc, makeViewSettings({ dialogueHighlight: true }));
+    const spans = [...doc.querySelectorAll(`.${DIALOGUE_SPAN_CLASS}`)].map((s) => s.textContent);
+    expect(spans).toEqual([
+      '‘Fetch a bunch o’ rope, and be quick about it.’',
+      '‘We’re goin’ home.’',
+      '‘The lads’ boots are wet,’',
+      '‘Rock ’n’ roll!’',
+      '‘We’re goin’—now!’',
+    ]);
+  });
+
+  it('still closes a single quote after a letter when no later quote closes it', () => {
+    const doc = makeDoc(
+      `<p>‘Hello’ she said, and walked off.</p>` +
+        `<p>They called it ‘progress’ and moved on, ‘Fine.’</p>` +
+        `<p>‘Wait’ he said.</p><p>‘Go.’</p>` +
+        `<p>He said ‘no’, then left.</p>` +
+        `<p>Type ‘end’ then “’” to close it.</p>` +
+        `<p>Type ‘end’ then "’" to close it.</p>`,
+    );
+    manageDialogueHighlight(doc, makeViewSettings({ dialogueHighlight: true }));
+    const spans = [...doc.querySelectorAll(`.${DIALOGUE_SPAN_CLASS}`)].map((s) => s.textContent);
+    expect(spans).toEqual([
+      '‘Hello’',
+      '‘progress’',
+      '‘Fine.’',
+      '‘Wait’',
+      '‘Go.’',
+      '‘no’',
+      '‘end’',
+      '“’”',
+      '‘end’',
+      '"’"',
+    ]);
+  });
+
+  it('wraps a quote longer than 500 characters', () => {
+    const speech =
+      'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. '
+        .repeat(5)
+        .trim();
+    const quotes = [
+      `“${speech}”`,
+      `„${speech}“`,
+      `"${speech}"`,
+      `«${speech}»`,
+      `「${speech}」`,
+      `『${speech}』`,
+    ];
+    const doc = makeDoc(quotes.map((q) => `<p>${q}</p>`).join(''));
+    manageDialogueHighlight(doc, makeViewSettings({ dialogueHighlight: true }));
+    const spans = [...doc.querySelectorAll(`.${DIALOGUE_SPAN_CLASS}`)].map((s) => s.textContent);
+    expect(spans).toEqual(quotes);
+  });
+
+  it('does not let an unclosed quote swallow the next one', () => {
+    const doc = makeDoc(`<p>“Wait, she said.</p><p>He answered “fine” and left.</p>`);
+    manageDialogueHighlight(doc, makeViewSettings({ dialogueHighlight: true }));
+    const spans = [...doc.querySelectorAll(`.${DIALOGUE_SPAN_CLASS}`)].map((s) => s.textContent);
+    expect(spans).toEqual(['“fine”']);
+  });
+
+  it('wraps a quote holding inner quotes in the same marks', () => {
+    const outer = '“I am still interested in my spiritual “children”; in my little dog, Lizoo.”';
+    const doc = makeDoc(`<p>${outer}</p><p>Il dit « on l’appelle « le chef » ici ».</p>`);
+    manageDialogueHighlight(doc, makeViewSettings({ dialogueHighlight: true }));
+    const spans = [...doc.querySelectorAll(`.${DIALOGUE_SPAN_CLASS}`)].map((s) => s.textContent);
+    expect(spans).toEqual([outer, '« on l’appelle « le chef » ici »']);
+  });
+
+  it('does not nest quotes across paragraphs', () => {
+    const doc = makeDoc(`<p>“The speech goes on,</p><p>and he said “hi” to me.”</p>`);
+    manageDialogueHighlight(doc, makeViewSettings({ dialogueHighlight: true }));
+    const spans = [...doc.querySelectorAll(`.${DIALOGUE_SPAN_CLASS}`)].map((s) => s.textContent);
+    expect(spans).toEqual(['“hi”']);
+  });
+
+  it('skips a quote longer than 2048 characters but keeps quotes inside it', () => {
+    const filler = 'x'.repeat(2100);
+    const doc = makeDoc(`<p>“${filler} «oui» ${filler}”</p>`);
+    manageDialogueHighlight(doc, makeViewSettings({ dialogueHighlight: true }));
+    const spans = [...doc.querySelectorAll(`.${DIALOGUE_SPAN_CLASS}`)].map((s) => s.textContent);
+    expect(spans).toEqual(['«oui»']);
+  });
+
   it('does not pair a stray ASCII quote with one in a later paragraph', () => {
     const doc = makeDoc(`<p>The 5" screen was small.</p><p>He said "hi" and left.</p>`);
     manageDialogueHighlight(doc, makeViewSettings({ dialogueHighlight: true }));

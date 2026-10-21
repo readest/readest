@@ -160,6 +160,27 @@ describe('OPDS proxy response isolation', () => {
     expect(res.headers.get('Content-Type')).toBe('application/octet-stream');
   });
 
+  it.each([
+    401, 404,
+  ])('drops the compressed length and encoding from a decoded error body (%s)', async (status) => {
+    // fetch has already decoded the body; the upstream headers describe the
+    // compressed bytes.
+    fetchSpy.mockResolvedValueOnce(
+      new Response('Not found', {
+        status,
+        headers: {
+          'Content-Type': 'text/plain',
+          'Content-Encoding': 'gzip',
+          'Content-Length': '999',
+        },
+      }),
+    );
+    const res = await GET(proxyReq('https://feeds.example.com/missing'));
+    expect(res.headers.get('Content-Encoding')).toBeNull();
+    expect(res.headers.get('Content-Length')).not.toBe('999');
+    expect(await res.text()).toBe('Not found');
+  });
+
   it('does not expose an upstream JavaScript MIME type', async () => {
     fetchSpy.mockResolvedValueOnce(
       new Response('evil()', {
@@ -197,6 +218,21 @@ describe('OPDS proxy response isolation', () => {
     expect(sent[1]?.get('X-Api-Key')).toBeNull();
     expect(sent[2]?.get('Authorization')).toBeNull();
   });
+  it('takes the catalog credential from the Authorization request header', async () => {
+    const sent: Headers[] = [];
+    fetchSpy.mockImplementation(async (_url: string, init: RequestInit) => {
+      sent.push(new Headers(init.headers));
+      return new Response('<feed/>', { headers: { 'Content-Type': 'application/atom+xml' } });
+    });
+    const res = await GET(
+      new NextRequest(proxyReq('https://feeds.example.com/feed').url, {
+        headers: { Authorization: 'Basic secret' },
+      }),
+    );
+    expect(sent[0]?.get('Authorization')).toBe('Basic secret');
+    expect(res.headers.get('Cache-Control')).toBe('no-store');
+  });
+
   it.each(['HEAD', 'stream'])('isolates %s responses as well', async (mode) => {
     fetchSpy.mockResolvedValueOnce(
       new Response('evil()', {
@@ -225,5 +261,19 @@ describe('OPDS proxy response isolation', () => {
     );
     const res = await GET(new NextRequest(proxyReq('https://feeds.example.com/feed').url + suffix));
     expect(res.headers.get('Cache-Control')).toBe(expected);
+  });
+
+  it('keys a cached anonymous feed on the Authorization header', async () => {
+    // The credential travels in a header, so a guest feed and a signed-in feed
+    // share one proxy URL; without Vary the browser would serve the cached
+    // guest feed after the user adds credentials.
+    fetchSpy.mockResolvedValueOnce(
+      new Response('<feed/>', {
+        headers: { 'Content-Type': 'application/atom+xml' },
+      }),
+    );
+    const res = await GET(proxyReq('https://feeds.example.com/feed'));
+    expect(res.headers.get('Cache-Control')).toBe('public, max-age=300');
+    expect(res.headers.get('Vary')).toBe('Authorization');
   });
 });

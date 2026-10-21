@@ -100,6 +100,7 @@ function seedViewState(key: string, overrides: Record<string, unknown> = {}) {
         ribbonVisible: false,
         ttsEnabled: false,
         autoScrollEnabled: false,
+        drawingEnabled: false,
         syncing: false,
         gridInsets: null,
         previewMode: false,
@@ -249,6 +250,32 @@ describe('readerStore', () => {
 
       const retrieved = useReaderStore.getState().getViewSettings(key);
       expect(retrieved).toEqual(settings);
+    });
+
+    test('keeps the sidebar tab chosen in the book config when a primary view saves settings', () => {
+      const key = 'bookid-0';
+      const live = { sideBarTab: 'toc', ttsLocation: 'cfi-1' } as unknown as ViewSettings;
+      seedViewState(key, { viewSettings: live });
+      const bookData = (sideBarTab: string) => ({
+        bookid: {
+          id: 'bookid',
+          book: null,
+          file: null,
+          config: { updatedAt: Date.now(), viewSettings: { ...live, sideBarTab } },
+          bookDoc: null,
+          isFixedLayout: false,
+        } as BookData,
+      });
+      useBookDataStore.setState({ booksData: bookData('toc') });
+
+      // The sidebar writes its tab to the book config only (#6836)...
+      useBookDataStore.setState({ booksData: bookData('annotations') });
+      // ...then Read Aloud saves the next sentence through the live settings.
+      useReaderStore.getState().setViewSettings(key, { ...live, ttsLocation: 'cfi-2' });
+
+      const saved = useBookDataStore.getState().booksData['bookid']!.config!.viewSettings!;
+      expect(saved.sideBarTab).toBe('annotations');
+      expect(saved.ttsLocation).toBe('cfi-2');
     });
 
     test('setViewSettings does nothing for empty key', () => {

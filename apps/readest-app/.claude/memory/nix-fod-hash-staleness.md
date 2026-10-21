@@ -48,3 +48,13 @@ help. RULE: whenever pnpm-lock.yaml changes, set `hash = "";` FIRST, push, read
 `got:` from the failing fod-hashes run, then commit the real hash. The old "no
 need to blank" advice above is WRONG now. Workflow hardening (e.g. a
 `nix build --check` pass on the FOD attrs) NOT done.
+
+Seventh hit 2026-10-09 (NEW failure shape: RELEASE AGE): #6686 added
+`music-metadata@12.1.0` (published the day before) to pnpm-lock.yaml. With the
+hash blanked (PR #6688, draft), `fod-hashes` failed with
+`ERR_PNPM_MINIMUM_RELEASE_AGE_VIOLATION`: the fetcher's pnpm 11.9.0 enforces its
+default one-day minimumReleaseAge (nothing in the repo sets it), so NO `got:` is
+printed until the newest locked package is a day old. Do not add a
+minimumReleaseAgeExclude (supply-chain policy bypass). Re-run the fod-hashes job
+after the cutoff (`gh run rerun <run> --failed`), then commit the `got:` hash.
+Resolved: rerun at cutoff+6 min printed `got:`; #6688 MERGED 3f45c2333 (2026-10-09).

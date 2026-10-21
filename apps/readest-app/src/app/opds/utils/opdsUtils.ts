@@ -248,6 +248,7 @@ export const validateOPDSURL = async (
   password?: string,
   useProxy = false,
   customHeaders: Record<string, string> = {},
+  allowSelfSignedCert = false,
 ): Promise<ValidationResult> => {
   try {
     const controller = new AbortController();
@@ -261,6 +262,7 @@ export const validateOPDSURL = async (
         signal: controller.signal,
       },
       customHeaders,
+      allowSelfSignedCert,
     );
     clearTimeout(timeout);
 

@@ -91,6 +91,26 @@ describe('iframeEventHandlers click gestures', () => {
     expect(postedTypes(postSpy)).toContain('iframe-single-click');
   });
 
+  test('a single click carries its main-window position, for ink hit-testing', async () => {
+    const { handleClick, handleMousedown, handleMouseup } = await importHandlers();
+    const view = {
+      frameElement: {
+        getBoundingClientRect: () => ({ left: 40, top: 30, width: 200, height: 400 }),
+      },
+      document: { documentElement: { clientWidth: 200, clientHeight: 400 } },
+    } as unknown as Window;
+
+    handleMousedown('book-1', mouseEvent({ view }));
+    handleMouseup('book-1', mouseEvent({ view }));
+    handleClick('book-1', { current: false }, false, false, mouseEvent({ view }));
+    vi.advanceTimersByTime(260);
+
+    const msg = postSpy.mock.calls
+      .map((call: unknown[]) => call[0] as Record<string, unknown>)
+      .find((m: Record<string, unknown>) => m['type'] === 'iframe-single-click');
+    expect(msg).toMatchObject({ windowX: 140, windowY: 130 });
+  });
+
   test('a plain double-click posts iframe-double-click and not iframe-single-click', async () => {
     const { handleClick, handleMousedown, handleMouseup } = await importHandlers();
     const doubleClickDisabled = { current: false };
@@ -259,6 +279,48 @@ describe('single-tap opens image gallery / table zoom in reflowable books (#4584
     const media = messages.find((m) => m['type'] === 'iframe-open-media')!;
     expect(media['elementType']).toBe('table');
     expect(media['html']).toBe(table.outerHTML);
+  });
+
+  // #6856: the table zoom covered the place a link in the table leads to.
+  test('reflowable: tap on a link inside a table follows the link, not the table zoom', async () => {
+    const handlers = await importHandlers();
+    const table = document.createElement('table');
+    const cell = document.createElement('td');
+    const anchor = document.createElement('a');
+    anchor.href = '#chapter-3';
+    anchor.textContent = 'Chapter 3';
+    cell.appendChild(anchor);
+    table.appendChild(cell);
+
+    // The same tap as `tap`, keeping the click so foliate's link handler gets it
+    const { handleClick, handleClickCapture, handleMousedown, handleMouseup } = handlers;
+    const click = mouseEvent({ target: anchor });
+    handleMousedown('book-1', mouseEvent());
+    handleMouseup('book-1', mouseEvent());
+    handleClickCapture('book-1', click);
+    handleClick('book-1', { current: false }, false, false, click);
+    vi.advanceTimersByTime(260);
+
+    const types = postedMessages().map((m) => m['type']);
+    expect(types).not.toContain('iframe-open-media');
+    expect(types).not.toContain('iframe-single-click');
+    expect(click.preventDefault).not.toHaveBeenCalled();
+    expect(click.stopImmediatePropagation).not.toHaveBeenCalled();
+  });
+
+  test('reflowable: tap on a table wrapped in a link still opens the table zoom', async () => {
+    const handlers = await importHandlers();
+    const anchor = document.createElement('a');
+    anchor.href = 'https://example.com';
+    const table = document.createElement('table');
+    const cell = document.createElement('td');
+    table.appendChild(cell);
+    anchor.appendChild(table);
+
+    tap(handlers, false, cell);
+
+    const media = postedMessages().find((m) => m['type'] === 'iframe-open-media')!;
+    expect(media['elementType']).toBe('table');
   });
 
   test('fixed-layout: tap on an image keeps tap-to-turn, carrying the image for the center tap', async () => {

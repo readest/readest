@@ -1,0 +1,550 @@
+{
+  "epub": "sample-kosync.fb2",
+  "fb2": true,
+  "dom_version": 20240114,
+  "every": 1,
+  "word_count": 108,
+  "fragments": [],
+  "words": [
+    {
+      "xp": "/FictionBook/body[1]/title/p[1]/text().0",
+      "xp_end": "/FictionBook/body[1]/title/p[1]/text().6",
+      "text": "KOSync"
+    },
+    {
+      "xp": "/FictionBook/body[1]/title/p[1]/text().7",
+      "xp_end": "/FictionBook/body[1]/title/p[1]/text().10",
+      "text": "FB2"
+    },
+    {
+      "xp": "/FictionBook/body[1]/title/p[1]/text().11",
+      "xp_end": "/FictionBook/body[1]/title/p[1]/text().17",
+      "text": "Sample"
+    },
+    {
+      "xp": "/FictionBook/body[1]/title/p[2]/text().0",
+      "xp_end": "/FictionBook/body[1]/title/p[2]/text().1",
+      "text": "A"
+    },
+    {
+      "xp": "/FictionBook/body[1]/title/p[2]/text().2",
+      "xp_end": "/FictionBook/body[1]/title/p[2]/text().6",
+      "text": "book"
+    },
+    {
+      "xp": "/FictionBook/body[1]/title/p[2]/text().7",
+      "xp_end": "/FictionBook/body[1]/title/p[2]/text().10",
+      "text": "for"
+    },
+    {
+      "xp": "/FictionBook/body[1]/title/p[2]/text().11",
+      "xp_end": "/FictionBook/body[1]/title/p[2]/text().19",
+      "text": "position"
+    },
+    {
+      "xp": "/FictionBook/body[1]/title/p[2]/text().20",
+      "xp_end": "/FictionBook/body[1]/title/p[2]/text().24",
+      "text": "sync"
+    },
+    {
+      "xp": "/FictionBook/body[1]/epigraph/p/text().0",
+      "xp_end": "/FictionBook/body[1]/epigraph/p/text().5",
+      "text": "Words"
+    },
+    {
+      "xp": "/FictionBook/body[1]/epigraph/p/text().6",
+      "xp_end": "/FictionBook/body[1]/epigraph/p/text().12",
+      "text": "before"
+    },
+    {
+      "xp": "/FictionBook/body[1]/epigraph/p/text().13",
+      "xp_end": "/FictionBook/body[1]/epigraph/p/text().16",
+      "text": "the"
+    },
+    {
+      "xp": "/FictionBook/body[1]/epigraph/p/text().17",
+      "xp_end": "/FictionBook/body[1]/epigraph/p/text().22",
+      "text": "first"
+    },
+    {
+      "xp": "/FictionBook/body[1]/epigraph/p/text().23",
+      "xp_end": "/FictionBook/body[1]/epigraph/p/text().30",
+      "text": "chapter"
+    },
+    {
+      "xp": "/FictionBook/body[1]/epigraph/text-author/text().0",
+      "xp_end": "/FictionBook/body[1]/epigraph/text-author/text().7",
+      "text": "Someone"
+    },
+    {
+      "xp": "/FictionBook/body[1]/epigraph/text-author/text().8",
+      "xp_end": "/FictionBook/body[1]/epigraph/text-author/text().12",
+      "text": "Wise"
+    },
+    {
+      "xp": "/FictionBook/body[1]/section[1]/title/p/text().0",
+      "xp_end": "/FictionBook/body[1]/section[1]/title/p/text().7",
+      "text": "Chapter"
+    },
+    {
+      "xp": "/FictionBook/body[1]/section[1]/title/p/text().8",
+      "xp_end": "/FictionBook/body[1]/section[1]/title/p/text().11",
+      "text": "One"
+    },
+    {
+      "xp": "/FictionBook/body[1]/section[1]/epigraph/p/text().0",
+      "xp_end": "/FictionBook/body[1]/section[1]/epigraph/p/text().2",
+      "text": "An"
+    },
+    {
+      "xp": "/FictionBook/body[1]/section[1]/epigraph/p/text().3",
+      "xp_end": "/FictionBook/body[1]/section[1]/epigraph/p/text().11",
+      "text": "epigraph"
+    },
+    {
+      "xp": "/FictionBook/body[1]/section[1]/epigraph/p/text().12",
+      "xp_end": "/FictionBook/body[1]/section[1]/epigraph/p/text().18",
+      "text": "inside"
+    },
+    {
+      "xp": "/FictionBook/body[1]/section[1]/epigraph/p/text().19",
+      "xp_end": "/FictionBook/body[1]/section[1]/epigraph/p/text().22",
+      "text": "the"
+    },
+    {
+      "xp": "/FictionBook/body[1]/section[1]/epigraph/p/text().23",
+      "xp_end": "/FictionBook/body[1]/section[1]/epigraph/p/text().30",
+      "text": "chapter"
+    },
+    {
+      "xp": "/FictionBook/body[1]/section[1]/epigraph/text-author/text().0",
+      "xp_end": "/FictionBook/body[1]/section[1]/epigraph/text-author/text().7",
+      "text": "Another"
+    },
+    {
+      "xp": "/FictionBook/body[1]/section[1]/epigraph/text-author/text().8",
+      "xp_end": "/FictionBook/body[1]/section[1]/epigraph/text-author/text().14",
+      "text": "Author"
+    },
+    {
+      "xp": "/FictionBook/body[1]/section[1]/p[1]/text().0",
+      "xp_end": "/FictionBook/body[1]/section[1]/p[1]/text().3",
+      "text": "The"
+    },
+    {
+      "xp": "/FictionBook/body[1]/section[1]/p[1]/text().4",
+      "xp_end": "/FictionBook/body[1]/section[1]/p[1]/text().9",
+      "text": "first"
+    },
+    {
+      "xp": "/FictionBook/body[1]/section[1]/p[1]/text().10",
+      "xp_end": "/FictionBook/body[1]/section[1]/p[1]/text().19",
+      "text": "paragraph"
+    },
+    {
+      "xp": "/FictionBook/body[1]/section[1]/p[1]/text().20",
+      "xp_end": "/FictionBook/body[1]/section[1]/p[1]/text().22",
+      "text": "of"
+    },
+    {
+      "xp": "/FictionBook/body[1]/section[1]/p[1]/text().23",
+      "xp_end": "/FictionBook/body[1]/section[1]/p[1]/text().30",
+      "text": "chapter"
+    },
+    {
+      "xp": "/FictionBook/body[1]/section[1]/p[1]/text().31",
+      "xp_end": "/FictionBook/body[1]/section[1]/p[1]/text().34",
+      "text": "one"
+    },
+    {
+      "xp": "/FictionBook/body[1]/section[1]/p[2]/text()[1].0",
+      "xp_end": "/FictionBook/body[1]/section[1]/p[2]/text()[1].5",
+      "text": "Plain"
+    },
+    {
+      "xp": "/FictionBook/body[1]/section[1]/p[2]/emphasis/text().0",
+      "xp_end": "/FictionBook/body[1]/section[1]/p[2]/emphasis/text().6",
+      "text": "italic"
+    },
+    {
+      "xp": "/FictionBook/body[1]/section[1]/p[2]/text()[2].1",
+      "xp_end": "/FictionBook/body[1]/section[1]/p[2]/text()[2].4",
+      "text": "and"
+    },
+    {
+      "xp": "/FictionBook/body[1]/section[1]/p[2]/strong/text().0",
+      "xp_end": "/FictionBook/body[1]/section[1]/p[2]/strong/text().4",
+      "text": "bold"
+    },
+    {
+      "xp": "/FictionBook/body[1]/section[1]/p[2]/text()[3].1",
+      "xp_end": "/FictionBook/body[1]/section[1]/p[2]/text()[3].6",
+      "text": "words"
+    },
+    {
+      "xp": "/FictionBook/body[1]/section[1]/p[2]/text()[3].7",
+      "xp_end": "/FictionBook/body[1]/section[1]/p[2]/text()[3].11",
+      "text": "with"
+    },
+    {
+      "xp": "/FictionBook/body[1]/section[1]/p[2]/text()[3].12",
+      "xp_end": "/FictionBook/body[1]/section[1]/p[2]/text()[3].13",
+      "text": "a"
+    },
+    {
+      "xp": "/FictionBook/body[1]/section[1]/p[2]/text()[3].14",
+      "xp_end": "/FictionBook/body[1]/section[1]/p[2]/text()[3].18",
+      "text": "note"
+    },
+    {
+      "xp": "/FictionBook/body[1]/section[1]/p[2]/a/text().1",
+      "xp_end": "/FictionBook/body[1]/section[1]/p[2]/a/text().2",
+      "text": "1"
+    },
+    {
+      "xp": "/FictionBook/body[1]/section[1]/p[2]/text()[4].1",
+      "xp_end": "/FictionBook/body[1]/section[1]/p[2]/text()[4].6",
+      "text": "after"
+    },
+    {
+      "xp": "/FictionBook/body[1]/section[1]/p[2]/text()[4].7",
+      "xp_end": "/FictionBook/body[1]/section[1]/p[2]/text()[4].11",
+      "text": "them"
+    },
+    {
+      "xp": "/FictionBook/body[1]/section[1]/subtitle/text().0",
+      "xp_end": "/FictionBook/body[1]/section[1]/subtitle/text().1",
+      "text": "A"
+    },
+    {
+      "xp": "/FictionBook/body[1]/section[1]/subtitle/text().2",
+      "xp_end": "/FictionBook/body[1]/section[1]/subtitle/text().10",
+      "text": "subtitle"
+    },
+    {
+      "xp": "/FictionBook/body[1]/section[1]/p[3]/text().0",
+      "xp_end": "/FictionBook/body[1]/section[1]/p[3]/text().3",
+      "text": "The"
+    },
+    {
+      "xp": "/FictionBook/body[1]/section[1]/p[3]/text().4",
+      "xp_end": "/FictionBook/body[1]/section[1]/p[3]/text().9",
+      "text": "third"
+    },
+    {
+      "xp": "/FictionBook/body[1]/section[1]/p[3]/text().10",
+      "xp_end": "/FictionBook/body[1]/section[1]/p[3]/text().19",
+      "text": "paragraph"
+    },
+    {
+      "xp": "/FictionBook/body[1]/section[1]/p[3]/text().20",
+      "xp_end": "/FictionBook/body[1]/section[1]/p[3]/text().22",
+      "text": "of"
+    },
+    {
+      "xp": "/FictionBook/body[1]/section[1]/p[3]/text().23",
+      "xp_end": "/FictionBook/body[1]/section[1]/p[3]/text().30",
+      "text": "chapter"
+    },
+    {
+      "xp": "/FictionBook/body[1]/section[1]/p[3]/text().31",
+      "xp_end": "/FictionBook/body[1]/section[1]/p[3]/text().34",
+      "text": "one"
+    },
+    {
+      "xp": "/FictionBook/body[1]/section[2]/title/p/text().0",
+      "xp_end": "/FictionBook/body[1]/section[2]/title/p/text().7",
+      "text": "Chapter"
+    },
+    {
+      "xp": "/FictionBook/body[1]/section[2]/title/p/text().8",
+      "xp_end": "/FictionBook/body[1]/section[2]/title/p/text().11",
+      "text": "Two"
+    },
+    {
+      "xp": "/FictionBook/body[1]/section[2]/section[1]/title/p/text().0",
+      "xp_end": "/FictionBook/body[1]/section[2]/section[1]/title/p/text().4",
+      "text": "Part"
+    },
+    {
+      "xp": "/FictionBook/body[1]/section[2]/section[1]/title/p/text().5",
+      "xp_end": "/FictionBook/body[1]/section[2]/section[1]/title/p/text().6",
+      "text": "A"
+    },
+    {
+      "xp": "/FictionBook/body[1]/section[2]/section[1]/p/text().0",
+      "xp_end": "/FictionBook/body[1]/section[2]/section[1]/p/text().6",
+      "text": "Nested"
+    },
+    {
+      "xp": "/FictionBook/body[1]/section[2]/section[1]/p/text().7",
+      "xp_end": "/FictionBook/body[1]/section[2]/section[1]/p/text().14",
+      "text": "section"
+    },
+    {
+      "xp": "/FictionBook/body[1]/section[2]/section[1]/p/text().15",
+      "xp_end": "/FictionBook/body[1]/section[2]/section[1]/p/text().19",
+      "text": "text"
+    },
+    {
+      "xp": "/FictionBook/body[1]/section[2]/section[1]/p/text().21",
+      "xp_end": "/FictionBook/body[1]/section[2]/section[1]/p/text().25",
+      "text": "part"
+    },
+    {
+      "xp": "/FictionBook/body[1]/section[2]/section[1]/p/text().26",
+      "xp_end": "/FictionBook/body[1]/section[2]/section[1]/p/text().27",
+      "text": "A"
+    },
+    {
+      "xp": "/FictionBook/body[1]/section[2]/section[1]/poem/stanza[1]/v[1]/text().0",
+      "xp_end": "/FictionBook/body[1]/section[2]/section[1]/poem/stanza[1]/v[1]/text().5",
+      "text": "First"
+    },
+    {
+      "xp": "/FictionBook/body[1]/section[2]/section[1]/poem/stanza[1]/v[1]/text().6",
+      "xp_end": "/FictionBook/body[1]/section[2]/section[1]/poem/stanza[1]/v[1]/text().10",
+      "text": "line"
+    },
+    {
+      "xp": "/FictionBook/body[1]/section[2]/section[1]/poem/stanza[1]/v[1]/text().11",
+      "xp_end": "/FictionBook/body[1]/section[2]/section[1]/poem/stanza[1]/v[1]/text().13",
+      "text": "of"
+    },
+    {
+      "xp": "/FictionBook/body[1]/section[2]/section[1]/poem/stanza[1]/v[1]/text().14",
+      "xp_end": "/FictionBook/body[1]/section[2]/section[1]/poem/stanza[1]/v[1]/text().17",
+      "text": "the"
+    },
+    {
+      "xp": "/FictionBook/body[1]/section[2]/section[1]/poem/stanza[1]/v[1]/text().18",
+      "xp_end": "/FictionBook/body[1]/section[2]/section[1]/poem/stanza[1]/v[1]/text().23",
+      "text": "verse"
+    },
+    {
+      "xp": "/FictionBook/body[1]/section[2]/section[1]/poem/stanza[1]/v[2]/text().0",
+      "xp_end": "/FictionBook/body[1]/section[2]/section[1]/poem/stanza[1]/v[2]/text().6",
+      "text": "Second"
+    },
+    {
+      "xp": "/FictionBook/body[1]/section[2]/section[1]/poem/stanza[1]/v[2]/text().7",
+      "xp_end": "/FictionBook/body[1]/section[2]/section[1]/poem/stanza[1]/v[2]/text().11",
+      "text": "line"
+    },
+    {
+      "xp": "/FictionBook/body[1]/section[2]/section[1]/poem/stanza[1]/v[2]/text().12",
+      "xp_end": "/FictionBook/body[1]/section[2]/section[1]/poem/stanza[1]/v[2]/text().14",
+      "text": "of"
+    },
+    {
+      "xp": "/FictionBook/body[1]/section[2]/section[1]/poem/stanza[1]/v[2]/text().15",
+      "xp_end": "/FictionBook/body[1]/section[2]/section[1]/poem/stanza[1]/v[2]/text().18",
+      "text": "the"
+    },
+    {
+      "xp": "/FictionBook/body[1]/section[2]/section[1]/poem/stanza[1]/v[2]/text().19",
+      "xp_end": "/FictionBook/body[1]/section[2]/section[1]/poem/stanza[1]/v[2]/text().24",
+      "text": "verse"
+    },
+    {
+      "xp": "/FictionBook/body[1]/section[2]/section[1]/poem/stanza[2]/v/text().0",
+      "xp_end": "/FictionBook/body[1]/section[2]/section[1]/poem/stanza[2]/v/text().5",
+      "text": "Third"
+    },
+    {
+      "xp": "/FictionBook/body[1]/section[2]/section[1]/poem/stanza[2]/v/text().6",
+      "xp_end": "/FictionBook/body[1]/section[2]/section[1]/poem/stanza[2]/v/text().10",
+      "text": "line"
+    },
+    {
+      "xp": "/FictionBook/body[1]/section[2]/section[1]/poem/stanza[2]/v/text().11",
+      "xp_end": "/FictionBook/body[1]/section[2]/section[1]/poem/stanza[2]/v/text().13",
+      "text": "of"
+    },
+    {
+      "xp": "/FictionBook/body[1]/section[2]/section[1]/poem/stanza[2]/v/text().14",
+      "xp_end": "/FictionBook/body[1]/section[2]/section[1]/poem/stanza[2]/v/text().17",
+      "text": "the"
+    },
+    {
+      "xp": "/FictionBook/body[1]/section[2]/section[1]/poem/stanza[2]/v/text().18",
+      "xp_end": "/FictionBook/body[1]/section[2]/section[1]/poem/stanza[2]/v/text().23",
+      "text": "verse"
+    },
+    {
+      "xp": "/FictionBook/body[1]/section[2]/section[1]/poem/text-author/text().0",
+      "xp_end": "/FictionBook/body[1]/section[2]/section[1]/poem/text-author/text().3",
+      "text": "The"
+    },
+    {
+      "xp": "/FictionBook/body[1]/section[2]/section[1]/poem/text-author/text().4",
+      "xp_end": "/FictionBook/body[1]/section[2]/section[1]/poem/text-author/text().8",
+      "text": "Poet"
+    },
+    {
+      "xp": "/FictionBook/body[1]/section[2]/section[2]/title/p/text().0",
+      "xp_end": "/FictionBook/body[1]/section[2]/section[2]/title/p/text().4",
+      "text": "Part"
+    },
+    {
+      "xp": "/FictionBook/body[1]/section[2]/section[2]/title/p/text().5",
+      "xp_end": "/FictionBook/body[1]/section[2]/section[2]/title/p/text().6",
+      "text": "B"
+    },
+    {
+      "xp": "/FictionBook/body[1]/section[2]/section[2]/cite/p/text().0",
+      "xp_end": "/FictionBook/body[1]/section[2]/section[2]/cite/p/text().1",
+      "text": "A"
+    },
+    {
+      "xp": "/FictionBook/body[1]/section[2]/section[2]/cite/p/text().2",
+      "xp_end": "/FictionBook/body[1]/section[2]/section[2]/cite/p/text().11",
+      "text": "quotation"
+    },
+    {
+      "xp": "/FictionBook/body[1]/section[2]/section[2]/cite/p/text().12",
+      "xp_end": "/FictionBook/body[1]/section[2]/section[2]/cite/p/text().14",
+      "text": "in"
+    },
+    {
+      "xp": "/FictionBook/body[1]/section[2]/section[2]/cite/p/text().15",
+      "xp_end": "/FictionBook/body[1]/section[2]/section[2]/cite/p/text().19",
+      "text": "part"
+    },
+    {
+      "xp": "/FictionBook/body[1]/section[2]/section[2]/cite/p/text().20",
+      "xp_end": "/FictionBook/body[1]/section[2]/section[2]/cite/p/text().21",
+      "text": "B"
+    },
+    {
+      "xp": "/FictionBook/body[1]/section[2]/section[2]/cite/text-author/text().0",
+      "xp_end": "/FictionBook/body[1]/section[2]/section[2]/cite/text-author/text().6",
+      "text": "Quoted"
+    },
+    {
+      "xp": "/FictionBook/body[1]/section[2]/section[2]/cite/text-author/text().7",
+      "xp_end": "/FictionBook/body[1]/section[2]/section[2]/cite/text-author/text().13",
+      "text": "Person"
+    },
+    {
+      "xp": "/FictionBook/body[1]/section[2]/section[2]/p/text()[1].0",
+      "xp_end": "/FictionBook/body[1]/section[2]/section[2]/p/text()[1].6",
+      "text": "Nested"
+    },
+    {
+      "xp": "/FictionBook/body[1]/section[2]/section[2]/p/text()[1].7",
+      "xp_end": "/FictionBook/body[1]/section[2]/section[2]/p/text()[1].14",
+      "text": "section"
+    },
+    {
+      "xp": "/FictionBook/body[1]/section[2]/section[2]/p/text()[1].15",
+      "xp_end": "/FictionBook/body[1]/section[2]/section[2]/p/text()[1].19",
+      "text": "text"
+    },
+    {
+      "xp": "/FictionBook/body[1]/section[2]/section[2]/p/text()[1].21",
+      "xp_end": "/FictionBook/body[1]/section[2]/section[2]/p/text()[1].25",
+      "text": "part"
+    },
+    {
+      "xp": "/FictionBook/body[1]/section[2]/section[2]/p/text()[1].26",
+      "xp_end": "/FictionBook/body[1]/section[2]/section[2]/p/text()[1].27",
+      "text": "B"
+    },
+    {
+      "xp": "/FictionBook/body[1]/section[2]/section[2]/p/a/text().1",
+      "xp_end": "/FictionBook/body[1]/section[2]/section[2]/p/a/text().2",
+      "text": "2"
+    },
+    {
+      "xp": "/FictionBook/body[1]/section[3]/title/p/text().0",
+      "xp_end": "/FictionBook/body[1]/section[3]/title/p/text().7",
+      "text": "Chapter"
+    },
+    {
+      "xp": "/FictionBook/body[1]/section[3]/title/p/text().8",
+      "xp_end": "/FictionBook/body[1]/section[3]/title/p/text().13",
+      "text": "Three"
+    },
+    {
+      "xp": "/FictionBook/body[1]/section[3]/p/text().0",
+      "xp_end": "/FictionBook/body[1]/section[3]/p/text().3",
+      "text": "The"
+    },
+    {
+      "xp": "/FictionBook/body[1]/section[3]/p/text().4",
+      "xp_end": "/FictionBook/body[1]/section[3]/p/text().8",
+      "text": "last"
+    },
+    {
+      "xp": "/FictionBook/body[1]/section[3]/p/text().9",
+      "xp_end": "/FictionBook/body[1]/section[3]/p/text().16",
+      "text": "chapter"
+    },
+    {
+      "xp": "/FictionBook/body[1]/section[3]/p/text().17",
+      "xp_end": "/FictionBook/body[1]/section[3]/p/text().20",
+      "text": "has"
+    },
+    {
+      "xp": "/FictionBook/body[1]/section[3]/p/text().21",
+      "xp_end": "/FictionBook/body[1]/section[3]/p/text().22",
+      "text": "a"
+    },
+    {
+      "xp": "/FictionBook/body[1]/section[3]/p/text().23",
+      "xp_end": "/FictionBook/body[1]/section[3]/p/text().29",
+      "text": "single"
+    },
+    {
+      "xp": "/FictionBook/body[1]/section[3]/p/text().30",
+      "xp_end": "/FictionBook/body[1]/section[3]/p/text().39",
+      "text": "paragraph"
+    },
+    {
+      "xp": "/FictionBook/body[2]/title/p/text().0",
+      "xp_end": "/FictionBook/body[2]/title/p/text().5",
+      "text": "Notes"
+    },
+    {
+      "xp": "/FictionBook/body[2]/section[1]/title/p/text().0",
+      "xp_end": "/FictionBook/body[2]/section[1]/title/p/text().1",
+      "text": "1"
+    },
+    {
+      "xp": "/FictionBook/body[2]/section[1]/p/text().0",
+      "xp_end": "/FictionBook/body[2]/section[1]/p/text().3",
+      "text": "The"
+    },
+    {
+      "xp": "/FictionBook/body[2]/section[1]/p/text().4",
+      "xp_end": "/FictionBook/body[2]/section[1]/p/text().9",
+      "text": "first"
+    },
+    {
+      "xp": "/FictionBook/body[2]/section[1]/p/text().10",
+      "xp_end": "/FictionBook/body[2]/section[1]/p/text().14",
+      "text": "note"
+    },
+    {
+      "xp": "/FictionBook/body[2]/section[2]/title/p/text().0",
+      "xp_end": "/FictionBook/body[2]/section[2]/title/p/text().1",
+      "text": "2"
+    },
+    {
+      "xp": "/FictionBook/body[2]/section[2]/p/text().0",
+      "xp_end": "/FictionBook/body[2]/section[2]/p/text().3",
+      "text": "The"
+    },
+    {
+      "xp": "/FictionBook/body[2]/section[2]/p/text().4",
+      "xp_end": "/FictionBook/body[2]/section[2]/p/text().10",
+      "text": "second"
+    },
+    {
+      "xp": "/FictionBook/body[2]/section[2]/p/text().11",
+      "xp_end": "/FictionBook/body[2]/section[2]/p/text().15",
+      "text": "note"
+    }
+  ]
+}

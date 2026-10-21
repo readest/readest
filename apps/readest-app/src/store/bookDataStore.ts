@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { SystemSettings } from '@/types/settings';
-import { Book, BookConfig, BookNote } from '@/types/book';
+import { Book, BookConfig, BookFormat, BookNote } from '@/types/book';
 import { EnvConfigType } from '@/services/environment';
 import { BookDoc } from '@/libs/document';
 import { useLibraryStore } from './libraryStore';
@@ -62,6 +62,8 @@ export interface BookData {
   file: File | null;
   config: BookConfig | null;
   bookDoc: BookDoc | null;
+  /* Format the document parsed as; differs from book.format for streamed stubs */
+  docFormat?: BookFormat;
   isFixedLayout: boolean;
 }
 

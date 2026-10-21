@@ -29,6 +29,8 @@ export interface TTSDownloadItem {
   done: number;
   total: number;
   error?: string;
+  // Automatic re-runs after a failed run (see ttsDownloadManager).
+  retries?: number;
   createdAt: number;
   startedAt?: number;
   priority: number; // Lower = processed first ('Download all' batches win).
@@ -42,6 +44,10 @@ interface TTSDownloadState {
   setInProgress: (id: string) => void;
   updateProgress: (id: string, done: number, total: number) => void;
   setFailed: (id: string, error?: string) => void;
+  // Back to pending for another run, counting the retry.
+  setRetrying: (id: string) => void;
+  // Back to pending to run from scratch (e.g. with another voice).
+  requeue: (id: string) => void;
 
   itemsForBook: (bookHash: string) => TTSDownloadItem[];
   itemForChapter: (bookHash: string, chapterKey: string) => TTSDownloadItem | undefined;
@@ -111,6 +117,32 @@ export const useTTSDownloadStore = create<TTSDownloadState>((set, get) => ({
         items: {
           ...state.items,
           [id]: { ...item, status: 'failed', error },
+        },
+      };
+    });
+  },
+
+  setRetrying: (id) => {
+    set((state) => {
+      const item = state.items[id];
+      if (!item) return state;
+      return {
+        items: {
+          ...state.items,
+          [id]: { ...item, status: 'pending', retries: (item.retries ?? 0) + 1 },
+        },
+      };
+    });
+  },
+
+  requeue: (id) => {
+    set((state) => {
+      const item = state.items[id];
+      if (!item) return state;
+      return {
+        items: {
+          ...state.items,
+          [id]: { ...item, status: 'pending', done: 0, total: 0, retries: 0, error: undefined },
         },
       };
     });

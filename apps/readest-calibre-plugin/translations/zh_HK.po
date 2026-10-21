@@ -1,0 +1,259 @@
+# Chinese (Hong Kong) translation for the Readest calibre plugin.
+# Copyright (C) 2026 Bilingify LLC
+# This file is distributed under the same license as the Readest calibre plugin.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Readest calibre plugin\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-13 12:37+0000\n"
+"PO-Revision-Date: 2026-10-13 22:40+0000\n"
+"Last-Translator: Bilingify LLC\n"
+"Language-Team: Chinese (Hong Kong)\n"
+"Language: zh_HK\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+msgid "Push selected books and their metadata into your Readest cloud library. Re-pushing a book updates its existing entry instead of creating a duplicate."
+msgstr "將所選書籍及其 metadata 發送到你的 Readest 雲端書庫。重新發送一本書會更新現有記錄，而不會建立重複副本。"
+
+msgid "Not logged in."
+msgstr "尚未登入。"
+
+msgid "Include custom columns in pushed metadata"
+msgstr "在所發送的 metadata 中包含自訂欄位"
+
+msgid "Only change this if you run a self-hosted Readest server."
+msgstr "只有在你自行架設 Readest 伺服器時才修改此項。"
+
+msgid "Logged in as %s."
+msgstr "已以 %s 身分登入。"
+
+msgid "API server:"
+msgstr "API 伺服器："
+
+msgid "Use the Readest toolbar menu to log in or out."
+msgstr "使用工具列上的 Readest 選單登入或登出。"
+
+msgid "Push to Readest"
+msgstr "發送到 Readest"
+
+msgid "Push to Readest failed"
+msgstr "發送到 Readest 失敗"
+
+msgid "Readest status"
+msgstr "Readest 狀態"
+
+msgid "Readest status check failed"
+msgstr "檢查 Readest 狀態失敗"
+
+msgid "Log in to Readest"
+msgstr "登入 Readest"
+
+msgid "Email:"
+msgstr "電郵："
+
+msgid "Password:"
+msgstr "密碼："
+
+msgid "Log in"
+msgstr "登入"
+
+msgid "Logging in…"
+msgstr "正在登入…"
+
+msgid "Waiting for the browser login to complete…"
+msgstr "正在等候瀏覽器登入完成…"
+
+msgid "Unknown"
+msgstr "不明"
+
+msgid "Pushing %d book to your Readest library…"
+msgid_plural "Pushing %d books to your Readest library…"
+msgstr[0] "正在發送 %d 本書到你的 Readest 書庫…"
+
+msgid "Checking %d book against your Readest library…"
+msgid_plural "Checking %d books against your Readest library…"
+msgstr[0] "正在檢查 %d 本書是否符合你的 Readest 書庫…"
+
+msgid "Or sign in with your browser:"
+msgstr "或使用瀏覽器登入："
+
+msgid "Please enter both email and password."
+msgstr "請同時輸入電郵和密碼。"
+
+msgid "Login failed: the browser callback carried no session."
+msgstr "登入失敗：瀏覽器回應中沒有任何工作階段。"
+
+msgid "Book"
+msgstr "書籍"
+
+msgid "Status"
+msgstr "狀態"
+
+msgid "Details"
+msgstr "詳細資料"
+
+msgid "Canceling…"
+msgstr "正在取消…"
+
+msgid "Browser login timed out. Try again."
+msgstr "瀏覽器登入逾時。請再試一次。"
+
+msgid "Login failed: %s"
+msgstr "登入失敗：%s"
+
+msgid "Readest Login"
+msgstr "登入 Readest"
+
+msgid "Completing login…"
+msgstr "正在完成登入…"
+
+msgid "Login complete. You can close this tab and return to calibre."
+msgstr "登入完成。你可以關閉這個分頁並回到 calibre。"
+
+msgid "Readest"
+msgstr "Readest"
+
+msgid "Push selected books and metadata to your Readest library"
+msgstr "將所選書籍及 metadata 發送到你的 Readest 書庫"
+
+msgid "Select the books to push to Readest."
+msgstr "選擇要發送到 Readest 的書籍。"
+
+msgid "Select the books to check against Readest."
+msgstr "選擇要在 Readest 檢查的書籍。"
+
+msgid "No books selected"
+msgstr "沒有選擇任何書籍"
+
+msgid "Push selected books to Readest"
+msgstr "將所選書籍發送到 Readest"
+
+msgid "Check Readest status"
+msgstr "檢查 Readest 狀態"
+
+msgid "Log in to Readest…"
+msgstr "登入 Readest…"
+
+msgid "Log out"
+msgstr "登出"
+
+msgid "Customize plugin…"
+msgstr "自訂外掛程式…"
+
+msgid "Log out (%s)"
+msgstr "登出（%s）"
+
+msgid "your Readest account"
+msgstr "你的 Readest 帳戶"
+
+msgid "Uploaded"
+msgstr "已上載"
+
+msgid "Replaced"
+msgstr "已取代"
+
+msgid "Updated"
+msgstr "已更新"
+
+msgid "Up to date"
+msgstr "已是最新"
+
+msgid "Failed"
+msgstr "失敗"
+
+msgid "In Readest"
+msgstr "已在 Readest"
+
+msgid "Metadata differs"
+msgstr "Metadata 不同"
+
+msgid "Out of date"
+msgstr "已過時"
+
+msgid "Not in Readest"
+msgstr "不在 Readest"
+
+msgid "No Readest-supported format (EPUB, PDF, ...)"
+msgstr "沒有 Readest 支援的格式（EPUB、PDF 等）"
+
+msgid "Book file is missing from the calibre library"
+msgstr "書籍檔案不在 calibre 書庫中"
+
+msgid "Nothing to push."
+msgstr "沒有可發送的內容。"
+
+msgid "Nothing to check."
+msgstr "沒有可檢查的內容。"
+
+msgid "Please log in to Readest first. (%s)"
+msgstr "請先登入 Readest。（%s）"
+
+msgid "Could not reach Readest: %s"
+msgstr "無法連線到 Readest：%s"
+
+msgid "Canceled."
+msgstr "已取消。"
+
+msgid "Readest storage quota exceeded — push stopped."
+msgstr "已超出 Readest 儲存空間限額 — 已停止發送。"
+
+msgid "Session expired — please log in again."
+msgstr "工作階段已過期 — 請重新登入。"
+
+msgid "Login failed"
+msgstr "登入失敗"
+
+msgid "Not logged in"
+msgstr "尚未登入"
+
+msgid "Session expired, please log in again"
+msgstr "工作階段已過期，請重新登入"
+
+msgid "Not authenticated"
+msgstr "未經驗證"
+
+msgid "Request failed (%s)"
+msgstr "要求失敗（%s）"
+
+msgid "Upload failed (%s)"
+msgstr "上載失敗（%s）"
+
+msgid "%d uploaded"
+msgid_plural "%d uploaded"
+msgstr[0] "%d 本已上載"
+
+msgid "%d replaced"
+msgid_plural "%d replaced"
+msgstr[0] "%d 本已取代"
+
+msgid "%d updated"
+msgid_plural "%d updated"
+msgstr[0] "%d 本已更新"
+
+msgid "%d up to date"
+msgid_plural "%d up to date"
+msgstr[0] "%d 本已是最新"
+
+msgid "%d failed"
+msgid_plural "%d failed"
+msgstr[0] "%d 本失敗"
+
+msgid "%d in Readest"
+msgid_plural "%d in Readest"
+msgstr[0] "%d 本已在 Readest"
+
+msgid "%d metadata differs"
+msgid_plural "%d metadata differs"
+msgstr[0] "%d 本 metadata 不同"
+
+msgid "%d out of date"
+msgid_plural "%d out of date"
+msgstr[0] "%d 本已過時"
+
+msgid "%d not in Readest"
+msgid_plural "%d not in Readest"
+msgstr[0] "%d 本不在 Readest"

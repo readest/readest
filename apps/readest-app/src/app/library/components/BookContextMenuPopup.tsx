@@ -89,7 +89,7 @@ const BookContextMenuPopup: React.FC<BookContextMenuPopupProps> = ({
       <Overlay onDismiss={onClose} className='z-0' />
       <div
         ref={menuRef}
-        className={clsx('absolute z-[1] w-max', !placement && 'invisible')}
+        className={clsx('no-context-menu absolute z-[1] w-max', !placement && 'invisible')}
         style={{ left: placement?.left ?? 0, top: placement?.top ?? 0 }}
       >
         <Menu

@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { corsAllMethods, runMiddleware } from '@/utils/cors';
 import { isLanAddress } from '@/utils/network';
+import { publicFetch } from '@/utils/publicFetch';
 import { KoSyncProxyPayload } from '@/types/kosync';
 
 const validEndpoints = [
@@ -38,20 +39,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (baseUrl.protocol !== 'http:' && baseUrl.protocol !== 'https:') {
       return res.status(400).json({ error: 'Only http and https URLs are allowed' });
     }
-    if (
-      baseUrl.username ||
-      baseUrl.password ||
-      baseUrl.search ||
-      baseUrl.hash ||
-      baseUrl.pathname !== '/'
-    ) {
+    // A path is allowed (BookOrbit mounts KOSync at /api/v1/koreader), but no
+    // query or fragment that could swallow the allowlisted endpoint.
+    if (baseUrl.username || baseUrl.password || /[?#]/.test(serverUrl)) {
       return res.status(400).json({ error: 'Invalid serverUrl' });
     }
+    decodeURI(baseUrl.pathname);
   } catch {
     return res.status(400).json({ error: 'Invalid serverUrl' });
   }
 
-  let targetUrl = new URL(endpoint, baseUrl.origin).href;
+  const target = new URL(baseUrl.origin);
+  target.pathname = `${baseUrl.pathname.replace(/\/+$/, '')}${endpoint}`;
+  let targetUrl = target.href;
   if (isLanAddress(targetUrl)) {
     return res
       .status(400)
@@ -63,7 +63,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     let body = clientBody ? JSON.stringify(clientBody) : null;
     let response: Response;
     for (let hop = 0; ; hop++) {
-      response = await fetch(targetUrl, {
+      response = await publicFetch(targetUrl, {
         method: requestMethod,
         headers: {
           ...clientHeaders,
@@ -71,7 +71,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           'Content-Type': 'application/json',
         },
         body,
-        redirect: 'manual',
       });
       const location = response.headers.get('location');
       if (![301, 302, 303, 307, 308].includes(response.status) || !location) break;

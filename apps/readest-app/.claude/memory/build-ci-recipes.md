@@ -40,3 +40,4 @@ Moved from MEMORY.md to keep the index small. One line per memory; open the link
 - [Shared-target stale plugin cache](worktree-shared-target-stale-plugin-cache.md) cargo clean -p only · [Web e2e local flake](web-e2e-local-devserver-cold-compile-flake.md) cold compile, NOT your change
 - [Chrome verify recipe](browser-verify-readest-web-recipe.md) · [CI/PR delivery + push keepalive](ci-pr-delivery-and-push.md) fork pushes need SSH
 - [Next page-export check webpack-only](nextjs-page-export-webpack-only-check.md) MERGED #5336; `rm -rf .next` if lint trips
+- [arm64 APK 90MB->57MB](android-apk-size-strip-lto-6368.md) MERGED #6368 (8750c3104)…

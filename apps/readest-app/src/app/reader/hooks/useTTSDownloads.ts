@@ -40,6 +40,9 @@ export const useTTSDownloads = (
   bookKey: string,
   getController: () => TTSController | null,
   isOpen: boolean,
+  // The session's clients are initialized, so its engine and voice are
+  // chosen: a download started earlier would use the default engine.
+  clientsReady: boolean,
 ): UseTTSDownloadsResult => {
   const _ = useTranslation();
   const { getBookData } = useBookDataStore();
@@ -63,11 +66,11 @@ export const useTTSDownloads = (
   // Bind the book to the manager while a download-capable session is live so
   // queued items — including rows restored from a previous session — process.
   useEffect(() => {
-    if (!supported) return;
+    if (!supported || !clientsReady) return;
     ttsDownloadManager.attachController(bookHash, getController);
     return () => ttsDownloadManager.detachController(bookHash);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [supported, bookHash]);
+  }, [supported, clientsReady, bookHash]);
 
   useEffect(() => {
     let cancelled = false;

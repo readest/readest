@@ -45,6 +45,19 @@ const makeRow = (overrides: Partial<ReplicaRow> = {}): ReplicaRow => ({
 });
 
 describe('opdsCatalogAdapter', () => {
+  test('syncs the self-signed certificate choice, including an explicit false', () => {
+    for (const allowSelfSignedCert of [true, false]) {
+      const fields = opdsCatalogAdapter.pack({ ...sample, allowSelfSignedCert });
+      expect(fields['allowSelfSignedCert']).toBe(allowSelfSignedCert);
+      expect(opdsCatalogAdapter.unpack(fields).allowSelfSignedCert).toBe(allowSelfSignedCert);
+      const row = makeRow();
+      row.fields_jsonb['allowSelfSignedCert'] = env(allowSelfSignedCert);
+      expect(opdsCatalogAdapter.unpackRow(row, '')?.allowSelfSignedCert).toBe(allowSelfSignedCert);
+    }
+    // A row published before the option existed leaves it unset (legacy = lenient).
+    expect(opdsCatalogAdapter.unpackRow(makeRow(), '')?.allowSelfSignedCert).toBeUndefined();
+  });
+
   test('kind + schemaVersion are stable constants', () => {
     expect(opdsCatalogAdapter.kind).toBe('opds_catalog');
     expect(opdsCatalogAdapter.schemaVersion).toBe(1);

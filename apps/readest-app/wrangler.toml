@@ -41,6 +41,25 @@ PNPM_VERSION = "10.28.1"
 STATS_COMPACT_ENABLED = "true"
 STATS_COMPACT_USERS_PER_RUN = "100"
 
+# Readest Voice: the readest-voice Worker (readest/readest-voice repo) runs the
+# dispatcher, RunPod and the download workers; the /api/tts/readest routes
+# gate, check quota and charge, and call it here (src/libs/readestVoice/
+# service.ts). Without this binding Readest Voice answers NOT_CONFIGURED.
+[[services]]
+binding = "READEST_VOICE"
+service = "readest-voice"
+entrypoint = "ReadestVoice"
+
+# The dispatcher Durable Object moved to the readest-voice Worker; v2 deletes
+# this Worker's old instance and its storage.
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["TTSDispatcher"]
+
+[[migrations]]
+tag = "v2"
+deleted_classes = ["TTSDispatcher"]
+
 [observability]
 enabled = true
 head_sampling_rate = 0.01

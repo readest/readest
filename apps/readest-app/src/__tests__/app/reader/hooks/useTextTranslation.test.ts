@@ -1,4 +1,5 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
+import { renderHook, waitFor } from '@testing-library/react';
 import {
   createTranslationTargetNode,
   getTranslationContextNodes,
@@ -6,8 +7,28 @@ import {
   observeTextNodesByDocument,
   resolveTranslationSourceNodes,
   setSourceVisibility,
+  useTextTranslation,
 } from '@/app/reader/hooks/useTextTranslation';
 import { walkTextNodes } from '@/utils/walk';
+
+const translate = vi.hoisted(() => vi.fn(async (texts: string[]) => texts.map(() => '我读汉字。')));
+const viewSettings = vi.hoisted(() => ({ translationEnabled: true, translationProvider: 'bing' }));
+const readerState = vi.hoisted(() => ({
+  getViewSettings: () => viewSettings,
+  setIsLoading: () => {},
+}));
+
+vi.mock('@/store/readerStore', () => ({
+  useReaderStore: (selector: (s: typeof readerState) => unknown) => selector(readerState),
+}));
+vi.mock('@/store/bookDataStore', () => ({
+  useBookDataStore: (selector: (s: { getBookData: () => null }) => unknown) =>
+    selector({ getBookData: () => null }),
+}));
+vi.mock('@/store/readerProgressStore', () => ({ useBookProgress: () => null }));
+vi.mock('@/hooks/useTranslator', () => ({ useTranslator: () => ({ translate }) }));
+vi.mock('@/hooks/useTranslation', () => ({ useTranslation: () => (text: string) => text }));
+vi.mock('@/services/translators', () => ({ getTranslators: () => [] }));
 
 describe('groupTextNodesByDocument', () => {
   it('keeps text nodes from separate iframe documents in separate observer groups', () => {
@@ -283,5 +304,34 @@ describe('createTranslationTargetNode', () => {
     });
 
     expect(wrapper.firstChild?.nodeName).toBe('BR');
+  });
+});
+
+describe('useTextTranslation', () => {
+  it('sends the translator the base text without the ruby readings', async () => {
+    let onIntersect: IntersectionObserverCallback = () => {};
+    vi.stubGlobal(
+      'IntersectionObserver',
+      class {
+        constructor(callback: IntersectionObserverCallback) {
+          onIntersect = callback;
+        }
+        observe() {}
+        disconnect() {}
+      },
+    );
+    const view = document.createElement('div');
+    view.innerHTML = '<p>私は<ruby>漢字<rp>(</rp><rt>かんじ</rt><rp>)</rp></ruby>を読む。</p>';
+    const paragraph = view.querySelector('p')!;
+
+    renderHook(() => useTextTranslation('book-1', view));
+    onIntersect(
+      [{ isIntersecting: true, target: paragraph } as unknown as IntersectionObserverEntry],
+      {} as IntersectionObserver,
+    );
+
+    await waitFor(() => expect(translate).toHaveBeenCalled());
+    expect(translate).toHaveBeenCalledWith(['私は漢字を読む。']);
+    vi.unstubAllGlobals();
   });
 });

@@ -84,8 +84,15 @@ const nextConfig = {
       // can't find fflate (only installed in this app's node_modules).
       fflate: path.resolve(__dirname, 'node_modules/fflate'),
       ...(appPlatform !== 'web' ? { '@readest/turso-database-wasm/webpack': false } : {}),
+      // music-metadata only parses user-picked files in the browser; its
+      // file-type dependency leaves a webpackIgnore'd `import('strtok3')` in
+      // the server bundle that the OpenNext esbuild pass cannot resolve.
       ...(isServer && appPlatform === 'web'
-        ? { '@readest/turso-database-wasm/webpack': false, 'jieba-wasm': false }
+        ? {
+            '@readest/turso-database-wasm/webpack': false,
+            'jieba-wasm': false,
+            'music-metadata': false,
+          }
         : {}),
     };
     return config;

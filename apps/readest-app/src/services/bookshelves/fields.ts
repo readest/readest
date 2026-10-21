@@ -1,5 +1,6 @@
 import type { Book } from '@/types/book';
 import type { BookshelfFieldKind, BookshelfOperator } from '@/types/bookshelf';
+import { getBookPageCount } from '@/utils/book';
 import { stubTranslation as _ } from '@/utils/misc';
 
 type FieldValue = string | number | boolean | string[] | undefined;
@@ -120,6 +121,7 @@ export const BOOKSHELF_FIELDS: BookshelfField[] = [
     read: (b) =>
       b.progress != null && !['unread', 'finished', 'abandoned'].includes(b.readingStatus || ''),
   },
+  { id: 'pages', label: _('Pages'), kind: 'number', read: (b) => getBookPageCount(b) },
   { id: 'created', label: _('Date Added'), kind: 'date', read: (b) => b.createdAt },
   // Date Read deliberately retains the library's existing updatedAt semantics.
   { id: 'updated', label: _('Date Read'), kind: 'date', read: (b) => b.updatedAt },

@@ -40,6 +40,9 @@ vi.mock('@/services/tts/WebSpeechClient', () => ({
   }),
 }));
 vi.mock('@/services/tts/EdgeTTSClient', () => ({
+  // constants.ts imports this named const from the same module; the mock
+  // factory replaces the whole module, so it must re-export it too.
+  DEFAULT_SENTENCE_GAP_SEC: 0.15,
   EdgeTTSClient: vi.fn().mockImplementation(function (this: Record<string, unknown>) {
     Object.assign(this, makeMockClient('edge-tts'));
   }),

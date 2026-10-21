@@ -33,7 +33,7 @@
 // and is a no-op on the web platform.
 import { invoke } from '@tauri-apps/api/core';
 import { isTauriAppPlatform } from '@/services/environment';
-import type { BookDoc, BookMetadata } from '@/libs/document';
+import type { BookDoc, BookMetadata, SectionItem } from '@/libs/document';
 
 // ─── shared helpers ──────────────────────────────────────────────────
 
@@ -74,35 +74,84 @@ interface RustParsedEpubMetadata {
    *  so the importer can run foliate's OPF metadata extractor without a
    *  second zip access. */
   opfBytes: number[] | Uint8Array;
+  /** Zip entry name → uncompressed size, for the import-time page count. */
+  sizes?: Record<string, number>;
 }
 
 export interface NativeParsedEpub {
   /** partialMD5 of the file, ready to use as the `Book.hash`. */
   partialMd5: string;
-  /** Lightweight BookDoc stub: only `metadata` and `getCover()` are
-   *  populated, which is all `bookService.importBook` consults on the
-   *  import hot path. Sections / TOC / fixed-layout detection are
-   *  populated lazily by the reader when the user actually opens the
-   *  book (which goes through the regular `DocumentLoader` path). */
+  /** Lightweight BookDoc stub: `metadata`, `rendition`, spine sizes and
+   *  `getCover()` are populated, which is all `bookService.importBook`
+   *  consults on the import hot path. Full sections / TOC are populated
+   *  lazily by the reader when the user actually opens the book (which
+   *  goes through the regular `DocumentLoader` path). */
   bookDoc: BookDoc;
 }
+
+const OPF_NS = 'http://www.idpf.org/2007/opf';
+
+// foliate-js's resolveURL: manifest hrefs are relative to the OPF and
+// percent-decoded (except %2F / %23) into zip entry names.
+const resolveOpfHref = (href: string, opfPath: string): string => {
+  const root = 'https://invalid.invalid/';
+  const url = new URL(href, root + opfPath);
+  url.search = '';
+  const path = url.href.replace(root, '');
+  try {
+    return decodeURIComponent(path.replace(/%(2f|23)/gi, '%25$1'));
+  } catch {
+    return path;
+  }
+};
+
+/**
+ * The spine as foliate-js builds it (itemrefs whose manifest item exists),
+ * reduced to the `size` / `linear` the page count reads. Sizes come from
+ * the zip central directory, like `getSize()` on the open path.
+ */
+const parseSpineSizes = (
+  opfXml: string,
+  opfPath: string,
+  sizes: Record<string, number>,
+): Pick<SectionItem, 'size' | 'linear'>[] => {
+  const opf = new DOMParser().parseFromString(opfXml, 'application/xml');
+  // Like foliate's childGetter: ignore the namespace if the OPF never declares it.
+  const useNS = opf.lookupNamespaceURI(null) === OPF_NS || !!opf.lookupPrefix(OPF_NS);
+  const elements = (name: string) =>
+    useNS ? opf.getElementsByTagNameNS(OPF_NS, name) : opf.getElementsByTagName(name);
+  const hrefs = new Map(
+    Array.from(elements('item'), (item) => [item.getAttribute('id'), item.getAttribute('href')]),
+  );
+  return Array.from(elements('itemref')).flatMap((itemref) => {
+    const href = hrefs.get(itemref.getAttribute('idref'));
+    if (href == null) return [];
+    const linear = itemref.getAttribute('linear') ?? '';
+    return [{ size: sizes[resolveOpfHref(href, opfPath)] ?? 0, linear }];
+  });
+};
 
 /**
  * Build a BookDoc stub for the importer.
  *
  * `metadata` is whatever foliate-js's `parseEpubMetadataFromXML` returns
  * for the OPF Rust handed us — byte-stable against the reader path.
- * `getCover()` returns the Rust-downscaled blob; everything else is the
- * minimum the importer reads (it never touches `sections` / `toc` /
- * `splitTOCHref`).
+ * `getCover()` returns the Rust-downscaled blob; `sections` carry only the
+ * spine sizes the page count reads. Everything else is the minimum the
+ * importer reads (it never touches `toc` / `splitTOCHref`).
  */
-const buildBookDocStub = (metadata: BookMetadata, coverBlob: Blob | null): BookDoc => {
+const buildBookDocStub = (
+  metadata: BookMetadata,
+  rendition: BookDoc['rendition'] | undefined,
+  sections: Pick<SectionItem, 'size' | 'linear'>[],
+  coverBlob: Blob | null,
+): BookDoc => {
   const stub = {
     metadata,
-    rendition: {},
+    rendition: rendition ?? {},
     dir: 'ltr',
     toc: [],
-    sections: [],
+    sections,
     splitTOCHref: () => [null, null],
     getCover: async () => coverBlob,
   } as unknown as BookDoc;
@@ -144,10 +193,14 @@ export const tryNativeParseEpub = async (
     // import keeps the bridge tree-shakable on web builds where this
     // path is never reached.
     const epubModule = (await import('foliate-js/epub.js')) as unknown as {
-      parseEpubMetadataFromXML: (xml: string) => { metadata: BookMetadata };
+      parseEpubMetadataFromXML: (xml: string) => {
+        metadata: BookMetadata;
+        rendition?: BookDoc['rendition'];
+      };
     };
     const opfXml = bytesArrayToString(rust.opfBytes);
-    const { metadata } = epubModule.parseEpubMetadataFromXML(opfXml);
+    const { metadata, rendition } = epubModule.parseEpubMetadataFromXML(opfXml);
+    const sections = parseSpineSizes(opfXml, rust.opfPath, rust.sizes ?? {});
 
     let coverBlob: Blob | null = null;
     if (rust.cover && rust.coverMime) {
@@ -166,7 +219,7 @@ export const tryNativeParseEpub = async (
 
     return {
       partialMd5: rust.partialMd5,
-      bookDoc: buildBookDocStub(metadata, coverBlob),
+      bookDoc: buildBookDocStub(metadata, rendition, sections, coverBlob),
     };
   } catch (err) {
     console.warn('[tauriEpubBridge] native parse failed, falling back to JS:', err);

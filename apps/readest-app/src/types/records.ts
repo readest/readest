@@ -1,3 +1,4 @@
+import type { InkStroke } from '@/services/handwriting/model';
 export interface DBBook {
   user_id: string;
   book_hash: string;
@@ -15,6 +16,7 @@ export interface DBBook {
   reading_status_updated_at?: string | null;
   cover_hash?: string | null;
   cover_updated_at?: string | null;
+  page_count?: number | null;
 
   metadata?: string | null;
   metadata_updated_at?: string | null;
@@ -55,6 +57,8 @@ export interface DBBookNote {
   color?: string;
   note: string;
   global?: boolean;
+  /** Handwriting strokes of an `ink` note; null for every other type. */
+  ink?: InkStroke[] | null;
 
   created_at?: string;
   updated_at?: string;

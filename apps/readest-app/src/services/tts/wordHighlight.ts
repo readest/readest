@@ -93,6 +93,19 @@ export const findBoundaryIndexAtTime = (
   return result;
 };
 
+// No word starts before the speech does. A forced aligner can still place the
+// first word inside the leading silence, and its words run early by about the
+// same amount throughout the clip, so shift them all by that lead. Otherwise
+// the second word lights up as soon as the first becomes audible.
+export const alignBoundariesToSpeech = <T extends { offset: number }>(
+  boundaries: T[],
+  speechStartSec: number,
+): T[] => {
+  const lead = Math.round(speechStartSec * TICKS_PER_SECOND) - (boundaries[0]?.offset ?? Infinity);
+  if (!(lead > 0)) return boundaries;
+  return boundaries.map((boundary) => ({ ...boundary, offset: boundary.offset + lead }));
+};
+
 // Extract the sub-range covering [start, end) of base.toString(). Walks the
 // text nodes intersecting the base range, slicing partially-contained
 // boundary nodes the same way Range stringification does.

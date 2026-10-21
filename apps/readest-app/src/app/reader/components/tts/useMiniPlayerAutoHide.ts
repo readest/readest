@@ -4,6 +4,8 @@ import { useReaderStore } from '@/store/readerStore';
 
 // How long the full card lingers after the toolbar goes away.
 const LINGER_MS = 5000;
+// How long a stall must last before it brings a hidden card back.
+const BUFFERING_SHOW_DELAY_MS = 500;
 
 /**
  * Whether the TTS mini player should be on screen (#5310).
@@ -22,14 +24,22 @@ const LINGER_MS = 5000;
  * sheet hands back a visible one.
  *
  * With that, one branch covers both the session start and every later toolbar
- * dismissal: no toolbar up means show the card and arm a fresh countdown.
- * Re-running on hoveredBookKey also cancels a countdown in flight when the
- * toolbar returns, so a stale remainder can never hide a card just summoned.
+ * dismissal: no toolbar up means arm a fresh countdown on the card the
+ * toolbar (or the mount) already showed. Re-running on hoveredBookKey also
+ * cancels a countdown in flight when the toolbar returns, so a stale remainder
+ * can never hide a card just summoned.
+ *
+ * While `buffering` (nothing audible yet: a cold GPU worker can take far longer
+ * than the linger) the countdown pauses, so a card on screen keeps its spinning
+ * play button, and it starts again once audio does. A hidden card comes back
+ * only when the stall outlasts BUFFERING_SHOW_DELAY_MS: the next paragraph
+ * usually loads in less, and popping the card up for that is just noise.
  */
 export const useMiniPlayerAutoHide = (
   bookKey: string,
   playerStyle: TTSPlayerStyle,
   mounted: boolean,
+  buffering = false,
 ) => {
   const { hoveredBookKey } = useReaderStore();
   const [visible, setVisible] = useState(true);
@@ -39,10 +49,13 @@ export const useMiniPlayerAutoHide = (
       setVisible(true);
       return;
     }
-    setVisible(true);
+    if (buffering) {
+      const timeout = setTimeout(() => setVisible(true), BUFFERING_SHOW_DELAY_MS);
+      return () => clearTimeout(timeout);
+    }
     const timeout = setTimeout(() => setVisible(false), LINGER_MS);
     return () => clearTimeout(timeout);
-  }, [mounted, playerStyle, hoveredBookKey, bookKey]);
+  }, [mounted, playerStyle, hoveredBookKey, bookKey, buffering]);
 
   return visible;
 };

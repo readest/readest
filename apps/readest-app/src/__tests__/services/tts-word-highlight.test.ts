@@ -1,5 +1,6 @@
 import { describe, test, it, expect } from 'vitest';
 import {
+  alignBoundariesToSpeech,
   computeWordOffsets,
   findBoundaryIndexAtTime,
   getTextSubRange,
@@ -82,6 +83,31 @@ describe('findBoundaryIndexAtTime', () => {
 
   test('returns the last boundary after the stream end', () => {
     expect(findBoundaryIndexAtTime(boundaries, 10)).toBe(2);
+  });
+});
+
+describe('alignBoundariesToSpeech', () => {
+  // A forced aligner can put the first word inside the leading silence. The
+  // player trims that silence, so the second word lit up almost as soon as the
+  // first one became audible.
+  const boundaries = [
+    { offset: 2_210_000, duration: 200_000, text: '从' },
+    { offset: 4_010_000, duration: 200_000, text: '一' },
+    { offset: 5_610_000, duration: 2_610_000, text: '开始' },
+  ];
+
+  test('shifts every word so the first starts with the speech', () => {
+    expect(alignBoundariesToSpeech(boundaries, 0.3).map((b) => b.offset)).toEqual([
+      3_000_000, 4_800_000, 6_400_000,
+    ]);
+  });
+
+  test('keeps boundaries whose first word starts after the speech', () => {
+    expect(alignBoundariesToSpeech(boundaries, 0.2)).toBe(boundaries);
+  });
+
+  test('keeps an empty list', () => {
+    expect(alignBoundariesToSpeech([], 0.3)).toEqual([]);
   });
 });
 

@@ -853,7 +853,7 @@ describe('opdsUtils', () => {
         headers: new Headers(),
       } as Response);
 
-      await validateOPDSURL('https://example.com/opds', 'user', 'pass', true, customHeaders);
+      await validateOPDSURL('https://example.com/opds', 'user', 'pass', true, customHeaders, true);
 
       expect(mockFetchWithAuth).toHaveBeenCalledWith(
         'https://example.com/opds',
@@ -862,6 +862,7 @@ describe('opdsUtils', () => {
         true,
         expect.objectContaining({ signal: expect.anything() }),
         customHeaders,
+        true,
       );
     });
   });

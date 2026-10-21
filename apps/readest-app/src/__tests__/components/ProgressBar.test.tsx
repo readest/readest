@@ -79,8 +79,12 @@ vi.mock('@/utils/event', () => ({
   eventDispatcher: { dispatchSync: () => false },
 }));
 
+let statusInfoProps: Record<string, unknown> | null = null;
 vi.mock('@/app/reader/components/StatusInfo.tsx', () => ({
-  default: () => null,
+  default: (props: Record<string, unknown>) => {
+    statusInfoProps = props;
+    return null;
+  },
 }));
 
 const baseSettings: ViewSettings = {
@@ -151,6 +155,31 @@ describe('ProgressBar — fixed-layout remaining pages', () => {
     expect(container.querySelector('.progressinfo')?.getAttribute('aria-label')).toContain(
       'pages left in chapter',
     );
+  });
+});
+
+describe('ProgressBar — percent readout', () => {
+  // A location pair of 2/5 reads 60%; the continuous fraction says 45%.
+  const setupPercent = (isFixedLayout: boolean) => {
+    currentViewSettings = {
+      ...baseSettings,
+      progressStyle: 'percentage',
+      showProgressInfo: true,
+    } as ViewSettings;
+    currentProgress = { ...makeProgress(2, 5), fraction: 0.45 } as BookProgress;
+    currentBookData = { isFixedLayout };
+  };
+
+  it('reads the continuous fraction for reflowable books', () => {
+    setupPercent(false);
+    const { container } = renderProgressBar();
+    expect(container.querySelector('.progress-info-label')?.textContent).toBe('45%');
+  });
+
+  it('keeps the page-count percent for fixed-layout books (fraction is byte-weighted)', () => {
+    setupPercent(true);
+    const { container } = renderProgressBar();
+    expect(container.querySelector('.progress-info-label')?.textContent).toBe('60%');
   });
 });
 
@@ -787,5 +816,40 @@ describe('ProgressBar — pages left on every page turn (#6442)', () => {
       '11',
       '10',
     ]);
+  });
+});
+
+// #6794: a custom header/footer text color reached every footer item except the
+// battery percentage, which kept the theme's text color.
+describe('ProgressBar — battery percentage follows a custom footer color (#6794)', () => {
+  const settings = (overrides: Partial<ViewSettings>) => {
+    currentViewSettings = {
+      ...baseSettings,
+      showCurrentBatteryStatus: true,
+      showBatteryPercentage: true,
+      ...overrides,
+    } as ViewSettings;
+  };
+
+  beforeEach(() => {
+    statusInfoProps = null;
+  });
+
+  it('lets the battery percentage inherit a custom footer text color', () => {
+    settings({ isEink: false, headerFooterTextColor: '#806000' });
+    renderProgressBar();
+    expect(statusInfoProps?.['inheritTextColor']).toBe(true);
+  });
+
+  it('keeps the themed percentage when no custom color is set', () => {
+    settings({ isEink: false, headerFooterTextColor: '' });
+    renderProgressBar();
+    expect(statusInfoProps?.['inheritTextColor']).toBe(false);
+  });
+
+  it('keeps the eink percentage treatment even with a custom color', () => {
+    settings({ isEink: true, headerFooterTextColor: '#806000' });
+    renderProgressBar();
+    expect(statusInfoProps?.['inheritTextColor']).toBe(false);
   });
 });

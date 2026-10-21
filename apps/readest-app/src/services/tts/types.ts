@@ -13,11 +13,20 @@ export type TTSHighlightOptions = {
   color: string;
 };
 
+// The language of a voice that reads any language (ISO 639 "multiple
+// languages"). Its preference is kept under this code, not the book's.
+export const MULTILINGUAL_LANG = 'mul';
+
 export type TTSVoice = {
   id: string;
   name: string;
   lang: string;
   disabled?: boolean;
+  // Premium voices: the plan that unlocks them, shown as a badge.
+  tier?: 'plus' | 'pro';
+  // A trait the engine spells into the voice id, shown as a badge instead of
+  // in the name.
+  variant?: 'multilingual' | 'expressive';
 };
 
 export type TTSVoicesGroup = {

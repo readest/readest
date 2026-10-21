@@ -74,6 +74,7 @@ vi.mock('@/store/customFontStore', () => ({
 }));
 vi.mock('@/utils/style', () => ({
   applyLinkHitArea: () => {},
+  keepTextAlignment: () => {},
   getFootnoteStyles: () => '',
   getStyles: () => '',
   getThemeCode: () => ({ bg: '#fff', fg: '#000', primary: '#000', palette: {} }),
