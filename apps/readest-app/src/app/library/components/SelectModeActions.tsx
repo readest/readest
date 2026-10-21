@@ -109,7 +109,7 @@ const SelectModeActions: React.FC<SelectModeActionsProps> = ({
           'text-base-content text-xs shadow-lg',
           'not-eink:bg-base-300 eink:bg-base-100 eink:border eink:border-base-content',
           'mx-auto w-fit max-w-[calc(100vw-1rem)] rounded-lg p-4',
-          'flex items-center justify-center gap-x-6',
+          'flex flex-wrap items-center justify-center gap-x-6 gap-y-3',
           'max-[500px]:grid max-[500px]:grid-cols-4 max-[500px]:gap-x-6 max-[500px]:gap-y-3',
         )}
       >
