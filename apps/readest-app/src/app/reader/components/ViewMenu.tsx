@@ -30,6 +30,7 @@ import { useBookDataStore } from '@/store/bookDataStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useCloudSyncStatus } from '@/hooks/useCloudSyncStatus';
+import { isTauriAppPlatform } from '@/services/environment';
 import { getStyles } from '@/utils/style';
 import { navigateToLogin } from '@/utils/nav';
 import { getScrollGapAttr } from '@/utils/webtoon';
@@ -58,6 +59,10 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
   const router = useRouter();
   const { user } = useAuth();
   const { envConfig, appService } = useEnv();
+  const [browserFullscreenAvailable, setBrowserFullscreenAvailable] = useState(false);
+  useEffect(() => {
+    setBrowserFullscreenAvailable(!isTauriAppPlatform() && !!document.fullscreenEnabled);
+  }, []);
   const { getConfig, getBookData } = useBookDataStore();
   const { setSettingsDialogOpen, setSettingsDialogBookKey } = useSettingsStore();
   const { getView, getViewSettings, getViewState, getProgress, setViewSettings, recreateViewer } =
@@ -117,9 +122,19 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
     setThemeMode(nextThemeMode(themeMode, !!appService?.hasAmbientLightSensor));
   };
 
-  const handleFullScreen = () => {
-    tauriHandleToggleFullScreen();
+  const handleFullScreen = async () => {
     setIsDropdownOpen?.(false);
+    try {
+      if (appService?.hasWindow) {
+        await tauriHandleToggleFullScreen();
+      } else if (document.fullscreenElement) {
+        await document.exitFullscreen();
+      } else {
+        await document.documentElement.requestFullscreen();
+      }
+    } catch (error) {
+      console.warn('Failed to toggle fullscreen:', error);
+    }
   };
 
   // Readest Cloud's own stamps for THIS book. The per-book values are more
@@ -584,7 +599,9 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
 
       <hr aria-hidden='true' className='border-base-300 my-1' />
 
-      {appService?.hasWindow && <MenuItem label={_('Fullscreen')} onClick={handleFullScreen} />}
+      {(appService?.hasWindow || browserFullscreenAvailable) && (
+        <MenuItem label={_('Fullscreen')} onClick={handleFullScreen} />
+      )}
       <MenuItem
         label={
           themeMode === 'dark'
