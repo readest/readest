@@ -30,7 +30,6 @@ import { useBookDataStore } from '@/store/bookDataStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useCloudSyncStatus } from '@/hooks/useCloudSyncStatus';
-import { isTauriAppPlatform } from '@/services/environment';
 import { getStyles } from '@/utils/style';
 import { navigateToLogin } from '@/utils/nav';
 import { getScrollGapAttr } from '@/utils/webtoon';
@@ -39,7 +38,7 @@ import { eventDispatcher } from '@/utils/event';
 import { getMaxInlineSize } from '@/utils/config';
 import { nextThemeMode } from '@/utils/ambientLight';
 import { saveViewSettings } from '@/helpers/settings';
-import { tauriHandleToggleFullScreen } from '@/utils/window';
+import { canToggleFullScreen, toggleFullScreen } from '@/utils/window';
 import { setCoverSpread } from '@/utils/spread';
 import MenuItem from '@/components/MenuItem';
 import Menu from '@/components/Menu';
@@ -59,10 +58,6 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
   const router = useRouter();
   const { user } = useAuth();
   const { envConfig, appService } = useEnv();
-  const [browserFullscreenAvailable, setBrowserFullscreenAvailable] = useState(false);
-  useEffect(() => {
-    setBrowserFullscreenAvailable(!isTauriAppPlatform() && !!document.fullscreenEnabled);
-  }, []);
   const { getConfig, getBookData } = useBookDataStore();
   const { setSettingsDialogOpen, setSettingsDialogBookKey } = useSettingsStore();
   const { getView, getViewSettings, getViewState, getProgress, setViewSettings, recreateViewer } =
@@ -122,19 +117,9 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
     setThemeMode(nextThemeMode(themeMode, !!appService?.hasAmbientLightSensor));
   };
 
-  const handleFullScreen = async () => {
+  const handleFullScreen = () => {
+    toggleFullScreen(appService);
     setIsDropdownOpen?.(false);
-    try {
-      if (appService?.hasWindow) {
-        await tauriHandleToggleFullScreen();
-      } else if (document.fullscreenElement) {
-        await document.exitFullscreen();
-      } else {
-        await document.documentElement.requestFullscreen();
-      }
-    } catch (error) {
-      console.warn('Failed to toggle fullscreen:', error);
-    }
   };
 
   // Readest Cloud's own stamps for THIS book. The per-book values are more
@@ -599,7 +584,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
 
       <hr aria-hidden='true' className='border-base-300 my-1' />
 
-      {(appService?.hasWindow || browserFullscreenAvailable) && (
+      {canToggleFullScreen(appService) && (
         <MenuItem label={_('Fullscreen')} onClick={handleFullScreen} />
       )}
       <MenuItem

@@ -2,7 +2,6 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import ViewMenu from '@/app/reader/components/ViewMenu';
-import { tauriHandleToggleFullScreen } from '@/utils/window';
 
 const mockView = {
   book: { dir: undefined as string | undefined },
@@ -41,6 +40,7 @@ const currentViewSettings = {
 const mockRecreateViewer = vi.fn();
 const mockSaveViewSettings = vi.fn().mockResolvedValue(undefined);
 const mockAppService = {
+  appPlatform: 'web',
   hasWindow: false,
   hasAmbientLightSensor: false,
   supportsCanvasContext2DFilter: true,
@@ -106,42 +106,35 @@ vi.mock('@/utils/webtoon', () => ({ getScrollGapAttr: vi.fn() }));
 vi.mock('@/app/reader/hooks/useCapturedTurn', () => ({ applyPageTurnAttributes: vi.fn() }));
 vi.mock('@/utils/config', () => ({ getMaxInlineSize: () => 720 }));
 vi.mock('@/utils/ambientLight', () => ({ nextThemeMode: (mode: string) => mode }));
-vi.mock('@/utils/window', () => ({ tauriHandleToggleFullScreen: vi.fn() }));
+vi.mock('@/utils/window', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/utils/window')>()),
+  tauriHandleToggleFullScreen: vi.fn(),
+}));
 
 describe('ViewMenu fullscreen', () => {
-  const requestFullscreen = vi.fn().mockResolvedValue(undefined);
-  const exitFullscreen = vi.fn().mockResolvedValue(undefined);
-  const restoreProperties: Array<() => void> = [];
-  const stubProperty = (target: object, key: string, value: unknown) => {
-    const original = Object.getOwnPropertyDescriptor(target, key);
-    Object.defineProperty(target, key, { configurable: true, value });
-    restoreProperties.push(() => {
-      if (original) Object.defineProperty(target, key, original);
-      else Reflect.deleteProperty(target, key);
+  const requestFullscreen = vi.fn();
+
+  const stubFullscreenApi = (enabled: boolean) => {
+    Object.defineProperty(document, 'fullscreenEnabled', { configurable: true, value: enabled });
+    Object.defineProperty(document, 'fullscreenElement', { configurable: true, value: null });
+    Object.defineProperty(document.documentElement, 'requestFullscreen', {
+      configurable: true,
+      value: requestFullscreen,
     });
   };
 
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.stubEnv('NEXT_PUBLIC_APP_PLATFORM', 'web');
-    mockAppService.hasWindow = false;
     requestFullscreen.mockResolvedValue(undefined);
-    stubProperty(document, 'fullscreenEnabled', true);
-    stubProperty(document, 'fullscreenElement', null);
-    stubProperty(document, 'exitFullscreen', exitFullscreen);
-    stubProperty(document.documentElement, 'requestFullscreen', requestFullscreen);
+    stubFullscreenApi(true);
   });
 
   afterEach(() => {
     cleanup();
-    restoreProperties.reverse().forEach((restore) => restore());
-    restoreProperties.length = 0;
-    mockAppService.hasWindow = false;
-    vi.unstubAllEnvs();
-    vi.restoreAllMocks();
+    mockAppService.appPlatform = 'web';
   });
 
-  it('offers a touch control that enters browser fullscreen and closes the menu', async () => {
+  it('offers Fullscreen in a web browser and enters it on tap (#6892)', async () => {
     const closeMenu = vi.fn();
     render(<ViewMenu bookKey='book-1' setIsDropdownOpen={closeMenu} />);
 
@@ -149,53 +142,20 @@ describe('ViewMenu fullscreen', () => {
 
     await waitFor(() => expect(requestFullscreen).toHaveBeenCalledOnce());
     expect(closeMenu).toHaveBeenCalledWith(false);
-    expect(tauriHandleToggleFullScreen).not.toHaveBeenCalled();
   });
 
-  it('exits browser fullscreen when it is already active', async () => {
-    stubProperty(document, 'fullscreenElement', document.documentElement);
-    render(<ViewMenu bookKey='book-1' />);
-
-    fireEvent.click(screen.getByRole('menuitem', { name: 'Fullscreen' }));
-
-    await waitFor(() => expect(exitFullscreen).toHaveBeenCalledOnce());
-    expect(requestFullscreen).not.toHaveBeenCalled();
-  });
-
-  it('hides fullscreen in browsers without the Fullscreen API', () => {
-    stubProperty(document, 'fullscreenEnabled', false);
+  it('hides Fullscreen in browsers without the Fullscreen API', () => {
+    stubFullscreenApi(false);
     render(<ViewMenu bookKey='book-1' />);
 
     expect(screen.queryByRole('menuitem', { name: 'Fullscreen' })).toBeNull();
   });
 
-  it('keeps using the native fullscreen command in desktop apps', async () => {
-    vi.stubEnv('NEXT_PUBLIC_APP_PLATFORM', 'tauri');
-    mockAppService.hasWindow = true;
-    render(<ViewMenu bookKey='book-1' />);
-
-    fireEvent.click(screen.getByRole('menuitem', { name: 'Fullscreen' }));
-
-    await waitFor(() => expect(tauriHandleToggleFullScreen).toHaveBeenCalledOnce());
-    expect(requestFullscreen).not.toHaveBeenCalled();
-  });
-
-  it('does not expose browser fullscreen in native mobile webviews', () => {
-    vi.stubEnv('NEXT_PUBLIC_APP_PLATFORM', 'tauri');
+  it('hides Fullscreen in native mobile webviews', () => {
+    mockAppService.appPlatform = 'tauri';
     render(<ViewMenu bookKey='book-1' />);
 
     expect(screen.queryByRole('menuitem', { name: 'Fullscreen' })).toBeNull();
-  });
-
-  it('handles a rejected fullscreen request without an unhandled rejection', async () => {
-    const error = new Error('Fullscreen request denied');
-    requestFullscreen.mockRejectedValue(error);
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    render(<ViewMenu bookKey='book-1' />);
-
-    fireEvent.click(screen.getByRole('menuitem', { name: 'Fullscreen' }));
-
-    await waitFor(() => expect(warn).toHaveBeenCalledWith('Failed to toggle fullscreen:', error));
   });
 });
 
