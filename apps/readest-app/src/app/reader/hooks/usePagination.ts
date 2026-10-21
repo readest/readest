@@ -464,6 +464,18 @@ export const usePagination = (
     } else {
       if (msg.type === 'click') {
         const { clientX } = msg;
+        // A click beside the page lands here, outside the page iframes. Like a
+        // click on the page, it dismisses the selection toolbar first instead
+        // of turning the page under it (#6958).
+        if (
+          eventDispatcher.dispatchSync('iframe-single-click', {
+            bookKey,
+            windowX: clientX,
+            windowY: msg.clientY,
+          })
+        ) {
+          return;
+        }
         const width = window.innerWidth;
         const leftThreshold = width * 0.5;
         const rightThreshold = width * 0.5;
