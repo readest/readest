@@ -83,9 +83,11 @@ describe.runIf(env)('Android wake keeps the reading position', () => {
 
     await adbShell('input keyevent KEYCODE_SLEEP');
     await sleep(3_000);
+    expect(await adbShell('dumpsys power')).toMatch(/mWakefulness=(Asleep|Dozing)/);
     await wake();
     // Let the window regain focus and any scroll settle.
     await sleep(4_000);
+    expect(await adbShell('dumpsys power')).toMatch(/mWakefulness=Awake/);
 
     const after = await readPosition(page);
     expect({ section: after.section, page: after.page, start: after.start }).toEqual({
