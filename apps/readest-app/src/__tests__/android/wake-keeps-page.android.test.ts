@@ -58,7 +58,9 @@ describe.runIf(env)('Android wake keeps the reading position', () => {
     page = await openFixtureBook(FIXTURE);
   }, 120_000);
 
-  afterAll(() => {
+  afterAll(async () => {
+    // Don't leave the device asleep for the next Android test.
+    await wake().catch(() => {});
     page?.close();
   });
 
@@ -88,6 +90,7 @@ describe.runIf(env)('Android wake keeps the reading position', () => {
     // Let the window regain focus and any scroll settle.
     await sleep(4_000);
     expect(await adbShell('dumpsys power')).toMatch(/mWakefulness=Awake/);
+    expect(await page.evaluate<boolean>('return document.hasFocus();')).toBe(true);
 
     const after = await readPosition(page);
     expect({ section: after.section, page: after.page, start: after.start }).toEqual({
