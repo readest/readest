@@ -1622,3 +1622,18 @@
     animation: none;
   }
 }
+
+/* Tailwind emits `.tabular-nums` as a chain of empty-fallback var() calls over
+   @property-registered custom properties. Chromium < 119 treats any
+   declaration containing such a var() as invalid at computed-value time
+   (fixed by "CSS Variables: Persistent guaranteed-invalid values",
+   chromestatus.com/feature/6265214410424320), so on those WebViews — our
+   e-ink fleet sits on 109/113 — the utility silently computes to `normal`
+   and the readout digits render with Inter's proportional widths, reflowing
+   the footer on every value change. This unlayered duplicate wins the
+   cascade over the layered utility on every engine and is a no-op where the
+   chain already resolves (>= 119).
+   https://drafts.csswg.org/css-variables-1/#using-variables */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
