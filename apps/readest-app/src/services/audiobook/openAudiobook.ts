@@ -20,7 +20,7 @@ import { findABSServerById, useABSServerStore } from '@/store/absServerStore';
 import { ttsSessionManager } from '@/services/tts/TTSSessionManager';
 import type { TTSMediaBridgeMeta } from '@/services/tts/ttsMediaBridge';
 import { buildAbsMediaUrl, parseAbsFilePath } from '@/utils/audiobook';
-import { getOSPlatform, isIPadOS, stubTranslation as _, uniqueId } from '@/utils/misc';
+import { getOSPlatform, stubTranslation as _, uniqueId } from '@/utils/misc';
 import { isTauriAppPlatform } from '@/services/environment';
 import { eventDispatcher } from '@/utils/event';
 import type { AppService } from '@/types/system';
@@ -32,11 +32,6 @@ import type {
   ABSServer,
   ABSTrack,
 } from '@/types/audiobookshelf';
-
-// iOS Tauri must use the app-process AVPlayer (mirrors MediaOverlayClient's
-// NativeNarrationPlayer split): WebKit HTMLMediaElement / WebAudio cannot own
-// the app's non-mixable audio session.
-const isIOSTauri = (): boolean => isTauriAppPlatform() && (getOSPlatform() === 'ios' || isIPadOS());
 
 // Android's WebView cannot seek media served by a custom scheme (Chromium
 // 40739128), so a downloaded track plays through the same native ExoPlayer
@@ -202,7 +197,10 @@ export const openAudiobookSession = async (input: {
     const startAt = offline
       ? await withTimeout(begin, OFFLINE_SESSION_TIMEOUT_MS).catch(() => localPosition)
       : await begin;
-    const nativeClock = isIOSTauri() || (!!offline && isAndroidTauri());
+    // iOS must use the app-process AVPlayer (mirrors MediaOverlayClient's
+    // NativeNarrationPlayer split): WebKit HTMLMediaElement / WebAudio cannot own
+    // the app's non-mixable audio session.
+    const nativeClock = appService.isIOSApp || (!!offline && isAndroidTauri());
     const blobClock = !!offline && !nativeClock && isLinuxTauri();
 
     // The WebView <audio> element applies the platform's TLS trust, unlike

@@ -19,18 +19,18 @@ vi.mock('@tauri-apps/plugin-fs', () => ({
   remove: vi.fn(async () => undefined),
 }));
 
-const platform = vi.hoisted(() => ({ os: 'ios', iPad: false }));
+const platform = vi.hoisted(() => ({ os: 'ios' }));
 
 vi.mock('@/utils/misc', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/utils/misc')>()),
   getOSPlatform: () => platform.os,
-  isIPadOS: () => platform.iPad,
 }));
 
 import { addPluginListener, invoke, type PluginListener } from '@tauri-apps/api/core';
 import { writeFile } from '@tauri-apps/plugin-fs';
 import type { BookDoc } from '@/libs/document';
 import type { TTSController } from '@/services/tts/TTSController';
+import type { AppService } from '@/types/system';
 import {
   loadMediaOverlaySection,
   type MediaOverlaySection,
@@ -69,7 +69,10 @@ const setup = async () => {
     media: { narrator: 'Jane Reader' },
   } as unknown as BookDoc;
   section = (await loadMediaOverlaySection(book, 0, doc, 'en'))!;
-  client = new MediaOverlayClient({ dispatchSpeakMark: vi.fn() } as unknown as TTSController);
+  client = new MediaOverlayClient(
+    { dispatchSpeakMark: vi.fn() } as unknown as TTSController,
+    { isIOSApp: true } as AppService,
+  );
   await client.init();
   client.attachBook(book);
   client.setSection(section);
@@ -108,7 +111,6 @@ afterEach(async () => {
   vi.unstubAllEnvs();
   vi.unstubAllGlobals();
   platform.os = 'ios';
-  platform.iPad = false;
 });
 
 describe('MediaOverlayClient on iOS Tauri', () => {
@@ -129,7 +131,6 @@ describe('MediaOverlayClient on iOS Tauri', () => {
   // iPadOS sends a desktop user agent, so the OS reads as macOS there (#6974).
   test('takes the native path on an iPad too', async () => {
     platform.os = 'macos';
-    platform.iPad = true;
     await setup();
     const iter = client.speak(section.ssmlForBlock(0)!, new AbortController().signal);
     const first = await iter.next();

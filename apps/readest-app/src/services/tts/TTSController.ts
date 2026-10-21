@@ -334,7 +334,7 @@ export class TTSController extends EventTarget {
     if (appService?.isAndroidApp || appService?.isIOSApp) {
       this.ttsNativeClient = new NativeTTSClient(this);
     }
-    this.ttsMediaOverlayClient = new MediaOverlayClient(this);
+    this.ttsMediaOverlayClient = new MediaOverlayClient(this, appService);
     this.ttsClient = this.ttsWebClient;
     this.appService = appService;
     this.view = view;

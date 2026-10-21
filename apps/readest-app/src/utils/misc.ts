@@ -101,11 +101,6 @@ export const getOSPlatform = (): OsPlatform => {
   return 'unknown';
 };
 
-// iPadOS sends a desktop ("Macintosh") user agent, so getOSPlatform() reports
-// an iPad as 'macos'; touch points give it away.
-export const isIPadOS = (): boolean =>
-  navigator.userAgent.includes('Macintosh') && navigator.maxTouchPoints > 1;
-
 export const isContentURI = (uri: string) => {
   return uri.startsWith('content://');
 };

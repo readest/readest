@@ -1,11 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { OsPlatform } from '@/types/system';
 
 const mocks = vi.hoisted(() => ({
   invoke: vi.fn(),
   isTauriAppPlatform: vi.fn(() => false),
-  getOSPlatform: vi.fn((): OsPlatform => 'android'),
-  isIPadOS: vi.fn(() => false),
+  isIOSApp: false,
   servers: [] as Array<{ url: string; deletedAt?: number; allowSelfSignedCert?: boolean }>,
   settingsServers: [] as Array<{ url: string; deletedAt?: number; allowSelfSignedCert?: boolean }>,
   bookorbit: undefined as
@@ -17,12 +15,11 @@ vi.mock('@tauri-apps/api/core', () => ({ invoke: mocks.invoke }));
 
 vi.mock('@/services/environment', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/services/environment')>();
-  return { ...actual, isTauriAppPlatform: mocks.isTauriAppPlatform };
-});
-
-vi.mock('@/utils/misc', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/utils/misc')>();
-  return { ...actual, getOSPlatform: mocks.getOSPlatform, isIPadOS: mocks.isIPadOS };
+  return {
+    ...actual,
+    isTauriAppPlatform: mocks.isTauriAppPlatform,
+    getInitializedAppService: () => ({ isIOSApp: mocks.isIOSApp }),
+  };
 });
 
 vi.mock('@/store/absServerStore', () => ({
@@ -44,8 +41,7 @@ describe('getMediaProxyBase (#6216)', () => {
     vi.resetModules();
     mocks.invoke.mockReset();
     mocks.isTauriAppPlatform.mockReturnValue(true);
-    mocks.getOSPlatform.mockReturnValue('android');
-    mocks.isIPadOS.mockReturnValue(false);
+    mocks.isIOSApp = false;
     mocks.servers = [];
     mocks.settingsServers = [];
     mocks.bookorbit = undefined;
@@ -63,18 +59,9 @@ describe('getMediaProxyBase (#6216)', () => {
     expect(mocks.invoke).not.toHaveBeenCalled();
   });
 
-  it('never starts a proxy on iOS, whose AVPlayer clocks take the direct URL', async () => {
-    mocks.getOSPlatform.mockReturnValue('ios');
-    const { getMediaProxyBase: fresh } = await import('@/services/audiobook/mediaProxy');
-
-    await expect(fresh()).resolves.toBeNull();
-    expect(mocks.invoke).not.toHaveBeenCalled();
-  });
-
-  // iPadOS sends a desktop user agent, so the OS reads as macOS there (#6974).
-  it('never starts a proxy on an iPad either', async () => {
-    mocks.getOSPlatform.mockReturnValue('macos');
-    mocks.isIPadOS.mockReturnValue(true);
+  // Read from the app service, not the user agent: iPadOS sends a desktop one (#6974).
+  it('never starts a proxy in the iOS app, whose AVPlayer clocks take the direct URL', async () => {
+    mocks.isIOSApp = true;
     const { getMediaProxyBase: fresh } = await import('@/services/audiobook/mediaProxy');
 
     await expect(fresh()).resolves.toBeNull();

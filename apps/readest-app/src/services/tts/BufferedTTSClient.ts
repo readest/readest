@@ -1,5 +1,4 @@
-import { getOSPlatform, getUserLocale, isIPadOS } from '@/utils/misc';
-import { isTauriAppPlatform } from '@/services/environment';
+import { getUserLocale } from '@/utils/misc';
 import { isSameLang } from '@/utils/lang';
 import { NativeAudioPlayer } from './NativeAudioPlayer';
 import { TTSClient, TTSCapabilities, TTSMessageEvent } from './TTSClient';
@@ -127,10 +126,7 @@ export class BufferedTTSClient implements TTSClient {
   // mute switch behave like a music app — the WebAudio path renders in
   // WebKit's GPU process under a session the app cannot own. Everywhere else
   // the gapless WSOLA WebAudio pipeline stays.
-  #player: WebAudioPlayer | NativeAudioPlayer =
-    isTauriAppPlatform() && (getOSPlatform() === 'ios' || isIPadOS())
-      ? new NativeAudioPlayer()
-      : new WebAudioPlayer();
+  #player: WebAudioPlayer | NativeAudioPlayer;
   #activeGeneration: number | null = null;
   #activeQueue: AsyncQueue<SpeakQueueEvent> | null = null;
   #chunkMeta: ChunkMeta[] = [];
@@ -157,6 +153,7 @@ export class BufferedTTSClient implements TTSClient {
     this.name = provider.id;
     this.controller = controller;
     this.appService = appService;
+    this.#player = appService?.isIOSApp ? new NativeAudioPlayer() : new WebAudioPlayer();
   }
 
   async init(): Promise<boolean> {

@@ -17,11 +17,10 @@
 // a server added mid-session becomes reachable without restarting the proxy.
 
 import { invoke } from '@tauri-apps/api/core';
-import { isTauriAppPlatform } from '@/services/environment';
+import { getInitializedAppService, isTauriAppPlatform } from '@/services/environment';
 import { useABSServerStore } from '@/store/absServerStore';
 import type { ABSServer } from '@/types/audiobookshelf';
 import { useSettingsStore } from '@/store/settingsStore';
-import { getOSPlatform, isIPadOS } from '@/utils/misc';
 import { allowsSelfSignedCert } from '@/utils/tls';
 
 /**
@@ -102,7 +101,7 @@ export interface MediaProxyGrant {
  * with a fresh credential replaces the one it supersedes.
  */
 export const getMediaProxyBase = async (grant?: MediaProxyGrant): Promise<string | null> => {
-  if (!isTauriAppPlatform() || getOSPlatform() === 'ios' || isIPadOS()) return null;
+  if (!isTauriAppPlatform() || getInitializedAppService()?.isIOSApp) return null;
   try {
     // A certificate belongs to the origin, so servers sharing one share its
     // policy: an origin any of them verifies is verified for all of them, in
