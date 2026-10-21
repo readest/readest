@@ -38,7 +38,7 @@ import { eventDispatcher } from '@/utils/event';
 import { getMaxInlineSize } from '@/utils/config';
 import { nextThemeMode } from '@/utils/ambientLight';
 import { saveViewSettings } from '@/helpers/settings';
-import { tauriHandleToggleFullScreen } from '@/utils/window';
+import { canToggleFullScreen, toggleFullScreen } from '@/utils/window';
 import { setCoverSpread } from '@/utils/spread';
 import MenuItem from '@/components/MenuItem';
 import Menu from '@/components/Menu';
@@ -118,7 +118,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
   };
 
   const handleFullScreen = () => {
-    tauriHandleToggleFullScreen();
+    toggleFullScreen(appService);
     setIsDropdownOpen?.(false);
   };
 
@@ -584,7 +584,9 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
 
       <hr aria-hidden='true' className='border-base-300 my-1' />
 
-      {appService?.hasWindow && <MenuItem label={_('Fullscreen')} onClick={handleFullScreen} />}
+      {canToggleFullScreen(appService) && (
+        <MenuItem label={_('Fullscreen')} onClick={handleFullScreen} />
+      )}
       <MenuItem
         label={
           themeMode === 'dark'

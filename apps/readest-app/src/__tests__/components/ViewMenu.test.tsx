@@ -39,6 +39,12 @@ const currentViewSettings = {
 
 const mockRecreateViewer = vi.fn();
 const mockSaveViewSettings = vi.fn().mockResolvedValue(undefined);
+const mockAppService = {
+  appPlatform: 'web',
+  hasWindow: false,
+  hasAmbientLightSensor: false,
+  supportsCanvasContext2DFilter: true,
+};
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: vi.fn() }),
@@ -46,7 +52,7 @@ vi.mock('next/navigation', () => ({
 vi.mock('@/context/EnvContext', () => ({
   useEnv: () => ({
     envConfig: {},
-    appService: { hasAmbientLightSensor: false, supportsCanvasContext2DFilter: true },
+    appService: mockAppService,
   }),
 }));
 vi.mock('@/context/AuthContext', () => ({
@@ -100,7 +106,58 @@ vi.mock('@/utils/webtoon', () => ({ getScrollGapAttr: vi.fn() }));
 vi.mock('@/app/reader/hooks/useCapturedTurn', () => ({ applyPageTurnAttributes: vi.fn() }));
 vi.mock('@/utils/config', () => ({ getMaxInlineSize: () => 720 }));
 vi.mock('@/utils/ambientLight', () => ({ nextThemeMode: (mode: string) => mode }));
-vi.mock('@/utils/window', () => ({ tauriHandleToggleFullScreen: vi.fn() }));
+vi.mock('@/utils/window', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/utils/window')>()),
+  tauriHandleToggleFullScreen: vi.fn(),
+}));
+
+describe('ViewMenu fullscreen', () => {
+  const requestFullscreen = vi.fn();
+
+  const stubFullscreenApi = (enabled: boolean) => {
+    Object.defineProperty(document, 'fullscreenEnabled', { configurable: true, value: enabled });
+    Object.defineProperty(document, 'fullscreenElement', { configurable: true, value: null });
+    Object.defineProperty(document.documentElement, 'requestFullscreen', {
+      configurable: true,
+      value: requestFullscreen,
+    });
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    requestFullscreen.mockResolvedValue(undefined);
+    stubFullscreenApi(true);
+  });
+
+  afterEach(() => {
+    cleanup();
+    mockAppService.appPlatform = 'web';
+  });
+
+  it('offers Fullscreen in a web browser and enters it on tap (#6892)', async () => {
+    const closeMenu = vi.fn();
+    render(<ViewMenu bookKey='book-1' setIsDropdownOpen={closeMenu} />);
+
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Fullscreen' }));
+
+    await waitFor(() => expect(requestFullscreen).toHaveBeenCalledOnce());
+    expect(closeMenu).toHaveBeenCalledWith(false);
+  });
+
+  it('hides Fullscreen in browsers without the Fullscreen API', () => {
+    stubFullscreenApi(false);
+    render(<ViewMenu bookKey='book-1' />);
+
+    expect(screen.queryByRole('menuitem', { name: 'Fullscreen' })).toBeNull();
+  });
+
+  it('hides Fullscreen in native mobile webviews', () => {
+    mockAppService.appPlatform = 'tauri';
+    render(<ViewMenu bookKey='book-1' />);
+
+    expect(screen.queryByRole('menuitem', { name: 'Fullscreen' })).toBeNull();
+  });
+});
 
 describe('ViewMenu right-to-left pages toggle', () => {
   beforeEach(() => {
