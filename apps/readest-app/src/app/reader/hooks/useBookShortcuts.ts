@@ -479,6 +479,7 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
   useEffect(() => {
     const handleMouseUp = (event: MouseEvent) => {
       if (event.button !== 3 && event.button !== 4) return;
+      if (!sideBarBookKey) return;
       event.preventDefault();
       const { ctrlKey, altKey, metaKey, shiftKey } = event;
       const key = event.button === 3 ? 'MouseX1' : 'MouseX2';

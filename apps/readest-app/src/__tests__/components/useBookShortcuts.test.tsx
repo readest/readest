@@ -451,6 +451,18 @@ describe('useBookShortcuts', () => {
       expect(mockView.history.back).not.toHaveBeenCalled();
     });
 
+    it('lets the webview handle the button while no book is focused', () => {
+      const NoBook = () => {
+        useBookShortcuts({ sideBarBookKey: null, bookKeys: [] });
+        return null;
+      };
+      render(<NoBook />);
+      const event = release(3);
+
+      expect(mockView.history.back).not.toHaveBeenCalled();
+      expect(event.defaultPrevented).toBe(false);
+    });
+
     it('ignores the other mouse buttons', () => {
       render(<Harness />);
       const event = release(0);
