@@ -56,6 +56,14 @@ describe('DocumentLoader.open', () => {
     }
   });
 
+  it('reports an unreadable ZIP header as potentially corrupted', async () => {
+    const file = new File([new Uint8Array([0x50, 0x4b, 0x03, 0x04, 0x00])], 'damaged.epub');
+
+    await expect(new DocumentLoader(file).open()).rejects.toThrow(
+      'Unsupported or corrupted book file',
+    );
+  });
+
   it('uses distinct, qualified import messages for unrecognized and unparseable books', () => {
     expect(getImportErrorMessage('Failed to open the book file: Unrecognized book structure')).toBe(
       'This file is not a supported book format, or it is corrupted',

@@ -641,7 +641,10 @@ export class DocumentLoader {
       }
     } catch (e: unknown) {
       console.error('Failed to open document:', e);
-      if (e instanceof Error && e.message?.includes('not a valid zip')) {
+      if (
+        e instanceof Error &&
+        (e.message?.includes('not a valid zip') || e.message === 'File format is not recognized')
+      ) {
         throw new Error('Unsupported or corrupted book file');
       }
       if (recognizedBookStructure) {
