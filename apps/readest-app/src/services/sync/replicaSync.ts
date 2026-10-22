@@ -2,10 +2,13 @@ import { acknowledgeBookshelfOperation } from '@/services/bookshelves/journal';
 import { HlcGenerator } from '@/libs/crdt';
 import { LocalStorageHlcStore, type HlcSnapshotStore } from '@/libs/hlcStore';
 import { ReplicaSyncClient } from '@/libs/replicaSyncClient';
-import { markSettled, onSettled } from '@/utils/event';
+import { eventDispatcher, markSettled, onSettled } from '@/utils/event';
+import i18n from '@/i18n/i18n';
 import { ReplicaSyncManager, type CursorStore } from './replicaSyncManager';
 
 const REPLICA_SYNC_READY_EVENT = 'replica-sync-ready';
+
+const _ = (key: string) => i18n.t(key, { defaultValue: key });
 
 export interface ReplicaSyncInitOpts {
   deviceId: string;
@@ -90,6 +93,15 @@ export const initReplicaSync = (opts: ReplicaSyncInitOpts): ReplicaSyncContext =
     },
     onAcknowledged: (row) => {
       if (row.kind === 'bookshelf') acknowledgeBookshelfOperation(row);
+    },
+    // The server refuses changes stamped more than a minute from its own time.
+    onClockSkew: () => {
+      eventDispatcher.dispatch('toast', {
+        type: 'error',
+        message: _(
+          "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.",
+        ),
+      });
     },
   });
 

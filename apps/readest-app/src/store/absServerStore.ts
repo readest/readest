@@ -111,6 +111,8 @@ export const useABSServerStore = create<ABSServerStoreState>((set, get) => ({
       input.reincarnation ?? existing?.reincarnation ?? Math.random().toString(36).slice(2);
     const server: ABSServer = {
       ...input,
+      // A server accepts self-signed certificates unless the user turns it off.
+      allowSelfSignedCert: input.allowSelfSignedCert ?? true,
       // id === contentId, always. `librarySync` bakes the id into each
       // book's `abs://<serverId>/<itemId>` filePath and hashes that path,
       // so a per-device id (the old `Date.now()`) gave the same audiobook

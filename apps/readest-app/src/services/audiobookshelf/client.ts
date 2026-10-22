@@ -1,6 +1,7 @@
 import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
 import { isTauriAppPlatform } from '@/services/environment';
 import { runWithConcurrency } from '@/utils/concurrency';
+import { allowsSelfSignedCert, tlsFetch } from '@/utils/tls';
 import type {
   ABSLibrary,
   ABSLibraryItem,
@@ -93,17 +94,26 @@ export interface ABSRequestOptions {
 
 /**
  * Platform fetch carrying the transport options every ABS request needs: the
- * tauri http client on native (LAN servers, self-signed certs accepted) with
- * the Origin header suppressed, `window.fetch` on the web.
+ * tauri http client on native (LAN servers, self-signed certs accepted when
+ * the server allows them) with the Origin header suppressed, `window.fetch` on
+ * the web.
  */
-export const absFetch = (url: string, init: ABSRequestOptions = {}): Promise<Response> => {
+export const absFetch = (
+  server: ABSServer,
+  url: string,
+  init: ABSRequestOptions = {},
+): Promise<Response> => {
   const fetch = isTauriAppPlatform() ? tauriFetch : window.fetch;
-  return fetch(url, {
-    method: init.method ?? 'GET',
-    headers: withOriginSuppressed(init.headers ?? {}),
-    body: init.body,
-    danger: { acceptInvalidCerts: true, acceptInvalidHostnames: true },
-  });
+  return tlsFetch(
+    fetch,
+    url,
+    {
+      method: init.method ?? 'GET',
+      headers: withOriginSuppressed(init.headers ?? {}),
+      body: init.body,
+    },
+    allowsSelfSignedCert(server),
+  );
 };
 
 /** Fields accepted by PATCH /api/me/progress/:libraryItemId; ABS merges what is sent. */
@@ -166,8 +176,13 @@ export class ABSClient {
     this.#onTokensUpdated = callbacks.onTokensUpdated;
   }
 
+  /** Whether this server accepts a self-signed certificate (see `allowsSelfSignedCert`). */
+  get allowSelfSignedCert(): boolean {
+    return allowsSelfSignedCert(this.#server);
+  }
+
   async #fetch(path: string, init: ABSRequestOptions = {}): Promise<Response> {
-    return absFetch(`${this.#base}${path}`, {
+    return absFetch(this.#server, `${this.#base}${path}`, {
       method: init.method,
       headers: {
         Accept: 'application/json',

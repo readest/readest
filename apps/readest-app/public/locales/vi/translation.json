@@ -2597,5 +2597,8 @@
   "{{count}} voices available_other": "Có {{count}} giọng đọc",
   "Multilingual": "Đa ngôn ngữ",
   "Expressive": "Biểu cảm",
-  "Show Page Thumbnails": "Hiển thị hình thu nhỏ trang"
+  "Show Page Thumbnails": "Hiển thị hình thu nhỏ trang",
+  "Allow Self-Signed Certificate": "Cho phép chứng chỉ tự ký",
+  "Skips certificate checks for this server. Turn it off if the server has a valid certificate": "Bỏ qua kiểm tra chứng chỉ cho máy chủ này. Hãy tắt nếu máy chủ có chứng chỉ hợp lệ",
+  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "Một số thay đổi chưa được đồng bộ vì đồng hồ của thiết bị này bị lệch. Hãy đặt ngày giờ tự động rồi thử lại."
 }

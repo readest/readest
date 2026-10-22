@@ -45,11 +45,13 @@ const setup = ({
   pageList = undefined as unknown,
   pageItem = undefined as unknown,
   showFraction = false,
+  fraction = undefined as number | undefined,
 } = {}) => {
   mocks.state.progress = {
     pageinfo: { current: 93, next: 94, total: 251 },
     section: { current: 4, total: 30 },
     pageItem,
+    fraction,
   };
   mocks.state.viewSettings = { progressStyle };
   mocks.state.bookData = { isFixedLayout, bookDoc: { pageList } };
@@ -74,6 +76,17 @@ describe('PageJumpInput', () => {
   it('shows a percentage label when that progress style is selected', () => {
     const { input } = setup({ progressStyle: 'percentage' });
     expect(input.value).toBe('37%');
+  });
+
+  it('reads the continuous fraction for the percentage label of reflowable books', () => {
+    const { input } = setup({ progressStyle: 'percentage', fraction: 0.3 });
+    expect(input.value).toBe('30%');
+  });
+
+  it('keeps the page-count percentage for fixed-layout books', () => {
+    // section 4 of 30 -> (4 + 1) / 30 = 17%, not the byte-weighted fraction
+    const { input } = setup({ progressStyle: 'percentage', isFixedLayout: true, fraction: 0.3 });
+    expect(input.value).toBe('17%');
   });
 
   it('always shows the page fraction when showFraction is set', () => {

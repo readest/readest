@@ -121,6 +121,7 @@ CREATE TABLE public.files (
   deleted_at timestamp with time zone NULL,
   CONSTRAINT files_pkey PRIMARY KEY (id),
   CONSTRAINT files_file_key_key UNIQUE (file_key),
+  CONSTRAINT files_file_size_nonnegative CHECK (file_size >= 0),
   CONSTRAINT files_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users (id) ON DELETE CASCADE
 );
 
@@ -137,4 +138,4 @@ CREATE POLICY files_delete ON public.files FOR DELETE USING (auth.uid() = user_i
 GRANT ALL ON public.books TO authenticated;
 GRANT ALL ON public.book_configs TO authenticated;
 GRANT ALL ON public.book_notes TO authenticated;
-GRANT ALL ON public.files TO authenticated;
+GRANT SELECT ON public.files TO authenticated;

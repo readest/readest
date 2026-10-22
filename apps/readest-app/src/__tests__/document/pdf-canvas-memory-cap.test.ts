@@ -218,10 +218,11 @@ describe('PDF raster sharpness on desktop (#5251)', () => {
     const { canvas, renderDpr, displayW } = await renderPageCanvas(dpr, zoom);
     expect(canvas).toBeTruthy();
 
-    // The bitmap size is an integer, so the full-dpr viewport is truncated.
+    // The bitmap size is an integer, so the full-dpr viewport is rounded up to
+    // whole device pixels (#6928).
     expect(renderDpr).toBeCloseTo(dpr, 2);
-    expect(canvas.width).toBe(Math.trunc(PAGE_W * zoom * dpr));
-    expect(canvas.height).toBe(Math.trunc(PAGE_H * zoom * dpr));
+    expect(canvas.width).toBe(Math.ceil(PAGE_W * zoom * dpr));
+    expect(canvas.height).toBe(Math.ceil(PAGE_H * zoom * dpr));
     expect(canvas.width * canvas.height).toBeGreaterThan(MAX_CANVAS_PIXELS);
 
     // Still no document scaling: the CSS box stays the display size.
@@ -235,6 +236,47 @@ describe('PDF raster sharpness on desktop (#5251)', () => {
       maxTouchPoints: 5,
     });
     expect(renderDpr).toBeLessThan(dpr);
+  });
+});
+
+describe('PDF raster maps 1:1 onto device pixels (#6928)', () => {
+  // Windows display scale 150%, a zoom whose page box is a fractional number of
+  // device pixels (612 * 0.8523 * 1.5 = 782.41). A bitmap truncated to 782 px
+  // drawn into a 782.41 device-px box is resampled by the browser, which blurs
+  // every glyph edge. The bitmap and its CSS box must cover the same whole
+  // number of device pixels.
+  const dpr = 1.5;
+  const zoom = 0.8523;
+
+  it('sizes the CSS box to the bitmap at the full device pixel ratio', async () => {
+    const { canvas } = await renderPageCanvas(dpr, zoom);
+    const cssW = parseFloat(canvas.style.width);
+    const cssH = parseFloat(canvas.style.height);
+    expect(cssW * dpr).toBeCloseTo(canvas.width, 6);
+    expect(cssH * dpr).toBeCloseTo(canvas.height, 6);
+    // The box still covers the whole page (no seam at a spread's spine, #4587)
+    // and overshoots it by less than one device pixel.
+    for (const [css, page] of [
+      [cssW, PAGE_W * zoom],
+      [cssH, PAGE_H * zoom],
+    ] as const) {
+      expect(css).toBeGreaterThanOrEqual(page);
+      expect(css - page).toBeLessThan(1 / dpr);
+    }
+  });
+
+  it('keeps the CSS box at the display size when a phone clamps the render dpr', async () => {
+    // Android at dpr 2.625 renders at MAX_RENDER_DPR, so the bitmap can't map
+    // 1:1 onto the screen anyway; the box stays the page box.
+    const { canvas, displayW, renderDpr } = await renderPageCanvas(2.625, zoom, {
+      userAgent: 'Mozilla/5.0 (Linux; Android 16) AppleWebKit/537.36 Mobile Safari/537.36',
+      maxTouchPoints: 5,
+    });
+    expect(renderDpr).toBeCloseTo(MAX_RENDER_DPR, 2);
+    expect(canvas.width).toBe(Math.floor(PAGE_W * zoom * MAX_RENDER_DPR));
+    expect(canvas.height).toBe(Math.floor(PAGE_H * zoom * MAX_RENDER_DPR));
+    expect(displayW).toBeCloseTo(PAGE_W * zoom, 6);
+    expect(parseFloat(canvas.style.height)).toBeCloseTo(PAGE_H * zoom, 6);
   });
 });
 

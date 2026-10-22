@@ -2727,5 +2727,8 @@
   "{{count}} voices available_other": "{{count}} voix disponibles",
   "Multilingual": "Multilingue",
   "Expressive": "Expressive",
-  "Show Page Thumbnails": "Afficher les miniatures des pages"
+  "Show Page Thumbnails": "Afficher les miniatures des pages",
+  "Allow Self-Signed Certificate": "Autoriser le certificat auto-signé",
+  "Skips certificate checks for this server. Turn it off if the server has a valid certificate": "Ignore la vérification du certificat pour ce serveur. Désactivez-le si le serveur a un certificat valide",
+  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "Certaines modifications n'ont pas été synchronisées, car l'horloge de cet appareil n'est pas à l'heure. Réglez la date et l'heure automatiquement, puis réessayez."
 }

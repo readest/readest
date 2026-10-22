@@ -2669,5 +2669,8 @@
   "{{count}} Notes_one": "{{count}} not",
   "{{count}} Notes_other": "{{count}} not",
   "Within {{count}} words_one": "{{count}} kelime içinde",
-  "Within {{count}} words_other": "{{count}} kelime içinde"
+  "Within {{count}} words_other": "{{count}} kelime içinde",
+  "Allow Self-Signed Certificate": "Kendinden imzalı sertifikaya izin ver",
+  "Skips certificate checks for this server. Turn it off if the server has a valid certificate": "Bu sunucu için sertifika denetimini atlar. Sunucunun geçerli bir sertifikası varsa kapatın",
+  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "Bu cihazın saati doğru olmadığı için bazı değişiklikler eşitlenmedi. Tarih ve saati otomatik olarak ayarlayın, ardından yeniden deneyin."
 }

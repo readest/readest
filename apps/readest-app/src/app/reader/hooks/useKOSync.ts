@@ -148,6 +148,7 @@ export const useKOSync = (bookKey: string, provider: KosyncProgressProvider = ko
             content?.doc,
             content?.index,
             bookData.bookDoc ?? undefined,
+            bookData.book?.format,
           );
           koProgress = xpointerResult.xpointer;
           setConfig(bookKey, { xpointer: koProgress });

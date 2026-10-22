@@ -2662,5 +2662,8 @@
   "{{count}} voices available_other": "{{count}} hang érhető el",
   "Multilingual": "Többnyelvű",
   "Expressive": "Kifejező",
-  "Show Page Thumbnails": "Oldalbélyegképek megjelenítése"
+  "Show Page Thumbnails": "Oldalbélyegképek megjelenítése",
+  "Allow Self-Signed Certificate": "Önaláírt tanúsítvány engedélyezése",
+  "Skips certificate checks for this server. Turn it off if the server has a valid certificate": "Kihagyja a tanúsítvány ellenőrzését ennél a kiszolgálónál. Kapcsold ki, ha a kiszolgálónak érvényes tanúsítványa van",
+  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "Néhány módosítás nem szinkronizálódott, mert az eszköz órája nem pontos. Állítsa a dátumot és az időt automatikusra, majd próbálja újra."
 }

@@ -1,6 +1,9 @@
 import { describe, it, expect, afterEach } from 'vitest';
 import { classifyPdfLineBreaks, getPdfTextFromRange, type PdfLine } from '@/utils/pdfText';
 import { getTextFromRange } from '@/utils/sel';
+import { textWalker } from 'foliate-js/text-walker.js';
+import { TTS } from 'foliate-js/tts.js';
+import { createTTSNodeFilter } from '@/services/tts/nodeFilter';
 
 // Body text: 10px em, 12px line pitch, column spanning x 0..400.
 const line = (text: string, overrides: Partial<PdfLine> = {}): PdfLine => ({
@@ -248,5 +251,29 @@ describe('getPdfTextFromRange', () => {
     range.selectNodeContents(layer);
 
     expect(getTextFromRange(range)).toBe('the calibration is done');
+  });
+
+  it('copies the same text after the page was read aloud', () => {
+    layer = document.createElement('div');
+    layer.className = 'textLayer';
+    layer.append(
+      span('the calibra-', 0, 0, 400),
+      br(),
+      span('tion is done in two steps:', 0, 12, 300),
+      br(),
+      span('step one ends with a hyphen-', 0, 24, 200),
+      br(),
+      span('then a short line.', 0, 36, 150),
+      br(),
+    );
+    document.body.appendChild(layer);
+    // Read Aloud joins the wrapped lines in the text layer for reading (#6935).
+    new TTS(document, textWalker, createTTSNodeFilter(), () => {}, 'word').start();
+    const range = document.createRange();
+    range.selectNodeContents(layer);
+
+    expect(getTextFromRange(range)).toBe(
+      'the calibration is done in two steps:\nstep one ends with a hyphen-\nthen a short line.',
+    );
   });
 });

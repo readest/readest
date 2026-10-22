@@ -2662,5 +2662,8 @@
   "{{count}} voices available_other": "{{count}} stemmen beschikbaar",
   "Multilingual": "Meertalig",
   "Expressive": "Expressief",
-  "Show Page Thumbnails": "Paginaminiaturen weergeven"
+  "Show Page Thumbnails": "Paginaminiaturen weergeven",
+  "Allow Self-Signed Certificate": "Zelfondertekend certificaat toestaan",
+  "Skips certificate checks for this server. Turn it off if the server has a valid certificate": "Slaat de certificaatcontrole voor deze server over. Zet dit uit als de server een geldig certificaat heeft",
+  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "Sommige wijzigingen zijn niet gesynchroniseerd omdat de klok van dit apparaat niet goed staat. Stel datum en tijd automatisch in en probeer het opnieuw."
 }

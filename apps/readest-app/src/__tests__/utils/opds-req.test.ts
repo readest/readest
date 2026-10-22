@@ -104,23 +104,15 @@ describe('opdsReq', () => {
   describe('getProxiedURL', () => {
     it('should generate proxy URL for image requests without auth', () => {
       const imageUrl = 'http://my-opds-server.local/covers/book.jpg';
-      const proxied = getProxiedURL(imageUrl, '', true);
+      const proxied = getProxiedURL(imageUrl, true);
       expect(proxied).toContain('/api/opds/proxy');
       expect(proxied).toContain('url=' + encodeURIComponent(imageUrl));
       expect(proxied).toContain('stream=true');
     });
 
-    it('should generate proxy URL with auth parameter', () => {
-      const imageUrl = 'http://my-opds-server.local/covers/book.jpg';
-      const auth = 'Basic dXNlcjpwYXNz';
-      const proxied = getProxiedURL(imageUrl, auth, true);
-      // URLSearchParams encodes spaces as '+' rather than '%20'
-      expect(proxied).toContain('auth=Basic+dXNlcjpwYXNz');
-    });
-
     it('should include serialized custom headers in the proxy URL', () => {
       const imageUrl = 'http://my-opds-server.local/covers/book.jpg';
-      const proxied = getProxiedURL(imageUrl, '', true, {
+      const proxied = getProxiedURL(imageUrl, true, {
         'CF-Access-Client-Id': 'client-id',
         'CF-Access-Client-Secret': 'secret',
       });
@@ -193,15 +185,19 @@ describe('opdsReq', () => {
       expect(headers['Authorization']).toBeUndefined();
     });
 
-    it('passes preemptive auth through the proxy URL when useProxy is true', async () => {
+    it('passes preemptive auth to the proxy as a header, never in its URL', async () => {
       fetchMock.mockResolvedValue(makeResponse({ status: 200, body: '<feed/>' }));
 
       await fetchWithAuth('https://opds.example.com/feed', 'alice', 's3cret', true);
 
       expect(fetchMock).toHaveBeenCalledTimes(1);
       const proxyUrl = fetchMock.mock.calls[0]![0] as string;
-      const auth = new URL(proxyUrl, 'https://web.readest.com').searchParams.get('auth');
-      expect(auth).toBe(`Basic ${btoa('alice:s3cret')}`);
+      expect(new URL(proxyUrl, 'https://web.readest.com').searchParams.get('auth')).toBeNull();
+      const headers = (fetchMock.mock.calls[0]![1] as RequestInit).headers as Record<
+        string,
+        string
+      >;
+      expect(headers['Authorization']).toBe(`Basic ${btoa('alice:s3cret')}`);
     });
 
     it('recovers when a Digest-only server rejects the preemptive Basic header with 400', async () => {
@@ -252,12 +248,15 @@ describe('opdsReq', () => {
       const res = await fetchWithAuth('http://calibre.example.com/opds', 'alice', 's3cret', true);
 
       expect(fetchMock).toHaveBeenCalledTimes(3);
-      const bareUrl = fetchMock.mock.calls[1]![0] as string;
-      expect(new URL(bareUrl, 'https://web.readest.com').searchParams.get('auth')).toBeNull();
-      const digestUrl = fetchMock.mock.calls[2]![0] as string;
-      expect(new URL(digestUrl, 'https://web.readest.com').searchParams.get('auth')).toMatch(
-        /^Digest /,
-      );
+      const headersOf = (call: number) =>
+        (fetchMock.mock.calls[call]![1] as RequestInit).headers as Record<string, string>;
+      expect(headersOf(1)['Authorization']).toBeUndefined();
+      expect(headersOf(2)['Authorization']).toMatch(/^Digest /);
+      for (const [url] of fetchMock.mock.calls) {
+        expect(
+          new URL(url as string, 'https://web.readest.com').searchParams.get('auth'),
+        ).toBeNull();
+      }
       expect(res.status).toBe(200);
     });
 
@@ -384,6 +383,27 @@ describe('opdsReq', () => {
       const init = tauriFetchMock.mock.calls[0]![1] as RequestInit;
       const headers = init.headers as Record<string, string>;
       expect(headers['Origin']).toBe('');
+    });
+
+    it('verifies TLS certificates unless the catalog allows self-signed ones', async () => {
+      tauriFetchMock.mockResolvedValue(makeResponse({ status: 200, body: '<feed/>' }));
+      const url = 'https://opds.example.com/feed';
+
+      await fetchWithAuth(url, 'alice', 's3cret', false);
+      await probeAuth(url, 'alice', 's3cret', false);
+      for (const call of tauriFetchMock.mock.calls) {
+        expect(call[1]).not.toHaveProperty('danger');
+      }
+
+      tauriFetchMock.mockClear();
+      await fetchWithAuth(url, 'alice', 's3cret', false, {}, {}, true);
+      await probeAuth(url, 'alice', 's3cret', false, {}, true);
+      expect(tauriFetchMock).toHaveBeenCalledTimes(2);
+      for (const call of tauriFetchMock.mock.calls) {
+        expect(call[1]).toMatchObject({
+          danger: { acceptInvalidCerts: true, acceptInvalidHostnames: true },
+        });
+      }
     });
   });
 });

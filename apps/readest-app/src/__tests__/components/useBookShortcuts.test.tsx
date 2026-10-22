@@ -415,4 +415,60 @@ describe('useBookShortcuts', () => {
       expect(mockSaveViewSettings).not.toHaveBeenCalled();
     });
   });
+
+  describe('mouse Back/Forward released outside the page (#6960)', () => {
+    const release = (button: number) => {
+      const event = new MouseEvent('mouseup', { button, bubbles: true, cancelable: true });
+      document.body.dispatchEvent(event);
+      return event;
+    };
+
+    afterEach(() => {
+      localStorage.removeItem('customShortcuts');
+    });
+
+    it('goes back in the book instead of letting the webview leave the reader', () => {
+      render(<Harness />);
+      const event = release(3);
+
+      expect(mockView.history.back).toHaveBeenCalledTimes(1);
+      expect(event.defaultPrevented).toBe(true);
+    });
+
+    it('goes forward in the book on the Forward button', () => {
+      render(<Harness />);
+      const event = release(4);
+
+      expect(mockView.history.forward).toHaveBeenCalledTimes(1);
+      expect(event.defaultPrevented).toBe(true);
+    });
+
+    it('leaves a button bound to another action to that action', () => {
+      localStorage.setItem('customShortcuts', JSON.stringify({ onToggleSideBar: ['MouseX1'] }));
+      render(<Harness />);
+      release(3);
+
+      expect(mockView.history.back).not.toHaveBeenCalled();
+    });
+
+    it('lets the webview handle the button while no book is focused', () => {
+      const NoBook = () => {
+        useBookShortcuts({ sideBarBookKey: null, bookKeys: [] });
+        return null;
+      };
+      render(<NoBook />);
+      const event = release(3);
+
+      expect(mockView.history.back).not.toHaveBeenCalled();
+      expect(event.defaultPrevented).toBe(false);
+    });
+
+    it('ignores the other mouse buttons', () => {
+      render(<Harness />);
+      const event = release(0);
+
+      expect(mockView.history.back).not.toHaveBeenCalled();
+      expect(event.defaultPrevented).toBe(false);
+    });
+  });
 });

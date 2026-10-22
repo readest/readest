@@ -68,6 +68,35 @@ export async function POST(request: Request, { params }: RouteParams) {
 
   const supabase = createSupabaseAdminClient();
 
+  // Checked once the imported row is live, as /api/storage/upload does: the
+  // trigger on `files` has then counted it in `plans.storage_usage_bytes`
+  // along with every upload committed before it. The token's usage claim is
+  // frozen when the token is minted, so it is only the fallback.
+  const { usage: claimUsage, quota } = getStoragePlanData(jwt);
+  const quotaExceeded = async () => {
+    const { data: planRow, error: planError } = await supabase
+      .from('plans')
+      .select('storage_usage_bytes')
+      .eq('id', user.id)
+      .single();
+    // Only a missing row or a missing `plans` table (self-hosted) falls back;
+    // any other failure refuses rather than pass on the stale claim.
+    if (planError && !['PGRST116', 'PGRST205', '42P01'].includes(planError.code)) {
+      return NextResponse.json({ error: 'Could not read storage usage' }, { status: 500 });
+    }
+    const usage: number = planRow?.storage_usage_bytes ?? claimUsage + share.bookSize;
+    if (usage <= quota + STORAGE_QUOTA_GRACE_BYTES) return null;
+    return NextResponse.json(
+      {
+        error: 'Insufficient storage quota',
+        code: 'quota_exceeded',
+        usage: usage - share.bookSize,
+        quota,
+      },
+      { status: 402 },
+    );
+  };
+
   // Idempotency: look up existing rows for the same (user_id, book_hash),
   // INCLUDING soft-deleted ones. file_key is unique globally, so an active
   // import that the user later deleted leaves a row that would collide with
@@ -105,22 +134,20 @@ export async function POST(request: Request, { params }: RouteParams) {
       console.error('Share import restore-deleted-row failed:', restoreError);
       return NextResponse.json({ error: 'Could not restore book' }, { status: 500 });
     }
+    const refused = await quotaExceeded();
+    if (refused) {
+      await supabase
+        .from('files')
+        .update({ deleted_at: deletedRow.deleted_at })
+        .eq('id', deletedRow.id);
+      return refused;
+    }
     return NextResponse.json({
       fileId: deletedRow.id,
       alreadyOwned: true,
       bookHash: share.bookHash,
       cfi: share.cfi,
     });
-  }
-
-  // Quota check before doing any byte-copy work. JWT-based but consistent
-  // with how the existing upload endpoint enforces it.
-  const { usage, quota } = getStoragePlanData(jwt);
-  if (usage + share.bookSize > quota + STORAGE_QUOTA_GRACE_BYTES) {
-    return NextResponse.json(
-      { error: 'Insufficient storage quota', code: 'quota_exceeded', usage, quota },
-      { status: 402 },
-    );
   }
 
   // Translate the sharer's file_keys into the recipient's namespace by
@@ -165,6 +192,12 @@ export async function POST(request: Request, { params }: RouteParams) {
   if (insertBookError || !insertedBook) {
     console.error('Share import insert book row failed:', insertBookError);
     return NextResponse.json({ error: 'Could not import book' }, { status: 500 });
+  }
+  // Quota check before doing any byte-copy work.
+  const refused = await quotaExceeded();
+  if (refused) {
+    await supabase.from('files').delete().eq('id', insertedBook.id);
+    return refused;
   }
 
   try {

@@ -2727,5 +2727,8 @@
   "{{count}} voices available_other": "{{count}} קולות זמינים",
   "Multilingual": "רב-לשוני",
   "Expressive": "אקספרסיבי",
-  "Show Page Thumbnails": "הצג תמונות ממוזערות של עמודים"
+  "Show Page Thumbnails": "הצג תמונות ממוזערות של עמודים",
+  "Allow Self-Signed Certificate": "אפשר אישור בחתימה עצמית",
+  "Skips certificate checks for this server. Turn it off if the server has a valid certificate": "מדלג על בדיקת האישור עבור שרת זה. כבה זאת אם לשרת יש אישור תקף",
+  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "חלק מהשינויים לא סונכרנו כי השעון של המכשיר הזה אינו מכוון. הגדר תאריך ושעה אוטומטיים ונסה שוב."
 }

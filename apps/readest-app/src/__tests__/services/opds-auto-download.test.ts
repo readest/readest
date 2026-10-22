@@ -146,17 +146,11 @@ describe('OPDS auto-download orchestrator', () => {
     });
   });
 
-  it('downloads with skipSslVerification like the manual download path', async () => {
-    // The manual OPDS download (page.tsx handleDownload) passes
-    // skipSslVerification as a workaround for self-signed/private-CA OPDS
-    // servers (#2871): the native download_file validates TLS with rustls,
-    // which ignores the OS trust store, while the feed fetch and auth probe
-    // go through the http plugin with acceptInvalidCerts. Without the same
-    // flag here, auto-download dies in the TLS handshake on servers where
-    // manual download works (#4988).
-    const catalogs: OPDSCatalog[] = [
-      { id: 'cat-1', name: 'Shelf', url: 'https://shelf.example.com/opds', autoDownload: true },
-    ];
+  it('skips TLS verification on the download only when the catalog allows self-signed certs', async () => {
+    // The native download_file validates TLS with rustls, which ignores the OS
+    // trust store, so a self-signed/private-CA OPDS server needs the catalog's
+    // opt-in for downloads too, not just for the feed fetch (#2871, #4988).
+    // Catalogs saved before the option existed keep the old behavior.
     vi.mocked(checkFeedForNewItems).mockResolvedValue([
       {
         entryId: 'urn:shelf:1',
@@ -166,12 +160,47 @@ describe('OPDS auto-download orchestrator', () => {
         baseURL: 'https://shelf.example.com/opds',
       },
     ]);
+    const catalog: OPDSCatalog = {
+      id: 'cat-1',
+      name: 'Shelf',
+      url: 'https://shelf.example.com/opds',
+      autoDownload: true,
+    };
 
-    await syncSubscribedCatalogs(catalogs, appService, []);
+    for (const [allowSelfSignedCert, expected] of [
+      [false, false],
+      [true, true],
+      [undefined, true],
+    ] as const) {
+      vi.mocked(downloadFile).mockClear();
+      await syncSubscribedCatalogs([{ ...catalog, allowSelfSignedCert }], appService, []);
+      expect(vi.mocked(downloadFile).mock.calls[0]![0]).toMatchObject({
+        skipSslVerification: expected,
+      });
+    }
+  });
 
-    expect(downloadFile).toHaveBeenCalledTimes(1);
+  it("verifies a download the feed points at on another origin, whatever the catalog's choice", async () => {
+    vi.mocked(checkFeedForNewItems).mockResolvedValue([
+      {
+        entryId: 'urn:shelf:1',
+        title: 'Issue 1',
+        acquisitionHref: 'https://cdn.example.net/dl/1.epub',
+        mimeType: 'application/epub+zip',
+        baseURL: 'https://shelf.example.com/opds',
+      },
+    ]);
+    const catalog: OPDSCatalog = {
+      id: 'cat-1',
+      name: 'Shelf',
+      url: 'https://shelf.example.com/opds',
+      autoDownload: true,
+      allowSelfSignedCert: true,
+    };
+
+    await syncSubscribedCatalogs([catalog], appService, []);
     expect(vi.mocked(downloadFile).mock.calls[0]![0]).toMatchObject({
-      skipSslVerification: true,
+      skipSslVerification: false,
     });
   });
 

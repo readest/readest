@@ -2597,5 +2597,8 @@
   "{{count}} voices available_other": "可用语音 {{count}} 个",
   "Multilingual": "多语言",
   "Expressive": "富有表现力",
-  "Show Page Thumbnails": "显示页面缩略图"
+  "Show Page Thumbnails": "显示页面缩略图",
+  "Allow Self-Signed Certificate": "允许自签名证书",
+  "Skips certificate checks for this server. Turn it off if the server has a valid certificate": "将跳过此服务器的证书校验。如果服务器有有效证书，请关闭此选项",
+  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "此设备的时钟不准确，部分更改未能同步。请将日期和时间设为自动设置，然后重试。"
 }

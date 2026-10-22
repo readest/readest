@@ -1,6 +1,7 @@
 import { Book, BookConfig, BookNote } from '@/types/book';
 import { resolveReferencePageCount } from '@/utils/progress';
 import { bookGroupDiffers, pickFresherGroup } from '@/utils/book';
+import { incomingNoteWins } from '@/utils/booknoteStamp';
 import { RemoteBookConfig } from './wire';
 
 /**
@@ -22,17 +23,10 @@ import { RemoteBookConfig } from './wire';
 
 /**
  * Per-note merge: pick the locally-stored copy or the remote copy of each
- * note based on `updatedAt` / `deletedAt`. Mirrors `processNewNote` in
- * `useNotesSync.ts` so users get the same semantics regardless of which
- * sync backend produced the row.
- *
- * A note is keyed by `id`. When the same id exists on both sides the side
- * with the latest change, max(updatedAt, deletedAt), wins, and an exact tie
- * goes to a tombstone: a note edited or restored after a remote deletion
- * survives it, and a deletion made after a remote edit sticks (#6762).
+ * note by `incomingNoteWins`, the rule `useNotesSync.ts` applies too, so
+ * users get the same semantics regardless of which sync backend produced
+ * the row. A note is keyed by `id`.
  */
-const latestChangeAt = (note: BookNote) => Math.max(note.updatedAt ?? 0, note.deletedAt ?? 0);
-
 export const mergeNotes = (local: BookNote[], remote: BookNote[]): BookNote[] => {
   const byId = new Map<string, BookNote>();
   for (const n of local) byId.set(n.id, n);
@@ -42,10 +36,7 @@ export const mergeNotes = (local: BookNote[], remote: BookNote[]): BookNote[] =>
       byId.set(r.id, r);
       continue;
     }
-    const lAt = latestChangeAt(l);
-    const rAt = latestChangeAt(r);
-    const remoteWins = rAt > lAt || (rAt === lAt && !!r.deletedAt && !l.deletedAt);
-    const [winner, loser] = remoteWins ? [r, l] : [l, r];
+    const [winner, loser] = incomingNoteWins(l, r) ? [r, l] : [l, r];
     // Pin the winner's deletedAt so a live winner never inherits the loser's
     // tombstone through a key it doesn't carry.
     byId.set(r.id, { ...loser, ...winner, deletedAt: winner.deletedAt });

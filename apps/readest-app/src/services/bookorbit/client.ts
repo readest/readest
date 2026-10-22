@@ -14,6 +14,7 @@ import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
 import { withOriginSuppressed } from '@/app/opds/utils/opdsReq';
 import { isTauriAppPlatform } from '@/services/environment';
 import { normalizeCustomHeaders } from '@/utils/customHeaders';
+import { tlsFetch } from '@/utils/tls';
 import type { BookOrbitSettings } from '@/types/settings';
 import { isSupportedManifest } from './manifest';
 import type { BookOrbitManifest } from './manifest';
@@ -51,6 +52,8 @@ export type BookOrbitTarget = Pick<
 > & {
   /** Short-lived bearer token, cached between requests by the caller. */
   accessToken?: string;
+  /** Resolved from the settings row by the caller (see `allowsSelfSignedCert`). */
+  allowSelfSignedCert: boolean;
 };
 
 /** Raised when the server speaks a manifest schema this build does not know. */
@@ -76,14 +79,22 @@ interface RequestOptions {
   body?: string;
 }
 
-const boFetch = (url: string, init: RequestOptions = {}): Promise<Response> => {
+const boFetch = (
+  url: string,
+  init: RequestOptions,
+  allowSelfSignedCert: boolean,
+): Promise<Response> => {
   const doFetch = isTauriAppPlatform() ? tauriFetch : window.fetch;
-  return doFetch(url, {
-    method: init.method ?? 'GET',
-    headers: withOriginSuppressed(init.headers ?? {}),
-    body: init.body,
-    danger: { acceptInvalidCerts: true, acceptInvalidHostnames: true },
-  });
+  return tlsFetch(
+    doFetch,
+    url,
+    {
+      method: init.method ?? 'GET',
+      headers: withOriginSuppressed(init.headers ?? {}),
+      body: init.body,
+    },
+    allowSelfSignedCert,
+  );
 };
 
 export class BookOrbitClient {
@@ -108,6 +119,11 @@ export class BookOrbitClient {
   }
 
   /** The cached bearer, empty until the first login. */
+  /** Whether this server accepts a self-signed certificate. */
+  get allowSelfSignedCert(): boolean {
+    return this.#server.allowSelfSignedCert;
+  }
+
   get accessToken(): string {
     return this.#server.accessToken ?? '';
   }
@@ -124,17 +140,21 @@ export class BookOrbitClient {
   }
 
   #fetch(path: string, init: RequestOptions = {}): Promise<Response> {
-    return boFetch(`${this.#base}${path}`, {
-      ...init,
-      headers: {
-        Accept: 'application/json',
-        ...normalizeCustomHeaders(this.#server.customHeaders),
-        ...(this.#server.accessToken
-          ? { Authorization: `Bearer ${this.#server.accessToken}` }
-          : {}),
-        ...init.headers,
+    return boFetch(
+      `${this.#base}${path}`,
+      {
+        ...init,
+        headers: {
+          Accept: 'application/json',
+          ...normalizeCustomHeaders(this.#server.customHeaders),
+          ...(this.#server.accessToken
+            ? { Authorization: `Bearer ${this.#server.accessToken}` }
+            : {}),
+          ...init.headers,
+        },
       },
-    });
+      this.#server.allowSelfSignedCert,
+    );
   }
 
   /**
@@ -169,11 +189,15 @@ export class BookOrbitClient {
     const { username, password } = this.#server;
     if (!username && !password) throw new BookOrbitAuthError();
 
-    const res = await boFetch(`${this.#base}/api/v1/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-      body: JSON.stringify({ username, password }),
-    });
+    const res = await boFetch(
+      `${this.#base}/api/v1/auth/login`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({ username, password }),
+      },
+      this.#server.allowSelfSignedCert,
+    );
     if (!res.ok) throw new BookOrbitAuthError();
 
     const { accessToken } = (await res.json()) as { accessToken?: string };
