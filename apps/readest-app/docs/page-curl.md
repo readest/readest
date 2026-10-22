@@ -29,7 +29,7 @@ EGL rendering runs on a dedicated thread. Settlement submits one pose at a time,
 then waits for the hardware layer to acquire that image before advancing. An
 EGL presentation timestamp is checked against the acquired SurfaceTexture
 timestamp from a hardware frame-commit callback. Delayed frames advance the
-animation clock by at most one sixth of the minimum 100 ms duration, preserving
+animation clock by at most 1/6 of the minimum 100 ms duration, preserving
 intermediate poses under GPU load. The next pose is submitted directly from the
 acknowledgement. Finger-follow updates retain their coalesced draw path.
 
