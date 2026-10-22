@@ -104,6 +104,16 @@ export const useTextSelector = (
   // (#4728) has no pointer drag — handleSelectionchange uses this to refresh the
   // popup/range for keyboard-driven changes while still deferring mid-drag.
   const isPointerDown = useRef(false);
+  // A mouse release can land outside the selected text after scrolling. Keep
+  // the selection's endpoints from the press so only a new/extended selection
+  // opens the toolbar there, not an unchanged selection from an earlier drag.
+  const mouseSelectionAtPointerDown = useRef<{
+    doc: Document;
+    anchorNode: Node | null;
+    anchorOffset: number;
+    focusNode: Node | null;
+    focusOffset: number;
+  } | null>(null);
   // Tracked from the moves themselves rather than from pointerdown, because a
   // WebKit selection handle drag delivers moves without a matching down.
   const pointerDragActive = useRef(false);
@@ -718,6 +728,16 @@ export const useTextSelector = (
   const handlePointerDown = (doc: Document, index: number, ev: PointerEvent) => {
     beginSelectionDrag();
     lastPointerType.current = ev.pointerType;
+    const selection = ev.pointerType === 'mouse' ? doc.getSelection() : null;
+    mouseSelectionAtPointerDown.current = selection
+      ? {
+          doc,
+          anchorNode: selection.anchorNode,
+          anchorOffset: selection.anchorOffset,
+          focusNode: selection.focusNode,
+          focusOffset: selection.focusOffset,
+        }
+      : null;
     const isTouchPress = ev.pointerType === 'touch' || ev.pointerType === 'pen';
     touchWordGestureRef.current =
       isTouchPress && !isValidSelection(doc.getSelection() as Selection)
@@ -889,6 +909,7 @@ export const useTextSelector = (
 
   const handlePointerCancel = (doc: Document, _index: number, _ev: PointerEvent) => {
     isPointerDown.current = false;
+    mouseSelectionAtPointerDown.current = null;
     cancelImageHold();
     doc.documentElement.classList.remove(LINK_TOUCH_HOLD_CLASS);
     mouseDoubleClickRef.current = null;
@@ -1017,6 +1038,8 @@ export const useTextSelector = (
 
   const handlePointerUp = async (doc: Document, index: number, ev?: PointerEvent) => {
     isPointerDown.current = false;
+    const mouseSelectionAtDown = mouseSelectionAtPointerDown.current;
+    mouseSelectionAtPointerDown.current = null;
     cancelImageHold();
     doc.documentElement.classList.remove(LINK_TOUCH_HOLD_CLASS);
     endSelectionDrag();
@@ -1084,6 +1107,13 @@ export const useTextSelector = (
     const sel = doc.getSelection() as Selection;
     if (isValidSelection(sel)) {
       const isPointerInside = ev && isPointerInsideSelection(sel, ev);
+      const changedMouseSelection =
+        ev?.pointerType === 'mouse' &&
+        mouseSelectionAtDown?.doc === doc &&
+        (sel.anchorNode !== mouseSelectionAtDown.anchorNode ||
+          sel.anchorOffset !== mouseSelectionAtDown.anchorOffset ||
+          sel.focusNode !== mouseSelectionAtDown.focusNode ||
+          sel.focusOffset !== mouseSelectionAtDown.focusOffset);
       let trimPoint: { node: Node; offset: number } | null = null;
       if (
         isPointerInside &&
@@ -1097,7 +1127,7 @@ export const useTextSelector = (
       // iOS no longer needs a special path: the native plugin
       // (ContextMenuSuppressor) suppresses the system selection menu, so
       // iOS selections go through the same path as desktop.
-      if (isPointerInside) {
+      if (isPointerInside || changedMouseSelection) {
         isUpToPopup.current = true;
         makeSelection(sel, index, true, false, trimPoint, !!trimPoint || isTouchWordSelection(sel));
       } else if (appService?.isAndroidApp) {
