@@ -2,6 +2,19 @@ import { describe, expect, it } from 'vitest';
 import { buildPageCurlMesh } from '@/utils/pageCurlMesh';
 
 describe('paper curl mesh', () => {
+  it('bends the upper corner at the reference fold instead of delaying it on tall screens', () => {
+    const mesh = buildPageCurlMesh(400, 800, 0.25, 0.5, false, 1);
+    const liftedTop: number[] = [];
+    for (let i = 0; i < mesh.length; i += 6) {
+      if (mesh[i + 1] === 0 && mesh[i + 4]! > 0.001) liftedTop.push(mesh[i]! * 400);
+    }
+    // Reference fold centre: 400 - (400 + 0.7 * 400) * 0.25 = 230.
+    // Its slope is 0.15, so it meets the upper edge at x=290. Allow one
+    // hinge strip before lift becomes positive; an extra half-height bias
+    // postpones this intersection to x=350 and visibly shrinks the corner.
+    expect(Math.min(...liftedTop)).toBeLessThan(300);
+  });
+
   it('preserves every source pixel without gaps or overlapping strips', () => {
     for (const [w, h] of [
       [400, 300],

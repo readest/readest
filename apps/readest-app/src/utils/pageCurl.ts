@@ -74,10 +74,15 @@ export class PageCurlRenderer {
   private canvas: HTMLCanvasElement | null = null;
   private gl: WebGLRenderingContext | null = null;
   private incomingTex: WebGLTexture | null = null;
+  private pageTex: WebGLTexture | null = null;
   private returningTex: WebGLTexture | null = null;
   private returning = false;
   private hasIncoming = false;
   private columns = 1;
+  private destinationTex: WebGLTexture | null = null;
+  private adjacentPrevious = false;
+  private adjacentNext = false;
+  private destination = false;
   private vertexBuffer: WebGLBuffer | null = null;
   private width = 0;
   private height = 0;
@@ -205,7 +210,11 @@ export class PageCurlRenderer {
     const gl = this.gl;
     if (!gl) return;
     this.returning = false;
-    const tex = gl.createTexture();
+    this.hasIncoming = false;
+    this.destination = false;
+    this.adjacentPrevious = false;
+    this.adjacentNext = false;
+    const tex = this.pageTex ?? (this.pageTex = gl.createTexture());
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, tex);
     // Upload unflipped; the vertex shader samples page coordinates directly.
@@ -222,6 +231,30 @@ export class PageCurlRenderer {
 
   /** Kept for the shared captured-turn interface; the paper tint comes from the printing itself. */
   setBackdrop(_source: TexImageSource) {}
+
+  /** Upload the neighbouring sheets while idle, before any gesture. */
+  prepareAdjacent(previous: TexImageSource | null, next: TexImageSource | null) {
+    this.adjacentPrevious = previous !== null;
+    this.adjacentNext = next !== null;
+    if (previous) this.setReturning(previous);
+    this.returning = false;
+    const gl = this.gl;
+    if (gl && next) {
+      this.destinationTex ??= this.createPlaceholderTexture(gl, 3, [0, 0, 0, 0]);
+      gl.activeTexture(gl.TEXTURE3);
+      gl.bindTexture(gl.TEXTURE_2D, this.destinationTex);
+      gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 0);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, next);
+      gl.activeTexture(gl.TEXTURE0);
+    }
+  }
+
+  selectAdjacent(forward: boolean) {
+    const ready = forward ? this.adjacentNext : this.adjacentPrevious;
+    this.destination = forward && ready;
+    this.returning = !forward && ready;
+    return ready;
+  }
 
   /** The previous sheet returns around the book's existing spine. */
   setReturning(source: TexImageSource) {
@@ -312,6 +345,7 @@ export class PageCurlRenderer {
       gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.DYNAMIC_DRAW);
       gl.drawArrays(gl.TRIANGLES, 0, vertices.length / 6);
     };
+    if (this.destination) draw(buildPageCurlMesh(w, h, 0, 0.5, rtl, 1), 3);
     if (this.returning) {
       // Keep the current page underneath the sheet until it returns. In a
       // spread the returning sheet's back is the current inner column; as
@@ -343,10 +377,22 @@ export class PageCurlRenderer {
   }
 
   dispose() {
-    this.gl?.getExtension('WEBGL_lose_context')?.loseContext();
+    const gl = this.gl;
     this.canvas?.remove();
     this.canvas = null;
     this.gl = null;
     this.vertexBuffer = null;
+    this.pageTex = null;
+    this.returningTex = null;
+    this.incomingTex = null;
+    this.destinationTex = null;
+    if (gl) {
+      const release = () => gl.getExtension('WEBGL_lose_context')?.loseContext();
+      // Context loss clears the compositor's existing texture immediately.
+      // Let the detached DOM layer leave a painted frame first, otherwise
+      // Android can briefly composite a cleared sheet over the live reader.
+      if (document.hidden) release();
+      else requestAnimationFrame(() => requestAnimationFrame(release));
+    }
   }
 }

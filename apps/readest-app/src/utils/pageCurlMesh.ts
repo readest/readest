@@ -1,10 +1,10 @@
 // Paper model derived from eBoox 2.63's PageCurlGLSurface renderer:
-// 64 parallel hinges, each rotating PI/64, over 0.7 of the leaf width.
+// 64 parallel hinges, each rotating PI/65, over 0.7 of the leaf width.
 // Clip at the hinges before deforming: a fixed rectangular grid cuts across
 // diagonal creases and makes the paper wobble as those creases move.
 type Point = [number, number];
 const HINGES = 64;
-const ANGLE = Math.PI / HINGES;
+const ANGLE = Math.PI / (HINGES + 1);
 
 export function buildPageCurlMesh(
   width: number,
@@ -26,7 +26,7 @@ export function buildPageCurlMesh(
   const norm = Math.hypot(1, slope);
   const nx = 1 / norm;
   const ny = slope / norm;
-  const fold = leafWidth - (leafWidth + bend) * p + (Math.abs(slope) * height) / 2;
+  const fold = leafWidth - (leafWidth + bend) * p;
   const step = bend / HINGES / norm;
   const vertices: number[] = [];
   const distance = ([x, y]: Point) => (x - fold) * nx + (y - height / 2) * ny;

@@ -1,4 +1,4 @@
-import { describe, it, expect, afterEach, beforeEach } from 'vitest';
+import { describe, it, expect, afterEach, beforeEach, vi } from 'vitest';
 import { PageCurlRenderer } from '@/utils/pageCurl';
 
 // Tests for the WebGL page-curl renderer (readest#555 mesh curl groundwork).
@@ -69,6 +69,35 @@ describe('PageCurlRenderer (browser)', () => {
     expect(bottomLeft[3]).toBe(255);
     expect(bottomLeft[0]).toBeGreaterThan(100); // red
     expect(bottomLeft[1]).toBeLessThan(100);
+  });
+
+  it('selects resident neighbouring sheets without uploading during either turn', async () => {
+    const canvas = document.createElement('canvas');
+    canvas.width = W;
+    canvas.height = H;
+    const ctx = canvas.getContext('2d')!;
+    ctx.fillStyle = 'blue';
+    ctx.fillRect(0, 0, W, H);
+    const previous = await createImageBitmap(canvas);
+    ctx.fillStyle = 'green';
+    ctx.fillRect(0, 0, W, H);
+    const next = await createImageBitmap(canvas);
+    renderer.prepareAdjacent(previous, next);
+    previous.close();
+    next.close();
+    const gl = host.querySelector('canvas')!.getContext('webgl')!;
+    const upload = vi.spyOn(gl, 'texImage2D');
+    try {
+      expect(renderer.selectAdjacent(true)).toBe(true);
+      renderer.render(1);
+      expect(renderer.readPixel(W / 2, H / 2)).toEqual([0, 128, 0, 255]);
+      expect(renderer.selectAdjacent(false)).toBe(true);
+      renderer.render(1);
+      expect(renderer.readPixel(W / 2, H / 2)).toEqual([0, 0, 255, 255]);
+      expect(upload).not.toHaveBeenCalled();
+    } finally {
+      upload.mockRestore();
+    }
   });
 
   it('uses the full device DPR for its backing store', () => {
@@ -149,11 +178,35 @@ describe('PageCurlRenderer (browser)', () => {
     }
   });
 
+  it('updates the page without allocating another GPU texture', async () => {
+    const gl = host.querySelector('canvas')!.getContext('webgl')!;
+    const allocate = vi.spyOn(gl, 'createTexture');
+    try {
+      const page = await makePageBitmap();
+      renderer.setTexture(page);
+      page.close();
+      expect(allocate).not.toHaveBeenCalled();
+      renderer.render(0);
+      expect(renderer.readPixel(20, 20).slice(0, 3)).toEqual([0, 160, 0]);
+    } finally {
+      allocate.mockRestore();
+    }
+  });
+
+  it('keeps the detached GPU frame alive until the DOM removal has painted', async () => {
+    renderer.render(0);
+    const gl = host.querySelector('canvas')!.getContext('webgl')!;
+    renderer.dispose();
+    expect(host.querySelector('canvas')).toBeNull();
+    expect(gl.isContextLost()).toBe(false);
+    await vi.waitFor(() => expect(gl.isContextLost()).toBe(true));
+  });
+
   it('tilts the fold with vertical finger displacement', () => {
     renderer.render(0.4, { x: 1, y: 1 });
     // Dragging downward rotates the fold: the upper edge curls away first.
-    const top = renderer.readPixel(W - 110, 20);
-    const bottom = renderer.readPixel(W - 110, H - 20);
+    const top = renderer.readPixel(W - 200, 20);
+    const bottom = renderer.readPixel(W - 200, H - 20);
     expect(top[3]).toBe(0);
     expect(bottom[3]).toBe(255);
   });
