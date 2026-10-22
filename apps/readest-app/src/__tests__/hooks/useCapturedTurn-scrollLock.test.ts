@@ -37,6 +37,8 @@ const h = vi.hoisted(() => ({
       | Promise<void | (() => void | Promise<void>)>;
   },
   hoveredBookKey: 'book-1' as string | null,
+  isFixedLayout: false,
+  pageRect: null as DOMRect | null,
   setHoveredBookKey: vi.fn(),
   settingsDialogOpen: false,
   settingsListeners: new Set<
@@ -65,7 +67,10 @@ const h = vi.hoisted(() => ({
     atStart: false,
     primaryIndex: 0,
     getContents() {
-      return [{ index: 0, doc: { getSelection: () => h.selection } }];
+      const frameElement = h.pageRect && { getBoundingClientRect: () => h.pageRect };
+      return [
+        { index: 0, doc: { getSelection: () => h.selection, defaultView: { frameElement } } },
+      ];
     },
     getAttribute: vi.fn(() => null as string | null),
     hasAttribute: (name: string) => name === 'data-native-paper-commit' && h.nativeCommit,
@@ -110,7 +115,7 @@ vi.mock('@/store/readerStore', () => {
   return { useReaderStore };
 });
 vi.mock('@/store/bookDataStore', () => ({
-  useBookDataStore: () => ({ getBookData: () => ({ isFixedLayout: false }) }),
+  useBookDataStore: () => ({ getBookData: () => ({ isFixedLayout: h.isFixedLayout }) }),
 }));
 vi.mock('@/store/settingsStore', () => {
   const useSettingsStore = () => ({ isSettingsDialogOpen: h.settingsDialogOpen });
@@ -211,6 +216,8 @@ beforeEach(() => {
   h.settingsDialogOpen = false;
   h.settingsListeners.clear();
   h.viewSettings.pageTurnStyle = 'curl';
+  h.isFixedLayout = false;
+  h.pageRect = null;
 });
 
 afterEach(() => {
@@ -967,6 +974,31 @@ describe('useCapturedTurn scroll-lock gate', () => {
     // Distance alone is 55%, but projecting the -0.1px/ms release returns it
     // to 47%, so the Slide cancels.
     expect(h.controller.endDrag).toHaveBeenCalledWith(false, -0.1);
+  });
+
+  test.each([
+    'push',
+    'curl',
+  ] as const)('turns a %s drag across a fixed-layout page narrower than half the cell', (style) => {
+    // One PDF page in a landscape phone: the page is a third of the cell.
+    h.isFixedLayout = true;
+    h.viewSettings.pageTurnStyle = style;
+    h.viewSettings.zoomLevel = 100;
+    h.viewSettings.zoomMode = 'fit-page';
+    h.pageRect = new DOMRect(298, 0, 318, 412);
+    const cell = document.createElement('div');
+    cell.id = 'gridcell-book-1';
+    vi.spyOn(cell, 'getBoundingClientRect').mockReturnValue(new DOMRect(0, 0, 915, 412));
+    document.body.appendChild(cell);
+    renderHook(() => useCapturedTurn('book-1', { current: makeView() }));
+
+    dispatchTouchInterceptors('book-1', detail('start', 0, 0, 0, 596));
+    dispatchTouchInterceptors('book-1', detail('move', -278, 0, 1200, 596));
+    dispatchTouchInterceptors('book-1', detail('end', -278, 0, 1330, 596));
+
+    // 278px is 87% of the page but 30% of the cell; the finger rested
+    // before lifting, so distance alone decides.
+    expect(h.controller.endDrag).toHaveBeenCalledWith(true, 0);
   });
 
   test("uses recent release velocity without changing Curl's full-gesture commit rule", () => {

@@ -393,7 +393,7 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
         {hasRemainingInfo && (
           <div
             className={clsx(
-              'remaining-info text-start truncate',
+              'remaining-info text-start truncate tabular-nums',
               !stickyBarActive && 'flex-1 min-w-0',
             )}
           >

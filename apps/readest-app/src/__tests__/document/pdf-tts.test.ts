@@ -4,6 +4,7 @@ import { resolve, join } from 'path';
 import { textWalker } from 'foliate-js/text-walker.js';
 import { TTS } from 'foliate-js/tts.js';
 import { createRejectFilter } from '@/utils/node';
+import { createTTSNodeFilter } from '@/services/tts/nodeFilter';
 import { DocumentLoader } from '@/libs/document';
 import type { BookDoc } from '@/libs/document';
 
@@ -281,6 +282,99 @@ describe('PDF TTS', () => {
       expect(text2).toContain('nothing');
       expect(text2).not.toContain('Alice');
       expect(text2).not.toContain('tired');
+    });
+  });
+
+  // pdf.js ends a printed line with a <br> and no space (#6935): text items
+  // of Metaontology.pdf, page 64, as `getTextContent()` returns them.
+  describe('TTS across wrapped PDF lines', () => {
+    const createWrappedPDFDoc = (lines: string[][]): Document => {
+      const html = lines
+        .map((spans) => spans.map((t) => `<span role="presentation">${t}</span>`).join(''))
+        .join('<br role="presentation">');
+      return new DOMParser().parseFromString(
+        `<!DOCTYPE html><html lang="en"><body><div id="canvas"><canvas></canvas></div>` +
+          `<div class="textLayer">${html}</div><div class="annotationLayer"></div></body></html>`,
+        'text/html',
+      );
+    };
+
+    const readAll = (doc: Document) => {
+      const tts = new TTS(doc, textWalker, createTTSNodeFilter(), highlight, 'word');
+      const blocks: string[] = [];
+      for (let ssml = tts.start(); ssml; ssml = tts.next()) blocks.push(ssml);
+      return blocks;
+    };
+
+    it('reads the words on either side of a line break as two words', () => {
+      const doc = createWrappedPDFDoc([
+        [
+          'Ontological pluralism is the view that every ideal language is a quanti',
+          'fi',
+          'ed language',
+        ],
+        ['that has multiple primitive existential quanti', 'fi', 'ers in it.'],
+      ]);
+      const text = readAll(doc).map(stripTags).join(' ');
+      expect(text).toContain('quantified language that has');
+      expect(text).not.toContain('languagethat');
+    });
+
+    it('ends a sentence at a line break after its full stop', () => {
+      const doc = createWrappedPDFDoc([
+        ['ideal, contrary to this version of quanti', 'fi', 'er variantism.'],
+        ['Javier-Castellanos (2019: section IV) suggests that we need to rethink the'],
+      ]);
+      const blocks = readAll(doc).map(stripTags);
+      expect(blocks).toHaveLength(2);
+      expect(blocks[1]).toMatch(/^Javier-Castellanos/);
+    });
+
+    it('reads a word hyphenated across lines whole, as one word', () => {
+      const doc = createWrappedPDFDoc([
+        ['Javier-Castellanos suggests instead that the ideality of a language is explanator-'],
+        ['ily primary; an expression is perfectly natural.'],
+      ]);
+      const [ssml] = readAll(doc);
+      expect(stripTags(ssml!)).toContain('is explanatorily primary');
+      // One word mark for the whole word, so it is highlighted as one.
+      expect(ssml).toMatch(/<mark name="\d+"\/>explanatorily/);
+    });
+
+    it('keeps the hyphen before a capitalised continuation', () => {
+      const doc = createWrappedPDFDoc([
+        ['some versions of quanti', 'fi', 'er variantism are inconsistent. Javier-'],
+        ['Castellanos (2019: 288) notes that some versions of post-'],
+        ['Marxist views differ.'],
+      ]);
+      const text = readAll(doc).map(stripTags).join(' ');
+      expect(text).toContain('Javier-Castellanos (2019: 288)');
+      expect(text).toContain('post-Marxist views');
+    });
+
+    it('leaves a line that already ends in a space, and CJK lines, as they are', () => {
+      const doc = createWrappedPDFDoc([
+        ['Alice was beginning to get very '],
+        ['tired of sitting.'],
+      ]);
+      expect(readAll(doc).map(stripTags)).toEqual([
+        'Alice was beginning to get very tired of sitting.',
+      ]);
+      const cjk = createWrappedPDFDoc([['这是第一行'], ['和第二行。']]);
+      expect(readAll(cjk).map(stripTags).join('')).toBe('这是第一行和第二行。');
+    });
+
+    it('reads the same text when the page is read aloud again', () => {
+      const doc = createWrappedPDFDoc([
+        ['the ideality of a language is explanator-'],
+        ['ily primary and every ideal language'],
+        ['that has quantifiers.'],
+      ]);
+      const first = readAll(doc);
+      expect(readAll(doc)).toEqual(first);
+      expect(stripTags(first.join(' '))).toContain(
+        'explanatorily primary and every ideal language that has',
+      );
     });
   });
 

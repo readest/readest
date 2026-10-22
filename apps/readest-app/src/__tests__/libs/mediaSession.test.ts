@@ -7,6 +7,7 @@ vi.mock('@/utils/misc', () => ({
 }));
 vi.mock('@/services/environment', () => ({
   isTauriAppPlatform: vi.fn(),
+  getInitializedAppService: vi.fn(),
 }));
 
 // mediaSession.ts imports these at module load; TauriMediaSession construction
@@ -24,7 +25,10 @@ import {
   type MediaSessionState,
 } from '@/libs/mediaSession';
 import { getOSPlatform } from '@/utils/misc';
-import { isTauriAppPlatform } from '@/services/environment';
+import { getInitializedAppService, isTauriAppPlatform } from '@/services/environment';
+import type { AppService } from '@/types/system';
+
+const iosApp = { isIOSApp: true } as AppService;
 
 const setNavigatorMediaSession = (present: boolean) => {
   if (present) {
@@ -40,6 +44,7 @@ const setNavigatorMediaSession = (present: boolean) => {
 describe('getMediaSession', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(getInitializedAppService).mockReturnValue(null);
   });
 
   afterEach(() => {
@@ -54,6 +59,17 @@ describe('getMediaSession', () => {
     // dead buttons. The composite feeds both.
     vi.mocked(getOSPlatform).mockReturnValue('ios');
     vi.mocked(isTauriAppPlatform).mockReturnValue(true);
+    vi.mocked(getInitializedAppService).mockReturnValue(iosApp);
+    setNavigatorMediaSession(true);
+
+    expect(getMediaSession()).toBeInstanceOf(IOSCompositeMediaSession);
+  });
+
+  // iPadOS sends a desktop user agent, so the OS reads as macOS there (#6974).
+  test('returns the composite session on an iPad in the iOS app', () => {
+    vi.mocked(getOSPlatform).mockReturnValue('macos');
+    vi.mocked(isTauriAppPlatform).mockReturnValue(true);
+    vi.mocked(getInitializedAppService).mockReturnValue(iosApp);
     setNavigatorMediaSession(true);
 
     expect(getMediaSession()).toBeInstanceOf(IOSCompositeMediaSession);
@@ -62,6 +78,7 @@ describe('getMediaSession', () => {
   test('returns the plain TauriMediaSession on iOS Tauri without navigator.mediaSession', () => {
     vi.mocked(getOSPlatform).mockReturnValue('ios');
     vi.mocked(isTauriAppPlatform).mockReturnValue(true);
+    vi.mocked(getInitializedAppService).mockReturnValue(iosApp);
     setNavigatorMediaSession(false);
 
     const session = getMediaSession();

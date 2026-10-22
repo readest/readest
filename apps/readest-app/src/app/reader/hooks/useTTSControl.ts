@@ -25,6 +25,7 @@ import { genSSMLRaw, parseSSMLLang } from '@/utils/ssml';
 import { throttle } from '@/utils/throttle';
 import { isCfiInLocation } from '@/utils/cfi';
 import { getLocale } from '@/utils/misc';
+import { getPDFSpeechLang } from '@/utils/lang';
 import { estimateTTSTime } from '@/utils/ttsTime';
 import { pageBreakFraction } from '@/utils/ttsPageFollow';
 import { getTextSubRange, rangeTextExcludingInert } from '@/services/tts/wordHighlight';
@@ -965,8 +966,6 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
         }
       }
 
-      const primaryLang = bookData.book.primaryLanguage;
-
       if (ttsControllerRef.current) {
         ttsControllerRef.current.stop();
         ttsControllerRef.current = null;
@@ -1047,6 +1046,14 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
           void ttsController.shutdown();
           return;
         }
+        const speechSection = view.renderer.getContents().find((x) => x.index === ttsFromIndex);
+        const primaryLang =
+          bookData.book.format === 'PDF'
+            ? getPDFSpeechLang(
+                bookData.book.primaryLanguage,
+                speechSection?.doc.body?.textContent || '',
+              )
+            : bookData.book.primaryLanguage;
         ttsController.sentenceTint = !viewSettings.isEink;
         ttsController.updateHighlightOptions(
           getTTSHighlightOptions(

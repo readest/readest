@@ -24,6 +24,8 @@ import { extendSelectionFromContents, KeyModifiers } from '@/utils/sel';
 import { getReadingAreaRect, keyboardTurnDirection } from './useAutoPageTurn';
 import { viewPagination } from './usePagination';
 import useShortcuts from '@/hooks/useShortcuts';
+import { loadShortcuts } from '@/helpers/shortcuts';
+import { matchesShortcut } from '@/utils/shortcutKeys';
 import useBooksManager from './useBooksManager';
 import { getReadingRulerMoveDirection, isReadingRulerMoveKey } from '../utils/readingRuler';
 
@@ -466,6 +468,31 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
       eventDispatcher.off('reset-zoom', resetZoom);
       eventDispatcher.off('pinch-zoom', handlePinchZoom);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sideBarBookKey]);
+
+  // A mouse Back/Forward release on the page is handled in the iframe
+  // (handleMouseup in iframeEventHandlers). One outside it, on a bar, a
+  // sidebar or the gap between pages, reaches this document, where the
+  // webview would go back out of the reader (#6960). Go back in the book
+  // instead, unless the button is bound to an action useShortcuts runs.
+  useEffect(() => {
+    const handleMouseUp = (event: MouseEvent) => {
+      if (event.button !== 3 && event.button !== 4) return;
+      if (!sideBarBookKey) return;
+      event.preventDefault();
+      const { ctrlKey, altKey, metaKey, shiftKey } = event;
+      const key = event.button === 3 ? 'MouseX1' : 'MouseX2';
+      const eventLike = { key, ctrlKey, altKey, metaKey, shiftKey };
+      const bound = Object.values(loadShortcuts()).some(({ keys }) =>
+        matchesShortcut(eventLike, keys),
+      );
+      if (bound) return;
+      if (event.button === 3) goBack();
+      else goForward();
+    };
+    window.addEventListener('mouseup', handleMouseUp);
+    return () => window.removeEventListener('mouseup', handleMouseUp);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sideBarBookKey]);
 

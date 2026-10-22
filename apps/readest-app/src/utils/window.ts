@@ -186,6 +186,23 @@ export const tauriHandleToggleFullScreen = async () => {
   }
 };
 
+// The web build has no native window, so its fullscreen is the browser's
+// Fullscreen API: on a phone there is no F11 to reach it otherwise (#6892).
+// Native mobile webviews don't implement it.
+export const canToggleFullScreen = (appService: AppService | null) =>
+  !!appService?.hasWindow || (appService?.appPlatform === 'web' && !!document.fullscreenEnabled);
+
+export const toggleFullScreen = async (appService: AppService | null) => {
+  if (appService?.hasWindow) return tauriHandleToggleFullScreen();
+  try {
+    // Requested before any await, while the tap still counts as user activation.
+    if (document.fullscreenElement) await document.exitFullscreen();
+    else await document.documentElement.requestFullscreen();
+  } catch (error) {
+    console.warn('Failed to toggle fullscreen:', error);
+  }
+};
+
 export const tauriHandleSetAlwaysOnTop = async (isAlwaysOnTop: boolean) => {
   const windows = await getAllWindows();
   await Promise.all(windows.map((w) => w.setAlwaysOnTop(isAlwaysOnTop)));

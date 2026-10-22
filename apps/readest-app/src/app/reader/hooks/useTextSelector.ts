@@ -1103,6 +1103,13 @@ export const useTextSelector = (
       } else if (appService?.isAndroidApp) {
         isUpToPopup.current = false;
       }
+    } else if (ev?.pointerType === 'mouse' && isTextSelected.current) {
+      // The press cleared the selection and its selectionchange was deferred
+      // to this release. The click would dismiss the toolbar, but on a blank
+      // part of a PDF page pdf.js moves `.endOfContent` under the pointer as
+      // the selection collapses, and Chromium then sends no click (#6958).
+      handleDismissPopup();
+      isTextSelected.current = false;
     }
 
     if (osPlatform === 'android' && appService?.isAndroidApp) {

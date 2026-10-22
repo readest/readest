@@ -125,6 +125,8 @@ interface DragState {
   forward: boolean;
   width: number;
   height: number;
+  /** The width a release must cross half of to turn (see getPagesWidth). */
+  releaseWidth: number;
   /** Finger distance already consumed when a Slide gesture was claimed. */
   visualOriginDistance: number;
   progress: number;
@@ -977,11 +979,13 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
             return true;
           }
           const rect = document.getElementById(`gridcell-${bookKey}`)?.getBoundingClientRect();
+          const width = rect?.width || window.innerWidth;
           const startedState: DragState = {
             style,
             forward,
-            width: rect?.width || window.innerWidth,
+            width,
             height: rect?.height || window.innerHeight,
+            releaseWidth: isFixedLayout() ? getPagesWidth(currentView, width) : width,
             visualOriginDistance: 0,
             progress: 0,
             grabY: 0.5,
@@ -1044,15 +1048,15 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
       // horizon: distance and speed contribute continuously instead of
       // crossing two independent hard thresholds. Curl preserves the existing
       // whole-gesture 0.3px/ms-or-halfway rule.
-      const releaseProgress = Math.max(0, Math.min(1, signed / state.width));
+      const releaseProgress = Math.max(0, Math.min(1, signed / state.releaseWidth));
       const projectedProgress =
-        releaseProgress + (releaseVelocity * SLIDE_RELEASE_PROJECTION_MS) / state.width;
+        releaseProgress + (releaseVelocity * SLIDE_RELEASE_PROJECTION_MS) / state.releaseWidth;
       const commit =
         state.style !== 'curl'
           ? projectedProgress > 0.5
           : fullGestureVelocity > 0.3
             ? true
-            : state.progress > 0.5;
+            : releaseProgress > 0.5;
       // CapturedPageTurn serializes endDrag behind an in-flight beginDrag, so
       // queue release immediately. This also keeps a following gesture behind
       // the complete begin/end pair instead of letting it supersede the turn.
@@ -1065,6 +1069,22 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
     // Above the fixed-layout swipe-flip (0), below the reading ruler (10).
     5,
   );
+};
+
+/**
+ * A fixed-layout page can be far narrower than the cell: one PDF page in a
+ * landscape phone is a third of it, so a drag across the whole page never
+ * reached half the cell. Judge the release against the pages on screen.
+ */
+const getPagesWidth = (view: FoliateView, cellWidth: number) => {
+  const rects = view.renderer
+    .getContents()
+    .map(({ doc }) => doc.defaultView?.frameElement?.getBoundingClientRect())
+    .filter((rect): rect is DOMRect => !!rect && rect.width > 0);
+  if (!rects.length) return cellWidth;
+  const left = Math.min(...rects.map((rect) => rect.left));
+  const right = Math.max(...rects.map((rect) => rect.right));
+  return Math.min(cellWidth, right - left);
 };
 
 const dragProgress = (state: DragState, deltaX: number, rtl: boolean) => {

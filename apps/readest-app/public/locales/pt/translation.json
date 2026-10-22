@@ -2673,5 +2673,6 @@
   "Expressive": "Expressiva",
   "Show Page Thumbnails": "Mostrar miniaturas das páginas",
   "Allow Self-Signed Certificate": "Permitir certificado autoassinado",
-  "Skips certificate checks for this server. Turn it off if the server has a valid certificate": "Ignora a verificação do certificado deste servidor. Desative se o servidor tiver um certificado válido"
+  "Skips certificate checks for this server. Turn it off if the server has a valid certificate": "Ignora a verificação do certificado deste servidor. Desative se o servidor tiver um certificado válido",
+  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "Algumas alterações não foram sincronizadas porque o relógio deste dispositivo está errado. Defina a data e a hora automaticamente e tente novamente."
 }
