@@ -317,7 +317,8 @@ export async function extractCollectionPack(
       totalUncompressedBytes += entry.uncompressedSize ?? 0;
       if (totalUncompressedBytes > MAX_PACK_TOTAL_UNCOMPRESSED_BYTES) {
         console.warn('Rejected archive: cumulative uncompressed size exceeds limit');
-        break;
+        await zipReader.close();
+        return null;
       }
 
       const parts = rawName.split('/');

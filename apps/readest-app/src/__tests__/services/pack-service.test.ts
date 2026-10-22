@@ -5,6 +5,7 @@ import {
   createCollectionPack,
   extractCollectionPack,
   isReadestPackFile,
+  MAX_PACK_ENTRY_BYTES,
   READEST_PACK_EXT,
 } from '@/services/pack/packService';
 import { configureZip } from '@/utils/zip';
@@ -174,6 +175,38 @@ describe('packService', () => {
       expect(extracted).not.toBeNull();
       expect(extracted?.collectionName).toBeUndefined();
       expect(extracted?.files.length).toBe(3);
+    });
+
+    it('rejects the whole archive when the cumulative size limit is exceeded', async () => {
+      await configureZip();
+      const { BlobWriter, Uint8ArrayReader, ZipReader, ZipWriter } = await import('@zip.js/zip.js');
+
+      const blobWriter = new BlobWriter('application/zip');
+      const zipWriter = new ZipWriter(blobWriter);
+      for (let i = 1; i <= 5; i++) {
+        await zipWriter.add(
+          `book${i}.epub`,
+          new Uint8ArrayReader(new TextEncoder().encode(`content ${i}`)),
+        );
+      }
+      await zipWriter.close();
+      const buffer = await (await blobWriter.getData()).arrayBuffer();
+
+      // Report each entry at the per-book limit so five of them pass 4 GB in total
+      const getEntries = ZipReader.prototype.getEntries;
+      const spy = vi.spyOn(ZipReader.prototype, 'getEntries').mockImplementation(async function (
+        this: InstanceType<typeof ZipReader>,
+        options,
+      ) {
+        const entries = await getEntries.call(this, options);
+        for (const entry of entries) entry.uncompressedSize = MAX_PACK_ENTRY_BYTES;
+        return entries;
+      });
+      try {
+        expect(await extractCollectionPack(buffer)).toBeNull();
+      } finally {
+        spy.mockRestore();
+      }
     });
 
     it('safely handles and sanitizes invalid collection.name in manifest', async () => {
