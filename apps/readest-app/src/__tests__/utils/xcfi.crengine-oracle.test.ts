@@ -11,7 +11,9 @@
 //
 // An FB2 fixture (`fb2: true`) lists crengine's words for the whole book:
 // crengine reads FB2 natively, so its XPointers start at /FictionBook and keep
-// the FB2 tag names, and the section is found from the pointer itself.
+// the FB2 tag names, and the section is found from the pointer itself. A MOBI
+// fixture (`mobi: true`) does the same: crengine reads a MOBI book as one HTML
+// document, so its XPointers start at /html/body.
 //
 // Ad hoc validation of any local EPUB (not committed, e.g. a reporter's book):
 //   XPOINTER_ORACLE=/path/to/book.crengine.json pnpm test src/__tests__/utils/xcfi.crengine-oracle.test.ts
@@ -28,6 +30,7 @@ type OracleWord = { xp: string; xp_end: string; text: string };
 type Oracle = {
   epub: string;
   fb2?: boolean;
+  mobi?: boolean;
   words?: OracleWord[];
   fragments: { index: number; docfragment: number; word_count: number; words: OracleWord[] }[];
 };
@@ -55,7 +58,11 @@ const oracles = (): { name: string; oracle: Oracle; epub: string }[] => {
 
 const openBook = async (file: string): Promise<BookDoc> => {
   const buffer = readFileSync(file);
-  const type = file.endsWith('.fb2') ? 'application/x-fictionbook+xml' : 'application/epub+zip';
+  const type = file.endsWith('.fb2')
+    ? 'application/x-fictionbook+xml'
+    : file.endsWith('.mobi')
+      ? 'application/x-mobipocket-ebook'
+      : 'application/epub+zip';
   const f = new File([buffer], file.split('/').pop()!, { type });
   const { book } = await new DocumentLoader(f).open();
   return book;
@@ -70,7 +77,7 @@ const cases = oracles();
 const summarize = (label: string, list: string[], words: number) =>
   `${label}: ${list.length}/${words} mismatches\n  ${list.slice(0, 10).join('\n  ')}`;
 
-/** FB2 sections carry synthetic per-index CFIs: resolve one in its section. */
+/** FB2 and MOBI sections carry synthetic per-index CFIs: resolve one in its section. */
 const resolveFakeCFI = async (book: BookDoc, cfi: string) => {
   const parts = CFI.parse(cfi);
   const index = CFI.fake.toIndex(parts.parent.shift());
@@ -78,12 +85,19 @@ const resolveFakeCFI = async (book: BookDoc, cfi: string) => {
   return { index, range: CFI.toRange(doc, parts) as Range };
 };
 
-describe.each(cases.filter((c) => c.oracle.fb2))('crengine FB2 XPointer oracle: $name', ({
-  oracle,
-  epub,
-}) => {
+const isWholeBook = (oracle: Oracle) => oracle.fb2 || oracle.mobi;
+
+describe.each(
+  cases.filter((c) => isWholeBook(c.oracle)),
+)('crengine $oracle.epub XPointer oracle', ({ oracle, epub }) => {
   it('converts every sampled word both ways exactly as crengine does', async () => {
     const book = await openBook(epub);
+    // Parse each section once: a MOBI novel re-parsed per word runs out of memory.
+    for (const section of book.sections) {
+      const createDocument = section.createDocument.bind(section);
+      let doc: Promise<Document> | undefined;
+      section.createDocument = () => (doc ??= createDocument());
+    }
     const pull: string[] = [];
     const push: string[] = [];
     const words = oracle.words!;
@@ -108,7 +122,8 @@ describe.each(cases.filter((c) => c.oracle.fb2))('crengine FB2 XPointer oracle: 
       try {
         const base = CFI.fake.fromIndex(resolved.index);
         const cfi = CFI.joinIndir(base, CFI.fromRange(resolved.range));
-        const back = await getXPointerFromCFI(cfi, undefined, undefined, book, 'FB2');
+        const format = oracle.fb2 ? 'FB2' : 'MOBI';
+        const back = await getXPointerFromCFI(cfi, undefined, undefined, book, format);
         if (back.pos0 !== word.xp || back.pos1 !== word.xp_end) {
           push.push(
             `"${word.text}": expected ${word.xp} .. ${word.xp_end}, got ${back.pos0} .. ${back.pos1}`,
@@ -124,7 +139,7 @@ describe.each(cases.filter((c) => c.oracle.fb2))('crengine FB2 XPointer oracle: 
   }, 120000);
 });
 
-describe.each(cases.filter((c) => !c.oracle.fb2))('crengine XPointer oracle: $name', ({
+describe.each(cases.filter((c) => !isWholeBook(c.oracle)))('crengine XPointer oracle: $name', ({
   oracle,
   epub,
 }) => {

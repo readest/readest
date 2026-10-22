@@ -55,6 +55,10 @@ class MainActivity : TauriActivity(), KeyDownInterceptor {
 
     override fun onWebViewCreate(webView: WebView) {
         wv = webView
+        // requestFocus() out of touch mode (after a hardware page-turn key)
+        // otherwise focuses the page's first focusable node, the a11y skip link
+        // at the section start, and scrolls the reader there on every wake (#6967).
+        webView.settings.setNeedInitialFocus(false)
         ensureInitialPaint()
         focusWebView()
     }

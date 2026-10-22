@@ -262,4 +262,18 @@ describe('OPDS proxy response isolation', () => {
     const res = await GET(new NextRequest(proxyReq('https://feeds.example.com/feed').url + suffix));
     expect(res.headers.get('Cache-Control')).toBe(expected);
   });
+
+  it('keys a cached anonymous feed on the Authorization header', async () => {
+    // The credential travels in a header, so a guest feed and a signed-in feed
+    // share one proxy URL; without Vary the browser would serve the cached
+    // guest feed after the user adds credentials.
+    fetchSpy.mockResolvedValueOnce(
+      new Response('<feed/>', {
+        headers: { 'Content-Type': 'application/atom+xml' },
+      }),
+    );
+    const res = await GET(proxyReq('https://feeds.example.com/feed'));
+    expect(res.headers.get('Cache-Control')).toBe('public, max-age=300');
+    expect(res.headers.get('Vary')).toBe('Authorization');
+  });
 });

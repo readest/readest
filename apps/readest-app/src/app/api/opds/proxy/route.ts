@@ -269,6 +269,9 @@ async function handleRequest(request: NextRequest, method: 'GET' | 'HEAD') {
           ? 'no-store'
           : 'public, max-age=300',
       );
+      // The catalog credential arrives in this header, so a cached guest feed
+      // must not answer a signed-in request for the same URL.
+      h.set('Vary', 'Authorization');
       h.set('Access-Control-Allow-Origin', '*');
       h.set('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
       h.set('Access-Control-Allow-Headers', 'Content-Type');
@@ -357,6 +360,7 @@ function isolateProxyResponse(response: NextResponse): NextResponse {
     'etag',
     'last-modified',
     'cache-control',
+    'vary',
     'www-authenticate',
     'x-content-length',
     'access-control-allow-origin',

@@ -2543,5 +2543,6 @@
   "Expressive": "Ekspresif",
   "Show Page Thumbnails": "Tunjukkan Lakaran Kecil Halaman",
   "Allow Self-Signed Certificate": "Benarkan Sijil Tandatangan Sendiri",
-  "Skips certificate checks for this server. Turn it off if the server has a valid certificate": "Melangkau semakan sijil untuk pelayan ini. Matikannya jika pelayan mempunyai sijil yang sah"
+  "Skips certificate checks for this server. Turn it off if the server has a valid certificate": "Melangkau semakan sijil untuk pelayan ini. Matikannya jika pelayan mempunyai sijil yang sah",
+  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "Sesetengah perubahan tidak disegerakkan kerana jam peranti ini tidak tepat. Tetapkan tarikh dan masa secara automatik, kemudian cuba lagi."
 }

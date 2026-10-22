@@ -1,5 +1,5 @@
 -- XPointer oracle: dump crengine's own XPointer for every visible word of an
--- EPUB, so Readest's CFI <-> XPointer conversion (src/utils/xcfi.ts) can be
+-- EPUB, FB2 or MOBI, so Readest's CFI <-> XPointer conversion (src/utils/xcfi.ts) can be
 -- validated against the real KOReader engine instead of assumptions about it.
 --
 -- Runs headlessly inside a KOReader emulator build (no window, no sync server):
@@ -59,7 +59,12 @@ local function collect(prefix, start)
     return words, seen
 end
 
-if epub:lower():match("%.fb2$") then
+if epub:lower():match("%.mobi$") or epub:lower():match("%.prc$") or epub:lower():match("%.azw$") then
+    -- crengine reads a MOBI (the old Mobipocket format, not KF8) as one HTML
+    -- document: no DocFragments, its XPointers start at /html/body.
+    result.mobi = true
+    result.words, result.word_count = collect("/html/body", "/html/body")
+elseif epub:lower():match("%.fb2$") then
     -- crengine reads FB2 natively: no DocFragments, its XPointers start at
     -- the FictionBook root and keep the FB2 tag names.
     result.fb2 = true

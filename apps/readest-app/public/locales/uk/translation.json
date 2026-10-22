@@ -2738,5 +2738,6 @@
   "Expressive": "Виразний",
   "Show Page Thumbnails": "Показувати мініатюри сторінок",
   "Allow Self-Signed Certificate": "Дозволити самопідписаний сертифікат",
-  "Skips certificate checks for this server. Turn it off if the server has a valid certificate": "Пропускає перевірку сертифіката для цього сервера. Вимкніть, якщо сервер має дійсний сертифікат"
+  "Skips certificate checks for this server. Turn it off if the server has a valid certificate": "Пропускає перевірку сертифіката для цього сервера. Вимкніть, якщо сервер має дійсний сертифікат",
+  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "Деякі зміни не синхронізувалися, бо годинник цього пристрою показує неправильний час. Увімкніть автоматичне встановлення дати й часу та спробуйте ще раз."
 }

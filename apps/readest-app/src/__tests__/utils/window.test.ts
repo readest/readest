@@ -33,10 +33,12 @@ import { type as osType, version as osVersion } from '@tauri-apps/plugin-os';
 import { useTrafficLightStore } from '@/store/trafficLightStore';
 import type { AppService } from '@/types/system';
 import {
+  canToggleFullScreen,
   formatAppWindowTitle,
   tauriHandleOnCloseWindow,
   tauriHandleToggleFullScreen,
   tauriSetWindowTitle,
+  toggleFullScreen,
   windowNeedsClientOutline,
 } from '@/utils/window';
 
@@ -202,6 +204,76 @@ describe('tauriHandleToggleFullScreen', () => {
     await tauriHandleToggleFullScreen();
 
     expect(win.setFullscreen).toHaveBeenCalledWith(true);
+  });
+});
+
+describe('browser fullscreen', () => {
+  const webApp = { appPlatform: 'web', hasWindow: false } as AppService;
+  const mobileApp = { appPlatform: 'tauri', hasWindow: false } as AppService;
+  const desktopApp = { appPlatform: 'tauri', hasWindow: true } as AppService;
+  const requestFullscreen = vi.fn();
+  const exitFullscreen = vi.fn();
+
+  const stubFullscreen = (enabled: boolean, element: Element | null) => {
+    Object.defineProperty(document, 'fullscreenEnabled', { configurable: true, value: enabled });
+    Object.defineProperty(document, 'fullscreenElement', { configurable: true, value: element });
+    Object.defineProperty(document, 'exitFullscreen', {
+      configurable: true,
+      value: exitFullscreen,
+    });
+    Object.defineProperty(document.documentElement, 'requestFullscreen', {
+      configurable: true,
+      value: requestFullscreen,
+    });
+  };
+
+  beforeEach(() => {
+    requestFullscreen.mockReset().mockResolvedValue(undefined);
+    exitFullscreen.mockReset().mockResolvedValue(undefined);
+    stubFullscreen(true, null);
+  });
+
+  test('is offered in web browsers with the Fullscreen API, where phones have no F11 (#6892)', () => {
+    expect(canToggleFullScreen(webApp)).toBe(true);
+    stubFullscreen(false, null);
+    expect(canToggleFullScreen(webApp)).toBe(false);
+  });
+
+  test('is offered for native windows but not in native mobile webviews', () => {
+    expect(canToggleFullScreen(desktopApp)).toBe(true);
+    expect(canToggleFullScreen(mobileApp)).toBe(false);
+  });
+
+  test('enters browser fullscreen, then exits it', async () => {
+    await toggleFullScreen(webApp);
+    expect(requestFullscreen).toHaveBeenCalledOnce();
+
+    stubFullscreen(true, document.documentElement);
+    await toggleFullScreen(webApp);
+    expect(exitFullscreen).toHaveBeenCalledOnce();
+    expect(requestFullscreen).toHaveBeenCalledOnce();
+  });
+
+  test('swallows a refused fullscreen request', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    requestFullscreen.mockRejectedValue(new Error('denied'));
+
+    await expect(toggleFullScreen(webApp)).resolves.toBeUndefined();
+    expect(warn).toHaveBeenCalled();
+    warn.mockRestore();
+  });
+
+  test('uses the native window in desktop apps', async () => {
+    vi.mocked(osType).mockReturnValue('macos');
+    const win = makeFullscreenWindow({ isFullscreen: false, isMaximized: false });
+    vi.mocked(getCurrentWindow).mockReturnValue(
+      win as unknown as ReturnType<typeof getCurrentWindow>,
+    );
+
+    await toggleFullScreen(desktopApp);
+
+    expect(win.setFullscreen).toHaveBeenCalledWith(true);
+    expect(requestFullscreen).not.toHaveBeenCalled();
   });
 });
 

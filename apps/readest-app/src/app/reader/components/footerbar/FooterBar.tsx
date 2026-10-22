@@ -2,6 +2,7 @@ import clsx from 'clsx';
 import React, { useCallback, useMemo, useEffect, useRef } from 'react';
 import { useEnv } from '@/context/EnvContext';
 import { useSpatialNavigation } from '@/app/reader/hooks/useSpatialNavigation';
+import { useWindowFocusRestore } from '@/app/reader/hooks/useWindowFocusRestore';
 import { useReaderStore } from '@/store/readerStore';
 import { useSidebarStore } from '@/store/sidebarStore';
 import { useBookDataStore } from '@/store/bookDataStore';
@@ -48,6 +49,7 @@ const FooterBar: React.FC<FooterBarProps> = ({
 
   const docs = view?.renderer.getContents() ?? [];
   const pointerInDoc = docs.some(({ doc }) => doc?.body?.style.cursor === 'pointer');
+  const isWindowFocusRestore = useWindowFocusRestore();
 
   const progressInfo = useMemo(
     () => (FIXED_LAYOUT_FORMATS.has(bookFormat) ? section : pageinfo),
@@ -261,7 +263,9 @@ const FooterBar: React.FC<FooterBarProps> = ({
         aria-label={_('Footer Bar')}
         className={containerClasses}
         dir={viewSettings?.rtl ? 'rtl' : 'ltr'}
-        onFocus={() => !appService?.isMobile && setHoveredBookKey(bookKey)}
+        onFocus={() =>
+          !appService?.isMobile && !isWindowFocusRestore() && setHoveredBookKey(bookKey)
+        }
         onMouseLeave={() => window.innerWidth >= 640 && setHoveredBookKey('')}
       >
         <MobileFooterBar {...commonProps} />
