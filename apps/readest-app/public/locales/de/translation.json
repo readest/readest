@@ -2609,5 +2609,16 @@
   "Show Page Thumbnails": "Seitenvorschaubilder anzeigen",
   "Allow Self-Signed Certificate": "Selbstsigniertes Zertifikat erlauben",
   "Skips certificate checks for this server. Turn it off if the server has a valid certificate": "Überspringt die Zertifikatsprüfung für diesen Server. Deaktiviere es, wenn der Server ein gültiges Zertifikat hat",
-  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "Einige Änderungen wurden nicht synchronisiert, weil die Uhr dieses Geräts falsch geht. Stelle Datum und Uhrzeit auf automatisch und versuche es erneut."
+  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "Einige Änderungen wurden nicht synchronisiert, weil die Uhr dieses Geräts falsch geht. Stelle Datum und Uhrzeit auf automatisch und versuche es erneut.",
+  "Creating package for {{count}} book(s)..._one": "Paket für {{count}} Buch wird erstellt...",
+  "Creating package for {{count}} book(s)..._other": "Paket für {{count}} Bücher wird erstellt...",
+  "No local files available to pack": "Keine lokalen Dateien zum Packen verfügbar",
+  "{{count}} book(s) omitted (file not available locally)_one": "{{count}} Buch ausgelassen (Datei nicht lokal verfügbar)",
+  "{{count}} book(s) omitted (file not available locally)_other": "{{count}} Bücher ausgelassen (Dateien nicht lokal verfügbar)",
+  "Exported {{filename}}": "{{filename}} exportiert",
+  "Failed to export package": "Paket konnte nicht exportiert werden",
+  "Pack": "Packen",
+  "Failed to create pack": "Paket konnte nicht erstellt werden",
+  "Restored collection \"{{name}}\" ({{count}} books)_one": "Sammlung „{{name}}“ wiederhergestellt ({{count}} Buch)",
+  "Restored collection \"{{name}}\" ({{count}} books)_other": "Sammlung „{{name}}“ wiederhergestellt ({{count}} Bücher)"
 }

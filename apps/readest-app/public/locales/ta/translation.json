@@ -2609,5 +2609,16 @@
   "Show Page Thumbnails": "பக்க சிறுபடங்களைக் காட்டு",
   "Allow Self-Signed Certificate": "சுய கையொப்பமிட்ட சான்றிதழை அனுமதி",
   "Skips certificate checks for this server. Turn it off if the server has a valid certificate": "இந்த சேவையகத்திற்கான சான்றிதழ் சரிபார்ப்பைத் தவிர்க்கிறது. சேவையகத்தில் செல்லுபடியான சான்றிதழ் இருந்தால் இதை முடக்கவும்",
-  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "இந்தச் சாதனத்தின் கடிகாரம் சரியாக இல்லாததால் சில மாற்றங்கள் ஒத்திசைக்கப்படவில்லை. தேதியையும் நேரத்தையும் தானாக அமைத்து, மீண்டும் முயலவும்."
+  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "இந்தச் சாதனத்தின் கடிகாரம் சரியாக இல்லாததால் சில மாற்றங்கள் ஒத்திசைக்கப்படவில்லை. தேதியையும் நேரத்தையும் தானாக அமைத்து, மீண்டும் முயலவும்.",
+  "Creating package for {{count}} book(s)..._one": "{{count}} புத்தகத்திற்கான தொகுப்பு உருவாக்கப்படுகிறது...",
+  "Creating package for {{count}} book(s)..._other": "{{count}} புத்தகங்களுக்கான தொகுப்பு உருவாக்கப்படுகிறது...",
+  "No local files available to pack": "பேக் செய்ய உள்ளூர் கோப்புகள் இல்லை",
+  "{{count}} book(s) omitted (file not available locally)_one": "{{count}} புத்தகம் தவிர்க்கப்பட்டது (கோப்பு உள்ளூரில் இல்லை)",
+  "{{count}} book(s) omitted (file not available locally)_other": "{{count}} புத்தகங்கள் தவிர்க்கப்பட்டன (கோப்புகள் உள்ளூரில் இல்லை)",
+  "Exported {{filename}}": "{{filename}} ஏற்றுமதி செய்யப்பட்டது",
+  "Failed to export package": "தொகுப்பை ஏற்றுமதி செய்ய முடியவில்லை",
+  "Pack": "பேக்",
+  "Failed to create pack": "பேக்கை உருவாக்க முடியவில்லை",
+  "Restored collection \"{{name}}\" ({{count}} books)_one": "தொகுப்பு \"{{name}}\" மீட்டமைக்கப்பட்டது ({{count}} புத்தகம்)",
+  "Restored collection \"{{name}}\" ({{count}} books)_other": "தொகுப்பு \"{{name}}\" மீட்டமைக்கப்பட்டது ({{count}} புத்தகங்கள்)"
 }
