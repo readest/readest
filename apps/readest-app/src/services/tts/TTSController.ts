@@ -2145,6 +2145,7 @@ export class TTSController extends EventTarget {
     this.#awaitingAudio = false;
     // A handover (the next paragraph starting) keeps them: they are its audio.
     if (!handover) this.#withdrawPreloads();
+    if (!handover) this.#lastSetMark = null;
     if (this.#currentSpeakAbortController) {
       this.#currentSpeakAbortController.abort();
     }

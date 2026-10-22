@@ -185,4 +185,20 @@ describe('TTSController look-ahead keeps the sentence being read (#6850)', () =>
     controller.dispatchSpeakMark({ offset: 0, name: '0', text: 'Four.', language: 'en' });
     expect(controller.getSpokenSentence()?.text).toBe('Four.');
   });
+
+  test('normal stop drops the old speech mark before playback restarts', async () => {
+    const { controller, tts } = await startOn('<p>One. Two. Three.</p><p>Four. Five.</p>');
+    tts.next();
+    tts.setMark('0');
+    controller.state = 'playing';
+    expect(controller.getSpokenSentence()?.text).toBe('Two.');
+
+    await controller.stop(true);
+    controller.state = 'playing';
+    expect(controller.getSpokenSentence()?.text).toBe('Two.');
+
+    await controller.stop();
+    controller.state = 'playing';
+    expect(controller.getSpokenSentence()?.text).toBe('Four.');
+  });
 });
