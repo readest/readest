@@ -60,3 +60,22 @@ export const writeTextToClipboard = async (text: string): Promise<boolean> => {
 
   return false;
 };
+
+/** Read on a user gesture; return null when the platform denies clipboard access. */
+export const readTextFromClipboard = async (): Promise<string | null> => {
+  if (isTauriAppPlatform()) {
+    try {
+      const { readText } = await import('@tauri-apps/plugin-clipboard-manager');
+      return await readText();
+    } catch (err) {
+      console.warn('[clipboard] tauri readText failed, falling back', err);
+    }
+  }
+
+  try {
+    return (await navigator.clipboard?.readText()) ?? null;
+  } catch (err) {
+    console.warn('[clipboard] navigator.clipboard.readText failed', err);
+    return null;
+  }
+};

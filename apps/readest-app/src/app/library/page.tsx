@@ -118,6 +118,7 @@ import ImportFromFolderDialog, {
 } from './components/ImportFromFolderDialog';
 import WebSourcesDialog from './components/WebSourcesDialog';
 import ImportNovelDialog from './components/ImportNovelDialog';
+import ImportPastedTextDialog from './components/ImportPastedTextDialog';
 import NowPlayingBar from './components/NowPlayingBar';
 import { convertToEpubWithWorker } from '@/services/send/conversion/conversionWorker';
 import type { WebBrowserPage } from '@/services/webBrowser/webBrowser';
@@ -267,6 +268,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   const [showAddFeed, setShowAddFeed] = useState(false);
   const [showWebSources, setShowWebSources] = useState(false);
   const [showImportNovel, setShowImportNovel] = useState(false);
+  const [showImportPastedText, setShowImportPastedText] = useState(false);
   const [importMenuAnchor, setImportMenuAnchor] = useState<HTMLElement | null>(null);
   const [loading, setLoading] = useState(false);
   // Seed from the library store: if we already have books in memory (the
@@ -932,7 +934,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     files: SelectedFile[],
     groupId?: string,
     options: { silent?: boolean } = {},
-  ): Promise<{ failedPaths: string[] }> =>
+  ): Promise<{ failedPaths: string[]; importedCount: number }> =>
     // Whole runs are serialized (see enqueueImportRun); the lookup index is
     // built inside the run so a queued run sees everything the previous one
     // imported.
@@ -942,7 +944,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     files: SelectedFile[],
     groupId?: string,
     options: { silent?: boolean } = {},
-  ): Promise<{ failedPaths: string[] }> => {
+  ): Promise<{ failedPaths: string[]; importedCount: number }> => {
     setLoading(true);
     const { library } = useLibraryStore.getState();
     // Build the lookup index ONCE per import batch so each book lookup is
@@ -1081,7 +1083,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     }
 
     setLoading(false);
-    return { failedPaths };
+    return { failedPaths, importedCount: successfulImports.length };
   };
 
   /**
@@ -1339,6 +1341,12 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     setIsSelectMode(false);
     const groupId = searchParams?.get('group') || '';
     await importBooks([{ file }], groupId);
+  };
+
+  const handleImportPastedText = async (file: File) => {
+    setIsSelectMode(false);
+    const { importedCount } = await importBooks([{ file }], getImportTargetGroupId());
+    return importedCount > 0;
   };
 
   const handleImportBooksFromDirectory = async (dirPath?: string) => {
@@ -1914,6 +1922,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
           isSelectAll={isSelectAll}
           onPullLibrary={pullLibrary}
           onImportBooksFromFiles={handleImportBooksFromFiles}
+          onImportPastedText={() => setShowImportPastedText(true)}
           onImportBooksFromDirectory={
             appService?.canReadExternalDir ? handleImportBooksFromDirectory : undefined
           }
@@ -2077,6 +2086,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
           anchor={importMenuAnchor}
           onClose={() => setImportMenuAnchor(null)}
           onImportBooksFromFiles={handleImportBooksFromFiles}
+          onImportPastedText={() => setShowImportPastedText(true)}
           onImportBooksFromDirectory={
             appService?.canReadExternalDir ? handleImportBooksFromDirectory : undefined
           }
@@ -2195,6 +2205,11 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
         isOpen={showImportNovel}
         onClose={() => setShowImportNovel(false)}
         onImport={handleImportNovelFile}
+      />
+      <ImportPastedTextDialog
+        isOpen={showImportPastedText}
+        onClose={() => setShowImportPastedText(false)}
+        onImport={handleImportPastedText}
       />
       <ClipSignInAlert />
       <Toast />

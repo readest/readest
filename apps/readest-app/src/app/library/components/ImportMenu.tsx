@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import { MdLanguage, MdMenuBook, MdRssFeed } from 'react-icons/md';
+import { MdContentPaste, MdLanguage, MdMenuBook, MdRssFeed } from 'react-icons/md';
 import { LuLibrary } from 'react-icons/lu';
 import { IoFileTray } from 'react-icons/io5';
 import { useEnv } from '@/context/EnvContext';
@@ -11,6 +11,7 @@ export interface ImportMenuProps {
   menuClassName?: string;
   setIsDropdownOpen?: (open: boolean) => void;
   onImportBooksFromFiles: () => void;
+  onImportPastedText?: () => void;
   onImportBooksFromDirectory?: () => void;
   onImportFromWebBrowser?: () => void;
   onImportBookFromNovelUrl?: () => void;
@@ -22,6 +23,7 @@ const ImportMenu: React.FC<ImportMenuProps> = ({
   menuClassName,
   setIsDropdownOpen,
   onImportBooksFromFiles,
+  onImportPastedText,
   onImportBooksFromDirectory,
   onImportFromWebBrowser,
   onImportBookFromNovelUrl,
@@ -33,6 +35,11 @@ const ImportMenu: React.FC<ImportMenuProps> = ({
 
   const handleImportFromFiles = () => {
     onImportBooksFromFiles();
+    setIsDropdownOpen?.(false);
+  };
+
+  const handleImportPastedText = () => {
+    onImportPastedText?.();
     setIsDropdownOpen?.(false);
   };
 
@@ -74,6 +81,13 @@ const ImportMenu: React.FC<ImportMenuProps> = ({
         Icon={<IoFileTray className='h-5 w-5' />}
         onClick={handleImportFromFiles}
       />
+      {onImportPastedText && (
+        <MenuItem
+          label={_('From Pasted Text')}
+          Icon={<MdContentPaste className='h-5 w-5' />}
+          onClick={handleImportPastedText}
+        />
+      )}
       {onImportBooksFromDirectory && (
         <MenuItem
           label={_('From Directory')}
