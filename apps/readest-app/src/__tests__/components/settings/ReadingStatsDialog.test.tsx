@@ -117,8 +117,8 @@ describe('ReadingTrendsChart (Progress line chart)', () => {
 
     // Check metric labels
     expect(screen.getByText('Time')).toBeDefined();
-    expect(screen.getByText('Books')).toBeDefined();
-    expect(screen.getByText('Pages')).toBeDefined();
+    expect(screen.getByText('Peak Books')).toBeDefined();
+    expect(screen.getByText('Est. Pages')).toBeDefined();
 
     // Switch range pill to 7D
     fireEvent.click(screen.getByText('7D'));
