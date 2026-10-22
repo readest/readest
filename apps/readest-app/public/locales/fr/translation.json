@@ -593,7 +593,6 @@
   "Translated Only": "Traduit Seulement",
   "Source Only": "Source Seulement",
   "TTS Text": "TTS Texte",
-  "The book file is corrupted": "Le fichier du livre est corrompu",
   "The book file is empty": "Le fichier du livre est vide",
   "Failed to open the book file": "Échec de l'ouverture du fichier du livre",
   "On-Demand Purchase": "Achat à la Demande",
@@ -2674,5 +2673,7 @@
   "Show Page Thumbnails": "Afficher les miniatures des pages",
   "Allow Self-Signed Certificate": "Autoriser le certificat auto-signé",
   "Skips certificate checks for this server. Turn it off if the server has a valid certificate": "Ignore la vérification du certificat pour ce serveur. Désactivez-le si le serveur a un certificat valide",
-  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "Certaines modifications n'ont pas été synchronisées, car l'horloge de cet appareil n'est pas à l'heure. Réglez la date et l'heure automatiquement, puis réessayez."
+  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "Certaines modifications n'ont pas été synchronisées, car l'horloge de cet appareil n'est pas à l'heure. Réglez la date et l'heure automatiquement, puis réessayez.",
+  "This file is not a supported book format, or it is corrupted": "Ce fichier n'est pas un format de livre pris en charge ou il est corrompu",
+  "The book file may be corrupted": "Le fichier du livre est peut-être corrompu"
 }

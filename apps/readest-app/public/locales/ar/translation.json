@@ -608,7 +608,6 @@
   "Translated Only": "المترجم فقط",
   "Source Only": "المصدر فقط",
   "TTS Text": "نص تحويل النص إلى كلام",
-  "The book file is corrupted": "ملف الكتاب تالف",
   "The book file is empty": "ملف الكتاب فارغ",
   "Failed to open the book file": "فشل في فتح ملف الكتاب",
   "On-Demand Purchase": "الشراء عند الطلب",
@@ -2869,5 +2868,7 @@
   "Show Page Thumbnails": "إظهار الصور المصغرة للصفحات",
   "Allow Self-Signed Certificate": "السماح بالشهادة الموقّعة ذاتيًا",
   "Skips certificate checks for this server. Turn it off if the server has a valid certificate": "يتخطى التحقق من الشهادة لهذا الخادم. أوقف تشغيله إذا كانت لدى الخادم شهادة صالحة",
-  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "لم تتم مزامنة بعض التغييرات لأن ساعة هذا الجهاز غير مضبوطة. اضبط التاريخ والوقت تلقائيًا، ثم حاول مرة أخرى."
+  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "لم تتم مزامنة بعض التغييرات لأن ساعة هذا الجهاز غير مضبوطة. اضبط التاريخ والوقت تلقائيًا، ثم حاول مرة أخرى.",
+  "This file is not a supported book format, or it is corrupted": "هذا الملف ليس بتنسيق كتاب مدعوم، أو أنه تالف",
+  "The book file may be corrupted": "قد يكون ملف الكتاب تالفًا"
 }

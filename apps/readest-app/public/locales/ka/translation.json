@@ -1991,7 +1991,6 @@
   "This book format is not supported": "წიგნის ეს ფორმატი მხარდაჭერილი არ არის",
   "Failed to open the book file": "წიგნის ფაილის გახსნა ვერ მოხერხდა",
   "The book file is empty": "წიგნის ფაილი ცარიელია",
-  "The book file is corrupted": "წიგნის ფაილი დაზიანებულია",
   "Google Books": "Google Books",
   "Open Library": "Open Library",
   "This chapter could not be downloaded.": "ეს თავი ვერ ჩამოიტვირთა.",
@@ -2609,5 +2608,7 @@
   "Show Page Thumbnails": "გვერდის მინიატურების ჩვენება",
   "Allow Self-Signed Certificate": "თვითხელმოწერილი სერტიფიკატის დაშვება",
   "Skips certificate checks for this server. Turn it off if the server has a valid certificate": "გამოტოვებს ამ სერვერის სერტიფიკატის შემოწმებას. გამორთეთ, თუ სერვერს აქვს მოქმედი სერტიფიკატი",
-  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "ზოგიერთი ცვლილება არ სინქრონიზდა, რადგან ამ მოწყობილობის საათი არასწორია. დააყენეთ თარიღი და დრო ავტომატურად და სცადეთ ხელახლა."
+  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "ზოგიერთი ცვლილება არ სინქრონიზდა, რადგან ამ მოწყობილობის საათი არასწორია. დააყენეთ თარიღი და დრო ავტომატურად და სცადეთ ხელახლა.",
+  "This file is not a supported book format, or it is corrupted": "ეს ფაილი არ არის მხარდაჭერილი წიგნის ფორმატი, ან ის დაზიანებულია",
+  "The book file may be corrupted": "წიგნის ფაილი შეიძლება დაზიანებული იყოს"
 }

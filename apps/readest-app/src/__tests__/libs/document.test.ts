@@ -2,6 +2,8 @@ import { afterEach, describe, it, expect, vi } from 'vitest';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
 import { DocumentLoader, getDirection } from '@/libs/document';
+import { getImportErrorMessage } from '@/services/errors';
+import { BlobWriter, TextReader, ZipWriter } from '@zip.js/zip.js';
 
 if (typeof globalThis['CSS'] === 'undefined') {
   (globalThis as Record<string, unknown>)['CSS'] = {
@@ -28,6 +30,41 @@ const loadFixtureBytes = (name: string): Uint8Array => {
 };
 
 describe('DocumentLoader.open', () => {
+  it('reports bytes with no recognized book signature as unrecognized', async () => {
+    const file = new File([new Uint8Array([0x89, 0x50, 0x4e, 0x47])], 'picture.png');
+
+    await expect(new DocumentLoader(file).open()).rejects.toThrow('Unrecognized book structure');
+  });
+
+  it('reports a valid ZIP without EPUB structure as unrecognized', async () => {
+    const writer = new ZipWriter(new BlobWriter('application/zip'));
+    await writer.add('readme.txt', new TextReader('This archive is not a book.'));
+    const file = new File([await writer.close()], 'notes.zip');
+
+    await expect(new DocumentLoader(file).open()).rejects.toThrow('Unrecognized book structure');
+  });
+
+  it('reports an EPUB-like ZIP that cannot be parsed as potentially corrupted', async () => {
+    for (const entryName of ['META-INF/container.xml', 'book.opf']) {
+      const writer = new ZipWriter(new BlobWriter('application/zip'));
+      await writer.add(entryName, new TextReader(''));
+      const file = new File([await writer.close()], 'broken.epub');
+
+      await expect(new DocumentLoader(file).open()).rejects.toThrow(
+        'Unsupported or corrupted book file',
+      );
+    }
+  });
+
+  it('uses distinct, qualified import messages for unrecognized and unparseable books', () => {
+    expect(getImportErrorMessage('Failed to open the book file: Unrecognized book structure')).toBe(
+      'This file is not a supported book format, or it is corrupted',
+    );
+    expect(
+      getImportErrorMessage('Failed to open the book file: Unsupported or corrupted book file'),
+    ).toBe('The book file may be corrupted');
+  });
+
   it('opens an EPUB whose first local file header has a non-standard signature byte', async () => {
     // Some EPUB writers in the wild produce a malformed first local file header
     // signature - PK\x03\x02 instead of the spec-mandated PK\x03\x04.

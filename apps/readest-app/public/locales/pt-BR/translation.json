@@ -1264,7 +1264,6 @@
   "This book format is not supported": "Este formato de livro não é suportado",
   "Failed to open the book file": "Falha ao abrir o arquivo do livro",
   "The book file is empty": "O arquivo do livro está vazio",
-  "The book file is corrupted": "O arquivo do livro está corrompido",
   "Google Books": "Google Books",
   "Open Library": "Open Library",
   "Book not found in library": "Livro não encontrado na biblioteca",
@@ -2674,5 +2673,7 @@
   "Show Page Thumbnails": "Mostrar miniaturas das páginas",
   "Allow Self-Signed Certificate": "Permitir certificado autoassinado",
   "Skips certificate checks for this server. Turn it off if the server has a valid certificate": "Ignora a verificação do certificado deste servidor. Desative se o servidor tiver um certificado válido",
-  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "Algumas alterações não foram sincronizadas porque o relógio deste dispositivo está errado. Defina a data e a hora automaticamente e tente novamente."
+  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "Algumas alterações não foram sincronizadas porque o relógio deste dispositivo está errado. Defina a data e a hora automaticamente e tente novamente.",
+  "This file is not a supported book format, or it is corrupted": "Este arquivo não é um formato de livro compatível ou está corrompido",
+  "The book file may be corrupted": "O arquivo do livro pode estar corrompido"
 }

@@ -583,7 +583,6 @@
   "Translated Only": "མདོག་ཚད་ཀྱི་བསྡུར་བ།",
   "Source Only": "ཡིག་སྒྱུར་སྤོ་བ།",
   "TTS Text": "TTS ཡིག",
-  "The book file is corrupted": "དེབ་གནས་བཅས་པའི་སྤྱོད་བྱས་མ་ཐུབ།",
   "The book file is empty": "དེབ་གནས་བཅས་པའི་སྤྱོད་བྱས་མ་ཐུབ།",
   "Failed to open the book file": "དེབ་གནས་བཅས་པའི་སྤྱོད་བྱས་མ་ཐུབ།",
   "On-Demand Purchase": "অনুরোধে ক্রয়",
@@ -2544,5 +2543,7 @@
   "Show Page Thumbnails": "ཤོག་ངོས་ཀྱི་པར་ཆུང་སྟོན།",
   "Allow Self-Signed Certificate": "རང་མཚན་རྟགས་ཀྱི་ལག་ཁྱེར་ལ་ཆོག་མཆན་སྤྲོད།",
   "Skips certificate checks for this server. Turn it off if the server has a valid certificate": "ཞབས་ཞུ་འཕྲུལ་ཆས་འདིའི་ལག་ཁྱེར་ཞིབ་བཤེར་བྱེད་མི་དགོས། ཞབས་ཞུ་འཕྲུལ་ཆས་ལ་ནུས་ལྡན་ལག་ཁྱེར་ཡོད་ན་འདི་སྒོ་རྒྱོབ།",
-  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "སྒྲིག་ཆས་འདིའི་ཆུ་ཚོད་མི་འགྲིག་པས་བཟོ་བཅོས་ཁ་ཤས་མཉམ་སྡེབ་མ་བྱུང་། ཚེས་གྲངས་དང་དུས་ཚོད་རང་འགུལ་གྱིས་སྒྲིག་རྗེས་ཡང་བསྐྱར་ཚོད་ལྟ་གྱིས།"
+  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "སྒྲིག་ཆས་འདིའི་ཆུ་ཚོད་མི་འགྲིག་པས་བཟོ་བཅོས་ཁ་ཤས་མཉམ་སྡེབ་མ་བྱུང་། ཚེས་གྲངས་དང་དུས་ཚོད་རང་འགུལ་གྱིས་སྒྲིག་རྗེས་ཡང་བསྐྱར་ཚོད་ལྟ་གྱིས།",
+  "This file is not a supported book format, or it is corrupted": "ཡིག་ཆ་འདི་རྒྱབ་སྐྱོར་བྱེད་པའི་དེབ་ཀྱི་རྣམ་གཞག་མིན་པའམ་ཡང་ན་སྐྱོན་ཤོར་འདུག",
+  "The book file may be corrupted": "དཔེ་ཆའི་ཡིག་ཆ་ལ་སྐྱོན་ཤོར་ཡོད་སྲིད།"
 }

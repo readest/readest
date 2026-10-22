@@ -598,7 +598,6 @@
   "Translated Only": "Только перевод",
   "Source Only": "Только источник",
   "TTS Text": "TTS Текст",
-  "The book file is corrupted": "Файл книги поврежден",
   "The book file is empty": "Файл книги пуст",
   "Failed to open the book file": "Не удалось открыть файл книги",
   "On-Demand Purchase": "Покупка по запросу",
@@ -2739,5 +2738,7 @@
   "Show Page Thumbnails": "Показывать миниатюры страниц",
   "Allow Self-Signed Certificate": "Разрешить самоподписанный сертификат",
   "Skips certificate checks for this server. Turn it off if the server has a valid certificate": "Пропускает проверку сертификата для этого сервера. Отключите, если у сервера действительный сертификат",
-  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "Некоторые изменения не синхронизировались, потому что часы на этом устройстве идут неверно. Включите автоматическую установку даты и времени и повторите попытку."
+  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "Некоторые изменения не синхронизировались, потому что часы на этом устройстве идут неверно. Включите автоматическую установку даты и времени и повторите попытку.",
+  "This file is not a supported book format, or it is corrupted": "Этот файл не относится к поддерживаемым форматам книг или повреждён",
+  "The book file may be corrupted": "Возможно, файл книги поврежден."
 }

@@ -584,7 +584,6 @@
   "Translated Only": "仅译文",
   "Source Only": "仅原文",
   "TTS Text": "TTS 文本",
-  "The book file is corrupted": "书籍文件已损坏",
   "The book file is empty": "书籍文件为空",
   "Failed to open the book file": "无法打开书籍文件",
   "On-Demand Purchase": "按需购买",
@@ -2544,5 +2543,7 @@
   "Show Page Thumbnails": "显示页面缩略图",
   "Allow Self-Signed Certificate": "允许自签名证书",
   "Skips certificate checks for this server. Turn it off if the server has a valid certificate": "将跳过此服务器的证书校验。如果服务器有有效证书，请关闭此选项",
-  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "此设备的时钟不准确，部分更改未能同步。请将日期和时间设为自动设置，然后重试。"
+  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "此设备的时钟不准确，部分更改未能同步。请将日期和时间设为自动设置，然后重试。",
+  "This file is not a supported book format, or it is corrupted": "该文件不是受支持的书籍格式，或者已损坏",
+  "The book file may be corrupted": "书籍文件可能已损坏"
 }

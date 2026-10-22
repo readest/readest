@@ -588,7 +588,6 @@
   "Translated Only": "فقط ترجمه شده",
   "Source Only": "فقط منبع",
   "TTS Text": "متن TTS",
-  "The book file is corrupted": "فایل کتاب خراب است",
   "The book file is empty": "فایل کتاب خالی است",
   "Failed to open the book file": "خطا در باز کردن فایل کتاب",
   "On-Demand Purchase": "خرید سفارشی",
@@ -2609,5 +2608,7 @@
   "Show Page Thumbnails": "نمایش تصاویر کوچک صفحات",
   "Allow Self-Signed Certificate": "اجازه به گواهی خودامضا",
   "Skips certificate checks for this server. Turn it off if the server has a valid certificate": "بررسی گواهی این سرور را نادیده می‌گیرد. اگر سرور گواهی معتبر دارد، آن را خاموش کنید",
-  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "برخی تغییرات همگام‌سازی نشدند، چون ساعت این دستگاه درست نیست. تاریخ و زمان را روی تنظیم خودکار بگذارید و دوباره امتحان کنید."
+  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "برخی تغییرات همگام‌سازی نشدند، چون ساعت این دستگاه درست نیست. تاریخ و زمان را روی تنظیم خودکار بگذارید و دوباره امتحان کنید.",
+  "This file is not a supported book format, or it is corrupted": "این فایل قالب کتاب پشتیبانی‌شده‌ای ندارد یا خراب است",
+  "The book file may be corrupted": "فایل کتاب ممکن است خراب باشد"
 }

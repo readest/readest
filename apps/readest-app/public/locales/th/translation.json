@@ -583,7 +583,6 @@
   "Translated Only": "แปลแล้วเท่านั้น",
   "Source Only": "ต้นฉบับเท่านั้น",
   "TTS Text": "ข้อความ TTS",
-  "The book file is corrupted": "ไฟล์หนังสือเสียหาย",
   "The book file is empty": "ไฟล์หนังสือว่างเปล่า",
   "Failed to open the book file": "ไม่สามารถเปิดไฟล์หนังสือได้",
   "On-Demand Purchase": "การซื้อเมื่อจำเป็น",
@@ -2544,5 +2543,7 @@
   "Show Page Thumbnails": "แสดงภาพขนาดย่อของหน้า",
   "Allow Self-Signed Certificate": "อนุญาตใบรับรองที่ลงนามด้วยตนเอง",
   "Skips certificate checks for this server. Turn it off if the server has a valid certificate": "ข้ามการตรวจสอบใบรับรองของเซิร์ฟเวอร์นี้ ปิดตัวเลือกนี้หากเซิร์ฟเวอร์มีใบรับรองที่ถูกต้อง",
-  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "การเปลี่ยนแปลงบางส่วนไม่ได้ซิงค์เพราะนาฬิกาของอุปกรณ์นี้ไม่ตรง ตั้งวันที่และเวลาเป็นอัตโนมัติ แล้วลองอีกครั้ง"
+  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "การเปลี่ยนแปลงบางส่วนไม่ได้ซิงค์เพราะนาฬิกาของอุปกรณ์นี้ไม่ตรง ตั้งวันที่และเวลาเป็นอัตโนมัติ แล้วลองอีกครั้ง",
+  "This file is not a supported book format, or it is corrupted": "ไฟล์นี้ไม่ใช่รูปแบบหนังสือที่รองรับ หรือไฟล์อาจเสียหาย",
+  "The book file may be corrupted": "ไฟล์หนังสืออาจเสียหาย"
 }

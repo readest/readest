@@ -1240,7 +1240,6 @@
   "This book format is not supported": "Ushbu kitob formati qoʻllab-quvvatlanmaydi",
   "Failed to open the book file": "Kitob faylini ochib boʻlmadi",
   "The book file is empty": "Kitob fayli boʻsh",
-  "The book file is corrupted": "Kitob fayli buzilgan",
   "Google Books": "Google Books",
   "Open Library": "Open Library",
   "Book not found in library": "Kitob kutubxonada topilmadi",
@@ -2609,5 +2608,7 @@
   "Show Page Thumbnails": "Sahifa eskizlarini ko'rsatish",
   "Allow Self-Signed Certificate": "O‘zi imzolagan sertifikatga ruxsat berish",
   "Skips certificate checks for this server. Turn it off if the server has a valid certificate": "Ushbu server uchun sertifikat tekshiruvini o‘tkazib yuboradi. Serverda haqiqiy sertifikat bo‘lsa, uni o‘chiring",
-  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "Ba'zi o'zgarishlar sinxronlanmadi, chunki bu qurilmaning soati noto'g'ri. Sana va vaqtni avtomatik sozlang, so'ng qayta urinib ko'ring."
+  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "Ba'zi o'zgarishlar sinxronlanmadi, chunki bu qurilmaning soati noto'g'ri. Sana va vaqtni avtomatik sozlang, so'ng qayta urinib ko'ring.",
+  "This file is not a supported book format, or it is corrupted": "Bu fayl qoʻllab-quvvatlanadigan kitob formati emas yoki u buzilgan",
+  "The book file may be corrupted": "Kitob fayli buzilgan bo'lishi mumkin"
 }
