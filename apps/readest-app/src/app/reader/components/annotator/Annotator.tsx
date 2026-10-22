@@ -2739,6 +2739,8 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
             return (
               <DictionarySheet
                 word={selection?.text as string}
+                bookKey={bookKey}
+                seriesName={bookData.book?.metadata?.series}
                 lang={bookData.bookDoc?.metadata.language as string}
                 selection={dictionarySelection}
                 onDismiss={handleDismissPopupShowToolbar}
@@ -2750,6 +2752,8 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
           return (
             <DictionaryPopup
               word={selection?.text as string}
+              bookKey={bookKey}
+              seriesName={bookData.book?.metadata?.series}
               lang={bookData.bookDoc?.metadata.language as string}
               selection={dictionarySelection}
               position={dictPopupPosition}
