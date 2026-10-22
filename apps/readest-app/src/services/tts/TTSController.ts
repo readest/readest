@@ -2386,7 +2386,14 @@ export class TTSController extends EventTarget {
   }
 
   getSpokenSentence(): { cfi: string; text: string } | null {
-    const range = this.#getTts()?.getLastRange();
+    // The text iterator may step ahead while audio is still playing. The last
+    // dispatched mark is the sentence that actually started sounding; only
+    // use it while it belongs to the current section document.
+    const spokenRange = this.#lastSetMark?.range;
+    const range =
+      this.state === 'playing' && spokenRange?.startContainer.ownerDocument === this.#ttsDoc
+        ? spokenRange
+        : this.#getTts()?.getLastRange();
     if (!range || this.#ttsSectionIndex < 0) return null;
     try {
       const cfi = this.view.getCFI(this.#ttsSectionIndex, range);

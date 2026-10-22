@@ -64,6 +64,8 @@ vi.mock('foliate-js/overlayer.js', () => ({ Overlayer: { highlight: 'highlightFn
 
 interface LiveTTS {
   start(): string | undefined;
+  next(): string | undefined;
+  setMark(mark: string): Range | undefined;
   getLastRange(): Range | undefined;
 }
 const ttsInstances: LiveTTS[] = [];
@@ -161,5 +163,26 @@ describe('TTSController look-ahead keeps the sentence being read (#6850)', () =>
     await controller.backward(true);
 
     expect(tts.getLastRange()?.toString().trim()).toBe('One.');
+  });
+
+  test('highlight shortcut keeps the audible sentence when the text cursor moves ahead', async () => {
+    const { controller, tts } = await startOn('<p>One. Two. Three.</p><p>Four. Five.</p>');
+    controller.state = 'playing';
+
+    // The live text iterator can be used to prepare later content while the
+    // current audio chunk is still sounding. It is not the audible position.
+    tts.next();
+    expect(tts.getLastRange()).toBeUndefined();
+    expect(controller.getSpokenSentence()?.text).toBe('Two.');
+
+    tts.setMark('0');
+    expect(tts.getLastRange()?.toString().trim()).toBe('Four.');
+    expect(controller.getSpokenSentence()?.text).toBe('Two.');
+
+    controller.state = 'paused';
+    expect(controller.getSpokenSentence()?.text).toBe('Four.');
+    controller.state = 'playing';
+    controller.dispatchSpeakMark({ offset: 0, name: '0', text: 'Four.', language: 'en' });
+    expect(controller.getSpokenSentence()?.text).toBe('Four.');
   });
 });
