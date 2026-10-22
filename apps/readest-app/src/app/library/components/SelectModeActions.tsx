@@ -9,7 +9,7 @@ import {
   MdOutlineCloudDownload,
   MdWifiTethering,
   MdLabelOutline,
-  MdArchive,
+  MdOutlineArchive,
 } from 'react-icons/md';
 import { IoShareSocialOutline } from 'react-icons/io5';
 import { LuFolderPlus } from 'react-icons/lu';
@@ -209,7 +209,7 @@ const SelectModeActions: React.FC<SelectModeActionsProps> = ({
               (!hasSelection || !hasValidBooks) && 'btn-disabled opacity-50',
             )}
           >
-            <MdArchive />
+            <MdOutlineArchive />
             <div>{_('Pack')}</div>
           </button>
         )}
