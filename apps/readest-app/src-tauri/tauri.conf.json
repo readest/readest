@@ -184,10 +184,10 @@
       },
       {
         "name": "Readest Book Package",
-        "ext": ["readestpack"],
-        "contentTypes": ["com.readest.pack"],
+        "ext": ["rbooks"],
+        "contentTypes": ["com.readest.books"],
         "description": "Readest Book Package",
-        "mimeType": "application/x-readestpack",
+        "mimeType": "application/x-readest-books",
         "role": "Viewer",
         "rank": "Owner"
       }

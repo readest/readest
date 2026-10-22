@@ -654,7 +654,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
     setShowSelectModeActions(false);
     handleSetSelectMode(false);
 
-    // Several books from one group travel as a .readestpack so the receiver
+    // Several books from one group travel as a .rbooks pack so the receiver
     // restores the group; a single book is sent as itself.
     const collectionName = books.length > 1 ? getCommonGroupName(books) : undefined;
 

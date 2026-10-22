@@ -209,7 +209,7 @@
 
       <dict>
         <key>UTTypeIdentifier</key>
-        <string>com.readest.pack</string>
+        <string>com.readest.books</string>
         <key>UTTypeDescription</key>
         <string>Readest Book Package</string>
         <key>UTTypeConformsTo</key>
@@ -220,10 +220,10 @@
         <dict>
           <key>public.filename-extension</key>
           <array>
-            <string>readestpack</string>
+            <string>rbooks</string>
           </array>
           <key>public.mime-type</key>
-          <string>application/x-readestpack</string>
+          <string>application/x-readest-books</string>
         </dict>
       </dict>
 

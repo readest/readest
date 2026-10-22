@@ -36,9 +36,9 @@ function makeMockAppService(fileContent = 'mock epub content'): AppService {
 
 describe('packService', () => {
   describe('isReadestPackFile', () => {
-    it('identifies .readestpack files correctly regardless of casing', () => {
-      expect(isReadestPackFile('collection.readestpack')).toBe(true);
-      expect(isReadestPackFile('/path/to/my_books.READESTPACK')).toBe(true);
+    it('identifies .rbooks files correctly regardless of casing', () => {
+      expect(isReadestPackFile('collection.rbooks')).toBe(true);
+      expect(isReadestPackFile('/path/to/my_books.RBOOKS')).toBe(true);
       expect(isReadestPackFile('books.epub')).toBe(false);
       expect(isReadestPackFile('archive.zip')).toBe(false);
     });
@@ -51,7 +51,7 @@ describe('packService', () => {
       expect(result).toBeNull();
     });
 
-    it('creates a .readestpack archive with manifest and book entries', async () => {
+    it('creates a .rbooks archive with manifest and book entries', async () => {
       const appService = makeMockAppService('dummy epub binary data');
       const book1 = makeBook({ title: 'Book One', hash: 'hash1' });
       const book2 = makeBook({ title: 'Book Two', hash: 'hash2', format: 'PDF' });
@@ -88,7 +88,7 @@ describe('packService', () => {
       );
 
       // Verify manifest metadata
-      expect(extracted?.manifest?.format).toBe('readestpack');
+      expect(extracted?.manifest?.format).toBe('rbooks');
       expect(extracted?.manifest?.books.length).toBe(2);
       expect(extracted?.manifest?.collection?.name).toBe('World Classics');
     });
@@ -185,7 +185,7 @@ describe('packService', () => {
 
       // Add manifest with invalid collection.name (object instead of string)
       const invalidManifest = {
-        format: 'readestpack',
+        format: 'rbooks',
         version: 1,
         collection: { name: { invalid: 123 } },
         books: [{ id: 'b1', filename: 'book1.epub' }],

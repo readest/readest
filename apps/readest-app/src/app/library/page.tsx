@@ -1177,7 +1177,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     const existingPaths = collectKnownSourcePaths(library, osPlatform);
     for (const key of autoImportFailedPathsRef.current) existingPaths.add(key);
     const newFiles: SelectedFile[] = [];
-    const watchedExts = SUPPORTED_BOOK_EXTS.filter((ext) => ext !== 'readestpack');
+    const watchedExts = SUPPORTED_BOOK_EXTS.filter((ext) => ext !== 'rbooks');
     for (const folder of folders) {
       try {
         if (!autoImportGrantedFoldersRef.current.has(folder)) {

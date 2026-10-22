@@ -7,8 +7,8 @@ import { makeSafeFilename } from '@/utils/misc';
 import { getFileExtension } from '@/utils/path';
 import { configureZip } from '@/utils/zip';
 
-export const READEST_PACK_EXT = 'readestpack';
-export const READEST_PACK_MIME = 'application/x-readestpack';
+export const READEST_PACK_EXT = 'rbooks';
+export const READEST_PACK_MIME = 'application/x-readest-books';
 export const MANIFEST_FILENAME = 'readest-manifest.json';
 
 export const MAX_PACK_ENTRIES = 5_000;
@@ -28,7 +28,7 @@ export interface ReadestPackBookMeta {
 }
 
 export interface ReadestPackManifest {
-  format: 'readestpack';
+  format: 'rbooks';
   version: 1;
   createdAt: number;
   collection?: {
@@ -72,7 +72,7 @@ export const resolveImportGroup = (
 };
 
 /**
- * Checks if a given filename or path has the .readestpack extension.
+ * Checks if a given filename or path has the .rbooks extension.
  */
 export const isReadestPackFile = (filename: string): boolean => {
   return getFileExtension(filename).toLowerCase() === READEST_PACK_EXT;
@@ -115,7 +115,7 @@ export async function getBookBinaryData(
 }
 
 /**
- * Bundles the given books and collection metadata into a secure .readestpack archive.
+ * Bundles the given books and collection metadata into a secure .rbooks archive.
  */
 export async function createCollectionPack(
   appService: AppService,
@@ -180,7 +180,7 @@ export async function createCollectionPack(
   }
 
   const manifest: ReadestPackManifest = {
-    format: 'readestpack',
+    format: 'rbooks',
     version: 1,
     createdAt: Date.now(),
     collection: collectionName
@@ -211,7 +211,7 @@ export async function createCollectionPack(
 }
 
 /**
- * Extracts book files and manifest metadata from a .readestpack or zip archive.
+ * Extracts book files and manifest metadata from a .rbooks archive.
  * Includes Zip-Slip and path traversal protection.
  */
 export async function extractCollectionPack(
@@ -265,7 +265,7 @@ export async function extractCollectionPack(
           if (
             parsed &&
             typeof parsed === 'object' &&
-            (parsed as { format?: unknown }).format === 'readestpack' &&
+            (parsed as { format?: unknown }).format === 'rbooks' &&
             Array.isArray((parsed as { books?: unknown }).books)
           ) {
             const candidate = parsed as ReadestPackManifest;
