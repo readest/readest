@@ -4,7 +4,7 @@ import { useReaderStore } from '@/store/readerStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useBookDataStore } from '@/store/bookDataStore';
 import type { PageInfo } from '@/types/book';
-import { formatProgress, getReferencePageInfo } from '@/utils/progress';
+import { formatProgress, formatProgressPercent, getReferencePageInfo } from '@/utils/progress';
 import { clampPage, findReferencePageHref, fractionForPage, parsePageInput } from './pageJump';
 
 interface PageJumpInputProps {
@@ -85,7 +85,16 @@ const PageJumpInput: React.FC<PageJumpInputProps> = ({ bookKey, showFraction, cl
     showFraction || progressStyle === 'fraction' ? '{current} / {total}' : '{percent}%';
   const displayText = referenceInfo
     ? `${referenceInfo.current} / ${referenceInfo.total}`
-    : formatProgress(pageInfo.current, pageInfo.total, template, false, 'en', 0);
+    : template === '{percent}%'
+      ? formatProgressPercent(
+          bookData?.isFixedLayout ? undefined : progress?.fraction,
+          pageInfo.current,
+          pageInfo.total,
+          false,
+          'en',
+          0,
+        )
+      : formatProgress(pageInfo.current, pageInfo.total, template, false, 'en', 0);
 
   const total = referenceInfo ? referenceInfo.total : pageInfo.total;
   const currentLabel = referenceInfo ? referenceInfo.current : String(pageInfo.current + 1);

@@ -25,6 +25,7 @@ vi.mock('@/services/opds/audioStream', () => ({
     authHeader: null,
     customHeaders: {},
     hasCredentials: false,
+    allowSelfSignedCert: false,
   }),
   canStreamOpdsAudio: () => true,
   buildOpdsAudioUrl: (href: string) => href,

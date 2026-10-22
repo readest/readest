@@ -37,13 +37,14 @@ import MenuItem from '@/components/MenuItem';
 import { useRouter } from 'next/navigation';
 import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
-import { isWebAppPlatform } from '@/services/environment';
+import { isTauriAppPlatform, isWebAppPlatform } from '@/services/environment';
 import { useCustomOPDSStore } from '@/store/customOPDSStore';
 import { ensurePassphraseUnlocked } from '@/services/sync/passphraseGate';
 import { isCredentialsSyncEnabled } from '@/services/sync/syncCategories';
 import { isSyncError } from '@/libs/errors';
 import { OPDSCatalog } from '@/types/opds';
 import { isLanAddress } from '@/utils/network';
+import { allowsSelfSignedCert } from '@/utils/tls';
 import { eventDispatcher } from '@/utils/event';
 import { SectionTitle } from '@/components/settings/primitives';
 import { deleteSubscriptionState, loadSubscriptionState } from '@/services/opds';
@@ -93,8 +94,16 @@ async function validateOPDSCatalog(
   username?: string,
   password?: string,
   customHeaders?: Record<string, string>,
+  allowSelfSignedCert?: boolean,
 ): Promise<{ valid: boolean; error?: string }> {
-  const result = await validateOPDSURL(url, username, password, isWebAppPlatform(), customHeaders);
+  const result = await validateOPDSURL(
+    url,
+    username,
+    password,
+    isWebAppPlatform(),
+    customHeaders,
+    allowSelfSignedCert,
+  );
   return { valid: result.isValid, error: result.error };
 }
 
@@ -115,6 +124,7 @@ const EMPTY_NEW_CATALOG = {
   customHeadersInput: '',
   proxyConsent: false,
   autoDownload: false,
+  allowSelfSignedCert: true,
 };
 
 interface CatalogCardProps {
@@ -488,6 +498,7 @@ export function CatalogManager({ inSubPage = false }: CatalogManagerProps = {}) 
       newCatalog.username || undefined,
       newCatalog.password || undefined,
       parsedHeaders.headers,
+      newCatalog.allowSelfSignedCert,
     );
 
     if (!validation.valid) {
@@ -535,6 +546,7 @@ export function CatalogManager({ inSubPage = false }: CatalogManagerProps = {}) 
         password: newCatalog.password || undefined,
         customHeaders,
         autoDownload: newCatalog.autoDownload || undefined,
+        allowSelfSignedCert: newCatalog.allowSelfSignedCert,
       });
     } else {
       useCustomOPDSStore.getState().addCatalog({
@@ -546,6 +558,7 @@ export function CatalogManager({ inSubPage = false }: CatalogManagerProps = {}) 
         password: newCatalog.password || undefined,
         customHeaders,
         autoDownload: newCatalog.autoDownload || undefined,
+        allowSelfSignedCert: newCatalog.allowSelfSignedCert,
       });
     }
     persistMutation();
@@ -569,6 +582,7 @@ export function CatalogManager({ inSubPage = false }: CatalogManagerProps = {}) 
       customHeadersInput: formatCustomHeadersInput(catalog.customHeaders),
       proxyConsent: false,
       autoDownload: catalog.autoDownload || false,
+      allowSelfSignedCert: allowsSelfSignedCert(catalog),
     });
     setEditingCatalogId(catalog.id);
     setShowAddDialog(true);
@@ -833,6 +847,30 @@ export function CatalogManager({ inSubPage = false }: CatalogManagerProps = {}) 
                     </div>
                   )}
                 </div>
+
+                {isTauriAppPlatform() && (
+                  <div className='flex flex-col'>
+                    <label className='flex cursor-pointer select-none items-center justify-start gap-3 p-0'>
+                      <input
+                        type='checkbox'
+                        className='toggle toggle-sm toggle-primary'
+                        checked={newCatalog.allowSelfSignedCert}
+                        onChange={(e) =>
+                          setNewCatalog({ ...newCatalog, allowSelfSignedCert: e.target.checked })
+                        }
+                        disabled={isValidating}
+                      />
+                      <div>
+                        <span className='text-sm'>{_('Allow Self-Signed Certificate')}</span>
+                        <p className='text-base-content/60 text-xs'>
+                          {_(
+                            'Skips certificate checks for this server. Turn it off if the server has a valid certificate',
+                          )}
+                        </p>
+                      </div>
+                    </label>
+                  </div>
+                )}
 
                 <div className='flex flex-col'>
                   <div className='flex select-none items-center justify-between px-1 py-2'>

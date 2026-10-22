@@ -2606,5 +2606,8 @@
   "{{count}} voices available_other": "{{count}} குரல்கள் கிடைக்கின்றன",
   "Multilingual": "பன்மொழி",
   "Expressive": "உணர்ச்சிமிக்க",
-  "Show Page Thumbnails": "பக்க சிறுபடங்களைக் காட்டு"
+  "Show Page Thumbnails": "பக்க சிறுபடங்களைக் காட்டு",
+  "Allow Self-Signed Certificate": "சுய கையொப்பமிட்ட சான்றிதழை அனுமதி",
+  "Skips certificate checks for this server. Turn it off if the server has a valid certificate": "இந்த சேவையகத்திற்கான சான்றிதழ் சரிபார்ப்பைத் தவிர்க்கிறது. சேவையகத்தில் செல்லுபடியான சான்றிதழ் இருந்தால் இதை முடக்கவும்",
+  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "இந்தச் சாதனத்தின் கடிகாரம் சரியாக இல்லாததால் சில மாற்றங்கள் ஒத்திசைக்கப்படவில்லை. தேதியையும் நேரத்தையும் தானாக அமைத்து, மீண்டும் முயலவும்."
 }

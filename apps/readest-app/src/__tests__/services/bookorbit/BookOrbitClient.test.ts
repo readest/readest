@@ -165,3 +165,18 @@ describe('BookOrbitClient', () => {
     expect(headers['X-Auth-Key']).toBe('a'.repeat(32));
   });
 });
+
+describe('BookOrbitClient – TLS certificate checks', () => {
+  it('relaxes certificate checks only when the server allows self-signed certs', async () => {
+    const fetchMock = setFetch(async () => jsonResponse(200, { results: [], unmatched: [] }));
+    const books = [{ hash: 'a'.repeat(32), keys: [], keysComplete: true, changes: [] }];
+
+    await new BookOrbitClient(makeConfig({ allowSelfSignedCert: false })).exchangeAnnotations(
+      books,
+    );
+    await new BookOrbitClient(makeConfig({ allowSelfSignedCert: true })).exchangeAnnotations(books);
+
+    expect(fetchMock.mock.calls[0]![1]).not.toHaveProperty('danger');
+    expect(fetchMock.mock.calls[1]![1]).toHaveProperty('danger');
+  });
+});

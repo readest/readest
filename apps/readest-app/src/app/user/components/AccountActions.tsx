@@ -22,7 +22,10 @@ const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = ({
   if (!show) return null;
 
   return (
-    <div className='fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4'>
+    <div
+      data-capture-blocking-overlay='true'
+      className='fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4'
+    >
       <div className='bg-base-100 eink-bordered w-full max-w-md rounded-2xl p-6'>
         <h3 className='text-base-content mb-4 text-xl font-bold'>{title}</h3>
         <p className='text-base-content/70 mb-6'>{message}</p>

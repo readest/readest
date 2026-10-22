@@ -193,10 +193,13 @@ const measureRow = ({ spans }: TextLayerRow): PdfLine => {
   return line;
 };
 
+// Text nodes at any depth: Read Aloud wraps a line-end hyphen in an element
+// of its own to skip it (foliate-js tts.js), and copying keeps it.
 const sliceText = (el: Element, range: Range) => {
   let out = '';
-  for (const node of Array.from(el.childNodes)) {
-    if (node.nodeType !== Node.TEXT_NODE || !range.intersectsNode(node)) continue;
+  const walker = el.ownerDocument.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+  for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+    if (!range.intersectsNode(node)) continue;
     const data = (node as Text).data;
     const start = node === range.startContainer ? range.startOffset : 0;
     const end = node === range.endContainer ? range.endOffset : data.length;

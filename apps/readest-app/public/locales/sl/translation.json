@@ -2736,5 +2736,8 @@
   "{{count}} voices available_other": "Na voljo je {{count}} glasov",
   "Multilingual": "Večjezični",
   "Expressive": "Izrazni",
-  "Show Page Thumbnails": "Prikaži sličice strani"
+  "Show Page Thumbnails": "Prikaži sličice strani",
+  "Allow Self-Signed Certificate": "Dovoli samopodpisano potrdilo",
+  "Skips certificate checks for this server. Turn it off if the server has a valid certificate": "Preskoči preverjanje potrdila za ta strežnik. Izklopite, če ima strežnik veljavno potrdilo",
+  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "Nekatere spremembe se niso sinhronizirale, ker ura te naprave ni točna. Nastavite datum in čas samodejno ter poskusite znova."
 }

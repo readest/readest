@@ -5,8 +5,11 @@ const mocks = vi.hoisted(() => ({
   invoke: vi.fn(),
   isTauriAppPlatform: vi.fn(() => false),
   getOSPlatform: vi.fn((): OsPlatform => 'android'),
-  servers: [] as Array<{ url: string; deletedAt?: number }>,
-  settingsServers: [] as Array<{ url: string; deletedAt?: number }>,
+  servers: [] as Array<{ url: string; deletedAt?: number; allowSelfSignedCert?: boolean }>,
+  settingsServers: [] as Array<{ url: string; deletedAt?: number; allowSelfSignedCert?: boolean }>,
+  bookorbit: undefined as
+    | { serverUrl: string; password?: string; allowSelfSignedCert?: boolean }
+    | undefined,
 }));
 
 vi.mock('@tauri-apps/api/core', () => ({ invoke: mocks.invoke }));
@@ -26,7 +29,11 @@ vi.mock('@/store/absServerStore', () => ({
 }));
 
 vi.mock('@/store/settingsStore', () => ({
-  useSettingsStore: { getState: () => ({ settings: { absServers: mocks.settingsServers } }) },
+  useSettingsStore: {
+    getState: () => ({
+      settings: { absServers: mocks.settingsServers, bookorbit: mocks.bookorbit },
+    }),
+  },
 }));
 
 import { getMediaProxyBase, proxiedMediaUrl } from '@/services/audiobook/mediaProxy';
@@ -39,6 +46,7 @@ describe('getMediaProxyBase (#6216)', () => {
     mocks.getOSPlatform.mockReturnValue('android');
     mocks.servers = [];
     mocks.settingsServers = [];
+    mocks.bookorbit = undefined;
   });
 
   afterEach(() => {
@@ -78,6 +86,94 @@ describe('getMediaProxyBase (#6216)', () => {
     expect(mocks.invoke).toHaveBeenCalledTimes(2);
     expect(mocks.invoke).toHaveBeenLastCalledWith('get_media_proxy_base', {
       origins: ['https://abs.example:8443', 'http://192.168.2.3:13378'],
+      // Saved before the option existed, so both keep accepting self-signed certs.
+      selfSigned: ['https://abs.example:8443', 'http://192.168.2.3:13378'],
+    });
+  });
+
+  it("forwards each server's certificate choice, preferring the live store copy", async () => {
+    mocks.servers = [
+      { url: 'https://verified.example', allowSelfSignedCert: false },
+      { url: 'https://home.example', allowSelfSignedCert: true },
+    ];
+    // A stale persisted copy must not re-enable what the store turned off.
+    mocks.settingsServers = [{ url: 'https://verified.example' }];
+    mocks.invoke.mockResolvedValue('http://127.0.0.1:41234/s3cret');
+    const { getMediaProxyBase: fresh } = await import('@/services/audiobook/mediaProxy');
+
+    // A grant that doesn't say accepts self-signed certificates, like a server.
+    await fresh({ origin: 'https://books.example', authorization: 'Bearer t' });
+    await fresh({ origin: 'https://lab.example', allowSelfSignedCert: false });
+    expect(mocks.invoke.mock.calls[0]![1]).toMatchObject({
+      origins: ['https://verified.example', 'https://home.example', 'https://books.example'],
+      selfSigned: ['https://home.example', 'https://books.example'],
+    });
+    expect(mocks.invoke.mock.calls[1]![1]).toMatchObject({
+      selfSigned: ['https://home.example'],
+    });
+  });
+
+  // A certificate belongs to the origin (host:port), so servers sharing one
+  // share its policy: if any of them turned the option off, it is verified
+  // for all of them, whichever call registers the origin.
+  it('verifies an origin when any Audiobookshelf server on it turned the option off', async () => {
+    mocks.servers = [
+      { url: 'https://home.example/abs-a', allowSelfSignedCert: true },
+      { url: 'https://home.example/abs-b', allowSelfSignedCert: false },
+    ];
+    mocks.invoke.mockResolvedValue('http://127.0.0.1:41234/s3cret');
+    const { getMediaProxyBase: fresh } = await import('@/services/audiobook/mediaProxy');
+
+    await fresh();
+    expect(mocks.invoke).toHaveBeenLastCalledWith('get_media_proxy_base', {
+      origins: ['https://home.example'],
+      selfSigned: [],
+    });
+  });
+
+  it('weighs every live store entry, even two spellings of one URL', async () => {
+    mocks.servers = [
+      { url: 'https://home.example', allowSelfSignedCert: true },
+      { url: 'https://home.example/', allowSelfSignedCert: false },
+    ];
+    mocks.invoke.mockResolvedValue('http://127.0.0.1:41234/s3cret');
+    const { getMediaProxyBase: fresh } = await import('@/services/audiobook/mediaProxy');
+
+    await fresh();
+    expect(mocks.invoke).toHaveBeenLastCalledWith('get_media_proxy_base', {
+      origins: ['https://home.example'],
+      selfSigned: [],
+    });
+  });
+
+  it('keeps a BookOrbit origin verified when an Audiobookshelf server shares it', async () => {
+    mocks.servers = [{ url: 'https://home.example/abs', allowSelfSignedCert: true }];
+    mocks.bookorbit = {
+      serverUrl: 'https://home.example',
+      password: 'pw',
+      allowSelfSignedCert: false,
+    };
+    mocks.invoke.mockResolvedValue('http://127.0.0.1:41234/s3cret');
+    const { getMediaProxyBase: fresh } = await import('@/services/audiobook/mediaProxy');
+
+    // BookOrbit registering its own grant...
+    await fresh({ origin: 'https://home.example', authorization: 'Bearer t' });
+    expect(mocks.invoke.mock.calls[0]![1]).toMatchObject({ selfSigned: [] });
+    // ...and a later Audiobookshelf-only call must not flip it back.
+    await fresh();
+    expect(mocks.invoke.mock.calls[1]![1]).toMatchObject({ selfSigned: [] });
+  });
+
+  it("lets a server's live store copy turn the option on over a stale persisted copy", async () => {
+    mocks.servers = [{ url: 'https://home.example', allowSelfSignedCert: true }];
+    mocks.settingsServers = [{ url: 'https://home.example/', allowSelfSignedCert: false }];
+    mocks.invoke.mockResolvedValue('http://127.0.0.1:41234/s3cret');
+    const { getMediaProxyBase: fresh } = await import('@/services/audiobook/mediaProxy');
+
+    await fresh();
+    expect(mocks.invoke).toHaveBeenLastCalledWith('get_media_proxy_base', {
+      origins: ['https://home.example'],
+      selfSigned: ['https://home.example'],
     });
   });
 
@@ -96,6 +192,7 @@ describe('getMediaProxyBase (#6216)', () => {
     await fresh();
     expect(mocks.invoke).toHaveBeenLastCalledWith('get_media_proxy_base', {
       origins: ['https://abs.example:8443', 'http://192.168.2.3:13378'],
+      selfSigned: ['https://abs.example:8443', 'http://192.168.2.3:13378'],
     });
   });
 

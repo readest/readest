@@ -121,6 +121,15 @@ export const validateAndNormalizeDate = (dateInput: string): ValidationResult<st
           error: 'Day must be between 01 and 31',
         };
       }
+      // Date parsing rolls impossible days into the next month.
+      const month = parseInt(cleaned.substring(5, 7));
+      if (
+        date.getUTCFullYear() !== year ||
+        date.getUTCMonth() + 1 !== month ||
+        date.getUTCDate() !== day
+      ) {
+        return { isValid: false, value: null, error: 'Invalid date' };
+      }
     }
 
     return {

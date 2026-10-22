@@ -6,6 +6,7 @@ import { KoSyncProxyPayload } from '@/types/kosync';
 import { isLanAddress } from '@/utils/network';
 import { getUserLang, makeSafeFilename } from '@/utils/misc';
 import { normalizeCustomHeaders } from '@/utils/customHeaders';
+import { allowsSelfSignedCert, tlsFetch } from '@/utils/tls';
 import { getAPIBaseUrl, isTauriAppPlatform } from '../environment';
 
 const getContributorName = (contributor: unknown): string => {
@@ -90,19 +91,20 @@ export class KOSyncClient {
         const fetch = isTauriAppPlatform() ? tauriFetch : window.fetch;
         const directUrl = `${this.config.serverUrl}${endpoint}`;
 
-        return await fetch(directUrl, {
-          method,
-          headers: {
-            accept: 'application/vnd.koreader.v1+json',
-            ...(method === 'GET' ? {} : { 'Content-Type': 'application/json' }),
-            ...Object.fromEntries(headers.entries()),
+        return await tlsFetch(
+          fetch,
+          directUrl,
+          {
+            method,
+            headers: {
+              accept: 'application/vnd.koreader.v1+json',
+              ...(method === 'GET' ? {} : { 'Content-Type': 'application/json' }),
+              ...Object.fromEntries(headers.entries()),
+            },
+            body,
           },
-          body,
-          danger: {
-            acceptInvalidCerts: true,
-            acceptInvalidHostnames: true,
-          },
-        });
+          allowsSelfSignedCert(this.config),
+        );
       }
 
       const proxyUrl = `${getAPIBaseUrl()}/kosync`;

@@ -725,6 +725,128 @@ describe('yandexProvider', () => {
     const firstBody = new URLSearchParams(translateCalls()[0]![1]?.body as string);
     expect(firstBody.get('text')!.endsWith('.')).toBe(true);
   });
+
+  it('splits a long single sentence at the clause boundary near its middle', async () => {
+    mockYandexFlow((text) => ({ code: 200, text: [text] }));
+    const text =
+      'And it was no small sign of arrogance when the Ritschl school counterposed this Jesus image as a purely historical portrait of him to the Jesus image of the churches and cried out through Wernle: “Christianity had for thousands of years forgotten who its Master was,” as if over against all sorts of sects the churches had not done their utmost to confess no other Christ than the Christ depicted before their eyes in the Scriptures.';
+
+    const { yandexProvider } = await import('@/services/translators/providers/yandex');
+    const [result] = await yandexProvider.translate([text], 'en', 'ru');
+
+    const sent = translateCalls().map(
+      (call) => new URLSearchParams(call[1]?.body as string).get('text') ?? '',
+    );
+    expect(sent).toHaveLength(2);
+    expect(sent[0]!.trimEnd().endsWith('was,”')).toBe(true);
+    expect(sent[1]!.startsWith('as if over against')).toBe(true);
+    expect(sent.join('')).toBe(text);
+    expect(result).toBe(text);
+  });
+
+  const rateLimited = (retryAfter: string) =>
+    ({
+      ok: false,
+      status: 429,
+      headers: new Headers({ 'Retry-After': retryAfter }),
+      json: async () => ({ error: 'Too many requests' }),
+    }) as unknown as Response;
+
+  it('retries a rate-limited chunk after the Retry-After delay', async () => {
+    mockTauriFetch.mockImplementation(async (url) => {
+      if (String(url).includes('/sessions')) return sessionResponse() as unknown as Response;
+      if (translateCalls().length === 1) return rateLimited('0');
+      return {
+        ok: true,
+        status: 200,
+        json: async () => ({ code: 200, text: ['Bonjour'] }),
+      } as unknown as Response;
+    });
+
+    const { yandexProvider } = await import('@/services/translators/providers/yandex');
+    await expect(yandexProvider.translate(['Hello'], 'en', 'fr')).resolves.toEqual(['Bonjour']);
+    expect(translateCalls()).toHaveLength(2);
+    expect(sessionCalls()).toHaveLength(1);
+  });
+
+  it('honours an HTTP-date Retry-After value', async () => {
+    mockTauriFetch.mockImplementation(async (url) => {
+      if (String(url).includes('/sessions')) return sessionResponse() as unknown as Response;
+      if (translateCalls().length === 1) {
+        return rateLimited(new Date(Date.now() + 1000).toUTCString());
+      }
+      return {
+        ok: true,
+        status: 200,
+        json: async () => ({ code: 200, text: ['Bonjour'] }),
+      } as unknown as Response;
+    });
+
+    const { yandexProvider } = await import('@/services/translators/providers/yandex');
+    const startedAt = Date.now();
+    await expect(yandexProvider.translate(['Hello'], 'en', 'fr')).resolves.toEqual(['Bonjour']);
+    // The date is at most a second away, so the 5 s fallback delay was not used.
+    expect(Date.now() - startedAt).toBeLessThan(4000);
+    expect(translateCalls()).toHaveLength(2);
+  });
+
+  it('keeps a long run of short clauses within the request budget', async () => {
+    mockYandexFlow((text) => ({ code: 200, text: [text] }));
+    const text = 'word, '.repeat(1000);
+
+    const { yandexProvider } = await import('@/services/translators/providers/yandex');
+    const [result] = await yandexProvider.translate([text], 'en', 'ru');
+
+    const sent = translateCalls().map(
+      (call) => new URLSearchParams(call[1]?.body as string).get('text') ?? '',
+    );
+    expect(sent.length).toBeLessThanOrEqual(29);
+    expect(sent.join('')).toBe(text);
+    expect(result).toBe(text);
+  });
+
+  it('gives up after a bounded number of rate-limit retries', async () => {
+    mockTauriFetch.mockImplementation(async (url) => {
+      if (String(url).includes('/sessions')) return sessionResponse() as unknown as Response;
+      return rateLimited('0');
+    });
+
+    const { yandexProvider } = await import('@/services/translators/providers/yandex');
+    await expect(yandexProvider.translate(['Hello'], 'en', 'fr')).rejects.toThrow(
+      'yandex translate failed with status 429: Too many requests',
+    );
+    expect(translateCalls()).toHaveLength(4);
+  });
+
+  it('does not split short sentences at commas', async () => {
+    mockYandexFlow((text) => ({ code: 200, text: [text] }));
+    const text = 'One, two, and three are numbers, as everyone knows. '.repeat(10);
+    expect(text.length).toBeLessThanOrEqual(600);
+
+    const { yandexProvider } = await import('@/services/translators/providers/yandex');
+    await yandexProvider.translate([text], 'en', 'ru');
+
+    expect(translateCalls()).toHaveLength(1);
+  });
+
+  it('keeps the request count of a long paragraph close to the plain chunking', async () => {
+    mockYandexFlow((text) => ({ code: 200, text: [text] }));
+    const long =
+      'And it was no small sign of arrogance when the Ritschl school counterposed this image, as a purely historical portrait of him, to the image of the churches and cried out through Wernle. ';
+    const short = 'This is a short sentence, with a comma. ';
+    const text = `${short.repeat(5)}${long}${short.repeat(5)}`;
+
+    const { yandexProvider } = await import('@/services/translators/providers/yandex');
+    const [result] = await yandexProvider.translate([text], 'en', 'ru');
+
+    const sent = translateCalls().map(
+      (call) => new URLSearchParams(call[1]?.body as string).get('text') ?? '',
+    );
+    expect(sent.every((part) => part.length <= 600)).toBe(true);
+    expect(sent.length).toBeLessThanOrEqual(3);
+    expect(sent.join('')).toBe(text);
+    expect(result).toBe(text);
+  });
 });
 
 // ---------------------------------------------------------------------------

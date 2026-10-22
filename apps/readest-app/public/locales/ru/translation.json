@@ -2736,5 +2736,8 @@
   "{{count}} voices available_other": "Доступно {{count}} голоса",
   "Multilingual": "Многоязычный",
   "Expressive": "Выразительный",
-  "Show Page Thumbnails": "Показывать миниатюры страниц"
+  "Show Page Thumbnails": "Показывать миниатюры страниц",
+  "Allow Self-Signed Certificate": "Разрешить самоподписанный сертификат",
+  "Skips certificate checks for this server. Turn it off if the server has a valid certificate": "Пропускает проверку сертификата для этого сервера. Отключите, если у сервера действительный сертификат",
+  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "Некоторые изменения не синхронизировались, потому что часы на этом устройстве идут неверно. Включите автоматическую установку даты и времени и повторите попытку."
 }

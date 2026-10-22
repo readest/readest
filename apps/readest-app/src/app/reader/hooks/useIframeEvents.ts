@@ -271,6 +271,28 @@ export const useTouchEvent = (bookKey: string) => {
     return true;
   };
 
+  const startFixedLayoutPinch = (
+    e: IframeTouchEvent | React.TouchEvent<HTMLDivElement>,
+    t0: IframeTouch,
+    t1: IframeTouch,
+  ) => {
+    if (!getBookData(bookKey)?.isFixedLayout) return false;
+    cancelLayeredTurnTouch(bookKey);
+    // The pinch branch owns the gesture from here. A captured curl the
+    // first finger already claimed would otherwise sit frozen over the
+    // page until the next touchstart (readest#6239).
+    cancelClaimedSingleTouch(e, t0);
+    pinchPendingRef.current = true;
+    isPinchingRef.current = false;
+    initialTouch0Ref.current = t0;
+    initialTouch1Ref.current = t1;
+    initialPinchDistRef.current = getTouchDistance(t0, t1);
+    initialZoomRef.current = getViewSettings(bookKey)?.zoomLevel ?? 100;
+    lastPinchRatioRef.current = 1;
+    clearSingleTouchState();
+    return true;
+  };
+
   const onTouchStart = (e: IframeTouchEvent | React.TouchEvent<HTMLDivElement>) => {
     layeredTurnOwnedRef.current = false;
     layeredTurnCandidateRef.current = false;
@@ -285,24 +307,7 @@ export const useTouchEvent = (bookKey: string) => {
     // a raw move that arrived while the start message was still queued.
     if ('preventDefault' in e) beginLayeredTurnTouch(bookKey);
     if (t0 && t1) {
-      const bookData = getBookData(bookKey);
-      if (bookData?.isFixedLayout) {
-        cancelLayeredTurnTouch(bookKey);
-        // The pinch branch owns the gesture from here. A captured curl the
-        // first finger already claimed would otherwise sit frozen over the
-        // page until the next touchstart (readest#6239).
-        cancelClaimedSingleTouch(e, t0);
-        pinchPendingRef.current = true;
-        isPinchingRef.current = false;
-        initialTouch0Ref.current = t0;
-        initialTouch1Ref.current = t1;
-        initialPinchDistRef.current = getTouchDistance(t0, t1);
-        initialZoomRef.current = getViewSettings(bookKey)?.zoomLevel ?? 100;
-        lastPinchRatioRef.current = 1;
-        clearSingleTouchState();
-        return;
-      }
-      latchReflowableMultiTouch(e, t0, t1);
+      if (!startFixedLayoutPinch(e, t0, t1)) latchReflowableMultiTouch(e, t0, t1);
       return;
     }
     if (!t0) {
@@ -357,13 +362,24 @@ export const useTouchEvent = (bookKey: string) => {
       }
       const currentDist = getTouchDistance(t0, t1);
       if (initialPinchDistRef.current > 0) {
-        const ratio = currentDist / initialPinchDistRef.current;
+        const rawRatio = currentDist / initialPinchDistRef.current;
+        // Clamp the live preview to the same bounds the release commits, so the
+        // page never previews past the zoom limit.
+        const committed = Math.max(
+          MIN_ZOOM_LEVEL,
+          Math.min(MAX_ZOOM_LEVEL, Math.round(initialZoomRef.current * rawRatio)),
+        );
+        const ratio = committed / initialZoomRef.current;
         lastPinchRatioRef.current = ratio;
         const renderer = getView(bookKey)?.renderer;
         renderer?.pinchZoom?.(ratio);
       }
       return;
     }
+    // Each page of a spread is its own iframe, and the browser sends a touch
+    // sequence only to its first finger's frame: a second finger on the other
+    // page gets no touchstart and first shows up here.
+    if (t0 && t1 && touchStartRef.current && startFixedLayoutPinch(e, t0, t1)) return;
     if (!touchStartRef.current) return;
     const touch = t0;
     if (touch) {

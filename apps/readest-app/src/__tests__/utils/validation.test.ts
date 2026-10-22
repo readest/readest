@@ -96,6 +96,38 @@ describe('validateAndNormalizeDate', () => {
   });
 
   describe('YYYY-MM-DD format', () => {
+    it.each([
+      '2023-02-29',
+      '2023-02-30',
+      '2024-02-30',
+      '2024-02-31',
+      '2024-04-31',
+      '2024-06-31',
+      '2024-09-31',
+      '2024-11-31',
+      '1900-02-29',
+    ])('should reject impossible calendar date %s', (input) => {
+      const result = validateAndNormalizeDate(input);
+      expect(result.isValid).toBe(false);
+      expect(result.value).toBeNull();
+      expect(result.error).toBeDefined();
+    });
+
+    it.each([
+      '2024-02-29',
+      '2000-02-29',
+      '2023-02-28',
+      '1900-02-28',
+      '2024-04-30',
+      '2024-01-31',
+      '1000-01-01',
+    ])('should preserve valid calendar date %s in UTC', (input) => {
+      expect(validateAndNormalizeDate(input)).toEqual({
+        isValid: true,
+        value: `${input}T00:00:00.000Z`,
+      });
+    });
+
     it('should accept a valid full date', () => {
       const result = validateAndNormalizeDate('2024-06-15');
       expect(result.isValid).toBe(true);

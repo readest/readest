@@ -109,6 +109,16 @@ beforeEach(() => {
 });
 
 describe('downloadAbsForOffline — audiobook', () => {
+  it('verifies TLS certificates for a server that does not allow self-signed ones', async () => {
+    useABSServerStore.setState({ servers: [{ ...server, allowSelfSignedCert: false }] });
+    const { service } = makeAppService();
+    downloadFileMock.mockResolvedValue({});
+
+    await downloadAbsForOffline(service, makeBook());
+
+    expect(downloadFileMock.mock.calls[0]![0]).toMatchObject({ skipSslVerification: false });
+  });
+
   it('downloads every track, then writes the manifest last', async () => {
     const { service, files } = makeAppService();
     const progress = vi.fn();
