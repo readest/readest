@@ -34,13 +34,12 @@ import { eventDispatcher } from '@/utils/event';
 import { transferManager } from '@/services/transferManager';
 import { purgeCloudBookData } from '@/services/purgeCloudBookData';
 import { isReadestCloudStorageActive } from '@/services/sync/cloudSyncProvider';
+import { getFilename, getFolderImportGroupName, joinScannedPath } from '@/utils/path';
 import {
-  getFileExtension,
-  getFilename,
-  getFolderImportGroupName,
-  joinScannedPath,
-} from '@/utils/path';
-import { extractCollectionPack, isReadestPackFile } from '@/services/pack/packService';
+  extractCollectionPack,
+  isReadestPackFile,
+  resolveImportGroup,
+} from '@/services/pack/packService';
 import { parseOpenWithFiles } from '@/helpers/openWith';
 import { getInitializedAppService, isTauriAppPlatform } from '@/services/environment';
 import { checkForAppUpdates, checkAppReleaseNotes } from '@/helpers/updater';
@@ -79,7 +78,7 @@ import { useOpenDeviceLink } from '@/hooks/useOpenDeviceLink';
 import { useClipUrlIngress } from '@/hooks/useClipUrlIngress';
 import { useWebBrowserDownloads } from '@/hooks/useWebBrowserDownloads';
 import { useKeyDownActions } from '@/hooks/useKeyDownActions';
-import { SelectedFile, useFileSelector } from '@/hooks/useFileSelector';
+import { SelectedFile, resolveTauriFileName, useFileSelector } from '@/hooks/useFileSelector';
 import { lockScreenOrientation, selectDirectory, showFilePicker } from '@/utils/bridge';
 import { useAndroidPickedBooks } from '@/hooks/useAndroidFilePicker';
 import { requestStoragePermission } from '@/utils/permission';
@@ -614,56 +613,42 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
       for (const file of openWithFiles) {
         console.log('Open with book:', file);
         try {
-          const fileName = typeof file === 'string' ? getFilename(file) : (file as File).name;
-          const ext = getFileExtension(fileName).toLowerCase();
-
-          if (isReadestPackFile(fileName) || ext === 'zip') {
-            try {
-              let buffer: ArrayBuffer | null = null;
-              if (typeof file === 'string') {
-                const raw = await appService.readFile(file, 'None', 'binary');
-                if (typeof raw !== 'string') buffer = raw as ArrayBuffer;
-              } else if ((file as unknown) instanceof File) {
-                buffer = await (file as unknown as File).arrayBuffer();
-              }
-
-              if (buffer) {
-                const pack = await extractCollectionPack(buffer);
-                const isPack =
-                  isReadestPackFile(fileName) || pack?.manifest?.format === 'readestpack';
-                if (pack && pack.files.length > 0 && isPack) {
-                  const targetGroupId = pack.collectionName
-                    ? getGroupId(pack.collectionName) || pack.collectionName
-                    : undefined;
-                  for (const innerFile of pack.files) {
-                    try {
-                      const book = await ingestFile(
-                        {
-                          file: innerFile,
-                          books: libraryBooks,
-                          transient: false,
-                          groupId: targetGroupId,
-                          groupName: pack.collectionName,
-                          forceUpload: !!appService.isMobile && !!user,
-                        },
-                        { appService, settings, isLoggedIn: !!user },
-                      );
-                      if (book && bookIds.length === 0) {
-                        bookIds.push(book.hash);
-                      }
-                    } catch (err) {
-                      console.warn(
-                        'Failed to import pack entry during open-with:',
-                        innerFile.name,
-                        err,
-                      );
-                    }
+          // An Android VIEW intent hands over a content:// URI with no extension.
+          if (isReadestPackFile(await resolveTauriFileName(file, appService))) {
+            const raw = await appService.readFile(file, 'None', 'binary');
+            const pack = typeof raw === 'string' ? null : await extractCollectionPack(raw);
+            if (pack) {
+              const { groupId, groupName } = resolveImportGroup(
+                undefined,
+                pack.collectionName,
+                getGroupId,
+                getGroupName,
+              );
+              for (const innerFile of pack.files) {
+                try {
+                  const book = await ingestFile(
+                    {
+                      file: innerFile,
+                      books: libraryBooks,
+                      transient: false,
+                      groupId,
+                      groupName,
+                      forceUpload: !!appService.isMobile && !!user,
+                    },
+                    { appService, settings, isLoggedIn: !!user },
+                  );
+                  if (book && bookIds.length === 0) {
+                    bookIds.push(book.hash);
                   }
-                  continue;
+                } catch (err) {
+                  console.warn(
+                    'Failed to import pack entry during open-with:',
+                    innerFile.name,
+                    err,
+                  );
                 }
               }
-            } catch (err) {
-              console.warn('Failed to extract pack during open-with:', err);
+              continue;
             }
           }
 
@@ -1027,48 +1012,23 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     const appBooksPrefix: string | null =
       useSettingsStore.getState().settings.localBooksDir || null;
 
-    interface SelectedFileWithGroup extends SelectedFile {
-      groupIdOverride?: string;
-    }
-
-    const effectiveFiles: SelectedFileWithGroup[] = [];
-
+    // A pack expands into its books, which land in the pack's collection unless
+    // the import already targets a group.
+    const effectiveFiles: (SelectedFile & { packCollectionName?: string })[] = [];
     for (const selectedFile of files) {
-      const fileName =
-        selectedFile.name ||
-        (selectedFile.file ? selectedFile.file.name : getFilename(selectedFile.path || ''));
-      const ext = getFileExtension(fileName).toLowerCase();
-
-      if (isReadestPackFile(fileName) || ext === 'zip') {
+      const fileName = selectedFile.name || selectedFile.file?.name || selectedFile.path || '';
+      if (appService && isReadestPackFile(fileName)) {
         try {
-          let buffer: ArrayBuffer | null = null;
-          if (selectedFile.file) {
-            buffer = await selectedFile.file.arrayBuffer();
-          } else if (selectedFile.path && appService) {
-            const raw = await appService.readFile(selectedFile.path, 'None', 'binary');
-            if (typeof raw !== 'string') {
-              buffer = raw as ArrayBuffer;
+          const data = selectedFile.file
+            ? await selectedFile.file.arrayBuffer()
+            : await appService.readFile(selectedFile.path!, 'None', 'binary');
+          const pack = typeof data === 'string' ? null : await extractCollectionPack(data);
+          if (pack) {
+            const packCollectionName = groupId ? undefined : pack.collectionName;
+            for (const file of pack.files) {
+              effectiveFiles.push({ file, name: file.name, packCollectionName });
             }
-          }
-
-          if (buffer) {
-            const pack = await extractCollectionPack(buffer);
-            const isPack = isReadestPackFile(fileName) || pack?.manifest?.format === 'readestpack';
-            if (pack && pack.files.length > 0 && isPack) {
-              let packGroupId: string | undefined;
-              if ((!groupId || groupId === '') && pack.collectionName) {
-                const existingGroup = getGroupId(pack.collectionName);
-                packGroupId = existingGroup || pack.collectionName;
-              }
-              for (const innerFile of pack.files) {
-                effectiveFiles.push({
-                  file: innerFile,
-                  name: innerFile.name,
-                  groupIdOverride: packGroupId,
-                });
-              }
-              continue;
-            }
+            continue;
           }
         } catch (err) {
           console.warn('Failed to unpack archive during import:', err);
@@ -1077,7 +1037,9 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
       effectiveFiles.push(selectedFile);
     }
 
-    const processFile = async (selectedFile: SelectedFileWithGroup): Promise<Book | null> => {
+    const processFile = async (
+      selectedFile: (typeof effectiveFiles)[number],
+    ): Promise<Book | null> => {
       const file = selectedFile.file || selectedFile.path;
       if (!file) return null;
       if (!appService) return null;
@@ -1088,14 +1050,16 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
         //                  basePath (Import-from-Folder "keep" mode).
         //   - '' (empty) → caller explicitly wants the library root.
         //   - any string → caller explicitly wants that group.
-        // If this entry was extracted from a pack that specified a collection name,
-        // use its groupIdOverride.
-        let resolvedGroupId =
-          selectedFile.groupIdOverride !== undefined ? selectedFile.groupIdOverride : groupId;
-        let resolvedGroupName =
-          resolvedGroupId !== undefined
-            ? getGroupName(resolvedGroupId) || resolvedGroupId
-            : undefined;
+        // Distinguishing '' from undefined matters for re-imports of an
+        // already-known book: without it, a falsy check would silently
+        // keep the existingBook's stale groupId/groupName from a prior
+        // import instead of moving the book to the root.
+        let { groupId: resolvedGroupId, groupName: resolvedGroupName } = resolveImportGroup(
+          groupId,
+          selectedFile.packCollectionName,
+          getGroupId,
+          getGroupName,
+        );
         if (resolvedGroupId === undefined && path && basePath) {
           resolvedGroupName = getFolderImportGroupName(path, basePath);
           resolvedGroupId = getGroupId(resolvedGroupName);

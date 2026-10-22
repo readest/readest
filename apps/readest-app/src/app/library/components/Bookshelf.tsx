@@ -21,12 +21,12 @@ import { useMedianPageDurationsSecs } from '@/hooks/useMedianPageDurationSecs';
 import { useBookshelfDate } from '@/hooks/useBookshelfDate';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { navigateToLibrary, navigateToReader, showReaderWindow } from '@/utils/nav';
-import { isMd5 } from '@/utils/md5';
 import {
   createBookFilter,
   createBookSorter,
   ensureLibraryGroupByType,
   expandBookshelfSelection,
+  getCommonGroupName,
   findSelectedManualGroup,
   resolveCurrentShelfBooks,
   selectAbsOfflineBooks,
@@ -60,7 +60,7 @@ import ModalPortal from '@/components/ModalPortal';
 import BookshelfItem from './BookshelfItem';
 import SelectModeActions from './SelectModeActions';
 import ShareBookDialog from './ShareBookDialog';
-import { createCollectionPack } from '@/services/pack/packService';
+import { createCollectionPack, READEST_PACK_MIME } from '@/services/pack/packService';
 import { useAuth } from '@/context/AuthContext';
 import GroupingModal from './GroupingModal';
 import TaggingModal from './TaggingModal';
@@ -646,8 +646,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
   };
 
   const sendSelectedNearby = () => {
-    const rawIds = getSelectedBooks();
-    const ids = expandBookshelfSelection(rawIds, sortedBookshelfItems);
+    const ids = expandBookshelfSelection(getSelectedBooks(), sortedBookshelfItems);
     const books = ids
       .map((id) => filteredBooks.find((book) => book.hash === id))
       .filter((book): book is Book => !!book);
@@ -655,24 +654,13 @@ const Bookshelf: React.FC<BookshelfProps> = ({
     setShowSelectModeActions(false);
     handleSetSelectMode(false);
 
-    // If the selection targets a collection/group (browsing a group, selected a group item,
-    // or all selected books belong to the same group), package as a .readestpack so
-    // the receiver restores the complete collection structure.
-    const hasGroupSelected = rawIds.some((id) => !isMd5(id));
-    const commonGroup =
-      manualGroupName ||
-      (books[0]?.groupName && books.every((b) => b.groupName === books[0]?.groupName)
-        ? books[0]?.groupName
-        : undefined);
-    const shouldPack = Boolean(
-      hasGroupSelected || manualGroupName || (books.length > 1 && commonGroup),
-    );
-    const collectionName =
-      manualGroupName || (hasGroupSelected ? books[0]?.groupName : commonGroup);
+    // Several books from one group travel as a .readestpack so the receiver
+    // restores the group; a single book is sent as itself.
+    const collectionName = books.length > 1 ? getCommonGroupName(books) : undefined;
 
     eventDispatcher.dispatch('localsend-send-books', {
       books,
-      asPack: shouldPack,
+      asPack: !!collectionName,
       collectionName,
     });
   };
@@ -695,8 +683,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
     });
 
     try {
-      const collectionName = manualGroupName || (books[0]?.groupName ?? undefined);
-      const result = await createCollectionPack(appService, books, collectionName);
+      const result = await createCollectionPack(appService, books, getCommonGroupName(books));
       if (!result) {
         eventDispatcher.dispatch('toast', {
           type: 'warning',
@@ -716,9 +703,10 @@ const Bookshelf: React.FC<BookshelfProps> = ({
         });
       }
 
-      await appService.saveFile(result.filename, result.data, {
-        mimeType: 'application/x-readestpack',
+      const saved = await appService.saveFile(result.filename, result.data, {
+        mimeType: READEST_PACK_MIME,
       });
+      if (!saved) return;
 
       eventDispatcher.dispatch('toast', {
         type: 'success',

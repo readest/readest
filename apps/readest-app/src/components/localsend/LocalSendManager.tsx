@@ -50,6 +50,7 @@ import {
   extractCollectionPack,
   isReadestPackFile,
   READEST_PACK_MIME,
+  resolveImportGroup,
 } from '@/services/pack/packService';
 import type { Book } from '@/types/book';
 import DevicePickerDialog from './DevicePickerDialog';
@@ -88,7 +89,7 @@ const LocalSendManager: React.FC = () => {
 
   const cleanupTempSendFile = useCallback(async () => {
     if (pendingTempSendFileRef.current && appService) {
-      await appService.deleteFile(pendingTempSendFileRef.current, 'None').catch(() => {});
+      await appService.deleteFile(pendingTempSendFileRef.current, 'Temp').catch(() => {});
       pendingTempSendFileRef.current = null;
     }
   }, [appService]);
@@ -238,9 +239,18 @@ const LocalSendManager: React.FC = () => {
             toast(_('No local files available to pack'), 'warning');
             return;
           }
-          const tempFileName = `temp-send-${Date.now()}-${result.filename}`;
-          await appService.writeFile(tempFileName, 'None', result.data);
-          const resolvedPath = await appService.resolveFilePath(tempFileName, 'None');
+          if (result.count < books.length) {
+            toast(
+              _('{{count}} book(s) omitted (file not available locally)', {
+                count: books.length - result.count,
+              }),
+              'warning',
+            );
+          }
+          // A Temp subdirectory: the fs scope covers paths under Temp, not Temp itself.
+          const tempFileName = `localsend/${Date.now()}-${result.filename}`;
+          await appService.writeFile(tempFileName, 'Temp', result.data);
+          const resolvedPath = await appService.resolveFilePath(tempFileName, 'Temp');
           pendingTempSendFileRef.current = tempFileName;
           setSendFiles([
             {
@@ -286,54 +296,53 @@ const LocalSendManager: React.FC = () => {
       if (payload.error || !payload.path) return; // failures are summarized on receive-end
       try {
         if (isReadestPackFile(payload.fileName)) {
-          const raw = await appService.readFile(payload.path, 'None', 'binary');
-          if (typeof raw !== 'string') {
-            const pack = await extractCollectionPack(raw as ArrayBuffer);
-            if (pack && pack.files.length > 0) {
-              const { getGroupId, updateBooks } = useLibraryStore.getState();
-              const collectionName = pack.collectionName?.trim() || undefined;
-              const resolvedGroupId = collectionName
-                ? getGroupId(collectionName) || collectionName
-                : undefined;
-              const importedBooks: Book[] = [];
-
-              for (const innerFile of pack.files) {
-                try {
-                  const book = await ingestFile(
-                    {
-                      file: innerFile,
-                      books: useLibraryStore.getState().library,
-                      groupId: resolvedGroupId,
-                      groupName: collectionName,
-                      forceCopy: true,
-                    },
-                    {
-                      appService,
-                      settings: useSettingsStore.getState().settings,
-                      isLoggedIn: !!userRef.current,
-                    },
-                  );
-                  if (book) importedBooks.push(book);
-                } catch (err) {
-                  console.error('Failed to ingest book from pack:', err);
-                }
-              }
-
-              if (importedBooks.length > 0) {
-                await updateBooks(envConfig, importedBooks);
-                if (collectionName) {
-                  toast(
-                    _('Restored collection "{{name}}" ({{count}} books)', {
-                      name: collectionName,
-                      count: importedBooks.length,
-                    }),
-                    'success',
-                  );
-                }
+          try {
+            const raw = await appService.readFile(payload.path, 'None', 'binary');
+            const pack = typeof raw === 'string' ? null : await extractCollectionPack(raw);
+            if (!pack) throw new Error('Not a readable Readest pack');
+            const { getGroupId, getGroupName, updateBooks } = useLibraryStore.getState();
+            const { groupId, groupName } = resolveImportGroup(
+              undefined,
+              pack.collectionName,
+              getGroupId,
+              getGroupName,
+            );
+            const importedBooks: Book[] = [];
+            for (const innerFile of pack.files) {
+              try {
+                const book = await ingestFile(
+                  {
+                    file: innerFile,
+                    books: useLibraryStore.getState().library,
+                    groupId,
+                    groupName,
+                    forceCopy: true,
+                  },
+                  {
+                    appService,
+                    settings: useSettingsStore.getState().settings,
+                    isLoggedIn: !!userRef.current,
+                  },
+                );
+                if (book) importedBooks.push(book);
+              } catch (err) {
+                console.error('Failed to ingest book from pack:', err);
               }
             }
+            if (importedBooks.length === 0) throw new Error('No books imported from pack');
+            await updateBooks(envConfig, importedBooks);
+            if (groupName) {
+              toast(
+                _('Restored collection "{{name}}" ({{count}} books)', {
+                  name: groupName,
+                  count: importedBooks.length,
+                }),
+                'success',
+              );
+            }
+          } finally {
+            await appService.deleteFile(payload.path, 'None').catch(() => {});
           }
-          await appService.deleteFile(payload.path, 'None').catch(() => {});
           return;
         }
 

@@ -53,6 +53,25 @@ export interface PackCreationResult {
 export type PackProgressCallback = (current: number, total: number, title: string) => void;
 
 /**
+ * Where an imported book lands. A pack's collection name wins over the import
+ * target; otherwise `groupId` keeps its meaning (undefined = no preference,
+ * '' = library root, any other string = that group).
+ */
+export const resolveImportGroup = (
+  groupId: string | undefined,
+  packCollectionName: string | undefined,
+  getGroupId: (name: string) => string | undefined,
+  getGroupName: (id: string) => string | undefined,
+): { groupId: string | undefined; groupName: string | undefined } => {
+  // getGroupId fingerprints a name the library doesn't know yet, so the
+  // collection name has to be carried through: getGroupName can't recover it.
+  if (packCollectionName) {
+    return { groupId: getGroupId(packCollectionName), groupName: packCollectionName };
+  }
+  return { groupId, groupName: groupId !== undefined ? getGroupName(groupId) : undefined };
+};
+
+/**
  * Checks if a given filename or path has the .readestpack extension.
  */
 export const isReadestPackFile = (filename: string): boolean => {

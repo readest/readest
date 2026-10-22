@@ -209,6 +209,26 @@
 
       <dict>
         <key>UTTypeIdentifier</key>
+        <string>com.readest.pack</string>
+        <key>UTTypeDescription</key>
+        <string>Readest Book Package</string>
+        <key>UTTypeConformsTo</key>
+        <array>
+          <string>public.zip-archive</string>
+        </array>
+        <key>UTTypeTagSpecification</key>
+        <dict>
+          <key>public.filename-extension</key>
+          <array>
+            <string>readestpack</string>
+          </array>
+          <key>public.mime-type</key>
+          <string>application/x-readestpack</string>
+        </dict>
+      </dict>
+
+      <dict>
+        <key>UTTypeIdentifier</key>
         <string>org.mobipocket.mobi</string>
         <key>UTTypeDescription</key>
         <string>MOBI Document</string>
