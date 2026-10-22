@@ -21,8 +21,9 @@
 // presents those files as one timeline on top of the same per-platform player.
 
 import type { BookDoc } from '@/libs/document';
+import type { AppService } from '@/types/system';
 import { BlobAudioClock, HtmlAudioClock } from '@/services/audiobook/AudiobookClock';
-import { getOSPlatform, stubTranslation as _ } from '@/utils/misc';
+import { stubTranslation as _ } from '@/utils/misc';
 import { parseSSMLMarks } from '@/utils/ssml';
 import type { TTSCapabilities, TTSClient, TTSMessageEvent } from '../TTSClient';
 import type { TTSController } from '../TTSController';
@@ -57,12 +58,6 @@ const CLIP_CONTINUITY_TOLERANCE_SEC = 0.3;
 // next block to claim it. Long enough that a normal handover is never cut short,
 // short enough that narration can never be left running unattended.
 const HANDOVER_GRACE_MS = 1000;
-
-// Inline of isTauriAppPlatform(): importing @/services/environment pulls the
-// app-service graph into unit tests that only need the platform bit.
-const isNativeNarrationPlatform = (): boolean =>
-  ['android', 'ios'].includes(getOSPlatform()) &&
-  process.env['NEXT_PUBLIC_APP_PLATFORM'] === 'tauri';
 
 // Container blobs come out of the zip with no MIME type, and a media element
 // given a typeless blob URL refuses to decode it ("Format error"), so the type
@@ -169,7 +164,7 @@ export class MediaOverlayClient implements TTSClient {
 
   #source: NarrationAudioSource | null = null;
   #section: MediaOverlaySection | null = null;
-  #native = isNativeNarrationPlatform();
+  #native: boolean;
   #player: NativeNarrationPlayer | null = null;
   #audio: NarrationClock | null = null;
   #audioHref: string | null = null;
@@ -185,8 +180,9 @@ export class MediaOverlayClient implements TTSClient {
   #rate = 1;
   #lang = 'en';
 
-  constructor(controller?: TTSController) {
+  constructor(controller?: TTSController, appService?: AppService | null) {
     this.controller = controller;
+    this.#native = !!(appService?.isAndroidApp || appService?.isIOSApp);
   }
 
   async init(): Promise<boolean> {

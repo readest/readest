@@ -136,6 +136,7 @@ const book: Book = {
 };
 
 const appService = {} as AppService;
+const iosAppService = { isIOSApp: true } as AppService;
 
 describe('openAudiobookSession', () => {
   beforeEach(() => {
@@ -239,7 +240,18 @@ describe('openAudiobookSession', () => {
     mocks.getOSPlatform.mockReturnValue('ios');
     mocks.isTauriAppPlatform.mockReturnValue(true);
 
-    const result = await openAudiobookSession({ appService, book });
+    const result = await openAudiobookSession({ appService: iosAppService, book });
+    expect(result).not.toBeNull();
+
+    const [, clock] = mocks.controllerCtor.mock.calls[0]!;
+    expect(clock).toBeInstanceOf(NativeAudiobookClock);
+  });
+
+  // iPadOS sends a desktop user agent, so the OS reads as macOS there (#6974).
+  it('uses NativeAudiobookClock on an iPad in the iOS app', async () => {
+    mocks.isTauriAppPlatform.mockReturnValue(true);
+
+    const result = await openAudiobookSession({ appService: iosAppService, book });
     expect(result).not.toBeNull();
 
     const [, clock] = mocks.controllerCtor.mock.calls[0]!;
@@ -262,7 +274,7 @@ describe('openAudiobookSession', () => {
     mocks.getOSPlatform.mockReturnValue('ios');
     mocks.isTauriAppPlatform.mockReturnValue(true);
 
-    await openAudiobookSession({ appService, book });
+    await openAudiobookSession({ appService: iosAppService, book });
 
     const [, , meta] = mocks.claim.mock.calls[0]!;
     expect(meta.ownsAudioFocus).toBe(true);
@@ -329,7 +341,7 @@ describe('openAudiobookSession', () => {
       mocks.isTauriAppPlatform.mockReturnValue(true);
       mocks.getMediaProxyBase.mockResolvedValue(null);
 
-      await openAudiobookSession({ appService, book });
+      await openAudiobookSession({ appService: iosAppService, book });
 
       const [source] = mocks.controllerCtor.mock.calls[0]!;
       expect((source as AudiobookSource).resolveUrl('/api/items/item1/file/1')).toBe(directUrl);
