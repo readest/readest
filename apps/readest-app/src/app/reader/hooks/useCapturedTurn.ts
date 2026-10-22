@@ -279,7 +279,12 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
   const isFixedLayout = () => !!getBookData(bookKey)?.isFixedLayout;
 
   const markCaptureBroken = (error: unknown) => {
-    if (controllerRef.current instanceof NativePageTurn) {
+    const viewSettings = getViewSettings(bookKey);
+    const style = viewSettings ? getCapturedTurnStyle(viewSettings, isFixedLayout()) : null;
+    if (
+      controllerRef.current instanceof NativePageTurn &&
+      controllerRef.current.canQueueNativeTurn(style)
+    ) {
       // The native controller releases the failed scene and recreates its
       // texture bank. A transient interruption must not disable future turns.
       console.warn('Native page turn interrupted; retrying on the next gesture:', error);
@@ -290,7 +295,6 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
     captureBroken = true;
     console.warn('Captured page turn unavailable, falling back:', error);
     const currentView = viewRef.current;
-    const viewSettings = getViewSettings(bookKey);
     if (currentView && viewSettings) {
       applyPageTurnAttributes(currentView, viewSettings, isFixedLayout());
     }

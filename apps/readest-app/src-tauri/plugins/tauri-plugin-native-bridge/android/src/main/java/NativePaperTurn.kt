@@ -121,9 +121,10 @@ internal class NativePaperTurn(private val activity: Activity, private val webVi
         webView.postOnAnimation { webView.postOnAnimation { if (p.live) action() } }
     }
 
-    private fun ensureRegion(args: NativePaperArgs, keep: Pending) {
+    private fun ensureRegion(args: NativePaperArgs, keep: Pending): Boolean {
         if (owner != args.owner) {
-            check(!active) { "Another reader owns the native paper scene" }
+            // A competing idle capture must not tear down the active reader.
+            if (active) return false
             pending.toList().filter { it !== keep }.forEach { it.resolve(JSObject().put("ready", false).put("cancelled", true)) }
             captures.clear(); latestCapture.clear(); requestKeys.clear(); uploadedRequests.clear()
             popup?.dismiss(); view?.onFailure = null; view?.dispose(); popup = null; view = null
@@ -150,6 +151,7 @@ internal class NativePaperTurn(private val activity: Activity, private val webVi
             }
         } else popup?.update(left, top, w, h)
         width = w; height = h
+        return true
     }
 
     fun command(args: NativePaperArgs, invoke: Invoke) {
@@ -167,7 +169,7 @@ internal class NativePaperTurn(private val activity: Activity, private val webVi
                 if (args.owner != owner) { p.resolve(); return }
             }
             if (args.op == "capture") {
-                ensureRegion(args, p)
+                if (!ensureRegion(args, p)) { p.resolve(JSObject().put("ready", false)); return }
                 generation = maxOf(generation, args.generation)
                 capture(args, p)
                 return

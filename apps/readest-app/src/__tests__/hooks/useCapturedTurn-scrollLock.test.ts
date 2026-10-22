@@ -230,6 +230,49 @@ afterEach(() => {
 });
 
 describe('useCapturedTurn scroll-lock gate', () => {
+  test.each([
+    'native curl',
+    'slide',
+    'fixed curl',
+    'curl without preview',
+  ] as const)('uses the matching recovery path after a failed Android %s', async (mode) => {
+    vi.resetModules();
+    const { useCapturedTurn: useFreshCapturedTurn } = await import(
+      '@/app/reader/hooks/useCapturedTurn'
+    );
+    const { NativePageTurn } = await import('@/app/reader/utils/nativePageTurn');
+    h.android = true;
+    h.renderer.getPageTurnKey = () => '1';
+    h.renderer.previewPage = mode === 'curl without preview' ? undefined : async () => null;
+    h.viewSettings.pageTurnStyle = mode === 'slide' ? 'slide' : 'curl';
+    h.isFixedLayout = mode === 'fixed curl';
+    h.viewSettings.zoomLevel = 100;
+    h.viewSettings.zoomMode = 'fit-page';
+    const invalidate = vi.spyOn(NativePageTurn.prototype, 'invalidateNativePages');
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const view = makeView();
+    const originalNext = vi.mocked(view.next);
+    h.controller.turn.mockRejectedValueOnce(new Error('capture failed'));
+    const { unmount } = renderHook(() => useFreshCapturedTurn('book-1', { current: view }));
+    try {
+      invalidate.mockClear();
+      await act(async () => {
+        await view.next();
+      });
+      expect(originalNext).toHaveBeenCalledTimes(1);
+      expect(invalidate).toHaveBeenCalledTimes(mode === 'native curl' ? 1 : 0);
+      await act(async () => {
+        await view.next();
+      });
+      expect(h.controller.turn).toHaveBeenCalledTimes(mode === 'native curl' ? 2 : 1);
+      expect(originalNext).toHaveBeenCalledTimes(mode === 'native curl' ? 1 : 2);
+    } finally {
+      unmount();
+      invalidate.mockRestore();
+      warn.mockRestore();
+    }
+  });
+
   test('accepts a new native curl swipe while a previous tap is settling', async () => {
     h.android = true;
     h.renderer.previewPage = async () => null;
@@ -300,6 +343,8 @@ describe('useCapturedTurn scroll-lock gate', () => {
 
   test('retries native animation after a transient failure instead of disabling every later turn', async () => {
     h.android = true;
+    h.renderer.getPageTurnKey = () => '1';
+    h.renderer.previewPage = async () => null;
     const view = makeView();
     renderHook(() => useCapturedTurn('book-1', { current: view }));
     h.controller.turn.mockRejectedValueOnce(new Error('Native page textures are not ready'));

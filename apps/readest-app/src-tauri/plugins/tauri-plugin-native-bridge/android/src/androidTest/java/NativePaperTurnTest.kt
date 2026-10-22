@@ -142,6 +142,41 @@ class NativePaperTurnTest {
     private fun absColor(a: Int, b: Int) = maxOf(kotlin.math.abs(Color.red(a) - Color.red(b)),
         kotlin.math.abs(Color.green(a) - Color.green(b)), kotlin.math.abs(Color.blue(a) - Color.blue(b)))
 
+    @Test fun anotherReadersCaptureDoesNotDestroyTheActiveOwnersPendingFinish() {
+        Harness().use { f ->
+            f.capture("red"); f.command("cover") { key = "red" }
+            f.color("lime"); f.capture("green")
+            f.command("start") { key = "red"; destination = "green" }
+            f.command("animate") { commit = true }
+            f.awaitNativeColor(Color.GREEN)
+            val canvas = f.nativeView()
+            val finished = CountDownLatch(1)
+            val finishError = AtomicReference<String>()
+            instrumentation.runOnMainSync {
+                f.holdPresentation = true
+                f.paper.command(f.args("finish")) { _, error ->
+                    finishError.set(error); finished.countDown()
+                }
+            }
+            val other = f.command("capture") { owner = 2; key = "other"; requestId = 99 }
+            assertFalse("Reject only the competing capture", other.optBoolean("ready", true))
+            assertEquals("Keep the current owner's pending finish", 1L, finished.count)
+            assertSame("Keep the current owner's GPU scene", canvas, f.nativeView())
+            f.awaitNativeColor(Color.GREEN)
+            f.color("lime")
+            instrumentation.runOnMainSync {
+                f.holdPresentation = false
+                f.heldPresentations.toList().forEach { it() }; f.heldPresentations.clear()
+            }
+            assertTrue(finished.await(6, TimeUnit.SECONDS))
+            assertNull(finishError.get())
+            f.command("start") { key = "green"; destination = "red"; forward = false }
+            f.command("animate") { commit = true }
+            f.awaitNativeColor(Color.RED)
+            f.color("red"); f.command("finish")
+        }
+    }
+
     @Test fun keepsTheRestoredPageCoveredUntilItsWebViewFrameIsReady() {
         Harness().use { f ->
             f.capture("current")
