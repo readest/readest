@@ -265,7 +265,7 @@ export const ReadingTrendsChart: React.FC<ReadingTrendsChartProps> = ({ data }) 
           </div>
           <div>
             <div className='text-base-content/60 text-[0.7em] uppercase font-semibold tracking-wider'>
-              {_('Books')}
+              {activePoint ? _('Books') : _('Peak Books')}
             </div>
             <div className='text-base-content text-lg sm:text-xl font-bold tabular-nums'>
               {activePoint ? activePoint.bookCount : totalBooks}
@@ -273,7 +273,7 @@ export const ReadingTrendsChart: React.FC<ReadingTrendsChartProps> = ({ data }) 
           </div>
           <div>
             <div className='text-base-content/60 text-[0.7em] uppercase font-semibold tracking-wider'>
-              {_('Pages')}
+              {activePoint ? _('Pages') : _('Est. Pages')}
             </div>
             <div className='text-base-content text-lg sm:text-xl font-bold tabular-nums'>
               {(activePoint ? activePoint.pages : totalPages).toLocaleString()}
