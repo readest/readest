@@ -182,6 +182,14 @@ fn register_file(
     files: &RwLock<HashMap<String, FileWindow>>,
     window: FileWindow,
 ) -> Result<String, String> {
+    // The window is served to the WebView's origin, so it may only carry an
+    // audio type: never one the page would render or run.
+    let content_type = &window.content_type;
+    if !content_type.to_ascii_lowercase().starts_with("audio/")
+        || content_type.contains(['\r', '\n'])
+    {
+        return Err(format!("media proxy: not an audio type: {content_type:?}"));
+    }
     let mut files = files
         .write()
         .map_err(|_| "media proxy: file table poisoned".to_string())?;
@@ -373,7 +381,8 @@ fn serve_file(
         .header(CONTENT_TYPE, window.content_type.as_str())
         .header(ACCEPT_RANGES, "bytes")
         // See forward(): the page is cross-origin isolated.
-        .header("Cross-Origin-Resource-Policy", "cross-origin");
+        .header("Cross-Origin-Resource-Policy", "cross-origin")
+        .header("X-Content-Type-Options", "nosniff");
     let (builder, first, count) = match byte_range(range, len) {
         Ok(Some((first, last))) => (
             builder
@@ -963,6 +972,45 @@ mod tests {
             .await
             .unwrap();
         assert_eq!(guessed.status(), 404);
+    }
+
+    #[tokio::test]
+    async fn serves_file_windows_with_nosniff() {
+        let (url, _, _) = spawn_file_proxy("nosniff").await;
+
+        let res = test_client().get(&url).send().await.unwrap();
+
+        assert_eq!(res.headers()["x-content-type-options"], "nosniff");
+    }
+
+    /// The window is reachable from the WebView's origin, so a type the page
+    /// would render (HTML, SVG, script) must never be attached to a file.
+    #[test]
+    fn registering_refuses_a_non_audio_type() {
+        let files: RwLock<HashMap<String, FileWindow>> = RwLock::new(HashMap::new());
+        let window = |content_type: &str| FileWindow {
+            path: PathBuf::from("/books/a.epub"),
+            start: 1,
+            end: 2,
+            content_type: content_type.into(),
+        };
+
+        for refused in [
+            "text/html",
+            "image/svg+xml",
+            "application/javascript",
+            "video/mp4",
+            "audio/mpeg\r\nX-Injected: 1",
+            "",
+        ] {
+            assert!(
+                register_file(&files, window(refused)).is_err(),
+                "{refused:?}"
+            );
+        }
+        assert!(register_file(&files, window("audio/mpeg")).is_ok());
+        assert!(register_file(&files, window("Audio/MP4")).is_ok());
+        assert!(files.read().unwrap().len() == 2);
     }
 
     #[test]
