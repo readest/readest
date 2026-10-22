@@ -143,9 +143,14 @@ export class ReedyXRaySource {
   }
 
   private statusFromMeta(bookHash: string, meta: BookMeta | null): XRaySourceStatus {
-    if (!meta) return { kind: 'not_indexed' };
+    if (!meta || meta.indexingStatus === 'not_indexed') return { kind: 'not_indexed' };
     if (meta.indexingStatus === 'indexing') return { kind: 'indexing' };
     if (meta.indexingStatus === 'failed') return { kind: 'failed', error: meta.error };
+
+    const fingerprint = toFingerprint(bookHash, meta);
+    if (meta.indexingStatus === 'empty_index' || meta.chunkCount === 0) {
+      return { kind: 'empty_index', fingerprint };
+    }
 
     if (meta.embeddingModel !== this.activeEmbeddingModelId) {
       return {
@@ -153,11 +158,6 @@ export class ReedyXRaySource {
         activeModel: this.activeEmbeddingModelId,
         indexedModel: meta.embeddingModel,
       };
-    }
-
-    const fingerprint = toFingerprint(bookHash, meta);
-    if (meta.indexingStatus === 'empty_index' || meta.chunkCount === 0) {
-      return { kind: 'empty_index', fingerprint };
     }
 
     return {

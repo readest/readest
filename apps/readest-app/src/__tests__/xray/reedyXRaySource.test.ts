@@ -110,7 +110,7 @@ describe('ReedyXRaySource', () => {
     expect(mocks.openNativeDatabase).toHaveBeenCalledOnce();
   });
 
-  it('reports missing, ready, and stale Reedy indexes', async () => {
+  it('reports Reedy indexing states before model compatibility', async () => {
     const source = new ReedyXRaySource(db, reedy, MODEL_ID);
     await expect(source.getStatus(BOOK_HASH)).resolves.toEqual({ kind: 'not_indexed' });
 
@@ -130,6 +130,15 @@ describe('ReedyXRaySource', () => {
       activeModel: 'embedding-b',
       indexedModel: MODEL_ID,
     });
+
+    await reedy.upsertBookMeta(indexedMeta({ indexingStatus: 'not_indexed' }));
+    expect.soft(await source.getStatus(BOOK_HASH)).toEqual({ kind: 'not_indexed' });
+
+    await reedy.upsertBookMeta(indexedMeta({ indexingStatus: 'empty_index', chunkCount: 0 }));
+    expect.soft(await stale.getStatus(BOOK_HASH)).toMatchObject({ kind: 'empty_index' });
+
+    await reedy.upsertBookMeta(indexedMeta({ chunkCount: 0 }));
+    expect.soft(await stale.getStatus(BOOK_HASH)).toMatchObject({ kind: 'empty_index' });
   });
 
   it('reads only complete chunks at or before the current CFI', async () => {
