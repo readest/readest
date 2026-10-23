@@ -175,6 +175,9 @@ class NativeTTSPlugin(private val activity: Activity) : Plugin(activity) {
         }
 
         override fun onPlayerError(error: PlaybackException) {
+            // The failed item can't play again by seeking; the next load of the
+            // same file must prepare it afresh.
+            playoutLoadedPath = null
             if (playoutCurrentIndex < 0) return
             Log.e(TAG, "Native narration playback failed", error)
             playoutCurrentIndex = -1

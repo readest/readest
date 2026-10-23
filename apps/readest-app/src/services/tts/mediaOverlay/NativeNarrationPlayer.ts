@@ -255,7 +255,11 @@ export class NativeNarrationPlayer {
   }
 
   async #stageBlob(href: string, blob: Blob): Promise<string> {
-    if (this.#stagedHref === href && this.#stagedPath) return this.#stagedPath;
+    // A path from loadPath() is the caller's file (possibly the whole book),
+    // not a staged copy of this href.
+    if (this.#ownsStagedPath && this.#stagedHref === href && this.#stagedPath) {
+      return this.#stagedPath;
+    }
     if (this.#stagedPath && this.#ownsStagedPath) {
       await remove(this.#stagedPath).catch(() => undefined);
     }
