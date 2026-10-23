@@ -4,6 +4,7 @@ import {
   containsCJK,
   isCJKPunctuation,
   isRTLText,
+  splitAtFocus,
   getSegmenterLocale,
   segmentCJKText,
   splitTextIntoWords,
@@ -151,6 +152,24 @@ describe('rsvp/utils', () => {
 
     test('returns false for empty string', () => {
       expect(isRTLText('')).toBe(false);
+    });
+  });
+
+  describe('splitAtFocus', () => {
+    test('keeps a Bengali vowel sign with its consonant (#7024)', () => {
+      // মাথা: the vowel sign া must stay on ম, not start the text after it.
+      expect(splitAtFocus('মাথা', 0)).toEqual({ before: '', focus: 'মা', after: 'থা' });
+    });
+
+    test('keeps a Bengali conjunct together (#7024)', () => {
+      expect(splitAtFocus('বন্ধু', 1)).toEqual({ before: 'ব', focus: 'ন্ধু', after: '' });
+      expect(splitAtFocus('কৌশল', 1)).toEqual({ before: '', focus: 'কৌ', after: 'শল' });
+    });
+
+    test('splits Latin and CJK words one character at a time, as before', () => {
+      expect(splitAtFocus('reading', 2)).toEqual({ before: 're', focus: 'a', after: 'ding' });
+      expect(splitAtFocus('是。', 0)).toEqual({ before: '', focus: '是', after: '。' });
+      expect(splitAtFocus('', 0)).toEqual({ before: '', focus: '', after: '' });
     });
   });
 

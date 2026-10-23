@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useSync } from '@/hooks/useSync';
 import { BookNote, FIXED_LAYOUT_FORMATS } from '@/types/book';
@@ -8,7 +8,7 @@ import { SYNC_NOTES_INTERVAL_SEC } from '@/services/constants';
 import { throttle } from '@/utils/throttle';
 import { getXPointerFromCFI, getCFIFromXPointer, getCFIFromXPointerRange } from '@/utils/xcfi';
 import { getIndexFromCfi } from '@/utils/cfi';
-import { incomingNoteWins } from '@/utils/booknoteStamp';
+import { incomingNoteWins, nextBooknoteStamp } from '@/utils/booknoteStamp';
 import { removeBookNoteOverlays } from '../utils/annotatorUtil';
 
 export const useNotesSync = (bookKey: string) => {
@@ -16,6 +16,8 @@ export const useNotesSync = (bookKey: string) => {
   const { syncedNotes, syncNotes, lastSyncedAtNotes } = useSync(bookKey);
   const { getConfig, setConfig, getBookData } = useBookDataStore();
   const { getView, getViewsById } = useReaderStore();
+  // The updatedAt of each note's oldest push not yet answered by the server.
+  const pushedAtRef = useRef(new Map<string, number>());
 
   const config = getConfig(bookKey);
 
@@ -156,6 +158,11 @@ export const useNotesSync = (bookKey: string) => {
         const newNotes = getNewNotes();
         if (newNotes.notes?.length) {
           populateXPointersForPush(newNotes.notes).then((enriched) => {
+            enriched.forEach((note) => {
+              if (!pushedAtRef.current.has(note.id)) {
+                pushedAtRef.current.set(note.id, note.updatedAt);
+              }
+            });
             syncNotes(enriched, book?.hash, book?.metaHash, 'both');
           });
         } else {
@@ -186,6 +193,26 @@ export const useNotesSync = (bookKey: string) => {
       const oldNotes = config?.booknotes ?? [];
       const existingNote = oldNotes.find((oldNote) => oldNote.id === note.id);
       if (existingNote) {
+        const pushedAt = pushedAtRef.current.get(note.id);
+        if (
+          pushedAt !== undefined &&
+          !note.deletedAt &&
+          existingNote.updatedAt > pushedAt &&
+          incomingNoteWins(existingNote, note)
+        ) {
+          // Changed here after it was pushed: the reply is the pushed version,
+          // which the server stamps with its own clock on insert. Taking it
+          // would undo what was done since, such as strokes drawn while the
+          // first push of a drawing was in flight. Keep ours, stamped after
+          // the reply so the next sync pushes it. A deletion may come from
+          // another device, so it goes through the usual newest-wins rule.
+          return {
+            ...note,
+            ...existingNote,
+            deletedAt: existingNote.deletedAt,
+            updatedAt: nextBooknoteStamp(note),
+          };
+        }
         if (incomingNoteWins(existingNote, note)) {
           // A tombstone from KOReader carries no cfi; keep the local anchor or
           // setConfig discards the note instead of recording the deletion. The
@@ -239,6 +266,8 @@ export const useNotesSync = (bookKey: string) => {
         ...oldNotes.filter((oldNote) => !convertedNotes.some((n) => n.id === oldNote.id)),
         ...convertedNotes.map(processNewNote),
       ];
+      // Answered: later copies of these notes are ordinary changes.
+      convertedNotes.forEach((note) => pushedAtRef.current.delete(note.id));
       setConfig(bookKey, { booknotes: mergedNotes });
     };
     processSyncedNotes();

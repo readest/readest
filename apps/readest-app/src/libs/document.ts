@@ -113,6 +113,8 @@ export type BookMetadata = {
   absDuration?: number;
 };
 
+export type BookMediaSource = { blob: Blob } | { path: string; start: number; end: number };
+
 export interface BookDoc {
   metadata: BookMetadata;
   rendition: {
@@ -143,6 +145,11 @@ export interface BookDoc {
   // manifest items.
   loadText?(href: string): Promise<string | null>;
   loadBlob?(href: string): Promise<Blob>;
+  // Where a stored (uncompressed) entry's bytes lie in the book file, so a
+  // large media entry can be played in place instead of copied out whole:
+  // a slice of the file, or its byte window [start, end) on disk. Null for a
+  // compressed entry or a file that can't be sliced lazily.
+  getMediaSource?(href: string, type: string): Promise<BookMediaSource | null>;
   // EPUB 3 `media:*` package metadata, used to name the narrator.
   media?: { narrator?: string; duration?: number };
 }
@@ -399,6 +406,25 @@ export class DocumentLoader {
       !entry.directory ? entry.getData(new BlobWriter(type!)) : null,
     );
 
+    // A stored entry's data follows its local header, whose name and extra
+    // field lengths can differ from the central directory's copy.
+    const getMediaSource = async (name: string, type: string): Promise<BookMediaSource | null> => {
+      const entry = getEntry(name);
+      if (!entry || entry.directory || entry.encrypted || entry.compressionMethod !== 0) {
+        return null;
+      }
+      const header = new DataView(
+        await this.file.slice(entry.offset, entry.offset + 30).arrayBuffer(),
+      );
+      if (header.byteLength < 30 || header.getUint32(0, true) !== 0x04034b50) return null;
+      const start = entry.offset + 30 + header.getUint16(26, true) + header.getUint16(28, true);
+      const end = start + entry.uncompressedSize;
+      // A plain File slices lazily; NativeFile and RemoteFile read the slice
+      // into memory, so for them the app plays the entry from disk.
+      if (!('open' in this.file)) return { blob: this.file.slice(start, end, type) };
+      return this.nativeFilePath ? { path: this.nativeFilePath, start, end } : null;
+    };
+
     // Prefetch fast-path: foliate-js's EPUB.init() reads container.xml,
     // the OPF, the EPUB3 nav and (if present) the NCX via this very
     // `loadText`. On Tauri we already have those bytes in memory from
@@ -456,7 +482,15 @@ export class DocumentLoader {
       ? (name: string) => sizesOverride.get(name) ?? getEntry(name)?.uncompressedSize ?? 0
       : (name: string) => getEntry(name)?.uncompressedSize ?? 0;
 
-    return { entries, loadText, loadBlob, getSize, getComment, sha1: undefined };
+    return {
+      entries,
+      loadText,
+      loadBlob,
+      getMediaSource,
+      getSize,
+      getComment,
+      sha1: undefined,
+    };
   }
 
   /**
@@ -601,7 +635,9 @@ export class DocumentLoader {
           format = 'FBZ';
         } else {
           const { EPUB } = await import('foliate-js/epub.js');
-          book = await new EPUB(loader).init();
+          book = Object.assign(await new EPUB(loader).init(), {
+            getMediaSource: loader.getMediaSource,
+          });
           format = 'EPUB';
         }
       } else if (await this.isPDF()) {

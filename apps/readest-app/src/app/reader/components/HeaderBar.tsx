@@ -150,12 +150,14 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
   }, []);
 
   // Check if mouse is outside header area to avoid false positive event of MouseLeave when clicking inside header on Windows
+  // The top edge itself counts as inside: a pointer pushed against the top of a
+  // maximized window sits at y=0 and can't leave upward (#7015).
   const isMouseOutsideHeader = useCallback((clientX: number, clientY: number) => {
     if (!headerRef.current) return true;
 
     const rect = headerRef.current.getBoundingClientRect();
     return (
-      clientX <= rect.left || clientX >= rect.right || clientY <= rect.top || clientY >= rect.bottom
+      clientX <= rect.left || clientX >= rect.right || clientY < rect.top || clientY >= rect.bottom
     );
   }, []);
 
@@ -208,6 +210,13 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
         onClick={() => setHoveredBookKey(bookKey)}
         onMouseEnter={() => !appService?.isMobile && setHoveredBookKey(bookKey)}
         onTouchStart={() => !appService?.isMobile && setHoveredBookKey(bookKey)}
+        // A pointer that crosses the strip straight into the book never enters
+        // the header, so the header's own mouseleave never comes (#6999).
+        onMouseLeave={(e) => {
+          if (!appService?.isMobile && isMouseOutsideHeader(e.clientX, e.clientY)) {
+            setHoveredBookKey('');
+          }
+        }}
       />
       <div
         className={clsx(

@@ -20,7 +20,7 @@
 // item's tracks) hands over a track list instead, and MultiTrackNarrationClock
 // presents those files as one timeline on top of the same per-platform player.
 
-import type { BookDoc } from '@/libs/document';
+import type { BookDoc, BookMediaSource } from '@/libs/document';
 import type { AppService } from '@/types/system';
 import { BlobAudioClock, HtmlAudioClock } from '@/services/audiobook/AudiobookClock';
 import { stubTranslation as _ } from '@/utils/misc';
@@ -77,11 +77,11 @@ const AUDIO_MIME_TYPES: Record<string, string> = {
   webm: 'audio/webm',
 };
 
-const audioBlobWithType = (href: string, blob: Blob): Blob => {
-  if (blob.type) return blob;
-  const ext = href.split('.').pop()?.toLowerCase() ?? '';
-  return new Blob([blob], { type: AUDIO_MIME_TYPES[ext] ?? 'audio/mpeg' });
-};
+const audioType = (href: string): string =>
+  AUDIO_MIME_TYPES[href.split('.').pop()?.toLowerCase() ?? ''] ?? 'audio/mpeg';
+
+const audioBlobWithType = (href: string, blob: Blob): Blob =>
+  blob.type ? blob : new Blob([blob], { type: audioType(href) });
 
 interface ClipRun {
   audioHref: string;
@@ -92,6 +92,8 @@ export interface NarrationAudioSource {
   narrator?: string;
   textHighlight?: boolean;
   loadBlob: (href: string) => Promise<Blob>;
+  // The audio's bytes in place in the book file (see BookDoc.getMediaSource).
+  getMediaSource?: (href: string, type: string) => Promise<BookMediaSource | null>;
   resolveUrl?: (href: string) => Promise<string | null>;
   resolvePath?: (href: string) => Promise<string | null>;
   // A recording split across several streamable files, timed on one global
@@ -206,6 +208,9 @@ export class MediaOverlayClient implements TTSClient {
         ? {
             narrator: book.media?.narrator,
             loadBlob: (href) => book.loadBlob!(href),
+            ...(book.getMediaSource
+              ? { getMediaSource: (href, type) => book.getMediaSource!(href, type) }
+              : {}),
           }
         : null,
     );
@@ -278,9 +283,28 @@ export class MediaOverlayClient implements TTSClient {
       // Keep any prior native session's file until the new one is staged; load()
       // replaces the AVPlayer item. Do not call #releaseAudio (that aborts).
       this.#cancelHandover();
+      // The native player plays a stored entry in place from the book file.
+      // A book it can't open (a content:// URI on Android) still gets the
+      // entry staged as a copy.
+      const media = !path
+        ? await this.#source.getMediaSource?.(href, audioType(href)).catch(() => null)
+        : null;
+      const inPlace =
+        !!media &&
+        'path' in media &&
+        (await this.#player
+          .loadPath(href, media.path, 0, {
+            start: media.start,
+            end: media.end,
+            contentType: audioType(href),
+          })
+          .then(
+            () => true,
+            () => false,
+          ));
       if (path) {
         await this.#player.loadPath(href, path, 0);
-      } else {
+      } else if (!inPlace) {
         const blob = audioBlobWithType(href, await this.#source.loadBlob(href));
         await this.#player.load(href, blob, 0);
       }
@@ -293,10 +317,25 @@ export class MediaOverlayClient implements TTSClient {
     }
 
     const directUrl = await this.#source.resolveUrl?.(href).catch(() => null);
+    // A book's one shared track can be most of the book (900 MB in #6989), so
+    // a stored audio entry plays in place rather than being copied out whole
+    // first: a slice of the book file, or the media proxy's window onto it.
+    const media = directUrl
+      ? null
+      : await this.#source.getMediaSource?.(href, audioType(href)).catch(() => null);
+    const mediaUrl =
+      media && 'path' in media
+        ? await (await import('@/services/audiobook/mediaProxy'))
+            .getMediaFileUrl(media.path, media.start, media.end, audioType(href))
+            .catch(() => null)
+        : null;
     this.#releaseAudio();
-    let url = directUrl ?? null;
+    let url = directUrl ?? mediaUrl;
     if (!url) {
-      const blob = audioBlobWithType(href, await this.#source.loadBlob(href));
+      const blob =
+        media && 'blob' in media
+          ? media.blob
+          : audioBlobWithType(href, await this.#source.loadBlob(href));
       url = URL.createObjectURL(blob);
       this.#objectUrl = url;
     }
