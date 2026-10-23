@@ -40,7 +40,7 @@ overrides:
   undici: '>=7.29.1 <8'
   flatted: '>=3.4.2'
   body-parser: '>=2.3.0'
-  dompurify: '>=3.4.16'
+  dompurify: '>=3.4.17'
   i18next-http-backend: '>=4.0.2 <5'
   picomatch: '>=4.0.4'
   path-to-regexp: '>=8.4.0'
