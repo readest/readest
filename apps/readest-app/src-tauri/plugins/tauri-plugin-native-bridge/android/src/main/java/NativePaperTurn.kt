@@ -81,11 +81,13 @@ internal class NativePaperTurn(private val activity: Activity, private val webVi
         @Volatile var live = true
         private val deadline = Runnable { if (live) failAll("Native page frame timed out") }
         init { pending.add(this); main.postDelayed(deadline, 3000) }
+        /** Complete a bridge request once and remove its timeout. */
         fun resolve(result: JSObject = JSObject()) {
             if (!live) return
             live = false; main.removeCallbacks(deadline); pending.remove(this)
             complete(result, null)
         }
+        /** Reject a bridge request once and remove its timeout. */
         fun reject(message: String) {
             if (!live) return
             live = false; main.removeCallbacks(deadline); pending.remove(this)
@@ -93,6 +95,7 @@ internal class NativePaperTurn(private val activity: Activity, private val webVi
         }
     }
 
+    /** Tear down the failed scene and reject every outstanding request. */
     private fun failAll(message: String) {
         animation?.let { choreographer.removeFrameCallback(it) }; animation = null
         animationPending = null; active = false; dragging = false; cancelled = true
@@ -102,6 +105,7 @@ internal class NativePaperTurn(private val activity: Activity, private val webVi
         captures.clear(); latestCapture.clear(); requestKeys.clear(); uploadedRequests.clear()
     }
 
+    /** Wait for the live WebView visual state and committed window frame before handoff. */
     private fun presented(p: Pending, action: () -> Unit) {
         if (!webView.isAttachedToWindow || activity.isDestroyed || activity.isFinishing) {
             failAll("WebView not available for native paper"); return
@@ -117,10 +121,12 @@ internal class NativePaperTurn(private val activity: Activity, private val webVi
         })
     }
 
+    /** Wait for two UI frames before acknowledging a newly drawn native cover. */
     private fun painted(p: Pending, action: () -> Unit) {
         webView.postOnAnimation { webView.postOnAnimation { if (p.live) action() } }
     }
 
+    /** Create or resize the native cover, refusing a competing owner during an active turn. */
     private fun ensureRegion(args: NativePaperArgs, keep: Pending): Boolean {
         if (owner != args.owner) {
             // A competing idle capture must not tear down the active reader.
@@ -154,10 +160,12 @@ internal class NativePaperTurn(private val activity: Activity, private val webVi
         return true
     }
 
+    /** Dispatch an owner-scoped bridge command and settle its completion callback. */
     fun command(args: NativePaperArgs, invoke: Invoke) {
         command(args) { result, error -> if (error != null) invoke.reject(error) else invoke.resolve(result ?: JSObject()) }
     }
 
+    /** Dispatch an owner-scoped bridge command and settle its completion callback. */
     internal fun command(args: NativePaperArgs, complete: (JSObject?, String?) -> Unit) {
         val p = Pending(complete)
         try {
@@ -241,7 +249,7 @@ internal class NativePaperTurn(private val activity: Activity, private val webVi
                     dragging = false
                     cancelled = true; animationTarget = 0f
                     if (animationPending != null) completeAnimation()
-                    else { progress = 0f; requestDraw() }
+                    else { progress = 0f; view?.alpha = 0f; requestDraw() }
                     p.resolve()
                 }
                 "finish" -> {
@@ -270,6 +278,7 @@ internal class NativePaperTurn(private val activity: Activity, private val webVi
         catch (error: OutOfMemoryError) { failAll("Not enough memory for native paper") }
     }
 
+    /** Capture the Activity pixels beneath the popup and upload a generation-checked page texture. */
     private fun capture(args: NativePaperArgs, p: Pending) {
         if (abortedRequests.remove("${args.owner}:${args.requestId}") || active) { p.resolve(JSObject().put("ready", false)); return }
         captures[args.requestId] = p
@@ -310,6 +319,7 @@ internal class NativePaperTurn(private val activity: Activity, private val webVi
         }
     }
 
+    /** Track the native finger without consuming the WebView touch sequence. */
     fun touch(event: MotionEvent) {
         when (event.actionMasked) {
             MotionEvent.ACTION_DOWN -> {
@@ -329,11 +339,13 @@ internal class NativePaperTurn(private val activity: Activity, private val webVi
             MotionEvent.ACTION_CANCEL -> { finger = false; dragging = false }
         }
     }
+    /** Translate the latest native finger position into the current sheet pose. */
     private fun updateFinger() {
         val distance = if (forward != rtl) downX - lastX else lastX - downX
         progress = (distance / width).coerceIn(0f, 1f)
         grabY = 0.5f + (lastY - downY) / height
     }
+    /** Coalesce finger-follow poses into one Choreographer update. */
     private fun requestDraw() {
         if (drawScheduled) return
         drawScheduled = true
@@ -342,6 +354,7 @@ internal class NativePaperTurn(private val activity: Activity, private val webVi
             if (active && animationPending == null) view?.draw(progress, grabY)
         }
     }
+    /** Settle the released sheet, advancing only after each native pose is presented. */
     private fun animate(args: NativePaperArgs, p: Pending) {
         if (!active) { p.resolve(JSObject().put("cancelled", true)); return }
         if (animationPending != null) { p.reject("Native paper already settling"); return }
@@ -383,6 +396,7 @@ internal class NativePaperTurn(private val activity: Activity, private val webVi
         }
         animation = callback; choreographer.postFrameCallback(callback)
     }
+    /** Present the terminal pose before acknowledging settlement. */
     private fun completeAnimation() {
         val p = animationPending ?: return
         animation?.let { choreographer.removeFrameCallback(it) }; animation = null
@@ -396,6 +410,7 @@ internal class NativePaperTurn(private val activity: Activity, private val webVi
             }
         }
     }
+    /** Release the scene and settle outstanding requests except the caller being disposed. */
     private fun disposeExcept(keep: Pending?) {
         animation?.let { choreographer.removeFrameCallback(it) }; animation = null
         animationPending = null; active = false; dragging = false
@@ -404,5 +419,6 @@ internal class NativePaperTurn(private val activity: Activity, private val webVi
         popup?.dismiss(); popup = null; view?.onFailure = null; view?.dispose(); view = null
         latestCapture.clear(); requestKeys.clear(); uploadedRequests.clear(); owner = 0
     }
+    /** Release the scene and all outstanding native commands. */
     fun dispose() = disposeExcept(null)
 }

@@ -7,6 +7,7 @@ export interface PageTurnMeasurement {
   finish: () => void;
 }
 
+/** Measure first motion and JS frame intervals only in explicitly instrumented builds. */
 export function measurePageTurn(startedAt: number, resident: boolean): PageTurnMeasurement | null {
   if (!enabled) return null;
   let panel = document.getElementById('page-turn-diagnostics');

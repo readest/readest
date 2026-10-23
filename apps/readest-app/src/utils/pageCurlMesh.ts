@@ -6,6 +6,7 @@ type Point = [number, number];
 const HINGES = 64;
 const ANGLE = Math.PI / (HINGES + 1);
 
+/** Clip the source leaf at each hinge and emit perspective-ready textured triangles. */
 export function buildPageCurlMesh(
   width: number,
   height: number,

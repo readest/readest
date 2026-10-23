@@ -117,6 +117,7 @@ interface TurnRenderer {
   isUsable?(): boolean;
   render(progress: number, grab: CurlGrab, rtl: boolean): void;
   animateSettle?(options: PageSlideSettleOptions): Animation | null;
+  /** Cancel active work and release prepared surfaces, captures, and animation resources. */
   dispose(): void;
 }
 
@@ -596,6 +597,7 @@ export class CapturedPageTurn {
     return this.#endDrag(session, commit, releaseVelocity);
   }
 
+  /** Settle one drag session and restore navigation when the user cancels. */
   #endDrag(session: DragSession, commit: boolean, releaseVelocity = 0) {
     const run = this.#pending.then(async () => {
       if (this.#disposed) {
@@ -639,6 +641,7 @@ export class CapturedPageTurn {
     return run;
   }
 
+  /** Cancel an unfinished gesture before accepting a replacement session. */
   #cancelOpenDrag() {
     const session = this.#dragSession;
     if (!session) return;
@@ -646,6 +649,7 @@ export class CapturedPageTurn {
     this.#endDrag(session, false).catch(() => {});
   }
 
+  /** Commit navigation after a resident captured sheet reaches its destination. */
   async #commitDeferredNavigation(active: ActiveTurn) {
     active.measurement?.endMotion();
     if (!active.deferredNavigation || this.#disposed) return;
@@ -681,6 +685,7 @@ export class CapturedPageTurn {
     this.invalidatePreparedCapture();
   }
 
+  /** Resolve a nonempty content rectangle and its current rendering host. */
   #readCaptureTarget(): CaptureTarget | null {
     const hostElement = this.#host.getHostElement();
     const rect = this.#host.getContentRect();
@@ -688,6 +693,7 @@ export class CapturedPageTurn {
     return { hostElement, rect: captureRectFrom(rect), dpr: currentDpr() };
   }
 
+  /** Capture and cover a turn, preparing the incoming sheet before animation begins. */
   async #setUp(
     forward: boolean,
     rtl: boolean,
@@ -931,15 +937,18 @@ export class CapturedPageTurn {
     }
   }
 
+  /** Convert the active turn's vertical grip to renderer grab coordinates. */
   #grab(active: ActiveTurn) {
     return { x: active.rendererRtl ? 0 : 1, y: active.grabY };
   }
 
+  /** Render the current sheet pose using the turn's reading direction. */
   #draw(active: ActiveTurn, progress = active.progress) {
     active.measurement?.draw(progress);
     active.renderer.render(progress, this.#grab(active), active.rendererRtl);
   }
 
+  /** Capture the previous sheet under the cover for backward navigation. */
   async #captureReturning(active: ActiveTurn, rect: CaptureRect) {
     const uncover = await this.#host.coverRegion?.(rect);
     let image: ArrayBuffer | ImageBitmap | null = null;
@@ -1037,6 +1046,7 @@ export class CapturedPageTurn {
     }
   }
 
+  /** Apply the newest buffered gesture pose to a newly ready surface. */
   #applyDragSession(active: ActiveTurn, session: DragSession) {
     cancelAnimationFrame(active.dragRaf);
     active.dragRaf = 0;
@@ -1047,6 +1057,7 @@ export class CapturedPageTurn {
     }
   }
 
+  /** Reuse or produce a valid surface for the requested host and layout generation. */
   async #ensurePreparedSurface(
     hostElement: HTMLElement,
     rect: CaptureRect,
@@ -1144,6 +1155,7 @@ export class CapturedPageTurn {
     }
   }
 
+  /** Capture platform pixels and attach an overlay while respecting cancellation. */
   async #captureSurface(
     hostElement: HTMLElement,
     rect: CaptureRect,
@@ -1271,6 +1283,7 @@ export class CapturedPageTurn {
     return surface;
   }
 
+  /** Transfer ownership of a compatible prepared surface to an active turn. */
   #takePreparedSurface(
     hostElement: HTMLElement,
     rect: CaptureRect,
@@ -1299,6 +1312,7 @@ export class CapturedPageTurn {
     return prepared;
   }
 
+  /** Retain an idle surface and discard the previously cached one. */
   #storePreparedSurface(surface: PreparedSurface) {
     // Decide against current ownership, not the request's start state: a touch
     // can release while native capture is pending, or another cell can claim
@@ -1356,6 +1370,7 @@ export class CapturedPageTurn {
     return true;
   }
 
+  /** Track whether the prepared overlay has reached a browser paint. */
   #trackPreparedSurfacePaint(surface: PreparedSurface) {
     this.#stopPreparedSurfacePaint(surface);
     surface.surfaceAlreadyPainted = false;
@@ -1374,12 +1389,14 @@ export class CapturedPageTurn {
     });
   }
 
+  /** Cancel outstanding paint tracking before a surface is released. */
   #stopPreparedSurfacePaint(surface: PreparedSurface) {
     if (!surface.paintRaf) return;
     cancelAnimationFrame(surface.paintRaf);
     surface.paintRaf = 0;
   }
 
+  /** Align the captured overlay with the host's content rectangle. */
   #positionOverlay(overlay: HTMLElement, hostElement: HTMLElement, rect: CaptureRect) {
     const hostRect = hostElement.getBoundingClientRect();
     Object.assign(overlay.style, {
@@ -1390,6 +1407,7 @@ export class CapturedPageTurn {
     });
   }
 
+  /** Release one surface's overlay, textures, and capture bitmaps. */
   #disposeSurface(surface: PreparedSurface) {
     surface.adjacentAbort?.abort();
     this.#stopPreparedSurfacePaint(surface);
@@ -1397,6 +1415,7 @@ export class CapturedPageTurn {
     surface.overlay.remove();
   }
 
+  /** Release the cached surface and optionally its gesture retention. */
   #closePreparedSurface(releaseRetention = true) {
     const surface = this.#preparedSurface;
     this.#preparedSurface = null;
@@ -1551,6 +1570,7 @@ export class CapturedPageTurn {
     }
   }
 
+  /** Release active overlay resources and any in-flight animation. */
   #disposeActive() {
     this.#finishActive();
   }

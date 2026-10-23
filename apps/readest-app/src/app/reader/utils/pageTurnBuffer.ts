@@ -21,18 +21,21 @@ export class PageTurnBuffer {
     },
   ) {}
 
+  /** Close cached bitmaps and invalidate captures from the preceding layout generation. */
   clear() {
     this.#epoch++;
     for (const bitmap of this.#pages.values()) bitmap.close();
     this.#pages.clear();
   }
 
+  /** Permanently stop preparation and release cached bitmap ownership. */
   dispose() {
     this.#disposed = true;
     this.clear();
     if (owner === this) owner = null;
   }
 
+  /** Release the previous reader's bitmap cache before retaining this reader's pages. */
   #claim() {
     if (owner && owner !== this) owner.clear();
     owner = this;
@@ -42,6 +45,7 @@ export class PageTurnBuffer {
     return this.#preparing;
   }
 
+  /** Return a caller-owned bitmap copy, caching only captures whose layout remains valid. */
   async #read(key: string, capture: () => Promise<Image>, epoch: number, valid = () => true) {
     const cached = this.#pages.get(key);
     if (cached) {
@@ -71,6 +75,7 @@ export class PageTurnBuffer {
     return createImageBitmap(bitmap);
   }
 
+  /** Capture the current page after outstanding previews have restored the viewport. */
   async capture(rect: Rect): Promise<Image> {
     this.#claim();
     await this.#pending;

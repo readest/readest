@@ -74,6 +74,7 @@ export class NativePageTurn extends CapturedPageTurn {
     super(host);
   }
 
+  /** Require Curl, an enabled native layout, and both paginator preview APIs. */
   #eligible(style: CapturedTurnStyle) {
     return (
       style === 'curl' &&
@@ -82,24 +83,30 @@ export class NativePageTurn extends CapturedPageTurn {
       !!this.native.renderer.previewPage
     );
   }
+  /** Report whether this turn uses the native queue rather than captured-page fallback. */
   canQueueNativeTurn(style: CapturedTurnStyle | null) {
     return style !== null && this.#eligible(style);
   }
+  /** Tag each bridge command with the reader owner and current pixel generation. */
   #call(args: Omit<NativePaperCommand, 'owner' | 'generation'>) {
     return this.native.call({ ...args, owner: this.#owner, generation: this.#generation });
   }
+  /** Read the current content bounds, rejecting empty capture regions. */
   #rect(): Rect | null {
     const rect = this.host.getContentRect();
     return rect && rect.width > 0 && rect.height > 0
       ? { x: rect.x, y: rect.y, width: rect.width, height: rect.height }
       : null;
   }
+  /** Resolve a page identity within the current paginator layout. */
   #key(delta = 0) {
     return this.native.renderer.getPageTurnKey?.(delta) ?? null;
   }
+  /** Reject capture after disposal or while the host blocks interaction. */
   #allowed() {
     return !this.#dead && this.host.isCaptureAllowed?.() !== false;
   }
+  /** Commit the reading position while bypassing the native path's redundant unlock delay. */
   async #navigate(forward: boolean) {
     this.native.renderer.setAttribute('data-native-paper-commit', '');
     try {
@@ -108,10 +115,12 @@ export class NativePageTurn extends CapturedPageTurn {
       this.native.renderer.removeAttribute('data-native-paper-commit');
     }
   }
+  /** Invalidate the previous reader's native page identities before taking ownership. */
   #claim() {
     if (nativeOwner && nativeOwner !== this) nativeOwner.invalidateNativePages();
     nativeOwner = this;
   }
+  /** Abort idle previews so input can restore and use the live paginator. */
   #stopWarm() {
     if (this.#abort && !this.#abort.signal.aborted) {
       this.#keys.clear();
@@ -119,6 +128,7 @@ export class NativePageTurn extends CapturedPageTurn {
     }
   }
 
+  /** Capture one keyed native texture, restoring temporary host chrome after completion. */
   async #capture(key: string, rect: Rect, signal?: AbortSignal) {
     await this.#invalidations;
     if (this.#keys.has(key)) return true;
@@ -157,6 +167,7 @@ export class NativePageTurn extends CapturedPageTurn {
     return !!this.#scene || super.active;
   }
 
+  /** Warm the current and adjacent native sheets under a cover without committing navigation. */
   override prepareCapture(style: CapturedTurnStyle = 'curl'): Promise<boolean> {
     if (!this.#eligible(style)) return super.prepareCapture(style);
     this.#claim();
@@ -200,20 +211,24 @@ export class NativePageTurn extends CapturedPageTurn {
     return run;
   }
 
+  /** Stop native warm-up when a gesture leases the prepared surface. */
   override retainPreparedCapture() {
     this.#stopWarm();
     super.retainPreparedCapture();
   }
+  /** Cancel incomplete preparation while retaining reusable settled captures. */
   override invalidatePendingPreparedCapture() {
     this.#stopWarm();
     super.invalidatePendingPreparedCapture();
   }
+  /** Invalidate preparation and cancel an active scene when interaction becomes blocked. */
   override invalidatePreparedCapture() {
     this.#stopWarm();
     if (this.#scene && !this.#allowed())
       void this.#call({ op: 'cancel', turnId: this.#scene.session.id }).catch(() => {});
     super.invalidatePreparedCapture();
   }
+  /** Advance the pixel generation and serialize invalidation of resident native textures. */
   invalidateNativePages() {
     this.#abort?.abort();
     this.#generation++;
@@ -226,6 +241,7 @@ export class NativePageTurn extends CapturedPageTurn {
     }
   }
 
+  /** Queue a scene, preparing missing sheets and rechecking boundaries before navigation. */
   override beginDrag(
     forward: boolean,
     rtl: boolean,
@@ -317,6 +333,7 @@ export class NativePageTurn extends CapturedPageTurn {
     return ready;
   }
 
+  /** Coalesce JavaScript drag poses only when native touch tracking is unavailable. */
   override moveDrag(progress: number, grabY: number) {
     const session = this.#session;
     if (!session) {
@@ -339,6 +356,7 @@ export class NativePageTurn extends CapturedPageTurn {
     });
   }
 
+  /** Serialize settlement, commit or roll back navigation, then await native handoff. */
   override endDrag(commit: boolean, velocity = 0): Promise<void> {
     const session = this.#session;
     if (!session) return super.endDrag(commit, velocity);
@@ -383,6 +401,7 @@ export class NativePageTurn extends CapturedPageTurn {
     return run;
   }
 
+  /** Roll back a failed cold turn and release its cover without reusing stale texture keys. */
   async #restore(scene: Scene) {
     if (this.#scene !== scene) return;
     this.#scene = null;
@@ -396,6 +415,7 @@ export class NativePageTurn extends CapturedPageTurn {
     }
   }
 
+  /** Enqueue a complete tap begin/end pair before subsequent input can overtake it. */
   override async turn(forward: boolean, rtl: boolean, style: CapturedTurnStyle = 'curl') {
     if (!this.#eligible(style)) return super.turn(forward, rtl, style);
     if (this.#dead) return false;
@@ -406,6 +426,7 @@ export class NativePageTurn extends CapturedPageTurn {
     return started;
   }
 
+  /** Abort captures and release this reader's native scene and fallback resources. */
   override dispose() {
     if (this.#dead) return;
     this.#dead = true;

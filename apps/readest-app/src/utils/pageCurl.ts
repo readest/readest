@@ -249,6 +249,7 @@ export class PageCurlRenderer {
     }
   }
 
+  /** Select the buffered sheet for this navigation direction without changing reading direction. */
   selectAdjacent(forward: boolean) {
     const ready = forward ? this.adjacentNext : this.adjacentPrevious;
     this.destination = forward && ready;
@@ -376,6 +377,7 @@ export class PageCurlRenderer {
     return !!this.gl && !this.gl.isContextLost();
   }
 
+  /** Delete retained GL resources and detach the rendering surface. */
   dispose() {
     const gl = this.gl;
     this.canvas?.remove();

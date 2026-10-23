@@ -64,11 +64,13 @@ internal class NativePaperView(context: Context) : TextureView(context), Texture
         surfaceTextureListener = this
     }
 
+    /** Run GL work on the EGL thread once its surface is ready. */
     private fun execute(action: () -> Unit) {
         worker.post { if (!dead) { if (ready) {
             try { action() } catch (error: Exception) { main.post { onFailure?.invoke(error) } }
         } else waiting.add(action) } }
     }
+    /** Run GL work and deliver its result on the Android main thread. */
     private fun report(done: (Exception?) -> Unit, action: () -> Unit) {
         execute {
             val error = try { action(); null } catch (e: Exception) { e }
@@ -76,6 +78,7 @@ internal class NativePaperView(context: Context) : TextureView(context), Texture
         }
     }
 
+    /** Upload a valid keyed bitmap, recycle its pixels, and retain at most three textures. */
     fun upload(key: String, bitmap: Bitmap, valid: () -> Boolean, done: (Boolean, List<String>, Exception?) -> Unit) {
         if (dead) { bitmap.recycle(); done(false, emptyList(), IllegalStateException("Paper surface disposed")); return }
         bitmaps.add(bitmap)
@@ -112,6 +115,7 @@ internal class NativePaperView(context: Context) : TextureView(context), Texture
         }
     }
 
+    /** Select the resident source and destination textures and draw the initial pose. */
     fun scene(from: String, to: String, forwards: Boolean, mirrored: Boolean,
               p: Float, y: Float, done: (Exception?) -> Unit) {
         report(done) {
@@ -122,6 +126,7 @@ internal class NativePaperView(context: Context) : TextureView(context), Texture
         }
     }
 
+    /** Draw the newest pose, coalescing updates that do not require an acknowledgement. */
     fun draw(p: Float, y: Float, done: ((Exception?) -> Unit)? = null) {
         progress = p.coerceIn(0f, 1f); grabY = y
         if (done != null) { report(done) { render() }; return }
@@ -153,8 +158,10 @@ internal class NativePaperView(context: Context) : TextureView(context), Texture
         }
     }
 
+    /** Invalidate an old frame callback so it cannot complete a replacement submission. */
     fun discardPresentation() { presentation = null }
 
+    /** Confirm the hardware layer acquired this request's timestamp before completing it. */
     private fun acknowledgePresentation(frame: PresentedFrame) {
         if (presentation !== frame) return
         // TextureView updates its hardware layer on RenderThread. The Java
@@ -164,6 +171,7 @@ internal class NativePaperView(context: Context) : TextureView(context), Texture
         } else postOnAnimation { acknowledgePresentation(frame) }
     }
 
+    /** Evict obsolete textures, optionally preserving both sheets of the active scene. */
     fun clear(preserveScene: Boolean) {
         execute {
             val removed = textures.filterKeys { !preserveScene || (it != current && it != destination) }
@@ -172,6 +180,7 @@ internal class NativePaperView(context: Context) : TextureView(context), Texture
         }
     }
 
+    /** Remove a captured texture only if its request is still the latest owner of that key. */
     fun drop(key: String, valid: () -> Boolean, done: () -> Unit) {
         execute {
             if (valid()) textures.remove(key)?.let { GL.glDeleteTextures(1, intArrayOf(it), 0) }
@@ -179,6 +188,7 @@ internal class NativePaperView(context: Context) : TextureView(context), Texture
         }
     }
 
+    /** Render one textured sheet using the reusable mesh and explicit paper-side shading. */
     private fun drawPage(key: String?, p: Float, y: Float) {
         val texture = textures[key] ?: return
         val count = mesh.build(pixelsWide, pixelsHigh, p, y, rtl)
@@ -196,6 +206,7 @@ internal class NativePaperView(context: Context) : TextureView(context), Texture
         GL.glDrawArrays(GL.GL_TRIANGLES, 0, count)
     }
 
+    /** Draw both layers and submit the EGL buffer with a producer presentation timestamp. */
     private fun render(stamp: Long = System.nanoTime()) {
         if (!ready) return
         GL.glViewport(0, 0, pixelsWide, pixelsHigh)
@@ -212,6 +223,7 @@ internal class NativePaperView(context: Context) : TextureView(context), Texture
         check(EGL14.eglSwapBuffers(display, eglSurface)) { "Native paper frame could not be presented" }
     }
 
+    /** Compile a GL shader and surface its compile diagnostic on failure. */
     private fun shader(type: Int, source: String): Int {
         val id = GL.glCreateShader(type)
         GL.glShaderSource(id, source); GL.glCompileShader(id)
@@ -220,6 +232,7 @@ internal class NativePaperView(context: Context) : TextureView(context), Texture
         return id
     }
 
+    /** Initialize EGL and shader resources on the worker, then drain queued GL work. */
     override fun onSurfaceTextureAvailable(texture: SurfaceTexture, width: Int, height: Int) {
         worker.post {
             if (dead) return@post
@@ -264,13 +277,17 @@ internal class NativePaperView(context: Context) : TextureView(context), Texture
             } catch (error: Exception) { main.post { onFailure?.invoke(error) } }
         }
     }
+    /** Schedule a redraw using the resized surface dimensions. */
     override fun onSurfaceTextureSizeChanged(texture: SurfaceTexture, width: Int, height: Int) {
         execute { pixelsWide = width; pixelsHigh = height; render() }
     }
+    /** Leave acquisition acknowledgement to the timestamp and frame-commit barrier. */
     override fun onSurfaceTextureUpdated(texture: SurfaceTexture) {}
+    /** Dispose worker resources while allowing TextureView to release its surface. */
     override fun onSurfaceTextureDestroyed(texture: SurfaceTexture): Boolean {
         worker.post { release() }; return true
     }
+    /** Clear page identities and destroy EGL resources on the rendering worker. */
     private fun release() {
         ready = false; textures.clear(); current = null; destination = null
         if (display != EGL14.EGL_NO_DISPLAY) {
@@ -281,6 +298,7 @@ internal class NativePaperView(context: Context) : TextureView(context), Texture
         windowSurface?.release(); windowSurface = null
         display = EGL14.EGL_NO_DISPLAY; eglContext = EGL14.EGL_NO_CONTEXT; eglSurface = EGL14.EGL_NO_SURFACE
     }
+    /** Stop presentation callbacks and enqueue final worker resource cleanup. */
     fun dispose() {
         dead = true
         discardPresentation()

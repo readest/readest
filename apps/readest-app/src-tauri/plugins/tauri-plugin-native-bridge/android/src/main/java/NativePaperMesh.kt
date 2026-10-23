@@ -24,8 +24,10 @@ internal class NativePaperMesh {
     private val sumX = DoubleArray(65) { sin(it * angle / 2) / sinHalf * cos((it * angle - angle) / 2) }
     private val sumZ = DoubleArray(65) { sin(it * angle / 2) / sinHalf * sin((it * angle - angle) / 2) }
 
+    /** Measure signed distance from a source point to the current fold line. */
     private fun distance(x: Double, y: Double) = (x - fold) * nx + (y - height / 2) * ny
 
+    /** Clip a polygon to one side of a hinge using preallocated coordinate storage. */
     private fun clip(input: DoubleArray, size: Int, edge: Double, above: Boolean, output: DoubleArray): Int {
         var n = 0
         for (i in 0 until size) {
@@ -46,6 +48,7 @@ internal class NativePaperMesh {
         return n
     }
 
+    /** Project a source point through the hinge rotations and append its textured vertex. */
     private fun vertex(x: Double, y: Double, deform: Boolean) {
         var px = x; var py = y; var z = 0.0; var shade = 0.0
         val s = distance(x, y)
@@ -66,6 +69,7 @@ internal class NativePaperMesh {
         vertices[count++] = shade.toFloat()
     }
 
+    /** Triangulate a clipped polygon and preserve the face identity for shading. */
     private fun emit(polygon: DoubleArray, size: Int, deform: Boolean) {
         for (i in 1 until size - 1) {
             vertex(polygon[0], polygon[1], deform)
@@ -89,6 +93,7 @@ internal class NativePaperMesh {
         }
     }
 
+    /** Build the current fold into reusable vertex storage and return the vertex count. */
     fun build(w: Int, h: Int, progress: Float, grabY: Float, mirrored: Boolean): Int {
         width = w.toDouble(); height = h.toDouble(); rtl = mirrored; count = 0
         val p = progress.coerceIn(0f, 1f).toDouble()

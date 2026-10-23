@@ -142,6 +142,24 @@ class NativePaperTurnTest {
     private fun absColor(a: Int, b: Int) = maxOf(kotlin.math.abs(Color.red(a) - Color.red(b)),
         kotlin.math.abs(Color.green(a) - Color.green(b)), kotlin.math.abs(Color.blue(a) - Color.blue(b)))
 
+    @Test fun cancellingBeforeSettlementHidesTheNativeSheetAndAllowsTheNextTurn() {
+        Harness().use { f ->
+            f.capture("red"); f.command("cover") { key = "red" }
+            f.color("lime"); f.capture("green")
+            f.command("start") { key = "red"; destination = "green"; progress = 0.3f }
+            instrumentation.runOnMainSync { assertEquals(1f, f.nativeView().alpha, 0f) }
+            f.command("cancel")
+            instrumentation.runOnMainSync {
+                assertEquals("A cancelled drag must not leave a stale native cover", 0f, f.nativeView().alpha, 0f)
+            }
+            f.command("finish")
+            f.command("start") { key = "green"; destination = "red"; forward = false; turnId = 1 }
+            f.command("animate") { commit = true; turnId = 1 }
+            f.awaitNativeColor(Color.RED)
+            f.color("red"); f.command("finish") { turnId = 1 }
+        }
+    }
+
     @Test fun anotherReadersCaptureDoesNotDestroyTheActiveOwnersPendingFinish() {
         Harness().use { f ->
             f.capture("red"); f.command("cover") { key = "red" }
