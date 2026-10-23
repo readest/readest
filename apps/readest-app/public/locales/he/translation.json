@@ -2717,5 +2717,9 @@
   "Text": "טקסט",
   "Paste": "הדבקה",
   "The shared text is no longer available": "הטקסט המשותף כבר אינו זמין",
-  "Shared Text": "טקסט משותף"
+  "Shared Text": "טקסט משותף",
+  "Note Template": "תבנית הערה",
+  "Each highlight is rendered as Markdown with Nunjucks, then sent to Notion as blocks": "כל הדגשה מעובדת ל-Markdown באמצעות Nunjucks ולאחר מכן נשלחת ל-Notion כבלוקים",
+  "Quotes take the highlight color, and > [!NOTE] becomes a callout": "ציטוטים מקבלים את צבע ההדגשה, ו-‎> [!NOTE]‎ הופך לתיבת הסבר",
+  "Variables: {{variables}}": "משתנים: {{variables}}"
 }

@@ -2785,5 +2785,9 @@
   "Text": "Текст",
   "Paste": "Вставить",
   "The shared text is no longer available": "Общий текст больше недоступен",
-  "Shared Text": "Общий текст"
+  "Shared Text": "Общий текст",
+  "Note Template": "Шаблон заметки",
+  "Each highlight is rendered as Markdown with Nunjucks, then sent to Notion as blocks": "Каждое выделение отображается как Markdown с помощью Nunjucks, а затем отправляется в Notion в виде блоков",
+  "Quotes take the highlight color, and > [!NOTE] becomes a callout": "Цитаты получают цвет выделения, а > [!NOTE] становится выноской",
+  "Variables: {{variables}}": "Переменные: {{variables}}"
 }

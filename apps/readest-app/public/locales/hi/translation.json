@@ -2649,5 +2649,9 @@
   "Text": "टेक्स्ट",
   "Paste": "पेस्ट करें",
   "The shared text is no longer available": "साझा किया गया टेक्स्ट अब उपलब्ध नहीं है",
-  "Shared Text": "साझा किया गया टेक्स्ट"
+  "Shared Text": "साझा किया गया टेक्स्ट",
+  "Note Template": "नोट टेम्पलेट",
+  "Each highlight is rendered as Markdown with Nunjucks, then sent to Notion as blocks": "प्रत्येक हाइलाइट को Nunjucks के साथ Markdown के रूप में रेंडर किया जाता है, फिर ब्लॉक के रूप में Notion पर भेजा जाता है",
+  "Quotes take the highlight color, and > [!NOTE] becomes a callout": "उद्धरण हाइलाइट का रंग लेते हैं, और > [!NOTE] एक कॉलआउट बन जाता है",
+  "Variables: {{variables}}": "वेरिएबल: {{variables}}"
 }

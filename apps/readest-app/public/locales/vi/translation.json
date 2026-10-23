@@ -2581,5 +2581,9 @@
   "Text": "Văn bản",
   "Paste": "Dán",
   "The shared text is no longer available": "Văn bản được chia sẻ không còn khả dụng",
-  "Shared Text": "Văn bản được chia sẻ"
+  "Shared Text": "Văn bản được chia sẻ",
+  "Note Template": "Mẫu ghi chú",
+  "Each highlight is rendered as Markdown with Nunjucks, then sent to Notion as blocks": "Mỗi đoạn tô sáng được hiển thị dưới dạng Markdown bằng Nunjucks, sau đó gửi đến Notion dưới dạng khối",
+  "Quotes take the highlight color, and > [!NOTE] becomes a callout": "Trích dẫn mang màu của đoạn tô sáng, và > [!NOTE] trở thành khung chú thích",
+  "Variables: {{variables}}": "Biến: {{variables}}"
 }

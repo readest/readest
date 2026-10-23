@@ -2717,5 +2717,9 @@
   "Text": "Texto",
   "Paste": "Colar",
   "The shared text is no longer available": "O texto partilhado já não está disponível",
-  "Shared Text": "Texto partilhado"
+  "Shared Text": "Texto partilhado",
+  "Note Template": "Modelo de nota",
+  "Each highlight is rendered as Markdown with Nunjucks, then sent to Notion as blocks": "Cada destaque é renderizado como Markdown com Nunjucks e depois enviado para o Notion como blocos",
+  "Quotes take the highlight color, and > [!NOTE] becomes a callout": "As citações assumem a cor do destaque e > [!NOTE] torna-se uma caixa de destaque",
+  "Variables: {{variables}}": "Variáveis: {{variables}}"
 }

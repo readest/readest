@@ -2581,5 +2581,9 @@
   "Text": "텍스트",
   "Paste": "붙여넣기",
   "The shared text is no longer available": "공유된 텍스트를 더 이상 사용할 수 없습니다",
-  "Shared Text": "공유된 텍스트"
+  "Shared Text": "공유된 텍스트",
+  "Note Template": "메모 템플릿",
+  "Each highlight is rendered as Markdown with Nunjucks, then sent to Notion as blocks": "각 하이라이트는 Nunjucks로 Markdown으로 렌더링된 뒤 블록으로 Notion에 전송됩니다",
+  "Quotes take the highlight color, and > [!NOTE] becomes a callout": "인용문에는 하이라이트 색상이 적용되고 > [!NOTE]는 콜아웃이 됩니다",
+  "Variables: {{variables}}": "변수: {{variables}}"
 }
