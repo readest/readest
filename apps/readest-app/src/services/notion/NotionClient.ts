@@ -1,11 +1,19 @@
 import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
 import { marked, type Token } from 'marked';
-import { NOTION_API_BASE_URL, NOTION_API_VERSION } from '@/services/constants';
+import {
+  NOTION_API_BASE_URL,
+  NOTION_API_VERSION,
+  READEST_WEB_BASE_URL,
+} from '@/services/constants';
 import { isTauriAppPlatform } from '@/services/environment';
 import { getAccessToken } from '@/utils/access';
 import type { BookNote, HighlightColor } from '@/types/book';
 import type { NotionSettings } from '@/types/settings';
-import { buildAnnotationAppUrl, buildAnnotationWebUrl } from '@/utils/deeplink';
+import {
+  buildAnnotationAppUrl,
+  buildAnnotationWebUrl,
+  parseAnnotationDeepLink,
+} from '@/utils/deeplink';
 import { getContentMd5 } from '@/utils/misc';
 import { renderNoteTemplate } from '@/utils/note';
 import type { NotionNoteMapping, NotionSyncStoreLike } from './NotionSyncStore';
@@ -95,8 +103,12 @@ const MAX_RICH_TEXT_ITEMS_PER_BLOCK = 20;
 const MAX_BLOCKS_PER_REQUEST = 100;
 const MAX_APPEND_BODY_BYTES = 450 * 1024;
 const MAX_RATE_LIMIT_RETRIES = 3;
-const NOTION_MARKER_ORIGIN = 'https://readest.com';
-const NOTION_MARKER_ROOT = '/notion-sync';
+// Earlier releases wrote markers under this path, which opens nothing. They
+// are still read so pages synced by those releases are recognized.
+const LEGACY_MARKER_ORIGIN = 'https://readest.com';
+const LEGACY_MARKER_ROOT = '/notion-sync';
+// The sync state a note marker adds to the annotation's web link.
+const NOTE_MARKER_PARAM = 'notion';
 
 const READEST_TO_NOTION_COLOR: Record<HighlightColor, string> = {
   red: 'red_background',
@@ -172,11 +184,39 @@ const textBlocks = (
   props?: Record<string, unknown>,
 ): NotionBlock[] => itemBlocks(type, richTextItems(text, annotations, link), props);
 
+// Joins neighbouring runs that share formatting and link, such as the text
+// around a Markdown escape, so a block holds as few rich text items as it can.
+const mergeItems = (items: RichTextItem[]): RichTextItem[] => {
+  const runs: RichTextItem[][] = [];
+  for (const item of items) {
+    const run = runs.at(-1);
+    const head = run?.[0];
+    if (
+      run &&
+      head &&
+      JSON.stringify(head.annotations) === JSON.stringify(item.annotations) &&
+      head.text.link?.url === item.text.link?.url
+    ) {
+      run.push(item);
+    } else {
+      runs.push([item]);
+    }
+  }
+  return runs.flatMap((run) =>
+    richTextItems(
+      run.map((item) => item.text.content).join(''),
+      run[0]!.annotations,
+      run[0]!.text.link?.url,
+    ),
+  );
+};
+
 const itemBlocks = (
   type: string,
-  items: RichTextItem[],
+  runs: RichTextItem[],
   props?: Record<string, unknown>,
 ): NotionBlock[] => {
+  const items = mergeItems(runs);
   const blocks: NotionBlock[] = [];
   for (let index = 0; index < items.length; index += MAX_RICH_TEXT_ITEMS_PER_BLOCK) {
     blocks.push({
@@ -237,8 +277,9 @@ const templateBlocks = (markdown: string, color: string): NotionBlock[] =>
       case 'heading':
         return itemBlocks(`heading_${Math.min(token.depth, 3)}`, inlineItems(token.tokens));
       case 'blockquote': {
-        const items = (token.tokens ?? []).flatMap((child, index) => [
-          ...(index > 0 ? richTextItems('\n') : []),
+        const paragraphs = (token.tokens ?? []).filter((child) => child.type !== 'space');
+        const items = paragraphs.flatMap((child, index) => [
+          ...(index > 0 ? richTextItems('\n\n') : []),
           ...inlineItems([child]),
         ]);
         const alert = items[0]?.text.content.match(/^\[!(\w+)\]\s*/);
@@ -272,11 +313,11 @@ const templateBlocks = (markdown: string, color: string): NotionBlock[] =>
 export const DEFAULT_NOTION_NOTE_TEMPLATE = `{% if chapter.title %}
 ### {{ chapter.title }}
 {% endif %}
-> {{ annotation.text }}
+{{ annotation.text | blockquote }}
 {% if annotation.note %}
 
 > [!NOTE]
-> {{ annotation.note }}
+{{ annotation.note | blockquote }}
 {% endif %}`;
 
 interface NoteTemplate {
@@ -313,39 +354,44 @@ const buildNoteBlocks = (
       ]),
 ];
 
+// Book text and notes are written literally, as in the built-in layout:
+// escaping keeps `__init__`, a leading `#` or a bare URL (`:`) from turning
+// into formatting or a link.
+const escapeMarkdown = (text: string): string => text.replace(/[\\`*_{}[\]()#+\-.!|<>~:]/g, '\\$&');
+
 // The same variables as the export template, one annotation at a time; the
 // annotation link is always the web form, which opens from Notion anywhere.
 const renderTemplate = (note: BookNote, chapter: string | null, template: NoteTemplate) => {
   const link = { bookHash: template.bookHash, noteId: note.id, cfi: note.cfi };
   return renderNoteTemplate(template.source, {
-    title: template.title,
-    chapter: { title: chapter ?? '' },
+    title: escapeMarkdown(template.title),
+    chapter: { title: escapeMarkdown(chapter ?? '') },
     annotation: {
       ...note,
       bookHash: template.bookHash,
       link: buildAnnotationWebUrl(link),
       webLink: buildAnnotationWebUrl(link),
       appLink: buildAnnotationAppUrl(link),
-      text: note.text || '',
-      note: note.note || '',
+      text: escapeMarkdown(note.text || ''),
+      note: escapeMarkdown(note.note || ''),
       timestamp: note.updatedAt,
     },
   });
 };
 
-const markerUrl = (...segments: string[]): string =>
-  `${NOTION_MARKER_ORIGIN}${NOTION_MARKER_ROOT}/${segments
-    .map((segment) => encodeURIComponent(segment))
-    .join('/')}`;
-
-const bookMarkerUrl = (bookHash: string): string => markerUrl('book', bookHash);
+// Markers identify the sync's own blocks on a page. They are links readers can
+// open: the book in the web reader, and each note's annotation page.
+const bookMarkerUrl = (bookHash: string): string => `${READEST_WEB_BASE_URL}/reader/${bookHash}`;
 
 const noteMarkerUrl = (
   bookHash: string,
-  noteId: string,
+  note: BookNote,
   payloadHash: string,
   blockCount: number,
-): string => markerUrl('note', bookHash, noteId, payloadHash, String(blockCount));
+): string => {
+  const link = buildAnnotationWebUrl({ bookHash, noteId: note.id, cfi: note.cfi });
+  return `${link}${link.includes('?') ? '&' : '?'}${NOTE_MARKER_PARAM}=${payloadHash}.${blockCount}`;
+};
 
 const blockLinks = (block: NotionBlock): string[] => {
   const value = block[block.type] as { rich_text?: NotionRichText[] } | undefined;
@@ -354,11 +400,11 @@ const blockLinks = (block: NotionBlock): string[] => {
     .filter((url): url is string => !!url);
 };
 
-const markerSegments = (url: string): string[] | null => {
+const legacyMarkerSegments = (url: string): string[] | null => {
   try {
     const parsed = new URL(url);
-    if (parsed.origin !== NOTION_MARKER_ORIGIN) return null;
-    const prefix = `${NOTION_MARKER_ROOT}/`;
+    if (parsed.origin !== LEGACY_MARKER_ORIGIN) return null;
+    const prefix = `${LEGACY_MARKER_ROOT}/`;
     if (!parsed.pathname.startsWith(prefix)) return null;
     return parsed.pathname
       .slice(prefix.length)
@@ -371,20 +417,38 @@ const markerSegments = (url: string): string[] | null => {
 
 const isBookMarker = (block: NotionBlock, bookHash: string): boolean =>
   blockLinks(block).some((url) => {
-    const segments = markerSegments(url);
+    if (url === bookMarkerUrl(bookHash)) return true;
+    const segments = legacyMarkerSegments(url);
     return segments?.length === 2 && segments[0] === 'book' && segments[1] === bookHash;
   });
+
+const parseNoteMarker = (
+  url: string,
+): { bookHash: string; noteId: string; payloadHash: string; blockCount: string } | null => {
+  const segments = legacyMarkerSegments(url);
+  if (segments) {
+    if (segments.length !== 5 || segments[0] !== 'note') return null;
+    const [, bookHash = '', noteId = '', payloadHash = '', blockCount = ''] = segments;
+    return { bookHash, noteId, payloadHash, blockCount };
+  }
+  const link = parseAnnotationDeepLink(url);
+  if (!link) return null;
+  const [payloadHash, blockCount] =
+    new URL(url).searchParams.get(NOTE_MARKER_PARAM)?.split('.') ?? [];
+  if (!payloadHash || !blockCount) return null;
+  return { bookHash: link.bookHash, noteId: link.noteId, payloadHash, blockCount };
+};
 
 const noteMarker = (
   block: NotionBlock,
   bookHash: string,
 ): { noteId: string; payloadHash: string; blockCount: number } | null => {
   for (const url of blockLinks(block)) {
-    const segments = markerSegments(url);
-    if (segments?.length !== 5 || segments[0] !== 'note' || segments[1] !== bookHash) continue;
-    const blockCount = Number(segments[4]);
+    const marker = parseNoteMarker(url);
+    if (marker?.bookHash !== bookHash) continue;
+    const blockCount = Number(marker.blockCount);
     if (!Number.isSafeInteger(blockCount) || blockCount < 2) continue;
-    return { noteId: segments[2]!, payloadHash: segments[3]!, blockCount };
+    return { noteId: marker.noteId, payloadHash: marker.payloadHash, blockCount };
   }
   return null;
 };
@@ -987,7 +1051,7 @@ export class NotionClient {
             note,
             chapter,
             this.config.includeChapterHeading ?? true,
-            noteMarkerUrl(bookHash, note.id, payloadHash, unmarkedBlocks.length),
+            noteMarkerUrl(bookHash, note, payloadHash, unmarkedBlocks.length),
             template,
           );
         }

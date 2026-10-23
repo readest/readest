@@ -141,10 +141,12 @@ const NotionForm: React.FC<NotionFormProps> = ({ onBack }) => {
     await saveSettings(envConfig, newSettings);
   };
 
+  // An editor value that doesn't compile is never saved; the last valid
+  // template stays in the settings.
   const handleToggleTemplate = () =>
     saveNotion({
       useCustomTemplate: !settings.notion?.useCustomTemplate,
-      customTemplate: template,
+      ...(validateNoteTemplate(template).isValid ? { customTemplate: template } : {}),
     });
 
   const handleSaveTemplate = async (value: string) => {

@@ -154,4 +154,29 @@ describe('NotionForm note template', () => {
       DEFAULT_NOTION_NOTE_TEMPLATE,
     );
   });
+
+  test('turning the template off keeps the last valid template', async () => {
+    useSettingsStore.setState({
+      settings: {
+        notion: {
+          ...connected.notion,
+          useCustomTemplate: true,
+          customTemplate: DEFAULT_NOTION_NOTE_TEMPLATE,
+        },
+      },
+    } as never);
+    render(<NotionForm onBack={() => {}} />);
+
+    fireEvent.change(screen.getByLabelText('Note Template'), {
+      target: { value: '{% if annotation.note %}unclosed' },
+    });
+    fireEvent.click(screen.getByLabelText('Use Custom Template'));
+
+    await waitFor(() =>
+      expect(useSettingsStore.getState().settings.notion.useCustomTemplate).toBe(false),
+    );
+    expect(useSettingsStore.getState().settings.notion.customTemplate).toBe(
+      DEFAULT_NOTION_NOTE_TEMPLATE,
+    );
+  });
 });

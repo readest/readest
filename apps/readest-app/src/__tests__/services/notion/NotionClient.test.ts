@@ -367,6 +367,93 @@ describe('NotionClient note sync', () => {
     ).toHaveLength(5);
   });
 
+  test('links the book and note markers to pages that open in Readest', async () => {
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse({ results: [], has_more: false }))
+      .mockResolvedValueOnce(jsonResponse({ id: PAGE_ID }))
+      .mockResolvedValueOnce(
+        jsonResponse({ results: Array.from({ length: 5 }, (_, i) => ({ id: `block-${i}` })) }),
+      );
+
+    await new NotionClient(makeSettings(), makeStore().store).syncBookNotes(
+      'book-hash',
+      'Book',
+      [makeNote()],
+      () => 'Chapter',
+    );
+
+    const createBody = JSON.parse((fetchMock.mock.calls[1]![1] as RequestInit).body as string);
+    const appendBody = JSON.parse((fetchMock.mock.calls[2]![1] as RequestInit).body as string);
+    expect(createBody.children[0].paragraph.rich_text[0].text.link.url).toBe(
+      'https://web.readest.com/reader/book-hash',
+    );
+    const noteLink = appendBody.children[1].paragraph.rich_text[0].text.link.url as string;
+    expect(noteLink).toMatch(
+      new RegExp(
+        `^${buildAnnotationWebUrl({
+          bookHash: 'book-hash',
+          noteId: 'note-1',
+          cfi: 'epubcfi(/6/2!/4)',
+        }).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}&notion=[0-9a-f]{32}\\.5$`,
+      ),
+    );
+  });
+
+  test('recovers pages and notes whose markers were written by an earlier release', async () => {
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse({ results: [], has_more: false }))
+      .mockResolvedValueOnce(jsonResponse({ id: PAGE_ID }))
+      .mockResolvedValueOnce(
+        jsonResponse({ results: Array.from({ length: 5 }, (_, i) => ({ id: `block-${i}` })) }),
+      );
+    await new NotionClient(makeSettings(), makeStore().store).syncBookNotes(
+      'book-hash',
+      'Book',
+      [makeNote()],
+      () => 'Chapter',
+    );
+    const createBody = JSON.parse((fetchMock.mock.calls[1]![1] as RequestInit).body as string);
+    const appendBody = JSON.parse((fetchMock.mock.calls[2]![1] as RequestInit).body as string);
+    type LinkedParagraph = { paragraph: { rich_text: { text: { link: { url: string } } }[] } };
+    const withLink = (block: LinkedParagraph, url: string) => {
+      const copy = structuredClone(block);
+      copy.paragraph.rich_text[0]!.text.link.url = url;
+      return copy;
+    };
+    const noteLink = new URL(appendBody.children[1].paragraph.rich_text[0].text.link.url);
+    const [payloadHash, blockCount] = noteLink.searchParams.get('notion')!.split('.');
+    const remoteChildren = [
+      withLink(createBody.children[0], 'https://readest.com/notion-sync/book/book-hash'),
+      appendBody.children[0],
+      withLink(
+        appendBody.children[1],
+        `https://readest.com/notion-sync/note/book-hash/note-1/${payloadHash}/${blockCount}`,
+      ),
+      ...appendBody.children.slice(2),
+    ].map((block, index) => ({ ...block, id: `block-${index}` }));
+
+    fetchMock.mockReset();
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse({ results: [{ id: PAGE_ID }], has_more: false }))
+      .mockResolvedValueOnce(jsonResponse({ results: remoteChildren, has_more: false }));
+    const freshStore = makeStore();
+    const recovered = await new NotionClient(makeSettings(), freshStore.store).syncBookNotes(
+      'book-hash',
+      'Book',
+      [makeNote()],
+      () => 'Chapter',
+    );
+
+    expect(recovered).toEqual({ success: true, inserted: 0, updated: 0, deleted: 0, skipped: 1 });
+    expect(freshStore.notes.get(`${TARGET_ID}:book-hash:note-1`)?.blockIds).toEqual([
+      'block-1',
+      'block-2',
+      'block-3',
+      'block-4',
+      'block-5',
+    ]);
+  });
+
   test('recovers an append whose successful upstream response was lost', async () => {
     const { store } = makeStore();
     let committedChildren: Array<Record<string, unknown>> = [];
@@ -673,8 +760,14 @@ describe('NotionClient note sync', () => {
       await new NotionClient(settings, makeStore().store).syncBookNotes(
         'book-hash',
         'Book',
-        [makeNote({ color: 'blue' })],
-        () => 'Chapter',
+        [
+          makeNote({
+            color: 'blue',
+            text: 'First paragraph\n\n# Not a heading, __init__ *b* [c](https://d.e) 1. x',
+            note: 'Note one\n\nNote **two**',
+          }),
+        ],
+        () => 'Chapter *1*',
       );
       const { children } = JSON.parse((fetchMock.mock.calls[2]![1] as RequestInit).body as string);
       return children.slice(2);
