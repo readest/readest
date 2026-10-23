@@ -2707,5 +2707,15 @@
   "Month": "חודש",
   "Year": "שנה",
   "Daily average {{time}}": "ממוצע יומי {{time}}",
-  "Failed to load reading statistics": "טעינת סטטיסטיקת הקריאה נכשלה"
+  "Failed to load reading statistics": "טעינת סטטיסטיקת הקריאה נכשלה",
+  "From Pasted Text": "מטקסט מודבק",
+  "Could not read the clipboard. Paste into the text box instead.": "לא ניתן לקרוא את הלוח. הדביקו את הטקסט בתיבת הטקסט.",
+  "Pasted Text": "טקסט מודבק",
+  "Failed to import book.": "ייבוא הספר נכשל.",
+  "Import Pasted Text": "ייבוא טקסט מודבק",
+  "Paste an article or notes to read or listen to them like a book": "הדביקו מאמר או הערות כדי לקרוא או להאזין להם כמו לספר",
+  "Text": "טקסט",
+  "Paste": "הדבקה",
+  "The shared text is no longer available": "הטקסט המשותף כבר אינו זמין",
+  "Shared Text": "טקסט משותף"
 }

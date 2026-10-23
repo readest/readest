@@ -2775,5 +2775,15 @@
   "Month": "Mesec",
   "Year": "Leto",
   "Daily average {{time}}": "Dnevno povprečje {{time}}",
-  "Failed to load reading statistics": "Statistike branja ni bilo mogoče naložiti"
+  "Failed to load reading statistics": "Statistike branja ni bilo mogoče naložiti",
+  "From Pasted Text": "Iz prilepljenega besedila",
+  "Could not read the clipboard. Paste into the text box instead.": "Odložišča ni bilo mogoče prebrati. Besedilo prilepite v polje z besedilom.",
+  "Pasted Text": "Prilepljeno besedilo",
+  "Failed to import book.": "Uvoz knjige ni uspel.",
+  "Import Pasted Text": "Uvozi prilepljeno besedilo",
+  "Paste an article or notes to read or listen to them like a book": "Prilepite članek ali zapiske, da jih berete ali poslušate kot knjigo",
+  "Text": "Besedilo",
+  "Paste": "Prilepi",
+  "The shared text is no longer available": "Deljeno besedilo ni več na voljo",
+  "Shared Text": "Deljeno besedilo"
 }

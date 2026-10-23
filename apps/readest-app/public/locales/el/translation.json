@@ -2639,5 +2639,15 @@
   "Month": "Μήνας",
   "Year": "Έτος",
   "Daily average {{time}}": "Ημερήσιος μέσος όρος {{time}}",
-  "Failed to load reading statistics": "Αποτυχία φόρτωσης των στατιστικών ανάγνωσης"
+  "Failed to load reading statistics": "Αποτυχία φόρτωσης των στατιστικών ανάγνωσης",
+  "From Pasted Text": "Από επικολλημένο κείμενο",
+  "Could not read the clipboard. Paste into the text box instead.": "Δεν ήταν δυνατή η ανάγνωση του προχείρου. Επικολλήστε το κείμενο στο πλαίσιο κειμένου.",
+  "Pasted Text": "Επικολλημένο κείμενο",
+  "Failed to import book.": "Αποτυχία εισαγωγής βιβλίου.",
+  "Import Pasted Text": "Εισαγωγή επικολλημένου κειμένου",
+  "Paste an article or notes to read or listen to them like a book": "Επικολλήστε ένα άρθρο ή σημειώσεις για να τα διαβάσετε ή να τα ακούσετε σαν βιβλίο",
+  "Text": "Κείμενο",
+  "Paste": "Επικόλληση",
+  "The shared text is no longer available": "Το κοινόχρηστο κείμενο δεν είναι πλέον διαθέσιμο",
+  "Shared Text": "Κοινόχρηστο κείμενο"
 }

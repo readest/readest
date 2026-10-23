@@ -2639,5 +2639,15 @@
   "Month": "महीना",
   "Year": "वर्ष",
   "Daily average {{time}}": "दैनिक औसत {{time}}",
-  "Failed to load reading statistics": "पढ़ने के आँकड़े लोड नहीं हो सके"
+  "Failed to load reading statistics": "पढ़ने के आँकड़े लोड नहीं हो सके",
+  "From Pasted Text": "पेस्ट किए गए टेक्स्ट से",
+  "Could not read the clipboard. Paste into the text box instead.": "क्लिपबोर्ड पढ़ा नहीं जा सका। टेक्स्ट को सीधे टेक्स्ट बॉक्स में पेस्ट करें।",
+  "Pasted Text": "पेस्ट किया गया टेक्स्ट",
+  "Failed to import book.": "किताब इम्पोर्ट नहीं हो सकी।",
+  "Import Pasted Text": "पेस्ट किया गया टेक्स्ट इम्पोर्ट करें",
+  "Paste an article or notes to read or listen to them like a book": "किसी लेख या नोट्स को पेस्ट करें और उन्हें किताब की तरह पढ़ें या सुनें",
+  "Text": "टेक्स्ट",
+  "Paste": "पेस्ट करें",
+  "The shared text is no longer available": "साझा किया गया टेक्स्ट अब उपलब्ध नहीं है",
+  "Shared Text": "साझा किया गया टेक्स्ट"
 }

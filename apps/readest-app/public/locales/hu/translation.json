@@ -2639,5 +2639,15 @@
   "Month": "Hónap",
   "Year": "Év",
   "Daily average {{time}}": "Napi átlag {{time}}",
-  "Failed to load reading statistics": "Nem sikerült betölteni az olvasási statisztikát"
+  "Failed to load reading statistics": "Nem sikerült betölteni az olvasási statisztikát",
+  "From Pasted Text": "Beillesztett szövegből",
+  "Could not read the clipboard. Paste into the text box instead.": "Nem sikerült beolvasni a vágólapot. Illeszd be a szöveget a szövegmezőbe.",
+  "Pasted Text": "Beillesztett szöveg",
+  "Failed to import book.": "A könyv importálása sikertelen.",
+  "Import Pasted Text": "Beillesztett szöveg importálása",
+  "Paste an article or notes to read or listen to them like a book": "Illessz be egy cikket vagy jegyzeteket, hogy könyvként olvasd vagy hallgasd őket",
+  "Text": "Szöveg",
+  "Paste": "Beillesztés",
+  "The shared text is no longer available": "A megosztott szöveg már nem érhető el",
+  "Shared Text": "Megosztott szöveg"
 }

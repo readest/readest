@@ -2571,5 +2571,15 @@
   "Month": "ཟླ་བ།",
   "Year": "ལོ།",
   "Daily average {{time}}": "ཉིན་རེའི་ཆ་སྙོམས་ {{time}}",
-  "Failed to load reading statistics": "ཀློག་པའི་གྲངས་ཐོ་ཕབ་ལེན་བྱེད་མ་ཐུབ།"
+  "Failed to load reading statistics": "ཀློག་པའི་གྲངས་ཐོ་ཕབ་ལེན་བྱེད་མ་ཐུབ།",
+  "From Pasted Text": "སྦྱར་བའི་ཡི་གེ་ནས།",
+  "Could not read the clipboard. Paste into the text box instead.": "སྦྱར་སྡེར་ཀློག་མ་ཐུབ། ཡི་གེ་དེ་ཡི་གེའི་སྒྲོམ་དུ་སྦྱོར་རོགས།",
+  "Pasted Text": "སྦྱར་བའི་ཡི་གེ",
+  "Failed to import book.": "དཔེ་དེབ་ནང་འདྲེན་མ་ཐུབ།",
+  "Import Pasted Text": "སྦྱར་བའི་ཡི་གེ་ནང་འདྲེན།",
+  "Paste an article or notes to read or listen to them like a book": "རྩོམ་ཡིག་གམ་ཟིན་བྲིས་སྦྱར་ནས་དཔེ་དེབ་ལྟར་ཀློག་པའམ་ཉན་ཆོག",
+  "Text": "ཡི་གེ",
+  "Paste": "སྦྱོར།",
+  "The shared text is no longer available": "མཉམ་སྤྱོད་བྱས་པའི་ཡི་གེ་ད་ལྟ་མི་འདུག",
+  "Shared Text": "མཉམ་སྤྱོད་བྱས་པའི་ཡི་གེ"
 }

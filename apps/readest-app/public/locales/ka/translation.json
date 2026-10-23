@@ -2639,5 +2639,15 @@
   "Month": "თვე",
   "Year": "წელი",
   "Daily average {{time}}": "დღიური საშუალო {{time}}",
-  "Failed to load reading statistics": "კითხვის სტატისტიკის ჩატვირთვა ვერ მოხერხდა"
+  "Failed to load reading statistics": "კითხვის სტატისტიკის ჩატვირთვა ვერ მოხერხდა",
+  "From Pasted Text": "ჩასმული ტექსტიდან",
+  "Could not read the clipboard. Paste into the text box instead.": "ბუფერის წაკითხვა ვერ მოხერხდა. ჩასვით ტექსტი ტექსტის ველში.",
+  "Pasted Text": "ჩასმული ტექსტი",
+  "Failed to import book.": "წიგნის იმპორტი ვერ მოხერხდა.",
+  "Import Pasted Text": "ჩასმული ტექსტის იმპორტი",
+  "Paste an article or notes to read or listen to them like a book": "ჩასვით სტატია ან შენიშვნები, რომ წაიკითხოთ ან მოუსმინოთ როგორც წიგნს",
+  "Text": "ტექსტი",
+  "Paste": "ჩასმა",
+  "The shared text is no longer available": "გაზიარებული ტექსტი აღარ არის ხელმისაწვდომი",
+  "Shared Text": "გაზიარებული ტექსტი"
 }

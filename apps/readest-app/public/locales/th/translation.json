@@ -2571,5 +2571,15 @@
   "Month": "เดือน",
   "Year": "ปี",
   "Daily average {{time}}": "เฉลี่ยต่อวัน {{time}}",
-  "Failed to load reading statistics": "โหลดสถิติการอ่านไม่สำเร็จ"
+  "Failed to load reading statistics": "โหลดสถิติการอ่านไม่สำเร็จ",
+  "From Pasted Text": "จากข้อความที่วาง",
+  "Could not read the clipboard. Paste into the text box instead.": "ไม่สามารถอ่านคลิปบอร์ดได้ โปรดวางข้อความลงในช่องข้อความแทน",
+  "Pasted Text": "ข้อความที่วาง",
+  "Failed to import book.": "นำเข้าหนังสือไม่สำเร็จ",
+  "Import Pasted Text": "นำเข้าข้อความที่วาง",
+  "Paste an article or notes to read or listen to them like a book": "วางบทความหรือบันทึกเพื่ออ่านหรือฟังเหมือนหนังสือ",
+  "Text": "ข้อความ",
+  "Paste": "วาง",
+  "The shared text is no longer available": "ข้อความที่แชร์ไม่พร้อมใช้งานแล้ว",
+  "Shared Text": "ข้อความที่แชร์"
 }

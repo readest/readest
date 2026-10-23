@@ -2639,5 +2639,15 @@
   "Month": "Månad",
   "Year": "År",
   "Daily average {{time}}": "Dagligt snitt {{time}}",
-  "Failed to load reading statistics": "Det gick inte att läsa in lässtatistiken"
+  "Failed to load reading statistics": "Det gick inte att läsa in lässtatistiken",
+  "From Pasted Text": "Från inklistrad text",
+  "Could not read the clipboard. Paste into the text box instead.": "Det gick inte att läsa urklipp. Klistra in texten i textrutan i stället.",
+  "Pasted Text": "Inklistrad text",
+  "Failed to import book.": "Det gick inte att importera boken.",
+  "Import Pasted Text": "Importera inklistrad text",
+  "Paste an article or notes to read or listen to them like a book": "Klistra in en artikel eller anteckningar för att läsa eller lyssna på dem som en bok",
+  "Text": "Text",
+  "Paste": "Klistra in",
+  "The shared text is no longer available": "Den delade texten är inte längre tillgänglig",
+  "Shared Text": "Delad text"
 }

@@ -2639,5 +2639,15 @@
   "Month": "Oy",
   "Year": "Yil",
   "Daily average {{time}}": "Kunlik oʻrtacha {{time}}",
-  "Failed to load reading statistics": "Oʻqish statistikasini yuklab boʻlmadi"
+  "Failed to load reading statistics": "Oʻqish statistikasini yuklab boʻlmadi",
+  "From Pasted Text": "Joylangan matndan",
+  "Could not read the clipboard. Paste into the text box instead.": "Buferni o‘qib bo‘lmadi. Matnni matn maydoniga joylang.",
+  "Pasted Text": "Joylangan matn",
+  "Failed to import book.": "Kitobni import qilib bo‘lmadi.",
+  "Import Pasted Text": "Joylangan matnni import qilish",
+  "Paste an article or notes to read or listen to them like a book": "Maqola yoki qaydlarni joylab, ularni kitob kabi o‘qing yoki tinglang",
+  "Text": "Matn",
+  "Paste": "Joylash",
+  "The shared text is no longer available": "Ulashilgan matn endi mavjud emas",
+  "Shared Text": "Ulashilgan matn"
 }

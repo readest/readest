@@ -2775,5 +2775,15 @@
   "Month": "Місяць",
   "Year": "Рік",
   "Daily average {{time}}": "У середньому за день {{time}}",
-  "Failed to load reading statistics": "Не вдалося завантажити статистику читання"
+  "Failed to load reading statistics": "Не вдалося завантажити статистику читання",
+  "From Pasted Text": "З вставленого тексту",
+  "Could not read the clipboard. Paste into the text box instead.": "Не вдалося прочитати буфер обміну. Вставте текст у текстове поле.",
+  "Pasted Text": "Вставлений текст",
+  "Failed to import book.": "Не вдалося імпортувати книгу.",
+  "Import Pasted Text": "Імпортувати вставлений текст",
+  "Paste an article or notes to read or listen to them like a book": "Вставте статтю або нотатки, щоб читати чи слухати їх як книгу",
+  "Text": "Текст",
+  "Paste": "Вставити",
+  "The shared text is no longer available": "Поширений текст більше недоступний",
+  "Shared Text": "Поширений текст"
 }

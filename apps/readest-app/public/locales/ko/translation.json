@@ -2571,5 +2571,15 @@
   "Month": "월",
   "Year": "연",
   "Daily average {{time}}": "일일 평균 {{time}}",
-  "Failed to load reading statistics": "독서 통계를 불러오지 못했습니다"
+  "Failed to load reading statistics": "독서 통계를 불러오지 못했습니다",
+  "From Pasted Text": "붙여넣은 텍스트에서",
+  "Could not read the clipboard. Paste into the text box instead.": "클립보드를 읽을 수 없습니다. 텍스트 상자에 직접 붙여넣으세요.",
+  "Pasted Text": "붙여넣은 텍스트",
+  "Failed to import book.": "책을 가져오지 못했습니다.",
+  "Import Pasted Text": "붙여넣은 텍스트 가져오기",
+  "Paste an article or notes to read or listen to them like a book": "기사나 메모를 붙여넣어 책처럼 읽거나 들어 보세요",
+  "Text": "텍스트",
+  "Paste": "붙여넣기",
+  "The shared text is no longer available": "공유된 텍스트를 더 이상 사용할 수 없습니다",
+  "Shared Text": "공유된 텍스트"
 }

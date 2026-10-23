@@ -2639,5 +2639,15 @@
   "Month": "Ay",
   "Year": "Yıl",
   "Daily average {{time}}": "Günlük ortalama {{time}}",
-  "Failed to load reading statistics": "Okuma istatistikleri yüklenemedi"
+  "Failed to load reading statistics": "Okuma istatistikleri yüklenemedi",
+  "From Pasted Text": "Yapıştırılan metinden",
+  "Could not read the clipboard. Paste into the text box instead.": "Pano okunamadı. Metni metin kutusuna yapıştırın.",
+  "Pasted Text": "Yapıştırılan metin",
+  "Failed to import book.": "Kitap içe aktarılamadı.",
+  "Import Pasted Text": "Yapıştırılan metni içe aktar",
+  "Paste an article or notes to read or listen to them like a book": "Bir makaleyi veya notları yapıştırarak kitap gibi okuyun ya da dinleyin",
+  "Text": "Metin",
+  "Paste": "Yapıştır",
+  "The shared text is no longer available": "Paylaşılan metin artık kullanılamıyor",
+  "Shared Text": "Paylaşılan metin"
 }

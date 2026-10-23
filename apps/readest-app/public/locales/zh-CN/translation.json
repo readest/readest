@@ -2571,5 +2571,15 @@
   "Month": "月",
   "Year": "年",
   "Daily average {{time}}": "日均 {{time}}",
-  "Failed to load reading statistics": "无法加载阅读统计"
+  "Failed to load reading statistics": "无法加载阅读统计",
+  "From Pasted Text": "从粘贴的文本",
+  "Could not read the clipboard. Paste into the text box instead.": "无法读取剪贴板，请直接粘贴到文本框中。",
+  "Pasted Text": "粘贴的文本",
+  "Failed to import book.": "导入书籍失败。",
+  "Import Pasted Text": "导入粘贴的文本",
+  "Paste an article or notes to read or listen to them like a book": "粘贴文章或笔记，像书一样阅读或收听",
+  "Text": "文本",
+  "Paste": "粘贴",
+  "The shared text is no longer available": "分享的文本已不可用",
+  "Shared Text": "分享的文本"
 }

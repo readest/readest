@@ -2571,5 +2571,15 @@
   "Month": "Bulan",
   "Year": "Tahun",
   "Daily average {{time}}": "Rata-rata harian {{time}}",
-  "Failed to load reading statistics": "Gagal memuat statistik membaca"
+  "Failed to load reading statistics": "Gagal memuat statistik membaca",
+  "From Pasted Text": "Dari teks yang ditempel",
+  "Could not read the clipboard. Paste into the text box instead.": "Tidak dapat membaca papan klip. Tempelkan teks ke kotak teks.",
+  "Pasted Text": "Teks yang ditempel",
+  "Failed to import book.": "Gagal mengimpor buku.",
+  "Import Pasted Text": "Impor teks yang ditempel",
+  "Paste an article or notes to read or listen to them like a book": "Tempelkan artikel atau catatan untuk dibaca atau didengarkan seperti buku",
+  "Text": "Teks",
+  "Paste": "Tempel",
+  "The shared text is no longer available": "Teks yang dibagikan tidak lagi tersedia",
+  "Shared Text": "Teks yang dibagikan"
 }

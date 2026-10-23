@@ -2707,5 +2707,15 @@
   "Month": "Lună",
   "Year": "An",
   "Daily average {{time}}": "Medie zilnică {{time}}",
-  "Failed to load reading statistics": "Statisticile de lectură nu au putut fi încărcate"
+  "Failed to load reading statistics": "Statisticile de lectură nu au putut fi încărcate",
+  "From Pasted Text": "Din text lipit",
+  "Could not read the clipboard. Paste into the text box instead.": "Nu s-a putut citi clipboardul. Lipește textul în caseta de text.",
+  "Pasted Text": "Text lipit",
+  "Failed to import book.": "Importul cărții a eșuat.",
+  "Import Pasted Text": "Importă text lipit",
+  "Paste an article or notes to read or listen to them like a book": "Lipește un articol sau notițe pentru a le citi sau asculta ca pe o carte",
+  "Text": "Text",
+  "Paste": "Lipește",
+  "The shared text is no longer available": "Textul partajat nu mai este disponibil",
+  "Shared Text": "Text partajat"
 }

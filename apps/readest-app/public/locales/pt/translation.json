@@ -2707,5 +2707,15 @@
   "Month": "Mês",
   "Year": "Ano",
   "Daily average {{time}}": "Média diária {{time}}",
-  "Failed to load reading statistics": "Não foi possível carregar as estatísticas de leitura"
+  "Failed to load reading statistics": "Não foi possível carregar as estatísticas de leitura",
+  "From Pasted Text": "A partir de texto colado",
+  "Could not read the clipboard. Paste into the text box instead.": "Não foi possível ler a área de transferência. Cole o texto na caixa de texto.",
+  "Pasted Text": "Texto colado",
+  "Failed to import book.": "Falha ao importar o livro.",
+  "Import Pasted Text": "Importar texto colado",
+  "Paste an article or notes to read or listen to them like a book": "Cole um artigo ou notas para os ler ou ouvir como um livro",
+  "Text": "Texto",
+  "Paste": "Colar",
+  "The shared text is no longer available": "O texto partilhado já não está disponível",
+  "Shared Text": "Texto partilhado"
 }

@@ -2911,5 +2911,15 @@
   "Month": "شهر",
   "Year": "سنة",
   "Daily average {{time}}": "المتوسط اليومي {{time}}",
-  "Failed to load reading statistics": "تعذّر تحميل إحصاءات القراءة"
+  "Failed to load reading statistics": "تعذّر تحميل إحصاءات القراءة",
+  "From Pasted Text": "من نص ملصق",
+  "Could not read the clipboard. Paste into the text box instead.": "تعذّرت قراءة الحافظة. الصق النص في مربع النص بدلاً من ذلك.",
+  "Pasted Text": "نص ملصق",
+  "Failed to import book.": "فشل استيراد الكتاب.",
+  "Import Pasted Text": "استيراد نص ملصق",
+  "Paste an article or notes to read or listen to them like a book": "الصق مقالاً أو ملاحظات لقراءتها أو الاستماع إليها مثل كتاب",
+  "Text": "النص",
+  "Paste": "لصق",
+  "The shared text is no longer available": "النص المُشارك لم يعد متاحاً",
+  "Shared Text": "نص مُشارك"
 }

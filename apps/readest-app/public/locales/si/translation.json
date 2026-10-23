@@ -2639,5 +2639,15 @@
   "Month": "මාසය",
   "Year": "වසර",
   "Daily average {{time}}": "දෛනික සාමාන්‍යය {{time}}",
-  "Failed to load reading statistics": "කියවීමේ සංඛ්‍යාලේඛන පූරණය කළ නොහැකි විය"
+  "Failed to load reading statistics": "කියවීමේ සංඛ්‍යාලේඛන පූරණය කළ නොහැකි විය",
+  "From Pasted Text": "ඇලවූ පෙළෙන්",
+  "Could not read the clipboard. Paste into the text box instead.": "ක්ලිප්බෝඩය කියවිය නොහැකි විය. ඒ වෙනුවට පෙළ කොටුවට අලවන්න.",
+  "Pasted Text": "ඇලවූ පෙළ",
+  "Failed to import book.": "පොත ආයාත කිරීම අසාර්ථක විය.",
+  "Import Pasted Text": "ඇලවූ පෙළ ආයාත කරන්න",
+  "Paste an article or notes to read or listen to them like a book": "ලිපියක් හෝ සටහන් අලවා පොතක් මෙන් කියවන්න හෝ අසන්න",
+  "Text": "පෙළ",
+  "Paste": "අලවන්න",
+  "The shared text is no longer available": "බෙදාගත් පෙළ තවදුරටත් ලබා ගත නොහැක",
+  "Shared Text": "බෙදාගත් පෙළ"
 }

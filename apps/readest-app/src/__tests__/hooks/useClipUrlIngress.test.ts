@@ -38,6 +38,11 @@ describe('useClipUrlIngress share-extension pending saves', () => {
 
   it('converts htmlFile saves directly without re-fetching via clip_url', async () => {
     const { convertToEpubWithWorker } = await import('@/services/send/conversion/conversionWorker');
+    // A converted book, so the hook has no reason to fall back to clip_url.
+    vi.mocked(convertToEpubWithWorker).mockResolvedValue({
+      file: new File(['epub'], 'Paywalled.epub'),
+      title: 'Paywalled',
+    } as Awaited<ReturnType<typeof convertToEpubWithWorker>>);
     invokeMock.mockImplementation(async (cmd: unknown) => {
       if (cmd === 'plugin:native-bridge|read_share_clip_html') {
         return { html: '<html><body>captured from Safari</body></html>' };
@@ -61,6 +66,31 @@ describe('useClipUrlIngress share-extension pending saves', () => {
         }),
       );
     });
+    const { ingestFile } = await import('@/services/ingestService');
+    await vi.waitFor(() => expect(ingestFile).toHaveBeenCalled());
+    expect(invokeMock).not.toHaveBeenCalledWith('clip_url', expect.anything());
+  });
+
+  it('imports shared text as a TXT book without clipping a URL', async () => {
+    const { ingestFile } = await import('@/services/ingestService');
+    const ingestMock = vi.mocked(ingestFile);
+    ingestMock.mockReset().mockResolvedValue(null);
+    invokeMock.mockImplementation(async (cmd: unknown) => {
+      if (cmd === 'plugin:native-bridge|read_share_clip_html') {
+        return { html: 'Gemini summary\n\nSee https://example.com/source for more.' };
+      }
+      throw new Error(`unexpected invoke: ${String(cmd)}`);
+    });
+    renderHook(() => useClipUrlIngress());
+    getPendingHook()([{ url: '', textFile: 'note.txt', title: 'Gemini summary' }]);
+    await vi.waitFor(() => expect(ingestMock).toHaveBeenCalledTimes(1));
+    expect(invokeMock).toHaveBeenCalledWith(
+      'plugin:native-bridge|read_share_clip_html',
+      expect.objectContaining({ payload: expect.objectContaining({ fileName: 'note.txt' }) }),
+    );
+    const file = ingestMock.mock.calls[0]![0].file as File;
+    expect(file.name).toBe('Gemini summary.txt');
+    expect(await file.text()).toBe('Gemini summary\n\nSee https://example.com/source for more.');
     expect(invokeMock).not.toHaveBeenCalledWith('clip_url', expect.anything());
   });
 
