@@ -1044,6 +1044,32 @@ describe('nbspTransformer', () => {
       expect(result).toContain(`и${NBSP}в${NBSP}доме`);
     });
 
+    test('glues a short preposition to a quoted Cyrillic word', async () => {
+      for (const quotedWord of [
+        '«двуручник»',
+        '&laquo;двуручник&raquo;',
+        '&#171;двуручник&#187;',
+        '“двуручник”',
+        '"двуручник"',
+      ]) {
+        const html = `<p>Он смотрел на ${quotedWord}.</p>`;
+        const result = await nbspTransformer.transform(
+          makeCtx({ content: html, primaryLanguage: 'ru' }),
+        );
+        expect(result).toContain(`на${NBSP}${quotedWord}`);
+        expect(result.length).toBe(html.length);
+      }
+    });
+
+    test('does not glue a quoted Latin word or a completed exclamation', async () => {
+      const html = '<p>Он смотрел на «Google». Не! Потом он ушёл.</p>';
+      const result = await nbspTransformer.transform(
+        makeCtx({ content: html, primaryLanguage: 'ru' }),
+      );
+      expect(result).toContain('на «Google»');
+      expect(result).toContain('Не! Потом');
+    });
+
     test('does not split a longer word that begins with a short word', async () => {
       const html = '<p>в наказание</p>';
       const result = await nbspTransformer.transform(

@@ -129,3 +129,24 @@ export const getMediaProxyBase = async (grant?: MediaProxyGrant): Promise<string
 /** The proxied form of an absolute track URL (token query included). */
 export const proxiedMediaUrl = (base: string, upstreamUrl: string): string =>
   `${base}/media?u=${encodeURIComponent(upstreamUrl)}`;
+
+/**
+ * A loopback URL serving bytes [start, end) of a local file, with `Range`
+ * support, so a media element can stream and seek audio stored inside a book
+ * without the file being read into the WebView first. Null where there is no
+ * proxy (see getMediaProxyBase) or the file is outside the asset scope.
+ */
+export const getMediaFileUrl = async (
+  path: string,
+  start: number,
+  end: number,
+  contentType: string,
+): Promise<string | null> => {
+  if (!isTauriAppPlatform() || getInitializedAppService()?.isIOSApp) return null;
+  try {
+    return await invoke<string>('get_media_file_url', { path, start, end, contentType });
+  } catch (error) {
+    console.warn('media proxy cannot serve the book file:', error);
+    return null;
+  }
+};

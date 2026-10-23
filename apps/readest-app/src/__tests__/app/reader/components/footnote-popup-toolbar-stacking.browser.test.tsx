@@ -25,6 +25,7 @@ const h = vi.hoisted(() => ({
 
 vi.mock('@/context/EnvContext', () => ({ useEnv: () => ({ appService: { isMobile: false } }) }));
 vi.mock('@/hooks/useTranslation', () => ({ useTranslation: () => (s: string) => s }));
+vi.mock('@/hooks/useResponsiveSize', () => ({ useResponsiveSize: (size: number) => size }));
 vi.mock('@/store/readerStore', () => ({
   useReaderStore: () => ({
     getView: () => ({ goTo: () => {} }),
@@ -211,5 +212,24 @@ describe('selection toolbar over the footnote popup (#6145)', () => {
     expect(footnoteLayer).not.toBeNull();
     expect(toolbarLayer).not.toBeNull();
     expect(footnoteLayer!).toBeLessThan(toolbarLayer!);
+  });
+});
+
+describe('footnote popup in paragraph mode (#6995)', () => {
+  test('an empty-space tap reaches the footnote dismiss layer above paragraph mode', () => {
+    render(<FootnotePopup bookKey='book-1' bookDoc={{} as BookDoc} />);
+    act(() => {
+      h.dispatchFootnote({ bookKey: 'book-1', element: anchor, footnote: NOTE });
+    });
+    render(<div className='fixed inset-0 z-40' data-testid='paragraph-backdrop' />);
+
+    const footnote = footnoteContainer();
+    expect(footnote.getAttribute('aria-hidden')).toBe('false');
+    const hit = document.elementFromPoint(5, 5);
+    expect(hit?.classList.contains('overlay')).toBe(true);
+    act(() => {
+      (hit as HTMLElement).click();
+    });
+    expect(footnote.getAttribute('aria-hidden')).toBe('true');
   });
 });

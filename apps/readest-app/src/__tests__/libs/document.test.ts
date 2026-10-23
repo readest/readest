@@ -2,6 +2,8 @@ import { afterEach, describe, it, expect, vi } from 'vitest';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
 import { DocumentLoader, getDirection } from '@/libs/document';
+import { getImportErrorMessage } from '@/services/errors';
+import { BlobWriter, TextReader, ZipWriter } from '@zip.js/zip.js';
 
 if (typeof globalThis['CSS'] === 'undefined') {
   (globalThis as Record<string, unknown>)['CSS'] = {
@@ -28,6 +30,21 @@ const loadFixtureBytes = (name: string): Uint8Array => {
 };
 
 describe('DocumentLoader.open', () => {
+  it('reports a ZIP with no book inside as an unsupported format, not a raw parser error', async () => {
+    const writer = new ZipWriter(new BlobWriter('application/zip'));
+    await writer.add('readme.txt', new TextReader('This archive is not a book.'));
+    const file = new File([await writer.close()], 'notes.zip');
+
+    const error = await new DocumentLoader(file).open().then(
+      () => null,
+      (e: Error) => e,
+    );
+    // bookService wraps loader errors before the import toast maps them.
+    expect(getImportErrorMessage(`Failed to open the book file: ${error?.message}`)).toBe(
+      'This book format is not supported',
+    );
+  });
+
   it('opens an EPUB whose first local file header has a non-standard signature byte', async () => {
     // Some EPUB writers in the wild produce a malformed first local file header
     // signature - PK\x03\x02 instead of the spec-mandated PK\x03\x04.
