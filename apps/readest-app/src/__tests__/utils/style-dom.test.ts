@@ -530,6 +530,24 @@ describe('applyImageStyle', () => {
     expect(img.style.height).toBeTruthy();
   });
 
+  it('preserves aspect ratio with object-fit: contain when both width and height percentages are specified', () => {
+    document.body.innerHTML = '<div><img width="100%" height="100%" /></div>';
+    applyImageStyle(document);
+    const img = document.querySelector('img')!;
+    expect(img.hasAttribute('width')).toBe(false);
+    expect(img.hasAttribute('height')).toBe(false);
+    expect(img.style.objectFit).toBe('contain');
+  });
+
+  it('uses --available-height for %-based height calculation when defined', () => {
+    document.documentElement.style.setProperty('--available-height', '800');
+    document.body.innerHTML = '<div><img height="50%" /></div>';
+    applyImageStyle(document);
+    const img = document.querySelector('img')!;
+    expect(img.style.height).toBe('400px');
+    document.documentElement.style.removeProperty('--available-height');
+  });
+
   it('does not convert pixel-based width attributes', () => {
     document.body.innerHTML = '<div><img width="200" /></div>';
     applyImageStyle(document);

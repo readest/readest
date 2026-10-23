@@ -611,6 +611,22 @@ const getPageLayoutStyles = (
     max-height: calc(var(--available-height) * 0.8 * 1px);
   }
 
+  body.paginated-mode img {
+    max-width: 100%;
+    max-height: calc(var(--available-height) * 1px);
+    object-fit: contain;
+  }
+
+  body.paginated-mode svg {
+    max-width: 100%;
+    max-height: calc(var(--available-height) * 1px);
+  }
+
+  body.scroll-mode img {
+    max-width: 100%;
+    object-fit: contain;
+  }
+
   figure.code {
     overflow: unset !important;
   }
@@ -1738,6 +1754,23 @@ export const applyImageStyle = (document: Document) => {
     };
   });
 
+  const rootStyle = document.documentElement?.style;
+  const availableHeight = rootStyle
+    ? parseFloat(rootStyle.getPropertyValue('--available-height'))
+    : NaN;
+  const baseHeight =
+    !isNaN(availableHeight) && availableHeight > 0
+      ? availableHeight
+      : (win?.innerHeight ?? window.innerHeight);
+
+  const availableWidth = rootStyle
+    ? parseFloat(rootStyle.getPropertyValue('--available-width'))
+    : NaN;
+  const baseWidth =
+    !isNaN(availableWidth) && availableWidth > 0
+      ? availableWidth
+      : (win?.innerWidth ?? window.innerWidth);
+
   for (const {
     img,
     percentWidth,
@@ -1749,12 +1782,15 @@ export const applyImageStyle = (document: Document) => {
   } of plans) {
     leadingImageParagraph?.classList.add('leading-image');
     if (!isNaN(percentWidth)) {
-      img.style.width = `${(percentWidth / 100) * window.innerWidth}px`;
+      img.style.width = `${(percentWidth / 100) * baseWidth}px`;
       img.removeAttribute('width');
     }
     if (!isNaN(percentHeight)) {
-      img.style.height = `${(percentHeight / 100) * window.innerHeight}px`;
+      img.style.height = `${(percentHeight / 100) * baseHeight}px`;
       img.removeAttribute('height');
+    }
+    if (!isNaN(percentWidth) && !isNaN(percentHeight)) {
+      img.style.objectFit = 'contain';
     }
     if (inlineWithText) {
       img.classList.add('has-text-siblings');
