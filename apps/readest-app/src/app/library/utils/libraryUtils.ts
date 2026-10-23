@@ -1196,3 +1196,9 @@ export const getBookContextMenuItemIds = (
   ids.push('delete');
   return ids;
 };
+
+/** The group every book shares, or undefined when they don't share one. */
+export const getCommonGroupName = (books: Book[]): string | undefined => {
+  const name = books[0]?.groupName;
+  return name && books.every((book) => book.groupName === name) ? name : undefined;
+};

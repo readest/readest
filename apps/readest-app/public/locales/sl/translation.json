@@ -2739,5 +2739,22 @@
   "Show Page Thumbnails": "Prikaži sličice strani",
   "Allow Self-Signed Certificate": "Dovoli samopodpisano potrdilo",
   "Skips certificate checks for this server. Turn it off if the server has a valid certificate": "Preskoči preverjanje potrdila za ta strežnik. Izklopite, če ima strežnik veljavno potrdilo",
-  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "Nekatere spremembe se niso sinhronizirale, ker ura te naprave ni točna. Nastavite datum in čas samodejno ter poskusite znova."
+  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "Nekatere spremembe se niso sinhronizirale, ker ura te naprave ni točna. Nastavite datum in čas samodejno ter poskusite znova.",
+  "Creating package for {{count}} book(s)..._one": "Ustvarjanje paketa za {{count}} knjigo...",
+  "Creating package for {{count}} book(s)..._two": "Ustvarjanje paketa za {{count}} knjigi...",
+  "Creating package for {{count}} book(s)..._few": "Ustvarjanje paketa za {{count}} knjige...",
+  "Creating package for {{count}} book(s)..._other": "Ustvarjanje paketa za {{count}} knjig...",
+  "No local files available to pack": "Ni lokalnih datotek za pakiranje",
+  "{{count}} book(s) omitted (file not available locally)_one": "Izpuščena {{count}} knjiga (datoteka ni na voljo lokalno)",
+  "{{count}} book(s) omitted (file not available locally)_two": "Izpuščeni {{count}} knjigi (datoteki nista na voljo lokalno)",
+  "{{count}} book(s) omitted (file not available locally)_few": "Izpuščene {{count}} knjige (datoteke niso na voljo lokalno)",
+  "{{count}} book(s) omitted (file not available locally)_other": "Izpuščenih {{count}} knjig (datoteke niso na voljo lokalno)",
+  "Exported {{filename}}": "Izvoženo: {{filename}}",
+  "Failed to export package": "Izvoz paketa ni uspel",
+  "Pack": "Zapakiraj",
+  "Failed to create pack": "Ustvarjanje paketa ni uspelo",
+  "Restored collection \"{{name}}\" ({{count}} books)_one": "Zbirka »{{name}}« obnovljena ({{count}} knjiga)",
+  "Restored collection \"{{name}}\" ({{count}} books)_two": "Zbirka »{{name}}« obnovljena ({{count}} knjigi)",
+  "Restored collection \"{{name}}\" ({{count}} books)_few": "Zbirka »{{name}}« obnovljena ({{count}} knjige)",
+  "Restored collection \"{{name}}\" ({{count}} books)_other": "Zbirka »{{name}}« obnovljena ({{count}} knjig)"
 }

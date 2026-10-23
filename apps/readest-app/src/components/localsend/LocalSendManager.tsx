@@ -45,6 +45,13 @@ import {
 import { eventDispatcher } from '@/utils/event';
 import { setMulticastLock } from '@/utils/bridge';
 import { resolveBookSendFile } from '@/services/localsend/bookFile';
+import {
+  createCollectionPack,
+  extractCollectionPack,
+  isReadestPackFile,
+  READEST_PACK_MIME,
+  resolveImportGroup,
+} from '@/services/pack/packService';
 import type { Book } from '@/types/book';
 import DevicePickerDialog from './DevicePickerDialog';
 import ReceiveRequestDialog from './ReceiveRequestDialog';
@@ -78,6 +85,14 @@ const LocalSendManager: React.FC = () => {
 
   const pendingRequest = useLocalSendStore((state) => state.pendingRequest);
   const [sendFiles, setSendFiles] = useState<SendFileInput[] | null>(null);
+  const pendingTempSendFileRef = useRef<string | null>(null);
+
+  const cleanupTempSendFile = useCallback(async () => {
+    if (pendingTempSendFileRef.current && appService) {
+      await appService.deleteFile(pendingTempSendFileRef.current, 'Temp').catch(() => {});
+      pendingTempSendFileRef.current = null;
+    }
+  }, [appService]);
 
   // Pairing entitlement, checked at receive time so a lapsed plan brings the
   // confirmation dialogs back while the pairing records stay intact.
@@ -210,8 +225,47 @@ const LocalSendManager: React.FC = () => {
   useEffect(() => {
     const onSendBooks = async (event: CustomEvent) => {
       if (!appService) return;
-      const { books } = event.detail as { books: Book[] };
+      const { books, asPack, collectionName } = event.detail as {
+        books: Book[];
+        asPack?: boolean;
+        collectionName?: string;
+      };
       if (!books?.length) return;
+
+      if (asPack) {
+        try {
+          const result = await createCollectionPack(appService, books, collectionName);
+          if (!result) {
+            toast(_('No local files available to pack'), 'warning');
+            return;
+          }
+          if (result.count < books.length) {
+            toast(
+              _('{{count}} book(s) omitted (file not available locally)', {
+                count: books.length - result.count,
+              }),
+              'warning',
+            );
+          }
+          // A Temp subdirectory: the fs scope covers paths under Temp, not Temp itself.
+          const tempFileName = `localsend/${Date.now()}-${result.filename}`;
+          await appService.writeFile(tempFileName, 'Temp', result.data);
+          const resolvedPath = await appService.resolveFilePath(tempFileName, 'Temp');
+          pendingTempSendFileRef.current = tempFileName;
+          setSendFiles([
+            {
+              path: resolvedPath,
+              fileName: result.filename,
+              mimeType: READEST_PACK_MIME,
+            },
+          ]);
+        } catch (err) {
+          console.error('Failed to create pack for Nearby transfer:', err);
+          toast(_('Failed to create pack'), 'error');
+        }
+        return;
+      }
+
       const resolved: SendFileInput[] = [];
       for (const book of books) {
         const file = await resolveBookSendFile(book, appService);
@@ -241,6 +295,57 @@ const LocalSendManager: React.FC = () => {
       if (!owned || !appService) return;
       if (payload.error || !payload.path) return; // failures are summarized on receive-end
       try {
+        if (isReadestPackFile(payload.fileName)) {
+          try {
+            const raw = await appService.readFile(payload.path, 'None', 'binary');
+            const pack = typeof raw === 'string' ? null : await extractCollectionPack(raw);
+            if (!pack) throw new Error('Not a readable Readest pack');
+            const { getGroupId, getGroupName, updateBooks } = useLibraryStore.getState();
+            const importedBooks: Book[] = [];
+            for (const { file: innerFile, groupName: packGroupName } of pack.books) {
+              const { groupId, groupName } = resolveImportGroup(
+                undefined,
+                packGroupName,
+                getGroupId,
+                getGroupName,
+              );
+              try {
+                const book = await ingestFile(
+                  {
+                    file: innerFile,
+                    books: useLibraryStore.getState().library,
+                    groupId,
+                    groupName,
+                    forceCopy: true,
+                  },
+                  {
+                    appService,
+                    settings: useSettingsStore.getState().settings,
+                    isLoggedIn: !!userRef.current,
+                  },
+                );
+                if (book) importedBooks.push(book);
+              } catch (err) {
+                console.error('Failed to ingest book from pack:', err);
+              }
+            }
+            if (importedBooks.length === 0) throw new Error('No books imported from pack');
+            await updateBooks(envConfig, importedBooks);
+            if (pack.collectionName) {
+              toast(
+                _('Restored collection "{{name}}" ({{count}} books)', {
+                  name: pack.collectionName,
+                  count: importedBooks.length,
+                }),
+                'success',
+              );
+            }
+          } finally {
+            await appService.deleteFile(payload.path, 'None').catch(() => {});
+          }
+          return;
+        }
+
         const { library } = useLibraryStore.getState();
         const book = await ingestFile(
           { file: payload.path, books: library, forceCopy: true },
@@ -335,6 +440,7 @@ const LocalSendManager: React.FC = () => {
         listen<SendEnd>(LOCALSEND_EVENTS.sendEnd, (event) => {
           const sendState = store().sendState;
           store().sendEnded();
+          void cleanupTempSendFile();
           if (!sendState) return; // another window's transfer
           const { status, error, filesSent } = event.payload;
           if (status === 'sent') {
@@ -434,7 +540,15 @@ const LocalSendManager: React.FC = () => {
           }}
         />
       )}
-      {sendFiles && <DevicePickerDialog files={sendFiles} onClose={() => setSendFiles(null)} />}
+      {sendFiles && (
+        <DevicePickerDialog
+          files={sendFiles}
+          onClose={() => {
+            setSendFiles(null);
+            void cleanupTempSendFile();
+          }}
+        />
+      )}
       <TransferProgressCard onCancelReceive={(id) => void cancelLocalSendReceive(id)} />
     </>
   );

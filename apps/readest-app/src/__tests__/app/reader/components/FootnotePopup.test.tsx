@@ -487,6 +487,26 @@ describe('FootnotePopup jump to location', () => {
     expect(screen.getByTestId('popup').dataset['open']).toBe('false');
   });
 
+  it('closes when paragraph mode focuses a different paragraph in this book', async () => {
+    const { unmount } = await renderPopup();
+    try {
+      await openFootnotePopup();
+      expect(screen.getByTestId('popup').dataset['open']).toBe('true');
+
+      await act(async () => {
+        await eventDispatcher.dispatch('paragraph-focus', { bookKey: 'another-book' });
+      });
+      expect(screen.getByTestId('popup').dataset['open']).toBe('true');
+
+      await act(async () => {
+        await eventDispatcher.dispatch('paragraph-focus', { bookKey: BOOK_KEY });
+      });
+      expect(screen.getByTestId('popup').dataset['open']).toBe('false');
+    } finally {
+      unmount();
+    }
+  });
+
   // #6390 review: a range-editor preview is dispatched after an await, so it
   // can land once the popup shows another section. It must not draw there.
   it('draws a drag preview only for a note in the section the popup shows', async () => {

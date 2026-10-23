@@ -254,6 +254,19 @@ const FooterBar: React.FC<FooterBarProps> = ({
         )}
         onMouseEnter={() => !isMobile && setHoveredBookKey(bookKey)}
         onTouchStart={() => !isMobile && setHoveredBookKey(bookKey)}
+        // A pointer that crosses the strip straight into the book (coming up
+        // from a taskbar that covers most of it) never enters the footer, so
+        // the footer's own mouseleave never comes (#6999).
+        onMouseLeave={(e) => {
+          const rect = footerBarRef.current?.getBoundingClientRect();
+          const inFooter =
+            !!rect &&
+            e.clientX >= rect.left &&
+            e.clientX < rect.right &&
+            e.clientY >= rect.top &&
+            e.clientY < rect.bottom;
+          if (!isMobile && !inFooter) setHoveredBookKey('');
+        }}
       />
 
       {/* Main footer container */}

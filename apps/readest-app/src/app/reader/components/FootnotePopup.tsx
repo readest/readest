@@ -675,6 +675,16 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
     setSourceHref(null);
   };
 
+  useEffect(() => {
+    if (!showPopup) return;
+    // Paragraph navigation moves the anchor out from under this popup.
+    const onParagraphFocus = (event: CustomEvent) => {
+      if (event.detail?.bookKey === bookKey) handleDismissPopup();
+    };
+    eventDispatcher.on('paragraph-focus', onParagraphFocus);
+    return () => eventDispatcher.off('paragraph-focus', onParagraphFocus);
+  }, [bookKey, showPopup, handleDismissPopup]);
+
   // Handle custom footnote popup event from iframe event
   const handleFootnotePopupEvent = (event: CustomEvent) => {
     const { element, footnote } = event.detail;
@@ -904,7 +914,8 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
 
   return (
     <div ref={containerRef} role='toolbar' tabIndex={-1}>
-      {showPopup && <Overlay onDismiss={handleDismissPopup} />}
+      {/* Above Paragraph mode's z-40 backdrop, below the popup's z-[42] band. */}
+      {showPopup && <Overlay className='z-[41]' onDismiss={handleDismissPopup} />}
       {/* The note's text is selectable, so the selection toolbar and the range
           handles open against a selection that lives inside this popup — they
           have to draw over it, exactly as they do over the book page. That used

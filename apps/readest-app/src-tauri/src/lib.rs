@@ -701,6 +701,7 @@ pub fn run() {
             web_browser::open_web_browser,
             browser_fetch::fetch_web_browser_resource,
             media_proxy::get_media_proxy_base,
+            media_proxy::get_media_file_url,
             web_browser::set_web_browser_status,
             web_browser::extract_web_browser_archive,
             localsend::commands::localsend_start,

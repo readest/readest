@@ -20,6 +20,15 @@
 // proxy into an open SSRF relay onto loopback/LAN services, CWE-918);
 // redirects are disabled so a hostile server cannot bounce a request past the
 // allowlist. The query, which carries the ABS access token, is never logged.
+//
+// It also serves byte windows of local files, `GET /<secret>/file/<id>`, for
+// audio stored inside a book (#6989): a book whose narration is one 900 MB
+// track otherwise had to be read whole into the WebView before playing. The
+// custom schemes can't stream it to a media element (CEF fails any `Range`
+// request to a custom scheme, so the element can't seek), but a real HTTP
+// server can. Windows are registered by `get_media_file_url` under a random id,
+// so a request can only name a window the app registered, and only paths in
+// the asset protocol scope can be registered.
 
 use bytes::Bytes;
 use futures_util::StreamExt;
@@ -36,9 +45,11 @@ use hyper::{Method, Request, Response, StatusCode};
 use hyper_util::rt::TokioIo;
 use std::collections::HashMap;
 use std::convert::Infallible;
+use std::io::{Read, Seek, SeekFrom};
+use std::path::PathBuf;
 use std::sync::{Arc, RwLock};
 use std::time::Duration;
-use tauri::Url;
+use tauri::{AppHandle, Manager, Runtime, Url};
 use tokio::net::TcpListener;
 use tokio::sync::OnceCell;
 
@@ -74,9 +85,36 @@ struct Grant {
 /// URL untouched, so a token expiring mid-track does not interrupt playback.
 type Origins = Arc<RwLock<HashMap<String, Grant>>>;
 
+/// A byte window [start, end) of a local file, served at `/file/<id>`.
+#[derive(Clone, Debug, PartialEq)]
+struct FileWindow {
+    path: PathBuf,
+    start: u64,
+    end: u64,
+    content_type: String,
+}
+
+type Files = Arc<RwLock<HashMap<String, FileWindow>>>;
+
 struct Proxy {
     base: String,
     origins: Origins,
+    files: Files,
+}
+
+async fn proxy() -> Result<&'static Proxy, String> {
+    PROXY
+        .get_or_try_init(|| async {
+            let origins: Origins = Arc::new(RwLock::new(HashMap::new()));
+            let files: Files = Arc::new(RwLock::new(HashMap::new()));
+            let base = start(Clients::new()?, origins.clone(), files.clone()).await?;
+            Ok::<_, String>(Proxy {
+                base,
+                origins,
+                files,
+            })
+        })
+        .await
 }
 
 static PROXY: OnceCell<Proxy> = OnceCell::const_new();
@@ -95,13 +133,7 @@ pub async fn get_media_proxy_base(
     auth: Option<HashMap<String, String>>,
     self_signed: Option<Vec<String>>,
 ) -> Result<String, String> {
-    let proxy = PROXY
-        .get_or_try_init(|| async {
-            let origins: Origins = Arc::new(RwLock::new(HashMap::new()));
-            let base = start(Clients::new()?, origins.clone()).await?;
-            Ok::<_, String>(Proxy { base, origins })
-        })
-        .await?;
+    let proxy = proxy().await?;
     if let Ok(mut allow) = proxy.origins.write() {
         register(
             &mut allow,
@@ -111,6 +143,62 @@ pub async fn get_media_proxy_base(
         );
     }
     Ok(proxy.base.clone())
+}
+
+/// URL of the media proxy serving bytes [start, end) of the local file at
+/// `path` as `content_type`, with `Range` support. Only paths the asset
+/// protocol may read are accepted; registering the same window again returns
+/// the same URL.
+#[tauri::command]
+pub async fn get_media_file_url<R: Runtime>(
+    app: AppHandle<R>,
+    path: String,
+    start: u64,
+    end: u64,
+    content_type: String,
+) -> Result<String, String> {
+    let path = PathBuf::from(path);
+    if !crate::range_file::is_safe_path(&path) || !app.asset_protocol_scope().is_allowed(&path) {
+        return Err("media proxy: path not allowed".into());
+    }
+    let size = std::fs::metadata(&path)
+        .map_err(|e| format!("media proxy: {e}"))?
+        .len();
+    if start > end || end > size {
+        return Err("media proxy: window outside the file".into());
+    }
+    let proxy = proxy().await?;
+    let window = FileWindow {
+        path,
+        start,
+        end,
+        content_type,
+    };
+    let id = register_file(&proxy.files, window)?;
+    Ok(format!("{}/file/{id}", proxy.base))
+}
+
+fn register_file(
+    files: &RwLock<HashMap<String, FileWindow>>,
+    window: FileWindow,
+) -> Result<String, String> {
+    // The window is served to the WebView's origin, so it may only carry an
+    // audio type: never one the page would render or run.
+    let content_type = &window.content_type;
+    if !content_type.to_ascii_lowercase().starts_with("audio/")
+        || content_type.contains(['\r', '\n'])
+    {
+        return Err(format!("media proxy: not an audio type: {content_type:?}"));
+    }
+    let mut files = files
+        .write()
+        .map_err(|_| "media proxy: file table poisoned".to_string())?;
+    if let Some((id, _)) = files.iter().find(|(_, known)| **known == window) {
+        return Ok(id.clone());
+    }
+    let id = uuid::Uuid::new_v4().simple().to_string();
+    files.insert(id.clone(), window);
+    Ok(id)
 }
 
 /// Merge one call's origins into the allowlist. Every listed origin's
@@ -169,7 +257,7 @@ impl Clients {
 
 /// Binds a fresh listener on 127.0.0.1 and serves it on the current tokio
 /// runtime. Returns the base URL including the secret path segment.
-async fn start(clients: Clients, origins: Origins) -> Result<String, String> {
+async fn start(clients: Clients, origins: Origins, files: Files) -> Result<String, String> {
     let listener = TcpListener::bind(("127.0.0.1", 0))
         .await
         .map_err(|e| format!("media proxy: bind: {e}"))?;
@@ -193,12 +281,16 @@ async fn start(clients: Clients, origins: Origins) -> Result<String, String> {
             let secret = secret.clone();
             let clients = clients.clone();
             let origins = origins.clone();
+            let files = files.clone();
             tokio::spawn(async move {
                 let service = service_fn(move |req| {
                     let secret = secret.clone();
                     let clients = clients.clone();
                     let origins = origins.clone();
-                    async move { Ok::<_, Infallible>(handle(req, &secret, &clients, &origins).await) }
+                    let files = files.clone();
+                    async move {
+                        Ok::<_, Infallible>(handle(req, &secret, &clients, &origins, &files).await)
+                    }
                 });
                 if let Err(e) = http1::Builder::new()
                     .serve_connection(TokioIo::new(stream), service)
@@ -221,11 +313,135 @@ async fn handle(
     secret: &str,
     clients: &Clients,
     origins: &Origins,
+    files: &Files,
 ) -> Response<ProxyBody> {
-    match forward(req, secret, clients, origins).await {
+    let file_id = req
+        .uri()
+        .path()
+        .strip_prefix(&format!("/{secret}/file/"))
+        .map(str::to_owned);
+    let result = match file_id {
+        Some(id) => serve_file(&req, &id, files),
+        None => forward(req, secret, clients, origins).await,
+    };
+    match result {
         Ok(response) => response,
         Err(status) => empty(status),
     }
+}
+
+/// The single byte range of a `Range: bytes=...` header within a body of
+/// `len` bytes, as an inclusive (first, last); `Err` when it can't be served.
+/// Anything else (no header, several ranges) is served whole.
+fn byte_range(header: Option<&str>, len: u64) -> Result<Option<(u64, u64)>, ()> {
+    let Some(spec) = header.and_then(|h| h.trim().strip_prefix("bytes=")) else {
+        return Ok(None);
+    };
+    if spec.contains(',') {
+        return Ok(None);
+    }
+    let (first, last) = spec.split_once('-').ok_or(())?;
+    let (first, last) = match (first.trim(), last.trim()) {
+        ("", suffix) => {
+            let n: u64 = suffix.parse().map_err(|_| ())?;
+            (len.saturating_sub(n), len.checked_sub(1).ok_or(())?)
+        }
+        (first, "") => (
+            first.parse().map_err(|_| ())?,
+            len.checked_sub(1).ok_or(())?,
+        ),
+        (first, last) => {
+            let first: u64 = first.parse().map_err(|_| ())?;
+            let last: u64 = last.parse().map_err(|_| ())?;
+            (first, last.min(len.checked_sub(1).ok_or(())?))
+        }
+    };
+    if first > last || first >= len {
+        return Err(());
+    }
+    Ok(Some((first, last)))
+}
+
+fn serve_file(
+    req: &Request<Incoming>,
+    id: &str,
+    files: &Files,
+) -> Result<Response<ProxyBody>, StatusCode> {
+    if req.method() != Method::GET {
+        return Err(StatusCode::METHOD_NOT_ALLOWED);
+    }
+    let window = files
+        .read()
+        .ok()
+        .and_then(|files| files.get(id).cloned())
+        .ok_or(StatusCode::NOT_FOUND)?;
+    let len = window.end - window.start;
+    let range = req.headers().get(RANGE).and_then(|v| v.to_str().ok());
+    let builder = Response::builder()
+        .header(CONTENT_TYPE, window.content_type.as_str())
+        .header(ACCEPT_RANGES, "bytes")
+        // See forward(): the page is cross-origin isolated.
+        .header("Cross-Origin-Resource-Policy", "cross-origin")
+        .header("X-Content-Type-Options", "nosniff");
+    let (builder, first, count) = match byte_range(range, len) {
+        Ok(Some((first, last))) => (
+            builder
+                .status(StatusCode::PARTIAL_CONTENT)
+                .header(CONTENT_RANGE, format!("bytes {first}-{last}/{len}")),
+            first,
+            last + 1 - first,
+        ),
+        Ok(None) => (builder.status(StatusCode::OK), 0, len),
+        Err(()) => {
+            return builder
+                .status(StatusCode::RANGE_NOT_SATISFIABLE)
+                .header(CONTENT_RANGE, format!("bytes */{len}"))
+                .body(BoxBody::new(
+                    Empty::<Bytes>::new().map_err(|never| match never {}),
+                ))
+                .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR);
+        }
+    };
+    builder
+        .header(CONTENT_LENGTH, count)
+        .body(file_body(window.path, window.start + first, count))
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)
+}
+
+/// Streams `count` bytes of the file from `offset`, a chunk at a time, so a
+/// seek that drops the connection stops the reading too.
+fn file_body(path: PathBuf, offset: u64, count: u64) -> ProxyBody {
+    const CHUNK: u64 = 256 * 1024;
+    let state: (Option<std::fs::File>, u64) = (None, count);
+    let stream = futures_util::stream::try_unfold(state, move |(file, left)| {
+        let path = path.clone();
+        async move {
+            if left == 0 {
+                return Ok(None);
+            }
+            let n = left.min(CHUNK);
+            let (file, chunk) = tokio::task::spawn_blocking(move || {
+                let mut file = match file {
+                    Some(file) => file,
+                    None => {
+                        let mut file = std::fs::File::open(&path)?;
+                        file.seek(SeekFrom::Start(offset))?;
+                        file
+                    }
+                };
+                let mut chunk = vec![0; n as usize];
+                file.read_exact(&mut chunk)?;
+                Ok::<_, std::io::Error>((file, chunk))
+            })
+            .await
+            .map_err(std::io::Error::other)??;
+            Ok(Some((
+                Frame::data(Bytes::from(chunk)),
+                (Some(file), left - n),
+            )))
+        }
+    });
+    BoxBody::new(StreamBody::new(stream))
 }
 
 fn empty(status: StatusCode) -> Response<ProxyBody> {
@@ -462,7 +678,39 @@ mod tests {
             verified: test_client(),
             self_signed: test_client(),
         };
-        start(clients, origins).await.unwrap()
+        start(clients, origins, Arc::new(RwLock::new(HashMap::new())))
+            .await
+            .unwrap()
+    }
+
+    /// A 1000-byte "book" on disk and a proxy serving the window [100, 600)
+    /// of it; returns the window's URL, the proxy base and the file bytes.
+    async fn spawn_file_proxy(name: &str) -> (String, String, Vec<u8>) {
+        let bytes = track();
+        let path = std::env::temp_dir().join(format!(
+            "readest-media-proxy-{name}-{}.epub",
+            std::process::id()
+        ));
+        std::fs::write(&path, &bytes).unwrap();
+        let files: Files = Arc::new(RwLock::new(HashMap::new()));
+        let id = register_file(
+            &files,
+            FileWindow {
+                path,
+                start: 100,
+                end: 600,
+                content_type: "audio/mpeg".into(),
+            },
+        )
+        .unwrap();
+        let clients = Clients {
+            verified: test_client(),
+            self_signed: test_client(),
+        };
+        let base = start(clients, Arc::new(RwLock::new(HashMap::new())), files)
+            .await
+            .unwrap();
+        (format!("{base}/file/{id}"), base, bytes)
     }
 
     fn test_client() -> reqwest::Client {
@@ -630,6 +878,167 @@ mod tests {
         assert_eq!(secret.len(), 32);
         assert!(secret.chars().all(|c| c.is_ascii_hexdigit()));
         assert_ne!(a, b);
+    }
+
+    #[tokio::test]
+    async fn serves_a_byte_range_of_a_file_window() {
+        let (url, _, bytes) = spawn_file_proxy("range").await;
+
+        let res = test_client()
+            .get(&url)
+            .header(RANGE, "bytes=10-19")
+            .send()
+            .await
+            .unwrap();
+
+        assert_eq!(res.status(), 206);
+        assert_eq!(res.headers()[CONTENT_RANGE], "bytes 10-19/500");
+        assert_eq!(res.headers()[CONTENT_LENGTH], "10");
+        assert_eq!(res.headers()[CONTENT_TYPE], "audio/mpeg");
+        assert_eq!(res.headers()[ACCEPT_RANGES], "bytes");
+        assert_eq!(
+            res.headers()["cross-origin-resource-policy"],
+            "cross-origin"
+        );
+        assert_eq!(res.bytes().await.unwrap().as_ref(), &bytes[110..120]);
+    }
+
+    #[tokio::test]
+    async fn serves_a_whole_file_window_without_a_range() {
+        let (url, _, bytes) = spawn_file_proxy("whole").await;
+
+        let res = test_client().get(&url).send().await.unwrap();
+
+        assert_eq!(res.status(), 200);
+        assert_eq!(res.headers()[CONTENT_LENGTH], "500");
+        assert_eq!(res.bytes().await.unwrap().as_ref(), &bytes[100..600]);
+    }
+
+    #[tokio::test]
+    async fn serves_open_and_suffix_ranges_up_to_the_window_end() {
+        let (url, _, bytes) = spawn_file_proxy("open").await;
+        let client = test_client();
+
+        let open = client
+            .get(&url)
+            .header(RANGE, "bytes=490-")
+            .send()
+            .await
+            .unwrap();
+        assert_eq!(open.headers()[CONTENT_RANGE], "bytes 490-499/500");
+        assert_eq!(open.bytes().await.unwrap().as_ref(), &bytes[590..600]);
+
+        let suffix = client
+            .get(&url)
+            .header(RANGE, "bytes=-4")
+            .send()
+            .await
+            .unwrap();
+        assert_eq!(suffix.headers()[CONTENT_RANGE], "bytes 496-499/500");
+        assert_eq!(suffix.bytes().await.unwrap().as_ref(), &bytes[596..600]);
+    }
+
+    #[tokio::test]
+    async fn refuses_a_range_past_the_window_end() {
+        let (url, _, _) = spawn_file_proxy("past").await;
+
+        let res = test_client()
+            .get(&url)
+            .header(RANGE, "bytes=500-")
+            .send()
+            .await
+            .unwrap();
+
+        assert_eq!(res.status(), 416);
+        assert_eq!(res.headers()[CONTENT_RANGE], "bytes */500");
+    }
+
+    #[tokio::test]
+    async fn serves_only_registered_windows_behind_the_secret() {
+        let (url, base, _) = spawn_file_proxy("ids").await;
+        let client = test_client();
+        let (origin, _secret) = base.rsplit_once('/').unwrap();
+        let id = url.rsplit_once('/').unwrap().1;
+
+        let unknown = client
+            .get(format!("{base}/file/0000"))
+            .send()
+            .await
+            .unwrap();
+        assert_eq!(unknown.status(), 404);
+        let guessed = client
+            .get(format!("{origin}/guessed/file/{id}"))
+            .send()
+            .await
+            .unwrap();
+        assert_eq!(guessed.status(), 404);
+    }
+
+    #[tokio::test]
+    async fn serves_file_windows_with_nosniff() {
+        let (url, _, _) = spawn_file_proxy("nosniff").await;
+
+        let res = test_client().get(&url).send().await.unwrap();
+
+        assert_eq!(res.headers()["x-content-type-options"], "nosniff");
+    }
+
+    /// The window is reachable from the WebView's origin, so a type the page
+    /// would render (HTML, SVG, script) must never be attached to a file.
+    #[test]
+    fn registering_refuses_a_non_audio_type() {
+        let files: RwLock<HashMap<String, FileWindow>> = RwLock::new(HashMap::new());
+        let window = |content_type: &str| FileWindow {
+            path: PathBuf::from("/books/a.epub"),
+            start: 1,
+            end: 2,
+            content_type: content_type.into(),
+        };
+
+        for refused in [
+            "text/html",
+            "image/svg+xml",
+            "application/javascript",
+            "video/mp4",
+            "audio/mpeg\r\nX-Injected: 1",
+            "",
+        ] {
+            assert!(
+                register_file(&files, window(refused)).is_err(),
+                "{refused:?}"
+            );
+        }
+        assert!(register_file(&files, window("audio/mpeg")).is_ok());
+        assert!(register_file(&files, window("Audio/MP4")).is_ok());
+        assert!(files.read().unwrap().len() == 2);
+    }
+
+    #[test]
+    fn registering_a_window_again_reuses_its_id() {
+        let files: RwLock<HashMap<String, FileWindow>> = RwLock::new(HashMap::new());
+        let window = FileWindow {
+            path: PathBuf::from("/books/a.epub"),
+            start: 1,
+            end: 2,
+            content_type: "audio/mpeg".into(),
+        };
+        let first = register_file(&files, window.clone()).unwrap();
+        assert_eq!(register_file(&files, window.clone()).unwrap(), first);
+        let other = FileWindow { end: 3, ..window };
+        assert_ne!(register_file(&files, other).unwrap(), first);
+    }
+
+    #[test]
+    fn byte_range_parses_one_range_within_the_body() {
+        assert_eq!(byte_range(None, 10), Ok(None));
+        assert_eq!(byte_range(Some("bytes=0-4"), 10), Ok(Some((0, 4))));
+        assert_eq!(byte_range(Some("bytes=5-"), 10), Ok(Some((5, 9))));
+        assert_eq!(byte_range(Some("bytes=-3"), 10), Ok(Some((7, 9))));
+        assert_eq!(byte_range(Some("bytes=8-100"), 10), Ok(Some((8, 9))));
+        assert_eq!(byte_range(Some("bytes=0-1,4-5"), 10), Ok(None));
+        assert_eq!(byte_range(Some("bytes=10-"), 10), Err(()));
+        assert_eq!(byte_range(Some("bytes=5-2"), 10), Err(()));
+        assert_eq!(byte_range(Some("bytes=x-"), 10), Err(()));
     }
 
     #[test]
