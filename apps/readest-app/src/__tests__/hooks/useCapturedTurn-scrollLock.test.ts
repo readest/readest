@@ -248,6 +248,8 @@ describe('useCapturedTurn scroll-lock gate', () => {
     h.isFixedLayout = mode === 'fixed curl';
     h.viewSettings.zoomLevel = 100;
     h.viewSettings.zoomMode = 'fit-page';
+    // Fixed layouts and renderers without previews turn natively too.
+    const native = mode !== 'slide';
     const invalidate = vi.spyOn(NativePageTurn.prototype, 'invalidateNativePages');
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const view = makeView();
@@ -260,12 +262,12 @@ describe('useCapturedTurn scroll-lock gate', () => {
         await view.next();
       });
       expect(originalNext).toHaveBeenCalledTimes(1);
-      expect(invalidate).toHaveBeenCalledTimes(mode === 'native curl' ? 1 : 0);
+      expect(invalidate).toHaveBeenCalledTimes(native ? 1 : 0);
       await act(async () => {
         await view.next();
       });
-      expect(h.controller.turn).toHaveBeenCalledTimes(mode === 'native curl' ? 2 : 1);
-      expect(originalNext).toHaveBeenCalledTimes(mode === 'native curl' ? 1 : 2);
+      expect(h.controller.turn).toHaveBeenCalledTimes(native ? 2 : 1);
+      expect(originalNext).toHaveBeenCalledTimes(native ? 1 : 2);
     } finally {
       unmount();
       invalidate.mockRestore();
@@ -311,6 +313,46 @@ describe('useCapturedTurn scroll-lock gate', () => {
           );
       });
       expect(invalidate).not.toHaveBeenCalled();
+    } finally {
+      unmount();
+      invalidate.mockRestore();
+    }
+  });
+  // The bookmark ribbon rewrites its unchanged visibility on every relocation.
+  // A cold native turn navigates between capturing its sheets and starting,
+  // so dropping the current sheet there aborted every PDF curl.
+  test('keeps native book textures when a view state is rewritten unchanged', async () => {
+    vi.resetModules();
+    const { useCapturedTurn: useFreshCapturedTurn } = await import(
+      '@/app/reader/hooks/useCapturedTurn'
+    );
+    const { NativePageTurn } = await import('@/app/reader/utils/nativePageTurn');
+    h.android = true;
+    h.renderer.getPageTurnKey = () => '1';
+    const invalidate = vi.spyOn(NativePageTurn.prototype, 'invalidateNativePages');
+    const { unmount } = renderHook(() => useFreshCapturedTurn('book-1', { current: makeView() }));
+    try {
+      const state = { inited: true, ttsEnabled: false };
+      act(() => {
+        for (const listener of h.readerListeners)
+          listener(
+            { hoveredBookKey: null, bottomBarTab: '', viewStates: { 'book-1': { ...state } } },
+            { hoveredBookKey: null, bottomBarTab: '', viewStates: { 'book-1': state } },
+          );
+      });
+      expect(invalidate).not.toHaveBeenCalled();
+      act(() => {
+        for (const listener of h.readerListeners)
+          listener(
+            {
+              hoveredBookKey: null,
+              bottomBarTab: '',
+              viewStates: { 'book-1': { ...state, ttsEnabled: true } },
+            },
+            { hoveredBookKey: null, bottomBarTab: '', viewStates: { 'book-1': state } },
+          );
+      });
+      expect(invalidate).toHaveBeenCalledTimes(1);
     } finally {
       unmount();
       invalidate.mockRestore();

@@ -75,14 +75,10 @@ export class NativePageTurn extends CapturedPageTurn {
     super(host);
   }
 
-  /** Require Curl, an enabled native layout, and both paginator preview APIs. */
+  /** Require Curl, an enabled native layout, and page identities. Without
+   * previews (fixed layout), each new page is captured after navigating under the cover. */
   #eligible(style: CapturedTurnStyle) {
-    return (
-      style === 'curl' &&
-      this.native.enabled() &&
-      !!this.native.renderer.getPageTurnKey &&
-      !!this.native.renderer.previewPage
-    );
+    return style === 'curl' && this.native.enabled() && !!this.native.renderer.getPageTurnKey;
   }
   /** Report whether this turn uses the native queue rather than captured-page fallback. */
   canQueueNativeTurn(style: CapturedTurnStyle | null) {
@@ -184,7 +180,7 @@ export class NativePageTurn extends CapturedPageTurn {
       if (abort.signal.aborted) return false;
       await this.#call({ op: 'cover', key, ...rect });
       try {
-        for (const forward of [true, false]) {
+        for (const forward of this.native.renderer.previewPage ? [true, false] : []) {
           if (abort.signal.aborted || !this.#allowed()) break;
           const adjacent = this.#key(forward ? 1 : -1);
           if (!adjacent || this.#keys.has(adjacent)) continue;
@@ -276,11 +272,9 @@ export class NativePageTurn extends CapturedPageTurn {
           await this.host.onCovered?.('curl', true);
         }
         if (!this.#allowed()) return false;
-        if (destination) {
-          if (!this.#keys.has(destination)) {
-            const target = destination;
-            await this.native.renderer.previewPage!(forward, () => this.#capture(target, rect));
-          }
+        if (destination && !this.#keys.has(destination) && this.native.renderer.previewPage) {
+          const target = destination;
+          await this.native.renderer.previewPage(forward, () => this.#capture(target, rect));
         }
         if (!destination || !this.#keys.has(destination)) {
           // A not-yet-loaded section is prepared under the native current sheet.

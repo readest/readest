@@ -397,9 +397,11 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
       (getInitializedAppService()?.isAndroidApp || getInitializedAppService()?.isIOSApp) &&
       getViewSettings(bookKey)?.pageTurnStyle === 'curl' &&
       !getViewSettings(bookKey)?.vertical &&
-      // Android's native paper also turns a two-column spread as one leaf.
-      (view.renderer.columnCount ?? 1) <= (getInitializedAppService()?.isAndroidApp ? 2 : 1) &&
-      !!view.renderer.previewPage;
+      // Android's native paper also turns a two-column spread as one leaf, and
+      // fixed layouts, which name their pages but cannot preview them.
+      (getInitializedAppService()?.isAndroidApp
+        ? (view.renderer.columnCount ?? 1) <= 2 && !!view.renderer.getPageTurnKey
+        : (view.renderer.columnCount ?? 1) === 1 && !!view.renderer.previewPage);
     const pageBuffer = new PageTurnBuffer({
       renderer: view.renderer,
       capture: async (rect) => {
@@ -537,9 +539,7 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
       ? new NativePageTurn(turnHost, {
           renderer: view.renderer,
           enabled: () =>
-            !isFixedLayout() &&
-            !getViewSettings(bookKey)?.vertical &&
-            (view.renderer.columnCount ?? 1) <= 2,
+            !getViewSettings(bookKey)?.vertical && (view.renderer.columnCount ?? 1) <= 2,
           call: (command) => paperCurl<NativePaperResult>(command),
         })
       : new CapturedPageTurn(turnHost);
@@ -660,15 +660,20 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
       const toolbarContentChanged =
         state.bottomBarTab !== previous.bottomBarTab &&
         (state.hoveredBookKey === bookKey || previous.hoveredBookKey === bookKey);
-      const readerPixelsChanged =
-        toolbarChanged || toolbarContentChanged || currentViewState !== previousViewState;
+      // The bookmark ribbon rewrites its unchanged visibility on every
+      // relocation; only a changed field can change the reader's pixels.
+      const viewStateChanged =
+        currentViewState !== previousViewState &&
+        (!currentViewState ||
+          !previousViewState ||
+          (Object.keys(currentViewState) as (keyof typeof currentViewState)[]).some(
+            (field) => currentViewState[field] !== previousViewState[field],
+          ));
+      const readerPixelsChanged = toolbarChanged || toolbarContentChanged || viewStateChanged;
       if (readerPixelsChanged) {
-        // Native EPUB textures cover only the renderer, not the toolbar.
+        // Native textures cover only the renderer, not the toolbar.
         // Hiding chrome as a turn starts must not destroy its selected sheets.
-        if (
-          !(controller instanceof NativePageTurn && bufferedPagesEnabled()) ||
-          currentViewState !== previousViewState
-        )
+        if (!(controller instanceof NativePageTurn && bufferedPagesEnabled()) || viewStateChanged)
           invalidatePagePixels();
         invalidateAndSchedulePreparedCapture(
           toolbarChanged || toolbarContentChanged

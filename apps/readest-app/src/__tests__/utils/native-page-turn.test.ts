@@ -63,6 +63,27 @@ describe('Android native page-turn pipeline', () => {
     }
   });
 
+  it('turns a renderer without page previews by navigating under the cover', async () => {
+    const f = fixture();
+    delete (f.renderer as { previewPage?: unknown }).previewPage;
+    try {
+      await f.controller.prepareCapture('curl');
+      expect(await f.controller.turn(true, false)).toBe(true);
+      expect(f.events.indexOf('cover')).toBeLessThan(f.events.indexOf('navigate'));
+      expect(f.call.mock.calls.find(([args]) => args.op === 'start')?.[0]).toMatchObject({
+        key: '1',
+        destination: '2',
+      });
+      // The page left behind stays resident, so turning back starts at once.
+      f.events.length = 0;
+      expect(await f.controller.turn(false, false)).toBe(true);
+      expect(f.events[0]).toBe('start');
+      expect(f.capture).not.toHaveBeenCalled();
+    } finally {
+      f.controller.dispose();
+    }
+  });
+
   it('does not roll a cancelled boundary clamp forwards and keeps the next turn usable', async () => {
     const f = fixture();
     const key = f.renderer.getPageTurnKey!;
