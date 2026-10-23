@@ -2,6 +2,7 @@ import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import HeaderBar from '@/app/reader/components/HeaderBar';
+import { getHeaderTriggerHeight } from '@/utils/insets';
 
 // jsdom ships no ResizeObserver, and HeaderBar constructs one to track its own
 // width. Same stub pattern as popup-resting-triangle.test.
@@ -59,7 +60,7 @@ vi.mock('@/hooks/useTrafficLight', () => ({
 vi.mock('@/hooks/useResponsiveSize', () => ({ useResponsiveSize: (n: number) => n }));
 vi.mock('@/app/reader/hooks/useSpatialNavigation', () => ({ useSpatialNavigation: () => {} }));
 vi.mock('@/utils/insets', () => ({
-  getHeaderTriggerHeight: () => 0,
+  getHeaderTriggerHeight: vi.fn(() => 0),
   getHorizontalInsetStyle: () => ({}),
 }));
 vi.mock('@/helpers/settings', () => ({ saveViewSettings: vi.fn() }));
@@ -109,6 +110,7 @@ afterEach(() => {
   vi.unstubAllGlobals();
   useEnvMock.mockReset();
   setHoveredBookKey.mockReset();
+  vi.mocked(getHeaderTriggerHeight).mockReturnValue(0);
   currentBookData = null;
 });
 
@@ -223,6 +225,12 @@ describe('HeaderBar hover strip (#6999)', () => {
     const { container } = renderWithHeaderAt({});
     fireEvent.mouseLeave(hoverStrip(container), { clientX: 700, clientY: 20 });
     expect(setHoveredBookKey).not.toHaveBeenCalledWith('');
+  });
+
+  it('is as tall as the trigger height the insets give it', () => {
+    vi.mocked(getHeaderTriggerHeight).mockReturnValue(8);
+    const { container } = renderWithHeaderAt({});
+    expect(hoverStrip(container).style.height).toBe('8px');
   });
 
   it('keeps the header when it appears over a pointer on the top row (#7006)', () => {
