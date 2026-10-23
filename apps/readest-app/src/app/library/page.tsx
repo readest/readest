@@ -618,13 +618,13 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
             const raw = await appService.readFile(file, 'None', 'binary');
             const pack = typeof raw === 'string' ? null : await extractCollectionPack(raw);
             if (pack) {
-              const { groupId, groupName } = resolveImportGroup(
-                undefined,
-                pack.collectionName,
-                getGroupId,
-                getGroupName,
-              );
-              for (const innerFile of pack.files) {
+              for (const { file: innerFile, groupName: packGroupName } of pack.books) {
+                const { groupId, groupName } = resolveImportGroup(
+                  undefined,
+                  packGroupName,
+                  getGroupId,
+                  getGroupName,
+                );
                 try {
                   const book = await ingestFile(
                     {
@@ -1012,9 +1012,9 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     const appBooksPrefix: string | null =
       useSettingsStore.getState().settings.localBooksDir || null;
 
-    // A pack expands into its books, which land in the pack's collection unless
-    // the import already targets a group.
-    const effectiveFiles: (SelectedFile & { packCollectionName?: string })[] = [];
+    // A pack expands into its books, which land in their own groups unless the
+    // import already targets a group.
+    const effectiveFiles: (SelectedFile & { packGroupName?: string })[] = [];
     for (const selectedFile of files) {
       const fileName = selectedFile.name || selectedFile.file?.name || selectedFile.path || '';
       if (appService && isReadestPackFile(fileName)) {
@@ -1024,9 +1024,12 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
             : await appService.readFile(selectedFile.path!, 'None', 'binary');
           const pack = typeof data === 'string' ? null : await extractCollectionPack(data);
           if (pack) {
-            const packCollectionName = groupId ? undefined : pack.collectionName;
-            for (const file of pack.files) {
-              effectiveFiles.push({ file, name: file.name, packCollectionName });
+            for (const { file, groupName } of pack.books) {
+              effectiveFiles.push({
+                file,
+                name: file.name,
+                packGroupName: groupId ? undefined : groupName,
+              });
             }
             continue;
           }
@@ -1056,7 +1059,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
         // import instead of moving the book to the root.
         let { groupId: resolvedGroupId, groupName: resolvedGroupName } = resolveImportGroup(
           groupId,
-          selectedFile.packCollectionName,
+          selectedFile.packGroupName,
           getGroupId,
           getGroupName,
         );

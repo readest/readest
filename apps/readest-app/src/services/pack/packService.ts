@@ -38,9 +38,15 @@ export interface ReadestPackManifest {
   books: ReadestPackBookMeta[];
 }
 
+export interface ExtractedPackBook {
+  file: File;
+  /** The book's group in the exporting library, else the pack's collection. */
+  groupName?: string;
+}
+
 export interface ExtractedPack {
   collectionName?: string;
-  files: File[];
+  books: ExtractedPackBook[];
   manifest?: ReadestPackManifest;
 }
 
@@ -53,20 +59,20 @@ export interface PackCreationResult {
 export type PackProgressCallback = (current: number, total: number, title: string) => void;
 
 /**
- * Where an imported book lands. A pack's collection name wins over the import
+ * Where an imported book lands. A book's group from a pack wins over the import
  * target; otherwise `groupId` keeps its meaning (undefined = no preference,
  * '' = library root, any other string = that group).
  */
 export const resolveImportGroup = (
   groupId: string | undefined,
-  packCollectionName: string | undefined,
+  packGroupName: string | undefined,
   getGroupId: (name: string) => string | undefined,
   getGroupName: (id: string) => string | undefined,
 ): { groupId: string | undefined; groupName: string | undefined } => {
   // getGroupId fingerprints a name the library doesn't know yet, so the
-  // collection name has to be carried through: getGroupName can't recover it.
-  if (packCollectionName) {
-    return { groupId: getGroupId(packCollectionName), groupName: packCollectionName };
+  // group name has to be carried through: getGroupName can't recover it.
+  if (packGroupName) {
+    return { groupId: getGroupId(packGroupName), groupName: packGroupName };
   }
   return { groupId, groupName: groupId !== undefined ? getGroupName(groupId) : undefined };
 };
@@ -281,7 +287,15 @@ export async function extractCollectionPack(
       }
     }
 
-    const files: File[] = [];
+    const manifestGroups = new Map<string, string>();
+    for (const meta of manifest?.books ?? []) {
+      const groupName = typeof meta?.groupName === 'string' ? meta.groupName.trim() : '';
+      if (groupName && typeof meta.filename === 'string') {
+        manifestGroups.set(meta.filename, groupName);
+      }
+    }
+
+    const books: ExtractedPackBook[] = [];
     let totalUncompressedBytes = 0;
 
     for (const entry of entries) {
@@ -329,7 +343,10 @@ export async function extractCollectionPack(
         const mime =
           MIMETYPES[ext.toUpperCase() as keyof typeof MIMETYPES]?.[0] || 'application/octet-stream';
         const file = new File([bytes], baseName, { type: mime });
-        files.push(file);
+        books.push({
+          file,
+          groupName: manifestGroups.get(rawName) ?? manifest?.collection?.name,
+        });
       } catch (err) {
         console.warn(`Failed to extract entry ${entry.filename}:`, err);
       }
@@ -337,13 +354,13 @@ export async function extractCollectionPack(
 
     await zipReader.close();
 
-    if (files.length === 0) {
+    if (books.length === 0) {
       return null;
     }
 
     return {
       collectionName: manifest?.collection?.name,
-      files,
+      books,
       manifest,
     };
   } catch (err) {

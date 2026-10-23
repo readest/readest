@@ -78,9 +78,9 @@ describe('packService', () => {
       const extracted = await extractCollectionPack(result!.data);
       expect(extracted).not.toBeNull();
       expect(extracted?.collectionName).toBe('World Classics');
-      expect(extracted?.files.length).toBe(2);
+      expect(extracted?.books.length).toBe(2);
 
-      const fileNames = extracted!.files.map((f) => f.name);
+      const fileNames = extracted!.books.map((b) => b.file.name);
       expect(fileNames.some((name) => name.includes('Book One') || name.includes('Book_One'))).toBe(
         true,
       );
@@ -104,10 +104,55 @@ describe('packService', () => {
       expect(result).not.toBeNull();
 
       const extracted = await extractCollectionPack(result!.data);
-      expect(extracted?.files.length).toBe(3);
-      const names = extracted!.files.map((f) => f.name);
+      expect(extracted?.books.length).toBe(3);
+      const names = extracted!.books.map((b) => b.file.name);
       const uniqueNames = new Set(names);
       expect(uniqueNames.size).toBe(3);
+    });
+
+    it("keeps each book's group when the pack spans several groups", async () => {
+      const appService = makeMockAppService();
+      const books = [
+        makeBook({ title: 'One', hash: 'hashA', groupName: 'Classics' }),
+        makeBook({ title: 'Two', hash: 'hashB', groupName: 'Classics/Poetry' }),
+        makeBook({ title: 'Three', hash: 'hashC', groupName: 'Essays' }),
+        makeBook({ title: 'Four', hash: 'hashD', groupName: undefined }),
+      ];
+
+      const result = await createCollectionPack(appService, books);
+      const extracted = await extractCollectionPack(result!.data);
+
+      expect(extracted?.collectionName).toBeUndefined();
+      expect(extracted?.books.map((book) => book.groupName)).toEqual([
+        'Classics',
+        'Classics/Poetry',
+        'Essays',
+        undefined,
+      ]);
+    });
+
+    it('puts books without their own group in the pack collection', async () => {
+      const manifest = {
+        format: 'rbooks',
+        version: 1,
+        createdAt: 0,
+        collection: { name: 'Classics', count: 2 },
+        books: [{ filename: 'books/a.epub', title: 'A', format: 'EPUB' }],
+      };
+      const { BlobWriter, Uint8ArrayReader, ZipWriter } = await import('@zip.js/zip.js');
+      const blobWriter = new BlobWriter();
+      const zipWriter = new ZipWriter(blobWriter);
+      const encode = (text: string) => new Uint8ArrayReader(new TextEncoder().encode(text));
+      await zipWriter.add('books/a.epub', encode('a'));
+      await zipWriter.add('books/b.epub', encode('b'));
+      await zipWriter.add('readest-manifest.json', encode(JSON.stringify(manifest)));
+      await zipWriter.close();
+
+      const extracted = await extractCollectionPack(
+        await (await blobWriter.getData()).arrayBuffer(),
+      );
+
+      expect(extracted?.books.map((book) => book.groupName)).toEqual(['Classics', 'Classics']);
     });
   });
 
@@ -143,8 +188,8 @@ describe('packService', () => {
       const extracted = await extractCollectionPack(buffer);
       expect(extracted).not.toBeNull();
       // Only the legit book should be extracted, the path traversal entry must be dropped
-      expect(extracted?.files.length).toBe(1);
-      expect(extracted?.files[0]?.name).toBe('legit.epub');
+      expect(extracted?.books.length).toBe(1);
+      expect(extracted?.books[0]?.file.name).toBe('legit.epub');
     });
 
     it('extracts book files from generic zip archives without manifest', async () => {
@@ -174,7 +219,7 @@ describe('packService', () => {
       const extracted = await extractCollectionPack(buffer);
       expect(extracted).not.toBeNull();
       expect(extracted?.collectionName).toBeUndefined();
-      expect(extracted?.files.length).toBe(3);
+      expect(extracted?.books.length).toBe(3);
     });
 
     it('rejects the whole archive when the cumulative size limit is exceeded', async () => {
@@ -240,7 +285,7 @@ describe('packService', () => {
       const extracted = await extractCollectionPack(buffer);
       expect(extracted).not.toBeNull();
       expect(extracted?.collectionName).toBeUndefined();
-      expect(extracted?.files.length).toBe(1);
+      expect(extracted?.books.length).toBe(1);
     });
   });
 });

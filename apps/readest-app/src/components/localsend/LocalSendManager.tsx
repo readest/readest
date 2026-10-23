@@ -301,14 +301,14 @@ const LocalSendManager: React.FC = () => {
             const pack = typeof raw === 'string' ? null : await extractCollectionPack(raw);
             if (!pack) throw new Error('Not a readable Readest pack');
             const { getGroupId, getGroupName, updateBooks } = useLibraryStore.getState();
-            const { groupId, groupName } = resolveImportGroup(
-              undefined,
-              pack.collectionName,
-              getGroupId,
-              getGroupName,
-            );
             const importedBooks: Book[] = [];
-            for (const innerFile of pack.files) {
+            for (const { file: innerFile, groupName: packGroupName } of pack.books) {
+              const { groupId, groupName } = resolveImportGroup(
+                undefined,
+                packGroupName,
+                getGroupId,
+                getGroupName,
+              );
               try {
                 const book = await ingestFile(
                   {
@@ -331,10 +331,10 @@ const LocalSendManager: React.FC = () => {
             }
             if (importedBooks.length === 0) throw new Error('No books imported from pack');
             await updateBooks(envConfig, importedBooks);
-            if (groupName) {
+            if (pack.collectionName) {
               toast(
                 _('Restored collection "{{name}}" ({{count}} books)', {
-                  name: groupName,
+                  name: pack.collectionName,
                   count: importedBooks.length,
                 }),
                 'success',
