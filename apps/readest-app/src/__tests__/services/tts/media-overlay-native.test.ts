@@ -28,7 +28,7 @@ vi.mock('@/utils/misc', async (importOriginal) => ({
 
 import { addPluginListener, invoke, type PluginListener } from '@tauri-apps/api/core';
 import { writeFile } from '@tauri-apps/plugin-fs';
-import type { BookDoc } from '@/libs/document';
+import type { BookDoc, BookMediaSource } from '@/libs/document';
 import type { TTSController } from '@/services/tts/TTSController';
 import type { AppService } from '@/types/system';
 import {
@@ -57,16 +57,20 @@ let playoutEvents: ((payload: unknown) => void) | null;
 let client: MediaOverlayClient;
 let section: MediaOverlaySection;
 
-const setup = async () => {
+const WINDOW = { path: '/books/hash/book.epub', start: 64, end: 72 };
+
+let book: BookDoc;
+
+const setup = async (media: BookMediaSource | null = WINDOW) => {
   const doc = new DOMParser().parseFromString(
     `<!DOCTYPE html><html lang="en"><body>${HTML}</body></html>`,
     'text/html',
   );
-  const book = {
+  book = {
     sections: [{ mediaOverlay: { href: 'OEBPS/ch1.smil', id: 'smil1' } }],
     loadText: async () => `<smil xmlns="http://www.w3.org/ns/SMIL"><body>${SMIL}</body></smil>`,
     loadBlob: vi.fn(async () => new Blob([new Uint8Array(8)])),
-    getMediaSource: vi.fn(async () => ({ path: '/books/hash/book.epub', start: 64, end: 72 })),
+    getMediaSource: vi.fn(async () => media),
     media: { narrator: 'Jane Reader' },
   } as unknown as BookDoc;
   section = (await loadMediaOverlaySection(book, 0, doc, 'en'))!;
@@ -115,8 +119,9 @@ afterEach(async () => {
 });
 
 describe('MediaOverlayClient on iOS Tauri', () => {
-  test('stages the chapter and drives the native playout instead of an element', async () => {
-    await setup();
+  // A compressed entry has no byte window in the book file to play.
+  test('stages a compressed entry and drives the native playout instead of an element', async () => {
+    await setup(null);
     const iter = client.speak(section.ssmlForBlock(0)!, new AbortController().signal);
     const first = await iter.next();
 
@@ -129,16 +134,38 @@ describe('MediaOverlayClient on iOS Tauri', () => {
     expect(load?.['path']).toMatch(/mo-narration-.*\.mp4$/);
   });
 
-  // AVPlayer can't play a byte window of a file, so iOS must not be handed
-  // the book file: it would play the whole EPUB as audio.
-  test('stages a stored entry rather than handing AVPlayer the book file', async () => {
+  // A book's one shared track can be most of the book (900 MB in #6989), so
+  // AVPlayer reads the stored entry's window of the book file instead of a
+  // staged copy of it.
+  test('plays a stored audio entry from its window of the book file without copying it', async () => {
     await setup();
     const iter = client.speak(section.ssmlForBlock(0)!, new AbortController().signal);
     await iter.next();
 
+    expect(book.loadBlob).not.toHaveBeenCalled();
+    expect(writeFile).not.toHaveBeenCalled();
     const load = controlCalls.find((c) => c['action'] === 'load');
-    expect(load?.['path']).toMatch(/mo-narration-.*\.mp4$/);
-    expect(load).not.toHaveProperty('start');
+    expect(load).toMatchObject({ ...WINDOW, contentType: 'audio/mp4' });
+  });
+
+  test('stages the entry when the player cannot open its window', async () => {
+    await setup();
+    const control = vi.mocked(invoke).getMockImplementation()!;
+    vi.mocked(invoke).mockImplementation(async (cmd: string, args?: unknown) => {
+      const payload = (args as { payload?: Record<string, unknown> })?.payload ?? {};
+      if (cmd === 'plugin:native-tts|playout_control' && payload['action'] === 'load') {
+        controlCalls.push(payload);
+        if (payload['start'] !== undefined) throw new Error('playout load: cannot open window');
+        return { session: 7 } as unknown;
+      }
+      return control(cmd, args as Parameters<typeof invoke>[1]);
+    });
+    const iter = client.speak(section.ssmlForBlock(0)!, new AbortController().signal);
+    await iter.next();
+
+    expect(book.loadBlob).toHaveBeenCalledTimes(1);
+    const loads = controlCalls.filter((c) => c['action'] === 'load');
+    expect(loads.at(-1)?.['path']).toMatch(/mo-narration-.*\.mp4$/);
   });
 
   // iPadOS sends a desktop user agent, so the OS reads as macOS there (#6974).
