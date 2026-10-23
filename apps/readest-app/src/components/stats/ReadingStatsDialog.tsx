@@ -2,10 +2,8 @@ import React, { useEffect, useState } from 'react';
 import Dialog from '@/components/Dialog';
 import { useEnv } from '@/context/EnvContext';
 import { useAuth } from '@/context/AuthContext';
-import { SyncClient } from '@/libs/sync';
 import { useTranslation } from '@/hooks/useTranslation';
 import { StatisticsDb } from '@/services/statistics/statisticsDb';
-import { pullStats } from '@/services/statistics/statsSync';
 import { isSyncCategoryEnabled } from '@/services/sync/syncCategories';
 import { getDailySeconds, getStreaks, toDateKey } from '@/services/statistics/readingStats';
 import { BoxedList, SettingsRow } from '@/components/settings/primitives';
@@ -52,6 +50,12 @@ const ReadingStatsContent: React.FC = () => {
         // Only an open book pulls stats, so from the library this device may
         // not have the account's other devices yet: show what's here, then pull.
         if (user && isSyncCategoryEnabled('stats')) {
+          // Loaded here so the menus that import this dialog don't pull the
+          // sync client (and its API base URL) into their module graph.
+          const [{ SyncClient }, { pullStats }] = await Promise.all([
+            import('@/libs/sync'),
+            import('@/services/statistics/statsSync'),
+          ]);
           await pullStats(db, new SyncClient()).catch((err) =>
             console.warn('Failed to pull reading stats:', err),
           );
