@@ -167,6 +167,8 @@ export class MediaOverlayClient implements TTSClient {
   #source: NarrationAudioSource | null = null;
   #section: MediaOverlaySection | null = null;
   #native: boolean;
+  // The native player can play a byte window of a file (ExoPlayer, not AVPlayer).
+  #fileWindows: boolean;
   #player: NativeNarrationPlayer | null = null;
   #audio: NarrationClock | null = null;
   #audioHref: string | null = null;
@@ -185,6 +187,7 @@ export class MediaOverlayClient implements TTSClient {
   constructor(controller?: TTSController, appService?: AppService | null) {
     this.controller = controller;
     this.#native = !!(appService?.isAndroidApp || appService?.isIOSApp);
+    this.#fileWindows = !!appService?.isAndroidApp;
   }
 
   async init(): Promise<boolean> {
@@ -283,9 +286,25 @@ export class MediaOverlayClient implements TTSClient {
       // Keep any prior native session's file until the new one is staged; load()
       // replaces the AVPlayer item. Do not call #releaseAudio (that aborts).
       this.#cancelHandover();
+      // ExoPlayer plays a stored entry in place from the book file; AVPlayer
+      // can't take a byte window. A book ExoPlayer can't open (a content://
+      // URI) still gets the entry staged as a copy.
+      const media =
+        !path && this.#fileWindows
+          ? await this.#source.getMediaSource?.(href, audioType(href)).catch(() => null)
+          : null;
+      const inPlace =
+        !!media &&
+        'path' in media &&
+        (await this.#player
+          .loadPath(href, media.path, 0, { start: media.start, end: media.end })
+          .then(
+            () => true,
+            () => false,
+          ));
       if (path) {
         await this.#player.loadPath(href, path, 0);
-      } else {
+      } else if (!inPlace) {
         const blob = audioBlobWithType(href, await this.#source.loadBlob(href));
         await this.#player.load(href, blob, 0);
       }

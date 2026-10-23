@@ -140,18 +140,32 @@ export class NativeNarrationPlayer {
   // Hand AVPlayer that path directly: copying a multi-hour M4B through a Blob
   // and a second temp file would double I/O and briefly hold the whole book in
   // memory. The caller owns the path, so release() must never delete it.
-  async loadPath(href: string, path: string, startSec = 0): Promise<void> {
+  // `bytes` is a range [start, end) of the file to play as the whole
+  // track: a stored audio entry inside the book's zip. Android only.
+  async loadPath(
+    href: string,
+    path: string,
+    startSec = 0,
+    bytes?: { start: number; end: number },
+  ): Promise<void> {
     await this.ensureReady();
+    // Record the path only once the player took it, so a failed load leaves
+    // load() free to stage a copy of the same href.
+    await this.#loadResolvedPath(href, path, startSec, bytes);
     if (this.#ownsStagedPath && this.#stagedPath && this.#stagedPath !== path) {
       await remove(this.#stagedPath).catch(() => undefined);
     }
     this.#stagedHref = href;
     this.#stagedPath = path;
     this.#ownsStagedPath = false;
-    await this.#loadResolvedPath(href, path, startSec);
   }
 
-  async #loadResolvedPath(href: string, path: string, startSec: number): Promise<void> {
+  async #loadResolvedPath(
+    href: string,
+    path: string,
+    startSec: number,
+    bytes?: { start: number; end: number },
+  ): Promise<void> {
     this.#href = href;
     this.#ended = false;
     await invoke('plugin:native-tts|playout_control', {
@@ -159,6 +173,7 @@ export class NativeNarrationPlayer {
         action: 'load',
         path,
         positionMs: startSec * 1000,
+        ...bytes,
       },
     });
     this.#cache = {

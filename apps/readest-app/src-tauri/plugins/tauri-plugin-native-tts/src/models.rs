@@ -140,6 +140,10 @@ pub struct PlayoutControlRequest {
     pub path: Option<String>,
     // Seek target for actions "load" and "seek", in milliseconds.
     pub position_ms: Option<f64>,
+    // Byte window [start, end) of `path` to play as the whole track (Android):
+    // a stored audio entry inside the book's zip.
+    pub start: Option<u64>,
+    pub end: Option<u64>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
