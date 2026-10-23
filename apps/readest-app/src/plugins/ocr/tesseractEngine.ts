@@ -378,6 +378,16 @@ export class TesseractOcrEngine {
       const confidences: number[] = [];
       const fontSize = getMangaFontSize(detectedBlock);
       for (const line of detectedBlock.lines) {
+        if (typeof document === 'undefined') {
+          // Let queued cancellations run; scheduler.yield() prioritizes its own continuation.
+          const scheduler = (
+            globalThis as typeof globalThis & {
+              scheduler?: { postTask?: (callback: () => void) => Promise<void> };
+            }
+          ).scheduler;
+          if (scheduler?.postTask) await scheduler.postTask(() => undefined);
+          else await new Promise<void>((resolve) => setTimeout(resolve, 0));
+        }
         signal?.throwIfAborted();
         if (this.#terminated) throw new Error('OCR engine has been terminated');
         const useJapaneseRecognizer = isJapaneseLanguage(this.#textLanguage);

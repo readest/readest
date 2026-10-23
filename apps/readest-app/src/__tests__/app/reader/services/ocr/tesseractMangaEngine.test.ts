@@ -157,12 +157,18 @@ describe('Tesseract manga OCR', () => {
 
     const cancellation = new AbortController();
     recognizer.recognize.mockImplementationOnce(async () => {
-      cancellation.abort();
+      setTimeout(() => cancellation.abort(), 0);
       return { text: '一行目', confidence: 91 };
     });
-    await expect(engine.recognize(source, page, cancellation.signal)).rejects.toMatchObject({
-      name: 'AbortError',
-    });
+    const browserDocument = document;
+    vi.stubGlobal('document', undefined);
+    try {
+      await expect(engine.recognize(source, page, cancellation.signal)).rejects.toMatchObject({
+        name: 'AbortError',
+      });
+    } finally {
+      vi.stubGlobal('document', browserDocument);
+    }
     expect(recognizer.recognize).toHaveBeenCalledTimes(3);
     expect(recognizer.recognize.mock.calls[2]?.[2]).toBe(cancellation.signal);
     recognizer.recognize.mockResolvedValue({ text: '再開', confidence: 91 });
