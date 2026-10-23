@@ -2609,5 +2609,15 @@
   "Show Page Thumbnails": "გვერდის მინიატურების ჩვენება",
   "Allow Self-Signed Certificate": "თვითხელმოწერილი სერტიფიკატის დაშვება",
   "Skips certificate checks for this server. Turn it off if the server has a valid certificate": "გამოტოვებს ამ სერვერის სერტიფიკატის შემოწმებას. გამორთეთ, თუ სერვერს აქვს მოქმედი სერტიფიკატი",
-  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "ზოგიერთი ცვლილება არ სინქრონიზდა, რადგან ამ მოწყობილობის საათი არასწორია. დააყენეთ თარიღი და დრო ავტომატურად და სცადეთ ხელახლა."
+  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "ზოგიერთი ცვლილება არ სინქრონიზდა, რადგან ამ მოწყობილობის საათი არასწორია. დააყენეთ თარიღი და დრო ავტომატურად და სცადეთ ხელახლა.",
+  "From Pasted Text": "ჩასმული ტექსტიდან",
+  "Could not read the clipboard. Paste into the text box instead.": "ბუფერის წაკითხვა ვერ მოხერხდა. ჩასვით ტექსტი ტექსტის ველში.",
+  "Pasted Text": "ჩასმული ტექსტი",
+  "Failed to import book.": "წიგნის იმპორტი ვერ მოხერხდა.",
+  "Import Pasted Text": "ჩასმული ტექსტის იმპორტი",
+  "Paste an article or notes to read or listen to them like a book": "ჩასვით სტატია ან შენიშვნები, რომ წაიკითხოთ ან მოუსმინოთ როგორც წიგნს",
+  "Text": "ტექსტი",
+  "Paste": "ჩასმა",
+  "The shared text is no longer available": "გაზიარებული ტექსტი აღარ არის ხელმისაწვდომი",
+  "Shared Text": "გაზიარებული ტექსტი"
 }

@@ -2609,5 +2609,15 @@
   "Show Page Thumbnails": "பக்க சிறுபடங்களைக் காட்டு",
   "Allow Self-Signed Certificate": "சுய கையொப்பமிட்ட சான்றிதழை அனுமதி",
   "Skips certificate checks for this server. Turn it off if the server has a valid certificate": "இந்த சேவையகத்திற்கான சான்றிதழ் சரிபார்ப்பைத் தவிர்க்கிறது. சேவையகத்தில் செல்லுபடியான சான்றிதழ் இருந்தால் இதை முடக்கவும்",
-  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "இந்தச் சாதனத்தின் கடிகாரம் சரியாக இல்லாததால் சில மாற்றங்கள் ஒத்திசைக்கப்படவில்லை. தேதியையும் நேரத்தையும் தானாக அமைத்து, மீண்டும் முயலவும்."
+  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "இந்தச் சாதனத்தின் கடிகாரம் சரியாக இல்லாததால் சில மாற்றங்கள் ஒத்திசைக்கப்படவில்லை. தேதியையும் நேரத்தையும் தானாக அமைத்து, மீண்டும் முயலவும்.",
+  "From Pasted Text": "ஒட்டிய உரையிலிருந்து",
+  "Could not read the clipboard. Paste into the text box instead.": "கிளிப்போர்டைப் படிக்க முடியவில்லை. உரைப் பெட்டியில் நேரடியாக ஒட்டவும்.",
+  "Pasted Text": "ஒட்டிய உரை",
+  "Failed to import book.": "புத்தகத்தை இறக்க முடியவில்லை.",
+  "Import Pasted Text": "ஒட்டிய உரையை இறக்கு",
+  "Paste an article or notes to read or listen to them like a book": "ஒரு கட்டுரை அல்லது குறிப்புகளை ஒட்டி, புத்தகம் போல் படிக்கவும் அல்லது கேட்கவும்",
+  "Text": "உரை",
+  "Paste": "ஒட்டு",
+  "The shared text is no longer available": "பகிரப்பட்ட உரை இனி கிடைக்கவில்லை",
+  "Shared Text": "பகிரப்பட்ட உரை"
 }

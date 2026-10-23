@@ -2544,5 +2544,15 @@
   "Show Page Thumbnails": "แสดงภาพขนาดย่อของหน้า",
   "Allow Self-Signed Certificate": "อนุญาตใบรับรองที่ลงนามด้วยตนเอง",
   "Skips certificate checks for this server. Turn it off if the server has a valid certificate": "ข้ามการตรวจสอบใบรับรองของเซิร์ฟเวอร์นี้ ปิดตัวเลือกนี้หากเซิร์ฟเวอร์มีใบรับรองที่ถูกต้อง",
-  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "การเปลี่ยนแปลงบางส่วนไม่ได้ซิงค์เพราะนาฬิกาของอุปกรณ์นี้ไม่ตรง ตั้งวันที่และเวลาเป็นอัตโนมัติ แล้วลองอีกครั้ง"
+  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "การเปลี่ยนแปลงบางส่วนไม่ได้ซิงค์เพราะนาฬิกาของอุปกรณ์นี้ไม่ตรง ตั้งวันที่และเวลาเป็นอัตโนมัติ แล้วลองอีกครั้ง",
+  "From Pasted Text": "จากข้อความที่วาง",
+  "Could not read the clipboard. Paste into the text box instead.": "ไม่สามารถอ่านคลิปบอร์ดได้ โปรดวางข้อความลงในช่องข้อความแทน",
+  "Pasted Text": "ข้อความที่วาง",
+  "Failed to import book.": "นำเข้าหนังสือไม่สำเร็จ",
+  "Import Pasted Text": "นำเข้าข้อความที่วาง",
+  "Paste an article or notes to read or listen to them like a book": "วางบทความหรือบันทึกเพื่ออ่านหรือฟังเหมือนหนังสือ",
+  "Text": "ข้อความ",
+  "Paste": "วาง",
+  "The shared text is no longer available": "ข้อความที่แชร์ไม่พร้อมใช้งานแล้ว",
+  "Shared Text": "ข้อความที่แชร์"
 }

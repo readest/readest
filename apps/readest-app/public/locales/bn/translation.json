@@ -2609,5 +2609,15 @@
   "Show Page Thumbnails": "পৃষ্ঠার থাম্বনেইল দেখান",
   "Allow Self-Signed Certificate": "স্ব-স্বাক্ষরিত সার্টিফিকেট অনুমতি দিন",
   "Skips certificate checks for this server. Turn it off if the server has a valid certificate": "এই সার্ভারের জন্য সার্টিফিকেট যাচাই এড়িয়ে যায়। সার্ভারের বৈধ সার্টিফিকেট থাকলে এটি বন্ধ করুন",
-  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "এই ডিভাইসের ঘড়ি ঠিক না থাকায় কিছু পরিবর্তন সিঙ্ক হয়নি। তারিখ ও সময় স্বয়ংক্রিয়ভাবে সেট করুন, তারপর আবার চেষ্টা করুন।"
+  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "এই ডিভাইসের ঘড়ি ঠিক না থাকায় কিছু পরিবর্তন সিঙ্ক হয়নি। তারিখ ও সময় স্বয়ংক্রিয়ভাবে সেট করুন, তারপর আবার চেষ্টা করুন।",
+  "From Pasted Text": "পেস্ট করা টেক্সট থেকে",
+  "Could not read the clipboard. Paste into the text box instead.": "ক্লিপবোর্ড পড়া যায়নি। পরিবর্তে টেক্সট বক্সে পেস্ট করুন।",
+  "Pasted Text": "পেস্ট করা টেক্সট",
+  "Failed to import book.": "বই আমদানি করা যায়নি।",
+  "Import Pasted Text": "পেস্ট করা টেক্সট আমদানি করুন",
+  "Paste an article or notes to read or listen to them like a book": "একটি নিবন্ধ বা নোট পেস্ট করে বইয়ের মতো পড়ুন বা শুনুন",
+  "Text": "টেক্সট",
+  "Paste": "পেস্ট",
+  "The shared text is no longer available": "শেয়ার করা টেক্সট আর উপলব্ধ নেই",
+  "Shared Text": "শেয়ার করা টেক্সট"
 }

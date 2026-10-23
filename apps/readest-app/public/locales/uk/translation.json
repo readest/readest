@@ -2739,5 +2739,15 @@
   "Show Page Thumbnails": "Показувати мініатюри сторінок",
   "Allow Self-Signed Certificate": "Дозволити самопідписаний сертифікат",
   "Skips certificate checks for this server. Turn it off if the server has a valid certificate": "Пропускає перевірку сертифіката для цього сервера. Вимкніть, якщо сервер має дійсний сертифікат",
-  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "Деякі зміни не синхронізувалися, бо годинник цього пристрою показує неправильний час. Увімкніть автоматичне встановлення дати й часу та спробуйте ще раз."
+  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "Деякі зміни не синхронізувалися, бо годинник цього пристрою показує неправильний час. Увімкніть автоматичне встановлення дати й часу та спробуйте ще раз.",
+  "From Pasted Text": "З вставленого тексту",
+  "Could not read the clipboard. Paste into the text box instead.": "Не вдалося прочитати буфер обміну. Вставте текст у текстове поле.",
+  "Pasted Text": "Вставлений текст",
+  "Failed to import book.": "Не вдалося імпортувати книгу.",
+  "Import Pasted Text": "Імпортувати вставлений текст",
+  "Paste an article or notes to read or listen to them like a book": "Вставте статтю або нотатки, щоб читати чи слухати їх як книгу",
+  "Text": "Текст",
+  "Paste": "Вставити",
+  "The shared text is no longer available": "Поширений текст більше недоступний",
+  "Shared Text": "Поширений текст"
 }

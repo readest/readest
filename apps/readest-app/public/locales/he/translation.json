@@ -2674,5 +2674,15 @@
   "Show Page Thumbnails": "הצג תמונות ממוזערות של עמודים",
   "Allow Self-Signed Certificate": "אפשר אישור בחתימה עצמית",
   "Skips certificate checks for this server. Turn it off if the server has a valid certificate": "מדלג על בדיקת האישור עבור שרת זה. כבה זאת אם לשרת יש אישור תקף",
-  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "חלק מהשינויים לא סונכרנו כי השעון של המכשיר הזה אינו מכוון. הגדר תאריך ושעה אוטומטיים ונסה שוב."
+  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "חלק מהשינויים לא סונכרנו כי השעון של המכשיר הזה אינו מכוון. הגדר תאריך ושעה אוטומטיים ונסה שוב.",
+  "From Pasted Text": "מטקסט מודבק",
+  "Could not read the clipboard. Paste into the text box instead.": "לא ניתן לקרוא את הלוח. הדביקו את הטקסט בתיבת הטקסט.",
+  "Pasted Text": "טקסט מודבק",
+  "Failed to import book.": "ייבוא הספר נכשל.",
+  "Import Pasted Text": "ייבוא טקסט מודבק",
+  "Paste an article or notes to read or listen to them like a book": "הדביקו מאמר או הערות כדי לקרוא או להאזין להם כמו לספר",
+  "Text": "טקסט",
+  "Paste": "הדבקה",
+  "The shared text is no longer available": "הטקסט המשותף כבר אינו זמין",
+  "Shared Text": "טקסט משותף"
 }

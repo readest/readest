@@ -2609,5 +2609,15 @@
   "Show Page Thumbnails": "نمایش تصاویر کوچک صفحات",
   "Allow Self-Signed Certificate": "اجازه به گواهی خودامضا",
   "Skips certificate checks for this server. Turn it off if the server has a valid certificate": "بررسی گواهی این سرور را نادیده می‌گیرد. اگر سرور گواهی معتبر دارد، آن را خاموش کنید",
-  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "برخی تغییرات همگام‌سازی نشدند، چون ساعت این دستگاه درست نیست. تاریخ و زمان را روی تنظیم خودکار بگذارید و دوباره امتحان کنید."
+  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "برخی تغییرات همگام‌سازی نشدند، چون ساعت این دستگاه درست نیست. تاریخ و زمان را روی تنظیم خودکار بگذارید و دوباره امتحان کنید.",
+  "From Pasted Text": "از متن جای‌گذاری‌شده",
+  "Could not read the clipboard. Paste into the text box instead.": "خواندن کلیپ‌بورد ممکن نشد. متن را مستقیماً در کادر متن جای‌گذاری کنید.",
+  "Pasted Text": "متن جای‌گذاری‌شده",
+  "Failed to import book.": "وارد کردن کتاب ناموفق بود.",
+  "Import Pasted Text": "وارد کردن متن جای‌گذاری‌شده",
+  "Paste an article or notes to read or listen to them like a book": "یک مقاله یا یادداشت را جای‌گذاری کنید تا مانند کتاب بخوانید یا بشنوید",
+  "Text": "متن",
+  "Paste": "جای‌گذاری",
+  "The shared text is no longer available": "متن اشتراک‌گذاشته‌شده دیگر در دسترس نیست",
+  "Shared Text": "متن اشتراک‌گذاشته‌شده"
 }

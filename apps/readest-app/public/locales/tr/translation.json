@@ -2616,5 +2616,15 @@
   "Within {{count}} words_other": "{{count}} kelime içinde",
   "Allow Self-Signed Certificate": "Kendinden imzalı sertifikaya izin ver",
   "Skips certificate checks for this server. Turn it off if the server has a valid certificate": "Bu sunucu için sertifika denetimini atlar. Sunucunun geçerli bir sertifikası varsa kapatın",
-  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "Bu cihazın saati doğru olmadığı için bazı değişiklikler eşitlenmedi. Tarih ve saati otomatik olarak ayarlayın, ardından yeniden deneyin."
+  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "Bu cihazın saati doğru olmadığı için bazı değişiklikler eşitlenmedi. Tarih ve saati otomatik olarak ayarlayın, ardından yeniden deneyin.",
+  "From Pasted Text": "Yapıştırılan metinden",
+  "Could not read the clipboard. Paste into the text box instead.": "Pano okunamadı. Metni metin kutusuna yapıştırın.",
+  "Pasted Text": "Yapıştırılan metin",
+  "Failed to import book.": "Kitap içe aktarılamadı.",
+  "Import Pasted Text": "Yapıştırılan metni içe aktar",
+  "Paste an article or notes to read or listen to them like a book": "Bir makaleyi veya notları yapıştırarak kitap gibi okuyun ya da dinleyin",
+  "Text": "Metin",
+  "Paste": "Yapıştır",
+  "The shared text is no longer available": "Paylaşılan metin artık kullanılamıyor",
+  "Shared Text": "Paylaşılan metin"
 }

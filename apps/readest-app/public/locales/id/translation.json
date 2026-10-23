@@ -2544,5 +2544,15 @@
   "Show Page Thumbnails": "Tampilkan Gambar Mini Halaman",
   "Allow Self-Signed Certificate": "Izinkan Sertifikat Tanda Tangan Sendiri",
   "Skips certificate checks for this server. Turn it off if the server has a valid certificate": "Melewati pemeriksaan sertifikat untuk server ini. Matikan jika server memiliki sertifikat yang valid",
-  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "Beberapa perubahan tidak tersinkron karena jam perangkat ini tidak tepat. Atur tanggal dan waktu secara otomatis, lalu coba lagi."
+  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "Beberapa perubahan tidak tersinkron karena jam perangkat ini tidak tepat. Atur tanggal dan waktu secara otomatis, lalu coba lagi.",
+  "From Pasted Text": "Dari teks yang ditempel",
+  "Could not read the clipboard. Paste into the text box instead.": "Tidak dapat membaca papan klip. Tempelkan teks ke kotak teks.",
+  "Pasted Text": "Teks yang ditempel",
+  "Failed to import book.": "Gagal mengimpor buku.",
+  "Import Pasted Text": "Impor teks yang ditempel",
+  "Paste an article or notes to read or listen to them like a book": "Tempelkan artikel atau catatan untuk dibaca atau didengarkan seperti buku",
+  "Text": "Teks",
+  "Paste": "Tempel",
+  "The shared text is no longer available": "Teks yang dibagikan tidak lagi tersedia",
+  "Shared Text": "Teks yang dibagikan"
 }

@@ -2609,5 +2609,15 @@
   "Show Page Thumbnails": "Sahifa eskizlarini ko'rsatish",
   "Allow Self-Signed Certificate": "O‘zi imzolagan sertifikatga ruxsat berish",
   "Skips certificate checks for this server. Turn it off if the server has a valid certificate": "Ushbu server uchun sertifikat tekshiruvini o‘tkazib yuboradi. Serverda haqiqiy sertifikat bo‘lsa, uni o‘chiring",
-  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "Ba'zi o'zgarishlar sinxronlanmadi, chunki bu qurilmaning soati noto'g'ri. Sana va vaqtni avtomatik sozlang, so'ng qayta urinib ko'ring."
+  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "Ba'zi o'zgarishlar sinxronlanmadi, chunki bu qurilmaning soati noto'g'ri. Sana va vaqtni avtomatik sozlang, so'ng qayta urinib ko'ring.",
+  "From Pasted Text": "Joylangan matndan",
+  "Could not read the clipboard. Paste into the text box instead.": "Buferni o‘qib bo‘lmadi. Matnni matn maydoniga joylang.",
+  "Pasted Text": "Joylangan matn",
+  "Failed to import book.": "Kitobni import qilib bo‘lmadi.",
+  "Import Pasted Text": "Joylangan matnni import qilish",
+  "Paste an article or notes to read or listen to them like a book": "Maqola yoki qaydlarni joylab, ularni kitob kabi o‘qing yoki tinglang",
+  "Text": "Matn",
+  "Paste": "Joylash",
+  "The shared text is no longer available": "Ulashilgan matn endi mavjud emas",
+  "Shared Text": "Ulashilgan matn"
 }

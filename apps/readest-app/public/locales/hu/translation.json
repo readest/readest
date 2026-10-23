@@ -2609,5 +2609,15 @@
   "Show Page Thumbnails": "Oldalbélyegképek megjelenítése",
   "Allow Self-Signed Certificate": "Önaláírt tanúsítvány engedélyezése",
   "Skips certificate checks for this server. Turn it off if the server has a valid certificate": "Kihagyja a tanúsítvány ellenőrzését ennél a kiszolgálónál. Kapcsold ki, ha a kiszolgálónak érvényes tanúsítványa van",
-  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "Néhány módosítás nem szinkronizálódott, mert az eszköz órája nem pontos. Állítsa a dátumot és az időt automatikusra, majd próbálja újra."
+  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "Néhány módosítás nem szinkronizálódott, mert az eszköz órája nem pontos. Állítsa a dátumot és az időt automatikusra, majd próbálja újra.",
+  "From Pasted Text": "Beillesztett szövegből",
+  "Could not read the clipboard. Paste into the text box instead.": "Nem sikerült beolvasni a vágólapot. Illeszd be a szöveget a szövegmezőbe.",
+  "Pasted Text": "Beillesztett szöveg",
+  "Failed to import book.": "A könyv importálása sikertelen.",
+  "Import Pasted Text": "Beillesztett szöveg importálása",
+  "Paste an article or notes to read or listen to them like a book": "Illessz be egy cikket vagy jegyzeteket, hogy könyvként olvasd vagy hallgasd őket",
+  "Text": "Szöveg",
+  "Paste": "Beillesztés",
+  "The shared text is no longer available": "A megosztott szöveg már nem érhető el",
+  "Shared Text": "Megosztott szöveg"
 }

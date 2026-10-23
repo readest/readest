@@ -2544,5 +2544,15 @@
   "Show Page Thumbnails": "Hiển thị hình thu nhỏ trang",
   "Allow Self-Signed Certificate": "Cho phép chứng chỉ tự ký",
   "Skips certificate checks for this server. Turn it off if the server has a valid certificate": "Bỏ qua kiểm tra chứng chỉ cho máy chủ này. Hãy tắt nếu máy chủ có chứng chỉ hợp lệ",
-  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "Một số thay đổi chưa được đồng bộ vì đồng hồ của thiết bị này bị lệch. Hãy đặt ngày giờ tự động rồi thử lại."
+  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "Một số thay đổi chưa được đồng bộ vì đồng hồ của thiết bị này bị lệch. Hãy đặt ngày giờ tự động rồi thử lại.",
+  "From Pasted Text": "Từ văn bản đã dán",
+  "Could not read the clipboard. Paste into the text box instead.": "Không thể đọc bảng nhớ tạm. Hãy dán văn bản vào ô văn bản.",
+  "Pasted Text": "Văn bản đã dán",
+  "Failed to import book.": "Không thể nhập sách.",
+  "Import Pasted Text": "Nhập văn bản đã dán",
+  "Paste an article or notes to read or listen to them like a book": "Dán bài viết hoặc ghi chú để đọc hoặc nghe như một cuốn sách",
+  "Text": "Văn bản",
+  "Paste": "Dán",
+  "The shared text is no longer available": "Văn bản được chia sẻ không còn khả dụng",
+  "Shared Text": "Văn bản được chia sẻ"
 }

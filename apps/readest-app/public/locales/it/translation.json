@@ -2674,5 +2674,15 @@
   "Show Page Thumbnails": "Mostra miniature delle pagine",
   "Allow Self-Signed Certificate": "Consenti certificato autofirmato",
   "Skips certificate checks for this server. Turn it off if the server has a valid certificate": "Salta il controllo del certificato per questo server. Disattivalo se il server ha un certificato valido",
-  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "Alcune modifiche non sono state sincronizzate perché l'orologio di questo dispositivo non è corretto. Imposta data e ora automaticamente, poi riprova."
+  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "Alcune modifiche non sono state sincronizzate perché l'orologio di questo dispositivo non è corretto. Imposta data e ora automaticamente, poi riprova.",
+  "From Pasted Text": "Da testo incollato",
+  "Could not read the clipboard. Paste into the text box instead.": "Impossibile leggere gli appunti. Incolla il testo nella casella di testo.",
+  "Pasted Text": "Testo incollato",
+  "Failed to import book.": "Importazione del libro non riuscita.",
+  "Import Pasted Text": "Importa testo incollato",
+  "Paste an article or notes to read or listen to them like a book": "Incolla un articolo o delle note per leggerli o ascoltarli come un libro",
+  "Text": "Testo",
+  "Paste": "Incolla",
+  "The shared text is no longer available": "Il testo condiviso non è più disponibile",
+  "Shared Text": "Testo condiviso"
 }

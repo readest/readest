@@ -2739,5 +2739,15 @@
   "Show Page Thumbnails": "Prikaži sličice strani",
   "Allow Self-Signed Certificate": "Dovoli samopodpisano potrdilo",
   "Skips certificate checks for this server. Turn it off if the server has a valid certificate": "Preskoči preverjanje potrdila za ta strežnik. Izklopite, če ima strežnik veljavno potrdilo",
-  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "Nekatere spremembe se niso sinhronizirale, ker ura te naprave ni točna. Nastavite datum in čas samodejno ter poskusite znova."
+  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "Nekatere spremembe se niso sinhronizirale, ker ura te naprave ni točna. Nastavite datum in čas samodejno ter poskusite znova.",
+  "From Pasted Text": "Iz prilepljenega besedila",
+  "Could not read the clipboard. Paste into the text box instead.": "Odložišča ni bilo mogoče prebrati. Besedilo prilepite v polje z besedilom.",
+  "Pasted Text": "Prilepljeno besedilo",
+  "Failed to import book.": "Uvoz knjige ni uspel.",
+  "Import Pasted Text": "Uvozi prilepljeno besedilo",
+  "Paste an article or notes to read or listen to them like a book": "Prilepite članek ali zapiske, da jih berete ali poslušate kot knjigo",
+  "Text": "Besedilo",
+  "Paste": "Prilepi",
+  "The shared text is no longer available": "Deljeno besedilo ni več na voljo",
+  "Shared Text": "Deljeno besedilo"
 }

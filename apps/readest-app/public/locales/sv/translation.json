@@ -2609,5 +2609,15 @@
   "Show Page Thumbnails": "Visa sidminiatyrer",
   "Allow Self-Signed Certificate": "Tillåt självsignerat certifikat",
   "Skips certificate checks for this server. Turn it off if the server has a valid certificate": "Hoppar över certifikatkontrollen för den här servern. Stäng av det om servern har ett giltigt certifikat",
-  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "Vissa ändringar synkroniserades inte eftersom enhetens klocka går fel. Ställ in datum och tid automatiskt och försök igen."
+  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "Vissa ändringar synkroniserades inte eftersom enhetens klocka går fel. Ställ in datum och tid automatiskt och försök igen.",
+  "From Pasted Text": "Från inklistrad text",
+  "Could not read the clipboard. Paste into the text box instead.": "Det gick inte att läsa urklipp. Klistra in texten i textrutan i stället.",
+  "Pasted Text": "Inklistrad text",
+  "Failed to import book.": "Det gick inte att importera boken.",
+  "Import Pasted Text": "Importera inklistrad text",
+  "Paste an article or notes to read or listen to them like a book": "Klistra in en artikel eller anteckningar för att läsa eller lyssna på dem som en bok",
+  "Text": "Text",
+  "Paste": "Klistra in",
+  "The shared text is no longer available": "Den delade texten är inte längre tillgänglig",
+  "Shared Text": "Delad text"
 }

@@ -2544,5 +2544,15 @@
   "Show Page Thumbnails": "显示页面缩略图",
   "Allow Self-Signed Certificate": "允许自签名证书",
   "Skips certificate checks for this server. Turn it off if the server has a valid certificate": "将跳过此服务器的证书校验。如果服务器有有效证书，请关闭此选项",
-  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "此设备的时钟不准确，部分更改未能同步。请将日期和时间设为自动设置，然后重试。"
+  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "此设备的时钟不准确，部分更改未能同步。请将日期和时间设为自动设置，然后重试。",
+  "From Pasted Text": "从粘贴的文本",
+  "Could not read the clipboard. Paste into the text box instead.": "无法读取剪贴板，请直接粘贴到文本框中。",
+  "Pasted Text": "粘贴的文本",
+  "Failed to import book.": "导入书籍失败。",
+  "Import Pasted Text": "导入粘贴的文本",
+  "Paste an article or notes to read or listen to them like a book": "粘贴文章或笔记，像书一样阅读或收听",
+  "Text": "文本",
+  "Paste": "粘贴",
+  "The shared text is no longer available": "分享的文本已不可用",
+  "Shared Text": "分享的文本"
 }

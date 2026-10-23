@@ -2739,5 +2739,15 @@
   "Show Page Thumbnails": "Показывать миниатюры страниц",
   "Allow Self-Signed Certificate": "Разрешить самоподписанный сертификат",
   "Skips certificate checks for this server. Turn it off if the server has a valid certificate": "Пропускает проверку сертификата для этого сервера. Отключите, если у сервера действительный сертификат",
-  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "Некоторые изменения не синхронизировались, потому что часы на этом устройстве идут неверно. Включите автоматическую установку даты и времени и повторите попытку."
+  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "Некоторые изменения не синхронизировались, потому что часы на этом устройстве идут неверно. Включите автоматическую установку даты и времени и повторите попытку.",
+  "From Pasted Text": "Из вставленного текста",
+  "Could not read the clipboard. Paste into the text box instead.": "Не удалось прочитать буфер обмена. Вставьте текст в текстовое поле.",
+  "Pasted Text": "Вставленный текст",
+  "Failed to import book.": "Не удалось импортировать книгу.",
+  "Import Pasted Text": "Импортировать вставленный текст",
+  "Paste an article or notes to read or listen to them like a book": "Вставьте статью или заметки, чтобы читать или слушать их как книгу",
+  "Text": "Текст",
+  "Paste": "Вставить",
+  "The shared text is no longer available": "Общий текст больше недоступен",
+  "Shared Text": "Общий текст"
 }

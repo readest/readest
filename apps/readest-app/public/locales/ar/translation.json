@@ -2869,5 +2869,15 @@
   "Show Page Thumbnails": "إظهار الصور المصغرة للصفحات",
   "Allow Self-Signed Certificate": "السماح بالشهادة الموقّعة ذاتيًا",
   "Skips certificate checks for this server. Turn it off if the server has a valid certificate": "يتخطى التحقق من الشهادة لهذا الخادم. أوقف تشغيله إذا كانت لدى الخادم شهادة صالحة",
-  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "لم تتم مزامنة بعض التغييرات لأن ساعة هذا الجهاز غير مضبوطة. اضبط التاريخ والوقت تلقائيًا، ثم حاول مرة أخرى."
+  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "لم تتم مزامنة بعض التغييرات لأن ساعة هذا الجهاز غير مضبوطة. اضبط التاريخ والوقت تلقائيًا، ثم حاول مرة أخرى.",
+  "From Pasted Text": "من نص ملصق",
+  "Could not read the clipboard. Paste into the text box instead.": "تعذّرت قراءة الحافظة. الصق النص في مربع النص بدلاً من ذلك.",
+  "Pasted Text": "نص ملصق",
+  "Failed to import book.": "فشل استيراد الكتاب.",
+  "Import Pasted Text": "استيراد نص ملصق",
+  "Paste an article or notes to read or listen to them like a book": "الصق مقالاً أو ملاحظات لقراءتها أو الاستماع إليها مثل كتاب",
+  "Text": "النص",
+  "Paste": "لصق",
+  "The shared text is no longer available": "النص المُشارك لم يعد متاحاً",
+  "Shared Text": "نص مُشارك"
 }

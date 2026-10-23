@@ -2674,5 +2674,15 @@
   "Show Page Thumbnails": "Afișează miniaturile paginilor",
   "Allow Self-Signed Certificate": "Permite certificat autosemnat",
   "Skips certificate checks for this server. Turn it off if the server has a valid certificate": "Omite verificarea certificatului pentru acest server. Dezactivează opțiunea dacă serverul are un certificat valid",
-  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "Unele modificări nu s-au sincronizat deoarece ceasul acestui dispozitiv nu este corect. Setați data și ora automat, apoi încercați din nou."
+  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "Unele modificări nu s-au sincronizat deoarece ceasul acestui dispozitiv nu este corect. Setați data și ora automat, apoi încercați din nou.",
+  "From Pasted Text": "Din text lipit",
+  "Could not read the clipboard. Paste into the text box instead.": "Nu s-a putut citi clipboardul. Lipește textul în caseta de text.",
+  "Pasted Text": "Text lipit",
+  "Failed to import book.": "Importul cărții a eșuat.",
+  "Import Pasted Text": "Importă text lipit",
+  "Paste an article or notes to read or listen to them like a book": "Lipește un articol sau notițe pentru a le citi sau asculta ca pe o carte",
+  "Text": "Text",
+  "Paste": "Lipește",
+  "The shared text is no longer available": "Textul partajat nu mai este disponibil",
+  "Shared Text": "Text partajat"
 }

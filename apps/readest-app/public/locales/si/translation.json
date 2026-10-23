@@ -2609,5 +2609,15 @@
   "Show Page Thumbnails": "පිටු සිඟිති රූ පෙන්වන්න",
   "Allow Self-Signed Certificate": "ස්වයං-අත්සන් කළ සහතිකයට ඉඩ දෙන්න",
   "Skips certificate checks for this server. Turn it off if the server has a valid certificate": "මෙම සේවාදායකය සඳහා සහතික පරීක්ෂාව මඟ හරියි. සේවාදායකයට වලංගු සහතිකයක් තිබේ නම් එය අක්‍රිය කරන්න",
-  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "මෙම උපාංගයේ ඔරලෝසුව නිවැරදි නොවන නිසා සමහර වෙනස්කම් සමමුහුර්ත නොවීය. දිනය සහ වේලාව ස්වයංක්‍රීයව සකසා නැවත උත්සාහ කරන්න."
+  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "මෙම උපාංගයේ ඔරලෝසුව නිවැරදි නොවන නිසා සමහර වෙනස්කම් සමමුහුර්ත නොවීය. දිනය සහ වේලාව ස්වයංක්‍රීයව සකසා නැවත උත්සාහ කරන්න.",
+  "From Pasted Text": "ඇලවූ පෙළෙන්",
+  "Could not read the clipboard. Paste into the text box instead.": "ක්ලිප්බෝඩය කියවිය නොහැකි විය. ඒ වෙනුවට පෙළ කොටුවට අලවන්න.",
+  "Pasted Text": "ඇලවූ පෙළ",
+  "Failed to import book.": "පොත ආයාත කිරීම අසාර්ථක විය.",
+  "Import Pasted Text": "ඇලවූ පෙළ ආයාත කරන්න",
+  "Paste an article or notes to read or listen to them like a book": "ලිපියක් හෝ සටහන් අලවා පොතක් මෙන් කියවන්න හෝ අසන්න",
+  "Text": "පෙළ",
+  "Paste": "අලවන්න",
+  "The shared text is no longer available": "බෙදාගත් පෙළ තවදුරටත් ලබා ගත නොහැක",
+  "Shared Text": "බෙදාගත් පෙළ"
 }

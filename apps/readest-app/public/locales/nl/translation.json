@@ -2609,5 +2609,15 @@
   "Show Page Thumbnails": "Paginaminiaturen weergeven",
   "Allow Self-Signed Certificate": "Zelfondertekend certificaat toestaan",
   "Skips certificate checks for this server. Turn it off if the server has a valid certificate": "Slaat de certificaatcontrole voor deze server over. Zet dit uit als de server een geldig certificaat heeft",
-  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "Sommige wijzigingen zijn niet gesynchroniseerd omdat de klok van dit apparaat niet goed staat. Stel datum en tijd automatisch in en probeer het opnieuw."
+  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "Sommige wijzigingen zijn niet gesynchroniseerd omdat de klok van dit apparaat niet goed staat. Stel datum en tijd automatisch in en probeer het opnieuw.",
+  "From Pasted Text": "Van geplakte tekst",
+  "Could not read the clipboard. Paste into the text box instead.": "Kan het klembord niet lezen. Plak de tekst in het tekstvak.",
+  "Pasted Text": "Geplakte tekst",
+  "Failed to import book.": "Boek importeren mislukt.",
+  "Import Pasted Text": "Geplakte tekst importeren",
+  "Paste an article or notes to read or listen to them like a book": "Plak een artikel of notities om ze als een boek te lezen of te beluisteren",
+  "Text": "Tekst",
+  "Paste": "Plakken",
+  "The shared text is no longer available": "De gedeelde tekst is niet meer beschikbaar",
+  "Shared Text": "Gedeelde tekst"
 }
