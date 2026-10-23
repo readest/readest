@@ -98,10 +98,15 @@ describe('getHeaderTriggerHeight (#4977)', () => {
     expect(getHeaderTriggerHeight(0, viewSettings({ writingMode: 'vertical-rl' }))).toBe(16);
   });
 
-  it('collapses instead of going negative when the text starts above the cell', () => {
-    expect(
-      getHeaderTriggerHeight(0, viewSettings({ showHeader: false, compactMarginTopPx: -20 })),
-    ).toBe(0);
+  it('keeps an 8px strip when the text starts at the top edge (#7006)', () => {
+    // A 0px strip left no way to reveal the toolbar by hovering. On Windows
+    // the top 4px of a restored frameless window resize it instead.
+    const compact = (compactMarginTopPx: number) =>
+      getHeaderTriggerHeight(0, viewSettings({ showHeader: false, compactMarginTopPx }));
+    expect(compact(0)).toBe(8);
+    expect(compact(4)).toBe(8);
+    expect(compact(-20)).toBe(8);
+    expect(compact(12)).toBe(12);
   });
 });
 

@@ -54,14 +54,19 @@ export const getHeaderBandGeometry = (topInset: number, marginTopPx: number) => 
  * content top instead: the renderer's `margin-top`, see
  * FoliateViewer.applyMarginAndGap, which floors at 16px via moreTopInset while
  * the page header is on and drops the safe-area inset when it is off.
+ *
+ * It never goes below 8px, though: with a top margin of 0 the strip vanished
+ * and hovering could no longer reveal the toolbar at all (#7006), and on
+ * Windows the top ~4px of a restored frameless window are its resize border.
  */
 export const getHeaderTriggerHeight = (topInset: number, viewSettings: ViewSettings) => {
+  const minHeight = 8;
   const maxHeight = 44;
   const isVertical = viewSettings.vertical || viewSettings.writingMode.includes('vertical');
   const marginTopPx = getViewInsets(viewSettings).top;
   const contentTop =
     viewSettings.showHeader && !isVertical ? Math.max(topInset + marginTopPx, 16) : marginTopPx;
-  return Math.min(maxHeight, Math.max(0, contentTop));
+  return Math.min(maxHeight, Math.max(minHeight, contentTop));
 };
 
 /**
