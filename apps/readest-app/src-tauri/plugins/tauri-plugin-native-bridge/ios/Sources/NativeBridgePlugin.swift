@@ -835,6 +835,8 @@ class NativeBridgePlugin: Plugin {
           "groupId": save.groupId,
           "groupName": save.groupName,
           "htmlFile": save.htmlFile,
+          "textFile": save.textFile,
+          "title": save.title,
           "addedAt": save.addedAt,
         ]
       }
@@ -1931,10 +1933,11 @@ class NativeBridgePlugin: Plugin {
     invoke.resolve()
   }
 
-  /// Read + delete a page-HTML file the Share Extension captured from
-  /// the user's signed-in Safari tab (App Group `SharedClips/`). Resolves
-  /// `{ html }`, or `{}` when the file is missing/unreadable — the JS
-  /// caller falls back to the `clip_url` re-fetch.
+  /// Read + delete a file the Share Extension wrote to App Group
+  /// `SharedClips/`: page HTML captured from the user's signed-in Safari
+  /// tab, or shared text. Resolves `{ html }` with the file's text, or `{}`
+  /// when the file is missing/unreadable — for HTML the JS caller falls
+  /// back to the `clip_url` re-fetch.
   @objc public func read_share_clip_html(_ invoke: Invoke) {
     let args: ReadShareClipHtmlArgs
     do {
