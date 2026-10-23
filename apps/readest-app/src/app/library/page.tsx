@@ -90,7 +90,7 @@ import { getActiveBookshelfGroupBy } from '@/services/bookshelves/grouping';
 import { LibraryGroupByType } from '@/types/settings';
 import { BookMetadata } from '@/libs/document';
 import { AboutWindow } from '@/components/AboutWindow';
-import ReadingStatsDialog from '@/components/ReadingStatsDialog';
+import ReadingStatsDialog from '@/components/stats/ReadingStatsDialog';
 import { KeyboardShortcutsHelp } from '@/components/KeyboardShortcutsHelp';
 import LocalSendManager from '@/components/localsend/LocalSendManager';
 import { BookDetailModal } from '@/components/metadata';

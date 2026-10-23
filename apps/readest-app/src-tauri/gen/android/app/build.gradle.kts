@@ -99,8 +99,6 @@ android {
             isMinifyEnabled = true
             if (keystorePropertiesFile.exists()) {
                 signingConfig = signingConfigs.getByName("signing")
-            } else {
-                signingConfig = signingConfigs.getByName("debug")
             }
             proguardFiles(
                 *fileTree(".") { include("**/*.pro") }
