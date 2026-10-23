@@ -16,14 +16,20 @@ vi.mock('@/components/Dialog', () => ({
   default: ({
     isOpen,
     title,
+    onClose,
     children,
   }: {
     isOpen: boolean;
     title: string;
+    onClose: () => void;
     children: React.ReactNode;
   }) =>
     isOpen ? (
       <div role='dialog' aria-label={title}>
+        {/* Stands in for Escape, the backdrop and swipe-to-dismiss. */}
+        <button type='button' onClick={onClose}>
+          Dismiss
+        </button>
         {children}
       </div>
     ) : null,
@@ -89,6 +95,36 @@ describe('ImportPastedTextDialog', () => {
       expect(screen.getByLabelText('Text')).toHaveProperty('value', 'Copied article'),
     );
     expect(readTextFromClipboard).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps text typed while the clipboard read was pending', async () => {
+    let resolveRead: (text: string) => void = () => {};
+    readTextFromClipboard.mockReturnValue(new Promise((resolve) => (resolveRead = resolve)));
+    render(<ImportPastedTextDialog isOpen onClose={vi.fn()} onImport={vi.fn()} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Paste' }));
+    fireEvent.change(screen.getByLabelText('Text'), { target: { value: 'Typed meanwhile' } });
+    resolveRead('Copied article');
+
+    await waitFor(() => expect(readTextFromClipboard).toHaveBeenCalledTimes(1));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(screen.getByLabelText('Text')).toHaveProperty('value', 'Typed meanwhile');
+  });
+
+  it('cannot be dismissed while an import is running', async () => {
+    const onClose = vi.fn();
+    let finishImport: (imported: boolean) => void = () => {};
+    const onImport = vi.fn(() => new Promise<boolean>((resolve) => (finishImport = resolve)));
+    render(<ImportPastedTextDialog isOpen onClose={onClose} onImport={onImport} />);
+    fireEvent.change(screen.getByLabelText('Text'), { target: { value: 'Long article' } });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Import' }));
+    await waitFor(() => expect(onImport).toHaveBeenCalledTimes(1));
+    fireEvent.click(screen.getByRole('button', { name: 'Dismiss' }));
+    expect(onClose).not.toHaveBeenCalled();
+
+    finishImport(true);
+    await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
   });
 
   it('keeps manual paste available when clipboard access is denied', async () => {

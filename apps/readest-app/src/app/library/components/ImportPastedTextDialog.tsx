@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { MdContentPaste } from 'react-icons/md';
 import Dialog from '@/components/Dialog';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -29,10 +29,12 @@ const ImportPastedTextDialog: React.FC<ImportPastedTextDialogProps> = ({
   const [content, setContent] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const openingRef = useRef(0);
 
   // Reset transient state every time the dialog reopens.
   useEffect(() => {
     if (!isOpen) return;
+    openingRef.current += 1;
     setTitle('');
     setContent('');
     setBusy(false);
@@ -40,13 +42,22 @@ const ImportPastedTextDialog: React.FC<ImportPastedTextDialogProps> = ({
   }, [isOpen]);
 
   const pasteFromClipboard = async () => {
+    const opening = openingRef.current;
+    const draft = content;
     const text = await readTextFromClipboard();
+    // The paste prompt can stay up while the user types or reopens the dialog.
+    if (opening !== openingRef.current) return;
     if (text === null) {
       setError(_('Could not read the clipboard. Paste into the text box instead.'));
       return;
     }
-    setContent(text);
+    setContent((current) => (current === draft ? text : current));
     setError(null);
+  };
+
+  // Escape, the backdrop and swipe-to-dismiss must not drop a running import.
+  const close = () => {
+    if (!busy) onClose();
   };
 
   const importText = async () => {
@@ -70,7 +81,7 @@ const ImportPastedTextDialog: React.FC<ImportPastedTextDialogProps> = ({
   return (
     <Dialog
       isOpen={isOpen}
-      onClose={onClose}
+      onClose={close}
       title={_('Import Pasted Text')}
       aboveKeyboard
       // Size to content — same override as ImportNovelDialog.
