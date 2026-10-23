@@ -61,6 +61,39 @@ describe('ReadingTimeChart keyboard access', () => {
   });
 });
 
+describe('pointer behavior', () => {
+  it('leaves the headline and footer alone on hover, and selects on click', () => {
+    vi.useFakeTimers({ now: new Date('2026-10-21T12:00:00'), toFake: ['Date'] });
+    const daily = new Map([['2026-10-20', 1800]]);
+    const { container } = render(
+      <>
+        <ReadingTimeChart daily={daily} />
+        <ReadingHeatmap daily={daily} />
+      </>,
+    );
+    const [chartStatus, heatmapStatus] = screen.getAllByRole('status');
+    const chartBefore = chartStatus!.textContent;
+    const heatmapBefore = heatmapStatus!.textContent;
+    const bar = container.querySelector('[data-index="5"]')!;
+    const day = container.querySelector('[data-date="2026-10-20"]')!;
+
+    fireEvent.mouseOver(bar);
+    fireEvent.mouseOver(day);
+    expect(chartStatus!.textContent).toBe(chartBefore);
+    expect(heatmapStatus!.textContent).toBe(heatmapBefore);
+
+    fireEvent.pointerDown(bar);
+    fireEvent.click(bar);
+    expect(chartStatus!.textContent).toContain('20');
+    fireEvent.click(bar);
+    expect(chartStatus!.textContent).toBe(chartBefore);
+
+    fireEvent.click(day);
+    expect(heatmapStatus!.textContent).toContain('20');
+    expect(heatmapStatus!.textContent).toContain('30m');
+  });
+});
+
 describe('arrow keys inside a Dialog', () => {
   // Dialog stops every keydown at its own node, before React's root listener.
   const InDialog = ({ children }: { children: React.ReactNode }) => (

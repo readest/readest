@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { MdChevronLeft, MdChevronRight } from 'react-icons/md';
 import { useTranslation } from '@/hooks/useTranslation';
 import { toDateKey } from '@/services/statistics/readingStats';
@@ -36,6 +36,7 @@ const ReadingHeatmap: React.FC<ReadingHeatmapProps> = ({ daily }) => {
   const currentYear = new Date().getFullYear();
   const [year, setYear] = useState(currentYear);
   const [selected, setSelected] = useState<string | null>(null);
+  const pointerFocus = useRef(false);
 
   const locale = getLocale();
   const todayKey = toDateKey(new Date());
@@ -59,9 +60,12 @@ const ReadingHeatmap: React.FC<ReadingHeatmapProps> = ({ daily }) => {
       day: 'numeric',
     });
 
-  const handlePointer = (event: React.SyntheticEvent) => {
+  // Hover only outlines the day under the pointer (with a tooltip); the status
+  // line changes on a deliberate click, tap or arrow key, never in passing.
+  const handleClick = (event: React.MouseEvent) => {
+    pointerFocus.current = false;
     const date = (event.target as HTMLElement).dataset['date'];
-    if (date) setSelected(date);
+    if (date) setSelected(selected === date ? null : date);
   };
 
   // One tab stop for the whole year: arrows step a day down a column or a
@@ -85,7 +89,10 @@ const ReadingHeatmap: React.FC<ReadingHeatmapProps> = ({ daily }) => {
   };
 
   const handleFocus = () => {
-    if (!selected) setSelected(year === currentYear ? todayKey : `${year}-01-01`);
+    if (!pointerFocus.current && !selected) {
+      setSelected(year === currentYear ? todayKey : `${year}-01-01`);
+    }
+    pointerFocus.current = false;
   };
 
   const changeYear = (delta: number) => {
@@ -125,9 +132,8 @@ const ReadingHeatmap: React.FC<ReadingHeatmapProps> = ({ daily }) => {
         tabIndex={0}
         aria-label={_('Reading activity')}
         className='focus-visible:ring-base-content/15 flex flex-col gap-3 rounded-sm focus-visible:outline-hidden focus-visible:ring-2'
-        onClick={handlePointer}
-        onMouseOver={handlePointer}
-        onMouseLeave={() => setSelected(null)}
+        onPointerDown={() => (pointerFocus.current = true)}
+        onClick={handleClick}
         onFocus={handleFocus}
         onBlur={() => setSelected(null)}
         onKeyDownCapture={handleKeyDown}
@@ -162,12 +168,14 @@ const ReadingHeatmap: React.FC<ReadingHeatmapProps> = ({ daily }) => {
                     <span
                       key={key}
                       data-date={key}
+                      title={`${formatDay(key)} · ${time(daily.get(key) ?? 0)}`}
                       className={clsx(
-                        'aspect-square rounded-[2px]',
+                        'aspect-square cursor-pointer rounded-[2px] outline-offset-1',
                         LEVEL_CLASSES[getLevel(daily.get(key) ?? 0)],
                         key > todayKey && 'opacity-40',
-                        selected === key &&
-                          'outline-base-content outline outline-1 outline-offset-1',
+                        selected === key
+                          ? 'outline-base-content outline outline-1'
+                          : 'hover:outline-base-content/40 hover:outline hover:outline-1',
                       )}
                     />
                   );

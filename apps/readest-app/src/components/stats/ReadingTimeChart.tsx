@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import SegmentedControl from '@/components/SegmentedControl';
 import { useTranslation } from '@/hooks/useTranslation';
 import { getReadingBars, type ReadingRange } from '@/services/statistics/readingStats';
@@ -14,6 +14,7 @@ const ReadingTimeChart: React.FC<ReadingTimeChartProps> = ({ daily }) => {
   const _ = useTranslation();
   const [range, setRange] = useState<ReadingRange>('week');
   const [selected, setSelected] = useState<number | null>(null);
+  const pointerFocus = useRef(false);
 
   const locale = getLocale();
   const bars = getReadingBars(daily, range);
@@ -49,11 +50,19 @@ const ReadingTimeChart: React.FC<ReadingTimeChartProps> = ({ daily }) => {
     setSelected(Math.min(bars.length - 1, Math.max(0, selected + step)));
   };
 
-  const handlePointer = (event: React.SyntheticEvent) => {
+  // Hover only brightens the bar under the pointer (with a tooltip); the
+  // headline changes on a deliberate click, tap or arrow key, never in passing.
+  const handleClick = (event: React.MouseEvent) => {
+    pointerFocus.current = false;
     const index = (event.target as HTMLElement).closest<HTMLElement>('[data-index]')?.dataset[
       'index'
     ];
-    if (index !== undefined) setSelected(Number(index));
+    if (index !== undefined) setSelected(selected === Number(index) ? null : Number(index));
+  };
+
+  const handleFocus = () => {
+    if (!pointerFocus.current) setSelected((current) => current ?? bars.length - 1);
+    pointerFocus.current = false;
   };
 
   return (
@@ -86,10 +95,9 @@ const ReadingTimeChart: React.FC<ReadingTimeChartProps> = ({ daily }) => {
         tabIndex={0}
         aria-label={_('Reading Time')}
         className='focus-visible:ring-base-content/15 rounded-sm focus-visible:outline-hidden focus-visible:ring-2'
-        onClick={handlePointer}
-        onMouseOver={handlePointer}
-        onMouseLeave={() => setSelected(null)}
-        onFocus={() => setSelected((current) => current ?? bars.length - 1)}
+        onPointerDown={() => (pointerFocus.current = true)}
+        onClick={handleClick}
+        onFocus={handleFocus}
         onBlur={() => setSelected(null)}
         onKeyDownCapture={handleKeyDown}
       >
@@ -101,16 +109,15 @@ const ReadingTimeChart: React.FC<ReadingTimeChartProps> = ({ daily }) => {
             <span
               key={item.date.getTime()}
               data-index={index}
-              className='flex h-full min-w-0 flex-1 items-end'
+              title={`${formatBarDate(item.date)} · ${time(item.seconds)}`}
+              className='group flex h-full min-w-0 flex-1 cursor-pointer items-end'
             >
               <span
                 className={clsx(
                   'mx-auto w-full max-w-10 rounded-t-sm transition-colors duration-150',
                   selected === index
                     ? 'bg-base-content'
-                    : selected === null
-                      ? 'bg-base-content/75'
-                      : 'bg-base-content/30',
+                    : 'bg-base-content/55 group-hover:bg-base-content/80',
                 )}
                 style={{
                   height: item.seconds > 0 ? `${Math.max(2, (item.seconds / max) * 100)}%` : 0,
