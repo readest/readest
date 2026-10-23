@@ -16,7 +16,7 @@ export const useNotesSync = (bookKey: string) => {
   const { syncedNotes, syncNotes, lastSyncedAtNotes } = useSync(bookKey);
   const { getConfig, setConfig, getBookData } = useBookDataStore();
   const { getView, getViewsById } = useReaderStore();
-  // The updatedAt of each note as this device last pushed it.
+  // The updatedAt of each note's oldest push not yet answered by the server.
   const pushedAtRef = useRef(new Map<string, number>());
 
   const config = getConfig(bookKey);
@@ -158,7 +158,11 @@ export const useNotesSync = (bookKey: string) => {
         const newNotes = getNewNotes();
         if (newNotes.notes?.length) {
           populateXPointersForPush(newNotes.notes).then((enriched) => {
-            enriched.forEach((note) => pushedAtRef.current.set(note.id, note.updatedAt));
+            enriched.forEach((note) => {
+              if (!pushedAtRef.current.has(note.id)) {
+                pushedAtRef.current.set(note.id, note.updatedAt);
+              }
+            });
             syncNotes(enriched, book?.hash, book?.metaHash, 'both');
           });
         } else {
@@ -260,6 +264,8 @@ export const useNotesSync = (bookKey: string) => {
         ...oldNotes.filter((oldNote) => !convertedNotes.some((n) => n.id === oldNote.id)),
         ...convertedNotes.map(processNewNote),
       ];
+      // Answered: later copies of these notes are ordinary changes.
+      convertedNotes.forEach((note) => pushedAtRef.current.delete(note.id));
       setConfig(bookKey, { booknotes: mergedNotes });
     };
     processSyncedNotes();

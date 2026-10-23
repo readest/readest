@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, test, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { cleanup, renderHook, waitFor } from '@testing-library/react';
 import type { BookNote } from '@/types/book';
 
@@ -58,6 +58,12 @@ vi.mock('@/store/bookDataStore', () => ({
   }),
 }));
 
+// Push on every change, so two pushes of one drawing can be in flight at once.
+vi.mock('@/services/constants', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/services/constants')>()),
+  SYNC_NOTES_INTERVAL_SEC: 0,
+}));
+
 vi.mock('@/store/readerStore', () => ({
   useReaderStore: h.makeStore({ getView: () => null, getViewsById: () => [] }),
 }));
@@ -65,6 +71,11 @@ vi.mock('@/store/readerStore', () => ({
 import { useNotesSync } from '@/app/reader/hooks/useNotesSync';
 
 describe('useNotesSync push reply', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    h.state.syncedNotes = null;
+  });
+
   afterEach(() => {
     cleanup();
   });
@@ -84,8 +95,8 @@ describe('useNotesSync push reply', () => {
     await waitFor(() => expect(h.syncNotesMock).toHaveBeenCalled());
 
     // A second stroke lands before the reply, which carries the first version
-    // under the server's insert stamp.
-    h.state.config = { ...h.state.config, booknotes: [h.drawing(['a', 'b'], 3500)] };
+    // under the server's insert stamp (edited in place, so no second push runs).
+    h.state.config.booknotes[0] = h.drawing(['a', 'b'], 3500);
     h.state.syncedNotes = [h.drawing(['a'], 4000)];
     rerender();
 
@@ -94,5 +105,42 @@ describe('useNotesSync push reply', () => {
     expect(merged.ink!.map((s) => s.id)).toEqual(['a', 'b']);
     // Stamped after the reply, so the next sync pushes it.
     expect(merged.updatedAt).toBeGreaterThan(4000);
+  });
+
+  test('keeps strokes drawn after the first of two pushes still in flight', async () => {
+    h.state.config = { ...h.state.config, booknotes: [h.drawing(['a'], 3000)] };
+    const { rerender } = renderHook(() => useNotesSync('h1-key'));
+    await waitFor(() => expect(h.syncNotesMock).toHaveBeenCalledTimes(1));
+
+    // The second stroke goes out before the first push is answered.
+    h.state.config = { ...h.state.config, booknotes: [h.drawing(['a', 'b'], 3500)] };
+    rerender();
+    await waitFor(() => expect(h.syncNotesMock).toHaveBeenCalledTimes(2));
+
+    // The first push's reply: its version, under the server's insert stamp.
+    h.state.syncedNotes = [h.drawing(['a'], 4000)];
+    rerender();
+
+    await waitFor(() => expect(h.setConfigMock).toHaveBeenCalled());
+    expect(mergedDrawing().ink!.map((s) => s.id)).toEqual(['a', 'b']);
+  });
+
+  test('applies a deletion from another device once the push reply is in', async () => {
+    h.state.config = { ...h.state.config, booknotes: [h.drawing(['a'], 3000)] };
+    const { rerender } = renderHook(() => useNotesSync('h1-key'));
+    await waitFor(() => expect(h.syncNotesMock).toHaveBeenCalled());
+
+    h.state.syncedNotes = [h.drawing(['a'], 4000)];
+    rerender();
+    await waitFor(() => expect(h.setConfigMock).toHaveBeenCalledTimes(1));
+
+    // A stroke drawn here, not pushed yet (the array is edited in place, so no
+    // push runs), then a deletion made later on another device arrives.
+    h.state.config.booknotes[0] = h.drawing(['a', 'b'], 5000);
+    h.state.syncedNotes = [{ ...h.drawing([], 6000), deletedAt: 6000 }];
+    rerender();
+
+    await waitFor(() => expect(h.setConfigMock).toHaveBeenCalledTimes(2));
+    expect(mergedDrawing().deletedAt).toBe(6000);
   });
 });
