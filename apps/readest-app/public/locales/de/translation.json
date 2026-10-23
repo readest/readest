@@ -2638,5 +2638,6 @@
   "Week": "Woche",
   "Month": "Monat",
   "Year": "Jahr",
-  "Daily average {{time}}": "Tagesdurchschnitt {{time}}"
+  "Daily average {{time}}": "Tagesdurchschnitt {{time}}",
+  "Failed to load reading statistics": "Lesestatistik konnte nicht geladen werden"
 }

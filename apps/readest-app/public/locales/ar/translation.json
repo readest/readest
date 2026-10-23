@@ -2910,5 +2910,6 @@
   "Week": "أسبوع",
   "Month": "شهر",
   "Year": "سنة",
-  "Daily average {{time}}": "المتوسط اليومي {{time}}"
+  "Daily average {{time}}": "المتوسط اليومي {{time}}",
+  "Failed to load reading statistics": "تعذّر تحميل إحصاءات القراءة"
 }

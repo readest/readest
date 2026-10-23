@@ -2570,5 +2570,6 @@
   "Week": "週",
   "Month": "月",
   "Year": "年",
-  "Daily average {{time}}": "1日平均 {{time}}"
+  "Daily average {{time}}": "1日平均 {{time}}",
+  "Failed to load reading statistics": "読書統計を読み込めませんでした"
 }

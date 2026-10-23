@@ -37,6 +37,25 @@ const ReadingTimeChart: React.FC<ReadingTimeChartProps> = ({ daily }) => {
 
   const bar = selected !== null ? bars[selected] : undefined;
 
+  // One tab stop for the chart, like the heatmap: arrows step through the bars
+  // and the caption above announces the selected one.
+  // Bound in the capture phase: Dialog stops every keydown at its own node,
+  // so a bubbling React handler inside it never runs.
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    const rtl = getComputedStyle(event.currentTarget).direction === 'rtl';
+    const step = { ArrowLeft: rtl ? 1 : -1, ArrowRight: rtl ? -1 : 1 }[event.key];
+    if (!step || selected === null) return;
+    event.preventDefault();
+    setSelected(Math.min(bars.length - 1, Math.max(0, selected + step)));
+  };
+
+  const handlePointer = (event: React.SyntheticEvent) => {
+    const index = (event.target as HTMLElement).closest<HTMLElement>('[data-index]')?.dataset[
+      'index'
+    ];
+    if (index !== undefined) setSelected(Number(index));
+  };
+
   return (
     <div className='flex flex-col gap-4'>
       <SegmentedControl<ReadingRange>
@@ -53,7 +72,7 @@ const ReadingTimeChart: React.FC<ReadingTimeChartProps> = ({ daily }) => {
           setSelected(null);
         }}
       />
-      <div>
+      <div role='status'>
         <div className='text-2xl font-semibold tabular-nums'>{time(bar ? bar.seconds : total)}</div>
         <div className='text-base-content/70 text-[0.85em]'>
           {bar
@@ -61,34 +80,49 @@ const ReadingTimeChart: React.FC<ReadingTimeChartProps> = ({ daily }) => {
             : _('Daily average {{time}}', { time: time(total / days) })}
         </div>
       </div>
-      {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions */}
-      <div onMouseLeave={() => setSelected(null)}>
-        <div className='border-base-300 flex h-32 items-end gap-0.5 border-b sm:gap-1'>
+      {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events */}
+      <div
+        role='group'
+        tabIndex={0}
+        aria-label={_('Reading Time')}
+        className='focus-visible:ring-base-content/15 rounded-sm focus-visible:outline-hidden focus-visible:ring-2'
+        onClick={handlePointer}
+        onMouseOver={handlePointer}
+        onMouseLeave={() => setSelected(null)}
+        onFocus={() => setSelected((current) => current ?? bars.length - 1)}
+        onBlur={() => setSelected(null)}
+        onKeyDownCapture={handleKeyDown}
+      >
+        <div
+          aria-hidden='true'
+          className='border-base-300 flex h-32 items-end gap-0.5 border-b sm:gap-1'
+        >
           {bars.map((item, index) => (
-            <button
+            <span
               key={item.date.getTime()}
-              type='button'
-              aria-label={`${formatBarDate(item.date)}: ${time(item.seconds)}`}
-              aria-pressed={selected === index}
-              onMouseEnter={() => setSelected(index)}
-              onClick={() => setSelected(selected === index ? null : index)}
-              className='focus-visible:ring-base-content/15 flex h-full min-w-0 flex-1 items-end rounded-sm focus-visible:outline-hidden focus-visible:ring-2'
+              data-index={index}
+              className='flex h-full min-w-0 flex-1 items-end'
             >
               <span
                 className={clsx(
                   'mx-auto w-full max-w-10 rounded-t-sm transition-colors duration-150',
-                  selected === null || selected === index
+                  selected === index
                     ? 'bg-base-content'
-                    : 'bg-base-content/30',
+                    : selected === null
+                      ? 'bg-base-content/75'
+                      : 'bg-base-content/30',
                 )}
                 style={{
                   height: item.seconds > 0 ? `${Math.max(2, (item.seconds / max) * 100)}%` : 0,
                 }}
               />
-            </button>
+            </span>
           ))}
         </div>
-        <div className='text-base-content/70 mt-1 flex gap-0.5 text-[0.75em] sm:gap-1'>
+        <div
+          aria-hidden='true'
+          className='text-base-content/70 mt-1 flex gap-0.5 text-[0.75em] sm:gap-1'
+        >
           {bars.map((item, index) => (
             <span
               key={item.date.getTime()}

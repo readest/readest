@@ -2706,5 +2706,6 @@
   "Week": "שבוע",
   "Month": "חודש",
   "Year": "שנה",
-  "Daily average {{time}}": "ממוצע יומי {{time}}"
+  "Daily average {{time}}": "ממוצע יומי {{time}}",
+  "Failed to load reading statistics": "טעינת סטטיסטיקת הקריאה נכשלה"
 }

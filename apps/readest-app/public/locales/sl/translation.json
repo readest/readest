@@ -2774,5 +2774,6 @@
   "Week": "Teden",
   "Month": "Mesec",
   "Year": "Leto",
-  "Daily average {{time}}": "Dnevno povprečje {{time}}"
+  "Daily average {{time}}": "Dnevno povprečje {{time}}",
+  "Failed to load reading statistics": "Statistike branja ni bilo mogoče naložiti"
 }

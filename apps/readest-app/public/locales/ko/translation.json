@@ -2570,5 +2570,6 @@
   "Week": "주",
   "Month": "월",
   "Year": "연",
-  "Daily average {{time}}": "일일 평균 {{time}}"
+  "Daily average {{time}}": "일일 평균 {{time}}",
+  "Failed to load reading statistics": "독서 통계를 불러오지 못했습니다"
 }

@@ -2638,5 +2638,6 @@
   "Week": "هفته",
   "Month": "ماه",
   "Year": "سال",
-  "Daily average {{time}}": "میانگین روزانه {{time}}"
+  "Daily average {{time}}": "میانگین روزانه {{time}}",
+  "Failed to load reading statistics": "بارگیری آمار مطالعه ناموفق بود"
 }

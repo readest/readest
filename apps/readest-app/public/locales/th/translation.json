@@ -2570,5 +2570,6 @@
   "Week": "สัปดาห์",
   "Month": "เดือน",
   "Year": "ปี",
-  "Daily average {{time}}": "เฉลี่ยต่อวัน {{time}}"
+  "Daily average {{time}}": "เฉลี่ยต่อวัน {{time}}",
+  "Failed to load reading statistics": "โหลดสถิติการอ่านไม่สำเร็จ"
 }

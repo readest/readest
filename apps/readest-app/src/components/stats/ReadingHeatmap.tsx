@@ -64,6 +64,30 @@ const ReadingHeatmap: React.FC<ReadingHeatmapProps> = ({ daily }) => {
     if (date) setSelected(date);
   };
 
+  // One tab stop for the whole year: arrows step a day down a column or a
+  // week across columns, and the status line below announces the day.
+  // Bound in the capture phase: Dialog stops every keydown at its own node,
+  // so a bubbling React handler inside it never runs.
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    const rtl = getComputedStyle(event.currentTarget).direction === 'rtl';
+    const steps: Record<string, number> = {
+      ArrowUp: -1,
+      ArrowDown: 1,
+      ArrowLeft: rtl ? 7 : -7,
+      ArrowRight: rtl ? -7 : 7,
+    };
+    const step = steps[event.key];
+    if (!step || !selected) return;
+    event.preventDefault();
+    const date = new Date(`${selected}T00:00:00`);
+    date.setDate(date.getDate() + step);
+    if (date.getFullYear() === year) setSelected(toDateKey(date));
+  };
+
+  const handleFocus = () => {
+    if (!selected) setSelected(year === currentYear ? todayKey : `${year}-01-01`);
+  };
+
   const changeYear = (delta: number) => {
     setYear(year + delta);
     setSelected(null);
@@ -95,12 +119,18 @@ const ReadingHeatmap: React.FC<ReadingHeatmapProps> = ({ daily }) => {
         </div>
       </div>
 
-      {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions, jsx-a11y/click-events-have-key-events */}
+      {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events */}
       <div
-        className='flex flex-col gap-3'
+        role='group'
+        tabIndex={0}
+        aria-label={_('Reading activity')}
+        className='focus-visible:ring-base-content/15 flex flex-col gap-3 rounded-sm focus-visible:outline-hidden focus-visible:ring-2'
         onClick={handlePointer}
         onMouseOver={handlePointer}
         onMouseLeave={() => setSelected(null)}
+        onFocus={handleFocus}
+        onBlur={() => setSelected(null)}
+        onKeyDownCapture={handleKeyDown}
       >
         {[0, 6].map((startMonth) => {
           const days = getHalfYear(year, startMonth);
@@ -121,8 +151,7 @@ const ReadingHeatmap: React.FC<ReadingHeatmapProps> = ({ daily }) => {
                 )}
               </div>
               <div
-                role='img'
-                aria-label={_('Reading activity')}
+                aria-hidden='true'
                 className='grid grid-flow-col grid-rows-7 gap-[3px]'
                 style={columns}
               >
@@ -150,7 +179,7 @@ const ReadingHeatmap: React.FC<ReadingHeatmapProps> = ({ daily }) => {
       </div>
 
       <div className='text-base-content/70 flex items-center justify-between gap-2 text-[0.85em]'>
-        <span className='truncate tabular-nums'>
+        <span role='status' className='truncate tabular-nums'>
           {selected
             ? `${formatDay(selected)} · ${time(daily.get(selected) ?? 0)}`
             : _('{{time}} in {{year}}', { time: time(yearTotal), year })}

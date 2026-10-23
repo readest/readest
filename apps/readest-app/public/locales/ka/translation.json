@@ -2638,5 +2638,6 @@
   "Week": "კვირა",
   "Month": "თვე",
   "Year": "წელი",
-  "Daily average {{time}}": "დღიური საშუალო {{time}}"
+  "Daily average {{time}}": "დღიური საშუალო {{time}}",
+  "Failed to load reading statistics": "კითხვის სტატისტიკის ჩატვირთვა ვერ მოხერხდა"
 }

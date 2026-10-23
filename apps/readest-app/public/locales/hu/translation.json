@@ -2638,5 +2638,6 @@
   "Week": "Hét",
   "Month": "Hónap",
   "Year": "Év",
-  "Daily average {{time}}": "Napi átlag {{time}}"
+  "Daily average {{time}}": "Napi átlag {{time}}",
+  "Failed to load reading statistics": "Nem sikerült betölteni az olvasási statisztikát"
 }

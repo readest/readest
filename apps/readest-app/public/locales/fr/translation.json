@@ -2706,5 +2706,6 @@
   "Week": "Semaine",
   "Month": "Mois",
   "Year": "Année",
-  "Daily average {{time}}": "Moyenne quotidienne {{time}}"
+  "Daily average {{time}}": "Moyenne quotidienne {{time}}",
+  "Failed to load reading statistics": "Impossible de charger les statistiques de lecture"
 }

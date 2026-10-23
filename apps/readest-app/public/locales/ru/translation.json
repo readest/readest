@@ -2774,5 +2774,6 @@
   "Week": "Неделя",
   "Month": "Месяц",
   "Year": "Год",
-  "Daily average {{time}}": "В среднем за день {{time}}"
+  "Daily average {{time}}": "В среднем за день {{time}}",
+  "Failed to load reading statistics": "Не удалось загрузить статистику чтения"
 }

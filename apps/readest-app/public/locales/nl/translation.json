@@ -2638,5 +2638,6 @@
   "Week": "Week",
   "Month": "Maand",
   "Year": "Jaar",
-  "Daily average {{time}}": "Daggemiddelde {{time}}"
+  "Daily average {{time}}": "Daggemiddelde {{time}}",
+  "Failed to load reading statistics": "Leesstatistieken konden niet worden geladen"
 }

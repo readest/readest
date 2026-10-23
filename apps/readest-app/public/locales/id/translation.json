@@ -2570,5 +2570,6 @@
   "Week": "Minggu",
   "Month": "Bulan",
   "Year": "Tahun",
-  "Daily average {{time}}": "Rata-rata harian {{time}}"
+  "Daily average {{time}}": "Rata-rata harian {{time}}",
+  "Failed to load reading statistics": "Gagal memuat statistik membaca"
 }

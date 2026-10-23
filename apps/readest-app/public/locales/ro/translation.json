@@ -2706,5 +2706,6 @@
   "Week": "Săptămână",
   "Month": "Lună",
   "Year": "An",
-  "Daily average {{time}}": "Medie zilnică {{time}}"
+  "Daily average {{time}}": "Medie zilnică {{time}}",
+  "Failed to load reading statistics": "Statisticile de lectură nu au putut fi încărcate"
 }

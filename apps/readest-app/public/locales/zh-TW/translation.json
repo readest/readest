@@ -2570,5 +2570,6 @@
   "Week": "週",
   "Month": "月",
   "Year": "年",
-  "Daily average {{time}}": "日均 {{time}}"
+  "Daily average {{time}}": "日均 {{time}}",
+  "Failed to load reading statistics": "無法載入閱讀統計"
 }

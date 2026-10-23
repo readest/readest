@@ -2774,5 +2774,6 @@
   "Week": "Tydzień",
   "Month": "Miesiąc",
   "Year": "Rok",
-  "Daily average {{time}}": "Średnio dziennie {{time}}"
+  "Daily average {{time}}": "Średnio dziennie {{time}}",
+  "Failed to load reading statistics": "Nie udało się wczytać statystyk czytania"
 }

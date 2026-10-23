@@ -2638,5 +2638,6 @@
   "Week": "Εβδομάδα",
   "Month": "Μήνας",
   "Year": "Έτος",
-  "Daily average {{time}}": "Ημερήσιος μέσος όρος {{time}}"
+  "Daily average {{time}}": "Ημερήσιος μέσος όρος {{time}}",
+  "Failed to load reading statistics": "Αποτυχία φόρτωσης των στατιστικών ανάγνωσης"
 }

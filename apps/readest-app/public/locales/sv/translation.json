@@ -2638,5 +2638,6 @@
   "Week": "Vecka",
   "Month": "Månad",
   "Year": "År",
-  "Daily average {{time}}": "Dagligt snitt {{time}}"
+  "Daily average {{time}}": "Dagligt snitt {{time}}",
+  "Failed to load reading statistics": "Det gick inte att läsa in lässtatistiken"
 }

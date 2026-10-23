@@ -2570,5 +2570,6 @@
   "Week": "Tuần",
   "Month": "Tháng",
   "Year": "Năm",
-  "Daily average {{time}}": "Trung bình mỗi ngày {{time}}"
+  "Daily average {{time}}": "Trung bình mỗi ngày {{time}}",
+  "Failed to load reading statistics": "Không thể tải thống kê đọc"
 }

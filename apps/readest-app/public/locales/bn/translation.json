@@ -2638,5 +2638,6 @@
   "Week": "সপ্তাহ",
   "Month": "মাস",
   "Year": "বছর",
-  "Daily average {{time}}": "দৈনিক গড় {{time}}"
+  "Daily average {{time}}": "দৈনিক গড় {{time}}",
+  "Failed to load reading statistics": "পড়ার পরিসংখ্যান লোড করা যায়নি"
 }

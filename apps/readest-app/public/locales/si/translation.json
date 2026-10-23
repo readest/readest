@@ -2638,5 +2638,6 @@
   "Week": "සතිය",
   "Month": "මාසය",
   "Year": "වසර",
-  "Daily average {{time}}": "දෛනික සාමාන්‍යය {{time}}"
+  "Daily average {{time}}": "දෛනික සාමාන්‍යය {{time}}",
+  "Failed to load reading statistics": "කියවීමේ සංඛ්‍යාලේඛන පූරණය කළ නොහැකි විය"
 }

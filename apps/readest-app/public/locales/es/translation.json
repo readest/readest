@@ -2706,5 +2706,6 @@
   "Week": "Semana",
   "Month": "Mes",
   "Year": "Año",
-  "Daily average {{time}}": "Promedio diario {{time}}"
+  "Daily average {{time}}": "Promedio diario {{time}}",
+  "Failed to load reading statistics": "No se pudieron cargar las estadísticas de lectura"
 }

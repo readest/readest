@@ -2638,5 +2638,6 @@
   "Week": "Hafta",
   "Month": "Ay",
   "Year": "Yıl",
-  "Daily average {{time}}": "Günlük ortalama {{time}}"
+  "Daily average {{time}}": "Günlük ortalama {{time}}",
+  "Failed to load reading statistics": "Okuma istatistikleri yüklenemedi"
 }

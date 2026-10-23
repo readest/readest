@@ -2638,5 +2638,6 @@
   "Week": "Hafta",
   "Month": "Oy",
   "Year": "Yil",
-  "Daily average {{time}}": "Kunlik oʻrtacha {{time}}"
+  "Daily average {{time}}": "Kunlik oʻrtacha {{time}}",
+  "Failed to load reading statistics": "Oʻqish statistikasini yuklab boʻlmadi"
 }

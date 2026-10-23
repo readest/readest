@@ -2638,5 +2638,6 @@
   "Week": "வாரம்",
   "Month": "மாதம்",
   "Year": "ஆண்டு",
-  "Daily average {{time}}": "தினசரி சராசரி {{time}}"
+  "Daily average {{time}}": "தினசரி சராசரி {{time}}",
+  "Failed to load reading statistics": "வாசிப்பு புள்ளிவிவரங்களை ஏற்ற முடியவில்லை"
 }

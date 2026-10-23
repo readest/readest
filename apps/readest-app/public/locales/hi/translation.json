@@ -2638,5 +2638,6 @@
   "Week": "सप्ताह",
   "Month": "महीना",
   "Year": "वर्ष",
-  "Daily average {{time}}": "दैनिक औसत {{time}}"
+  "Daily average {{time}}": "दैनिक औसत {{time}}",
+  "Failed to load reading statistics": "पढ़ने के आँकड़े लोड नहीं हो सके"
 }

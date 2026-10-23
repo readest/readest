@@ -1,11 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import Dialog from '@/components/Dialog';
 import { useEnv } from '@/context/EnvContext';
+import { useAuth } from '@/context/AuthContext';
+import { SyncClient } from '@/libs/sync';
 import { useTranslation } from '@/hooks/useTranslation';
 import { StatisticsDb } from '@/services/statistics/statisticsDb';
+import { pullStats } from '@/services/statistics/statsSync';
+import { isSyncCategoryEnabled } from '@/services/sync/syncCategories';
 import { getDailySeconds, getStreaks, toDateKey } from '@/services/statistics/readingStats';
 import { BoxedList, SettingsRow } from '@/components/settings/primitives';
 import { formatDuration } from '@/utils/duration';
+import { getLocale } from '@/utils/misc';
 import ReadingTimeChart from './ReadingTimeChart';
 import ReadingHeatmap from './ReadingHeatmap';
 
@@ -27,25 +32,48 @@ interface ReadingStats {
 const ReadingStatsContent: React.FC = () => {
   const _ = useTranslation();
   const { appService } = useEnv();
+  const { user } = useAuth();
   const [stats, setStats] = useState<ReadingStats | null>(null);
+  const [failed, setFailed] = useState(false);
 
   useEffect(() => {
     if (!appService) return;
     let cancelled = false;
+    const load = async (db: StatisticsDb) => {
+      const [quarters, totals] = await Promise.all([
+        db.getQuarterHourDurations(),
+        db.getReadingTotals(),
+      ]);
+      if (!cancelled) setStats({ daily: getDailySeconds(quarters), totals });
+    };
     StatisticsDb.open(appService)
       .then(async (db) => {
-        const [quarters, totals] = await Promise.all([
-          db.getQuarterHourDurations(),
-          db.getReadingTotals(),
-        ]);
-        if (!cancelled) setStats({ daily: getDailySeconds(quarters), totals });
+        await load(db);
+        // Only an open book pulls stats, so from the library this device may
+        // not have the account's other devices yet: show what's here, then pull.
+        if (user && isSyncCategoryEnabled('stats')) {
+          await pullStats(db, new SyncClient()).catch((err) =>
+            console.warn('Failed to pull reading stats:', err),
+          );
+          await load(db);
+        }
       })
-      .catch((err) => console.error('Failed to load reading stats:', err));
+      .catch((err) => {
+        console.error('Failed to load reading stats:', err);
+        if (!cancelled) setFailed(true);
+      });
     return () => {
       cancelled = true;
     };
-  }, [appService]);
+  }, [appService, user]);
 
+  if (failed) {
+    return (
+      <p className='text-base-content/70 py-10 text-center'>
+        {_('Failed to load reading statistics')}
+      </p>
+    );
+  }
   if (!stats) return null;
 
   const { daily, totals } = stats;
@@ -77,10 +105,10 @@ const ReadingStatsContent: React.FC = () => {
           <span className='tabular-nums'>{time(totals.seconds)}</span>
         </SettingsRow>
         <SettingsRow label={_('Books')}>
-          <span className='tabular-nums'>{totals.books.toLocaleString()}</span>
+          <span className='tabular-nums'>{totals.books.toLocaleString(getLocale())}</span>
         </SettingsRow>
         <SettingsRow label={_('Pages')}>
-          <span className='tabular-nums'>{totals.pages.toLocaleString()}</span>
+          <span className='tabular-nums'>{totals.pages.toLocaleString(getLocale())}</span>
         </SettingsRow>
       </BoxedList>
     </div>
