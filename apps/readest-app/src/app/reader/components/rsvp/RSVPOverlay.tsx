@@ -432,6 +432,7 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
   // spans: slicing by character index breaks letter shaping and reverses the
   // visual order. Render them whole instead, like CJK Highlight Word (#4630).
   const isRTLWord = currentWord ? isRTLText(currentWord.text) : false;
+  const isWholeWord = isRTLWord || (isCJKWord && highlightWholeWord);
   const wordLetterSpacing = undefined;
   // The before/after text sits half a focus letter away from the center. A
   // focus cluster of several code points (Bengali কি, ন্তু) is wider than one
@@ -441,7 +442,7 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
   useLayoutEffect(() => {
     const width = orpChar.length > 1 ? orpRef.current?.offsetWidth : undefined;
     setClusterSideOffset(width ? `${width / 2}px` : null);
-  }, [orpChar, fontSizeIndex, fontFamily]);
+  }, [orpChar, isWholeWord, fontSizeIndex, fontFamily]);
   const wordSideOffset = clusterSideOffset ?? (isCJKWord ? '0.45em' : '0.3em');
 
   // Time remaining calculation
@@ -1070,7 +1071,7 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
                 }}
               >
                 {currentWord ? (
-                  isRTLWord || (isCJKWord && highlightWholeWord) ? (
+                  isWholeWord ? (
                     // Whole-word mode: center the full word and color it, instead
                     // of anchoring a single focus character. Used for CJK Highlight
                     // Word and always for RTL words, whose shaping/order would
