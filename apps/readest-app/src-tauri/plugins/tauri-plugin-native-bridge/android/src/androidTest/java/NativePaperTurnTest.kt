@@ -142,6 +142,22 @@ class NativePaperTurnTest {
     private fun absColor(a: Int, b: Int) = maxOf(kotlin.math.abs(Color.red(a) - Color.red(b)),
         kotlin.math.abs(Color.green(a) - Color.green(b)), kotlin.math.abs(Color.blue(a) - Color.blue(b)))
 
+    @Test fun spreadTurnsItsOuterColumnOntoTheFacingPage() {
+        Harness().use { f ->
+            f.color("linear-gradient(90deg,rgb(255,0,0) 50%,rgb(0,255,0) 50%)"); f.capture("current")
+            f.command("cover") { key = "current" }
+            f.color("linear-gradient(90deg,rgb(0,0,255) 50%,rgb(255,255,0) 50%)"); f.capture("next")
+            f.command("start") { key = "current"; destination = "next"; progress = 0.6f; columns = 2 }
+            // Mid-turn, the inner column is still the current spread's page.
+            f.awaitNativeColor(Color.RED, 4, h / 2)
+            f.command("animate") { commit = true }
+            // The landed leaf shows the next spread's facing page on its back.
+            f.awaitNativeColor(Color.BLUE, w / 8, h / 2)
+            f.awaitNativeColor(Color.YELLOW, w * 7 / 8, h / 2)
+            f.command("finish")
+        }
+    }
+
     @Test fun cancellingBeforeSettlementHidesTheNativeSheetAndAllowsTheNextTurn() {
         Harness().use { f ->
             f.capture("red"); f.command("cover") { key = "red" }
@@ -240,7 +256,7 @@ class NativePaperTurnTest {
                 image.setPixels(pixels, 0, w, 0, 0, w, rows)
                 canvas.upload("detail", image, { true }) { accepted, _, uploadError ->
                     if (!accepted || uploadError != null) { error.set(uploadError ?: Exception("Upload rejected")); rendered.countDown() }
-                    else canvas.scene("detail", "detail", true, false, 0f, 0.5f) {
+                    else canvas.scene("detail", "detail", true, false, 0f, 0.5f, 1) {
                         error.set(it); rendered.countDown()
                     }
                 }

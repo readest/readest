@@ -7,7 +7,7 @@ import {
 import type { CapturedTurnHost } from '@/app/reader/utils/capturedTurn';
 import type { Renderer } from '@/types/view';
 
-const fixture = () => {
+const fixture = (columns?: number) => {
   let page = 1;
   const events: string[] = [];
   const renderer = {
@@ -39,6 +39,7 @@ const fixture = () => {
     {
       getHostElement: () => document.body,
       getContentRect: () => new DOMRect(0, 0, 360, 780),
+      ...(columns ? { getColumnCount: () => columns } : {}),
       capture,
       navigate,
     },
@@ -48,6 +49,20 @@ const fixture = () => {
 };
 
 describe('Android native page-turn pipeline', () => {
+  it('tells the native scene how many columns the spread shows', async () => {
+    for (const columns of [1, 2]) {
+      const f = fixture(columns);
+      try {
+        expect(await f.controller.turn(true, false)).toBe(true);
+        expect(f.call.mock.calls.find(([args]) => args.op === 'start')?.[0]).toMatchObject({
+          columns,
+        });
+      } finally {
+        f.controller.dispose();
+      }
+    }
+  });
+
   it('does not roll a cancelled boundary clamp forwards and keeps the next turn usable', async () => {
     const f = fixture();
     const key = f.renderer.getPageTurnKey!;

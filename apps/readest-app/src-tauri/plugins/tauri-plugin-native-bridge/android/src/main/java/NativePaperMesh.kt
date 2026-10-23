@@ -8,10 +8,13 @@ internal class NativePaperMesh {
     var count = 0
         private set
     private val rect = DoubleArray(16)
+    private val inner = DoubleArray(8)
     private val a = DoubleArray(16)
     private val b = DoubleArray(16)
     private var width = 1.0
     private var height = 1.0
+    // A spread turns only its outer column; [origin, width] is that leaf.
+    private var origin = 0.0
     private var nx = 1.0
     private var ny = 0.0
     private var fold = 0.0
@@ -50,9 +53,13 @@ internal class NativePaperMesh {
 
     /** Project a source point through the hinge rotations and append its textured vertex. */
     private fun vertex(x: Double, y: Double, deform: Boolean) {
-        var px = x; var py = y; var z = 0.0; var shade = 0.0
+        val sourceX = origin + x
+        var px = sourceX; var py = y; var z = 0.0; var shade = 0.0
         val s = distance(x, y)
-        if (deform && s > 0) {
+        if (deform && s > 0 && step < 1e-6) {
+            // A spread leaf with no bend left lies flat on the facing column.
+            px -= 2 * s * nx; py -= 2 * s * ny
+        } else if (deform && s > 0) {
             val band = min(64, floor(s / step + 1e-7).toInt())
             val remainder = s - band * step
             val bentX = step * sumX[band] + remainder * cosines[band]
@@ -61,7 +68,7 @@ internal class NativePaperMesh {
             py -= (s - bentX) * ny
             shade = max(0.0, 0.25 - abs(0.25 - min(64.0, s / step) / 128))
         }
-        vertices[count++] = ((if (rtl) width - x else x) / width).toFloat()
+        vertices[count++] = ((if (rtl) width - sourceX else sourceX) / width).toFloat()
         vertices[count++] = (y / height).toFloat()
         vertices[count++] = (if (rtl) width - px else px).toFloat()
         vertices[count++] = py.toFloat()
@@ -94,21 +101,33 @@ internal class NativePaperMesh {
     }
 
     /** Build the current fold into reusable vertex storage and return the vertex count. */
-    fun build(w: Int, h: Int, progress: Float, grabY: Float, mirrored: Boolean): Int {
+    fun build(w: Int, h: Int, progress: Float, grabY: Float, mirrored: Boolean, columns: Int = 1): Int {
         width = w.toDouble(); height = h.toDouble(); rtl = mirrored; count = 0
         val p = progress.coerceIn(0f, 1f).toDouble()
-        if (p >= 1) return 0
+        val spread = columns >= 2
+        if (!spread && p >= 1) return 0
+        val leaf = if (spread) width / 2 else width
+        origin = width - leaf
         val slope = (0.2 - 2 * (grabY - 0.5)) * (1 - p)
         val norm = hypot(1.0, slope)
         nx = 1 / norm; ny = slope / norm
-        val bend = width * 0.7
-        fold = width - (width + bend) * p
+        // A spread leaf tightens to nothing so it lands flat on the facing column.
+        val bend = leaf * 0.7 * (if (spread) 1 - p * p else 1.0)
+        fold = leaf - (leaf + bend) * p
         step = bend / 64 / norm
         rect[0] = 0.0; rect[1] = 0.0
-        rect[2] = width; rect[3] = 0.0
-        rect[4] = width; rect[5] = height
+        rect[2] = leaf; rect[3] = 0.0
+        rect[4] = leaf; rect[5] = height
         rect[6] = 0.0; rect[7] = height
+        if (spread) {
+            inner[0] = -origin; inner[1] = 0.0
+            inner[2] = 0.0; inner[3] = 0.0
+            inner[4] = 0.0; inner[5] = height
+            inner[6] = -origin; inner[7] = height
+            emit(inner, 4, false)
+        }
         if (p <= 0) { emit(rect, 4, false); return count / 6 }
+        if (step < 1e-6) { emit(rect, 4, true); return count / 6 }
         emit(a, clip(rect, 4, 0.0, false, a), true)
         for (band in 0 until 64) {
             val n = clip(rect, 4, band * step, true, a)

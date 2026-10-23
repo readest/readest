@@ -36,6 +36,7 @@ class NativePaperArgs {
     var forward = true; var rtl = false
     var progress = 0f; var grabY = 0.5f
     var commit = false; var velocity = 0f
+    var columns = 1
 }
 
 /** CSS px -> WebView px as [left, top, width, height]. The CSS viewport can
@@ -218,7 +219,7 @@ internal class NativePaperTurn(private val activity: Activity, private val webVi
                     turnId = args.turnId
                     dragging = false
                     current = args.key; destination = current; forward = true; progress = 0f; grabY = 0.5f
-                    view!!.scene(current, current, true, false, 0f, 0.5f) { error ->
+                    view!!.scene(current, current, true, false, 0f, 0.5f, 1) { error ->
                         if (!p.live) return@scene
                         if (error != null) failAll(error.message ?: "Native cover failed")
                         else { view?.alpha = 1f; painted(p) { p.resolve() } }
@@ -243,7 +244,7 @@ internal class NativePaperTurn(private val activity: Activity, private val webVi
                     bufferedRelease = args.released && progress > 0f
                     if (bufferedRelease) progress = progress.coerceAtMost(0.5f)
                     if (trackNativeTouch) updateFinger()
-                    view!!.scene(current, destination, forward, rtl, progress, grabY) { error ->
+                    view!!.scene(current, destination, forward, rtl, progress, grabY, args.columns) { error ->
                         if (!p.live) return@scene
                         if (error != null) failAll(error.message ?: "Native pages not ready")
                         else {

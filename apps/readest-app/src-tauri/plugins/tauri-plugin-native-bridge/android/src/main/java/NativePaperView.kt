@@ -41,6 +41,8 @@ internal class NativePaperView(context: Context) : TextureView(context), Texture
     private var program = 0
     private var pageUniform = 0
     private var textureUniform = 0
+    private var backUniform = 0
+    private var spreadUniform = 0
     private var posAttribute = 0
     private var surfaceAttribute = 0
     private var shadeAttribute = 0
@@ -50,6 +52,7 @@ internal class NativePaperView(context: Context) : TextureView(context), Texture
     private var destination: String? = null
     private var forward = true
     private var rtl = false
+    private var columns = 1
     @Volatile private var progress = 0f
     @Volatile private var grabY = 0.5f
     private class PresentedFrame(val done: (Exception?) -> Unit) {
@@ -117,10 +120,10 @@ internal class NativePaperView(context: Context) : TextureView(context), Texture
 
     /** Select the resident source and destination textures and draw the initial pose. */
     fun scene(from: String, to: String, forwards: Boolean, mirrored: Boolean,
-              p: Float, y: Float, done: (Exception?) -> Unit) {
+              p: Float, y: Float, spreadColumns: Int, done: (Exception?) -> Unit) {
         report(done) {
             check(textures.containsKey(from) && textures.containsKey(to)) { "Native page textures are not ready" }
-            current = from; destination = to; forward = forwards; rtl = mirrored
+            current = from; destination = to; forward = forwards; rtl = mirrored; columns = spreadColumns
             progress = p; grabY = y
             render()
         }
@@ -188,16 +191,26 @@ internal class NativePaperView(context: Context) : TextureView(context), Texture
         }
     }
 
-    /** Render one textured sheet using the reusable mesh and explicit paper-side shading. */
-    private fun drawPage(key: String?, p: Float, y: Float) {
+    /** Render one textured sheet using the reusable mesh and explicit paper-side shading.
+     * A spread sheet turns only its outer column; [back] is the spread its leaf lands on. */
+    private fun drawPage(key: String?, p: Float, y: Float, spreadColumns: Int = 1, back: String? = null) {
         val texture = textures[key] ?: return
-        val count = mesh.build(pixelsWide, pixelsHigh, p, y, rtl)
+        val backTexture = back?.let { textures[it] }
+        val count = mesh.build(pixelsWide, pixelsHigh, p, y, rtl, spreadColumns)
         if (count == 0) return
         buffer.position(0); buffer.put(mesh.vertices, 0, mesh.count); buffer.position(0)
-        GL.glBindTexture(GL.GL_TEXTURE_2D, texture)
         // A flat physical-pixel sheet must not blend adjacent text pixels.
         // Only the projected, moving leaf needs interpolation.
         val filter = if (p <= 0f) GL.GL_NEAREST else GL.GL_LINEAR
+        GL.glUniform1f(spreadUniform, if (backTexture != null) 1f else 0f)
+        if (backTexture != null) {
+            GL.glActiveTexture(GL.GL_TEXTURE1)
+            GL.glBindTexture(GL.GL_TEXTURE_2D, backTexture)
+            GL.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_MIN_FILTER, filter)
+            GL.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_MAG_FILTER, filter)
+            GL.glActiveTexture(GL.GL_TEXTURE0)
+        }
+        GL.glBindTexture(GL.GL_TEXTURE_2D, texture)
         GL.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_MIN_FILTER, filter)
         GL.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_MAG_FILTER, filter)
         buffer.position(0); GL.glVertexAttribPointer(posAttribute, 2, GL.GL_FLOAT, false, 24, buffer)
@@ -215,10 +228,16 @@ internal class NativePaperView(context: Context) : TextureView(context), Texture
         GL.glUseProgram(program)
         GL.glUniform2f(pageUniform, pixelsWide.toFloat(), pixelsHigh.toFloat())
         GL.glUniform1i(textureUniform, 0)
+        GL.glUniform1i(backUniform, 1)
         GL.glFrontFace(if (rtl) GL.GL_CW else GL.GL_CCW)
         GL.glActiveTexture(GL.GL_TEXTURE0)
-        drawPage(if (forward) destination else current, 0f, 0.5f)
-        drawPage(if (forward) current else destination, if (forward) progress else 1f - progress, grabY)
+        val base = if (forward) destination else current
+        val sheet = if (forward) current else destination
+        val pose = if (forward) progress else 1f - progress
+        drawPage(base, 0f, 0.5f)
+        // A backward spread turn is the previous spread's forward turn, reversed.
+        if (columns >= 2) drawPage(sheet, pose, grabY, columns, base)
+        else drawPage(sheet, pose, grabY)
         check(EGLExt.eglPresentationTimeANDROID(display, eglSurface, stamp)) { "Cannot timestamp native paper frame" }
         check(EGL14.eglSwapBuffers(display, eglSurface)) { "Native paper frame could not be presented" }
     }
@@ -264,6 +283,8 @@ internal class NativePaperView(context: Context) : TextureView(context), Texture
             GL.glDeleteShader(vertex); GL.glDeleteShader(fragment)
             pageUniform = GL.glGetUniformLocation(program, "uPage")
             textureUniform = GL.glGetUniformLocation(program, "uTex")
+            backUniform = GL.glGetUniformLocation(program, "uBack")
+            spreadUniform = GL.glGetUniformLocation(program, "uSpread")
             posAttribute = GL.glGetAttribLocation(program, "aPos")
             surfaceAttribute = GL.glGetAttribLocation(program, "aSurface")
             shadeAttribute = GL.glGetAttribLocation(program, "aShade")
@@ -323,12 +344,15 @@ internal class NativePaperView(context: Context) : TextureView(context), Texture
         """
         private const val FRAGMENT = """
             precision mediump float;
-            uniform sampler2D uTex; uniform mediump vec2 uPage;
+            uniform sampler2D uTex; uniform sampler2D uBack; uniform float uSpread; uniform mediump vec2 uPage;
             varying mediump vec2 vUv; varying mediump float vShade; varying mediump float vHeight;
             void main() {
               vec4 page=texture2D(uTex,vUv);
               float back=step(0.5,vShade);
               vec3 color=mix(page.rgb,mix(vec3(0.5),page.rgb,0.6),back);
+              // A spread leaf's back is the facing column of the spread it lands on,
+              // mirrored about the spine, so the landed leaf matches that page.
+              if(uSpread>0.5 && back>0.5) { page=texture2D(uBack,vec2(1.0-vUv.x,vUv.y)); color=page.rgb; }
               color=mix(color,vec3(0.5),vShade-back);
               if(vHeight>10.0) {
                 vec2 edge=min(vUv,1.0-vUv)*uPage/2.0;

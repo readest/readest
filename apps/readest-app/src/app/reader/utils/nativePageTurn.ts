@@ -32,6 +32,7 @@ export interface NativePaperCommand {
   grabY?: number;
   commit?: boolean;
   velocity?: number;
+  columns?: number;
 }
 export interface NativePaperResult {
   ready?: boolean;
@@ -305,6 +306,8 @@ export class NativePageTurn extends CapturedPageTurn {
           rtl,
           progress: session.progress,
           grabY: session.grabY,
+          // A spread turns its outer column as a leaf hinged at the spine.
+          columns: this.host.getColumnCount?.() ?? 1,
         });
         if (result.ready === false) throw new Error('Native paper scene was not started');
         scene.touchTracked = result.touchTracked === true;

@@ -397,7 +397,8 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
       (getInitializedAppService()?.isAndroidApp || getInitializedAppService()?.isIOSApp) &&
       getViewSettings(bookKey)?.pageTurnStyle === 'curl' &&
       !getViewSettings(bookKey)?.vertical &&
-      (view.renderer.columnCount ?? 1) === 1 &&
+      // Android's native paper also turns a two-column spread as one leaf.
+      (view.renderer.columnCount ?? 1) <= (getInitializedAppService()?.isAndroidApp ? 2 : 1) &&
       !!view.renderer.previewPage;
     const pageBuffer = new PageTurnBuffer({
       renderer: view.renderer,
@@ -538,7 +539,7 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
           enabled: () =>
             !isFixedLayout() &&
             !getViewSettings(bookKey)?.vertical &&
-            (view.renderer.columnCount ?? 1) === 1,
+            (view.renderer.columnCount ?? 1) <= 2,
           call: (command) => paperCurl<NativePaperResult>(command),
         })
       : new CapturedPageTurn(turnHost);

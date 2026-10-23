@@ -16,6 +16,39 @@ class NativePaperMeshTest {
         }
     }
 
+    @Test fun matchesTheVerifiedBrowserSpreadMesh() {
+        val lines = javaClass.getResourceAsStream("/native-paper-mesh-spread.txt")!!.bufferedReader().readLines()
+        val expected = lines[1].split(',').map { it.toFloat() }
+        val mesh = NativePaperMesh()
+        mesh.build(360, 780, 0.42f, 0.83f, false, 2)
+        assertEquals(expected.size, mesh.count)
+        for (i in expected.indices) {
+            val value = if (i % 6 == 5) mesh.vertices[i] % 1f else mesh.vertices[i]
+            assertEquals("vertex component $i", expected[i], value, 0.002f)
+        }
+    }
+
+    @Test fun landsTheSpreadLeafAsTheMirrorOfItsColumn() {
+        val mesh = NativePaperMesh()
+        for (rtl in listOf(false, true)) {
+            mesh.build(360, 780, 1f, 0.5f, rtl, 2)
+            assertTrue(mesh.count > 0)
+            for (i in 0 until mesh.count step 6) {
+                val u = mesh.vertices[i]; val x = mesh.vertices[i + 2]
+                val leaf = if (rtl) u < 0.5f else u > 0.5f
+                if (leaf) {
+                    // The landed leaf lies on the facing column, back side up.
+                    assertEquals(360f - u * 360f, x, 0.01f)
+                    assertTrue(mesh.vertices[i + 5] >= 1f)
+                } else if (u != 0.5f) {
+                    assertEquals(u * 360f, x, 0.01f)
+                    assertTrue(mesh.vertices[i + 5] < 1f)
+                }
+                assertEquals(0f, mesh.vertices[i + 4], 0.0001f)
+            }
+        }
+    }
+
     @Test fun preservesFlatPixelsAndClearsTheFinishedLeaf() {
         val mesh = NativePaperMesh()
         assertEquals(6, mesh.build(360, 780, 0f, 0.5f, false))
