@@ -2609,5 +2609,16 @@
   "Show Page Thumbnails": "Sahifa eskizlarini ko'rsatish",
   "Allow Self-Signed Certificate": "O‘zi imzolagan sertifikatga ruxsat berish",
   "Skips certificate checks for this server. Turn it off if the server has a valid certificate": "Ushbu server uchun sertifikat tekshiruvini o‘tkazib yuboradi. Serverda haqiqiy sertifikat bo‘lsa, uni o‘chiring",
-  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "Ba'zi o'zgarishlar sinxronlanmadi, chunki bu qurilmaning soati noto'g'ri. Sana va vaqtni avtomatik sozlang, so'ng qayta urinib ko'ring."
+  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "Ba'zi o'zgarishlar sinxronlanmadi, chunki bu qurilmaning soati noto'g'ri. Sana va vaqtni avtomatik sozlang, so'ng qayta urinib ko'ring.",
+  "Creating package for {{count}} book(s)..._one": "{{count}} ta kitob uchun paket yaratilmoqda...",
+  "Creating package for {{count}} book(s)..._other": "{{count}} ta kitob uchun paket yaratilmoqda...",
+  "No local files available to pack": "Qadoqlash uchun mahalliy fayllar yo‘q",
+  "{{count}} book(s) omitted (file not available locally)_one": "{{count}} ta kitob o‘tkazib yuborildi (fayl qurilmada mavjud emas)",
+  "{{count}} book(s) omitted (file not available locally)_other": "{{count}} ta kitob o‘tkazib yuborildi (fayl qurilmada mavjud emas)",
+  "Exported {{filename}}": "{{filename}} eksport qilindi",
+  "Failed to export package": "Paketni eksport qilib bo‘lmadi",
+  "Pack": "Qadoqlash",
+  "Failed to create pack": "Paket yaratib bo‘lmadi",
+  "Restored collection \"{{name}}\" ({{count}} books)_one": "\"{{name}}\" to‘plami tiklandi ({{count}} ta kitob)",
+  "Restored collection \"{{name}}\" ({{count}} books)_other": "\"{{name}}\" to‘plami tiklandi ({{count}} ta kitob)"
 }

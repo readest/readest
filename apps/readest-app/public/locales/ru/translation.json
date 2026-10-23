@@ -2739,5 +2739,22 @@
   "Show Page Thumbnails": "Показывать миниатюры страниц",
   "Allow Self-Signed Certificate": "Разрешить самоподписанный сертификат",
   "Skips certificate checks for this server. Turn it off if the server has a valid certificate": "Пропускает проверку сертификата для этого сервера. Отключите, если у сервера действительный сертификат",
-  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "Некоторые изменения не синхронизировались, потому что часы на этом устройстве идут неверно. Включите автоматическую установку даты и времени и повторите попытку."
+  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "Некоторые изменения не синхронизировались, потому что часы на этом устройстве идут неверно. Включите автоматическую установку даты и времени и повторите попытку.",
+  "Creating package for {{count}} book(s)..._one": "Создание пакета для {{count}} книги...",
+  "Creating package for {{count}} book(s)..._few": "Создание пакета для {{count}} книг...",
+  "Creating package for {{count}} book(s)..._many": "Создание пакета для {{count}} книг...",
+  "Creating package for {{count}} book(s)..._other": "Создание пакета для {{count}} книги...",
+  "No local files available to pack": "Нет локальных файлов для упаковки",
+  "{{count}} book(s) omitted (file not available locally)_one": "Пропущена {{count}} книга (файл недоступен локально)",
+  "{{count}} book(s) omitted (file not available locally)_few": "Пропущены {{count}} книги (файлы недоступны локально)",
+  "{{count}} book(s) omitted (file not available locally)_many": "Пропущено {{count}} книг (файлы недоступны локально)",
+  "{{count}} book(s) omitted (file not available locally)_other": "Пропущено {{count}} книги (файлы недоступны локально)",
+  "Exported {{filename}}": "Экспортировано: {{filename}}",
+  "Failed to export package": "Не удалось экспортировать пакет",
+  "Pack": "Упаковать",
+  "Failed to create pack": "Не удалось создать пакет",
+  "Restored collection \"{{name}}\" ({{count}} books)_one": "Коллекция «{{name}}» восстановлена ({{count}} книга)",
+  "Restored collection \"{{name}}\" ({{count}} books)_few": "Коллекция «{{name}}» восстановлена ({{count}} книги)",
+  "Restored collection \"{{name}}\" ({{count}} books)_many": "Коллекция «{{name}}» восстановлена ({{count}} книг)",
+  "Restored collection \"{{name}}\" ({{count}} books)_other": "Коллекция «{{name}}» восстановлена ({{count}} книги)"
 }
