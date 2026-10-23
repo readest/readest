@@ -598,6 +598,7 @@
   "Translated Only": "Тільки переклад",
   "Source Only": "Тільки джерело",
   "TTS Text": "Текст TTS",
+  "The book file is corrupted": "Файл книги пошкоджено",
   "The book file is empty": "Файл книги порожній",
   "Failed to open the book file": "Не вдалося відкрити файл книги",
   "On-Demand Purchase": "Покупка за запитом",
@@ -2738,7 +2739,5 @@
   "Show Page Thumbnails": "Показувати мініатюри сторінок",
   "Allow Self-Signed Certificate": "Дозволити самопідписаний сертифікат",
   "Skips certificate checks for this server. Turn it off if the server has a valid certificate": "Пропускає перевірку сертифіката для цього сервера. Вимкніть, якщо сервер має дійсний сертифікат",
-  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "Деякі зміни не синхронізувалися, бо годинник цього пристрою показує неправильний час. Увімкніть автоматичне встановлення дати й часу та спробуйте ще раз.",
-  "This file is not a supported book format, or it is corrupted": "Цей файл не є форматом книги, що підтримується, або він пошкоджений",
-  "The book file may be corrupted": "Файл книги може бути пошкоджено"
+  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "Деякі зміни не синхронізувалися, бо годинник цього пристрою показує неправильний час. Увімкніть автоматичне встановлення дати й часу та спробуйте ще раз."
 }

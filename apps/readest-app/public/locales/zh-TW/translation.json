@@ -583,6 +583,7 @@
   "Translated Only": "僅翻譯",
   "Source Only": "僅原文",
   "TTS Text": "TTS 文字",
+  "The book file is corrupted": "書籍文件已損壞",
   "The book file is empty": "書籍文件為空",
   "Failed to open the book file": "無法打開書籍文件",
   "On-Demand Purchase": "按需購買",
@@ -2543,7 +2544,5 @@
   "Show Page Thumbnails": "顯示頁面縮圖",
   "Allow Self-Signed Certificate": "允許自簽憑證",
   "Skips certificate checks for this server. Turn it off if the server has a valid certificate": "將略過此伺服器的憑證驗證。如果伺服器有有效的憑證，請關閉此選項",
-  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "此裝置的時鐘不準確，部分變更未能同步。請將日期和時間設為自動設定，然後再試一次。",
-  "This file is not a supported book format, or it is corrupted": "該文件不是受支援的書籍格式，或已損壞",
-  "The book file may be corrupted": "書籍文件可能已損壞"
+  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "此裝置的時鐘不準確，部分變更未能同步。請將日期和時間設為自動設定，然後再試一次。"
 }

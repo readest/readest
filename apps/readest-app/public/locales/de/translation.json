@@ -588,6 +588,7 @@
   "Translated Only": "Nur Übersetzungstext",
   "Source Only": "Nur Quelltext",
   "TTS Text": "TTS-Text",
+  "The book file is corrupted": "Die Buchdatei ist beschädigt",
   "The book file is empty": "Die Buchdatei ist leer",
   "Failed to open the book file": "Fehler beim Öffnen der Buchdatei",
   "On-Demand Purchase": "Kauf auf Anfrage",
@@ -2608,7 +2609,5 @@
   "Show Page Thumbnails": "Seitenvorschaubilder anzeigen",
   "Allow Self-Signed Certificate": "Selbstsigniertes Zertifikat erlauben",
   "Skips certificate checks for this server. Turn it off if the server has a valid certificate": "Überspringt die Zertifikatsprüfung für diesen Server. Deaktiviere es, wenn der Server ein gültiges Zertifikat hat",
-  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "Einige Änderungen wurden nicht synchronisiert, weil die Uhr dieses Geräts falsch geht. Stelle Datum und Uhrzeit auf automatisch und versuche es erneut.",
-  "This file is not a supported book format, or it is corrupted": "Diese Datei ist kein unterstütztes Buchformat oder sie ist beschädigt",
-  "The book file may be corrupted": "Die Buchdatei ist möglicherweise beschädigt"
+  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "Einige Änderungen wurden nicht synchronisiert, weil die Uhr dieses Geräts falsch geht. Stelle Datum und Uhrzeit auf automatisch und versuche es erneut."
 }

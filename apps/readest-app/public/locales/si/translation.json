@@ -588,6 +588,7 @@
   "Translated Only": "පරිවර්තනය පමණක්",
   "Source Only": "මූලාශ්‍රය පමණක්",
   "TTS Text": "TTS පෙළ",
+  "The book file is corrupted": "පොතේ ගොනුව අසමත් වී ඇත",
   "The book file is empty": "පොතේ ගොනුව හිස් වේ",
   "Failed to open the book file": "පොතේ ගොනුව විවෘත කිරීමට අසමත් විය",
   "On-Demand Purchase": "අවශ්‍යතාවය මත මිලදී ගැනීම",
@@ -2608,7 +2609,5 @@
   "Show Page Thumbnails": "පිටු සිඟිති රූ පෙන්වන්න",
   "Allow Self-Signed Certificate": "ස්වයං-අත්සන් කළ සහතිකයට ඉඩ දෙන්න",
   "Skips certificate checks for this server. Turn it off if the server has a valid certificate": "මෙම සේවාදායකය සඳහා සහතික පරීක්ෂාව මඟ හරියි. සේවාදායකයට වලංගු සහතිකයක් තිබේ නම් එය අක්‍රිය කරන්න",
-  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "මෙම උපාංගයේ ඔරලෝසුව නිවැරදි නොවන නිසා සමහර වෙනස්කම් සමමුහුර්ත නොවීය. දිනය සහ වේලාව ස්වයංක්‍රීයව සකසා නැවත උත්සාහ කරන්න.",
-  "This file is not a supported book format, or it is corrupted": "මෙම ගොනුව සහය දක්වන පොත් ආකෘතියක් නොවේ, නැතහොත් එය දූෂිත වී ඇත",
-  "The book file may be corrupted": "පොත් ගොනුව දූෂිත විය හැක"
+  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "මෙම උපාංගයේ ඔරලෝසුව නිවැරදි නොවන නිසා සමහර වෙනස්කම් සමමුහුර්ත නොවීය. දිනය සහ වේලාව ස්වයංක්‍රීයව සකසා නැවත උත්සාහ කරන්න."
 }

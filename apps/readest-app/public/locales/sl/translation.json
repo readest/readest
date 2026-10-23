@@ -203,6 +203,7 @@
   "This book format is not supported": "Ta format knjige ni podprt",
   "Failed to open the book file": "Odpiranje datoteke s knjigo ni uspelo",
   "The book file is empty": "Datoteka s knjigo je prazna",
+  "The book file is corrupted": "Datoteka s knjigo je poškodovana",
   "Failed to import book(s): {{filenames}}": "Uvoz knjig ni uspel: {{filenames}}",
   "Successfully imported {{count}} book(s)_one": "Uspešno uvožena {{count}} knjiga",
   "Successfully imported {{count}} book(s)_two": "Uspešno uvoženi {{count}} knjigi",
@@ -2738,7 +2739,5 @@
   "Show Page Thumbnails": "Prikaži sličice strani",
   "Allow Self-Signed Certificate": "Dovoli samopodpisano potrdilo",
   "Skips certificate checks for this server. Turn it off if the server has a valid certificate": "Preskoči preverjanje potrdila za ta strežnik. Izklopite, če ima strežnik veljavno potrdilo",
-  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "Nekatere spremembe se niso sinhronizirale, ker ura te naprave ni točna. Nastavite datum in čas samodejno ter poskusite znova.",
-  "This file is not a supported book format, or it is corrupted": "Ta datoteka ni podprta knjižna oblika ali pa je poškodovana",
-  "The book file may be corrupted": "Knjižna datoteka je morda poškodovana"
+  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "Nekatere spremembe se niso sinhronizirale, ker ura te naprave ni točna. Nastavite datum in čas samodejno ter poskusite znova."
 }

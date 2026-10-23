@@ -199,6 +199,7 @@
   "This book format is not supported": "פורמט ספר זה אינו נתמך",
   "Failed to open the book file": "פתיחת קובץ הספר נכשלה",
   "The book file is empty": "קובץ הספר ריק",
+  "The book file is corrupted": "קובץ הספר פגום",
   "Failed to import book(s): {{filenames}}": "ייבוא הספר(ים) נכשל: {{filenames}}",
   "Successfully imported {{count}} book(s)_one": "ספר אחד יובא בהצלחה",
   "Successfully imported {{count}} book(s)_two": "{{count}} ספרים יובאו בהצלחה",
@@ -2673,7 +2674,5 @@
   "Show Page Thumbnails": "הצג תמונות ממוזערות של עמודים",
   "Allow Self-Signed Certificate": "אפשר אישור בחתימה עצמית",
   "Skips certificate checks for this server. Turn it off if the server has a valid certificate": "מדלג על בדיקת האישור עבור שרת זה. כבה זאת אם לשרת יש אישור תקף",
-  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "חלק מהשינויים לא סונכרנו כי השעון של המכשיר הזה אינו מכוון. הגדר תאריך ושעה אוטומטיים ונסה שוב.",
-  "This file is not a supported book format, or it is corrupted": "קובץ זה אינו פורמט ספר נתמך, או שהוא פגום",
-  "The book file may be corrupted": "ייתכן שקובץ הספר פגום"
+  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "חלק מהשינויים לא סונכרנו כי השעון של המכשיר הזה אינו מכוון. הגדר תאריך ושעה אוטומטיים ונסה שוב."
 }

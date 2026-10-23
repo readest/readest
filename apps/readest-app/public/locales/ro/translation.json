@@ -1085,6 +1085,7 @@
   "This book format is not supported": "Acest format de carte nu este acceptat",
   "Failed to open the book file": "Nu s-a putut deschide fișierul cărții",
   "The book file is empty": "Fișierul cărții este gol",
+  "The book file is corrupted": "Fișierul cărții este corupt",
   "Google Books": "Google Books",
   "Open Library": "Open Library",
   "Book not found in library": "Cartea nu a fost găsită în bibliotecă",
@@ -2673,7 +2674,5 @@
   "Show Page Thumbnails": "Afișează miniaturile paginilor",
   "Allow Self-Signed Certificate": "Permite certificat autosemnat",
   "Skips certificate checks for this server. Turn it off if the server has a valid certificate": "Omite verificarea certificatului pentru acest server. Dezactivează opțiunea dacă serverul are un certificat valid",
-  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "Unele modificări nu s-au sincronizat deoarece ceasul acestui dispozitiv nu este corect. Setați data și ora automat, apoi încercați din nou.",
-  "This file is not a supported book format, or it is corrupted": "Acest fișier nu este un format de carte acceptat sau este corupt",
-  "The book file may be corrupted": "Fișierul cărții poate fi corupt"
+  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "Unele modificări nu s-au sincronizat deoarece ceasul acestui dispozitiv nu este corect. Setați data și ora automat, apoi încercați din nou."
 }

@@ -588,6 +588,7 @@
   "Translated Only": "শুধুমাত্র অনূদিত",
   "Source Only": "শুধুমাত্র উৎস",
   "TTS Text": "TTS টেক্সট",
+  "The book file is corrupted": "বইয়ের ফাইলটি ক্ষতিগ্রস্ত।",
   "The book file is empty": "বইয়ের ফাইলটি খালি।",
   "Failed to open the book file": "বইয়ের ফাইল খুলতে ব্যর্থ।",
   "On-Demand Purchase": "অনুরোধে ক্রয়",
@@ -2608,7 +2609,5 @@
   "Show Page Thumbnails": "পৃষ্ঠার থাম্বনেইল দেখান",
   "Allow Self-Signed Certificate": "স্ব-স্বাক্ষরিত সার্টিফিকেট অনুমতি দিন",
   "Skips certificate checks for this server. Turn it off if the server has a valid certificate": "এই সার্ভারের জন্য সার্টিফিকেট যাচাই এড়িয়ে যায়। সার্ভারের বৈধ সার্টিফিকেট থাকলে এটি বন্ধ করুন",
-  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "এই ডিভাইসের ঘড়ি ঠিক না থাকায় কিছু পরিবর্তন সিঙ্ক হয়নি। তারিখ ও সময় স্বয়ংক্রিয়ভাবে সেট করুন, তারপর আবার চেষ্টা করুন।",
-  "This file is not a supported book format, or it is corrupted": "এই ফাইলটি একটি সমর্থিত বই বিন্যাস নয়, বা এটি দূষিত",
-  "The book file may be corrupted": "বইয়ের ফাইলটি নষ্ট হয়ে যেতে পারে"
+  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "এই ডিভাইসের ঘড়ি ঠিক না থাকায় কিছু পরিবর্তন সিঙ্ক হয়নি। তারিখ ও সময় স্বয়ংক্রিয়ভাবে সেট করুন, তারপর আবার চেষ্টা করুন।"
 }

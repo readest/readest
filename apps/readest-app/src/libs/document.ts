@@ -524,7 +524,6 @@ export class DocumentLoader {
   public async open(): Promise<{ book: BookDoc; format: BookFormat }> {
     let book = null;
     let format: BookFormat = 'EPUB';
-    let recognizedBookStructure = false;
     if (!this.file.size) {
       throw new Error('File is empty');
     }
@@ -580,7 +579,6 @@ export class DocumentLoader {
         const { entries } = loader;
 
         if (this.isCBZ()) {
-          recognizedBookStructure = true;
           const { makeComicBook } = await import('foliate-js/comic-book.js');
           if (this.widePages) {
             const { measureWidePages, trackWidePages } = await import('@/utils/spread');
@@ -596,29 +594,22 @@ export class DocumentLoader {
           }
           format = 'CBZ';
         } else if (this.isFBZ()) {
-          recognizedBookStructure = true;
           const entry = entries.find((entry) => entry.filename.endsWith(`.${EXTS.FB2}`));
           const blob = await loader.loadBlob((entry ?? entries[0]!).filename);
           const { makeFB2 } = await import('foliate-js/fb2.js');
           book = await makeFB2(blob);
           format = 'FBZ';
         } else {
-          recognizedBookStructure = entries.some((entry) =>
-            /(^|\/)META-INF\/container\.xml$|\.opf$/i.test(entry.filename),
-          );
-          if (!recognizedBookStructure) throw new Error('Unrecognized book structure');
           const { EPUB } = await import('foliate-js/epub.js');
           book = await new EPUB(loader).init();
           format = 'EPUB';
         }
       } else if (await this.isPDF()) {
-        recognizedBookStructure = true;
         await configurePDFWorker();
         const { makePDF } = await import('foliate-js/pdf.js');
         book = await makePDF(this.file);
         format = 'PDF';
       } else if (await (await import('foliate-js/mobi.js')).isMOBI(this.file)) {
-        recognizedBookStructure = true;
         const fflate = await import('foliate-js/vendor/fflate.js');
         const { MOBI } = await import('foliate-js/mobi.js');
         book = await new MOBI({ unzlib: fflate.unzlibSync }).open(this.file);
@@ -634,25 +625,17 @@ export class DocumentLoader {
             format = 'MOBI';
         }
       } else if (this.isFB2()) {
-        recognizedBookStructure = true;
         const { makeFB2 } = await import('foliate-js/fb2.js');
         book = await makeFB2(this.file);
         format = 'FB2';
       }
     } catch (e: unknown) {
       console.error('Failed to open document:', e);
-      if (
-        e instanceof Error &&
-        (e.message?.includes('not a valid zip') || e.message === 'File format is not recognized')
-      ) {
-        throw new Error('Unsupported or corrupted book file');
-      }
-      if (recognizedBookStructure) {
+      if (e instanceof Error && e.message?.includes('not a valid zip')) {
         throw new Error('Unsupported or corrupted book file');
       }
       throw e;
     }
-    if (!book) throw new Error('Unrecognized book structure');
     return { book, format } as { book: BookDoc; format: BookFormat };
   }
 }

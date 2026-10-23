@@ -1100,6 +1100,7 @@
   "This book format is not supported": "Ez a könyvformátum nem támogatott",
   "Failed to open the book file": "A könyvfájl megnyitása sikertelen",
   "The book file is empty": "A könyvfájl üres",
+  "The book file is corrupted": "A könyvfájl sérült",
   "Google Books": "Google Books",
   "Open Library": "Open Library",
   "Book not found in library": "A könyv nem található a könyvtárban",
@@ -2608,7 +2609,5 @@
   "Show Page Thumbnails": "Oldalbélyegképek megjelenítése",
   "Allow Self-Signed Certificate": "Önaláírt tanúsítvány engedélyezése",
   "Skips certificate checks for this server. Turn it off if the server has a valid certificate": "Kihagyja a tanúsítvány ellenőrzését ennél a kiszolgálónál. Kapcsold ki, ha a kiszolgálónak érvényes tanúsítványa van",
-  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "Néhány módosítás nem szinkronizálódott, mert az eszköz órája nem pontos. Állítsa a dátumot és az időt automatikusra, majd próbálja újra.",
-  "This file is not a supported book format, or it is corrupted": "Ez a fájl nem támogatott könyvformátum, vagy sérült",
-  "The book file may be corrupted": "Lehet, hogy a könyvfájl sérült"
+  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "Néhány módosítás nem szinkronizálódott, mert az eszköz órája nem pontos. Állítsa a dátumot és az időt automatikusra, majd próbálja újra."
 }
