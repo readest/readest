@@ -1,4 +1,8 @@
 {
+  "Pack": "Paketle",
+  "Exported {{filename}}": "{{filename}} dışa aktarıldı",
+  "No local files available to pack": "Paketlenecek yerel dosya bulunamadı",
+  "Failed to export package": "Paket dışa aktarılamadı",
   "On hold": "Askıda",
   "Mark as On hold": "Askıda olarak işaretle",
   "(detected)": "(algılandı)",
@@ -2672,5 +2676,12 @@
   "Within {{count}} words_other": "{{count}} kelime içinde",
   "Allow Self-Signed Certificate": "Kendinden imzalı sertifikaya izin ver",
   "Skips certificate checks for this server. Turn it off if the server has a valid certificate": "Bu sunucu için sertifika denetimini atlar. Sunucunun geçerli bir sertifikası varsa kapatın",
-  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "Bu cihazın saati doğru olmadığı için bazı değişiklikler eşitlenmedi. Tarih ve saati otomatik olarak ayarlayın, ardından yeniden deneyin."
+  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "Bu cihazın saati doğru olmadığı için bazı değişiklikler eşitlenmedi. Tarih ve saati otomatik olarak ayarlayın, ardından yeniden deneyin.",
+  "Creating package for {{count}} book(s)..._one": "{{count}} kitap paketleniyor...",
+  "Creating package for {{count}} book(s)..._other": "{{count}} kitap paketleniyor...",
+  "{{count}} book(s) omitted (file not available locally)_one": "{{count}} kitap atlandı (dosya yerel olarak mevcut değil)",
+  "{{count}} book(s) omitted (file not available locally)_other": "{{count}} kitap atlandı (dosya yerel olarak mevcut değil)",
+  "Failed to create pack": "Paket oluşturulamadı",
+  "Restored collection \"{{name}}\" ({{count}} books)_one": "\"{{name}}\" koleksiyonu geri yüklendi ({{count}} kitap)",
+  "Restored collection \"{{name}}\" ({{count}} books)_other": "\"{{name}}\" koleksiyonu geri yüklendi ({{count}} kitap)"
 }

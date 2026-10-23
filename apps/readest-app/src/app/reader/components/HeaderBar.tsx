@@ -208,6 +208,13 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
         onClick={() => setHoveredBookKey(bookKey)}
         onMouseEnter={() => !appService?.isMobile && setHoveredBookKey(bookKey)}
         onTouchStart={() => !appService?.isMobile && setHoveredBookKey(bookKey)}
+        // A pointer that crosses the strip straight into the book never enters
+        // the header, so the header's own mouseleave never comes (#6999).
+        onMouseLeave={(e) => {
+          if (!appService?.isMobile && isMouseOutsideHeader(e.clientX, e.clientY)) {
+            setHoveredBookKey('');
+          }
+        }}
       />
       <div
         className={clsx(

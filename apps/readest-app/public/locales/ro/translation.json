@@ -2730,5 +2730,19 @@
   "Show Page Thumbnails": "Afișează miniaturile paginilor",
   "Allow Self-Signed Certificate": "Permite certificat autosemnat",
   "Skips certificate checks for this server. Turn it off if the server has a valid certificate": "Omite verificarea certificatului pentru acest server. Dezactivează opțiunea dacă serverul are un certificat valid",
-  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "Unele modificări nu s-au sincronizat deoarece ceasul acestui dispozitiv nu este corect. Setați data și ora automat, apoi încercați din nou."
+  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "Unele modificări nu s-au sincronizat deoarece ceasul acestui dispozitiv nu este corect. Setați data și ora automat, apoi încercați din nou.",
+  "Creating package for {{count}} book(s)..._one": "Se creează pachetul pentru {{count}} carte...",
+  "Creating package for {{count}} book(s)..._few": "Se creează pachetul pentru {{count}} cărți...",
+  "Creating package for {{count}} book(s)..._other": "Se creează pachetul pentru {{count}} de cărți...",
+  "No local files available to pack": "Nu există fișiere locale de împachetat",
+  "{{count}} book(s) omitted (file not available locally)_one": "{{count}} carte omisă (fișierul nu este disponibil local)",
+  "{{count}} book(s) omitted (file not available locally)_few": "{{count}} cărți omise (fișierele nu sunt disponibile local)",
+  "{{count}} book(s) omitted (file not available locally)_other": "{{count}} de cărți omise (fișierele nu sunt disponibile local)",
+  "Exported {{filename}}": "{{filename}} a fost exportat",
+  "Failed to export package": "Exportul pachetului a eșuat",
+  "Pack": "Împachetează",
+  "Failed to create pack": "Crearea pachetului a eșuat",
+  "Restored collection \"{{name}}\" ({{count}} books)_one": "Colecția „{{name}}” a fost restaurată ({{count}} carte)",
+  "Restored collection \"{{name}}\" ({{count}} books)_few": "Colecția „{{name}}” a fost restaurată ({{count}} cărți)",
+  "Restored collection \"{{name}}\" ({{count}} books)_other": "Colecția „{{name}}” a fost restaurată ({{count}} de cărți)"
 }

@@ -2730,5 +2730,19 @@
   "Show Page Thumbnails": "Mostrar miniaturas de páginas",
   "Allow Self-Signed Certificate": "Permitir certificado autofirmado",
   "Skips certificate checks for this server. Turn it off if the server has a valid certificate": "Omite la verificación del certificado de este servidor. Desactívalo si el servidor tiene un certificado válido",
-  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "Algunos cambios no se sincronizaron porque el reloj de este dispositivo no está en hora. Configura la fecha y la hora automáticamente y vuelve a intentarlo."
+  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "Algunos cambios no se sincronizaron porque el reloj de este dispositivo no está en hora. Configura la fecha y la hora automáticamente y vuelve a intentarlo.",
+  "Creating package for {{count}} book(s)..._one": "Creando paquete con {{count}} libro...",
+  "Creating package for {{count}} book(s)..._many": "Creando paquete con {{count}} libros...",
+  "Creating package for {{count}} book(s)..._other": "Creando paquete con {{count}} libros...",
+  "No local files available to pack": "No hay archivos locales para empaquetar",
+  "{{count}} book(s) omitted (file not available locally)_one": "{{count}} libro omitido (archivo no disponible localmente)",
+  "{{count}} book(s) omitted (file not available locally)_many": "{{count}} libros omitidos (archivos no disponibles localmente)",
+  "{{count}} book(s) omitted (file not available locally)_other": "{{count}} libros omitidos (archivos no disponibles localmente)",
+  "Exported {{filename}}": "{{filename}} exportado",
+  "Failed to export package": "No se pudo exportar el paquete",
+  "Pack": "Empaquetar",
+  "Failed to create pack": "No se pudo crear el paquete",
+  "Restored collection \"{{name}}\" ({{count}} books)_one": "Colección «{{name}}» restaurada ({{count}} libro)",
+  "Restored collection \"{{name}}\" ({{count}} books)_many": "Colección «{{name}}» restaurada ({{count}} libros)",
+  "Restored collection \"{{name}}\" ({{count}} books)_other": "Colección «{{name}}» restaurada ({{count}} libros)"
 }

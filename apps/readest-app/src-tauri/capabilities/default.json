@@ -245,6 +245,7 @@
     "allow-open-web-browser",
     "allow-fetch-web-browser-resource",
     "allow-get-media-proxy-base",
+    "allow-get-media-file-url",
     "allow-set-web-browser-status",
     "allow-extract-web-browser-archive",
     "allow-spawn-fresh-browser",

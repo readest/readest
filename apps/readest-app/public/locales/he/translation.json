@@ -2730,5 +2730,19 @@
   "Show Page Thumbnails": "הצג תמונות ממוזערות של עמודים",
   "Allow Self-Signed Certificate": "אפשר אישור בחתימה עצמית",
   "Skips certificate checks for this server. Turn it off if the server has a valid certificate": "מדלג על בדיקת האישור עבור שרת זה. כבה זאת אם לשרת יש אישור תקף",
-  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "חלק מהשינויים לא סונכרנו כי השעון של המכשיר הזה אינו מכוון. הגדר תאריך ושעה אוטומטיים ונסה שוב."
+  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "חלק מהשינויים לא סונכרנו כי השעון של המכשיר הזה אינו מכוון. הגדר תאריך ושעה אוטומטיים ונסה שוב.",
+  "Creating package for {{count}} book(s)..._one": "יוצר חבילה עבור ספר אחד...",
+  "Creating package for {{count}} book(s)..._two": "יוצר חבילה עבור {{count}} ספרים...",
+  "Creating package for {{count}} book(s)..._other": "יוצר חבילה עבור {{count}} ספרים...",
+  "No local files available to pack": "אין קבצים מקומיים לאריזה",
+  "{{count}} book(s) omitted (file not available locally)_one": "ספר אחד הושמט (הקובץ אינו זמין מקומית)",
+  "{{count}} book(s) omitted (file not available locally)_two": "{{count}} ספרים הושמטו (הקבצים אינם זמינים מקומית)",
+  "{{count}} book(s) omitted (file not available locally)_other": "{{count}} ספרים הושמטו (הקבצים אינם זמינים מקומית)",
+  "Exported {{filename}}": "{{filename}} יוצא",
+  "Failed to export package": "ייצוא החבילה נכשל",
+  "Pack": "אריזה",
+  "Failed to create pack": "יצירת החבילה נכשלה",
+  "Restored collection \"{{name}}\" ({{count}} books)_one": "האוסף \"{{name}}\" שוחזר (ספר אחד)",
+  "Restored collection \"{{name}}\" ({{count}} books)_two": "האוסף \"{{name}}\" שוחזר ({{count}} ספרים)",
+  "Restored collection \"{{name}}\" ({{count}} books)_other": "האוסף \"{{name}}\" שוחזר ({{count}} ספרים)"
 }

@@ -2600,5 +2600,13 @@
   "Show Page Thumbnails": "顯示頁面縮圖",
   "Allow Self-Signed Certificate": "允許自簽憑證",
   "Skips certificate checks for this server. Turn it off if the server has a valid certificate": "將略過此伺服器的憑證驗證。如果伺服器有有效的憑證，請關閉此選項",
-  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "此裝置的時鐘不準確，部分變更未能同步。請將日期和時間設為自動設定，然後再試一次。"
+  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "此裝置的時鐘不準確，部分變更未能同步。請將日期和時間設為自動設定，然後再試一次。",
+  "Creating package for {{count}} book(s)..._other": "正在為 {{count}} 本書建立套件...",
+  "No local files available to pack": "沒有可打包的本機檔案",
+  "{{count}} book(s) omitted (file not available locally)_other": "已略過 {{count}} 本書（本機沒有檔案）",
+  "Exported {{filename}}": "已匯出 {{filename}}",
+  "Failed to export package": "匯出套件失敗",
+  "Pack": "打包",
+  "Failed to create pack": "建立套件失敗",
+  "Restored collection \"{{name}}\" ({{count}} books)_other": "已還原分組「{{name}}」（{{count}} 本書）"
 }

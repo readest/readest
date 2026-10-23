@@ -2600,5 +2600,13 @@
   "Show Page Thumbnails": "显示页面缩略图",
   "Allow Self-Signed Certificate": "允许自签名证书",
   "Skips certificate checks for this server. Turn it off if the server has a valid certificate": "将跳过此服务器的证书校验。如果服务器有有效证书，请关闭此选项",
-  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "此设备的时钟不准确，部分更改未能同步。请将日期和时间设为自动设置，然后重试。"
+  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "此设备的时钟不准确，部分更改未能同步。请将日期和时间设为自动设置，然后重试。",
+  "Creating package for {{count}} book(s)..._other": "正在为 {{count}} 本书创建包...",
+  "No local files available to pack": "没有可打包的本地文件",
+  "{{count}} book(s) omitted (file not available locally)_other": "已跳过 {{count}} 本书（本地没有文件）",
+  "Exported {{filename}}": "已导出 {{filename}}",
+  "Failed to export package": "导出包失败",
+  "Pack": "打包",
+  "Failed to create pack": "创建包失败",
+  "Restored collection \"{{name}}\" ({{count}} books)_other": "已恢复分组“{{name}}”（{{count}} 本书）"
 }

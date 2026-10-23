@@ -2600,5 +2600,13 @@
   "Show Page Thumbnails": "แสดงภาพขนาดย่อของหน้า",
   "Allow Self-Signed Certificate": "อนุญาตใบรับรองที่ลงนามด้วยตนเอง",
   "Skips certificate checks for this server. Turn it off if the server has a valid certificate": "ข้ามการตรวจสอบใบรับรองของเซิร์ฟเวอร์นี้ ปิดตัวเลือกนี้หากเซิร์ฟเวอร์มีใบรับรองที่ถูกต้อง",
-  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "การเปลี่ยนแปลงบางส่วนไม่ได้ซิงค์เพราะนาฬิกาของอุปกรณ์นี้ไม่ตรง ตั้งวันที่และเวลาเป็นอัตโนมัติ แล้วลองอีกครั้ง"
+  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "การเปลี่ยนแปลงบางส่วนไม่ได้ซิงค์เพราะนาฬิกาของอุปกรณ์นี้ไม่ตรง ตั้งวันที่และเวลาเป็นอัตโนมัติ แล้วลองอีกครั้ง",
+  "Creating package for {{count}} book(s)..._other": "กำลังสร้างแพ็กเกจสำหรับหนังสือ {{count}} เล่ม...",
+  "No local files available to pack": "ไม่มีไฟล์ในเครื่องให้แพ็ก",
+  "{{count}} book(s) omitted (file not available locally)_other": "ข้ามหนังสือ {{count}} เล่ม (ไม่มีไฟล์ในเครื่อง)",
+  "Exported {{filename}}": "ส่งออก {{filename}} แล้ว",
+  "Failed to export package": "ส่งออกแพ็กเกจไม่สำเร็จ",
+  "Pack": "แพ็ก",
+  "Failed to create pack": "สร้างแพ็กไม่สำเร็จ",
+  "Restored collection \"{{name}}\" ({{count}} books)_other": "กู้คืนคอลเลกชัน \"{{name}}\" แล้ว (หนังสือ {{count}} เล่ม)"
 }

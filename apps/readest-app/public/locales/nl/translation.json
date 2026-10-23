@@ -2665,5 +2665,16 @@
   "Show Page Thumbnails": "Paginaminiaturen weergeven",
   "Allow Self-Signed Certificate": "Zelfondertekend certificaat toestaan",
   "Skips certificate checks for this server. Turn it off if the server has a valid certificate": "Slaat de certificaatcontrole voor deze server over. Zet dit uit als de server een geldig certificaat heeft",
-  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "Sommige wijzigingen zijn niet gesynchroniseerd omdat de klok van dit apparaat niet goed staat. Stel datum en tijd automatisch in en probeer het opnieuw."
+  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "Sommige wijzigingen zijn niet gesynchroniseerd omdat de klok van dit apparaat niet goed staat. Stel datum en tijd automatisch in en probeer het opnieuw.",
+  "Creating package for {{count}} book(s)..._one": "Pakket maken voor {{count}} boek...",
+  "Creating package for {{count}} book(s)..._other": "Pakket maken voor {{count}} boeken...",
+  "No local files available to pack": "Geen lokale bestanden om in te pakken",
+  "{{count}} book(s) omitted (file not available locally)_one": "{{count}} boek overgeslagen (bestand niet lokaal beschikbaar)",
+  "{{count}} book(s) omitted (file not available locally)_other": "{{count}} boeken overgeslagen (bestanden niet lokaal beschikbaar)",
+  "Exported {{filename}}": "{{filename}} geëxporteerd",
+  "Failed to export package": "Pakket exporteren mislukt",
+  "Pack": "Inpakken",
+  "Failed to create pack": "Pakket maken mislukt",
+  "Restored collection \"{{name}}\" ({{count}} books)_one": "Collectie \"{{name}}\" hersteld ({{count}} boek)",
+  "Restored collection \"{{name}}\" ({{count}} books)_other": "Collectie \"{{name}}\" hersteld ({{count}} boeken)"
 }

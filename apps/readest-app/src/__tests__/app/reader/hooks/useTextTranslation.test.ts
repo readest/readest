@@ -324,14 +324,18 @@ describe('useTextTranslation', () => {
     view.innerHTML = '<p>私は<ruby>漢字<rp>(</rp><rt>かんじ</rt><rp>)</rp></ruby>を読む。</p>';
     const paragraph = view.querySelector('p')!;
 
-    renderHook(() => useTextTranslation('book-1', view));
-    onIntersect(
-      [{ isIntersecting: true, target: paragraph } as unknown as IntersectionObserverEntry],
-      {} as IntersectionObserver,
-    );
+    const { unmount } = renderHook(() => useTextTranslation('book-1', view));
+    try {
+      onIntersect(
+        [{ isIntersecting: true, target: paragraph } as unknown as IntersectionObserverEntry],
+        {} as IntersectionObserver,
+      );
 
-    await waitFor(() => expect(translate).toHaveBeenCalled());
-    expect(translate).toHaveBeenCalledWith(['私は漢字を読む。']);
-    vi.unstubAllGlobals();
+      await waitFor(() => expect(paragraph.querySelector('.translation-target')).not.toBeNull());
+      expect(translate).toHaveBeenCalledWith(['私は漢字を読む。']);
+    } finally {
+      unmount();
+      vi.unstubAllGlobals();
+    }
   });
 });

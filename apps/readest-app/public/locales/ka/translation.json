@@ -2665,5 +2665,16 @@
   "Show Page Thumbnails": "გვერდის მინიატურების ჩვენება",
   "Allow Self-Signed Certificate": "თვითხელმოწერილი სერტიფიკატის დაშვება",
   "Skips certificate checks for this server. Turn it off if the server has a valid certificate": "გამოტოვებს ამ სერვერის სერტიფიკატის შემოწმებას. გამორთეთ, თუ სერვერს აქვს მოქმედი სერტიფიკატი",
-  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "ზოგიერთი ცვლილება არ სინქრონიზდა, რადგან ამ მოწყობილობის საათი არასწორია. დააყენეთ თარიღი და დრო ავტომატურად და სცადეთ ხელახლა."
+  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "ზოგიერთი ცვლილება არ სინქრონიზდა, რადგან ამ მოწყობილობის საათი არასწორია. დააყენეთ თარიღი და დრო ავტომატურად და სცადეთ ხელახლა.",
+  "Creating package for {{count}} book(s)..._one": "იქმნება პაკეტი {{count}} წიგნისთვის...",
+  "Creating package for {{count}} book(s)..._other": "იქმნება პაკეტი {{count}} წიგნისთვის...",
+  "No local files available to pack": "შესაფუთი ლოკალური ფაილები არ არის",
+  "{{count}} book(s) omitted (file not available locally)_one": "{{count}} წიგნი გამოტოვებულია (ფაილი ლოკალურად მიუწვდომელია)",
+  "{{count}} book(s) omitted (file not available locally)_other": "{{count}} წიგნი გამოტოვებულია (ფაილი ლოკალურად მიუწვდომელია)",
+  "Exported {{filename}}": "{{filename}} ექსპორტირებულია",
+  "Failed to export package": "პაკეტის ექსპორტი ვერ მოხერხდა",
+  "Pack": "შეფუთვა",
+  "Failed to create pack": "პაკეტის შექმნა ვერ მოხერხდა",
+  "Restored collection \"{{name}}\" ({{count}} books)_one": "კოლექცია „{{name}}“ აღდგენილია ({{count}} წიგნი)",
+  "Restored collection \"{{name}}\" ({{count}} books)_other": "კოლექცია „{{name}}“ აღდგენილია ({{count}} წიგნი)"
 }

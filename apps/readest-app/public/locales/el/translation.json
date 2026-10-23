@@ -2665,5 +2665,16 @@
   "Show Page Thumbnails": "Εμφάνιση μικρογραφιών σελίδων",
   "Allow Self-Signed Certificate": "Αποδοχή αυτο-υπογεγραμμένου πιστοποιητικού",
   "Skips certificate checks for this server. Turn it off if the server has a valid certificate": "Παραλείπει τον έλεγχο πιστοποιητικού για αυτόν τον διακομιστή. Απενεργοποιήστε το αν ο διακομιστής έχει έγκυρο πιστοποιητικό",
-  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "Ορισμένες αλλαγές δεν συγχρονίστηκαν επειδή το ρολόι αυτής της συσκευής δεν είναι σωστό. Ορίστε την ημερομηνία και την ώρα αυτόματα και δοκιμάστε ξανά."
+  "Some changes didn't sync because this device's clock is off. Set the date and time automatically, then try again.": "Ορισμένες αλλαγές δεν συγχρονίστηκαν επειδή το ρολόι αυτής της συσκευής δεν είναι σωστό. Ορίστε την ημερομηνία και την ώρα αυτόματα και δοκιμάστε ξανά.",
+  "Creating package for {{count}} book(s)..._one": "Δημιουργία πακέτου για {{count}} βιβλίο...",
+  "Creating package for {{count}} book(s)..._other": "Δημιουργία πακέτου για {{count}} βιβλία...",
+  "No local files available to pack": "Δεν υπάρχουν τοπικά αρχεία για πακετάρισμα",
+  "{{count}} book(s) omitted (file not available locally)_one": "Παραλείφθηκε {{count}} βιβλίο (το αρχείο δεν είναι διαθέσιμο τοπικά)",
+  "{{count}} book(s) omitted (file not available locally)_other": "Παραλείφθηκαν {{count}} βιβλία (τα αρχεία δεν είναι διαθέσιμα τοπικά)",
+  "Exported {{filename}}": "Εξήχθη το {{filename}}",
+  "Failed to export package": "Αποτυχία εξαγωγής πακέτου",
+  "Pack": "Πακετάρισμα",
+  "Failed to create pack": "Αποτυχία δημιουργίας πακέτου",
+  "Restored collection \"{{name}}\" ({{count}} books)_one": "Η συλλογή «{{name}}» επαναφέρθηκε ({{count}} βιβλίο)",
+  "Restored collection \"{{name}}\" ({{count}} books)_other": "Η συλλογή «{{name}}» επαναφέρθηκε ({{count}} βιβλία)"
 }
