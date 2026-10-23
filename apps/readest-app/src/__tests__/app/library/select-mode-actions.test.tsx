@@ -153,3 +153,21 @@ describe('SelectModeActions download', () => {
     ]);
   });
 });
+
+describe('SelectModeActions pack', () => {
+  it('calls onPack when the pack action is clicked', () => {
+    const onPack = vi.fn();
+    render(<SelectModeActions {...baseProps} onPack={onPack} />);
+
+    fireEvent.click(getAction('Pack'));
+
+    expect(onPack).toHaveBeenCalledTimes(1);
+  });
+
+  it('disables the pack action when no books are selected', () => {
+    const onPack = vi.fn();
+    render(<SelectModeActions {...baseProps} selectedBooks={[]} onPack={onPack} />);
+
+    expect(getAction('Pack').className).toContain('btn-disabled');
+  });
+});

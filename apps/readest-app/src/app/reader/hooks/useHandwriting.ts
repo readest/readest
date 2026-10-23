@@ -8,7 +8,7 @@ import { useEnv } from '@/context/EnvContext';
 import { saveSysSettings } from '@/helpers/settings';
 import { HandwritingEditor } from '@/services/handwriting/editor';
 import { HandwritingService, nextInkSession } from '@/services/handwriting/handwritingService';
-import { loadInkEditor, withInkNotes } from '@/services/handwriting/persistence';
+import { inkSignature, loadInkEditor, withInkNotes } from '@/services/handwriting/persistence';
 import { fixedPageKey, sectionPageKey } from '@/services/handwriting/pageKey';
 import { createInkAnchoring } from '../utils/inkAnchoring';
 import { boundsOf } from '@/services/handwriting/anchor';
@@ -16,7 +16,6 @@ import type { PageRect } from '@/services/handwriting/coords';
 import type { InkStroke, InkTool } from '@/services/handwriting/model';
 import type { ReadSettings } from '@/types/settings';
 import type { FoliateView } from '@/types/view';
-import type { BookNote } from '@/types/book';
 
 /** Strokes normalized to one rect; the canvas draws each layer against its rect. */
 export interface InkLayer {
@@ -45,13 +44,6 @@ const describeInk = (view: FoliateView, cfi: string): string => {
     return '';
   }
 };
-
-/** What identifies the book's ink notes, to tell outside edits from our own. */
-const inkSignature = (notes: BookNote[] | undefined) =>
-  (notes ?? [])
-    .filter((n) => n.type === 'ink')
-    .map((n) => `${n.id}:${n.updatedAt}:${n.deletedAt ?? ''}`)
-    .join();
 
 const sameRect = (a: PageRect, b: PageRect) =>
   a.left === b.left && a.top === b.top && a.width === b.width && a.height === b.height;

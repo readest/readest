@@ -8,6 +8,11 @@ import {
 } from '@/services/tts/mediaOverlay/MediaOverlaySection';
 import { MediaOverlayClient } from '@/services/tts/mediaOverlay/MediaOverlayClient';
 
+const { mediaFileUrl } = vi.hoisted(() => ({
+  mediaFileUrl: vi.fn(async (..._args: unknown[]): Promise<string | null> => null),
+}));
+vi.mock('@/services/audiobook/mediaProxy', () => ({ getMediaFileUrl: mediaFileUrl }));
+
 // Minimal HTMLAudioElement stand-in: jsdom has no media pipeline, so the test
 // drives the clock itself and emits the events a real element would.
 class FakeAudio {
@@ -212,6 +217,59 @@ describe('MediaOverlayClient capabilities', () => {
     expect(audio().src).toBe('http://asset.localhost/books/ch1.mp3');
     expect(loadBlob).not.toHaveBeenCalled();
     expect(createObjectURL).not.toHaveBeenCalled();
+  });
+
+  // A book's single shared track can be most of the book (900 MB, #6989):
+  // a stored entry plays from the book file itself, never copied out whole.
+  test('plays a stored audio entry from a slice of the book file', async () => {
+    await setup();
+    const slice = new Blob([new Uint8Array(8)], { type: 'audio/mpeg' });
+    const getMediaSource = vi.fn(async () => ({ blob: slice }));
+    (book as { getMediaSource?: unknown }).getMediaSource = getMediaSource;
+    client.attachBook(book);
+
+    const iter = client.speak(section.ssmlForBlock(0)!, new AbortController().signal);
+    await iter.next();
+
+    expect(book.loadBlob).not.toHaveBeenCalled();
+    expect(getMediaSource).toHaveBeenCalledWith('OEBPS/ch1.mp3', 'audio/mpeg');
+    expect(createObjectURL).toHaveBeenCalledExactlyOnceWith(slice);
+  });
+
+  test('plays a stored audio entry of a native book through the media proxy', async () => {
+    await setup();
+    (book as { getMediaSource?: unknown }).getMediaSource = vi.fn(async () => ({
+      path: '/books/narrated.epub',
+      start: 120,
+      end: 4216,
+    }));
+    client.attachBook(book);
+    mediaFileUrl.mockResolvedValueOnce('http://127.0.0.1:9/s/file/f1');
+
+    const iter = client.speak(section.ssmlForBlock(0)!, new AbortController().signal);
+    await iter.next();
+
+    expect(book.loadBlob).not.toHaveBeenCalled();
+    expect(mediaFileUrl).toHaveBeenCalledWith('/books/narrated.epub', 120, 4216, 'audio/mpeg');
+    expect(audio().src).toBe('http://127.0.0.1:9/s/file/f1');
+    expect(createObjectURL).not.toHaveBeenCalled();
+  });
+
+  test('falls back to the blob when the media proxy cannot serve the book', async () => {
+    await setup();
+    (book as { getMediaSource?: unknown }).getMediaSource = vi.fn(async () => ({
+      path: '/books/narrated.epub',
+      start: 120,
+      end: 4216,
+    }));
+    client.attachBook(book);
+    mediaFileUrl.mockResolvedValueOnce(null);
+
+    const iter = client.speak(section.ssmlForBlock(0)!, new AbortController().signal);
+    await iter.next();
+
+    expect(book.loadBlob).toHaveBeenCalledWith('OEBPS/ch1.mp3');
+    expect(audio().src).toBe('blob:audio');
   });
 
   // A recording split across files (an Audiobookshelf item) is one timeline

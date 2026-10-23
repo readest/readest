@@ -154,6 +154,7 @@ describe("ReadestSyncClient without Turbo", function()
         swap("ui/uimanager", stubs.UIManager)
         swap("datastorage", {getSettingsDir = function() return "/tmp" end})
         swap("socketutil", {set_timeout = function() end, reset_timeout = function() end})
+        swap("socket", {})
         swap("ffi/util", {
             runInSubProcess = function(fn)
                 child = fn
@@ -262,6 +263,34 @@ describe("ReadestSyncClient without Turbo", function()
         assert.is_false(replies[1].ok)
         assert.are.equal("timeout", replies[1].body)
         assert.is_nil(require("lfs").attributes(result_path))
+    end)
+    it("connects over IPv4 in a macOS worker, where forked AF_UNSPEC lookups crash (#6933)", function()
+        local saved_os, sockets = jit.os, {}
+        local function make(family)
+            return function()
+                local sock = { family = family, timeouts = {} }
+                function sock:settimeout(value, mode) self.timeouts[mode] = value end
+                return sock
+            end
+        end
+        local socketutil = package.loaded["socketutil"]
+        socketutil.block_timeout, socketutil.total_timeout = 5, 10
+        local function run(os_name)
+            package.loaded["socket"].tcp = make("unspec")
+            package.loaded["socket"].tcp4 = make("inet")
+            jit.os = os_name
+            client(function()
+                sockets[os_name] = require("socket").tcp()
+                return { status = 200 }
+            end):pullChanges({}, callback)
+            child(123)
+            jit.os = saved_os
+        end
+        run("OSX")
+        run("Linux")
+        assert.are.equal("inet", sockets.OSX.family)
+        assert.are.same({ b = 5, t = 10 }, sockets.OSX.timeouts)
+        assert.are.equal("unspec", sockets.Linux.family)
     end)
     it("fails without running blocking HTTP on the UI thread if fork fails", function()
         spawn_ok = false

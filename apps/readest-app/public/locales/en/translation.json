@@ -125,5 +125,11 @@
   "{{count}} pages left_one": "{{count}} page left",
   "{{count}} pages left_other": "{{count}} pages left",
   "{{time}} and {{count}} pages left_one": "{{time}} and {{count}} page left",
-  "{{time}} and {{count}} pages left_other": "{{time}} and {{count}} pages left"
+  "{{time}} and {{count}} pages left_other": "{{time}} and {{count}} pages left",
+  "Creating package for {{count}} book(s)..._one": "Creating package for {{count}} book...",
+  "Creating package for {{count}} book(s)..._other": "Creating package for {{count}} books...",
+  "{{count}} book(s) omitted (file not available locally)_one": "{{count}} book omitted (file not available locally)",
+  "{{count}} book(s) omitted (file not available locally)_other": "{{count}} books omitted (files not available locally)",
+  "Restored collection \"{{name}}\" ({{count}} books)_one": "Restored collection \"{{name}}\" ({{count}} book)",
+  "Restored collection \"{{name}}\" ({{count}} books)_other": "Restored collection \"{{name}}\" ({{count}} books)"
 }

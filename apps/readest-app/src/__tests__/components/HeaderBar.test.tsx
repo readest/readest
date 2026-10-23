@@ -1,4 +1,4 @@
-import { act, cleanup, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import HeaderBar from '@/app/reader/components/HeaderBar';
@@ -185,6 +185,53 @@ describe('HeaderBar book metadata data attributes (#5776)', () => {
     expect(title.getAttribute('data-book-title')).toBe('Book');
     expect(title.hasAttribute('data-book-series')).toBe(false);
     expect(title.hasAttribute('data-book-series-index')).toBe(false);
+  });
+});
+
+describe('HeaderBar hover strip (#6999)', () => {
+  // The strip along the top edge reveals the header on mouseenter, and the
+  // header hides on its own mouseleave. A pointer that crosses the strip and
+  // lands in the book with its next move never entered the header, so only the
+  // strip sees it go.
+  const hoverStrip = (container: HTMLElement) =>
+    container.querySelector('div[role="none"]') as HTMLElement;
+
+  beforeEach(() => {
+    useEnvMock.mockReturnValue({ envConfig: {}, appService: { isMobile: false } });
+    setViewport(1440, 900);
+  });
+
+  const renderWithHeaderAt = (rect: Partial<DOMRect>) => {
+    const result = renderHeader();
+    vi.spyOn(screen.getByRole('banner'), 'getBoundingClientRect').mockReturnValue({
+      left: 0,
+      right: 1440,
+      top: 0,
+      bottom: 44,
+      ...rect,
+    } as DOMRect);
+    return result;
+  };
+
+  it('hides the header when the pointer leaves the strip for the book', () => {
+    const { container } = renderWithHeaderAt({});
+    fireEvent.mouseLeave(hoverStrip(container), { clientX: 700, clientY: 300 });
+    expect(setHoveredBookKey).toHaveBeenCalledWith('');
+  });
+
+  it('keeps the header when the pointer leaves the strip for the header itself', () => {
+    const { container } = renderWithHeaderAt({});
+    fireEvent.mouseLeave(hoverStrip(container), { clientX: 700, clientY: 20 });
+    expect(setHoveredBookKey).not.toHaveBeenCalledWith('');
+  });
+
+  it('keeps the header for a pointer on the top row of a maximized window (#7015)', () => {
+    // The pointer can't go above y=0, the header's own top edge, so the strip
+    // and the header passing it back and forth there must not hide it.
+    const { container } = renderWithHeaderAt({});
+    fireEvent.mouseLeave(hoverStrip(container), { clientX: 700, clientY: 0 });
+    fireEvent.mouseLeave(screen.getByRole('banner'), { clientX: 700, clientY: 0 });
+    expect(setHoveredBookKey).not.toHaveBeenCalledWith('');
   });
 });
 
