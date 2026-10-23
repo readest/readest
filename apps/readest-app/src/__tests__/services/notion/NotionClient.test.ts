@@ -567,6 +567,66 @@ describe('NotionClient note sync', () => {
     expect(appendBody.children).toHaveLength(10);
   });
 
+  test('colours each quote with its highlight colour and writes the note as a callout', async () => {
+    const { store } = makeStore();
+    const notes = [
+      makeNote({ color: 'violet' }),
+      makeNote({ id: 'note-2', color: '#123456', note: '' }),
+    ];
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse({ results: [], has_more: false }))
+      .mockResolvedValueOnce(jsonResponse({ id: PAGE_ID }))
+      .mockResolvedValueOnce(
+        jsonResponse({ results: Array.from({ length: 9 }, (_, i) => ({ id: `block-${i}` })) }),
+      );
+
+    await new NotionClient(makeSettings(), store).syncBookNotes(
+      'book-hash',
+      'Book',
+      notes,
+      () => 'Chapter',
+    );
+
+    const appendBody = JSON.parse((fetchMock.mock.calls[2]![1] as RequestInit).body as string);
+    const quotes = appendBody.children.filter((block: { type: string }) => block.type === 'quote');
+    expect(quotes.map((block: { quote: { color: string } }) => block.quote.color)).toEqual([
+      'purple_background',
+      'default',
+    ]);
+    const callouts = appendBody.children.filter(
+      (block: { type: string }) => block.type === 'callout',
+    );
+    expect(callouts).toHaveLength(1);
+    expect(callouts[0].callout.rich_text[0].text.content).toBe('My note');
+    expect(callouts[0].callout.icon).toEqual({ type: 'emoji', emoji: '📝' });
+  });
+
+  test('rewrites a synced note when its highlight colour changes', async () => {
+    const { store } = makeStore();
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse({ results: [], has_more: false }))
+      .mockResolvedValueOnce(jsonResponse({ id: PAGE_ID }))
+      .mockResolvedValueOnce(
+        jsonResponse({ results: Array.from({ length: 4 }, (_, i) => ({ id: `block-${i}` })) }),
+      )
+      .mockResolvedValueOnce(jsonResponse({ id: PAGE_ID }))
+      .mockResolvedValueOnce(
+        jsonResponse({ results: Array.from({ length: 4 }, (_, i) => ({ id: `new-${i}` })) }),
+      )
+      .mockResolvedValue(jsonResponse({ archived: true }));
+    const client = new NotionClient(makeSettings(), store);
+
+    await client.syncBookNotes('book-hash', 'Book', [makeNote({ color: 'yellow' })], () => null);
+    const recoloured = await client.syncBookNotes(
+      'book-hash',
+      'Book',
+      [makeNote({ color: 'green' })],
+      () => null,
+    );
+
+    expect(recoloured).toEqual({ success: true, inserted: 0, updated: 1, deleted: 0, skipped: 0 });
+  });
+
   test('records replacement blocks before deleting stale blocks so a retry cannot append twice', async () => {
     const { store, pages, notes, writes } = makeStore();
     pages.set(`${TARGET_ID}:book-hash`, {

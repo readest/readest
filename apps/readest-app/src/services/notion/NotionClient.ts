@@ -2,7 +2,7 @@ import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
 import { NOTION_API_BASE_URL, NOTION_API_VERSION } from '@/services/constants';
 import { isTauriAppPlatform } from '@/services/environment';
 import { getAccessToken } from '@/utils/access';
-import type { BookNote } from '@/types/book';
+import type { BookNote, HighlightColor } from '@/types/book';
 import type { NotionSettings } from '@/types/settings';
 import { getContentMd5 } from '@/utils/misc';
 import type { NotionNoteMapping, NotionSyncStoreLike } from './NotionSyncStore';
@@ -95,6 +95,17 @@ const MAX_RATE_LIMIT_RETRIES = 3;
 const NOTION_MARKER_ORIGIN = 'https://readest.com';
 const NOTION_MARKER_ROOT = '/notion-sync';
 
+const READEST_TO_NOTION_COLOR: Record<HighlightColor, string> = {
+  red: 'red_background',
+  yellow: 'yellow_background',
+  green: 'green_background',
+  blue: 'blue_background',
+  violet: 'purple_background',
+};
+
+const quoteColor = (note: BookNote): string =>
+  (note.color && READEST_TO_NOTION_COLOR[note.color]) || 'default';
+
 const sleep = (milliseconds: number) =>
   new Promise<void>((resolve) => setTimeout(resolve, milliseconds));
 
@@ -149,10 +160,11 @@ const richTextItems = (text: string, annotations?: Record<string, unknown>, link
   }));
 
 const textBlocks = (
-  type: 'heading_3' | 'quote' | 'paragraph',
+  type: 'heading_3' | 'quote' | 'paragraph' | 'callout',
   text: string,
   annotations?: Record<string, unknown>,
   link?: string,
+  props?: Record<string, unknown>,
 ): NotionBlock[] => {
   const items = richTextItems(text, annotations, link);
   const blocks: NotionBlock[] = [];
@@ -160,7 +172,7 @@ const textBlocks = (
     blocks.push({
       object: 'block',
       type,
-      [type]: { rich_text: items.slice(index, index + MAX_RICH_TEXT_ITEMS_PER_BLOCK) },
+      [type]: { rich_text: items.slice(index, index + MAX_RICH_TEXT_ITEMS_PER_BLOCK), ...props },
     });
   }
   return blocks;
@@ -180,8 +192,13 @@ const buildNoteBlocks = (
     markerUrl,
   ),
   ...(includeChapterHeading && chapter ? textBlocks('heading_3', chapter) : []),
-  ...textBlocks('quote', note.text ?? ''),
-  ...(note.note ? textBlocks('paragraph', `📝 ${note.note}`) : []),
+  ...textBlocks('quote', note.text ?? '', undefined, undefined, { color: quoteColor(note) }),
+  ...(note.note
+    ? textBlocks('callout', note.note, undefined, undefined, {
+        icon: { type: 'emoji', emoji: '📝' },
+        color: 'gray_background',
+      })
+    : []),
 ];
 
 const markerUrl = (...segments: string[]): string =>
@@ -819,6 +836,7 @@ export class NotionClient {
           payloadHash = getContentMd5({
             text: note.text,
             note: note.note,
+            color: quoteColor(note),
             chapter,
             createdAt: note.createdAt,
             includeChapterHeading: this.config.includeChapterHeading ?? true,
