@@ -73,6 +73,23 @@ function ReadestSyncClient:_prepare()
     self.client:enable("ReadestAuth", { access_token = self.access_token })
 end
 
+-- macOS 26+ crashes a fork()ed child in getaddrinfo when an AF_UNSPEC
+-- lookup returns only IPv4 addresses (its NAT64 pass, Apple FB21364061,
+-- #6933). AF_INET lookups skip that pass, so workers connect over IPv4
+-- there. Call in the child before its first request.
+function ReadestSyncClient.useIPv4InWorker()
+    if jit.os ~= "OSX" then return end
+    local socket = require("socket")
+    local socketutil = require("socketutil")
+    -- Keep the timeouts socketutil's own socket.tcp patch applies.
+    socket.tcp = function()
+        local sock = socket.tcp4()
+        sock:settimeout(socketutil.block_timeout, "b")
+        sock:settimeout(socketutil.total_timeout, "t")
+        return sock
+    end
+end
+
 -- Internal: dispatch a Spore RPC and invoke `callback(success, body, status)`
 -- when the async response arrives. The status is forwarded so callers can
 -- distinguish 401/403/404 from generic failure (codex round 1 finding 15).
@@ -112,6 +129,7 @@ function ReadestSyncClient:_dispatchInSubprocess(name, args, timeouts, receive, 
         -- driver destructors on Android (same rule as background covers).
         pcall(function()
             local ok, res = pcall(function()
+                ReadestSyncClient.useIPv4InWorker()
                 self:_prepare()
                 socketutil:set_timeout(timeouts[1], timeouts[2])
                 return self.client[name](self.client, args)
