@@ -38,6 +38,19 @@ class NativePaperArgs {
     var commit = false; var velocity = 0f
 }
 
+/** CSS px -> WebView px as [left, top, width, height]. The CSS viewport can
+ * overhang the WebView (412.19 CSS px x 2.625 = 1082 px on a 1080 px screen).
+ * PixelCopy clips that overhang and stretches the rest over the whole bitmap,
+ * so the snapshot drew about 2 px larger than the live page. */
+internal fun webViewRegion(x: Float, y: Float, width: Float, height: Float, density: Float,
+                           viewWidth: Int, viewHeight: Int): IntArray {
+    val left = (x * density).roundToInt().coerceIn(0, viewWidth)
+    val top = (y * density).roundToInt().coerceIn(0, viewHeight)
+    val right = ((x + width) * density).roundToInt().coerceIn(left, viewWidth)
+    val bottom = ((y + height) * density).roundToInt().coerceIn(top, viewHeight)
+    return intArrayOf(left, top, right - left, bottom - top)
+}
+
 /** Lossless native pages -> resident ES2 textures -> native touch/vsync.
  * Only commands, page identities and completion acknowledgements cross IPC. */
 internal class NativePaperTurn(private val activity: Activity, private val webView: WebView) {
@@ -126,6 +139,10 @@ internal class NativePaperTurn(private val activity: Activity, private val webVi
         webView.postOnAnimation { webView.postOnAnimation { if (p.live) action() } }
     }
 
+    /** Convert the command's CSS rect to WebView pixels, clipped to the WebView. */
+    private fun region(args: NativePaperArgs) = webViewRegion(args.x, args.y, args.width, args.height,
+        webView.resources.displayMetrics.density, webView.width, webView.height)
+
     /** Create or resize the native cover, refusing a competing owner during an active turn. */
     private fun ensureRegion(args: NativePaperArgs, keep: Pending): Boolean {
         if (owner != args.owner) {
@@ -136,12 +153,11 @@ internal class NativePaperTurn(private val activity: Activity, private val webVi
             popup?.dismiss(); view?.onFailure = null; view?.dispose(); popup = null; view = null
             owner = args.owner; generation = args.generation
         }
-        val density = webView.resources.displayMetrics.density
-        val w = (args.width * density).roundToInt(); val h = (args.height * density).roundToInt()
+        val (x, y, w, h) = region(args)
         check(w > 0 && h > 0) { "Empty native page region" }
         val screen = IntArray(2); webView.getLocationOnScreen(screen)
-        val left = screen[0] + (args.x * density).roundToInt()
-        val top = screen[1] + (args.y * density).roundToInt()
+        val left = screen[0] + x
+        val top = screen[1] + y
         if (view == null) {
             val canvas = NativePaperView(activity).apply {
                 alpha = 0.004f
@@ -292,11 +308,10 @@ internal class NativePaperTurn(private val activity: Activity, private val webVi
             latestCapture[args.key] == args.requestId && !active }
         presented(p) {
             if (!valid()) { p.resolve(JSObject().put("ready", false)); return@presented }
-            val density = webView.resources.displayMetrics.density
             val location = IntArray(2); webView.getLocationInWindow(location)
-            val x = location[0] + (args.x * density).roundToInt()
-            val y = location[1] + (args.y * density).roundToInt()
-            val w = (args.width * density).roundToInt(); val h = (args.height * density).roundToInt()
+            val (left, top, w, h) = region(args)
+            val x = location[0] + left
+            val y = location[1] + top
             val bitmap = try { Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888) }
                 catch (error: OutOfMemoryError) { failAll("Not enough memory for native page bitmap"); return@presented }
             try {

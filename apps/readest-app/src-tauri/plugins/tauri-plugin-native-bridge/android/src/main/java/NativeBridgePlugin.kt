@@ -2371,13 +2371,12 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
                 invoke.reject("WebView not available")
                 return@runOnUiThread
             }
-            val density = webView.resources.displayMetrics.density
+            val (x, y, width, height) = webViewRegion(args.x, args.y, args.width, args.height,
+                webView.resources.displayMetrics.density, webView.width, webView.height)
             val location = IntArray(2)
             webView.getLocationInWindow(location)
-            val left = location[0] + (args.x * density).roundToInt()
-            val top = location[1] + (args.y * density).roundToInt()
-            val width = (args.width * density).roundToInt()
-            val height = (args.height * density).roundToInt()
+            val left = location[0] + x
+            val top = location[1] + y
             if (width <= 0 || height <= 0) {
                 invoke.reject("Empty cover region")
                 return@runOnUiThread
@@ -2408,8 +2407,7 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
                             val screen = IntArray(2)
                             webView.getLocationOnScreen(screen)
                             popup.showAtLocation(webView, Gravity.TOP or Gravity.LEFT,
-                                screen[0] + (args.x * density).roundToInt(),
-                                screen[1] + (args.y * density).roundToInt())
+                                screen[0] + x, screen[1] + y)
                             val token = ++pageCoverToken
                             pageCovers[token] = Pair(popup, bitmap)
                             // Resolve after the popup's first draw, before JS
