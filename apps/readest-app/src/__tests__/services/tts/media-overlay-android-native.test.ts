@@ -24,6 +24,7 @@ vi.mock('@/utils/misc', async (importOriginal) => ({
 import { addPluginListener, invoke, type PluginListener } from '@tauri-apps/api/core';
 import { writeFile } from '@tauri-apps/plugin-fs';
 import type { BookDoc } from '@/libs/document';
+import type { NarrationAudioSource } from '@/services/tts/mediaOverlay/MediaOverlayClient';
 import type { TTSController } from '@/services/tts/TTSController';
 import type { AppService } from '@/types/system';
 import {
@@ -42,7 +43,12 @@ let client: MediaOverlayClient;
 let section: MediaOverlaySection;
 let controlCalls: Array<Record<string, unknown>>;
 
-const setup = async () => {
+const pairedAudiobook: NarrationAudioSource = {
+  loadBlob: vi.fn(async () => new Blob([new Uint8Array(8)])),
+  resolvePath: vi.fn(async () => '/books/hash/audiobook/book.m4b'),
+};
+
+const setup = async (source: NarrationAudioSource = pairedAudiobook) => {
   const doc = new DOMParser().parseFromString(
     '<!DOCTYPE html><html><body><p id="chapter">Chapter</p></body></html>',
     'text/html',
@@ -59,10 +65,7 @@ const setup = async () => {
     { isAndroidApp: true } as AppService,
   );
   await client.init();
-  client.attachSource({
-    loadBlob: vi.fn(async () => new Blob([new Uint8Array(8)])),
-    resolvePath: vi.fn(async () => '/books/hash/audiobook/book.m4b'),
-  });
+  client.attachSource(source);
   client.setSection(section);
 };
 
@@ -104,6 +107,53 @@ describe('MediaOverlayClient on Android Tauri', () => {
     expect(writeFile).not.toHaveBeenCalled();
     expect(controlCalls.find((call) => call['action'] === 'load')?.['path']).toBe(
       '/books/hash/audiobook/book.m4b',
+    );
+  });
+
+  test('plays a stored audio entry from its window of the book file without copying it', async () => {
+    const loadBlob = vi.fn(async () => new Blob([new Uint8Array(8)]));
+    await setup({
+      loadBlob,
+      getMediaSource: vi.fn(async () => ({
+        path: '/books/hash/book.epub',
+        start: 1024,
+        end: 9024,
+      })),
+    });
+    const utterance = client.speak(section.ssmlForBlock(0)!, new AbortController().signal);
+    await utterance.next();
+
+    expect(loadBlob).not.toHaveBeenCalled();
+    expect(writeFile).not.toHaveBeenCalled();
+    const load = controlCalls.find((call) => call['action'] === 'load');
+    expect(load).toMatchObject({ path: '/books/hash/book.epub', start: 1024, end: 9024 });
+  });
+
+  test('stages the entry when the player cannot open the book file', async () => {
+    vi.mocked(invoke).mockImplementation(async (command: string, args?: unknown) => {
+      const payload = (args as { payload?: Record<string, unknown> })?.payload ?? {};
+      if (command === 'plugin:native-tts|playout_control') {
+        controlCalls.push(payload);
+        if (payload['action'] === 'load' && payload['start'] !== undefined) {
+          throw new Error('Narration file not found');
+        }
+        return payload['action'] === 'start-session' ? { session: 11 } : { session: null };
+      }
+      if (command === 'plugin:native-tts|playout_position') {
+        return { session: 11, index: 0, positionMs: 0, playing: true };
+      }
+      return undefined;
+    });
+    await setup({
+      loadBlob: vi.fn(async () => new Blob([new Uint8Array(8)])),
+      getMediaSource: vi.fn(async () => ({ path: 'content://books/book.epub', start: 0, end: 8 })),
+    });
+    const utterance = client.speak(section.ssmlForBlock(0)!, new AbortController().signal);
+    await utterance.next();
+
+    expect(writeFile).toHaveBeenCalledTimes(1);
+    expect(controlCalls.filter((call) => call['action'] === 'load').at(-1)?.['path']).toMatch(
+      /mo-narration-.*\.m4b$/,
     );
   });
 });
