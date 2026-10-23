@@ -43,6 +43,7 @@ import {
   TTSWordOffset,
 } from './wordHighlight';
 import {
+  audioType,
   findNarratedSection,
   hasMediaOverlays,
   loadMediaOverlaySection,
@@ -667,7 +668,9 @@ export class TTSController extends EventTarget {
         resolveUrl: async (href) => {
           const appService = this.appService!;
           if (appService.appPlatform !== 'tauri' || appService.isMobileApp) return null;
-          return convertFileSrc(await appService.resolveFilePath(href, 'Books'));
+          const path = await appService.resolveFilePath(href, 'Books');
+          const { getLocalMediaUrl } = await import('@/services/audiobook/mediaProxy');
+          return (await getLocalMediaUrl(path, audioType(href))) ?? convertFileSrc(path);
         },
         resolvePath: async (href) => await this.appService!.resolveFilePath(href, 'Books'),
       });
