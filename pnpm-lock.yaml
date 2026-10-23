@@ -20,7 +20,7 @@ overrides:
   undici: '>=7.29.1 <8'
   flatted: '>=3.4.2'
   body-parser: '>=2.3.0'
-  dompurify: '>=3.4.16'
+  dompurify: '>=3.4.17'
   i18next-http-backend: '>=4.0.2 <5'
   picomatch: '>=4.0.4'
   path-to-regexp: '>=8.4.0'
@@ -293,8 +293,8 @@ importers:
         specifier: ^1.11.13
         version: 1.11.20
       dompurify:
-        specifier: '>=3.4.16'
-        version: 3.4.16
+        specifier: '>=3.4.17'
+        version: 3.4.17
       fflate:
         specifier: '>=0.8.3 <0.9'
         version: 0.8.3
@@ -636,8 +636,8 @@ importers:
         specifier: ^2.8.16
         version: 2.8.26
       dompurify:
-        specifier: '>=3.4.16'
-        version: 3.4.16
+        specifier: '>=3.4.17'
+        version: 3.4.17
     devDependencies:
       '@types/chrome':
         specifier: ^0.0.270
@@ -5216,8 +5216,8 @@ packages:
     resolution: {integrity: sha512-cgwlv/1iFQiFnU96XXgROh8xTeetsnJiDsTc7TYCLFd9+/WNkIqPTxiM/8pSd8VIrhXGTf1Ny1q1hquVqDJB5w==}
     engines: {node: '>= 4'}
 
-  dompurify@3.4.16:
-    resolution: {integrity: sha512-sqo+pNp3qRhCIpbgRi1y8Tgk27Bo2Ry7w0dC1NBeNTdZChWjz9Xb/KOoZbRP/R6pQZ80Qw8YhXw13hWWBbMRnQ==}
+  dompurify@3.4.17:
+    resolution: {integrity: sha512-B/pSlYVHQ58kqISD/yDjuJ1yfzI34m1gF4lAod2bwSRhiN4K5Cl3H8Af7hqB2PmTL911tdEudnnXn5FnhRoz0w==}
 
   domutils@3.2.2:
     resolution: {integrity: sha512-6kZKyUajlDuqlHKVX1w7gyslj9MPIXzIFiz/rGu35uC1wMi+kMhQwGhl4lt9unC9Vb9INnY9Z3/ZA3+FhASLaw==}
@@ -12223,7 +12223,7 @@ snapshots:
 
   '@types/dompurify@3.2.0':
     dependencies:
-      dompurify: 3.4.16
+      dompurify: 3.4.17
 
   '@types/eslint-scope@3.7.7':
     dependencies:
@@ -13827,7 +13827,7 @@ snapshots:
     dependencies:
       domelementtype: 2.3.0
 
-  dompurify@3.4.16:
+  dompurify@3.4.17:
     optionalDependencies:
       '@types/trusted-types': 2.0.7
 
@@ -15459,7 +15459,7 @@ snapshots:
       d3-sankey: 0.12.3
       dagre-d3-es: 7.0.14
       dayjs: 1.11.20
-      dompurify: 3.4.16
+      dompurify: 3.4.17
       es-toolkit: 1.46.1
       katex: 0.18.11
       khroma: 2.1.0
@@ -16170,7 +16170,7 @@ snapshots:
       '@posthog/core': 1.28.7
       '@posthog/types': 1.373.2
       core-js: 3.49.0
-      dompurify: 3.4.16
+      dompurify: 3.4.17
       fflate: 0.4.9
       preact: 10.29.1
       query-selector-shadow-dom: 1.0.1
