@@ -2717,5 +2717,9 @@
   "Text": "Text",
   "Paste": "Lipește",
   "The shared text is no longer available": "Textul partajat nu mai este disponibil",
-  "Shared Text": "Text partajat"
+  "Shared Text": "Text partajat",
+  "Note Template": "Șablon de notă",
+  "Each highlight is rendered as Markdown with Nunjucks, then sent to Notion as blocks": "Fiecare evidențiere este redată ca Markdown cu Nunjucks, apoi trimisă în Notion sub formă de blocuri",
+  "Quotes take the highlight color, and > [!NOTE] becomes a callout": "Citatele preiau culoarea evidențierii, iar > [!NOTE] devine o casetă de evidențiere",
+  "Variables: {{variables}}": "Variabile: {{variables}}"
 }

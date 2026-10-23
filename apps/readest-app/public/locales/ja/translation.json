@@ -2581,5 +2581,9 @@
   "Text": "テキスト",
   "Paste": "貼り付け",
   "The shared text is no longer available": "共有されたテキストは利用できなくなりました",
-  "Shared Text": "共有されたテキスト"
+  "Shared Text": "共有されたテキスト",
+  "Note Template": "メモテンプレート",
+  "Each highlight is rendered as Markdown with Nunjucks, then sent to Notion as blocks": "各ハイライトは Nunjucks で Markdown としてレンダリングされ、ブロックとして Notion に送信されます",
+  "Quotes take the highlight color, and > [!NOTE] becomes a callout": "引用にはハイライトの色が付き、> [!NOTE] はコールアウトになります",
+  "Variables: {{variables}}": "変数: {{variables}}"
 }

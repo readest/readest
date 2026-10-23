@@ -271,7 +271,7 @@ export function buildAnnotationCopyMarkdown({
  * @param data The data to render the template with
  * @returns The rendered template string
  */
-export function renderNoteTemplate(template: string, data: NoteTemplateData): string {
+export function renderNoteTemplate(template: string, data: object): string {
   try {
     return env.renderString(template, data);
   } catch (error) {

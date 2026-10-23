@@ -2581,5 +2581,9 @@
   "Text": "文字",
   "Paste": "貼上",
   "The shared text is no longer available": "分享的文字已無法取得",
-  "Shared Text": "分享的文字"
+  "Shared Text": "分享的文字",
+  "Note Template": "筆記範本",
+  "Each highlight is rendered as Markdown with Nunjucks, then sent to Notion as blocks": "每則螢光標記會以 Nunjucks 轉為 Markdown，再以區塊形式傳送到 Notion",
+  "Quotes take the highlight color, and > [!NOTE] becomes a callout": "引文會套用螢光標記的顏色，> [!NOTE] 會變成標註區塊",
+  "Variables: {{variables}}": "變數：{{variables}}"
 }

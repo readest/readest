@@ -2581,5 +2581,9 @@
   "Text": "ཡི་གེ",
   "Paste": "སྦྱོར།",
   "The shared text is no longer available": "མཉམ་སྤྱོད་བྱས་པའི་ཡི་གེ་ད་ལྟ་མི་འདུག",
-  "Shared Text": "མཉམ་སྤྱོད་བྱས་པའི་ཡི་གེ"
+  "Shared Text": "མཉམ་སྤྱོད་བྱས་པའི་ཡི་གེ",
+  "Note Template": "མཆན་གྱི་དཔེ་གཞི",
+  "Each highlight is rendered as Markdown with Nunjucks, then sent to Notion as blocks": "འོད་རྟགས་རེ་རེ་ Nunjucks བེད་སྤྱོད་ནས་ Markdown ལ་བསྒྱུར་ཏེ་ Notion ལ་དུམ་བུའི་རྣམ་པར་བསྐུར་གྱི་རེད",
+  "Quotes take the highlight color, and > [!NOTE] becomes a callout": "ལུང་འདྲེན་ལ་འོད་རྟགས་ཀྱི་ཚོན་མདོག་ཐོབ་ཅིང་། > [!NOTE] དེ་གསལ་བཤད་སྒྲོམ་དུ་འགྱུར",
+  "Variables: {{variables}}": "འགྱུར་ཚད: {{variables}}"
 }

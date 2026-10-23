@@ -2785,5 +2785,9 @@
   "Text": "Besedilo",
   "Paste": "Prilepi",
   "The shared text is no longer available": "Deljeno besedilo ni več na voljo",
-  "Shared Text": "Deljeno besedilo"
+  "Shared Text": "Deljeno besedilo",
+  "Note Template": "Predloga opombe",
+  "Each highlight is rendered as Markdown with Nunjucks, then sent to Notion as blocks": "Vsak poudarek se z Nunjucks upodobi kot Markdown in nato pošlje v Notion kot bloki",
+  "Quotes take the highlight color, and > [!NOTE] becomes a callout": "Citati prevzamejo barvo poudarka, > [!NOTE] pa postane opomba",
+  "Variables: {{variables}}": "Spremenljivke: {{variables}}"
 }

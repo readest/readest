@@ -2649,5 +2649,9 @@
   "Text": "Matn",
   "Paste": "Joylash",
   "The shared text is no longer available": "Ulashilgan matn endi mavjud emas",
-  "Shared Text": "Ulashilgan matn"
+  "Shared Text": "Ulashilgan matn",
+  "Note Template": "Eslatma shabloni",
+  "Each highlight is rendered as Markdown with Nunjucks, then sent to Notion as blocks": "Har bir belgilash Nunjucks yordamida Markdown sifatida chiqariladi, so‘ng Notion’ga bloklar ko‘rinishida yuboriladi",
+  "Quotes take the highlight color, and > [!NOTE] becomes a callout": "Iqtiboslar belgilash rangini oladi, > [!NOTE] esa izoh blokiga aylanadi",
+  "Variables: {{variables}}": "O‘zgaruvchilar: {{variables}}"
 }

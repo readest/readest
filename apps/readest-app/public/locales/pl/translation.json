@@ -2785,5 +2785,9 @@
   "Text": "Tekst",
   "Paste": "Wklej",
   "The shared text is no longer available": "Udostępniony tekst nie jest już dostępny",
-  "Shared Text": "Udostępniony tekst"
+  "Shared Text": "Udostępniony tekst",
+  "Note Template": "Szablon notatki",
+  "Each highlight is rendered as Markdown with Nunjucks, then sent to Notion as blocks": "Każde wyróżnienie jest renderowane jako Markdown za pomocą Nunjucks, a następnie wysyłane do Notion jako bloki",
+  "Quotes take the highlight color, and > [!NOTE] becomes a callout": "Cytaty przyjmują kolor wyróżnienia, a > [!NOTE] staje się objaśnieniem",
+  "Variables: {{variables}}": "Zmienne: {{variables}}"
 }

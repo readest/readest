@@ -2649,5 +2649,9 @@
   "Text": "Tekst",
   "Paste": "Plakken",
   "The shared text is no longer available": "De gedeelde tekst is niet meer beschikbaar",
-  "Shared Text": "Gedeelde tekst"
+  "Shared Text": "Gedeelde tekst",
+  "Note Template": "Notitiesjabloon",
+  "Each highlight is rendered as Markdown with Nunjucks, then sent to Notion as blocks": "Elke markering wordt met Nunjucks als Markdown weergegeven en daarna als blokken naar Notion gestuurd",
+  "Quotes take the highlight color, and > [!NOTE] becomes a callout": "Citaten krijgen de markeringskleur en > [!NOTE] wordt een callout",
+  "Variables: {{variables}}": "Variabelen: {{variables}}"
 }

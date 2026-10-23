@@ -2649,5 +2649,9 @@
   "Text": "පෙළ",
   "Paste": "අලවන්න",
   "The shared text is no longer available": "බෙදාගත් පෙළ තවදුරටත් ලබා ගත නොහැක",
-  "Shared Text": "බෙදාගත් පෙළ"
+  "Shared Text": "බෙදාගත් පෙළ",
+  "Note Template": "සටහන් අච්චුව",
+  "Each highlight is rendered as Markdown with Nunjucks, then sent to Notion as blocks": "සෑම උද්දීපනයක්ම Nunjucks සමඟ Markdown ලෙස සකසා, පසුව Notion වෙත කොටස් ලෙස යවනු ලැබේ",
+  "Quotes take the highlight color, and > [!NOTE] becomes a callout": "උපුටා දැක්වීම් උද්දීපනයේ වර්ණය ගන්නා අතර, > [!NOTE] විස්තර කොටුවක් බවට පත් වේ",
+  "Variables: {{variables}}": "විචල්‍ය: {{variables}}"
 }
