@@ -81,18 +81,18 @@ const ImportMenu: React.FC<ImportMenuProps> = ({
         Icon={<IoFileTray className='h-5 w-5' />}
         onClick={handleImportFromFiles}
       />
-      {onImportPastedText && (
-        <MenuItem
-          label={_('From Pasted Text')}
-          Icon={<MdContentPaste className='h-5 w-5' />}
-          onClick={handleImportPastedText}
-        />
-      )}
       {onImportBooksFromDirectory && (
         <MenuItem
           label={_('From Directory')}
           Icon={<IoFileTray className='h-5 w-5' />}
           onClick={handleImportFromDirectory}
+        />
+      )}
+      {onImportPastedText && (
+        <MenuItem
+          label={_('From Pasted Text')}
+          Icon={<MdContentPaste className='h-5 w-5' />}
+          onClick={handleImportPastedText}
         />
       )}
       <hr aria-hidden='true' className='border-base-200 my-1' />

@@ -56,13 +56,25 @@ describe('ImportPastedTextDialog', () => {
     await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
   });
 
-  it('does not import an empty title or whitespace-only text', () => {
+  it('titles the book after the first line when no title is entered', async () => {
     const onImport = vi.fn(async (_file: File) => true);
     render(<ImportPastedTextDialog isOpen onClose={vi.fn()} onImport={onImport} />);
+
+    fireEvent.change(screen.getByLabelText('Text'), {
+      target: { value: '\nMorning briefing\n\nThree stories today.' },
+    });
+    expect(screen.getByLabelText('Book title')).toHaveProperty('placeholder', 'Morning briefing');
+    fireEvent.click(screen.getByRole('button', { name: 'Import' }));
+
+    await waitFor(() => expect(onImport).toHaveBeenCalledTimes(1));
+    expect(onImport.mock.calls[0]![0].name).toBe('Morning briefing.txt');
+  });
+
+  it('does not import whitespace-only text', () => {
+    const onImport = vi.fn(async (_file: File) => true);
+    render(<ImportPastedTextDialog isOpen onClose={vi.fn()} onImport={onImport} />);
+    fireEvent.change(screen.getByLabelText('Book title'), { target: { value: 'Title' } });
     fireEvent.change(screen.getByLabelText('Text'), { target: { value: '   \n' } });
-    expect(screen.getByRole('button', { name: 'Import' })).toHaveProperty('disabled', true);
-    fireEvent.change(screen.getByLabelText('Book title'), { target: { value: '' } });
-    fireEvent.change(screen.getByLabelText('Text'), { target: { value: 'Content' } });
     expect(screen.getByRole('button', { name: 'Import' })).toHaveProperty('disabled', true);
     expect(onImport).not.toHaveBeenCalled();
   });
@@ -71,7 +83,7 @@ describe('ImportPastedTextDialog', () => {
     readTextFromClipboard.mockResolvedValue('Copied article');
     render(<ImportPastedTextDialog isOpen onClose={vi.fn()} onImport={vi.fn()} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Paste from Clipboard' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Paste' }));
 
     await waitFor(() =>
       expect(screen.getByLabelText('Text')).toHaveProperty('value', 'Copied article'),
@@ -83,7 +95,7 @@ describe('ImportPastedTextDialog', () => {
     readTextFromClipboard.mockResolvedValue(null);
     render(<ImportPastedTextDialog isOpen onClose={vi.fn()} onImport={vi.fn()} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Paste from Clipboard' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Paste' }));
 
     await screen.findByRole('alert');
     fireEvent.change(screen.getByLabelText('Text'), { target: { value: 'Typed instead' } });

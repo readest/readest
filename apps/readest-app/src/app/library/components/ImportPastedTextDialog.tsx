@@ -1,35 +1,43 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { MdContentPaste } from 'react-icons/md';
 import Dialog from '@/components/Dialog';
 import { useTranslation } from '@/hooks/useTranslation';
 import { readTextFromClipboard } from '@/utils/clipboard';
+import { createTextBookFile, getTextTitle } from '@/utils/txt';
 
 interface ImportPastedTextDialogProps {
   isOpen: boolean;
   onClose: () => void;
+  /** Hand the `.txt` file to the normal library import path; false keeps the draft. */
   onImport: (file: File) => Promise<boolean>;
 }
 
+/**
+ * Modal for the Library import-menu's "From Pasted Text" entry (#6747). The
+ * text becomes a `.txt` file and takes the local-file import path; a blank
+ * title falls back to the text's first line.
+ */
 const ImportPastedTextDialog: React.FC<ImportPastedTextDialogProps> = ({
   isOpen,
   onClose,
   onImport,
 }) => {
   const _ = useTranslation();
-  const defaultTitle = _('Pasted Text');
-  const [title, setTitle] = useState(defaultTitle);
+  const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Reset transient state every time the dialog reopens.
   useEffect(() => {
     if (!isOpen) return;
-    setTitle(defaultTitle);
+    setTitle('');
     setContent('');
     setBusy(false);
     setError(null);
-  }, [isOpen, defaultTitle]);
+  }, [isOpen]);
 
   const pasteFromClipboard = async () => {
     const text = await readTextFromClipboard();
@@ -42,22 +50,11 @@ const ImportPastedTextDialog: React.FC<ImportPastedTextDialogProps> = ({
   };
 
   const importText = async () => {
-    if (busy || !title.trim() || !content.trim()) return;
+    if (busy || !content.trim()) return;
     setBusy(true);
     setError(null);
     try {
-      const filename = title
-        .trim()
-        .replace(/[<>:"/\\|?*\x00-\x1f]/g, '-')
-        .replace(/[. ]+$/g, '')
-        .slice(0, 120);
-      if (!filename) {
-        setError(_('Enter a book title.'));
-        return;
-      }
-      const imported = await onImport(
-        new File([content], `${filename}.txt`, { type: 'text/plain' }),
-      );
+      const imported = await onImport(createTextBookFile(content, title, _('Pasted Text')));
       if (!imported) {
         setError(_('Failed to import book.'));
         return;
@@ -76,61 +73,75 @@ const ImportPastedTextDialog: React.FC<ImportPastedTextDialogProps> = ({
       onClose={onClose}
       title={_('Import Pasted Text')}
       aboveKeyboard
+      // Size to content — same override as ImportNovelDialog.
       boxClassName='sm:w-[520px]! sm:max-w-[520px]! sm:h-auto! sm:max-h-[80vh]!'
     >
       <div className='flex flex-col gap-4 pb-6 pt-2'>
-        <label className='flex flex-col gap-1.5'>
-          <span className='text-base-content/70 text-xs'>{_('Book title')}</span>
+        <p className='text-base-content/70 text-sm leading-relaxed'>
+          {_('Paste an article or notes to read or listen to them like a book')}
+        </p>
+        <div className='flex flex-col gap-1.5'>
+          <label className='text-base-content/70 text-xs' htmlFor='pasted-text-title'>
+            {_('Book title')}
+          </label>
           <input
+            id='pasted-text-title'
             type='text'
-            className='input eink-bordered w-full'
+            className='input eink-bordered placeholder:text-base-content/35 w-full'
+            placeholder={getTextTitle(content) || _('Pasted Text')}
             value={title}
             disabled={busy}
-            onChange={(event) => setTitle(event.target.value)}
+            onChange={(e) => setTitle(e.target.value)}
           />
-        </label>
-        <label className='flex flex-col gap-1.5'>
-          <span className='text-base-content/70 text-xs'>{_('Text')}</span>
+        </div>
+        <div className='flex flex-col gap-1.5'>
+          <div className='flex items-center justify-between gap-2'>
+            <label className='text-base-content/70 text-xs' htmlFor='pasted-text-content'>
+              {_('Text')}
+            </label>
+            <button
+              type='button'
+              className='btn btn-ghost btn-xs touch-target gap-1.5'
+              onClick={() => void pasteFromClipboard()}
+              disabled={busy}
+            >
+              <MdContentPaste aria-hidden='true' className='h-3.5 w-3.5' />
+              {_('Paste')}
+            </button>
+          </div>
           <textarea
+            id='pasted-text-content'
+            autoFocus
             className='textarea eink-bordered h-48 w-full select-text'
             value={content}
             disabled={busy}
-            onChange={(event) => setContent(event.target.value)}
+            onChange={(e) => setContent(e.target.value)}
           />
-        </label>
-        <div className='flex flex-wrap items-center justify-between gap-2'>
-          <button
-            type='button'
-            className='btn btn-ghost btn-sm eink-bordered'
-            onClick={() => void pasteFromClipboard()}
-            disabled={busy}
-          >
-            {_('Paste from Clipboard')}
-          </button>
-          <div className='flex gap-2'>
-            <button
-              type='button'
-              className='btn btn-ghost btn-sm eink-bordered'
-              onClick={onClose}
-              disabled={busy}
-            >
-              {_('Cancel')}
-            </button>
-            <button
-              type='button'
-              className='btn btn-contrast btn-sm'
-              onClick={() => void importText()}
-              disabled={busy || !title.trim() || !content.trim()}
-            >
-              {_('Import')}
-            </button>
-          </div>
         </div>
         {error && (
-          <p className='text-error text-sm' role='alert'>
+          <p className='text-error text-sm leading-relaxed' role='alert'>
             {error}
           </p>
         )}
+        <div className='flex justify-end gap-2 pt-1'>
+          <button
+            type='button'
+            className='btn btn-ghost btn-sm eink-bordered'
+            onClick={onClose}
+            disabled={busy}
+          >
+            {_('Cancel')}
+          </button>
+          <button
+            type='button'
+            className='btn btn-contrast btn-sm'
+            onClick={() => void importText()}
+            disabled={busy || !content.trim()}
+          >
+            {busy && <span className='loading loading-spinner loading-xs' />}
+            {_('Import')}
+          </button>
+        </div>
       </div>
     </Dialog>
   );
