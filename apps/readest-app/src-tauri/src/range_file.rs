@@ -73,7 +73,7 @@ fn parse_query(uri_query: Option<&str>) -> Option<RangeQuery> {
 /// `..`/symlinks) for existing files, so this is redundant for the security
 /// outcome — but it fails closed and keeps the handler obviously-correct
 /// instead of relying on that canonicalization subtlety.
-fn is_safe_path(path: &Path) -> bool {
+pub(crate) fn is_safe_path(path: &Path) -> bool {
     path.is_absolute()
         && !path.to_string_lossy().contains('\0')
         && !path.components().any(|c| matches!(c, Component::ParentDir))
