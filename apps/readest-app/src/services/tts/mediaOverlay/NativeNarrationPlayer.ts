@@ -18,6 +18,12 @@ interface PlayoutPosition {
   playing: boolean;
 }
 
+interface FileWindow {
+  start: number;
+  end: number;
+  contentType: string;
+}
+
 interface PlayoutEvent {
   type: string;
   session: number;
@@ -141,13 +147,9 @@ export class NativeNarrationPlayer {
   // and a second temp file would double I/O and briefly hold the whole book in
   // memory. The caller owns the path, so release() must never delete it.
   // `bytes` is a range [start, end) of the file to play as the whole
-  // track: a stored audio entry inside the book's zip. Android only.
-  async loadPath(
-    href: string,
-    path: string,
-    startSec = 0,
-    bytes?: { start: number; end: number },
-  ): Promise<void> {
+  // track: a stored audio entry inside the book's zip. AVPlayer needs its
+  // `contentType`, since the file's own extension names the book.
+  async loadPath(href: string, path: string, startSec = 0, bytes?: FileWindow): Promise<void> {
     await this.ensureReady();
     // Record the path only once the player took it, so a failed load leaves
     // load() free to stage a copy of the same href.
@@ -164,7 +166,7 @@ export class NativeNarrationPlayer {
     href: string,
     path: string,
     startSec: number,
-    bytes?: { start: number; end: number },
+    bytes?: FileWindow,
   ): Promise<void> {
     this.#href = href;
     this.#ended = false;
