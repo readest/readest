@@ -247,7 +247,12 @@ internal class NativePaperTurn(private val activity: Activity, private val webVi
                     view!!.scene(current, destination, forward, rtl, progress, grabY, args.columns) { error ->
                         if (!p.live) return@scene
                         if (error != null) failAll(error.message ?: "Native pages not ready")
-                        else {
+                        else if (cancelled) {
+                            // A cancel that overtook scene preparation already hid
+                            // the cover; animate and finish settle this scene hidden.
+                            active = true; dragging = false
+                            p.resolve(JSObject().put("touchTracked", false))
+                        } else {
                             active = true; dragging = !bufferedRelease; view?.alpha = 1f
                             if (trackNativeTouch && finger) { updateFinger(); requestDraw() }
                             p.resolve(JSObject().put("touchTracked", trackNativeTouch))

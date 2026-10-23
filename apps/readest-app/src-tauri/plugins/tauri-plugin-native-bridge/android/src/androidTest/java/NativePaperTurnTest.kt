@@ -176,6 +176,27 @@ class NativePaperTurnTest {
         }
     }
 
+    @Test fun aCancelBeforeTheSceneIsReadyKeepsTheCoverHidden() {
+        Harness().use { f ->
+            f.capture("red"); f.command("cover") { key = "red" }
+            f.color("lime"); f.capture("green")
+            // The scene is prepared on the GL thread, so the cancel reaches
+            // the main thread before the start callback does.
+            val started = CountDownLatch(1)
+            var alpha = -1f
+            instrumentation.runOnMainSync {
+                f.paper.command(f.args("start") { key = "red"; destination = "green"; progress = 0.3f }) { _, _ ->
+                    alpha = f.nativeView().alpha; started.countDown()
+                }
+                f.paper.command(f.args("cancel")) { _, _ -> }
+            }
+            assertTrue(started.await(6, TimeUnit.SECONDS))
+            assertEquals("A cancelled scene must not restore its cover", 0f, alpha, 0f)
+            f.command("finish")
+            instrumentation.runOnMainSync { assertNotEquals(1f, f.nativeView().alpha) }
+        }
+    }
+
     @Test fun anotherReadersCaptureDoesNotDestroyTheActiveOwnersPendingFinish() {
         Harness().use { f ->
             f.capture("red"); f.command("cover") { key = "red" }
