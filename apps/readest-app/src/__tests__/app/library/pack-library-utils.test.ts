@@ -1,4 +1,6 @@
+import i18next from 'i18next';
 import { describe, expect, it } from 'vitest';
+import en from '../../../../public/locales/en/translation.json';
 import type { Book } from '@/types/book';
 import { getCommonGroupName } from '@/app/library/utils/libraryUtils';
 import { resolveImportGroup } from '@/services/pack/packService';
@@ -65,5 +67,35 @@ describe('resolveImportGroup', () => {
     expect(
       resolveImportGroup(md5Fingerprint('Existing'), undefined, getGroupId, getGroupName),
     ).toEqual({ groupId: md5Fingerprint('Existing'), groupName: 'Existing' });
+  });
+});
+
+describe('pack messages in English', () => {
+  const t = async () => {
+    const i18n = i18next.createInstance();
+    await i18n.init({ lng: 'en', resources: { en: { translation: en } } });
+    return i18n.t.bind(i18n);
+  };
+
+  it('uses singular and plural book counts', async () => {
+    const _ = await t();
+    expect(_('Creating package for {{count}} book(s)...', { count: 1 })).toBe(
+      'Creating package for 1 book...',
+    );
+    expect(_('Creating package for {{count}} book(s)...', { count: 3 })).toBe(
+      'Creating package for 3 books...',
+    );
+    expect(_('{{count}} book(s) omitted (file not available locally)', { count: 1 })).toBe(
+      '1 book omitted (file not available locally)',
+    );
+    expect(_('{{count}} book(s) omitted (file not available locally)', { count: 2 })).toBe(
+      '2 books omitted (files not available locally)',
+    );
+    expect(
+      _('Restored collection "{{name}}" ({{count}} books)', { name: 'Classics', count: 1 }),
+    ).toBe('Restored collection "Classics" (1 book)');
+    expect(
+      _('Restored collection "{{name}}" ({{count}} books)', { name: 'Classics', count: 3 }),
+    ).toBe('Restored collection "Classics" (3 books)');
   });
 });
