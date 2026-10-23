@@ -196,6 +196,7 @@ export const useNotesSync = (bookKey: string) => {
         const pushedAt = pushedAtRef.current.get(note.id);
         if (
           pushedAt !== undefined &&
+          !note.deletedAt &&
           existingNote.updatedAt > pushedAt &&
           incomingNoteWins(existingNote, note)
         ) {
@@ -203,7 +204,8 @@ export const useNotesSync = (bookKey: string) => {
           // which the server stamps with its own clock on insert. Taking it
           // would undo what was done since, such as strokes drawn while the
           // first push of a drawing was in flight. Keep ours, stamped after
-          // the reply so the next sync pushes it.
+          // the reply so the next sync pushes it. A deletion may come from
+          // another device, so it goes through the usual newest-wins rule.
           return {
             ...note,
             ...existingNote,

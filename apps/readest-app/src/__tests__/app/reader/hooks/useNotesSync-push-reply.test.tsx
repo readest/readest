@@ -143,4 +143,19 @@ describe('useNotesSync push reply', () => {
     await waitFor(() => expect(h.setConfigMock).toHaveBeenCalledTimes(2));
     expect(mergedDrawing().deletedAt).toBe(6000);
   });
+
+  test('applies a deletion from another device that arrives before the push reply', async () => {
+    h.state.config = { ...h.state.config, booknotes: [h.drawing(['a'], 3000)] };
+    const { rerender } = renderHook(() => useNotesSync('h1-key'));
+    await waitFor(() => expect(h.syncNotesMock).toHaveBeenCalled());
+
+    // A stroke drawn here, not pushed yet, then a newer deletion from another
+    // device comes back in place of the reply.
+    h.state.config.booknotes[0] = h.drawing(['a', 'b'], 3500);
+    h.state.syncedNotes = [{ ...h.drawing([], 6000), deletedAt: 6000 }];
+    rerender();
+
+    await waitFor(() => expect(h.setConfigMock).toHaveBeenCalled());
+    expect(mergedDrawing().deletedAt).toBe(6000);
+  });
 });
