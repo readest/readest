@@ -573,6 +573,28 @@ describe('Annotate opens the note editor at the selection', () => {
     expect(liveAnnotations()).toHaveLength(0);
   });
 
+  test('keeps the style and colour of the highlight it adds a note to', async () => {
+    h.config.booknotes = [
+      {
+        id: 'existing',
+        type: 'annotation',
+        cfi: 'epubcfi(/6/2!/4/2)',
+        style: 'underline',
+        color: 'violet',
+        text: 'selected text',
+        note: '',
+        createdAt: 1,
+        updatedAt: 1,
+      } as BookNote,
+    ];
+
+    await annotate();
+
+    expect(liveAnnotations()).toEqual([
+      expect.objectContaining({ id: 'existing', style: 'underline', color: 'violet' }),
+    ]);
+  });
+
   test('cancelling keeps a highlight that already existed before Annotate', async () => {
     render(<Annotator bookKey='book-1' contentInsets={{ top: 0, right: 0, bottom: 0, left: 0 }} />);
     await selectText();
