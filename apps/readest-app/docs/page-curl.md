@@ -6,12 +6,21 @@ until the destination page is ready.
 
 ## Android native path
 
-Single-column, horizontal, reflowable content with Curl enabled uses
-`NativePageTurn` in JavaScript and `NativePaperTurn` / `NativePaperView` on
-Android. Fixed layouts, vertical writing, spreads, and other platforms retain
-the captured-page fallback.
+Horizontal content with Curl enabled uses `NativePageTurn` in JavaScript and
+`NativePaperTurn` / `NativePaperView` on Android: reflowable books in one or two
+columns, and fixed layouts (PDF, CBZ, fixed EPUB) in single pages or two-page
+spreads. A two-column spread turns its outer column as a leaf hinged at the
+spine; the leaf's back shows the destination spread's facing page. Vertical
+writing, three or more columns, and other platforms retain the captured-page
+fallback.
 
-Android PixelCopy captures the current page and its neighbours as full physical
+Fixed layouts name their pages with `getPageTurnKey()` but cannot preview them.
+A turn there captures the current page, navigates under the native cover, then
+captures the destination. Pages already resident, such as the one just left,
+start without navigating first.
+
+Android PixelCopy captures the current page and its neighbours, clipped to the
+WebView (the CSS viewport can round a pixel or two past it), as full physical
 resolution ARGB8888 bitmaps. The bitmaps upload directly to ES2 textures, with at
 most three resident pages. Native animation commands carry page identities,
 gesture data, and completion acknowledgements; they do not carry encoded images
@@ -22,7 +31,8 @@ Activity window underneath it, so preparing a neighbour does not capture the
 visible cover. JavaScript prepares adjacent paginator positions while idle,
 using cancellable previews that restore the reading position without adding
 history or relocation events. Theme changes, reflow, backgrounding, and owner
-changes invalidate cached pixels.
+changes invalidate cached pixels; a reader-state write that changes no field
+does not.
 
 Android tracks MotionEvents and uses Choreographer to settle a released sheet.
 EGL rendering runs on a dedicated thread. Settlement submits one pose at a time,
@@ -87,7 +97,7 @@ From `apps/readest-app`, run the targeted unit and Chromium suites:
 
 ```sh
 pnpm test --run src/__tests__/utils/native-page-turn.test.ts src/__tests__/hooks/useCapturedTurn-scrollLock.test.ts src/__tests__/hooks/useCapturedTurn.test.ts src/__tests__/utils/page-curl-mesh.test.ts src/__tests__/utils/page-turn-diagnostics.test.ts
-pnpm test:browser src/__tests__/utils/captured-turn.browser.test.ts src/__tests__/utils/page-curl.browser.test.ts src/__tests__/utils/page-turn-buffer.browser.test.ts src/__tests__/document/paginator-paginated.browser.test.ts src/__tests__/document/paginator-resize-anchor.browser.test.ts
+pnpm test:browser src/__tests__/document/fixed-layout-page-turn-key.browser.test.ts src/__tests__/utils/captured-turn.browser.test.ts src/__tests__/utils/page-curl.browser.test.ts src/__tests__/utils/page-turn-buffer.browser.test.ts src/__tests__/document/paginator-paginated.browser.test.ts src/__tests__/document/paginator-resize-anchor.browser.test.ts
 pnpm lint
 ```
 
