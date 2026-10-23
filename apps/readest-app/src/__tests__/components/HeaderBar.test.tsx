@@ -224,6 +224,15 @@ describe('HeaderBar hover strip (#6999)', () => {
     fireEvent.mouseLeave(hoverStrip(container), { clientX: 700, clientY: 20 });
     expect(setHoveredBookKey).not.toHaveBeenCalledWith('');
   });
+
+  it('keeps the header for a pointer on the top row of a maximized window (#7015)', () => {
+    // The pointer can't go above y=0, the header's own top edge, so the strip
+    // and the header passing it back and forth there must not hide it.
+    const { container } = renderWithHeaderAt({});
+    fireEvent.mouseLeave(hoverStrip(container), { clientX: 700, clientY: 0 });
+    fireEvent.mouseLeave(screen.getByRole('banner'), { clientX: 700, clientY: 0 });
+    expect(setHoveredBookKey).not.toHaveBeenCalledWith('');
+  });
 });
 
 describe('HeaderBar focus reveal (#6940)', () => {

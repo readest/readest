@@ -3,13 +3,14 @@ import React, { useEffect } from 'react';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { BiMoon, BiSun } from 'react-icons/bi';
-import { PiGear } from 'react-icons/pi';
+import { PiGear, PiChartBar } from 'react-icons/pi';
 import { TbSunMoon } from 'react-icons/tb';
 import { MdZoomOut, MdZoomIn, MdCheck, MdInfoOutline, MdOutlineSensors } from 'react-icons/md';
 import { MdRemove, MdAdd, MdContrast } from 'react-icons/md';
 import { MdSync, MdSyncProblem } from 'react-icons/md';
 import { IoMdExpand } from 'react-icons/io';
 import { IoShareOutline } from 'react-icons/io5';
+import { setReadingStatsDialogVisible } from '@/components/stats/ReadingStatsDialog';
 import { TbArrowAutofitWidth } from 'react-icons/tb';
 import { TbColumns1, TbColumns2 } from 'react-icons/tb';
 import { TbCarouselVertical, TbCarouselHorizontal } from 'react-icons/tb';
@@ -131,6 +132,11 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
   const toggleOcr = () => {
     setOcrEnabled(bookKey, !viewState?.ocrEnabled);
     setIsDropdownOpen?.(false);
+  };
+
+  const openReadingStats = () => {
+    setIsDropdownOpen?.(false);
+    setReadingStatsDialogVisible(true);
   };
 
   const openSettingsDialog = () => {
@@ -652,6 +658,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
         }
         onClick={cycleThemeMode}
       />
+      <MenuItem label={_('Reading Statistics')} Icon={PiChartBar} onClick={openReadingStats} />
       <MenuItem label={_('Settings')} Icon={PiGear} onClick={openSettingsDialog} />
       <hr aria-hidden='true' className='border-base-300 my-1' />
 

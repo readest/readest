@@ -46,7 +46,10 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
+import androidx.media3.common.util.UnstableApi
+import androidx.media3.datasource.DataSource
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.source.ProgressiveMediaSource
 import java.io.File
 
 data class TTSVoiceData(
@@ -125,6 +128,9 @@ class PlayoutControlArgs {
     var rate: Double? = null
     var path: String? = null
     var positionMs: Double? = null
+    // Byte window [start, end) of `path` to play as the whole track.
+    var start: Long? = null
+    var end: Long? = null
 }
 
 @TauriPlugin(
@@ -169,6 +175,9 @@ class NativeTTSPlugin(private val activity: Activity) : Plugin(activity) {
         }
 
         override fun onPlayerError(error: PlaybackException) {
+            // The failed item can't play again by seeking; the next load of the
+            // same file must prepare it afresh.
+            playoutLoadedPath = null
             if (playoutCurrentIndex < 0) return
             Log.e(TAG, "Native narration playback failed", error)
             playoutCurrentIndex = -1
@@ -684,7 +693,7 @@ class NativeTTSPlugin(private val activity: Activity) : Plugin(activity) {
                         if (path.isNullOrEmpty()) {
                             invoke.reject("playout load requires path")
                         } else {
-                            loadContinuousFile(path, args.positionMs ?: 0.0)
+                            loadContinuousFile(path, args.positionMs ?: 0.0, args.start, args.end)
                             invoke.resolve(JSObject().apply { put("session", playoutSession) })
                         }
                     }
@@ -721,7 +730,8 @@ class NativeTTSPlugin(private val activity: Activity) : Plugin(activity) {
         }
     }
 
-    private fun loadContinuousFile(path: String, positionMs: Double) {
+    @androidx.annotation.OptIn(UnstableApi::class)
+    private fun loadContinuousFile(path: String, positionMs: Double, start: Long?, end: Long?) {
         // A paired Audiobookshelf audiobook streams its tracks by URL, the
         // same way the iOS playout player already accepts http(s) paths.
         val uri = if (path.startsWith("http://") || path.startsWith("https://")) {
@@ -733,13 +743,29 @@ class NativeTTSPlugin(private val activity: Activity) : Plugin(activity) {
         }
         val player = ensurePlayoutPlayer()
         val startMs = positionMs.coerceAtLeast(0.0).toLong()
+        // One book file holds many audio entries, so the window is part of
+        // what is loaded.
+        val window = if (start != null && end != null) start to end else null
+        val loadedKey = window?.let { "$path#${it.first}-${it.second}" } ?: path
 
-        if (playoutLoadedPath == path && player.currentMediaItem != null) {
+        if (playoutLoadedPath == loadedKey && player.currentMediaItem != null) {
             player.seekTo(startMs)
         } else {
-            player.setMediaItem(MediaItem.fromUri(uri), startMs)
+            if (window != null) {
+                // A stored audio entry inside the book's zip: stream its bytes
+                // in place rather than copying them out.
+                val (from, to) = window
+                require(to > from) { "Empty narration window: $from-$to" }
+                val file = File(path)
+                val factory = DataSource.Factory { FileWindowDataSource(file, from, to - from) }
+                val source = ProgressiveMediaSource.Factory(factory)
+                    .createMediaSource(MediaItem.fromUri(uri))
+                player.setMediaSource(source, startMs)
+            } else {
+                player.setMediaItem(MediaItem.fromUri(uri), startMs)
+            }
             player.prepare()
-            playoutLoadedPath = path
+            playoutLoadedPath = loadedKey
         }
         // Loading and resuming are separate operations, matching the web and
         // iOS clocks used by MediaOverlayClient.

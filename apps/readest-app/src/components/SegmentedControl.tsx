@@ -54,7 +54,7 @@ const SegmentedControl = <T extends string | number>({
       role='radiogroup'
       aria-label={ariaLabel}
       className={clsx(
-        'bg-base-300/60 rounded-lg p-0.5',
+        'bg-base-200 eink-bordered rounded-lg p-0.5',
         fullWidth ? 'flex w-full' : 'inline-flex',
         className,
       )}
@@ -77,8 +77,11 @@ const SegmentedControl = <T extends string | number>({
               'rounded-md font-medium transition-colors disabled:opacity-50',
               fullWidth && 'flex-1',
               sizeClasses,
+              // Picking a segment isn't a call to action, so no brand color: the
+              // active one is a neutral pill raised above the track (lighter in
+              // both schemes), inverted on e-ink like the Theme Mode switch.
               selected
-                ? 'bg-primary text-primary-content shadow-xs'
+                ? 'bg-base-100 theme-dark:bg-base-300 text-base-content eink-inverted shadow-xs'
                 : 'text-base-content/70 hover:text-base-content',
             )}
           >

@@ -66,6 +66,7 @@ const setup = async () => {
     sections: [{ mediaOverlay: { href: 'OEBPS/ch1.smil', id: 'smil1' } }],
     loadText: async () => `<smil xmlns="http://www.w3.org/ns/SMIL"><body>${SMIL}</body></smil>`,
     loadBlob: vi.fn(async () => new Blob([new Uint8Array(8)])),
+    getMediaSource: vi.fn(async () => ({ path: '/books/hash/book.epub', start: 64, end: 72 })),
     media: { narrator: 'Jane Reader' },
   } as unknown as BookDoc;
   section = (await loadMediaOverlaySection(book, 0, doc, 'en'))!;
@@ -126,6 +127,18 @@ describe('MediaOverlayClient on iOS Tauri', () => {
     expect(actions).toContain('resume');
     const load = controlCalls.find((c) => c['action'] === 'load');
     expect(load?.['path']).toMatch(/mo-narration-.*\.mp4$/);
+  });
+
+  // AVPlayer can't play a byte window of a file, so iOS must not be handed
+  // the book file: it would play the whole EPUB as audio.
+  test('stages a stored entry rather than handing AVPlayer the book file', async () => {
+    await setup();
+    const iter = client.speak(section.ssmlForBlock(0)!, new AbortController().signal);
+    await iter.next();
+
+    const load = controlCalls.find((c) => c['action'] === 'load');
+    expect(load?.['path']).toMatch(/mo-narration-.*\.mp4$/);
+    expect(load).not.toHaveProperty('start');
   });
 
   // iPadOS sends a desktop user agent, so the OS reads as macOS there (#6974).
