@@ -25,6 +25,7 @@ import { addPluginListener, invoke, type PluginListener } from '@tauri-apps/api/
 import { writeFile } from '@tauri-apps/plugin-fs';
 import type { BookDoc } from '@/libs/document';
 import type { TTSController } from '@/services/tts/TTSController';
+import type { AppService } from '@/types/system';
 import {
   loadMediaOverlaySection,
   type MediaOverlaySection,
@@ -53,7 +54,10 @@ const setup = async () => {
     loadBlob: vi.fn(async () => new Blob([new Uint8Array(8)])),
   } as unknown as BookDoc;
   section = (await loadMediaOverlaySection(book, 0, doc, 'en'))!;
-  client = new MediaOverlayClient({ dispatchSpeakMark: vi.fn() } as unknown as TTSController);
+  client = new MediaOverlayClient(
+    { dispatchSpeakMark: vi.fn() } as unknown as TTSController,
+    { isAndroidApp: true } as AppService,
+  );
   await client.init();
   client.attachSource({
     loadBlob: vi.fn(async () => new Blob([new Uint8Array(8)])),

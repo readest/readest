@@ -26,6 +26,7 @@ import {
   createBookSorter,
   ensureLibraryGroupByType,
   expandBookshelfSelection,
+  getCommonGroupName,
   findSelectedManualGroup,
   resolveCurrentShelfBooks,
   selectAbsOfflineBooks,
@@ -59,6 +60,7 @@ import ModalPortal from '@/components/ModalPortal';
 import BookshelfItem from './BookshelfItem';
 import SelectModeActions from './SelectModeActions';
 import ShareBookDialog from './ShareBookDialog';
+import { createCollectionPack, READEST_PACK_MIME } from '@/services/pack/packService';
 import { useAuth } from '@/context/AuthContext';
 import GroupingModal from './GroupingModal';
 import TaggingModal from './TaggingModal';
@@ -644,16 +646,81 @@ const Bookshelf: React.FC<BookshelfProps> = ({
   };
 
   const sendSelectedNearby = () => {
-    // Group ids in the selection simply don't match any book hash and drop
-    // out; LocalSendManager resolves the files and reports unavailable books.
-    const ids = getSelectedBooks();
+    const ids = expandBookshelfSelection(getSelectedBooks(), sortedBookshelfItems);
     const books = ids
       .map((id) => filteredBooks.find((book) => book.hash === id))
       .filter((book): book is Book => !!book);
     if (books.length === 0) return;
     setShowSelectModeActions(false);
     handleSetSelectMode(false);
-    eventDispatcher.dispatch('localsend-send-books', { books });
+
+    // Several books from one group travel as a .rbooks pack so the receiver
+    // restores the group; a single book is sent as itself.
+    const collectionName = books.length > 1 ? getCommonGroupName(books) : undefined;
+
+    eventDispatcher.dispatch('localsend-send-books', {
+      books,
+      asPack: !!collectionName,
+      collectionName,
+    });
+  };
+
+  const handlePackSelectedBooks = async () => {
+    if (!appService) return;
+    const ids = expandBookshelfSelection(getSelectedBooks(), sortedBookshelfItems);
+    const books = ids
+      .map((id) => filteredBooks.find((book) => book.hash === id))
+      .filter((book): book is Book => !!book);
+    if (books.length === 0) return;
+
+    setShowSelectModeActions(false);
+    handleSetSelectMode(false);
+
+    eventDispatcher.dispatch('toast', {
+      type: 'info',
+      message: _('Creating package for {{count}} book(s)...', { count: books.length }),
+      timeout: 3000,
+    });
+
+    try {
+      const result = await createCollectionPack(appService, books, getCommonGroupName(books));
+      if (!result) {
+        eventDispatcher.dispatch('toast', {
+          type: 'warning',
+          message: _('No local files available to pack'),
+          timeout: 3000,
+        });
+        return;
+      }
+
+      if (result.count < books.length) {
+        eventDispatcher.dispatch('toast', {
+          type: 'warning',
+          message: _('{{count}} book(s) omitted (file not available locally)', {
+            count: books.length - result.count,
+          }),
+          timeout: 4000,
+        });
+      }
+
+      const saved = await appService.saveFile(result.filename, result.data, {
+        mimeType: READEST_PACK_MIME,
+      });
+      if (!saved) return;
+
+      eventDispatcher.dispatch('toast', {
+        type: 'success',
+        message: _('Exported {{filename}}', { filename: result.filename }),
+        timeout: 3000,
+      });
+    } catch (err) {
+      console.error('Failed to create book pack:', err);
+      eventDispatcher.dispatch('toast', {
+        type: 'error',
+        message: _('Failed to export package'),
+        timeout: 3000,
+      });
+    }
   };
 
   const updateBooksStatus = async (status: ReadingStatus | undefined) => {
@@ -1035,6 +1102,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
           onStatus={showStatusSelection}
           onDownload={downloadSelectedBooks}
           onSend={sendSelectedBook}
+          onPack={handlePackSelectedBooks}
           onDelete={deleteSelectedBooks}
           onCancel={() => handleSetSelectMode(false)}
         />
