@@ -566,6 +566,29 @@ class NativePaperTurnTest {
         }
     }
 
+    @Test fun aStaleReplacementUploadKeepsTheResidentPage() {
+        Harness().use { f ->
+            f.capture("current")
+            // The replacement is valid when its upload starts and stale once
+            // its pixels are on the GPU.
+            val done = CountDownLatch(1)
+            var accepted = true
+            var keys = emptyList<String>()
+            instrumentation.runOnMainSync {
+                val bitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888).apply { eraseColor(Color.BLUE) }
+                var checks = 0
+                f.nativeView().upload("current", bitmap, { checks++ == 0 }) { ok, resident, _ ->
+                    accepted = ok; keys = resident; done.countDown()
+                }
+            }
+            assertTrue(done.await(3, TimeUnit.SECONDS))
+            assertFalse(accepted)
+            assertTrue("The resident page stays in the bank", "current" in keys)
+            f.command("cover") { key = "current" }
+            f.awaitNativeColor(Color.RED)
+        }
+    }
+
     @Test fun removesAnUploadedAbortedPageBeforeReportingTheTextureBank() {
         Harness().use { f ->
             f.capture("obsolete")

@@ -89,7 +89,9 @@ internal class NativePaperView(context: Context) : TextureView(context), Texture
             var accepted = false
             val error = try {
                 if (valid()) {
-                    val id = textures[key] ?: IntArray(1).also { GL.glGenTextures(1, it, 0) }[0]
+                    // A replacement goes into a new texture, so a request that
+                    // turns stale cannot take the resident page with it.
+                    val id = IntArray(1).also { GL.glGenTextures(1, it, 0) }[0]
                     GL.glBindTexture(GL.GL_TEXTURE_2D, id)
                     GL.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_MIN_FILTER, GL.GL_LINEAR)
                     GL.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_MAG_FILTER, GL.GL_LINEAR)
@@ -99,9 +101,9 @@ internal class NativePaperView(context: Context) : TextureView(context), Texture
                     check(GL.glGetError() == GL.GL_NO_ERROR) { "Cannot upload native page texture" }
                     if (!valid()) {
                         GL.glDeleteTextures(1, intArrayOf(id), 0)
-                        textures.remove(key)
                     } else {
-                        textures.remove(key); textures[key] = id
+                        textures.remove(key)?.let { GL.glDeleteTextures(1, intArrayOf(it), 0) }
+                        textures[key] = id
                         while (textures.size > 3) {
                             val oldest = textures.keys.firstOrNull { it != current && it != destination } ?: break
                             val old = textures.remove(oldest)!!
