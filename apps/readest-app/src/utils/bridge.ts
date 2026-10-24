@@ -1,7 +1,7 @@
 import { invoke, Channel } from '@tauri-apps/api/core';
 import { getOSPlatform } from '@/utils/misc';
 
-/** Android native paper renderer; only metadata crosses this command. */
+/** Android and iOS native paper renderer; only metadata crosses this command. */
 export const paperCurl = <T>(payload: object) =>
   invoke<T>('plugin:native-bridge|paper_curl', { payload });
 

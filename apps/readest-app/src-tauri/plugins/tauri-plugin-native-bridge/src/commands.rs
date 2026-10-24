@@ -448,11 +448,11 @@ pub(crate) async fn paper_curl<R: Runtime>(
     app: AppHandle<R>,
     payload: serde_json::Value,
 ) -> Result<serde_json::Value> {
-    #[cfg(target_os = "android")]
+    #[cfg(any(target_os = "android", target_os = "ios"))]
     {
         app.native_bridge().paper_curl(payload)
     }
-    #[cfg(not(target_os = "android"))]
+    #[cfg(not(any(target_os = "android", target_os = "ios")))]
     {
         let _ = (app, payload);
         Err(crate::Error::UnsupportedPlatformError)

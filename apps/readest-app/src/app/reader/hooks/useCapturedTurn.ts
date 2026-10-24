@@ -393,15 +393,16 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
     // already in place. Rendering can start at relocation, but another
     // navigation (including a cancelled drag) must still wait for unlock.
     let navigationPending = Promise.resolve();
+    const nativePaper =
+      getInitializedAppService()?.isAndroidApp || getInitializedAppService()?.isIOSApp;
     const bufferedPagesEnabled = () =>
-      (getInitializedAppService()?.isAndroidApp || getInitializedAppService()?.isIOSApp) &&
+      nativePaper &&
       getViewSettings(bookKey)?.pageTurnStyle === 'curl' &&
       !getViewSettings(bookKey)?.vertical &&
-      // Android's native paper also turns a two-column spread as one leaf, and
+      // The native paper also turns a two-column spread as one leaf, and
       // fixed layouts, which name their pages but cannot preview them.
-      (getInitializedAppService()?.isAndroidApp
-        ? (view.renderer.columnCount ?? 1) <= 2 && !!view.renderer.getPageTurnKey
-        : (view.renderer.columnCount ?? 1) === 1 && !!view.renderer.previewPage);
+      (view.renderer.columnCount ?? 1) <= 2 &&
+      !!view.renderer.getPageTurnKey;
     const pageBuffer = new PageTurnBuffer({
       renderer: view.renderer,
       capture: async (rect) => {
@@ -535,7 +536,7 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
         else await Promise.race([relocated, navigation]);
       },
     };
-    const controller = getInitializedAppService()?.isAndroidApp
+    const controller = nativePaper
       ? new NativePageTurn(turnHost, {
           renderer: view.renderer,
           enabled: () =>

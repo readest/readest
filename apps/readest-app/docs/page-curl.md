@@ -4,14 +4,14 @@ Readest renders a captured page as a deformable strip mesh. The book continues
 to use its existing layout engine; the animation temporarily covers that layout
 until the destination page is ready.
 
-## Android native path
+## Native path (Android and iOS)
 
 Horizontal content with Curl enabled uses `NativePageTurn` in JavaScript and
-`NativePaperTurn` / `NativePaperView` on Android: reflowable books in one or two
+`NativePaperTurn` / `NativePaperView` on Android and iOS: reflowable books in one or two
 columns, and fixed layouts (PDF, CBZ, fixed EPUB) in single pages or two-page
 spreads. A two-column spread turns its outer column as a leaf hinged at the
 spine; the leaf's back shows the destination spread's facing page. Vertical
-writing, three or more columns, and other platforms retain the captured-page
+writing, three or more columns, and desktop platforms retain the captured-page
 fallback.
 
 Fixed layouts name their pages with `getPageTurnKey()` but cannot preview them.
@@ -33,6 +33,29 @@ using cancellable previews that restore the reading position without adding
 history or relocation events. Theme changes, reflow, backgrounding, and owner
 changes invalidate cached pixels; a reader-state write that changes no field
 does not.
+
+## iOS
+
+iOS keeps the same commands and page identities. `WKWebView.takeSnapshot`
+captures full-scale pages, waiting for WebKit's next presentation update; it
+renders only the web view's own layers, so the Metal sheet, a sibling view
+above the web view, is never captured. Regions snap to device pixels so one
+texel maps to one pixel. Each snapshot is redrawn as 8-bit BGRA and copied
+into a Metal texture, since `MTKTextureLoader` cannot decode WebKit's snapshot
+images, and at most three pages stay resident. A WebContent crash or a new
+main-frame document drops the scene, as the old page can no longer finish its
+turn.
+
+Everything runs on the main thread. A frame is encoded, scheduled and
+presented with the Core Animation transaction that shows or hides the sheet
+(`presentsWithTransaction`), so a scene is ready when its command returns and
+no cancel can overtake it. A passive gesture recognizer follows the finger
+without claiming the web view's touches. CADisplayLink settles a released
+sheet, advancing at most 1/6 of the minimum duration per refresh. The
+web-view barrier before `finish` and `idle` is a 1x1 snapshot, which completes
+after WebKit's next presentation update, followed by one display refresh.
+
+## Android
 
 Android tracks MotionEvents and uses Choreographer to settle a released sheet.
 EGL rendering runs on a dedicated thread. Settlement submits one pose at a time,
@@ -64,7 +87,7 @@ existing renderer fallback.
 
 ## Paper geometry and sampling
 
-The TypeScript and Kotlin mesh implementations clip the paper at 64 parallel
+The TypeScript, Kotlin and Swift mesh implementations clip the paper at 64 parallel
 hinges before applying successive rotations of pi / 65 over a bend band of
 0.7 times the leaf width. Texture coordinates remain attached to the original
 paper. Perspective projection and depth produce the fold, and the mesh carries
@@ -76,7 +99,7 @@ navigation direction. On a spread the bend tapers to zero as the sheet reaches
 the spine. Progress starts with a flat page and finishes with the destination
 fully visible.
 
-Flat Android sheets use nearest-pixel sampling; moving folds use linear
+Flat native sheets use nearest-pixel sampling; moving folds use linear
 interpolation. High-precision shader coordinates are used where supported.
 Captured pixels already contain the reader's theme colours, so the native view
 disables a second system force-dark pass.

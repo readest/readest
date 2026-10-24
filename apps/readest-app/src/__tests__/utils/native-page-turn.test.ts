@@ -49,6 +49,30 @@ const fixture = (columns?: number) => {
 };
 
 describe('Android native page-turn pipeline', () => {
+  // The native scene outlives a page reload (WebContent crash, reopen). A
+  // reloaded reader must not reuse the previous page's owner, or the native
+  // side keeps that page's generation and rejects every capture.
+  it('gives a reader on a reloaded page a new native owner', async () => {
+    const owners = new Set<number>();
+    for (let load = 0; load < 2; load++) {
+      vi.resetModules();
+      const { NativePageTurn: Fresh } = await import('@/app/reader/utils/nativePageTurn');
+      const call = vi.fn(async (_args: NativePaperCommand): Promise<NativePaperResult> => ({}));
+      const controller = new Fresh(
+        {
+          getHostElement: () => document.body,
+          getContentRect: () => new DOMRect(0, 0, 360, 780),
+          capture: vi.fn(),
+          navigate: vi.fn(),
+        },
+        { renderer: fixture().renderer, enabled: () => true, call },
+      );
+      controller.dispose();
+      owners.add(call.mock.calls[0]![0].owner);
+    }
+    expect(owners.size).toBe(2);
+  });
+
   it('tells the native scene how many columns the spread shows', async () => {
     for (const columns of [1, 2]) {
       const f = fixture(columns);

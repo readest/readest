@@ -427,6 +427,8 @@ class WebViewLifecycleManager: NSObject {
   private var isMonitoring = false
   private var lastBackgroundTime: Date?
   private var backgroundTimeThreshold: TimeInterval = 180.0
+  /// Called when the page is lost or replaced by a new document.
+  var onDocumentChange: (() -> Void)?
 
   func startMonitoring(webView: WKWebView) {
     self.webView = webView
@@ -554,6 +556,7 @@ extension WebViewLifecycleManager: WKNavigationDelegate {
 
   func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
     logger.error("WebViewLifecycleManager: WebContent process TERMINATED!️")
+    onDocumentChange?()
     recoverWebView(webView, reason: "process_terminated")
 
     if let original = originalNavigationDelegate,
@@ -614,6 +617,7 @@ extension WebViewLifecycleManager: WKNavigationDelegate {
   }
 
   func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
+    onDocumentChange?()
     if let original = originalNavigationDelegate,
       original.responds(to: #selector(webView(_:didCommit:)))
     {
@@ -655,6 +659,7 @@ class NativeBridgePlugin: Plugin {
   // interrupted turn from removing the next turn's cover.
   private var turnCoverView: UIView?
   private var turnCoverToken: Int = 0
+  private var nativePaper: NativePaperTurn?
   private var authSession: ASWebAuthenticationSession?
   private var currentOrientationMask: UIInterfaceOrientationMask = .all
   private var originalDelegate: UIApplicationDelegate?
@@ -696,6 +701,7 @@ class NativeBridgePlugin: Plugin {
 
     webViewLifecycleManager = WebViewLifecycleManager()
     webViewLifecycleManager?.startMonitoring(webView: webview)
+    webViewLifecycleManager?.onDocumentChange = { [weak self] in self?.nativePaper?.reset() }
     logger.log("NativeBridgePlugin: WebView lifecycle monitoring activated")
 
     // Forward Apple Pencil double-tap / squeeze gestures as native keys for
@@ -2195,6 +2201,24 @@ class NativeBridgePlugin: Plugin {
       self.turnCoverToken += 1
       self.turnCoverView = cover
       invoke.resolve(["token": self.turnCoverToken])
+    }
+  }
+
+  /// Native paper curl; see NativePaperTurn. Only page identities, gesture
+  /// data and acknowledgements cross this command, never page pixels.
+  @objc public func paper_curl(_ invoke: Invoke) {
+    guard let args = try? invoke.parseArgs(NativePaperArgs.self) else {
+      return invoke.reject("Failed to parse arguments")
+    }
+    DispatchQueue.main.async { [weak self] in
+      guard let self, let webView = self.webView else {
+        return invoke.reject("WebView not available")
+      }
+      let paper = self.nativePaper ?? NativePaperTurn(webView: webView)
+      self.nativePaper = paper
+      paper.command(args) { result, error in
+        if let error { invoke.reject(error) } else { invoke.resolve(result ?? [:]) }
+      }
     }
   }
 

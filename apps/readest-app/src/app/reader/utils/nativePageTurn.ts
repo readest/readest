@@ -43,10 +43,13 @@ export interface NativePaperResult {
 type Rect = { x: number; y: number; width: number; height: number };
 type Session = { id: number; released: boolean; progress: number; grabY: number };
 type Scene = { session: Session; forward: boolean; navigated: boolean; touchTracked: boolean };
-let nextOwner = 0;
+// The native scene outlives a page reload. Start each page load at its own
+// owner, or a reloaded reader inherits the old page's generation and every
+// capture is refused. Kept within a 32-bit Int for the Kotlin side.
+let nextOwner = Math.floor(Math.random() * 0x40000000);
 let nativeOwner: NativePageTurn | null = null;
 
-/** Android owns bitmaps, texture residency, finger tracking and frame delivery.
+/** Android and iOS own pixels, texture residency, finger tracking and frame delivery.
  * The web side only prepares page positions and commits reading progress. */
 export class NativePageTurn extends CapturedPageTurn {
   #owner = ++nextOwner;
