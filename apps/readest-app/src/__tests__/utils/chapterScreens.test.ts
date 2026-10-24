@@ -4,6 +4,7 @@ import {
   clearChapterScreens,
   getCalibratedPagePair,
   getMeasuredChapterScreens,
+  harvestLoadedChapterScreens,
   recordChapterScreens,
 } from '@/utils/chapterScreens';
 
@@ -56,5 +57,21 @@ describe('chapterScreens', () => {
   it('treats a zero-span chapter fraction as position 0', () => {
     const pair = getCalibratedPagePair(bookKey, [{}], 0, 4, true, 0.7);
     expect(pair).toEqual({ current: 0, total: 0 });
+  });
+
+  it('freezes first-measured counts on repeated harvests', () => {
+    // The preload window re-lays-out sections as the reader moves; re-harvests
+    // jitter by a page and must not drag the base or total mid-chapter.
+    const contents = [
+      { index: 0, contentPages: 10 },
+      { index: 1, contentPages: 12 },
+    ];
+    harvestLoadedChapterScreens(bookKey, contents);
+    harvestLoadedChapterScreens(bookKey, [
+      { index: 0, contentPages: 11 },
+      { index: 1, contentPages: 13 },
+    ]);
+    const pair = getCalibratedPagePair(bookKey, [{ size: 15000 }, { size: 15000 }], 1, 2, false, 0);
+    expect(pair).toEqual({ current: 12, total: 22 });
   });
 });

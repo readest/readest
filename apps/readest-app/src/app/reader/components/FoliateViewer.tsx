@@ -31,6 +31,8 @@ import { useProgressAutoSave } from '../hooks/useProgressAutoSave';
 import {
   CHUNKED_SECTION_THRESHOLD,
   clearChapterScreens,
+  getMeasuredChapterScreens,
+  harvestLoadedChapterScreens,
   recordChapterScreens,
 } from '@/utils/chapterScreens';
 import { useBackgroundTexture } from '@/hooks/useBackgroundTexture';
@@ -295,12 +297,37 @@ const FoliateViewer: React.FC<{
     if (sampledSpine != null && sampledSpine !== lastSampledSpineRef.current) {
       lastSampledSpineRef.current = sampledSpine;
       const sectionSize = getBookData(bookKey)?.bookDoc?.sections?.[sampledSpine]?.size;
-      if ((sectionSize ?? 0) <= CHUNKED_SECTION_THRESHOLD) {
+      if (
+        (sectionSize ?? 0) <= CHUNKED_SECTION_THRESHOLD &&
+        !getMeasuredChapterScreens(bookKey)?.has(sampledSpine)
+      ) {
         const measuredPages = viewRef.current?.renderer?.pages;
         if (measuredPages && measuredPages > 0) {
           recordChapterScreens(bookKey, sampledSpine, measuredPages);
         }
       }
+    }
+    // Harvest every loaded section's measured count (primary, preloaded
+    // neighbors, rendered chunks): with readest/foliate-js#133 the whole
+    // preloaded window is exact, not just the current chapter. No-op on
+    // foliate builds without the exposed contentPages. contentPages counts
+    // columns while renderer.pages counts spreads, so the column count is
+    // derived from the primary view's own pair and the harvest is stored in
+    // spread units to match the entry-time sampling above.
+    const loadedContents = viewRef.current?.renderer?.getContents?.();
+    if (loadedContents?.length) {
+      const rendererPages = viewRef.current?.renderer?.pages ?? 0;
+      const primaryItem = loadedContents.find((c) => c.index === sampledSpine) ?? loadedContents[0];
+      const primaryContentPages = primaryItem?.contentPages ?? 0;
+      const columnCount =
+        rendererPages > 0 && primaryContentPages > 0 ? primaryContentPages / rendererPages : 1;
+      harvestLoadedChapterScreens(
+        bookKey,
+        loadedContents.map((c) => ({
+          index: c.index,
+          contentPages: (c.contentPages ?? 0) / columnCount,
+        })),
+      );
     }
   }, [bookKey, setProgress, cancelRelocateScheduled]);
 

@@ -32,6 +32,39 @@ export const clearChapterScreens = (bookKey: string) => {
   maps.delete(bookKey);
 };
 
+/**
+ * Harvest the measured spread counts of every loaded section from
+ * renderer.getContents(): the primary section, its preloaded neighbors, and
+ * every rendered chunk of a chunked section (items share the spine index, so
+ * per-spine sums accumulate the section's rendered-so-far count). Requires
+ * readest/foliate-js#133 (contentPages on getContents items); on older foliate
+ * builds the sweep is a no-op and the entry-time sampling fallback covers only
+ * the current chapter.
+ */
+export const harvestLoadedChapterScreens = (
+  bookKey: string,
+  contents: Array<{ index?: number; contentPages?: number }>,
+) => {
+  const existing = maps.get(bookKey);
+  const sums = new Map<number, number>();
+  for (const item of contents) {
+    const spine = item.index;
+    const pages = item.contentPages;
+    if (spine === undefined || pages === undefined || pages <= 0) continue;
+    sums.set(spine, (sums.get(spine) ?? 0) + pages);
+  }
+  for (const [spine, pages] of sums) {
+    // First measurement freezes a chapter's count for the whole session. The
+    // preload window unloads and re-lays-out sections as the reader moves, and
+    // re-measurements jitter by a page - letting them overwrite would drag the
+    // bytes-per-screen ratio and every estimate around mid-chapter, breaking
+    // the exactly-one-page-per-turn guarantee.
+    if (!existing?.has(spine)) {
+      recordChapterScreens(bookKey, spine, pages);
+    }
+  }
+};
+
 export interface CalibratedSectionSource {
   size?: number;
 }
