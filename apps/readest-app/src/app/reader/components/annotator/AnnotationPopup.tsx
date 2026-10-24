@@ -124,7 +124,7 @@ const AnnotationPopup: React.FC<AnnotationPopupProps> = ({
               return (
                 <AnnotationToolButton
                   key={index}
-                  showTooltip={!highlightOptionsVisible}
+                  showTooltip={true}
                   tooltipText={button.tooltipText}
                   Icon={button.Icon}
                   onClick={button.onClick}
