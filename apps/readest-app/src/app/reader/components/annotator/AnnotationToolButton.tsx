@@ -23,9 +23,7 @@ const AnnotationToolButton: React.FC<AnnotationToolButtonProps> = ({
   };
   return (
     <div
-      className={clsx(
-        !buttonClicked && showTooltip && 'lg:tooltip lg:tooltip-top',
-      )}
+      className={clsx(!buttonClicked && showTooltip && 'lg:tooltip lg:tooltip-top')}
       data-tip={!buttonClicked && showTooltip ? tooltipText : undefined}
     >
       <button
