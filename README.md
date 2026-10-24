@@ -65,6 +65,7 @@
 | [**Read-Along Narration**][link-readalong] | Play embedded EPUB 3 Media Overlays with timed highlighting, or pair a reflowable EPUB locally with DRM-free MP3, M4A, or M4B narration. [Storyteller][link-storyteller] remains an option for generating phrase-aligned EPUBs. |
 | **Sync across Platforms**                  | Synchronize book files, reading progress, notes, and bookmarks across all supported platforms.                         |
 | [**Sync with Koreader**][link-kosync-wiki] | Synchronize reading progress, notes, and bookmarks with [Koreader][link-koreader] devices.                             |
+| [**Obsidian Sync Plugin**][link-obsidian-plugin] | Export and synchronize books, reading progress, and annotations into Obsidian vault notes.                             |
 | **Accessibility**                          | Provides full keyboard navigation and support for screen readers such as VoiceOver, TalkBack, NVDA, and Orca.         |
 | **Visual & Focus Aids**                    | Reading ruler, paragraph-by-paragraph reading mode, and speed reading features.                                        |
 
@@ -305,3 +306,5 @@ We would also like to thank the [Web Chinese Fonts Plan](https://chinese-font.ne
 [link-readalong]: https://github.com/readest/readest/blob/main/apps/readest-app/docs/read-along-narration.md
 [link-storyteller]: https://storyteller-platform.dev/
 [link-reddit]: https://reddit.com/r/readest/
+
+[link-obsidian-plugin]: https://github.com/Armone0/obsidian-readest-sync
