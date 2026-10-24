@@ -26,6 +26,12 @@ export interface Renderer extends HTMLElement {
   atStart: boolean;
   atEnd: boolean;
   containerPosition: number;
+  getPageTurnKey?: (delta?: number) => string | null;
+  previewPage?: <T>(
+    forward: boolean,
+    capture: () => Promise<T>,
+    signal?: AbortSignal,
+  ) => Promise<{ key: string; value: T } | null>;
   // Sub-pixel remainder of the scroll position, rendered as a transform on the
   // scrollport because scroll offsets themselves quantize to whole CSS pixels.
   subpixelOffset: number;

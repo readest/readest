@@ -15,12 +15,12 @@ import { PageCurlRenderer } from '@/utils/pageCurl';
 const W = 320;
 const H = 240;
 
-const makePngBuffer = async (): Promise<ArrayBuffer> => {
+const makePngBuffer = async (color = 'rgb(200, 60, 60)'): Promise<ArrayBuffer> => {
   const canvas = document.createElement('canvas');
   canvas.width = W;
   canvas.height = H;
   const ctx = canvas.getContext('2d')!;
-  ctx.fillStyle = 'rgb(200, 60, 60)';
+  ctx.fillStyle = color;
   ctx.fillRect(0, 0, W, H);
   const blob = await new Promise<Blob>((resolve) => canvas.toBlob((b) => resolve(b!), 'image/png'));
   return blob.arrayBuffer();
@@ -61,9 +61,12 @@ describe('CapturedPageTurn (browser)', () => {
     controller = new CapturedPageTurn(hostApi, { duration: 40 });
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     controller.dispose();
     host.remove();
+    // Drain deferred GPU teardown before the next test replaces RAF with
+    // a controlled queue to check prepared-surface paint ordering.
+    await waitForPaint();
   });
 
   it('captures the content rect, navigates once, and disposes after a turn', async () => {
@@ -74,6 +77,152 @@ describe('CapturedPageTurn (browser)', () => {
     expect(navigate).toHaveBeenCalledWith(true);
     // Overlay fully cleaned up.
     expect(host.querySelector('canvas')).toBeNull();
+  });
+
+  it('starts a prepared backward curl without capturing the previous page during the swipe', async () => {
+    controller.dispose();
+    const prepareAdjacent = vi.fn(
+      async (): Promise<[ImageBitmap, ImageBitmap]> => [
+        await createImageBitmap(new Blob([await makePngBuffer('blue')])),
+        await createImageBitmap(new Blob([await makePngBuffer('green')])),
+      ],
+    );
+    controller = new CapturedPageTurn(
+      {
+        getHostElement: () => host,
+        getContentRect: contentRect,
+        capture,
+        navigate,
+        prepareAdjacent,
+      },
+      { duration: 40 },
+    );
+    expect(await controller.prepareCapture()).toBe(true);
+    expect(prepareAdjacent).toHaveBeenCalledOnce();
+    expect(await controller.beginDrag(false, false)).toBe(true);
+    expect(capture).toHaveBeenCalledTimes(1);
+    // A resident scene does not need a live EPUB layout change while dragging.
+    expect(navigate).not.toHaveBeenCalled();
+    await controller.endDrag(true);
+    expect(navigate.mock.calls.map(([forward]) => forward)).toEqual([false]);
+  });
+
+  it('cancels a resident-sheet drag without navigating the live EPUB in either direction', async () => {
+    controller.dispose();
+    controller = new CapturedPageTurn(
+      {
+        getHostElement: () => host,
+        getContentRect: contentRect,
+        capture,
+        navigate,
+        prepareAdjacent: async () => [
+          await createImageBitmap(new Blob([await makePngBuffer('blue')])),
+          await createImageBitmap(new Blob([await makePngBuffer('green')])),
+        ],
+      },
+      { duration: 40 },
+    );
+    await controller.prepareCapture();
+    await controller.beginDrag(true, false);
+    controller.moveDrag(0.3, 0.5);
+    await controller.endDrag(false);
+    expect(navigate).not.toHaveBeenCalled();
+  });
+
+  it('keeps a resident destination covered when a new swipe interrupts its deferred commit', async () => {
+    controller.dispose();
+    controller = new CapturedPageTurn(
+      {
+        getHostElement: () => host,
+        getContentRect: contentRect,
+        capture,
+        navigate,
+        prepareAdjacent: async () => [
+          await createImageBitmap(new Blob([await makePngBuffer('blue')])),
+          await createImageBitmap(new Blob([await makePngBuffer('green')])),
+        ],
+      },
+      { duration: 5000 },
+    );
+    let commit!: () => void;
+    navigate.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          commit = resolve;
+        }),
+    );
+    const render = vi.spyOn(PageCurlRenderer.prototype, 'render');
+    try {
+      await controller.prepareCapture();
+      await controller.beginDrag(true, false);
+      controller.moveDrag(0.4, 0.5);
+      const ending = controller.endDrag(true);
+      await vi.waitFor(() => expect(render.mock.calls.at(-1)?.[0]).toBeGreaterThan(0.4));
+      const next = controller.beginDrag(true, false);
+      await vi.waitFor(() => expect(navigate).toHaveBeenCalledOnce());
+      expect(host.querySelector('canvas')).not.toBeNull();
+      expect(render.mock.calls.at(-1)?.[0]).toBe(1);
+      commit();
+      await ending;
+      await next;
+      expect(navigate).toHaveBeenCalledTimes(2);
+    } finally {
+      controller.dispose();
+      render.mockRestore();
+    }
+  });
+
+  it('returns a previous sheet around the same spine instead of switching to RTL', async () => {
+    const render = vi.spyOn(PageCurlRenderer.prototype, 'render');
+    try {
+      expect(await controller.beginDrag(false, false, 'curl')).toBe(true);
+      controller.moveDrag(0.4, 0.5);
+      expect(render.mock.calls.at(-1)?.[2]).toBe(false);
+      expect(capture).toHaveBeenCalledTimes(2);
+      expect(navigate).toHaveBeenCalledWith(false);
+      await controller.endDrag(false);
+      expect(navigate.mock.calls.map(([forward]) => forward)).toEqual([false, true]);
+    } finally {
+      render.mockRestore();
+    }
+  });
+
+  it('restores the current page if the returning sheet cannot be captured', async () => {
+    capture
+      .mockResolvedValueOnce(await makePngBuffer())
+      .mockRejectedValueOnce(new Error('previous frame unavailable'));
+    await expect(controller.beginDrag(false, false, 'curl')).rejects.toThrow(
+      'previous frame unavailable',
+    );
+    expect(navigate.mock.calls.map(([forward]) => forward)).toEqual([false, true]);
+    expect(host.querySelector('canvas')).toBeNull();
+  });
+
+  it('finishes backward navigation on the previous texture before removing the overlay', async () => {
+    capture
+      .mockResolvedValueOnce(await makePngBuffer('rgb(200, 60, 60)'))
+      .mockResolvedValueOnce(await makePngBuffer('rgb(20, 80, 200)'));
+    const finalPixels: number[][] = [];
+    const original = PageCurlRenderer.prototype.render;
+    const render = vi.spyOn(PageCurlRenderer.prototype, 'render').mockImplementation(function (
+      this: PageCurlRenderer,
+      progress,
+      grab,
+      rtl,
+    ) {
+      original.call(this, progress, grab, rtl);
+      if (progress === 1) finalPixels.push(this.readPixel(W / 2, H / 2));
+    });
+    try {
+      expect(await controller.beginDrag(false, false, 'curl')).toBe(true);
+      controller.moveDrag(0.95, 0.5);
+      await controller.endDrag(true);
+      expect(finalPixels).toEqual([[20, 80, 200, 255]]);
+      expect(navigate.mock.calls.map(([forward]) => forward)).toEqual([false]);
+      expect(host.querySelector('canvas')).toBeNull();
+    } finally {
+      render.mockRestore();
+    }
   });
 
   it('notifies the host after the covering frame is mounted and before navigation', async () => {
@@ -171,6 +320,64 @@ describe('CapturedPageTurn (browser)', () => {
     expect(canvas.getContext('webgl')).toBe(gl);
 
     await controller.endDrag(false);
+  });
+
+  it('reuses the GPU context across completed turns while uploading the new page', async () => {
+    capture.mockResolvedValueOnce(await makePngBuffer('rgb(200, 60, 60)'));
+    expect(await controller.beginDrag(true, false, 'curl')).toBe(true);
+    const first = host.querySelector('canvas')!;
+    await controller.endDrag(true);
+    capture.mockResolvedValueOnce(await makePngBuffer('rgb(20, 80, 200)'));
+    expect(await controller.beginDrag(true, false, 'curl')).toBe(true);
+    const second = host.querySelector('canvas')!;
+    expect(second).toBe(first);
+    const gl = second.getContext('webgl')!;
+    const pixel = new Uint8Array(4);
+    gl.readPixels(second.width / 2, second.height / 2, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixel);
+    expect([...pixel]).toEqual([20, 80, 200, 255]);
+    expect(capture).toHaveBeenCalledTimes(2);
+    await controller.endDrag(true);
+  });
+
+  it('does not render more device pixels than its captured page contains', async () => {
+    vi.stubGlobal('devicePixelRatio', 2.75);
+    try {
+      const snapshot = document.createElement('canvas');
+      snapshot.width = W * 2;
+      snapshot.height = H * 2;
+      capture.mockResolvedValueOnce(await createImageBitmap(snapshot));
+      expect(await controller.beginDrag(true, false, 'curl')).toBe(true);
+      const canvas = host.querySelector('canvas')!;
+      expect(canvas.width).toBe(W * 2);
+      expect(canvas.height).toBe(H * 2);
+      await controller.endDrag(true);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('releases a recycled GPU context when its reader is disposed', async () => {
+    expect(await controller.beginDrag(true, false, 'curl')).toBe(true);
+    const gl = host.querySelector('canvas')!.getContext('webgl')!;
+    await controller.endDrag(true);
+    expect(gl.isContextLost()).toBe(false);
+    controller.dispose();
+    await vi.waitFor(() => expect(gl.isContextLost()).toBe(true));
+  });
+
+  it('coalesces Curl touch bursts into one display frame using the latest position', async () => {
+    expect(await controller.beginDrag(true, false, 'curl')).toBe(true);
+    const render = vi.spyOn(PageCurlRenderer.prototype, 'render');
+    try {
+      for (let i = 1; i <= 10; i++) controller.moveDrag(i / 20, 0.5);
+      expect(render).not.toHaveBeenCalled();
+      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+      expect(render).toHaveBeenCalledOnce();
+      expect(render).toHaveBeenLastCalledWith(0.5, { x: 1, y: 0.5 }, false);
+      await controller.endDrag(true);
+    } finally {
+      render.mockRestore();
+    }
   });
 
   it('recaptures Curl when an idle prepared WebGL context is no longer usable', async () => {
@@ -962,7 +1169,7 @@ describe('CapturedPageTurn (browser)', () => {
     expect(host.querySelector('canvas')).toBeNull();
   });
 
-  it('draws the host backdrop on the back of the curling page', async () => {
+  it('uses the neutral eBoox paper back even when the host supplies a backdrop', async () => {
     const paper = document.createElement('canvas');
     paper.width = W;
     paper.height = H;
@@ -976,11 +1183,12 @@ describe('CapturedPageTurn (browser)', () => {
     );
 
     expect(await withBackdrop.beginDrag(true, false)).toBe(true);
-    expect(getBackdrop).toHaveBeenCalledOnce();
+    expect(getBackdrop).not.toHaveBeenCalled();
     withBackdrop.moveDrag(0.45, 0.5);
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
 
-    // The wrapped-over back face shows the red page mixed toward the dark
-    // theme paper — the hardcoded whitened back would read near-white here.
+    // The back retains the red printing with the neutral grey paper tint,
+    // independently of the separately supplied host backdrop.
     const canvas = host.querySelector('canvas')!;
     const gl = canvas.getContext('webgl')!;
     const dpr = canvas.width / W;
@@ -995,7 +1203,9 @@ describe('CapturedPageTurn (browser)', () => {
       px,
     );
     expect(px[3]).toBe(255);
-    expect(px[0]).toBeLessThan(100);
+    expect(px[0]).toBeGreaterThan(100);
+    expect(px[1]).toBeGreaterThan(35);
+    expect(px[1]).toBeLessThan(100);
     withBackdrop.dispose();
   });
 
@@ -1527,6 +1737,29 @@ describe('CapturedPageTurn (browser)', () => {
     await ending;
   });
 
+  it('finishes a released turn when the next swipe arrives instead of queuing its animation', async () => {
+    const fast = new CapturedPageTurn(
+      { getHostElement: () => host, getContentRect: contentRect, capture, navigate },
+      { duration: 5000 },
+    );
+    try {
+      expect(await fast.beginDrag(true, false, 'curl')).toBe(true);
+      fast.moveDrag(0.2, 0.5);
+      const ending = fast.endDrag(true);
+      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+      let started = false;
+      const next = fast.beginDrag(true, false, 'curl').then((ok) => {
+        started = ok;
+      });
+      await vi.waitFor(() => expect(started).toBe(true), { timeout: 500 });
+      await Promise.all([ending, next]);
+      expect(navigate.mock.calls.map(([forward]) => forward)).toEqual([true, true]);
+      await fast.endDrag(true, 10);
+    } finally {
+      fast.dispose();
+    }
+  });
+
   it('cancels an unreleased drag before starting its replacement', async () => {
     expect(await controller.beginDrag(true, false, 'slide')).toBe(true);
     controller.moveDrag(0.3, 0.5);
@@ -1541,6 +1774,42 @@ describe('CapturedPageTurn (browser)', () => {
     await controller.endDrag(false);
     expect(navigate).toHaveBeenNthCalledWith(4, false);
     expect(host.querySelector('canvas')).toBeNull();
+  });
+
+  it('restores a released cancelled turn before a following swipe navigates', async () => {
+    expect(await controller.beginDrag(true, false, 'curl')).toBe(true);
+    controller.moveDrag(0.4, 0.5);
+    const cancellation = controller.endDrag(false);
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    expect(await controller.beginDrag(true, false, 'curl')).toBe(true);
+    await cancellation;
+    expect(navigate.mock.calls.map(([forward]) => forward)).toEqual([true, false, true]);
+    await controller.endDrag(true);
+  });
+
+  it('drains gestures released during capture without replaying every animation tail', async () => {
+    const fast = new CapturedPageTurn(
+      { getHostElement: () => host, getContentRect: contentRect, capture, navigate },
+      { duration: 5000 },
+    );
+    const released: Promise<void>[] = [];
+    let latest = Promise.resolve(false);
+    try {
+      for (let i = 0; i < 4; i++) {
+        latest = fast.beginDrag(true, false, 'curl');
+        fast.moveDrag(0.7, 0.5);
+        released.push(fast.endDrag(true));
+      }
+      let ready = false;
+      void latest.then((ok) => {
+        ready = ok;
+      });
+      await vi.waitFor(() => expect(ready).toBe(true), { timeout: 1000 });
+      expect(navigate).toHaveBeenCalledTimes(4);
+    } finally {
+      fast.dispose();
+      await Promise.all(released);
+    }
   });
 
   it('cancels an unreleased drag before a programmatic turn', async () => {
@@ -1746,12 +2015,12 @@ describe('CapturedPageTurn two-column curl (browser)', () => {
     expect(overlay()).toBeNull();
   });
 
-  it('lands a backward leaf on the right column', async () => {
+  it('captures the returning spread without switching the spine side', async () => {
     await makeController().turn(false, false, 'curl');
     await vi.waitFor(() => expect(uncover).toHaveBeenCalledTimes(1));
     expect(navigate).toHaveBeenCalledWith(false);
-    expect(capture.mock.calls[1]![0]).toEqual(rightHalf);
-    expect(coverRegion).toHaveBeenCalledWith(rightHalf);
+    expect(capture.mock.calls[1]![0]).toEqual({ x: 10, y: 20, width: W, height: H });
+    expect(coverRegion).toHaveBeenCalledWith({ x: 10, y: 20, width: W, height: H });
   });
 
   it('lands an rtl forward leaf on the right column', async () => {

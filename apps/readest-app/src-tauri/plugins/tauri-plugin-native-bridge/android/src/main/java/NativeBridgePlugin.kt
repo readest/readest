@@ -37,6 +37,10 @@ import android.os.Looper
 import android.os.ParcelFileDescriptor
 import android.util.Base64
 import android.view.PixelCopy
+import android.view.Gravity
+import android.widget.ImageView
+import android.widget.PopupWindow
+import android.graphics.drawable.ColorDrawable
 import android.webkit.WebView
 import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
@@ -177,6 +181,11 @@ class CaptureWebviewRegionArgs {
 }
 
 @InvokeArg
+class UncoverWebviewRegionArgs {
+    var token: Int = 0
+}
+
+@InvokeArg
 class UpdateBookshelfWidgetTtsArgs {
     var active: Boolean = false
     var playing: Boolean = false
@@ -245,6 +254,7 @@ interface KeyDownInterceptor {
   ]
 )
 class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
+    private var nativePaper: NativePaperTurn? = null
     private val implementation = NativeBridge()
     private var webViewRef: WebView? = null
     private val billingManager by lazy {
@@ -255,6 +265,8 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
     // Cancelled in onDestroy so in-flight work can't resolve into — or leak —
     // a dead Activity.
     private val pluginScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+    private var pageCoverToken = 0
+    private val pageCovers = mutableMapOf<Int, Pair<PopupWindow, Bitmap>>()
 
     // Held while the LocalSend service runs so multicast discovery
     // announcements are delivered; most Android devices filter multicast
@@ -315,6 +327,12 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
     }
 
     override fun onDestroy() {
+        nativePaper?.dispose(); nativePaper = null
+        pageCovers.values.forEach { (popup, bitmap) ->
+            popup.dismiss()
+            bitmap.recycle()
+        }
+        pageCovers.clear()
         stopAmbientLightUpdatesInternal()
         inputManager?.unregisterInputDeviceListener(gamepadInputListener)
         inputManager = null
@@ -364,6 +382,7 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
     override fun load(webView: WebView) {
         instance = this
         webViewRef = webView
+        webView.setOnTouchListener { _, event -> nativePaper?.touch(event); false }
         super.load(webView)
         inputManager = activity.getSystemService(Context.INPUT_SERVICE) as? InputManager
         gamepadConnected = hasConnectedGamepad()
@@ -2217,6 +2236,51 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
      * scales into a smaller bitmap for free and the moving page stays
      * visually sharp.
      */
+    /** DOM RAF completion does not mean WebView has submitted its new pixels
+     * to the activity surface. In particular a returning sheet must not copy
+     * the old page just after its covering canvas becomes hidden. */
+    private fun afterCaptureFrame(webView: WebView, invoke: Invoke, capture: () -> Unit) {
+        if (!webView.isAttachedToWindow || activity.isFinishing || activity.isDestroyed) {
+            invoke.reject("WebView not available")
+            return
+        }
+        val handler = Handler(Looper.getMainLooper())
+        var pending = true
+        val timeout = Runnable {
+            if (pending) {
+                pending = false
+                invoke.reject("WebView capture frame did not commit")
+            }
+        }
+        val committed = {
+            if (pending) {
+                pending = false
+                handler.removeCallbacks(timeout)
+                if (!webView.isAttachedToWindow || activity.isFinishing || activity.isDestroyed) {
+                    invoke.reject("WebView not available")
+                } else {
+                    capture()
+                }
+            }
+        }
+        handler.postDelayed(timeout, 2000)
+        webView.postVisualStateCallback(0L, object : WebView.VisualStateCallback() {
+            override fun onComplete(requestId: Long) {
+                if (!pending) return
+                if (Build.VERSION.SDK_INT >= 29 && webView.isHardwareAccelerated) {
+                    webView.viewTreeObserver.registerFrameCommitCallback {
+                        webView.post { committed() }
+                    }
+                } else {
+                    // Older Android lacks frame-commit callbacks. Wait until
+                    // a draw after visual readiness has traversed the view.
+                    webView.postOnAnimation { webView.postOnAnimation { committed() } }
+                }
+                webView.invalidate()
+            }
+        })
+    }
+
     @Command
     fun capture_webview_region(invoke: Invoke) {
         val args = invoke.parseArgs(CaptureWebviewRegionArgs::class.java)
@@ -2227,48 +2291,151 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
             return
         }
         activity.runOnUiThread {
-            val density = webView.resources.displayMetrics.density
-            val location = IntArray(2)
-            webView.getLocationInWindow(location)
-            val left = location[0] + (args.x * density).toInt()
-            val top = location[1] + (args.y * density).toInt()
-            val width = (args.width * density).toInt()
-            val height = (args.height * density).toInt()
-            if (width <= 0 || height <= 0) {
-                invoke.reject("Empty capture region")
+            afterCaptureFrame(webView, invoke) {
+                val density = webView.resources.displayMetrics.density
+                val location = IntArray(2)
+                webView.getLocationInWindow(location)
+                val left = location[0] + (args.x * density).toInt()
+                val top = location[1] + (args.y * density).toInt()
+                val width = (args.width * density).toInt()
+                val height = (args.height * density).toInt()
+                if (width <= 0 || height <= 0) {
+                    invoke.reject("Empty capture region")
+                    return@afterCaptureFrame
+                }
+                val captureScale = minOf(density, 2f)
+                val destWidth = (args.width * captureScale).toInt()
+                val destHeight = (args.height * captureScale).toInt()
+                val bitmap = Bitmap.createBitmap(destWidth, destHeight, Bitmap.Config.ARGB_8888)
+                try {
+                    PixelCopy.request(
+                        window,
+                        Rect(left, top, left + width, top + height),
+                        bitmap,
+                        { result ->
+                            if (result == PixelCopy.SUCCESS) {
+                                // Encode off the main thread; ~100ms of work for
+                                // a full-screen 2x JPEG.
+                                pluginScope.launch {
+                                    try {
+                                        val data = withContext(Dispatchers.IO) {
+                                            val out = ByteArrayOutputStream()
+                                            bitmap.compress(Bitmap.CompressFormat.JPEG, 90, out)
+                                            Base64.encodeToString(out.toByteArray(), Base64.NO_WRAP)
+                                        }
+                                        invoke.resolve(JSObject().put("data", data))
+                                    } finally {
+                                        // The bridge owns encoded bytes now. Do not
+                                        // accumulate full-screen native bitmaps
+                                        // until GC interrupts a later page turn.
+                                        bitmap.recycle()
+                                    }
+                                }
+                            } else {
+                                bitmap.recycle()
+                                invoke.reject("PixelCopy failed: $result")
+                            }
+                        },
+                        Handler(Looper.getMainLooper())
+                    )
+                } catch (e: IllegalArgumentException) {
+                    // Thrown when the rect falls outside the window bounds.
+                    bitmap.recycle()
+                    invoke.reject("Capture region out of bounds: ${e.message}")
+                }
+            }
+        }
+    }
+
+    @Command
+    fun paper_curl(invoke: Invoke) {
+        val args = invoke.parseArgs(NativePaperArgs::class.java)
+        activity.runOnUiThread {
+            val webView = webViewRef
+            if (webView == null || activity.isDestroyed || activity.isFinishing) {
+                invoke.reject("WebView not available"); return@runOnUiThread
+            }
+            val paper = nativePaper ?: NativePaperTurn(activity, webView).also { nativePaper = it }
+            paper.command(args, invoke)
+        }
+    }
+
+    /** A separate window freezes the visible page while PixelCopy reads the
+     * activity window underneath. A View overlay would be captured again. */
+    @Command
+    fun cover_webview_region(invoke: Invoke) {
+        val args = invoke.parseArgs(CaptureWebviewRegionArgs::class.java)
+        activity.runOnUiThread {
+            val webView = webViewRef
+            if (webView == null || activity.isFinishing || activity.isDestroyed) {
+                invoke.reject("WebView not available")
                 return@runOnUiThread
             }
-            val captureScale = minOf(density, 2f)
-            val destWidth = (args.width * captureScale).toInt()
-            val destHeight = (args.height * captureScale).toInt()
-            val bitmap = Bitmap.createBitmap(destWidth, destHeight, Bitmap.Config.ARGB_8888)
-            try {
-                PixelCopy.request(
-                    window,
-                    Rect(left, top, left + width, top + height),
-                    bitmap,
-                    { result ->
-                        if (result == PixelCopy.SUCCESS) {
-                            // Encode off the main thread; ~100ms of work for
-                            // a full-screen 2x JPEG.
-                            pluginScope.launch {
-                                val data = withContext(Dispatchers.IO) {
-                                    val out = ByteArrayOutputStream()
-                                    bitmap.compress(Bitmap.CompressFormat.JPEG, 90, out)
-                                    Base64.encodeToString(out.toByteArray(), Base64.NO_WRAP)
-                                }
-                                invoke.resolve(JSObject().put("data", data))
-                            }
-                        } else {
-                            invoke.reject("PixelCopy failed: $result")
-                        }
-                    },
-                    Handler(Looper.getMainLooper())
-                )
-            } catch (e: IllegalArgumentException) {
-                // Thrown when the rect falls outside the window bounds.
-                invoke.reject("Capture region out of bounds: ${e.message}")
+            val (x, y, width, height) = webViewRegion(args.x, args.y, args.width, args.height,
+                webView.resources.displayMetrics.density, webView.width, webView.height)
+            val location = IntArray(2)
+            webView.getLocationInWindow(location)
+            val left = location[0] + x
+            val top = location[1] + y
+            if (width <= 0 || height <= 0) {
+                invoke.reject("Empty cover region")
+                return@runOnUiThread
             }
+            val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+            try {
+                PixelCopy.request(activity.window, Rect(left, top, left + width, top + height),
+                    bitmap, { result ->
+                        if (result != PixelCopy.SUCCESS || activity.isFinishing || activity.isDestroyed) {
+                            bitmap.recycle()
+                            invoke.reject("Page cover capture failed: $result")
+                            return@request
+                        }
+                        try {
+                            val image = ImageView(activity).apply {
+                                setImageBitmap(bitmap)
+                                scaleType = ImageView.ScaleType.FIT_XY
+                            }
+                            val popup = PopupWindow(image, width, height, false).apply {
+                                animationStyle = 0
+                                enterTransition = null
+                                exitTransition = null
+                                isTouchable = false
+                                isClippingEnabled = false
+                                setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+                                if (Build.VERSION.SDK_INT >= 29) setIsLaidOutInScreen(true)
+                            }
+                            val screen = IntArray(2)
+                            webView.getLocationOnScreen(screen)
+                            popup.showAtLocation(webView, Gravity.TOP or Gravity.LEFT,
+                                screen[0] + x, screen[1] + y)
+                            val token = ++pageCoverToken
+                            pageCovers[token] = Pair(popup, bitmap)
+                            // Resolve after the popup's first draw, before JS
+                            // removes its covering canvas for the next capture.
+                            image.postOnAnimation { image.postOnAnimation {
+                                invoke.resolve(JSObject().put("token", token))
+                            } }
+                        } catch (error: Exception) {
+                            bitmap.recycle()
+                            invoke.reject("Cannot cover page: ${error.message}")
+                        }
+                    }, Handler(Looper.getMainLooper()))
+            } catch (error: IllegalArgumentException) {
+                bitmap.recycle()
+                invoke.reject("Cover region out of bounds: ${error.message}")
+            }
+        }
+    }
+
+    @Command
+    fun uncover_webview_region(invoke: Invoke) {
+        val args = invoke.parseArgs(UncoverWebviewRegionArgs::class.java)
+        activity.runOnUiThread {
+            pageCovers.remove(args.token)?.let { (popup, bitmap) ->
+                popup.dismiss()
+                bitmap.recycle()
+            }
+            invoke.resolve()
         }
     }
 

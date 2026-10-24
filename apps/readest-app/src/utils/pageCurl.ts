@@ -1,113 +1,66 @@
-/**
- * WebGL page-curl renderer (readest#555, mesh curl for Tauri apps).
- *
- * Draws a captured page bitmap as a grid mesh deformed around a cylinder —
- * the classic page curl: content before the fold stays flat, content past the
- * fold wraps over the cylinder and comes out mirrored on top, showing the
- * back of the page: the content bleeding through the theme paper (see
- * setBackdrop). The canvas is transparent wherever the page has curled
- * away, so the live (already turned) page shows through underneath.
- *
- * With two columns on screen (setColumns), only the outer column is a leaf:
- * it is hinged at the spine like a real book page, the fold stops at the
- * spine, and the leaf lands on the inner column as an exact mirror. Its back
- * shows the incoming page (setIncoming) so that the moment the overlay is
- * removed matches the live page underneath; without an incoming texture the
- * back is theme paper and the canvas fades out over the last stretch.
- *
- * The renderer knows nothing about capture or gestures: callers provide an
- * ImageBitmap of the outgoing page and drive `render(progress, grab)`.
- */
+import { buildPageCurlMesh } from './pageCurlMesh';
 
+/** Captured paper rendered as 64 hinged strips, with perspective and a translucent back. */
 const VERTEX_SHADER = `
-attribute vec2 aPos;      // page coords in [0,1]x[0,1]
-uniform vec2 uPage;       // page size in px
-uniform vec2 uFold;       // a point on the fold line, page px
-uniform vec2 uDir;        // fold normal (unit): points toward the curled side
-uniform float uRadius;    // cylinder radius, px
-uniform vec2 uLeaf;       // open x interval (page px) of the leaf that may deform
-varying vec2 vUv;
-varying float vLift;      // 0 flat .. 1 on top of the cylinder / landed
-varying float vShade;     // 0 flat or landed .. 1 at the top of the roll
-
-const float PI = 3.141592653589793;
+attribute vec2 aPos;
+attribute vec3 aSurface;
+attribute float aShade;
+uniform mediump vec2 uPage;
+varying mediump vec2 vUv;
+varying mediump float vShade;
+varying mediump float vHeight;
 
 void main() {
-  vec2 p = aPos * uPage;
-  float s = dot(p - uFold, uDir);
-  float lift = 0.0;
-  float shade = 0.0;
-  // Vertices on the spine itself never move: they are the hinge shared with
-  // the flat inner column, which must not stretch.
-  if (p.x > uLeaf.x && p.x < uLeaf.y && s > 0.0) {
-    float r = max(uRadius, 1.0e-3);
-    if (s < PI * r) {
-      float wrapped = r * sin(s / r);
-      float z = r * (1.0 - cos(s / r));
-      p -= uDir * (s - wrapped);
-      lift = z / (2.0 * r);
-      shade = sin(s / r);
-    } else {
-      // Past the half turn: lies flat on top, mirrored about the fold. With
-      // a zero radius this is an exact reflection, which is how a leaf lands
-      // on the facing page.
-      p -= uDir * (2.0 * s - PI * r);
-      lift = 1.0;
-    }
-  }
-  // Texture row 0 is the top of the captured page and aPos.y = 0 is the top
-  // of the page, so page coordinates are texture coordinates as-is. Do NOT
-  // rely on UNPACK_FLIP_Y_WEBGL to reconcile them: WebKit ignores it for
-  // ImageBitmap uploads, which turned the curl upside down on iOS.
   vUv = aPos;
-  vLift = lift;
-  vShade = shade;
-  vec2 clip = (p / uPage) * 2.0 - 1.0;
-  // Lifted parts draw on top of flat parts.
-  gl_Position = vec4(clip.x, -clip.y, -vLift * 0.5, 1.0);
+  vShade = aShade;
+  vHeight = aSurface.z;
+  // eBoox's projection: camera distance 7 page widths / 2, with the
+  // lifted page skewing toward the top as it approaches the camera.
+  float depth = 2.0 * aSurface.z / (7.0 * uPage.x);
+  float q = 1.0 - depth;
+  vec2 clip = aSurface.xy / uPage * 2.0 - 1.0;
+  gl_Position = vec4(clip.x, -clip.y + depth, -depth, q);
 }
 `;
 
 const FRAGMENT_SHADER = `
 precision mediump float;
 uniform sampler2D uTex;
-uniform sampler2D uBack;
 uniform sampler2D uIncoming;
 uniform float uHasIncoming;
 uniform vec2 uIncomingMap; // incoming u = uIncomingMap.x + uIncomingMap.y * page u
-varying vec2 vUv;
-varying float vLift;
-varying float vShade;
+uniform mediump vec2 uPage;
+varying mediump vec2 vUv;
+varying mediump float vShade;
+varying mediump float vHeight;
 
 void main() {
   vec4 c = texture2D(uTex, vUv);
-  if (gl_FrontFacing) {
-    // Slight contact shading as the page lifts.
-    c.rgb *= 1.0 - 0.18 * vLift;
-  } else if (uHasIncoming > 0.5) {
-    // The back of a leaf: the incoming page, mirrored about the spine so it
-    // reads correctly once the leaf has landed. Shaded only on the roll so
-    // the landed part matches the live page pixel for pixel.
-    c = texture2D(uIncoming, vec2(uIncomingMap.x + uIncomingMap.y * vUv.x, vUv.y));
-    c.rgb *= 1.0 - 0.22 * vShade;
-  } else {
-    // The back of the page: the mirrored content bleeding through the
-    // paper — the theme background supplied via setBackdrop.
-    vec3 paper = texture2D(uBack, vUv).rgb;
-    c.rgb = mix(c.rgb, paper, 0.72);
-    c.rgb *= 1.0 - 0.08 * vLift;
+  if (!gl_FrontFacing) {
+    if (uHasIncoming > 0.5) {
+      c = texture2D(uIncoming, vec2(uIncomingMap.x + uIncomingMap.y * vUv.x, vUv.y));
+    } else {
+      // The paper in eBoox transmits 60% of the mirrored printing. Its
+      // neutral grey tint is independent of the book's background colour.
+      c.rgb = mix(c.rgb, vec3(0.5), 0.4);
+    }
   }
-  gl_FragColor = vec4(c.rgb, c.a);
+  c.rgb = mix(c.rgb, vec3(0.5), vShade);
+  if (vHeight > 10.0) {
+    vec2 edge = min(vUv, 1.0 - vUv) * uPage / 2.0;
+    float border = clamp(1.0 - min(edge.x, edge.y), 0.0, 1.0);
+    c.rgb = mix(c.rgb, vec3(0.5), 0.4 * border);
+  }
+  gl_FragColor = c;
 }
 `;
 
-const GRID = 64;
 // Without an incoming texture a two-column leaf lands showing paper; fade the
 // whole canvas over the last stretch so the live page takes over smoothly.
 const LEAF_FADE_START = 0.8;
 
 export interface CurlGrab {
-  /** Normalized grab point on the page, 0..1 in both axes. */
+  /** x is the grabbed edge; y encodes 0.5 + vertical displacement / page height. */
   x: number;
   y: number;
 }
@@ -120,11 +73,17 @@ const smoothstep = (edge0: number, edge1: number, x: number) => {
 export class PageCurlRenderer {
   private canvas: HTMLCanvasElement | null = null;
   private gl: WebGLRenderingContext | null = null;
-  private backTex: WebGLTexture | null = null;
   private incomingTex: WebGLTexture | null = null;
+  private pageTex: WebGLTexture | null = null;
+  private returningTex: WebGLTexture | null = null;
+  private returning = false;
   private hasIncoming = false;
   private columns = 1;
-  private indexCount = 0;
+  private destinationTex: WebGLTexture | null = null;
+  private adjacentPrevious = false;
+  private adjacentNext = false;
+  private destination = false;
+  private vertexBuffer: WebGLBuffer | null = null;
   private width = 0;
   private height = 0;
   private uniforms: Record<string, WebGLUniformLocation | null> = {};
@@ -188,57 +147,26 @@ export class PageCurlRenderer {
     // biome-ignore lint/correctness/useHookAtTopLevel: WebGL API, not a React hook
     gl.useProgram(program);
 
-    // Grid mesh of GRID x GRID quads over the unit page. GRID is even, so a
-    // two-column spine falls on a grid line and no quad straddles the hinge.
-    const verts: number[] = [];
-    for (let y = 0; y <= GRID; y++) {
-      for (let x = 0; x <= GRID; x++) {
-        verts.push(x / GRID, y / GRID);
-      }
+    this.vertexBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexBuffer);
+    for (const [name, size, offset] of [
+      ['aPos', 2, 0],
+      ['aSurface', 3, 8],
+      ['aShade', 1, 20],
+    ] as const) {
+      const location = gl.getAttribLocation(program, name);
+      gl.enableVertexAttribArray(location);
+      gl.vertexAttribPointer(location, size, gl.FLOAT, false, 24, offset);
     }
-    const indices: number[] = [];
-    const at = (x: number, y: number) => y * (GRID + 1) + x;
-    for (let y = 0; y < GRID; y++) {
-      for (let x = 0; x < GRID; x++) {
-        indices.push(at(x, y), at(x + 1, y), at(x, y + 1));
-        indices.push(at(x + 1, y), at(x + 1, y + 1), at(x, y + 1));
-      }
-    }
-    this.indexCount = indices.length;
 
-    const vbo = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(verts), gl.STATIC_DRAW);
-    const aPos = gl.getAttribLocation(program, 'aPos');
-    gl.enableVertexAttribArray(aPos);
-    gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
-
-    const ibo = gl.createBuffer();
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ibo);
-    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices), gl.STATIC_DRAW);
-
-    for (const name of [
-      'uPage',
-      'uFold',
-      'uDir',
-      'uRadius',
-      'uLeaf',
-      'uTex',
-      'uBack',
-      'uIncoming',
-      'uHasIncoming',
-      'uIncomingMap',
-    ]) {
+    for (const name of ['uPage', 'uTex', 'uIncoming', 'uHasIncoming', 'uIncomingMap']) {
       this.uniforms[name] = gl.getUniformLocation(program, name);
     }
     gl.uniform2f(this.uniforms['uPage']!, width, height);
 
-    // Back-face paper on unit 1: plain white until setBackdrop supplies the
-    // theme background.
-    this.backTex = this.createPlaceholderTexture(gl, 1, [255, 255, 255, 255]);
-    gl.uniform1i(this.uniforms['uBack']!, 1);
     // Incoming page on unit 2: unused until setIncoming supplies it.
     this.incomingTex = this.createPlaceholderTexture(gl, 2, [0, 0, 0, 0]);
+    this.returningTex = this.createPlaceholderTexture(gl, 1, [0, 0, 0, 0]);
     gl.uniform1i(this.uniforms['uIncoming']!, 2);
     gl.uniform1f(this.uniforms['uHasIncoming']!, 0);
     gl.uniform2f(this.uniforms['uIncomingMap']!, 0, 1);
@@ -246,10 +174,10 @@ export class PageCurlRenderer {
 
     gl.viewport(0, 0, canvas.width, canvas.height);
     gl.enable(gl.DEPTH_TEST);
+    gl.depthFunc(gl.LEQUAL);
     gl.disable(gl.CULL_FACE);
     // The vertex shader flips Y into clip space, mirroring triangle winding:
-    // the grid's quads come out clockwise, so declare CW as front-facing or
-    // gl_FrontFacing (front page vs whitened back) is inverted.
+    // the paper's triangles come out clockwise. render() mirrors this for RTL.
     gl.frontFace(gl.CW);
     gl.enable(gl.BLEND);
     gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
@@ -281,7 +209,12 @@ export class PageCurlRenderer {
   setTexture(source: TexImageSource) {
     const gl = this.gl;
     if (!gl) return;
-    const tex = gl.createTexture();
+    this.returning = false;
+    this.hasIncoming = false;
+    this.destination = false;
+    this.adjacentPrevious = false;
+    this.adjacentNext = false;
+    const tex = this.pageTex ?? (this.pageTex = gl.createTexture());
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, tex);
     // Upload unflipped; the vertex shader samples page coordinates directly.
@@ -296,15 +229,44 @@ export class PageCurlRenderer {
     gl.uniform1i(this.uniforms['uTex']!, 0);
   }
 
-  /** Paper drawn on the back of the page (theme background color + texture). */
-  setBackdrop(source: TexImageSource) {
+  /** Kept for the shared captured-turn interface; the paper tint comes from the printing itself. */
+  setBackdrop(_source: TexImageSource) {}
+
+  /** Upload the neighbouring sheets while idle, before any gesture. */
+  prepareAdjacent(previous: TexImageSource | null, next: TexImageSource | null) {
+    this.adjacentPrevious = previous !== null;
+    this.adjacentNext = next !== null;
+    if (previous) this.setReturning(previous);
+    this.returning = false;
     const gl = this.gl;
-    if (!gl || !this.backTex) return;
+    if (gl && next) {
+      this.destinationTex ??= this.createPlaceholderTexture(gl, 3, [0, 0, 0, 0]);
+      gl.activeTexture(gl.TEXTURE3);
+      gl.bindTexture(gl.TEXTURE_2D, this.destinationTex);
+      gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 0);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, next);
+      gl.activeTexture(gl.TEXTURE0);
+    }
+  }
+
+  /** Select the buffered sheet for this navigation direction without changing reading direction. */
+  selectAdjacent(forward: boolean) {
+    const ready = forward ? this.adjacentNext : this.adjacentPrevious;
+    this.destination = forward && ready;
+    this.returning = !forward && ready;
+    return ready;
+  }
+
+  /** The previous sheet returns around the book's existing spine. */
+  setReturning(source: TexImageSource) {
+    const gl = this.gl;
+    if (!gl || !this.returningTex) return;
     gl.activeTexture(gl.TEXTURE1);
-    gl.bindTexture(gl.TEXTURE_2D, this.backTex);
+    gl.bindTexture(gl.TEXTURE_2D, this.returningTex);
     gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 0);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, source);
     gl.activeTexture(gl.TEXTURE0);
+    this.returning = true;
   }
 
   /**
@@ -337,71 +299,62 @@ export class PageCurlRenderer {
 
   /**
    * Draw the curl at `progress` (0 = flat, 1 = fully turned). `grab` picks
-   * where the reader lifted the page: y near 1 curls from the bottom corner
-   * (a diagonal fold that straightens as the turn completes), y near 0.5
-   * folds straight. `rtl` mirrors the direction: with rtl the page is
-   * grabbed at its left edge.
+   * the vertical finger displacement (0.5 is stationary). The diagonal
+   * fold straightens as the turn completes. `rtl` mirrors the direction:
+   * with rtl the page is grabbed at its left edge.
    */
   render(progress: number, grab: CurlGrab = { x: 1, y: 0.5 }, rtl = false) {
     const gl = this.gl;
     if (!gl) return;
     const { width: w, height: h } = this;
     const leaf = this.columns === 2;
-    // The sheet being turned: the whole page, or the outer column of a
-    // two-column spread.
-    const leafWidth = leaf ? w / 2 : w;
-    // Only the spine is a hinge; the outer edge (and a single page) is open.
-    const leafMin = leaf && !rtl ? w / 2 : -1e9;
-    const leafMax = leaf && rtl ? w / 2 : 1e9;
-
-    // Fold normal: mostly horizontal, tilted by how far the grab sits from
-    // the vertical middle. The tilt decays with progress — a corner grab
-    // starts as a steep diagonal pinch at that corner and flattens out, so
-    // the far side of the page stays flat early in the turn yet the whole
-    // page still clears by the end.
-    const tilt = (grab.y - 0.5) * 1.8 * (1 - progress);
-    const dx = rtl ? -1 : 1;
-    const len = Math.hypot(1, tilt);
-    const dir: [number, number] = [dx / len, tilt / len];
-
-    let radius: number;
-    let travel: number;
-    if (leaf) {
-      // The roll tightens all the way to nothing so the leaf lands flat on
-      // the inner column, and the fold stops exactly at the spine.
-      radius = 0.16 * leafWidth * (1 - progress * progress);
-      travel = leafWidth;
-    } else {
-      // The cylinder tightens slightly as the page lifts off.
-      radius = Math.max(24, 0.16 * w * (1 - 0.4 * progress));
-      // The fold sweeps from the grabbed edge along the grab row; by progress 1
-      // (tilt 0) it must cross the page plus the final half-circumference so
-      // the spine-side column has fully wrapped off.
-      const endRadius = Math.max(24, 0.16 * w * 0.6);
-      travel = w + Math.PI * endRadius;
-    }
-    const start: [number, number] = [rtl ? 0 : w, grab.y * h];
-    const foldX = start[0] - dir[0] * travel * progress;
-    const foldY = start[1] - dir[1] * travel * progress;
+    const mesh = buildPageCurlMesh(
+      w,
+      h,
+      this.returning ? 1 - progress : progress,
+      grab.y,
+      rtl,
+      this.columns,
+      !this.returning,
+    );
+    gl.frontFace(rtl ? gl.CCW : gl.CW);
 
     // The leaf's back shows the incoming inner column mirrored about the
     // spine: page u in [0.5, 1] maps to incoming u in [1, 0] for a right
     // leaf, page u in [0, 0.5] to incoming u in [1, 0] for a left leaf.
-    const showIncoming = leaf && this.hasIncoming;
+    const showIncoming = leaf && (this.hasIncoming || this.returning);
     gl.uniform1f(this.uniforms['uHasIncoming']!, showIncoming ? 1 : 0);
-    gl.uniform2f(this.uniforms['uIncomingMap']!, rtl ? 1 : 2, -2);
-    gl.uniform2f(this.uniforms['uLeaf']!, leafMin, leafMax);
+    gl.uniform1i(this.uniforms['uIncoming']!, this.returning ? 0 : 2);
+    gl.uniform2f(
+      this.uniforms['uIncomingMap']!,
+      this.returning ? 1 : rtl ? 1 : 2,
+      this.returning ? -1 : -2,
+    );
     if (this.canvas) {
-      const opacity = leaf && !this.hasIncoming ? 1 - smoothstep(LEAF_FADE_START, 1, progress) : 1;
+      const opacity =
+        leaf && !this.hasIncoming && !this.returning
+          ? 1 - smoothstep(LEAF_FADE_START, 1, progress)
+          : 1;
       this.canvas.style.opacity = opacity < 1 ? String(opacity) : '';
     }
 
     gl.clearColor(0, 0, 0, 0);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-    gl.uniform2f(this.uniforms['uFold']!, foldX, foldY);
-    gl.uniform2f(this.uniforms['uDir']!, dir[0], dir[1]);
-    gl.uniform1f(this.uniforms['uRadius']!, radius);
-    gl.drawElements(gl.TRIANGLES, this.indexCount, gl.UNSIGNED_SHORT, 0);
+    const draw = (vertices: Float32Array, texture: number) => {
+      gl.uniform1i(this.uniforms['uTex']!, texture);
+      gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexBuffer);
+      gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.DYNAMIC_DRAW);
+      gl.drawArrays(gl.TRIANGLES, 0, vertices.length / 6);
+    };
+    if (this.destination) draw(buildPageCurlMesh(w, h, 0, 0.5, rtl, 1), 3);
+    if (this.returning) {
+      // Keep the current page underneath the sheet until it returns. In a
+      // spread the returning sheet's back is the current inner column; as
+      // it lifts, the previous inner column is uncovered underneath it.
+      draw(buildPageCurlMesh(w, h, 0, 0.5, rtl, 1), 0);
+      if (leaf) draw(buildPageCurlMesh(w, h, 0, 0.5, rtl, 2).subarray(0, 36), 1);
+    }
+    draw(mesh, this.returning ? 1 : 0);
   }
 
   /** Read back a pixel (device px, origin top-left) — used by tests. */
@@ -424,10 +377,24 @@ export class PageCurlRenderer {
     return !!this.gl && !this.gl.isContextLost();
   }
 
+  /** Delete retained GL resources and detach the rendering surface. */
   dispose() {
-    this.gl?.getExtension('WEBGL_lose_context')?.loseContext();
+    const gl = this.gl;
     this.canvas?.remove();
     this.canvas = null;
     this.gl = null;
+    this.vertexBuffer = null;
+    this.pageTex = null;
+    this.returningTex = null;
+    this.incomingTex = null;
+    this.destinationTex = null;
+    if (gl) {
+      const release = () => gl.getExtension('WEBGL_lose_context')?.loseContext();
+      // Context loss clears the compositor's existing texture immediately.
+      // Let the detached DOM layer leave a painted frame first, otherwise
+      // Android can briefly composite a cleared sheet over the live reader.
+      if (document.hidden) release();
+      else requestAnimationFrame(() => requestAnimationFrame(release));
+    }
   }
 }

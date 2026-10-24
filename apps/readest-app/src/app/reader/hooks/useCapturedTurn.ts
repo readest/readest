@@ -6,13 +6,19 @@ import { useBookDataStore } from '@/store/bookDataStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useThemeStore } from '@/store/themeStore';
-import { captureWebviewRegion, coverWebviewRegion, uncoverWebviewRegion } from '@/utils/bridge';
+import {
+  captureWebviewRegion,
+  coverWebviewRegion,
+  uncoverWebviewRegion,
+  paperCurl,
+} from '@/utils/bridge';
 import { getInitializedAppService, isTauriAppPlatform } from '@/services/environment';
 import { detectViewTransitionGroup } from '@/utils/viewTransition';
 import { TURN_GESTURE_LEFT_INSET_ATTRIBUTE } from '../utils/brightnessGesture';
 import { isLayeredTurnTouchActive, setLayeredTurnTouchClaimed } from '../utils/iframeEventHandlers';
-import { CapturedPageTurn, CapturedTurnStyle } from '../utils/capturedTurn';
-import { renderTurnBackdrop } from '../utils/turnBackdrop';
+import { CapturedPageTurn, CapturedTurnStyle, type CapturedTurnHost } from '../utils/capturedTurn';
+import { NativePageTurn, type NativePaperResult } from '../utils/nativePageTurn';
+import { PageTurnBuffer } from '../utils/pageTurnBuffer';
 import {
   createTurnGestureIntent as createArenaIntent,
   NATIVE_CAPTURED_TURN_ATTRIBUTE,
@@ -273,11 +279,22 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
   const isFixedLayout = () => !!getBookData(bookKey)?.isFixedLayout;
 
   const markCaptureBroken = (error: unknown) => {
+    const viewSettings = getViewSettings(bookKey);
+    const style = viewSettings ? getCapturedTurnStyle(viewSettings, isFixedLayout()) : null;
+    if (
+      controllerRef.current instanceof NativePageTurn &&
+      controllerRef.current.canQueueNativeTurn(style)
+    ) {
+      // The native controller releases the failed scene and recreates its
+      // texture bank. A transient interruption must not disable future turns.
+      console.warn('Native page turn interrupted; retrying on the next gesture:', error);
+      controllerRef.current.invalidateNativePages();
+      return;
+    }
     if (captureBroken) return;
     captureBroken = true;
     console.warn('Captured page turn unavailable, falling back:', error);
     const currentView = viewRef.current;
-    const viewSettings = getViewSettings(bookKey);
     if (currentView && viewSettings) {
       applyPageTurnAttributes(currentView, viewSettings, isFixedLayout());
     }
@@ -372,14 +389,47 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
       prev: view.prev.bind(view),
       next: view.next.bind(view),
     };
-    const controller = new CapturedPageTurn({
+    // The paginator keeps its lock for 100ms after a non-animated page is
+    // already in place. Rendering can start at relocation, but another
+    // navigation (including a cancelled drag) must still wait for unlock.
+    let navigationPending = Promise.resolve();
+    const bufferedPagesEnabled = () =>
+      (getInitializedAppService()?.isAndroidApp || getInitializedAppService()?.isIOSApp) &&
+      getViewSettings(bookKey)?.pageTurnStyle === 'curl' &&
+      !getViewSettings(bookKey)?.vertical &&
+      // Android's native paper also turns a two-column spread as one leaf, and
+      // fixed layouts, which name their pages but cannot preview them.
+      (getInitializedAppService()?.isAndroidApp
+        ? (view.renderer.columnCount ?? 1) <= 2 && !!view.renderer.getPageTurnKey
+        : (view.renderer.columnCount ?? 1) === 1 && !!view.renderer.previewPage);
+    const pageBuffer = new PageTurnBuffer({
+      renderer: view.renderer,
+      capture: async (rect) => {
+        const release = acquirePixelCaptureFilter();
+        try {
+          return await captureWebviewRegion(rect);
+        } finally {
+          release();
+        }
+      },
+      cover: async (rect) => {
+        const { token } = await coverWebviewRegion(rect);
+        return () => uncoverWebviewRegion({ token });
+      },
+      allowed: () => !isPreparedSurfaceBlockedByOverlay(),
+    });
+    const turnHost: CapturedTurnHost = {
       getHostElement: () => document.getElementById(`gridcell-${bookKey}`),
       // The whole reader cell turns — running header, footer, and page
       // margins ride the turning page like a physical sheet (and like
       // Apple Books), so the capture spans the full cell, not just the
       // text content box.
       getContentRect: () =>
-        document.getElementById(`gridcell-${bookKey}`)?.getBoundingClientRect() ?? null,
+        // Buffered EPUB sheets exclude app chrome: page counters and controls
+        // stay live, rather than caching the current page's counter on a neighbour.
+        bufferedPagesEnabled()
+          ? view.renderer.getBoundingClientRect()
+          : (document.getElementById(`gridcell-${bookKey}`)?.getBoundingClientRect() ?? null),
       // A push translates the live reader view in beside the outgoing capture.
       // The cell clips it, and the header/footer stay put like the paginator's
       // native push, which scrolls only the page strip.
@@ -390,21 +440,25 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
       onBeforeCapture: () => {
         restoreToolbarOnCancelRef.current = useReaderStore.getState().hoveredBookKey === bookKey;
       },
-      capture: captureWebviewRegion,
+      capture: (rect) =>
+        bufferedPagesEnabled() ? pageBuffer.capture(rect) : captureWebviewRegion(rect),
+      prepareAdjacent: (rect, signal) =>
+        bufferedPagesEnabled() ? pageBuffer.prepare(rect, signal) : Promise.resolve([null, null]),
       // A two-column spread turns only its outer column, hinged at the spine
       // (readest#6106). Vertical writing stacks its columns instead, which
       // the leaf model does not describe.
       getColumnCount: () =>
         getViewSettings(bookKey)?.vertical ? 1 : (view.renderer.columnCount ?? 1),
       // The leaf's back shows the incoming column, captured under the overlay
-      // behind a native cover. Only iOS has the cover so far; elsewhere the
-      // back is theme paper.
-      coverRegion: getInitializedAppService()?.isIOSApp
-        ? async (rect) => {
-            const { token } = await coverWebviewRegion(rect);
-            return () => uncoverWebviewRegion({ token });
-          }
-        : undefined,
+      // behind a native cover on iOS and Android. The same cover protects
+      // the full previous-page capture for a backward curl.
+      coverRegion:
+        getInitializedAppService()?.isIOSApp || getInitializedAppService()?.isAndroidApp
+          ? async (rect) => {
+              const { token } = await coverWebviewRegion(rect);
+              return () => uncoverWebviewRegion({ token });
+            }
+          : undefined,
       preparePixelCapture: async () => {
         const transientVisible =
           document.querySelector(CAPTURE_INVALIDATING_OVERLAY_SELECTOR) !== null;
@@ -419,19 +473,6 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
       // controller rechecks this gate before mounting or navigating so those
       // pixels can never be replayed by a later turn.
       isCaptureAllowed: () => !isCapturedSurfaceBlockedByOverlay(),
-      getBackdrop: () => {
-        const cell = document.getElementById(`gridcell-${bookKey}`);
-        const rect = cell?.getBoundingClientRect();
-        if (!cell || !rect) return null;
-        // The back of the curl shows the theme paper: the background color
-        // plus the texture layer painted on the viewer's ::before.
-        return renderTurnBackdrop(
-          cell.querySelector('.foliate-viewer'),
-          useThemeStore.getState().themeCode.bg,
-          rect.width,
-          rect.height,
-        );
-      },
       onCovered: async (_style, surfaceAlreadyPainted) => {
         // A warm low-alpha surface has already survived a compositor paint.
         // Cold surfaces retain the conservative wait before touching live UI.
@@ -451,19 +492,61 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
         if (shouldRestore) await syncToolbarVisibility(true);
       },
       navigate: async (forward: boolean) => {
+        if (pageBuffer.preparing) await pageBuffer.preparing;
+        await navigationPending;
         // The paginator's animated paths (push slide and the layered VT
         // turns) all gate on the `animated` attribute; dropping it makes
         // the underlying turn an instant jump hidden by the overlay.
         const renderer = view.renderer;
+        const nativeCommit = renderer.hasAttribute('data-native-paper-commit');
         const hadAnimated = renderer.hasAttribute('animated');
+        const previousCfi = view.lastLocation?.cfi;
+        let pageReady!: () => void;
+        const relocated = new Promise<void>((resolve) => {
+          pageReady = resolve;
+        });
+        const onRelocate = (event: Event) => {
+          const cfi = view.lastLocation?.cfi;
+          // A duplicate or clamped relocation can leave the visible position
+          // unchanged. That event is not proof that the destination is ready
+          // and must not select the old frame as the returning sheet.
+          if (
+            (event as CustomEvent<{ reason?: string }>).detail?.reason === 'page' &&
+            previousCfi &&
+            cfi &&
+            cfi !== previousCfi
+          )
+            pageReady();
+        };
+        renderer.addEventListener('relocate', onRelocate);
         renderer.removeAttribute('animated');
-        try {
-          await (forward ? originals.next() : originals.prev());
-        } finally {
-          if (hadAnimated) renderer.setAttribute('animated', '');
-        }
+        const navigation = (async () => {
+          try {
+            await (forward ? originals.next() : originals.prev());
+          } finally {
+            renderer.removeEventListener('relocate', onRelocate);
+            if (hadAnimated) renderer.setAttribute('animated', '');
+          }
+        })();
+        navigationPending = navigation.catch(() => {});
+        // Fixed-layout renderers and section changes may not emit a page
+        // relocation. Their completed navigation remains the fallback.
+        if (nativeCommit) await navigation;
+        else await Promise.race([relocated, navigation]);
       },
-    });
+    };
+    const controller = getInitializedAppService()?.isAndroidApp
+      ? new NativePageTurn(turnHost, {
+          renderer: view.renderer,
+          enabled: () =>
+            !getViewSettings(bookKey)?.vertical && (view.renderer.columnCount ?? 1) <= 2,
+          call: (command) => paperCurl<NativePaperResult>(command),
+        })
+      : new CapturedPageTurn(turnHost);
+    const invalidatePagePixels = () => {
+      pageBuffer.clear();
+      if (controller instanceof NativePageTurn) controller.invalidateNativePages();
+    };
     controllerRef.current = controller;
 
     let prepareTimer: ReturnType<typeof setTimeout> | null = null;
@@ -505,7 +588,7 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
           // Do not ask the native webview to capture while a tap, selection,
           // brightness drag, or still-unclaimed turn gesture is in flight.
           if (isLayeredTurnTouchActive(bookKey)) {
-            schedulePreparedCapture();
+            schedulePreparedCapture(PREPARED_CAPTURE_DELAY_MS);
             return;
           }
           const appService = getInitializedAppService();
@@ -527,7 +610,11 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
         });
       });
     }
-    function schedulePreparedCapture(delay = PREPARED_CAPTURE_DELAY_MS) {
+    const preparedCaptureDelay = () =>
+      controller instanceof NativePageTurn && bufferedPagesEnabled()
+        ? 0
+        : PREPARED_CAPTURE_DELAY_MS;
+    function schedulePreparedCapture(delay = preparedCaptureDelay()) {
       if (cleanedUp) return;
       prepareNotBefore = Math.max(prepareNotBefore, performance.now() + delay);
       cancelPreparedCaptureSchedule();
@@ -536,7 +623,7 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
         Math.max(0, prepareNotBefore - performance.now()),
       );
     }
-    const invalidateAndSchedulePreparedCapture = (delay = PREPARED_CAPTURE_DELAY_MS) => {
+    const invalidateAndSchedulePreparedCapture = (delay = preparedCaptureDelay()) => {
       controller.invalidatePreparedCapture();
       schedulePreparedCapture(delay);
     };
@@ -546,7 +633,10 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
     // A warm surface represents the pixels of one settled reader-cell state.
     // Coalesce the renderer's noisy lifecycle into one post-paint capture and
     // discard any result whose generation changed while native work ran.
-    const handleCapturedSurfaceChange = () => invalidateAndSchedulePreparedCapture();
+    const handleCapturedSurfaceChange = (event: Event) => {
+      if (event.type !== 'relocate') invalidatePagePixels();
+      invalidateAndSchedulePreparedCapture();
+    };
     view.addEventListener('relocate', handleCapturedSurfaceChange);
     view.addEventListener('draw-annotation', handleCapturedSurfaceChange);
     view.addEventListener('show-annotation', handleCapturedSurfaceChange);
@@ -555,7 +645,10 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
     const gridCell = document.getElementById(`gridcell-${bookKey}`);
     const resizeObserver =
       gridCell && typeof ResizeObserver !== 'undefined'
-        ? new ResizeObserver(() => invalidateAndSchedulePreparedCapture())
+        ? new ResizeObserver(() => {
+            invalidatePagePixels();
+            invalidateAndSchedulePreparedCapture();
+          })
         : null;
     if (gridCell) resizeObserver?.observe(gridCell);
 
@@ -567,9 +660,21 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
       const toolbarContentChanged =
         state.bottomBarTab !== previous.bottomBarTab &&
         (state.hoveredBookKey === bookKey || previous.hoveredBookKey === bookKey);
-      const readerPixelsChanged =
-        toolbarChanged || toolbarContentChanged || currentViewState !== previousViewState;
+      // The bookmark ribbon rewrites its unchanged visibility on every
+      // relocation; only a changed field can change the reader's pixels.
+      const viewStateChanged =
+        currentViewState !== previousViewState &&
+        (!currentViewState ||
+          !previousViewState ||
+          (Object.keys(currentViewState) as (keyof typeof currentViewState)[]).some(
+            (field) => currentViewState[field] !== previousViewState[field],
+          ));
+      const readerPixelsChanged = toolbarChanged || toolbarContentChanged || viewStateChanged;
       if (readerPixelsChanged) {
+        // Native textures cover only the renderer, not the toolbar.
+        // Hiding chrome as a turn starts must not destroy its selected sheets.
+        if (!(controller instanceof NativePageTurn && bufferedPagesEnabled()) || viewStateChanged)
+          invalidatePagePixels();
         invalidateAndSchedulePreparedCapture(
           toolbarChanged || toolbarContentChanged
             ? PREPARED_CAPTURE_CHROME_DELAY_MS
@@ -587,6 +692,7 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
         state.safeAreaInsets !== previous.safeAreaInsets ||
         state.isRoundedWindow !== previous.isRoundedWindow;
       if (themePixelsChanged) {
+        invalidatePagePixels();
         invalidateAndSchedulePreparedCapture(
           systemChromeChanged ? PREPARED_CAPTURE_CHROME_DELAY_MS : PREPARED_CAPTURE_DELAY_MS,
         );
@@ -603,6 +709,7 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
       captureBlockedByOverlay = blocked;
       captureInteractivelyBlocked = interactivelyBlocked;
       if (interactivelyBlocked && !wasInteractivelyBlocked) {
+        invalidatePagePixels();
         // Discard the clean-page surface as soon as the first covering layer
         // opens, and invalidate any native work that was already in flight.
         cancelPreparedCaptureSchedule();
@@ -634,6 +741,7 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
       if (document.hidden) {
         cancelPreparedCaptureSchedule();
         prepareNotBefore = 0;
+        invalidatePagePixels();
         controller.invalidatePreparedCapture();
       } else {
         schedulePreparedCapture();
@@ -654,7 +762,8 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
       }
       const programmaticTurn = Symbol('captured-turn');
       programmaticTurnsInFlightRef.current.add(programmaticTurn);
-      view.renderer.setAttribute(NATIVE_PROGRAMMATIC_TURN_ATTRIBUTE, '');
+      if (!(controller instanceof NativePageTurn && controller.canQueueNativeTurn(style)))
+        view.renderer.setAttribute(NATIVE_PROGRAMMATIC_TURN_ATTRIBUTE, '');
       // If another input starts a programmatic turn while a finger is still
       // pending, that navigation owns the rest of the touch sequence. Do not
       // let later samples reuse the old origin and launch a second turn after
@@ -710,6 +819,7 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
       view.prev = originals.prev;
       view.next = originals.next;
       controller.dispose();
+      pageBuffer.dispose();
       cleanupLayeredTurn();
       programmaticTurnsInFlightRef.current.clear();
       view.renderer.removeAttribute(NATIVE_PROGRAMMATIC_TURN_ATTRIBUTE);
@@ -750,8 +860,17 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
         const selectionActive = hasActiveSelection(currentView);
         const overlayBlocksCapture = isCapturedSurfaceBlockedByOverlay();
         const preparedPixelsBlocked = isPreparedSurfaceBlockedByOverlay();
+        const viewSettings = getViewSettings(bookKey);
+        const programmaticInputBlocked =
+          programmaticTurnsInFlightRef.current.size > 0 &&
+          !(
+            controller instanceof NativePageTurn &&
+            controller.canQueueNativeTurn(
+              viewSettings ? getCapturedTurnStyle(viewSettings, isFixedLayout()) : null,
+            )
+          );
         gestureClaimed.current =
-          programmaticTurnsInFlightRef.current.size > 0 || selectionActive || overlayBlocksCapture;
+          programmaticInputBlocked || selectionActive || overlayBlocksCapture;
 
         // These interactions can change the live pixels while the finger is
         // down. Remove a low-alpha idle surface immediately rather than leave
@@ -777,7 +896,7 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
           overlayBlocksCapture ||
           selectionActive ||
           currentView.renderer.scrollLocked ||
-          programmaticTurnsInFlightRef.current.size > 0
+          programmaticInputBlocked
         ) {
           gestureIntentRef.current = null;
         }
@@ -788,7 +907,6 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
         // soon as the finger lands. A later beginDrag joins that promise.
         // Keep the brightness strip out of this speculative path because its
         // touch is reserved for changing the live page appearance.
-        const viewSettings = getViewSettings(bookKey);
         if (
           !gestureClaimed.current &&
           !preparedPixelsBlocked &&

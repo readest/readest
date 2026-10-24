@@ -1,4 +1,4 @@
-import { describe, it, expect, afterEach, beforeEach } from 'vitest';
+import { describe, it, expect, afterEach, beforeEach, vi } from 'vitest';
 import { PageCurlRenderer } from '@/utils/pageCurl';
 
 // Tests for the WebGL page-curl renderer (readest#555 mesh curl groundwork).
@@ -71,6 +71,35 @@ describe('PageCurlRenderer (browser)', () => {
     expect(bottomLeft[1]).toBeLessThan(100);
   });
 
+  it('selects resident neighbouring sheets without uploading during either turn', async () => {
+    const canvas = document.createElement('canvas');
+    canvas.width = W;
+    canvas.height = H;
+    const ctx = canvas.getContext('2d')!;
+    ctx.fillStyle = 'blue';
+    ctx.fillRect(0, 0, W, H);
+    const previous = await createImageBitmap(canvas);
+    ctx.fillStyle = 'green';
+    ctx.fillRect(0, 0, W, H);
+    const next = await createImageBitmap(canvas);
+    renderer.prepareAdjacent(previous, next);
+    previous.close();
+    next.close();
+    const gl = host.querySelector('canvas')!.getContext('webgl')!;
+    const upload = vi.spyOn(gl, 'texImage2D');
+    try {
+      expect(renderer.selectAdjacent(true)).toBe(true);
+      renderer.render(1);
+      expect(renderer.readPixel(W / 2, H / 2)).toEqual([0, 128, 0, 255]);
+      expect(renderer.selectAdjacent(false)).toBe(true);
+      renderer.render(1);
+      expect(renderer.readPixel(W / 2, H / 2)).toEqual([0, 0, 255, 255]);
+      expect(upload).not.toHaveBeenCalled();
+    } finally {
+      upload.mockRestore();
+    }
+  });
+
   it('uses the full device DPR for its backing store', () => {
     renderer.dispose();
     renderer = new PageCurlRenderer();
@@ -81,7 +110,17 @@ describe('PageCurlRenderer (browser)', () => {
     expect(canvas.height).toBe(H * 3);
   });
 
-  it('curls the outer half away, folding its whitened back over the spine side', () => {
+  it('uses the eBoox neutral translucent paper back instead of bleaching it white', () => {
+    renderer.render(0.45, { x: 1, y: 0.5 });
+    const back = renderer.readPixel(100, 75);
+    expect(back[3]).toBe(255);
+    expect(back[0]).toBeGreaterThan(35);
+    expect(back[0]).toBeLessThan(130);
+    expect(back[2]).toBeLessThan(180);
+    expect(back[2]).toBeGreaterThan(back[0]);
+  });
+
+  it('curls the outer half away, folding its translucent back over the spine side', () => {
     renderer.render(0.45, { x: 1, y: 0.5 });
 
     // The outer (right) region has curled away: transparent, the live page
@@ -90,13 +129,15 @@ describe('PageCurlRenderer (browser)', () => {
     expect(outer[3]).toBe(0);
 
     // The wrapped-over part lands near the spine ON TOP, showing the page
-    // back: whitened blue (the mirrored outer-half content). A straight
+    // back: translucent blue (the mirrored outer-half content). A straight
     // fold mirrors horizontally only — the top row stays on top, so this
-    // is whitened BLUE (not whitened yellow from the bottom row).
+    // is translucent BLUE (not translucent yellow from the bottom row).
     const back = renderer.readPixel(100, 75);
     expect(back[3]).toBe(255);
-    expect(back[0]).toBeGreaterThan(140); // whitened
-    expect(back[2]).toBeGreaterThan(180); // blue tint preserved
+    expect(back[0]).toBeGreaterThanOrEqual(50); // neutral grey plus the edge tint
+    expect(back[0]).toBeLessThan(90);
+    expect(back[2]).toBeGreaterThan(130); // blue printing remains visible
+    expect(back[2]).toBeLessThan(160);
     expect(back[1]).toBeLessThan(back[2]); // not yellow: rows did not flip
 
     // The far spine edge still shows the flat front (green).
@@ -106,7 +147,7 @@ describe('PageCurlRenderer (browser)', () => {
     expect(front[0]).toBeLessThan(120);
   });
 
-  it('tints the folded back with the backdrop paper instead of white', () => {
+  it('keeps the neutral translucent back independent of the host backdrop', () => {
     const paper = document.createElement('canvas');
     paper.width = W;
     paper.height = H;
@@ -116,14 +157,14 @@ describe('PageCurlRenderer (browser)', () => {
     renderer.setBackdrop(paper);
     renderer.render(0.45, { x: 1, y: 0.5 });
 
-    // Same wrapped-over sample point as the whitened-back test: with a dark
-    // theme backdrop the mirrored blue content mixes toward the dark paper,
-    // not toward white.
+    // eBoox derives its translucent back from the captured printing and a
+    // neutral grey tint, including when a separate dark backdrop is supplied.
     const back = renderer.readPixel(100, 75);
     expect(back[3]).toBe(255);
-    expect(back[0]).toBeLessThan(60);
+    expect(back[0]).toBeLessThan(90);
     expect(back[2]).toBeGreaterThan(35); // faint blue remainder
-    expect(back[2]).toBeLessThan(90);
+    expect(back[2]).toBeGreaterThan(130);
+    expect(back[2]).toBeLessThan(160);
 
     // The flat front is not tinted by the backdrop.
     const front = renderer.readPixel(12, 75);
@@ -137,14 +178,37 @@ describe('PageCurlRenderer (browser)', () => {
     }
   });
 
-  it('tilts the fold for corner grabs', () => {
+  it('updates the page without allocating another GPU texture', async () => {
+    const gl = host.querySelector('canvas')!.getContext('webgl')!;
+    const allocate = vi.spyOn(gl, 'createTexture');
+    try {
+      const page = await makePageBitmap();
+      renderer.setTexture(page);
+      page.close();
+      expect(allocate).not.toHaveBeenCalled();
+      renderer.render(0);
+      expect(renderer.readPixel(20, 20).slice(0, 3)).toEqual([0, 160, 0]);
+    } finally {
+      allocate.mockRestore();
+    }
+  });
+
+  it('keeps the detached GPU frame alive until the DOM removal has painted', async () => {
+    renderer.render(0);
+    const gl = host.querySelector('canvas')!.getContext('webgl')!;
+    renderer.dispose();
+    expect(host.querySelector('canvas')).toBeNull();
+    expect(gl.isContextLost()).toBe(false);
+    await vi.waitFor(() => expect(gl.isContextLost()).toBe(true));
+  });
+
+  it('tilts the fold with vertical finger displacement', () => {
     renderer.render(0.4, { x: 1, y: 1 });
-    // A bottom-corner grab folds diagonally: at the same x, the bottom is
-    // curled away while the top is still flat.
-    const top = renderer.readPixel(W - 110, 20);
-    const bottom = renderer.readPixel(W - 110, H - 20);
-    expect(top[3]).toBe(255);
-    expect(bottom[3]).toBe(0);
+    // Dragging downward rotates the fold: the upper edge curls away first.
+    const top = renderer.readPixel(W - 200, 20);
+    const bottom = renderer.readPixel(W - 200, H - 20);
+    expect(top[3]).toBe(0);
+    expect(bottom[3]).toBe(255);
   });
 
   it('mirrors the direction for rtl pages', () => {
@@ -154,6 +218,28 @@ describe('PageCurlRenderer (browser)', () => {
     const right = renderer.readPixel(W - 12, 75);
     expect(left[3]).toBe(0);
     expect(right[3]).toBe(255);
+  });
+
+  it('returns the previous page over the current one around the same spine', () => {
+    const previous = document.createElement('canvas');
+    previous.width = W;
+    previous.height = H;
+    const ctx = previous.getContext('2d')!;
+    ctx.fillStyle = 'rgb(180, 60, 200)';
+    ctx.fillRect(0, 0, W, H);
+    renderer.setReturning(previous);
+    renderer.render(0, { x: 1, y: 0.5 }, false);
+    expect(renderer.readPixel(20, 75).slice(0, 3)).toEqual([0, 160, 0]);
+    expect(renderer.readPixel(W - 20, 75).slice(0, 3)).toEqual([0, 0, 160]);
+    renderer.render(0.4, { x: 1, y: 0.5 }, false);
+    // The previous leaf is arriving from the LEFT; its right edge has not
+    // covered the outer edge of the current page yet.
+    expect(renderer.readPixel(W - 20, 75).slice(0, 3)).toEqual([0, 0, 160]);
+    renderer.render(1, { x: 1, y: 0.5 }, false);
+    expect(renderer.readPixel(20, 75).slice(0, 3)).toEqual([180, 60, 200]);
+    expect(renderer.readPixel(W - 20, 75).slice(0, 3)).toEqual([180, 60, 200]);
+    renderer.render(0, { x: 1, y: 0.5 }, false);
+    expect(renderer.readPixel(20, 75).slice(0, 3)).toEqual([0, 160, 0]);
   });
 });
 
@@ -276,11 +362,11 @@ describe('PageCurlRenderer two-column leaf (browser)', () => {
     expect(parseFloat(renderer.canvasOpacity)).toBeCloseTo(0.5, 1);
     renderer.render(1, { x: 1, y: 0.5 });
     expect(renderer.canvasOpacity).toBe('0');
-    // The paper back still lands on the inner column (whitened blue/yellow),
+    // The paper back still lands on the inner column (translucent blue/yellow),
     // never mirrored-away transparency, so the fade has something to fade.
     const landed = renderer.readPixel(HALF / 2, 75);
     expect(landed[3]).toBe(255);
-    expect(landed[0]).toBeGreaterThan(140);
+    expect(landed[0]).toBeCloseTo(51, -1);
   });
 
   it('turns the left column onto the right for rtl / backward leaves', async () => {
@@ -302,5 +388,26 @@ describe('PageCurlRenderer two-column leaf (browser)', () => {
       expect(renderer.readPixel(x, 150)[3]).toBe(0);
     }
     expect(renderer.canvasOpacity).toBe('');
+  });
+
+  it('returns a spread without replacing the current inner column too early', () => {
+    const previous = document.createElement('canvas');
+    previous.width = W;
+    previous.height = H;
+    const ctx = previous.getContext('2d')!;
+    ctx.fillStyle = 'rgb(0, 200, 200)';
+    ctx.fillRect(0, 0, HALF, H);
+    ctx.fillStyle = 'rgb(200, 0, 200)';
+    ctx.fillRect(HALF, 0, HALF, H);
+    for (const rtl of [false, true]) {
+      renderer.setReturning(previous);
+      renderer.render(0, { x: rtl ? 0 : 1, y: 0.5 }, rtl);
+      expect(renderer.readPixel(20, 75).slice(0, 3)).toEqual([0, 160, 0]);
+      expect(renderer.readPixel(W - 20, 75).slice(0, 3)).toEqual([0, 0, 160]);
+      renderer.render(1, { x: rtl ? 0 : 1, y: 0.5 }, rtl);
+      expect(renderer.readPixel(20, 75).slice(0, 3)).toEqual([0, 200, 200]);
+      expect(renderer.readPixel(W - 20, 75).slice(0, 3)).toEqual([200, 0, 200]);
+      expect(renderer.canvasOpacity).toBe('');
+    }
   });
 });
