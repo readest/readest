@@ -75,7 +75,8 @@ const KEPT_SIDECARS = new Set(['cover.png', 'config.json', 'nav.json']);
  * A dir written more recently than this may belong to an import whose row is
  * not in the library yet: files land in Books/<hash>/ before the caller saves
  * the row, and OPDS auto-download and restore persist a whole batch at once.
- * Such dirs are left alone until they settle.
+ * Such dirs are left alone until they settle, unless their book was deleted
+ * after the last write: nothing has been imported into them since.
  */
 const ORPHAN_SETTLE_MS = 60 * 60 * 1000;
 
@@ -95,6 +96,12 @@ export const getOrphanedBookEntries = async (
   // Any live row protects its dir, even if a legacy library.json also carries
   // a tombstone for the same hash.
   const liveHashes = new Set(books.filter((book) => !book.deletedAt).map((book) => book.hash));
+  const deletedAt = new Map<string, number>();
+  for (const book of books) {
+    if (book.deletedAt) {
+      deletedAt.set(book.hash, Math.max(book.deletedAt, deletedAt.get(book.hash) ?? 0));
+    }
+  }
   let files: FileItem[];
   try {
     // Scan by absolute path: a base-relative read of 'Books' resolves to a
@@ -114,7 +121,12 @@ export const getOrphanedBookEntries = async (
     if (!result) {
       result = appService
         .stats(dir, 'Books')
-        .then(({ mtime }) => !!mtime && now - mtime.getTime() >= ORPHAN_SETTLE_MS)
+        .then(
+          ({ mtime }) =>
+            !!mtime &&
+            (now - mtime.getTime() >= ORPHAN_SETTLE_MS ||
+              mtime.getTime() <= (deletedAt.get(dir) ?? 0)),
+        )
         .catch(() => false);
       settled.set(dir, result);
     }

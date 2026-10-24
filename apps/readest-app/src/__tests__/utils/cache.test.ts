@@ -69,6 +69,38 @@ describe('getOrphanedBookEntries (#5837)', () => {
     expect(await getOrphanedBookEntries(unreadable, [])).toEqual([]);
   });
 
+  it('reclaims a book deleted after its dir was last written, however recent', async () => {
+    // Download 50 books, delete them on another device, open Manage Cache:
+    // every dir was written minutes ago, so the settle window hid all but the
+    // older ones. Nothing has written to the dir since the delete, so no
+    // import can own it.
+    const now = Date.now();
+    const readDirectory = vi.fn().mockResolvedValue(makeFiles(`${DELETED}/book.epub`));
+    const appService = makeBooksFs(readDirectory, async () => ({
+      mtime: new Date(now - 10 * 60 * 1000),
+    }));
+
+    const entries = await getOrphanedBookEntries(appService, [
+      makeBook(DELETED, now - 5 * 60 * 1000),
+    ]);
+
+    expect(entries).toEqual([{ base: 'Books', path: `${DELETED}/book.epub`, size: 10 }]);
+  });
+
+  it('holds back a deleted book dir written after the delete, as a re-import may own it', async () => {
+    const now = Date.now();
+    const readDirectory = vi.fn().mockResolvedValue(makeFiles(`${DELETED}/book.epub`));
+    const appService = makeBooksFs(readDirectory, async () => ({
+      mtime: new Date(now - 60 * 1000),
+    }));
+
+    const entries = await getOrphanedBookEntries(appService, [
+      makeBook(DELETED, now - 5 * 60 * 1000),
+    ]);
+
+    expect(entries).toEqual([]);
+  });
+
   it('stats each candidate dir once', async () => {
     const readDirectory = vi
       .fn()
