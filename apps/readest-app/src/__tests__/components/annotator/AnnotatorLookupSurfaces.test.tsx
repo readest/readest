@@ -17,8 +17,11 @@ import { act, cleanup, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { eventDispatcher } from '@/utils/event';
 import type { TextSelection } from '@/utils/sel';
+import type { ComponentProps } from 'react';
+import type AnnotationPopup from '@/app/reader/components/annotator/AnnotationPopup';
 
 const h = vi.hoisted(() => ({
+  appService: {} as { appPlatform?: string; isIOSApp?: boolean },
   actions: null as null | Record<string, () => boolean>,
   config: { booknotes: [] as unknown[], viewSettings: {} },
   viewSettings: {
@@ -38,7 +41,6 @@ const h = vi.hoisted(() => ({
   deselect: vi.fn(),
   restoreSelectionRange: vi.fn(() => true),
   isTextSelected: { current: true },
-  appService: {} as { isIOSApp?: boolean },
   onNativeTouch: null as null | ((ev: { type: string; x: number; y: number }) => void),
   // Swapped per test: the fixed-layout branch of `onLoad` used to wire PDF-only
   // listeners, so a regression there is only visible with this on.
@@ -54,6 +56,12 @@ const h = vi.hoisted(() => ({
 }));
 
 const settings = {
+  aiSettings: {
+    enabled: false,
+    reedy: { enabled: false },
+    provider: 'ai-gateway',
+    aiGatewayApiKey: '',
+  },
   globalReadSettings: {
     highlightStyle: 'highlight',
     highlightStyles: { highlight: 'yellow', underline: 'green', squiggly: 'blue' },
@@ -126,7 +134,11 @@ vi.mock('@/store/readerStore', () => {
 
 vi.mock('@/store/readerProgressStore', () => ({
   getBookProgress: () => ({ page: 1 }),
-  useBookProgress: () => ({ page: 1, sectionHref: 'chapter.xhtml' }),
+  useBookProgress: () => ({
+    page: 1,
+    sectionHref: 'chapter.xhtml',
+    location: 'epubcfi(/6/2!/4/2)',
+  }),
 }));
 
 vi.mock('@/store/notebookStore', () => ({
@@ -241,7 +253,18 @@ vi.mock('@/app/reader/components/annotator/ImportAnnotationsDialog', () => ({
   default: () => null,
 }));
 vi.mock('@/app/reader/components/annotator/AnnotationPopup', () => ({
-  default: () => <div data-testid='annotation-toolbar' />,
+  default: ({ buttons }: Pick<ComponentProps<typeof AnnotationPopup>, 'buttons'>) => (
+    <div data-testid='annotation-toolbar'>
+      {buttons.map((button) => (
+        <button type='button' key={button.tooltipText} onClick={button.onClick}>
+          {button.tooltipText}
+        </button>
+      ))}
+    </div>
+  ),
+}));
+vi.mock('@/app/reader/components/annotator/XRayPopup', () => ({
+  default: ({ term }: { term: string }) => <div data-testid='xray-surface'>{term.trim()}</div>,
 }));
 // The dismiss button stands in for the popup's close / backdrop tap, so a test
 // can drive the route back out of the lookup. Each surface reads its text the
@@ -302,6 +325,10 @@ const republishSelectionWithSuppressedHandles = async () => {
 };
 
 beforeEach(() => {
+  h.appService.appPlatform = 'web';
+  settings.aiSettings.enabled = false;
+  settings.aiSettings.reedy.enabled = false;
+  settings.aiSettings.aiGatewayApiKey = '';
   h.actions = null;
   h.appService = {};
   h.onNativeTouch = null;
@@ -320,6 +347,32 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('a lookup surface survives the selection it is anchored to being republished', () => {
+  test('X-Ray stays open when the native handles are suppressed', async () => {
+    h.appService.appPlatform = 'tauri';
+    settings.aiSettings.enabled = true;
+    settings.aiSettings.reedy.enabled = true;
+    const { rerender } = render(
+      <Annotator bookKey='book-1' contentInsets={{ top: 0, right: 0, bottom: 0, left: 0 }} />,
+    );
+    await selectText();
+    expect(screen.queryByRole('button', { name: 'X-Ray' })).toBeNull();
+    settings.aiSettings.aiGatewayApiKey = 'test-key';
+    rerender(
+      <Annotator bookKey='book-1' contentInsets={{ top: 0, right: 0, bottom: 0, left: 0 }} />,
+    );
+
+    act(() => screen.getByRole('button', { name: 'X-Ray' }).click());
+    expect(await screen.findByTestId('xray-surface')).toBeTruthy();
+
+    await republishSelectionWithSuppressedHandles();
+
+    expect(screen.queryByTestId('xray-surface')).toBeTruthy();
+    expect(screen.queryByTestId('annotation-toolbar')).toBeNull();
+
+    act(() => h.actions?.['onProofreadSelection']?.());
+    expect(screen.queryByTestId('proofread-surface')).toBeTruthy();
+    expect(screen.queryByTestId('xray-surface')).toBeNull();
+  });
   test.each([
     ['onDictionarySelection', 'dictionary-surface'],
     ['onTranslateSelection', 'translator-surface'],

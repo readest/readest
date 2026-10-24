@@ -1,11 +1,12 @@
 import clsx from 'clsx';
-import React, { useCallback, useEffect, useState } from 'react';
+import dynamic from 'next/dynamic';
+import React, { useCallback, useEffect, useId, useState } from 'react';
 
 import { useSettingsStore } from '@/store/settingsStore';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useSidebarStore } from '@/store/sidebarStore';
-import { useNotebookStore } from '@/store/notebookStore';
+import { useNotebookStore, type NotebookTab } from '@/store/notebookStore';
 import { useAIChatStore } from '@/store/aiChatStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeStore } from '@/store/themeStore';
@@ -29,10 +30,13 @@ import NotebookHeader from './Header';
 import NotebookEditor from './NotebookEditor';
 import NotebookTabNavigation from './NotebookTabNavigation';
 
+const XRayView = dynamic(() => import('./XRayView'), { ssr: false });
+
 const MIN_NOTEBOOK_WIDTH = 0.15;
 const MAX_NOTEBOOK_WIDTH = 0.45;
 
 const Notebook: React.FC = () => {
+  const notebookId = useId();
   const _ = useTranslation();
   const { envConfig, appService } = useEnv();
   const { settings } = useSettingsStore();
@@ -126,7 +130,7 @@ const Notebook: React.FC = () => {
     });
   };
 
-  const handleTabChange = (tab: 'notes' | 'ai') => {
+  const handleTabChange = (tab: NotebookTab) => {
     setNotebookActiveTab(tab);
     saveSysSettings(envConfig, 'globalReadSettings', {
       ...settings.globalReadSettings,
@@ -263,24 +267,41 @@ const Notebook: React.FC = () => {
             handleTogglePin={handleTogglePin}
           />
         </div>
-        {notebookActiveTab === 'ai' ? (
-          <div className='flex min-h-0 flex-1 flex-col'>
-            <AIAssistant key={activeConversationId ?? 'new'} bookKey={sideBarBookKey} />
-          </div>
-        ) : (
-          <NotebookEditor
-            bookKey={sideBarBookKey}
-            handleOpenAnnotations={handleOpenAnnotations}
-            excerpts={excerptNotes}
-            onDeleteExcerpt={handleDeleteExcerpt}
-          />
-        )}
         <div
-          className='shrink-0'
+          className='order-last shrink-0'
           style={{ paddingBottom: `${(safeAreaInsets?.bottom || 0) / 2}px` }}
         >
-          <NotebookTabNavigation activeTab={notebookActiveTab} onTabChange={handleTabChange} />
+          <NotebookTabNavigation
+            idPrefix={notebookId}
+            activeTab={notebookActiveTab}
+            onTabChange={handleTabChange}
+          />
         </div>
+        {(['notes', 'ai', 'xray'] as const).map((tab) => (
+          <div
+            key={tab}
+            role={settings.aiSettings?.enabled ? 'tabpanel' : undefined}
+            id={`${notebookId}-${tab}-panel`}
+            aria-labelledby={settings.aiSettings?.enabled ? `${notebookId}-${tab}` : undefined}
+            hidden={notebookActiveTab !== tab}
+            tabIndex={settings.aiSettings?.enabled ? 0 : undefined}
+            className='flex min-h-0 flex-1 flex-col'
+          >
+            {notebookActiveTab === tab &&
+              (tab === 'ai' ? (
+                <AIAssistant key={activeConversationId ?? 'new'} bookKey={sideBarBookKey} />
+              ) : tab === 'xray' ? (
+                <XRayView bookKey={sideBarBookKey} />
+              ) : (
+                <NotebookEditor
+                  bookKey={sideBarBookKey}
+                  handleOpenAnnotations={handleOpenAnnotations}
+                  excerpts={excerptNotes}
+                  onDeleteExcerpt={handleDeleteExcerpt}
+                />
+              ))}
+          </div>
+        ))}
       </div>
     </>
   ) : null;
