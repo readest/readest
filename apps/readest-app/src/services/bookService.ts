@@ -605,6 +605,35 @@ export async function importBook(
             openedSource = undefined;
           }
         }
+        // DOCX/RTF have no native reader either: convert to EPUB up front so
+        // everything downstream (native parse, hash, metadata, storage, sync)
+        // sees an ordinary EPUB import. Same consume-the-source contract as
+        // the TXT conversion above; the conversion stays silent — no UI, no
+        // new strings — consistent with how the Send inbox already converts
+        // documents through the same worker.
+        if (/\.(docx|rtf)$/i.test(filename)) {
+          // Dynamic import: the conversion stack (mammoth, Readability, EPUB
+          // assembly) stays out of the main bundle via code splitting.
+          const { convertToEpubWithWorker } = await import(
+            '@/services/send/conversion/conversionWorker'
+          );
+          try {
+            const bytes = await fileobj.arrayBuffer();
+            const { file: convertedFile } = await convertToEpubWithWorker({
+              kind: /\.docx$/i.test(filename) ? 'docx' : 'rtf',
+              bytes,
+              fileName: filename,
+            });
+            fileobj = convertedFile;
+          } finally {
+            if (openedSource?.close) {
+              try {
+                await openedSource.close();
+              } catch {}
+            }
+            openedSource = undefined;
+          }
+        }
         if (!fileobj || fileobj.size === 0) {
           throw new Error('Invalid or empty book file');
         }
@@ -627,7 +656,10 @@ export async function importBook(
         // tests.
         let nativeBookDoc: BookDoc | undefined;
         let nativeFormat: BookFormat | undefined;
-        if (typeof file === 'string' && !/\.txt$/i.test(filename)) {
+        // TXT/DOCX/RTF fileobj was converted in memory above, so the bytes at
+        // `path` are still the original document — don't hand those to the
+        // path-based native parsers.
+        if (typeof file === 'string' && !/(\.txt|\.docx|\.rtf)$/i.test(filename)) {
           const nativePdf = await tryNativeParsePdf(file, fileobj, osPlatform);
           if (nativePdf) {
             nativeBookDoc = nativePdf.bookDoc;
@@ -839,7 +871,10 @@ export async function importBook(
       (!(await fs.exists(bookFilename, 'Books')) ||
         (overwrite && file !== `${await fs.getPrefix('Books')}/${bookFilename}`));
     if (willWriteBookFile && fileobj) {
-      if (/\.txt$/i.test(filename)) {
+      if (/(\.txt|\.docx|\.rtf)$/i.test(filename)) {
+        // The import converted fileobj in memory; the file at `path` still
+        // holds the original document, so write the EPUB bytes — never copy
+        // the source path into Books.
         await fs.writeFile(bookFilename, 'Books', fileobj);
       } else if (typeof file === 'string' && isContentURI(file)) {
         // openFile has already materialized opaque providers into a seekable
