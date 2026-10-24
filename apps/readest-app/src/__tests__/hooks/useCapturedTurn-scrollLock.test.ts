@@ -25,6 +25,7 @@ const h = vi.hoisted(() => ({
     ) => void
   >(),
   android: false,
+  ios: false,
   nativeCommit: false,
   controllerHost: null as null | {
     navigate: (forward: boolean) => Promise<void>;
@@ -142,6 +143,7 @@ vi.mock('@/services/environment', () => ({
     isMobileApp: process.env['NEXT_PUBLIC_APP_PLATFORM'] === 'tauri',
     isMacOSApp: false,
     isAndroidApp: h.android,
+    isIOSApp: h.ios,
   }),
 }));
 vi.mock('@/app/reader/utils/capturedTurn', () => ({
@@ -196,6 +198,7 @@ const setSettingsDialogOpen = (open: boolean) => {
 
 beforeEach(() => {
   h.android = false;
+  h.ios = false;
   h.nativeCommit = false;
   h.renderer.previewPage = undefined;
   h.renderer.getPageTurnKey = undefined;
@@ -230,18 +233,20 @@ afterEach(() => {
 });
 
 describe('useCapturedTurn scroll-lock gate', () => {
-  test.each([
-    'native curl',
-    'slide',
-    'fixed curl',
-    'curl without preview',
-  ] as const)('uses the matching recovery path after a failed Android %s', async (mode) => {
+  test.each(
+    (['Android', 'iOS'] as const).flatMap((platform) =>
+      (['native curl', 'slide', 'fixed curl', 'curl without preview'] as const).map(
+        (mode) => [platform, mode] as const,
+      ),
+    ),
+  )('uses the matching recovery path after a failed %s %s', async (platform, mode) => {
     vi.resetModules();
     const { useCapturedTurn: useFreshCapturedTurn } = await import(
       '@/app/reader/hooks/useCapturedTurn'
     );
     const { NativePageTurn } = await import('@/app/reader/utils/nativePageTurn');
-    h.android = true;
+    h.android = platform === 'Android';
+    h.ios = platform === 'iOS';
     h.renderer.getPageTurnKey = () => '1';
     h.renderer.previewPage = mode === 'curl without preview' ? undefined : async () => null;
     h.viewSettings.pageTurnStyle = mode === 'slide' ? 'slide' : 'curl';
