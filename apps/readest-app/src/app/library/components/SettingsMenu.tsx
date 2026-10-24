@@ -437,7 +437,7 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
             onClick={handleRefreshMetadata}
             disabled={isRefreshingMetadata}
           />
-          {appService?.isMobileApp && (
+          {(appService?.isMobileApp || appService?.isDesktopApp) && (
             <MenuItem label={_('Manage Cache')} onClick={handleManageCache} />
           )}
           {!isPinEnabled && (
