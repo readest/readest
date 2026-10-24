@@ -2,7 +2,7 @@ import clsx from 'clsx';
 import React, { useState } from 'react';
 
 interface AnnotationToolButtonProps {
-  showTooltip: boolean;
+  showTooltip?: boolean;
   tooltipText: string;
   disabled?: boolean;
   Icon: React.ElementType;
@@ -10,7 +10,7 @@ interface AnnotationToolButtonProps {
 }
 
 const AnnotationToolButton: React.FC<AnnotationToolButtonProps> = ({
-  showTooltip,
+  showTooltip = true,
   tooltipText,
   disabled,
   Icon,
@@ -23,12 +23,15 @@ const AnnotationToolButton: React.FC<AnnotationToolButtonProps> = ({
   };
   return (
     <div
-      className='lg:tooltip lg:tooltip-bottom'
-      title={!buttonClicked && showTooltip ? tooltipText : undefined}
+      className={clsx(
+        !buttonClicked && showTooltip && 'lg:tooltip lg:tooltip-top',
+      )}
+      data-tip={!buttonClicked && showTooltip ? tooltipText : undefined}
     >
       <button
         onClick={handleClick}
         aria-label={tooltipText}
+        title={!buttonClicked && showTooltip ? tooltipText : undefined}
         className={clsx(
           'flex h-8 min-h-8 w-8 items-center justify-center p-0',
           disabled

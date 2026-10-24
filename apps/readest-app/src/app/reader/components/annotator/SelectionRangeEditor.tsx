@@ -117,14 +117,16 @@ const SelectionRangeEditor: React.FC<SelectionRangeEditorProps> = ({
     (point: Point, commit = false) => {
       const anchor = fixedAnchorRef.current;
       if (!anchor) return;
-      void onDragTo(anchor, point, commit).then((bounds) => {
+      const yBias = isVertical ? 0 : draggingRef.current === 'start' ? 2 : -2;
+      const adjustedPoint = isVertical ? point : { x: point.x, y: point.y + yBias };
+      void onDragTo(anchor, adjustedPoint, commit).then((bounds) => {
         if (bounds) boundsRef.current = bounds;
       });
       // Drag the handle into the corner to turn the page; the anchored end keeps
       // the previous page's part of the selection across the turn.
-      if (!commit) noteAutoTurnPoint(viewSettings?.scrolled ? null : point);
+      if (!commit) noteAutoTurnPoint(viewSettings?.scrolled ? null : adjustedPoint);
     },
-    [onDragTo, noteAutoTurnPoint, viewSettings?.scrolled],
+    [onDragTo, noteAutoTurnPoint, viewSettings?.scrolled, isVertical],
   );
 
   // Rebuild the range from the held handle position after an auto page-turn, so
