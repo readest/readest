@@ -133,6 +133,55 @@ describe('EdgeSpeechTTS on Cloudflare Workers', () => {
     expect(mockSocket.close).toHaveBeenCalledOnce();
   });
 
+  test('falls back to bing Read Aloud when msedgeservices refuses the upgrade', async () => {
+    const listeners: Record<string, Array<(event: unknown) => void>> = {};
+    const mockSocket = {
+      accept: vi.fn(),
+      send: vi.fn(),
+      close: vi.fn(),
+      addEventListener: vi.fn((type: string, cb: (event: unknown) => void) => {
+        (listeners[type] ??= []).push(cb);
+      }),
+    };
+    mockSocket.send.mockImplementation(() => {
+      if (mockSocket.send.mock.calls.length !== 2) return;
+      const headerBytes = new TextEncoder().encode('Path:audio\r\n');
+      const frame = new Uint8Array(2 + headerBytes.byteLength + 2);
+      new DataView(frame.buffer).setInt16(0, headerBytes.byteLength);
+      frame.set(headerBytes, 2);
+      frame.set([0x01, 0x02], 2 + headerBytes.byteLength);
+      queueMicrotask(() => {
+        for (const cb of listeners['message'] ?? []) cb({ data: frame.buffer });
+        for (const cb of listeners['message'] ?? []) cb({ data: 'Path: turn.end\r\n\r\n' });
+      });
+    });
+    const fetchSpy = vi
+      .fn()
+      .mockResolvedValueOnce({ status: 200 })
+      .mockResolvedValueOnce({ status: 101, webSocket: mockSocket });
+    globalThis.fetch = fetchSpy as unknown as typeof fetch;
+
+    const { EdgeSpeechTTS } = await import('@/libs/edgeTTS');
+    const response = await new EdgeSpeechTTS('wss').create({
+      lang: 'en-US',
+      text: 'hello',
+      voice: 'en-US-AvaNeural',
+      rate: 1.0,
+      pitch: 1.0,
+    });
+
+    expect(new Uint8Array(await response.arrayBuffer())).toEqual(new Uint8Array([0x01, 0x02]));
+    expect(fetchSpy).toHaveBeenCalledTimes(2);
+    expect(String(fetchSpy.mock.calls[0]![0])).toContain('https://api.msedgeservices.com/');
+    const fallbackUrl = String(fetchSpy.mock.calls[1]![0]);
+    expect(fallbackUrl).toContain(
+      'https://speech.platform.bing.com/consumer/speech/synthesize/readaloud/edge/v1?',
+    );
+    expect(fallbackUrl).toContain('TrustedClientToken=6A5AA1D4EAFF4E9FB37E23D68491D6F4');
+    expect(fallbackUrl).toContain('Sec-MS-GEC-Version=2-');
+    expect(fallbackUrl).not.toContain('Ocp-Apim-Subscription-Key=');
+  });
+
   test('decodes Blob binary frames (Cloudflare Workers shape)', async () => {
     // On real Cloudflare Workers, WebSocket binary frames arrive as Blob
     // instances rather than ArrayBuffer. This test guards that code path
