@@ -333,7 +333,8 @@ const FoliateViewer: React.FC<{
         bookKey,
         loadedContents
           .filter(
-            (c) => (c.index == null ? 0 : sectionSizes?.[c.index]?.size ?? 0) <=
+            (c) =>
+              (c.index == null ? 0 : (sectionSizes?.[c.index]?.size ?? 0)) <=
               CHUNKED_SECTION_THRESHOLD,
           )
           .map((c) => ({
@@ -402,8 +403,6 @@ const FoliateViewer: React.FC<{
   // sampled screen counts describe a layout that no longer exists: drop them.
   // The next relocate re-harvests everything loaded in the new layout and the
   // pair re-calibrates to it - page numbers must change when the font does.
-  // Keyed on the applied CSS itself so any setting that changes layout
-  // metrics trips it, including ones added later.
   // Dropping the measurements must also drop the entry marker: otherwise the
   // next relocate in the same chapter would skip the re-sample and the
   // re-snapshot, and the readout would compute from the jittering live map -
@@ -412,10 +411,15 @@ const FoliateViewer: React.FC<{
     clearChapterScreens(bookKey);
     lastSampledSpineRef.current = null;
   }, [bookKey]);
-  const stylesCss = viewSettings ? getStyles(viewSettings, undefined, getLoadedFonts()) : '';
+  // Keyed on the serialized view settings: any setting change re-renders
+  // every loaded view (paginator render()) and invalidates every measured
+  // count, so drop them wholesale — including settings added later, without
+  // enumerating layout-relevant fields. Non-layout settings trigger a
+  // harmless re-harvest of the same values.
+  const settingsFingerprint = viewSettings ? JSON.stringify(viewSettings) : '';
   useEffect(() => {
     invalidateChapterScreens();
-  }, [bookKey, invalidateChapterScreens, stylesCss]);
+  }, [bookKey, invalidateChapterScreens, settingsFingerprint]);
 
   // Same for container resizes (window, sidebar, orientation): the paginator
   // re-renders on resize, invalidating every measured count. The view element
@@ -424,6 +428,9 @@ const FoliateViewer: React.FC<{
     let observer: ResizeObserver | undefined;
     let raf = 0;
     const attach = () => {
+      // jsdom (unit tests) has no ResizeObserver; without it the calibration
+      // simply keeps stale counts, which tests that never resize are fine with.
+      if (typeof ResizeObserver === 'undefined') return;
       const el = viewRef.current;
       if (el) {
         observer = new ResizeObserver(() => invalidateChapterScreens());
