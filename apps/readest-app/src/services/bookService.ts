@@ -537,6 +537,11 @@ export async function importBook(
     lookupIndex,
     osPlatform,
   } = options;
+  // In-place is only meaningful for formats the reader can parse natively.
+  // DOCX/RTF are converted to EPUB and must be persisted into Books/ — the
+  // converted artifact is the only readable form, so binding the book to the
+  // original document path would break reader opens and sync uploads.
+  let effectiveInPlace = inPlace;
   const isPseStream = typeof file === 'string' && isPseStreamFileName(file);
 
   let loadedBook: BookDoc | undefined;
@@ -612,6 +617,20 @@ export async function importBook(
         // new strings — consistent with how the Send inbox already converts
         // documents through the same worker.
         if (/\.(docx|rtf)$/i.test(filename)) {
+          // Fall back to a managed copy: the reader can only open the
+          // converted EPUB, so an in-place binding to the source document
+          // would be unreadable.
+          if (effectiveInPlace) {
+            effectiveInPlace = false;
+          }
+          // Transient open-with cannot work either: nothing is persisted in
+          // transient mode, so there is nowhere readable to put the EPUB.
+          // Fail fast instead of returning a book bound to the raw document.
+          if (transient) {
+            throw new Error(
+              'DOCX/RTF files must be imported (converted to EPUB) before they can be read; transient open is not supported.',
+            );
+          }
           // Dynamic import: the conversion stack (mammoth, Readability, EPUB
           // assembly) stays out of the main bundle via code splitting.
           const { convertToEpubWithWorker } = await import(
@@ -866,7 +885,7 @@ export async function importBook(
     const willWriteBookFile =
       saveBook &&
       !transient &&
-      !inPlace &&
+      !effectiveInPlace &&
       !!fileobj &&
       (!(await fs.exists(bookFilename, 'Books')) ||
         (overwrite && file !== `${await fs.getPrefix('Books')}/${bookFilename}`));
@@ -1059,7 +1078,7 @@ export async function importBook(
       if (isValidURL(file)) {
         book.url = file;
         if (existingBook) existingBook.url = file;
-      } else if (transient || inPlace) {
+      } else if (transient || effectiveInPlace) {
         // transient: source file is loaded directly, never persisted in Books/.
         // inPlace: source file is inside the user's library root and we read it
         // there directly instead of duplicating it under Books/<hash>/.
@@ -1069,7 +1088,7 @@ export async function importBook(
           // Keep the path it is losing so the auto-import scan knows both
           // files are accounted for (transient previews are never persisted,
           // so there is nothing to remember for them).
-          if (inPlace && !transient) {
+          if (effectiveInPlace && !transient) {
             displaceSourcePath(existingBook, file, osPlatform);
           }
           existingBook.filePath = file;
@@ -1081,7 +1100,7 @@ export async function importBook(
     // in-place fast path. Only persistent in-place imports go into the
     // index — transient previews are short-lived and never persisted to
     // the library so indexing them would just leak references.
-    if (lookupIndex && inPlace && !transient && typeof file === 'string') {
+    if (lookupIndex && effectiveInPlace && !transient && typeof file === 'string') {
       const indexedBook = existingBook || book;
       if (indexedBook.filePath) {
         const key = normalizeFilePathForIndex(indexedBook.filePath, osPlatform);

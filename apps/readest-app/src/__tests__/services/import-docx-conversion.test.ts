@@ -201,4 +201,36 @@ describe('importBook DOCX/RTF conversion', () => {
     await expect(service.importBook('/library/report.docx', [])).rejects.toThrow();
     expect(mockClose).toHaveBeenCalledTimes(1);
   });
+
+  it('falls back to a managed copy for in-place DOCX imports', async () => {
+    const source = makeSourceDoc();
+    service.getFs().openFile.mockResolvedValue(source);
+
+    // In-place binds the book to the source path, but the reader can only
+    // open the converted EPUB — so an in-place docx import must be persisted
+    // into Books/ instead, and the book must not carry the source path.
+    const result = await service.importBook('/watched/report.docx', [], {
+      inPlace: true,
+    });
+
+    expect(result).not.toBeNull();
+    expect(result!.filePath).toBeUndefined();
+    const fs = service.getFs();
+    const bookWrite = fs.writeFile.mock.calls.find(([name]) => /\.epub$/.test(name));
+    expect(bookWrite).toBeDefined();
+    expect(fs.copyFile).not.toHaveBeenCalled();
+  });
+
+  it('fails fast when a DOCX is opened transiently', async () => {
+    const source = makeSourceDoc();
+    service.getFs().openFile.mockResolvedValue(source);
+
+    // Transient mode never persists anything, so the converted EPUB would
+    // have nowhere readable to live — reject instead of returning a book
+    // bound to the raw document.
+    await expect(
+      service.importBook('/library/report.docx', [], { transient: true }),
+    ).rejects.toThrow();
+    expect(mockConvertDocx).not.toHaveBeenCalled();
+  });
 });
