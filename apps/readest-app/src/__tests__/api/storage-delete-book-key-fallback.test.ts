@@ -122,6 +122,13 @@ describe('DELETE /api/storage/delete — book file uploaded under another name',
     expect(deletedIds).toEqual([]);
   });
 
+  it('does not fall back for a key outside Readest/Books', async () => {
+    const status = await deleteKey(`${USER}/Readest/BookNotes/${HASH}/Repro Deletion Test.epub`);
+
+    expect(status).toBe(404);
+    expect(deleteObjectMock).not.toHaveBeenCalled();
+  });
+
   it("never resolves to another user's file", async () => {
     rows = rows.map((row) => ({ ...row, user_id: 'someone-else' }));
     const status = await deleteKey(`${USER}/Readest/Books/${HASH}/Repro Deletion Test.epub`);

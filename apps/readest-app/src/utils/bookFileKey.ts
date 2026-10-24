@@ -7,8 +7,7 @@
 export const parseBookFileKey = (
   fileKey: string,
 ): { bookHash: string; fileExtension: string } | null => {
-  if (!fileKey.includes('Readest/Book')) return null;
   const parts = fileKey.split('/');
-  if (parts.length !== 5) return null;
+  if (parts.length !== 5 || parts[1] !== 'Readest' || parts[2] !== 'Books') return null;
   return { bookHash: parts[3]!, fileExtension: parts[4]!.split('.').pop() || '' };
 };
