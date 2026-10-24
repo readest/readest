@@ -28,6 +28,11 @@ import { useFoliateEvents } from '../hooks/useFoliateEvents';
 import { useProgressSync } from '../hooks/useProgressSync';
 import { useABSProgressSync } from '../hooks/useABSProgressSync';
 import { useProgressAutoSave } from '../hooks/useProgressAutoSave';
+import {
+  CHUNKED_SECTION_THRESHOLD,
+  clearChapterScreens,
+  recordChapterScreens,
+} from '@/utils/chapterScreens';
 import { useBackgroundTexture } from '@/hooks/useBackgroundTexture';
 import { useAutoFocus } from '@/hooks/useAutoFocus';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -244,6 +249,7 @@ const FoliateViewer: React.FC<{
   const pendingRelocateRef = useRef<CustomEvent | null>(null);
   const relocateRafRef = useRef<number | null>(null);
   const relocateTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastSampledSpineRef = useRef<number | null>(null);
   const cancelRelocateScheduled = useCallback(() => {
     if (relocateTimeoutRef.current != null) {
       clearTimeout(relocateTimeoutRef.current);
@@ -280,6 +286,22 @@ const FoliateViewer: React.FC<{
       ? getLockedPanX(viewRef.current, getViewSettings(bookKey))
       : undefined;
     if (panX !== undefined && panX !== getConfig(bookKey)?.panX) setConfig(bookKey, { panX });
+    // Sample the section's measured spread count as it becomes primary: the
+    // session map calibrates the book-level page pair (chapterScreens.ts).
+    // Chunked sections report chunk-local counts, so they stay byte-estimated.
+    // getBookData is re-read here, not captured: this callback is memoized
+    // without bookData, and the book document loads after the first render.
+    const sampledSpine = detail.section?.current;
+    if (sampledSpine != null && sampledSpine !== lastSampledSpineRef.current) {
+      lastSampledSpineRef.current = sampledSpine;
+      const sectionSize = getBookData(bookKey)?.bookDoc?.sections?.[sampledSpine]?.size;
+      if ((sectionSize ?? 0) <= CHUNKED_SECTION_THRESHOLD) {
+        const measuredPages = viewRef.current?.renderer?.pages;
+        if (measuredPages && measuredPages > 0) {
+          recordChapterScreens(bookKey, sampledSpine, measuredPages);
+        }
+      }
+    }
   }, [bookKey, setProgress, cancelRelocateScheduled]);
 
   const progressRelocateHandler = (event: Event) => {
@@ -322,8 +344,12 @@ const FoliateViewer: React.FC<{
       }
       cancelRelocateScheduled();
       pendingRelocateRef.current = null;
+      // The sampled screen counts describe one open's layout; a reopen starts
+      // a fresh map so settings or viewport changes can never leak stale
+      // weights across sessions.
+      clearChapterScreens(bookKey);
     };
-  }, [cancelRelocateScheduled, commitRelocate]);
+  }, [bookKey, cancelRelocateScheduled, commitRelocate]);
 
   const getDocTransformHandler = ({ width, height }: { width: number; height: number }) => {
     return (event: Event) => {
