@@ -1733,7 +1733,12 @@ export const applyImageStyle = (document: Document) => {
       const isInline = childNodes.every(
         (node) => node.nodeType !== Node.ELEMENT_NODE || (node as Element).tagName !== 'BR',
       );
-      inlineWithText = hasTextSiblings && isInline;
+      // A glyph image standing in for a character is never sized as a share
+      // of the line; a title image the book sizes that way keeps it (#7039).
+      // computedStyleMap keeps the percentage that getComputedStyle resolves.
+      const width = img.computedStyleMap?.().get('width');
+      const percentSized = !!width && 'unit' in width && width.unit === 'percent';
+      inlineWithText = hasTextSiblings && isInline && !percentSized;
       if (inlineWithText) {
         // Only supply Readest's baseline default when the book leaves
         // vertical-align at its initial value; an author-set value (e.g. a CJK
