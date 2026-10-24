@@ -35,6 +35,7 @@ import { convertPagesToTimeRemainingMinutes } from '@/app/library/utils/libraryU
 import { formatDuration } from '@/utils/duration';
 import { getMarginalInlinePadding } from '@/utils/insets';
 import { SIZE_PER_LOC, SIZE_PER_TIME_UNIT } from '@/services/constants';
+import { CHUNKED_SECTION_THRESHOLD, getCalibratedPagePair } from '@/utils/chapterScreens';
 import { useMedianPageDurationSecs } from '@/hooks/useMedianPageDurationSecs';
 
 interface ProgressBarProps {
@@ -96,6 +97,47 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
   const lang = localStorage?.getItem('i18nextLng') || '';
   const localize = isVertical && lang.toLowerCase().startsWith('zh');
   const pageInfo = bookData?.isFixedLayout ? section : pageinfo;
+  // The 页码 pair calibrated into screen space: the renderer's page/pages are
+  // the primary section's own measured spread coordinates (0-based), and
+  // chapters sampled this session (FoliateViewer records them on entry)
+  // contribute their real spread counts, while unmeasured ones are estimated
+  // from uncompressed bytes over the measured bytes-per-screen ratio
+  // (SIZE_PER_LOC cold, i.e. today's estimate). The readout advances exactly
+  // one page per turn within a chapter; estimate corrections land only when a
+  // chapter is entered. Fixed layout keeps its real page pairs, scrolled mode
+  // has no spreads, and formats without section sizes keep the byte-grid pair.
+  const { page: current = 0, pages: total = 0 } = view?.renderer || {};
+  const sectionFractions = view?.getSectionFractions() ?? [];
+  const sectionIndex = section?.current ?? 0;
+  const sections = bookData?.bookDoc?.sections;
+  const isCalibratedPair =
+    readingProgressStyle === 'fraction' &&
+    !bookData?.isFixedLayout &&
+    !viewSettings.scrolled &&
+    !!sections?.length;
+  const isCurrentChunked = (sections?.[sectionIndex]?.size ?? 0) > CHUNKED_SECTION_THRESHOLD;
+  const chapterSpan =
+    (sectionFractions[sectionIndex + 1] ?? 0) - (sectionFractions[sectionIndex] ?? 0);
+  const chapterFraction =
+    chapterSpan > 0
+      ? Math.min(
+          1,
+          Math.max(
+            0,
+            ((progress?.fraction ?? 0) - (sectionFractions[sectionIndex] ?? 0)) / chapterSpan,
+          ),
+        )
+      : 0;
+  const calibratedPair = isCalibratedPair
+    ? getCalibratedPagePair(
+        bookKey,
+        sections!,
+        sectionIndex,
+        current,
+        isCurrentChunked,
+        chapterFraction,
+      )
+    : null;
   const referenceInfo =
     readingProgressStyle === 'reference'
       ? getReferencePageInfo({
@@ -115,7 +157,15 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
           localize,
           lang,
         )
-      : formatProgress(pageInfo?.current, pageInfo?.total, template, localize, lang);
+      : calibratedPair && calibratedPair.total > 0
+        ? formatProgress(
+            Math.floor(calibratedPair.current),
+            Math.ceil(calibratedPair.total),
+            template,
+            localize,
+            lang,
+          )
+        : formatProgress(pageInfo?.current, pageInfo?.total, template, localize, lang);
 
   // Sticky progress bar is horizontal-only; vertical mode keeps its side footer.
   const stickyBarActive = viewSettings.showStickyProgressBar && !isVertical;
@@ -129,7 +179,6 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
     progress?.fraction ??
     (pageInfo && pageInfo.total > 0 ? (pageInfo.current + 1) / pageInfo.total : 0);
 
-  const { page: current = 0, pages: total = 0 } = view?.renderer || {};
   const screenPagesLeft = bookData?.isFixedLayout
     ? pageInfo
       ? Math.max(pageInfo.total - pageInfo.current, 1)
@@ -142,8 +191,6 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
     chapterEnd !== undefined && progress
       ? Math.max(1, chapterEnd - progress.pageinfo.current)
       : undefined;
-  const sectionFractions = view?.getSectionFractions() ?? [];
-  const sectionIndex = section?.current ?? 0;
   const sectionLocation = bookData?.bookDoc?.sections?.[sectionIndex]?.location;
   // Foliate rounds current/next locations down. Their difference can alternate
   // between 0, 1 and 2 for identical screens, so use the unrounded section span.

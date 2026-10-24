@@ -28,6 +28,14 @@ import { useFoliateEvents } from '../hooks/useFoliateEvents';
 import { useProgressSync } from '../hooks/useProgressSync';
 import { useABSProgressSync } from '../hooks/useABSProgressSync';
 import { useProgressAutoSave } from '../hooks/useProgressAutoSave';
+import {
+  CHUNKED_SECTION_THRESHOLD,
+  clearChapterScreens,
+  getMeasuredChapterScreens,
+  harvestLoadedChapterScreens,
+  recordChapterScreens,
+  snapshotChapterScreens,
+} from '@/utils/chapterScreens';
 import { useBackgroundTexture } from '@/hooks/useBackgroundTexture';
 import { useAutoFocus } from '@/hooks/useAutoFocus';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -244,6 +252,8 @@ const FoliateViewer: React.FC<{
   const pendingRelocateRef = useRef<CustomEvent | null>(null);
   const relocateRafRef = useRef<number | null>(null);
   const relocateTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastSampledSpineRef = useRef<number | null>(null);
+  const appliedLayoutSignatureRef = useRef('');
   const cancelRelocateScheduled = useCallback(() => {
     if (relocateTimeoutRef.current != null) {
       clearTimeout(relocateTimeoutRef.current);
@@ -280,6 +290,64 @@ const FoliateViewer: React.FC<{
       ? getLockedPanX(viewRef.current, getViewSettings(bookKey))
       : undefined;
     if (panX !== undefined && panX !== getConfig(bookKey)?.panX) setConfig(bookKey, { panX });
+    // Sample the section's measured spread count as it becomes primary: the
+    // session map calibrates the book-level page pair (chapterScreens.ts).
+    // Chunked sections report chunk-local counts, so they stay byte-estimated.
+    // getBookData is re-read here, not captured: this callback is memoized
+    // without bookData, and the book document loads after the first render.
+    const sampledSpine = detail.section?.current;
+    const spineChanged = sampledSpine != null && sampledSpine !== lastSampledSpineRef.current;
+    if (spineChanged) {
+      lastSampledSpineRef.current = sampledSpine;
+      const sectionSize = getBookData(bookKey)?.bookDoc?.sections?.[sampledSpine]?.size;
+      if (
+        (sectionSize ?? 0) <= CHUNKED_SECTION_THRESHOLD &&
+        !getMeasuredChapterScreens(bookKey)?.has(sampledSpine)
+      ) {
+        const measuredPages = viewRef.current?.renderer?.pages;
+        if (measuredPages && measuredPages > 0) {
+          recordChapterScreens(bookKey, sampledSpine, measuredPages);
+        }
+      }
+    }
+    // Harvest every loaded section's measured count (primary, preloaded
+    // neighbors, rendered chunks): with readest/foliate-js#133 the whole
+    // preloaded window is exact, not just the current chapter. No-op on
+    // foliate builds without the exposed contentPages. contentPages counts
+    // columns; the paginator exposes its real column count as a public
+    // property, so convert per section to spreads with ceil for the partial
+    // final screen. Deriving the ratio from renderer.pages instead would be
+    // wrong — that getter rounds, so e.g. 3 columns / 2 per screen reads 1.5.
+    const loadedContents = viewRef.current?.renderer?.getContents?.();
+    const columnCount = viewRef.current?.renderer?.columnCount ?? 0;
+    if (loadedContents?.length && columnCount > 0) {
+      // Chunked sections stay out of the harvest: getContents() lists one
+      // entry per rendered chunk, so a spine sum is only a partial count that
+      // grows as later chunks render - freezing it as the chapter's measured
+      // weight would understate it. They keep the byte estimate (the primary
+      // item above still contributes its column ratio even when chunked).
+      const sectionSizes = getBookData(bookKey)?.bookDoc?.sections;
+      harvestLoadedChapterScreens(
+        bookKey,
+        loadedContents
+          .filter(
+            (c) =>
+              (c.index == null ? 0 : (sectionSizes?.[c.index]?.size ?? 0)) <=
+              CHUNKED_SECTION_THRESHOLD,
+          )
+          .map((c) => ({
+            index: c.index,
+            contentPages: Math.ceil((c.contentPages ?? 0) / columnCount),
+          })),
+      );
+    }
+    if (spineChanged) {
+      // Freeze the readout weights at chapter entry: the snapshot adopts this
+      // chapter's fresh measurement plus everything harvested since the last
+      // entry, so estimate corrections land at chapter boundaries - never
+      // mid-chapter, where they would break the one-page-per-turn cadence.
+      snapshotChapterScreens(bookKey);
+    }
   }, [bookKey, setProgress, cancelRelocateScheduled]);
 
   const progressRelocateHandler = (event: Event) => {
@@ -322,8 +390,64 @@ const FoliateViewer: React.FC<{
       }
       cancelRelocateScheduled();
       pendingRelocateRef.current = null;
+      // The sampled screen counts describe one open's layout; a reopen starts
+      // a fresh map so settings or viewport changes can never leak stale
+      // weights across sessions.
+      clearChapterScreens(bookKey);
     };
-  }, [cancelRelocateScheduled, commitRelocate]);
+  }, [bookKey, cancelRelocateScheduled, commitRelocate]);
+
+  // A style change re-renders every loaded view (paginator render()), so the
+  // sampled screen counts describe a layout that no longer exists: drop them.
+  // The next relocate re-harvests everything loaded in the new layout and the
+  // pair re-calibrates to it - page numbers must change when the font does.
+  // Dropping the measurements must also drop the entry marker: otherwise the
+  // next relocate in the same chapter would skip the re-sample and the
+  // re-snapshot, and the readout would compute from the jittering live map -
+  // exactly what the entry snapshot exists to prevent.
+  const invalidateChapterScreens = useCallback(() => {
+    clearChapterScreens(bookKey);
+    lastSampledSpineRef.current = null;
+  }, [bookKey]);
+  // Keyed on the serialized view settings plus the loaded-font list: any
+  // setting change re-renders every loaded view (paginator render()) and
+  // invalidates every measured count, so drop them wholesale — including
+  // settings added later, without enumerating layout-relevant fields.
+  // Non-layout settings trigger a harmless re-harvest of the same values.
+  // A custom font finishing its async load re-layouts too (fontReady ->
+  // expand()) without touching the settings value, so the loaded fonts are
+  // part of the key.
+  const settingsFingerprint = viewSettings
+    ? JSON.stringify(viewSettings) + '|' + JSON.stringify(getLoadedFonts())
+    : '';
+  useEffect(() => {
+    invalidateChapterScreens();
+  }, [bookKey, invalidateChapterScreens, settingsFingerprint]);
+
+  // Same for container resizes (window, sidebar, orientation): the paginator
+  // re-renders on resize, invalidating every measured count. The view element
+  // appears asynchronously, so attach through a rAF retry.
+  useEffect(() => {
+    let observer: ResizeObserver | undefined;
+    let raf = 0;
+    const attach = () => {
+      // jsdom (unit tests) has no ResizeObserver; without it the calibration
+      // simply keeps stale counts, which tests that never resize are fine with.
+      if (typeof ResizeObserver === 'undefined') return;
+      const el = viewRef.current;
+      if (el) {
+        observer = new ResizeObserver(() => invalidateChapterScreens());
+        observer.observe(el);
+        return;
+      }
+      raf = requestAnimationFrame(attach);
+    };
+    attach();
+    return () => {
+      cancelAnimationFrame(raf);
+      observer?.disconnect();
+    };
+  }, [bookKey, invalidateChapterScreens]);
 
   const getDocTransformHandler = ({ width, height }: { width: number; height: number }) => {
     return (event: Event) => {
@@ -964,6 +1088,18 @@ const FoliateViewer: React.FC<{
     viewRef.current?.renderer.setAttribute('margin-right', `${rightMargin}px`);
     viewRef.current?.renderer.setAttribute('margin-bottom', `${bottomMargin}px`);
     viewRef.current?.renderer.setAttribute('margin-left', `${leftMargin}px`);
+    // These attributes re-render every loaded view, so a change invalidates
+    // the measured screen counts. Margin changes can come from state outside
+    // viewSettings (the TTS mini player's and drawing dock's bottom clearance
+    // live in viewState), so neither the settings fingerprint nor the
+    // ResizeObserver sees them - margins don't resize the observed element.
+    // Keyed on the applied signature so re-applying the same values (this
+    // runs on many triggers) keeps the current snapshot intact.
+    const layoutSignature = `${topMargin}|${rightMargin}|${bottomMargin}|${leftMargin}|${viewSettings.gapPercent}|${viewSettings.columnGapPx}`;
+    if (layoutSignature !== appliedLayoutSignatureRef.current) {
+      appliedLayoutSignatureRef.current = layoutSignature;
+      invalidateChapterScreens();
+    }
 
     if (viewSettings.scrolled) {
       const headerVisible = showTopHeader;
