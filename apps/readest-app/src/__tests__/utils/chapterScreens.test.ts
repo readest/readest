@@ -6,6 +6,7 @@ import {
   getMeasuredChapterScreens,
   harvestLoadedChapterScreens,
   recordChapterScreens,
+  snapshotChapterScreens,
 } from '@/utils/chapterScreens';
 
 const bookKey = 'book-1';
@@ -59,19 +60,29 @@ describe('chapterScreens', () => {
     expect(pair).toEqual({ current: 0, total: 0 });
   });
 
-  it('freezes first-measured counts on repeated harvests', () => {
-    // The preload window re-lays-out sections as the reader moves; re-harvests
-    // jitter by a page and must not drag the base or total mid-chapter.
-    const contents = [
+  it('computes from the entry snapshot until the next one re-snapshots', () => {
+    // The live map keeps tracking the current layout (preload re-layouts
+    // jitter counts by a page), but the pair must not drift mid-chapter: it
+    // computes from the snapshot taken at chapter entry, and re-entering a
+    // chapter adopts every accumulated correction at that boundary.
+    const sections2 = [{ size: 15000 }, { size: 15000 }];
+    harvestLoadedChapterScreens(bookKey, [
       { index: 0, contentPages: 10 },
       { index: 1, contentPages: 12 },
-    ];
-    harvestLoadedChapterScreens(bookKey, contents);
+    ]);
+    snapshotChapterScreens(bookKey);
+    // live map updates after the snapshot: jitter plus a newly loaded chapter
     harvestLoadedChapterScreens(bookKey, [
       { index: 0, contentPages: 11 },
       { index: 1, contentPages: 13 },
     ]);
-    const pair = getCalibratedPagePair(bookKey, [{ size: 15000 }, { size: 15000 }], 1, 2, false, 0);
-    expect(pair).toEqual({ current: 12, total: 22 });
+    recordChapterScreens(bookKey, 2, 50);
+
+    const before = getCalibratedPagePair(bookKey, sections2, 1, 2, false, 0);
+    expect(before).toEqual({ current: 12, total: 22 });
+
+    snapshotChapterScreens(bookKey);
+    const after = getCalibratedPagePair(bookKey, sections2, 1, 2, false, 0);
+    expect(after).toEqual({ current: 13, total: 24 });
   });
 });

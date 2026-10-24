@@ -34,6 +34,7 @@ import {
   getMeasuredChapterScreens,
   harvestLoadedChapterScreens,
   recordChapterScreens,
+  snapshotChapterScreens,
 } from '@/utils/chapterScreens';
 import { useBackgroundTexture } from '@/hooks/useBackgroundTexture';
 import { useAutoFocus } from '@/hooks/useAutoFocus';
@@ -294,7 +295,8 @@ const FoliateViewer: React.FC<{
     // getBookData is re-read here, not captured: this callback is memoized
     // without bookData, and the book document loads after the first render.
     const sampledSpine = detail.section?.current;
-    if (sampledSpine != null && sampledSpine !== lastSampledSpineRef.current) {
+    const spineChanged = sampledSpine != null && sampledSpine !== lastSampledSpineRef.current;
+    if (spineChanged) {
       lastSampledSpineRef.current = sampledSpine;
       const sectionSize = getBookData(bookKey)?.bookDoc?.sections?.[sampledSpine]?.size;
       if (
@@ -328,6 +330,13 @@ const FoliateViewer: React.FC<{
           contentPages: (c.contentPages ?? 0) / columnCount,
         })),
       );
+    }
+    if (spineChanged) {
+      // Freeze the readout weights at chapter entry: the snapshot adopts this
+      // chapter's fresh measurement plus everything harvested since the last
+      // entry, so estimate corrections land at chapter boundaries - never
+      // mid-chapter, where they would break the one-page-per-turn cadence.
+      snapshotChapterScreens(bookKey);
     }
   }, [bookKey, setProgress, cancelRelocateScheduled]);
 
@@ -377,6 +386,39 @@ const FoliateViewer: React.FC<{
       clearChapterScreens(bookKey);
     };
   }, [bookKey, cancelRelocateScheduled, commitRelocate]);
+
+  // A style change re-renders every loaded view (paginator render()), so the
+  // sampled screen counts describe a layout that no longer exists: drop them.
+  // The next relocate re-harvests everything loaded in the new layout and the
+  // pair re-calibrates to it - page numbers must change when the font does.
+  // Keyed on the applied CSS itself so any setting that changes layout
+  // metrics trips it, including ones added later.
+  const stylesCss = viewSettings ? getStyles(viewSettings, undefined, getLoadedFonts()) : '';
+  useEffect(() => {
+    clearChapterScreens(bookKey);
+  }, [bookKey, stylesCss]);
+
+  // Same for container resizes (window, sidebar, orientation): the paginator
+  // re-renders on resize, invalidating every measured count. The view element
+  // appears asynchronously, so attach through a rAF retry.
+  useEffect(() => {
+    let observer: ResizeObserver | undefined;
+    let raf = 0;
+    const attach = () => {
+      const el = viewRef.current;
+      if (el) {
+        observer = new ResizeObserver(() => clearChapterScreens(bookKey));
+        observer.observe(el);
+        return;
+      }
+      raf = requestAnimationFrame(attach);
+    };
+    attach();
+    return () => {
+      cancelAnimationFrame(raf);
+      observer?.disconnect();
+    };
+  }, [bookKey]);
 
   const getDocTransformHandler = ({ width, height }: { width: number; height: number }) => {
     return (event: Event) => {

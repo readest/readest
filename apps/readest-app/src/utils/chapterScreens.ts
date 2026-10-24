@@ -19,6 +19,16 @@ export const CHUNKED_SECTION_THRESHOLD = 512 * 1024;
  */
 const maps = new Map<string, Map<number, number>>();
 
+/**
+ * The per-open snapshot the readout computes from, taken when a chapter is
+ * entered. The live map keeps updating underneath (the preload window loads
+ * and re-lays-out sections as the reader moves), but the snapshot freezes the
+ * weights so the readout advances exactly one page per turn within a chapter;
+ * entering the next chapter re-snapshots and adopts every accumulated
+ * correction at that boundary - never mid-chapter.
+ */
+const snapshots = new Map<string, Map<number, number>>();
+
 export const recordChapterScreens = (bookKey: string, spine: number, pages: number) => {
   if (!(pages > 0)) return;
   let map = maps.get(bookKey);
@@ -28,8 +38,16 @@ export const recordChapterScreens = (bookKey: string, spine: number, pages: numb
 
 export const getMeasuredChapterScreens = (bookKey: string) => maps.get(bookKey);
 
+/** Freeze the live measurements into the readout snapshot at chapter entry. */
+export const snapshotChapterScreens = (bookKey: string) => {
+  const live = maps.get(bookKey);
+  if (live) snapshots.set(bookKey, new Map(live));
+  else snapshots.delete(bookKey);
+};
+
 export const clearChapterScreens = (bookKey: string) => {
   maps.delete(bookKey);
+  snapshots.delete(bookKey);
 };
 
 /**
@@ -45,7 +63,6 @@ export const harvestLoadedChapterScreens = (
   bookKey: string,
   contents: Array<{ index?: number; contentPages?: number }>,
 ) => {
-  const existing = maps.get(bookKey);
   const sums = new Map<number, number>();
   for (const item of contents) {
     const spine = item.index;
@@ -53,16 +70,7 @@ export const harvestLoadedChapterScreens = (
     if (spine === undefined || pages === undefined || pages <= 0) continue;
     sums.set(spine, (sums.get(spine) ?? 0) + pages);
   }
-  for (const [spine, pages] of sums) {
-    // First measurement freezes a chapter's count for the whole session. The
-    // preload window unloads and re-lays-out sections as the reader moves, and
-    // re-measurements jitter by a page - letting them overwrite would drag the
-    // bytes-per-screen ratio and every estimate around mid-chapter, breaking
-    // the exactly-one-page-per-turn guarantee.
-    if (!existing?.has(spine)) {
-      recordChapterScreens(bookKey, spine, pages);
-    }
-  }
+  for (const [spine, pages] of sums) recordChapterScreens(bookKey, spine, pages);
 };
 
 export interface CalibratedSectionSource {
@@ -89,7 +97,10 @@ export const getCalibratedPagePair = (
   isChunked: boolean,
   chapterFraction: number,
 ): { current: number; total: number } => {
-  const measured = maps.get(bookKey);
+  // The readout computes from the entry-time snapshot, not the live map: the
+  // map keeps tracking the current layout, but adopting its updates
+  // mid-chapter would move the base and total under the reader.
+  const measured = snapshots.get(bookKey) ?? maps.get(bookKey);
   let measuredBytes = 0;
   let measuredScreens = 0;
   measured?.forEach((screens, spine) => {
