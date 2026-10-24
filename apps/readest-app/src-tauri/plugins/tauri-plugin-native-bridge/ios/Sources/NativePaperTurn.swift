@@ -569,6 +569,12 @@ final class NativePaperTurn {
     }
   }
 
+  /// Drop the scene when the webview loads a new document. The old page can
+  /// no longer finish its turn, and a held sheet would refuse the new reader.
+  func reset() {
+    dispose(except: nil)
+  }
+
   /// Release the scene and settle outstanding requests except the caller being disposed.
   private func dispose(except keep: Pending?) {
     stopAnimation()

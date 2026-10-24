@@ -427,6 +427,8 @@ class WebViewLifecycleManager: NSObject {
   private var isMonitoring = false
   private var lastBackgroundTime: Date?
   private var backgroundTimeThreshold: TimeInterval = 180.0
+  /// Called when the page is lost or replaced by a new document.
+  var onDocumentChange: (() -> Void)?
 
   func startMonitoring(webView: WKWebView) {
     self.webView = webView
@@ -554,6 +556,7 @@ extension WebViewLifecycleManager: WKNavigationDelegate {
 
   func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
     logger.error("WebViewLifecycleManager: WebContent process TERMINATED!️")
+    onDocumentChange?()
     recoverWebView(webView, reason: "process_terminated")
 
     if let original = originalNavigationDelegate,
@@ -614,6 +617,7 @@ extension WebViewLifecycleManager: WKNavigationDelegate {
   }
 
   func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
+    onDocumentChange?()
     if let original = originalNavigationDelegate,
       original.responds(to: #selector(webView(_:didCommit:)))
     {
@@ -697,6 +701,7 @@ class NativeBridgePlugin: Plugin {
 
     webViewLifecycleManager = WebViewLifecycleManager()
     webViewLifecycleManager?.startMonitoring(webView: webview)
+    webViewLifecycleManager?.onDocumentChange = { [weak self] in self?.nativePaper?.reset() }
     logger.log("NativeBridgePlugin: WebView lifecycle monitoring activated")
 
     // Forward Apple Pencil double-tap / squeeze gestures as native keys for

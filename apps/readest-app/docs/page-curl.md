@@ -40,8 +40,11 @@ iOS keeps the same commands and page identities. `WKWebView.takeSnapshot`
 captures full-scale pages, waiting for WebKit's next presentation update; it
 renders only the web view's own layers, so the Metal sheet, a sibling view
 above the web view, is never captured. Regions snap to device pixels so one
-texel maps to one pixel. `MTKTextureLoader` uploads the snapshots, and at most
-three pages stay resident.
+texel maps to one pixel. Each snapshot is redrawn as 8-bit BGRA and copied
+into a Metal texture, since `MTKTextureLoader` cannot decode WebKit's snapshot
+images, and at most three pages stay resident. A WebContent crash or a new
+main-frame document drops the scene, as the old page can no longer finish its
+turn.
 
 Everything runs on the main thread. A frame is encoded, scheduled and
 presented with the Core Animation transaction that shows or hides the sheet
