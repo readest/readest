@@ -77,7 +77,7 @@ const AUDIO_MIME_TYPES: Record<string, string> = {
   webm: 'audio/webm',
 };
 
-const audioType = (href: string): string =>
+export const audioType = (href: string): string =>
   AUDIO_MIME_TYPES[href.split('.').pop()?.toLowerCase() ?? ''] ?? 'audio/mpeg';
 
 const audioBlobWithType = (href: string, blob: Blob): Blob =>
