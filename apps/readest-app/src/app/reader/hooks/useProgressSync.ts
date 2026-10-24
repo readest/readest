@@ -161,17 +161,21 @@ export const useProgressSync = (bookKey: string) => {
       const config = getConfig(bookKey);
       const view = getView(bookKey);
       const book = getBookData(bookKey)?.book;
-      if (config && view && book && config.progress && config.progress[0] > 0) {
+      if (config && book && config.progress && config.progress[0] > 0) {
         try {
-          const contents = view.renderer.getContents();
-          const primaryIndex = view.renderer.primaryIndex;
+          const contents = view?.renderer.getContents() ?? [];
+          const primaryIndex = view?.renderer.primaryIndex;
           const content = contents.find((x) => x.index === primaryIndex) ?? contents[0];
-          if (content && !FIXED_LAYOUT_FORMATS.has(book.format)) {
-            const { doc, index } = content;
+          // The close-time push runs after the views are destroyed, even after
+          // the view state is cleared: load the section from the book then, or
+          // the previous push's XPointer goes out beside the new location and
+          // the next pull, which takes the further of the two, jumps back to
+          // it (#7041).
+          if (!FIXED_LAYOUT_FORMATS.has(book.format)) {
             const xpointerResult = await getXPointerFromCFI(
               config.location!,
-              doc,
-              index || 0,
+              content?.doc,
+              content?.index || 0,
               getBookData(bookKey)?.bookDoc ?? undefined,
               book.format,
             );
@@ -193,6 +197,15 @@ export const useProgressSync = (bookKey: string) => {
     [],
   );
 
+  // Save the position before pushing it. The auto-save stamps updatedAt ~1.5s
+  // after the last turn and the server keeps its row on a tie, so a push inside
+  // that window was dropped and the next open jumped back to the old,
+  // further position (#7041).
+  const flushPush = async () => {
+    await eventDispatcher.dispatch('flush-progress-save', { bookKey });
+    handleAutoSync.flush();
+  };
+
   const handleSyncBookProgress = async (event: CustomEvent) => {
     const { bookKey: syncBookKey } = event.detail;
     if (syncBookKey === bookKey) {
@@ -202,7 +215,7 @@ export const useProgressSync = (bookKey: string) => {
       // auto-sync window, which would otherwise drop the pending push and leave
       // other devices on the previous cloud-synced position. Must run while the
       // gate below is still open so syncConfig takes the push branch.
-      handleAutoSync.flush();
+      await flushPush();
       // Manual pull-to-refresh: tear down any prior retry chain so the new
       // attempt starts fresh, rather than being short-circuited by the
       // "retry already pending" guard in pullWithRetry.
@@ -216,7 +229,7 @@ export const useProgressSync = (bookKey: string) => {
   useWindowActiveChanged((isActive) => {
     if (!user || !progress) return;
     if (!isActive) {
-      handleAutoSync.flush();
+      void flushPush();
       return;
     }
     // The book stays mounted while Android is backgrounded. Pull again on

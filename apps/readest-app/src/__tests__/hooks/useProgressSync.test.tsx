@@ -161,6 +161,7 @@ vi.mock('@/utils/event', () => ({
 
 import { useProgressSync } from '@/app/reader/hooks/useProgressSync';
 import { SYNC_PROGRESS_INTERVAL_SEC } from '@/services/constants';
+import { getXPointerFromCFI } from '@/utils/xcfi';
 
 const flushAutoSync = async () => {
   await act(async () => {
@@ -618,6 +619,84 @@ describe('useProgressSync', () => {
     // The pending push is flushed immediately — Device A's last local position
     // reaches the cloud before the reader tears down.
     expect(pushCallCount()).toBeGreaterThanOrEqual(1);
+  });
+
+  // #7041: the server keeps its row unless the pushed updatedAt is newer, and
+  // the auto-save stamps updatedAt ~1.5s after the last turn. A close inside
+  // that window pushed the previous push's updatedAt, the push lost the tie,
+  // and the next open's forward-only pull jumped back to the old position.
+  test('sync-book-progress saves the position before pushing it', async () => {
+    const order: string[] = [];
+    const mutable = h as { view: typeof h.view | null };
+    const view = h.view;
+    // The close clears the view state while the save is still on disk; the
+    // push must not need the view.
+    h.eventListeners.set(
+      'flush-progress-save',
+      new Set([
+        () => {
+          order.push('save');
+          mutable.view = null;
+        },
+      ]),
+    );
+    h.syncConfigsMock.mockImplementation(async (...args: unknown[]) => {
+      if (args[3] === 'push') order.push('push');
+    });
+    const { rerender } = renderHook(() => useProgressSync('h1-view1'));
+    await advance(0);
+
+    h.state.progress = { location: 'cfi-loc-back' };
+    await act(async () => {
+      rerender();
+      await flushMicrotasks();
+    });
+    await act(async () => {
+      h.eventListeners
+        .get('sync-book-progress')
+        ?.forEach((fn) =>
+          fn(new CustomEvent('sync-book-progress', { detail: { bookKey: 'h1-view1' } })),
+        );
+      await flushMicrotasks();
+    });
+
+    mutable.view = view;
+    expect(order).toEqual(['save', 'push']);
+    h.syncConfigsMock.mockImplementation(async () => {});
+  });
+
+  // #7041: closing the book destroys its views before the close-time push, so
+  // the XPointer can no longer come from a rendered section. Skipping it left
+  // the previous push's XPointer beside the new location, and the next pull
+  // (which takes the further of the two) jumped back to the old position.
+  test('a push after the views are gone converts the XPointer from the book', async () => {
+    h.book.format = 'EPUB';
+    const config = h.config as { xpointer?: string };
+    config.xpointer = '/body/DocFragment[20]/body/p[3]';
+    vi.mocked(getXPointerFromCFI).mockResolvedValueOnce({
+      xpointer: '/body/DocFragment[7]/body/p[1]',
+    });
+    try {
+      const { rerender } = renderHook(() => useProgressSync('h1-view1'));
+      await advance(0);
+      h.state.progress = { location: 'cfi-loc-back' };
+      await act(async () => {
+        rerender();
+        await flushMicrotasks();
+      });
+      await flushAutoSync();
+
+      expect(getXPointerFromCFI).toHaveBeenCalledWith(
+        'cfi-loc',
+        undefined,
+        0,
+        h.state.bookDoc,
+        'EPUB',
+      );
+      expect(config.xpointer).toBe('/body/DocFragment[7]/body/p[1]');
+    } finally {
+      delete config.xpointer;
+    }
   });
 });
 
