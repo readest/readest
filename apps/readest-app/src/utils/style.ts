@@ -1513,26 +1513,43 @@ export const transformStylesheet = (
   // replace absolute font sizes with rem units
   // replace vw and vh as they cause problems with layout
   // replace hardcoded colors
+  //
+  // Only ABSOLUTE sizes (keywords, px, pt) get clamped to the reader's minimum
+  // font size. Relative units (em/rem/%) are left exactly as the book wrote
+  // them, because they already scale against the reader's body size: clamping
+  // them overrides a deliberate authoring decision and inflates text that is
+  // *meant* to be small — marginalia, ruby annotations, footnote markers.
+  //
+  // This is destructive for any book whose layout depends on that ratio. A
+  // 脂評 marginalia edition sets `font-size: 0.5rem` on its side notes and ships
+  // a script that measures note heights against 0.5 × body size; clamping every
+  // note to a 26px minimum inflates each note by 68%, so the notes overflow the
+  // boxes sized for them, cover the body text, and swallow taps meant for the
+  // page — every touch lands on one of the book's 800+ in-page anchors.
+  const KEYWORD_REM: Record<string, number> = {
+    'xx-small': 0.6,
+    'x-small': 0.75,
+    small: 0.875,
+    medium: 1,
+    large: 1.2,
+    'x-large': 1.5,
+    'xx-large': 2,
+    'xxx-large': 3,
+  };
+  const clampMin = (rem: number) => `max(${rem}rem, var(--min-font-size, 8px))`;
   css = css
-    .replace(/font-size\s*:\s*xx-small/gi, 'font-size: 0.6rem')
-    .replace(/font-size\s*:\s*x-small/gi, 'font-size: 0.75rem')
-    .replace(/font-size\s*:\s*small/gi, 'font-size: 0.875rem')
-    .replace(/font-size\s*:\s*medium/gi, 'font-size: 1rem')
-    .replace(/font-size\s*:\s*large/gi, 'font-size: 1.2rem')
-    .replace(/font-size\s*:\s*x-large/gi, 'font-size: 1.5rem')
-    .replace(/font-size\s*:\s*xx-large/gi, 'font-size: 2rem')
-    .replace(/font-size\s*:\s*xxx-large/gi, 'font-size: 3rem')
-    .replace(/font-size\s*:\s*(\d+(?:\.\d+)?)px/gi, (_, px) => {
-      const rem = parseFloat(px) / fontScale / 16;
-      return `font-size: ${rem}rem`;
-    })
-    .replace(/font-size\s*:\s*(\d+(?:\.\d+)?)pt/gi, (_, pt) => {
-      const rem = parseFloat(pt) / fontScale / 12;
-      return `font-size: ${rem}rem`;
-    })
-    .replace(/font-size\s*:\s*(\d*\.?\d+)(px|rem|em|%)?/gi, (_, size, unit = 'px') => {
-      return `font-size: max(${size}${unit}, var(--min-font-size, 8px))`;
-    })
+    .replace(
+      /font-size\s*:\s*(xx-small|x-small|small|medium|large|x-large|xx-large|xxx-large)/gi,
+      (_, kw: string) => `font-size: ${clampMin(KEYWORD_REM[kw.toLowerCase()]!)}`,
+    )
+    .replace(
+      /font-size\s*:\s*(\d+(?:\.\d+)?)px/gi,
+      (_, px: string) => `font-size: ${clampMin(parseFloat(px) / fontScale / 16)}`,
+    )
+    .replace(
+      /font-size\s*:\s*(\d+(?:\.\d+)?)pt/gi,
+      (_, pt: string) => `font-size: ${clampMin(parseFloat(pt) / fontScale / 12)}`,
+    )
     // remove no-op backdrop-filter: brightness(100%); see #3895
     .replace(/backdrop-filter\s*:\s*brightness\(100%\)\s*[;]?/gi, '')
     .replace(/(\d*\.?\d+)vw/gi, (_, d) => (parseFloat(d) * vw) / 100 + 'px')

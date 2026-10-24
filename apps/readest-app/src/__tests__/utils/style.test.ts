@@ -161,6 +161,47 @@ describe('transformStylesheet', () => {
     });
   });
 
+  // Relative units already scale against the reader's body size, so clamping
+  // them to the minimum font size overrides a deliberate authoring decision.
+  // Books that set `0.5em` on marginalia expect half-size text; inflating it to
+  // the minimum makes those notes overflow the boxes the book sized for them.
+  describe('font-size relative units are not clamped', () => {
+    it('leaves em untouched', () => {
+      const css = '.note { font-size: 0.6em; }';
+      const result = transformStylesheet(css, VW, VH, VERTICAL);
+      expect(result).toContain('font-size: 0.6em');
+      expect(result).not.toContain('max(');
+    });
+
+    it('leaves rem untouched', () => {
+      const css = '.note { font-size: 0.5rem; }';
+      const result = transformStylesheet(css, VW, VH, VERTICAL);
+      expect(result).toContain('font-size: 0.5rem');
+      expect(result).not.toContain('max(');
+    });
+
+    it('leaves percentage untouched', () => {
+      const css = '.note { font-size: 80%; }';
+      const result = transformStylesheet(css, VW, VH, VERTICAL);
+      expect(result).toContain('font-size: 80%');
+      expect(result).not.toContain('max(');
+    });
+
+    it('keeps !important on an unclamped relative size', () => {
+      const css = '.note { font-size: 0.5rem !important; }';
+      const result = transformStylesheet(css, VW, VH, VERTICAL);
+      expect(result).toContain('font-size: 0.5rem !important');
+      expect(result).not.toContain('max(');
+    });
+
+    it('still clamps an absolute size in the same stylesheet', () => {
+      const css = '.note { font-size: 0.6em; } .tiny { font-size: 10px; }';
+      const result = transformStylesheet(css, VW, VH, VERTICAL);
+      expect(result).toContain('font-size: 0.6em');
+      expect(result).toContain('font-size: max(0.625rem, var(--min-font-size, 8px))');
+    });
+  });
+
   describe('vw/vh replacement', () => {
     it('replaces vw with computed px', () => {
       const css = '.w { width: 10vw; }';
