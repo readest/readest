@@ -393,10 +393,18 @@ const FoliateViewer: React.FC<{
   // pair re-calibrates to it - page numbers must change when the font does.
   // Keyed on the applied CSS itself so any setting that changes layout
   // metrics trips it, including ones added later.
+  // Dropping the measurements must also drop the entry marker: otherwise the
+  // next relocate in the same chapter would skip the re-sample and the
+  // re-snapshot, and the readout would compute from the jittering live map -
+  // exactly what the entry snapshot exists to prevent.
+  const invalidateChapterScreens = useCallback(() => {
+    clearChapterScreens(bookKey);
+    lastSampledSpineRef.current = null;
+  }, [bookKey]);
   const stylesCss = viewSettings ? getStyles(viewSettings, undefined, getLoadedFonts()) : '';
   useEffect(() => {
-    clearChapterScreens(bookKey);
-  }, [bookKey, stylesCss]);
+    invalidateChapterScreens();
+  }, [bookKey, invalidateChapterScreens, stylesCss]);
 
   // Same for container resizes (window, sidebar, orientation): the paginator
   // re-renders on resize, invalidating every measured count. The view element
@@ -407,7 +415,7 @@ const FoliateViewer: React.FC<{
     const attach = () => {
       const el = viewRef.current;
       if (el) {
-        observer = new ResizeObserver(() => clearChapterScreens(bookKey));
+        observer = new ResizeObserver(() => invalidateChapterScreens());
         observer.observe(el);
         return;
       }
@@ -418,7 +426,7 @@ const FoliateViewer: React.FC<{
       cancelAnimationFrame(raf);
       observer?.disconnect();
     };
-  }, [bookKey]);
+  }, [bookKey, invalidateChapterScreens]);
 
   const getDocTransformHandler = ({ width, height }: { width: number; height: number }) => {
     return (event: Event) => {
