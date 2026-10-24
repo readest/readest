@@ -1001,6 +1001,14 @@
     color: var(--color-base-content) !important;
   }
 
+  /* The same flattening for the scrolled-mode scrollbar thumb, which is
+     otherwise a 50% grey wash that an e-ink panel renders as near-invisible.
+     The thumb lives in foliate's shadow root, but custom properties inherit
+     across the boundary, so setting it here still reaches it. */
+  [data-eink='true'] {
+    --scrollbar-thumb-color: var(--color-base-content);
+  }
+
   /* E-ink cannot render a translucent wash, so a tinted base-content surface is
      flattened to solid ink. `[class*=…]` matches the class attribute as plain
      text, so skip elements whose only match is variant-prefixed: `hover:`,

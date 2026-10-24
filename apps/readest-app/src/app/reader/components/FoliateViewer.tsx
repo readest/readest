@@ -25,6 +25,7 @@ import { registerBookmarkPullDoc } from '../utils/bookmarkPullGesture';
 import BrightnessOverlay from './BrightnessOverlay';
 import { usePagination, viewPagination } from '../hooks/usePagination';
 import { useFoliateEvents } from '../hooks/useFoliateEvents';
+import { useScrollbarReveal } from '../hooks/useScrollbarReveal';
 import { useProgressSync } from '../hooks/useProgressSync';
 import { useABSProgressSync } from '../hooks/useABSProgressSync';
 import { useProgressAutoSave } from '../hooks/useProgressAutoSave';
@@ -185,6 +186,9 @@ const FoliateViewer: React.FC<{
   const librarySearchHighlightTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [scrollMargins, setScrollMargins] = useState({ top: 0, bottom: 0 });
   const docLoaded = useRef(false);
+  // The renderer is created inside the open effect, after the first render, so
+  // anything that styles it has to wait for this rather than read the ref.
+  const [rendererEl, setRendererEl] = useState<HTMLElement | null>(null);
 
   const autoScroll = useAutoScroll(bookKey, viewRef);
   const { registerSpeedListeners, overlayVisible: speedOverlayVisible } =
@@ -578,7 +582,12 @@ const FoliateViewer: React.FC<{
       applyThemeModeClass(detail.doc, isDarkMode);
       applyScrollModeClass(detail.doc, viewSettings.scrolled || false);
       applyEinkModeAttribute(detail.doc, viewSettings.isEink || false);
-      applyScrollbarStyle(document, viewSettings.hideScrollbar || false);
+      applyScrollbarStyle(
+        document,
+        viewSettings.hideScrollbar || false,
+        renderer,
+        viewSettings.scrolled || false,
+      );
       keepTextAlignment(detail.doc);
       handleA11yNavigation(viewRef.current, detail.doc, {
         skipToLastPosCallback: skipToReadingPosition,
@@ -861,6 +870,10 @@ const FoliateViewer: React.FC<{
 
   useCapturedTurn(bookKey, viewRef);
 
+  // With the scrollbar hidden, it comes back only on demand: pointer at the
+  // right edge, or a scroll. See applyScrollbarStyle for why the slot is kept.
+  useScrollbarReveal(rendererEl, !!(viewSettings?.hideScrollbar && viewSettings?.scrolled));
+
   useFoliateEvents(viewRef.current, {
     onLoad: docLoadHandler,
     onStabilized: stabilizedHandler,
@@ -903,6 +916,7 @@ const FoliateViewer: React.FC<{
       await view.open(bookDoc);
       // make sure we can listen renderer events after opening book
       viewRef.current = view;
+      setRendererEl(view.renderer);
       setFoliateView(bookKey, view);
 
       const { book } = view;
@@ -1205,7 +1219,12 @@ const FoliateViewer: React.FC<{
         applyThemeModeClass(doc, isDarkMode);
         applyScrollModeClass(doc, viewSettings.scrolled || false);
         applyEinkModeAttribute(doc, viewSettings.isEink || false);
-        applyScrollbarStyle(document, viewSettings.hideScrollbar || false);
+        applyScrollbarStyle(
+          document,
+          viewSettings.hideScrollbar || false,
+          renderer,
+          viewSettings.scrolled || false,
+        );
       });
 
       if (bookData?.book?.format === 'PDF' && themeCode && renderer) {
