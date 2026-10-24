@@ -3,6 +3,7 @@ import { createSupabaseAdminClient } from '@/utils/supabase';
 import { corsAllMethods, runMiddleware } from '@/utils/cors';
 import { getDownloadSignedUrl } from '@/utils/object';
 import { validateUserAndToken } from '@/utils/access';
+import { parseBookFileKey } from '@/utils/bookFileKey';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   await runMiddleware(req, res, corsAllMethods);
@@ -93,16 +94,9 @@ async function processFileKeys(
 
   if (missingFileKeys.length > 0) {
     const fallbackCandidates = missingFileKeys
-      .filter((key) => key.includes('Readest/Book'))
       .map((key) => {
-        const parts = key.split('/');
-        if (parts.length === 5) {
-          const bookHash = parts[3]!;
-          const filename = parts[4]!;
-          const fileExtension = filename.split('.').pop() || '';
-          return { originalKey: key, bookHash, fileExtension };
-        }
-        return null;
+        const parsed = parseBookFileKey(key);
+        return parsed ? { originalKey: key, ...parsed } : null;
       })
       .filter(Boolean) as Array<{ originalKey: string; bookHash: string; fileExtension: string }>;
 
