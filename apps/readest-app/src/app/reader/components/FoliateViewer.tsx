@@ -314,16 +314,13 @@ const FoliateViewer: React.FC<{
     // neighbors, rendered chunks): with readest/foliate-js#133 the whole
     // preloaded window is exact, not just the current chapter. No-op on
     // foliate builds without the exposed contentPages. contentPages counts
-    // columns while renderer.pages counts spreads, so the column count is
-    // derived from the primary view's own pair and the harvest is stored in
-    // spread units to match the entry-time sampling above.
+    // columns; the paginator exposes its real column count as a public
+    // property, so convert per section to spreads with ceil for the partial
+    // final screen. Deriving the ratio from renderer.pages instead would be
+    // wrong — that getter rounds, so e.g. 3 columns / 2 per screen reads 1.5.
     const loadedContents = viewRef.current?.renderer?.getContents?.();
-    if (loadedContents?.length) {
-      const rendererPages = viewRef.current?.renderer?.pages ?? 0;
-      const primaryItem = loadedContents.find((c) => c.index === sampledSpine) ?? loadedContents[0];
-      const primaryContentPages = primaryItem?.contentPages ?? 0;
-      const columnCount =
-        rendererPages > 0 && primaryContentPages > 0 ? primaryContentPages / rendererPages : 1;
+    const columnCount = viewRef.current?.renderer?.columnCount ?? 0;
+    if (loadedContents?.length && columnCount > 0) {
       // Chunked sections stay out of the harvest: getContents() lists one
       // entry per rendered chunk, so a spine sum is only a partial count that
       // grows as later chunks render - freezing it as the chapter's measured
@@ -340,7 +337,7 @@ const FoliateViewer: React.FC<{
           )
           .map((c) => ({
             index: c.index,
-            contentPages: (c.contentPages ?? 0) / columnCount,
+            contentPages: Math.ceil((c.contentPages ?? 0) / columnCount),
           })),
       );
     }
