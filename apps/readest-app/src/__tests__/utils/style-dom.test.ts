@@ -23,6 +23,8 @@ import {
   applyEinkModeAttribute,
   applyScrollbarStyle,
   SCROLLBAR_REVEAL_VAR,
+  SCROLLBAR_INSET_BOTTOM_VAR,
+  SCROLLBAR_INSET_TOP_VAR,
   applyTranslationStyle,
   getThemeCode,
   getStyles,
@@ -254,6 +256,48 @@ describe('applyScrollbarStyle', () => {
 
     applyScrollbarStyle(document, false, host, true);
     expect(container.style.getPropertyValue(SCROLLBAR_REVEAL_VAR)).toBe('');
+  });
+
+  it('bounds the bar at both ends for a horizontal-text column', () => {
+    // The header/footer bars float over the column, so the track's two ends
+    // have to be reserved at the bottom of the stack: those are the only
+    // scrollbar parts Chromium lets us give a length to.
+    applyScrollbarStyle(document, false, host, true);
+    const inner = shadowStyle()!.textContent!;
+    expect(inner).toContain('::-webkit-scrollbar-button:vertical:start:decrement');
+    expect(inner).toContain('::-webkit-scrollbar-button:vertical:end:increment');
+    expect(inner).toContain(SCROLLBAR_INSET_TOP_VAR);
+    expect(inner).toContain(SCROLLBAR_INSET_BOTTOM_VAR);
+    // Unwritten custom property = no reservation, i.e. the old full-height bar.
+    expect(inner).toContain(`var(${SCROLLBAR_INSET_TOP_VAR}, 0px)`);
+    expect(inner).toContain(`var(${SCROLLBAR_INSET_BOTTOM_VAR}, 0px)`);
+    // The boxes must paint nothing of their own.
+    expect(inner).toContain('background: transparent');
+  });
+
+  it("leaves a vertical book's bar edge to edge", () => {
+    // A vertical book overflows sideways, so its bar runs along the bottom and
+    // the footer lifts off it instead -- reserving the ends would only shorten
+    // a bar nothing covers.
+    applyScrollbarStyle(document, false, host, true, true);
+    const inner = shadowStyle()!.textContent!;
+    expect(inner).toContain('width: 8px');
+    expect(inner).not.toContain('::-webkit-scrollbar-button');
+    expect(inner).not.toContain(SCROLLBAR_INSET_TOP_VAR);
+  });
+
+  it('drops stale end bounds once the rules no longer exist', () => {
+    const container = document.createElement('div');
+    container.setAttribute('part', 'container');
+    host.shadowRoot!.appendChild(container);
+
+    applyScrollbarStyle(document, false, host, true);
+    container.style.setProperty(SCROLLBAR_INSET_TOP_VAR, '48px');
+    container.style.setProperty(SCROLLBAR_INSET_BOTTOM_VAR, '56px');
+
+    applyScrollbarStyle(document, false, host, true, true);
+    expect(container.style.getPropertyValue(SCROLLBAR_INSET_TOP_VAR)).toBe('');
+    expect(container.style.getPropertyValue(SCROLLBAR_INSET_BOTTOM_VAR)).toBe('');
   });
 });
 

@@ -26,6 +26,7 @@ import BrightnessOverlay from './BrightnessOverlay';
 import { usePagination, viewPagination } from '../hooks/usePagination';
 import { useFoliateEvents } from '../hooks/useFoliateEvents';
 import { useScrollbarReveal } from '../hooks/useScrollbarReveal';
+import { useScrollbarInsets } from '../hooks/useScrollbarInsets';
 import { useProgressSync } from '../hooks/useProgressSync';
 import { useABSProgressSync } from '../hooks/useABSProgressSync';
 import { useProgressAutoSave } from '../hooks/useProgressAutoSave';
@@ -135,6 +136,17 @@ declare global {
   }
 }
 
+// Depth of the two floating bars, i.e. how much of the reading column's right
+// edge they can cover. Mirrors the chrome's own classes -- `.header-bar` is
+// `h-11` (44px) and `.footer-bar` `sm:h-[52px]` on desktop. Nothing reads these
+// at runtime; they are the ceiling the scrollbar's end bounds are computed
+// against, so they only ever have to be right to the pixel.
+const HEADER_BAR_DEPTH_PX = 44;
+const FOOTER_BAR_DEPTH_PX = 52;
+// A hair of daylight between a bar and the thumb parked against it, so the two
+// read as separate objects when both are on screen.
+const SCROLLBAR_BOUND_GAP_PX = 4;
+
 const FoliateViewer: React.FC<{
   bookKey: string;
   bookDoc: BookDoc;
@@ -193,6 +205,13 @@ const FoliateViewer: React.FC<{
   const autoScroll = useAutoScroll(bookKey, viewRef);
   const { registerSpeedListeners, overlayVisible: speedOverlayVisible } =
     useAutoScrollSpeedGesture(autoScroll);
+
+  // Writing axis of the book, the same way getViewInsets decides it: a vertical
+  // book's column overflows sideways, so its scrollbar is the horizontal one
+  // along the bottom edge rather than the vertical one the chrome can cover.
+  const isVerticalWriting = !!(
+    viewSettings?.vertical || viewSettings?.writingMode.includes('vertical')
+  );
 
   // The book document outlives this view: bookDataStore keeps it for the next
   // open, so listeners left on its transformTarget would keep the closed view,
@@ -587,6 +606,9 @@ const FoliateViewer: React.FC<{
         viewSettings.hideScrollbar || false,
         renderer,
         viewSettings.scrolled || false,
+        // A vertical section scrolls sideways, so its bar runs along the
+        // bottom edge and the chrome never lands on it.
+        newVertical,
       );
       keepTextAlignment(detail.doc);
       handleA11yNavigation(viewRef.current, detail.doc, {
@@ -873,6 +895,23 @@ const FoliateViewer: React.FC<{
   // With the scrollbar hidden, it comes back only on demand: pointer at the
   // right edge, or a scroll. See applyScrollbarStyle for why the slot is kept.
   useScrollbarReveal(rendererEl, !!(viewSettings?.hideScrollbar && viewSettings?.scrolled));
+
+  // The bars float over the column, so the scrollbar has to stop short of them
+  // or its thumb ends up painted underneath. `scrollMargins` already carries
+  // how far the column clears each edge -- the header band's own depth at the
+  // top, the reserved footer margin at the bottom -- and only the uncovered
+  // remainder is left over for the bar to sit on. A column that already clears
+  // the bar therefore reserves nothing but the daylight gap.
+  const scrollbarBoundsTop =
+    Math.max(0, HEADER_BAR_DEPTH_PX - scrollMargins.top) + SCROLLBAR_BOUND_GAP_PX;
+  const scrollbarBoundsBottom =
+    Math.max(0, FOOTER_BAR_DEPTH_PX - scrollMargins.bottom) + SCROLLBAR_BOUND_GAP_PX;
+  useScrollbarInsets(
+    rendererEl,
+    !!(viewSettings?.scrolled && !isVerticalWriting),
+    scrollbarBoundsTop,
+    scrollbarBoundsBottom,
+  );
 
   useFoliateEvents(viewRef.current, {
     onLoad: docLoadHandler,
@@ -1224,6 +1263,7 @@ const FoliateViewer: React.FC<{
           viewSettings.hideScrollbar || false,
           renderer,
           viewSettings.scrolled || false,
+          isVerticalWriting,
         );
       });
 
@@ -1242,6 +1282,8 @@ const FoliateViewer: React.FC<{
     viewSettings?.contrast,
     viewSettings?.hideScrollbar,
     viewSettings?.isEink,
+    // Decides whether the sheet carries the bar's end bounds at all.
+    isVerticalWriting,
   ]);
 
   // The annotation overlay lives outside the content iframe, so its blend mode

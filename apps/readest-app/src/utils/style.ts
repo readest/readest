@@ -1691,6 +1691,22 @@ export const SCROLLBAR_REVEAL_VAR = '--scrollbar-reveal-thumb';
 export const SCROLLBAR_THUMB_COLOR = 'var(--scrollbar-thumb-color, rgba(128, 128, 128, 0.5))';
 
 /**
+ * Custom properties that bound the bar inside the reading area, written inline
+ * on the scroll container by `useScrollbarInsets` -- same channel as
+ * {@link SCROLLBAR_REVEAL_VAR} and for the same reason (a custom property only
+ * reaches a scrollbar pseudo-element from its own originating element).
+ *
+ * They size the two `::-webkit-scrollbar-button` boxes at the ends of the
+ * track, which is the only scrollbar part Chromium lets us give a length to.
+ * Reserving those boxes shortens the track the thumb travels along, so the
+ * thumb stops short of the very top/bottom instead of sliding under the
+ * floating header and footer bars. 0px (the default) restores a full-height
+ * bar.
+ */
+export const SCROLLBAR_INSET_TOP_VAR = '--scrollbar-inset-top';
+export const SCROLLBAR_INSET_BOTTOM_VAR = '--scrollbar-inset-bottom';
+
+/**
  * Style the scrollbar of the reading column.
  *
  * The scroll container (`#container[part="container"]`) lives inside the
@@ -1737,17 +1753,25 @@ export const SCROLLBAR_THUMB_COLOR = 'var(--scrollbar-thumb-color, rgba(128, 128
  * @param document should be the global `document`
  * @param renderer the foliate renderer -- supplies the shadow root
  * @param scrolled reserve the scrollbar slot only in scrolled mode
+ * @param vertical the book writes vertically, i.e. its bar runs along the
+ *   bottom edge instead of the right one -- see the button rules below
  */
 export const applyScrollbarStyle = (
   document: Document,
   hideScrollbar: boolean,
   renderer?: HTMLElement | null,
   scrolled = false,
+  vertical = false,
 ) => {
   const shadow = renderer?.shadowRoot;
   // Paginated mode has no vertical scrollbar to reserve a slot for, and doing
   // so there would only steal width from the text.
   const reserveSlot = scrolled && !!shadow;
+  // The bar's own ends get a bound only where the chrome can sit on them: a
+  // horizontal-text column reserves its right edge, a vertical one scrolls
+  // sideways and lifts its footer off the horizontal bar instead
+  // (HORIZONTAL_SCROLLBAR_LIFT), so there is nothing to inset there.
+  const boundEnds = reserveSlot && !vertical;
 
   // The reveal variable only means something while the bar can be revealed.
   // It is written inline on the container (see useScrollbarReveal), so clear it
@@ -1755,6 +1779,12 @@ export const applyScrollbarStyle = (
   const container = shadow?.querySelector<HTMLElement>('[part="container"]');
   if (container && !(reserveSlot && hideScrollbar)) {
     container.style.removeProperty(SCROLLBAR_REVEAL_VAR);
+  }
+  // Same for the end bounds: leave no stale reservation behind when the rules
+  // that read them are gone (or when this book's bar must run edge to edge).
+  if (container && !boundEnds) {
+    container.style.removeProperty(SCROLLBAR_INSET_TOP_VAR);
+    container.style.removeProperty(SCROLLBAR_INSET_BOTTOM_VAR);
   }
 
   let styleEl = document.getElementById(SCROLLBAR_STYLE_ID) as HTMLStyleElement;
@@ -1821,6 +1851,44 @@ export const applyScrollbarStyle = (
     // bar is always present and never needs a reserved slot anyway.
     `[part="container"]:dir(rtl) { scrollbar-gutter: auto; }`,
   ];
+
+  if (boundEnds) {
+    rules.push(
+      // The header and footer bars float over the reading column, so at a
+      // section start (or end) the thumb's own end sits underneath whichever
+      // bar slides in -- the one thing on screen that says "where am I" gets
+      // covered exactly when a reader checks it.
+      //
+      // The bar's travel can only be shortened from the two ends of the track,
+      // and the only part of a scrollbar Chromium gives a length to is
+      // `::-webkit-scrollbar-button`. Two transparent, empty boxes pinned to
+      // the track's start/end inset the thumb instead of clipping it: what is
+      // reserved is track, so the thumb stops at the bound and the scroll
+      // mapping stays linear (measured: a 720px column with 48/56px reserved
+      // runs its thumb 48..663 instead of 0..719, thumb 98px instead of 113).
+      //
+      // `height: 0px` is the do-nothing state, which is what an unwritten
+      // property resolves to -- a bar with no reservation behaves exactly as
+      // before. Values come in as custom properties from `useScrollbarInsets`
+      // because Chromium does not inherit them into a scrollbar pseudo-element
+      // from the host, only from the container's own inline style.
+      //
+      // Chromium drops both boxes once they would leave no usable track
+      // (measured: kept at 120px tall, gone at 90px), so a short column in a
+      // grid of books degrades to the plain bar rather than to a broken one.
+      `[part="container"]::-webkit-scrollbar-button:vertical:start:decrement {`,
+      `  display: block;`,
+      `  height: var(${SCROLLBAR_INSET_TOP_VAR}, 0px);`,
+      `  background: transparent;`,
+      `}`,
+      `[part="container"]::-webkit-scrollbar-button:vertical:end:increment {`,
+      `  display: block;`,
+      `  height: var(${SCROLLBAR_INSET_BOTTOM_VAR}, 0px);`,
+      `  background: transparent;`,
+      `}`,
+    );
+  }
+
   shadowStyleEl.textContent = rules.join('\n');
 };
 
