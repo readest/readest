@@ -323,12 +323,23 @@ const FoliateViewer: React.FC<{
       const primaryContentPages = primaryItem?.contentPages ?? 0;
       const columnCount =
         rendererPages > 0 && primaryContentPages > 0 ? primaryContentPages / rendererPages : 1;
+      // Chunked sections stay out of the harvest: getContents() lists one
+      // entry per rendered chunk, so a spine sum is only a partial count that
+      // grows as later chunks render - freezing it as the chapter's measured
+      // weight would understate it. They keep the byte estimate (the primary
+      // item above still contributes its column ratio even when chunked).
+      const sectionSizes = getBookData(bookKey)?.bookDoc?.sections;
       harvestLoadedChapterScreens(
         bookKey,
-        loadedContents.map((c) => ({
-          index: c.index,
-          contentPages: (c.contentPages ?? 0) / columnCount,
-        })),
+        loadedContents
+          .filter(
+            (c) => (c.index == null ? 0 : sectionSizes?.[c.index]?.size ?? 0) <=
+              CHUNKED_SECTION_THRESHOLD,
+          )
+          .map((c) => ({
+            index: c.index,
+            contentPages: (c.contentPages ?? 0) / columnCount,
+          })),
       );
     }
     if (spineChanged) {
