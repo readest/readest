@@ -277,8 +277,120 @@ describe('single-tap opens image gallery / table zoom in reflowable books (#4584
     expect(types).toContain('iframe-open-media');
     expect(types).not.toContain('iframe-single-click');
     const media = messages.find((m) => m['type'] === 'iframe-open-media')!;
+    expect(media['html']).toBe(table.outerHTML);
+  });
+
+  // A noteref's child image is a typographic marker (in a 脂評 edition, a small
+  // 「註」 glyph repeated hundreds of times per chapter), not an illustration.
+  // Tapping it must reach the note and must never open the image viewer.
+  describe('note-reference markers never open the image viewer', () => {
+    const noterefCases: [string, (a: HTMLAnchorElement) => void][] = [
+      ['epub:type="noteref"', (a) => a.setAttribute('epub:type', 'noteref')],
+      ['role="doc-noteref"', (a) => a.setAttribute('role', 'doc-noteref')],
+      ['rel="footnote"', (a) => a.setAttribute('rel', 'footnote')],
+    ];
+
+    for (const [label, mark] of noterefCases) {
+      test(`reflowable: ${label} marker image posts no open-media`, async () => {
+        const handlers = await importHandlers();
+        const a = document.createElement('a');
+        a.setAttribute('href', '#note-1');
+        mark(a);
+        const img = document.createElement('img');
+        img.src = 'blob:http://localhost/note-marker';
+        a.appendChild(img);
+        document.body.appendChild(a);
+
+        tap(handlers, false, img);
+
+        const types = postedMessages().map((m) => m['type']);
+        expect(types).not.toContain('iframe-open-media');
+
+        a.remove();
+      });
+    }
+
+    test('reflowable: a plain linked image still zooms (#4757 behaviour kept)', async () => {
+      const handlers = await importHandlers();
+      const a = document.createElement('a');
+      a.setAttribute('href', '#figure-1');
+      const img = document.createElement('img');
+      img.src = 'blob:http://localhost/figure';
+      a.appendChild(img);
+      document.body.appendChild(a);
+
+      tap(handlers, false, img);
+
+      const media = postedMessages().find((m) => m['type'] === 'iframe-open-media');
+      expect(media).toBeDefined();
+      expect(media!['elementType']).toBe('image');
+
+      a.remove();
+    });
+  });
+
+  // 脂評匯校本-style books lay a whole chapter in one giant <table> (every
+  // paragraph is a row). That table is layout, not zoomable content: tapping
+  // its text must turn the page / toggle the toolbar, never open the viewer.
+  // The page size comes from foliate's `--available-*` page box, NOT the
+  // iframe's client size — the section document is content-sized (it measured
+  // 1040x6480 paginated on this book), so a client-size basis never fires.
+  test('reflowable: a chapter-length layout table is not zoomable media', async () => {
+    const handlers = await importHandlers();
+    const table = document.createElement('table');
+    const cell = document.createElement('td');
+    cell.textContent = '正文';
+    table.appendChild(cell);
+    document.body.appendChild(table);
+    // One page is 800x1200 (`--available-*`); the chapter table spans twenty
+    // of them, and the iframe document is content-sized (800 x 1200*20).
+    vi.spyOn(document.documentElement.style, 'getPropertyValue').mockImplementation(
+      (name: string) =>
+        name === '--available-width' ? '800' : name === '--available-height' ? '1200' : '',
+    );
+    vi.spyOn(document.documentElement, 'clientWidth', 'get').mockReturnValue(800);
+    vi.spyOn(document.documentElement, 'clientHeight', 'get').mockReturnValue(1200 * 20);
+    vi.spyOn(table, 'getBoundingClientRect').mockReturnValue({
+      width: 800,
+      height: 1200 * 20,
+    } as DOMRect);
+
+    tap(handlers, false, cell);
+
+    const types = postedMessages().map((m) => m['type']);
+    expect(types).not.toContain('iframe-open-media');
+    expect(types).toContain('iframe-single-click');
+
+    table.remove();
+  });
+
+  // A data table that fits on a page stays zoomable even when the section
+  // document is much larger than one page.
+  test('reflowable: a page-fitting table in a huge document still zooms', async () => {
+    const handlers = await importHandlers();
+    const table = document.createElement('table');
+    const cell = document.createElement('td');
+    cell.textContent = '数据';
+    table.appendChild(cell);
+    document.body.appendChild(table);
+    vi.spyOn(document.documentElement.style, 'getPropertyValue').mockImplementation(
+      (name: string) =>
+        name === '--available-width' ? '800' : name === '--available-height' ? '1200' : '',
+    );
+    vi.spyOn(document.documentElement, 'clientWidth', 'get').mockReturnValue(800);
+    vi.spyOn(document.documentElement, 'clientHeight', 'get').mockReturnValue(1200 * 20);
+    vi.spyOn(table, 'getBoundingClientRect').mockReturnValue({
+      width: 400,
+      height: 400,
+    } as DOMRect);
+
+    tap(handlers, false, cell);
+
+    const media = postedMessages().find((m) => m['type'] === 'iframe-open-media')!;
     expect(media['elementType']).toBe('table');
     expect(media['html']).toBe(table.outerHTML);
+
+    table.remove();
   });
 
   // #6856: the table zoom covered the place a link in the table leads to.
