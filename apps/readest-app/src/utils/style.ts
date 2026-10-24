@@ -1809,6 +1809,17 @@ export const applyScrollbarStyle = (
     // inherited non-auto value is enough to knock out the pseudo-elements.
     // Resetting it to `auto` on the container restores them.
     `[part="container"] { scrollbar-gutter: stable; scrollbar-color: auto; }`,
+    // ...but the gutter must not be reserved in an RTL scroller. Chromium
+    // shrinks `clientWidth` by the 8px slot yet still lays the (much wider)
+    // view box out from the padding-box's right edge, which leaves the content
+    // overhanging the scroll origin by ~7px. In an RTL container that overhang
+    // is unreachable — `scrollLeft = 0` clamps back to -7 — so the group never
+    // starts flush and foliate's `#scrollPrev` can never satisfy its
+    // "already at the scroll start" test, which is what made the tap on the
+    // right edge of a vertical-rl book (scrolled mode) die at every section
+    // boundary. Vertical books scroll horizontally in scrolled mode, so their
+    // bar is always present and never needs a reserved slot anyway.
+    `[part="container"]:dir(rtl) { scrollbar-gutter: auto; }`,
   ];
   shadowStyleEl.textContent = rules.join('\n');
 };

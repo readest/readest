@@ -188,6 +188,17 @@ describe('applyScrollbarStyle', () => {
     expect(shadowStyle()!.textContent).toContain('scrollbar-gutter: stable');
   });
 
+  it('never reserves the gutter in an RTL scroller', () => {
+    // Chromium shrinks clientWidth by the reserved 8px but still lays the wide
+    // view box out from the padding-box's right edge, leaving ~7px of content
+    // past the scroll origin. An RTL scroller cannot reach that overhang, so
+    // `scrollLeft = 0` clamps back and the book never sits flush at a section
+    // start — which killed the tap-to-previous-section at every chapter head.
+    applyScrollbarStyle(document, true, host, true);
+    const inner = shadowStyle()!.textContent!;
+    expect(inner).toContain('[part="container"]:dir(rtl) { scrollbar-gutter: auto; }');
+  });
+
   it('gates the hidden thumb on the reveal custom property', () => {
     applyScrollbarStyle(document, true, host, true);
     const inner = shadowStyle()!.textContent!;
