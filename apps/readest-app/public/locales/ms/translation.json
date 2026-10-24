@@ -719,6 +719,8 @@
   "Rename Group": "Namakan Semula Kumpulan",
   "From Directory": "Dari Direktori",
   "Successfully imported {{count}} book(s)_other": "Berjaya mengimport {{count}} buku",
+  "Successfully imported {{count}} book(s) via conversion_other": "Berjaya mengimport {{count}} buku (melalui penukaran)",
+  "Successfully imported {{count}} book(s), {{converted}} of them via conversion_other": "Berjaya mengimport {{count}} buku ({{converted}} daripadanya melalui penukaran)",
   "Count": "Jumlah",
   "Start Page": "Halaman Awal",
   "Search in OPDS Catalog...": "Cari dalam Katalog OPDS...",

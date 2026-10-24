@@ -593,6 +593,7 @@ export async function importBook(
           const txt2epub = new TxtToEpubConverter();
           try {
             ({ file: fileobj } = await txt2epub.convert({ file: fileobj }));
+            options.onConverted?.('TXT');
           } finally {
             // Convert consumes the source; release RemoteFile/NativeFile
             // immediately so DocumentLoader / cover / write do not keep the

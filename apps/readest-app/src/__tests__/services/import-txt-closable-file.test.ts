@@ -201,4 +201,26 @@ describe('importBook TXT ClosableFile lifecycle', () => {
     expect(result).not.toBeNull();
     expect(mockConvert).toHaveBeenCalledTimes(1);
   });
+
+  it('reports onConverted("TXT") after a successful conversion', async () => {
+    const onConverted = vi.fn();
+    const source = makeSourceTxt();
+    service.getFs().openFile.mockResolvedValue(source);
+
+    const result = await service.importBook('/library/novel.txt', [], { onConverted });
+
+    expect(result).not.toBeNull();
+    expect(onConverted).toHaveBeenCalledTimes(1);
+    expect(onConverted).toHaveBeenCalledWith('TXT');
+  });
+
+  it('does not report onConverted when the TXT conversion fails', async () => {
+    const onConverted = vi.fn();
+    const source = makeSourceTxt();
+    service.getFs().openFile.mockResolvedValue(source);
+    mockConvert.mockRejectedValue(new Error('No chapters detected.'));
+
+    await expect(service.importBook('/library/novel.txt', [], { onConverted })).rejects.toThrow();
+    expect(onConverted).not.toHaveBeenCalled();
+  });
 });

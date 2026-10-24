@@ -958,6 +958,10 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     const failedImports: Array<{ filename: string; errorMessage: string }> = [];
     const failedPaths: string[] = [];
     const successfulImports: string[] = [];
+    // Sources that importBook converted to EPUB (TXT today) — the success
+    // toast says so, because "my document turned into an EPUB" is worth
+    // knowing about.
+    let convertedImports = 0;
 
     // Readest's own Books/ prefix is resolved once at app init and persisted
     // in `settings.localBooksDir`. We hand it to `ingestFile` so the in-place
@@ -1006,6 +1010,9 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
             lookupIndex,
             groupId: resolvedGroupId,
             groupName: resolvedGroupName,
+            onConverted: () => {
+              convertedImports++;
+            },
           },
           { appService, settings: liveSettings, isLoggedIn: !!user, appBooksPrefix },
         );
@@ -1071,10 +1078,21 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     // mode failures are suppressed, so show success independently of them; in
     // interactive mode keep the original behaviour (only when nothing failed).
     if (successfulImports.length > 0 && (options.silent || failedImports.length === 0)) {
+      // Three shapes: nothing converted, everything converted, a proper
+      // subset converted — the partitive wording only makes sense when the
+      // converted books are a strict subset of the batch.
+      const count = successfulImports.length;
+      const message =
+        convertedImports === 0
+          ? _('Successfully imported {{count}} book(s)', { count })
+          : convertedImports === count
+            ? _('Successfully imported {{count}} book(s) via conversion', { count })
+            : _('Successfully imported {{count}} book(s), {{converted}} of them via conversion', {
+                count,
+                converted: convertedImports,
+              });
       eventDispatcher.dispatch('toast', {
-        message: _('Successfully imported {{count}} book(s)', {
-          count: successfulImports.length,
-        }),
+        message,
         timeout: 2000,
         type: 'success',
       });

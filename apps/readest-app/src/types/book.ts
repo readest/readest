@@ -25,6 +25,14 @@ export type BookFormat =
   | 'OPDSAUDIO'
   // Streaming audiobook from BookOrbit's audiobook API; filePath is bookorbit://<bookId> (#6224)
   | 'BOOKORBIT';
+/**
+ * Source formats importBook converts to EPUB before opening. The library never
+ * parses these natively: the converted EPUB is what gets hashed, stored and
+ * synced, and the source document is consumed. The union is deliberately
+ * format-agnostic so future import-time conversions can report themselves
+ * through the same onConverted callback.
+ */
+export type ConvertedSourceFormat = 'TXT';
 export type BookNoteType = 'bookmark' | 'annotation' | 'excerpt' | 'notebook' | 'ink';
 export type ReadingStatus = 'unread' | 'reading' | 'finished' | 'abandoned';
 export type HighlightStyle = 'highlight' | 'underline' | 'squiggly';
@@ -83,6 +91,13 @@ export interface ImportBookOptions {
   overwrite?: boolean;
   /** Whether the import is transient (not stored long-term). Defaults to false. */
   transient?: boolean;
+  /**
+   * Called when a source document was converted to EPUB during the import
+   * (TXT today). Callers use it to surface "converted" feedback (e.g. the
+   * library batch toast) so the user can tell a converted import from a
+   * native one.
+   */
+  onConverted?: (format: ConvertedSourceFormat) => void;
   /**
    * If true, do NOT copy the source file into Books/<hash>/. Instead, persist
    * an absolute filePath on the Book and let isBookAvailable / loadBookContent

@@ -1,4 +1,4 @@
-import type { Book, BookLookupIndex } from '@/types/book';
+import type { Book, BookLookupIndex, ConvertedSourceFormat } from '@/types/book';
 import type { AppService, OsPlatform } from '@/types/system';
 import type { SystemSettings } from '@/types/settings';
 import { transferManager } from '@/services/transferManager';
@@ -45,6 +45,12 @@ export interface IngestFileOptions {
    * the file into Books/<hash>/. Defaults to false.
    */
   forceCopy?: boolean;
+  /**
+   * Forwarded to bookService.importBook: fires when a source document was
+   * converted to EPUB during the import (TXT today), so callers can surface
+   * feedback distinct from a native-format import.
+   */
+  onConverted?: (format: ConvertedSourceFormat) => void;
 }
 
 /**
@@ -206,6 +212,7 @@ export async function ingestFile(
     lookupIndex: opts.lookupIndex,
     transient: opts.transient,
     inPlace,
+    onConverted: opts.onConverted,
   });
   if (!book) return null;
 

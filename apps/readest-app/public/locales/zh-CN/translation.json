@@ -720,6 +720,8 @@
   "Rename Group": "重命名分组",
   "From Directory": "从文件夹导入",
   "Successfully imported {{count}} book(s)_other": "成功导入 {{count}} 本书",
+  "Successfully imported {{count}} book(s) via conversion_other": "成功导入 {{count}} 本书（经格式转换）",
+  "Successfully imported {{count}} book(s), {{converted}} of them via conversion_other": "成功导入 {{count}} 本书（其中 {{converted}} 本经格式转换）",
   "Count": "数量",
   "Start Page": "起始页",
   "Search in OPDS Catalog...": "在 OPDS 目录中搜索...",

@@ -719,6 +719,8 @@
   "Rename Group": "Đổi tên nhóm",
   "From Directory": "Từ thư mục",
   "Successfully imported {{count}} book(s)_other": "Đã nhập thành công {{count}} sách",
+  "Successfully imported {{count}} book(s) via conversion_other": "Đã nhập thành công {{count}} cuốn sách (qua chuyển đổi)",
+  "Successfully imported {{count}} book(s), {{converted}} of them via conversion_other": "Đã nhập thành công {{count}} cuốn sách (trong đó {{converted}} cuốn qua chuyển đổi)",
   "Count": "Số lượng",
   "Start Page": "Trang bắt đầu",
   "Search in OPDS Catalog...": "Tìm kiếm trong danh mục OPDS...",

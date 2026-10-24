@@ -719,6 +719,8 @@
   "Rename Group": "그룹 이름 바꾸기",
   "From Directory": "디렉토리에서",
   "Successfully imported {{count}} book(s)_other": "성공적으로 {{count}} 권의 책이 가져와졌습니다",
+  "Successfully imported {{count}} book(s) via conversion_other": "책 {{count}}권을 성공적으로 가져왔습니다(형식 변환을 통해 가져옴)",
+  "Successfully imported {{count}} book(s), {{converted}} of them via conversion_other": "책 {{count}}권을 성공적으로 가져왔습니다(그중 {{converted}}권은 형식 변환을 통해 가져옴)",
   "Count": "개수",
   "Start Page": "시작 페이지",
   "Search in OPDS Catalog...": "OPDS 카탈로그에서 검색...",

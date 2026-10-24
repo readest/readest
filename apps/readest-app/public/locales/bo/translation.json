@@ -719,6 +719,8 @@
   "Rename Group": "ཚོགས་མིང་བསྒྱུར་བ།",
   "From Directory": "སྐོར་འདེམས་པ་ནས།",
   "Successfully imported {{count}} book(s)_other": "སྤྲིན་ནས་ཕབ་སྟེ་འབེབས་ {{count}} དེབ་འདེམས་སོང་",
+  "Successfully imported {{count}} book(s) via conversion_other": "དེབ {{count}} ནང་འདྲེན་ལེགས་འགྲུབ་བྱུང་ (སྒྱུར་སྒྲིག་ལམ་ནས)",
+  "Successfully imported {{count}} book(s), {{converted}} of them via conversion_other": "དེབ {{count}} ནང་འདྲེན་ལེགས་འགྲུབ་བྱུང་ (དེའི་ནང་ {{converted}} སྒྱུར་སྒྲིག་ལམ་ནས)",
   "Count": "ཨང་",
   "Start Page": "ཤོག་ངོས་དང་པོ",
   "Search in OPDS Catalog...": "OPDS དཀར་ཆག་ནང་འཚོལ།...",
