@@ -412,12 +412,17 @@ const FoliateViewer: React.FC<{
     clearChapterScreens(bookKey);
     lastSampledSpineRef.current = null;
   }, [bookKey]);
-  // Keyed on the serialized view settings: any setting change re-renders
-  // every loaded view (paginator render()) and invalidates every measured
-  // count, so drop them wholesale — including settings added later, without
-  // enumerating layout-relevant fields. Non-layout settings trigger a
-  // harmless re-harvest of the same values.
-  const settingsFingerprint = viewSettings ? JSON.stringify(viewSettings) : '';
+  // Keyed on the serialized view settings plus the loaded-font list: any
+  // setting change re-renders every loaded view (paginator render()) and
+  // invalidates every measured count, so drop them wholesale — including
+  // settings added later, without enumerating layout-relevant fields.
+  // Non-layout settings trigger a harmless re-harvest of the same values.
+  // A custom font finishing its async load re-layouts too (fontReady ->
+  // expand()) without touching the settings value, so the loaded fonts are
+  // part of the key.
+  const settingsFingerprint = viewSettings
+    ? JSON.stringify(viewSettings) + '|' + JSON.stringify(getLoadedFonts())
+    : '';
   useEffect(() => {
     invalidateChapterScreens();
   }, [bookKey, invalidateChapterScreens, settingsFingerprint]);
