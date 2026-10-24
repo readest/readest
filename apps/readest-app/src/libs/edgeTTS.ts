@@ -34,6 +34,10 @@ type UpgradeResponse = Response & { webSocket?: AcceptableWebSocket };
 // speech.platform.bing.com now rejects the handshake with 403 in many regions
 // (rany2/edge-tts#490); Edge Read Aloud moved to api.msedgeservices.com.
 const EDGE_SPEECH_URL = 'wss://api.msedgeservices.com/tts/cognitiveservices/websocket/v1';
+// msedgeservices answers the upgrade with a plain HTTP 200 from some hosts,
+// where the bing endpoint still works; fall back to it on a failed handshake.
+const EDGE_SPEECH_FALLBACK_URL =
+  'wss://speech.platform.bing.com/consumer/speech/synthesize/readaloud/edge/v1';
 const EDGE_API_TOKEN = '6A5AA1D4EAFF4E9FB37E23D68491D6F4';
 const CHROMIUM_FULL_VERSION = '143.0.3650.75';
 const CHROMIUM_MAJOR_VERSION = CHROMIUM_FULL_VERSION.split('.')[0];
@@ -310,6 +314,26 @@ export const generateSecMsGec = async (now = Date.now()) => {
   return `${toHex(new Uint8Array(cs64.buffer))}-${toHex(digest)}`;
 };
 
+class EdgeHandshakeError extends Error {}
+
+export const buildEdgeSpeechUrls = async (connectId: string, now = Date.now()) => {
+  const gec = await generateSecMsGec(now);
+  const version = `2-${CHROMIUM_FULL_VERSION}`;
+  const primary = new URLSearchParams({
+    ConnectionId: connectId,
+    'Ocp-Apim-Subscription-Key': EDGE_API_TOKEN,
+    'Sec-MS-GEC': gec,
+    'Sec-MS-GEC-Version': version,
+  });
+  const fallback = new URLSearchParams({
+    TrustedClientToken: EDGE_API_TOKEN,
+    ConnectionId: connectId,
+    'Sec-MS-GEC': gec,
+    'Sec-MS-GEC-Version': version,
+  });
+  return [`${EDGE_SPEECH_URL}?${primary}`, `${EDGE_SPEECH_FALLBACK_URL}?${fallback}`];
+};
+
 const generateMuid = () => {
   // Generate 16 random bytes (32 hex characters)
   const array = new Uint8Array(16);
@@ -468,15 +492,32 @@ export class EdgeSpeechTTS {
     return response;
   }
 
-  async #fetchEdgeSpeechWs({ lang, text, voice, rate }: EdgeTTSPayload): Promise<EdgeSpeechAudio> {
+  // Index into buildEdgeSpeechUrls() of the endpoint that last completed a
+  // handshake, so a working fallback is tried first on the next sentence.
+  static #endpoint = 0;
+
+  async #fetchEdgeSpeechWs(payload: EdgeTTSPayload): Promise<EdgeSpeechAudio> {
     const connectId = randomMd5();
-    const params = new URLSearchParams({
-      ConnectionId: connectId,
-      'Ocp-Apim-Subscription-Key': EDGE_API_TOKEN,
-      'Sec-MS-GEC': await generateSecMsGec(),
-      'Sec-MS-GEC-Version': `2-${CHROMIUM_FULL_VERSION}`,
-    });
-    const url = `${EDGE_SPEECH_URL}?${params.toString()}`;
+    const urls = await buildEdgeSpeechUrls(connectId);
+    const start = EdgeSpeechTTS.#endpoint;
+    for (let i = 0; i < urls.length; i++) {
+      const index = (start + i) % urls.length;
+      try {
+        const audio = await this.#fetchEdgeSpeechWsAt(payload, connectId, urls[index]!);
+        EdgeSpeechTTS.#endpoint = index;
+        return audio;
+      } catch (error) {
+        if (!(error instanceof EdgeHandshakeError) || i === urls.length - 1) throw error;
+      }
+    }
+    throw new Error('WebSocket error occurred.');
+  }
+
+  async #fetchEdgeSpeechWsAt(
+    { lang, text, voice, rate }: EdgeTTSPayload,
+    connectId: string,
+    url: string,
+  ): Promise<EdgeSpeechAudio> {
     const date = new Date().toString();
     const baseHeaders = {
       'User-Agent':
@@ -584,7 +625,13 @@ export class EdgeSpeechTTS {
         };
         try {
           const TauriWebSocket = (await import('@tauri-apps/plugin-websocket')).default;
-          ws = await TauriWebSocket.connect(url, { headers: baseHeaders });
+          try {
+            ws = await TauriWebSocket.connect(url, { headers: baseHeaders });
+          } catch (error) {
+            return settle(() =>
+              reject(new EdgeHandshakeError(`WebSocket error occurred: ${error}`)),
+            );
+          }
           let audioData = new ArrayBuffer(0);
           const boundaries: TTSWordBoundary[] = [];
           unlisten = ws.addListener((msg) => {
@@ -655,7 +702,9 @@ export class EdgeSpeechTTS {
 
             if (upgradeResponse.status !== 101 || !upgradeResponse.webSocket) {
               return reject(
-                new Error(`WebSocket upgrade failed with status ${upgradeResponse.status}`),
+                new EdgeHandshakeError(
+                  `WebSocket upgrade failed with status ${upgradeResponse.status}`,
+                ),
               );
             }
 
@@ -791,8 +840,10 @@ export class EdgeSpeechTTS {
 
         let audioData = new ArrayBuffer(0);
         const boundaries: TTSWordBoundary[] = [];
+        let opened = false;
 
         ws.addEventListener('open', () => {
+          opened = true;
           ws.send(config);
           ws.send(content);
         });
@@ -829,7 +880,11 @@ export class EdgeSpeechTTS {
         });
 
         ws.addEventListener('error', () => {
-          reject(new Error('WebSocket error occurred.'));
+          reject(
+            opened
+              ? new Error('WebSocket error occurred.')
+              : new EdgeHandshakeError('WebSocket error occurred.'),
+          );
         });
       });
     }
