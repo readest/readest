@@ -253,6 +253,7 @@ const FoliateViewer: React.FC<{
   const relocateRafRef = useRef<number | null>(null);
   const relocateTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastSampledSpineRef = useRef<number | null>(null);
+  const appliedLayoutSignatureRef = useRef('');
   const cancelRelocateScheduled = useCallback(() => {
     if (relocateTimeoutRef.current != null) {
       clearTimeout(relocateTimeoutRef.current);
@@ -1085,6 +1086,18 @@ const FoliateViewer: React.FC<{
     viewRef.current?.renderer.setAttribute('margin-right', `${rightMargin}px`);
     viewRef.current?.renderer.setAttribute('margin-bottom', `${bottomMargin}px`);
     viewRef.current?.renderer.setAttribute('margin-left', `${leftMargin}px`);
+    // These attributes re-render every loaded view, so a change invalidates
+    // the measured screen counts. Margin changes can come from state outside
+    // viewSettings (the TTS mini player's and drawing dock's bottom clearance
+    // live in viewState), so neither the settings fingerprint nor the
+    // ResizeObserver sees them - margins don't resize the observed element.
+    // Keyed on the applied signature so re-applying the same values (this
+    // runs on many triggers) keeps the current snapshot intact.
+    const layoutSignature = `${topMargin}|${rightMargin}|${bottomMargin}|${leftMargin}|${viewSettings.gapPercent}|${viewSettings.columnGapPx}`;
+    if (layoutSignature !== appliedLayoutSignatureRef.current) {
+      appliedLayoutSignatureRef.current = layoutSignature;
+      invalidateChapterScreens();
+    }
 
     if (viewSettings.scrolled) {
       const headerVisible = showTopHeader;
