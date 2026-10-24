@@ -958,9 +958,12 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     const failedImports: Array<{ filename: string; errorMessage: string }> = [];
     const failedPaths: string[] = [];
     const successfulImports: string[] = [];
-    // Sources that importBook converted to EPUB (TXT today) — the success
-    // toast says so, because "my document turned into an EPUB" is worth
-    // knowing about.
+    // Books whose source importBook converted to EPUB (TXT today) — the
+    // success toast says so, because "my document turned into an EPUB" is
+    // worth knowing about. Counted per file only AFTER that file's import
+    // succeeds: the conversion callback can fire for a file whose import
+    // later fails, and the converted count must stay a subset of the
+    // successful imports for the three toast shapes below to hold.
     let convertedImports = 0;
 
     // Readest's own Books/ prefix is resolved once at app init and persisted
@@ -1003,6 +1006,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
         // `externalLibraryFolders` and incorrectly fall back to copy
         // mode. Pulling the latest snapshot from zustand fixes this.
         const liveSettings = useSettingsStore.getState().settings;
+        let converted = false;
         const book = await ingestFile(
           {
             file,
@@ -1011,12 +1015,13 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
             groupId: resolvedGroupId,
             groupName: resolvedGroupName,
             onConverted: () => {
-              convertedImports++;
+              converted = true;
             },
           },
           { appService, settings: liveSettings, isLoggedIn: !!user, appBooksPrefix },
         );
         if (!book) return null;
+        if (converted) convertedImports++;
         successfulImports.push(book.title);
         return book;
       } catch (error) {
@@ -1082,15 +1087,17 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
       // subset converted — the partitive wording only makes sense when the
       // converted books are a strict subset of the batch.
       const count = successfulImports.length;
-      const message =
-        convertedImports === 0
-          ? _('Successfully imported {{count}} book(s)', { count })
-          : convertedImports === count
-            ? _('Successfully imported {{count}} book(s) via conversion', { count })
-            : _('Successfully imported {{count}} book(s), {{converted}} of them via conversion', {
-                count,
-                converted: convertedImports,
-              });
+      let message: string;
+      if (convertedImports === 0) {
+        message = _('Successfully imported {{count}} book(s)', { count });
+      } else if (convertedImports === count) {
+        message = _('Successfully imported {{count}} book(s) via conversion', { count });
+      } else {
+        message = _(
+          'Successfully imported {{count}} book(s), {{converted}} of them via conversion',
+          { count, converted: convertedImports },
+        );
+      }
       eventDispatcher.dispatch('toast', {
         message,
         timeout: 2000,
