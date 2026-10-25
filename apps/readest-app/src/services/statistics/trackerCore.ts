@@ -25,6 +25,18 @@ export class TrackerCore {
 
   constructor(private readonly cfg: StatsTrackingConfig) {}
 
+  /**
+   * The page currently being timed, as a zero-duration event. Persist it when
+   * the page starts so a book reaches the statistics before its first dwell is
+   * flushed; the real event updates the same row when the page is left.
+   */
+  get currentEvent(): FlushedEvent | null {
+    const p = this.pending;
+    return p
+      ? { page: p.page, startTime: p.startTime, duration: 0, totalPages: p.totalPages }
+      : null;
+  }
+
   /** Notify the current page at `now`. Returns events flushed by leaving the prior page. */
   onPage(page: number, totalPages: number, now: number): FlushedEvent[] {
     if (this.pending && this.pending.page === page) {

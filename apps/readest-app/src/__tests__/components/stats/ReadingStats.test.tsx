@@ -2,6 +2,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import ReadingHeatmap from '@/components/stats/ReadingHeatmap';
 import ReadingTimeChart from '@/components/stats/ReadingTimeChart';
+import { useLibraryStore } from '@/store/libraryStore';
+import type { Book } from '@/types/book';
 
 const env = vi.hoisted(() => ({ appService: {}, envConfig: {} }));
 const db = vi.hoisted(() => ({
@@ -22,10 +24,14 @@ vi.mock('@/context/AuthContext', () => ({ useAuth: () => ({ user: sync.user }) }
 vi.mock('@/services/sync/syncCategories', () => ({ isSyncCategoryEnabled: () => true }));
 vi.mock('@/services/statistics/statsSync', () => ({ pullStats: sync.pullStats }));
 vi.mock('@/libs/sync', () => ({ SyncClient: class {} }));
+vi.mock('@/components/BookCover', () => ({
+  default: () => <div data-testid='book-cover' />,
+}));
 
 afterEach(() => {
   cleanup();
   vi.useRealTimers();
+  useLibraryStore.setState({ library: [], hashIndex: new Map() });
 });
 
 describe('ReadingHeatmap keyboard access', () => {
@@ -122,22 +128,127 @@ describe('arrow keys inside a Dialog', () => {
 });
 
 describe('ReadingStatsDialog', () => {
-  const openDialog = async () => {
+  const openDialog = async (props: { onOpenBook?: (book: Book) => void } = {}) => {
     const { default: ReadingStatsDialog, setReadingStatsDialogVisible } = await import(
       '@/components/stats/ReadingStatsDialog'
     );
-    render(<ReadingStatsDialog />);
+    render(<ReadingStatsDialog {...props} />);
     await act(async () => setReadingStatsDialogVisible(true));
   };
+
+  const makeBooks = (count: number) =>
+    Array.from({ length: count }, (_, index) => ({
+      bookMd5: `book-${index}`,
+      title: `Book ${index}`,
+      authors: `Author ${index}`,
+      seconds: 600,
+      furthestPage: 50,
+      totalPages: 100,
+      lastRead: 1_800_000_000 - index,
+    }));
+
+  const mockBooks = (books: ReturnType<typeof makeBooks>) =>
+    db.open.mockResolvedValue({
+      getQuarterHourDurations: async () => [],
+      getReadingTotals: async () => ({ seconds: 0, books: books.length, pages: books.length }),
+      getBookStats: async () => books,
+    });
 
   it('formats all-time counts with the app locale', async () => {
     db.open.mockResolvedValue({
       getQuarterHourDurations: async () => [],
       getReadingTotals: async () => ({ seconds: 0, books: 1234, pages: 56789 }),
+      getBookStats: async () => [],
     });
     await openDialog();
     expect(await screen.findByText('56.789')).toBeTruthy();
     expect(screen.getByText('1.234')).toBeTruthy();
+  });
+
+  it('lists each book with its reading time, progress and last read date', async () => {
+    const onOpenBook = vi.fn();
+    useLibraryStore.setState({
+      library: [{ hash: 'dune', title: 'Dune' } as Book],
+      hashIndex: new Map([['dune', 0]]),
+    });
+    db.open.mockResolvedValue({
+      getQuarterHourDurations: async () => [],
+      getReadingTotals: async () => ({ seconds: 9000, books: 1, pages: 42 }),
+      getBookStats: async () => [
+        {
+          bookMd5: 'dune',
+          title: 'Dune',
+          authors: 'Frank Herbert',
+          seconds: 5400,
+          furthestPage: 210,
+          totalPages: 500,
+          lastRead: Math.floor(new Date(2026, 9, 20, 12).getTime() / 1000),
+        },
+      ],
+    });
+    await openDialog({ onOpenBook });
+    expect(await screen.findByText('Dune')).toBeTruthy();
+    expect(screen.getByTestId('book-cover')).toBeTruthy();
+    expect(screen.getByText('1h 30m')).toBeTruthy();
+    expect(screen.getByText('42%')).toBeTruthy();
+    expect(screen.getByRole('progressbar', { name: 'Dune' }).getAttribute('aria-valuenow')).toBe(
+      '42',
+    );
+    expect(screen.getByText('Frank Herbert')).toBeTruthy();
+    expect(screen.getByText(/^Last read /)).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Dune' }));
+    expect(onOpenBook).toHaveBeenCalledWith(expect.objectContaining({ hash: 'dune' }));
+  });
+
+  it('leaves books that are not in the local library static', async () => {
+    useLibraryStore.setState({
+      library: [{ hash: 'book-0', title: 'Book 0', deletedAt: 123 } as Book],
+      hashIndex: new Map([['book-0', 0]]),
+    });
+    mockBooks(makeBooks(2));
+    const onOpenBook = vi.fn();
+    await openDialog({ onOpenBook });
+
+    expect(await screen.findByText('Book 0')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Book 0' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Book 1' })).toBeNull();
+    expect(onOpenBook).not.toHaveBeenCalled();
+  });
+
+  it('caps the dashboard at five books and opens the full list with search', async () => {
+    mockBooks(makeBooks(6));
+    await openDialog();
+    expect(await screen.findByText('Book 0')).toBeTruthy();
+    expect(screen.getByText('Book 4')).toBeTruthy();
+    expect(screen.queryByText('Book 5')).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: /View All/ }));
+    expect(await screen.findByText('All Books')).toBeTruthy();
+    expect(screen.getByText('Book 5')).toBeTruthy();
+
+    fireEvent.change(screen.getByPlaceholderText('Search Books...'), {
+      target: { value: 'Author 5' },
+    });
+    expect(screen.getByText('Book 5')).toBeTruthy();
+    expect(screen.queryByText('Book 0')).toBeNull();
+
+    fireEvent.change(screen.getByPlaceholderText('Search Books...'), {
+      target: { value: 'no such book' },
+    });
+    expect(
+      screen.getByText('No matching books found. Try a different title or author.'),
+    ).toBeTruthy();
+  });
+
+  it('loads the full list a page at a time', async () => {
+    mockBooks(makeBooks(31));
+    await openDialog();
+    fireEvent.click(screen.getByRole('button', { name: /View All/ }));
+
+    expect(await screen.findAllByRole('progressbar')).toHaveLength(30);
+    fireEvent.click(screen.getByRole('button', { name: 'Load more' }));
+    expect(screen.getAllByRole('progressbar')).toHaveLength(31);
   });
 
   it("pulls the account's stats from other devices, then shows them", async () => {
@@ -149,6 +260,7 @@ describe('ReadingStatsDialog', () => {
     db.open.mockResolvedValue({
       getQuarterHourDurations: async () => [],
       getReadingTotals: async () => ({ seconds: 0, books: pulled ? 40 : 3, pages: 0 }),
+      getBookStats: async () => [],
     });
     await openDialog();
     expect(sync.pullStats).toHaveBeenCalled();

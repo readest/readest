@@ -186,7 +186,8 @@ export class TtsStatsRecorder {
       if (!resolved || !this.#playing) return;
       const now = nowSec();
       if (resolved.page !== this.#currentPage) {
-        await this.#persist(this.#core.onPage(resolved.page, resolved.totalPages, now));
+        const flushed = this.#core.onPage(resolved.page, resolved.totalPages, now);
+        await this.#persist(this.#withCurrentMarker(flushed));
         this.#currentPage = resolved.page;
         this.#dwellStartedAt = now;
         return;
@@ -197,7 +198,8 @@ export class TtsStatsRecorder {
       // from. Reopening on the same page with a later start_time keeps the time
       // without weakening that cap - the primary key is (book, page, start).
       await this.#persist(this.#core.onIdle(now));
-      await this.#persist(this.#core.onPage(resolved.page, resolved.totalPages, now));
+      const flushed = this.#core.onPage(resolved.page, resolved.totalPages, now);
+      await this.#persist(this.#withCurrentMarker(flushed));
       this.#dwellStartedAt = now;
     } finally {
       this.#ticking = false;
@@ -309,6 +311,15 @@ export class TtsStatsRecorder {
       }
     })();
     return this.#dbPromise;
+  }
+
+  /**
+   * A zero-duration marker for the page being timed, so a newly started book
+   * shows up in the statistics at once; the flush later fills in the duration.
+   */
+  #withCurrentMarker(events: FlushedEvent[]): FlushedEvent[] {
+    const marker = this.#core.currentEvent;
+    return marker ? [...events, marker] : events;
   }
 
   async #persist(events: FlushedEvent[]): Promise<void> {

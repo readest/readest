@@ -42,4 +42,13 @@ describe('TrackerCore', () => {
     expect(t.onHide(40)).toEqual([{ page: 7, startTime: 0, duration: 40, totalPages: 10 }]);
     expect(t.onClose(99)).toEqual([]); // already flushed + paused by hide
   });
+
+  it('offers the page being timed as a zero-duration marker', () => {
+    const t = new TrackerCore(cfg);
+    expect(t.currentEvent).toBeNull();
+    t.onPage(5, 100, 1000);
+    expect(t.currentEvent).toEqual({ page: 5, startTime: 1000, duration: 0, totalPages: 100 });
+    t.onIdle(1030);
+    expect(t.currentEvent).toBeNull();
+  });
 });

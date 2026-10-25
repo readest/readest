@@ -40,6 +40,8 @@
   "{{count}} downloads_other": "{{count}} downloads",
   "{{count}} days_one": "{{count}} day",
   "{{count}} days_other": "{{count}} days",
+  "{{count}} books_one": "{{count}} book",
+  "{{count}} books_other": "{{count}} books",
   "Expires in {{count}} days_one": "Expires in {{count}} day",
   "Expires in {{count}} days_other": "Expires in {{count}} days",
   "Expires in {{count}} hours_one": "Expires in {{count}} hour",

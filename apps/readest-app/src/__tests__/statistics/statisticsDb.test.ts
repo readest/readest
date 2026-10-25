@@ -108,6 +108,102 @@ describe('StatisticsDb', () => {
     expect(events[0]!.bookMd5).toBe('m1');
   });
 
+  it('summarizes reading per book, most recently read first', async () => {
+    const alpha = await stats.upsertBook({ bookMd5: 'alpha', title: 'Alpha', authors: 'Ann' });
+    const beta = await stats.upsertBook({ bookMd5: 'beta', title: 'Beta', authors: '' });
+    await stats.insertPageEvent(alpha, { page: 1, startTime: 100, duration: 10, totalPages: 80 });
+    await stats.insertPageEvent(alpha, { page: 2, startTime: 200, duration: 20, totalPages: 80 });
+    await stats.insertPageEvent(beta, { page: 1, startTime: 300, duration: 5, totalPages: 50 });
+
+    expect(await stats.getBookStats()).toEqual([
+      {
+        bookMd5: 'beta',
+        title: 'Beta',
+        authors: '',
+        seconds: 5,
+        furthestPage: 1,
+        totalPages: 50,
+        lastRead: 305,
+      },
+      {
+        bookMd5: 'alpha',
+        title: 'Alpha',
+        authors: 'Ann',
+        seconds: 30,
+        furthestPage: 2,
+        totalPages: 80,
+        lastRead: 220,
+      },
+    ]);
+  });
+
+  it('rescales older page numbers to the book’s current pagination', async () => {
+    const id = await stats.upsertBook({ bookMd5: 'scale', title: 'Scale', authors: '' });
+    // Read page 26 of a 50-page pagination, then page 10 of a 100-page one.
+    await stats.insertPageEvent(id, { page: 26, startTime: 100, duration: 10, totalPages: 50 });
+    await stats.insertPageEvent(id, { page: 10, startTime: 200, duration: 10, totalPages: 100 });
+    await stats.recomputeBookTotals(id); // book.pages = 100 now
+
+    const [book] = await stats.getBookStats();
+    expect(book!.totalPages).toBe(100);
+    // Page 26/50 scales to 51/100 — further than the raw page 10.
+    expect(book!.furthestPage).toBe(51);
+  });
+
+  it('lists a book whose first page is only marked, not timed yet', async () => {
+    const id = await stats.upsertBook({ bookMd5: 'opened', title: 'Opened', authors: '' });
+    await stats.insertPageEvent(id, { page: 1, startTime: 500, duration: 0, totalPages: 120 });
+    await stats.recomputeBookTotals(id);
+
+    expect(await stats.getBookStats()).toEqual([
+      {
+        bookMd5: 'opened',
+        title: 'Opened',
+        authors: '',
+        seconds: 0,
+        furthestPage: 1,
+        totalPages: 120,
+        lastRead: 500,
+      },
+    ]);
+  });
+
+  it('keeps zero-duration page markers out of the reading pace', async () => {
+    const id = await stats.upsertBook({ bookMd5: 'marked', title: 'Marked', authors: '' });
+    for (let page = 1; page <= 6; page++) {
+      await stats.insertPageEvent(id, {
+        page,
+        startTime: 100 + page,
+        duration: 30,
+        totalPages: 100,
+      });
+    }
+    for (let page = 10; page < 30; page++) {
+      await stats.insertPageEvent(id, {
+        page,
+        startTime: 200 + page,
+        duration: 0,
+        totalPages: 100,
+      });
+    }
+
+    expect(await stats.getMedianPageDurationSecs(id)).toBe(30);
+  });
+
+  it('keeps zero-duration page markers local until they are timed', async () => {
+    const id = await stats.upsertBook({ bookMd5: 'm', title: 'M', authors: '' });
+    await stats.insertPageEvent(id, { page: 1, startTime: 100, duration: 0, totalPages: 10 });
+    expect((await stats.getEventsForPush(0)).events).toEqual([]);
+
+    await stats.insertPageEvent(id, { page: 1, startTime: 100, duration: 8, totalPages: 10 });
+    expect((await stats.getEventsForPush(0)).events).toHaveLength(1);
+  });
+
+  it('leaves books without page events out of the per-book summary', async () => {
+    await stats.upsertBook({ bookMd5: 'empty', title: 'Empty', authors: '' });
+    expect(await stats.getBookStats()).toEqual([]);
+  });
+
   it('applies remote events idempotently via upsert', async () => {
     const remoteBooks = [{ bookMd5: 'm2', title: 'T2', authors: 'A2' }];
     const remoteEvents = [

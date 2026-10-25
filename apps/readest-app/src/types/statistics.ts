@@ -20,6 +20,21 @@ export interface StatBook {
   authors: string; // KOReader stores authors as a single text field
 }
 
+/** One book's reading totals, derived from its page events. */
+export interface BookReadingStat {
+  bookMd5: string;
+  title: string;
+  authors: string;
+  /** Seconds read across all page events. */
+  seconds: number;
+  /** Furthest page reached, 1-based and rescaled to `totalPages`. */
+  furthestPage: number;
+  /** The book's page count from its latest page event, or 0 when unknown. */
+  totalPages: number;
+  /** Unix seconds when the last page visit ended. */
+  lastRead: number;
+}
+
 /** Tunables for the tracker's flush/idle behavior. KOReader-aligned defaults. */
 export interface StatsTrackingConfig {
   /** Seconds of inactivity before the current page event is flushed + paused. */

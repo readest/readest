@@ -15,22 +15,29 @@ import { useNotebookStore } from '@/store/notebookStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useDeviceControlStore } from '@/store/deviceStore';
 import { useScreenWakeLock } from '@/hooks/useScreenWakeLock';
+import { useTranslation } from '@/hooks/useTranslation';
 import { useScreenBrightness } from '@/app/reader/hooks/useScreenBrightness';
 import { useTransferQueue } from '@/hooks/useTransferQueue';
 import { useReplicaPull } from '@/hooks/useReplicaPull';
 import { eventDispatcher } from '@/utils/event';
+import { navigateToReader } from '@/utils/nav';
 import { interceptWindowOpen } from '@/utils/open';
 import { mountAdditionalFonts } from '@/styles/fonts';
 import { isTauriAppPlatform } from '@/services/environment';
+import { BOOK_IDS_SEPARATOR } from '@/services/constants';
+import { getBookHashFromKey } from '@/services/tts/TTSSessionManager';
 import { getSysFontsList, setSystemUIVisibility } from '@/utils/bridge';
 import { AboutWindow } from '@/components/AboutWindow';
-import ReadingStatsDialog from '@/components/stats/ReadingStatsDialog';
+import ReadingStatsDialog, {
+  setReadingStatsDialogVisible,
+} from '@/components/stats/ReadingStatsDialog';
 import { KeyboardShortcutsHelp } from '@/components/KeyboardShortcutsHelp';
 import { UpdaterWindow } from '@/components/UpdaterWindow';
 import { ProofreadRulesManager } from './ProofreadRules';
 import { Toast } from '@/components/Toast';
 import { getLocale } from '@/utils/misc';
 import { initDayjs } from '@/utils/time';
+import type { Book } from '@/types/book';
 import ReaderContent from './ReaderContent';
 
 /*
@@ -56,6 +63,7 @@ Z-Index Layering Guide:
 
 const Reader: React.FC<{ ids?: string }> = ({ ids }) => {
   const router = useRouter();
+  const _ = useTranslation();
   const { appService } = useEnv();
   const { settings } = useSettingsStore();
   const { libraryLoaded } = useLibrary();
@@ -157,6 +165,25 @@ const Reader: React.FC<{ ids?: string }> = ({ ids }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hoveredBookKey]);
 
+  const openBookFromStats = async (book: Book) => {
+    setReadingStatsDialogVisible(false);
+    const currentHashes = (ids ?? '').split(BOOK_IDS_SEPARATOR).map((id) => getBookHashFromKey(id));
+    if (currentHashes.includes(book.hash)) return;
+    // The reader has no library download machinery: only books already on
+    // this device can be switched to from here.
+    const available = appService
+      ? await appService.isBookAvailable(book).catch(() => false)
+      : false;
+    if (!available) {
+      eventDispatcher.dispatch('toast', {
+        message: _('This book is not downloaded to this device. Open it from the library first.'),
+        type: 'info',
+      });
+      return;
+    }
+    navigateToReader(router, [book.hash]);
+  };
+
   return libraryLoaded && settings.globalReadSettings ? (
     <div
       className={clsx(
@@ -167,7 +194,7 @@ const Reader: React.FC<{ ids?: string }> = ({ ids }) => {
       <Suspense fallback={<div className='full-height'></div>}>
         <ReaderContent ids={ids} settings={settings} />
         <AboutWindow />
-        <ReadingStatsDialog />
+        <ReadingStatsDialog onOpenBook={openBookFromStats} />
         <KeyboardShortcutsHelp />
         <UpdaterWindow />
         <ProofreadRulesManager />

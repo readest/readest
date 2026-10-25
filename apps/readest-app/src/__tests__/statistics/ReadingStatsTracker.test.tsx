@@ -32,6 +32,9 @@ vi.mock('@/services/statistics/statsSync', () => ({
 }));
 vi.mock('@/services/sync/syncCategories', () => ({ isSyncCategoryEnabled: () => false }));
 vi.mock('@/libs/sync', () => ({ SyncClient: class {} }));
+vi.mock('@/store/settingsStore', () => ({
+  useSettingsStore: { getState: () => ({ settings: { bookorbit: { enabled: false } } }) },
+}));
 vi.mock('@/services/tts/TTSSessionManager', () => ({
   ttsSessionManager: {
     getPlaybackState: () => mocks.playbackState,
@@ -41,6 +44,7 @@ vi.mock('@/services/tts/TTSSessionManager', () => ({
 }));
 
 import { eventDispatcher } from '@/utils/event';
+import { flushPageStats } from '@/services/statistics/pageFlush';
 import ReadingStatsTracker from '@/app/reader/components/ReadingStatsTracker';
 
 describe('ReadingStatsTracker', () => {
@@ -121,10 +125,38 @@ describe('ReadingStatsTracker while TTS plays', () => {
     expect(mocks.db.insertPageEvent).toHaveBeenCalled();
   });
 
+  it('pre-inserts the opening page so a new book shows up in the statistics', async () => {
+    mount();
+    await settle();
+
+    expect(mocks.db.insertPageEvent).toHaveBeenCalledWith(
+      1,
+      expect.objectContaining({ page: 1, totalPages: 100, duration: 0 }),
+    );
+  });
+
+  it('flushes the page on screen when the statistics dialog asks', async () => {
+    mount();
+    await settle();
+    await settle(30_000);
+
+    mocks.db.insertPageEvent.mockClear();
+    await act(async () => {
+      await flushPageStats();
+    });
+
+    const durations = mocks.db.insertPageEvent.mock.calls.map(
+      (call) => (call as unknown[])[1] as { duration: number },
+    );
+    expect(durations.some((event) => event.duration >= 30)).toBe(true);
+  });
+
   it('stops recording page dwell while TTS is playing', async () => {
     const { rerender } = mount();
     await settle();
     await emitPlaybackState('playing');
+    // The opening page's marker was written before TTS took over.
+    mocks.db.insertPageEvent.mockClear();
 
     await settle(30_000);
     setPage(1);

@@ -1,7 +1,7 @@
 import type { AppService } from '@/types/system';
 import type { DatabaseService, DatabaseRow } from '@/types/database';
 import { DEFAULT_STATS_TRACKING_CONFIG } from '@/types/statistics';
-import type { PageStatEvent, StatBook } from '@/types/statistics';
+import type { BookReadingStat, PageStatEvent, StatBook } from '@/types/statistics';
 
 interface BookRow extends DatabaseRow {
   id: number;
@@ -157,7 +157,7 @@ export class StatisticsDb {
     const rows = await this.db.select<{ duration: number }>(
       `SELECT duration
          FROM page_stat_data
-         WHERE id_book = ? AND duration <= ?
+         WHERE id_book = ? AND duration > 0 AND duration <= ?
          ORDER BY start_time DESC, page DESC
          LIMIT 50`,
       [idBook, MAX_PAGE_SECONDS],
@@ -178,7 +178,7 @@ export class StatisticsDb {
          SELECT b.md5, p.duration,
            ROW_NUMBER() OVER (PARTITION BY p.id_book ORDER BY p.start_time DESC, p.page DESC) AS recency
          FROM page_stat_data p JOIN book b ON b.id = p.id_book
-         WHERE p.duration <= ?
+         WHERE p.duration > 0 AND p.duration <= ?
        ) WHERE recency <= 50 ORDER BY md5, duration`,
       [MAX_PAGE_SECONDS],
     );
@@ -206,7 +206,7 @@ export class StatisticsDb {
   async getQuarterHourDurations(): Promise<{ quarter: number; seconds: number }[]> {
     return this.db.select<{ quarter: number; seconds: number }>(
       `SELECT start_time / 900 AS quarter, SUM(duration) AS seconds
-       FROM page_stat_data GROUP BY quarter ORDER BY quarter`,
+       FROM page_stat_data WHERE duration > 0 GROUP BY quarter ORDER BY quarter`,
     );
   }
 
@@ -218,6 +218,37 @@ export class StatisticsDb {
        FROM page_stat_data`,
     );
     return rows[0] ?? { seconds: 0, books: 0, pages: 0 };
+  }
+
+  /**
+   * Reading totals for every book with page events, most recently read first.
+   * A page just opened has a 0-second marker (see TrackerCore.currentEvent), so
+   * a newly opened book is listed before its first dwell is flushed.
+   * `furthestPage` is rescaled with the book's current page count, so progress
+   * survives a font-size or window-size change between sessions.
+   */
+  async getBookStats(): Promise<BookReadingStat[]> {
+    const rows = await this.db.select<DatabaseRow>(
+      `SELECT b.md5 AS bookMd5, b.title AS title, COALESCE(b.authors, '') AS authors,
+              SUM(p.duration) AS seconds,
+              MAX(p.start_time + p.duration) AS lastRead,
+              COALESCE(NULLIF(b.pages, 0), MAX(p.total_pages)) AS totalPages,
+              MAX(CASE WHEN b.pages > 0 AND p.total_pages > 0
+                       THEN ((p.page - 1) * b.pages) / p.total_pages + 1
+                       ELSE p.page END) AS furthestPage
+       FROM page_stat_data p JOIN book b ON b.id = p.id_book
+       GROUP BY b.id
+       ORDER BY lastRead DESC, title ASC`,
+    );
+    return rows.map((r) => ({
+      bookMd5: String(r['bookMd5']),
+      title: String(r['title'] ?? ''),
+      authors: String(r['authors'] ?? ''),
+      seconds: Number(r['seconds'] ?? 0),
+      furthestPage: Number(r['furthestPage'] ?? 0),
+      totalPages: Number(r['totalPages'] ?? 0),
+      lastRead: Number(r['lastRead'] ?? 0),
+    }));
   }
 
   async getBookByMd5(md5: string): Promise<BookRow | null> {
@@ -239,7 +270,11 @@ export class StatisticsDb {
     return this.upsertBook({ bookMd5, title: bookMd5, authors: '' });
   }
 
-  /** Events with start_time > cursor, joined to their md5, for pushing. */
+  /**
+   * Events with start_time > cursor, joined to their md5, for pushing.
+   * Zero-duration page markers stay local: their duration is filled in later,
+   * and the start-time cursor would skip the update once it has passed them.
+   */
   async getEventsForPush(
     sinceStartTime: number,
   ): Promise<{ events: PageStatEvent[]; books: StatBook[] }> {
@@ -247,7 +282,7 @@ export class StatisticsDb {
       `SELECT b.md5 AS bookMd5, b.title AS title, b.authors AS authors,
               p.page AS page, p.start_time AS startTime, p.duration AS duration, p.total_pages AS totalPages
        FROM page_stat_data p JOIN book b ON b.id = p.id_book
-       WHERE p.start_time > ?
+       WHERE p.start_time > ? AND p.duration > 0
        ORDER BY p.start_time ASC`,
       [sinceStartTime],
     );

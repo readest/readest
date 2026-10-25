@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { getBookProgress, useBookProgress } from '@/store/readerProgressStore';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useEnv } from '@/context/EnvContext';
@@ -13,6 +13,7 @@ import { SyncClient } from '@/libs/sync';
 import { BookOrbitClient } from '@/services/bookorbit/BookOrbitClient';
 import { pushStatsToBookOrbit } from '@/services/bookorbit/statsPush';
 import { pushStats, pullStats } from '@/services/statistics/statsSync';
+import { registerPageFlusher } from '@/services/statistics/pageFlush';
 import { isSyncCategoryEnabled } from '@/services/sync/syncCategories';
 import { useSettingsStore } from '@/store/settingsStore';
 import { eventDispatcher } from '@/utils/event';
@@ -34,7 +35,12 @@ export default function ReadingStatsTracker({ bookKey }: { bookKey: string }) {
   const getBookData = useBookDataStore((s) => s.getBookData);
   const { user } = useAuth();
   const coreRef = useRef(new TrackerCore(DEFAULT_STATS_TRACKING_CONFIG));
+  // Page marker already written so a new book appears in the stats at once.
+  const markedRef = useRef<string | null>(null);
   const dbRef = useRef<StatisticsDb | null>(null);
+  // Flips once the statistics DB is open, so the opening page can be marked
+  // even though the tracker mounts before StatisticsDb.open resolves.
+  const [dbReady, setDbReady] = useState(false);
   const idleRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pushTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   // While this book is being read aloud, TtsStatsRecorder owns the clock and
@@ -94,6 +100,7 @@ export default function ReadingStatsTracker({ bookKey }: { bookKey: string }) {
       StatisticsDb.open(appService).then((db) => {
         if (cancelled) return;
         dbRef.current = db;
+        setDbReady(true);
         if (syncEnabled()) runBestEffort(pullStats(db, new SyncClient()));
       }),
     );
@@ -130,16 +137,41 @@ export default function ReadingStatsTracker({ bookKey }: { bookKey: string }) {
 
   const openPageAt = (info: { current?: number; total: number } | undefined) => {
     if (!info) return;
-    void persist(coreRef.current.onPage((info.current ?? 0) + 1, info.total || 1, nowSec()));
+    const page = (info.current ?? 0) + 1;
+    const total = info.total || 1;
+    const flushed = coreRef.current.onPage(page, total, nowSec());
+    // Pre-insert the page being timed with 0s while its dwell is still open:
+    // a freshly imported/opened book shows up in the statistics immediately,
+    // and the flush later fills the real duration into the same row.
+    const pending = bookMd5 && dbRef.current ? coreRef.current.currentEvent : null;
+    const key = pending ? `${pending.page}:${pending.startTime}` : null;
+    const marker = pending && key !== markedRef.current ? pending : null;
+    if (marker) markedRef.current = key;
+    void persist(marker ? [...flushed, marker] : flushed);
     armIdle();
   };
 
-  // Page changes drive the tracker.
+  // Page changes drive the tracker. Re-run when the book or the DB arrives so
+  // the opening page gets its marker even if either was late.
   useEffect(() => {
     if (ttsPlayingRef.current) return;
     openPageAt(progress?.pageinfo);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [progress?.pageinfo]);
+  }, [progress?.pageinfo, bookMd5, dbReady]);
+
+  // Let the statistics dialog flush the page currently on screen before it
+  // queries, so an open book is shown with the time read so far, not just its
+  // zero-duration opening marker.
+  useEffect(() => {
+    return registerPageFlusher(async () => {
+      if (!dbRef.current || !bookMd5) return;
+      const flushed = coreRef.current.onIdle(nowSec());
+      await persist(flushed);
+      const info = getBookProgress(bookKey)?.pageinfo;
+      if (info) openPageAt(info);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bookKey, bookMd5]);
 
   // Hand the clock to TtsStatsRecorder while this book is read aloud, and take
   // it back afterwards. TTS turns pages to follow the narration, so without

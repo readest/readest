@@ -60,6 +60,7 @@ import { useDemoBooks } from './hooks/useDemoBooks';
 import { useBooksSync } from './hooks/useBooksSync';
 import { useLibraryFileSync } from './hooks/useLibraryFileSync';
 import { useBookTransferActions } from './hooks/useBookTransferActions';
+import { useOpenBook } from './hooks/useOpenBook';
 import { useAbsOfflineDownload } from './hooks/useAbsOfflineDownload';
 import { useAutoImportFolders } from './hooks/useAutoImportFolders';
 import { useInboxDrainer } from '@/hooks/useInboxDrainer';
@@ -95,7 +96,9 @@ import { getActiveBookshelfGroupBy } from '@/services/bookshelves/grouping';
 import { LibraryGroupByType } from '@/types/settings';
 import { BookMetadata } from '@/libs/document';
 import { AboutWindow } from '@/components/AboutWindow';
-import ReadingStatsDialog from '@/components/stats/ReadingStatsDialog';
+import ReadingStatsDialog, {
+  setReadingStatsDialogVisible,
+} from '@/components/stats/ReadingStatsDialog';
 import { KeyboardShortcutsHelp } from '@/components/KeyboardShortcutsHelp';
 import LocalSendManager from '@/components/localsend/LocalSendManager';
 import { BookDetailModal } from '@/components/metadata';
@@ -1255,6 +1258,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     updateBook,
     setBooksTransferProgress,
   );
+  const { openBook } = useOpenBook({ setLoading, handleBookDownload });
 
   const handleBookDelete = (deleteAction: DeleteAction) => {
     return async (book: Book, syncBooks = true) => {
@@ -2207,7 +2211,12 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
         </ModalPortal>
       )}
       <AboutWindow />
-      <ReadingStatsDialog />
+      <ReadingStatsDialog
+        onOpenBook={(book) => {
+          setReadingStatsDialogVisible(false);
+          void openBook(book);
+        }}
+      />
       <KeyboardShortcutsHelp />
       <LocalSendManager />
       <UpdaterWindow />
