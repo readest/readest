@@ -1,6 +1,7 @@
 import { act, cleanup, render, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { BookProgress } from '@/types/book';
+import { DEFAULT_STATS_TRACKING_CONFIG } from '@/types/statistics';
 
 const mocks = vi.hoisted(() => ({
   open: vi.fn(),
@@ -178,7 +179,9 @@ describe('ReadingStatsTracker while TTS plays', () => {
     await act(async () => {
       await flushPageStats();
     });
-    await settle(30_000);
+    // If the flusher wrongly restarted page timing, its idle timer would fire
+    // here and persist a duplicate dwell; advancing only 30s would miss it.
+    await settle(DEFAULT_STATS_TRACKING_CONFIG.idleTimeoutSeconds * 1000);
 
     expect(mocks.db.insertPageEvent).not.toHaveBeenCalled();
   });
