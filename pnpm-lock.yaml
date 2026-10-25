@@ -355,14 +355,14 @@ importers:
         specifier: ^1.12.0
         version: 1.12.0
       marked:
-        specifier: ^15.0.12
-        version: 15.0.12
+        specifier: ^18.1.1
+        version: 18.1.1
       marked-footnote:
         specifier: ^1.4.0
-        version: 1.4.0(marked@15.0.12)
+        version: 1.4.0(marked@18.1.1)
       marked-katex-extension:
         specifier: ^5.1.13
-        version: 5.1.13(katex@0.18.11)(marked@15.0.12)
+        version: 5.1.13(katex@0.18.11)(marked@18.1.1)
       music-metadata:
         specifier: 12.1.0
         version: 12.1.0
@@ -6469,13 +6469,13 @@ packages:
       katex: '>=0.18.11 <0.19'
       marked: '>=4 <19'
 
-  marked@15.0.12:
-    resolution: {integrity: sha512-8dD6FusOQSrpv9Z1rdNMdlSgQOIP880DHqnohobOmYLElGEqAL/JvxvuxZO16r4HtjTlfPRDC1hbvxC9dPN2nA==}
-    engines: {node: '>= 18'}
-    hasBin: true
-
   marked@16.4.2:
     resolution: {integrity: sha512-TI3V8YYWvkVf3KJe1dRkpnjs68JUPyEa5vjKrp1XEEJUAOaQc+Qj+L1qWbPd0SJuAdQkFU0h73sXXqwDYxsiDA==}
+    engines: {node: '>= 20'}
+    hasBin: true
+
+  marked@18.1.1:
+    resolution: {integrity: sha512-zEGgrtUG8crk+TrMacJSVABU4DYDDkS8uqgU3ohrn/2fW9C2AEfUrO3m6IhpIpQpl7YcVpiXXC9cSMWDANT3dg==}
     engines: {node: '>= 20'}
     hasBin: true
 
@@ -15132,18 +15132,18 @@ snapshots:
 
   markdown-table@3.0.4: {}
 
-  marked-footnote@1.4.0(marked@15.0.12):
+  marked-footnote@1.4.0(marked@18.1.1):
     dependencies:
-      marked: 15.0.12
+      marked: 18.1.1
 
-  marked-katex-extension@5.1.13(katex@0.18.11)(marked@15.0.12):
+  marked-katex-extension@5.1.13(katex@0.18.11)(marked@18.1.1):
     dependencies:
       katex: 0.18.11
-      marked: 15.0.12
-
-  marked@15.0.12: {}
+      marked: 18.1.1
 
   marked@16.4.2: {}
+
+  marked@18.1.1: {}
 
   matchmediaquery@0.4.2:
     dependencies:

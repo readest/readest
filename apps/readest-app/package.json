@@ -186,7 +186,7 @@
     "lucide-react": "^0.562.0",
     "lunr": "^2.3.9",
     "mammoth": "^1.12.0",
-    "marked": "^15.0.12",
+    "marked": "^18.1.1",
     "marked-footnote": "^1.4.0",
     "marked-katex-extension": "^5.1.13",
     "music-metadata": "12.1.0",
