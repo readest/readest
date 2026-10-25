@@ -6,7 +6,6 @@ import { LRUCache } from '@/utils/lru';
 import { genSSML } from '@/utils/ssml';
 import { fetchWithAuth } from '@/utils/fetch';
 import { getAPIBaseUrl, isTauriAppPlatform } from '@/services/environment';
-import { connectWorkersWebSocket } from '@/libs/workersWebSocket';
 import type { TTSVoice } from '@/services/tts/types';
 
 // Cloudflare Workers expose a global `WebSocketPair` that is not available in
@@ -629,6 +628,8 @@ export class EdgeSpeechTTS {
           try {
             // Workers' own fetch() upgrade gets a plain HTTP 200 from
             // api.msedgeservices.com, so speak WebSocket over a raw socket.
+            // Loaded only here so other runtimes never evaluate it.
+            const { connectWorkersWebSocket } = await import('@/libs/workersWebSocket');
             const ws = await connectWorkersWebSocket(url, baseHeaders);
             let audioData = new ArrayBuffer(0);
             const boundaries: TTSWordBoundary[] = [];

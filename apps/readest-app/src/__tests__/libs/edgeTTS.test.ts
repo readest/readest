@@ -283,6 +283,23 @@ describe('EdgeSpeechTTS on Cloudflare Workers', () => {
   });
 });
 
+describe('EdgeSpeechTTS outside Cloudflare Workers', () => {
+  test('does not load the Workers socket module', async () => {
+    // node.readest.com (Vercel) and the clients never take the Workers path,
+    // so loading edgeTTS must not evaluate the cloudflare:sockets client.
+    vi.resetModules();
+    vi.doMock('@/libs/workersWebSocket', () => {
+      throw new Error('workersWebSocket loaded outside Workers');
+    });
+    try {
+      await expect(import('@/libs/edgeTTS')).resolves.toHaveProperty('EdgeSpeechTTS');
+    } finally {
+      vi.doUnmock('@/libs/workersWebSocket');
+      vi.resetModules();
+    }
+  });
+});
+
 describe('EdgeSpeechTTS.voices', () => {
   test('a multilingual or expressive voice is named without the suffix, which becomes its variant', async () => {
     const { EdgeSpeechTTS } = await import('@/libs/edgeTTS');
