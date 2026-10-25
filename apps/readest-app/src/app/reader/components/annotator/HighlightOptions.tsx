@@ -257,7 +257,6 @@ const HighlightOptions: React.FC<HighlightOptionsProps> = ({
           <button
             key={style}
             aria-label={_('Select {{style}} style', { style: _(style) })}
-            title={_(style)}
             onClick={() => handleSelectStyle(style)}
             className={clsx(
               'eink-bordered not-eink:shadow-xs flex items-center justify-center rounded-full p-0',
