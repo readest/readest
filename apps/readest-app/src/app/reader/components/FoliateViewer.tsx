@@ -22,6 +22,7 @@ import { useMouseEvent, useTouchEvent, useOpenMediaEvent } from '../hooks/useIfr
 import { useCapturedTurn, applyPageTurnAttributes } from '../hooks/useCapturedTurn';
 import { useBrightnessGesture } from '../hooks/useBrightnessGesture';
 import { registerBookmarkPullDoc } from '../utils/bookmarkPullGesture';
+import { captureImageRenderStyle, type ImageRenderStyle } from '../utils/imageRenderStyle';
 import BrightnessOverlay from './BrightnessOverlay';
 import { usePagination, viewPagination } from '../hooks/usePagination';
 import { useFoliateEvents } from '../hooks/useFoliateEvents';
@@ -448,7 +449,13 @@ const FoliateViewer: React.FC<{
       applyImageStyle(detail.doc);
       applyScrollableStyle(detail.doc);
       applyTableTouchScroll(detail.doc);
-      applyThemeModeClass(detail.doc, isDarkMode);
+      // Read the theme live rather than from this closure: `useFoliateEvents`
+      // binds the handler once (`[view]`), so the captured `isDarkMode` is the
+      // theme the reader *mounted* in. Every section loaded after a theme switch
+      // would otherwise be stamped with the old class, and the book's own
+      // `body.theme-dark` rules — the plate behind a transparent chapter
+      // ornament, night text colors — silently stop applying to it.
+      applyThemeModeClass(detail.doc, useThemeStore.getState().isDarkMode);
       applyScrollModeClass(detail.doc, viewSettings.scrolled || false);
       applyEinkModeAttribute(detail.doc, viewSettings.isEink || false);
       applyScrollbarStyle(document, viewSettings.hideScrollbar || false);
@@ -654,6 +661,12 @@ const FoliateViewer: React.FC<{
   const autoscrollAnchor = useMiddleClickAutoscroll(bookKey, viewRef, containerRef);
 
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  // How the page drew that image (its filter and the plate behind its
+  // transparent area), so the viewer can match the page instead of showing the
+  // bare bitmap on a dark backdrop.
+  const [selectedImageRenderStyle, setSelectedImageRenderStyle] = useState<ImageRenderStyle | null>(
+    null,
+  );
   // The description of the image on screen, kept next to `selectedImage` so the
   // two can never drift apart (the pressed image may be missing from the list).
   const [selectedImageAlt, setSelectedImageAlt] = useState<string>('');
@@ -675,6 +688,7 @@ const FoliateViewer: React.FC<{
       setImageList(allImages);
       setCurrentImageIndex(index >= 0 ? index : 0);
       setSelectedImageAlt(index >= 0 ? allImages[index]!.alt : '');
+      setSelectedImageRenderStyle(captureImageRenderStyle(viewRef.current, src));
 
       const dataUrl = await convertBlobUrlToDataUrl(src);
       setSelectedImage(dataUrl);
@@ -697,8 +711,11 @@ const FoliateViewer: React.FC<{
         setSelectedImage(dataUrl);
         setSelectedImageAlt(alt);
         if (cfi && viewRef.current) {
-          viewRef.current?.goTo(cfi);
+          await viewRef.current.goTo(cfi);
         }
+        // Read the page's rendering after the jump: a section that was not in
+        // the renderer yet is not in `getContents()` either.
+        setSelectedImageRenderStyle(captureImageRenderStyle(viewRef.current, src));
       } catch (error) {
         console.error('Failed to load previous image:', error);
       }
@@ -715,8 +732,11 @@ const FoliateViewer: React.FC<{
         setSelectedImage(dataUrl);
         setSelectedImageAlt(alt);
         if (cfi && viewRef.current) {
-          viewRef.current?.goTo(cfi);
+          await viewRef.current.goTo(cfi);
         }
+        // Read the page's rendering after the jump: a section that was not in
+        // the renderer yet is not in `getContents()` either.
+        setSelectedImageRenderStyle(captureImageRenderStyle(viewRef.current, src));
       } catch (error) {
         console.error('Failed to load next image:', error);
       }
@@ -726,6 +746,7 @@ const FoliateViewer: React.FC<{
   const handleCloseImage = useCallback(() => {
     setSelectedImage(null);
     setSelectedImageAlt('');
+    setSelectedImageRenderStyle(null);
     setImageList([]);
     setCurrentImageIndex(0);
   }, []);
@@ -1213,6 +1234,7 @@ const FoliateViewer: React.FC<{
           gridInsets={gridInsets}
           src={selectedImage}
           caption={selectedImageAlt}
+          renderStyle={selectedImageRenderStyle}
           onClose={handleCloseImage}
           onPrevious={currentImageIndex > 0 ? handlePreviousImage : undefined}
           onNext={currentImageIndex < imageList.length - 1 ? handleNextImage : undefined}

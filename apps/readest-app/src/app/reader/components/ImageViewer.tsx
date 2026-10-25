@@ -9,6 +9,13 @@ import { Insets } from '@/types/misc';
 import { eventDispatcher } from '@/utils/event';
 import { canShareText } from '@/utils/share';
 import { dataUrlToBytes, imageExtensionFromMime } from '@/utils/image';
+import {
+  isLightColor,
+  probeImageInk,
+  resolveImagePlate,
+  type ImageInk,
+  type ImageRenderStyle,
+} from '@/app/reader/utils/imageRenderStyle';
 import ZoomControls from './ZoomControls';
 import { ImageMenu } from './ImageContextMenu';
 
@@ -18,6 +25,12 @@ interface ImageViewerProps {
   // The image's description (its `alt` text), shown over the zoomed image when
   // the book provides one (#5232).
   caption?: string;
+  // How the book page drew this image (its `filter` and the plate it filled the
+  // transparent area with). The raw bitmap on the viewer's dimmed backdrop is
+  // not what the page shows: an ornament whose white background is transparency
+  // renders as dark ink on a dark backdrop and vanishes. Absent for images the
+  // reader does not lay out itself (a book cover, a dictionary illustration).
+  renderStyle?: ImageRenderStyle | null;
   onClose: () => void;
   onPrevious?: () => void;
   onNext?: () => void;
@@ -41,6 +54,7 @@ const MAX_COMMIT_RASTER_DIM = 4096;
 const ImageViewer: React.FC<ImageViewerProps> = ({
   src,
   caption,
+  renderStyle,
   onClose,
   onPrevious,
   onNext,
@@ -577,6 +591,36 @@ const ImageViewer: React.FC<ImageViewerProps> = ({
 
   const cursorStyle = scale > 1 ? (isDragging ? 'grabbing' : 'grab') : 'default';
 
+  // The plate behind the image, so its transparent areas show what the page put
+  // there instead of the viewer's dimmed backdrop — which is dark in both
+  // themes, so a transparent line drawing disappears on it either way.
+  //
+  // The page's own fill is the best answer when we have it, but it cannot be
+  // depended on: a section carries the theme it loaded under, so a drawing
+  // whose plate comes from the book's night CSS loses it as soon as the reader
+  // switches theme, and the section reloads without it. The image's own pixels
+  // do not have that problem (see `resolveImagePlate`).
+  const [ink, setInk] = useState<ImageInk | null>(null);
+  const pagePlate = renderStyle?.plate ?? null;
+  // A page fill is only trustworthy when it is actually paper: the reader
+  // rewrites a book's light backgrounds to the theme color in dark mode, so the
+  // page can hand over `#1e1e1e` for a drawing it is propping up with a white
+  // shadow. Read the pixels unless the fill is light on its own.
+  const pagePlateIsPaper = isLightColor(pagePlate) === true;
+  useEffect(() => {
+    setInk(null);
+    if (!src || pagePlateIsPaper) return;
+    let cancelled = false;
+    probeImageInk(decodeURIComponent(src)).then((result) => {
+      if (!cancelled) setInk(result);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [src, pagePlateIsPaper]);
+
+  const plate = resolveImagePlate({ pagePlate, filter: renderStyle?.filter, ink });
+
   if (!src) return null;
 
   // Desktop right-click gets the same image menu as an image in the book.
@@ -681,6 +725,14 @@ const ImageViewer: React.FC<ImageViewerProps> = ({
             onDoubleClick={onDoubleClick}
             onContextMenu={handleContextMenu}
             style={{
+              // Reproduce what the page painted: the same filter, and the plate
+              // it filled the image's transparent area with. Without them a
+              // line drawing whose white background is alpha renders as dark ink
+              // on the dimmed backdrop (see `ImageRenderStyle`).
+              ...(renderStyle?.filter && renderStyle.filter !== 'none'
+                ? { filter: renderStyle.filter }
+                : {}),
+              ...(plate ? { backgroundColor: plate } : {}),
               // Once measured, the layout size is explicit so committed zoom can
               // grow it past the container (`flexShrink` keeps the centering
               // flexbox from clamping it back to the container size).
