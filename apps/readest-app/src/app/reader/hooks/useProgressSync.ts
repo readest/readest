@@ -208,8 +208,12 @@ export const useProgressSync = (bookKey: string) => {
   // further position (#7041). Resolves once the push has reached the server.
   const flushPush = () => {
     const flush = (async () => {
+      // Hold a scheduled push until the save lands: one that came due while
+      // the save is on disk would carry the old updatedAt.
+      const pushDue = handleAutoSync.pending();
+      handleAutoSync.cancel();
       await eventDispatcher.dispatch('flush-progress-save', { bookKey });
-      handleAutoSync.flush();
+      if (pushDue) pendingPush.current = syncConfig();
       await pendingPush.current;
     })();
     pendingFlush.current = flush;

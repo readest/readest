@@ -680,6 +680,56 @@ describe('useProgressSync', () => {
     h.syncConfigsMock.mockImplementation(async () => {});
   });
 
+  // The debounce can expire while the save is on disk; that push would carry
+  // the old updatedAt and be dropped, leaving nothing to push once saved.
+  test('a debounced push that comes due during the save waits for it', async () => {
+    const order: string[] = [];
+    let finishSave!: () => void;
+    h.eventListeners.set(
+      'flush-progress-save',
+      new Set([
+        () => {
+          order.push('save');
+          return new Promise<void>((resolve) => {
+            finishSave = () => {
+              order.push('saved');
+              resolve();
+            };
+          });
+        },
+      ]),
+    );
+    h.syncConfigsMock.mockImplementation(async (...args: unknown[]) => {
+      if (args[3] === 'push') order.push('push');
+    });
+    const { rerender } = renderHook(() => useProgressSync('h1-view1'));
+    await advance(0);
+
+    h.state.progress = { location: 'cfi-loc-back' };
+    await act(async () => {
+      rerender();
+      await flushMicrotasks();
+    });
+    await act(async () => {
+      h.eventListeners
+        .get('sync-book-progress')
+        ?.forEach(
+          (fn) =>
+            void fn(new CustomEvent('sync-book-progress', { detail: { bookKey: 'h1-view1' } })),
+        );
+      await flushMicrotasks();
+    });
+    await advance(SYNC_PROGRESS_INTERVAL_SEC * 1000 + 100);
+    expect(order).toEqual(['save']);
+    await act(async () => {
+      finishSave();
+      await flushMicrotasks();
+    });
+
+    expect(order).toEqual(['save', 'saved', 'push']);
+    h.syncConfigsMock.mockImplementation(async () => {});
+  });
+
   // The manual Sync pull must not start until the flushed push has reached the
   // server: a pull answered first would bring back the old, further position.
   test('sync-book-progress pulls only after the flushed push completes', async () => {
