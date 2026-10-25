@@ -1018,6 +1018,8 @@ export class NativeAppService extends BaseAppService {
     base: BaseDir,
     opts?: DatabaseOpts,
   ): Promise<DatabaseService> {
+    // Turso doesn't create the parent folder (#7068).
+    await ensureDirExists(this.fs, getDirPath(path), base);
     const fullPath = await this.resolveFilePath(path, base);
     const { NativeDatabaseService } = await import('./database/nativeDatabaseService');
     const db = await NativeDatabaseService.open(`sqlite:${fullPath}`, opts);
