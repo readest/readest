@@ -151,6 +151,38 @@ describe('ReadingStatsTracker while TTS plays', () => {
     expect(durations.some((event) => event.duration >= 30)).toBe(true);
   });
 
+  it('records a re-pagination on the current page', async () => {
+    const { rerender } = mount();
+    await settle();
+    mocks.db.insertPageEvent.mockClear();
+
+    mocks.progress = {
+      pageinfo: { current: 0, next: 1, total: 200 },
+    } as unknown as BookProgress;
+    rerender(<ReadingStatsTracker bookKey={BOOK_KEY} />);
+    await settle();
+
+    expect(mocks.db.insertPageEvent).toHaveBeenCalledWith(
+      1,
+      expect.objectContaining({ page: 1, totalPages: 200, duration: 0 }),
+    );
+  });
+
+  it('does not restart the page clock while TTS owns it', async () => {
+    mount();
+    await settle();
+    await emitPlaybackState('playing');
+    await settle();
+    mocks.db.insertPageEvent.mockClear();
+
+    await act(async () => {
+      await flushPageStats();
+    });
+    await settle(30_000);
+
+    expect(mocks.db.insertPageEvent).not.toHaveBeenCalled();
+  });
+
   it('stops recording page dwell while TTS is playing', async () => {
     const { rerender } = mount();
     await settle();

@@ -37,10 +37,18 @@ export class TrackerCore {
       : null;
   }
 
-  /** Notify the current page at `now`. Returns events flushed by leaving the prior page. */
+  /**
+   * Notify the current page at `now`. Returns events flushed by leaving the
+   * prior page, plus a zero-duration update when the same page's page count
+   * changes (re-pagination) so the book keeps its current page total.
+   */
   onPage(page: number, totalPages: number, now: number): FlushedEvent[] {
     if (this.pending && this.pending.page === page) {
       // Same page (e.g. resume after idle, or a no-op relocate): keep dwelling.
+      if (this.pending.totalPages !== totalPages) {
+        this.pending.totalPages = totalPages;
+        return [{ page, startTime: this.pending.startTime, duration: 0, totalPages }];
+      }
       return [];
     }
     const flushed = this.flush(now);

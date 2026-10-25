@@ -51,4 +51,14 @@ describe('TrackerCore', () => {
     t.onIdle(1030);
     expect(t.currentEvent).toBeNull();
   });
+
+  it('reports a pagination change without leaving the page', () => {
+    const t = new TrackerCore(cfg);
+    t.onPage(5, 100, 1000);
+    expect(t.onPage(5, 120, 1010)).toEqual([
+      { page: 5, startTime: 1000, duration: 0, totalPages: 120 },
+    ]);
+    expect(t.onPage(5, 120, 1020)).toEqual([]);
+    expect(t.currentEvent).toEqual({ page: 5, startTime: 1000, duration: 0, totalPages: 120 });
+  });
 });

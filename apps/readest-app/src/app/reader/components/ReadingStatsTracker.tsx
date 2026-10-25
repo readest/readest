@@ -164,7 +164,9 @@ export default function ReadingStatsTracker({ bookKey }: { bookKey: string }) {
   // zero-duration opening marker.
   useEffect(() => {
     return registerPageFlusher(async () => {
-      if (!dbRef.current || !bookMd5) return;
+      // While TTS owns the clock, flushing would restart this tracker's page
+      // timing and bill the same wall-clock a second time.
+      if (ttsPlayingRef.current || !dbRef.current || !bookMd5) return;
       const flushed = coreRef.current.onIdle(nowSec());
       await persist(flushed);
       const info = getBookProgress(bookKey)?.pageinfo;
