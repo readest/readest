@@ -66,6 +66,10 @@ export class TTSSessionManager extends EventTarget {
   #sleepTimer: ReturnType<typeof setTimeout> | null = null;
   #sleepTimeoutSec = 0;
   #sleepFiresAt = 0;
+  // The duration last chosen in the picker. Unlike the armed timer above it
+  // outlives a stop, so the next session in this app launch starts with the
+  // same timer; it is never persisted, so a new launch starts with none.
+  #chosenSleepSec = 0;
   // "Stop at end of chapter" mode - mutually exclusive with the numeric
   // sleep timer above. A STANDING preference (unlike the numeric timer,
   // which self-clears once it fires): it keeps stopping at every chapter
@@ -98,6 +102,7 @@ export class TTSSessionManager extends EventTarget {
     this.#meta = meta;
     this.#lastRelayedState = null;
     controller.stopAtChapterEnd = this.#stopAtChapterEnd;
+    if (!this.#sleepTimer && this.#chosenSleepSec > 0) this.#armSleepTimer(this.#chosenSleepSec);
     this.#subscribe(controller);
     void ttsMediaBridge.bind(controller, meta);
     this.#emitSessionChanged('claimed');
@@ -263,15 +268,20 @@ export class TTSSessionManager extends EventTarget {
   // fire into a dead closure and orphan the audio).
   setSleepTimer(seconds: number): void {
     this.#clearSleepTimer();
+    this.#chosenSleepSec = Math.max(seconds, 0);
     if (seconds > 0) {
       this.#setStopAtChapterEnd(false);
-      this.#sleepTimeoutSec = seconds;
-      this.#sleepFiresAt = Date.now() + seconds * 1000;
-      this.#sleepTimer = setTimeout(() => {
-        this.#sleepTimer = null;
-        void this.stopActive('timeout');
-      }, seconds * 1000);
+      this.#armSleepTimer(seconds);
     }
+  }
+
+  #armSleepTimer(seconds: number): void {
+    this.#sleepTimeoutSec = seconds;
+    this.#sleepFiresAt = Date.now() + seconds * 1000;
+    this.#sleepTimer = setTimeout(() => {
+      this.#sleepTimer = null;
+      void this.stopActive('timeout');
+    }, seconds * 1000);
   }
 
   getSleepTimer(): { timeoutSec: number; firesAt: number } | null {
@@ -286,7 +296,10 @@ export class TTSSessionManager extends EventTarget {
   // triggered by a chapter boundary instead of a clock. Mutually exclusive
   // with the numeric timer (enabling one clears the other).
   setStopAtChapterEnd(enabled: boolean): void {
-    if (enabled) this.#clearSleepTimer();
+    if (enabled) {
+      this.#clearSleepTimer();
+      this.#chosenSleepSec = 0;
+    }
     this.#setStopAtChapterEnd(enabled);
   }
 
