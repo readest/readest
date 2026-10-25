@@ -1093,6 +1093,15 @@ export async function importBook(
           }
           existingBook.filePath = file;
         }
+      } else if (inPlace) {
+        // A converted DOCX/RTF lives in Books/; remember its watched source so
+        // the auto-import scan doesn't convert it again on every pass.
+        const target = existingBook || book;
+        const key = normalizeFilePathForIndex(file, osPlatform);
+        const known = (target.altFilePaths ?? []).map((p) =>
+          normalizeFilePathForIndex(p, osPlatform),
+        );
+        if (!known.includes(key)) target.altFilePaths = [...(target.altFilePaths ?? []), file];
       }
     }
     // Now that `filePath` is set, keep the path index in sync so later files

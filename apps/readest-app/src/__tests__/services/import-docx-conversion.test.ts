@@ -35,6 +35,7 @@ vi.mock('@/libs/storage', () => ({
 }));
 
 import { BaseAppService } from '@/services/appService';
+import { collectKnownSourcePaths } from '@/services/bookService';
 
 class TestAppService extends BaseAppService {
   protected fs = {
@@ -219,6 +220,15 @@ describe('importBook DOCX/RTF conversion', () => {
     const bookWrite = fs.writeFile.mock.calls.find(([name]) => /\.epub$/.test(name));
     expect(bookWrite).toBeDefined();
     expect(fs.copyFile).not.toHaveBeenCalled();
+  });
+
+  it('remembers the watched source so the auto-import scan skips it next time', async () => {
+    const source = makeSourceDoc();
+    service.getFs().openFile.mockResolvedValue(source);
+
+    const result = await service.importBook('/watched/report.docx', [], { inPlace: true });
+
+    expect(collectKnownSourcePaths([result!], 'linux').has('/watched/report.docx')).toBe(true);
   });
 
   it('fails fast when a DOCX is opened transiently', async () => {
