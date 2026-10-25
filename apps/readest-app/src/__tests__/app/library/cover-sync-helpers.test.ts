@@ -60,13 +60,13 @@ describe('needsCoverRefresh (issue #4544)', () => {
     ).toBe(false);
   });
 
-  it('not uploaded to cloud → no refresh', () => {
+  it('synced cover without an uploaded book file → still refreshes when coverHash is newer (issue #6816)', () => {
     expect(
       needsCoverRefresh(
-        local({ coverDownloadedAt: null }),
-        synced({ uploadedAt: null, coverHash: 'hA', coverUpdatedAt: 1000 }),
+        local({ coverDownloadedAt: 1000, coverHash: 'hOLD', coverUpdatedAt: 1000 }),
+        synced({ uploadedAt: null, coverHash: 'hNEW', coverUpdatedAt: 2000 }),
       ),
-    ).toBe(false);
+    ).toBe(true);
   });
 
   it('deleted synced book → no refresh', () => {

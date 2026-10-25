@@ -1106,7 +1106,7 @@ const coverMs = (t?: number | null) => t ?? 0;
  *    copy before its own push lands.
  */
 export const needsCoverRefresh = (local: CoverSyncFields, synced: CoverSyncFields): boolean => {
-  if (synced.deletedAt || !synced.uploadedAt) return false;
+  if (synced.deletedAt) return false;
   if (!local.coverDownloadedAt) return true; // first download
   if (!synced.coverHash) return false; // nothing to compare (legacy book)
   if (coverMs(synced.coverUpdatedAt) <= coverMs(local.coverUpdatedAt)) return false;
