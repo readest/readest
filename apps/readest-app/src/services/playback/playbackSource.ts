@@ -59,6 +59,8 @@ export interface PlaybackSource extends EventTarget {
   stopAtChapterEnd: boolean;
   start(): Promise<void>;
   pause(): Promise<void>;
+  /** Continue an exact 'paused' in place, without restarting the current segment. */
+  resume?(): Promise<void>;
   forward(byMark?: boolean): Promise<void>;
   backward(byMark?: boolean): Promise<void>;
   setRate(rate: number): Promise<void>;
@@ -69,3 +71,11 @@ export interface PlaybackSource extends EventTarget {
   detachView(): void;
   shutdown(): Promise<void>;
 }
+
+/**
+ * Play a paused source the way the in-app play button does: an exact 'paused'
+ * is a mid-sentence pause that resume() continues in place; the other paused
+ * flavours, and a source without resume(), need a full start().
+ */
+export const resumePlayback = (source: PlaybackSource): Promise<void> =>
+  source.state === 'paused' && source.resume ? source.resume() : source.start();
