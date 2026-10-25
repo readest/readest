@@ -70,6 +70,8 @@ export const useProgressSync = (bookKey: string) => {
   const pullInFlight = useRef(false);
   const pendingResumePull = useRef(false);
   const pullRetryTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingPush = useRef<Promise<void>>(Promise.resolve());
+  const pendingFlush = useRef<Promise<void> | null>(null);
 
   const clearPendingPullRetry = () => {
     if (pullRetryTimer.current !== null) {
@@ -184,7 +186,7 @@ export const useProgressSync = (bookKey: string) => {
         } catch (error) {
           console.warn('Failed to convert CFI to XPointer', error);
         }
-        pushConfig(bookKey, config);
+        await pushConfig(bookKey, config);
       }
     }
   };
@@ -192,7 +194,7 @@ export const useProgressSync = (bookKey: string) => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const handleAutoSync = useCallback(
     debounce(() => {
-      syncConfig();
+      pendingPush.current = syncConfig();
     }, SYNC_PROGRESS_INTERVAL_SEC * 1000),
     [],
   );
@@ -200,10 +202,19 @@ export const useProgressSync = (bookKey: string) => {
   // Save the position before pushing it. The auto-save stamps updatedAt ~1.5s
   // after the last turn and the server keeps its row on a tie, so a push inside
   // that window was dropped and the next open jumped back to the old,
-  // further position (#7041).
-  const flushPush = async () => {
-    await eventDispatcher.dispatch('flush-progress-save', { bookKey });
-    handleAutoSync.flush();
+  // further position (#7041). Resolves once the push has reached the server.
+  const flushPush = () => {
+    const flush = (async () => {
+      await eventDispatcher.dispatch('flush-progress-save', { bookKey });
+      handleAutoSync.flush();
+      await pendingPush.current;
+    })();
+    pendingFlush.current = flush;
+    const clear = () => {
+      if (pendingFlush.current === flush) pendingFlush.current = null;
+    };
+    flush.then(clear, clear);
+    return flush;
   };
 
   const handleSyncBookProgress = async (event: CustomEvent) => {
@@ -234,12 +245,17 @@ export const useProgressSync = (bookKey: string) => {
     }
     // The book stays mounted while Android is backgrounded. Pull again on
     // resume before a suspended auto-push can send the old local position.
-    handleAutoSync.cancel();
-    pendingResumePull.current = pullInFlight.current;
-    configPulled.current = false;
-    pullAttempt.current = 0;
-    clearPendingPullRetry();
-    void pullWithRetry();
+    const resume = () => {
+      handleAutoSync.cancel();
+      pendingResumePull.current = pullInFlight.current;
+      configPulled.current = false;
+      pullAttempt.current = 0;
+      clearPendingPullRetry();
+      void pullWithRetry();
+    };
+    // A quick return must not cancel the push the deactivation is still saving.
+    if (pendingFlush.current) pendingFlush.current.then(resume, resume);
+    else resume();
   });
 
   // Push: flush the pending push + pull when the book is closed or the user
