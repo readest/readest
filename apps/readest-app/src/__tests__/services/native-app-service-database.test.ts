@@ -103,4 +103,31 @@ describe('NativeAppService.openDatabase', () => {
     expect(created, 'Dictionaries folder created').toBeGreaterThanOrEqual(0);
     expect(created).toBeLessThan(opened);
   });
+
+  // Moving the data folder points every base at a new root, so a folder known
+  // to exist under the old root says nothing about the new one.
+  test('creates the folder again under a new data root', async () => {
+    vi.resetModules();
+    const { NativeAppService } = await import('@/services/nativeAppService');
+    const service = new NativeAppService();
+    await service.init();
+    await service.openDatabase(
+      'dictionary-plugin-control',
+      'dictionary-plugin-control.sqlite3',
+      'Dictionaries',
+    );
+
+    await service.setCustomRootDir('/new-root');
+    calls.length = 0;
+    await service.openDatabase(
+      'dictionary-plugin-control',
+      'dictionary-plugin-control.sqlite3',
+      'Dictionaries',
+    );
+
+    const opened = calls.findIndex((call) => call.startsWith('open '));
+    const created = calls.findIndex((call) => /^mkdir \/new-root\/.*Dictionaries$/.test(call));
+    expect(created, 'Dictionaries folder created under the new root').toBeGreaterThanOrEqual(0);
+    expect(created).toBeLessThan(opened);
+  });
 });

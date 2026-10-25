@@ -811,6 +811,9 @@ export class NativeAppService extends BaseAppService {
   }
 
   async setCustomRootDir(customRootDir: string) {
+    // The cache is keyed by base, not root: what existed under the old root
+    // says nothing about the new one.
+    knownExistingDirs.clear();
     this.fs.resolvePath = getPathResolver({
       customRootDir,
       isPortable: this.isPortableApp,
