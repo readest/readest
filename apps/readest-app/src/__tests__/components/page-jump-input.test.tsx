@@ -143,6 +143,34 @@ describe('PageJumpInput', () => {
     expect(mocks.view.goToFraction.mock.calls[0]![0]).toBeCloseTo(119.5 / 251);
   });
 
+  it('jumps when the field loses focus after an edit (no Enter key on iOS number pads)', () => {
+    const { input } = setup();
+    fireEvent.focus(input);
+    fireEvent.change(input, { target: { value: '120 / 251' } });
+    fireEvent.blur(input);
+    expect(mocks.view.goToFraction).toHaveBeenCalledTimes(1);
+    expect(mocks.view.goToFraction.mock.calls[0]![0]).toBeCloseTo(119.5 / 251);
+    expect(input.value).toBe('94 / 251');
+  });
+
+  it('does not jump when the field loses focus unedited', () => {
+    const { input } = setup();
+    fireEvent.focus(input);
+    fireEvent.blur(input);
+    expect(mocks.view.goToFraction).not.toHaveBeenCalled();
+  });
+
+  it('does not jump when the footer bar hides mid-edit', () => {
+    mocks.state.hoveredBookKey = 'book1';
+    const { input, rerender } = setup();
+    input.focus();
+    fireEvent.change(input, { target: { value: '120 / 251' } });
+    mocks.state.hoveredBookKey = '';
+    rerender(<PageJumpInput bookKey='book1' />);
+    expect(document.activeElement).not.toBe(input);
+    expect(mocks.view.goToFraction).not.toHaveBeenCalled();
+  });
+
   it('clamps out-of-range pages to the last page', () => {
     const { input } = setup();
     fireEvent.focus(input);
