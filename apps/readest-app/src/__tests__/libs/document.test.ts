@@ -159,13 +159,15 @@ describe('DocumentLoader format probes for a .zip of images', () => {
     expect(book.sections.map((s: { id: string }) => s.id)).toEqual(['001.jpg']);
   });
 
-  it('opens a .zip of uppercase .JPG pages as a comic with every page', async () => {
+  it('keeps uppercase .JPG pages when it opens a .zip as a comic', async () => {
     const file = await makeZip(['001.JPG', '002.Jpg'], 'manga.zip');
 
     const result = await new DocumentLoader(file).open().catch((e: Error) => e);
 
     expect(result instanceof Error ? result.message : result.format).toBe('CBZ');
-    expect(result instanceof Error ? 0 : result.book.sections.length).toBe(2);
+    expect(
+      result instanceof Error ? [] : result.book.sections.map((s: { id: string }) => s.id),
+    ).toEqual(['001.JPG', '002.Jpg']);
   });
 
   it('still opens an EPUB renamed to .zip as an EPUB', async () => {
