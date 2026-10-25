@@ -1618,13 +1618,19 @@ export class TTSController extends EventTarget {
   }
 
   // Stepping back into a section starts at its end: its last paragraph, or by
-  // mark its last sentence, rather than its opening (#7065).
-  #fromEnd(byMark: boolean): string | undefined {
+  // mark its last sentence, rather than its opening (#7065). A closing block
+  // with nothing to speak (a "***" divider) is passed over, or playback would
+  // move straight on to the section it came from. Paused, the landing spot is
+  // shown the way a step back within a section shows it.
+  #fromEnd(byMark: boolean, paused: boolean): string | undefined {
     const tts = this.#getTts();
     let last: string | undefined;
     for (let ssml = tts?.next(); ssml; ssml = tts?.next()) last = ssml;
+    while (last && !parseSSMLMarks(last).marks.length) last = tts?.prev();
     const mark = byMark && last ? parseSSMLMarks(last).marks.at(-1) : undefined;
-    return mark && tts?.setMark(mark.name) ? tts.resume() : last;
+    const ssml = mark && tts?.setMark(mark.name) ? tts.resume() : last;
+    if (paused && ssml) this.dispatchSpeakMark(parseSSMLMarks(ssml).marks[0]);
+    return ssml;
   }
 
   async #handleNavigationWithoutSSML(
@@ -2202,7 +2208,7 @@ export class TTSController extends EventTarget {
       await this.#handleNavigationWithoutSSML(
         () => this.#initTTSForPrevSection(),
         isPlaying,
-        () => this.#fromEnd(byMark),
+        () => this.#fromEnd(byMark, !isPlaying),
       );
     } else {
       await this.#handleNavigationWithSSML(ssml, isPlaying);
