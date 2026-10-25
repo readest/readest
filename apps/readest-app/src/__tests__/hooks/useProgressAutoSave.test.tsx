@@ -62,6 +62,7 @@ vi.mock('@/store/settingsStore', () => ({
 }));
 
 import { useProgressAutoSave } from '@/app/reader/hooks/useProgressAutoSave';
+import { eventDispatcher } from '@/utils/event';
 
 const flushDebouncedSave = async () => {
   await act(async () => {
@@ -194,6 +195,27 @@ describe('useProgressAutoSave', () => {
 
     await firePageHide();
 
+    expect(h.saveConfigMock).toHaveBeenCalledTimes(1);
+  });
+
+  // #7041: the close-time cloud push asks for this save first, so the push
+  // carries the updatedAt of the position it sends.
+  test('flush-progress-save persists a moved position at once', async () => {
+    const { rerender } = renderHook(() => useProgressAutoSave('h1-view1'));
+    await flushDebouncedSave();
+
+    h.state.config = { location: 'cfi-loc-back', updatedAt: 1000 };
+    h.state.progress = { location: 'cfi-loc-back' };
+    rerender();
+
+    await act(async () => {
+      await eventDispatcher.dispatch('flush-progress-save', { bookKey: 'h2-view1' });
+    });
+    expect(h.saveConfigMock).not.toHaveBeenCalled();
+
+    await act(async () => {
+      await eventDispatcher.dispatch('flush-progress-save', { bookKey: 'h1-view1' });
+    });
     expect(h.saveConfigMock).toHaveBeenCalledTimes(1);
   });
 

@@ -6,13 +6,17 @@ interface DebounceOptions {
  * Debounces a function by waiting `delay` ms after the last call before executing it.
  * If `emitLast` is false, it cancels the call instead of delaying it.
  *
- * @returns A debounced function with additional `flush` and `cancel` methods.
+ * @returns A debounced function with additional `flush`, `cancel` and `pending` methods.
  */
 export const debounce = <T extends (...args: Parameters<T>) => void | Promise<void>>(
   func: T,
   delay: number,
   options: DebounceOptions = { emitLast: true },
-): ((...args: Parameters<T>) => void) & { flush: () => void; cancel: () => void } => {
+): ((...args: Parameters<T>) => void) & {
+  flush: () => void;
+  cancel: () => void;
+  pending: () => boolean;
+} => {
   let timeout: ReturnType<typeof setTimeout> | null = null;
   let lastArgs: Parameters<T> | null = null;
 
@@ -62,6 +66,11 @@ export const debounce = <T extends (...args: Parameters<T>) => void | Promise<vo
       lastArgs = null;
     }
   };
+
+  /**
+   * Whether a call is waiting to run.
+   */
+  debounced.pending = () => timeout !== null;
 
   return debounced;
 };
