@@ -6,38 +6,21 @@ import { LRUCache } from '@/utils/lru';
 import { genSSML } from '@/utils/ssml';
 import { fetchWithAuth } from '@/utils/fetch';
 import { getAPIBaseUrl, isTauriAppPlatform } from '@/services/environment';
+import { connectWorkersWebSocket } from '@/libs/workersWebSocket';
 import type { TTSVoice } from '@/services/tts/types';
 
 // Cloudflare Workers expose a global `WebSocketPair` that is not available in
 // browsers or Node.js. The Node `ws` package (used transitively via
 // `isomorphic-ws`) cannot run on Workers because it relies on
 // `http.createConnection`, which the Workers runtime does not implement.
-// Detecting Workers lets us use the fetch-based WebSocket upgrade pattern
-// (`fetch(..., { headers: { Upgrade: 'websocket' } })`) instead.
+// Detecting Workers lets us open the socket with `connectWorkersWebSocket`
+// instead.
 const isCloudflareWorkers = () =>
   typeof (globalThis as { WebSocketPair?: unknown }).WebSocketPair !== 'undefined';
-
-// The WebSocket returned by a Cloudflare Workers upgrade response must be
-// `accept()`ed before use. This minimal interface captures the bits we need
-// without pulling in `@cloudflare/workers-types`.
-interface AcceptableWebSocket {
-  accept(): void;
-  send(data: string | ArrayBuffer | ArrayBufferView): void;
-  close(code?: number, reason?: string): void;
-  addEventListener(type: 'message', listener: (event: { data: unknown }) => void): void;
-  addEventListener(type: 'close', listener: () => void): void;
-  addEventListener(type: 'error', listener: (event: unknown) => void): void;
-}
-
-type UpgradeResponse = Response & { webSocket?: AcceptableWebSocket };
 
 // speech.platform.bing.com now rejects the handshake with 403 in many regions
 // (rany2/edge-tts#490); Edge Read Aloud moved to api.msedgeservices.com.
 const EDGE_SPEECH_URL = 'wss://api.msedgeservices.com/tts/cognitiveservices/websocket/v1';
-// msedgeservices answers the upgrade with a plain HTTP 200 from some hosts,
-// where the bing endpoint still works; fall back to it on a failed handshake.
-const EDGE_SPEECH_FALLBACK_URL =
-  'wss://speech.platform.bing.com/consumer/speech/synthesize/readaloud/edge/v1';
 const EDGE_API_TOKEN = '6A5AA1D4EAFF4E9FB37E23D68491D6F4';
 const CHROMIUM_FULL_VERSION = '143.0.3650.75';
 const CHROMIUM_MAJOR_VERSION = CHROMIUM_FULL_VERSION.split('.')[0];
@@ -314,26 +297,6 @@ export const generateSecMsGec = async (now = Date.now()) => {
   return `${toHex(new Uint8Array(cs64.buffer))}-${toHex(digest)}`;
 };
 
-class EdgeHandshakeError extends Error {}
-
-export const buildEdgeSpeechUrls = async (connectId: string, now = Date.now()) => {
-  const gec = await generateSecMsGec(now);
-  const version = `2-${CHROMIUM_FULL_VERSION}`;
-  const primary = new URLSearchParams({
-    ConnectionId: connectId,
-    'Ocp-Apim-Subscription-Key': EDGE_API_TOKEN,
-    'Sec-MS-GEC': gec,
-    'Sec-MS-GEC-Version': version,
-  });
-  const fallback = new URLSearchParams({
-    TrustedClientToken: EDGE_API_TOKEN,
-    ConnectionId: connectId,
-    'Sec-MS-GEC': gec,
-    'Sec-MS-GEC-Version': version,
-  });
-  return [`${EDGE_SPEECH_URL}?${primary}`, `${EDGE_SPEECH_FALLBACK_URL}?${fallback}`];
-};
-
 const generateMuid = () => {
   // Generate 16 random bytes (32 hex characters)
   const array = new Uint8Array(16);
@@ -492,32 +455,15 @@ export class EdgeSpeechTTS {
     return response;
   }
 
-  // Index into buildEdgeSpeechUrls() of the endpoint that last completed a
-  // handshake, so a working fallback is tried first on the next sentence.
-  static #endpoint = 0;
-
-  async #fetchEdgeSpeechWs(payload: EdgeTTSPayload): Promise<EdgeSpeechAudio> {
+  async #fetchEdgeSpeechWs({ lang, text, voice, rate }: EdgeTTSPayload): Promise<EdgeSpeechAudio> {
     const connectId = randomMd5();
-    const urls = await buildEdgeSpeechUrls(connectId);
-    const start = EdgeSpeechTTS.#endpoint;
-    for (let i = 0; i < urls.length; i++) {
-      const index = (start + i) % urls.length;
-      try {
-        const audio = await this.#fetchEdgeSpeechWsAt(payload, connectId, urls[index]!);
-        EdgeSpeechTTS.#endpoint = index;
-        return audio;
-      } catch (error) {
-        if (!(error instanceof EdgeHandshakeError) || i === urls.length - 1) throw error;
-      }
-    }
-    throw new Error('WebSocket error occurred.');
-  }
-
-  async #fetchEdgeSpeechWsAt(
-    { lang, text, voice, rate }: EdgeTTSPayload,
-    connectId: string,
-    url: string,
-  ): Promise<EdgeSpeechAudio> {
+    const params = new URLSearchParams({
+      ConnectionId: connectId,
+      'Ocp-Apim-Subscription-Key': EDGE_API_TOKEN,
+      'Sec-MS-GEC': await generateSecMsGec(),
+      'Sec-MS-GEC-Version': `2-${CHROMIUM_FULL_VERSION}`,
+    });
+    const url = `${EDGE_SPEECH_URL}?${params.toString()}`;
     const date = new Date().toString();
     const baseHeaders = {
       'User-Agent':
@@ -625,13 +571,7 @@ export class EdgeSpeechTTS {
         };
         try {
           const TauriWebSocket = (await import('@tauri-apps/plugin-websocket')).default;
-          try {
-            ws = await TauriWebSocket.connect(url, { headers: baseHeaders });
-          } catch (error) {
-            return settle(() =>
-              reject(new EdgeHandshakeError(`WebSocket error occurred: ${error}`)),
-            );
-          }
+          ws = await TauriWebSocket.connect(url, { headers: baseHeaders });
           let audioData = new ArrayBuffer(0);
           const boundaries: TTSWordBoundary[] = [];
           unlisten = ws.addListener((msg) => {
@@ -687,28 +627,9 @@ export class EdgeSpeechTTS {
       return new Promise<EdgeSpeechAudio>((resolve, reject) => {
         (async () => {
           try {
-            // Cloudflare Workers cannot use the `ws` npm package because it
-            // relies on `http.createConnection`. Instead, WebSockets are
-            // opened by calling `fetch()` with an `Upgrade: websocket`
-            // header. The response has status 101 and a `webSocket`
-            // property that must be `accept()`ed before sending data.
-            const upgradeUrl = url.replace(/^wss:\/\//i, 'https://');
-            const upgradeResponse = (await fetch(upgradeUrl, {
-              headers: {
-                ...baseHeaders,
-                Upgrade: 'websocket',
-              },
-            })) as UpgradeResponse;
-
-            if (upgradeResponse.status !== 101 || !upgradeResponse.webSocket) {
-              return reject(
-                new EdgeHandshakeError(
-                  `WebSocket upgrade failed with status ${upgradeResponse.status}`,
-                ),
-              );
-            }
-
-            const ws = upgradeResponse.webSocket;
+            // Workers' own fetch() upgrade gets a plain HTTP 200 from
+            // api.msedgeservices.com, so speak WebSocket over a raw socket.
+            const ws = await connectWorkersWebSocket(url, baseHeaders);
             let audioData = new ArrayBuffer(0);
             const boundaries: TTSWordBoundary[] = [];
             let settled = false;
@@ -840,10 +761,8 @@ export class EdgeSpeechTTS {
 
         let audioData = new ArrayBuffer(0);
         const boundaries: TTSWordBoundary[] = [];
-        let opened = false;
 
         ws.addEventListener('open', () => {
-          opened = true;
           ws.send(config);
           ws.send(content);
         });
@@ -880,11 +799,7 @@ export class EdgeSpeechTTS {
         });
 
         ws.addEventListener('error', () => {
-          reject(
-            opened
-              ? new Error('WebSocket error occurred.')
-              : new EdgeHandshakeError('WebSocket error occurred.'),
-          );
+          reject(new Error('WebSocket error occurred.'));
         });
       });
     }
