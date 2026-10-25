@@ -139,10 +139,14 @@ describe.runIf(env)('Android text selection over CDP (#1553)', () => {
       label: targets.dragWord.word,
     });
 
+    // The caret follows the stem tip, not the finger: release where the tip
+    // (0.375 of the handle's height down its box) lands on the target word.
+    const grabY = 33;
+    const fingerToTip = (0.375 * endHandle.h - grabY) * dpr;
     await motionGesture([
-      { x: (endHandle.x + 15) * dpr, y: (endHandle.y + 33) * dpr, pauseSec: 0.3 },
-      { x: to.deviceX, y: to.deviceY + 30, pauseSec: 0.2 },
-      { x: to.deviceX, y: to.deviceY, pauseSec: 0.3 },
+      { x: (endHandle.x + 15) * dpr, y: (endHandle.y + grabY) * dpr, pauseSec: 0.3 },
+      { x: to.deviceX, y: to.deviceY - fingerToTip + 30, pauseSec: 0.2 },
+      { x: to.deviceX, y: to.deviceY - fingerToTip, pauseSec: 0.3 },
     ]);
 
     const sel = await waitFor(
