@@ -802,6 +802,32 @@ describe('useProgressSync', () => {
       delete config.xpointer;
     }
   });
+
+  // Same jump as above when the conversion itself fails: the previous push's
+  // XPointer would go out beside the new location.
+  test('a push whose XPointer conversion fails does not carry the previous XPointer', async () => {
+    h.book.format = 'EPUB';
+    const config = h.config as { xpointer?: string };
+    config.xpointer = '/body/DocFragment[20]/body/p[3]';
+    vi.mocked(getXPointerFromCFI).mockRejectedValueOnce(new Error('no section'));
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      const { rerender } = renderHook(() => useProgressSync('h1-view1'));
+      await advance(0);
+      h.state.progress = { location: 'cfi-loc-back' };
+      await act(async () => {
+        rerender();
+        await flushMicrotasks();
+      });
+      await flushAutoSync();
+
+      expect(pushCallCount()).toBe(1);
+      expect(config.xpointer).toBe('');
+    } finally {
+      warn.mockRestore();
+      delete config.xpointer;
+    }
+  });
 });
 
 // Issue #5625. The Readest KOReader plugin pushes `progress` + `xpointer` and

@@ -184,6 +184,9 @@ export const useProgressSync = (bookKey: string) => {
             config.xpointer = xpointerResult.xpointer;
           }
         } catch (error) {
+          // Don't send the previous push's XPointer beside the new location:
+          // the next pull would jump to it. Readers and the koplugin skip ''.
+          if (config.location) config.xpointer = '';
           console.warn('Failed to convert CFI to XPointer', error);
         }
         await pushConfig(bookKey, config);
