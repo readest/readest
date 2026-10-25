@@ -1107,6 +1107,7 @@ const coverMs = (t?: number | null) => t ?? 0;
  */
 export const needsCoverRefresh = (local: CoverSyncFields, synced: CoverSyncFields): boolean => {
   if (synced.deletedAt) return false;
+  if (!synced.uploadedAt && !synced.coverHash) return false;
   if (!local.coverDownloadedAt) return true; // first download
   if (!synced.coverHash) return false; // nothing to compare (legacy book)
   if (coverMs(synced.coverUpdatedAt) <= coverMs(local.coverUpdatedAt)) return false;

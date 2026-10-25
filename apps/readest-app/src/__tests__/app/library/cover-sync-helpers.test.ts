@@ -69,6 +69,15 @@ describe('needsCoverRefresh (issue #4544)', () => {
     ).toBe(true);
   });
 
+  it('unuploaded book without a coverHash (e.g. local feed book) → no refresh even on first download', () => {
+    expect(
+      needsCoverRefresh(
+        local({ coverDownloadedAt: null }),
+        synced({ uploadedAt: null, coverHash: null }),
+      ),
+    ).toBe(false);
+  });
+
   it('deleted synced book → no refresh', () => {
     expect(
       needsCoverRefresh(
