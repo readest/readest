@@ -153,9 +153,19 @@ describe('DocumentLoader format probes for a .zip of images', () => {
   it('ignores the __MACOSX folder a Finder-made zip carries', async () => {
     const file = await makeZip(['001.jpg', '__MACOSX/._001.jpg'], 'manga.zip');
 
-    const { format } = await new DocumentLoader(file).open();
+    const { format, book } = await new DocumentLoader(file).open();
 
     expect(format).toBe('CBZ');
+    expect(book.sections.map((s: { id: string }) => s.id)).toEqual(['001.jpg']);
+  });
+
+  it('opens a .zip of uppercase .JPG pages as a comic with every page', async () => {
+    const file = await makeZip(['001.JPG', '002.Jpg'], 'manga.zip');
+
+    const result = await new DocumentLoader(file).open().catch((e: Error) => e);
+
+    expect(result instanceof Error ? result.message : result.format).toBe('CBZ');
+    expect(result instanceof Error ? 0 : result.book.sections.length).toBe(2);
   });
 
   it('still opens an EPUB renamed to .zip as an EPUB', async () => {
