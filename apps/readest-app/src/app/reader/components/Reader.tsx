@@ -25,7 +25,6 @@ import { interceptWindowOpen } from '@/utils/open';
 import { mountAdditionalFonts } from '@/styles/fonts';
 import { isTauriAppPlatform } from '@/services/environment';
 import { BOOK_IDS_SEPARATOR } from '@/services/constants';
-import { getBookHashFromKey } from '@/services/tts/TTSSessionManager';
 import { getSysFontsList, setSystemUIVisibility } from '@/utils/bridge';
 import { AboutWindow } from '@/components/AboutWindow';
 import ReadingStatsDialog, {
@@ -167,7 +166,10 @@ const Reader: React.FC<{ ids?: string }> = ({ ids }) => {
 
   const openBookFromStats = async (book: Book) => {
     setReadingStatsDialogVisible(false);
-    const currentHashes = (ids ?? '').split(BOOK_IDS_SEPARATOR).map((id) => getBookHashFromKey(id));
+    // Book keys are `<hash>-<viewId>`; the statistics list is keyed by hash.
+    // Split here instead of importing TTSSessionManager, which pulls the sync
+    // API into the reader's module graph at load time.
+    const currentHashes = (ids ?? '').split(BOOK_IDS_SEPARATOR).map((id) => id.split('-')[0]);
     if (currentHashes.includes(book.hash)) return;
     // The reader has no library download machinery: only books already on
     // this device can be switched to from here.
