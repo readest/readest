@@ -92,6 +92,15 @@ describe('images inline with text', () => {
     expect(img.getBoundingClientRect().height).toBeCloseTo(180, 0);
   });
 
+  test('a title image with a calc() percentage width keeps its size', async () => {
+    const img = await render(
+      '.p { width: calc(30% - 1px); height: auto; }',
+      `<h1 style="font-size: 20px"><img class="p" src="${SQUARE}"/>收音机</h1>`,
+    );
+
+    expect(img.getBoundingClientRect().height).toBeCloseTo(179, 0);
+  });
+
   test('a glyph image next to text is still clamped to 1em', async () => {
     const img = await render('', `<p style="font-size: 20px">生<img src="${SQUARE}"/>字</p>`);
 

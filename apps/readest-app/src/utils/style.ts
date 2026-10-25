@@ -1735,9 +1735,10 @@ export const applyImageStyle = (document: Document) => {
       );
       // A glyph image standing in for a character is never sized as a share
       // of the line; a title image the book sizes that way keeps it (#7039).
-      // computedStyleMap keeps the percentage that getComputedStyle resolves.
+      // computedStyleMap keeps the percentage that getComputedStyle resolves,
+      // also inside a calc() (serialized as e.g. `calc(30% - 1px)`).
       const width = img.computedStyleMap?.().get('width');
-      const percentSized = !!width && 'unit' in width && width.unit === 'percent';
+      const percentSized = !!width && width.toString().includes('%');
       inlineWithText = hasTextSiblings && isInline && !percentSized;
       if (inlineWithText) {
         // Only supply Readest's baseline default when the book leaves
