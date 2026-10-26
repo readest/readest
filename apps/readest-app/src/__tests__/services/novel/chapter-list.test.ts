@@ -124,6 +124,39 @@ describe('parseChapterList', () => {
     const toc = parseChapterList(page, 'https://www.example.com/book/2/')!;
     expect(toc.title).toBe('神墓');
   });
+
+  it('reads chapters numbered 第N頁 over a 第N章 recommendations box (czbooks shape)', () => {
+    // Opaque chapter ids, so the href-template fallback can't find the list.
+    const ids = Array.from({ length: 40 }, (_, i) => `sk${(i * 7919).toString(36)}x`);
+    const page = `<!DOCTYPE html><html><head><title>某書 - 小說狂人</title></head><body>
+<ul class="chapter-list">
+${ids.map((id, i) => `<li><a href="//czbooks.net/n/skl6f083l/${id}">第${i + 1}頁</a></li>`).join('\n')}
+</ul>
+<div class="recommend"><ul>
+${[1837, 252, 150, 99, 132, 128].map((n, i) => `<li><a href="/n/other${i}/c${i}">第${n}章</a></li>`).join('\n')}
+</ul></div>
+</body></html>`;
+    const toc = parseChapterList(page, 'https://czbooks.net/n/skl6f083l')!;
+    expect(toc.chapters).toHaveLength(40);
+    expect(toc.chapters[0]!.title).toBe('第1頁');
+    expect(toc.chapters[39]!.title).toBe('第40頁');
+  });
+
+  it.each(['節', '話', '页'])('reads a chapter list numbered 第N%s', (unit) => {
+    const page = `<!DOCTYPE html><html><head><title>某書</title></head><body>
+<ul>${Array.from({ length: 8 }, (_, i) => `<li><a href="/b/${String.fromCharCode(97 + i)}x">第${'一二三四五六七八'[i]}${unit} 標題</a></li>`).join('\n')}</ul>
+</body></html>`;
+    const toc = parseChapterList(page, 'https://www.example.com/b/');
+    expect(toc?.chapters ?? []).toHaveLength(8);
+  });
+
+  it('reads traditional numerals 萬 and 兩 in chapter titles', () => {
+    const page = `<!DOCTYPE html><html><head><title>某書</title></head><body>
+<ul>${Array.from({ length: 6 }, (_, i) => `<li><a href="/b/${String.fromCharCode(97 + i)}x">第一萬零${'兩三四五六七'[i]}章</a></li>`).join('\n')}</ul>
+</body></html>`;
+    const toc = parseChapterList(page, 'https://www.example.com/b/');
+    expect(toc?.chapters ?? []).toHaveLength(6);
+  });
 });
 
 /** A bare chapter-index page: no per-work metadata at all, and a site-wide

@@ -45,7 +45,8 @@ const MIN_CHAPTER_LINKS = 5;
 const CONTAINER_COVERAGE = 0.8;
 
 const CHAPTER_TEXT_PATTERNS = [
-  /第\s*[0-9０-９零〇一二三四五六七八九十百千万两]+\s*[章节回卷集部篇话]/,
+  // Traditional forms too (節, 話, 萬, 兩); some sites number chapters as 页/頁.
+  /第\s*[0-9０-９零〇一二三四五六七八九十百千万萬两兩]+\s*[章节節回卷集部篇话話页頁]/,
   /\bchapter\s*[0-9]+/i,
   /\bch\.?\s*[0-9]+\b/i,
   /\bepisode\s*[0-9]+/i,
