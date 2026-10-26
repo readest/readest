@@ -697,12 +697,13 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
         (state.hoveredBookKey === bookKey || previous.hoveredBookKey === bookKey);
       // The bookmark ribbon rewrites its unchanged visibility on every
       // relocation; only a changed field can change the reader's pixels.
+      // `syncing` only spins the View menu's icon, outside the page.
       const viewStateChanged =
         currentViewState !== previousViewState &&
         (!currentViewState ||
           !previousViewState ||
           (Object.keys(currentViewState) as (keyof typeof currentViewState)[]).some(
-            (field) => currentViewState[field] !== previousViewState[field],
+            (field) => field !== 'syncing' && currentViewState[field] !== previousViewState[field],
           ));
       const readerPixelsChanged = toolbarChanged || toolbarContentChanged || viewStateChanged;
       if (readerPixelsChanged) {
