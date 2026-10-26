@@ -164,17 +164,20 @@ const parseChineseNumber = (numeral: string): number => {
   return total + section + digit;
 };
 
-/** First chapter number in the title (arabic, or Chinese after 第), else the
- *  last digit run in the URL path — used only to detect newest-first ordering. */
+/** Chapter number in the title (the last 第N, arabic or Chinese, so 第一卷
+ *  第六章 reads 6), else the last digit run in the URL path — used only to
+ *  detect newest-first ordering. */
 const chapterNumber = (entry: LinkEntry): number | null => {
   // Full-width digits (第１２頁) read as ASCII.
   const text = entry.text.replace(/[０-９]/g, (d) => String.fromCharCode(d.charCodeAt(0) - 0xfee0));
+  const numeral = [
+    ...text.matchAll(/第\s*([0-9]+|[零〇一二三四五六七八九十百千万萬两兩]+)/g),
+  ].pop()?.[1];
+  if (numeral) return /^[0-9]/.test(numeral) ? parseInt(numeral, 10) : parseChineseNumber(numeral);
   const numbered =
-    text.match(/(?:第|\bchapter|\bch\.?|\bepisode)\s*([0-9]+)/i) ||
+    text.match(/(?:\bchapter|\bch\.?|\bepisode)\s*([0-9]+)/i) ||
     text.match(/^([0-9]+)\s*[、.．:：\-]/);
   if (numbered?.[1]) return parseInt(numbered[1], 10);
-  const chinese = text.match(/第\s*([零〇一二三四五六七八九十百千万萬两兩]+)/);
-  if (chinese?.[1]) return parseChineseNumber(chinese[1]);
   const pathDigits = entry.url.pathname.match(/([0-9]+)(?=[^0-9]*$)/);
   return pathDigits?.[1] ? parseInt(pathDigits[1], 10) : null;
 };

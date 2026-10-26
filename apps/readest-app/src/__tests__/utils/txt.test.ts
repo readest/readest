@@ -407,6 +407,11 @@ describe('extractChaptersFromSegment — Chinese (zh)', () => {
     expect(volume!.isVolume).toBe(true);
   });
 
+  it('should not mark a 第 卷 heading without a number as a volume', () => {
+    const chapters = extractChapters('前文内容\n第 卷 标题\n正文内容', 'zh');
+    expect(chapters.some((c) => c.isVolume)).toBe(false);
+  });
+
   it('should include title text in captured heading', () => {
     const chapters = extractChapters('前文内容\n第一章 天地初开\n正文内容', 'zh');
     const chapter = chapters.find((c) => c.title.includes('第一章'));

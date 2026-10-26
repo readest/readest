@@ -130,8 +130,10 @@ const escapeXml = (str: string) => {
 const CJK_NUMBER_DIGITS = '零〇一二两兩三四五六七八九十壹贰貳叁叄參肆伍陆陸柒捌玖拾0-9';
 const CJK_NUMBER_UNITS = '百千万萬佰仟';
 const CJK_NUMBER_CHARS = `${CJK_NUMBER_DIGITS}${CJK_NUMBER_UNITS}`;
-// Spaces as the heading split allows them (第一 卷).
-const CJK_VOLUME_HEADING = new RegExp(`第[ 　${CJK_NUMBER_CHARS}]+(卷|本|册|冊|部)`);
+// Spaces as the heading split allows them (第一 卷), around a required numeral.
+const CJK_VOLUME_HEADING = new RegExp(
+  `第[ 　]*[${CJK_NUMBER_CHARS}][ 　${CJK_NUMBER_CHARS}]*(卷|本|册|冊|部)`,
+);
 
 export class TxtToEpubConverter {
   public async convert(options: Txt2EpubOptions): Promise<ConversionResult> {

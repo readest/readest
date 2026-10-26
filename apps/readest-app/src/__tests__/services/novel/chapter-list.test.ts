@@ -175,6 +175,21 @@ ${[1837, 252, 150, 99, 132, 128].map((n, i) => `<li><a href="/n/other${i}/c${i}"
     expect(toc.chapters.map((c) => c.title)).toEqual(numerals.map((n) => `第${n}${unit}`));
   });
 
+  it.each([
+    ['第一卷 第%s章', ['一', '二', '三', '四', '五', '六']],
+    ['第1卷 第%s章', ['1', '2', '3', '4', '5', '6']],
+  ])('orders by the chapter number, not the volume (%s)', (template, nums) => {
+    const titles = nums.map((n) => template.replace('%s', n));
+    const page = `<!DOCTYPE html><html><head><title>某書</title></head><body>
+<ul>${titles
+      .map((t, i) => `<li><a href="/n/book/s${'abcdef'[i]}">${t}</a></li>`)
+      .reverse()
+      .join('\n')}</ul>
+</body></html>`;
+    const toc = parseChapterList(page, 'https://www.example.com/n/book/')!;
+    expect(toc.chapters.map((c) => c.title)).toEqual(titles);
+  });
+
   it('reverses a newest-first list numbered in full-width digits (第１２頁)', () => {
     const titles = ['第１頁', '第２頁', '第３頁', '第９頁', '第１０頁', '第１２頁'];
     const page = `<!DOCTYPE html><html><head><title>某書</title></head><body>
