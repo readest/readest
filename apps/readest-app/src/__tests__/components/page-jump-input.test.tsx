@@ -64,6 +64,26 @@ const setup = ({
   return { ...utils, input };
 };
 
+// A PDF page list: one entry per physical page, labels restart and change script.
+const pdfLabels = [
+  'i',
+  'ii',
+  'iii',
+  'iv',
+  '1',
+  '2',
+  '3',
+  '4',
+  '٤',
+  '٥',
+  '٦',
+  '٧',
+  ' Long Label - 11',
+  ' Long Label - 12',
+  ' Long Label - 13',
+  ' Long Label - 14',
+];
+
 beforeEach(() => {
   mocks.view.goTo.mockClear();
   mocks.view.goToFraction.mockClear();
@@ -315,5 +335,40 @@ describe('PageJumpInput', () => {
       fireEvent.focus(input);
       expect(input.value).toBe('94 / 251');
     });
+
+    it("previews a PDF page's own label", () => {
+      const pageList = pdfLabels.map((label, index) => ({ label, href: String(index), index }));
+      const { input } = setup({
+        progressStyle: 'reference',
+        pageList,
+        pageItem: pageList[15],
+        previewFraction: 0.5,
+      });
+      expect(input.value).toBe('4 / 16');
+    });
+
+    it('keeps the label box as wide as the longest page label while previewing', () => {
+      const pageList = pdfLabels.map((label, index) => ({ label, href: String(index), index }));
+      const { container, rerender } = setup({
+        progressStyle: 'reference',
+        pageList,
+        pageItem: pageList[15],
+      });
+      const sizer = container.querySelector('[aria-hidden="true"]')!;
+      const widths = [undefined, 0.5, 0.1, 1].map((previewFraction) => {
+        rerender(<PageJumpInput bookKey='book1' previewFraction={previewFraction} />);
+        return sizer.textContent!.length;
+      });
+      expect(widths).toEqual([20, 20, 20, 20]);
+    });
+  });
+
+  it('keeps the label box width when editing starts', () => {
+    const { container, input } = setup();
+    const sizer = container.querySelector('[aria-hidden="true"]')!;
+    expect(sizer.textContent).toBe('251 / 251');
+    fireEvent.focus(input);
+    expect(input.value).toBe('94 / 251');
+    expect(sizer.textContent).toBe('251 / 251');
   });
 });

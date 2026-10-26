@@ -4,7 +4,12 @@ import { useReaderStore } from '@/store/readerStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useBookDataStore } from '@/store/bookDataStore';
 import type { PageInfo } from '@/types/book';
-import { formatProgress, formatProgressPercent, getReferencePageInfo } from '@/utils/progress';
+import {
+  collectLabels,
+  formatProgress,
+  formatProgressPercent,
+  getReferencePageInfo,
+} from '@/utils/progress';
 import { clampPage, findReferencePageHref, fractionForPage, parsePageInput } from './pageJump';
 
 interface PageJumpInputProps {
@@ -83,11 +88,12 @@ const PageJumpInput: React.FC<PageJumpInputProps> = ({
   const pageInfo = liveValid ? livePageInfo : lastPageInfo;
   if (!pageInfo) return null;
 
+  const pageList = bookData?.bookDoc?.pageList;
   const progressFraction = (pageInfo.current + 1) / pageInfo.total;
   const referenceInfo =
     progressStyle === 'reference'
       ? getReferencePageInfo({
-          pageList: bookData?.bookDoc?.pageList,
+          pageList,
           pageItem: progress?.pageItem,
           fraction: progressFraction,
           referencePageCount: viewSettings?.referencePageCount,
@@ -107,11 +113,18 @@ const PageJumpInput: React.FC<PageJumpInputProps> = ({
             Math.max(0, Math.ceil(preview * pageInfo.total) - 1),
           ),
         };
+  // A PDF page list has one entry per physical page, so the page under the
+  // slider has a label of its own; other page lists only get an estimate.
+  const previewPageItem =
+    preview !== null && pageList?.every((item, index) => item.index === index)
+      ? pageList[Math.min(pageList.length, Math.max(1, Math.ceil(preview * pageList.length))) - 1]
+      : undefined;
   const shownReferenceInfo =
     preview === null || !referenceInfo
       ? referenceInfo
       : getReferencePageInfo({
-          pageList: bookData?.bookDoc?.pageList,
+          pageList,
+          pageItem: previewPageItem,
           fraction: preview,
           referencePageCount: viewSettings?.referencePageCount,
         });
@@ -163,12 +176,19 @@ const PageJumpInput: React.FC<PageJumpInputProps> = ({
   };
 
   const text = editing ? draft : displayText;
-  // Size the box for the book's widest label (the last page, in tabular
-  // digits), so a label that changes while the slider is dragged never moves
-  // the slider under the cursor (#6646).
+  // Size the box for the book's widest label (the last page in tabular digits,
+  // or the longest page-list label), so a label that changes while the slider
+  // is dragged, or turns into the draft on focus, never moves the slider under
+  // the cursor (#6646).
+  const widestLabel = referenceInfo
+    ? collectLabels(pageList ?? []).reduce(
+        (widest, label) => (label.length > widest.length ? label : widest),
+        String(total),
+      )
+    : String(total);
   const widestText =
-    template === '{percent}%' && !shownReferenceInfo ? '100%' : `${total} / ${total}`;
-  const sizerText = editing || text.length > widestText.length ? text : widestText;
+    template === '{percent}%' && !referenceInfo ? '100%' : `${widestLabel} / ${total}`;
+  const sizerText = text.length > widestText.length ? text : widestText;
 
   return (
     <div
