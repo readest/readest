@@ -270,6 +270,31 @@ describe('footnote popup CFI mapping', () => {
     expect(getFootnoteLocalCfi(bookCfi, mapping, popupDoc)).toBeNull();
   });
 
+  it('maps a selection under a cfi-skip ancestor, which the copies keep but CFI omits', () => {
+    const section = SECTION.replace(
+      '<ol class="notes">',
+      '<div class="wrap" cfi-skip=""><ol class="notes">',
+    ).replace('</ol>', '</ol></div>');
+    const popupDoc = XHTML(section);
+    const pristineDoc = XHTML(section);
+    const mapping = simulatePopup(popupDoc, liContents)!;
+    expect(mapping).not.toBeNull();
+
+    const text = popupDoc.getElementById('fn2')!.firstChild!;
+    const selection = popupDoc.createRange();
+    selection.setStart(text, 7);
+    selection.setEnd(text, 16);
+    const cfi = getFootnoteSelectionCfi(selection, mapping, BASE_CFI);
+    expect(cfi).toBeTruthy();
+    const resolved = resolveInDoc(pristineDoc, cfi!);
+    expect(resolved!.startContainer).toBe(pristineDoc.getElementById('fn2')!.firstChild);
+    expect(resolved!.startOffset).toBe(7);
+    expect(resolved!.endOffset).toBe(16);
+
+    const localCfi = getFootnoteLocalCfi(cfi!, mapping, popupDoc);
+    expect(resolveInDoc(popupDoc, localCfi!)!.toString()).toBe(selection.toString());
+  });
+
   it('returns null when the selection boundary cannot be pushed below the popup body', () => {
     const popupDoc = XHTML(SECTION);
     const mapping = simulatePopup(popupDoc, liContents)!;

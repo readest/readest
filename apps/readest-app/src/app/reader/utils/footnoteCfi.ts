@@ -74,6 +74,19 @@ const normalizeBoundary = (node: Node, offset: number, isEnd: boolean): [Node, n
   return [node, offset];
 };
 
+// CFI steps from the popup root down to the element the fragment sits in: the
+// body, or the innermost copy of the elements it came from.
+const fragmentParentParts = (
+  popupDoc: Document,
+  mapping: FootnoteExtractMapping,
+): CfiPart[] | null => {
+  let parent: Element | null = popupDoc.body;
+  for (let i = 0; i < mapping.depth; i++) parent = parent?.firstElementChild ?? null;
+  if (!parent) return null;
+  const parts = boundaryParts(parent, 0);
+  return parts?.length ? parts : null;
+};
+
 // Translate a selection range inside the (mutated) footnote popup document
 // into a CFI that resolves in the pristine section document, joined onto the
 // section's spine base CFI. Returns null when the range cannot be mapped.
@@ -83,17 +96,19 @@ export const getFootnoteSelectionCfi = (
   baseCfi: string,
 ): string | null => {
   try {
-    if (!range.startContainer.ownerDocument?.body) return null;
+    const popupDoc = range.startContainer.ownerDocument;
     const containerParts = parseSinglePath(mapping.containerCfi);
-    if (!containerParts?.length) return null;
+    if (!popupDoc || !containerParts?.length) return null;
+    // Steps down to the element the fragment sits in. Counted from its own CFI
+    // path, not from `depth`: a copy marked cfi-skip takes no CFI step.
+    const parentParts = fragmentParentParts(popupDoc, mapping);
+    if (!parentParts) return null;
 
     const mapBoundary = (node: Node, offset: number, isEnd: boolean): string | null => {
       const [n, o] = normalizeBoundary(node, offset, isEnd);
       const parts = boundaryParts(n, o);
-      // parts[0] is the popup <body> step, then one step per wrapping copy;
-      // below them lies the fragment
-      if (!parts || parts.length < 2 + mapping.depth) return null;
-      const [first, ...rest] = parts.slice(1 + mapping.depth) as [CfiPart, ...CfiPart[]];
+      if (!parts || parts.length <= parentParts.length) return null;
+      const [first, ...rest] = parts.slice(parentParts.length) as [CfiPart, ...CfiPart[]];
       const mapped = [...containerParts, { ...first, index: first.index + mapping.delta }, ...rest];
       return CFI.joinIndir(baseCfi, CFI.toString([mapped]) as string) as string;
     };
@@ -120,15 +135,9 @@ export const getFootnoteLocalCfi = (
 ): string | null => {
   try {
     const containerParts = parseSinglePath(mapping.containerCfi);
-    if (!containerParts?.length || !popupDoc.body) return null;
-    // The element the fragment sits in: the body, or the innermost copy of
-    // the elements it came from.
-    let fragmentParent: Element | null = popupDoc.body;
-    for (let i = 0; i < mapping.depth; i++)
-      fragmentParent = fragmentParent?.firstElementChild ?? null;
-    if (!fragmentParent) return null;
-    const bodyParts = boundaryParts(fragmentParent, 0);
-    if (!bodyParts?.length) return null;
+    if (!containerParts?.length) return null;
+    const bodyParts = fragmentParentParts(popupDoc, mapping);
+    if (!bodyParts) return null;
 
     const mapPath = (parts: CfiPart[][]): CfiPart[][] | null => {
       const docParts = parts[parts.length - 1];
