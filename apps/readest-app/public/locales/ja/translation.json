@@ -2585,5 +2585,7 @@
   "Note Template": "メモテンプレート",
   "Each highlight is rendered as Markdown with Nunjucks, then sent to Notion as blocks": "各ハイライトは Nunjucks で Markdown としてレンダリングされ、ブロックとして Notion に送信されます",
   "Quotes take the highlight color, and > [!NOTE] becomes a callout": "引用にはハイライトの色が付き、> [!NOTE] はコールアウトになります",
-  "Variables: {{variables}}": "変数: {{variables}}"
+  "Variables: {{variables}}": "変数: {{variables}}",
+  "Stable Page Numbers": "固定ページ番号",
+  "Turn off to count pages by the screens of this device": "オフにすると、このデバイスの画面数でページを数えます"
 }

@@ -2653,5 +2653,7 @@
   "Note Template": "Not Şablonu",
   "Each highlight is rendered as Markdown with Nunjucks, then sent to Notion as blocks": "Her vurgu Nunjucks ile Markdown olarak işlenir ve ardından Notion'a bloklar halinde gönderilir",
   "Quotes take the highlight color, and > [!NOTE] becomes a callout": "Alıntılar vurgu rengini alır ve > [!NOTE] bir bilgi kutusuna dönüşür",
-  "Variables: {{variables}}": "Değişkenler: {{variables}}"
+  "Variables: {{variables}}": "Değişkenler: {{variables}}",
+  "Stable Page Numbers": "Sabit sayfa numaraları",
+  "Turn off to count pages by the screens of this device": "Sayfaları bu cihazın ekranlarına göre saymak için kapatın"
 }

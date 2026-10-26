@@ -2721,5 +2721,7 @@
   "Note Template": "Șablon de notă",
   "Each highlight is rendered as Markdown with Nunjucks, then sent to Notion as blocks": "Fiecare evidențiere este redată ca Markdown cu Nunjucks, apoi trimisă în Notion sub formă de blocuri",
   "Quotes take the highlight color, and > [!NOTE] becomes a callout": "Citatele preiau culoarea evidențierii, iar > [!NOTE] devine o casetă de evidențiere",
-  "Variables: {{variables}}": "Variabile: {{variables}}"
+  "Variables: {{variables}}": "Variabile: {{variables}}",
+  "Stable Page Numbers": "Numere de pagină stabile",
+  "Turn off to count pages by the screens of this device": "Dezactivează pentru a număra paginile după ecranele acestui dispozitiv"
 }

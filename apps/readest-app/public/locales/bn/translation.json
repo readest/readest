@@ -2653,5 +2653,7 @@
   "Note Template": "নোট টেমপ্লেট",
   "Each highlight is rendered as Markdown with Nunjucks, then sent to Notion as blocks": "প্রতিটি হাইলাইট Nunjucks দিয়ে Markdown হিসেবে রেন্ডার হয়, তারপর ব্লক হিসেবে Notion-এ পাঠানো হয়",
   "Quotes take the highlight color, and > [!NOTE] becomes a callout": "উদ্ধৃতিগুলো হাইলাইটের রং পায়, এবং > [!NOTE] একটি কলআউট হয়ে যায়",
-  "Variables: {{variables}}": "ভেরিয়েবল: {{variables}}"
+  "Variables: {{variables}}": "ভেরিয়েবল: {{variables}}",
+  "Stable Page Numbers": "স্থির পৃষ্ঠা নম্বর",
+  "Turn off to count pages by the screens of this device": "এই ডিভাইসের স্ক্রিন অনুযায়ী পৃষ্ঠা গোনার জন্য এটি বন্ধ করুন"
 }

@@ -2585,5 +2585,7 @@
   "Note Template": "Mẫu ghi chú",
   "Each highlight is rendered as Markdown with Nunjucks, then sent to Notion as blocks": "Mỗi đoạn tô sáng được hiển thị dưới dạng Markdown bằng Nunjucks, sau đó gửi đến Notion dưới dạng khối",
   "Quotes take the highlight color, and > [!NOTE] becomes a callout": "Trích dẫn mang màu của đoạn tô sáng, và > [!NOTE] trở thành khung chú thích",
-  "Variables: {{variables}}": "Biến: {{variables}}"
+  "Variables: {{variables}}": "Biến: {{variables}}",
+  "Stable Page Numbers": "Số trang cố định",
+  "Turn off to count pages by the screens of this device": "Tắt để đếm trang theo màn hình của thiết bị này"
 }

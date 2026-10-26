@@ -2653,5 +2653,7 @@
   "Note Template": "قالب یادداشت",
   "Each highlight is rendered as Markdown with Nunjucks, then sent to Notion as blocks": "هر هایلایت با Nunjucks به Markdown تبدیل می‌شود و سپس به‌صورت بلوک به Notion ارسال می‌شود",
   "Quotes take the highlight color, and > [!NOTE] becomes a callout": "نقل‌قول‌ها رنگ هایلایت را می‌گیرند و ‎> [!NOTE]‎ به کادر توضیح تبدیل می‌شود",
-  "Variables: {{variables}}": "متغیرها: {{variables}}"
+  "Variables: {{variables}}": "متغیرها: {{variables}}",
+  "Stable Page Numbers": "شماره صفحه‌های ثابت",
+  "Turn off to count pages by the screens of this device": "برای شمارش صفحه‌ها بر اساس صفحه‌نمایش‌های این دستگاه خاموش کنید"
 }
