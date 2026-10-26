@@ -407,6 +407,44 @@ describe('useCapturedTurn scroll-lock gate', () => {
       // Deleting a highlight emits no event.
       await act(async () => highlight.remove());
       expect(invalidate).toHaveBeenCalledTimes(2);
+      // Where highlights overlap, the later one paints on top.
+      const below = drawHighlight('blue');
+      highlight = drawHighlight('green');
+      await act(async () => {});
+      invalidate.mockClear();
+      await act(async () => h.overlay!.append(below));
+      expect(invalidate).toHaveBeenCalledTimes(1);
+    } finally {
+      unmount();
+      invalidate.mockRestore();
+    }
+  });
+  test('drops native book textures for highlights drawn before their overlay was observed', async () => {
+    vi.resetModules();
+    const { useCapturedTurn: useFreshCapturedTurn } = await import(
+      '@/app/reader/hooks/useCapturedTurn'
+    );
+    const { NativePageTurn } = await import('@/app/reader/utils/nativePageTurn');
+    h.android = true;
+    h.renderer.getPageTurnKey = () => '1';
+    const svgNs = 'http://www.w3.org/2000/svg';
+    const invalidate = vi.spyOn(NativePageTurn.prototype, 'invalidateNativePages');
+    const { unmount } = renderHook(() => useFreshCapturedTurn('book-1', { current: makeView() }));
+    const relocate = () =>
+      act(() => {
+        for (const listener of h.viewListeners.get('relocate') ?? [])
+          listener(new CustomEvent('relocate'));
+      });
+    try {
+      invalidate.mockClear();
+      h.overlay = document.createElementNS(svgNs, 'svg');
+      h.overlay.append(document.createElementNS(svgNs, 'defs'));
+      relocate();
+      expect(invalidate).not.toHaveBeenCalled();
+      h.overlay = document.createElementNS(svgNs, 'svg');
+      h.overlay.append(document.createElementNS(svgNs, 'rect'));
+      relocate();
+      expect(invalidate).toHaveBeenCalledTimes(1);
     } finally {
       unmount();
       invalidate.mockRestore();
