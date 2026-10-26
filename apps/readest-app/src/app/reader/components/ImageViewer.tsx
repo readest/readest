@@ -607,9 +607,12 @@ const ImageViewer: React.FC<ImageViewerProps> = ({
   // page can hand over `#1e1e1e` for a drawing it is propping up with a white
   // shadow. Read the pixels unless the fill is light on its own.
   const pagePlateIsPaper = isLightColor(pagePlate) === true;
+  // `undefined` means there is no page to match (a book cover, a dictionary
+  // illustration); `null` means the reader could not find the image on the page.
+  const fromPage = renderStyle !== undefined;
   useEffect(() => {
     setInk(null);
-    if (!src || pagePlateIsPaper) return;
+    if (!src || !fromPage || pagePlateIsPaper) return;
     let cancelled = false;
     probeImageInk(decodeURIComponent(src)).then((result) => {
       if (!cancelled) setInk(result);
@@ -617,7 +620,7 @@ const ImageViewer: React.FC<ImageViewerProps> = ({
     return () => {
       cancelled = true;
     };
-  }, [src, pagePlateIsPaper]);
+  }, [src, fromPage, pagePlateIsPaper]);
 
   const plate = resolveImagePlate({ pagePlate, filter: renderStyle?.filter, ink });
 

@@ -498,10 +498,15 @@ describe('ImageViewer', () => {
       expect(container.querySelector('img')!.style.backgroundColor).toBe('');
     });
 
-    it('leaves an image the reader did not lay out untouched', () => {
+    // A book cover or a dictionary illustration passes no render style: there is
+    // no page to match, so even a transparent dark-ink image is left as it is.
+    it('leaves an image the reader did not lay out untouched', async () => {
+      probeImageInkMock.mockResolvedValue({ transparentRatio: 0.7, darkInkRatio: 0.95 });
       const { container } = render(
-        <ImageViewer src='blob:test-image' onClose={vi.fn()} gridInsets={gridInsets} />,
+        <ImageViewer src='data:image/png;base64,AA==' onClose={vi.fn()} gridInsets={gridInsets} />,
       );
+      await act(async () => {});
+      expect(probeImageInkMock).not.toHaveBeenCalled();
       const img = container.querySelector('img')!;
       expect(img.style.backgroundColor).toBe('');
       expect(img.style.filter).toBe('');

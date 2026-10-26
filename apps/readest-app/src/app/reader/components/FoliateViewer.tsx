@@ -449,13 +449,7 @@ const FoliateViewer: React.FC<{
       applyImageStyle(detail.doc);
       applyScrollableStyle(detail.doc);
       applyTableTouchScroll(detail.doc);
-      // Read the theme live rather than from this closure: `useFoliateEvents`
-      // binds the handler once (`[view]`), so the captured `isDarkMode` is the
-      // theme the reader *mounted* in. Every section loaded after a theme switch
-      // would otherwise be stamped with the old class, and the book's own
-      // `body.theme-dark` rules — the plate behind a transparent chapter
-      // ornament, night text colors — silently stop applying to it.
-      applyThemeModeClass(detail.doc, useThemeStore.getState().isDarkMode);
+      applyThemeModeClass(detail.doc, isDarkMode);
       applyScrollModeClass(detail.doc, viewSettings.scrolled || false);
       applyEinkModeAttribute(detail.doc, viewSettings.isEink || false);
       applyScrollbarStyle(document, viewSettings.hideScrollbar || false);
@@ -710,12 +704,14 @@ const FoliateViewer: React.FC<{
         const dataUrl = await convertBlobUrlToDataUrl(src);
         setSelectedImage(dataUrl);
         setSelectedImageAlt(alt);
+        // Read the page's rendering before the jump, so the new image never
+        // shows the previous one's, and again after it: a section that was not
+        // in the renderer yet is not in `getContents()` either.
+        setSelectedImageRenderStyle(captureImageRenderStyle(viewRef.current, src));
         if (cfi && viewRef.current) {
           await viewRef.current.goTo(cfi);
+          setSelectedImageRenderStyle(captureImageRenderStyle(viewRef.current, src));
         }
-        // Read the page's rendering after the jump: a section that was not in
-        // the renderer yet is not in `getContents()` either.
-        setSelectedImageRenderStyle(captureImageRenderStyle(viewRef.current, src));
       } catch (error) {
         console.error('Failed to load previous image:', error);
       }
@@ -731,12 +727,14 @@ const FoliateViewer: React.FC<{
         const dataUrl = await convertBlobUrlToDataUrl(src);
         setSelectedImage(dataUrl);
         setSelectedImageAlt(alt);
+        // Read the page's rendering before the jump, so the new image never
+        // shows the previous one's, and again after it: a section that was not
+        // in the renderer yet is not in `getContents()` either.
+        setSelectedImageRenderStyle(captureImageRenderStyle(viewRef.current, src));
         if (cfi && viewRef.current) {
           await viewRef.current.goTo(cfi);
+          setSelectedImageRenderStyle(captureImageRenderStyle(viewRef.current, src));
         }
-        // Read the page's rendering after the jump: a section that was not in
-        // the renderer yet is not in `getContents()` either.
-        setSelectedImageRenderStyle(captureImageRenderStyle(viewRef.current, src));
       } catch (error) {
         console.error('Failed to load next image:', error);
       }
