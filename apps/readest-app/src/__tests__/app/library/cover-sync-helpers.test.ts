@@ -78,6 +78,15 @@ describe('needsCoverRefresh (issue #4544)', () => {
     ).toBe(false);
   });
 
+  it('audiobookshelf book (format === "ABS") → no cloud refresh even on first download', () => {
+    expect(
+      needsCoverRefresh(
+        local({ coverDownloadedAt: null, format: 'ABS' }),
+        synced({ coverHash: 'hABS', format: 'ABS' }),
+      ),
+    ).toBe(false);
+  });
+
   it('deleted synced book → no refresh', () => {
     expect(
       needsCoverRefresh(
