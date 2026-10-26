@@ -31,6 +31,7 @@ export const useScreenWakeLock = (lock: boolean, hasWindow?: boolean, isIOSApp =
     let shouldHoldWakeLock = lock;
     let requestPending = false;
     let unlistenOnFocusChanged: Promise<() => void> | null = null;
+    let blurTimer: ReturnType<typeof setTimeout> | undefined;
 
     const requestWakeLock = async () => {
       shouldHoldWakeLock = true;
@@ -86,12 +87,19 @@ export const useScreenWakeLock = (lock: boolean, hasWindow?: boolean, isIOSApp =
     if (useDocumentVisibility && lock) {
       document.addEventListener('visibilitychange', handleVisibilityChange);
     } else if (isTauriAppPlatform() && hasWindow && lock) {
+      // On Linux CEF, refocusing the window reports focus and then blur as the
+      // browser view takes keyboard focus from the toplevel, and the page gets
+      // focus a few ms later (#7085). Trust a blur only if the page is still
+      // unfocused shortly after it.
       unlistenOnFocusChanged = getCurrentWindow()
         .onFocusChanged(({ payload: focused }) => {
+          clearTimeout(blurTimer);
           if (focused) {
             requestWakeLock();
           } else {
-            releaseWakeLock();
+            blurTimer = setTimeout(() => {
+              if (!document.hasFocus()) releaseWakeLock();
+            }, 100);
           }
         })
         .catch((error) => {
@@ -106,6 +114,7 @@ export const useScreenWakeLock = (lock: boolean, hasWindow?: boolean, isIOSApp =
       if (useDocumentVisibility && lock) {
         document.removeEventListener('visibilitychange', handleVisibilityChange);
       }
+      clearTimeout(blurTimer);
       void unlistenOnFocusChanged?.then((unlisten) => unlisten());
     };
   }, [lock, hasWindow, isIOSApp]);
