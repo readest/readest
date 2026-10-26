@@ -157,6 +157,42 @@ ${[1837, 252, 150, 99, 132, 128].map((n, i) => `<li><a href="/n/other${i}/c${i}"
     const toc = parseChapterList(page, 'https://www.example.com/b/');
     expect(toc?.chapters ?? []).toHaveLength(6);
   });
+
+  // Newest-first lists numbered in Chinese numerals, with ids that carry no
+  // digits, so only the title can tell the list runs backwards.
+  const numerals = ['一', '二', '三', '四', '五', '六', '七', '八', '九', '十', '十一', '二十'];
+  const newestFirstPage = (
+    unit: string,
+  ) => `<!DOCTYPE html><html><head><title>某書</title></head><body>
+<ul>${numerals
+    .map((n, i) => `<li><a href="/n/book/s${'abcdefghijkl'[i]}">第${n}${unit}</a></li>`)
+    .reverse()
+    .join('\n')}</ul>
+</body></html>`;
+
+  it.each(['章', '頁'])('reverses a newest-first list numbered in Chinese (第N%s)', (unit) => {
+    const toc = parseChapterList(newestFirstPage(unit), 'https://www.example.com/n/book/')!;
+    expect(toc.chapters.map((c) => c.title)).toEqual(numerals.map((n) => `第${n}${unit}`));
+  });
+
+  it('reads larger Chinese numerals in order (九十九, 一百, 一百零一, 一千, 一萬)', () => {
+    const titles = [
+      '第九十九章',
+      '第一百章',
+      '第一百零一章',
+      '第一千章',
+      '第一萬章',
+      '第一萬零一章',
+    ];
+    const page = `<!DOCTYPE html><html><head><title>某書</title></head><body>
+<ul>${titles
+      .map((t, i) => `<li><a href="/n/book/s${'abcdef'[i]}">${t}</a></li>`)
+      .reverse()
+      .join('\n')}</ul>
+</body></html>`;
+    const toc = parseChapterList(page, 'https://www.example.com/n/book/')!;
+    expect(toc.chapters.map((c) => c.title)).toEqual(titles);
+  });
 });
 
 /** A bare chapter-index page: no per-work metadata at all, and a site-wide

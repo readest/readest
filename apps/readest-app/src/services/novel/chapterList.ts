@@ -128,13 +128,51 @@ const findChapterContainer = (candidates: LinkEntry[]): Element | null => {
   return container;
 };
 
-/** First arabic chapter number in the title, else the last digit run in the
- *  URL path — used only to detect newest-first ordering. */
+const CN_DIGITS: Record<string, number> = {
+  零: 0,
+  〇: 0,
+  一: 1,
+  二: 2,
+  两: 2,
+  兩: 2,
+  三: 3,
+  四: 4,
+  五: 5,
+  六: 6,
+  七: 7,
+  八: 8,
+  九: 9,
+};
+const CN_UNITS: Record<string, number> = { 十: 10, 百: 100, 千: 1000 };
+
+/** 第一百零一 → 101, 第一萬零二 → 10002. */
+const parseChineseNumber = (numeral: string): number => {
+  let total = 0;
+  let section = 0;
+  let digit = 0;
+  for (const ch of numeral) {
+    if (ch in CN_DIGITS) digit = CN_DIGITS[ch]!;
+    else if (ch in CN_UNITS) {
+      section += (digit || 1) * CN_UNITS[ch]!;
+      digit = 0;
+    } else if (ch === '万' || ch === '萬') {
+      total += (section + digit) * 10000;
+      section = 0;
+      digit = 0;
+    }
+  }
+  return total + section + digit;
+};
+
+/** First chapter number in the title (arabic, or Chinese after 第), else the
+ *  last digit run in the URL path — used only to detect newest-first ordering. */
 const chapterNumber = (entry: LinkEntry): number | null => {
   const numbered =
     entry.text.match(/(?:第|\bchapter|\bch\.?|\bepisode)\s*([0-9]+)/i) ||
     entry.text.match(/^([0-9]+)\s*[、.．:：\-]/);
   if (numbered?.[1]) return parseInt(numbered[1], 10);
+  const chinese = entry.text.match(/第\s*([零〇一二三四五六七八九十百千万萬两兩]+)/);
+  if (chinese?.[1]) return parseChineseNumber(chinese[1]);
   const pathDigits = entry.url.pathname.match(/([0-9]+)(?=[^0-9]*$)/);
   return pathDigits?.[1] ? parseInt(pathDigits[1], 10) : null;
 };
