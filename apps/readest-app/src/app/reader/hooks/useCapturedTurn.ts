@@ -633,12 +633,11 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
 
     // Each turn redraws every highlight on the new page unchanged, so compare
     // the overlay markup rather than react to each draw. This also catches a
-    // deleted highlight, which emits no event.
+    // deleted highlight, which emits no event. Order matters: later children
+    // paint over earlier ones where highlights overlap.
     const overlayMarkup = new WeakMap<Element, string>();
     const markupOf = (overlay: Element) =>
-      Array.from(overlay.children, (child) => child.outerHTML)
-        .sort()
-        .join('');
+      Array.from(overlay.children, (child) => child.outerHTML).join('');
     const overlayObserver = new MutationObserver((records) => {
       let changed = false;
       for (const overlay of new Set(records.map((record) => record.target as Element))) {
@@ -652,23 +651,26 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
       invalidateAndSchedulePreparedCapture();
     });
     // An overlay is attached after foliate's create-overlay event, so pick up
-    // new ones on the surface changes below instead.
+    // new ones on the surface changes below instead. Reports whether a new
+    // overlay already had highlights drawn before it was observed.
     const observeOverlays = () => {
+      let drawn = false;
       for (const { overlayer } of view.renderer.getContents()) {
         const overlay = (overlayer as { element?: Element } | undefined)?.element;
         if (!overlay || overlayMarkup.has(overlay)) continue;
         overlayMarkup.set(overlay, markupOf(overlay));
         overlayObserver.observe(overlay, { childList: true });
+        drawn ||= overlay.querySelector(':scope > :not(defs)') !== null;
       }
+      return drawn;
     };
 
     // A warm surface represents the pixels of one settled reader-cell state.
     // Coalesce the renderer's noisy lifecycle into one post-paint capture and
     // discard any result whose generation changed while native work ran.
     const handleCapturedSurfaceChange = (event: Event) => {
-      if (event.type !== 'relocate') invalidatePagePixels();
+      if (observeOverlays() || event.type !== 'relocate') invalidatePagePixels();
       invalidateAndSchedulePreparedCapture();
-      observeOverlays();
     };
     observeOverlays();
     view.addEventListener('relocate', handleCapturedSurfaceChange);
