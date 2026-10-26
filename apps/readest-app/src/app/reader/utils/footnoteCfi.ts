@@ -6,12 +6,15 @@ import * as CFI from 'foliate-js/epubcfi.js';
 // this describes how CFI paths translate between the two:
 // - `containerCfi`: collapsed CFI (document part only) of the element the
 //   fragment was extracted from,
+// - `depth`: how many copies of that element and its ancestors the popup body
+//   wraps the fragment in, each the only child of the one above (#7103),
 // - `delta`: constant shift of every first-level child-step index (2 x the
 //   number of container element children preceding the extraction start),
 // - `firstIndex`/`lastIndex`: the range of first-level indices (in pristine
 //   document terms) the fragment covers, for reverse-mapping bounds.
 export interface FootnoteExtractMapping {
   containerCfi: string;
+  depth: number;
   delta: number;
   firstIndex: number;
   lastIndex: number;
@@ -87,9 +90,10 @@ export const getFootnoteSelectionCfi = (
     const mapBoundary = (node: Node, offset: number, isEnd: boolean): string | null => {
       const [n, o] = normalizeBoundary(node, offset, isEnd);
       const parts = boundaryParts(n, o);
-      // parts[0] is the popup <body> step; below it lies the fragment
-      if (!parts || parts.length < 2) return null;
-      const [, first, ...rest] = parts as [CfiPart, CfiPart, ...CfiPart[]];
+      // parts[0] is the popup <body> step, then one step per wrapping copy;
+      // below them lies the fragment
+      if (!parts || parts.length < 2 + mapping.depth) return null;
+      const [first, ...rest] = parts.slice(1 + mapping.depth) as [CfiPart, ...CfiPart[]];
       const mapped = [...containerParts, { ...first, index: first.index + mapping.delta }, ...rest];
       return CFI.joinIndir(baseCfi, CFI.toString([mapped]) as string) as string;
     };
@@ -117,7 +121,13 @@ export const getFootnoteLocalCfi = (
   try {
     const containerParts = parseSinglePath(mapping.containerCfi);
     if (!containerParts?.length || !popupDoc.body) return null;
-    const bodyParts = boundaryParts(popupDoc.body, 0);
+    // The element the fragment sits in: the body, or the innermost copy of
+    // the elements it came from.
+    let fragmentParent: Element | null = popupDoc.body;
+    for (let i = 0; i < mapping.depth; i++)
+      fragmentParent = fragmentParent?.firstElementChild ?? null;
+    if (!fragmentParent) return null;
+    const bodyParts = boundaryParts(fragmentParent, 0);
     if (!bodyParts?.length) return null;
 
     const mapPath = (parts: CfiPart[][]): CfiPart[][] | null => {
