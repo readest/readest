@@ -46,6 +46,8 @@ const setup = ({
   pageItem = undefined as unknown,
   showFraction = false,
   fraction = undefined as number | undefined,
+  referencePageCount = undefined as number | undefined,
+  previewFraction = undefined as number | null | undefined,
 } = {}) => {
   mocks.state.progress = {
     pageinfo: { current: 93, next: 94, total: 251 },
@@ -53,9 +55,11 @@ const setup = ({
     pageItem,
     fraction,
   };
-  mocks.state.viewSettings = { progressStyle };
+  mocks.state.viewSettings = { progressStyle, referencePageCount };
   mocks.state.bookData = { isFixedLayout, bookDoc: { pageList } };
-  const utils = render(<PageJumpInput bookKey='book1' showFraction={showFraction} />);
+  const utils = render(
+    <PageJumpInput bookKey='book1' showFraction={showFraction} previewFraction={previewFraction} />,
+  );
   const input = utils.getByRole('textbox', { name: 'Go to Page' }) as HTMLInputElement;
   return { ...utils, input };
 };
@@ -250,5 +254,66 @@ describe('PageJumpInput', () => {
     });
 
     expect(input.value).toBe('Long Label - 14 / 16');
+  });
+
+  describe('while the progress slider is dragged (#7075)', () => {
+    it('previews the page under the slider', () => {
+      const { input } = setup({ previewFraction: 0.5 });
+      expect(input.value).toBe('126 / 251');
+    });
+
+    it('previews the page fraction in the mobile pill', () => {
+      const { input } = setup({
+        progressStyle: 'percentage',
+        showFraction: true,
+        previewFraction: 0.5,
+      });
+      expect(input.value).toBe('126 / 251');
+    });
+
+    it('previews the slider percentage', () => {
+      const { input } = setup({ progressStyle: 'percentage', fraction: 0.3, previewFraction: 0.5 });
+      expect(input.value).toBe('50%');
+    });
+
+    it('previews the spine page for fixed layout books', () => {
+      const { input } = setup({ isFixedLayout: true, previewFraction: 0.5 });
+      expect(input.value).toBe('15 / 30');
+    });
+
+    it('estimates the reference page', () => {
+      const { input } = setup({
+        progressStyle: 'reference',
+        referencePageCount: 300,
+        previewFraction: 0.5,
+      });
+      expect(input.value).toBe('150 / 300');
+    });
+
+    it('starts at the first page', () => {
+      const { input } = setup({ previewFraction: 0 });
+      expect(input.value).toBe('1 / 251');
+    });
+
+    it('shows the current page again without a preview', () => {
+      const { input } = setup({ previewFraction: null });
+      expect(input.value).toBe('94 / 251');
+    });
+
+    it('keeps the label box as wide as the last page while previewing', () => {
+      const { container, rerender } = setup({ previewFraction: 0 });
+      const sizer = container.querySelector('[aria-hidden="true"]')!;
+      const widths = [0, 0.05, 0.5, 1].map((previewFraction) => {
+        rerender(<PageJumpInput bookKey='book1' previewFraction={previewFraction} />);
+        return sizer.textContent;
+      });
+      expect(widths).toEqual(['251 / 251', '251 / 251', '251 / 251', '251 / 251']);
+    });
+
+    it('edits from the current page, not the preview', () => {
+      const { input } = setup({ previewFraction: 0.5 });
+      fireEvent.focus(input);
+      expect(input.value).toBe('94 / 251');
+    });
   });
 });

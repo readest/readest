@@ -11,6 +11,8 @@ interface PageJumpInputProps {
   bookKey: string;
   /** Always show '{current} / {total}' regardless of the progress style. */
   showFraction?: boolean;
+  /** The progress slider's position while it is dragged, shown until the reader relocates. */
+  previewFraction?: number | null;
   className?: string;
 }
 
@@ -22,7 +24,12 @@ interface PageJumpInputProps {
  * invisible sizer span reserves the label's width so toggling edit mode never
  * shifts the surrounding layout.
  */
-const PageJumpInput: React.FC<PageJumpInputProps> = ({ bookKey, showFraction, className }) => {
+const PageJumpInput: React.FC<PageJumpInputProps> = ({
+  bookKey,
+  showFraction,
+  previewFraction,
+  className,
+}) => {
   const _ = useTranslation();
   const { hoveredBookKey, getView, getProgress, getViewSettings } = useReaderStore();
   const { getBookData } = useBookDataStore();
@@ -86,20 +93,42 @@ const PageJumpInput: React.FC<PageJumpInputProps> = ({ bookKey, showFraction, cl
           referencePageCount: viewSettings?.referencePageCount,
         })
       : null;
+
+  // While the slider is dragged, label the page under it: the same page the
+  // slider shows for a location, (current + 1) / total.
+  const preview = previewFraction ?? null;
+  const shownPageInfo =
+    preview === null
+      ? pageInfo
+      : {
+          ...pageInfo,
+          current: Math.min(
+            pageInfo.total - 1,
+            Math.max(0, Math.ceil(preview * pageInfo.total) - 1),
+          ),
+        };
+  const shownReferenceInfo =
+    preview === null || !referenceInfo
+      ? referenceInfo
+      : getReferencePageInfo({
+          pageList: bookData?.bookDoc?.pageList,
+          fraction: preview,
+          referencePageCount: viewSettings?.referencePageCount,
+        });
   const template =
     showFraction || progressStyle === 'fraction' ? '{current} / {total}' : '{percent}%';
-  const displayText = referenceInfo
-    ? `${referenceInfo.current} / ${referenceInfo.total}`
+  const displayText = shownReferenceInfo
+    ? `${shownReferenceInfo.current} / ${shownReferenceInfo.total}`
     : template === '{percent}%'
       ? formatProgressPercent(
-          bookData?.isFixedLayout ? undefined : progress?.fraction,
-          pageInfo.current,
-          pageInfo.total,
+          bookData?.isFixedLayout ? undefined : (preview ?? progress?.fraction),
+          shownPageInfo.current,
+          shownPageInfo.total,
           false,
           'en',
           0,
         )
-      : formatProgress(pageInfo.current, pageInfo.total, template, false, 'en', 0);
+      : formatProgress(shownPageInfo.current, shownPageInfo.total, template, false, 'en', 0);
 
   const total = referenceInfo ? referenceInfo.total : pageInfo.total;
   const currentLabel = referenceInfo ? referenceInfo.current : String(pageInfo.current + 1);
@@ -134,11 +163,17 @@ const PageJumpInput: React.FC<PageJumpInputProps> = ({ bookKey, showFraction, cl
   };
 
   const text = editing ? draft : displayText;
+  // Size the box for the book's widest label (the last page, in tabular
+  // digits), so a label that changes while the slider is dragged never moves
+  // the slider under the cursor (#6646).
+  const widestText =
+    template === '{percent}%' && !shownReferenceInfo ? '100%' : `${total} / ${total}`;
+  const sizerText = editing || text.length > widestText.length ? text : widestText;
 
   return (
     <div
       className={clsx(
-        'relative flex items-center rounded-md text-nowrap transition-colors',
+        'relative flex items-center rounded-md text-nowrap tabular-nums transition-colors',
         editing
           ? 'eink-bordered bg-base-content/10'
           : 'hover:bg-base-content/10 cursor-pointer bg-transparent',
@@ -148,7 +183,7 @@ const PageJumpInput: React.FC<PageJumpInputProps> = ({ bookKey, showFraction, cl
       {/* Invisible sizer: the box is always as wide as its text, so swapping
           between label and edit modes never shifts the surrounding layout. */}
       <span aria-hidden='true' className='invisible whitespace-pre px-1 py-0.5'>
-        {text}
+        {sizerText}
       </span>
       <input
         ref={inputRef}
