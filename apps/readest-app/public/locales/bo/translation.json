@@ -2586,6 +2586,6 @@
   "Each highlight is rendered as Markdown with Nunjucks, then sent to Notion as blocks": "འོད་རྟགས་རེ་རེ་ Nunjucks བེད་སྤྱོད་ནས་ Markdown ལ་བསྒྱུར་ཏེ་ Notion ལ་དུམ་བུའི་རྣམ་པར་བསྐུར་གྱི་རེད",
   "Quotes take the highlight color, and > [!NOTE] becomes a callout": "ལུང་འདྲེན་ལ་འོད་རྟགས་ཀྱི་ཚོན་མདོག་ཐོབ་ཅིང་། > [!NOTE] དེ་གསལ་བཤད་སྒྲོམ་དུ་འགྱུར",
   "Variables: {{variables}}": "འགྱུར་ཚད: {{variables}}",
-  "Count Pages by Screen": "བརྙན་ཡོལ་ལྟར་ཤོག་གྲངས་རྩིས།",
-  "Page numbers follow the screens of this device": "ཤོག་གྲངས་ནི་སྒྲིག་ཆས་འདིའི་བརྙན་ཡོལ་ལྟར་འགྲོ།"
+  "Stable Page Numbers": "ཤོག་གྲངས་བརྟན་པོ།",
+  "Turn off to count pages by the screens of this device": "སྒྲིག་ཆས་འདིའི་བརྙན་ཡོལ་ལྟར་ཤོག་གྲངས་རྩིས་པར་སྒོ་རྒྱག"
 }

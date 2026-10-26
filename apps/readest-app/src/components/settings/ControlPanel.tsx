@@ -48,8 +48,8 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
   const [showPaginationButtons, setShowPaginationButtons] = useState(
     viewSettings.showPaginationButtons,
   );
-  const [screenPageNumbers, setScreenPageNumbers] = useState(
-    viewSettings.screenPageNumbers ?? false,
+  const [stablePageNumbers, setStablePageNumbers] = useState(
+    viewSettings.stablePageNumbers ?? true,
   );
   const [isDisableClick, setIsDisableClick] = useState(viewSettings.disableClick);
   const [isDisableSwipe, setIsDisableSwipe] = useState(viewSettings.disableSwipe);
@@ -140,7 +140,7 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
       scrollingOverlap: setScrollingOverlap,
       hideScrollbar: setHideScrollbar,
       showPaginationButtons: setShowPaginationButtons,
-      screenPageNumbers: setScreenPageNumbers,
+      stablePageNumbers: setStablePageNumbers,
       disableClick: setIsDisableClick,
       disableSwipe: setIsDisableSwipe,
       disablePullDownToBookmark: setDisablePullDownToBookmark,
@@ -234,10 +234,10 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
   }, [showPaginationButtons]);
 
   useEffect(() => {
-    if (screenPageNumbers === (viewSettings.screenPageNumbers ?? false)) return;
-    saveViewSettings(envConfig, bookKey, 'screenPageNumbers', screenPageNumbers, false, false);
+    if (stablePageNumbers === (viewSettings.stablePageNumbers ?? true)) return;
+    saveViewSettings(envConfig, bookKey, 'stablePageNumbers', stablePageNumbers, false, false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [screenPageNumbers]);
+  }, [stablePageNumbers]);
 
   useEffect(() => {
     saveViewSettings(envConfig, bookKey, 'disableClick', isDisableClick, false, false);
@@ -547,11 +547,11 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
           data-setting-id='settings.control.showPaginationButtons'
         />
         <SettingsSwitchRow
-          label={_('Count Pages by Screen')}
-          description={_('Page numbers follow the screens of this device')}
-          checked={screenPageNumbers}
-          onChange={() => setScreenPageNumbers(!screenPageNumbers)}
-          data-setting-id='settings.control.screenPageNumbers'
+          label={_('Stable Page Numbers')}
+          description={_('Turn off to count pages by the screens of this device')}
+          checked={stablePageNumbers}
+          onChange={() => setStablePageNumbers(!stablePageNumbers)}
+          data-setting-id='settings.control.stablePageNumbers'
         />
       </BoxedList>
 

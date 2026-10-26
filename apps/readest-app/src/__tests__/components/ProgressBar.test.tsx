@@ -190,14 +190,14 @@ describe('ProgressBar — calibrated page pair', () => {
     fraction?: number;
     sections?: { size?: number }[];
     scrolled?: boolean;
-    screenPageNumbers?: boolean;
+    stablePageNumbers?: boolean;
   }) => {
     currentViewSettings = {
       ...baseSettings,
       progressStyle: 'fraction',
       showProgressInfo: true,
       scrolled: opts?.scrolled ?? false,
-      screenPageNumbers: opts?.screenPageNumbers ?? true,
+      stablePageNumbers: opts?.stablePageNumbers ?? false,
     } as ViewSettings;
     currentProgress = { ...makeProgress(2, 5), fraction: opts?.fraction } as BookProgress;
     currentBookData = {
@@ -206,10 +206,10 @@ describe('ProgressBar — calibrated page pair', () => {
     };
   };
 
-  it('keeps the stable byte-grid pair unless screen page numbers are on', () => {
+  it('keeps the stable byte-grid pair by default', () => {
     setupFraction({
       sections: [{ size: 1500 }, { size: 1500 }, { size: 15000 }],
-      screenPageNumbers: DEFAULT_VIEW_CONFIG.screenPageNumbers,
+      stablePageNumbers: DEFAULT_VIEW_CONFIG.stablePageNumbers,
     });
     recordChapterScreens('book-1', 2, 10);
     currentRenderer = { page: 3, pages: 10 };

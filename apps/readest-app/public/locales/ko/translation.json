@@ -2586,6 +2586,6 @@
   "Each highlight is rendered as Markdown with Nunjucks, then sent to Notion as blocks": "각 하이라이트는 Nunjucks로 Markdown으로 렌더링된 뒤 블록으로 Notion에 전송됩니다",
   "Quotes take the highlight color, and > [!NOTE] becomes a callout": "인용문에는 하이라이트 색상이 적용되고 > [!NOTE]는 콜아웃이 됩니다",
   "Variables: {{variables}}": "변수: {{variables}}",
-  "Count Pages by Screen": "화면 단위로 페이지 세기",
-  "Page numbers follow the screens of this device": "페이지 번호가 이 기기의 화면 수를 따릅니다"
+  "Stable Page Numbers": "고정 페이지 번호",
+  "Turn off to count pages by the screens of this device": "끄면 이 기기의 화면 수로 페이지를 셉니다"
 }

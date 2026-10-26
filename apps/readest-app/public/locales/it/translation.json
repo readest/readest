@@ -2722,6 +2722,6 @@
   "Each highlight is rendered as Markdown with Nunjucks, then sent to Notion as blocks": "Ogni evidenziazione viene resa in Markdown con Nunjucks, quindi inviata a Notion come blocchi",
   "Quotes take the highlight color, and > [!NOTE] becomes a callout": "Le citazioni assumono il colore dell'evidenziazione e > [!NOTE] diventa un riquadro",
   "Variables: {{variables}}": "Variabili: {{variables}}",
-  "Count Pages by Screen": "Conta le pagine per schermata",
-  "Page numbers follow the screens of this device": "I numeri di pagina seguono le schermate di questo dispositivo"
+  "Stable Page Numbers": "Numeri di pagina stabili",
+  "Turn off to count pages by the screens of this device": "Disattiva per contare le pagine in base alle schermate di questo dispositivo"
 }

@@ -2790,6 +2790,6 @@
   "Each highlight is rendered as Markdown with Nunjucks, then sent to Notion as blocks": "Кожне виділення відтворюється як Markdown за допомогою Nunjucks, а потім надсилається до Notion у вигляді блоків",
   "Quotes take the highlight color, and > [!NOTE] becomes a callout": "Цитати отримують колір виділення, а > [!NOTE] стає виноскою",
   "Variables: {{variables}}": "Змінні: {{variables}}",
-  "Count Pages by Screen": "Рахувати сторінки за екранами",
-  "Page numbers follow the screens of this device": "Номери сторінок відповідають екранам цього пристрою"
+  "Stable Page Numbers": "Стабільні номери сторінок",
+  "Turn off to count pages by the screens of this device": "Вимкніть, щоб рахувати сторінки за екранами цього пристрою"
 }

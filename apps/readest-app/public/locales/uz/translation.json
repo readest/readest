@@ -2654,6 +2654,6 @@
   "Each highlight is rendered as Markdown with Nunjucks, then sent to Notion as blocks": "Har bir belgilash Nunjucks yordamida Markdown sifatida chiqariladi, so‘ng Notion’ga bloklar ko‘rinishida yuboriladi",
   "Quotes take the highlight color, and > [!NOTE] becomes a callout": "Iqtiboslar belgilash rangini oladi, > [!NOTE] esa izoh blokiga aylanadi",
   "Variables: {{variables}}": "O‘zgaruvchilar: {{variables}}",
-  "Count Pages by Screen": "Sahifalarni ekran bo'yicha sanash",
-  "Page numbers follow the screens of this device": "Sahifa raqamlari ushbu qurilma ekranlariga mos keladi"
+  "Stable Page Numbers": "Barqaror sahifa raqamlari",
+  "Turn off to count pages by the screens of this device": "Sahifalarni ushbu qurilma ekranlari bo'yicha sanash uchun o'chiring"
 }

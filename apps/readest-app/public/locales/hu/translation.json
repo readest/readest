@@ -2654,6 +2654,6 @@
   "Each highlight is rendered as Markdown with Nunjucks, then sent to Notion as blocks": "Minden kiemelés Nunjucks segítségével Markdownként jelenik meg, majd blokkokként kerül a Notionbe",
   "Quotes take the highlight color, and > [!NOTE] becomes a callout": "Az idézetek a kiemelés színét kapják, a > [!NOTE] pedig kiemelt mezővé válik",
   "Variables: {{variables}}": "Változók: {{variables}}",
-  "Count Pages by Screen": "Oldalak számolása képernyőnként",
-  "Page numbers follow the screens of this device": "Az oldalszámok az eszköz képernyőit követik"
+  "Stable Page Numbers": "Állandó oldalszámok",
+  "Turn off to count pages by the screens of this device": "Kapcsolja ki, hogy az oldalakat az eszköz képernyői szerint számolja"
 }

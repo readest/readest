@@ -2586,6 +2586,6 @@
   "Each highlight is rendered as Markdown with Nunjucks, then sent to Notion as blocks": "ไฮไลต์แต่ละรายการจะถูกเรนเดอร์เป็น Markdown ด้วย Nunjucks แล้วส่งไปยัง Notion เป็นบล็อก",
   "Quotes take the highlight color, and > [!NOTE] becomes a callout": "คำอ้างอิงจะใช้สีของไฮไลต์ และ > [!NOTE] จะกลายเป็นกล่องข้อความเน้น",
   "Variables: {{variables}}": "ตัวแปร: {{variables}}",
-  "Count Pages by Screen": "นับหน้าตามหน้าจอ",
-  "Page numbers follow the screens of this device": "เลขหน้าจะเป็นไปตามหน้าจอของอุปกรณ์นี้"
+  "Stable Page Numbers": "เลขหน้าคงที่",
+  "Turn off to count pages by the screens of this device": "ปิดเพื่อนับหน้าตามหน้าจอของอุปกรณ์นี้"
 }

@@ -2586,6 +2586,6 @@
   "Each highlight is rendered as Markdown with Nunjucks, then sent to Notion as blocks": "每則螢光標記會以 Nunjucks 轉為 Markdown，再以區塊形式傳送到 Notion",
   "Quotes take the highlight color, and > [!NOTE] becomes a callout": "引文會套用螢光標記的顏色，> [!NOTE] 會變成標註區塊",
   "Variables: {{variables}}": "變數：{{variables}}",
-  "Count Pages by Screen": "按螢幕計算頁碼",
-  "Page numbers follow the screens of this device": "頁碼依本裝置的實際螢幕數計算"
+  "Stable Page Numbers": "固定頁碼",
+  "Turn off to count pages by the screens of this device": "關閉後依本裝置的實際螢幕數計算頁碼"
 }

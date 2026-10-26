@@ -2654,6 +2654,6 @@
   "Each highlight is rendered as Markdown with Nunjucks, then sent to Notion as blocks": "Varje markering renderas som Markdown med Nunjucks och skickas sedan till Notion som block",
   "Quotes take the highlight color, and > [!NOTE] becomes a callout": "Citat får markeringens färg och > [!NOTE] blir en callout",
   "Variables: {{variables}}": "Variabler: {{variables}}",
-  "Count Pages by Screen": "Räkna sidor per skärm",
-  "Page numbers follow the screens of this device": "Sidnummer följer skärmarna på den här enheten"
+  "Stable Page Numbers": "Stabila sidnummer",
+  "Turn off to count pages by the screens of this device": "Stäng av för att räkna sidor efter skärmarna på den här enheten"
 }

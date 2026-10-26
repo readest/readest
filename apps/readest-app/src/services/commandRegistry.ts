@@ -495,9 +495,18 @@ const controlPanelItems = [
     section: 'Pagination',
   },
   {
-    id: 'settings.control.screenPageNumbers',
-    labelKey: _('Count Pages by Screen'),
-    keywords: ['page', 'number', 'count', 'screen', 'calibrate', 'measured', 'pagination'],
+    id: 'settings.control.stablePageNumbers',
+    labelKey: _('Stable Page Numbers'),
+    keywords: [
+      'stable',
+      'page',
+      'number',
+      'count',
+      'screen',
+      'calibrate',
+      'measured',
+      'pagination',
+    ],
     section: 'Pagination',
   },
   {

@@ -2654,6 +2654,6 @@
   "Each highlight is rendered as Markdown with Nunjucks, then sent to Notion as blocks": "ஒவ்வொரு சிறப்பம்சமும் Nunjucks மூலம் Markdown ஆக உருவாக்கப்பட்டு, பின்னர் தொகுதிகளாக Notion-க்கு அனுப்பப்படும்",
   "Quotes take the highlight color, and > [!NOTE] becomes a callout": "மேற்கோள்கள் சிறப்பம்சத்தின் நிறத்தைப் பெறும், > [!NOTE] ஒரு குறிப்புப் பெட்டியாக மாறும்",
   "Variables: {{variables}}": "மாறிகள்: {{variables}}",
-  "Count Pages by Screen": "திரை வாரியாகப் பக்கங்களை எண்ணு",
-  "Page numbers follow the screens of this device": "பக்க எண்கள் இந்தச் சாதனத்தின் திரைகளைப் பின்பற்றும்"
+  "Stable Page Numbers": "நிலையான பக்க எண்கள்",
+  "Turn off to count pages by the screens of this device": "இந்தச் சாதனத்தின் திரைகளின்படி பக்கங்களை எண்ண அணைக்கவும்"
 }

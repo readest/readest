@@ -2586,6 +2586,6 @@
   "Each highlight is rendered as Markdown with Nunjucks, then sent to Notion as blocks": "Setiap sorotan dirender sebagai Markdown dengan Nunjucks, lalu dikirim ke Notion sebagai blok",
   "Quotes take the highlight color, and > [!NOTE] becomes a callout": "Kutipan mengikuti warna sorotan, dan > [!NOTE] menjadi callout",
   "Variables: {{variables}}": "Variabel: {{variables}}",
-  "Count Pages by Screen": "Hitung halaman per layar",
-  "Page numbers follow the screens of this device": "Nomor halaman mengikuti layar perangkat ini"
+  "Stable Page Numbers": "Nomor halaman tetap",
+  "Turn off to count pages by the screens of this device": "Matikan untuk menghitung halaman berdasarkan layar perangkat ini"
 }

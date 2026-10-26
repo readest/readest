@@ -2722,6 +2722,6 @@
   "Each highlight is rendered as Markdown with Nunjucks, then sent to Notion as blocks": "כל הדגשה מעובדת ל-Markdown באמצעות Nunjucks ולאחר מכן נשלחת ל-Notion כבלוקים",
   "Quotes take the highlight color, and > [!NOTE] becomes a callout": "ציטוטים מקבלים את צבע ההדגשה, ו-‎> [!NOTE]‎ הופך לתיבת הסבר",
   "Variables: {{variables}}": "משתנים: {{variables}}",
-  "Count Pages by Screen": "ספירת עמודים לפי מסך",
-  "Page numbers follow the screens of this device": "מספרי העמודים תואמים למסכים של מכשיר זה"
+  "Stable Page Numbers": "מספרי עמודים קבועים",
+  "Turn off to count pages by the screens of this device": "כבו כדי לספור עמודים לפי המסכים של מכשיר זה"
 }
