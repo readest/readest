@@ -40,6 +40,7 @@ const h = vi.hoisted(() => ({
   hoveredBookKey: 'book-1' as string | null,
   isFixedLayout: false,
   pageRect: null as DOMRect | null,
+  overlay: null as SVGSVGElement | null,
   setHoveredBookKey: vi.fn(),
   settingsDialogOpen: false,
   settingsListeners: new Set<
@@ -70,7 +71,11 @@ const h = vi.hoisted(() => ({
     getContents() {
       const frameElement = h.pageRect && { getBoundingClientRect: () => h.pageRect };
       return [
-        { index: 0, doc: { getSelection: () => h.selection, defaultView: { frameElement } } },
+        {
+          index: 0,
+          doc: { getSelection: () => h.selection, defaultView: { frameElement } },
+          overlayer: h.overlay && { element: h.overlay },
+        },
       ];
     },
     getAttribute: vi.fn(() => null as string | null),
@@ -221,6 +226,7 @@ beforeEach(() => {
   h.viewSettings.pageTurnStyle = 'curl';
   h.isFixedLayout = false;
   h.pageRect = null;
+  h.overlay = null;
 });
 
 afterEach(() => {
@@ -358,6 +364,49 @@ describe('useCapturedTurn scroll-lock gate', () => {
           );
       });
       expect(invalidate).toHaveBeenCalledTimes(1);
+    } finally {
+      unmount();
+      invalidate.mockRestore();
+    }
+  });
+  // Each turn redraws every highlight on the new page unchanged: foliate
+  // removes and re-adds it. Dropping the native pages there made the next
+  // turn capture both sheets again in any book with highlights.
+  test('keeps native book textures when a highlight is redrawn unchanged', async () => {
+    vi.resetModules();
+    const { useCapturedTurn: useFreshCapturedTurn } = await import(
+      '@/app/reader/hooks/useCapturedTurn'
+    );
+    const { NativePageTurn } = await import('@/app/reader/utils/nativePageTurn');
+    h.android = true;
+    h.renderer.getPageTurnKey = () => '1';
+    const svgNs = 'http://www.w3.org/2000/svg';
+    h.overlay = document.createElementNS(svgNs, 'svg');
+    const drawHighlight = (fill: string) => {
+      const rect = document.createElementNS(svgNs, 'rect');
+      rect.setAttribute('fill', fill);
+      h.overlay!.append(rect);
+      return rect;
+    };
+    let highlight = drawHighlight('yellow');
+    const invalidate = vi.spyOn(NativePageTurn.prototype, 'invalidateNativePages');
+    const { unmount } = renderHook(() => useFreshCapturedTurn('book-1', { current: makeView() }));
+    const redraw = (fill: string) =>
+      act(async () => {
+        highlight.remove();
+        for (const listener of h.viewListeners.get('draw-annotation') ?? [])
+          listener(new CustomEvent('draw-annotation'));
+        highlight = drawHighlight(fill);
+      });
+    try {
+      invalidate.mockClear();
+      await redraw('yellow');
+      expect(invalidate).not.toHaveBeenCalled();
+      await redraw('red');
+      expect(invalidate).toHaveBeenCalledTimes(1);
+      // Deleting a highlight emits no event.
+      await act(async () => highlight.remove());
+      expect(invalidate).toHaveBeenCalledTimes(2);
     } finally {
       unmount();
       invalidate.mockRestore();

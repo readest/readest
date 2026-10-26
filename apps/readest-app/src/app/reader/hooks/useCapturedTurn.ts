@@ -631,15 +631,47 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
     schedulePreparedCaptureRef.current = schedulePreparedCapture;
     cancelPreparedCaptureScheduleRef.current = cancelPreparedCaptureSchedule;
 
+    // Each turn redraws every highlight on the new page unchanged, so compare
+    // the overlay markup rather than react to each draw. This also catches a
+    // deleted highlight, which emits no event.
+    const overlayMarkup = new WeakMap<Element, string>();
+    const markupOf = (overlay: Element) =>
+      Array.from(overlay.children, (child) => child.outerHTML)
+        .sort()
+        .join('');
+    const overlayObserver = new MutationObserver((records) => {
+      let changed = false;
+      for (const overlay of new Set(records.map((record) => record.target as Element))) {
+        const markup = markupOf(overlay);
+        if (overlayMarkup.get(overlay) === markup) continue;
+        overlayMarkup.set(overlay, markup);
+        changed = true;
+      }
+      if (!changed) return;
+      invalidatePagePixels();
+      invalidateAndSchedulePreparedCapture();
+    });
+    // An overlay is attached after foliate's create-overlay event, so pick up
+    // new ones on the surface changes below instead.
+    const observeOverlays = () => {
+      for (const { overlayer } of view.renderer.getContents()) {
+        const overlay = (overlayer as { element?: Element } | undefined)?.element;
+        if (!overlay || overlayMarkup.has(overlay)) continue;
+        overlayMarkup.set(overlay, markupOf(overlay));
+        overlayObserver.observe(overlay, { childList: true });
+      }
+    };
+
     // A warm surface represents the pixels of one settled reader-cell state.
     // Coalesce the renderer's noisy lifecycle into one post-paint capture and
     // discard any result whose generation changed while native work ran.
     const handleCapturedSurfaceChange = (event: Event) => {
       if (event.type !== 'relocate') invalidatePagePixels();
       invalidateAndSchedulePreparedCapture();
+      observeOverlays();
     };
+    observeOverlays();
     view.addEventListener('relocate', handleCapturedSurfaceChange);
-    view.addEventListener('draw-annotation', handleCapturedSurfaceChange);
     view.addEventListener('show-annotation', handleCapturedSurfaceChange);
     view.renderer.addEventListener('stabilized', handleCapturedSurfaceChange);
 
@@ -814,7 +846,7 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
       resizeObserver?.disconnect();
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       view.removeEventListener('relocate', handleCapturedSurfaceChange);
-      view.removeEventListener('draw-annotation', handleCapturedSurfaceChange);
+      overlayObserver.disconnect();
       view.removeEventListener('show-annotation', handleCapturedSurfaceChange);
       view.renderer.removeEventListener('stabilized', handleCapturedSurfaceChange);
       view.prev = originals.prev;
