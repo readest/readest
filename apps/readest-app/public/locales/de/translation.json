@@ -2653,5 +2653,7 @@
   "Note Template": "Notizvorlage",
   "Each highlight is rendered as Markdown with Nunjucks, then sent to Notion as blocks": "Jede Markierung wird mit Nunjucks als Markdown gerendert und dann als Blöcke an Notion gesendet",
   "Quotes take the highlight color, and > [!NOTE] becomes a callout": "Zitate übernehmen die Markierungsfarbe, und > [!NOTE] wird zu einem Callout",
-  "Variables: {{variables}}": "Variablen: {{variables}}"
+  "Variables: {{variables}}": "Variablen: {{variables}}",
+  "Count Pages by Screen": "Seiten nach Bildschirm zählen",
+  "Page numbers follow the screens of this device": "Seitenzahlen folgen den Bildschirmseiten dieses Geräts"
 }

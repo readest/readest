@@ -2585,5 +2585,7 @@
   "Note Template": "Templat Nota",
   "Each highlight is rendered as Markdown with Nunjucks, then sent to Notion as blocks": "Setiap serlahan dipaparkan sebagai Markdown dengan Nunjucks, kemudian dihantar ke Notion sebagai blok",
   "Quotes take the highlight color, and > [!NOTE] becomes a callout": "Petikan mengambil warna serlahan, dan > [!NOTE] menjadi kotak serlahan",
-  "Variables: {{variables}}": "Pemboleh ubah: {{variables}}"
+  "Variables: {{variables}}": "Pemboleh ubah: {{variables}}",
+  "Count Pages by Screen": "Kira halaman mengikut skrin",
+  "Page numbers follow the screens of this device": "Nombor halaman mengikut skrin peranti ini"
 }

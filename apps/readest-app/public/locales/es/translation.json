@@ -2721,5 +2721,7 @@
   "Note Template": "Plantilla de nota",
   "Each highlight is rendered as Markdown with Nunjucks, then sent to Notion as blocks": "Cada resaltado se genera como Markdown con Nunjucks y luego se envía a Notion como bloques",
   "Quotes take the highlight color, and > [!NOTE] becomes a callout": "Las citas toman el color del resaltado y > [!NOTE] se convierte en un destacado",
-  "Variables: {{variables}}": "Variables: {{variables}}"
+  "Variables: {{variables}}": "Variables: {{variables}}",
+  "Count Pages by Screen": "Contar páginas por pantalla",
+  "Page numbers follow the screens of this device": "Los números de página siguen las pantallas de este dispositivo"
 }

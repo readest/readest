@@ -2653,5 +2653,7 @@
   "Note Template": "შენიშვნის შაბლონი",
   "Each highlight is rendered as Markdown with Nunjucks, then sent to Notion as blocks": "თითოეული მონიშვნა Nunjucks-ით Markdown-ად გამოისახება და შემდეგ Notion-ში ბლოკების სახით იგზავნება",
   "Quotes take the highlight color, and > [!NOTE] becomes a callout": "ციტატები მონიშვნის ფერს იღებს, ხოლო > [!NOTE] ხდება გამოყოფილი ბლოკი",
-  "Variables: {{variables}}": "ცვლადები: {{variables}}"
+  "Variables: {{variables}}": "ცვლადები: {{variables}}",
+  "Count Pages by Screen": "გვერდების დათვლა ეკრანების მიხედვით",
+  "Page numbers follow the screens of this device": "გვერდის ნომრები ამ მოწყობილობის ეკრანებს მიჰყვება"
 }

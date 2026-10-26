@@ -190,12 +190,14 @@ describe('ProgressBar — calibrated page pair', () => {
     fraction?: number;
     sections?: { size?: number }[];
     scrolled?: boolean;
+    screenPageNumbers?: boolean;
   }) => {
     currentViewSettings = {
       ...baseSettings,
       progressStyle: 'fraction',
       showProgressInfo: true,
       scrolled: opts?.scrolled ?? false,
+      screenPageNumbers: opts?.screenPageNumbers ?? true,
     } as ViewSettings;
     currentProgress = { ...makeProgress(2, 5), fraction: opts?.fraction } as BookProgress;
     currentBookData = {
@@ -203,6 +205,19 @@ describe('ProgressBar — calibrated page pair', () => {
       bookDoc: opts?.sections ? { sections: opts.sections } : { metadata: {} },
     };
   };
+
+  it('keeps the stable byte-grid pair unless screen page numbers are on', () => {
+    setupFraction({
+      sections: [{ size: 1500 }, { size: 1500 }, { size: 15000 }],
+      screenPageNumbers: DEFAULT_VIEW_CONFIG.screenPageNumbers,
+    });
+    recordChapterScreens('book-1', 2, 10);
+    currentRenderer = { page: 3, pages: 10 };
+
+    const { container } = renderProgressBar();
+
+    expect(container.querySelector('.progress-info-label')?.textContent).toBe('3 / 5');
+  });
 
   it('advances exactly one page per turn once chapters are measured', () => {
     // Chapter 2 measures 10 spreads over 15000 bytes -> 1500 bytes/screen, so

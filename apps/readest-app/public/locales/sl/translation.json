@@ -2789,5 +2789,7 @@
   "Note Template": "Predloga opombe",
   "Each highlight is rendered as Markdown with Nunjucks, then sent to Notion as blocks": "Vsak poudarek se z Nunjucks upodobi kot Markdown in nato pošlje v Notion kot bloki",
   "Quotes take the highlight color, and > [!NOTE] becomes a callout": "Citati prevzamejo barvo poudarka, > [!NOTE] pa postane opomba",
-  "Variables: {{variables}}": "Spremenljivke: {{variables}}"
+  "Variables: {{variables}}": "Spremenljivke: {{variables}}",
+  "Count Pages by Screen": "Štej strani po zaslonih",
+  "Page numbers follow the screens of this device": "Številke strani sledijo zaslonom te naprave"
 }

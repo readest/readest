@@ -2789,5 +2789,7 @@
   "Note Template": "Шаблон заметки",
   "Each highlight is rendered as Markdown with Nunjucks, then sent to Notion as blocks": "Каждое выделение отображается как Markdown с помощью Nunjucks, а затем отправляется в Notion в виде блоков",
   "Quotes take the highlight color, and > [!NOTE] becomes a callout": "Цитаты получают цвет выделения, а > [!NOTE] становится выноской",
-  "Variables: {{variables}}": "Переменные: {{variables}}"
+  "Variables: {{variables}}": "Переменные: {{variables}}",
+  "Count Pages by Screen": "Считать страницы по экранам",
+  "Page numbers follow the screens of this device": "Номера страниц соответствуют экранам этого устройства"
 }

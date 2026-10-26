@@ -48,6 +48,9 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
   const [showPaginationButtons, setShowPaginationButtons] = useState(
     viewSettings.showPaginationButtons,
   );
+  const [screenPageNumbers, setScreenPageNumbers] = useState(
+    viewSettings.screenPageNumbers ?? false,
+  );
   const [isDisableClick, setIsDisableClick] = useState(viewSettings.disableClick);
   const [isDisableSwipe, setIsDisableSwipe] = useState(viewSettings.disableSwipe);
   const [disablePullDownToBookmark, setDisablePullDownToBookmark] = useState(
@@ -137,6 +140,7 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
       scrollingOverlap: setScrollingOverlap,
       hideScrollbar: setHideScrollbar,
       showPaginationButtons: setShowPaginationButtons,
+      screenPageNumbers: setScreenPageNumbers,
       disableClick: setIsDisableClick,
       disableSwipe: setIsDisableSwipe,
       disablePullDownToBookmark: setDisablePullDownToBookmark,
@@ -228,6 +232,12 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showPaginationButtons]);
+
+  useEffect(() => {
+    if (screenPageNumbers === (viewSettings.screenPageNumbers ?? false)) return;
+    saveViewSettings(envConfig, bookKey, 'screenPageNumbers', screenPageNumbers, false, false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [screenPageNumbers]);
 
   useEffect(() => {
     saveViewSettings(envConfig, bookKey, 'disableClick', isDisableClick, false, false);
@@ -535,6 +545,13 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
           checked={showPaginationButtons}
           onChange={() => setShowPaginationButtons(!showPaginationButtons)}
           data-setting-id='settings.control.showPaginationButtons'
+        />
+        <SettingsSwitchRow
+          label={_('Count Pages by Screen')}
+          description={_('Page numbers follow the screens of this device')}
+          checked={screenPageNumbers}
+          onChange={() => setScreenPageNumbers(!screenPageNumbers)}
+          data-setting-id='settings.control.screenPageNumbers'
         />
       </BoxedList>
 

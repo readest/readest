@@ -495,6 +495,12 @@ const controlPanelItems = [
     section: 'Pagination',
   },
   {
+    id: 'settings.control.screenPageNumbers',
+    labelKey: _('Count Pages by Screen'),
+    keywords: ['page', 'number', 'count', 'screen', 'calibrate', 'measured', 'pagination'],
+    section: 'Pagination',
+  },
+  {
     id: 'settings.control.disablePullDownToBookmark',
     labelKey: _('Pull-Down to Bookmark'),
     keywords: ['pull', 'down', 'bookmark', 'gesture'],

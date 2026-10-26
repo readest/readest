@@ -2585,5 +2585,7 @@
   "Note Template": "笔记模板",
   "Each highlight is rendered as Markdown with Nunjucks, then sent to Notion as blocks": "每条高亮会用 Nunjucks 渲染为 Markdown，再以块的形式发送到 Notion",
   "Quotes take the highlight color, and > [!NOTE] becomes a callout": "引用会使用高亮颜色，> [!NOTE] 会变成标注块",
-  "Variables: {{variables}}": "变量：{{variables}}"
+  "Variables: {{variables}}": "变量：{{variables}}",
+  "Count Pages by Screen": "按屏幕计算页码",
+  "Page numbers follow the screens of this device": "页码按本设备的实际屏数计算"
 }

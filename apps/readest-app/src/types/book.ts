@@ -378,6 +378,7 @@ export interface ViewConfig {
   showCurrentBatteryStatus: boolean;
   showBatteryPercentage: boolean;
   showPaginationButtons: boolean;
+  screenPageNumbers: boolean;
   progressStyle: 'percentage' | 'fraction' | 'reference';
   referencePageCount: number;
 
