@@ -4,13 +4,20 @@ import { useReaderStore } from '@/store/readerStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useBookDataStore } from '@/store/bookDataStore';
 import type { PageInfo } from '@/types/book';
-import { formatProgress, formatProgressPercent, getReferencePageInfo } from '@/utils/progress';
+import {
+  collectLabels,
+  formatProgress,
+  formatProgressPercent,
+  getReferencePageInfo,
+} from '@/utils/progress';
 import { clampPage, findReferencePageHref, fractionForPage, parsePageInput } from './pageJump';
 
 interface PageJumpInputProps {
   bookKey: string;
   /** Always show '{current} / {total}' regardless of the progress style. */
   showFraction?: boolean;
+  /** The progress slider's position while it is dragged, shown until the reader relocates. */
+  previewFraction?: number | null;
   className?: string;
 }
 
@@ -22,7 +29,12 @@ interface PageJumpInputProps {
  * invisible sizer span reserves the label's width so toggling edit mode never
  * shifts the surrounding layout.
  */
-const PageJumpInput: React.FC<PageJumpInputProps> = ({ bookKey, showFraction, className }) => {
+const PageJumpInput: React.FC<PageJumpInputProps> = ({
+  bookKey,
+  showFraction,
+  previewFraction,
+  className,
+}) => {
   const _ = useTranslation();
   const { hoveredBookKey, getView, getProgress, getViewSettings } = useReaderStore();
   const { getBookData } = useBookDataStore();
@@ -76,30 +88,60 @@ const PageJumpInput: React.FC<PageJumpInputProps> = ({ bookKey, showFraction, cl
   const pageInfo = liveValid ? livePageInfo : lastPageInfo;
   if (!pageInfo) return null;
 
+  const pageList = bookData?.bookDoc?.pageList;
   const progressFraction = (pageInfo.current + 1) / pageInfo.total;
   const referenceInfo =
     progressStyle === 'reference'
       ? getReferencePageInfo({
-          pageList: bookData?.bookDoc?.pageList,
+          pageList,
           pageItem: progress?.pageItem,
           fraction: progressFraction,
           referencePageCount: viewSettings?.referencePageCount,
         })
       : null;
+
+  // While the slider is dragged, label the page under it: the same page the
+  // slider shows for a location, (current + 1) / total.
+  const preview = previewFraction ?? null;
+  const shownPageInfo =
+    preview === null
+      ? pageInfo
+      : {
+          ...pageInfo,
+          current: Math.min(
+            pageInfo.total - 1,
+            Math.max(0, Math.ceil(preview * pageInfo.total) - 1),
+          ),
+        };
+  // A PDF page list has one entry per physical page, so the page under the
+  // slider has a label of its own; other page lists only get an estimate.
+  const previewPageItem =
+    preview !== null && pageList?.every((item, index) => item.index === index)
+      ? pageList[Math.min(pageList.length, Math.max(1, Math.ceil(preview * pageList.length))) - 1]
+      : undefined;
+  const shownReferenceInfo =
+    preview === null || !referenceInfo
+      ? referenceInfo
+      : getReferencePageInfo({
+          pageList,
+          pageItem: previewPageItem,
+          fraction: preview,
+          referencePageCount: viewSettings?.referencePageCount,
+        });
   const template =
     showFraction || progressStyle === 'fraction' ? '{current} / {total}' : '{percent}%';
-  const displayText = referenceInfo
-    ? `${referenceInfo.current} / ${referenceInfo.total}`
+  const displayText = shownReferenceInfo
+    ? `${shownReferenceInfo.current} / ${shownReferenceInfo.total}`
     : template === '{percent}%'
       ? formatProgressPercent(
-          bookData?.isFixedLayout ? undefined : progress?.fraction,
-          pageInfo.current,
-          pageInfo.total,
+          bookData?.isFixedLayout ? undefined : (preview ?? progress?.fraction),
+          shownPageInfo.current,
+          shownPageInfo.total,
           false,
           'en',
           0,
         )
-      : formatProgress(pageInfo.current, pageInfo.total, template, false, 'en', 0);
+      : formatProgress(shownPageInfo.current, shownPageInfo.total, template, false, 'en', 0);
 
   const total = referenceInfo ? referenceInfo.total : pageInfo.total;
   const currentLabel = referenceInfo ? referenceInfo.current : String(pageInfo.current + 1);
@@ -134,11 +176,24 @@ const PageJumpInput: React.FC<PageJumpInputProps> = ({ bookKey, showFraction, cl
   };
 
   const text = editing ? draft : displayText;
+  // Size the box for the book's widest label (the last page in tabular digits,
+  // or the longest page-list label), so a label that changes while the slider
+  // is dragged, or turns into the draft on focus, never moves the slider under
+  // the cursor (#6646).
+  const widestLabel = referenceInfo
+    ? collectLabels(pageList ?? []).reduce(
+        (widest, label) => (label.length > widest.length ? label : widest),
+        String(total),
+      )
+    : String(total);
+  const widestText =
+    template === '{percent}%' && !referenceInfo ? '100%' : `${widestLabel} / ${total}`;
+  const sizerText = text.length > widestText.length ? text : widestText;
 
   return (
     <div
       className={clsx(
-        'relative flex items-center rounded-md text-nowrap transition-colors',
+        'relative flex items-center rounded-md text-nowrap tabular-nums transition-colors',
         editing
           ? 'eink-bordered bg-base-content/10'
           : 'hover:bg-base-content/10 cursor-pointer bg-transparent',
@@ -148,7 +203,7 @@ const PageJumpInput: React.FC<PageJumpInputProps> = ({ bookKey, showFraction, cl
       {/* Invisible sizer: the box is always as wide as its text, so swapping
           between label and edit modes never shifts the surrounding layout. */}
       <span aria-hidden='true' className='invisible whitespace-pre px-1 py-0.5'>
-        {text}
+        {sizerText}
       </span>
       <input
         ref={inputRef}

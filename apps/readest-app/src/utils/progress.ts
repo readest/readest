@@ -116,7 +116,7 @@ export interface ReferencePageInfo {
   total: number;
 }
 
-const collectLabels = (items: ReferencePageItem[]): string[] =>
+export const collectLabels = (items: ReferencePageItem[]): string[] =>
   items.flatMap((item) => [
     item.label?.trim() ?? '',
     ...(item.subitems?.length ? collectLabels(item.subitems) : []),
