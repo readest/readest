@@ -2655,5 +2655,5 @@
   "Quotes take the highlight color, and > [!NOTE] becomes a callout": "উদ্ধৃতিগুলো হাইলাইটের রং পায়, এবং > [!NOTE] একটি কলআউট হয়ে যায়",
   "Variables: {{variables}}": "ভেরিয়েবল: {{variables}}",
   "Stable Page Numbers": "স্থির পৃষ্ঠা নম্বর",
-  "Turn off to count pages by the screens of this device": "এই ডিভাইসের স্ক্রিন অনুযায়ী পৃষ্ঠা গুনতে বন্ধ করুন"
+  "Turn off to count pages by the screens of this device": "এই ডিভাইসের স্ক্রিন অনুযায়ী পৃষ্ঠা গোনার জন্য এটি বন্ধ করুন"
 }
