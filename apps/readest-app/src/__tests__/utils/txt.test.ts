@@ -400,6 +400,13 @@ describe('extractChaptersFromSegment — Chinese (zh)', () => {
     expect(volume!.isVolume).toBe(true);
   });
 
+  it.each(['卷', '冊'])('should mark a spaced 第一 %s heading as a volume', (suffix) => {
+    const chapters = extractChapters(`前文内容\n第一 ${suffix} 标题\n正文内容`, 'zh');
+    const volume = chapters.find((c) => c.title.includes(`第一 ${suffix}`));
+    expect(volume).toBeDefined();
+    expect(volume!.isVolume).toBe(true);
+  });
+
   it('should include title text in captured heading', () => {
     const chapters = extractChapters('前文内容\n第一章 天地初开\n正文内容', 'zh');
     const chapter = chapters.find((c) => c.title.includes('第一章'));

@@ -175,6 +175,18 @@ ${[1837, 252, 150, 99, 132, 128].map((n, i) => `<li><a href="/n/other${i}/c${i}"
     expect(toc.chapters.map((c) => c.title)).toEqual(numerals.map((n) => `第${n}${unit}`));
   });
 
+  it('reverses a newest-first list numbered in full-width digits (第１２頁)', () => {
+    const titles = ['第１頁', '第２頁', '第３頁', '第９頁', '第１０頁', '第１２頁'];
+    const page = `<!DOCTYPE html><html><head><title>某書</title></head><body>
+<ul>${titles
+      .map((t, i) => `<li><a href="/n/book/s${'abcdef'[i]}9">${t}</a></li>`)
+      .reverse()
+      .join('\n')}</ul>
+</body></html>`;
+    const toc = parseChapterList(page, 'https://www.example.com/n/book/')!;
+    expect(toc.chapters.map((c) => c.title)).toEqual(titles);
+  });
+
   it('reads larger Chinese numerals in order (九十九, 一百, 一百零一, 一千, 一萬)', () => {
     const titles = [
       '第九十九章',
