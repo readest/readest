@@ -21,13 +21,19 @@ interface HandwritingOptionsProps {
   onSelectWidth: (width: number) => void;
 }
 
-const MIN_DOT = 3;
+const MIN_DOT = 2;
 const MAX_DOT = 7;
 /** Width swatch radius, scaled so the row reads as increasing weight. */
 const dotFor = (width: number, widths: readonly number[]) => {
   const min = widths[0]!;
   const max = widths[widths.length - 1]!;
-  return MIN_DOT + ((width - min) / (max - min)) * (MAX_DOT - MIN_DOT);
+  const index = widths.indexOf(width);
+  const minDot = widths[0] !== undefined && widths[0] >= 0.02 ? 3 : MIN_DOT;
+  if (index !== -1 && widths.length > 1) {
+    return minDot + (index / (widths.length - 1)) * (MAX_DOT - minDot);
+  }
+  if (max === min) return minDot;
+  return minDot + Math.max(0, Math.min(1, (width - min) / (max - min))) * (MAX_DOT - minDot);
 };
 
 /** The active tool's colors and widths. B&W e-ink has no colors to offer. */

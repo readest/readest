@@ -3,7 +3,11 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { HandwritingDock } from '@/app/reader/components/handwriting/HandwritingBars';
 import QuickActionMenu from '@/app/reader/components/annotator/QuickActionMenu';
-import { HANDWRITING_COLORS, MARKER_COLORS } from '@/services/handwriting/model';
+import {
+  HANDWRITING_COLORS,
+  HANDWRITING_WIDTHS,
+  MARKER_COLORS,
+} from '@/services/handwriting/model';
 
 const h = vi.hoisted(() => ({ scrolled: false, dispatch: vi.fn() }));
 
@@ -134,7 +138,7 @@ describe('drawing bars', () => {
     expect(screen.queryAllByRole('button', { name: 'Pen Size' })).toHaveLength(0);
     fireEvent.click(screen.getByRole('button', { name: 'Pen' }));
     const sizes = screen.getAllByRole('button', { name: 'Pen Size' });
-    expect(sizes).toHaveLength(4);
+    expect(sizes).toHaveLength(HANDWRITING_WIDTHS.length);
     fireEvent.click(sizes[3]!);
     expect(props.onSelectWidth).toHaveBeenCalled();
     expect(screen.queryAllByRole('button', { name: 'Pen Size' })).toHaveLength(0);

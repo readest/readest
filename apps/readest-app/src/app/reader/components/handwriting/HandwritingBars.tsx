@@ -81,7 +81,7 @@ export const HandwritingDock: React.FC<HandwritingDockProps> = ({
       style={{ paddingBottom: bottomInset }}
     >
       {optionsOpen && (
-        <div className='eink-bordered bg-base-100 border-base-300/50 not-eink:shadow-md absolute bottom-full start-3 mb-2 rounded-2xl border px-3 py-2'>
+        <div className='eink-bordered bg-base-100 border-base-300/50 not-eink:shadow-md absolute bottom-full start-3 mb-2 max-w-[calc(100vw-1.5rem)] overflow-x-auto rounded-2xl border px-3 py-2'>
           <HandwritingOptions
             tool={tool}
             color={penColor}

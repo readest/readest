@@ -22,7 +22,14 @@ export const HANDWRITING_COLORS = [
  * Pen widths as a fraction of page width. The stored value is normalized, so
  * the same setting reads the same relative thickness on any page size.
  */
-export const HANDWRITING_WIDTHS = [0.004, DEFAULT_HANDWRITING_WIDTH, 0.01, 0.016] as const;
+export const HANDWRITING_WIDTHS = [
+  0.001,
+  0.002,
+  0.004,
+  DEFAULT_HANDWRITING_WIDTH,
+  0.01,
+  0.016,
+] as const;
 
 /**
  * A pen draws opaque ink that follows pressure; a marker draws a broad,
