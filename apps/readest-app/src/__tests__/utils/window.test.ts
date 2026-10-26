@@ -15,7 +15,7 @@ vi.mock('@tauri-apps/api/core', () => ({
 }));
 
 vi.mock('@tauri-apps/plugin-process', () => ({
-  exit: vi.fn(),
+  exit: vi.fn().mockResolvedValue(undefined),
 }));
 
 vi.mock('@tauri-apps/plugin-os', () => ({
@@ -28,6 +28,7 @@ vi.mock('@/utils/event', () => ({
 }));
 
 import { getCurrentWindow } from '@tauri-apps/api/window';
+import { exit } from '@tauri-apps/plugin-process';
 import { invoke } from '@tauri-apps/api/core';
 import { type as osType, version as osVersion } from '@tauri-apps/plugin-os';
 import { useTrafficLightStore } from '@/store/trafficLightStore';
@@ -83,9 +84,10 @@ describe('tauriHandleOnCloseWindow', () => {
 
     expect(callback).not.toHaveBeenCalled();
     expect(win.destroy).not.toHaveBeenCalled();
+    expect(exit).not.toHaveBeenCalled();
   });
 
-  test('on Windows, destroys the main window', async () => {
+  test('on Windows, destroys the main window and exits the process', async () => {
     vi.mocked(osType).mockReturnValue('windows');
     const { win, trigger } = makeWindow('main');
     vi.mocked(getCurrentWindow).mockReturnValue(
@@ -96,10 +98,12 @@ describe('tauriHandleOnCloseWindow', () => {
     await tauriHandleOnCloseWindow(callback);
     await trigger();
 
+    expect(callback).toHaveBeenCalled();
     expect(win.destroy).toHaveBeenCalled();
+    expect(exit).toHaveBeenCalledWith(0);
   });
 
-  test('on Linux, destroys the main window', async () => {
+  test('on Linux, destroys the main window and exits the process', async () => {
     vi.mocked(osType).mockReturnValue('linux');
     const { win, trigger } = makeWindow('main');
     vi.mocked(getCurrentWindow).mockReturnValue(
@@ -110,7 +114,9 @@ describe('tauriHandleOnCloseWindow', () => {
     await tauriHandleOnCloseWindow(callback);
     await trigger();
 
+    expect(callback).toHaveBeenCalled();
     expect(win.destroy).toHaveBeenCalled();
+    expect(exit).toHaveBeenCalledWith(0);
   });
 
   test('on macOS, dedicated reader windows still destroy after 300ms', async () => {
@@ -122,11 +128,12 @@ describe('tauriHandleOnCloseWindow', () => {
 
     const callback = vi.fn();
     await tauriHandleOnCloseWindow(callback);
-    await trigger();
-
+    const pending = trigger();
     expect(win.destroy).not.toHaveBeenCalled();
-    vi.advanceTimersByTime(300);
+    await vi.advanceTimersByTimeAsync(300);
+    await pending;
     expect(win.destroy).toHaveBeenCalled();
+    expect(exit).not.toHaveBeenCalled();
   });
 });
 

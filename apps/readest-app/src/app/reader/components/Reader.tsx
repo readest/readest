@@ -32,6 +32,7 @@ import { Toast } from '@/components/Toast';
 import { getLocale } from '@/utils/misc';
 import { initDayjs } from '@/utils/time';
 import ReaderContent from './ReaderContent';
+import { useAgentBridgeHost } from '@/services/agentBridge/host';
 
 /*
 Z-Index Layering Guide:
@@ -56,6 +57,7 @@ Z-Index Layering Guide:
 
 const Reader: React.FC<{ ids?: string }> = ({ ids }) => {
   const router = useRouter();
+  useAgentBridgeHost();
   const { appService } = useEnv();
   const { settings } = useSettingsStore();
   const { libraryLoaded } = useLibrary();

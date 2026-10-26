@@ -125,6 +125,16 @@ export const tauriHandleClose = async () => {
   getCurrentWindow().close();
 };
 
+/** Cap for book/settings cleanup before we tear the window down anyway. */
+const CLOSE_CLEANUP_TIMEOUT_MS = 5000;
+/** Cap for `destroy()` so a hung WebView2 teardown cannot block forever. */
+const CLOSE_DESTROY_TIMEOUT_MS = 2000;
+/** Last-resort process exit if main-window close still has not finished. */
+const CLOSE_FORCE_EXIT_MS = 8000;
+
+const withTimeout = <T,>(promise: Promise<T>, ms: number): Promise<T | void> =>
+  Promise.race([promise, new Promise<void>((resolve) => setTimeout(resolve, ms))]);
+
 export const tauriHandleOnCloseWindow = async (callback: () => void) => {
   const currentWindow = getCurrentWindow();
   return await currentWindow.onCloseRequested(async (event) => {
@@ -133,15 +143,54 @@ export const tauriHandleOnCloseWindow = async (callback: () => void) => {
     // to hide the window (close-to-hide), keeping the app in the dock. Skip
     // the in-app cleanup — the user is just minimizing the window and
     // expects the active book to still be there when the window reopens.
-    if (currentWindow.label === 'main' && (await osType()) === 'macos') {
+    const platform = await osType();
+    if (currentWindow.label === 'main' && platform === 'macos') {
       return;
     }
-    await callback();
-    if (currentWindow.label.startsWith('reader')) {
-      await emitTo('main', 'close-reader-window', { label: currentWindow.label });
-      setTimeout(() => currentWindow.destroy(), 300);
-    } else if (currentWindow.label === 'main') {
-      await currentWindow.destroy();
+
+    // Closing main on Windows/Linux must quit the process. preventDefault +
+    // async destroy can leave an empty WebView2 shell if cleanup hangs or
+    // destroy only tears down the webview. Schedule a hard exit as a
+    // backstop; clear it once teardown finishes.
+    const shouldQuitApp = currentWindow.label === 'main' && platform !== 'macos';
+    let forceExitTimer: ReturnType<typeof setTimeout> | undefined;
+    if (shouldQuitApp) {
+      forceExitTimer = setTimeout(() => {
+        void exit(0);
+      }, CLOSE_FORCE_EXIT_MS);
+    }
+
+    try {
+      try {
+        await withTimeout(Promise.resolve().then(() => callback()), CLOSE_CLEANUP_TIMEOUT_MS);
+      } catch (error) {
+        console.error('Close cleanup failed:', error);
+      }
+
+      if (currentWindow.label.startsWith('reader')) {
+        try {
+          await emitTo('main', 'close-reader-window', { label: currentWindow.label });
+        } catch (error) {
+          console.error('Failed to notify main of reader close:', error);
+        }
+        // Brief yield so the main window can react, then await destroy
+        // instead of a fire-and-forget timer that can miss teardown.
+        await new Promise<void>((resolve) => setTimeout(resolve, 300));
+        await withTimeout(currentWindow.destroy(), CLOSE_DESTROY_TIMEOUT_MS);
+      } else if (currentWindow.label === 'main') {
+        try {
+          await withTimeout(currentWindow.destroy(), CLOSE_DESTROY_TIMEOUT_MS);
+        } catch (error) {
+          console.error('Window destroy failed:', error);
+        }
+        if (shouldQuitApp) {
+          await exit(0);
+        }
+      }
+    } finally {
+      if (forceExitTimer !== undefined) {
+        clearTimeout(forceExitTimer);
+      }
     }
   });
 };

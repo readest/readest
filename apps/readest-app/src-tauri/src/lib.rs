@@ -22,6 +22,8 @@ use tauri_plugin_fs::FsExt;
 
 #[cfg(desktop)]
 use tauri::{Listener, Url};
+#[cfg(desktop)]
+mod agent_bridge;
 mod backup_zip;
 #[cfg(target_os = "macos")]
 mod browser_cookies_macos;
@@ -70,7 +72,7 @@ use tauri_plugin_opener::OpenerExt;
 use transfer_file::{download_file, upload_file};
 
 #[cfg(any(desktop, target_os = "ios"))]
-fn allow_file_in_scopes<R: tauri::Runtime>(app: &AppHandle<R>, files: Vec<PathBuf>) {
+pub(crate) fn allow_file_in_scopes<R: tauri::Runtime>(app: &AppHandle<R>, files: Vec<PathBuf>) {
     let fs_scope = app.fs_scope();
     let asset_protocol_scope = app.asset_protocol_scope();
     for file in &files {
@@ -87,7 +89,7 @@ fn allow_file_in_scopes<R: tauri::Runtime>(app: &AppHandle<R>, files: Vec<PathBu
     }
 }
 
-fn allow_dir_in_scopes<R: tauri::Runtime>(app: &AppHandle<R>, dir: &PathBuf) {
+pub(crate) fn allow_dir_in_scopes<R: tauri::Runtime>(app: &AppHandle<R>, dir: &PathBuf) {
     let fs_scope = app.fs_scope();
     let asset_protocol_scope = app.asset_protocol_scope();
     if let Err(e) = fs_scope.allow_directory(dir, true) {
@@ -857,6 +859,9 @@ pub fn run() {
             #[cfg(desktop)]
             {
                 app.handle().plugin(tauri_plugin_cli::init())?;
+                // Loopback agent bridge for external clients (readness-cli). Desktop only,
+                // same process lifetime as the single-instance plugin above.
+                agent_bridge::start(app.handle().clone());
             }
 
             // Check for e-ink device on Android before building the window
@@ -1065,6 +1070,43 @@ pub fn run() {
                                 let _ = theme_window_for_listen.show();
                                 let _ = theme_window_for_listen.set_focus();
                             }
+                        });
+                    }
+
+                    // Safety net for the JS close path: onCloseRequested always
+                    // preventDefault()s then async-destroys. If that stalls on
+                    // Windows (blank WebView2 shell still mapped), force-quit
+                    // once the grace period elapses. Successful teardown exits
+                    // earlier and this timer becomes a no-op.
+                    if let Some(main_window) = app.get_webview_window("main") {
+                        main_window.on_window_event(move |event| match event {
+                            tauri::WindowEvent::CloseRequested { .. } => {
+                                std::thread::spawn(|| {
+                                    std::thread::sleep(std::time::Duration::from_secs(3));
+                                    // Always exit: a successful teardown already
+                                    // ended the process (this thread dies with it).
+                                    // Use process::exit rather than AppHandle::exit —
+                                    // the latter posts to the event loop, which may
+                                    // already be wedged when a blank WebView2 shell
+                                    // is left behind after CloseRequested.
+                                    log::warn!(
+                                        "main window close grace period elapsed; forcing process exit"
+                                    );
+                                    std::process::exit(0);
+                                });
+                            }
+                            // If the window is destroyed but the process lingers
+                            // (blank shell / WebView2 race), end the process.
+                            tauri::WindowEvent::Destroyed => {
+                                std::thread::spawn(|| {
+                                    std::thread::sleep(std::time::Duration::from_millis(500));
+                                    log::warn!(
+                                        "main window destroyed; ensuring process exit"
+                                    );
+                                    std::process::exit(0);
+                                });
+                            }
+                            _ => {}
                         });
                     }
                 }

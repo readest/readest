@@ -7,6 +7,10 @@ license = ""
 repository = ""
 edition = "2021"
 rust-version = "1.90"
+# Agent clients talk to agent_bridge over loopback HTTP.
+# The console client is the Node/TS package readness-cli
+# (packages/readness-cli), not a Rust [[bin]].
+default-run = "Readest"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
