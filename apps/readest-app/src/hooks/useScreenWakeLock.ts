@@ -77,6 +77,11 @@ export const useScreenWakeLock = (lock: boolean, hasWindow?: boolean, isIOSApp =
       }
     };
 
+    const handlePageFocus = () => {
+      clearTimeout(blurTimer);
+      requestWakeLock();
+    };
+
     if (lock) {
       requestWakeLock();
     } else if (wakeLockRef.current) {
@@ -106,6 +111,8 @@ export const useScreenWakeLock = (lock: boolean, hasWindow?: boolean, isIOSApp =
           console.info('Failed to register window focus listener:', error);
           return () => {};
         });
+      // The page may get focus only after that check released the lock.
+      window.addEventListener('focus', handlePageFocus);
     }
 
     return () => {
@@ -115,6 +122,7 @@ export const useScreenWakeLock = (lock: boolean, hasWindow?: boolean, isIOSApp =
         document.removeEventListener('visibilitychange', handleVisibilityChange);
       }
       clearTimeout(blurTimer);
+      window.removeEventListener('focus', handlePageFocus);
       void unlistenOnFocusChanged?.then((unlisten) => unlisten());
     };
   }, [lock, hasWindow, isIOSApp]);

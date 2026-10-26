@@ -91,6 +91,21 @@ describe('useScreenWakeLock on mobile', () => {
     expect(mocks.release).not.toHaveBeenCalled();
   });
 
+  it('reacquires the wake lock when the page gets focus after a released blur', async () => {
+    vi.spyOn(document, 'hasFocus').mockReturnValue(false);
+    renderHook(() => useScreenWakeLock(true, true));
+    await waitFor(() => expect(mocks.request).toHaveBeenCalledOnce());
+
+    const handleFocusChanged = mocks.onFocusChanged.mock.calls[0]![0] as (event: {
+      payload: boolean;
+    }) => void;
+    handleFocusChanged({ payload: false });
+    await waitFor(() => expect(mocks.release).toHaveBeenCalledOnce());
+
+    window.dispatchEvent(new Event('focus'));
+    await waitFor(() => expect(mocks.request).toHaveBeenCalledTimes(2));
+  });
+
   it('releases and reacquires the wake lock as document visibility changes', async () => {
     let hidden = false;
     vi.spyOn(document, 'hidden', 'get').mockImplementation(() => hidden);
