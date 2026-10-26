@@ -15,12 +15,12 @@ const h = vi.hoisted(() => ({
       state: {
         hoveredBookKey: string | null;
         bottomBarTab: string;
-        viewStates: Record<string, { inited: boolean; ttsEnabled: boolean }>;
+        viewStates: Record<string, { inited: boolean; ttsEnabled: boolean; syncing?: boolean }>;
       },
       previous: {
         hoveredBookKey: string | null;
         bottomBarTab: string;
-        viewStates: Record<string, { inited: boolean; ttsEnabled: boolean }>;
+        viewStates: Record<string, { inited: boolean; ttsEnabled: boolean; syncing?: boolean }>;
       },
     ) => void
   >(),
@@ -407,6 +407,37 @@ describe('useCapturedTurn scroll-lock gate', () => {
       // Deleting a highlight emits no event.
       await act(async () => highlight.remove());
       expect(invalidate).toHaveBeenCalledTimes(2);
+    } finally {
+      unmount();
+      invalidate.mockRestore();
+    }
+  });
+  // Progress sync flips `syncing` around each turn. It only spins the View
+  // menu's icon, so dropping the native pages there aborted turns in flight.
+  test('keeps native book textures when progress sync starts', async () => {
+    vi.resetModules();
+    const { useCapturedTurn: useFreshCapturedTurn } = await import(
+      '@/app/reader/hooks/useCapturedTurn'
+    );
+    const { NativePageTurn } = await import('@/app/reader/utils/nativePageTurn');
+    h.android = true;
+    h.renderer.getPageTurnKey = () => '1';
+    const invalidate = vi.spyOn(NativePageTurn.prototype, 'invalidateNativePages');
+    const { unmount } = renderHook(() => useFreshCapturedTurn('book-1', { current: makeView() }));
+    try {
+      const state = { inited: true, ttsEnabled: false, syncing: false };
+      act(() => {
+        for (const listener of h.readerListeners)
+          listener(
+            {
+              hoveredBookKey: null,
+              bottomBarTab: '',
+              viewStates: { 'book-1': { ...state, syncing: true } },
+            },
+            { hoveredBookKey: null, bottomBarTab: '', viewStates: { 'book-1': state } },
+          );
+      });
+      expect(invalidate).not.toHaveBeenCalled();
     } finally {
       unmount();
       invalidate.mockRestore();
