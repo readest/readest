@@ -305,3 +305,63 @@ describe('HandwritingService stored precision', () => {
     ]);
   });
 });
+
+describe('HandwritingService pen width on a wide page (#7094)', () => {
+  const draw = (service: HandwritingService) =>
+    (service as unknown as { onBatch: (p: InkPoint[], k: string, e: boolean) => void }).onBatch(
+      [
+        [0.1, 0.5],
+        [0.4, 0.5],
+      ],
+      'end',
+      false,
+    );
+  const desktop = { left: 0, top: 0, width: 1600, height: 900 };
+
+  it('draws the finest pen as fine on a desktop-wide page as on a small tablet', () => {
+    const editor = new HandwritingEditor();
+    const service = new HandwritingService(editor, 'sec:1', desktop, { widthFraction: 0.004 });
+    draw(service);
+    const [stroke] = editor.strokes('sec:1');
+    // 0.004 of a 600px page, not of the 1600px desktop page (6.4px).
+    expect(stroke!.width * desktop.width).toBeCloseTo(2.4);
+  });
+
+  it('shows the stroke being drawn at the width it is saved with', () => {
+    const service = new HandwritingService(new HandwritingEditor(), 'sec:1', desktop, {
+      widthFraction: 0.004,
+    });
+    (service as unknown as { onBatch: (p: InkPoint[], k: string, e: boolean) => void }).onBatch(
+      [[0.1, 0.1]],
+      'move',
+      false,
+    );
+    expect(service.liveStrokes()[0]!.width * desktop.width).toBeCloseTo(2.4);
+  });
+
+  it('keeps the pen a fraction of the page on a phone-sized page', () => {
+    const editor = new HandwritingEditor();
+    const service = new HandwritingService(editor, 'sec:1', rect, { widthFraction: 0.004 });
+    draw(service);
+    expect(editor.strokes('sec:1')[0]!.width).toBe(0.004);
+  });
+
+  it('keeps the size on screen when a stroke is routed to a smaller page', () => {
+    const editor = new HandwritingEditor();
+    const service = new HandwritingService(editor, 'page:1', desktop, { widthFraction: 0.004 });
+    const page = { left: 400, top: 0, width: 800, height: 900 };
+    service.setRouter(() => ({ page: 'page:2', rect: page, anchoring: null }));
+    draw(service);
+    expect(editor.strokes('page:2')[0]!.width * page.width).toBeCloseTo(2.4);
+  });
+
+  it('keeps a marker band a fraction of the page, about a line of text', () => {
+    const editor = new HandwritingEditor();
+    const service = new HandwritingService(editor, 'sec:1', desktop, {
+      tool: 'marker',
+      widthFraction: 0.03,
+    });
+    draw(service);
+    expect(editor.strokes('sec:1')[0]!.width).toBe(0.03);
+  });
+});
