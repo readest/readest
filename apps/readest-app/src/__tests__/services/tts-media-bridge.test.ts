@@ -20,6 +20,7 @@ class FakeController extends EventTarget {
   terminated = false;
   pause = vi.fn().mockResolvedValue(true);
   start = vi.fn().mockResolvedValue(undefined);
+  resume = vi.fn().mockResolvedValue(undefined);
   forward = vi.fn().mockResolvedValue(undefined);
   backward = vi.fn().mockResolvedValue(undefined);
   seekToTime = vi.fn().mockResolvedValue(undefined);
@@ -99,7 +100,7 @@ describe('TTSMediaBridge', () => {
     expect(fake.handlers.has('play')).toBe(true);
     fake.handlers.get('pause')!({} as MediaSessionActionDetails);
     expect(controller.pause).toHaveBeenCalled();
-    controller.state = 'paused';
+    controller.state = 'stop-paused';
     fake.handlers.get('play')!({} as MediaSessionActionDetails);
     expect(controller.start).toHaveBeenCalled();
     fake.handlers.get('seekto')!({ seekTime: 42 } as MediaSessionActionDetails);
@@ -146,8 +147,45 @@ describe('TTSMediaBridge', () => {
     controller.state = 'playing';
     toggle();
     expect(controller.pause).toHaveBeenCalled();
-    controller.state = 'paused';
+    controller.state = 'forward-paused';
     toggle();
+    expect(controller.start).toHaveBeenCalled();
+  });
+
+  // #7048: a media key after a mid-sentence pause re-read the sentence from
+  // its start, while Space continued in place. An exact 'paused' resumes the
+  // audio where it stopped, like the in-app play button; the other paused
+  // flavours (stop/forward/setrate/...) still need a full start().
+  test('play and toggle resume a mid-sentence pause in place', async () => {
+    class RecordingTauriSession extends TauriMediaSession {
+      actions = new Map<string, (() => void) | ((position: number) => void)>();
+      override setActionHandler(
+        action: string,
+        handler: (() => void) | ((position: number) => void) | null,
+      ) {
+        if (handler) this.actions.set(action, handler);
+        else this.actions.delete(action);
+      }
+      override async setActive() {}
+      override async updateMetadata() {}
+      override async updatePlaybackState() {}
+    }
+    const tauriSession = new RecordingTauriSession();
+    bridge = new TTSMediaBridge(() => tauriSession as unknown as MediaSession);
+    await bridge.bind(controller as unknown as TTSController, meta());
+    controller.state = 'paused';
+    (tauriSession.actions.get('toggle') as () => void)();
+    (tauriSession.actions.get('play') as () => void)();
+    expect(controller.resume).toHaveBeenCalledTimes(2);
+    expect(controller.start).not.toHaveBeenCalled();
+  });
+
+  test('play restarts a source that has no resume()', async () => {
+    const audiobookLike = controller as Partial<FakeController>;
+    delete audiobookLike.resume;
+    await bind();
+    controller.state = 'paused';
+    fake.handlers.get('play')!({} as MediaSessionActionDetails);
     expect(controller.start).toHaveBeenCalled();
   });
 

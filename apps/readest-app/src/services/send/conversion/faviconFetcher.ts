@@ -1,5 +1,4 @@
 import { browserFetch as tauriFetch } from '@/services/webBrowser/browserFetch';
-import { isTauriAppPlatform } from '@/services/environment';
 import { imageFetchHeaders } from './httpHeaders';
 
 /**
@@ -28,6 +27,11 @@ const HOSTED_FALLBACK_PATHS = [
   '/apple-touch-icon-precomposed.png',
   '/favicon.ico',
 ];
+
+// Not `isTauriAppPlatform` from services/environment: that module reaches
+// appService → bookService → the conversion worker, so this module (bundled
+// into send-conversion.worker) would spawn its own worker and hang the build.
+const isTauriAppPlatform = () => process.env['NEXT_PUBLIC_APP_PLATFORM'] === 'tauri';
 
 const httpFetch = (url: string, referer: string | null, init?: RequestInit): Promise<Response> => {
   if (!isTauriAppPlatform()) {

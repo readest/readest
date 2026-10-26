@@ -143,6 +143,20 @@ describe('debounce', () => {
     });
   });
 
+  describe('pending', () => {
+    it('is true only while a call is waiting to run', () => {
+      const debounced = debounce(vi.fn(), 100);
+      expect(debounced.pending()).toBe(false);
+      debounced();
+      expect(debounced.pending()).toBe(true);
+      vi.advanceTimersByTime(100);
+      expect(debounced.pending()).toBe(false);
+      debounced();
+      debounced.cancel();
+      expect(debounced.pending()).toBe(false);
+    });
+  });
+
   // -----------------------------------------------------------------------
   // Edge cases
   // -----------------------------------------------------------------------

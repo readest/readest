@@ -12,24 +12,10 @@ import type { TTSVoice } from '@/services/tts/types';
 // browsers or Node.js. The Node `ws` package (used transitively via
 // `isomorphic-ws`) cannot run on Workers because it relies on
 // `http.createConnection`, which the Workers runtime does not implement.
-// Detecting Workers lets us use the fetch-based WebSocket upgrade pattern
-// (`fetch(..., { headers: { Upgrade: 'websocket' } })`) instead.
+// Detecting Workers lets us open the socket with `connectWorkersWebSocket`
+// instead.
 const isCloudflareWorkers = () =>
   typeof (globalThis as { WebSocketPair?: unknown }).WebSocketPair !== 'undefined';
-
-// The WebSocket returned by a Cloudflare Workers upgrade response must be
-// `accept()`ed before use. This minimal interface captures the bits we need
-// without pulling in `@cloudflare/workers-types`.
-interface AcceptableWebSocket {
-  accept(): void;
-  send(data: string | ArrayBuffer | ArrayBufferView): void;
-  close(code?: number, reason?: string): void;
-  addEventListener(type: 'message', listener: (event: { data: unknown }) => void): void;
-  addEventListener(type: 'close', listener: () => void): void;
-  addEventListener(type: 'error', listener: (event: unknown) => void): void;
-}
-
-type UpgradeResponse = Response & { webSocket?: AcceptableWebSocket };
 
 // speech.platform.bing.com now rejects the handshake with 403 in many regions
 // (rany2/edge-tts#490); Edge Read Aloud moved to api.msedgeservices.com.
@@ -640,26 +626,11 @@ export class EdgeSpeechTTS {
       return new Promise<EdgeSpeechAudio>((resolve, reject) => {
         (async () => {
           try {
-            // Cloudflare Workers cannot use the `ws` npm package because it
-            // relies on `http.createConnection`. Instead, WebSockets are
-            // opened by calling `fetch()` with an `Upgrade: websocket`
-            // header. The response has status 101 and a `webSocket`
-            // property that must be `accept()`ed before sending data.
-            const upgradeUrl = url.replace(/^wss:\/\//i, 'https://');
-            const upgradeResponse = (await fetch(upgradeUrl, {
-              headers: {
-                ...baseHeaders,
-                Upgrade: 'websocket',
-              },
-            })) as UpgradeResponse;
-
-            if (upgradeResponse.status !== 101 || !upgradeResponse.webSocket) {
-              return reject(
-                new Error(`WebSocket upgrade failed with status ${upgradeResponse.status}`),
-              );
-            }
-
-            const ws = upgradeResponse.webSocket;
+            // Workers' own fetch() upgrade gets a plain HTTP 200 from
+            // api.msedgeservices.com, so speak WebSocket over a raw socket.
+            // Loaded only here so other runtimes never evaluate it.
+            const { connectWorkersWebSocket } = await import('@/libs/workersWebSocket');
+            const ws = await connectWorkersWebSocket(url, baseHeaders);
             let audioData = new ArrayBuffer(0);
             const boundaries: TTSWordBoundary[] = [];
             let settled = false;

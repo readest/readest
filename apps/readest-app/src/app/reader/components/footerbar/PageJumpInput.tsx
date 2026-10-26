@@ -17,9 +17,10 @@ interface PageJumpInputProps {
 /**
  * The footer bar's progress label, editable in place: clicking it selects the
  * current page number inside the "94 / 251" text so a target page can be
- * typed over it. Enter jumps there; Escape or blur cancels. An invisible
- * sizer span reserves the label's width so toggling edit mode never shifts
- * the surrounding layout.
+ * typed over it. Enter or leaving the field jumps there (the iOS number pad
+ * has no Enter key, only the keyboard bar's Done); Escape cancels. An
+ * invisible sizer span reserves the label's width so toggling edit mode never
+ * shifts the surrounding layout.
  */
 const PageJumpInput: React.FC<PageJumpInputProps> = ({ bookKey, showFraction, className }) => {
   const _ = useTranslation();
@@ -35,6 +36,8 @@ const PageJumpInput: React.FC<PageJumpInputProps> = ({ bookKey, showFraction, cl
   const [draft, setDraft] = useState('');
   const [selectLength, setSelectLength] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
+  // Set while the field is blurred on purpose, so onBlur doesn't commit.
+  const quietBlurRef = useRef(false);
   const [lastPageInfo, setLastPageInfo] = useState<PageInfo | null>(null);
 
   useEffect(() => {
@@ -51,7 +54,9 @@ const PageJumpInput: React.FC<PageJumpInputProps> = ({ bookKey, showFraction, cl
   useEffect(() => {
     // The footer bar hid (or another book took focus) mid-edit.
     if (hoveredBookKey !== bookKey && document.activeElement === inputRef.current) {
+      quietBlurRef.current = true;
       inputRef.current?.blur();
+      quietBlurRef.current = false;
     }
   }, [hoveredBookKey, bookKey]);
 
@@ -113,15 +118,19 @@ const PageJumpInput: React.FC<PageJumpInputProps> = ({ bookKey, showFraction, cl
     }
   };
 
-  const stopEditing = () => {
-    setEditing(false);
-    inputRef.current?.blur();
-  };
+  const initialDraft = `${currentLabel} / ${total}`;
 
   const commitDraft = () => {
+    if (draft === initialDraft) return;
     const page = parsePageInput(draft);
     if (page !== null) jumpToPage(page);
-    stopEditing();
+  };
+
+  const stopEditing = () => {
+    setEditing(false);
+    quietBlurRef.current = true;
+    inputRef.current?.blur();
+    quietBlurRef.current = false;
   };
 
   const text = editing ? draft : displayText;
@@ -153,18 +162,23 @@ const PageJumpInput: React.FC<PageJumpInputProps> = ({ bookKey, showFraction, cl
         onFocus={() => {
           // Keep the "current / total" text as-is (percentage style swaps to
           // it) and pre-select the page portion for type-over editing.
-          setDraft(`${currentLabel} / ${total}`);
+          setDraft(initialDraft);
           setSelectLength(currentLabel.length);
           setEditing(true);
         }}
-        onBlur={() => setEditing(false)}
+        onBlur={() => {
+          setEditing(false);
+          if (!quietBlurRef.current) commitDraft();
+        }}
         onChange={(e) => setDraft(e.target.value)}
         onKeyDown={(e) => {
           // Keep keystrokes away from the reader's page-turn shortcuts and
           // the footer bar's spatial navigation.
           e.stopPropagation();
-          if (e.key === 'Enter') commitDraft();
-          else if (e.key === 'Escape') stopEditing();
+          if (e.key === 'Enter') {
+            commitDraft();
+            stopEditing();
+          } else if (e.key === 'Escape') stopEditing();
         }}
       />
     </div>
