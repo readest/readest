@@ -171,14 +171,18 @@ export class HardcoverSyncMapStore {
     if (this.loadedBookHash !== bookHash) {
       await this.loadForBook(bookHash);
     }
-    this.mappings.set(noteId, {
+    const row: HardcoverSyncMapRow = {
       book_hash: bookHash,
       note_id: noteId,
       hardcover_journal_id: journalId,
       payload_hash: payloadHash,
       synced_at: Date.now(),
-    });
+    };
+    this.mappings.set(noteId, row);
     this.modified = true;
+    await this.withDb(async (db) => {
+      await this.upsertRow(db, row);
+    });
   }
 
   // Forget every note -> journal mapping for a book. Used when the book is

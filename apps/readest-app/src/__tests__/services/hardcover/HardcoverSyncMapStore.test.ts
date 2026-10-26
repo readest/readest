@@ -138,6 +138,17 @@ describe('HardcoverSyncMapStore', () => {
     expect(stored?.payload_hash).toBe('def');
   });
 
+  test('upsertMapping persists immediately to the database without waiting for flush (issue #6907)', async () => {
+    const bookHash = 'test-book-hash';
+    const noteId = 'note-immediate';
+
+    await store.upsertMapping(bookHash, noteId, 789, 'ghi');
+
+    const stored = mockDb.rows.get(makeRowKey(bookHash, noteId));
+    expect(stored?.hardcover_journal_id).toBe(789);
+    expect(stored?.payload_hash).toBe('ghi');
+  });
+
   test('flush is a no-op when nothing was modified', async () => {
     await store.loadForBook('book-1');
     mockDb.execute.mockClear();
