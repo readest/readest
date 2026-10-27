@@ -334,4 +334,47 @@ describe('useTextTranslation', () => {
     expect(translate).toHaveBeenCalledWith(['私は漢字を読む。']);
     vi.unstubAllGlobals();
   });
+
+  it('drops the DOM work when a translation resolves after unmount', async () => {
+    let resolveTranslation: ((texts: string[]) => void) | undefined;
+    translate.mockImplementationOnce(
+      () =>
+        new Promise<string[]>((resolve) => {
+          resolveTranslation = resolve;
+        }),
+    );
+    let onIntersect: IntersectionObserverCallback = () => {};
+    vi.stubGlobal(
+      'IntersectionObserver',
+      class {
+        constructor(callback: IntersectionObserverCallback) {
+          onIntersect = callback;
+        }
+        observe() {}
+        disconnect() {}
+      },
+    );
+    const view = document.createElement('div');
+    view.innerHTML = '<p>Source paragraph.</p>';
+    const paragraph = view.querySelector('p')!;
+    document.body.appendChild(view);
+
+    const { unmount } = renderHook(() => useTextTranslation('book-1', view));
+    onIntersect(
+      [{ isIntersecting: true, target: paragraph } as unknown as IntersectionObserverEntry],
+      {} as IntersectionObserver,
+    );
+    await waitFor(() => expect(translate).toHaveBeenCalled());
+
+    unmount();
+    resolveTranslation!(['Translated paragraph.']);
+    // Long enough for a batch timer scheduled after the cleanup to run.
+    await new Promise((resolve) => setTimeout(resolve, 120));
+
+    expect(paragraph.querySelector('.translation-target')).toBeNull();
+    expect(paragraph.classList.contains('translation-source')).toBe(false);
+
+    view.remove();
+    vi.unstubAllGlobals();
+  });
 });
