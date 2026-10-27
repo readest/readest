@@ -451,29 +451,15 @@ export const handleWheel = (bookKey: string, event: WheelEvent) => {
 // gallery / table zoom viewers consume.
 type MediaTarget = { elementType: 'image'; src: string } | { elementType: 'table'; html: string };
 
-// A zoomable table is a self-contained data table that fits on a page. Chinese
-// classics editions (e.g. 脂評匯校本) lay a whole chapter in one giant <table>
-// — every paragraph is a row, so the table spans dozens of pages. That is a
-// layout table, not content: claiming it as media makes any tap on its text
-// offer the table viewer in the page's center tap zone. Tables larger than a
-// couple of pages are layout.
-//
-// The page size is the box foliate publishes on the root (`--available-*`):
-// one page. The iframe's own client size is NOT a page — the section document
-// is content-sized (measured 1040x6480 paginated, 8083x720 scrolled on the
-// 脂評匯校本), so a client-size basis makes a chapter-long table look about
-// one page "big" and the check never fires.
-const isLayoutTable = (table: HTMLElement) => {
-  const doc = table.ownerDocument;
-  const rootStyle = doc.documentElement.style;
-  const pageWidth =
-    parseFloat(rootStyle.getPropertyValue('--available-width')) || doc.documentElement.clientWidth;
-  const pageHeight =
-    parseFloat(rootStyle.getPropertyValue('--available-height')) ||
-    doc.documentElement.clientHeight;
-  if (!pageWidth || !pageHeight) return false;
-  const { width, height } = table.getBoundingClientRect();
-  return width * height >= 2 * pageWidth * pageHeight;
+// How many pages an element's box covers. foliate publishes the page's content
+// box on the root element; fixed-layout pages have none, so this is NaN there.
+const pagesCovered = (element: Element) => {
+  const style = element.ownerDocument.documentElement?.style;
+  const pageArea =
+    parseFloat(style?.getPropertyValue('--available-width') ?? '') *
+    parseFloat(style?.getPropertyValue('--available-height') ?? '');
+  const { width, height } = element.getBoundingClientRect();
+  return (width * height) / pageArea;
 };
 
 const detectMediaTarget = (target: HTMLElement | null): MediaTarget | null => {
@@ -491,9 +477,9 @@ const detectMediaTarget = (target: HTMLElement | null): MediaTarget | null => {
   }
   const table = target.localName === 'table' ? target : target.closest('table');
   // A link inside a table is followed; the table zooms from anywhere else
-  // (#6856) — unless the table is a chapter-length layout table, which is no
-  // more a zoom target than the surrounding text is.
-  if (table && !table.contains(target.closest('a')) && !isLayoutTable(table)) {
+  // (#6856). A table running past two pages lays out the text itself (some
+  // annotated classics set a whole chapter in one), so it is not media.
+  if (table && !table.contains(target.closest('a')) && !(pagesCovered(table) >= 2)) {
     return { elementType: 'table', html: (table as HTMLElement).outerHTML };
   }
   return null;
@@ -518,19 +504,23 @@ export const getContextMenuImage = (
 };
 
 // A full-bleed cover or full-page illustration spans the page-turn zones, so
-// tapping it has to stay a page turn (#6424). foliate publishes the page's
-// content box on the root element; half of it separates such pages from inline
-// figures.
+// tapping it has to stay a page turn (#6424). Half a page separates such pages
+// from inline figures.
 const fillsPage = (target: HTMLElement) => {
   const element = target.closest('img, svg, table');
-  if (!element) return false;
-  const { style } = element.ownerDocument.documentElement;
-  const pageArea =
-    parseFloat(style.getPropertyValue('--available-width')) *
-    parseFloat(style.getPropertyValue('--available-height'));
-  const { width, height } = element.getBoundingClientRect();
-  return width * height >= pageArea / 2;
+  return !!element && pagesCovered(element) >= 0.5;
 };
+
+// The links foliate's FootnoteHandler always opens in a popup. Their image is a
+// marker, like the 「註」 glyph some annotated classics put on every note. An
+// XHTML section keeps `epub:type` namespaced, an HTML one as a plain attribute.
+const noteRefSelector = ['noteref', 'biblioref', 'glossref']
+  .flatMap((type) => [
+    `a[href][*|type~="${type}"]`,
+    `a[href][epub\\:type~="${type}"]`,
+    `a[href][role~="doc-${type}"]`,
+  ])
+  .join(', ');
 
 export const handleClick = (
   bookKey: string,
@@ -598,40 +588,15 @@ export const handleClick = (
       '.qqreader-footnote',
     ].join(', ');
     const footnote = element?.closest(footnoteSelector);
-    // EPUB3 marks a note reference with `epub:type="noteref"`; ARIA spells the
-    // same thing `role="doc-noteref"`, and older books use `rel="footnote"`.
-    // None of those are in `footnoteSelector` above, which only knows the
-    // private classes of a few Chinese reading apps.
-    //
-    // A noteref's child image is a typographic marker — in a 脂評 edition it is
-    // a little 「註」 glyph repeated once per annotation, hundreds per chapter —
-    // not an illustration. Without this check `detectMediaTarget` claims it, so
-    // one tap does both: the link handler opens the note popup *and* the image
-    // viewer opens full-screen on the marker glyph, on top of everything. The
-    // reader sees "another page" appear for no reason and the note is buried
-    // underneath. Skip the media path entirely and let the link handler own it.
-    const isNoteReference = (el: Element | null): boolean => {
-      const anchor = el?.closest('a[href]');
-      if (!anchor) return false;
-      if (/\bdoc-noteref\b/.test(anchor.getAttribute('role') ?? '')) return true;
-      if (/\bfootnote\b/.test(anchor.getAttribute('rel') ?? '')) return true;
-      // `epub:type` may or may not survive as a literal attribute name
-      // depending on how the section was parsed, so match on the suffix.
-      return anchor
-        .getAttributeNames()
-        .some(
-          (name) => /(^|:)type$/.test(name) && /\bnoteref\b/.test(anchor.getAttribute(name) ?? ''),
-        );
-    };
     // In reflowable books a single tap on an image/table opens the media
     // viewer. A media element wrapped in a plain link (e.g. a figure linking to
     // its full-resolution image) should still zoom rather than follow the link
-    // (#4757). Footnotes are excluded so footnote links keep their
+    // (#4757). Footnotes and note references are excluded so they keep their
     // popup/navigation behavior. Fixed-layout pages (comics/manga) keep
     // tap-to-turn, so their media rides along on the single click like media
     // filling a reflowable page, and a linked image there stays a link.
     const media =
-      !footnote && !isNoteReference(element) && !(isFixedLayout && element?.closest('a'))
+      !footnote && !element?.closest(noteRefSelector) && !(isFixedLayout && element?.closest('a'))
         ? detectMediaTarget(element)
         : null;
     const pageMedia = media && element && (isFixedLayout || fillsPage(element)) ? media : null;
