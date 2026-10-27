@@ -406,11 +406,16 @@ describe('single-tap opens image gallery / table zoom in reflowable books (#4584
   // (a 「註」 glyph on every note in some annotated classics), not an illustration.
   describe('note-reference markers open the note, not the image viewer', () => {
     const OPS = 'http://www.idpf.org/2007/ops';
-    const cases: [string, (a: HTMLAnchorElement) => void][] = [
+    const cases: [string, (a: HTMLAnchorElement, img: HTMLImageElement) => void][] = [
       ['XHTML epub:type="noteref"', (a) => a.setAttributeNS(OPS, 'epub:type', 'noteref')],
       ['HTML epub:type="noteref"', (a) => a.setAttribute('epub:type', 'noteref')],
       ['role="doc-noteref"', (a) => a.setAttribute('role', 'doc-noteref')],
       ['epub:type="biblioref"', (a) => a.setAttributeNS(OPS, 'epub:type', 'biblioref')],
+      ['a link inside <sup>', (a) => document.createElement('sup').appendChild(a)],
+      ['a link set as superscript', (a) => (a.style.verticalAlign = 'super')],
+      ['a marker set as superscript', (_a, img) => (img.style.verticalAlign = 'super')],
+      ['a.footnote', (a) => a.classList.add('footnote')],
+      ['a.footnote-link', (a) => a.classList.add('footnote-link')],
     ];
 
     for (const [label, mark] of cases) {
@@ -418,10 +423,10 @@ describe('single-tap opens image gallery / table zoom in reflowable books (#4584
         const handlers = await importHandlers();
         const anchor = document.createElement('a');
         anchor.href = '#note-1';
-        mark(anchor);
         const img = document.createElement('img');
         img.src = 'blob:http://localhost/note-marker';
         anchor.appendChild(img);
+        mark(anchor, img);
 
         tap(handlers, false, img);
 

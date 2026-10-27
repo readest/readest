@@ -511,16 +511,40 @@ const fillsPage = (target: HTMLElement) => {
   return !!element && pagesCovered(element) >= 0.5;
 };
 
-// The links foliate's FootnoteHandler always opens in a popup. Their image is a
-// marker, like the 「註」 glyph some annotated classics put on every note. An
-// XHTML section keeps `epub:type` namespaced, an HTML one as a plain attribute.
-const noteRefSelector = ['noteref', 'biblioref', 'glossref']
-  .flatMap((type) => [
-    `a[href][*|type~="${type}"]`,
-    `a[href][epub\\:type~="${type}"]`,
-    `a[href][role~="doc-${type}"]`,
-  ])
-  .join(', ');
+// An XHTML section keeps `epub:type` namespaced, an HTML one as a plain attribute.
+const linkTypeSelector = (types: string[]) =>
+  types
+    .flatMap((type) => [
+      `a[href][*|type~="${type}"]`,
+      `a[href][epub\\:type~="${type}"]`,
+      `a[href][role~="doc-${type}"]`,
+    ])
+    .join(', ');
+const noteRefSelector = `${linkTypeSelector(['noteref', 'biblioref', 'glossref'])}, a[href].footnote, a[href].footnote-link`;
+const backlinkSelector = linkTypeSelector(['backlink']);
+
+const isSuper = (el: Element | null) =>
+  !!el &&
+  (el.matches('sup') ||
+    /^(super|top|text-top)$|^\d/.test(
+      el.ownerDocument.defaultView?.getComputedStyle(el).verticalAlign ?? '',
+    ));
+
+// Whether the footnote popup opens for the link holding the element. Its image
+// is then a marker, like the 「註」 glyph some annotated classics put on every
+// note. Mirrors foliate's `isFootnoteReference` (a note reference, or any link
+// but a backlink set as superscript) plus the classes FootnotePopup follows.
+const opensNote = (element: HTMLElement | null) => {
+  const a = element?.closest('a[href]');
+  if (!a) return false;
+  if (a.matches(noteRefSelector)) return true;
+  return (
+    !a.matches(backlinkSelector) &&
+    (isSuper(a) ||
+      (a.children.length === 1 && isSuper(a.firstElementChild)) ||
+      isSuper(a.parentElement))
+  );
+};
 
 export const handleClick = (
   bookKey: string,
@@ -596,7 +620,7 @@ export const handleClick = (
     // tap-to-turn, so their media rides along on the single click like media
     // filling a reflowable page, and a linked image there stays a link.
     const media =
-      !footnote && !element?.closest(noteRefSelector) && !(isFixedLayout && element?.closest('a'))
+      !footnote && !opensNote(element) && !(isFixedLayout && element?.closest('a'))
         ? detectMediaTarget(element)
         : null;
     const pageMedia = media && element && (isFixedLayout || fillsPage(element)) ? media : null;
