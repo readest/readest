@@ -2655,5 +2655,11 @@
   "Quotes take the highlight color, and > [!NOTE] becomes a callout": "উদ্ধৃতিগুলো হাইলাইটের রং পায়, এবং > [!NOTE] একটি কলআউট হয়ে যায়",
   "Variables: {{variables}}": "ভেরিয়েবল: {{variables}}",
   "Stable Page Numbers": "স্থির পৃষ্ঠা নম্বর",
-  "Turn off to count pages by the screens of this device": "এই ডিভাইসের স্ক্রিন অনুযায়ী পৃষ্ঠা গোনার জন্য এটি বন্ধ করুন"
+  "Turn off to count pages by the screens of this device": "এই ডিভাইসের স্ক্রিন অনুযায়ী পৃষ্ঠা গোনার জন্য এটি বন্ধ করুন",
+  "One page": "এক পৃষ্ঠা",
+  "Two pages": "দুই পৃষ্ঠা",
+  "Show One Page": "এক পৃষ্ঠা দেখান",
+  "Show Two Pages": "দুই পৃষ্ঠা দেখান",
+  "Two Pages When Unfolded": "খোলা অবস্থায় দুই পৃষ্ঠা",
+  "In landscape, show a page on each side of the fold. Sets the columns there.": "ল্যান্ডস্কেপে ভাঁজের প্রতিটি পাশে একটি করে পৃষ্ঠা দেখান. সেখানে কলামও নির্ধারণ করে।"
 }

@@ -19,11 +19,18 @@ export const getMaxInlineSize = (viewSettings: ViewSettings) => {
  * Whether the paginator will lay the page out as a two-column spread,
  * mirroring its column count: min(maxColumnCount, ceil(width / maxInlineSize)).
  */
-export const expectsColumnSpread = (viewSettings: ViewSettings, pageWidth: number) => {
+export const expectsColumnSpread = (
+  viewSettings: ViewSettings,
+  pageWidth: number,
+  layout = {
+    maxColumnCount: viewSettings.maxColumnCount,
+    maxInlineSize: getMaxInlineSize(viewSettings),
+  },
+) => {
   if (viewSettings.scrolled || viewSettings.vertical) return false;
   const columns = Math.min(
-    viewSettings.maxColumnCount,
-    Math.ceil(Math.floor(pageWidth) / Math.floor(getMaxInlineSize(viewSettings))),
+    layout.maxColumnCount,
+    Math.ceil(Math.floor(pageWidth) / Math.floor(layout.maxInlineSize)),
   );
   return columns > 1;
 };

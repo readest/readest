@@ -137,6 +137,27 @@ both use `appWindow()` (the webview's own window), and `get_safe_area_insets` re
   mount, resize and orientation change, since folding between two landscape displays fires no
   orientation event.
 
+### Book Pose and the Fold (iPhone Duo only)
+
+The inner display's hinge runs down its middle in landscape, so each half is about the size of the
+cover display. That pose shows a book as two pages, one either side of the hinge.
+
+- `utils/duo.ts` names the pose from `isIPhoneDuo` and the viewport (`getDuoPose`: `off`, `cover`,
+  `inner-portrait`, `inner-landscape`) and resolves the renderer attributes for it
+  (`getRendererLayout`: `max-column-count`, `max-inline-size`, fixed-layout `spread`, `column-gap`).
+  Off the inner landscape pose, and on every other device, it returns the reader's own settings
+  unchanged.
+- In inner landscape, the `duoBookMode` view setting (default on) gives exactly two columns, or a
+  two-page spread for fixed layouts. With it off the page is one column. The header's book-mode
+  button and the Layout panel's "Two Pages When Unfolded" row switch it.
+- `get_safe_area_insets` reports `fold` on the Duo: the hinge status and the UIKit `.division`
+  reserved region in window points. The region is active only while the device is part way folded.
+  While a vertical region is active, the spine gap widens to clear it (`getDuoSpineGutter`).
+- A `UIHingeInteraction` on the web view sends `duo-fold-changed` when the hinge status changes,
+  because folding part way does not resize the web view. `useSafeAreaInsets` refetches on it.
+- `FoliateViewer` re-applies the layout when the pose, fold or setting changes, only on the Duo.
+  The paginator keeps the reading position across the re-layout.
+
 ### Passing `gridInsets`
 
 When creating overlay components (image viewers, table viewers, zoom controls, etc.), always pass `gridInsets` as a prop so they can position their controls correctly:

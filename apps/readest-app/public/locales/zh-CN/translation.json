@@ -2587,5 +2587,11 @@
   "Quotes take the highlight color, and > [!NOTE] becomes a callout": "引用会使用高亮颜色，> [!NOTE] 会变成标注块",
   "Variables: {{variables}}": "变量：{{variables}}",
   "Stable Page Numbers": "稳定页码",
-  "Turn off to count pages by the screens of this device": "关闭后按本设备的实际屏数计算页码"
+  "Turn off to count pages by the screens of this device": "关闭后按本设备的实际屏数计算页码",
+  "One page": "单页",
+  "Two pages": "双页",
+  "Show One Page": "显示单页",
+  "Show Two Pages": "显示双页",
+  "Two Pages When Unfolded": "展开时显示双页",
+  "In landscape, show a page on each side of the fold. Sets the columns there.": "横屏时，在折叠处两侧各显示一页。并决定此时的分栏。"
 }

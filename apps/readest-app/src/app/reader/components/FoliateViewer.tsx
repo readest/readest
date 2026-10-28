@@ -82,7 +82,8 @@ import {
   handleTouchEnd,
   handleTouchCancel,
 } from '../utils/iframeEventHandlers';
-import { getMaxInlineSize } from '@/utils/config';
+import { getCurrentRendererLayout, useDuoPose } from '@/hooks/useDuoPose';
+import { applyRendererLayout } from '@/utils/duo';
 import { getLockedPanX } from '../utils/lockedPan';
 import { getDirFromUILanguage } from '@/utils/rtl';
 import { isTauriAppPlatform } from '@/services/environment';
@@ -144,7 +145,8 @@ const FoliateViewer: React.FC<{
   const _ = useTranslation();
   const searchParams = useSearchParams();
   const { appService, envConfig } = useEnv();
-  const { themeCode, isDarkMode, isIPhoneDuo } = useThemeStore();
+  const { themeCode, isDarkMode, isIPhoneDuo, duoFold, safeAreaInsets } = useThemeStore();
+  const duoPose = useDuoPose();
   const { settings } = useSettingsStore();
   const { loadFont, loadCustomFonts, getLoadedFonts, getAvailableFonts } = useCustomFontStore();
   // Per-field selectors — see store/readerProgressStore.ts header for the
@@ -895,8 +897,10 @@ const FoliateViewer: React.FC<{
         }
       }
 
+      // iPhone Duo's book pose picks the columns and spread (see utils/duo).
+      const rendererLayout = getCurrentRendererLayout(viewSettings);
       if (bookDoc.rendition?.layout === 'pre-paginated' && bookDoc.sections) {
-        bookDoc.rendition.spread = viewSettings.spreadMode;
+        bookDoc.rendition.spread = rendererLayout.spreadMode;
         setCoverSpread(bookDoc, viewSettings.keepCoverSpread);
       }
 
@@ -953,8 +957,7 @@ const FoliateViewer: React.FC<{
       doubleClickDisabled.current = viewSettings.disableDoubleClick!;
       const animated = viewSettings.animated!;
       const eink = viewSettings.isEink!;
-      const maxColumnCount = viewSettings.maxColumnCount!;
-      const maxInlineSize = getMaxInlineSize(viewSettings);
+      const { maxColumnCount, maxInlineSize } = rendererLayout;
       const maxBlockSize = viewSettings.maxBlockSize!;
       const screenOrientation = viewSettings.screenOrientation!;
       if (appService?.isMobileApp) {
@@ -989,7 +992,7 @@ const FoliateViewer: React.FC<{
       applyEinkMode(eink);
       if (bookDoc?.rendition?.layout === 'pre-paginated') {
         view.renderer.setAttribute('zoom', viewSettings.zoomMode);
-        view.renderer.setAttribute('spread', viewSettings.spreadMode);
+        view.renderer.setAttribute('spread', rendererLayout.spreadMode);
         view.renderer.setAttribute('scale-factor', viewSettings.zoomLevel);
         view.renderer.setAttribute('scroll-gap', getScrollGapAttr(viewSettings.webtoonMode));
         view.renderer.toggleAttribute('lock-pan-x', !!viewSettings.lockHorizontalPan);
@@ -997,7 +1000,7 @@ const FoliateViewer: React.FC<{
           view.renderer.panX = config.panX;
         }
       } else {
-        view.renderer.setAttribute('max-column-count', maxColumnCount);
+        view.renderer.setAttribute('max-column-count', `${maxColumnCount}`);
         view.renderer.setAttribute('max-inline-size', `${maxInlineSize}px`);
         view.renderer.setAttribute('max-block-size', `${maxBlockSize}px`);
       }
@@ -1098,7 +1101,8 @@ const FoliateViewer: React.FC<{
     // ResizeObserver sees them - margins don't resize the observed element.
     // Keyed on the applied signature so re-applying the same values (this
     // runs on many triggers) keeps the current snapshot intact.
-    const layoutSignature = `${topMargin}|${rightMargin}|${bottomMargin}|${leftMargin}|${viewSettings.gapPercent}|${viewSettings.columnGapPx}`;
+    const { columnGapPx } = getCurrentRendererLayout(viewSettings);
+    const layoutSignature = `${topMargin}|${rightMargin}|${bottomMargin}|${leftMargin}|${viewSettings.gapPercent}|${columnGapPx}`;
     if (layoutSignature !== appliedLayoutSignatureRef.current) {
       appliedLayoutSignatureRef.current = layoutSignature;
       invalidateChapterScreens();
@@ -1122,8 +1126,8 @@ const FoliateViewer: React.FC<{
       setScrollMargins({ top: 0, bottom: 0 });
     }
     viewRef.current?.renderer.setAttribute('gap', `${viewSettings.gapPercent}%`);
-    if (viewSettings.columnGapPx > 0) {
-      viewRef.current?.renderer.setAttribute('column-gap', `${viewSettings.columnGapPx}px`);
+    if (columnGapPx > 0) {
+      viewRef.current?.renderer.setAttribute('column-gap', `${columnGapPx}px`);
     } else {
       viewRef.current?.renderer.removeAttribute('column-gap');
     }
@@ -1307,9 +1311,39 @@ const FoliateViewer: React.FC<{
   useEffect(() => {
     const renderer = viewRef.current?.renderer;
     if (!renderer || !viewSettings || bookDoc.rendition?.layout === 'pre-paginated') return;
-    renderer.setAttribute('max-inline-size', `${getMaxInlineSize(viewSettings)}px`);
+    renderer.setAttribute(
+      'max-inline-size',
+      `${getCurrentRendererLayout(viewSettings).maxInlineSize}px`,
+    );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [viewSettings?.vertical]);
+
+  // iPhone Duo: folding, unfolding, turning the device or flipping book mode
+  // changes how many pages the display shows. The paginator keeps the
+  // reading position across the re-layout. Other devices never get here, so
+  // their layout stays exactly the settings' (#6307).
+  useEffect(() => {
+    const renderer = viewRef.current?.renderer;
+    if (!isIPhoneDuo || !renderer || !viewSettings) return;
+    applyRendererLayout(renderer, getCurrentRendererLayout(viewSettings), bookDoc.rendition);
+    applyMarginAndGap();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    isIPhoneDuo,
+    duoPose,
+    duoFold,
+    // The page width the layout is sized to; insets land after the resize.
+    safeAreaInsets,
+    // Switching these writes the reader's own max inline size (ViewMenu,
+    // ControlPanel), so the book pose's values are re-applied after them.
+    viewSettings?.scrolled,
+    viewSettings?.vertical,
+    viewSettings?.duoBookMode,
+    viewSettings?.maxColumnCount,
+    viewSettings?.maxInlineSize,
+    viewSettings?.spreadMode,
+    viewSettings?.columnGapPx,
+  ]);
 
   useEffect(() => {
     if (viewRef.current && viewRef.current.renderer && viewSettings) {

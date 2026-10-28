@@ -2655,5 +2655,11 @@
   "Quotes take the highlight color, and > [!NOTE] becomes a callout": "Az idézetek a kiemelés színét kapják, a > [!NOTE] pedig kiemelt mezővé válik",
   "Variables: {{variables}}": "Változók: {{variables}}",
   "Stable Page Numbers": "Állandó oldalszámok",
-  "Turn off to count pages by the screens of this device": "Kapcsolja ki, hogy az oldalakat az eszköz képernyői szerint számolja"
+  "Turn off to count pages by the screens of this device": "Kapcsolja ki, hogy az oldalakat az eszköz képernyői szerint számolja",
+  "One page": "Egy oldal",
+  "Two pages": "Két oldal",
+  "Show One Page": "Egy oldal megjelenítése",
+  "Show Two Pages": "Két oldal megjelenítése",
+  "Two Pages When Unfolded": "Két oldal kihajtva",
+  "In landscape, show a page on each side of the fold. Sets the columns there.": "Fekvő módban a hajtás mindkét oldalán egy-egy oldal jelenik meg. Ott az oszlopokat is ez határozza meg."
 }

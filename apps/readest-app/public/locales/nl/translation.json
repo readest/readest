@@ -2655,5 +2655,11 @@
   "Quotes take the highlight color, and > [!NOTE] becomes a callout": "Citaten krijgen de markeringskleur en > [!NOTE] wordt een callout",
   "Variables: {{variables}}": "Variabelen: {{variables}}",
   "Stable Page Numbers": "Vaste paginanummers",
-  "Turn off to count pages by the screens of this device": "Zet uit om pagina's te tellen per scherm van dit apparaat"
+  "Turn off to count pages by the screens of this device": "Zet uit om pagina's te tellen per scherm van dit apparaat",
+  "One page": "Eén pagina",
+  "Two pages": "Twee pagina's",
+  "Show One Page": "Eén pagina tonen",
+  "Show Two Pages": "Twee pagina's tonen",
+  "Two Pages When Unfolded": "Twee pagina's opengevouwen",
+  "In landscape, show a page on each side of the fold. Sets the columns there.": "In liggende stand aan elke kant van de vouw een pagina tonen. Bepaalt daar de kolommen."
 }

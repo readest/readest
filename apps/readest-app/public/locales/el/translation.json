@@ -2655,5 +2655,11 @@
   "Quotes take the highlight color, and > [!NOTE] becomes a callout": "Τα αποσπάσματα παίρνουν το χρώμα της επισήμανσης και το > [!NOTE] γίνεται πλαίσιο επισήμανσης",
   "Variables: {{variables}}": "Μεταβλητές: {{variables}}",
   "Stable Page Numbers": "Σταθεροί αριθμοί σελίδων",
-  "Turn off to count pages by the screens of this device": "Απενεργοποιήστε για μέτρηση σελίδων με βάση τις οθόνες αυτής της συσκευής"
+  "Turn off to count pages by the screens of this device": "Απενεργοποιήστε για μέτρηση σελίδων με βάση τις οθόνες αυτής της συσκευής",
+  "One page": "Μία σελίδα",
+  "Two pages": "Δύο σελίδες",
+  "Show One Page": "Εμφάνιση μίας σελίδας",
+  "Show Two Pages": "Εμφάνιση δύο σελίδων",
+  "Two Pages When Unfolded": "Δύο σελίδες όταν είναι ανοιχτό",
+  "In landscape, show a page on each side of the fold. Sets the columns there.": "Σε οριζόντιο προσανατολισμό, εμφάνιση μίας σελίδας σε κάθε πλευρά της αναδίπλωσης. Ορίζει εκεί τις στήλες."
 }

@@ -258,6 +258,9 @@ export interface BookLayout {
   /* Centre gap of a two-column spread in px; 0 derives it from the margins
      and gapPercent as before. */
   columnGapPx: number;
+  /* iPhone Duo, inner display in landscape: show two pages, one on each side
+     of the hinge (true), or a single page (false). Ignored in other poses. */
+  duoBookMode: boolean;
   scrolled: boolean;
   scrolledDirection: 'vertical' | 'horizontal';
   webtoonMode: boolean;

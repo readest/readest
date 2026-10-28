@@ -2655,5 +2655,11 @@
   "Quotes take the highlight color, and > [!NOTE] becomes a callout": "Iqtiboslar belgilash rangini oladi, > [!NOTE] esa izoh blokiga aylanadi",
   "Variables: {{variables}}": "O‘zgaruvchilar: {{variables}}",
   "Stable Page Numbers": "Barqaror sahifa raqamlari",
-  "Turn off to count pages by the screens of this device": "Sahifalarni ushbu qurilma ekranlari bo'yicha sanash uchun o'chiring"
+  "Turn off to count pages by the screens of this device": "Sahifalarni ushbu qurilma ekranlari bo'yicha sanash uchun o'chiring",
+  "One page": "Bitta sahifa",
+  "Two pages": "Ikki sahifa",
+  "Show One Page": "Bitta sahifani ko‘rsatish",
+  "Show Two Pages": "Ikki sahifani ko‘rsatish",
+  "Two Pages When Unfolded": "Ochilganda ikki sahifa",
+  "In landscape, show a page on each side of the fold. Sets the columns there.": "Gorizontal holatda bukilish joyining har ikki tomonida bittadan sahifa ko‘rsatish. U yerda ustunlarni ham belgilaydi."
 }

@@ -2587,5 +2587,11 @@
   "Quotes take the highlight color, and > [!NOTE] becomes a callout": "引文會套用螢光標記的顏色，> [!NOTE] 會變成標註區塊",
   "Variables: {{variables}}": "變數：{{variables}}",
   "Stable Page Numbers": "穩定頁碼",
-  "Turn off to count pages by the screens of this device": "關閉後依本裝置的實際螢幕數計算頁碼"
+  "Turn off to count pages by the screens of this device": "關閉後依本裝置的實際螢幕數計算頁碼",
+  "One page": "單頁",
+  "Two pages": "雙頁",
+  "Show One Page": "顯示單頁",
+  "Show Two Pages": "顯示雙頁",
+  "Two Pages When Unfolded": "展開時顯示雙頁",
+  "In landscape, show a page on each side of the fold. Sets the columns there.": "橫向時，在摺疊處兩側各顯示一頁。並決定此時的分欄。"
 }

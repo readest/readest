@@ -11,7 +11,8 @@ import { useSidebarStore } from '@/store/sidebarStore';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { getGridTemplate, getInsetEdges } from '@/utils/grid';
-import { expectsColumnSpread } from '@/utils/config';
+import { getRendererLayout, isRendererSpread } from '@/utils/duo';
+import { useDuoPose } from '@/hooks/useDuoPose';
 import { getPageAreaInsets, getReadingScreenInsets, getSpreadColumnGap } from '@/utils/insets';
 import { tauriSetWindowTitle } from '@/utils/window';
 import { useContentInsets } from '../hooks/useContentInsets';
@@ -136,11 +137,19 @@ const BookCellInner: React.FC<BookCellProps> = ({
   // inset on their outer edge only, so a symmetric pad would leave a dead band
   // against their neighbour. Off the Duo the cell's insets are used as they are.
   const isIPhoneDuo = useThemeStore((s) => s.isIPhoneDuo);
+  const duoFold = useThemeStore((s) => s.duoFold);
+  const duoPose = useDuoPose();
+  const isFixedLayout = !!getBookData(bookKey)?.isFixedLayout;
+  const pageWidth = window.innerWidth - cellInsets.left - cellInsets.right;
+  const rendererLayout = viewSettings
+    ? getRendererLayout(viewSettings, duoPose, pageWidth, duoFold)
+    : null;
   const isSpread =
     isIPhoneDuo &&
     spansWidth &&
     !!viewSettings &&
-    expectsColumnSpread(viewSettings, window.innerWidth - cellInsets.left - cellInsets.right);
+    !!rendererLayout &&
+    isRendererSpread(viewSettings, rendererLayout, duoPose, isFixedLayout, pageWidth);
   const gridInsets = useMemo(() => getPageAreaInsets(cellInsets, isSpread), [cellInsets, isSpread]);
   const chromeGridInsets = useMemo(
     () => getPageAreaInsets(chromeCellInsets, isSpread),
@@ -183,7 +192,11 @@ const BookCellInner: React.FC<BookCellProps> = ({
   const viewerKey = viewState.viewerKey;
   const horizontalGapPercent = viewSettings.gapPercent;
   // Read on each relocate, which also follows a 1 <-> 2 column re-layout.
-  const columnGap = getSpreadColumnGap(viewSettings, getView(bookKey)?.renderer?.columnCount ?? 1);
+  // The gap the renderer was given, widened over the fold on iPhone Duo.
+  const columnGap = getSpreadColumnGap(
+    { ...viewSettings, columnGapPx: rendererLayout?.columnGapPx ?? viewSettings.columnGapPx },
+    getView(bookKey)?.renderer?.columnCount ?? 1,
+  );
   const showHeader = viewSettings.showHeader;
   const showFooter = viewSettings.showFooter;
 

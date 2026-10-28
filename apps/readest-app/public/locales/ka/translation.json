@@ -2655,5 +2655,11 @@
   "Quotes take the highlight color, and > [!NOTE] becomes a callout": "ციტატები მონიშვნის ფერს იღებს, ხოლო > [!NOTE] ხდება გამოყოფილი ბლოკი",
   "Variables: {{variables}}": "ცვლადები: {{variables}}",
   "Stable Page Numbers": "მუდმივი გვერდის ნომრები",
-  "Turn off to count pages by the screens of this device": "გამორთეთ, რომ გვერდები ამ მოწყობილობის ეკრანებით დაითვალოს"
+  "Turn off to count pages by the screens of this device": "გამორთეთ, რომ გვერდები ამ მოწყობილობის ეკრანებით დაითვალოს",
+  "One page": "ერთი გვერდი",
+  "Two pages": "ორი გვერდი",
+  "Show One Page": "ერთი გვერდის ჩვენება",
+  "Show Two Pages": "ორი გვერდის ჩვენება",
+  "Two Pages When Unfolded": "ორი გვერდი გაშლისას",
+  "In landscape, show a page on each side of the fold. Sets the columns there.": "ჰორიზონტალურ რეჟიმში ნაკეცის თითოეულ მხარეს თითო გვერდის ჩვენება. იქ სვეტებსაც ეს განსაზღვრავს."
 }

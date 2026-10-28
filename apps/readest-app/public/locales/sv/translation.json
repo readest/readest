@@ -2655,5 +2655,11 @@
   "Quotes take the highlight color, and > [!NOTE] becomes a callout": "Citat får markeringens färg och > [!NOTE] blir en callout",
   "Variables: {{variables}}": "Variabler: {{variables}}",
   "Stable Page Numbers": "Stabila sidnummer",
-  "Turn off to count pages by the screens of this device": "Stäng av för att räkna sidor efter skärmarna på den här enheten"
+  "Turn off to count pages by the screens of this device": "Stäng av för att räkna sidor efter skärmarna på den här enheten",
+  "One page": "En sida",
+  "Two pages": "Två sidor",
+  "Show One Page": "Visa en sida",
+  "Show Two Pages": "Visa två sidor",
+  "Two Pages When Unfolded": "Två sidor när den är utfälld",
+  "In landscape, show a page on each side of the fold. Sets the columns there.": "I liggande läge visas en sida på var sida om vecket. Styr kolumnerna där."
 }

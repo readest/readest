@@ -712,6 +712,21 @@ class NativeBridgePlugin: Plugin {
     pencilInteraction.delegate = pencilHandler
     webview.addInteraction(pencilInteraction)
 
+    // iPhone Duo: folding the inner display part way changes the folding
+    // region without resizing the web view, so tell JS to refetch it.
+    #if canImport(UIKit, _version: 9127.0.85)  // iOS 27.1 SDK: the hinge API
+    if NativeBridgePlugin.isIPhoneDuo, #available(iOS 27.1, *) {
+      let hingeInteraction = UIHingeInteraction { [weak self] _, update in
+        guard let self else { return }
+        let status = NativeBridgePlugin.hingeStatusName(update.hinge?.status)
+        guard status != self.lastHingeStatus else { return }
+        self.lastHingeStatus = status
+        self.trigger("duo-fold-changed", data: ["status": status])
+      }
+      webview.addInteraction(hingeInteraction)
+    }
+    #endif
+
     // The WKWebView never fires the `prefers-color-scheme` media query
     // `change` event while the app stays foregrounded, so observe the
     // native appearance and push changes to JS instead. Registration is
@@ -1499,8 +1514,8 @@ class NativeBridgePlugin: Plugin {
     }
   }
 
-  // iOS exposes no foldable API and the viewport size cannot identify the
-  // device, so iPhone Duo is recognized by its model identifier.
+  // The viewport size cannot identify the device, and UIKit's hinge API is
+  // only in the iOS 27.1 SDK, so iPhone Duo is recognized by its model.
   private static let iPhoneDuoModelIdentifiers: Set<String> = ["iPhone19,4"]
 
   private static let isIPhoneDuo: Bool = {
@@ -1516,6 +1531,46 @@ class NativeBridgePlugin: Plugin {
     }
     return iPhoneDuoModelIdentifiers.contains(identifier)
   }()
+
+  #if canImport(UIKit, _version: 9127.0.85)
+  @available(iOS 27.1, *)
+  private static func hingeStatusName(_ status: UIHinge.Status?) -> String {
+    switch status {
+    case .closed: return "closed"
+    case .partiallyOpen: return "partial"
+    case .fullyOpen: return "open"
+    default: return "unknown"
+    }
+  }
+  #endif
+
+  private var lastHingeStatus = "unknown"
+
+  // The iPhone Duo folding region in window points (CSS px in the full-window
+  // web view), or nil off the Duo, before iOS 27.1, or on the cover display.
+  // Inactive regions are reported too, so the page knows where the crease
+  // is while the display is flat.
+  private func foldState(in window: UIWindow) -> [String: Any]? {
+    #if canImport(UIKit, _version: 9127.0.85)
+    guard NativeBridgePlugin.isIPhoneDuo, #available(iOS 27.1, *) else { return nil }
+    let regions = window.reservedRegions(kind: .division, options: .includeInactive)
+    guard let region = regions.first(where: { $0.isActive }) ?? regions.first else {
+      return ["status": lastHingeStatus]
+    }
+    return [
+      "status": lastHingeStatus,
+      "regionActive": region.isActive,
+      "region": [
+        "x": region.frame.origin.x,
+        "y": region.frame.origin.y,
+        "width": region.frame.size.width,
+        "height": region.frame.size.height
+      ]
+    ]
+    #else
+    return nil
+    #endif
+  }
 
   @objc public func get_safe_area_insets(_ invoke: Invoke) {
     DispatchQueue.main.async {
@@ -1533,7 +1588,7 @@ class NativeBridgePlugin: Plugin {
           bottomCornerRadius = probe.effectiveRadius(corner: [.bottomLeft, .bottomRight])
           probe.removeFromSuperview()
         }
-        invoke.resolve([
+        var response: [String: Any] = [
           "top": insets.top,
           "left": insets.left,
           "bottom": insets.bottom,
@@ -1541,7 +1596,9 @@ class NativeBridgePlugin: Plugin {
           "bottomCornerRadius": bottomCornerRadius,
           "isIPhoneDuo": NativeBridgePlugin.isIPhoneDuo,
           "statusBarHidden": window.rootViewController?.prefersStatusBarHidden ?? false
-        ])
+        ]
+        if let fold = self.foldState(in: window) { response["fold"] = fold }
+        invoke.resolve(response)
       } else {
         invoke.resolve([
           "error": "No window found",

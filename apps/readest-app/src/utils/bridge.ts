@@ -93,7 +93,16 @@ export interface GetSafeAreaInsetsResponse {
   isIPhoneDuo?: boolean;
   /** iOS: whether the root view controller currently hides the status bar. */
   statusBarHidden?: boolean;
+  /** iPhone Duo: hinge status and folding region (window points). */
+  fold?: DuoFoldState;
   error?: string;
+}
+
+export interface DuoFoldState {
+  status: 'closed' | 'partial' | 'open' | 'unknown';
+  /** Whether the folding region currently divides the display. */
+  regionActive?: boolean;
+  region?: { x: number; y: number; width: number; height: number };
 }
 
 interface GetScreenBrightnessResponse {

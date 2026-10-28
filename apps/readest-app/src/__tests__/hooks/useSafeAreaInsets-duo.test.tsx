@@ -7,7 +7,9 @@ const h = vi.hoisted(() => ({
   updateInsets: vi.fn(),
   updateCornerRadius: vi.fn(),
   setIsIPhoneDuo: vi.fn(),
+  setDuoFold: vi.fn(),
   storeIsIPhoneDuo: false,
+  foldListener: null as null | (() => void),
 }));
 
 vi.mock('@/context/EnvContext', () => ({ useEnv: () => ({ appService: h.appService }) }));
@@ -17,6 +19,7 @@ vi.mock('@/store/themeStore', () => ({
       updateSafeAreaInsets: h.updateInsets,
       updateScreenCornerRadius: h.updateCornerRadius,
       setIsIPhoneDuo: h.setIsIPhoneDuo,
+      setDuoFold: h.setDuoFold,
     }),
     {
       getState: () => ({
@@ -27,6 +30,12 @@ vi.mock('@/store/themeStore', () => ({
   ),
 }));
 vi.mock('@/utils/bridge', () => ({ getSafeAreaInsets: h.getInsets }));
+vi.mock('@tauri-apps/api/core', () => ({
+  addPluginListener: (_plugin: string, event: string, handler: () => void) => {
+    if (event === 'duo-fold-changed') h.foldListener = handler;
+    return Promise.resolve({ unregister: () => {} });
+  },
+}));
 vi.mock('@/utils/misc', () => ({ getOSPlatform: () => 'ios' }));
 vi.mock('@tauri-apps/api/window', () => ({
   getCurrentWindow: () => ({
@@ -40,6 +49,8 @@ afterEach(() => {
   cleanup();
   h.getInsets.mockReset();
   h.setIsIPhoneDuo.mockClear();
+  h.setDuoFold.mockClear();
+  h.foldListener = null;
   h.storeIsIPhoneDuo = false;
 });
 
@@ -70,5 +81,41 @@ describe('useSafeAreaInsets iPhone Duo flag', () => {
     h.storeIsIPhoneDuo = true;
     window.dispatchEvent(new Event('resize'));
     await waitFor(() => expect(h.getInsets).toHaveBeenCalledTimes(2));
+  });
+});
+
+describe('useSafeAreaInsets iPhone Duo fold', () => {
+  const fold = {
+    status: 'partial',
+    regionActive: true,
+    region: { x: 455, y: 0, width: 40, height: 669 },
+  };
+
+  it('records the fold on the Duo and clears it elsewhere', async () => {
+    h.getInsets.mockResolvedValue({ ...zero, isIPhoneDuo: true, fold });
+    renderHook(() => useSafeAreaInsets());
+    await waitFor(() => expect(h.setDuoFold).toHaveBeenLastCalledWith(fold));
+    cleanup();
+
+    h.getInsets.mockResolvedValue({ ...zero, fold });
+    renderHook(() => useSafeAreaInsets());
+    await waitFor(() => expect(h.setDuoFold).toHaveBeenLastCalledWith(null));
+  });
+
+  it('refetches on a hinge change and again once UIKit settles the region', async () => {
+    h.getInsets.mockResolvedValue({ ...zero, isIPhoneDuo: true, fold });
+    renderHook(() => useSafeAreaInsets());
+    await waitFor(() => expect(h.foldListener).not.toBeNull());
+    await waitFor(() => expect(h.getInsets).toHaveBeenCalledTimes(1));
+
+    vi.useFakeTimers();
+    try {
+      h.foldListener!();
+      expect(h.getInsets).toHaveBeenCalledTimes(2);
+      vi.advanceTimersByTime(300);
+      expect(h.getInsets).toHaveBeenCalledTimes(3);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

@@ -36,7 +36,7 @@ import { navigateToLogin } from '@/utils/nav';
 import { getScrollGapAttr } from '@/utils/webtoon';
 import { applyPageTurnAttributes } from '@/app/reader/hooks/useCapturedTurn';
 import { eventDispatcher } from '@/utils/event';
-import { getMaxInlineSize } from '@/utils/config';
+import { getCurrentRendererLayout, useDuoPose } from '@/hooks/useDuoPose';
 import { nextThemeMode } from '@/utils/ambientLight';
 import { saveViewSettings } from '@/helpers/settings';
 import { canToggleFullScreen, toggleFullScreen } from '@/utils/window';
@@ -84,6 +84,19 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
   const [contrast, setContrast] = useState(viewSettings!.contrast ?? 100);
   const [zoomMode, setZoomMode] = useState(viewSettings!.zoomMode!);
   const [spreadMode, setSpreadMode] = useState(viewSettings!.spreadMode!);
+  // On iPhone Duo's inner display in landscape, book mode decides the spread.
+  const duoOwnsSpread = useDuoPose() === 'inner-landscape';
+  const duoBookMode = useReaderStore(
+    (s) => s.viewStates[bookKey]?.viewSettings?.duoBookMode ?? true,
+  );
+  const shownSpreadMode = duoOwnsSpread ? (duoBookMode ? 'auto' : 'none') : spreadMode;
+  const chooseSpreadMode = (mode: 'auto' | 'none') => {
+    if (duoOwnsSpread) {
+      saveViewSettings(envConfig, bookKey, 'duoBookMode', mode === 'auto', false, false);
+    } else {
+      setSpreadMode(mode);
+    }
+  };
   const [keepCoverSpread, setKeepCoverSpread] = useState(viewSettings!.keepCoverSpread!);
   const [invertImgColorInDark, setInvertImgColorInDark] = useState(
     viewSettings!.invertImgColorInDark,
@@ -204,7 +217,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
     getView(bookKey)?.renderer.setAttribute('flow', isScrolledMode ? 'scrolled' : 'paginated');
     getView(bookKey)?.renderer.setAttribute(
       'max-inline-size',
-      `${getMaxInlineSize(viewSettings)}px`,
+      `${getCurrentRendererLayout(viewSettings!).maxInlineSize}px`,
     );
     getView(bookKey)?.renderer.setStyles?.(getStyles(viewSettings!));
     // `scrolled` decides which engine owns a swipe: leaving it stale keeps the
@@ -407,12 +420,12 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
               <button
                 title={_('Single Page')}
                 onClick={() => {
-                  setSpreadMode('none');
+                  chooseSpreadMode('none');
                   if (isScrolledMode) setScrolledMode(false);
                 }}
                 className={clsx(
                   'hover:bg-base-300 text-base-content rounded-full p-2',
-                  !isScrolledMode && spreadMode === 'none' && 'bg-base-300/75',
+                  !isScrolledMode && shownSpreadMode === 'none' && 'bg-base-300/75',
                 )}
               >
                 <TbColumns1 />
@@ -420,12 +433,12 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
               <button
                 title={_('Auto Spread')}
                 onClick={() => {
-                  setSpreadMode('auto');
+                  chooseSpreadMode('auto');
                   if (isScrolledMode) setScrolledMode(false);
                 }}
                 className={clsx(
                   'hover:bg-base-300 text-base-content rounded-full p-2',
-                  !isScrolledMode && spreadMode === 'auto' && 'bg-base-300/75',
+                  !isScrolledMode && shownSpreadMode === 'auto' && 'bg-base-300/75',
                 )}
               >
                 <TbColumns2 />
@@ -484,7 +497,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
               label={_('Separate Cover Page')}
               Icon={keepCoverSpread ? MdCheck : undefined}
               onClick={() => setKeepCoverSpread(!keepCoverSpread)}
-              disabled={spreadMode === 'none'}
+              disabled={shownSpreadMode === 'none'}
             />
             <MenuItem
               label={_('Right-to-Left Pages')}

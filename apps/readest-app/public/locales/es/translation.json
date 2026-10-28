@@ -2723,5 +2723,11 @@
   "Quotes take the highlight color, and > [!NOTE] becomes a callout": "Las citas toman el color del resaltado y > [!NOTE] se convierte en un destacado",
   "Variables: {{variables}}": "Variables: {{variables}}",
   "Stable Page Numbers": "Números de página estables",
-  "Turn off to count pages by the screens of this device": "Desactívalo para contar las páginas por las pantallas de este dispositivo"
+  "Turn off to count pages by the screens of this device": "Desactívalo para contar las páginas por las pantallas de este dispositivo",
+  "One page": "Una página",
+  "Two pages": "Dos páginas",
+  "Show One Page": "Mostrar una página",
+  "Show Two Pages": "Mostrar dos páginas",
+  "Two Pages When Unfolded": "Dos páginas al desplegar",
+  "In landscape, show a page on each side of the fold. Sets the columns there.": "En horizontal, muestra una página a cada lado del pliegue. Define allí las columnas."
 }

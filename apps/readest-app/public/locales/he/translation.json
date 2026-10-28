@@ -2723,5 +2723,11 @@
   "Quotes take the highlight color, and > [!NOTE] becomes a callout": "ציטוטים מקבלים את צבע ההדגשה, ו-‎> [!NOTE]‎ הופך לתיבת הסבר",
   "Variables: {{variables}}": "משתנים: {{variables}}",
   "Stable Page Numbers": "מספרי עמודים קבועים",
-  "Turn off to count pages by the screens of this device": "כבו כדי לספור עמודים לפי המסכים של מכשיר זה"
+  "Turn off to count pages by the screens of this device": "כבו כדי לספור עמודים לפי המסכים של מכשיר זה",
+  "One page": "עמוד אחד",
+  "Two pages": "שני עמודים",
+  "Show One Page": "הצג עמוד אחד",
+  "Show Two Pages": "הצג שני עמודים",
+  "Two Pages When Unfolded": "שני עמודים כשהמכשיר פתוח",
+  "In landscape, show a page on each side of the fold. Sets the columns there.": "במצב לרוחב, הצג עמוד בכל צד של הקיפול. קובע שם את העמודות."
 }

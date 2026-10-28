@@ -2587,5 +2587,11 @@
   "Quotes take the highlight color, and > [!NOTE] becomes a callout": "ལུང་འདྲེན་ལ་འོད་རྟགས་ཀྱི་ཚོན་མདོག་ཐོབ་ཅིང་། > [!NOTE] དེ་གསལ་བཤད་སྒྲོམ་དུ་འགྱུར",
   "Variables: {{variables}}": "འགྱུར་ཚད: {{variables}}",
   "Stable Page Numbers": "ཤོག་གྲངས་བརྟན་པོ།",
-  "Turn off to count pages by the screens of this device": "སྒྲིག་ཆས་འདིའི་བརྙན་ཡོལ་ལྟར་ཤོག་གྲངས་རྩིས་པར་སྒོ་རྒྱག"
+  "Turn off to count pages by the screens of this device": "སྒྲིག་ཆས་འདིའི་བརྙན་ཡོལ་ལྟར་ཤོག་གྲངས་རྩིས་པར་སྒོ་རྒྱག",
+  "One page": "ཤོག་ངོས་གཅིག",
+  "Two pages": "ཤོག་ངོས་གཉིས",
+  "Show One Page": "ཤོག་ངོས་གཅིག་སྟོན།",
+  "Show Two Pages": "ཤོག་ངོས་གཉིས་སྟོན།",
+  "Two Pages When Unfolded": "ཕྱེ་དུས་ཤོག་ངོས་གཉིས",
+  "In landscape, show a page on each side of the fold. Sets the columns there.": "འཕྲེད་ཕྱོགས་སུ་ལྟེབ་སའི་ཕྱོགས་རེ་རེར་ཤོག་ངོས་རེ་སྟོན།. དེར་ཀ་བ་ཡང་གཏན་འཁེལ་བྱེད།"
 }

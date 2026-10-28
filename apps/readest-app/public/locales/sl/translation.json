@@ -2791,5 +2791,11 @@
   "Quotes take the highlight color, and > [!NOTE] becomes a callout": "Citati prevzamejo barvo poudarka, > [!NOTE] pa postane opomba",
   "Variables: {{variables}}": "Spremenljivke: {{variables}}",
   "Stable Page Numbers": "Stalne številke strani",
-  "Turn off to count pages by the screens of this device": "Izklopite za štetje strani po zaslonih te naprave"
+  "Turn off to count pages by the screens of this device": "Izklopite za štetje strani po zaslonih te naprave",
+  "One page": "Ena stran",
+  "Two pages": "Dve strani",
+  "Show One Page": "Pokaži eno stran",
+  "Show Two Pages": "Pokaži dve strani",
+  "Two Pages When Unfolded": "Dve strani, ko je razprto",
+  "In landscape, show a page on each side of the fold. Sets the columns there.": "V ležečem načinu prikaži stran na vsaki strani pregiba. Tam določa stolpce."
 }

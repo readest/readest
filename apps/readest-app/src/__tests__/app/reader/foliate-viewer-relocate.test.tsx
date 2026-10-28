@@ -25,7 +25,12 @@ vi.mock('@/store/bookDataStore', () => ({
 }));
 vi.mock('@/store/parallelViewStore', () => ({ useParallelViewStore: () => () => [] }));
 vi.mock('@/store/settingsStore', () => ({ useSettingsStore: () => ({ settings: {} }) }));
-vi.mock('@/store/themeStore', () => ({ useThemeStore: () => ({}) }));
+vi.mock('@/store/themeStore', () => {
+  const state = { isIPhoneDuo: false, duoFold: null, safeAreaInsets: null };
+  const useThemeStore = (selector?: (s: typeof state) => unknown) =>
+    selector ? selector(state) : state;
+  return { useThemeStore: Object.assign(useThemeStore, { getState: () => state }) };
+});
 vi.mock('@/store/customFontStore', () => ({
   // FoliateViewer's calibration fingerprint reads the loaded-font list at
   // render, so the minimal store mock has to provide it.

@@ -18,6 +18,7 @@ import { getCurrentWindow } from '@tauri-apps/api/window';
 import { CustomTheme, Palette, ThemeMode, ThemeScope } from '@/styles/themes';
 import { EnvConfigType, isWebAppPlatform } from '@/services/environment';
 import { SystemSettings } from '@/types/settings';
+import type { DuoFoldState } from '@/utils/bridge';
 import { Insets } from '@/types/misc';
 import { StatusBarHiddenInsets } from '@/utils/insets';
 
@@ -69,6 +70,8 @@ interface ThemeState {
   // iPhone Duo, whose vertical status strip is a large left/right inset (#6307).
   // Every horizontal-inset rule is gated on it, so no other device changes.
   isIPhoneDuo: boolean;
+  // iPhone Duo hinge status and folding region, null elsewhere.
+  duoFold: DuoFoldState | null;
   isRoundedWindow: boolean;
   setSystemUIAlwaysHidden: (hidden: boolean) => void;
   setStatusBarHeight: (height: number) => void;
@@ -95,6 +98,7 @@ interface ThemeState {
   recordStatusBarHiddenInsets: (insets: Insets) => void;
   updateScreenCornerRadius: (radius: number) => void;
   setIsIPhoneDuo: (isIPhoneDuo: boolean) => void;
+  setDuoFold: (fold: DuoFoldState | null) => void;
 }
 
 const LIBRARY_THEME_MODE_KEY = 'libraryThemeMode';
@@ -311,6 +315,7 @@ export const useThemeStore = create<ThemeState>((set, get) => {
     statusBarHiddenInsets: null,
     screenCornerRadius: 0,
     isIPhoneDuo: false,
+    duoFold: null,
     isRoundedWindow: true,
     showSystemUI: () => set({ systemUIVisible: true }),
     dismissSystemUI: () => set({ systemUIVisible: false }),
@@ -443,6 +448,11 @@ export const useThemeStore = create<ThemeState>((set, get) => {
     },
     setIsIPhoneDuo: (isIPhoneDuo) => {
       if (get().isIPhoneDuo !== isIPhoneDuo) set({ isIPhoneDuo });
+    },
+    setDuoFold: (fold) => {
+      // Refetched on every resize and focus: keep the reference while nothing
+      // changed so the reader does not re-lay out the page.
+      if (JSON.stringify(get().duoFold) !== JSON.stringify(fold)) set({ duoFold: fold });
     },
   };
 });

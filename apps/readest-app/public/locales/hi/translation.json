@@ -2655,5 +2655,11 @@
   "Quotes take the highlight color, and > [!NOTE] becomes a callout": "उद्धरण हाइलाइट का रंग लेते हैं, और > [!NOTE] एक कॉलआउट बन जाता है",
   "Variables: {{variables}}": "वेरिएबल: {{variables}}",
   "Stable Page Numbers": "स्थिर पेज संख्याएँ",
-  "Turn off to count pages by the screens of this device": "इस डिवाइस की स्क्रीन के अनुसार पेज गिनने के लिए बंद करें"
+  "Turn off to count pages by the screens of this device": "इस डिवाइस की स्क्रीन के अनुसार पेज गिनने के लिए बंद करें",
+  "One page": "एक पृष्ठ",
+  "Two pages": "दो पृष्ठ",
+  "Show One Page": "एक पृष्ठ दिखाएँ",
+  "Show Two Pages": "दो पृष्ठ दिखाएँ",
+  "Two Pages When Unfolded": "खोलने पर दो पृष्ठ",
+  "In landscape, show a page on each side of the fold. Sets the columns there.": "लैंडस्केप में मोड़ के दोनों ओर एक-एक पृष्ठ दिखाएँ. वहाँ कॉलम भी तय करता है।"
 }

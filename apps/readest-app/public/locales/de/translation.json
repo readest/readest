@@ -2655,5 +2655,11 @@
   "Quotes take the highlight color, and > [!NOTE] becomes a callout": "Zitate übernehmen die Markierungsfarbe, und > [!NOTE] wird zu einem Callout",
   "Variables: {{variables}}": "Variablen: {{variables}}",
   "Stable Page Numbers": "Stabile Seitenzahlen",
-  "Turn off to count pages by the screens of this device": "Ausschalten, um Seiten nach den Bildschirmen dieses Geräts zu zählen"
+  "Turn off to count pages by the screens of this device": "Ausschalten, um Seiten nach den Bildschirmen dieses Geräts zu zählen",
+  "One page": "Eine Seite",
+  "Two pages": "Zwei Seiten",
+  "Show One Page": "Eine Seite anzeigen",
+  "Show Two Pages": "Zwei Seiten anzeigen",
+  "Two Pages When Unfolded": "Zwei Seiten im aufgeklappten Zustand",
+  "In landscape, show a page on each side of the fold. Sets the columns there.": "Im Querformat auf jeder Seite des Falzes eine Seite anzeigen. Legt dort die Spalten fest."
 }
