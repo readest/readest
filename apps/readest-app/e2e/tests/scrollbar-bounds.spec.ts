@@ -1,15 +1,13 @@
 import { expect, test } from '../fixtures/base';
 
 /**
- * Acceptance check for the local "keep the scrollbar clear of the chrome" fix.
+ * The reading column's scrollbar is drawn at the column's own edge, and the
+ * header/footer bars float on top of that edge: with the thumb parked at a
+ * section start (or end) and a bar slid in, the bar painted over the thumb.
+ * The bar's travel is now bounded -- the thumb stops short of both ends -- so
+ * the contract this spec locks down is geometric:
  *
- * Not part of the upstream suite. The reading column's scrollbar is drawn at
- * the column's own edge, and the header/footer bars float on top of that edge:
- * with the thumb parked at a section start (or end) and a bar slid in, the bar
- * painted over the thumb. The bar's travel is now bounded -- the thumb stops
- * short of both ends -- so the contract this spec locks down is geometric:
- *
- *   container.top    + reserved top    <= header.bottom
+ *   container.top    + reserved top    >= header.bottom
  *   container.bottom - reserved bottom <= footer.top
  *
  * i.e. no part of the bar the thumb can reach is ever underneath the chrome.
@@ -91,7 +89,6 @@ test('the bar stops short of the header and footer bars', async ({ openBook, pag
   await reader.setPageHeaderVisible(true);
   await page.waitForTimeout(800);
   const withHeader = await bounds(page);
-  console.log('[1] 页眉页脚带:', JSON.stringify(withHeader));
   expectClearOfChrome(withHeader);
   expect(withHeader.containerTop).toBeGreaterThanOrEqual(withHeader.headerBottom);
   expect(withHeader.insetTop).toBe('4px');
@@ -102,7 +99,6 @@ test('the bar stops short of the header and footer bars', async ({ openBook, pag
   await reader.setPageHeaderVisible(false);
   await page.waitForTimeout(800);
   const compact = await bounds(page);
-  console.log('[2] 紧凑边距:', JSON.stringify(compact));
   expectClearOfChrome(compact);
   expect(compact.containerTop).toBeLessThan(compact.headerBottom);
   expect(compact.insetTop).toBe('48px');

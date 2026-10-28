@@ -1,12 +1,12 @@
 import { expect, test } from '../fixtures/base';
 
 /**
- * Acceptance check for the local "reveal the scrollbar on demand" change.
- *
- * Not part of the upstream suite — this spec exists to prove the local patch
- * behaves as designed in a real browser: 8px slot always reserved, thumb
- * painted transparent when hidden, revealed by the right-edge hot zone and by
- * scrolling, and never a layout shift.
+ * The scrolled-mode scrollbar: an 8px slot is always reserved, hiding only
+ * paints the thumb transparent (never re-lays out the column), and the bar
+ * comes back while the pointer is in the right-edge strip or briefly after a
+ * scroll. Assertions read the *painted* thumb and the *computed* gutter, not
+ * a flag — a flag-only check is what let an earlier revision of this code
+ * pass while nothing reached the screen.
  */
 
 test.setTimeout(240_000);
@@ -16,8 +16,6 @@ test.setTimeout(240_000);
 // blank even when the behaviour is correct. Drop that flag so the bar is
 // actually drawn and the screenshots mean something.
 test.use({ launchOptions: { ignoreDefaultArgs: ['--hide-scrollbars'] } });
-
-const SHOT_DIR = 'scrollbar-check';
 
 type Probe = {
   hasShadowStyle: boolean;
@@ -100,7 +98,12 @@ const viewerBox = (page: import('@playwright/test').Page) =>
       : null;
   });
 
-test('scrolled + hide scrollbar: right-edge reveal, no reflow', async ({ openBook, page }) => {
+test('scrolled + hide scrollbar: right-edge reveal, no reflow', async ({
+  openBook,
+  page,
+}, testInfo) => {
+  // Screenshots land in Playwright's output dir, never in the repo.
+  const shot = (name: string) => testInfo.outputPath(name);
   const reader = await openBook();
 
   // --- turn on scrolled mode, then hide the scrollbar -----------------------
@@ -128,7 +131,6 @@ test('scrolled + hide scrollbar: right-edge reveal, no reflow', async ({ openBoo
   await page.waitForTimeout(1200);
 
   const hidden = await probe(page);
-  console.log('[1] 隐藏态:', JSON.stringify(hidden, null, 1));
 
   // Structural expectations: the shadow sheet exists and reserves the slot.
   expect(hidden.hasShadowStyle).toBe(true);
@@ -156,8 +158,8 @@ test('scrolled + hide scrollbar: right-edge reveal, no reflow', async ({ openBoo
     width: 40,
     height: Math.min(600, cr!.height),
   };
-  await page.screenshot({ path: `${SHOT_DIR}/01-hidden.png` });
-  await page.screenshot({ path: `${SHOT_DIR}/01-hidden-strip.png`, clip: strip });
+  await page.screenshot({ path: shot('01-hidden.png') });
+  await page.screenshot({ path: shot('01-hidden-strip.png'), clip: strip });
 
   // --- pointer in the middle of the page: still hidden ----------------------
   await page.mouse.move(b.left + b.width / 2, b.top + Math.min(300, b.height / 2));
@@ -170,9 +172,8 @@ test('scrolled + hide scrollbar: right-edge reveal, no reflow', async ({ openBoo
   const revealed = await probe(page);
   // Painted, not merely flagged: the switch has to reach the pseudo-element.
   expect(revealed.thumbIsTransparent).toBe(false);
-  console.log('[2] 揭示态:', JSON.stringify(revealed, null, 1));
-  await page.screenshot({ path: `${SHOT_DIR}/02-revealed.png` });
-  await page.screenshot({ path: `${SHOT_DIR}/02-revealed-strip.png`, clip: strip });
+  await page.screenshot({ path: shot('02-revealed.png') });
+  await page.screenshot({ path: shot('02-revealed-strip.png'), clip: strip });
 
   // The whole point: revealing must not re-lay out the column.
   expect(revealed.clientWidth).toBe(hidden.clientWidth);
@@ -188,10 +189,9 @@ test('scrolled + hide scrollbar: right-edge reveal, no reflow', async ({ openBoo
   await page.mouse.wheel(0, 600);
   await expect.poll(async () => (await probe(page)).revealVar).not.toBe('');
   await page.waitForTimeout(200);
-  await page.screenshot({ path: `${SHOT_DIR}/03-scrolling-strip.png`, clip: strip });
+  await page.screenshot({ path: shot('03-scrolling-strip.png'), clip: strip });
 
   const afterScroll = await probe(page);
-  console.log('[3] 滚动闪烁:', JSON.stringify(afterScroll, null, 1));
   expect(afterScroll.scrollTop).toBeGreaterThan(before);
 
   // Flash expires on its own (~900ms) with the pointer parked mid-page.
@@ -211,9 +211,8 @@ test('scrolled + hide scrollbar: right-edge reveal, no reflow', async ({ openBoo
   await page.waitForTimeout(600);
 
   const shown = await probe(page);
-  console.log('[4] 常显态:', JSON.stringify(shown, null, 1));
   expect(shown.revealVar).toBe('');
   expect(shown.thumbIsTransparent).toBe(false);
   expect(shown.shadowCss).not.toContain('--scrollbar-reveal-thumb');
-  await page.screenshot({ path: `${SHOT_DIR}/04-always-visible-strip.png`, clip: strip });
+  await page.screenshot({ path: shot('04-always-visible-strip.png'), clip: strip });
 });
