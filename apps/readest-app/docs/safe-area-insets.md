@@ -150,6 +150,9 @@ cover display. That pose shows a book as two pages, one either side of the hinge
 - In inner landscape, the `duoBookMode` view setting (default on) gives exactly two columns, or a
   two-page spread for fixed layouts. With it off the page is one column. The header's book-mode
   button and the Layout panel's "Two Pages When Unfolded" row switch it.
+- `duoFoldedBookMode` (default on) forces two pages while the hinge is part way open
+  (`isDuoPartlyFolded`: hinge status `partial` or an active vertical region), whatever
+  `duoBookMode` says. The header button hides then, since it would have no effect.
 - `get_safe_area_insets` reports `fold` on the Duo: the hinge status and the UIKit `.division`
   reserved region in window points. The region is active only while the device is part way folded.
   While a vertical region is active, the spine gap widens to clear it (`getDuoSpineGutter`).

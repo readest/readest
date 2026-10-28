@@ -2661,5 +2661,7 @@
   "Show One Page": "එක් පිටුවක් පෙන්වන්න",
   "Show Two Pages": "පිටු දෙකක් පෙන්වන්න",
   "Two Pages When Unfolded": "දිග හැරි විට පිටු දෙකක්",
-  "In landscape, show a page on each side of the fold. Sets the columns there.": "තිරස් දිශානතියේදී නැමුමේ එක් එක් පැත්තේ පිටුවක් පෙන්වන්න. එහි තීරු ද තීරණය කරයි."
+  "In landscape, show a page on each side of the fold. Sets the columns there.": "තිරස් දිශානතියේදී නැමුමේ එක් එක් පැත්තේ පිටුවක් පෙන්වන්න. එහි තීරු ද තීරණය කරයි.",
+  "Two Pages When Partly Folded": "අර්ධව නැමූ විට පිටු දෙකක්",
+  "Show two pages while the phone is held part way open, like a book": "දුරකථනය පොතක් මෙන් අර්ධව විවෘතව ඇති විට පිටු දෙකක් පෙන්වන්න"
 }

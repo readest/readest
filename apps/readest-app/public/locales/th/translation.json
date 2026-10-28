@@ -2593,5 +2593,7 @@
   "Show One Page": "แสดงหนึ่งหน้า",
   "Show Two Pages": "แสดงสองหน้า",
   "Two Pages When Unfolded": "สองหน้าเมื่อกางออก",
-  "In landscape, show a page on each side of the fold. Sets the columns there.": "ในแนวนอน แสดงหนึ่งหน้าในแต่ละด้านของรอยพับ กำหนดจำนวนคอลัมน์ในโหมดนี้"
+  "In landscape, show a page on each side of the fold. Sets the columns there.": "ในแนวนอน แสดงหนึ่งหน้าในแต่ละด้านของรอยพับ กำหนดจำนวนคอลัมน์ในโหมดนี้",
+  "Two Pages When Partly Folded": "สองหน้าเมื่อพับบางส่วน",
+  "Show two pages while the phone is held part way open, like a book": "แสดงสองหน้าขณะเปิดโทรศัพท์ค้างไว้บางส่วนเหมือนหนังสือ"
 }

@@ -2661,5 +2661,7 @@
   "Show One Page": "এক পৃষ্ঠা দেখান",
   "Show Two Pages": "দুই পৃষ্ঠা দেখান",
   "Two Pages When Unfolded": "খোলা অবস্থায় দুই পৃষ্ঠা",
-  "In landscape, show a page on each side of the fold. Sets the columns there.": "ল্যান্ডস্কেপে ভাঁজের প্রতিটি পাশে একটি করে পৃষ্ঠা দেখান. সেখানে কলামও নির্ধারণ করে।"
+  "In landscape, show a page on each side of the fold. Sets the columns there.": "ল্যান্ডস্কেপে ভাঁজের প্রতিটি পাশে একটি করে পৃষ্ঠা দেখান. সেখানে কলামও নির্ধারণ করে।",
+  "Two Pages When Partly Folded": "আংশিক ভাঁজ করলে দুই পৃষ্ঠা",
+  "Show two pages while the phone is held part way open, like a book": "ফোনটি বইয়ের মতো আংশিক খোলা থাকলে দুই পৃষ্ঠা দেখান"
 }

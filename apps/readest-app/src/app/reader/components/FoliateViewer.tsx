@@ -1339,6 +1339,7 @@ const FoliateViewer: React.FC<{
     viewSettings?.scrolled,
     viewSettings?.vertical,
     viewSettings?.duoBookMode,
+    viewSettings?.duoFoldedBookMode,
     viewSettings?.maxColumnCount,
     viewSettings?.maxInlineSize,
     viewSettings?.spreadMode,

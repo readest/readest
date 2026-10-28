@@ -2661,5 +2661,7 @@
   "Show One Page": "Tek sayfa göster",
   "Show Two Pages": "İki sayfa göster",
   "Two Pages When Unfolded": "Açıkken iki sayfa",
-  "In landscape, show a page on each side of the fold. Sets the columns there.": "Yatay modda katlama yerinin her iki yanında birer sayfa göster. Orada sütunları da belirler."
+  "In landscape, show a page on each side of the fold. Sets the columns there.": "Yatay modda katlama yerinin her iki yanında birer sayfa göster. Orada sütunları da belirler.",
+  "Two Pages When Partly Folded": "Kısmen katlanınca iki sayfa",
+  "Show two pages while the phone is held part way open, like a book": "Telefon kitap gibi yarı açıkken iki sayfa göster"
 }

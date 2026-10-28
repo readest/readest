@@ -2593,5 +2593,7 @@
   "Show One Page": "顯示單頁",
   "Show Two Pages": "顯示雙頁",
   "Two Pages When Unfolded": "展開時顯示雙頁",
-  "In landscape, show a page on each side of the fold. Sets the columns there.": "橫向時，在摺疊處兩側各顯示一頁。並決定此時的分欄。"
+  "In landscape, show a page on each side of the fold. Sets the columns there.": "橫向時，在摺疊處兩側各顯示一頁。並決定此時的分欄。",
+  "Two Pages When Partly Folded": "半摺疊時顯示雙頁",
+  "Show two pages while the phone is held part way open, like a book": "手機像書一樣半打開時顯示雙頁"
 }

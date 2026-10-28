@@ -2661,5 +2661,7 @@
   "Show One Page": "ერთი გვერდის ჩვენება",
   "Show Two Pages": "ორი გვერდის ჩვენება",
   "Two Pages When Unfolded": "ორი გვერდი გაშლისას",
-  "In landscape, show a page on each side of the fold. Sets the columns there.": "ჰორიზონტალურ რეჟიმში ნაკეცის თითოეულ მხარეს თითო გვერდის ჩვენება. იქ სვეტებსაც ეს განსაზღვრავს."
+  "In landscape, show a page on each side of the fold. Sets the columns there.": "ჰორიზონტალურ რეჟიმში ნაკეცის თითოეულ მხარეს თითო გვერდის ჩვენება. იქ სვეტებსაც ეს განსაზღვრავს.",
+  "Two Pages When Partly Folded": "ორი გვერდი ნაწილობრივ დაკეცვისას",
+  "Show two pages while the phone is held part way open, like a book": "ორი გვერდის ჩვენება, როცა ტელეფონი წიგნივით ნახევრად ღიაა"
 }

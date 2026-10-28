@@ -2661,5 +2661,7 @@
   "Show One Page": "Visa en sida",
   "Show Two Pages": "Visa två sidor",
   "Two Pages When Unfolded": "Två sidor när den är utfälld",
-  "In landscape, show a page on each side of the fold. Sets the columns there.": "I liggande läge visas en sida på var sida om vecket. Styr kolumnerna där."
+  "In landscape, show a page on each side of the fold. Sets the columns there.": "I liggande läge visas en sida på var sida om vecket. Styr kolumnerna där.",
+  "Two Pages When Partly Folded": "Två sidor när den är halvvikt",
+  "Show two pages while the phone is held part way open, like a book": "Visa två sidor när telefonen är halvöppen, som en bok"
 }

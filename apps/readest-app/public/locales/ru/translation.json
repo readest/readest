@@ -2797,5 +2797,7 @@
   "Show One Page": "Показать одну страницу",
   "Show Two Pages": "Показать две страницы",
   "Two Pages When Unfolded": "Две страницы в разложенном виде",
-  "In landscape, show a page on each side of the fold. Sets the columns there.": "В альбомной ориентации показывать по странице с каждой стороны сгиба. Определяет там количество колонок."
+  "In landscape, show a page on each side of the fold. Sets the columns there.": "В альбомной ориентации показывать по странице с каждой стороны сгиба. Определяет там количество колонок.",
+  "Two Pages When Partly Folded": "Две страницы при частичном сгибе",
+  "Show two pages while the phone is held part way open, like a book": "Показывать две страницы, когда телефон приоткрыт, как книга"
 }

@@ -2729,5 +2729,7 @@
   "Show One Page": "Afișează o pagină",
   "Show Two Pages": "Afișează două pagini",
   "Two Pages When Unfolded": "Două pagini când este deschis",
-  "In landscape, show a page on each side of the fold. Sets the columns there.": "În modul peisaj, afișează câte o pagină de fiecare parte a pliului. Stabilește acolo coloanele."
+  "In landscape, show a page on each side of the fold. Sets the columns there.": "În modul peisaj, afișează câte o pagină de fiecare parte a pliului. Stabilește acolo coloanele.",
+  "Two Pages When Partly Folded": "Două pagini când e parțial pliat",
+  "Show two pages while the phone is held part way open, like a book": "Afișează două pagini cât timp telefonul este întredeschis, ca o carte"
 }

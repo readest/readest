@@ -2593,5 +2593,7 @@
   "Show One Page": "Hiện một trang",
   "Show Two Pages": "Hiện hai trang",
   "Two Pages When Unfolded": "Hai trang khi mở ra",
-  "In landscape, show a page on each side of the fold. Sets the columns there.": "Ở chế độ ngang, hiện một trang ở mỗi bên nếp gấp. Đặt số cột trong trường hợp này."
+  "In landscape, show a page on each side of the fold. Sets the columns there.": "Ở chế độ ngang, hiện một trang ở mỗi bên nếp gấp. Đặt số cột trong trường hợp này.",
+  "Two Pages When Partly Folded": "Hai trang khi gập một phần",
+  "Show two pages while the phone is held part way open, like a book": "Hiện hai trang khi điện thoại mở hé như một cuốn sách"
 }

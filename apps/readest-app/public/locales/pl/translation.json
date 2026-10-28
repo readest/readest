@@ -2797,5 +2797,7 @@
   "Show One Page": "Pokaż jedną stronę",
   "Show Two Pages": "Pokaż dwie strony",
   "Two Pages When Unfolded": "Dwie strony po rozłożeniu",
-  "In landscape, show a page on each side of the fold. Sets the columns there.": "W poziomie pokazuj stronę po każdej stronie zgięcia. Określa wtedy kolumny."
+  "In landscape, show a page on each side of the fold. Sets the columns there.": "W poziomie pokazuj stronę po każdej stronie zgięcia. Określa wtedy kolumny.",
+  "Two Pages When Partly Folded": "Dwie strony po częściowym złożeniu",
+  "Show two pages while the phone is held part way open, like a book": "Pokazuj dwie strony, gdy telefon jest częściowo otwarty jak książka"
 }

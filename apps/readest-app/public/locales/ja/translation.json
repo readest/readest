@@ -2593,5 +2593,7 @@
   "Show One Page": "1ページ表示",
   "Show Two Pages": "2ページ表示",
   "Two Pages When Unfolded": "展開時に2ページ表示",
-  "In landscape, show a page on each side of the fold. Sets the columns there.": "横向きのとき、折り目の両側に1ページずつ表示します。そのときの段数もこの設定で決まります。"
+  "In landscape, show a page on each side of the fold. Sets the columns there.": "横向きのとき、折り目の両側に1ページずつ表示します。そのときの段数もこの設定で決まります。",
+  "Two Pages When Partly Folded": "半分折りたたみ時に2ページ",
+  "Show two pages while the phone is held part way open, like a book": "本のように半開きにしているときは2ページ表示します"
 }

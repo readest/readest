@@ -69,6 +69,9 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
   );
   const [maxColumnCount, setMaxColumnCount] = useState(viewSettings.maxColumnCount);
   const [duoBookMode, setDuoBookMode] = useState(viewSettings.duoBookMode ?? true);
+  const [duoFoldedBookMode, setDuoFoldedBookMode] = useState(
+    viewSettings.duoFoldedBookMode ?? true,
+  );
   const isIPhoneDuo = useThemeStore((s) => s.isIPhoneDuo);
   const [maxInlineSize, setMaxInlineSize] = useState(viewSettings.maxInlineSize);
   const [maxBlockSize, setMaxBlockSize] = useState(viewSettings.maxBlockSize);
@@ -143,6 +146,7 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
       columnGapPx: setColumnGapPx,
       maxColumnCount: setMaxColumnCount,
       duoBookMode: setDuoBookMode,
+      duoFoldedBookMode: setDuoFoldedBookMode,
       maxInlineSize: setMaxInlineSize,
       maxBlockSize: setMaxBlockSize,
       overrideLayout: setOverrideLayout,
@@ -328,6 +332,12 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
     saveViewSettings(envConfig, bookKey, 'duoBookMode', duoBookMode, false, false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [duoBookMode]);
+
+  useEffect(() => {
+    if (duoFoldedBookMode === (viewSettings.duoFoldedBookMode ?? true)) return;
+    saveViewSettings(envConfig, bookKey, 'duoFoldedBookMode', duoFoldedBookMode, false, false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [duoFoldedBookMode]);
 
   useEffect(() => {
     if (maxInlineSize === viewSettings.maxInlineSize) return;
@@ -775,6 +785,16 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
             disabled={isVertical}
             onChange={() => setDuoBookMode(!duoBookMode)}
             data-setting-id='settings.layout.duoBookMode'
+          />
+        )}
+        {isIPhoneDuo && (
+          <SettingsSwitchRow
+            label={_('Two Pages When Partly Folded')}
+            description={_('Show two pages while the phone is held part way open, like a book')}
+            checked={duoFoldedBookMode}
+            disabled={isVertical}
+            onChange={() => setDuoFoldedBookMode(!duoFoldedBookMode)}
+            data-setting-id='settings.layout.duoFoldedBookMode'
           />
         )}
         <NumberInput

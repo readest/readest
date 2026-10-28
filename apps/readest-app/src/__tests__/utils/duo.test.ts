@@ -4,6 +4,7 @@ import { ViewSettings } from '@/types/book';
 import { expectsColumnSpread } from '@/utils/config';
 import {
   applyRendererLayout,
+  getDuoBookMode,
   getDuoColumnLayout,
   getDuoPose,
   getDuoSpineGutter,
@@ -127,7 +128,7 @@ describe('getRendererLayout', () => {
   it('shows one page and no spread without book mode', () => {
     setViewport(951, 669);
     const layout = getRendererLayout(
-      settings({ duoBookMode: false, spreadMode: 'auto' }),
+      settings({ duoBookMode: false, duoFoldedBookMode: false, spreadMode: 'auto' }),
       'inner-landscape',
       891,
       bookFold,
@@ -255,5 +256,32 @@ describe('applyRendererLayout', () => {
     expect(renderer.attrs.get('spread')).toBe('auto');
     expect(rendition.spread).toBe('auto');
     expect(renderer.attrs.has('max-column-count')).toBe(false);
+  });
+});
+
+describe('two pages while part way folded', () => {
+  const partialNoRegion = { status: 'partial' as const };
+
+  it('forces two pages whatever book mode says, by default', () => {
+    for (const fold of [bookFold, partialNoRegion]) {
+      expect(getDuoBookMode(settings({ duoBookMode: false }), fold)).toBe(true);
+    }
+    setViewport(951, 669);
+    const layout = getRendererLayout(
+      settings({ duoBookMode: false }),
+      'inner-landscape',
+      891,
+      partialNoRegion,
+    );
+    expect(layout.maxColumnCount).toBe(2);
+    expect(layout.spreadMode).toBe('auto');
+  });
+
+  it('follows book mode while flat, or with the setting off', () => {
+    expect(getDuoBookMode(settings({ duoBookMode: false }), flatFold)).toBe(false);
+    expect(getDuoBookMode(settings({ duoBookMode: false }), null)).toBe(false);
+    expect(
+      getDuoBookMode(settings({ duoBookMode: false, duoFoldedBookMode: false }), bookFold),
+    ).toBe(false);
   });
 });

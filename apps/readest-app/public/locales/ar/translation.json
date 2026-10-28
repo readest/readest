@@ -2933,5 +2933,7 @@
   "Show One Page": "عرض صفحة واحدة",
   "Show Two Pages": "عرض صفحتين",
   "Two Pages When Unfolded": "صفحتان عند الفتح",
-  "In landscape, show a page on each side of the fold. Sets the columns there.": "في الوضع الأفقي، اعرض صفحة على كل جانب من الطيّة. ويحدد الأعمدة هناك."
+  "In landscape, show a page on each side of the fold. Sets the columns there.": "في الوضع الأفقي، اعرض صفحة على كل جانب من الطيّة. ويحدد الأعمدة هناك.",
+  "Two Pages When Partly Folded": "صفحتان عند الطي الجزئي",
+  "Show two pages while the phone is held part way open, like a book": "اعرض صفحتين عندما يكون الهاتف مفتوحًا جزئيًا مثل كتاب"
 }

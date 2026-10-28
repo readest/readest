@@ -2729,5 +2729,7 @@
   "Show One Page": "הצג עמוד אחד",
   "Show Two Pages": "הצג שני עמודים",
   "Two Pages When Unfolded": "שני עמודים כשהמכשיר פתוח",
-  "In landscape, show a page on each side of the fold. Sets the columns there.": "במצב לרוחב, הצג עמוד בכל צד של הקיפול. קובע שם את העמודות."
+  "In landscape, show a page on each side of the fold. Sets the columns there.": "במצב לרוחב, הצג עמוד בכל צד של הקיפול. קובע שם את העמודות.",
+  "Two Pages When Partly Folded": "שני עמודים כשהמכשיר מקופל חלקית",
+  "Show two pages while the phone is held part way open, like a book": "הצג שני עמודים כשהטלפון פתוח חלקית, כמו ספר"
 }

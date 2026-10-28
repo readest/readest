@@ -2797,5 +2797,7 @@
   "Show One Page": "Pokaži eno stran",
   "Show Two Pages": "Pokaži dve strani",
   "Two Pages When Unfolded": "Dve strani, ko je razprto",
-  "In landscape, show a page on each side of the fold. Sets the columns there.": "V ležečem načinu prikaži stran na vsaki strani pregiba. Tam določa stolpce."
+  "In landscape, show a page on each side of the fold. Sets the columns there.": "V ležečem načinu prikaži stran na vsaki strani pregiba. Tam določa stolpce.",
+  "Two Pages When Partly Folded": "Dve strani, ko je delno pregnjeno",
+  "Show two pages while the phone is held part way open, like a book": "Pokaži dve strani, ko je telefon delno odprt kot knjiga"
 }
