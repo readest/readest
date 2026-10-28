@@ -85,7 +85,7 @@ export const useScrollbarReveal = (renderer: HTMLElement | null | undefined, ena
         measuredAt = now;
         measure();
       }
-      setHovering(event.clientX >= rightEdge - HOT_ZONE_PX);
+      setHovering(event.clientX >= rightEdge - HOT_ZONE_PX && event.clientX <= rightEdge);
     };
 
     const onFramePointerMove = (event: PointerEvent) => {

@@ -210,7 +210,7 @@ const FoliateViewer: React.FC<{
   // book's column overflows sideways, so its scrollbar is the horizontal one
   // along the bottom edge rather than the vertical one the chrome can cover.
   const isVerticalWriting = !!(
-    viewSettings?.vertical || viewSettings?.writingMode.includes('vertical')
+    viewSettings?.vertical || viewSettings?.writingMode?.includes('vertical')
   );
 
   // The book document outlives this view: bookDataStore keeps it for the next
