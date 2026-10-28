@@ -23,9 +23,14 @@ const SCROLL_FLASH_MS = 900;
  *
  * Three things bring it back:
  *
- * 1. The pointer moving into the right-hand strip of the renderer. A reader
- *    reaches for the scrollbar by going right, so "right edge" reads as "wants
- *    the bar" without any hovering of the text itself.
+ * 1. The pointer moving into the strip along the bar. A reader reaches for the
+ *    scrollbar by going toward it, so "at the bar" reads as "wants the bar"
+ *    without any hovering of the text itself. Which edge the bar lives on
+ *    follows the writing axis: a horizontal book scrolls its column
+ *    vertically and keeps the bar on the right, while a vertical-rl book's
+ *    column overflows sideways and its bar is the horizontal one along the
+ *    bottom edge (the same axis `FoliateViewer` already uses for the
+ *    scrollbar-button insets).
  * 2. A scroll -- the bar is the only readout of position, so a wheel turn
  *    flashes it even when the pointer sits in the middle of the page.
  * 3. Neither: it fades back out.
@@ -35,7 +40,11 @@ const SCROLL_FLASH_MS = 900;
  * into the parent viewport. Otherwise the strip would go dead the moment the
  * pointer crossed into the page.
  */
-export const useScrollbarReveal = (renderer: HTMLElement | null | undefined, enabled: boolean) => {
+export const useScrollbarReveal = (
+  renderer: HTMLElement | null | undefined,
+  enabled: boolean,
+  verticalWriting = false,
+) => {
   useEffect(() => {
     if (!enabled || !renderer) return;
     const shadow = renderer.shadowRoot;
@@ -61,14 +70,18 @@ export const useScrollbarReveal = (renderer: HTMLElement | null | undefined, ena
     };
     const sync = () => paint(hovering || Date.now() < flashUntil);
 
-    // The renderer fills the reading area, so its right edge is where the
-    // scrollbar floats. Re-measured on a slow tick rather than every
-    // pointermove: a sidebar opening changes the edge without a resize event,
-    // and a layout read per move is a layout read too many.
+    // The renderer fills the reading area, so the bar floats along the edge
+    // chosen by the writing axis (right, or bottom for a vertical book).
+    // Re-measured on a slow tick rather than every pointermove: a sidebar
+    // opening changes the edge without a resize event, and a layout read per
+    // move is a layout read too many.
     let rightEdge = renderer.getBoundingClientRect().right;
+    let bottomEdge = renderer.getBoundingClientRect().bottom;
     let measuredAt = 0;
     const measure = () => {
-      rightEdge = renderer.getBoundingClientRect().right;
+      const rect = renderer.getBoundingClientRect();
+      rightEdge = rect.right;
+      bottomEdge = rect.bottom;
     };
 
     const setHovering = (next: boolean) => {
@@ -76,6 +89,14 @@ export const useScrollbarReveal = (renderer: HTMLElement | null | undefined, ena
       hovering = next;
       sync();
     };
+
+    // Inside the strip only: past the edge the pointer is over neighbouring
+    // chrome (a docked sidebar, the second pane of a parallel view), and that
+    // must not light up this renderer's bar.
+    const inHotZone = (x: number, y: number) =>
+      verticalWriting
+        ? y >= bottomEdge - HOT_ZONE_PX && y <= bottomEdge
+        : x >= rightEdge - HOT_ZONE_PX && x <= rightEdge;
 
     const onPointerMove = (event: PointerEvent) => {
       // Touch and pen drags scroll the page; they have no hover to speak of.
@@ -85,7 +106,7 @@ export const useScrollbarReveal = (renderer: HTMLElement | null | undefined, ena
         measuredAt = now;
         measure();
       }
-      setHovering(event.clientX >= rightEdge - HOT_ZONE_PX && event.clientX <= rightEdge);
+      setHovering(inHotZone(event.clientX, event.clientY));
     };
 
     const onFramePointerMove = (event: PointerEvent) => {
@@ -93,7 +114,8 @@ export const useScrollbarReveal = (renderer: HTMLElement | null | undefined, ena
       const owner = (event.target as Node | null)?.ownerDocument;
       const frame = owner?.defaultView?.frameElement as HTMLElement | null;
       if (!frame) return;
-      setHovering(frame.getBoundingClientRect().left + event.clientX >= rightEdge - HOT_ZONE_PX);
+      const rect = frame.getBoundingClientRect();
+      setHovering(inHotZone(rect.left + event.clientX, rect.top + event.clientY));
     };
 
     const onPointerLeave = () => setHovering(false);
@@ -164,5 +186,5 @@ export const useScrollbarReveal = (renderer: HTMLElement | null | undefined, ena
       window.removeEventListener('resize', measure);
       paintContainer(container, false);
     };
-  }, [renderer, enabled]);
+  }, [renderer, enabled, verticalWriting]);
 };

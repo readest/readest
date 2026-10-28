@@ -894,7 +894,11 @@ const FoliateViewer: React.FC<{
 
   // With the scrollbar hidden, it comes back only on demand: pointer at the
   // right edge, or a scroll. See applyScrollbarStyle for why the slot is kept.
-  useScrollbarReveal(rendererEl, !!(viewSettings?.hideScrollbar && viewSettings?.scrolled));
+  useScrollbarReveal(
+    rendererEl,
+    !!(viewSettings?.hideScrollbar && viewSettings?.scrolled),
+    isVerticalWriting,
+  );
 
   // The bars float over the column, so the scrollbar has to stop short of them
   // or its thumb ends up painted underneath. `scrollMargins` already carries
