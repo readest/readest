@@ -269,7 +269,14 @@ impl SwiftLinker {
                 // Release/Debug configuration
                 .args(["-c", configuration])
                 // Where the artifacts will be generated to
-                .args(["--build-path", &out_path.display().to_string()]);
+                .args(["--build-path", &out_path.display().to_string()])
+                // Swift 6.4 (Xcode 27.1) defaults to the Swift Build backend,
+                // which writes Xcode-style `Products/<Config>-<platform>`
+                // directories and, in release, makes the `@_cdecl` plugin
+                // entry points (`init_plugin_*`) local to the prelinked
+                // object, so the Rust link fails. The native build system
+                // keeps the `<triple>/<config>` layout and exported symbols.
+                .args(["--build-system", "native"]);
 
             // Xcode's script phases export SDKROOT for the *product* platform
             // (e.g. iphoneos), which leaks into SPM's manifest compilation —
