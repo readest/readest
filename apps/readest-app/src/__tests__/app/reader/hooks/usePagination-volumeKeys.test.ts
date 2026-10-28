@@ -156,6 +156,28 @@ describe('usePagination volume-key interception with TTS (#4691)', () => {
     expect(useDeviceControlStore.getState().volumeKeysIntercepted).toBe(false);
   });
 
+  test('hands volume keys back to the OS when the setting is turned off (#7119)', () => {
+    const { rerender } = setup();
+    vi.mocked(interceptKeys).mockClear();
+
+    h.viewSettings = { volumeKeysToFlip: false };
+    rerender();
+
+    expect(interceptKeys).toHaveBeenCalledWith({ volumeKeys: false });
+    expect(useDeviceControlStore.getState().volumeKeysIntercepted).toBe(false);
+  });
+
+  test('intercepts volume keys when the setting is turned on while reading', () => {
+    h.viewSettings = { volumeKeysToFlip: false };
+    const { rerender } = setup();
+
+    h.viewSettings = { volumeKeysToFlip: true };
+    rerender();
+
+    expect(interceptKeys).toHaveBeenCalledWith({ volumeKeys: true });
+    expect(useDeviceControlStore.getState().volumeKeysIntercepted).toBe(true);
+  });
+
   // The native side still forwards volume keys to the web layer while TTS plays
   // (iOS via a lingering KVO, Android calls onNativeKeyDown unconditionally), so
   // handlePageFlip must itself refuse to page-flip while TTS is playing — the
