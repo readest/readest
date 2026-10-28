@@ -524,6 +524,10 @@ export interface SystemSettings {
   libraryColumns: number;
   librarySkeuomorphicCovers: boolean;
   /**
+   * When true, displays a page count badge on book covers in the library grid and list views (#6909).
+   */
+  libraryShowPageCount?: boolean;
+  /**
    * When true, the library hides real cover images and shows a plain
    * title/author panel instead. Privacy escape hatch for when the shelf is
    * visible to others.

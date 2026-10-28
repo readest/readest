@@ -245,6 +245,7 @@ export const DEFAULT_SYSTEM_SETTINGS: Partial<SystemSettings> = {
   libraryAutoColumns: true,
   libraryColumns: 6,
   librarySkeuomorphicCovers: false,
+  libraryShowPageCount: false,
   libraryHideCovers: false,
   libraryRecentShelfEnabled: false,
 
