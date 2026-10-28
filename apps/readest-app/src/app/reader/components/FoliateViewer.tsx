@@ -575,7 +575,9 @@ const FoliateViewer: React.FC<{
       applyImageStyle(detail.doc);
       applyScrollableStyle(detail.doc);
       applyTableTouchScroll(detail.doc);
-      applyThemeModeClass(detail.doc, isDarkMode);
+      // Read the theme live: `useFoliateEvents` binds this handler once, so the
+      // closed-over `isDarkMode` is the theme the reader mounted in.
+      applyThemeModeClass(detail.doc, useThemeStore.getState().isDarkMode);
       applyScrollModeClass(detail.doc, viewSettings.scrolled || false);
       applyEinkModeAttribute(detail.doc, viewSettings.isEink || false);
       applyScrollbarStyle(document, viewSettings.hideScrollbar || false);
