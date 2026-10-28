@@ -897,10 +897,9 @@ const FoliateViewer: React.FC<{
         }
       }
 
-      // iPhone Duo's book pose picks the columns and spread (see utils/duo).
-      const rendererLayout = getCurrentRendererLayout(viewSettings);
       if (bookDoc.rendition?.layout === 'pre-paginated' && bookDoc.sections) {
-        bookDoc.rendition.spread = rendererLayout.spreadMode;
+        // iPhone Duo's book pose picks the spread (see utils/duo).
+        bookDoc.rendition.spread = getCurrentRendererLayout(viewSettings).spreadMode;
         setCoverSpread(bookDoc, viewSettings.keepCoverSpread);
       }
 
@@ -957,7 +956,6 @@ const FoliateViewer: React.FC<{
       doubleClickDisabled.current = viewSettings.disableDoubleClick!;
       const animated = viewSettings.animated!;
       const eink = viewSettings.isEink!;
-      const { maxColumnCount, maxInlineSize } = rendererLayout;
       const maxBlockSize = viewSettings.maxBlockSize!;
       const screenOrientation = viewSettings.screenOrientation!;
       if (appService?.isMobileApp) {
@@ -990,7 +988,12 @@ const FoliateViewer: React.FC<{
         view.renderer.removeAttribute('eink');
       }
       applyEinkMode(eink);
+      // Resolved after the awaits above: the Duo's pose can arrive while the
+      // book opens, before the re-layout effect has a renderer to apply it to.
+      const rendererLayout = getCurrentRendererLayout(viewSettings);
+      const { maxColumnCount, maxInlineSize } = rendererLayout;
       if (bookDoc?.rendition?.layout === 'pre-paginated') {
+        bookDoc.rendition.spread = rendererLayout.spreadMode;
         view.renderer.setAttribute('zoom', viewSettings.zoomMode);
         view.renderer.setAttribute('spread', rendererLayout.spreadMode);
         view.renderer.setAttribute('scale-factor', viewSettings.zoomLevel);

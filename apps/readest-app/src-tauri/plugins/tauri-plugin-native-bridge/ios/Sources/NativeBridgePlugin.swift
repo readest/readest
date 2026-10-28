@@ -719,9 +719,18 @@ class NativeBridgePlugin: Plugin {
       let hingeInteraction = UIHingeInteraction { [weak self] _, update in
         guard let self else { return }
         let status = NativeBridgePlugin.hingeStatusName(update.hinge?.status)
-        guard status != self.lastHingeStatus else { return }
+        let statusChanged = status != self.lastHingeStatus
         self.lastHingeStatus = status
-        self.trigger("duo-fold-changed", data: ["status": status])
+        // The folding region can change with the angle inside one status, so
+        // forward those too, at most every 250ms plus one trailing update.
+        if statusChanged || Date().timeIntervalSince(self.lastHingeEvent) >= 0.25 {
+          self.sendHingeEvent()
+        } else if !self.hingeEventPending {
+          self.hingeEventPending = true
+          DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { [weak self] in
+            self?.sendHingeEvent()
+          }
+        }
       }
       webview.addInteraction(hingeInteraction)
     }
@@ -1545,6 +1554,14 @@ class NativeBridgePlugin: Plugin {
   #endif
 
   private var lastHingeStatus = "unknown"
+  private var lastHingeEvent = Date.distantPast
+  private var hingeEventPending = false
+
+  private func sendHingeEvent() {
+    hingeEventPending = false
+    lastHingeEvent = Date()
+    trigger("duo-fold-changed", data: ["status": lastHingeStatus])
+  }
 
   // The iPhone Duo folding region in window points (CSS px in the full-window
   // web view), or nil off the Duo, before iOS 27.1, or on the cover display.

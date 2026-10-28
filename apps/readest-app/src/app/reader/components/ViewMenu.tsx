@@ -310,7 +310,8 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
     if (!bookData?.bookDoc?.sections?.length) return;
     viewSettings.keepCoverSpread = keepCoverSpread;
     setCoverSpread(bookData.bookDoc, keepCoverSpread);
-    getView(bookKey)?.renderer.setAttribute('spread', spreadMode);
+    // The spread in effect, which book mode decides on iPhone Duo.
+    getView(bookKey)?.renderer.setAttribute('spread', shownSpreadMode);
     setViewSettings(bookKey, viewSettings);
     saveViewSettings(envConfig, bookKey, 'keepCoverSpread', keepCoverSpread, true, false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
