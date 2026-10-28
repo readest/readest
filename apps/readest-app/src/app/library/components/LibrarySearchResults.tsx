@@ -304,7 +304,7 @@ const LibrarySearchResults = ({
             truncated: Boolean(event.truncated),
             expandedBooks: [],
           };
-          if (event.matchCount > 0) addLibrarySearchHistory(query);
+          if (event.matchCount > 0) addLibrarySearchHistory(query, 'text');
         }
       }
     }, delay);

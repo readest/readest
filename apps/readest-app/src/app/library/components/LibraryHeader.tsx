@@ -42,6 +42,7 @@ interface LibraryHeaderProps {
   onSearchConfigChange: (config: LibrarySearchConfig) => void;
   onSearchQueryChange: (query: string) => void;
   onSearchTargetChange: (target: LibrarySearchTarget) => void;
+  onSearchSubmit?: (query: string) => void;
 }
 
 const LibraryHeader: React.FC<LibraryHeaderProps> = ({
@@ -63,6 +64,7 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
   onSearchConfigChange,
   onSearchQueryChange,
   onSearchTargetChange,
+  onSearchSubmit,
 }) => {
   const _ = useTranslation();
   const { appService } = useEnv();
@@ -77,6 +79,12 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
   useShortcuts({
     onToggleSelectMode,
   });
+
+  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && !e.nativeEvent.isComposing && searchQuery.trim()) {
+      onSearchSubmit?.(searchQuery.trim());
+    }
+  };
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     onSearchQueryChange(e.target.value);
@@ -148,6 +156,7 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
                     : _('Search Books...')
               }
               onChange={handleSearchChange}
+              onKeyDown={handleSearchKeyDown}
               spellCheck='false'
               className={clsx(
                 'window-drag-input search-input input h-9 w-full rounded-full pe-[30%] ps-10 sm:h-7',

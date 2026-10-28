@@ -21,4 +21,25 @@ describe('library search history', () => {
     clearLibrarySearchHistory();
     expect(loadLibrarySearchHistory()).toEqual([]);
   });
+
+  it('keeps books search history separate from text search history (#7126)', () => {
+    addLibrarySearchHistory('Dune', 'books');
+    addLibrarySearchHistory('Herbert', 'books');
+    addLibrarySearchHistory('spice melange', 'text');
+
+    const booksHistory = loadLibrarySearchHistory('books');
+    const textHistory = loadLibrarySearchHistory('text');
+
+    expect(booksHistory).toEqual(['Herbert', 'Dune']);
+    expect(textHistory).toEqual(['spice melange']);
+
+    clearLibrarySearchHistory('books');
+    expect(loadLibrarySearchHistory('books')).toEqual([]);
+    expect(loadLibrarySearchHistory('text')).toEqual(['spice melange']);
+  });
+
+  it('falls back to legacy storage key for text target when empty', () => {
+    localStorage.setItem('search-history-library', JSON.stringify(['legacy query']));
+    expect(loadLibrarySearchHistory('text')).toEqual(['legacy query']);
+  });
 });

@@ -5,7 +5,7 @@ import BookshelvesDialog from './components/BookshelvesDialog';
 import clsx from 'clsx';
 import * as React from 'react';
 import { MdChevronRight, MdClose } from 'react-icons/md';
-import { useState, useRef, useEffect, Suspense, useCallback } from 'react';
+import { useState, useRef, useEffect, Suspense, useCallback, useMemo } from 'react';
 import { ReadonlyURLSearchParams, useSearchParams } from 'next/navigation';
 
 import { Book, BooksGroup, type LibrarySearchConfig } from '@/types/book';
@@ -22,7 +22,11 @@ import { debounce } from '@/utils/debounce';
 import { createSerialRunner, runWithConcurrency } from '@/utils/concurrency';
 import { createThrottledCheckpoint } from '@/utils/checkpoint';
 import { DEFAULT_NEARBY_WORDS } from '@/utils/searchConfig';
-import { clearLibrarySearchHistory, loadLibrarySearchHistory } from './utils/searchHistory';
+import {
+  addLibrarySearchHistory,
+  clearLibrarySearchHistory,
+  loadLibrarySearchHistory,
+} from './utils/searchHistory';
 import type { LibrarySearchTarget } from '@/types/book';
 import { navigateToLibrary, navigateToLogin, navigateToReader } from '@/utils/nav';
 import { splitLibraryOpenIds } from '@/utils/audiobook';
@@ -287,6 +291,13 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   const pendingLibrarySearchQueryRef = useRef<string | null>(null);
   const [librarySearchProgress, setLibrarySearchProgress] = useState<number | null>(null);
   const [librarySearchHistory, setLibrarySearchHistory] = useState<string[]>([]);
+  const visibleSearchHistory = useMemo(() => {
+    const trimmed = librarySearchQuery.trim().toLowerCase();
+    if (!trimmed) return librarySearchHistory;
+    return librarySearchHistory.filter(
+      (term) => term.toLowerCase().includes(trimmed) && term.toLowerCase() !== trimmed,
+    );
+  }, [librarySearchQuery, librarySearchHistory]);
   const [librarySearchTarget, setLibrarySearchTarget] = useState<LibrarySearchTarget>(() =>
     ['contents', 'text'].includes(searchParams?.get('search') ?? '') ? 'text' : 'books',
   );
@@ -294,8 +305,8 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     getLibrarySearchConfig(searchParams),
   );
   useEffect(() => {
-    if (librarySearchTarget === 'text' && !librarySearchQuery.trim()) {
-      setLibrarySearchHistory(loadLibrarySearchHistory());
+    if (!librarySearchQuery.trim()) {
+      setLibrarySearchHistory(loadLibrarySearchHistory(librarySearchTarget));
     }
   }, [librarySearchTarget, librarySearchQuery]);
   const librarySearchTargetRef = useRef(librarySearchTarget);
@@ -914,6 +925,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     librarySearchTargetRef.current = target;
     librarySearchConfigRef.current = config;
     setLibrarySearchTarget(target);
+    setLibrarySearchHistory(loadLibrarySearchHistory(target));
     setLibrarySearchConfig(config);
   }, [searchParams]);
 
@@ -1870,8 +1882,12 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   const updateLibrarySearchUrl = (target: LibrarySearchTarget, config: LibrarySearchConfig) => {
     const params = new URLSearchParams(window.location.search);
     const query = pendingLibrarySearchQueryRef.current ?? librarySearchQuery;
-    if (query) params.set('q', query);
-    else params.delete('q');
+    if (query) {
+      params.set('q', query);
+      if (query.trim()) {
+        addLibrarySearchHistory(query.trim(), target);
+      }
+    } else params.delete('q');
     if (target === 'text') params.set('search', 'text');
     else params.delete('search');
     if (config.mode !== 'contains') params.set('mode', config.mode);
@@ -1893,6 +1909,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   const handleSearchTargetChange = (target: LibrarySearchTarget) => {
     librarySearchTargetRef.current = target;
     setLibrarySearchTarget(target);
+    setLibrarySearchHistory(loadLibrarySearchHistory(target));
     debouncedSearchUrlUpdate.cancel();
     updateLibrarySearchUrl(target, librarySearchConfigRef.current);
     if (target === 'text') handleSetSelectMode(false);
@@ -1916,8 +1933,19 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   useEffect(() => () => debouncedSearchUrlUpdate.cancel(), [debouncedSearchUrlUpdate]);
 
   // Immediate variant for history pills and other one-shot applications.
+  const handleSearchSubmit = (query: string) => {
+    debouncedSearchUrlUpdate.cancel();
+    addLibrarySearchHistory(query, librarySearchTargetRef.current);
+    const urlQuery = new URLSearchParams(window.location.search).get('q') ?? '';
+    pendingLibrarySearchQueryRef.current = query === urlQuery ? null : query;
+    setLibrarySearchQuery(query);
+    updateLibrarySearchUrl(librarySearchTargetRef.current, librarySearchConfigRef.current);
+    setLibrarySearchHistory(loadLibrarySearchHistory(librarySearchTargetRef.current));
+  };
+
   const handleSearchQueryApply = (query: string) => {
     debouncedSearchUrlUpdate.cancel();
+    addLibrarySearchHistory(query, librarySearchTargetRef.current);
     const urlQuery = new URLSearchParams(window.location.search).get('q') ?? '';
     pendingLibrarySearchQueryRef.current = query === urlQuery ? null : query;
     setLibrarySearchQuery(query);
@@ -2012,6 +2040,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
           onSearchConfigChange={handleSearchConfigChange}
           onSearchQueryChange={handleSearchQueryChange}
           onSearchTargetChange={handleSearchTargetChange}
+          onSearchSubmit={handleSearchSubmit}
         />
         <progress
           aria-label={_('Library Search Progress')}
@@ -2039,36 +2068,34 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
           <Spinner loading />
         </div>
       )}
-      {librarySearchTarget === 'text' &&
-        !librarySearchQuery.trim() &&
-        librarySearchHistory.length > 0 && (
-          <div className='relative my-1 flex shrink-0 items-center px-4 sm:px-6'>
-            <div className='no-scrollbar not-eink:[mask-image:linear-gradient(to_right,transparent,black_12px,black_calc(100%_-_12px),transparent)] flex flex-1 gap-1.5 overflow-x-auto'>
-              {librarySearchHistory.map((term) => (
-                <button
-                  key={term}
-                  type='button'
-                  onClick={() => handleSearchQueryApply(term)}
-                  className='bg-base-300/45 hover:bg-base-300/70 text-base-content/70 max-w-[60%] shrink-0 whitespace-nowrap rounded-full px-3 py-0.5 text-xs'
-                >
-                  <p className='truncate'>{term}</p>
-                </button>
-              ))}
-            </div>
-            <button
-              type='button'
-              onClick={() => {
-                clearLibrarySearchHistory();
-                setLibrarySearchHistory([]);
-              }}
-              title={_('Clear search history')}
-              aria-label={_('Clear search history')}
-              className='text-base-content/50 hover:text-base-content/80 flex h-6 w-8 shrink-0 items-center justify-center'
-            >
-              <MdClose className='h-4 w-4' />
-            </button>
+      {visibleSearchHistory.length > 0 && (
+        <div className='relative my-1 flex shrink-0 items-center px-4 sm:px-6'>
+          <div className='no-scrollbar not-eink:[mask-image:linear-gradient(to_right,transparent,black_12px,black_calc(100%_-_12px),transparent)] flex flex-1 gap-1.5 overflow-x-auto'>
+            {visibleSearchHistory.map((term) => (
+              <button
+                key={term}
+                type='button'
+                onClick={() => handleSearchQueryApply(term)}
+                className='bg-base-300/45 hover:bg-base-300/70 text-base-content/70 max-w-[60%] shrink-0 whitespace-nowrap rounded-full px-3 py-0.5 text-xs'
+              >
+                <p className='truncate'>{term}</p>
+              </button>
+            ))}
           </div>
-        )}
+          <button
+            type='button'
+            onClick={() => {
+              clearLibrarySearchHistory(librarySearchTarget);
+              setLibrarySearchHistory([]);
+            }}
+            title={_('Clear search history')}
+            aria-label={_('Clear search history')}
+            className='text-base-content/50 hover:text-base-content/80 flex h-6 w-8 shrink-0 items-center justify-center'
+          >
+            <MdClose className='h-4 w-4' />
+          </button>
+        </div>
+      )}
       {currentGroupPath && (
         <div
           className={`transition-all duration-300 ease-in-out ${
