@@ -161,3 +161,47 @@ it('does not paint the next image with the previous image style while the book j
   });
   expect(gallery.viewer?.renderStyle).toEqual({ filter: 'none', plate: null });
 });
+
+// A jump that lands after the viewer moved on (closed, then opened on another
+// image) must not paint the image now on screen with the one it jumped to.
+it('ignores a jump that lands after the viewer moved to another image', async () => {
+  const section = document.createElement('div');
+  section.innerHTML =
+    '<img src="blob:flourish" style="filter: invert(100%)"><img src="blob:ornament">' +
+    '<img src="blob:star" style="filter: grayscale(100%)">';
+  document.body.appendChild(section);
+  gallery.contents = [{ doc: document, index: 0 }];
+  gallery.jump = Promise.resolve();
+  const props = {
+    bookKey: 'test-book',
+    bookDoc: { metadata: {} },
+    config: {},
+    gridInsets: { top: 0, right: 0, bottom: 0, left: 0 },
+    contentInsets: { top: 0, right: 0, bottom: 0, left: 0 },
+  } as unknown as ComponentProps<typeof FoliateViewer>;
+  render(<FoliateViewer {...props} />);
+  await waitFor(() => expect(gallery.pressImage).not.toBeNull());
+  await act(async () => {});
+
+  await act(() => gallery.pressImage!('blob:flourish'));
+  let land = () => {};
+  gallery.jump = new Promise<void>((resolve) => {
+    land = resolve;
+  });
+  let next: Promise<void> | undefined;
+  await act(async () => {
+    next = gallery.viewer!.onNext!() as unknown as Promise<void>;
+  });
+  await act(async () => {
+    gallery.viewer!.onClose();
+  });
+  await act(() => gallery.pressImage!('blob:star'));
+  expect(gallery.viewer?.renderStyle?.filter).toBe('grayscale(100%)');
+
+  await act(async () => {
+    land();
+    await next;
+  });
+  expect(gallery.viewer?.src).toBe('data:blob:star');
+  expect(gallery.viewer?.renderStyle?.filter).toBe('grayscale(100%)');
+});

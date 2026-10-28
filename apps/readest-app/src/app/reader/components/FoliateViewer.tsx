@@ -667,8 +667,12 @@ const FoliateViewer: React.FC<{
   const [selectedTableHtml, setSelectedTableHtml] = useState<string | null>(null);
   const [imageList, setImageList] = useState<DocumentImage[]>([]);
   const [currentImageIndex, setCurrentImageIndex] = useState<number>(0);
+  // Bumped whenever the viewer shows another image or closes, so a jump that
+  // lands late does not apply its image's rendering to the one now on screen.
+  const imageSelectionRef = useRef(0);
 
   const handleImagePress = useCallback(async (src: string) => {
+    imageSelectionRef.current += 1;
     try {
       // Get all images from the current document
       const allImages = collectDocumentImages(
@@ -701,6 +705,7 @@ const FoliateViewer: React.FC<{
       setCurrentImageIndex(newIndex);
       try {
         const { src, cfi, alt } = imageList[newIndex]!;
+        const selection = ++imageSelectionRef.current;
         const dataUrl = await convertBlobUrlToDataUrl(src);
         setSelectedImage(dataUrl);
         setSelectedImageAlt(alt);
@@ -710,7 +715,9 @@ const FoliateViewer: React.FC<{
         setSelectedImageRenderStyle(captureImageRenderStyle(viewRef.current, src));
         if (cfi && viewRef.current) {
           await viewRef.current.goTo(cfi);
-          setSelectedImageRenderStyle(captureImageRenderStyle(viewRef.current, src));
+          if (selection === imageSelectionRef.current) {
+            setSelectedImageRenderStyle(captureImageRenderStyle(viewRef.current, src));
+          }
         }
       } catch (error) {
         console.error('Failed to load previous image:', error);
@@ -724,6 +731,7 @@ const FoliateViewer: React.FC<{
       setCurrentImageIndex(newIndex);
       try {
         const { src, cfi, alt } = imageList[newIndex]!;
+        const selection = ++imageSelectionRef.current;
         const dataUrl = await convertBlobUrlToDataUrl(src);
         setSelectedImage(dataUrl);
         setSelectedImageAlt(alt);
@@ -733,7 +741,9 @@ const FoliateViewer: React.FC<{
         setSelectedImageRenderStyle(captureImageRenderStyle(viewRef.current, src));
         if (cfi && viewRef.current) {
           await viewRef.current.goTo(cfi);
-          setSelectedImageRenderStyle(captureImageRenderStyle(viewRef.current, src));
+          if (selection === imageSelectionRef.current) {
+            setSelectedImageRenderStyle(captureImageRenderStyle(viewRef.current, src));
+          }
         }
       } catch (error) {
         console.error('Failed to load next image:', error);
@@ -742,6 +752,7 @@ const FoliateViewer: React.FC<{
   }, [currentImageIndex, imageList]);
 
   const handleCloseImage = useCallback(() => {
+    imageSelectionRef.current += 1;
     setSelectedImage(null);
     setSelectedImageAlt('');
     setSelectedImageRenderStyle(null);
