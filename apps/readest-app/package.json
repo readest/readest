@@ -116,7 +116,7 @@
     "@mozilla/readability": "^0.6.0",
     "@napi-rs/wasm-runtime": "^1.1.1",
     "@noble/hashes": "^1.8.0",
-    "@opennextjs/cloudflare": "^1.20.11",
+    "@opennextjs/cloudflare": "^1.20.13",
     "@radix-ui/react-collapsible": "^1.1.12",
     "@radix-ui/react-dialog": "^1.1.15",
     "@radix-ui/react-dropdown-menu": "^2.1.16",
