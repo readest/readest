@@ -54,6 +54,8 @@ describe('useScrollbarReveal hot-zone orientation', () => {
     expect(revealed(container)).toBe(true);
     movePointer(1050, 400); // past the edge: neighbouring chrome
     expect(revealed(container)).toBe(false);
+    movePointer(980, 900); // beside the strip but below the renderer
+    expect(revealed(container)).toBe(false);
     movePointer(980, 400); // back in
     expect(revealed(container)).toBe(true);
   });
@@ -68,6 +70,8 @@ describe('useScrollbarReveal hot-zone orientation', () => {
     movePointer(500, 780); // inside the bottom strip
     expect(revealed(container)).toBe(true);
     movePointer(500, 830); // past the bottom edge
+    expect(revealed(container)).toBe(false);
+    movePointer(1050, 780); // beside the strip but past the right edge
     expect(revealed(container)).toBe(false);
     movePointer(500, 780);
     expect(revealed(container)).toBe(true);

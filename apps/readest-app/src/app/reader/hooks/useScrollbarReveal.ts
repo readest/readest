@@ -75,13 +75,10 @@ export const useScrollbarReveal = (
     // Re-measured on a slow tick rather than every pointermove: a sidebar
     // opening changes the edge without a resize event, and a layout read per
     // move is a layout read too many.
-    let rightEdge = renderer.getBoundingClientRect().right;
-    let bottomEdge = renderer.getBoundingClientRect().bottom;
+    let bounds = renderer.getBoundingClientRect();
     let measuredAt = 0;
     const measure = () => {
-      const rect = renderer.getBoundingClientRect();
-      rightEdge = rect.right;
-      bottomEdge = rect.bottom;
+      bounds = renderer.getBoundingClientRect();
     };
 
     const setHovering = (next: boolean) => {
@@ -90,13 +87,16 @@ export const useScrollbarReveal = (
       sync();
     };
 
-    // Inside the strip only: past the edge the pointer is over neighbouring
-    // chrome (a docked sidebar, the second pane of a parallel view), and that
-    // must not light up this renderer's bar.
-    const inHotZone = (x: number, y: number) =>
-      verticalWriting
-        ? y >= bottomEdge - HOT_ZONE_PX && y <= bottomEdge
-        : x >= rightEdge - HOT_ZONE_PX && x <= rightEdge;
+    // Inside the strip along the bar's own edge, and clamped to the renderer
+    // on the perpendicular axis too: a pointer past the edge is over
+    // neighbouring chrome (a docked sidebar, the second pane of a parallel
+    // view), and that must not light up this renderer's bar.
+    const inHotZone = (x: number, y: number) => {
+      const { left, right, top, bottom } = bounds;
+      return verticalWriting
+        ? y >= bottom - HOT_ZONE_PX && y <= bottom && x >= left && x <= right
+        : x >= right - HOT_ZONE_PX && x <= right && y >= top && y <= bottom;
+    };
 
     const onPointerMove = (event: PointerEvent) => {
       // Touch and pen drags scroll the page; they have no hover to speak of.
