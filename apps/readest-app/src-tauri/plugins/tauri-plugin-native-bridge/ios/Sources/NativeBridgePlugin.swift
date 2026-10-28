@@ -1237,6 +1237,11 @@ class NativeBridgePlugin: Plugin {
             logger.error("Orientation update error: \(error.localizedDescription)")
           }
         }
+        // Resizable scenes refuse the geometry request; lock through the
+        // iOS 26 preference instead.
+        if #available(iOS 26.0, *) {
+          OrientationLock.apply(orientationMask, in: windowScene)
+        }
       }
     } else {
       if orientationMask == .all {
