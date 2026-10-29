@@ -8,7 +8,13 @@ import {
   speechEndpoint,
 } from '@/services/tts/providers/openaiCompatible';
 import type { CustomTTSService } from '@/types/customTTS';
-import { BoxedList, SettingLabel, SettingsSwitchRow } from './primitives';
+import {
+  BoxedList,
+  SettingLabel,
+  SettingsRow,
+  SettingsSelect,
+  SettingsSwitchRow,
+} from './primitives';
 import SubPageHeader from './SubPageHeader';
 
 const BASE_URL_PRESETS = [
@@ -63,6 +69,7 @@ const CustomTTSServiceEditor: React.FC<CustomTTSServiceEditorProps> = ({ service
     baseUrl: draft.baseUrl.trim(),
     model: draft.model.trim(),
     instructions: draft.instructions?.trim() || undefined,
+    voices: draft.voices?.trim() || undefined,
   });
 
   // Lists the service's voices and speaks a short sample with the first one,
@@ -88,7 +95,10 @@ const CustomTTSServiceEditor: React.FC<CustomTTSServiceEditorProps> = ({ service
         new AbortController().signal,
       );
       setVoiceCount(voices.length);
-      const url = URL.createObjectURL(new Blob([audio], { type: 'audio/mpeg' }));
+      const isWav = new TextDecoder().decode(audio.slice(0, 4)) === 'RIFF';
+      const url = URL.createObjectURL(
+        new Blob([audio], { type: isWav ? 'audio/wav' : 'audio/mpeg' }),
+      );
       const player = new Audio(url);
       player.onended = () => URL.revokeObjectURL(url);
       await player.play();
@@ -186,6 +196,16 @@ const CustomTTSServiceEditor: React.FC<CustomTTSServiceEditorProps> = ({ service
             ))}
           </datalist>
         </Field>
+        <Field id='tts-voices' label={_('Voices')}>
+          <input
+            id='tts-voices'
+            type='text'
+            className={inputClass}
+            value={draft.voices ?? ''}
+            onChange={(e) => update({ voices: e.target.value })}
+            placeholder='Kore, Puck, Zephyr'
+          />
+        </Field>
         <Field id='tts-instructions' label={_('Instructions')}>
           <textarea
             id='tts-instructions'
@@ -196,6 +216,25 @@ const CustomTTSServiceEditor: React.FC<CustomTTSServiceEditorProps> = ({ service
             placeholder={_('Optional, for models that accept a speaking style')}
           />
         </Field>
+        <SettingsRow label={_('Format')}>
+          <SettingsSelect
+            value={draft.responseFormat ?? 'mp3'}
+            onChange={(e) =>
+              update({
+                responseFormat:
+                  e.target.value === 'mp3'
+                    ? undefined
+                    : (e.target.value as CustomTTSService['responseFormat']),
+              })
+            }
+            ariaLabel={_('Format')}
+            options={[
+              { value: 'mp3', label: 'MP3' },
+              { value: 'wav', label: 'WAV' },
+              { value: 'none', label: _('Default') },
+            ]}
+          />
+        </SettingsRow>
         <SettingsSwitchRow
           label={_('Enabled')}
           checked={!draft.disabled}

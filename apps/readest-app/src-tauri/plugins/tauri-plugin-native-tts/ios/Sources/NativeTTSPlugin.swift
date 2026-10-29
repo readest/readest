@@ -1239,8 +1239,11 @@ class NativeTTSPlugin: Plugin, AVSpeechSynthesizerDelegate {
           return
         }
         self.playoutAnalysisQueue.async {
+          // AVURLAsset picks its decoder by extension; custom speech services
+          // may answer in WAV.
+          let ext = data.starts(with: Data("RIFF".utf8)) ? "wav" : "mp3"
           let url = FileManager.default.temporaryDirectory.appendingPathComponent(
-            "tts-playout-\(args.session)-\(args.index).mp3")
+            "tts-playout-\(args.session)-\(args.index).\(ext)")
           do {
             try data.write(to: url)
           } catch {

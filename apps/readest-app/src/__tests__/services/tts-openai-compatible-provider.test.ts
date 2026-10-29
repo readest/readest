@@ -92,6 +92,17 @@ describe('OpenAICompatibleSpeechProvider', () => {
     expect(voices.map((v) => v.name)).toEqual(OPENAI_TTS_VOICES);
   });
 
+  it('uses the voice names typed for a service instead of asking it', async () => {
+    services = [service({ voices: ' Kore, Puck ,, Zephyr ' })];
+    const voices = await provider.getAllVoices();
+    expect(voices.map((v) => [v.id, v.name])).toEqual([
+      ['s1:Kore', 'Kore'],
+      ['s1:Puck', 'Puck'],
+      ['s1:Zephyr', 'Zephyr'],
+    ]);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it('queries no service without premium', async () => {
     allowed = false;
     expect(await provider.getAllVoices()).toEqual([]);
@@ -127,6 +138,19 @@ describe('OpenAICompatibleSpeechProvider', () => {
       response_format: 'mp3',
       instructions: 'Calm narrator.',
     });
+  });
+
+  it('requests the configured audio format, or none for the service default', async () => {
+    fetchMock.mockImplementation(async () => audioResponse());
+    const sentBody = async (responseFormat?: CustomTTSService['responseFormat']) => {
+      services = [service({ responseFormat })];
+      fetchMock.mockClear();
+      await provider.synthesize(req('s1:nova'), new AbortController().signal);
+      return JSON.parse(fetchMock.mock.calls[0]![1].body);
+    };
+    expect((await sentBody(undefined)).response_format).toBe('mp3');
+    expect((await sentBody('wav')).response_format).toBe('wav');
+    expect(await sentBody('none')).not.toHaveProperty('response_format');
   });
 
   it('accepts a base URL pasted with the endpoint on it', async () => {
@@ -224,5 +248,7 @@ describe('OpenAICompatibleSpeechProvider', () => {
     const instructions = scope();
     services = [service({ model: 'tts-1', instructions: 'Whisper.', apiKey: 'other' })];
     expect(scope()).toBe(instructions);
+    services = [service({ model: 'tts-1', instructions: 'Whisper.', responseFormat: 'none' })];
+    expect(scope()).not.toBe(instructions);
   });
 });

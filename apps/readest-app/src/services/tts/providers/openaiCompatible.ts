@@ -111,9 +111,12 @@ const parseVoiceList = (body: unknown): ListedVoice[] => {
   });
 };
 
-// The voices a service offers, from GET {baseUrl}/audio/voices. OpenAI itself
-// has no such endpoint, so a service that lists nothing gets its standard voices.
+// The voices a service offers: the names typed for it, else GET
+// {baseUrl}/audio/voices. OpenAI itself has no such endpoint, so a service that
+// lists nothing gets its standard voices.
 const fetchServiceVoices = async (service: CustomTTSService): Promise<ListedVoice[]> => {
+  const typed = service.voices?.split(',').flatMap((name) => name.trim() || []);
+  if (typed?.length) return typed.map((name) => ({ name }));
   if (isMiMoService(service)) return MIMO_VOICES;
   // A timer rather than AbortSignal.timeout: tauriFetch rejects unhandled when
   // a finished request is aborted.
@@ -187,7 +190,13 @@ export class OpenAICompatibleSpeechProvider implements SpeechProvider {
 
   cacheScope(req: SpeechSynthesisRequest): string {
     const service = this.#resolve(req.voice)?.service;
-    return JSON.stringify([service?.baseUrl, service?.model, service?.instructions]);
+    // The format joins the key only when set, so existing MP3 caches stay valid.
+    return JSON.stringify([
+      service?.baseUrl,
+      service?.model,
+      service?.instructions,
+      ...(service?.responseFormat ? [service.responseFormat] : []),
+    ]);
   }
 
   async synthesize(
@@ -218,7 +227,9 @@ export class OpenAICompatibleSpeechProvider implements SpeechProvider {
             model: service.model,
             input: req.text,
             voice,
-            response_format: 'mp3',
+            ...(service.responseFormat !== 'none' && {
+              response_format: service.responseFormat ?? 'mp3',
+            }),
             ...(service.instructions ? { instructions: service.instructions } : {}),
           };
       const res = await getAIFetch()(speechEndpoint(service), {

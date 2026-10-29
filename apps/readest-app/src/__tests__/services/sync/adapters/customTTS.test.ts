@@ -14,6 +14,8 @@ const service: CustomTTSService = {
   apiKey: 'sk-secret',
   model: 'kokoro',
   instructions: 'Calm.',
+  responseFormat: 'none',
+  voices: 'Kore, Puck',
   disabled: true,
   addedAt: 1700000000000,
   updatedAt: 1700000000001,
