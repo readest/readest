@@ -174,12 +174,11 @@ describe('OpenAICompatibleSpeechProvider', () => {
     expect(await sentBody('none')).not.toHaveProperty('response_format');
   });
 
-  it('unwraps a WAV a proxy wrapped in another WAV, dropping non-audio chunks', async () => {
+  it('hands back, unchanged, the WAV a proxy wrapped in another WAV', async () => {
     // LiteLLM wraps Gemini's whole WAV, C2PA manifest included, as PCM samples.
-    const samples = [1, 2, 3, 4, 5, 6];
     const gemini = wav([
       ['fmt ', PCM_FMT],
-      ['data', samples],
+      ['data', [1, 2, 3, 4, 5, 6]],
       ['C2PA', [9, 9, 9]],
     ]);
     fetchMock.mockResolvedValue(
@@ -191,14 +190,8 @@ describe('OpenAICompatibleSpeechProvider', () => {
       ),
     );
     const result = await provider.synthesize(req('s1:Kore'), new AbortController().signal);
-    expect(new Uint8Array(result.audio)).toEqual(
-      wav([
-        ['fmt ', PCM_FMT],
-        ['data', samples],
-      ]),
-    );
+    expect(new Uint8Array(result.audio)).toEqual(gemini);
   });
-
   it('passes other audio through untouched', async () => {
     const plain = wav([
       ['fmt ', PCM_FMT],
@@ -211,6 +204,7 @@ describe('OpenAICompatibleSpeechProvider', () => {
       expect(new Uint8Array(result.audio)).toEqual(bytes);
     }
   });
+
   it('accepts a base URL pasted with the endpoint on it', async () => {
     for (const baseUrl of [
       'https://tts.example.com/v1/audio/speech',

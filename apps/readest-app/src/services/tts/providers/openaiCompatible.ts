@@ -154,49 +154,30 @@ const abortError = () => new DOMException('Aborted', 'AbortError');
 const fourCC = (bytes: Uint8Array, at: number) =>
   String.fromCharCode(...bytes.subarray(at, at + 4));
 
-const ascii = (text: string) => Uint8Array.from(text, (c) => c.charCodeAt(0));
-
-// A WAV's chunk payloads by id (the first of each), or null for other audio.
-const wavChunks = (bytes: Uint8Array): Map<string, Uint8Array> | null => {
-  if (bytes.length < 12 || fourCC(bytes, 0) !== 'RIFF' || fourCC(bytes, 8) !== 'WAVE') {
-    return null;
-  }
-  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
-  const chunks = new Map<string, Uint8Array>();
-  for (let at = 12; at + 8 <= bytes.length; ) {
-    const id = fourCC(bytes, at);
-    const size = view.getUint32(at + 4, true);
-    const start = at + 8;
-    if (!chunks.has(id))
-      chunks.set(id, bytes.subarray(start, Math.min(start + size, bytes.length)));
-    at = start + size + (size & 1);
-  }
-  return chunks;
-};
+const isWav = (bytes: Uint8Array) =>
+  bytes.length >= 12 && fourCC(bytes, 0) === 'RIFF' && fourCC(bytes, 8) === 'WAVE';
 
 // Some proxies (LiteLLM with Gemini TTS) take a service's whole WAV file for
 // raw PCM and wrap it in a WAV of their own. Players then read the inner
 // header and whatever follows its audio (Gemini's C2PA provenance manifest)
-// as samples: a click before every sentence and static after it.
+// as samples: a click before every sentence and static after it. The inner
+// file is the service's own and intact, so it is the one to play.
 const unwrapNestedWav = (audio: ArrayBuffer): ArrayBuffer => {
-  const data = wavChunks(new Uint8Array(audio))?.get('data');
-  const inner = data ? wavChunks(data) : null;
-  const fmt = inner?.get('fmt ');
-  const samples = inner?.get('data');
-  if (!fmt || !samples) return audio;
-  const out = new Uint8Array(20 + fmt.length + 8 + samples.length + (samples.length & 1));
-  const view = new DataView(out.buffer);
-  const writeChunk = (at: number, id: string, payload: Uint8Array) => {
-    out.set(ascii(id), at);
-    view.setUint32(at + 4, payload.length, true);
-    out.set(payload, at + 8);
-  };
-  out.set(ascii('RIFF'));
-  view.setUint32(4, out.length - 8, true);
-  out.set(ascii('WAVE'), 8);
-  writeChunk(12, 'fmt ', fmt);
-  writeChunk(20 + fmt.length, 'data', samples);
-  return out.buffer;
+  const bytes = new Uint8Array(audio);
+  if (!isWav(bytes)) return audio;
+  const view = new DataView(audio);
+  for (let at = 12; at + 8 <= bytes.length; ) {
+    const size = view.getUint32(at + 4, true);
+    const start = at + 8;
+    if (fourCC(bytes, at) === 'data') {
+      const inner = bytes.subarray(start, start + size);
+      if (!isWav(inner)) return audio;
+      const innerLength = 8 + new DataView(inner.buffer, inner.byteOffset).getUint32(4, true);
+      return inner.slice(0, innerLength).buffer;
+    }
+    at = start + size + (size & 1);
+  }
+  return audio;
 };
 
 export class OpenAICompatibleSpeechProvider implements SpeechProvider {
