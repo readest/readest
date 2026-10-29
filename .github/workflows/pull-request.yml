@@ -144,7 +144,9 @@ jobs:
         run: cargo test
 
   build_web_app:
-    runs-on: ubuntu-latest
+    # Pinned: our Playwright (1.60) has no Chromium build for ubuntu26.04,
+    # which ubuntu-latest now resolves to on some runners.
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -215,7 +217,9 @@ jobs:
   # Playwright and run only on shard 1; koplugin + browser-extension tests
   # moved to the test_extensions job.
   test_web_app:
-    runs-on: ubuntu-latest
+    # Pinned: our Playwright (1.60) has no Chromium build for ubuntu26.04,
+    # which ubuntu-latest now resolves to on some runners.
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
