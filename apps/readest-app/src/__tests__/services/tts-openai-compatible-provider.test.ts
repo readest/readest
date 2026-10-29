@@ -248,6 +248,8 @@ describe('OpenAICompatibleSpeechProvider', () => {
     const instructions = scope();
     services = [service({ model: 'tts-1', instructions: 'Whisper.', apiKey: 'other' })];
     expect(scope()).toBe(instructions);
+    services = [service({ model: 'tts-1', instructions: 'Whisper.', responseFormat: 'mp3' })];
+    expect(scope()).toBe(instructions);
     services = [service({ model: 'tts-1', instructions: 'Whisper.', responseFormat: 'none' })];
     expect(scope()).not.toBe(instructions);
   });

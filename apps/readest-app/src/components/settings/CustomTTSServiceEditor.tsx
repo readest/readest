@@ -4,6 +4,7 @@ import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useCustomTTSStore } from '@/store/customTTSStore';
 import {
+  isMiMoService,
   OpenAICompatibleSpeechProvider,
   speechEndpoint,
 } from '@/services/tts/providers/openaiCompatible';
@@ -69,7 +70,8 @@ const CustomTTSServiceEditor: React.FC<CustomTTSServiceEditorProps> = ({ service
     baseUrl: draft.baseUrl.trim(),
     model: draft.model.trim(),
     instructions: draft.instructions?.trim() || undefined,
-    voices: draft.voices?.trim() || undefined,
+    // A cleared list stays '' rather than undefined, so it syncs.
+    voices: draft.voices?.trim(),
   });
 
   // Lists the service's voices and speaks a short sample with the first one,
@@ -216,25 +218,22 @@ const CustomTTSServiceEditor: React.FC<CustomTTSServiceEditorProps> = ({ service
             placeholder={_('Optional, for models that accept a speaking style')}
           />
         </Field>
-        <SettingsRow label={_('Format')}>
-          <SettingsSelect
-            value={draft.responseFormat ?? 'mp3'}
-            onChange={(e) =>
-              update({
-                responseFormat:
-                  e.target.value === 'mp3'
-                    ? undefined
-                    : (e.target.value as CustomTTSService['responseFormat']),
-              })
-            }
-            ariaLabel={_('Format')}
-            options={[
-              { value: 'mp3', label: 'MP3' },
-              { value: 'wav', label: 'WAV' },
-              { value: 'none', label: _('Default') },
-            ]}
-          />
-        </SettingsRow>
+        {!isMiMoService(draft) && (
+          <SettingsRow label={_('Format')}>
+            <SettingsSelect
+              value={draft.responseFormat ?? 'mp3'}
+              onChange={(e) =>
+                update({ responseFormat: e.target.value as CustomTTSService['responseFormat'] })
+              }
+              ariaLabel={_('Format')}
+              options={[
+                { value: 'mp3', label: 'MP3' },
+                { value: 'wav', label: 'WAV' },
+                { value: 'none', label: _('Default') },
+              ]}
+            />
+          </SettingsRow>
+        )}
         <SettingsSwitchRow
           label={_('Enabled')}
           checked={!draft.disabled}

@@ -45,7 +45,7 @@ const MIMO_VOICES: ListedVoice[] = [
 
 // MiMo serves speech only from chat completions, so any service on its host
 // (whatever the model) uses them; a proxy elsewhere keeps the OpenAI route.
-const isMiMoService = (service: CustomTTSService): boolean => {
+export const isMiMoService = (service: Pick<CustomTTSService, 'baseUrl'>): boolean => {
   try {
     return /(^|\.)xiaomimimo\.com$/.test(new URL(service.baseUrl).hostname);
   } catch {
@@ -190,12 +190,13 @@ export class OpenAICompatibleSpeechProvider implements SpeechProvider {
 
   cacheScope(req: SpeechSynthesisRequest): string {
     const service = this.#resolve(req.voice)?.service;
-    // The format joins the key only when set, so existing MP3 caches stay valid.
+    // Only a non-MP3 format joins the key, so existing MP3 caches stay valid.
+    const format = service?.responseFormat;
     return JSON.stringify([
       service?.baseUrl,
       service?.model,
       service?.instructions,
-      ...(service?.responseFormat ? [service.responseFormat] : []),
+      ...(format && format !== 'mp3' ? [format] : []),
     ]);
   }
 
