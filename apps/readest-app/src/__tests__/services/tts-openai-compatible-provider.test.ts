@@ -30,6 +30,27 @@ const audioResponse = (bytes = [1, 2, 3]) =>
 
 const req = (voice: string, text = 'Hello there.') => ({ lang: 'en', text, voice, pitch: 1 });
 
+// A RIFF/WAVE file of the given chunks, padded to even lengths as RIFF requires.
+const wav = (chunks: [string, number[]][]): Uint8Array<ArrayBuffer> => {
+  const body = chunks.flatMap(([id, payload]) => {
+    const size = payload.length;
+    const sizeBytes = [size & 0xff, (size >> 8) & 0xff, (size >> 16) & 0xff, size >>> 24];
+    return [...id].map((c) => c.charCodeAt(0)).concat(sizeBytes, payload, size & 1 ? [0] : []);
+  });
+  const size = body.length + 4;
+  return new Uint8Array([
+    ...[...'RIFF'].map((c) => c.charCodeAt(0)),
+    ...[size & 0xff, (size >> 8) & 0xff, (size >> 16) & 0xff, size >>> 24],
+    ...[...'WAVE'].map((c) => c.charCodeAt(0)),
+    ...body,
+  ]);
+};
+// PCM, mono, 24 kHz, 16-bit: what Gemini TTS returns.
+const PCM_FMT = [1, 0, 1, 0, 0xc0, 0x5d, 0, 0, 0x80, 0xbb, 0, 0, 2, 0, 16, 0];
+
+const wavResponse = (bytes: Uint8Array<ArrayBuffer>) =>
+  new Response(bytes, { status: 200, headers: { 'Content-Type': 'audio/wav' } });
+
 describe('OpenAICompatibleSpeechProvider', () => {
   let services: CustomTTSService[];
   let allowed: boolean;
@@ -153,6 +174,43 @@ describe('OpenAICompatibleSpeechProvider', () => {
     expect(await sentBody('none')).not.toHaveProperty('response_format');
   });
 
+  it('unwraps a WAV a proxy wrapped in another WAV, dropping non-audio chunks', async () => {
+    // LiteLLM wraps Gemini's whole WAV, C2PA manifest included, as PCM samples.
+    const samples = [1, 2, 3, 4, 5, 6];
+    const gemini = wav([
+      ['fmt ', PCM_FMT],
+      ['data', samples],
+      ['C2PA', [9, 9, 9]],
+    ]);
+    fetchMock.mockResolvedValue(
+      wavResponse(
+        wav([
+          ['fmt ', PCM_FMT],
+          ['data', [...gemini]],
+        ]),
+      ),
+    );
+    const result = await provider.synthesize(req('s1:Kore'), new AbortController().signal);
+    expect(new Uint8Array(result.audio)).toEqual(
+      wav([
+        ['fmt ', PCM_FMT],
+        ['data', samples],
+      ]),
+    );
+  });
+
+  it('passes other audio through untouched', async () => {
+    const plain = wav([
+      ['fmt ', PCM_FMT],
+      ['data', [1, 2, 3, 4]],
+      ['C2PA', [9, 9, 9]],
+    ]);
+    for (const bytes of [plain, new Uint8Array([0xff, 0xf3, 1, 2])]) {
+      fetchMock.mockResolvedValueOnce(wavResponse(bytes));
+      const result = await provider.synthesize(req('s1:Kore'), new AbortController().signal);
+      expect(new Uint8Array(result.audio)).toEqual(bytes);
+    }
+  });
   it('accepts a base URL pasted with the endpoint on it', async () => {
     for (const baseUrl of [
       'https://tts.example.com/v1/audio/speech',
