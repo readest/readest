@@ -596,6 +596,7 @@ impl<R: Runtime> NativeBridge<R> {
     /// side. Android has no implementation yet and rejects.
     pub fn cover_webview_region(
         &self,
+        _window: &tauri::WebviewWindow<R>,
         payload: CaptureWebviewRegionRequest,
     ) -> crate::Result<CoverWebviewRegionResponse> {
         self.0
@@ -605,6 +606,7 @@ impl<R: Runtime> NativeBridge<R> {
 
     pub fn uncover_webview_region(
         &self,
+        _window: &tauri::WebviewWindow<R>,
         payload: UncoverWebviewRegionRequest,
     ) -> crate::Result<()> {
         self.0

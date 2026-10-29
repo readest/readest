@@ -2791,5 +2791,6 @@
   "Quotes take the highlight color, and > [!NOTE] becomes a callout": "Citati prevzamejo barvo poudarka, > [!NOTE] pa postane opomba",
   "Variables: {{variables}}": "Spremenljivke: {{variables}}",
   "Stable Page Numbers": "Stalne številke strani",
-  "Turn off to count pages by the screens of this device": "Izklopite za štetje strani po zaslonih te naprave"
+  "Turn off to count pages by the screens of this device": "Izklopite za štetje strani po zaslonih te naprave",
+  "Page Flip": "Obračanje strani"
 }

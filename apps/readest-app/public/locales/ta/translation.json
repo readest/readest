@@ -2655,5 +2655,6 @@
   "Quotes take the highlight color, and > [!NOTE] becomes a callout": "மேற்கோள்கள் சிறப்பம்சத்தின் நிறத்தைப் பெறும், > [!NOTE] ஒரு குறிப்புப் பெட்டியாக மாறும்",
   "Variables: {{variables}}": "மாறிகள்: {{variables}}",
   "Stable Page Numbers": "நிலையான பக்க எண்கள்",
-  "Turn off to count pages by the screens of this device": "இந்தச் சாதனத்தின் திரைகளின்படி பக்கங்களை எண்ண அணைக்கவும்"
+  "Turn off to count pages by the screens of this device": "இந்தச் சாதனத்தின் திரைகளின்படி பக்கங்களை எண்ண அணைக்கவும்",
+  "Page Flip": "பக்கம் புரட்டல்"
 }

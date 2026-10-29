@@ -2655,5 +2655,6 @@
   "Quotes take the highlight color, and > [!NOTE] becomes a callout": "Zitate übernehmen die Markierungsfarbe, und > [!NOTE] wird zu einem Callout",
   "Variables: {{variables}}": "Variablen: {{variables}}",
   "Stable Page Numbers": "Stabile Seitenzahlen",
-  "Turn off to count pages by the screens of this device": "Ausschalten, um Seiten nach den Bildschirmen dieses Geräts zu zählen"
+  "Turn off to count pages by the screens of this device": "Ausschalten, um Seiten nach den Bildschirmen dieses Geräts zu zählen",
+  "Page Flip": "Seite wenden"
 }

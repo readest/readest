@@ -2587,5 +2587,6 @@
   "Quotes take the highlight color, and > [!NOTE] becomes a callout": "ལུང་འདྲེན་ལ་འོད་རྟགས་ཀྱི་ཚོན་མདོག་ཐོབ་ཅིང་། > [!NOTE] དེ་གསལ་བཤད་སྒྲོམ་དུ་འགྱུར",
   "Variables: {{variables}}": "འགྱུར་ཚད: {{variables}}",
   "Stable Page Numbers": "ཤོག་གྲངས་བརྟན་པོ།",
-  "Turn off to count pages by the screens of this device": "སྒྲིག་ཆས་འདིའི་བརྙན་ཡོལ་ལྟར་ཤོག་གྲངས་རྩིས་པར་སྒོ་རྒྱག"
+  "Turn off to count pages by the screens of this device": "སྒྲིག་ཆས་འདིའི་བརྙན་ཡོལ་ལྟར་ཤོག་གྲངས་རྩིས་པར་སྒོ་རྒྱག",
+  "Page Flip": "ཤོག་ལྷེ་བསྒྱུར་བ།"
 }

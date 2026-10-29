@@ -2655,5 +2655,6 @@
   "Quotes take the highlight color, and > [!NOTE] becomes a callout": "Iqtiboslar belgilash rangini oladi, > [!NOTE] esa izoh blokiga aylanadi",
   "Variables: {{variables}}": "O‘zgaruvchilar: {{variables}}",
   "Stable Page Numbers": "Barqaror sahifa raqamlari",
-  "Turn off to count pages by the screens of this device": "Sahifalarni ushbu qurilma ekranlari bo'yicha sanash uchun o'chiring"
+  "Turn off to count pages by the screens of this device": "Sahifalarni ushbu qurilma ekranlari bo'yicha sanash uchun o'chiring",
+  "Page Flip": "Sahifani ag'darish"
 }

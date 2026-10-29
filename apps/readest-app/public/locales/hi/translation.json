@@ -2655,5 +2655,6 @@
   "Quotes take the highlight color, and > [!NOTE] becomes a callout": "उद्धरण हाइलाइट का रंग लेते हैं, और > [!NOTE] एक कॉलआउट बन जाता है",
   "Variables: {{variables}}": "वेरिएबल: {{variables}}",
   "Stable Page Numbers": "स्थिर पेज संख्याएँ",
-  "Turn off to count pages by the screens of this device": "इस डिवाइस की स्क्रीन के अनुसार पेज गिनने के लिए बंद करें"
+  "Turn off to count pages by the screens of this device": "इस डिवाइस की स्क्रीन के अनुसार पेज गिनने के लिए बंद करें",
+  "Page Flip": "पेज पलटना"
 }

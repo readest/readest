@@ -83,6 +83,8 @@ export interface CapturedTurnHost {
    * leaf, and lands it on the inner column (readest#6106).
    */
   getColumnCount?: () => number;
+  /** Page Flip is the chosen style: a single page lifts over the spine instead of curling. */
+  isPageFlip?: () => boolean;
   /**
    * Freeze the on-screen pixels of `rect` (viewport CSS px) behind a native
    * layer that `capture` does not see. The two-column curl uses it to capture
@@ -108,6 +110,14 @@ interface TurnRenderer {
   setBackdrop?(source: TexImageSource): void;
   /** Page columns in the captured bitmap; 2 turns one leaf hinged at the spine. */
   setColumns?(columns: number): void;
+  /** Built to draw Page Flip, which needs its own GPU context. */
+  readonly pageFlip?: boolean;
+  /** Turn as a Page Flip where the surface can; returns whether it will. */
+  setFlip?(flip: boolean): boolean;
+  /** Release a Page Flip to its own physics; false when the turn does not flip. */
+  release?(commit: boolean): boolean;
+  /** Step and draw a released Page Flip; false once it has settled. */
+  advance?(seconds: number, rtl: boolean): boolean;
   /** The incoming inner column shown on the back of a two-column leaf. */
   setIncoming?(source: TexImageSource | null): void;
   setReturning?(source: TexImageSource): void;
@@ -862,6 +872,7 @@ export class CapturedPageTurn {
     // hiding the instant page swap happening underneath.
     try {
       renderer.setColumns?.(active.columns);
+      renderer.setFlip?.(this.#pageFlip(style));
       const adjacentReady = style === 'curl' && renderer.selectAdjacent?.(forward) === true;
       if (adjacentReady) active.waitingForReturning = false;
       active.deferredNavigation = adjacentReady;
@@ -935,6 +946,11 @@ export class CapturedPageTurn {
       }
       throw error;
     }
+  }
+
+  /** Whether this turn should flip its page rather than curl it. */
+  #pageFlip(style: CapturedTurnStyle) {
+    return style === 'curl' && this.#host.isPageFlip?.() === true;
   }
 
   /** Convert the active turn's vertical grip to renderer grab coordinates. */
@@ -1219,6 +1235,7 @@ export class CapturedPageTurn {
       recycled.surface.rect.width === rect.width &&
       recycled.surface.rect.height === rect.height &&
       recycled.surface.renderDpr === renderDpr &&
+      (recycled.surface.renderer.pageFlip ?? false) === this.#pageFlip(style) &&
       recycled.surface.renderer.isUsable?.() !== false
         ? recycled.surface
         : null;
@@ -1230,7 +1247,10 @@ export class CapturedPageTurn {
         ? new PageSlideRenderer()
         : style === 'push'
           ? new PagePushRenderer(() => this.#host.getPushTarget?.() ?? null)
-          : new PageCurlRenderer({ preserveDrawingBuffer: false }));
+          : new PageCurlRenderer({
+              preserveDrawingBuffer: false,
+              pageFlip: this.#pageFlip(style),
+            }));
     overlay.setAttribute('aria-hidden', 'true');
     overlay.dataset['capturedTurnPrepared'] = String(preMount);
     Object.assign(overlay.style, {
@@ -1298,6 +1318,7 @@ export class CapturedPageTurn {
       !hostElement.isConnected ||
       prepared.dpr !== dpr ||
       prepared.style !== style ||
+      (prepared.renderer.pageFlip ?? false) !== this.#pageFlip(style) ||
       prepared.renderer.isUsable?.() === false ||
       !sameCaptureRect(prepared.rect, rect)
     ) {
@@ -1435,6 +1456,7 @@ export class CapturedPageTurn {
       this.#draw(active, target);
       return Promise.resolve();
     }
+    if (active.renderer.release?.(target === 1)) return this.#settleFlip(active, target);
     return new Promise((resolve) => {
       const from = active.progress;
       const span = target - from;
@@ -1529,6 +1551,28 @@ export class CapturedPageTurn {
       } catch {
         // `finished` is not essential when onfinish/oncancel are available.
       }
+    });
+  }
+
+  /** Let a released Page Flip settle on its own physics, then lay it flat at `target`. */
+  #settleFlip(active: ActiveTurn, target: number): Promise<void> {
+    return new Promise((resolve) => {
+      active.finish = resolve;
+      let last = 0;
+      const step = (now: number) => {
+        if (this.#active !== active) return resolve();
+        const moving = active.renderer.advance!(last ? (now - last) / 1000 : 0, active.rendererRtl);
+        last = now;
+        if (moving) {
+          active.raf = requestAnimationFrame(step);
+          return;
+        }
+        active.progress = target;
+        this.#draw(active, target);
+        active.finish = null;
+        resolve();
+      };
+      active.raf = requestAnimationFrame(step);
     });
   }
 

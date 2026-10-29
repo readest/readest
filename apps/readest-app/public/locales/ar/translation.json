@@ -2927,5 +2927,6 @@
   "Quotes take the highlight color, and > [!NOTE] becomes a callout": "تأخذ الاقتباسات لون التمييز، ويصبح ‎> [!NOTE]‎ مربع تنبيه",
   "Variables: {{variables}}": "المتغيرات: {{variables}}",
   "Stable Page Numbers": "أرقام صفحات ثابتة",
-  "Turn off to count pages by the screens of this device": "أوقفه لعدّ الصفحات حسب شاشات هذا الجهاز"
+  "Turn off to count pages by the screens of this device": "أوقفه لعدّ الصفحات حسب شاشات هذا الجهاز",
+  "Page Flip": "قلب الصفحة"
 }

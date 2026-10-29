@@ -2791,5 +2791,6 @@
   "Quotes take the highlight color, and > [!NOTE] becomes a callout": "Цитаты получают цвет выделения, а > [!NOTE] становится выноской",
   "Variables: {{variables}}": "Переменные: {{variables}}",
   "Stable Page Numbers": "Постоянные номера страниц",
-  "Turn off to count pages by the screens of this device": "Отключите, чтобы считать страницы по экранам этого устройства"
+  "Turn off to count pages by the screens of this device": "Отключите, чтобы считать страницы по экранам этого устройства",
+  "Page Flip": "Перелистывание"
 }

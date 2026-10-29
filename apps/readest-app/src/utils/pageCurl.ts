@@ -1,4 +1,5 @@
 import { buildPageCurlMesh } from './pageCurlMesh';
+import { PageFlipLayer } from './pageFlip';
 
 /** Captured paper rendered as 64 hinged strips, with perspective and a translucent back. */
 const VERTEX_SHADER = `
@@ -72,7 +73,11 @@ const smoothstep = (edge0: number, edge1: number, x: number) => {
 
 export class PageCurlRenderer {
   private canvas: HTMLCanvasElement | null = null;
-  private gl: WebGLRenderingContext | null = null;
+  private gl: WebGLRenderingContext | WebGL2RenderingContext | null = null;
+  private program: WebGLProgram | null = null;
+  /** Page Flip, drawn on this canvas when the context is WebGL 2. */
+  private flip: PageFlipLayer | null = null;
+  private flipping = false;
   private incomingTex: WebGLTexture | null = null;
   private pageTex: WebGLTexture | null = null;
   private returningTex: WebGLTexture | null = null;
@@ -88,8 +93,11 @@ export class PageCurlRenderer {
   private height = 0;
   private uniforms: Record<string, WebGLUniformLocation | null> = {};
   private preserveDrawingBuffer: boolean;
+  /** Built to draw Page Flip as well, on a WebGL 2 context where available. */
+  readonly pageFlip: boolean;
 
-  constructor(options: { preserveDrawingBuffer?: boolean } = {}) {
+  constructor(options: { preserveDrawingBuffer?: boolean; pageFlip?: boolean } = {}) {
+    this.pageFlip = options.pageFlip ?? false;
     // Standalone pixel/readback users retain the historical default. The
     // captured-turn pipeline opts out because its idle surface can stay alive
     // much longer and redraws before reveal.
@@ -116,12 +124,16 @@ export class PageCurlRenderer {
 
     // preserveDrawingBuffer is only needed by readback callers. Long-lived
     // prepared turn surfaces disable it to avoid retaining another full-size
-    // color buffer while idle.
-    const gl = canvas.getContext('webgl', {
+    // color buffer while idle. Page Flip's shader needs WebGL 2, which runs
+    // the curl's shaders unchanged.
+    const options: WebGLContextAttributes = {
       alpha: true,
       premultipliedAlpha: true,
       preserveDrawingBuffer: this.preserveDrawingBuffer,
-    });
+    };
+    const gl =
+      (this.pageFlip ? canvas.getContext('webgl2', options) : null) ??
+      canvas.getContext('webgl', options);
     if (!gl) {
       this.dispose();
       throw new Error('WebGL unavailable');
@@ -146,6 +158,7 @@ export class PageCurlRenderer {
     }
     // biome-ignore lint/correctness/useHookAtTopLevel: WebGL API, not a React hook
     gl.useProgram(program);
+    this.program = program;
 
     this.vertexBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexBuffer);
@@ -181,6 +194,15 @@ export class PageCurlRenderer {
     gl.frontFace(gl.CW);
     gl.enable(gl.BLEND);
     gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+    if (typeof WebGL2RenderingContext !== 'undefined' && gl instanceof WebGL2RenderingContext) {
+      try {
+        this.flip = new PageFlipLayer(gl);
+      } catch (error) {
+        console.warn('Page Flip unavailable', error);
+      }
+      // biome-ignore lint/correctness/useHookAtTopLevel: WebGL API, not a React hook
+      gl.useProgram(program);
+    }
   }
 
   private createPlaceholderTexture(gl: WebGLRenderingContext, unit: number, rgba: number[]) {
@@ -279,6 +301,30 @@ export class PageCurlRenderer {
   }
 
   /**
+   * Turn the next sheet as a Page Flip instead of a curl. A spread, or a
+   * context without WebGL 2, keeps the curl. Returns whether it flips.
+   */
+  setFlip(flip: boolean) {
+    this.flipping = flip && this.columns < 2 && !!this.flip;
+    this.flip?.reset();
+    return this.flipping;
+  }
+
+  /** Release a flipped sheet to turn (`commit`) or return; false when this turn curls. */
+  release(commit: boolean) {
+    if (!this.flipping || !this.flip) return false;
+    this.flip.release(commit);
+    return true;
+  }
+
+  /** Step and draw the released flipped sheet; false once it has settled. */
+  advance(seconds: number, rtl: boolean) {
+    const moving = this.flip?.advance(seconds) ?? false;
+    this.renderFlip(rtl);
+    return moving;
+  }
+
+  /**
    * The incoming page shown on the back of a two-column leaf: a capture of
    * the inner column of the page the live view has already turned to (the
    * column the leaf lands on), at the same height as the captured page.
@@ -306,6 +352,10 @@ export class PageCurlRenderer {
   render(progress: number, grab: CurlGrab = { x: 1, y: 0.5 }, rtl = false) {
     const gl = this.gl;
     if (!gl) return;
+    if (this.flipping && this.flip) {
+      this.flip.pose(progress, grab.y, this.returning);
+      return this.renderFlip(rtl);
+    }
     const { width: w, height: h } = this;
     const leaf = this.columns === 2;
     const mesh = buildPageCurlMesh(
@@ -340,12 +390,7 @@ export class PageCurlRenderer {
 
     gl.clearColor(0, 0, 0, 0);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-    const draw = (vertices: Float32Array, texture: number) => {
-      gl.uniform1i(this.uniforms['uTex']!, texture);
-      gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexBuffer);
-      gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.DYNAMIC_DRAW);
-      gl.drawArrays(gl.TRIANGLES, 0, vertices.length / 6);
-    };
+    const draw = (vertices: Float32Array, texture: number) => this.drawMesh(vertices, texture);
     if (this.destination) draw(buildPageCurlMesh(w, h, 0, 0.5, rtl, 1), 3);
     if (this.returning) {
       // Keep the current page underneath the sheet until it returns. In a
@@ -355,6 +400,30 @@ export class PageCurlRenderer {
       if (leaf) draw(buildPageCurlMesh(w, h, 0, 0.5, rtl, 2).subarray(0, 36), 1);
     }
     draw(mesh, this.returning ? 1 : 0);
+  }
+
+  private drawMesh(vertices: Float32Array, texture: number) {
+    const gl = this.gl!;
+    gl.uniform1i(this.uniforms['uTex']!, texture);
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.DYNAMIC_DRAW);
+    gl.drawArrays(gl.TRIANGLES, 0, vertices.length / 6);
+  }
+
+  /** Draw the flat page beneath, then the flipped sheet. */
+  private renderFlip(rtl: boolean) {
+    const gl = this.gl;
+    if (!gl || !this.flip) return;
+    gl.clearColor(0, 0, 0, 0);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    gl.frontFace(rtl ? gl.CCW : gl.CW);
+    const flat = buildPageCurlMesh(this.width, this.height, 0, 0.5, rtl, 1);
+    if (this.destination) this.drawMesh(flat, 3);
+    // A backward sheet arrives over the current page.
+    if (this.returning) this.drawMesh(flat, 0);
+    this.flip.draw(this.returning ? 1 : 0, rtl);
+    // biome-ignore lint/correctness/useHookAtTopLevel: WebGL API, not a React hook
+    gl.useProgram(this.program);
   }
 
   /** Read back a pixel (device px, origin top-left) — used by tests. */
@@ -383,6 +452,9 @@ export class PageCurlRenderer {
     this.canvas?.remove();
     this.canvas = null;
     this.gl = null;
+    this.program = null;
+    this.flip = null;
+    this.flipping = false;
     this.vertexBuffer = null;
     this.pageTex = null;
     this.returningTex = null;

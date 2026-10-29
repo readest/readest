@@ -2655,5 +2655,6 @@
   "Quotes take the highlight color, and > [!NOTE] becomes a callout": "උපුටා දැක්වීම් උද්දීපනයේ වර්ණය ගන්නා අතර, > [!NOTE] විස්තර කොටුවක් බවට පත් වේ",
   "Variables: {{variables}}": "විචල්‍ය: {{variables}}",
   "Stable Page Numbers": "ස්ථාවර පිටු අංක",
-  "Turn off to count pages by the screens of this device": "මෙම උපාංගයේ තිර අනුව පිටු ගණන් කිරීමට අක්‍රිය කරන්න"
+  "Turn off to count pages by the screens of this device": "මෙම උපාංගයේ තිර අනුව පිටු ගණන් කිරීමට අක්‍රිය කරන්න",
+  "Page Flip": "පිටුව පෙරළීම"
 }
