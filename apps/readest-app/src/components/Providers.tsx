@@ -15,6 +15,7 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { useCustomTextureStore } from '@/store/customTextureStore';
 import { useSafeAreaInsets } from '@/hooks/useSafeAreaInsets';
 import { useSettingsSync } from '@/hooks/useSettingsSync';
+import { useInvalidServerConfigNotice } from '@/hooks/useInvalidServerConfigNotice';
 import { useDefaultIconSize } from '@/hooks/useResponsiveSize';
 import { useBackgroundTexture } from '@/hooks/useBackgroundTexture';
 import { useEinkMode } from '@/hooks/useEinkMode';
@@ -126,6 +127,7 @@ const Providers = ({ children }: { children: React.ReactNode }) => {
   const [showTelemetryConsent, setShowTelemetryConsent] = useState(false);
   useSafeAreaInsets(); // Initialize safe area insets
   useSettingsSync(); // Adopt global settings broadcast by other windows (#4580)
+  useInvalidServerConfigNotice(); // Tauri: a stored server config the bootstrap refused
 
   useEffect(() => {
     const handlerLanguageChanged = (lng: string) => {

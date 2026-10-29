@@ -209,6 +209,55 @@ unaffected either way.
 
 ---
 
+## Connecting the Readest apps
+
+the desktop and mobile apps can use your server without being rebuilt. in the
+app, open **Settings → Integrations → Readest Server** (or tap **Server** under
+the sign-in form), choose **Custom Server**, enter the URL you open the web
+client at (`SITE_URL`, e.g. `https://your-domain.com`), then **Test Connection**
+and **Save**.
+
+the app reads everything else from `GET /api/runtime-config` on that URL:
+`SUPABASE_PUBLIC_URL`, `ANON_KEY`, `SELF_HOSTED`, the quotas and
+`FONT_BASE_URL`. that endpoint ships with the client image, so **upgrade the
+client image first** (see [Upgrading](#upgrading-an-existing-deployment)); an
+older image answers 404 and the app reports that the server needs an update.
+the endpoint only publishes those public values, never `JWT_SECRET`,
+`SERVICE_ROLE_KEY` or storage credentials.
+
+the endpoint is controlled by `ALLOW_APP_CONNECTIONS`. the image defaults it to
+`true`; set `ALLOW_APP_CONNECTIONS=false` in `docker/.env` to stop the apps from
+connecting (they then report that the server doesn't allow app connections).
+this doesn't hide anything: the same values are public in the web client. to
+keep strangers out, set `DISABLE_SIGNUP=true` once your accounts exist.
+
+a few things to know:
+
+- **devices must reach the URLs.** with the default `HOST_IP=localhost` a phone
+  can't, because `localhost` is the phone itself. set `HOST_IP` (or
+  `SUPABASE_PUBLIC_URL` and `S3_PUBLIC_ENDPOINT`) to an address the device
+  resolves.
+- **separate auth host.** on a plain IP/port deployment auth runs on kong's port
+  (`:8000`) while the client is on `:3000`. that is fine: the app picks it up
+  from the endpoint and shows the sign-in host before you save. the **Advanced**
+  fields (Supabase URL and anon key) are only for overriding what the server
+  reports.
+- **`http://` URLs** need an explicit "I trust this network" acknowledgement,
+  since the connection is unencrypted. use them only on your LAN or a VPN.
+- **switching servers** signs you out and starts sync over against the new
+  server. books stored on the device stay, marked as not uploaded; entries that
+  only existed in the previous server's cloud are removed from the local
+  library (switching back pulls them again).
+- **OAuth sign-in** (Google, Apple, …) from the apps returns through
+  `readest://auth-callback`. add it to `ADDITIONAL_REDIRECT_URLS` if you enable
+  OAuth providers in gotrue; email/password needs nothing extra:
+
+  ```env
+  ADDITIONAL_REDIRECT_URLS=https://your-domain.com/**,readest://auth-callback
+  ```
+
+---
+
 ## Building the Dockerfile standalone
 
 ```bash

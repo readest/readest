@@ -92,3 +92,31 @@ describe('Browser-only database WASM', () => {
     expect(web.turbopack?.resolveAlias?.['@readest/turso-database-wasm/webpack']).toBeUndefined();
   });
 });
+
+describe('Server-only route handlers', () => {
+  // `app/api/runtime-config/route.ts` (and every other `.ts` route handler)
+  // exists only on the web server. The Tauri static export drops `.ts` page
+  // extensions so the handlers are never emitted into `out/`.
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.resetModules();
+  });
+
+  const loadConfig = async (platform: string) => {
+    vi.stubEnv('NEXT_PUBLIC_APP_PLATFORM', platform);
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.resetModules();
+    return (await import('../../next.config.mjs')).default;
+  };
+
+  test('the Tauri export excludes .ts route handlers', async () => {
+    const tauri = await loadConfig('tauri');
+    expect(tauri.output).toBe('export');
+    expect(tauri.pageExtensions).not.toContain('ts');
+  });
+
+  test('the web build serves them', async () => {
+    const web = await loadConfig('web');
+    expect(web.pageExtensions).toContain('ts');
+  });
+});

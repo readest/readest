@@ -27,6 +27,7 @@ import { authWithCustomTab, authWithSafari } from './utils/nativeAuth';
 import WindowButtons from '@/components/WindowButtons';
 import type { OAuthProvider } from './components/ProviderLogin';
 import AuthPanel from './components/AuthPanel';
+import ServerIndicator from './components/ServerIndicator';
 
 interface SingleInstancePayload {
   args: string[];
@@ -373,6 +374,9 @@ export default function AuthPage() {
             redirectTo={getTauriRedirectTo(false)}
             onProviderSignIn={tauriProviderSignIn}
           />
+          <div className='mt-6'>
+            <ServerIndicator />
+          </div>
         </div>
       </div>
     </div>

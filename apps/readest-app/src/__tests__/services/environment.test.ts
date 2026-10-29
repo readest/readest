@@ -105,6 +105,17 @@ describe('environment', () => {
     });
   });
 
+  // ── getAPIBaseUrl with a runtime server ────────────────────────
+  describe('getAPIBaseUrl with a runtime server', () => {
+    test('uses the runtime apiBaseUrl over a baked NEXT_PUBLIC_API_BASE_URL on Tauri', async () => {
+      env['NEXT_PUBLIC_APP_PLATFORM'] = 'tauri';
+      env['NEXT_PUBLIC_API_BASE_URL'] = 'https://baked.example.com';
+      window.__READEST_RUNTIME_CONFIG = { apiBaseUrl: 'https://books.example.com' };
+      const { getAPIBaseUrl } = await import('@/services/environment');
+      expect(getAPIBaseUrl()).toBe('https://books.example.com/api');
+    });
+  });
+
   // ── getBaseUrl ─────────────────────────────────────────────────
   describe('getBaseUrl', () => {
     test('returns runtime-configured apiBaseUrl when set', async () => {

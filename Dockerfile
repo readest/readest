@@ -67,6 +67,10 @@ ENV HOSTNAME=0.0.0.0
 # container came up gated with nothing on screen to explain why (#6093).
 # An operator running a hosted service that sells plans sets SELF_HOSTED=false.
 ENV SELF_HOSTED=true
+# Lets the native apps fetch this server's public config from
+# /api/runtime-config and connect to it. Defaulted here for the same reason as
+# SELF_HOSTED; set ALLOW_APP_CONNECTIONS=false to turn app connections off.
+ENV ALLOW_APP_CONNECTIONS=true
 WORKDIR /app
 # Monorepo-rooted standalone tree: server.js + hoisted, traced node_modules.
 COPY --from=build --chown=node:node /app/apps/readest-app/.next/standalone ./

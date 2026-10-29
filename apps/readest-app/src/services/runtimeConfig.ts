@@ -9,6 +9,38 @@ export interface ReadestRuntimeConfig {
   selfHosted?: boolean;
 }
 
+/**
+ * Every runtime-config key, classified by the type a client may accept for
+ * it. This is the allowlist for everything a server publishes about itself
+ * (`/api/runtime-config`) and everything the native app will install from a
+ * stored server choice: a key that is not listed here never leaves the server
+ * and is rejected on the client. Typed as a complete record so adding a field
+ * to `ReadestRuntimeConfig` without classifying it fails the type check.
+ * Never add a server-only credential here.
+ */
+export const PUBLIC_RUNTIME_CONFIG_KEYS: Record<
+  keyof ReadestRuntimeConfig,
+  'url' | 'string' | 'number' | 'boolean'
+> = {
+  supabaseUrl: 'url',
+  supabaseAnonKey: 'string',
+  apiBaseUrl: 'url',
+  objectStorageType: 'string',
+  storageFixedQuota: 'number',
+  translationFixedQuota: 'number',
+  fontBaseUrl: 'url',
+  selfHosted: 'boolean',
+};
+
+export const pickPublicRuntimeConfig = (config: ReadestRuntimeConfig): ReadestRuntimeConfig => {
+  const picked: Record<string, unknown> = {};
+  for (const key of Object.keys(PUBLIC_RUNTIME_CONFIG_KEYS)) {
+    const value = config[key as keyof ReadestRuntimeConfig];
+    if (value !== undefined && value !== null && value !== '') picked[key] = value;
+  }
+  return picked as ReadestRuntimeConfig;
+};
+
 declare global {
   interface Window {
     __READEST_RUNTIME_CONFIG?: ReadestRuntimeConfig;

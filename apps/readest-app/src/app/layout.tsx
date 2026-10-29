@@ -4,6 +4,7 @@ import Script from 'next/script';
 import { ViewTransitions } from '@/components/ViewTransitions';
 import { EnvProvider } from '@/context/EnvContext';
 import Providers from '@/components/Providers';
+import { getServerConfigBootstrapScript } from '@/services/serverConfig';
 
 import '../styles/globals.css';
 
@@ -127,8 +128,13 @@ const devHmrPatchScript = `(${patchTauriHmrWebSocket.toString()})(${JSON.stringi
 // web/Docker build. The Tauri build is statically exported (`output:
 // 'export'`), so the file isn't emitted — the request would return the SPA
 // fallback HTML and crash with `Unexpected token '<'`. All runtime-config
-// consumers fall back to `NEXT_PUBLIC_*` envs baked at build time on Tauri.
+// consumers fall back to `NEXT_PUBLIC_*` envs baked at build time on Tauri,
+// unless the user saved a server at runtime (below).
 const shouldInjectRuntimeConfig = process.env['NEXT_PUBLIC_APP_PLATFORM'] === 'web';
+// Tauri reads the server the user picked at runtime (Settings > Readest
+// Server) from localStorage, inline and ahead of the bundle, so modules that
+// read the runtime config at import time already see it.
+const shouldInjectServerConfig = process.env['NEXT_PUBLIC_APP_PLATFORM'] === 'tauri';
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   // Browser extensions can inject attributes on <html> before React hydrates it.
@@ -141,6 +147,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         {shouldInjectRuntimeConfig ? (
           <Script src='/runtime-config.js' strategy='beforeInteractive' />
+        ) : null}
+        {shouldInjectServerConfig ? (
+          <script dangerouslySetInnerHTML={{ __html: getServerConfigBootstrapScript() }} />
         ) : null}
         {shouldInjectDevHmrPatch ? (
           <script dangerouslySetInnerHTML={{ __html: devHmrPatchScript }} />

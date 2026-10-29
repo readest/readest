@@ -19,6 +19,7 @@ import {
   RiMicrosoftLine,
   RiAppleLine,
   RiHeadphoneLine,
+  RiServerLine,
 } from 'react-icons/ri';
 import { useAppRouter } from '@/hooks/useAppRouter';
 import { useEnv } from '@/context/EnvContext';
@@ -60,6 +61,8 @@ import GoogleDriveForm from './integrations/GoogleDriveForm';
 import OneDriveForm from './integrations/OneDriveForm';
 import ICloudForm from './integrations/ICloudForm';
 import S3Form from './integrations/S3Form';
+import ServerForm from './integrations/ServerForm';
+import { getActiveServerHost } from './integrations/ServerSettings';
 import { persistCloudProviderEnabled } from './integrations/cloudSync';
 import {
   canToggleCloudProvider,
@@ -96,6 +99,7 @@ type SubPage =
   | 'audiobookshelf'
   | 'send'
   | 'localsend'
+  | 'server'
   | null;
 
 /**
@@ -255,6 +259,12 @@ const IntegrationsPanel: React.FC = () => {
   // SubPageHeader's "Integrations" label lands at the exact same Y position
   // as the list-view's h2 — clicking a row reads as a navigation morph
   // rather than a layout shift.
+  if (subPage === 'server')
+    return (
+      <div className='my-4 w-full'>
+        <ServerForm onBack={() => setSubPage(null)} />
+      </div>
+    );
   if (subPage === 'kosync')
     return (
       <div className='my-4 w-full'>
@@ -702,6 +712,22 @@ const IntegrationsPanel: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* The native apps can be pointed at a self-hosted server at runtime;
+          the web build always talks to the server that serves it. */}
+      {isTauriAppPlatform() && (
+        <div className='w-full' data-setting-id='settings.integrations.server'>
+          <SectionTitle className='mb-2'>{_('Server')}</SectionTitle>
+          <div className='card eink-bordered border-base-200 bg-base-100 overflow-hidden border'>
+            <IntegrationRow
+              icon={RiServerLine}
+              title={_('Readest Server')}
+              status={getActiveServerHost() ?? _('Readest Cloud')}
+              onClick={() => setSubPage('server')}
+            />
+          </div>
+        </div>
+      )}
 
       <div className='w-full' data-setting-id='settings.integrations.cloudSync'>
         <SectionTitle className='mb-2'>{_('Cloud Sync')}</SectionTitle>
