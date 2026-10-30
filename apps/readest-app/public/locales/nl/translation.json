@@ -2657,8 +2657,6 @@
   "Stable Page Numbers": "Vaste paginanummers",
   "Turn off to count pages by the screens of this device": "Zet uit om pagina's te tellen per scherm van dit apparaat",
   "Page Flip": "Pagina omdraaien",
-  "{{count}}p_one": "{{count}} p.",
-  "{{count}}p_other": "{{count}} p.",
   "{{count}} pages_one": "{{count}} pagina",
   "{{count}} pages_other": "{{count}} pagina’s",
   "Show page count": "Aantal pagina’s tonen"

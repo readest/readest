@@ -11,6 +11,7 @@ vi.mock('@/hooks/useTranslation', () => ({
     text.replace('{{count}}', String(params?.count)),
 }));
 vi.mock('@/hooks/useResponsiveSize', () => ({ useResponsiveSize: (size: number) => size }));
+vi.mock('@/hooks/useMedianPageDurationSecs', () => ({ useMedianPageDurationSecs: () => null }));
 vi.mock('@/components/BookCover', () => ({ default: () => null }));
 
 const book: Book = {
@@ -24,7 +25,6 @@ const book: Book = {
 };
 
 const props = {
-  book,
   coverFit: 'crop' as const,
   isSelectMode: false,
   bookSelected: false,
@@ -37,22 +37,39 @@ const props = {
 
 afterEach(cleanup);
 
-describe('page count badge on library covers (#6909)', () => {
-  it.each(['grid', 'list'] as const)('badges the cover in %s view', (mode) => {
-    const { container } = render(<BookItem {...props} mode={mode} pageCount={412} />);
-    expect(container.querySelector('.bookitem-main')!.contains(screen.getByText('412p'))).toBe(
-      true,
+describe('page count under the title of library books (#6909)', () => {
+  it.each([
+    'grid',
+    'list',
+  ] as const)('shows the count under the title of an unopened book in %s view, not on the cover', (mode) => {
+    const { container } = render(<BookItem {...props} book={book} mode={mode} pageCount={412} />);
+    const label = screen.getByText('412 pages');
+    expect(container.querySelector('.bookitem-main')!.contains(label)).toBe(false);
+  });
+
+  it('follows the reading progress of a book being read', () => {
+    render(
+      <BookItem {...props} book={{ ...book, progress: [206, 412] }} mode='grid' pageCount={412} />,
     );
+    expect(screen.getByText('50% · 412 pages')).toBeTruthy();
   });
 
-  it('shows no badge without a page count', () => {
-    render(<BookItem {...props} mode='grid' />);
-    expect(screen.queryByText('412p')).toBeNull();
+  it('sits beside the Finished badge', () => {
+    render(
+      <BookItem
+        {...props}
+        book={{ ...book, readingStatus: 'finished' }}
+        mode='grid'
+        pageCount={412}
+      />,
+    );
+    expect(screen.getByText('Finished')).toBeTruthy();
+    expect(screen.getByText('412 pages')).toBeTruthy();
   });
 
-  it('sits in the opposite corner from the series index', () => {
-    render(<BookItem {...props} mode='grid' seriesIndex={3} pageCount={412} />);
-    expect(screen.getByText('412p').className).toContain('start-1');
-    expect(screen.getByText('#3').className).toContain('end-1');
+  it('shows nothing without a page count', () => {
+    render(<BookItem {...props} book={{ ...book, progress: [206, 412] }} mode='grid' />);
+    expect(screen.getByText('50%')).toBeTruthy();
+    expect(screen.queryByText(/pages/)).toBeNull();
   });
 });

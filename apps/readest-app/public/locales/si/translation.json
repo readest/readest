@@ -2657,8 +2657,6 @@
   "Stable Page Numbers": "ස්ථාවර පිටු අංක",
   "Turn off to count pages by the screens of this device": "මෙම උපාංගයේ තිර අනුව පිටු ගණන් කිරීමට අක්‍රිය කරන්න",
   "Page Flip": "පිටුව පෙරළීම",
-  "{{count}}p_one": "{{count}} පි.",
-  "{{count}}p_other": "{{count}} පි.",
   "{{count}} pages_one": "පිටු {{count}}",
   "{{count}} pages_other": "පිටු {{count}}",
   "Show page count": "පිටු ගණන පෙන්වන්න"

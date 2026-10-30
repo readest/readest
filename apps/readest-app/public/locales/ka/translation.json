@@ -2657,8 +2657,6 @@
   "Stable Page Numbers": "მუდმივი გვერდის ნომრები",
   "Turn off to count pages by the screens of this device": "გამორთეთ, რომ გვერდები ამ მოწყობილობის ეკრანებით დაითვალოს",
   "Page Flip": "გვერდის გადაბრუნება",
-  "{{count}}p_one": "{{count}} გვ.",
-  "{{count}}p_other": "{{count}} გვ.",
   "{{count}} pages_one": "{{count}} გვერდი",
   "{{count}} pages_other": "{{count}} გვერდი",
   "Show page count": "გვერდების რაოდენობის ჩვენება"
