@@ -130,6 +130,32 @@ describe('ExportMarkdownDialog export actions', () => {
     expect(onExport).toHaveBeenCalledTimes(1);
     expect(onExport.mock.calls[0]?.[2]).toMatchObject({ share: true });
   });
+
+  // The Android share sheet offers no way to save the file to storage, so
+  // Export writes it through the system save dialog and Share keeps the sheet.
+  it('offers Export (to storage) and Share (share sheet) on Android', () => {
+    h.appService = { isAndroidApp: true };
+    const onExport = renderDialog();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Export' }));
+    expect(onExport).toHaveBeenCalledTimes(1);
+    expect(onExport.mock.calls[0]?.[2]).toMatchObject({ share: false });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Share' }));
+    expect(onExport).toHaveBeenCalledTimes(2);
+    expect(onExport.mock.calls[1]?.[2]).toMatchObject({ share: true });
+  });
+
+  it('styles the main action with btn-contrast', () => {
+    h.appService = { isAndroidApp: true };
+    renderDialog();
+    expect(screen.getByRole('button', { name: 'Share' }).className).toContain('btn-contrast');
+    cleanup();
+
+    h.appService = { isIOSApp: true };
+    renderDialog();
+    expect(screen.getByRole('button', { name: 'Export' }).className).toContain('btn-contrast');
+  });
 });
 
 describe('ExportMarkdownDialog highlight context', () => {
