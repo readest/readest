@@ -2724,5 +2724,9 @@
   "Variables: {{variables}}": "Variabili: {{variables}}",
   "Stable Page Numbers": "Numeri di pagina stabili",
   "Turn off to count pages by the screens of this device": "Disattiva per contare le pagine in base alle schermate di questo dispositivo",
-  "Page Flip": "Girare pagina"
+  "Page Flip": "Girare pagina",
+  "{{count}} pages_one": "{{count}} pagina",
+  "{{count}} pages_many": "{{count}} pagine",
+  "{{count}} pages_other": "{{count}} pagine",
+  "Show page count": "Mostra numero di pagine"
 }

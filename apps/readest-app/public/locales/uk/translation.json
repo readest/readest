@@ -2792,5 +2792,10 @@
   "Variables: {{variables}}": "Змінні: {{variables}}",
   "Stable Page Numbers": "Стабільні номери сторінок",
   "Turn off to count pages by the screens of this device": "Вимкніть, щоб рахувати сторінки за екранами цього пристрою",
-  "Page Flip": "Перегортання"
+  "Page Flip": "Перегортання",
+  "{{count}} pages_one": "{{count}} сторінка",
+  "{{count}} pages_few": "{{count}} сторінки",
+  "{{count}} pages_many": "{{count}} сторінок",
+  "{{count}} pages_other": "{{count}} сторінки",
+  "Show page count": "Показувати кількість сторінок"
 }

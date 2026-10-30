@@ -2588,5 +2588,7 @@
   "Variables: {{variables}}": "ตัวแปร: {{variables}}",
   "Stable Page Numbers": "เลขหน้าคงที่",
   "Turn off to count pages by the screens of this device": "ปิดเพื่อนับหน้าตามหน้าจอของอุปกรณ์นี้",
-  "Page Flip": "พลิกหน้า"
+  "Page Flip": "พลิกหน้า",
+  "{{count}} pages_other": "{{count}} หน้า",
+  "Show page count": "แสดงจำนวนหน้า"
 }

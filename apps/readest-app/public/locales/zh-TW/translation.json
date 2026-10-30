@@ -2588,5 +2588,7 @@
   "Variables: {{variables}}": "變數：{{variables}}",
   "Stable Page Numbers": "穩定頁碼",
   "Turn off to count pages by the screens of this device": "關閉後依本裝置的實際螢幕數計算頁碼",
-  "Page Flip": "翻書"
+  "Page Flip": "翻書",
+  "{{count}} pages_other": "{{count}} 頁",
+  "Show page count": "顯示頁數"
 }

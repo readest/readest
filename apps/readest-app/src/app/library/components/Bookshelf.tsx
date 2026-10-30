@@ -936,6 +936,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
         mode={mode}
         coverFit={shelf.coverFit || 'crop'}
         skeuomorphicCovers={shelf.skeuomorphicCovers}
+        showPageCount={shelf.showPageCount}
         isSelectMode={isSelectMode}
         itemSelected={
           'hash' in item

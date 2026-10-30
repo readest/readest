@@ -2656,5 +2656,8 @@
   "Variables: {{variables}}": "वेरिएबल: {{variables}}",
   "Stable Page Numbers": "स्थिर पेज संख्याएँ",
   "Turn off to count pages by the screens of this device": "इस डिवाइस की स्क्रीन के अनुसार पेज गिनने के लिए बंद करें",
-  "Page Flip": "पेज पलटना"
+  "Page Flip": "पेज पलटना",
+  "{{count}} pages_one": "{{count}} पृष्ठ",
+  "{{count}} pages_other": "{{count}} पृष्ठ",
+  "Show page count": "पृष्ठ संख्या दिखाएँ"
 }

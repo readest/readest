@@ -2928,5 +2928,12 @@
   "Variables: {{variables}}": "المتغيرات: {{variables}}",
   "Stable Page Numbers": "أرقام صفحات ثابتة",
   "Turn off to count pages by the screens of this device": "أوقفه لعدّ الصفحات حسب شاشات هذا الجهاز",
-  "Page Flip": "قلب الصفحة"
+  "Page Flip": "قلب الصفحة",
+  "{{count}} pages_zero": "{{count}} صفحة",
+  "{{count}} pages_one": "صفحة واحدة",
+  "{{count}} pages_two": "صفحتان",
+  "{{count}} pages_few": "{{count}} صفحات",
+  "{{count}} pages_many": "{{count}} صفحة",
+  "{{count}} pages_other": "{{count}} صفحة",
+  "Show page count": "إظهار عدد الصفحات"
 }

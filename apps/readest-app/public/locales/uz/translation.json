@@ -2656,5 +2656,8 @@
   "Variables: {{variables}}": "O‘zgaruvchilar: {{variables}}",
   "Stable Page Numbers": "Barqaror sahifa raqamlari",
   "Turn off to count pages by the screens of this device": "Sahifalarni ushbu qurilma ekranlari bo'yicha sanash uchun o'chiring",
-  "Page Flip": "Sahifani ag'darish"
+  "Page Flip": "Sahifani ag'darish",
+  "{{count}} pages_one": "{{count}} sahifa",
+  "{{count}} pages_other": "{{count}} sahifa",
+  "Show page count": "Sahifalar sonini ko‘rsatish"
 }
