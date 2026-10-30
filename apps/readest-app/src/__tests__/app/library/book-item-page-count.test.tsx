@@ -47,11 +47,13 @@ describe('page count under the title of library books (#6909)', () => {
     expect(container.querySelector('.bookitem-main')!.contains(label)).toBe(false);
   });
 
-  it('follows the reading progress of a book being read', () => {
+  it('follows the reading progress of a book being read, without a separator', () => {
     render(
       <BookItem {...props} book={{ ...book, progress: [206, 412] }} mode='grid' pageCount={412} />,
     );
-    expect(screen.getByText('50% · 412 pages')).toBeTruthy();
+    const pages = screen.getByText('412 pages');
+    expect(screen.getByText('50%').parentElement).toBe(pages.parentElement);
+    expect(pages.parentElement!.textContent).toBe('50%412 pages');
   });
 
   it('sits beside the Finished badge', () => {

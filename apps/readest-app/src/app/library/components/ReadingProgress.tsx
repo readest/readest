@@ -25,13 +25,10 @@ const ReadingProgress: React.FC<ReadingProgressProps> = memo(
     const medianPageDurationSecs = useMedianPageDurationSecs(book.hash) ?? undefined;
     const minutes = getDisplayedTimeRemaining(book, medianPageDurationSecs);
     const pagesLabel = pageCount ? _('{{count}} pages', { count: pageCount }) : '';
-    const progressLabel = [
-      `${progressPercentage}%`,
-      showTimeRemaining && minutes ? formatTimeLeft(minutes, _) : '',
-      pagesLabel,
-    ]
-      .filter(Boolean)
-      .join(' · ');
+    const progressLabel =
+      showTimeRemaining && minutes
+        ? `${progressPercentage}% · ${formatTimeLeft(minutes, _)}`
+        : `${progressPercentage}%`;
     const pages = pagesLabel && (
       <span className='text-neutral-content/70 truncate text-xs'>{pagesLabel}</span>
     );
@@ -52,11 +49,10 @@ const ReadingProgress: React.FC<ReadingProgressProps> = memo(
           role='status'
         >
           <StatusBadge status={book.readingStatus}>{_('On hold')}</StatusBadge>
-          {progressPercentage !== null && !Number.isNaN(progressPercentage) ? (
-            <span>{[`${progressPercentage}%`, pagesLabel].filter(Boolean).join(' · ')}</span>
-          ) : (
-            pages
+          {progressPercentage !== null && !Number.isNaN(progressPercentage) && (
+            <span>{progressPercentage}%</span>
           )}
+          {pages}
         </div>
       );
     }
@@ -80,11 +76,12 @@ const ReadingProgress: React.FC<ReadingProgressProps> = memo(
 
     return (
       <div
-        className='text-neutral-content/70 flex min-w-0 justify-between text-xs'
+        className='text-neutral-content/70 flex min-w-0 justify-between gap-2 text-xs'
         role='status'
         aria-label={`${progressPercentage}%`}
       >
         <span className='truncate'>{progressLabel}</span>
+        {pages}
       </div>
     );
   },
