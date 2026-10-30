@@ -1040,7 +1040,7 @@ const FoliateViewer: React.FC<{
         view.renderer.setAttribute('max-inline-size', `${maxInlineSize}px`);
         view.renderer.setAttribute('max-block-size', `${maxBlockSize}px`);
       }
-      applyMarginAndGap();
+      applyMarginAndGapRef.current();
 
       // If the URL carries ?cfi=... (e.g. opened from a deep link / annotation
       // export link), use it as the initial location instead of the saved one.
@@ -1180,6 +1180,11 @@ const FoliateViewer: React.FC<{
       }
     }
   };
+  // openBook runs once from the mount effect and applies the margins after
+  // its awaits; through this ref it uses the insets current by then, not the
+  // ones from the first render (the status bar can hide while a book opens).
+  const applyMarginAndGapRef = useRef(applyMarginAndGap);
+  applyMarginAndGapRef.current = applyMarginAndGap;
 
   // The suppression below covers the whole web view, footnote popup included,
   // where instant highlighting has no hold gesture: a popup selection is made
