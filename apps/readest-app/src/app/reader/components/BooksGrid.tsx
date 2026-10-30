@@ -79,8 +79,9 @@ interface BookCellProps {
   bookKey: string;
   index: number;
   gridInsets: Insets;
-  // The cell's live insets, for the toolbar chrome that shows with the status
-  // bar; gridInsets are the reading page's (see getReadingScreenInsets). The
+  // The cell's insets for the toolbar chrome that shows with the status bar:
+  // on iPhone Duo those recorded with the status bar shown, elsewhere the live
+  // ones. gridInsets are the reading page's (see getReadingScreenInsets). The
   // same as gridInsets except on iPhone Duo.
   chromeInsets: Insets;
   // Both of the cell's side edges are screen edges (a full-width cell).
@@ -437,8 +438,8 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onCloseBook, onGoToLibr
     // orientation change still busts the cache.
     [bookKeys, chromeScreenInsets, aspectRatio],
   );
-  // On iPhone Duo the reading page keeps the side insets seen with the status
-  // bar hidden, so showing the toolbar (and with it the status strip) does not
+  // On iPhone Duo the reading page keeps the top and side insets seen with the
+  // status bar hidden, so showing the toolbar (and with it the status strip) does not
   // re-paginate. Elsewhere there is no record to apply: the page and the chrome
   // share the live insets.
   const perBookGridInsets = useMemo<Insets[]>(() => {

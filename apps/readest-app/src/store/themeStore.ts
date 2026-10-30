@@ -62,8 +62,9 @@ interface ThemeState {
   statusBarHeight: number;
   systemUIAlwaysHidden: boolean;
   safeAreaInsets: Insets | null;
-  // iPhone Duo: side insets seen with the status bar hidden; the reading page
-  // keeps them while the toolbar shows the status bar (see getReadingScreenInsets).
+  // iPhone Duo: top and side insets seen with the status bar hidden, per window
+  // size; the reading page keeps them while the toolbar shows the status bar
+  // (see getReadingScreenInsets).
   statusBarHiddenInsets: RecordedScreenInsetsBySize | null;
   // The same while the status bar shows, for the toolbars that show with it.
   statusBarShownInsets: RecordedScreenInsetsBySize | null;

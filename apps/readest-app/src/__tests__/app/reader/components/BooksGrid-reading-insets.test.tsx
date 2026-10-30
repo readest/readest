@@ -2,8 +2,8 @@ import { cleanup, render } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 /**
- * The reading page keeps the side insets recorded with the status bar hidden,
- * so showing the toolbar (and iPhone Duo's side strip) does not re-paginate
+ * The reading page keeps the top and side insets recorded with the status bar
+ * hidden, so showing the toolbar (and iPhone Duo's status strip) does not re-paginate
  * (#6307). Only the Duo has a strip with an inset of its own: every other
  * device lays the page out against its live insets, record or not.
  */

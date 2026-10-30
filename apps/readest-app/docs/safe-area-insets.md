@@ -120,16 +120,21 @@ true in `src-tauri/Info.plist`: apps built with the iOS 27 SDK can no longer hid
 both use `appWindow()` (the webview's own window), and `get_safe_area_insets` reports
 `statusBarHidden`. Everything below stays behind `isIPhoneDuo`:
 
-- **Inset re-read.** Hiding or showing the strip moves its inset (84pt to 0 on the inner
-  display), so `Reader` and `useTheme` re-read the insets after `setSystemUIVisibility`
-  resolves. Other iPhones never did, and a re-read would apply their 20 to 0 top inset.
+- **Inset re-read.** Hiding or showing the strip moves its inset (84pt at the side of the
+  inner display in landscape, 82pt at its top in portrait, to 0), so `Reader` and `useTheme`
+  re-read the insets after `setSystemUIVisibility` resolves. Other iPhones never did, and a re-read would apply their 20 to 0 top inset.
 - **Reading page.** `BooksGrid` lays each cell's page out against `getReadingScreenInsets()`,
-  which keeps the side insets recorded with the status bar hidden
-  (`themeStore.statusBarHiddenInsets`, recorded by `useSafeAreaInsets`, keyed by window
+  which keeps the top and side insets recorded with the status bar hidden
+  (`themeStore.statusBarHiddenInsets`, recorded by `useSafeAreaInsets`, one record per window
   size), so opening the toolbar does not re-paginate and the strip overlaps the page margin
-  while it is up. `HeaderBar` and `FooterBar` take the cell's live insets (`chromeInsets`) so
-  their buttons clear the strip. With Always Show Status Bar on, the page uses the live
-  insets. Off the Duo nothing is recorded or applied: page and chrome insets are the same.
+  while it is up. Book mode's page width (`useDuoPose`) reads the same record.
+- **Toolbars.** `HeaderBar` and `FooterBar` (`chromeInsets`, and the header's `screenInsets`)
+  use the insets recorded with the status bar shown (`themeStore.statusBarShownInsets`), so
+  their buttons clear the strip from the first frame they show to the end of their hide
+  animation instead of re-spacing when its live inset lands. Until a record exists for the
+  window size (the first toolbar show there after launch) they use the live insets.
+- With Always Show Status Bar on, page and toolbars use the live insets. Off the Duo nothing
+  is recorded or applied: page and chrome insets are the same.
 - **Landscape rule.** An iPhone held landscape shows no status bar whatever the app asks
   for, so `useTheme` sets `systemUIAlwaysHidden` on any landscape orientation change
   (unchanged). On the Duo it instead uses `isStatusBarHiddenBySystem()`, landscape and under
@@ -147,20 +152,24 @@ cover display. That pose shows a book as two pages, one either side of the hinge
   (`getRendererLayout`: `max-column-count`, `max-inline-size`, fixed-layout `spread`, `column-gap`).
   Off the inner landscape pose, and on every other device, it returns the reader's own settings
   unchanged.
-- In inner landscape, the `duoBookMode` view setting (default on) gives exactly two columns, or a
-  two-page spread for fixed layouts. With it off the page is one column. The header's book-mode
-  button and the Layout panel's "Two Pages When Unfolded" row switch it.
-- `duoFoldedBookMode` (default on) forces two pages while the hinge is part way open
-  (`isDuoPartlyFolded`: hinge status `partial` or an active vertical region), whatever
-  `duoBookMode` says. The header button hides then, since it would have no effect.
+- In inner landscape the page shows two pages, one either side of the hinge: exactly two
+  columns, or a two-page spread for fixed layouts, flat or partly open alike. The header's
+  book-mode button (and the View menu's single/spread buttons for fixed layouts) switch the
+  `duoBookMode` view setting to one page and back; there is no settings row for it.
 - `get_safe_area_insets` reports `fold` on the Duo: the hinge status and the UIKit `.division`
-  reserved region in window points. The region is active only while the device is part way folded.
+  reserved region in window points. The region is active only while the device is partly folded.
   Two pages always keep the spine gap wide enough to clear a vertical region, active or not
-  (`getDuoSpineGutter`), so the page lays out the same flat and part way folded.
-- A `UIHingeInteraction` on the web view sends `duo-fold-changed` when the hinge status changes,
-  because folding part way does not resize the web view. `useSafeAreaInsets` refetches on it.
-- `FoliateViewer` re-applies the layout when the pose, fold or setting changes, only on the Duo.
-  The paginator keeps the reading position across the re-layout.
+  (`getDuoSpineGutter`), so the page lays out the same flat and partly folded.
+- A `UIHingeInteraction` on the web view sends `duo-fold-changed`, because partly folding the
+  display does not resize the web view: at once when the hinge status changes, and for updates
+  within one status at most every 250ms plus one trailing update (cancelled when an update is
+  sent before it). `useSafeAreaInsets` refetches on it.
+- `FoliateViewer` re-applies the layout when the pose, fold, insets or a layout setting change,
+  only on the Duo. It resolves the layout 150ms after the last change, once the window has
+  settled (turning the device passes through a square viewport), and writes only the renderer
+  attributes whose value changed, since each write re-lays out the page. Showing or hiding the
+  toolbars therefore writes nothing. The paginator keeps the reading position across a
+  re-layout.
 
 ### Passing `gridInsets`
 
