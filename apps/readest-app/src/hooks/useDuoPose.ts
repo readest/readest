@@ -1,14 +1,29 @@
 import { useEffect, useState } from 'react';
+import { useSettingsStore } from '@/store/settingsStore';
 import { useThemeStore } from '@/store/themeStore';
 import { ViewSettings } from '@/types/book';
 import { DuoPose, getDuoPose, getRendererLayout, RendererLayout } from '@/utils/duo';
+import { getReadingScreenInsets } from '@/utils/insets';
 
 const readPose = (isIPhoneDuo: boolean): DuoPose =>
   getDuoPose(isIPhoneDuo, window.innerWidth, window.innerHeight);
 
-/** The width the page lays out in: the viewport inside the side insets. */
+/**
+ * The width the page lays out in: the viewport inside the side insets the
+ * reading page keeps (see getReadingScreenInsets), so showing the toolbar and
+ * its status strip does not change the layout.
+ */
 const readPageWidth = () => {
-  const insets = useThemeStore.getState().safeAreaInsets;
+  const { safeAreaInsets, statusBarHiddenInsets, isIPhoneDuo } = useThemeStore.getState();
+  const { alwaysShowStatusBar } = useSettingsStore.getState().settings;
+  const insets =
+    safeAreaInsets &&
+    getReadingScreenInsets(
+      safeAreaInsets,
+      isIPhoneDuo && !alwaysShowStatusBar ? statusBarHiddenInsets : null,
+      window.innerWidth,
+      window.innerHeight,
+    );
   return window.innerWidth - (insets?.left ?? 0) - (insets?.right ?? 0);
 };
 
