@@ -55,6 +55,8 @@ export interface BookshelfDefinition {
   coverFit?: LibraryCoverFitType;
   /** Older definitions inherit the legacy library cover appearance. */
   skeuomorphicCovers?: boolean;
+  /** Badges each book cover with its page count (#6909). */
+  showPageCount?: boolean;
   filters: BookshelfFilterGroup;
   /** Missing on older definitions; inherit the View menu's grouping by default. */
   useGlobalGrouping?: boolean;

@@ -2589,6 +2589,8 @@
   "Stable Page Numbers": "ཤོག་གྲངས་བརྟན་པོ།",
   "Turn off to count pages by the screens of this device": "སྒྲིག་ཆས་འདིའི་བརྙན་ཡོལ་ལྟར་ཤོག་གྲངས་རྩིས་པར་སྒོ་རྒྱག",
   "Page Flip": "ཤོག་ལྷེ་བསྒྱུར་བ།",
+  "{{count}} pages_other": "ཤོག་ངོས་ {{count}}",
+  "Show page count": "ཤོག་ངོས་ཀྱི་གྲངས་ཀ་སྟོན།",
   "One page": "ཤོག་ངོས་གཅིག",
   "Two pages": "ཤོག་ངོས་གཉིས",
   "Show One Page": "ཤོག་ངོས་གཅིག་སྟོན།",

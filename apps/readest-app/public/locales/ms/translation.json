@@ -2589,6 +2589,8 @@
   "Stable Page Numbers": "Nombor halaman tetap",
   "Turn off to count pages by the screens of this device": "Matikan untuk mengira halaman mengikut skrin peranti ini",
   "Page Flip": "Selak Halaman",
+  "{{count}} pages_other": "{{count}} halaman",
+  "Show page count": "Tunjukkan bilangan halaman",
   "One page": "Satu halaman",
   "Two pages": "Dua halaman",
   "Show One Page": "Tunjukkan Satu Halaman",
