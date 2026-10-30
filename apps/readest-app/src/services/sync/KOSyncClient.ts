@@ -313,6 +313,6 @@ export class KOSyncClient {
     if (this.config.checksumMethod === 'filename') {
       console.warn('This is not possible anymore, using md5 instead.');
     }
-    return book.hash;
+    return book.metadata?.absFileHash ?? book.hash;
   }
 }

@@ -79,6 +79,38 @@ describe('CapturedPageTurn (browser)', () => {
     expect(host.querySelector('canvas')).toBeNull();
   });
 
+  it('settles a chosen Page Flip on its own physics in both directions', async () => {
+    controller.dispose();
+    const advance = vi.spyOn(PageCurlRenderer.prototype, 'advance');
+    try {
+      for (const flip of [false, true]) {
+        advance.mockClear();
+        controller = new CapturedPageTurn(
+          {
+            getHostElement: () => host,
+            getContentRect: contentRect,
+            capture,
+            navigate,
+            isPageFlip: () => flip,
+          },
+          { duration: 40 },
+        );
+        for (const forward of [true, false]) {
+          navigate.mockClear();
+          expect(await controller.turn(forward, false)).toBe(true);
+          expect(navigate.mock.calls.map(([to]) => to)).toEqual([forward]);
+          expect(host.querySelector('canvas')).toBeNull();
+        }
+        // A curl eases its progress; a flip steps its sheet on every frame.
+        if (flip) expect(advance.mock.calls.length).toBeGreaterThan(4);
+        else expect(advance).not.toHaveBeenCalled();
+        controller.dispose();
+      }
+    } finally {
+      advance.mockRestore();
+    }
+  });
+
   it('starts a prepared backward curl without capturing the previous page during the swipe', async () => {
     controller.dispose();
     const prepareAdjacent = vi.fn(

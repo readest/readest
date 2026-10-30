@@ -320,6 +320,35 @@ describe('KOSyncClient.updateProgress – document metadata', () => {
   });
 });
 
+describe('KOSyncClient – Audiobookshelf ebooks', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  // The book's hash is the md5 of its abs:// path; KOReader keys the same
+  // EPUB by the partial MD5 of its file (#7088).
+  it("pulls and pushes under the file's own id", async () => {
+    const fileHash = '0123456789abcdef0123456789abcdef';
+    const mock = setFetch(() => jsonResponse(200, {}));
+    const book = {
+      ...makeBook(),
+      format: 'ABS',
+      metadata: { absMediaType: 'ebook', absFileHash: fileHash },
+    } as unknown as Book;
+    const client = new KOSyncClient(makeConfig({ userkey: 'key' }));
+
+    await client.getProgress(book);
+    await client.updateProgress(book, '/body/DocFragment[12]', 0.14);
+
+    const [[getUrl], [, putInit]] = mock.mock.calls as [
+      [string, RequestInit],
+      [string, RequestInit],
+    ];
+    expect(getUrl).toBe(`http://192.168.1.50/syncs/progress/${fileHash}`);
+    expect(JSON.parse(putInit.body as string)['document']).toBe(fileHash);
+  });
+});
+
 describe('KOSyncClient – TLS certificate checks', () => {
   afterEach(() => {
     vi.unstubAllGlobals();

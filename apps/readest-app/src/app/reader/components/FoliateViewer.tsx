@@ -22,6 +22,7 @@ import { useMouseEvent, useTouchEvent, useOpenMediaEvent } from '../hooks/useIfr
 import { useCapturedTurn, applyPageTurnAttributes } from '../hooks/useCapturedTurn';
 import { useBrightnessGesture } from '../hooks/useBrightnessGesture';
 import { registerBookmarkPullDoc } from '../utils/bookmarkPullGesture';
+import { captureImageRenderStyle, type ImageRenderStyle } from '../utils/imageRenderStyle';
 import BrightnessOverlay from './BrightnessOverlay';
 import { usePagination, viewPagination } from '../hooks/usePagination';
 import { useFoliateEvents } from '../hooks/useFoliateEvents';
@@ -577,7 +578,9 @@ const FoliateViewer: React.FC<{
       applyImageStyle(detail.doc);
       applyScrollableStyle(detail.doc);
       applyTableTouchScroll(detail.doc);
-      applyThemeModeClass(detail.doc, isDarkMode);
+      // Read the theme live: `useFoliateEvents` binds this handler once, so the
+      // closed-over `isDarkMode` is the theme the reader mounted in.
+      applyThemeModeClass(detail.doc, useThemeStore.getState().isDarkMode);
       applyScrollModeClass(detail.doc, viewSettings.scrolled || false);
       applyEinkModeAttribute(detail.doc, viewSettings.isEink || false);
       applyScrollbarStyle(document, viewSettings.hideScrollbar || false);
@@ -783,14 +786,24 @@ const FoliateViewer: React.FC<{
   const autoscrollAnchor = useMiddleClickAutoscroll(bookKey, viewRef, containerRef);
 
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  // How the page drew that image (its filter and the plate behind its
+  // transparent area), so the viewer can match the page instead of showing the
+  // bare bitmap on a dark backdrop.
+  const [selectedImageRenderStyle, setSelectedImageRenderStyle] = useState<ImageRenderStyle | null>(
+    null,
+  );
   // The description of the image on screen, kept next to `selectedImage` so the
   // two can never drift apart (the pressed image may be missing from the list).
   const [selectedImageAlt, setSelectedImageAlt] = useState<string>('');
   const [selectedTableHtml, setSelectedTableHtml] = useState<string | null>(null);
   const [imageList, setImageList] = useState<DocumentImage[]>([]);
   const [currentImageIndex, setCurrentImageIndex] = useState<number>(0);
+  // Bumped whenever the viewer shows another image or closes, so a jump that
+  // lands late does not apply its image's rendering to the one now on screen.
+  const imageSelectionRef = useRef(0);
 
   const handleImagePress = useCallback(async (src: string) => {
+    imageSelectionRef.current += 1;
     try {
       // Get all images from the current document
       const allImages = collectDocumentImages(
@@ -804,6 +817,7 @@ const FoliateViewer: React.FC<{
       setImageList(allImages);
       setCurrentImageIndex(index >= 0 ? index : 0);
       setSelectedImageAlt(index >= 0 ? allImages[index]!.alt : '');
+      setSelectedImageRenderStyle(captureImageRenderStyle(viewRef.current, src));
 
       const dataUrl = await convertBlobUrlToDataUrl(src);
       setSelectedImage(dataUrl);
@@ -822,11 +836,19 @@ const FoliateViewer: React.FC<{
       setCurrentImageIndex(newIndex);
       try {
         const { src, cfi, alt } = imageList[newIndex]!;
+        const selection = ++imageSelectionRef.current;
         const dataUrl = await convertBlobUrlToDataUrl(src);
         setSelectedImage(dataUrl);
         setSelectedImageAlt(alt);
+        // Read the page's rendering before the jump, so the new image never
+        // shows the previous one's, and again after it: a section that was not
+        // in the renderer yet is not in `getContents()` either.
+        setSelectedImageRenderStyle(captureImageRenderStyle(viewRef.current, src));
         if (cfi && viewRef.current) {
-          viewRef.current?.goTo(cfi);
+          await viewRef.current.goTo(cfi);
+          if (selection === imageSelectionRef.current) {
+            setSelectedImageRenderStyle(captureImageRenderStyle(viewRef.current, src));
+          }
         }
       } catch (error) {
         console.error('Failed to load previous image:', error);
@@ -840,11 +862,19 @@ const FoliateViewer: React.FC<{
       setCurrentImageIndex(newIndex);
       try {
         const { src, cfi, alt } = imageList[newIndex]!;
+        const selection = ++imageSelectionRef.current;
         const dataUrl = await convertBlobUrlToDataUrl(src);
         setSelectedImage(dataUrl);
         setSelectedImageAlt(alt);
+        // Read the page's rendering before the jump, so the new image never
+        // shows the previous one's, and again after it: a section that was not
+        // in the renderer yet is not in `getContents()` either.
+        setSelectedImageRenderStyle(captureImageRenderStyle(viewRef.current, src));
         if (cfi && viewRef.current) {
-          viewRef.current?.goTo(cfi);
+          await viewRef.current.goTo(cfi);
+          if (selection === imageSelectionRef.current) {
+            setSelectedImageRenderStyle(captureImageRenderStyle(viewRef.current, src));
+          }
         }
       } catch (error) {
         console.error('Failed to load next image:', error);
@@ -853,8 +883,10 @@ const FoliateViewer: React.FC<{
   }, [currentImageIndex, imageList]);
 
   const handleCloseImage = useCallback(() => {
+    imageSelectionRef.current += 1;
     setSelectedImage(null);
     setSelectedImageAlt('');
+    setSelectedImageRenderStyle(null);
     setImageList([]);
     setCurrentImageIndex(0);
   }, []);
@@ -1390,6 +1422,7 @@ const FoliateViewer: React.FC<{
           gridInsets={gridInsets}
           src={selectedImage}
           caption={selectedImageAlt}
+          renderStyle={selectedImageRenderStyle}
           onClose={handleCloseImage}
           onPrevious={currentImageIndex > 0 ? handlePreviousImage : undefined}
           onNext={currentImageIndex < imageList.length - 1 ? handleNextImage : undefined}

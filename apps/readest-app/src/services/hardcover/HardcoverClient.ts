@@ -21,6 +21,7 @@ import {
   MUTATION_UPDATE_READ,
   MUTATION_INSERT_JOURNAL,
   MUTATION_UPDATE_JOURNAL,
+  QUERY_GET_JOURNAL_ENTRIES,
 } from './hardcover-graphql';
 
 /** Where OAuth tokens live between clients, so a refresh by one is seen by the others. */
@@ -119,6 +120,16 @@ type JournalOp = {
   payloadHash: string;
   noteIds: string[];
 };
+
+type JournalRow = {
+  id: number;
+  event: string;
+  entry: string | null;
+  metadata?: { position?: { value?: number } } | null;
+};
+
+// Hardcover's row limit for reading_journals.
+const JOURNAL_PAGE_SIZE = 100;
 
 /** This book cannot sync to Hardcover (no match, or no page count), not a sync failure. */
 export class HardcoverUnmatchedError extends Error {}
@@ -746,6 +757,46 @@ export class HardcoverClient {
     );
   }
 
+  // A note with no highlighted text has the entry of a quote of that text.
+  private journalKey(event: unknown, entry: string) {
+    return `${event}\n${entry}`;
+  }
+
+  /** The book's notes and quotes on Hardcover, event and entry text -> entries, oldest first. */
+  private async fetchJournalEntries(
+    bookId: number,
+  ): Promise<Map<string, Array<{ id: number; page?: number }>>> {
+    const entries = new Map<string, Array<{ id: number; page?: number }>>();
+    for (let offset = 0; ; offset += JOURNAL_PAGE_SIZE) {
+      let rows: JournalRow[];
+      try {
+        const data = await this.request<
+          { user_id: number | null; book_id: number; limit: number; offset: number },
+          { reading_journals?: JournalRow[] | null }
+        >(QUERY_GET_JOURNAL_ENTRIES, {
+          user_id: this.userId,
+          book_id: bookId,
+          limit: JOURNAL_PAGE_SIZE,
+          offset,
+        });
+        rows = data.reading_journals ?? [];
+      } catch (error) {
+        // Signed in before Readest asked for read:journal: only this device's mappings
+        // can tell what was pushed, until the user reconnects.
+        if (error instanceof Error && error.message.includes('insufficient_scope')) return entries;
+        throw error;
+      }
+      for (const row of rows) {
+        const entry = row.entry?.trim();
+        if (!entry) continue;
+        const key = this.journalKey(row.event, entry);
+        const found = { id: Number(row.id), page: row.metadata?.position?.value };
+        entries.set(key, [...(entries.get(key) ?? []), found]);
+      }
+      if (rows.length < JOURNAL_PAGE_SIZE) return entries;
+    }
+  }
+
   /** Sends ops in batches sized to the quota, saving each result as it is known; a batch's first failure is thrown after its results are saved. */
   private async sendJournalOps(
     context: BookContext,
@@ -834,6 +885,7 @@ export class HardcoverClient {
     // Classify first, then send the journal writes in batches.
     const pending: JournalOp[] = [];
     const pendingInserts = new Map<string, JournalOp>();
+    const mappedIds = new Set(this.mapStore.journalIds());
 
     try {
       for (const note of notes) {
@@ -887,10 +939,36 @@ export class HardcoverClient {
         });
       }
 
-      const save = async (op: JournalOp, id: number) => {
+      const map = async (op: JournalOp, id: number) => {
         for (const noteId of op.noteIds) {
           await this.mapStore.upsertMapping(book.hash, noteId, id, op.payloadHash);
         }
+      };
+
+      // The mappings live on this device only, so a note pushed from another device (or by a
+      // push cut short before they were saved) looks new here; take its entry over (#6907).
+      if (pendingInserts.size) {
+        const existing = await this.fetchJournalEntries(context.bookId);
+        // Each entry stands for one note: the same text highlighted twice has two, told
+        // apart by page first and by age after.
+        for (const byPage of [true, false]) {
+          for (const op of pendingInserts.values()) {
+            if (!pending.includes(op)) continue;
+            const key = this.journalKey(op.payload['event'], op.payload['entry'] as string);
+            const id = existing
+              .get(key)
+              ?.find((e) => !mappedIds.has(e.id) && (!byPage || e.page === op.payload['page']))?.id;
+            if (id === undefined) continue;
+            mappedIds.add(id);
+            await map(op, id);
+            pending.splice(pending.indexOf(op), 1);
+            skipped += 1;
+          }
+        }
+      }
+
+      const save = async (op: JournalOp, id: number) => {
+        await map(op, id);
         if (op.journalId === null) inserted += 1;
         else updated += 1;
       };
