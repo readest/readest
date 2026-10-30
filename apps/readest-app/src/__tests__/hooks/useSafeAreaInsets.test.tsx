@@ -7,7 +7,9 @@ const h = vi.hoisted(() => ({
   updateInsets: vi.fn(),
   updateCornerRadius: vi.fn(),
   setIsIPhoneDuo: vi.fn(),
+  setDuoFold: vi.fn(),
   recordHidden: vi.fn(),
+  recordShown: vi.fn(),
   storeInsets: { top: 0, right: 0, bottom: 0, left: 0 } as Record<string, number> | null,
   focus: undefined as ((event: { payload: boolean }) => void) | undefined,
   unlisten: vi.fn(),
@@ -20,7 +22,9 @@ vi.mock('@/store/themeStore', () => ({
       updateSafeAreaInsets: h.updateInsets,
       updateScreenCornerRadius: h.updateCornerRadius,
       setIsIPhoneDuo: h.setIsIPhoneDuo,
+      setDuoFold: h.setDuoFold,
       recordStatusBarHiddenInsets: h.recordHidden,
+      recordStatusBarShownInsets: h.recordShown,
     }),
     { getState: () => ({ safeAreaInsets: h.storeInsets }) },
   ),
@@ -43,6 +47,7 @@ afterEach(() => {
   h.storeInsets = { top: 0, right: 0, bottom: 0, left: 0 };
   h.updateInsets.mockClear();
   h.recordHidden.mockClear();
+  h.recordShown.mockClear();
 });
 
 it('refreshes CarPlay-only insets when the native phone window gains focus', async () => {
@@ -94,11 +99,28 @@ it('records the insets the Duo reports with the status bar hidden (#6307)', asyn
   unmount();
 });
 
+it('records the insets the Duo reports with the status bar shown, for the toolbars', async () => {
+  h.getInsets.mockResolvedValue({
+    top: 0,
+    right: 84,
+    bottom: 34,
+    left: 0,
+    isIPhoneDuo: true,
+    statusBarHidden: false,
+  });
+  const { unmount } = renderHook(() => useSafeAreaInsets());
+  await waitFor(() =>
+    expect(h.recordShown).toHaveBeenLastCalledWith({ top: 0, right: 84, bottom: 34, left: 0 }),
+  );
+  unmount();
+});
+
 it('records nothing off the Duo, even with the status bar hidden', async () => {
   h.getInsets.mockResolvedValue({ top: 59, right: 0, bottom: 34, left: 0, statusBarHidden: true });
   const { unmount } = renderHook(() => useSafeAreaInsets());
   await waitFor(() => expect(h.updateInsets).toHaveBeenCalled());
   expect(h.recordHidden).not.toHaveBeenCalled();
+  expect(h.recordShown).not.toHaveBeenCalled();
   unmount();
 });
 

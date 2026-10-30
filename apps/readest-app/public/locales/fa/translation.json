@@ -2659,5 +2659,9 @@
   "Page Flip": "ورق زدن صفحه",
   "{{count}} pages_one": "{{count}} صفحه",
   "{{count}} pages_other": "{{count}} صفحه",
-  "Show page count": "نمایش تعداد صفحات"
+  "Show page count": "نمایش تعداد صفحات",
+  "One page": "یک صفحه",
+  "Two pages": "دو صفحه",
+  "Show One Page": "نمایش یک صفحه",
+  "Show Two Pages": "نمایش دو صفحه"
 }

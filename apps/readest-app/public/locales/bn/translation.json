@@ -2659,5 +2659,9 @@
   "Page Flip": "পৃষ্ঠা উল্টানো",
   "{{count}} pages_one": "{{count}} পৃষ্ঠা",
   "{{count}} pages_other": "{{count}} পৃষ্ঠা",
-  "Show page count": "পৃষ্ঠা সংখ্যা দেখান"
+  "Show page count": "পৃষ্ঠা সংখ্যা দেখান",
+  "One page": "এক পৃষ্ঠা",
+  "Two pages": "দুই পৃষ্ঠা",
+  "Show One Page": "এক পৃষ্ঠা দেখান",
+  "Show Two Pages": "দুই পৃষ্ঠা দেখান"
 }

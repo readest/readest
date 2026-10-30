@@ -2659,5 +2659,9 @@
   "Page Flip": "Pagina omdraaien",
   "{{count}} pages_one": "{{count}} pagina",
   "{{count}} pages_other": "{{count}} pagina’s",
-  "Show page count": "Aantal pagina’s tonen"
+  "Show page count": "Aantal pagina’s tonen",
+  "One page": "Eén pagina",
+  "Two pages": "Twee pagina's",
+  "Show One Page": "Eén pagina tonen",
+  "Show Two Pages": "Twee pagina's tonen"
 }

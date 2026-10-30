@@ -2659,5 +2659,9 @@
   "Page Flip": "Sahifani ag'darish",
   "{{count}} pages_one": "{{count}} sahifa",
   "{{count}} pages_other": "{{count}} sahifa",
-  "Show page count": "Sahifalar sonini ko‘rsatish"
+  "Show page count": "Sahifalar sonini ko‘rsatish",
+  "One page": "Bitta sahifa",
+  "Two pages": "Ikki sahifa",
+  "Show One Page": "Bitta sahifani ko‘rsatish",
+  "Show Two Pages": "Ikki sahifani ko‘rsatish"
 }

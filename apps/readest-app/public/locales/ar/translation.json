@@ -2935,5 +2935,9 @@
   "{{count}} pages_few": "{{count}} صفحات",
   "{{count}} pages_many": "{{count}} صفحة",
   "{{count}} pages_other": "{{count}} صفحة",
-  "Show page count": "إظهار عدد الصفحات"
+  "Show page count": "إظهار عدد الصفحات",
+  "One page": "صفحة واحدة",
+  "Two pages": "صفحتان",
+  "Show One Page": "عرض صفحة واحدة",
+  "Show Two Pages": "عرض صفحتين"
 }

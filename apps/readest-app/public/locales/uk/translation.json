@@ -2797,5 +2797,9 @@
   "{{count}} pages_few": "{{count}} сторінки",
   "{{count}} pages_many": "{{count}} сторінок",
   "{{count}} pages_other": "{{count}} сторінки",
-  "Show page count": "Показувати кількість сторінок"
+  "Show page count": "Показувати кількість сторінок",
+  "One page": "Одна сторінка",
+  "Two pages": "Дві сторінки",
+  "Show One Page": "Показати одну сторінку",
+  "Show Two Pages": "Показати дві сторінки"
 }

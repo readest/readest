@@ -391,6 +391,7 @@ export const DEFAULT_BOOK_LAYOUT: BookLayout = {
   disableDoubleClick: false,
   volumeKeysToFlip: false,
   maxColumnCount: 2,
+  duoBookMode: true,
   maxInlineSize: getDefaultMaxInlineSize(),
   maxBlockSize: getDefaultMaxBlockSize(),
   writingMode: 'auto',

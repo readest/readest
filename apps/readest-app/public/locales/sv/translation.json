@@ -2659,5 +2659,9 @@
   "Page Flip": "Sidvändning",
   "{{count}} pages_one": "{{count}} sida",
   "{{count}} pages_other": "{{count}} sidor",
-  "Show page count": "Visa antal sidor"
+  "Show page count": "Visa antal sidor",
+  "One page": "En sida",
+  "Two pages": "Två sidor",
+  "Show One Page": "Visa en sida",
+  "Show Two Pages": "Visa två sidor"
 }

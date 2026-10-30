@@ -2659,5 +2659,9 @@
   "Page Flip": "Lapfordítás",
   "{{count}} pages_one": "{{count}} oldal",
   "{{count}} pages_other": "{{count}} oldal",
-  "Show page count": "Oldalszám megjelenítése"
+  "Show page count": "Oldalszám megjelenítése",
+  "One page": "Egy oldal",
+  "Two pages": "Két oldal",
+  "Show One Page": "Egy oldal megjelenítése",
+  "Show Two Pages": "Két oldal megjelenítése"
 }

@@ -2659,5 +2659,9 @@
   "Page Flip": "Seite wenden",
   "{{count}} pages_one": "{{count}} Seite",
   "{{count}} pages_other": "{{count}} Seiten",
-  "Show page count": "Seitenzahl anzeigen"
+  "Show page count": "Seitenzahl anzeigen",
+  "One page": "Eine Seite",
+  "Two pages": "Zwei Seiten",
+  "Show One Page": "Eine Seite anzeigen",
+  "Show Two Pages": "Zwei Seiten anzeigen"
 }

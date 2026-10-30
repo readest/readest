@@ -2659,5 +2659,9 @@
   "Page Flip": "Αναποδογύρισμα σελίδας",
   "{{count}} pages_one": "{{count}} σελίδα",
   "{{count}} pages_other": "{{count}} σελίδες",
-  "Show page count": "Εμφάνιση αριθμού σελίδων"
+  "Show page count": "Εμφάνιση αριθμού σελίδων",
+  "One page": "Μία σελίδα",
+  "Two pages": "Δύο σελίδες",
+  "Show One Page": "Εμφάνιση μίας σελίδας",
+  "Show Two Pages": "Εμφάνιση δύο σελίδων"
 }

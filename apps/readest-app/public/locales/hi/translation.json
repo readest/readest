@@ -2659,5 +2659,9 @@
   "Page Flip": "पेज पलटना",
   "{{count}} pages_one": "{{count}} पृष्ठ",
   "{{count}} pages_other": "{{count}} पृष्ठ",
-  "Show page count": "पृष्ठ संख्या दिखाएँ"
+  "Show page count": "पृष्ठ संख्या दिखाएँ",
+  "One page": "एक पृष्ठ",
+  "Two pages": "दो पृष्ठ",
+  "Show One Page": "एक पृष्ठ दिखाएँ",
+  "Show Two Pages": "दो पृष्ठ दिखाएँ"
 }

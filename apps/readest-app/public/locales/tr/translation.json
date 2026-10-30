@@ -2659,5 +2659,9 @@
   "Variables: {{variables}}": "Değişkenler: {{variables}}",
   "Stable Page Numbers": "Sabit sayfa numaraları",
   "Turn off to count pages by the screens of this device": "Sayfaları bu cihazın ekranlarına göre saymak için kapatın",
-  "Page Flip": "Sayfa Çevirme"
+  "Page Flip": "Sayfa Çevirme",
+  "One page": "Tek sayfa",
+  "Two pages": "İki sayfa",
+  "Show One Page": "Tek sayfa göster",
+  "Show Two Pages": "İki sayfa göster"
 }

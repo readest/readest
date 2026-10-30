@@ -2590,5 +2590,9 @@
   "Turn off to count pages by the screens of this device": "ปิดเพื่อนับหน้าตามหน้าจอของอุปกรณ์นี้",
   "Page Flip": "พลิกหน้า",
   "{{count}} pages_other": "{{count}} หน้า",
-  "Show page count": "แสดงจำนวนหน้า"
+  "Show page count": "แสดงจำนวนหน้า",
+  "One page": "หนึ่งหน้า",
+  "Two pages": "สองหน้า",
+  "Show One Page": "แสดงหนึ่งหน้า",
+  "Show Two Pages": "แสดงสองหน้า"
 }

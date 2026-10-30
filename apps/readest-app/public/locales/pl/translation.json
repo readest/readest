@@ -2797,5 +2797,9 @@
   "{{count}} pages_few": "{{count}} strony",
   "{{count}} pages_many": "{{count}} stron",
   "{{count}} pages_other": "{{count}} strony",
-  "Show page count": "Pokaż liczbę stron"
+  "Show page count": "Pokaż liczbę stron",
+  "One page": "Jedna strona",
+  "Two pages": "Dwie strony",
+  "Show One Page": "Pokaż jedną stronę",
+  "Show Two Pages": "Pokaż dwie strony"
 }

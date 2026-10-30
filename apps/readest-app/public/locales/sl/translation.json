@@ -2797,5 +2797,9 @@
   "{{count}} pages_two": "{{count}} strani",
   "{{count}} pages_few": "{{count}} strani",
   "{{count}} pages_other": "{{count}} strani",
-  "Show page count": "Prikaži število strani"
+  "Show page count": "Prikaži število strani",
+  "One page": "Ena stran",
+  "Two pages": "Dve strani",
+  "Show One Page": "Pokaži eno stran",
+  "Show Two Pages": "Pokaži dve strani"
 }

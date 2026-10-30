@@ -2590,5 +2590,9 @@
   "Turn off to count pages by the screens of this device": "Matikan untuk menghitung halaman berdasarkan layar perangkat ini",
   "Page Flip": "Balik Halaman",
   "{{count}} pages_other": "{{count}} halaman",
-  "Show page count": "Tampilkan jumlah halaman"
+  "Show page count": "Tampilkan jumlah halaman",
+  "One page": "Satu halaman",
+  "Two pages": "Dua halaman",
+  "Show One Page": "Tampilkan Satu Halaman",
+  "Show Two Pages": "Tampilkan Dua Halaman"
 }

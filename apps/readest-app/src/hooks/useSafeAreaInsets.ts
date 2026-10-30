@@ -1,4 +1,5 @@
 import { useCallback, useEffect } from 'react';
+import { addPluginListener } from '@tauri-apps/api/core';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { useEnv } from '@/context/EnvContext';
 import { useThemeStore } from '@/store/themeStore';
@@ -13,7 +14,9 @@ export const useSafeAreaInsets = () => {
     updateSafeAreaInsets,
     updateScreenCornerRadius,
     setIsIPhoneDuo,
+    setDuoFold,
     recordStatusBarHiddenInsets,
+    recordStatusBarShownInsets,
   } = useThemeStore();
 
   const updateInsets = (insets: Insets) => {
@@ -54,12 +57,17 @@ export const useSafeAreaInsets = () => {
             bottom: Math.round(response.bottom),
             left: Math.round(response.left),
           };
-          // iPhone Duo's status strip carries a side inset of its own: keep the
-          // sides seen with the status bar hidden for the reading page.
-          if (response.isIPhoneDuo && response.statusBarHidden) recordStatusBarHiddenInsets(insets);
+          // iPhone Duo's status strip carries an inset of its own (side or top):
+          // keep the insets seen with the status bar hidden for the reading
+          // page, and those seen with it shown for the toolbars.
+          if (response.isIPhoneDuo) {
+            if (response.statusBarHidden) recordStatusBarHiddenInsets(insets);
+            else recordStatusBarShownInsets(insets);
+          }
           updateInsets(insets);
           updateScreenCornerRadius(Math.round(response.bottomCornerRadius ?? 0));
           setIsIPhoneDuo(!!response.isIPhoneDuo);
+          setDuoFold(response.isIPhoneDuo ? (response.fold ?? null) : null);
         }
       });
     } else if (hasCustomProperties) {
@@ -119,6 +127,19 @@ export const useSafeAreaInsets = () => {
     };
     window.addEventListener('resize', handleResize);
 
+    // Folding the inner display part way moves the folding region without a
+    // resize; the native hinge observer reports it (iPhone Duo only). UIKit
+    // can mark the region active after the hinge update, so read it twice.
+    let foldRefetch: ReturnType<typeof setTimeout> | undefined;
+    const handleFoldChange = () => {
+      onUpdateInsets();
+      clearTimeout(foldRefetch);
+      foldRefetch = setTimeout(onUpdateInsets, 300);
+    };
+    const foldListener = appService?.isIOSApp
+      ? addPluginListener('native-bridge', 'duo-fold-changed', handleFoldChange).catch(() => null)
+      : undefined;
+
     return () => {
       if (window.screen?.orientation) {
         window.screen.orientation.removeEventListener('change', onUpdateInsets);
@@ -128,6 +149,8 @@ export const useSafeAreaInsets = () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('focus', handleFocus);
       window.removeEventListener('resize', handleResize);
+      foldListener?.then((listener) => listener?.unregister());
+      clearTimeout(foldRefetch);
       void unlistenFocus?.then((unlisten) => unlisten());
     };
   }, [onUpdateInsets]);

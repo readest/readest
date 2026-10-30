@@ -2728,5 +2728,9 @@
   "{{count}} pages_one": "{{count}} pagina",
   "{{count}} pages_many": "{{count}} pagine",
   "{{count}} pages_other": "{{count}} pagine",
-  "Show page count": "Mostra numero di pagine"
+  "Show page count": "Mostra numero di pagine",
+  "One page": "Una pagina",
+  "Two pages": "Due pagine",
+  "Show One Page": "Mostra una pagina",
+  "Show Two Pages": "Mostra due pagine"
 }

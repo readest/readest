@@ -2659,5 +2659,9 @@
   "Page Flip": "გვერდის გადაბრუნება",
   "{{count}} pages_one": "{{count}} გვერდი",
   "{{count}} pages_other": "{{count}} გვერდი",
-  "Show page count": "გვერდების რაოდენობის ჩვენება"
+  "Show page count": "გვერდების რაოდენობის ჩვენება",
+  "One page": "ერთი გვერდი",
+  "Two pages": "ორი გვერდი",
+  "Show One Page": "ერთი გვერდის ჩვენება",
+  "Show Two Pages": "ორი გვერდის ჩვენება"
 }

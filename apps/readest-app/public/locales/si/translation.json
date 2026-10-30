@@ -2659,5 +2659,9 @@
   "Page Flip": "පිටුව පෙරළීම",
   "{{count}} pages_one": "පිටු {{count}}",
   "{{count}} pages_other": "පිටු {{count}}",
-  "Show page count": "පිටු ගණන පෙන්වන්න"
+  "Show page count": "පිටු ගණන පෙන්වන්න",
+  "One page": "එක් පිටුවක්",
+  "Two pages": "පිටු දෙකක්",
+  "Show One Page": "එක් පිටුවක් පෙන්වන්න",
+  "Show Two Pages": "පිටු දෙකක් පෙන්වන්න"
 }
