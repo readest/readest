@@ -1,5 +1,5 @@
-import { describe, it, expect, vi } from 'vitest';
-import { renderHook, waitFor } from '@testing-library/react';
+import { afterEach, describe, it, expect, vi } from 'vitest';
+import { cleanup, renderHook, waitFor } from '@testing-library/react';
 import {
   createTranslationTargetNode,
   getTranslationContextNodes,
@@ -308,6 +308,11 @@ describe('createTranslationTargetNode', () => {
 });
 
 describe('useTextTranslation', () => {
+  // Without vitest globals, Testing Library does not unmount between tests. A
+  // hook left mounted keeps its 50 ms batch timer alive past the file's jsdom
+  // teardown, where it throws `Node is not defined` (#7125).
+  afterEach(cleanup);
+
   it('sends the translator the base text without the ruby readings', async () => {
     let onIntersect: IntersectionObserverCallback = () => {};
     vi.stubGlobal(
