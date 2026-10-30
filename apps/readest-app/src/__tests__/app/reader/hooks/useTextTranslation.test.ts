@@ -382,4 +382,46 @@ describe('useTextTranslation', () => {
     view.remove();
     vi.unstubAllGlobals();
   });
+
+  it('cancels a queued batch on unmount when translation was enabled after mount', async () => {
+    const getViewSettings = readerState.getViewSettings;
+    let settings = { ...viewSettings, translationEnabled: false };
+    readerState.getViewSettings = () => settings;
+    let onIntersect: IntersectionObserverCallback = () => {};
+    vi.stubGlobal(
+      'IntersectionObserver',
+      class {
+        constructor(callback: IntersectionObserverCallback) {
+          onIntersect = callback;
+        }
+        observe() {}
+        disconnect() {}
+      },
+    );
+    const view = document.createElement('div');
+    view.innerHTML = '<p>Source paragraph.</p>';
+    const paragraph = view.querySelector('p')!;
+    document.body.appendChild(view);
+
+    // Off at mount, so the `[view]` effect registers no cleanup.
+    const { rerender, unmount } = renderHook(() => useTextTranslation('book-1', view));
+    settings = { ...viewSettings, translationEnabled: true };
+    rerender();
+    onIntersect(
+      [{ isIntersecting: true, target: paragraph } as unknown as IntersectionObserverEntry],
+      {} as IntersectionObserver,
+    );
+    await waitFor(() => expect(translate).toHaveBeenCalled());
+    // Let the translation resolve and queue its batch, well inside the 50 ms window.
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    unmount();
+    await new Promise((resolve) => setTimeout(resolve, 120));
+
+    expect(paragraph.querySelector('.translation-target')).toBeNull();
+
+    view.remove();
+    readerState.getViewSettings = getViewSettings;
+    vi.unstubAllGlobals();
+  });
 });
