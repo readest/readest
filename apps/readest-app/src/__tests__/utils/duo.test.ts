@@ -59,14 +59,14 @@ describe('getDuoPose', () => {
 });
 
 describe('getDuoSpineGutter', () => {
-  it('is 0 while the display is flat or the region is unknown', () => {
+  it('is 0 while no region is reported', () => {
     expect(getDuoSpineGutter(null)).toBe(0);
     expect(getDuoSpineGutter(flatFold)).toBe(0);
-    expect(getDuoSpineGutter({ ...bookFold, regionActive: false })).toBe(0);
   });
 
-  it('is the width of an active vertical folding region', () => {
+  it('is the width of the vertical folding region, flat or part way folded', () => {
     expect(getDuoSpineGutter(bookFold)).toBe(41);
+    expect(getDuoSpineGutter({ ...bookFold, regionActive: false })).toBe(41);
   });
 
   it('ignores a horizontal region (the hinge across inner portrait)', () => {
@@ -136,6 +136,14 @@ describe('getRendererLayout', () => {
     expect(layout.maxColumnCount).toBe(1);
     expect(layout.spreadMode).toBe('none');
     expect(layout.columnGapPx).toBe(0);
+  });
+
+  it('lays the book out the same flat and part way folded, crease kept clear in both', () => {
+    setViewport(951, 669);
+    const flatWithRegion = { ...bookFold, status: 'open' as const, regionActive: false };
+    expect(getRendererLayout(settings(), 'inner-landscape', 891, flatWithRegion)).toEqual(
+      getRendererLayout(settings(), 'inner-landscape', 891, bookFold),
+    );
   });
 
   it('keeps the crease clear while the device is part way folded', () => {

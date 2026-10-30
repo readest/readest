@@ -31,20 +31,19 @@ export const getDuoPose = (isIPhoneDuo: boolean, width: number, height: number):
 };
 
 /**
- * Width (px) the spine gutter must keep clear while the hinge divides the
- * display: the folding region is reported only once the device is part way
- * folded, and is vertical in the book pose. 0 while the display is flat.
+ * Width (px) the spine gutter keeps clear of the hinge: the folding region,
+ * vertical in the book pose. It is reported flat too (inactive), so the page
+ * is laid out the same flat and part way folded. 0 when none is reported.
  */
 export const getDuoSpineGutter = (fold: DuoFoldState | null | undefined): number => {
   const region = fold?.region;
-  if (!fold?.regionActive || !region) return 0;
-  if (region.height <= region.width) return 0;
+  if (!region || region.height <= region.width) return 0;
   return Math.ceil(region.width);
 };
 
 /** Whether the inner display is part way folded, like a book held open. */
 export const isDuoPartlyFolded = (fold: DuoFoldState | null | undefined) =>
-  fold?.status === 'partial' || getDuoSpineGutter(fold) > 0;
+  fold?.status === 'partial' || (!!fold?.regionActive && getDuoSpineGutter(fold) > 0);
 
 /**
  * Whether the book pose shows two pages: always while part way folded (with

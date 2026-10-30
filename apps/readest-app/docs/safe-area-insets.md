@@ -155,7 +155,8 @@ cover display. That pose shows a book as two pages, one either side of the hinge
   `duoBookMode` says. The header button hides then, since it would have no effect.
 - `get_safe_area_insets` reports `fold` on the Duo: the hinge status and the UIKit `.division`
   reserved region in window points. The region is active only while the device is part way folded.
-  While a vertical region is active, the spine gap widens to clear it (`getDuoSpineGutter`).
+  Two pages always keep the spine gap wide enough to clear a vertical region, active or not
+  (`getDuoSpineGutter`), so the page lays out the same flat and part way folded.
 - A `UIHingeInteraction` on the web view sends `duo-fold-changed` when the hinge status changes,
   because folding part way does not resize the web view. `useSafeAreaInsets` refetches on it.
 - `FoliateViewer` re-applies the layout when the pose, fold or setting changes, only on the Duo.
