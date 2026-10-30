@@ -649,7 +649,20 @@ export const MONOSPACE_FONTS = [
 
 export const FALLBACK_FONTS = ['MiSans L3'];
 
+export const HEBREW_FONTS = [
+  'Assistant',
+  'Rubik',
+  'Heebo',
+  'David Libre',
+  'Frank Ruhl Libre',
+  'Secular One',
+  'Varela Round',
+  'Alef',
+  'Tinos',
+];
+
 export const WINDOWS_FONTS = [
+  ...HEBREW_FONTS,
   'Arial',
   'Arial Black',
   'Bahnschrift',

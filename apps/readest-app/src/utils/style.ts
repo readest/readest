@@ -716,6 +716,15 @@ const getParagraphLayoutStyles = (
   html, body {
     text-align: var(--default-text-align);
   }
+  /* RTL book layout support for Hebrew and Arabic text */
+  html[dir="rtl"], body[dir="rtl"], html.rtl, body.rtl {
+    direction: rtl !important;
+    text-align: right !important;
+  }
+  html[dir="rtl"] p, body[dir="rtl"] p,
+  html[dir="rtl"] div, body[dir="rtl"] div {
+    text-align: right;
+  }
   /* Authored text-wrap: pretty (e.g. Standard Ebooks' core.css) makes engines
      that justify with it (Safari 26+, recent Chromium) overshoot inter-word
      gaps and blocks the Word Spacing setting (#5582). Only the style longhand

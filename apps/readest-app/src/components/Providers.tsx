@@ -130,8 +130,8 @@ const Providers = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     const handlerLanguageChanged = (lng: string) => {
       document.documentElement.lang = lng;
-      // Set RTL class on document for targeted styling without affecting layout
       const dir = getDirFromUILanguage();
+      document.documentElement.dir = dir === 'rtl' ? 'rtl' : 'ltr';
       if (dir === 'rtl') {
         document.documentElement.classList.add('ui-rtl');
       } else {

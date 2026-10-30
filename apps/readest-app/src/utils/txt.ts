@@ -900,9 +900,10 @@ export class TxtToEpubConverter {
       .trim();
 
     // Add CSS stylesheet
+    const isRtl = language === 'he' || language === 'ar' || language === 'fa' || language === 'yi';
     const css = `
-      body { line-height: 1.6; font-size: 1em; font-family: 'Arial', sans-serif; text-align: justify; }
-      p { text-indent: 2em; margin: 0; }
+      body { line-height: 1.6; font-size: 1em; font-family: 'Arial', sans-serif; text-align: ${isRtl ? 'right' : 'justify'}; direction: ${isRtl ? 'rtl' : 'ltr'}; }
+      p { text-indent: 2em; margin: 0; text-align: ${isRtl ? 'right' : 'inherit'}; }
     `;
 
     await zipWriter.add('style.css', new TextReader(css), zipWriteOptions);

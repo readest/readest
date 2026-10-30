@@ -578,8 +578,37 @@
 
   .ui-rtl .dropdown-content,
   .ui-rtl .settings-menu,
-  .ui-rtl .view-menu {
+  .ui-rtl .view-menu,
+  .ui-rtl .dialog-container,
+  .ui-rtl .modal-box,
+  .ui-rtl .notebook-container,
+  .ui-rtl .sidebar-container,
+  .ui-rtl .popup-container {
     direction: rtl;
+    text-align: start;
+  }
+
+  /* Ensure inputs and search bars align correctly in RTL */
+  html[dir='rtl'] input:not([dir='ltr']),
+  html[dir='rtl'] textarea:not([dir='ltr']),
+  .ui-rtl input:not([dir='ltr']),
+  .ui-rtl textarea:not([dir='ltr']) {
+    text-align: right;
+  }
+
+  html[dir='rtl'] .search-input,
+  .ui-rtl .search-input {
+    text-align: right;
+    padding-inline-start: 2.5rem;
+    padding-inline-end: 1rem;
+  }
+
+  .ui-rtl .text-left {
+    text-align: right;
+  }
+
+  .ui-rtl .text-right {
+    text-align: left;
   }
 
   .dropdown-content.no-triangle::before,
