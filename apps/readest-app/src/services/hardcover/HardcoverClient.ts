@@ -750,15 +750,20 @@ export class HardcoverClient {
     );
   }
 
-  /** The book's notes and quotes on Hardcover, entry text -> journal ids, oldest first. */
+  // A note with no highlighted text has the entry of a quote of that text.
+  private journalKey(event: unknown, entry: string) {
+    return `${event}\n${entry}`;
+  }
+
+  /** The book's notes and quotes on Hardcover, event and entry text -> journal ids, oldest first. */
   private async fetchJournalEntries(bookId: number): Promise<Map<string, number[]>> {
     const entries = new Map<string, number[]>();
     for (let offset = 0; ; offset += JOURNAL_PAGE_SIZE) {
-      let rows: Array<{ id: number; entry: string | null }>;
+      let rows: Array<{ id: number; event: string; entry: string | null }>;
       try {
         const data = await this.request<
           { user_id: number | null; book_id: number; limit: number; offset: number },
-          { reading_journals?: Array<{ id: number; entry: string | null }> | null }
+          { reading_journals?: Array<{ id: number; event: string; entry: string | null }> | null }
         >(QUERY_GET_JOURNAL_ENTRIES, {
           user_id: this.userId,
           book_id: bookId,
@@ -774,7 +779,9 @@ export class HardcoverClient {
       }
       for (const row of rows) {
         const entry = row.entry?.trim();
-        if (entry) entries.set(entry, [...(entries.get(entry) ?? []), Number(row.id)]);
+        if (!entry) continue;
+        const key = this.journalKey(row.event, entry);
+        entries.set(key, [...(entries.get(key) ?? []), Number(row.id)]);
       }
       if (rows.length < JOURNAL_PAGE_SIZE) return entries;
     }
@@ -868,7 +875,7 @@ export class HardcoverClient {
     // Classify first, then send the journal writes in batches.
     const pending: JournalOp[] = [];
     const pendingInserts = new Map<string, JournalOp>();
-    const mappedIds = new Set<number>();
+    const mappedIds = new Set(this.mapStore.journalIds());
 
     try {
       for (const note of notes) {
@@ -882,7 +889,6 @@ export class HardcoverClient {
         // keeps hashes saved before it was configurable valid.
         const payloadHash = getContentMd5({ ...payload, privacy_setting_id: 3 });
         const existing = await this.mapStore.getMapping(book.hash, note.id);
-        if (existing) mappedIds.add(existing.hardcover_journal_id);
 
         if (!existing) {
           const samePayload = await this.mapStore.getMappingByPayloadHash(book.hash, payloadHash);
@@ -935,7 +941,8 @@ export class HardcoverClient {
         const existing = await this.fetchJournalEntries(context.bookId);
         for (const op of pendingInserts.values()) {
           // Each entry stands for one note: the same text highlighted twice has two.
-          const ids = existing.get(op.payload['entry'] as string) ?? [];
+          const ids =
+            existing.get(this.journalKey(op.payload['event'], op.payload['entry'] as string)) ?? [];
           const id = ids.find((candidate) => !mappedIds.has(candidate));
           if (id === undefined) continue;
           mappedIds.add(id);

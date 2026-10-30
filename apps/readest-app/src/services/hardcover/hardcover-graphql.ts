@@ -234,6 +234,6 @@ query GetJournalEntries($user_id: Int!, $book_id: Int!, $limit: Int!, $offset: I
     order_by: { id: asc }
     limit: $limit
     offset: $offset
-  ) { id entry }
+  ) { id event entry }
 }
 `;

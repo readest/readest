@@ -71,6 +71,7 @@ describe('HardcoverClient', () => {
       upsertMapping: vi.fn().mockResolvedValue(undefined),
       flush: vi.fn().mockResolvedValue(undefined),
       loadForBook: vi.fn().mockResolvedValue(undefined),
+      journalIds: vi.fn().mockReturnValue([]),
     } as unknown as HardcoverSyncMapStore;
 
     // Mock global fetch
@@ -1267,6 +1268,7 @@ describe('HardcoverClient journal batching', () => {
       upsertMapping: vi.fn().mockResolvedValue(undefined),
       flush: vi.fn().mockResolvedValue(undefined),
       loadForBook: vi.fn().mockResolvedValue(undefined),
+      journalIds: vi.fn().mockReturnValue([]),
     };
     client = new HardcoverClient(
       { accessToken: `batch-${tokenSeq++}` },
@@ -1463,7 +1465,7 @@ describe('HardcoverClient journal batching', () => {
 
   describe('entries already on Hardcover (#6907)', () => {
     // Hardcover's side: the journal, read 100 rows at a time, grown by inserts.
-    let journal: Array<{ id: number; entry: string }>;
+    let journal: Array<{ id: number; event: string; entry: string }>;
     const reads = () =>
       (fetchMock.mock.calls as FetchMockCall[])
         .map((c) => JSON.parse(c[1]?.body ?? '[]') as Op | Op[])
@@ -1514,7 +1516,11 @@ describe('HardcoverClient journal batching', () => {
           body.map((op) => {
             if (!op.query.includes('InsertReadingJournal')) return { data: {} };
             const id = 900 + journal.length;
-            journal.push({ id, entry: op.variables['entry'] as string });
+            journal.push({
+              id,
+              event: op.variables['event'] as string,
+              entry: op.variables['entry'] as string,
+            });
             return inserted(id);
           }),
         );
@@ -1551,9 +1557,37 @@ describe('HardcoverClient journal batching', () => {
       expect(journal).toHaveLength(2);
     });
 
+    test('does not take a note entry for a quote with the same text', async () => {
+      journal.push({ id: 500, event: 'note', entry: 'text 0' });
+
+      const result = await client.syncBookNotes(book, config(notes(1)));
+
+      expect(result).toMatchObject({ inserted: 1, skipped: 0 });
+    });
+
+    test('leaves entries mapped to deleted notes to them', async () => {
+      const mac = device();
+      await mac.syncBookNotes(book, config(notes(1)));
+
+      const rehighlighted = [
+        { id: 'n0', type: 'annotation', text: 'text 0', deletedAt: 1 },
+        // Elsewhere in the book, so not the same payload as the deleted one.
+        { id: 'n1', type: 'annotation', text: 'text 0', page: 2 },
+      ] as BookNote[];
+      const result = await mac.syncBookNotes(book, config(rehighlighted));
+
+      expect(result).toMatchObject({ inserted: 1, skipped: 0 });
+      expect(journal).toHaveLength(2);
+    });
+
     test('pages through the journal and matches the oldest of equal entries', async () => {
-      journal.push(...Array.from({ length: 100 }, (_, i) => ({ id: i + 1, entry: `other ${i}` })));
-      journal.push({ id: 500, entry: 'text 0' }, { id: 501, entry: 'text 0' });
+      journal.push(
+        ...Array.from({ length: 100 }, (_, i) => ({ id: i + 1, event: 'quote', entry: `o ${i}` })),
+      );
+      journal.push(
+        { id: 500, event: 'quote', entry: 'text 0' },
+        { id: 501, event: 'quote', entry: 'text 0' },
+      );
       (api as unknown as { userId: number }).userId = 7;
 
       const result = await client.syncBookNotes(book, config(notes(2)));
