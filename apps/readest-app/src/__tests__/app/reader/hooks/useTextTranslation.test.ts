@@ -424,4 +424,33 @@ describe('useTextTranslation', () => {
     readerState.getViewSettings = getViewSettings;
     vi.unstubAllGlobals();
   });
+
+  it('disconnects its observers on unmount when translation was enabled after mount', () => {
+    const getViewSettings = readerState.getViewSettings;
+    let settings = { ...viewSettings, translationEnabled: false };
+    readerState.getViewSettings = () => settings;
+    const disconnect = vi.fn();
+    vi.stubGlobal(
+      'IntersectionObserver',
+      class {
+        observe() {}
+        disconnect = disconnect;
+      },
+    );
+    const view = document.createElement('div');
+    view.innerHTML = '<p>Source paragraph.</p>';
+    document.body.appendChild(view);
+
+    // Off at mount, so the `[view]` effect registers no cleanup.
+    const { rerender, unmount } = renderHook(() => useTextTranslation('book-1', view));
+    settings = { ...viewSettings, translationEnabled: true };
+    rerender();
+    unmount();
+
+    expect(disconnect).toHaveBeenCalled();
+
+    view.remove();
+    readerState.getViewSettings = getViewSettings;
+    vi.unstubAllGlobals();
+  });
 });

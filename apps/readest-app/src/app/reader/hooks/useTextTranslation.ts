@@ -251,11 +251,13 @@ export function useTextTranslation(
     mountedRef.current = true;
     return () => {
       mountedRef.current = false;
-      // The `[view]` cleanup misses a batch when translation was off at mount.
+      // The `[view]` cleanup misses these when translation was off at mount.
       if (batchTimerRef.current) {
         clearTimeout(batchTimerRef.current);
         batchTimerRef.current = null;
       }
+      observerRefs.current.forEach((observer) => observer.disconnect());
+      observerRefs.current = [];
       pendingDOMUpdates.current = [];
     };
   }, []);
