@@ -220,3 +220,20 @@ mutation UpdateReadingJournal(
   ) { errors id }
 }
 `;
+
+// The reader's notes and quotes for a book, oldest first. Hardcover returns at
+// most 100 rows a query.
+export const QUERY_GET_JOURNAL_ENTRIES = `
+query GetJournalEntries($user_id: Int!, $book_id: Int!, $limit: Int!, $offset: Int!) {
+  reading_journals(
+    where: {
+      user_id: { _eq: $user_id }
+      book_id: { _eq: $book_id }
+      event: { _in: ["note", "quote"] }
+    }
+    order_by: { id: asc }
+    limit: $limit
+    offset: $offset
+  ) { id entry }
+}
+`;

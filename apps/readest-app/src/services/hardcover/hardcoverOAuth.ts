@@ -11,7 +11,7 @@ import {
 
 // Public client (no secret): safe to ship.
 export const HARDCOVER_OAUTH_CLIENT_ID = 'd5a1461f-073a-43c2-80c1-db784fa92a06';
-const SCOPE = 'read:catalog read:library write:library read:me:content';
+const SCOPE = 'read:catalog read:library read:journal write:library read:me:content';
 
 const OAUTH_BASE = 'https://api.hardcover.app/oauth2';
 const TOKEN_ENDPOINT = `${OAUTH_BASE}/token`;
