@@ -121,6 +121,13 @@ type JournalOp = {
   noteIds: string[];
 };
 
+type JournalRow = {
+  id: number;
+  event: string;
+  entry: string | null;
+  metadata?: { position?: { value?: number } } | null;
+};
+
 // Hardcover's row limit for reading_journals.
 const JOURNAL_PAGE_SIZE = 100;
 
@@ -755,15 +762,17 @@ export class HardcoverClient {
     return `${event}\n${entry}`;
   }
 
-  /** The book's notes and quotes on Hardcover, event and entry text -> journal ids, oldest first. */
-  private async fetchJournalEntries(bookId: number): Promise<Map<string, number[]>> {
-    const entries = new Map<string, number[]>();
+  /** The book's notes and quotes on Hardcover, event and entry text -> entries, oldest first. */
+  private async fetchJournalEntries(
+    bookId: number,
+  ): Promise<Map<string, Array<{ id: number; page?: number }>>> {
+    const entries = new Map<string, Array<{ id: number; page?: number }>>();
     for (let offset = 0; ; offset += JOURNAL_PAGE_SIZE) {
-      let rows: Array<{ id: number; event: string; entry: string | null }>;
+      let rows: JournalRow[];
       try {
         const data = await this.request<
           { user_id: number | null; book_id: number; limit: number; offset: number },
-          { reading_journals?: Array<{ id: number; event: string; entry: string | null }> | null }
+          { reading_journals?: JournalRow[] | null }
         >(QUERY_GET_JOURNAL_ENTRIES, {
           user_id: this.userId,
           book_id: bookId,
@@ -781,7 +790,8 @@ export class HardcoverClient {
         const entry = row.entry?.trim();
         if (!entry) continue;
         const key = this.journalKey(row.event, entry);
-        entries.set(key, [...(entries.get(key) ?? []), Number(row.id)]);
+        const found = { id: Number(row.id), page: row.metadata?.position?.value };
+        entries.set(key, [...(entries.get(key) ?? []), found]);
       }
       if (rows.length < JOURNAL_PAGE_SIZE) return entries;
     }
@@ -939,16 +949,21 @@ export class HardcoverClient {
       // push cut short before they were saved) looks new here; take its entry over (#6907).
       if (pendingInserts.size) {
         const existing = await this.fetchJournalEntries(context.bookId);
-        for (const op of pendingInserts.values()) {
-          // Each entry stands for one note: the same text highlighted twice has two.
-          const ids =
-            existing.get(this.journalKey(op.payload['event'], op.payload['entry'] as string)) ?? [];
-          const id = ids.find((candidate) => !mappedIds.has(candidate));
-          if (id === undefined) continue;
-          mappedIds.add(id);
-          await map(op, id);
-          pending.splice(pending.indexOf(op), 1);
-          skipped += 1;
+        // Each entry stands for one note: the same text highlighted twice has two, told
+        // apart by page first and by age after.
+        for (const byPage of [true, false]) {
+          for (const op of pendingInserts.values()) {
+            if (!pending.includes(op)) continue;
+            const key = this.journalKey(op.payload['event'], op.payload['entry'] as string);
+            const id = existing
+              .get(key)
+              ?.find((e) => !mappedIds.has(e.id) && (!byPage || e.page === op.payload['page']))?.id;
+            if (id === undefined) continue;
+            mappedIds.add(id);
+            await map(op, id);
+            pending.splice(pending.indexOf(op), 1);
+            skipped += 1;
+          }
         }
       }
 

@@ -1227,7 +1227,7 @@ describe('HardcoverClient journal batching', () => {
   let client: HardcoverClient;
   let api: HardcoverClientTestApi & {
     gate: { update: (h: Headers) => void };
-    fetchJournalEntries: (bookId: number) => Promise<Map<string, number[]>>;
+    fetchJournalEntries: (bookId: number) => Promise<Map<string, Array<{ id: number }>>>;
   };
   let fetchMock: ReturnType<typeof vi.fn>;
   let mapStore: Record<string, ReturnType<typeof vi.fn>>;
@@ -1465,7 +1465,12 @@ describe('HardcoverClient journal batching', () => {
 
   describe('entries already on Hardcover (#6907)', () => {
     // Hardcover's side: the journal, read 100 rows at a time, grown by inserts.
-    let journal: Array<{ id: number; event: string; entry: string }>;
+    let journal: Array<{
+      id: number;
+      event: string;
+      entry: string;
+      metadata?: { position: { value: number } };
+    }>;
     const reads = () =>
       (fetchMock.mock.calls as FetchMockCall[])
         .map((c) => JSON.parse(c[1]?.body ?? '[]') as Op | Op[])
@@ -1520,6 +1525,7 @@ describe('HardcoverClient journal batching', () => {
               id,
               event: op.variables['event'] as string,
               entry: op.variables['entry'] as string,
+              metadata: { position: { value: op.variables['page'] as number } },
             });
             return inserted(id);
           }),
@@ -1555,6 +1561,24 @@ describe('HardcoverClient journal batching', () => {
         skipped: 2,
       });
       expect(journal).toHaveLength(2);
+    });
+
+    test('matches equal entries by page before age', async () => {
+      journal.push(
+        { id: 500, event: 'quote', entry: 'refrain', metadata: { position: { value: 2 } } },
+        { id: 501, event: 'quote', entry: 'refrain', metadata: { position: { value: 1 } } },
+      );
+      const twice = [
+        { id: 'a', type: 'annotation', text: 'refrain', page: 1 },
+        { id: 'b', type: 'annotation', text: 'refrain', page: 2 },
+      ] as BookNote[];
+
+      await client.syncBookNotes(book, config(twice));
+
+      const mapped = Object.fromEntries(
+        mapStore['upsertMapping']!.mock.calls.map(([, noteId, id]) => [noteId, id]),
+      );
+      expect(mapped).toEqual({ a: 501, b: 500 });
     });
 
     test('does not take a note entry for a quote with the same text', async () => {
