@@ -146,9 +146,9 @@ const FoliateViewer: React.FC<{
   const _ = useTranslation();
   const searchParams = useSearchParams();
   const { appService, envConfig } = useEnv();
-  const { themeCode, isDarkMode, isIPhoneDuo } = useThemeStore();
-  // Re-renders on a pose change, so the Duo layout below is resolved again.
-  useDuoPose();
+  const { themeCode, isDarkMode, isIPhoneDuo, duoFold, safeAreaInsets, statusBarHiddenInsets } =
+    useThemeStore();
+  const duoPose = useDuoPose();
   const { settings } = useSettingsStore();
   const { loadFont, loadCustomFonts, getLoadedFonts, getAvailableFonts } = useCustomFontStore();
   // Per-field selectors — see store/readerProgressStore.ts header for the
@@ -1361,26 +1361,41 @@ const FoliateViewer: React.FC<{
 
   // iPhone Duo: folding, unfolding, turning the device or flipping book mode
   // changes how many pages the display shows. The paginator keeps the
-  // reading position across the re-layout. Keyed on the resolved values, not
-  // on the insets or hinge updates behind them: each renderer write re-lays
-  // out the page, and showing the toolbar must not. Other devices never get
-  // here, so their layout stays exactly the settings' (#6307).
-  const duoLayout = isIPhoneDuo && viewSettings ? getCurrentRendererLayout(viewSettings) : null;
+  // reading position across the re-layout. The layout is resolved here from
+  // the current window and insets, and only attributes that change are
+  // written: each write re-lays out the page, and showing the toolbar must
+  // not. Turning the device passes through a square viewport for a moment,
+  // so the layout is resolved once the window has settled. Other devices
+  // never get here, so their layout stays exactly the settings' (#6307).
   useEffect(() => {
-    const renderer = viewRef.current?.renderer;
-    if (!duoLayout || !renderer || !viewSettings) return;
-    applyRendererLayout(renderer, duoLayout, bookDoc.rendition);
-    applyMarginAndGap();
+    if (!isIPhoneDuo) return;
+    const timer = setTimeout(() => {
+      const renderer = viewRef.current?.renderer;
+      if (!renderer || !viewSettings) return;
+      const layout = getCurrentRendererLayout(viewSettings);
+      applyRendererLayout(renderer, layout, bookDoc.rendition);
+      const columnGap = layout.columnGapPx > 0 ? `${layout.columnGapPx}px` : null;
+      if (renderer.getAttribute('column-gap') !== columnGap) applyMarginAndGapRef.current();
+    }, 150);
+    return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
-    duoLayout?.maxColumnCount,
-    duoLayout?.maxInlineSize,
-    duoLayout?.spreadMode,
-    duoLayout?.columnGapPx,
+    isIPhoneDuo,
+    duoPose,
+    duoFold,
+    // The page width the layout is sized to; insets land after the resize.
+    safeAreaInsets,
+    statusBarHiddenInsets,
     // Switching these writes the reader's own max inline size (ViewMenu,
     // ControlPanel), so the book pose's values are re-applied after them.
     viewSettings?.scrolled,
     viewSettings?.vertical,
+    viewSettings?.duoBookMode,
+    viewSettings?.duoFoldedBookMode,
+    viewSettings?.maxColumnCount,
+    viewSettings?.maxInlineSize,
+    viewSettings?.spreadMode,
+    viewSettings?.columnGapPx,
   ]);
 
   useEffect(() => {
