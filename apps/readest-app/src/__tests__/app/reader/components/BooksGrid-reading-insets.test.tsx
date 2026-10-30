@@ -65,10 +65,13 @@ beforeEach(() => {
   useThemeStore.setState({
     safeAreaInsets: live,
     statusBarHiddenInsets: {
-      width: window.innerWidth,
-      height: window.innerHeight,
-      left: 0,
-      right: 0,
+      [`${window.innerWidth}x${window.innerHeight}`]: {
+        width: window.innerWidth,
+        height: window.innerHeight,
+        top: 0,
+        left: 0,
+        right: 0,
+      },
     },
     isIPhoneDuo: false,
   });

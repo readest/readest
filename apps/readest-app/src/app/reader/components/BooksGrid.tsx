@@ -13,7 +13,12 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { getGridTemplate, getInsetEdges } from '@/utils/grid';
 import { getRendererLayout, isRendererSpread } from '@/utils/duo';
 import { useDuoPose } from '@/hooks/useDuoPose';
-import { getPageAreaInsets, getReadingScreenInsets, getSpreadColumnGap } from '@/utils/insets';
+import {
+  getPageAreaInsets,
+  getReadingScreenInsets,
+  getRecordedScreenInsets,
+  getSpreadColumnGap,
+} from '@/utils/insets';
 import { tauriSetWindowTitle } from '@/utils/window';
 import { useContentInsets } from '../hooks/useContentInsets';
 import { usePageOverflow } from '../hooks/usePageOverflow';
@@ -383,6 +388,7 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onCloseBook, onGoToLibr
   const {
     safeAreaInsets: screenInsets,
     statusBarHiddenInsets,
+    statusBarShownInsets,
     isIPhoneDuo,
     screenCornerRadius,
   } = useThemeStore();
@@ -408,12 +414,28 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onCloseBook, onGoToLibr
   // to BookCell.gridInsets, and BookCell is React.memo'd. As long as
   // bookKeys / screenInsets / aspectRatio don't change, the cells'
   // gridInsets props stay reference-equal across renders.
+  // On iPhone Duo the toolbars keep the insets seen with the status bar shown:
+  // the strip shows and hides with them, and its live inset lands a moment
+  // after each, which would move them on every toggle.
+  const chromeScreenInsets = useMemo(
+    () =>
+      isIPhoneDuo && !alwaysShowStatusBar && screenInsets
+        ? getReadingScreenInsets(
+            screenInsets,
+            getRecordedScreenInsets(statusBarShownInsets, window.innerWidth, window.innerHeight),
+            window.innerWidth,
+            window.innerHeight,
+          )
+        : screenInsets,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [screenInsets, statusBarShownInsets, isIPhoneDuo, alwaysShowStatusBar, aspectRatio],
+  );
   const perBookChromeInsets = useMemo<Insets[]>(
-    () => getPerBookInsets(bookKeys, screenInsets, aspectRatio),
+    () => getPerBookInsets(bookKeys, chromeScreenInsets, aspectRatio),
     // aspectRatio is recomputed every render but its value is window-derived
     // and won't change between resizes; including it explicitly so an
     // orientation change still busts the cache.
-    [bookKeys, screenInsets, aspectRatio],
+    [bookKeys, chromeScreenInsets, aspectRatio],
   );
   // On iPhone Duo the reading page keeps the side insets seen with the status
   // bar hidden, so showing the toolbar (and with it the status strip) does not
@@ -424,7 +446,9 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onCloseBook, onGoToLibr
       screenInsets &&
       getReadingScreenInsets(
         screenInsets,
-        isIPhoneDuo && !alwaysShowStatusBar ? statusBarHiddenInsets : null,
+        isIPhoneDuo && !alwaysShowStatusBar
+          ? getRecordedScreenInsets(statusBarHiddenInsets, window.innerWidth, window.innerHeight)
+          : null,
         window.innerWidth,
         window.innerHeight,
       );
@@ -486,7 +510,7 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onCloseBook, onGoToLibr
           gridInsets={perBookGridInsets[index]!}
           chromeInsets={perBookChromeInsets[index]!}
           spansWidth={cellSpansWidth(index, bookKeys.length, aspectRatio)}
-          screenInsets={screenInsets}
+          screenInsets={chromeScreenInsets ?? screenInsets}
           cornerRadii={perBookCornerRadii[index] ?? NO_CORNERS}
           appServiceHasRoundedWindow={appServiceHasRoundedWindow}
           isHoveredAnim={isHoveredAnim}

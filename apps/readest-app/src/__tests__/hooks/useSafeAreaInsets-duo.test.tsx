@@ -20,6 +20,8 @@ vi.mock('@/store/themeStore', () => ({
       updateScreenCornerRadius: h.updateCornerRadius,
       setIsIPhoneDuo: h.setIsIPhoneDuo,
       setDuoFold: h.setDuoFold,
+      recordStatusBarHiddenInsets: () => {},
+      recordStatusBarShownInsets: () => {},
     }),
     {
       getState: () => ({

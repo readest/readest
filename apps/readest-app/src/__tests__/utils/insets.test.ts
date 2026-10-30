@@ -185,7 +185,7 @@ describe('getReadingScreenInsets (#6307)', () => {
   // iPhone Duo's inner display in landscape: the side status strip is an 84pt
   // right inset while shown and 0 once the reader hides the status bar.
   const shown = { top: 0, right: 84, bottom: 34, left: 0 };
-  const hidden = { width: 951, height: 669, left: 0, right: 0 };
+  const hidden = { width: 951, height: 669, top: 0, left: 0, right: 0 };
 
   it('uses the live insets until the status bar has been hidden', () => {
     expect(getReadingScreenInsets(shown, null, 951, 669)).toBe(shown);
@@ -196,6 +196,17 @@ describe('getReadingScreenInsets (#6307)', () => {
       top: 0,
       right: 0,
       bottom: 34,
+      left: 0,
+    });
+  });
+
+  it('keeps the hidden-status-bar top in inner portrait, where the strip is on top', () => {
+    const shownPortrait = { top: 82, right: 0, bottom: 20, left: 0 };
+    const hiddenPortrait = { width: 669, height: 951, top: 0, left: 0, right: 0 };
+    expect(getReadingScreenInsets(shownPortrait, hiddenPortrait, 669, 951)).toEqual({
+      top: 0,
+      right: 0,
+      bottom: 20,
       left: 0,
     });
   });

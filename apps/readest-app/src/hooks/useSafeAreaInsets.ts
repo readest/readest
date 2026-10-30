@@ -16,6 +16,7 @@ export const useSafeAreaInsets = () => {
     setIsIPhoneDuo,
     setDuoFold,
     recordStatusBarHiddenInsets,
+    recordStatusBarShownInsets,
   } = useThemeStore();
 
   const updateInsets = (insets: Insets) => {
@@ -56,9 +57,13 @@ export const useSafeAreaInsets = () => {
             bottom: Math.round(response.bottom),
             left: Math.round(response.left),
           };
-          // iPhone Duo's status strip carries a side inset of its own: keep the
-          // sides seen with the status bar hidden for the reading page.
-          if (response.isIPhoneDuo && response.statusBarHidden) recordStatusBarHiddenInsets(insets);
+          // iPhone Duo's status strip carries an inset of its own (side or top):
+          // keep the insets seen with the status bar hidden for the reading
+          // page, and those seen with it shown for the toolbars.
+          if (response.isIPhoneDuo) {
+            if (response.statusBarHidden) recordStatusBarHiddenInsets(insets);
+            else recordStatusBarShownInsets(insets);
+          }
           updateInsets(insets);
           updateScreenCornerRadius(Math.round(response.bottomCornerRadius ?? 0));
           setIsIPhoneDuo(!!response.isIPhoneDuo);

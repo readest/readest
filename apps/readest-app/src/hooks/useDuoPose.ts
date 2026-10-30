@@ -3,7 +3,7 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { useThemeStore } from '@/store/themeStore';
 import { ViewSettings } from '@/types/book';
 import { DuoPose, getDuoPose, getRendererLayout, RendererLayout } from '@/utils/duo';
-import { getReadingScreenInsets } from '@/utils/insets';
+import { getReadingScreenInsets, getRecordedScreenInsets } from '@/utils/insets';
 
 const readPose = (isIPhoneDuo: boolean): DuoPose =>
   getDuoPose(isIPhoneDuo, window.innerWidth, window.innerHeight);
@@ -20,7 +20,9 @@ const readPageWidth = () => {
     safeAreaInsets &&
     getReadingScreenInsets(
       safeAreaInsets,
-      isIPhoneDuo && !alwaysShowStatusBar ? statusBarHiddenInsets : null,
+      isIPhoneDuo && !alwaysShowStatusBar
+        ? getRecordedScreenInsets(statusBarHiddenInsets, window.innerWidth, window.innerHeight)
+        : null,
       window.innerWidth,
       window.innerHeight,
     );

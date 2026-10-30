@@ -20,7 +20,7 @@ import { EnvConfigType, isWebAppPlatform } from '@/services/environment';
 import { SystemSettings } from '@/types/settings';
 import type { DuoFoldState } from '@/utils/bridge';
 import { Insets } from '@/types/misc';
-import { StatusBarHiddenInsets } from '@/utils/insets';
+import { RecordedScreenInsets, RecordedScreenInsetsBySize } from '@/utils/insets';
 
 declare global {
   interface Window {
@@ -64,7 +64,9 @@ interface ThemeState {
   safeAreaInsets: Insets | null;
   // iPhone Duo: side insets seen with the status bar hidden; the reading page
   // keeps them while the toolbar shows the status bar (see getReadingScreenInsets).
-  statusBarHiddenInsets: StatusBarHiddenInsets | null;
+  statusBarHiddenInsets: RecordedScreenInsetsBySize | null;
+  // The same while the status bar shows, for the toolbars that show with it.
+  statusBarShownInsets: RecordedScreenInsetsBySize | null;
   // Radius (px) of the rounded bottom screen corners, 0 when unknown.
   screenCornerRadius: number;
   // iPhone Duo, whose vertical status strip is a large left/right inset (#6307).
@@ -96,10 +98,26 @@ interface ThemeState {
   handleAmbientLightChange: (lux: number) => void;
   updateSafeAreaInsets: (insets: Insets) => void;
   recordStatusBarHiddenInsets: (insets: Insets) => void;
+  recordStatusBarShownInsets: (insets: Insets) => void;
   updateScreenCornerRadius: (radius: number) => void;
   setIsIPhoneDuo: (isIPhoneDuo: boolean) => void;
   setDuoFold: (fold: DuoFoldState | null) => void;
 }
+
+// The records with this window size's set to these insets, or null when it
+// already holds them. Each size keeps its own, so turning the device back
+// finds the one taken there before.
+const recordScreenInsets = (
+  records: RecordedScreenInsetsBySize | null,
+  { top, left, right }: Insets,
+): RecordedScreenInsetsBySize | null => {
+  const width = window.innerWidth;
+  const height = window.innerHeight;
+  const key = `${width}x${height}`;
+  const prev: RecordedScreenInsets | undefined = records?.[key];
+  if (prev && prev.top === top && prev.left === left && prev.right === right) return null;
+  return { ...records, [key]: { width, height, top, left, right } };
+};
 
 const LIBRARY_THEME_MODE_KEY = 'libraryThemeMode';
 const LIBRARY_THEME_COLOR_KEY = 'libraryThemeColor';
@@ -313,6 +331,7 @@ export const useThemeStore = create<ThemeState>((set, get) => {
     systemUIAlwaysHidden: false,
     safeAreaInsets: { top: 0, right: 0, bottom: 0, left: 0 },
     statusBarHiddenInsets: null,
+    statusBarShownInsets: null,
     screenCornerRadius: 0,
     isIPhoneDuo: false,
     duoFold: null,
@@ -428,20 +447,13 @@ export const useThemeStore = create<ThemeState>((set, get) => {
     updateSafeAreaInsets: (insets) => {
       set({ safeAreaInsets: insets });
     },
-    recordStatusBarHiddenInsets: ({ left, right }) => {
-      const width = window.innerWidth;
-      const height = window.innerHeight;
-      const prev = get().statusBarHiddenInsets;
-      if (
-        prev &&
-        prev.width === width &&
-        prev.height === height &&
-        prev.left === left &&
-        prev.right === right
-      ) {
-        return;
-      }
-      set({ statusBarHiddenInsets: { width, height, left, right } });
+    recordStatusBarHiddenInsets: (insets) => {
+      const record = recordScreenInsets(get().statusBarHiddenInsets, insets);
+      if (record) set({ statusBarHiddenInsets: record });
+    },
+    recordStatusBarShownInsets: (insets) => {
+      const record = recordScreenInsets(get().statusBarShownInsets, insets);
+      if (record) set({ statusBarShownInsets: record });
     },
     updateScreenCornerRadius: (radius) => {
       if (get().screenCornerRadius !== radius) set({ screenCornerRadius: radius });
