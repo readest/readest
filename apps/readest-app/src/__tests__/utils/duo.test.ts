@@ -4,7 +4,6 @@ import { ViewSettings } from '@/types/book';
 import { expectsColumnSpread } from '@/utils/config';
 import {
   applyRendererLayout,
-  getDuoBookMode,
   getDuoColumnLayout,
   getDuoPose,
   getDuoSpineGutter,
@@ -128,7 +127,7 @@ describe('getRendererLayout', () => {
   it('shows one page and no spread without book mode', () => {
     setViewport(951, 669);
     const layout = getRendererLayout(
-      settings({ duoBookMode: false, duoFoldedBookMode: false, spreadMode: 'auto' }),
+      settings({ duoBookMode: false, spreadMode: 'auto' }),
       'inner-landscape',
       891,
       bookFold,
@@ -267,29 +266,18 @@ describe('applyRendererLayout', () => {
   });
 });
 
-describe('two pages while part way folded', () => {
-  const partialNoRegion = { status: 'partial' as const };
-
-  it('forces two pages whatever book mode says, by default', () => {
-    for (const fold of [bookFold, partialNoRegion]) {
-      expect(getDuoBookMode(settings({ duoBookMode: false }), fold)).toBe(true);
-    }
+describe('one page while part way folded', () => {
+  it('keeps the page the reader chose, flat or part way open', () => {
     setViewport(951, 669);
-    const layout = getRendererLayout(
-      settings({ duoBookMode: false }),
-      'inner-landscape',
-      891,
-      partialNoRegion,
-    );
-    expect(layout.maxColumnCount).toBe(2);
-    expect(layout.spreadMode).toBe('auto');
-  });
-
-  it('follows book mode while flat, or with the setting off', () => {
-    expect(getDuoBookMode(settings({ duoBookMode: false }), flatFold)).toBe(false);
-    expect(getDuoBookMode(settings({ duoBookMode: false }), null)).toBe(false);
-    expect(
-      getDuoBookMode(settings({ duoBookMode: false, duoFoldedBookMode: false }), bookFold),
-    ).toBe(false);
+    for (const fold of [flatFold, bookFold, { status: 'partial' as const }]) {
+      const layout = getRendererLayout(
+        settings({ duoBookMode: false }),
+        'inner-landscape',
+        891,
+        fold,
+      );
+      expect(layout.maxColumnCount).toBe(1);
+      expect(layout.spreadMode).toBe('none');
+    }
   });
 });

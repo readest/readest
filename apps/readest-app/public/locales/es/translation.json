@@ -2728,9 +2728,5 @@
   "One page": "Una página",
   "Two pages": "Dos páginas",
   "Show One Page": "Mostrar una página",
-  "Show Two Pages": "Mostrar dos páginas",
-  "Two Pages When Unfolded": "Dos páginas al desplegar",
-  "In landscape, show a page on each side of the fold. Sets the columns there.": "En horizontal, muestra una página a cada lado del pliegue. Define allí las columnas.",
-  "Two Pages When Partly Folded": "Dos páginas al plegar parcialmente",
-  "Show two pages while the phone is held part way open, like a book": "Muestra dos páginas mientras el teléfono está entreabierto, como un libro"
+  "Show Two Pages": "Mostrar dos páginas"
 }

@@ -2592,9 +2592,5 @@
   "One page": "单页",
   "Two pages": "双页",
   "Show One Page": "显示单页",
-  "Show Two Pages": "显示双页",
-  "Two Pages When Unfolded": "展开时显示双页",
-  "In landscape, show a page on each side of the fold. Sets the columns there.": "横屏时，在折叠处两侧各显示一页。并决定此时的分栏。",
-  "Two Pages When Partly Folded": "半折叠时显示双页",
-  "Show two pages while the phone is held part way open, like a book": "手机像书一样半打开时显示双页"
+  "Show Two Pages": "显示双页"
 }

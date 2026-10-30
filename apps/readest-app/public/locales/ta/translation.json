@@ -2660,9 +2660,5 @@
   "One page": "ஒரு பக்கம்",
   "Two pages": "இரண்டு பக்கங்கள்",
   "Show One Page": "ஒரு பக்கத்தைக் காட்டு",
-  "Show Two Pages": "இரண்டு பக்கங்களைக் காட்டு",
-  "Two Pages When Unfolded": "திறக்கும்போது இரண்டு பக்கங்கள்",
-  "In landscape, show a page on each side of the fold. Sets the columns there.": "கிடைமட்டத்தில், மடிப்பின் ஒவ்வொரு பக்கத்திலும் ஒரு பக்கத்தைக் காட்டு. அங்கு நெடுவரிசைகளையும் தீர்மானிக்கும்.",
-  "Two Pages When Partly Folded": "பாதி மடித்தால் இரண்டு பக்கங்கள்",
-  "Show two pages while the phone is held part way open, like a book": "தொலைபேசி புத்தகம் போல் பாதி திறந்திருக்கும்போது இரண்டு பக்கங்களைக் காட்டு"
+  "Show Two Pages": "இரண்டு பக்கங்களைக் காட்டு"
 }

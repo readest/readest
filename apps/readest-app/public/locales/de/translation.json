@@ -2660,9 +2660,5 @@
   "One page": "Eine Seite",
   "Two pages": "Zwei Seiten",
   "Show One Page": "Eine Seite anzeigen",
-  "Show Two Pages": "Zwei Seiten anzeigen",
-  "Two Pages When Unfolded": "Zwei Seiten im aufgeklappten Zustand",
-  "In landscape, show a page on each side of the fold. Sets the columns there.": "Im Querformat auf jeder Seite des Falzes eine Seite anzeigen. Legt dort die Spalten fest.",
-  "Two Pages When Partly Folded": "Zwei Seiten, wenn halb zugeklappt",
-  "Show two pages while the phone is held part way open, like a book": "Zwei Seiten anzeigen, solange das Telefon wie ein Buch halb geöffnet ist"
+  "Show Two Pages": "Zwei Seiten anzeigen"
 }

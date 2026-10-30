@@ -7,8 +7,6 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { useDuoPose } from '@/hooks/useDuoPose';
 import { saveViewSettings } from '@/helpers/settings';
-import { useThemeStore } from '@/store/themeStore';
-import { isDuoPartlyFolded } from '@/utils/duo';
 import { eventDispatcher } from '@/utils/event';
 import Button from '@/components/Button';
 
@@ -27,15 +25,10 @@ const DuoBookModeToggler: React.FC<DuoBookModeTogglerProps> = ({ bookKey }) => {
   // Scalars, not the settings object: saveViewSettings updates it in place.
   const bookMode = useReaderStore((s) => s.viewStates[bookKey]?.viewSettings?.duoBookMode ?? true);
   const vertical = useReaderStore((s) => !!s.viewStates[bookKey]?.viewSettings?.vertical);
-  const foldedBookMode = useReaderStore(
-    (s) => s.viewStates[bookKey]?.viewSettings?.duoFoldedBookMode ?? true,
-  );
-  const partlyFolded = useThemeStore((s) => isDuoPartlyFolded(s.duoFold));
   const pose = useDuoPose();
   const iconSize18 = useResponsiveSize(18);
 
-  // Part way folded, two pages are forced, so the switch would do nothing.
-  if (pose !== 'inner-landscape' || vertical || (foldedBookMode && partlyFolded)) return null;
+  if (pose !== 'inner-landscape' || vertical) return null;
 
   const toggleBookMode = () => {
     saveViewSettings(envConfig, bookKey, 'duoBookMode', !bookMode, false, false);

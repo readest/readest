@@ -37,7 +37,6 @@ import { getScrollGapAttr } from '@/utils/webtoon';
 import { applyPageTurnAttributes } from '@/app/reader/hooks/useCapturedTurn';
 import { eventDispatcher } from '@/utils/event';
 import { getCurrentRendererLayout, useDuoPose } from '@/hooks/useDuoPose';
-import { getDuoBookMode } from '@/utils/duo';
 import { nextThemeMode } from '@/utils/ambientLight';
 import { saveViewSettings } from '@/helpers/settings';
 import { canToggleFullScreen, toggleFullScreen } from '@/utils/window';
@@ -87,10 +86,9 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
   const [spreadMode, setSpreadMode] = useState(viewSettings!.spreadMode!);
   // On iPhone Duo's inner display in landscape, book mode decides the spread.
   const duoOwnsSpread = useDuoPose() === 'inner-landscape';
-  const duoBookMode = useReaderStore((s) => {
-    const settings = s.viewStates[bookKey]?.viewSettings;
-    return settings ? getDuoBookMode(settings, useThemeStore.getState().duoFold) : true;
-  });
+  const duoBookMode = useReaderStore(
+    (s) => s.viewStates[bookKey]?.viewSettings?.duoBookMode ?? true,
+  );
   const shownSpreadMode = duoOwnsSpread ? (duoBookMode ? 'auto' : 'none') : spreadMode;
   const chooseSpreadMode = (mode: 'auto' | 'none') => {
     if (duoOwnsSpread) {

@@ -2592,9 +2592,5 @@
   "One page": "ཤོག་ངོས་གཅིག",
   "Two pages": "ཤོག་ངོས་གཉིས",
   "Show One Page": "ཤོག་ངོས་གཅིག་སྟོན།",
-  "Show Two Pages": "ཤོག་ངོས་གཉིས་སྟོན།",
-  "Two Pages When Unfolded": "ཕྱེ་དུས་ཤོག་ངོས་གཉིས",
-  "In landscape, show a page on each side of the fold. Sets the columns there.": "འཕྲེད་ཕྱོགས་སུ་ལྟེབ་སའི་ཕྱོགས་རེ་རེར་ཤོག་ངོས་རེ་སྟོན།. དེར་ཀ་བ་ཡང་གཏན་འཁེལ་བྱེད།",
-  "Two Pages When Partly Folded": "ཕྱེད་ཙམ་ལྟེབ་དུས་ཤོག་ངོས་གཉིས",
-  "Show two pages while the phone is held part way open, like a book": "ཁ་པར་དཔེ་ཆ་ལྟར་ཕྱེད་ཙམ་ཕྱེ་དུས་ཤོག་ངོས་གཉིས་སྟོན།"
+  "Show Two Pages": "ཤོག་ངོས་གཉིས་སྟོན།"
 }

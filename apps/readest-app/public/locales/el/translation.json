@@ -2660,9 +2660,5 @@
   "One page": "Μία σελίδα",
   "Two pages": "Δύο σελίδες",
   "Show One Page": "Εμφάνιση μίας σελίδας",
-  "Show Two Pages": "Εμφάνιση δύο σελίδων",
-  "Two Pages When Unfolded": "Δύο σελίδες όταν είναι ανοιχτό",
-  "In landscape, show a page on each side of the fold. Sets the columns there.": "Σε οριζόντιο προσανατολισμό, εμφάνιση μίας σελίδας σε κάθε πλευρά της αναδίπλωσης. Ορίζει εκεί τις στήλες.",
-  "Two Pages When Partly Folded": "Δύο σελίδες όταν είναι μισοδιπλωμένο",
-  "Show two pages while the phone is held part way open, like a book": "Εμφάνιση δύο σελίδων όταν το τηλέφωνο είναι μισάνοιχτο, σαν βιβλίο"
+  "Show Two Pages": "Εμφάνιση δύο σελίδων"
 }

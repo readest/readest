@@ -2796,9 +2796,5 @@
   "One page": "Одна сторінка",
   "Two pages": "Дві сторінки",
   "Show One Page": "Показати одну сторінку",
-  "Show Two Pages": "Показати дві сторінки",
-  "Two Pages When Unfolded": "Дві сторінки в розкладеному вигляді",
-  "In landscape, show a page on each side of the fold. Sets the columns there.": "В альбомній орієнтації показувати по сторінці з кожного боку згину. Визначає там кількість колонок.",
-  "Two Pages When Partly Folded": "Дві сторінки при частковому згині",
-  "Show two pages while the phone is held part way open, like a book": "Показувати дві сторінки, коли телефон прочинений, як книжка"
+  "Show Two Pages": "Показати дві сторінки"
 }

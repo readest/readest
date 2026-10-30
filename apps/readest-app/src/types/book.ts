@@ -261,9 +261,6 @@ export interface BookLayout {
   /* iPhone Duo, inner display in landscape: show two pages, one on each side
      of the hinge (true), or a single page (false). Ignored in other poses. */
   duoBookMode: boolean;
-  /* iPhone Duo: show two pages whenever the inner display is part way folded
-     in landscape, whatever duoBookMode says. */
-  duoFoldedBookMode: boolean;
   scrolled: boolean;
   scrolledDirection: 'vertical' | 'horizontal';
   webtoonMode: boolean;

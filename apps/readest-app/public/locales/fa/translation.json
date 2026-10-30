@@ -2660,9 +2660,5 @@
   "One page": "یک صفحه",
   "Two pages": "دو صفحه",
   "Show One Page": "نمایش یک صفحه",
-  "Show Two Pages": "نمایش دو صفحه",
-  "Two Pages When Unfolded": "دو صفحه هنگام باز بودن",
-  "In landscape, show a page on each side of the fold. Sets the columns there.": "در حالت افقی، در هر طرف تاخوردگی یک صفحه نمایش داده شود. ستون‌ها را در آنجا تعیین می‌کند.",
-  "Two Pages When Partly Folded": "دو صفحه هنگام تاشدگی جزئی",
-  "Show two pages while the phone is held part way open, like a book": "وقتی گوشی مانند کتاب نیمه‌باز است، دو صفحه نمایش داده شود"
+  "Show Two Pages": "نمایش دو صفحه"
 }

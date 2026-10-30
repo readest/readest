@@ -2660,9 +2660,5 @@
   "One page": "Bitta sahifa",
   "Two pages": "Ikki sahifa",
   "Show One Page": "Bitta sahifani ko‘rsatish",
-  "Show Two Pages": "Ikki sahifani ko‘rsatish",
-  "Two Pages When Unfolded": "Ochilganda ikki sahifa",
-  "In landscape, show a page on each side of the fold. Sets the columns there.": "Gorizontal holatda bukilish joyining har ikki tomonida bittadan sahifa ko‘rsatish. U yerda ustunlarni ham belgilaydi.",
-  "Two Pages When Partly Folded": "Qisman bukilganda ikki sahifa",
-  "Show two pages while the phone is held part way open, like a book": "Telefon kitobdek qisman ochiq turganda ikki sahifa ko‘rsatish"
+  "Show Two Pages": "Ikki sahifani ko‘rsatish"
 }

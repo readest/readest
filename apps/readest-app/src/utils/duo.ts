@@ -41,22 +41,6 @@ export const getDuoSpineGutter = (fold: DuoFoldState | null | undefined): number
   return Math.ceil(region.width);
 };
 
-/** Whether the inner display is part way folded, like a book held open. */
-export const isDuoPartlyFolded = (fold: DuoFoldState | null | undefined) =>
-  fold?.status === 'partial' || (!!fold?.regionActive && getDuoSpineGutter(fold) > 0);
-
-/**
- * Whether the book pose shows two pages: always while part way folded (with
- * `duoFoldedBookMode`, on by default), otherwise the reader's `duoBookMode`.
- */
-export const getDuoBookMode = (
-  viewSettings: Pick<ViewSettings, 'duoBookMode' | 'duoFoldedBookMode'>,
-  fold: DuoFoldState | null | undefined,
-) => {
-  if ((viewSettings.duoFoldedBookMode ?? true) && isDuoPartlyFolded(fold)) return true;
-  return viewSettings.duoBookMode ?? true;
-};
-
 export interface DuoColumnLayout {
   maxColumnCount: number;
   maxInlineSize: number;
@@ -111,7 +95,7 @@ export const getRendererLayout = (
   };
   // Scrolled flow is a single column and never a two-page spread.
   if (pose !== 'inner-landscape' || viewSettings.vertical || viewSettings.scrolled) return own;
-  const bookMode = getDuoBookMode(viewSettings, fold);
+  const bookMode = viewSettings.duoBookMode ?? true;
   const columns = getDuoColumnLayout(bookMode, pageWidth, own.maxInlineSize);
   const gutter = bookMode ? getDuoSpineGutter(fold) : 0;
   return {

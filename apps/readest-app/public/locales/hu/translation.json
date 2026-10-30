@@ -2660,9 +2660,5 @@
   "One page": "Egy oldal",
   "Two pages": "Két oldal",
   "Show One Page": "Egy oldal megjelenítése",
-  "Show Two Pages": "Két oldal megjelenítése",
-  "Two Pages When Unfolded": "Két oldal kihajtva",
-  "In landscape, show a page on each side of the fold. Sets the columns there.": "Fekvő módban a hajtás mindkét oldalán egy-egy oldal jelenik meg. Ott az oszlopokat is ez határozza meg.",
-  "Two Pages When Partly Folded": "Két oldal félig hajtva",
-  "Show two pages while the phone is held part way open, like a book": "Két oldal megjelenítése, amíg a telefon könyvként félig nyitva van"
+  "Show Two Pages": "Két oldal megjelenítése"
 }

@@ -2592,9 +2592,5 @@
   "One page": "한 페이지",
   "Two pages": "두 페이지",
   "Show One Page": "한 페이지 보기",
-  "Show Two Pages": "두 페이지 보기",
-  "Two Pages When Unfolded": "펼쳤을 때 두 페이지",
-  "In landscape, show a page on each side of the fold. Sets the columns there.": "가로 모드에서 접히는 부분 양쪽에 한 페이지씩 표시. 이때 단 수도 이 설정을 따릅니다.",
-  "Two Pages When Partly Folded": "반쯤 접었을 때 두 페이지",
-  "Show two pages while the phone is held part way open, like a book": "책처럼 반쯤 펼쳐 들었을 때 두 페이지로 표시"
+  "Show Two Pages": "두 페이지 보기"
 }
