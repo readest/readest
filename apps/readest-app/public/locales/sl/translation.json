@@ -2792,5 +2792,14 @@
   "Variables: {{variables}}": "Spremenljivke: {{variables}}",
   "Stable Page Numbers": "Stalne številke strani",
   "Turn off to count pages by the screens of this device": "Izklopite za štetje strani po zaslonih te naprave",
-  "Page Flip": "Obračanje strani"
+  "Page Flip": "Obračanje strani",
+  "{{count}}p_one": "{{count}} str.",
+  "{{count}}p_two": "{{count}} str.",
+  "{{count}}p_few": "{{count}} str.",
+  "{{count}}p_other": "{{count}} str.",
+  "{{count}} pages_one": "{{count}} stran",
+  "{{count}} pages_two": "{{count}} strani",
+  "{{count}} pages_few": "{{count}} strani",
+  "{{count}} pages_other": "{{count}} strani",
+  "Show page count": "Prikaži število strani"
 }

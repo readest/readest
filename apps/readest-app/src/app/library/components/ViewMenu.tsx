@@ -97,11 +97,6 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
     navigateToLibrary(router, `${params.toString()}`);
   };
 
-  const handleToggleShowPageCount = async () => {
-    const newValue = !settings.libraryShowPageCount;
-    await saveSysSettings(envConfig, 'libraryShowPageCount', newValue);
-  };
-
   const handleToggleAutoColumns = async () => {
     const newValue = !settings.libraryAutoColumns;
     await saveSysSettings(envConfig, 'libraryAutoColumns', newValue);
@@ -220,16 +215,6 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
           />
         }
         onClick={() => handleToggleAutoColumns()}
-      />
-
-      {/* Show Page Count */}
-      <hr aria-hidden='true' className='border-base-200 my-1' />
-      <MenuItem
-        label={_('Show page count')}
-        buttonClass='min-h-8 py-1!'
-        toggled={!!settings.libraryShowPageCount}
-        onClick={handleToggleShowPageCount}
-        transient
       />
 
       {/* Group By - Collapsible */}

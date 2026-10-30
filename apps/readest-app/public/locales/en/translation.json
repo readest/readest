@@ -18,8 +18,6 @@
   "{{count}} pages left in book_other": "<0>{{count}}</0><1> pages left in book</1>",
   "{{count}} pages_one": "{{count}} page",
   "{{count}} pages_other": "{{count}} pages",
-  "{{count}}p": "{{count}}p",
-  "Show page count": "Show page count",
   "Deleted {{count}} file(s)_one": "Deleted {{count}} file",
   "Deleted {{count}} file(s)_other": "Deleted {{count}} files",
   "{{count}} files_one": "{{count}} file",

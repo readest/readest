@@ -2792,5 +2792,14 @@
   "Variables: {{variables}}": "Переменные: {{variables}}",
   "Stable Page Numbers": "Постоянные номера страниц",
   "Turn off to count pages by the screens of this device": "Отключите, чтобы считать страницы по экранам этого устройства",
-  "Page Flip": "Перелистывание"
+  "Page Flip": "Перелистывание",
+  "{{count}}p_one": "{{count}} с.",
+  "{{count}}p_few": "{{count}} с.",
+  "{{count}}p_many": "{{count}} с.",
+  "{{count}}p_other": "{{count}} с.",
+  "{{count}} pages_one": "{{count}} страница",
+  "{{count}} pages_few": "{{count}} страницы",
+  "{{count}} pages_many": "{{count}} страниц",
+  "{{count}} pages_other": "{{count}} страницы",
+  "Show page count": "Показывать число страниц"
 }

@@ -2588,5 +2588,8 @@
   "Variables: {{variables}}": "変数: {{variables}}",
   "Stable Page Numbers": "固定ページ番号",
   "Turn off to count pages by the screens of this device": "オフにすると、このデバイスの画面数でページを数えます",
-  "Page Flip": "ページめくり"
+  "Page Flip": "ページめくり",
+  "{{count}}p_other": "{{count}}p",
+  "{{count}} pages_other": "{{count}}ページ",
+  "Show page count": "ページ数を表示"
 }

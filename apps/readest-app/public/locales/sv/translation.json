@@ -2656,5 +2656,10 @@
   "Variables: {{variables}}": "Variabler: {{variables}}",
   "Stable Page Numbers": "Stabila sidnummer",
   "Turn off to count pages by the screens of this device": "Stäng av för att räkna sidor efter skärmarna på den här enheten",
-  "Page Flip": "Sidvändning"
+  "Page Flip": "Sidvändning",
+  "{{count}}p_one": "{{count}} s.",
+  "{{count}}p_other": "{{count}} s.",
+  "{{count}} pages_one": "{{count}} sida",
+  "{{count}} pages_other": "{{count}} sidor",
+  "Show page count": "Visa antal sidor"
 }

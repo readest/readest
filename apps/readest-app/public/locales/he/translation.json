@@ -2724,5 +2724,12 @@
   "Variables: {{variables}}": "משתנים: {{variables}}",
   "Stable Page Numbers": "מספרי עמודים קבועים",
   "Turn off to count pages by the screens of this device": "כבו כדי לספור עמודים לפי המסכים של מכשיר זה",
-  "Page Flip": "הפיכת דף"
+  "Page Flip": "הפיכת דף",
+  "{{count}}p_one": "{{count}} עמ׳",
+  "{{count}}p_two": "{{count}} עמ׳",
+  "{{count}}p_other": "{{count}} עמ׳",
+  "{{count}} pages_one": "עמוד אחד",
+  "{{count}} pages_two": "{{count}} עמודים",
+  "{{count}} pages_other": "{{count}} עמודים",
+  "Show page count": "הצג מספר עמודים"
 }

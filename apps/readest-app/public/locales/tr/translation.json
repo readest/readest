@@ -2004,7 +2004,6 @@
   "Pencil Squeeze": "Apple Pencil sıkma",
   "Pages": "Sayfalar",
   "Show page count": "Sayfa sayısını göster",
-  "{{count}}p": "{{count}}s",
   "{{count}} pages_one": "{{count}} sayfa",
   "{{count}} pages_other": "{{count}} sayfa",
   "Go to Page": "Sayfaya Git",
@@ -2660,5 +2659,7 @@
   "Variables: {{variables}}": "Değişkenler: {{variables}}",
   "Stable Page Numbers": "Sabit sayfa numaraları",
   "Turn off to count pages by the screens of this device": "Sayfaları bu cihazın ekranlarına göre saymak için kapatın",
-  "Page Flip": "Sayfa Çevirme"
+  "Page Flip": "Sayfa Çevirme",
+  "{{count}}p_one": "{{count}} s.",
+  "{{count}}p_other": "{{count}} s."
 }

@@ -20,7 +20,7 @@ import { navigateToLogin } from '@/utils/nav';
 import { isReadestCloudStorageActive } from '@/services/sync/cloudSyncProvider';
 import { isFeedBook } from '@/services/rss/feedBookUrl';
 import { isAudiobook } from '@/utils/audiobook';
-import { formatAuthors, formatDescription, formatSeries, getBookPageCount } from '@/utils/book';
+import { formatAuthors, formatDescription, formatSeries } from '@/utils/book';
 import { splitDuration } from '@/utils/time';
 import { INDETERMINATE_PROGRESS } from '@/utils/transfer';
 import { getBookTags } from '../utils/libraryUtils';
@@ -41,7 +41,8 @@ interface BookItemProps {
   showTimeRemaining: boolean;
   /** Badged on the cover inside a series group, where the breadcrumb names the series. */
   seriesIndex?: number;
-  showPageCount?: boolean;
+  /** Badged on the cover when the shelf shows page counts. */
+  pageCount?: number;
 }
 
 const BookItem: React.FC<BookItemProps> = ({
@@ -57,7 +58,7 @@ const BookItem: React.FC<BookItemProps> = ({
   showBookDetailsModal,
   showTimeRemaining,
   seriesIndex,
-  showPageCount: propShowPageCount,
+  pageCount,
 }) => {
   const _ = useTranslation();
   const router = useRouter();
@@ -65,8 +66,6 @@ const BookItem: React.FC<BookItemProps> = ({
   const { appService } = useEnv();
   const { settings } = useSettingsStore();
   const showSpine = skeuomorphicCovers ?? settings.librarySkeuomorphicCovers;
-  const showPageCount = propShowPageCount ?? settings.libraryShowPageCount ?? false;
-  const pageCount = getBookPageCount(book);
   const iconSize15 = useResponsiveSize(15);
 
   // Reset during render, not in an effect: a cached cover reports its size
@@ -179,11 +178,8 @@ const BookItem: React.FC<BookItemProps> = ({
             )}
           </div>
         )}
-        {showPageCount && !isAudiobook(book) && pageCount !== undefined && pageCount > 0 && (
-          <span
-            aria-label={_('{{count}} pages', { count: pageCount })}
-            className='eink-bordered bg-base-100/90 text-base-content absolute start-1 top-1 rounded-sm px-1 text-[10px] font-semibold leading-4 shadow-sm'
-          >
+        {pageCount !== undefined && (
+          <span className='eink-bordered bg-base-100/90 text-base-content absolute start-1 top-1 rounded-sm px-1 text-[10px] font-semibold leading-4 shadow-sm'>
             {_('{{count}}p', { count: pageCount })}
           </span>
         )}

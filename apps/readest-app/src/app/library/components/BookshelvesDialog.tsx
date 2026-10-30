@@ -522,6 +522,7 @@ export function BookshelvesEditor({
           mode={mode}
           coverFit={shelf.coverFit || 'crop'}
           skeuomorphicCovers={shelf.skeuomorphicCovers}
+          showPageCount={shelf.showPageCount}
           isSelectMode={false}
           itemSelected={false}
           transferProgress={null}
@@ -709,6 +710,11 @@ export function BookshelvesEditor({
                 label={_('Skeuomorphic covers')}
                 checked={!!selected.skeuomorphicCovers}
                 onChange={() => update({ skeuomorphicCovers: !selected.skeuomorphicCovers })}
+              />
+              <SettingsSwitchRow
+                label={_('Show page count')}
+                checked={!!selected.showPageCount}
+                onChange={() => update({ showPageCount: !selected.showPageCount })}
               />
             </BoxedList>
             <BookshelfFilterEditor

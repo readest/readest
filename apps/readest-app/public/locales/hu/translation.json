@@ -2656,5 +2656,10 @@
   "Variables: {{variables}}": "Változók: {{variables}}",
   "Stable Page Numbers": "Állandó oldalszámok",
   "Turn off to count pages by the screens of this device": "Kapcsolja ki, hogy az oldalakat az eszköz képernyői szerint számolja",
-  "Page Flip": "Lapfordítás"
+  "Page Flip": "Lapfordítás",
+  "{{count}}p_one": "{{count}} o.",
+  "{{count}}p_other": "{{count}} o.",
+  "{{count}} pages_one": "{{count}} oldal",
+  "{{count}} pages_other": "{{count}} oldal",
+  "Show page count": "Oldalszám megjelenítése"
 }

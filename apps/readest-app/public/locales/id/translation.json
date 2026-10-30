@@ -2588,5 +2588,8 @@
   "Variables: {{variables}}": "Variabel: {{variables}}",
   "Stable Page Numbers": "Nomor halaman tetap",
   "Turn off to count pages by the screens of this device": "Matikan untuk menghitung halaman berdasarkan layar perangkat ini",
-  "Page Flip": "Balik Halaman"
+  "Page Flip": "Balik Halaman",
+  "{{count}}p_other": "{{count}} hlm",
+  "{{count}} pages_other": "{{count}} halaman",
+  "Show page count": "Tampilkan jumlah halaman"
 }

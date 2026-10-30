@@ -2724,5 +2724,12 @@
   "Variables: {{variables}}": "Variables : {{variables}}",
   "Stable Page Numbers": "Numéros de page stables",
   "Turn off to count pages by the screens of this device": "Désactivez pour compter les pages selon les écrans de cet appareil",
-  "Page Flip": "Tourner la page"
+  "Page Flip": "Tourner la page",
+  "{{count}}p_one": "{{count}} p.",
+  "{{count}}p_many": "{{count}} p.",
+  "{{count}}p_other": "{{count}} p.",
+  "{{count}} pages_one": "{{count}} page",
+  "{{count}} pages_many": "{{count}} pages",
+  "{{count}} pages_other": "{{count}} pages",
+  "Show page count": "Afficher le nombre de pages"
 }

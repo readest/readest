@@ -2656,5 +2656,10 @@
   "Variables: {{variables}}": "متغیرها: {{variables}}",
   "Stable Page Numbers": "شماره صفحه‌های ثابت",
   "Turn off to count pages by the screens of this device": "برای شمارش صفحه‌ها بر اساس صفحه‌نمایش‌های این دستگاه خاموش کنید",
-  "Page Flip": "ورق زدن صفحه"
+  "Page Flip": "ورق زدن صفحه",
+  "{{count}}p_one": "{{count}} ص",
+  "{{count}}p_other": "{{count}} ص",
+  "{{count}} pages_one": "{{count}} صفحه",
+  "{{count}} pages_other": "{{count}} صفحه",
+  "Show page count": "نمایش تعداد صفحات"
 }

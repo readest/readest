@@ -2588,5 +2588,8 @@
   "Variables: {{variables}}": "变量：{{variables}}",
   "Stable Page Numbers": "稳定页码",
   "Turn off to count pages by the screens of this device": "关闭后按本设备的实际屏数计算页码",
-  "Page Flip": "翻书"
+  "Page Flip": "翻书",
+  "{{count}}p_other": "{{count}}页",
+  "{{count}} pages_other": "{{count}} 页",
+  "Show page count": "显示页数"
 }

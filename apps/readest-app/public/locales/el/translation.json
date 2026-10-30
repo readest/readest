@@ -2656,5 +2656,10 @@
   "Variables: {{variables}}": "Μεταβλητές: {{variables}}",
   "Stable Page Numbers": "Σταθεροί αριθμοί σελίδων",
   "Turn off to count pages by the screens of this device": "Απενεργοποιήστε για μέτρηση σελίδων με βάση τις οθόνες αυτής της συσκευής",
-  "Page Flip": "Αναποδογύρισμα σελίδας"
+  "Page Flip": "Αναποδογύρισμα σελίδας",
+  "{{count}}p_one": "{{count}} σ.",
+  "{{count}}p_other": "{{count}} σ.",
+  "{{count}} pages_one": "{{count}} σελίδα",
+  "{{count}} pages_other": "{{count}} σελίδες",
+  "Show page count": "Εμφάνιση αριθμού σελίδων"
 }

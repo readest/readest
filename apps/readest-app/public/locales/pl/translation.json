@@ -2792,5 +2792,14 @@
   "Variables: {{variables}}": "Zmienne: {{variables}}",
   "Stable Page Numbers": "Stałe numery stron",
   "Turn off to count pages by the screens of this device": "Wyłącz, aby liczyć strony według ekranów tego urządzenia",
-  "Page Flip": "Przewracanie strony"
+  "Page Flip": "Przewracanie strony",
+  "{{count}}p_one": "{{count}} s.",
+  "{{count}}p_few": "{{count}} s.",
+  "{{count}}p_many": "{{count}} s.",
+  "{{count}}p_other": "{{count}} s.",
+  "{{count}} pages_one": "{{count}} strona",
+  "{{count}} pages_few": "{{count}} strony",
+  "{{count}} pages_many": "{{count}} stron",
+  "{{count}} pages_other": "{{count}} strony",
+  "Show page count": "Pokaż liczbę stron"
 }
