@@ -13,6 +13,7 @@ import { Insets } from '@/types/misc';
 import { EnvConfigType } from '@/services/environment';
 import { FoliateView } from '@/types/view';
 import { isAbsEbook } from '@/utils/audiobook';
+import { partialMD5 } from '@/utils/md5';
 import { DocumentLoader, TOCItem } from '@/libs/document';
 import {
   isPseStreamFileName,
@@ -277,6 +278,16 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
           bookDoc = doc.book;
           docFormat = doc.format;
           if (doc.format === 'CBZ') config.widePages = getWidePages(bookDoc.sections);
+        }
+      }
+      // KOReader keys a book by its file's partial MD5, but an Audiobookshelf
+      // ebook's hash comes from its abs:// path: keep the file's own id with
+      // the book for KOReader Sync (#7088).
+      if (file && isAbsEbook(book) && !book.metadata?.absFileHash) {
+        try {
+          book.metadata!.absFileHash = await partialMD5(file);
+        } catch (err) {
+          console.warn('Failed to hash the Audiobookshelf ebook', err);
         }
       }
       const config = await configPromise;
