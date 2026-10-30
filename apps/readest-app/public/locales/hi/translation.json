@@ -2639,5 +2639,22 @@
   "Month": "महीना",
   "Year": "वर्ष",
   "Daily average {{time}}": "दैनिक औसत {{time}}",
-  "Failed to load reading statistics": "पढ़ने के आँकड़े लोड नहीं हो सके"
+  "Failed to load reading statistics": "पढ़ने के आँकड़े लोड नहीं हो सके",
+  "From Pasted Text": "पेस्ट किए गए टेक्स्ट से",
+  "Could not read the clipboard. Paste into the text box instead.": "क्लिपबोर्ड पढ़ा नहीं जा सका। टेक्स्ट को सीधे टेक्स्ट बॉक्स में पेस्ट करें।",
+  "Pasted Text": "पेस्ट किया गया टेक्स्ट",
+  "Failed to import book.": "किताब इम्पोर्ट नहीं हो सकी।",
+  "Import Pasted Text": "पेस्ट किया गया टेक्स्ट इम्पोर्ट करें",
+  "Paste an article or notes to read or listen to them like a book": "किसी लेख या नोट्स को पेस्ट करें और उन्हें किताब की तरह पढ़ें या सुनें",
+  "Text": "टेक्स्ट",
+  "Paste": "पेस्ट करें",
+  "The shared text is no longer available": "साझा किया गया टेक्स्ट अब उपलब्ध नहीं है",
+  "Shared Text": "साझा किया गया टेक्स्ट",
+  "Note Template": "नोट टेम्पलेट",
+  "Each highlight is rendered as Markdown with Nunjucks, then sent to Notion as blocks": "प्रत्येक हाइलाइट को Nunjucks के साथ Markdown के रूप में रेंडर किया जाता है, फिर ब्लॉक के रूप में Notion पर भेजा जाता है",
+  "Quotes take the highlight color, and > [!NOTE] becomes a callout": "उद्धरण हाइलाइट का रंग लेते हैं, और > [!NOTE] एक कॉलआउट बन जाता है",
+  "Variables: {{variables}}": "वेरिएबल: {{variables}}",
+  "Stable Page Numbers": "स्थिर पेज संख्याएँ",
+  "Turn off to count pages by the screens of this device": "इस डिवाइस की स्क्रीन के अनुसार पेज गिनने के लिए बंद करें",
+  "Page Flip": "पेज पलटना"
 }

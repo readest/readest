@@ -61,6 +61,18 @@ jobs:
       - name: install NDK
         run: sdkmanager "ndk;28.2.13676358"
 
+      # The emulator runner installs the system image itself and fails the job
+      # on one bad download ("Error on ZipFile unknown archive"). Installing it
+      # here with retries leaves the runner's install a no-op.
+      - name: install emulator system image
+        run: |
+          for attempt in 1 2 3; do
+            sdkmanager --install 'system-images;android-34;google_apis;x86_64' > /dev/null && exit 0
+            echo "system image install failed (attempt $attempt)"
+            sleep 15
+          done
+          exit 1
+
       - name: install dependencies
         run: pnpm install --frozen-lockfile --prefer-offline
 
@@ -72,7 +84,7 @@ jobs:
         with:
           targets: x86_64-linux-android
 
-      - uses: Swatinem/rust-cache@f0d9c3887740aee45f6153b24b3a6b815192ec16 # v2
+      - uses: Swatinem/rust-cache@c8037a86dde8214a8310e9f54a8fc61ab362aa31 # v2
         with:
           workspaces: apps/readest-app/src-tauri
 

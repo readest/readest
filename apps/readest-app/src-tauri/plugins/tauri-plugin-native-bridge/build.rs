@@ -61,6 +61,7 @@ const COMMANDS: &[&str] = &[
     "get_reading_widget_instances",
     "set_reading_widget_catalog",
     "capture_webview_region",
+    "paper_curl",
     "cover_webview_region",
     "uncover_webview_region",
     "set_selection_suppressed",

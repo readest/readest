@@ -2639,5 +2639,22 @@
   "Month": "மாதம்",
   "Year": "ஆண்டு",
   "Daily average {{time}}": "தினசரி சராசரி {{time}}",
-  "Failed to load reading statistics": "வாசிப்பு புள்ளிவிவரங்களை ஏற்ற முடியவில்லை"
+  "Failed to load reading statistics": "வாசிப்பு புள்ளிவிவரங்களை ஏற்ற முடியவில்லை",
+  "From Pasted Text": "ஒட்டிய உரையிலிருந்து",
+  "Could not read the clipboard. Paste into the text box instead.": "கிளிப்போர்டைப் படிக்க முடியவில்லை. உரைப் பெட்டியில் நேரடியாக ஒட்டவும்.",
+  "Pasted Text": "ஒட்டிய உரை",
+  "Failed to import book.": "புத்தகத்தை இறக்க முடியவில்லை.",
+  "Import Pasted Text": "ஒட்டிய உரையை இறக்கு",
+  "Paste an article or notes to read or listen to them like a book": "ஒரு கட்டுரை அல்லது குறிப்புகளை ஒட்டி, புத்தகம் போல் படிக்கவும் அல்லது கேட்கவும்",
+  "Text": "உரை",
+  "Paste": "ஒட்டு",
+  "The shared text is no longer available": "பகிரப்பட்ட உரை இனி கிடைக்கவில்லை",
+  "Shared Text": "பகிரப்பட்ட உரை",
+  "Note Template": "குறிப்பு வார்ப்புரு",
+  "Each highlight is rendered as Markdown with Nunjucks, then sent to Notion as blocks": "ஒவ்வொரு சிறப்பம்சமும் Nunjucks மூலம் Markdown ஆக உருவாக்கப்பட்டு, பின்னர் தொகுதிகளாக Notion-க்கு அனுப்பப்படும்",
+  "Quotes take the highlight color, and > [!NOTE] becomes a callout": "மேற்கோள்கள் சிறப்பம்சத்தின் நிறத்தைப் பெறும், > [!NOTE] ஒரு குறிப்புப் பெட்டியாக மாறும்",
+  "Variables: {{variables}}": "மாறிகள்: {{variables}}",
+  "Stable Page Numbers": "நிலையான பக்க எண்கள்",
+  "Turn off to count pages by the screens of this device": "இந்தச் சாதனத்தின் திரைகளின்படி பக்கங்களை எண்ண அணைக்கவும்",
+  "Page Flip": "பக்கம் புரட்டல்"
 }

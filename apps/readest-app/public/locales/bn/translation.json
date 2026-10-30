@@ -2639,5 +2639,22 @@
   "Month": "মাস",
   "Year": "বছর",
   "Daily average {{time}}": "দৈনিক গড় {{time}}",
-  "Failed to load reading statistics": "পড়ার পরিসংখ্যান লোড করা যায়নি"
+  "Failed to load reading statistics": "পড়ার পরিসংখ্যান লোড করা যায়নি",
+  "From Pasted Text": "পেস্ট করা টেক্সট থেকে",
+  "Could not read the clipboard. Paste into the text box instead.": "ক্লিপবোর্ড পড়া যায়নি। পরিবর্তে টেক্সট বক্সে পেস্ট করুন।",
+  "Pasted Text": "পেস্ট করা টেক্সট",
+  "Failed to import book.": "বই আমদানি করা যায়নি।",
+  "Import Pasted Text": "পেস্ট করা টেক্সট আমদানি করুন",
+  "Paste an article or notes to read or listen to them like a book": "একটি নিবন্ধ বা নোট পেস্ট করে বইয়ের মতো পড়ুন বা শুনুন",
+  "Text": "টেক্সট",
+  "Paste": "পেস্ট",
+  "The shared text is no longer available": "শেয়ার করা টেক্সট আর উপলব্ধ নেই",
+  "Shared Text": "শেয়ার করা টেক্সট",
+  "Note Template": "নোট টেমপ্লেট",
+  "Each highlight is rendered as Markdown with Nunjucks, then sent to Notion as blocks": "প্রতিটি হাইলাইট Nunjucks দিয়ে Markdown হিসেবে রেন্ডার হয়, তারপর ব্লক হিসেবে Notion-এ পাঠানো হয়",
+  "Quotes take the highlight color, and > [!NOTE] becomes a callout": "উদ্ধৃতিগুলো হাইলাইটের রং পায়, এবং > [!NOTE] একটি কলআউট হয়ে যায়",
+  "Variables: {{variables}}": "ভেরিয়েবল: {{variables}}",
+  "Stable Page Numbers": "স্থির পৃষ্ঠা নম্বর",
+  "Turn off to count pages by the screens of this device": "এই ডিভাইসের স্ক্রিন অনুযায়ী পৃষ্ঠা গোনার জন্য এটি বন্ধ করুন",
+  "Page Flip": "পৃষ্ঠা উল্টানো"
 }

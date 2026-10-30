@@ -27,6 +27,7 @@ const BOOKS_DIR = '/data/Books';
 const fs: Record<string, FileItem[]> = { Cache: [], Temp: [], Books: [] };
 
 const appService = {
+  isMobileApp: true,
   isIOSApp: false,
   isAndroidApp: false,
   resolveFilePath: vi.fn(async () => BOOKS_DIR),

@@ -56,7 +56,7 @@ const h = vi.hoisted(() => {
       } | null,
       bookDoc: {} as unknown,
     },
-    eventListeners: new Map<string, Set<(e: CustomEvent) => void>>(),
+    eventListeners: new Map<string, Set<(e: CustomEvent) => void | Promise<void>>>(),
   };
 });
 
@@ -150,17 +150,19 @@ vi.mock('@/utils/event', () => ({
     off: (name: string, fn: (e: CustomEvent) => void) => {
       h.eventListeners.get(name)?.delete(fn);
     },
-    dispatch: (name: string, detail: unknown) => {
+    // Awaits each listener in turn, like the real eventDispatcher.dispatch.
+    dispatch: async (name: string, detail: unknown) => {
       const listeners = h.eventListeners.get(name);
       if (!listeners) return;
       const event = new CustomEvent(name, { detail });
-      for (const fn of [...listeners]) fn(event);
+      for (const fn of [...listeners]) await fn(event);
     },
   },
 }));
 
 import { useProgressSync } from '@/app/reader/hooks/useProgressSync';
 import { SYNC_PROGRESS_INTERVAL_SEC } from '@/services/constants';
+import { getXPointerFromCFI } from '@/utils/xcfi';
 
 const flushAutoSync = async () => {
   await act(async () => {
@@ -618,6 +620,263 @@ describe('useProgressSync', () => {
     // The pending push is flushed immediately — Device A's last local position
     // reaches the cloud before the reader tears down.
     expect(pushCallCount()).toBeGreaterThanOrEqual(1);
+  });
+
+  // #7041: the server keeps its row unless the pushed updatedAt is newer, and
+  // the auto-save stamps updatedAt ~1.5s after the last turn. A close inside
+  // that window pushed the previous push's updatedAt, the push lost the tie,
+  // and the next open's forward-only pull jumped back to the old position.
+  test('sync-book-progress saves the position before pushing it', async () => {
+    const order: string[] = [];
+    const mutable = h as { view: typeof h.view | null };
+    const view = h.view;
+    let finishSave!: () => void;
+    // The close clears the view state while the save is still on disk; the
+    // push must not need the view.
+    h.eventListeners.set(
+      'flush-progress-save',
+      new Set([
+        () => {
+          order.push('save');
+          mutable.view = null;
+          return new Promise<void>((resolve) => {
+            finishSave = () => {
+              order.push('saved');
+              resolve();
+            };
+          });
+        },
+      ]),
+    );
+    h.syncConfigsMock.mockImplementation(async (...args: unknown[]) => {
+      if (args[3] === 'push') order.push('push');
+    });
+    const { rerender } = renderHook(() => useProgressSync('h1-view1'));
+    await advance(0);
+
+    h.state.progress = { location: 'cfi-loc-back' };
+    await act(async () => {
+      rerender();
+      await flushMicrotasks();
+    });
+    await act(async () => {
+      h.eventListeners
+        .get('sync-book-progress')
+        ?.forEach(
+          (fn) =>
+            void fn(new CustomEvent('sync-book-progress', { detail: { bookKey: 'h1-view1' } })),
+        );
+      await flushMicrotasks();
+    });
+    // Nothing is pushed while the save is still being written.
+    expect(order).toEqual(['save']);
+    await act(async () => {
+      finishSave();
+      await flushMicrotasks();
+    });
+
+    mutable.view = view;
+    expect(order).toEqual(['save', 'saved', 'push']);
+    h.syncConfigsMock.mockImplementation(async () => {});
+  });
+
+  // The debounce can expire while the save is on disk; that push would carry
+  // the old updatedAt and be dropped, leaving nothing to push once saved.
+  test('a debounced push that comes due during the save waits for it', async () => {
+    const order: string[] = [];
+    let finishSave!: () => void;
+    h.eventListeners.set(
+      'flush-progress-save',
+      new Set([
+        () => {
+          order.push('save');
+          return new Promise<void>((resolve) => {
+            finishSave = () => {
+              order.push('saved');
+              resolve();
+            };
+          });
+        },
+      ]),
+    );
+    h.syncConfigsMock.mockImplementation(async (...args: unknown[]) => {
+      if (args[3] === 'push') order.push('push');
+    });
+    const { rerender } = renderHook(() => useProgressSync('h1-view1'));
+    await advance(0);
+
+    h.state.progress = { location: 'cfi-loc-back' };
+    await act(async () => {
+      rerender();
+      await flushMicrotasks();
+    });
+    await act(async () => {
+      h.eventListeners
+        .get('sync-book-progress')
+        ?.forEach(
+          (fn) =>
+            void fn(new CustomEvent('sync-book-progress', { detail: { bookKey: 'h1-view1' } })),
+        );
+      await flushMicrotasks();
+    });
+    await advance(SYNC_PROGRESS_INTERVAL_SEC * 1000 + 100);
+    expect(order).toEqual(['save']);
+    await act(async () => {
+      finishSave();
+      await flushMicrotasks();
+    });
+
+    expect(order).toEqual(['save', 'saved', 'push']);
+    h.syncConfigsMock.mockImplementation(async () => {});
+  });
+
+  // The manual Sync pull must not start until the flushed push has reached the
+  // server: a pull answered first would bring back the old, further position.
+  test('sync-book-progress pulls only after the flushed push completes', async () => {
+    const order: string[] = [];
+    let finishPush!: () => void;
+    const { rerender } = renderHook(() => useProgressSync('h1-view1'));
+    await advance(0);
+    h.syncConfigsMock.mockImplementation(async (...args: unknown[]) => {
+      order.push(args[3] as string);
+      if (args[3] === 'push') {
+        await new Promise<void>((resolve) => {
+          finishPush = () => {
+            order.push('pushed');
+            resolve();
+          };
+        });
+      }
+    });
+
+    h.state.progress = { location: 'cfi-loc-back' };
+    await act(async () => {
+      rerender();
+      await flushMicrotasks();
+    });
+    await act(async () => {
+      h.eventListeners
+        .get('sync-book-progress')
+        ?.forEach(
+          (fn) =>
+            void fn(new CustomEvent('sync-book-progress', { detail: { bookKey: 'h1-view1' } })),
+        );
+      await flushMicrotasks();
+    });
+    expect(order).toEqual(['push']);
+    await act(async () => {
+      finishPush();
+      await flushMicrotasks();
+    });
+    expect(order).toEqual(['push', 'pushed', 'pull']);
+    h.syncConfigsMock.mockImplementation(async () => {});
+  });
+
+  // Coming back before the deactivation's save finished used to cancel the
+  // push it was about to flush, leaving the last position unpushed.
+  test('a quick return to the app keeps the deactivation push', async () => {
+    let finishSave!: () => void;
+    h.eventListeners.set(
+      'flush-progress-save',
+      new Set([
+        () =>
+          new Promise<void>((resolve) => {
+            finishSave = resolve;
+          }),
+      ]),
+    );
+    const { rerender } = renderHook(() => useProgressSync('h1-view1'));
+    await advance(0);
+    h.state.progress = { location: 'cfi-loc-back' };
+    await act(async () => {
+      rerender();
+      await flushMicrotasks();
+    });
+    h.syncConfigsMock.mockClear();
+
+    const visibility = vi.spyOn(document, 'visibilityState', 'get');
+    try {
+      visibility.mockReturnValue('hidden');
+      await act(async () => {
+        document.dispatchEvent(new Event('visibilitychange'));
+        await flushMicrotasks();
+      });
+      visibility.mockReturnValue('visible');
+      await act(async () => {
+        document.dispatchEvent(new Event('visibilitychange'));
+        await flushMicrotasks();
+      });
+      await act(async () => {
+        finishSave();
+        await flushMicrotasks();
+      });
+      expect(pushCallCount()).toBe(1);
+      expect(pullCallCount()).toBe(1);
+      const kinds = h.syncConfigsMock.mock.calls.map((c) => (c as unknown[])[3]);
+      expect(kinds).toEqual(['push', 'pull']);
+    } finally {
+      visibility.mockRestore();
+    }
+  });
+
+  // #7041: closing the book destroys its views before the close-time push, so
+  // the XPointer can no longer come from a rendered section. Skipping it left
+  // the previous push's XPointer beside the new location, and the next pull
+  // (which takes the further of the two) jumped back to the old position.
+  test('a push after the views are gone converts the XPointer from the book', async () => {
+    h.book.format = 'EPUB';
+    const config = h.config as { xpointer?: string };
+    config.xpointer = '/body/DocFragment[20]/body/p[3]';
+    vi.mocked(getXPointerFromCFI).mockResolvedValueOnce({
+      xpointer: '/body/DocFragment[7]/body/p[1]',
+    });
+    try {
+      const { rerender } = renderHook(() => useProgressSync('h1-view1'));
+      await advance(0);
+      h.state.progress = { location: 'cfi-loc-back' };
+      await act(async () => {
+        rerender();
+        await flushMicrotasks();
+      });
+      await flushAutoSync();
+
+      expect(getXPointerFromCFI).toHaveBeenCalledWith(
+        'cfi-loc',
+        undefined,
+        0,
+        h.state.bookDoc,
+        'EPUB',
+      );
+      expect(config.xpointer).toBe('/body/DocFragment[7]/body/p[1]');
+    } finally {
+      delete config.xpointer;
+    }
+  });
+
+  // Same jump as above when the conversion itself fails: the previous push's
+  // XPointer would go out beside the new location.
+  test('a push whose XPointer conversion fails does not carry the previous XPointer', async () => {
+    h.book.format = 'EPUB';
+    const config = h.config as { xpointer?: string };
+    config.xpointer = '/body/DocFragment[20]/body/p[3]';
+    vi.mocked(getXPointerFromCFI).mockRejectedValueOnce(new Error('no section'));
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      const { rerender } = renderHook(() => useProgressSync('h1-view1'));
+      await advance(0);
+      h.state.progress = { location: 'cfi-loc-back' };
+      await act(async () => {
+        rerender();
+        await flushMicrotasks();
+      });
+      await flushAutoSync();
+
+      expect(pushCallCount()).toBe(1);
+      expect(config.xpointer).toBe('');
+    } finally {
+      warn.mockRestore();
+      delete config.xpointer;
+    }
   });
 });
 

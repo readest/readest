@@ -48,6 +48,9 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
   const [showPaginationButtons, setShowPaginationButtons] = useState(
     viewSettings.showPaginationButtons,
   );
+  const [stablePageNumbers, setStablePageNumbers] = useState(
+    viewSettings.stablePageNumbers ?? true,
+  );
   const [isDisableClick, setIsDisableClick] = useState(viewSettings.disableClick);
   const [isDisableSwipe, setIsDisableSwipe] = useState(viewSettings.disableSwipe);
   const [disablePullDownToBookmark, setDisablePullDownToBookmark] = useState(
@@ -110,7 +113,11 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
           { value: 'curl', label: _('Page Curl') },
         ]
       : []),
+    // Only the captured and native turns draw the flip.
+    ...(isTauriAppPlatform() ? [{ value: 'flip', label: _('Page Flip') }] : []),
   ];
+  // On the web a synced flip turns as a curl.
+  const shownTurnStyle = pageTurnStyle === 'flip' && !isTauriAppPlatform() ? 'curl' : pageTurnStyle;
 
   const einkAutoRefreshIntervalOptions = [
     { value: '0', label: _('Off') },
@@ -137,6 +144,7 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
       scrollingOverlap: setScrollingOverlap,
       hideScrollbar: setHideScrollbar,
       showPaginationButtons: setShowPaginationButtons,
+      stablePageNumbers: setStablePageNumbers,
       disableClick: setIsDisableClick,
       disableSwipe: setIsDisableSwipe,
       disablePullDownToBookmark: setDisablePullDownToBookmark,
@@ -228,6 +236,12 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showPaginationButtons]);
+
+  useEffect(() => {
+    if (stablePageNumbers === (viewSettings.stablePageNumbers ?? true)) return;
+    saveViewSettings(envConfig, bookKey, 'stablePageNumbers', stablePageNumbers, false, false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stablePageNumbers]);
 
   useEffect(() => {
     saveViewSettings(envConfig, bookKey, 'disableClick', isDisableClick, false, false);
@@ -536,6 +550,13 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
           onChange={() => setShowPaginationButtons(!showPaginationButtons)}
           data-setting-id='settings.control.showPaginationButtons'
         />
+        <SettingsSwitchRow
+          label={_('Stable Page Numbers')}
+          description={_('Turn off to count pages by the screens of this device')}
+          checked={stablePageNumbers}
+          onChange={() => setStablePageNumbers(!stablePageNumbers)}
+          data-setting-id='settings.control.stablePageNumbers'
+        />
       </BoxedList>
 
       <PageTurnerSettings
@@ -610,7 +631,7 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
             // A synced slide/curl setting from another device still reads as
             // push here when this engine cannot animate it.
             value={
-              turnStyleOptions.some((opt) => opt.value === pageTurnStyle) ? pageTurnStyle : 'push'
+              turnStyleOptions.some((opt) => opt.value === shownTurnStyle) ? shownTurnStyle : 'push'
             }
             onChange={(e) => setPageTurnStyle(e.target.value as PageTurnStyle)}
             ariaLabel={_('Animation Style')}

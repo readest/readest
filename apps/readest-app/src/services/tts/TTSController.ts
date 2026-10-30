@@ -43,6 +43,7 @@ import {
   TTSWordOffset,
 } from './wordHighlight';
 import {
+  audioType,
   findNarratedSection,
   hasMediaOverlays,
   loadMediaOverlaySection,
@@ -667,7 +668,9 @@ export class TTSController extends EventTarget {
         resolveUrl: async (href) => {
           const appService = this.appService!;
           if (appService.appPlatform !== 'tauri' || appService.isMobileApp) return null;
-          return convertFileSrc(await appService.resolveFilePath(href, 'Books'));
+          const path = await appService.resolveFilePath(href, 'Books');
+          const { getLocalMediaUrl } = await import('@/services/audiobook/mediaProxy');
+          return (await getLocalMediaUrl(path, audioType(href))) ?? convertFileSrc(path);
         },
         resolvePath: async (href) => await this.appService!.resolveFilePath(href, 'Books'),
       });
@@ -1614,13 +1617,30 @@ export class TTSController extends EventTarget {
     }
   }
 
-  async #handleNavigationWithoutSSML(initSection: () => Promise<boolean>, isPlaying: boolean) {
+  // Stepping back into a section starts at its end: its last paragraph, or by
+  // mark its last sentence, rather than its opening (#7065). A closing block
+  // with nothing to speak (a "***" divider) is passed over, or playback would
+  // move straight on to the section it came from. Paused, the landing spot is
+  // shown the way a step back within a section shows it.
+  #fromEnd(byMark: boolean, paused: boolean): string | undefined {
+    const tts = this.#getTts();
+    let last: string | undefined;
+    for (let ssml = tts?.next(); ssml; ssml = tts?.next()) last = ssml;
+    while (last && !parseSSMLMarks(last).marks.length) last = tts?.prev();
+    const mark = byMark && last ? parseSSMLMarks(last).marks.at(-1) : undefined;
+    const ssml = mark && tts?.setMark(mark.name) ? tts.resume() : last;
+    if (paused && ssml) this.dispatchSpeakMark(parseSSMLMarks(ssml).marks[0]);
+    return ssml;
+  }
+
+  async #handleNavigationWithoutSSML(
+    initSection: () => Promise<boolean>,
+    isPlaying: boolean,
+    read = () => this.#getTts()?.start(),
+  ) {
     if (await initSection()) {
-      if (isPlaying) {
-        this.#speak(this.#getTts()?.start());
-      } else {
-        this.#getTts()?.start();
-      }
+      const ssml = read();
+      if (isPlaying) this.#speak(ssml);
     } else {
       // No adjacent section in this direction: the session has run out of
       // content (end of book on forward, start of book on backward).
@@ -2185,7 +2205,11 @@ export class TTSController extends EventTarget {
         : undefined
       : tts?.prev(!isPlaying);
     if (!ssml) {
-      await this.#handleNavigationWithoutSSML(() => this.#initTTSForPrevSection(), isPlaying);
+      await this.#handleNavigationWithoutSSML(
+        () => this.#initTTSForPrevSection(),
+        isPlaying,
+        () => this.#fromEnd(byMark, !isPlaying),
+      );
     } else {
       await this.#handleNavigationWithSSML(ssml, isPlaying);
     }

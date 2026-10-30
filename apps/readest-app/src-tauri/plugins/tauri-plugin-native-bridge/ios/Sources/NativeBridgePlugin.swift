@@ -427,6 +427,8 @@ class WebViewLifecycleManager: NSObject {
   private var isMonitoring = false
   private var lastBackgroundTime: Date?
   private var backgroundTimeThreshold: TimeInterval = 180.0
+  /// Called when the page is lost or replaced by a new document.
+  var onDocumentChange: (() -> Void)?
 
   func startMonitoring(webView: WKWebView) {
     self.webView = webView
@@ -554,6 +556,7 @@ extension WebViewLifecycleManager: WKNavigationDelegate {
 
   func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
     logger.error("WebViewLifecycleManager: WebContent process TERMINATED!️")
+    onDocumentChange?()
     recoverWebView(webView, reason: "process_terminated")
 
     if let original = originalNavigationDelegate,
@@ -614,6 +617,7 @@ extension WebViewLifecycleManager: WKNavigationDelegate {
   }
 
   func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
+    onDocumentChange?()
     if let original = originalNavigationDelegate,
       original.responds(to: #selector(webView(_:didCommit:)))
     {
@@ -655,6 +659,7 @@ class NativeBridgePlugin: Plugin {
   // interrupted turn from removing the next turn's cover.
   private var turnCoverView: UIView?
   private var turnCoverToken: Int = 0
+  private var nativePaper: NativePaperTurn?
   private var authSession: ASWebAuthenticationSession?
   private var currentOrientationMask: UIInterfaceOrientationMask = .all
   private var originalDelegate: UIApplicationDelegate?
@@ -696,6 +701,7 @@ class NativeBridgePlugin: Plugin {
 
     webViewLifecycleManager = WebViewLifecycleManager()
     webViewLifecycleManager?.startMonitoring(webView: webview)
+    webViewLifecycleManager?.onDocumentChange = { [weak self] in self?.nativePaper?.reset() }
     logger.log("NativeBridgePlugin: WebView lifecycle monitoring activated")
 
     // Forward Apple Pencil double-tap / squeeze gestures as native keys for
@@ -835,6 +841,8 @@ class NativeBridgePlugin: Plugin {
           "groupId": save.groupId,
           "groupName": save.groupName,
           "htmlFile": save.htmlFile,
+          "textFile": save.textFile,
+          "title": save.title,
           "addedAt": save.addedAt,
         ]
       }
@@ -1931,10 +1939,11 @@ class NativeBridgePlugin: Plugin {
     invoke.resolve()
   }
 
-  /// Read + delete a page-HTML file the Share Extension captured from
-  /// the user's signed-in Safari tab (App Group `SharedClips/`). Resolves
-  /// `{ html }`, or `{}` when the file is missing/unreadable — the JS
-  /// caller falls back to the `clip_url` re-fetch.
+  /// Read + delete a file the Share Extension wrote to App Group
+  /// `SharedClips/`: page HTML captured from the user's signed-in Safari
+  /// tab, or shared text. Resolves `{ html }` with the file's text, or `{}`
+  /// when the file is missing/unreadable — for HTML the JS caller falls
+  /// back to the `clip_url` re-fetch.
   @objc public func read_share_clip_html(_ invoke: Invoke) {
     let args: ReadShareClipHtmlArgs
     do {
@@ -2192,6 +2201,24 @@ class NativeBridgePlugin: Plugin {
       self.turnCoverToken += 1
       self.turnCoverView = cover
       invoke.resolve(["token": self.turnCoverToken])
+    }
+  }
+
+  /// Native paper curl; see NativePaperTurn. Only page identities, gesture
+  /// data and acknowledgements cross this command, never page pixels.
+  @objc public func paper_curl(_ invoke: Invoke) {
+    guard let args = try? invoke.parseArgs(NativePaperArgs.self) else {
+      return invoke.reject("Failed to parse arguments")
+    }
+    DispatchQueue.main.async { [weak self] in
+      guard let self, let webView = self.webView else {
+        return invoke.reject("WebView not available")
+      }
+      let paper = self.nativePaper ?? NativePaperTurn(webView: webView)
+      self.nativePaper = paper
+      paper.command(args) { result, error in
+        if let error { invoke.reject(error) } else { invoke.resolve(result ?? [:]) }
+      }
     }
   }
 

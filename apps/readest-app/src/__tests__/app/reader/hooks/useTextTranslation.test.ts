@@ -1,5 +1,5 @@
-import { describe, it, expect, vi } from 'vitest';
-import { renderHook, waitFor } from '@testing-library/react';
+import { afterEach, describe, it, expect, vi } from 'vitest';
+import { cleanup, renderHook, waitFor } from '@testing-library/react';
 import {
   createTranslationTargetNode,
   getTranslationContextNodes,
@@ -308,6 +308,11 @@ describe('createTranslationTargetNode', () => {
 });
 
 describe('useTextTranslation', () => {
+  // Without vitest globals, Testing Library does not unmount between tests. A
+  // hook left mounted keeps its 50 ms batch timer alive past the file's jsdom
+  // teardown, where it throws `Node is not defined` (#7125).
+  afterEach(cleanup);
+
   it('sends the translator the base text without the ruby readings', async () => {
     let onIntersect: IntersectionObserverCallback = () => {};
     vi.stubGlobal(
@@ -332,6 +337,173 @@ describe('useTextTranslation', () => {
 
     await waitFor(() => expect(translate).toHaveBeenCalled());
     expect(translate).toHaveBeenCalledWith(['私は漢字を読む。']);
+    vi.unstubAllGlobals();
+  });
+
+  it('drops the DOM work when a translation resolves after unmount', async () => {
+    let resolveTranslation: ((texts: string[]) => void) | undefined;
+    translate.mockImplementationOnce(
+      () =>
+        new Promise<string[]>((resolve) => {
+          resolveTranslation = resolve;
+        }),
+    );
+    let onIntersect: IntersectionObserverCallback = () => {};
+    vi.stubGlobal(
+      'IntersectionObserver',
+      class {
+        constructor(callback: IntersectionObserverCallback) {
+          onIntersect = callback;
+        }
+        observe() {}
+        disconnect() {}
+      },
+    );
+    const view = document.createElement('div');
+    view.innerHTML = '<p>Source paragraph.</p>';
+    const paragraph = view.querySelector('p')!;
+    document.body.appendChild(view);
+
+    const { unmount } = renderHook(() => useTextTranslation('book-1', view));
+    onIntersect(
+      [{ isIntersecting: true, target: paragraph } as unknown as IntersectionObserverEntry],
+      {} as IntersectionObserver,
+    );
+    await waitFor(() => expect(translate).toHaveBeenCalled());
+
+    unmount();
+    resolveTranslation!(['Translated paragraph.']);
+    // Long enough for a batch timer scheduled after the cleanup to run.
+    await new Promise((resolve) => setTimeout(resolve, 120));
+
+    expect(paragraph.querySelector('.translation-target')).toBeNull();
+    expect(paragraph.classList.contains('translation-source')).toBe(false);
+
+    view.remove();
+    vi.unstubAllGlobals();
+  });
+
+  it('cancels a queued batch on unmount when translation was enabled after mount', async () => {
+    const getViewSettings = readerState.getViewSettings;
+    let settings = { ...viewSettings, translationEnabled: false };
+    readerState.getViewSettings = () => settings;
+    let onIntersect: IntersectionObserverCallback = () => {};
+    vi.stubGlobal(
+      'IntersectionObserver',
+      class {
+        constructor(callback: IntersectionObserverCallback) {
+          onIntersect = callback;
+        }
+        observe() {}
+        disconnect() {}
+      },
+    );
+    const view = document.createElement('div');
+    view.innerHTML = '<p>Source paragraph.</p>';
+    const paragraph = view.querySelector('p')!;
+    document.body.appendChild(view);
+
+    // Off at mount, so the `[view]` effect registers no cleanup.
+    const { rerender, unmount } = renderHook(() => useTextTranslation('book-1', view));
+    settings = { ...viewSettings, translationEnabled: true };
+    rerender();
+    onIntersect(
+      [{ isIntersecting: true, target: paragraph } as unknown as IntersectionObserverEntry],
+      {} as IntersectionObserver,
+    );
+    await waitFor(() => expect(translate).toHaveBeenCalled());
+    // Let the translation resolve and queue its batch, well inside the 50 ms window.
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    unmount();
+    await new Promise((resolve) => setTimeout(resolve, 120));
+
+    expect(paragraph.querySelector('.translation-target')).toBeNull();
+
+    view.remove();
+    readerState.getViewSettings = getViewSettings;
+    vi.unstubAllGlobals();
+  });
+
+  it('disconnects its observers on unmount when translation was enabled after mount', () => {
+    const getViewSettings = readerState.getViewSettings;
+    let settings = { ...viewSettings, translationEnabled: false };
+    readerState.getViewSettings = () => settings;
+    const disconnect = vi.fn();
+    vi.stubGlobal(
+      'IntersectionObserver',
+      class {
+        observe() {}
+        disconnect = disconnect;
+      },
+    );
+    const view = document.createElement('div');
+    view.innerHTML = '<p>Source paragraph.</p>';
+    document.body.appendChild(view);
+
+    // Off at mount, so the `[view]` effect registers no cleanup.
+    const { rerender, unmount } = renderHook(() => useTextTranslation('book-1', view));
+    settings = { ...viewSettings, translationEnabled: true };
+    rerender();
+    unmount();
+
+    expect(disconnect).toHaveBeenCalled();
+
+    view.remove();
+    readerState.getViewSettings = getViewSettings;
+    vi.unstubAllGlobals();
+  });
+
+  it('starts no queued translations after unmount when translation was enabled after mount', async () => {
+    const getViewSettings = readerState.getViewSettings;
+    let settings = { ...viewSettings, translationEnabled: false };
+    readerState.getViewSettings = () => settings;
+    const original = translate.getMockImplementation()!;
+    const resolvers: Array<() => void> = [];
+    translate.mockImplementation(
+      (texts: string[]) =>
+        new Promise<string[]>((resolve) => {
+          resolvers.push(() => resolve(texts.map(() => 'Translated.')));
+        }),
+    );
+    let onIntersect: IntersectionObserverCallback = () => {};
+    vi.stubGlobal(
+      'IntersectionObserver',
+      class {
+        constructor(callback: IntersectionObserverCallback) {
+          onIntersect = callback;
+        }
+        observe() {}
+        disconnect() {}
+      },
+    );
+    const view = document.createElement('div');
+    // More paragraphs than the 5 in flight, so some wait in the queue.
+    view.innerHTML = Array.from({ length: 8 }, (_, i) => `<p>Paragraph ${i}.</p>`).join('');
+    document.body.appendChild(view);
+    const before = translate.mock.calls.length;
+
+    // Off at mount, so the `[view]` effect registers no cleanup.
+    const { rerender, unmount } = renderHook(() => useTextTranslation('book-1', view));
+    settings = { ...viewSettings, translationEnabled: true };
+    rerender();
+    onIntersect(
+      Array.from(view.querySelectorAll('p')).map(
+        (target) => ({ isIntersecting: true, target }) as unknown as IntersectionObserverEntry,
+      ),
+      {} as IntersectionObserver,
+    );
+    expect(translate.mock.calls.length - before).toBe(5);
+
+    unmount();
+    resolvers.forEach((resolve) => resolve());
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(translate.mock.calls.length - before).toBe(5);
+
+    translate.mockImplementation(original);
+    view.remove();
+    readerState.getViewSettings = getViewSettings;
     vi.unstubAllGlobals();
   });
 });

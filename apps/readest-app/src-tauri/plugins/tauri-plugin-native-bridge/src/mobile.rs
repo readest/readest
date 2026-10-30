@@ -586,10 +586,17 @@ impl<R: Runtime> NativeBridge<R> {
             .map_err(|e| crate::Error::NativeBridgeError(format!("invalid base64 PNG: {e}")))
     }
 
+    pub fn paper_curl(&self, payload: serde_json::Value) -> crate::Result<serde_json::Value> {
+        self.0
+            .run_mobile_plugin("paper_curl", payload)
+            .map_err(Into::into)
+    }
+
     /// Native cover for the two-column page curl (#6106); see the Swift
     /// side. Android has no implementation yet and rejects.
     pub fn cover_webview_region(
         &self,
+        _window: &tauri::WebviewWindow<R>,
         payload: CaptureWebviewRegionRequest,
     ) -> crate::Result<CoverWebviewRegionResponse> {
         self.0
@@ -599,6 +606,7 @@ impl<R: Runtime> NativeBridge<R> {
 
     pub fn uncover_webview_region(
         &self,
+        _window: &tauri::WebviewWindow<R>,
         payload: UncoverWebviewRegionRequest,
     ) -> crate::Result<()> {
         self.0

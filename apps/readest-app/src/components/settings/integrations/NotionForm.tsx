@@ -4,10 +4,15 @@ import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useSettingsStore } from '@/store/settingsStore';
 import { eventDispatcher } from '@/utils/event';
-import { normalizeNotionObjectId, NotionClient } from '@/services/notion';
+import {
+  DEFAULT_NOTION_NOTE_TEMPLATE,
+  normalizeNotionObjectId,
+  NotionClient,
+} from '@/services/notion';
+import type { NotionSettings } from '@/types/settings';
+import { validateNoteTemplate } from '@/utils/note';
 import SubPageHeader from '../SubPageHeader';
-import { SectionTitle, SettingLabel } from '../primitives';
-import { Toggle } from '@/components/primitives/toggle';
+import { BoxedList, SectionTitle, SettingsSwitchRow, Tips } from '../primitives';
 
 interface NotionFormProps {
   onBack: () => void;
@@ -21,6 +26,10 @@ const NotionForm: React.FC<NotionFormProps> = ({ onBack }) => {
   const [accessToken, setAccessToken] = useState('');
   const [databaseId, setDatabaseId] = useState('');
   const [isConnecting, setIsConnecting] = useState(false);
+  const [template, setTemplate] = useState(
+    settings.notion?.customTemplate || DEFAULT_NOTION_NOTE_TEMPLATE,
+  );
+  const [templateError, setTemplateError] = useState('');
 
   const isConfigured = !!settings.notion?.accessToken && !!settings.notion?.databaseId;
 
@@ -126,6 +135,31 @@ const NotionForm: React.FC<NotionFormProps> = ({ onBack }) => {
     await saveSettings(envConfig, newSettings);
   };
 
+  const saveNotion = async (patch: Partial<NotionSettings>) => {
+    const newSettings = { ...settings, notion: { ...settings.notion, ...patch } };
+    setSettings(newSettings);
+    await saveSettings(envConfig, newSettings);
+  };
+
+  // An editor value that doesn't compile is never saved; the last valid
+  // template stays in the settings.
+  const handleToggleTemplate = () =>
+    saveNotion({
+      useCustomTemplate: !settings.notion?.useCustomTemplate,
+      ...(validateNoteTemplate(template).isValid ? { customTemplate: template } : {}),
+    });
+
+  const handleSaveTemplate = async (value: string) => {
+    const { isValid, error } = validateNoteTemplate(value);
+    setTemplateError(isValid ? '' : (error ?? ''));
+    if (isValid) await saveNotion({ customTemplate: value });
+  };
+
+  const handleResetTemplate = () => {
+    setTemplate(DEFAULT_NOTION_NOTE_TEMPLATE);
+    handleSaveTemplate(DEFAULT_NOTION_NOTE_TEMPLATE);
+  };
+
   const lastSyncedAt = settings.notion?.lastSyncedAt ?? 0;
   const lastSyncedLabel = lastSyncedAt ? new Date(lastSyncedAt).toLocaleString() : _('Never');
 
@@ -158,24 +192,66 @@ const NotionForm: React.FC<NotionFormProps> = ({ onBack }) => {
 
       {isConfigured ? (
         <div className='space-y-5'>
-          <div className='card eink-bordered border-base-200 bg-base-100 border'>
-            <div className='divide-base-200 divide-y'>
-              <label className='flex min-h-14 items-center justify-between px-4'>
-                <SettingLabel>{_('Sync Enabled')}</SettingLabel>
-                <Toggle
-                  checked={settings.notion?.enabled ?? false}
-                  onChange={handleToggleEnabled}
-                />
-              </label>
-              <label className='flex min-h-14 items-center justify-between px-4'>
-                <SettingLabel>{_('Include Chapter Heading')}</SettingLabel>
-                <Toggle
-                  checked={settings.notion?.includeChapterHeading ?? true}
-                  onChange={handleToggleChapterHeading}
-                />
-              </label>
+          <BoxedList>
+            <SettingsSwitchRow
+              label={_('Sync Enabled')}
+              checked={settings.notion?.enabled ?? false}
+              onChange={handleToggleEnabled}
+            />
+            <SettingsSwitchRow
+              label={_('Include Chapter Heading')}
+              checked={settings.notion?.includeChapterHeading ?? true}
+              onChange={handleToggleChapterHeading}
+              disabled={settings.notion?.useCustomTemplate}
+            />
+            <SettingsSwitchRow
+              label={_('Use Custom Template')}
+              checked={settings.notion?.useCustomTemplate ?? false}
+              onChange={handleToggleTemplate}
+            />
+          </BoxedList>
+
+          {settings.notion?.useCustomTemplate && (
+            <div className='space-y-1.5'>
+              <div className='flex items-center justify-between'>
+                <SectionTitle as='label' htmlFor='notion-template' className='block'>
+                  {_('Note Template')}
+                </SectionTitle>
+                <button
+                  type='button'
+                  onClick={handleResetTemplate}
+                  className='min-h-11 min-w-11 cursor-pointer text-sm focus-visible:outline-2 focus-visible:outline-offset-2'
+                >
+                  {_('Reset Template')}
+                </button>
+              </div>
+              <textarea
+                id='notion-template'
+                dir='ltr'
+                rows={10}
+                spellCheck='false'
+                className='textarea eink-bordered settings-content w-full font-mono text-xs focus:outline-hidden'
+                value={template}
+                onChange={(e) => setTemplate(e.target.value)}
+                onBlur={() => handleSaveTemplate(template)}
+              />
+              {templateError && <p className='text-error text-xs'>{templateError}</p>}
+              <Tips>
+                <li>
+                  {_(
+                    'Each highlight is rendered as Markdown with Nunjucks, then sent to Notion as blocks',
+                  )}
+                </li>
+                <li>{_('Quotes take the highlight color, and > [!NOTE] becomes a callout')}</li>
+                <li>
+                  {_('Variables: {{variables}}', {
+                    variables:
+                      'title, chapter.title, annotation.text, annotation.note, annotation.color, annotation.style, annotation.page, annotation.timestamp, annotation.link, annotation.appLink',
+                  })}
+                </li>
+              </Tips>
             </div>
-          </div>
+          )}
 
           <div className='flex justify-end'>
             <button

@@ -2775,5 +2775,22 @@
   "Month": "Mesec",
   "Year": "Leto",
   "Daily average {{time}}": "Dnevno povprečje {{time}}",
-  "Failed to load reading statistics": "Statistike branja ni bilo mogoče naložiti"
+  "Failed to load reading statistics": "Statistike branja ni bilo mogoče naložiti",
+  "From Pasted Text": "Iz prilepljenega besedila",
+  "Could not read the clipboard. Paste into the text box instead.": "Odložišča ni bilo mogoče prebrati. Besedilo prilepite v polje z besedilom.",
+  "Pasted Text": "Prilepljeno besedilo",
+  "Failed to import book.": "Uvoz knjige ni uspel.",
+  "Import Pasted Text": "Uvozi prilepljeno besedilo",
+  "Paste an article or notes to read or listen to them like a book": "Prilepite članek ali zapiske, da jih berete ali poslušate kot knjigo",
+  "Text": "Besedilo",
+  "Paste": "Prilepi",
+  "The shared text is no longer available": "Deljeno besedilo ni več na voljo",
+  "Shared Text": "Deljeno besedilo",
+  "Note Template": "Predloga opombe",
+  "Each highlight is rendered as Markdown with Nunjucks, then sent to Notion as blocks": "Vsak poudarek se z Nunjucks upodobi kot Markdown in nato pošlje v Notion kot bloki",
+  "Quotes take the highlight color, and > [!NOTE] becomes a callout": "Citati prevzamejo barvo poudarka, > [!NOTE] pa postane opomba",
+  "Variables: {{variables}}": "Spremenljivke: {{variables}}",
+  "Stable Page Numbers": "Stalne številke strani",
+  "Turn off to count pages by the screens of this device": "Izklopite za štetje strani po zaslonih te naprave",
+  "Page Flip": "Obračanje strani"
 }

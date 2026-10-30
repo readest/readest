@@ -2571,5 +2571,22 @@
   "Month": "月",
   "Year": "年",
   "Daily average {{time}}": "日均 {{time}}",
-  "Failed to load reading statistics": "無法載入閱讀統計"
+  "Failed to load reading statistics": "無法載入閱讀統計",
+  "From Pasted Text": "從貼上的文字",
+  "Could not read the clipboard. Paste into the text box instead.": "無法讀取剪貼簿，請直接貼到文字方塊中。",
+  "Pasted Text": "貼上的文字",
+  "Failed to import book.": "匯入書籍失敗。",
+  "Import Pasted Text": "匯入貼上的文字",
+  "Paste an article or notes to read or listen to them like a book": "貼上文章或筆記，像書一樣閱讀或聆聽",
+  "Text": "文字",
+  "Paste": "貼上",
+  "The shared text is no longer available": "分享的文字已無法取得",
+  "Shared Text": "分享的文字",
+  "Note Template": "筆記範本",
+  "Each highlight is rendered as Markdown with Nunjucks, then sent to Notion as blocks": "每則螢光標記會以 Nunjucks 轉為 Markdown，再以區塊形式傳送到 Notion",
+  "Quotes take the highlight color, and > [!NOTE] becomes a callout": "引文會套用螢光標記的顏色，> [!NOTE] 會變成標註區塊",
+  "Variables: {{variables}}": "變數：{{variables}}",
+  "Stable Page Numbers": "穩定頁碼",
+  "Turn off to count pages by the screens of this device": "關閉後依本裝置的實際螢幕數計算頁碼",
+  "Page Flip": "翻書"
 }

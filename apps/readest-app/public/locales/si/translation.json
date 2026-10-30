@@ -2639,5 +2639,22 @@
   "Month": "මාසය",
   "Year": "වසර",
   "Daily average {{time}}": "දෛනික සාමාන්‍යය {{time}}",
-  "Failed to load reading statistics": "කියවීමේ සංඛ්‍යාලේඛන පූරණය කළ නොහැකි විය"
+  "Failed to load reading statistics": "කියවීමේ සංඛ්‍යාලේඛන පූරණය කළ නොහැකි විය",
+  "From Pasted Text": "ඇලවූ පෙළෙන්",
+  "Could not read the clipboard. Paste into the text box instead.": "ක්ලිප්බෝඩය කියවිය නොහැකි විය. ඒ වෙනුවට පෙළ කොටුවට අලවන්න.",
+  "Pasted Text": "ඇලවූ පෙළ",
+  "Failed to import book.": "පොත ආයාත කිරීම අසාර්ථක විය.",
+  "Import Pasted Text": "ඇලවූ පෙළ ආයාත කරන්න",
+  "Paste an article or notes to read or listen to them like a book": "ලිපියක් හෝ සටහන් අලවා පොතක් මෙන් කියවන්න හෝ අසන්න",
+  "Text": "පෙළ",
+  "Paste": "අලවන්න",
+  "The shared text is no longer available": "බෙදාගත් පෙළ තවදුරටත් ලබා ගත නොහැක",
+  "Shared Text": "බෙදාගත් පෙළ",
+  "Note Template": "සටහන් අච්චුව",
+  "Each highlight is rendered as Markdown with Nunjucks, then sent to Notion as blocks": "සෑම උද්දීපනයක්ම Nunjucks සමඟ Markdown ලෙස සකසා, පසුව Notion වෙත කොටස් ලෙස යවනු ලැබේ",
+  "Quotes take the highlight color, and > [!NOTE] becomes a callout": "උපුටා දැක්වීම් උද්දීපනයේ වර්ණය ගන්නා අතර, > [!NOTE] විස්තර කොටුවක් බවට පත් වේ",
+  "Variables: {{variables}}": "විචල්‍ය: {{variables}}",
+  "Stable Page Numbers": "ස්ථාවර පිටු අංක",
+  "Turn off to count pages by the screens of this device": "මෙම උපාංගයේ තිර අනුව පිටු ගණන් කිරීමට අක්‍රිය කරන්න",
+  "Page Flip": "පිටුව පෙරළීම"
 }

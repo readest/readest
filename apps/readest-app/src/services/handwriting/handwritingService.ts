@@ -3,6 +3,7 @@ import { HandwritingEditor } from './editor';
 import {
   DEFAULT_HANDWRITING_COLOR,
   DEFAULT_HANDWRITING_WIDTH,
+  PEN_MAX_SCALING_WIDTH,
   simplifyPoints,
   roundPoints,
   type InkPoint,
@@ -122,11 +123,19 @@ export class HandwritingService {
     this.router = router;
   }
 
+  /** The ink width as a fraction of this session's rect. A marker band follows the page. */
+  private strokeWidth() {
+    const { tool, widthFraction } = this.options;
+    const { width } = this.rect;
+    if (tool === 'marker' || width <= PEN_MAX_SCALING_WIDTH) return widthFraction;
+    return (widthFraction * PEN_MAX_SCALING_WIDTH) / width;
+  }
+
   private liveStroke(): InkStroke {
     return {
       id: '__live__',
       color: this.options.color,
-      width: this.options.widthFraction,
+      width: this.strokeWidth(),
       ...this.toolField(),
       points: this.live,
     };
@@ -184,7 +193,7 @@ export class HandwritingService {
   private restartBoox() {
     if (this.backend !== 'boox') return;
     void this.boox
-      .update(this.rect, this.options.widthFraction * this.rect.width, this.options.color)
+      .update(this.rect, this.strokeWidth() * this.rect.width, this.options.color)
       .catch((err) => console.warn('Failed to update BOOX pen:', err));
   }
 
@@ -286,7 +295,7 @@ export class HandwritingService {
       await this.boox.start(
         this.rect,
         toPage,
-        this.options.widthFraction * this.rect.width,
+        this.strokeWidth() * this.rect.width,
         this.options.color,
       );
     } else if (this.backend === 'pointer') {
@@ -373,7 +382,7 @@ export class HandwritingService {
       this.editor.addStroke(target.page, {
         id: nextStrokeId(),
         color: this.options.color,
-        width: this.options.widthFraction * target.scale,
+        width: this.strokeWidth() * target.scale,
         ...this.toolField(),
         ...(this.session ? { session: this.session } : {}),
         ...pinned,

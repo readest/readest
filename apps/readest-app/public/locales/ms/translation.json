@@ -2571,5 +2571,22 @@
   "Month": "Bulan",
   "Year": "Tahun",
   "Daily average {{time}}": "Purata harian {{time}}",
-  "Failed to load reading statistics": "Gagal memuatkan statistik membaca"
+  "Failed to load reading statistics": "Gagal memuatkan statistik membaca",
+  "From Pasted Text": "Daripada teks yang ditampal",
+  "Could not read the clipboard. Paste into the text box instead.": "Tidak dapat membaca papan keratan. Tampal teks ke dalam kotak teks.",
+  "Pasted Text": "Teks yang ditampal",
+  "Failed to import book.": "Gagal mengimport buku.",
+  "Import Pasted Text": "Import teks yang ditampal",
+  "Paste an article or notes to read or listen to them like a book": "Tampal artikel atau nota untuk dibaca atau didengar seperti buku",
+  "Text": "Teks",
+  "Paste": "Tampal",
+  "The shared text is no longer available": "Teks yang dikongsi tidak lagi tersedia",
+  "Shared Text": "Teks yang dikongsi",
+  "Note Template": "Templat Nota",
+  "Each highlight is rendered as Markdown with Nunjucks, then sent to Notion as blocks": "Setiap serlahan dipaparkan sebagai Markdown dengan Nunjucks, kemudian dihantar ke Notion sebagai blok",
+  "Quotes take the highlight color, and > [!NOTE] becomes a callout": "Petikan mengambil warna serlahan, dan > [!NOTE] menjadi kotak serlahan",
+  "Variables: {{variables}}": "Pemboleh ubah: {{variables}}",
+  "Stable Page Numbers": "Nombor halaman tetap",
+  "Turn off to count pages by the screens of this device": "Matikan untuk mengira halaman mengikut skrin peranti ini",
+  "Page Flip": "Selak Halaman"
 }

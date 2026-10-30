@@ -451,6 +451,17 @@ export const handleWheel = (bookKey: string, event: WheelEvent) => {
 // gallery / table zoom viewers consume.
 type MediaTarget = { elementType: 'image'; src: string } | { elementType: 'table'; html: string };
 
+// How many pages an element's box covers. foliate publishes the page's content
+// box on the root element; fixed-layout pages have none, so this is NaN there.
+const pagesCovered = (element: Element) => {
+  const style = element.ownerDocument.documentElement?.style;
+  const pageArea =
+    parseFloat(style?.getPropertyValue('--available-width') ?? '') *
+    parseFloat(style?.getPropertyValue('--available-height') ?? '');
+  const { width, height } = element.getBoundingClientRect();
+  return (width * height) / pageArea;
+};
+
 const detectMediaTarget = (target: HTMLElement | null): MediaTarget | null => {
   if (!target) return null;
   if (target.localName === 'img') {
@@ -465,8 +476,10 @@ const detectMediaTarget = (target: HTMLElement | null): MediaTarget | null => {
     if (href) return { elementType: 'image', src: new URL(href, svgImage.baseURI).href };
   }
   const table = target.localName === 'table' ? target : target.closest('table');
-  // A link inside a table is followed; the table zooms from anywhere else (#6856)
-  if (table && !table.contains(target.closest('a'))) {
+  // A link inside a table is followed; the table zooms from anywhere else
+  // (#6856). A table running past two pages lays out the text itself (some
+  // annotated classics set a whole chapter in one), so it is not media.
+  if (table && !table.contains(target.closest('a')) && !(pagesCovered(table) >= 2)) {
     return { elementType: 'table', html: (table as HTMLElement).outerHTML };
   }
   return null;
@@ -491,18 +504,46 @@ export const getContextMenuImage = (
 };
 
 // A full-bleed cover or full-page illustration spans the page-turn zones, so
-// tapping it has to stay a page turn (#6424). foliate publishes the page's
-// content box on the root element; half of it separates such pages from inline
-// figures.
+// tapping it has to stay a page turn (#6424). Half a page separates such pages
+// from inline figures.
 const fillsPage = (target: HTMLElement) => {
   const element = target.closest('img, svg, table');
-  if (!element) return false;
-  const { style } = element.ownerDocument.documentElement;
-  const pageArea =
-    parseFloat(style.getPropertyValue('--available-width')) *
-    parseFloat(style.getPropertyValue('--available-height'));
-  const { width, height } = element.getBoundingClientRect();
-  return width * height >= pageArea / 2;
+  return !!element && pagesCovered(element) >= 0.5;
+};
+
+// An XHTML section keeps `epub:type` namespaced, an HTML one as a plain attribute.
+const linkTypeSelector = (types: string[]) =>
+  types
+    .flatMap((type) => [
+      `a[href][*|type~="${type}"]`,
+      `a[href][epub\\:type~="${type}"]`,
+      `a[href][role~="doc-${type}"]`,
+    ])
+    .join(', ');
+const noteRefSelector = `${linkTypeSelector(['noteref', 'biblioref', 'glossref'])}, a[href].footnote, a[href].footnote-link`;
+const backlinkSelector = linkTypeSelector(['backlink']);
+
+const isSuper = (el: Element | null) =>
+  !!el &&
+  (el.matches('sup') ||
+    /^(super|top|text-top)$|^\d/.test(
+      el.ownerDocument.defaultView?.getComputedStyle(el).verticalAlign ?? '',
+    ));
+
+// Whether the footnote popup opens for the link holding the element. Its image
+// is then a marker, like the 「註」 glyph some annotated classics put on every
+// note. Mirrors foliate's `isFootnoteReference` (a note reference, or any link
+// but a backlink set as superscript) plus the classes FootnotePopup follows.
+const opensNote = (element: HTMLElement | null) => {
+  const a = element?.closest('a[href]');
+  if (!a) return false;
+  if (a.matches(noteRefSelector)) return true;
+  return (
+    !a.matches(backlinkSelector) &&
+    (isSuper(a) ||
+      (a.children.length === 1 && isSuper(a.firstElementChild)) ||
+      isSuper(a.parentElement))
+  );
 };
 
 export const handleClick = (
@@ -574,12 +615,14 @@ export const handleClick = (
     // In reflowable books a single tap on an image/table opens the media
     // viewer. A media element wrapped in a plain link (e.g. a figure linking to
     // its full-resolution image) should still zoom rather than follow the link
-    // (#4757). Footnotes are excluded so footnote links keep their
+    // (#4757). Footnotes and note references are excluded so they keep their
     // popup/navigation behavior. Fixed-layout pages (comics/manga) keep
     // tap-to-turn, so their media rides along on the single click like media
     // filling a reflowable page, and a linked image there stays a link.
     const media =
-      !footnote && !(isFixedLayout && element?.closest('a')) ? detectMediaTarget(element) : null;
+      !footnote && !opensNote(element) && !(isFixedLayout && element?.closest('a'))
+        ? detectMediaTarget(element)
+        : null;
     const pageMedia = media && element && (isFixedLayout || fillsPage(element)) ? media : null;
     if (
       !media &&

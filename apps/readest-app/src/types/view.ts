@@ -26,6 +26,12 @@ export interface Renderer extends HTMLElement {
   atStart: boolean;
   atEnd: boolean;
   containerPosition: number;
+  getPageTurnKey?: (delta?: number) => string | null;
+  previewPage?: <T>(
+    forward: boolean,
+    capture: () => Promise<T>,
+    signal?: AbortSignal,
+  ) => Promise<{ key: string; value: T } | null>;
   // Sub-pixel remainder of the scroll position, rendered as a transform on the
   // scrollport because scroll offsets themselves quantize to whole CSS pixels.
   subpixelOffset: number;
@@ -48,7 +54,14 @@ export interface Renderer extends HTMLElement {
   goTo: (params: { index: number; anchor?: number | RangeAnchor }) => Promise<void>;
   setStyles?: (css: string) => void;
   primaryIndex: number;
-  getContents: () => { doc: Document; index?: number; overlayer?: unknown }[];
+  getContents: () => {
+    doc: Document;
+    index?: number;
+    overlayer?: unknown;
+    // readest/foliate-js#133: measured column count of the rendered view;
+    // absent on foliate builds older than the #133 squash (1a1cf1d).
+    contentPages?: number;
+  }[];
   scrollToAnchor?: (anchor: number | Range, reason?: string, smooth?: boolean) => void;
   addEventListener: (
     type: string,

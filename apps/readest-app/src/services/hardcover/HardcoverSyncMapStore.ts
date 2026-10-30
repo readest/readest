@@ -162,6 +162,11 @@ export class HardcoverSyncMapStore {
     return best;
   }
 
+  // Every journal entry the loaded book's notes are mapped to, deleted notes included.
+  journalIds(): number[] {
+    return [...this.mappings.values()].map((row) => row.hardcover_journal_id);
+  }
+
   async upsertMapping(
     bookHash: string,
     noteId: string,

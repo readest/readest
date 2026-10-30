@@ -2571,5 +2571,22 @@
   "Month": "เดือน",
   "Year": "ปี",
   "Daily average {{time}}": "เฉลี่ยต่อวัน {{time}}",
-  "Failed to load reading statistics": "โหลดสถิติการอ่านไม่สำเร็จ"
+  "Failed to load reading statistics": "โหลดสถิติการอ่านไม่สำเร็จ",
+  "From Pasted Text": "จากข้อความที่วาง",
+  "Could not read the clipboard. Paste into the text box instead.": "ไม่สามารถอ่านคลิปบอร์ดได้ โปรดวางข้อความลงในช่องข้อความแทน",
+  "Pasted Text": "ข้อความที่วาง",
+  "Failed to import book.": "นำเข้าหนังสือไม่สำเร็จ",
+  "Import Pasted Text": "นำเข้าข้อความที่วาง",
+  "Paste an article or notes to read or listen to them like a book": "วางบทความหรือบันทึกเพื่ออ่านหรือฟังเหมือนหนังสือ",
+  "Text": "ข้อความ",
+  "Paste": "วาง",
+  "The shared text is no longer available": "ข้อความที่แชร์ไม่พร้อมใช้งานแล้ว",
+  "Shared Text": "ข้อความที่แชร์",
+  "Note Template": "เทมเพลตโน้ต",
+  "Each highlight is rendered as Markdown with Nunjucks, then sent to Notion as blocks": "ไฮไลต์แต่ละรายการจะถูกเรนเดอร์เป็น Markdown ด้วย Nunjucks แล้วส่งไปยัง Notion เป็นบล็อก",
+  "Quotes take the highlight color, and > [!NOTE] becomes a callout": "คำอ้างอิงจะใช้สีของไฮไลต์ และ > [!NOTE] จะกลายเป็นกล่องข้อความเน้น",
+  "Variables: {{variables}}": "ตัวแปร: {{variables}}",
+  "Stable Page Numbers": "เลขหน้าคงที่",
+  "Turn off to count pages by the screens of this device": "ปิดเพื่อนับหน้าตามหน้าจอของอุปกรณ์นี้",
+  "Page Flip": "พลิกหน้า"
 }

@@ -2571,5 +2571,22 @@
   "Month": "Tháng",
   "Year": "Năm",
   "Daily average {{time}}": "Trung bình mỗi ngày {{time}}",
-  "Failed to load reading statistics": "Không thể tải thống kê đọc"
+  "Failed to load reading statistics": "Không thể tải thống kê đọc",
+  "From Pasted Text": "Từ văn bản đã dán",
+  "Could not read the clipboard. Paste into the text box instead.": "Không thể đọc bảng nhớ tạm. Hãy dán văn bản vào ô văn bản.",
+  "Pasted Text": "Văn bản đã dán",
+  "Failed to import book.": "Không thể nhập sách.",
+  "Import Pasted Text": "Nhập văn bản đã dán",
+  "Paste an article or notes to read or listen to them like a book": "Dán bài viết hoặc ghi chú để đọc hoặc nghe như một cuốn sách",
+  "Text": "Văn bản",
+  "Paste": "Dán",
+  "The shared text is no longer available": "Văn bản được chia sẻ không còn khả dụng",
+  "Shared Text": "Văn bản được chia sẻ",
+  "Note Template": "Mẫu ghi chú",
+  "Each highlight is rendered as Markdown with Nunjucks, then sent to Notion as blocks": "Mỗi đoạn tô sáng được hiển thị dưới dạng Markdown bằng Nunjucks, sau đó gửi đến Notion dưới dạng khối",
+  "Quotes take the highlight color, and > [!NOTE] becomes a callout": "Trích dẫn mang màu của đoạn tô sáng, và > [!NOTE] trở thành khung chú thích",
+  "Variables: {{variables}}": "Biến: {{variables}}",
+  "Stable Page Numbers": "Số trang cố định",
+  "Turn off to count pages by the screens of this device": "Tắt để đếm trang theo màn hình của thiết bị này",
+  "Page Flip": "Lật trang"
 }

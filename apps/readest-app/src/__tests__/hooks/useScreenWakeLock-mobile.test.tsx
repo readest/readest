@@ -60,7 +60,7 @@ describe('useScreenWakeLock on mobile', () => {
       payload: boolean;
     }) => void;
     handleFocusChanged({ payload: false });
-    expect(mocks.release).toHaveBeenCalledOnce();
+    await waitFor(() => expect(mocks.release).toHaveBeenCalledOnce());
 
     handleFocusChanged({ payload: true });
     await waitFor(() => expect(mocks.request).toHaveBeenCalledTimes(2));
@@ -71,6 +71,39 @@ describe('useScreenWakeLock on mobile', () => {
     });
 
     expect(mocks.unlisten).toHaveBeenCalledOnce();
+  });
+
+  it('keeps the wake lock when the page gets focus just after a window blur', async () => {
+    // Linux CEF: refocusing the window reports focus, then blur as the browser
+    // view takes keyboard focus from the toplevel; the page gets focus ms later (#7085).
+    const hasFocus = vi.spyOn(document, 'hasFocus').mockReturnValue(false);
+    renderHook(() => useScreenWakeLock(true, true));
+    await waitFor(() => expect(mocks.request).toHaveBeenCalledOnce());
+
+    const handleFocusChanged = mocks.onFocusChanged.mock.calls[0]![0] as (event: {
+      payload: boolean;
+    }) => void;
+    handleFocusChanged({ payload: true });
+    handleFocusChanged({ payload: false });
+    setTimeout(() => hasFocus.mockReturnValue(true), 5);
+    await act(() => new Promise((resolve) => setTimeout(resolve, 200)));
+
+    expect(mocks.release).not.toHaveBeenCalled();
+  });
+
+  it('reacquires the wake lock when the page gets focus after a released blur', async () => {
+    vi.spyOn(document, 'hasFocus').mockReturnValue(false);
+    renderHook(() => useScreenWakeLock(true, true));
+    await waitFor(() => expect(mocks.request).toHaveBeenCalledOnce());
+
+    const handleFocusChanged = mocks.onFocusChanged.mock.calls[0]![0] as (event: {
+      payload: boolean;
+    }) => void;
+    handleFocusChanged({ payload: false });
+    await waitFor(() => expect(mocks.release).toHaveBeenCalledOnce());
+
+    window.dispatchEvent(new Event('focus'));
+    await waitFor(() => expect(mocks.request).toHaveBeenCalledTimes(2));
   });
 
   it('releases and reacquires the wake lock as document visibility changes', async () => {

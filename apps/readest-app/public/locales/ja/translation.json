@@ -2571,5 +2571,22 @@
   "Month": "月",
   "Year": "年",
   "Daily average {{time}}": "1日平均 {{time}}",
-  "Failed to load reading statistics": "読書統計を読み込めませんでした"
+  "Failed to load reading statistics": "読書統計を読み込めませんでした",
+  "From Pasted Text": "貼り付けたテキストから",
+  "Could not read the clipboard. Paste into the text box instead.": "クリップボードを読み取れませんでした。テキストボックスに直接貼り付けてください。",
+  "Pasted Text": "貼り付けたテキスト",
+  "Failed to import book.": "本をインポートできませんでした。",
+  "Import Pasted Text": "貼り付けたテキストをインポート",
+  "Paste an article or notes to read or listen to them like a book": "記事やメモを貼り付けて、本のように読んだり聴いたりできます",
+  "Text": "テキスト",
+  "Paste": "貼り付け",
+  "The shared text is no longer available": "共有されたテキストは利用できなくなりました",
+  "Shared Text": "共有されたテキスト",
+  "Note Template": "メモテンプレート",
+  "Each highlight is rendered as Markdown with Nunjucks, then sent to Notion as blocks": "各ハイライトは Nunjucks で Markdown としてレンダリングされ、ブロックとして Notion に送信されます",
+  "Quotes take the highlight color, and > [!NOTE] becomes a callout": "引用にはハイライトの色が付き、> [!NOTE] はコールアウトになります",
+  "Variables: {{variables}}": "変数: {{variables}}",
+  "Stable Page Numbers": "固定ページ番号",
+  "Turn off to count pages by the screens of this device": "オフにすると、このデバイスの画面数でページを数えます",
+  "Page Flip": "ページめくり"
 }

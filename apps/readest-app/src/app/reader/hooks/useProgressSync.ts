@@ -70,6 +70,8 @@ export const useProgressSync = (bookKey: string) => {
   const pullInFlight = useRef(false);
   const pendingResumePull = useRef(false);
   const pullRetryTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingPush = useRef<Promise<void>>(Promise.resolve());
+  const pendingFlush = useRef<Promise<void> | null>(null);
 
   const clearPendingPullRetry = () => {
     if (pullRetryTimer.current !== null) {
@@ -161,26 +163,33 @@ export const useProgressSync = (bookKey: string) => {
       const config = getConfig(bookKey);
       const view = getView(bookKey);
       const book = getBookData(bookKey)?.book;
-      if (config && view && book && config.progress && config.progress[0] > 0) {
+      if (config && book && config.progress && config.progress[0] > 0) {
         try {
-          const contents = view.renderer.getContents();
-          const primaryIndex = view.renderer.primaryIndex;
+          const contents = view?.renderer.getContents() ?? [];
+          const primaryIndex = view?.renderer.primaryIndex;
           const content = contents.find((x) => x.index === primaryIndex) ?? contents[0];
-          if (content && !FIXED_LAYOUT_FORMATS.has(book.format)) {
-            const { doc, index } = content;
+          // The close-time push runs after the views are destroyed, even after
+          // the view state is cleared: load the section from the book then, or
+          // the previous push's XPointer goes out beside the new location and
+          // the next pull, which takes the further of the two, jumps back to
+          // it (#7041).
+          if (!FIXED_LAYOUT_FORMATS.has(book.format)) {
             const xpointerResult = await getXPointerFromCFI(
               config.location!,
-              doc,
-              index || 0,
+              content?.doc,
+              content?.index || 0,
               getBookData(bookKey)?.bookDoc ?? undefined,
               book.format,
             );
             config.xpointer = xpointerResult.xpointer;
           }
         } catch (error) {
+          // Don't send the previous push's XPointer beside the new location:
+          // the next pull would jump to it. Readers and the koplugin skip ''.
+          if (config.location) config.xpointer = '';
           console.warn('Failed to convert CFI to XPointer', error);
         }
-        pushConfig(bookKey, config);
+        await pushConfig(bookKey, config);
       }
     }
   };
@@ -188,10 +197,32 @@ export const useProgressSync = (bookKey: string) => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const handleAutoSync = useCallback(
     debounce(() => {
-      syncConfig();
+      pendingPush.current = syncConfig();
     }, SYNC_PROGRESS_INTERVAL_SEC * 1000),
     [],
   );
+
+  // Save the position before pushing it. The auto-save stamps updatedAt ~1.5s
+  // after the last turn and the server keeps its row on a tie, so a push inside
+  // that window was dropped and the next open jumped back to the old,
+  // further position (#7041). Resolves once the push has reached the server.
+  const flushPush = () => {
+    const flush = (async () => {
+      // Hold a scheduled push until the save lands: one that came due while
+      // the save is on disk would carry the old updatedAt.
+      const pushDue = handleAutoSync.pending();
+      handleAutoSync.cancel();
+      await eventDispatcher.dispatch('flush-progress-save', { bookKey });
+      if (pushDue) pendingPush.current = syncConfig();
+      await pendingPush.current;
+    })();
+    pendingFlush.current = flush;
+    const clear = () => {
+      if (pendingFlush.current === flush) pendingFlush.current = null;
+    };
+    flush.then(clear, clear);
+    return flush;
+  };
 
   const handleSyncBookProgress = async (event: CustomEvent) => {
     const { bookKey: syncBookKey } = event.detail;
@@ -202,7 +233,7 @@ export const useProgressSync = (bookKey: string) => {
       // auto-sync window, which would otherwise drop the pending push and leave
       // other devices on the previous cloud-synced position. Must run while the
       // gate below is still open so syncConfig takes the push branch.
-      handleAutoSync.flush();
+      await flushPush();
       // Manual pull-to-refresh: tear down any prior retry chain so the new
       // attempt starts fresh, rather than being short-circuited by the
       // "retry already pending" guard in pullWithRetry.
@@ -216,17 +247,22 @@ export const useProgressSync = (bookKey: string) => {
   useWindowActiveChanged((isActive) => {
     if (!user || !progress) return;
     if (!isActive) {
-      handleAutoSync.flush();
+      void flushPush();
       return;
     }
     // The book stays mounted while Android is backgrounded. Pull again on
     // resume before a suspended auto-push can send the old local position.
-    handleAutoSync.cancel();
-    pendingResumePull.current = pullInFlight.current;
-    configPulled.current = false;
-    pullAttempt.current = 0;
-    clearPendingPullRetry();
-    void pullWithRetry();
+    const resume = () => {
+      handleAutoSync.cancel();
+      pendingResumePull.current = pullInFlight.current;
+      configPulled.current = false;
+      pullAttempt.current = 0;
+      clearPendingPullRetry();
+      void pullWithRetry();
+    };
+    // A quick return must not cancel the push the deactivation is still saving.
+    if (pendingFlush.current) pendingFlush.current.then(resume, resume);
+    else resume();
   });
 
   // Push: flush the pending push + pull when the book is closed or the user

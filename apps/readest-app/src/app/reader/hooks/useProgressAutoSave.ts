@@ -5,6 +5,7 @@ import { useReaderStore } from '@/store/readerStore';
 import { useBookProgress } from '@/store/readerProgressStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { debounce } from '@/utils/debounce';
+import { eventDispatcher } from '@/utils/event';
 
 export const useProgressAutoSave = (bookKey: string) => {
   const { envConfig } = useEnv();
@@ -104,6 +105,18 @@ export const useProgressAutoSave = (bookKey: string) => {
       window.removeEventListener('pagehide', flush);
     };
   }, []);
+
+  // The cloud push asks for this save first, so it carries the updatedAt of
+  // the position it sends (#7041).
+  useEffect(() => {
+    const onFlush = async (event: CustomEvent) => {
+      if (event.detail?.bookKey === bookKey) await persistProgressRef.current();
+    };
+    eventDispatcher.on('flush-progress-save', onFlush);
+    return () => {
+      eventDispatcher.off('flush-progress-save', onFlush);
+    };
+  }, [bookKey]);
 
   // On unmount (book closed / navigated away), flush any pending throttled
   // library.json write so the shelf reflects this session's last read

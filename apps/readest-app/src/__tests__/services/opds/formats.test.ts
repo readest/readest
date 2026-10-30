@@ -112,7 +112,10 @@ describe('classifyAcquisitionLink', () => {
     });
 
     it('rejects incompatible formats by href extension', () => {
-      for (const href of ['/dl/book.rtf', '/dl/book.docx', '/dl/book.lrf', '/dl/book.prc']) {
+      // rtf/docx left this list when they became importable: the shared
+      // whitelist classifies their links as downloadable, and the import
+      // pipeline converts them to EPUB on arrival.
+      for (const href of ['/dl/book.lrf', '/dl/book.prc']) {
         expect(classifyAcquisitionLink(link({ href }))).toBe('unsupported');
       }
     });

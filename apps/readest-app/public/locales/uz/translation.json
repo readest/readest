@@ -2639,5 +2639,22 @@
   "Month": "Oy",
   "Year": "Yil",
   "Daily average {{time}}": "Kunlik oʻrtacha {{time}}",
-  "Failed to load reading statistics": "Oʻqish statistikasini yuklab boʻlmadi"
+  "Failed to load reading statistics": "Oʻqish statistikasini yuklab boʻlmadi",
+  "From Pasted Text": "Joylangan matndan",
+  "Could not read the clipboard. Paste into the text box instead.": "Buferni o‘qib bo‘lmadi. Matnni matn maydoniga joylang.",
+  "Pasted Text": "Joylangan matn",
+  "Failed to import book.": "Kitobni import qilib bo‘lmadi.",
+  "Import Pasted Text": "Joylangan matnni import qilish",
+  "Paste an article or notes to read or listen to them like a book": "Maqola yoki qaydlarni joylab, ularni kitob kabi o‘qing yoki tinglang",
+  "Text": "Matn",
+  "Paste": "Joylash",
+  "The shared text is no longer available": "Ulashilgan matn endi mavjud emas",
+  "Shared Text": "Ulashilgan matn",
+  "Note Template": "Eslatma shabloni",
+  "Each highlight is rendered as Markdown with Nunjucks, then sent to Notion as blocks": "Har bir belgilash Nunjucks yordamida Markdown sifatida chiqariladi, so‘ng Notion’ga bloklar ko‘rinishida yuboriladi",
+  "Quotes take the highlight color, and > [!NOTE] becomes a callout": "Iqtiboslar belgilash rangini oladi, > [!NOTE] esa izoh blokiga aylanadi",
+  "Variables: {{variables}}": "O‘zgaruvchilar: {{variables}}",
+  "Stable Page Numbers": "Barqaror sahifa raqamlari",
+  "Turn off to count pages by the screens of this device": "Sahifalarni ushbu qurilma ekranlari bo'yicha sanash uchun o'chiring",
+  "Page Flip": "Sahifani ag'darish"
 }

@@ -10,6 +10,7 @@ import { convertToEpubWithWorker } from '@/services/send/conversion/conversionWo
 import { clipPageWithSignInFallback, isClipCancelled } from '@/services/send/clipSignIn';
 import type { ConvertedBook } from '@/services/send/conversion/types';
 import { eventDispatcher } from '@/utils/event';
+import { createTextBookFile } from '@/utils/txt';
 import { parseAnnotationDeepLink, parseDeviceLinkDeepLink } from '@/utils/deeplink';
 import { parseShareDeepLink } from '@/utils/share';
 import { useTranslation } from './useTranslation';
@@ -25,7 +26,19 @@ interface PendingShareSave {
   groupId?: string | null;
   groupName?: string | null;
   htmlFile?: string | null;
+  /** Shared text (not a URL) saved as a file in App Group `SharedClips/`. */
+  textFile?: string | null;
+  title?: string | null;
   addedAt?: string;
+}
+
+/** Read + delete a file the Share Extension wrote to App Group `SharedClips/`. */
+async function readSharedClip(fileName: string): Promise<string | null> {
+  const { html } = await invoke<{ html?: string | null }>(
+    'plugin:native-bridge|read_share_clip_html',
+    { payload: { fileName } },
+  );
+  return html || null;
 }
 
 /**
@@ -34,10 +47,7 @@ interface PendingShareSave {
  * native command reads and deletes the file, so this is single-shot.
  */
 async function convertSharedHtml(url: string, htmlFile: string): Promise<ConvertedBook> {
-  const { html } = await invoke<{ html?: string | null }>(
-    'plugin:native-bridge|read_share_clip_html',
-    { payload: { fileName: htmlFile } },
-  );
+  const html = await readSharedClip(htmlFile);
   if (!html) {
     throw new Error('Shared page HTML unavailable');
   }
@@ -60,7 +70,8 @@ async function convertSharedHtml(url: string, htmlFile: string): Promise<Convert
  *      pipeline, but the chosen library group is preserved. When the
  *      share came from Safari, `htmlFile` points at the page DOM the
  *      extension captured from the signed-in tab (App Group container);
- *      it converts directly, skipping the `clip_url` re-fetch.
+ *      it converts directly, skipping the `clip_url` re-fetch. Shared text
+ *      that isn't a URL arrives as `textFile` and imports as a TXT book.
  *
  * On iOS we also expose `window.__readestGetGroups()` so the
  * Share-Extension picker can show up-to-date library groups, and we
@@ -81,6 +92,51 @@ export function useClipUrlIngress() {
   const { envConfig, appService } = useEnv();
   const { user } = useAuth();
   const inflight = useRef<Set<string>>(new Set());
+
+  const showShareError = useCallback(
+    (err: unknown) => {
+      const detail =
+        err instanceof Error
+          ? err.message
+          : typeof err === 'string'
+            ? err
+            : _('Could not fetch this page');
+      eventDispatcher.dispatch('toast', { type: 'error', message: detail, timeout: 3500 });
+    },
+    [_],
+  );
+
+  // Every share-sheet import ends here: ingest, keep the picked group, toast.
+  const saveSharedBook = useCallback(
+    async (file: File, fallbackTitle: string, options: ClipOptions) => {
+      if (!appService) return;
+      const { library } = useLibraryStore.getState();
+      const { settings } = useSettingsStore.getState();
+      const ingested = await ingestFile(
+        { file, books: library, forceUpload: true },
+        { appService, settings, isLoggedIn: !!user },
+      );
+      if (!ingested) {
+        throw new Error('Import produced no book');
+      }
+      if (options.groupId) ingested.groupId = options.groupId;
+      if (options.groupName) ingested.groupName = options.groupName;
+      if (options.groupId || options.groupName) {
+        // Group membership merges on its own clock (#5911).
+        ingested.updatedAt = Date.now();
+        ingested.groupUpdatedAt = ingested.updatedAt;
+      }
+      await useLibraryStore.getState().updateBooks(envConfig, [ingested]);
+      eventDispatcher.dispatch('toast', {
+        type: 'success',
+        message: _('Saved “{{title}}” to your library.', {
+          title: ingested.title || fallbackTitle,
+        }),
+        timeout: 3000,
+      });
+    },
+    [_, appService, envConfig, user],
+  );
 
   const clipAndImport = useCallback(
     async (url: string, options: ClipOptions = {}) => {
@@ -108,51 +164,36 @@ export function useClipUrlIngress() {
         if (!book) {
           book = await clipPageWithSignInFallback(url, _, appService);
         }
-        const { library } = useLibraryStore.getState();
-        const { settings } = useSettingsStore.getState();
-        const ingested = await ingestFile(
-          { file: book.file, books: library, forceUpload: true },
-          { appService, settings, isLoggedIn: !!user },
-        );
-        if (!ingested) {
-          throw new Error('Import produced no book');
-        }
-        if (options.groupId) ingested.groupId = options.groupId;
-        if (options.groupName) ingested.groupName = options.groupName;
-        if (options.groupId || options.groupName) {
-          // Group membership merges on its own clock (#5911).
-          ingested.updatedAt = Date.now();
-          ingested.groupUpdatedAt = ingested.updatedAt;
-        }
-        await useLibraryStore.getState().updateBooks(envConfig, [ingested]);
-        eventDispatcher.dispatch('toast', {
-          type: 'success',
-          message: _('Saved “{{title}}” to your library.', {
-            title: ingested.title || book.title || url,
-          }),
-          timeout: 3000,
-        });
+        await saveSharedBook(book.file, book.title || url, options);
       } catch (err) {
         // The user closed the interactive sign-in capture — their call,
         // not an error worth toasting about.
-        if (!isClipCancelled(err)) {
-          const detail =
-            err instanceof Error
-              ? err.message
-              : typeof err === 'string'
-                ? err
-                : _('Could not fetch this page');
-          eventDispatcher.dispatch('toast', {
-            type: 'error',
-            message: detail,
-            timeout: 3500,
-          });
-        }
+        if (!isClipCancelled(err)) showShareError(err);
       } finally {
         inflight.current.delete(url);
       }
     },
-    [_, appService, envConfig, user],
+    [_, appService, saveSharedBook, showShareError],
+  );
+
+  const importSharedText = useCallback(
+    async (textFile: string, title: string, options: ClipOptions) => {
+      try {
+        const text = await readSharedClip(textFile);
+        if (!text?.trim()) {
+          throw new Error(_('The shared text is no longer available'));
+        }
+        const fallbackTitle = _('Shared Text');
+        await saveSharedBook(
+          createTextBookFile(text, title, fallbackTitle),
+          fallbackTitle,
+          options,
+        );
+      } catch (err) {
+        showShareError(err);
+      }
+    },
+    [_, saveSharedBook, showShareError],
   );
 
   // Deep-link path (existing).
@@ -249,11 +290,15 @@ export function useClipUrlIngress() {
       if (!Array.isArray(saves)) return false;
       for (const save of saves) {
         if (!save || typeof save.url !== 'string') continue;
-        void clipAndImport(save.url, {
+        const options = {
           groupId: save.groupId ?? undefined,
           groupName: save.groupName ?? undefined,
-          htmlFile: save.htmlFile ?? undefined,
-        });
+        };
+        if (save.textFile) {
+          void importSharedText(save.textFile, save.title ?? '', options);
+          continue;
+        }
+        void clipAndImport(save.url, { ...options, htmlFile: save.htmlFile ?? undefined });
       }
       return true;
     };
@@ -274,5 +319,5 @@ export function useClipUrlIngress() {
       delete cleanup.__readestGetGroups;
       delete cleanup.__readestOnShareExtensionPending;
     };
-  }, [appService, clipAndImport]);
+  }, [appService, clipAndImport, importSharedText]);
 }

@@ -106,6 +106,7 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
             commands::get_reading_widget_instances,
             commands::set_reading_widget_catalog,
             commands::capture_webview_region,
+            commands::paper_curl,
             commands::cover_webview_region,
             commands::uncover_webview_region,
             commands::set_selection_suppressed,

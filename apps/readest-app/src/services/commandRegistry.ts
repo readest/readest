@@ -495,6 +495,21 @@ const controlPanelItems = [
     section: 'Pagination',
   },
   {
+    id: 'settings.control.stablePageNumbers',
+    labelKey: _('Stable Page Numbers'),
+    keywords: [
+      'stable',
+      'page',
+      'number',
+      'count',
+      'screen',
+      'calibrate',
+      'measured',
+      'pagination',
+    ],
+    section: 'Pagination',
+  },
+  {
     id: 'settings.control.disablePullDownToBookmark',
     labelKey: _('Pull-Down to Bookmark'),
     keywords: ['pull', 'down', 'bookmark', 'gesture'],

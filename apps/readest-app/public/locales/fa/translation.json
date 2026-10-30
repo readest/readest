@@ -2639,5 +2639,22 @@
   "Month": "ماه",
   "Year": "سال",
   "Daily average {{time}}": "میانگین روزانه {{time}}",
-  "Failed to load reading statistics": "بارگیری آمار مطالعه ناموفق بود"
+  "Failed to load reading statistics": "بارگیری آمار مطالعه ناموفق بود",
+  "From Pasted Text": "از متن جای‌گذاری‌شده",
+  "Could not read the clipboard. Paste into the text box instead.": "خواندن کلیپ‌بورد ممکن نشد. متن را مستقیماً در کادر متن جای‌گذاری کنید.",
+  "Pasted Text": "متن جای‌گذاری‌شده",
+  "Failed to import book.": "وارد کردن کتاب ناموفق بود.",
+  "Import Pasted Text": "وارد کردن متن جای‌گذاری‌شده",
+  "Paste an article or notes to read or listen to them like a book": "یک مقاله یا یادداشت را جای‌گذاری کنید تا مانند کتاب بخوانید یا بشنوید",
+  "Text": "متن",
+  "Paste": "جای‌گذاری",
+  "The shared text is no longer available": "متن اشتراک‌گذاشته‌شده دیگر در دسترس نیست",
+  "Shared Text": "متن اشتراک‌گذاشته‌شده",
+  "Note Template": "قالب یادداشت",
+  "Each highlight is rendered as Markdown with Nunjucks, then sent to Notion as blocks": "هر هایلایت با Nunjucks به Markdown تبدیل می‌شود و سپس به‌صورت بلوک به Notion ارسال می‌شود",
+  "Quotes take the highlight color, and > [!NOTE] becomes a callout": "نقل‌قول‌ها رنگ هایلایت را می‌گیرند و ‎> [!NOTE]‎ به کادر توضیح تبدیل می‌شود",
+  "Variables: {{variables}}": "متغیرها: {{variables}}",
+  "Stable Page Numbers": "شماره صفحه‌های ثابت",
+  "Turn off to count pages by the screens of this device": "برای شمارش صفحه‌ها بر اساس صفحه‌نمایش‌های این دستگاه خاموش کنید",
+  "Page Flip": "ورق زدن صفحه"
 }

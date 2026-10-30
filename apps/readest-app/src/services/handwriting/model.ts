@@ -25,6 +25,13 @@ export const HANDWRITING_COLORS = [
 export const HANDWRITING_WIDTHS = [0.004, DEFAULT_HANDWRITING_WIDTH, 0.01, 0.016] as const;
 
 /**
+ * Widest page (CSS px) a pen width grows with. Text doesn't grow with the
+ * window, so past this the pen keeps its size on screen: on a desktop page
+ * the finest pen stays a fine line instead of several px wide (#7094).
+ */
+export const PEN_MAX_SCALING_WIDTH = 600;
+
+/**
  * A pen draws opaque ink that follows pressure; a marker draws a broad,
  * translucent band of even width, for highlighting what is under it.
  */

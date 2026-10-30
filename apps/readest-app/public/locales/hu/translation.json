@@ -2639,5 +2639,22 @@
   "Month": "Hónap",
   "Year": "Év",
   "Daily average {{time}}": "Napi átlag {{time}}",
-  "Failed to load reading statistics": "Nem sikerült betölteni az olvasási statisztikát"
+  "Failed to load reading statistics": "Nem sikerült betölteni az olvasási statisztikát",
+  "From Pasted Text": "Beillesztett szövegből",
+  "Could not read the clipboard. Paste into the text box instead.": "Nem sikerült beolvasni a vágólapot. Illeszd be a szöveget a szövegmezőbe.",
+  "Pasted Text": "Beillesztett szöveg",
+  "Failed to import book.": "A könyv importálása sikertelen.",
+  "Import Pasted Text": "Beillesztett szöveg importálása",
+  "Paste an article or notes to read or listen to them like a book": "Illessz be egy cikket vagy jegyzeteket, hogy könyvként olvasd vagy hallgasd őket",
+  "Text": "Szöveg",
+  "Paste": "Beillesztés",
+  "The shared text is no longer available": "A megosztott szöveg már nem érhető el",
+  "Shared Text": "Megosztott szöveg",
+  "Note Template": "Jegyzetsablon",
+  "Each highlight is rendered as Markdown with Nunjucks, then sent to Notion as blocks": "Minden kiemelés Nunjucks segítségével Markdownként jelenik meg, majd blokkokként kerül a Notionbe",
+  "Quotes take the highlight color, and > [!NOTE] becomes a callout": "Az idézetek a kiemelés színét kapják, a > [!NOTE] pedig kiemelt mezővé válik",
+  "Variables: {{variables}}": "Változók: {{variables}}",
+  "Stable Page Numbers": "Állandó oldalszámok",
+  "Turn off to count pages by the screens of this device": "Kapcsolja ki, hogy az oldalakat az eszköz képernyői szerint számolja",
+  "Page Flip": "Lapfordítás"
 }

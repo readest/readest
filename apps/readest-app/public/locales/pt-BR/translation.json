@@ -2707,5 +2707,22 @@
   "Month": "Mês",
   "Year": "Ano",
   "Daily average {{time}}": "Média diária {{time}}",
-  "Failed to load reading statistics": "Não foi possível carregar as estatísticas de leitura"
+  "Failed to load reading statistics": "Não foi possível carregar as estatísticas de leitura",
+  "From Pasted Text": "De texto colado",
+  "Could not read the clipboard. Paste into the text box instead.": "Não foi possível ler a área de transferência. Cole o texto na caixa de texto.",
+  "Pasted Text": "Texto colado",
+  "Failed to import book.": "Falha ao importar o livro.",
+  "Import Pasted Text": "Importar texto colado",
+  "Paste an article or notes to read or listen to them like a book": "Cole um artigo ou anotações para ler ou ouvir como um livro",
+  "Text": "Texto",
+  "Paste": "Colar",
+  "The shared text is no longer available": "O texto compartilhado não está mais disponível",
+  "Shared Text": "Texto compartilhado",
+  "Note Template": "Modelo de nota",
+  "Each highlight is rendered as Markdown with Nunjucks, then sent to Notion as blocks": "Cada destaque é renderizado como Markdown com Nunjucks e depois enviado ao Notion como blocos",
+  "Quotes take the highlight color, and > [!NOTE] becomes a callout": "As citações recebem a cor do destaque, e > [!NOTE] vira um bloco de destaque",
+  "Variables: {{variables}}": "Variáveis: {{variables}}",
+  "Stable Page Numbers": "Números de página estáveis",
+  "Turn off to count pages by the screens of this device": "Desative para contar as páginas pelas telas deste dispositivo",
+  "Page Flip": "Virar página"
 }

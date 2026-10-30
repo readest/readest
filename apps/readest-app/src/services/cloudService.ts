@@ -306,6 +306,10 @@ export async function downloadBookCovers(
         }
       } catch (error) {
         console.log(`Failed to download cover file for book: '${file.lfp}'`, error);
+        // The sync still adopts the new cover hash, so mark the cover as not
+        // downloaded or it is never fetched again (#6816).
+        const book = booksLfps.get(file.lfp);
+        if (book) book.coverDownloadedAt = null;
       }
     }),
   );

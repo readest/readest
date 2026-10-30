@@ -32,8 +32,7 @@ const PageTurnerSettings: React.FC<PageTurnerSettingsProps> = ({ bookKey, onRegi
   const _ = useTranslation();
   const { envConfig, appService } = useEnv();
   const { getViewSettings } = useReaderStore();
-  const { setKeyLearnMode, acquireVolumeKeyInterception, releaseVolumeKeyInterception } =
-    useDeviceControlStore();
+  const { setKeyLearnMode } = useDeviceControlStore();
   const { settings } = useSettingsStore();
   const viewSettings = getViewSettings(bookKey) || settings.globalViewSettings;
   const resetToDefaults = useResetViewSettings();
@@ -123,14 +122,9 @@ const PageTurnerSettings: React.FC<PageTurnerSettingsProps> = ({ bookKey, onRegi
   }, [listening]);
 
   useEffect(() => {
+    // The reader and library pagination hooks own the volume-key interception
+    // and follow this setting; taking it here too left it held (#7119).
     saveViewSettings(envConfig, bookKey, 'volumeKeysToFlip', volumeKeysToFlip, false, false);
-    if (appService?.isMobileApp) {
-      if (volumeKeysToFlip) {
-        acquireVolumeKeyInterception();
-      } else {
-        releaseVolumeKeyInterception();
-      }
-    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [volumeKeysToFlip]);
 

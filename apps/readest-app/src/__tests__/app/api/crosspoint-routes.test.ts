@@ -25,6 +25,7 @@ const makeClient = () => ({
       ...WRITES,
       'select',
       'eq',
+      'in',
       'is',
       'not',
       'lt',
@@ -740,6 +741,7 @@ describe('KOSync progress', () => {
     const libraryBook = {
       book_hash: BOOK,
       title: 'Alice',
+      format: 'EPUB',
       source_title: TITLE,
       author: 'Lewis Carroll and John Tenniel',
     };
@@ -768,7 +770,7 @@ describe('KOSync progress', () => {
             'or',
             `book_hash.eq.${DOC},source_title.ilike.Alice_ Illustrated _1865_,title.ilike.Alice_ Illustrated _1865_`,
           ],
-          ['books', 'eq', 'format', 'EPUB'],
+          ['books', 'in', 'format', ['EPUB', 'ABS']],
           ['books', 'is', 'deleted_at', null],
           linkWrite,
           ['book_configs', 'eq', 'book_hash', BOOK],
@@ -780,6 +782,28 @@ describe('KOSync progress', () => {
       // Every book with that title is compared: a cut-off list could drop
       // Readest's own file or a second book that fits.
       expect(calls.some(([table, method]) => table === 'books' && method === 'limit')).toBe(false);
+    });
+
+    // An ebook streamed from Audiobookshelf is keyed by its abs:// path, so
+    // even the server's own bytes never match it by id.
+    it('links it to an Audiobookshelf ebook, not an audiobook of that title', async () => {
+      const absBook = (book_hash: string, absMediaType?: string) => ({
+        ...libraryBook,
+        book_hash,
+        format: 'ABS',
+        metadata: JSON.stringify({ title: TITLE, absSource: 'abs://srv/item', absMediaType }),
+      });
+      results['books.select'] = {
+        data: [absBook('f'.repeat(32)), absBook(BOOK, 'ebook')],
+        error: null,
+      };
+      await put({ metadata });
+      expect(calls).toContainEqual(linkWrite);
+
+      calls = [];
+      results['books.select'] = { data: [absBook(BOOK)], error: null };
+      await put({ metadata });
+      expect(wrote('crosspoint_documents')).toBe(false);
     });
 
     it("doesn't pull Readest's position back when it links", async () => {

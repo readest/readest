@@ -526,16 +526,35 @@ impl<R: Runtime> NativeBridge<R> {
     /// desktop, where the leaf keeps a paper back.
     pub fn cover_webview_region(
         &self,
-        _payload: CaptureWebviewRegionRequest,
+        window: &tauri::WebviewWindow<R>,
+        payload: CaptureWebviewRegionRequest,
     ) -> crate::Result<CoverWebviewRegionResponse> {
-        Err(crate::Error::UnsupportedPlatformError)
+        #[cfg(target_os = "macos")]
+        {
+            crate::platform::macos::cover_webview_region(window, payload)
+                .map(|token| CoverWebviewRegionResponse { token })
+        }
+        #[cfg(not(target_os = "macos"))]
+        {
+            let _ = (window, payload);
+            Err(crate::Error::UnsupportedPlatformError)
+        }
     }
 
     pub fn uncover_webview_region(
         &self,
-        _payload: UncoverWebviewRegionRequest,
+        window: &tauri::WebviewWindow<R>,
+        payload: UncoverWebviewRegionRequest,
     ) -> crate::Result<()> {
-        Err(crate::Error::UnsupportedPlatformError)
+        #[cfg(target_os = "macos")]
+        {
+            crate::platform::macos::uncover_webview_region(window, payload.token)
+        }
+        #[cfg(not(target_os = "macos"))]
+        {
+            let _ = (window, payload);
+            Err(crate::Error::UnsupportedPlatformError)
+        }
     }
 
     /// Probe the iCloud ubiquity container. Non-macOS desktops report

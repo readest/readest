@@ -2571,5 +2571,22 @@
   "Month": "月",
   "Year": "年",
   "Daily average {{time}}": "日均 {{time}}",
-  "Failed to load reading statistics": "无法加载阅读统计"
+  "Failed to load reading statistics": "无法加载阅读统计",
+  "From Pasted Text": "从粘贴的文本",
+  "Could not read the clipboard. Paste into the text box instead.": "无法读取剪贴板，请直接粘贴到文本框中。",
+  "Pasted Text": "粘贴的文本",
+  "Failed to import book.": "导入书籍失败。",
+  "Import Pasted Text": "导入粘贴的文本",
+  "Paste an article or notes to read or listen to them like a book": "粘贴文章或笔记，像书一样阅读或收听",
+  "Text": "文本",
+  "Paste": "粘贴",
+  "The shared text is no longer available": "分享的文本已不可用",
+  "Shared Text": "分享的文本",
+  "Note Template": "笔记模板",
+  "Each highlight is rendered as Markdown with Nunjucks, then sent to Notion as blocks": "每条高亮会用 Nunjucks 渲染为 Markdown，再以块的形式发送到 Notion",
+  "Quotes take the highlight color, and > [!NOTE] becomes a callout": "引用会使用高亮颜色，> [!NOTE] 会变成标注块",
+  "Variables: {{variables}}": "变量：{{variables}}",
+  "Stable Page Numbers": "稳定页码",
+  "Turn off to count pages by the screens of this device": "关闭后按本设备的实际屏数计算页码",
+  "Page Flip": "翻书"
 }

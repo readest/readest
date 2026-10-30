@@ -216,10 +216,14 @@ export function useHandwriting(bookKey: string) {
     update();
     const ro = new ResizeObserver(update);
     ro.observe(cellEl);
-    const renderer = getView(bookKey)?.renderer;
-    for (const frame of isFixedLayout ? pageFrames(getView(bookKey)) : []) ro.observe(frame);
+    const view = getView(bookKey);
+    const renderer = view?.renderer;
+    for (const frame of isFixedLayout ? pageFrames(view) : []) ro.observe(frame);
     renderer?.addEventListener('scroll', update);
     const mo = new MutationObserver(update);
+    // A push page turn slides the whole view in and writes its resting
+    // transform there when it lands; a page measured mid-slide is off screen.
+    if (view) mo.observe(view, { attributes: true, attributeFilter: ['style'] });
     if (renderer?.shadowRoot) {
       mo.observe(renderer.shadowRoot, {
         attributes: true,

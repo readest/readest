@@ -20,7 +20,7 @@ jobs:
       pull-requests: read
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: cachix/install-nix-action@448cde739abec1eaf0646249e3d25bb8d9bc7702
+      - uses: cachix/install-nix-action@75c75c31ebece974e48ebc36b4ad125bd97bd97b
       # skipPush is a cachix-action input, not an install-nix-action one. The
       # cache is public, so pulling needs no token at all; omitting authToken
       # keeps the push token out of PR-triggered builds entirely.
@@ -144,7 +144,9 @@ jobs:
         run: cargo test
 
   build_web_app:
-    runs-on: ubuntu-latest
+    # Pinned: our Playwright (1.60) has no Chromium build for ubuntu26.04,
+    # which ubuntu-latest now resolves to on some runners.
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -215,7 +217,9 @@ jobs:
   # Playwright and run only on shard 1; koplugin + browser-extension tests
   # moved to the test_extensions job.
   test_web_app:
-    runs-on: ubuntu-latest
+    # Pinned: our Playwright (1.60) has no Chromium build for ubuntu26.04,
+    # which ubuntu-latest now resolves to on some runners.
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
@@ -426,7 +430,7 @@ jobs:
           # configured with cache-workspace-crates for the vendored tauri fork).
           cache: false
 
-      - uses: Swatinem/rust-cache@f0d9c3887740aee45f6153b24b3a6b815192ec16 # v2
+      - uses: Swatinem/rust-cache@c8037a86dde8214a8310e9f54a8fc61ab362aa31 # v2
         if: steps.changes.outputs.tauri == 'true'
         with:
           # cache-workspace-crates caches the path/workspace crates too: the

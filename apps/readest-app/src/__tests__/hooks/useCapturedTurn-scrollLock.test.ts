@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { act, cleanup, renderHook } from '@testing-library/react';
-import type { FoliateView } from '@/types/view';
+import type { FoliateView, Renderer } from '@/types/view';
 import type { ViewSettings } from '@/types/book';
 import type { TouchDetail } from '@/app/reader/hooks/useTouchInterceptor';
 
@@ -10,7 +10,25 @@ import type { TouchDetail } from '@/app/reader/hooks/useTouchInterceptor';
 // is set (instant highlight engaged). This test pins the captured turn to the
 // same gate so a hold-then-swipe extends the highlight instead of paginating.
 const h = vi.hoisted(() => ({
+  readerListeners: new Set<
+    (
+      state: {
+        hoveredBookKey: string | null;
+        bottomBarTab: string;
+        viewStates: Record<string, { inited: boolean; ttsEnabled: boolean; syncing?: boolean }>;
+      },
+      previous: {
+        hoveredBookKey: string | null;
+        bottomBarTab: string;
+        viewStates: Record<string, { inited: boolean; ttsEnabled: boolean; syncing?: boolean }>;
+      },
+    ) => void
+  >(),
+  android: false,
+  ios: false,
+  nativeCommit: false,
   controllerHost: null as null | {
+    navigate: (forward: boolean) => Promise<void>;
     onBeforeCapture?: (style: 'curl' | 'slide') => Promise<void> | void;
     onCovered?: (style: 'curl' | 'slide', surfaceAlreadyPainted?: boolean) => Promise<void> | void;
     onCancelled?: (style: 'curl' | 'slide') => Promise<void> | void;
@@ -22,6 +40,7 @@ const h = vi.hoisted(() => ({
   hoveredBookKey: 'book-1' as string | null,
   isFixedLayout: false,
   pageRect: null as DOMRect | null,
+  overlay: null as SVGSVGElement | null,
   setHoveredBookKey: vi.fn(),
   settingsDialogOpen: false,
   settingsListeners: new Set<
@@ -42,6 +61,8 @@ const h = vi.hoisted(() => ({
   viewListeners: new Map<string, Set<EventListener>>(),
   selection: null as { rangeCount: number; isCollapsed: boolean } | null,
   renderer: {
+    getPageTurnKey: undefined as Renderer['getPageTurnKey'],
+    previewPage: undefined as Renderer['previewPage'],
     listeners: new Map<string, Set<EventListener>>(),
     scrollLocked: false,
     atEnd: false,
@@ -50,11 +71,15 @@ const h = vi.hoisted(() => ({
     getContents() {
       const frameElement = h.pageRect && { getBoundingClientRect: () => h.pageRect };
       return [
-        { index: 0, doc: { getSelection: () => h.selection, defaultView: { frameElement } } },
+        {
+          index: 0,
+          doc: { getSelection: () => h.selection, defaultView: { frameElement } },
+          overlayer: h.overlay && { element: h.overlay },
+        },
       ];
     },
     getAttribute: vi.fn(() => null as string | null),
-    hasAttribute: () => false,
+    hasAttribute: (name: string) => name === 'data-native-paper-commit' && h.nativeCommit,
     setAttribute: () => {},
     removeAttribute: () => {},
     addEventListener(type: string, listener: EventListener) {
@@ -89,7 +114,10 @@ vi.mock('@/store/readerStore', () => {
     bottomBarTab: '',
     viewStates: { 'book-1': { inited: true, ttsEnabled: false } },
   });
-  useReaderStore.subscribe = () => () => {};
+  useReaderStore.subscribe = (listener: Parameters<typeof h.readerListeners.add>[0]) => {
+    h.readerListeners.add(listener);
+    return () => h.readerListeners.delete(listener);
+  };
   return { useReaderStore };
 });
 vi.mock('@/store/bookDataStore', () => ({
@@ -109,13 +137,18 @@ vi.mock('@/store/settingsStore', () => {
   };
   return { useSettingsStore };
 });
-vi.mock('@/utils/bridge', () => ({ captureWebviewRegion: vi.fn() }));
+vi.mock('@/utils/bridge', () => ({
+  captureWebviewRegion: vi.fn(),
+  paperCurl: vi.fn(async () => ({})),
+}));
 vi.mock('@/utils/viewTransition', () => ({ detectViewTransitionGroup: () => false }));
 vi.mock('@/services/environment', () => ({
   isTauriAppPlatform: () => process.env['NEXT_PUBLIC_APP_PLATFORM'] === 'tauri',
   getInitializedAppService: () => ({
     isMobileApp: process.env['NEXT_PUBLIC_APP_PLATFORM'] === 'tauri',
     isMacOSApp: false,
+    isAndroidApp: h.android,
+    isIOSApp: h.ios,
   }),
 }));
 vi.mock('@/app/reader/utils/capturedTurn', () => ({
@@ -133,6 +166,7 @@ import { dispatchTouchInterceptors } from '@/app/reader/hooks/useTouchIntercepto
 const makeView = () =>
   ({
     renderer: h.renderer,
+    lastLocation: { cfi: 'current-page' },
     prev: vi.fn(),
     next: vi.fn(),
     addEventListener(type: string, listener: EventListener) {
@@ -168,6 +202,12 @@ const setSettingsDialogOpen = (open: boolean) => {
 };
 
 beforeEach(() => {
+  h.android = false;
+  h.ios = false;
+  h.nativeCommit = false;
+  h.renderer.previewPage = undefined;
+  h.renderer.getPageTurnKey = undefined;
+  h.readerListeners.clear();
   vi.clearAllMocks();
   h.controller.beginDrag.mockResolvedValue(true);
   h.setHoveredBookKey.mockReset();
@@ -186,6 +226,7 @@ beforeEach(() => {
   h.viewSettings.pageTurnStyle = 'curl';
   h.isFixedLayout = false;
   h.pageRect = null;
+  h.overlay = null;
 });
 
 afterEach(() => {
@@ -198,6 +239,393 @@ afterEach(() => {
 });
 
 describe('useCapturedTurn scroll-lock gate', () => {
+  test.each(
+    (['Android', 'iOS'] as const).flatMap((platform) =>
+      (['native curl', 'slide', 'fixed curl', 'curl without preview'] as const).map(
+        (mode) => [platform, mode] as const,
+      ),
+    ),
+  )('uses the matching recovery path after a failed %s %s', async (platform, mode) => {
+    vi.resetModules();
+    const { useCapturedTurn: useFreshCapturedTurn } = await import(
+      '@/app/reader/hooks/useCapturedTurn'
+    );
+    const { NativePageTurn } = await import('@/app/reader/utils/nativePageTurn');
+    h.android = platform === 'Android';
+    h.ios = platform === 'iOS';
+    h.renderer.getPageTurnKey = () => '1';
+    h.renderer.previewPage = mode === 'curl without preview' ? undefined : async () => null;
+    h.viewSettings.pageTurnStyle = mode === 'slide' ? 'slide' : 'curl';
+    h.isFixedLayout = mode === 'fixed curl';
+    h.viewSettings.zoomLevel = 100;
+    h.viewSettings.zoomMode = 'fit-page';
+    // Fixed layouts and renderers without previews turn natively too.
+    const native = mode !== 'slide';
+    const invalidate = vi.spyOn(NativePageTurn.prototype, 'invalidateNativePages');
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const view = makeView();
+    const originalNext = vi.mocked(view.next);
+    h.controller.turn.mockRejectedValueOnce(new Error('capture failed'));
+    const { unmount } = renderHook(() => useFreshCapturedTurn('book-1', { current: view }));
+    try {
+      invalidate.mockClear();
+      await act(async () => {
+        await view.next();
+      });
+      expect(originalNext).toHaveBeenCalledTimes(1);
+      expect(invalidate).toHaveBeenCalledTimes(native ? 1 : 0);
+      await act(async () => {
+        await view.next();
+      });
+      expect(h.controller.turn).toHaveBeenCalledTimes(native ? 2 : 1);
+      expect(originalNext).toHaveBeenCalledTimes(native ? 1 : 2);
+    } finally {
+      unmount();
+      invalidate.mockRestore();
+      warn.mockRestore();
+    }
+  });
+
+  test('accepts a new native curl swipe while a previous tap is settling', async () => {
+    h.android = true;
+    h.renderer.previewPage = async () => null;
+    h.renderer.getPageTurnKey = () => '1';
+    let resolveTurn!: () => void;
+    h.controller.turn.mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          resolveTurn = resolve;
+        }),
+    );
+    const view = makeView();
+    renderHook(() => useCapturedTurn('book-1', { current: view }));
+    const turning = view.next() as unknown as Promise<void>;
+    dispatchTouchInterceptors('book-1', detail('start', 0, 0, 0, 150));
+    const consumed = dispatchTouchInterceptors('book-1', detail('move', -60, 0, 16, 150));
+    resolveTurn();
+    await act(async () => turning);
+    expect(consumed).toBe(true);
+    expect(h.controller.beginDrag).toHaveBeenCalledExactlyOnceWith(true, false, 'curl');
+  });
+
+  test('keeps native book textures when only the toolbar outside the sheet is hidden', async () => {
+    h.android = true;
+    h.renderer.previewPage = async () => null;
+    const { NativePageTurn } = await import('@/app/reader/utils/nativePageTurn');
+    const invalidate = vi.spyOn(NativePageTurn.prototype, 'invalidateNativePages');
+    const { unmount } = renderHook(() => useCapturedTurn('book-1', { current: makeView() }));
+    try {
+      const viewStates = { 'book-1': { inited: true, ttsEnabled: false } };
+      act(() => {
+        for (const listener of h.readerListeners)
+          listener(
+            { hoveredBookKey: null, bottomBarTab: '', viewStates },
+            { hoveredBookKey: 'book-1', bottomBarTab: '', viewStates },
+          );
+      });
+      expect(invalidate).not.toHaveBeenCalled();
+    } finally {
+      unmount();
+      invalidate.mockRestore();
+    }
+  });
+  // The bookmark ribbon rewrites its unchanged visibility on every relocation.
+  // A cold native turn navigates between capturing its sheets and starting,
+  // so dropping the current sheet there aborted every PDF curl.
+  test('keeps native book textures when a view state is rewritten unchanged', async () => {
+    vi.resetModules();
+    const { useCapturedTurn: useFreshCapturedTurn } = await import(
+      '@/app/reader/hooks/useCapturedTurn'
+    );
+    const { NativePageTurn } = await import('@/app/reader/utils/nativePageTurn');
+    h.android = true;
+    h.renderer.getPageTurnKey = () => '1';
+    const invalidate = vi.spyOn(NativePageTurn.prototype, 'invalidateNativePages');
+    const { unmount } = renderHook(() => useFreshCapturedTurn('book-1', { current: makeView() }));
+    try {
+      const state = { inited: true, ttsEnabled: false };
+      act(() => {
+        for (const listener of h.readerListeners)
+          listener(
+            { hoveredBookKey: null, bottomBarTab: '', viewStates: { 'book-1': { ...state } } },
+            { hoveredBookKey: null, bottomBarTab: '', viewStates: { 'book-1': state } },
+          );
+      });
+      expect(invalidate).not.toHaveBeenCalled();
+      act(() => {
+        for (const listener of h.readerListeners)
+          listener(
+            {
+              hoveredBookKey: null,
+              bottomBarTab: '',
+              viewStates: { 'book-1': { ...state, ttsEnabled: true } },
+            },
+            { hoveredBookKey: null, bottomBarTab: '', viewStates: { 'book-1': state } },
+          );
+      });
+      expect(invalidate).toHaveBeenCalledTimes(1);
+    } finally {
+      unmount();
+      invalidate.mockRestore();
+    }
+  });
+  // Each turn redraws every highlight on the new page unchanged: foliate
+  // removes and re-adds it. Dropping the native pages there made the next
+  // turn capture both sheets again in any book with highlights.
+  test('keeps native book textures when a highlight is redrawn unchanged', async () => {
+    vi.resetModules();
+    const { useCapturedTurn: useFreshCapturedTurn } = await import(
+      '@/app/reader/hooks/useCapturedTurn'
+    );
+    const { NativePageTurn } = await import('@/app/reader/utils/nativePageTurn');
+    h.android = true;
+    h.renderer.getPageTurnKey = () => '1';
+    const svgNs = 'http://www.w3.org/2000/svg';
+    h.overlay = document.createElementNS(svgNs, 'svg');
+    const drawHighlight = (fill: string) => {
+      const rect = document.createElementNS(svgNs, 'rect');
+      rect.setAttribute('fill', fill);
+      h.overlay!.append(rect);
+      return rect;
+    };
+    let highlight = drawHighlight('yellow');
+    const invalidate = vi.spyOn(NativePageTurn.prototype, 'invalidateNativePages');
+    const { unmount } = renderHook(() => useFreshCapturedTurn('book-1', { current: makeView() }));
+    const redraw = (fill: string) =>
+      act(async () => {
+        highlight.remove();
+        for (const listener of h.viewListeners.get('draw-annotation') ?? [])
+          listener(new CustomEvent('draw-annotation'));
+        highlight = drawHighlight(fill);
+      });
+    try {
+      invalidate.mockClear();
+      await redraw('yellow');
+      expect(invalidate).not.toHaveBeenCalled();
+      await redraw('red');
+      expect(invalidate).toHaveBeenCalledTimes(1);
+      // Deleting a highlight emits no event.
+      await act(async () => highlight.remove());
+      expect(invalidate).toHaveBeenCalledTimes(2);
+      // Where highlights overlap, the later one paints on top.
+      const below = drawHighlight('blue');
+      highlight = drawHighlight('green');
+      await act(async () => {});
+      invalidate.mockClear();
+      await act(async () => h.overlay!.append(below));
+      expect(invalidate).toHaveBeenCalledTimes(1);
+    } finally {
+      unmount();
+      invalidate.mockRestore();
+    }
+  });
+  test('drops native book textures for highlights drawn before their overlay was observed', async () => {
+    vi.resetModules();
+    const { useCapturedTurn: useFreshCapturedTurn } = await import(
+      '@/app/reader/hooks/useCapturedTurn'
+    );
+    const { NativePageTurn } = await import('@/app/reader/utils/nativePageTurn');
+    h.android = true;
+    h.renderer.getPageTurnKey = () => '1';
+    const svgNs = 'http://www.w3.org/2000/svg';
+    const invalidate = vi.spyOn(NativePageTurn.prototype, 'invalidateNativePages');
+    const { unmount } = renderHook(() => useFreshCapturedTurn('book-1', { current: makeView() }));
+    const relocate = () =>
+      act(() => {
+        for (const listener of h.viewListeners.get('relocate') ?? [])
+          listener(new CustomEvent('relocate'));
+      });
+    try {
+      invalidate.mockClear();
+      h.overlay = document.createElementNS(svgNs, 'svg');
+      h.overlay.append(document.createElementNS(svgNs, 'defs'));
+      relocate();
+      expect(invalidate).not.toHaveBeenCalled();
+      h.overlay = document.createElementNS(svgNs, 'svg');
+      h.overlay.append(document.createElementNS(svgNs, 'rect'));
+      relocate();
+      expect(invalidate).toHaveBeenCalledTimes(1);
+    } finally {
+      unmount();
+      invalidate.mockRestore();
+    }
+  });
+  // Progress sync flips `syncing` around each turn. It only spins the View
+  // menu's icon, so dropping the native pages there aborted turns in flight.
+  test('keeps native book textures when progress sync starts', async () => {
+    vi.resetModules();
+    const { useCapturedTurn: useFreshCapturedTurn } = await import(
+      '@/app/reader/hooks/useCapturedTurn'
+    );
+    const { NativePageTurn } = await import('@/app/reader/utils/nativePageTurn');
+    h.android = true;
+    h.renderer.getPageTurnKey = () => '1';
+    const invalidate = vi.spyOn(NativePageTurn.prototype, 'invalidateNativePages');
+    const { unmount } = renderHook(() => useFreshCapturedTurn('book-1', { current: makeView() }));
+    try {
+      const state = { inited: true, ttsEnabled: false, syncing: false };
+      act(() => {
+        for (const listener of h.readerListeners)
+          listener(
+            {
+              hoveredBookKey: null,
+              bottomBarTab: '',
+              viewStates: { 'book-1': { ...state, syncing: true } },
+            },
+            { hoveredBookKey: null, bottomBarTab: '', viewStates: { 'book-1': state } },
+          );
+      });
+      expect(invalidate).not.toHaveBeenCalled();
+    } finally {
+      unmount();
+      invalidate.mockRestore();
+    }
+  });
+  test('keeps a native cover until navigation completes after an early relocation', async () => {
+    h.nativeCommit = true;
+    const view = makeView();
+    let finish!: () => void;
+    vi.mocked(view.next).mockImplementation(
+      () =>
+        new Promise<void>((resolve) => {
+          finish = resolve;
+        }),
+    );
+    renderHook(() => useCapturedTurn('book-1', { current: view }));
+    let ready = false;
+    const turn = h.controllerHost!.navigate(true).then(() => {
+      ready = true;
+    });
+    await Promise.resolve();
+    view.lastLocation = { cfi: 'next-page' };
+    h.renderer.dispatchEvent(new CustomEvent('relocate', { detail: { reason: 'page' } }));
+    for (let i = 0; i < 10; i++) await Promise.resolve();
+    const revealedBeforeCompletion = ready;
+    finish();
+    await turn;
+    expect(revealedBeforeCompletion).toBe(false);
+  });
+
+  test('retries native animation after a transient failure instead of disabling every later turn', async () => {
+    h.android = true;
+    h.renderer.getPageTurnKey = () => '1';
+    h.renderer.previewPage = async () => null;
+    const view = makeView();
+    renderHook(() => useCapturedTurn('book-1', { current: view }));
+    h.controller.turn.mockRejectedValueOnce(new Error('Native page textures are not ready'));
+    await act(async () => {
+      await view.next();
+    });
+    await act(async () => {
+      await view.next();
+    });
+    expect(h.controller.turn).toHaveBeenCalledTimes(2);
+  });
+  test('does not treat a same-page relocation as the previous page being ready', async () => {
+    const view = makeView();
+    view.lastLocation = { cfi: 'current-page' };
+    let finish!: () => void;
+    vi.mocked(view.prev).mockImplementation(
+      () =>
+        new Promise<void>((resolve) => {
+          finish = resolve;
+        }),
+    );
+    renderHook(() => useCapturedTurn('book-1', { current: view }));
+    let ready = false;
+    const turn = h.controllerHost!.navigate(false).then(() => {
+      ready = true;
+    });
+    await Promise.resolve();
+    h.renderer.dispatchEvent(new CustomEvent('relocate', { detail: { reason: 'page' } }));
+    for (let i = 0; i < 10; i++) await Promise.resolve();
+    const acceptedOldPage = ready;
+    finish();
+    await turn;
+    expect(acceptedOldPage).toBe(false);
+  });
+
+  test('starts the captured turn on page relocation before the paginator unlock delay', async () => {
+    const view = makeView();
+    let unlock!: () => void;
+    const navigation = new Promise<void>((resolve) => {
+      unlock = resolve;
+    });
+    vi.mocked(view.next).mockImplementation(() => navigation);
+    renderHook(() => useCapturedTurn('book-1', { current: view }));
+    let ready = false;
+    const turn = h.controllerHost!.navigate(true).then(() => {
+      ready = true;
+    });
+    await Promise.resolve();
+    view.lastLocation = { cfi: 'next-page' };
+    h.renderer.dispatchEvent(new CustomEvent('relocate', { detail: { reason: 'page' } }));
+    for (let i = 0; i < 10; i++) await Promise.resolve();
+    const respondedBeforeUnlock = ready;
+    unlock();
+    await turn;
+    expect(respondedBeforeUnlock).toBe(true);
+  });
+
+  test('waits for unlock before reversing a page whose animation already started', async () => {
+    const view = makeView();
+    const previous = view.prev;
+    let unlock!: () => void;
+    vi.mocked(view.next).mockImplementation(
+      () =>
+        new Promise<void>((resolve) => {
+          unlock = resolve;
+        }),
+    );
+    renderHook(() => useCapturedTurn('book-1', { current: view }));
+    const first = h.controllerHost!.navigate(true);
+    await Promise.resolve();
+    view.lastLocation = { cfi: 'next-page' };
+    h.renderer.dispatchEvent(new CustomEvent('relocate', { detail: { reason: 'page' } }));
+    await first;
+    const reversed = h.controllerHost!.navigate(false);
+    await Promise.resolve();
+    expect(previous).not.toHaveBeenCalled();
+    unlock();
+    await reversed;
+    expect(previous).toHaveBeenCalledOnce();
+    expect(h.renderer.listeners.get('relocate')?.size ?? 0).toBe(0);
+  });
+
+  test('ignores unrelated relocations and falls back to navigation completion', async () => {
+    const view = makeView();
+    let finish!: () => void;
+    vi.mocked(view.next).mockImplementation(
+      () =>
+        new Promise<void>((resolve) => {
+          finish = resolve;
+        }),
+    );
+    renderHook(() => useCapturedTurn('book-1', { current: view }));
+    let ready = false;
+    const turn = h.controllerHost!.navigate(true).then(() => {
+      ready = true;
+    });
+    await Promise.resolve();
+    h.renderer.dispatchEvent(
+      new CustomEvent('relocate', { detail: { reason: 'container-scroll' } }),
+    );
+    for (let i = 0; i < 10; i++) await Promise.resolve();
+    expect(ready).toBe(false);
+    finish();
+    await turn;
+    expect(ready).toBe(true);
+    expect(h.renderer.listeners.get('relocate')?.size ?? 0).toBe(0);
+  });
+
+  test('propagates navigation errors and removes the readiness listener', async () => {
+    const view = makeView();
+    vi.mocked(view.next).mockRejectedValue(new Error('page unavailable'));
+    renderHook(() => useCapturedTurn('book-1', { current: view }));
+    await expect(h.controllerHost!.navigate(true)).rejects.toThrow('page unavailable');
+    expect(h.renderer.listeners.get('relocate')?.size ?? 0).toBe(0);
+  });
+
   test('starts an eligible snapshot warm-up immediately on touchstart', () => {
     h.viewSettings.pageTurnStyle = 'slide';
     renderHook(() => useCapturedTurn('book-1', { current: makeView() }));

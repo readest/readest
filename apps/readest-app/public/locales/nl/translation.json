@@ -2639,5 +2639,22 @@
   "Month": "Maand",
   "Year": "Jaar",
   "Daily average {{time}}": "Daggemiddelde {{time}}",
-  "Failed to load reading statistics": "Leesstatistieken konden niet worden geladen"
+  "Failed to load reading statistics": "Leesstatistieken konden niet worden geladen",
+  "From Pasted Text": "Van geplakte tekst",
+  "Could not read the clipboard. Paste into the text box instead.": "Kan het klembord niet lezen. Plak de tekst in het tekstvak.",
+  "Pasted Text": "Geplakte tekst",
+  "Failed to import book.": "Boek importeren mislukt.",
+  "Import Pasted Text": "Geplakte tekst importeren",
+  "Paste an article or notes to read or listen to them like a book": "Plak een artikel of notities om ze als een boek te lezen of te beluisteren",
+  "Text": "Tekst",
+  "Paste": "Plakken",
+  "The shared text is no longer available": "De gedeelde tekst is niet meer beschikbaar",
+  "Shared Text": "Gedeelde tekst",
+  "Note Template": "Notitiesjabloon",
+  "Each highlight is rendered as Markdown with Nunjucks, then sent to Notion as blocks": "Elke markering wordt met Nunjucks als Markdown weergegeven en daarna als blokken naar Notion gestuurd",
+  "Quotes take the highlight color, and > [!NOTE] becomes a callout": "Citaten krijgen de markeringskleur en > [!NOTE] wordt een callout",
+  "Variables: {{variables}}": "Variabelen: {{variables}}",
+  "Stable Page Numbers": "Vaste paginanummers",
+  "Turn off to count pages by the screens of this device": "Zet uit om pagina's te tellen per scherm van dit apparaat",
+  "Page Flip": "Pagina omdraaien"
 }

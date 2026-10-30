@@ -2775,5 +2775,22 @@
   "Month": "Месяц",
   "Year": "Год",
   "Daily average {{time}}": "В среднем за день {{time}}",
-  "Failed to load reading statistics": "Не удалось загрузить статистику чтения"
+  "Failed to load reading statistics": "Не удалось загрузить статистику чтения",
+  "From Pasted Text": "Из вставленного текста",
+  "Could not read the clipboard. Paste into the text box instead.": "Не удалось прочитать буфер обмена. Вставьте текст в текстовое поле.",
+  "Pasted Text": "Вставленный текст",
+  "Failed to import book.": "Не удалось импортировать книгу.",
+  "Import Pasted Text": "Импортировать вставленный текст",
+  "Paste an article or notes to read or listen to them like a book": "Вставьте статью или заметки, чтобы читать или слушать их как книгу",
+  "Text": "Текст",
+  "Paste": "Вставить",
+  "The shared text is no longer available": "Общий текст больше недоступен",
+  "Shared Text": "Общий текст",
+  "Note Template": "Шаблон заметки",
+  "Each highlight is rendered as Markdown with Nunjucks, then sent to Notion as blocks": "Каждое выделение отображается как Markdown с помощью Nunjucks, а затем отправляется в Notion в виде блоков",
+  "Quotes take the highlight color, and > [!NOTE] becomes a callout": "Цитаты получают цвет выделения, а > [!NOTE] становится выноской",
+  "Variables: {{variables}}": "Переменные: {{variables}}",
+  "Stable Page Numbers": "Постоянные номера страниц",
+  "Turn off to count pages by the screens of this device": "Отключите, чтобы считать страницы по экранам этого устройства",
+  "Page Flip": "Перелистывание"
 }
