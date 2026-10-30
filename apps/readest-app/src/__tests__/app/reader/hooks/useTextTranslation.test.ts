@@ -453,4 +453,57 @@ describe('useTextTranslation', () => {
     readerState.getViewSettings = getViewSettings;
     vi.unstubAllGlobals();
   });
+
+  it('starts no queued translations after unmount when translation was enabled after mount', async () => {
+    const getViewSettings = readerState.getViewSettings;
+    let settings = { ...viewSettings, translationEnabled: false };
+    readerState.getViewSettings = () => settings;
+    const original = translate.getMockImplementation()!;
+    const resolvers: Array<() => void> = [];
+    translate.mockImplementation(
+      (texts: string[]) =>
+        new Promise<string[]>((resolve) => {
+          resolvers.push(() => resolve(texts.map(() => 'Translated.')));
+        }),
+    );
+    let onIntersect: IntersectionObserverCallback = () => {};
+    vi.stubGlobal(
+      'IntersectionObserver',
+      class {
+        constructor(callback: IntersectionObserverCallback) {
+          onIntersect = callback;
+        }
+        observe() {}
+        disconnect() {}
+      },
+    );
+    const view = document.createElement('div');
+    // More paragraphs than the 5 in flight, so some wait in the queue.
+    view.innerHTML = Array.from({ length: 8 }, (_, i) => `<p>Paragraph ${i}.</p>`).join('');
+    document.body.appendChild(view);
+    const before = translate.mock.calls.length;
+
+    // Off at mount, so the `[view]` effect registers no cleanup.
+    const { rerender, unmount } = renderHook(() => useTextTranslation('book-1', view));
+    settings = { ...viewSettings, translationEnabled: true };
+    rerender();
+    onIntersect(
+      Array.from(view.querySelectorAll('p')).map(
+        (target) => ({ isIntersecting: true, target }) as unknown as IntersectionObserverEntry,
+      ),
+      {} as IntersectionObserver,
+    );
+    expect(translate.mock.calls.length - before).toBe(5);
+
+    unmount();
+    resolvers.forEach((resolve) => resolve());
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(translate.mock.calls.length - before).toBe(5);
+
+    translate.mockImplementation(original);
+    view.remove();
+    readerState.getViewSettings = getViewSettings;
+    vi.unstubAllGlobals();
+  });
 });

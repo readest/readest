@@ -258,6 +258,7 @@ export function useTextTranslation(
       }
       observerRefs.current.forEach((observer) => observer.disconnect());
       observerRefs.current = [];
+      translationQueue.current = [];
       pendingDOMUpdates.current = [];
     };
   }, []);
