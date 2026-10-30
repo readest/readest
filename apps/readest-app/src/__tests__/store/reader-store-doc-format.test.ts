@@ -85,4 +85,32 @@ describe('readerStore records the parsed document format', () => {
     await open(ebook, new File([bytes], 'streamed.epub'));
     expect(bookData().book?.metadata?.absFileHash).toBe(md5(bytes));
   });
+
+  // The server can replace an item's file under the same abs:// path.
+  test('rehashes an Audiobookshelf ebook whose file was replaced', async () => {
+    const bytes = 'PK new edition';
+    const ebook = {
+      ...book,
+      metadata: { title: 'Streamed', absMediaType: 'ebook', absFileHash: md5('PK old edition') },
+    };
+    await open(ebook, new File([bytes], 'streamed.epub'));
+    expect(bookData().book?.metadata?.absFileHash).toBe(md5(bytes));
+  });
+
+  test('opens the book when hashing an Audiobookshelf ebook stalls', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout'] });
+    try {
+      const stalled = new File(['PK'], 'streamed.epub');
+      stalled.slice = () => ({ arrayBuffer: () => new Promise(() => {}) }) as never;
+      const ebook = { ...book, metadata: { title: 'Streamed', absMediaType: 'ebook' } };
+      let opened = false;
+      void open(ebook, stalled).then(() => {
+        opened = true;
+      });
+      await vi.advanceTimersByTimeAsync(10_000);
+      expect(opened).toBe(true);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });
