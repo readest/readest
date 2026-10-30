@@ -1,6 +1,7 @@
 // A book streamed from Audiobookshelf keeps `format: 'ABS'` in the library, so
 // the reader store records the format the document parsed as next to bookDoc.
 import { beforeEach, describe, expect, test, vi } from 'vitest';
+import { md5 } from 'js-md5';
 
 import type { BookData } from '@/store/bookDataStore';
 
@@ -41,14 +42,14 @@ import { DocumentLoader } from '@/libs/document';
 
 const book = { hash: 'stub', format: 'ABS', title: 'Streamed' };
 
-const open = async () => {
+const open = async (libraryBook: object = book, file = new File([], 'streamed.epub')) => {
   vi.mocked(DocumentLoader).mockImplementation(function () {
     const bookDoc = { metadata: { title: 'Streamed' }, sections: [], toc: [] };
     return { open: async () => ({ book: bookDoc, format: 'EPUB' }) };
   } as never);
-  vi.mocked(useLibraryStore.getState().getBookByHash).mockReturnValue(book as never);
+  vi.mocked(useLibraryStore.getState().getBookByHash).mockReturnValue(libraryBook as never);
   const appService = {
-    loadBookContent: async () => ({ file: new File([], 'streamed.epub') }),
+    loadBookContent: async () => ({ file }),
     resolveNativeBookFilePath: async () => null,
     loadBookConfig: async () => ({ viewSettings: {}, updatedAt: 0 }),
   };
@@ -74,5 +75,42 @@ describe('readerStore records the parsed document format', () => {
     await open();
     expect(DocumentLoader).not.toHaveBeenCalled();
     expect(bookData().docFormat).toBe('EPUB');
+  });
+
+  // KOReader Sync needs the id KOReader computes for the same file (#7088).
+  test("keeps an Audiobookshelf ebook's partial MD5 with the book", async () => {
+    // A file under 1 KiB is a single partialMD5 chunk: the md5 of all of it.
+    const bytes = 'PK epub bytes';
+    const ebook = { ...book, metadata: { title: 'Streamed', absMediaType: 'ebook' } };
+    await open(ebook, new File([bytes], 'streamed.epub'));
+    expect(bookData().book?.metadata?.absFileHash).toBe(md5(bytes));
+  });
+
+  // The server can replace an item's file under the same abs:// path.
+  test('rehashes an Audiobookshelf ebook whose file was replaced', async () => {
+    const bytes = 'PK new edition';
+    const ebook = {
+      ...book,
+      metadata: { title: 'Streamed', absMediaType: 'ebook', absFileHash: md5('PK old edition') },
+    };
+    await open(ebook, new File([bytes], 'streamed.epub'));
+    expect(bookData().book?.metadata?.absFileHash).toBe(md5(bytes));
+  });
+
+  test('opens the book when hashing an Audiobookshelf ebook stalls', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout'] });
+    try {
+      const stalled = new File(['PK'], 'streamed.epub');
+      stalled.slice = () => ({ arrayBuffer: () => new Promise(() => {}) }) as never;
+      const ebook = { ...book, metadata: { title: 'Streamed', absMediaType: 'ebook' } };
+      let opened = false;
+      void open(ebook, stalled).then(() => {
+        opened = true;
+      });
+      await vi.advanceTimersByTimeAsync(10_000);
+      expect(opened).toBe(true);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

@@ -111,6 +111,9 @@ export type BookMetadata = {
   absMediaType?: 'podcast' | 'ebook';
   absEpisodeCount?: number;
   absDuration?: number;
+  // The partial MD5 of an ABS ebook's file, which KOReader uses as the
+  // book's id; the hash comes from the abs:// path instead (#7088).
+  absFileHash?: string;
 };
 
 export type BookMediaSource = { blob: Blob } | { path: string; start: number; end: number };
