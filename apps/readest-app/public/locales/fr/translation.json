@@ -2723,5 +2723,6 @@
   "Quotes take the highlight color, and > [!NOTE] becomes a callout": "Les citations prennent la couleur du surlignage, et > [!NOTE] devient un encadré",
   "Variables: {{variables}}": "Variables : {{variables}}",
   "Stable Page Numbers": "Numéros de page stables",
-  "Turn off to count pages by the screens of this device": "Désactivez pour compter les pages selon les écrans de cet appareil"
+  "Turn off to count pages by the screens of this device": "Désactivez pour compter les pages selon les écrans de cet appareil",
+  "Page Flip": "Tourner la page"
 }

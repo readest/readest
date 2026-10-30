@@ -7,7 +7,7 @@ import {
 import type { CapturedTurnHost } from '@/app/reader/utils/capturedTurn';
 import type { Renderer } from '@/types/view';
 
-const fixture = (columns?: number) => {
+const fixture = (columns?: number, flip?: () => boolean) => {
   let page = 1;
   const events: string[] = [];
   const renderer = {
@@ -40,6 +40,7 @@ const fixture = (columns?: number) => {
       getHostElement: () => document.body,
       getContentRect: () => new DOMRect(0, 0, 360, 780),
       ...(columns ? { getColumnCount: () => columns } : {}),
+      ...(flip ? { isPageFlip: flip } : {}),
       capture,
       navigate,
     },
@@ -81,6 +82,24 @@ describe('Android native page-turn pipeline', () => {
         expect(f.call.mock.calls.find(([args]) => args.op === 'start')?.[0]).toMatchObject({
           columns,
         });
+      } finally {
+        f.controller.dispose();
+      }
+    }
+  });
+
+  it('asks the native scene for Page Flip only while it is the chosen style', async () => {
+    for (const [flip, expected] of [
+      [undefined, false],
+      [() => false, false],
+      [() => true, true],
+    ] as const) {
+      const f = fixture(1, flip);
+      try {
+        expect(await f.controller.turn(true, false)).toBe(true);
+        expect(f.call.mock.calls.find(([args]) => args.op === 'start')?.[0].flip ?? false).toBe(
+          expected,
+        );
       } finally {
         f.controller.dispose();
       }

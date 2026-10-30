@@ -72,7 +72,7 @@ export const getCapturedTurnStyle = (
   if (!isTauriAppPlatform() || captureBroken) return null;
   if (!viewSettings.animated || viewSettings.scrolled || viewSettings.isEink) return null;
   if (isFixedLayout && isPanningFixedLayout(viewSettings)) return null;
-  if (viewSettings.pageTurnStyle === 'curl') return 'curl';
+  if (viewSettings.pageTurnStyle === 'curl' || viewSettings.pageTurnStyle === 'flip') return 'curl';
   // `fixed-layout.js` has no strip to scroll, so its push is an instant swap;
   // the captured pipeline pushes the live view in beside the outgoing
   // capture instead. Reflowable books keep the paginator's native push.
@@ -102,7 +102,7 @@ export const applyPageTurnAttributes = (
   prepareNativeSlide = getInitializedAppService()?.isMobileApp === true,
 ) => {
   const captured = getCapturedTurnStyle(viewSettings, isFixedLayout, prepareNativeSlide);
-  const style = viewSettings.pageTurnStyle;
+  const style = viewSettings.pageTurnStyle === 'flip' ? 'curl' : viewSettings.pageTurnStyle;
   if (style && style !== 'push' && !captured && detectViewTransitionGroup()) {
     view.renderer.setAttribute('turn-style', style);
   } else {
@@ -397,7 +397,7 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
       getInitializedAppService()?.isAndroidApp || getInitializedAppService()?.isIOSApp;
     const bufferedPagesEnabled = () =>
       nativePaper &&
-      getViewSettings(bookKey)?.pageTurnStyle === 'curl' &&
+      ['curl', 'flip'].includes(getViewSettings(bookKey)?.pageTurnStyle ?? '') &&
       !getViewSettings(bookKey)?.vertical &&
       // The native paper also turns a two-column spread as one leaf, and
       // fixed layouts, which name their pages but cannot preview them.
@@ -451,10 +451,13 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
       getColumnCount: () =>
         getViewSettings(bookKey)?.vertical ? 1 : (view.renderer.columnCount ?? 1),
       // The leaf's back shows the incoming column, captured under the overlay
-      // behind a native cover on iOS and Android. The same cover protects
-      // the full previous-page capture for a backward curl.
+      // behind a native cover on iOS, Android and macOS. The same cover
+      // protects the full previous-page capture for a backward turn, which
+      // otherwise shows that page before the sheet arrives.
       coverRegion:
-        getInitializedAppService()?.isIOSApp || getInitializedAppService()?.isAndroidApp
+        getInitializedAppService()?.isIOSApp ||
+        getInitializedAppService()?.isAndroidApp ||
+        getInitializedAppService()?.isMacOSApp
           ? async (rect) => {
               const { token } = await coverWebviewRegion(rect);
               return () => uncoverWebviewRegion({ token });
@@ -492,6 +495,7 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
         restoreToolbarOnCancelRef.current = false;
         if (shouldRestore) await syncToolbarVisibility(true);
       },
+      isPageFlip: () => getViewSettings(bookKey)?.pageTurnStyle === 'flip',
       navigate: async (forward: boolean) => {
         if (pageBuffer.preparing) await pageBuffer.preparing;
         await navigationPending;

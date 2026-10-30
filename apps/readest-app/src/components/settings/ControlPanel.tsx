@@ -113,7 +113,11 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
           { value: 'curl', label: _('Page Curl') },
         ]
       : []),
+    // Only the captured and native turns draw the flip.
+    ...(isTauriAppPlatform() ? [{ value: 'flip', label: _('Page Flip') }] : []),
   ];
+  // On the web a synced flip turns as a curl.
+  const shownTurnStyle = pageTurnStyle === 'flip' && !isTauriAppPlatform() ? 'curl' : pageTurnStyle;
 
   const einkAutoRefreshIntervalOptions = [
     { value: '0', label: _('Off') },
@@ -627,7 +631,7 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
             // A synced slide/curl setting from another device still reads as
             // push here when this engine cannot animate it.
             value={
-              turnStyleOptions.some((opt) => opt.value === pageTurnStyle) ? pageTurnStyle : 'push'
+              turnStyleOptions.some((opt) => opt.value === shownTurnStyle) ? shownTurnStyle : 'push'
             }
             onChange={(e) => setPageTurnStyle(e.target.value as PageTurnStyle)}
             ariaLabel={_('Animation Style')}

@@ -2655,5 +2655,6 @@
   "Quotes take the highlight color, and > [!NOTE] becomes a callout": "Alıntılar vurgu rengini alır ve > [!NOTE] bir bilgi kutusuna dönüşür",
   "Variables: {{variables}}": "Değişkenler: {{variables}}",
   "Stable Page Numbers": "Sabit sayfa numaraları",
-  "Turn off to count pages by the screens of this device": "Sayfaları bu cihazın ekranlarına göre saymak için kapatın"
+  "Turn off to count pages by the screens of this device": "Sayfaları bu cihazın ekranlarına göre saymak için kapatın",
+  "Page Flip": "Sayfa Çevirme"
 }

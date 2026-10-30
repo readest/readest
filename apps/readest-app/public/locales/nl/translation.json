@@ -2655,5 +2655,6 @@
   "Quotes take the highlight color, and > [!NOTE] becomes a callout": "Citaten krijgen de markeringskleur en > [!NOTE] wordt een callout",
   "Variables: {{variables}}": "Variabelen: {{variables}}",
   "Stable Page Numbers": "Vaste paginanummers",
-  "Turn off to count pages by the screens of this device": "Zet uit om pagina's te tellen per scherm van dit apparaat"
+  "Turn off to count pages by the screens of this device": "Zet uit om pagina's te tellen per scherm van dit apparaat",
+  "Page Flip": "Pagina omdraaien"
 }
