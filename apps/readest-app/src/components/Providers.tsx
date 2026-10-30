@@ -40,6 +40,7 @@ import AppLockScreen from '@/components/AppLockScreen';
 import CarMediaLibraryBridge from '@/components/CarMediaLibraryBridge';
 import FileSyncReport from '@/components/FileSyncReport';
 import AppLockDialog from '@/components/settings/AppLockDialog';
+import { VocabularyDialog } from '@/components/vocabulary/VocabularyDialog';
 import PassphrasePrompt from '@/components/PassphrasePrompt';
 import TelemetryConsentDialog from '@/components/TelemetryConsentDialog';
 import { upgradeToKeychainIfAvailable } from '@/libs/crypto/passphrase';
@@ -278,6 +279,7 @@ const Providers = ({ children }: { children: React.ReactNode }) => {
                   <WindowResizeHandles />
                 </div>
                 <AppLockDialog />
+                <VocabularyDialog />
                 <TelemetryConsentDialog
                   open={showTelemetryConsent}
                   onClose={() => setShowTelemetryConsent(false)}

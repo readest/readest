@@ -40,6 +40,8 @@ import MenuItem from '@/components/MenuItem';
 import Quota from '@/components/Quota';
 import Menu from '@/components/Menu';
 import { type AppLockDialogMode, useAppLockStore } from '@/store/appLockStore';
+import { useVocabularyStore } from '@/store/vocabularyStore';
+import { PiCards } from 'react-icons/pi';
 
 interface SettingsMenuProps {
   onPullLibrary: (fullRefresh?: boolean, verbose?: boolean) => void;
@@ -221,6 +223,12 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
         setRefreshMetadataProgress('');
       }, 2000);
     }
+  };
+
+  const { setDialogOpen: setVocabularyDialogOpen } = useVocabularyStore();
+  const openVocabulary = () => {
+    setIsDropdownOpen?.(false);
+    setVocabularyDialogOpen(true);
   };
 
   const openReadingStats = () => {
@@ -421,6 +429,7 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
         }
         onClick={cycleThemeMode}
       />
+      <MenuItem label={_('Vocabulary')} Icon={PiCards} onClick={openVocabulary} />
       <MenuItem label={_('Reading Statistics')} Icon={PiChartBar} onClick={openReadingStats} />
       <MenuItem label={_('Settings')} Icon={PiGear} onClick={openSettingsDialog} />
       <hr aria-hidden='true' className='border-base-200 my-1' />
