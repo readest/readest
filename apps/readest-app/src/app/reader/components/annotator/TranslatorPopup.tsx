@@ -77,7 +77,7 @@ const TranslatorPopup: React.FC<TranslatorPopupProps> = ({
   // diagnosed from the popup itself (#5823).
   const [errorDetail, setErrorDetail] = useState<string | null>(null);
   const book = useBookDataStore((s) => s.getBookData(bookKey)?.book);
-  const { addWord, isWordSaved, removeWord, items } = useVocabularyStore();
+  const { addWord, removeWord, items } = useVocabularyStore();
   const savedItem = items.find((it) => it.word.toLowerCase() === text.trim().toLowerCase());
   const isSaved = !!savedItem;
 

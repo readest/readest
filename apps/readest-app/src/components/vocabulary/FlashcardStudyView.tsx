@@ -56,7 +56,7 @@ export const FlashcardStudyView: React.FC<FlashcardStudyViewProps> = ({
   const handlePronounce = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (currentItem?.word) {
-      void pronounceWord(currentItem.word, currentItem.sourceLang);
+      void pronounceWord(currentItem.word, currentItem.sourceLang, {});
     }
   };
 

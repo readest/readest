@@ -9,4 +9,5 @@ export type AnnotationToolType =
   | 'tts'
   | 'proofread'
   | 'share'
-  | 'quotecard';
+  | 'quotecard'
+  | 'wordtabs';

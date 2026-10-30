@@ -6,14 +6,12 @@ import {
   PiTrash,
   PiSpeakerHigh,
   PiCheckCircle,
-  PiClockCountdown,
   PiMagnifyingGlass,
   PiDownloadSimple,
 } from 'react-icons/pi';
 import Dialog from '@/components/Dialog';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useVocabularyStore } from '@/store/vocabularyStore';
-import { VocabularyItem, VocabularyMastery } from '@/types/vocabulary';
 import { FlashcardStudyView } from './FlashcardStudyView';
 import { pronounceWord } from '@/services/tts/wordPronouncer';
 
@@ -188,7 +186,7 @@ export const VocabularyDialog: React.FC = () => {
                       <span className='font-bold text-base text-base-content'>{item.word}</span>
                       <button
                         type='button'
-                        onClick={() => void pronounceWord(item.word, item.sourceLang)}
+                        onClick={() => void pronounceWord(item.word, item.sourceLang, {})}
                         className='text-base-content/50 hover:text-primary transition-colors'
                         title={_('Pronounce')}
                       >

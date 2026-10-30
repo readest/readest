@@ -28,6 +28,7 @@ interface VocabularyStore {
   }) => VocabularyItem;
 
   removeWord: (id: string) => void;
+  updateWordTranslation: (id: string, translation: string) => void;
   updateMastery: (id: string, mastery: VocabularyMastery) => void;
   recordReview: (id: string, mastery?: VocabularyMastery) => void;
   isWordSaved: (word: string) => boolean;
@@ -88,6 +89,13 @@ export const useVocabularyStore = create<VocabularyStore>()(
       removeWord: (id) =>
         set((state) => ({
           items: state.items.filter((item) => item.id !== id),
+        })),
+
+      updateWordTranslation: (id, translation) =>
+        set((state) => ({
+          items: state.items.map((item) =>
+            item.id === id ? { ...item, translation: translation.trim() } : item,
+          ),
         })),
 
       updateMastery: (id, mastery) =>
