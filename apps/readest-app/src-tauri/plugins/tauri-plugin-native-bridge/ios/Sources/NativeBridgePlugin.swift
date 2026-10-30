@@ -1248,6 +1248,10 @@ class NativeBridgePlugin: Plugin {
             rootVC.setNeedsUpdateOfSupportedInterfaceOrientations()
           }
         }
+        // Release any iOS 26 lock first so it can't block this request.
+        if #available(iOS 26.0, *) {
+          OrientationLock.apply(.all, in: windowScene)
+        }
         if orientationMask == .all {
           windowScene.requestGeometryUpdate(.iOS(interfaceOrientations: .all)) { error in
             logger.error("Orientation update error: \(error.localizedDescription)")
@@ -1258,6 +1262,14 @@ class NativeBridgePlugin: Plugin {
         } else {
           windowScene.requestGeometryUpdate(.iOS(interfaceOrientations: orientationMask)) { error in
             logger.error("Orientation update error: \(error.localizedDescription)")
+            // Resizable scenes refuse the request; lock through the iOS 26
+            // preference instead, unless the reader has picked again since.
+            if #available(iOS 26.0, *) {
+              DispatchQueue.main.async {
+                guard self.currentOrientationMask == orientationMask else { return }
+                OrientationLock.apply(orientationMask, in: windowScene)
+              }
+            }
           }
         }
       }
