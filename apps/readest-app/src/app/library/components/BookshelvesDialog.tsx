@@ -714,7 +714,10 @@ export function BookshelvesEditor({
               <SettingsSwitchRow
                 label={_('Show page count')}
                 checked={!!selected.showPageCount}
-                onChange={() => update({ showPageCount: !selected.showPageCount })}
+                // Off clears the key: older app versions reject a definition carrying it.
+                onChange={() =>
+                  update({ showPageCount: selected.showPageCount ? undefined : true })
+                }
               />
             </BoxedList>
             <BookshelfFilterEditor
