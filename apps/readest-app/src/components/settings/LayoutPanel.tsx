@@ -8,7 +8,6 @@ import { useEnv } from '@/context/EnvContext';
 import { useReaderStore } from '@/store/readerStore';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useSettingsStore } from '@/store/settingsStore';
-import { useThemeStore } from '@/store/themeStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useResetViewSettings } from '@/hooks/useResetSettings';
 import { isCJKEnv } from '@/utils/misc';
@@ -68,11 +67,6 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
     viewSettings.compactMarginRightPx,
   );
   const [maxColumnCount, setMaxColumnCount] = useState(viewSettings.maxColumnCount);
-  const [duoBookMode, setDuoBookMode] = useState(viewSettings.duoBookMode ?? true);
-  const [duoFoldedBookMode, setDuoFoldedBookMode] = useState(
-    viewSettings.duoFoldedBookMode ?? true,
-  );
-  const isIPhoneDuo = useThemeStore((s) => s.isIPhoneDuo);
   const [maxInlineSize, setMaxInlineSize] = useState(viewSettings.maxInlineSize);
   const [maxBlockSize, setMaxBlockSize] = useState(viewSettings.maxBlockSize);
   const [writingMode, setWritingMode] = useState(viewSettings.writingMode);
@@ -145,8 +139,6 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
       gapPercent: setGapPercent,
       columnGapPx: setColumnGapPx,
       maxColumnCount: setMaxColumnCount,
-      duoBookMode: setDuoBookMode,
-      duoFoldedBookMode: setDuoFoldedBookMode,
       maxInlineSize: setMaxInlineSize,
       maxBlockSize: setMaxBlockSize,
       overrideLayout: setOverrideLayout,
@@ -325,19 +317,6 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
     view?.renderer.setAttribute('max-inline-size', `${getMaxInlineSize(newViewSettings)}px`);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [maxColumnCount]);
-
-  useEffect(() => {
-    if (duoBookMode === (viewSettings.duoBookMode ?? true)) return;
-    // FoliateViewer re-lays out the page for the new mode.
-    saveViewSettings(envConfig, bookKey, 'duoBookMode', duoBookMode, false, false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [duoBookMode]);
-
-  useEffect(() => {
-    if (duoFoldedBookMode === (viewSettings.duoFoldedBookMode ?? true)) return;
-    saveViewSettings(envConfig, bookKey, 'duoFoldedBookMode', duoFoldedBookMode, false, false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [duoFoldedBookMode]);
 
   useEffect(() => {
     if (maxInlineSize === viewSettings.maxInlineSize) return;
@@ -775,28 +754,6 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
           max={4}
           data-setting-id='settings.layout.maxColumnCount'
         />
-        {isIPhoneDuo && (
-          <SettingsSwitchRow
-            label={_('Two Pages When Unfolded')}
-            description={_(
-              'In landscape, show a page on each side of the fold. Sets the columns there.',
-            )}
-            checked={duoBookMode}
-            disabled={isVertical}
-            onChange={() => setDuoBookMode(!duoBookMode)}
-            data-setting-id='settings.layout.duoBookMode'
-          />
-        )}
-        {isIPhoneDuo && (
-          <SettingsSwitchRow
-            label={_('Two Pages When Partly Folded')}
-            description={_('Show two pages while the phone is held part way open, like a book')}
-            checked={duoFoldedBookMode}
-            disabled={isVertical}
-            onChange={() => setDuoFoldedBookMode(!duoFoldedBookMode)}
-            data-setting-id='settings.layout.duoFoldedBookMode'
-          />
-        )}
         <NumberInput
           label={viewSettings.vertical ? _('Maximum Column Height') : _('Maximum Column Width')}
           value={maxInlineSize}

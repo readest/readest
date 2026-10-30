@@ -725,11 +725,10 @@ class NativeBridgePlugin: Plugin {
         // forward those too, at most every 250ms plus one trailing update.
         if statusChanged || Date().timeIntervalSince(self.lastHingeEvent) >= 0.25 {
           self.sendHingeEvent()
-        } else if !self.hingeEventPending {
-          self.hingeEventPending = true
-          DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { [weak self] in
-            self?.sendHingeEvent()
-          }
+        } else if self.pendingHingeEvent == nil {
+          let event = DispatchWorkItem { [weak self] in self?.sendHingeEvent() }
+          self.pendingHingeEvent = event
+          DispatchQueue.main.asyncAfter(deadline: .now() + 0.25, execute: event)
         }
       }
       webview.addInteraction(hingeInteraction)
@@ -1555,10 +1554,12 @@ class NativeBridgePlugin: Plugin {
 
   private var lastHingeStatus = "unknown"
   private var lastHingeEvent = Date.distantPast
-  private var hingeEventPending = false
+  // The trailing update, cancelled when an update is sent before it runs.
+  private var pendingHingeEvent: DispatchWorkItem?
 
   private func sendHingeEvent() {
-    hingeEventPending = false
+    pendingHingeEvent?.cancel()
+    pendingHingeEvent = nil
     lastHingeEvent = Date()
     trigger("duo-fold-changed", data: ["status": lastHingeStatus])
   }
