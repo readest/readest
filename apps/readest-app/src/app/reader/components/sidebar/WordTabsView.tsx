@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import clsx from 'clsx';
 import { PiCards } from 'react-icons/pi';
 import { BsTranslate } from 'react-icons/bs';
 import { RiDeleteBinLine } from 'react-icons/ri';
 import { FiCheck, FiRefreshCw } from 'react-icons/fi';
 import { useVocabularyStore } from '@/store/vocabularyStore';
+import { useBookDataStore } from '@/store/bookDataStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { translateSingleText } from '@/services/translators/quickTranslate';
 import { VocabularyItem, VocabularyMastery } from '@/types/vocabulary';
@@ -18,17 +19,59 @@ interface WordTabsViewProps {
 
 export const WordTabsView: React.FC<WordTabsViewProps> = ({ bookKey }) => {
   const _ = useTranslation();
-  const { items, removeWord, updateMastery, updateWordTranslation, setDialogOpen } =
+  const { items, removeWord, updateMastery, updateWordTranslation, setDialogOpen, setBookFilter } =
     useVocabularyStore();
+  const currentBook = useBookDataStore((s) => s.getBookData(bookKey)?.book);
+  const currentTitle = currentBook?.title?.trim().toLowerCase();
+
   const [filterMode, setFilterMode] = useState<'current' | 'all'>('current');
   const [translatingId, setTranslatingId] = useState<string | null>(null);
 
-  const filteredItems = items.filter((item) => {
-    if (filterMode === 'current') {
-      return item.bookKey === bookKey;
+  const isCurrentBookItem = useCallback(
+    (item: VocabularyItem) => {
+      if (item.bookKey && bookKey) {
+        if (item.bookKey === bookKey) return true;
+        try {
+          if (decodeURIComponent(item.bookKey) === decodeURIComponent(bookKey)) return true;
+        } catch {
+          // ignore
+        }
+      }
+      if (currentTitle && item.bookTitle) {
+        if (item.bookTitle.trim().toLowerCase() === currentTitle) return true;
+      }
+      return false;
+    },
+    [bookKey, currentTitle],
+  );
+
+  // Auto-heal items saved under this title without bookKey
+  useEffect(() => {
+    if (!bookKey || !currentTitle) return;
+    const hasUnlinked = items.some(
+      (it) =>
+        (!it.bookKey || it.bookKey !== bookKey) &&
+        it.bookTitle &&
+        it.bookTitle.trim().toLowerCase() === currentTitle,
+    );
+    if (hasUnlinked) {
+      useVocabularyStore.setState((state) => ({
+        items: state.items.map((it) => {
+          if (
+            (!it.bookKey || it.bookKey !== bookKey) &&
+            it.bookTitle &&
+            it.bookTitle.trim().toLowerCase() === currentTitle
+          ) {
+            return { ...it, bookKey };
+          }
+          return it;
+        }),
+      }));
     }
-    return true;
-  });
+  }, [bookKey, currentTitle, items]);
+
+  const thisBookItems = items.filter(isCurrentBookItem);
+  const filteredItems = filterMode === 'current' ? thisBookItems : items;
 
   const handleTranslate = async (item: VocabularyItem) => {
     if (translatingId) return;
@@ -83,12 +126,21 @@ export const WordTabsView: React.FC<WordTabsViewProps> = ({ bookKey }) => {
     }
   };
 
+  const handleOpenStudy = () => {
+    if (filterMode === 'current' && currentBook?.title) {
+      setBookFilter(currentBook.title);
+    } else {
+      setBookFilter('ALL');
+    }
+    setDialogOpen(true);
+  };
+
   return (
     <div className='flex h-full flex-col p-3'>
       {/* Top Header Actions */}
       <div className='mb-3 flex flex-col gap-2'>
         <button
-          onClick={() => setDialogOpen(true)}
+          onClick={handleOpenStudy}
           className='btn btn-primary btn-sm flex w-full items-center justify-center gap-2 shadow-sm'
         >
           <PiCards className='size-4' />
@@ -105,7 +157,7 @@ export const WordTabsView: React.FC<WordTabsViewProps> = ({ bookKey }) => {
               filterMode === 'current' && 'tab-active font-semibold',
             )}
           >
-            {_('This Book')}
+            {_('This Book')} ({thisBookItems.length})
           </button>
           <button
             onClick={() => setFilterMode('all')}

@@ -60,6 +60,7 @@ export const useVocabularyStore = create<VocabularyStore>()(
             ...existing,
             translation: data.translation || existing.translation,
             contextSentence: data.contextSentence || existing.contextSentence,
+            bookKey: data.bookKey || existing.bookKey,
             bookTitle: data.bookTitle || existing.bookTitle,
           };
           set((state) => ({
