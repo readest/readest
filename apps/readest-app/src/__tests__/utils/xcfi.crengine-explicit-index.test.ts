@@ -18,7 +18,7 @@ const makeBook = (sections: number): BookDoc =>
       linear: 'yes',
       createDocument: async () =>
         createDocument(
-          `<html><body><div><p>s${s} p1</p><p>s${s} p2</p><p>s${s} <b>bold</b> p3</p></div></body></html>`,
+          `<html><body><div><p>s${s} p1</p><p>s${s} p2</p><p>s${s} <b>bold</b> p3</p><p>s${s} p4</p></div></body></html>`,
         ),
     })),
   }) as unknown as BookDoc;
@@ -32,8 +32,8 @@ const openBook = async (name: string, type: string): Promise<BookDoc> => {
 describe('XPointers with an explicit [1] on every first step', () => {
   it('reads the position from #7166', async () => {
     const book = makeBook(23);
-    const explicit = '/body[1]/DocFragment[23]/body[1]/div[1]/p[2]/text()[1].0';
-    const old = '/body/DocFragment[23]/body/div/p[2]/text().0';
+    const explicit = '/body[1]/DocFragment[23]/body[1]/div[1]/p[4]/text()[1].0';
+    const old = '/body/DocFragment[23]/body/div/p[4]/text().0';
     const cfi = await getCFIFromXPointer(explicit, undefined, undefined, book);
     expect(cfi).toBe(await getCFIFromXPointer(old, undefined, undefined, book));
   });
