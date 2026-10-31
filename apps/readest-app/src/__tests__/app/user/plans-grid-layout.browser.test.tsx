@@ -49,10 +49,7 @@ const renderGrid = (userPlan: UserPlan = 'free') =>
     </div>,
   );
 
-const cards = () =>
-  Array.from(document.querySelectorAll('div.bg-base-100.rounded-lg')).filter((el) =>
-    el.className.includes('h-full'),
-  ) as HTMLElement[];
+const cards = () => Array.from(document.querySelectorAll('[data-plan-card]')) as HTMLElement[];
 
 afterEach(() => cleanup());
 
@@ -104,6 +101,26 @@ describe('plans grid layout', () => {
     expect(panels).toHaveLength(3);
     const tops = panels.map((p) => Math.round(p.getBoundingClientRect().top));
     expect(tops[0]).toBe(tops[1]);
+  });
+
+  // Safari 16 sized every card to a fraction of the viewport and clipped the
+  // rest (#7181). Chromium never did, so this guards the invariant here; the
+  // Safari 16 check itself ran on WebKit 16.4.
+  it('makes every card tall enough for its content', async () => {
+    for (const [width, height] of [
+      [390, 844],
+      [768, 1024],
+      [1024, 768],
+    ] as const) {
+      await page.viewport(width, height);
+      renderGrid();
+
+      expect(cards()).toHaveLength(4);
+      for (const card of cards()) {
+        expect(card.clientHeight).toBeGreaterThanOrEqual(card.scrollHeight);
+      }
+      cleanup();
+    }
   });
 
   it('drops to a single column on a phone', async () => {
