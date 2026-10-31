@@ -293,9 +293,7 @@ export class NativeNarrationPlayer {
   #onNativeEvent(event: PlayoutEvent): void {
     if (this.#resolvedSession !== null && event.session !== this.#resolvedSession) return;
     if (event.type === 'ended') {
-      this.#ended = true;
-      this.#cache.playing = false;
-      for (const fn of [...this.#endedListeners]) fn();
+      this.#finishEnded();
     } else if (event.type === 'error') {
       // The item failed to load or play. Nothing will ever move the clock, so
       // this is the only thing that can unstick a waiting speak().
@@ -307,6 +305,14 @@ export class NativeNarrationPlayer {
       this.#cache.playing = !this.#userPaused;
       this.#cache.at = performance.now();
     }
+  }
+
+  #finishEnded(): void {
+    if (this.#ended) return;
+    this.#ended = true;
+    this.#cache.playing = false;
+    this.#stopPolling();
+    for (const fn of [...this.#endedListeners]) fn();
   }
 
   #startPolling(): void {
@@ -335,9 +341,10 @@ export class NativeNarrationPlayer {
           at: performance.now(),
         };
       } else {
-        // No current item: freeze the extrapolated clock on the last known
-        // position rather than letting it run away past the end of the file.
-        this.#cache.playing = false;
+        // Android can emit `ended` while the WebView is suspended under screen
+        // lock. If that event is not delivered, the position query is the only
+        // observable completion signal once JavaScript resumes.
+        this.#finishEnded();
       }
     } catch {
       // Transient invoke failures must not kill the poll loop.

@@ -159,14 +159,19 @@ describe('NativeNarrationPlayer', () => {
     await player.shutdown();
   });
 
-  test('freezes the clock when the native player reports no current item', async () => {
+  test('recovers an ended event missed while the WebView was suspended', async () => {
     const player = new NativeNarrationPlayer();
     await player.load('ch1.mp3', new Blob([new Uint8Array(4)]), 0);
+    const ended = vi.fn();
+    player.addEventListener('ended', ended);
     await player.play();
     expect(player.paused).toBe(false);
 
     position = { session: 3, index: -1, positionMs: 0, playing: false };
-    await vi.waitFor(() => expect(player.paused).toBe(true));
+    await vi.waitFor(() => expect(ended).toHaveBeenCalledOnce());
+    expect(player.paused).toBe(true);
+    playoutEvents!({ type: 'ended', session: 3, index: 0 });
+    expect(ended).toHaveBeenCalledOnce();
     await player.shutdown();
   });
 
