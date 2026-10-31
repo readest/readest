@@ -2384,7 +2384,6 @@
   "{{seconds}}s": "{{seconds}} s",
   "Could not read the length of every track in this audiobook": "Nu s-a putut citi durata fiecărei piese din această carte audio",
   "Manage the streamed audiobook paired with this ebook.": "Gestionează cartea audio transmisă în flux asociată cu această carte electronică.",
-  "Dismiss": "Închide",
   "Failed to upload the library index. Please sync again.": "Nu s-a putut încărca indexul bibliotecii. Sincronizați din nou.",
   "Search results": "Rezultatele căutării",
   "Filter group": "Grup de filtre",
