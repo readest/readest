@@ -171,7 +171,6 @@ describe('BookTTSCacheStore', () => {
         'hash123',
         bookData.destinations,
         expect.any(Map),
-        undefined,
       ),
     );
     expect(bookData.getBookDataDestinations).toHaveBeenCalledWith(appService, 'hash123');
@@ -217,7 +216,6 @@ describe('BookTTSCacheStore', () => {
         'hash777',
         bookData.destinations,
         expect.any(Map),
-        undefined,
       );
     await vi.waitFor(pushed);
     bookData.pushBookData.mockClear();
@@ -287,13 +285,20 @@ describe('BookTTSCacheStore', () => {
       // A book without audio, synced before: no listing at all.
       await openWith('hash-rec1', { webdav: [], readest: [] });
       expect(bookData.pullBookData).not.toHaveBeenCalled();
+    });
+
+    test('the push never trusts the record, so purged packs are uploaded again', async () => {
+      // The record only grows by merging: after a book's audio is purged from
+      // a destination (the book removed from Readest Cloud) it still names
+      // those packs, and a push trusting it would never upload them again.
+      await openWith('hash-rec5', { readest: ['1-a.mp3'] });
       expect(bookData.pushBookData).toHaveBeenCalledWith(
         expect.objectContaining({ id: 'tts' }),
-        'hash-rec1',
+        'hash-rec5',
         bookData.destinations,
         expect.any(Map),
-        { webdav: [], readest: [] },
       );
+      expect(bookData.pushBookData.mock.calls[0]).toHaveLength(4);
     });
 
     test('an open pulls when the record lists a pack this device lacks', async () => {

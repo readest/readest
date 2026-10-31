@@ -403,7 +403,10 @@ export class BookTTSCacheStore implements TTSCacheStore {
       const kind = createTTSBookDataKind(store);
       // What each destination holds, synced in the book's config: an open
       // pulls only when it names a pack this device lacks, or a destination it
-      // has never recorded. A book without audio then makes no request.
+      // has never recorded. A book without audio then makes no request. The
+      // push never trusts it: it only grows by merging, so it still names
+      // packs purged with the book from a destination; a device with audio
+      // lists before pushing, which also corrects the record.
       const books = useBookDataStore.getState();
       const recorded = books.getConfig(bookHash)?.ttsPacks;
       const needsPull = async () => {
@@ -418,7 +421,7 @@ export class BookTTSCacheStore implements TTSCacheStore {
       if (direction === 'both' && (await needsPull())) {
         await pullBookData(kind, bookHash, destinations, listings);
       }
-      await pushBookData(kind, bookHash, destinations, listings, recorded);
+      await pushBookData(kind, bookHash, destinations, listings);
 
       // Record what each listed destination holds; one that declined the
       // book holds nothing.
