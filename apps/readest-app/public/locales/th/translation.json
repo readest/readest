@@ -1844,8 +1844,6 @@
   "Audio Cache": "แคชเสียง",
   "Cache Synthesized Audio": "แคชเสียงสังเคราะห์",
   "Reuse generated speech across sessions without refetching": "ใช้เสียงที่สร้างไว้ซ้ำระหว่างเซสชันโดยไม่ต้องดึงใหม่",
-  "Sync Audio Cache": "ซิงค์แคชเสียง",
-  "Share section audio between your devices through your file sync service": "แชร์เสียงของแต่ละส่วนระหว่างอุปกรณ์ผ่านบริการซิงค์ไฟล์ของคุณ",
   "Storage Limit": "ขีดจำกัดพื้นที่จัดเก็บ",
   "Playback settings": "การตั้งค่าการเล่น",
   "Player Style": "รูปแบบตัวเล่น",
@@ -2594,5 +2592,7 @@
   "One page": "หนึ่งหน้า",
   "Two pages": "สองหน้า",
   "Show One Page": "แสดงหนึ่งหน้า",
-  "Show Two Pages": "แสดงสองหน้า"
+  "Show Two Pages": "แสดงสองหน้า",
+  "Book Data": "ข้อมูลหนังสือ",
+  "Downloaded read-aloud audio and translations": "เสียงอ่านออกเสียงที่ดาวน์โหลดและคำแปล"
 }

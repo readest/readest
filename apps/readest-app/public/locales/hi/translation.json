@@ -1880,8 +1880,6 @@
   "Audio Cache": "ऑडियो कैश",
   "Cache Synthesized Audio": "सिंथेसाइज़ किया गया ऑडियो कैश करें",
   "Reuse generated speech across sessions without refetching": "जनरेट की गई आवाज़ को दोबारा प्राप्त किए बिना सत्रों में फिर से उपयोग करें",
-  "Sync Audio Cache": "ऑडियो कैश सिंक करें",
-  "Share section audio between your devices through your file sync service": "अपनी फ़ाइल सिंक सेवा के ज़रिये अपने डिवाइसों के बीच खंड ऑडियो साझा करें",
   "Storage Limit": "संग्रहण सीमा",
   "Playback settings": "प्लेबैक सेटिंग्स",
   "Player Style": "प्लेयर शैली",
@@ -2663,5 +2661,7 @@
   "One page": "एक पृष्ठ",
   "Two pages": "दो पृष्ठ",
   "Show One Page": "एक पृष्ठ दिखाएँ",
-  "Show Two Pages": "दो पृष्ठ दिखाएँ"
+  "Show Two Pages": "दो पृष्ठ दिखाएँ",
+  "Book Data": "पुस्तक डेटा",
+  "Downloaded read-aloud audio and translations": "डाउनलोड किया गया पढ़कर सुनाने का ऑडियो और अनुवाद"
 }

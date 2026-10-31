@@ -62,7 +62,7 @@ vi.mock('@/helpers/settings', () => ({
 }));
 
 vi.mock('@/services/tts/providers/bookCacheStore', () => ({
-  getTTSCacheConfig: () => ({ enabled: false, syncEnabled: false, budgetMB: 200 }),
+  getTTSCacheConfig: () => ({ enabled: false, budgetMB: 200 }),
   setTTSCacheConfig: vi.fn(),
 }));
 
@@ -127,6 +127,16 @@ const getCustomServicesRow = () =>
 
 // Custom TTS services are premium: free and signed-out readers see the row
 // with a Premium badge that routes to the upgrade page or sign-in.
+describe('TTSPanel audio cache', () => {
+  afterEach(cleanup);
+
+  it('has no audio sync switch of its own (Book Data sync covers it)', () => {
+    const { container } = render(<TTSPanel bookKey='book-1' onRegisterReset={vi.fn()} />);
+    expect(container.querySelector("[data-setting-id='settings.tts.audioCache']")).not.toBeNull();
+    expect(container.querySelector("[data-setting-id='settings.tts.audioCacheSync']")).toBeNull();
+  });
+});
+
 describe('TTSPanel custom TTS services premium gate', () => {
   beforeEach(() => {
     state.token = null;

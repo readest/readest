@@ -1880,8 +1880,6 @@
   "Audio Cache": "Ljudcache",
   "Cache Synthesized Audio": "Cacha syntetiserat ljud",
   "Reuse generated speech across sessions without refetching": "Återanvänd genererat tal mellan sessioner utan att hämta det igen",
-  "Sync Audio Cache": "Synkronisera ljudcache",
-  "Share section audio between your devices through your file sync service": "Dela avsnittsljud mellan dina enheter via din filsynkroniseringstjänst",
   "Storage Limit": "Lagringsgräns",
   "Playback settings": "Uppspelningsinställningar",
   "Player Style": "Spelarstil",
@@ -2663,5 +2661,7 @@
   "One page": "En sida",
   "Two pages": "Två sidor",
   "Show One Page": "Visa en sida",
-  "Show Two Pages": "Visa två sidor"
+  "Show Two Pages": "Visa två sidor",
+  "Book Data": "Bokdata",
+  "Downloaded read-aloud audio and translations": "Nedladdat uppläsningsljud och översättningar"
 }

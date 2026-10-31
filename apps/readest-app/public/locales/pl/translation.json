@@ -1952,8 +1952,6 @@
   "Audio Cache": "Pamięć podręczna audio",
   "Cache Synthesized Audio": "Buforuj syntezowany dźwięk",
   "Reuse generated speech across sessions without refetching": "Używaj ponownie wygenerowanej mowy między sesjami bez ponownego pobierania",
-  "Sync Audio Cache": "Synchronizuj pamięć podręczną audio",
-  "Share section audio between your devices through your file sync service": "Udostępniaj dźwięk sekcji między urządzeniami za pomocą usługi synchronizacji plików",
   "Storage Limit": "Limit pamięci",
   "Playback settings": "Ustawienia odtwarzania",
   "Player Style": "Styl odtwarzacza",
@@ -2801,5 +2799,7 @@
   "One page": "Jedna strona",
   "Two pages": "Dwie strony",
   "Show One Page": "Pokaż jedną stronę",
-  "Show Two Pages": "Pokaż dwie strony"
+  "Show Two Pages": "Pokaż dwie strony",
+  "Book Data": "Dane książki",
+  "Downloaded read-aloud audio and translations": "Pobrane audio czytania na głos i tłumaczenia"
 }

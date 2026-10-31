@@ -971,7 +971,7 @@ export class SqliteTTSCacheStore implements TTSCacheStore {
     return rows[0]?.total ?? 0;
   }
 
-  // ── Pack sync surface (services/sync/file/ttsPackSync) ────────────────
+  // ── Pack sync surface (services/sync/bookData/ttsKind) ────────────────
   // The database is the source of truth for what packs exist; the sidecar
   // is REBUILT from rows rather than read from disk, so a stale or missing
   // sidecar file can never poison a push.

@@ -26,8 +26,6 @@ const DOWNLOADS_MARKER = 'downloads.json';
 export interface TTSCacheConfig {
   enabled: boolean;
   budgetMB: number;
-  // Share section packs through the user's third-party file-sync provider.
-  syncEnabled: boolean;
 }
 
 // localStorage-backed like the other TTS preferences (TTSUtils); a settings
@@ -39,10 +37,9 @@ export const getTTSCacheConfig = (): TTSCacheConfig => {
     return {
       enabled: parsed.enabled !== false,
       budgetMB: typeof parsed.budgetMB === 'number' ? parsed.budgetMB : DEFAULT_BUDGET_MB,
-      syncEnabled: parsed.syncEnabled === true,
     };
   } catch {
-    return { enabled: true, budgetMB: DEFAULT_BUDGET_MB, syncEnabled: false };
+    return { enabled: true, budgetMB: DEFAULT_BUDGET_MB };
   }
 };
 
@@ -355,20 +352,26 @@ export class BookTTSCacheStore implements TTSCacheStore {
     }
   }
 
-  // Push/pull section packs through the selected file-sync provider. The
-  // sync module is imported lazily: it must stay out of the TTS module
-  // graph (settingsStore -> constants -> EdgeTTSClient would cycle) and out
-  // of sessions that never enable sync.
+  // Push/pull downloaded section packs through every book-data destination
+  // (Book Data sync). The sync modules are imported lazily: they must stay
+  // out of the TTS module graph (settingsStore -> constants -> EdgeTTSClient
+  // would cycle).
   #syncPacks(bookHash: string, store: SqliteTTSCacheStore, direction: 'push' | 'both'): void {
-    if (!getTTSCacheConfig().syncEnabled) return;
     void (async () => {
-      const { getActiveTTSPackSyncProvider, pullTTSPacks, pushTTSPacks } = await import(
-        '@/services/sync/file/ttsPackSync'
-      );
-      const provider = await getActiveTTSPackSyncProvider();
-      if (!provider) return;
-      if (direction === 'both') await pullTTSPacks(provider, bookHash, store);
-      await pushTTSPacks(provider, bookHash, store);
+      const [
+        { getBookDataDestinations },
+        { pullBookData, pushBookData },
+        { createTTSBookDataKind },
+      ] = await Promise.all([
+        import('@/services/sync/bookData/destinationsFor'),
+        import('@/services/sync/bookData/engine'),
+        import('@/services/sync/bookData/ttsKind'),
+      ]);
+      const destinations = await getBookDataDestinations(this.#appService, bookHash);
+      if (!destinations.length) return;
+      const kind = createTTSBookDataKind(store);
+      if (direction === 'both') await pullBookData(kind, bookHash, destinations);
+      await pushBookData(kind, bookHash, destinations);
     })().catch((err) => {
       console.warn('TTS pack sync failed', err);
     });

@@ -1844,8 +1844,6 @@
   "Audio Cache": "音声キャッシュ",
   "Cache Synthesized Audio": "合成音声をキャッシュ",
   "Reuse generated speech across sessions without refetching": "生成した音声をセッションをまたいで再利用し、再取得を不要にします",
-  "Sync Audio Cache": "音声キャッシュを同期",
-  "Share section audio between your devices through your file sync service": "ファイル同期サービスを通じてセクションの音声をデバイス間で共有",
   "Storage Limit": "ストレージ上限",
   "Playback settings": "再生設定",
   "Player Style": "プレーヤーのスタイル",
@@ -2594,5 +2592,7 @@
   "One page": "1ページ",
   "Two pages": "2ページ",
   "Show One Page": "1ページ表示",
-  "Show Two Pages": "2ページ表示"
+  "Show Two Pages": "2ページ表示",
+  "Book Data": "書籍データ",
+  "Downloaded read-aloud audio and translations": "ダウンロードした読み上げ音声と翻訳"
 }

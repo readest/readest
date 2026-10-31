@@ -1916,8 +1916,6 @@
   "Audio Cache": "מטמון שמע",
   "Cache Synthesized Audio": "שמור שמע מסונתז במטמון",
   "Reuse generated speech across sessions without refetching": "שימוש חוזר בדיבור שנוצר בין הפעלות ללא הורדה מחדש",
-  "Sync Audio Cache": "סנכרן מטמון שמע",
-  "Share section audio between your devices through your file sync service": "שתף שמע של קטעים בין המכשירים שלך דרך שירות סנכרון הקבצים",
   "Storage Limit": "מגבלת אחסון",
   "Playback settings": "הגדרות השמעה",
   "Player Style": "סגנון הנגן",
@@ -2732,5 +2730,7 @@
   "One page": "עמוד אחד",
   "Two pages": "שני עמודים",
   "Show One Page": "הצג עמוד אחד",
-  "Show Two Pages": "הצג שני עמודים"
+  "Show Two Pages": "הצג שני עמודים",
+  "Book Data": "נתוני ספר",
+  "Downloaded read-aloud audio and translations": "שמע הקראה שהורד ותרגומים"
 }

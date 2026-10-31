@@ -1884,8 +1884,6 @@
   "Audio Cache": "Ses önbelleği",
   "Cache Synthesized Audio": "Sentezlenen sesi önbelleğe al",
   "Reuse generated speech across sessions without refetching": "Oluşturulan konuşmayı yeniden almadan oturumlar arasında yeniden kullanın",
-  "Sync Audio Cache": "Ses önbelleğini eşitle",
-  "Share section audio between your devices through your file sync service": "Kısım seslerini dosya eşitleme hizmetiniz üzerinden cihazlarınız arasında paylaşın",
   "Storage Limit": "Depolama sınırı",
   "Playback settings": "Oynatma Ayarları",
   "Player Style": "Oynatıcı Stili",
@@ -2663,5 +2661,7 @@
   "One page": "Tek sayfa",
   "Two pages": "İki sayfa",
   "Show One Page": "Tek sayfa göster",
-  "Show Two Pages": "İki sayfa göster"
+  "Show Two Pages": "İki sayfa göster",
+  "Book Data": "Kitap Verileri",
+  "Downloaded read-aloud audio and translations": "İndirilen sesli okuma kayıtları ve çeviriler"
 }

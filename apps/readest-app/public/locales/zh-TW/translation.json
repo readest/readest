@@ -1859,8 +1859,6 @@
   "Audio Cache": "音訊快取",
   "Cache Synthesized Audio": "快取合成語音",
   "Reuse generated speech across sessions without refetching": "跨工作階段重複使用已產生的語音，無需重新取得",
-  "Sync Audio Cache": "同步音訊快取",
-  "Share section audio between your devices through your file sync service": "透過您的檔案同步服務在裝置間共享章節音訊",
   "Storage Limit": "儲存空間上限",
   "Playback settings": "播放設定",
   "Player Style": "播放器樣式",
@@ -2594,5 +2592,7 @@
   "One page": "單頁",
   "Two pages": "雙頁",
   "Show One Page": "顯示單頁",
-  "Show Two Pages": "顯示雙頁"
+  "Show Two Pages": "顯示雙頁",
+  "Book Data": "書籍資料",
+  "Downloaded read-aloud audio and translations": "已下載的朗讀音訊與翻譯"
 }

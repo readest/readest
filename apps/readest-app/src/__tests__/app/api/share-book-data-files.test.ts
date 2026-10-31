@@ -28,7 +28,6 @@ const builder = (table: string) => {
     },
     error: null,
   });
-  // biome-ignore lint/suspicious/noThenProperty: mock PostgREST builder is intentionally thenable
   b['then'] = (ok: (v: unknown) => unknown) => Promise.resolve(result).then(ok);
   return b;
 };

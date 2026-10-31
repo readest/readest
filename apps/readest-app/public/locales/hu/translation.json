@@ -1880,8 +1880,6 @@
   "Audio Cache": "Hang-gyorsítótár",
   "Cache Synthesized Audio": "Szintetizált hang gyorsítótárazása",
   "Reuse generated speech across sessions without refetching": "A generált beszéd újrafelhasználása a munkamenetek között újbóli letöltés nélkül",
-  "Sync Audio Cache": "Hang-gyorsítótár szinkronizálása",
-  "Share section audio between your devices through your file sync service": "Szakaszok hangjának megosztása eszközei között a fájlszinkronizálási szolgáltatással",
   "Storage Limit": "Tárhelykorlát",
   "Playback settings": "Lejátszási beállítások",
   "Player Style": "Lejátszó stílusa",
@@ -2663,5 +2661,7 @@
   "One page": "Egy oldal",
   "Two pages": "Két oldal",
   "Show One Page": "Egy oldal megjelenítése",
-  "Show Two Pages": "Két oldal megjelenítése"
+  "Show Two Pages": "Két oldal megjelenítése",
+  "Book Data": "Könyvadatok",
+  "Downloaded read-aloud audio and translations": "Letöltött felolvasási hang és fordítások"
 }

@@ -1859,8 +1859,6 @@
   "Audio Cache": "音频缓存",
   "Cache Synthesized Audio": "缓存合成语音",
   "Reuse generated speech across sessions without refetching": "跨会话复用已生成的语音，无需重新获取",
-  "Sync Audio Cache": "同步音频缓存",
-  "Share section audio between your devices through your file sync service": "通过您的文件同步服务在设备间共享章节音频",
   "Storage Limit": "存储上限",
   "Playback settings": "播放设置",
   "Player Style": "播放器样式",
@@ -2594,5 +2592,7 @@
   "One page": "单页",
   "Two pages": "双页",
   "Show One Page": "显示单页",
-  "Show Two Pages": "显示双页"
+  "Show Two Pages": "显示双页",
+  "Book Data": "书籍数据",
+  "Downloaded read-aloud audio and translations": "已下载的朗读音频和翻译"
 }

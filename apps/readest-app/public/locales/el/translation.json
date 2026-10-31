@@ -1880,8 +1880,6 @@
   "Audio Cache": "Προσωρινή μνήμη ήχου",
   "Cache Synthesized Audio": "Αποθήκευση συντεθειμένου ήχου στην προσωρινή μνήμη",
   "Reuse generated speech across sessions without refetching": "Επαναχρησιμοποίηση της παραγόμενης ομιλίας μεταξύ συνεδριών χωρίς εκ νέου λήψη",
-  "Sync Audio Cache": "Συγχρονισμός προσωρινής μνήμης ήχου",
-  "Share section audio between your devices through your file sync service": "Κοινή χρήση του ήχου ενοτήτων μεταξύ των συσκευών σας μέσω της υπηρεσίας συγχρονισμού αρχείων",
   "Storage Limit": "Όριο αποθήκευσης",
   "Playback settings": "Ρυθμίσεις αναπαραγωγής",
   "Player Style": "Στυλ αναπαραγωγής",
@@ -2663,5 +2661,7 @@
   "One page": "Μία σελίδα",
   "Two pages": "Δύο σελίδες",
   "Show One Page": "Εμφάνιση μίας σελίδας",
-  "Show Two Pages": "Εμφάνιση δύο σελίδων"
+  "Show Two Pages": "Εμφάνιση δύο σελίδων",
+  "Book Data": "Δεδομένα βιβλίου",
+  "Downloaded read-aloud audio and translations": "Ληφθέντα ηχητικά ανάγνωσης και μεταφράσεις"
 }
