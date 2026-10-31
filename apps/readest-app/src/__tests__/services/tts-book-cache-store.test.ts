@@ -181,32 +181,21 @@ describe('BookTTSCacheStore', () => {
     await sqliteStore.recordMarkKey(7, 0, 'k1');
     await sqliteStore.compact();
 
-    setTTSCacheConfig({ enabled: true, budgetMB: 200, syncEnabled: true });
-    packSync.getActiveTTSPackSyncProvider.mockResolvedValue(packSync.provider);
-    try {
-      const store = new BookTTSCacheStore(appService, () => 'hash777', 1024 * 1024);
-      await store.open();
-      await vi.waitFor(() =>
-        expect(packSync.pushTTSPacks).toHaveBeenCalledWith(
-          packSync.provider,
-          'hash777',
-          expect.anything(),
-        ),
+    bookData.getBookDataDestinations.mockResolvedValue(bookData.destinations);
+    const store = new BookTTSCacheStore(appService, () => 'hash777', 1024 * 1024);
+    await store.open();
+    const pushed = () =>
+      expect(bookData.pushBookData).toHaveBeenCalledWith(
+        expect.objectContaining({ id: 'tts' }),
+        'hash777',
+        bookData.destinations,
       );
-      packSync.pushTTSPacks.mockClear();
-      await store.beginDownloadSections([7]);
-      await store.compact();
-      await store.completeDownloadSections([7]);
-      await vi.waitFor(() =>
-        expect(packSync.pushTTSPacks).toHaveBeenCalledWith(
-          packSync.provider,
-          'hash777',
-          expect.anything(),
-        ),
-      );
-    } finally {
-      localStorage.clear();
-    }
+    await vi.waitFor(pushed);
+    bookData.pushBookData.mockClear();
+    await store.beginDownloadSections([7]);
+    await store.compact();
+    await store.completeDownloadSections([7]);
+    await vi.waitFor(pushed);
   });
 
   test('an open failure degrades to a no-op cache', async () => {
