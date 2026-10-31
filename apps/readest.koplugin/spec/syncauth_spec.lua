@@ -138,6 +138,24 @@ describe("SupabaseAuthClient error propagation", function()
     end)
 end)
 
+describe("SupabaseAuthClient:sign_out", function()
+    it("signs out only this device, like the Readest app", function()
+        local sent
+        local client = newAuthClient(function(_, args)
+            sent = args
+            return { status = 204, body = "" }
+        end)
+        spore_client.sign_out = spore_client.refresh_token
+
+        local got_ok
+        client:sign_out("access", function(ok) got_ok = ok end)
+
+        assert.is_true(got_ok)
+        -- Supabase's default scope is global: every session of the account.
+        assert.are.same({ scope = "local" }, sent)
+    end)
+end)
+
 describe("SyncAuth:doLogin failure handling", function()
     local shown
     local sign_in_password

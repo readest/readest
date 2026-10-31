@@ -20,6 +20,7 @@
       "path": "/logout",
       "method": "POST",
       "required_params": [],
+      "optional_params": ["scope"],
       "payload": [],
       "expected_status": [204, 401]
     },
