@@ -2501,7 +2501,6 @@
   "Download status": "ჩამოტვირთვის სტატუსი",
   "Local only": "მხოლოდ ლოკალური",
   "Cloud only": "მხოლოდ ღრუბელში",
-  "Link a CrossPoint Reader": "CrossPoint წამკითხველის დაკავშირება",
   "The reader gets your Readest library, reading statistics and reading progress. Only enter a code shown on your own reader.": "წამკითხველი მიიღებს თქვენს Readest-ის ბიბლიოთეკას, კითხვის სტატისტიკასა და კითხვის პროგრესს. შეიყვანეთ მხოლოდ თქვენს საკუთარ წამკითხველზე ნაჩვენები კოდი.",
   "Sign in to continue": "გასაგრძელებლად შედით სისტემაში",
   "Your reader is linked. It finishes signing in on its own.": "წამკითხველი დაკავშირებულია. ის შესვლას თავად დაასრულებს.",
@@ -2662,5 +2661,6 @@
   "Show One Page": "ერთი გვერდის ჩვენება",
   "Show Two Pages": "ორი გვერდის ჩვენება",
   "Book Data": "წიგნის მონაცემები",
-  "Downloaded read-aloud audio and translations": "ჩამოტვირთული ხმამაღლა კითხვის აუდიო და თარგმანები"
+  "Downloaded read-aloud audio and translations": "ჩამოტვირთული ხმამაღლა კითხვის აუდიო და თარგმანები",
+  "Link a Reader": "მკითხველის დაკავშირება"
 }

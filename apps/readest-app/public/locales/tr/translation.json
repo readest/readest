@@ -2508,7 +2508,6 @@
   "Download status": "İndirme durumu",
   "Local only": "Yalnızca yerel",
   "Cloud only": "Yalnızca bulutta",
-  "Link a CrossPoint Reader": "CrossPoint okuyucusunu bağla",
   "The reader gets your Readest library, reading statistics and reading progress. Only enter a code shown on your own reader.": "Okuyucu, Readest kitaplığınıza, okuma istatistiklerinize ve okuma ilerlemenize erişir. Yalnızca kendi okuyucunuzda gösterilen bir kodu girin.",
   "Sign in to continue": "Devam etmek için oturum açın",
   "Your reader is linked. It finishes signing in on its own.": "Okuyucunuz bağlandı. Oturum açmayı kendisi tamamlayacak.",
@@ -2662,5 +2661,6 @@
   "Show One Page": "Tek sayfa göster",
   "Show Two Pages": "İki sayfa göster",
   "Book Data": "Kitap Verileri",
-  "Downloaded read-aloud audio and translations": "İndirilen sesli okuma kayıtları ve çeviriler"
+  "Downloaded read-aloud audio and translations": "İndirilen sesli okuma kayıtları ve çeviriler",
+  "Link a Reader": "Okuyucu bağla"
 }

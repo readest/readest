@@ -640,3 +640,123 @@ describe("SupabaseAuthClient refresh transport", function()
         assert.is_true(ok, err)
     end)
 end)
+
+describe("SyncAuth:loginWithCode", function()
+    local polls, poll_answers, orig = {}, {}, {}
+    local shown, closed, scheduled
+    -- Run every scheduled task once, like a UI loop tick.
+    local function drain()
+        local pending = scheduled
+        scheduled = {}
+        for _, task in ipairs(pending) do task.fn() end
+    end
+    local code = {
+        device_code = "secret", user_code = "BCDF-GHJK",
+        verification_uri = "https://web.readest.com/link",
+        verification_uri_complete = "https://web.readest.com/link?code=BCDF-GHJK",
+        expires_in = 600, interval = 5,
+    }
+
+    before_each(function()
+        polls, poll_answers = {}, {}
+        shown, closed, scheduled = {}, {}, {}
+        for _, name in ipairs({ "show", "close", "scheduleIn" }) do orig[name] = UIManager[name] end
+        orig.infoNew = InfoMessage.new
+        InfoMessage.new = function(_, o) return o or {} end
+        UIManager.show = function(_, widget) table.insert(shown, widget) end
+        UIManager.close = function(_, widget) table.insert(closed, widget) end
+        UIManager.scheduleIn = function(_, delay, fn) table.insert(scheduled, { delay = delay, fn = fn }) end
+        -- Another spec may have loaded readest_syncauth with a bare NetworkMgr.
+        local NetworkMgr = require("ui/network/manager")
+        orig.willRerunWhenOnline = NetworkMgr.willRerunWhenOnline
+        NetworkMgr.willRerunWhenOnline = function() return false end
+        orig.getSignInClient = SyncAuth.getSignInClient
+        SyncAuth.getSignInClient = function()
+            return {
+                requestDeviceCode = function(_, cb) cb(true, code, 200) end,
+                pollDeviceToken = function(_, device_code, cb)
+                    table.insert(polls, device_code)
+                    cb(unpack(table.remove(poll_answers, 1)))
+                end,
+            }
+        end
+    end)
+
+    after_each(function()
+        SyncAuth.getSignInClient = orig.getSignInClient
+        for _, name in ipairs({ "show", "close", "scheduleIn" }) do UIManager[name] = orig[name] end
+        InfoMessage.new = orig.infoNew
+        require("ui/network/manager").willRerunWhenOnline = orig.willRerunWhenOnline
+    end)
+
+    local function codeMessage()
+        for _, widget in ipairs(shown) do
+            if widget.text and widget.text:find("BCDF-GHJK", 1, true) then return widget end
+        end
+    end
+
+    it("shows the code and its link, then saves the session once it is approved", function()
+        local settings = { auth_required = true, user_email = "old@example.com" }
+        poll_answers = {
+            { false, { error = "authorization_pending" }, 400 },
+            { true, {
+                access_token = "code-access", refresh_token = "code-refresh", expires_in = 3600,
+                user = { id = "reader", email = "reader@example.com", user_metadata = { user_name = "reader" } },
+            }, 200 },
+        }
+        SyncAuth:loginWithCode(settings, "/plugin")
+
+        local message = codeMessage()
+        assert.truthy(message, "the code is shown")
+        assert.truthy(message.text:find("https://web.readest.com/link", 1, true))
+        assert.are.equal(0, #polls) -- the first poll waits one interval
+        assert.are.equal(5, scheduled[1].delay)
+
+        drain()
+        assert.are.same({ "secret" }, polls)
+        assert.is_true(SyncAuth:needsLogin(settings)) -- still pending
+
+        local flushed_with
+        local orig_flush = G_reader_settings.flush
+        G_reader_settings.flush = function(self) flushed_with = self:readSetting("readest_sync") end
+        drain()
+        G_reader_settings.flush = orig_flush
+        assert.are.same({ "secret", "secret" }, polls)
+        -- Written at once: a code sign-in must survive an exit that skips saving.
+        assert.are.equal("code-refresh", flushed_with and flushed_with.refresh_token)
+        assert.are.equal("code-access", settings.access_token)
+        assert.are.equal("code-refresh", settings.refresh_token)
+        assert.are.equal("reader", settings.user_id)
+        assert.are.equal("reader@example.com", settings.user_email)
+        assert.is_nil(settings.auth_required)
+        assert.is_true(math.abs(settings.expires_at - (os.time() + 3600)) <= 1)
+        assert.is_false(SyncAuth:needsLogin(settings))
+        assert.are.equal(message, closed[#closed])
+        assert.are.equal(0, #scheduled) -- polling stopped
+    end)
+
+    it("stops polling with a message when the code expires", function()
+        local settings = {}
+        poll_answers = { { false, { error = "expired_token" }, 400 } }
+        SyncAuth:loginWithCode(settings, "/plugin")
+        drain()
+        assert.are.equal(0, #scheduled)
+        assert.is_nil(settings.access_token)
+        local last = shown[#shown]
+        assert.truthy(last.text:find("expired", 1, true))
+    end)
+
+    it("keeps polling through a network failure", function()
+        poll_answers = { { false, { error = "timeout" } } }
+        SyncAuth:loginWithCode({}, "/plugin")
+        drain()
+        assert.are.equal(1, #scheduled)
+    end)
+
+    it("stops polling when the code message is dismissed", function()
+        SyncAuth:loginWithCode({}, "/plugin")
+        codeMessage().dismiss_callback()
+        drain()
+        assert.are.equal(0, #polls)
+    end)
+end)

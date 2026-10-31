@@ -2437,7 +2437,6 @@
   "Download status": "Trạng thái tải xuống",
   "Local only": "Chỉ cục bộ",
   "Cloud only": "Chỉ trên đám mây",
-  "Link a CrossPoint Reader": "Liên kết máy đọc CrossPoint",
   "The reader gets your Readest library, reading statistics and reading progress. Only enter a code shown on your own reader.": "Máy đọc sẽ nhận thư viện Readest, thống kê đọc và tiến độ đọc của bạn. Chỉ nhập mã hiển thị trên máy đọc của chính bạn.",
   "Sign in to continue": "Đăng nhập để tiếp tục",
   "Your reader is linked. It finishes signing in on its own.": "Máy đọc của bạn đã được liên kết. Máy sẽ tự hoàn tất việc đăng nhập.",
@@ -2593,5 +2592,6 @@
   "Show One Page": "Hiện một trang",
   "Show Two Pages": "Hiện hai trang",
   "Book Data": "Dữ liệu sách",
-  "Downloaded read-aloud audio and translations": "Âm thanh đọc to đã tải xuống và bản dịch"
+  "Downloaded read-aloud audio and translations": "Âm thanh đọc to đã tải xuống và bản dịch",
+  "Link a Reader": "Liên kết máy đọc sách"
 }

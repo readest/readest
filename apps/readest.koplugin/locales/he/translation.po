@@ -287,14 +287,14 @@ msgstr "לא פתוח ספר"
 msgid "Uploaded to Readest:"
 msgstr "הועלה ל-Readest:"
 
+msgid "Auto sync"
+msgstr "סנכרון אוטומטי"
+
 msgid "Log in Readest Account"
 msgstr "התחבר לחשבון Readest"
 
 msgid "Log out as %1"
 msgstr "התנתק מ-%1"
-
-msgid "Auto sync"
-msgstr "סנכרון אוטומטי"
 
 msgid "Readest library"
 msgstr "ספריית Readest"
@@ -524,17 +524,26 @@ msgstr "התחבר"
 msgid "Please enter both email and password"
 msgstr "הזן דוא\"ל וסיסמה"
 
+msgid "Sign in with a code"
+msgstr "התחברות באמצעות קוד"
+
 msgid "Please configure Supabase URL and API key first"
 msgstr "הגדר תחילה את כתובת Supabase ומפתח API"
 
 msgid "Logging in..."
 msgstr "מתחבר…"
 
+msgid "Login failed: %1"
+msgstr "ההתחברות נכשלה: %1"
+
 msgid "Successfully logged in to Readest"
 msgstr "התחברת ל-Readest בהצלחה"
 
-msgid "Login failed: %1"
-msgstr "ההתחברות נכשלה: %1"
+msgid "Scan the QR code with a phone signed in to Readest, or open %1 and enter this code:\n\n%2"
+msgstr "סרקו את קוד ה-QR בטלפון שמחובר ל-Readest, או פתחו את %1 והזינו את הקוד הזה:\n\n%2"
+
+msgid "The code expired. Please try again."
+msgstr "תוקף הקוד פג. נסו שוב."
 
 msgid "Logged out from Readest"
 msgstr "התנתקת מ-Readest"

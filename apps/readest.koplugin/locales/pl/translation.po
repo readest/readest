@@ -287,14 +287,14 @@ msgstr "Brak otwartej książki"
 msgid "Uploaded to Readest:"
 msgstr "Wysłano do Readest:"
 
+msgid "Auto sync"
+msgstr "Auto synchronizacja"
+
 msgid "Log in Readest Account"
 msgstr "Zaloguj się do konta Readest"
 
 msgid "Log out as %1"
 msgstr "Wyloguj jako %1"
-
-msgid "Auto sync"
-msgstr "Auto synchronizacja"
 
 msgid "Readest library"
 msgstr "Biblioteka Readest"
@@ -524,17 +524,26 @@ msgstr "Zaloguj"
 msgid "Please enter both email and password"
 msgstr "Wprowadź adres e-mail i hasło"
 
+msgid "Sign in with a code"
+msgstr "Zaloguj się kodem"
+
 msgid "Please configure Supabase URL and API key first"
 msgstr "Najpierw skonfiguruj URL Supabase i klucz API"
 
 msgid "Logging in..."
 msgstr "Logowanie…"
 
+msgid "Login failed: %1"
+msgstr "Logowanie nie powiodło się: %1"
+
 msgid "Successfully logged in to Readest"
 msgstr "Zalogowano do Readest"
 
-msgid "Login failed: %1"
-msgstr "Logowanie nie powiodło się: %1"
+msgid "Scan the QR code with a phone signed in to Readest, or open %1 and enter this code:\n\n%2"
+msgstr "Zeskanuj kod QR telefonem zalogowanym do Readest albo otwórz %1 i wpisz ten kod:\n\n%2"
+
+msgid "The code expired. Please try again."
+msgstr "Kod wygasł. Spróbuj ponownie."
 
 msgid "Logged out from Readest"
 msgstr "Wylogowano z Readest"

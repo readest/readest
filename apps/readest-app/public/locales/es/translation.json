@@ -2565,7 +2565,6 @@
   "Download status": "Estado de descarga",
   "Local only": "Solo local",
   "Cloud only": "Solo en la nube",
-  "Link a CrossPoint Reader": "Vincular un lector CrossPoint",
   "The reader gets your Readest library, reading statistics and reading progress. Only enter a code shown on your own reader.": "El lector obtiene tu biblioteca de Readest, tus estadísticas de lectura y tu progreso de lectura. Introduce solo un código que se muestre en tu propio lector.",
   "Sign in to continue": "Inicia sesión para continuar",
   "Your reader is linked. It finishes signing in on its own.": "Tu lector está vinculado. Terminará de iniciar sesión por sí solo.",
@@ -2731,5 +2730,6 @@
   "Show One Page": "Mostrar una página",
   "Show Two Pages": "Mostrar dos páginas",
   "Book Data": "Datos del libro",
-  "Downloaded read-aloud audio and translations": "Audio de lectura en voz alta descargado y traducciones"
+  "Downloaded read-aloud audio and translations": "Audio de lectura en voz alta descargado y traducciones",
+  "Link a Reader": "Vincular un lector"
 }

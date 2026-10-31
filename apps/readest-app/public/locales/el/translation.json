@@ -2501,7 +2501,6 @@
   "Download status": "Κατάσταση λήψης",
   "Local only": "Μόνο τοπικά",
   "Cloud only": "Μόνο στο cloud",
-  "Link a CrossPoint Reader": "Σύνδεση συσκευής ανάγνωσης CrossPoint",
   "The reader gets your Readest library, reading statistics and reading progress. Only enter a code shown on your own reader.": "Η συσκευή ανάγνωσης αποκτά πρόσβαση στη βιβλιοθήκη σας στο Readest, στα στατιστικά ανάγνωσης και στην πρόοδο ανάγνωσης. Εισαγάγετε μόνο κωδικό που εμφανίζεται στη δική σας συσκευή ανάγνωσης.",
   "Sign in to continue": "Συνδεθείτε για να συνεχίσετε",
   "Your reader is linked. It finishes signing in on its own.": "Η συσκευή ανάγνωσης συνδέθηκε. Θα ολοκληρώσει τη σύνδεση μόνη της.",
@@ -2662,5 +2661,6 @@
   "Show One Page": "Εμφάνιση μίας σελίδας",
   "Show Two Pages": "Εμφάνιση δύο σελίδων",
   "Book Data": "Δεδομένα βιβλίου",
-  "Downloaded read-aloud audio and translations": "Ληφθέντα ηχητικά ανάγνωσης και μεταφράσεις"
+  "Downloaded read-aloud audio and translations": "Ληφθέντα ηχητικά ανάγνωσης και μεταφράσεις",
+  "Link a Reader": "Σύνδεση συσκευής ανάγνωσης"
 }

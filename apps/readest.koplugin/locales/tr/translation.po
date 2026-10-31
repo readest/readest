@@ -287,14 +287,14 @@ msgstr "Açık kitap yok"
 msgid "Uploaded to Readest:"
 msgstr "Readest'e yüklendi:"
 
+msgid "Auto sync"
+msgstr "Otomatik senkronizasyon"
+
 msgid "Log in Readest Account"
 msgstr "Readest hesabına giriş yap"
 
 msgid "Log out as %1"
 msgstr "%1 olarak çıkış yap"
-
-msgid "Auto sync"
-msgstr "Otomatik senkronizasyon"
 
 msgid "Readest library"
 msgstr "Readest kütüphanesi"
@@ -524,17 +524,26 @@ msgstr "Giriş"
 msgid "Please enter both email and password"
 msgstr "E-posta ve parolayı girin"
 
+msgid "Sign in with a code"
+msgstr "Kodla oturum aç"
+
 msgid "Please configure Supabase URL and API key first"
 msgstr "Önce Supabase URL ve API anahtarını yapılandırın"
 
 msgid "Logging in..."
 msgstr "Giriş yapılıyor…"
 
+msgid "Login failed: %1"
+msgstr "Giriş başarısız: %1"
+
 msgid "Successfully logged in to Readest"
 msgstr "Readest'e başarıyla giriş yapıldı"
 
-msgid "Login failed: %1"
-msgstr "Giriş başarısız: %1"
+msgid "Scan the QR code with a phone signed in to Readest, or open %1 and enter this code:\n\n%2"
+msgstr "QR kodunu Readest'te oturum açmış bir telefonla tarayın veya %1 adresini açıp şu kodu girin:\n\n%2"
+
+msgid "The code expired. Please try again."
+msgstr "Kodun süresi doldu. Lütfen tekrar deneyin."
 
 msgid "Logged out from Readest"
 msgstr "Readest'ten çıkış yapıldı"

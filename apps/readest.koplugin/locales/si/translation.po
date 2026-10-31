@@ -287,14 +287,14 @@ msgstr "පොතක් විවෘතව නැත"
 msgid "Uploaded to Readest:"
 msgstr "Readest වෙත උඩුගත කරන ලදී:"
 
+msgid "Auto sync"
+msgstr "ස්වයංක්‍රීය සමමුහූර්ත"
+
 msgid "Log in Readest Account"
 msgstr "Readest ගිණුමට පිවිසෙන්න"
 
 msgid "Log out as %1"
 msgstr "%1 ලෙස ඉවත් වන්න"
-
-msgid "Auto sync"
-msgstr "ස්වයංක්‍රීය සමමුහූර්ත"
 
 msgid "Readest library"
 msgstr "Readest පුස්තකාලය"
@@ -524,17 +524,26 @@ msgstr "පිවිසෙන්න"
 msgid "Please enter both email and password"
 msgstr "කරුණාකර ඊමේල් සහ මුරපදය දෙකම ඇතුළත් කරන්න"
 
+msgid "Sign in with a code"
+msgstr "කේතයකින් පුරනය වන්න"
+
 msgid "Please configure Supabase URL and API key first"
 msgstr "කරුණාකර මුලින්ම Supabase URL සහ API යතුර වින්‍යාස කරන්න"
 
 msgid "Logging in..."
 msgstr "පිවිසෙමින්…"
 
+msgid "Login failed: %1"
+msgstr "පිවිසීම අසාර්ථකයි: %1"
+
 msgid "Successfully logged in to Readest"
 msgstr "Readest වෙත සාර්ථකව පිවිසුණි"
 
-msgid "Login failed: %1"
-msgstr "පිවිසීම අසාර්ථකයි: %1"
+msgid "Scan the QR code with a phone signed in to Readest, or open %1 and enter this code:\n\n%2"
+msgstr "Readest වෙත පුරනය වූ දුරකථනයකින් QR කේතය ස්කෑන් කරන්න, නැතහොත් %1 විවෘත කර මෙම කේතය ඇතුළත් කරන්න:\n\n%2"
+
+msgid "The code expired. Please try again."
+msgstr "කේතය කල් ඉකුත් විය. කරුණාකර නැවත උත්සාහ කරන්න."
 
 msgid "Logged out from Readest"
 msgstr "Readest වෙතින් ඉවත් විය"

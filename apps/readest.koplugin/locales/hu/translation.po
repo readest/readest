@@ -287,14 +287,14 @@ msgstr "Nincs megnyitott könyv"
 msgid "Uploaded to Readest:"
 msgstr "Feltöltve a Readestbe:"
 
+msgid "Auto sync"
+msgstr "Automatikus szinkron"
+
 msgid "Log in Readest Account"
 msgstr "Bejelentkezés Readest-fiókba"
 
 msgid "Log out as %1"
 msgstr "Kijelentkezés mint %1"
-
-msgid "Auto sync"
-msgstr "Automatikus szinkron"
 
 msgid "Readest library"
 msgstr "Readest könyvtár"
@@ -524,17 +524,26 @@ msgstr "Bejelentkezés"
 msgid "Please enter both email and password"
 msgstr "Add meg az e-mail-címet és a jelszót"
 
+msgid "Sign in with a code"
+msgstr "Bejelentkezés kóddal"
+
 msgid "Please configure Supabase URL and API key first"
 msgstr "Először állítsd be a Supabase URL-t és az API-kulcsot"
 
 msgid "Logging in..."
 msgstr "Bejelentkezés…"
 
+msgid "Login failed: %1"
+msgstr "Sikertelen bejelentkezés: %1"
+
 msgid "Successfully logged in to Readest"
 msgstr "Sikeres bejelentkezés a Readestbe"
 
-msgid "Login failed: %1"
-msgstr "Sikertelen bejelentkezés: %1"
+msgid "Scan the QR code with a phone signed in to Readest, or open %1 and enter this code:\n\n%2"
+msgstr "Olvasd be a QR-kódot egy Readestbe bejelentkezett telefonnal, vagy nyisd meg a(z) %1 oldalt, és írd be ezt a kódot:\n\n%2"
+
+msgid "The code expired. Please try again."
+msgstr "A kód lejárt. Próbáld újra."
 
 msgid "Logged out from Readest"
 msgstr "Kijelentkezve a Readestből"

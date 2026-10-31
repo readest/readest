@@ -2501,7 +2501,6 @@
   "Download status": "ডাউনলোডের অবস্থা",
   "Local only": "শুধু স্থানীয়",
   "Cloud only": "শুধু ক্লাউডে",
-  "Link a CrossPoint Reader": "CrossPoint রিডার লিঙ্ক করুন",
   "The reader gets your Readest library, reading statistics and reading progress. Only enter a code shown on your own reader.": "রিডারটি আপনার Readest লাইব্রেরি, পড়ার পরিসংখ্যান ও পড়ার অগ্রগতি পাবে। শুধু আপনার নিজের রিডারে দেখানো কোডটিই লিখুন।",
   "Sign in to continue": "চালিয়ে যেতে সাইন ইন করুন",
   "Your reader is linked. It finishes signing in on its own.": "আপনার রিডার লিঙ্ক হয়েছে। এটি নিজে থেকেই সাইন ইন সম্পন্ন করবে।",
@@ -2662,5 +2661,6 @@
   "Show One Page": "এক পৃষ্ঠা দেখান",
   "Show Two Pages": "দুই পৃষ্ঠা দেখান",
   "Book Data": "বইয়ের ডেটা",
-  "Downloaded read-aloud audio and translations": "ডাউনলোড করা পড়ে শোনানোর অডিও ও অনুবাদ"
+  "Downloaded read-aloud audio and translations": "ডাউনলোড করা পড়ে শোনানোর অডিও ও অনুবাদ",
+  "Link a Reader": "রিডার লিংক করুন"
 }

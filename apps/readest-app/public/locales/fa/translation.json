@@ -2501,7 +2501,6 @@
   "Download status": "وضعیت دانلود",
   "Local only": "فقط محلی",
   "Cloud only": "فقط در فضای ابری",
-  "Link a CrossPoint Reader": "پیوند دادن کتاب‌خوان CrossPoint",
   "The reader gets your Readest library, reading statistics and reading progress. Only enter a code shown on your own reader.": "کتاب‌خوان به کتابخانهٔ Readest، آمار مطالعه و پیشرفت مطالعهٔ شما دسترسی پیدا می‌کند. فقط کدی را وارد کنید که روی کتاب‌خوان خودتان نمایش داده شده است.",
   "Sign in to continue": "برای ادامه وارد شوید",
   "Your reader is linked. It finishes signing in on its own.": "کتاب‌خوان شما پیوند داده شد. ورود را خودش کامل می‌کند.",
@@ -2662,5 +2661,6 @@
   "Show One Page": "نمایش یک صفحه",
   "Show Two Pages": "نمایش دو صفحه",
   "Book Data": "داده‌های کتاب",
-  "Downloaded read-aloud audio and translations": "صدای بلندخوانی دانلودشده و ترجمه‌ها"
+  "Downloaded read-aloud audio and translations": "صدای بلندخوانی دانلودشده و ترجمه‌ها",
+  "Link a Reader": "پیوند دادن کتاب‌خوان"
 }

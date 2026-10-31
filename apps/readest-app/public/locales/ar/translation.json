@@ -2757,7 +2757,6 @@
   "Download status": "حالة التنزيل",
   "Local only": "محلي فقط",
   "Cloud only": "في السحابة فقط",
-  "Link a CrossPoint Reader": "ربط قارئ CrossPoint",
   "The reader gets your Readest library, reading statistics and reading progress. Only enter a code shown on your own reader.": "سيحصل القارئ على مكتبتك في Readest وإحصاءات القراءة وتقدّم القراءة. أدخل فقط رمزًا معروضًا على قارئك الخاص.",
   "Sign in to continue": "سجّل الدخول للمتابعة",
   "Your reader is linked. It finishes signing in on its own.": "تم ربط القارئ. سيُكمل تسجيل الدخول من تلقاء نفسه.",
@@ -2938,5 +2937,6 @@
   "Show One Page": "عرض صفحة واحدة",
   "Show Two Pages": "عرض صفحتين",
   "Book Data": "بيانات الكتاب",
-  "Downloaded read-aloud audio and translations": "صوت القراءة بصوت عالٍ الذي تم تنزيله والترجمات"
+  "Downloaded read-aloud audio and translations": "صوت القراءة بصوت عالٍ الذي تم تنزيله والترجمات",
+  "Link a Reader": "ربط قارئ"
 }

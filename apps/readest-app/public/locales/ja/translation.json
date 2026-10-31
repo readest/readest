@@ -2437,7 +2437,6 @@
   "Download status": "ダウンロード状態",
   "Local only": "ローカルのみ",
   "Cloud only": "クラウドのみ",
-  "Link a CrossPoint Reader": "CrossPoint リーダーをリンク",
   "The reader gets your Readest library, reading statistics and reading progress. Only enter a code shown on your own reader.": "リーダーで Readest のライブラリー、読書統計、読書の進捗を利用できるようになります。ご自身のリーダーに表示されたコードのみを入力してください。",
   "Sign in to continue": "サインインして続行",
   "Your reader is linked. It finishes signing in on its own.": "リーダーがリンクされました。サインインはリーダー側で自動的に完了します。",
@@ -2593,5 +2592,6 @@
   "Show One Page": "1ページ表示",
   "Show Two Pages": "2ページ表示",
   "Book Data": "書籍データ",
-  "Downloaded read-aloud audio and translations": "ダウンロードした読み上げ音声と翻訳"
+  "Downloaded read-aloud audio and translations": "ダウンロードした読み上げ音声と翻訳",
+  "Link a Reader": "リーダーをリンク"
 }
