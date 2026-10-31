@@ -69,8 +69,21 @@ export interface TTSCacheStore {
   close?(): Promise<void>;
 }
 
+// Whitespace is not spoken, and playback (the rendered view) and chapter
+// downloads (a fresh copy of the section) do not always agree on it: keyed
+// as-is, one sentence cached, packed and synced twice. Text without such
+// whitespace keeps its key.
 export const computeTTSCacheKey = (providerId: string, req: SpeechSynthesisRequest): string =>
-  md5(JSON.stringify(['tts-v1', providerId, req.lang, req.voice, req.pitch, req.text]));
+  md5(
+    JSON.stringify([
+      'tts-v1',
+      providerId,
+      req.lang,
+      req.voice,
+      req.pitch,
+      req.text.replace(/\s+/g, ' ').trim(),
+    ]),
+  );
 
 // Recently read or synthesized sentences kept in memory: a store read costs
 // hundreds of ms on device, and audio fetched ahead plays from here at the

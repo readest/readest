@@ -217,6 +217,22 @@ describe('CachingProvider', () => {
     expect(inner.synthesize).toHaveBeenCalledTimes(4);
   });
 
+  test('whitespace that is not spoken does not change the key', async () => {
+    // Live playback reads the rendered view, a chapter download a fresh copy
+    // of the section: the last sentence came out with and without a trailing
+    // space, so a downloaded chapter synthesized it again when played and
+    // packed the section twice.
+    expect(computeTTSCacheKey('fake', req('Every sentence here is short. '))).toBe(
+      computeTTSCacheKey('fake', req('Every sentence here is short.')),
+    );
+    expect(computeTTSCacheKey('fake', req(' Every  sentence\nhere is short.'))).toBe(
+      computeTTSCacheKey('fake', req('Every sentence here is short.')),
+    );
+    expect(computeTTSCacheKey('fake', req('Every sentence here is short.'))).not.toBe(
+      computeTTSCacheKey('fake', req('Everysentence here is short.')),
+    );
+  });
+
   test('concurrent requests for the same key synthesize once', async () => {
     let release!: (r: SpeechSynthesisResult) => void;
     inner = makeInner({
