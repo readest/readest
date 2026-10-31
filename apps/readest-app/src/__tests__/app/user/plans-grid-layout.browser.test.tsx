@@ -103,9 +103,21 @@ describe('plans grid layout', () => {
     expect(tops[0]).toBe(tops[1]);
   });
 
-  // Safari 16 sized every card to a fraction of the viewport and clipped the
-  // rest (#7181). Chromium never did, so this guards the invariant here; the
-  // Safari 16 check itself ran on WebKit 16.4.
+  // Safari 16 resolved a percentage height on these grid items against the
+  // wrong box, so overflow-hidden clipped each card to a fraction of the
+  // viewport (#7181). Chromium lays that out correctly, so check the resolved
+  // height is auto: the card is sized by the row's stretch, which every
+  // engine gets right.
+  it('sizes cards by the grid row, not a percentage height', async () => {
+    await page.viewport(768, 1024);
+    renderGrid();
+
+    expect(cards()).toHaveLength(4);
+    for (const card of cards()) {
+      expect(card.computedStyleMap().get('height')?.toString()).toBe('auto');
+    }
+  });
+
   it('makes every card tall enough for its content', async () => {
     for (const [width, height] of [
       [390, 844],
