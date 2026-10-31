@@ -23,6 +23,7 @@ export const transformBookConfigToDB = (bookConfig: unknown, userId: string): DB
     rsvpPosition,
     searchConfig,
     viewSettings,
+    ttsPacks,
     updatedAt,
   } = bookConfig as BookConfig;
 
@@ -36,6 +37,8 @@ export const transformBookConfigToDB = (bookConfig: unknown, userId: string): DB
     rsvp_position: rsvpPosition && JSON.stringify(rsvpPosition),
     search_config: searchConfig && JSON.stringify(searchConfig),
     view_settings: viewSettings && JSON.stringify(viewSettings),
+    // Only a book with Read Aloud history writes the column.
+    ...(ttsPacks ? { tts_packs: JSON.stringify(ttsPacks) } : {}),
     updated_at: new Date(updatedAt ?? Date.now()).toISOString(),
   };
 };
@@ -50,6 +53,7 @@ export const transformBookConfigFromDB = (dbBookConfig: DBBookConfig): BookConfi
     rsvp_position,
     search_config,
     view_settings,
+    tts_packs,
     updated_at,
   } = dbBookConfig;
   return {
@@ -61,6 +65,7 @@ export const transformBookConfigFromDB = (dbBookConfig: DBBookConfig): BookConfi
     rsvpPosition: rsvp_position && JSON.parse(rsvp_position),
     searchConfig: search_config && JSON.parse(search_config),
     viewSettings: view_settings && JSON.parse(view_settings),
+    ...(tts_packs ? { ttsPacks: JSON.parse(tts_packs) } : {}),
     updatedAt: new Date(updated_at!).getTime(),
   } as BookConfig;
 };
