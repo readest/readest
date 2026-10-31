@@ -37,6 +37,10 @@ const useCategoryCopy = (): Record<SyncCategory, CategoryCopy> => {
       title: _('Annotations'),
       description: _('Highlights and notes'),
     },
+    book_data: {
+      title: _('Book Data'),
+      description: _('Downloaded read-aloud audio and translations'),
+    },
     dictionary: {
       title: _('Dictionaries'),
       description: _('Imported dictionary bundles and settings'),
