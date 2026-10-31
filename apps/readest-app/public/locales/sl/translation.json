@@ -1952,8 +1952,6 @@
   "Audio Cache": "Zvočni predpomnilnik",
   "Cache Synthesized Audio": "Predpomni sintetizirani zvok",
   "Reuse generated speech across sessions without refetching": "Ponovno uporabi ustvarjeni govor med sejami brez ponovnega prenosa",
-  "Sync Audio Cache": "Sinhroniziraj zvočni predpomnilnik",
-  "Share section audio between your devices through your file sync service": "Delite zvok razdelkov med napravami prek storitve za sinhronizacijo datotek",
   "Storage Limit": "Omejitev shrambe",
   "Playback settings": "Nastavitve predvajanja",
   "Player Style": "Slog predvajalnika",
@@ -2800,5 +2798,7 @@
   "One page": "Ena stran",
   "Two pages": "Dve strani",
   "Show One Page": "Pokaži eno stran",
-  "Show Two Pages": "Pokaži dve strani"
+  "Show Two Pages": "Pokaži dve strani",
+  "Book Data": "Podatki knjige",
+  "Downloaded read-aloud audio and translations": "Prenesen zvok branja na glas in prevodi"
 }

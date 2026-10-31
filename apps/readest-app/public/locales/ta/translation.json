@@ -1880,8 +1880,6 @@
   "Audio Cache": "ஆடியோ கேச்",
   "Cache Synthesized Audio": "உருவாக்கிய ஆடியோவை கேச் செய்",
   "Reuse generated speech across sessions without refetching": "உருவாக்கிய பேச்சை மீண்டும் பெறாமல் அமர்வுகளுக்கு இடையில் மீண்டும் பயன்படுத்தவும்",
-  "Sync Audio Cache": "ஆடியோ கேச்சை ஒத்திசை",
-  "Share section audio between your devices through your file sync service": "உங்கள் கோப்பு ஒத்திசைவு சேவையின் மூலம் சாதனங்களுக்கு இடையில் பகுதி ஆடியோவைப் பகிரவும்",
   "Storage Limit": "சேமிப்பு வரம்பு",
   "Playback settings": "இயக்க அமைப்புகள்",
   "Player Style": "இயக்கி பாணி",
@@ -2662,5 +2660,7 @@
   "One page": "ஒரு பக்கம்",
   "Two pages": "இரண்டு பக்கங்கள்",
   "Show One Page": "ஒரு பக்கத்தைக் காட்டு",
-  "Show Two Pages": "இரண்டு பக்கங்களைக் காட்டு"
+  "Show Two Pages": "இரண்டு பக்கங்களைக் காட்டு",
+  "Book Data": "புத்தகத் தரவு",
+  "Downloaded read-aloud audio and translations": "பதிவிறக்கிய உரக்கப் படிக்கும் ஒலி மற்றும் மொழிபெயர்ப்புகள்"
 }

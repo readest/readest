@@ -1880,8 +1880,6 @@
   "Audio Cache": "Audiocache",
   "Cache Synthesized Audio": "Gesynthetiseerde audio cachen",
   "Reuse generated speech across sessions without refetching": "Gegenereerde spraak hergebruiken tussen sessies zonder opnieuw op te halen",
-  "Sync Audio Cache": "Audiocache synchroniseren",
-  "Share section audio between your devices through your file sync service": "Sectie-audio delen tussen je apparaten via je bestandssynchronisatiedienst",
   "Storage Limit": "Opslaglimiet",
   "Playback settings": "Afspeelinstellingen",
   "Player Style": "Spelerstijl",
@@ -2662,5 +2660,7 @@
   "One page": "Eén pagina",
   "Two pages": "Twee pagina's",
   "Show One Page": "Eén pagina tonen",
-  "Show Two Pages": "Twee pagina's tonen"
+  "Show Two Pages": "Twee pagina's tonen",
+  "Book Data": "Boekgegevens",
+  "Downloaded read-aloud audio and translations": "Gedownloade voorleesaudio en vertalingen"
 }

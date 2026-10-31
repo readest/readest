@@ -1880,8 +1880,6 @@
   "Audio Cache": "ශ්‍රව්‍ය කෑෂය",
   "Cache Synthesized Audio": "සංස්ලේෂිත ශ්‍රව්‍ය කෑෂ් කරන්න",
   "Reuse generated speech across sessions without refetching": "ජනනය කළ කථනය නැවත ලබා නොගෙන සැසි අතර නැවත භාවිත කරන්න",
-  "Sync Audio Cache": "ශ්‍රව්‍ය කෑෂය සමමුහුර්ත කරන්න",
-  "Share section audio between your devices through your file sync service": "ඔබගේ ගොනු සමමුහුර්ත සේවාව හරහා උපාංග අතර කොටස් ශ්‍රව්‍ය බෙදාගන්න",
   "Storage Limit": "ගබඩා සීමාව",
   "Playback settings": "වාදන සැකසුම්",
   "Player Style": "වාදක විලාසය",
@@ -2662,5 +2660,7 @@
   "One page": "එක් පිටුවක්",
   "Two pages": "පිටු දෙකක්",
   "Show One Page": "එක් පිටුවක් පෙන්වන්න",
-  "Show Two Pages": "පිටු දෙකක් පෙන්වන්න"
+  "Show Two Pages": "පිටු දෙකක් පෙන්වන්න",
+  "Book Data": "පොත් දත්ත",
+  "Downloaded read-aloud audio and translations": "බාගත කළ හඬ නගා කියවීමේ ශ්‍රව්‍ය සහ පරිවර්තන"
 }

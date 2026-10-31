@@ -49,6 +49,27 @@ describe('isSyncCategoryEnabled', () => {
     expect(isSyncCategoryEnabled('font')).toBe(true);
   });
 
+  describe('book_data', () => {
+    test('is a listed category', () => {
+      expect(SYNC_CATEGORIES).toContain('book_data');
+    });
+
+    test('defaults on when unset', () => {
+      setSettings({ syncCategories: {} });
+      expect(isSyncCategoryEnabled('book_data')).toBe(true);
+    });
+
+    test('follows its toggle', () => {
+      setSettings({ syncCategories: { book_data: false } });
+      expect(isSyncCategoryEnabled('book_data')).toBe(false);
+    });
+
+    test('is not gated by Readest Cloud', () => {
+      setSettings({ webdav: { enabled: true } } as Partial<SystemSettings>);
+      expect(isSyncCategoryEnabled('book_data')).toBe(true);
+    });
+  });
+
   describe('cloud sync provider gate (exclusive routing, #4380)', () => {
     test('book/progress/note are gated off while a third-party provider is selected', () => {
       setSettings({ webdav: { enabled: true } } as Partial<SystemSettings>);
@@ -232,11 +253,12 @@ describe('translator category', () => {
 });
 
 describe('SYNC_CATEGORIES', () => {
-  test('covers all thirteen user-facing categories (incl. settings + stats + credentials)', () => {
+  test('covers all fourteen user-facing categories (incl. book_data + settings + stats + credentials)', () => {
     expect([...SYNC_CATEGORIES].sort()).toEqual(
       [
         'abs_server',
         'book',
+        'book_data',
         'credentials',
         'custom_translator',
         'custom_tts',

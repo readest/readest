@@ -83,6 +83,10 @@ const query = (table: string) => {
       filters[k] = v;
       return builder;
     },
+    is: (k: string, v: unknown) => {
+      filters[k] = v;
+      return builder;
+    },
     single: () => run(),
     // biome-ignore lint/suspicious/noThenProperty: mock PostgREST builder is intentionally thenable
     then: (ok: (v: unknown) => unknown, fail: (e: unknown) => unknown) => run().then(ok, fail),
@@ -95,6 +99,7 @@ vi.mock('@/utils/supabase', () => ({
 }));
 
 import { POST } from '@/app/api/share/[token]/import/route';
+import { resolveActiveShare } from '@/libs/shareServer';
 
 const importShare = () =>
   POST(new Request('http://localhost/api/share/tok/import', { method: 'POST' }), {
@@ -177,6 +182,36 @@ describe('POST /api/share/[token]/import — quota', () => {
 
     expect(res.status).toBe(402);
     expect(db.files).toHaveLength(0);
+  });
+
+  it('a synced TTS pack for the hash does not count as owning the book', async () => {
+    seed({ book_hash: 'hash', file_key: 'user-1/Readest/Books/hash/tts/3-f.mp3', file_size: 5 });
+
+    const res = await importShare();
+
+    expect(res.status).toBe(200);
+    expect(await res.json()).toMatchObject({ alreadyOwned: false });
+    expect(copyObjectMock).toHaveBeenCalled();
+  });
+
+  it("a self-import finds the sharer's own book file, not a TTS pack listed first", async () => {
+    vi.mocked(resolveActiveShare).mockResolvedValueOnce({
+      ok: true,
+      share: {
+        userId: 'user-1',
+        bookHash: 'hash',
+        bookSize: 100,
+        bookFileKey: 'user-1/Readest/Books/hash/book.epub',
+        coverFileKey: null,
+        cfi: null,
+      },
+    } as Awaited<ReturnType<typeof resolveActiveShare>>);
+    seed({ book_hash: 'hash', file_key: 'user-1/Readest/Books/hash/tts/3-f.mp3', file_size: 5 });
+    seed({ book_hash: 'hash', file_key: 'user-1/Readest/Books/hash/book.epub', file_size: 100 });
+
+    const res = await importShare();
+
+    expect(await res.json()).toMatchObject({ fileId: 'seed2', alreadyOwned: true });
   });
 
   it('restores a deleted copy that fits', async () => {

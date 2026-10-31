@@ -11,6 +11,8 @@ import {
   uploadFile,
   uploadReplicaFile,
   deleteFile as deleteCloudFile,
+  listFiles,
+  purgeFiles,
   createProgressHandler,
   batchGetDownloadUrls,
 } from '@/libs/storage';
@@ -19,6 +21,25 @@ import { ProgressHandler } from '@/utils/transfer';
 import { CLOUD_BOOKS_SUBDIR, CLOUD_REPLICAS_SUBDIR } from './constants';
 import { isBookFileContentSource, resolveBookContentSource } from './bookContent';
 import { getAbsOfflineDir } from '@/utils/audiobook';
+import { isBookDataFileKey } from '@/utils/bookDataKey';
+
+// A book's synced data (downloaded TTS packs) sits under its cloud folder by
+// content name, so it is found by listing, not by name. Best-effort.
+const purgeCloudBookData = async (bookHash: string): Promise<void> => {
+  try {
+    const { files } = await listFiles({ bookHash, search: `/${bookHash}/`, pageSize: 1000 });
+    const keys = (files ?? []).map((f) => f.file_key).filter(isBookDataFileKey);
+    // The purge route takes at most 100 keys a request.
+    let failed = 0;
+    for (let i = 0; i < keys.length; i += 100) {
+      const result = await purgeFiles(keys.slice(i, i + 100), true);
+      failed += result?.failedCount ?? 0;
+    }
+    if (failed) console.warn(`Failed to delete ${failed} synced book data file(s)`);
+  } catch (error) {
+    console.warn('Failed to delete synced book data:', error);
+  }
+};
 
 export async function deleteBook(
   fs: FileSystem,
@@ -94,6 +115,7 @@ export async function deleteBook(
         console.log('Failed to delete uploaded file:', error);
       }
     }
+    void purgeCloudBookData(book.hash);
     book.uploadedAt = null;
   }
 }

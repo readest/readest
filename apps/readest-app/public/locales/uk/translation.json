@@ -1952,8 +1952,6 @@
   "Audio Cache": "Аудіокеш",
   "Cache Synthesized Audio": "Кешувати синтезоване мовлення",
   "Reuse generated speech across sessions without refetching": "Повторно використовувати згенероване мовлення між сеансами без повторного отримання",
-  "Sync Audio Cache": "Синхронізувати аудіокеш",
-  "Share section audio between your devices through your file sync service": "Діліться аудіо секцій між пристроями через сервіс синхронізації файлів",
   "Storage Limit": "Ліміт сховища",
   "Playback settings": "Налаштування відтворення",
   "Player Style": "Стиль плеєра",
@@ -2800,5 +2798,7 @@
   "One page": "Одна сторінка",
   "Two pages": "Дві сторінки",
   "Show One Page": "Показати одну сторінку",
-  "Show Two Pages": "Показати дві сторінки"
+  "Show Two Pages": "Показати дві сторінки",
+  "Book Data": "Дані книги",
+  "Downloaded read-aloud audio and translations": "Завантажене аудіо читання вголос і переклади"
 }

@@ -2024,8 +2024,6 @@
   "Audio Cache": "ذاكرة التخزين المؤقت للصوت",
   "Cache Synthesized Audio": "تخزين الصوت المُولَّد مؤقتًا",
   "Reuse generated speech across sessions without refetching": "إعادة استخدام الصوت المُولَّد عبر الجلسات دون إعادة جلبه",
-  "Sync Audio Cache": "مزامنة ذاكرة التخزين المؤقت للصوت",
-  "Share section audio between your devices through your file sync service": "مشاركة صوت المقاطع بين أجهزتك عبر خدمة مزامنة الملفات",
   "Storage Limit": "حد التخزين",
   "Playback settings": "إعدادات التشغيل",
   "Player Style": "نمط المشغل",
@@ -2938,5 +2936,7 @@
   "One page": "صفحة واحدة",
   "Two pages": "صفحتان",
   "Show One Page": "عرض صفحة واحدة",
-  "Show Two Pages": "عرض صفحتين"
+  "Show Two Pages": "عرض صفحتين",
+  "Book Data": "بيانات الكتاب",
+  "Downloaded read-aloud audio and translations": "صوت القراءة بصوت عالٍ الذي تم تنزيله والترجمات"
 }

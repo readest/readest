@@ -1880,8 +1880,6 @@
   "Audio Cache": "Audio kesh",
   "Cache Synthesized Audio": "Sintezlangan audioni keshlash",
   "Reuse generated speech across sessions without refetching": "Yaratilgan nutqni qayta yuklab olmasdan seanslar orasida qayta ishlatish",
-  "Sync Audio Cache": "Audio keshni sinxronlash",
-  "Share section audio between your devices through your file sync service": "Boʻlim audiosini fayl sinxronlash xizmati orqali qurilmalaringiz oʻrtasida ulashing",
   "Storage Limit": "Saqlash chegarasi",
   "Playback settings": "Ijro sozlamalari",
   "Player Style": "Pleyer uslubi",
@@ -2662,5 +2660,7 @@
   "One page": "Bitta sahifa",
   "Two pages": "Ikki sahifa",
   "Show One Page": "Bitta sahifani ko‘rsatish",
-  "Show Two Pages": "Ikki sahifani ko‘rsatish"
+  "Show Two Pages": "Ikki sahifani ko‘rsatish",
+  "Book Data": "Kitob maʼlumotlari",
+  "Downloaded read-aloud audio and translations": "Yuklab olingan ovozli o‘qish audiosi va tarjimalar"
 }

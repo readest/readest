@@ -11,6 +11,8 @@
 // manifest updates and once more at session close.
 
 import { isTauriAppPlatform } from '@/services/environment';
+import type { BookDataListings } from '@/services/sync/bookData/engine';
+import type { BookDataDestination } from '@/services/sync/bookData/types';
 import type { DatabaseService } from '@/types/database';
 import type { AppService } from '@/types/system';
 import type { TTSCacheEntry, TTSCacheStore } from './cache';
@@ -23,11 +25,20 @@ const DEFAULT_BUDGET_MB = 200;
 const COMPACT_DEBOUNCE_MS = 30_000;
 const DOWNLOADS_MARKER = 'downloads.json';
 
+// The sync round in flight per book, shared by every store of that book.
+const syncRounds = new Map<string, Promise<void>>();
+// What a book's rounds share between opens: the destinations, so a folder is
+// prepared once, and their listings, so a push round lists nothing new. An
+// open starts a new session; a download's push rounds (one per finished
+// section) reuse it.
+const syncSessions = new Map<
+  string,
+  { destinations: Map<string, BookDataDestination>; listings: BookDataListings }
+>();
+
 export interface TTSCacheConfig {
   enabled: boolean;
   budgetMB: number;
-  // Share section packs through the user's third-party file-sync provider.
-  syncEnabled: boolean;
 }
 
 // localStorage-backed like the other TTS preferences (TTSUtils); a settings
@@ -39,10 +50,9 @@ export const getTTSCacheConfig = (): TTSCacheConfig => {
     return {
       enabled: parsed.enabled !== false,
       budgetMB: typeof parsed.budgetMB === 'number' ? parsed.budgetMB : DEFAULT_BUDGET_MB,
-      syncEnabled: parsed.syncEnabled === true,
     };
   } catch {
-    return { enabled: true, budgetMB: DEFAULT_BUDGET_MB, syncEnabled: false };
+    return { enabled: true, budgetMB: DEFAULT_BUDGET_MB };
   }
 };
 
@@ -355,22 +365,46 @@ export class BookTTSCacheStore implements TTSCacheStore {
     }
   }
 
-  // Push/pull section packs through the selected file-sync provider. The
-  // sync module is imported lazily: it must stay out of the TTS module
-  // graph (settingsStore -> constants -> EdgeTTSClient would cycle) and out
-  // of sessions that never enable sync.
+  // Push/pull downloaded section packs through every book-data destination
+  // (Book Data sync). The sync modules are imported lazily: they must stay
+  // out of the TTS module graph (settingsStore -> constants -> EdgeTTSClient
+  // would cycle).
+  // Rounds for one book run one after another: overlapping rounds would both
+  // see a pack missing and upload it twice, through the same Cache file.
   #syncPacks(bookHash: string, store: SqliteTTSCacheStore, direction: 'push' | 'both'): void {
-    if (!getTTSCacheConfig().syncEnabled) return;
-    void (async () => {
-      const { getActiveTTSPackSyncProvider, pullTTSPacks, pushTTSPacks } = await import(
-        '@/services/sync/file/ttsPackSync'
-      );
-      const provider = await getActiveTTSPackSyncProvider();
-      if (!provider) return;
-      if (direction === 'both') await pullTTSPacks(provider, bookHash, store);
-      await pushTTSPacks(provider, bookHash, store);
-    })().catch((err) => {
+    const round = async () => {
+      const [
+        { getBookDataDestinations },
+        { pullBookData, pushBookData },
+        { createTTSBookDataKind },
+      ] = await Promise.all([
+        import('@/services/sync/bookData/destinationsFor'),
+        import('@/services/sync/bookData/engine'),
+        import('@/services/sync/bookData/ttsKind'),
+      ]);
+      const current = await getBookDataDestinations(this.#appService, bookHash);
+      let session = syncSessions.get(bookHash);
+      if (direction === 'both' || !session) {
+        session = { destinations: new Map(), listings: new Map() };
+        syncSessions.set(bookHash, session);
+      }
+      const { destinations: kept, listings } = session;
+      const destinations = current.map((dest) => {
+        if (!kept.has(dest.id)) kept.set(dest.id, dest);
+        return kept.get(dest.id)!;
+      });
+      if (!destinations.length) return;
+      const kind = createTTSBookDataKind(store);
+      if (direction === 'both') await pullBookData(kind, bookHash, destinations, listings);
+      await pushBookData(kind, bookHash, destinations, listings);
+    };
+    const previous = syncRounds.get(bookHash) ?? Promise.resolve();
+    const next = previous.then(round).catch((err) => {
       console.warn('TTS pack sync failed', err);
+    });
+    syncRounds.set(bookHash, next);
+    void next.then(() => {
+      if (syncRounds.get(bookHash) === next) syncRounds.delete(bookHash);
     });
   }
 

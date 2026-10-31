@@ -1844,8 +1844,6 @@
   "Audio Cache": "Cache audio",
   "Cache Synthesized Audio": "Simpan audio sintesis ke cache",
   "Reuse generated speech across sessions without refetching": "Gunakan kembali suara yang dihasilkan antar sesi tanpa mengambil ulang",
-  "Sync Audio Cache": "Sinkronkan cache audio",
-  "Share section audio between your devices through your file sync service": "Bagikan audio bagian antar perangkat melalui layanan sinkronisasi file Anda",
   "Storage Limit": "Batas penyimpanan",
   "Playback settings": "Pengaturan pemutaran",
   "Player Style": "Gaya Pemutar",
@@ -2593,5 +2591,7 @@
   "One page": "Satu halaman",
   "Two pages": "Dua halaman",
   "Show One Page": "Tampilkan Satu Halaman",
-  "Show Two Pages": "Tampilkan Dua Halaman"
+  "Show Two Pages": "Tampilkan Dua Halaman",
+  "Book Data": "Data Buku",
+  "Downloaded read-aloud audio and translations": "Audio bacakan yang diunduh dan terjemahan"
 }

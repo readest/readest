@@ -1844,8 +1844,6 @@
   "Audio Cache": "སྒྲའི་གསོག་མཛོད།",
   "Cache Synthesized Audio": "བཟོས་པའི་སྒྲ་གསོག་འཇོག",
   "Reuse generated speech across sessions without refetching": "བཟོས་ཟིན་པའི་སྐད་སྒྲ་བསྐྱར་དུ་ལེན་མི་དགོས་པར་བསྐྱར་སྤྱོད་བྱེད།",
-  "Sync Audio Cache": "སྒྲའི་གསོག་མཛོད་མཉམ་འགྲིག",
-  "Share section audio between your devices through your file sync service": "ཡིག་ཆ་མཉམ་འགྲིག་ཞབས་ཞུ་བརྒྱུད་སྒྲིག་ཆས་བར་ས་བཅད་ཀྱི་སྒྲ་མཉམ་སྤྱོད།",
   "Storage Limit": "གསོག་ཉར་ཚད་བཀག",
   "Playback settings": "གཏོང་བའི་སྒྲིག་སྟངས།",
   "Player Style": "གཏོང་ཆས་ཀྱི་བཟོ་དབྱིབས།",
@@ -2593,5 +2591,7 @@
   "One page": "ཤོག་ངོས་གཅིག",
   "Two pages": "ཤོག་ངོས་གཉིས",
   "Show One Page": "ཤོག་ངོས་གཅིག་སྟོན།",
-  "Show Two Pages": "ཤོག་ངོས་གཉིས་སྟོན།"
+  "Show Two Pages": "ཤོག་ངོས་གཉིས་སྟོན།",
+  "Book Data": "དཔེ་དེབ་ཀྱི་གཞི་གྲངས།",
+  "Downloaded read-aloud audio and translations": "ཕབ་ལེན་བྱས་པའི་སྐད་སྒྲས་ཀློག་པའི་སྒྲ་དང་ཡིག་སྒྱུར།"
 }

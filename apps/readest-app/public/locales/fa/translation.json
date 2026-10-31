@@ -1880,8 +1880,6 @@
   "Audio Cache": "حافظه پنهان صدا",
   "Cache Synthesized Audio": "ذخیره صدای ساخته‌شده در حافظه پنهان",
   "Reuse generated speech across sessions without refetching": "استفاده دوباره از گفتار تولیدشده بین نشست‌ها بدون دریافت مجدد",
-  "Sync Audio Cache": "همگام‌سازی حافظه پنهان صدا",
-  "Share section audio between your devices through your file sync service": "اشتراک‌گذاری صدای بخش‌ها بین دستگاه‌های شما از طریق سرویس همگام‌سازی فایل",
   "Storage Limit": "محدودیت فضای ذخیره‌سازی",
   "Playback settings": "تنظیمات پخش",
   "Player Style": "سبک پخش‌کننده",
@@ -2662,5 +2660,7 @@
   "One page": "یک صفحه",
   "Two pages": "دو صفحه",
   "Show One Page": "نمایش یک صفحه",
-  "Show Two Pages": "نمایش دو صفحه"
+  "Show Two Pages": "نمایش دو صفحه",
+  "Book Data": "داده‌های کتاب",
+  "Downloaded read-aloud audio and translations": "صدای بلندخوانی دانلودشده و ترجمه‌ها"
 }

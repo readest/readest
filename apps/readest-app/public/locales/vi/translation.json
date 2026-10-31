@@ -1844,8 +1844,6 @@
   "Audio Cache": "Bộ nhớ đệm âm thanh",
   "Cache Synthesized Audio": "Lưu âm thanh tổng hợp vào bộ nhớ đệm",
   "Reuse generated speech across sessions without refetching": "Dùng lại giọng nói đã tạo giữa các phiên mà không cần tải lại",
-  "Sync Audio Cache": "Đồng bộ bộ nhớ đệm âm thanh",
-  "Share section audio between your devices through your file sync service": "Chia sẻ âm thanh của các phần giữa các thiết bị qua dịch vụ đồng bộ tệp của bạn",
   "Storage Limit": "Giới hạn lưu trữ",
   "Playback settings": "Cài đặt phát",
   "Player Style": "Kiểu trình phát",
@@ -2593,5 +2591,7 @@
   "One page": "Một trang",
   "Two pages": "Hai trang",
   "Show One Page": "Hiện một trang",
-  "Show Two Pages": "Hiện hai trang"
+  "Show Two Pages": "Hiện hai trang",
+  "Book Data": "Dữ liệu sách",
+  "Downloaded read-aloud audio and translations": "Âm thanh đọc to đã tải xuống và bản dịch"
 }

@@ -1851,8 +1851,6 @@
   "Audio Cache": "აუდიოს ქეში",
   "Cache Synthesized Audio": "სინთეზირებული აუდიოს ქეშირება",
   "Reuse generated speech across sessions without refetching": "გამოიყენეთ გენერირებული მეტყველება სესიებს შორის ხელახლა მიღების გარეშე",
-  "Sync Audio Cache": "აუდიოს ქეშის სინქრონიზაცია",
-  "Share section audio between your devices through your file sync service": "გააზიარეთ სექციის აუდიო თქვენს მოწყობილობებს შორის ფაილების სინქრონიზაციის სერვისით",
   "Storage Limit": "საცავის ლიმიტი",
   "Extra Large": "ძალიან დიდი",
   "Word Lens data downloaded": "Word Lens-ის მონაცემები ჩამოიტვირთა",
@@ -2662,5 +2660,7 @@
   "One page": "ერთი გვერდი",
   "Two pages": "ორი გვერდი",
   "Show One Page": "ერთი გვერდის ჩვენება",
-  "Show Two Pages": "ორი გვერდის ჩვენება"
+  "Show Two Pages": "ორი გვერდის ჩვენება",
+  "Book Data": "წიგნის მონაცემები",
+  "Downloaded read-aloud audio and translations": "ჩამოტვირთული ხმამაღლა კითხვის აუდიო და თარგმანები"
 }

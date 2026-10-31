@@ -3,6 +3,7 @@ import { createSupabaseAdminClient } from '@/utils/supabase';
 import { validateUserAndToken } from '@/utils/access';
 import { generateShareToken } from '@/libs/shareServer';
 import { objectExists } from '@/utils/object';
+import { isBookDataFileKey } from '@/utils/bookDataKey';
 import {
   SHARE_BASE_URL,
   SHARE_CFI_MAX_LENGTH,
@@ -130,7 +131,10 @@ export async function POST(request: Request) {
 
   // Pick the book file (not the cover) by extension. Covers are PNG/JPG;
   // book files are EPUB/PDF/MOBI/etc. The widest filter is "is not an image".
-  const bookFile = bookFiles.find((f) => !/\.(png|jpe?g|webp|gif)$/i.test(f.file_key));
+  // Synced book data (TTS packs) shares the hash and is skipped too.
+  const bookFile = bookFiles.find(
+    (f) => !/\.(png|jpe?g|webp|gif)$/i.test(f.file_key) && !isBookDataFileKey(f.file_key),
+  );
   if (!bookFile) {
     return NextResponse.json(
       { error: 'Book file row not found', code: 'book_not_uploaded' },
