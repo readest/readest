@@ -581,6 +581,69 @@ describe('iframeEventHandlers touch forwarding', () => {
     );
   });
 
+  describe('a touch whose start element is removed mid-gesture', () => {
+    // A zoom change rebuilds a PDF page's pdf.js text layer. A touch that began
+    // on one of its spans keeps targeting that span after it is detached, so its
+    // later events never reach the document's listeners.
+    const touchDomEvent = (type: string, touches: Touch[], changedTouches = touches) => {
+      const event = new Event(type, { bubbles: true, cancelable: true });
+      Object.defineProperties(event, {
+        touches: { value: touches },
+        changedTouches: { value: changedTouches },
+      });
+      return event as TouchEvent;
+    };
+    let span: HTMLSpanElement;
+    let listeners: [string, (event: Event) => void][];
+
+    beforeEach(async () => {
+      const { handleTouchStart, handleTouchMove, handleTouchEnd, handleTouchCancel } =
+        await importHandlers();
+      listeners = [
+        ['touchstart', (e) => handleTouchStart('book-1', e as TouchEvent)],
+        ['touchmove', (e) => handleTouchMove('book-1', e as TouchEvent)],
+        ['touchend', (e) => handleTouchEnd('book-1', e as TouchEvent)],
+        ['touchcancel', (e) => handleTouchCancel('book-1', e as TouchEvent)],
+      ];
+      for (const [type, listener] of listeners) document.addEventListener(type, listener);
+      span = document.createElement('span');
+      document.body.appendChild(span);
+    });
+
+    afterEach(() => {
+      for (const [type, listener] of listeners) document.removeEventListener(type, listener);
+      span.remove();
+    });
+
+    test('its moves and release still reach the reader', () => {
+      span.dispatchEvent(touchDomEvent('touchstart', [touchPoint(300, 100)]));
+      span.remove();
+      span.dispatchEvent(touchDomEvent('touchmove', [touchPoint(200, 100)]));
+      span.dispatchEvent(touchDomEvent('touchend', [], [touchPoint(100, 100)]));
+
+      expect(postedTypes(postSpy)).toEqual([
+        'iframe-touchstart',
+        'iframe-touchmove',
+        'iframe-touchend',
+      ]);
+    });
+
+    test('a touch on a connected element is forwarded once', () => {
+      span.dispatchEvent(touchDomEvent('touchstart', [touchPoint(300, 100)]));
+      span.dispatchEvent(touchDomEvent('touchmove', [touchPoint(200, 100)]));
+      span.dispatchEvent(touchDomEvent('touchend', [], [touchPoint(100, 100)]));
+      // A later touch elsewhere is not forwarded by the earlier start element.
+      span.remove();
+      span.dispatchEvent(touchDomEvent('touchmove', [touchPoint(200, 100)]));
+
+      expect(postedTypes(postSpy)).toEqual([
+        'iframe-touchstart',
+        'iframe-touchmove',
+        'iframe-touchend',
+      ]);
+    });
+  });
+
   test('touchcancel forwards the released finger and clears the gesture', async () => {
     const {
       handleClick,

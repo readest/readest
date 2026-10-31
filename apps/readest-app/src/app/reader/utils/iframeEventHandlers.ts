@@ -829,6 +829,27 @@ const handleTouchEv = (bookKey: string, event: TouchEvent, type: string) => {
 
 export const handleTouchStart = (bookKey: string, event: TouchEvent) => {
   handleTouchEv(bookKey, event, 'iframe-touchstart');
+  // A zoom change mid-gesture (an edge turn resets a zoomed PDF page) rebuilds
+  // the pdf.js text layer. A touch that began on one of its spans keeps
+  // targeting the detached span, so its later events never reach the
+  // document. Forward them from the span, only once it is detached.
+  const target = event.target as Node | null;
+  if (!target?.addEventListener || target === event.currentTarget) return;
+  const forward = (type: string) => (e: Event) => {
+    if (!target.isConnected) handleTouchEv(bookKey, e as TouchEvent, type);
+  };
+  const onMove = forward('iframe-touchmove');
+  const onEnd = forward('iframe-touchend');
+  const onCancel = forward('iframe-touchcancel');
+  const release = (e: Event) => {
+    target.removeEventListener('touchmove', onMove);
+    target.removeEventListener('touchend', release);
+    target.removeEventListener('touchcancel', release);
+    (e.type === 'touchend' ? onEnd : onCancel)(e);
+  };
+  target.addEventListener('touchmove', onMove, { passive: false });
+  target.addEventListener('touchend', release, { passive: false });
+  target.addEventListener('touchcancel', release);
 };
 
 export const handleTouchMove = (bookKey: string, event: TouchEvent) => {
