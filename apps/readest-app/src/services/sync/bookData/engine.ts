@@ -34,6 +34,7 @@ const pushTo = async (
   dest: BookDataDestination,
 ): Promise<number> => {
   const remote = await dest.list(bookHash, kind.id);
+  if (!remote) return 0;
   let pushed = 0;
   for (const unit of units) {
     const files = kind.filesOf(unit);
@@ -94,6 +95,7 @@ export const pullBookData = async (
   for (const dest of destinations) {
     try {
       const remote = await dest.list(bookHash, kind.id);
+      if (!remote) continue;
       for (const file of remote) {
         const unit = kind.unitOf(file);
         if (!unit || sources.has(unit)) continue;

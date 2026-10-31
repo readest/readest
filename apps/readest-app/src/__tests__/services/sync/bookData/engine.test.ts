@@ -48,14 +48,17 @@ const makeDest = (id: string, remote: string[] = []) => {
     writes: string[];
     failWrites: boolean;
     failList: boolean;
+    declines: boolean;
   } = {
     id,
     files,
     writes,
     failWrites: false,
     failList: false,
+    declines: false,
     async list() {
       if (dest.failList) throw new Error('503');
+      if (dest.declines) return null;
       return new Set(files.keys());
     },
     async read(_h, _k, name) {
@@ -126,6 +129,16 @@ describe('pushBookData', () => {
     const a = makeDest('webdav');
     a.failList = true;
     const b = makeDest('gdrive');
+    expect(await pushBookData(kind, HASH, [a, b])).toBe(1);
+    expect(a.writes).toEqual([]);
+    expect(b.writes).toEqual(['a.mp3', 'a.json']);
+  });
+
+  test('a destination that declines the book gets nothing', async () => {
+    const { kind } = makeKind({ 'a.mp3': 'mp3' });
+    const a = makeDest('readest');
+    a.declines = true;
+    const b = makeDest('webdav');
     expect(await pushBookData(kind, HASH, [a, b])).toBe(1);
     expect(a.writes).toEqual([]);
     expect(b.writes).toEqual(['a.mp3', 'a.json']);

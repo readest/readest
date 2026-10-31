@@ -1,6 +1,7 @@
 import { CLOUD_BOOKS_SUBDIR } from '@/services/constants';
 import { deleteFile as deleteCloudFile, downloadFile, listFiles } from '@/libs/storage';
 import type { AppService } from '@/types/system';
+import { isBookDataFileKey } from '@/utils/bookDataKey';
 import type { BookDataDestination } from './types';
 
 // Cloud transfers go through a file in the Cache folder: desktop and mobile
@@ -15,18 +16,25 @@ export const createReadestCloudDestination = (appService: AppService): BookDataD
 
   return {
     id: 'readest',
-    // Throws on a failed listing, so push skips Readest Cloud instead of
-    // uploading everything again.
+    // One listing of all the book's files. Null when the book file itself is
+    // not in Readest Cloud: `uploadedAt` is also set for a book that only a
+    // file-sync backend holds (#5084). Throws on a failed listing, so push
+    // skips Readest Cloud instead of uploading everything again.
     async list(bookHash, kind) {
       const folder = `/${bookHash}/${kind}/`;
-      const { files } = await listFiles({ bookHash, search: folder, pageSize: 1000 });
+      const { files } = await listFiles({ bookHash, pageSize: 1000 });
+      let hasBook = false;
       const names = new Set<string>();
       for (const { file_key } of files ?? []) {
+        if (!isBookDataFileKey(file_key)) {
+          if (!/\.(png|jpe?g|webp|gif)$/i.test(file_key)) hasBook = true;
+          continue;
+        }
         const at = file_key.indexOf(folder);
         const name = at >= 0 ? file_key.slice(at + folder.length) : '';
         if (name && !name.includes('/')) names.add(name);
       }
-      return names;
+      return hasBook ? names : null;
     },
     async read(bookHash, kind, name) {
       const lfp = `${INBOX_DIR}/${name}`;

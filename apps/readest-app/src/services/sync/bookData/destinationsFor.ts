@@ -11,8 +11,10 @@ import type { BookDataDestination } from './types';
 
 /**
  * Where a book's data syncs right now: every enabled file-sync backend
- * (unless the plan has them paused, #4959), and Readest Cloud when the book
- * itself is uploaded there and Books sync runs through it. Empty with the
+ * (unless the plan has them paused, #4959), and Readest Cloud when Books sync
+ * runs through it and the book may be uploaded there. `uploadedAt` only rules
+ * out a local book: it is also set for a book a file-sync backend holds, so the
+ * Readest Cloud destination checks for the book file itself. Empty with the
  * Book Data category off.
  */
 export const getBookDataDestinations = async (

@@ -89,7 +89,7 @@ describe('Readest Cloud destination', () => {
     deleteCloudFileMock.mockReset().mockResolvedValue(undefined);
   });
 
-  test("lists only that kind's files", async () => {
+  test("lists only that kind's files, from one listing of the book", async () => {
     listFilesMock.mockResolvedValue({
       files: [
         { file_key: 'u1/Readest/Books/h/tts/a.mp3' },
@@ -98,11 +98,18 @@ describe('Readest Cloud destination', () => {
       ],
     });
     expect(await cloud().list('h', 'tts')).toEqual(new Set(['a.mp3']));
-    expect(listFilesMock).toHaveBeenCalledWith({
-      bookHash: 'h',
-      search: '/h/tts/',
-      pageSize: 1000,
+    expect(listFilesMock).toHaveBeenCalledWith({ bookHash: 'h', pageSize: 1000 });
+  });
+
+  test('declines a book whose file is not in Readest Cloud', async () => {
+    // `uploadedAt` is also set when the book's file is on a file-sync backend
+    // only (#5084), so the listing decides: no book file, no book data.
+    listFilesMock.mockResolvedValue({
+      files: [{ file_key: 'u1/Readest/Books/h/tts/a.mp3' }],
     });
+    expect(await cloud().list('h', 'tts')).toBeNull();
+    listFilesMock.mockResolvedValue({ files: [] });
+    expect(await cloud().list('h', 'tts')).toBeNull();
   });
 
   test('a listing error throws instead of reading as an empty folder', async () => {
