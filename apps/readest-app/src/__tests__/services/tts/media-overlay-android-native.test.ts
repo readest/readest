@@ -99,6 +99,20 @@ afterEach(async () => {
 });
 
 describe('MediaOverlayClient on Android Tauri', () => {
+  test('queues the next section audio without replacing the current file', async () => {
+    await setup();
+    const utterance = client.speak(section.ssmlForBlock(0)!, new AbortController().signal);
+    await utterance.next();
+    await client.preloadSection({
+      pars: [{ audioHref: 'next.m4b' }],
+    } as unknown as MediaOverlaySection);
+
+    expect(controlCalls.find((call) => call['action'] === 'queue')).toMatchObject({
+      path: '/books/hash/audiobook/book.m4b',
+    });
+    expect(controlCalls.filter((call) => call['action'] === 'load')).toHaveLength(1);
+  });
+
   test('streams a paired audiobook from its native path without buffering it', async () => {
     await setup();
     const utterance = client.speak(section.ssmlForBlock(0)!, new AbortController().signal);

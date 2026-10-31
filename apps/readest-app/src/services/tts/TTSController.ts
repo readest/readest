@@ -1747,6 +1747,12 @@ export class TTSController extends EventTarget {
     if (!section?.createDocument) return [];
     try {
       const doc = await this.#createSectionDoc(section);
+      if (this.ttsClient === this.ttsMediaOverlayClient) {
+        const narration = await this.#loadNarrationSection(this.view, sectionIndex, doc);
+        if (narration) {
+          await this.ttsMediaOverlayClient.preloadSection(narration);
+        }
+      }
       const { TTS } = await import('foliate-js/tts.js');
       const { textWalker } = await import('foliate-js/text-walker.js');
       const tts = new TTS(doc, textWalker, createTTSNodeFilter(), () => {}, this.#ttsGranularity);
