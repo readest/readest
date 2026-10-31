@@ -880,6 +880,36 @@ describe('SqliteTTSCacheStore pack portability', () => {
     expect(await store.buildPackSidecar('nope.mp3')).toBeNull();
   });
 
+  test('a pack still describes all its sentences after an import shares one', async () => {
+    const localName = await packName();
+    const localSidecar = await readSidecar();
+
+    // Another device packed section 3 with k1 and a sentence this one lacks.
+    const otherDb = await NodeDatabaseService.open(':memory:');
+    const otherFs = new FakePackFs();
+    const other = new SqliteTTSCacheStore(otherDb, {
+      budgetBytes: 1024 * 1024,
+      now: () => clock.t++,
+      packFs: otherFs,
+    });
+    await other.registerSectionMarks(3, ['m1', 'm9']);
+    await other.put('k1', sentence(1));
+    await other.recordMarkKey(3, 0, 'k1');
+    await other.put('k9', sentence(9));
+    await other.recordMarkKey(3, 1, 'k9');
+    await other.compact();
+    const otherName = (await otherFs.list()).find((n) => n.endsWith('.mp3'))!;
+    const otherSidecar = JSON.parse(
+      new TextDecoder().decode(otherFs.files.get(packSidecarName(otherName))!),
+    ) as TTSPackSidecar;
+    const otherBytes = otherFs.files.get(otherName)!.slice().buffer as ArrayBuffer;
+    await otherDb.close();
+
+    // The import repoints k1's row at the imported pack.
+    expect(await store.importPack(otherBytes, otherSidecar)).toBe(true);
+    expect(await store.buildPackSidecar(localName)).toEqual(localSidecar);
+  });
+
   test('evicting a pack removes its sidecar too', async () => {
     // Shrink the budget with a new store over the same db and force eviction.
     const tight = new SqliteTTSCacheStore(db, {

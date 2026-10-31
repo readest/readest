@@ -266,7 +266,11 @@ export class BookTTSCacheStore implements TTSCacheStore {
     if (!opened) return;
     await opened.store.completeDownloadSections(sections);
     const bookHash = this.#getBookHash();
-    if (bookHash) await this.#syncDownloadMarker(bookHash, opened.store);
+    if (!bookHash) return;
+    await this.#syncDownloadMarker(bookHash, opened.store);
+    // A section packed earlier by listening becomes eligible only now, with
+    // no new pack for compaction to push.
+    this.#syncPacks(bookHash, opened.store, 'push');
   }
 
   async cancelDownloadSections(sections: number[]): Promise<void> {

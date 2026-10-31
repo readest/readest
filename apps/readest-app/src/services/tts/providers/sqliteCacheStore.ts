@@ -1022,6 +1022,10 @@ export class SqliteTTSCacheStore implements TTSCacheStore {
     const pack = packs[0];
     // Packs from before keys-based identity have no fingerprint: not portable.
     if (!pack?.keys_fingerprint) return null;
+    // Prefer the sidecar written with the pack: an imported pack sharing a
+    // sentence repoints that row, so the rows alone can miss entries.
+    const stored = await this.#packFs?.readSidecar(packSidecarName(name)).catch(() => null);
+    if (stored?.keysFingerprint === pack.keys_fingerprint) return stored;
     const entries = await this.#db.select<
       DatabaseRow & {
         key: string;

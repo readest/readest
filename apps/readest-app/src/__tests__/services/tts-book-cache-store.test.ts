@@ -150,6 +150,46 @@ describe('BookTTSCacheStore', () => {
     }
   });
 
+  test('finishing a download pushes its pack even when listening already made it', async () => {
+    // Section 7 was packed by ordinary listening, so the open's push skipped
+    // it and the download creates no new pack.
+    const sqliteStore = new SqliteTTSCacheStore(db, {
+      budgetBytes: 1024 * 1024,
+      packFs: packState.fs,
+    });
+    await sqliteStore.registerSectionMarks(7, ['0:a']);
+    await sqliteStore.put('k1', entry());
+    await sqliteStore.recordMarkKey(7, 0, 'k1');
+    await sqliteStore.compact();
+
+    setTTSCacheConfig({ enabled: true, budgetMB: 200, syncEnabled: true });
+    packSync.getActiveTTSPackSyncProvider.mockResolvedValue(packSync.provider);
+    try {
+      const store = new BookTTSCacheStore(appService, () => 'hash777', 1024 * 1024);
+      await store.open();
+      await vi.waitFor(() =>
+        expect(packSync.pushTTSPacks).toHaveBeenCalledWith(
+          packSync.provider,
+          'hash777',
+          expect.anything(),
+        ),
+      );
+      packSync.pushTTSPacks.mockClear();
+      await store.beginDownloadSections([7]);
+      await store.compact();
+      await store.completeDownloadSections([7]);
+      await vi.waitFor(() =>
+        expect(packSync.pushTTSPacks).toHaveBeenCalledWith(
+          packSync.provider,
+          'hash777',
+          expect.anything(),
+        ),
+      );
+    } finally {
+      localStorage.clear();
+    }
+  });
+
   test('an open failure degrades to a no-op cache', async () => {
     openDatabase.mockRejectedValue(new Error('locked'));
     const store = new BookTTSCacheStore(appService, () => 'hash123', 1024 * 1024);
