@@ -43,6 +43,29 @@ const bookData = vi.hoisted(() => ({
   pushBookData: vi.fn(async () => 0),
 }));
 
+const bookConfig = vi.hoisted(() => ({
+  config: null as { ttsPacks?: Record<string, string[]>; updatedAt?: number } | null,
+  setConfig: vi.fn((_key: string, update: object) => {
+    bookConfig.config = { ...bookConfig.config, ...update };
+  }),
+  book: { hash: 'hash-rec4' },
+  settings: { kind: 'settings' },
+}));
+vi.mock('@/store/libraryStore', () => ({
+  useLibraryStore: { getState: () => ({ getBookByHash: () => bookConfig.book }) },
+}));
+vi.mock('@/store/settingsStore', () => ({
+  useSettingsStore: { getState: () => ({ settings: bookConfig.settings }) },
+}));
+vi.mock('@/store/bookDataStore', () => ({
+  useBookDataStore: {
+    getState: () => ({
+      getConfig: () => bookConfig.config,
+      setConfig: bookConfig.setConfig,
+    }),
+  },
+}));
+
 vi.mock('@/services/sync/bookData/destinationsFor', () => ({
   getBookDataDestinations: bookData.getBookDataDestinations,
 }));
@@ -89,6 +112,7 @@ describe('BookTTSCacheStore', () => {
       writeFile,
       deleteFile,
       readDirectory: vi.fn().mockResolvedValue([]),
+      saveBookConfig: vi.fn(async () => {}),
     } as unknown as AppService;
   });
 
@@ -147,6 +171,7 @@ describe('BookTTSCacheStore', () => {
         'hash123',
         bookData.destinations,
         expect.any(Map),
+        undefined,
       ),
     );
     expect(bookData.getBookDataDestinations).toHaveBeenCalledWith(appService, 'hash123');
@@ -192,6 +217,7 @@ describe('BookTTSCacheStore', () => {
         'hash777',
         bookData.destinations,
         expect.any(Map),
+        undefined,
       );
     await vi.waitFor(pushed);
     bookData.pushBookData.mockClear();
@@ -243,6 +269,66 @@ describe('BookTTSCacheStore', () => {
     expect((pushedTo as unknown[])[1]).toBe((pulledTo as unknown[])[1]);
     bookData.getBookDataDestinations.mockReset();
     bookData.getBookDataDestinations.mockResolvedValue([]);
+  });
+
+  describe('with the packs recorded in the book config', () => {
+    const openWith = async (hash: string, ttsPacks?: Record<string, string[]>) => {
+      bookConfig.config = { ttsPacks, updatedAt: 42 };
+      bookConfig.setConfig.mockClear();
+      bookData.getBookDataDestinations.mockResolvedValue(bookData.destinations);
+      bookData.pullBookData.mockClear();
+      bookData.pushBookData.mockClear();
+      const store = new BookTTSCacheStore(appService, () => hash, 1024 * 1024);
+      await store.open();
+      await vi.waitFor(() => expect(bookData.pushBookData).toHaveBeenCalled());
+    };
+
+    test('an open pulls nothing when every destination is recorded and nothing is missing', async () => {
+      // A book without audio, synced before: no listing at all.
+      await openWith('hash-rec1', { webdav: [], readest: [] });
+      expect(bookData.pullBookData).not.toHaveBeenCalled();
+      expect(bookData.pushBookData).toHaveBeenCalledWith(
+        expect.objectContaining({ id: 'tts' }),
+        'hash-rec1',
+        bookData.destinations,
+        expect.any(Map),
+        { webdav: [], readest: [] },
+      );
+    });
+
+    test('an open pulls when the record lists a pack this device lacks', async () => {
+      await openWith('hash-rec2', { webdav: ['9-x.mp3'], readest: [] });
+      expect(bookData.pullBookData).toHaveBeenCalled();
+    });
+
+    test('an open lists a destination the config never recorded', async () => {
+      await openWith('hash-rec3', { webdav: [] });
+      expect(bookData.pullBookData).toHaveBeenCalled();
+    });
+
+    test('records what each listed destination holds, a declining one as empty', async () => {
+      bookData.pullBookData.mockImplementationOnce(async (...args: unknown[]) => {
+        const listings = args[3] as Map<string, Set<string> | null>;
+        listings.set('webdav', new Set(['1-a.mp3', '1-a.json', '2-b.mp3']));
+        listings.set('readest', null);
+        return 0;
+      });
+      await openWith('hash-rec4', undefined);
+      await vi.waitFor(() =>
+        expect(bookConfig.setConfig).toHaveBeenCalledWith('hash-rec4', {
+          ttsPacks: { webdav: ['1-a.mp3'], readest: [] },
+        }),
+      );
+      // Saved to the book's config file at once, so a quit before the next
+      // page turn keeps it; updatedAt untouched, so progress can't move.
+      await vi.waitFor(() =>
+        expect(appService.saveBookConfig).toHaveBeenCalledWith(
+          bookConfig.book,
+          { updatedAt: 42, ttsPacks: { webdav: ['1-a.mp3'], readest: [] } },
+          bookConfig.settings,
+        ),
+      );
+    });
   });
 
   test('an open failure degrades to a no-op cache', async () => {

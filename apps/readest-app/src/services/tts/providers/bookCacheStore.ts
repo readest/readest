@@ -377,10 +377,16 @@ export class BookTTSCacheStore implements TTSCacheStore {
         { getBookDataDestinations },
         { pullBookData, pushBookData },
         { createTTSBookDataKind },
+        { useBookDataStore },
+        { useLibraryStore },
+        { useSettingsStore },
       ] = await Promise.all([
         import('@/services/sync/bookData/destinationsFor'),
         import('@/services/sync/bookData/engine'),
         import('@/services/sync/bookData/ttsKind'),
+        import('@/store/bookDataStore'),
+        import('@/store/libraryStore'),
+        import('@/store/settingsStore'),
       ]);
       const current = await getBookDataDestinations(this.#appService, bookHash);
       let session = syncSessions.get(bookHash);
@@ -395,8 +401,48 @@ export class BookTTSCacheStore implements TTSCacheStore {
       });
       if (!destinations.length) return;
       const kind = createTTSBookDataKind(store);
-      if (direction === 'both') await pullBookData(kind, bookHash, destinations, listings);
-      await pushBookData(kind, bookHash, destinations, listings);
+      // What each destination holds, synced in the book's config: an open
+      // pulls only when it names a pack this device lacks, or a destination it
+      // has never recorded. A book without audio then makes no request.
+      const books = useBookDataStore.getState();
+      const recorded = books.getConfig(bookHash)?.ttsPacks;
+      const needsPull = async () => {
+        if (destinations.some((dest) => !recorded?.[dest.id])) return true;
+        for (const dest of destinations) {
+          for (const unit of recorded![dest.id]!) {
+            if (!(await kind.hasLocal(unit))) return true;
+          }
+        }
+        return false;
+      };
+      if (direction === 'both' && (await needsPull())) {
+        await pullBookData(kind, bookHash, destinations, listings);
+      }
+      await pushBookData(kind, bookHash, destinations, listings, recorded);
+
+      // Record what each listed destination holds; one that declined the
+      // book holds nothing.
+      const next = { ...recorded };
+      for (const dest of destinations) {
+        if (!listings.has(dest.id)) continue;
+        const files = listings.get(dest.id) ?? new Set<string>();
+        const units: string[] = [];
+        for (const file of files) {
+          const unit = kind.unitOf(file);
+          if (unit && kind.filesOf(unit).every((f) => files.has(f))) units.push(unit);
+        }
+        next[dest.id] = units;
+      }
+      if (JSON.stringify(next) !== JSON.stringify(recorded ?? {}) && books.getConfig(bookHash)) {
+        // No updatedAt bump: recording audio must not move reading progress.
+        // Saved at once, so a quit before the next page turn keeps it.
+        books.setConfig(bookHash, { ttsPacks: next });
+        const book = useLibraryStore.getState().getBookByHash(bookHash);
+        const config = books.getConfig(bookHash);
+        if (book && config) {
+          await this.#appService.saveBookConfig(book, config, useSettingsStore.getState().settings);
+        }
+      }
     };
     const previous = syncRounds.get(bookHash) ?? Promise.resolve();
     const next = previous.then(round).catch((err) => {

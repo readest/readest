@@ -1,3 +1,4 @@
+import { mergeTTSPacks } from '@/utils/ttsPacks';
 import { Book, BookConfig, BookNote } from '@/types/book';
 import { resolveReferencePageCount } from '@/utils/progress';
 import { bookGroupDiffers, pickFresherGroup } from '@/utils/book';
@@ -73,6 +74,10 @@ export const mergeBookConfig = (
       : ({ ...filteredRemote, ...local } as BookConfig);
   const notes = mergeNotes(local.booknotes ?? [], remote.booknotes ?? []);
   merged.booknotes = notes;
+  // A union, whichever side won the scalars: recording audio never bumps
+  // updatedAt, so the winner may lack the other side's packs.
+  const ttsPacks = mergeTTSPacks(local.ttsPacks, remote.ttsPacks);
+  if (ttsPacks) merged.ttsPacks = ttsPacks;
   // The reference page count is the one viewSettings key that crosses devices
   // (issue #5716) — it describes the book's print edition, not the screen. It
   // arrives as its own envelope key, so apply it to viewSettings by hand

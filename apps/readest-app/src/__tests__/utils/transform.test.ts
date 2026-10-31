@@ -520,3 +520,22 @@ describe('book page count', () => {
     expect('pageCount' in transformBookFromDB({ ...row, page_count: null })).toBe(false);
   });
 });
+
+describe('book config read-aloud packs', () => {
+  it('round-trips the packs each destination holds', () => {
+    const config = {
+      bookHash: 'h',
+      updatedAt: 1,
+      ttsPacks: { readest: ['3-a.mp3'], webdav: [] },
+    } as BookConfig;
+    const db = transformBookConfigToDB(config, 'u');
+    expect(transformBookConfigFromDB(db).ttsPacks).toEqual({ readest: ['3-a.mp3'], webdav: [] });
+  });
+
+  it('sends no column when the config never recorded packs', () => {
+    // Only a book with Read Aloud history writes the new column.
+    const db = transformBookConfigToDB({ bookHash: 'h', updatedAt: 1 } as BookConfig, 'u');
+    expect('tts_packs' in db).toBe(false);
+    expect(transformBookConfigFromDB(db).ttsPacks).toBeUndefined();
+  });
+});

@@ -68,6 +68,7 @@ CREATE TABLE public.book_configs (
   rsvp_position text NULL,
   search_config jsonb NULL,
   view_settings jsonb NULL,
+  tts_packs jsonb NULL,
   created_at timestamp with time zone NULL DEFAULT now(),
   updated_at timestamp with time zone NULL DEFAULT now(),
   deleted_at timestamp with time zone NULL,

@@ -41,9 +41,15 @@ const pushTo = async (
   units: string[],
   dest: BookDataDestination,
   listings?: BookDataListings,
+  recorded?: Record<string, string[]>,
 ): Promise<number> => {
   let remote = listings?.get(dest.id);
   if (remote === undefined) {
+    // The record (synced in the book's config) only rules work out: with
+    // something to upload, list first, which checks the destination still
+    // takes the book and skips what a peer already uploaded.
+    const known = recorded?.[dest.id];
+    if (known && units.every((unit) => known.includes(unit))) return 0;
     remote = await dest.list(bookHash, kind.id);
     listings?.set(dest.id, remote);
   }
@@ -80,6 +86,7 @@ export const pushBookData = async (
   bookHash: string,
   destinations: BookDataDestination[],
   listings?: BookDataListings,
+  recorded?: Record<string, string[]>,
 ): Promise<number> => {
   let units: string[];
   try {
@@ -92,7 +99,7 @@ export const pushBookData = async (
   let pushed = 0;
   for (const dest of destinations) {
     try {
-      pushed += await pushTo(kind, bookHash, units, dest, listings);
+      pushed += await pushTo(kind, bookHash, units, dest, listings, recorded);
     } catch (err) {
       console.warn(`Book data push to ${dest.id} failed`, err);
     }

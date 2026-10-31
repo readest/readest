@@ -183,6 +183,30 @@ describe('a sync session', () => {
   });
 });
 
+describe('pushing against the recorded packs', () => {
+  test('makes no request when every pack is already recorded there', async () => {
+    const dest = makeDest('webdav');
+    const list = vi.spyOn(dest, 'list');
+    const recorded = { webdav: ['a.mp3', 'b.mp3'] };
+    expect(
+      await pushBookData(makeKind({ 'a.mp3': 'a' }).kind, HASH, [dest], new Map(), recorded),
+    ).toBe(0);
+    expect(list).not.toHaveBeenCalled();
+  });
+
+  test('lists before uploading a pack the record lacks', async () => {
+    // Listing checks the destination still takes the book (Readest Cloud
+    // declines one whose file is gone) and skips what a peer uploaded.
+    const dest = makeDest('webdav', ['b.mp3', 'b.json']);
+    const list = vi.spyOn(dest, 'list');
+    const recorded = { webdav: ['a.mp3'] };
+    const kind = makeKind({ 'a.mp3': 'a', 'b.mp3': 'b', 'c.mp3': 'c' }).kind;
+    expect(await pushBookData(kind, HASH, [dest], new Map(), recorded)).toBe(2);
+    expect(list).toHaveBeenCalledTimes(1);
+    expect(dest.writes).toEqual(['a.mp3', 'a.json', 'c.mp3', 'c.json']);
+  });
+});
+
 describe('pullBookData', () => {
   test('imports units the device does not have', async () => {
     const { kind, imported } = makeKind({}, ['a.mp3']);
