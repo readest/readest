@@ -12,6 +12,7 @@ import android.view.Choreographer
 import android.view.Gravity
 import android.view.MotionEvent
 import android.view.PixelCopy
+import android.view.WindowManager
 import android.webkit.WebView
 import android.widget.PopupWindow
 import app.tauri.annotation.InvokeArg
@@ -176,6 +177,9 @@ internal class NativePaperTurn(private val activity: Activity, private val webVi
             popup = PopupWindow(canvas, w, h, false).apply {
                 animationStyle = 0; enterTransition = null; exitTransition = null
                 isTouchable = false; isClippingEnabled = false
+                // Stay under the keyboard: Android drops IME touches that pass through this window (#7171).
+                inputMethodMode = PopupWindow.INPUT_METHOD_NEEDED
+                softInputMode = WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING
                 setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
                 if (Build.VERSION.SDK_INT >= 29) setIsLaidOutInScreen(true)
                 showAtLocation(webView, Gravity.TOP or Gravity.LEFT, left, top)

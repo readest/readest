@@ -10,6 +10,7 @@ import android.os.Looper
 import android.os.SystemClock
 import android.view.MotionEvent
 import android.view.PixelCopy
+import android.view.WindowManager
 import android.view.Gravity
 import android.widget.PopupWindow
 import android.webkit.WebView
@@ -319,6 +320,20 @@ class NativePaperTurnTest {
             f.awaitNativeColor(Color.GREEN)
             f.command("finish")
             assertEquals(Color.GREEN, f.activityPixel())
+        }
+    }
+
+    @Test fun keepsTheNativeCoverBelowTheKeyboard() {
+        Harness().use { f ->
+            f.capture("one")
+            var attrs: WindowManager.LayoutParams? = null
+            instrumentation.runOnMainSync { attrs = f.nativeView().rootView.layoutParams as WindowManager.LayoutParams }
+            // Without ALT_FOCUSABLE_IM a not-focusable window sits above the IME, and
+            // Android drops keyboard touches that pass through another app's window.
+            assertEquals("Cover is Z-ordered below the keyboard", WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM,
+                attrs!!.flags and WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM)
+            assertEquals("Keyboard does not move the cover", WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING,
+                attrs!!.softInputMode and WindowManager.LayoutParams.SOFT_INPUT_MASK_ADJUST)
         }
     }
 
