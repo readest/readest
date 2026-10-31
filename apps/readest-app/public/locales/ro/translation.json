@@ -2565,7 +2565,6 @@
   "Download status": "Stare descărcare",
   "Local only": "Doar local",
   "Cloud only": "Doar în cloud",
-  "Link a CrossPoint Reader": "Conectați un cititor CrossPoint",
   "The reader gets your Readest library, reading statistics and reading progress. Only enter a code shown on your own reader.": "Cititorul primește biblioteca dvs. Readest, statisticile de lectură și progresul lecturii. Introduceți doar un cod afișat pe propriul cititor.",
   "Sign in to continue": "Conectați-vă pentru a continua",
   "Your reader is linked. It finishes signing in on its own.": "Cititorul este conectat. Va finaliza singur autentificarea.",
@@ -2731,5 +2730,6 @@
   "Show One Page": "Afișează o pagină",
   "Show Two Pages": "Afișează două pagini",
   "Book Data": "Datele cărții",
-  "Downloaded read-aloud audio and translations": "Audio descărcat de citire cu voce tare și traduceri"
+  "Downloaded read-aloud audio and translations": "Audio descărcat de citire cu voce tare și traduceri",
+  "Link a Reader": "Conectează un cititor"
 }

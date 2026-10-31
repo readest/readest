@@ -287,14 +287,14 @@ msgstr "Không có sách nào đang mở"
 msgid "Uploaded to Readest:"
 msgstr "Đã tải lên Readest:"
 
+msgid "Auto sync"
+msgstr "Tự động đồng bộ"
+
 msgid "Log in Readest Account"
 msgstr "Đăng nhập tài khoản Readest"
 
 msgid "Log out as %1"
 msgstr "Đăng xuất khỏi %1"
-
-msgid "Auto sync"
-msgstr "Tự động đồng bộ"
 
 msgid "Readest library"
 msgstr "Thư viện Readest"
@@ -524,17 +524,26 @@ msgstr "Đăng nhập"
 msgid "Please enter both email and password"
 msgstr "Vui lòng nhập email và mật khẩu"
 
+msgid "Sign in with a code"
+msgstr "Đăng nhập bằng mã"
+
 msgid "Please configure Supabase URL and API key first"
 msgstr "Vui lòng cấu hình URL Supabase và khóa API trước"
 
 msgid "Logging in..."
 msgstr "Đang đăng nhập…"
 
+msgid "Login failed: %1"
+msgstr "Đăng nhập thất bại: %1"
+
 msgid "Successfully logged in to Readest"
 msgstr "Đã đăng nhập Readest"
 
-msgid "Login failed: %1"
-msgstr "Đăng nhập thất bại: %1"
+msgid "Scan the QR code with a phone signed in to Readest, or open %1 and enter this code:\n\n%2"
+msgstr "Quét mã QR bằng điện thoại đã đăng nhập Readest, hoặc mở %1 và nhập mã này:\n\n%2"
+
+msgid "The code expired. Please try again."
+msgstr "Mã đã hết hạn. Vui lòng thử lại."
 
 msgid "Logged out from Readest"
 msgstr "Đã đăng xuất khỏi Readest"

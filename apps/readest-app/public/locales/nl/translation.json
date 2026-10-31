@@ -2501,7 +2501,6 @@
   "Download status": "Downloadstatus",
   "Local only": "Alleen lokaal",
   "Cloud only": "Alleen in de cloud",
-  "Link a CrossPoint Reader": "Een CrossPoint-e-reader koppelen",
   "The reader gets your Readest library, reading statistics and reading progress. Only enter a code shown on your own reader.": "De e-reader krijgt toegang tot je Readest-bibliotheek, leesstatistieken en leesvoortgang. Voer alleen een code in die op je eigen e-reader wordt weergegeven.",
   "Sign in to continue": "Log in om door te gaan",
   "Your reader is linked. It finishes signing in on its own.": "Je e-reader is gekoppeld. Hij rondt het inloggen zelf af.",
@@ -2662,5 +2661,6 @@
   "Show One Page": "Eén pagina tonen",
   "Show Two Pages": "Twee pagina's tonen",
   "Book Data": "Boekgegevens",
-  "Downloaded read-aloud audio and translations": "Gedownloade voorleesaudio en vertalingen"
+  "Downloaded read-aloud audio and translations": "Gedownloade voorleesaudio en vertalingen",
+  "Link a Reader": "Een e-reader koppelen"
 }

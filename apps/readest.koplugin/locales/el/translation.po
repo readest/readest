@@ -287,14 +287,14 @@ msgstr "Δεν υπάρχει ανοιχτό βιβλίο"
 msgid "Uploaded to Readest:"
 msgstr "Μεταφορτώθηκε στο Readest:"
 
+msgid "Auto sync"
+msgstr "Αυτόματος συγχρονισμός"
+
 msgid "Log in Readest Account"
 msgstr "Σύνδεση στον λογαριασμό Readest"
 
 msgid "Log out as %1"
 msgstr "Αποσύνδεση ως %1"
-
-msgid "Auto sync"
-msgstr "Αυτόματος συγχρονισμός"
 
 msgid "Readest library"
 msgstr "Βιβλιοθήκη Readest"
@@ -524,17 +524,26 @@ msgstr "Σύνδεση"
 msgid "Please enter both email and password"
 msgstr "Εισαγάγετε email και κωδικό πρόσβασης"
 
+msgid "Sign in with a code"
+msgstr "Σύνδεση με κωδικό"
+
 msgid "Please configure Supabase URL and API key first"
 msgstr "Διαμορφώστε πρώτα το URL Supabase και το κλειδί API"
 
 msgid "Logging in..."
 msgstr "Σύνδεση…"
 
+msgid "Login failed: %1"
+msgstr "Η σύνδεση απέτυχε: %1"
+
 msgid "Successfully logged in to Readest"
 msgstr "Συνδεθήκατε στο Readest"
 
-msgid "Login failed: %1"
-msgstr "Η σύνδεση απέτυχε: %1"
+msgid "Scan the QR code with a phone signed in to Readest, or open %1 and enter this code:\n\n%2"
+msgstr "Σαρώστε τον κωδικό QR με ένα τηλέφωνο συνδεδεμένο στο Readest ή ανοίξτε το %1 και εισαγάγετε αυτόν τον κωδικό:\n\n%2"
+
+msgid "The code expired. Please try again."
+msgstr "Ο κωδικός έληξε. Δοκιμάστε ξανά."
 
 msgid "Logged out from Readest"
 msgstr "Αποσυνδεθήκατε από το Readest"

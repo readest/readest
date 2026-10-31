@@ -2501,7 +2501,6 @@
   "Download status": "Nedladdningsstatus",
   "Local only": "Endast lokalt",
   "Cloud only": "Endast i molnet",
-  "Link a CrossPoint Reader": "Länka en CrossPoint-läsplatta",
   "The reader gets your Readest library, reading statistics and reading progress. Only enter a code shown on your own reader.": "Läsplattan får tillgång till ditt Readest-bibliotek, din lässtatistik och dina läsframsteg. Ange bara en kod som visas på din egen läsplatta.",
   "Sign in to continue": "Logga in för att fortsätta",
   "Your reader is linked. It finishes signing in on its own.": "Läsplattan är länkad. Den slutför inloggningen på egen hand.",
@@ -2662,5 +2661,6 @@
   "Show One Page": "Visa en sida",
   "Show Two Pages": "Visa två sidor",
   "Book Data": "Bokdata",
-  "Downloaded read-aloud audio and translations": "Nedladdat uppläsningsljud och översättningar"
+  "Downloaded read-aloud audio and translations": "Nedladdat uppläsningsljud och översättningar",
+  "Link a Reader": "Länka en läsplatta"
 }

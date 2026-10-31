@@ -287,14 +287,14 @@ msgstr "書籍が開かれていません"
 msgid "Uploaded to Readest:"
 msgstr "Readest にアップロードしました:"
 
+msgid "Auto sync"
+msgstr "自動同期"
+
 msgid "Log in Readest Account"
 msgstr "Readest アカウントにログイン"
 
 msgid "Log out as %1"
 msgstr "%1 をログアウト"
-
-msgid "Auto sync"
-msgstr "自動同期"
 
 msgid "Readest library"
 msgstr "Readest ライブラリ"
@@ -524,17 +524,26 @@ msgstr "ログイン"
 msgid "Please enter both email and password"
 msgstr "メールアドレスとパスワードを入力してください"
 
+msgid "Sign in with a code"
+msgstr "コードでサインイン"
+
 msgid "Please configure Supabase URL and API key first"
 msgstr "先に Supabase の URL と API キーを設定してください"
 
 msgid "Logging in..."
 msgstr "ログイン中…"
 
+msgid "Login failed: %1"
+msgstr "ログインに失敗しました: %1"
+
 msgid "Successfully logged in to Readest"
 msgstr "Readest にログインしました"
 
-msgid "Login failed: %1"
-msgstr "ログインに失敗しました: %1"
+msgid "Scan the QR code with a phone signed in to Readest, or open %1 and enter this code:\n\n%2"
+msgstr "Readest にサインインしたスマートフォンで QR コードをスキャンするか、%1 を開いて次のコードを入力してください：\n\n%2"
+
+msgid "The code expired. Please try again."
+msgstr "コードの有効期限が切れました。もう一度お試しください。"
 
 msgid "Logged out from Readest"
 msgstr "Readest からログアウトしました"
