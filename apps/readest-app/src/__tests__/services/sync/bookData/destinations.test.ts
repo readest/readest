@@ -11,6 +11,7 @@ vi.mock('@/libs/storage', () => ({
 
 import { createFileSyncDestination } from '@/services/sync/bookData/fileSyncDestination';
 import { createReadestCloudDestination } from '@/services/sync/bookData/cloudDestination';
+import { FileSyncError } from '@/services/sync/file/provider';
 import type { AppService } from '@/types/system';
 import { FakeFileSyncProvider } from './fakeFileSyncProvider';
 
@@ -49,9 +50,15 @@ describe('file-sync destination', () => {
   });
 
   test('list is empty for a missing folder', async () => {
-    provider.listError = new Error('404');
     const dest = createFileSyncDestination('webdav', provider);
     expect(await dest.list('h', 'tts')).toEqual(new Set());
+  });
+
+  test('a listing error throws instead of reading as an empty folder', async () => {
+    // Read as empty, it would make push upload every pack again.
+    provider.listError = new FileSyncError('timeout', 'NETWORK');
+    const dest = createFileSyncDestination('webdav', provider);
+    await expect(dest.list('h', 'tts')).rejects.toThrow('timeout');
   });
 });
 
@@ -98,9 +105,9 @@ describe('Readest Cloud destination', () => {
     });
   });
 
-  test('list is empty when the listing fails', async () => {
+  test('a listing error throws instead of reading as an empty folder', async () => {
     listFilesMock.mockRejectedValue(new Error('List files failed'));
-    expect(await cloud().list('h', 'tts')).toEqual(new Set());
+    await expect(cloud().list('h', 'tts')).rejects.toThrow('List files failed');
   });
 
   test('uploads from a Cache outbox file and removes it', async () => {

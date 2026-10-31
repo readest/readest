@@ -15,20 +15,18 @@ export const createReadestCloudDestination = (appService: AppService): BookDataD
 
   return {
     id: 'readest',
+    // Throws on a failed listing, so push skips Readest Cloud instead of
+    // uploading everything again.
     async list(bookHash, kind) {
-      try {
-        const folder = `/${bookHash}/${kind}/`;
-        const { files } = await listFiles({ bookHash, search: folder, pageSize: 1000 });
-        const names = new Set<string>();
-        for (const { file_key } of files ?? []) {
-          const at = file_key.indexOf(folder);
-          const name = at >= 0 ? file_key.slice(at + folder.length) : '';
-          if (name && !name.includes('/')) names.add(name);
-        }
-        return names;
-      } catch {
-        return new Set();
+      const folder = `/${bookHash}/${kind}/`;
+      const { files } = await listFiles({ bookHash, search: folder, pageSize: 1000 });
+      const names = new Set<string>();
+      for (const { file_key } of files ?? []) {
+        const at = file_key.indexOf(folder);
+        const name = at >= 0 ? file_key.slice(at + folder.length) : '';
+        if (name && !name.includes('/')) names.add(name);
       }
+      return names;
     },
     async read(bookHash, kind, name) {
       const lfp = `${INBOX_DIR}/${name}`;

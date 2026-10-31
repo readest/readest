@@ -5,7 +5,7 @@
 export interface BookDataDestination {
   /** 'readest' or the file-sync backend kind, for logs. */
   readonly id: string;
-  /** File names in the book's kind folder; empty on a missing folder or any error. */
+  /** File names in the book's kind folder; empty for a missing folder, throws on other errors. */
   list(bookHash: string, kind: string): Promise<Set<string>>;
   /** A file's bytes, or null when it is missing or unreadable. */
   read(bookHash: string, kind: string, name: string): Promise<ArrayBuffer | null>;

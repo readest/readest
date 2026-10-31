@@ -1,4 +1,8 @@
-import type { FileEntry, FileSyncProvider } from '@/services/sync/file/provider';
+import {
+  FileSyncError,
+  type FileEntry,
+  type FileSyncProvider,
+} from '@/services/sync/file/provider';
 
 // In-memory provider: path -> bytes/text, with an operation log so tests can
 // assert ordering (a pack's mp3 must land before its sidecar).
@@ -31,7 +35,7 @@ export class FakeFileSyncProvider implements FileSyncProvider {
         out.push({ name: key.slice(prefix.length), path: key, isDirectory: false });
       }
     }
-    if (!out.length) throw new Error('404: no such directory');
+    if (!out.length) throw new FileSyncError('no such directory', 'NOT_FOUND', 404);
     return out;
   }
   async writeText(path: string, body: string): Promise<void> {

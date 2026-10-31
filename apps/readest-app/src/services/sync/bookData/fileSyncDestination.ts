@@ -1,4 +1,4 @@
-import type { FileSyncProvider } from '@/services/sync/file/provider';
+import { FileSyncError, type FileSyncProvider } from '@/services/sync/file/provider';
 import type { FileSyncBackendKind } from '@/services/sync/file/providerRegistry';
 import { ancestorsOf, buildBookKindDirPath } from '@/services/sync/file/layout';
 import type { BookDataDestination } from './types';
@@ -17,9 +17,11 @@ export const createFileSyncDestination = (
       try {
         const entries = await provider.list(dirOf(bookHash, kind));
         return new Set(entries.filter((entry) => !entry.isDirectory).map((entry) => entry.name));
-      } catch {
-        // Missing folder (nothing synced yet) or a transient error: nothing remote.
-        return new Set();
+      } catch (err) {
+        // A missing folder means nothing synced yet. Any other error throws, so
+        // push skips this destination instead of uploading everything again.
+        if (err instanceof FileSyncError && err.code === 'NOT_FOUND') return new Set();
+        throw err;
       }
     },
     async read(bookHash, kind, name) {
