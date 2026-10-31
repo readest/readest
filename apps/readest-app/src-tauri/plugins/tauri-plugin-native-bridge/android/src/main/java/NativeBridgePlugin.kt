@@ -2401,6 +2401,9 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
                                 exitTransition = null
                                 isTouchable = false
                                 isClippingEnabled = false
+                                // Stay under the keyboard: Android drops IME touches that pass through this window (#7171).
+                                inputMethodMode = PopupWindow.INPUT_METHOD_NEEDED
+                                softInputMode = WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING
                                 setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
                                 if (Build.VERSION.SDK_INT >= 29) setIsLaidOutInScreen(true)
                             }
