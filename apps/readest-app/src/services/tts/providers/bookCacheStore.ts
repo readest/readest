@@ -424,8 +424,11 @@ export class BookTTSCacheStore implements TTSCacheStore {
       await pushBookData(kind, bookHash, destinations, listings);
 
       // Record what each listed destination holds; one that declined the
-      // book holds nothing.
-      const next = { ...recorded };
+      // book holds nothing. Start from the config as it is now: the reader's
+      // pull may have merged a peer's record while this round awaited.
+      const latest = books.getConfig(bookHash);
+      if (!latest) return;
+      const next = { ...latest.ttsPacks };
       for (const dest of destinations) {
         if (!listings.has(dest.id)) continue;
         const files = listings.get(dest.id) ?? new Set<string>();
@@ -436,7 +439,7 @@ export class BookTTSCacheStore implements TTSCacheStore {
         }
         next[dest.id] = units;
       }
-      if (JSON.stringify(next) !== JSON.stringify(recorded ?? {}) && books.getConfig(bookHash)) {
+      if (JSON.stringify(next) !== JSON.stringify(latest.ttsPacks ?? {})) {
         // No updatedAt bump: recording audio must not move reading progress.
         // Saved at once, so a quit before the next page turn keeps it.
         books.setConfig(bookHash, { ttsPacks: next });

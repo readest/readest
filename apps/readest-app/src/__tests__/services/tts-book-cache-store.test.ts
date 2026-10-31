@@ -287,6 +287,24 @@ describe('BookTTSCacheStore', () => {
       expect(bookData.pullBookData).not.toHaveBeenCalled();
     });
 
+    test('keeps an entry another sync merged while the round ran', async () => {
+      // The reader's open-time pull can merge a peer's record while this
+      // round awaits its listings; writing back the record read at the start
+      // would drop it.
+      bookData.pullBookData.mockImplementationOnce(async (...args: unknown[]) => {
+        const listings = args[3] as Map<string, Set<string> | null>;
+        listings.set('webdav', new Set(['1-a.mp3', '1-a.json']));
+        bookConfig.config = { ...bookConfig.config, ttsPacks: { gdrive: ['9-z.mp3'] } };
+        return 0;
+      });
+      await openWith('hash-rec6', undefined);
+      await vi.waitFor(() =>
+        expect(bookConfig.setConfig).toHaveBeenCalledWith('hash-rec6', {
+          ttsPacks: { gdrive: ['9-z.mp3'], webdav: ['1-a.mp3'] },
+        }),
+      );
+    });
+
     test('the push never trusts the record, so purged packs are uploaded again', async () => {
       // The record only grows by merging: after a book's audio is purged from
       // a destination (the book removed from Readest Cloud) it still names
