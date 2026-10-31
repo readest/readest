@@ -146,6 +146,7 @@ describe('BookTTSCacheStore', () => {
         expect.objectContaining({ id: 'tts' }),
         'hash123',
         bookData.destinations,
+        expect.any(Map),
       ),
     );
     expect(bookData.getBookDataDestinations).toHaveBeenCalledWith(appService, 'hash123');
@@ -153,6 +154,7 @@ describe('BookTTSCacheStore', () => {
       expect.objectContaining({ id: 'tts' }),
       'hash123',
       bookData.destinations,
+      expect.any(Map),
     );
     expect(bookData.pullBookData).toHaveBeenCalledBefore(bookData.pushBookData);
   });
@@ -189,6 +191,7 @@ describe('BookTTSCacheStore', () => {
         expect.objectContaining({ id: 'tts' }),
         'hash777',
         bookData.destinations,
+        expect.any(Map),
       );
     await vi.waitFor(pushed);
     bookData.pushBookData.mockClear();
@@ -215,6 +218,31 @@ describe('BookTTSCacheStore', () => {
     expect(bookData.pushBookData).toHaveBeenCalledTimes(1);
     release();
     await vi.waitFor(() => expect(bookData.pushBookData).toHaveBeenCalledTimes(2));
+  });
+
+  test("a book's push rounds reuse the open's destinations and listings", async () => {
+    // Each finished section of a download starts a push round; fresh
+    // destinations would list and prepare folders again every round.
+    bookData.getBookDataDestinations.mockImplementation(async () => [
+      { id: 'webdav' },
+      { id: 'readest' },
+    ]);
+    bookData.pullBookData.mockClear();
+    bookData.pushBookData.mockClear();
+    const store = new BookTTSCacheStore(appService, () => 'hash444', 1024 * 1024);
+    await store.open();
+    await vi.waitFor(() => expect(bookData.pushBookData).toHaveBeenCalledTimes(1));
+    await store.completeDownloadSections([]);
+    await vi.waitFor(() => expect(bookData.pushBookData).toHaveBeenCalledTimes(2));
+
+    const [, , pulledTo, pullListings] = bookData.pullBookData.mock.calls[0] as unknown[];
+    const [, , pushedTo, pushListings] = bookData.pushBookData.mock.calls[1] as unknown[];
+    expect(pullListings).toBeInstanceOf(Map);
+    expect(pushListings).toBe(pullListings);
+    expect((pushedTo as unknown[])[0]).toBe((pulledTo as unknown[])[0]);
+    expect((pushedTo as unknown[])[1]).toBe((pulledTo as unknown[])[1]);
+    bookData.getBookDataDestinations.mockReset();
+    bookData.getBookDataDestinations.mockResolvedValue([]);
   });
 
   test('an open failure degrades to a no-op cache', async () => {

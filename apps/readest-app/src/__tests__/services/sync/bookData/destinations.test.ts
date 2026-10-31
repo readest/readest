@@ -40,6 +40,14 @@ describe('file-sync destination', () => {
     expect(provider.ops.filter((op) => op.startsWith('ensureDir'))).toHaveLength(1);
   });
 
+  test('a folder its listing found is not prepared again before writing', async () => {
+    provider.files.set('/Readest/books/h/tts/a.mp3', bytes('mp3'));
+    const dest = createFileSyncDestination('webdav', provider);
+    await dest.list('h', 'tts');
+    await dest.write('h', 'tts', 'b.mp3', bytes('mp3'), 'audio/mpeg');
+    expect(provider.ops.filter((op) => op.startsWith('ensureDir'))).toEqual([]);
+  });
+
   test('lists and reads that kind', async () => {
     provider.files.set('/Readest/books/h/tts/a.mp3', bytes('mp3'));
     provider.files.set('/Readest/books/h/Title.epub', bytes('epub'));

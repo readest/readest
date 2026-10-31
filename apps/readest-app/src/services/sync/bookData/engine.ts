@@ -27,13 +27,26 @@ export interface BookDataKind {
   importUnit(unit: string, read: (file: string) => Promise<ArrayBuffer | null>): Promise<boolean>;
 }
 
+/**
+ * What each destination holds (null: it declined the book), by destination
+ * id, for one sync session of a book. A pull lists afresh; a push reuses the
+ * listing and adds what it uploads, so the push rounds of a chapter download
+ * (one per finished section) list each destination once.
+ */
+export type BookDataListings = Map<string, Set<string> | null>;
+
 const pushTo = async (
   kind: BookDataKind,
   bookHash: string,
   units: string[],
   dest: BookDataDestination,
+  listings?: BookDataListings,
 ): Promise<number> => {
-  const remote = await dest.list(bookHash, kind.id);
+  let remote = listings?.get(dest.id);
+  if (remote === undefined) {
+    remote = await dest.list(bookHash, kind.id);
+    listings?.set(dest.id, remote);
+  }
   if (!remote) return 0;
   let pushed = 0;
   for (const unit of units) {
@@ -49,6 +62,7 @@ const pushTo = async (
     try {
       for (const [i, file] of files.entries()) {
         await dest.write(bookHash, kind.id, file, bodies[i]!, kind.contentTypeOf(file));
+        remote.add(file);
       }
     } catch (err) {
       // Quota, auth or network: the rest of this round would fail the same way.
@@ -65,6 +79,7 @@ export const pushBookData = async (
   kind: BookDataKind,
   bookHash: string,
   destinations: BookDataDestination[],
+  listings?: BookDataListings,
 ): Promise<number> => {
   let units: string[];
   try {
@@ -77,7 +92,7 @@ export const pushBookData = async (
   let pushed = 0;
   for (const dest of destinations) {
     try {
-      pushed += await pushTo(kind, bookHash, units, dest);
+      pushed += await pushTo(kind, bookHash, units, dest, listings);
     } catch (err) {
       console.warn(`Book data push to ${dest.id} failed`, err);
     }
@@ -90,11 +105,13 @@ export const pullBookData = async (
   kind: BookDataKind,
   bookHash: string,
   destinations: BookDataDestination[],
+  listings?: BookDataListings,
 ): Promise<number> => {
   const sources = new Map<string, BookDataDestination>();
   for (const dest of destinations) {
     try {
       const remote = await dest.list(bookHash, kind.id);
+      listings?.set(dest.id, remote);
       if (!remote) continue;
       for (const file of remote) {
         const unit = kind.unitOf(file);

@@ -153,6 +153,36 @@ describe('pushBookData', () => {
   });
 });
 
+describe('a sync session', () => {
+  test('pushes against the listing it already has, adding what it uploads', async () => {
+    // A chapter download finishes one section at a time, each starting a push
+    // round: listing every destination each round doubled the requests.
+    const dest = makeDest('webdav', ['old.mp3', 'old.json']);
+    const list = vi.spyOn(dest, 'list');
+    const listings = new Map<string, Set<string> | null>();
+    await pullBookData(makeKind({}).kind, HASH, [dest], listings);
+    expect(list).toHaveBeenCalledTimes(1);
+
+    expect(await pushBookData(makeKind({ 'a.mp3': 'a' }).kind, HASH, [dest], listings)).toBe(1);
+    expect(
+      await pushBookData(makeKind({ 'a.mp3': 'a', 'b.mp3': 'b' }).kind, HASH, [dest], listings),
+    ).toBe(1);
+    expect(list).toHaveBeenCalledTimes(1);
+    expect(dest.writes).toEqual(['a.mp3', 'a.json', 'b.mp3', 'b.json']);
+  });
+
+  test('a destination that declined the book stays declined for the session', async () => {
+    const dest = makeDest('readest');
+    dest.declines = true;
+    const list = vi.spyOn(dest, 'list');
+    const listings = new Map<string, Set<string> | null>();
+    await pushBookData(makeKind({ 'a.mp3': 'a' }).kind, HASH, [dest], listings);
+    await pushBookData(makeKind({ 'a.mp3': 'a' }).kind, HASH, [dest], listings);
+    expect(list).toHaveBeenCalledTimes(1);
+    expect(dest.writes).toEqual([]);
+  });
+});
+
 describe('pullBookData', () => {
   test('imports units the device does not have', async () => {
     const { kind, imported } = makeKind({}, ['a.mp3']);

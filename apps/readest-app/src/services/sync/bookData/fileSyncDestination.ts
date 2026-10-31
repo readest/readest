@@ -15,7 +15,10 @@ export const createFileSyncDestination = (
     id,
     async list(bookHash, kind) {
       try {
-        const entries = await provider.list(dirOf(bookHash, kind));
+        const dir = dirOf(bookHash, kind);
+        const entries = await provider.list(dir);
+        // The folder exists: writing into it needs no preparing.
+        prepared.add(dir);
         return new Set(entries.filter((entry) => !entry.isDirectory).map((entry) => entry.name));
       } catch (err) {
         // A missing folder means nothing synced yet. Any other error throws, so

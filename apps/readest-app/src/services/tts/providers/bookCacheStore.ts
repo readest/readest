@@ -11,6 +11,8 @@
 // manifest updates and once more at session close.
 
 import { isTauriAppPlatform } from '@/services/environment';
+import type { BookDataListings } from '@/services/sync/bookData/engine';
+import type { BookDataDestination } from '@/services/sync/bookData/types';
 import type { DatabaseService } from '@/types/database';
 import type { AppService } from '@/types/system';
 import type { TTSCacheEntry, TTSCacheStore } from './cache';
@@ -25,6 +27,14 @@ const DOWNLOADS_MARKER = 'downloads.json';
 
 // The sync round in flight per book, shared by every store of that book.
 const syncRounds = new Map<string, Promise<void>>();
+// What a book's rounds share between opens: the destinations, so a folder is
+// prepared once, and their listings, so a push round lists nothing new. An
+// open starts a new session; a download's push rounds (one per finished
+// section) reuse it.
+const syncSessions = new Map<
+  string,
+  { destinations: Map<string, BookDataDestination>; listings: BookDataListings }
+>();
 
 export interface TTSCacheConfig {
   enabled: boolean;
@@ -372,11 +382,21 @@ export class BookTTSCacheStore implements TTSCacheStore {
         import('@/services/sync/bookData/engine'),
         import('@/services/sync/bookData/ttsKind'),
       ]);
-      const destinations = await getBookDataDestinations(this.#appService, bookHash);
+      const current = await getBookDataDestinations(this.#appService, bookHash);
+      let session = syncSessions.get(bookHash);
+      if (direction === 'both' || !session) {
+        session = { destinations: new Map(), listings: new Map() };
+        syncSessions.set(bookHash, session);
+      }
+      const { destinations: kept, listings } = session;
+      const destinations = current.map((dest) => {
+        if (!kept.has(dest.id)) kept.set(dest.id, dest);
+        return kept.get(dest.id)!;
+      });
       if (!destinations.length) return;
       const kind = createTTSBookDataKind(store);
-      if (direction === 'both') await pullBookData(kind, bookHash, destinations);
-      await pushBookData(kind, bookHash, destinations);
+      if (direction === 'both') await pullBookData(kind, bookHash, destinations, listings);
+      await pushBookData(kind, bookHash, destinations, listings);
     };
     const previous = syncRounds.get(bookHash) ?? Promise.resolve();
     const next = previous.then(round).catch((err) => {
