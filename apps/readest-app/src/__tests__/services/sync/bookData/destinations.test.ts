@@ -2,9 +2,11 @@ import { beforeEach, describe, expect, test, vi } from 'vitest';
 
 const listFilesMock = vi.fn();
 const downloadFileMock = vi.fn();
+const deleteCloudFileMock = vi.fn();
 vi.mock('@/libs/storage', () => ({
   listFiles: (...a: unknown[]) => listFilesMock(...a),
   downloadFile: (...a: unknown[]) => downloadFileMock(...a),
+  deleteFile: (...a: unknown[]) => deleteCloudFileMock(...a),
 }));
 
 import { createFileSyncDestination } from '@/services/sync/bookData/fileSyncDestination';
@@ -77,6 +79,7 @@ describe('Readest Cloud destination', () => {
     vi.clearAllMocks();
     listFilesMock.mockReset();
     downloadFileMock.mockReset().mockResolvedValue({});
+    deleteCloudFileMock.mockReset().mockResolvedValue(undefined);
   });
 
   test("lists only that kind's files", async () => {
@@ -124,6 +127,21 @@ describe('Readest Cloud destination', () => {
       'Insufficient storage quota',
     );
     expect(calls).toContain('deleteFile:Cache:book-data-outbox/a.mp3');
+  });
+
+  test('a failed upload drops the row it reserved, so the file is not listed', async () => {
+    // The upload route records the row before the bytes land: left in place,
+    // a sidecar would be listed as present with nothing behind it.
+    appService.uploadFileToCloud.mockRejectedValueOnce(new Error('Network error'));
+    await expect(
+      cloud().write('h', 'tts', 'a.json', bytes('{}'), 'application/json'),
+    ).rejects.toThrow('Network error');
+    expect(deleteCloudFileMock).toHaveBeenCalledWith('Readest/Books/h/tts/a.json');
+  });
+
+  test('a successful upload deletes nothing in the cloud', async () => {
+    await cloud().write('h', 'tts', 'a.mp3', bytes('mp3'), 'audio/mpeg');
+    expect(deleteCloudFileMock).not.toHaveBeenCalled();
   });
 
   test('reads through a Cache inbox file', async () => {

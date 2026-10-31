@@ -1,5 +1,5 @@
 import { CLOUD_BOOKS_SUBDIR } from '@/services/constants';
-import { downloadFile, listFiles } from '@/libs/storage';
+import { deleteFile as deleteCloudFile, downloadFile, listFiles } from '@/libs/storage';
 import type { AppService } from '@/types/system';
 import type { BookDataDestination } from './types';
 
@@ -45,15 +45,15 @@ export const createReadestCloudDestination = (appService: AppService): BookDataD
     },
     async write(bookHash, kind, name, body) {
       const lfp = `${OUTBOX_DIR}/${name}`;
+      const cfp = cloudPathOf(bookHash, kind, name);
       await appService.writeFile(lfp, 'Cache', body);
       try {
-        await appService.uploadFileToCloud(
-          lfp,
-          cloudPathOf(bookHash, kind, name),
-          'Cache',
-          () => {},
-          bookHash,
-        );
+        await appService.uploadFileToCloud(lfp, cfp, 'Cache', () => {}, bookHash);
+      } catch (err) {
+        // The upload route records the file before its bytes land; drop that
+        // row so a listing never shows a file with nothing behind it.
+        await deleteCloudFile(cfp).catch(() => {});
+        throw err;
       } finally {
         await appService.deleteFile(lfp, 'Cache').catch(() => {});
       }
