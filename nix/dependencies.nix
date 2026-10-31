@@ -17,6 +17,7 @@
 , libxcb
 , libxcursor
 , libxi
+, libglvnd
 }:
 {
   # Libraries named in libcef.so's DT_NEEDED entries. Declare them explicitly
@@ -51,5 +52,7 @@
     libxi
     libxrandr
     libxkbcommon
+    # Chromium's GPU process dlopens libGL.so.1.
+    libglvnd
   ];
 }
