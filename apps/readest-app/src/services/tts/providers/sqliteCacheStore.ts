@@ -641,6 +641,19 @@ export class SqliteTTSCacheStore implements TTSCacheStore {
   }
 
   async #packSection(section: number, fingerprint: string): Promise<boolean> {
+    // A synced pack of these very sentences is already here (stored under an
+    // imported fingerprint, so the query above cannot see it): reading the
+    // audio back only to find the pack name taken would repeat every run.
+    const markKeys = await this.#db.select<DatabaseRow & { key: string }>(
+      'SELECT key FROM manifest_marks WHERE section = ? ORDER BY ordinal ASC',
+      [section],
+    );
+    const covered = await this.#db.select<DatabaseRow & { id: number }>(
+      'SELECT id FROM packs WHERE keys_fingerprint = ?',
+      [md5(JSON.stringify(markKeys.map((row) => row.key)))],
+    );
+    if (covered.length) return false;
+
     const rows = await this.#db.select<
       DatabaseRow & {
         key: string;
