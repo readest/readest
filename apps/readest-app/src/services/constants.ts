@@ -1014,7 +1014,7 @@ export const SYNC_BOOKS_INTERVAL_SEC = 5;
 export const CHECK_UPDATE_INTERVAL_SEC = 24 * 60 * 60;
 
 export const MAX_ZOOM_LEVEL = 500;
-export const MIN_ZOOM_LEVEL = 50;
+export const MIN_ZOOM_LEVEL = 100;
 export const ZOOM_STEP = 10;
 
 // Reflowable books have no scale factor, so the zoom shortcuts step the book's

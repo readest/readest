@@ -23,6 +23,7 @@ import {
   createTurnGestureIntent as createArenaIntent,
   NATIVE_CAPTURED_TURN_ATTRIBUTE,
   NATIVE_PROGRAMMATIC_TURN_ATTRIBUTE,
+  isDragPastPanEdge,
   shouldClaimTurnGesture as shouldClaimArenaGesture,
   TURN_EDGE_ZONE_RATIO,
   type TurnGestureIntent,
@@ -33,6 +34,7 @@ import {
   type TouchDetail,
   useTouchInterceptor,
 } from './useTouchInterceptor';
+import { setFixedLayoutZoom } from './usePagination';
 
 // Once the native snapshot fails (older webview, capture bug), stop trying
 // for the rest of the session: the renderer's own `turn-style` animations
@@ -47,6 +49,13 @@ let captureBroken = false;
  */
 const isPanningFixedLayout = (viewSettings: ViewSettings) =>
   viewSettings.zoomLevel > 100 || viewSettings.zoomMode !== 'fit-page';
+
+const canCaptureTurn = (viewSettings: ViewSettings) =>
+  isTauriAppPlatform() &&
+  !captureBroken &&
+  viewSettings.animated &&
+  !viewSettings.scrolled &&
+  !viewSettings.isEink;
 
 /**
  * The turn style the captured-page pipeline should drive for this view, or
@@ -69,8 +78,7 @@ export const getCapturedTurnStyle = (
   isFixedLayout: boolean,
   prepareNativeSlide = getInitializedAppService()?.isMobileApp === true,
 ): CapturedTurnStyle | null => {
-  if (!isTauriAppPlatform() || captureBroken) return null;
-  if (!viewSettings.animated || viewSettings.scrolled || viewSettings.isEink) return null;
+  if (!canCaptureTurn(viewSettings)) return null;
   if (isFixedLayout && isPanningFixedLayout(viewSettings)) return null;
   if (viewSettings.pageTurnStyle === 'curl' || viewSettings.pageTurnStyle === 'flip') return 'curl';
   // `fixed-layout.js` has no strip to scroll, so its push is an instant swap;
@@ -259,6 +267,17 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
   const controllerRef = useRef<CapturedPageTurn | null>(null);
   const dragRef = useRef<DragState | null>(null);
   const gestureIntentRef = useRef<TurnGestureIntent | null>(null);
+  // Horizontal pan fraction of a panning fixed-layout page when the touch
+  // began (null: no sideways overflow); undefined when the page fits.
+  const panXAtStartRef = useRef<number | null | undefined>(undefined);
+  // The zoomed page an edge-drag turn in flight leaves, so a cancelled turn
+  // can put back its zoom and scroll position.
+  const panEdgeTurnRef = useRef<{
+    forward: boolean;
+    zoomLevel: number;
+    scrollLeft: number;
+    scrollTop: number;
+  } | null>(null);
   const programmaticTurnsInFlightRef = useRef(new Set<symbol>());
   const schedulePreparedCaptureRef = useRef<(() => void) | null>(null);
   const cancelPreparedCaptureScheduleRef = useRef<(() => void) | null>(null);
@@ -499,6 +518,11 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
       navigate: async (forward: boolean) => {
         if (pageBuffer.preparing) await pageBuffer.preparing;
         await navigationPending;
+        // A zoomed page dragged past its edge turns to a page at 100% zoom,
+        // like Photos. The reset happens here, under the captured outgoing
+        // page, so the incoming one slides in already fitted.
+        const edgeTurn = panEdgeTurnRef.current;
+        if (edgeTurn?.forward === forward) setFixedLayoutZoom(bookKey, view, 100);
         // The paginator's animated paths (push slide and the layered VT
         // turns) all gate on the `animated` attribute; dropping it makes
         // the underlying turn an instant jump hidden by the overlay.
@@ -538,6 +562,13 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
         // relocation. Their completed navigation remains the fallback.
         if (nativeCommit) await navigation;
         else await Promise.race([relocated, navigation]);
+        // A cancelled edge turn returns to the zoomed page as it was left.
+        if (edgeTurn && edgeTurn.forward !== forward) {
+          await navigation;
+          setFixedLayoutZoom(bookKey, view, edgeTurn.zoomLevel);
+          view.renderer.scrollLeft = edgeTurn.scrollLeft;
+          view.renderer.scrollTop = edgeTurn.scrollTop;
+        }
       },
     };
     const controller = nativePaper
@@ -871,6 +902,17 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [view, bookKey]);
 
+  // Forget a released drag's edge turn once the turn has settled.
+  const afterDrag = (ending: Promise<void>) => {
+    const edgeTurn = panEdgeTurnRef.current;
+    ending
+      .finally(() => {
+        if (panEdgeTurnRef.current === edgeTurn) panEdgeTurnRef.current = null;
+        schedulePreparedCaptureRef.current?.();
+      })
+      .catch(() => {});
+  };
+
   useTouchInterceptor(
     `captured-turn-${bookKey}`,
     (bk, detail) => {
@@ -888,12 +930,7 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
         // delivering the previous touchend. Cancel the old drag before its
         // state is replaced so it cannot remain over, or settle onto, the
         // following page.
-        if (dragRef.current) {
-          controller
-            .endDrag(false)
-            .finally(() => schedulePreparedCaptureRef.current?.())
-            .catch(() => {});
-        }
+        if (dragRef.current) afterDrag(controller.endDrag(false));
         dragRef.current = null;
         const intent = createTurnGestureIntent(bookKey, currentView, detail);
         gestureIntentRef.current = intent;
@@ -901,6 +938,10 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
         const overlayBlocksCapture = isCapturedSurfaceBlockedByOverlay();
         const preparedPixelsBlocked = isPreparedSurfaceBlockedByOverlay();
         const viewSettings = getViewSettings(bookKey);
+        panXAtStartRef.current =
+          viewSettings && isFixedLayout() && isPanningFixedLayout(viewSettings)
+            ? (currentView.renderer.panX ?? null)
+            : undefined;
         const programmaticInputBlocked =
           programmaticTurnsInFlightRef.current.size > 0 &&
           !(
@@ -999,10 +1040,22 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
             controller.releasePreparedCapture();
             return false;
           }
-          const style = getCapturedTurnStyle(viewSettings, isFixedLayout());
+          const panXAtStart = panXAtStartRef.current;
+          // A zoomed page dragged past its edge always pushes: it slides out
+          // with the next page beside it, the way Photos moves between photos.
+          const style =
+            panXAtStart === undefined
+              ? getCapturedTurnStyle(viewSettings, isFixedLayout())
+              : canCaptureTurn(viewSettings)
+                ? 'push'
+                : null;
           if (!style) {
             gestureIntentRef.current = null;
             controller.releasePreparedCapture();
+            return false;
+          }
+          // Short of the edge the drag pans the zoomed page.
+          if (panXAtStart !== undefined && !isDragPastPanEdge(panXAtStart, detail.deltaX)) {
             return false;
           }
           const intent =
@@ -1050,6 +1103,15 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
           }
           updateDragSample(startedState, detail, viewSettings.rtl);
           dragRef.current = startedState;
+          panEdgeTurnRef.current =
+            panXAtStart === undefined
+              ? null
+              : {
+                  forward,
+                  zoomLevel: viewSettings.zoomLevel,
+                  scrollLeft: currentView.renderer.scrollLeft,
+                  scrollTop: currentView.renderer.scrollTop,
+                };
           const beginning = controller.beginDrag(forward, viewSettings.rtl, style);
           // moveDrag buffers this initial sample even while native capture is
           // pending, then applies it before a queued release can settle.
@@ -1085,10 +1147,7 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
       // serialized queue. This ordering also covers touchcancel.
       controller.moveDrag(state.progress, state.grabY);
       if (detail.phase === 'cancel') {
-        controller
-          .endDrag(false)
-          .finally(() => schedulePreparedCaptureRef.current?.())
-          .catch(() => {});
+        afterDrag(controller.endDrag(false));
         return true;
       }
       const signed = dragDistance(state, detail.deltaX, viewSettings?.rtl ?? false);
@@ -1110,10 +1169,7 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
       // CapturedPageTurn serializes endDrag behind an in-flight beginDrag, so
       // queue release immediately. This also keeps a following gesture behind
       // the complete begin/end pair instead of letting it supersede the turn.
-      controller
-        .endDrag(commit, releaseVelocity)
-        .finally(() => schedulePreparedCaptureRef.current?.())
-        .catch(() => {});
+      afterDrag(controller.endDrag(commit, releaseVelocity));
       return true;
     },
     // Above the fixed-layout swipe-flip (0), below the reading ruler (10).

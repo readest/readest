@@ -7,7 +7,7 @@ import {
   getDirection,
   getPageProgressionRTL,
 } from '@/libs/document';
-import { BOOK_IDS_SEPARATOR } from '@/services/constants';
+import { BOOK_IDS_SEPARATOR, MIN_ZOOM_LEVEL } from '@/services/constants';
 import { BookConfig, PageInfo, ViewSettings } from '@/types/book';
 import { FoliateView, wrappedFoliateView } from '@/types/view';
 import { Insets } from '@/types/misc';
@@ -1029,6 +1029,8 @@ const FoliateViewer: React.FC<{
         bookDoc.rendition.spread = rendererLayout.spreadMode;
         view.renderer.setAttribute('zoom', viewSettings.zoomMode);
         view.renderer.setAttribute('spread', rendererLayout.spreadMode);
+        // A book saved below today's zoom-out floor opens at the floor.
+        viewSettings.zoomLevel = Math.max(viewSettings.zoomLevel, MIN_ZOOM_LEVEL);
         view.renderer.setAttribute('scale-factor', viewSettings.zoomLevel);
         view.renderer.setAttribute('scroll-gap', getScrollGapAttr(viewSettings.webtoonMode));
         view.renderer.toggleAttribute('lock-pan-x', !!viewSettings.lockHorizontalPan);
