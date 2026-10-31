@@ -206,6 +206,32 @@ describe("SyncAuth:doLogin failure handling", function()
     end)
 end)
 
+describe("SyncAuth:needsLogin", function()
+    local function session(overrides)
+        local s = {
+            access_token = "access", refresh_token = "refresh",
+            expires_at = os.time() + 3600, expires_in = 3600,
+        }
+        for k, v in pairs(overrides) do s[k] = v end
+        return s
+    end
+
+    it("stays signed in when only the access token expired (#7186)", function()
+        -- A night in standby: the next sync refreshes it with the saved refresh token.
+        assert.is_false(SyncAuth:needsLogin(session{ expires_at = os.time() - 8 * 3600 }))
+        assert.is_false(SyncAuth:needsLogin(session{ expires_at = os.time() + 30 }))
+        assert.is_false(SyncAuth:needsLogin(session{ expires_at = false }))
+    end)
+
+    it("needs a login without a session or while authentication is paused", function()
+        assert.is_true(SyncAuth:needsLogin({}))
+        assert.is_true(SyncAuth:needsLogin(session{ access_token = false, refresh_token = false }))
+        assert.is_true(SyncAuth:needsLogin(session{ auth_required = true, access_token = false }))
+        assert.is_true(SyncAuth:needsLogin(session{ refresh_token = false, expires_at = os.time() - 10 }))
+        assert.is_false(SyncAuth:needsLogin(session{}))
+    end)
+end)
+
 describe("SyncAuth:withFreshToken rejected refresh", function()
     local shown
     local refresh_result

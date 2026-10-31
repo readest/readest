@@ -48,8 +48,12 @@ local function notifyCallbacks(pending, success, err)
     end
 end
 
+-- An expired access token is not a lost session: the saved refresh token
+-- renews it on the next sync (#7186).
 function SyncAuth:needsLogin(settings)
-    return settings.auth_required or not settings.access_token or not settings.expires_at
+    if settings.auth_required then return true end
+    if settings.refresh_token then return false end
+    return not settings.access_token or not settings.expires_at
         or settings.expires_at < os.time() + 60
 end
 
