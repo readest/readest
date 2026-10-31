@@ -1,0 +1,811 @@
+{
+  "epub": "sample-war-peace.mobi",
+  "words": [
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[3]/font[1]/text()[1].0",
+      "xp_end": "/html[1]/body[1]/body[1]/p[3]/font[1]/text()[1].4",
+      "text": "This"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[66]/text()[1].696",
+      "xp_end": "/html[1]/body[1]/body[1]/p[66]/text()[1].701",
+      "text": "sight"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[148]/text()[3].13",
+      "xp_end": "/html[1]/body[1]/body[1]/p[148]/text()[3].16",
+      "text": "was"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[255]/text()[1].387",
+      "xp_end": "/html[1]/body[1]/body[1]/p[255]/text()[1].393",
+      "text": "looked"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[349]/text()[1].879",
+      "xp_end": "/html[1]/body[1]/body[1]/p[349]/text()[1].882",
+      "text": "and"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[422]/text()[1].33",
+      "xp_end": "/html[1]/body[1]/body[1]/p[422]/text()[1].36",
+      "text": "old"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[532]/text()[1].163",
+      "xp_end": "/html[1]/body[1]/body[1]/p[532]/text()[1].169",
+      "text": "handle"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[645]/text()[1].17",
+      "xp_end": "/html[1]/body[1]/body[1]/p[645]/text()[1].20",
+      "text": "was"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[725]/text()[1].133",
+      "xp_end": "/html[1]/body[1]/body[1]/p[725]/text()[1].137",
+      "text": "some"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[814]/text()[1].94",
+      "xp_end": "/html[1]/body[1]/body[1]/p[814]/text()[1].100",
+      "text": "Pierre"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[877]/text()[1].326",
+      "xp_end": "/html[1]/body[1]/body[1]/p[877]/text()[1].328",
+      "text": "to"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[939]/text()[1].671",
+      "xp_end": "/html[1]/body[1]/body[1]/p[939]/text()[1].674",
+      "text": "his"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[980]/text()[1].854",
+      "xp_end": "/html[1]/body[1]/body[1]/p[980]/text()[1].859",
+      "text": "again"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[1061]/text()[1].82",
+      "xp_end": "/html[1]/body[1]/body[1]/p[1061]/text()[1].92",
+      "text": "thoroughly"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[1164]/text()[1].401",
+      "xp_end": "/html[1]/body[1]/body[1]/p[1164]/text()[1].405",
+      "text": "meet"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[1277]/text()[1].26",
+      "xp_end": "/html[1]/body[1]/body[1]/p[1277]/text()[1].30",
+      "text": "with"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[1370]/text()[1].123",
+      "xp_end": "/html[1]/body[1]/body[1]/p[1370]/text()[1].125",
+      "text": "to"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[1510]/text()[1].298",
+      "xp_end": "/html[1]/body[1]/body[1]/p[1510]/text()[1].304",
+      "text": "castle"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[1597]/text()[1].1016",
+      "xp_end": "/html[1]/body[1]/body[1]/p[1597]/text()[1].1018",
+      "text": "he"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[1672]/text()[1].275",
+      "xp_end": "/html[1]/body[1]/body[1]/p[1672]/text()[1].282",
+      "text": "thought"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[1761]/text()[1].17",
+      "xp_end": "/html[1]/body[1]/body[1]/p[1761]/text()[1].26",
+      "text": "abandoned"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[1866]/text()[1].126",
+      "xp_end": "/html[1]/body[1]/body[1]/p[1866]/text()[1].128",
+      "text": "on"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[1935]/text()[1].254",
+      "xp_end": "/html[1]/body[1]/body[1]/p[1935]/text()[1].260",
+      "text": "cannon"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[1977]/text()[1].1299",
+      "xp_end": "/html[1]/body[1]/body[1]/p[1977]/text()[1].1302",
+      "text": "the"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[2022]/text()[1].33",
+      "xp_end": "/html[1]/body[1]/body[1]/p[2022]/text()[1].39",
+      "text": "untied"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[2106]/text()[1].280",
+      "xp_end": "/html[1]/body[1]/body[1]/p[2106]/text()[1].288",
+      "text": "stumbled"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[2158]/text()[1].132",
+      "xp_end": "/html[1]/body[1]/body[1]/p[2158]/text()[1].134",
+      "text": "he"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[2202]/text()[1].52",
+      "xp_end": "/html[1]/body[1]/body[1]/p[2202]/text()[1].56",
+      "text": "lady"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[2291]/text()[1].1003",
+      "xp_end": "/html[1]/body[1]/body[1]/p[2291]/text()[1].1006",
+      "text": "but"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[2354]/text()[1].111",
+      "xp_end": "/html[1]/body[1]/body[1]/p[2354]/text()[1].123",
+      "text": "Mademoiselle"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[2456]/text()[1].1139",
+      "xp_end": "/html[1]/body[1]/body[1]/p[2456]/text()[1].1141",
+      "text": "up"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[2526]/text()[1].817",
+      "xp_end": "/html[1]/body[1]/body[1]/p[2526]/text()[1].823",
+      "text": "Andréy"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[2585]/text()[1].81",
+      "xp_end": "/html[1]/body[1]/body[1]/p[2585]/text()[1].83",
+      "text": "is"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[2657]/text()[1].7",
+      "xp_end": "/html[1]/body[1]/body[1]/p[2657]/text()[1].8",
+      "text": "a"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[2710]/text()[4].761",
+      "xp_end": "/html[1]/body[1]/body[1]/p[2710]/text()[4].767",
+      "text": "Gúryev"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[2778]/text()[1].235",
+      "xp_end": "/html[1]/body[1]/body[1]/p[2778]/text()[1].238",
+      "text": "the"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[2848]/text()[1].915",
+      "xp_end": "/html[1]/body[1]/body[1]/p[2848]/text()[1].919",
+      "text": "that"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[2920]/text()[1].54",
+      "xp_end": "/html[1]/body[1]/body[1]/p[2920]/text()[1].57",
+      "text": "own"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[3017]/text()[1].471",
+      "xp_end": "/html[1]/body[1]/body[1]/p[3017]/text()[1].474",
+      "text": "the"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[3118]/text()[1].30",
+      "xp_end": "/html[1]/body[1]/body[1]/p[3118]/text()[1].34",
+      "text": "soon"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[3158]/text()[1].17",
+      "xp_end": "/html[1]/body[1]/body[1]/p[3158]/text()[1].19",
+      "text": "it"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[3238]/text()[1].95",
+      "xp_end": "/html[1]/body[1]/body[1]/p[3238]/text()[1].101",
+      "text": "formed"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[3322]/text()[1].221",
+      "xp_end": "/html[1]/body[1]/body[1]/p[3322]/text()[1].225",
+      "text": "have"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[3403]/text()[1].1484",
+      "xp_end": "/html[1]/body[1]/body[1]/p[3403]/text()[1].1486",
+      "text": "up"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[3499]/text()[3].175",
+      "xp_end": "/html[1]/body[1]/body[1]/p[3499]/text()[3].179",
+      "text": "real"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[3601]/text()[1].60",
+      "xp_end": "/html[1]/body[1]/body[1]/p[3601]/text()[1].65",
+      "text": "again"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[3665]/text()[1].211",
+      "xp_end": "/html[1]/body[1]/body[1]/p[3665]/text()[1].215",
+      "text": "than"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[3723]/text()[1].326",
+      "xp_end": "/html[1]/body[1]/body[1]/p[3723]/text()[1].335",
+      "text": "messenger"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[3801]/text()[1].211",
+      "xp_end": "/html[1]/body[1]/body[1]/p[3801]/text()[1].213",
+      "text": "to"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[3847]/text()[1].46",
+      "xp_end": "/html[1]/body[1]/body[1]/p[3847]/text()[1].52",
+      "text": "friend"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[3922]/text()[2].534",
+      "xp_end": "/html[1]/body[1]/body[1]/p[3922]/text()[2].541",
+      "text": "clearly"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[4000]/text()[1].189",
+      "xp_end": "/html[1]/body[1]/body[1]/p[4000]/text()[1].191",
+      "text": "to"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[4074]/text()[1].126",
+      "xp_end": "/html[1]/body[1]/body[1]/p[4074]/text()[1].127",
+      "text": "a"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[4149]/text()[1].27",
+      "xp_end": "/html[1]/body[1]/body[1]/p[4149]/text()[1].30",
+      "text": "and"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[4243]/text()[1].72",
+      "xp_end": "/html[1]/body[1]/body[1]/p[4243]/text()[1].76",
+      "text": "They"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[4311]/text()[1].207",
+      "xp_end": "/html[1]/body[1]/body[1]/p[4311]/text()[1].209",
+      "text": "of"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[4377]/text()[1].250",
+      "xp_end": "/html[1]/body[1]/body[1]/p[4377]/text()[1].253",
+      "text": "the"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/blockquote[46]/blockquote[1]/text()[1].161",
+      "xp_end": "/html[1]/body[1]/body[1]/blockquote[46]/blockquote[1]/text()[1].168",
+      "text": "feeling"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[4438]/text()[1].790",
+      "xp_end": "/html[1]/body[1]/body[1]/p[4438]/text()[1].794",
+      "text": "than"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[4541]/text()[1].1054",
+      "xp_end": "/html[1]/body[1]/body[1]/p[4541]/text()[1].1057",
+      "text": "her"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[4595]/text()[1].238",
+      "xp_end": "/html[1]/body[1]/body[1]/p[4595]/text()[1].241",
+      "text": "who"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[4652]/text()[1].59",
+      "xp_end": "/html[1]/body[1]/body[1]/p[4652]/text()[1].66",
+      "text": "carried"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[4741]/text()[1].24",
+      "xp_end": "/html[1]/body[1]/body[1]/p[4741]/text()[1].27",
+      "text": "was"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[4790]/text()[2].381",
+      "xp_end": "/html[1]/body[1]/body[1]/p[4790]/text()[2].383",
+      "text": "he"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[4849]/text()[1].0",
+      "xp_end": "/html[1]/body[1]/body[1]/p[4849]/text()[1].3",
+      "text": "The"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[4919]/text()[1].1372",
+      "xp_end": "/html[1]/body[1]/body[1]/p[4919]/text()[1].1376",
+      "text": "side"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[4985]/text()[1].67",
+      "xp_end": "/html[1]/body[1]/body[1]/p[4985]/text()[1].70",
+      "text": "not"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[5053]/text()[1].170",
+      "xp_end": "/html[1]/body[1]/body[1]/p[5053]/text()[1].173",
+      "text": "was"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[5146]/text()[1].4",
+      "xp_end": "/html[1]/body[1]/body[1]/p[5146]/text()[1].8",
+      "text": "only"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[5248]/text()[1].369",
+      "xp_end": "/html[1]/body[1]/body[1]/p[5248]/text()[1].373",
+      "text": "ever"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[5334]/text()[1].556",
+      "xp_end": "/html[1]/body[1]/body[1]/p[5334]/text()[1].559",
+      "text": "and"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[5368]/text()[2].306",
+      "xp_end": "/html[1]/body[1]/body[1]/p[5368]/text()[2].310",
+      "text": "come"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[5459]/text()[1].546",
+      "xp_end": "/html[1]/body[1]/body[1]/p[5459]/text()[1].559",
+      "text": "intentionally"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[5515]/text()[1].719",
+      "xp_end": "/html[1]/body[1]/body[1]/p[5515]/text()[1].720",
+      "text": "a"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[5573]/text()[1].135",
+      "xp_end": "/html[1]/body[1]/body[1]/p[5573]/text()[1].143",
+      "text": "straight"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[5632]/i[3]/text()[1].0",
+      "xp_end": "/html[1]/body[1]/body[1]/p[5632]/i[3]/text()[1].3",
+      "text": "his"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[5748]/text()[1].99",
+      "xp_end": "/html[1]/body[1]/body[1]/p[5748]/text()[1].102",
+      "text": "and"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[5859]/text()[1].144",
+      "xp_end": "/html[1]/body[1]/body[1]/p[5859]/text()[1].146",
+      "text": "Go"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[5952]/text()[1].524",
+      "xp_end": "/html[1]/body[1]/body[1]/p[5952]/text()[1].527",
+      "text": "her"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[6048]/text()[1].95",
+      "xp_end": "/html[1]/body[1]/body[1]/p[6048]/text()[1].104",
+      "text": "thousands"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[6091]/text()[1].57",
+      "xp_end": "/html[1]/body[1]/body[1]/p[6091]/text()[1].59",
+      "text": "of"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[6166]/text()[1].109",
+      "xp_end": "/html[1]/body[1]/body[1]/p[6166]/text()[1].113",
+      "text": "your"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[6219]/text()[1].79",
+      "xp_end": "/html[1]/body[1]/body[1]/p[6219]/text()[1].81",
+      "text": "at"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[6257]/text()[1].1151",
+      "xp_end": "/html[1]/body[1]/body[1]/p[6257]/text()[1].1154",
+      "text": "the"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[6292]/text()[1].1724",
+      "xp_end": "/html[1]/body[1]/body[1]/p[6292]/text()[1].1727",
+      "text": "the"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[6352]/text()[1].295",
+      "xp_end": "/html[1]/body[1]/body[1]/p[6352]/text()[1].299",
+      "text": "when"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[6388]/text()[1].381",
+      "xp_end": "/html[1]/body[1]/body[1]/p[6388]/text()[1].388",
+      "text": "herself"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[6425]/text()[1].627",
+      "xp_end": "/html[1]/body[1]/body[1]/p[6425]/text()[1].631",
+      "text": "that"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[6571]/text()[1].113",
+      "xp_end": "/html[1]/body[1]/body[1]/p[6571]/text()[1].116",
+      "text": "how"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[6622]/text()[1].142",
+      "xp_end": "/html[1]/body[1]/body[1]/p[6622]/text()[1].144",
+      "text": "be"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[6682]/text()[1].219",
+      "xp_end": "/html[1]/body[1]/body[1]/p[6682]/text()[1].222",
+      "text": "God"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[6775]/text()[1].108",
+      "xp_end": "/html[1]/body[1]/body[1]/p[6775]/text()[1].116",
+      "text": "Alpátych"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[6853]/text()[1].704",
+      "xp_end": "/html[1]/body[1]/body[1]/p[6853]/text()[1].706",
+      "text": "he"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[6903]/text()[1].147",
+      "xp_end": "/html[1]/body[1]/body[1]/p[6903]/text()[1].150",
+      "text": "was"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[6973]/text()[1].71",
+      "xp_end": "/html[1]/body[1]/body[1]/p[6973]/text()[1].74",
+      "text": "had"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[7040]/text()[1].500",
+      "xp_end": "/html[1]/body[1]/body[1]/p[7040]/text()[1].503",
+      "text": "all"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[7131]/text()[1].36",
+      "xp_end": "/html[1]/body[1]/body[1]/p[7131]/text()[1].38",
+      "text": "he"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[7236]/text()[1].178",
+      "xp_end": "/html[1]/body[1]/body[1]/p[7236]/text()[1].180",
+      "text": "my"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[7296]/text()[1].482",
+      "xp_end": "/html[1]/body[1]/body[1]/p[7296]/text()[1].485",
+      "text": "and"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[7386]/text()[1].624",
+      "xp_end": "/html[1]/body[1]/body[1]/p[7386]/text()[1].625",
+      "text": "I"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[7446]/text()[1].28",
+      "xp_end": "/html[1]/body[1]/body[1]/p[7446]/text()[1].30",
+      "text": "of"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[7537]/text()[1].255",
+      "xp_end": "/html[1]/body[1]/body[1]/p[7537]/text()[1].257",
+      "text": "he"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[7602]/text()[1].193",
+      "xp_end": "/html[1]/body[1]/body[1]/p[7602]/text()[1].197",
+      "text": "face"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[7662]/text()[1].69",
+      "xp_end": "/html[1]/body[1]/body[1]/p[7662]/text()[1].73",
+      "text": "That"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[7750]/text()[1].43",
+      "xp_end": "/html[1]/body[1]/body[1]/p[7750]/text()[1].48",
+      "text": "jerky"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[7838]/text()[1].38",
+      "xp_end": "/html[1]/body[1]/body[1]/p[7838]/text()[1].42",
+      "text": "sent"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[7910]/text()[1].220",
+      "xp_end": "/html[1]/body[1]/body[1]/p[7910]/text()[1].229",
+      "text": "intention"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[7978]/text()[1].187",
+      "xp_end": "/html[1]/body[1]/body[1]/p[7978]/text()[1].189",
+      "text": "or"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[8020]/text()[1].319",
+      "xp_end": "/html[1]/body[1]/body[1]/p[8020]/text()[1].322",
+      "text": "the"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[8050]/text()[1].20",
+      "xp_end": "/html[1]/body[1]/body[1]/p[8050]/text()[1].26",
+      "text": "pauses"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[8102]/text()[1].118",
+      "xp_end": "/html[1]/body[1]/body[1]/p[8102]/text()[1].122",
+      "text": "want"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[8196]/text()[1].202",
+      "xp_end": "/html[1]/body[1]/body[1]/p[8196]/text()[1].206",
+      "text": "made"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[8243]/text()[1].185",
+      "xp_end": "/html[1]/body[1]/body[1]/p[8243]/text()[1].189",
+      "text": "some"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[8335]/text()[1].301",
+      "xp_end": "/html[1]/body[1]/body[1]/p[8335]/text()[1].303",
+      "text": "so"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[8446]/text()[1].715",
+      "xp_end": "/html[1]/body[1]/body[1]/p[8446]/text()[1].717",
+      "text": "he"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[8510]/text()[1].315",
+      "xp_end": "/html[1]/body[1]/body[1]/p[8510]/text()[1].325",
+      "text": "Borovítski"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[8610]/text()[1].901",
+      "xp_end": "/html[1]/body[1]/body[1]/p[8610]/text()[1].911",
+      "text": "Rostopchín"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[8683]/text()[1].10",
+      "xp_end": "/html[1]/body[1]/body[1]/p[8683]/text()[1].17",
+      "text": "reached"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[8731]/text()[1].517",
+      "xp_end": "/html[1]/body[1]/body[1]/p[8731]/text()[1].521",
+      "text": "Osip"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[8808]/text()[1].172",
+      "xp_end": "/html[1]/body[1]/body[1]/p[8808]/text()[1].174",
+      "text": "he"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[8893]/text()[1].184",
+      "xp_end": "/html[1]/body[1]/body[1]/p[8893]/text()[1].188",
+      "text": "when"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[8956]/text()[1].50",
+      "xp_end": "/html[1]/body[1]/body[1]/p[8956]/text()[1].58",
+      "text": "glancing"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[9024]/text()[1].34",
+      "xp_end": "/html[1]/body[1]/body[1]/p[9024]/text()[1].36",
+      "text": "It"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[9100]/text()[1].18",
+      "xp_end": "/html[1]/body[1]/body[1]/p[9100]/text()[1].20",
+      "text": "me"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[9176]/text()[1].143",
+      "xp_end": "/html[1]/body[1]/body[1]/p[9176]/text()[1].146",
+      "text": "and"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[9229]/text()[1].480",
+      "xp_end": "/html[1]/body[1]/body[1]/p[9229]/text()[1].484",
+      "text": "very"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[9284]/text()[1].576",
+      "xp_end": "/html[1]/body[1]/body[1]/p[9284]/text()[1].582",
+      "text": "pushed"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[9363]/text()[1].132",
+      "xp_end": "/html[1]/body[1]/body[1]/p[9363]/text()[1].136",
+      "text": "they"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[9428]/text()[1].355",
+      "xp_end": "/html[1]/body[1]/body[1]/p[9428]/text()[1].362",
+      "text": "herself"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[9525]/text()[1].162",
+      "xp_end": "/html[1]/body[1]/body[1]/p[9525]/text()[1].175",
+      "text": "understanding"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[9566]/text()[1].478",
+      "xp_end": "/html[1]/body[1]/body[1]/p[9566]/text()[1].481",
+      "text": "the"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[9639]/text()[1].795",
+      "xp_end": "/html[1]/body[1]/body[1]/p[9639]/text()[1].797",
+      "text": "be"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[9683]/text()[1].485",
+      "xp_end": "/html[1]/body[1]/body[1]/p[9683]/text()[1].492",
+      "text": "stories"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[9747]/text()[1].1002",
+      "xp_end": "/html[1]/body[1]/body[1]/p[9747]/text()[1].1005",
+      "text": "and"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[9811]/text()[1].64",
+      "xp_end": "/html[1]/body[1]/body[1]/p[9811]/text()[1].69",
+      "text": "hurry"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[9875]/text()[1].595",
+      "xp_end": "/html[1]/body[1]/body[1]/p[9875]/text()[1].605",
+      "text": "fatherland"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[9932]/text()[2].246",
+      "xp_end": "/html[1]/body[1]/body[1]/p[9932]/text()[2].247",
+      "text": "I"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[10022]/text()[2].134",
+      "xp_end": "/html[1]/body[1]/body[1]/p[10022]/text()[2].136",
+      "text": "it"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[10141]/text()[1].904",
+      "xp_end": "/html[1]/body[1]/body[1]/p[10141]/text()[1].908",
+      "text": "high"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[10205]/text()[1].119",
+      "xp_end": "/html[1]/body[1]/body[1]/p[10205]/text()[1].120",
+      "text": "a"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[10262]/text()[1].115",
+      "xp_end": "/html[1]/body[1]/body[1]/p[10262]/text()[1].118",
+      "text": "the"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[10327]/text()[1].167",
+      "xp_end": "/html[1]/body[1]/body[1]/p[10327]/text()[1].170",
+      "text": "but"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[10398]/text()[1].67",
+      "xp_end": "/html[1]/body[1]/body[1]/p[10398]/text()[1].71",
+      "text": "most"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[10466]/text()[1].88",
+      "xp_end": "/html[1]/body[1]/body[1]/p[10466]/text()[1].90",
+      "text": "of"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[10556]/text()[1].146",
+      "xp_end": "/html[1]/body[1]/body[1]/p[10556]/text()[1].148",
+      "text": "on"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[10615]/text()[1].247",
+      "xp_end": "/html[1]/body[1]/body[1]/p[10615]/text()[1].248",
+      "text": "a"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[10680]/text()[1].148",
+      "xp_end": "/html[1]/body[1]/body[1]/p[10680]/text()[1].155",
+      "text": "brother"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[10788]/text()[1].100",
+      "xp_end": "/html[1]/body[1]/body[1]/p[10788]/text()[1].102",
+      "text": "to"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[10874]/text()[1].167",
+      "xp_end": "/html[1]/body[1]/body[1]/p[10874]/text()[1].169",
+      "text": "in"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[10923]/text()[1].209",
+      "xp_end": "/html[1]/body[1]/body[1]/p[10923]/text()[1].212",
+      "text": "law"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[10993]/text()[1].43",
+      "xp_end": "/html[1]/body[1]/body[1]/p[10993]/text()[1].48",
+      "text": "elder"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[11073]/text()[1].444",
+      "xp_end": "/html[1]/body[1]/body[1]/p[11073]/text()[1].452",
+      "text": "formerly"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[11136]/text()[1].1171",
+      "xp_end": "/html[1]/body[1]/body[1]/p[11136]/text()[1].1175",
+      "text": "from"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[11211]/text()[1].259",
+      "xp_end": "/html[1]/body[1]/body[1]/p[11211]/text()[1].261",
+      "text": "go"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[11285]/text()[1].115",
+      "xp_end": "/html[1]/body[1]/body[1]/p[11285]/text()[1].117",
+      "text": "up"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[11348]/text()[1].1000",
+      "xp_end": "/html[1]/body[1]/body[1]/p[11348]/text()[1].1010",
+      "text": "suppressed"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[11390]/text()[1].127",
+      "xp_end": "/html[1]/body[1]/body[1]/p[11390]/text()[1].130",
+      "text": "the"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[11447]/text()[1].310",
+      "xp_end": "/html[1]/body[1]/body[1]/p[11447]/text()[1].313",
+      "text": "its"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[11515]/text()[1].73",
+      "xp_end": "/html[1]/body[1]/body[1]/p[11515]/text()[1].76",
+      "text": "him"
+    },
+    {
+      "xp": "/html[1]/body[1]/body[1]/p[11568]/text()[1].91",
+      "xp_end": "/html[1]/body[1]/body[1]/p[11568]/text()[1].95",
+      "text": "must"
+    }
+  ],
+  "fragments": [],
+  "unindexed_mismatches": [],
+  "dom_version": 20260812,
+  "mobi": true,
+  "word_count": 575776,
+  "every": 3600
+}
