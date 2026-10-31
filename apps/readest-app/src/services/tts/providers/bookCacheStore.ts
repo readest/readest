@@ -432,12 +432,17 @@ export class BookTTSCacheStore implements TTSCacheStore {
       for (const dest of destinations) {
         if (!listings.has(dest.id)) continue;
         const files = listings.get(dest.id) ?? new Set<string>();
-        const units: string[] = [];
+        const units = new Set<string>();
         for (const file of files) {
           const unit = kind.unitOf(file);
-          if (unit && kind.filesOf(unit).every((f) => files.has(f))) units.push(unit);
+          if (unit && kind.filesOf(unit).every((f) => files.has(f))) units.add(unit);
         }
-        next[dest.id] = units;
+        // Keep what a peer added after the listing began; the listing only
+        // supersedes what this round started with.
+        for (const unit of latest.ttsPacks?.[dest.id] ?? []) {
+          if (!recorded?.[dest.id]?.includes(unit)) units.add(unit);
+        }
+        next[dest.id] = [...units];
       }
       if (JSON.stringify(next) !== JSON.stringify(latest.ttsPacks ?? {})) {
         // No updatedAt bump: recording audio must not move reading progress.

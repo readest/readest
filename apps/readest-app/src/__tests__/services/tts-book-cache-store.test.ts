@@ -305,6 +305,28 @@ describe('BookTTSCacheStore', () => {
       );
     });
 
+    test('keeps a pack merged into a destination while the round listed it', async () => {
+      // A peer's pack can land in the record after this round's listing began;
+      // replacing the destination with the listing would drop it, and the next
+      // open would skip pulling it. Entries the round started with are still
+      // replaced by the listing.
+      bookData.pullBookData.mockImplementationOnce(async (...args: unknown[]) => {
+        const listings = args[3] as Map<string, Set<string> | null>;
+        listings.set('webdav', new Set(['1-a.mp3', '1-a.json']));
+        bookConfig.config = {
+          ...bookConfig.config,
+          ttsPacks: { webdav: ['0-gone.mp3', '2-b.mp3'] },
+        };
+        return 0;
+      });
+      await openWith('hash-rec7', { webdav: ['0-gone.mp3'] });
+      await vi.waitFor(() =>
+        expect(bookConfig.setConfig).toHaveBeenCalledWith('hash-rec7', {
+          ttsPacks: { webdav: ['1-a.mp3', '2-b.mp3'] },
+        }),
+      );
+    });
+
     test('the push never trusts the record, so purged packs are uploaded again', async () => {
       // The record only grows by merging: after a book's audio is purged from
       // a destination (the book removed from Readest Cloud) it still names
