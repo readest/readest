@@ -976,10 +976,15 @@ export class SqliteTTSCacheStore implements TTSCacheStore {
   // is REBUILT from rows rather than read from disk, so a stale or missing
   // sidecar file can never poison a push.
 
+  // Only explicitly downloaded sections sync; packs from ordinary listening
+  // stay local. In-progress downloads count, since compaction pushes before
+  // completeDownloadSections sets the pin.
   async listPacks(): Promise<{ name: string; size: number }[]> {
     await this.#ensureSchema();
     const rows = await this.#db.select<DatabaseRow & { path: string; size: number }>(
-      'SELECT path, size FROM packs',
+      `SELECT p.path, p.size FROM packs p
+        JOIN pinned_sections ps ON ps.section = p.section
+       WHERE ps.active > 0 OR ps.pinned = 1`,
     );
     return rows.map((row) => ({ name: row.path, size: row.size }));
   }
@@ -1017,6 +1022,10 @@ export class SqliteTTSCacheStore implements TTSCacheStore {
     const pack = packs[0];
     // Packs from before keys-based identity have no fingerprint: not portable.
     if (!pack?.keys_fingerprint) return null;
+    // Prefer the sidecar written with the pack: an imported pack sharing a
+    // sentence repoints that row, so the rows alone can miss entries.
+    const stored = await this.#packFs?.readSidecar(packSidecarName(name)).catch(() => null);
+    if (stored?.keysFingerprint === pack.keys_fingerprint) return stored;
     const entries = await this.#db.select<
       DatabaseRow & {
         key: string;

@@ -183,8 +183,10 @@ export class BookTTSCacheStore implements TTSCacheStore {
           sweepTTSCaches(this.#appService, bookHash, this.#budgetBytes),
         );
         // Adopt packs other devices produced (existence-checked, validated
-        // on import); fire-and-forget like all cache housekeeping.
-        this.#syncPacks(bookHash, store, 'pull');
+        // on import), then upload local packs the remote lacks, such as ones
+        // compacted before sync was turned on. Fire-and-forget like all cache
+        // housekeeping.
+        this.#syncPacks(bookHash, store, 'both');
         return { db, store };
       } catch (err) {
         console.warn('TTS cache unavailable for this session', err);
@@ -264,7 +266,11 @@ export class BookTTSCacheStore implements TTSCacheStore {
     if (!opened) return;
     await opened.store.completeDownloadSections(sections);
     const bookHash = this.#getBookHash();
-    if (bookHash) await this.#syncDownloadMarker(bookHash, opened.store);
+    if (!bookHash) return;
+    await this.#syncDownloadMarker(bookHash, opened.store);
+    // A section packed earlier by listening becomes eligible only now, with
+    // no new pack for compaction to push.
+    this.#syncPacks(bookHash, opened.store, 'push');
   }
 
   async cancelDownloadSections(sections: number[]): Promise<void> {
@@ -353,7 +359,7 @@ export class BookTTSCacheStore implements TTSCacheStore {
   // sync module is imported lazily: it must stay out of the TTS module
   // graph (settingsStore -> constants -> EdgeTTSClient would cycle) and out
   // of sessions that never enable sync.
-  #syncPacks(bookHash: string, store: SqliteTTSCacheStore, direction: 'push' | 'pull'): void {
+  #syncPacks(bookHash: string, store: SqliteTTSCacheStore, direction: 'push' | 'both'): void {
     if (!getTTSCacheConfig().syncEnabled) return;
     void (async () => {
       const { getActiveTTSPackSyncProvider, pullTTSPacks, pushTTSPacks } = await import(
@@ -361,11 +367,8 @@ export class BookTTSCacheStore implements TTSCacheStore {
       );
       const provider = await getActiveTTSPackSyncProvider();
       if (!provider) return;
-      if (direction === 'pull') {
-        await pullTTSPacks(provider, bookHash, store);
-      } else {
-        await pushTTSPacks(provider, bookHash, store);
-      }
+      if (direction === 'both') await pullTTSPacks(provider, bookHash, store);
+      await pushTTSPacks(provider, bookHash, store);
     })().catch((err) => {
       console.warn('TTS pack sync failed', err);
     });
