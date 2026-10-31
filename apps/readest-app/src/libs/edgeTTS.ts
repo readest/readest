@@ -641,9 +641,12 @@ export class EdgeSpeechTTS {
       return new Promise<EdgeSpeechAudio>((resolveAudio, rejectAudio) => {
         let settled = false;
         let closeSocket = () => {};
+        // Releases the raw socket while the upgrade is still pending.
+        const connecting = new AbortController();
         const watchdog = inactivityWatchdog(() => {
           if (settled) return;
           settled = true;
+          connecting.abort();
           closeSocket();
           rejectAudio(new Error('WebSocket timed out waiting for audio.'));
         });
@@ -661,7 +664,7 @@ export class EdgeSpeechTTS {
             // api.msedgeservices.com, so speak WebSocket over a raw socket.
             // Loaded only here so other runtimes never evaluate it.
             const { connectWorkersWebSocket } = await import('@/libs/workersWebSocket');
-            const ws = await connectWorkersWebSocket(url, baseHeaders);
+            const ws = await connectWorkersWebSocket(url, baseHeaders, connecting.signal);
             closeSocket = () => {
               try {
                 ws.close();

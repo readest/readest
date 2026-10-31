@@ -70,6 +70,7 @@ const SOCKETS_MODULE = 'cloudflare:sockets';
 export const connectWorkersWebSocket = async (
   url: string,
   headers: Record<string, string>,
+  signal?: AbortSignal,
 ): Promise<WorkersWebSocket> => {
   // Only workerd has this module. A variable specifier and the ignore
   // comments keep Next's bundlers and tsc from resolving it; the minifier may
@@ -82,6 +83,11 @@ export const connectWorkersWebSocket = async (
   })) as { connect: Connect };
   const target = new URL(url);
   const socket = connect({ hostname: target.hostname, port: 443 }, { secureTransport: 'on' });
+  // Until the upgrade completes the caller has no WebSocket to close, so an
+  // abort (a stalled handshake timing out) closes the raw socket instead.
+  const abort = () => void socket.close().catch(() => {});
+  if (signal?.aborted) abort();
+  signal?.addEventListener('abort', abort, { once: true });
   const reader = socket.readable.getReader();
   const writer = socket.writable.getWriter();
 
@@ -111,6 +117,7 @@ export const connectWorkersWebSocket = async (
     throw new Error(`WebSocket upgrade failed with status ${status}`);
   }
   buffer = buffer.slice(headerEnd + 4);
+  signal?.removeEventListener('abort', abort);
 
   const listeners: Record<string, Array<(event?: unknown) => void>> = {};
   const emit = (type: string, event?: unknown) => {

@@ -252,6 +252,9 @@ describe('EdgeSpeechTTS on Cloudflare Workers', () => {
       await vi.waitFor(() => expect(connect).toHaveBeenCalled());
       await vi.advanceTimersByTimeAsync(30_000);
       expect(outcome.state).toBe('WebSocket timed out waiting for audio.');
+      // And the half-open connection is released, not left for the retry.
+      const signal = connect.mock.calls[0]![2] as AbortSignal | undefined;
+      expect(signal?.aborted).toBe(true);
     });
 
     test('fails after 30s of silence once the request is sent, and closes the socket', async () => {
