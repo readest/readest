@@ -23,6 +23,9 @@ const DEFAULT_BUDGET_MB = 200;
 const COMPACT_DEBOUNCE_MS = 30_000;
 const DOWNLOADS_MARKER = 'downloads.json';
 
+// The sync round in flight per book, shared by every store of that book.
+const syncRounds = new Map<string, Promise<void>>();
+
 export interface TTSCacheConfig {
   enabled: boolean;
   budgetMB: number;
@@ -356,8 +359,10 @@ export class BookTTSCacheStore implements TTSCacheStore {
   // (Book Data sync). The sync modules are imported lazily: they must stay
   // out of the TTS module graph (settingsStore -> constants -> EdgeTTSClient
   // would cycle).
+  // Rounds for one book run one after another: overlapping rounds would both
+  // see a pack missing and upload it twice, through the same Cache file.
   #syncPacks(bookHash: string, store: SqliteTTSCacheStore, direction: 'push' | 'both'): void {
-    void (async () => {
+    const round = async () => {
       const [
         { getBookDataDestinations },
         { pullBookData, pushBookData },
@@ -372,8 +377,14 @@ export class BookTTSCacheStore implements TTSCacheStore {
       const kind = createTTSBookDataKind(store);
       if (direction === 'both') await pullBookData(kind, bookHash, destinations);
       await pushBookData(kind, bookHash, destinations);
-    })().catch((err) => {
+    };
+    const previous = syncRounds.get(bookHash) ?? Promise.resolve();
+    const next = previous.then(round).catch((err) => {
       console.warn('TTS pack sync failed', err);
+    });
+    syncRounds.set(bookHash, next);
+    void next.then(() => {
+      if (syncRounds.get(bookHash) === next) syncRounds.delete(bookHash);
     });
   }
 

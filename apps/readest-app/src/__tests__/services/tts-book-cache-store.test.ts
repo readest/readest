@@ -198,6 +198,25 @@ describe('BookTTSCacheStore', () => {
     await vi.waitFor(pushed);
   });
 
+  test("a book's sync rounds run one after another", async () => {
+    // Overlapping rounds would both see a pack missing and upload it twice,
+    // through the same Cache outbox file.
+    bookData.getBookDataDestinations.mockResolvedValue(bookData.destinations);
+    let release: () => void = () => {};
+    bookData.pushBookData.mockClear();
+    bookData.pushBookData.mockImplementationOnce(
+      () => new Promise<number>((resolve) => (release = () => resolve(0))),
+    );
+    const store = new BookTTSCacheStore(appService, () => 'hash555', 1024 * 1024);
+    await store.open();
+    await vi.waitFor(() => expect(bookData.pushBookData).toHaveBeenCalledTimes(1));
+    await store.completeDownloadSections([]);
+    await new Promise((r) => setTimeout(r, 20));
+    expect(bookData.pushBookData).toHaveBeenCalledTimes(1);
+    release();
+    await vi.waitFor(() => expect(bookData.pushBookData).toHaveBeenCalledTimes(2));
+  });
+
   test('an open failure degrades to a no-op cache', async () => {
     openDatabase.mockRejectedValue(new Error('locked'));
     const store = new BookTTSCacheStore(appService, () => 'hash123', 1024 * 1024);
