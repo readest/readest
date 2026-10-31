@@ -51,6 +51,27 @@ describe('deleteBook from Readest Cloud', () => {
     expect(book.uploadedAt).toBeNull();
   });
 
+  test('purges at most 100 files per request, as the purge route allows', async () => {
+    // Over 100 keys, the route answers 400 and deletes nothing.
+    const keys = Array.from({ length: 150 }, (_, i) => `u1/Readest/Books/h/tts/${i}-a.mp3`);
+    listFilesMock.mockResolvedValue({ files: keys.map((file_key) => ({ file_key })) });
+    await deleteBook(fs, makeBook(), 'cloud');
+    await vi.waitFor(() => expect(purgeFilesMock).toHaveBeenCalledTimes(2));
+    expect(purgeFilesMock.mock.calls.map(([batch]) => (batch as string[]).length)).toEqual([
+      100, 50,
+    ]);
+    expect(purgeFilesMock.mock.calls.flatMap(([batch]) => batch as string[])).toEqual(keys);
+  });
+
+  test('warns when some files could not be purged', async () => {
+    listFilesMock.mockResolvedValue({ files: [{ file_key: 'u1/Readest/Books/h/tts/a.mp3' }] });
+    purgeFilesMock.mockResolvedValue({ failedCount: 1, failed: [{ fileKey: 'k', error: 'x' }] });
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    await deleteBook(fs, makeBook(), 'cloud');
+    await vi.waitFor(() => expect(warn).toHaveBeenCalledWith(expect.stringContaining('1')));
+    warn.mockRestore();
+  });
+
   test('a book with no synced data purges nothing', async () => {
     listFilesMock.mockResolvedValue({ files: [{ file_key: 'u1/Readest/Books/h/Title.epub' }] });
     await deleteBook(fs, makeBook(), 'cloud');

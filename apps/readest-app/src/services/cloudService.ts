@@ -29,7 +29,13 @@ const purgeCloudBookData = async (bookHash: string): Promise<void> => {
   try {
     const { files } = await listFiles({ bookHash, search: `/${bookHash}/`, pageSize: 1000 });
     const keys = (files ?? []).map((f) => f.file_key).filter(isBookDataFileKey);
-    if (keys.length) await purgeFiles(keys, true);
+    // The purge route takes at most 100 keys a request.
+    let failed = 0;
+    for (let i = 0; i < keys.length; i += 100) {
+      const result = await purgeFiles(keys.slice(i, i + 100), true);
+      failed += result?.failedCount ?? 0;
+    }
+    if (failed) console.warn(`Failed to delete ${failed} synced book data file(s)`);
   } catch (error) {
     console.warn('Failed to delete synced book data:', error);
   }
