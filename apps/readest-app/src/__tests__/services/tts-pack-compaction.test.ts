@@ -847,7 +847,25 @@ describe('SqliteTTSCacheStore pack portability', () => {
     expect(await store.totalCacheBytes()).toBeGreaterThan(0);
   });
 
+  test('only downloaded sections are offered for upload, not listening cache', async () => {
+    // Section 3 packed from ordinary listening (beforeEach): not synced.
+    expect(await store.listPacks()).toEqual([]);
+
+    // A download in progress already offers its pack: compaction pushes
+    // before completeDownloadSections sets the pin.
+    await store.beginDownloadSections([3]);
+    const name = await packName();
+    expect(await store.listPacks()).toEqual([{ name, size: 80 }]);
+
+    await store.completeDownloadSections([3]);
+    expect(await store.listPacks()).toEqual([{ name, size: 80 }]);
+
+    await store.clearDownloads();
+    expect(await store.listPacks()).toEqual([]);
+  });
+
   test('the sync source surface reflects the database', async () => {
+    await store.beginDownloadSections([3]);
     const name = await packName();
     expect(await store.listPacks()).toEqual([{ name, size: 80 }]);
     expect(await store.hasPack(name)).toBe(true);

@@ -36,6 +36,15 @@ vi.mock('@/services/tts/providers/opfsPackFs', () => ({
   createOpfsPackFs: vi.fn(async () => packState.fs),
 }));
 
+const packSync = vi.hoisted(() => ({
+  provider: { rootPath: '/' },
+  getActiveTTSPackSyncProvider: vi.fn(),
+  pullTTSPacks: vi.fn(async () => 0),
+  pushTTSPacks: vi.fn(async () => 0),
+}));
+
+vi.mock('@/services/sync/file/ttsPackSync', () => packSync);
+
 import { NodeDatabaseService } from '@/services/database/nodeDatabaseService';
 import {
   BookTTSCacheStore,
@@ -105,6 +114,40 @@ describe('BookTTSCacheStore', () => {
     register.mock.calls[0]![0](['k1']);
     expect(imported).toHaveBeenCalledWith(['k1']);
     register.mockRestore();
+  });
+
+  test('opening with sync on pushes packs made before sync was enabled', async () => {
+    // A section downloaded while sync was off: no later compaction creates
+    // its pack again, so the open is the only chance to upload it.
+    const sqliteStore = new SqliteTTSCacheStore(db, {
+      budgetBytes: 1024 * 1024,
+      packFs: packState.fs,
+    });
+    await sqliteStore.beginDownloadSections([7]);
+    await sqliteStore.registerSectionMarks(7, ['0:a']);
+    await sqliteStore.put('k1', entry());
+    await sqliteStore.recordMarkKey(7, 0, 'k1');
+    await sqliteStore.compact();
+    await sqliteStore.completeDownloadSections([7]);
+
+    setTTSCacheConfig({ enabled: true, budgetMB: 200, syncEnabled: true });
+    packSync.getActiveTTSPackSyncProvider.mockResolvedValue(packSync.provider);
+    packSync.pullTTSPacks.mockClear();
+    packSync.pushTTSPacks.mockClear();
+    try {
+      const store = new BookTTSCacheStore(appService, () => 'hash123', 1024 * 1024);
+      await store.open();
+      await vi.waitFor(() =>
+        expect(packSync.pushTTSPacks).toHaveBeenCalledWith(
+          packSync.provider,
+          'hash123',
+          expect.anything(),
+        ),
+      );
+      expect(packSync.pullTTSPacks).toHaveBeenCalledBefore(packSync.pushTTSPacks);
+    } finally {
+      localStorage.clear();
+    }
   });
 
   test('an open failure degrades to a no-op cache', async () => {
