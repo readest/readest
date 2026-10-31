@@ -25,6 +25,20 @@ vi.mock('@/utils/supabase', () => ({
 // handling has its own tests in workersWebSocket.test.ts.
 vi.mock('@/libs/workersWebSocket', () => ({ connectWorkersWebSocket: vi.fn() }));
 
+// Records where a promise stands: 'pending', 'resolved', or its rejection message.
+const track = (promise: Promise<unknown>) => {
+  const outcome = { state: 'pending' };
+  promise.then(
+    () => {
+      outcome.state = 'resolved';
+    },
+    (err: Error) => {
+      outcome.state = err.message;
+    },
+  );
+  return outcome;
+};
+
 type GlobalWithWsPair = typeof globalThis & { WebSocketPair?: unknown };
 
 const mockWorkersSocket = async (socket: unknown) => {
@@ -217,6 +231,52 @@ describe('EdgeSpeechTTS on Cloudflare Workers', () => {
         pitch: 1.0,
       }),
     ).rejects.toThrow('WebSocket upgrade failed with status 403');
+  });
+
+  describe('a stalled Edge connection', () => {
+    const payload = { lang: 'en-US', text: 'hello', voice: 'en-US-AriaNeural', rate: 1, pitch: 1 };
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    test('fails after 30s when the connect never completes', async () => {
+      const { connectWorkersWebSocket } = await import('@/libs/workersWebSocket');
+      const connect = vi
+        .mocked(connectWorkersWebSocket)
+        .mockClear()
+        .mockReturnValue(new Promise(() => {}));
+      const { EdgeSpeechTTS } = await import('@/libs/edgeTTS');
+      vi.useFakeTimers();
+      const created = new EdgeSpeechTTS('wss').create(payload);
+      const outcome = track(created);
+      await vi.waitFor(() => expect(connect).toHaveBeenCalled());
+      await vi.advanceTimersByTimeAsync(30_000);
+      expect(outcome.state).toBe('WebSocket timed out waiting for audio.');
+      // And the half-open connection is released, not left for the retry.
+      const signal = connect.mock.calls[0]![2] as AbortSignal | undefined;
+      expect(signal?.aborted).toBe(true);
+    });
+
+    test('fails after 30s of silence once the request is sent, and closes the socket', async () => {
+      const socket = {
+        accept: vi.fn(),
+        send: vi.fn(),
+        close: vi.fn(),
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      };
+      await mockWorkersSocket(socket);
+      const { EdgeSpeechTTS } = await import('@/libs/edgeTTS');
+      vi.useFakeTimers();
+      const created = new EdgeSpeechTTS('wss').create(payload);
+      const outcome = track(created);
+      await vi.waitFor(() => expect(socket.send).toHaveBeenCalled());
+      await vi.advanceTimersByTimeAsync(29_000);
+      expect(outcome.state).toBe('pending');
+      await vi.advanceTimersByTimeAsync(1_000);
+      expect(outcome.state).toBe('WebSocket timed out waiting for audio.');
+      expect(socket.close).toHaveBeenCalled();
+    });
   });
 
   test('captures word boundaries from audio.metadata frames', async () => {

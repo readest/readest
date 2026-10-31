@@ -169,6 +169,19 @@ describe('connectWorkersWebSocket', () => {
     expect(new TextDecoder().decode(long.payload)).toBe(ssml);
   });
 
+  test('closes the raw socket when aborted while the upgrade is pending', async () => {
+    // A stalled upgrade leaves the caller no WebSocket to close: the abort is
+    // its only way to release the connection.
+    const { connectWorkersWebSocket } = await import('@/libs/workersWebSocket');
+    const controller = new AbortController();
+    void connectWorkersWebSocket(URL_, {}, controller.signal).catch(() => {});
+    await flush();
+    expect(server.closed).toBe(false);
+    controller.abort();
+    await flush();
+    expect(server.closed).toBe(true);
+  });
+
   test('rejects a handshake the server answers without 101', async () => {
     const { connectWorkersWebSocket } = await import('@/libs/workersWebSocket');
     server.push('HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n');
