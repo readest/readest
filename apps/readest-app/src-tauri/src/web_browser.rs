@@ -273,6 +273,25 @@ fn is_browser_label(label: &str) -> bool {
     label.starts_with("browser-")
 }
 
+/// Key under which every browser window's geometry is saved in
+/// `.window-state.json`, for `tauri_plugin_window_state::Builder::map_label`
+/// (see `lib.rs`).
+///
+/// Each open gets a fresh `browser-N` label (`next_label`), so without the
+/// mapping the window-state plugin files every window under its own key and
+/// never finds a saved state to restore: the window came back at the builder's
+/// defaults every time. Pooled under one key, it reopens at the size, position
+/// and maximized state it was last closed with. Other windows keep their own
+/// label and are unaffected.
+#[cfg(desktop)]
+pub(crate) fn window_state_label(label: &str) -> &str {
+    if is_browser_label(label) {
+        "browser"
+    } else {
+        label
+    }
+}
+
 /// Open `url` in a new top-level browser window. Resolves when the window
 /// closes; `open_book_hash` is set when the user pressed [Open] on an
 /// imported book. Downloads are emitted as `web-browser-download` events
@@ -312,6 +331,11 @@ pub async fn open_web_browser<R: tauri::Runtime>(
         .title(&title)
         // Match the session-backed HTTP and rendered chapter fetchers.
         .user_agent("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36")
+        // First-open defaults. Once the window exists, the window-state plugin
+        // restores the bounds a browser window was last closed with (see
+        // `window_state_label`); the saved position is applied only when it
+        // still lands on a connected monitor, so after a display is unplugged
+        // the window stays centered as here.
         .inner_size(1100.0, 800.0)
         .min_inner_size(480.0, 360.0)
         .center()
@@ -804,6 +828,17 @@ mod tests {
         assert!(js.contains("\"back\":\"Zurück\""));
         assert!(js.contains("readest-browser.invalid"));
         assert!(js.contains("__readestBrowser"));
+    }
+
+    #[cfg(desktop)]
+    #[test]
+    fn window_state_label_pools_every_browser_window() {
+        // Every open gets a new label; all of them share one saved geometry.
+        assert_eq!(window_state_label("browser-0"), "browser");
+        assert_eq!(window_state_label("browser-42"), "browser");
+        // Other windows keep their own state entry.
+        assert_eq!(window_state_label("main"), "main");
+        assert_eq!(window_state_label("updater"), "updater");
     }
 
     // Regression guard for #5775: a long download filename must ellipsize the
