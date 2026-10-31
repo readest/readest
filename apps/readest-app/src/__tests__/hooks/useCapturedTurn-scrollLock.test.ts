@@ -67,6 +67,8 @@ const h = vi.hoisted(() => ({
     listeners: new Map<string, Set<EventListener>>(),
     scrollLocked: false,
     panX: null as number | null,
+    scrollLeft: 0,
+    scrollTop: 0,
     atEnd: false,
     atStart: false,
     primaryIndex: 0,
@@ -218,6 +220,8 @@ beforeEach(() => {
   vi.stubEnv('NEXT_PUBLIC_APP_PLATFORM', 'tauri');
   h.renderer.scrollLocked = false;
   h.renderer.panX = null;
+  h.renderer.scrollLeft = 0;
+  h.renderer.scrollTop = 0;
   h.renderer.atEnd = false;
   h.renderer.atStart = false;
   h.renderer.getAttribute.mockReset().mockReturnValue(null);
@@ -1777,13 +1781,42 @@ describe('useCapturedTurn on a zoomed fixed-layout page', () => {
     );
   });
 
-  test('a cancelled turn keeps the zoom it started with', async () => {
-    h.renderer.panX = 1;
-    drag(-60);
+  // The mocked next/prev leave the scroll alone, so zero it as the page
+  // turned to would, and see the cancel put the zoomed page's position back.
+  const turnToNextPage = async () => {
     await act(async () => h.controllerHost!.navigate(true));
+    h.renderer.scrollLeft = 0;
+    h.renderer.scrollTop = 0;
+  };
+
+  test('a cancelled turn keeps the zoom and position it started with', async () => {
+    h.renderer.panX = 1;
+    h.renderer.scrollLeft = 120;
+    h.renderer.scrollTop = 40;
+    drag(-60);
+    await turnToNextPage();
     await act(async () => h.controllerHost!.navigate(false));
     expect(h.renderer.setAttribute).toHaveBeenLastCalledWith('scale-factor', 200);
     expect(h.viewSettings.zoomLevel).toBe(200);
+    expect(h.renderer.scrollLeft).toBe(120);
+    expect(h.renderer.scrollTop).toBe(40);
+  });
+
+  test('a cancelled turn still restores its page when the next drag starts first', async () => {
+    h.renderer.panX = 1;
+    h.renderer.scrollLeft = 120;
+    h.renderer.scrollTop = 40;
+    drag(-60);
+    await turnToNextPage();
+    // The release is still settling when the next touch lands and claims.
+    h.controller.endDrag.mockReturnValueOnce(new Promise<void>(() => {}));
+    dispatchTouchInterceptors('book-1', detail('end', -60, 0, 32, 150));
+    dispatchTouchInterceptors('book-1', detail('start', 0, 0, 0, 150));
+    expect(dispatchTouchInterceptors('book-1', detail('move', -60, 0, 16, 150))).toBe(true);
+    await act(async () => h.controllerHost!.navigate(false));
+    expect(h.viewSettings.zoomLevel).toBe(200);
+    expect(h.renderer.scrollLeft).toBe(120);
+    expect(h.renderer.scrollTop).toBe(40);
   });
 
   test('a page turn that is not an edge drag keeps the zoom', async () => {

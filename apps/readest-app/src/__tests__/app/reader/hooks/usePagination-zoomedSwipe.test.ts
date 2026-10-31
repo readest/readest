@@ -59,9 +59,16 @@ import type { FoliateView } from '@/types/view';
 
 const BOOK_KEY = 'book-1';
 
-const setup = (panX: number | null) => {
+const setup = (panX: number | null, { atStart = false, atEnd = false } = {}) => {
   const view = {
-    renderer: { scrolled: false, panX, getAttribute: () => null, setAttribute: vi.fn() },
+    renderer: {
+      scrolled: false,
+      panX,
+      atStart,
+      atEnd,
+      getAttribute: () => null,
+      setAttribute: vi.fn(),
+    },
     book: { dir: 'ltr' as const, rendition: { layout: 'pre-paginated' } },
     isOverflowX: () => panX !== null,
     isOverflowY: () => true,
@@ -133,6 +140,20 @@ describe('swipe on a zoomed fixed-layout page', () => {
       BOOK_KEY,
       expect.objectContaining({ zoomLevel: 100 }),
     );
+  });
+
+  test('the last page keeps its zoom when there is no page to turn to', () => {
+    const { view, swipe } = setup(1, { atEnd: true });
+    swipe(-200);
+    expect(view.renderer.setAttribute).not.toHaveBeenCalled();
+    expect(h.viewSettings['zoomLevel']).toBe(200);
+  });
+
+  test('the first page keeps its zoom when there is no page to turn back to', () => {
+    const { view, swipe } = setup(0, { atStart: true });
+    swipe(200);
+    expect(view.renderer.setAttribute).not.toHaveBeenCalled();
+    expect(h.viewSettings['zoomLevel']).toBe(200);
   });
 
   test('dragging away from the edge only pans', () => {

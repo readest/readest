@@ -731,8 +731,13 @@ export const usePagination = (
       }
       const vx = Math.abs(deltaX / (deltaT || 1));
       if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 30 && vx > 0.2) {
-        // Like Photos, the page turned to opens at 100% zoom.
-        if (panning && viewRef.current) setFixedLayoutZoom(bookKey, viewRef.current, 100);
+        // Like Photos, the page turned to opens at 100% zoom. A swipe at the
+        // book's first or last page turns nowhere and keeps the zoom.
+        const view = viewRef.current;
+        const forward = viewSettings?.rtl ? deltaX > 0 : deltaX < 0;
+        if (panning && view && !(forward ? view.renderer.atEnd : view.renderer.atStart)) {
+          setFixedLayoutZoom(bookKey, view, 100);
+        }
         viewPagination(viewRef.current, viewSettings, deltaX > 0 ? 'left' : 'right');
         return true;
       }
