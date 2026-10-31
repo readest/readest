@@ -2384,7 +2384,6 @@
   "{{seconds}}s": "{{seconds}} s",
   "Could not read the length of every track in this audiobook": "Impossibile leggere la durata di ogni traccia di questo audiolibro",
   "Manage the streamed audiobook paired with this ebook.": "Gestisci l'audiolibro in streaming abbinato a questo ebook.",
-  "Dismiss": "Chiudi",
   "Failed to upload the library index. Please sync again.": "Impossibile caricare l’indice della libreria. Sincronizza di nuovo.",
   "Search results": "Risultati di ricerca",
   "Filter group": "Gruppo di filtri",

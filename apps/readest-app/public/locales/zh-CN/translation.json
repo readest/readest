@@ -2264,7 +2264,6 @@
   "{{seconds}}s": "{{seconds}} 秒",
   "Could not read the length of every track in this audiobook": "无法读取这本有声书中每个音轨的时长",
   "Manage the streamed audiobook paired with this ebook.": "管理与此电子书配对的流式有声书。",
-  "Dismiss": "关闭",
   "Failed to upload the library index. Please sync again.": "书库索引上传失败。请重新同步。",
   "Search results": "搜索结果",
   "Filter group": "筛选组",
