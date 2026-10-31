@@ -245,16 +245,6 @@ describe('ViewMenu layout', () => {
     cleanup();
   });
 
-  it('shows a zoom saved below the zoom-out limit at the limit', () => {
-    currentViewSettings.zoomLevel = 40;
-    try {
-      render(<ViewMenu bookKey='book-1' />);
-      expect(screen.getByText('50%')).toBeTruthy();
-    } finally {
-      currentViewSettings.zoomLevel = 100;
-    }
-  });
-
   it('drops Paragraph and Speed Reading modes for fixed-layout books', () => {
     render(<ViewMenu bookKey='book-1' />);
     expect(screen.queryByText('Paragraph Mode')).toBeNull();

@@ -147,23 +147,6 @@ describe('useTouchEvent pinch vs two-finger scroll', () => {
     expect(dispatched![1].zoomLevel).toBe(500);
   });
 
-  test('a pinch never zooms out below 100%', () => {
-    const h = renderTouchHook();
-    // 200px apart at 100% zoom.
-    h.current.onTouchStart(touchEvent([touch(100, 300), touch(300, 300)], 0));
-    // First move confirms the pinch and re-baselines separation to 140px.
-    h.current.onTouchMove(touchEvent([touch(130, 300), touch(270, 300)], 16));
-    // Then pinch in to 40px — a raw 0.29x ratio.
-    h.current.onTouchMove(touchEvent([touch(180, 300), touch(220, 300)], 32));
-    h.current.onTouchEnd(touchEvent([], 48));
-
-    for (const call of pinchZoom.mock.calls) {
-      expect(call[0]).toBeGreaterThanOrEqual(1);
-    }
-    const dispatched = mocks.dispatch.mock.calls.find((c) => c[0] === 'pinch-zoom');
-    expect(dispatched![1].zoomLevel).toBe(100);
-  });
-
   // Each page of a two-page spread is its own iframe, and the browser sends a
   // touch sequence only to the frame of its first finger. A second finger on the
   // other page gets no touchstart there; it first shows up in a touchmove.

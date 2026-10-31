@@ -80,8 +80,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
   const [isParagraphMode, setParagraphMode] = useState(
     viewSettings?.paragraphMode?.enabled ?? false,
   );
-  // A zoom saved below today's zoom-out limit shows, and steps, from the limit.
-  const [zoomLevel, setZoomLevel] = useState(Math.max(viewSettings!.zoomLevel!, MIN_ZOOM_LEVEL));
+  const [zoomLevel, setZoomLevel] = useState(viewSettings!.zoomLevel!);
   const [contrast, setContrast] = useState(viewSettings!.contrast ?? 100);
   const [zoomMode, setZoomMode] = useState(viewSettings!.zoomMode!);
   const [spreadMode, setSpreadMode] = useState(viewSettings!.spreadMode!);
