@@ -49,10 +49,7 @@ const renderGrid = (userPlan: UserPlan = 'free') =>
     </div>,
   );
 
-const cards = () =>
-  Array.from(document.querySelectorAll('div.bg-base-100.rounded-lg')).filter((el) =>
-    el.className.includes('h-full'),
-  ) as HTMLElement[];
+const cards = () => Array.from(document.querySelectorAll('[data-plan-card]')) as HTMLElement[];
 
 afterEach(() => cleanup());
 
@@ -104,6 +101,38 @@ describe('plans grid layout', () => {
     expect(panels).toHaveLength(3);
     const tops = panels.map((p) => Math.round(p.getBoundingClientRect().top));
     expect(tops[0]).toBe(tops[1]);
+  });
+
+  // Safari 16 resolved a percentage height on these grid items against the
+  // wrong box, so overflow-hidden clipped each card to a fraction of the
+  // viewport (#7181). Chromium lays that out correctly, so check the resolved
+  // height is auto: the card is sized by the row's stretch, which every
+  // engine gets right.
+  it('sizes cards by the grid row, not a percentage height', async () => {
+    await page.viewport(768, 1024);
+    renderGrid();
+
+    expect(cards()).toHaveLength(4);
+    for (const card of cards()) {
+      expect(card.computedStyleMap().get('height')?.toString()).toBe('auto');
+    }
+  });
+
+  it('makes every card tall enough for its content', async () => {
+    for (const [width, height] of [
+      [390, 844],
+      [768, 1024],
+      [1024, 768],
+    ] as const) {
+      await page.viewport(width, height);
+      renderGrid();
+
+      expect(cards()).toHaveLength(4);
+      for (const card of cards()) {
+        expect(card.clientHeight).toBeGreaterThanOrEqual(card.scrollHeight);
+      }
+      cleanup();
+    }
   });
 
   it('drops to a single column on a phone', async () => {
