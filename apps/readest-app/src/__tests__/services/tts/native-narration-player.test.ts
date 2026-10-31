@@ -175,6 +175,22 @@ describe('NativeNarrationPlayer', () => {
     await player.shutdown();
   });
 
+  test('queues the next file and detects its native transition after suspension', async () => {
+    const player = new NativeNarrationPlayer();
+    await player.loadPath('one.mp3', '/books/one.mp3');
+    await player.queuePath('/books/two.mp3');
+    expect(controlCalls.find((call) => call['action'] === 'queue')).toMatchObject({
+      path: '/books/two.mp3',
+    });
+
+    const ended = vi.fn();
+    player.addEventListener('ended', ended);
+    await player.play();
+    position = { session: 3, index: 1, positionMs: 4000, playing: true };
+    await vi.waitFor(() => expect(ended).toHaveBeenCalledOnce());
+    await player.shutdown();
+  });
+
   test('invalidateSession forces a fresh native session on next load', async () => {
     const player = new NativeNarrationPlayer();
     await player.load('ch1.mp3', new Blob([new Uint8Array(4)]), 0);

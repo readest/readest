@@ -167,6 +167,7 @@ export class MediaOverlayClient implements TTSClient {
   #source: NarrationAudioSource | null = null;
   #section: MediaOverlaySection | null = null;
   #native: boolean;
+  #androidNative: boolean;
   #player: NativeNarrationPlayer | null = null;
   #audio: NarrationClock | null = null;
   #audioHref: string | null = null;
@@ -185,6 +186,7 @@ export class MediaOverlayClient implements TTSClient {
   constructor(controller?: TTSController, appService?: AppService | null) {
     this.controller = controller;
     this.#native = !!(appService?.isAndroidApp || appService?.isIOSApp);
+    this.#androidNative = !!appService?.isAndroidApp;
   }
 
   async init(): Promise<boolean> {
@@ -227,6 +229,37 @@ export class MediaOverlayClient implements TTSClient {
   // change, since pars are resolved against that section's document.
   setSection(section: MediaOverlaySection | null): void {
     this.#section = section;
+  }
+
+  async preloadSection(section: MediaOverlaySection): Promise<void> {
+    if (!this.#androidNative || !this.#player || !this.#source) return;
+    const href = section.pars[0]?.audioHref;
+    if (!href || href === this.#audioHref) return;
+    const path = await this.#source.resolvePath?.(href).catch(() => null);
+    if (
+      path &&
+      (await this.#player.queuePath(path).then(
+        () => true,
+        () => false,
+      ))
+    )
+      return;
+    const media = await this.#source.getMediaSource?.(href, audioType(href)).catch(() => null);
+    if (media && 'path' in media) {
+      const queued = await this.#player
+        .queuePath(media.path, {
+          start: media.start,
+          end: media.end,
+          contentType: audioType(href),
+        })
+        .then(
+          () => true,
+          () => false,
+        );
+      if (queued) return;
+    }
+    const blob = audioBlobWithType(href, await this.#source.loadBlob(href));
+    await this.#player.queue(href, blob);
   }
 
   #narratorName(): string {
@@ -657,6 +690,7 @@ export class MediaOverlayClient implements TTSClient {
       liveRateChange: true,
       continuousTimeline: true,
       textHighlight: this.#source?.textHighlight !== false,
+      preloadsAudio: this.#androidNative,
     };
   }
 

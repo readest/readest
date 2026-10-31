@@ -18,6 +18,13 @@ interface PlayoutPosition {
   playing: boolean;
 }
 
+interface PlayoutControlResult {
+  session: number | null;
+  index?: number;
+  positionMs?: number;
+  playing?: boolean;
+}
+
 interface FileWindow {
   start: number;
   end: number;
@@ -48,12 +55,14 @@ const fileExtension = (href: string): string => {
 export class NativeNarrationPlayer {
   #nativeSession: Promise<number> | null = null;
   #resolvedSession: number | null = null;
+  #nativeIndex = -1;
   #listener: PluginListener | null = null;
   #listenerStarted = false;
   #href: string | null = null;
   #stagedPath: string | null = null;
   #stagedHref: string | null = null;
   #ownsStagedPath = false;
+  #ownedStagedPaths = new Set<string>();
   #rate = 1;
   #userPaused = true;
   #ended = false;
@@ -142,6 +151,12 @@ export class NativeNarrationPlayer {
     await this.#loadResolvedPath(href, path, startSec);
   }
 
+  async queue(href: string, blob: Blob): Promise<void> {
+    await this.ensureReady();
+    const path = await this.#stageBlob(href, blob);
+    await this.#queueResolvedPath(path);
+  }
+
   // Paired audiobooks already live as ordinary files under Books/<hash>.
   // Hand AVPlayer that path directly: copying a multi-hour M4B through a Blob
   // and a second temp file would double I/O and briefly hold the whole book in
@@ -154,12 +169,20 @@ export class NativeNarrationPlayer {
     // Record the path only once the player took it, so a failed load leaves
     // load() free to stage a copy of the same href.
     await this.#loadResolvedPath(href, path, startSec, bytes);
-    if (this.#ownsStagedPath && this.#stagedPath && this.#stagedPath !== path) {
-      await remove(this.#stagedPath).catch(() => undefined);
-    }
     this.#stagedHref = href;
     this.#stagedPath = path;
     this.#ownsStagedPath = false;
+  }
+
+  async queuePath(path: string, bytes?: FileWindow): Promise<void> {
+    await this.ensureReady();
+    await this.#queueResolvedPath(path, bytes);
+  }
+
+  async #queueResolvedPath(path: string, bytes?: FileWindow): Promise<void> {
+    await invoke('plugin:native-tts|playout_control', {
+      payload: { action: 'queue', path, ...bytes },
+    });
   }
 
   async #loadResolvedPath(
@@ -170,7 +193,7 @@ export class NativeNarrationPlayer {
   ): Promise<void> {
     this.#href = href;
     this.#ended = false;
-    await invoke('plugin:native-tts|playout_control', {
+    const result = await invoke<PlayoutControlResult>('plugin:native-tts|playout_control', {
       payload: {
         action: 'load',
         path,
@@ -178,9 +201,10 @@ export class NativeNarrationPlayer {
         ...bytes,
       },
     });
+    this.#nativeIndex = result.index ?? 0;
     this.#cache = {
-      mediaSec: startSec,
-      playing: !this.#userPaused,
+      mediaSec: (result.positionMs ?? startSec * 1000) / 1000,
+      playing: (result.playing ?? !this.#userPaused) && !this.#userPaused,
       at: performance.now(),
     };
   }
@@ -231,16 +255,16 @@ export class NativeNarrationPlayer {
     this.pause();
     this.#href = null;
     this.#stopPolling();
-    const path = this.#stagedPath;
-    const ownsPath = this.#ownsStagedPath;
     this.#stagedPath = null;
     this.#stagedHref = null;
     this.#ownsStagedPath = false;
-    if (path && ownsPath) {
-      await remove(path).catch(() => undefined);
-    }
+    await Promise.all(
+      [...this.#ownedStagedPaths].map((path) => remove(path).catch(() => undefined)),
+    );
+    this.#ownedStagedPaths.clear();
     this.#nativeSession = null;
     this.#resolvedSession = null;
+    this.#nativeIndex = -1;
     await invoke('plugin:native-tts|playout_control', { payload: { action: 'abort' } }).catch(
       () => {},
     );
@@ -262,9 +286,6 @@ export class NativeNarrationPlayer {
     if (this.#ownsStagedPath && this.#stagedHref === href && this.#stagedPath) {
       return this.#stagedPath;
     }
-    if (this.#stagedPath && this.#ownsStagedPath) {
-      await remove(this.#stagedPath).catch(() => undefined);
-    }
     const name = `mo-narration-${hashHref(href)}.${fileExtension(href)}`;
     const bytes = new Uint8Array(await blob.arrayBuffer());
     // App cache, not Temp: older Android versions resolve Temp to the
@@ -274,6 +295,7 @@ export class NativeNarrationPlayer {
     this.#stagedHref = href;
     this.#stagedPath = path;
     this.#ownsStagedPath = true;
+    this.#ownedStagedPaths.add(path);
     return path;
   }
 
@@ -293,6 +315,8 @@ export class NativeNarrationPlayer {
   #onNativeEvent(event: PlayoutEvent): void {
     if (this.#resolvedSession !== null && event.session !== this.#resolvedSession) return;
     if (event.type === 'ended') {
+      this.#finishEnded();
+    } else if (event.type === 'item-ended' && event.index === this.#nativeIndex) {
       this.#finishEnded();
     } else if (event.type === 'error') {
       // The item failed to load or play. Nothing will ever move the clock, so
@@ -334,7 +358,9 @@ export class NativeNarrationPlayer {
     try {
       const pos = await invoke<PlayoutPosition>('plugin:native-tts|playout_position');
       if (pos.session !== this.#resolvedSession) return;
-      if (pos.index >= 0) {
+      if (pos.index > this.#nativeIndex) {
+        this.#finishEnded();
+      } else if (pos.index >= 0) {
         this.#cache = {
           mediaSec: pos.positionMs / 1000,
           playing: pos.playing && !this.#userPaused,

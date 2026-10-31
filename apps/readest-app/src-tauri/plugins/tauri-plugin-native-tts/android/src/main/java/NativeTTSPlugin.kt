@@ -165,7 +165,7 @@ class NativeTTSPlugin(private val activity: Activity) : Plugin(activity) {
     private var playoutSession = 0
     private var playoutCurrentIndex = -1
     private var playoutRate = 1.0f
-    private var playoutLoadedPath: String? = null
+    private val playoutLoadedPaths = mutableListOf<String>()
     private val playoutListener = object : Player.Listener {
         override fun onPlaybackStateChanged(playbackState: Int) {
             if (playbackState == Player.STATE_ENDED && playoutCurrentIndex >= 0) {
@@ -174,10 +174,22 @@ class NativeTTSPlugin(private val activity: Activity) : Plugin(activity) {
             }
         }
 
+        override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
+            val player = playoutPlayer ?: return
+            val nextIndex = player.currentMediaItemIndex
+            if (reason == Player.MEDIA_ITEM_TRANSITION_REASON_AUTO && playoutCurrentIndex >= 0) {
+                val previousIndex = playoutCurrentIndex
+                playoutCurrentIndex = nextIndex
+                emitPlayoutEvent("item-ended", previousIndex)
+            } else if (nextIndex >= 0) {
+                playoutCurrentIndex = nextIndex
+            }
+        }
+
         override fun onPlayerError(error: PlaybackException) {
             // The failed item can't play again by seeking; the next load of the
             // same file must prepare it afresh.
-            playoutLoadedPath = null
+            playoutLoadedPaths.clear()
             if (playoutCurrentIndex < 0) return
             Log.e(TAG, "Native narration playback failed", error)
             playoutCurrentIndex = -1
@@ -693,8 +705,26 @@ class NativeTTSPlugin(private val activity: Activity) : Plugin(activity) {
                         if (path.isNullOrEmpty()) {
                             invoke.reject("playout load requires path")
                         } else {
-                            loadContinuousFile(path, args.positionMs ?: 0.0, args.start, args.end)
-                            invoke.resolve(JSObject().apply { put("session", playoutSession) })
+                            val index = loadContinuousFile(path, args.positionMs ?: 0.0, args.start, args.end)
+                            val player = playoutPlayer
+                            invoke.resolve(JSObject().apply {
+                                put("session", playoutSession)
+                                put("index", index)
+                                put("positionMs", player?.currentPosition ?: 0L)
+                                put("playing", player?.isPlaying ?: false)
+                            })
+                        }
+                    }
+                    "queue" -> {
+                        val path = args.path
+                        if (path.isNullOrEmpty()) {
+                            invoke.reject("playout queue requires path")
+                        } else {
+                            val index = queueContinuousFile(path, args.start, args.end)
+                            invoke.resolve(JSObject().apply {
+                                put("session", playoutSession)
+                                put("index", index)
+                            })
                         }
                     }
                     "seek" -> {
@@ -731,7 +761,7 @@ class NativeTTSPlugin(private val activity: Activity) : Plugin(activity) {
     }
 
     @androidx.annotation.OptIn(UnstableApi::class)
-    private fun loadContinuousFile(path: String, positionMs: Double, start: Long?, end: Long?) {
+    private fun mediaSource(path: String, start: Long?, end: Long?): Pair<String, androidx.media3.exoplayer.source.MediaSource> {
         // A paired Audiobookshelf audiobook streams its tracks by URL, the
         // same way the iOS playout player already accepts http(s) paths.
         val uri = if (path.startsWith("http://") || path.startsWith("https://")) {
@@ -741,44 +771,66 @@ class NativeTTSPlugin(private val activity: Activity) : Plugin(activity) {
             require(file.isFile) { "Narration file not found: $path" }
             Uri.fromFile(file)
         }
-        val player = ensurePlayoutPlayer()
-        val startMs = positionMs.coerceAtLeast(0.0).toLong()
         // One book file holds many audio entries, so the window is part of
         // what is loaded.
         val window = if (start != null && end != null) start to end else null
         val loadedKey = window?.let { "$path#${it.first}-${it.second}" } ?: path
 
-        if (playoutLoadedPath == loadedKey && player.currentMediaItem != null) {
-            player.seekTo(startMs)
+        val source = if (window != null) {
+            // A stored audio entry inside the book's zip: stream its bytes
+            // in place rather than copying them out.
+            val (from, to) = window
+            require(to > from) { "Empty narration window: $from-$to" }
+            val file = File(path)
+            val factory = DataSource.Factory { FileWindowDataSource(file, from, to - from) }
+            ProgressiveMediaSource.Factory(factory)
+                .createMediaSource(MediaItem.fromUri(uri))
         } else {
-            if (window != null) {
-                // A stored audio entry inside the book's zip: stream its bytes
-                // in place rather than copying them out.
-                val (from, to) = window
-                require(to > from) { "Empty narration window: $from-$to" }
-                val file = File(path)
-                val factory = DataSource.Factory { FileWindowDataSource(file, from, to - from) }
-                val source = ProgressiveMediaSource.Factory(factory)
-                    .createMediaSource(MediaItem.fromUri(uri))
-                player.setMediaSource(source, startMs)
-            } else {
-                player.setMediaItem(MediaItem.fromUri(uri), startMs)
-            }
-            player.prepare()
-            playoutLoadedPath = loadedKey
+            ProgressiveMediaSource.Factory(androidx.media3.datasource.DefaultDataSource.Factory(activity))
+                .createMediaSource(MediaItem.fromUri(uri))
         }
+        return loadedKey to source
+    }
+
+    @androidx.annotation.OptIn(UnstableApi::class)
+    private fun loadContinuousFile(path: String, positionMs: Double, start: Long?, end: Long?): Int {
+        val player = ensurePlayoutPlayer()
+        val startMs = positionMs.coerceAtLeast(0.0).toLong()
+        val (loadedKey, source) = mediaSource(path, start, end)
+        val queuedIndex = playoutLoadedPaths.indexOf(loadedKey)
+        if (queuedIndex >= 0) {
+            if (player.currentMediaItemIndex != queuedIndex) player.seekTo(queuedIndex, startMs)
+            playoutCurrentIndex = queuedIndex
+            return queuedIndex
+        }
+        player.setMediaSource(source, startMs)
+        playoutLoadedPaths.clear()
+        playoutLoadedPaths.add(loadedKey)
+        player.prepare()
         // Loading and resuming are separate operations, matching the web and
         // iOS clocks used by MediaOverlayClient.
         player.pause()
         playoutCurrentIndex = 0
         emitPlayoutEvent("chunk-start", 0)
+        return 0
+    }
+
+    @androidx.annotation.OptIn(UnstableApi::class)
+    private fun queueContinuousFile(path: String, start: Long?, end: Long?): Int {
+        val player = ensurePlayoutPlayer()
+        val (loadedKey, source) = mediaSource(path, start, end)
+        val existing = playoutLoadedPaths.indexOf(loadedKey)
+        if (existing >= 0) return existing
+        player.addMediaSource(source)
+        playoutLoadedPaths.add(loadedKey)
+        return playoutLoadedPaths.lastIndex
     }
 
     private fun abortPlayout() {
         playoutCurrentIndex = -1
         playoutPlayer?.stop()
         playoutPlayer?.clearMediaItems()
-        playoutLoadedPath = null
+        playoutLoadedPaths.clear()
     }
 
     private fun emitPlayoutEvent(type: String, index: Int? = null) {
