@@ -59,6 +59,16 @@ const TTS_BUFFERING_POLL_MS = 400;
 // editor has focus; the next mark catches up once it loses focus.
 const isTypingNote = () => !!document.activeElement?.hasAttribute('data-note-editor');
 
+// Text the book hides is still read aloud: a display:none long description
+// next to a figure, or screen-reader text off the left edge. It has no box on
+// the page, and foliate settles a box-less anchor on the section start (#7153),
+// so the view holds still until the voice reaches text that is shown. Same
+// test as the rect foliate's scrollToAnchor picks.
+const isRendered = (range: Range) =>
+  Array.from(range.getClientRects()).some(
+    (r) => r.width > 0 && r.height > 0 && r.x >= 0 && r.y >= 0,
+  );
+
 export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProps) => {
   const _ = useTranslation();
   const { appService, envConfig } = useEnv();
@@ -547,7 +557,7 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
       // The cfi may not resolve to a range in this doc (stale/cross-realm doc,
       // detached node). A null range would crash scrollToAnchor (foliate reads
       // range.startContainer) or getBoundingClientRect below (READEST-21).
-      if (!range) return;
+      if (!range || !isRendered(range)) return;
       if (!view.renderer.scrolled) {
         view.renderer.scrollToAnchor?.(range);
         // Page-follow measures where the page cuts the whole sounding sentence.
@@ -605,7 +615,7 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
 
       const wordRange = anchor(doc);
       const visibleRange = getProgress(bookKey)?.range as Range | undefined;
-      if (!wordRange || !visibleRange) return;
+      if (!wordRange || !visibleRange || !isRendered(wordRange)) return;
 
       try {
         const ahead = wordRange.compareBoundaryPoints(Range.END_TO_START, visibleRange) > 0;
