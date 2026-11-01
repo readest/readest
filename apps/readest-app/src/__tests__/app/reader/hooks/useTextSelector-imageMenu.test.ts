@@ -375,9 +375,14 @@ describe('useTextSelector long press opens the image viewer (#7145)', () => {
   });
 
   test.each([
-    true,
-    false,
-  ])('an iOS image hold preserves the next tap (compatibility click: %s)', async (emitsCompatibilityClick) => {
+    { holdMs: 500, emitsCompatibilityClick: true },
+    { holdMs: 500, emitsCompatibilityClick: false },
+    { holdMs: 1600, emitsCompatibilityClick: true },
+    { holdMs: 1600, emitsCompatibilityClick: false },
+  ])('an iOS $holdMs ms image hold preserves the next tap (compatibility click: $emitsCompatibilityClick)', async ({
+    holdMs,
+    emitsCompatibilityClick,
+  }) => {
     vi.useFakeTimers();
     h.appService = { isIOSApp: true, isMobile: true };
     h.osPlatform = 'ios';
@@ -400,7 +405,7 @@ describe('useTextSelector long press opens the image viewer (#7145)', () => {
     document.addEventListener('click', capture, true);
     try {
       result.current.handlePointerDown(document, 0, pointer);
-      vi.advanceTimersByTime(500);
+      vi.advanceTimersByTime(holdMs);
       await result.current.handlePointerUp(document, 0, pointer);
       expect(openedMedia()).toHaveLength(1);
       const compatibilityClick = () => {

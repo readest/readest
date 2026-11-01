@@ -50,6 +50,10 @@ export const setImageHoldClick = (bookKey: string, target: EventTarget | null) =
     imageHoldClicks.set(bookKey, { target, until: Date.now() + SYNTHESIZED_CLICK_SUPPRESSION_MS });
   else imageHoldClicks.delete(bookKey);
 };
+export const releaseImageHoldClick = (bookKey: string) => {
+  const hold = imageHoldClicks.get(bookKey);
+  if (hold) hold.until = Date.now() + SYNTHESIZED_CLICK_SUPPRESSION_MS;
+};
 
 const suppressedSwipeClicks = new Map<string, { until: number; endX: number; endY: number }>();
 interface LayeredTurnTouchClaim {

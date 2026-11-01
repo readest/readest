@@ -44,6 +44,7 @@ import {
   detectMediaTarget,
   getContextMenuImage,
   getImageViewerGesture,
+  releaseImageHoldClick,
   setImageHoldClick,
 } from '../utils/iframeEventHandlers';
 
@@ -1052,6 +1053,8 @@ export const useTextSelector = (
   };
 
   const handlePointerUp = async (doc: Document, index: number, ev?: PointerEvent) => {
+    // A held finger can outlast the window started when the viewer opened.
+    releaseImageHoldClick(bookKey);
     isPointerDown.current = false;
     const mouseSelectionAtDown = mouseSelectionAtPointerDown.current;
     mouseSelectionAtPointerDown.current = null;
