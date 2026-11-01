@@ -45,6 +45,33 @@ describe('OPDS proxy trusted private hosts (#7105)', () => {
     expect(fetchSpy.mock.calls[0]?.[1]).toMatchObject({ redirect: 'manual' });
   });
 
+  it.each([
+    ['[fd00:0:0:0:0:0:0:1]', '[fd00::1]'],
+    ['[FD00:0:0:0:0:0:0:1]', '[fd00:0:0:0:0:0:0:1]'],
+    ['[fd00::1]', '[fd00:0:0:0:0:0:0:1]'],
+  ])('matches equivalent IPv6 literals: %s and %s', async (entry, target) => {
+    vi.stubEnv('READEST_TRUSTED_PRIVATE_HOSTS', entry);
+    fetchSpy.mockResolvedValueOnce(new Response('<feed/>'));
+
+    expect((await GET(proxyReq(`http://${target}:8083/opds`))).status).toBe(200);
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([
+    '[fd00::2]',
+    '[fd00:::1]',
+    '[fd00::1]:8083',
+    '[fd00::2]@[fd00::1]',
+    '[fd00::1]/[fd00::2]',
+    '[fd00::1]?[fd00::2]',
+    '[fd00::1]#[fd00::2]',
+  ])('rejects an inexact or malformed IPv6 entry: %s', async (entry) => {
+    vi.stubEnv('READEST_TRUSTED_PRIVATE_HOSTS', entry);
+
+    expect((await GET(proxyReq('http://[fd00::1]:8083/opds'))).status).toBe(400);
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
   it('reads the allowlist again for each request', async () => {
     expect((await GET(proxyReq('http://calibre.lan/opds'))).status).toBe(400);
     vi.stubEnv('READEST_TRUSTED_PRIVATE_HOSTS', 'calibre.lan');
