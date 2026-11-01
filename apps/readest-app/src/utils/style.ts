@@ -524,6 +524,11 @@ const getPageLayoutStyles = (
   html.${LINK_TOUCH_HOLD_CLASS} a[href] {
     pointer-events: none !important;
   }
+  /* Linked images must still receive Android's long-press contextmenu. */
+  html.${LINK_TOUCH_HOLD_CLASS} a[href] img:not([zy-enlarge-src="none"]),
+  html.${LINK_TOUCH_HOLD_CLASS} a[href] svg:not([zy-enlarge-src="none"]) image {
+    pointer-events: auto !important;
+  }
   svg:where(:not([width])), img:where(:not([width])) {
     width: auto;
   }
