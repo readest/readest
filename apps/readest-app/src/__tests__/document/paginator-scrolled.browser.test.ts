@@ -153,6 +153,16 @@ describe('Paginator scrolled mode (browser)', () => {
     doc.body.append(longText);
 
     expect(longText.scrollWidth).toBeLessThanOrEqual(longText.clientWidth + 1);
+
+    const flex = doc.createElement('div');
+    flex.style.display = 'flex';
+    flex.style.width = '160px';
+    const flexItem = doc.createElement('div');
+    flexItem.textContent = `https://example.com/${'constrained'.repeat(30)}`;
+    flex.append(flexItem);
+    doc.body.append(flex);
+
+    expect(flex.scrollWidth).toBeLessThanOrEqual(flex.clientWidth + 1);
   });
 
   // Regression for issue #3987: toggling scrolled mode off shortly after
