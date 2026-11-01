@@ -53,14 +53,25 @@ import {
 } from './bookContent';
 
 /**
- * Import-time fallback key for a book already in the library, or undefined when
- * its `metaHash` is already stable across re-exports (issue #5959).
+ * Whether a bare UUID identifier of this format can be dropped from the
+ * import-time dedup key (issue #5959).
  *
  * PDFs are left out: #5411 deliberately scopes their identity to the filename,
  * and a library row no longer knows the filename it was imported from.
+ * FB2/FBZ are left out: their document-info id is a GUID minted once for the
+ * document and kept across revisions, so it is what tells two FB2s of the
+ * same title apart (issue #7150).
+ */
+function hasVolatileIdentifiers(format: Book['format']) {
+  return format !== 'PDF' && format !== 'FB2' && format !== 'FBZ';
+}
+
+/**
+ * Import-time fallback key for a book already in the library, or undefined when
+ * its `metaHash` is already stable across re-exports (issue #5959).
  */
 function getStableBookHash(book: Book) {
-  if (book.format === 'PDF' || !book.metadata) return undefined;
+  if (!hasVolatileIdentifiers(book.format) || !book.metadata) return undefined;
   return getStableMetadataHash(book.metadata);
 }
 
@@ -729,7 +740,9 @@ export async function importBook(
       loadedBook.metadata,
       format === 'PDF' ? getBaseFilename(filename) : undefined,
     );
-    const stableHash = format === 'PDF' ? undefined : getStableMetadataHash(loadedBook.metadata);
+    const stableHash = hasVolatileIdentifiers(format)
+      ? getStableMetadataHash(loadedBook.metadata)
+      : undefined;
     let existingBook = lookupIndex
       ? lookupIndex.byHash.get(hash)
       : books.find((b) => b.hash === hash);
