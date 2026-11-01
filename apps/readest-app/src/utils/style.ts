@@ -499,6 +499,9 @@ const getPageLayoutStyles = (
   html, body {
     ${writingMode === 'auto' ? '' : `writing-mode: ${writingMode} !important;`}
     max-height: unset;
+    /* Scrolled mode does not get the paginator's paginated overflow-wrap
+       fallback, so long URLs can extend past and be clipped by the viewport. */
+    overflow-wrap: break-word !important;
     -webkit-touch-callout: none;
     -webkit-user-select: text;
   }
