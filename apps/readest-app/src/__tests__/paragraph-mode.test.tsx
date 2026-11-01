@@ -111,6 +111,8 @@ function createMockView(docs: Document[], initialPrimaryIndex: number) {
 
   const renderer = {
     primaryIndex: initialPrimaryIndex,
+    atStart: false,
+    atEnd: false,
     getContents: vi.fn(() => contents),
     nextSection: vi.fn(async () => {
       renderer.primaryIndex = Math.min(renderer.primaryIndex + 1, contents.length - 1);
@@ -298,7 +300,9 @@ describe('paragraph mode', () => {
         realSetTimeout(handler, typeof timeout === 'number' && timeout < 1000 ? 0 : timeout),
       );
     const doc = createDoc('<p>First</p><p>Last</p>');
-    const { view } = createMockView([doc], 0);
+    const { view, renderer } = createMockView([doc], 0);
+    renderer.atStart = true;
+    renderer.atEnd = true;
     render(<HookHarness view={{ current: view }} />);
     await waitFor(() => expect(hookApi?.paragraphState.currentRange).toBeTruthy());
     if (direction === 'next') {
@@ -320,6 +324,34 @@ describe('paragraph mode', () => {
       direction === 'next' ? 'First' : 'Last',
     );
     expect(timers).not.toHaveBeenCalledWith(expect.any(Function), 750);
+  });
+
+  it.each([
+    'next',
+    'prev',
+  ] as const)('waits for an existing page turn when the %s section move returns early', async (direction) => {
+    const firstDoc = createDoc('<p>First A</p><p>First B</p>');
+    const secondDoc = createDoc('<p>Second A</p><p>Second B</p>');
+    const { view, renderer } = createMockView([firstDoc, secondDoc], direction === 'next' ? 0 : 1);
+    const transition = direction === 'next' ? renderer.nextSection : renderer.prevSection;
+    transition.mockImplementation(async () => {
+      setTimeout(() => {
+        renderer.primaryIndex = direction === 'next' ? 1 : 0;
+      }, 0);
+    });
+    render(<HookHarness view={{ current: view }} />);
+    await waitFor(() => expect(hookApi?.paragraphState.currentRange).toBeTruthy());
+    if (direction === 'next') {
+      await act(async () => {
+        await hookApi?.goToNextParagraph();
+      });
+    }
+    await act(async () => {
+      await eventDispatcher.dispatch(`paragraph-${direction}`, { bookKey: 'book-1' });
+    });
+    expect(hookApi?.paragraphState.currentRange?.toString()).toBe(
+      direction === 'next' ? 'Second A' : 'First B',
+    );
   });
 
   it('reports a failed paragraph event and still runs the next event', async () => {
