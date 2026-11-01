@@ -460,6 +460,15 @@ export const usePagination = (
       ) {
         const { keyName } = msg.detail;
         setHoveredBookKey('');
+        if (
+          viewSettings.paragraphMode?.enabled &&
+          (keyName === 'VolumeUp' || keyName === 'VolumeDown')
+        ) {
+          eventDispatcher.dispatch(keyName === 'VolumeUp' ? 'paragraph-prev' : 'paragraph-next', {
+            bookKey,
+          });
+          return;
+        }
         if (keyName === 'VolumeUp') {
           if (viewSettings.readingRulerEnabled && dispatchReadingRulerMove('up')) {
             return;
