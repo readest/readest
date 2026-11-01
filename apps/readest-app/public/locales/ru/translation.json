@@ -2629,7 +2629,6 @@
   "Download status": "Статус загрузки",
   "Local only": "Только локально",
   "Cloud only": "Только в облаке",
-  "Link a CrossPoint Reader": "Подключить устройство для чтения CrossPoint",
   "The reader gets your Readest library, reading statistics and reading progress. Only enter a code shown on your own reader.": "Устройство получит доступ к вашей библиотеке Readest, статистике чтения и прогрессу чтения. Вводите только код, показанный на вашем собственном устройстве.",
   "Sign in to continue": "Войдите, чтобы продолжить",
   "Your reader is linked. It finishes signing in on its own.": "Устройство подключено. Оно завершит вход само.",
@@ -2800,5 +2799,6 @@
   "Show One Page": "Показать одну страницу",
   "Show Two Pages": "Показать две страницы",
   "Book Data": "Данные книги",
-  "Downloaded read-aloud audio and translations": "Загруженное аудио чтения вслух и переводы"
+  "Downloaded read-aloud audio and translations": "Загруженное аудио чтения вслух и переводы",
+  "Link a Reader": "Привязать устройство для чтения"
 }

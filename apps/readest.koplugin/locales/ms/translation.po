@@ -287,14 +287,14 @@ msgstr "Tiada buku terbuka"
 msgid "Uploaded to Readest:"
 msgstr "Dimuat naik ke Readest:"
 
+msgid "Auto sync"
+msgstr "Penyegerakan automatik"
+
 msgid "Log in Readest Account"
 msgstr "Log masuk ke akaun Readest"
 
 msgid "Log out as %1"
 msgstr "Log keluar sebagai %1"
-
-msgid "Auto sync"
-msgstr "Penyegerakan automatik"
 
 msgid "Readest library"
 msgstr "Pustaka Readest"
@@ -524,17 +524,26 @@ msgstr "Log masuk"
 msgid "Please enter both email and password"
 msgstr "Sila masukkan e-mel dan kata laluan"
 
+msgid "Sign in with a code"
+msgstr "Log masuk dengan kod"
+
 msgid "Please configure Supabase URL and API key first"
 msgstr "Sila konfigurasikan URL Supabase dan kunci API dahulu"
 
 msgid "Logging in..."
 msgstr "Sedang log masuk…"
 
+msgid "Login failed: %1"
+msgstr "Log masuk gagal: %1"
+
 msgid "Successfully logged in to Readest"
 msgstr "Berjaya log masuk ke Readest"
 
-msgid "Login failed: %1"
-msgstr "Log masuk gagal: %1"
+msgid "Scan the QR code with a phone signed in to Readest, or open %1 and enter this code:\n\n%2"
+msgstr "Imbas kod QR dengan telefon yang telah log masuk ke Readest, atau buka %1 dan masukkan kod ini:\n\n%2"
+
+msgid "The code expired. Please try again."
+msgstr "Kod telah tamat tempoh. Sila cuba lagi."
 
 msgid "Logged out from Readest"
 msgstr "Log keluar daripada Readest"

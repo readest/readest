@@ -1,3 +1,4 @@
+import { mergeTTSPacks } from '@/utils/ttsPacks';
 import { useCallback, useEffect, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useEnv } from '@/context/EnvContext';
@@ -47,6 +48,7 @@ export const useProgressSync = (bookKey: string) => {
   // to the WHOLE bookDataStore — saveConfig writes booksData on every
   // throttled save and would otherwise re-render the entire reader subtree.
   const getConfig = useBookDataStore((s) => s.getConfig);
+  const setConfig = useBookDataStore((s) => s.setConfig);
   const saveConfig = useBookDataStore((s) => s.saveConfig);
   const getBookData = useBookDataStore((s) => s.getBookData);
   const getView = useReaderStore((s) => s.getView);
@@ -329,6 +331,16 @@ export const useProgressSync = (bookKey: string) => {
     // Base config for the device-agnostic viewSettings merge below (proofread
     // rules, reference page count). Prefer the exact same-file config.
     const syncedConfig = matches.find((c) => c.bookHash === bookHash) ?? matches[0];
+    // Read-aloud packs merge as a union, with no save that would bump
+    // updatedAt: recording audio must never move reading progress. Only this
+    // file's config counts; a sibling hash keeps its audio in another folder.
+    const ttsPacks = mergeTTSPacks(
+      config.ttsPacks,
+      matches.find((c) => c.bookHash === bookHash)?.ttsPacks,
+    );
+    if (ttsPacks && JSON.stringify(ttsPacks) !== JSON.stringify(config.ttsPacks)) {
+      setConfig(bookKey, { ttsPacks });
+    }
     if (syncedConfig) {
       const bookData = getBookData(bookKey);
       const view = getView(bookKey);

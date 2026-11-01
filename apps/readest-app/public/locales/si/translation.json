@@ -2501,7 +2501,6 @@
   "Download status": "බාගැනීමේ තත්ත්වය",
   "Local only": "දේශීය පමණි",
   "Cloud only": "වලාකුළේ පමණි",
-  "Link a CrossPoint Reader": "CrossPoint කියවනය සම්බන්ධ කරන්න",
   "The reader gets your Readest library, reading statistics and reading progress. Only enter a code shown on your own reader.": "කියවනයට ඔබගේ Readest පුස්තකාලය, කියවීමේ සංඛ්‍යාලේඛන සහ කියවීමේ ප්‍රගතිය ලැබේ. ඔබගේම කියවනයේ පෙන්වන කේතයක් පමණක් ඇතුළත් කරන්න.",
   "Sign in to continue": "ඉදිරියට යාමට පුරනය වන්න",
   "Your reader is linked. It finishes signing in on its own.": "ඔබගේ කියවනය සම්බන්ධ කර ඇත. එය පුරනය වීම ස්වයංක්‍රීයව සම්පූර්ණ කරයි.",
@@ -2662,5 +2661,6 @@
   "Show One Page": "එක් පිටුවක් පෙන්වන්න",
   "Show Two Pages": "පිටු දෙකක් පෙන්වන්න",
   "Book Data": "පොත් දත්ත",
-  "Downloaded read-aloud audio and translations": "බාගත කළ හඬ නගා කියවීමේ ශ්‍රව්‍ය සහ පරිවර්තන"
+  "Downloaded read-aloud audio and translations": "බාගත කළ හඬ නගා කියවීමේ ශ්‍රව්‍ය සහ පරිවර්තන",
+  "Link a Reader": "කියවනයක් සම්බන්ධ කරන්න"
 }

@@ -2437,7 +2437,6 @@
   "Download status": "下载状态",
   "Local only": "仅本地",
   "Cloud only": "仅云端",
-  "Link a CrossPoint Reader": "关联 CrossPoint 阅读器",
   "The reader gets your Readest library, reading statistics and reading progress. Only enter a code shown on your own reader.": "阅读器将获得您的 Readest 书库、阅读统计和阅读进度。请只输入您自己的阅读器上显示的代码。",
   "Sign in to continue": "登录以继续",
   "Your reader is linked. It finishes signing in on its own.": "阅读器已关联，它会自行完成登录。",
@@ -2593,5 +2592,6 @@
   "Show One Page": "显示单页",
   "Show Two Pages": "显示双页",
   "Book Data": "书籍数据",
-  "Downloaded read-aloud audio and translations": "已下载的朗读音频和翻译"
+  "Downloaded read-aloud audio and translations": "已下载的朗读音频和翻译",
+  "Link a Reader": "关联阅读器"
 }

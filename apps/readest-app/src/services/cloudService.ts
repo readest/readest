@@ -11,7 +11,7 @@ import {
   uploadFile,
   uploadReplicaFile,
   deleteFile as deleteCloudFile,
-  listFiles,
+  listAllFiles,
   purgeFiles,
   createProgressHandler,
   batchGetDownloadUrls,
@@ -27,8 +27,8 @@ import { isBookDataFileKey } from '@/utils/bookDataKey';
 // content name, so it is found by listing, not by name. Best-effort.
 const purgeCloudBookData = async (bookHash: string): Promise<void> => {
   try {
-    const { files } = await listFiles({ bookHash, search: `/${bookHash}/`, pageSize: 1000 });
-    const keys = (files ?? []).map((f) => f.file_key).filter(isBookDataFileKey);
+    const files = await listAllFiles({ bookHash, search: `/${bookHash}/` });
+    const keys = files.map((f) => f.file_key).filter(isBookDataFileKey);
     // The purge route takes at most 100 keys a request.
     let failed = 0;
     for (let i = 0; i < keys.length; i += 100) {

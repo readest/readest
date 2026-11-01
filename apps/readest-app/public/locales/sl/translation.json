@@ -2629,7 +2629,6 @@
   "Download status": "Stanje prenosa",
   "Local only": "Samo lokalno",
   "Cloud only": "Samo v oblaku",
-  "Link a CrossPoint Reader": "Poveži bralnik CrossPoint",
   "The reader gets your Readest library, reading statistics and reading progress. Only enter a code shown on your own reader.": "Bralnik dobi dostop do vaše knjižnice Readest, statistike branja in napredka branja. Vnesite samo kodo, prikazano na vašem lastnem bralniku.",
   "Sign in to continue": "Za nadaljevanje se prijavite",
   "Your reader is linked. It finishes signing in on its own.": "Bralnik je povezan. Prijavo bo dokončal sam.",
@@ -2800,5 +2799,6 @@
   "Show One Page": "Pokaži eno stran",
   "Show Two Pages": "Pokaži dve strani",
   "Book Data": "Podatki knjige",
-  "Downloaded read-aloud audio and translations": "Prenesen zvok branja na glas in prevodi"
+  "Downloaded read-aloud audio and translations": "Prenesen zvok branja na glas in prevodi",
+  "Link a Reader": "Poveži bralnik"
 }

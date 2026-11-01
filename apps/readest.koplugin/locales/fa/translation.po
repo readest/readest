@@ -287,14 +287,14 @@ msgstr "هیچ کتابی باز نیست"
 msgid "Uploaded to Readest:"
 msgstr "در Readest بارگذاری شد:"
 
+msgid "Auto sync"
+msgstr "همگام‌سازی خودکار"
+
 msgid "Log in Readest Account"
 msgstr "ورود به حساب Readest"
 
 msgid "Log out as %1"
 msgstr "خروج از حساب %1"
-
-msgid "Auto sync"
-msgstr "همگام‌سازی خودکار"
 
 msgid "Readest library"
 msgstr "کتابخانه Readest"
@@ -524,17 +524,26 @@ msgstr "ورود"
 msgid "Please enter both email and password"
 msgstr "لطفاً ایمیل و رمز عبور را وارد کنید"
 
+msgid "Sign in with a code"
+msgstr "ورود با کد"
+
 msgid "Please configure Supabase URL and API key first"
 msgstr "ابتدا آدرس Supabase و کلید API را پیکربندی کنید"
 
 msgid "Logging in..."
 msgstr "در حال ورود…"
 
+msgid "Login failed: %1"
+msgstr "ورود ناموفق: %1"
+
 msgid "Successfully logged in to Readest"
 msgstr "با موفقیت وارد Readest شدید"
 
-msgid "Login failed: %1"
-msgstr "ورود ناموفق: %1"
+msgid "Scan the QR code with a phone signed in to Readest, or open %1 and enter this code:\n\n%2"
+msgstr "کد QR را با تلفنی که وارد Readest شده است اسکن کنید، یا %1 را باز کنید و این کد را وارد کنید:\n\n%2"
+
+msgid "The code expired. Please try again."
+msgstr "کد منقضی شده است. لطفاً دوباره تلاش کنید."
 
 msgid "Logged out from Readest"
 msgstr "از Readest خارج شدید"

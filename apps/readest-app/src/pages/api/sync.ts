@@ -1,3 +1,4 @@
+import { mergeTTSPacks, type TTSPacks } from '@/utils/ttsPacks';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { NextRequest, NextResponse } from 'next/server';
 import { PostgrestError } from '@supabase/supabase-js';
@@ -115,6 +116,31 @@ export function resolvePageCountMerge(
 ): number | null {
   const [winner, loser] = clientIsNewer ? [client, server] : [server, client];
   return winner.page_count ?? loser.page_count ?? null;
+}
+
+const parseTTSPacks = (value: unknown): TTSPacks | undefined => {
+  if (!value) return undefined;
+  try {
+    return (typeof value === 'string' ? JSON.parse(value) : value) as TTSPacks;
+  } catch {
+    return undefined;
+  }
+};
+
+/**
+ * A book config's read-aloud packs (BookConfig.ttsPacks): the union of both
+ * rows, whichever wins on updated_at. Recording audio never bumps updated_at
+ * (it must not move reading progress), so the older row can hold packs the
+ * newer lacks. `changed` when the client adds a pack the server row lacks.
+ */
+export function resolveTTSPacksMerge(
+  client: Pick<DBBookConfig, 'tts_packs'>,
+  server: Pick<DBBookConfig, 'tts_packs'>,
+): { value: string | null; changed: boolean } {
+  const serverPacks = parseTTSPacks(server.tts_packs);
+  const merged = mergeTTSPacks(serverPacks, parseTTSPacks(client.tts_packs));
+  const value = merged ? JSON.stringify(merged) : null;
+  return { value, changed: value !== (serverPacks ? JSON.stringify(serverPacks) : null) };
 }
 
 type BookMetadataFields = Pick<
@@ -848,6 +874,28 @@ export async function POST(req: NextRequest) {
               } else {
                 batchAuthoritativeRecords.push(serverData);
               }
+            }
+          } else if (table === 'book_configs') {
+            // The row is LWW, but its read-aloud packs merge as a union.
+            const ttsPacks = resolveTTSPacksMerge(
+              dbRec as DBBookConfig,
+              serverData as Pick<DBBookConfig, 'tts_packs'>,
+            );
+            if (clientIsNewer) {
+              if (ttsPacks.value) (dbRec as DBBookConfig).tts_packs = ttsPacks.value;
+              toUpdate.push(dbRec);
+            } else if (ttsPacks.changed) {
+              // Server wins the row; graft the packs without touching
+              // updated_at, so no device's progress is overridden. Readers
+              // re-fetch a book's config on open (since=0) and see them.
+              // The runtime row carries every DBBookConfig column; the static
+              // BookDataRecord type is narrower, as in the books branch above.
+              toUpdate.push({
+                ...(serverData as unknown as DBBookConfig),
+                tts_packs: ttsPacks.value ?? undefined,
+              });
+            } else {
+              batchAuthoritativeRecords.push(serverData);
             }
           } else if (clientIsNewer) {
             toUpdate.push(dbRec);

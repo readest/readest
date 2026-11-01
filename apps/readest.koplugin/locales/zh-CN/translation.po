@@ -287,14 +287,14 @@ msgstr "没有打开的书籍"
 msgid "Uploaded to Readest:"
 msgstr "已上传到 Readest："
 
+msgid "Auto sync"
+msgstr "自动同步"
+
 msgid "Log in Readest Account"
 msgstr "登录 Readest 账户"
 
 msgid "Log out as %1"
 msgstr "退出登录（%1）"
-
-msgid "Auto sync"
-msgstr "自动同步"
 
 msgid "Readest library"
 msgstr "Readest 书库"
@@ -524,17 +524,26 @@ msgstr "登录"
 msgid "Please enter both email and password"
 msgstr "请输入邮箱和密码"
 
+msgid "Sign in with a code"
+msgstr "使用验证码登录"
+
 msgid "Please configure Supabase URL and API key first"
 msgstr "请先配置 Supabase URL 和 API key"
 
 msgid "Logging in..."
 msgstr "正在登录..."
 
+msgid "Login failed: %1"
+msgstr "登录失败：%1"
+
 msgid "Successfully logged in to Readest"
 msgstr "已成功登录 Readest"
 
-msgid "Login failed: %1"
-msgstr "登录失败：%1"
+msgid "Scan the QR code with a phone signed in to Readest, or open %1 and enter this code:\n\n%2"
+msgstr "请用已登录 Readest 的手机扫描二维码，或打开 %1 并输入以下验证码：\n\n%2"
+
+msgid "The code expired. Please try again."
+msgstr "验证码已过期，请重试。"
 
 msgid "Logged out from Readest"
 msgstr "已退出 Readest"

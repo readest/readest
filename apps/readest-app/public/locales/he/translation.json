@@ -2565,7 +2565,6 @@
   "Download status": "מצב הורדה",
   "Local only": "מקומי בלבד",
   "Cloud only": "בענן בלבד",
-  "Link a CrossPoint Reader": "קישור קורא CrossPoint",
   "The reader gets your Readest library, reading statistics and reading progress. Only enter a code shown on your own reader.": "הקורא יקבל את ספריית Readest שלך, סטטיסטיקות הקריאה והתקדמות הקריאה. יש להזין רק קוד שמוצג בקורא שלך.",
   "Sign in to continue": "יש להתחבר כדי להמשיך",
   "Your reader is linked. It finishes signing in on its own.": "הקורא שלך מקושר. הוא ישלים את ההתחברות בעצמו.",
@@ -2731,5 +2730,6 @@
   "Show One Page": "הצג עמוד אחד",
   "Show Two Pages": "הצג שני עמודים",
   "Book Data": "נתוני ספר",
-  "Downloaded read-aloud audio and translations": "שמע הקראה שהורד ותרגומים"
+  "Downloaded read-aloud audio and translations": "שמע הקראה שהורד ותרגומים",
+  "Link a Reader": "קישור קורא"
 }

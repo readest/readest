@@ -2437,7 +2437,6 @@
   "Download status": "Status unduhan",
   "Local only": "Hanya lokal",
   "Cloud only": "Hanya di cloud",
-  "Link a CrossPoint Reader": "Tautkan pembaca CrossPoint",
   "The reader gets your Readest library, reading statistics and reading progress. Only enter a code shown on your own reader.": "Pembaca akan mendapatkan perpustakaan Readest, statistik membaca, dan kemajuan membaca Anda. Masukkan hanya kode yang ditampilkan di pembaca Anda sendiri.",
   "Sign in to continue": "Masuk untuk melanjutkan",
   "Your reader is linked. It finishes signing in on its own.": "Pembaca Anda sudah tertaut. Pembaca akan menyelesaikan proses masuk dengan sendirinya.",
@@ -2593,5 +2592,6 @@
   "Show One Page": "Tampilkan Satu Halaman",
   "Show Two Pages": "Tampilkan Dua Halaman",
   "Book Data": "Data Buku",
-  "Downloaded read-aloud audio and translations": "Audio bacakan yang diunduh dan terjemahan"
+  "Downloaded read-aloud audio and translations": "Audio bacakan yang diunduh dan terjemahan",
+  "Link a Reader": "Tautkan pembaca"
 }

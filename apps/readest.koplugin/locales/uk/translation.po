@@ -287,14 +287,14 @@ msgstr "Жодну книгу не відкрито"
 msgid "Uploaded to Readest:"
 msgstr "Завантажено до Readest:"
 
+msgid "Auto sync"
+msgstr "Автосинхронізація"
+
 msgid "Log in Readest Account"
 msgstr "Увійти до облікового запису Readest"
 
 msgid "Log out as %1"
 msgstr "Вийти з %1"
-
-msgid "Auto sync"
-msgstr "Автосинхронізація"
 
 msgid "Readest library"
 msgstr "Бібліотека Readest"
@@ -524,17 +524,26 @@ msgstr "Увійти"
 msgid "Please enter both email and password"
 msgstr "Введіть електронну пошту та пароль"
 
+msgid "Sign in with a code"
+msgstr "Увійти за кодом"
+
 msgid "Please configure Supabase URL and API key first"
 msgstr "Спочатку налаштуйте URL Supabase і ключ API"
 
 msgid "Logging in..."
 msgstr "Вхід…"
 
+msgid "Login failed: %1"
+msgstr "Не вдалося увійти: %1"
+
 msgid "Successfully logged in to Readest"
 msgstr "Ви увійшли до Readest"
 
-msgid "Login failed: %1"
-msgstr "Не вдалося увійти: %1"
+msgid "Scan the QR code with a phone signed in to Readest, or open %1 and enter this code:\n\n%2"
+msgstr "Відскануйте QR-код телефоном, на якому ви увійшли в Readest, або відкрийте %1 і введіть цей код:\n\n%2"
+
+msgid "The code expired. Please try again."
+msgstr "Термін дії коду минув. Спробуйте ще раз."
 
 msgid "Logged out from Readest"
 msgstr "Вихід із Readest виконано"

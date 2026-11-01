@@ -1,3 +1,4 @@
+import type { TTSPacks } from '@/utils/ttsPacks';
 import type { InkStroke } from '@/services/handwriting/model';
 import { BookMetadata } from '@/libs/document';
 import { TTSHighlightOptions } from '@/services/tts/types';
@@ -700,6 +701,14 @@ export interface BookConfig {
   audiobook?: PairedAudiobook;
   hardcover?: HardcoverBookLink;
   pagebound?: PageboundBookLink;
+  /**
+   * Downloaded read-aloud packs each sync destination holds, by destination
+   * id. Both syncs carry it and merge it as a union, never by updatedAt, so
+   * recording audio can't move reading progress. A device lists a destination
+   * only when this says it has audio the device lacks, or lacks audio the
+   * device has.
+   */
+  ttsPacks?: TTSPacks;
   /**
    * The pages of a comic laid out as spreads of their own (wide images), by
    * page path: a device-local cache of measuring them, so a later open skips

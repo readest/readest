@@ -38,6 +38,7 @@ const h = vi.hoisted(() => {
     syncConfigsMock: vi.fn(async () => {}),
     syncBooksMock: vi.fn(async () => {}),
     saveConfigMock: vi.fn(async () => {}),
+    setConfigMock: vi.fn(),
     setViewSettingsMock: vi.fn(),
     recreateViewerMock: vi.fn(),
     cfiCompareMock: vi.fn((_a: string, _b: string) => 0),
@@ -83,7 +84,7 @@ vi.mock('@/context/EnvContext', () => ({
 vi.mock('@/store/bookDataStore', () => ({
   useBookDataStore: h.makeStore({
     getConfig: () => h.config,
-    setConfig: vi.fn(),
+    setConfig: h.setConfigMock,
     saveConfig: h.saveConfigMock,
     getBookData: () => ({ book: h.book, bookDoc: h.state.bookDoc }),
   }),
@@ -176,6 +177,7 @@ beforeEach(() => {
   h.syncConfigsMock.mockClear();
   h.syncBooksMock.mockClear();
   h.saveConfigMock.mockClear();
+  h.setConfigMock.mockClear();
   h.setViewSettingsMock.mockClear();
   h.recreateViewerMock.mockClear();
   h.view.goTo.mockClear();
@@ -572,6 +574,33 @@ describe('useProgressSync', () => {
 
     expect(h.setViewSettingsMock).not.toHaveBeenCalled();
     expect(h.saveConfigMock).not.toHaveBeenCalled();
+  });
+
+  test('adds the read-aloud packs a peer recorded, without bumping updatedAt', async () => {
+    // Recording audio must never move reading progress: the packs merge as a
+    // union into the local config, with no save that would bump updatedAt.
+    h.cfiCompareMock.mockReturnValue(0);
+    h.state.viewSettings = { proofreadRules: [] };
+    const updatedAt = h.config.updatedAt;
+    const config = h.config as typeof h.config & { ttsPacks?: Record<string, string[]> };
+    config.ttsPacks = { webdav: ['1-a.mp3'] };
+    h.state.syncedConfigs = [
+      {
+        bookHash: 'h1',
+        metaHash: 'm1',
+        updatedAt: 1,
+        ttsPacks: { webdav: ['2-b.mp3'], readest: [] },
+      },
+    ];
+    renderHook(() => useProgressSync('h1-view1'));
+    await advance(0);
+
+    expect(h.setConfigMock).toHaveBeenCalledWith('h1-view1', {
+      ttsPacks: { webdav: ['1-a.mp3', '2-b.mp3'], readest: [] },
+    });
+    expect(h.saveConfigMock).not.toHaveBeenCalled();
+    expect(h.config.updatedAt).toBe(updatedAt);
+    delete config.ttsPacks;
   });
 
   test('does not touch the view when synced proofread rules match local', async () => {

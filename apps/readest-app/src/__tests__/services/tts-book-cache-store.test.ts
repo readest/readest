@@ -43,6 +43,29 @@ const bookData = vi.hoisted(() => ({
   pushBookData: vi.fn(async () => 0),
 }));
 
+const bookConfig = vi.hoisted(() => ({
+  config: null as { ttsPacks?: Record<string, string[]>; updatedAt?: number } | null,
+  setConfig: vi.fn((_key: string, update: object) => {
+    bookConfig.config = { ...bookConfig.config, ...update };
+  }),
+  book: { hash: 'hash-rec4' },
+  settings: { kind: 'settings' },
+}));
+vi.mock('@/store/libraryStore', () => ({
+  useLibraryStore: { getState: () => ({ getBookByHash: () => bookConfig.book }) },
+}));
+vi.mock('@/store/settingsStore', () => ({
+  useSettingsStore: { getState: () => ({ settings: bookConfig.settings }) },
+}));
+vi.mock('@/store/bookDataStore', () => ({
+  useBookDataStore: {
+    getState: () => ({
+      getConfig: () => bookConfig.config,
+      setConfig: bookConfig.setConfig,
+    }),
+  },
+}));
+
 vi.mock('@/services/sync/bookData/destinationsFor', () => ({
   getBookDataDestinations: bookData.getBookDataDestinations,
 }));
@@ -89,6 +112,7 @@ describe('BookTTSCacheStore', () => {
       writeFile,
       deleteFile,
       readDirectory: vi.fn().mockResolvedValue([]),
+      saveBookConfig: vi.fn(async () => {}),
     } as unknown as AppService;
   });
 
@@ -243,6 +267,113 @@ describe('BookTTSCacheStore', () => {
     expect((pushedTo as unknown[])[1]).toBe((pulledTo as unknown[])[1]);
     bookData.getBookDataDestinations.mockReset();
     bookData.getBookDataDestinations.mockResolvedValue([]);
+  });
+
+  describe('with the packs recorded in the book config', () => {
+    const openWith = async (hash: string, ttsPacks?: Record<string, string[]>) => {
+      bookConfig.config = { ttsPacks, updatedAt: 42 };
+      bookConfig.setConfig.mockClear();
+      bookData.getBookDataDestinations.mockResolvedValue(bookData.destinations);
+      bookData.pullBookData.mockClear();
+      bookData.pushBookData.mockClear();
+      const store = new BookTTSCacheStore(appService, () => hash, 1024 * 1024);
+      await store.open();
+      await vi.waitFor(() => expect(bookData.pushBookData).toHaveBeenCalled());
+    };
+
+    test('an open pulls nothing when every destination is recorded and nothing is missing', async () => {
+      // A book without audio, synced before: no listing at all.
+      await openWith('hash-rec1', { webdav: [], readest: [] });
+      expect(bookData.pullBookData).not.toHaveBeenCalled();
+    });
+
+    test('keeps an entry another sync merged while the round ran', async () => {
+      // The reader's open-time pull can merge a peer's record while this
+      // round awaits its listings; writing back the record read at the start
+      // would drop it.
+      bookData.pullBookData.mockImplementationOnce(async (...args: unknown[]) => {
+        const listings = args[3] as Map<string, Set<string> | null>;
+        listings.set('webdav', new Set(['1-a.mp3', '1-a.json']));
+        bookConfig.config = { ...bookConfig.config, ttsPacks: { gdrive: ['9-z.mp3'] } };
+        return 0;
+      });
+      await openWith('hash-rec6', undefined);
+      await vi.waitFor(() =>
+        expect(bookConfig.setConfig).toHaveBeenCalledWith('hash-rec6', {
+          ttsPacks: { gdrive: ['9-z.mp3'], webdav: ['1-a.mp3'] },
+        }),
+      );
+    });
+
+    test('keeps a pack merged into a destination while the round listed it', async () => {
+      // A peer's pack can land in the record after this round's listing began;
+      // replacing the destination with the listing would drop it, and the next
+      // open would skip pulling it. Entries the round started with are still
+      // replaced by the listing.
+      bookData.pullBookData.mockImplementationOnce(async (...args: unknown[]) => {
+        const listings = args[3] as Map<string, Set<string> | null>;
+        listings.set('webdav', new Set(['1-a.mp3', '1-a.json']));
+        bookConfig.config = {
+          ...bookConfig.config,
+          ttsPacks: { webdav: ['0-gone.mp3', '2-b.mp3'] },
+        };
+        return 0;
+      });
+      await openWith('hash-rec7', { webdav: ['0-gone.mp3'] });
+      await vi.waitFor(() =>
+        expect(bookConfig.setConfig).toHaveBeenCalledWith('hash-rec7', {
+          ttsPacks: { webdav: ['1-a.mp3', '2-b.mp3'] },
+        }),
+      );
+    });
+
+    test('the push never trusts the record, so purged packs are uploaded again', async () => {
+      // The record only grows by merging: after a book's audio is purged from
+      // a destination (the book removed from Readest Cloud) it still names
+      // those packs, and a push trusting it would never upload them again.
+      await openWith('hash-rec5', { readest: ['1-a.mp3'] });
+      expect(bookData.pushBookData).toHaveBeenCalledWith(
+        expect.objectContaining({ id: 'tts' }),
+        'hash-rec5',
+        bookData.destinations,
+        expect.any(Map),
+      );
+      expect(bookData.pushBookData.mock.calls[0]).toHaveLength(4);
+    });
+
+    test('an open pulls when the record lists a pack this device lacks', async () => {
+      await openWith('hash-rec2', { webdav: ['9-x.mp3'], readest: [] });
+      expect(bookData.pullBookData).toHaveBeenCalled();
+    });
+
+    test('an open lists a destination the config never recorded', async () => {
+      await openWith('hash-rec3', { webdav: [] });
+      expect(bookData.pullBookData).toHaveBeenCalled();
+    });
+
+    test('records what each listed destination holds, a declining one as empty', async () => {
+      bookData.pullBookData.mockImplementationOnce(async (...args: unknown[]) => {
+        const listings = args[3] as Map<string, Set<string> | null>;
+        listings.set('webdav', new Set(['1-a.mp3', '1-a.json', '2-b.mp3']));
+        listings.set('readest', null);
+        return 0;
+      });
+      await openWith('hash-rec4', undefined);
+      await vi.waitFor(() =>
+        expect(bookConfig.setConfig).toHaveBeenCalledWith('hash-rec4', {
+          ttsPacks: { webdav: ['1-a.mp3'], readest: [] },
+        }),
+      );
+      // Saved to the book's config file at once, so a quit before the next
+      // page turn keeps it; updatedAt untouched, so progress can't move.
+      await vi.waitFor(() =>
+        expect(appService.saveBookConfig).toHaveBeenCalledWith(
+          bookConfig.book,
+          { updatedAt: 42, ttsPacks: { webdav: ['1-a.mp3'], readest: [] } },
+          bookConfig.settings,
+        ),
+      );
+    });
   });
 
   test('an open failure degrades to a no-op cache', async () => {

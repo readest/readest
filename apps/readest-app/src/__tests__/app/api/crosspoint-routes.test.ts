@@ -49,8 +49,18 @@ const makeClient = () => ({
   },
 });
 
+// Auth admin calls a KOReader sign-in makes to start the user's session.
+const getUserByIdMock = vi.fn();
+const generateLinkMock = vi.fn();
+const verifyOtpMock = vi.fn();
 vi.mock('@/utils/supabase', () => ({
-  createSupabaseAdminClient: () => makeClient(),
+  createSupabaseAdminClient: () => ({
+    ...makeClient(),
+    auth: {
+      admin: { getUserById: getUserByIdMock, generateLink: generateLinkMock },
+      verifyOtp: verifyOtpMock,
+    },
+  }),
 }));
 
 import { POST as codePOST } from '@/app/api/crosspoint/device/code/route';
@@ -224,6 +234,68 @@ describe('device sign-in', () => {
         ],
       ]),
     );
+  });
+
+  it('signs KOReader in with a session of its own once the code is approved', async () => {
+    const approved = {
+      user_code: 'BCDF-GHJK',
+      user_id: USER,
+      username: EMAIL,
+      expires_at: '2026-10-02T00:05:00.000Z',
+    };
+    results['crosspoint_device_codes.delete'] = { data: [approved], error: null };
+    getUserByIdMock.mockResolvedValue({ data: { user: { id: USER, email: EMAIL } }, error: null });
+    generateLinkMock.mockResolvedValue({
+      data: { properties: { hashed_token: 'hashed' } },
+      error: null,
+    });
+    verifyOtpMock.mockResolvedValue({
+      data: {
+        session: {
+          access_token: 'jwt',
+          refresh_token: 'refresh',
+          expires_in: 3600,
+          expires_at: 1790000000,
+          token_type: 'bearer',
+          user: {
+            id: USER,
+            email: EMAIL,
+            user_metadata: { user_name: 'reader' },
+            identities: [{ provider: 'google' }],
+          },
+        },
+      },
+      error: null,
+    });
+    const poll = () => tokenPOST(post('/device/token', { device_code: 'abc', grant: 'session' }));
+
+    const res = await poll();
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({
+      access_token: 'jwt',
+      refresh_token: 'refresh',
+      expires_in: 3600,
+      expires_at: 1790000000,
+      token_type: 'bearer',
+      user: { id: USER, email: EMAIL, user_metadata: { user_name: 'reader' } },
+    });
+    expect(getUserByIdMock).toHaveBeenCalledWith(USER);
+    expect(generateLinkMock).toHaveBeenCalledWith({ type: 'magiclink', email: EMAIL });
+    expect(verifyOtpMock).toHaveBeenCalledWith({ type: 'magiclink', token_hash: 'hashed' });
+    // A session, not a device key: no key is minted.
+    expect(wrote('crosspoint_devices')).toBe(false);
+
+    // A session that can't be started puts the approval back for the next poll.
+    generateLinkMock.mockResolvedValue({ data: null, error: boom });
+    calls = [];
+    const failed = await poll();
+    expect(failed.status).toBe(500);
+    expect(await failed.json()).not.toHaveProperty('access_token');
+    expect(calls).toContainEqual([
+      'crosspoint_device_codes',
+      'insert',
+      { device_code_hash: sha256('abc'), ...approved },
+    ]);
   });
 
   it('reports database failures while polling', async () => {

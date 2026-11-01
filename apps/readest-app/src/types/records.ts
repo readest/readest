@@ -36,6 +36,8 @@ export interface DBBookConfig {
   rsvp_position?: string;
   search_config?: string;
   view_settings?: string;
+  /** JSON of BookConfig.ttsPacks; merged as a union on the server. */
+  tts_packs?: string;
 
   created_at?: string;
   updated_at?: string;

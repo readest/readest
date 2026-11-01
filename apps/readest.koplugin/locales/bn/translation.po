@@ -287,14 +287,14 @@ msgstr "কোনো বই খোলা নেই"
 msgid "Uploaded to Readest:"
 msgstr "Readest-এ আপলোড করা হয়েছে:"
 
+msgid "Auto sync"
+msgstr "অটো সিঙ্ক"
+
 msgid "Log in Readest Account"
 msgstr "Readest অ্যাকাউন্টে লগ ইন করুন"
 
 msgid "Log out as %1"
 msgstr "%1 হিসেবে লগ আউট করুন"
-
-msgid "Auto sync"
-msgstr "অটো সিঙ্ক"
 
 msgid "Readest library"
 msgstr "Readest লাইব্রেরি"
@@ -524,17 +524,26 @@ msgstr "লগ ইন"
 msgid "Please enter both email and password"
 msgstr "অনুগ্রহ করে ইমেল এবং পাসওয়ার্ড উভয়ই লিখুন"
 
+msgid "Sign in with a code"
+msgstr "কোড দিয়ে সাইন ইন করুন"
+
 msgid "Please configure Supabase URL and API key first"
 msgstr "অনুগ্রহ করে প্রথমে Supabase URL এবং API কী কনফিগার করুন"
 
 msgid "Logging in..."
 msgstr "লগ ইন করা হচ্ছে…"
 
+msgid "Login failed: %1"
+msgstr "লগ ইন ব্যর্থ: %1"
+
 msgid "Successfully logged in to Readest"
 msgstr "Readest-এ সফলভাবে লগ ইন করা হয়েছে"
 
-msgid "Login failed: %1"
-msgstr "লগ ইন ব্যর্থ: %1"
+msgid "Scan the QR code with a phone signed in to Readest, or open %1 and enter this code:\n\n%2"
+msgstr "Readest-এ সাইন ইন করা ফোন দিয়ে QR কোড স্ক্যান করুন, অথবা %1 খুলে এই কোডটি লিখুন:\n\n%2"
+
+msgid "The code expired. Please try again."
+msgstr "কোডের মেয়াদ শেষ হয়েছে। আবার চেষ্টা করুন।"
 
 msgid "Logged out from Readest"
 msgstr "Readest থেকে লগ আউট হয়েছে"

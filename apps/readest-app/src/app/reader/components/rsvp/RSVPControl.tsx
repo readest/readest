@@ -10,6 +10,7 @@ import { useThemeStore } from '@/store/themeStore';
 import {
   RSVPController,
   RsvpStartChoice,
+  RsvpState,
   RsvpStopPosition,
   buildRsvpExitConfigUpdate,
 } from '@/services/rsvp';
@@ -18,6 +19,7 @@ import { buildRsvpTtsSpeakDetail } from './rsvpTts';
 import { getBaseFontFamily } from '@/utils/style';
 import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useScreenWakeLock } from '@/hooks/useScreenWakeLock';
 import { BookNote, PageInfo } from '@/types/book';
 import { TOCItem } from '@/libs/document';
 import { Insets } from '@/types/misc';
@@ -252,7 +254,7 @@ const RSVPControl = forwardRef<RSVPControlHandle, RSVPControlProps>(function RSV
   ref,
 ) {
   const _ = useTranslation();
-  const { envConfig } = useEnv();
+  const { envConfig, appService } = useEnv();
   const settings = useSettingsStore((s) => s.settings);
   const setSettingsDialogOpen = useSettingsStore((s) => s.setSettingsDialogOpen);
   const setSettingsDialogBookKey = useSettingsStore((s) => s.setSettingsDialogBookKey);
@@ -282,6 +284,7 @@ const RSVPControl = forwardRef<RSVPControlHandle, RSVPControlProps>(function RSV
   // TTS currently playing (vs paused). Drives the RSVP transport button's icon
   // when read-along is engaged so play/pause maps to the audio (slice, #3235).
   const [ttsPlaying, setTtsPlaying] = useState(false);
+  const [rsvpPlaying, setRsvpPlaying] = useState(false);
 
   useImperativeHandle(ref, () => ({ ttsSyncStatus }), [ttsSyncStatus]);
   const controllerRef = useRef<RSVPController | null>(null);
@@ -631,11 +634,38 @@ const RSVPControl = forwardRef<RSVPControlHandle, RSVPControlProps>(function RSV
   useEffect(() => {
     if (!isActive) return;
     if (!controllerRef.current) return;
-    if (getBookData(bookKey)?.isFixedLayout) return;
-    syncStateRef.current.following = true;
-    syncStateRef.current.lastSequenceSeen = -Infinity;
+    // Fixed layout never follows (D7), but still needs the replayed playback
+    // state so ttsActive/ttsPlaying match the live session.
+    if (!getBookData(bookKey)?.isFixedLayout) {
+      syncStateRef.current.following = true;
+      syncStateRef.current.lastSequenceSeen = -Infinity;
+    }
     eventDispatcher.dispatch('tts-sync-request', { bookKey });
   }, [isActive, bookKey, getBookData]);
+
+  // Nobody touches the screen during speed reading, so the system timeout
+  // would turn it off mid-session. Keep it on while words are advancing
+  // (RSVP's own timer, or TTS while read-along drives it). Skipped when
+  // Keep Screen Awake already holds the lock: on iOS both would share one
+  // app-wide idle timer, and releasing ours would undo the setting.
+  useEffect(() => {
+    const controller = controllerRef.current;
+    if (!isActive || !controller) return;
+    const handleStateChange = (e: Event) =>
+      setRsvpPlaying((e as CustomEvent<RsvpState>).detail.playing);
+    setRsvpPlaying(!!controller.currentState.playing);
+    controller.addEventListener('rsvp-state-change', handleStateChange);
+    return () => {
+      controller.removeEventListener('rsvp-state-change', handleStateChange);
+      setRsvpPlaying(false);
+    };
+  }, [isActive]);
+  const speedReadingPlaying = isActive && (ttsActive ? ttsPlaying : rsvpPlaying);
+  useScreenWakeLock(
+    speedReadingPlaying && !settings.screenWakeLock,
+    appService?.hasWindow,
+    appService?.isIOSApp,
+  );
 
   // One-time-per-session decouple toast: the first time following drops while
   // TTS still plays, tell the user once. Reset when following re-engages so a

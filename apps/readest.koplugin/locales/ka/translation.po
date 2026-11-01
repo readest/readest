@@ -287,14 +287,14 @@ msgstr "არცერთი წიგნი არ არის გახს�
 msgid "Uploaded to Readest:"
 msgstr "ატვირთულია Readest-ზე:"
 
+msgid "Auto sync"
+msgstr "ავტომატური სინქრონიზაცია"
+
 msgid "Log in Readest Account"
 msgstr "Readest-ის ანგარიშში შესვლა"
 
 msgid "Log out as %1"
 msgstr "%1 ანგარიშიდან გამოსვლა"
-
-msgid "Auto sync"
-msgstr "ავტომატური სინქრონიზაცია"
 
 msgid "Readest library"
 msgstr "Readest-ის ბიბლიოთეკა"
@@ -524,17 +524,26 @@ msgstr "შესვლა"
 msgid "Please enter both email and password"
 msgstr "შეიყვანეთ ელფოსტა და პაროლი"
 
+msgid "Sign in with a code"
+msgstr "კოდით შესვლა"
+
 msgid "Please configure Supabase URL and API key first"
 msgstr "ჯერ მიუთითეთ Supabase-ის URL და API გასაღები"
 
 msgid "Logging in..."
 msgstr "მიმდინარეობს შესვლა..."
 
+msgid "Login failed: %1"
+msgstr "შესვლა ვერ მოხერხდა: %1"
+
 msgid "Successfully logged in to Readest"
 msgstr "წარმატებით შეხვედით Readest-ში"
 
-msgid "Login failed: %1"
-msgstr "შესვლა ვერ მოხერხდა: %1"
+msgid "Scan the QR code with a phone signed in to Readest, or open %1 and enter this code:\n\n%2"
+msgstr "დაასკანერეთ QR კოდი Readest-ში შესული ტელეფონით, ან გახსენით %1 და შეიყვანეთ ეს კოდი:\n\n%2"
+
+msgid "The code expired. Please try again."
+msgstr "კოდს ვადა გაუვიდა. გთხოვთ, სცადოთ ხელახლა."
 
 msgid "Logged out from Readest"
 msgstr "გამოხვედით Readest-იდან"

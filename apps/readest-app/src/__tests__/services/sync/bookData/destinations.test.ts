@@ -4,7 +4,7 @@ const listFilesMock = vi.fn();
 const downloadFileMock = vi.fn();
 const deleteCloudFileMock = vi.fn();
 vi.mock('@/libs/storage', () => ({
-  listFiles: (...a: unknown[]) => listFilesMock(...a),
+  listAllFiles: async (...a: unknown[]) => (await listFilesMock(...a)).files,
   downloadFile: (...a: unknown[]) => downloadFileMock(...a),
   deleteFile: (...a: unknown[]) => deleteCloudFileMock(...a),
 }));
@@ -106,7 +106,7 @@ describe('Readest Cloud destination', () => {
       ],
     });
     expect(await cloud().list('h', 'tts')).toEqual(new Set(['a.mp3']));
-    expect(listFilesMock).toHaveBeenCalledWith({ bookHash: 'h', pageSize: 1000 });
+    expect(listFilesMock).toHaveBeenCalledWith({ bookHash: 'h' });
   });
 
   test('declines a book whose file is not in Readest Cloud', async () => {

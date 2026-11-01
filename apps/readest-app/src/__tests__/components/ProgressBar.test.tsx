@@ -494,11 +494,13 @@ describe('ProgressBar — tap to toggle visibility (#5293)', () => {
 
     fireEvent.click(strip);
     expect(strip.classList.contains('opacity-0')).toBe(true);
+    expect(strip.classList.contains('transition-opacity')).toBe(false);
     // The strip stays tappable while hidden so the same tap brings it back.
     expect(strip.classList.contains('pointer-events-auto')).toBe(true);
 
     fireEvent.click(strip);
     expect(strip.classList.contains('opacity-0')).toBe(false);
+    expect(strip.classList.contains('transition-opacity')).toBe(true);
   });
 
   it('never writes settings from the tap (visibility is ephemeral)', () => {
