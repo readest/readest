@@ -776,10 +776,11 @@ export const useParagraphMode = ({ bookKey, viewRef }: UseParagraphModeProps) =>
     let navigation = Promise.resolve();
     const enqueueNavigation = (event: CustomEvent, move: () => Promise<boolean>) => {
       if (event.detail?.bookKey !== bookKeyRef.current || !paragraphConfig.enabled) return;
-      navigation = navigation.then(async () => {
+      const result = navigation.then(async () => {
         if (active) await move();
       });
-      return navigation;
+      navigation = result.catch(() => {});
+      return result;
     };
     const handleNext = (event: CustomEvent) => enqueueNavigation(event, goToNextParagraph);
     const handlePrev = (event: CustomEvent) => enqueueNavigation(event, goToPrevParagraph);

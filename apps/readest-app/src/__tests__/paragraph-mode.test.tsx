@@ -12,6 +12,7 @@ import ParagraphOverlay from '@/app/reader/components/paragraph/ParagraphOverlay
 import { useParagraphMode } from '@/app/reader/hooks/useParagraphMode';
 import type { FoliateView } from '@/types/view';
 import { eventDispatcher } from '@/utils/event';
+import { ParagraphIterator } from '@/utils/paragraph';
 import {
   getParagraphActionForKey,
   getParagraphActionForZone,
@@ -285,6 +286,26 @@ describe('paragraph mode', () => {
       );
     });
     expect(transition).toHaveBeenCalledOnce();
+  });
+
+  it('reports a failed paragraph event and still runs the next event', async () => {
+    const doc = createDoc('<p>First</p><p>Second</p><p>Third</p>');
+    const { view } = createMockView([doc], 0);
+    render(<HookHarness view={{ current: view }} />);
+    await waitFor(() => expect(hookApi?.paragraphState.currentRange?.toString()).toBe('First'));
+    const failure = new Error('Paragraph move failed');
+    vi.spyOn(ParagraphIterator.prototype, 'next').mockImplementationOnce(() => {
+      throw failure;
+    });
+    await act(async () => {
+      await expect(eventDispatcher.dispatch('paragraph-next', { bookKey: 'book-1' })).rejects.toBe(
+        failure,
+      );
+    });
+    await act(async () => {
+      await eventDispatcher.dispatch('paragraph-next', { bookKey: 'book-1' });
+    });
+    expect(hookApi?.paragraphState.currentRange?.toString()).toBe('Second');
   });
 
   it('moves across the chunks of a section rendered in chunks', async () => {
