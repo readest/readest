@@ -92,12 +92,18 @@ fn set_enabled(user: &RegKey, classes: &RegKey, enabled: bool) -> io::Result<()>
                 }
             } else if own_handler.is_some_and(|value| value.eq_ignore_ascii_case(PROVIDER)) {
                 let key = user.open_subkey_with_flags(&user_slot, KEY_READ | KEY_WRITE)?;
-                key.delete_value("")?;
-                // Preserve any unrelated metadata/subkeys left in the handler slot.
-                let info = key.query_info()?;
-                if info.values == 0 && info.sub_keys == 0 {
-                    user.delete_subkey(&user_slot)?;
-                }
+                let previous = key.get_raw_value("")?;
+                let removal = (|| {
+                    key.delete_value("")?;
+                    // Preserve any unrelated metadata/subkeys left in the handler slot.
+                    let info = key.query_info()?;
+                    if info.values == 0 && info.sub_keys == 0 {
+                        user.delete_subkey(&user_slot)?;
+                    }
+                    Ok::<(), io::Error>(())
+                })();
+                registrations.push((user_slot, key, Some(previous), false));
+                removal?;
             }
         }
 
@@ -109,7 +115,12 @@ fn set_enabled(user: &RegKey, classes: &RegKey, enabled: bool) -> io::Result<()>
         let mut rollback_error = None;
         for (path, key, previous, created) in registrations.into_iter().rev() {
             let restored = match previous {
-                Some(value) => key.set_raw_value("", &value),
+                Some(value) if enabled => key.set_raw_value("", &value),
+                Some(value) => {
+                    drop(key);
+                    user.create_subkey(&path)
+                        .and_then(|(key, _)| key.set_raw_value("", &value))
+                }
                 None => match key.delete_value("") {
                     Err(err) if err.kind() == io::ErrorKind::NotFound => Ok(()),
                     result => result,
@@ -504,6 +515,11 @@ mod tests {
             registry.preference(),
             Some(1),
             "a failed disable must retain the preference too"
+        );
+        assert_eq!(
+            registry.user_handler("azw"),
+            Some(PROVIDER.to_lowercase()),
+            "failed disable must recreate a removed slot with its original value"
         );
     }
 }
