@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { invoke } from '@tauri-apps/api/core';
 import { useEnv } from '@/context/EnvContext';
 import { useReaderStore } from '@/store/readerStore';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -93,6 +94,43 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
   const [screenWakeLock, setScreenWakeLock] = useState(settings.screenWakeLock);
   const [autohideCursor, setAutohideCursor] = useState(settings.autohideCursor);
   const [gamepadEnabled, setGamepadEnabled] = useState(settings.gamepadEnabled);
+  const [explorerThumbnails, setExplorerThumbnails] = useState(false);
+  const [explorerThumbnailsBusy, setExplorerThumbnailsBusy] = useState(true);
+  const [explorerThumbnailsError, setExplorerThumbnailsError] = useState(false);
+
+  useEffect(() => {
+    if (!appService?.isWindowsApp) return;
+    let cancelled = false;
+    invoke<boolean>('get_explorer_thumbnails_enabled')
+      .then((enabled) => {
+        if (!cancelled) {
+          setExplorerThumbnails(enabled);
+          setExplorerThumbnailsBusy(false);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setExplorerThumbnailsError(true);
+          setExplorerThumbnailsBusy(false);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [appService?.isWindowsApp]);
+
+  const toggleExplorerThumbnails = async () => {
+    setExplorerThumbnailsBusy(true);
+    setExplorerThumbnailsError(false);
+    try {
+      await invoke('set_explorer_thumbnails_enabled', { enabled: !explorerThumbnails });
+      setExplorerThumbnails(!explorerThumbnails);
+    } catch {
+      setExplorerThumbnailsError(true);
+    } finally {
+      setExplorerThumbnailsBusy(false);
+    }
+  };
   const [reverseWheelPaging, setReverseWheelPaging] = useState(settings.reverseWheelPaging);
   const [hideBookshelfPageButtons, setHideBookshelfPageButtons] = useState(
     settings.hideBookshelfPageButtons,
@@ -754,6 +792,26 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
           data-setting-id='settings.control.gamepadEnabled'
         />
       </BoxedList>
+
+      {appService?.isWindowsApp && (
+        <div>
+          <BoxedList title={_('File Explorer')}>
+            <SettingsSwitchRow
+              label={_('Use Readest for File Explorer thumbnails')}
+              description={_('Existing thumbnail providers are preserved')}
+              checked={explorerThumbnails}
+              disabled={explorerThumbnailsBusy}
+              onChange={toggleExplorerThumbnails}
+              data-setting-id='settings.control.explorerThumbnails'
+            />
+          </BoxedList>
+          {explorerThumbnailsError && (
+            <p role='alert' className='text-error mt-2 ps-4 text-sm'>
+              {_('Could not update File Explorer thumbnails')}
+            </p>
+          )}
+        </div>
+      )}
 
       {appService?.hasUpdater && (
         <BoxedList title={_('Update')} data-setting-id='settings.control.checkUpdates'>
