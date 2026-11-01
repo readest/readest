@@ -27,6 +27,8 @@ const DOWNLOADS_MARKER = 'downloads.json';
 
 // The sync round in flight per book, shared by every store of that book.
 const syncRounds = new Map<string, Promise<void>>();
+// A saved pack record stays pending until its cloud publication succeeds.
+const pendingPackPublications = new Set<string>();
 // What a book's rounds share between opens: the destinations, so a folder is
 // prepared once, and their listings, so a push round lists nothing new. An
 // open starts a new session; a download's push rounds (one per finished
@@ -451,14 +453,48 @@ export class BookTTSCacheStore implements TTSCacheStore {
         const book = useLibraryStore.getState().getBookByHash(bookHash);
         const config = books.getConfig(bookHash);
         if (book && config) {
-          await this.#appService.saveBookConfig(book, config, useSettingsStore.getState().settings);
+          const settings = useSettingsStore.getState().settings;
+          await this.#appService.saveBookConfig(book, config, settings);
+          pendingPackPublications.add(bookHash);
         }
       }
     };
     const previous = syncRounds.get(bookHash) ?? Promise.resolve();
-    const next = previous.then(round).catch((err) => {
-      console.warn('TTS pack sync failed', err);
-    });
+    const next = previous
+      .then(round)
+      .then(async () => {
+        if (!pendingPackPublications.has(bookHash)) return;
+        const [
+          { useBookDataStore },
+          { useLibraryStore },
+          { SyncClient },
+          { isSyncCategoryEnabled },
+          { getUserID },
+        ] = await Promise.all([
+          import('@/store/bookDataStore'),
+          import('@/store/libraryStore'),
+          import('@/libs/sync'),
+          import('@/services/sync/syncCategories'),
+          import('@/utils/access'),
+        ]);
+        const book = useLibraryStore.getState().getBookByHash(bookHash);
+        const config = useBookDataStore.getState().getConfig(bookHash);
+        // Retry saved records even when Book Data has no destinations now.
+        // Publish only the pack record, at the oldest timestamp: the server
+        // unions it into its row without replacing reading progress. The
+        // reader publishes its position separately, with a fresh XPointer.
+        if (book && config && isSyncCategoryEnabled('progress') && (await getUserID())) {
+          await new SyncClient().pushChanges({
+            configs: [
+              { bookHash, metaHash: book.metaHash, ttsPacks: config.ttsPacks, updatedAt: 0 },
+            ],
+          });
+          pendingPackPublications.delete(bookHash);
+        }
+      })
+      .catch((err) => {
+        console.warn('TTS pack sync failed', err);
+      });
     syncRounds.set(bookHash, next);
     void next.then(() => {
       if (syncRounds.get(bookHash) === next) syncRounds.delete(bookHash);
