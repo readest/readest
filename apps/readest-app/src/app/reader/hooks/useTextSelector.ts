@@ -40,7 +40,13 @@ import {
   toDocPoint,
 } from '../utils/crossDocSelection';
 import { toParentViewportPoint } from '../utils/annotatorUtil';
-import { getContextMenuImage } from '../utils/iframeEventHandlers';
+import {
+  detectMediaTarget,
+  getContextMenuImage,
+  getImageViewerGesture,
+  releaseImageHoldClick,
+  setImageHoldClick,
+} from '../utils/iframeEventHandlers';
 
 // Instant-highlight quick action: on touch a plain tap and a swipe are both
 // page-turn gestures, so the highlight must not engage on pointer-down or it
@@ -702,6 +708,14 @@ export const useTextSelector = (
     if (isTouch && isTextAtPoint(doc, clientX, clientY)) return false;
     const getImage = getContextMenuImage(event);
     if (!getImage) return false;
+    // A book whose images open on a long press opens the viewer instead (#7145).
+    // PDF images have no file of their own to show, so they keep the menu.
+    const media = isTouch ? detectMediaTarget(event.target as HTMLElement) : null;
+    if (media?.elementType === 'image' && getImageViewerGesture(bookKey) === 'longPress') {
+      setImageHoldClick(bookKey, event.target);
+      window.postMessage({ type: 'iframe-open-media', bookKey, ...media }, '*');
+      return true;
+    }
     const { x, y } = toParentViewportPoint(doc, clientX, clientY);
     eventDispatcher.dispatch('image-context-menu', { bookKey, getImage, x, y });
     return true;
@@ -727,6 +741,7 @@ export const useTextSelector = (
 
   const handlePointerDown = (doc: Document, index: number, ev: PointerEvent) => {
     beginSelectionDrag();
+    setImageHoldClick(bookKey, null);
     lastPointerType.current = ev.pointerType;
     const selection = ev.pointerType === 'mouse' ? doc.getSelection() : null;
     mouseSelectionAtPointerDown.current = selection
@@ -746,7 +761,8 @@ export const useTextSelector = (
     if (appService?.isAndroidApp && ev.pointerType === 'touch') {
       doc.documentElement.classList.add(LINK_TOUCH_HOLD_CLASS);
     }
-    if (appService?.isIOSApp && ev.pointerType === 'touch') armImageHold(ev);
+    if ((appService?.isIOSApp || osPlatform === 'ios') && ev.pointerType === 'touch')
+      armImageHold(ev);
     isPointerDown.current = true;
     clearCrossDoc();
     dragAnchorRef.current = null;
@@ -1037,6 +1053,8 @@ export const useTextSelector = (
   };
 
   const handlePointerUp = async (doc: Document, index: number, ev?: PointerEvent) => {
+    // A held finger can outlast the window started when the viewer opened.
+    releaseImageHoldClick(bookKey);
     isPointerDown.current = false;
     const mouseSelectionAtDown = mouseSelectionAtPointerDown.current;
     mouseSelectionAtPointerDown.current = null;
@@ -1324,10 +1342,8 @@ export const useTextSelector = (
   };
 
   const handleContextmenu = (event: Event) => {
-    const isTouch =
-      !!appService?.isMobile ||
-      lastPointerType.current === 'touch' ||
-      lastPointerType.current === 'pen';
+    const pointerType = (event as PointerEvent).pointerType || lastPointerType.current;
+    const isTouch = pointerType === 'touch' || pointerType === 'pen';
     // Images get Readest's own menu, from a right-click or, on Android, a long
     // press (#6574): the webview's differs per engine and offers "Copy image
     // address" for a blob URL nobody can use (#6558).
@@ -1377,6 +1393,7 @@ export const useTextSelector = (
       instantGestureCleanup.current?.();
       if (instantHoldTimer.current) clearTimeout(instantHoldTimer.current);
       cancelImageHold();
+      setImageHoldClick(bookKey, null);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

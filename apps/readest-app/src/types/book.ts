@@ -44,6 +44,8 @@ export interface ParagraphModeConfig {
   enabled: boolean;
 }
 
+export type ImageViewerGesture = 'tap' | 'longPress';
+
 export const FIXED_LAYOUT_FORMATS: Set<BookFormat> = new Set(['PDF', 'CBZ']);
 
 /**
@@ -275,6 +277,9 @@ export interface BookLayout {
   fullscreenClickArea: boolean;
   swapClickArea: boolean;
   disableDoubleClick: boolean;
+  /* What opens the image viewer on an image (#7145). Set per book; unset means
+     long press in fixed-layout books and tap in the others. */
+  imageViewerGesture?: ImageViewerGesture;
   volumeKeysToFlip: boolean;
   maxColumnCount: number;
   maxInlineSize: number;
