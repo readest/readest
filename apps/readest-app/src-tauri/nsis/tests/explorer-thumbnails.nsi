@@ -48,6 +48,8 @@ Section
     FileWrite $8 "PASS: fresh install$\r$\n"
     ; Upgrade: remove only legacy Readest registrations, in either install scope.
     WriteRegStr HKCR ".epub\ShellEx\${SHELL_THUMBNAIL_HANDLER}" "" "${CLSID_READEST_THUMBNAIL}"
+    WriteRegStr HKCR ".epub\ShellEx\${SHELL_THUMBNAIL_HANDLER}" "Unrelated" "keep-value"
+    WriteRegStr HKCR ".epub\ShellEx\${SHELL_THUMBNAIL_HANDLER}\Unrelated" "" "keep-subkey"
     WriteRegStr HKCR ".pdf\ShellEx\${SHELL_THUMBNAIL_HANDLER}" "" "third-party-thumbnail"
     WriteRegStr HKCR ".pdf\ShellEx\${SHELL_PREVIEW_HANDLER}" "" "third-party-preview"
     !insertmacro NSIS_HOOK_POSTINSTALL
@@ -59,6 +61,8 @@ Section
     !insertmacro NSIS_HOOK_POSTINSTALL
     !insertmacro ASSERT_VALUE HKLM "Software\Classes\.mobi\ShellEx\${SHELL_THUMBNAIL_HANDLER}" "" "" "machine legacy registration removed"
 
+    !insertmacro ASSERT_VALUE HKCR ".epub\ShellEx\${SHELL_THUMBNAIL_HANDLER}" "Unrelated" "keep-value" "upgrade preserves unrelated values"
+    !insertmacro ASSERT_VALUE HKCR ".epub\ShellEx\${SHELL_THUMBNAIL_HANDLER}\Unrelated" "" "keep-subkey" "upgrade preserves unrelated subkeys"
     FileWrite $8 "PASS: upgrade$\r$\n"
     ; Explicit preference survives reinstall and never overwrites another handler.
     WriteRegDWORD HKCU "Software\Readest" "ExplorerThumbnails" 1
@@ -80,7 +84,11 @@ Section
     ; Uninstall also removes an opted-in per-user slot for a machine install.
     WriteRegDWORD HKCU "Software\Readest" "ExplorerThumbnails" 1
     !insertmacro NSIS_HOOK_POSTINSTALL
+    WriteRegStr HKCU "Software\Classes\.epub\ShellEx\${SHELL_THUMBNAIL_HANDLER}" "UserMetadata" "keep-user-value"
+    WriteRegStr HKCU "Software\Classes\.epub\ShellEx\${SHELL_THUMBNAIL_HANDLER}\UserMetadata" "" "keep-user-subkey"
     !insertmacro NSIS_HOOK_PREUNINSTALL
+    !insertmacro ASSERT_VALUE HKCU "Software\Classes\.epub\ShellEx\${SHELL_THUMBNAIL_HANDLER}" "UserMetadata" "keep-user-value" "uninstall preserves unrelated user values"
+    !insertmacro ASSERT_VALUE HKCU "Software\Classes\.epub\ShellEx\${SHELL_THUMBNAIL_HANDLER}\UserMetadata" "" "keep-user-subkey" "uninstall preserves unrelated user subkeys"
     !insertmacro ASSERT_VALUE HKCU "Software\Classes\.epub\ShellEx\${SHELL_THUMBNAIL_HANDLER}" "" "" "uninstall removes opted-in thumbnails"
     !insertmacro ASSERT_VALUE HKCR ".epub\ShellEx\${SHELL_PREVIEW_HANDLER}" "" "" "uninstall removes own preview"
     !insertmacro ASSERT_VALUE HKCR ".pdf\ShellEx\${SHELL_THUMBNAIL_HANDLER}" "" "third-party-thumbnail" "uninstall preserves third-party thumbnail"

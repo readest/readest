@@ -33,7 +33,7 @@
     Push $0
     ReadRegStr $0 HKCR "${EXT}\ShellEx\${HANDLER}" ""
     ${If} $0 == "${CLSID_READEST_THUMBNAIL}"
-        DeleteRegKey HKCR "${EXT}\ShellEx\${HANDLER}"
+        DeleteRegValue HKCR "${EXT}\ShellEx\${HANDLER}" ""
     ${EndIf}
     Pop $0
 !macroend
@@ -44,7 +44,7 @@
     Push $0
     ReadRegStr $0 ${ROOT} "Software\Classes\${EXT}\ShellEx\${SHELL_THUMBNAIL_HANDLER}" ""
     ${If} $0 == "${CLSID_READEST_THUMBNAIL}"
-        DeleteRegKey ${ROOT} "Software\Classes\${EXT}\ShellEx\${SHELL_THUMBNAIL_HANDLER}"
+        DeleteRegValue ${ROOT} "Software\Classes\${EXT}\ShellEx\${SHELL_THUMBNAIL_HANDLER}" ""
     ${EndIf}
     Pop $0
 !macroend
