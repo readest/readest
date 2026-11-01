@@ -165,6 +165,9 @@ class NativeTTSPlugin(private val activity: Activity) : Plugin(activity) {
     private var playoutPlayer: ExoPlayer? = null
     private var playoutSession = 0
     private var playoutCurrentIndex = -1
+    // The item the playlist ended on, kept for position reads: JS may have
+    // missed every event that told it the player got there.
+    private var playoutEndedIndex = -1
     private var playoutRate = 1.0f
     // What each playlist item plays, by index: the loaded file, then any file
     // queued after it. JS owns advancing through the book, but it can be
@@ -175,6 +178,7 @@ class NativeTTSPlugin(private val activity: Activity) : Plugin(activity) {
         override fun onPlaybackStateChanged(playbackState: Int) {
             if (playbackState == Player.STATE_ENDED && playoutCurrentIndex >= 0) {
                 Log.d(TAG, "Narration playlist ended at item $playoutCurrentIndex")
+                playoutEndedIndex = playoutCurrentIndex
                 playoutCurrentIndex = -1
                 emitPlayoutEvent("ended", 0)
             }
@@ -728,6 +732,7 @@ class NativeTTSPlugin(private val activity: Activity) : Plugin(activity) {
                         // Seeking back into a file that played out makes it current again.
                         if (playoutCurrentIndex < 0 && player?.currentMediaItem != null && playoutLoadedKeys.isNotEmpty()) {
                             playoutCurrentIndex = player.currentMediaItemIndex
+                            playoutEndedIndex = -1
                         }
                         invoke.resolve(JSObject().apply { put("session", JSONObject.NULL) })
                     }
@@ -746,6 +751,7 @@ class NativeTTSPlugin(private val activity: Activity) : Plugin(activity) {
             invoke.resolve(JSObject().apply {
                 put("session", playoutSession)
                 put("index", playoutCurrentIndex)
+                if (playoutCurrentIndex < 0 && playoutEndedIndex >= 0) put("endedIndex", playoutEndedIndex)
                 put("positionMs", player?.currentPosition ?: 0L)
                 put("playing", player?.isPlaying ?: false)
             })
@@ -819,6 +825,7 @@ class NativeTTSPlugin(private val activity: Activity) : Plugin(activity) {
         // iOS clocks used by MediaOverlayClient.
         player.pause()
         playoutCurrentIndex = player.currentMediaItemIndex
+        playoutEndedIndex = -1
         emitPlayoutEvent("chunk-start", playoutCurrentIndex)
     }
 
@@ -836,6 +843,7 @@ class NativeTTSPlugin(private val activity: Activity) : Plugin(activity) {
             player.removeMediaItems(0, done)
             repeat(done) { playoutLoadedKeys.removeAt(0) }
             if (playoutCurrentIndex >= 0) playoutCurrentIndex = player.currentMediaItemIndex
+            if (playoutEndedIndex >= 0) playoutEndedIndex -= done
         }
         if (next.source != null) player.addMediaSource(next.source) else player.addMediaItem(next.item)
         playoutLoadedKeys.add(next.key)
@@ -843,6 +851,7 @@ class NativeTTSPlugin(private val activity: Activity) : Plugin(activity) {
 
     private fun abortPlayout() {
         playoutCurrentIndex = -1
+        playoutEndedIndex = -1
         playoutPlayer?.stop()
         playoutPlayer?.clearMediaItems()
         playoutLoadedKeys.clear()

@@ -16,6 +16,8 @@ interface PlayoutPosition {
   index: number;
   positionMs: number;
   playing: boolean;
+  // Android: the item the playlist ended on, once nothing is current.
+  endedIndex?: number;
 }
 
 interface FileWindow {
@@ -366,8 +368,9 @@ export class NativeNarrationPlayer {
     if (event.type === 'ended') {
       this.#finishEnded();
     } else if (event.type === 'item-ended') {
-      const next = this.#nativeIndex + 1;
-      if (event.index === this.#nativeIndex && next < this.#playlist.length) this.#rollTo(next);
+      // Indices restart whenever a queue drops played files, so a late event
+      // can name an item of the new playlist. Confirm with the position.
+      void this.sync().catch(() => undefined);
     } else if (event.type === 'error') {
       // The item failed to load or play. Nothing will ever move the clock, so
       // this is the only thing that can unstick a waiting speak().
@@ -420,8 +423,11 @@ export class NativeNarrationPlayer {
     if (pos.session !== this.#resolvedSession) return;
     const seenIndex = this.#seenIndex;
     this.#seenIndex = pos.index;
-    if (pos.index > this.#nativeIndex && pos.index < this.#playlist.length) {
-      this.#rollTo(pos.index);
+    // Where the player is, or the item it ended on: either may be past the
+    // file JS last knew of.
+    const reached = pos.index >= 0 ? pos.index : (pos.endedIndex ?? -1);
+    if (reached > this.#nativeIndex && reached < this.#playlist.length) {
+      this.#rollTo(reached);
     }
     if (pos.index >= 0) {
       this.#cache = {

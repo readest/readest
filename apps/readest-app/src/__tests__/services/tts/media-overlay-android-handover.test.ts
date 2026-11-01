@@ -35,7 +35,14 @@ import {
 import { MediaOverlayClient } from '@/services/tts/mediaOverlay/MediaOverlayClient';
 
 const SESSION = 11;
-const native = { items: [] as string[], current: -1, positionMs: 0, playing: false };
+const native = {
+  items: [] as string[],
+  current: -1,
+  positionMs: 0,
+  playing: false,
+  // The item the playlist ended on, reported once nothing is current.
+  endedIndex: -1,
+};
 let calls: string[] = [];
 let emit: ((event: unknown) => void) | null = null;
 // Runs inside the next native `load`, before the plugin handles it.
@@ -52,6 +59,7 @@ const fakeInvoke = async (command: string, args?: unknown): Promise<unknown> => 
       index: native.current,
       positionMs: native.positionMs,
       playing: native.playing,
+      ...(native.current < 0 && native.endedIndex >= 0 ? { endedIndex: native.endedIndex } : {}),
     };
   }
   switch (p['action']) {
@@ -180,7 +188,7 @@ const playLastStanzaOfA = async (a: MediaOverlaySection, b: MediaOverlaySection)
 beforeEach(() => {
   vi.clearAllMocks();
   vi.stubEnv('NEXT_PUBLIC_APP_PLATFORM', 'tauri');
-  Object.assign(native, { items: [], current: -1, positionMs: 0, playing: false });
+  Object.assign(native, { items: [], current: -1, positionMs: 0, playing: false, endedIndex: -1 });
   calls = [];
   emit = null;
   beforeLoad = null;
@@ -344,6 +352,24 @@ describe('Android narration handover to the next file', () => {
     await client.stop();
   });
 
+  test('a late rollover event from before the next queue does not end the file playing', async () => {
+    const { a, b } = await start();
+    const { rest } = await playLastStanzaOfA(a, b);
+    // The position read finds the rollover; its event is still on the way.
+    rollOver(7000, { deliverEvent: false });
+    await rest;
+    client.setSection(b);
+    const gen = client.speak(b.ssmlForBlock(2)!, new AbortController().signal);
+    await gen.next();
+    await client.preloadSection(await loadSection('poem3.mp3'));
+    expect(native.items.map(file)).toEqual(['poem2.mp3', 'poem3.mp3']);
+
+    // poem1.mp3's event names item 0, which is now poem2.mp3.
+    emit!({ type: 'item-ended', session: SESSION, index: 0 });
+    // Stanza 3 of poem2.mp3 runs to 18 s, and the player is at 7 s.
+    expect(await finishes(gen, 1200)).toBe('stuck');
+  });
+
   test('after the lock: the next section continues from the live position, not 0 s', async () => {
     const { a, b } = await start();
     const { rest } = await playLastStanzaOfA(a, b);
@@ -370,6 +396,26 @@ describe('Android narration handover to the next file', () => {
     native.playing = false;
     emit!({ type: 'ended', session: SESSION, index: 0 });
     await rest;
+
+    calls = [];
+    client.setSection(b);
+    for (const block of [0, 1, 2]) {
+      const gen = client.speak(b.ssmlForBlock(block)!, new AbortController().signal);
+      expect(await finishes(gen)).not.toBe('stuck');
+    }
+    expect(calls).toEqual([]);
+  });
+
+  test('after a lock longer than the queued file, with every event lost: it is not replayed', async () => {
+    const { a, b } = await start();
+    const { rest } = await playLastStanzaOfA(a, b);
+    // poem2.mp3 played to its end too; neither the rollover nor the end
+    // reached JS. Only the position read tells.
+    rollOver(18000, { deliverEvent: false });
+    native.endedIndex = native.current;
+    native.current = -1;
+    native.playing = false;
+    expect(await Promise.race([rest, tick(1500).then(() => 'stuck')])).not.toBe('stuck');
 
     calls = [];
     client.setSection(b);
