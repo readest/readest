@@ -79,6 +79,11 @@ export class NativeNarrationPlayer {
     return this.#ended;
   }
 
+  // Whether `href` is loaded or queued.
+  has(href: string): boolean {
+    return this.#playlist.includes(href);
+  }
+
   // Whether the native player has already played `href` out and moved on to a
   // file queued after it.
   playedPast(href: string): boolean {

@@ -6,7 +6,7 @@
 // jumps to a file already in the playlist (dropping the items before it) and
 // otherwise replaces the playlist, `queue` keeps the last item and appends,
 // and a file that plays out rolls into the next item on its own.
-import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, type Mock, test, vi } from 'vitest';
 
 vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn(), addPluginListener: vi.fn() }));
 vi.mock('@tauri-apps/api/path', () => ({
@@ -113,20 +113,29 @@ const smil = (audio: string) =>
     <par><text src="x.xhtml#s3"/><audio src="${audio}" clipBegin="12s" clipEnd="18s"/></par>
   </body></smil>`;
 
-const loadSection = async (audio: string): Promise<MediaOverlaySection> => {
+// Stanza 3 recorded in a file of its own.
+const splitSmil = (audio: string) =>
+  `<smil xmlns="http://www.w3.org/ns/SMIL"><body>
+    <par><text src="x.xhtml#s1"/><audio src="${audio}.mp3" clipBegin="0s" clipEnd="6s"/></par>
+    <par><text src="x.xhtml#s2"/><audio src="${audio}.mp3" clipBegin="6s" clipEnd="12s"/></par>
+    <par><text src="x.xhtml#s3"/><audio src="${audio}-c.mp3" clipBegin="0s" clipEnd="6s"/></par>
+  </body></smil>`;
+
+const loadSection = async (audio: string, split = false): Promise<MediaOverlaySection> => {
   const doc = new DOMParser().parseFromString(
     '<!DOCTYPE html><html><body><p id="s1">One.</p><p id="s2">Two.</p><p id="s3">Three.</p></body></html>',
     'text/html',
   );
   const book = {
     sections: [{ mediaOverlay: { href: 'poem.smil', id: 'smil' } }],
-    loadText: async () => smil(audio),
+    loadText: async () => (split ? splitSmil(audio) : smil(audio)),
   } as unknown as BookDoc;
   return (await loadMediaOverlaySection(book, 0, doc, 'en'))!;
 };
 
 let client: MediaOverlayClient;
 let marks: string[];
+let resolvePath: Mock<(href: string) => Promise<string | null>>;
 
 const start = async (platform: Partial<AppService> = { isAndroidApp: true }) => {
   const a = await loadSection('poem1.mp3');
@@ -139,10 +148,8 @@ const start = async (platform: Partial<AppService> = { isAndroidApp: true }) => 
     platform as AppService,
   );
   await client.init();
-  client.attachSource({
-    loadBlob: vi.fn(async () => new Blob([new Uint8Array(8)])),
-    resolvePath: vi.fn(async (href: string) => `/books/hash/${href}`),
-  });
+  resolvePath = vi.fn(async (href: string) => `/books/hash/${href}`);
+  client.attachSource({ loadBlob: vi.fn(async () => new Blob([new Uint8Array(8)])), resolvePath });
   client.setSection(a);
   return { a, b };
 };
@@ -210,6 +217,41 @@ describe('Android narration handover to the next file', () => {
     await client.preloadSection(b);
 
     expect(calls.filter((call) => call.startsWith('queue'))).toEqual([]);
+    await client.stop();
+  });
+
+  test('an offer repeated on every preload queues the file once', async () => {
+    const { a, b } = await start();
+    const { rest } = await playLastStanzaOfA(a, b);
+    const lookups = resolvePath.mock.calls.length;
+    await client.preloadSection(b);
+    await client.preloadSection(b);
+
+    expect(calls.filter((call) => call.startsWith('queue'))).toEqual(['queue poem2.mp3']);
+    expect(resolvePath.mock.calls.length).toBe(lookups);
+    native.positionMs = 18000;
+    emit!({ type: 'ended', session: SESSION, index: 0 });
+    await rest;
+  });
+
+  test("queues the section's own next file while an earlier one plays", async () => {
+    await start();
+    const split = await loadSection('poem1', true);
+    client.setSection(split);
+    const gen = client.speak(split.ssmlForBlock(0)!, new AbortController().signal);
+    await gen.next();
+    await tick();
+
+    expect(calls).toContain('queue poem1-c.mp3');
+    // Its stanza joins the rolled-over file like a next section would.
+    const rest = drain(gen);
+    await tick();
+    rollOver(3000);
+    await rest;
+    calls = [];
+    const gen2 = client.speak(split.ssmlForBlock(2)!, new AbortController().signal);
+    await gen2.next();
+    expect(calls).toEqual([]);
     await client.stop();
   });
 

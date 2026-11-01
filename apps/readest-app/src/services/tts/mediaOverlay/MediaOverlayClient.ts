@@ -240,10 +240,24 @@ export class MediaOverlayClient implements TTSClient {
   // without JS. Only while this section's last file is the one playing:
   // queued earlier, it would play in place of this section's later files.
   async preloadSection(next: MediaOverlaySection): Promise<void> {
-    if (!this.#queuesNext || !this.#player || !this.#source || this.#source.resolveTracks) return;
-    const href = next.pars[0]?.audioHref;
-    if (!href || href === this.#audioHref || this.#audio !== this.#player) return;
     if (this.#section?.pars.at(-1)?.audioHref !== this.#audioHref) return;
+    await this.#queue(next.pars[0]?.audioHref);
+  }
+
+  // The same within a section recorded across several files: while one plays,
+  // queue the file its last clip hands over to.
+  #queueNextInSection(href: string): void {
+    const pars = this.#section?.pars ?? [];
+    let last = -1;
+    for (let i = 0; i < pars.length; i++) if (pars[i]!.audioHref === href) last = i;
+    if (last < 0) return;
+    void this.#queue(pars[last + 1]?.audioHref).catch(() => undefined);
+  }
+
+  async #queue(href: string | undefined): Promise<void> {
+    const player = this.#player;
+    if (!this.#queuesNext || !player || !this.#source || this.#source.resolveTracks) return;
+    if (!href || href === this.#audioHref || this.#audio !== player || player.has(href)) return;
     await this.#placeOnNative(href, true);
   }
 
@@ -540,6 +554,7 @@ export class MediaOverlayClient implements TTSClient {
         return;
       }
       if (signal.aborted) return;
+      this.#queueNextInSection(run.audioHref);
 
       this.#cancelHandover();
       await setClockRate(audio, this.#rate);

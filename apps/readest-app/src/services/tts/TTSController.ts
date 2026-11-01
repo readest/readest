@@ -129,6 +129,10 @@ type TTSState =
 // A sentence position for A-B repeat. A CFI rather than a Range: the section's
 // document is replaced on re-attach and section changes.
 type TTSLoopPoint = { sectionIndex: number; cfi: string };
+
+// The opening paragraphs of an upcoming section, and its narration when it
+// is the next section and narration is playing.
+type SectionOpening = { ssmls: string[]; narration: MediaOverlaySection | null };
 export type TTSLoopState = 'off' | 'a' | 'ab';
 
 const HIGHLIGHT_KEY = 'tts-highlight';
@@ -222,7 +226,7 @@ export class TTSController extends EventTarget {
   // Opening paragraphs (raw SSML) of what is read after the current document
   // (the next chunk of a chunked section, else the next section), for preloads
   // across its end; built once per document read.
-  #nextOpening: { after: Document | null; ssmls: Promise<string[]> } | null = null;
+  #nextOpening: { after: Document | null; opening: Promise<SectionOpening> } | null = null;
   // Signal for queued background preloads: a windowed provider keeps them
   // until it aborts, so a voice change or stop must withdraw them.
   #preloadAbort = new AbortController();
@@ -1711,12 +1715,16 @@ export class TTSController extends EventTarget {
         const chunkAnchor = this.#adjacentChunkAnchor(1);
         this.#nextOpening = {
           after: this.#ttsDoc,
-          ssmls: chunkAnchor
+          opening: chunkAnchor
             ? this.#sectionOpening(this.#ttsSectionIndex, chunkAnchor)
             : this.#sectionOpening(this.#ttsSectionIndex + 1),
         };
       }
-      for (const ssml of await this.#nextOpening.ssmls) {
+      const { ssmls: opening, narration } = await this.#nextOpening.opening;
+      // Offered again on every preload: the client takes it only once this
+      // section's last audio file is playing (#7193).
+      if (narration) await this.#queueNarration(narration);
+      for (const ssml of opening) {
         if (!budgetLeft()) break;
         rawSsmls.push(ssml);
         seconds += estimate(ssml);
@@ -1741,13 +1749,22 @@ export class TTSController extends EventTarget {
   // SSML, from a throwaway TTS over a fresh document (never the live one), the
   // same way the live session will produce them so preloads match playback.
   // `from` starts at a chunk instead: chunk documents keep the full section's
-  // element indices, so its anchor resolves in the fresh document too.
-  async #sectionOpening(sectionIndex: number, from?: (doc: Document) => Range): Promise<string[]> {
+  // element indices, so its anchor resolves in the fresh document too. A next
+  // section also brings its narration, for the client to queue.
+  async #sectionOpening(
+    sectionIndex: number,
+    from?: (doc: Document) => Range,
+  ): Promise<SectionOpening> {
     const section = this.view.book.sections?.[sectionIndex];
-    if (!section?.createDocument) return [];
+    if (!section?.createDocument) return { ssmls: [], narration: null };
     try {
       const doc = await this.#createSectionDoc(section);
-      if (!from && this.narrationActive) await this.#queueNarration(sectionIndex, doc);
+      let narration: MediaOverlaySection | null = null;
+      if (!from && this.narrationActive) {
+        // Narration that fails to load must not cost the opening its preload.
+        narration = await (async () =>
+          this.#loadNarrationSection(this.view, sectionIndex, doc))().catch(() => null);
+      }
       const { TTS } = await import('foliate-js/tts.js');
       const { textWalker } = await import('foliate-js/text-walker.js');
       const tts = new TTS(doc, textWalker, createTTSNodeFilter(), () => {}, this.#ttsGranularity);
@@ -1761,21 +1778,20 @@ export class TTSController extends EventTarget {
         seconds += estimateSentenceSeconds(text, this.ttsLang || 'en', voiceId);
         if (seconds >= PRELOAD_AHEAD_SEC) break;
       }
-      return ssmls;
+      return { ssmls, narration };
     } catch (err) {
       console.warn('TTS preload of an upcoming opening failed', sectionIndex, err);
-      return [];
+      return { ssmls: [], narration: null };
     }
   }
 
   // Hand the next section's recording to the narration client ahead of time,
   // so a native player can play on into it while JS is suspended (#7193).
-  async #queueNarration(sectionIndex: number, doc: Document): Promise<void> {
+  async #queueNarration(narration: MediaOverlaySection): Promise<void> {
     try {
-      const narration = await this.#loadNarrationSection(this.view, sectionIndex, doc);
-      if (narration) await this.ttsMediaOverlayClient.preloadSection(narration);
+      await this.ttsMediaOverlayClient.preloadSection(narration);
     } catch (err) {
-      console.warn('[TTS] queueing the next narrated section failed', sectionIndex, err);
+      console.warn('[TTS] queueing the next narrated section failed', err);
     }
   }
 
