@@ -1049,6 +1049,14 @@ describe('useTTSControl handleHighlightMark cross-section navigation', () => {
     // foliate settles an anchor with no box on the section start.
     expect(mockView.renderer.scrollToAnchor).not.toHaveBeenCalled();
     expect(mockViewSettings.ttsLocation).toBe('epubcfi(/6/4!/4/8)');
+
+    // The next shown sentence is followed again.
+    const shown = new Range();
+    mockView.resolveCFI.mockReturnValue({ index: 0, anchor: () => shown });
+    await act(async () => {
+      handler(new CustomEvent('tts-highlight-mark', { detail: { cfi: 'epubcfi(/6/4!/4/10)' } }));
+    });
+    expect(mockView.renderer.scrollToAnchor).toHaveBeenCalledWith(shown);
   });
 
   it('holds the scrolled view for a sentence the book hides (#7153)', async () => {
