@@ -159,7 +159,78 @@ describe("ReadestSync:onResume", function()
         plugin:onNetworkConnected()
         assert.are.equal(1, #UIManagerStub._scheduled)
         UIManagerStub:drain()
+        UIManagerStub:drain()
         assert.are.equal(3, #plugin.pull_calls)
+        assert.are.equal(0, #UIManagerStub._scheduled)
+        assert.is_nil(plugin.background_pull_task)
+    end)
+
+    it("stops waiting when auto sync is disabled", function()
+        local plugin = makePlugin({ auto_sync = true, access_token = "tok", document = {} })
+        stubs.NetworkMgr._route = false
+
+        plugin:onResume()
+        UIManagerStub:drain()
+        plugin:onReadestSyncToggleAutoSync(false)
+        UIManagerStub:drain()
+
+        assert.are.equal(0, #plugin.pull_calls)
+        assert.are.equal(0, #UIManagerStub._scheduled)
+        assert.is_nil(plugin.background_pull_task)
+    end)
+
+    it("does not pull when auto sync is disabled before the route returns", function()
+        local plugin = makePlugin({ auto_sync = true, access_token = "tok", document = {} })
+        stubs.NetworkMgr._route = false
+
+        plugin:onResume()
+        plugin:onReadestSyncToggleAutoSync(false)
+        stubs.NetworkMgr._route = true
+        UIManagerStub:drain()
+        UIManagerStub:drain()
+
+        assert.are.equal(0, #plugin.pull_calls)
+        assert.are.equal(0, #UIManagerStub._scheduled)
+        assert.is_nil(plugin.background_pull_task)
+    end)
+
+    it("keeps waiting when reconnect fires before the route returns", function()
+        local plugin = makePlugin({ auto_sync = true, access_token = "tok", document = {} })
+        stubs.NetworkMgr._route = false
+
+        plugin:onResume()
+        UIManagerStub:drain()
+        plugin.pull_pending_offline = true
+        plugin:onNetworkConnected()
+        UIManagerStub:drain()
+        assert.are.equal(0, #plugin.pull_calls)
+        assert.are.equal(1, #UIManagerStub._scheduled)
+
+        stubs.NetworkMgr._route = true
+        UIManagerStub:drain()
+        UIManagerStub:drain()
+        assert.are.equal(3, #plugin.pull_calls)
+        assert.are.equal(0, #UIManagerStub._scheduled)
+        assert.is_nil(plugin.background_pull_task)
+    end)
+
+    it("does not restart the bounded wake wait on reconnect", function()
+        local plugin = makePlugin({ auto_sync = true, access_token = "tok", document = {} })
+        stubs.NetworkMgr._route = false
+
+        plugin:onResume()
+        local waited = 0
+        for check = 1, 32 do
+            if #UIManagerStub._scheduled == 0 then break end
+            if check == 29 then
+                plugin.pull_pending_offline = true
+                plugin:onNetworkConnected()
+            end
+            waited = waited + UIManagerStub._scheduled[1].delay
+            UIManagerStub:drain()
+        end
+        assert.are.equal(3, #plugin.pull_calls)
+        assert.are.equal(61, waited)
         assert.are.equal(0, #UIManagerStub._scheduled)
         assert.is_nil(plugin.background_pull_task)
     end)

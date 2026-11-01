@@ -164,7 +164,9 @@ function ReadestSync:scheduleWakePull(checks)
         end
         self.background_pull_task = function()
             self.background_pull_task = nil
-            self:scheduleWakePull(checks + 1)
+            if self.settings.auto_sync and self.settings.access_token and self.ui.document then
+                self:scheduleWakePull(checks + 1)
+            end
         end
         UIManager:scheduleIn(WAKE_NETWORK_CHECK_INTERVAL, self.background_pull_task)
         return
@@ -1228,6 +1230,8 @@ function ReadestSync:onAnnotationsModified(items)
     end
 end
 
+-- Retry a skipped pull on reconnect, preserving any pending wake wait's
+-- route checks and original limit.
 function ReadestSync:onNetworkConnected()
     if self.settings.localsend_enabled then
         self.localsend:startService(true)
@@ -1244,7 +1248,11 @@ function ReadestSync:onNetworkConnected()
         return
     end
     self.pull_pending_offline = nil
-    self:scheduleBackgroundPull(BACKGROUND_PULL_DELAY)
+    -- A pending wake wait already checks for an address and a route. Keep
+    -- its original limit: NetworkConnected can arrive before routing is ready.
+    if not self.background_pull_task then
+        self:scheduleBackgroundPull(BACKGROUND_PULL_DELAY)
+    end
 end
 
 function ReadestSync:onNetworkDisconnected()
