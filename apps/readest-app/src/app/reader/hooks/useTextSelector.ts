@@ -40,7 +40,11 @@ import {
   toDocPoint,
 } from '../utils/crossDocSelection';
 import { toParentViewportPoint } from '../utils/annotatorUtil';
-import { getContextMenuImage } from '../utils/iframeEventHandlers';
+import {
+  detectMediaTarget,
+  getContextMenuImage,
+  getImageViewerGesture,
+} from '../utils/iframeEventHandlers';
 
 // Instant-highlight quick action: on touch a plain tap and a swipe are both
 // page-turn gestures, so the highlight must not engage on pointer-down or it
@@ -702,6 +706,13 @@ export const useTextSelector = (
     if (isTouch && isTextAtPoint(doc, clientX, clientY)) return false;
     const getImage = getContextMenuImage(event);
     if (!getImage) return false;
+    // A book whose images open on a long press opens the viewer instead (#7145).
+    // PDF images have no file of their own to show, so they keep the menu.
+    const media = isTouch ? detectMediaTarget(event.target as HTMLElement) : null;
+    if (media?.elementType === 'image' && getImageViewerGesture(bookKey) === 'longPress') {
+      window.postMessage({ type: 'iframe-open-media', bookKey, ...media }, '*');
+      return true;
+    }
     const { x, y } = toParentViewportPoint(doc, clientX, clientY);
     eventDispatcher.dispatch('image-context-menu', { bookKey, getImage, x, y });
     return true;

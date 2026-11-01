@@ -9,10 +9,11 @@ import { useEinkMode } from '@/hooks/useEinkMode';
 import { getStyles } from '@/utils/style';
 import { getMaxInlineSize } from '@/utils/config';
 import { saveSysSettings, saveViewSettings } from '@/helpers/settings';
-import { PageTurnStyle } from '@/types/book';
+import { ImageViewerGesture, PageTurnStyle } from '@/types/book';
 import { SettingsPanelPanelProp } from './SettingsDialog';
 import { annotationToolQuickActions } from '@/app/reader/components/annotator/AnnotationTools';
 import { applyPageTurnAttributes } from '@/app/reader/hooks/useCapturedTurn';
+import { resolveImageViewerGesture } from '@/app/reader/utils/iframeEventHandlers';
 import { isTauriAppPlatform } from '@/services/environment';
 import { DEFAULT_SYSTEM_SETTINGS } from '@/services/constants';
 import {
@@ -59,6 +60,9 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
   const [fullscreenClickArea, setFullscreenClickArea] = useState(viewSettings.fullscreenClickArea);
   const [swapClickArea, setSwapClickArea] = useState(viewSettings.swapClickArea);
   const [isDisableDoubleClick, setIsDisableDoubleClick] = useState(viewSettings.disableDoubleClick);
+  const [imageViewerGesture, setImageViewerGesture] = useState(
+    resolveImageViewerGesture(viewSettings, !!bookData?.isFixedLayout),
+  );
   const [enableAnnotationQuickActions, setEnableAnnotationQuickActions] = useState(
     viewSettings.enableAnnotationQuickActions,
   );
@@ -457,6 +461,13 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
     ];
   };
 
+  // Set for this book only: comics and novels want different gestures (#7145).
+  const handleSelectImageViewerGesture = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    const gesture = event.target.value as ImageViewerGesture;
+    setImageViewerGesture(gesture);
+    saveViewSettings(envConfig, bookKey, 'imageViewerGesture', gesture, true, false);
+  };
+
   const handleSelectAnnotationQuickAction = (event: React.ChangeEvent<HTMLSelectElement>) => {
     const action = event.target.value as typeof annotationQuickAction;
     setAnnotationQuickAction(action);
@@ -544,6 +555,23 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
           onChange={() => setIsDisableDoubleClick(!isDisableDoubleClick)}
           data-setting-id='settings.control.disableDoubleClick'
         />
+        {bookData && (
+          <SettingsRow
+            label={_('Open Images')}
+            description={_('For this book only')}
+            data-setting-id='settings.control.imageViewerGesture'
+          >
+            <SettingsSelect
+              value={imageViewerGesture}
+              onChange={handleSelectImageViewerGesture}
+              ariaLabel={_('Open Images')}
+              options={[
+                { value: 'tap', label: appService?.isMobileApp ? _('Tap') : _('Click') },
+                { value: 'longPress', label: _('Long Press') },
+              ]}
+            />
+          </SettingsRow>
+        )}
         <SettingsSwitchRow
           label={_('Show Page Navigation Buttons')}
           checked={showPaginationButtons}

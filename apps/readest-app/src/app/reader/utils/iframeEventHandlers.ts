@@ -1,5 +1,6 @@
 import { DOUBLE_CLICK_INTERVAL_THRESHOLD_MS, LONG_HOLD_THRESHOLD } from '@/services/constants';
 import { eventDispatcher } from '@/utils/event';
+import type { ImageViewerGesture, ViewSettings } from '@/types/book';
 import { findGlossWord } from '@/app/reader/utils/wordlensRuby';
 import { TURN_GESTURE_LEFT_INSET_ATTRIBUTE } from './brightnessGesture';
 import { hasScrollRoomY } from './wheelGesture';
@@ -28,6 +29,21 @@ interface TouchGesture {
   turnIntent?: TurnGestureIntent;
 }
 const touchGestures = new Map<string, TouchGesture>();
+
+// Each open book's gesture for the image viewer, kept in step by the reader.
+const imageViewerGestures = new Map<string, ImageViewerGesture>();
+export const setImageViewerGesture = (bookKey: string, gesture: ImageViewerGesture) => {
+  imageViewerGestures.set(bookKey, gesture);
+};
+export const getImageViewerGesture = (bookKey: string) => imageViewerGestures.get(bookKey) ?? 'tap';
+
+// A comic or PDF page is all image, so a tap there turns the page or shows the
+// toolbar unless the book is set to open its images on a tap (#7145).
+export const resolveImageViewerGesture = (
+  viewSettings: Pick<ViewSettings, 'imageViewerGesture'>,
+  isFixedLayout: boolean,
+): ImageViewerGesture => viewSettings.imageViewerGesture ?? (isFixedLayout ? 'longPress' : 'tap');
+
 const suppressedSwipeClicks = new Map<string, { until: number; endX: number; endY: number }>();
 interface LayeredTurnTouchClaim {
   claimed: boolean;
@@ -462,7 +478,7 @@ const pagesCovered = (element: Element) => {
   return (width * height) / pageArea;
 };
 
-const detectMediaTarget = (target: HTMLElement | null): MediaTarget | null => {
+export const detectMediaTarget = (target: HTMLElement | null): MediaTarget | null => {
   if (!target) return null;
   if (target.localName === 'img') {
     return { elementType: 'image', src: (target as HTMLImageElement).src };
@@ -619,10 +635,16 @@ export const handleClick = (
     // popup/navigation behavior. Fixed-layout pages (comics/manga) keep
     // tap-to-turn, so their media rides along on the single click like media
     // filling a reflowable page, and a linked image there stays a link.
-    const media =
+    const target =
       !footnote && !opensNote(element) && !(isFixedLayout && element?.closest('a'))
         ? detectMediaTarget(element)
         : null;
+    // A book whose images open on a long press taps through them (#7145).
+    const heldImage =
+      target?.elementType === 'image' && getImageViewerGesture(bookKey) === 'longPress'
+        ? target
+        : null;
+    const media = heldImage ? null : target;
     const pageMedia = media && element && (isFixedLayout || fillsPage(element)) ? media : null;
     if (
       !media &&
@@ -653,8 +675,10 @@ export const handleClick = (
       return;
     }
 
-    // if long hold is detected, we don't want to send single click event
+    // if long hold is detected, we don't want to send single click event; a
+    // mouse held on an image is the long press that opens the viewer.
     if (!longHoldTimeout) {
+      if (heldImage) window.postMessage({ type: 'iframe-open-media', bookKey, ...heldImage }, '*');
       return;
     }
 

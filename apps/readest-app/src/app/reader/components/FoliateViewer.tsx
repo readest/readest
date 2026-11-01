@@ -82,6 +82,8 @@ import {
   handleTouchMove,
   handleTouchEnd,
   handleTouchCancel,
+  resolveImageViewerGesture,
+  setImageViewerGesture,
 } from '../utils/iframeEventHandlers';
 import { getCurrentRendererLayout, useDuoPose } from '@/hooks/useDuoPose';
 import { applyRendererLayout } from '@/utils/duo';
@@ -1344,6 +1346,15 @@ const FoliateViewer: React.FC<{
       doubleClickDisabled.current = !!viewSettings?.disableDoubleClick;
     }
   }, [viewSettings?.disableDoubleClick]);
+
+  useEffect(() => {
+    if (!viewSettings) return;
+    setImageViewerGesture(
+      bookKey,
+      resolveImageViewerGesture(viewSettings, !!bookData?.isFixedLayout),
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bookKey, viewSettings?.imageViewerGesture, bookData?.isFixedLayout]);
 
   // A section can flip the writing axis mid-book — a vertical chapter inside an
   // otherwise horizontal one. `getMaxInlineSize` measures the other screen axis

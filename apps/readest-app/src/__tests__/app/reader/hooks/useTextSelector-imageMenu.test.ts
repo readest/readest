@@ -304,3 +304,57 @@ describe('useTextSelector image long-press menu (#6574)', () => {
     });
   });
 });
+
+// #7145: with the image viewer set to open on long press, a long press on an
+// image opens the viewer in place of the menu; a right-click keeps the menu.
+describe('useTextSelector long press opens the image viewer (#7145)', () => {
+  let postSpy: ReturnType<typeof vi.spyOn>;
+  beforeEach(async () => {
+    postSpy = vi.spyOn(window, 'postMessage').mockImplementation(() => {});
+    const { setImageViewerGesture } = await import('@/app/reader/utils/iframeEventHandlers');
+    setImageViewerGesture('book-1', 'longPress');
+  });
+  afterEach(async () => {
+    const { setImageViewerGesture } = await import('@/app/reader/utils/iframeEventHandlers');
+    setImageViewerGesture('book-1', 'tap');
+  });
+  const openedMedia = () =>
+    postSpy.mock.calls
+      .map((call: unknown[]) => call[0] as Record<string, unknown>)
+      .filter((m: Record<string, unknown>) => m['type'] === 'iframe-open-media');
+
+  test('an Android long press on an image opens the viewer, not the menu', () => {
+    h.appService = { isAndroidApp: true, isMobile: true };
+    listen();
+    document.body.innerHTML = '<img src="blob:http://localhost/figure">';
+    expect(rightClick(document.querySelector('img')!).defaultPrevented).toBe(true);
+    expect(imageMenus()).toEqual([]);
+    expect(openedMedia()).toEqual([
+      {
+        type: 'iframe-open-media',
+        bookKey: 'book-1',
+        elementType: 'image',
+        src: 'blob:http://localhost/figure',
+      },
+    ]);
+  });
+
+  test('a desktop right-click on an image keeps the menu', () => {
+    listen();
+    document.body.innerHTML = '<img src="blob:http://localhost/figure">';
+    rightClick(document.querySelector('img')!);
+    expect(imageMenus()).toHaveLength(1);
+    expect(openedMedia()).toEqual([]);
+  });
+
+  test('a long press on a PDF image, which the viewer cannot show, keeps the menu', () => {
+    h.appService = { isAndroidApp: true, isMobile: true };
+    listen();
+    document.body.innerHTML = '<div class="textLayer"></div>';
+    Object.assign(document, { getImageAt: () => vi.fn() });
+    rightClick(document.querySelector('.textLayer')!);
+    expect(imageMenus()).toHaveLength(1);
+    expect(openedMedia()).toEqual([]);
+    delete (document as { getImageAt?: unknown }).getImageAt;
+  });
+});
