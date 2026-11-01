@@ -634,9 +634,12 @@ const RSVPControl = forwardRef<RSVPControlHandle, RSVPControlProps>(function RSV
   useEffect(() => {
     if (!isActive) return;
     if (!controllerRef.current) return;
-    if (getBookData(bookKey)?.isFixedLayout) return;
-    syncStateRef.current.following = true;
-    syncStateRef.current.lastSequenceSeen = -Infinity;
+    // Fixed layout never follows (D7), but still needs the replayed playback
+    // state so ttsActive/ttsPlaying match the live session.
+    if (!getBookData(bookKey)?.isFixedLayout) {
+      syncStateRef.current.following = true;
+      syncStateRef.current.lastSequenceSeen = -Infinity;
+    }
     eventDispatcher.dispatch('tts-sync-request', { bookKey });
   }, [isActive, bookKey, getBookData]);
 

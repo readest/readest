@@ -428,6 +428,7 @@ describe('RSVPControl — keeps the screen awake while playing', () => {
     });
 
   beforeEach(() => {
+    isFixedLayout = false;
     controllerEventListeners.clear();
     controllerMock = makeControllerMock();
     useScreenWakeLock.mockClear();
@@ -464,5 +465,31 @@ describe('RSVPControl — keeps the screen awake while playing', () => {
       await eventDispatcher.dispatch('tts-playback-state', { bookKey: BOOK_KEY, state: 'paused' });
     });
     expect(wakeLockRequested()).toBe(false);
+  });
+
+  test('fixed layout entered with TTS paused does not hold it for the frozen word', async () => {
+    isFixedLayout = true;
+    // Stand-in for useTTSControl's replay of the live session's state.
+    const replayPaused = () =>
+      eventDispatcher.dispatch('tts-playback-state', { bookKey: BOOK_KEY, state: 'paused' });
+    eventDispatcher.on('tts-sync-request', replayPaused);
+    try {
+      render(
+        <RSVPControl bookKey={BOOK_KEY} gridInsets={{ top: 0, bottom: 0, left: 0, right: 0 }} />,
+      );
+      await act(async () => {
+        await eventDispatcher.dispatch('tts-playback-state', {
+          bookKey: BOOK_KEY,
+          state: 'paused',
+        });
+      });
+      await startSession();
+
+      // RSVP starts externally driven (no timer) but reports playing.
+      await emitRsvpState(true);
+      expect(wakeLockRequested()).toBe(false);
+    } finally {
+      eventDispatcher.off('tts-sync-request', replayPaused);
+    }
   });
 });
