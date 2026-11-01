@@ -92,7 +92,7 @@ describe('PointerHandwritingBackend palm rejection', () => {
     expect(points.every((p) => p.length === 2)).toBe(true);
   });
 
-  it('accepts a new touch stroke after the pen lifts', () => {
+  it('reserves touch for navigation after the pen lifts', () => {
     const { el, points } = setup();
 
     dispatch(el, 'pointerdown', { pointerId: 1, pointerType: 'pen' });
@@ -100,17 +100,17 @@ describe('PointerHandwritingBackend palm rejection', () => {
     dispatch(el, 'pointerdown', { pointerId: 3, pointerType: 'touch', clientX: 70, clientY: 80 });
     dispatch(el, 'pointerup', { pointerId: 3, pointerType: 'touch' });
 
-    expect(points).toHaveLength(2);
+    expect(points).toHaveLength(1);
   });
 
-  it('does not steal a second concurrent touch while the first is drawing', () => {
+  it('cancels finger ink when a second contact starts a gesture', () => {
     const { el, points } = setup();
 
     dispatch(el, 'pointerdown', { pointerId: 5, pointerType: 'touch', clientX: 10, clientY: 10 });
     dispatch(el, 'pointerdown', { pointerId: 6, pointerType: 'touch', clientX: 99, clientY: 99 });
     dispatch(el, 'pointerup', { pointerId: 5, pointerType: 'touch' });
 
-    expect(points).toHaveLength(1);
+    expect(points).toHaveLength(0);
   });
 });
 
@@ -173,7 +173,7 @@ describe('PointerHandwritingBackend', () => {
     dispatch(el, 'pointermove', { clientX: 2, clientY: 2 });
     dispatch(el, 'pointercancel', {});
     await new Promise((r) => requestAnimationFrame(r));
-    expect(onBatch).not.toHaveBeenCalled();
+    expect(onBatch).toHaveBeenCalledExactlyOnceWith([], 'cancel', false);
   });
 
   it('detects eraser via button 5 and omits pressure for mouse', async () => {
@@ -216,5 +216,129 @@ describe('PointerHandwritingBackend', () => {
     dispatch(el, 'pointerdown', { clientX: 1, clientY: 1 });
     await new Promise((r) => requestAnimationFrame(r));
     expect(onBatch).not.toHaveBeenCalled();
+  });
+});
+
+describe('stylus input regressions (#7147)', () => {
+  it('uses the S Pen barrel button as a temporary eraser', () => {
+    const el = new FakeElement();
+    const backend = new PointerHandwritingBackend();
+    const batch = vi.fn();
+    backend.onBatch(batch);
+    backend.attach(el as unknown as HTMLElement, identity);
+    dispatch(el, 'pointerdown', { buttons: 3, button: 2 });
+    dispatch(el, 'pointerup', {});
+    expect(batch).toHaveBeenLastCalledWith(expect.any(Array), 'end', true);
+    dispatch(el, 'pointerdown', { buttons: 1 });
+    dispatch(el, 'pointerup', {});
+    expect(batch).toHaveBeenLastCalledWith(expect.any(Array), 'end', false);
+  });
+
+  it('does not draw a resting palm after a pen stroke', () => {
+    const el = new FakeElement();
+    const backend = new PointerHandwritingBackend();
+    const batch = vi.fn();
+    backend.onBatch(batch);
+    backend.attach(el as unknown as HTMLElement, identity);
+    dispatch(el, 'pointerdown', {});
+    dispatch(el, 'pointerup', {});
+    batch.mockClear();
+    dispatch(el, 'pointerdown', { pointerType: 'touch', pointerId: 8 });
+    dispatch(el, 'pointerup', { pointerType: 'touch', pointerId: 8 });
+    expect(batch).not.toHaveBeenCalled();
+  });
+
+  it('keeps a sample when getCoalescedEvents returns an empty array', () => {
+    const el = new FakeElement();
+    const backend = new PointerHandwritingBackend();
+    const batch = vi.fn();
+    backend.onBatch(batch);
+    backend.attach(el as unknown as HTMLElement, identity);
+    dispatch(el, 'pointerdown', { pressure: 0.2 });
+    dispatch(el, 'pointermove', { pressure: 0.9, clientX: 5, getCoalescedEvents: () => [] });
+    dispatch(el, 'pointerup', {});
+    expect(batch.mock.calls[0]![0]).toEqual([
+      [0, 0, 0.2],
+      [5, 0, 0.9],
+    ]);
+  });
+});
+
+describe('finger gestures while drawing', () => {
+  const setup = () => {
+    const el = new FakeElement();
+    const backend = new PointerHandwritingBackend();
+    const gesture = vi.fn();
+    const batch = vi.fn();
+    backend.onBatch(batch);
+    backend.onGesture(gesture);
+    backend.attach(el as unknown as HTMLElement, identity);
+    dispatch(el, 'pointerover', {});
+    return { el, backend, gesture, batch };
+  };
+  const touch = (el: FakeElement, type: string, id: number, x = id * 20, y = 10) =>
+    dispatch(el, type, { pointerId: id, pointerType: 'touch', clientX: x, clientY: y });
+
+  it.each([2, 3])('uses a %i-finger tap for history without ink', (count) => {
+    const { el, gesture, batch } = setup();
+    for (let i = 1; i <= count; i++) touch(el, 'pointerdown', i);
+    // Each finger can wobble without moving the gesture beyond its tap slop.
+    for (let i = 1; i <= count; i++) touch(el, 'pointermove', i, i * 20 + 1);
+    for (let i = 1; i <= count; i++) touch(el, 'pointerup', i);
+    expect(gesture).toHaveBeenCalledExactlyOnceWith({ action: count === 2 ? 'undo' : 'redo' });
+    expect(batch).not.toHaveBeenCalled();
+  });
+
+  it('navigates with a finger swipe after detecting a pen', () => {
+    const { el, gesture, batch } = setup();
+    touch(el, 'pointerdown', 1, 100);
+    touch(el, 'pointermove', 1, 40);
+    touch(el, 'pointerup', 1, 40);
+    expect(gesture).toHaveBeenCalledExactlyOnceWith({ action: 'swipe', dx: -60, dy: 0 });
+    expect(batch).not.toHaveBeenCalled();
+  });
+
+  it('ignores a moving palm even if the pen lifts before the palm', () => {
+    const { el, gesture } = setup();
+    dispatch(el, 'pointerdown', { pointerId: 10 });
+    touch(el, 'pointerdown', 1, 100);
+    dispatch(el, 'pointerup', { pointerId: 10 });
+    touch(el, 'pointermove', 1, 20);
+    touch(el, 'pointerup', 1, 20);
+    expect(gesture).not.toHaveBeenCalled();
+  });
+
+  it('rejects multi-finger drags and cancelled gestures', () => {
+    const { el, gesture } = setup();
+    touch(el, 'pointerdown', 1);
+    touch(el, 'pointerdown', 2);
+    touch(el, 'pointermove', 1, 150);
+    touch(el, 'pointerup', 1, 150);
+    touch(el, 'pointerup', 2);
+    touch(el, 'pointerdown', 1);
+    touch(el, 'pointerdown', 2);
+    touch(el, 'pointercancel', 1);
+    touch(el, 'pointerup', 2);
+    expect(gesture).not.toHaveBeenCalled();
+  });
+
+  it('splits strokes when the barrel button changes during contact', () => {
+    const { el, batch } = setup();
+    dispatch(el, 'pointerdown', { pointerId: 10, buttons: 1 });
+    dispatch(el, 'pointermove', { pointerId: 10, buttons: 3, clientX: 5 });
+    expect(batch).toHaveBeenLastCalledWith([[0, 0, 0.5]], 'end', false);
+    dispatch(el, 'pointerup', { pointerId: 10 });
+    expect(batch).toHaveBeenLastCalledWith([[5, 0, 0.5]], 'end', true);
+  });
+
+  it('detach drops pending input before reattaching', () => {
+    const { el, backend, batch } = setup();
+    dispatch(el, 'pointerdown', {});
+    backend.detach();
+    expect(batch).toHaveBeenLastCalledWith([], 'cancel', false);
+    backend.attach(el as unknown as HTMLElement, identity);
+    dispatch(el, 'pointerdown', { clientX: 9 });
+    dispatch(el, 'pointerup', {});
+    expect(batch).toHaveBeenLastCalledWith([[9, 0, 0.5]], 'end', false);
   });
 });

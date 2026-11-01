@@ -20,7 +20,11 @@ export interface InkTarget {
   rect: PageRect;
   anchoring: InkAnchoring | null;
 }
-import { PointerHandwritingBackend } from './pointerBackend';
+import {
+  PointerHandwritingBackend,
+  type InkGesture,
+  type PointerBatchKind,
+} from './pointerBackend';
 import { BooxHandwritingBackend, queryPenCapabilities } from './booxBackend';
 import { isTauriAppPlatform } from '@/services/environment';
 import { getOSPlatform } from '@/utils/misc';
@@ -278,6 +282,14 @@ export class HandwritingService {
     this.onRender?.();
   }
 
+  onGesture(listener: (gesture: InkGesture) => void) {
+    this.pointer.onGesture((gesture) => {
+      if (gesture.action === 'undo') this.undo();
+      else if (gesture.action === 'redo') this.redo();
+      else listener(gesture);
+    });
+  }
+
   async attach(el: HTMLElement) {
     this.backend = await detectPenBackend({
       queryNative:
@@ -356,7 +368,13 @@ export class HandwritingService {
     return pinned;
   }
 
-  private onBatch(points: InkPoint[], kind: 'move' | 'end', erase: boolean) {
+  private onBatch(points: InkPoint[], kind: PointerBatchKind, erase: boolean) {
+    if (kind === 'cancel') {
+      this.live = [];
+      this.eraseTail = null;
+      this.onRender?.();
+      return;
+    }
     if (erase || this.liveErase) {
       const path = this.eraseTail ? [this.eraseTail, ...points] : points;
       if (path.length) {

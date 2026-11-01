@@ -321,6 +321,20 @@ export function useHandwriting(bookKey: string) {
     [getView, bookKey, scrolled],
   );
 
+  useEffect(() => {
+    serviceRef.current?.onGesture((gesture) => {
+      if (gesture.action !== 'swipe') return;
+      const { dx, dy } = gesture;
+      const view = getView(bookKey);
+      if (scrolled && view?.renderer.scrollProp !== 'scrollLeft') {
+        if (Math.abs(dy) > Math.abs(dx)) void (dy > 0 ? view?.prev() : view?.next());
+      } else if (Math.abs(dx) > Math.abs(dy)) {
+        if (dx > 0) view?.goLeft();
+        else view?.goRight();
+      }
+    });
+  }, [scrolled, getView, bookKey]);
+
   // Scrolled views show several sections or pages at once: send each stroke
   // to the one it is drawn over, pinned to that section's text or page.
   useEffect(() => {

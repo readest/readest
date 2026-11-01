@@ -108,3 +108,65 @@ describe('useHandwriting after a page turn', () => {
     await waitFor(() => expect(result.current.pageRect.left).toBe(0));
   });
 });
+
+describe('useHandwriting finger navigation', () => {
+  it.each([
+    false,
+    true,
+  ])('routes a finger swipe through drawing mode (scrolled=%s)', async (scrolled) => {
+    const { view } = mountView();
+    const goRight = vi.fn();
+    const next = vi.fn();
+    Object.assign(view, { goRight, next });
+    h.readerState.getView = () => view;
+    h.readerState.getViewSettings = () => ({ scrolled });
+    const { result } = renderHook(() => useHandwriting('book-1'));
+    const canvas = document.createElement('div');
+    canvas.setPointerCapture = vi.fn();
+    await act(() => result.current.attach(canvas));
+    const pointer = (type: string, pointerType: string, x: number, y: number) => {
+      const event = new Event(type);
+      Object.assign(event, { pointerId: 1, pointerType, clientX: x, clientY: y });
+      canvas.dispatchEvent(event);
+    };
+    act(() => {
+      pointer('pointerover', 'pen', 0, 0);
+      pointer('pointerdown', 'touch', 200, 200);
+      pointer('pointerup', 'touch', scrolled ? 200 : 100, scrolled ? 100 : 200);
+    });
+    expect(scrolled ? next : goRight).toHaveBeenCalledOnce();
+    expect(result.current.layers.flatMap((layer) => layer.strokes)).toEqual([]);
+    await act(() => result.current.detach());
+    h.readerState.getViewSettings = () => ({ scrolled: false });
+  });
+});
+
+describe('useHandwriting horizontal scrolling', () => {
+  it('navigates by the physical side when swiping right', async () => {
+    const { view } = mountView();
+    const goLeft = vi.fn();
+    const next = vi.fn();
+    Object.assign(view, { goLeft, next });
+    Object.assign(view.renderer, { scrollProp: 'scrollLeft' });
+    h.readerState.getView = () => view;
+    h.readerState.getViewSettings = () => ({ scrolled: true });
+    const { result } = renderHook(() => useHandwriting('book-1'));
+    const canvas = document.createElement('div');
+    canvas.setPointerCapture = vi.fn();
+    await act(() => result.current.attach(canvas));
+    const pointer = (type: string, pointerType: string, clientX: number) => {
+      const event = new Event(type);
+      Object.assign(event, { pointerId: 1, pointerType, clientX, clientY: 200 });
+      canvas.dispatchEvent(event);
+    };
+    act(() => {
+      pointer('pointerover', 'pen', 0);
+      pointer('pointerdown', 'touch', 100);
+      pointer('pointerup', 'touch', 200);
+    });
+    expect(goLeft).toHaveBeenCalledOnce();
+    expect(next).not.toHaveBeenCalled();
+    await act(() => result.current.detach());
+    h.readerState.getViewSettings = () => ({ scrolled: false });
+  });
+});
