@@ -4,7 +4,7 @@ const listFilesMock = vi.fn();
 const purgeFilesMock = vi.fn();
 const deleteCloudFileMock = vi.fn();
 vi.mock('@/libs/storage', () => ({
-  listFiles: (...a: unknown[]) => listFilesMock(...a),
+  listAllFiles: async (...a: unknown[]) => (await listFilesMock(...a)).files,
   purgeFiles: (...a: unknown[]) => purgeFilesMock(...a),
   deleteFile: (...a: unknown[]) => deleteCloudFileMock(...a),
   downloadFile: vi.fn(),
@@ -46,7 +46,7 @@ describe('deleteBook from Readest Cloud', () => {
         true,
       ),
     );
-    expect(listFilesMock).toHaveBeenCalledWith({ bookHash: 'h', search: '/h/', pageSize: 1000 });
+    expect(listFilesMock).toHaveBeenCalledWith({ bookHash: 'h', search: '/h/' });
     expect(deleteCloudFileMock).toHaveBeenCalledTimes(2);
     expect(book.uploadedAt).toBeNull();
   });

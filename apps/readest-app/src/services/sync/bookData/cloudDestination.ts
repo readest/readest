@@ -1,5 +1,5 @@
 import { CLOUD_BOOKS_SUBDIR } from '@/services/constants';
-import { deleteFile as deleteCloudFile, downloadFile, listFiles } from '@/libs/storage';
+import { deleteFile as deleteCloudFile, downloadFile, listAllFiles } from '@/libs/storage';
 import type { AppService } from '@/types/system';
 import { isBookDataFileKey } from '@/utils/bookDataKey';
 import type { BookDataDestination } from './types';
@@ -22,10 +22,10 @@ export const createReadestCloudDestination = (appService: AppService): BookDataD
     // skips Readest Cloud instead of uploading everything again.
     async list(bookHash, kind) {
       const folder = `/${bookHash}/${kind}/`;
-      const { files } = await listFiles({ bookHash, pageSize: 1000 });
+      const files = await listAllFiles({ bookHash });
       let hasBook = false;
       const names = new Set<string>();
-      for (const { file_key } of files ?? []) {
+      for (const { file_key } of files) {
         if (!isBookDataFileKey(file_key)) {
           if (!/\.(png|jpe?g|webp|gif)$/i.test(file_key)) hasBook = true;
           continue;
