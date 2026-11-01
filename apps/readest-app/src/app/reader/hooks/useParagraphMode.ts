@@ -772,23 +772,24 @@ export const useParagraphMode = ({ bookKey, viewRef }: UseParagraphModeProps) =>
       }
     };
 
-    const handleNext = (event: CustomEvent) => {
-      if (event.detail?.bookKey === bookKeyRef.current && paragraphConfig.enabled) {
-        goToNextParagraph();
-      }
+    let active = true;
+    let navigation = Promise.resolve();
+    const enqueueNavigation = (event: CustomEvent, move: () => Promise<boolean>) => {
+      if (event.detail?.bookKey !== bookKeyRef.current || !paragraphConfig.enabled) return;
+      navigation = navigation.then(async () => {
+        if (active) await move();
+      });
+      return navigation;
     };
-
-    const handlePrev = (event: CustomEvent) => {
-      if (event.detail?.bookKey === bookKeyRef.current && paragraphConfig.enabled) {
-        goToPrevParagraph();
-      }
-    };
+    const handleNext = (event: CustomEvent) => enqueueNavigation(event, goToNextParagraph);
+    const handlePrev = (event: CustomEvent) => enqueueNavigation(event, goToPrevParagraph);
 
     eventDispatcher.on('toggle-paragraph-mode', handleToggle);
     eventDispatcher.on('paragraph-next', handleNext);
     eventDispatcher.on('paragraph-prev', handlePrev);
 
     return () => {
+      active = false;
       eventDispatcher.off('toggle-paragraph-mode', handleToggle);
       eventDispatcher.off('paragraph-next', handleNext);
       eventDispatcher.off('paragraph-prev', handlePrev);

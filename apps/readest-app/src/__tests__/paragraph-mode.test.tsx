@@ -241,6 +241,52 @@ describe('paragraph mode', () => {
     });
   });
 
+  it.each([
+    'next',
+    'prev',
+  ] as const)('preserves repeated %s paragraph events during a section transition', async (direction) => {
+    const firstDoc = createDoc('<p>First A</p><p>First B</p>');
+    const secondDoc = createDoc('<p>Second A</p><p>Second B</p>');
+    const { view, renderer } = createMockView([firstDoc, secondDoc], direction === 'next' ? 0 : 1);
+    let finishTransition: (() => void) | undefined;
+    const transition = direction === 'next' ? renderer.nextSection : renderer.prevSection;
+    transition.mockImplementation(
+      () =>
+        new Promise<void>((resolve) => {
+          finishTransition = () => {
+            renderer.primaryIndex = direction === 'next' ? 1 : 0;
+            resolve();
+          };
+        }),
+    );
+    const viewRef = { current: view } as React.RefObject<FoliateView | null>;
+    render(<HookHarness view={viewRef} />);
+    await waitFor(() => expect(hookApi?.paragraphState.currentRange).toBeTruthy());
+    if (direction === 'next') {
+      await act(async () => {
+        await hookApi?.goToNextParagraph();
+      });
+    }
+
+    let firstPress = Promise.resolve();
+    let secondPress = Promise.resolve();
+    await act(async () => {
+      firstPress = eventDispatcher.dispatch(`paragraph-${direction}`, { bookKey: 'book-1' });
+    });
+    await waitFor(() => expect(transition).toHaveBeenCalledOnce());
+    await act(async () => {
+      secondPress = eventDispatcher.dispatch(`paragraph-${direction}`, { bookKey: 'book-1' });
+      finishTransition!();
+      await Promise.all([firstPress, secondPress]);
+    });
+    await waitFor(() => {
+      expect(hookApi?.paragraphState.currentRange?.toString()).toBe(
+        direction === 'next' ? 'Second B' : 'First A',
+      );
+    });
+    expect(transition).toHaveBeenCalledOnce();
+  });
+
   it('moves across the chunks of a section rendered in chunks', async () => {
     // foliate-js renders a huge section as chunk documents that share its
     // spine index; each holds hidden placeholders for the other chunks.
