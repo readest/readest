@@ -1124,6 +1124,7 @@ describe('link touch hold (#6242)', () => {
         <a href="#svg"><svg><image id="svg" href="figure.png"/></svg></a>
         <a href="#note" id="text">note</a>
         <a href="#glyph"><img id="glyph" zy-enlarge-src="none" style="pointer-events:none"></a>
+        <a href="#svg-glyph"><svg zy-enlarge-src="none"><image id="svg-glyph" href="figure.png"/></svg></a>
       `;
       doc.documentElement.classList.add(LINK_TOUCH_HOLD_CLASS);
       const pointerEvents = (id: string) =>
@@ -1132,6 +1133,9 @@ describe('link touch hold (#6242)', () => {
       expect(pointerEvents('svg'), 'linked SVG image receives the hold').toBe('auto');
       expect(pointerEvents('text'), 'text links stay out of hit testing').toBe('none');
       expect(pointerEvents('glyph'), 'non-enlargeable glyph stays out of hit testing').toBe('none');
+      expect(pointerEvents('svg-glyph'), 'non-enlargeable SVG stays out of hit testing').toBe(
+        'none',
+      );
       doc.documentElement.classList.remove(LINK_TOUCH_HOLD_CLASS);
       expect(pointerEvents('text'), 'text link is clickable after release').toBe('auto');
     } finally {

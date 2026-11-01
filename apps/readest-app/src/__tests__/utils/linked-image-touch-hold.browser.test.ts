@@ -54,6 +54,7 @@ describe('Android linked-image touch hold', () => {
       </a>
       <a href="#note" id="text">Text link</a>
       <a href="#glyph"><img id="glyph" src="${pixel}" zy-enlarge-src="none" style="pointer-events:none"/></a>
+      <a href="#svg-glyph"><svg zy-enlarge-src="none" width="100" height="100"><image id="svg-glyph" href="${pixel}" width="100" height="100"/></svg></a>
     `;
     await doc.querySelector('img')!.decode();
     applyLinkHitArea(doc);
@@ -69,6 +70,7 @@ describe('Android linked-image touch hold', () => {
     }
     expect(pointerEvents('text')).toBe('none');
     expect(pointerEvents('glyph')).toBe('none');
+    expect(pointerEvents('svg-glyph')).toBe('none');
     doc.documentElement.classList.remove(LINK_TOUCH_HOLD_CLASS);
     expect(pointerEvents('text')).toBe('auto');
   });
