@@ -690,7 +690,7 @@ export class MediaOverlayClient implements TTSClient {
       liveRateChange: true,
       continuousTimeline: true,
       textHighlight: this.#source?.textHighlight !== false,
-      preloadsAudio: this.#androidNative,
+      ...(this.#androidNative ? { preloadsAudio: true } : {}),
     };
   }
 
