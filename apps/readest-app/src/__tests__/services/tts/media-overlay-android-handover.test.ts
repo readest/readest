@@ -47,6 +47,8 @@ let calls: string[] = [];
 let emit: ((event: unknown) => void) | null = null;
 // Runs inside the next native `load`, before the plugin handles it.
 let beforeLoad: (() => void) | null = null;
+// Holds back the next position read's reply, taken before it waits.
+let positionGate: Promise<void> | null = null;
 
 const file = (path: unknown) => String(path).split('/').pop();
 const currentFile = () => file(native.items[native.current]);
@@ -54,13 +56,17 @@ const currentFile = () => file(native.items[native.current]);
 const fakeInvoke = async (command: string, args?: unknown): Promise<unknown> => {
   const p = (args as { payload?: Record<string, unknown> })?.payload ?? {};
   if (command === 'plugin:native-tts|playout_position') {
-    return {
+    const pos = {
       session: SESSION,
       index: native.current,
       positionMs: native.positionMs,
       playing: native.playing,
       ...(native.current < 0 && native.endedIndex >= 0 ? { endedIndex: native.endedIndex } : {}),
     };
+    const gate = positionGate;
+    positionGate = null;
+    if (gate) await gate;
+    return pos;
   }
   switch (p['action']) {
     case 'start-session':
@@ -192,6 +198,7 @@ beforeEach(() => {
   calls = [];
   emit = null;
   beforeLoad = null;
+  positionGate = null;
   vi.mocked(addPluginListener).mockImplementation(async (_plugin, _event, cb) => {
     emit = cb as (event: unknown) => void;
     return { unregister: vi.fn() } as unknown as PluginListener;
@@ -469,6 +476,76 @@ describe('Android narration end of file while the WebView was asleep', () => {
     emit!({ type: 'ended', session: SESSION, index: 0 });
 
     expect(await finishes(gen)).toEqual([{ code: 'end', message: 'Narration finished' }]);
+  });
+
+  test('a late ended event does not end the file loaded since', async () => {
+    const { a, b } = await start();
+    const gen = client.speak(a.ssmlForBlock(2)!, new AbortController().signal);
+    await gen.next();
+    const rest = finishes(gen);
+    // poem1.mp3 ends; a position read finds it before the event arrives.
+    native.current = -1;
+    native.playing = false;
+    expect(await rest).not.toBe('stuck');
+
+    client.setSection(b);
+    const gen2 = client.speak(b.ssmlForBlock(0)!, new AbortController().signal);
+    await gen2.next();
+    expect(calls.slice(-1)).toEqual(['load poem2.mp3']);
+    emit!({ type: 'ended', session: SESSION, index: 0 });
+    // Stanza 1 of poem2.mp3 runs to 6 s, and the player is at 0 s.
+    expect(await finishes(gen2, 1200)).toBe('stuck');
+  });
+
+  test('a position read taken before a load does not end the file loaded', async () => {
+    const { a, b } = await start();
+    const gen = client.speak(a.ssmlForBlock(2)!, new AbortController().signal);
+    await gen.next();
+    const rest = finishes(gen);
+    // poem1.mp3 ends. The first read to see it is slow to come back; a later
+    // one ends the block and JS loads poem2.mp3 before the slow one lands.
+    let release!: () => void;
+    positionGate = new Promise<void>((resolve) => (release = resolve));
+    native.current = -1;
+    native.playing = false;
+    expect(await rest).not.toBe('stuck');
+
+    client.setSection(b);
+    const gen2 = client.speak(b.ssmlForBlock(0)!, new AbortController().signal);
+    await gen2.next();
+    expect(calls.slice(-1)).toEqual(['load poem2.mp3']);
+    release();
+    expect(await finishes(gen2, 1200)).toBe('stuck');
+  });
+
+  test('a file queued after the playlist ended is loaded, not waited on', async () => {
+    const { a, b } = await start();
+    const gen = client.speak(a.ssmlForBlock(2)!, new AbortController().signal);
+    await gen.next();
+    let release!: () => void;
+    const slow = new Promise<void>((resolve) => (release = resolve));
+    resolvePath.mockImplementation(async (href: string) => {
+      if (href === 'poem2.mp3') await slow;
+      return `/books/hash/${href}`;
+    });
+    const offer = client.preloadSection(b);
+    const rest = finishes(gen);
+    // poem1.mp3 ends while poem2.mp3's path still resolves.
+    native.current = -1;
+    native.endedIndex = 0;
+    native.playing = false;
+    expect(await rest).not.toBe('stuck');
+    release();
+    await offer;
+    expect(native.items.map(file)).toEqual(['poem1.mp3', 'poem2.mp3']);
+
+    client.setSection(b);
+    const gen2 = client.speak(b.ssmlForBlock(0)!, new AbortController().signal);
+    await gen2.next();
+    expect(calls.slice(-1)).toEqual(['load poem2.mp3']);
+    expect(native.items.map(file)).toEqual(['poem2.mp3']);
+    expect(native.current).toBe(0);
+    expect(await finishes(gen2, 1200)).toBe('stuck');
   });
 
   test('an ended event that never arrives is found from the position', async () => {

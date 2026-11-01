@@ -140,8 +140,21 @@ describe('NativeNarrationPlayer', () => {
     await player.ensureReady();
     const ended = vi.fn();
     player.addEventListener('ended', ended);
+    // Both plugins clear the current item before they send `ended`.
+    position = { session: 3, index: -1, positionMs: 18000, playing: false };
     playoutEvents!({ type: 'ended', session: 3, index: 0 });
-    expect(ended).toHaveBeenCalledOnce();
+    await vi.waitFor(() => expect(ended).toHaveBeenCalledOnce());
+    await player.shutdown();
+  });
+
+  test('an ended event while a file is still current does not end it', async () => {
+    const player = new NativeNarrationPlayer();
+    await player.ensureReady();
+    const ended = vi.fn();
+    player.addEventListener('ended', ended);
+    playoutEvents!({ type: 'ended', session: 3, index: 0 });
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(ended).not.toHaveBeenCalled();
     await player.shutdown();
   });
 

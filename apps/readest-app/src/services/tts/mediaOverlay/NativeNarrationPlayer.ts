@@ -61,6 +61,9 @@ export class NativeNarrationPlayer {
   #nativeIndex = -1;
   // The item index the last position read reported.
   #seenIndex = -1;
+  // Counts loads, so a position read that overlapped one is dropped: it may
+  // describe the playlist the load replaced.
+  #loads = 0;
   // Staged copies of book audio this player wrote, by href.
   #staged = new Map<string, string>();
   #rate = 1;
@@ -229,6 +232,7 @@ export class NativeNarrationPlayer {
   ): Promise<void> {
     this.#href = href;
     this.#ended = false;
+    this.#loads++;
     await invoke('plugin:native-tts|playout_control', {
       payload: {
         action: 'load',
@@ -243,6 +247,7 @@ export class NativeNarrationPlayer {
     this.#playlist = index >= 0 ? this.#playlist.slice(index) : [href];
     this.#nativeIndex = 0;
     this.#seenIndex = 0;
+    this.#loads++;
     await this.#pruneStaged();
     this.#cache = {
       mediaSec: startSec,
@@ -366,7 +371,13 @@ export class NativeNarrationPlayer {
   #onNativeEvent(event: PlayoutEvent): void {
     if (this.#resolvedSession !== null && event.session !== this.#resolvedSession) return;
     if (event.type === 'ended') {
-      this.#finishEnded();
+      // A late event can belong to a file played before the one loaded since:
+      // end only if the player is still at an end.
+      void this.sync()
+        .then((pos) => {
+          if (pos && pos.index < 0) this.#finishEnded();
+        })
+        .catch(() => undefined);
     } else if (event.type === 'item-ended') {
       // Indices restart whenever a queue drops played files, so a late event
       // can name an item of the new playlist. Confirm with the position.
@@ -417,10 +428,12 @@ export class NativeNarrationPlayer {
   // Read where the native player really is. Events sent while the WebView was
   // suspended can arrive late or not at all, so this is what reconciles a
   // rollover or an end of file it missed.
-  async sync(): Promise<void> {
-    if (this.#resolvedSession === null) return;
+  // Returns the position it applied, or null when it was dropped.
+  async sync(): Promise<PlayoutPosition | null> {
+    if (this.#resolvedSession === null) return null;
+    const loads = this.#loads;
     const pos = await invoke<PlayoutPosition>('plugin:native-tts|playout_position');
-    if (pos.session !== this.#resolvedSession) return;
+    if (pos.session !== this.#resolvedSession || loads !== this.#loads) return null;
     const seenIndex = this.#seenIndex;
     this.#seenIndex = pos.index;
     // Where the player is, or the item it ended on: either may be past the
@@ -443,5 +456,6 @@ export class NativeNarrationPlayer {
     } else {
       this.#cache.playing = false;
     }
+    return pos;
   }
 }
