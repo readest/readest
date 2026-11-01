@@ -192,6 +192,44 @@ describe('MediaOverlayTTS', () => {
     expect(marksOf(tts.from(target))).toEqual(['3']);
   });
 
+  test('from(range) finds body text after an interleaved end-of-chapter footnote', async () => {
+    const footnoteDoc = new DOMParser().parseFromString(
+      '<html><body><p id="before">Before the note.</p>' +
+        '<p id="after">After the note.</p><p id="gap">Unnarrated text.</p>' +
+        '<p id="later">Later body text.</p>' +
+        '<aside role="doc-footnote" id="note">The footnote.</aside></body></html>',
+      'text/html',
+    );
+    const book = {
+      sections: [{ mediaOverlay: { href: 'OEBPS/ch1.smil', id: 'smil1' } }],
+      loadText: async () =>
+        '<smil><body>' +
+        par('before', 0, 1) +
+        par('note', 1, 2) +
+        par('after', 2, 3) +
+        par('later', 3, 4) +
+        '</body></smil>',
+    } as unknown as BookDoc;
+    const footnoteSection = (await loadMediaOverlaySection(book, 0, footnoteDoc, 'en'))!;
+    const tts = new MediaOverlayTTS(footnoteDoc, footnoteSection, highlight);
+    for (const [id, mark] of [
+      ['before', '0'],
+      ['after', '2'],
+      ['gap', '3'],
+      ['later', '3'],
+      ['note', '1'],
+    ] as const) {
+      const range = footnoteDoc.createRange();
+      range.selectNodeContents(footnoteDoc.getElementById(id)!);
+      expect(marksOf(tts.from(range)), `starting in ${id}`).toEqual([mark]);
+      expect(marksOf(tts.resume())).toEqual([mark]);
+    }
+    // Playback still follows the publisher's order: body, note, then body.
+    tts.start();
+    expect(marksOf(tts.next())).toEqual(['1']);
+    expect(marksOf(tts.next())).toEqual(['2']);
+  });
+
   // Found by end-to-end playback: narration skips unnarrated sections, so the
   // location playback was requested from usually belongs to a DIFFERENT
   // section's document. compareBoundaryPoints throws WrongDocumentError across

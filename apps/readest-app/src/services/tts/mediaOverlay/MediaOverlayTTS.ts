@@ -201,7 +201,12 @@ export class MediaOverlayTTS {
     const rangeDoc = range.startContainer.ownerDocument ?? range.startContainer;
     if (rangeDoc !== this.doc) return this.start();
 
-    const pars = this.#section.pars;
+    // SMIL order is playback order: a footnote stored at the chapter's end
+    // can be narrated between body sentences. Search by text position without
+    // reordering the section's playback blocks or marks.
+    const pars = [...this.#section.pars].sort((a, b) =>
+      a.range.compareBoundaryPoints(Range.END_TO_END, b.range),
+    );
     // END_TO_START compares this range's START against the argument's END.
     const target =
       pars.find((par) => range.compareBoundaryPoints(Range.END_TO_START, par.range) < 0) ??
