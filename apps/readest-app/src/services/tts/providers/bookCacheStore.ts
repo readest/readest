@@ -27,6 +27,8 @@ const DOWNLOADS_MARKER = 'downloads.json';
 
 // The sync round in flight per book, shared by every store of that book.
 const syncRounds = new Map<string, Promise<void>>();
+// A saved pack record stays pending until its cloud publication succeeds.
+const pendingPackPublications = new Set<string>();
 // What a book's rounds share between opens: the destinations, so a folder is
 // prepared once, and their listings, so a push round lists nothing new. An
 // open starts a new session; a download's push rounds (one per finished
@@ -453,19 +455,25 @@ export class BookTTSCacheStore implements TTSCacheStore {
         if (book && config) {
           const settings = useSettingsStore.getState().settings;
           await this.#appService.saveBookConfig(book, config, settings);
-          // Publish only the pack record, at the oldest timestamp: the server
-          // unions it into its row without replacing reading progress. The
-          // reader publishes its position separately, with a fresh XPointer.
-          const [{ SyncClient }, { isSyncCategoryEnabled }, { getUserID }] = await Promise.all([
-            import('@/libs/sync'),
-            import('@/services/sync/syncCategories'),
-            import('@/utils/access'),
-          ]);
-          if (isSyncCategoryEnabled('progress') && (await getUserID())) {
-            await new SyncClient().pushChanges({
-              configs: [{ bookHash, metaHash: book.metaHash, ttsPacks: next, updatedAt: 0 }],
-            });
-          }
+          pendingPackPublications.add(bookHash);
+        }
+      }
+      if (pendingPackPublications.has(bookHash)) {
+        const book = useLibraryStore.getState().getBookByHash(bookHash);
+        if (!book) return;
+        // Publish only the pack record, at the oldest timestamp: the server
+        // unions it into its row without replacing reading progress. The
+        // reader publishes its position separately, with a fresh XPointer.
+        const [{ SyncClient }, { isSyncCategoryEnabled }, { getUserID }] = await Promise.all([
+          import('@/libs/sync'),
+          import('@/services/sync/syncCategories'),
+          import('@/utils/access'),
+        ]);
+        if (isSyncCategoryEnabled('progress') && (await getUserID())) {
+          await new SyncClient().pushChanges({
+            configs: [{ bookHash, metaHash: book.metaHash, ttsPacks: next, updatedAt: 0 }],
+          });
+          pendingPackPublications.delete(bookHash);
         }
       }
     };

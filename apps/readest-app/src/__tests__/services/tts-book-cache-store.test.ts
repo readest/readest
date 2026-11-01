@@ -357,6 +357,49 @@ describe('BookTTSCacheStore', () => {
     });
 
     test.each([
+      'network',
+      'server',
+    ] as const)('retries a failed publication without saving unchanged packs again (%s)', async (failure) => {
+      auth.getUserID.mockResolvedValue('test-user');
+      auth.getAccessToken.mockResolvedValue('test-token');
+      const requests: { configs: Partial<BookConfig>[] }[] = [];
+      vi.stubGlobal('fetch', async (_url: string, init: RequestInit) => {
+        requests.push(JSON.parse(String(init.body)));
+        if (requests.length === 1) {
+          if (failure === 'network') throw new Error('Offline');
+          return Response.json({ error: 'Unavailable' }, { status: 503 });
+        }
+        return Response.json({ configs: [], books: [], notes: [] });
+      });
+      const store = await openWith(`hash-retry-${failure}`, { webdav: [], readest: [] });
+      bookData.pushBookData.mockImplementationOnce(async (...args: unknown[]) => {
+        const listings = args[3] as Map<string, Set<string> | null>;
+        listings.set('webdav', new Set(['1-a.mp3', '1-a.json']));
+        return 1;
+      });
+      await store.completeDownloadSections([]);
+      await vi.waitFor(() => expect(requests).toHaveLength(1));
+
+      await store.completeDownloadSections([]);
+      await vi.waitFor(() => expect(requests).toHaveLength(2));
+      expect(requests[1]).toEqual(requests[0]);
+      expect(requests[1]?.configs).toEqual([
+        {
+          bookHash: `hash-retry-${failure}`,
+          metaHash: 'meta-rec4',
+          ttsPacks: { webdav: ['1-a.mp3'], readest: [] },
+          updatedAt: 0,
+        },
+      ]);
+      expect(appService.saveBookConfig).toHaveBeenCalledTimes(1);
+      expect(bookConfig.config?.updatedAt).toBe(42);
+
+      await store.completeDownloadSections([]);
+      await vi.waitFor(() => expect(bookData.pushBookData).toHaveBeenCalledTimes(4));
+      expect(requests).toHaveLength(2);
+    });
+
+    test.each([
       'signed-out',
       'progress-off',
       'cloud-off',
