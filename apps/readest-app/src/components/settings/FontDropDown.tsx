@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { FixedSizeList as List } from 'react-window';
 import { FiChevronUp, FiChevronLeft } from 'react-icons/fi';
 import { MdCheck } from 'react-icons/md';
@@ -83,13 +83,28 @@ const FontDropdown: React.FC<DropdownProps> = ({
   const iconSize = useResponsiveSize(16);
   const allOptions = [...options, ...(moreOptions ?? [])];
   const selectedOption = allOptions.find((option) => option.option === selected) ?? allOptions[0]!;
+  const [query, setQuery] = useState('');
 
   const ITEM_HEIGHT = 40;
   const MAX_HEIGHT = 320;
+  const listHeight = Math.min(options.length * ITEM_HEIGHT, MAX_HEIGHT);
+  // Search only when the fonts don't fit in one list without scrolling.
+  const searchable = allOptions.length * ITEM_HEIGHT > MAX_HEIGHT;
+  const term = query.trim().toLowerCase();
+  const matches = term
+    ? allOptions.filter(
+        (option, i) =>
+          (option.label || option.option).toLowerCase().includes(term) &&
+          allOptions.findIndex((o) => o.option === option.option) === i,
+      )
+    : options;
+  // While searching, results fill the space the lists had, so the menu keeps
+  // its size and the search field stays where it is.
+  const resultsHeight = term ? listHeight + (moreOptions?.length ? ITEM_HEIGHT : 0) : listHeight;
 
   const mainListData = useMemo(
     () => ({
-      options,
+      options: matches,
       selected,
       onSelect,
       onGetFontFamily,
@@ -97,7 +112,7 @@ const FontDropdown: React.FC<DropdownProps> = ({
       iconSize,
       appService,
     }),
-    [options, selected, onSelect, onGetFontFamily, family, iconSize, appService],
+    [matches, selected, onSelect, onGetFontFamily, family, iconSize, appService],
   );
 
   const moreListData = useMemo(
@@ -113,7 +128,12 @@ const FontDropdown: React.FC<DropdownProps> = ({
   );
 
   return (
-    <div className='dropdown dropdown-top'>
+    <div
+      className='dropdown dropdown-top'
+      onBlur={(e) => {
+        if (!e.currentTarget.contains(e.relatedTarget)) setQuery('');
+      }}
+    >
       <button
         tabIndex={0}
         className='btn btn-sm flex items-center px-[10px] font-normal normal-case sm:px-[20px]'
@@ -140,21 +160,38 @@ const FontDropdown: React.FC<DropdownProps> = ({
           moreOptions?.length ? '' : 'inline overflow-hidden',
         )}
       >
-        {/* Virtualized main options */}
-        <div style={{ height: Math.min(options.length * ITEM_HEIGHT, MAX_HEIGHT) }}>
-          <List
-            width='100%'
-            height={Math.min(options.length * ITEM_HEIGHT, MAX_HEIGHT)}
-            itemCount={options.length}
-            itemSize={ITEM_HEIGHT}
-            itemData={mainListData}
-          >
-            {FontItem}
-          </List>
+        {searchable && (
+          <div className='px-2 pb-2'>
+            <input
+              type='search'
+              placeholder={_('Search...')}
+              aria-label={_('Search...')}
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              className='input input-sm eink-bordered w-full'
+            />
+          </div>
+        )}
+
+        {/* Virtualized main options, or the search results */}
+        <div style={{ height: resultsHeight }}>
+          {term && matches.length === 0 ? (
+            <div className='px-4 py-2 text-sm opacity-60'>{_('No search results found')}</div>
+          ) : (
+            <List
+              width='100%'
+              height={resultsHeight}
+              itemCount={matches.length}
+              itemSize={ITEM_HEIGHT}
+              itemData={mainListData}
+            >
+              {FontItem}
+            </List>
+          )}
         </div>
 
         {/* More options with nested dropdown */}
-        {moreOptions && moreOptions.length > 0 && (
+        {!term && moreOptions && moreOptions.length > 0 && (
           <li className='dropdown dropdown-left dropdown-top px-2'>
             {/* Focusing the row makes the nested dropdown :focus-within, which
                 is what reveals the sub-list; nothing else opens it. */}
