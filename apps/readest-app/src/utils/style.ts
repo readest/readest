@@ -491,6 +491,10 @@ const getPageLayoutStyles = (
   vertical: boolean,
 ) => `
   html {
+    /* The paginator forces this on the root in paginated mode only; scrolled
+       mode needs it too or a long URL runs past the viewport (#7154).
+       break-word, not anywhere: see the td, th rule (#5681). */
+    overflow-wrap: break-word !important;
     --margin-top: ${marginTop}px;
     --margin-right: ${marginRight}px;
     --margin-bottom: ${marginBottom}px;
@@ -499,9 +503,6 @@ const getPageLayoutStyles = (
   html, body {
     ${writingMode === 'auto' ? '' : `writing-mode: ${writingMode} !important;`}
     max-height: unset;
-    /* Scrolled mode does not get the paginator's paginated overflow-wrap
-       fallback, so long URLs can extend past and be clipped by the viewport. */
-    overflow-wrap: anywhere !important;
     -webkit-touch-callout: none;
     -webkit-user-select: text;
   }

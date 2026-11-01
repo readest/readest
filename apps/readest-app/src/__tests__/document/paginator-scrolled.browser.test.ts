@@ -154,15 +154,14 @@ describe('Paginator scrolled mode (browser)', () => {
 
     expect(longText.scrollWidth).toBeLessThanOrEqual(longText.clientWidth + 1);
 
-    const flex = doc.createElement('div');
-    flex.style.display = 'flex';
-    flex.style.width = '160px';
-    const flexItem = doc.createElement('div');
-    flexItem.textContent = `https://example.com/${'constrained'.repeat(30)}`;
-    flex.append(flexItem);
-    doc.body.append(flex);
-
-    expect(flex.scrollWidth).toBeLessThanOrEqual(flex.clientWidth + 1);
+    // The fallback must not shrink min-content sizes (#5681): a short label in
+    // a CSS table built from divs keeps its word on one line.
+    const table = doc.createElement('div');
+    table.innerHTML = `<div style="display:table;width:300px"><div style="display:table-row"><div id="label" style="display:table-cell">Angela:</div><div style="display:table-cell">${'Lorem ipsum dolor sit amet '.repeat(30)}</div></div></div>`;
+    doc.body.append(table);
+    const range = doc.createRange();
+    range.selectNodeContents(doc.getElementById('label')!);
+    expect(range.getClientRects().length, 'lines the label wraps onto').toBe(1);
   });
 
   // Regression for issue #3987: toggling scrolled mode off shortly after
