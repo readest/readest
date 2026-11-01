@@ -421,7 +421,9 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
           'progress-strip flex items-center',
           stripTappable && 'pointer-events-auto cursor-pointer',
           dismissed && 'opacity-0',
-          !isEink && 'transition-opacity duration-300',
+          // Hide immediately so a page turn during the old 300 ms fade cannot
+          // repaint a partly visible footer. Showing may still fade in.
+          !isEink && !dismissed && 'transition-opacity duration-300',
           isVertical ? 'h-full' : 'w-full',
           // Sticky bar grows on the left; the info widgets pack to the right
           // with even gaps. Without it, keep the 3-zone left/center/right row.
