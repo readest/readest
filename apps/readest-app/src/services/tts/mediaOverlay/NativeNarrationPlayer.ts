@@ -170,22 +170,31 @@ export class NativeNarrationPlayer {
     await this.#loadResolvedPath(href, path, startSec);
   }
 
-  // Queue a file to play after the current one without JS (Android only): the
-  // WebView can be suspended under screen lock while the native player runs.
-  async queue(href: string, blob: Blob): Promise<void> {
+  // Queue a file to play after `after`, the file now playing, without JS
+  // (Android only): the WebView can be suspended under screen lock while the
+  // native player runs.
+  async queue(href: string, blob: Blob, after: string): Promise<void> {
     if (this.#playlist.includes(href)) return;
     await this.ensureReady();
     const path = await this.#stageBlob(href, blob);
-    await this.#queueResolvedPath(href, path);
+    await this.#queueResolvedPath(href, path, after);
   }
 
-  async queuePath(href: string, path: string, bytes?: FileWindow): Promise<void> {
+  async queuePath(href: string, path: string, after: string, bytes?: FileWindow): Promise<void> {
     if (this.#playlist.includes(href)) return;
     await this.ensureReady();
-    await this.#queueResolvedPath(href, path, bytes);
+    await this.#queueResolvedPath(href, path, after, bytes);
   }
 
-  async #queueResolvedPath(href: string, path: string, bytes?: FileWindow): Promise<void> {
+  async #queueResolvedPath(
+    href: string,
+    path: string,
+    after: string,
+    bytes?: FileWindow,
+  ): Promise<void> {
+    // Checked with nothing awaited before the command: another file loaded
+    // while this one resolved means it no longer follows what is playing.
+    if (this.#href !== after || this.#playlist.includes(href)) return;
     await invoke('plugin:native-tts|playout_control', {
       payload: { action: 'queue', path, ...bytes },
     });

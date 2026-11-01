@@ -257,8 +257,9 @@ export class MediaOverlayClient implements TTSClient {
   async #queue(href: string | undefined): Promise<void> {
     const player = this.#player;
     if (!this.#queuesNext || !player || !this.#source || this.#source.resolveTracks) return;
-    if (!href || href === this.#audioHref || this.#audio !== player || player.has(href)) return;
-    await this.#placeOnNative(href, true);
+    const after = this.#audioHref;
+    if (!href || !after || href === after || this.#audio !== player || player.has(href)) return;
+    await this.#placeOnNative(href, after);
   }
 
   #narratorName(): string {
@@ -322,7 +323,7 @@ export class MediaOverlayClient implements TTSClient {
       // Keep any prior native session's file until the new one is staged; load()
       // replaces the AVPlayer item. Do not call #releaseAudio (that aborts).
       this.#cancelHandover();
-      await this.#placeOnNative(href, false);
+      await this.#placeOnNative(href, null);
       this.#rolledInto = null;
       this.#player.playbackRate = this.#rate;
       this.#player.pause();
@@ -365,23 +366,23 @@ export class MediaOverlayClient implements TTSClient {
     return audio;
   }
 
-  // Load `href` on the native player, or queue it after the current file. The
+  // Load `href` on the native player, or queue it to follow `after`. The
   // native player plays a stored entry in place from the book file; a book it
   // can't open (a content:// URI on Android) still gets the entry staged as a
   // copy.
-  async #placeOnNative(href: string, queue: boolean): Promise<void> {
+  async #placeOnNative(href: string, after: string | null): Promise<void> {
     const player = this.#player!;
     const source = this.#source!;
     const path = await source.resolvePath?.(href).catch(() => null);
     if (path) {
-      await (queue ? player.queuePath(href, path) : player.loadPath(href, path, 0));
+      await (after !== null ? player.queuePath(href, path, after) : player.loadPath(href, path, 0));
       return;
     }
     const media = await source.getMediaSource?.(href, audioType(href)).catch(() => null);
     if (media && 'path' in media) {
       const bytes = { start: media.start, end: media.end, contentType: audioType(href) };
-      const placed = await (queue
-        ? player.queuePath(href, media.path, bytes)
+      const placed = await (after !== null
+        ? player.queuePath(href, media.path, after, bytes)
         : player.loadPath(href, media.path, 0, bytes)
       ).then(
         () => true,
@@ -390,7 +391,7 @@ export class MediaOverlayClient implements TTSClient {
       if (placed) return;
     }
     const blob = audioBlobWithType(href, await source.loadBlob(href));
-    await (queue ? player.queue(href, blob) : player.load(href, blob, 0));
+    await (after !== null ? player.queue(href, blob, after) : player.load(href, blob, 0));
   }
 
   // Leave the element playing for the next block to pick up, but never

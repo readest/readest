@@ -178,7 +178,7 @@ describe('NativeNarrationPlayer', () => {
   test('queues the next file and detects its native transition after suspension', async () => {
     const player = new NativeNarrationPlayer();
     await player.loadPath('one.mp3', '/books/one.mp3');
-    await player.queuePath('two.mp3', '/books/two.mp3');
+    await player.queuePath('two.mp3', '/books/two.mp3', 'one.mp3');
     expect(controlCalls.find((call) => call['action'] === 'queue')).toMatchObject({
       path: '/books/two.mp3',
     });

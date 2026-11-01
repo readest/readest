@@ -255,6 +255,30 @@ describe('Android narration handover to the next file', () => {
     await client.stop();
   });
 
+  test('a queue still resolving when another file loads is dropped', async () => {
+    const { a, b } = await start();
+    const gen = client.speak(a.ssmlForBlock(2)!, new AbortController().signal);
+    await gen.next();
+    // poem2.mp3's path is slow to resolve; meanwhile the reader moves on.
+    let release!: () => void;
+    const slow = new Promise<void>((resolve) => (release = resolve));
+    resolvePath.mockImplementation(async (href: string) => {
+      if (href === 'poem2.mp3') await slow;
+      return `/books/hash/${href}`;
+    });
+    const offer = client.preloadSection(b);
+    const c = await loadSection('poem3.mp3');
+    client.setSection(c);
+    const gen2 = client.speak(c.ssmlForBlock(0)!, new AbortController().signal);
+    await gen2.next();
+    release();
+    await offer;
+
+    expect(calls).toContain('load poem3.mp3');
+    expect(calls.filter((call) => call.startsWith('queue'))).toEqual([]);
+    await client.stop();
+  });
+
   test('does not queue on iOS, whose player has no playlist', async () => {
     const { a, b } = await start({ isIOSApp: true });
     const gen = client.speak(a.ssmlForBlock(2)!, new AbortController().signal);
