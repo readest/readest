@@ -399,6 +399,52 @@ describe('BookTTSCacheStore', () => {
       expect(requests).toHaveLength(2);
     });
 
+    test('retries the latest saved record after Book Data destinations are disabled', async () => {
+      auth.getUserID.mockResolvedValue('test-user');
+      auth.getAccessToken.mockResolvedValue('test-token');
+      const requests: { configs: Partial<BookConfig>[] }[] = [];
+      vi.stubGlobal('fetch', async (_url: string, init: RequestInit) => {
+        requests.push(JSON.parse(String(init.body)));
+        if (requests.length === 1) throw new Error('Offline');
+        return Response.json({ configs: [], books: [], notes: [] });
+      });
+      const hash = 'hash-retry-without-destinations';
+      const store = await openWith(hash, { webdav: [], readest: [] });
+      bookData.pushBookData.mockImplementationOnce(async (...args: unknown[]) => {
+        const listings = args[3] as Map<string, Set<string> | null>;
+        listings.set('webdav', new Set(['1-a.mp3', '1-a.json']));
+        return 1;
+      });
+      await store.completeDownloadSections([]);
+      await vi.waitFor(() => expect(requests).toHaveLength(1));
+
+      bookConfig.settings.syncCategories = { book_data: false };
+      bookData.getBookDataDestinations.mockResolvedValue([]);
+      bookConfig.config = {
+        ...bookConfig.config,
+        ttsPacks: { webdav: ['1-a.mp3'], readest: ['2-b.mp3'] },
+      };
+      await store.completeDownloadSections([]);
+      await vi.waitFor(() => expect(requests).toHaveLength(2));
+      expect(requests[1]?.configs).toEqual([
+        {
+          bookHash: hash,
+          metaHash: 'meta-rec4',
+          ttsPacks: { webdav: ['1-a.mp3'], readest: ['2-b.mp3'] },
+          updatedAt: 0,
+        },
+      ]);
+      expect(bookData.pushBookData).toHaveBeenCalledTimes(2);
+      expect(appService.saveBookConfig).toHaveBeenCalledTimes(1);
+      expect(bookConfig.config.updatedAt).toBe(42);
+
+      bookData.getBookDataDestinations.mockClear();
+      await store.completeDownloadSections([]);
+      await vi.waitFor(() => expect(bookData.getBookDataDestinations).toHaveBeenCalled());
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      expect(requests).toHaveLength(2);
+    });
+
     test.each([
       'signed-out',
       'progress-off',

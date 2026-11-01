@@ -458,29 +458,43 @@ export class BookTTSCacheStore implements TTSCacheStore {
           pendingPackPublications.add(bookHash);
         }
       }
-      if (pendingPackPublications.has(bookHash)) {
-        const book = useLibraryStore.getState().getBookByHash(bookHash);
-        if (!book) return;
-        // Publish only the pack record, at the oldest timestamp: the server
-        // unions it into its row without replacing reading progress. The
-        // reader publishes its position separately, with a fresh XPointer.
-        const [{ SyncClient }, { isSyncCategoryEnabled }, { getUserID }] = await Promise.all([
+    };
+    const previous = syncRounds.get(bookHash) ?? Promise.resolve();
+    const next = previous
+      .then(round)
+      .then(async () => {
+        if (!pendingPackPublications.has(bookHash)) return;
+        const [
+          { useBookDataStore },
+          { useLibraryStore },
+          { SyncClient },
+          { isSyncCategoryEnabled },
+          { getUserID },
+        ] = await Promise.all([
+          import('@/store/bookDataStore'),
+          import('@/store/libraryStore'),
           import('@/libs/sync'),
           import('@/services/sync/syncCategories'),
           import('@/utils/access'),
         ]);
-        if (isSyncCategoryEnabled('progress') && (await getUserID())) {
+        const book = useLibraryStore.getState().getBookByHash(bookHash);
+        const config = useBookDataStore.getState().getConfig(bookHash);
+        // Retry saved records even when Book Data has no destinations now.
+        // Publish only the pack record, at the oldest timestamp: the server
+        // unions it into its row without replacing reading progress. The
+        // reader publishes its position separately, with a fresh XPointer.
+        if (book && config && isSyncCategoryEnabled('progress') && (await getUserID())) {
           await new SyncClient().pushChanges({
-            configs: [{ bookHash, metaHash: book.metaHash, ttsPacks: next, updatedAt: 0 }],
+            configs: [
+              { bookHash, metaHash: book.metaHash, ttsPacks: config.ttsPacks, updatedAt: 0 },
+            ],
           });
           pendingPackPublications.delete(bookHash);
         }
-      }
-    };
-    const previous = syncRounds.get(bookHash) ?? Promise.resolve();
-    const next = previous.then(round).catch((err) => {
-      console.warn('TTS pack sync failed', err);
-    });
+      })
+      .catch((err) => {
+        console.warn('TTS pack sync failed', err);
+      });
     syncRounds.set(bookHash, next);
     void next.then(() => {
       if (syncRounds.get(bookHash) === next) syncRounds.delete(bookHash);
