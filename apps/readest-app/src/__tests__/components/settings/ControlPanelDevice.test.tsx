@@ -151,6 +151,19 @@ describe('Windows Explorer thumbnail preference (#7206)', () => {
     expect(invoke).toHaveBeenCalledWith('set_explorer_thumbnails_enabled', { enabled: false });
   });
 
+  it('allows an explicit opt-in after the initial preference read fails', async () => {
+    platform.isWindowsApp = true;
+    vi.mocked(invoke).mockRejectedValueOnce(new Error('Invalid registry value'));
+    vi.mocked(invoke).mockResolvedValue(undefined);
+    render(<ControlPanel bookKey='test' onRegisterReset={() => {}} />);
+    await waitFor(() => expect(screen.getByRole('alert')).toBeTruthy());
+    expect(thumbnailSwitch().disabled).toBe(false);
+    fireEvent.click(thumbnailSwitch());
+    await waitFor(() => expect(thumbnailSwitch().checked).toBe(true));
+    expect(invoke).toHaveBeenCalledWith('set_explorer_thumbnails_enabled', { enabled: true });
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
   it('keeps the saved value while a write is pending and after a failed write', async () => {
     platform.isWindowsApp = true;
     let rejectWrite: (error: Error) => void = () => {};

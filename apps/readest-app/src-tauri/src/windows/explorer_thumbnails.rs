@@ -1,6 +1,6 @@
 use std::{io, path::Path};
 use winreg::{
-    enums::{HKEY_CLASSES_ROOT, HKEY_CURRENT_USER, KEY_READ, KEY_WRITE},
+    enums::{HKEY_CLASSES_ROOT, HKEY_CURRENT_USER, KEY_READ, KEY_WRITE, REG_CREATED_NEW_KEY},
     RegKey,
 };
 
@@ -63,31 +63,76 @@ fn set_enabled(user: &RegKey, classes: &RegKey, enabled: bool) -> io::Result<()>
         }
     }
 
-    for extension in EXTENSIONS {
-        let slot = format!(r".{extension}\ShellEx\{THUMBNAIL_HANDLER}");
-        let user_slot = format!(r"Software\Classes\{slot}");
-        let own_handler = handler(user, &user_slot)?;
-        if enabled {
-            // HKCR is merged. Check HKCU too, including when using isolated test roots.
-            let existing = own_handler.or(handler(classes, &slot)?);
-            if existing.is_none_or(|value| value.is_empty() || value.eq_ignore_ascii_case(PROVIDER))
-            {
-                user.create_subkey(&user_slot)?.0.set_value("", &PROVIDER)?;
-            }
-        } else if own_handler.is_some_and(|value| value.eq_ignore_ascii_case(PROVIDER)) {
-            let key = user.open_subkey_with_flags(&user_slot, KEY_READ | KEY_WRITE)?;
-            key.delete_value("")?;
-            // Preserve any unrelated metadata/subkeys left in the handler slot.
-            let info = key.query_info()?;
-            if info.values == 0 && info.sub_keys == 0 {
-                user.delete_subkey(&user_slot)?;
+    let mut registrations = Vec::new();
+    let result = (|| {
+        for extension in EXTENSIONS {
+            let slot = format!(r".{extension}\ShellEx\{THUMBNAIL_HANDLER}");
+            let user_slot = format!(r"Software\Classes\{slot}");
+            let own_handler = handler(user, &user_slot)?;
+            if enabled {
+                // HKCR is merged. Check HKCU too, including when using isolated test roots.
+                let existing = own_handler.or(handler(classes, &slot)?);
+                if existing
+                    .is_none_or(|value| value.is_empty() || value.eq_ignore_ascii_case(PROVIDER))
+                {
+                    let (key, disposition) = user.create_subkey(&user_slot)?;
+                    let previous = match key.get_raw_value("") {
+                        Ok(value) => Some(value),
+                        Err(err) if err.kind() == io::ErrorKind::NotFound => None,
+                        Err(err) => return Err(err),
+                    };
+                    let write = key.set_value("", &PROVIDER);
+                    registrations.push((
+                        user_slot,
+                        key,
+                        previous,
+                        disposition == REG_CREATED_NEW_KEY,
+                    ));
+                    write?;
+                }
+            } else if own_handler.is_some_and(|value| value.eq_ignore_ascii_case(PROVIDER)) {
+                let key = user.open_subkey_with_flags(&user_slot, KEY_READ | KEY_WRITE)?;
+                key.delete_value("")?;
+                // Preserve any unrelated metadata/subkeys left in the handler slot.
+                let info = key.query_info()?;
+                if info.values == 0 && info.sub_keys == 0 {
+                    user.delete_subkey(&user_slot)?;
+                }
             }
         }
-    }
 
-    user.create_subkey(PREFERENCE_KEY)?
-        .0
-        .set_value(PREFERENCE_VALUE, &u32::from(enabled))
+        user.create_subkey(PREFERENCE_KEY)?
+            .0
+            .set_value(PREFERENCE_VALUE, &u32::from(enabled))
+    })();
+    if let Err(err) = result {
+        let mut rollback_error = None;
+        for (path, key, previous, created) in registrations.into_iter().rev() {
+            let restored = match previous {
+                Some(value) => key.set_raw_value("", &value),
+                None => match key.delete_value("") {
+                    Err(err) if err.kind() == io::ErrorKind::NotFound => Ok(()),
+                    result => result,
+                },
+            }
+            .and_then(|()| {
+                if created {
+                    user.delete_subkey(&path)?;
+                }
+                Ok(())
+            });
+            if let Err(err) = restored {
+                rollback_error = Some(err);
+            }
+        }
+        return Err(match rollback_error {
+            Some(rollback) => {
+                io::Error::other(format!("{err}; thumbnail rollback failed: {rollback}"))
+            }
+            None => err,
+        });
+    }
+    Ok(())
 }
 
 #[cfg(test)]
@@ -388,6 +433,26 @@ mod tests {
             .set_value(PREFERENCE_VALUE, &0_u32)
             .unwrap();
         registry
+            .user
+            .create_subkey(format!(r"Software\Classes\{}", Registry::slot("mobi")))
+            .unwrap()
+            .0
+            .set_value("", &"")
+            .unwrap();
+        registry
+            .user
+            .create_subkey(format!(r"Software\Classes\{}", Registry::slot("azw")))
+            .unwrap()
+            .0
+            .set_value("", &PROVIDER.to_lowercase())
+            .unwrap();
+        let metadata = registry
+            .user
+            .create_subkey(format!(r"Software\Classes\{}", Registry::slot("kf8")))
+            .unwrap()
+            .0;
+        metadata.set_value("Unrelated", &"preserve me").unwrap();
+        registry
             .classes
             .create_subkey(Registry::slot("pdf"))
             .unwrap()
@@ -404,6 +469,22 @@ mod tests {
             "preference must be written after registry mutations succeed"
         );
         assert_eq!(registry.user_handler("pdf"), None);
+        for extension in EXTENSIONS {
+            let previous = match extension {
+                "mobi" => Some(String::new()),
+                "azw" => Some(PROVIDER.to_lowercase()),
+                _ => None,
+            };
+            assert_eq!(
+                registry.user_handler(extension),
+                previous,
+                "failed enable must restore .{extension} registration"
+            );
+        }
+        assert_eq!(
+            metadata.get_value::<String, _>("Unrelated").unwrap(),
+            "preserve me"
+        );
         registry
             .user
             .create_subkey(PREFERENCE_KEY)

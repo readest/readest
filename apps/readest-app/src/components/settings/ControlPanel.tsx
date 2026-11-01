@@ -109,7 +109,10 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
         }
       })
       .catch(() => {
-        if (!cancelled) setExplorerThumbnailsError(true);
+        if (!cancelled) {
+          setExplorerThumbnailsError(true);
+          setExplorerThumbnailsBusy(false);
+        }
       });
     return () => {
       cancelled = true;
