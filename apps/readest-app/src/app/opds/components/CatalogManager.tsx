@@ -44,6 +44,7 @@ import { isCredentialsSyncEnabled } from '@/services/sync/syncCategories';
 import { isSyncError } from '@/libs/errors';
 import { OPDSCatalog } from '@/types/opds';
 import { isLanAddress } from '@/utils/network';
+import { isSelfHosted } from '@/utils/access';
 import { allowsSelfSignedCert } from '@/utils/tls';
 import { eventDispatcher } from '@/utils/event';
 import { SectionTitle } from '@/components/settings/primitives';
@@ -473,6 +474,7 @@ export function CatalogManager({ inSubPage = false }: CatalogManagerProps = {}) 
     if (
       process.env['NODE_ENV'] === 'production' &&
       isWebAppPlatform() &&
+      !isSelfHosted() &&
       isLanAddress(newCatalog.url)
     ) {
       setUrlError(_('Adding LAN addresses is not supported in the web app version.'));
