@@ -1747,12 +1747,7 @@ export class TTSController extends EventTarget {
     if (!section?.createDocument) return [];
     try {
       const doc = await this.#createSectionDoc(section);
-      if (this.ttsClient === this.ttsMediaOverlayClient) {
-        const narration = await this.#loadNarrationSection(this.view, sectionIndex, doc);
-        if (narration) {
-          await this.ttsMediaOverlayClient.preloadSection(narration);
-        }
-      }
+      if (!from && this.narrationActive) await this.#queueNarration(sectionIndex, doc);
       const { TTS } = await import('foliate-js/tts.js');
       const { textWalker } = await import('foliate-js/text-walker.js');
       const tts = new TTS(doc, textWalker, createTTSNodeFilter(), () => {}, this.#ttsGranularity);
@@ -1770,6 +1765,17 @@ export class TTSController extends EventTarget {
     } catch (err) {
       console.warn('TTS preload of an upcoming opening failed', sectionIndex, err);
       return [];
+    }
+  }
+
+  // Hand the next section's recording to the narration client ahead of time,
+  // so a native player can play on into it while JS is suspended (#7193).
+  async #queueNarration(sectionIndex: number, doc: Document): Promise<void> {
+    try {
+      const narration = await this.#loadNarrationSection(this.view, sectionIndex, doc);
+      if (narration) await this.ttsMediaOverlayClient.preloadSection(narration);
+    } catch (err) {
+      console.warn('[TTS] queueing the next narrated section failed', sectionIndex, err);
     }
   }
 

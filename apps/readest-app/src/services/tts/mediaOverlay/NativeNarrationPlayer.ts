@@ -18,13 +18,6 @@ interface PlayoutPosition {
   playing: boolean;
 }
 
-interface PlayoutControlResult {
-  session: number | null;
-  index?: number;
-  positionMs?: number;
-  playing?: boolean;
-}
-
 interface FileWindow {
   start: number;
   end: number;
@@ -55,14 +48,19 @@ const fileExtension = (href: string): string => {
 export class NativeNarrationPlayer {
   #nativeSession: Promise<number> | null = null;
   #resolvedSession: number | null = null;
-  #nativeIndex = -1;
   #listener: PluginListener | null = null;
   #listenerStarted = false;
   #href: string | null = null;
-  #stagedPath: string | null = null;
-  #stagedHref: string | null = null;
-  #ownsStagedPath = false;
-  #ownedStagedPaths = new Set<string>();
+  // The native playlist by index, as hrefs: the loaded file and any queued
+  // after it. #nativeIndex is the item the native player is on. It follows
+  // the plugin's rules, which depend only on the order of loads and queues
+  // (never on when a file happens to roll over), so the two cannot drift.
+  #playlist: string[] = [];
+  #nativeIndex = -1;
+  // The item index the last position read reported.
+  #seenIndex = -1;
+  // Staged copies of book audio this player wrote, by href.
+  #staged = new Map<string, string>();
   #rate = 1;
   #userPaused = true;
   #ended = false;
@@ -71,8 +69,21 @@ export class NativeNarrationPlayer {
   #endedListeners = new Set<() => void>();
   #errorListeners = new Set<() => void>();
 
+  // The file the native player is on: the one loaded, or the queued one it
+  // rolled into by itself.
   get href(): string | null {
     return this.#href;
+  }
+
+  get ended(): boolean {
+    return this.#ended;
+  }
+
+  // Whether the native player has already played `href` out and moved on to a
+  // file queued after it.
+  playedPast(href: string): boolean {
+    const index = this.#playlist.indexOf(href);
+    return index >= 0 && index < this.#nativeIndex;
   }
 
   get paused(): boolean {
@@ -119,6 +130,9 @@ export class NativeNarrationPlayer {
       return;
     }
     this.#ended = false;
+    // A new session starts with an empty native playlist.
+    this.#playlist = [];
+    this.#nativeIndex = -1;
     this.#nativeSession = invoke<{ session: number }>('plugin:native-tts|playout_control', {
       payload: { action: 'start-session' },
     }).then((res) => {
@@ -151,10 +165,30 @@ export class NativeNarrationPlayer {
     await this.#loadResolvedPath(href, path, startSec);
   }
 
+  // Queue a file to play after the current one without JS (Android only): the
+  // WebView can be suspended under screen lock while the native player runs.
   async queue(href: string, blob: Blob): Promise<void> {
+    if (this.#playlist.includes(href)) return;
     await this.ensureReady();
     const path = await this.#stageBlob(href, blob);
-    await this.#queueResolvedPath(path);
+    await this.#queueResolvedPath(href, path);
+  }
+
+  async queuePath(href: string, path: string, bytes?: FileWindow): Promise<void> {
+    if (this.#playlist.includes(href)) return;
+    await this.ensureReady();
+    await this.#queueResolvedPath(href, path, bytes);
+  }
+
+  async #queueResolvedPath(href: string, path: string, bytes?: FileWindow): Promise<void> {
+    await invoke('plugin:native-tts|playout_control', {
+      payload: { action: 'queue', path, ...bytes },
+    });
+    if (this.#playlist.includes(href)) return;
+    // The plugin keeps only the file this one follows.
+    this.#playlist = [...this.#playlist.slice(-1), href];
+    this.#nativeIndex = 0;
+    await this.#pruneStaged();
   }
 
   // Paired audiobooks already live as ordinary files under Books/<hash>.
@@ -169,20 +203,6 @@ export class NativeNarrationPlayer {
     // Record the path only once the player took it, so a failed load leaves
     // load() free to stage a copy of the same href.
     await this.#loadResolvedPath(href, path, startSec, bytes);
-    this.#stagedHref = href;
-    this.#stagedPath = path;
-    this.#ownsStagedPath = false;
-  }
-
-  async queuePath(path: string, bytes?: FileWindow): Promise<void> {
-    await this.ensureReady();
-    await this.#queueResolvedPath(path, bytes);
-  }
-
-  async #queueResolvedPath(path: string, bytes?: FileWindow): Promise<void> {
-    await invoke('plugin:native-tts|playout_control', {
-      payload: { action: 'queue', path, ...bytes },
-    });
   }
 
   async #loadResolvedPath(
@@ -193,7 +213,7 @@ export class NativeNarrationPlayer {
   ): Promise<void> {
     this.#href = href;
     this.#ended = false;
-    const result = await invoke<PlayoutControlResult>('plugin:native-tts|playout_control', {
+    await invoke('plugin:native-tts|playout_control', {
       payload: {
         action: 'load',
         path,
@@ -201,10 +221,16 @@ export class NativeNarrationPlayer {
         ...bytes,
       },
     });
-    this.#nativeIndex = result.index ?? 0;
+    // A file already in the playlist is jumped to and the ones before it are
+    // dropped; anything else replaces the playlist.
+    const index = this.#playlist.indexOf(href);
+    this.#playlist = index >= 0 ? this.#playlist.slice(index) : [href];
+    this.#nativeIndex = 0;
+    this.#seenIndex = 0;
+    await this.#pruneStaged();
     this.#cache = {
-      mediaSec: (result.positionMs ?? startSec * 1000) / 1000,
-      playing: (result.playing ?? !this.#userPaused) && !this.#userPaused,
+      mediaSec: startSec,
+      playing: !this.#userPaused,
       at: performance.now(),
     };
   }
@@ -255,16 +281,11 @@ export class NativeNarrationPlayer {
     this.pause();
     this.#href = null;
     this.#stopPolling();
-    this.#stagedPath = null;
-    this.#stagedHref = null;
-    this.#ownsStagedPath = false;
-    await Promise.all(
-      [...this.#ownedStagedPaths].map((path) => remove(path).catch(() => undefined)),
-    );
-    this.#ownedStagedPaths.clear();
+    this.#playlist = [];
+    this.#nativeIndex = -1;
+    await this.#pruneStaged();
     this.#nativeSession = null;
     this.#resolvedSession = null;
-    this.#nativeIndex = -1;
     await invoke('plugin:native-tts|playout_control', { payload: { action: 'abort' } }).catch(
       () => {},
     );
@@ -281,22 +302,36 @@ export class NativeNarrationPlayer {
   }
 
   async #stageBlob(href: string, blob: Blob): Promise<string> {
-    // A path from loadPath() is the caller's file (possibly the whole book),
-    // not a staged copy of this href.
-    if (this.#ownsStagedPath && this.#stagedHref === href && this.#stagedPath) {
-      return this.#stagedPath;
-    }
+    // Only copies this player wrote; a path from loadPath() is the caller's
+    // file (possibly the whole book) and is never staged or removed.
+    const staged = this.#staged.get(href);
+    if (staged) return staged;
     const name = `mo-narration-${hashHref(href)}.${fileExtension(href)}`;
     const bytes = new Uint8Array(await blob.arrayBuffer());
     // App cache, not Temp: older Android versions resolve Temp to the
     // unwritable /data/local/tmp.
     await writeFile(name, bytes, { baseDir: BaseDirectory.AppCache });
     const path = await join(await appCacheDir(), name);
-    this.#stagedHref = href;
-    this.#stagedPath = path;
-    this.#ownsStagedPath = true;
-    this.#ownedStagedPaths.add(path);
+    this.#staged.set(href, path);
     return path;
+  }
+
+  // Remove staged copies that are no longer in the native playlist.
+  async #pruneStaged(): Promise<void> {
+    const keep = new Set(this.#playlist);
+    for (const [href, path] of [...this.#staged]) {
+      if (keep.has(href)) continue;
+      this.#staged.delete(href);
+      await remove(path).catch(() => undefined);
+    }
+  }
+
+  // The native player rolled from the file JS was waiting on into the queued
+  // one. Whatever waits on the old file's clips is done with it.
+  #rollTo(index: number): void {
+    this.#nativeIndex = index;
+    this.#href = this.#playlist[index] ?? null;
+    for (const fn of [...this.#endedListeners]) fn();
   }
 
   async #ensureListener(): Promise<void> {
@@ -316,8 +351,9 @@ export class NativeNarrationPlayer {
     if (this.#resolvedSession !== null && event.session !== this.#resolvedSession) return;
     if (event.type === 'ended') {
       this.#finishEnded();
-    } else if (event.type === 'item-ended' && event.index === this.#nativeIndex) {
-      this.#finishEnded();
+    } else if (event.type === 'item-ended') {
+      const next = this.#nativeIndex + 1;
+      if (event.index === this.#nativeIndex && next < this.#playlist.length) this.#rollTo(next);
     } else if (event.type === 'error') {
       // The item failed to load or play. Nothing will ever move the clock, so
       // this is the only thing that can unstick a waiting speak().
@@ -335,7 +371,6 @@ export class NativeNarrationPlayer {
     if (this.#ended) return;
     this.#ended = true;
     this.#cache.playing = false;
-    this.#stopPolling();
     for (const fn of [...this.#endedListeners]) fn();
   }
 
@@ -356,24 +391,37 @@ export class NativeNarrationPlayer {
   async #poll(): Promise<void> {
     if (this.#resolvedSession === null || this.#ended || this.#userPaused) return;
     try {
-      const pos = await invoke<PlayoutPosition>('plugin:native-tts|playout_position');
-      if (pos.session !== this.#resolvedSession) return;
-      if (pos.index > this.#nativeIndex) {
-        this.#finishEnded();
-      } else if (pos.index >= 0) {
-        this.#cache = {
-          mediaSec: pos.positionMs / 1000,
-          playing: pos.playing && !this.#userPaused,
-          at: performance.now(),
-        };
-      } else {
-        // Android can emit `ended` while the WebView is suspended under screen
-        // lock. If that event is not delivered, the position query is the only
-        // observable completion signal once JavaScript resumes.
-        this.#finishEnded();
-      }
+      await this.sync();
     } catch {
       // Transient invoke failures must not kill the poll loop.
+    }
+  }
+
+  // Read where the native player really is. Events sent while the WebView was
+  // suspended can arrive late or not at all, so this is what reconciles a
+  // rollover or an end of file it missed.
+  async sync(): Promise<void> {
+    if (this.#resolvedSession === null) return;
+    const pos = await invoke<PlayoutPosition>('plugin:native-tts|playout_position');
+    if (pos.session !== this.#resolvedSession) return;
+    const seenIndex = this.#seenIndex;
+    this.#seenIndex = pos.index;
+    if (pos.index > this.#nativeIndex && pos.index < this.#playlist.length) {
+      this.#rollTo(pos.index);
+    }
+    if (pos.index >= 0) {
+      this.#cache = {
+        mediaSec: pos.positionMs / 1000,
+        playing: pos.playing && !this.#userPaused,
+        at: performance.now(),
+      };
+    } else if (seenIndex >= 0) {
+      // The file played out since the last read, maybe while the WebView was
+      // suspended and its `ended` event was lost. Hold the clock at the end.
+      this.#cache = { mediaSec: pos.positionMs / 1000, playing: false, at: performance.now() };
+      if (!this.#userPaused) this.#finishEnded();
+    } else {
+      this.#cache.playing = false;
     }
   }
 }
