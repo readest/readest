@@ -38,13 +38,38 @@
     Pop $0
 !macroend
 
+; Remove only our thumbnail slot, including a legacy installation-scope entry
+; that may be hidden underneath a per-user registration.
+!macro REMOVE_THUMBNAIL ROOT EXT
+    Push $0
+    ReadRegStr $0 ${ROOT} "Software\Classes\${EXT}\ShellEx\${SHELL_THUMBNAIL_HANDLER}" ""
+    ${If} $0 == "${CLSID_READEST_THUMBNAIL}"
+        DeleteRegKey ${ROOT} "Software\Classes\${EXT}\ShellEx\${SHELL_THUMBNAIL_HANDLER}"
+    ${EndIf}
+    Pop $0
+!macroend
+
 !macro REGISTER_EXT EXT
-    !insertmacro REGISTER_SHELLEX "${EXT}" "${SHELL_THUMBNAIL_HANDLER}"
+    !insertmacro UNREGISTER_SHELLEX "${EXT}" "${SHELL_THUMBNAIL_HANDLER}"
+    !insertmacro REMOVE_THUMBNAIL SHCTX "${EXT}"
+    !insertmacro REMOVE_THUMBNAIL HKCU "${EXT}"
+    Push $0
+    ReadRegDWORD $0 HKCU "Software\Readest" "ExplorerThumbnails"
+    ${If} $0 == 1
+        ReadRegStr $0 HKCR "${EXT}\ShellEx\${SHELL_THUMBNAIL_HANDLER}" ""
+        ${If} $0 == ""
+        ${OrIf} $0 == "${CLSID_READEST_THUMBNAIL}"
+            WriteRegStr HKCU "Software\Classes\${EXT}\ShellEx\${SHELL_THUMBNAIL_HANDLER}" "" "${CLSID_READEST_THUMBNAIL}"
+        ${EndIf}
+    ${EndIf}
+    Pop $0
     !insertmacro REGISTER_SHELLEX "${EXT}" "${SHELL_PREVIEW_HANDLER}"
 !macroend
 
 !macro UNREGISTER_EXT EXT
     !insertmacro UNREGISTER_SHELLEX "${EXT}" "${SHELL_THUMBNAIL_HANDLER}"
+    !insertmacro REMOVE_THUMBNAIL SHCTX "${EXT}"
+    !insertmacro REMOVE_THUMBNAIL HKCU "${EXT}"
     !insertmacro UNREGISTER_SHELLEX "${EXT}" "${SHELL_PREVIEW_HANDLER}"
 !macroend
 

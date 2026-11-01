@@ -1,5 +1,9 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { render, cleanup, screen, fireEvent } from '@testing-library/react';
+import { render, cleanup, screen, fireEvent, waitFor, act } from '@testing-library/react';
+import { invoke } from '@tauri-apps/api/core';
+
+vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
+const platform = vi.hoisted(() => ({ isWindowsApp: false }));
 
 /**
  * Settings > Behavior > Device switches: Gamepad Support (issue #5979) and
@@ -17,7 +21,7 @@ const sysSettings: Record<string, unknown> = { gamepadEnabled: true };
 const view = { bookEink: false, globalEink: false };
 
 vi.mock('@/context/EnvContext', () => ({
-  useEnv: () => ({ envConfig: {}, appService: { isMobileApp: false } }),
+  useEnv: () => ({ envConfig: {}, appService: { isMobileApp: false, ...platform } }),
 }));
 
 vi.mock('@/hooks/useTranslation', () => ({
@@ -105,6 +109,69 @@ afterEach(() => {
   sysSettings['gamepadEnabled'] = true;
   view.bookEink = false;
   view.globalEink = false;
+  platform.isWindowsApp = false;
+  vi.mocked(invoke).mockReset();
+});
+
+const thumbnailSwitch = () =>
+  document.querySelector<HTMLInputElement>(
+    '[data-setting-id="settings.control.explorerThumbnails"] input',
+  )!;
+
+describe('Windows Explorer thumbnail preference (#7206)', () => {
+  it('is hidden outside the Windows app and does not query the registry', () => {
+    render(<ControlPanel bookKey='test' onRegisterReset={() => {}} />);
+    expect(screen.queryByText('Use Readest for File Explorer thumbnails')).toBeNull();
+    expect(invoke).not.toHaveBeenCalled();
+  });
+
+  it('starts off, persists an explicit opt-in, and reloads the device preference', async () => {
+    platform.isWindowsApp = true;
+    let enabled = false;
+    vi.mocked(invoke).mockImplementation(async (command, args) => {
+      if (command === 'get_explorer_thumbnails_enabled') return enabled;
+      if (command === 'set_explorer_thumbnails_enabled') {
+        enabled = (args as { enabled: boolean }).enabled;
+        return;
+      }
+      throw new Error(`Unexpected command: ${command}`);
+    });
+    const panel = render(<ControlPanel bookKey='test' onRegisterReset={() => {}} />);
+    await waitFor(() => expect(thumbnailSwitch().disabled).toBe(false));
+    expect(thumbnailSwitch().checked).toBe(false);
+    fireEvent.click(thumbnailSwitch());
+    await waitFor(() => expect(thumbnailSwitch().checked).toBe(true));
+    expect(invoke).toHaveBeenCalledWith('set_explorer_thumbnails_enabled', { enabled: true });
+    expect(saveSysSettings).not.toHaveBeenCalled();
+    panel.unmount();
+    render(<ControlPanel bookKey='test' onRegisterReset={() => {}} />);
+    await waitFor(() => expect(thumbnailSwitch().checked).toBe(true));
+    fireEvent.click(thumbnailSwitch());
+    await waitFor(() => expect(thumbnailSwitch().checked).toBe(false));
+    expect(invoke).toHaveBeenCalledWith('set_explorer_thumbnails_enabled', { enabled: false });
+  });
+
+  it('keeps the saved value while a write is pending and after a failed write', async () => {
+    platform.isWindowsApp = true;
+    let rejectWrite: (error: Error) => void = () => {};
+    vi.mocked(invoke).mockImplementation((command) => {
+      if (command === 'get_explorer_thumbnails_enabled') return Promise.resolve(true);
+      return new Promise((_resolve, reject) => {
+        rejectWrite = reject;
+      });
+    });
+    render(<ControlPanel bookKey='test' onRegisterReset={() => {}} />);
+    await waitFor(() => expect(thumbnailSwitch().checked).toBe(true));
+    fireEvent.click(thumbnailSwitch());
+    expect(thumbnailSwitch().disabled).toBe(true);
+    expect(thumbnailSwitch().checked).toBe(true);
+    await act(async () => rejectWrite(new Error('Access denied')));
+    expect(thumbnailSwitch().checked).toBe(true);
+    expect(thumbnailSwitch().disabled).toBe(false);
+    expect(screen.getByRole('alert').textContent).toContain(
+      'Could not update File Explorer thumbnails',
+    );
+  });
 });
 
 describe('Settings > Behavior > Device > Gamepad Support', () => {

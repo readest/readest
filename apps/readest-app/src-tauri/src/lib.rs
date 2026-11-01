@@ -672,6 +672,10 @@ pub fn run() {
             is_updater_disabled,
             allow_paths_in_scopes,
             cover_thumbnail::optimize_cover_thumbnails,
+            #[cfg(target_os = "windows")]
+            windows::get_explorer_thumbnails_enabled,
+            #[cfg(target_os = "windows")]
+            windows::set_explorer_thumbnails_enabled,
             dir_scanner::read_dir,
             backup_zip::write_backup_zip,
             backup_zip::extract_backup_zip,
