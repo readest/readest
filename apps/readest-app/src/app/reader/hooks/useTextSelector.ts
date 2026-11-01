@@ -1336,10 +1336,8 @@ export const useTextSelector = (
   };
 
   const handleContextmenu = (event: Event) => {
-    const isTouch =
-      !!appService?.isMobile ||
-      lastPointerType.current === 'touch' ||
-      lastPointerType.current === 'pen';
+    const pointerType = (event as PointerEvent).pointerType || lastPointerType.current;
+    const isTouch = pointerType === 'touch' || pointerType === 'pen';
     // Images get Readest's own menu, from a right-click or, on Android, a long
     // press (#6574): the webview's differs per engine and offers "Copy image
     // address" for a blob URL nobody can use (#6558).

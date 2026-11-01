@@ -207,11 +207,27 @@ const consumeSuppressedDomClick = (bookKey: string, event: MouseEvent, now: numb
   return false;
 };
 
-// Runs before Foliate's bubble-phase link handler. Only recognized swipes are
-// intercepted here; ordinary clicks retain their existing listener order and
-// link/media/footnote behavior.
-export const handleClickCapture = (bookKey: string, event: MouseEvent) => {
-  consumeSuppressedDomClick(bookKey, event, Date.now());
+// Runs before Foliate's bubble-phase link handler, so a held linked image can
+// open the viewer without also following its link.
+export const handleClickCapture = (bookKey: string, event: MouseEvent, isFixedLayout = false) => {
+  if (consumeSuppressedDomClick(bookKey, event, Date.now())) return;
+  const element = event.target as HTMLElement | null;
+  if (
+    isFixedLayout ||
+    isMouseDown ||
+    longHoldTimeout ||
+    getImageViewerGesture(bookKey) !== 'longPress' ||
+    !element?.closest('a[href]') ||
+    opensNote(element) ||
+    element.closest(
+      '.js_readerFooterNote, .zhangyue-footnote, .duokan-footnote, .qqreader-footnote',
+    )
+  )
+    return;
+  const media = detectMediaTarget(element);
+  if (media?.elementType !== 'image') return;
+  suppressDomClick(event);
+  window.postMessage({ type: 'iframe-open-media', bookKey, ...media }, '*');
 };
 
 // The event's position in main-window viewport coordinates: iframe client
@@ -343,6 +359,7 @@ export const handleKeyup = (bookKey: string, event: KeyboardEvent) => {
 
 export const handleMousedown = (bookKey: string, event: MouseEvent) => {
   isMouseDown = true;
+  if (longHoldTimeout) clearTimeout(longHoldTimeout);
   longHoldTimeout = setTimeout(() => {
     longHoldTimeout = null;
   }, LONG_HOLD_THRESHOLD);

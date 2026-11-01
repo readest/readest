@@ -86,13 +86,14 @@ const setup = (setSelection: (s: TextSelection | null) => void) => {
   );
 };
 
-const rightClick = (target: Element, x = 50, y = 50) => {
+const rightClick = (target: Element, x = 50, y = 50, pointerType = 'mouse') => {
   const event = new MouseEvent('contextmenu', {
     bubbles: true,
     cancelable: true,
     clientX: x,
     clientY: y,
   });
+  Object.defineProperty(event, 'pointerType', { value: pointerType });
   target.dispatchEvent(event);
   return event;
 };
@@ -222,7 +223,7 @@ describe('useTextSelector image long-press menu (#6574)', () => {
     h.appService = { isAndroidApp: true, isMobile: true };
     listen();
     document.body.innerHTML = '<img src="blob:http://localhost/figure">';
-    expect(rightClick(document.querySelector('img')!, 30, 40).defaultPrevented).toBe(true);
+    expect(rightClick(document.querySelector('img')!, 30, 40, 'touch').defaultPrevented).toBe(true);
     expect(imageMenus()).toMatchObject([{ bookKey: 'book-1', x: 30, y: 40 }]);
   });
 
@@ -230,7 +231,7 @@ describe('useTextSelector image long-press menu (#6574)', () => {
     h.appService = { isAndroidApp: true, isMobile: true };
     listen();
     document.body.innerHTML = '<p>plain text</p>';
-    expect(rightClick(document.querySelector('p')!).defaultPrevented).toBe(true);
+    expect(rightClick(document.querySelector('p')!, 50, 50, 'touch').defaultPrevented).toBe(true);
     expect(imageMenus()).toEqual([]);
   });
 
@@ -241,10 +242,10 @@ describe('useTextSelector image long-press menu (#6574)', () => {
     Object.assign(document, { getImageAt: () => vi.fn() });
     const textLayer = document.querySelector('.textLayer')!;
     h.textAtPoint = true;
-    rightClick(document.querySelector('span')!);
+    rightClick(document.querySelector('span')!, 50, 50, 'touch');
     expect(imageMenus()).toEqual([]);
     h.textAtPoint = false;
-    rightClick(textLayer);
+    rightClick(textLayer, 50, 50, 'touch');
     expect(imageMenus()).toHaveLength(1);
     delete (document as { getImageAt?: unknown }).getImageAt;
   });
@@ -328,7 +329,7 @@ describe('useTextSelector long press opens the image viewer (#7145)', () => {
     h.appService = { isAndroidApp: true, isMobile: true };
     listen();
     document.body.innerHTML = '<img src="blob:http://localhost/figure">';
-    expect(rightClick(document.querySelector('img')!).defaultPrevented).toBe(true);
+    expect(rightClick(document.querySelector('img')!, 50, 50, 'touch').defaultPrevented).toBe(true);
     expect(imageMenus()).toEqual([]);
     expect(openedMedia()).toEqual([
       {
@@ -371,6 +372,30 @@ describe('useTextSelector long press opens the image viewer (#7145)', () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+
+  test.each(['android', 'ios'])('a mouse right-click on %s keeps the image menu', (platform) => {
+    h.appService = {
+      isMobile: true,
+      isAndroidApp: platform === 'android',
+      isIOSApp: platform === 'ios',
+    };
+    h.osPlatform = platform;
+    document.body.innerHTML = '<img src="blob:http://localhost/figure">';
+    const img = document.querySelector('img')!;
+    const { result } = setup(vi.fn());
+    result.current.handlePointerDown(document, 0, {
+      target: img,
+      pointerType: 'mouse',
+      button: 2,
+      clientX: 30,
+      clientY: 40,
+    } as unknown as PointerEvent);
+    const event = new MouseEvent('contextmenu', { bubbles: true, cancelable: true, button: 2 });
+    Object.defineProperty(event, 'target', { value: img });
+    result.current.handleContextmenu(event);
+    expect(imageMenus()).toHaveLength(1);
+    expect(openedMedia()).toEqual([]);
   });
 
   test('a desktop right-click on an image keeps the menu', () => {

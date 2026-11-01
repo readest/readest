@@ -647,9 +647,11 @@ const FoliateViewer: React.FC<{
         detail.doc.addEventListener('mouseup', handleMouseup.bind(null, bookKey));
         detail.doc.addEventListener('mousemove', handleMousemove.bind(null, bookKey));
         detail.doc.addEventListener('auxclick', handleAuxclick.bind(null, bookKey));
-        detail.doc.addEventListener('click', handleClickCapture.bind(null, bookKey), {
-          capture: true,
-        });
+        detail.doc.addEventListener(
+          'click',
+          (event: MouseEvent) => handleClickCapture(bookKey, event, !!bookData?.isFixedLayout),
+          { capture: true },
+        );
         detail.doc.addEventListener(
           'click',
           handleClick.bind(

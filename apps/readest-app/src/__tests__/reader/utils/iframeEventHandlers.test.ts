@@ -1072,6 +1072,64 @@ describe('image viewer gesture (#7145)', () => {
     expect(postedMessages().map((m) => m['type'])).not.toContain('iframe-single-click');
   });
 
+  test('long press: an earlier timer cannot turn a second short press into a hold', async () => {
+    const handlers = await importHandlers();
+    handlers.setImageViewerGesture('book-1', 'longPress');
+    const img = image();
+
+    click(handlers, false, img);
+    click(handlers, false, img, 400);
+
+    expect(postedMessages().filter((m) => m['type'] === 'iframe-single-click')).toHaveLength(2);
+    expect(postedMessages().map((m) => m['type'])).not.toContain('iframe-open-media');
+  });
+
+  test.each([
+    { holdMs: 0, isFixedLayout: false, note: false, opens: false },
+    { holdMs: 600, isFixedLayout: false, note: false, opens: true },
+    { holdMs: 600, isFixedLayout: true, note: false, opens: false },
+    { holdMs: 600, isFixedLayout: false, note: true, opens: false },
+  ])('linked DOM click: $holdMs ms, fixed: $isFixedLayout, note: $note', async ({
+    holdMs,
+    isFixedLayout,
+    note,
+    opens,
+  }) => {
+    const handlers = await importHandlers();
+    handlers.setImageViewerGesture('book-1', 'longPress');
+    const link = document.createElement('a');
+    link.href = '#figure';
+    if (note) link.setAttribute('role', 'doc-noteref');
+    const img = image();
+    link.append(img);
+    document.body.append(link);
+    const navigate = vi.fn((event: Event) => event.preventDefault());
+    const capture = (event: MouseEvent) =>
+      handlers.handleClickCapture('book-1', event, isFixedLayout);
+    const bubble = (event: MouseEvent) =>
+      handlers.handleClick('book-1', { current: false }, isFixedLayout, false, event);
+    // Foliate installs its bubble listener before the reader's load listeners.
+    document.addEventListener('click', navigate);
+    document.addEventListener('click', capture, true);
+    document.addEventListener('click', bubble);
+    try {
+      handlers.handleMousedown('book-1', mouseEvent({ target: img }));
+      vi.advanceTimersByTime(holdMs);
+      handlers.handleMouseup('book-1', mouseEvent({ target: img }));
+      img.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+      vi.advanceTimersByTime(260);
+      expect(navigate).toHaveBeenCalledTimes(opens ? 0 : 1);
+      expect(postedMessages().filter((m) => m['type'] === 'iframe-open-media')).toHaveLength(
+        opens ? 1 : 0,
+      );
+    } finally {
+      document.removeEventListener('click', navigate);
+      document.removeEventListener('click', capture, true);
+      document.removeEventListener('click', bubble);
+      link.remove();
+    }
+  });
+
   test('tap: a held mouse button on an image opens nothing', async () => {
     const handlers = await importHandlers();
     handlers.setImageViewerGesture('book-1', 'tap');
