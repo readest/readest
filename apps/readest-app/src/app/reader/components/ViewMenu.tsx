@@ -498,7 +498,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
               label={_('Separate Cover Page')}
               Icon={keepCoverSpread ? MdCheck : undefined}
               onClick={() => setKeepCoverSpread(!keepCoverSpread)}
-              disabled={shownSpreadMode === 'none'}
+              disabled={isScrolledMode || shownSpreadMode === 'none'}
             />
             <MenuItem
               label={_('Right-to-Left Pages')}
