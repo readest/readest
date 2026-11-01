@@ -11,7 +11,17 @@ const MAX_REDIRECTS = 5;
 // opt specific catalogs into private-network access. Re-check every redirect.
 const isPrivateHostAllowed = (hostname: string) => {
   if (process.env.NODE_ENV === 'development') return true;
-  const normalize = (host: string) => host.trim().toLowerCase().replace(/\.+$/, '');
+  const normalize = (host: string) => {
+    const value = host.trim().toLowerCase().replace(/\.+$/, '');
+    if (/^\[[\da-f:.]+\]$/.test(value)) {
+      try {
+        return new URL(`http://${value}`).hostname;
+      } catch {
+        return '';
+      }
+    }
+    return value;
+  };
   return (process.env['READEST_TRUSTED_PRIVATE_HOSTS'] ?? '')
     .split(',')
     .some((host) => normalize(host) !== '' && normalize(host) === normalize(hostname));
