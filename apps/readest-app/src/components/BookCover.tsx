@@ -11,6 +11,26 @@ import { useLibraryStore } from '@/store/libraryStore';
 
 export const HideBookCoversContext = createContext<boolean | undefined>(undefined);
 
+// Cover art keeps its color across themes and metadata edits. Keep this palette
+// and mapping stable so a synced book has the same cover on every device.
+const FALLBACK_COVER_COLORS = [
+  '#8d642e',
+  '#77566e',
+  '#a15543',
+  '#386456',
+  '#486780',
+  '#356c70',
+  '#935c6b',
+  '#4d557b',
+];
+const getFallbackCoverColor = (bookHash: string) => {
+  let hash = 2166136261;
+  for (let i = 0; i < bookHash.length; i++) {
+    hash = Math.imul(hash ^ bookHash.charCodeAt(i), 16777619);
+  }
+  return FALLBACK_COVER_COLORS[(hash >>> 0) % FALLBACK_COVER_COLORS.length]!;
+};
+
 interface BookCoverProps {
   book: Book;
   mode?: LibraryViewModeType;
@@ -51,6 +71,7 @@ const BookCover: React.FC<BookCoverProps> = memo<BookCoverProps>(
     const defaultShelfCovers = useDefaultBookshelfCovers();
     const hideCovers = shelfHideCovers ?? defaultShelfCovers.hideCovers;
     const displayCoverUrl = hideCovers ? null : coverImageUrl;
+    const author = formatAuthors(book.author || book.metadata?.author || '');
 
     const shouldShowSpine = showSpine && !hideCovers && imageLoaded && !imageError;
 
@@ -177,34 +198,93 @@ const BookCover: React.FC<BookCoverProps> = memo<BookCoverProps>(
 
         <div
           className={clsx(
-            'fallback-cover absolute inset-0 p-2',
+            'fallback-cover absolute inset-0',
             displayCoverUrl && !imageError && 'invisible',
-            'text-neutral-content text-center font-serif font-medium',
-            isPreview ? 'bg-base-200/50' : 'bg-base-100',
+            'text-center font-serif font-medium',
+            hideCovers
+              ? ['text-neutral-content p-2', isPreview ? 'bg-base-200/50' : 'bg-base-100']
+              : 'eink-bordered eink:text-base-content flex flex-col overflow-hidden border border-current/35 p-[10%] ps-[14%]',
             imageClassName,
           )}
+          style={
+            hideCovers
+              ? undefined
+              : {
+                  backgroundColor: getFallbackCoverColor(book.hash || ''),
+                  color: '#fff8e7',
+                }
+          }
         >
-          <div className='flex h-1/2 items-center justify-center'>
-            <span
-              className={clsx(
-                isPreview ? 'line-clamp-2' : mode === 'grid' ? 'line-clamp-3' : 'line-clamp-2',
-                isPreview ? 'text-[0.5em]' : mode === 'grid' ? 'text-lg' : 'text-sm',
+          {hideCovers ? (
+            <>
+              <div className='flex h-1/2 items-center justify-center'>
+                <span
+                  className={clsx(
+                    isPreview ? 'line-clamp-2' : mode === 'grid' ? 'line-clamp-3' : 'line-clamp-2',
+                    isPreview ? 'text-[0.5em]' : mode === 'grid' ? 'text-lg' : 'text-sm',
+                  )}
+                >
+                  {formatTitle(book.title)}
+                </span>
+              </div>
+              <div className='h-1/6'></div>
+              <div className='flex h-1/3 items-center justify-center'>
+                <span
+                  className={clsx(
+                    'text-neutral-content/50 line-clamp-1',
+                    isPreview ? 'text-[0.4em]' : mode === 'grid' ? 'text-base' : 'text-xs',
+                  )}
+                >
+                  {author}
+                </span>
+              </div>
+            </>
+          ) : (
+            <>
+              <div
+                aria-hidden='true'
+                className='fallback-cover-spine eink:opacity-100 absolute inset-y-0 start-[4%] border-s border-current opacity-35'
+              />
+              {mode === 'grid' &&
+                !isPreview &&
+                book.format &&
+                !['ABS', 'OPDSAUDIO', 'BOOKORBIT'].includes(book.format) && (
+                  <span className='fallback-cover-format shrink-0 font-sans text-[10px] leading-none tracking-widest'>
+                    {book.format.toUpperCase()}
+                  </span>
+                )}
+              <div className='flex min-h-0 flex-1 items-center justify-center py-[8%]'>
+                <span
+                  dir='auto'
+                  className={clsx(
+                    'fallback-cover-title line-clamp-3 w-full min-w-0 leading-tight [overflow-wrap:anywhere]',
+                    isPreview ? 'text-[0.5em]' : mode === 'grid' ? 'text-lg' : 'text-xs',
+                  )}
+                >
+                  {formatTitle(book.title)}
+                </span>
+              </div>
+              {mode === 'grid' && author && (
+                <div className='flex shrink-0 flex-col items-center gap-2'>
+                  {!isPreview && (
+                    <div
+                      aria-hidden='true'
+                      className='eink:opacity-100 h-px w-6 bg-current opacity-55'
+                    />
+                  )}
+                  <span
+                    dir='auto'
+                    className={clsx(
+                      'fallback-cover-author line-clamp-2 leading-snug',
+                      isPreview ? 'text-[0.4em]' : 'text-xs',
+                    )}
+                  >
+                    {author}
+                  </span>
+                </div>
               )}
-            >
-              {formatTitle(book.title)}
-            </span>
-          </div>
-          <div className='h-1/6'></div>
-          <div className='flex h-1/3 items-center justify-center'>
-            <span
-              className={clsx(
-                'text-neutral-content/50 line-clamp-1',
-                isPreview ? 'text-[0.4em]' : mode === 'grid' ? 'text-base' : 'text-xs',
-              )}
-            >
-              {formatAuthors(book.author || book.metadata?.author || '')}
-            </span>
-          </div>
+            </>
+          )}
         </div>
       </div>
     );
