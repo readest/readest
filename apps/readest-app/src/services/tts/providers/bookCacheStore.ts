@@ -451,7 +451,21 @@ export class BookTTSCacheStore implements TTSCacheStore {
         const book = useLibraryStore.getState().getBookByHash(bookHash);
         const config = books.getConfig(bookHash);
         if (book && config) {
-          await this.#appService.saveBookConfig(book, config, useSettingsStore.getState().settings);
+          const settings = useSettingsStore.getState().settings;
+          await this.#appService.saveBookConfig(book, config, settings);
+          // Publish only the pack record, at the oldest timestamp: the server
+          // unions it into its row without replacing reading progress. The
+          // reader publishes its position separately, with a fresh XPointer.
+          const [{ SyncClient }, { isSyncCategoryEnabled }, { getUserID }] = await Promise.all([
+            import('@/libs/sync'),
+            import('@/services/sync/syncCategories'),
+            import('@/utils/access'),
+          ]);
+          if (isSyncCategoryEnabled('progress') && (await getUserID())) {
+            await new SyncClient().pushChanges({
+              configs: [{ bookHash, metaHash: book.metaHash, ttsPacks: next, updatedAt: 0 }],
+            });
+          }
         }
       }
     };

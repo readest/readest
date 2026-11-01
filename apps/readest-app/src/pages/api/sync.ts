@@ -3,7 +3,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { NextRequest, NextResponse } from 'next/server';
 import { PostgrestError } from '@supabase/supabase-js';
 import { createSupabaseClient } from '@/utils/supabase';
-import { BookDataRecord } from '@/types/book';
+import { BookConfig, BookDataRecord } from '@/types/book';
 import { transformBookConfigToDB } from '@/utils/transform';
 import { transformBookNoteToDB } from '@/utils/transform';
 import { transformBookToDB } from '@/utils/transform';
@@ -764,7 +764,13 @@ export async function POST(req: NextRequest) {
         const serverData = serverRecordsMap.get(key);
 
         if (!serverData) {
-          dbRec.updated_at = new Date().toISOString();
+          const packOnly =
+            table === 'book_configs' &&
+            (original as unknown as BookConfig).updatedAt === 0 &&
+            (dbRec as DBBookConfig).tts_packs;
+          // A pack-only seed must not outrank the reader's saved position.
+          // Keep it just above epoch so the initial since=0 pull includes it.
+          dbRec.updated_at = new Date(packOnly ? 1 : Date.now()).toISOString();
           toInsert.push(dbRec);
         } else {
           const clientUpdatedAt = dbRec.updated_at ? new Date(dbRec.updated_at).getTime() : 0;

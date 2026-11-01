@@ -1,4 +1,6 @@
-import { beforeEach, describe, expect, test, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
+import type { BookConfig } from '@/types/book';
+import type { SystemSettings } from '@/types/settings';
 
 const packState = vi.hoisted(() => {
   const files = new Map<string, Uint8Array>();
@@ -43,13 +45,23 @@ const bookData = vi.hoisted(() => ({
   pushBookData: vi.fn(async () => 0),
 }));
 
+const auth = vi.hoisted(() => ({
+  getUserID: vi.fn(async (): Promise<string | null> => null),
+  getAccessToken: vi.fn(async (): Promise<string | null> => null),
+}));
+vi.mock('@/utils/access', async (original) => ({
+  ...(await original<typeof import('@/utils/access')>()),
+  getUserID: auth.getUserID,
+  getAccessToken: auth.getAccessToken,
+}));
+
 const bookConfig = vi.hoisted(() => ({
-  config: null as { ttsPacks?: Record<string, string[]>; updatedAt?: number } | null,
+  config: null as Partial<BookConfig> | null,
   setConfig: vi.fn((_key: string, update: object) => {
     bookConfig.config = { ...bookConfig.config, ...update };
   }),
-  book: { hash: 'hash-rec4' },
-  settings: { kind: 'settings' },
+  book: { hash: 'hash-rec4', metaHash: 'meta-rec4' },
+  settings: {} as SystemSettings,
 }));
 vi.mock('@/store/libraryStore', () => ({
   useLibraryStore: { getState: () => ({ getBookByHash: () => bookConfig.book }) },
@@ -99,6 +111,9 @@ describe('BookTTSCacheStore', () => {
   let deleteFile: ReturnType<typeof vi.fn>;
 
   beforeEach(async () => {
+    auth.getUserID.mockResolvedValue(null);
+    auth.getAccessToken.mockResolvedValue(null);
+    bookConfig.settings = { globalViewSettings: {} } as SystemSettings;
     packState.files.clear();
     db = await NodeDatabaseService.open(':memory:');
     createDir = vi.fn().mockResolvedValue(undefined);
@@ -115,6 +130,8 @@ describe('BookTTSCacheStore', () => {
       saveBookConfig: vi.fn(async () => {}),
     } as unknown as AppService;
   });
+
+  afterEach(() => vi.unstubAllGlobals());
 
   test('does nothing until the book hash resolves', async () => {
     const store = new BookTTSCacheStore(appService, () => null, 1024 * 1024);
@@ -279,7 +296,95 @@ describe('BookTTSCacheStore', () => {
       const store = new BookTTSCacheStore(appService, () => hash, 1024 * 1024);
       await store.open();
       await vi.waitFor(() => expect(bookData.pushBookData).toHaveBeenCalled());
+      return store;
     };
+
+    test.each([
+      ['cfi-unchanged', 'hash-publish-cfi-unchanged'],
+      [undefined, 'hash-publish-unset'],
+    ] as const)('publishes a changed download record without a page turn (location: %s)', async (location, hash) => {
+      auth.getUserID.mockResolvedValue('test-user');
+      auth.getAccessToken.mockResolvedValue('test-token');
+      const requests: { configs: Partial<BookConfig>[] }[] = [];
+      vi.stubGlobal('fetch', async (_url: string, init: RequestInit) => {
+        requests.push(JSON.parse(String(init.body)));
+        return Response.json({ configs: [], books: [], notes: [] });
+      });
+      const store = await openWith(hash, {
+        webdav: [],
+        readest: [],
+      });
+      bookConfig.config = {
+        ...bookConfig.config,
+        location,
+        xpointer: '/body/DocFragment[9]/body/p[20]',
+        progress: [5, 100],
+        booknotes: [],
+        widePages: ['page-1.jpg'],
+        panX: 0.5,
+        lastPushedAtConfig: 41,
+        audiobook: { version: 1, files: [], chapters: [], mappings: [], createdAt: 1 },
+      };
+      const persisted = Promise.withResolvers<void>();
+      vi.mocked(appService.saveBookConfig).mockImplementationOnce(() => persisted.promise);
+      bookData.pushBookData.mockImplementationOnce(async (...args: unknown[]) => {
+        const listings = args[3] as Map<string, Set<string> | null>;
+        listings.set('webdav', new Set(['1-a.mp3', '1-a.json']));
+        listings.set('readest', new Set(['1-a.mp3', '1-a.json']));
+        return 1;
+      });
+      await store.completeDownloadSections([]);
+      await vi.waitFor(() => expect(appService.saveBookConfig).toHaveBeenCalled());
+      expect(requests).toHaveLength(0);
+      persisted.resolve();
+
+      await vi.waitFor(() => expect(requests).toHaveLength(1));
+      expect(requests[0]?.configs).toEqual([
+        {
+          bookHash: hash,
+          metaHash: 'meta-rec4',
+          updatedAt: 0,
+          ttsPacks: { webdav: ['1-a.mp3'], readest: ['1-a.mp3'] },
+        },
+      ]);
+      expect(bookConfig.config?.updatedAt).toBe(42);
+      expect(bookConfig.config?.location).toBe(location);
+      expect(bookConfig.config?.xpointer).toBe('/body/DocFragment[9]/body/p[20]');
+
+      await store.completeDownloadSections([]);
+      await vi.waitFor(() => expect(bookData.pushBookData).toHaveBeenCalledTimes(3));
+      expect(requests).toHaveLength(1);
+    });
+
+    test.each([
+      'signed-out',
+      'progress-off',
+      'cloud-off',
+    ] as const)('keeps a changed record local when config sync is disabled (%s)', async (disabled) => {
+      auth.getUserID.mockResolvedValue(disabled === 'signed-out' ? null : 'test-user');
+      auth.getAccessToken.mockResolvedValue('test-token');
+      bookConfig.settings = {
+        globalViewSettings: {},
+        readestCloud: { enabled: disabled !== 'cloud-off' },
+        syncCategories: { progress: disabled !== 'progress-off' },
+      } as SystemSettings;
+      const requests: unknown[] = [];
+      vi.stubGlobal('fetch', async (_url: string, init: RequestInit) => {
+        requests.push(JSON.parse(String(init.body)));
+        return Response.json({ configs: [], books: [], notes: [] });
+      });
+      bookData.pullBookData.mockImplementationOnce(async (...args: unknown[]) => {
+        const listings = args[3] as Map<string, Set<string> | null>;
+        listings.set('webdav', new Set(['1-a.mp3', '1-a.json']));
+        return 0;
+      });
+      const store = await openWith(`hash-disabled-${disabled}`, undefined);
+      await vi.waitFor(() => expect(appService.saveBookConfig).toHaveBeenCalled());
+      await store.completeDownloadSections([]);
+      await vi.waitFor(() => expect(bookData.pushBookData).toHaveBeenCalledTimes(2));
+      expect(bookConfig.config?.ttsPacks).toEqual({ webdav: ['1-a.mp3'] });
+      expect(requests).toHaveLength(0);
+    });
 
     test('an open pulls nothing when every destination is recorded and nothing is missing', async () => {
       // A book without audio, synced before: no listing at all.
