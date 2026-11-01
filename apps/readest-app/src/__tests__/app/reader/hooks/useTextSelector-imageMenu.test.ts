@@ -374,6 +374,55 @@ describe('useTextSelector long press opens the image viewer (#7145)', () => {
     }
   });
 
+  test.each([
+    true,
+    false,
+  ])('an iOS image hold preserves the next tap (compatibility click: %s)', async (emitsCompatibilityClick) => {
+    vi.useFakeTimers();
+    h.appService = { isIOSApp: true, isMobile: true };
+    h.osPlatform = 'ios';
+    document.body.innerHTML = '<a href="#figure"><img src="blob:http://localhost/figure"></a>';
+    const img = document.querySelector('img')!;
+    const { result } = setup(vi.fn());
+    const pointer = {
+      target: img,
+      pointerType: 'touch',
+      clientX: 30,
+      clientY: 40,
+      button: 0,
+    } as unknown as PointerEvent;
+    const { handleClickCapture, handleMousedown, handleMouseup } = await import(
+      '@/app/reader/utils/iframeEventHandlers'
+    );
+    const navigate = vi.fn((event: Event) => event.preventDefault());
+    const capture = (event: MouseEvent) => handleClickCapture('book-1', event);
+    document.addEventListener('click', navigate);
+    document.addEventListener('click', capture, true);
+    try {
+      result.current.handlePointerDown(document, 0, pointer);
+      vi.advanceTimersByTime(500);
+      await result.current.handlePointerUp(document, 0, pointer);
+      expect(openedMedia()).toHaveLength(1);
+      const compatibilityClick = () => {
+        const mouse = new MouseEvent('mousedown');
+        handleMousedown('book-1', mouse);
+        handleMouseup('book-1', mouse);
+        img.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+      };
+      if (emitsCompatibilityClick) compatibilityClick();
+      expect(navigate).not.toHaveBeenCalled();
+      result.current.handlePointerDown(document, 0, pointer);
+      await result.current.handlePointerUp(document, 0, pointer);
+      compatibilityClick();
+      expect(navigate).toHaveBeenCalledTimes(1);
+      expect(openedMedia()).toHaveLength(1);
+    } finally {
+      document.removeEventListener('click', navigate);
+      document.removeEventListener('click', capture, true);
+      vi.useRealTimers();
+    }
+  });
+
   test.each(['android', 'ios'])('a mouse right-click on %s keeps the image menu', (platform) => {
     h.appService = {
       isMobile: true,

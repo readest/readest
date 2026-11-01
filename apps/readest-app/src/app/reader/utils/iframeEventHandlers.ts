@@ -44,6 +44,13 @@ export const resolveImageViewerGesture = (
   isFixedLayout: boolean,
 ): ImageViewerGesture => viewSettings.imageViewerGesture ?? (isFixedLayout ? 'longPress' : 'tap');
 
+const imageHoldClicks = new Map<string, { target: EventTarget; until: number }>();
+export const setImageHoldClick = (bookKey: string, target: EventTarget | null) => {
+  if (target)
+    imageHoldClicks.set(bookKey, { target, until: Date.now() + SYNTHESIZED_CLICK_SUPPRESSION_MS });
+  else imageHoldClicks.delete(bookKey);
+};
+
 const suppressedSwipeClicks = new Map<string, { until: number; endX: number; endY: number }>();
 interface LayeredTurnTouchClaim {
   claimed: boolean;
@@ -182,6 +189,14 @@ const suppressDomClick = (event: MouseEvent) => {
 };
 
 const consumeSuppressedDomClick = (bookKey: string, event: MouseEvent, now: number) => {
+  const imageHold = imageHoldClicks.get(bookKey);
+  if (imageHold) {
+    imageHoldClicks.delete(bookKey);
+    if (now <= imageHold.until && event.target === imageHold.target) {
+      suppressDomClick(event);
+      return true;
+    }
+  }
   const suppressedSwipe = suppressedSwipeClicks.get(bookKey);
   if (suppressedSwipe) {
     if (now > suppressedSwipe.until) {

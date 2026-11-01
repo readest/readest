@@ -44,6 +44,7 @@ import {
   detectMediaTarget,
   getContextMenuImage,
   getImageViewerGesture,
+  setImageHoldClick,
 } from '../utils/iframeEventHandlers';
 
 // Instant-highlight quick action: on touch a plain tap and a swipe are both
@@ -710,6 +711,7 @@ export const useTextSelector = (
     // PDF images have no file of their own to show, so they keep the menu.
     const media = isTouch ? detectMediaTarget(event.target as HTMLElement) : null;
     if (media?.elementType === 'image' && getImageViewerGesture(bookKey) === 'longPress') {
+      setImageHoldClick(bookKey, event.target);
       window.postMessage({ type: 'iframe-open-media', bookKey, ...media }, '*');
       return true;
     }
@@ -738,6 +740,7 @@ export const useTextSelector = (
 
   const handlePointerDown = (doc: Document, index: number, ev: PointerEvent) => {
     beginSelectionDrag();
+    setImageHoldClick(bookKey, null);
     lastPointerType.current = ev.pointerType;
     const selection = ev.pointerType === 'mouse' ? doc.getSelection() : null;
     mouseSelectionAtPointerDown.current = selection
@@ -1387,6 +1390,7 @@ export const useTextSelector = (
       instantGestureCleanup.current?.();
       if (instantHoldTimer.current) clearTimeout(instantHoldTimer.current);
       cancelImageHold();
+      setImageHoldClick(bookKey, null);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
