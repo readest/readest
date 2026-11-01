@@ -209,6 +209,11 @@ export class MediaOverlayTTS {
     );
     // END_TO_START compares this range's START against the argument's END.
     const target =
+      pars.find(
+        (par) =>
+          par.range.compareBoundaryPoints(Range.START_TO_START, range) <= 0 &&
+          range.compareBoundaryPoints(Range.END_TO_START, par.range) < 0,
+      ) ??
       pars.find((par) => range.compareBoundaryPoints(Range.END_TO_START, par.range) < 0) ??
       pars.at(-1);
     // Unlike foliate's `from`, this leaves #lastMark pointing at the resolved

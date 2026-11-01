@@ -230,6 +230,30 @@ describe('MediaOverlayTTS', () => {
     expect(marksOf(tts.next())).toEqual(['2']);
   });
 
+  test('from(range) prefers a containing parent over a later nested phrase', async () => {
+    const nestedDoc = new DOMParser().parseFromString(
+      '<html><body><p id="parent">Before <span id="child">nested phrase</span> after.</p></body></html>',
+      'text/html',
+    );
+    const book = {
+      sections: [{ mediaOverlay: { href: 'OEBPS/ch1.smil', id: 'smil1' } }],
+      loadText: async () => `<smil><body>${par('parent', 0, 1)}${par('child', 1, 2)}</body></smil>`,
+    } as unknown as BookDoc;
+    const nestedSection = (await loadMediaOverlaySection(book, 0, nestedDoc, 'en'))!;
+    const tts = new MediaOverlayTTS(nestedDoc, nestedSection, highlight);
+    const parentRange = nestedSection.pars[0]!.range;
+    const childRange = nestedSection.pars[1]!.range;
+
+    expect(marksOf(tts.from(parentRange)), 'exact parent range').toEqual(['0', '1']);
+    expect(marksOf(tts.resume())).toEqual(['0', '1']);
+    expect(marksOf(tts.from(childRange)), 'exact child range').toEqual(['1']);
+
+    const afterChild = nestedDoc.createRange();
+    afterChild.setStart(nestedDoc.getElementById('parent')!.lastChild!, 1);
+    afterChild.collapse(true);
+    expect(marksOf(tts.from(afterChild)), 'parent text after child').toEqual(['0', '1']);
+  });
+
   // Found by end-to-end playback: narration skips unnarrated sections, so the
   // location playback was requested from usually belongs to a DIFFERENT
   // section's document. compareBoundaryPoints throws WrongDocumentError across
