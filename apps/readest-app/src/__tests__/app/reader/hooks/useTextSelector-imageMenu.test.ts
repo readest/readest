@@ -107,6 +107,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   h.appService = { isAndroidApp: false, isMobile: false };
   h.textAtPoint = false;
+  h.osPlatform = 'macos';
 });
 
 afterEach(() => {
@@ -337,6 +338,39 @@ describe('useTextSelector long press opens the image viewer (#7145)', () => {
         src: 'blob:http://localhost/figure',
       },
     ]);
+  });
+
+  test.each([true, false])('an iOS touch hold opens the viewer (native app: %s)', (isIOSApp) => {
+    vi.useFakeTimers();
+    try {
+      h.appService = { isIOSApp, isMobile: true };
+      h.osPlatform = 'ios';
+      document.body.innerHTML = '<img src="blob:http://localhost/figure">';
+      const img = document.querySelector('img')!;
+      const { result } = setup(vi.fn());
+      result.current.handlePointerDown(document, 0, {
+        target: img,
+        pointerType: 'touch',
+        clientX: 30,
+        clientY: 40,
+        button: 0,
+      } as unknown as PointerEvent);
+
+      vi.advanceTimersByTime(499);
+      expect(openedMedia()).toEqual([]);
+      vi.advanceTimersByTime(1);
+      expect(openedMedia()).toEqual([
+        {
+          type: 'iframe-open-media',
+          bookKey: 'book-1',
+          elementType: 'image',
+          src: img.src,
+        },
+      ]);
+      expect(imageMenus()).toEqual([]);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   test('a desktop right-click on an image keeps the menu', () => {

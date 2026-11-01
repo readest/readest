@@ -1042,6 +1042,36 @@ describe('image viewer gesture (#7145)', () => {
     expect(messages.map((m) => m['type'])).not.toContain('iframe-single-click');
   });
 
+  test.each([
+    false,
+    true,
+  ])('long press: a 300ms press stays a page click (fixed layout: %s)', async (isFixedLayout) => {
+    const handlers = await importHandlers();
+    handlers.setImageViewerGesture('book-1', 'longPress');
+
+    click(handlers, isFixedLayout, image(), 300);
+
+    expect(postedMessages().map((m) => m['type'])).not.toContain('iframe-open-media');
+    expect(postedMessages()).toContainEqual(
+      expect.objectContaining({ type: 'iframe-single-click' }),
+    );
+  });
+
+  test.each([0, 600])('long press: linked images open only after a hold (%sms)', async (holdMs) => {
+    const handlers = await importHandlers();
+    handlers.setImageViewerGesture('book-1', 'longPress');
+    const img = image();
+    const link = document.createElement('a');
+    link.href = 'https://example.com/figure';
+    link.appendChild(img);
+
+    click(handlers, false, img, holdMs);
+
+    const opened = postedMessages().filter((m) => m['type'] === 'iframe-open-media');
+    expect(opened).toHaveLength(holdMs ? 1 : 0);
+    expect(postedMessages().map((m) => m['type'])).not.toContain('iframe-single-click');
+  });
+
   test('tap: a held mouse button on an image opens nothing', async () => {
     const handlers = await importHandlers();
     handlers.setImageViewerGesture('book-1', 'tap');

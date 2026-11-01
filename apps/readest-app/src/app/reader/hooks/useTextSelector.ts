@@ -757,7 +757,8 @@ export const useTextSelector = (
     if (appService?.isAndroidApp && ev.pointerType === 'touch') {
       doc.documentElement.classList.add(LINK_TOUCH_HOLD_CLASS);
     }
-    if (appService?.isIOSApp && ev.pointerType === 'touch') armImageHold(ev);
+    if ((appService?.isIOSApp || osPlatform === 'ios') && ev.pointerType === 'touch')
+      armImageHold(ev);
     isPointerDown.current = true;
     clearCrossDoc();
     dragAnchorRef.current = null;

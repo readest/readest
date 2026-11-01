@@ -571,6 +571,8 @@ export const handleClick = (
 ) => {
   const now = Date.now();
   if (consumeSuppressedDomClick(bookKey, event, now)) return;
+  // Decide at release; waiting for a possible double-click must not extend a hold.
+  const isLongHold = !longHoldTimeout;
 
   if (!doubleClickDisabled.current && now - lastClickTime < DOUBLE_CLICK_INTERVAL_THRESHOLD_MS) {
     lastClickTime = now;
@@ -648,6 +650,7 @@ export const handleClick = (
     const pageMedia = media && element && (isFixedLayout || fillsPage(element)) ? media : null;
     if (
       !media &&
+      !(heldImage && isLongHold) &&
       element?.closest('sup, a, audio, video') &&
       !element?.closest('a.duokan-footnote:not([href])')
     ) {
@@ -677,7 +680,7 @@ export const handleClick = (
 
     // if long hold is detected, we don't want to send single click event; a
     // mouse held on an image is the long press that opens the viewer.
-    if (!longHoldTimeout) {
+    if (isLongHold) {
       if (heldImage) window.postMessage({ type: 'iframe-open-media', bookKey, ...heldImage }, '*');
       return;
     }
