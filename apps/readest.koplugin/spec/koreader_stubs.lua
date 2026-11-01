@@ -117,10 +117,12 @@ M.LibraryWidget = {
 -- the paths that bring Wi-Fi up (modal on Kobo/Kindle), so specs count them.
 M.NetworkMgr = {
     _online = true,
+    _route = true,
     _willRerunWhenOnline_calls = 0,
     _goOnlineToRun_calls = 0,
     isOnline = function(self) return self._online end,
     isConnected = function(self) return self._online end,
+    hasDefaultRoute = function(self) return self._route end,
     willRerunWhenOnline = function(self)
         self._willRerunWhenOnline_calls = self._willRerunWhenOnline_calls + 1
         return false
@@ -161,6 +163,7 @@ function M.reset()
     end
     M.util.partialMD5 = function(_file) return "stub-md5" end
     M.NetworkMgr._online = true
+    M.NetworkMgr._route = true
     M.NetworkMgr._willRerunWhenOnline_calls = 0
     M.NetworkMgr._goOnlineToRun_calls = 0
     M.LibraryWidget._menu = nil
