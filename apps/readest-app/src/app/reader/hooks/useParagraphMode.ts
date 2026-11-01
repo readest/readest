@@ -515,7 +515,8 @@ export const useParagraphMode = ({ bookKey, viewRef }: UseParagraphModeProps) =>
 
     try {
       await view.renderer.nextSection?.();
-      const newSectionReady = await waitForNewSection(oldDoc);
+      const newSectionReady =
+        getPrimaryContent()?.doc !== oldDoc && (await waitForNewSection(oldDoc));
 
       if (!newSectionReady) {
         pendingNavigationRef.current = null;
@@ -575,7 +576,8 @@ export const useParagraphMode = ({ bookKey, viewRef }: UseParagraphModeProps) =>
 
     try {
       await view.renderer.prevSection?.();
-      const newSectionReady = await waitForNewSection(oldDoc);
+      const newSectionReady =
+        getPrimaryContent()?.doc !== oldDoc && (await waitForNewSection(oldDoc));
 
       if (!newSectionReady) {
         pendingNavigationRef.current = null;

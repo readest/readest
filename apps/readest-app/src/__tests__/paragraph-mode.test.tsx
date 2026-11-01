@@ -288,6 +288,40 @@ describe('paragraph mode', () => {
     expect(transition).toHaveBeenCalledOnce();
   });
 
+  it.each([
+    'next',
+    'prev',
+  ] as const)('does not wait on repeated %s book-boundary events before reversing', async (direction) => {
+    const timers = vi
+      .spyOn(globalThis, 'setTimeout')
+      .mockImplementation((handler, timeout) =>
+        realSetTimeout(handler, typeof timeout === 'number' && timeout < 1000 ? 0 : timeout),
+      );
+    const doc = createDoc('<p>First</p><p>Last</p>');
+    const { view } = createMockView([doc], 0);
+    render(<HookHarness view={{ current: view }} />);
+    await waitFor(() => expect(hookApi?.paragraphState.currentRange).toBeTruthy());
+    if (direction === 'next') {
+      await act(async () => {
+        await hookApi?.goToNextParagraph();
+      });
+    }
+    timers.mockClear();
+    await act(async () => {
+      await Promise.all([
+        eventDispatcher.dispatch(`paragraph-${direction}`, { bookKey: 'book-1' }),
+        eventDispatcher.dispatch(`paragraph-${direction}`, { bookKey: 'book-1' }),
+        eventDispatcher.dispatch(direction === 'next' ? 'paragraph-prev' : 'paragraph-next', {
+          bookKey: 'book-1',
+        }),
+      ]);
+    });
+    expect(hookApi?.paragraphState.currentRange?.toString()).toBe(
+      direction === 'next' ? 'First' : 'Last',
+    );
+    expect(timers).not.toHaveBeenCalledWith(expect.any(Function), 750);
+  });
+
   it('reports a failed paragraph event and still runs the next event', async () => {
     const doc = createDoc('<p>First</p><p>Second</p><p>Third</p>');
     const { view } = createMockView([doc], 0);
