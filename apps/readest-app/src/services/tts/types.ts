@@ -27,6 +27,9 @@ export type TTSVoice = {
   // A trait the engine spells into the voice id, shown as a badge instead of
   // in the name.
   variant?: 'multilingual' | 'expressive';
+  // A name the user's own service gave, shown as is: run through the
+  // translator, one that matches a UI string would come out translated.
+  literalName?: boolean;
 };
 
 export type TTSVoicesGroup = {
@@ -34,6 +37,8 @@ export type TTSVoicesGroup = {
   name: string;
   voices: TTSVoice[];
   disabled?: boolean;
+  // Named by the user (their own service): shown as is, like a voice's literalName.
+  literalName?: boolean;
 };
 
 export type TTSMark = {

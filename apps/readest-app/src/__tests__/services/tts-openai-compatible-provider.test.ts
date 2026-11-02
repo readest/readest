@@ -121,6 +121,8 @@ describe('OpenAICompatibleSpeechProvider', () => {
       ['s1:voice-7f3a', 'Narrator'],
       ['s1:F1', 'F1'],
     ]);
+    // The service names its voices: the picker shows them untranslated.
+    expect(voices.every((v) => v.literalName)).toBe(true);
     fetchMock.mockResolvedValueOnce(audioResponse());
     await provider.synthesize(req(voices[0]!.id), new AbortController().signal);
     const [, init] = fetchMock.mock.calls.at(-1)!;

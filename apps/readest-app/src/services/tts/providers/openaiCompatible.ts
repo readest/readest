@@ -208,6 +208,7 @@ export class OpenAICompatibleSpeechProvider implements SpeechProvider {
       lists[i]!.map((voice) => ({
         id: customVoiceId(service.id, voice.name),
         name: voice.label ?? voice.name,
+        literalName: true,
         lang: voiceLang(voice),
       })),
     );
@@ -217,6 +218,7 @@ export class OpenAICompatibleSpeechProvider implements SpeechProvider {
     return this.getServices().map((service) => ({
       id: `${this.id}:${service.id}`,
       name: service.name,
+      literalName: true,
       voices: voices.filter((voice) => voice.id.startsWith(`${service.id}:`)),
     }));
   }
