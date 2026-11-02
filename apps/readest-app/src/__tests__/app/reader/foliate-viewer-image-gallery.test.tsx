@@ -18,7 +18,7 @@ const { readerState, bookDataState, gallery } = vi.hoisted(() => {
     },
     readerState: {
       setProgress: vi.fn(),
-      viewStates: {} as Record<string, { ocrEnabled?: boolean; ocrLanguage?: string }>,
+      viewStates: {},
       getViewState: () => ({}),
       getViewSettings: () => ({ writingMode: 'auto' }),
       setView: () => {},

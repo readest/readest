@@ -10,7 +10,7 @@ const { readerState, openGate, bookDataState, attrs } = vi.hoisted(() => {
     openGate: { pending: null as Promise<void> | null, started: false },
     readerState: {
       setProgress: vi.fn(),
-      viewStates: {} as Record<string, { ocrEnabled?: boolean; ocrLanguage?: string }>,
+      viewStates: {},
       getViewState: () => ({}),
       getViewSettings: () => ({ writingMode: 'auto', showHeader: true, vertical: false }),
       setView: () => {},
