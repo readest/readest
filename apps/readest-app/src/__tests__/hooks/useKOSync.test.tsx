@@ -154,6 +154,7 @@ vi.mock('@/utils/event', () => ({
 }));
 
 import { useKOSync, type KosyncProgressProvider } from '@/app/reader/hooks/useKOSync';
+import { getCFIFromXPointer, getXPointerFromCFI } from '@/utils/xcfi';
 
 const flushMicrotasks = async () => {
   for (let i = 0; i < 30; i++) await Promise.resolve();
@@ -228,6 +229,114 @@ describe('useKOSync — changing checksum method (#7118)', () => {
     expect(result.current.syncState).toBe('conflict');
     await advance(KOSYNC_PUSH_DEBOUNCE_MS + 500);
     expect(h.updateProgressMock).not.toHaveBeenCalled();
+  });
+
+  test('ignores an old empty response after the new identity reports a conflict', async () => {
+    let finishOldPull!: (value: null) => void;
+    h.getProgressMock.mockImplementationOnce(
+      () => new Promise<null>((resolve) => (finishOldPull = resolve)),
+    );
+    const { result, rerender } = renderHook(() => useKOSync('h1-view1'));
+    await settle();
+
+    h.settings.kosync = { ...h.settings.kosync, checksumMethod: 'filename' };
+    rerender();
+    await settle();
+    expect(result.current.syncState).toBe('conflict');
+
+    finishOldPull(null);
+    await settle();
+    expect(result.current.syncState).toBe('conflict');
+    await advance(KOSYNC_PUSH_DEBOUNCE_MS + 500);
+    expect(h.updateProgressMock).not.toHaveBeenCalled();
+  });
+
+  test('ignores old conflict calculations after switching checksum method', async () => {
+    let finishOldPreview!: (value: { fraction: number }) => void;
+    h.view.getCFIProgress.mockImplementationOnce(
+      () => new Promise<{ fraction: number }>((resolve) => (finishOldPreview = resolve)),
+    );
+    const { result, rerender } = renderHook(() => useKOSync('h1-view1'));
+    await settle();
+
+    const newRemote = { ...h.remote, timestamp: 12345 };
+    h.getProgressMock.mockResolvedValue(newRemote);
+    h.settings.kosync = { ...h.settings.kosync, checksumMethod: 'filename' };
+    rerender();
+    await settle();
+    expect(result.current.conflictDetails?.remote.timestamp).toBe(12345);
+
+    finishOldPreview({ fraction: 0.6 });
+    await settle();
+    expect(result.current.conflictDetails?.remote.timestamp).toBe(12345);
+    expect(result.current.syncState).toBe('conflict');
+  });
+
+  test('does not navigate to an old identity after its conversion finishes', async () => {
+    h.settings.kosync.strategy = 'silent';
+    let finishOldConversion!: (value: string) => void;
+    vi.mocked(getCFIFromXPointer).mockImplementationOnce(
+      () => new Promise<string>((resolve) => (finishOldConversion = resolve)),
+    );
+    const { result, rerender } = renderHook(() => useKOSync('h1-view1'));
+    await settle();
+
+    h.getProgressMock.mockResolvedValue(null);
+    h.settings.kosync = { ...h.settings.kosync, checksumMethod: 'filename' };
+    rerender();
+    await settle();
+    expect(result.current.syncState).toBe('synced');
+
+    finishOldConversion('epubcfi(/6/650!/4/2/6)');
+    await settle();
+    expect(h.goTo).not.toHaveBeenCalled();
+    expect(result.current.syncState).toBe('synced');
+  });
+
+  test('does not upload an old identity after its conversion finishes', async () => {
+    h.getProgressMock.mockResolvedValueOnce(null);
+    let finishOldConversion!: (value: { xpointer: string }) => void;
+    vi.mocked(getXPointerFromCFI).mockImplementationOnce(
+      () => new Promise<{ xpointer: string }>((resolve) => (finishOldConversion = resolve)),
+    );
+    const { result, rerender } = renderHook(() => useKOSync('h1-view1'));
+    await settle();
+    await advance(KOSYNC_PUSH_DEBOUNCE_MS + 500);
+
+    h.settings.kosync = { ...h.settings.kosync, checksumMethod: 'filename' };
+    rerender();
+    await settle();
+    expect(result.current.syncState).toBe('conflict');
+
+    finishOldConversion({ xpointer: h.XPOINTER });
+    await settle();
+    expect(h.updateProgressMock).not.toHaveBeenCalled();
+  });
+
+  test('does not apply a pending remote conflict resolution after switching methods', async () => {
+    const { result, rerender } = renderHook(() => useKOSync('h1-view1'));
+    await settle();
+    let finishOldConversion!: (value: string) => void;
+    vi.mocked(getCFIFromXPointer).mockImplementationOnce(
+      () => new Promise<string>((resolve) => (finishOldConversion = resolve)),
+    );
+    let resolution!: Promise<void>;
+    act(() => {
+      resolution = result.current.resolveWithRemote();
+    });
+
+    h.settings.kosync = { ...h.settings.kosync, checksumMethod: 'filename' };
+    rerender();
+    await settle();
+    expect(result.current.syncState).toBe('conflict');
+
+    await act(async () => {
+      finishOldConversion('epubcfi(/6/650!/4/2/6)');
+      await resolution;
+    });
+    expect(h.goTo).not.toHaveBeenCalled();
+    expect(result.current.syncState).toBe('conflict');
+    expect(result.current.conflictDetails).not.toBeNull();
   });
 
   test('does not repull when unrelated settings change', async () => {

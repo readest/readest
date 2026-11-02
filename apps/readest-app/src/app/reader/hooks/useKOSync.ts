@@ -101,12 +101,15 @@ export const useKOSync = (bookKey: string, provider: KosyncProgressProvider = ko
 
   const checksumMethod = provider.selectConfig(settings)?.checksumMethod;
   const previousChecksumMethod = useRef(checksumMethod);
+  const checksumGeneration = useRef(0);
 
   useEffect(() => {
     const config = provider.selectConfig(settings);
     if (previousChecksumMethod.current !== checksumMethod) {
+      checksumGeneration.current += 1;
       hasPulledOnce.current = false;
       resolvedRemoteRef.current = null;
+      setConflictDetails(null);
       setSyncState('idle');
       previousChecksumMethod.current = checksumMethod;
     }
@@ -185,6 +188,7 @@ export const useKOSync = (bookKey: string, provider: KosyncProgressProvider = ko
     book: Book,
     bookDoc: BookDoc,
     remote: KoSyncProgress,
+    generation: number,
   ): Promise<boolean> => {
     const view = getView(bookKey);
     const bookData = getBookData(bookKey);
@@ -213,8 +217,10 @@ export const useKOSync = (bookKey: string, provider: KosyncProgressProvider = ko
             content?.index,
             bookDoc,
           );
+          if (generation !== checksumGeneration.current) return false;
           view.goTo(cfi);
         } catch (error) {
+          if (generation !== checksumGeneration.current) return false;
           console.error('Failed to convert XPointer to CFI', error);
           eventDispatcher.dispatch('hint', { bookKey, message: _('Sync failed') });
           return false;
@@ -240,6 +246,7 @@ export const useKOSync = (bookKey: string, provider: KosyncProgressProvider = ko
     bookDoc: BookDoc,
     local: BookProgress,
     remote: KoSyncProgress,
+    generation: number,
   ) => {
     let remotePreview = '';
     const remotePercentage = remote.percentage || 0;
@@ -327,6 +334,7 @@ export const useKOSync = (bookKey: string, provider: KosyncProgressProvider = ko
       });
     }
 
+    if (generation !== checksumGeneration.current) return false;
     if (showConflictDetails) {
       setConflictDetails({
         book,
@@ -351,8 +359,10 @@ export const useKOSync = (bookKey: string, provider: KosyncProgressProvider = ko
         )
           return;
 
+        const generation = checksumGeneration.current;
         const currentBook = getBookData(bookKey)?.book;
         const progress = await generateKOProgress();
+        if (generation !== checksumGeneration.current) return;
         if (!currentBook || !progress || !progress.koProgress) return;
 
         console.log('[KOSync] Pushing progress');
@@ -374,6 +384,7 @@ export const useKOSync = (bookKey: string, provider: KosyncProgressProvider = ko
       const config = provider.selectConfig(settings);
       if (!config?.enabled) return;
       const { strategy } = config;
+      const generation = checksumGeneration.current;
 
       hasPulledOnce.current = true;
       if (strategy === 'send') {
@@ -383,6 +394,7 @@ export const useKOSync = (bookKey: string, provider: KosyncProgressProvider = ko
 
       setSyncState('checking');
       const remoteProgress = await kosyncClient.getProgress(book);
+      if (generation !== checksumGeneration.current) return;
       if (!remoteProgress || !remoteProgress.progress) {
         setSyncState('synced');
         return;
@@ -395,7 +407,8 @@ export const useKOSync = (bookKey: string, provider: KosyncProgressProvider = ko
         : Date.now();
       const remoteIsNewer = remoteTimestamp > localTimestamp;
       if (strategy === 'receive' || (strategy === 'silent' && remoteIsNewer)) {
-        const applied = await applyRemoteProgress(book, bookDoc, remoteProgress);
+        const applied = await applyRemoteProgress(book, bookDoc, remoteProgress, generation);
+        if (generation !== checksumGeneration.current) return;
         setSyncState(applied ? 'synced' : 'error');
       } else if (strategy === 'prompt') {
         const resolved = resolvedRemoteRef.current;
@@ -410,7 +423,8 @@ export const useKOSync = (bookKey: string, provider: KosyncProgressProvider = ko
         }
         // Only stay in the conflict state when there's an actual conflict to
         // resolve; otherwise return to 'synced' so auto-push keeps working.
-        const hasConflict = await promptedSync(book, bookDoc, progress, remoteProgress);
+        const hasConflict = await promptedSync(book, bookDoc, progress, remoteProgress, generation);
+        if (generation !== checksumGeneration.current) return;
         setSyncState(hasConflict ? 'conflict' : 'synced');
       } else {
         setSyncState('synced');
@@ -528,8 +542,10 @@ export const useKOSync = (bookKey: string, provider: KosyncProgressProvider = ko
     if (!book || !bookDoc || !remote || !view) return;
     if (!remote.progress && getRemoteFraction(remote) === undefined) return;
 
+    const generation = checksumGeneration.current;
     resolvedRemoteRef.current = remote;
-    const applied = await applyRemoteProgress(book, bookDoc, remote);
+    const applied = await applyRemoteProgress(book, bookDoc, remote, generation);
+    if (generation !== checksumGeneration.current) return;
     setSyncState(applied ? 'synced' : 'error');
     setConflictDetails(null);
   };
