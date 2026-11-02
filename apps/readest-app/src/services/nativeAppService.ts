@@ -314,21 +314,11 @@ export const nativeFileSystem: FileSystem = {
     const normalizedPath = OS_TYPE === 'ios' ? safeDecodePath(path) : path;
     const { fp, baseDir } = this.resolvePath(normalizedPath, base);
     if (isValidURL(path)) {
-      return await new RemoteFile(
-        path,
-        name || getURLFilename(path),
-        '',
-        Date.now(),
-        fetcher ?? tauriFetch,
-      ).open();
+      const fname = name || getURLFilename(path);
+      return await new RemoteFile(path, fname, '', Date.now(), fetcher ?? tauriFetch).open();
     }
-    let fname =
-      name ||
-      (isFileURI(path)
-        ? getURLFilename(path)
-        : getPathFilename(OS_TYPE === 'windows' ? fp.replace(/\\/g, '/') : fp));
     if (isContentURI(path) || (isFileURI(path) && OS_TYPE === 'ios')) {
-      fname = safeDecodePath(await basename(path));
+      const fname = safeDecodePath(await basename(path));
       if (path.includes('com.android.externalstorage')) {
         // If the URI is from shared internal storage (like /storage/emulated/0),
         // we can access it directly using the path — no need to copy.
@@ -346,7 +336,10 @@ export const nativeFileSystem: FileSystem = {
         }
         return await new NativeFile(dst, fname, baseDir ? baseDir : null).open();
       }
-    } else if (isFileURI(path)) {
+    }
+    const localPath = OS_TYPE === 'windows' ? fp.replace(/\\/g, '/') : fp;
+    const fname = name || (isFileURI(path) ? getURLFilename(path) : getPathFilename(localPath));
+    if (isFileURI(path)) {
       return await new NativeFile(fp, fname, baseDir ? baseDir : null).open();
     } else if (needsQueryRangeReads(OS_TYPE)) {
       // Android and Linux can't use the asset protocol for ranged reads —
