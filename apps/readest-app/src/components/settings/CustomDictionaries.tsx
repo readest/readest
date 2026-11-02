@@ -296,7 +296,7 @@ const CustomDictionaries: React.FC<CustomDictionariesProps> = ({ onBack }) => {
   const [dictionariesLoaded, setDictionariesLoaded] = useState(false);
   useEffect(() => {
     void loadCustomDictionaries(envConfig)
-      .then(() => setDictionariesLoaded(true))
+      .then((loaded) => setDictionariesLoaded(loaded))
       .catch(() => {});
     ensureCustomTranslatorsLoaded(envConfig);
     // eslint-disable-next-line react-hooks/exhaustive-deps

@@ -150,8 +150,8 @@ interface DictionaryStoreState {
    */
   applyRemoteDictionarySettings(patch: Partial<DictionarySettings>): void;
 
-  /** Hydrate from `settings.customDictionaries` + `settings.dictionarySettings` + check on-disk availability. */
-  loadCustomDictionaries(envConfig: EnvConfigType): Promise<void>;
+  /** Hydrate settings and check on-disk availability; return whether loading succeeded. */
+  loadCustomDictionaries(envConfig: EnvConfigType): Promise<boolean>;
   /**
    * Persist current state back into settings (which then syncs to
    * cloud). Pass `{ publishOrderChange: true }` from explicit user
@@ -677,8 +677,10 @@ export const useCustomDictionaryStore = create<DictionaryStoreState>((set, get) 
         contextMaxOutputTokens: persistedSettings.contextMaxOutputTokens,
       };
       set({ dictionaries, settings: settingsMerged });
+      return true;
     } catch (error) {
       console.error('Failed to load custom dictionaries settings:', error);
+      return false;
     }
   },
 
