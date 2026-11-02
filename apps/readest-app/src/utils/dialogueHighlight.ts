@@ -71,7 +71,7 @@ const isSkipped = (node: Text): boolean => {
 
 type TextEntry = { node: Text; start: number; end: number };
 type Region = { start: number; end: number };
-type TextBlock = Region & { hasContent: boolean };
+type TextBlock = Region & { firstCharacter: string };
 
 const BLOCK_SELECTOR =
   'p, div, li, blockquote, dd, dt, h1, h2, h3, h4, h5, h6, td, th, caption, figcaption, section, article, aside, body';
@@ -96,11 +96,11 @@ const collectEntries = (
     if (content) {
       const nodeBlock = node.parentElement?.closest(BLOCK_SELECTOR) ?? null;
       if (blocks.length === 0 || nodeBlock !== textBlock) {
-        blocks.push({ start: text.length, end: text.length, hasContent: false });
+        blocks.push({ start: text.length, end: text.length, firstCharacter: '' });
       }
       textBlock = nodeBlock;
       const currentBlock = blocks[blocks.length - 1]!;
-      currentBlock.hasContent ||= !!content.trim();
+      currentBlock.firstCharacter ||= content.trimStart().charAt(0);
       if (!isSkipped(node)) {
         if (block && nodeBlock !== block) text += '\n';
         if (currentBlock.start === currentBlock.end) currentBlock.start = text.length;
@@ -117,17 +117,16 @@ const collectEntries = (
 
 const findRegions = (text: string, blocks: TextBlock[]): Region[] => {
   const raw: Region[] = [];
-  // Whitespace between elements is not a paragraph; skipped text in a code
-  // paragraph still breaks adjacency even though it contributes no scan text.
-  const paragraphs = blocks.filter((block) => block.hasContent);
+  // Whitespace between elements is not a paragraph. Include skipped text in
+  // the leading character so code cannot hide narration before an opening mark.
+  const paragraphs = blocks.filter((block) => block.firstCharacter);
   for (let i = 0; i < paragraphs.length - 1; i++) {
     const block = paragraphs[i]!;
     const next = paragraphs[i + 1]!;
     const content = text.slice(block.start, block.end).trimEnd();
-    const nextContent = text.slice(next.start, next.end).trimStart();
     CONTINUED_DIALOGUE_PATTERN.lastIndex = 0;
     const match = CONTINUED_DIALOGUE_PATTERN.exec(content);
-    if (!match || match[0][0] !== nextContent[0]) continue;
+    if (!match || match[0][0] !== next.firstCharacter) continue;
     const limit = match[0][0] === '‘' ? 301 : MAX_QUOTE_LENGTH;
     if (match[0].length > limit) continue;
     raw.push({ start: block.start + match.index, end: block.start + content.length });

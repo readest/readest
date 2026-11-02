@@ -489,6 +489,8 @@ describe('manageDialogueHighlight', () => {
   it.each([
     '<p>“Unclosed.</p><p>Narration.</p><p>“Later.”</p>',
     '<p>“Unclosed.</p><p><code>Narration.</code></p><p>“Later.”</p>',
+    '<p>“Unclosed.</p><p><code>Example:</code>“Later.”</p>',
+    '<p>“Unclosed.</p><p> <code>Example:</code> “Later.”</p>',
     '<p>“Unclosed.</p><p>‘Different marks.’</p>',
     '<p>“Unclosed.\n“Another line.”</p>',
     '<p>“Closed.” Narration.</p><p>“Next.”</p>',
