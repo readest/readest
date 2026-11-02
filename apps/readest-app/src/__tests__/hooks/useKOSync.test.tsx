@@ -46,6 +46,7 @@ const h = vi.hoisted(() => {
         username: 'user',
         userkey: 'key',
         strategy: 'prompt' as string,
+        checksumMethod: 'binary' as string,
         deviceId: 'this-device',
       },
     },
@@ -178,6 +179,7 @@ beforeEach(() => {
     username: 'user',
     userkey: 'key',
     strategy: 'prompt',
+    checksumMethod: 'binary',
     deviceId: 'this-device',
   };
   h.localProgress = {
@@ -206,6 +208,60 @@ beforeEach(() => {
 afterEach(() => {
   vi.useRealTimers();
   cleanup();
+});
+
+describe('useKOSync — changing checksum method (#7118)', () => {
+  test('pulls the new identity before allowing automatic pushes', async () => {
+    h.getProgressMock.mockResolvedValue(null);
+    const { result, rerender } = renderHook(() => useKOSync('h1-view1'));
+    await settle();
+    await advance(KOSYNC_PUSH_DEBOUNCE_MS + 500);
+    h.getProgressMock.mockClear();
+    h.updateProgressMock.mockClear();
+    h.getProgressMock.mockResolvedValue(h.remote);
+
+    h.settings.kosync = { ...h.settings.kosync, checksumMethod: 'filename' };
+    rerender();
+    await settle();
+
+    expect(h.getProgressMock).toHaveBeenCalledTimes(1);
+    expect(result.current.syncState).toBe('conflict');
+    await advance(KOSYNC_PUSH_DEBOUNCE_MS + 500);
+    expect(h.updateProgressMock).not.toHaveBeenCalled();
+  });
+
+  test('does not repull when unrelated settings change', async () => {
+    h.getProgressMock.mockResolvedValue(null);
+    const { rerender } = renderHook(() => useKOSync('h1-view1'));
+    await settle();
+    h.getProgressMock.mockClear();
+
+    h.settings.kosync = { ...h.settings.kosync, enabled: false };
+    rerender();
+    await settle();
+
+    expect(h.getProgressMock).not.toHaveBeenCalled();
+  });
+
+  test('does not reuse a conflict resolution from the previous checksum identity', async () => {
+    const { result, rerender } = renderHook(() => useKOSync('h1-view1'));
+    await settle();
+    await act(async () => {
+      result.current.resolveWithLocal();
+      await flushMicrotasks();
+    });
+    h.getProgressMock.mockClear();
+    h.updateProgressMock.mockClear();
+
+    h.settings.kosync = { ...h.settings.kosync, checksumMethod: 'filename' };
+    rerender();
+    await settle();
+
+    expect(h.getProgressMock).toHaveBeenCalledTimes(1);
+    expect(result.current.syncState).toBe('conflict');
+    await advance(KOSYNC_PUSH_DEBOUNCE_MS + 500);
+    expect(h.updateProgressMock).not.toHaveBeenCalled();
+  });
 });
 
 describe('useKOSync — applying a newer remote position (#5065)', () => {

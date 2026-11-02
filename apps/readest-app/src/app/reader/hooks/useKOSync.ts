@@ -99,8 +99,17 @@ export const useKOSync = (bookKey: string, provider: KosyncProgressProvider = ko
   // pull-on-open effect below. Reads from readerProgressStore.
   const progress = useBookProgress(bookKey);
 
+  const checksumMethod = provider.selectConfig(settings)?.checksumMethod;
+  const previousChecksumMethod = useRef(checksumMethod);
+
   useEffect(() => {
     const config = provider.selectConfig(settings);
+    if (previousChecksumMethod.current !== checksumMethod) {
+      hasPulledOnce.current = false;
+      resolvedRemoteRef.current = null;
+      setSyncState('idle');
+      previousChecksumMethod.current = checksumMethod;
+    }
     if (!config) {
       setKOSyncClient(null);
       return;
@@ -108,7 +117,7 @@ export const useKOSync = (bookKey: string, provider: KosyncProgressProvider = ko
     const client = new KOSyncClient({ ...config });
     setKOSyncClient(client);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [settings, provider]);
+  }, [settings, provider, checksumMethod]);
 
   const generateKOProgress = useCallback(async () => {
     const progress = getProgress(bookKey);
@@ -335,7 +344,12 @@ export const useKOSync = (bookKey: string, provider: KosyncProgressProvider = ko
         if (!bookKey || !appService || !kosyncClient || !hasPulledOnce.current) return;
         const { settings } = useSettingsStore.getState();
         const config = provider.selectConfig(settings);
-        if (!config || ['receive', 'disable'].includes(config.strategy)) return;
+        if (
+          !config ||
+          config.checksumMethod !== checksumMethod ||
+          ['receive', 'disable'].includes(config.strategy)
+        )
+          return;
 
         const currentBook = getBookData(bookKey)?.book;
         const progress = await generateKOProgress();
