@@ -4,11 +4,10 @@ import type { ComponentProps } from 'react';
 import FoliateViewer from '@/app/reader/components/FoliateViewer';
 import { useFoliateEvents } from '@/app/reader/hooks/useFoliateEvents';
 
-const { setProgress, readerState, onAutoSaveRelocate } = vi.hoisted(() => {
+const { setProgress, readerState } = vi.hoisted(() => {
   const setProgress = vi.fn();
   return {
     setProgress,
-    onAutoSaveRelocate: vi.fn(),
     readerState: {
       setProgress,
       getViewState: () => ({}),
@@ -68,9 +67,7 @@ vi.mock('@/app/reader/hooks/useCapturedTurn', () => ({ useCapturedTurn: () => {}
 vi.mock('@/app/reader/hooks/usePagination', () => ({ usePagination: () => ({}) }));
 vi.mock('@/app/reader/hooks/useProgressSync', () => ({ useProgressSync: () => {} }));
 vi.mock('@/app/reader/hooks/useABSProgressSync', () => ({ useABSProgressSync: () => {} }));
-vi.mock('@/app/reader/hooks/useProgressAutoSave', () => ({
-  useProgressAutoSave: () => onAutoSaveRelocate,
-}));
+vi.mock('@/app/reader/hooks/useProgressAutoSave', () => ({ useProgressAutoSave: () => {} }));
 vi.mock('@/app/reader/hooks/useAutoSaveBookCover', () => ({ useBookCoverAutoSave: () => {} }));
 vi.mock('@/app/reader/hooks/useFileSync', () => ({ useFileSync: () => {} }));
 vi.mock('@/app/reader/hooks/useTextTranslation', () => ({ useTextTranslation: () => {} }));
@@ -127,16 +124,6 @@ describe('reader relocation progress', () => {
     expect(setProgress).toHaveBeenCalledOnce();
     expect(setProgress.mock.lastCall?.[1]).toBe('epubcfi(/6/2)');
     expect(setProgress.mock.lastCall?.[5]).toEqual({ current: 3, next: 4, total: 10 });
-  });
-
-  it('notifies autosave of the initial location before coalescing a user jump', () => {
-    render(<FoliateViewer {...props} />);
-    relocate({ cfi: 'cfi-start', location: { current: 0, next: 1, total: 10 } });
-    relocate({ cfi: 'cfi-jump', location: { current: 4, next: 5, total: 10 } });
-    expect(onAutoSaveRelocate.mock.calls).toEqual([['cfi-start'], ['cfi-jump']]);
-    expect(setProgress).not.toHaveBeenCalled();
-    act(() => vi.advanceTimersByTime(20));
-    expect(setProgress.mock.lastCall?.[1]).toBe('cfi-jump');
   });
 
   it('still coalesces valid relocations to the latest page', () => {

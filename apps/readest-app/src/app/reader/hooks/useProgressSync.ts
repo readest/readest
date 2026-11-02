@@ -68,6 +68,9 @@ export const useProgressSync = (bookKey: string) => {
 
   const configPulled = useRef(false);
   const hasPulledConfigOnce = useRef(false);
+  const initialPullConfig = useRef<{ location: BookConfig['location']; updatedAt: number } | null>(
+    null,
+  );
   const pullAttempt = useRef(0);
   const pullInFlight = useRef(false);
   const pendingResumePull = useRef(false);
@@ -144,6 +147,7 @@ export const useProgressSync = (bookKey: string) => {
       // protects the cross-device case (a stale local push with an older
       // updated_at will lose to a fresher server record).
       configPulled.current = true;
+      initialPullConfig.current = null;
       return;
     }
     const delay = PULL_RETRY_DELAYS_MS[pullAttempt.current]!;
@@ -288,6 +292,10 @@ export const useProgressSync = (bookKey: string) => {
   useEffect(() => {
     if (!progress || hasPulledConfigOnce.current) return;
     hasPulledConfigOnce.current = true;
+    const config = getConfig(bookKey);
+    if (config && !config.updatedAt) {
+      initialPullConfig.current = { location: config.location, updatedAt: 0 };
+    }
     pullWithRetry();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [progress]);
@@ -304,6 +312,8 @@ export const useProgressSync = (bookKey: string) => {
   const applyRemoteProgress = async (syncedConfigs: BookConfig[]) => {
     const config = getConfig(bookKey);
     const book = getBookData(bookKey)?.book;
+    const initialConfig = initialPullConfig.current;
+    initialPullConfig.current = null;
     if (!syncedConfigs || syncedConfigs.length === 0 || !config || !book) return;
 
     const bookHash = bookKey.split('-')[0]!;
@@ -364,7 +374,14 @@ export const useProgressSync = (bookKey: string) => {
       // it forward. Otherwise an old duplicate keeps pulling a deliberate
       // rewind (or a purged position) back to its furthest page (#7092).
       // Across different files only the reading fraction is comparable, not CFI.
-      const savedAt = Math.max(config.updatedAt ?? 0, exactConfig?.updatedAt ?? 0);
+      // A fresh copy can autosave its initial page before the first pull lands.
+      // That timestamp is not a reading change. Once the location moves, use
+      // its current timestamp so a deliberate rewind still wins.
+      const localSavedAt =
+        initialConfig && config.location === initialConfig.location
+          ? initialConfig.updatedAt
+          : (config.updatedAt ?? 0);
+      const savedAt = Math.max(localSavedAt, exactConfig?.updatedAt ?? 0);
       const siblingFraction = matches
         .filter((c) => c.bookHash !== bookHash && (c.updatedAt ?? 0) > savedAt)
         .reduce((best, c) => Math.max(best, getConfigFraction(c) ?? 0), 0);
