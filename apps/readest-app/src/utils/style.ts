@@ -352,10 +352,12 @@ const getColorStyles = (
   themeCode: ThemeCode,
   backgroundTextureId: string,
   isEink: boolean,
+  isFootnote: boolean,
   transparentImageBackground: boolean,
 ) => {
   const { bg, fg, primary, isDarkMode } = themeCode;
   const hasBackgroundTexture = !!backgroundTextureId && backgroundTextureId !== 'none';
+  const texturedFootnote = isFootnote && hasBackgroundTexture;
   // Over a background texture, Override Book Color still forces the text
   // colors but fills backgrounds with transparent so the texture shows (#6712).
   const overrideBg = hasBackgroundTexture ? 'transparent' : bg;
@@ -368,7 +370,7 @@ const getColorStyles = (
       --override-color: ${overrideColor};
       color-scheme: ${isDarkMode ? 'dark' : 'light'};
     }
-    html, body {
+    ${texturedFootnote && !overrideColor ? 'html' : 'html, body'} {
       color: ${fg};
     }
     ${isEink ? getEinkSelectionStyles() : isDarkMode ? getDarkSelectionStyles(primary) : ''}
@@ -380,7 +382,8 @@ const getColorStyles = (
       background: var(--background-set, none);
     }
     body {
-      ${isEink ? `background-color: ${bg} !important;` : ''}
+      ${isEink && !texturedFootnote ? `background-color: ${bg} !important;` : ''}
+      ${texturedFootnote && overrideColor ? 'background-color: transparent !important;' : ''}
     }
     section, aside, blockquote, article, nav, header, footer, main, figure,
     div, p, font, h1, h2, h3, h4, h5, h6, li, span {
@@ -399,7 +402,7 @@ const getColorStyles = (
       text-decoration: ${isEink ? 'underline' : 'none'};
     }
     body.pbg {
-      ${isDarkMode ? `background-color: ${bg} !important;` : ''}
+      ${isDarkMode && !texturedFootnote ? `background-color: ${bg} !important;` : ''}
     }
     /* When inverting in dark mode, invert(100%) must stay the effective filter
        (a later filter declaration would discard it), and multiply must not
@@ -1168,6 +1171,7 @@ export const getStyles = (
   viewSettings: ViewSettings,
   themeCode?: ThemeCode,
   customFonts: CustomFont[] = [],
+  isFootnote = false,
 ) => {
   if (!themeCode) {
     themeCode = getThemeCode();
@@ -1219,6 +1223,7 @@ export const getStyles = (
     themeCode,
     viewSettings.backgroundTextureId,
     viewSettings.isEink,
+    isFootnote,
     !!viewSettings.transparentImageBackground,
   );
   const translationStyles = getTranslationStyles(viewSettings);
