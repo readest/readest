@@ -443,6 +443,74 @@ describe('manageDialogueHighlight', () => {
     expect(spans).toEqual(quotes);
   });
 
+  it.each([
+    ['“', '”'],
+    ['‘', '’'],
+    ['„', '“'],
+    ['«', '»'],
+    ['「', '」'],
+    ['『', '』'],
+  ])('wraps every paragraph of a speech continued with %s', (open, close) => {
+    const first = `${open}First paragraph, with no closing mark.`;
+    const second = `${open}Second paragraph, still no closing mark.`;
+    const last = `${open}Final paragraph, which closes the speech.${close}`;
+    const doc = makeDoc(
+      `<p>Narration before ${first}</p>\n  <p>  ${second}</p>\n  <p>${last} Narration after.</p>`,
+    );
+    manageDialogueHighlight(doc, makeViewSettings({ dialogueHighlight: true }));
+    const spans = [...doc.querySelectorAll(`.${DIALOGUE_SPAN_CLASS}`)].map((s) => s.textContent);
+    expect(spans).toEqual([first, second, last]);
+  });
+
+  it('keeps inline markup and apostrophes in continued single-quoted dialogue', () => {
+    const doc = makeDoc(
+      `<p>‘We’re going <em>home</em> with their boots.</p>` +
+        `<p><b>‘We’ll</b> be there soon.’ Narration.</p>`,
+    );
+    const original = doc.body.innerHTML;
+    const settings = makeViewSettings({ dialogueHighlight: true });
+    manageDialogueHighlight(doc, settings);
+    manageDialogueHighlight(doc, settings);
+    const spans = [...doc.querySelectorAll(`.${DIALOGUE_SPAN_CLASS}`)].map((s) => s.textContent);
+    expect(spans).toEqual([
+      '‘We’re going ',
+      'home',
+      ' with their boots.',
+      '‘We’ll',
+      ' be there soon.’',
+    ]);
+    expect(
+      [...doc.querySelectorAll(`.${DIALOGUE_SPAN_CLASS}`)].every((s) => s.hasAttribute('cfi-skip')),
+    ).toBe(true);
+    clearDialogueHighlight(doc);
+    expect(doc.body.innerHTML).toBe(original);
+  });
+
+  it.each([
+    '<p>“Unclosed.</p><p>Narration.</p><p>“Later.”</p>',
+    '<p>“Unclosed.</p><p><code>Narration.</code></p><p>“Later.”</p>',
+    '<p>“Unclosed.</p><p>‘Different marks.’</p>',
+    '<p>“Unclosed.\n“Another line.”</p>',
+    '<p>“Closed.” Narration.</p><p>“Next.”</p>',
+    '<p>‘Closed’ Narration.</p><p>‘Next.’</p>',
+    '<p>“Unclosed.</p><p>Narration “quoted”.</p>',
+  ])('leaves the unmatched quote fallback unchanged: %s', (html) => {
+    const doc = makeDoc(html);
+    manageDialogueHighlight(doc, makeViewSettings({ dialogueHighlight: true }));
+    const spans = [...doc.querySelectorAll(`.${DIALOGUE_SPAN_CLASS}`)].map((s) => s.textContent);
+    expect(spans.some((text) => text?.includes('Unclosed'))).toBe(false);
+    expect(spans.some((text) => text?.includes('Narration'))).toBe(false);
+  });
+
+  it('keeps the length limits for continued dialogue', () => {
+    const doc = makeDoc(
+      `<p>“${'x'.repeat(2100)}</p><p>“Next.”</p>` + `<p>‘${'x'.repeat(310)}</p><p>‘Next.’</p>`,
+    );
+    manageDialogueHighlight(doc, makeViewSettings({ dialogueHighlight: true }));
+    const spans = [...doc.querySelectorAll(`.${DIALOGUE_SPAN_CLASS}`)].map((s) => s.textContent);
+    expect(spans).toEqual(['“Next.”', '‘Next.’']);
+  });
+
   it('does not let an unclosed quote swallow the next one', () => {
     const doc = makeDoc(`<p>“Wait, she said.</p><p>He answered “fine” and left.</p>`);
     manageDialogueHighlight(doc, makeViewSettings({ dialogueHighlight: true }));
