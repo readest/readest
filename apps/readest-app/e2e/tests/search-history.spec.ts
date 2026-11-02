@@ -6,6 +6,36 @@ import { LibraryPage } from '../pages/LibraryPage';
 // is already serving another worktree.
 const libraryUrl = process.env['READEST_HISTORY_TEST_URL'] ?? '/library';
 
+for (const action of ['remove', 'clear'] as const) {
+  test(`keeps book history deleted after a pending search: ${action}`, async ({ page }) => {
+    await page.goto(libraryUrl);
+    const library = new LibraryPage(page);
+    await library.importBook(SAMPLE_EPUB);
+    await expect(library.bookCards()).toHaveCount(1);
+    await page.evaluate(() => localStorage.setItem('search-history-library-books', '["Alice"]'));
+    await page.getByRole('textbox', { name: 'Search Books', exact: true }).fill('Alice');
+    await page
+      .getByRole('button', {
+        name: action === 'remove' ? 'Remove Alice from search history' : 'Clear search history',
+      })
+      .click();
+    await expect(page).toHaveURL(/q=Alice/);
+    expect(
+      await page.evaluate(() =>
+        JSON.parse(localStorage.getItem('search-history-library-books') ?? '[]'),
+      ),
+    ).toEqual([]);
+  });
+}
+
+test('saves the current query when switching from text to book search', async ({ page }) => {
+  await page.goto(`${libraryUrl}?q=Alice&search=text`);
+  await page.getByRole('button', { name: 'Full Text Search', exact: true }).click();
+  await expect
+    .poll(() => page.evaluate(() => localStorage.getItem('search-history-library-books')))
+    .toContain('Alice');
+});
+
 test('reuses a search immediately after clearing it and persists history deletion', async ({
   page,
 }) => {

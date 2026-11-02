@@ -1872,7 +1872,10 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   const updateLibrarySearchUrl = (target: LibrarySearchTarget, config: LibrarySearchConfig) => {
     const params = new URLSearchParams(window.location.search);
     const query = pendingLibrarySearchQueryRef.current ?? librarySearchQuery;
-    if (target === 'books' && query !== (params.get('q') ?? '')) {
+    if (
+      target === 'books' &&
+      (query !== (params.get('q') ?? '') || params.get('search') === 'text')
+    ) {
       addLibrarySearchHistory(query, target);
     }
     if (query) params.set('q', query);

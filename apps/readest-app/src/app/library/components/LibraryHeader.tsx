@@ -339,6 +339,7 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
                     aria-label={_('Clear search history')}
                     className='focus-visible:ring-base-content/15 min-h-11 shrink-0 rounded-md px-2 text-[0.85em] focus-visible:outline-hidden focus-visible:ring-2'
                     onClick={() => {
+                      if (searchTarget === 'books') onSearchQueryApply(searchQuery);
                       clearLibrarySearchHistory(searchTarget);
                       setSearchHistory([]);
                       searchInputRef.current?.focus();
@@ -370,6 +371,7 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
                         title={_('Remove from history')}
                         className='btn btn-ghost btn-circle h-11 min-h-11 w-11 shrink-0 p-0 focus-visible:ring-base-content/15 focus-visible:outline-hidden focus-visible:ring-2'
                         onClick={() => {
+                          if (searchTarget === 'books') onSearchQueryApply(searchQuery);
                           removeLibrarySearchHistory(term, searchTarget);
                           setSearchHistory(loadLibrarySearchHistory(searchTarget));
                           searchInputRef.current?.focus();

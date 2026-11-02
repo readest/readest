@@ -63,7 +63,7 @@ const Header = ({ target = 'books' }: { target?: LibrarySearchTarget }) => {
 
 beforeEach(() => {
   localStorage.clear();
-  apply.mockClear();
+  apply.mockReset();
 });
 afterEach(cleanup);
 
@@ -85,7 +85,7 @@ describe('library search history dropdown', () => {
     expect((input as HTMLInputElement).value).toBe('Dune');
   });
 
-  it('removes one item without searching, persists it, and clears all remaining history', () => {
+  it('removes one item, persists it, and clears all remaining history', () => {
     addLibrarySearchHistory('Dune', 'books');
     addLibrarySearchHistory('Earthsea', 'books');
     render(<Header />);
@@ -93,10 +93,27 @@ describe('library search history dropdown', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Remove Dune from search history' }));
     expect(loadLibrarySearchHistory('books')).toEqual(['Earthsea']);
     expect(screen.queryByRole('button', { name: 'Dune' })).toBeNull();
-    expect(apply).not.toHaveBeenCalled();
+    expect(apply).toHaveBeenCalledWith('');
     fireEvent.click(screen.getByRole('button', { name: 'Clear search history' }));
     expect(loadLibrarySearchHistory('books')).toEqual([]);
     expect(screen.queryByRole('region', { name: 'Search history' })).toBeNull();
+  });
+
+  it.each([
+    'remove',
+    'clear',
+  ] as const)('applies pending book input before history %s', (action) => {
+    addLibrarySearchHistory('Dune', 'books');
+    apply.mockImplementationOnce((term: string) => addLibrarySearchHistory(term, 'books'));
+    render(<Header />);
+    fireEvent.change(screen.getByRole('textbox'), { target: { value: 'Dune' } });
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: action === 'remove' ? 'Remove Dune from search history' : 'Clear search history',
+      }),
+    );
+    expect(apply).toHaveBeenCalledWith('Dune');
+    expect(loadLibrarySearchHistory('books')).toEqual([]);
   });
 
   it('dismisses on Escape and outside presses and supports keyboard selection', () => {

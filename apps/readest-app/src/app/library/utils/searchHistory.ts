@@ -2,6 +2,13 @@ import type { LibrarySearchTarget } from '@/types/book';
 
 const STORAGE_KEY = 'search-history-library';
 const MAX_SEARCH_HISTORY = 10;
+let textHistoryRevision = 0;
+let textHistoryClearRevision = 0;
+const removedTextHistoryRevisions = new Map<string, number>();
+
+// Capture when a scan starts so later deletion wins over its completion write.
+export const getLibrarySearchHistoryRevision = (term: string): number =>
+  removedTextHistoryRevisions.get(term.trim()) ?? textHistoryClearRevision;
 const storageKey = (target: LibrarySearchTarget) =>
   target === 'text' ? STORAGE_KEY : `${STORAGE_KEY}-books`;
 
@@ -32,6 +39,7 @@ export const addLibrarySearchHistory = (
 };
 
 export const removeLibrarySearchHistory = (term: string, target: LibrarySearchTarget): void => {
+  if (target === 'text') removedTextHistoryRevisions.set(term.trim(), ++textHistoryRevision);
   try {
     localStorage.setItem(
       storageKey(target),
@@ -43,6 +51,10 @@ export const removeLibrarySearchHistory = (term: string, target: LibrarySearchTa
 };
 
 export const clearLibrarySearchHistory = (target: LibrarySearchTarget = 'text'): void => {
+  if (target === 'text') {
+    textHistoryClearRevision = ++textHistoryRevision;
+    removedTextHistoryRevisions.clear();
+  }
   try {
     localStorage.removeItem(storageKey(target));
   } catch {
