@@ -51,6 +51,10 @@ describe('bookshelf layouts from the View menu', () => {
     expect(readBookshelves(useSettingsStore.getState().settings)).toEqual(before);
     expect(readPendingBookshelves()).toEqual(pending);
   });
+  it('does not offer an article sorting toggle', () => {
+    render(<ViewMenu />);
+    expect(screen.queryByText('Ignore A, An, The in titles')).toBeNull();
+  });
   it('offers the same sort labels as the bookshelf editor, except Size', () => {
     render(<ViewMenu />);
     for (const [value, label] of Object.entries(BOOKSHELF_SORT_LABELS))
