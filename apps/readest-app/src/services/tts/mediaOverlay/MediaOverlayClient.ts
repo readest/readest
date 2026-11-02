@@ -521,10 +521,18 @@ export class MediaOverlayClient implements TTSClient {
         if (this.#player.playedPast(run.audioHref)) continue;
       }
 
+      const playbackSignal = this.#playback.signal;
       let audio: NarrationClock;
       try {
         audio = await this.#ensureAudio(run.audioHref);
       } catch (e) {
+        if (
+          signal.aborted ||
+          playbackSignal.aborted ||
+          (e instanceof DOMException && e.name === 'AbortError')
+        ) {
+          return;
+        }
         yield { code: 'error', message: e instanceof Error ? e.message : 'Narration unavailable' };
         return;
       }

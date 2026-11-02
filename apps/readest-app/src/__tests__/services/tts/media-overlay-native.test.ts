@@ -259,9 +259,40 @@ describe('MediaOverlayClient on Linux Tauri', () => {
     await client[stop]();
     finishLoad();
 
-    expect((await pending).value?.code).not.toBe('boundary');
+    expect(await pending).toEqual({ done: true, value: undefined });
     expect(controlCalls.some((call) => call['action'] === 'resume')).toBe(false);
     expect(controlCalls.some((call) => call['action'] === 'abort')).toBe(true);
+  });
+
+  test.each([
+    'speak',
+    'playback',
+  ])('suppresses a rejected load after %s cancellation', async (kind) => {
+    await setup(entry as BookMediaSource, linux);
+    const control = vi.mocked(invoke).getMockImplementation()!;
+    let rejectLoad!: (error: Error) => void;
+    const gate = new Promise<never>((_resolve, reject) => {
+      rejectLoad = reject;
+    });
+    vi.mocked(invoke).mockImplementation(async (cmd: string, args?: unknown) => {
+      const result = await control(cmd, args as Parameters<typeof invoke>[1]);
+      const payload = (args as { payload?: Record<string, unknown> })?.payload;
+      if (cmd === 'plugin:native-tts|playout_control' && payload?.['action'] === 'load') {
+        await gate;
+      }
+      return result;
+    });
+    const abort = new AbortController();
+    const pending = client.speak(section.ssmlForBlock(0)!, abort.signal).next();
+    await vi.waitFor(() =>
+      expect(controlCalls.some((call) => call['action'] === 'load')).toBe(true),
+    );
+    if (kind === 'speak') abort.abort();
+    else client.invalidatePlayback();
+    rejectLoad(new Error('Narration load cancelled'));
+
+    expect(await pending).toEqual({ done: true, value: undefined });
+    expect(controlCalls.some((call) => call['action'] === 'resume')).toBe(false);
   });
 
   test('keeps Linux handover playback continuous without aborting the native session', async () => {
