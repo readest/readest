@@ -52,7 +52,14 @@ import {
   isValidUrlTemplate,
 } from '@/services/dictionaries/webSearchTemplates';
 import SubPageHeader from './SubPageHeader';
-import { BoxedList, SettingsRow, SettingsSelect, SettingsSwitchRow, Tips } from './primitives';
+import {
+  BoxedList,
+  SettingsInput,
+  SettingsRow,
+  SettingsSelect,
+  SettingsSwitchRow,
+  Tips,
+} from './primitives';
 
 /** Dictionary popup font-size multipliers, surfaced as percentages (#4443). */
 const FONT_SCALE_OPTIONS = [
@@ -276,6 +283,7 @@ const CustomDictionaries: React.FC<CustomDictionariesProps> = ({ onBack }) => {
     setFontScale,
     setAutoPlayPronunciation,
     setContextTranslatorId,
+    setContextOptions,
     addWebSearch,
     updateWebSearch,
     removeWebSearch,
@@ -298,6 +306,11 @@ const CustomDictionaries: React.FC<CustomDictionariesProps> = ({ onBack }) => {
   const hasPremium = isCustomTranslatorAllowed(token);
   const llmTranslators = getLLMTranslators();
   const contextTranslator = hasPremium ? getContextTranslator() : undefined;
+  const prompts = useCustomTranslatorStore((s) => s.prompts).filter((p) => !p.deletedAt);
+  const contextPromptId =
+    settings.contextPromptId === 'custom' || prompts.some((p) => p.id === settings.contextPromptId)
+      ? settings.contextPromptId!
+      : 'default';
 
   const { selectFiles } = useFileSelector(appService, _);
   const [importing, setImporting] = useState(false);
@@ -876,6 +889,67 @@ const CustomDictionaries: React.FC<CustomDictionariesProps> = ({ onBack }) => {
               onChange={handleContextTranslatorChange}
               options={llmTranslators.map((t) => ({ value: t.id, label: t.name }))}
               ariaLabel={_('AI Translator')}
+            />
+          </SettingsRow>
+          <SettingsRow label={_('Prompt')}>
+            <SettingsSelect
+              value={contextPromptId}
+              onChange={(event) => {
+                setContextOptions({ contextPromptId: event.target.value });
+                void saveCustomDictionaries(envConfig);
+              }}
+              options={[
+                { value: 'default', label: _('Default') },
+                ...prompts.map((p) => ({ value: p.id, label: p.name })),
+                { value: 'custom', label: _('Custom Instructions') },
+              ]}
+              ariaLabel={_('Prompt')}
+            />
+          </SettingsRow>
+          {contextPromptId === 'custom' && (
+            <div className='space-y-2 py-3 pe-4'>
+              <label htmlFor='context-dictionary-instructions' className='block font-medium'>
+                {_('Dictionary Instructions')}
+              </label>
+              <textarea
+                id='context-dictionary-instructions'
+                className='textarea eink-bordered border-base-300 bg-base-100 w-full rounded-lg border text-sm'
+                rows={7}
+                value={settings.contextSystemPrompt ?? ''}
+                placeholder={_(
+                  'Explain the selected text in {{targetLang}}. Focus on historical context and word origins. Skip examples and synonyms.',
+                )}
+                onChange={(event) => {
+                  setContextOptions({ contextSystemPrompt: event.target.value });
+                  void saveCustomDictionaries(envConfig);
+                }}
+              />
+              <p className='text-base-content/65 text-[0.8em] leading-relaxed'>
+                {_(
+                  'The selected text, surrounding passage, book title, and author are included automatically. Leave blank to use the default prompt.',
+                )}
+              </p>
+              <p className='text-base-content/65 break-words text-[0.8em] leading-relaxed'>
+                {_('Variables:')}{' '}
+                <code>{'{{sourceLang}}, {{targetLang}}, {{bookTitle}}, {{bookAuthor}}'}</code>
+              </p>
+            </div>
+          )}
+          <SettingsRow label={_('Maximum Output Tokens')}>
+            <SettingsInput
+              type='number'
+              min={1}
+              step={1}
+              aria-label={_('Maximum Output Tokens')}
+              placeholder={_('Provider Default')}
+              value={settings.contextMaxOutputTokens || ''}
+              onChange={(event) => {
+                const value = Number(event.target.value);
+                if (!event.target.value || (Number.isSafeInteger(value) && value > 0)) {
+                  setContextOptions({ contextMaxOutputTokens: value });
+                  void saveCustomDictionaries(envConfig);
+                }
+              }}
             />
           </SettingsRow>
         </BoxedList>

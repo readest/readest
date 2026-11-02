@@ -919,6 +919,25 @@ describe('customDictionaryStore — context dictionary (#5544)', () => {
     expect(settings.providerEnabled['builtin:context']).toBe(false);
   });
 
+  it('keeps dictionary instructions and output limits across loads, including resets', async () => {
+    const options = {
+      contextPromptId: 'custom',
+      contextSystemPrompt: 'Explain historical context.',
+      contextMaxOutputTokens: 4096,
+    };
+    seedPersisted({ providerOrder: [], providerEnabled: {}, ...options });
+    await useCustomDictionaryStore.getState().loadCustomDictionaries(fakeEnv);
+    expect(useCustomDictionaryStore.getState().settings).toMatchObject(options);
+    useCustomDictionaryStore
+      .getState()
+      .setContextOptions({ contextPromptId: 'default', contextMaxOutputTokens: 0 });
+    expect(useCustomDictionaryStore.getState().settings).toMatchObject({
+      contextPromptId: 'default',
+      contextMaxOutputTokens: 0,
+      contextSystemPrompt: options.contextSystemPrompt,
+    });
+  });
+
   it('keeps the chosen translator across loads and updates it', async () => {
     seedPersisted({
       providerOrder: ['builtin:context'],

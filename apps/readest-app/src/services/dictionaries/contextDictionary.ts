@@ -47,7 +47,14 @@ export interface ContextLookupInput {
   bookAuthor?: string;
 }
 
+export interface ContextLookupOptions {
+  systemPrompt?: string;
+  maxOutputTokens?: number;
+}
+
 export interface ContextEntry {
+  /** Custom prompts return free-form Markdown instead of the built-in JSON entry. */
+  markdown?: string;
   headword: string;
   pronunciation?: string;
   grammar?: string;
@@ -148,11 +155,19 @@ export const lookupInContext = async (
   translator: CustomTranslator,
   input: ContextLookupInput,
   signal: AbortSignal,
+  options: ContextLookupOptions = {},
 ): Promise<ContextEntry> => {
-  const system = renderPrompt(CONTEXT_DICTIONARY_PROMPT, {
+  const customPrompt = options.systemPrompt?.trim();
+  const system = renderPrompt(customPrompt || CONTEXT_DICTIONARY_PROMPT, {
     sourceLang: input.sourceLang || 'AUTO',
     targetLang: input.targetLang,
+    bookTitle: input.bookTitle,
+    bookAuthor: input.bookAuthor,
   });
+  const maxOutputTokens =
+    Number.isSafeInteger(options.maxOutputTokens) && options.maxOutputTokens! > 0
+      ? options.maxOutputTokens
+      : undefined;
   const prompt = JSON.stringify({
     selectedText: input.text,
     before: input.before,
@@ -161,7 +176,14 @@ export const lookupInContext = async (
     bookAuthor: input.bookAuthor ?? '',
   });
   const key = md5Fingerprint(
-    JSON.stringify([translator.id, translator.updatedAt, translator.model, system, prompt]),
+    JSON.stringify([
+      translator.id,
+      translator.updatedAt,
+      translator.model,
+      system,
+      prompt,
+      maxOutputTokens,
+    ]),
   );
   const cached = cache.get(key);
   if (cached) return cached;
@@ -181,10 +203,15 @@ export const lookupInContext = async (
       system,
       prompt,
       temperature: translator.temperature,
+      maxOutputTokens,
       maxRetries: 1,
       abortSignal: controller.signal,
     });
-    const entry = parseContextEntry(text);
+    const markdown = stripReasoning(text);
+    if (!markdown) throw new Error('The AI provider returned an incomplete entry.');
+    const entry: ContextEntry = customPrompt
+      ? { headword: input.text, definition: '', examples: [], synonyms: [], markdown }
+      : parseContextEntry(text);
     if (cache.size >= MAX_CACHE_ENTRIES) cache.delete(cache.keys().next().value!);
     cache.set(key, entry);
     return entry;

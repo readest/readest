@@ -282,6 +282,86 @@ describe('CustomDictionaries — context dictionary (#5544)', () => {
     expect(getToggles(container)[0]!.disabled).toBe(true);
   });
 
+  it('saves custom dictionary instructions and an output limit independently of translation', async () => {
+    useCustomTranslatorStore.setState({ translators: [llm('a')], prompts: [], loaded: true });
+    seedSettings(contextSettings);
+    const saveCustomDictionaries = vi.fn().mockResolvedValue(undefined);
+    useCustomDictionaryStore.setState({ saveCustomDictionaries });
+    render(<CustomDictionaries onBack={() => {}} />);
+
+    fireEvent.change(screen.getByRole('combobox', { name: 'Prompt' }), {
+      target: { value: 'custom' },
+    });
+    const instructions = screen.getByRole('textbox', { name: 'Dictionary Instructions' });
+    fireEvent.change(instructions, {
+      target: { value: 'Explain the historical slang. Skip synonyms.' },
+    });
+    fireEvent.blur(instructions);
+    const tokens = screen.getByRole('spinbutton', { name: 'Maximum Output Tokens' });
+    fireEvent.change(tokens, { target: { value: '4096' } });
+    fireEvent.blur(tokens);
+
+    await waitFor(() => expect(saveCustomDictionaries).toHaveBeenCalled());
+    expect(useCustomDictionaryStore.getState().settings).toMatchObject({
+      contextPromptId: 'custom',
+      contextSystemPrompt: 'Explain the historical slang. Skip synonyms.',
+      contextMaxOutputTokens: 4096,
+    });
+    expect(useCustomTranslatorStore.getState().translators[0]).toEqual(llm('a'));
+  });
+
+  it.each(['instructions', 'tokens'])('persists %s when dismissed without blurring', (field) => {
+    useCustomTranslatorStore.setState({ translators: [llm('a')], prompts: [], loaded: true });
+    seedSettings({ ...contextSettings, contextPromptId: 'custom' });
+    let persisted: DictionarySettings | undefined;
+    useCustomDictionaryStore.setState({
+      saveCustomDictionaries: async () => {
+        persisted = { ...useCustomDictionaryStore.getState().settings };
+      },
+    });
+    const { unmount } = render(<CustomDictionaries onBack={() => {}} />);
+    const input =
+      field === 'instructions'
+        ? screen.getByRole('textbox', { name: 'Dictionary Instructions' })
+        : screen.getByRole('spinbutton', { name: 'Maximum Output Tokens' });
+    input.focus();
+    fireEvent.change(input, {
+      target: { value: field === 'instructions' ? 'Explain the era.' : '4096' },
+    });
+    unmount();
+
+    expect(persisted).toMatchObject(
+      field === 'instructions'
+        ? { contextSystemPrompt: 'Explain the era.' }
+        : { contextMaxOutputTokens: 4096 },
+    );
+  });
+
+  it('offers saved prompts and falls back to the built-in prompt after deletion', () => {
+    useCustomTranslatorStore.setState({
+      translators: [llm('a')],
+      prompts: [
+        {
+          id: 'history',
+          name: 'Historical context',
+          systemPrompt: 'Explain the era.',
+          addedAt: 1,
+          updatedAt: 1,
+        },
+      ],
+      loaded: true,
+    });
+    seedSettings({ ...contextSettings, contextPromptId: 'history' });
+    render(<CustomDictionaries onBack={() => {}} />);
+    expect((screen.getByRole('combobox', { name: 'Prompt' }) as HTMLSelectElement).value).toBe(
+      'history',
+    );
+    act(() => useCustomTranslatorStore.setState({ prompts: [] }));
+    expect((screen.getByRole('combobox', { name: 'Prompt' }) as HTMLSelectElement).value).toBe(
+      'default',
+    );
+  });
+
   it('lets the user pick which translator answers', async () => {
     useCustomTranslatorStore.setState({ translators: [llm('a'), llm('b')], loaded: true });
     seedSettings(contextSettings);
