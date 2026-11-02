@@ -34,12 +34,13 @@ export const isDialogueHighlightActive = (viewSettings: ViewSettings): boolean =
 // the pairing and tint the narration instead of the dialogue.
 //
 // Each pair stops at its next opening mark (ASCII "" at the end of the block),
-// so an unclosed quote can't swallow the next one. ‘’ is capped at 300
-// characters, since a mis-curled apostrophe (‘80s) opens a quote that nothing
-// closes; every quote is capped at MAX_QUOTE_LENGTH in case a malformed book
-// pairs two marks pages apart.
+// so an unclosed quote can't swallow the next one. For ‘’, only a punctuated
+// closing mark in the same paragraph allows a long quote. The looser fallback
+// stays capped at 300 characters, since a mis-curled apostrophe (‘80s) opens a
+// quote that nothing closes. Every quote is capped at MAX_QUOTE_LENGTH in case
+// a malformed book pairs two marks pages apart.
 const DIALOGUE_PATTERN =
-  /“[^“”]+?[”"]|„[^„“]+?[“"]|"[^"\n]+?"|«[^«»]+?[»]|「[^「」]+?[」]|『[^『』]+?[』]|‘(?:[^‘’\n]|’(?=\p{L})|\p{L}’(?=[\s\p{Pd}])){0,300}?(?![‘’“”„«»「」『』"'])\p{P}’(?!\p{L})|‘(?:[^‘’]|’(?=\p{L})){1,300}?’(?!\p{L})/gu;
+  /“[^“”]+?[”"]|„[^„“]+?[“"]|"[^"\n]+?"|«[^«»]+?[»]|「[^「」]+?[」]|『[^『』]+?[』]|‘(?:[^‘’\n]|’(?=\p{L})|\p{L}’(?=[\s\p{Pd}]))*?(?![‘’“”„«»「」『』"'])\p{P}’(?!\p{L})|‘(?:[^‘’]|’(?=\p{L})){1,300}?’(?!\p{L})/gu;
 
 // A quote holding inner quotes in the same marks (“my spiritual “children”;
 // my dog”). Only within one paragraph: across paragraphs an opening mark
