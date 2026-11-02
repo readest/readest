@@ -4,7 +4,7 @@ version = "0.1.0"
 authors = [ "You" ]
 description = ""
 edition = "2021"
-rust-version = "1.85"
+rust-version = "1.88"
 exclude = ["/examples", "/dist-js", "/guest-js", "/node_modules"]
 links = "tauri-plugin-native-tts"
 
@@ -29,7 +29,7 @@ cpal = "=0.16.0"
 soundtouch = { version = "=0.5.4", features = ["bundled"] }
 symphonia = { version = "=0.6.1", default-features = false, features = ["aac", "alac", "isomp4", "mp3", "flac", "vorbis", "ogg", "wav", "pcm"] }
 miniz_oxide = "=0.8.9"
-zip = { version = "2", default-features = false, features = ["deflate"] }
+zip = { version = "9.0.5", default-features = false, features = ["deflate"] }
 
 [target.'cfg(target_os = "macos")'.dependencies]
 objc2 = "0.6"

@@ -398,7 +398,9 @@ impl AudioSource {
             if member.encrypted() {
                 return Err(invalid("encrypted ZIP audio is unsupported"));
             }
-            let data = member.data_start();
+            let data = member
+                .data_start()
+                .ok_or_else(|| invalid("ZIP audio data offset is unavailable"))?;
             let compressed = member.compressed_size();
             let len = member.size();
             if data
