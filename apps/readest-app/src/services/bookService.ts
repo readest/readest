@@ -603,7 +603,7 @@ export async function importBook(
           fileobj = file;
           filename = file.name;
         }
-        originalFilename = filename.split('/').pop()!;
+        originalFilename = filename;
         // A download saved as "novel.txt (1)" is still a TXT, and its title
         // should not read "novel.txt" either. Drop the duplicate marker before
         // anything downstream classifies or names the book (issue #5959).

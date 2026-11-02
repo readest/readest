@@ -1479,6 +1479,32 @@ describe('importBook PDF filename-aware dedup', () => {
     });
   });
 
+  it('keeps decoded URL slashes within distinct import filenames', async () => {
+    const books: Book[] = [];
+    const web = new WebAppService();
+    const fetcher = vi.fn().mockResolvedValue(
+      new Response(null, {
+        headers: { 'content-length': '3', 'content-type': 'application/pdf' },
+      }),
+    );
+    for (const prefix of ['one', 'two']) {
+      const url = `https://example.com/${prefix}%2Fpart.pdf`;
+      const file = await web.fs.openFile(url, 'None', undefined, fetcher);
+      service.getFs().openFile.mockResolvedValue(file);
+      mockPartialMD5.mockResolvedValue(`pdf-${prefix}`);
+      setupMockPdfDoc();
+
+      const book = await service.importBook(url, books);
+
+      expect(book).toMatchObject({
+        originalFilename: `${prefix}/part.pdf`,
+        title: `${prefix}/part`,
+        metaHash: getMetadataHash(PDF_METADATA, `${prefix}/part`),
+      });
+    }
+    expect(books.filter((book) => !book.deletedAt)).toHaveLength(2);
+  });
+
   it('saves the resolved Android provider name instead of the opaque content URI', async () => {
     mockPartialMD5.mockResolvedValue('pdf-hash');
     setupMockPdfDoc();
