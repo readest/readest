@@ -568,7 +568,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
       {bookData.book?.format !== 'PDF' && (
         <MenuItem
           label={_('Make White Image Backgrounds Transparent')}
-          Icon={transparentImageBackground ? MdCheck : undefined}
+          toggled={transparentImageBackground}
           onClick={() => setTransparentImageBackground(!transparentImageBackground)}
         />
       )}

@@ -124,13 +124,16 @@ describe('ViewMenu transparent image backgrounds (#7045)', () => {
     mockBookData.book.format = 'PDF';
   });
 
-  it('persists the image toggle for EPUBs', async () => {
+  it('announces the image toggle state and persists it for EPUBs', async () => {
     vi.clearAllMocks();
     mockBookData.book.format = 'EPUB';
     render(<ViewMenu bookKey='book-1' />);
     fireEvent.click(
-      screen.getByRole('menuitem', { name: 'Make White Image Backgrounds Transparent' }),
+      screen.getByRole('menuitem', { name: 'Make White Image Backgrounds Transparent - OFF' }),
     );
+    expect(
+      screen.getByRole('menuitem', { name: 'Make White Image Backgrounds Transparent - ON' }),
+    ).toBeTruthy();
     await waitFor(() =>
       expect(mockSaveViewSettings).toHaveBeenCalledWith(
         expect.anything(),
