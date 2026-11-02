@@ -116,6 +116,9 @@ const ThemePanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
   const [dialogueHighlightItalic, setDialogueHighlightItalic] = useState(
     viewSettings.dialogueHighlightItalic,
   );
+  const [dialogueHighlightWeight, setDialogueHighlightWeight] = useState(
+    viewSettings.dialogueHighlightWeight ?? 'normal',
+  );
   const [selectedTextureId, setSelectedTextureId] = useState(currentTextureId);
   const [backgroundOpacity, setBackgroundOpacity] = useState(currentBackgroundOpacity);
   const [backgroundSize, setBackgroundSize] = useState(currentBackgroundSize);
@@ -161,6 +164,7 @@ const ThemePanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
       dialogueHighlightCustomTextColor: setDialogueHighlightCustomTextColor,
       dialogueHighlightTextColor: setDialogueHighlightTextColor,
       dialogueHighlightItalic: setDialogueHighlightItalic,
+      dialogueHighlightWeight: setDialogueHighlightWeight,
       readingRulerEnabled: setReadingRulerEnabled,
       readingRulerLines: setReadingRulerLines,
       readingRulerOpacity: setReadingRulerOpacity,
@@ -281,7 +285,14 @@ const ThemePanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
     // Capture before the saves below mutate viewSettings in place.
     const customTextColorChanged =
       dialogueHighlightCustomTextColor !== viewSettings.dialogueHighlightCustomTextColor;
+    const weightChanged =
+      dialogueHighlightWeight !== (viewSettings.dialogueHighlightWeight ?? 'normal');
     const saves: Promise<void>[] = [];
+    if (weightChanged) {
+      saves.push(
+        saveViewSettings(envConfig, bookKey, 'dialogueHighlightWeight', dialogueHighlightWeight),
+      );
+    }
     if (dialogueHighlightCustomColor !== viewSettings.dialogueHighlightCustomColor) {
       saves.push(
         saveViewSettings(
@@ -325,11 +336,11 @@ const ThemePanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
     // Recoloring is pure CSS (getStyles reads these fields), so the saved
     // viewSettings refresh via saveViewSettings -> setStyles is enough when
     // the background is on and spans are guaranteed present. With the
-    // background off, spans may not exist yet (text-only mode just turned
-    // on), so re-wrap — but only on that toggle transition, not on every
+    // background off, spans may not exist yet (text color or weight just
+    // enabled marking), so re-wrap on those transitions, not on every
     // color-picker tick, since each run clears and rewrites every document.
     // Wait for every save so each open book has the new settings first.
-    if (!dialogueHighlight && customTextColorChanged) {
+    if (!dialogueHighlight && (customTextColorChanged || weightChanged)) {
       Promise.all(saves).then(refreshDialogueMarks);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -339,6 +350,7 @@ const ThemePanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
     dialogueHighlightCustomTextColor,
     dialogueHighlightTextColor,
     dialogueHighlightItalic,
+    dialogueHighlightWeight,
   ]);
 
   useEffect(() => {
@@ -632,6 +644,8 @@ const ThemePanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
             onBackgroundColorChange={setDialogueHighlightColor}
             onCustomTextColorToggle={setDialogueHighlightCustomTextColor}
             italic={dialogueHighlightItalic}
+            weight={dialogueHighlightWeight}
+            onWeightChange={setDialogueHighlightWeight}
             onTextColorChange={setDialogueHighlightTextColor}
             onItalicToggle={setDialogueHighlightItalic}
             data-setting-id='settings.color.dialogueHighlight'

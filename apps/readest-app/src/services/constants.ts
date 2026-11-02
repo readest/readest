@@ -431,6 +431,7 @@ export const DEFAULT_BOOK_STYLE: BookStyle = {
   dialogueHighlightCustomTextColor: false,
   dialogueHighlightTextColor: '',
   dialogueHighlightItalic: false,
+  dialogueHighlightWeight: 'normal',
   userStylesheet: '',
   userUIStylesheet: '',
 

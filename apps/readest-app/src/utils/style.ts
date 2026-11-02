@@ -301,30 +301,44 @@ const getDialogueHighlightStyles = (viewSettings: ViewSettings, themeCode: Theme
     viewSettings.dialogueHighlightCustomTextColor && viewSettings.dialogueHighlightTextColor
       ? `\n    color: ${viewSettings.dialogueHighlightTextColor} !important;`
       : '';
+  // A thin outline works even when the font has only regular/bold faces.
+  const weight =
+    viewSettings.dialogueHighlightWeight === 'slightly-heavier'
+      ? '\n    -webkit-text-stroke: 0.2px currentColor !important;'
+      : viewSettings.dialogueHighlightWeight === 'bold'
+        ? '\n    font-weight: bold !important;'
+        : '';
   return `
   /* Dialogue lines tinted with the custom color or, by default, the theme's
      primary color. !important so the tint survives "Override Book Color",
      which repaints spans/paragraphs with the theme background at the same
      importance level but lower specificity. */
-  .readest-dialogue {${bgDecl(22)}${text}
+  .readest-dialogue {${bgDecl(22)}${text}${weight}
     border-radius: 0.2em;
     box-decoration-break: clone;
     -webkit-box-decoration-break: clone;
   }
-  .readest-dialogue-block {${bgDecl(12)}${text}
+  .readest-dialogue-block {${bgDecl(12)}${text}${weight}
     border-radius: 0.3em;
   }${
     viewSettings.dialogueHighlightItalic
       ? `
   /* Italic runs marked like quoted dialogue; nested marks drop their own
      tint so overlapping translucent backgrounds don't stack. */
-  :is(i, em) {${bgDecl(22)}${text}
+  :is(i, em) {${bgDecl(22)}${text}${weight}
     border-radius: 0.2em;
     box-decoration-break: clone;
     -webkit-box-decoration-break: clone;
   }
   :is(i, em) :is(i, em, .readest-dialogue), .readest-dialogue :is(i, em) {
     background-color: transparent !important;
+  }`
+      : ''
+  }${
+    viewSettings.dialogueHighlightWeight === 'bold'
+      ? `
+  .readest-dialogue-block *, .readest-dialogue *${viewSettings.dialogueHighlightItalic ? ', :is(i, em) *' : ''} {
+    font-weight: bold !important;
   }`
       : ''
   }
