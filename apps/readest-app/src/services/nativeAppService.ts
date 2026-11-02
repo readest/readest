@@ -318,7 +318,8 @@ export const nativeFileSystem: FileSystem = {
       return await new RemoteFile(path, fname, '', Date.now(), fetcher ?? tauriFetch).open();
     }
     if (isContentURI(path) || (isFileURI(path) && OS_TYPE === 'ios')) {
-      const fname = safeDecodePath(await basename(path));
+      const isIOSFileURI = isFileURI(path) && OS_TYPE === 'ios';
+      const fname = isIOSFileURI ? getURLFilename(path) : safeDecodePath(await basename(path));
       if (path.includes('com.android.externalstorage')) {
         // If the URI is from shared internal storage (like /storage/emulated/0),
         // we can access it directly using the path — no need to copy.
@@ -328,7 +329,8 @@ export const nativeFileSystem: FileSystem = {
         // or file:// URIs is security scoped resource in iOS (e.g. from Files app),
         // we cannot access the file directly — so we copy it to a temporary cache location.
         const prefix = await this.getPrefix('Cache');
-        const dst = await join(prefix, `${crypto.randomUUID()}-${decodeURIComponent(fname)}`);
+        const copyName = isIOSFileURI ? fname : decodeURIComponent(fname);
+        const dst = await join(prefix, `${crypto.randomUUID()}-${copyName}`);
         const res = await copyURIToPath({ uri: path, dst });
         if (!res.success) {
           console.error('Failed to open file:', res);

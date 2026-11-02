@@ -124,6 +124,22 @@ describe('NativeAppService.saveFile share gating', () => {
   });
 
   test.each([
+    ['A%23B.epub', 'A#B.epub'],
+    ['100%25.epub', '100%.epub'],
+    ['Report%2520Final.epub', 'Report%20Final.epub'],
+    ['A%3FB.epub', 'A?B.epub'],
+    ['%E4%B8%89%E4%BD%93%20book.epub', '三体 book.epub'],
+  ])('decodes an iOS import basename exactly once: %s', async (encodedName, expected) => {
+    const service = await loadServiceWithOS('ios');
+    const uri = `file:///private/var/Inbox/${encodedName}`;
+    const file = await service.openFile(uri, 'None');
+    expect(file.name).toBe(expected);
+    const request = copyURIToPathMock.mock.calls[0]![0] as { uri: string; dst: string };
+    expect(request.uri).toBe(uri);
+    expect(request.dst.endsWith(`-${expected}`)).toBe(true);
+  });
+
+  test.each([
     ['https://example.com/manual.pdf#zoom=1.25', undefined, 'manual.pdf'],
     ['https://example.com/C%2B%2B.pdf?type=application/pdf', undefined, 'C++.pdf'],
     ['https://example.com/one%5Cpart.pdf', undefined, 'one\\part.pdf'],
