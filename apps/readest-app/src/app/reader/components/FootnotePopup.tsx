@@ -464,7 +464,7 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
         const backgroundColor = getComputedStyle(popupContainer).backgroundColor;
         popupTheme.bg = backgroundColor;
       }
-      const mainStyles = getStyles(viewSettings, popupTheme, getLoadedFonts());
+      const mainStyles = getStyles(viewSettings, popupTheme, getLoadedFonts(), true);
       const footnoteStyles = getFootnoteStyles();
       renderer.setStyles?.(`${mainStyles}\n${footnoteStyles}`);
     };
@@ -939,17 +939,8 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
           height={responsiveHeight}
           position={showPopup ? popupPosition! : undefined}
           trianglePosition={showPopup ? anchor! : undefined}
-          // Scroll along the note's block axis and clip the other one. A note
-          // that wraps can never need a horizontal scrollbar, but leaving that
-          // axis `visible` promotes it to `auto` (CSS resolves `visible` to
-          // `auto` next to a non-`visible` value), so any stray pixel of
-          // cross-axis overflow bought a second scrollbar (#5999).
-          className={clsx(
-            'footnote-popup select-text pointer-events-auto',
-            viewSettings.vertical
-              ? 'overflow-x-auto overflow-y-hidden'
-              : 'overflow-y-auto overflow-x-hidden',
-          )}
+          // Keep the texture surface stationary while the note scrolls inside it.
+          className='footnote-popup select-text pointer-events-auto overflow-clip'
           onDismiss={handleDismissPopup}
         >
           {canGoBack && (
@@ -995,7 +986,16 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
           )}
           {/* Fill the popup's content box rather than restating its border-box
               size, which overflowed it by the border on both axes (#5999). */}
-          <div className='footnote-content h-full w-full' ref={footnoteRef}></div>
+          <div
+            className={clsx(
+              'footnote-content h-full w-full',
+              // Clip the cross axis so it cannot gain a second scrollbar (#5999).
+              viewSettings.vertical
+                ? 'overflow-x-auto overflow-y-hidden'
+                : 'overflow-y-auto overflow-x-hidden',
+            )}
+            ref={footnoteRef}
+          ></div>
         </Popup>
       </div>
     </div>

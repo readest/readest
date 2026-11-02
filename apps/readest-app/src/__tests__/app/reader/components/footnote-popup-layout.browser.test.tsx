@@ -12,6 +12,7 @@ import {
 import FootnotePopup from '@/app/reader/components/FootnotePopup';
 import { mountBackgroundTexture, unmountBackgroundTexture } from '@/styles/textures';
 import { eventDispatcher } from '@/utils/event';
+import { getStyles } from '@/utils/style';
 import '@/styles/globals.css';
 
 const h = vi.hoisted(() => ({
@@ -101,7 +102,7 @@ afterEach(() => {
   document.documentElement.style.removeProperty('--bg-texture-size');
 });
 
-const openFootnote = (direction: 'ltr' | 'rtl' = 'ltr') => {
+const openFootnote = (direction: 'ltr' | 'rtl' = 'ltr', bodyBackground?: string) => {
   h.viewSettings.rtl = direction === 'rtl';
   render(<FootnotePopup bookKey='book-1' bookDoc={{} as BookDoc} />);
   act(() => {
@@ -122,6 +123,7 @@ const openFootnote = (direction: 'ltr' | 'rtl' = 'ltr') => {
         const doc = iframe.contentDocument!;
         doc.documentElement.dir = direction;
         doc.head.innerHTML = '<style>.authored-justify { text-align: justify; }</style>';
+        if (bodyBackground) doc.body.style.backgroundColor = bodyBackground;
         doc.body.innerHTML = `
           <p id="css-justify" class="authored-justify">A footnote justified by the book stylesheet.</p>
           <p id="inline-justify" style="text-align: justify">A footnote justified by an inline style.</p>
@@ -196,11 +198,14 @@ describe('footnote popup background texture (#6841)', () => {
   ] as const)('keeps authored backgrounds above the texture: %j', (mode) => {
     document.documentElement.dataset['theme'] = `default-${mode.theme}`;
     document.documentElement.dataset['eink'] = `${mode.eink}`;
+    h.viewSettings.isEink = mode.eink;
+    h.viewSettings.backgroundTextureId = 'paper';
     h.viewSettings.useBookLayout = mode.useBookLayout;
     h.viewSettings.vertical = mode.vertical;
     h.viewSettings.overrideColor = false;
     mountTexture();
     const doc = openFootnote(mode.direction);
+    expect(doc.defaultView!.getComputedStyle(doc.body).backgroundColor).toBe('rgba(0, 0, 0, 0)');
     const paragraph = doc.getElementById('left')!;
     paragraph.style.background = 'rgb(12, 34, 56)';
     paragraph.style.backgroundImage = 'linear-gradient(red, blue)';
@@ -208,6 +213,47 @@ describe('footnote popup background texture (#6841)', () => {
     const authored = doc.defaultView!.getComputedStyle(paragraph);
     expect(authored.backgroundColor).toBe('rgb(12, 34, 56)');
     expect(authored.backgroundImage).toBe('linear-gradient(rgb(255, 0, 0), rgb(0, 0, 255))');
+  });
+
+  test('preserves an authored body background in a textured e-ink footnote', () => {
+    h.viewSettings.isEink = true;
+    h.viewSettings.backgroundTextureId = 'paper';
+    h.viewSettings.overrideColor = false;
+    mountTexture();
+    const doc = openFootnote('ltr', 'rgb(12, 34, 56)');
+    expect(doc.defaultView!.getComputedStyle(doc.body).backgroundColor).toBe('rgb(12, 34, 56)');
+  });
+
+  test('retains the e-ink fill without a texture and in the main reader', () => {
+    h.viewSettings.isEink = true;
+    h.viewSettings.backgroundTextureId = 'none';
+    const doc = openFootnote();
+    expect(doc.defaultView!.getComputedStyle(doc.body).backgroundColor).toBe(
+      getComputedStyle(document.querySelector('#popup-container')!).backgroundColor,
+    );
+    h.viewSettings.backgroundTextureId = 'paper';
+    const style = doc.createElement('style');
+    style.textContent = getStyles(h.viewSettings);
+    doc.head.replaceChildren(style);
+    expect(doc.defaultView!.getComputedStyle(doc.body).backgroundColor).toBe('rgb(255, 255, 255)');
+  });
+
+  test('scrolls long synthesized notes without scrolling the texture surface', () => {
+    mountTexture();
+    render(<FootnotePopup bookKey='book-1' bookDoc={{} as BookDoc} />);
+    act(() => {
+      eventDispatcher.dispatch('footnote-popup', {
+        element: anchor,
+        footnote: 'A long footnote with enough text to scroll. '.repeat(200),
+      });
+    });
+    const popup = document.querySelector<HTMLElement>('#popup-container')!;
+    const content = popup.querySelector<HTMLElement>('.footnote-content')!;
+    content.scrollTop = content.scrollHeight;
+    popup.scrollTop = popup.scrollHeight;
+    expect(content.scrollTop).toBeGreaterThan(content.clientHeight);
+    expect(popup.scrollTop).toBe(0);
+    expectTextureBelowContent();
   });
 
   test('textures synthesized data-attribute footnotes and clears it when disabled', () => {

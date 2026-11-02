@@ -351,6 +351,7 @@ const getColorStyles = (
   themeCode: ThemeCode,
   backgroundTextureId: string,
   isEink: boolean,
+  isFootnote: boolean,
 ) => {
   const { bg, fg, primary, isDarkMode } = themeCode;
   const hasBackgroundTexture = !!backgroundTextureId && backgroundTextureId !== 'none';
@@ -378,7 +379,7 @@ const getColorStyles = (
       background: var(--background-set, none);
     }
     body {
-      ${isEink ? `background-color: ${bg} !important;` : ''}
+      ${isEink && !(isFootnote && hasBackgroundTexture) ? `background-color: ${bg} !important;` : ''}
     }
     section, aside, blockquote, article, nav, header, footer, main, figure,
     div, p, font, h1, h2, h3, h4, h5, h6, li, span {
@@ -1160,6 +1161,7 @@ export const getStyles = (
   viewSettings: ViewSettings,
   themeCode?: ThemeCode,
   customFonts: CustomFont[] = [],
+  isFootnote = false,
 ) => {
   if (!themeCode) {
     themeCode = getThemeCode();
@@ -1211,6 +1213,7 @@ export const getStyles = (
     themeCode,
     viewSettings.backgroundTextureId,
     viewSettings.isEink,
+    isFootnote,
   );
   const translationStyles = getTranslationStyles(viewSettings);
   const warichuStyles = getWarichuStyles();
