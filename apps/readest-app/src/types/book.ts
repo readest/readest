@@ -321,6 +321,7 @@ export interface BookStyle {
   dialogueHighlightCustomTextColor: boolean;
   dialogueHighlightTextColor: string;
   dialogueHighlightItalic: boolean;
+  dialogueHighlightWeight: 'normal' | 'slightly-heavier' | 'bold';
   userStylesheet: string;
   userUIStylesheet: string;
 

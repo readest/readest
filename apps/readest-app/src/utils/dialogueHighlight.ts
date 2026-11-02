@@ -5,13 +5,12 @@ import { getIndexFromCfi } from '@/utils/cfi';
 export const DIALOGUE_SPAN_CLASS = 'readest-dialogue';
 export const DIALOGUE_BLOCK_CLASS = 'readest-dialogue-block';
 
-/**
- * Whether dialogue marking is active at all. Background and text are
- * independent: text coloring keeps working with the background off, so the
- * section must be wrapped (and styled) when either switch is on.
- */
+/** Background, text color and weight can each enable dialogue marking. */
 export const isDialogueHighlightActive = (viewSettings: ViewSettings): boolean =>
-  !!viewSettings.dialogueHighlight || !!viewSettings.dialogueHighlightCustomTextColor;
+  !!viewSettings.dialogueHighlight ||
+  !!viewSettings.dialogueHighlightCustomTextColor ||
+  viewSettings.dialogueHighlightWeight === 'slightly-heavier' ||
+  viewSettings.dialogueHighlightWeight === 'bold';
 
 // Paired quotation marks used for dialogue across CJK and Western books:
 // Chinese “”/‘’, Japanese 「」/『』, French «», German „“ plus ASCII "".

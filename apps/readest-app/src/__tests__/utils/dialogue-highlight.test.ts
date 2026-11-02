@@ -79,6 +79,79 @@ describe('dialogueHighlight default', () => {
   });
 });
 
+describe('dialogue weight', () => {
+  it('preserves the book weight by default', () => {
+    expect(DEFAULT_BOOK_STYLE).toHaveProperty('dialogueHighlightWeight', 'normal');
+  });
+
+  it.each([
+    'slightly-heavier',
+    'bold',
+  ] as const)('marks dialogue with only %s enabled', (weight) => {
+    const doc = makeDoc('<p>She said “Hello.” Then left.</p><p>— Goodbye.</p>');
+    const settings = makeViewSettings({
+      dialogueHighlightWeight: weight,
+    });
+    manageDialogueHighlight(doc, settings);
+    expect(doc.querySelector(`.${DIALOGUE_SPAN_CLASS}`)?.textContent).toBe('“Hello.”');
+    expect(doc.querySelector(`.${DIALOGUE_BLOCK_CLASS}`)?.textContent).toBe('— Goodbye.');
+    manageDialogueHighlight(doc, makeViewSettings());
+    expect(doc.querySelector(`.${DIALOGUE_SPAN_CLASS}, .${DIALOGUE_BLOCK_CLASS}`)).toBeNull();
+    expect(doc.body.textContent).toBe('She said “Hello.” Then left.— Goodbye.');
+  });
+
+  it.each([
+    ['slightly-heavier', '-webkit-text-stroke: 0.2px currentColor !important'],
+    ['bold', 'font-weight: bold !important'],
+  ] as const)('styles quotes, dash dialogue and italic text with %s alone', (weight, declaration) => {
+    const css = getStyles(
+      makeViewSettings({
+        dialogueHighlightWeight: weight,
+        dialogueHighlightItalic: true,
+      }),
+      themeCode,
+    );
+    const rules =
+      css.match(/^ {2}(?:\.readest-dialogue(?:-block)?|:is\(i, em\))\s*\{[^}]*\}/gm) ?? [];
+    expect(rules).toHaveLength(3);
+    for (const rule of rules) {
+      expect(rule).toContain(declaration);
+      expect(rule).not.toContain('background-color');
+      expect(rule).not.toMatch(/\n\s+color:/);
+      if (weight === 'slightly-heavier') expect(rule).not.toContain('font-weight');
+      else expect(rule).not.toContain('-webkit-text-stroke');
+    }
+  });
+
+  it('bolds explicitly regular text inside dash-led dialogue', () => {
+    const settings = makeViewSettings({ dialogueHighlightWeight: 'bold' });
+    const doc = makeDoc('<p>— <span style="font-weight: 400">Hello.</span></p>');
+    manageDialogueHighlight(doc, settings);
+    const container = document.createElement('div');
+    const style = document.createElement('style');
+    style.textContent = (
+      getStyles(settings, themeCode).match(/\.readest-dialogue-block[^}]*\}/g) ?? []
+    ).join('\n');
+    container.append(style, document.importNode(doc.body.firstElementChild!, true));
+    document.body.append(container);
+    try {
+      expect(getComputedStyle(container.querySelector('span')!).fontWeight).toBe('bold');
+    } finally {
+      container.remove();
+    }
+  });
+
+  it('leaves existing styling unchanged for missing or normal weight', () => {
+    const legacy = makeViewSettings({ dialogueHighlight: true });
+    delete (legacy as Partial<ViewSettings>).dialogueHighlightWeight;
+    const normal = makeViewSettings({
+      dialogueHighlight: true,
+      dialogueHighlightWeight: 'normal',
+    });
+    expect(getStyles(normal, themeCode)).toBe(getStyles(legacy, themeCode));
+  });
+});
+
 describe('getStyles dialogue chunk', () => {
   it('emits no dialogue rules when disabled', () => {
     const css = getStyles(makeViewSettings({ dialogueHighlight: false }), themeCode);
