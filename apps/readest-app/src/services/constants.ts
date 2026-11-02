@@ -444,6 +444,7 @@ export const DEFAULT_BOOK_STYLE: BookStyle = {
   spreadMode: 'auto',
   keepCoverSpread: true,
   invertImgColorInDark: false,
+  transparentImageBackground: false,
   applyThemeToPDF: false,
   contrast: 100,
 };

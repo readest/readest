@@ -377,6 +377,12 @@ const colorPanelItems = [
     section: 'Theme',
   },
   {
+    id: 'settings.color.transparentImageBackground',
+    labelKey: _('Make White Image Backgrounds Transparent'),
+    keywords: ['image', 'white', 'background', 'transparent', 'diagram'],
+    section: 'Theme',
+  },
+  {
     id: 'settings.color.overrideBookColor',
     labelKey: _('Override Book Color'),
     keywords: ['override', 'book', 'color', 'custom'],
