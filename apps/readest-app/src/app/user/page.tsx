@@ -385,7 +385,10 @@ const ProfilePage = () => {
                     </div>
                     <div className='flex flex-col gap-y-8 px-6'>
                       <AccountActions
+                        userEmail={userEmail}
+                        planName={_(userPlanDetails.name)}
                         userPlan={userProfilePlan}
+                        customizationPurchased={customizationPurchased}
                         iapAvailable={iapAvailable}
                         onLogout={handleLogout}
                         onResetPassword={handleResetPassword}
