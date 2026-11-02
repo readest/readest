@@ -1020,6 +1020,27 @@ describe('useProgressSync — duplicate copies (#7092)', () => {
     expect(h.view.goToFraction).not.toHaveBeenCalled();
   });
 
+  test('returning to the initial location does not revive the first-pull exception', async () => {
+    h.config.updatedAt = 0;
+    h.state.syncedConfigs = null;
+    const { rerender } = renderHook(() => useProgressSync('h1-view1'));
+
+    h.config.location = 'user-destination';
+    h.config.updatedAt = 4000;
+    h.state.progress = { location: 'user-destination', fraction: 0.1 };
+    rerender();
+    await advance(0);
+
+    h.config.location = 'cfi-loc';
+    h.config.updatedAt = 5000;
+    h.state.progress = { location: 'cfi-loc', fraction: 0.05 };
+    h.state.syncedConfigs = [sibling(3000)];
+    rerender();
+    await advance(0);
+
+    expect(h.view.goToFraction).not.toHaveBeenCalled();
+  });
+
   test('a slow first pull still respects an exact cloud purge', async () => {
     h.config.updatedAt = 0;
     h.state.syncedConfigs = null;

@@ -290,9 +290,14 @@ export const useProgressSync = (bookKey: string) => {
 
   // Pull: pull progress once when the book is opened, with retry on failure
   useEffect(() => {
+    const config = getConfig(bookKey);
+    // A round trip is still a reading change; returning to the initial page
+    // must not revive the zero-timestamp exception while the pull is pending.
+    if (initialPullConfig.current && config?.location !== initialPullConfig.current.location) {
+      initialPullConfig.current = null;
+    }
     if (!progress || hasPulledConfigOnce.current) return;
     hasPulledConfigOnce.current = true;
-    const config = getConfig(bookKey);
     if (config && !config.updatedAt) {
       initialPullConfig.current = { location: config.location, updatedAt: 0 };
     }
