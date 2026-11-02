@@ -1599,8 +1599,6 @@
   "Search on Goodreads": "Goodreadsで検索",
   "Reference Pages": "参照ページ",
   "Reference Page Count": "参照ページ数",
-  "Lookup app reset. The next lookup will ask again.": "検索アプリをリセットしました。次回の検索時に再度確認します。",
-  "System Lookup App": "システム検索アプリ",
   "Share": "共有",
   "Share text after selection": "選択後にテキストを共有",
   "Customize Toolbar": "ツールバーをカスタマイズ",
@@ -2604,5 +2602,7 @@
   "Search history": "検索履歴",
   "Clear All": "すべてクリア",
   "Remove {{term}} from search history": "検索履歴から{{term}}を削除",
-  "Remove from history": "履歴から削除"
+  "Remove from history": "履歴から削除",
+  "Lookup App": "検索アプリ",
+  "Ask Every Time": "毎回確認"
 }

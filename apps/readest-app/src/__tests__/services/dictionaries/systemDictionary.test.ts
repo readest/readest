@@ -34,10 +34,10 @@ vi.mock('@tauri-apps/api/window', () => ({
 }));
 
 import {
-  clearRememberedLookupApp,
-  getRememberedLookupApp,
+  getLookupApps,
   invokeSystemDictionary,
   isSystemDictionarySupported,
+  setLookupApp,
 } from '@/services/dictionaries/systemDictionary';
 
 const MACOS_CMD = 'show_lookup_popover';
@@ -140,50 +140,62 @@ describe('invokeSystemDictionary — native dispatch', () => {
   });
 });
 
-const GET_LOOKUP_CMD = 'plugin:native-bridge|get_lookup_dictionary';
-const CLEAR_LOOKUP_CMD = 'plugin:native-bridge|clear_lookup_dictionary';
+const GET_APPS_CMD = 'plugin:native-bridge|get_lookup_apps';
+const SET_APP_CMD = 'plugin:native-bridge|set_lookup_app';
 
-describe('getRememberedLookupApp — Android-only remembered dictionary', () => {
-  it('returns the remembered app on Android', async () => {
+describe('getLookupApps — Android lookup app picker', () => {
+  it('lists the installed lookup apps on Android', async () => {
     appService.value = flags('android');
-    invokeMock.mockResolvedValueOnce({ packageName: 'com.eusoft.eudic', label: 'Eudic' });
+    const apps = [
+      { packageName: 'com.qianyan.eudic', className: '.Lightpeek', label: 'Eudic', selected: true },
+      { packageName: 'com.baidu.searchbox', className: '.Search', label: 'Baidu', selected: false },
+    ];
+    invokeMock.mockResolvedValueOnce({ apps });
 
-    const app = await getRememberedLookupApp();
-
-    expect(app).toEqual({ packageName: 'com.eusoft.eudic', label: 'Eudic' });
-    expect(invokeMock).toHaveBeenCalledWith(GET_LOOKUP_CMD);
+    expect(await getLookupApps()).toEqual(apps);
+    expect(invokeMock).toHaveBeenCalledWith(GET_APPS_CMD);
   });
 
-  it('returns null when nothing is remembered (empty response)', async () => {
+  it('returns an empty list when the bridge fails', async () => {
     appService.value = flags('android');
-    invokeMock.mockResolvedValueOnce({});
+    invokeMock.mockRejectedValueOnce(new Error('No command getLookupApps found'));
 
-    expect(await getRememberedLookupApp()).toBeNull();
+    expect(await getLookupApps()).toEqual([]);
   });
 
   it('is a no-op on non-Android platforms', async () => {
     appService.value = flags('ios');
 
-    expect(await getRememberedLookupApp()).toBeNull();
-    expect(invokeMock).not.toHaveBeenCalledWith(GET_LOOKUP_CMD);
+    expect(await getLookupApps()).toEqual([]);
+    expect(invokeMock).not.toHaveBeenCalledWith(GET_APPS_CMD);
   });
 });
 
-describe('clearRememberedLookupApp — Android-only reset', () => {
-  it('invokes the clear command on Android', async () => {
+describe('setLookupApp — Android lookup app picker', () => {
+  it('saves the chosen app on Android', async () => {
     appService.value = flags('android');
 
-    await clearRememberedLookupApp();
+    await setLookupApp({ packageName: 'com.qianyan.eudic', className: '.Lightpeek' });
 
-    expect(invokeMock).toHaveBeenCalledWith(CLEAR_LOOKUP_CMD);
+    expect(invokeMock).toHaveBeenCalledWith(SET_APP_CMD, {
+      payload: { packageName: 'com.qianyan.eudic', className: '.Lightpeek' },
+    });
+  });
+
+  it('clears the choice with null', async () => {
+    appService.value = flags('android');
+
+    await setLookupApp(null);
+
+    expect(invokeMock).toHaveBeenCalledWith(SET_APP_CMD, { payload: {} });
   });
 
   it('is a no-op on non-Android platforms', async () => {
     appService.value = flags('ios');
 
-    await clearRememberedLookupApp();
+    await setLookupApp(null);
 
-    expect(invokeMock).not.toHaveBeenCalledWith(CLEAR_LOOKUP_CMD);
+    expect(invokeMock).not.toHaveBeenCalledWith(SET_APP_CMD, expect.anything());
   });
 });
 

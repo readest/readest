@@ -1698,8 +1698,6 @@
   "Search on Goodreads": "Искать в Goodreads",
   "Reference Pages": "Страницы бумажной книги",
   "Reference Page Count": "Число страниц бумажной книги",
-  "Lookup app reset. The next lookup will ask again.": "Приложение для поиска сброшено. При следующем поиске запрос появится снова.",
-  "System Lookup App": "Системное приложение для поиска",
   "Share": "Поделиться",
   "Share text after selection": "Поделиться текстом после выделения",
   "Customize Toolbar": "Настроить панель инструментов",
@@ -2811,5 +2809,7 @@
   "Search history": "История поиска",
   "Clear All": "Очистить всё",
   "Remove {{term}} from search history": "Удалить {{term}} из истории поиска",
-  "Remove from history": "Удалить из истории"
+  "Remove from history": "Удалить из истории",
+  "Lookup App": "Приложение для поиска",
+  "Ask Every Time": "Спрашивать каждый раз"
 }

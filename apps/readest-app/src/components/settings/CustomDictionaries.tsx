@@ -39,11 +39,11 @@ import { evictProvider, isSystemDictionaryEnabled } from '@/services/dictionarie
 import { getContextTranslator } from '@/services/dictionaries/providers/contextProvider';
 import { BUILTIN_PROVIDER_IDS } from '@/services/dictionaries/types';
 import {
-  clearRememberedLookupApp,
-  getRememberedLookupApp,
+  getLookupApps,
   isSystemDictionaryAvailable,
   isSystemDictionarySupported,
-  type RememberedLookupApp,
+  setLookupApp,
+  type LookupApp,
 } from '@/services/dictionaries/systemDictionary';
 import { queueDictionaryBinaryUpload } from '@/services/sync/replicaBinaryUpload';
 import type { ImportedDictionary, WebSearchEntry } from '@/services/dictionaries/types';
@@ -322,21 +322,18 @@ const CustomDictionaries: React.FC<CustomDictionariesProps> = ({ onBack }) => {
     stage: string;
     percentage: number;
   } | null>(null);
-  // Android only: the dictionary app remembered for the browser-excluding
-  // system-lookup chooser (issue #4559). Stays null on every other platform
-  // and whenever nothing has been remembered, so the reset row below only
-  // surfaces for the narrow case that can get "stuck" on one app.
-  const [rememberedLookupApp, setRememberedLookupApp] = useState<RememberedLookupApp | null>(null);
+  // Android only: the apps a system-dictionary lookup can go to (#4937).
+  const [lookupApps, setLookupApps] = useState<LookupApp[]>([]);
   useEffect(() => {
     if (!appService?.isAndroidApp) return;
     let cancelled = false;
-    void getRememberedLookupApp().then((app) => {
-      if (!cancelled) setRememberedLookupApp(app);
+    void getLookupApps().then((apps) => {
+      if (!cancelled) setLookupApps(apps);
     });
     return () => {
       cancelled = true;
     };
-  }, [appService]);
+  }, [appService?.isAndroidApp]);
   const handleFontScaleChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
     setFontScale(Number(e.target.value));
     await saveCustomDictionaries(envConfig);
@@ -352,14 +349,12 @@ const CustomDictionaries: React.FC<CustomDictionariesProps> = ({ onBack }) => {
     await saveCustomDictionaries(envConfig);
   };
 
-  const handleResetLookupApp = async () => {
-    await clearRememberedLookupApp();
-    setRememberedLookupApp(null);
-    eventDispatcher.dispatch('toast', {
-      type: 'info',
-      message: _('Lookup app reset. The next lookup will ask again.'),
-      timeout: 4000,
-    });
+  const lookupAppKey = (app: LookupApp) => `${app.packageName}/${app.className}`;
+  const selectedLookupApp = lookupApps.find((app) => app.selected);
+  const handleLookupAppChange = async (event: React.ChangeEvent<HTMLSelectElement>) => {
+    const chosen = lookupApps.find((app) => lookupAppKey(app) === event.target.value) ?? null;
+    setLookupApps((apps) => apps.map((app) => ({ ...app, selected: app === chosen })));
+    await setLookupApp(chosen);
   };
   // Edit and Delete are mutually-exclusive row affordances. Toggling one on
   // turns the other off so the trailing column never shows two icons at once.
@@ -893,6 +888,22 @@ const CustomDictionaries: React.FC<CustomDictionariesProps> = ({ onBack }) => {
         </BoxedList>
       )}
 
+      {appService?.isAndroidApp && lookupApps.length > 0 && (
+        <BoxedList className='mt-4' title={_('System Dictionary')}>
+          <SettingsRow label={_('Lookup App')}>
+            <SettingsSelect
+              ariaLabel={_('Lookup App')}
+              value={selectedLookupApp ? lookupAppKey(selectedLookupApp) : ''}
+              onChange={handleLookupAppChange}
+              options={[
+                { value: '', label: _('Ask Every Time') },
+                ...lookupApps.map((app) => ({ value: lookupAppKey(app), label: app.label })),
+              ]}
+            />
+          </SettingsRow>
+        </BoxedList>
+      )}
+
       {contextTranslator && (
         <BoxedList
           className='mt-4'
@@ -1077,33 +1088,6 @@ const CustomDictionaries: React.FC<CustomDictionariesProps> = ({ onBack }) => {
           <span className='line-clamp-1'>{_('Add Web Search')}</span>
         </button>
       </div>
-
-      {/* Reset the remembered system-lookup app. Only rendered on Android
-          when a dictionary has actually been remembered from the
-          browser-excluding chooser (issue #4559), so the user can switch
-          to another installed dictionary without uninstalling. */}
-      {rememberedLookupApp && (
-        <div
-          className={clsx(
-            'eink-bordered mt-4 flex items-center justify-between gap-3',
-            'border-base-200 bg-base-100 rounded-lg border px-4 py-3',
-          )}
-        >
-          <div className='min-w-0'>
-            <div className='text-base-content text-sm font-medium'>{_('System Lookup App')}</div>
-            <div className='text-base-content/60 line-clamp-1 text-xs'>
-              {rememberedLookupApp.label}
-            </div>
-          </div>
-          <button
-            type='button'
-            onClick={handleResetLookupApp}
-            className='btn btn-ghost btn-sm eink-bordered shrink-0'
-          >
-            {_('Reset')}
-          </button>
-        </div>
-      )}
 
       <Tips className='mt-4'>
         <li>{_('StarDict bundles need .ifo, .idx, and .dict.dz files (.syn optional).')}</li>

@@ -1599,8 +1599,6 @@
   "Search on Goodreads": "Tìm trên Goodreads",
   "Reference Pages": "Trang tham chiếu",
   "Reference Page Count": "Số trang tham chiếu",
-  "Lookup app reset. The next lookup will ask again.": "Đã đặt lại ứng dụng tra cứu. Lần tra cứu tiếp theo sẽ hỏi lại.",
-  "System Lookup App": "Ứng dụng tra cứu hệ thống",
   "Share": "Chia sẻ",
   "Share text after selection": "Chia sẻ văn bản sau khi chọn",
   "Customize Toolbar": "Tùy chỉnh thanh công cụ",
@@ -2604,5 +2602,7 @@
   "Search history": "Lịch sử tìm kiếm",
   "Clear All": "Xóa tất cả",
   "Remove {{term}} from search history": "Xóa {{term}} khỏi lịch sử tìm kiếm",
-  "Remove from history": "Xóa khỏi lịch sử"
+  "Remove from history": "Xóa khỏi lịch sử",
+  "Lookup App": "Ứng dụng tra cứu",
+  "Ask Every Time": "Luôn hỏi"
 }

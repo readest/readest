@@ -1665,8 +1665,6 @@
   "Search on Goodreads": "Pesquisar no Goodreads",
   "Reference Pages": "Páginas de referência",
   "Reference Page Count": "Número de páginas de referência",
-  "Lookup app reset. The next lookup will ask again.": "App de pesquisa redefinida. Na próxima pesquisa será perguntado novamente.",
-  "System Lookup App": "App de pesquisa do sistema",
   "Share": "Partilhar",
   "Share text after selection": "Partilhar texto após a seleção",
   "Customize Toolbar": "Personalizar barra de ferramentas",
@@ -2742,5 +2740,7 @@
   "Search history": "Histórico de pesquisa",
   "Clear All": "Limpar tudo",
   "Remove {{term}} from search history": "Remover {{term}} do histórico de pesquisa",
-  "Remove from history": "Remover do histórico"
+  "Remove from history": "Remover do histórico",
+  "Lookup App": "App de consulta",
+  "Ask Every Time": "Perguntar sempre"
 }
