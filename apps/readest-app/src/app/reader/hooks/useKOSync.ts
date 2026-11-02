@@ -81,6 +81,7 @@ export const useKOSync = (bookKey: string, provider: KosyncProgressProvider = ko
   const getProgress = useReaderStore((s) => s.getProgress);
   const getView = useReaderStore((s) => s.getView);
   const getBookData = useBookDataStore((s) => s.getBookData);
+  const book = useBookDataStore((s) => s.getBookData(bookKey)?.book);
   const getConfig = useBookDataStore((s) => s.getConfig);
   const setConfig = useBookDataStore((s) => s.setConfig);
 
@@ -100,20 +101,13 @@ export const useKOSync = (bookKey: string, provider: KosyncProgressProvider = ko
   const progress = useBookProgress(bookKey);
 
   const checksumMethod = provider.selectConfig(settings)?.checksumMethod;
-  const previousChecksumMethod = useRef(checksumMethod);
   const checksumGeneration = useRef(0);
   const pendingPut = useRef<Promise<unknown>>(Promise.resolve());
+  const documentDigest = kosyncClient && book ? kosyncClient.getDocumentDigest(book) : null;
+  const previousDocumentDigest = useRef(documentDigest);
 
   useEffect(() => {
     const config = provider.selectConfig(settings);
-    if (previousChecksumMethod.current !== checksumMethod) {
-      checksumGeneration.current += 1;
-      hasPulledOnce.current = false;
-      resolvedRemoteRef.current = null;
-      setConflictDetails(null);
-      setSyncState('idle');
-      previousChecksumMethod.current = checksumMethod;
-    }
     if (!config) {
       setKOSyncClient(null);
       return;
@@ -122,6 +116,16 @@ export const useKOSync = (bookKey: string, provider: KosyncProgressProvider = ko
     setKOSyncClient(client);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [settings, provider, checksumMethod]);
+
+  useEffect(() => {
+    if (previousDocumentDigest.current === documentDigest) return;
+    previousDocumentDigest.current = documentDigest;
+    checksumGeneration.current += 1;
+    hasPulledOnce.current = false;
+    resolvedRemoteRef.current = null;
+    setConflictDetails(null);
+    setSyncState('idle');
+  }, [documentDigest]);
 
   const generateKOProgress = useCallback(async () => {
     const generation = checksumGeneration.current;
@@ -364,9 +368,10 @@ export const useKOSync = (bookKey: string, provider: KosyncProgressProvider = ko
 
         const generation = checksumGeneration.current;
         const currentBook = getBookData(bookKey)?.book;
+        if (!currentBook || kosyncClient.getDocumentDigest(currentBook) !== documentDigest) return;
         const progress = await generateKOProgress();
         if (generation !== checksumGeneration.current) return;
-        if (!currentBook || !progress || !progress.koProgress) return;
+        if (!progress || !progress.koProgress) return;
 
         const put = pendingPut.current.then(async () => {
           if (generation !== checksumGeneration.current) return;
@@ -377,7 +382,7 @@ export const useKOSync = (bookKey: string, provider: KosyncProgressProvider = ko
         await put;
       }, 5000),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [bookKey, appService, kosyncClient],
+    [bookKey, appService, kosyncClient, documentDigest],
   );
 
   const pullProgress = useCallback(
@@ -502,7 +507,7 @@ export const useKOSync = (bookKey: string, provider: KosyncProgressProvider = ko
     if (hasPulledOnce.current) return;
 
     syncRefs.current.pullProgress();
-  }, [appService, kosyncClient, progress?.location]);
+  }, [appService, kosyncClient, progress?.location, documentDigest]);
 
   // Push: auto-push progress when progress changes with a debounce
   useEffect(() => {

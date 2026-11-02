@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { act, cleanup, renderHook } from '@testing-library/react';
+import type { Book } from '@/types/book';
+import type { KOSyncSettings } from '@/types/settings';
 
 const KOSYNC_PUSH_DEBOUNCE_MS = 5000;
 
@@ -28,7 +30,13 @@ const h = vi.hoisted(() => {
     getCFIProgress: vi.fn(async () => ({ fraction: 0.6 })),
   };
 
-  const book = { hash: 'h1', format: 'EPUB', updatedAt: 1 };
+  const book = {
+    hash: 'h1',
+    title: 'Old title',
+    originalFilename: '',
+    format: 'EPUB',
+    updatedAt: 1,
+  };
   const bookDoc = {};
 
   return {
@@ -128,16 +136,26 @@ vi.mock('@/utils/xcfi', () => ({
   getXPointerFromCFI: vi.fn(() => Promise.resolve({ xpointer: h.XPOINTER })),
 }));
 
-vi.mock('@/services/sync/KOSyncClient', () => ({
-  KOSyncClient: class {
-    getProgress() {
-      return h.getProgressMock();
-    }
-    updateProgress(...args: unknown[]) {
-      return h.updateProgressMock(...args);
-    }
-  },
-}));
+vi.mock('@/services/sync/KOSyncClient', async (importOriginal) => {
+  const { KOSyncClient } = await importOriginal<typeof import('@/services/sync/KOSyncClient')>();
+  return {
+    KOSyncClient: class {
+      private client: InstanceType<typeof KOSyncClient>;
+      constructor(config: KOSyncSettings) {
+        this.client = new KOSyncClient({ ...config, serverUrl: 'https://sync.example.com' });
+      }
+      getDocumentDigest(book: Book) {
+        return this.client.getDocumentDigest(book);
+      }
+      getProgress() {
+        return h.getProgressMock();
+      }
+      updateProgress(...args: unknown[]) {
+        return h.updateProgressMock(...args);
+      }
+    },
+  };
+});
 
 vi.mock('@/utils/event', () => ({
   eventDispatcher: {
@@ -196,6 +214,8 @@ beforeEach(() => {
     timestamp: Math.floor(Date.now() / 1000) + 10_000,
     device_id: 'other-device',
   };
+  h.book.title = 'Old title';
+  h.book.originalFilename = '';
   h.cfiResolves = true;
   h.getProgressMock.mockReset();
   h.getProgressMock.mockResolvedValue(h.remote);
@@ -387,6 +407,55 @@ describe('useKOSync — changing checksum method (#7118)', () => {
     await settle();
     expect(h.updateProgressMock).toHaveBeenCalledTimes(1);
     expect(result.current.syncState).toBe('conflict');
+  });
+
+  test('pulls a renamed legacy book before automatic uploads resume', async () => {
+    h.settings.kosync.checksumMethod = 'filename';
+    h.getProgressMock.mockResolvedValueOnce(null);
+    const { result, rerender } = renderHook(() => useKOSync('h1-view1'));
+    await settle();
+    h.getProgressMock.mockClear();
+    h.updateProgressMock.mockClear();
+
+    h.book.title = 'New title';
+    rerender();
+    await settle();
+    expect(h.getProgressMock).toHaveBeenCalledTimes(1);
+    expect(result.current.syncState).toBe('conflict');
+    await advance(KOSYNC_PUSH_DEBOUNCE_MS + 500);
+    expect(h.updateProgressMock).not.toHaveBeenCalled();
+  });
+
+  test('discards an old title response after the renamed book reaches conflict', async () => {
+    h.settings.kosync.checksumMethod = 'filename';
+    let finishOldPull!: (value: null) => void;
+    h.getProgressMock.mockImplementationOnce(
+      () => new Promise<null>((resolve) => (finishOldPull = resolve)),
+    );
+    const { result, rerender } = renderHook(() => useKOSync('h1-view1'));
+    await settle();
+    h.book.title = 'New title';
+    rerender();
+    await settle();
+    expect(result.current.syncState).toBe('conflict');
+    finishOldPull(null);
+    await settle();
+    expect(result.current.syncState).toBe('conflict');
+  });
+
+  test.each([
+    'binary',
+    'filename',
+  ])('does not repull on title edits with a stable %s digest', async (method) => {
+    h.settings.kosync.checksumMethod = method;
+    h.book.originalFilename = 'Original.epub';
+    const { rerender } = renderHook(() => useKOSync('h1-view1'));
+    await settle();
+    h.getProgressMock.mockClear();
+    h.book.title = 'New title';
+    rerender();
+    await settle();
+    expect(h.getProgressMock).not.toHaveBeenCalled();
   });
 
   test('does not repull when unrelated settings change', async () => {
