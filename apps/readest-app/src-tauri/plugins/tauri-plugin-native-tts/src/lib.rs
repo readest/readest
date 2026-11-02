@@ -7,6 +7,8 @@ pub use models::*;
 
 #[cfg(desktop)]
 mod desktop;
+#[cfg(target_os = "linux")]
+mod linux;
 #[cfg(mobile)]
 mod mobile;
 #[cfg(desktop)]
@@ -56,18 +58,31 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
             commands::update_media_library,
             commands::update_carplay_state,
             commands::playout_enqueue,
-            commands::playout_control,
             commands::playout_position $(, $extra)*]
         };
     }
     let builder = Builder::new("native-tts");
-    #[cfg(desktop)]
+    #[cfg(target_os = "linux")]
+    let builder = builder.invoke_handler({
+        let fallback: fn(tauri::ipc::Invoke<R>) -> bool =
+            handler!(commands::register_listener, commands::remove_listener);
+        move |invoke: tauri::ipc::Invoke<R>| {
+            if invoke.message.command() == "playout_control" {
+                commands::playout_control(invoke);
+                true
+            } else {
+                fallback(invoke)
+            }
+        }
+    });
+    #[cfg(all(desktop, not(target_os = "linux")))]
     let builder = builder.invoke_handler(handler!(
+        commands::playout_control,
         commands::register_listener,
         commands::remove_listener
     ));
     #[cfg(mobile)]
-    let builder = builder.invoke_handler(handler!());
+    let builder = builder.invoke_handler(handler!(commands::playout_control));
     builder
         .setup(|app, api| {
             #[cfg(mobile)]

@@ -1,4 +1,15 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+
+const platform = vi.hoisted(() => ({ os: 'linux' }));
+vi.mock('@/utils/misc', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/utils/misc')>()),
+  getOSPlatform: () => platform.os,
+}));
+
+afterEach(() => {
+  vi.unstubAllEnvs();
+  platform.os = 'linux';
+});
 
 import { DocumentLoader } from '@/libs/document';
 
@@ -54,6 +65,7 @@ const createNarratedEpub = async () => {
     extraField: new Map([[0xcafe, new Uint8Array(12)]]),
   });
   await writer.add('OPS/audio/deflated.mp3', new Uint8ArrayReader(AUDIO), { level: 9 });
+  await writer.add('OPS/audio/Chapter 1 #é.m4a', new Uint8ArrayReader(AUDIO), { level: 9 });
 
   const bytes = new Uint8Array(await (await writer.close()).arrayBuffer());
   return { bytes, file: new File([bytes], 'narrated.epub', { type: 'application/epub+zip' }) };
@@ -91,6 +103,42 @@ describe('BookDoc.getMediaSource', () => {
     expect(media).toMatchObject({ path: '/books/narrated.epub' });
     const { start, end } = media as { start: number; end: number };
     expect(bytes.slice(start, end)).toEqual(AUDIO);
+  });
+
+  it('hands Linux the raw compressed ZIP entry without reading its audio bytes', async () => {
+    vi.stubEnv('NEXT_PUBLIC_APP_PLATFORM', 'tauri');
+    const { file } = await createNarratedEpub();
+    const nativeFile = Object.assign(file, { open: async () => file, close: async () => {} });
+    const { book } = await new DocumentLoader(nativeFile, {
+      nativeFilePath: '/books/narrated.epub',
+    }).open();
+    const slice = vi.spyOn(file, 'slice');
+    const loadBlob = vi.spyOn(book, 'loadBlob' as never);
+
+    expect(await book.getMediaSource!('ops/audio/chapter 1 #é.m4a', 'audio/mp4')).toEqual({
+      path: '/books/narrated.epub',
+      entry: 'OPS/audio/Chapter 1 #é.m4a',
+    });
+    expect(slice).not.toHaveBeenCalled();
+    expect(loadBlob).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['web', 'linux', '/books/narrated.epub'],
+    ['tauri', 'android', '/books/narrated.epub'],
+    ['tauri', 'ios', '/books/narrated.epub'],
+    ['tauri', 'macos', '/books/narrated.epub'],
+    ['tauri', 'linux', undefined],
+    ['tauri', 'linux', 'https://server/narrated.epub'],
+    ['tauri', 'linux', 'Readest/Books/narrated.epub'],
+  ])('preserves compressed entry fallback on %s/%s with path %s', async (app, os, path) => {
+    vi.stubEnv('NEXT_PUBLIC_APP_PLATFORM', app);
+    platform.os = os!;
+    const { file } = await createNarratedEpub();
+    const nativeFile = Object.assign(file, { open: async () => file, close: async () => {} });
+    const { book } = await new DocumentLoader(nativeFile, { nativeFilePath: path }).open();
+
+    expect(await book.getMediaSource!('OPS/audio/deflated.mp3', 'audio/mpeg')).toBeNull();
   });
 
   it('has no media source for a compressed entry', async () => {

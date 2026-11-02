@@ -81,7 +81,7 @@ jobs:
         if: steps.changes.outputs.tauri == 'true'
         run: |
           sudo apt-get update
-          sudo apt-get install -y pkg-config libfontconfig-dev libglib2.0-dev libgtk-3-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev libsoup-3.0-dev
+          sudo apt-get install -y pkg-config libasound2-dev libclang-dev g++ libfontconfig-dev libglib2.0-dev libgtk-3-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev libsoup-3.0-dev
       - name: Format check
         if: steps.changes.outputs.tauri == 'true'
         working-directory: apps/readest-app/src-tauri
@@ -93,7 +93,10 @@ jobs:
       - name: Unit tests
         if: steps.changes.outputs.tauri == 'true'
         working-directory: apps/readest-app/src-tauri
-        run: cargo test -p Readest --lib
+        run: |
+          cargo test -p Readest --lib
+          cargo test -p tauri-plugin-native-tts --lib
+          python3 -I plugins/tauri-plugin-native-tts/tests/linux_lifecycle.py
 
   # apps/readest.koplugin/native/localsend-bin is a standalone Cargo crate
   # (not part of the src-tauri workspace), built into the koplugin's release
@@ -473,7 +476,7 @@ jobs:
         if: steps.changes.outputs.tauri == 'true'
         run: |
           sudo apt-get update
-          sudo apt-get install -y pkg-config libfontconfig-dev libglib2.0-dev libgtk-3-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev libsoup-3.0-dev xvfb
+          sudo apt-get install -y pkg-config libasound2-dev libclang-dev g++ libfontconfig-dev libglib2.0-dev libgtk-3-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev libsoup-3.0-dev xvfb
 
       - name: run tauri tests
         if: steps.changes.outputs.tauri == 'true'
