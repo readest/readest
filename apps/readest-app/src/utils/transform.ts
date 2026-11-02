@@ -77,6 +77,7 @@ export const transformBookToDB = (book: unknown, userId: string): DBBook => {
     format,
     title,
     sourceTitle,
+    originalFilename,
     author,
     groupId,
     groupName,
@@ -116,6 +117,7 @@ export const transformBookToDB = (book: unknown, userId: string): DBBook => {
     cover_updated_at: coverUpdatedAt ? new Date(coverUpdatedAt).toISOString() : null,
     page_count: pageCount ?? null,
     source_title: sanitizeString(sourceTitle),
+    original_filename: sanitizeString(originalFilename),
     metadata: metadata ? sanitizeString(JSON.stringify(metadata)) : null,
     metadata_updated_at: metadataUpdatedAt ? new Date(metadataUpdatedAt).toISOString() : null,
     created_at: new Date(createdAt ?? Date.now()).toISOString(),
@@ -143,6 +145,7 @@ export const transformBookFromDB = (dbBook: DBBook): Book => {
     cover_updated_at,
     page_count,
     source_title,
+    original_filename,
     metadata,
     metadata_updated_at,
     created_at,
@@ -179,6 +182,7 @@ export const transformBookFromDB = (dbBook: DBBook): Book => {
   // Only when set: an undefined key would wipe the local count in the pull
   // merge's `{ ...local, ...remote }` spread.
   if (page_count != null) book.pageCount = page_count;
+  if (original_filename != null) book.originalFilename = original_filename;
   // Native cloud DBBook has no `url` column; a feed book carries its feed URL in
   // metadata so the reader can rebuild the feed:// descriptor here.
   if (!book.url && book.metadata?.feedUrl) {

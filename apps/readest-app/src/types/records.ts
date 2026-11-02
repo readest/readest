@@ -6,6 +6,7 @@ export interface DBBook {
   format: string;
   title: string;
   source_title?: string;
+  original_filename?: string | null;
   author: string;
   group_id?: string;
   group_name?: string;

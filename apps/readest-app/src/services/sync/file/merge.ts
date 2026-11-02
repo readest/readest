@@ -196,6 +196,10 @@ export const mergeBookMetadata = (local: Book, remote: Book): Book => {
   // this a metadata-less peer erased every book's description across the fleet
   // (#5912).
   merged.metadata = merged.metadata ?? remote.metadata ?? local.metadata;
+  // Directory discovery cannot recover the original import name from the managed file.
+  if (!merged.originalFilename && remote.originalFilename) {
+    merged.originalFilename = remote.originalFilename;
+  }
   return merged;
 };
 
@@ -243,7 +247,7 @@ export const shouldApplyRemoteBookMetadata = (local: Book, remote: Book): boolea
  * trigger, and the pass that gets a device's own shelf back after #5911 / #5912
  * emptied it.
  *
- * Both cases are "an absent value must never win", and neither can loop:
+ * These cases are "an absent value must never win", and none can loop:
  * applying the merge makes the local row equal the resolution, after which this
  * is false again.
  *
@@ -253,6 +257,7 @@ export const shouldApplyRemoteBookMetadata = (local: Book, remote: Book): boolea
  *    has already returned true, so the only question left here is the tie — and
  *    on a tie the merge itself resolves the same way.
  *  - A description this device does not have and the peer does.
+ *  - An original import filename missing from a directory-discovered row.
  *
  * Never on the incremental path. It is true for an entire library at once on
  * the first run after the fix, and every hit costs a local library write
@@ -267,7 +272,8 @@ export const isRemoteBookMissingLocally = (local: Book, remote: Book): boolean =
   !remote.deletedAt &&
   !local.deletedAt &&
   (bookGroupDiffers(local, pickFresherGroup(local, remote, false)) ||
-    (!local.metadata && !!remote.metadata));
+    (!local.metadata && !!remote.metadata) ||
+    (!local.originalFilename && !!remote.originalFilename));
 
 /**
  * The row to PUBLISH into library.json for a book this device also holds,
@@ -303,12 +309,14 @@ export const resolvePublishedBook = (local: Book, remote: Book | undefined): Boo
   const meta = remoteMetaNewer ? remote : local;
   // Never delete a blob the remote has, whichever side won the clock.
   const metadata = meta.metadata ?? local.metadata ?? remote.metadata;
+  const originalFilename = local.originalFilename || remote.originalFilename;
   if (
     group.groupId === local.groupId &&
     group.groupName === local.groupName &&
     group.groupUpdatedAt === local.groupUpdatedAt &&
     !remoteMetaNewer &&
-    metadata === local.metadata
+    metadata === local.metadata &&
+    originalFilename === local.originalFilename
   ) {
     return local;
   }
@@ -325,5 +333,6 @@ export const resolvePublishedBook = (local: Book, remote: Book | undefined): Boo
         }
       : {}),
     metadata,
+    ...(originalFilename ? { originalFilename } : {}),
   };
 };
