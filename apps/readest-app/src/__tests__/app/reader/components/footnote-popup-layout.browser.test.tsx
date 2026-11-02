@@ -10,6 +10,8 @@ import {
   DEFAULT_VIEW_CONFIG,
 } from '@/services/constants';
 import FootnotePopup from '@/app/reader/components/FootnotePopup';
+import { mountBackgroundTexture, unmountBackgroundTexture } from '@/styles/textures';
+import { eventDispatcher } from '@/utils/event';
 import '@/styles/globals.css';
 
 const h = vi.hoisted(() => ({
@@ -92,6 +94,11 @@ afterEach(() => {
   });
   cleanup();
   cell.remove();
+  unmountBackgroundTexture(document);
+  document.documentElement.removeAttribute('data-eink');
+  document.documentElement.removeAttribute('data-theme');
+  document.documentElement.style.removeProperty('--bg-texture-opacity');
+  document.documentElement.style.removeProperty('--bg-texture-size');
 });
 
 const openFootnote = (direction: 'ltr' | 'rtl' = 'ltr') => {
@@ -156,6 +163,67 @@ const expectAlignment = (doc: Document, justified: string, left: string) => {
   expect(alignment('center')).toBe('center');
   expect(alignment('right')).toBe('right');
 };
+
+describe('footnote popup background texture (#6841)', () => {
+  const mountTexture = () => {
+    document.documentElement.style.setProperty('--bg-texture-opacity', '0.4');
+    document.documentElement.style.setProperty('--bg-texture-size', '120px');
+    mountBackgroundTexture(document, {
+      id: 'paper',
+      name: 'Paper',
+      url: '/images/paper-texture.png',
+    });
+  };
+
+  const expectTextureBelowContent = () => {
+    const popup = document.querySelector<HTMLElement>('#popup-container')!;
+    const texture = getComputedStyle(popup, '::before');
+    expect(texture.backgroundImage).toContain('/images/paper-texture.png');
+    expect(texture.opacity).toBe('0.4');
+    expect(texture.backgroundSize).toBe('120px');
+    expect(texture.pointerEvents).toBe('none');
+    // A negative layer inside an isolated popup paints above its surface but
+    // below even unpositioned content and the book iframe's own backgrounds.
+    expect(texture.zIndex).toBe('-1');
+    expect(getComputedStyle(popup).isolation).toBe('isolate');
+  };
+
+  test.each([
+    { theme: 'light', eink: false, direction: 'ltr', useBookLayout: false, vertical: false },
+    { theme: 'dark', eink: false, direction: 'rtl', useBookLayout: true, vertical: false },
+    { theme: 'light', eink: true, direction: 'rtl', useBookLayout: false, vertical: true },
+    { theme: 'dark', eink: true, direction: 'ltr', useBookLayout: true, vertical: true },
+  ] as const)('keeps authored backgrounds above the texture: %j', (mode) => {
+    document.documentElement.dataset['theme'] = `default-${mode.theme}`;
+    document.documentElement.dataset['eink'] = `${mode.eink}`;
+    h.viewSettings.useBookLayout = mode.useBookLayout;
+    h.viewSettings.vertical = mode.vertical;
+    h.viewSettings.overrideColor = false;
+    mountTexture();
+    const doc = openFootnote(mode.direction);
+    const paragraph = doc.getElementById('left')!;
+    paragraph.style.background = 'rgb(12, 34, 56)';
+    paragraph.style.backgroundImage = 'linear-gradient(red, blue)';
+    expectTextureBelowContent();
+    const authored = doc.defaultView!.getComputedStyle(paragraph);
+    expect(authored.backgroundColor).toBe('rgb(12, 34, 56)');
+    expect(authored.backgroundImage).toBe('linear-gradient(rgb(255, 0, 0), rgb(0, 0, 255))');
+  });
+
+  test('textures synthesized data-attribute footnotes and clears it when disabled', () => {
+    mountTexture();
+    render(<FootnotePopup bookKey='book-1' bookDoc={{} as BookDoc} />);
+    act(() => {
+      eventDispatcher.dispatch('footnote-popup', { element: anchor, footnote: 'Plain footnote' });
+    });
+    expectTextureBelowContent();
+    expect(document.querySelector('.footnote-content p')?.textContent).toBe('Plain footnote');
+    unmountBackgroundTexture(document);
+    expect(
+      getComputedStyle(document.querySelector('#popup-container')!, '::before').backgroundImage,
+    ).toBe('none');
+  });
+});
 
 describe('footnote popup layout overrides (#6636)', () => {
   test.each(['ltr', 'rtl'] as const)('disables authored justification in %s', (direction) => {

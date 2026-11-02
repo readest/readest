@@ -945,7 +945,7 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
           // `auto` next to a non-`visible` value), so any stray pixel of
           // cross-axis overflow bought a second scrollbar (#5999).
           className={clsx(
-            'select-text pointer-events-auto',
+            'footnote-popup select-text pointer-events-auto',
             viewSettings.vertical
               ? 'overflow-x-auto overflow-y-hidden'
               : 'overflow-y-auto overflow-x-hidden',

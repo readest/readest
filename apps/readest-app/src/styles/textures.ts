@@ -94,7 +94,7 @@ const createTextureCSS = (texture: BackgroundTexture) => {
     }
 
     body::before, .sidebar-container::before, .notebook-container::before,
-    .foliate-viewer::before, .notch-masked::before {
+    .foliate-viewer::before, .notch-masked::before, .footnote-popup::before {
       content: "";
       position: absolute;
       top: 0;
@@ -111,6 +111,14 @@ const createTextureCSS = (texture: BackgroundTexture) => {
     }
     body::before {
       height: 100vh;
+    }
+    /* Keep the texture above the popup surface and below authored backgrounds. */
+    .footnote-popup {
+      isolation: isolate;
+    }
+    .footnote-popup::before {
+      z-index: -1;
+      border-radius: inherit;
     }
     `;
 
