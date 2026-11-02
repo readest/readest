@@ -355,6 +355,7 @@ const getColorStyles = (
 ) => {
   const { bg, fg, primary, isDarkMode } = themeCode;
   const hasBackgroundTexture = !!backgroundTextureId && backgroundTextureId !== 'none';
+  const texturedFootnote = isFootnote && hasBackgroundTexture;
   // Over a background texture, Override Book Color still forces the text
   // colors but fills backgrounds with transparent so the texture shows (#6712).
   const overrideBg = hasBackgroundTexture ? 'transparent' : bg;
@@ -367,7 +368,7 @@ const getColorStyles = (
       --override-color: ${overrideColor};
       color-scheme: ${isDarkMode ? 'dark' : 'light'};
     }
-    html, body {
+    ${texturedFootnote && !overrideColor ? 'html' : 'html, body'} {
       color: ${fg};
     }
     ${isEink ? getEinkSelectionStyles() : isDarkMode ? getDarkSelectionStyles(primary) : ''}
@@ -379,7 +380,8 @@ const getColorStyles = (
       background: var(--background-set, none);
     }
     body {
-      ${isEink && !(isFootnote && hasBackgroundTexture) ? `background-color: ${bg} !important;` : ''}
+      ${isEink && !texturedFootnote ? `background-color: ${bg} !important;` : ''}
+      ${texturedFootnote && overrideColor ? 'background-color: transparent !important;' : ''}
     }
     section, aside, blockquote, article, nav, header, footer, main, figure,
     div, p, font, h1, h2, h3, h4, h5, h6, li, span {

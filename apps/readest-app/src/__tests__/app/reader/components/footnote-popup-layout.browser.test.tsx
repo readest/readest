@@ -102,7 +102,11 @@ afterEach(() => {
   document.documentElement.style.removeProperty('--bg-texture-size');
 });
 
-const openFootnote = (direction: 'ltr' | 'rtl' = 'ltr', bodyBackground?: string) => {
+const openFootnote = (
+  direction: 'ltr' | 'rtl' = 'ltr',
+  bodyBackground?: string,
+  authoredStyles = '',
+) => {
   h.viewSettings.rtl = direction === 'rtl';
   render(<FootnotePopup bookKey='book-1' bookDoc={{} as BookDoc} />);
   act(() => {
@@ -116,13 +120,13 @@ const openFootnote = (direction: 'ltr' | 'rtl' = 'ltr', bodyBackground?: string)
   Object.defineProperty(view, 'renderer', {
     value: {
       viewSize: 220,
-      setAttribute: () => {},
+      setAttribute: (name: string, value: string) => view.setAttribute(name, value),
       getContents: () => [{ doc: iframe.contentDocument!, index: 0 }],
       setStyles: (css: string) => {
         // The popup has attached the view before styling its document.
         const doc = iframe.contentDocument!;
         doc.documentElement.dir = direction;
-        doc.head.innerHTML = '<style>.authored-justify { text-align: justify; }</style>';
+        doc.head.innerHTML = `<style>.authored-justify { text-align: justify; } ${authoredStyles}</style>`;
         if (bodyBackground) doc.body.style.backgroundColor = bodyBackground;
         doc.body.innerHTML = `
           <p id="css-justify" class="authored-justify">A footnote justified by the book stylesheet.</p>
@@ -222,6 +226,29 @@ describe('footnote popup background texture (#6841)', () => {
     mountTexture();
     const doc = openFootnote('ltr', 'rgb(12, 34, 56)');
     expect(doc.defaultView!.getComputedStyle(doc.body).backgroundColor).toBe('rgb(12, 34, 56)');
+  });
+
+  test.each([
+    false,
+    true,
+  ])('keeps authored body colors readable with Override Book Color %s', (overrideColor) => {
+    document.documentElement.dataset['theme'] = 'default-light';
+    h.viewSettings.isEink = true;
+    h.viewSettings.backgroundTextureId = 'paper';
+    h.viewSettings.overrideColor = overrideColor;
+    mountTexture();
+    const doc = openFootnote('ltr', undefined, 'body { background: black; color: white; }');
+    // Foliate extracts the body background into its own view surface. Leaving
+    // no-background enabled discards that fill while retaining authored text.
+    expect(doc.defaultView!.frameElement?.parentElement?.hasAttribute('no-background')).toBe(false);
+    const body = doc.defaultView!.getComputedStyle(doc.body);
+    expect(body.backgroundColor).toBe(overrideColor ? 'rgba(0, 0, 0, 0)' : 'rgb(0, 0, 0)');
+    expect(body.color).toBe(
+      overrideColor
+        ? doc.defaultView!.getComputedStyle(doc.documentElement).color
+        : 'rgb(255, 255, 255)',
+    );
+    expect(doc.defaultView!.getComputedStyle(doc.getElementById('left')!).color).toBe(body.color);
   });
 
   test('retains the e-ink fill without a texture and in the main reader', () => {

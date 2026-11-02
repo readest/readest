@@ -94,7 +94,8 @@ const createTextureCSS = (texture: BackgroundTexture) => {
     }
 
     body::before, .sidebar-container::before, .notebook-container::before,
-    .foliate-viewer::before, .notch-masked::before, .footnote-popup::before {
+    .foliate-viewer::before, .notch-masked::before, .footnote-popup::before,
+    .footnote-popup + .popup-triangle-inner::before {
       content: "";
       position: absolute;
       top: 0;
@@ -119,6 +120,34 @@ const createTextureCSS = (texture: BackgroundTexture) => {
     .footnote-popup::before {
       z-index: -1;
       border-radius: inherit;
+    }
+    /* Paint the same texture over the inner arrow's matching surface color. */
+    .footnote-popup + .popup-triangle-inner::before {
+      width: 14px;
+      height: 7px;
+      right: auto;
+      bottom: auto;
+      left: -7px;
+    }
+    .footnote-popup + .popup-triangle-inner[data-direction="up"]::before {
+      top: -7px;
+      clip-path: polygon(0 0, 100% 0, 50% 100%);
+    }
+    .footnote-popup + .popup-triangle-inner[data-direction="down"]::before {
+      clip-path: polygon(50% 0, 100% 100%, 0 100%);
+    }
+    .footnote-popup + .popup-triangle-inner[data-direction="left"]::before,
+    .footnote-popup + .popup-triangle-inner[data-direction="right"]::before {
+      top: -7px;
+      width: 7px;
+      height: 14px;
+    }
+    .footnote-popup + .popup-triangle-inner[data-direction="left"]::before {
+      clip-path: polygon(0 0, 100% 50%, 0 100%);
+    }
+    .footnote-popup + .popup-triangle-inner[data-direction="right"]::before {
+      left: 0;
+      clip-path: polygon(100% 0, 0 50%, 100% 100%);
     }
     `;
 

@@ -451,7 +451,11 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
       const viewSettings = getViewSettings(bookKey)!;
       renderer.setAttribute('flow', 'scrolled');
       renderer.setAttribute('no-preload', '');
-      renderer.setAttribute('no-background', '');
+      // Foliate moves authored body backgrounds onto its view surface. Let it
+      // paint those above the texture instead of discarding them with the fill.
+      if (!viewSettings.backgroundTextureId || viewSettings.backgroundTextureId === 'none') {
+        renderer.setAttribute('no-background', '');
+      }
       renderer.setAttribute('margin-top', '0px');
       renderer.setAttribute('margin-right', '0px');
       renderer.setAttribute('margin-bottom', '0px');
