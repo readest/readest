@@ -1374,6 +1374,40 @@ describe('importBook PDF filename-aware dedup', () => {
     expect(book).toMatchObject({ originalFilename: name, title: name.replace(/\.pdf$/, '') });
   });
 
+  it.each([
+    'file',
+    'path',
+  ] as const)('keeps PDFs with question marks distinct when importing a %s', async (source) => {
+    const books: Book[] = [];
+    for (const revision of [1, 2]) {
+      const name = `manual?rev${revision}.pdf`;
+      mockPartialMD5.mockResolvedValue(`pdf-revision-${revision}`);
+      setupMockPdfDoc();
+      // Native openFile currently derives its File.name with the URL-oriented helper.
+      service.getFs().openFile.mockResolvedValue(new File(['pdf'], 'manual'));
+      const book = await service.importBook(
+        source === 'file' ? new File([`revision ${revision}`], name) : `/library/${name}`,
+        books,
+      );
+      expect(book).toMatchObject({
+        originalFilename: name,
+        title: `manual?rev${revision}`,
+        metaHash: getMetadataHash(PDF_METADATA, `manual?rev${revision}`),
+      });
+    }
+    expect(books.filter((book) => !book.deletedAt)).toHaveLength(2);
+  });
+
+  it('strips URL queries when the opened file has no name', async () => {
+    mockPartialMD5.mockResolvedValue('pdf-hash');
+    setupMockPdfDoc();
+    service.getFs().openFile.mockResolvedValue(new File(['pdf'], ''));
+
+    const book = await service.importBook('https://example.com/manual.pdf?revision=1', []);
+
+    expect(book).toMatchObject({ originalFilename: 'manual.pdf', title: 'manual' });
+  });
+
   it('preserves the unmodified basename before removing a download duplicate marker', async () => {
     mockPartialMD5.mockResolvedValue('pdf-hash');
     setupMockPdfDoc();

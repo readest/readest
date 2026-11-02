@@ -38,7 +38,7 @@ import { tryNativeParseMobi } from '@/utils/tauriMobiBridge';
 import { tryNativeParsePdf } from '@/utils/tauriPdfBridge';
 import { isPseStreamFileName, openPseStreamBook, parsePseStreamFileName } from './opds/pseStream';
 import { DEFAULT_BOOK_SEARCH_CONFIG, DEFAULT_FIXED_LAYOUT_VIEW_SETTINGS } from './constants';
-import { isContentURI, isValidURL, makeSafeFilename } from '@/utils/misc';
+import { isContentURI, isFileURI, isValidURL, makeSafeFilename } from '@/utils/misc';
 import { deserializeConfig, serializeConfig, serializeRawConfig } from '@/utils/serializer';
 import { ClosableFile } from '@/utils/file';
 import { TxtToEpubConverter } from '@/utils/txt';
@@ -593,12 +593,15 @@ export async function importBook(
       } else {
         if (typeof file === 'string') {
           fileobj = await fs.openFile(file, 'None');
-          filename = fileobj.name || getFilename(file);
+          filename =
+            isValidURL(file) || isContentURI(file) || isFileURI(file)
+              ? fileobj.name || getFilename(file)
+              : file.replace(/\\/g, '/').split('/').pop()!;
         } else {
           fileobj = file;
           filename = file.name;
         }
-        originalFilename = getFilename(filename);
+        originalFilename = filename.replace(/\\/g, '/').split('/').pop()!;
         // A download saved as "novel.txt (1)" is still a TXT, and its title
         // should not read "novel.txt" either. Drop the duplicate marker before
         // anything downstream classifies or names the book (issue #5959).
