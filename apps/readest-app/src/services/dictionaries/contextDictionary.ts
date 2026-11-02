@@ -9,11 +9,7 @@
 import type { CustomTranslator } from '@/types/translation';
 import { md5Fingerprint } from '@/utils/md5';
 import { renderPrompt } from '@/services/translators/custom/prompts';
-import {
-  createChatModel,
-  loadSDK,
-  stripReasoning,
-} from '@/services/translators/custom/openaiCompatible';
+import { generateChatText, stripReasoning } from '@/services/translators/custom/openaiCompatible';
 
 const REQUEST_TIMEOUT_MS = 60_000;
 const MAX_CACHE_ENTRIES = 100;
@@ -197,12 +193,9 @@ export const lookupInContext = async (
   const timer = setTimeout(abort, REQUEST_TIMEOUT_MS);
   signal.addEventListener('abort', abort, { once: true });
   try {
-    const [{ generateText }] = await loadSDK();
-    const { text } = await generateText({
-      model: await createChatModel(translator),
+    const text = await generateChatText(translator, {
       system,
       prompt,
-      temperature: translator.temperature,
       maxOutputTokens,
       maxRetries: 1,
       abortSignal: controller.signal,

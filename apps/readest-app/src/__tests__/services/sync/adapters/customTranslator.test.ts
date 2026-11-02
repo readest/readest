@@ -19,6 +19,7 @@ const translator: CustomTranslator = {
   apiKey: 'sk-secret',
   model: 'gpt-x',
   temperature: 0.3,
+  thinking: 'off',
   disabled: true,
   addedAt: 1700000000000,
   updatedAt: 1700000000001,
