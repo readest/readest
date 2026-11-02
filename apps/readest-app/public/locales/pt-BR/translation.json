@@ -2738,5 +2738,9 @@
   "Click": "Clique",
   "Long Press": "Toque longo",
   "Weight": "Espessura",
-  "Slightly heavier": "Um pouco mais espesso"
+  "Slightly heavier": "Um pouco mais espesso",
+  "Search history": "Histórico de pesquisa",
+  "Clear All": "Limpar tudo",
+  "Remove {{term}} from search history": "Remover {{term}} do histórico de pesquisa",
+  "Remove from history": "Remover do histórico"
 }

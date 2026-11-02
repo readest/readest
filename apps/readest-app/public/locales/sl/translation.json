@@ -2807,5 +2807,9 @@
   "Click": "Klik",
   "Long Press": "Dolg pritisk",
   "Weight": "Debelina",
-  "Slightly heavier": "Nekoliko debelejše"
+  "Slightly heavier": "Nekoliko debelejše",
+  "Search history": "Zgodovina iskanja",
+  "Clear All": "Počisti vse",
+  "Remove {{term}} from search history": "Odstrani {{term}} iz zgodovine iskanja",
+  "Remove from history": "Odstrani iz zgodovine"
 }

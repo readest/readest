@@ -2669,5 +2669,9 @@
   "Click": "ক্লিক",
   "Long Press": "দীর্ঘক্ষণ চাপুন",
   "Weight": "পুরুত্ব",
-  "Slightly heavier": "সামান্য মোটা"
+  "Slightly heavier": "সামান্য মোটা",
+  "Search history": "অনুসন্ধান ইতিহাস",
+  "Clear All": "সব সাফ করুন",
+  "Remove {{term}} from search history": "অনুসন্ধান ইতিহাস থেকে {{term}} সরান",
+  "Remove from history": "ইতিহাস থেকে সরান"
 }

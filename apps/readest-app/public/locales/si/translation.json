@@ -2669,5 +2669,9 @@
   "Click": "ක්ලික් කිරීම",
   "Long Press": "දිගු එබීම",
   "Weight": "ඝනකම",
-  "Slightly heavier": "මඳක් ඝනකම්"
+  "Slightly heavier": "මඳක් ඝනකම්",
+  "Search history": "සෙවුම් ඉතිහාසය",
+  "Clear All": "සියල්ල හිස් කරන්න",
+  "Remove {{term}} from search history": "සෙවුම් ඉතිහාසයෙන් {{term}} ඉවත් කරන්න",
+  "Remove from history": "ඉතිහාසයෙන් ඉවත් කරන්න"
 }

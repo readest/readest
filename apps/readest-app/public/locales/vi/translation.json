@@ -2600,5 +2600,9 @@
   "Click": "Nhấp",
   "Long Press": "Nhấn giữ",
   "Weight": "Độ đậm",
-  "Slightly heavier": "Đậm hơn một chút"
+  "Slightly heavier": "Đậm hơn một chút",
+  "Search history": "Lịch sử tìm kiếm",
+  "Clear All": "Xóa tất cả",
+  "Remove {{term}} from search history": "Xóa {{term}} khỏi lịch sử tìm kiếm",
+  "Remove from history": "Xóa khỏi lịch sử"
 }

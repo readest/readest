@@ -2807,5 +2807,9 @@
   "Click": "Щелчок",
   "Long Press": "Долгое нажатие",
   "Weight": "Толщина",
-  "Slightly heavier": "Немного толще"
+  "Slightly heavier": "Немного толще",
+  "Search history": "История поиска",
+  "Clear All": "Очистить всё",
+  "Remove {{term}} from search history": "Удалить {{term}} из истории поиска",
+  "Remove from history": "Удалить из истории"
 }

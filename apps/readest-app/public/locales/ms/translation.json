@@ -2600,5 +2600,9 @@
   "Click": "Klik",
   "Long Press": "Tekan lama",
   "Weight": "Ketebalan",
-  "Slightly heavier": "Sedikit lebih tebal"
+  "Slightly heavier": "Sedikit lebih tebal",
+  "Search history": "Sejarah carian",
+  "Clear All": "Kosongkan semua",
+  "Remove {{term}} from search history": "Alih keluar {{term}} daripada sejarah carian",
+  "Remove from history": "Alih keluar daripada sejarah"
 }

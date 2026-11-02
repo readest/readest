@@ -2807,5 +2807,9 @@
   "Click": "Kliknięcie",
   "Long Press": "Długie naciśnięcie",
   "Weight": "Grubość",
-  "Slightly heavier": "Nieco grubsza"
+  "Slightly heavier": "Nieco grubsza",
+  "Search history": "Historia wyszukiwania",
+  "Clear All": "Wyczyść wszystko",
+  "Remove {{term}} from search history": "Usuń {{term}} z historii wyszukiwania",
+  "Remove from history": "Usuń z historii"
 }

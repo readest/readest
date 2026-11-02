@@ -1,7 +1,7 @@
 import clsx from 'clsx';
-import React, { useRef } from 'react';
+import React, { useEffect, useId, useRef, useState } from 'react';
 import { FaChevronDown, FaSearch } from 'react-icons/fa';
-import { MdManageSearch } from 'react-icons/md';
+import { MdClose, MdHistory, MdManageSearch } from 'react-icons/md';
 import { PiPlus } from 'react-icons/pi';
 import { PiSelectionAll, PiSelectionAllFill } from 'react-icons/pi';
 import { PiDotsThreeCircle } from 'react-icons/pi';
@@ -18,6 +18,13 @@ import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import useShortcuts from '@/hooks/useShortcuts';
 import WindowButtons from '@/components/WindowButtons';
 import Dropdown from '@/components/Dropdown';
+import BoxedList from '@/components/settings/primitives/BoxedList';
+import SettingLabel from '@/components/settings/primitives/SettingLabel';
+import {
+  clearLibrarySearchHistory,
+  loadLibrarySearchHistory,
+  removeLibrarySearchHistory,
+} from '../utils/searchHistory';
 import SettingsMenu from './SettingsMenu';
 import ImportMenu from './ImportMenu';
 import LibrarySearchOptionsMenu from './LibrarySearchOptionsMenu';
@@ -42,6 +49,7 @@ interface LibraryHeaderProps {
   searchConfig: LibrarySearchConfig;
   onSearchConfigChange: (config: LibrarySearchConfig) => void;
   onSearchQueryChange: (query: string) => void;
+  onSearchQueryApply?: (query: string) => void;
   onSearchTargetChange: (target: LibrarySearchTarget) => void;
 }
 
@@ -64,6 +72,7 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
   searchConfig,
   onSearchConfigChange,
   onSearchQueryChange,
+  onSearchQueryApply = onSearchQueryChange,
   onSearchTargetChange,
 }) => {
   const _ = useTranslation();
@@ -80,7 +89,45 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
     onToggleSelectMode,
   });
 
+  const searchRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const historyRef = useRef<HTMLDivElement>(null);
+  const historyId = useId();
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [searchHistory, setSearchHistory] = useState<string[]>([]);
+  const matchingHistory = searchHistory.filter((term) =>
+    term.toLocaleLowerCase().includes(searchQuery.trim().toLocaleLowerCase()),
+  );
+  const showHistory = historyOpen && matchingHistory.length > 0;
+
+  const openHistory = () => {
+    setSearchHistory(loadLibrarySearchHistory(searchTarget));
+    setHistoryOpen(true);
+  };
+
+  useEffect(() => {
+    setHistoryOpen(false);
+  }, [searchTarget]);
+
+  useEffect(() => {
+    if (!historyOpen) return;
+    const dismiss = (event: PointerEvent) => {
+      if (event.target instanceof Node && !searchRef.current?.contains(event.target)) {
+        setHistoryOpen(false);
+      }
+    };
+    document.addEventListener('pointerdown', dismiss);
+    return () => document.removeEventListener('pointerdown', dismiss);
+  }, [historyOpen]);
+
+  const applySearch = (query: string) => {
+    searchInputRef.current?.focus();
+    setHistoryOpen(false);
+    onSearchQueryApply(query);
+  };
+
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    openHistory();
     onSearchQueryChange(e.target.value);
   };
 
@@ -112,7 +159,21 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
       }}
     >
       <div className='flex w-full items-center justify-between space-x-6 sm:space-x-12'>
-        <div className='exclude-title-bar-mousedown relative flex w-full items-center ps-4'>
+        <div
+          ref={searchRef}
+          className='exclude-title-bar-mousedown relative flex w-full items-center ps-4'
+          onBlur={(event) => {
+            if (!event.currentTarget.contains(event.relatedTarget)) setHistoryOpen(false);
+          }}
+          onKeyDown={(event) => {
+            if (event.key === 'Escape' && historyOpen) {
+              event.preventDefault();
+              event.stopPropagation();
+              searchInputRef.current?.focus();
+              setHistoryOpen(false);
+            }
+          }}
+        >
           <div className='relative flex h-9 w-full items-center sm:h-7'>
             {/* The icon doubles as the mode indicator and toggle: magnifier
                 for book search, full-text glyph for content search. */}
@@ -138,8 +199,30 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
               </button>
             </div>
             <input
+              ref={searchInputRef}
               type='text'
               value={searchQuery}
+              autoComplete='off'
+              aria-label={searchTarget === 'text' ? _('Full Text Search') : _('Search Books')}
+              aria-controls={showHistory ? historyId : undefined}
+              onFocus={openHistory}
+              onClick={openHistory}
+              onKeyDown={(event) => {
+                if (event.nativeEvent.isComposing) return;
+                if (event.key === 'Enter') {
+                  event.preventDefault();
+                  applySearch(searchQuery);
+                } else if (event.key === 'ArrowDown') {
+                  event.preventDefault();
+                  if (showHistory) {
+                    historyRef.current
+                      ?.querySelector<HTMLButtonElement>('[data-history-term]')
+                      ?.focus();
+                  } else {
+                    openHistory();
+                  }
+                }
+              }}
               placeholder={
                 searchTarget === 'text'
                   ? _('Search contents in {{count}} Book(s)...', { count: currentBooksCount })
@@ -240,6 +323,66 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
               </>
             )}
           </div>
+          {showHistory && (
+            <div
+              ref={historyRef}
+              id={historyId}
+              role='region'
+              aria-label={_('Search history')}
+              className='settings-content absolute start-4 end-0 top-full z-20 mt-2'
+            >
+              <BoxedList cardClassName='rounded-lg' innerClassName='ps-0!'>
+                <div className='flex min-h-11 items-center justify-between gap-2 px-3'>
+                  <SettingLabel>{_('Search history')}</SettingLabel>
+                  <button
+                    type='button'
+                    aria-label={_('Clear search history')}
+                    className='focus-visible:ring-base-content/15 min-h-11 shrink-0 rounded-md px-2 text-[0.85em] focus-visible:outline-hidden focus-visible:ring-2'
+                    onClick={() => {
+                      clearLibrarySearchHistory(searchTarget);
+                      setSearchHistory([]);
+                      searchInputRef.current?.focus();
+                    }}
+                  >
+                    {_('Clear All')}
+                  </button>
+                </div>
+                <ul className='max-h-[min(20rem,50dvh)] overflow-y-auto py-1'>
+                  {matchingHistory.map((term) => (
+                    <li key={term} className='flex min-h-11 items-center gap-1 px-1'>
+                      <button
+                        type='button'
+                        data-history-term
+                        className='hover:bg-base-200 focus-visible:ring-base-content/15 flex min-h-11 min-w-0 flex-1 items-center gap-3 rounded-md px-3 text-start transition-colors duration-150 focus-visible:outline-hidden focus-visible:ring-2'
+                        onClick={() => applySearch(term)}
+                      >
+                        <MdHistory
+                          aria-hidden='true'
+                          className='text-base-content/60 h-5 w-5 shrink-0'
+                        />
+                        <span className='truncate' dir='auto'>
+                          {term}
+                        </span>
+                      </button>
+                      <button
+                        type='button'
+                        aria-label={_('Remove {{term}} from search history', { term })}
+                        title={_('Remove from history')}
+                        className='btn btn-ghost btn-circle h-11 min-h-11 w-11 shrink-0 p-0 focus-visible:ring-base-content/15 focus-visible:outline-hidden focus-visible:ring-2'
+                        onClick={() => {
+                          removeLibrarySearchHistory(term, searchTarget);
+                          setSearchHistory(loadLibrarySearchHistory(searchTarget));
+                          searchInputRef.current?.focus();
+                        }}
+                      >
+                        <MdClose aria-hidden='true' className='h-4 w-4' />
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </BoxedList>
+            </div>
+          )}
         </div>
         {isSelectMode ? (
           <div

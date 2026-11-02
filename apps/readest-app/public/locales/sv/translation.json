@@ -2669,5 +2669,9 @@
   "Click": "Klick",
   "Long Press": "Långt tryck",
   "Weight": "Tjocklek",
-  "Slightly heavier": "Något tjockare"
+  "Slightly heavier": "Något tjockare",
+  "Search history": "Sökhistorik",
+  "Clear All": "Rensa allt",
+  "Remove {{term}} from search history": "Ta bort {{term}} från sökhistoriken",
+  "Remove from history": "Ta bort från historiken"
 }

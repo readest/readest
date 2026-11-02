@@ -2600,5 +2600,9 @@
   "Click": "คลิก",
   "Long Press": "กดค้าง",
   "Weight": "ความหนา",
-  "Slightly heavier": "หนาขึ้นเล็กน้อย"
+  "Slightly heavier": "หนาขึ้นเล็กน้อย",
+  "Search history": "ประวัติการค้นหา",
+  "Clear All": "ล้างทั้งหมด",
+  "Remove {{term}} from search history": "ลบ {{term}} ออกจากประวัติการค้นหา",
+  "Remove from history": "ลบออกจากประวัติ"
 }

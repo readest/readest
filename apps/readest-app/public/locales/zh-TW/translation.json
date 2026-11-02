@@ -2600,5 +2600,9 @@
   "Click": "單擊",
   "Long Press": "長按",
   "Weight": "字重",
-  "Slightly heavier": "稍粗"
+  "Slightly heavier": "稍粗",
+  "Search history": "搜尋歷史",
+  "Clear All": "全部清除",
+  "Remove {{term}} from search history": "從搜尋歷史中移除{{term}}",
+  "Remove from history": "從歷史記錄中移除"
 }

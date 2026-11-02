@@ -2600,5 +2600,9 @@
   "Click": "རྐྱང་རྡེབ།",
   "Long Press": "ཡུན་རིང་མནན།",
   "Weight": "ཡིག་གཟུགས་ཀྱི་སྦོམ་ཚད།",
-  "Slightly heavier": "ཅུང་སྦོམ་པ།"
+  "Slightly heavier": "ཅུང་སྦོམ་པ།",
+  "Search history": "འཚོལ་བཤེར་ལོ་རྒྱུས།",
+  "Clear All": "ཚང་མ་གཙང་སེལ།",
+  "Remove {{term}} from search history": "འཚོལ་བཤེར་ལོ་རྒྱུས་ནས་ {{term}} བསུབ།",
+  "Remove from history": "ལོ་རྒྱུས་ནས་བསུབ།"
 }

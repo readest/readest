@@ -2669,5 +2669,9 @@
   "Click": "Klikken",
   "Long Press": "Lang indrukken",
   "Weight": "Dikte",
-  "Slightly heavier": "Iets dikker"
+  "Slightly heavier": "Iets dikker",
+  "Search history": "Zoekgeschiedenis",
+  "Clear All": "Alles wissen",
+  "Remove {{term}} from search history": "{{term}} uit de zoekgeschiedenis verwijderen",
+  "Remove from history": "Uit geschiedenis verwijderen"
 }
