@@ -104,7 +104,7 @@ rustPlatform.buildRustPackage (finalAttrs: {
     # Regenerate whenever pnpm-lock.yaml changes: the nix-deps-check workflow
     # fails on pull requests that change the lockfile and prints the expected
     # hash in its log.
-    hash = "";
+    hash = "sha256-wTtuBDL3zyh4SKo2D3TLQrGWuFt576Io0YtXiOa7LaY=";
     pnpmInstallFlags = [
       # Increase number of fetch attempts to work around timeout issues on slow
       # networks: "TimeoutError: The operation was aborted due to timeout".
@@ -117,7 +117,7 @@ rustPlatform.buildRustPackage (finalAttrs: {
   };
 
   cargoRoot = "../..";
-  cargoHash = "";
+  cargoHash = "sha256-gG1u9jMtYMEOnmzzWsWdG8otjCdxmX+dthalUYFaNGU=";
 
   buildAndTestSubdir = "src-tauri";
 
