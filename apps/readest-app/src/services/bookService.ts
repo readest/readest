@@ -765,8 +765,8 @@ export async function importBook(
       if (format === 'PDF') {
         title = stripDuplicateMarker(originalFilename || filename).replace(/\.[^.]*$/, '');
         pdfIdentity = title;
-        // Extensionless download endpoints can serve unrelated PDFs under the same name.
-        if (typeof file === 'string' && isValidURL(file) && !/\.pdf$/i.test(filename)) {
+        // Names without a PDF extension can be shared download endpoints, even on reimport.
+        if (!/\.pdf$/i.test(stripDuplicateMarker(originalFilename || filename))) {
           pdfIdentity = hash;
         }
       }

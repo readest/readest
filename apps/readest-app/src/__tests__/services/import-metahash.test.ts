@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Book } from '@/types/book';
-import { getMetadataHash } from '@/utils/book';
+import { getLocalBookFilename, getMetadataHash } from '@/utils/book';
 import { transformBookFromDB, transformBookToDB } from '@/utils/transform';
 
 const mockOpen = vi.hoisted(() => vi.fn());
@@ -1530,7 +1530,19 @@ describe('importBook PDF filename-aware dedup', () => {
       await service.importBook(url, books);
     }
 
+    const originalHashes = books.map((book) => book.metaHash);
+    for (const book of [...books]) {
+      mockPartialMD5.mockResolvedValue(book.hash);
+      service.getFs().openFile.mockResolvedValue(new File(['pdf'], 'PowerPoint Presentation.pdf'));
+      setupMockPdfDoc();
+      await service.importBook(
+        `${await service.getFs().getPrefix('Books')}/${getLocalBookFilename(book)}`,
+        books,
+      );
+    }
+
     const liveBooks = books.filter((book) => !book.deletedAt);
+    expect(liveBooks.map((book) => book.metaHash)).toEqual(originalHashes);
     expect(liveBooks).toHaveLength(2);
     expect(new Set(liveBooks.map((book) => book.metaHash)).size).toBe(2);
     expect(liveBooks.every((book) => book.originalFilename === 'download')).toBe(true);
