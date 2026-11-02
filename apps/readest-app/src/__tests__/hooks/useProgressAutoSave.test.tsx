@@ -122,6 +122,26 @@ describe('useProgressAutoSave', () => {
     expect(h.saveConfigMock).not.toHaveBeenCalled();
   });
 
+  test('does not make a fresh copy newer while its initial cloud pull is pending', async () => {
+    h.state.config = { location: '', updatedAt: 0 };
+    h.state.progress = null;
+    const { rerender } = renderHook(() => useProgressAutoSave('h1-view1'));
+
+    h.state.config.location = 'cfi-start';
+    h.state.progress = { location: 'cfi-start' };
+    rerender();
+    await flushDebouncedSave();
+
+    expect(h.saveConfigMock).not.toHaveBeenCalled();
+
+    h.state.config.location = 'cfi-next';
+    h.state.progress = { location: 'cfi-next' };
+    rerender();
+    await flushDebouncedSave();
+
+    expect(h.saveConfigMock).toHaveBeenCalledTimes(1);
+  });
+
   test('saves once the location advances past the loaded position', async () => {
     const { rerender } = renderHook(() => useProgressAutoSave('h1-view1'));
     await flushDebouncedSave();

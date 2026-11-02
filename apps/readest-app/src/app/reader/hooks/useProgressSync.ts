@@ -360,11 +360,13 @@ export const useProgressSync = (bookKey: string) => {
       if (exactConfig?.location && isMalformedLocationCfi(exactConfig.location)) {
         exactConfig = { ...exactConfig, location: undefined };
       }
-      // Furthest reading fraction among sibling copies (same metaHash, different
-      // book_hash). progress[0]/progress[1] compares across re-packaged copies
-      // of the same work; a CFI does not.
+      // Only a sibling newer than this file's local AND cloud saves may move
+      // it forward. Otherwise an old duplicate keeps pulling a deliberate
+      // rewind (or a purged position) back to its furthest page (#7092).
+      // Across different files only the reading fraction is comparable, not CFI.
+      const savedAt = Math.max(config.updatedAt ?? 0, exactConfig?.updatedAt ?? 0);
       const siblingFraction = matches
-        .filter((c) => c.bookHash !== bookHash)
+        .filter((c) => c.bookHash !== bookHash && (c.updatedAt ?? 0) > savedAt)
         .reduce((best, c) => Math.max(best, getConfigFraction(c) ?? 0), 0);
       const exactFraction = exactConfig ? (getConfigFraction(exactConfig) ?? 0) : 0;
       const localFraction = getBookProgress(bookKey)?.fraction ?? getConfigFraction(config) ?? 0;

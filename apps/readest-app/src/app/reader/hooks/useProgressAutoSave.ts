@@ -77,6 +77,13 @@ export const useProgressAutoSave = (bookKey: string) => {
   }, [bookKey]);
 
   useEffect(() => {
+    const config = getConfig(bookKey);
+    // A fresh copy's first relocation is its starting page, not a reading
+    // decision. Keep its zero timestamp so a slow sibling pull can recover
+    // the saved position instead of losing to this initial autosave (#7092).
+    if (!lastSavedLocationRef.current && !config?.updatedAt && config?.location) {
+      lastSavedLocationRef.current = config.location;
+    }
     saveBookConfig();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [progress, bookKey]);
