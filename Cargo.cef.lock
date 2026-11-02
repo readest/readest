@@ -87,7 +87,7 @@ dependencies = [
  "windows 0.61.3",
  "winreg 0.52.0",
  "zbus 5.17.0",
- "zip 2.4.2",
+ "zip 9.0.5",
 ]
 
 [[package]]
@@ -2983,6 +2983,7 @@ checksum = "843fba2746e448b37e26a819579957415c8cef339bf08564fe8b7ddbd959573c"
 dependencies = [
  "crc32fast",
  "miniz_oxide",
+ "zlib-rs",
 ]
 
 [[package]]
@@ -9271,7 +9272,7 @@ dependencies = [
  "tauri",
  "tauri-plugin",
  "thiserror 2.0.20",
- "zip 2.4.2",
+ "zip 9.0.5",
 ]
 
 [[package]]
@@ -10420,6 +10421,12 @@ checksum = "9ea3136b675547379c4bd395ca6b938e5ad3c3d20fad76e7fe85f9e0d011419c"
 dependencies = [
  "rand 0.9.5",
 ]
+
+[[package]]
+name = "typed-path"
+version = "0.12.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "54ec2755506471f54baf5e4bb5499d8e510cc1caf271270e778a736bd2d7336c"
 
 [[package]]
 name = "typeid"
@@ -12570,23 +12577,6 @@ dependencies = [
 
 [[package]]
 name = "zip"
-version = "2.4.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fabe6324e908f85a1c52063ce7aa26b68dcb7eb6dbc83a2d148403c9bc3eba50"
-dependencies = [
- "arbitrary",
- "crc32fast",
- "crossbeam-utils",
- "displaydoc",
- "flate2",
- "indexmap 2.14.0",
- "memchr",
- "thiserror 2.0.20",
- "zopfli",
-]
-
-[[package]]
-name = "zip"
 version = "4.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "caa8cd6af31c3b31c6631b8f483848b91589021b28fffe50adada48d4f4d2ed1"
@@ -12596,6 +12586,27 @@ dependencies = [
  "indexmap 2.14.0",
  "memchr",
 ]
+
+[[package]]
+name = "zip"
+version = "9.0.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6e04976da629d3b04204ba8105b396a193af8ad2583b2c79bfb3ab8af580a11e"
+dependencies = [
+ "crc32fast",
+ "flate2",
+ "indexmap 2.14.0",
+ "memchr",
+ "nix 0.31.3",
+ "typed-path",
+ "zopfli",
+]
+
+[[package]]
+name = "zlib-rs"
+version = "0.6.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b268e58e7c693d7c271f93ffc4ba3b380412554231c85bf61ca7af91042a4112"
 
 [[package]]
 name = "zmij"
