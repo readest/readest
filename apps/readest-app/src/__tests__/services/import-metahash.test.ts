@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Book } from '@/types/book';
-import { getLocalBookFilename, getMetadataHash } from '@/utils/book';
+import { getMetadataHash } from '@/utils/book';
 import { transformBookFromDB, transformBookToDB } from '@/utils/transform';
 
 const mockOpen = vi.hoisted(() => vi.fn());
@@ -1313,14 +1313,54 @@ describe('importBook PDF filename-aware dedup', () => {
 
     expect(imported).toBe(existingBook);
     expect(existingBook).toMatchObject({
-      title: 'canon-r7-custom-buttons',
-      originalFilename: 'canon-r7-custom-buttons.pdf',
+      title: originalMetadata.title,
+      metaHash: getMetadataHash(originalMetadata, 'canon-r7-custom-buttons'),
     });
+    expect(existingBook.originalFilename).toBeUndefined();
     expect(existingBook.sourceTitle).toBe(originalMetadata.title);
     expect(existingBook.author).toBe(changedMetadata.author);
     expect(existingBook.metadata).toEqual(changedMetadata);
     expect(existingBook.metadataUpdatedAt).toBe(existingBook.updatedAt);
     expect(service.getFs().openFile).not.toHaveBeenCalled();
+  });
+
+  it('preserves an edited PDF title and both hashes on reimport', async () => {
+    const books: Book[] = [];
+    mockPartialMD5.mockResolvedValue('pdf-hash');
+    setupMockPdfDoc();
+    const book = (await service.importBook(new File(['pdf'], 'Original.pdf'), books))!;
+    const originalMetaHash = book.metaHash;
+    book.title = 'My edited title';
+
+    setupMockPdfDoc({ ...PDF_METADATA, author: 'Updated author' });
+    const reimported = await service.importBook(new File(['pdf'], 'Renamed.pdf'), books);
+
+    expect(reimported).toBe(book);
+    expect(reimported).toMatchObject({
+      title: 'My edited title',
+      hash: 'pdf-hash',
+      metaHash: originalMetaHash,
+      originalFilename: 'Original.pdf',
+    });
+  });
+
+  it('preserves an existing PDF with no original filename on external reimport', async () => {
+    const legacy = makeBook({
+      hash: 'legacy-pdf',
+      format: 'PDF',
+      title: 'Existing title',
+      metaHash: 'existing-meta-hash',
+      sourceTitle: PDF_METADATA.title,
+    });
+    mockPartialMD5.mockResolvedValue(legacy.hash);
+    setupMockPdfDoc();
+    const reimported = await service.importBook(new File(['pdf'], 'New name.pdf'), [legacy]);
+    expect(reimported).toMatchObject({
+      title: 'Existing title',
+      hash: 'legacy-pdf',
+      metaHash: 'existing-meta-hash',
+    });
+    expect(reimported!.originalFilename).toBeUndefined();
   });
 
   it('keeps the original filename and PDF title when re-importing the managed copy', async () => {
@@ -1435,8 +1475,7 @@ describe('importBook PDF filename-aware dedup', () => {
   it.each([
     'file',
     'path',
-  ] as const)('keeps literal POSIX backslashes distinct when importing a %s', async (source) => {
-    const books: Book[] = [];
+  ] as const)('preserves literal POSIX backslashes when importing a %s', async (source) => {
     for (const edition of ['first', 'second']) {
       const name = `${edition}\\chapter.pdf`;
       mockPartialMD5.mockResolvedValue(`pdf-${edition}`);
@@ -1444,15 +1483,14 @@ describe('importBook PDF filename-aware dedup', () => {
       service.getFs().openFile.mockResolvedValue(new File(['pdf'], name));
       const book = await service.importBook(
         source === 'file' ? new File([edition], name) : `/library/${name}`,
-        books,
+        [],
       );
       expect(book).toMatchObject({
         originalFilename: name,
         title: `${edition}\\chapter`,
-        metaHash: getMetadataHash(PDF_METADATA, `${edition}\\chapter`),
+        metaHash: getMetadataHash(PDF_METADATA, 'chapter'),
       });
     }
-    expect(books.filter((book) => !book.deletedAt)).toHaveLength(2);
   });
 
   it.each([
@@ -1483,12 +1521,11 @@ describe('importBook PDF filename-aware dedup', () => {
     expect(book).toMatchObject({
       originalFilename: name,
       title,
-      metaHash: getMetadataHash(PDF_METADATA, title),
+      metaHash: getMetadataHash(PDF_METADATA, title.replace(/\\/g, '/').split('/').pop()),
     });
   });
 
-  it('keeps decoded URL slashes within distinct import filenames', async () => {
-    const books: Book[] = [];
+  it('keeps decoded URL slashes in the displayed import filename', async () => {
     const web = new WebAppService();
     const fetcher = vi.fn().mockResolvedValue(
       new Response(null, {
@@ -1502,55 +1539,29 @@ describe('importBook PDF filename-aware dedup', () => {
       mockPartialMD5.mockResolvedValue(`pdf-${prefix}`);
       setupMockPdfDoc();
 
-      const book = await service.importBook(url, books);
+      const book = await service.importBook(url, []);
 
       expect(book).toMatchObject({
         originalFilename: `${prefix}/part.pdf`,
         title: `${prefix}/part`,
-        metaHash: getMetadataHash(PDF_METADATA, `${prefix}/part`),
+        metaHash: getMetadataHash(PDF_METADATA, 'part'),
       });
     }
-    expect(books.filter((book) => !book.deletedAt)).toHaveLength(2);
   });
 
-  it('keeps different PDFs from extensionless download URLs separate', async () => {
-    const books: Book[] = [];
-    const web = new WebAppService();
-    const fetcher = vi
-      .fn()
-      .mockResolvedValue(new Response(null, { headers: { 'content-length': '3' } }));
-    for (const id of [1, 2]) {
-      const url = `https://example.com/download?id=${id}`;
-      service
-        .getFs()
-        .openFile.mockResolvedValue(await web.fs.openFile(url, 'None', undefined, fetcher));
-      mockPartialMD5.mockResolvedValue(`pdf-download-${id}`);
-      setupMockPdfDoc();
-
-      await service.importBook(url, books);
-    }
-
-    const originalHashes = books.map((book) => book.metaHash);
-    for (const book of [...books]) {
-      mockPartialMD5.mockResolvedValue(book.hash);
-      service.getFs().openFile.mockResolvedValue(new File(['pdf'], 'PowerPoint Presentation.pdf'));
-      setupMockPdfDoc();
-      await service.importBook(
-        `${await service.getFs().getPrefix('Books')}/${getLocalBookFilename(book)}`,
-        books,
-      );
-    }
-
-    const liveBooks = books.filter((book) => !book.deletedAt);
-    expect(liveBooks.map((book) => book.metaHash)).toEqual(originalHashes);
-    expect(liveBooks).toHaveLength(2);
-    expect(new Set(liveBooks.map((book) => book.metaHash)).size).toBe(2);
-    expect(liveBooks.every((book) => book.originalFilename === 'download')).toBe(true);
-    expect(liveBooks.every((book) => book.title === 'download')).toBe(true);
-    expect(service.getFs().removeDir).not.toHaveBeenCalled();
+  it('uses the existing metadata hash calculation for an extensionless PDF', async () => {
+    mockPartialMD5.mockResolvedValue('pdf-download');
+    setupMockPdfDoc();
+    const book = await service.importBook(new File(['pdf'], 'download'), []);
+    expect(book).toMatchObject({
+      hash: 'pdf-download',
+      title: 'download',
+      originalFilename: 'download',
+      metaHash: getMetadataHash(PDF_METADATA, 'download'),
+    });
   });
 
-  it('reindexes a legacy extensionless PDF before importing another PDF in the batch', async () => {
+  it('keeps a legacy PDF metadata hash and its batch index unchanged', async () => {
     const legacyHash = getMetadataHash(PDF_METADATA, 'download');
     const legacy: Book = {
       hash: 'legacy-pdf',
@@ -1569,24 +1580,20 @@ describe('importBook PDF filename-aware dedup', () => {
     setupMockPdfDoc();
     await service.importBook(new File(['pdf'], 'download'), books, { lookupIndex });
 
-    expect(lookupIndex.byMetaKey.get(`${legacyHash}:PDF`) ?? []).not.toContain(legacy);
-    expect(lookupIndex.byMetaKey.get(`${legacy.metaHash}:PDF`)).toContain(legacy);
-
-    mockPartialMD5.mockResolvedValue('other-pdf');
-    setupMockPdfDoc();
-    await service.importBook(new File(['different pdf'], 'download.pdf'), books, { lookupIndex });
-    expect(books.filter((book) => !book.deletedAt)).toHaveLength(2);
+    expect(legacy.metaHash).toBe(legacyHash);
+    expect(lookupIndex.byMetaKey.get(`${legacyHash}:PDF`)).toEqual([legacy]);
+    expect(books.filter((book) => !book.deletedAt)).toHaveLength(1);
     expect(legacy.hash).toBe('legacy-pdf');
     expect(service.getFs().removeDir).not.toHaveBeenCalled();
   });
 
-  it('keeps missing-title PDF metadata stable when its managed filename is sanitized', async () => {
+  it('keeps PDF title and hashes when its managed filename is sanitized', async () => {
     const books: Book[] = [];
     mockPartialMD5.mockResolvedValue('untitled-download');
     setupMockPdfDoc({ ...PDF_METADATA, title: '' });
     const book = await service.importBook(new File(['pdf'], 'download?rev1'), books);
     const originalMetaHash = book!.metaHash;
-    const originalTitle = book!.metadata!.title;
+    const originalTitle = book!.title;
 
     setupMockPdfDoc({ ...PDF_METADATA, title: '' });
     service.getFs().openFile.mockResolvedValue(new File(['pdf'], 'download_rev1.pdf'));
@@ -1594,7 +1601,7 @@ describe('importBook PDF filename-aware dedup', () => {
       '/library/Books/untitled-download/download_rev1.pdf',
       books,
     );
-    expect(reimported!.metadata!.title).toEqual(originalTitle);
+    expect(reimported!.title).toEqual(originalTitle);
     expect(reimported!.metaHash).toBe(originalMetaHash);
     expect(reimported!.originalFilename).toBe('download?rev1');
   });

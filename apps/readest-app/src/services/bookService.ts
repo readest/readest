@@ -719,6 +719,10 @@ export async function importBook(
         throw new Error('Unsupported or corrupted book file');
       }
       normalizeMetadataIsbn(loadedBook.metadata);
+      const metadataTitle = formatTitle(loadedBook.metadata.title);
+      if (!metadataTitle || !metadataTitle.trim() || metadataTitle === filename) {
+        loadedBook.metadata.title = getBaseFilename(filename);
+      }
     } catch (error) {
       throw new Error(`Failed to open the book file: ${(error as Error).message || error}`);
     }
@@ -727,36 +731,13 @@ export async function importBook(
     let existingBook = lookupIndex
       ? lookupIndex.byHash.get(hash)
       : books.find((b) => b.hash === hash);
-    originalFilename = existingBook?.originalFilename || originalFilename;
-    const titleFilename =
-      format === 'PDF' ? stripDuplicateMarker(originalFilename || filename) : filename;
-    const metadataTitle = formatTitle(loadedBook.metadata.title);
-    if (!metadataTitle || !metadataTitle.trim() || metadataTitle === filename) {
-      loadedBook.metadata.title = getBaseFilename(titleFilename);
-    }
-    let title = formatTitle(loadedBook.metadata.title);
-    let metaHash: Book['metaHash'];
-    if (format !== 'PDF') {
-      metaHash = getMetadataHash(loadedBook.metadata);
-    } else if (
-      existingBook &&
-      !existingBook.originalFilename &&
-      typeof file === 'string' &&
-      normalizeFilePathForIndex(file, osPlatform) ===
-        normalizeFilePathForIndex(
-          `${await fs.getPrefix('Books')}/${getLocalBookFilename(existingBook)}`,
-          osPlatform,
-        )
-    ) {
-      // A cloud record may lack the import name; its managed copy cannot recover it.
-      originalFilename = undefined;
-      title = existingBook.title;
-      metaHash = existingBook.metaHash;
-    } else {
-      title = titleFilename.replace(/\.[^.]*$/, '');
-      // Extensionless download names need content identity, including on reimport.
-      metaHash = getMetadataHash(loadedBook.metadata, /\.pdf$/i.test(titleFilename) ? title : hash);
-    }
+    const metaHash =
+      format === 'PDF' && existingBook
+        ? existingBook.metaHash
+        : getMetadataHash(
+            loadedBook.metadata,
+            format === 'PDF' ? getBaseFilename(filename) : undefined,
+          );
     const stableHash = hasVolatileIdentifiers(format)
       ? getStableMetadataHash(loadedBook.metadata)
       : undefined;
@@ -820,8 +801,11 @@ export async function importBook(
       hash,
       format,
       metaHash,
-      title,
-      originalFilename,
+      title:
+        format === 'PDF'
+          ? (existingBook?.title ?? filename.replace(/\.[^.]*$/, ''))
+          : formatTitle(loadedBook.metadata.title),
+      originalFilename: existingBook ? existingBook.originalFilename : originalFilename,
       sourceTitle: formatTitle(loadedBook.metadata.title),
       primaryLanguage,
       author: formatAuthors(loadedBook.metadata.author, primaryLanguage),
@@ -1062,17 +1046,6 @@ export async function importBook(
     // Past this point the target book/config is authoritative. A later cleanup
     // failure must leave the library pointing at the new hash, not roll it back
     // to a directory whose retirement may already have started.
-    if (lookupIndex && existingBook && rollbackSnapshot) {
-      if (rollbackSnapshot.metaHash && rollbackSnapshot.metaHash !== existingBook.metaHash) {
-        const oldKey = `${rollbackSnapshot.metaHash}:${rollbackSnapshot.format}`;
-        const remaining = (lookupIndex.byMetaKey.get(oldKey) ?? []).filter(
-          (candidate) => candidate !== existingBook,
-        );
-        if (remaining.length) lookupIndex.byMetaKey.set(oldKey, remaining);
-        else lookupIndex.byMetaKey.delete(oldKey);
-      }
-      indexBookKeys(lookupIndex, existingBook, existingBook.metaHash, stableHash);
-    }
     rollbackBook = undefined;
     rollbackSnapshot = undefined;
     if (retiredTombstone) {
