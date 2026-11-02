@@ -114,7 +114,12 @@ vi.mock('@/store/settingsStore', () => ({
 }));
 
 vi.mock('@/store/libraryStore', () => ({
-  useLibraryStore: h.makeStore({ library: [h.libraryBook] }),
+  useLibraryStore: h.makeStore({
+    library: [h.libraryBook],
+    getBookByHash: vi.fn((hash: string) =>
+      hash === h.libraryBook.hash ? h.libraryBook : undefined,
+    ),
+  }),
 }));
 
 vi.mock('@/utils/serializer', () => ({
@@ -187,6 +192,8 @@ beforeEach(() => {
   h.getCFIFromXPointerMock.mockReset();
   h.getCFIFromXPointerMock.mockResolvedValue('');
   h.book.format = 'PDF';
+  h.config.location = 'cfi-loc';
+  h.config.updatedAt = 1000;
   h.state.syncedConfigs = [];
   h.state.progress = { location: 'cfi-loc' };
   h.state.viewSettings = { proofreadRules: [] };
@@ -906,6 +913,195 @@ describe('useProgressSync', () => {
       warn.mockRestore();
       delete config.xpointer;
     }
+  });
+});
+
+describe('useProgressSync — duplicate copies (#7092)', () => {
+  const exact = (updatedAt = 2000) => ({
+    bookHash: 'h1',
+    metaHash: 'm1',
+    location: 'exact-location',
+    progress: [10, 100],
+    updatedAt,
+  });
+  const sibling = (updatedAt: number, current = 60) => ({
+    bookHash: 'h2',
+    metaHash: 'm1',
+    location: 'sibling-location',
+    progress: [current, 100],
+    updatedAt,
+  });
+
+  test.each([
+    1999, 2000,
+  ])('ignores a sibling no newer than this file’s cloud save (%i)', async (updatedAt) => {
+    h.state.syncedConfigs = [sibling(updatedAt), exact()];
+    renderHook(() => useProgressSync('h1-view1'));
+    await advance(0);
+
+    expect(h.view.goToFraction).not.toHaveBeenCalled();
+  });
+
+  test('ignores a sibling older than a local save even when it beats the cloud save', async () => {
+    h.state.syncedConfigs = [exact(500), sibling(999)];
+    renderHook(() => useProgressSync('h1-view1'));
+    await advance(0);
+
+    expect(h.view.goToFraction).not.toHaveBeenCalled();
+  });
+
+  test('an old furthest copy does not mask a more recent eligible copy', async () => {
+    h.state.syncedConfigs = [sibling(1500, 90), sibling(3000, 40), exact()];
+    renderHook(() => useProgressSync('h1-view1'));
+    await advance(0);
+
+    expect(h.view.goToFraction).toHaveBeenCalledWith(0.4);
+    expect(h.view.goTo).not.toHaveBeenCalled();
+  });
+
+  test('still restores a newer sibling by fraction on a first open', async () => {
+    h.state.syncedConfigs = [sibling(3000)];
+    renderHook(() => useProgressSync('h1-view1'));
+    await advance(0);
+
+    expect(h.view.goToFraction).toHaveBeenCalledWith(0.6);
+    expect(h.view.goTo).not.toHaveBeenCalled();
+  });
+
+  test('an initial-page autosave does not block a slow first sibling pull', async () => {
+    h.config.updatedAt = 0;
+    h.state.syncedConfigs = null;
+    const { rerender } = renderHook(() => useProgressSync('h1-view1'));
+    await advance(2000);
+
+    // Autosave stamps the unchanged initial page while the pull is pending.
+    h.config.updatedAt = 4000;
+    h.state.syncedConfigs = [sibling(3000)];
+    rerender();
+    await advance(0);
+
+    expect(h.view.goToFraction).toHaveBeenCalledWith(0.6);
+  });
+
+  test('direction detection before the first relocation does not block sibling recovery', async () => {
+    h.config.location = '';
+    h.config.updatedAt = 0;
+    h.state.progress = null;
+    h.state.syncedConfigs = null;
+    const { rerender } = renderHook(() => useProgressSync('h1-view1'));
+
+    // docLoadHandler detects RTL/vertical writing before the first relocate.
+    h.config.updatedAt = 4000;
+    h.config.location = 'cfi-start';
+    h.state.progress = { location: 'cfi-start', fraction: 0.01 };
+    rerender();
+    await advance(0);
+
+    h.state.syncedConfigs = [sibling(3000)];
+    rerender();
+    await advance(0);
+
+    expect(h.view.goToFraction).toHaveBeenCalledWith(0.6);
+  });
+
+  test('the fresh-copy exception expires after the first response', async () => {
+    h.config.updatedAt = 0;
+    h.state.syncedConfigs = null;
+    const { rerender } = renderHook(() => useProgressSync('h1-view1'));
+    h.config.updatedAt = 4000;
+    h.state.syncedConfigs = [];
+    rerender();
+    await advance(0);
+
+    await act(async () => {
+      for (const listener of h.eventListeners.get('sync-book-progress') ?? []) {
+        await listener(new CustomEvent('sync-book-progress', { detail: { bookKey: 'h1-view1' } }));
+      }
+    });
+    h.state.syncedConfigs = [sibling(3000)];
+    rerender();
+    await advance(0);
+
+    expect(h.view.goToFraction).not.toHaveBeenCalled();
+  });
+
+  test('a saved move during the first pull still rejects an older sibling', async () => {
+    h.config.updatedAt = 0;
+    h.state.syncedConfigs = null;
+    const { rerender } = renderHook(() => useProgressSync('h1-view1'));
+    await advance(2000);
+
+    h.config.location = 'user-destination';
+    h.config.updatedAt = 4000;
+    h.state.progress = { location: 'user-destination', fraction: 0.1 };
+    h.state.syncedConfigs = [sibling(3000)];
+    rerender();
+    await advance(0);
+
+    expect(h.view.goToFraction).not.toHaveBeenCalled();
+  });
+
+  test('returning to the initial location does not revive the first-pull exception', async () => {
+    h.config.updatedAt = 0;
+    h.state.syncedConfigs = null;
+    const { rerender } = renderHook(() => useProgressSync('h1-view1'));
+
+    h.config.location = 'user-destination';
+    h.config.updatedAt = 4000;
+    h.state.progress = { location: 'user-destination', fraction: 0.1 };
+    rerender();
+    await advance(0);
+
+    h.config.location = 'cfi-loc';
+    h.config.updatedAt = 5000;
+    h.state.progress = { location: 'cfi-loc', fraction: 0.05 };
+    h.state.syncedConfigs = [sibling(3000)];
+    rerender();
+    await advance(0);
+
+    expect(h.view.goToFraction).not.toHaveBeenCalled();
+  });
+
+  test('a slow first pull still respects an exact cloud purge', async () => {
+    h.config.updatedAt = 0;
+    h.state.syncedConfigs = null;
+    const { rerender } = renderHook(() => useProgressSync('h1-view1'));
+    await advance(2000);
+
+    h.config.updatedAt = 5000;
+    h.state.syncedConfigs = [{ ...exact(4000), location: null, progress: null }, sibling(3000)];
+    rerender();
+    await advance(0);
+
+    expect(h.view.goToFraction).not.toHaveBeenCalled();
+  });
+
+  test('still applies the exact file’s forward location when a stale sibling is further', async () => {
+    h.cfiCompareMock.mockReturnValue(-1);
+    h.state.syncedConfigs = [sibling(1500, 90), exact()];
+    renderHook(() => useProgressSync('h1-view1'));
+    await advance(0);
+
+    expect(h.view.goTo).toHaveBeenCalledWith('exact-location');
+    expect(h.view.goToFraction).not.toHaveBeenCalled();
+  });
+
+  test('a purged cloud position is not restored from an older copy', async () => {
+    h.state.syncedConfigs = [{ ...exact(4000), location: null, progress: null }, sibling(3000)];
+    renderHook(() => useProgressSync('h1-view1'));
+    await advance(0);
+
+    expect(h.view.goToFraction).not.toHaveBeenCalled();
+    expect(h.view.goTo).not.toHaveBeenCalled();
+  });
+
+  test('does not move backward for a newer sibling', async () => {
+    h.state.progress = { location: 'cfi-loc', fraction: 0.8 };
+    h.state.syncedConfigs = [sibling(3000), exact()];
+    renderHook(() => useProgressSync('h1-view1'));
+    await advance(0);
+
+    expect(h.view.goToFraction).not.toHaveBeenCalled();
   });
 });
 
