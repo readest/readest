@@ -1448,13 +1448,14 @@ describe('importBook PDF filename-aware dedup', () => {
   });
 
   it.each([
-    undefined,
-    'resolved?edition.pdf',
-  ])('uses a query-free URL fallback while preserving resolved filename %s', async (resolvedFilename) => {
+    ['https://example.com/manual.pdf?token=abc.def', undefined],
+    ['https://example.com/manual.pdf#page=2', undefined],
+    ['https://example.com/manual.pdf?token=abc.def#page=2', undefined],
+    ['https://example.com/manual.pdf#page=2', 'resolved?edition#1.pdf'],
+  ])('uses a clean URL fallback for %s while preserving resolved filename %s', async (url, resolvedFilename) => {
     mockPartialMD5.mockResolvedValue('pdf-hash');
     setupMockPdfDoc();
     const web = new WebAppService();
-    const url = 'https://example.com/manual.pdf?token=abc.def';
     const fetcher = vi.fn().mockResolvedValue(
       new Response(null, {
         headers: { 'content-length': '3', 'content-type': 'application/pdf' },

@@ -86,7 +86,7 @@ const indexedDBFileSystem: FileSystem = {
     if (isValidURL(path)) {
       return await new RemoteFile(
         path,
-        filename || getFilename(path),
+        filename || getFilename(path.split('#')[0]!),
         '',
         Date.now(),
         fetcher,
