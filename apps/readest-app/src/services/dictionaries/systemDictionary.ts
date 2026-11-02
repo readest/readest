@@ -221,44 +221,50 @@ export const invokeSystemDictionary = async (
   }
 };
 
-/** The dictionary app remembered for the Android browser-excluding chooser. */
-export interface RememberedLookupApp {
+/** Android: an app a lookup can be sent to (an `ACTION_PROCESS_TEXT` handler). */
+export interface LookupApp {
   packageName: string;
-  /** Human-readable app label (e.g. "Eudic"), resolved natively. */
+  className: string;
+  /** Human-readable label (e.g. "Eudic"), resolved natively. */
   label: string;
+  /** True for the app lookups currently go to. */
+  selected: boolean;
 }
 
 /**
- * Android only: the dictionary app the user previously picked from the
- * browser-excluding lookup chooser (issue #4559), or `null` when none is
- * remembered or the platform isn't Android. The settings UI uses this to
- * offer a "reset" affordance so the user can switch dictionaries without
- * having to uninstall the remembered one.
+ * Android only: the installed apps (browsers left out) that a lookup can go
+ * to, for the Settings picker (#4937). Empty on other platforms or when the
+ * bridge fails.
  */
-export const getRememberedLookupApp = async (): Promise<RememberedLookupApp | null> => {
-  if (!isTauriAppPlatform()) return null;
-  if (getSystemDictionaryOS() !== 'android') return null;
+export const getLookupApps = async (): Promise<LookupApp[]> => {
+  if (!isTauriAppPlatform()) return [];
+  if (getSystemDictionaryOS() !== 'android') return [];
   try {
-    const res = await invoke<{ packageName?: string; label?: string }>(
-      'plugin:native-bridge|get_lookup_dictionary',
-    );
-    if (res?.packageName && res.label) {
-      return { packageName: res.packageName, label: res.label };
-    }
-    return null;
+    const res = await invoke<{ apps?: LookupApp[] }>('plugin:native-bridge|get_lookup_apps');
+    return res?.apps ?? [];
   } catch (error) {
-    console.warn('[systemDictionary] get_lookup_dictionary failed', error);
-    return null;
+    console.warn('[systemDictionary] get_lookup_apps failed', error);
+    return [];
   }
 };
 
-/** Android only: forget the remembered lookup dictionary app. */
-export const clearRememberedLookupApp = async (): Promise<void> => {
-  if (!isTauriAppPlatform()) return;
-  if (getSystemDictionaryOS() !== 'android') return;
+/**
+ * Android only: send every lookup to `app`, or pass `null` to go back to
+ * Android's default handling (its chooser, or an app picked with "Always").
+ * Resolves `true` once saved.
+ */
+export const setLookupApp = async (
+  app: Pick<LookupApp, 'packageName' | 'className'> | null,
+): Promise<boolean> => {
+  if (!isTauriAppPlatform()) return false;
+  if (getSystemDictionaryOS() !== 'android') return false;
   try {
-    await invoke('plugin:native-bridge|clear_lookup_dictionary');
+    await invoke('plugin:native-bridge|set_lookup_app', {
+      payload: app ? { packageName: app.packageName, className: app.className } : {},
+    });
+    return true;
   } catch (error) {
-    console.warn('[systemDictionary] clear_lookup_dictionary failed', error);
+    console.warn('[systemDictionary] set_lookup_app failed', error);
+    return false;
   }
 };

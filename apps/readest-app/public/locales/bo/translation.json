@@ -1599,8 +1599,6 @@
   "Search on Goodreads": "Goodreads ནང་འཚོལ།",
   "Reference Pages": "དཔེ་སྟོན་ཤོག་ངོས།",
   "Reference Page Count": "དཔེ་སྟོན་ཤོག་ངོས་ཀྱི་གྲངས།",
-  "Lookup app reset. The next lookup will ask again.": "འཚོལ་བཤེར་ཉེར་སྤྱོད་བསྐྱར་སྒྲིག་བྱས་ཟིན། རྗེས་མའི་འཚོལ་བཤེར་སྐབས་སླར་ཡང་འདྲི་ངེས།",
-  "System Lookup App": "རྒྱུད་ཁོངས་འཚོལ་བཤེར་ཉེར་སྤྱོད།",
   "Share": "མཉམ་སྤྱོད།",
   "Share text after selection": "འདེམ་པའི་རྗེས་སུ་ཡི་གེ་མཉམ་སྤྱོད་བྱེད།",
   "Customize Toolbar": "ལག་ཆ་ཕྲ་མོའི་ཕྲེང་རང་སྒྲིག",
@@ -2604,5 +2602,6 @@
   "Search history": "འཚོལ་བཤེར་ལོ་རྒྱུས།",
   "Clear All": "ཚང་མ་གཙང་སེལ།",
   "Remove {{term}} from search history": "འཚོལ་བཤེར་ལོ་རྒྱུས་ནས་ {{term}} བསུབ།",
-  "Remove from history": "ལོ་རྒྱུས་ནས་བསུབ།"
+  "Remove from history": "ལོ་རྒྱུས་ནས་བསུབ།",
+  "Lookup App": "འཚོལ་ཞིབ་མཉེན་ཆས།"
 }

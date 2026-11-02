@@ -1632,8 +1632,6 @@
   "Search on Goodreads": "Goodreads'da qidirish",
   "Reference Pages": "Bosma sahifalar",
   "Reference Page Count": "Bosma sahifalar soni",
-  "Lookup app reset. The next lookup will ask again.": "Qidiruv ilovasi tiklandi. Keyingi qidiruvda yana so‘raladi.",
-  "System Lookup App": "Tizim qidiruv ilovasi",
   "Share": "Ulashish",
   "Share text after selection": "Tanlovdan keyin matnni ulashish",
   "Customize Toolbar": "Asboblar panelini moslashtirish",
@@ -2673,5 +2671,6 @@
   "Search history": "Qidiruv tarixi",
   "Clear All": "Barchasini tozalash",
   "Remove {{term}} from search history": "{{term}} soʻrovini qidiruv tarixidan olib tashlash",
-  "Remove from history": "Tarixdan olib tashlash"
+  "Remove from history": "Tarixdan olib tashlash",
+  "Lookup App": "Qidiruv ilovasi"
 }

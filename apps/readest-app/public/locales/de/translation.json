@@ -1632,8 +1632,6 @@
   "Search on Goodreads": "Auf Goodreads suchen",
   "Reference Pages": "Referenzseiten",
   "Reference Page Count": "Anzahl der Referenzseiten",
-  "Lookup app reset. The next lookup will ask again.": "Nachschlage-App zurückgesetzt. Bei der nächsten Suche wird erneut gefragt.",
-  "System Lookup App": "System-Nachschlage-App",
   "Share": "Teilen",
   "Share text after selection": "Text nach Auswahl teilen",
   "Customize Toolbar": "Werkzeugleiste anpassen",
@@ -2673,5 +2671,6 @@
   "Search history": "Suchverlauf",
   "Clear All": "Alles löschen",
   "Remove {{term}} from search history": "{{term}} aus dem Suchverlauf entfernen",
-  "Remove from history": "Aus dem Verlauf entfernen"
+  "Remove from history": "Aus dem Verlauf entfernen",
+  "Lookup App": "Nachschlage-App"
 }

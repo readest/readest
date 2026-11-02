@@ -29,15 +29,20 @@ const platform = vi.hoisted(() => ({
   available: false,
   premium: true,
   ios: false,
+  android: false,
 }));
 const mocks = vi.hoisted(() => ({
   importDictionaries: vi.fn(),
   selectFiles: vi.fn(),
   getAppService: vi.fn(),
+  getLookupApps: vi.fn(),
+  setLookupApp: vi.fn(),
 }));
 vi.mock('@/services/dictionaries/systemDictionary', () => ({
   isSystemDictionarySupported: () => platform.supported,
   isSystemDictionaryAvailable: () => platform.available,
+  getLookupApps: mocks.getLookupApps,
+  setLookupApp: mocks.setLookupApp,
 }));
 
 vi.mock('@/hooks/useTranslation', () => ({
@@ -47,7 +52,11 @@ vi.mock('@/hooks/useTranslation', () => ({
 
 vi.mock('@/context/EnvContext', () => ({
   useEnv: () => ({
-    appService: { importDictionaries: mocks.importDictionaries, isIOSApp: platform.ios },
+    appService: {
+      importDictionaries: mocks.importDictionaries,
+      isIOSApp: platform.ios,
+      isAndroidApp: platform.android,
+    },
     envConfig: { getAppService: mocks.getAppService },
   }),
 }));
@@ -107,6 +116,9 @@ beforeEach(() => {
   platform.available = false;
   platform.premium = true;
   platform.ios = false;
+  platform.android = false;
+  mocks.getLookupApps.mockReset().mockResolvedValue([]);
+  mocks.setLookupApp.mockReset().mockResolvedValue(true);
   useCustomTranslatorStore.setState({ translators: [], loaded: true });
   mocks.importDictionaries.mockReset();
   mocks.selectFiles.mockReset();
@@ -275,6 +287,91 @@ describe('CustomDictionaries — system dictionary fullscreen', () => {
     seedSettings(enabledSystemSettings);
     render(<CustomDictionaries onBack={() => {}} />);
     expect(screen.queryByRole('checkbox', { name: 'Fullscreen' })).toBeNull();
+  });
+});
+
+describe('CustomDictionaries — Android lookup app (#4937)', () => {
+  const eudic = {
+    packageName: 'com.qianyan.eudic',
+    className: 'com.eusoft.dict.activity.dict.LightpeekActivity',
+    label: 'Eudic',
+    selected: false,
+  };
+  const baidu = {
+    packageName: 'com.baidu.searchbox',
+    className: 'com.baidu.browser.search.LightSearchProcessTextActivity',
+    label: 'Baidu Search',
+    selected: false,
+  };
+
+  it('sends lookups to the app picked in Settings, or back to asking', async () => {
+    platform.android = true;
+    mocks.getLookupApps.mockResolvedValue([eudic, baidu]);
+    seedSettings(enabledSystemSettings);
+    render(<CustomDictionaries onBack={() => {}} />);
+
+    const select = (await screen.findByRole('combobox', {
+      name: 'Lookup App',
+    })) as HTMLSelectElement;
+    expect(select.value).toBe('');
+    expect(Array.from(select.options).map((o) => o.text)).toEqual([
+      'Default',
+      'Eudic',
+      'Baidu Search',
+    ]);
+
+    fireEvent.change(select, { target: { value: `${eudic.packageName}/${eudic.className}` } });
+    await waitFor(() =>
+      expect(mocks.setLookupApp).toHaveBeenCalledWith(
+        expect.objectContaining({ packageName: eudic.packageName, className: eudic.className }),
+      ),
+    );
+    expect(select.value).toBe(`${eudic.packageName}/${eudic.className}`);
+
+    fireEvent.change(select, { target: { value: '' } });
+    await waitFor(() => expect(mocks.setLookupApp).toHaveBeenLastCalledWith(null));
+  });
+
+  it('puts the picker back when the choice cannot be saved', async () => {
+    platform.android = true;
+    mocks.getLookupApps.mockResolvedValue([eudic, baidu]);
+    mocks.setLookupApp.mockResolvedValue(false);
+    seedSettings(enabledSystemSettings);
+    render(<CustomDictionaries onBack={() => {}} />);
+
+    const select = (await screen.findByRole('combobox', {
+      name: 'Lookup App',
+    })) as HTMLSelectElement;
+    fireEvent.change(select, { target: { value: `${eudic.packageName}/${eudic.className}` } });
+    await waitFor(() => expect(mocks.setLookupApp).toHaveBeenCalled());
+    await waitFor(() => expect(select.value).toBe(''));
+  });
+
+  it('shows the saved app as selected', async () => {
+    platform.android = true;
+    mocks.getLookupApps.mockResolvedValue([eudic, { ...baidu, selected: true }]);
+    seedSettings(enabledSystemSettings);
+    render(<CustomDictionaries onBack={() => {}} />);
+
+    const select = (await screen.findByRole('combobox', {
+      name: 'Lookup App',
+    })) as HTMLSelectElement;
+    expect(select.value).toBe(`${baidu.packageName}/${baidu.className}`);
+  });
+
+  it('hides the picker when no app can take a lookup, and off Android', async () => {
+    platform.android = true;
+    seedSettings(enabledSystemSettings);
+    render(<CustomDictionaries onBack={() => {}} />);
+    await waitFor(() => expect(mocks.getLookupApps).toHaveBeenCalled());
+    expect(screen.queryByRole('combobox', { name: 'Lookup App' })).toBeNull();
+    cleanup();
+
+    platform.android = false;
+    mocks.getLookupApps.mockClear().mockResolvedValue([eudic]);
+    render(<CustomDictionaries onBack={() => {}} />);
+    expect(screen.queryByRole('combobox', { name: 'Lookup App' })).toBeNull();
+    expect(mocks.getLookupApps).not.toHaveBeenCalled();
   });
 });
 

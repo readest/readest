@@ -1632,8 +1632,6 @@
   "Search on Goodreads": "Goodreads पर खोजें",
   "Reference Pages": "संदर्भ पृष्ठ",
   "Reference Page Count": "संदर्भ पृष्ठ संख्या",
-  "Lookup app reset. The next lookup will ask again.": "लुकअप ऐप रीसेट कर दिया गया। अगली बार फिर से पूछा जाएगा।",
-  "System Lookup App": "सिस्टम लुकअप ऐप",
   "Share": "साझा करें",
   "Share text after selection": "चयन के बाद टेक्स्ट साझा करें",
   "Customize Toolbar": "टूलबार अनुकूलित करें",
@@ -2673,5 +2671,6 @@
   "Search history": "खोज इतिहास",
   "Clear All": "सभी साफ़ करें",
   "Remove {{term}} from search history": "{{term}} को खोज इतिहास से हटाएँ",
-  "Remove from history": "इतिहास से हटाएँ"
+  "Remove from history": "इतिहास से हटाएँ",
+  "Lookup App": "लुकअप ऐप"
 }

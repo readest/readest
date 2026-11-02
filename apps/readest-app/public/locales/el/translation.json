@@ -1632,8 +1632,6 @@
   "Search on Goodreads": "Αναζήτηση στο Goodreads",
   "Reference Pages": "Σελίδες αναφοράς",
   "Reference Page Count": "Αριθμός σελίδων αναφοράς",
-  "Lookup app reset. The next lookup will ask again.": "Η εφαρμογή αναζήτησης επαναφέρθηκε. Στην επόμενη αναζήτηση θα ερωτηθείτε ξανά.",
-  "System Lookup App": "Εφαρμογή αναζήτησης συστήματος",
   "Share": "Κοινοποίηση",
   "Share text after selection": "Κοινοποίηση κειμένου μετά την επιλογή",
   "Customize Toolbar": "Προσαρμογή γραμμής εργαλείων",
@@ -2673,5 +2671,6 @@
   "Search history": "Ιστορικό αναζήτησης",
   "Clear All": "Εκκαθάριση όλων",
   "Remove {{term}} from search history": "Αφαίρεση του {{term}} από το ιστορικό αναζήτησης",
-  "Remove from history": "Αφαίρεση από το ιστορικό"
+  "Remove from history": "Αφαίρεση από το ιστορικό",
+  "Lookup App": "Εφαρμογή αναζήτησης"
 }

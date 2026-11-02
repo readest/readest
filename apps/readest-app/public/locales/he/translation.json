@@ -1665,8 +1665,6 @@
   "Search on Goodreads": "חיפוש ב-Goodreads",
   "Reference Pages": "עמודי ייחוס",
   "Reference Page Count": "מספר עמודי ייחוס",
-  "Lookup app reset. The next lookup will ask again.": "אפליקציית החיפוש אופסה. בחיפוש הבא תוצג שאלה שוב.",
-  "System Lookup App": "אפליקציית חיפוש מערכת",
   "Share": "שיתוף",
   "Share text after selection": "שיתוף טקסט לאחר הבחירה",
   "Customize Toolbar": "התאמת סרגל הכלים",
@@ -2742,5 +2740,6 @@
   "Search history": "היסטוריית חיפוש",
   "Clear All": "נקה הכל",
   "Remove {{term}} from search history": "הסר את {{term}} מהיסטוריית החיפוש",
-  "Remove from history": "הסר מההיסטוריה"
+  "Remove from history": "הסר מההיסטוריה",
+  "Lookup App": "אפליקציית חיפוש"
 }
