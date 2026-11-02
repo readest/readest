@@ -444,6 +444,56 @@ describe('manageDialogueHighlight', () => {
   });
 
   it.each([
+    301, 304, 600, 2048,
+  ])('wraps punctuated single-quoted dialogue of %i characters', (length) => {
+    const quote = `‘${'x'.repeat(length - 3)}.’`;
+    const doc = makeDoc(`<p>Narration. ${quote} Narration.</p>`);
+    manageDialogueHighlight(doc, makeViewSettings({ dialogueHighlight: true }));
+    const spans = [...doc.querySelectorAll(`.${DIALOGUE_SPAN_CLASS}`)].map((s) => s.textContent);
+    expect(spans).toEqual([quote]);
+  });
+
+  it('keeps apostrophes and inline markup in long single-quoted dialogue', () => {
+    const first = `‘We’re goin’ home with the lads’ boots. ${'Keep walking. '.repeat(30)}`;
+    const last = ' and a bunch o’ rope,’';
+    const doc = makeDoc(`<p>${first}<em>carefully</em>${last} she said.</p>`);
+    manageDialogueHighlight(doc, makeViewSettings({ dialogueHighlight: true }));
+    const spans = [...doc.querySelectorAll(`.${DIALOGUE_SPAN_CLASS}`)].map((s) => s.textContent);
+    expect(spans).toEqual([first, 'carefully', last]);
+  });
+
+  it('keeps the short fallback for single quotes without closing punctuation', () => {
+    const short = `‘${'x'.repeat(300)}’`;
+    const long = `‘${'x'.repeat(301)}’`;
+    const doc = makeDoc(`<p>${short}</p><p>${long}</p><p>‘Later.’</p>`);
+    manageDialogueHighlight(doc, makeViewSettings({ dialogueHighlight: true }));
+    const spans = [...doc.querySelectorAll(`.${DIALOGUE_SPAN_CLASS}`)].map((s) => s.textContent);
+    expect(spans).toEqual([short, '‘Later.’']);
+  });
+
+  it('keeps a short fallback quote before an oversized punctuated match', () => {
+    const doc = makeDoc(`<p>‘Hello’ ${'narration '.repeat(240)}.’</p>`);
+    manageDialogueHighlight(doc, makeViewSettings({ dialogueHighlight: true }));
+    const spans = [...doc.querySelectorAll(`.${DIALOGUE_SPAN_CLASS}`)].map((s) => s.textContent);
+    expect(spans).toEqual(['‘Hello’']);
+  });
+
+  it('does not extend long single-quoted dialogue across a paragraph boundary', () => {
+    const doc = makeDoc(`<p>The ‘80s ${'narration '.repeat(40)}</p><p>continues here.’</p>`);
+    manageDialogueHighlight(doc, makeViewSettings({ dialogueHighlight: true }));
+    expect(doc.querySelectorAll(`.${DIALOGUE_SPAN_CLASS}`)).toHaveLength(0);
+  });
+
+  it('skips single-quoted dialogue over 2048 characters but keeps inner and later quotes', () => {
+    const quote = `‘${'x'.repeat(2040)} «oui».’`;
+    expect(quote).toHaveLength(2049);
+    const doc = makeDoc(`<p>${quote} Narration. ‘Later.’</p>`);
+    manageDialogueHighlight(doc, makeViewSettings({ dialogueHighlight: true }));
+    const spans = [...doc.querySelectorAll(`.${DIALOGUE_SPAN_CLASS}`)].map((s) => s.textContent);
+    expect(spans).toEqual(['«oui»', '‘Later.’']);
+  });
+
+  it.each([
     ['“', '”'],
     ['‘', '’'],
     ['„', '“'],
