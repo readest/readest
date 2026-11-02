@@ -36,6 +36,29 @@ section whose `<par>` elements each pair a text fragment
 (`clipBegin`/`clipEnd`). Those pairs are the publisher's own text-to-audio sync
 points, which is why read-along playback needs no alignment of its own.
 
+### Audio support on Linux
+
+Standard Linux CEF builds omit AAC decoding. Local narration uses Rust audio
+playback for AAC-LC and ALAC in MP4/M4A/M4B, FLAC and PCM WAV. Audio is decoded
+on a worker and sent to the system audio device; playback speed preserves
+pitch. Remote recordings and local MP3/Ogg/Opus/WebM audio retain WebView
+playback. This preserves MP3 seeking and supports Opus, which can also be
+carried in Ogg and is not supported by the native decoder. Compressed
+MP3/Ogg/Opus/WebM EPUB entries play from an in-memory blob without writing an
+extracted file to the app cache.
+
+For native playback, stored EPUB entries are read as byte windows in the book.
+DEFLATE-compressed entries are read directly through an in-memory checkpoint
+index; no extracted audio file is written to the app cache. Seeking to an
+unindexed position needs a forward decompression pass. MP4 recordings with
+metadata at the front can start without scanning the whole entry. Metadata at
+the end requires forward decompression before playback, so a large compressed
+recording can take several seconds to open. The index is released with the
+loaded recording.
+
+HE-AAC, xHE-AAC, raw ADTS AAC and DRM are not supported by the native decoder.
+MP3 remains a portable alternative for those recordings.
+
 ### Getting a narrated EPUB
 
 Commercially narrated read-along EPUBs exist but are uncommon. If you have an

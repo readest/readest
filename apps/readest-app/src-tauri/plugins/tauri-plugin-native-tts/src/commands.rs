@@ -100,6 +100,46 @@ pub(crate) async fn playout_enqueue<R: Runtime>(
     app.native_tts().playout_enqueue(payload)
 }
 
+// Called directly by the Linux IPC handler: async command macros defer even
+// the first line to independently scheduled tasks, which can reorder controls.
+#[cfg(target_os = "linux")]
+pub(crate) fn playout_control<R: Runtime>(invoke: tauri::ipc::Invoke<R>) {
+    use tauri::ipc::{CommandArg, CommandItem};
+    use tauri::Manager;
+
+    let payload = PlayoutControlRequest::from_command(CommandItem {
+        plugin: Some("native-tts"),
+        name: "playout_control",
+        key: "payload",
+        message: &invoke.message,
+        acl: &invoke.acl,
+    });
+    let reply = payload.and_then(|payload| {
+        invoke
+            .message
+            .webview()
+            .app_handle()
+            .native_tts()
+            .playout_control_enqueue(payload)
+            .map_err(Into::into)
+    });
+    match reply {
+        Ok(reply) => invoke.resolver.respond_async(async move {
+            tauri::async_runtime::spawn_blocking(move || {
+                reply
+                    .recv()
+                    .map_err(|error| crate::Error::NativeTTSError(error.to_string()))?
+                    .map_err(crate::Error::NativeTTSError)
+            })
+            .await
+            .map_err(|error| crate::Error::NativeTTSError(error.to_string()))?
+            .map_err(Into::into)
+        }),
+        Err(error) => invoke.resolver.invoke_error(error),
+    }
+}
+
+#[cfg(not(target_os = "linux"))]
 #[command]
 pub(crate) async fn playout_control<R: Runtime>(
     app: AppHandle<R>,

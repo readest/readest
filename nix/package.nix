@@ -117,7 +117,7 @@ rustPlatform.buildRustPackage (finalAttrs: {
   };
 
   cargoRoot = "../..";
-  cargoHash = "sha256-jID/RwLjS7IrvbrlP46NlW227fJjgM6CdVtdXFA/9b0=";
+  cargoHash = "sha256-wAIqAGNmo5DgwqpVcucjGCiOTdh22j8E7Q++jul7r8U=";
 
   buildAndTestSubdir = "src-tauri";
 
@@ -159,6 +159,7 @@ rustPlatform.buildRustPackage (finalAttrs: {
     pnpmConfigHook
     pnpm_11
     pkg-config
+    rustPlatform.bindgenHook
     wrapGAppsHook3
     autoPatchelfHook
     # Chromium's GPU process dlopens the system GL/Vulkan drivers; on NixOS

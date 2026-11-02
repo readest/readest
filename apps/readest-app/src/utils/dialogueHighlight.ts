@@ -48,6 +48,12 @@ const DIALOGUE_PATTERN =
 const NESTED_DIALOGUE_PATTERN =
   /“[^“”\n]*(?:“[^“”\n]*”[^“”\n]*)+”|„[^„“\n]*(?:„[^„“\n]*“[^„“\n]*)+“|«[^«»\n]*(?:«[^«»\n]*»[^«»\n]*)+»/gu;
 
+// An unclosed quote may run to the end of its block when the next block
+// starts with the same opening mark. Keep the existing closing-quote rules:
+// only apostrophes within words are unambiguously part of a single quote.
+const CONTINUED_DIALOGUE_PATTERN =
+  /“[^“”"]+$|„[^„“"]+$|«[^«»]+$|「[^「」]+$|『[^『』]+$|‘(?:[^‘’]|’(?=\p{L}))+$/gu;
+
 const MAX_QUOTE_LENGTH = 2048;
 
 // Paragraph-leading dashes marking dialogue lines (French/Russian/CJK style).
@@ -64,6 +70,8 @@ const isSkipped = (node: Text): boolean => {
 };
 
 type TextEntry = { node: Text; start: number; end: number };
+type Region = { start: number; end: number };
+type TextBlock = Region & { firstCharacter: string; firstCharacterEligible: boolean };
 
 const BLOCK_SELECTOR =
   'p, div, li, blockquote, dd, dt, h1, h2, h3, h4, h5, h6, td, th, caption, figcaption, section, article, aside, body';
@@ -72,33 +80,66 @@ const BLOCK_SELECTOR =
 // <br> and inline boundaries contribute zero characters, so a match range can
 // transparently cross them and is mapped back to node slices below; a block
 // boundary contributes a newline that belongs to no node.
-const collectEntries = (doc: Document): { entries: TextEntry[]; text: string } => {
+const collectEntries = (
+  doc: Document,
+): { entries: TextEntry[]; text: string; blocks: TextBlock[] } => {
   const showText = doc.defaultView?.NodeFilter.SHOW_TEXT ?? 4;
   const walker = doc.createTreeWalker(doc.body ?? doc.documentElement, showText);
   const entries: TextEntry[] = [];
+  const blocks: TextBlock[] = [];
   let text = '';
   let block: Element | null = null;
   let node = walker.nextNode() as Text | null;
+  let textBlock: Element | null = null;
   while (node) {
-    if (!isSkipped(node)) {
-      const content = node.textContent ?? '';
-      if (content) {
-        const nodeBlock = node.parentElement!.closest(BLOCK_SELECTOR);
+    const content = node.textContent ?? '';
+    if (content && !node.parentElement?.closest('script, style')) {
+      const nodeBlock = node.parentElement?.closest(BLOCK_SELECTOR) ?? null;
+      if (blocks.length === 0 || nodeBlock !== textBlock) {
+        blocks.push({
+          start: text.length,
+          end: text.length,
+          firstCharacter: '',
+          firstCharacterEligible: false,
+        });
+      }
+      textBlock = nodeBlock;
+      const currentBlock = blocks[blocks.length - 1]!;
+      const eligible = !isSkipped(node);
+      if (!currentBlock.firstCharacter) {
+        currentBlock.firstCharacter = content.trimStart().charAt(0);
+        currentBlock.firstCharacterEligible = eligible;
+      }
+      if (eligible) {
         if (block && nodeBlock !== block) text += '\n';
+        if (currentBlock.start === currentBlock.end) currentBlock.start = text.length;
         block = nodeBlock;
         entries.push({ node, start: text.length, end: text.length + content.length });
         text += content;
+        currentBlock.end = text.length;
       }
     }
     node = walker.nextNode() as Text | null;
   }
-  return { entries, text };
+  return { entries, text, blocks };
 };
 
-type Region = { start: number; end: number };
-
-const findRegions = (text: string): Region[] => {
+const findRegions = (text: string, blocks: TextBlock[]): Region[] => {
   const raw: Region[] = [];
+  // Whitespace between elements is not a paragraph. Include skipped text in
+  // the leading character so code cannot hide narration before an opening mark.
+  const paragraphs = blocks.filter((block) => block.firstCharacter);
+  for (let i = 0; i < paragraphs.length - 1; i++) {
+    const block = paragraphs[i]!;
+    const next = paragraphs[i + 1]!;
+    const content = text.slice(block.start, block.end).trimEnd();
+    CONTINUED_DIALOGUE_PATTERN.lastIndex = 0;
+    const match = CONTINUED_DIALOGUE_PATTERN.exec(content);
+    if (!match || !next.firstCharacterEligible || match[0][0] !== next.firstCharacter) continue;
+    const limit = match[0][0] === '‘' ? 301 : MAX_QUOTE_LENGTH;
+    if (match[0].length > limit) continue;
+    raw.push({ start: block.start + match.index, end: block.start + content.length });
+  }
   for (const pattern of [DIALOGUE_PATTERN, NESTED_DIALOGUE_PATTERN]) {
     pattern.lastIndex = 0;
     let match: RegExpExecArray | null;
@@ -207,9 +248,9 @@ export const manageDialogueHighlight = (doc: Document, viewSettings: ViewSetting
   clearDialogueHighlight(doc);
   if (!isDialogueHighlightActive(viewSettings)) return;
   if (!doc.body && !doc.documentElement) return;
-  const { entries, text } = collectEntries(doc);
+  const { entries, text, blocks } = collectEntries(doc);
   if (entries.length === 0) return;
-  wrapRegions(doc, entries, findRegions(text));
+  wrapRegions(doc, entries, findRegions(text, blocks));
   markDashBlocks(doc);
 };
 
