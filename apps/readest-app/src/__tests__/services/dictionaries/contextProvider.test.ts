@@ -102,6 +102,59 @@ describe('context dictionary provider', () => {
     expect(container.textContent).toContain('shore');
   });
 
+  it('uses a saved prompt and renders sanitized Markdown without fixed sections', async () => {
+    setTranslators([llm('a')]);
+    useCustomTranslatorStore.setState({
+      prompts: [
+        {
+          id: 'history',
+          name: 'History',
+          systemPrompt: 'Explain etymology.',
+          addedAt: 1,
+          updatedAt: 1,
+        },
+      ],
+    });
+    useCustomDictionaryStore
+      .getState()
+      .setContextOptions({ contextPromptId: 'history', contextMaxOutputTokens: 4096 });
+    mocks.lookupInContext.mockResolvedValue({
+      ...entry,
+      markdown:
+        '## Origins\n**River** usage. <script>alert(1)</script><img src=x onerror="alert(1)">',
+    });
+    const container = document.createElement('div');
+    expect((await lookup(container)).ok).toBe(true);
+    expect(mocks.lookupInContext.mock.calls[0]![3]).toEqual({
+      systemPrompt: 'Explain etymology.',
+      maxOutputTokens: 4096,
+    });
+    expect(container.querySelector('h2')?.textContent).toBe('Origins');
+    expect(container.querySelector('strong')?.textContent).toBe('River');
+    expect(container.querySelector('script, [onerror]')).toBeNull();
+    expect(container.textContent).not.toContain('Synonyms');
+  });
+
+  it('falls back to the built-in prompt when a saved prompt is deleted', async () => {
+    setTranslators([llm('a')]);
+    useCustomTranslatorStore.setState({
+      prompts: [
+        {
+          id: 'history',
+          name: 'History',
+          systemPrompt: 'Explain history.',
+          addedAt: 1,
+          updatedAt: 2,
+          deletedAt: 2,
+        },
+      ],
+    });
+    useCustomDictionaryStore.getState().setContextOptions({ contextPromptId: 'history' });
+    mocks.lookupInContext.mockResolvedValue(entry);
+    await lookup();
+    expect(mocks.lookupInContext.mock.calls[0]![3]).toMatchObject({ systemPrompt: undefined });
+  });
+
   it('falls back to the first translator when the chosen one is gone', async () => {
     setTranslators([llm('a')], 'deleted');
     mocks.lookupInContext.mockResolvedValue(entry);

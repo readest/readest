@@ -54,6 +54,30 @@ describe('settingsAdapter', () => {
     expect([...SETTINGS_DICTIONARY_FIELDS].sort()).toEqual(whitelistedDictPaths.slice().sort());
   });
 
+  test('round-trips context dictionary instructions and output limits, including resets', () => {
+    for (const options of [
+      {
+        contextPromptId: 'custom',
+        contextSystemPrompt: 'Explain the era.',
+        contextMaxOutputTokens: 4096,
+      },
+      { contextPromptId: 'default', contextSystemPrompt: '', contextMaxOutputTokens: 0 },
+    ]) {
+      const fields = settingsAdapter.pack({
+        name: 'singleton',
+        patch: {
+          dictionarySettings: { providerOrder: [], providerEnabled: {}, ...options },
+        },
+      });
+      expect(fields['dictionarySettings.contextPromptId']).toBe(options.contextPromptId);
+      expect(fields['dictionarySettings.contextSystemPrompt']).toBe(options.contextSystemPrompt);
+      expect(fields['dictionarySettings.contextMaxOutputTokens']).toBe(
+        options.contextMaxOutputTokens,
+      );
+      expect(settingsAdapter.unpack(fields).patch.dictionarySettings).toMatchObject(options);
+    }
+  });
+
   test('declares no `binary` capability — bundled metadata only', () => {
     expect(settingsAdapter.binary).toBeUndefined();
   });

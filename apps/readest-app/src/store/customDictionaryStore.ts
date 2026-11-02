@@ -127,6 +127,12 @@ interface DictionaryStoreState {
   setAutoPlayPronunciation(enabled: boolean): void;
   /** Pick the custom translator the context dictionary asks (#5544). */
   setContextTranslatorId(id: string): void;
+  setContextOptions(
+    options: Pick<
+      DictionarySettings,
+      'contextPromptId' | 'contextSystemPrompt' | 'contextMaxOutputTokens'
+    >,
+  ): void;
 
   /** Add a custom web search (id is generated). Appended + enabled by default. */
   addWebSearch(name: string, urlTemplate: string): WebSearchEntry;
@@ -466,6 +472,10 @@ export const useCustomDictionaryStore = create<DictionaryStoreState>((set, get) 
     }));
   },
 
+  setContextOptions: (options) => {
+    set((state) => ({ settings: { ...state.settings, ...options } }));
+  },
+
   addWebSearch: (name, urlTemplate) => {
     const trimmedName = name.trim();
     const trimmedUrl = urlTemplate.trim();
@@ -652,6 +662,9 @@ export const useCustomDictionaryStore = create<DictionaryStoreState>((set, get) 
           persistedSettings.autoPlayPronunciation ??
           DEFAULT_DICTIONARY_SETTINGS.autoPlayPronunciation,
         contextTranslatorId: persistedSettings.contextTranslatorId,
+        contextPromptId: persistedSettings.contextPromptId,
+        contextSystemPrompt: persistedSettings.contextSystemPrompt,
+        contextMaxOutputTokens: persistedSettings.contextMaxOutputTokens,
       };
       set({ dictionaries, settings: settingsMerged });
     } catch (error) {
