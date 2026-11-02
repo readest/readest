@@ -19,15 +19,17 @@ def verify(name, source, directory):
 with tempfile.TemporaryDirectory(prefix="readest-lifecycle-") as temporary:
     directory = Path(temporary)
     src=(root/'commands.rs').read_text()
-    body=src[src.index('pub(crate) async fn playout_control'):src.index('\n#[command]',src.index('pub(crate) async fn playout_control'))]
+    start = src.index('pub(crate) fn playout_control')
+    body = src[start:src.index('\n#[cfg(not(target_os = "linux"))]', start)]
     prefix=r'''
-    #![allow(dead_code,unused_variables)]
+    #![allow(dead_code,unused_variables,unused_imports)]
     use std::sync::{Arc,Mutex,mpsc};
     use std::future::Future;
     use std::pin::Pin;
     use std::task::{Context,Poll,Wake,Waker};
     type Result<T>=std::result::Result<T,Error>;
     #[derive(Debug)] enum Error {NativeTTSError(String)}
+    impl From<Error> for String{fn from(error:Error)->Self{format!("{error:?}")}}
     struct PlayoutControlRequest {action:String}
     struct PlayoutControlResponse;
     trait Runtime:Send+Sync+'static{}
@@ -44,6 +46,28 @@ with tempfile.TemporaryDirectory(prefix="readest-lifecycle-") as temporary:
     }
     }
     mod tauri {
+    pub trait Manager {}
+    pub mod ipc {
+    use super::super::*;
+    pub struct Invoke<R>{pub message:Message<R>,pub resolver:Resolver,pub acl:()}
+    pub struct Message<R>{pub app:AppHandle<R>,pub action:String}
+    impl<R> Message<R>{pub fn webview(&self)->&Self{self}pub fn app_handle(&self)->&AppHandle<R>{&self.app}}
+    pub struct CommandItem<'a,R>{pub plugin:Option<&'static str>,pub name:&'static str,pub key:&'static str,pub message:&'a Message<R>,pub acl:&'a ()}
+    pub trait CommandArg<R>:Sized{fn from_command(item:CommandItem<'_,R>)->std::result::Result<Self,String>;}
+    impl<R> CommandArg<R> for PlayoutControlRequest{fn from_command(item:CommandItem<'_,R>)->std::result::Result<Self,String>{Ok(Self{action:item.message.action.clone()})}}
+    type Response=Pin<Box<dyn Future<Output=std::result::Result<PlayoutControlResponse,String>>+Send>>;
+    static RESPONSES:Mutex<Vec<Response>>=Mutex::new(Vec::new());
+    pub struct Resolver;
+    impl Resolver{pub fn respond_async(self,f:impl Future<Output=std::result::Result<PlayoutControlResponse,String>>+Send+'static){RESPONSES.lock().unwrap().push(Box::pin(f));}pub fn invoke_error(self,e:String){panic!("{e}")}}
+    pub fn execute_reverse(){
+    struct Noop;impl Wake for Noop{fn wake(self:Arc<Self>){}}
+    let w=Waker::from(Arc::new(Noop));let mut cx=Context::from_waker(&w);
+    let mut responses=std::mem::take(&mut *RESPONSES.lock().unwrap());
+    for response in responses.iter_mut().rev(){assert!(response.as_mut().poll(&mut cx).is_pending());}
+    super::async_runtime::execute_reverse();
+    for response in responses.iter_mut().rev(){assert!(matches!(response.as_mut().poll(&mut cx),Poll::Ready(Ok(_))));}
+    }
+    }
     pub mod async_runtime {
     use super::super::*;
     type Job=Box<dyn FnOnce()+Send>;
@@ -56,15 +80,13 @@ with tempfile.TemporaryDirectory(prefix="readest-lifecycle-") as temporary:
     '''
     test=r'''
     #[test] fn transport_is_enqueued_before_blocking_executor_can_reorder_waiters(){
-    struct Noop;impl Wake for Noop{fn wake(self:Arc<Self>){}}
     let app=AppHandle::<TestRuntime>(Arc::new(Native{log:Mutex::new(vec![])}),std::marker::PhantomData);
-    let mut pause=Box::pin(playout_control(app.clone(),PlayoutControlRequest{action:"pause".into()}));
-    let mut resume=Box::pin(playout_control(app.clone(),PlayoutControlRequest{action:"resume".into()}));
-    let w=Waker::from(Arc::new(Noop));let mut cx=Context::from_waker(&w);
-    assert!(pause.as_mut().poll(&mut cx).is_pending());assert!(resume.as_mut().poll(&mut cx).is_pending());
-    tauri::async_runtime::execute_reverse();
-    assert!(matches!(pause.as_mut().poll(&mut cx),Poll::Ready(Ok(_))));assert!(matches!(resume.as_mut().poll(&mut cx),Poll::Ready(Ok(_))));
-    assert_eq!(*app.0.log.lock().unwrap(),["pause","resume"],"blocking executor order must not reorder transport intentions");
+    for action in ["pause","resume","load","abort"]{
+    playout_control(tauri::ipc::Invoke{message:tauri::ipc::Message{app:app.clone(),action:action.into()},resolver:tauri::ipc::Resolver,acl:()});
+    }
+    assert_eq!(*app.0.log.lock().unwrap(),["pause","resume","load","abort"],"controls must enqueue before any response future is polled");
+    tauri::ipc::execute_reverse();
+    assert_eq!(*app.0.log.lock().unwrap(),["pause","resume","load","abort"],"async response scheduling must not reorder transport intentions");
     }
     '''
     verify("commands", prefix + body + test, directory)
