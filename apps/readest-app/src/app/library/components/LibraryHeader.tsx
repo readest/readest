@@ -21,6 +21,7 @@ import Dropdown from '@/components/Dropdown';
 import BoxedList from '@/components/settings/primitives/BoxedList';
 import SettingLabel from '@/components/settings/primitives/SettingLabel';
 import {
+  addLibrarySearchHistory,
   clearLibrarySearchHistory,
   loadLibrarySearchHistory,
   removeLibrarySearchHistory,
@@ -121,6 +122,7 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
   }, [historyOpen]);
 
   const applySearch = (query: string) => {
+    if (searchTarget === 'books') addLibrarySearchHistory(query, searchTarget);
     searchInputRef.current?.focus();
     setHistoryOpen(false);
     onSearchQueryApply(query);

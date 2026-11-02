@@ -28,6 +28,21 @@ for (const action of ['remove', 'clear'] as const) {
   });
 }
 
+test('records Enter when the query already matches the URL', async ({ page }) => {
+  await page.goto(libraryUrl);
+  const library = new LibraryPage(page);
+  await library.importBook(SAMPLE_EPUB);
+  await expect(library.bookCards()).toHaveCount(1);
+  const input = page.getByRole('textbox', { name: 'Search Books', exact: true });
+  await input.fill('Alice');
+  await expect(page).toHaveURL(/q=Alice/);
+  await page.evaluate(() => localStorage.removeItem('search-history-library-books'));
+  await input.press('Enter');
+  expect(await page.evaluate(() => localStorage.getItem('search-history-library-books'))).toContain(
+    'Alice',
+  );
+});
+
 test('saves the current query when switching from text to book search', async ({ page }) => {
   await page.goto(`${libraryUrl}?q=Alice&search=text`);
   await page.getByRole('button', { name: 'Full Text Search', exact: true }).click();

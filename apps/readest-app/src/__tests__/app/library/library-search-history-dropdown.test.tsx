@@ -116,6 +116,18 @@ describe('library search history dropdown', () => {
     expect(loadLibrarySearchHistory('books')).toEqual([]);
   });
 
+  it('saves an explicitly submitted book query and refreshes history recency', () => {
+    render(<Header />);
+    const input = screen.getByRole('textbox');
+    fireEvent.change(input, { target: { value: 'Dune' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+    expect(loadLibrarySearchHistory('books')).toEqual(['Dune']);
+    addLibrarySearchHistory('Earthsea', 'books');
+    fireEvent.click(input);
+    fireEvent.click(screen.getByRole('button', { name: 'Dune' }));
+    expect(loadLibrarySearchHistory('books')).toEqual(['Dune', 'Earthsea']);
+  });
+
   it('dismisses on Escape and outside presses and supports keyboard selection', () => {
     addLibrarySearchHistory('Dune', 'books');
     render(<Header />);
