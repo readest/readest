@@ -444,7 +444,7 @@ describe('manageDialogueHighlight', () => {
   });
 
   it.each([
-    301, 600, 2048,
+    301, 304, 600, 2048,
   ])('wraps punctuated single-quoted dialogue of %i characters', (length) => {
     const quote = `‘${'x'.repeat(length - 3)}.’`;
     const doc = makeDoc(`<p>Narration. ${quote} Narration.</p>`);
@@ -469,6 +469,13 @@ describe('manageDialogueHighlight', () => {
     manageDialogueHighlight(doc, makeViewSettings({ dialogueHighlight: true }));
     const spans = [...doc.querySelectorAll(`.${DIALOGUE_SPAN_CLASS}`)].map((s) => s.textContent);
     expect(spans).toEqual([short, '‘Later.’']);
+  });
+
+  it('keeps a short fallback quote before an oversized punctuated match', () => {
+    const doc = makeDoc(`<p>‘Hello’ ${'narration '.repeat(240)}.’</p>`);
+    manageDialogueHighlight(doc, makeViewSettings({ dialogueHighlight: true }));
+    const spans = [...doc.querySelectorAll(`.${DIALOGUE_SPAN_CLASS}`)].map((s) => s.textContent);
+    expect(spans).toEqual(['‘Hello’']);
   });
 
   it('does not extend long single-quoted dialogue across a paragraph boundary', () => {

@@ -56,6 +56,7 @@ const CONTINUED_DIALOGUE_PATTERN =
   /“[^“”"]+$|„[^„“"]+$|«[^«»]+$|「[^「」]+$|『[^『』]+$|‘(?:[^‘’]|’(?=\p{L}))+$/gu;
 
 const MAX_QUOTE_LENGTH = 2048;
+const SINGLE_QUOTE_FALLBACK_PATTERN = /‘(?:[^‘’]|’(?=\p{L})){1,300}?’(?!\p{L})/uy;
 
 // Paragraph-leading dashes marking dialogue lines (French/Russian/CJK style).
 // The ASCII hyphen is left out: it leads list items in converted text.
@@ -149,6 +150,15 @@ const findRegions = (text: string, blocks: TextBlock[]): Region[] => {
       // rejected span are still found.
       if (match[0].length > MAX_QUOTE_LENGTH) {
         pattern.lastIndex = match.index + 1;
+        if (pattern === DIALOGUE_PATTERN && match[0][0] === '‘') {
+          // The long alternative won before the loose fallback could run.
+          SINGLE_QUOTE_FALLBACK_PATTERN.lastIndex = match.index;
+          const fallback = SINGLE_QUOTE_FALLBACK_PATTERN.exec(text);
+          if (fallback) {
+            raw.push({ start: match.index, end: match.index + fallback[0].length });
+            pattern.lastIndex = match.index + fallback[0].length;
+          }
+        }
         continue;
       }
       raw.push({ start: match.index, end: match.index + match[0].length });
