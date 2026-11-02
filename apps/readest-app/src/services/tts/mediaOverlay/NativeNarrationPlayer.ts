@@ -1,4 +1,4 @@
-// Continuous long-file playout for Media Overlay on mobile Tauri.
+// Continuous long-file playout for Media Overlay on mobile and Linux Tauri.
 //
 // Edge TTS already plays through an in-process AVPlayer (NativeAudioPlayer)
 // because WebKit HTMLMediaElement / WebAudio cannot own the app's non-mixable
@@ -20,11 +20,9 @@ interface PlayoutPosition {
   endedIndex?: number;
 }
 
-interface FileWindow {
-  start: number;
-  end: number;
-  contentType: string;
-}
+type FileSource =
+  | { start: number; end: number; contentType: string }
+  | { entry: string; contentType: string };
 
 interface PlayoutEvent {
   type: string;
@@ -143,18 +141,19 @@ export class NativeNarrationPlayer {
     // A new session starts with an empty native playlist.
     this.#playlist = [];
     this.#nativeIndex = -1;
-    this.#nativeSession = invoke<{ session: number }>('plugin:native-tts|playout_control', {
+    const session = invoke<{ session: number }>('plugin:native-tts|playout_control', {
       payload: { action: 'start-session' },
     }).then((res) => {
-      this.#resolvedSession = res.session;
+      if (this.#nativeSession === session) this.#resolvedSession = res.session;
       return res.session;
     });
-    await this.#nativeSession;
+    this.#nativeSession = session;
+    await session;
   }
 
   // Forget the native session id after another engine (Edge) aborted the shared
   // AVPlayer. Keeps the staged chapter file so the next load() is cheap.
-  invalidateSession(): void {
+  invalidateSession(abort = false): void {
     this.#userPaused = true;
     this.#cache.playing = false;
     this.#href = null;
@@ -162,9 +161,9 @@ export class NativeNarrationPlayer {
     this.#resolvedSession = null;
     this.#ended = false;
     this.#stopPolling();
-    void invoke('plugin:native-tts|playout_control', { payload: { action: 'pause' } }).catch(
-      () => {},
-    );
+    void invoke('plugin:native-tts|playout_control', {
+      payload: { action: abort ? 'abort' : 'pause' },
+    }).catch(() => {});
   }
 
   // Stage the chapter blob once per href, then load (or seek) on the native
@@ -185,7 +184,7 @@ export class NativeNarrationPlayer {
     await this.#queueResolvedPath(href, path, after);
   }
 
-  async queuePath(href: string, path: string, after: string, bytes?: FileWindow): Promise<void> {
+  async queuePath(href: string, path: string, after: string, bytes?: FileSource): Promise<void> {
     if (this.#playlist.includes(href)) return;
     await this.ensureReady();
     await this.#queueResolvedPath(href, path, after, bytes);
@@ -195,7 +194,7 @@ export class NativeNarrationPlayer {
     href: string,
     path: string,
     after: string,
-    bytes?: FileWindow,
+    bytes?: FileSource,
   ): Promise<void> {
     // Checked with nothing awaited before the command: another file loaded
     // while this one resolved means it no longer follows what is playing.
@@ -214,21 +213,29 @@ export class NativeNarrationPlayer {
   // Hand AVPlayer that path directly: copying a multi-hour M4B through a Blob
   // and a second temp file would double I/O and briefly hold the whole book in
   // memory. The caller owns the path, so release() must never delete it.
-  // `bytes` is a range [start, end) of the file to play as the whole
-  // track: a stored audio entry inside the book's zip. AVPlayer needs its
-  // `contentType`, since the file's own extension names the book.
-  async loadPath(href: string, path: string, startSec = 0, bytes?: FileWindow): Promise<void> {
+  // `bytes` identifies a stored entry's range [start, end), or a compressed
+  // entry's raw ZIP name on Linux. The contentType names the audio rather
+  // than the book's container.
+  async loadPath(
+    href: string,
+    path: string,
+    startSec = 0,
+    bytes?: FileSource,
+    signal?: AbortSignal,
+  ): Promise<void> {
     await this.ensureReady();
+    signal?.throwIfAborted();
     // Record the path only once the player took it, so a failed load leaves
     // load() free to stage a copy of the same href.
-    await this.#loadResolvedPath(href, path, startSec, bytes);
+    await this.#loadResolvedPath(href, path, startSec, bytes, signal);
   }
 
   async #loadResolvedPath(
     href: string,
     path: string,
     startSec: number,
-    bytes?: FileWindow,
+    bytes?: FileSource,
+    signal?: AbortSignal,
   ): Promise<void> {
     this.#href = href;
     this.#ended = false;
@@ -241,6 +248,7 @@ export class NativeNarrationPlayer {
         ...bytes,
       },
     });
+    signal?.throwIfAborted();
     // A file already in the playlist is jumped to and the ones before it are
     // dropped; anything else replaces the playlist.
     const index = this.#playlist.indexOf(href);

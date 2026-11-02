@@ -105,7 +105,24 @@ pub(crate) async fn playout_control<R: Runtime>(
     app: AppHandle<R>,
     payload: PlayoutControlRequest,
 ) -> Result<PlayoutControlResponse> {
-    app.native_tts().playout_control(payload)
+    #[cfg(target_os = "linux")]
+    {
+        // Enqueue before yielding to the blocking pool, whose tasks may run in
+        // a different order. Only waiting for the worker belongs off-thread.
+        let reply = app.native_tts().playout_control_enqueue(payload)?;
+        tauri::async_runtime::spawn_blocking(move || {
+            reply
+                .recv()
+                .map_err(|error| crate::Error::NativeTTSError(error.to_string()))?
+                .map_err(crate::Error::NativeTTSError)
+        })
+        .await
+        .map_err(|error| crate::Error::NativeTTSError(error.to_string()))?
+    }
+    #[cfg(not(target_os = "linux"))]
+    {
+        app.native_tts().playout_control(payload)
+    }
 }
 
 #[command]

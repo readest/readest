@@ -146,6 +146,8 @@ pub struct PlayoutControlRequest {
     pub start: Option<u64>,
     pub end: Option<u64>,
     pub content_type: Option<String>,
+    // Linux reads compressed narration directly from this ZIP entry.
+    pub entry: Option<String>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]

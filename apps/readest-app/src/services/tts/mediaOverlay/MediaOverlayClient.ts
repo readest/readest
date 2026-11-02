@@ -14,7 +14,9 @@
 // (NativeNarrationPlayer). iOS needs it so TTSMediaBridge and narration share
 // one playback session; Android needs it so multi-hour local files can stream
 // from disk without buffering the whole audiobook through the WebView.
-// Desktop and web use a plain HTMLAudioElement.
+// Linux uses it for local files and ZIP entries so decoding does not depend
+// on the WebView's codecs. Remote Linux sources, other desktops and web use
+// a plain HTMLAudioElement.
 //
 // A source whose recording is split across several files (an Audiobookshelf
 // item's tracks) hands over a track list instead, and MultiTrackNarrationClock
@@ -167,6 +169,8 @@ export class MediaOverlayClient implements TTSClient {
   #source: NarrationAudioSource | null = null;
   #section: MediaOverlaySection | null = null;
   #native: boolean;
+  #linux: boolean;
+  #linuxPlayback = new AbortController();
   // Android's player takes the next section's file in a playlist and plays on
   // into it while the WebView is suspended under screen lock (#7193).
   #queuesNext: boolean;
@@ -192,10 +196,11 @@ export class MediaOverlayClient implements TTSClient {
     this.controller = controller;
     this.#native = !!(appService?.isAndroidApp || appService?.isIOSApp);
     this.#queuesNext = !!appService?.isAndroidApp;
+    this.#linux = !!appService?.isLinuxApp;
   }
 
   async init(): Promise<boolean> {
-    if (this.#native) {
+    if (this.#native || this.#linux) {
       // Re-entering narration after Edge/system must not orphan the existing
       // player (and its staged chapter file / event listener).
       if (!this.#player) this.#player = new NativeNarrationPlayer();
@@ -294,7 +299,9 @@ export class MediaOverlayClient implements TTSClient {
   async #loadAudio(href: string): Promise<NarrationClock> {
     if (!this.#source) throw new Error('Book cannot load narration audio');
 
+    const signal = this.#linux ? this.#linuxPlayback.signal : undefined;
     const tracks = await this.#source.resolveTracks?.(href).catch(() => null);
+    signal?.throwIfAborted();
     if (tracks?.length) {
       let player: NarrationTrackPlayer;
       if (this.#native && this.#player) {
@@ -319,18 +326,25 @@ export class MediaOverlayClient implements TTSClient {
       return clock;
     }
 
-    if (this.#native && this.#player) {
-      // Keep any prior native session's file until the new one is staged; load()
-      // replaces the AVPlayer item. Do not call #releaseAudio (that aborts).
+    if ((this.#native || this.#linux) && this.#player) {
+      // Keep the prior native session until the new file replaces it. Linux
+      // accepts local sources only; remote recordings retain their HTML clock.
       this.#cancelHandover();
-      await this.#placeOnNative(href, null);
-      this.#rolledInto = null;
-      this.#player.playbackRate = this.#rate;
-      this.#player.pause();
-      this.#audio = this.#player;
-      this.#audioHref = href;
-      this.#objectUrl = null;
-      return this.#player;
+      if (await this.#placeOnNative(href, null, signal)) {
+        signal?.throwIfAborted();
+        if (this.#audio !== this.#player) {
+          this.#audio?.pause();
+          this.#audio?.destroy?.();
+          if (this.#objectUrl) URL.revokeObjectURL(this.#objectUrl);
+        }
+        this.#rolledInto = null;
+        this.#player.playbackRate = this.#rate;
+        this.#player.pause();
+        this.#audio = this.#player;
+        this.#audioHref = href;
+        this.#objectUrl = null;
+        return this.#player;
+      }
     }
 
     const directUrl = await this.#source.resolveUrl?.(href).catch(() => null);
@@ -341,7 +355,7 @@ export class MediaOverlayClient implements TTSClient {
       ? null
       : await this.#source.getMediaSource?.(href, audioType(href)).catch(() => null);
     const mediaUrl =
-      media && 'path' in media
+      media && 'start' in media
         ? await (await import('@/services/audiobook/mediaProxy'))
             .getMediaFileUrl(media.path, media.start, media.end, audioType(href))
             .catch(() => null)
@@ -370,28 +384,50 @@ export class MediaOverlayClient implements TTSClient {
   // native player plays a stored entry in place from the book file; a book it
   // can't open (a content:// URI on Android) still gets the entry staged as a
   // copy.
-  async #placeOnNative(href: string, after: string | null): Promise<void> {
+  async #placeOnNative(href: string, after: string | null, signal?: AbortSignal): Promise<boolean> {
+    // Keep MP3 on its existing seekable HTML clock. Symphonia has no Opus
+    // decoder or WebM demuxer, and Ogg can carry Opus, so those stay here too.
+    if (this.#linux && /\.(mp3|ogg|oga|opus|webm)$/i.test(href)) return false;
     const player = this.#player!;
     const source = this.#source!;
     const path = await source.resolvePath?.(href).catch(() => null);
-    if (path) {
-      await (after !== null ? player.queuePath(href, path, after) : player.loadPath(href, path, 0));
-      return;
+    signal?.throwIfAborted();
+    if (path && (!this.#linux || path.startsWith('/'))) {
+      await (after !== null
+        ? player.queuePath(href, path, after)
+        : player.loadPath(href, path, 0, undefined, signal));
+      return true;
     }
-    const media = await source.getMediaSource?.(href, audioType(href)).catch(() => null);
-    if (media && 'path' in media) {
-      const bytes = { start: media.start, end: media.end, contentType: audioType(href) };
-      const placed = await (after !== null
-        ? player.queuePath(href, media.path, after, bytes)
-        : player.loadPath(href, media.path, 0, bytes)
-      ).then(
-        () => true,
-        () => false,
-      );
-      if (placed) return;
+    // A Linux source error must surface, rather than falling back to loading
+    // and staging an entire compressed recording through the WebView.
+    const resolving = source.getMediaSource?.(href, audioType(href));
+    const media = await (this.#linux ? resolving : resolving?.catch(() => null));
+    signal?.throwIfAborted();
+    if (media && 'path' in media && (!this.#linux || media.path.startsWith('/'))) {
+      const bytes = {
+        ...('entry' in media ? { entry: media.entry } : { start: media.start, end: media.end }),
+        contentType: audioType(href),
+      };
+      const placing =
+        after !== null
+          ? player.queuePath(href, media.path, after, bytes)
+          : player.loadPath(href, media.path, 0, bytes, signal);
+      if (this.#linux) {
+        await placing;
+        return true;
+      }
+      if (
+        await placing.then(
+          () => true,
+          () => false,
+        )
+      )
+        return true;
     }
+    if (this.#linux) return false;
     const blob = audioBlobWithType(href, await source.loadBlob(href));
     await (after !== null ? player.queue(href, blob, after) : player.load(href, blob, 0));
+    return true;
   }
 
   // Leave the element playing for the next block to pick up, but never
@@ -421,7 +457,7 @@ export class MediaOverlayClient implements TTSClient {
     this.#objectUrl = null;
     this.#playedPar = null;
     this.#rolledInto = null;
-    if (this.#native && this.#player) {
+    if (this.#player && (this.#native || this.#player.href)) {
       void this.#player.release();
     }
   }
@@ -430,6 +466,8 @@ export class MediaOverlayClient implements TTSClient {
   // TTS engine takes the shared iOS playout AVPlayer (Edge abort): otherwise
   // speak() reuses a dead session and plays silence after switching back.
   invalidatePlayback(): void {
+    this.#linuxPlayback.abort();
+    this.#linuxPlayback = new AbortController();
     this.#cancelHandover();
     // #cancelHandover just killed the timer that would have silenced a rolling
     // element, and the reference is dropped below — silence it here or the
@@ -445,8 +483,8 @@ export class MediaOverlayClient implements TTSClient {
       URL.revokeObjectURL(this.#objectUrl);
       this.#objectUrl = null;
     }
-    if (this.#native && this.#player) {
-      this.#player.invalidateSession();
+    if (this.#player) {
+      this.#player.invalidateSession(this.#linux);
     }
   }
 
@@ -667,6 +705,12 @@ export class MediaOverlayClient implements TTSClient {
       this.#armHandover(this.#audio);
       return;
     }
+    if (this.#linux && !handover && this.#audioLoad) {
+      // Stop a decoder still opening/scanning the recording immediately; no
+      // clock has been published for pause() to stop yet.
+      this.invalidatePlayback();
+      return;
+    }
     this.#cancelHandover();
     this.#audio?.pause();
   }
@@ -773,6 +817,8 @@ export class MediaOverlayClient implements TTSClient {
   }
 
   async shutdown(): Promise<void> {
+    this.#linuxPlayback.abort();
+    this.#linuxPlayback = new AbortController();
     this.initialized = false;
     const player = this.#player;
     this.#player = null;

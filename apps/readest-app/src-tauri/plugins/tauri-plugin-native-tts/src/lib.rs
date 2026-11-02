@@ -7,6 +7,8 @@ pub use models::*;
 
 #[cfg(desktop)]
 mod desktop;
+#[cfg(target_os = "linux")]
+mod linux;
 #[cfg(mobile)]
 mod mobile;
 #[cfg(desktop)]
