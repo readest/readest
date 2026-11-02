@@ -1,4 +1,4 @@
-import { useId, useState, type ReactNode } from 'react';
+import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
 import { UserPlan } from '@/types/quota';
@@ -24,6 +24,23 @@ const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = ({
   const titleId = useId();
   const [confirmationText, setConfirmationText] = useState('');
   const canConfirm = !requireTypedConfirmation || confirmationText === 'DELETE';
+  const dialogRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const previousFocus = document.activeElement;
+    const dialog = dialogRef.current;
+    const firstControl = () => dialog?.querySelector<HTMLElement>('input, button');
+    firstControl()?.focus();
+
+    const containFocus = (event: FocusEvent) => {
+      if (event.target instanceof Node && !dialog?.contains(event.target)) firstControl()?.focus();
+    };
+    document.addEventListener('focusin', containFocus);
+    return () => {
+      document.removeEventListener('focusin', containFocus);
+      if (previousFocus instanceof HTMLElement) previousFocus.focus({ preventScroll: true });
+    };
+  }, []);
 
   return (
     <div
@@ -31,6 +48,22 @@ const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = ({
       className='fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4'
     >
       <div
+        ref={dialogRef}
+        onKeyDown={(event) => {
+          if (event.key !== 'Tab') return;
+          const controls = event.currentTarget.querySelectorAll<HTMLElement>(
+            'input, button:not(:disabled)',
+          );
+          const first = controls[0];
+          const last = controls[controls.length - 1];
+          if (event.shiftKey && document.activeElement === first) {
+            event.preventDefault();
+            last?.focus();
+          } else if (!event.shiftKey && document.activeElement === last) {
+            event.preventDefault();
+            first?.focus();
+          }
+        }}
         role='dialog'
         aria-modal='true'
         aria-labelledby={titleId}

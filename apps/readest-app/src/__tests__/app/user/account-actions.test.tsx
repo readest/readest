@@ -108,6 +108,42 @@ describe('account deletion confirmation (#7251)', () => {
     expect(confirmButton().disabled).toBe(true);
   });
 
+  it('focuses the confirmation field and restores the trigger after canceling', async () => {
+    renderActions();
+    const trigger = screen.getByRole('button', { name: 'Delete Account' });
+    trigger.focus();
+    openAccountDeletion();
+    expect(document.activeElement).toBe(confirmationInput());
+
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    await waitFor(() => expect(document.activeElement).toBe(trigger));
+  });
+
+  it('returns focus to the dialog if a page control tries to take it', () => {
+    renderActions();
+    openAccountDeletion();
+    screen.getByRole('button', { name: 'Sign Out' }).focus();
+    expect(document.activeElement).toBe(confirmationInput());
+  });
+
+  it('keeps Tab and Shift+Tab inside the dialog as confirmation becomes enabled', () => {
+    renderActions();
+    openAccountDeletion();
+    const input = confirmationInput();
+    const cancel = screen.getByRole('button', { name: 'Cancel' });
+    input.focus();
+    fireEvent.keyDown(input, { key: 'Tab', shiftKey: true });
+    expect(document.activeElement).toBe(cancel);
+    fireEvent.keyDown(cancel, { key: 'Tab' });
+    expect(document.activeElement).toBe(input);
+
+    fireEvent.change(input, { target: { value: 'DELETE' } });
+    fireEvent.keyDown(input, { key: 'Tab', shiftKey: true });
+    expect(document.activeElement).toBe(confirmButton());
+    fireEvent.keyDown(confirmButton(), { key: 'Tab' });
+    expect(document.activeElement).toBe(input);
+  });
+
   it('keeps the delete-all-books confirmation independent', async () => {
     const { onConfirmDelete, onConfirmDeleteAllBooks } = renderActions('pro');
     openAccountDeletion();
