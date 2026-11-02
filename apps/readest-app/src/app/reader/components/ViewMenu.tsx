@@ -236,12 +236,13 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
     viewSettings.webtoonMode = webtoonMode;
     getView(bookKey)?.renderer.setAttribute('scroll-gap', getScrollGapAttr(webtoonMode));
     if (webtoonMode) {
-      // Webtoon Mode implies scrolled flow + fit-width (scale-factor 100) so pages
-      // fill the width without horizontal overflow/clipping. Reuse the existing
-      // scrolled / zoomLevel effects rather than duplicating their renderer wiring.
-      if (!isScrolledMode) setScrolledMode(true);
+      // Keep an existing scroll direction so horizontal manga can be gapless too.
+      // Entering from paginated reading still defaults to a vertical webtoon strip.
+      if (!isScrolledMode) {
+        setScrolledMode(true);
+        setScrolledDirection('vertical');
+      }
       if (zoomLevel !== 100) setZoomLevel(100);
-      if (scrolledDirection !== 'vertical') setScrolledDirection('vertical');
       saveViewSettings(envConfig, bookKey, 'scrolled', true, false, false);
     }
     setViewSettings(bookKey, viewSettings);
@@ -460,7 +461,6 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
               <button
                 title={_('Horizontal Scrolling')}
                 onClick={() => {
-                  if (webtoonMode) setWebtoonMode(false);
                   setScrolledDirection('horizontal');
                   if (!isScrolledMode) setScrolledMode(true);
                 }}
