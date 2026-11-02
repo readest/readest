@@ -52,6 +52,20 @@ export const isCaselessLang = (lang: string | null | undefined): boolean => {
   ].includes(normalizedLang);
 };
 
+/**
+ * True when the active UI language uses a script with no upper/lower case
+ * distinction (CJK, Arabic-script, Hebrew, major Indic scripts, Thai,
+ * Tibetan). Use this to opt out of UI rules that depend on the `uppercase`
+ * CSS property for emphasis — those rules render as no-ops in caseless
+ * scripts and the affected text needs alternate visual weight (typically a
+ * larger font-size). Reads the active i18next locale from localStorage and
+ * falls back to navigator.language.
+ */
+export const isCaselessUILang = () => {
+  const uiLanguage = localStorage?.getItem('i18nextLng') || navigator.language || '';
+  return isCaselessLang(uiLanguage);
+};
+
 const ZH_SCRIPTS_MAPPING: Record<string, string> = {
   zh: 'zh-Hans',
   'zh-cn': 'zh-Hans',
