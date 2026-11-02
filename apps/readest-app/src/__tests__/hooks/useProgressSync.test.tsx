@@ -983,6 +983,27 @@ describe('useProgressSync — duplicate copies (#7092)', () => {
     expect(h.view.goToFraction).toHaveBeenCalledWith(0.6);
   });
 
+  test('direction detection before the first relocation does not block sibling recovery', async () => {
+    h.config.location = '';
+    h.config.updatedAt = 0;
+    h.state.progress = null;
+    h.state.syncedConfigs = null;
+    const { rerender } = renderHook(() => useProgressSync('h1-view1'));
+
+    // docLoadHandler detects RTL/vertical writing before the first relocate.
+    h.config.updatedAt = 4000;
+    h.config.location = 'cfi-start';
+    h.state.progress = { location: 'cfi-start', fraction: 0.01 };
+    rerender();
+    await advance(0);
+
+    h.state.syncedConfigs = [sibling(3000)];
+    rerender();
+    await advance(0);
+
+    expect(h.view.goToFraction).toHaveBeenCalledWith(0.6);
+  });
+
   test('the fresh-copy exception expires after the first response', async () => {
     h.config.updatedAt = 0;
     h.state.syncedConfigs = null;

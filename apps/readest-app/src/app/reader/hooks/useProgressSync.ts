@@ -288,19 +288,29 @@ export const useProgressSync = (bookKey: string) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [progress?.location]);
 
+  // Writing-direction detection can stamp updatedAt before the first relocate.
+  useEffect(() => {
+    const config = getConfig(bookKey);
+    if (config && !config.updatedAt) {
+      initialPullConfig.current = { location: config.location, updatedAt: 0 };
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bookKey]);
+
   // Pull: pull progress once when the book is opened, with retry on failure
   useEffect(() => {
     const config = getConfig(bookKey);
+    if (!progress) return;
+    if (!hasPulledConfigOnce.current && initialPullConfig.current) {
+      initialPullConfig.current.location = config?.location;
+    }
     // A round trip is still a reading change; returning to the initial page
     // must not revive the zero-timestamp exception while the pull is pending.
     if (initialPullConfig.current && config?.location !== initialPullConfig.current.location) {
       initialPullConfig.current = null;
     }
-    if (!progress || hasPulledConfigOnce.current) return;
+    if (hasPulledConfigOnce.current) return;
     hasPulledConfigOnce.current = true;
-    if (config && !config.updatedAt) {
-      initialPullConfig.current = { location: config.location, updatedAt: 0 };
-    }
     pullWithRetry();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [progress]);
