@@ -38,7 +38,7 @@ import { tryNativeParseMobi } from '@/utils/tauriMobiBridge';
 import { tryNativeParsePdf } from '@/utils/tauriPdfBridge';
 import { isPseStreamFileName, openPseStreamBook, parsePseStreamFileName } from './opds/pseStream';
 import { DEFAULT_BOOK_SEARCH_CONFIG, DEFAULT_FIXED_LAYOUT_VIEW_SETTINGS } from './constants';
-import { isContentURI, isFileURI, isValidURL, makeSafeFilename } from '@/utils/misc';
+import { isContentURI, isValidURL, makeSafeFilename } from '@/utils/misc';
 import { deserializeConfig, serializeConfig, serializeRawConfig } from '@/utils/serializer';
 import { ClosableFile } from '@/utils/file';
 import { TxtToEpubConverter } from '@/utils/txt';
@@ -591,19 +591,8 @@ export async function importBook(
         ({ book: loadedBook, format } = await openPseStreamBook(data));
         filename = file as string;
       } else {
-        if (typeof file === 'string') {
-          fileobj = await fs.openFile(file, 'None');
-          if (isValidURL(file) || isContentURI(file) || isFileURI(file)) {
-            filename = fileobj.name || getFilename(file);
-          } else {
-            // Only Windows paths treat backslashes as separators.
-            const path = /^(?:[a-z]:[\\/]|\\\\)/i.test(file) ? file.replace(/\\/g, '/') : file;
-            filename = path.split('/').pop()!;
-          }
-        } else {
-          fileobj = file;
-          filename = file.name;
-        }
+        fileobj = typeof file === 'string' ? await fs.openFile(file, 'None') : file;
+        filename = fileobj.name;
         originalFilename = filename;
         // A download saved as "novel.txt (1)" is still a TXT, and its title
         // should not read "novel.txt" either. Drop the duplicate marker before

@@ -3,7 +3,7 @@ import { DatabaseOpts, DatabaseService } from '@/types/database';
 import { SchemaType } from '@/services/database/migrate';
 import { getOSPlatform, isValidURL } from '@/utils/misc';
 import { isSafariBrowser } from '@/utils/ua';
-import { getURLFilename } from '@/utils/path';
+import { getPathFilename, getURLFilename } from '@/utils/path';
 import { RemoteFile } from '@/utils/file';
 import { detectViewTransitionGroup, detectViewTransitionsAPI } from '@/utils/viewTransition';
 import { isPWA } from './environment';
@@ -93,7 +93,7 @@ const indexedDBFileSystem: FileSystem = {
       ).open();
     } else {
       const content = await this.readFile(path, base, 'binary');
-      return new File([content], filename || path);
+      return new File([content], filename || getPathFilename(path));
     }
   },
   async copyFile(srcPath: string, srcBase: BaseDir, dstPath: string, dstBase: BaseDir) {

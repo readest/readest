@@ -137,6 +137,19 @@ describe('NativeAppService.saveFile share gating', () => {
     expect(file.name).toBe(expected);
   });
 
+  test.each([
+    ['linux', '/books/first\\chapter.pdf', undefined, 'first\\chapter.pdf'],
+    ['linux', '/books/manual?rev1.pdf', undefined, 'manual?rev1.pdf'],
+    ['linux', '/books/Report%20Final.pdf', undefined, 'Report%20Final.pdf'],
+    ['windows', 'C:\\books\\Device_Manual.pdf', undefined, 'Device_Manual.pdf'],
+    ['windows', '\\\\server\\books\\Device_Manual.pdf', undefined, 'Device_Manual.pdf'],
+    ['macos', '/books/book.pdf', 'Original%20Name.pdf', 'Original%20Name.pdf'],
+  ] as const)('resolves local %s names for %s', async (os, path, name, expected) => {
+    const service = await loadServiceWithOS(os);
+    const file = await service['fs'].openFile(path, 'None', name);
+    expect(file.name).toBe(expected);
+  });
+
   test('uses a unique cache path for same-named content-provider files', async () => {
     const service = await loadServiceWithOS('android');
 
