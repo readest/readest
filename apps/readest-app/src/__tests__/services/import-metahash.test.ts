@@ -1448,11 +1448,17 @@ describe('importBook PDF filename-aware dedup', () => {
   });
 
   it.each([
-    ['https://example.com/manual.pdf?token=abc.def', undefined],
-    ['https://example.com/manual.pdf#page=2', undefined],
-    ['https://example.com/manual.pdf?token=abc.def#page=2', undefined],
-    ['https://example.com/manual.pdf#page=2', 'resolved?edition#1.pdf'],
-  ])('uses a clean URL fallback for %s while preserving resolved filename %s', async (url, resolvedFilename) => {
+    ['https://example.com/manual.pdf?token=abc.def', undefined, 'manual.pdf'],
+    ['https://example.com/manual.pdf#page=2', undefined, 'manual.pdf'],
+    ['https://example.com/manual.pdf?token=abc.def#page=2', undefined, 'manual.pdf'],
+    ['https://example.com/manual.pdf#page=2', 'resolved?edition#1.pdf', 'resolved?edition#1.pdf'],
+    ['https://example.com/C%2B%2B.pdf', undefined, 'C++.pdf'],
+    ['https://example.com/manual.pdf?type=application/pdf', undefined, 'manual.pdf'],
+    ['https://example.com/manual.pdf?token=%FF', undefined, 'manual.pdf'],
+    ['https://example.com/manual%FF.pdf', undefined, 'manual%FF.pdf'],
+    ['https://example.com/one%5Cpart.pdf', undefined, 'one\\part.pdf'],
+    ['https://example.com/two%5Cpart.pdf', undefined, 'two\\part.pdf'],
+  ])('uses a clean URL fallback for %s while preserving resolved filename %s', async (url, resolvedFilename, name) => {
     mockPartialMD5.mockResolvedValue('pdf-hash');
     setupMockPdfDoc();
     const web = new WebAppService();
@@ -1465,7 +1471,6 @@ describe('importBook PDF filename-aware dedup', () => {
     service.getFs().openFile.mockResolvedValue(file);
 
     const book = await service.importBook(url, []);
-    const name = resolvedFilename || 'manual.pdf';
     const title = name.slice(0, -4);
     expect(book).toMatchObject({
       originalFilename: name,
