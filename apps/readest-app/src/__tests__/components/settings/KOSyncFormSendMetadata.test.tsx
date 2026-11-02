@@ -49,7 +49,7 @@ afterEach(() => {
 });
 
 describe('KOSyncForm checksum method', () => {
-  test('offers filename matching, explains legacy fallback, and persists both methods', async () => {
+  test('offers filename matching, explains the method, and persists both methods', async () => {
     render(<KOSyncForm onBack={vi.fn()} />);
 
     const select = screen.getByRole('combobox', { name: 'Checksum Method' });
@@ -65,9 +65,7 @@ describe('KOSyncForm checksum method', () => {
       );
     });
     expect(
-      screen.getByText(
-        'File Name uses the original filename, including its extension. Books without a saved original filename use {title}.{ext}.',
-      ),
+      screen.getByText('File Name uses the original filename, including its extension.'),
     ).toBeTruthy();
 
     fireEvent.change(select, { target: { value: 'binary' } });

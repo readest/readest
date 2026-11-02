@@ -288,11 +288,7 @@ const KOSyncForm: React.FC<KOSyncFormProps> = ({ onBack }) => {
 
           {settings.kosync.checksumMethod === 'filename' && (
             <Tips>
-              <li>
-                {_(
-                  'File Name uses the original filename, including its extension. Books without a saved original filename use {title}.{ext}.',
-                )}
-              </li>
+              <li>{_('File Name uses the original filename, including its extension.')}</li>
             </Tips>
           )}
 
