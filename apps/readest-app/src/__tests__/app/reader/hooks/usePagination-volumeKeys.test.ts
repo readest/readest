@@ -194,6 +194,77 @@ describe('usePagination volume-key interception with TTS (#4691)', () => {
     expect(view.next).not.toHaveBeenCalled();
   });
 
+  test.each([
+    { rtl: false, vertical: false },
+    { rtl: true, vertical: false },
+    { rtl: false, vertical: true },
+    { rtl: true, vertical: true },
+  ])('navigates paragraphs instead of pages with volume keys (%j)', async (layout) => {
+    h.viewSettings = {
+      volumeKeysToFlip: true,
+      paragraphMode: { enabled: true },
+      readingRulerEnabled: true,
+      ...layout,
+    };
+    const next = vi.fn();
+    const prev = vi.fn();
+    const ruler = vi.fn(() => true);
+    eventDispatcher.on('paragraph-next', next);
+    eventDispatcher.on('paragraph-prev', prev);
+    eventDispatcher.onSync('reading-ruler-move', ruler);
+    try {
+      const view = makeView();
+      const { rerender } = setupWithView(view);
+
+      await pressVolumeKey('VolumeDown');
+      expect(next).toHaveBeenCalledOnce();
+      expect(next.mock.calls[0]![0].detail).toEqual({ bookKey: BOOK_KEY });
+      expect(prev).not.toHaveBeenCalled();
+      await pressVolumeKey('VolumeUp');
+      expect(prev).toHaveBeenCalledOnce();
+      expect(prev.mock.calls[0]![0].detail).toEqual({ bookKey: BOOK_KEY });
+      expect(ruler).not.toHaveBeenCalled();
+      expect(view.next).not.toHaveBeenCalled();
+      expect(view.prev).not.toHaveBeenCalled();
+
+      next.mockClear();
+      prev.mockClear();
+      await emitPlayback('playing');
+      await pressVolumeKey('VolumeDown');
+      await pressVolumeKey('VolumeUp');
+      expect(next).not.toHaveBeenCalled();
+      expect(prev).not.toHaveBeenCalled();
+
+      await emitPlayback('paused');
+      await pressVolumeKey('VolumeDown');
+      expect(next).toHaveBeenCalledOnce();
+
+      h.viewSettings = { ...h.viewSettings, volumeKeysToFlip: false };
+      rerender();
+      await pressVolumeKey('VolumeDown');
+      await pressVolumeKey('VolumeUp');
+      expect(next).toHaveBeenCalledOnce();
+      expect(prev).not.toHaveBeenCalled();
+
+      h.viewSettings = {
+        volumeKeysToFlip: true,
+        paragraphMode: { enabled: false },
+        ...layout,
+      };
+      rerender();
+      await pressVolumeKey('VolumeDown');
+      await pressVolumeKey('VolumeUp');
+      expect(view.next).toHaveBeenCalledOnce();
+      expect(view.prev).toHaveBeenCalledOnce();
+      expect(next).toHaveBeenCalledOnce();
+      expect(prev).not.toHaveBeenCalled();
+    } finally {
+      eventDispatcher.off('paragraph-next', next);
+      eventDispatcher.off('paragraph-prev', prev);
+      eventDispatcher.offSync('reading-ruler-move', ruler);
+    }
+  });
+
   test('page-flips on volume keys when TTS is paused', async () => {
     const view = makeView();
     setupWithView(view);
