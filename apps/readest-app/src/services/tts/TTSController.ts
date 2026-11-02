@@ -1836,8 +1836,9 @@ export class TTSController extends EventTarget {
     // utterance is the same recording playing on.
     await this.stop(true);
     this.#terminated = false;
-    this.#currentSpeakAbortController = new AbortController();
-    const { signal } = this.#currentSpeakAbortController;
+    const abortController = new AbortController();
+    this.#currentSpeakAbortController = abortController;
+    const { signal } = abortController;
 
     this.#currentSpeakPromise = new Promise(async (resolve, reject) => {
       try {
@@ -1851,6 +1852,7 @@ export class TTSController extends EventTarget {
         });
 
         ssml = await this.#preprocessSSML(await ssml);
+        if (signal.aborted) return;
         if (!ssml) {
           this.#nossmlCnt++;
           // FIXME: in case we are at the end of the book, need a better way to handle this
@@ -1892,6 +1894,7 @@ export class TTSController extends EventTarget {
           }
           await this.preloadSSML(ssml, signal);
         }
+        if (signal.aborted) return;
         // Only the native client surfaces an offline engine failure as a
         // terminal 'error' code (Edge/Web throw, which the catch below handles).
         const canSkipOnError = this.ttsClient === this.ttsNativeClient;
@@ -2006,8 +2009,10 @@ export class TTSController extends EventTarget {
           reject(e);
         }
       } finally {
-        if (this.#currentSpeakAbortController) {
-          this.#currentSpeakAbortController.abort();
+        // A skipped uncached preload can finish after its replacement starts.
+        // Its cleanup belongs to this utterance, never the current one.
+        abortController.abort();
+        if (this.#currentSpeakAbortController === abortController) {
           this.#currentSpeakAbortController = null;
         }
       }
