@@ -206,6 +206,42 @@ describe('TTSSessionManager', () => {
     expect(manager.getSleepTimer()).toBeNull();
   });
 
+  test('the chosen sleep timer re-arms on the next session after a stop (#7047)', async () => {
+    vi.useFakeTimers();
+    claim();
+    manager.setSleepTimer(600);
+    await manager.stopActive('user');
+    expect(manager.getSleepTimer()).toBeNull();
+
+    claim('hashA-r2', new FakeController());
+    expect(manager.getSleepTimer()?.timeoutSec).toBe(600);
+    expect(manager.getSleepTimer()?.firesAt).toBe(Date.now() + 600_000);
+
+    // Still chosen after it fired and stopped playback.
+    vi.advanceTimersByTime(601_000);
+    vi.useRealTimers();
+    await flush();
+    expect(manager.getActiveSession()).toBeNull();
+    claim('hashB-r1', new FakeController());
+    expect(manager.getSleepTimer()?.timeoutSec).toBe(600);
+  });
+
+  test('choosing no timer or chapter end stops the timer from re-arming', async () => {
+    claim();
+    manager.setSleepTimer(600);
+    manager.setSleepTimer(0);
+    await manager.stopActive('user');
+    claim('hashA-r2', new FakeController());
+    expect(manager.getSleepTimer()).toBeNull();
+
+    manager.setSleepTimer(600);
+    manager.setStopAtChapterEnd(true);
+    await manager.stopActive('user');
+    claim('hashA-r3', new FakeController());
+    expect(manager.getSleepTimer()).toBeNull();
+    expect(manager.getStopAtChapterEnd()).toBe(true);
+  });
+
   test('chapter-end mode reaches the live controller and every controller claimed after', () => {
     claim();
     manager.setStopAtChapterEnd(true);

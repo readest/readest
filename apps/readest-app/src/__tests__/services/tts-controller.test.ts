@@ -77,10 +77,12 @@ vi.mock('@/utils/lang', () => ({
 
 vi.mock('foliate-js/tts.js', () => ({
   TTS: vi.fn().mockImplementation(function (this: Record<string, unknown>) {
+    // A section of 20 paragraphs: stepping back into one reads to its end.
+    let paragraphs = 20;
     Object.assign(this, {
       start: vi.fn().mockReturnValue('<speak>hello</speak>'),
       resume: vi.fn().mockReturnValue('<speak>hello</speak>'),
-      next: vi.fn().mockReturnValue('<speak>next</speak>'),
+      next: vi.fn(() => (paragraphs-- > 0 ? '<speak>next</speak>' : undefined)),
       prev: vi.fn().mockReturnValue('<speak>prev</speak>'),
       nextMark: vi.fn().mockReturnValue('<speak>nextMark</speak>'),
       prevMark: vi.fn().mockReturnValue('<speak>prevMark</speak>'),
@@ -1460,6 +1462,115 @@ describe('TTSController', () => {
 
       expect(forwardSpy).toHaveBeenCalledWith(false, true);
       vi.useRealTimers();
+    });
+  });
+
+  // Stepping back from the opening of a section (a PDF page, an EPUB chapter)
+  // lands on the end of the previous one, not on its first paragraph (#7065).
+  describe('stepping back into the previous section', () => {
+    const page = (text: string) => {
+      const doc = document.implementation.createHTMLDocument();
+      doc.body.innerHTML = text;
+      return doc;
+    };
+
+    let restoreMocks: () => void;
+    let pages: Document[];
+
+    beforeEach(async () => {
+      const { TTS: RealTTS } =
+        await vi.importActual<typeof import('foliate-js/tts.js')>('foliate-js/tts.js');
+      const { textWalker } = await vi.importActual<typeof import('foliate-js/text-walker.js')>(
+        'foliate-js/text-walker.js',
+      );
+      const { parseSSMLMarks } = await import('@/utils/ssml');
+      const { TTS } = await import('foliate-js/tts.js');
+      const mockedParse = vi.mocked(parseSSMLMarks).getMockImplementation()!;
+      const mockedTTS = vi.mocked(TTS).getMockImplementation()!;
+      restoreMocks = () => {
+        vi.mocked(parseSSMLMarks).mockImplementation(mockedParse);
+        vi.mocked(TTS).mockImplementation(mockedTTS);
+      };
+      // Like the real parser, a mark over punctuation alone is no mark.
+      vi.mocked(parseSSMLMarks).mockImplementation((ssml: string) => ({
+        plainText: '',
+        marks: [...ssml.matchAll(/<mark name="([^"]+)"\s*\/>([^<]*)/g)]
+          .filter(([, , text]) => !/^[\p{P}\p{S}\s]*$/u.test(text!))
+          .map(([, name, text]) => ({
+            offset: 0,
+            name: name!,
+            text: text!.trim(),
+            language: 'en',
+          })),
+      }));
+      vi.mocked(TTS).mockImplementation(function (doc: Document) {
+        return new RealTTS(doc, textWalker, () => NodeFilter.FILTER_ACCEPT, vi.fn(), 'sentence');
+      } as unknown as typeof TTS);
+      controller.ttsClient.getGranularities = vi.fn().mockReturnValue(['sentence']);
+
+      pages = [
+        page('<p>Page one opens.</p><p>Page one goes on. Page one ends.</p>'),
+        page('<p>Page two opens.</p>'),
+      ];
+      (mockView.renderer as unknown as Record<string, unknown>)['getContents'] = () => {
+        const index = controller.getSectionIndex() ?? 0;
+        return [{ doc: pages[index], index, overlayer: { remove: vi.fn(), add: vi.fn() } }];
+      };
+      await controller.initViewTTS(1);
+      mockView.tts!.start();
+    });
+
+    afterEach(() => restoreMocks());
+
+    test('the previous sentence is the last sentence of the previous section', async () => {
+      await controller.backward(true);
+
+      expect(controller.getSectionIndex()).toBe(0);
+      expect(mockView.tts!.getLastRange()?.toString()).toBe('Page one ends.');
+    });
+
+    test('the previous paragraph is the last paragraph of the previous section', async () => {
+      await controller.backward();
+
+      expect(controller.getSectionIndex()).toBe(0);
+      expect(mockView.tts!.resume()).toContain('Page one goes on.');
+    });
+
+    // A closing divider has no sentence to speak; landing on it would hand
+    // playback straight back to the page the user left.
+    const withDivider = () =>
+      page('<p>Page one opens.</p><p>Page one goes on. Page one ends.</p><p>***</p>');
+
+    test('the previous sentence passes over a closing block with nothing to speak', async () => {
+      pages[0] = withDivider();
+      await controller.backward(true);
+      expect(mockView.tts!.getLastRange()?.toString()).toBe('Page one ends.');
+    });
+
+    test('the previous paragraph passes over a closing block with nothing to speak', async () => {
+      pages[0] = withDivider();
+      await controller.backward();
+      expect(mockView.tts!.resume()).toContain('Page one goes on.');
+    });
+
+    const spokenMarks = () => {
+      const spoken: string[] = [];
+      controller.addEventListener('tts-speak-mark', (e) =>
+        spoken.push((e as CustomEvent<{ text: string }>).detail.text),
+      );
+      return spoken;
+    };
+
+    test('a paused step back by sentence shows the sentence it lands on', async () => {
+      const spoken = spokenMarks();
+      await controller.backward(true);
+      expect(spoken).toEqual(['Page one ends.']);
+    });
+
+    test('a paused step back by paragraph shows the paragraph it lands on', async () => {
+      const spoken = spokenMarks();
+      await controller.backward();
+      expect(spoken).toEqual(['Page one goes on.']);
     });
   });
 

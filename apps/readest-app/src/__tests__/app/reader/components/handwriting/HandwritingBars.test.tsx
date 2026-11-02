@@ -128,15 +128,14 @@ describe('drawing bars', () => {
     expect(props.onTurnRight).toHaveBeenCalled();
   });
 
-  it('opens the pen options from the pen button and closes them on a choice', () => {
+  it('keeps the width slider open while choosing a fine pen width', () => {
     const props = dockProps();
     render(<HandwritingDock {...props} />);
-    expect(screen.queryAllByRole('button', { name: 'Pen Size' })).toHaveLength(0);
     fireEvent.click(screen.getByRole('button', { name: 'Pen' }));
-    const sizes = screen.getAllByRole('button', { name: 'Pen Size' });
-    expect(sizes).toHaveLength(4);
-    fireEvent.click(sizes[3]!);
-    expect(props.onSelectWidth).toHaveBeenCalled();
-    expect(screen.queryAllByRole('button', { name: 'Pen Size' })).toHaveLength(0);
+    const slider = screen.getByRole('slider', { name: 'Pen Size' });
+    expect(Number(slider.getAttribute('min'))).toBeLessThan(0.004);
+    fireEvent.change(slider, { target: { value: '0.001' } });
+    expect(props.onSelectWidth).toHaveBeenCalledWith(0.001);
+    expect(screen.getByRole('slider', { name: 'Pen Size' })).toBeTruthy();
   });
 });

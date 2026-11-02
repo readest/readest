@@ -3,13 +3,14 @@ import React, { useEffect } from 'react';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { BiMoon, BiSun } from 'react-icons/bi';
-import { PiGear } from 'react-icons/pi';
+import { PiGear, PiChartBar } from 'react-icons/pi';
 import { TbSunMoon } from 'react-icons/tb';
 import { MdZoomOut, MdZoomIn, MdCheck, MdInfoOutline, MdOutlineSensors } from 'react-icons/md';
 import { MdRemove, MdAdd, MdContrast } from 'react-icons/md';
 import { MdSync, MdSyncProblem } from 'react-icons/md';
 import { IoMdExpand } from 'react-icons/io';
 import { IoShareOutline } from 'react-icons/io5';
+import { setReadingStatsDialogVisible } from '@/components/stats/ReadingStatsDialog';
 import { TbArrowAutofitWidth } from 'react-icons/tb';
 import { TbColumns1, TbColumns2 } from 'react-icons/tb';
 import { TbCarouselVertical, TbCarouselHorizontal } from 'react-icons/tb';
@@ -35,7 +36,7 @@ import { navigateToLogin } from '@/utils/nav';
 import { getScrollGapAttr } from '@/utils/webtoon';
 import { applyPageTurnAttributes } from '@/app/reader/hooks/useCapturedTurn';
 import { eventDispatcher } from '@/utils/event';
-import { getMaxInlineSize } from '@/utils/config';
+import { getCurrentRendererLayout, useDuoPose } from '@/hooks/useDuoPose';
 import { nextThemeMode } from '@/utils/ambientLight';
 import { saveViewSettings } from '@/helpers/settings';
 import { canToggleFullScreen, toggleFullScreen } from '@/utils/window';
@@ -83,6 +84,19 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
   const [contrast, setContrast] = useState(viewSettings!.contrast ?? 100);
   const [zoomMode, setZoomMode] = useState(viewSettings!.zoomMode!);
   const [spreadMode, setSpreadMode] = useState(viewSettings!.spreadMode!);
+  // On iPhone Duo's inner display in landscape, book mode decides the spread.
+  const duoOwnsSpread = useDuoPose() === 'inner-landscape';
+  const duoBookMode = useReaderStore(
+    (s) => s.viewStates[bookKey]?.viewSettings?.duoBookMode ?? true,
+  );
+  const shownSpreadMode = duoOwnsSpread ? (duoBookMode ? 'auto' : 'none') : spreadMode;
+  const chooseSpreadMode = (mode: 'auto' | 'none') => {
+    if (duoOwnsSpread) {
+      saveViewSettings(envConfig, bookKey, 'duoBookMode', mode === 'auto', false, false);
+    } else {
+      setSpreadMode(mode);
+    }
+  };
   const [keepCoverSpread, setKeepCoverSpread] = useState(viewSettings!.keepCoverSpread!);
   const [invertImgColorInDark, setInvertImgColorInDark] = useState(
     viewSettings!.invertImgColorInDark,
@@ -105,6 +119,11 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
     setParagraphMode(!isParagraphMode);
     eventDispatcher.dispatch('toggle-paragraph-mode', { bookKey });
     setIsDropdownOpen?.(false);
+  };
+
+  const openReadingStats = () => {
+    setIsDropdownOpen?.(false);
+    setReadingStatsDialogVisible(true);
   };
 
   const openSettingsDialog = () => {
@@ -198,7 +217,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
     getView(bookKey)?.renderer.setAttribute('flow', isScrolledMode ? 'scrolled' : 'paginated');
     getView(bookKey)?.renderer.setAttribute(
       'max-inline-size',
-      `${getMaxInlineSize(viewSettings)}px`,
+      `${getCurrentRendererLayout(viewSettings!).maxInlineSize}px`,
     );
     getView(bookKey)?.renderer.setStyles?.(getStyles(viewSettings!));
     // `scrolled` decides which engine owns a swipe: leaving it stale keeps the
@@ -289,7 +308,8 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
     if (!bookData?.bookDoc?.sections?.length) return;
     viewSettings.keepCoverSpread = keepCoverSpread;
     setCoverSpread(bookData.bookDoc, keepCoverSpread);
-    getView(bookKey)?.renderer.setAttribute('spread', spreadMode);
+    // The spread in effect, which book mode decides on iPhone Duo.
+    getView(bookKey)?.renderer.setAttribute('spread', shownSpreadMode);
     setViewSettings(bookKey, viewSettings);
     saveViewSettings(envConfig, bookKey, 'keepCoverSpread', keepCoverSpread, true, false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -401,12 +421,12 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
               <button
                 title={_('Single Page')}
                 onClick={() => {
-                  setSpreadMode('none');
+                  chooseSpreadMode('none');
                   if (isScrolledMode) setScrolledMode(false);
                 }}
                 className={clsx(
                   'hover:bg-base-300 text-base-content rounded-full p-2',
-                  !isScrolledMode && spreadMode === 'none' && 'bg-base-300/75',
+                  !isScrolledMode && shownSpreadMode === 'none' && 'bg-base-300/75',
                 )}
               >
                 <TbColumns1 />
@@ -414,12 +434,12 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
               <button
                 title={_('Auto Spread')}
                 onClick={() => {
-                  setSpreadMode('auto');
+                  chooseSpreadMode('auto');
                   if (isScrolledMode) setScrolledMode(false);
                 }}
                 className={clsx(
                   'hover:bg-base-300 text-base-content rounded-full p-2',
-                  !isScrolledMode && spreadMode === 'auto' && 'bg-base-300/75',
+                  !isScrolledMode && shownSpreadMode === 'auto' && 'bg-base-300/75',
                 )}
               >
                 <TbColumns2 />
@@ -478,7 +498,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
               label={_('Separate Cover Page')}
               Icon={keepCoverSpread ? MdCheck : undefined}
               onClick={() => setKeepCoverSpread(!keepCoverSpread)}
-              disabled={spreadMode === 'none'}
+              disabled={isScrolledMode || shownSpreadMode === 'none'}
             />
             <MenuItem
               label={_('Right-to-Left Pages')}
@@ -608,6 +628,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
         }
         onClick={cycleThemeMode}
       />
+      <MenuItem label={_('Reading Statistics')} Icon={PiChartBar} onClick={openReadingStats} />
       <MenuItem label={_('Settings')} Icon={PiGear} onClick={openSettingsDialog} />
       <hr aria-hidden='true' className='border-base-300 my-1' />
 

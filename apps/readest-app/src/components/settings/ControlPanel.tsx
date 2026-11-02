@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { invoke } from '@tauri-apps/api/core';
 import { useEnv } from '@/context/EnvContext';
 import { useReaderStore } from '@/store/readerStore';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -9,10 +10,11 @@ import { useEinkMode } from '@/hooks/useEinkMode';
 import { getStyles } from '@/utils/style';
 import { getMaxInlineSize } from '@/utils/config';
 import { saveSysSettings, saveViewSettings } from '@/helpers/settings';
-import { PageTurnStyle } from '@/types/book';
+import { ImageViewerGesture, PageTurnStyle } from '@/types/book';
 import { SettingsPanelPanelProp } from './SettingsDialog';
 import { annotationToolQuickActions } from '@/app/reader/components/annotator/AnnotationTools';
 import { applyPageTurnAttributes } from '@/app/reader/hooks/useCapturedTurn';
+import { resolveImageViewerGesture } from '@/app/reader/utils/iframeEventHandlers';
 import { isTauriAppPlatform } from '@/services/environment';
 import { DEFAULT_SYSTEM_SETTINGS } from '@/services/constants';
 import {
@@ -48,6 +50,9 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
   const [showPaginationButtons, setShowPaginationButtons] = useState(
     viewSettings.showPaginationButtons,
   );
+  const [stablePageNumbers, setStablePageNumbers] = useState(
+    viewSettings.stablePageNumbers ?? true,
+  );
   const [isDisableClick, setIsDisableClick] = useState(viewSettings.disableClick);
   const [isDisableSwipe, setIsDisableSwipe] = useState(viewSettings.disableSwipe);
   const [disablePullDownToBookmark, setDisablePullDownToBookmark] = useState(
@@ -56,6 +61,9 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
   const [fullscreenClickArea, setFullscreenClickArea] = useState(viewSettings.fullscreenClickArea);
   const [swapClickArea, setSwapClickArea] = useState(viewSettings.swapClickArea);
   const [isDisableDoubleClick, setIsDisableDoubleClick] = useState(viewSettings.disableDoubleClick);
+  const [imageViewerGesture, setImageViewerGesture] = useState(
+    resolveImageViewerGesture(viewSettings, !!bookData?.isFixedLayout),
+  );
   const [enableAnnotationQuickActions, setEnableAnnotationQuickActions] = useState(
     viewSettings.enableAnnotationQuickActions,
   );
@@ -86,6 +94,43 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
   const [screenWakeLock, setScreenWakeLock] = useState(settings.screenWakeLock);
   const [autohideCursor, setAutohideCursor] = useState(settings.autohideCursor);
   const [gamepadEnabled, setGamepadEnabled] = useState(settings.gamepadEnabled);
+  const [explorerThumbnails, setExplorerThumbnails] = useState(false);
+  const [explorerThumbnailsBusy, setExplorerThumbnailsBusy] = useState(true);
+  const [explorerThumbnailsError, setExplorerThumbnailsError] = useState(false);
+
+  useEffect(() => {
+    if (!appService?.isWindowsApp) return;
+    let cancelled = false;
+    invoke<boolean>('get_explorer_thumbnails_enabled')
+      .then((enabled) => {
+        if (!cancelled) {
+          setExplorerThumbnails(enabled);
+          setExplorerThumbnailsBusy(false);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setExplorerThumbnailsError(true);
+          setExplorerThumbnailsBusy(false);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [appService?.isWindowsApp]);
+
+  const toggleExplorerThumbnails = async () => {
+    setExplorerThumbnailsBusy(true);
+    setExplorerThumbnailsError(false);
+    try {
+      await invoke('set_explorer_thumbnails_enabled', { enabled: !explorerThumbnails });
+      setExplorerThumbnails(!explorerThumbnails);
+    } catch {
+      setExplorerThumbnailsError(true);
+    } finally {
+      setExplorerThumbnailsBusy(false);
+    }
+  };
   const [reverseWheelPaging, setReverseWheelPaging] = useState(settings.reverseWheelPaging);
   const [hideBookshelfPageButtons, setHideBookshelfPageButtons] = useState(
     settings.hideBookshelfPageButtons,
@@ -110,7 +155,11 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
           { value: 'curl', label: _('Page Curl') },
         ]
       : []),
+    // Only the captured and native turns draw the flip.
+    ...(isTauriAppPlatform() ? [{ value: 'flip', label: _('Page Flip') }] : []),
   ];
+  // On the web a synced flip turns as a curl.
+  const shownTurnStyle = pageTurnStyle === 'flip' && !isTauriAppPlatform() ? 'curl' : pageTurnStyle;
 
   const einkAutoRefreshIntervalOptions = [
     { value: '0', label: _('Off') },
@@ -137,6 +186,7 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
       scrollingOverlap: setScrollingOverlap,
       hideScrollbar: setHideScrollbar,
       showPaginationButtons: setShowPaginationButtons,
+      stablePageNumbers: setStablePageNumbers,
       disableClick: setIsDisableClick,
       disableSwipe: setIsDisableSwipe,
       disablePullDownToBookmark: setDisablePullDownToBookmark,
@@ -228,6 +278,12 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showPaginationButtons]);
+
+  useEffect(() => {
+    if (stablePageNumbers === (viewSettings.stablePageNumbers ?? true)) return;
+    saveViewSettings(envConfig, bookKey, 'stablePageNumbers', stablePageNumbers, false, false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stablePageNumbers]);
 
   useEffect(() => {
     saveViewSettings(envConfig, bookKey, 'disableClick', isDisableClick, false, false);
@@ -443,6 +499,13 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
     ];
   };
 
+  // Set for this book only: comics and novels want different gestures (#7145).
+  const handleSelectImageViewerGesture = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    const gesture = event.target.value as ImageViewerGesture;
+    setImageViewerGesture(gesture);
+    saveViewSettings(envConfig, bookKey, 'imageViewerGesture', gesture, true, false);
+  };
+
   const handleSelectAnnotationQuickAction = (event: React.ChangeEvent<HTMLSelectElement>) => {
     const action = event.target.value as typeof annotationQuickAction;
     setAnnotationQuickAction(action);
@@ -530,11 +593,35 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
           onChange={() => setIsDisableDoubleClick(!isDisableDoubleClick)}
           data-setting-id='settings.control.disableDoubleClick'
         />
+        {bookData && (
+          <SettingsRow
+            label={_('Open Images')}
+            description={_('For this book only')}
+            data-setting-id='settings.control.imageViewerGesture'
+          >
+            <SettingsSelect
+              value={imageViewerGesture}
+              onChange={handleSelectImageViewerGesture}
+              ariaLabel={_('Open Images')}
+              options={[
+                { value: 'tap', label: appService?.isMobileApp ? _('Tap') : _('Click') },
+                { value: 'longPress', label: _('Long Press') },
+              ]}
+            />
+          </SettingsRow>
+        )}
         <SettingsSwitchRow
           label={_('Show Page Navigation Buttons')}
           checked={showPaginationButtons}
           onChange={() => setShowPaginationButtons(!showPaginationButtons)}
           data-setting-id='settings.control.showPaginationButtons'
+        />
+        <SettingsSwitchRow
+          label={_('Stable Page Numbers')}
+          description={_('Turn off to count pages by the screens of this device')}
+          checked={stablePageNumbers}
+          onChange={() => setStablePageNumbers(!stablePageNumbers)}
+          data-setting-id='settings.control.stablePageNumbers'
         />
       </BoxedList>
 
@@ -610,7 +697,7 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
             // A synced slide/curl setting from another device still reads as
             // push here when this engine cannot animate it.
             value={
-              turnStyleOptions.some((opt) => opt.value === pageTurnStyle) ? pageTurnStyle : 'push'
+              turnStyleOptions.some((opt) => opt.value === shownTurnStyle) ? shownTurnStyle : 'push'
             }
             onChange={(e) => setPageTurnStyle(e.target.value as PageTurnStyle)}
             ariaLabel={_('Animation Style')}
@@ -705,6 +792,26 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
           data-setting-id='settings.control.gamepadEnabled'
         />
       </BoxedList>
+
+      {appService?.isWindowsApp && (
+        <div>
+          <BoxedList title={_('File Explorer')}>
+            <SettingsSwitchRow
+              label={_('Use Readest for File Explorer thumbnails')}
+              description={_('Existing thumbnail providers are preserved')}
+              checked={explorerThumbnails}
+              disabled={explorerThumbnailsBusy}
+              onChange={toggleExplorerThumbnails}
+              data-setting-id='settings.control.explorerThumbnails'
+            />
+          </BoxedList>
+          {explorerThumbnailsError && (
+            <p role='alert' className='text-error mt-2 ps-4 text-sm'>
+              {_('Could not update File Explorer thumbnails')}
+            </p>
+          )}
+        </div>
+      )}
 
       {appService?.hasUpdater && (
         <BoxedList title={_('Update')} data-setting-id='settings.control.checkUpdates'>

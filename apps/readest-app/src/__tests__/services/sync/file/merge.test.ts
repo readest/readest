@@ -141,6 +141,33 @@ describe('mergeBookConfig (LWW scalars + CRDT notes)', () => {
   });
 });
 
+describe('mergeBookConfig read-aloud packs', () => {
+  test('unions both sides even when the remote config is older', () => {
+    // Recording audio never bumps updatedAt (it must not move progress), so
+    // the side that wins the scalar race may lack the other side's packs.
+    const local = {
+      updatedAt: 200,
+      booknotes: [],
+      ttsPacks: { webdav: ['1-a.mp3'] },
+    } as BookConfig;
+    const r = envelope({ config: { updatedAt: 100 }, ttsPacks: { webdav: ['2-b.mp3'], s3: [] } });
+    expect(mergeBookConfig(local, r).config.ttsPacks).toEqual({
+      webdav: ['1-a.mp3', '2-b.mp3'],
+      s3: [],
+    });
+  });
+
+  test('a newer remote without packs keeps the local ones', () => {
+    const local = {
+      updatedAt: 100,
+      booknotes: [],
+      ttsPacks: { webdav: ['1-a.mp3'] },
+    } as BookConfig;
+    const r = envelope({ config: { updatedAt: 200 } });
+    expect(mergeBookConfig(local, r).config.ttsPacks).toEqual({ webdav: ['1-a.mp3'] });
+  });
+});
+
 // Issue #5716: the count is the only viewSettings key that crosses devices.
 describe('mergeBookConfig reference page count (issue #5716)', () => {
   test('adopts a peer count into viewSettings when this device has none', () => {

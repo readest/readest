@@ -58,9 +58,15 @@ vi.mock('@/context/EnvContext', () => ({
 vi.mock('@/context/AuthContext', () => ({
   useAuth: () => ({ user: null }),
 }));
-vi.mock('@/store/themeStore', () => ({
-  useThemeStore: () => ({ themeMode: 'auto', isDarkMode: false, setThemeMode: vi.fn() }),
-}));
+vi.mock('@/store/themeStore', () => {
+  const useThemeStore = () => ({
+    themeMode: 'auto',
+    isDarkMode: false,
+    setThemeMode: vi.fn(),
+  });
+  useThemeStore.getState = () => ({ isIPhoneDuo: false, duoFold: null });
+  return { useThemeStore };
+});
 vi.mock('@/store/readerStore', () => ({
   useReaderStore: () => ({
     getView: () => mockView,
@@ -77,12 +83,14 @@ vi.mock('@/store/bookDataStore', () => ({
     getBookData: () => mockBookData,
   }),
 }));
-vi.mock('@/store/settingsStore', () => ({
-  useSettingsStore: () => ({
+vi.mock('@/store/settingsStore', () => {
+  const useSettingsStore = () => ({
     setSettingsDialogOpen: vi.fn(),
     setSettingsDialogBookKey: vi.fn(),
-  }),
-}));
+  });
+  useSettingsStore.getState = () => ({ settings: { alwaysShowStatusBar: false } });
+  return { useSettingsStore };
+});
 vi.mock('@/hooks/useTranslation', () => ({
   useTranslation: () => (key: string) => key,
 }));
@@ -237,6 +245,10 @@ const menuSequence = () =>
 
 describe('ViewMenu layout', () => {
   beforeEach(() => {
+    currentViewSettings.scrolled = false;
+    currentViewSettings.scrolledDirection = 'vertical';
+    currentViewSettings.spreadMode = 'auto';
+    currentViewSettings.keepCoverSpread = true;
     mockBookData.isFixedLayout = true;
     mockBookData.bookDoc.rendition = { layout: 'pre-paginated' };
   });
@@ -257,6 +269,18 @@ describe('ViewMenu layout', () => {
     render(<ViewMenu bookKey='book-1' />);
     expect(screen.getByText('Paragraph Mode')).toBeTruthy();
     expect(screen.getByText('Speed Reading Mode')).toBeTruthy();
+  });
+
+  it.each([
+    'Vertical Scrolling',
+    'Horizontal Scrolling',
+  ])('disables Separate Cover Page in %s mode (#7129)', (layout) => {
+    render(<ViewMenu bookKey='book-1' />);
+
+    fireEvent.click(screen.getByTitle(layout));
+
+    const separateCoverButton = screen.getByText('Separate Cover Page').closest('button');
+    expect(separateCoverButton?.disabled).toBe(true);
   });
 
   it('groups the image colour toggles after Auto Scroll and Webtoon Mode on its own above sync', () => {

@@ -18,7 +18,7 @@ import { isTauriAppPlatform } from '@/services/environment';
 import { getOSPlatform } from '@/utils/misc';
 import { notifyCarPlayState } from './carPlaySession';
 import { SILENCE_DATA } from './TTSData';
-import type { PlaybackSource } from '@/services/playback/playbackSource';
+import { resumePlayback, type PlaybackSource } from '@/services/playback/playbackSource';
 import type { TTSMark, TTSMediaMetadataMode } from './types';
 
 export interface TTSMediaBridgeMeta {
@@ -324,7 +324,7 @@ export class TTSMediaBridge {
       if (ctrl.state === 'playing') {
         void ctrl.pause();
       } else if (ctrl.state.includes('paused')) {
-        void ctrl.start();
+        void resumePlayback(ctrl);
       }
     };
     // 'play'/'pause' must be DIRECTIONAL, not toggles: audio-focus events
@@ -335,7 +335,7 @@ export class TTSMediaBridge {
     // action instead.
     mediaSession.setActionHandler('play', () => {
       const ctrl = controller();
-      if (ctrl?.state.includes('paused')) void ctrl.start();
+      if (ctrl?.state.includes('paused')) void resumePlayback(ctrl);
     });
     mediaSession.setActionHandler('pause', () => {
       const ctrl = controller();

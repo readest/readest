@@ -1673,4 +1673,46 @@ describe('importBook volatile-identifier dedup (issue #5959)', () => {
     expect(second).not.toBe(first);
     expect(books.filter((b) => !b.deletedAt)).toHaveLength(2);
   });
+
+  // Issue #7150: an FB2's document-info id is a GUID its editor mints once for
+  // the document and keeps across revisions, so it tells two FB2s with the
+  // same title and author apart rather than marking a throwaway export.
+  it('keeps two FB2 documents of the same title apart (issue #7150)', async () => {
+    const fb2Metadata = (id: string) => ({
+      title: 'Реквием для убийцы',
+      author: [{ name: 'Джеймс Хэдли Чейз', sortAs: 'Чейз, Джеймс Хэдли' }],
+      language: 'ru',
+      identifier: id,
+    });
+    const setupMockFb2Doc = (metadata: Record<string, unknown>) => {
+      mockOpen.mockResolvedValue({
+        book: { metadata, getCover: vi.fn().mockResolvedValue(null) },
+        format: 'FB2',
+      });
+    };
+    const books: Book[] = [];
+    const lookupIndex = buildBookLookupIndex(books);
+
+    mockPartialMD5.mockResolvedValue('fb2-hash-1');
+    setupMockFb2Doc(fb2Metadata('BBF748F5-2994-4DE2-B907-6C2B05324A92'));
+    const first = await service.importBook(
+      new File(['ocr 2012'], '041 1957 Реквием для убийцы.fb2'),
+      books,
+      { lookupIndex },
+    );
+
+    mockPartialMD5.mockResolvedValue('fb2-hash-2');
+    setupMockFb2Doc(fb2Metadata('A75CD08C-B1D1-4F5C-BAEF-13EEAF130115'));
+    const second = await service.importBook(
+      new File(['fb tools 2006'], '041 1957 Реквием для убийцы 2.fb2'),
+      books,
+      { lookupIndex },
+    );
+
+    expect(second).not.toBe(first);
+    expect(books.filter((b) => !b.deletedAt).map((b) => b.hash)).toEqual([
+      'fb2-hash-1',
+      'fb2-hash-2',
+    ]);
+  });
 });

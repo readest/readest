@@ -84,6 +84,15 @@ describe('wire envelope (frozen)', () => {
     expect(p.referencePageCount).toBeUndefined();
   });
 
+  test('buildRemotePayload carries the synced read-aloud packs outside config', () => {
+    const withPacks = { ...config, ttsPacks: { webdav: ['3-a.mp3'] } } as BookConfig;
+    const p = buildRemotePayload(book, withPacks, 'dev-1');
+    expect(p.ttsPacks).toEqual({ webdav: ['3-a.mp3'] });
+    // Outside config: the scalar spread in mergeBookConfig must never replace it.
+    expect('ttsPacks' in p.config).toBe(false);
+    expect(parseRemotePayload(JSON.stringify(p))?.ttsPacks).toEqual({ webdav: ['3-a.mp3'] });
+  });
+
   test('parseRemotePayload rejects null / non-JSON / wrong schema', () => {
     expect(parseRemotePayload(null)).toBeNull();
     expect(parseRemotePayload('not json')).toBeNull();

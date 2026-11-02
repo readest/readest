@@ -130,7 +130,10 @@ const escapeXml = (str: string) => {
 const CJK_NUMBER_DIGITS = '零〇一二两兩三四五六七八九十壹贰貳叁叄參肆伍陆陸柒捌玖拾0-9';
 const CJK_NUMBER_UNITS = '百千万萬佰仟';
 const CJK_NUMBER_CHARS = `${CJK_NUMBER_DIGITS}${CJK_NUMBER_UNITS}`;
-const CJK_VOLUME_HEADING = new RegExp(`第[${CJK_NUMBER_CHARS}]+(卷|本|册|部)`);
+// Spaces as the heading split allows them (第一 卷), around a required numeral.
+const CJK_VOLUME_HEADING = new RegExp(
+  `第[ 　]*[${CJK_NUMBER_CHARS}][ 　${CJK_NUMBER_CHARS}]*(卷|本|册|冊|部)`,
+);
 
 export class TxtToEpubConverter {
   public async convert(options: Txt2EpubOptions): Promise<ConversionResult> {
@@ -742,12 +745,12 @@ export class TxtToEpubConverter {
       const cjkNumber = `第[ 　${CJK_NUMBER_DIGITS}][ 　${CJK_NUMBER_CHARS}]*`;
       // Tier 1 — chapter units. Real headings; a title may attach directly
       // (第一章天地初开) or after a separator.
-      const chapterUnit = String.raw`[章节回讲篇话](?:[：:、 　\(\)0-9]*[^\n-]{0,36})`;
+      const chapterUnit = String.raw`[章节節回讲講篇话話](?:[：:、 　\(\)0-9]*[^\n-]{0,36})`;
       // Tier 2 — volume/measure-word units. These double as 量词 in prose
       // (第一封信 "the first letter", 第四本书 "the fourth book"), so a title only
       // counts when introduced by a separator (：:、, space, parens) or the line
       // ends — never a bare noun directly after the unit. See issue #4658.
-      const volumeUnit = String.raw`[卷本册部封](?:[：:、 　\(\)][：:、 　\(\)0-9]*[^\n-]{0,36})?`;
+      const volumeUnit = String.raw`[卷本册冊部封](?:[：:、 　\(\)][：:、 　\(\)0-9]*[^\n-]{0,36})?`;
       const numberedHeading = String.raw`${cjkNumber}(?:${chapterUnit}|${volumeUnit})(?!\S)`;
       const prefaceHeading = String.raw`(?:楔子|前言|简介|引言|序言|序章|总论|概论|后记|番外篇|番外|外传)(?:[：: 　][^\n-]{0,36})?(?!\S)`;
       const englishHeading = String.raw`chapter[\s.]*[0-9]+(?:[：:. 　]+[^\n-]{0,50})?(?!\S)`;
@@ -1106,3 +1109,20 @@ export class TxtToEpubConverter {
     return 'utf-8';
   }
 }
+
+// First non-empty line of pasted or shared text, as a book title.
+export const getTextTitle = (text: string): string =>
+  (text.split('\n').find((line) => line.trim()) ?? '').trim().slice(0, 80);
+
+// Wrap pasted or shared text as a .txt file for the normal import path. The
+// TXT importer titles the book after the file name, so a blank title falls
+// back to the text's first line, then to `fallbackTitle`.
+export const createTextBookFile = (text: string, title: string, fallbackTitle: string): File => {
+  // "Briefing: today" -> "Briefing - today"; trailing dots and spaces are
+  // not allowed in Windows file names.
+  const name = (title.trim() || getTextTitle(text))
+    .replace(/\s*[<>:"/\\|?*\x00-\x1f]+\s*/g, ' - ')
+    .slice(0, 80)
+    .replace(/^[\s-]+|[\s.-]+$/g, '');
+  return new File([text], `${name || fallbackTitle}.txt`, { type: 'text/plain' });
+};

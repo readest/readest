@@ -287,14 +287,14 @@ msgstr "Nobena knjiga ni odprta"
 msgid "Uploaded to Readest:"
 msgstr "Naloženo v Readest:"
 
+msgid "Auto sync"
+msgstr "Samodejna sinhronizacija"
+
 msgid "Log in Readest Account"
 msgstr "Prijava v račun Readest"
 
 msgid "Log out as %1"
 msgstr "Odjava kot %1"
-
-msgid "Auto sync"
-msgstr "Samodejna sinhronizacija"
 
 msgid "Readest library"
 msgstr "Knjižnica Readest"
@@ -524,17 +524,26 @@ msgstr "Prijava"
 msgid "Please enter both email and password"
 msgstr "Vnesite e-pošto in geslo"
 
+msgid "Sign in with a code"
+msgstr "Prijava s kodo"
+
 msgid "Please configure Supabase URL and API key first"
 msgstr "Najprej nastavite URL Supabase in ključ API"
 
 msgid "Logging in..."
 msgstr "Prijavljanje…"
 
+msgid "Login failed: %1"
+msgstr "Prijava ni uspela: %1"
+
 msgid "Successfully logged in to Readest"
 msgstr "Uspešno prijavljeni v Readest"
 
-msgid "Login failed: %1"
-msgstr "Prijava ni uspela: %1"
+msgid "Scan the QR code with a phone signed in to Readest, or open %1 and enter this code:\n\n%2"
+msgstr "Skenirajte kodo QR s telefonom, ki je prijavljen v Readest, ali odprite %1 in vnesite to kodo:\n\n%2"
+
+msgid "The code expired. Please try again."
+msgstr "Koda je potekla. Poskusite znova."
 
 msgid "Logged out from Readest"
 msgstr "Odjavljeni iz Readest"

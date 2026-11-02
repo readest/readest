@@ -787,6 +787,30 @@ describe('SqliteTTSCacheStore pack portability', () => {
     expect(imported).toHaveBeenCalledTimes(1);
   });
 
+  test('a section a synced pack already covers is not packed again', async () => {
+    const sidecar = await readSidecar();
+    const bytes = packFs.files.get(await packName())!;
+    const otherDb = await NodeDatabaseService.open(':memory:');
+    const otherFs = new FakePackFs();
+    const other = new SqliteTTSCacheStore(otherDb, {
+      budgetBytes: 1024 * 1024,
+      now: () => clock.t++,
+      packFs: otherFs,
+    });
+    expect(await other.importPack(bytes.slice().buffer as ArrayBuffer, sidecar)).toBe(true);
+    // Downloading or playing the section records the same sentences.
+    await other.registerSectionMarks(3, ['m1', 'm2']);
+    await other.recordMarkKey(3, 0, 'k1');
+    await other.recordMarkKey(3, 1, 'k2');
+    const files = [...otherFs.files.keys()].sort();
+    const readRange = vi.spyOn(otherFs, 'readRange');
+
+    expect(await other.compact()).toBe(0);
+    // Neither re-read the section's audio nor wrote a second pack.
+    expect(readRange).not.toHaveBeenCalled();
+    expect([...otherFs.files.keys()].sort()).toEqual(files);
+  });
+
   test('a packed sentence counts as cached only while its pack file is there', async () => {
     const sidecar = await readSidecar();
     const bytes = packFs.files.get(await packName())!;
@@ -847,7 +871,25 @@ describe('SqliteTTSCacheStore pack portability', () => {
     expect(await store.totalCacheBytes()).toBeGreaterThan(0);
   });
 
+  test('only downloaded sections are offered for upload, not listening cache', async () => {
+    // Section 3 packed from ordinary listening (beforeEach): not synced.
+    expect(await store.listPacks()).toEqual([]);
+
+    // A download in progress already offers its pack: compaction pushes
+    // before completeDownloadSections sets the pin.
+    await store.beginDownloadSections([3]);
+    const name = await packName();
+    expect(await store.listPacks()).toEqual([{ name, size: 80 }]);
+
+    await store.completeDownloadSections([3]);
+    expect(await store.listPacks()).toEqual([{ name, size: 80 }]);
+
+    await store.clearDownloads();
+    expect(await store.listPacks()).toEqual([]);
+  });
+
   test('the sync source surface reflects the database', async () => {
+    await store.beginDownloadSections([3]);
     const name = await packName();
     expect(await store.listPacks()).toEqual([{ name, size: 80 }]);
     expect(await store.hasPack(name)).toBe(true);
@@ -860,6 +902,36 @@ describe('SqliteTTSCacheStore pack portability', () => {
     const rebuilt = await store.buildPackSidecar(name);
     expect(rebuilt).toEqual(await readSidecar());
     expect(await store.buildPackSidecar('nope.mp3')).toBeNull();
+  });
+
+  test('a pack still describes all its sentences after an import shares one', async () => {
+    const localName = await packName();
+    const localSidecar = await readSidecar();
+
+    // Another device packed section 3 with k1 and a sentence this one lacks.
+    const otherDb = await NodeDatabaseService.open(':memory:');
+    const otherFs = new FakePackFs();
+    const other = new SqliteTTSCacheStore(otherDb, {
+      budgetBytes: 1024 * 1024,
+      now: () => clock.t++,
+      packFs: otherFs,
+    });
+    await other.registerSectionMarks(3, ['m1', 'm9']);
+    await other.put('k1', sentence(1));
+    await other.recordMarkKey(3, 0, 'k1');
+    await other.put('k9', sentence(9));
+    await other.recordMarkKey(3, 1, 'k9');
+    await other.compact();
+    const otherName = (await otherFs.list()).find((n) => n.endsWith('.mp3'))!;
+    const otherSidecar = JSON.parse(
+      new TextDecoder().decode(otherFs.files.get(packSidecarName(otherName))!),
+    ) as TTSPackSidecar;
+    const otherBytes = otherFs.files.get(otherName)!.slice().buffer as ArrayBuffer;
+    await otherDb.close();
+
+    // The import repoints k1's row at the imported pack.
+    expect(await store.importPack(otherBytes, otherSidecar)).toBe(true);
+    expect(await store.buildPackSidecar(localName)).toEqual(localSidecar);
   });
 
   test('evicting a pack removes its sidecar too', async () => {

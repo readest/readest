@@ -58,6 +58,20 @@ vi.mock('@/utils/fetch', () => ({
   ),
 }));
 
+// Records where a promise stands: 'pending', 'resolved', or its rejection message.
+const track = (promise: Promise<unknown>) => {
+  const outcome = { state: 'pending' };
+  promise.then(
+    () => {
+      outcome.state = 'resolved';
+    },
+    (err: Error) => {
+      outcome.state = err.message;
+    },
+  );
+  return outcome;
+};
+
 const makeBinaryAudioFrame = (audio: Uint8Array) => {
   const header = new TextEncoder().encode('Path:audio\r\n');
   const buf = new ArrayBuffer(2 + header.length + audio.length);
@@ -123,6 +137,29 @@ describe('EdgeSpeechTTS.createAudioData word boundaries (browser WebSocket path)
     expect(wsState.instances.length).toBe(1);
     expect(new Uint8Array(cached.data)).toEqual(new Uint8Array([1, 2, 3, 4]));
     expect(cached.boundaries).toEqual(boundaries);
+  });
+
+  test('fails after 30s when the socket never opens, and closes it', async () => {
+    const { EdgeSpeechTTS } = await import('@/libs/edgeTTS');
+    vi.useFakeTimers();
+    try {
+      const created = new EdgeSpeechTTS('wss').createAudioData({
+        lang: 'en',
+        text: 'A socket that never opens',
+        voice: 'en-US-AriaNeural',
+        rate: 1.0,
+        pitch: 1.0,
+      });
+      const outcome = track(created);
+      await vi.waitFor(() => expect(wsState.instances).toHaveLength(1));
+      const ws = wsState.instances[0]!;
+      const close = vi.spyOn(ws as unknown as { close: () => void }, 'close');
+      await vi.advanceTimersByTimeAsync(30_000);
+      expect(outcome.state).toBe('WebSocket timed out waiting for audio.');
+      expect(close).toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   test('resolves with empty boundaries when no metadata frames arrive', async () => {

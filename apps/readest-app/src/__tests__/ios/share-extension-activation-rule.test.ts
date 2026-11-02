@@ -32,12 +32,33 @@ const projectYml = stripYamlComments(
   readFileSync(resolve(process.cwd(), 'src-tauri/gen/apple/project.yml'), 'utf-8'),
 );
 
+// The rule is an NSPredicate string; collapse whitespace so clause checks
+// don't depend on how the YAML folds it.
+const activationRule = (() => {
+  const match = projectYml.match(/NSExtensionActivationRule:\s*>-\n((?:\s{16,}.*\n)+)/);
+  return match ? match[1]!.replace(/\s+/g, ' ').trim() : '';
+})();
+
 describe('iOS Share Extension activation rule (txt share stuck)', () => {
   it('does not enable NSExtensionActivationSupportsText (would capture .txt files)', () => {
     expect(projectYml).not.toContain('NSExtensionActivationSupportsText');
   });
 
-  it('still activates for web URLs (article clipping preserved)', () => {
-    expect(projectYml).toContain('NSExtensionActivationSupportsWebURLWithMaxCount');
+  it('accepts shared plain text only when it is not a file (#6747)', () => {
+    // A .txt shared from Files carries public.plain-text AND public.file-url;
+    // text shared from an app (selection, AI reply) carries public.plain-text
+    // alone. Checked on the iOS 26.3 simulator.
+    expect(activationRule).toContain(
+      '(ANY $att.registeredTypeIdentifiers UTI-CONFORMS-TO "public.plain-text" AND NOT ANY $att.registeredTypeIdentifiers UTI-CONFORMS-TO "public.file-url")',
+    );
+  });
+
+  it('still activates for web URLs and Safari pages (article clipping preserved)', () => {
+    expect(activationRule).toContain(
+      '(ANY $att.registeredTypeIdentifiers UTI-CONFORMS-TO "public.url" AND NOT ANY $att.registeredTypeIdentifiers UTI-CONFORMS-TO "public.file-url")',
+    );
+    expect(activationRule).toContain(
+      'ANY $att.registeredTypeIdentifiers UTI-CONFORMS-TO "com.apple.property-list"',
+    );
   });
 });

@@ -1,6 +1,7 @@
 import { md5 } from 'js-md5';
 import { NextResponse } from 'next/server';
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { isAbsEbook } from '@/utils/audiobook';
 
 // Server side of the CrossPoint SD plugin (routes under /api/crosspoint). A
 // reader links to an account with a device code, then authenticates every
@@ -68,11 +69,13 @@ export const authenticateDevice = async (
 };
 
 // A reader's KOSync document id is the partial MD5 of its file. CrossPoint's
-// "Optimize EPUB" upload rewrites a book, so that copy's id matches no Readest
-// book. Its first progress upload links it to the library book by title and
-// author (sent with KOSync "Send metadata"); later syncs and reading
-// sessions follow the link. Both helpers report a database error, like a
-// query, so a route never syncs a linked copy under its own id instead.
+// "Optimize EPUB" upload rewrites a book, and an ebook streamed from
+// Audiobookshelf is keyed by its abs:// path rather than its bytes, so the
+// copy's id matches no Readest book. Its first progress upload links it to
+// the library book by title and author (sent with KOSync "Send metadata");
+// later syncs and reading sessions follow the link. Both helpers report a
+// database error, like a query, so a route never syncs a linked copy under its
+// own id instead.
 
 interface Link {
   bookHash: string | null;
@@ -96,14 +99,24 @@ export const linkedBook = async (
   return { bookHash: (data?.book_hash as string | undefined) ?? null, error };
 };
 
+// The books row stores metadata as a JSON string.
+const parseMetadata = (value: unknown) => {
+  try {
+    return typeof value === 'string' ? JSON.parse(value) : value;
+  } catch {
+    return null;
+  }
+};
+
 const normalizeText = (value: unknown) =>
   typeof value === 'string' ? value.normalize('NFC').replace(/\s+/g, ' ').trim().toLowerCase() : '';
 
 /**
- * Links a copy to the library EPUB with its title. When titles collide, the
- * book must also share the copy's first author, and of several such books
- * (the same book imported twice, another edition) the most recently read one
- * wins. No book when the copy is Readest's own file or none fits.
+ * Links a copy to the library EPUB or Audiobookshelf ebook with its title.
+ * When titles collide, the book must also share the copy's first author, and
+ * of several such books (the same book imported twice, another edition) the
+ * most recently read one wins. No book when the copy is Readest's own file or
+ * none fits.
  */
 export const linkCopy = async (
   supabase: SupabaseClient,
@@ -122,15 +135,19 @@ export const linkCopy = async (
     .replace(/[,()%*\\"]/g, '_');
   const { data, error } = await supabase
     .from('books')
-    .select('book_hash, title, source_title, author, updated_at')
+    .select('book_hash, title, source_title, author, updated_at, format, metadata')
     .eq('user_id', userId)
     .or(`book_hash.eq.${document},source_title.ilike.${pattern},title.ilike.${pattern}`)
-    .eq('format', 'EPUB')
+    .in('format', ['EPUB', 'ABS'])
     .is('deleted_at', null);
   if (error) return { bookHash: null, error };
   if (!data || data.some((book) => book.book_hash === document)) return NO_LINK;
+  // An Audiobookshelf audiobook of the same title is not the copy's book.
   let matches = data.filter(
-    (book) => normalizeText(book.source_title) === wanted || normalizeText(book.title) === wanted,
+    (book) =>
+      (book.format === 'EPUB' ||
+        isAbsEbook({ format: book.format, metadata: parseMetadata(book.metadata) })) &&
+      (normalizeText(book.source_title) === wanted || normalizeText(book.title) === wanted),
   );
   // The reader joins every dc:creator with ", "; Readest lists a book's
   // authors with ", ", " and ", " & " or "、" between them.

@@ -35,11 +35,14 @@ const mountPage = async () => {
 };
 
 // The handler tracks the pointer in screen coordinates, so a drag up and to the
-// left scrolls the page down and to the right by the same amount.
+// left scrolls the page down and to the right by the same amount. Pointer id 1
+// is the mouse, which the handler captures for the length of the drag.
 const drag = (doc: Document, container: Element, dx: number, dy: number) => {
   const Pointer = (doc.defaultView as Window & typeof globalThis).PointerEvent;
   const at = (type: string, screenX: number, screenY: number) =>
-    container.dispatchEvent(new Pointer(type, { screenX, screenY, clientX: 100, clientY: 100 }));
+    container.dispatchEvent(
+      new Pointer(type, { pointerId: 1, screenX, screenY, clientX: 100, clientY: 100 }),
+    );
   at('pointerdown', 300, 300);
   at('pointermove', 300 + dx, 300 + dy);
   at('pointerup', 300 + dx, 300 + dy);

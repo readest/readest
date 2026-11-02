@@ -1,5 +1,6 @@
 import { customAlphabet } from 'nanoid';
 import { createSupabaseAdminClient } from '@/utils/supabase';
+import { isBookDataFileKey } from '@/utils/bookDataKey';
 
 // 22-char URL-safe alphabet (alphanumeric only — no `-` or `_`). Avoids
 // punctuation that some chat clients linkify oddly.
@@ -57,6 +58,7 @@ export interface ResolvedShare {
 }
 
 const isCoverKey = (fileKey: string): boolean => /\.(png|jpe?g|webp|gif)$/i.test(fileKey);
+const isBookKey = (fileKey: string): boolean => !isCoverKey(fileKey) && !isBookDataFileKey(fileKey);
 
 // Single source of truth for the "is this share alive and usable?" check.
 // Used by the public metadata, download, cover, og.png, and import routes
@@ -102,11 +104,11 @@ export const resolveActiveShare = async (
     return { ok: false, reason: { kind: 'lookup_failed', detail: filesError.message } };
   }
 
-  const bookFile = files?.find((f) => !isCoverKey(f.file_key));
+  const bookFile = files?.find((f) => isBookKey(f.file_key));
   if (!bookFile) {
     return { ok: false, reason: { kind: 'source_deleted' } };
   }
-  const coverFile = files?.find((f) => isCoverKey(f.file_key));
+  const coverFile = files?.find((f) => isCoverKey(f.file_key) && !isBookDataFileKey(f.file_key));
 
   return {
     ok: true,

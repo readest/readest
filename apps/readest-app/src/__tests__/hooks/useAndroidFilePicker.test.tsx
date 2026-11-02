@@ -140,8 +140,9 @@ describe('useAndroidPickedBooks with a mixed selection', () => {
   test('imports the books and still names the file it dropped', async () => {
     const onPickedBooks = vi.fn();
     const dispatchSpy = vi.spyOn(eventDispatcher, 'dispatch').mockResolvedValue();
+    // .doc stays unsupported; .docx converts to EPUB on import and is accepted.
     basenameMock.mockImplementation(async (path: string) =>
-      path.endsWith('/1') ? 'novel.epub' : 'resume.docx',
+      path.endsWith('/1') ? 'novel.epub' : 'resume.doc',
     );
     renderHook(() => useAndroidPickedBooks(makeAppService(true), onPickedBooks));
 
@@ -154,7 +155,7 @@ describe('useAndroidPickedBooks with a mixed selection', () => {
     ]);
     expect(dispatchSpy).toHaveBeenCalledWith(
       'toast',
-      expect.objectContaining({ message: expect.stringContaining('resume.docx') }),
+      expect.objectContaining({ message: expect.stringContaining('resume.doc') }),
     );
     dispatchSpy.mockRestore();
   });

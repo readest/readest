@@ -41,6 +41,8 @@ interface BookItemProps {
   showTimeRemaining: boolean;
   /** Badged on the cover inside a series group, where the breadcrumb names the series. */
   seriesIndex?: number;
+  /** Shown under the title when the shelf shows page counts. */
+  pageCount?: number;
 }
 
 const BookItem: React.FC<BookItemProps> = ({
@@ -56,6 +58,7 @@ const BookItem: React.FC<BookItemProps> = ({
   showBookDetailsModal,
   showTimeRemaining,
   seriesIndex,
+  pageCount,
 }) => {
   const _ = useTranslation();
   const router = useRouter();
@@ -228,7 +231,9 @@ const BookItem: React.FC<BookItemProps> = ({
         <div
           className={clsx(
             'flex items-center',
-            book.progress || book.readingStatus || isAbsBook ? 'justify-between' : 'justify-end',
+            book.progress || book.readingStatus || isAbsBook || pageCount
+              ? 'justify-between'
+              : 'justify-end',
           )}
           style={{
             height: `${iconSize15}px`,
@@ -245,8 +250,12 @@ const BookItem: React.FC<BookItemProps> = ({
               </span>
             </div>
           ) : (
-            (book.progress || book.readingStatus) && (
-              <ReadingProgress book={book} showTimeRemaining={showTimeRemaining} />
+            (book.progress || book.readingStatus || pageCount) && (
+              <ReadingProgress
+                book={book}
+                showTimeRemaining={showTimeRemaining}
+                pageCount={pageCount}
+              />
             )
           )}
           {mode === 'list' && tags.length > 0 && (

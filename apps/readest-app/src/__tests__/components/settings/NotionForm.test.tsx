@@ -38,6 +38,7 @@ vi.mock('@/services/notion', async (original) => {
 });
 
 import NotionForm from '@/components/settings/integrations/NotionForm';
+import { DEFAULT_NOTION_NOTE_TEMPLATE } from '@/services/notion';
 
 const objectId = '1234567890abcdef1234567890abcdef';
 const resolvedId = 'abcdefabcdefabcdefabcdefabcdefab';
@@ -100,6 +101,82 @@ describe('NotionForm connection validation', () => {
         message: 'The Notion database is unavailable or has not been shared with this integration.',
         type: 'error',
       }),
+    );
+  });
+});
+
+describe('NotionForm note template', () => {
+  const connected = {
+    notion: { ...disconnected.notion, enabled: true, accessToken: 'secret', databaseId: objectId },
+  } as unknown as SystemSettings;
+
+  beforeEach(() => {
+    useSettingsStore.setState({ settings: connected } as never);
+  });
+
+  test('turning the template on saves the default template', async () => {
+    render(<NotionForm onBack={() => {}} />);
+
+    fireEvent.click(screen.getByLabelText('Use Custom Template'));
+
+    await waitFor(() =>
+      expect(useSettingsStore.getState().settings.notion).toEqual(
+        expect.objectContaining({
+          useCustomTemplate: true,
+          customTemplate: DEFAULT_NOTION_NOTE_TEMPLATE,
+        }),
+      ),
+    );
+    expect(screen.getByLabelText('Note Template')).toHaveProperty(
+      'value',
+      DEFAULT_NOTION_NOTE_TEMPLATE,
+    );
+  });
+
+  test('keeps an invalid template out of the settings and shows why', async () => {
+    useSettingsStore.setState({
+      settings: {
+        notion: {
+          ...connected.notion,
+          useCustomTemplate: true,
+          customTemplate: DEFAULT_NOTION_NOTE_TEMPLATE,
+        },
+      },
+    } as never);
+    render(<NotionForm onBack={() => {}} />);
+
+    const editor = screen.getByLabelText('Note Template');
+    fireEvent.change(editor, { target: { value: '{% if annotation.note %}unclosed' } });
+    fireEvent.blur(editor);
+
+    await waitFor(() => expect(screen.getByText(/got end of file/)).toBeTruthy());
+    expect(useSettingsStore.getState().settings.notion.customTemplate).toBe(
+      DEFAULT_NOTION_NOTE_TEMPLATE,
+    );
+  });
+
+  test('turning the template off keeps the last valid template', async () => {
+    useSettingsStore.setState({
+      settings: {
+        notion: {
+          ...connected.notion,
+          useCustomTemplate: true,
+          customTemplate: DEFAULT_NOTION_NOTE_TEMPLATE,
+        },
+      },
+    } as never);
+    render(<NotionForm onBack={() => {}} />);
+
+    fireEvent.change(screen.getByLabelText('Note Template'), {
+      target: { value: '{% if annotation.note %}unclosed' },
+    });
+    fireEvent.click(screen.getByLabelText('Use Custom Template'));
+
+    await waitFor(() =>
+      expect(useSettingsStore.getState().settings.notion.useCustomTemplate).toBe(false),
+    );
+    expect(useSettingsStore.getState().settings.notion.customTemplate).toBe(
+      DEFAULT_NOTION_NOTE_TEMPLATE,
     );
   });
 });

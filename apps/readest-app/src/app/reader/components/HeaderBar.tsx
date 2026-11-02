@@ -32,6 +32,7 @@ import SidebarToggler from './SidebarToggler';
 import BookmarkToggler from './BookmarkToggler';
 import NotebookToggler from './NotebookToggler';
 import TranslationToggler from './TranslationToggler';
+import DuoBookModeToggler from './DuoBookModeToggler';
 import ViewMenu from './ViewMenu';
 import SyncInfoDialog from './SyncInfoDialog';
 
@@ -150,12 +151,14 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
   }, []);
 
   // Check if mouse is outside header area to avoid false positive event of MouseLeave when clicking inside header on Windows
+  // The top edge itself counts as inside: a pointer pushed against the top of a
+  // maximized window sits at y=0 and can't leave upward (#7015).
   const isMouseOutsideHeader = useCallback((clientX: number, clientY: number) => {
     if (!headerRef.current) return true;
 
     const rect = headerRef.current.getBoundingClientRect();
     return (
-      clientX <= rect.left || clientX >= rect.right || clientY <= rect.top || clientY >= rect.bottom
+      clientX <= rect.left || clientX >= rect.right || clientY < rect.top || clientY >= rect.bottom
     );
   }, []);
 
@@ -285,6 +288,7 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
             </button>
             <BookmarkToggler bookKey={bookKey} />
             <TranslationToggler bookKey={bookKey} />
+            <DuoBookModeToggler bookKey={bookKey} />
           </div>
           {enableAnnotationQuickActions && (
             <Dropdown

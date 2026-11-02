@@ -43,7 +43,8 @@ overrides:
   dompurify: '>=3.4.17'
   i18next-http-backend: '>=4.0.2 <5'
   picomatch: '>=4.0.4'
-  path-to-regexp: '>=8.4.0'
+  'path-to-regexp@6': '>=6.3.0 <7'
+  'path-to-regexp@8': '>=8.4.0 <9'
   protobufjs: '>=7.6.5 <8'
   serialize-javascript: 7.0.5
   fast-xml-parser: '>=5.7.0'

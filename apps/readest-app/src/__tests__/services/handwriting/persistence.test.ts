@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 
-import { loadInkEditor, withInkNotes } from '@/services/handwriting/persistence';
+import { inkSignature, loadInkEditor, withInkNotes } from '@/services/handwriting/persistence';
 import { HandwritingEditor } from '@/services/handwriting/editor';
 import type { InkStroke } from '@/services/handwriting/model';
 import type { BookNote } from '@/types/book';
@@ -130,5 +130,62 @@ describe('ink notes', () => {
       deletedAt: 5,
     };
     expect(loadInkEditor([highlight, deleted], false).pageKeys()).toEqual([]);
+  });
+});
+
+// Postgres jsonb stores object keys shortest first.
+const asJsonb = (value: object) =>
+  Object.fromEntries(
+    Object.entries(value).sort(([a], [b]) => a.length - b.length || (a < b ? -1 : 1)),
+  ) as InkStroke;
+
+describe('synced ink', () => {
+  it('keeps a synced drawing as is when sync returned its strokes with keys reordered', () => {
+    const editor = new HandwritingEditor();
+    editor.addStroke('sec:3', stroke('a', 'ink-s1', WORDS));
+    const [pushed] = write([], editor, 100);
+    const synced = { ...pushed!, updatedAt: 500, ink: pushed!.ink!.map(asJsonb) };
+    // Drawing elsewhere must not restamp it, or it would win over a peer's edit.
+    editor.addStroke('sec:4', stroke('b', 'ink-s2', NEXT_CHAPTER));
+    const notes = write([synced], editor, 600);
+    expect(notes.find((n) => n.id === 'ink-s1')).toBe(synced);
+  });
+});
+
+describe('inkSignature', () => {
+  const editor = new HandwritingEditor();
+  editor.addStroke('sec:3', stroke('a', 'ink-s1', WORDS));
+  const notes = write([highlight], editor, 100);
+  const drawing = notes.find((n) => n.type === 'ink')!;
+  const others = notes.filter((n) => n.type !== 'ink');
+
+  it('stays the same when sync only restamps a drawing', () => {
+    expect(inkSignature([...others, { ...drawing, updatedAt: 500 }])).toBe(inkSignature(notes));
+  });
+
+  it('stays the same when sync returns the strokes with their keys reordered', () => {
+    const synced = { ...drawing, updatedAt: 500, ink: drawing.ink!.map(asJsonb) };
+    expect(JSON.stringify(synced.ink)).not.toBe(JSON.stringify(drawing.ink));
+    expect(inkSignature([...others, synced])).toBe(inkSignature(notes));
+  });
+
+  it('ignores the other booknotes', () => {
+    expect(inkSignature([drawing])).toBe(inkSignature(notes));
+  });
+
+  it('stays the same when sync moves the drawings it returned to the end', () => {
+    const other = { ...drawing, id: 'ink-s2' };
+    expect(inkSignature([other, drawing])).toBe(inkSignature([drawing, other]));
+  });
+
+  it('changes when a drawing gains or loses strokes', () => {
+    const more = { ...drawing, ink: [...drawing.ink!, stroke('b', 'ink-s1', WORDS)] };
+    expect(inkSignature([more])).not.toBe(inkSignature(notes));
+    expect(inkSignature([{ ...drawing, ink: [] }])).not.toBe(inkSignature(notes));
+  });
+
+  it('changes when a drawing is deleted or another one arrives', () => {
+    expect(inkSignature([{ ...drawing, deletedAt: 300 }])).not.toBe(inkSignature(notes));
+    expect(inkSignature([drawing, { ...drawing, id: 'ink-s2' }])).not.toBe(inkSignature(notes));
   });
 });

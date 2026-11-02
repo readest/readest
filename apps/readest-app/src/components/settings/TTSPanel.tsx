@@ -254,16 +254,6 @@ const TTSPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset }
           }
           data-setting-id='settings.tts.audioCacheEnabled'
         />
-        <SettingsSwitchRow
-          label={_('Sync Audio Cache')}
-          description={_('Share section audio between your devices through your file sync service')}
-          checked={ttsCacheConfig.syncEnabled}
-          disabled={!ttsCacheConfig.enabled}
-          onChange={() =>
-            updateTTSCacheConfig({ ...ttsCacheConfig, syncEnabled: !ttsCacheConfig.syncEnabled })
-          }
-          data-setting-id='settings.tts.audioCacheSync'
-        />
         <SettingsRow label={_('Storage Limit')}>
           <SettingsSelect
             value={String(ttsCacheConfig.budgetMB)}

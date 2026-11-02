@@ -68,6 +68,7 @@ vi.mock('@/app/library/components/BookshelfItem', () => ({
     itemSelected,
     coverFit,
     skeuomorphicCovers,
+    showPageCount,
     isSelectMode,
     handleLibraryNavigation,
     showSeriesIndex,
@@ -77,6 +78,7 @@ vi.mock('@/app/library/components/BookshelfItem', () => ({
     itemSelected: boolean;
     coverFit: string;
     skeuomorphicCovers: boolean;
+    showPageCount?: boolean;
     isSelectMode: boolean;
     handleLibraryNavigation: (group: string) => void;
     showSeriesIndex?: boolean;
@@ -96,6 +98,7 @@ vi.mock('@/app/library/components/BookshelfItem', () => ({
       <button
         data-cover-fit={coverFit}
         data-skeuomorphic-covers={skeuomorphicCovers}
+        data-show-page-count={showPageCount}
         data-show-series-index={showSeriesIndex}
         aria-pressed={itemSelected}
         onClick={onClick}
@@ -417,6 +420,15 @@ describe('library bookshelf integration', () => {
         .querySelector('button')
         ?.getAttribute('data-skeuomorphic-covers'),
     ).toBe('false');
+  });
+  it('shows page counts only on the shelf that turns them on (#6909)', () => {
+    const custom = { ...createBookshelf('With page counts'), showPageCount: true };
+    configure([custom, ...defaultBookshelves(DEFAULT_SYSTEM_SETTINGS)]);
+    render(<Bookshelf {...props} />);
+    const showPageCount = (shelfId: string) =>
+      screen.getByTestId(shelfId).querySelector('button')?.getAttribute('data-show-page-count');
+    expect(showPageCount(custom.id)).toBe('true');
+    expect(showPageCount('default')).toBeNull();
   });
   it('updates inheriting shelves from global sorting while Default can sort independently', () => {
     const custom = createBookshelf('Following global sorting');

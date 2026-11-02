@@ -287,14 +287,14 @@ msgstr "Nicio carte deschisă"
 msgid "Uploaded to Readest:"
 msgstr "Încărcat în Readest:"
 
+msgid "Auto sync"
+msgstr "Sincronizare automată"
+
 msgid "Log in Readest Account"
 msgstr "Autentificare în contul Readest"
 
 msgid "Log out as %1"
 msgstr "Deconectare de la %1"
-
-msgid "Auto sync"
-msgstr "Sincronizare automată"
 
 msgid "Readest library"
 msgstr "Biblioteca Readest"
@@ -524,17 +524,26 @@ msgstr "Autentificare"
 msgid "Please enter both email and password"
 msgstr "Introdu emailul și parola"
 
+msgid "Sign in with a code"
+msgstr "Conectează-te cu un cod"
+
 msgid "Please configure Supabase URL and API key first"
 msgstr "Configurează mai întâi URL-ul Supabase și cheia API"
 
 msgid "Logging in..."
 msgstr "Se conectează…"
 
+msgid "Login failed: %1"
+msgstr "Autentificare eșuată: %1"
+
 msgid "Successfully logged in to Readest"
 msgstr "Autentificat în Readest"
 
-msgid "Login failed: %1"
-msgstr "Autentificare eșuată: %1"
+msgid "Scan the QR code with a phone signed in to Readest, or open %1 and enter this code:\n\n%2"
+msgstr "Scanează codul QR cu un telefon conectat la Readest sau deschide %1 și introdu acest cod:\n\n%2"
+
+msgid "The code expired. Please try again."
+msgstr "Codul a expirat. Te rugăm să încerci din nou."
 
 msgid "Logged out from Readest"
 msgstr "Deconectat de la Readest"

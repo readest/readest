@@ -36,12 +36,21 @@ export const setCacheManagerDialogVisible = (visible: boolean) => {
 type CacheStatus = 'scanning' | 'idle' | 'confirming' | 'clearing' | 'done' | 'error';
 
 /**
- * Locations Manage Cache clears (mobile only). Both iOS and Android clear the
- * app Cache and Temp bases; iOS additionally clears the `Documents/Inbox`
- * folder, where "Open in Readest" leaves already-imported book copies that
- * otherwise linger forever.
+ * Locations Manage Cache clears. Both iOS and Android clear the app Cache and
+ * Temp bases; iOS additionally clears the `Documents/Inbox` folder, where
+ * "Open in Readest" leaves already-imported book copies that otherwise linger
+ * forever. On desktop neither root is Readest's alone (WebKit's cache on
+ * macOS, the WebView2 profile on Windows, a system-wide Temp), so only the
+ * cache dirs Readest writes and rebuilds are cleared: in-app browser
+ * downloads, kept after import, and page thumbnails.
  */
-const getCacheSources = async (appService: AppService): Promise<CacheSource[]> => {
+export const getCacheSources = async (appService: AppService): Promise<CacheSource[]> => {
+  if (!appService.isMobileApp) {
+    return [
+      { base: 'Cache', dir: 'browser-downloads' },
+      { base: 'Cache', dir: 'page-thumbnails' },
+    ];
+  }
   const sources: CacheSource[] = [
     { base: 'Cache', dir: '' },
     { base: 'Temp', dir: '' },

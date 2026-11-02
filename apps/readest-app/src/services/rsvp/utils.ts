@@ -49,6 +49,33 @@ export function isRTLText(text: string): boolean {
 }
 
 /**
+ * Split a word around its focus letter (the ORP) for the RSVP display. The
+ * focus is the whole grapheme cluster at `orpIndex`, so a vowel sign or a
+ * conjunct (Bengali মা, ন্ধু) is never cut off from its consonant and drawn on
+ * a dotted circle in its own span (#7024).
+ */
+export function splitAtFocus(
+  text: string,
+  orpIndex: number,
+): { before: string; focus: string; after: string } {
+  let start = orpIndex;
+  let end = orpIndex + 1;
+  if (typeof Intl !== 'undefined' && Intl.Segmenter && orpIndex < text.length) {
+    const segmenter = new Intl.Segmenter(undefined, { granularity: 'grapheme' });
+    const cluster = segmenter.segment(text).containing(orpIndex);
+    if (cluster) {
+      start = cluster.index;
+      end = cluster.index + cluster.segment.length;
+    }
+  }
+  return {
+    before: text.substring(0, start),
+    focus: text.substring(start, end),
+    after: text.substring(end),
+  };
+}
+
+/**
  * Check if text is CJK punctuation
  */
 export function isCJKPunctuation(text: string): boolean {

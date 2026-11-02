@@ -11,7 +11,8 @@ import { eventDispatcher } from '@/utils/event';
 import { openExternalUrl } from '@/utils/open';
 import { getBookGoodreadsQuery, getGoodreadsSearchUrl } from '@/utils/goodreads';
 import { getOSPlatform } from '@/utils/misc';
-import { getSeriesIndex } from '@/utils/book';
+import { getBookPageCount, getSeriesIndex } from '@/utils/book';
+import { isAudiobook } from '@/utils/audiobook';
 import { throttle } from '@/utils/throttle';
 import { LibraryCoverFitType, LibraryViewModeType } from '@/types/settings';
 import { FILE_REVEAL_LABELS, FILE_REVEAL_PLATFORMS } from '@/utils/os';
@@ -87,6 +88,7 @@ interface BookshelfItemProps {
   item: Book | BooksGroup;
   coverFit: LibraryCoverFitType;
   skeuomorphicCovers?: boolean;
+  showPageCount?: boolean;
   isSelectMode: boolean;
   itemSelected: boolean;
   transferProgress: number | null;
@@ -112,6 +114,7 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
   item,
   coverFit,
   skeuomorphicCovers,
+  showPageCount,
   isSelectMode,
   itemSelected,
   transferProgress,
@@ -446,6 +449,8 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
     showSeriesIndex && mode === 'grid' && 'format' in item
       ? getSeriesIndex(item.metadata?.seriesIndex)
       : undefined;
+  const pageCount =
+    showPageCount && 'format' in item && !isAudiobook(item) ? getBookPageCount(item) : undefined;
   const itemDataAttrs =
     'format' in item ? { 'data-book-hash': item.hash } : { 'data-group-name': item.name };
 
@@ -464,9 +469,12 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
         tabIndex={0}
         aria-label={
           'format' in item
-            ? seriesIndex !== undefined
-              ? `${item.title} #${seriesIndex}`
-              : item.title
+            ? [
+                seriesIndex !== undefined ? `${item.title} #${seriesIndex}` : item.title,
+                pageCount && _('{{count}} pages', { count: pageCount }),
+              ]
+                .filter(Boolean)
+                .join(', ')
             : item.name
         }
         style={{
@@ -494,6 +502,7 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
               showBookDetailsModal={showBookDetailsModal}
               showTimeRemaining={showTimeRemaining}
               seriesIndex={seriesIndex}
+              pageCount={pageCount}
             />
           ) : (
             <GroupItem

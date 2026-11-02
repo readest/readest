@@ -42,7 +42,10 @@ const mountPage = async (scrolls = true) => {
 
 const press = (doc: Document, container: Element, clientX: number, clientY: number) => {
   const Pointer = (doc.defaultView as Window & typeof globalThis).PointerEvent;
-  container.dispatchEvent(new Pointer('pointerdown', { clientX, clientY, screenX: 0, screenY: 0 }));
+  // Pointer id 1 is the mouse, which the handler captures while it pans.
+  container.dispatchEvent(
+    new Pointer('pointerdown', { pointerId: 1, clientX, clientY, screenX: 0, screenY: 0 }),
+  );
 };
 
 // What the browser fires as a mouse drag begins to select; cancelling it keeps

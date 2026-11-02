@@ -47,6 +47,17 @@ describe('bookshelf validation boundaries', () => {
     row.fields_jsonb['definition']!.v = { ...definition, skeuomorphicCovers: 'invalid' };
     expect(validateRow(row).ok).toBe(false);
   });
+  it('round-trips the page count badge choice through synced definitions (#6909)', () => {
+    const row = makeRow();
+    row.fields_jsonb['definition']!.v = {
+      ...createBookshelf('Paged', row.replica_id),
+      showPageCount: true,
+    };
+    const settings = { bookshelves: { rows: { [row.replica_id]: row } } };
+    expect(readBookshelves(settings).find((s) => s.id === row.replica_id)?.showPageCount).toBe(
+      true,
+    );
+  });
   it('round-trips relative date filters through synced definitions', () => {
     const row = makeRow();
     const definition = createBookshelf('Recent additions', row.replica_id);

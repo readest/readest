@@ -17,6 +17,7 @@
 // a server added mid-session becomes reachable without restarting the proxy.
 
 import { invoke } from '@tauri-apps/api/core';
+import { stat } from '@tauri-apps/plugin-fs';
 import { getInitializedAppService, isTauriAppPlatform } from '@/services/environment';
 import { useABSServerStore } from '@/store/absServerStore';
 import type { ABSServer } from '@/types/audiobookshelf';
@@ -149,4 +150,21 @@ export const getMediaFileUrl = async (
     console.warn('media proxy cannot serve the book file:', error);
     return null;
   }
+};
+
+/**
+ * getMediaFileUrl for a whole local audio file. On desktop the asset protocol
+ * answers a range request with at most 1,000 KiB, and macOS WebKit gives up on
+ * a recording whose index is bigger than that: a long M4B reports "The
+ * operation is not supported" and stays silent (#6848).
+ */
+export const getLocalMediaUrl = async (
+  path: string,
+  contentType: string,
+): Promise<string | null> => {
+  const size = await stat(path).then(
+    (info) => info.size,
+    () => null,
+  );
+  return size === null ? null : await getMediaFileUrl(path, 0, size, contentType);
 };

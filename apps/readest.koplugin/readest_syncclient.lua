@@ -70,7 +70,27 @@ function ReadestSyncClient:_prepare()
     self.client:reset_middlewares()
     self.client:enable("Format.JSON")
     self.client:enable("ReadestHeaders", {})
-    self.client:enable("ReadestAuth", { access_token = self.access_token })
+    -- Sign-in requests (requestDeviceCode, pollDeviceToken) have no token yet.
+    if self.access_token then
+        self.client:enable("ReadestAuth", { access_token = self.access_token })
+    end
+end
+
+-- macOS 26+ crashes a fork()ed child in getaddrinfo when an AF_UNSPEC
+-- lookup returns only IPv4 addresses (its NAT64 pass, Apple FB21364061,
+-- #6933). AF_INET lookups skip that pass, so workers connect over IPv4
+-- there. Call in the child before its first request.
+function ReadestSyncClient.useIPv4InWorker()
+    if jit.os ~= "OSX" then return end
+    local socket = require("socket")
+    local socketutil = require("socketutil")
+    -- Keep the timeouts socketutil's own socket.tcp patch applies.
+    socket.tcp = function()
+        local sock = socket.tcp4()
+        sock:settimeout(socketutil.block_timeout, "b")
+        sock:settimeout(socketutil.total_timeout, "t")
+        return sock
+    end
 end
 
 -- Internal: dispatch a Spore RPC and invoke `callback(success, body, status)`
@@ -112,6 +132,7 @@ function ReadestSyncClient:_dispatchInSubprocess(name, args, timeouts, receive, 
         -- driver destructors on Android (same rule as background covers).
         pcall(function()
             local ok, res = pcall(function()
+                ReadestSyncClient.useIPv4InWorker()
                 self:_prepare()
                 socketutil:set_timeout(timeouts[1], timeouts[2])
                 return self.client[name](self.client, args)
@@ -265,6 +286,19 @@ function ReadestSyncClient:getUploadUrl(params, callback)
         fileSize = params.fileSize,
         bookHash = params.bookHash,
     }, callback)
+end
+
+-- Sign-in with a code (no access token): the server answers like an OAuth
+-- device authorization grant. requestDeviceCode returns { device_code,
+-- user_code, verification_uri, verification_uri_complete, expires_in,
+-- interval }; pollDeviceToken answers 400 { error = "authorization_pending" }
+-- until the code is approved on the web, then a Readest session once.
+function ReadestSyncClient:requestDeviceCode(callback)
+    self:_dispatch("requestDeviceCode", {}, callback)
+end
+
+function ReadestSyncClient:pollDeviceToken(device_code, callback)
+    self:_dispatch("pollDeviceToken", { device_code = device_code, grant = "session" }, callback)
 end
 
 return ReadestSyncClient

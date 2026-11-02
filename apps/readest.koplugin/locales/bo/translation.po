@@ -287,14 +287,14 @@ msgstr "དཔེ་ཆ་ཁ་ཕྱེ་མེད།"
 msgid "Uploaded to Readest:"
 msgstr "Readest ལ་སྦར་ཟིན་:"
 
+msgid "Auto sync"
+msgstr "རང་འགུལ་མཉམ་སྦྱོར་"
+
 msgid "Log in Readest Account"
 msgstr "Readest རྩིས་ཐོར་འཛུལ་ཞུགས།"
 
 msgid "Log out as %1"
 msgstr "%1 ནས་ཕྱིར་ཐོན།"
-
-msgid "Auto sync"
-msgstr "རང་འགུལ་མཉམ་སྦྱོར་"
 
 msgid "Readest library"
 msgstr "Readest དཔེ་མཛོད་"
@@ -524,17 +524,26 @@ msgstr "འཛུལ་ཞུགས།"
 msgid "Please enter both email and password"
 msgstr "ཡིག་འཕྲིན་དང་གསང་ཨང་གཉིས་ཀ་འབྲི་རོགས།"
 
+msgid "Sign in with a code"
+msgstr "ཨང་རྟགས་ཀྱིས་ནང་འཛུལ།"
+
 msgid "Please configure Supabase URL and API key first"
 msgstr "དང་པོ་ Supabase URL དང་ API ལྡེ་མིག་སྒྲིག་འགོད་གནང་རོགས།"
 
 msgid "Logging in..."
 msgstr "འཛུལ་ཞུགས་བཞིན་པ…"
 
+msgid "Login failed: %1"
+msgstr "འཛུལ་ཞུགས་མ་ཐུབ: %1"
+
 msgid "Successfully logged in to Readest"
 msgstr "Readest ལ་ལེགས་པར་འཛུལ་ཞུགས་སོང་།"
 
-msgid "Login failed: %1"
-msgstr "འཛུལ་ཞུགས་མ་ཐུབ: %1"
+msgid "Scan the QR code with a phone signed in to Readest, or open %1 and enter this code:\n\n%2"
+msgstr "Readest ལ་ནང་འཛུལ་བྱས་པའི་ཁ་པར་གྱིས་ QR ཨང་རྟགས་བཤེར་རོགས། ཡང་ན་ %1 ཁ་ཕྱེ་ནས་ཨང་རྟགས་འདི་འཇུག་རོགས།\n\n%2"
+
+msgid "The code expired. Please try again."
+msgstr "ཨང་རྟགས་དུས་ཚོད་རྫོགས་སོང་། ཡང་བསྐྱར་ཚོད་ལྟ་བྱེད་རོགས།"
 
 msgid "Logged out from Readest"
 msgstr "Readest ནས་ཕྱིར་ཐོན་སོང་།"

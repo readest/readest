@@ -249,6 +249,30 @@ pub struct GetSafeAreaInsetsResponse {
     /// iOS: whether the root view controller currently hides the status bar.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status_bar_hidden: Option<bool>,
+    /// iPhone Duo: hinge status and folding region; absent elsewhere.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub fold: Option<FoldState>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct FoldState {
+    /// `closed`, `partial`, `open` or `unknown`.
+    pub status: String,
+    /// Whether the folding region currently divides the display.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub region_active: Option<bool>,
+    /// The folding region in window points (CSS px).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub region: Option<FoldRegion>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct FoldRegion {
+    pub x: f64,
+    pub y: f64,
+    pub width: f64,
+    pub height: f64,
 }
 
 #[derive(Debug, Deserialize, Serialize)]

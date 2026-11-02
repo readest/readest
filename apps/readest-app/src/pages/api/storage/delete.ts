@@ -3,6 +3,7 @@ import { corsAllMethods, runMiddleware } from '@/utils/cors';
 import { createSupabaseAdminClient } from '@/utils/supabase';
 import { validateUserAndToken } from '@/utils/access';
 import { deleteObject } from '@/utils/object';
+import { parseBookFileKey } from '@/utils/bookFileKey';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   await runMiddleware(req, res, corsAllMethods);
@@ -24,15 +25,30 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     const supabase = createSupabaseAdminClient();
-    const { data: fileRecord, error: fileError } = await supabase
+    let { data: fileRecord } = await supabase
       .from('files')
-      .select('user_id, id')
+      .select('user_id, id, file_key')
       .eq('user_id', user.id)
       .eq('file_key', fileKey)
       .limit(1)
       .single();
 
-    if (fileError || !fileRecord) {
+    // Same fallback as the download API: a book file uploaded under another
+    // name (the calibre plugin and koplugin use `{hash}.{ext}`) is found by its
+    // book hash and extension.
+    const bookFile = !fileRecord && parseBookFileKey(fileKey);
+    if (bookFile) {
+      const { data: candidates } = await supabase
+        .from('files')
+        .select('user_id, id, file_key')
+        .eq('user_id', user.id)
+        .eq('book_hash', bookFile.bookHash)
+        .is('deleted_at', null);
+      fileRecord =
+        candidates?.find((f) => f.file_key.endsWith(`.${bookFile.fileExtension}`)) ?? null;
+    }
+
+    if (!fileRecord) {
       return res.status(404).json({ error: 'File not found' });
     }
 
@@ -41,7 +57,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     try {
-      await deleteObject(fileKey);
+      await deleteObject(fileRecord.file_key);
       const { error: deleteError } = await supabase.from('files').delete().eq('id', fileRecord.id);
 
       if (deleteError) {

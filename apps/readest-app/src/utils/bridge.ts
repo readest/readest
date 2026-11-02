@@ -1,6 +1,10 @@
 import { invoke, Channel } from '@tauri-apps/api/core';
 import { getOSPlatform } from '@/utils/misc';
 
+/** Android and iOS native paper renderer; only metadata crosses this command. */
+export const paperCurl = <T>(payload: object) =>
+  invoke<T>('plugin:native-bridge|paper_curl', { payload });
+
 export interface CopyURIRequest {
   uri: string;
   dst: string;
@@ -89,7 +93,16 @@ export interface GetSafeAreaInsetsResponse {
   isIPhoneDuo?: boolean;
   /** iOS: whether the root view controller currently hides the status bar. */
   statusBarHidden?: boolean;
+  /** iPhone Duo: hinge status and folding region (window points). */
+  fold?: DuoFoldState;
   error?: string;
+}
+
+export interface DuoFoldState {
+  status: 'closed' | 'partial' | 'open' | 'unknown';
+  /** Whether the folding region currently divides the display. */
+  regionActive?: boolean;
+  region?: { x: number; y: number; width: number; height: number };
 }
 
 interface GetScreenBrightnessResponse {
@@ -432,7 +445,7 @@ export interface CoverWebviewRegionResponse {
 
 /**
  * Freeze the on-screen pixels of a webview region behind a native snapshot
- * view that `captureWebviewRegion` does not see (iOS only so far). The
+ * view/window that `captureWebviewRegion` does not see (iOS and Android). The
  * two-column page curl uses it to capture the incoming column under its
  * overlay without ever showing it (#6106). Rejects where unimplemented.
  */
