@@ -1,7 +1,11 @@
 import { browserFetch as tauriFetch } from '@/services/webBrowser/browserFetch';
-import { isTauriAppPlatform } from '@/services/environment';
 import { imageFetchHeaders } from './httpHeaders';
 import type { EpubImage } from './types';
+
+// Not `isTauriAppPlatform` from services/environment: that module reaches
+// appService → bookService → the conversion worker, so this module (bundled
+// into send-conversion.worker) would spawn its own worker and hang the build.
+const isTauriAppPlatform = () => process.env['NEXT_PUBLIC_APP_PLATFORM'] === 'tauri';
 
 // On Tauri we go through the Rust HTTP client (no browser-CORS); on web
 // we use the native fetch — the bundler is only ever invoked from a

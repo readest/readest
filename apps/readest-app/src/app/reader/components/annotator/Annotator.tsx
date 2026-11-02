@@ -1696,7 +1696,11 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
   // Returns the brand-new highlight records (one per page of a cross-page
   // selection): only those are placeholders the note-cancel flow may remove;
   // restyling/toggling an existing one must never tear down the user's record.
-  const handleHighlight = (update = false, highlightStyle?: HighlightStyle): BookNote[] => {
+  const handleHighlight = (
+    update = false,
+    highlightStyle?: HighlightStyle,
+    keepExisting = false,
+  ): BookNote[] => {
     if (!selection || !selection.text || selectionIsOcr) return [];
     setHighlightOptionsVisible(true);
     const { booknotes: annotations = [] } = config;
@@ -1745,7 +1749,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
       };
       const existingIndex = findExisting(cfi);
       if (existingIndex !== -1) {
-        if (!update && !allExist) continue;
+        if (keepExisting || (!update && !allExist)) continue;
         const existing = annotations[existingIndex]!;
         if (update) {
           // Tear down the original highlight and its global fan-outs before
@@ -1886,7 +1890,9 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
       const { sectionHref: href } = progress;
       selection.href = href;
     }
-    const created = handleHighlight(true);
+    // A note goes onto an existing highlight as it is, without restyling it to
+    // the last used style and color; only unhighlighted parts get a highlight.
+    const created = handleHighlight(false, undefined, true);
     const cfi = selection.popup ? selection.cfi : view?.getCFI(selection.index, selection.range);
     const target =
       created[0] ??

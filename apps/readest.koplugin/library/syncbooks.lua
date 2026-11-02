@@ -593,6 +593,7 @@ function M.downloadBook(book, opts, cb)
                     local http = require("socket.http")
                     local socketutil = require("socketutil")
                     local ltn12 = require("ltn12")
+                    require("readest_syncclient").useIPv4InWorker()
                     local f, ferr = io.open(partial, "wb")
                     if not f then result = "error:" .. tostring(ferr); return end
                     socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
@@ -718,6 +719,7 @@ function M.downloadCover(book, opts, cb)
                         local http       = require("socket.http")
                         local socketutil = require("socketutil")
                         local ltn12      = require("ltn12")
+                        require("readest_syncclient").useIPv4InWorker()
 
                         local f, ferr = io.open(dst, "wb")
                         if not f then

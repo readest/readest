@@ -7,10 +7,25 @@ import { publicFetch } from '@/utils/publicFetch';
 // Cap redirect hops so the SSRF host check below can re-run on every one.
 const MAX_REDIRECTS = 5;
 
-// In `next dev` the server runs on the developer's own machine, where a LAN
-// OPDS catalog is the normal use case (the CatalogManager UI only forbids
-// adding LAN URLs in production builds), so the host blocklist is skipped.
-const isPrivateHostAllowed = () => process.env.NODE_ENV === 'development';
+// Keep this server-only setting at request time so prebuilt Docker images can
+// opt specific catalogs into private-network access. Re-check every redirect.
+const isPrivateHostAllowed = (hostname: string) => {
+  if (process.env.NODE_ENV === 'development') return true;
+  const normalize = (host: string) => {
+    const value = host.trim().toLowerCase().replace(/\.+$/, '');
+    if (/^\[[\da-f:.]+\]$/.test(value)) {
+      try {
+        return new URL(`http://${value}`).hostname;
+      } catch {
+        return '';
+      }
+    }
+    return value;
+  };
+  return (process.env['READEST_TRUSTED_PRIVATE_HOSTS'] ?? '')
+    .split(',')
+    .some((host) => normalize(host) !== '' && normalize(host) === normalize(hostname));
+};
 
 /**
  * Fetch the target while running the SSRF host check on every redirect hop.
@@ -68,10 +83,11 @@ async function fetchFollowingRedirects(
     if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
       throw new SsrfBlockedError('Only http(s) URLs are supported');
     }
-    if (!isPrivateHostAllowed() && isBlockedHost(parsed.hostname)) {
+    const allowPrivateHost = isPrivateHostAllowed(parsed.hostname);
+    if (!allowPrivateHost && isBlockedHost(parsed.hostname)) {
       throw new SsrfBlockedError('This URL is not allowed');
     }
-    const response = isPrivateHostAllowed()
+    const response = allowPrivateHost
       ? await fetch(currentUrl, { ...init, headers, redirect: 'manual' })
       : await publicFetch(currentUrl, { ...init, headers });
     if (response.status >= 300 && response.status < 400 && response.headers.has('location')) {
@@ -136,7 +152,7 @@ async function handleRequest(request: NextRequest, method: 'GET' | 'HEAD') {
   if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') {
     return NextResponse.json({ error: 'Only http(s) URLs are supported' }, { status: 400 });
   }
-  if (!isPrivateHostAllowed() && isBlockedHost(parsedUrl.hostname)) {
+  if (!isPrivateHostAllowed(parsedUrl.hostname) && isBlockedHost(parsedUrl.hostname)) {
     return NextResponse.json({ error: 'This URL is not allowed' }, { status: 400 });
   }
 

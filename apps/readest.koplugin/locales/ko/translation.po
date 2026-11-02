@@ -287,14 +287,14 @@ msgstr "열린 책이 없습니다"
 msgid "Uploaded to Readest:"
 msgstr "Readest에 업로드됨:"
 
+msgid "Auto sync"
+msgstr "자동 동기화"
+
 msgid "Log in Readest Account"
 msgstr "Readest 계정에 로그인"
 
 msgid "Log out as %1"
 msgstr "%1 로그아웃"
-
-msgid "Auto sync"
-msgstr "자동 동기화"
 
 msgid "Readest library"
 msgstr "Readest 라이브러리"
@@ -524,17 +524,26 @@ msgstr "로그인"
 msgid "Please enter both email and password"
 msgstr "이메일과 비밀번호를 모두 입력하세요"
 
+msgid "Sign in with a code"
+msgstr "코드로 로그인"
+
 msgid "Please configure Supabase URL and API key first"
 msgstr "먼저 Supabase URL과 API 키를 설정하세요"
 
 msgid "Logging in..."
 msgstr "로그인 중…"
 
+msgid "Login failed: %1"
+msgstr "로그인 실패: %1"
+
 msgid "Successfully logged in to Readest"
 msgstr "Readest에 로그인되었습니다"
 
-msgid "Login failed: %1"
-msgstr "로그인 실패: %1"
+msgid "Scan the QR code with a phone signed in to Readest, or open %1 and enter this code:\n\n%2"
+msgstr "Readest에 로그인된 휴대폰으로 QR 코드를 스캔하거나, %1을(를) 열고 다음 코드를 입력하세요:\n\n%2"
+
+msgid "The code expired. Please try again."
+msgstr "코드가 만료되었습니다. 다시 시도해 주세요."
 
 msgid "Logged out from Readest"
 msgstr "Readest에서 로그아웃되었습니다"

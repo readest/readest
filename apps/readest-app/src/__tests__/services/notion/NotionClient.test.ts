@@ -4,12 +4,14 @@ import { NOTION_API_BASE_URL, NOTION_API_VERSION } from '@/services/constants';
 import { isTauriAppPlatform } from '@/services/environment';
 import { getAccessToken } from '@/utils/access';
 import {
+  DEFAULT_NOTION_NOTE_TEMPLATE,
   normalizeNotionObjectId,
   NotionClient,
   type NotionSyncStoreLike,
 } from '@/services/notion/NotionClient';
 import type { BookNote } from '@/types/book';
 import type { NotionSettings } from '@/types/settings';
+import { buildAnnotationAppUrl, buildAnnotationWebUrl } from '@/utils/deeplink';
 
 vi.mock('@tauri-apps/plugin-http', () => ({ fetch: vi.fn() }));
 vi.mock('@/services/environment', () => ({ isTauriAppPlatform: vi.fn(() => false) }));
@@ -365,6 +367,93 @@ describe('NotionClient note sync', () => {
     ).toHaveLength(5);
   });
 
+  test('links the book and note markers to pages that open in Readest', async () => {
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse({ results: [], has_more: false }))
+      .mockResolvedValueOnce(jsonResponse({ id: PAGE_ID }))
+      .mockResolvedValueOnce(
+        jsonResponse({ results: Array.from({ length: 5 }, (_, i) => ({ id: `block-${i}` })) }),
+      );
+
+    await new NotionClient(makeSettings(), makeStore().store).syncBookNotes(
+      'book-hash',
+      'Book',
+      [makeNote()],
+      () => 'Chapter',
+    );
+
+    const createBody = JSON.parse((fetchMock.mock.calls[1]![1] as RequestInit).body as string);
+    const appendBody = JSON.parse((fetchMock.mock.calls[2]![1] as RequestInit).body as string);
+    expect(createBody.children[0].paragraph.rich_text[0].text.link.url).toBe(
+      'https://web.readest.com/reader/book-hash',
+    );
+    const noteLink = appendBody.children[1].paragraph.rich_text[0].text.link.url as string;
+    expect(noteLink).toMatch(
+      new RegExp(
+        `^${buildAnnotationWebUrl({
+          bookHash: 'book-hash',
+          noteId: 'note-1',
+          cfi: 'epubcfi(/6/2!/4)',
+        }).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}&notion=[0-9a-f]{32}\\.5$`,
+      ),
+    );
+  });
+
+  test('recovers pages and notes whose markers were written by an earlier release', async () => {
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse({ results: [], has_more: false }))
+      .mockResolvedValueOnce(jsonResponse({ id: PAGE_ID }))
+      .mockResolvedValueOnce(
+        jsonResponse({ results: Array.from({ length: 5 }, (_, i) => ({ id: `block-${i}` })) }),
+      );
+    await new NotionClient(makeSettings(), makeStore().store).syncBookNotes(
+      'book-hash',
+      'Book',
+      [makeNote()],
+      () => 'Chapter',
+    );
+    const createBody = JSON.parse((fetchMock.mock.calls[1]![1] as RequestInit).body as string);
+    const appendBody = JSON.parse((fetchMock.mock.calls[2]![1] as RequestInit).body as string);
+    type LinkedParagraph = { paragraph: { rich_text: { text: { link: { url: string } } }[] } };
+    const withLink = (block: LinkedParagraph, url: string) => {
+      const copy = structuredClone(block);
+      copy.paragraph.rich_text[0]!.text.link.url = url;
+      return copy;
+    };
+    const noteLink = new URL(appendBody.children[1].paragraph.rich_text[0].text.link.url);
+    const [payloadHash, blockCount] = noteLink.searchParams.get('notion')!.split('.');
+    const remoteChildren = [
+      withLink(createBody.children[0], 'https://readest.com/notion-sync/book/book-hash'),
+      appendBody.children[0],
+      withLink(
+        appendBody.children[1],
+        `https://readest.com/notion-sync/note/book-hash/note-1/${payloadHash}/${blockCount}`,
+      ),
+      ...appendBody.children.slice(2),
+    ].map((block, index) => ({ ...block, id: `block-${index}` }));
+
+    fetchMock.mockReset();
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse({ results: [{ id: PAGE_ID }], has_more: false }))
+      .mockResolvedValueOnce(jsonResponse({ results: remoteChildren, has_more: false }));
+    const freshStore = makeStore();
+    const recovered = await new NotionClient(makeSettings(), freshStore.store).syncBookNotes(
+      'book-hash',
+      'Book',
+      [makeNote()],
+      () => 'Chapter',
+    );
+
+    expect(recovered).toEqual({ success: true, inserted: 0, updated: 0, deleted: 0, skipped: 1 });
+    expect(freshStore.notes.get(`${TARGET_ID}:book-hash:note-1`)?.blockIds).toEqual([
+      'block-1',
+      'block-2',
+      'block-3',
+      'block-4',
+      'block-5',
+    ]);
+  });
+
   test('recovers an append whose successful upstream response was lost', async () => {
     const { store } = makeStore();
     let committedChildren: Array<Record<string, unknown>> = [];
@@ -565,6 +654,215 @@ describe('NotionClient note sync', () => {
     expect(fetchMock.mock.calls[2]![0]).toBe(`/api/notion/blocks/${PAGE_ID}/children`);
     const appendBody = JSON.parse((fetchMock.mock.calls[2]![1] as RequestInit).body as string);
     expect(appendBody.children).toHaveLength(10);
+  });
+
+  test('colours each quote with its highlight colour and writes the note as a callout', async () => {
+    const { store } = makeStore();
+    const notes = [
+      makeNote({ color: 'violet' }),
+      makeNote({ id: 'note-2', color: '#123456', note: '' }),
+    ];
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse({ results: [], has_more: false }))
+      .mockResolvedValueOnce(jsonResponse({ id: PAGE_ID }))
+      .mockResolvedValueOnce(
+        jsonResponse({ results: Array.from({ length: 9 }, (_, i) => ({ id: `block-${i}` })) }),
+      );
+
+    await new NotionClient(makeSettings(), store).syncBookNotes(
+      'book-hash',
+      'Book',
+      notes,
+      () => 'Chapter',
+    );
+
+    const appendBody = JSON.parse((fetchMock.mock.calls[2]![1] as RequestInit).body as string);
+    const quotes = appendBody.children.filter((block: { type: string }) => block.type === 'quote');
+    expect(quotes.map((block: { quote: { color: string } }) => block.quote.color)).toEqual([
+      'purple_background',
+      'default',
+    ]);
+    const callouts = appendBody.children.filter(
+      (block: { type: string }) => block.type === 'callout',
+    );
+    expect(callouts).toHaveLength(1);
+    expect(callouts[0].callout.rich_text[0].text.content).toBe('My note');
+    expect(callouts[0].callout.icon).toEqual({ type: 'emoji', emoji: '📝' });
+  });
+
+  test('renders each note through a custom Markdown template', async () => {
+    const { store } = makeStore();
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse({ results: [], has_more: false }))
+      .mockResolvedValueOnce(jsonResponse({ id: PAGE_ID }))
+      .mockResolvedValueOnce(
+        jsonResponse({ results: Array.from({ length: 7 }, (_, i) => ({ id: `block-${i}` })) }),
+      );
+    const settings = {
+      ...makeSettings(),
+      useCustomTemplate: true,
+      customTemplate: [
+        '## {{ chapter.title }} · {{ title }}',
+        '',
+        '> {{ annotation.text }}',
+        '',
+        '---',
+        '',
+        '> [!TIP]',
+        '> **Note:** {{ annotation.note }}',
+        '',
+        '- page {{ annotation.page }}',
+        '- [source](https://example.com)',
+      ].join('\n'),
+    };
+
+    await new NotionClient(settings, store).syncBookNotes(
+      'book-hash',
+      'Book',
+      [makeNote({ color: 'green', page: 12 })],
+      () => 'Chapter',
+    );
+
+    const { children } = JSON.parse((fetchMock.mock.calls[2]![1] as RequestInit).body as string);
+    expect(children.map((block: { type: string }) => block.type)).toEqual([
+      'divider',
+      'paragraph',
+      'heading_2',
+      'quote',
+      'callout',
+      'bulleted_list_item',
+      'bulleted_list_item',
+    ]);
+    expect(children[2].heading_2.rich_text[0].text.content).toBe('Chapter · Book');
+    expect(children[3].quote.color).toBe('green_background');
+    expect(children[3].quote.rich_text[0].text.content).toBe('Highlighted text');
+    expect(children[4].callout.icon).toEqual({ type: 'emoji', emoji: '💡' });
+    expect(children[4].callout.rich_text).toEqual([
+      expect.objectContaining({ text: { content: 'Note:' }, annotations: { bold: true } }),
+      expect.objectContaining({ text: { content: ' My note' } }),
+    ]);
+    expect(children[5].bulleted_list_item.rich_text[0].text.content).toBe('page 12');
+    expect(children[6].bulleted_list_item.rich_text[0].text).toEqual({
+      content: 'source',
+      link: { url: 'https://example.com' },
+    });
+  });
+
+  test('the default template renders the built-in layout', async () => {
+    const appended = async (settings: NotionSettings) => {
+      fetchMock.mockReset();
+      fetchMock
+        .mockResolvedValueOnce(jsonResponse({ results: [], has_more: false }))
+        .mockResolvedValueOnce(jsonResponse({ id: PAGE_ID }))
+        .mockResolvedValueOnce(
+          jsonResponse({ results: Array.from({ length: 5 }, (_, i) => ({ id: `block-${i}` })) }),
+        );
+      await new NotionClient(settings, makeStore().store).syncBookNotes(
+        'book-hash',
+        'Book',
+        [
+          makeNote({
+            color: 'blue',
+            text: 'First paragraph\n\n# Not a heading, __init__ *b* [c](https://d.e) 1. x',
+            note: 'Note one\n\nNote **two**',
+          }),
+        ],
+        () => 'Chapter *1*',
+      );
+      const { children } = JSON.parse((fetchMock.mock.calls[2]![1] as RequestInit).body as string);
+      return children.slice(2);
+    };
+
+    expect(
+      await appended({
+        ...makeSettings(),
+        useCustomTemplate: true,
+        customTemplate: DEFAULT_NOTION_NOTE_TEMPLATE,
+      }),
+    ).toEqual(await appended(makeSettings()));
+  });
+
+  test('gives the template the annotation web link as its link', async () => {
+    const { store } = makeStore();
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse({ results: [], has_more: false }))
+      .mockResolvedValueOnce(jsonResponse({ id: PAGE_ID }))
+      .mockResolvedValueOnce(
+        jsonResponse({ results: Array.from({ length: 4 }, (_, i) => ({ id: `block-${i}` })) }),
+      );
+    const settings = {
+      ...makeSettings(),
+      useCustomTemplate: true,
+      customTemplate: '[Open]({{ annotation.link }})\n\n{{ annotation.appLink }}',
+    };
+
+    await new NotionClient(settings, store).syncBookNotes(
+      'book-hash',
+      'Book',
+      [makeNote()],
+      () => null,
+    );
+
+    const { children } = JSON.parse((fetchMock.mock.calls[2]![1] as RequestInit).body as string);
+    const link = { bookHash: 'book-hash', noteId: 'note-1', cfi: 'epubcfi(/6/2!/4)' };
+    expect(children[2].paragraph.rich_text[0].text.link).toEqual({
+      url: buildAnnotationWebUrl(link),
+    });
+    expect(children[3].paragraph.rich_text[0].text.content).toBe(buildAnnotationAppUrl(link));
+  });
+
+  test('rewrites synced notes when the custom template changes', async () => {
+    const { store } = makeStore();
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse({ results: [], has_more: false }))
+      .mockResolvedValueOnce(jsonResponse({ id: PAGE_ID }))
+      .mockResolvedValueOnce(
+        jsonResponse({ results: Array.from({ length: 5 }, (_, i) => ({ id: `block-${i}` })) }),
+      )
+      .mockResolvedValueOnce(jsonResponse({ id: PAGE_ID }))
+      .mockResolvedValueOnce(
+        jsonResponse({ results: Array.from({ length: 3 }, (_, i) => ({ id: `new-${i}` })) }),
+      )
+      .mockResolvedValue(jsonResponse({ archived: true }));
+
+    await new NotionClient(makeSettings(), store).syncBookNotes(
+      'book-hash',
+      'Book',
+      [makeNote()],
+      () => 'Chapter',
+    );
+    const templated = await new NotionClient(
+      { ...makeSettings(), useCustomTemplate: true, customTemplate: '> {{ annotation.text }}' },
+      store,
+    ).syncBookNotes('book-hash', 'Book', [makeNote()], () => 'Chapter');
+
+    expect(templated).toEqual({ success: true, inserted: 0, updated: 1, deleted: 0, skipped: 0 });
+  });
+
+  test('rewrites a synced note when its highlight colour changes', async () => {
+    const { store } = makeStore();
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse({ results: [], has_more: false }))
+      .mockResolvedValueOnce(jsonResponse({ id: PAGE_ID }))
+      .mockResolvedValueOnce(
+        jsonResponse({ results: Array.from({ length: 4 }, (_, i) => ({ id: `block-${i}` })) }),
+      )
+      .mockResolvedValueOnce(jsonResponse({ id: PAGE_ID }))
+      .mockResolvedValueOnce(
+        jsonResponse({ results: Array.from({ length: 4 }, (_, i) => ({ id: `new-${i}` })) }),
+      )
+      .mockResolvedValue(jsonResponse({ archived: true }));
+    const client = new NotionClient(makeSettings(), store);
+
+    await client.syncBookNotes('book-hash', 'Book', [makeNote({ color: 'yellow' })], () => null);
+    const recoloured = await client.syncBookNotes(
+      'book-hash',
+      'Book',
+      [makeNote({ color: 'green' })],
+      () => null,
+    );
+
+    expect(recoloured).toEqual({ success: true, inserted: 0, updated: 1, deleted: 0, skipped: 0 });
   });
 
   test('records replacement blocks before deleting stale blocks so a retry cannot append twice', async () => {

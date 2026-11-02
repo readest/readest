@@ -269,7 +269,15 @@ reader's own highlight style.
 - **Mobile Tauri** plays narration through `NativeNarrationPlayer`: AVPlayer on
   iOS and ExoPlayer on Android. Paired audiobooks are streamed directly from
   their local path, or by `http(s)` URL for an Audiobookshelf pairing (through
-  the loopback media proxy on Android). Desktop Tauri streams its asset URL
+  the loopback media proxy on Android). JS owns moving through the book, but
+  Android can suspend the WebView under screen lock while ExoPlayer plays on,
+  so once a section's last audio file is playing, the next section's first
+  file is queued in ExoPlayer's playlist and played without JS. When JS runs
+  again, `NativeNarrationPlayer.sync()` reads where the player got to (or the
+  item it ended on): clips of a file it played past are skipped, and the next
+  section joins the queued file where it is instead of reloading it (#7193).
+  A rollover event only prompts that read, since a late one can name an index
+  the next queue has reused. Desktop Tauri streams its asset URL
   through `HTMLAudioElement`, an Audiobookshelf pairing through the proxy; web
   uses a blob URL.
 

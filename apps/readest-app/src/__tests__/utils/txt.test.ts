@@ -91,6 +91,11 @@ describe('createChapterRegexps — Chinese (zh) regex matching', () => {
       const regex = getFirstRegex('zh');
       expect(regex.test(`\n第一${suffix}\n`)).toBe(true);
     });
+
+    it.each(['節', '話', '講', '冊'])('should match the traditional form 第一%s', (suffix) => {
+      const regex = getFirstRegex('zh');
+      expect(regex.test(`\n第一${suffix}\n`)).toBe(true);
+    });
   });
 
   describe('Chinese preface keywords', () => {
@@ -388,11 +393,23 @@ describe('extractChaptersFromSegment — Chinese (zh)', () => {
     expect(chapter!.isVolume).toBe(false);
   });
 
-  it.each(['本', '册'])('should mark 第一%s as a volume', (suffix) => {
+  it.each(['本', '册', '冊'])('should mark 第一%s as a volume', (suffix) => {
     const chapters = extractChapters(`前文内容\n第一${suffix} 标题\n正文内容`, 'zh');
     const volume = chapters.find((c) => c.title.includes(`第一${suffix}`));
     expect(volume).toBeDefined();
     expect(volume!.isVolume).toBe(true);
+  });
+
+  it.each(['卷', '冊'])('should mark a spaced 第一 %s heading as a volume', (suffix) => {
+    const chapters = extractChapters(`前文内容\n第一 ${suffix} 标题\n正文内容`, 'zh');
+    const volume = chapters.find((c) => c.title.includes(`第一 ${suffix}`));
+    expect(volume).toBeDefined();
+    expect(volume!.isVolume).toBe(true);
+  });
+
+  it('should not mark a 第 卷 heading without a number as a volume', () => {
+    const chapters = extractChapters('前文内容\n第 卷 标题\n正文内容', 'zh');
+    expect(chapters.some((c) => c.isVolume)).toBe(false);
   });
 
   it('should include title text in captured heading', () => {

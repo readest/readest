@@ -61,6 +61,8 @@ vi.mock('@/app/reader/components/rsvp/RSVPOverlay', () => ({
 vi.mock('@/app/reader/components/rsvp/RSVPStartDialog', () => ({ default: () => null }));
 vi.mock('@/hooks/useTranslation', () => ({ useTranslation: () => (s: string) => s }));
 vi.mock('@/context/EnvContext', () => ({ useEnv: () => ({ envConfig: {} }) }));
+const useScreenWakeLock = vi.hoisted(() => vi.fn());
+vi.mock('@/hooks/useScreenWakeLock', () => ({ useScreenWakeLock }));
 
 vi.mock('@/store/readerStore', () => {
   const state = {
@@ -413,5 +415,81 @@ describe('RSVPControl — TTS sync wiring (slice 5, #3235)', () => {
       });
       expect(handle.current?.ttsSyncStatus).toBe('decoupled');
     });
+  });
+});
+
+describe('RSVPControl — keeps the screen awake while playing', () => {
+  const wakeLockRequested = () => useScreenWakeLock.mock.lastCall?.[0];
+  const emitRsvpState = (playing: boolean) =>
+    act(async () => {
+      (controllerEventListeners.get('rsvp-state-change') ?? []).forEach((h) =>
+        h(new CustomEvent('rsvp-state-change', { detail: { active: true, playing } })),
+      );
+    });
+
+  beforeEach(() => {
+    isFixedLayout = false;
+    controllerEventListeners.clear();
+    controllerMock = makeControllerMock();
+    useScreenWakeLock.mockClear();
+  });
+
+  afterEach(() => cleanup());
+
+  test('holds the wake lock while RSVP plays and drops it on pause', async () => {
+    render(
+      <RSVPControl bookKey={BOOK_KEY} gridInsets={{ top: 0, bottom: 0, left: 0, right: 0 }} />,
+    );
+    expect(wakeLockRequested()).toBe(false);
+    await startSession();
+
+    await emitRsvpState(true);
+    expect(wakeLockRequested()).toBe(true);
+
+    await emitRsvpState(false);
+    expect(wakeLockRequested()).toBe(false);
+  });
+
+  test('follows TTS playback while read-along drives RSVP', async () => {
+    render(
+      <RSVPControl bookKey={BOOK_KEY} gridInsets={{ top: 0, bottom: 0, left: 0, right: 0 }} />,
+    );
+    await startSession();
+
+    await act(async () => {
+      await eventDispatcher.dispatch('tts-playback-state', { bookKey: BOOK_KEY, state: 'playing' });
+    });
+    expect(wakeLockRequested()).toBe(true);
+
+    await act(async () => {
+      await eventDispatcher.dispatch('tts-playback-state', { bookKey: BOOK_KEY, state: 'paused' });
+    });
+    expect(wakeLockRequested()).toBe(false);
+  });
+
+  test('fixed layout entered with TTS paused does not hold it for the frozen word', async () => {
+    isFixedLayout = true;
+    // Stand-in for useTTSControl's replay of the live session's state.
+    const replayPaused = () =>
+      eventDispatcher.dispatch('tts-playback-state', { bookKey: BOOK_KEY, state: 'paused' });
+    eventDispatcher.on('tts-sync-request', replayPaused);
+    try {
+      render(
+        <RSVPControl bookKey={BOOK_KEY} gridInsets={{ top: 0, bottom: 0, left: 0, right: 0 }} />,
+      );
+      await act(async () => {
+        await eventDispatcher.dispatch('tts-playback-state', {
+          bookKey: BOOK_KEY,
+          state: 'paused',
+        });
+      });
+      await startSession();
+
+      // RSVP starts externally driven (no timer) but reports playing.
+      await emitRsvpState(true);
+      expect(wakeLockRequested()).toBe(false);
+    } finally {
+      eventDispatcher.off('tts-sync-request', replayPaused);
+    }
   });
 });

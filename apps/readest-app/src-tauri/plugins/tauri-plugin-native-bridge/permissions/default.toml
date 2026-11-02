@@ -60,6 +60,7 @@ permissions = [
   "allow-get-reading-widget-instances",
   "allow-set-reading-widget-catalog",
   "allow-capture-webview-region",
+  "allow-paper-curl",
   "allow-cover-webview-region",
   "allow-uncover-webview-region",
   "allow-set-selection-suppressed",

@@ -427,6 +427,8 @@ class WebViewLifecycleManager: NSObject {
   private var isMonitoring = false
   private var lastBackgroundTime: Date?
   private var backgroundTimeThreshold: TimeInterval = 180.0
+  /// Called when the page is lost or replaced by a new document.
+  var onDocumentChange: (() -> Void)?
 
   func startMonitoring(webView: WKWebView) {
     self.webView = webView
@@ -554,6 +556,7 @@ extension WebViewLifecycleManager: WKNavigationDelegate {
 
   func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
     logger.error("WebViewLifecycleManager: WebContent process TERMINATED!️")
+    onDocumentChange?()
     recoverWebView(webView, reason: "process_terminated")
 
     if let original = originalNavigationDelegate,
@@ -614,6 +617,7 @@ extension WebViewLifecycleManager: WKNavigationDelegate {
   }
 
   func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
+    onDocumentChange?()
     if let original = originalNavigationDelegate,
       original.responds(to: #selector(webView(_:didCommit:)))
     {
@@ -655,6 +659,7 @@ class NativeBridgePlugin: Plugin {
   // interrupted turn from removing the next turn's cover.
   private var turnCoverView: UIView?
   private var turnCoverToken: Int = 0
+  private var nativePaper: NativePaperTurn?
   private var authSession: ASWebAuthenticationSession?
   private var currentOrientationMask: UIInterfaceOrientationMask = .all
   private var originalDelegate: UIApplicationDelegate?
@@ -696,6 +701,7 @@ class NativeBridgePlugin: Plugin {
 
     webViewLifecycleManager = WebViewLifecycleManager()
     webViewLifecycleManager?.startMonitoring(webView: webview)
+    webViewLifecycleManager?.onDocumentChange = { [weak self] in self?.nativePaper?.reset() }
     logger.log("NativeBridgePlugin: WebView lifecycle monitoring activated")
 
     // Forward Apple Pencil double-tap / squeeze gestures as native keys for
@@ -705,6 +711,29 @@ class NativeBridgePlugin: Plugin {
     let pencilInteraction = UIPencilInteraction()
     pencilInteraction.delegate = pencilHandler
     webview.addInteraction(pencilInteraction)
+
+    // iPhone Duo: folding the inner display part way changes the folding
+    // region without resizing the web view, so tell JS to refetch it.
+    #if canImport(UIKit, _version: 9127.0.85)  // iOS 27.1 SDK: the hinge API
+    if NativeBridgePlugin.isIPhoneDuo, #available(iOS 27.1, *) {
+      let hingeInteraction = UIHingeInteraction { [weak self] _, update in
+        guard let self else { return }
+        let status = NativeBridgePlugin.hingeStatusName(update.hinge?.status)
+        let statusChanged = status != self.lastHingeStatus
+        self.lastHingeStatus = status
+        // The folding region can change with the angle inside one status, so
+        // forward those too, at most every 250ms plus one trailing update.
+        if statusChanged || Date().timeIntervalSince(self.lastHingeEvent) >= 0.25 {
+          self.sendHingeEvent()
+        } else if self.pendingHingeEvent == nil {
+          let event = DispatchWorkItem { [weak self] in self?.sendHingeEvent() }
+          self.pendingHingeEvent = event
+          DispatchQueue.main.asyncAfter(deadline: .now() + 0.25, execute: event)
+        }
+      }
+      webview.addInteraction(hingeInteraction)
+    }
+    #endif
 
     // The WKWebView never fires the `prefers-color-scheme` media query
     // `change` event while the app stays foregrounded, so observe the
@@ -835,6 +864,8 @@ class NativeBridgePlugin: Plugin {
           "groupId": save.groupId,
           "groupName": save.groupName,
           "htmlFile": save.htmlFile,
+          "textFile": save.textFile,
+          "title": save.title,
           "addedAt": save.addedAt,
         ]
       }
@@ -1217,6 +1248,10 @@ class NativeBridgePlugin: Plugin {
             rootVC.setNeedsUpdateOfSupportedInterfaceOrientations()
           }
         }
+        // Release any iOS 26 lock first so it can't block this request.
+        if #available(iOS 26.0, *) {
+          OrientationLock.apply(.all, in: windowScene)
+        }
         if orientationMask == .all {
           windowScene.requestGeometryUpdate(.iOS(interfaceOrientations: .all)) { error in
             logger.error("Orientation update error: \(error.localizedDescription)")
@@ -1227,6 +1262,14 @@ class NativeBridgePlugin: Plugin {
         } else {
           windowScene.requestGeometryUpdate(.iOS(interfaceOrientations: orientationMask)) { error in
             logger.error("Orientation update error: \(error.localizedDescription)")
+            // Resizable scenes refuse the request; lock through the iOS 26
+            // preference instead, unless the reader has picked again since.
+            if #available(iOS 26.0, *) {
+              DispatchQueue.main.async {
+                guard self.currentOrientationMask == orientationMask else { return }
+                OrientationLock.apply(orientationMask, in: windowScene)
+              }
+            }
           }
         }
       }
@@ -1491,8 +1534,8 @@ class NativeBridgePlugin: Plugin {
     }
   }
 
-  // iOS exposes no foldable API and the viewport size cannot identify the
-  // device, so iPhone Duo is recognized by its model identifier.
+  // The viewport size cannot identify the device, and UIKit's hinge API is
+  // only in the iOS 27.1 SDK, so iPhone Duo is recognized by its model.
   private static let iPhoneDuoModelIdentifiers: Set<String> = ["iPhone19,4"]
 
   private static let isIPhoneDuo: Bool = {
@@ -1508,6 +1551,56 @@ class NativeBridgePlugin: Plugin {
     }
     return iPhoneDuoModelIdentifiers.contains(identifier)
   }()
+
+  #if canImport(UIKit, _version: 9127.0.85)
+  @available(iOS 27.1, *)
+  private static func hingeStatusName(_ status: UIHinge.Status?) -> String {
+    switch status {
+    case .closed: return "closed"
+    case .partiallyOpen: return "partial"
+    case .fullyOpen: return "open"
+    default: return "unknown"
+    }
+  }
+  #endif
+
+  private var lastHingeStatus = "unknown"
+  private var lastHingeEvent = Date.distantPast
+  // The trailing update, cancelled when an update is sent before it runs.
+  private var pendingHingeEvent: DispatchWorkItem?
+
+  private func sendHingeEvent() {
+    pendingHingeEvent?.cancel()
+    pendingHingeEvent = nil
+    lastHingeEvent = Date()
+    trigger("duo-fold-changed", data: ["status": lastHingeStatus])
+  }
+
+  // The iPhone Duo folding region in window points (CSS px in the full-window
+  // web view), or nil off the Duo, before iOS 27.1, or on the cover display.
+  // Inactive regions are reported too, so the page knows where the crease
+  // is while the display is flat.
+  private func foldState(in window: UIWindow) -> [String: Any]? {
+    #if canImport(UIKit, _version: 9127.0.85)
+    guard NativeBridgePlugin.isIPhoneDuo, #available(iOS 27.1, *) else { return nil }
+    let regions = window.reservedRegions(kind: .division, options: .includeInactive)
+    guard let region = regions.first(where: { $0.isActive }) ?? regions.first else {
+      return ["status": lastHingeStatus]
+    }
+    return [
+      "status": lastHingeStatus,
+      "regionActive": region.isActive,
+      "region": [
+        "x": region.frame.origin.x,
+        "y": region.frame.origin.y,
+        "width": region.frame.size.width,
+        "height": region.frame.size.height
+      ]
+    ]
+    #else
+    return nil
+    #endif
+  }
 
   @objc public func get_safe_area_insets(_ invoke: Invoke) {
     DispatchQueue.main.async {
@@ -1525,7 +1618,7 @@ class NativeBridgePlugin: Plugin {
           bottomCornerRadius = probe.effectiveRadius(corner: [.bottomLeft, .bottomRight])
           probe.removeFromSuperview()
         }
-        invoke.resolve([
+        var response: [String: Any] = [
           "top": insets.top,
           "left": insets.left,
           "bottom": insets.bottom,
@@ -1533,7 +1626,9 @@ class NativeBridgePlugin: Plugin {
           "bottomCornerRadius": bottomCornerRadius,
           "isIPhoneDuo": NativeBridgePlugin.isIPhoneDuo,
           "statusBarHidden": window.rootViewController?.prefersStatusBarHidden ?? false
-        ])
+        ]
+        if let fold = self.foldState(in: window) { response["fold"] = fold }
+        invoke.resolve(response)
       } else {
         invoke.resolve([
           "error": "No window found",
@@ -1931,10 +2026,11 @@ class NativeBridgePlugin: Plugin {
     invoke.resolve()
   }
 
-  /// Read + delete a page-HTML file the Share Extension captured from
-  /// the user's signed-in Safari tab (App Group `SharedClips/`). Resolves
-  /// `{ html }`, or `{}` when the file is missing/unreadable — the JS
-  /// caller falls back to the `clip_url` re-fetch.
+  /// Read + delete a file the Share Extension wrote to App Group
+  /// `SharedClips/`: page HTML captured from the user's signed-in Safari
+  /// tab, or shared text. Resolves `{ html }` with the file's text, or `{}`
+  /// when the file is missing/unreadable — for HTML the JS caller falls
+  /// back to the `clip_url` re-fetch.
   @objc public func read_share_clip_html(_ invoke: Invoke) {
     let args: ReadShareClipHtmlArgs
     do {
@@ -2192,6 +2288,24 @@ class NativeBridgePlugin: Plugin {
       self.turnCoverToken += 1
       self.turnCoverView = cover
       invoke.resolve(["token": self.turnCoverToken])
+    }
+  }
+
+  /// Native paper curl; see NativePaperTurn. Only page identities, gesture
+  /// data and acknowledgements cross this command, never page pixels.
+  @objc public func paper_curl(_ invoke: Invoke) {
+    guard let args = try? invoke.parseArgs(NativePaperArgs.self) else {
+      return invoke.reject("Failed to parse arguments")
+    }
+    DispatchQueue.main.async { [weak self] in
+      guard let self, let webView = self.webView else {
+        return invoke.reject("WebView not available")
+      }
+      let paper = self.nativePaper ?? NativePaperTurn(webView: webView)
+      self.nativePaper = paper
+      paper.command(args) { result, error in
+        if let error { invoke.reject(error) } else { invoke.resolve(result ?? [:]) }
+      }
     }
   }
 

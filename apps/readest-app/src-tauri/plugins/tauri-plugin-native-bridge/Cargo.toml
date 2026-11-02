@@ -14,6 +14,7 @@ links = "tauri-plugin-native-bridge"
 [dependencies]
 tauri = { version = "2" }
 serde = "1.0"
+serde_json = "1"
 thiserror = "2"
 schemars = "0.8"
 
@@ -24,7 +25,6 @@ schemars = "0.8"
 cef = ["dep:tauri-runtime-cef"]
 
 [dev-dependencies]
-serde_json = "1"
 base64 = "0.22"
 
 [build-dependencies]
@@ -59,7 +59,6 @@ base64 = "0.22"
 # DevTools `Page.captureScreenshot` for the mesh page-curl texture (#555)
 # answers in JSON with the image base64-encoded.
 base64 = "0.22"
-serde_json = "1"
 
 [target.'cfg(target_os = "windows")'.dependencies]
 windows-native-keyring-store = "1"

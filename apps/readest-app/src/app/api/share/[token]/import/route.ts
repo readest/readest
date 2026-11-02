@@ -1,12 +1,17 @@
 import { NextResponse } from 'next/server';
 import { createSupabaseAdminClient } from '@/utils/supabase';
 import { copyObject, objectExists } from '@/utils/object';
+import { isBookDataFileKey } from '@/utils/bookDataKey';
 import {
   STORAGE_QUOTA_GRACE_BYTES,
   getStoragePlanData,
   validateUserAndToken,
 } from '@/utils/access';
 import { rejectionToHttp, resolveActiveShare } from '@/libs/shareServer';
+
+// The book file, not its cover or its synced book data (TTS packs).
+const isBookFileKey = (fileKey: string): boolean =>
+  !/\.(png|jpe?g|webp|gif)$/i.test(fileKey) && !isBookDataFileKey(fileKey);
 
 interface RouteParams {
   params: Promise<{ token: string }>;
@@ -43,19 +48,13 @@ export async function POST(request: Request, { params }: RouteParams) {
   // burning a copy operation.
   if (share.userId === user.id) {
     const supabase = createSupabaseAdminClient();
-    const { data: own } = await supabase
+    const { data: ownRows } = await supabase
       .from('files')
-      .select('id, book_hash')
+      .select('id, file_key')
       .eq('user_id', user.id)
       .eq('book_hash', share.bookHash)
-      .is('deleted_at', null)
-      .not('file_key', 'ilike', '%.png')
-      .not('file_key', 'ilike', '%.jpg')
-      .not('file_key', 'ilike', '%.jpeg')
-      .not('file_key', 'ilike', '%.webp')
-      .not('file_key', 'ilike', '%.gif')
-      .limit(1)
-      .maybeSingle();
+      .is('deleted_at', null);
+    const own = (ownRows ?? []).find((f) => isBookFileKey(f.file_key));
     if (own) {
       return NextResponse.json({
         fileId: own.id,
@@ -110,7 +109,7 @@ export async function POST(request: Request, { params }: RouteParams) {
     console.error('Share import existing-row lookup failed:', existingError);
     return NextResponse.json({ error: 'Could not check library' }, { status: 500 });
   }
-  const existingRows = (existing ?? []).filter((f) => !/\.(png|jpe?g|webp|gif)$/i.test(f.file_key));
+  const existingRows = (existing ?? []).filter((f) => isBookFileKey(f.file_key));
   const liveRow = existingRows.find((f) => f.deleted_at === null);
   if (liveRow) {
     return NextResponse.json({

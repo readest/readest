@@ -45,7 +45,7 @@ const MIMO_VOICES: ListedVoice[] = [
 
 // MiMo serves speech only from chat completions, so any service on its host
 // (whatever the model) uses them; a proxy elsewhere keeps the OpenAI route.
-const isMiMoService = (service: CustomTTSService): boolean => {
+export const isMiMoService = (service: Pick<CustomTTSService, 'baseUrl'>): boolean => {
   try {
     return /(^|\.)xiaomimimo\.com$/.test(new URL(service.baseUrl).hostname);
   } catch {
@@ -111,9 +111,12 @@ const parseVoiceList = (body: unknown): ListedVoice[] => {
   });
 };
 
-// The voices a service offers, from GET {baseUrl}/audio/voices. OpenAI itself
-// has no such endpoint, so a service that lists nothing gets its standard voices.
+// The voices a service offers: the names typed for it, else GET
+// {baseUrl}/audio/voices. OpenAI itself has no such endpoint, so a service that
+// lists nothing gets its standard voices.
 const fetchServiceVoices = async (service: CustomTTSService): Promise<ListedVoice[]> => {
+  const typed = service.voices?.split(',').flatMap((name) => name.trim() || []);
+  if (typed?.length) return typed.map((name) => ({ name }));
   if (isMiMoService(service)) return MIMO_VOICES;
   // A timer rather than AbortSignal.timeout: tauriFetch rejects unhandled when
   // a finished request is aborted.
@@ -147,6 +150,35 @@ const decodeMiMoAudio = async (res: Response): Promise<ArrayBuffer> => {
 };
 
 const abortError = () => new DOMException('Aborted', 'AbortError');
+
+const fourCC = (bytes: Uint8Array, at: number) =>
+  String.fromCharCode(...bytes.subarray(at, at + 4));
+
+const isWav = (bytes: Uint8Array) =>
+  bytes.length >= 12 && fourCC(bytes, 0) === 'RIFF' && fourCC(bytes, 8) === 'WAVE';
+
+// Some proxies (LiteLLM with Gemini TTS) take a service's whole WAV file for
+// raw PCM and wrap it in a WAV of their own. Players then read the inner
+// header and whatever follows its audio (Gemini's C2PA provenance manifest)
+// as samples: a click before every sentence and static after it. The inner
+// file is the service's own and intact, so it is the one to play.
+const unwrapNestedWav = (audio: ArrayBuffer): ArrayBuffer => {
+  const bytes = new Uint8Array(audio);
+  if (!isWav(bytes)) return audio;
+  const view = new DataView(audio);
+  for (let at = 12; at + 8 <= bytes.length; ) {
+    const size = view.getUint32(at + 4, true);
+    const start = at + 8;
+    if (fourCC(bytes, at) === 'data') {
+      const inner = bytes.subarray(start, start + size);
+      if (!isWav(inner)) return audio;
+      const innerLength = 8 + new DataView(inner.buffer, inner.byteOffset).getUint32(4, true);
+      return inner.slice(0, innerLength).buffer;
+    }
+    at = start + size + (size & 1);
+  }
+  return audio;
+};
 
 export class OpenAICompatibleSpeechProvider implements SpeechProvider {
   readonly id = CUSTOM_TTS_PROVIDER_ID;
@@ -187,7 +219,14 @@ export class OpenAICompatibleSpeechProvider implements SpeechProvider {
 
   cacheScope(req: SpeechSynthesisRequest): string {
     const service = this.#resolve(req.voice)?.service;
-    return JSON.stringify([service?.baseUrl, service?.model, service?.instructions]);
+    // Only a non-MP3 format joins the key, so existing MP3 caches stay valid.
+    const format = service?.responseFormat;
+    return JSON.stringify([
+      service?.baseUrl,
+      service?.model,
+      service?.instructions,
+      ...(format && format !== 'mp3' ? [format] : []),
+    ]);
   }
 
   async synthesize(
@@ -218,7 +257,9 @@ export class OpenAICompatibleSpeechProvider implements SpeechProvider {
             model: service.model,
             input: req.text,
             voice,
-            response_format: 'mp3',
+            ...(service.responseFormat !== 'none' && {
+              response_format: service.responseFormat ?? 'mp3',
+            }),
             ...(service.instructions ? { instructions: service.instructions } : {}),
           };
       const res = await getAIFetch()(speechEndpoint(service), {
@@ -236,7 +277,7 @@ export class OpenAICompatibleSpeechProvider implements SpeechProvider {
         }
         throw new Error(message);
       }
-      const audio = isMiMo ? await decodeMiMoAudio(res) : await res.arrayBuffer();
+      const audio = isMiMo ? await decodeMiMoAudio(res) : unwrapNestedWav(await res.arrayBuffer());
       return { audio, boundaries: [] };
     } finally {
       signal.removeEventListener('abort', onAbort);

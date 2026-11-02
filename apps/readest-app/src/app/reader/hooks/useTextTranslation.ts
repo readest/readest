@@ -241,6 +241,27 @@ export function useTextTranslation(
   const pendingDOMUpdates = useRef<Array<() => void>>([]);
   const batchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hintTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // A translation can resolve after the hook is gone. Scheduling its DOM work
+  // then would start a fresh 50 ms timer that runs against a torn-down
+  // environment (and, in tests, after the document is gone: `Node is not
+  // defined`), so both the resolve path and the batcher check this first.
+  const mountedRef = useRef(true);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      // The `[view]` cleanup misses these when translation was off at mount.
+      if (batchTimerRef.current) {
+        clearTimeout(batchTimerRef.current);
+        batchTimerRef.current = null;
+      }
+      observerRefs.current.forEach((observer) => observer.disconnect());
+      observerRefs.current = [];
+      translationQueue.current = [];
+      pendingDOMUpdates.current = [];
+    };
+  }, []);
 
   const toggleTranslationVisibility = (visible: boolean) => {
     translatedElements.current.forEach((element) => {
@@ -358,6 +379,7 @@ export function useTextTranslation(
   };
 
   const batchDOMUpdate = (update: () => void) => {
+    if (!mountedRef.current) return;
     pendingDOMUpdates.current.push(update);
     if (!batchTimerRef.current) {
       batchTimerRef.current = setTimeout(() => {
@@ -404,6 +426,7 @@ export function useTextTranslation(
       const useMarkup = markupChunks.length > 0;
 
       const translated = await translateRef.current(useMarkup ? markupChunks : [text]);
+      if (!mountedRef.current) return;
       const translatedText = translated.join('');
       if (!translatedText || text === translatedText) return;
 

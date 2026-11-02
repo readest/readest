@@ -22,3 +22,10 @@ Hit 2026-10-11 building PR #6674 for the iPad Air M2 (iPadOS 27, Xcode 26.3) fro
    wrong: cargo keeps the cached build-script result and the link fails with `could not find native static library`.
 3. Install pinned: `ideviceinstaller -u <UDID> install src-tauri/gen/apple/build/arm64/Readest.ipa` (an iPhone is also
    paired; see [[feedback-pin-adb-serial]]). The user's shell exports `iPad`/`iPhone` UDID vars.
+4. SILENT stale Swift (2026-10-30, Xcode 27.1 / Swift 6.4): the build SUCCEEDS but the app runs old plugin Swift
+   ("No command paper_curl found for plugin native-bridge"; Page Curl and Page Flip both dead on device). Swift 6.4's
+   default `--build-system swiftbuild` writes to `out/swift-rs/<pkg>/out/Products/Release-iphoneos/`, while
+   packages/swift-rs/src-rs/build.rs linked `<triple>/release/`, where libs from a pre-6.4 build lingered. With that
+   dir cleared, every iOS build fails: "could not find native static library `Tauri`". Fix MERGED in #7160:
+   build.rs reruns the swift command with `--show-bin-path` and links that dir.
+   Check: `nm <lib>.a | grep <new command>`.

@@ -140,8 +140,21 @@ describe('NativeNarrationPlayer', () => {
     await player.ensureReady();
     const ended = vi.fn();
     player.addEventListener('ended', ended);
+    // Both plugins clear the current item before they send `ended`.
+    position = { session: 3, index: -1, positionMs: 18000, playing: false };
     playoutEvents!({ type: 'ended', session: 3, index: 0 });
-    expect(ended).toHaveBeenCalledOnce();
+    await vi.waitFor(() => expect(ended).toHaveBeenCalledOnce());
+    await player.shutdown();
+  });
+
+  test('an ended event while a file is still current does not end it', async () => {
+    const player = new NativeNarrationPlayer();
+    await player.ensureReady();
+    const ended = vi.fn();
+    player.addEventListener('ended', ended);
+    playoutEvents!({ type: 'ended', session: 3, index: 0 });
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(ended).not.toHaveBeenCalled();
     await player.shutdown();
   });
 
@@ -159,14 +172,35 @@ describe('NativeNarrationPlayer', () => {
     await player.shutdown();
   });
 
-  test('freezes the clock when the native player reports no current item', async () => {
+  test('recovers an ended event missed while the WebView was suspended', async () => {
     const player = new NativeNarrationPlayer();
     await player.load('ch1.mp3', new Blob([new Uint8Array(4)]), 0);
+    const ended = vi.fn();
+    player.addEventListener('ended', ended);
     await player.play();
     expect(player.paused).toBe(false);
 
     position = { session: 3, index: -1, positionMs: 0, playing: false };
-    await vi.waitFor(() => expect(player.paused).toBe(true));
+    await vi.waitFor(() => expect(ended).toHaveBeenCalledOnce());
+    expect(player.paused).toBe(true);
+    playoutEvents!({ type: 'ended', session: 3, index: 0 });
+    expect(ended).toHaveBeenCalledOnce();
+    await player.shutdown();
+  });
+
+  test('queues the next file and detects its native transition after suspension', async () => {
+    const player = new NativeNarrationPlayer();
+    await player.loadPath('one.mp3', '/books/one.mp3');
+    await player.queuePath('two.mp3', '/books/two.mp3', 'one.mp3');
+    expect(controlCalls.find((call) => call['action'] === 'queue')).toMatchObject({
+      path: '/books/two.mp3',
+    });
+
+    const ended = vi.fn();
+    player.addEventListener('ended', ended);
+    await player.play();
+    position = { session: 3, index: 1, positionMs: 4000, playing: true };
+    await vi.waitFor(() => expect(ended).toHaveBeenCalledOnce());
     await player.shutdown();
   });
 

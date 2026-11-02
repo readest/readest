@@ -21,8 +21,9 @@ const DesktopFooterBar: React.FC<FooterBarChildProps> = ({
   onSpeakText,
 }) => {
   const _ = useTranslation();
-  const { hoveredBookKey, getView, getViewState, getViewSettings } = useReaderStore();
+  const { hoveredBookKey, getView, getViewState, getProgress, getViewSettings } = useReaderStore();
   const view = getView(bookKey);
+  const progress = getProgress(bookKey);
   const viewState = getViewState(bookKey);
   const viewSettings = getViewSettings(bookKey);
 
@@ -47,9 +48,18 @@ const DesktopFooterBar: React.FC<FooterBarChildProps> = ({
     }
   }, [progressValid, progressFraction]);
 
+  // The page label previews the slider while it is dragged, until the reader
+  // relocates and reports the real page.
+  const [previewFraction, setPreviewFraction] = React.useState<number | null>(null);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setPreviewFraction(null);
+  }, [progress]);
+
   const handleProgressChange = useCallback(
     (value: number) => {
       setProgressValue(value);
+      setPreviewFraction(value / 100);
       navigationHandlers.onProgressChange(value);
     },
     [navigationHandlers],
@@ -99,7 +109,7 @@ const DesktopFooterBar: React.FC<FooterBarChildProps> = ({
         label={_('Go Forward')}
         disabled={!view?.history.canGoForward}
       />
-      <PageJumpInput bookKey={bookKey} className='mx-2 text-sm' />
+      <PageJumpInput bookKey={bookKey} previewFraction={previewFraction} className='mx-2 text-sm' />
       <input
         ref={rangeInputRef}
         type='range'

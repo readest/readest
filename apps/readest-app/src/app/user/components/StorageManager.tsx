@@ -19,6 +19,7 @@ import {
 import { eventDispatcher } from '@/utils/event';
 import Spinner from '@/components/Spinner';
 import Alert from '@/components/Alert';
+import { isBookDataFileKey } from '@/utils/bookDataKey';
 
 const StorageManager = () => {
   const _ = useTranslation();
@@ -127,7 +128,11 @@ const StorageManager = () => {
     if (isReplicaGroup) {
       return groupFiles.reduce((a, b) => (b.file_size > a.file_size ? b : a));
     }
-    return groupFiles.find((f) => !isCoverFile(f)) || groupFiles[0] || null;
+    return (
+      groupFiles.find((f) => !isCoverFile(f) && !isBookDataFileKey(f.file_key)) ||
+      groupFiles[0] ||
+      null
+    );
   };
 
   // Get all files for a book including covers
@@ -197,8 +202,12 @@ const StorageManager = () => {
     try {
       const fileKeys = Array.from(selectedFiles);
       const fileRecords = files.filter((f) => selectedFiles.has(f.file_key));
+      // Deleting only a book's synced data (TTS packs) leaves the book uploaded.
       const selectedBookHashes = new Set(
-        fileRecords.map((f) => f.book_hash).filter((hash): hash is string => !!hash),
+        fileRecords
+          .filter((f) => !isBookDataFileKey(f.file_key))
+          .map((f) => f.book_hash)
+          .filter((hash): hash is string => !!hash),
       );
 
       const result = await purgeFiles(fileKeys, true);

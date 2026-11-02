@@ -54,7 +54,8 @@ vi.mock('@/store/bookDataStore', () => ({
 vi.mock('@/hooks/useEinkMode', () => ({
   useEinkMode: () => ({ applyEinkMode: vi.fn() }),
 }));
-vi.mock('@/services/environment', () => ({ isTauriAppPlatform: () => false }));
+const platform = vi.hoisted(() => ({ tauri: false }));
+vi.mock('@/services/environment', () => ({ isTauriAppPlatform: () => platform.tauri }));
 vi.mock('@/utils/share', () => ({ canShareText: () => true }));
 vi.mock('@/utils/telemetry', () => ({ optInTelemetry: vi.fn(), optOutTelemetry: vi.fn() }));
 vi.mock('@/components/settings/PageTurnerSettings', () => ({ default: () => null }));
@@ -69,6 +70,7 @@ const savedSettings = (): SystemSettings => JSON.parse(localStorage.getItem(stor
 
 beforeEach(() => {
   appService.hasUpdater = true;
+  platform.tauri = false;
   useSettingsStore.setState({
     settings: {
       ...DEFAULT_SYSTEM_SETTINGS,
@@ -171,5 +173,35 @@ describe('Behavior animation reset', () => {
       animated: false,
       pageTurnStyle: 'push',
     });
+  });
+});
+
+describe('Animation style options', () => {
+  const useStyle = (style: 'curl' | 'flip') =>
+    useSettingsStore.setState({
+      settings: {
+        ...useSettingsStore.getState().settings,
+        globalViewSettings: { ...defaultViewSettings, animated: true, pageTurnStyle: style },
+      },
+    });
+  const styleSelect = () =>
+    screen.getByRole<HTMLSelectElement>('combobox', { name: 'Animation Style' });
+  const styleValues = () => Array.from(styleSelect().options, (option) => option.value);
+
+  it('offers Page Flip in the apps', () => {
+    platform.tauri = true;
+    useStyle('flip');
+    render(<ControlPanel bookKey='' onRegisterReset={() => {}} />);
+    expect(styleValues()).toEqual(['push', 'slide', 'curl', 'flip']);
+    expect(styleSelect().value).toBe('flip');
+  });
+
+  // Another device can sync Page Flip here; it turns as Page Curl, so the
+  // select shows that rather than Push.
+  it('shows a synced Page Flip as Page Curl on the web', () => {
+    useStyle('flip');
+    render(<ControlPanel bookKey='' onRegisterReset={() => {}} />);
+    expect(styleValues()).toEqual(['push', 'slide', 'curl']);
+    expect(styleSelect().value).toBe('curl');
   });
 });

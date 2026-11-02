@@ -14,9 +14,11 @@ vi.mock('@/libs/storage', () => ({
   batchGetDownloadUrls: vi.fn().mockResolvedValue([]),
 }));
 
-import { uploadBookCover } from '@/services/cloudService';
+import { downloadBookCovers, uploadBookCover } from '@/services/cloudService';
 import { computeCoverHash } from '@/services/bookService';
-import { uploadFile } from '@/libs/storage';
+import { batchGetDownloadUrls, downloadFile, uploadFile } from '@/libs/storage';
+import { needsCoverRefresh, pickFresherCover } from '@/app/library/utils/libraryUtils';
+import { AppService } from '@/types/system';
 
 function createMockBook(overrides: Partial<Book> = {}): Book {
   return {
@@ -125,5 +127,41 @@ describe('uploadBookCover (issue #4544)', () => {
     const fs = createMockFs({ exists: vi.fn().mockResolvedValue(false) });
     await uploadBookCover(fs, resolveFilePath, createMockBook());
     expect(uploadFile).not.toHaveBeenCalled();
+  });
+});
+
+describe('downloadBookCovers (issue #6816)', () => {
+  const appService = {} as AppService;
+  // A cover edited on another device: the cloud row advertises a newer cover.
+  const synced = createMockBook({ coverHash: 'new-hash', coverUpdatedAt: 2000 });
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(batchGetDownloadUrls).mockResolvedValue([
+      { lfp: 'abc123/cover.png', cfp: 'Readest/Books/abc123/cover.png', downloadUrl: 'https://r2' },
+    ]);
+  });
+
+  // The sync loop adopts the synced cover clock after the download, then asks
+  // needsCoverRefresh again on the next sync.
+  const adoptSyncedCover = (book: Book) => ({ ...book, ...pickFresherCover(book, synced) });
+
+  test('a cover whose download failed is fetched again on the next sync', async () => {
+    vi.mocked(downloadFile).mockRejectedValueOnce(new Error('connection reset'));
+    const local = createMockBook({ coverHash: 'old-hash', coverUpdatedAt: 1000 });
+    expect(needsCoverRefresh(local, synced)).toBe(true);
+
+    await downloadBookCovers(appService, createMockFs(), '/books', [local]);
+
+    expect(needsCoverRefresh(adoptSyncedCover(local), synced)).toBe(true);
+  });
+
+  test('a downloaded cover is not fetched again', async () => {
+    const local = createMockBook({ coverHash: 'old-hash', coverUpdatedAt: 1000 });
+
+    await downloadBookCovers(appService, createMockFs(), '/books', [local]);
+
+    expect(downloadFile).toHaveBeenCalledTimes(1);
+    expect(needsCoverRefresh(adoptSyncedCover(local), synced)).toBe(false);
   });
 });

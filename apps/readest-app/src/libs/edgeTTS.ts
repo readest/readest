@@ -12,24 +12,10 @@ import type { TTSVoice } from '@/services/tts/types';
 // browsers or Node.js. The Node `ws` package (used transitively via
 // `isomorphic-ws`) cannot run on Workers because it relies on
 // `http.createConnection`, which the Workers runtime does not implement.
-// Detecting Workers lets us use the fetch-based WebSocket upgrade pattern
-// (`fetch(..., { headers: { Upgrade: 'websocket' } })`) instead.
+// Detecting Workers lets us open the socket with `connectWorkersWebSocket`
+// instead.
 const isCloudflareWorkers = () =>
   typeof (globalThis as { WebSocketPair?: unknown }).WebSocketPair !== 'undefined';
-
-// The WebSocket returned by a Cloudflare Workers upgrade response must be
-// `accept()`ed before use. This minimal interface captures the bits we need
-// without pulling in `@cloudflare/workers-types`.
-interface AcceptableWebSocket {
-  accept(): void;
-  send(data: string | ArrayBuffer | ArrayBufferView): void;
-  close(code?: number, reason?: string): void;
-  addEventListener(type: 'message', listener: (event: { data: unknown }) => void): void;
-  addEventListener(type: 'close', listener: () => void): void;
-  addEventListener(type: 'error', listener: (event: unknown) => void): void;
-}
-
-type UpgradeResponse = Response & { webSocket?: AcceptableWebSocket };
 
 // speech.platform.bing.com now rejects the handshake with 403 in many regions
 // (rany2/edge-tts#490); Edge Read Aloud moved to api.msedgeservices.com.
@@ -425,6 +411,21 @@ export type EDGE_TTS_PROTOCOL = 'wss' | 'https';
 // dead and would otherwise hang playback forever (#5230).
 const WS_INACTIVITY_TIMEOUT_MS = 30_000;
 
+// The same budget for the other WebSocket transports, which back the HTTPS
+// proxy route and direct browser playback: a connect that stalls (one took
+// 76s to fail) or a socket gone silent must fail so the caller can retry,
+// instead of holding every request that joined it.
+const inactivityWatchdog = (onTimeout: () => void) => {
+  let timer = setTimeout(onTimeout, WS_INACTIVITY_TIMEOUT_MS);
+  return {
+    touch: () => {
+      clearTimeout(timer);
+      timer = setTimeout(onTimeout, WS_INACTIVITY_TIMEOUT_MS);
+    },
+    stop: () => clearTimeout(timer),
+  };
+};
+
 export class EdgeSpeechTTS {
   static voices = genVoiceList(EDGE_TTS_VOICES);
   private static audioCache = new LRUCache<string, Blob>(200);
@@ -637,32 +638,44 @@ export class EdgeSpeechTTS {
       // The Workers path backs the HTTPS proxy route. It captures both the
       // audio body and the word boundaries (audio.metadata frames) so the
       // route can forward boundaries via the WORD_BOUNDARIES_HEADER.
-      return new Promise<EdgeSpeechAudio>((resolve, reject) => {
+      return new Promise<EdgeSpeechAudio>((resolveAudio, rejectAudio) => {
+        let settled = false;
+        let closeSocket = () => {};
+        // Releases the raw socket while the upgrade is still pending.
+        const connecting = new AbortController();
+        const watchdog = inactivityWatchdog(() => {
+          if (settled) return;
+          settled = true;
+          connecting.abort();
+          closeSocket();
+          rejectAudio(new Error('WebSocket timed out waiting for audio.'));
+        });
+        const resolve = (audio: EdgeSpeechAudio) => {
+          watchdog.stop();
+          resolveAudio(audio);
+        };
+        const reject = (error: Error) => {
+          watchdog.stop();
+          rejectAudio(error);
+        };
         (async () => {
           try {
-            // Cloudflare Workers cannot use the `ws` npm package because it
-            // relies on `http.createConnection`. Instead, WebSockets are
-            // opened by calling `fetch()` with an `Upgrade: websocket`
-            // header. The response has status 101 and a `webSocket`
-            // property that must be `accept()`ed before sending data.
-            const upgradeUrl = url.replace(/^wss:\/\//i, 'https://');
-            const upgradeResponse = (await fetch(upgradeUrl, {
-              headers: {
-                ...baseHeaders,
-                Upgrade: 'websocket',
-              },
-            })) as UpgradeResponse;
-
-            if (upgradeResponse.status !== 101 || !upgradeResponse.webSocket) {
-              return reject(
-                new Error(`WebSocket upgrade failed with status ${upgradeResponse.status}`),
-              );
-            }
-
-            const ws = upgradeResponse.webSocket;
+            // Workers' own fetch() upgrade gets a plain HTTP 200 from
+            // api.msedgeservices.com, so speak WebSocket over a raw socket.
+            // Loaded only here so other runtimes never evaluate it.
+            const { connectWorkersWebSocket } = await import('@/libs/workersWebSocket');
+            const ws = await connectWorkersWebSocket(url, baseHeaders, connecting.signal);
+            closeSocket = () => {
+              try {
+                ws.close();
+              } catch {
+                // ignore close failures
+              }
+            };
+            // Timed out while connecting.
+            if (settled) return closeSocket();
             let audioData = new ArrayBuffer(0);
             const boundaries: TTSWordBoundary[] = [];
-            let settled = false;
             // Cloudflare Workers deliver binary WebSocket frames as `Blob`,
             // whose conversion to bytes (`blob.arrayBuffer()`) is async.
             // Chain every binary message through this promise so frames are
@@ -703,6 +716,7 @@ export class EdgeSpeechTTS {
 
             const onMessage = (event: { data: unknown }) => {
               if (settled) return;
+              watchdog.touch();
               const data = event.data;
               if (typeof data === 'string') {
                 const { headers, body } = getHeadersAndData(data);
@@ -778,7 +792,19 @@ export class EdgeSpeechTTS {
         })();
       });
     } else {
-      return new Promise((resolve, reject) => {
+      return new Promise((resolveAudio, rejectAudio) => {
+        const watchdog = inactivityWatchdog(() => {
+          ws.close();
+          rejectAudio(new Error('WebSocket timed out waiting for audio.'));
+        });
+        const resolve = (audio: EdgeSpeechAudio) => {
+          watchdog.stop();
+          resolveAudio(audio);
+        };
+        const reject = (error: Error) => {
+          watchdog.stop();
+          rejectAudio(error);
+        };
         // In browsers isomorphic-ws is the native WebSocket, whose second
         // argument is a subprotocol list — passing an options object throws
         // SyntaxError. Custom headers are only supported (and only needed)
@@ -793,11 +819,13 @@ export class EdgeSpeechTTS {
         const boundaries: TTSWordBoundary[] = [];
 
         ws.addEventListener('open', () => {
+          watchdog.touch();
           ws.send(config);
           ws.send(content);
         });
 
         ws.addEventListener('message', (event: WebSocket.MessageEvent) => {
+          watchdog.touch();
           if (typeof event.data === 'string') {
             const { headers, body } = getHeadersAndData(event.data);
             if (headers['Path'] === 'audio.metadata') {

@@ -99,3 +99,13 @@ export const shouldClaimTurnGesture = (
   const fallback = absX >= requiredFallbackDistance && absX > absY;
   return edgeFastPath || coherentFastPath || fallback;
 };
+
+/**
+ * A zoomed fixed-layout page pans under a drag. A drag that starts with the
+ * page already at its left or right edge and keeps pulling past it turns the
+ * page instead, the way Photos moves to the next photo. `panX` is the
+ * renderer's horizontal pan fraction when the touch began (null: nothing
+ * overflows sideways); `deltaX` < 0 drags toward the page's right edge.
+ */
+export const isDragPastPanEdge = (panX: number | null, deltaX: number) =>
+  panX === null || (deltaX < 0 ? panX >= 0.99 : panX <= 0.01);

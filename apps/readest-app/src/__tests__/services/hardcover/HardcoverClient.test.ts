@@ -71,6 +71,7 @@ describe('HardcoverClient', () => {
       upsertMapping: vi.fn().mockResolvedValue(undefined),
       flush: vi.fn().mockResolvedValue(undefined),
       loadForBook: vi.fn().mockResolvedValue(undefined),
+      journalIds: vi.fn().mockReturnValue([]),
     } as unknown as HardcoverSyncMapStore;
 
     // Mock global fetch
@@ -194,8 +195,8 @@ describe('HardcoverClient', () => {
     // note-3: kept (annotation with no note, but no conflicts)
     expect(results.inserted).toBe(2);
     expect(results.skipped).toBe(0);
-    // authenticate, edition lookup, one batched journal write
-    expect(fetchMock).toHaveBeenCalledTimes(3);
+    // authenticate, edition lookup, journal read, one batched journal write
+    expect(fetchMock).toHaveBeenCalledTimes(4);
     expect(mockMapStore.flush).toHaveBeenCalled();
   });
 
@@ -742,6 +743,10 @@ describe('HardcoverClient', () => {
     });
     fetchMock.mockResolvedValueOnce({
       ok: true,
+      json: () => Promise.resolve({ data: { reading_journals: [] } }),
+    });
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
       json: () => Promise.resolve([{ data: { insert_reading_journal: { id: 999 } } }]),
     });
 
@@ -1220,7 +1225,10 @@ describe('HardcoverClient journal batching', () => {
   const context = { editionId: 1, pages: 100, bookId: 2, bookPages: 100, userBook: { id: 3 } };
   type Op = { query: string; variables: Record<string, unknown> };
   let client: HardcoverClient;
-  let api: HardcoverClientTestApi & { gate: { update: (h: Headers) => void } };
+  let api: HardcoverClientTestApi & {
+    gate: { update: (h: Headers) => void };
+    fetchJournalEntries: (bookId: number) => Promise<Map<string, Array<{ id: number }>>>;
+  };
   let fetchMock: ReturnType<typeof vi.fn>;
   let mapStore: Record<string, ReturnType<typeof vi.fn>>;
   let tokenSeq = 0;
@@ -1237,9 +1245,11 @@ describe('HardcoverClient journal batching', () => {
       id === noteId ? { hardcover_journal_id: 55, payload_hash: 'stale' } : null,
     );
 
-  // Each request body is an array of operations.
+  // Each journal write request is an array of operations.
   const batches = () =>
-    (fetchMock.mock.calls as FetchMockCall[]).map((c) => JSON.parse(c[1]?.body ?? '[]') as Op[]);
+    (fetchMock.mock.calls as FetchMockCall[])
+      .map((c) => JSON.parse(c[1]?.body ?? '[]') as Op | Op[])
+      .filter((body): body is Op[] => Array.isArray(body));
   const response = (json: unknown, init = {}) => ({
     ok: true,
     status: 200,
@@ -1258,6 +1268,7 @@ describe('HardcoverClient journal batching', () => {
       upsertMapping: vi.fn().mockResolvedValue(undefined),
       flush: vi.fn().mockResolvedValue(undefined),
       loadForBook: vi.fn().mockResolvedValue(undefined),
+      journalIds: vi.fn().mockReturnValue([]),
     };
     client = new HardcoverClient(
       { accessToken: `batch-${tokenSeq++}` },
@@ -1265,6 +1276,7 @@ describe('HardcoverClient journal batching', () => {
     );
     api = client as unknown as typeof api;
     vi.spyOn(api, 'ensureBookInLibrary').mockResolvedValue(context as TestBookContext);
+    vi.spyOn(api, 'fetchJournalEntries').mockResolvedValue(new Map());
     // Answers each batch with ids 900+index.
     fetchMock.mockImplementation(async (_url, init) => {
       const ops = JSON.parse((init as { body: string }).body) as Op[];
@@ -1341,6 +1353,9 @@ describe('HardcoverClient journal batching', () => {
       linkedClient as unknown as HardcoverClientTestApi,
       'ensureBookInLibrary',
     ).mockResolvedValue(context as TestBookContext);
+    vi.spyOn(linkedClient as unknown as typeof api, 'fetchJournalEntries').mockResolvedValue(
+      new Map(),
+    );
 
     await linkedClient.syncBookNotes(book, config(notes(2)));
     // The link dialog clears the old book's mappings through its own store.
@@ -1446,5 +1461,194 @@ describe('HardcoverClient journal batching', () => {
 
     fetchMock.mockResolvedValueOnce(response({ errors: [{ message: 'nope' }] }));
     await expect(client.syncBookNotes(book, config(notes(2)))).rejects.toThrow('mismatch');
+  });
+
+  describe('entries already on Hardcover (#6907)', () => {
+    // Hardcover's side: the journal, read 100 rows at a time, grown by inserts.
+    let journal: Array<{
+      id: number;
+      event: string;
+      entry: string;
+      metadata?: { position: { value: number } };
+    }>;
+    const reads = () =>
+      (fetchMock.mock.calls as FetchMockCall[])
+        .map((c) => JSON.parse(c[1]?.body ?? '[]') as Op | Op[])
+        .filter((body): body is Op => !Array.isArray(body));
+
+    // A device with its own hardcover-sync.db.
+    const device = () => {
+      const rows = new Map<string, unknown[]>();
+      const db = {
+        select: async () =>
+          [...rows.values()].map(
+            ([book_hash, note_id, hardcover_journal_id, payload_hash, synced_at]) => ({
+              book_hash,
+              note_id,
+              hardcover_journal_id,
+              payload_hash,
+              synced_at,
+            }),
+          ),
+        execute: async (_sql: string, params: unknown[]) => {
+          rows.set(String(params[1]), params);
+          return {};
+        },
+        close: async () => {},
+      };
+      const appService = { openDatabase: async () => db } as unknown as AppService;
+      const deviceClient = new HardcoverClient(
+        { accessToken: `batch-${tokenSeq++}` },
+        new HardcoverSyncMapStore(appService),
+      );
+      vi.spyOn(
+        deviceClient as unknown as HardcoverClientTestApi,
+        'ensureBookInLibrary',
+      ).mockResolvedValue(context as TestBookContext);
+      return deviceClient;
+    };
+
+    beforeEach(() => {
+      journal = [];
+      vi.mocked(api.fetchJournalEntries).mockRestore();
+      fetchMock.mockImplementation(async (_url, init) => {
+        const body = JSON.parse((init as { body: string }).body) as Op | Op[];
+        if (!Array.isArray(body)) {
+          const { offset, limit } = body.variables as { offset: number; limit: number };
+          return response({ data: { reading_journals: journal.slice(offset, offset + limit) } });
+        }
+        return response(
+          body.map((op) => {
+            if (!op.query.includes('InsertReadingJournal')) return { data: {} };
+            const id = 900 + journal.length;
+            journal.push({
+              id,
+              event: op.variables['event'] as string,
+              entry: op.variables['entry'] as string,
+              metadata: { position: { value: op.variables['page'] as number } },
+            });
+            return inserted(id);
+          }),
+        );
+      });
+    });
+
+    test('a second device reuses the entries the first one pushed', async () => {
+      await device().syncBookNotes(book, config(notes(3)));
+      expect(journal).toHaveLength(3);
+
+      const result = await device().syncBookNotes(book, config(notes(3)));
+
+      expect(result).toMatchObject({ inserted: 0, updated: 0, skipped: 3 });
+      expect(journal).toHaveLength(3);
+    });
+
+    test('gives each entry to one note when the same text is highlighted twice', async () => {
+      const twice = [
+        { id: 'a', type: 'annotation', text: 'refrain', page: 1 },
+        { id: 'b', type: 'annotation', text: 'refrain', page: 2 },
+      ] as BookNote[];
+      const mac = device();
+      await mac.syncBookNotes(book, config(twice.slice(0, 1)));
+
+      // The second highlight is new on this device, not the first one's entry.
+      expect(await mac.syncBookNotes(book, config(twice))).toMatchObject({ inserted: 1 });
+      expect(journal).toHaveLength(2);
+
+      // Another device takes over both entries.
+      expect(await device().syncBookNotes(book, config(twice))).toMatchObject({
+        inserted: 0,
+        skipped: 2,
+      });
+      expect(journal).toHaveLength(2);
+    });
+
+    test('matches equal entries by page before age', async () => {
+      journal.push(
+        { id: 500, event: 'quote', entry: 'refrain', metadata: { position: { value: 2 } } },
+        { id: 501, event: 'quote', entry: 'refrain', metadata: { position: { value: 1 } } },
+      );
+      const twice = [
+        { id: 'a', type: 'annotation', text: 'refrain', page: 1 },
+        { id: 'b', type: 'annotation', text: 'refrain', page: 2 },
+      ] as BookNote[];
+
+      await client.syncBookNotes(book, config(twice));
+
+      const mapped = Object.fromEntries(
+        mapStore['upsertMapping']!.mock.calls.map(([, noteId, id]) => [noteId, id]),
+      );
+      expect(mapped).toEqual({ a: 501, b: 500 });
+    });
+
+    test('does not take a note entry for a quote with the same text', async () => {
+      journal.push({ id: 500, event: 'note', entry: 'text 0' });
+
+      const result = await client.syncBookNotes(book, config(notes(1)));
+
+      expect(result).toMatchObject({ inserted: 1, skipped: 0 });
+    });
+
+    test('leaves entries mapped to deleted notes to them', async () => {
+      const mac = device();
+      await mac.syncBookNotes(book, config(notes(1)));
+
+      const rehighlighted = [
+        { id: 'n0', type: 'annotation', text: 'text 0', deletedAt: 1 },
+        // Elsewhere in the book, so not the same payload as the deleted one.
+        { id: 'n1', type: 'annotation', text: 'text 0', page: 2 },
+      ] as BookNote[];
+      const result = await mac.syncBookNotes(book, config(rehighlighted));
+
+      expect(result).toMatchObject({ inserted: 1, skipped: 0 });
+      expect(journal).toHaveLength(2);
+    });
+
+    test('pages through the journal and matches the oldest of equal entries', async () => {
+      journal.push(
+        ...Array.from({ length: 100 }, (_, i) => ({ id: i + 1, event: 'quote', entry: `o ${i}` })),
+      );
+      journal.push(
+        { id: 500, event: 'quote', entry: 'text 0' },
+        { id: 501, event: 'quote', entry: 'text 0' },
+      );
+      (api as unknown as { userId: number }).userId = 7;
+
+      const result = await client.syncBookNotes(book, config(notes(2)));
+
+      expect(result).toMatchObject({ inserted: 1, skipped: 1 });
+      expect(reads().map((r) => r.variables['offset'])).toEqual([0, 100]);
+      expect(reads()[0]!.variables).toMatchObject({ user_id: 7, book_id: 2 });
+      expect(mapStore['upsertMapping']).toHaveBeenCalledWith(
+        'book-hash',
+        'n0',
+        500,
+        expect.any(String),
+      );
+      expect(batches().flat()).toHaveLength(1);
+    });
+
+    test('inserts as before when the sign-in lacks read:journal', async () => {
+      const answer = fetchMock.getMockImplementation()!;
+      fetchMock.mockImplementationOnce(async () =>
+        response(
+          { error: 'insufficient_scope', scope: 'read:journal' },
+          { ok: false, status: 403, statusText: 'Forbidden' },
+        ),
+      );
+      fetchMock.mockImplementation(answer);
+
+      const result = await client.syncBookNotes(book, config(notes(2)));
+
+      expect(result).toMatchObject({ inserted: 2, skipped: 0 });
+    });
+
+    test('reads the journal only when a note would be inserted', async () => {
+      mapStore['getMapping']!.mockResolvedValue({ hardcover_journal_id: 55, payload_hash: 'old' });
+
+      await client.syncBookNotes(book, config(notes(2)));
+
+      expect(reads()).toHaveLength(0);
+    });
   });
 });

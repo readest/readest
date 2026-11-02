@@ -287,14 +287,14 @@ msgstr "ไม่มีหนังสือที่เปิดอยู่"
 msgid "Uploaded to Readest:"
 msgstr "อัปโหลดไปยัง Readest แล้ว:"
 
+msgid "Auto sync"
+msgstr "ซิงค์อัตโนมัติ"
+
 msgid "Log in Readest Account"
 msgstr "เข้าสู่ระบบบัญชี Readest"
 
 msgid "Log out as %1"
 msgstr "ออกจากระบบในชื่อ %1"
-
-msgid "Auto sync"
-msgstr "ซิงค์อัตโนมัติ"
 
 msgid "Readest library"
 msgstr "คลัง Readest"
@@ -524,17 +524,26 @@ msgstr "เข้าสู่ระบบ"
 msgid "Please enter both email and password"
 msgstr "โปรดป้อนทั้งอีเมลและรหัสผ่าน"
 
+msgid "Sign in with a code"
+msgstr "ลงชื่อเข้าใช้ด้วยรหัส"
+
 msgid "Please configure Supabase URL and API key first"
 msgstr "โปรดกำหนดค่า URL ของ Supabase และคีย์ API ก่อน"
 
 msgid "Logging in..."
 msgstr "กำลังเข้าสู่ระบบ…"
 
+msgid "Login failed: %1"
+msgstr "เข้าสู่ระบบไม่สำเร็จ: %1"
+
 msgid "Successfully logged in to Readest"
 msgstr "เข้าสู่ระบบ Readest สำเร็จ"
 
-msgid "Login failed: %1"
-msgstr "เข้าสู่ระบบไม่สำเร็จ: %1"
+msgid "Scan the QR code with a phone signed in to Readest, or open %1 and enter this code:\n\n%2"
+msgstr "สแกนคิวอาร์โค้ดด้วยโทรศัพท์ที่ลงชื่อเข้าใช้ Readest อยู่ หรือเปิด %1 แล้วป้อนรหัสนี้:\n\n%2"
+
+msgid "The code expired. Please try again."
+msgstr "รหัสหมดอายุแล้ว โปรดลองอีกครั้ง"
 
 msgid "Logged out from Readest"
 msgstr "ออกจากระบบ Readest แล้ว"

@@ -489,9 +489,30 @@ const controlPanelItems = [
     section: 'Pagination',
   },
   {
+    id: 'settings.control.imageViewerGesture',
+    labelKey: _('Open Images'),
+    keywords: ['image', 'viewer', 'gallery', 'tap', 'click', 'long', 'press', 'hold'],
+    section: 'Pagination',
+  },
+  {
     id: 'settings.control.showPaginationButtons',
     labelKey: _('Show Page Navigation Buttons'),
     keywords: ['show', 'pagination', 'buttons', 'navigation', 'arrows', 'chevron', 'page', 'turn'],
+    section: 'Pagination',
+  },
+  {
+    id: 'settings.control.stablePageNumbers',
+    labelKey: _('Stable Page Numbers'),
+    keywords: [
+      'stable',
+      'page',
+      'number',
+      'count',
+      'screen',
+      'calibrate',
+      'measured',
+      'pagination',
+    ],
     section: 'Pagination',
   },
   {

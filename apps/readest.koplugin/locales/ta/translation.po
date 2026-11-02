@@ -287,14 +287,14 @@ msgstr "எந்த நூலும் திறக்கப்படவில�
 msgid "Uploaded to Readest:"
 msgstr "Readest-இல் பதிவேற்றப்பட்டது:"
 
+msgid "Auto sync"
+msgstr "தானியங்கி ஒத்திசைவு"
+
 msgid "Log in Readest Account"
 msgstr "Readest கணக்கில் உள்நுழைக"
 
 msgid "Log out as %1"
 msgstr "%1 ஆக வெளியேறு"
-
-msgid "Auto sync"
-msgstr "தானியங்கி ஒத்திசைவு"
 
 msgid "Readest library"
 msgstr "Readest நூலகம்"
@@ -524,17 +524,26 @@ msgstr "உள்நுழை"
 msgid "Please enter both email and password"
 msgstr "மின்னஞ்சல் மற்றும் கடவுச்சொல்லை உள்ளிடவும்"
 
+msgid "Sign in with a code"
+msgstr "குறியீட்டுடன் உள்நுழையவும்"
+
 msgid "Please configure Supabase URL and API key first"
 msgstr "முதலில் Supabase URL மற்றும் API விசையை உள்ளமைக்கவும்"
 
 msgid "Logging in..."
 msgstr "உள்நுழைகிறது…"
 
+msgid "Login failed: %1"
+msgstr "உள்நுழைவில் தோல்வி: %1"
+
 msgid "Successfully logged in to Readest"
 msgstr "Readest இல் வெற்றிகரமாக உள்நுழைந்தீர்கள்"
 
-msgid "Login failed: %1"
-msgstr "உள்நுழைவில் தோல்வி: %1"
+msgid "Scan the QR code with a phone signed in to Readest, or open %1 and enter this code:\n\n%2"
+msgstr "Readest-இல் உள்நுழைந்த தொலைபேசியால் QR குறியீட்டை ஸ்கேன் செய்யவும், அல்லது %1 ஐத் திறந்து இந்தக் குறியீட்டை உள்ளிடவும்:\n\n%2"
+
+msgid "The code expired. Please try again."
+msgstr "குறியீடு காலாவதியானது. மீண்டும் முயற்சிக்கவும்."
 
 msgid "Logged out from Readest"
 msgstr "Readest இலிருந்து வெளியேறினீர்கள்"

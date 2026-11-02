@@ -18,9 +18,9 @@ import ProfileHeader from '@/app/user/components/Header';
 type Status = 'idle' | 'linking' | 'linked' | 'failed';
 
 /**
- * Approves a CrossPoint reader's sign-in. The Readest card on the reader's web
- * Settings page links to this page with the code filled in, and waits until
- * its owner approves here.
+ * Approves a reader's sign-in: a CrossPoint reader (the Readest card on its web
+ * Settings page) or KOReader (Readest > Sign in with a code). Both link to this
+ * page with the code filled in, and wait until its owner approves here.
  */
 export default function LinkDevice() {
   const _ = useTranslation();
@@ -78,7 +78,7 @@ export default function LinkDevice() {
       {inApp && <ProfileHeader onGoBack={goBack} />}
       <div className='mx-auto flex max-w-[480px] flex-col gap-6 px-4 py-16'>
         <header>
-          <h1 className='text-xl font-semibold tracking-tight'>{_('Link a CrossPoint Reader')}</h1>
+          <h1 className='text-xl font-semibold tracking-tight'>{_('Link a Reader')}</h1>
           <p className='text-base-content/70 mt-1 text-sm'>
             {_(
               'The reader gets your Readest library, reading statistics and reading progress. Only enter a code shown on your own reader.',

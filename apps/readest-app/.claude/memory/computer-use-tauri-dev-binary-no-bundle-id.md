@@ -64,3 +64,8 @@ More traps (2026-10-09, verifying #6680 on macOS):
 - Web Inspector: right-click the book page -> Inspect Element (the footer is the progress slider; right-clicking it MOVES the reading position). Typed console input gets cut by autocomplete and WebKit's console rejects `import()`: request `clipboardWrite`, put a helper in `public/zz-*.js` (delete after), load it with a module `<script>` tag that sets `window.__x`, and paste one-line commands. Pick the `reader` context, not `about:srcdoc`.
 - The dev build shares the installed app's library and book configs: put the reading position back before quitting (`goToFraction`).
 
+
+More traps (2026-10-23, verifying #6986's stats dialog):
+- `pnpm tauri build --debug --bundles app` from a worktree took ~3 min (shared target on the external SSD), a real alternative to the wrapper. Its frontend is baked in, so rebuild after every UI edit.
+- A fresh debug .app got a hidden **UserNotificationCenter** window over it: clicks and cmd+, silently did nothing, CPU idle, no sheet in System Events. Only a `right_click` error named the blocker; after `request_access` for UserNotificationCenter it had gone and clicks worked.
+- WKWebView applies synthetic pointer events about one step late: the hover highlight trails the cursor and a click can land on the previous layout. Scroll ticks often don't move overlay-scrolled dialogs; press `End`/`Home` instead.

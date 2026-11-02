@@ -287,14 +287,14 @@ msgstr "Hech qanday kitob ochilmagan"
 msgid "Uploaded to Readest:"
 msgstr "Readest-ga yuklandi:"
 
+msgid "Auto sync"
+msgstr "Avtomatik sinxronlash"
+
 msgid "Log in Readest Account"
 msgstr "Readest hisobiga kirish"
 
 msgid "Log out as %1"
 msgstr "%1 sifatida chiqish"
-
-msgid "Auto sync"
-msgstr "Avtomatik sinxronlash"
 
 msgid "Readest library"
 msgstr "Readest kutubxonasi"
@@ -524,17 +524,26 @@ msgstr "Kirish"
 msgid "Please enter both email and password"
 msgstr "Iltimos, email va parolni kiriting"
 
+msgid "Sign in with a code"
+msgstr "Kod bilan kirish"
+
 msgid "Please configure Supabase URL and API key first"
 msgstr "Iltimos, avval Supabase URL va API kalitini sozlang"
 
 msgid "Logging in..."
 msgstr "Tizimga kirilmoqda..."
 
+msgid "Login failed: %1"
+msgstr "Kirish muvaffaqiyatsiz tugadi: %1"
+
 msgid "Successfully logged in to Readest"
 msgstr "Readest-ga muvaffaqiyatli kirildi"
 
-msgid "Login failed: %1"
-msgstr "Kirish muvaffaqiyatsiz tugadi: %1"
+msgid "Scan the QR code with a phone signed in to Readest, or open %1 and enter this code:\n\n%2"
+msgstr "QR kodni Readest’ga kirgan telefon bilan skanerlang yoki %1 ni ochib, ushbu kodni kiriting:\n\n%2"
+
+msgid "The code expired. Please try again."
+msgstr "Kod muddati tugadi. Qaytadan urinib ko‘ring."
 
 msgid "Logged out from Readest"
 msgstr "Readest-dan chiqildi"
