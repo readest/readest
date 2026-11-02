@@ -71,7 +71,7 @@ const isSkipped = (node: Text): boolean => {
 
 type TextEntry = { node: Text; start: number; end: number };
 type Region = { start: number; end: number };
-type TextBlock = Region & { firstCharacter: string };
+type TextBlock = Region & { firstCharacter: string; firstCharacterEligible: boolean };
 
 const BLOCK_SELECTOR =
   'p, div, li, blockquote, dd, dt, h1, h2, h3, h4, h5, h6, td, th, caption, figcaption, section, article, aside, body';
@@ -93,15 +93,24 @@ const collectEntries = (
   let textBlock: Element | null = null;
   while (node) {
     const content = node.textContent ?? '';
-    if (content) {
+    if (content && !node.parentElement?.closest('script, style')) {
       const nodeBlock = node.parentElement?.closest(BLOCK_SELECTOR) ?? null;
       if (blocks.length === 0 || nodeBlock !== textBlock) {
-        blocks.push({ start: text.length, end: text.length, firstCharacter: '' });
+        blocks.push({
+          start: text.length,
+          end: text.length,
+          firstCharacter: '',
+          firstCharacterEligible: false,
+        });
       }
       textBlock = nodeBlock;
       const currentBlock = blocks[blocks.length - 1]!;
-      currentBlock.firstCharacter ||= content.trimStart().charAt(0);
-      if (!isSkipped(node)) {
+      const eligible = !isSkipped(node);
+      if (!currentBlock.firstCharacter) {
+        currentBlock.firstCharacter = content.trimStart().charAt(0);
+        currentBlock.firstCharacterEligible = eligible;
+      }
+      if (eligible) {
         if (block && nodeBlock !== block) text += '\n';
         if (currentBlock.start === currentBlock.end) currentBlock.start = text.length;
         block = nodeBlock;
@@ -126,7 +135,7 @@ const findRegions = (text: string, blocks: TextBlock[]): Region[] => {
     const content = text.slice(block.start, block.end).trimEnd();
     CONTINUED_DIALOGUE_PATTERN.lastIndex = 0;
     const match = CONTINUED_DIALOGUE_PATTERN.exec(content);
-    if (!match || match[0][0] !== next.firstCharacter) continue;
+    if (!match || !next.firstCharacterEligible || match[0][0] !== next.firstCharacter) continue;
     const limit = match[0][0] === '‘' ? 301 : MAX_QUOTE_LENGTH;
     if (match[0].length > limit) continue;
     raw.push({ start: block.start + match.index, end: block.start + content.length });

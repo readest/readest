@@ -462,6 +462,16 @@ describe('manageDialogueHighlight', () => {
     expect(spans).toEqual([first, second, last]);
   });
 
+  it.each([
+    '<style>p { color: black }</style>',
+    '<script>const example = 1;</script>',
+  ])('ignores non-rendered text between continued paragraphs: %s', (between) => {
+    const doc = makeDoc(`<p>“First.</p>${between}<p>“Second.”</p>`);
+    manageDialogueHighlight(doc, makeViewSettings({ dialogueHighlight: true }));
+    const spans = [...doc.querySelectorAll(`.${DIALOGUE_SPAN_CLASS}`)].map((s) => s.textContent);
+    expect(spans).toEqual(['“First.', '“Second.”']);
+  });
+
   it('keeps inline markup and apostrophes in continued single-quoted dialogue', () => {
     const doc = makeDoc(
       `<p>‘We’re going <em>home</em> with their boots.</p>` +
@@ -490,6 +500,8 @@ describe('manageDialogueHighlight', () => {
     '<p>“Unclosed.</p><p>Narration.</p><p>“Later.”</p>',
     '<p>“Unclosed.</p><p><code>Narration.</code></p><p>“Later.”</p>',
     '<p>“Unclosed.</p><p><code>Example:</code>“Later.”</p>',
+    '<p>“Unclosed.</p><p><code>“Example.”</code></p>',
+    '<p>“Unclosed.</p><p><code>“Example.”</code>“Later.”</p>',
     '<p>“Unclosed.</p><p> <code>Example:</code> “Later.”</p>',
     '<p>“Unclosed.</p><p>‘Different marks.’</p>',
     '<p>“Unclosed.\n“Another line.”</p>',
