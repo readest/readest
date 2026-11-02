@@ -231,7 +231,7 @@ const FoliateViewer: React.FC<{
   useUICSS(bookKey);
   useProgressSync(bookKey);
   useABSProgressSync(bookKey);
-  useProgressAutoSave(bookKey);
+  const onAutoSaveRelocate = useProgressAutoSave(bookKey);
   useBookCoverAutoSave(bookKey);
   const { syncState, conflictDetails, resolveWithLocal, resolveWithRemote } = useKOSync(bookKey);
   const bookOrbitSync = useKOSync(bookKey, bookOrbitProgressProvider);
@@ -363,6 +363,7 @@ const FoliateViewer: React.FC<{
     // Foliate can emit a late relocation after close() clears its progress
     // resolver. Keep any valid pending position instead of replacing it.
     if (!(event as CustomEvent).detail.location) return;
+    onAutoSaveRelocate?.((event as CustomEvent).detail.cfi);
 
     // Always stash the latest detail; if another rAF is already pending
     // it'll pick this up and the intermediate states are skipped.

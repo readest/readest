@@ -125,8 +125,9 @@ describe('useProgressAutoSave', () => {
   test('does not make a fresh copy newer while its initial cloud pull is pending', async () => {
     h.state.config = { location: '', updatedAt: 0 };
     h.state.progress = null;
-    const { rerender } = renderHook(() => useProgressAutoSave('h1-view1'));
+    const { result, rerender } = renderHook(() => useProgressAutoSave('h1-view1'));
 
+    result.current?.('cfi-start');
     h.state.config.location = 'cfi-start';
     h.state.progress = { location: 'cfi-start' };
     rerender();
@@ -136,6 +137,22 @@ describe('useProgressAutoSave', () => {
 
     h.state.config.location = 'cfi-next';
     h.state.progress = { location: 'cfi-next' };
+    rerender();
+    await flushDebouncedSave();
+
+    expect(h.saveConfigMock).toHaveBeenCalledTimes(1);
+  });
+
+  test('persists an early user jump coalesced with the initial relocation', async () => {
+    h.state.config = { location: '', updatedAt: 0 };
+    h.state.progress = null;
+    const { result, rerender } = renderHook(() => useProgressAutoSave('h1-view1'));
+
+    // The viewer receives both events before committing the latest progress.
+    result.current?.('cfi-start');
+    result.current?.('cfi-user-jump');
+    h.state.config.location = 'cfi-user-jump';
+    h.state.progress = { location: 'cfi-user-jump' };
     rerender();
     await flushDebouncedSave();
 

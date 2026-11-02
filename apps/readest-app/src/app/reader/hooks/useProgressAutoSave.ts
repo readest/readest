@@ -76,14 +76,23 @@ export const useProgressAutoSave = (bookKey: string) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bookKey]);
 
+  const initialRelocateSeenRef = useRef(false);
+  const onRelocate = useCallback(
+    (location: string) => {
+      if (initialRelocateSeenRef.current) return;
+      initialRelocateSeenRef.current = true;
+      const config = getConfig(bookKey);
+      // Capture the first event before the viewer coalesces progress updates.
+      // A fresh copy's starting page must not beat a slow sibling pull, but a
+      // subsequent user destination still needs to be saved (#7092).
+      if (!lastSavedLocationRef.current && !config?.updatedAt) {
+        lastSavedLocationRef.current = location;
+      }
+    },
+    [bookKey, getConfig],
+  );
+
   useEffect(() => {
-    const config = getConfig(bookKey);
-    // A fresh copy's first relocation is its starting page, not a reading
-    // decision. Keep its zero timestamp so a slow sibling pull can recover
-    // the saved position instead of losing to this initial autosave (#7092).
-    if (!lastSavedLocationRef.current && !config?.updatedAt && config?.location) {
-      lastSavedLocationRef.current = config.location;
-    }
     saveBookConfig();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [progress, bookKey]);
@@ -138,4 +147,6 @@ export const useProgressAutoSave = (bookKey: string) => {
       });
     };
   }, []);
+
+  return onRelocate;
 };
