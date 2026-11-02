@@ -340,6 +340,55 @@ describe('useKOSync — changing checksum method (#7118)', () => {
     expect(result.current.conflictDetails).not.toBeNull();
   });
 
+  test('waits for an active upload before pulling the new checksum identity', async () => {
+    h.getProgressMock.mockResolvedValueOnce(null);
+    let finishUpload!: () => void;
+    h.updateProgressMock.mockImplementationOnce(
+      () => new Promise<void>((resolve) => (finishUpload = resolve)),
+    );
+    const { result, rerender } = renderHook(() => useKOSync('h1-view1'));
+    await settle();
+    await advance(KOSYNC_PUSH_DEBOUNCE_MS + 500);
+    expect(h.updateProgressMock).toHaveBeenCalledTimes(1);
+    h.getProgressMock.mockClear();
+
+    h.settings.kosync = { ...h.settings.kosync, checksumMethod: 'filename' };
+    rerender();
+    await settle();
+    expect(result.current.syncState).toBe('checking');
+    expect(h.getProgressMock).not.toHaveBeenCalled();
+
+    finishUpload();
+    await settle();
+    expect(h.getProgressMock).toHaveBeenCalledTimes(1);
+    expect(result.current.syncState).toBe('conflict');
+  });
+
+  test('serializes uploads and discards a queued upload after switching methods', async () => {
+    h.getProgressMock.mockResolvedValueOnce(null);
+    let finishUpload!: () => void;
+    h.updateProgressMock.mockImplementationOnce(
+      () => new Promise<void>((resolve) => (finishUpload = resolve)),
+    );
+    const { result, rerender } = renderHook(() => useKOSync('h1-view1'));
+    await settle();
+    await advance(KOSYNC_PUSH_DEBOUNCE_MS + 500);
+    act(() => {
+      result.current.pushProgress();
+      result.current.pushProgress.flush();
+    });
+    await settle();
+    expect(h.updateProgressMock).toHaveBeenCalledTimes(1);
+
+    h.settings.kosync = { ...h.settings.kosync, checksumMethod: 'filename' };
+    rerender();
+    await settle();
+    finishUpload();
+    await settle();
+    expect(h.updateProgressMock).toHaveBeenCalledTimes(1);
+    expect(result.current.syncState).toBe('conflict');
+  });
+
   test('does not repull when unrelated settings change', async () => {
     h.getProgressMock.mockResolvedValue(null);
     const { rerender } = renderHook(() => useKOSync('h1-view1'));

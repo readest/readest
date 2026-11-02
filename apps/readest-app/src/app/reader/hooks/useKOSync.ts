@@ -102,6 +102,7 @@ export const useKOSync = (bookKey: string, provider: KosyncProgressProvider = ko
   const checksumMethod = provider.selectConfig(settings)?.checksumMethod;
   const previousChecksumMethod = useRef(checksumMethod);
   const checksumGeneration = useRef(0);
+  const pendingPut = useRef<Promise<unknown>>(Promise.resolve());
 
   useEffect(() => {
     const config = provider.selectConfig(settings);
@@ -367,8 +368,13 @@ export const useKOSync = (bookKey: string, provider: KosyncProgressProvider = ko
         if (generation !== checksumGeneration.current) return;
         if (!currentBook || !progress || !progress.koProgress) return;
 
-        console.log('[KOSync] Pushing progress');
-        await kosyncClient.updateProgress(currentBook, progress.koProgress, progress.percentage);
+        const put = pendingPut.current.then(async () => {
+          if (generation !== checksumGeneration.current) return;
+          console.log('[KOSync] Pushing progress');
+          await kosyncClient.updateProgress(currentBook, progress.koProgress, progress.percentage);
+        });
+        pendingPut.current = put.catch(() => undefined);
+        await put;
       }, 5000),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [bookKey, appService, kosyncClient],
@@ -395,6 +401,8 @@ export const useKOSync = (bookKey: string, provider: KosyncProgressProvider = ko
       }
 
       setSyncState('checking');
+      await pendingPut.current;
+      if (generation !== checksumGeneration.current) return;
       const remoteProgress = await kosyncClient.getProgress(book);
       if (generation !== checksumGeneration.current) return;
       if (!remoteProgress || !remoteProgress.progress) {
