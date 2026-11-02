@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
   refresh: vi.fn(),
   verifyGoogle: vi.fn(),
   verifyApple: vi.fn(),
+  dispatch: vi.fn(),
 }));
 
 vi.mock('next/navigation', () => ({ useSearchParams: () => new URLSearchParams() }));
@@ -39,7 +40,7 @@ vi.mock('@/hooks/useAvailablePlans', () => ({
   useAvailablePlans: () => ({ availablePlans: [], iapAvailable: true }),
 }));
 vi.mock('@/utils/nav', () => ({ navigateBackFromProfile: vi.fn() }));
-vi.mock('@/utils/event', () => ({ eventDispatcher: { dispatch: vi.fn() } }));
+vi.mock('@/utils/event', () => ({ eventDispatcher: { dispatch: mocks.dispatch } }));
 vi.mock('@/services/environment', () => ({ isTauriAppPlatform: () => false }));
 vi.mock('@/libs/payment/iap/client', () => ({
   purchaseIAPProduct: vi.fn(),
@@ -83,6 +84,7 @@ it('refreshes verified restored purchases before showing the account deletion wa
   );
   mocks.refresh.mockImplementation(async () => {
     mocks.customizationPurchased = true;
+    return true;
   });
   render(<ProfilePage />);
 
@@ -94,4 +96,27 @@ it('refreshes verified restored purchases before showing the account deletion wa
 
   fireEvent.click(screen.getByRole('button', { name: 'Delete Account' }));
   expect(screen.getByText('This account has a paid plan or purchases.')).toBeTruthy();
+});
+
+it('reports restore failure when refreshed entitlements are unavailable', async () => {
+  mocks.verifyGoogle.mockResolvedValue(undefined);
+  mocks.verifyApple.mockResolvedValue(undefined);
+  mocks.refresh.mockResolvedValue(false);
+  const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+  try {
+    render(<ProfilePage />);
+    fireEvent.click(screen.getByRole('button', { name: 'Restore Purchase' }));
+    await waitFor(() =>
+      expect(mocks.dispatch).toHaveBeenCalledWith('toast', {
+        type: 'info',
+        message: 'Failed to restore purchases.',
+      }),
+    );
+    expect(mocks.dispatch).not.toHaveBeenCalledWith('toast', {
+      type: 'info',
+      message: 'Purchases restored successfully.',
+    });
+  } finally {
+    consoleError.mockRestore();
+  }
 });

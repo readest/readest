@@ -218,7 +218,9 @@ const ProfilePage = () => {
         // server, so re-verify those too.
         await verifyGooglePurchaseProducts(purchases);
         await verifyApplePurchaseProducts(purchases);
-        await refresh();
+        if (!(await refresh())) {
+          throw new Error('Failed to refresh session after restoring purchases');
+        }
         const restoredSubscriptions = purchases
           .filter((p) => !isPurchaseProduct(p.productId))
           .sort((a, b) => new Date(b.purchaseDate).getTime() - new Date(a.purchaseDate).getTime());
