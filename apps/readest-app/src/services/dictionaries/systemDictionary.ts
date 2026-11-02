@@ -32,6 +32,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { getInitializedAppService, isTauriAppPlatform } from '@/services/environment';
 import type { Rect } from '@/utils/sel';
+import { useCustomDictionaryStore } from '@/store/customDictionaryStore';
 
 /**
  * Real native OS for the handoff, taken from the app service's capability
@@ -195,7 +196,15 @@ export const invokeSystemDictionary = async (
       // are not forwarded — neither platform's native UI uses them.
       const result = await invoke<MobileLookupResponse>(
         'plugin:native-bridge|show_lookup_popover',
-        { payload: { word: trimmed } },
+        {
+          payload: {
+            word: trimmed,
+            ...(os === 'ios' &&
+            useCustomDictionaryStore.getState().settings.systemDictionaryFullscreen
+              ? { fullScreen: true }
+              : {}),
+          },
+        },
       );
       // Android-only: chooser empty → no dictionary app installed.
       // Treat as silent no-op rather than an error per Q2 semantics.

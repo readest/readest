@@ -1850,9 +1850,22 @@ class NativeBridgePlugin: Plugin {
       // dictionary glance. On iOS 15+ we use a half-detent sheet
       // presentation: medium height by default, but the user can
       // drag-to-expand to full if they want more room. iPad keeps
-      // the form sheet (a native floating panel) since half-screen
-      // sheets look out of place on tablet-class screens.
-      if UIDevice.current.userInterfaceIdiom == .pad {
+      // the compact form sheet unless the user opts into full screen.
+      var lookupVC: UIViewController = dictVC
+      if args.fullScreen == true {
+        // The dictionary's view is transparent, and presenting it directly
+        // full-screen can lose its light appearance on iPadOS. Keep it in
+        // the window hierarchy with an opaque, theme-aware container.
+        let container = UIViewController()
+        container.modalPresentationStyle = .overFullScreen
+        container.view.backgroundColor = .systemBackground
+        container.addChild(dictVC)
+        dictVC.view.frame = container.view.bounds
+        dictVC.view.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        container.view.addSubview(dictVC.view)
+        dictVC.didMove(toParent: container)
+        lookupVC = container
+      } else if UIDevice.current.userInterfaceIdiom == .pad {
         dictVC.modalPresentationStyle = .formSheet
       } else if #available(iOS 15.0, *) {
         dictVC.modalPresentationStyle = .pageSheet
@@ -1873,7 +1886,7 @@ class NativeBridgePlugin: Plugin {
         // the full screen.
         dictVC.modalPresentationStyle = .formSheet
       }
-      presenter.present(dictVC, animated: true) {
+      presenter.present(lookupVC, animated: true) {
         invoke.resolve(["success": true])
       }
     }
@@ -2551,6 +2564,7 @@ class SecureItemGetArgs: Decodable {
 
 class ShowLookupPopoverArgs: Decodable {
   let word: String
+  let fullScreen: Bool?
 }
 
 struct UpdateReadingWidgetBookArgs: Decodable {
