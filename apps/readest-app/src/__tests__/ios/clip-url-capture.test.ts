@@ -1,5 +1,7 @@
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { execFileSync } from 'node:child_process';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join, resolve } from 'node:path';
 import { runInNewContext } from 'node:vm';
 import { afterEach, describe, expect, it } from 'vitest';
 
@@ -70,6 +72,38 @@ describe('iOS clip capture with stalled subresources (#6867)', () => {
   it('does not count surrounding whitespace as rendered content', () => {
     expect(capture('complete', `  Sign in${' '.repeat(500)}`, true, 400)).toBeNull();
   });
+
+  it.skipIf(process.platform !== 'darwin')(
+    'retries late content after 27 seconds until capture or timeout',
+    () => {
+      // Compile the real Swift method with a deterministic clock and WKWebView
+      // boundary. Predicate behavior is exercised separately by the JS tests.
+      const start = source.indexOf('  private func captureOuterHtml(');
+      const end = source.indexOf('  private func finish(', start);
+      const method = source.slice(start, end).replace(/^\s*clipLogger\.log.*$/m, '');
+      const harness = readFileSync(
+        resolve(process.cwd(), 'src/__tests__/ios/clip-url-scheduler.swift'),
+        'utf8',
+      );
+      const directory = mkdtempSync(join(tmpdir(), 'readest-clip-scheduler-'));
+      try {
+        const file = join(directory, 'main.swift');
+        writeFileSync(file, harness.replace('  // PRODUCTION_CAPTURE_METHOD', method));
+        const output = execFileSync('swift', [file], { encoding: 'utf8', timeout: 20_000 });
+        const result: unknown = JSON.parse(output);
+        expect(result).toEqual({
+          late: '<article>Late rendered article</article>',
+          lateCompletions: 1,
+          blank: 'timeout',
+          blankCompletions: 1,
+          blankEvaluations: 6,
+        });
+      } finally {
+        rmSync(directory, { recursive: true, force: true });
+      }
+    },
+    25_000,
+  );
 
   it('preserves the final URL in captured HTML', () => {
     const html = capture('complete', 'Article.');

@@ -388,16 +388,14 @@ final class ClipUrlController: UIViewController, WKNavigationDelegate {
     guard !captureFired && !completed else { return }
     captureFired = true
     // Match the converter's 400-character quality floor while waiting.
-    // Manual capture and the final attempt still return short login pages.
+    // Manual capture and checks after 27 s still return short login pages.
     let minTextChars = requireReady && !contentWaitEnded ? 400 : 0
     webView.evaluateJavaScript("(function() { if (\(requireReady) && (document.readyState === 'loading' || !document.body || !document.body.innerText.trim() || document.body.innerText.trim().length < \(minTextChars))) return null; var root = document.documentElement.cloneNode(true); root.setAttribute('data-readest-url', location.href); return root.outerHTML; })()") { [weak self] result, error in
       guard let self = self, !self.completed else { return }
       if requireReady && error == nil && !(result is String) {
         self.captureFired = false
-        if !self.contentWaitEnded || minTextChars > 0 {
-          DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
-            self?.captureOuterHtml(requireReady: true)
-          }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+          self?.captureOuterHtml(requireReady: true)
         }
         return
       }
