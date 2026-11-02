@@ -10,6 +10,7 @@ const { readerState, openGate, bookDataState, attrs } = vi.hoisted(() => {
     openGate: { pending: null as Promise<void> | null, started: false },
     readerState: {
       setProgress: vi.fn(),
+      viewStates: {} as Record<string, { ocrEnabled?: boolean; ocrLanguage?: string }>,
       getViewState: () => ({}),
       getViewSettings: () => ({ writingMode: 'auto', showHeader: true, vertical: false }),
       setView: () => {},
@@ -37,6 +38,9 @@ vi.mock('@/store/themeStore', () => {
 });
 vi.mock('@/store/customFontStore', () => ({
   useCustomFontStore: () => ({ getLoadedFonts: () => [], getAvailableFonts: () => [] }),
+}));
+vi.mock('@/app/reader/hooks/useOcrSession', () => ({
+  useOcrSession: () => vi.fn().mockResolvedValue(null),
 }));
 vi.mock('@/context/EnvContext', () => ({ useEnv: () => ({}) }));
 vi.mock('next/navigation', () => ({ useSearchParams: () => null }));
