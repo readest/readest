@@ -1479,6 +1479,23 @@ describe('importBook PDF filename-aware dedup', () => {
     });
   });
 
+  it('saves the resolved Android provider name instead of the opaque content URI', async () => {
+    mockPartialMD5.mockResolvedValue('pdf-hash');
+    setupMockPdfDoc();
+    service.getFs().openFile.mockResolvedValue(new File(['pdf'], 'Original Manual.pdf'));
+
+    const book = await service.importBook(
+      'content://com.android.providers.downloads.documents/document/7421',
+      [],
+    );
+
+    expect(book).toMatchObject({
+      originalFilename: 'Original Manual.pdf',
+      title: 'Original Manual',
+      metaHash: getMetadataHash(PDF_METADATA, 'Original Manual'),
+    });
+  });
+
   it('strips URL queries when the opened file has no name', async () => {
     mockPartialMD5.mockResolvedValue('pdf-hash');
     setupMockPdfDoc();

@@ -8,6 +8,7 @@ const saveDialogMock = vi.fn().mockResolvedValue('/tmp/exported.md');
 const shareFileMock = vi.fn().mockResolvedValue(undefined);
 const copyURIToPathMock = vi.fn().mockResolvedValue({ success: true });
 const removeMock = vi.fn().mockResolvedValue(undefined);
+const basenameMock = vi.fn((p: string) => Promise.resolve(p.split('/').pop() ?? p));
 
 vi.mock('@tauri-apps/plugin-os', () => ({
   type: () => osTypeMock(),
@@ -40,7 +41,7 @@ vi.mock('@tauri-apps/plugin-dialog', () => ({
 
 vi.mock('@tauri-apps/api/path', () => ({
   join: (...parts: string[]) => Promise.resolve(parts.join('/')),
-  basename: (p: string) => Promise.resolve(p.split('/').pop() ?? p),
+  basename: (p: string) => basenameMock(p),
   appDataDir: () => Promise.resolve('/tmp/app-data'),
   appConfigDir: () => Promise.resolve('/tmp/app-config'),
   appCacheDir: () => Promise.resolve('/tmp/app-cache'),
@@ -60,6 +61,11 @@ vi.mock('@/utils/bridge', () => ({
 
 vi.mock('@/utils/file', () => ({
   NativeFile: class {
+    constructor(
+      public path: string,
+      public name: string,
+    ) {}
+
     async open() {
       return this;
     }
@@ -93,6 +99,19 @@ describe('NativeAppService.saveFile share gating', () => {
     shareFileMock.mockClear();
     copyURIToPathMock.mockClear();
     removeMock.mockClear();
+  });
+
+  test.each([
+    'content://com.android.externalstorage.documents/document/primary%3Aopaque-id',
+    'content://com.android.providers.downloads.documents/document/7421',
+  ])('resolves the provider display name with basename for %s', async (uri) => {
+    const service = await loadServiceWithOS('android');
+    basenameMock.mockResolvedValueOnce('Original Manual.pdf');
+
+    const file = await service.openFile(uri, 'None');
+
+    expect(basenameMock).toHaveBeenCalledWith(uri);
+    expect(file.name).toBe('Original Manual.pdf');
   });
 
   test('uses a unique cache path for same-named content-provider files', async () => {
