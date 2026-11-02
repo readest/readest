@@ -9,9 +9,14 @@ import {
   waitFor as waitForWithOptions,
 } from '@testing-library/react';
 
+// One key with a real translation, so a name that must stay literal can be told
+// from one that is translated.
+const TRANSLATIONS: Record<string, string> = { Cherry: 'Cerise' };
 vi.mock('@/hooks/useTranslation', () => ({
   useTranslation: () => (key: string, opts?: Record<string, unknown>) =>
-    opts ? Object.entries(opts).reduce((s, [k, v]) => s.replace(`{{${k}}}`, String(v)), key) : key,
+    opts
+      ? Object.entries(opts).reduce((s, [k, v]) => s.replace(`{{${k}}}`, String(v)), key)
+      : (TRANSLATIONS[key] ?? key),
 }));
 
 vi.mock('@/hooks/useResponsiveSize', () => ({
@@ -777,6 +782,38 @@ describe('TTSPlayerSheet', () => {
     fireEvent.click(screen.getByRole('button', { name: /Edge TTS/ }));
     expect(row('Ava').textContent).toBe('AvaMultilingual');
     expect(screen.getByText('Multilingual').className).toContain('ms-auto');
+  });
+
+  test("shows a service's voice name as given, translating only built-in names", async () => {
+    const groups = [
+      {
+        id: 'custom',
+        name: 'Cherry',
+        literalName: true,
+        voices: [
+          { id: 's1:cherry', name: 'Cherry', lang: 'mul', literalName: true },
+          { id: 'cherry', name: 'Cherry', lang: 'mul' },
+        ],
+      },
+    ];
+    const props = makeProps({
+      onGetVoices: vi.fn().mockResolvedValue(groups),
+      onGetVoiceId: vi.fn().mockReturnValue('s1:cherry'),
+    });
+    render(<TTSPlayerSheet {...props} />);
+    const voiceButton = screen.getByLabelText('Voice');
+    await waitFor(() => expect(voiceButton.textContent).toBe('Cherry'));
+    fireEvent.click(voiceButton);
+    // The group is the user's service, named by them.
+    const header = await waitFor(() => screen.getByRole('button', { name: /voices/ }));
+    expect(header.textContent).toBe('Cherry: 2 voices');
+    const rows = screen
+      .getAllByRole('button', { name: /^(Cherry|Cerise)$/ })
+      .filter((row) => row !== voiceButton);
+    expect(rows.map((row) => row.textContent)).toEqual(['Cherry', 'Cerise']);
+    // Folded, the header still names the current voice as given.
+    fireEvent.click(header);
+    expect(header.textContent).toBe('Cherry: 2 voicesCherry');
   });
 
   test('voice groups form an accordion opened on the current voice, foldable', async () => {

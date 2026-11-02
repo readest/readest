@@ -21,7 +21,7 @@ import {
 import { RiForward30Line, RiReplay15Line, RiVoiceAiFill } from 'react-icons/ri';
 import { TbArrowBarToRight } from 'react-icons/tb';
 import { useAppRouter } from '@/hooks/useAppRouter';
-import { TTSVoicesGroup } from '@/services/tts';
+import { TTSVoice, TTSVoicesGroup } from '@/services/tts';
 import { MEDIA_OVERLAY_VOICE_ID } from '@/services/tts/mediaOverlay';
 import type { TTSLoopState } from '@/services/tts/TTSController';
 import { saveViewSettings } from '@/helpers/settings';
@@ -370,9 +370,12 @@ const TTSPlayerSheet = ({
   };
 
   const timeoutOptions = getTTSTimeoutOptions(_);
-  const currentVoiceName = voiceGroups
+  // A name a user's own service gave is shown as is; built-in names are UI strings.
+  const voiceName = (item: TTSVoice | TTSVoicesGroup) =>
+    item.literalName ? item.name : _(item.name);
+  const currentVoice = voiceGroups
     .flatMap((group) => group.voices)
-    .find((voice) => voice.id === selectedVoice)?.name;
+    .find((voice) => voice.id === selectedVoice);
   // Armed timer shows its live countdown on the button; the chapter-end mode
   // has no countdown so it just names itself; otherwise the button falls
   // back to naming the feature (the alarm icon already carries the
@@ -698,7 +701,7 @@ const TTSPlayerSheet = ({
             >
               <RiVoiceAiFill size={iconSize18} />
               <span className='text-base-content/60 max-w-full truncate px-1 text-xs'>
-                {currentVoiceName ? _(currentVoiceName) : _('Voice')}
+                {currentVoice?.name ? voiceName(currentVoice) : _('Voice')}
               </span>
             </button>
             <button
@@ -775,14 +778,14 @@ const TTSPlayerSheet = ({
                     {/* A single-voice group (a book's own narrator) would otherwise
                       read "Narration: 1 voices". */}
                     {voiceGroup.voices.length === 1
-                      ? _(voiceGroup.name)
+                      ? voiceName(voiceGroup)
                       : _('{{engine}}: {{count}} voices', {
-                          engine: _(voiceGroup.name),
+                          engine: voiceName(voiceGroup),
                           count: voiceGroup.voices.length,
                         })}
                   </span>
                   {collapsed && current && (
-                    <span className='max-w-[50%] shrink-0 truncate'>{_(current.name)}</span>
+                    <span className='max-w-[50%] shrink-0 truncate'>{voiceName(current)}</span>
                   )}
                   <MdExpandMore
                     className={clsx('shrink-0', collapsed && '-rotate-90 rtl:rotate-90')}
@@ -810,7 +813,7 @@ const TTSPlayerSheet = ({
                           voice.disabled && 'text-base-content/40',
                         )}
                       >
-                        {_(voice.name)}
+                        {voiceName(voice)}
                       </span>
                       {voice.variant && (
                         <span className='badge badge-sm badge-ghost ms-auto shrink-0'>

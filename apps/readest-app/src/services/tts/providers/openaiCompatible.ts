@@ -74,8 +74,11 @@ const authHeaders = (service: CustomTTSService): Record<string, string> =>
   service.apiKey ? { Authorization: `Bearer ${service.apiKey}` } : {};
 
 interface ListedVoice {
+  /** The voice sent to the service. */
   name: string;
   lang?: string;
+  /** What the picker shows, when the service names the voice apart from its id. */
+  label?: string;
 }
 
 // Kokoro names a voice by language and gender (`zf_xiaobei`: Mandarin, female).
@@ -97,7 +100,7 @@ const voiceLang = ({ name, lang }: ListedVoice): string =>
   lang ?? (/^[a-z][fm]_/.test(name) ? KOKORO_LANGS[name[0]!] : undefined) ?? MULTILINGUAL_LANG;
 
 // `{ voices: [...] }` of names (Kokoro-FastAPI) or of `{ id, name, lang }`
-// objects (`language` also read).
+// objects (`language` also read). An object's id is spoken with, its name shown.
 const parseVoiceList = (body: unknown): ListedVoice[] => {
   const list = (body as { voices?: unknown } | null)?.voices;
   if (!Array.isArray(list)) return [];
@@ -107,7 +110,8 @@ const parseVoiceList = (body: unknown): ListedVoice[] => {
     const voice = typeof id === 'string' ? id : typeof name === 'string' ? name : null;
     if (!voice) return [];
     const stated = typeof lang === 'string' ? lang : typeof language === 'string' ? language : '';
-    return [stated ? { name: voice, lang: stated } : { name: voice }];
+    const label = typeof name === 'string' && name.trim() ? name.trim() : undefined;
+    return [{ name: voice, ...(stated && { lang: stated }), ...(label && { label }) }];
   });
 };
 
@@ -203,7 +207,8 @@ export class OpenAICompatibleSpeechProvider implements SpeechProvider {
     return services.flatMap((service, i) =>
       lists[i]!.map((voice) => ({
         id: customVoiceId(service.id, voice.name),
-        name: voice.name,
+        name: voice.label ?? voice.name,
+        literalName: true,
         lang: voiceLang(voice),
       })),
     );
@@ -213,6 +218,7 @@ export class OpenAICompatibleSpeechProvider implements SpeechProvider {
     return this.getServices().map((service) => ({
       id: `${this.id}:${service.id}`,
       name: service.name,
+      literalName: true,
       voices: voices.filter((voice) => voice.id.startsWith(`${service.id}:`)),
     }));
   }
