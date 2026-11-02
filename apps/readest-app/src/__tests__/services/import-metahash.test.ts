@@ -1247,6 +1247,14 @@ describe('importBook PDF filename-aware dedup', () => {
 
     expect(book2).not.toBe(book1);
     expect(books.filter((b) => !b.deletedAt)).toHaveLength(2);
+    expect(book1).toMatchObject({
+      title: 'lecture-01',
+      originalFilename: 'lecture-01.pdf',
+      sourceTitle: PDF_METADATA.title,
+      metadata: PDF_METADATA,
+      metaHash: getMetadataHash(PDF_METADATA, 'lecture-01'),
+    });
+    expect(book2).toMatchObject({ title: 'lecture-02', originalFilename: 'lecture-02.pdf' });
   });
 
   it('still dedupes a PDF re-imported with the same filename and metadata', async () => {
@@ -1302,12 +1310,77 @@ describe('importBook PDF filename-aware dedup', () => {
     const imported = await service.importBook(changedFile, [existingBook]);
 
     expect(imported).toBe(existingBook);
-    expect(existingBook.title).toBe(changedMetadata.title);
+    expect(existingBook).toMatchObject({
+      title: 'canon-r7-custom-buttons',
+      originalFilename: 'canon-r7-custom-buttons.pdf',
+    });
     expect(existingBook.sourceTitle).toBe(originalMetadata.title);
     expect(existingBook.author).toBe(changedMetadata.author);
     expect(existingBook.metadata).toEqual(changedMetadata);
     expect(existingBook.metadataUpdatedAt).toBe(existingBook.updatedAt);
     expect(service.getFs().openFile).not.toHaveBeenCalled();
+  });
+
+  it('keeps the original filename and PDF title when re-importing the managed copy', async () => {
+    mockPartialMD5.mockResolvedValue('pdf-hash-1');
+    setupMockPdfDoc();
+    const books: Book[] = [];
+    const book = await service.importBook(new File(['pdf'], 'Device_Manual_V2.1.PDF'), books);
+
+    service.getFs().openFile.mockResolvedValue(new File(['pdf'], 'PowerPoint Presentation.pdf'));
+    setupMockPdfDoc();
+    const reimported = await service.importBook(
+      '/library/Books/pdf-hash-1/PowerPoint Presentation.pdf',
+      books,
+    );
+
+    expect(reimported).toBe(book);
+    expect(reimported).toMatchObject({
+      originalFilename: 'Device_Manual_V2.1.PDF',
+      title: 'Device_Manual_V2.1',
+      sourceTitle: PDF_METADATA.title,
+    });
+  });
+
+  it.each([
+    ['EPUB', 'novel.epub'],
+    ['MOBI', 'novel.mobi'],
+    ['CBZ', 'comic.cbz'],
+    ['FB2', 'novel.fb2'],
+    ['MD', 'notes.md'],
+    ['HTML', 'article.html'],
+  ] as const)('saves the original basename for %s without replacing its metadata title', async (format, name) => {
+    mockPartialMD5.mockResolvedValue('book-hash');
+    mockOpen.mockResolvedValue({
+      format,
+      book: { metadata: { ...TEST_METADATA }, getCover: vi.fn().mockResolvedValue(null) },
+    });
+
+    const book = await service.importBook(new File(['book'], name), []);
+
+    expect(book).toMatchObject({ originalFilename: name, title: TEST_METADATA.title });
+  });
+
+  it.each([
+    ['/home/reader/manuals/安全 Manual.v2.pdf', '安全 Manual.v2.pdf'],
+    ['C:\\Users\\reader\\manuals\\Device_Manual.pdf', 'Device_Manual.pdf'],
+  ])('saves only the basename when importing %s', async (path, name) => {
+    mockPartialMD5.mockResolvedValue('pdf-hash');
+    setupMockPdfDoc();
+    service.getFs().openFile.mockResolvedValue(new File(['pdf'], path));
+
+    const book = await service.importBook(path, []);
+
+    expect(book).toMatchObject({ originalFilename: name, title: name.replace(/\.pdf$/, '') });
+  });
+
+  it('preserves the unmodified basename before removing a download duplicate marker', async () => {
+    mockPartialMD5.mockResolvedValue('pdf-hash');
+    setupMockPdfDoc();
+
+    const book = await service.importBook(new File(['pdf'], 'manual.pdf (1)'), []);
+
+    expect(book).toMatchObject({ originalFilename: 'manual.pdf (1)', title: 'manual' });
   });
 
   it('refreshBookMetadata preserves the salted metaHash for PDFs', async () => {
