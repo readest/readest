@@ -310,6 +310,7 @@ describe('useKOSync — changing checksum method (#7118)', () => {
 
     finishOldConversion({ xpointer: h.XPOINTER });
     await settle();
+    expect(h.config.xpointer).toBe('');
     expect(h.updateProgressMock).not.toHaveBeenCalled();
   });
 

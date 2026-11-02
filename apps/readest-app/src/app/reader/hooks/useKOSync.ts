@@ -123,6 +123,7 @@ export const useKOSync = (bookKey: string, provider: KosyncProgressProvider = ko
   }, [settings, provider, checksumMethod]);
 
   const generateKOProgress = useCallback(async () => {
+    const generation = checksumGeneration.current;
     const progress = getProgress(bookKey);
     const bookData = getBookData(bookKey);
     if (!progress || !bookData) return null;
@@ -162,6 +163,7 @@ export const useKOSync = (bookKey: string, provider: KosyncProgressProvider = ko
             bookData.bookDoc ?? undefined,
             bookData.book?.format,
           );
+          if (generation !== checksumGeneration.current) return null;
           koProgress = xpointerResult.xpointer;
           setConfig(bookKey, { xpointer: koProgress });
         } catch (error) {
