@@ -142,6 +142,9 @@ describe('NativeAppService.saveFile share gating', () => {
     ['linux', '/books/manual?rev1.pdf', undefined, 'manual?rev1.pdf'],
     ['linux', '/books/Report%20Final.pdf', undefined, 'Report%20Final.pdf'],
     ['windows', 'C:\\books\\Device_Manual.pdf', undefined, 'Device_Manual.pdf'],
+    ['windows', 'chapters\\manual.pdf', undefined, 'manual.pdf'],
+    ['windows', '\\chapters\\manual.pdf', undefined, 'manual.pdf'],
+    ['linux', 'chapters\\manual.pdf', undefined, 'chapters\\manual.pdf'],
     ['windows', '\\\\server\\books\\Device_Manual.pdf', undefined, 'Device_Manual.pdf'],
     ['macos', '/books/book.pdf', 'Original%20Name.pdf', 'Original%20Name.pdf'],
   ] as const)('resolves local %s names for %s', async (os, path, name, expected) => {

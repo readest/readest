@@ -322,7 +322,11 @@ export const nativeFileSystem: FileSystem = {
         fetcher ?? tauriFetch,
       ).open();
     }
-    let fname = name || (isFileURI(path) ? getURLFilename(path) : getPathFilename(fp));
+    let fname =
+      name ||
+      (isFileURI(path)
+        ? getURLFilename(path)
+        : getPathFilename(OS_TYPE === 'windows' ? fp.replace(/\\/g, '/') : fp));
     if (isContentURI(path) || (isFileURI(path) && OS_TYPE === 'ios')) {
       fname = safeDecodePath(await basename(path));
       if (path.includes('com.android.externalstorage')) {
