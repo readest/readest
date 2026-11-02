@@ -1513,6 +1513,31 @@ describe('importBook PDF filename-aware dedup', () => {
     expect(books.filter((book) => !book.deletedAt)).toHaveLength(2);
   });
 
+  it('keeps different PDFs from extensionless download URLs separate', async () => {
+    const books: Book[] = [];
+    const web = new WebAppService();
+    const fetcher = vi
+      .fn()
+      .mockResolvedValue(new Response(null, { headers: { 'content-length': '3' } }));
+    for (const id of [1, 2]) {
+      const url = `https://example.com/download?id=${id}`;
+      service
+        .getFs()
+        .openFile.mockResolvedValue(await web.fs.openFile(url, 'None', undefined, fetcher));
+      mockPartialMD5.mockResolvedValue(`pdf-download-${id}`);
+      setupMockPdfDoc();
+
+      await service.importBook(url, books);
+    }
+
+    const liveBooks = books.filter((book) => !book.deletedAt);
+    expect(liveBooks).toHaveLength(2);
+    expect(new Set(liveBooks.map((book) => book.metaHash)).size).toBe(2);
+    expect(liveBooks.every((book) => book.originalFilename === 'download')).toBe(true);
+    expect(liveBooks.every((book) => book.title === 'download')).toBe(true);
+    expect(service.getFs().removeDir).not.toHaveBeenCalled();
+  });
+
   it('saves the resolved Android provider name instead of the opaque content URI', async () => {
     mockPartialMD5.mockResolvedValue('pdf-hash');
     setupMockPdfDoc();

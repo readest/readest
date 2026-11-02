@@ -761,11 +761,16 @@ export async function importBook(
       title = existingBook.title;
       metaHash = existingBook.metaHash;
     } else {
+      let pdfIdentity: string | undefined;
       if (format === 'PDF') {
         title = stripDuplicateMarker(originalFilename || filename).replace(/\.[^.]*$/, '');
+        pdfIdentity = title;
+        // Extensionless download endpoints can serve unrelated PDFs under the same name.
+        if (typeof file === 'string' && isValidURL(file) && !/\.pdf$/i.test(filename)) {
+          pdfIdentity = hash;
+        }
       }
-      // Salt PDF identity with its filename so generic metadata cannot merge distinct files.
-      metaHash = getMetadataHash(loadedBook.metadata, format === 'PDF' ? title : undefined);
+      metaHash = getMetadataHash(loadedBook.metadata, pdfIdentity);
     }
     const stableHash = hasVolatileIdentifiers(format)
       ? getStableMetadataHash(loadedBook.metadata)
