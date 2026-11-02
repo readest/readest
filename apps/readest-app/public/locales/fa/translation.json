@@ -2669,5 +2669,9 @@
   "Click": "کلیک",
   "Long Press": "لمس طولانی",
   "Weight": "ضخامت",
-  "Slightly heavier": "کمی ضخیم‌تر"
+  "Slightly heavier": "کمی ضخیم‌تر",
+  "Search history": "تاریخچه جستجو",
+  "Clear All": "پاک کردن همه",
+  "Remove {{term}} from search history": "حذف {{term}} از تاریخچه جستجو",
+  "Remove from history": "حذف از تاریخچه"
 }

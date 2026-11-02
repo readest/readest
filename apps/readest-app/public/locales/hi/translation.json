@@ -2669,5 +2669,9 @@
   "Click": "क्लिक",
   "Long Press": "देर तक दबाएँ",
   "Weight": "मोटाई",
-  "Slightly heavier": "थोड़ा मोटा"
+  "Slightly heavier": "थोड़ा मोटा",
+  "Search history": "खोज इतिहास",
+  "Clear All": "सभी साफ़ करें",
+  "Remove {{term}} from search history": "{{term}} को खोज इतिहास से हटाएँ",
+  "Remove from history": "इतिहास से हटाएँ"
 }

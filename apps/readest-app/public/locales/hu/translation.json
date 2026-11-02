@@ -2669,5 +2669,9 @@
   "Click": "Kattintás",
   "Long Press": "Hosszú nyomás",
   "Weight": "Vastagság",
-  "Slightly heavier": "Kissé vastagabb"
+  "Slightly heavier": "Kissé vastagabb",
+  "Search history": "Keresési előzmények",
+  "Clear All": "Összes törlése",
+  "Remove {{term}} from search history": "{{term}} eltávolítása a keresési előzményekből",
+  "Remove from history": "Eltávolítás az előzményekből"
 }

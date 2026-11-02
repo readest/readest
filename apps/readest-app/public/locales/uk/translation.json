@@ -2807,5 +2807,9 @@
   "Click": "Клік",
   "Long Press": "Довге натискання",
   "Weight": "Товщина",
-  "Slightly heavier": "Трохи товщий"
+  "Slightly heavier": "Трохи товщий",
+  "Search history": "Історія пошуку",
+  "Clear All": "Очистити все",
+  "Remove {{term}} from search history": "Видалити {{term}} з історії пошуку",
+  "Remove from history": "Видалити з історії"
 }

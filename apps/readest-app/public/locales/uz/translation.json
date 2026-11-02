@@ -2669,5 +2669,9 @@
   "Click": "Chertish",
   "Long Press": "Uzoq bosish",
   "Weight": "Qalinlik",
-  "Slightly heavier": "Biroz qalinroq"
+  "Slightly heavier": "Biroz qalinroq",
+  "Search history": "Qidiruv tarixi",
+  "Clear All": "Barchasini tozalash",
+  "Remove {{term}} from search history": "{{term}} soʻrovini qidiruv tarixidan olib tashlash",
+  "Remove from history": "Tarixdan olib tashlash"
 }

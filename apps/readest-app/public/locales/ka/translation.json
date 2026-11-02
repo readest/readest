@@ -2669,5 +2669,9 @@
   "Click": "დაწკაპუნება",
   "Long Press": "ხანგრძლივი დაჭერა",
   "Weight": "სისქე",
-  "Slightly heavier": "ოდნავ უფრო სქელი"
+  "Slightly heavier": "ოდნავ უფრო სქელი",
+  "Search history": "ძებნის ისტორია",
+  "Clear All": "ყველაფრის გასუფთავება",
+  "Remove {{term}} from search history": "{{term}} ძებნის ისტორიიდან წაშლა",
+  "Remove from history": "ისტორიიდან წაშლა"
 }

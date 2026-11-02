@@ -5,9 +5,16 @@ import { DropdownProvider } from '@/context/DropdownContext';
 import Menu from '@/components/Menu';
 import LibraryHeader from '@/app/library/components/LibraryHeader';
 import { DEFAULT_BOOK_SEARCH_CONFIG } from '@/services/constants';
+import { addLibrarySearchHistory } from '@/app/library/utils/searchHistory';
 
 vi.mock('@/context/EnvContext', () => ({ useEnv: () => ({ appService: null }) }));
-vi.mock('@/hooks/useTranslation', () => ({ useTranslation: () => (s: string) => s }));
+vi.mock('@/hooks/useTranslation', () => ({
+  useTranslation: () => (key: string, values?: Record<string, string>) =>
+    Object.entries(values ?? {}).reduce(
+      (text, [name, value]) => text.replace(`{{${name}}}`, value),
+      key,
+    ),
+}));
 vi.mock('@/hooks/useTrafficLight', () => ({
   useTrafficLight: () => ({ isTrafficLightVisible: false }),
 }));
@@ -31,6 +38,9 @@ const noop = () => {};
 afterEach(() => {
   cleanup();
   document.documentElement.dir = 'ltr';
+  document.documentElement.removeAttribute('data-eink');
+  document.documentElement.removeAttribute('data-theme');
+  localStorage.clear();
 });
 
 const renderHeader = () =>
@@ -57,6 +67,47 @@ const renderHeader = () =>
       </div>
     </DropdownProvider>,
   );
+
+describe('library search history layout', () => {
+  for (const width of [390, 768, 1200]) {
+    for (const dir of ['ltr', 'rtl']) {
+      for (const eink of [false, true]) {
+        it(`fits the search field at ${width}px in ${dir}, e-ink ${eink}`, async () => {
+          await page.viewport(width, 900);
+          document.documentElement.dir = dir;
+          document.documentElement.dataset['eink'] = String(eink);
+          document.documentElement.dataset['theme'] = eink ? 'light' : 'dark';
+          const longTerm = 'A very long search query for a whole series of books '.repeat(4).trim();
+          addLibrarySearchHistory(longTerm, 'books');
+          addLibrarySearchHistory('Dune', 'books');
+          const { getByRole, getByText } = renderHeader();
+          const input = getByRole('textbox');
+          fireEvent.focus(input);
+          const history = getByRole('region', { name: 'Search history' });
+          const bounds = history.getBoundingClientRect();
+          const inputBounds = input.getBoundingClientRect();
+          expect(bounds.left).toBeCloseTo(inputBounds.left, 0);
+          expect(bounds.right).toBeCloseTo(inputBounds.right, 0);
+          expect(bounds.top).toBeGreaterThanOrEqual(inputBounds.bottom);
+          expect(bounds.left).toBeGreaterThanOrEqual(0);
+          expect(bounds.right).toBeLessThanOrEqual(width);
+          const remove = getByRole('button', { name: `Remove ${longTerm} from search history` });
+          expect(remove.getBoundingClientRect().width).toBeGreaterThanOrEqual(44);
+          expect(remove.getBoundingClientRect().height).toBeGreaterThanOrEqual(44);
+          const label = getByText(longTerm);
+          expect(label.scrollWidth).toBeGreaterThan(label.clientWidth);
+          const card = history.querySelector('.eink-bordered')!;
+          if (eink) {
+            expect(getComputedStyle(card).borderTopWidth).toBe('1px');
+            expect(getComputedStyle(card).borderTopColor).toBe(getComputedStyle(card).color);
+          }
+          fireEvent.click(remove);
+          expect(getByRole('button', { name: 'Dune' })).toBeTruthy();
+        });
+      }
+    }
+  }
+});
 
 describe('library search actions', () => {
   for (const width of [768, 1200]) {

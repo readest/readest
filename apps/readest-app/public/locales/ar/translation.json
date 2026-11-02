@@ -2945,5 +2945,9 @@
   "Click": "نقر",
   "Long Press": "ضغط مطوّل",
   "Weight": "سُمك الخط",
-  "Slightly heavier": "أكثر سُمكًا قليلًا"
+  "Slightly heavier": "أكثر سُمكًا قليلًا",
+  "Search history": "سجل البحث",
+  "Clear All": "مسح الكل",
+  "Remove {{term}} from search history": "إزالة {{term}} من سجل البحث",
+  "Remove from history": "إزالة من السجل"
 }

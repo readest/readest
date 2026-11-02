@@ -2669,5 +2669,9 @@
   "Click": "Klicken",
   "Long Press": "Lange drücken",
   "Weight": "Schriftstärke",
-  "Slightly heavier": "Etwas kräftiger"
+  "Slightly heavier": "Etwas kräftiger",
+  "Search history": "Suchverlauf",
+  "Clear All": "Alles löschen",
+  "Remove {{term}} from search history": "{{term}} aus dem Suchverlauf entfernen",
+  "Remove from history": "Aus dem Verlauf entfernen"
 }

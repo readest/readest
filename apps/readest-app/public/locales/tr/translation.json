@@ -2669,5 +2669,9 @@
   "Click": "Tıklama",
   "Long Press": "Uzun basma",
   "Weight": "Kalınlık",
-  "Slightly heavier": "Biraz daha kalın"
+  "Slightly heavier": "Biraz daha kalın",
+  "Search history": "Arama geçmişi",
+  "Clear All": "Tümünü temizle",
+  "Remove {{term}} from search history": "{{term}} aramasını arama geçmişinden kaldır",
+  "Remove from history": "Geçmişten kaldır"
 }

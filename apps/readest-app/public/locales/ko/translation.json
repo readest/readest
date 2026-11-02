@@ -2600,5 +2600,9 @@
   "Click": "클릭",
   "Long Press": "길게 누르기",
   "Weight": "굵기",
-  "Slightly heavier": "약간 더 굵게"
+  "Slightly heavier": "약간 더 굵게",
+  "Search history": "검색 기록",
+  "Clear All": "모두 지우기",
+  "Remove {{term}} from search history": "검색 기록에서 {{term}} 삭제",
+  "Remove from history": "기록에서 삭제"
 }

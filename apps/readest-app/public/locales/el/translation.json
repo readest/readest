@@ -2669,5 +2669,9 @@
   "Click": "Κλικ",
   "Long Press": "Παρατεταμένο πάτημα",
   "Weight": "Πάχος",
-  "Slightly heavier": "Ελαφρώς πιο έντονα"
+  "Slightly heavier": "Ελαφρώς πιο έντονα",
+  "Search history": "Ιστορικό αναζήτησης",
+  "Clear All": "Εκκαθάριση όλων",
+  "Remove {{term}} from search history": "Αφαίρεση του {{term}} από το ιστορικό αναζήτησης",
+  "Remove from history": "Αφαίρεση από το ιστορικό"
 }
