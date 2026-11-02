@@ -290,7 +290,7 @@ const KOSyncForm: React.FC<KOSyncFormProps> = ({ onBack }) => {
             <Tips>
               <li>
                 {_(
-                  'File Name uses the original filename, including its extension. Books without a saved original filename use File Content.',
+                  'File Name uses the original filename, including its extension. Books without a saved original filename use {title}.{ext}.',
                 )}
               </li>
             </Tips>

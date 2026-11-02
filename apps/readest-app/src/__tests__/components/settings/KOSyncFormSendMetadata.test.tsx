@@ -66,7 +66,7 @@ describe('KOSyncForm checksum method', () => {
     });
     expect(
       screen.getByText(
-        'File Name uses the original filename, including its extension. Books without a saved original filename use File Content.',
+        'File Name uses the original filename, including its extension. Books without a saved original filename use {title}.{ext}.',
       ),
     ).toBeTruthy();
 
