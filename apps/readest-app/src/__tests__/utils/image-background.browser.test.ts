@@ -91,6 +91,47 @@ describe('white transparency rendered pixels (#7045)', () => {
       frame.remove();
     }
   });
+  it.each([
+    false,
+    true,
+  ])('restores the original image styles when turned off (fixed: %s)', (fixed) => {
+    const frame = document.createElement('iframe');
+    document.body.appendChild(frame);
+    const doc = frame.contentDocument!;
+    doc.body.innerHTML = '<p><img/></p><svg><image/></svg>';
+    const style = doc.createElement('style');
+    doc.head.appendChild(style);
+    try {
+      for (const isDarkMode of [false, true]) {
+        for (const overrideColor of [false, true]) {
+          for (const invertImgColorInDark of [false, true]) {
+            const current = { ...settings, overrideColor, invertImgColorInDark };
+            const currentTheme = { ...theme, isDarkMode };
+            const apply = (transparentImageBackground: boolean) => {
+              const next = { ...current, transparentImageBackground };
+              if (fixed) applyFixedlayoutStyles(doc, next, currentTheme, 'EPUB');
+              else style.textContent = getStyles(next, currentTheme);
+            };
+            const read = () =>
+              Array.from(doc.querySelectorAll('img, image'), (image) => {
+                const computed = frame.contentWindow!.getComputedStyle(image);
+                return [computed.filter, computed.mixBlendMode, computed.backgroundColor];
+              });
+            apply(false);
+            const original = read();
+            apply(true);
+            expect(read()[0]![0]).toContain('readest-white-transparent');
+            apply(false);
+            expect(read()).toEqual(original);
+            expect(read()[0]![0]).not.toContain('readest-white-transparent');
+          }
+        }
+      }
+    } finally {
+      frame.remove();
+    }
+  });
+
   it('removes only near-white pixels and preserves color and alpha', async () => {
     expect(await renderPixels()).toEqual([
       0, 0, 0, 0, 0, 0, 0, 0, 244, 244, 244, 255, 255, 244, 255, 255, 255, 0, 0, 255, 0, 0, 0, 255,

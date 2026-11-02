@@ -117,7 +117,10 @@ export const captureImageRenderStyle = (
     for (const image of doc.querySelectorAll('image')) {
       const href =
         image.getAttribute('href') || image.getAttributeNS('http://www.w3.org/1999/xlink', 'href');
-      if (href === src) return readImageRenderStyle(image);
+      if (href === src) {
+        const style = readImageRenderStyle(image);
+        return style.filter.includes('readest-white-transparent') ? style : null;
+      }
     }
   }
   return null;

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  captureImageRenderStyle,
   isLightColor,
   isTransparentColor,
   plateColorFromBoxShadow,
@@ -90,6 +91,31 @@ describe('readImageRenderStyle', () => {
       makeImage('background-color: rgb(250, 250, 250); box-shadow: inset 0 0 0 999px #fff;'),
     );
     expect(style.plate).toBe('rgb(250, 250, 250)');
+  });
+});
+
+describe('captureImageRenderStyle for SVG images (#7045)', () => {
+  it('keeps the previous viewer behavior unless white transparency is enabled', () => {
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    const image = document.createElementNS('http://www.w3.org/2000/svg', 'image');
+    image.setAttribute('href', 'blob:diagram');
+    image.setAttribute('style', 'filter: invert(100%)');
+    svg.appendChild(image);
+    document.body.appendChild(svg);
+    const view = {
+      renderer: { getContents: () => [{ doc: document }] },
+    } as unknown as Parameters<typeof captureImageRenderStyle>[0];
+    try {
+      expect(captureImageRenderStyle(view, 'blob:diagram')).toBeNull();
+      image.style.filter = 'url("#readest-white-transparent") invert(100%)';
+      expect(captureImageRenderStyle(view, 'blob:diagram')?.filter).toContain(
+        'readest-white-transparent',
+      );
+      image.style.filter = 'invert(100%)';
+      expect(captureImageRenderStyle(view, 'blob:diagram')).toBeNull();
+    } finally {
+      svg.remove();
+    }
   });
 });
 
