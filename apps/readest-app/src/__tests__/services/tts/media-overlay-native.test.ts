@@ -119,6 +119,48 @@ afterEach(async () => {
   platform.os = 'ios';
 });
 
+describe('NativeNarrationPlayer source selection', () => {
+  test('opens a compressed local source without staging it', async () => {
+    const player = new NativeNarrationPlayer({ isLinuxApp: true } as AppService);
+    const loadBlob = vi.fn(async () => new Blob([new Uint8Array(8)]));
+    try {
+      expect(
+        await player.loadSource(
+          'chapter.m4a',
+          {
+            loadBlob,
+            getMediaSource: async () => ({ path: '/books/book.epub', entry: 'audio/chapter.m4a' }),
+          },
+          'audio/mp4',
+        ),
+      ).toBe(true);
+      expect(controlCalls.find((call) => call['action'] === 'load')).toMatchObject({
+        path: '/books/book.epub',
+        entry: 'audio/chapter.m4a',
+        contentType: 'audio/mp4',
+      });
+      expect(loadBlob).not.toHaveBeenCalled();
+      expect(writeFile).not.toHaveBeenCalled();
+    } finally {
+      await player.shutdown();
+    }
+  });
+
+  test.each([
+    'chapter.mp3',
+    'chapter.opus',
+    'chapter.webm',
+  ])('declines %s before resolving its source', async (href) => {
+    const player = new NativeNarrationPlayer({ isLinuxApp: true } as AppService);
+    const loadBlob = vi.fn(async () => new Blob());
+    const resolvePath = vi.fn(async () => `/books/${href}`);
+    expect(await player.loadSource(href, { loadBlob, resolvePath }, 'audio/mpeg')).toBe(false);
+    expect(resolvePath).not.toHaveBeenCalled();
+    expect(loadBlob).not.toHaveBeenCalled();
+    expect(controlCalls).toEqual([]);
+  });
+});
+
 describe('MediaOverlayClient on Linux Tauri', () => {
   const linux = { isLinuxApp: true } as AppService;
   const entry = { path: '/books/hash/book.epub', entry: 'OEBPS/Chapter 1 #é.m4a' };

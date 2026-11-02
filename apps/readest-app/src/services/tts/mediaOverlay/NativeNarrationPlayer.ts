@@ -10,6 +10,14 @@
 import { addPluginListener, invoke, PluginListener } from '@tauri-apps/api/core';
 import { appCacheDir, join } from '@tauri-apps/api/path';
 import { BaseDirectory, remove, writeFile } from '@tauri-apps/plugin-fs';
+import type { BookMediaSource } from '@/libs/document';
+import type { AppService } from '@/types/system';
+
+export interface NativeNarrationSource {
+  loadBlob: (href: string) => Promise<Blob>;
+  getMediaSource?: (href: string, type: string) => Promise<BookMediaSource | null>;
+  resolvePath?: (href: string) => Promise<string | null>;
+}
 
 interface PlayoutPosition {
   session: number;
@@ -46,6 +54,20 @@ const fileExtension = (href: string): string => {
 };
 
 export class NativeNarrationPlayer {
+  readonly supportsStreaming: boolean;
+  readonly queuesNext: boolean;
+  readonly cancelsPendingLoads: boolean;
+
+  constructor(appService?: AppService | null) {
+    this.supportsStreaming = !appService?.isLinuxApp;
+    this.queuesNext = !!appService?.isAndroidApp;
+    this.cancelsPendingLoads = !!appService?.isLinuxApp;
+  }
+
+  static isSupported(appService?: AppService | null): boolean {
+    return !!(appService?.isAndroidApp || appService?.isIOSApp || appService?.isLinuxApp);
+  }
+
   #nativeSession: Promise<number> | null = null;
   #resolvedSession: number | null = null;
   #listener: PluginListener | null = null;
@@ -153,7 +175,7 @@ export class NativeNarrationPlayer {
 
   // Forget the native session id after another engine (Edge) aborted the shared
   // AVPlayer. Keeps the staged chapter file so the next load() is cheap.
-  invalidateSession(abort = false): void {
+  invalidateSession(abort = this.cancelsPendingLoads): void {
     this.#userPaused = true;
     this.#cache.playing = false;
     this.#href = null;
@@ -164,6 +186,58 @@ export class NativeNarrationPlayer {
     void invoke('plugin:native-tts|playout_control', {
       payload: { action: abort ? 'abort' : 'pause' },
     }).catch(() => {});
+  }
+
+  // Resolve sources here so callers do not need to know which native backend
+  // accepts streams, stages blobs, or requires a file in place.
+  async loadSource(
+    href: string,
+    source: NativeNarrationSource,
+    contentType: string,
+    after: string | null = null,
+    signal?: AbortSignal,
+  ): Promise<boolean> {
+    // Preserve the seekable browser path for MP3 and formats the Rust decoder
+    // cannot play (Ogg can contain Opus).
+    if (!this.supportsStreaming && /\.(mp3|ogg|oga|opus|webm)$/i.test(href)) return false;
+    const path = await source.resolvePath?.(href).catch(() => null);
+    signal?.throwIfAborted();
+    if (path && (this.supportsStreaming || path.startsWith('/'))) {
+      await (after !== null
+        ? this.queuePath(href, path, after)
+        : this.loadPath(href, path, 0, undefined, signal));
+      return true;
+    }
+    const resolving = source.getMediaSource?.(href, contentType);
+    // Direct-file backends must surface errors without extracting a recording.
+    const media = await (this.supportsStreaming ? resolving?.catch(() => null) : resolving);
+    signal?.throwIfAborted();
+    if (media && 'path' in media && (this.supportsStreaming || media.path.startsWith('/'))) {
+      const bytes = {
+        ...('entry' in media ? { entry: media.entry } : { start: media.start, end: media.end }),
+        contentType,
+      };
+      const placing =
+        after !== null
+          ? this.queuePath(href, media.path, after, bytes)
+          : this.loadPath(href, media.path, 0, bytes, signal);
+      if (!this.supportsStreaming) {
+        await placing;
+        return true;
+      }
+      if (
+        await placing.then(
+          () => true,
+          () => false,
+        )
+      )
+        return true;
+    }
+    if (!this.supportsStreaming) return false;
+    const loaded = await source.loadBlob(href);
+    const blob = loaded.type ? loaded : new Blob([loaded], { type: contentType });
+    await (after !== null ? this.queue(href, blob, after) : this.load(href, blob, 0));
+    return true;
   }
 
   // Stage the chapter blob once per href, then load (or seek) on the native
