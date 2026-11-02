@@ -453,6 +453,9 @@ const compareTitles = (a: string, b: string, uiLanguage: string): number => {
   return collator.compare(a, b);
 };
 
+const getTitleSortValue = (book: Book): string =>
+  formatTitle(book.title).replace(/^\s*(?:a|an|the)\s+(?=\S)/i, '');
+
 const compareBookByKey = (
   a: Book,
   b: Book,
@@ -462,8 +465,8 @@ const compareBookByKey = (
 ): number => {
   switch (sortBy) {
     case LibrarySortByType.Title: {
-      const aTitle = formatTitle(a.title);
-      const bTitle = formatTitle(b.title);
+      const aTitle = getTitleSortValue(a);
+      const bTitle = getTitleSortValue(b);
       return compareTitles(aTitle, bTitle, uiLanguage);
     }
     case LibrarySortByType.Author: {
@@ -887,7 +890,7 @@ export const createWithinGroupSorter =
 export const getBookSortValue = (book: Book, sortBy: LibrarySortByType): number | string => {
   switch (sortBy) {
     case LibrarySortByType.Title:
-      return formatTitle(book.title);
+      return getTitleSortValue(book);
 
     case LibrarySortByType.Author:
       return formatAuthors(book.author, book?.primaryLanguage || 'en', true);
