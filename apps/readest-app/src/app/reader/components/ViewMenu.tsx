@@ -101,6 +101,9 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
   const [invertImgColorInDark, setInvertImgColorInDark] = useState(
     viewSettings!.invertImgColorInDark,
   );
+  const [transparentImageBackground, setTransparentImageBackground] = useState(
+    !!viewSettings.transparentImageBackground,
+  );
   const [applyThemeToPDF, setApplyThemeToPDF] = useState(viewSettings!.applyThemeToPDF!);
   const [rtlSpread, setRtlSpread] = useState(bookData?.bookDoc?.dir === 'rtl');
 
@@ -279,6 +282,19 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
     saveViewSettings(envConfig, bookKey, 'invertImgColorInDark', invertImgColorInDark, true, true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [invertImgColorInDark]);
+
+  useEffect(() => {
+    if (transparentImageBackground === !!viewSettings.transparentImageBackground) return;
+    saveViewSettings(
+      envConfig,
+      bookKey,
+      'transparentImageBackground',
+      transparentImageBackground,
+      true,
+      true,
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [transparentImageBackground]);
 
   useEffect(() => {
     if (applyThemeToPDF === viewSettings.applyThemeToPDF) return;
@@ -548,6 +564,14 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
         Icon={invertImgColorInDark ? MdCheck : undefined}
         onClick={() => setInvertImgColorInDark(!invertImgColorInDark)}
       />
+
+      {bookData.book?.format !== 'PDF' && (
+        <MenuItem
+          label={_('Make White Image Backgrounds Transparent')}
+          Icon={transparentImageBackground ? MdCheck : undefined}
+          onClick={() => setTransparentImageBackground(!transparentImageBackground)}
+        />
+      )}
 
       <hr aria-hidden='true' className='border-base-300 my-1' />
 

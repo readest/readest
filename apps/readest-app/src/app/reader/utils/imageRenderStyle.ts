@@ -89,7 +89,7 @@ const plateColorFor = (style: CSSStyleDeclaration): string | null => {
 };
 
 /** Read the render style the page gave an image element. */
-export const readImageRenderStyle = (img: HTMLImageElement): ImageRenderStyle => {
+export const readImageRenderStyle = (img: HTMLImageElement | SVGImageElement): ImageRenderStyle => {
   const view = img.ownerDocument.defaultView;
   const style = view?.getComputedStyle(img);
   if (!style) return NO_RENDER_STYLE;
@@ -113,6 +113,11 @@ export const captureImageRenderStyle = (
     if (!doc) continue;
     for (const img of doc.querySelectorAll('img')) {
       if (img.src === src) return readImageRenderStyle(img);
+    }
+    for (const image of doc.querySelectorAll('image')) {
+      const href =
+        image.getAttribute('href') || image.getAttributeNS('http://www.w3.org/1999/xlink', 'href');
+      if (href === src) return readImageRenderStyle(image);
     }
   }
   return null;
@@ -250,6 +255,7 @@ export const resolveImagePlate = ({
   filter?: string | null;
   ink?: ImageInk | null;
 }): string | null => {
+  if (filter?.includes('readest-white-transparent')) return null;
   const inverts = !!filter && /invert\s*\(/i.test(filter);
   if (inverts) return pagePlate ?? null;
   const darkDrawing =
