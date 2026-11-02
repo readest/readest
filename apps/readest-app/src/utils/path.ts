@@ -11,6 +11,16 @@ export const getFilename = (fileOrUri: string) => {
   return lastPart.split('?')[0]!;
 };
 
+export const getURLFilename = (url: string) => {
+  const name = new URL(url).pathname.split('/').pop() || 'remote-file';
+  try {
+    return decodeURIComponent(name);
+  } catch {
+    // Keep the encoded basename when the server uses non-UTF-8 path bytes.
+    return name;
+  }
+};
+
 /**
  * Duplicate marker a browser or download manager appends when a download would
  * overwrite an existing file. Several of them put it after the extension

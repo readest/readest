@@ -750,8 +750,11 @@ export async function importBook(
       existingBook &&
       !existingBook.originalFilename &&
       typeof file === 'string' &&
-      file.replace(/\\/g, '/') ===
-        `${await fs.getPrefix('Books')}/${getLocalBookFilename(existingBook)}`.replace(/\\/g, '/')
+      normalizeFilePathForIndex(file, osPlatform) ===
+        normalizeFilePathForIndex(
+          `${await fs.getPrefix('Books')}/${getLocalBookFilename(existingBook)}`,
+          osPlatform,
+        )
     ) {
       // A cloud record may lack the import name; its managed copy cannot recover it.
       originalFilename = undefined;

@@ -40,7 +40,7 @@ import {
 import type { Book } from '@/types/book';
 import { needsQueryRangeReads } from '@/utils/ua';
 import { getOSPlatform, isContentURI, isFileURI, isValidURL } from '@/utils/misc';
-import { getDirPath, getFilename } from '@/utils/path';
+import { getDirPath, getFilename, getURLFilename } from '@/utils/path';
 import { NativeFile, RemoteFile } from '@/utils/file';
 import {
   copyURIToPath,
@@ -313,10 +313,17 @@ export const nativeFileSystem: FileSystem = {
   async openFile(path: string, base: BaseDir, name?: string, fetcher?: typeof fetch) {
     const normalizedPath = OS_TYPE === 'ios' ? safeDecodePath(path) : path;
     const { fp, baseDir } = this.resolvePath(normalizedPath, base);
-    let fname = safeDecodePath(name || getFilename(fp));
     if (isValidURL(path)) {
-      return await new RemoteFile(path, fname, '', Date.now(), fetcher ?? tauriFetch).open();
-    } else if (isContentURI(path) || (isFileURI(path) && OS_TYPE === 'ios')) {
+      return await new RemoteFile(
+        path,
+        name || getURLFilename(path),
+        '',
+        Date.now(),
+        fetcher ?? tauriFetch,
+      ).open();
+    }
+    let fname = safeDecodePath(name || getFilename(fp));
+    if (isContentURI(path) || (isFileURI(path) && OS_TYPE === 'ios')) {
       fname = safeDecodePath(await basename(path));
       if (path.includes('com.android.externalstorage')) {
         // If the URI is from shared internal storage (like /storage/emulated/0),

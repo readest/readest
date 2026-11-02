@@ -70,7 +70,16 @@ vi.mock('@/utils/file', () => ({
       return this;
     }
   },
-  RemoteFile: class {},
+  RemoteFile: class {
+    constructor(
+      public url: string,
+      public name: string,
+    ) {}
+
+    async open() {
+      return this;
+    }
+  },
 }));
 
 vi.mock('@/utils/files', () => ({
@@ -112,6 +121,20 @@ describe('NativeAppService.saveFile share gating', () => {
 
     expect(basenameMock).toHaveBeenCalledWith(uri);
     expect(file.name).toBe('Original Manual.pdf');
+  });
+
+  test.each([
+    ['https://example.com/manual.pdf#zoom=1.25', undefined, 'manual.pdf'],
+    ['https://example.com/C%2B%2B.pdf?type=application/pdf', undefined, 'C++.pdf'],
+    ['https://example.com/one%5Cpart.pdf', undefined, 'one\\part.pdf'],
+    ['https://example.com/manual%FF.pdf', undefined, 'manual%FF.pdf'],
+    ['https://example.com/manual.pdf#page=2', 'Original%20Name.pdf', 'Original%20Name.pdf'],
+  ])('resolves native URL fallback names for %s with override %s', async (url, name, expected) => {
+    const service = await loadServiceWithOS('android');
+
+    const file = await service['fs'].openFile(url, 'None', name);
+
+    expect(file.name).toBe(expected);
   });
 
   test('uses a unique cache path for same-named content-provider files', async () => {

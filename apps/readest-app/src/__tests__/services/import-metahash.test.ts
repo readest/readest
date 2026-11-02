@@ -1344,7 +1344,12 @@ describe('importBook PDF filename-aware dedup', () => {
     });
   });
 
-  it('preserves a synced PDF identity when its managed copy has no original filename', async () => {
+  it.each([
+    'windows',
+    'macos',
+    'ios',
+    'linux',
+  ] as const)('preserves synced managed-copy identity using %s path comparison', async (osPlatform) => {
     mockPartialMD5.mockResolvedValue('pdf-hash-1');
     setupMockPdfDoc();
     const imported = await service.importBook(new File(['pdf'], 'Device_Manual_V2.1.PDF'), []);
@@ -1353,9 +1358,12 @@ describe('importBook PDF filename-aware dedup', () => {
     service.getFs().getPrefix.mockResolvedValue('/library/Books');
     service.getFs().openFile.mockResolvedValue(new File(['pdf'], 'PowerPoint Presentation.pdf'));
     setupMockPdfDoc();
+    service.osPlatform = osPlatform;
 
     const reimported = await service.importBook(
-      '/library/Books/pdf-hash-1/PowerPoint Presentation.pdf',
+      osPlatform === 'linux'
+        ? '/library/Books/pdf-hash-1/PowerPoint Presentation.pdf'
+        : '/LIBRARY/BOOKS/pdf-hash-1/POWERPOINT PRESENTATION.PDF',
       [synced],
     );
 
