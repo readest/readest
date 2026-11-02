@@ -118,6 +118,43 @@ vi.mock('@/utils/window', async (importOriginal) => ({
   tauriHandleToggleFullScreen: vi.fn(),
 }));
 
+describe('ViewMenu transparent image backgrounds (#7045)', () => {
+  afterEach(() => {
+    cleanup();
+    mockBookData.book.format = 'PDF';
+  });
+
+  it('announces the image toggle state and persists it for EPUBs', async () => {
+    vi.clearAllMocks();
+    mockBookData.book.format = 'EPUB';
+    render(<ViewMenu bookKey='book-1' />);
+    fireEvent.click(
+      screen.getByRole('menuitem', { name: 'Make White Image Backgrounds Transparent - OFF' }),
+    );
+    expect(
+      screen.getByRole('menuitem', { name: 'Make White Image Backgrounds Transparent - ON' }),
+    ).toBeTruthy();
+    await waitFor(() =>
+      expect(mockSaveViewSettings).toHaveBeenCalledWith(
+        expect.anything(),
+        'book-1',
+        'transparentImageBackground',
+        true,
+        true,
+        true,
+      ),
+    );
+  });
+
+  it('does not offer image transparency for PDF pages', () => {
+    mockBookData.book.format = 'PDF';
+    render(<ViewMenu bookKey='book-1' />);
+    expect(
+      screen.queryByRole('menuitem', { name: 'Make White Image Backgrounds Transparent' }),
+    ).toBeNull();
+  });
+});
+
 describe('ViewMenu fullscreen', () => {
   const requestFullscreen = vi.fn();
 

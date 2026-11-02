@@ -335,6 +335,7 @@ export interface BookStyle {
   spreadMode: 'auto' | 'none';
   keepCoverSpread: boolean;
   invertImgColorInDark: boolean;
+  transparentImageBackground: boolean;
   applyThemeToPDF: boolean;
   contrast: number;
 }

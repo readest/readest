@@ -35,7 +35,13 @@ import { PREDEFINED_TEXTURES } from '@/styles/textures';
 import { useAtmosphereStore } from '@/store/atmosphereStore';
 import { DefaultHighlightColor, HighlightColor, UserHighlightColor } from '@/types/book';
 import clsx from 'clsx';
-import { ScopeSwitch, SectionTitle, SettingLabel } from './primitives';
+import {
+  BoxedList,
+  SettingsSwitchRow,
+  ScopeSwitch,
+  SectionTitle,
+  SettingLabel,
+} from './primitives';
 import { HIGHLIGHT_COLOR_HEX } from '@/services/constants';
 import ThemeEditor from './theme/ThemeEditor';
 import ThemeModeSelector from './theme/ThemeModeSelector';
@@ -93,6 +99,9 @@ const ThemePanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
 
   const [invertImgColorInDark, setInvertImgColorInDark] = useState(
     viewSettings.invertImgColorInDark,
+  );
+  const [transparentImageBackground, setTransparentImageBackground] = useState(
+    !!viewSettings.transparentImageBackground,
   );
   const [editTheme, setEditTheme] = useState<CustomTheme | null>(null);
   const [customThemes, setCustomThemes] = useState<Theme[]>([]);
@@ -155,6 +164,7 @@ const ThemePanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
     resetToDefaults({
       overrideColor: setOverrideColor,
       invertImgColorInDark: setInvertImgColorInDark,
+      transparentImageBackground: setTransparentImageBackground,
       highlightOpacity: setHighlightOpacity,
       codeHighlighting: setcodeHighlighting,
       codeLanguage: setCodeLanguage,
@@ -216,6 +226,12 @@ const ThemePanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
     saveViewSettings(envConfig, bookKey, 'invertImgColorInDark', invertImgColorInDark);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [invertImgColorInDark]);
+
+  useEffect(() => {
+    if (transparentImageBackground === !!viewSettings.transparentImageBackground) return;
+    saveViewSettings(envConfig, bookKey, 'transparentImageBackground', transparentImageBackground);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [transparentImageBackground]);
 
   useEffect(() => {
     if (overrideColor === viewSettings.overrideColor) return;
@@ -576,6 +592,22 @@ const ThemePanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
               onChange={() => setInvertImgColorInDark(!invertImgColorInDark)}
             />
           </label>
+
+          <BoxedList>
+            <SettingsSwitchRow
+              data-setting-id='settings.color.transparentImageBackground'
+              label={_('Make White Image Backgrounds Transparent')}
+              description={_(
+                'Remove white and near-white pixels from images while preserving other colors',
+              )}
+              checked={transparentImageBackground}
+              disabled={
+                !!bookKey &&
+                useBookDataStore.getState().getBookData(bookKey)?.book?.format === 'PDF'
+              }
+              onChange={() => setTransparentImageBackground(!transparentImageBackground)}
+            />
+          </BoxedList>
 
           <label
             data-setting-id='settings.color.overrideBookColor'

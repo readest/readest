@@ -19,6 +19,7 @@ import { isDialogueHighlightActive } from './dialogueHighlight';
 import { readStoredAmbientIsDarkMode } from './ambientLight';
 import { INLINE_FORMATTING_SELECTOR } from './inlineTags';
 import { getOSPlatform } from './misc';
+import { WHITE_TRANSPARENCY_FILTER } from './imageBackground';
 import {
   LINK_HIT_AREA_CLASS,
   LINK_HIT_AREA_PX,
@@ -352,6 +353,7 @@ const getColorStyles = (
   backgroundTextureId: string,
   isEink: boolean,
   isFootnote: boolean,
+  transparentImageBackground: boolean,
 ) => {
   const { bg, fg, primary, isDarkMode } = themeCode;
   const hasBackgroundTexture = !!backgroundTextureId && backgroundTextureId !== 'none';
@@ -406,9 +408,15 @@ const getColorStyles = (
        (a later filter declaration would discard it), and multiply must not
        apply: multiply with a dark page background erases the image (#5250). */
     img {
-      ${isDarkMode && invertImgColorInDark ? 'filter: invert(100%);' : ''}
-      ${isDarkMode && !invertImgColorInDark && overrideColor ? 'filter: grayscale(100%) contrast(1.2) brightness(1.2);' : ''}
-      ${overrideColor && !(isDarkMode && invertImgColorInDark) ? 'mix-blend-mode: multiply;' : ''}
+      ${transparentImageBackground ? `filter: ${WHITE_TRANSPARENCY_FILTER}${isDarkMode && invertImgColorInDark ? ' invert(100%)' : ''};` : isDarkMode && invertImgColorInDark ? 'filter: invert(100%);' : ''}
+      ${!transparentImageBackground && isDarkMode && !invertImgColorInDark && overrideColor ? 'filter: grayscale(100%) contrast(1.2) brightness(1.2);' : ''}
+      ${!transparentImageBackground && overrideColor && !(isDarkMode && invertImgColorInDark) ? 'mix-blend-mode: multiply;' : ''}
+    }
+    ${
+      transparentImageBackground
+        ? `svg image { filter: ${WHITE_TRANSPARENCY_FILTER}${isDarkMode && invertImgColorInDark ? ' invert(100%)' : ''}; }
+    img, svg image { mix-blend-mode: normal !important; background-color: transparent !important; }`
+        : ''
     }
     svg, img {
       ${overrideColor ? `background-color: transparent !important;` : ''};
@@ -1216,6 +1224,7 @@ export const getStyles = (
     viewSettings.backgroundTextureId,
     viewSettings.isEink,
     isFootnote,
+    !!viewSettings.transparentImageBackground,
   );
   const translationStyles = getTranslationStyles(viewSettings);
   const warichuStyles = getWarichuStyles();
@@ -1964,6 +1973,8 @@ export const applyFixedlayoutStyles = (
   // are to be inverted; inverting or blending it again would darken or flip the
   // theme colors (#6548).
   const isThemedPDF = format === 'PDF' && viewSettings.applyThemeToPDF;
+  const transparentImages = !!viewSettings.transparentImageBackground && format !== 'PDF';
+  if (transparentImages) imgFilters.push(WHITE_TRANSPARENCY_FILTER);
   // hue-rotate flips the hues back, so a blue link stays blue
   if (isDarkMode && invertImgColorInDark && !isThemedPDF) {
     imgFilters.push('invert(100%) hue-rotate(180deg)');
@@ -2002,7 +2013,13 @@ export const applyFixedlayoutStyles = (
     }
     img, canvas {
       ${imgFilter}
-      ${overrideColor && !isThemedPDF ? `mix-blend-mode: ${isDarkMode ? darkMixBlendMode : 'multiply'};` : ''}
+      ${!transparentImages && overrideColor && !isThemedPDF ? `mix-blend-mode: ${isDarkMode ? darkMixBlendMode : 'multiply'};` : ''}
+    }
+    ${
+      transparentImages
+        ? `svg image { ${imgFilter} }
+    img, svg image { mix-blend-mode: normal !important; background-color: transparent !important; }`
+        : ''
     }
     img.singlePage {
       position: relative;
