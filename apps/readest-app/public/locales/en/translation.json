@@ -134,6 +134,5 @@
   "{{count}} book(s) omitted (file not available locally)_other": "{{count}} books omitted (files not available locally)",
   "Restored collection \"{{name}}\" ({{count}} books)_one": "Restored collection \"{{name}}\" ({{count}} book)",
   "Restored collection \"{{name}}\" ({{count}} books)_other": "Restored collection \"{{name}}\" ({{count}} books)",
-  "Lookup App": "Lookup App",
-  "Ask Every Time": "Ask Every Time"
+  "Lookup App": "Lookup App"
 }

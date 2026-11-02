@@ -353,8 +353,9 @@ const CustomDictionaries: React.FC<CustomDictionariesProps> = ({ onBack }) => {
   const selectedLookupApp = lookupApps.find((app) => app.selected);
   const handleLookupAppChange = async (event: React.ChangeEvent<HTMLSelectElement>) => {
     const chosen = lookupApps.find((app) => lookupAppKey(app) === event.target.value) ?? null;
+    const previous = lookupApps;
     setLookupApps((apps) => apps.map((app) => ({ ...app, selected: app === chosen })));
-    await setLookupApp(chosen);
+    if (!(await setLookupApp(chosen))) setLookupApps(previous);
   };
   // Edit and Delete are mutually-exclusive row affordances. Toggling one on
   // turns the other off so the trailing column never shows two icons at once.
@@ -896,7 +897,7 @@ const CustomDictionaries: React.FC<CustomDictionariesProps> = ({ onBack }) => {
               value={selectedLookupApp ? lookupAppKey(selectedLookupApp) : ''}
               onChange={handleLookupAppChange}
               options={[
-                { value: '', label: _('Ask Every Time') },
+                { value: '', label: _('Default') },
                 ...lookupApps.map((app) => ({ value: lookupAppKey(app), label: app.label })),
               ]}
             />

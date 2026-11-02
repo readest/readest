@@ -249,19 +249,22 @@ export const getLookupApps = async (): Promise<LookupApp[]> => {
 };
 
 /**
- * Android only: send every lookup to `app`, or pass `null` to let Android
- * ask (and remember an "Always" pick) again.
+ * Android only: send every lookup to `app`, or pass `null` to go back to
+ * Android's default handling (its chooser, or an app picked with "Always").
+ * Resolves `true` once saved.
  */
 export const setLookupApp = async (
   app: Pick<LookupApp, 'packageName' | 'className'> | null,
-): Promise<void> => {
-  if (!isTauriAppPlatform()) return;
-  if (getSystemDictionaryOS() !== 'android') return;
+): Promise<boolean> => {
+  if (!isTauriAppPlatform()) return false;
+  if (getSystemDictionaryOS() !== 'android') return false;
   try {
     await invoke('plugin:native-bridge|set_lookup_app', {
       payload: app ? { packageName: app.packageName, className: app.className } : {},
     });
+    return true;
   } catch (error) {
     console.warn('[systemDictionary] set_lookup_app failed', error);
+    return false;
   }
 };

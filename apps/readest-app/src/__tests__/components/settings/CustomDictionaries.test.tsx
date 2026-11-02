@@ -118,7 +118,7 @@ beforeEach(() => {
   platform.ios = false;
   platform.android = false;
   mocks.getLookupApps.mockReset().mockResolvedValue([]);
-  mocks.setLookupApp.mockReset().mockResolvedValue(undefined);
+  mocks.setLookupApp.mockReset().mockResolvedValue(true);
   useCustomTranslatorStore.setState({ translators: [], loaded: true });
   mocks.importDictionaries.mockReset();
   mocks.selectFiles.mockReset();
@@ -315,7 +315,7 @@ describe('CustomDictionaries — Android lookup app (#4937)', () => {
     })) as HTMLSelectElement;
     expect(select.value).toBe('');
     expect(Array.from(select.options).map((o) => o.text)).toEqual([
-      'Ask Every Time',
+      'Default',
       'Eudic',
       'Baidu Search',
     ]);
@@ -330,6 +330,21 @@ describe('CustomDictionaries — Android lookup app (#4937)', () => {
 
     fireEvent.change(select, { target: { value: '' } });
     await waitFor(() => expect(mocks.setLookupApp).toHaveBeenLastCalledWith(null));
+  });
+
+  it('puts the picker back when the choice cannot be saved', async () => {
+    platform.android = true;
+    mocks.getLookupApps.mockResolvedValue([eudic, baidu]);
+    mocks.setLookupApp.mockResolvedValue(false);
+    seedSettings(enabledSystemSettings);
+    render(<CustomDictionaries onBack={() => {}} />);
+
+    const select = (await screen.findByRole('combobox', {
+      name: 'Lookup App',
+    })) as HTMLSelectElement;
+    fireEvent.change(select, { target: { value: `${eudic.packageName}/${eudic.className}` } });
+    await waitFor(() => expect(mocks.setLookupApp).toHaveBeenCalled());
+    await waitFor(() => expect(select.value).toBe(''));
   });
 
   it('shows the saved app as selected', async () => {

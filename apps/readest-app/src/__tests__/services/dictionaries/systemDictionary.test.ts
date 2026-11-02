@@ -175,8 +175,9 @@ describe('setLookupApp — Android lookup app picker', () => {
   it('saves the chosen app on Android', async () => {
     appService.value = flags('android');
 
-    await setLookupApp({ packageName: 'com.qianyan.eudic', className: '.Lightpeek' });
-
+    expect(await setLookupApp({ packageName: 'com.qianyan.eudic', className: '.Lightpeek' })).toBe(
+      true,
+    );
     expect(invokeMock).toHaveBeenCalledWith(SET_APP_CMD, {
       payload: { packageName: 'com.qianyan.eudic', className: '.Lightpeek' },
     });
@@ -190,10 +191,17 @@ describe('setLookupApp — Android lookup app picker', () => {
     expect(invokeMock).toHaveBeenCalledWith(SET_APP_CMD, { payload: {} });
   });
 
+  it('reports a save the bridge rejected', async () => {
+    appService.value = flags('android');
+    invokeMock.mockRejectedValueOnce(new Error('bridge down'));
+
+    expect(await setLookupApp(null)).toBe(false);
+  });
+
   it('is a no-op on non-Android platforms', async () => {
     appService.value = flags('ios');
 
-    await setLookupApp(null);
+    expect(await setLookupApp(null)).toBe(false);
 
     expect(invokeMock).not.toHaveBeenCalledWith(SET_APP_CMD, expect.anything());
   });
