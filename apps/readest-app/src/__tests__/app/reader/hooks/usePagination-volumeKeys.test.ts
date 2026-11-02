@@ -7,7 +7,11 @@ const h = vi.hoisted(() => ({
   appService: { isMobileApp: true } as { isMobileApp: boolean },
   viewSettings: { volumeKeysToFlip: true } as Record<string, unknown> | null,
   viewState: { inited: true } as Record<string, unknown> | null,
-  settingsState: { settings: { hardwarePageTurner: undefined } },
+  hoveredBookKey: null as string | null,
+  settingsState: {
+    settings: { hardwarePageTurner: undefined },
+    isSettingsDialogOpen: false,
+  },
 }));
 
 vi.mock('@/utils/bridge', () => ({
@@ -24,10 +28,10 @@ vi.mock('@/store/readerStore', () => ({
     () => ({
       getViewSettings: () => h.viewSettings,
       getViewState: () => h.viewState,
-      hoveredBookKey: null,
+      hoveredBookKey: h.hoveredBookKey,
       setHoveredBookKey: vi.fn(),
     }),
-    { getState: () => ({ hoveredBookKey: null }) },
+    { getState: () => ({ hoveredBookKey: h.hoveredBookKey }) },
   ),
 }));
 vi.mock('@/store/bookDataStore', () => ({
@@ -94,10 +98,152 @@ beforeEach(() => {
   h.appService = { isMobileApp: true };
   h.viewSettings = { volumeKeysToFlip: true };
   h.viewState = { inited: true };
+  h.hoveredBookKey = null;
+  h.settingsState.isSettingsDialogOpen = false;
 });
 
 afterEach(() => {
   cleanup();
+});
+
+describe('usePagination volume keys with reader controls (#7246)', () => {
+  test.each([
+    'book-1',
+    'other-book',
+  ])('releases interception for visible toolbars (%s) and restores it when hidden', async (hoveredBookKey) => {
+    const view = makeView();
+    const { rerender } = setupWithView(view);
+    h.hoveredBookKey = hoveredBookKey;
+    rerender();
+
+    expect(useDeviceControlStore.getState().volumeKeysIntercepted).toBe(false);
+    await pressVolumeKey('VolumeUp');
+    await pressVolumeKey('VolumeDown');
+    expect(view.prev).not.toHaveBeenCalled();
+    expect(view.next).not.toHaveBeenCalled();
+
+    h.hoveredBookKey = '';
+    rerender();
+    expect(useDeviceControlStore.getState().volumeKeysIntercepted).toBe(true);
+    await pressVolumeKey('VolumeDown');
+    expect(view.next).toHaveBeenCalledOnce();
+  });
+
+  test('does not page before the toolbar visibility rerender', async () => {
+    const view = makeView();
+    setupWithView(view);
+    h.hoveredBookKey = BOOK_KEY;
+    await pressVolumeKey('VolumeDown');
+    expect(view.next).not.toHaveBeenCalled();
+  });
+
+  test('releases volume keys for Settings even after toolbars are hidden', async () => {
+    const view = makeView();
+    const { rerender } = setupWithView(view);
+    h.settingsState.isSettingsDialogOpen = true;
+    rerender();
+    expect(useDeviceControlStore.getState().volumeKeysIntercepted).toBe(false);
+    await pressVolumeKey('VolumeDown');
+    expect(view.next).not.toHaveBeenCalled();
+
+    h.settingsState.isSettingsDialogOpen = false;
+    rerender();
+    expect(useDeviceControlStore.getState().volumeKeysIntercepted).toBe(true);
+  });
+
+  test.each([
+    '<dialog open></dialog>',
+    '<dialog class="modal modal-open"></dialog>',
+    '<div role="dialog" aria-modal="true"></div>',
+    '<button aria-haspopup="menu" aria-expanded="true"></button>',
+    '<div data-capture-blocking-overlay="true"></div>',
+  ])('releases and restores volume keys around an overlay: %s', async (markup) => {
+    const view = makeView();
+    setupWithView(view);
+    const host = document.createElement('div');
+    try {
+      await act(async () => {
+        host.innerHTML = markup;
+        document.body.append(host);
+      });
+      expect(useDeviceControlStore.getState().volumeKeysIntercepted).toBe(false);
+      await pressVolumeKey('VolumeUp');
+      await pressVolumeKey('VolumeDown');
+      expect(view.prev).not.toHaveBeenCalled();
+      expect(view.next).not.toHaveBeenCalled();
+
+      await act(async () => host.remove());
+      expect(useDeviceControlStore.getState().volumeKeysIntercepted).toBe(true);
+      await pressVolumeKey('VolumeDown');
+      expect(view.next).toHaveBeenCalledOnce();
+    } finally {
+      host.remove();
+    }
+  });
+
+  test('ignores closed overlays and tracks menu state changes without remounting', async () => {
+    const menu = document.createElement('button');
+    menu.setAttribute('aria-haspopup', 'menu');
+    menu.setAttribute('aria-expanded', 'false');
+    document.body.append(menu);
+    try {
+      setup();
+      expect(useDeviceControlStore.getState().volumeKeysIntercepted).toBe(true);
+      await act(async () => menu.setAttribute('aria-expanded', 'true'));
+      expect(useDeviceControlStore.getState().volumeKeysIntercepted).toBe(false);
+      await act(async () => menu.setAttribute('aria-expanded', 'false'));
+      expect(useDeviceControlStore.getState().volumeKeysIntercepted).toBe(true);
+    } finally {
+      menu.remove();
+    }
+  });
+
+  test('does not intercept on mount or advance paragraphs with controls already open', async () => {
+    h.hoveredBookKey = BOOK_KEY;
+    h.viewSettings = { volumeKeysToFlip: true, paragraphMode: { enabled: true } };
+    const next = vi.fn();
+    eventDispatcher.on('paragraph-next', next);
+    try {
+      setup();
+      expect(interceptKeys).not.toHaveBeenCalledWith({ volumeKeys: true });
+      await pressVolumeKey('VolumeDown');
+      expect(next).not.toHaveBeenCalled();
+    } finally {
+      eventDispatcher.off('paragraph-next', next);
+    }
+  });
+
+  test('keeps volume keys released while either TTS or toolbars remain active', async () => {
+    const { rerender } = setup();
+    h.hoveredBookKey = BOOK_KEY;
+    rerender();
+    await emitPlayback('playing');
+    h.hoveredBookKey = null;
+    rerender();
+    expect(useDeviceControlStore.getState().volumeKeysIntercepted).toBe(false);
+    await emitPlayback('paused');
+    expect(useDeviceControlStore.getState().volumeKeysIntercepted).toBe(true);
+
+    await emitPlayback('playing');
+    h.hoveredBookKey = BOOK_KEY;
+    rerender();
+    await emitPlayback('paused');
+    expect(useDeviceControlStore.getState().volumeKeysIntercepted).toBe(false);
+  });
+
+  test('releases all interception owners when toolbars show in parallel views', () => {
+    const first = setup();
+    const second = setup();
+    expect(useDeviceControlStore.getState().volumeKeysInterceptionCount).toBe(2);
+    h.hoveredBookKey = BOOK_KEY;
+    first.rerender();
+    second.rerender();
+    expect(useDeviceControlStore.getState().volumeKeysInterceptionCount).toBe(0);
+    expect(useDeviceControlStore.getState().volumeKeysIntercepted).toBe(false);
+    first.unmount();
+    second.unmount();
+    expect(useDeviceControlStore.getState().volumeKeysInterceptionCount).toBe(0);
+  });
 });
 
 describe('usePagination volume-key interception with TTS (#4691)', () => {
