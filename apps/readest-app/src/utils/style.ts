@@ -402,7 +402,7 @@ const getColorStyles = (
       text-decoration: ${isEink ? 'underline' : 'none'};
     }
     body.pbg {
-      ${isDarkMode && !(texturedFootnote && overrideColor) ? `background-color: ${bg} !important;` : ''}
+      ${isDarkMode && !texturedFootnote ? `background-color: ${bg} !important;` : ''}
     }
     /* When inverting in dark mode, invert(100%) must stay the effective filter
        (a later filter declaration would discard it), and multiply must not

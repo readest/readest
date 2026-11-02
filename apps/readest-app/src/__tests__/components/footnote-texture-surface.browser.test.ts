@@ -42,7 +42,7 @@ for (const theme of ['default-light', 'default-dark']) {
       isEink: true,
       overrideColor,
     } as ViewSettings;
-    const html = `<html xmlns="http://www.w3.org/1999/xhtml"><head><style>body { background: black; color: white; }</style></head><body class="${overrideColor ? 'pbg' : ''}"><p>Footnote with an authored body background.</p></body></html>`;
+    const html = `<html xmlns="http://www.w3.org/1999/xhtml"><head><style>body { background: black; color: white; }</style></head><body class="pbg"><p>Footnote with an authored body background.</p></body></html>`;
     source = URL.createObjectURL(new Blob([html], { type: 'application/xhtml+xml' }));
     paginator = document.createElement('foliate-paginator') as Renderer;
     paginator.style.cssText = 'position:absolute;width:360px;height:220px;left:0;top:0;';
