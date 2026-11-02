@@ -326,11 +326,19 @@ final class ClipUrlController: UIViewController, WKNavigationDelegate {
     // Interactive capture waits for the user's tap — no deadline.
     if interactiveMode { return }
 
-    // Hard timeout — fires even if `didFinish` never does (SPA, redirect
-    // chain, JS challenge that never resolves). Same 30 s budget as the
-    // desktop flow.
+    // A slow subframe or image can hold `didFinish` even when the article
+    // is ready. Try the rendered DOM before the deadline, leaving time for
+    // evaluateJavaScript to return. Empty/loading documents still time out.
+    DispatchQueue.main.asyncAfter(
+      deadline: .now() + ClipUrlController.hardTimeoutSeconds - ClipUrlController.loadSettleSeconds
+    ) { [weak self] in
+      guard let self = self, !self.didFinishOrFail else { return }
+      self.captureOuterHtml(requireReady: true)
+    }
+
+    // Keep the deadline active while a JavaScript evaluation is pending too.
     let work = DispatchWorkItem { [weak self] in
-      guard let self = self, !self.captureFired else { return }
+      guard let self = self, !self.completed else { return }
       clipLogger.warning("clip_url: hard timeout after \(ClipUrlController.hardTimeoutSeconds, privacy: .public)s")
       self.finish(.failure(.timedOut))
     }
@@ -376,11 +384,15 @@ final class ClipUrlController: UIViewController, WKNavigationDelegate {
     finish(.failure(.loadFailed(error.localizedDescription)))
   }
 
-  private func captureOuterHtml() {
+  private func captureOuterHtml(requireReady: Bool = false) {
     guard !captureFired && !completed else { return }
     captureFired = true
-    webView.evaluateJavaScript("(function() { var root = document.documentElement.cloneNode(true); root.setAttribute('data-readest-url', location.href); return root.outerHTML; })()") { [weak self] result, error in
-      guard let self = self else { return }
+    webView.evaluateJavaScript("(function() { if (\(requireReady) && (document.readyState === 'loading' || !document.body || !document.body.innerText.trim())) return null; var root = document.documentElement.cloneNode(true); root.setAttribute('data-readest-url', location.href); return root.outerHTML; })()") { [weak self] result, error in
+      guard let self = self, !self.completed else { return }
+      if requireReady && error == nil && !(result is String) {
+        self.captureFired = false
+        return
+      }
       if let html = result as? String, !html.isEmpty {
         clipLogger.log("clip_url: captured \(html.count, privacy: .public) chars")
         self.finish(.success(html))
