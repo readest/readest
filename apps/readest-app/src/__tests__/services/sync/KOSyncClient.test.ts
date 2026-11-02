@@ -52,6 +52,71 @@ const makeBook = (): Book =>
     title: 'A Book',
   }) as Book;
 
+describe('KOSyncClient – filename checksums', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it.each([
+    ['My Book.epub', '9a671b9d07b5404d84ce60af27058b04'],
+    ['阅读 Café 100%20.EPUB', '0df8ac8a37723d854b27eeb11dd337c5'],
+    ['first\\chapter.pdf', 'e2cae7b1d6c9d35e1537f242ebd9f950'],
+    ['one/part.pdf', '5311de6b0b50b8d4725340dda1c2990e'],
+  ])('hashes the exact original basename %s, including its extension', (originalFilename, digest) => {
+    const client = new KOSyncClient(makeConfig({ checksumMethod: 'filename' }));
+    const book = {
+      ...makeBook(),
+      originalFilename,
+      sourceTitle: 'Managed name',
+      title: 'Edited title',
+    };
+    expect(client.getDocumentDigest(book)).toBe(digest);
+    expect(client.getDocumentDigest({ ...book, hash: 'optimized-file-content' })).toBe(digest);
+  });
+
+  it('keeps using the content hash when File Content is selected', () => {
+    const client = new KOSyncClient(makeConfig());
+    const book = { ...makeBook(), originalFilename: 'My Book.epub' };
+    expect(client.getDocumentDigest(book)).toBe(book.hash);
+  });
+
+  it.each([
+    undefined,
+    '',
+  ])('falls back to content hash without an original filename (%s)', (originalFilename) => {
+    const client = new KOSyncClient(makeConfig({ checksumMethod: 'filename' }));
+    const book = { ...makeBook(), originalFilename };
+    expect(client.getDocumentDigest(book)).toBe(book.hash);
+    expect(
+      client.getDocumentDigest({
+        ...book,
+        metadata: {
+          title: 'A Book',
+          author: 'Author',
+          language: 'en',
+          absFileHash: 'abs-content-hash',
+        },
+      }),
+    ).toBe('abs-content-hash');
+  });
+
+  it('pulls and pushes using the same original filename digest', async () => {
+    const mock = setFetch(() => jsonResponse(200, { percentage: 0.5 }));
+    const book = { ...makeBook(), originalFilename: 'My Book.epub' };
+    const client = new KOSyncClient(makeConfig({ userkey: 'key', checksumMethod: 'filename' }));
+
+    const progress = await client.getProgress(book);
+    await client.updateProgress(book, '/body/DocFragment[12]', 0.5);
+
+    expect(mock.mock.calls[0]![0]).toBe(
+      'http://192.168.1.50/syncs/progress/9a671b9d07b5404d84ce60af27058b04',
+    );
+    expect(progress?.document).toBe('9a671b9d07b5404d84ce60af27058b04');
+    const putInit = mock.mock.calls[1]![1] as RequestInit;
+    expect(JSON.parse(putInit.body as string).document).toBe('9a671b9d07b5404d84ce60af27058b04');
+  });
+});
+
 describe('KOSyncClient.getProgress – server response shapes', () => {
   beforeEach(() => {
     vi.restoreAllMocks();

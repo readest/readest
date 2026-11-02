@@ -48,6 +48,37 @@ afterEach(() => {
   cleanup();
 });
 
+describe('KOSyncForm checksum method', () => {
+  test('offers filename matching, explains legacy fallback, and persists both methods', async () => {
+    render(<KOSyncForm onBack={vi.fn()} />);
+
+    const select = screen.getByRole('combobox', { name: 'Checksum Method' });
+    expect((select as HTMLSelectElement).value).toBe('binary');
+    expect(screen.getByRole('option', { name: 'File Name' })).toHaveProperty('value', 'filename');
+
+    fireEvent.change(select, { target: { value: 'filename' } });
+    await waitFor(() => {
+      expect(saveSettings).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          kosync: expect.objectContaining({ checksumMethod: 'filename' }),
+        }),
+      );
+    });
+    expect(
+      screen.getByText(
+        'File Name uses the original filename, including its extension. Books without a saved original filename use File Content.',
+      ),
+    ).toBeTruthy();
+
+    fireEvent.change(select, { target: { value: 'binary' } });
+    await waitFor(() => {
+      expect(saveSettings).toHaveBeenLastCalledWith(
+        expect.objectContaining({ kosync: expect.objectContaining({ checksumMethod: 'binary' }) }),
+      );
+    });
+  });
+});
+
 describe('KOSyncForm Send Document Metadata setting', () => {
   test('defaults off and persists both toggle states', async () => {
     render(<KOSyncForm onBack={vi.fn()} />);

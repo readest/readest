@@ -310,8 +310,8 @@ export class KOSyncClient {
   }
 
   getDocumentDigest(book: Book): string {
-    if (this.config.checksumMethod === 'filename') {
-      console.warn('This is not possible anymore, using md5 instead.');
+    if (this.config.checksumMethod === 'filename' && book.originalFilename) {
+      return md5(book.originalFilename);
     }
     return book.metadata?.absFileHash ?? book.hash;
   }
