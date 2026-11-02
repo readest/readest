@@ -30,9 +30,11 @@ export const useProgressAutoSave = (bookKey: string) => {
   // apply the same guard and neither can double-write (lastSavedLocationRef
   // makes a second call with an unchanged location a no-op).
   const persistProgress = useCallback(async () => {
-    // Skip while previewing a deep-link target — the user's actual
-    // last-read position should not be overwritten by a transient view.
-    if (useReaderStore.getState().getViewState(bookKey)?.previewMode) return;
+    // Only the primary view owns the shared location. A secondary view's
+    // baseline must not timestamp it before the primary has committed.
+    // Previewing a deep-link target must not persist the transient position.
+    const viewState = useReaderStore.getState().getViewState(bookKey);
+    if (!viewState?.isPrimary || viewState.previewMode) return;
     const config = getConfig(bookKey);
     if (!config) return;
     const currentLocation = config.location ?? null;
@@ -79,6 +81,7 @@ export const useProgressAutoSave = (bookKey: string) => {
   const initialRelocateSeenRef = useRef(false);
   const onRelocate = useCallback(
     (location: string) => {
+      if (!useReaderStore.getState().getViewState(bookKey)?.isPrimary) return;
       if (initialRelocateSeenRef.current) return;
       initialRelocateSeenRef.current = true;
       const config = getConfig(bookKey);

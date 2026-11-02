@@ -45,7 +45,10 @@ vi.mock('@/store/bookDataStore', () => ({
 vi.mock('@/store/readerStore', () => ({
   useReaderStore: h.makeStore({
     getProgress: () => h.state.progress,
-    getViewState: () => ({ previewMode: h.state.previewMode }),
+    getViewState: (bookKey: string) => ({
+      previewMode: h.state.previewMode,
+      isPrimary: bookKey === 'h1-view1',
+    }),
   }),
 }));
 
@@ -141,6 +144,30 @@ describe('useProgressAutoSave', () => {
     await flushDebouncedSave();
 
     expect(h.saveConfigMock).toHaveBeenCalledTimes(1);
+  });
+
+  test.each([
+    false,
+    true,
+  ])('secondary relocation does not save a fresh copy (primary committed: %s)', async (primaryCommitted) => {
+    h.state.config = { location: '', updatedAt: 0 };
+    h.state.progress = null;
+    const secondary = renderHook(() => useProgressAutoSave('h1-view2'));
+    const primary = renderHook(() => useProgressAutoSave('h1-view1'));
+
+    secondary.result.current('cfi-secondary');
+    h.state.progress = { location: 'cfi-secondary' };
+    secondary.rerender();
+    if (primaryCommitted) {
+      primary.result.current('cfi-start');
+      h.state.config.location = 'cfi-start';
+      h.state.progress = { location: 'cfi-start' };
+      primary.rerender();
+    }
+    await flushDebouncedSave();
+
+    // No artificial timestamp may disqualify the pending sibling pull.
+    expect(h.saveConfigMock).not.toHaveBeenCalled();
   });
 
   test('persists an early user jump coalesced with the initial relocation', async () => {
