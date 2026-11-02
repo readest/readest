@@ -730,10 +730,6 @@ export async function importBook(
         throw new Error('Unsupported or corrupted book file');
       }
       normalizeMetadataIsbn(loadedBook.metadata);
-      const metadataTitle = formatTitle(loadedBook.metadata.title);
-      if (!metadataTitle || !metadataTitle.trim() || metadataTitle === filename) {
-        loadedBook.metadata.title = getBaseFilename(filename);
-      }
     } catch (error) {
       throw new Error(`Failed to open the book file: ${(error as Error).message || error}`);
     }
@@ -743,10 +739,17 @@ export async function importBook(
       ? lookupIndex.byHash.get(hash)
       : books.find((b) => b.hash === hash);
     originalFilename = existingBook?.originalFilename || originalFilename;
+    const titleFilename =
+      format === 'PDF' ? stripDuplicateMarker(originalFilename || filename) : filename;
+    const metadataTitle = formatTitle(loadedBook.metadata.title);
+    if (!metadataTitle || !metadataTitle.trim() || metadataTitle === filename) {
+      loadedBook.metadata.title = getBaseFilename(titleFilename);
+    }
     let title = formatTitle(loadedBook.metadata.title);
     let metaHash: Book['metaHash'];
-    if (
-      format === 'PDF' &&
+    if (format !== 'PDF') {
+      metaHash = getMetadataHash(loadedBook.metadata);
+    } else if (
       existingBook &&
       !existingBook.originalFilename &&
       typeof file === 'string' &&
@@ -761,16 +764,9 @@ export async function importBook(
       title = existingBook.title;
       metaHash = existingBook.metaHash;
     } else {
-      let pdfIdentity: string | undefined;
-      if (format === 'PDF') {
-        title = stripDuplicateMarker(originalFilename || filename).replace(/\.[^.]*$/, '');
-        pdfIdentity = title;
-        // Names without a PDF extension can be shared download endpoints, even on reimport.
-        if (!/\.pdf$/i.test(stripDuplicateMarker(originalFilename || filename))) {
-          pdfIdentity = hash;
-        }
-      }
-      metaHash = getMetadataHash(loadedBook.metadata, pdfIdentity);
+      title = titleFilename.replace(/\.[^.]*$/, '');
+      // Extensionless download names need content identity, including on reimport.
+      metaHash = getMetadataHash(loadedBook.metadata, /\.pdf$/i.test(titleFilename) ? title : hash);
     }
     const stableHash = hasVolatileIdentifiers(format)
       ? getStableMetadataHash(loadedBook.metadata)
@@ -1077,6 +1073,17 @@ export async function importBook(
     // Past this point the target book/config is authoritative. A later cleanup
     // failure must leave the library pointing at the new hash, not roll it back
     // to a directory whose retirement may already have started.
+    if (lookupIndex && existingBook && rollbackSnapshot) {
+      if (rollbackSnapshot.metaHash && rollbackSnapshot.metaHash !== existingBook.metaHash) {
+        const oldKey = `${rollbackSnapshot.metaHash}:${rollbackSnapshot.format}`;
+        const remaining = (lookupIndex.byMetaKey.get(oldKey) ?? []).filter(
+          (candidate) => candidate !== existingBook,
+        );
+        if (remaining.length) lookupIndex.byMetaKey.set(oldKey, remaining);
+        else lookupIndex.byMetaKey.delete(oldKey);
+      }
+      indexBookKeys(lookupIndex, existingBook, existingBook.metaHash, stableHash);
+    }
     rollbackBook = undefined;
     rollbackSnapshot = undefined;
     if (retiredTombstone) {

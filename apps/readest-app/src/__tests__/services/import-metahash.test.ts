@@ -1353,7 +1353,8 @@ describe('importBook PDF filename-aware dedup', () => {
     mockPartialMD5.mockResolvedValue('pdf-hash-1');
     setupMockPdfDoc();
     const imported = await service.importBook(new File(['pdf'], 'Device_Manual_V2.1.PDF'), []);
-    const synced = transformBookFromDB(transformBookToDB(imported!, 'test-user'));
+    const dbBook = transformBookToDB(imported!, 'test-user');
+    const synced = transformBookFromDB({ ...dbBook, original_filename: undefined });
     expect(synced.originalFilename).toBeUndefined();
     service.getFs().getPrefix.mockResolvedValue('/library/Books');
     service.getFs().openFile.mockResolvedValue(new File(['pdf'], 'PowerPoint Presentation.pdf'));
@@ -1548,6 +1549,55 @@ describe('importBook PDF filename-aware dedup', () => {
     expect(liveBooks.every((book) => book.originalFilename === 'download')).toBe(true);
     expect(liveBooks.every((book) => book.title === 'download')).toBe(true);
     expect(service.getFs().removeDir).not.toHaveBeenCalled();
+  });
+
+  it('reindexes a legacy extensionless PDF before importing another PDF in the batch', async () => {
+    const legacyHash = getMetadataHash(PDF_METADATA, 'download');
+    const legacy: Book = {
+      hash: 'legacy-pdf',
+      format: 'PDF',
+      title: 'download',
+      sourceTitle: PDF_METADATA.title,
+      author: PDF_METADATA.author,
+      metadata: PDF_METADATA,
+      metaHash: legacyHash,
+      createdAt: 1,
+      updatedAt: 1,
+    };
+    const books = [legacy];
+    const lookupIndex = buildBookLookupIndex(books);
+    mockPartialMD5.mockResolvedValue('legacy-pdf');
+    setupMockPdfDoc();
+    await service.importBook(new File(['pdf'], 'download'), books, { lookupIndex });
+
+    expect(lookupIndex.byMetaKey.get(`${legacyHash}:PDF`) ?? []).not.toContain(legacy);
+    expect(lookupIndex.byMetaKey.get(`${legacy.metaHash}:PDF`)).toContain(legacy);
+
+    mockPartialMD5.mockResolvedValue('other-pdf');
+    setupMockPdfDoc();
+    await service.importBook(new File(['different pdf'], 'download.pdf'), books, { lookupIndex });
+    expect(books.filter((book) => !book.deletedAt)).toHaveLength(2);
+    expect(legacy.hash).toBe('legacy-pdf');
+    expect(service.getFs().removeDir).not.toHaveBeenCalled();
+  });
+
+  it('keeps missing-title PDF metadata stable when its managed filename is sanitized', async () => {
+    const books: Book[] = [];
+    mockPartialMD5.mockResolvedValue('untitled-download');
+    setupMockPdfDoc({ ...PDF_METADATA, title: '' });
+    const book = await service.importBook(new File(['pdf'], 'download?rev1'), books);
+    const originalMetaHash = book!.metaHash;
+    const originalTitle = book!.metadata!.title;
+
+    setupMockPdfDoc({ ...PDF_METADATA, title: '' });
+    service.getFs().openFile.mockResolvedValue(new File(['pdf'], 'download_rev1.pdf'));
+    const reimported = await service.importBook(
+      '/library/Books/untitled-download/download_rev1.pdf',
+      books,
+    );
+    expect(reimported!.metadata!.title).toEqual(originalTitle);
+    expect(reimported!.metaHash).toBe(originalMetaHash);
+    expect(reimported!.originalFilename).toBe('download?rev1');
   });
 
   it('saves the resolved Android provider name instead of the opaque content URI', async () => {
