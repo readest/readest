@@ -593,12 +593,13 @@ export async function importBook(
       } else {
         if (typeof file === 'string') {
           fileobj = await fs.openFile(file, 'None');
-          filename =
-            isValidURL(file) || isContentURI(file) || isFileURI(file)
-              ? fileobj.name || getFilename(file)
-              : (/^(?:[a-z]:[\\/]|\\\\)/i.test(file) ? file.replace(/\\/g, '/') : file)
-                  .split('/')
-                  .pop()!;
+          if (isValidURL(file) || isContentURI(file) || isFileURI(file)) {
+            filename = fileobj.name || getFilename(file);
+          } else {
+            // Only Windows paths treat backslashes as separators.
+            const path = /^(?:[a-z]:[\\/]|\\\\)/i.test(file) ? file.replace(/\\/g, '/') : file;
+            filename = path.split('/').pop()!;
+          }
         } else {
           fileobj = file;
           filename = file.name;
@@ -741,31 +742,28 @@ export async function importBook(
     let existingBook = lookupIndex
       ? lookupIndex.byHash.get(hash)
       : books.find((b) => b.hash === hash);
-    // Cloud records can lack the import name. A managed copy cannot recover it.
-    const preservePdfIdentity =
+    originalFilename = existingBook?.originalFilename || originalFilename;
+    let title = formatTitle(loadedBook.metadata.title);
+    let metaHash: Book['metaHash'];
+    if (
       format === 'PDF' &&
       existingBook &&
       !existingBook.originalFilename &&
       typeof file === 'string' &&
       file.replace(/\\/g, '/') ===
-        `${await fs.getPrefix('Books')}/${getLocalBookFilename(existingBook)}`.replace(/\\/g, '/');
-    // A managed copy is named after sourceTitle, so keep the name captured at import.
-    originalFilename = preservePdfIdentity
-      ? undefined
-      : existingBook?.originalFilename || originalFilename;
-    const pdfTitle =
-      preservePdfIdentity && existingBook
-        ? existingBook.title
-        : stripDuplicateMarker(originalFilename || filename).replace(/\.[^.]*$/, '');
-
-    // PDF metadata is often generic boilerplate (e.g. every PowerPoint export
-    // is titled "PowerPoint Presentation" by the same author), so metadata
-    // alone wrongly collapses distinct files into one book (issue #5411).
-    // Salt the hash with the original filename so only same-named PDFs dedupe.
-    const metaHash =
-      preservePdfIdentity && existingBook
-        ? existingBook.metaHash
-        : getMetadataHash(loadedBook.metadata, format === 'PDF' ? pdfTitle : undefined);
+        `${await fs.getPrefix('Books')}/${getLocalBookFilename(existingBook)}`.replace(/\\/g, '/')
+    ) {
+      // A cloud record may lack the import name; its managed copy cannot recover it.
+      originalFilename = undefined;
+      title = existingBook.title;
+      metaHash = existingBook.metaHash;
+    } else {
+      if (format === 'PDF') {
+        title = stripDuplicateMarker(originalFilename || filename).replace(/\.[^.]*$/, '');
+      }
+      // Salt PDF identity with its filename so generic metadata cannot merge distinct files.
+      metaHash = getMetadataHash(loadedBook.metadata, format === 'PDF' ? title : undefined);
+    }
     const stableHash = hasVolatileIdentifiers(format)
       ? getStableMetadataHash(loadedBook.metadata)
       : undefined;
@@ -829,7 +827,7 @@ export async function importBook(
       hash,
       format,
       metaHash,
-      title: format === 'PDF' ? pdfTitle : formatTitle(loadedBook.metadata.title),
+      title,
       originalFilename,
       sourceTitle: formatTitle(loadedBook.metadata.title),
       primaryLanguage,
