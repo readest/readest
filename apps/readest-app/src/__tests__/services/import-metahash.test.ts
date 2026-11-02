@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Book } from '@/types/book';
 import { getMetadataHash } from '@/utils/book';
+import { transformBookFromDB, transformBookToDB } from '@/utils/transform';
 
 const mockOpen = vi.hoisted(() => vi.fn());
 const mockPartialMD5 = vi.hoisted(() => vi.fn());
@@ -32,6 +33,7 @@ vi.mock('@/libs/storage', () => ({
 }));
 
 import { BaseAppService } from '@/services/appService';
+import { WebAppService } from '@/services/webAppService';
 import { buildBookLookupIndex, refreshBookMetadata } from '@/services/bookService';
 
 // Concrete test subclass of BaseAppService with mocked fs
@@ -1342,6 +1344,30 @@ describe('importBook PDF filename-aware dedup', () => {
     });
   });
 
+  it('preserves a synced PDF identity when its managed copy has no original filename', async () => {
+    mockPartialMD5.mockResolvedValue('pdf-hash-1');
+    setupMockPdfDoc();
+    const imported = await service.importBook(new File(['pdf'], 'Device_Manual_V2.1.PDF'), []);
+    const synced = transformBookFromDB(transformBookToDB(imported!, 'test-user'));
+    expect(synced.originalFilename).toBeUndefined();
+    service.getFs().getPrefix.mockResolvedValue('/library/Books');
+    service.getFs().openFile.mockResolvedValue(new File(['pdf'], 'PowerPoint Presentation.pdf'));
+    setupMockPdfDoc();
+
+    const reimported = await service.importBook(
+      '/library/Books/pdf-hash-1/PowerPoint Presentation.pdf',
+      [synced],
+    );
+
+    expect(reimported).toBe(synced);
+    expect(reimported).toMatchObject({
+      title: 'Device_Manual_V2.1',
+      metaHash: imported!.metaHash,
+      sourceTitle: PDF_METADATA.title,
+    });
+    expect(reimported!.originalFilename).toBeUndefined();
+  });
+
   it.each([
     ['EPUB', 'novel.epub'],
     ['MOBI', 'novel.mobi'],
@@ -1396,6 +1422,55 @@ describe('importBook PDF filename-aware dedup', () => {
       });
     }
     expect(books.filter((book) => !book.deletedAt)).toHaveLength(2);
+  });
+
+  it.each([
+    'file',
+    'path',
+  ] as const)('keeps literal POSIX backslashes distinct when importing a %s', async (source) => {
+    const books: Book[] = [];
+    for (const edition of ['first', 'second']) {
+      const name = `${edition}\\chapter.pdf`;
+      mockPartialMD5.mockResolvedValue(`pdf-${edition}`);
+      setupMockPdfDoc();
+      service.getFs().openFile.mockResolvedValue(new File(['pdf'], name));
+      const book = await service.importBook(
+        source === 'file' ? new File([edition], name) : `/library/${name}`,
+        books,
+      );
+      expect(book).toMatchObject({
+        originalFilename: name,
+        title: `${edition}\\chapter`,
+        metaHash: getMetadataHash(PDF_METADATA, `${edition}\\chapter`),
+      });
+    }
+    expect(books.filter((book) => !book.deletedAt)).toHaveLength(2);
+  });
+
+  it.each([
+    undefined,
+    'resolved?edition.pdf',
+  ])('uses a query-free URL fallback while preserving resolved filename %s', async (resolvedFilename) => {
+    mockPartialMD5.mockResolvedValue('pdf-hash');
+    setupMockPdfDoc();
+    const web = new WebAppService();
+    const url = 'https://example.com/manual.pdf?token=abc.def';
+    const fetcher = vi.fn().mockResolvedValue(
+      new Response(null, {
+        headers: { 'content-length': '3', 'content-type': 'application/pdf' },
+      }),
+    );
+    const file = await web.fs.openFile(url, 'None', resolvedFilename, fetcher);
+    service.getFs().openFile.mockResolvedValue(file);
+
+    const book = await service.importBook(url, []);
+    const name = resolvedFilename || 'manual.pdf';
+    const title = name.slice(0, -4);
+    expect(book).toMatchObject({
+      originalFilename: name,
+      title,
+      metaHash: getMetadataHash(PDF_METADATA, title),
+    });
   });
 
   it('strips URL queries when the opened file has no name', async () => {

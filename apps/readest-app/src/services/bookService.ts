@@ -596,12 +596,14 @@ export async function importBook(
           filename =
             isValidURL(file) || isContentURI(file) || isFileURI(file)
               ? fileobj.name || getFilename(file)
-              : file.replace(/\\/g, '/').split('/').pop()!;
+              : (/^(?:[a-z]:[\\/]|\\\\)/i.test(file) ? file.replace(/\\/g, '/') : file)
+                  .split('/')
+                  .pop()!;
         } else {
           fileobj = file;
           filename = file.name;
         }
-        originalFilename = filename.replace(/\\/g, '/').split('/').pop()!;
+        originalFilename = filename.split('/').pop()!;
         // A download saved as "novel.txt (1)" is still a TXT, and its title
         // should not read "novel.txt" either. Drop the duplicate marker before
         // anything downstream classifies or names the book (issue #5959).
@@ -739,19 +741,31 @@ export async function importBook(
     let existingBook = lookupIndex
       ? lookupIndex.byHash.get(hash)
       : books.find((b) => b.hash === hash);
+    // Cloud records can lack the import name. A managed copy cannot recover it.
+    const preservePdfIdentity =
+      format === 'PDF' &&
+      existingBook &&
+      !existingBook.originalFilename &&
+      typeof file === 'string' &&
+      file.replace(/\\/g, '/') ===
+        `${await fs.getPrefix('Books')}/${getLocalBookFilename(existingBook)}`.replace(/\\/g, '/');
     // A managed copy is named after sourceTitle, so keep the name captured at import.
-    originalFilename = existingBook?.originalFilename || originalFilename;
+    originalFilename = preservePdfIdentity
+      ? undefined
+      : existingBook?.originalFilename || originalFilename;
+    const pdfTitle =
+      preservePdfIdentity && existingBook
+        ? existingBook.title
+        : stripDuplicateMarker(originalFilename || filename).replace(/\.[^.]*$/, '');
 
     // PDF metadata is often generic boilerplate (e.g. every PowerPoint export
     // is titled "PowerPoint Presentation" by the same author), so metadata
     // alone wrongly collapses distinct files into one book (issue #5411).
     // Salt the hash with the original filename so only same-named PDFs dedupe.
-    const metaHash = getMetadataHash(
-      loadedBook.metadata,
-      format === 'PDF'
-        ? getBaseFilename(stripDuplicateMarker(originalFilename || filename))
-        : undefined,
-    );
+    const metaHash =
+      preservePdfIdentity && existingBook
+        ? existingBook.metaHash
+        : getMetadataHash(loadedBook.metadata, format === 'PDF' ? pdfTitle : undefined);
     const stableHash = hasVolatileIdentifiers(format)
       ? getStableMetadataHash(loadedBook.metadata)
       : undefined;
@@ -815,10 +829,7 @@ export async function importBook(
       hash,
       format,
       metaHash,
-      title:
-        format === 'PDF'
-          ? getBaseFilename(stripDuplicateMarker(originalFilename || filename))
-          : formatTitle(loadedBook.metadata.title),
+      title: format === 'PDF' ? pdfTitle : formatTitle(loadedBook.metadata.title),
       originalFilename,
       sourceTitle: formatTitle(loadedBook.metadata.title),
       primaryLanguage,

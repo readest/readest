@@ -3,6 +3,7 @@ import { DatabaseOpts, DatabaseService } from '@/types/database';
 import { SchemaType } from '@/services/database/migrate';
 import { getOSPlatform, isValidURL } from '@/utils/misc';
 import { isSafariBrowser } from '@/utils/ua';
+import { getFilename } from '@/utils/path';
 import { RemoteFile } from '@/utils/file';
 import { detectViewTransitionGroup, detectViewTransitionsAPI } from '@/utils/viewTransition';
 import { isPWA } from './environment';
@@ -83,7 +84,13 @@ const indexedDBFileSystem: FileSystem = {
   },
   async openFile(path: string, base: BaseDir, filename?: string, fetcher?: typeof fetch) {
     if (isValidURL(path)) {
-      return await new RemoteFile(path, filename, '', Date.now(), fetcher).open();
+      return await new RemoteFile(
+        path,
+        filename || getFilename(path),
+        '',
+        Date.now(),
+        fetcher,
+      ).open();
     } else {
       const content = await this.readFile(path, base, 'binary');
       return new File([content], filename || path);

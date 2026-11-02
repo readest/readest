@@ -5,6 +5,8 @@ import {
   mergeBookMetadata,
   isRemoteBookMetadataNewer,
   shouldApplyRemoteBookMetadata,
+  isRemoteBookMissingLocally,
+  resolvePublishedBook,
 } from '@/services/sync/file/merge';
 import type { Book, BookConfig, BookNote } from '@/types/book';
 import type { RemoteBookConfig } from '@/services/sync/file/wire';
@@ -574,6 +576,54 @@ describe('mergeBookMetadata metadataUpdatedAt clock (issue #5438)', () => {
     const local = { hash: 'h', title: 'L', author: 'A', updatedAt: 9 } as Book;
     const remote = { hash: 'h', title: 'R', author: 'A', updatedAt: 1 } as Book;
     expect(mergeBookMetadata(local, remote).title).toBe('L');
+  });
+});
+
+describe('original filename reconciliation', () => {
+  const local: Book = {
+    hash: 'pdf-hash',
+    format: 'PDF',
+    title: 'PowerPoint Presentation',
+    sourceTitle: 'Local managed title',
+    author: 'Author',
+    createdAt: 1,
+    updatedAt: 200,
+    metadataUpdatedAt: 100,
+  };
+  const remote: Book = {
+    ...local,
+    title: 'Device Manual',
+    sourceTitle: 'Remote managed title',
+    originalFilename: 'Device Manual.PDF',
+  };
+
+  test.each([
+    ['mergeBookMetadata', mergeBookMetadata],
+    ['resolvePublishedBook', resolvePublishedBook],
+  ] as const)('%s fills missing provenance without changing title, managed path, or clocks', (_name, merge) => {
+    expect(merge(local, remote)).toEqual({ ...local, originalFilename: 'Device Manual.PDF' });
+    expect(local.originalFilename).toBeUndefined();
+  });
+
+  test.each([
+    ['mergeBookMetadata', mergeBookMetadata],
+    ['resolvePublishedBook', resolvePublishedBook],
+  ] as const)('%s preserves an existing filename and does not invent absent provenance', (_name, merge) => {
+    const named = { ...local, originalFilename: 'Original.pdf' };
+    expect(merge(named, remote)).toEqual(named);
+    expect(merge(local, { ...remote, originalFilename: undefined })).toEqual(local);
+  });
+
+  test('Full Sync repairs missing provenance once, without requiring newer clocks', () => {
+    expect(isRemoteBookMissingLocally(local, remote)).toBe(true);
+    const repaired = mergeBookMetadata(local, remote);
+    expect(isRemoteBookMissingLocally(repaired, remote)).toBe(false);
+    expect(shouldApplyRemoteBookMetadata(local, remote)).toBe(false);
+    expect(isRemoteBookMissingLocally(local, { ...remote, originalFilename: undefined })).toBe(
+      false,
+    );
+    expect(isRemoteBookMissingLocally({ ...local, deletedAt: 300 }, remote)).toBe(false);
+    expect(isRemoteBookMissingLocally(local, { ...remote, deletedAt: 300 })).toBe(false);
   });
 });
 
