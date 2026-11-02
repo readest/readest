@@ -10,6 +10,7 @@
  * and routes it to the iOS plugin command path.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { useCustomDictionaryStore } from '@/store/customDictionaryStore';
 
 type OsFlags = { isMacOSApp: boolean; isIOSApp: boolean; isAndroidApp: boolean };
 
@@ -50,6 +51,7 @@ const flags = (os: 'macos' | 'ios' | 'android'): OsFlags => ({
 
 beforeEach(() => {
   env.tauri = true;
+  useCustomDictionaryStore.setState({ settings: { providerOrder: [], providerEnabled: {} } });
   // Default to iPad: native ios despite the desktop "Macintosh" UA.
   appService.value = flags('ios');
   invokeMock.mockReset();
@@ -69,6 +71,41 @@ describe('invokeSystemDictionary — native dispatch', () => {
     expect(invokeMock).toHaveBeenCalledWith(PLUGIN_CMD, { payload: { word: 'hello' } });
     // Must NOT hit the macOS-only Rust command that iOS doesn't register.
     expect(invokeMock).not.toHaveBeenCalledWith(MACOS_CMD, expect.anything());
+  });
+
+  it('forwards the fullscreen preference on iOS and applies changes to the next lookup', async () => {
+    useCustomDictionaryStore.setState({
+      settings: {
+        ...useCustomDictionaryStore.getState().settings,
+        systemDictionaryFullscreen: true,
+      },
+    });
+
+    expect(await invokeSystemDictionary(' hello ')).toBe(true);
+    expect(invokeMock).toHaveBeenLastCalledWith(PLUGIN_CMD, {
+      payload: { word: 'hello', fullScreen: true },
+    });
+
+    useCustomDictionaryStore.setState({
+      settings: {
+        ...useCustomDictionaryStore.getState().settings,
+        systemDictionaryFullscreen: false,
+      },
+    });
+    await invokeSystemDictionary('hello');
+    expect(invokeMock).toHaveBeenLastCalledWith(PLUGIN_CMD, { payload: { word: 'hello' } });
+  });
+
+  it('does not forward an iOS fullscreen preference to Android', async () => {
+    appService.value = flags('android');
+    useCustomDictionaryStore.setState({
+      settings: {
+        ...useCustomDictionaryStore.getState().settings,
+        systemDictionaryFullscreen: true,
+      },
+    });
+    await invokeSystemDictionary('hello');
+    expect(invokeMock).toHaveBeenLastCalledWith(PLUGIN_CMD, { payload: { word: 'hello' } });
   });
 
   it('routes a real macOS desktop to the bare Rust command', async () => {

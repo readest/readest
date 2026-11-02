@@ -23,7 +23,12 @@ import type { CustomTranslator } from '@/types/translation';
 // Per-test platform control. `isSystemDictionaryEnabled` (real, from the
 // registry) reads `isSystemDictionarySupported`, so toggling these flips both
 // the row visibility and the lock gate the component now relies on.
-const platform = vi.hoisted(() => ({ supported: false, available: false, premium: true }));
+const platform = vi.hoisted(() => ({
+  supported: false,
+  available: false,
+  premium: true,
+  ios: false,
+}));
 const mocks = vi.hoisted(() => ({
   importDictionaries: vi.fn(),
   selectFiles: vi.fn(),
@@ -40,7 +45,7 @@ vi.mock('@/hooks/useTranslation', () => ({
 
 vi.mock('@/context/EnvContext', () => ({
   useEnv: () => ({
-    appService: { importDictionaries: mocks.importDictionaries },
+    appService: { importDictionaries: mocks.importDictionaries, isIOSApp: platform.ios },
     envConfig: {},
   }),
 }));
@@ -99,6 +104,7 @@ beforeEach(() => {
   platform.supported = false;
   platform.available = false;
   platform.premium = true;
+  platform.ios = false;
   useCustomTranslatorStore.setState({ translators: [], loaded: true });
   mocks.importDictionaries.mockReset();
   mocks.selectFiles.mockReset();
@@ -156,6 +162,64 @@ describe('CustomDictionaries — system-dictionary lock', () => {
     expect(systemToggle!.title).not.toBe(LOCKED_TITLE);
     expect(otherToggles.every((t) => t.disabled)).toBe(true);
     expect(otherToggles.every((t) => t.title === LOCKED_TITLE)).toBe(true);
+  });
+});
+
+describe('CustomDictionaries — system dictionary fullscreen', () => {
+  it('defaults to compact on iOS and saves the fullscreen choice', async () => {
+    platform.ios = true;
+    platform.supported = true;
+    platform.available = true;
+    seedSettings(enabledSystemSettings);
+    const save = vi.fn().mockResolvedValue(undefined);
+    useCustomDictionaryStore.setState({ saveCustomDictionaries: save });
+
+    render(<CustomDictionaries onBack={() => {}} />);
+    const toggle = screen.queryByRole('checkbox', { name: 'Fullscreen' });
+    expect(toggle, 'iOS dictionary settings must offer fullscreen').not.toBeNull();
+    expect((toggle as HTMLInputElement).checked).toBe(false);
+    await waitFor(() => expect((toggle as HTMLInputElement).disabled).toBe(false));
+    fireEvent.click(toggle!);
+
+    await waitFor(() => expect(save).toHaveBeenCalledOnce());
+    expect(useCustomDictionaryStore.getState().settings).toMatchObject({
+      systemDictionaryFullscreen: true,
+    });
+    expect((screen.getByRole('checkbox', { name: 'Fullscreen' }) as HTMLInputElement).checked).toBe(
+      true,
+    );
+  });
+
+  it('prevents saving unhydrated dictionaries while the initial load is pending', async () => {
+    platform.ios = true;
+    seedSettings(enabledSystemSettings);
+    let finishLoading!: () => void;
+    const save = vi.fn().mockResolvedValue(undefined);
+    useCustomDictionaryStore.setState({
+      loadCustomDictionaries: () =>
+        new Promise<void>((resolve) => {
+          finishLoading = resolve;
+        }),
+      saveCustomDictionaries: save,
+    });
+
+    render(<CustomDictionaries onBack={() => {}} />);
+    const toggle = screen.getByRole('checkbox', { name: 'Fullscreen' }) as HTMLInputElement;
+    expect(toggle.disabled).toBe(true);
+    toggle.click();
+    expect(save).not.toHaveBeenCalled();
+
+    await act(async () => finishLoading());
+    expect(toggle.disabled).toBe(false);
+    fireEvent.click(toggle);
+    await waitFor(() => expect(save).toHaveBeenCalledOnce());
+    expect(useCustomDictionaryStore.getState().settings.systemDictionaryFullscreen).toBe(true);
+  });
+
+  it('hides the iOS presentation preference on other platforms', () => {
+    seedSettings(enabledSystemSettings);
+    render(<CustomDictionaries onBack={() => {}} />);
+    expect(screen.queryByRole('checkbox', { name: 'Fullscreen' })).toBeNull();
   });
 });
 

@@ -233,6 +233,8 @@ export interface DictionarySettings {
    * it; nothing is spoken when the entry has no recording.
    */
   autoPlayPronunciation?: boolean;
+  /** Use a full-screen native dictionary on iOS; unset keeps the compact presentation. */
+  systemDictionaryFullscreen?: boolean;
   /**
    * Custom translator (OpenAI-compatible) the context dictionary asks
    * (#5544). Unset or stale ids fall back to the first available one.

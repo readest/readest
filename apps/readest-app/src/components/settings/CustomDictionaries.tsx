@@ -282,6 +282,7 @@ const CustomDictionaries: React.FC<CustomDictionariesProps> = ({ onBack }) => {
     setEnabled,
     setFontScale,
     setAutoPlayPronunciation,
+    setSystemDictionaryFullscreen,
     setContextTranslatorId,
     setContextOptions,
     addWebSearch,
@@ -292,8 +293,11 @@ const CustomDictionaries: React.FC<CustomDictionariesProps> = ({ onBack }) => {
     markAvailableByContentId,
   } = useCustomDictionaryStore();
 
+  const [dictionariesLoaded, setDictionariesLoaded] = useState(false);
   useEffect(() => {
-    void loadCustomDictionaries(envConfig).catch(() => {});
+    void loadCustomDictionaries(envConfig)
+      .then(() => setDictionariesLoaded(true))
+      .catch(() => {});
     ensureCustomTranslatorsLoaded(envConfig);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -874,6 +878,20 @@ const CustomDictionaries: React.FC<CustomDictionariesProps> = ({ onBack }) => {
           </DndContext>
         </div>
       </div>
+
+      {appService?.isIOSApp && (
+        <BoxedList className='mt-4' title={_('System Dictionary')}>
+          <SettingsSwitchRow
+            label={_('Fullscreen')}
+            checked={settings.systemDictionaryFullscreen ?? false}
+            disabled={!dictionariesLoaded}
+            onChange={() => {
+              setSystemDictionaryFullscreen(!settings.systemDictionaryFullscreen);
+              void saveCustomDictionaries(envConfig);
+            }}
+          />
+        </BoxedList>
+      )}
 
       {contextTranslator && (
         <BoxedList

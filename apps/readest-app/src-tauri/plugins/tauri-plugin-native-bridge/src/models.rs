@@ -356,6 +356,9 @@ pub struct OpenExternalUrlResponse {
 #[serde(rename_all = "camelCase")]
 pub struct ShowLookupPopoverRequest {
     pub word: String,
+    /// iOS only. Omitted by older clients to keep the compact presentation.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub full_screen: Option<bool>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]

@@ -895,6 +895,73 @@ describe('customDictionaryStore — autoPlayPronunciation (#6265)', () => {
   });
 });
 
+describe('customDictionaryStore — system dictionary fullscreen (#7101)', () => {
+  it.each([true, false])('keeps fullscreen=%s saved during a pending load', async (enabled) => {
+    type SettingsState = ReturnType<typeof useSettingsStore.getState>;
+    const dictionary: ImportedDictionary = {
+      id: 'slow-dictionary',
+      contentId: 'slow-dictionary',
+      kind: 'mdict',
+      name: 'Slow Dictionary',
+      bundleDir: 'slow-dictionary',
+      files: { mdx: 'dictionary.mdx' },
+      addedAt: 1,
+    };
+    const settings = {
+      providerOrder: [dictionary.id],
+      providerEnabled: { [dictionary.id]: true },
+      systemDictionaryFullscreen: !enabled,
+    };
+    useSettingsStore.setState({
+      settings: {
+        customDictionaries: [dictionary],
+        dictionarySettings: settings,
+      } as unknown as SettingsState['settings'],
+      saveSettings: vi.fn().mockResolvedValue(undefined),
+    });
+    useCustomDictionaryStore.setState({ dictionaries: [dictionary], settings });
+    let finishLookup!: (exists: boolean) => void;
+    const exists = vi.fn(
+      () =>
+        new Promise<boolean>((resolve) => {
+          finishLookup = resolve;
+        }),
+    );
+    const fakeEnv = {
+      getAppService: () => Promise.resolve({ exists }),
+    } as unknown as EnvConfigType;
+    const loading = useCustomDictionaryStore.getState().loadCustomDictionaries(fakeEnv);
+    await vi.waitFor(() => expect(exists).toHaveBeenCalledOnce());
+    useCustomDictionaryStore.getState().setSystemDictionaryFullscreen(enabled);
+    await useCustomDictionaryStore.getState().saveCustomDictionaries(fakeEnv);
+    finishLookup(true);
+    await loading;
+    expect(useCustomDictionaryStore.getState().settings.systemDictionaryFullscreen).toBe(enabled);
+    await useCustomDictionaryStore.getState().saveCustomDictionaries(fakeEnv);
+    expect(useSettingsStore.getState().settings.dictionarySettings.systemDictionaryFullscreen).toBe(
+      enabled,
+    );
+  });
+
+  it.each([true, false])('preserves fullscreen=%s through a save and reload', async (enabled) => {
+    type SettingsState = ReturnType<typeof useSettingsStore.getState>;
+    useSettingsStore.setState({
+      settings: {
+        customDictionaries: [],
+        dictionarySettings: {},
+      } as unknown as SettingsState['settings'],
+      saveSettings: vi.fn().mockResolvedValue(undefined),
+    });
+    const fakeEnv = {
+      getAppService: () => Promise.resolve({ exists: vi.fn().mockResolvedValue(false) }),
+    } as unknown as EnvConfigType;
+    useCustomDictionaryStore.getState().setSystemDictionaryFullscreen(enabled);
+    await useCustomDictionaryStore.getState().saveCustomDictionaries(fakeEnv);
+    await useCustomDictionaryStore.getState().loadCustomDictionaries(fakeEnv);
+    expect(useCustomDictionaryStore.getState().settings.systemDictionaryFullscreen).toBe(enabled);
+  });
+});
+
 describe('customDictionaryStore — context dictionary (#5544)', () => {
   type SettingsState = ReturnType<typeof useSettingsStore.getState>;
   const fakeEnv = {
