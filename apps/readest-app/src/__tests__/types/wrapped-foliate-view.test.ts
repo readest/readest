@@ -37,7 +37,9 @@ describe('wrappedFoliateView goTo events', () => {
 
 describe('wrappedFoliateView select', () => {
   it('preserves the original method context and selects the resolved range', async () => {
-    const bookDoc = document.implementation.createHTMLDocument('book');
+    const frame = document.createElement('iframe');
+    document.body.append(frame);
+    const bookDoc = frame.contentDocument!;
     const text = bookDoc.createTextNode('selected search result');
     bookDoc.body.append(text);
     const range = bookDoc.createRange();
@@ -57,11 +59,15 @@ describe('wrappedFoliateView select', () => {
     view.renderer = {
       getContents: () => [{ index: 3, doc: bookDoc }],
     } as unknown as FoliateView['renderer'];
-    const wrapped = wrappedFoliateView(view);
-    await wrapped.select('search-cfi');
-    expect(originalSelect).toHaveBeenCalledWith('search-cfi');
-    expect(view.resolveCFI).toHaveBeenCalledWith('search-cfi');
-    expect(bookDoc.defaultView?.getSelection()?.toString()).toBe('selected search result');
+    try {
+      const wrapped = wrappedFoliateView(view);
+      await wrapped.select('search-cfi');
+      expect(originalSelect).toHaveBeenCalledWith('search-cfi');
+      expect(view.resolveCFI).toHaveBeenCalledWith('search-cfi');
+      expect(bookDoc.defaultView?.getSelection()?.toString()).toBe('selected search result');
+    } finally {
+      frame.remove();
+    }
   });
 
   it('does not resolve or create a DOM selection for non-CFI targets', async () => {
