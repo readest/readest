@@ -155,7 +155,9 @@ const VocabularyView: React.FC<VocabularyViewProps> = ({ onOpenBook }) => {
                 )}
               >
                 <span className='flex w-full items-center gap-2'>
-                  <span className='min-w-0 truncate font-semibold'>{e.word}</span>
+                  <span dir='auto' className='min-w-0 truncate font-semibold'>
+                    {e.word}
+                  </span>
                   {e.state !== 'none' && (
                     <span
                       className={clsx(

@@ -168,7 +168,9 @@ const VocabularyDetail: React.FC<VocabularyDetailProps> = ({ entry, onBack, onOp
       >
         <MdArrowBack size={20} className='rtl:rotate-180' />
       </button>
-      <h2 className='text-xl font-bold break-words'>{entry.word}</h2>
+      <h2 dir='auto' className='text-xl font-bold break-words'>
+        {entry.word}
+      </h2>
 
       <div className='mt-2'>
         {editing ? (
@@ -205,7 +207,7 @@ const VocabularyDetail: React.FC<VocabularyDetailProps> = ({ entry, onBack, onOp
               key={`${o.bookHash}|${o.cfi}|${o.at}`}
               className='eink-bordered bg-base-200/50 rounded-lg p-3 text-sm'
             >
-              <p>
+              <p dir='auto'>
                 <Highlighted sentence={o.sentence} word={entry.word} />
               </p>
               <div className='mt-1 flex items-center gap-2 text-xs'>

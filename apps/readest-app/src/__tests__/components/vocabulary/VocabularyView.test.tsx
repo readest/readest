@@ -83,6 +83,18 @@ describe('VocabularyView', () => {
     expect(useVocabularyStore.getState().entries['en:sandworm']!.deletedAt).toBeTruthy();
   });
 
+  it('lets book text keep its own direction in a right-to-left interface', () => {
+    render(<VocabularyView />);
+    fireEvent.click(screen.getByRole('button', { name: 'sandworm' }));
+    const detail = screen.getByRole('region', { name: 'sandworm' });
+    expect(within(detail).getByRole('heading', { name: 'sandworm' }).getAttribute('dir')).toBe(
+      'auto',
+    );
+    expect(
+      within(detail).getByText('sandworm', { selector: 'b' }).closest('p')!.getAttribute('dir'),
+    ).toBe('auto');
+  });
+
   it('offers Open in book only for books still in the library', () => {
     render(<VocabularyView />);
     fireEvent.click(screen.getByRole('button', { name: 'sandworm' }));
