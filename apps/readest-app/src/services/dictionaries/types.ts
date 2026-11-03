@@ -233,6 +233,11 @@ export interface DictionarySettings {
    * it; nothing is spoken when the entry has no recording.
    */
   autoPlayPronunciation?: boolean;
+  /**
+   * Save every word looked up in the dictionary popup to the vocabulary
+   * builder with its sentence (#789). Unset means on.
+   */
+  saveLookupsToVocabulary?: boolean;
   /** Use a full-screen native dictionary on iOS; unset keeps the compact presentation. */
   systemDictionaryFullscreen?: boolean;
   /**
