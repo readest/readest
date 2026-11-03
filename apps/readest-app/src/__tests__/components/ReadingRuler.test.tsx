@@ -693,6 +693,32 @@ describe('ReadingRuler', () => {
       ).toBeGreaterThan(lineHeight);
     });
 
+    it.each([
+      'band',
+      'line',
+    ] as const)('resizes immediately after moving a fixed-layout %s ruler and changing style', async (style) => {
+      const settings = { ...viewSettings, readingRulerStyle: style };
+      const { container, rerender } = render(
+        <ReadingRuler {...lineProps} bookFormat='PDF' viewSettings={settings} />,
+      );
+      eventDispatcher.dispatchSync('reading-ruler-move', {
+        bookKey: 'book-1',
+        direction: 'forward',
+      });
+      const ruler = () => container.querySelector('.ruler') as HTMLElement;
+      await waitFor(() =>
+        expect(parseFloat(ruler().style.height)).toBe(style === 'band' ? 56 : 28),
+      );
+      rerender(
+        <ReadingRuler
+          {...lineProps}
+          bookFormat='PDF'
+          viewSettings={{ ...settings, readingRulerStyle: style === 'band' ? 'line' : 'band' }}
+        />,
+      );
+      expect(parseFloat(ruler().style.height)).toBe(style === 'band' ? 28 : 56);
+    });
+
     it('places the line after the complete height of large text', () => {
       const content = makePaginatedContent(0, 800, [
         { top: 300, bottom: 400, left: 50, right: 750, width: 700, height: 100 },

@@ -286,9 +286,11 @@ const ReadingRuler: React.FC<ReadingRulerProps> = ({
       ? Infinity
       : calculateReadingRulerSize(lines + 1, viewSettings, bookFormat);
 
-  // A style change must remeasure even when scrolled mode otherwise keeps the
-  // ruler fixed on screen between relocates.
+  // A style change must discard the previous size, including fixed-layout
+  // fallbacks, and remeasure even when scrolled mode keeps the ruler fixed.
   useEffect(() => {
+    bandSizeRef.current = 0;
+    setBandSize(0);
     scrolledPlacedRef.current = false;
   }, [viewSettings.readingRulerStyle]);
 
