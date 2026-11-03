@@ -98,8 +98,9 @@ const HintEditor: React.FC<{ entry: VocabularyEntry; onDone: () => void }> = ({
         value={value}
         maxLength={80}
         onChange={(e) => setValue(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') save();
+        // Capture phase: Dialog stops every keydown at its own node.
+        onKeyDownCapture={(e) => {
+          if (e.key === 'Enter' && !e.nativeEvent.isComposing) save();
         }}
         placeholder={_('Short hint shown above the word')}
         className='eink-bordered input input-sm border-base-content/20 w-full'

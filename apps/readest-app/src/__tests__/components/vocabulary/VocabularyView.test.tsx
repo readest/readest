@@ -1,3 +1,4 @@
+import type React from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 
@@ -97,6 +98,30 @@ describe('VocabularyView', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Edit Hint' }));
     fireEvent.change(screen.getByRole('textbox', { name: 'Hint' }), { target: { value: '沙虫' } });
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    expect(useVocabularyStore.getState().entries['en:sandworm']!.hint).toBe('沙虫');
+  });
+
+  it('saves the hint on Enter inside a Dialog that stops keydown', () => {
+    // Dialog.tsx stops every keydown at its node; only capture listeners see it.
+    const StopKeys = ({ children }: { children: React.ReactNode }) => (
+      <div
+        ref={(el) => {
+          el?.addEventListener('keydown', (e) => e.stopPropagation());
+        }}
+      >
+        {children}
+      </div>
+    );
+    render(
+      <StopKeys>
+        <VocabularyView />
+      </StopKeys>,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'sandworm' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Edit Hint' }));
+    const input = screen.getByRole('textbox', { name: 'Hint' });
+    fireEvent.change(input, { target: { value: '沙虫' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
     expect(useVocabularyStore.getState().entries['en:sandworm']!.hint).toBe('沙虫');
   });
 
