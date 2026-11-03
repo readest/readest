@@ -9,9 +9,15 @@ import {
   ReadingStatus,
 } from '@/types/book';
 import { DBBookConfig, DBBook, DBBookNote } from '@/types/records';
-import { sanitizeString } from './sanitize';
 import { buildFeedBookUrl } from '@/services/rss/feedBookUrl';
 import { restoreAbsBookFields } from './audiobook';
+
+// Postgres text columns reject NUL. Kept here rather than in sanitize.ts, which
+// loads DOMPurify: the sync API route imports this module on every cold start.
+const sanitizeString = (str?: string) => {
+  if (!str) return str;
+  return str.replace(/\u0000/g, '');
+};
 
 export const transformBookConfigToDB = (bookConfig: unknown, userId: string): DBBookConfig => {
   const {

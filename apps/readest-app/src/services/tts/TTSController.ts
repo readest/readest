@@ -60,6 +60,7 @@ import {
   type NarratedAudioChapter,
 } from './pairedAudiobook';
 import { SKIP_BACKWARD_SEC, SKIP_FORWARD_SEC } from '@/services/playback/playbackSource';
+import { DEFAULT_PARAGRAPH_GAP_SEC } from './gap';
 import {
   stripInlineReadingAnnotations,
   stripInlineReadingAnnotationsFromSSML,
@@ -153,13 +154,7 @@ export interface TTSViewBindings {
   onSectionChange?: (sectionIndex: number) => Promise<void>;
 }
 
-// Silence inserted between paragraphs when auto-advancing during continuous
-// playback. Unlike the Edge-only inter-sentence gap, this applies to every
-// TTS client: the paragraph-to-paragraph transition (stop -> next -> speak)
-// is engine-agnostic, handled entirely in #speak()/forward() below. There is
-// no natural pause here otherwise -- the transition is as fast as the async
-// stop/init overhead allows, which reads as no pause at all.
-export const DEFAULT_PARAGRAPH_GAP_SEC = 0.3;
+export { DEFAULT_PARAGRAPH_GAP_SEC };
 
 const drawTint = (opacity: string) => (rects: DOMRectList, options: Record<string, unknown>) => {
   const g = Overlayer.highlight(rects, options);
