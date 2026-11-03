@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   pullVocabulary,
   pushVocabulary,
@@ -51,6 +51,9 @@ const makeDeps = (patch: Partial<VocabularySyncDeps> = {}) => {
 
 beforeEach(() => {
   useVocabularyStore.setState({ entries: {}, loaded: true, loadedCount: 1, version: 0 });
+});
+afterEach(() => {
+  vi.useRealTimers();
 });
 
 describe('pullVocabulary', () => {
@@ -148,11 +151,33 @@ describe('pushVocabulary', () => {
     const e = useVocabularyStore.getState().entries[id]!;
     expect(e.state).toBe('mastered');
     expect(e.dirty).toBe(true);
-    vi.useRealTimers();
   });
 });
 
 describe('syncVocabulary', () => {
+  it('runs once more when a sync is asked for while one is running', async () => {
+    useSettingsStore.setState({ settings: { syncCategories: {} } as unknown as SystemSettings });
+    let release!: () => void;
+    const gate = new Promise<void>((r) => {
+      release = r;
+    });
+    const deps = makeDeps({
+      pull: vi.fn(async () => {
+        await gate;
+        return [];
+      }),
+    });
+    const first = syncVocabulary(async () => deps);
+    // A change made mid-sync: the debounced sync arrives while the first runs.
+    useVocabularyStore.getState().ensureEntry('late', 'en');
+    const second = syncVocabulary(async () => deps);
+    release();
+    await Promise.all([first, second]);
+    expect(deps.pull).toHaveBeenCalledTimes(2);
+    const pushed = vi.mocked(deps.push).mock.calls.flatMap(([rows]) => rows.map((r) => r.id));
+    expect(pushed).toContain('en:late');
+  });
+
   it('still pulls when the push fails', async () => {
     useSettingsStore.setState({ settings: { syncCategories: {} } as unknown as SystemSettings });
     useVocabularyStore.getState().ensureEntry('run', 'en');

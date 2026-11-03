@@ -140,22 +140,36 @@ const defaultDeps = async (): Promise<VocabularySyncDeps | null> => {
 };
 
 let inFlight: Promise<void> | null = null;
+// A sync asked for while one runs: changes made since its push snapshot need another pass.
+let rerun = false;
+
+const syncOnce = async (makeDeps: () => Promise<VocabularySyncDeps | null>) => {
+  try {
+    if (!isSyncCategoryEnabled('vocabulary')) return;
+    const deps = await makeDeps();
+    if (!deps) return;
+    // A failed push must not stop this device from receiving other devices' words.
+    await pushVocabulary(deps).catch((err) => console.warn('[vocabulary] push failed', err));
+    await pullVocabulary(deps);
+  } catch (err) {
+    console.warn('[vocabulary] sync failed', err);
+  }
+};
 
 /** Push local changes, then pull remote ones. Skipped when signed out or the category is off. */
 export const syncVocabulary = (
   makeDeps: () => Promise<VocabularySyncDeps | null> = defaultDeps,
 ): Promise<void> => {
-  if (inFlight) return inFlight;
+  if (inFlight) {
+    rerun = true;
+    return inFlight;
+  }
   inFlight = (async () => {
     try {
-      if (!isSyncCategoryEnabled('vocabulary')) return;
-      const deps = await makeDeps();
-      if (!deps) return;
-      // A failed push must not stop this device from receiving other devices' words.
-      await pushVocabulary(deps).catch((err) => console.warn('[vocabulary] push failed', err));
-      await pullVocabulary(deps);
-    } catch (err) {
-      console.warn('[vocabulary] sync failed', err);
+      do {
+        rerun = false;
+        await syncOnce(makeDeps);
+      } while (rerun);
     } finally {
       inFlight = null;
     }
