@@ -4,7 +4,16 @@ const { generateTextMock } = vi.hoisted(() => ({ generateTextMock: vi.fn() }));
 
 vi.mock('ai', async (importOriginal) => {
   const actual = await importOriginal<typeof import('ai')>();
-  return { ...actual, generateText: generateTextMock };
+  return {
+    ...actual,
+    generateText: generateTextMock,
+    streamText: (args: unknown) => ({
+      fullStream: (async function* () {
+        const { text } = await generateTextMock(args);
+        yield { type: 'text-delta', text };
+      })(),
+    }),
+  };
 });
 vi.mock('@/services/ai/utils/httpFetch', () => ({ getAIFetch: () => vi.fn() }));
 
