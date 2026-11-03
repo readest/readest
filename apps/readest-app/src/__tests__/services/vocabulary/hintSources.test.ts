@@ -58,6 +58,33 @@ describe('hintFromDictionary', () => {
     expect(hint).toBe('good fortune');
   });
 
+  const htmlProvider = (html: string): DictionaryProvider => ({
+    id: 'html',
+    kind: 'stardict',
+    label: 'html',
+    lookup: async (_word, ctx) => {
+      ctx.container.innerHTML = html;
+      return { ok: true };
+    },
+  });
+
+  it('takes the first definition item without its examples', async () => {
+    const hint = await hintFromDictionary('serendipity', 'en', [
+      htmlProvider(
+        '<hgroup><h1>serendipity</h1><p>English</p></hgroup><h2>Noun</h2>' +
+          '<ol><li>An unsought, unintended discovery<ul><li>A happy example.</li></ul></li></ol>',
+      ),
+    ]);
+    expect(hint).toBe('An unsought, unintended discovery');
+  });
+
+  it('splits block elements into lines when there is no list', async () => {
+    const hint = await hintFromDictionary('luck', 'en', [
+      htmlProvider('<div>luck</div><div>n. good fortune</div>'),
+    ]);
+    expect(hint).toBe('good fortune');
+  });
+
   it('returns an empty string when no dictionary has it', async () => {
     expect(await hintFromDictionary('luck', 'en', [provider('a', null)])).toBe('');
   });

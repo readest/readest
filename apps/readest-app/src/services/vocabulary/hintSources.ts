@@ -38,14 +38,58 @@ export const firstSense = (text: string, word: string): string => {
   return '';
 };
 
-// Text of a rendered entry, including the open shadow roots MDict renders into.
+const BLOCK_TAGS = new Set([
+  'P',
+  'DIV',
+  'LI',
+  'OL',
+  'UL',
+  'DL',
+  'DT',
+  'DD',
+  'H1',
+  'H2',
+  'H3',
+  'H4',
+  'H5',
+  'H6',
+  'HGROUP',
+  'SECTION',
+  'ARTICLE',
+  'HEADER',
+  'BLOCKQUOTE',
+  'TABLE',
+  'TR',
+  'BR',
+]);
+
+// Text of a rendered entry, one line per block, including the open shadow
+// roots MDict renders into. The container is detached, so block boundaries
+// come from tag names (computed styles don't exist off-document).
 const textOf = (node: Node): string => {
   if (node instanceof Element && node.shadowRoot) return textOf(node.shadowRoot);
   if (node.nodeType === Node.TEXT_NODE) return node.textContent ?? '';
   const parts: string[] = [];
   for (const child of node.childNodes) parts.push(textOf(child));
-  const block = node instanceof HTMLElement && getComputedStyle(node).display === 'block';
-  return parts.join('') + (block ? '\n' : '');
+  return parts.join('') + (node instanceof Element && BLOCK_TAGS.has(node.tagName) ? '\n' : '');
+};
+
+// The first definition list item (its own text, without nested examples),
+// searching open shadow roots too.
+const firstDefinition = (root: Element | ShadowRoot): string => {
+  const li = root.querySelector('li');
+  if (li) {
+    const own = li.cloneNode(true) as Element;
+    own.querySelectorAll('ul, ol').forEach((list) => list.remove());
+    return own.textContent?.replace(/\s+/g, ' ').trim() ?? '';
+  }
+  for (const el of root.querySelectorAll('*')) {
+    if (el.shadowRoot) {
+      const found = firstDefinition(el.shadowRoot);
+      if (found) return found;
+    }
+  }
+  return '';
 };
 
 /** The dictionaries a hint can be taken from: no web searches, no paid AI. */
@@ -64,7 +108,7 @@ export const hintFromDictionary = async (
       await provider.init?.();
       const outcome = await provider.lookup(word, { lang, signal, container });
       if (!outcome.ok) continue;
-      const sense = firstSense(textOf(container), word);
+      const sense = firstSense(firstDefinition(container) || textOf(container), word);
       if (sense) return sense;
     } catch (err) {
       console.warn('[vocabulary] dictionary hint failed', provider.id, err);
