@@ -13,6 +13,17 @@ const makeAppService = (files: Record<string, string> = {}) =>
   }) as unknown as AppService;
 
 const occurrence = (sentence: string, at: number) => ({ sentence, at, bookHash: 'b1' });
+const occurrenceEntry = (key: string) => ({
+  id: `en:${key}`,
+  lang: 'en',
+  key,
+  word: key,
+  state: 'none' as const,
+  occurrences: [occurrence('Saved.', 1)],
+  createdAt: 1,
+  modifiedAt: 0,
+  deletedAt: null,
+});
 
 beforeEach(() => {
   vi.useFakeTimers();
@@ -171,6 +182,70 @@ describe('vocabularyStore', () => {
     const { entries } = useVocabularyStore.getState();
     expect(entries['en:restored']!.dirty).toBe(true);
     expect(entries['en:looked']!.dirty).toBe(true);
+  });
+
+  it('flush saves the newest list even while a delayed save is still writing', async () => {
+    const files: Record<string, string> = {};
+    let releaseFirst: (() => void) | null = null;
+    const appService = {
+      exists: vi.fn(async () => false),
+      readFile: vi.fn(),
+      writeFile: vi.fn((path: string, _base: string, content: string) => {
+        if (!releaseFirst) {
+          // The delayed save stalls; it finishes only after flush has run.
+          return new Promise<void>((resolve) => {
+            releaseFirst = () => {
+              files[path] = content;
+              resolve();
+            };
+          });
+        }
+        files[path] = content;
+        return Promise.resolve();
+      }),
+    } as unknown as AppService;
+    await useVocabularyStore.getState().load(appService);
+    const s = useVocabularyStore.getState();
+    s.ensureEntry('first', 'en');
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(releaseFirst).not.toBeNull();
+    s.ensureEntry('second', 'en');
+    const flushed = s.flush();
+    releaseFirst!();
+    await flushed;
+    const ids = JSON.parse(files[VOCABULARY_FILENAME]!).entries.map((e: { id: string }) => e.id);
+    expect(ids).toContain('en:second');
+  });
+
+  it('saves a word looked up while the file is loading, without dropping the file', async () => {
+    const files: Record<string, string> = {
+      [VOCABULARY_FILENAME]: JSON.stringify({
+        version: 1,
+        entries: [{ ...occurrenceEntry('old') }],
+      }),
+    };
+    let finishRead: (() => void) | null = null;
+    const appService = {
+      exists: vi.fn(async (path: string) => path in files),
+      readFile: vi.fn(
+        (path: string) =>
+          new Promise((resolve) => {
+            finishRead = () => resolve(files[path]);
+          }),
+      ),
+      writeFile: vi.fn(async (path: string, _base: string, content: string) => {
+        files[path] = content;
+      }),
+    } as unknown as AppService;
+    const loading = useVocabularyStore.getState().load(appService);
+    await vi.advanceTimersByTimeAsync(0);
+    useVocabularyStore.getState().ensureEntry('new', 'en');
+    await vi.advanceTimersByTimeAsync(1000);
+    finishRead!();
+    await loading;
+    await vi.advanceTimersByTimeAsync(1000);
+    const ids = JSON.parse(files[VOCABULARY_FILENAME]!).entries.map((e: { id: string }) => e.id);
+    expect(ids.sort()).toEqual(['en:new', 'en:old']);
   });
 
   it('merges remote entries without marking them dirty', () => {

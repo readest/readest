@@ -52,16 +52,25 @@ interface VocabularyStore {
 let appServiceRef: AppService | null = null;
 let persistTimer: ReturnType<typeof setTimeout> | null = null;
 
+// Writes run one at a time, each saving the list as it is when it starts, so
+// a slow earlier write can never land over a newer one. Nothing is written
+// until the file has been loaded: the list in memory would be partial.
+let writeChain: Promise<void> = Promise.resolve();
+const saveNow = (): Promise<void> => {
+  const run = writeChain.then(() => {
+    if (!appServiceRef || !useVocabularyStore.getState().loaded) return;
+    return writeVocabularyFile(appServiceRef, Object.values(useVocabularyStore.getState().entries));
+  });
+  writeChain = run.catch(() => {});
+  return run;
+};
+
 const schedulePersist = () => {
   if (!appServiceRef) return;
   if (persistTimer) clearTimeout(persistTimer);
   persistTimer = setTimeout(() => {
     persistTimer = null;
-    if (!appServiceRef) return;
-    const entries = Object.values(useVocabularyStore.getState().entries);
-    writeVocabularyFile(appServiceRef, entries).catch((err) =>
-      console.warn('[vocabulary] failed to save', err),
-    );
+    saveNow().catch((err) => console.warn('[vocabulary] failed to save', err));
   }, PERSIST_DELAY_MS);
 };
 
@@ -120,6 +129,8 @@ export const useVocabularyStore = create<VocabularyStore>((set, get) => {
         console.warn('[vocabulary] unreadable data file, keeping a copy', err);
         await keepUnreadableCopy(appService);
       }
+      // Saves made before the file loaded were skipped; save the merged list.
+      const unsaved = Object.keys(get().entries).length > 0;
       set((s) => {
         const entries = { ...s.entries };
         // Lookups recorded before the file finished loading win the merge, and
@@ -132,6 +143,7 @@ export const useVocabularyStore = create<VocabularyStore>((set, get) => {
         }
         return { entries, loaded: true, loadedCount: list.length, version: s.version + 1 };
       });
+      if (unsaved) schedulePersist();
     },
 
     recordLookup: ({ word, lang, occurrence }) => {
@@ -182,11 +194,10 @@ export const useVocabularyStore = create<VocabularyStore>((set, get) => {
       );
     },
 
-    flush: async () => {
+    flush: () => {
       if (persistTimer) clearTimeout(persistTimer);
       persistTimer = null;
-      if (!appServiceRef) return;
-      await writeVocabularyFile(appServiceRef, Object.values(get().entries));
+      return saveNow();
     },
 
     markPushed: (pushed) => {

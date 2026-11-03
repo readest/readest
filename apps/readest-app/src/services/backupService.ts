@@ -368,8 +368,10 @@ async function collectBackupEntries(
     console.warn('Skipping statistics backup:', error);
   }
 
-  // The vocabulary builder's words live in the Data dir too.
+  // The vocabulary builder's words live in the Data dir too. Save any change
+  // still waiting for the delayed save first.
   try {
+    await useVocabularyStore.getState().flush();
     const entries = await readVocabularyFile(appService);
     if (entries.length) {
       texts.push({ name: VOCABULARY_FILENAME, content: serializeVocabulary(entries) });
@@ -767,6 +769,8 @@ export async function restoreFromBackupZip(
     try {
       const data = await vocabularyEntry.getData!(new Uint8ArrayWriter());
       const backup = parseVocabularyFile(new TextDecoder().decode(data));
+      // Let pending saves finish first, so none lands over the restored list.
+      await useVocabularyStore.getState().flush();
       const merged = new Map((await readVocabularyFile(appService)).map((e) => [e.id, e]));
       for (const b of backup) {
         const local = merged.get(b.id);
