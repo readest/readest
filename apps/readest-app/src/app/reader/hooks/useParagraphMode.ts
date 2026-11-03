@@ -515,7 +515,9 @@ export const useParagraphMode = ({ bookKey, viewRef }: UseParagraphModeProps) =>
 
     try {
       await view.renderer.nextSection?.();
-      const newSectionReady = await waitForNewSection(oldDoc);
+      const newSectionReady =
+        (getPrimaryContent()?.doc !== oldDoc || !view.renderer.atEnd) &&
+        (await waitForNewSection(oldDoc));
 
       if (!newSectionReady) {
         pendingNavigationRef.current = null;
@@ -575,7 +577,9 @@ export const useParagraphMode = ({ bookKey, viewRef }: UseParagraphModeProps) =>
 
     try {
       await view.renderer.prevSection?.();
-      const newSectionReady = await waitForNewSection(oldDoc);
+      const newSectionReady =
+        (getPrimaryContent()?.doc !== oldDoc || !view.renderer.atStart) &&
+        (await waitForNewSection(oldDoc));
 
       if (!newSectionReady) {
         pendingNavigationRef.current = null;
@@ -772,23 +776,25 @@ export const useParagraphMode = ({ bookKey, viewRef }: UseParagraphModeProps) =>
       }
     };
 
-    const handleNext = (event: CustomEvent) => {
-      if (event.detail?.bookKey === bookKeyRef.current && paragraphConfig.enabled) {
-        goToNextParagraph();
-      }
+    let active = true;
+    let navigation = Promise.resolve();
+    const enqueueNavigation = (event: CustomEvent, move: () => Promise<boolean>) => {
+      if (event.detail?.bookKey !== bookKeyRef.current || !paragraphConfig.enabled) return;
+      const result = navigation.then(async () => {
+        if (active) await move();
+      });
+      navigation = result.catch(() => {});
+      return result;
     };
-
-    const handlePrev = (event: CustomEvent) => {
-      if (event.detail?.bookKey === bookKeyRef.current && paragraphConfig.enabled) {
-        goToPrevParagraph();
-      }
-    };
+    const handleNext = (event: CustomEvent) => enqueueNavigation(event, goToNextParagraph);
+    const handlePrev = (event: CustomEvent) => enqueueNavigation(event, goToPrevParagraph);
 
     eventDispatcher.on('toggle-paragraph-mode', handleToggle);
     eventDispatcher.on('paragraph-next', handleNext);
     eventDispatcher.on('paragraph-prev', handlePrev);
 
     return () => {
+      active = false;
       eventDispatcher.off('toggle-paragraph-mode', handleToggle);
       eventDispatcher.off('paragraph-next', handleNext);
       eventDispatcher.off('paragraph-prev', handlePrev);

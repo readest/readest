@@ -86,6 +86,10 @@ vi.mock('@/services/sync/bookData/engine', () => ({
   pushBookData: bookData.pushBookData,
 }));
 
+// Resolve the mocked access module up front. The store reaches the sync client
+// only through dynamic imports, and a module that first requests a mock while
+// its importOriginal factory is still pending binds to the real module.
+import '@/utils/access';
 import { NodeDatabaseService } from '@/services/database/nodeDatabaseService';
 import {
   BookTTSCacheStore,

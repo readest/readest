@@ -803,6 +803,7 @@ export async function POST(req: NextRequest) {
                   | 'group_name'
                   | 'group_updated_at'
                   | 'page_count'
+                  | 'original_filename'
                 >
               > &
               Pick<DBBook, 'title' | 'author' | 'tags'>;
@@ -815,6 +816,9 @@ export async function POST(req: NextRequest) {
             // Group membership likewise merges on its own clock (issue #5911).
             const group = resolveGroupMerge(clientBook, serverBook, clientIsNewer);
             const pageCount = resolvePageCountMerge(clientBook, serverBook, clientIsNewer);
+            // Import provenance only fills a blank; page-turn clocks and peers
+            // without the filename must not replace one already recorded.
+            const originalFilename = serverBook.original_filename || clientBook.original_filename;
             if (clientIsNewer) {
               // Client wins the row; graft the fresher status + cover +
               // metadata onto it (server's may be the newer one even though
@@ -832,6 +836,7 @@ export async function POST(req: NextRequest) {
               clientBook.group_name = group.group_name;
               clientBook.group_updated_at = group.group_updated_at;
               clientBook.page_count = pageCount;
+              clientBook.original_filename = originalFilename;
               toUpdate.push(clientBook);
             } else {
               // Only rewrite when a resolved field VALUE differs from the
@@ -845,12 +850,15 @@ export async function POST(req: NextRequest) {
               const metadataChanged = bookMetadataChanged(meta, serverBook);
               const groupChanged = bookGroupChanged(group, serverBook);
               const pageCountChanged = pageCount !== (serverBook.page_count ?? null);
+              const originalFilenameChanged =
+                (originalFilename ?? null) !== (serverBook.original_filename ?? null);
               if (
                 statusChanged ||
                 coverChanged ||
                 metadataChanged ||
                 groupChanged ||
-                pageCountChanged
+                pageCountChanged ||
+                originalFilenameChanged
               ) {
                 // Server wins the row, but the client's status, cover and/or
                 // metadata is the fresher one. Graft the fresher fields onto
@@ -876,6 +884,7 @@ export async function POST(req: NextRequest) {
                 propagated.group_name = group.group_name;
                 propagated.group_updated_at = group.group_updated_at;
                 propagated.page_count = pageCount;
+                propagated.original_filename = originalFilename;
                 toUpdate.push(propagated);
               } else {
                 batchAuthoritativeRecords.push(serverData);

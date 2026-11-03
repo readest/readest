@@ -1614,8 +1614,6 @@
   "Search on Goodreads": "在 Goodreads 中搜索",
   "Reference Pages": "参考页码",
   "Reference Page Count": "参考总页数",
-  "Lookup app reset. The next lookup will ask again.": "已重置查词应用。下次查词时将再次询问。",
-  "System Lookup App": "系统查词应用",
   "Share": "分享",
   "Share text after selection": "选择后分享文本",
   "Customize Toolbar": "自定义工具栏",
@@ -2598,5 +2596,13 @@
   "For this book only": "仅对本书生效",
   "Tap": "轻点",
   "Click": "单击",
-  "Long Press": "长按"
+  "Long Press": "长按",
+  "Weight": "字重",
+  "Slightly heavier": "稍粗",
+  "Search history": "搜索历史",
+  "Clear All": "全部清除",
+  "Remove {{term}} from search history": "从搜索历史中移除{{term}}",
+  "Remove from history": "从历史记录中移除",
+  "Lookup App": "查词应用",
+  "Thinking": "思考"
 }

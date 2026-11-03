@@ -1422,7 +1422,6 @@
   "Wikipedia": "ვიკიპედია",
   "System Dictionary": "სისტემური ლექსიკონი",
   "Disable System Dictionary first to change this.": "ამის შესაცვლელად ჯერ გამორთეთ სისტემური ლექსიკონი.",
-  "Lookup app reset. The next lookup will ask again.": "ძებნის აპლიკაცია განულდა. შემდეგ ძებნაზე ხელახლა გკითხავთ.",
   "URL template must start with http(s):// and contain %WORD%.": "URL შაბლონი უნდა იწყებოდეს http(s)://-ით და შეიცავდეს %WORD%-ს.",
   "Name cannot be empty.": "სახელი ცარიელი ვერ იქნება.",
   "System": "სისტემა",
@@ -1457,7 +1456,6 @@
   "Importing…": "მიმდინარეობს იმპორტი…",
   "Import Dictionary": "ლექსიკონის იმპორტი",
   "Add Web Search": "ვებ ძებნის დამატება",
-  "System Lookup App": "სისტემური ძებნის აპლიკაცია",
   "StarDict bundles need .ifo, .idx, and .dict.dz files (.syn optional).": "StarDict-ის პაკეტებს სჭირდება .ifo, .idx და .dict.dz ფაილები (.syn არასავალდებულოა).",
   "MDict bundles use .mdx files; companion .mdd and .css files are optional.": "MDict-ის პაკეტები იყენებს .mdx ფაილებს; თანმხლები .mdd და .css ფაილები არასავალდებულოა.",
   "DICT bundles need a .index file and a .dict.dz file.": "DICT-ის პაკეტებს სჭირდება .index და .dict.dz ფაილები.",
@@ -2667,5 +2665,13 @@
   "For this book only": "მხოლოდ ამ წიგნისთვის",
   "Tap": "შეხება",
   "Click": "დაწკაპუნება",
-  "Long Press": "ხანგრძლივი დაჭერა"
+  "Long Press": "ხანგრძლივი დაჭერა",
+  "Weight": "სისქე",
+  "Slightly heavier": "ოდნავ უფრო სქელი",
+  "Search history": "ძებნის ისტორია",
+  "Clear All": "ყველაფრის გასუფთავება",
+  "Remove {{term}} from search history": "{{term}} ძებნის ისტორიიდან წაშლა",
+  "Remove from history": "ისტორიიდან წაშლა",
+  "Lookup App": "საძიებო აპი",
+  "Thinking": "ფიქრი"
 }

@@ -2245,6 +2245,65 @@ describe('TTSController', () => {
     });
   });
 
+  test.each([
+    'preload',
+    'preprocess',
+  ] as const)('a skipped utterance awaiting %s cannot abort the speech that replaced it (#7065)', async (pendingStage) => {
+    await controller.initViewTTS(0);
+    controller.ttsClient = controller.ttsEdgeClient;
+    vi.spyOn(controller, 'preloadNextSSML').mockResolvedValue();
+    let finishOldPreload!: () => void;
+    const oldPreload = new Promise<void>((resolve) => {
+      finishOldPreload = resolve;
+    });
+    const preprocess = vi.fn(async (ssml: string) => {
+      if (pendingStage === 'preprocess' && ssml.includes('old')) await oldPreload;
+      return ssml;
+    });
+    controller.preprocessCallback = preprocess;
+    const playbackSignals: AbortSignal[] = [];
+    vi.mocked(controller.ttsClient.speak).mockImplementation(
+      async function* (ssml, signal, preload) {
+        if (preload) {
+          if (pendingStage === 'preload' && ssml.includes('old')) await oldPreload;
+          return;
+        }
+        playbackSignals.push(signal);
+        yield { code: 'boundary', mark: '0' };
+        if (!signal.aborted) {
+          await new Promise<void>((resolve) =>
+            signal.addEventListener('abort', () => resolve(), { once: true }),
+          );
+        }
+      },
+    );
+
+    await controller.speak('<speak>old uncached sentence</speak>');
+    await vi.waitFor(() => {
+      if (pendingStage === 'preload') {
+        expect(controller.ttsClient.speak).toHaveBeenCalledWith(
+          '<speak>old uncached sentence</speak>',
+          expect.anything(),
+          true,
+        );
+      } else {
+        expect(preprocess).toHaveBeenCalledWith('<speak>old uncached sentence</speak>');
+      }
+    });
+    await controller.forward(true);
+    await vi.waitFor(() => expect(playbackSignals).toHaveLength(1));
+    expect(playbackSignals[0]!.aborted).toBe(false);
+
+    finishOldPreload();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(
+      playbackSignals[0]!.aborted,
+      'finishing a skipped preload must leave the new utterance playing',
+    ).toBe(false);
+    expect(controller.state).toBe('playing');
+    expect(playbackSignals).toHaveLength(1);
+  });
+
   describe('preloadSSML', () => {
     test('does nothing when ssml is undefined', async () => {
       await controller.preloadSSML(undefined, new AbortController().signal);

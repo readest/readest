@@ -1599,8 +1599,6 @@
   "Search on Goodreads": "Goodreads에서 검색",
   "Reference Pages": "참조 페이지",
   "Reference Page Count": "참조 페이지 수",
-  "Lookup app reset. The next lookup will ask again.": "검색 앱을 초기화했습니다. 다음 검색 시 다시 묻습니다.",
-  "System Lookup App": "시스템 검색 앱",
   "Share": "공유",
   "Share text after selection": "선택 후 텍스트 공유",
   "Customize Toolbar": "도구 모음 사용자 지정",
@@ -2598,5 +2596,13 @@
   "For this book only": "이 책에만 적용",
   "Tap": "탭",
   "Click": "클릭",
-  "Long Press": "길게 누르기"
+  "Long Press": "길게 누르기",
+  "Weight": "굵기",
+  "Slightly heavier": "약간 더 굵게",
+  "Search history": "검색 기록",
+  "Clear All": "모두 지우기",
+  "Remove {{term}} from search history": "검색 기록에서 {{term}} 삭제",
+  "Remove from history": "기록에서 삭제",
+  "Lookup App": "사전 앱",
+  "Thinking": "생각"
 }

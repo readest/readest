@@ -52,6 +52,80 @@ const makeBook = (): Book =>
     title: 'A Book',
   }) as Book;
 
+describe('KOSyncClient – filename checksums', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it.each([
+    ['My Book.epub', '9a671b9d07b5404d84ce60af27058b04'],
+    ['阅读 Café 100%20.EPUB', '0df8ac8a37723d854b27eeb11dd337c5'],
+    ['first\\chapter.pdf', 'e2cae7b1d6c9d35e1537f242ebd9f950'],
+    ['one/part.pdf', '5311de6b0b50b8d4725340dda1c2990e'],
+  ])('hashes the exact original basename %s, including its extension', (originalFilename, digest) => {
+    const client = new KOSyncClient(makeConfig({ checksumMethod: 'filename' }));
+    const book = {
+      ...makeBook(),
+      originalFilename,
+      sourceTitle: 'Managed name',
+      title: 'Edited title',
+    };
+    expect(client.getDocumentDigest(book)).toBe(digest);
+    expect(client.getDocumentDigest({ ...book, hash: 'optimized-file-content' })).toBe(digest);
+  });
+
+  it('keeps using the content hash when File Content is selected', () => {
+    const client = new KOSyncClient(makeConfig());
+    const book = { ...makeBook(), originalFilename: 'My Book.epub' };
+    expect(client.getDocumentDigest(book)).toBe(book.hash);
+  });
+
+  it.each([
+    undefined,
+    '',
+  ])('uses title and extension without an original filename (%s)', (originalFilename) => {
+    const client = new KOSyncClient(makeConfig({ checksumMethod: 'filename' }));
+    const book: Book = {
+      ...makeBook(),
+      originalFilename,
+      title: 'Edited title',
+      sourceTitle: 'Managed name',
+      format: 'EPUB',
+      metadata: {
+        title: 'Embedded title',
+        author: 'Author',
+        language: 'en',
+        absFileHash: 'abs-content-hash',
+      },
+    };
+    expect(client.getDocumentDigest(book)).toBe('c15ad0fcc7d0a60ecf61bcd69116c3c0');
+    expect(client.getDocumentDigest({ ...book, hash: 'optimized-file-content' })).toBe(
+      'c15ad0fcc7d0a60ecf61bcd69116c3c0',
+    );
+    expect(client.getDocumentDigest({ ...book, title: '阅读 Café 100%20', format: 'PDF' })).toBe(
+      'eff390be0b42c506d89e5a2ef5b79c36',
+    );
+    expect(new KOSyncClient(makeConfig()).getDocumentDigest(book)).toBe('abs-content-hash');
+  });
+
+  it.each([
+    ['My Book.epub', '9a671b9d07b5404d84ce60af27058b04'],
+    [undefined, 'c15ad0fcc7d0a60ecf61bcd69116c3c0'],
+  ])('pulls and pushes using the same filename digest (%s)', async (originalFilename, digest) => {
+    const mock = setFetch(() => jsonResponse(200, { percentage: 0.5 }));
+    const book: Book = { ...makeBook(), title: 'Edited title', format: 'EPUB', originalFilename };
+    const client = new KOSyncClient(makeConfig({ userkey: 'key', checksumMethod: 'filename' }));
+
+    const progress = await client.getProgress(book);
+    await client.updateProgress(book, '/body/DocFragment[12]', 0.5);
+
+    expect(mock.mock.calls[0]![0]).toBe(`http://192.168.1.50/syncs/progress/${digest}`);
+    expect(progress?.document).toBe(digest);
+    const putInit = mock.mock.calls[1]![1] as RequestInit;
+    expect(JSON.parse(putInit.body as string).document).toBe(digest);
+  });
+});
+
 describe('KOSyncClient.getProgress – server response shapes', () => {
   beforeEach(() => {
     vi.restoreAllMocks();

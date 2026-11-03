@@ -576,6 +576,7 @@ export async function importBook(
   try {
     let format: BookFormat;
     let filename: string;
+    let originalFilename: string | undefined;
     // When the Rust EPUB parser succeeds it gives us the partialMD5 for free,
     // so we can short-circuit the JS hashing pass below.
     let nativeHash: string | undefined;
@@ -590,13 +591,9 @@ export async function importBook(
         ({ book: loadedBook, format } = await openPseStreamBook(data));
         filename = file as string;
       } else {
-        if (typeof file === 'string') {
-          fileobj = await fs.openFile(file, 'None');
-          filename = fileobj.name || getFilename(file);
-        } else {
-          fileobj = file;
-          filename = file.name;
-        }
+        fileobj = typeof file === 'string' ? await fs.openFile(file, 'None') : file;
+        filename = fileobj.name;
+        originalFilename = filename;
         // A download saved as "novel.txt (1)" is still a TXT, and its title
         // should not read "novel.txt" either. Drop the duplicate marker before
         // anything downstream classifies or names the book (issue #5959).
@@ -731,21 +728,19 @@ export async function importBook(
     }
 
     const hash = isPseStream ? md5(file as string) : (nativeHash ?? (await partialMD5(fileobj!)));
-
-    // PDF metadata is often generic boilerplate (e.g. every PowerPoint export
-    // is titled "PowerPoint Presentation" by the same author), so metadata
-    // alone wrongly collapses distinct files into one book (issue #5411).
-    // Salt the hash with the original filename so only same-named PDFs dedupe.
-    const metaHash = getMetadataHash(
-      loadedBook.metadata,
-      format === 'PDF' ? getBaseFilename(filename) : undefined,
-    );
-    const stableHash = hasVolatileIdentifiers(format)
-      ? getStableMetadataHash(loadedBook.metadata)
-      : undefined;
     let existingBook = lookupIndex
       ? lookupIndex.byHash.get(hash)
       : books.find((b) => b.hash === hash);
+    const metaHash =
+      format === 'PDF' && existingBook
+        ? existingBook.metaHash
+        : getMetadataHash(
+            loadedBook.metadata,
+            format === 'PDF' ? getBaseFilename(filename) : undefined,
+          );
+    const stableHash = hasVolatileIdentifiers(format)
+      ? getStableMetadataHash(loadedBook.metadata)
+      : undefined;
     let metaHashMatch = false;
     let oldBookDir: string | undefined;
     if (existingBook) {
@@ -806,7 +801,11 @@ export async function importBook(
       hash,
       format,
       metaHash,
-      title: formatTitle(loadedBook.metadata.title),
+      title:
+        format === 'PDF'
+          ? (existingBook?.title ?? filename.replace(/\.[^.]*$/, ''))
+          : formatTitle(loadedBook.metadata.title),
+      originalFilename: existingBook ? existingBook.originalFilename : originalFilename,
       sourceTitle: formatTitle(loadedBook.metadata.title),
       primaryLanguage,
       author: formatAuthors(loadedBook.metadata.author, primaryLanguage),
@@ -865,6 +864,7 @@ export async function importBook(
       existingBook.format = book.format;
       existingBook.metaHash = metaHash;
       existingBook.title = book.title;
+      existingBook.originalFilename = book.originalFilename;
       existingBook.sourceTitle = book.sourceTitle;
       existingBook.author = book.author;
       existingBook.primaryLanguage = book.primaryLanguage;
@@ -879,6 +879,7 @@ export async function importBook(
       existingBook.format = book.format;
       existingBook.metaHash = metaHash;
       existingBook.title = book.title;
+      existingBook.originalFilename = book.originalFilename;
       existingBook.sourceTitle = book.sourceTitle;
       existingBook.author = book.author;
       existingBook.primaryLanguage = book.primaryLanguage;

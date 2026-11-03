@@ -1599,8 +1599,6 @@
   "Search on Goodreads": "Cari di Goodreads",
   "Reference Pages": "Halaman rujukan",
   "Reference Page Count": "Bilangan halaman rujukan",
-  "Lookup app reset. The next lookup will ask again.": "Apl carian ditetapkan semula. Carian seterusnya akan bertanya lagi.",
-  "System Lookup App": "Apl carian sistem",
   "Share": "Kongsi",
   "Share text after selection": "Kongsi teks selepas pemilihan",
   "Customize Toolbar": "Sesuaikan Bar Alat",
@@ -2598,5 +2596,13 @@
   "For this book only": "Untuk buku ini sahaja",
   "Tap": "Ketik",
   "Click": "Klik",
-  "Long Press": "Tekan lama"
+  "Long Press": "Tekan lama",
+  "Weight": "Ketebalan",
+  "Slightly heavier": "Sedikit lebih tebal",
+  "Search history": "Sejarah carian",
+  "Clear All": "Kosongkan semua",
+  "Remove {{term}} from search history": "Alih keluar {{term}} daripada sejarah carian",
+  "Remove from history": "Alih keluar daripada sejarah",
+  "Lookup App": "Aplikasi carian",
+  "Thinking": "Penaakulan"
 }

@@ -83,6 +83,8 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
             commands::get_external_sdcard_path,
             commands::open_external_url,
             commands::show_lookup_popover,
+            commands::get_lookup_apps,
+            commands::set_lookup_app,
             commands::select_directory,
             commands::show_file_picker,
             commands::get_storefront_region_code,

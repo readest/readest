@@ -146,7 +146,14 @@ describe('downloadNovel', () => {
     expect(stableIdentifier(firstIdentity)).not.toBe(stableIdentifier(secondIdentity));
   });
 
-  it('keeps failed images as placeholders without remote URLs', async () => {
+  it('keeps failed images as placeholders without remote URLs', async ({ onTestFinished }) => {
+    const originalFetch = globalThis.fetch;
+    const fetchImage = vi.spyOn(globalThis, 'fetch').mockImplementation((input, init) => {
+      // zip.js also fetches its embedded WASM using a data URL on first use.
+      if (String(input).startsWith('data:')) return originalFetch(input, init);
+      return Promise.reject(new Error('image unavailable'));
+    });
+    onTestFinished(() => fetchImage.mockRestore());
     const page = chapterPage(1).replace(
       '<div id="content">',
       '<div id="content"><img src="https://cdn.example.org/x.jpg"/><figure><img src="/y.png"/></figure>',
@@ -154,8 +161,19 @@ describe('downloadNovel', () => {
     const book = await downloadNovel(toc({ chapters: toc().chapters.slice(0, 5) }), TOC_URL, {
       fetchPage: makeFetchPage({ [`${BASE}/novel/7/1`]: page }),
     });
+    const imageUrls = fetchImage.mock.calls
+      .map(([url]) => String(url))
+      .filter((url) => !url.startsWith('data:'));
+    expect(imageUrls).toEqual(['https://cdn.example.org/x.jpg', `${BASE}/y.png`]);
     const files = await unzipEpub(book.file);
+    const chapter = new DOMParser().parseFromString(
+      files.get('OEBPS/chapter1.xhtml')!,
+      'text/html',
+    );
+    expect(chapter.querySelectorAll('img')).toHaveLength(2);
+    expect(chapter.querySelectorAll('img[src]')).toHaveLength(0);
     expect(files.get('OEBPS/chapter1.xhtml')).not.toContain('src="https://cdn.example.org');
+    expect(files.get('OEBPS/chapter1.xhtml')).not.toContain(`src="${BASE}/y.png`);
     expect(files.get('OEBPS/chapter1.xhtml')).not.toContain('src="/y.png');
   });
 

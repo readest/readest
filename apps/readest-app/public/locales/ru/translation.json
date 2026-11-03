@@ -1698,8 +1698,6 @@
   "Search on Goodreads": "Искать в Goodreads",
   "Reference Pages": "Страницы бумажной книги",
   "Reference Page Count": "Число страниц бумажной книги",
-  "Lookup app reset. The next lookup will ask again.": "Приложение для поиска сброшено. При следующем поиске запрос появится снова.",
-  "System Lookup App": "Системное приложение для поиска",
   "Share": "Поделиться",
   "Share text after selection": "Поделиться текстом после выделения",
   "Customize Toolbar": "Настроить панель инструментов",
@@ -2805,5 +2803,13 @@
   "For this book only": "Только для этой книги",
   "Tap": "Касание",
   "Click": "Щелчок",
-  "Long Press": "Долгое нажатие"
+  "Long Press": "Долгое нажатие",
+  "Weight": "Толщина",
+  "Slightly heavier": "Немного толще",
+  "Search history": "История поиска",
+  "Clear All": "Очистить всё",
+  "Remove {{term}} from search history": "Удалить {{term}} из истории поиска",
+  "Remove from history": "Удалить из истории",
+  "Lookup App": "Приложение для поиска",
+  "Thinking": "Размышление"
 }

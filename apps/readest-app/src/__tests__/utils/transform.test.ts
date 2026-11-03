@@ -497,6 +497,36 @@ describe('transformBook metadataUpdatedAt (issue #5438)', () => {
   });
 });
 
+describe('book original filename', () => {
+  const book: Book = {
+    hash: 'h',
+    format: 'EPUB',
+    title: 'T',
+    author: 'A',
+    originalFilename: '原書 (original edition).epub',
+    createdAt: 1,
+    updatedAt: 2,
+  };
+
+  it('round-trips the original import filename through the DB record', () => {
+    const db = transformBookToDB(book, 'u');
+    expect(db).toMatchObject({ original_filename: book.originalFilename });
+    expect(transformBookFromDB(db).originalFilename).toBe(book.originalFilename);
+  });
+
+  it('omits the outgoing column when no original filename is known', () => {
+    const db = transformBookToDB({ ...book, originalFilename: undefined }, 'u');
+    expect(JSON.parse(JSON.stringify(db))).not.toHaveProperty('original_filename');
+  });
+
+  it.each([undefined, null])('keeps the local filename when the DB value is %s', (value) => {
+    const row = transformBookToDB(book, 'u');
+    const pulled = transformBookFromDB({ ...row, original_filename: value });
+    expect(pulled).not.toHaveProperty('originalFilename');
+    expect({ ...book, ...pulled }.originalFilename).toBe(book.originalFilename);
+  });
+});
+
 describe('book page count', () => {
   const book: Book = {
     hash: 'h',

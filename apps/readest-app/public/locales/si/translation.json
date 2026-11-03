@@ -1632,8 +1632,6 @@
   "Search on Goodreads": "Goodreads හි සොයන්න",
   "Reference Pages": "යොමු පිටු",
   "Reference Page Count": "යොමු පිටු ගණන",
-  "Lookup app reset. The next lookup will ask again.": "සෙවුම් යෙදුම යළි සකසන ලදී. ඊළඟ සෙවුමේදී නැවත අසනු ඇත.",
-  "System Lookup App": "පද්ධති සෙවුම් යෙදුම",
   "Share": "බෙදාගන්න",
   "Share text after selection": "තේරීමෙන් පසු පෙළ බෙදාගන්න",
   "Customize Toolbar": "මෙවලම් තීරුව අභිරුචිකරණය කරන්න",
@@ -2667,5 +2665,13 @@
   "For this book only": "මෙම පොතට පමණි",
   "Tap": "තට්ටු කිරීම",
   "Click": "ක්ලික් කිරීම",
-  "Long Press": "දිගු එබීම"
+  "Long Press": "දිගු එබීම",
+  "Weight": "ඝනකම",
+  "Slightly heavier": "මඳක් ඝනකම්",
+  "Search history": "සෙවුම් ඉතිහාසය",
+  "Clear All": "සියල්ල හිස් කරන්න",
+  "Remove {{term}} from search history": "සෙවුම් ඉතිහාසයෙන් {{term}} ඉවත් කරන්න",
+  "Remove from history": "ඉතිහාසයෙන් ඉවත් කරන්න",
+  "Lookup App": "සෙවුම් යෙදුම",
+  "Thinking": "සිතීම"
 }

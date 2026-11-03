@@ -1698,8 +1698,6 @@
   "Search on Goodreads": "Išči v Goodreads",
   "Reference Pages": "Referenčne strani",
   "Reference Page Count": "Število referenčnih strani",
-  "Lookup app reset. The next lookup will ask again.": "Aplikacija za iskanje je ponastavljena. Ob naslednjem iskanju bo znova vprašala.",
-  "System Lookup App": "Sistemska aplikacija za iskanje",
   "Share": "Deli",
   "Share text after selection": "Deli besedilo po izbiri",
   "Customize Toolbar": "Prilagodi orodno vrstico",
@@ -2805,5 +2803,13 @@
   "For this book only": "Samo za to knjigo",
   "Tap": "Dotik",
   "Click": "Klik",
-  "Long Press": "Dolg pritisk"
+  "Long Press": "Dolg pritisk",
+  "Weight": "Debelina",
+  "Slightly heavier": "Nekoliko debelejše",
+  "Search history": "Zgodovina iskanja",
+  "Clear All": "Počisti vse",
+  "Remove {{term}} from search history": "Odstrani {{term}} iz zgodovine iskanja",
+  "Remove from history": "Odstrani iz zgodovine",
+  "Lookup App": "Aplikacija za iskanje",
+  "Thinking": "Razmišljanje"
 }

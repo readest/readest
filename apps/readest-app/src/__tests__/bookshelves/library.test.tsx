@@ -459,6 +459,28 @@ describe('library bookshelf integration', () => {
       expect(screen.getByTestId(id).querySelector('button')?.textContent).toBe('Book 0');
     expect(screen.getByTestId('default').querySelector('button')?.textContent).toBe('Book 19');
   });
+  it.each(['', 'q=story'])('ignores articles in library and search title sorting (%s)', (query) => {
+    const articleBooks = ['The Gatsby Story', 'Dune Story', 'A Tale Story'].map((title, index) => ({
+      ...books[index]!,
+      title,
+    }));
+    mocks.params = new URLSearchParams(query);
+    useSettingsStore.setState({
+      settings: {
+        ...DEFAULT_SYSTEM_SETTINGS,
+        libraryGroupBy: 'none',
+        librarySortBy: 'title',
+        librarySortByAuto: false,
+        librarySortAscending: true,
+      },
+    });
+    render(<Bookshelf {...props} libraryBooks={articleBooks} />);
+    const displayedTitles = () =>
+      Array.from(screen.getByTestId('default').querySelectorAll('button')).map(
+        (b) => b.textContent,
+      );
+    expect(displayedTitles()).toEqual(['Dune Story', 'The Gatsby Story', 'A Tale Story']);
+  });
   it('uses the global view for non-carousel shelves and keeps all carousel results', () => {
     const carousel = { ...createBookshelf('Carousel'), limit: 4 };
     const custom = { ...createBookshelf('Following view mode'), layout: 'grid' as const };

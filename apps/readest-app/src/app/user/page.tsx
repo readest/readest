@@ -218,6 +218,9 @@ const ProfilePage = () => {
         // server, so re-verify those too.
         await verifyGooglePurchaseProducts(purchases);
         await verifyApplePurchaseProducts(purchases);
+        if (!(await refresh())) {
+          throw new Error('Failed to refresh session after restoring purchases');
+        }
         const restoredSubscriptions = purchases
           .filter((p) => !isPurchaseProduct(p.productId))
           .sort((a, b) => new Date(b.purchaseDate).getTime() - new Date(a.purchaseDate).getTime());
@@ -385,7 +388,10 @@ const ProfilePage = () => {
                     </div>
                     <div className='flex flex-col gap-y-8 px-6'>
                       <AccountActions
+                        userEmail={userEmail}
+                        planName={_(userPlanDetails.name)}
                         userPlan={userProfilePlan}
+                        customizationPurchased={customizationPurchased}
                         iapAvailable={iapAvailable}
                         onLogout={handleLogout}
                         onResetPassword={handleResetPassword}

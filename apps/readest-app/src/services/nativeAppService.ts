@@ -40,7 +40,7 @@ import {
 import type { Book } from '@/types/book';
 import { needsQueryRangeReads } from '@/utils/ua';
 import { getOSPlatform, isContentURI, isFileURI, isValidURL } from '@/utils/misc';
-import { getDirPath, getFilename } from '@/utils/path';
+import { getDirPath, getFilename, getPathFilename, getURLFilename } from '@/utils/path';
 import { NativeFile, RemoteFile } from '@/utils/file';
 import {
   copyURIToPath,
@@ -313,11 +313,13 @@ export const nativeFileSystem: FileSystem = {
   async openFile(path: string, base: BaseDir, name?: string, fetcher?: typeof fetch) {
     const normalizedPath = OS_TYPE === 'ios' ? safeDecodePath(path) : path;
     const { fp, baseDir } = this.resolvePath(normalizedPath, base);
-    let fname = safeDecodePath(name || getFilename(fp));
     if (isValidURL(path)) {
+      const fname = name || getURLFilename(path);
       return await new RemoteFile(path, fname, '', Date.now(), fetcher ?? tauriFetch).open();
-    } else if (isContentURI(path) || (isFileURI(path) && OS_TYPE === 'ios')) {
-      fname = safeDecodePath(await basename(path));
+    }
+    if (isContentURI(path) || (isFileURI(path) && OS_TYPE === 'ios')) {
+      const isIOSFileURI = isFileURI(path) && OS_TYPE === 'ios';
+      const fname = isIOSFileURI ? getURLFilename(path) : safeDecodePath(await basename(path));
       if (path.includes('com.android.externalstorage')) {
         // If the URI is from shared internal storage (like /storage/emulated/0),
         // we can access it directly using the path — no need to copy.
@@ -327,7 +329,8 @@ export const nativeFileSystem: FileSystem = {
         // or file:// URIs is security scoped resource in iOS (e.g. from Files app),
         // we cannot access the file directly — so we copy it to a temporary cache location.
         const prefix = await this.getPrefix('Cache');
-        const dst = await join(prefix, `${crypto.randomUUID()}-${decodeURIComponent(fname)}`);
+        const copyName = isIOSFileURI ? fname : decodeURIComponent(fname);
+        const dst = await join(prefix, `${crypto.randomUUID()}-${copyName}`);
         const res = await copyURIToPath({ uri: path, dst });
         if (!res.success) {
           console.error('Failed to open file:', res);
@@ -335,7 +338,10 @@ export const nativeFileSystem: FileSystem = {
         }
         return await new NativeFile(dst, fname, baseDir ? baseDir : null).open();
       }
-    } else if (isFileURI(path)) {
+    }
+    const localPath = OS_TYPE === 'windows' ? fp.replace(/\\/g, '/') : fp;
+    const fname = name || (isFileURI(path) ? getURLFilename(path) : getPathFilename(localPath));
+    if (isFileURI(path)) {
       return await new NativeFile(fp, fname, baseDir ? baseDir : null).open();
     } else if (needsQueryRangeReads(OS_TYPE)) {
       // Android and Linux can't use the asset protocol for ranged reads —

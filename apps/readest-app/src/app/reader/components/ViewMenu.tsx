@@ -112,6 +112,9 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
   const [invertImgColorInDark, setInvertImgColorInDark] = useState(
     viewSettings!.invertImgColorInDark,
   );
+  const [transparentImageBackground, setTransparentImageBackground] = useState(
+    !!viewSettings.transparentImageBackground,
+  );
   const [applyThemeToPDF, setApplyThemeToPDF] = useState(viewSettings!.applyThemeToPDF!);
   const [rtlSpread, setRtlSpread] = useState(bookData?.bookDoc?.dir === 'rtl');
   const supportsOcr = bookData.book?.format === 'CBZ' || bookData.book?.format === 'PDF';
@@ -262,12 +265,13 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
     viewSettings.webtoonMode = webtoonMode;
     getView(bookKey)?.renderer.setAttribute('scroll-gap', getScrollGapAttr(webtoonMode));
     if (webtoonMode) {
-      // Webtoon Mode implies scrolled flow + fit-width (scale-factor 100) so pages
-      // fill the width without horizontal overflow/clipping. Reuse the existing
-      // scrolled / zoomLevel effects rather than duplicating their renderer wiring.
-      if (!isScrolledMode) setScrolledMode(true);
+      // Keep an existing scroll direction so horizontal manga can be gapless too.
+      // Entering from paginated reading still defaults to a vertical webtoon strip.
+      if (!isScrolledMode) {
+        setScrolledMode(true);
+        setScrolledDirection('vertical');
+      }
       if (zoomLevel !== 100) setZoomLevel(100);
-      if (scrolledDirection !== 'vertical') setScrolledDirection('vertical');
       saveViewSettings(envConfig, bookKey, 'scrolled', true, false, false);
     }
     setViewSettings(bookKey, viewSettings);
@@ -304,6 +308,19 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
     saveViewSettings(envConfig, bookKey, 'invertImgColorInDark', invertImgColorInDark, true, true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [invertImgColorInDark]);
+
+  useEffect(() => {
+    if (transparentImageBackground === !!viewSettings.transparentImageBackground) return;
+    saveViewSettings(
+      envConfig,
+      bookKey,
+      'transparentImageBackground',
+      transparentImageBackground,
+      true,
+      true,
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [transparentImageBackground]);
 
   useEffect(() => {
     if (applyThemeToPDF === viewSettings.applyThemeToPDF) return;
@@ -486,7 +503,6 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
               <button
                 title={_('Horizontal Scrolling')}
                 onClick={() => {
-                  if (webtoonMode) setWebtoonMode(false);
                   setScrolledDirection('horizontal');
                   if (!isScrolledMode) setScrolledMode(true);
                 }}
@@ -592,6 +608,14 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
         Icon={invertImgColorInDark ? MdCheck : undefined}
         onClick={() => setInvertImgColorInDark(!invertImgColorInDark)}
       />
+
+      {bookData.book?.format !== 'PDF' && (
+        <MenuItem
+          label={_('Make White Image Backgrounds Transparent')}
+          toggled={transparentImageBackground}
+          onClick={() => setTransparentImageBackground(!transparentImageBackground)}
+        />
+      )}
 
       <hr aria-hidden='true' className='border-base-300 my-1' />
 

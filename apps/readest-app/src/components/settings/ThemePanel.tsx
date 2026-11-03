@@ -35,7 +35,13 @@ import { PREDEFINED_TEXTURES } from '@/styles/textures';
 import { useAtmosphereStore } from '@/store/atmosphereStore';
 import { DefaultHighlightColor, HighlightColor, UserHighlightColor } from '@/types/book';
 import clsx from 'clsx';
-import { ScopeSwitch, SectionTitle, SettingLabel } from './primitives';
+import {
+  BoxedList,
+  SettingsSwitchRow,
+  ScopeSwitch,
+  SectionTitle,
+  SettingLabel,
+} from './primitives';
 import { HIGHLIGHT_COLOR_HEX } from '@/services/constants';
 import ThemeEditor from './theme/ThemeEditor';
 import ThemeModeSelector from './theme/ThemeModeSelector';
@@ -94,6 +100,9 @@ const ThemePanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
   const [invertImgColorInDark, setInvertImgColorInDark] = useState(
     viewSettings.invertImgColorInDark,
   );
+  const [transparentImageBackground, setTransparentImageBackground] = useState(
+    !!viewSettings.transparentImageBackground,
+  );
   const [editTheme, setEditTheme] = useState<CustomTheme | null>(null);
   const [customThemes, setCustomThemes] = useState<Theme[]>([]);
   const [showCustomThemeEditor, setShowCustomThemeEditor] = useState(false);
@@ -115,6 +124,9 @@ const ThemePanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
   );
   const [dialogueHighlightItalic, setDialogueHighlightItalic] = useState(
     viewSettings.dialogueHighlightItalic,
+  );
+  const [dialogueHighlightWeight, setDialogueHighlightWeight] = useState(
+    viewSettings.dialogueHighlightWeight ?? 'normal',
   );
   const [selectedTextureId, setSelectedTextureId] = useState(currentTextureId);
   const [backgroundOpacity, setBackgroundOpacity] = useState(currentBackgroundOpacity);
@@ -152,6 +164,7 @@ const ThemePanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
     resetToDefaults({
       overrideColor: setOverrideColor,
       invertImgColorInDark: setInvertImgColorInDark,
+      transparentImageBackground: setTransparentImageBackground,
       highlightOpacity: setHighlightOpacity,
       codeHighlighting: setcodeHighlighting,
       codeLanguage: setCodeLanguage,
@@ -161,6 +174,7 @@ const ThemePanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
       dialogueHighlightCustomTextColor: setDialogueHighlightCustomTextColor,
       dialogueHighlightTextColor: setDialogueHighlightTextColor,
       dialogueHighlightItalic: setDialogueHighlightItalic,
+      dialogueHighlightWeight: setDialogueHighlightWeight,
       readingRulerEnabled: setReadingRulerEnabled,
       readingRulerLines: setReadingRulerLines,
       readingRulerOpacity: setReadingRulerOpacity,
@@ -212,6 +226,12 @@ const ThemePanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
     saveViewSettings(envConfig, bookKey, 'invertImgColorInDark', invertImgColorInDark);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [invertImgColorInDark]);
+
+  useEffect(() => {
+    if (transparentImageBackground === !!viewSettings.transparentImageBackground) return;
+    saveViewSettings(envConfig, bookKey, 'transparentImageBackground', transparentImageBackground);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [transparentImageBackground]);
 
   useEffect(() => {
     if (overrideColor === viewSettings.overrideColor) return;
@@ -281,7 +301,14 @@ const ThemePanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
     // Capture before the saves below mutate viewSettings in place.
     const customTextColorChanged =
       dialogueHighlightCustomTextColor !== viewSettings.dialogueHighlightCustomTextColor;
+    const weightChanged =
+      dialogueHighlightWeight !== (viewSettings.dialogueHighlightWeight ?? 'normal');
     const saves: Promise<void>[] = [];
+    if (weightChanged) {
+      saves.push(
+        saveViewSettings(envConfig, bookKey, 'dialogueHighlightWeight', dialogueHighlightWeight),
+      );
+    }
     if (dialogueHighlightCustomColor !== viewSettings.dialogueHighlightCustomColor) {
       saves.push(
         saveViewSettings(
@@ -325,11 +352,11 @@ const ThemePanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
     // Recoloring is pure CSS (getStyles reads these fields), so the saved
     // viewSettings refresh via saveViewSettings -> setStyles is enough when
     // the background is on and spans are guaranteed present. With the
-    // background off, spans may not exist yet (text-only mode just turned
-    // on), so re-wrap — but only on that toggle transition, not on every
+    // background off, spans may not exist yet (text color or weight just
+    // enabled marking), so re-wrap on those transitions, not on every
     // color-picker tick, since each run clears and rewrites every document.
     // Wait for every save so each open book has the new settings first.
-    if (!dialogueHighlight && customTextColorChanged) {
+    if (!dialogueHighlight && (customTextColorChanged || weightChanged)) {
       Promise.all(saves).then(refreshDialogueMarks);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -339,6 +366,7 @@ const ThemePanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
     dialogueHighlightCustomTextColor,
     dialogueHighlightTextColor,
     dialogueHighlightItalic,
+    dialogueHighlightWeight,
   ]);
 
   useEffect(() => {
@@ -565,6 +593,22 @@ const ThemePanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
             />
           </label>
 
+          <BoxedList>
+            <SettingsSwitchRow
+              data-setting-id='settings.color.transparentImageBackground'
+              label={_('Make White Image Backgrounds Transparent')}
+              description={_(
+                'Remove white and near-white pixels from images while preserving other colors',
+              )}
+              checked={transparentImageBackground}
+              disabled={
+                !!bookKey &&
+                useBookDataStore.getState().getBookData(bookKey)?.book?.format === 'PDF'
+              }
+              onChange={() => setTransparentImageBackground(!transparentImageBackground)}
+            />
+          </BoxedList>
+
           <label
             data-setting-id='settings.color.overrideBookColor'
             className='flex cursor-pointer items-center justify-between px-4'
@@ -632,6 +676,8 @@ const ThemePanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
             onBackgroundColorChange={setDialogueHighlightColor}
             onCustomTextColorToggle={setDialogueHighlightCustomTextColor}
             italic={dialogueHighlightItalic}
+            weight={dialogueHighlightWeight}
+            onWeightChange={setDialogueHighlightWeight}
             onTextColorChange={setDialogueHighlightTextColor}
             onItalicToggle={setDialogueHighlightItalic}
             data-setting-id='settings.color.dialogueHighlight'
