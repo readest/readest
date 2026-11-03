@@ -26,8 +26,13 @@ interface VimCommandLineProps {
 const VimCommandLine: React.FC<VimCommandLineProps> = ({ bookKey, gridInsets }) => {
   const _ = useTranslation();
   const { appService } = useEnv();
-  const { getBookData, getConfig } = useBookDataStore();
-  const { getView, getProgress, hoveredBookKey } = useReaderStore();
+  // Per-field selectors: this is mounted in every book cell, so a whole-store
+  // subscription would re-render it on every page turn (see BooksGrid).
+  const getBookData = useBookDataStore((s) => s.getBookData);
+  const getConfig = useBookDataStore((s) => s.getConfig);
+  const getView = useReaderStore((s) => s.getView);
+  const getProgress = useReaderStore((s) => s.getProgress);
+  const hoveredBookKey = useReaderStore((s) => s.hoveredBookKey);
   const {
     bookKey: findBookKey,
     typing,
