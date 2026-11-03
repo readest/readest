@@ -1282,15 +1282,51 @@ export const applyTranslationStyle = (viewSettings: ViewSettings) => {
 // "Ignore publisher font names" (#7276): a list that names a generic family is
 // wrapped as `var(--book-serif, Palatino, serif)`. --book-serif is only defined
 // while that category's switch is on, so until then the book's list applies.
-const wrapPublisherFonts = (families: string, rewritten = families) => {
-  const generic = families
-    .split(',')
-    .map((family) => family.trim().toLowerCase())
-    .find((family) => /^(serif|sans-serif|monospace)$/.test(family));
-  if (!generic) return rewritten;
+const wrapPublisherFonts = (families: string, rewriteGenerics = false) => {
+  // Strings, comments and escapes are indivisible; commas inside functions
+  // also belong to the current family. Use the same tokens for detection and
+  // replacement so quoted names and comment text stay byte-for-byte intact.
+  const tokens =
+    families.match(
+      /\/\*[\s\S]*?\*\/|"(?:\\[\s\S]|[^"\\])*"|'(?:\\[\s\S]|[^'\\])*'|\\(?:[0-9a-fA-F]{1,6}\s?|[^\n\r\f])|[\w-]+|\s+|[^\s]/g,
+    ) ?? [];
+  const generics = new Set<string>();
+  let depth = 0;
+  let start = 0;
+  const finishFamily = (end: number) => {
+    const names: number[] = [];
+    for (let i = start; i < end; i++) {
+      if (!/^\s+$|^\/\*/.test(tokens[i]!)) names.push(i);
+    }
+    const index = names[0];
+    if (
+      names.length === 1 &&
+      index !== undefined &&
+      /^(serif|sans-serif|monospace)$/i.test(tokens[index]!)
+    ) {
+      const name = tokens[index]!.toLowerCase();
+      generics.add(name);
+      if (rewriteGenerics) tokens[index] = `var(--${name}, ${name})`;
+    }
+  };
+  for (let i = 0; i < tokens.length; i++) {
+    if (tokens[i] === '(') depth++;
+    else if (tokens[i] === ')') depth--;
+    else if (tokens[i] === ',' && depth === 0) {
+      finishFamily(i);
+      start = i + 1;
+    }
+  }
+  finishFamily(tokens.length);
+  if (!generics.size) return families;
+  const rewritten = tokens.join('');
   const list = rewritten.trim();
   const lead = rewritten.slice(0, rewritten.indexOf(list));
-  return `${lead}var(--book-${generic}, ${list})${rewritten.slice(lead.length + list.length)}`;
+  const wrapped = [...generics].reduceRight(
+    (fallback, name) => `var(--book-${name}, ${fallback})`,
+    list,
+  );
+  return lead + wrapped + rewritten.slice(lead.length + list.length);
 };
 
 const FONT_SIZE =
@@ -1641,16 +1677,7 @@ export const transformStylesheet = (
     .replace(/(font-family\s*:\s*)([^;{}]*)/gi, (_match: string, prefix: string, value: string) => {
       const important = /\s*!\s*important\s*$/i.exec(value);
       const families = important ? value.slice(0, important.index) : value;
-      const rewritten = families
-        .split(',')
-        .map((family: string) => {
-          const generic = /^(serif|sans-serif|monospace)$/i.exec(family.trim());
-          if (!generic) return family;
-          const name = generic[1]!.toLowerCase();
-          return family.replace(generic[1]!, `var(--${name}, ${name})`);
-        })
-        .join(',');
-      return prefix + wrapPublisherFonts(families, rewritten) + (important ? important[0] : '');
+      return prefix + wrapPublisherFonts(families, true) + (important ? important[0] : '');
     })
     .replace(/([\s;])font-weight\s*:\s*normal/gi, '$1font-weight: var(--font-weight)')
     .replace(/([\s;])color\s*:\s*black/gi, '$1color: var(--theme-fg-color)')
