@@ -135,7 +135,7 @@ describe("ReadestSyncClient transport failures", function()
 end)
 
 describe("ReadestSyncClient without Turbo", function()
-    local Client, saved, child, exited, spawn_ok, replies, rpc_calls, result_path, original_open, original_time, now, terminated
+    local Client, saved, child, exited, spawn_ok, replies, rpc_calls, result_path, original_open, original_time, now, terminated, slept, finish_after
     local function swap(name, value)
         saved[name] = package.loaded[name] or false
         package.loaded[name] = value
@@ -145,6 +145,7 @@ describe("ReadestSyncClient without Turbo", function()
         saved, replies = {}, {}
         child, exited, spawn_ok, rpc_calls, result_path = nil, false, true, 0, nil
         original_time, now, terminated = os.time, 100, 0
+        slept, finish_after = 0, nil
         os.time = function() return now end
         original_open = io.open
         io.open = function(path, mode)
@@ -162,6 +163,10 @@ describe("ReadestSyncClient without Turbo", function()
             end,
             isSubProcessDone = function() return exited end,
             terminateSubProcess = function() terminated = terminated + 1 end,
+            usleep = function()
+                slept = slept + 1
+                if slept == finish_after then exited = true end
+            end,
         })
         swap("ffi", {cdef = function() end, C = {_exit = function() end}})
         package.loaded["readest_syncclient"] = nil
@@ -342,6 +347,29 @@ describe("ReadestSyncClient without Turbo", function()
         os.remove(dir .. "/other.json")
         os.remove(dir .. "/readest_sync_100_1.json")
         lfs.rmdir(dir)
+    end)
+    it("lets a running worker finish before KOReader quits (#6685)", function()
+        client(function() return {status = 200} end):pullChanges({}, callback)
+        finish_after = 3
+        stubs.UIManager:quit()
+        assert.are.equal(3, slept)
+        assert.are.equal(0, terminated)
+        assert.are.equal(1, stubs.UIManager.quit_calls)
+    end)
+    it("kills a worker still running after the exit grace period and quits (#6685)", function()
+        client(function() return {status = 200} end):pullChanges({}, callback)
+        stubs.UIManager:quit()
+        assert.are.equal(50, slept)
+        assert.are.equal(1, terminated)
+        assert.are.equal(1, stubs.UIManager.quit_calls)
+    end)
+    it("quits without waiting when no worker is running (#6685)", function()
+        client(function() return {status = 200} end):pullChanges({}, callback)
+        exited = true
+        stubs.UIManager:drain()
+        stubs.UIManager:quit()
+        assert.are.equal(0, slept)
+        assert.are.equal(1, stubs.UIManager.quit_calls)
     end)
     it("reports a dead worker instead of leaving a callback pending forever", function()
         client(function() return {status = 200} end):pullChanges({}, callback)

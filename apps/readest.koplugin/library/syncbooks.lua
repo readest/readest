@@ -614,10 +614,12 @@ function M.downloadBook(book, opts, cb)
                 ffi.C._exit(0)
             end, true)
             if not pid then finish(false, "fork failed"); return end
+            require("readest_syncclient").trackWorker(pid)
 
             local poll
             poll = function()
                 if FFIUtil.isSubProcessDone(pid) then
+                    require("readest_syncclient").untrackWorker(pid)
                     local result = FFIUtil.readAllFromFD(parent_read_fd) or ""
                     if cancelled then
                         os.remove(partial)
@@ -757,11 +759,13 @@ function M.downloadCover(book, opts, cb)
                 if cb then cb(false, "fork failed") end
                 return
             end
+            require("readest_syncclient").trackWorker(pid)
 
             local poll_interval = 0.3
             local poll
             poll = function()
                 if FFIUtil.isSubProcessDone(pid) then
+                    require("readest_syncclient").untrackWorker(pid)
                     local result = FFIUtil.readAllFromFD(parent_read_fd) or ""
                     if result == "ok" then
                         if cb then cb(true, dst) end
