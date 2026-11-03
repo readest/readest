@@ -146,6 +146,15 @@ const ThemePanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
   const [readingRulerLines, setReadingRulerLines] = useState(viewSettings.readingRulerLines);
   const [readingRulerOpacity, setReadingRulerOpacity] = useState(viewSettings.readingRulerOpacity);
   const [readingRulerColor, setReadingRulerColor] = useState(viewSettings.readingRulerColor);
+  const [readingRulerStyle, setReadingRulerStyle] = useState(
+    viewSettings.readingRulerStyle ?? 'band',
+  );
+  const [readingRulerLineColor, setReadingRulerLineColor] = useState(
+    viewSettings.readingRulerLineColor ?? '#808080',
+  );
+  const [readingRulerLineThickness, setReadingRulerLineThickness] = useState(
+    viewSettings.readingRulerLineThickness ?? 2,
+  );
 
   const {
     textures: customTextures,
@@ -178,6 +187,9 @@ const ThemePanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
       readingRulerEnabled: setReadingRulerEnabled,
       readingRulerLines: setReadingRulerLines,
       readingRulerOpacity: setReadingRulerOpacity,
+      readingRulerStyle: setReadingRulerStyle,
+      readingRulerLineColor: setReadingRulerLineColor,
+      readingRulerLineThickness: setReadingRulerLineThickness,
     });
     resetThemeScopes();
     setSelectedTextureId('none');
@@ -422,6 +434,35 @@ const ThemePanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [readingRulerColor]);
 
+  useEffect(() => {
+    saveViewSettings(envConfig, bookKey, 'readingRulerStyle', readingRulerStyle, false, false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [readingRulerStyle]);
+
+  useEffect(() => {
+    saveViewSettings(
+      envConfig,
+      bookKey,
+      'readingRulerLineColor',
+      readingRulerLineColor,
+      false,
+      false,
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [readingRulerLineColor]);
+
+  useEffect(() => {
+    saveViewSettings(
+      envConfig,
+      bookKey,
+      'readingRulerLineThickness',
+      readingRulerLineThickness,
+      false,
+      false,
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [readingRulerLineThickness]);
+
   // Re-apply the CURRENT page's resolved texture rather than the edited
   // values: editing the other page's scope must not repaint this page (the
   // shared #background-texture style element belongs to the mounted page,
@@ -650,6 +691,12 @@ const ThemePanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
             lines={readingRulerLines}
             opacity={readingRulerOpacity}
             color={readingRulerColor}
+            rulerStyle={readingRulerStyle}
+            lineColor={readingRulerLineColor}
+            lineThickness={readingRulerLineThickness}
+            onStyleChange={setReadingRulerStyle}
+            onLineColorChange={setReadingRulerLineColor}
+            onLineThicknessChange={setReadingRulerLineThickness}
             onEnabledChange={setReadingRulerEnabled}
             onLinesChange={setReadingRulerLines}
             onOpacityChange={setReadingRulerOpacity}
