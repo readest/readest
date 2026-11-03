@@ -28,8 +28,9 @@ export const extractSentence = (before: string, word: string, after: string): st
   return `${before.slice(start)}${word}${after.slice(0, end)}`.replace(/\s+/g, ' ').trim();
 };
 
-const occurrenceKey = (o: VocabularyOccurrence) =>
-  `${o.bookHash ?? ''}|${o.cfi ?? ''}|${o.sentence}`;
+// The same sentence in the same book is one occurrence; its CFI can shift
+// (Word Lens hint markup), so it isn't part of the identity.
+const occurrenceKey = (o: VocabularyOccurrence) => `${o.bookHash ?? ''}|${o.sentence}`;
 
 const normalizeOccurrences = (list: VocabularyOccurrence[]): VocabularyOccurrence[] => {
   const seen = new Set<string>();

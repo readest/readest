@@ -40,6 +40,15 @@ describe('sentenceAt', () => {
     expect(sentenceAt(rangeOver(doc, 'Nemo'))).toBe('Then Nemo left.');
   });
 
+  it('leaves out ruby annotations such as Word Lens hints and furigana', () => {
+    const doc = docOf(
+      '<p>Captain Nemo smiled at the note <ruby class="wl-gloss">and<rt>和</rt></ruby> said nothing.</p>',
+    );
+    expect(sentenceAt(rangeOver(doc, 'Nemo'))).toBe(
+      'Captain Nemo smiled at the note and said nothing.',
+    );
+  });
+
   it('works for text without spaces', () => {
     const doc = docOf('<p>他走了。我们必须斟酌这件事！然后呢</p>');
     expect(sentenceAt(rangeOver(doc, '斟酌'))).toBe('我们必须斟酌这件事！');

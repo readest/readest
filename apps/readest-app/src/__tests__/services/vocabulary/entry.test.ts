@@ -74,10 +74,16 @@ describe('addOccurrence', () => {
   it('puts the newest first and ignores an identical occurrence', () => {
     let e = addOccurrence(entry(), occ('A cat.', 1));
     e = addOccurrence(e, occ('B cat.', 2));
-    e = addOccurrence(e, occ('B cat.', 3, { cfi: 'epubcfi(/6/2!/4/99)' }));
+    e = addOccurrence(e, occ('B cat.', 3, { bookHash: 'h2' }));
     expect(e.occurrences.map((o) => o.sentence)).toEqual(['B cat.', 'B cat.', 'A cat.']);
-    const again = addOccurrence(e, occ('A cat.', 1));
-    expect(again.occurrences).toHaveLength(3);
+    // The same sentence in the same book is one occurrence, even at a new CFI
+    // (hint markup changes the CFI of a word looked up again).
+    const again = addOccurrence(e, occ('A cat.', 4, { cfi: 'epubcfi(/6/2!/4/77)' }));
+    expect(again.occurrences.map((o) => [o.sentence, o.at])).toEqual([
+      ['A cat.', 4],
+      ['B cat.', 3],
+      ['B cat.', 2],
+    ]);
   });
   it(`keeps at most ${MAX_OCCURRENCES}`, () => {
     let e = entry();

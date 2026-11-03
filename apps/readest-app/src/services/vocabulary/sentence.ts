@@ -8,6 +8,13 @@ const blockOf = (node: Node): Element | null => {
   return element?.closest(BLOCK_SELECTOR) ?? element;
 };
 
+// A range's text without ruby annotations (Word Lens hints, furigana).
+const textOf = (range: Range): string => {
+  const fragment = range.cloneContents();
+  fragment.querySelectorAll('rt, rp').forEach((el) => el.remove());
+  return fragment.textContent ?? '';
+};
+
 /**
  * The sentence a selection sits in, read from its own block only and with the
  * text on either side left untrimmed, so the spaces around the word survive.
@@ -24,5 +31,5 @@ export const sentenceAt = (range: Range): string => {
   const last = blockOf(range.endContainer);
   if (last) tail.setEnd(last, last.childNodes.length);
   else tail.collapse(true);
-  return extractSentence(head.toString(), range.toString(), tail.toString());
+  return extractSentence(textOf(head), textOf(range), textOf(tail));
 };
