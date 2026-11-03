@@ -20,16 +20,23 @@ const textOf = (range: Range): string => {
  * text on either side left untrimmed, so the spaces around the word survive.
  */
 export const sentenceAt = (range: Range): string => {
-  const doc = range.startContainer.ownerDocument!;
-  const head = doc.createRange();
-  const first = blockOf(range.startContainer);
-  if (first) head.setStart(first, 0);
-  else head.collapse(true);
-  head.setEnd(range.startContainer, range.startOffset);
-  const tail = doc.createRange();
-  tail.setStart(range.endContainer, range.endOffset);
-  const last = blockOf(range.endContainer);
-  if (last) tail.setEnd(last, last.childNodes.length);
-  else tail.collapse(true);
-  return extractSentence(textOf(head), textOf(range), textOf(tail));
+  // Runs while rendering the dictionary popup; a range it can't read (e.g. a
+  // section remounting under it) gives '' and the caller falls back.
+  try {
+    const doc = range.startContainer.ownerDocument!;
+    const head = doc.createRange();
+    const first = blockOf(range.startContainer);
+    if (first) head.setStart(first, 0);
+    else head.collapse(true);
+    head.setEnd(range.startContainer, range.startOffset);
+    const tail = doc.createRange();
+    tail.setStart(range.endContainer, range.endOffset);
+    const last = blockOf(range.endContainer);
+    if (last) tail.setEnd(last, last.childNodes.length);
+    else tail.collapse(true);
+    return extractSentence(textOf(head), textOf(range), textOf(tail));
+  } catch (err) {
+    console.warn('[vocabulary] could not read the sentence', err);
+    return '';
+  }
 };

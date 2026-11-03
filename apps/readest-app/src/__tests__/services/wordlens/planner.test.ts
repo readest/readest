@@ -181,6 +181,15 @@ describe('planGlosses vocabulary marks (#6613)', () => {
     expect(occ[0]!.gloss).toBe('神秘');
   });
 
+  it('shows a typed hint as written, only shortened to the display cap', () => {
+    const occ = planGlosses(
+      'cryptic',
+      withLemma,
+      opts({ learning: [['cryptic', 'odd, unclear / vague']] }),
+    );
+    expect(occ[0]!.gloss).toBe('odd, unclear / vague');
+  });
+
   it('never hints a Mastered word', () => {
     expect(planGlosses('A cryptic note.', withLemma, opts({ mastered: ['cryptic'] }))).toEqual([]);
   });

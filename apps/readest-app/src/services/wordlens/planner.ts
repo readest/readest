@@ -6,7 +6,13 @@ import type {
   WordLensSourceLang,
 } from './types';
 import { isDifficult } from './difficulty';
-import { baseFormCandidates, cleanGloss, glossMentionsWord, glossesShareMeaning } from './gloss';
+import {
+  baseFormCandidates,
+  capForDisplay,
+  cleanGloss,
+  glossMentionsWord,
+  glossesShareMeaning,
+} from './gloss';
 import { normalizeWordKey } from '@/services/vocabulary/entry';
 
 export interface PlanOptions {
@@ -87,8 +93,10 @@ export const planGlosses = (
       if (keys.some((k) => k && marks.mastered.has(k))) continue;
       const key = keys.find((k) => k && marks.learning.has(k));
       if (key) {
+        // A saved hint is the reader's own text: shown as written, only capped.
+        const saved = marks.learning.get(key)?.replace(/\s+/g, ' ').trim();
         const packGloss = (entry ?? source.lookup(key))?.gloss ?? '';
-        const gloss = cleanGloss(marks.learning.get(key) ?? packGloss, opts.monolingual);
+        const gloss = saved ? capForDisplay(saved) : cleanGloss(packGloss, opts.monolingual);
         if (gloss) occurrences.push({ start: t.start, end: t.end, word: t.word, gloss });
         if (occurrences.length >= cap) break;
         continue;

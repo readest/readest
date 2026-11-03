@@ -133,6 +133,9 @@ describe('VocabularyView', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Edit Hint' }));
     const input = screen.getByRole('textbox', { name: 'Hint' });
     fireEvent.change(input, { target: { value: '沙虫' } });
+    // WebKit reports the Enter that confirms an IME composition as keyCode 229.
+    fireEvent.keyDown(input, { key: 'Enter', keyCode: 229 });
+    expect(useVocabularyStore.getState().entries['en:sandworm']!.hint).toBeUndefined();
     fireEvent.keyDown(input, { key: 'Enter' });
     expect(useVocabularyStore.getState().entries['en:sandworm']!.hint).toBe('沙虫');
   });

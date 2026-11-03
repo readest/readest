@@ -100,7 +100,8 @@ const HintEditor: React.FC<{ entry: VocabularyEntry; onDone: () => void }> = ({
         onChange={(e) => setValue(e.target.value)}
         // Capture phase: Dialog stops every keydown at its own node.
         onKeyDownCapture={(e) => {
-          if (e.key === 'Enter' && !e.nativeEvent.isComposing) save();
+          // keyCode 229: WebKit's Enter that confirms an IME composition.
+          if (e.key === 'Enter' && !e.nativeEvent.isComposing && e.keyCode !== 229) save();
         }}
         placeholder={_('Short hint shown above the word')}
         className='eink-bordered input input-sm border-base-content/20 w-full'

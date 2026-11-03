@@ -493,7 +493,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
         ? {
             lang: vocabularyLang(bookData.book?.primaryLanguage),
             occurrence: {
-              sentence: selection.range ? sentenceAt(selection.range) : selection.text,
+              sentence: (selection.range && sentenceAt(selection.range)) || selection.text,
               bookHash: bookData.book?.hash,
               bookTitle: bookData.book?.title,
               bookAuthor: bookData.book?.author,

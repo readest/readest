@@ -49,6 +49,15 @@ describe('sentenceAt', () => {
     );
   });
 
+  it('returns an empty string instead of throwing on a range it cannot read', () => {
+    const doc = docOf('<p>Captain Nemo smiled.</p>');
+    const range = rangeOver(doc, 'Nemo');
+    range.cloneContents = () => {
+      throw new Error('detached');
+    };
+    expect(sentenceAt(range)).toBe('');
+  });
+
   it('works for text without spaces', () => {
     const doc = docOf('<p>他走了。我们必须斟酌这件事！然后呢</p>');
     expect(sentenceAt(rangeOver(doc, '斟酌'))).toBe('我们必须斟酌这件事！');
