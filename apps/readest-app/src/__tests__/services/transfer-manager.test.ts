@@ -2,6 +2,12 @@ import { describe, test, expect, beforeEach, afterEach, vi, type Mock } from 'vi
 import { useTransferStore, TransferItem } from '@/store/transferStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import type { SystemSettings } from '@/types/settings';
+import { setCachedUserPlan } from '@/services/sync/cloudSyncProvider';
+import { runFileBookDownload } from '@/services/sync/file/runLibrarySync';
+
+vi.mock('@/services/sync/file/runLibrarySync', () => ({
+  runFileBookDownload: vi.fn(async () => true),
+}));
 
 // ── Mocks ────────────────────────────────────────────────────────────
 // The transferManager module is a singleton, so we need to mock its
@@ -106,6 +112,7 @@ beforeEach(() => {
   resetTransferStore();
   resetTransferManager();
   vi.clearAllMocks();
+  vi.mocked(runFileBookDownload).mockResolvedValue(true);
   localStorage.clear();
   // Book uploads are gated on the selected cloud sync provider and
   // deferred until settings hydrate; hydrate with Readest Cloud selected
@@ -122,6 +129,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  setCachedUserPlan('free');
   vi.restoreAllMocks();
 });
 
@@ -202,6 +210,30 @@ describe('TransferManager', () => {
       const store = useTransferStore.getState();
       expect(store.transfers['persisted-1']).toBeDefined();
       expect(store.isQueuePaused).toBe(true);
+    });
+
+    test('persists provider activity completed before manager initialization', async () => {
+      const store = useTransferStore.getState();
+      const id = store.addFileTransfer('s3', '/Readest/library.json', 'download');
+      store.setTransferStatus(id, 'completed');
+      localStorage.clear();
+      await transferManager.initialize(makeAppService() as never, () => [], vi.fn(), translationFn);
+      const persisted = JSON.parse(localStorage.getItem('readest_transfer_queue')!);
+      expect(persisted.transfers[id]).toMatchObject({ provider: 's3', status: 'completed' });
+    });
+
+    test('concurrent initialization shares one queue restore and the first app service', async () => {
+      const first = makeAppService();
+      const second = makeAppService();
+      const book = makeBook();
+      await Promise.all([
+        transferManager.initialize(first as never, () => [book], vi.fn(), translationFn),
+        transferManager.initialize(second as never, () => [book], vi.fn(), translationFn),
+      ]);
+      transferManager.queueDownload(book);
+      await vi.advanceTimersByTimeAsync(500);
+      expect(first['downloadBook']).toHaveBeenCalledTimes(1);
+      expect(second['downloadBook']).not.toHaveBeenCalled();
     });
 
     test('is idempotent — second call is a no-op', async () => {
@@ -684,6 +716,103 @@ describe('TransferManager', () => {
 
       const transfer = useTransferStore.getState().transfers[id];
       expect(transfer!.status).toBe('completed');
+    });
+
+    test.each([
+      'webdav',
+      'googleDrive',
+      's3',
+      'onedrive',
+      'icloud',
+    ] as const)('downloads queued books through %s without calling Readest Cloud', async (provider) => {
+      const book = makeBook({ uploadedAt: 1000 });
+      const appService = makeAppService();
+      const updateBook = vi.fn();
+      setCachedUserPlan('plus');
+      useSettingsStore.setState({
+        settings: {
+          ...useSettingsStore.getState().settings,
+          readestCloud: { enabled: false },
+          [provider]: { enabled: true },
+        } as SystemSettings,
+      });
+      await transferManager.initialize(
+        appService as never,
+        () => [book],
+        updateBook,
+        translationFn,
+      );
+
+      const id = transferManager.queueDownload(book, 10, true)!;
+      await vi.advanceTimersByTimeAsync(500);
+
+      expect(runFileBookDownload).toHaveBeenCalledWith(
+        expect.objectContaining({ getAppService: expect.any(Function) }),
+        book,
+        expect.any(Function),
+        id,
+      );
+      expect(appService['downloadBook']).not.toHaveBeenCalled();
+      expect(updateBook).toHaveBeenCalledWith(book);
+      expect(book.downloadedAt).toBeTruthy();
+      expect(useTransferStore.getState().transfers[id]?.status).toBe('completed');
+    });
+
+    test.each([
+      true,
+      false,
+    ])('falls back to Readest Cloud only when enabled (%s) after a file-provider miss', async (readestEnabled) => {
+      const book = makeBook({ uploadedAt: 1000 });
+      const appService = makeAppService();
+      const updateBook = vi.fn();
+      setCachedUserPlan('plus');
+      useSettingsStore.setState({
+        settings: {
+          version: 1,
+          readestCloud: { enabled: readestEnabled },
+          s3: { enabled: true },
+        } as SystemSettings,
+      });
+      vi.mocked(runFileBookDownload).mockResolvedValue(false);
+      await transferManager.initialize(
+        appService as never,
+        () => [book],
+        updateBook,
+        translationFn,
+      );
+
+      const id = transferManager.queueDownload(book)!;
+      await vi.advanceTimersByTimeAsync(500);
+
+      expect(runFileBookDownload).toHaveBeenCalled();
+      expect(appService['downloadBook']).toHaveBeenCalledTimes(readestEnabled ? 1 : 0);
+      expect(updateBook).toHaveBeenCalledTimes(readestEnabled ? 1 : 0);
+      expect(!!book.downloadedAt).toBe(readestEnabled);
+      const transfer = useTransferStore.getState().transfers[id]!;
+      if (readestEnabled) {
+        expect(transfer.status).toBe('completed');
+      } else {
+        expect(transfer.status).not.toBe('completed');
+        expect(transfer.retryCount).toBeGreaterThan(0);
+      }
+    });
+
+    test('provider-owned file activity persists without occupying queue slots or being retried', async () => {
+      const book = makeBook();
+      const appService = makeAppService();
+      await transferManager.initialize(appService as never, () => [book], vi.fn(), translationFn);
+      const store = useTransferStore.getState();
+      const fileId = store.addFileTransfer('s3', '/Readest/library.json', 'download');
+      transferManager.cancelTransfer(fileId);
+      expect(useTransferStore.getState().transfers[fileId]?.status).toBe('in_progress');
+      const id = transferManager.queueDownload(book)!;
+      await vi.advanceTimersByTimeAsync(500);
+      expect(useTransferStore.getState().transfers[id]?.status).toBe('completed');
+      store.setTransferStatus(fileId, 'failed', 'Offline');
+      transferManager.retryAllFailed();
+      expect(useTransferStore.getState().transfers[fileId]?.status).toBe('failed');
+      const persisted = JSON.parse(localStorage.getItem('readest_transfer_queue')!);
+      expect(persisted.transfers[fileId]).toMatchObject({ provider: 's3', status: 'failed' });
     });
 
     test('successful delete calls appService.deleteBook', async () => {

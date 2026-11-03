@@ -61,11 +61,12 @@ export const getReadyFileSyncBackends = (
 const buildEngine = async (
   envConfig: EnvConfigType,
   kind: FileSyncBackendKind,
+  parentTransferId?: string,
 ): Promise<FileSyncEngine | null> => {
   if (!canBackendRun(kind)) return null;
   const settings = useSettingsStore.getState().settings;
   const appService = await envConfig.getAppService();
-  const fileProvider = await createFileSyncProvider(kind, settings);
+  const fileProvider = await createFileSyncProvider(kind, settings, parentTransferId);
   if (!fileProvider) return null;
   const store = createAppLocalStore({ appService, settings, envConfig });
   return new FileSyncEngine(fileProvider, store);
@@ -229,11 +230,12 @@ export const runFileBookDownload = async (
   envConfig: EnvConfigType,
   book: Book,
   onProgress?: ProgressHandler,
+  parentTransferId?: string,
 ): Promise<boolean> => {
   const backends = getActiveFileSyncBackends(useSettingsStore.getState().settings);
   for (const kind of backends) {
     try {
-      const engine = await buildEngine(envConfig, kind);
+      const engine = await buildEngine(envConfig, kind, parentTransferId);
       if (!engine) continue;
       if (!(await engine.downloadBookFile(book, onProgress))) continue;
       book.downloadedAt = Date.now();

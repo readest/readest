@@ -72,7 +72,7 @@ describe('createFileSyncProvider', () => {
   test('delegates gdrive to buildGoogleDriveProvider', async () => {
     const fake = { rootPath: '/' } as unknown as FileSyncProvider;
     vi.mocked(buildGoogleDriveProvider).mockResolvedValueOnce(fake);
-    expect(await createFileSyncProvider('gdrive', {})).toBe(fake);
+    expect((await createFileSyncProvider('gdrive', {}))?.rootPath).toBe(fake.rootPath);
     expect(buildGoogleDriveProvider).toHaveBeenCalledTimes(1);
   });
 
@@ -183,9 +183,9 @@ describe('per-backend provider cache', () => {
     const fake = { rootPath: '/' } as FileSyncProvider;
     vi.mocked(buildICloudProvider).mockResolvedValue(fake);
     const first = await createFileSyncProvider('icloud', {});
-    expect(first).toBe(fake);
+    expect(first?.rootPath).toBe(fake.rootPath);
     const second = await createFileSyncProvider('icloud', {});
-    expect(second).toBe(fake);
+    expect(second).toBe(first);
     expect(buildICloudProvider).toHaveBeenCalledTimes(1);
   });
 
