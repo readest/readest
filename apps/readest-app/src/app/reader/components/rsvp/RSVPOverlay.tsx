@@ -31,8 +31,7 @@ import { Overlay } from '@/components/Overlay';
 import DictionarySheet from '@/app/reader/components/annotator/DictionarySheet';
 import DictionaryPopup from '@/app/reader/components/annotator/DictionaryPopup';
 import type { VocabularyCapture } from '@/app/reader/components/annotator/DictionaryResultsView';
-import { buildSelectionContext } from '@/services/dictionaries/contextDictionary';
-import { extractSentence } from '@/services/vocabulary/entry';
+import { sentenceAt } from '@/services/vocabulary/sentence';
 import TTSFollowIndicator, { TtsSyncStatus } from '@/app/reader/components/tts/TTSFollowIndicator';
 import { Toggle } from '@/components/primitives/toggle';
 
@@ -168,8 +167,7 @@ const WpmEntry: React.FC<WpmEntryProps> = ({ controller, wpm, bgColor }) => {
 // The sentence a looked-up word sits in; the bare word if the range can't be read.
 const sentenceAround = (range: Range, word: string): string => {
   try {
-    const { before, after } = buildSelectionContext(range);
-    return extractSentence(before, word, after);
+    return sentenceAt(range) || word;
   } catch {
     return word;
   }

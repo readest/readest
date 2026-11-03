@@ -97,7 +97,8 @@ import SelectionRangeEditor from './SelectionRangeEditor';
 import AnnotationPopup from './AnnotationPopup';
 import DictionaryPopup from './DictionaryPopup';
 import type { VocabularyCapture } from './DictionaryResultsView';
-import { extractSentence, vocabularyLang } from '@/services/vocabulary/entry';
+import { vocabularyLang } from '@/services/vocabulary/entry';
+import { sentenceAt } from '@/services/vocabulary/sentence';
 import DictionarySheet from './DictionarySheet';
 import NoteEditorSheet from './NoteEditorSheet';
 import TranslatorPopup from './TranslatorPopup';
@@ -492,13 +493,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
         ? {
             lang: vocabularyLang(bookData.book?.primaryLanguage),
             occurrence: {
-              sentence: dictionarySelection
-                ? extractSentence(
-                    dictionarySelection.before,
-                    selection.text,
-                    dictionarySelection.after,
-                  )
-                : selection.text,
+              sentence: selection.range ? sentenceAt(selection.range) : selection.text,
               bookHash: bookData.book?.hash,
               bookTitle: bookData.book?.title,
               bookAuthor: bookData.book?.author,
@@ -508,7 +503,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
           }
         : undefined,
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [dictionarySelection, selection],
+    [showDictionaryPopup, selection],
   );
 
   const getAnnotationText = useCallback(
