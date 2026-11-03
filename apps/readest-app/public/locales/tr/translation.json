@@ -2700,5 +2700,10 @@
   "All Books": "Tüm kitaplar",
   "Words": "Kelimeler",
   "No words match": "Eşleşen kelime yok",
-  "Select a word": "Bir kelime seçin"
+  "Select a word": "Bir kelime seçin",
+  "Find on Page": "Sayfada bul",
+  "Next Match": "Sonraki eşleşme",
+  "Previous Match": "Önceki eşleşme",
+  "Extend Selection": "Seçimi genişlet",
+  "Pattern not found: {{term}}": "Desen bulunamadı: {{term}}"
 }

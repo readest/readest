@@ -2769,5 +2769,10 @@
   "All Books": "כל הספרים",
   "Words": "מילים",
   "No words match": "אין מילים תואמות",
-  "Select a word": "בחר מילה"
+  "Select a word": "בחר מילה",
+  "Find on Page": "חיפוש בדף",
+  "Next Match": "ההתאמה הבאה",
+  "Previous Match": "ההתאמה הקודמת",
+  "Extend Selection": "הרחבת הבחירה",
+  "Pattern not found: {{term}}": "התבנית לא נמצאה: {{term}}"
 }

@@ -2631,5 +2631,10 @@
   "All Books": "すべての本",
   "Words": "単語",
   "No words match": "一致する単語はありません",
-  "Select a word": "単語を選択してください"
+  "Select a word": "単語を選択してください",
+  "Find on Page": "ページ内を検索",
+  "Next Match": "次の一致",
+  "Previous Match": "前の一致",
+  "Extend Selection": "選択範囲を拡張",
+  "Pattern not found: {{term}}": "パターンが見つかりません: {{term}}"
 }

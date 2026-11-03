@@ -547,6 +547,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
     handlePointerUp,
     handleDoubleClick,
     handleSelectionchange,
+    handleRendererRelocate,
     handleShowPopup,
     handleUpToPopup,
     handleContextmenu,
@@ -936,6 +937,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
     onDrawAnnotation,
     onShowAnnotation,
     onRelocate,
+    onRendererRelocate: handleRendererRelocate,
   });
 
   // Mobile native-touch handler (Android MainActivity / iOS touch observer).

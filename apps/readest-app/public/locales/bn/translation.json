@@ -2700,5 +2700,10 @@
   "All Books": "সব বই",
   "Words": "শব্দ",
   "No words match": "কোনো মিল পাওয়া শব্দ নেই",
-  "Select a word": "একটি শব্দ বেছে নিন"
+  "Select a word": "একটি শব্দ বেছে নিন",
+  "Find on Page": "পৃষ্ঠায় খুঁজুন",
+  "Next Match": "পরবর্তী মিল",
+  "Previous Match": "পূর্ববর্তী মিল",
+  "Extend Selection": "নির্বাচন বাড়ান",
+  "Pattern not found: {{term}}": "প্যাটার্ন পাওয়া যায়নি: {{term}}"
 }

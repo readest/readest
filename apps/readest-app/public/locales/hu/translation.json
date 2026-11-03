@@ -2700,5 +2700,10 @@
   "All Books": "Minden könyv",
   "Words": "Szavak",
   "No words match": "Nincs egyező szó",
-  "Select a word": "Válassz egy szót"
+  "Select a word": "Válassz egy szót",
+  "Find on Page": "Keresés az oldalon",
+  "Next Match": "Következő találat",
+  "Previous Match": "Előző találat",
+  "Extend Selection": "Kijelölés bővítése",
+  "Pattern not found: {{term}}": "A minta nem található: {{term}}"
 }

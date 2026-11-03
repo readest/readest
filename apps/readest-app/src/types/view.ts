@@ -2,7 +2,6 @@ import { BookDoc } from '@/libs/document';
 import { BookNote, BookSearchConfig, BookSearchResult } from '@/types/book';
 import { TTSGranularity } from '@/services/tts';
 import { TTS } from 'foliate-js/tts.js';
-import * as CFI from 'foliate-js/epubcfi.js';
 import type { MediaOverlayTTS } from '@/services/tts/mediaOverlay/MediaOverlayTTS';
 import { LocaleWithTextInfo } from './misc';
 
@@ -120,7 +119,7 @@ export interface FoliateView extends HTMLElement {
   ) => { index: number; label: string };
   search: (config: BookSearchConfig) => AsyncGenerator<BookSearchResult | string, void, void>;
   clearSearch: () => void;
-  select: (target: string | number | { fraction: number }) => Promise<void>;
+  select: (target: string | number | { fraction: number }) => void;
   deselect: () => void;
   initTTS: (
     granularity?: TTSGranularity,
@@ -172,23 +171,6 @@ export const wrappedFoliateView = (originalView: FoliateView): FoliateView => {
     return Promise.resolve(originalGoTo(target)).finally(() => {
       originalView.dispatchEvent(new CustomEvent('navigate-end'));
     });
-  };
-
-  const originalSelect = originalView.select?.bind(originalView);
-  originalView.select = async (target: string | number | { fraction: number }): Promise<void> => {
-    if (originalSelect) await Promise.resolve(originalSelect(target));
-    if (typeof target !== 'string' || !CFI.isCFI.test(target)) return;
-    const resolved = originalView.resolveCFI(target);
-    const content = originalView.renderer
-      .getContents()
-      .find((item) => item.index === resolved.index);
-    if (!content?.doc) return;
-    const range = resolved.anchor(content.doc);
-    if (!range || typeof range === 'number' || !('startContainer' in range)) return;
-    const selection = content.doc.defaultView?.getSelection();
-    if (!selection) return;
-    selection.removeAllRanges();
-    selection.addRange(range);
   };
 
   return originalView;

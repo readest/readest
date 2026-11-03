@@ -2631,5 +2631,10 @@
   "All Books": "所有書籍",
   "Words": "字詞",
   "No words match": "沒有符合的字詞",
-  "Select a word": "選擇一個字詞"
+  "Select a word": "選擇一個字詞",
+  "Find on Page": "頁內尋找",
+  "Next Match": "下一個符合項目",
+  "Previous Match": "上一個符合項目",
+  "Extend Selection": "擴展選取範圍",
+  "Pattern not found: {{term}}": "找不到符合項目：{{term}}"
 }

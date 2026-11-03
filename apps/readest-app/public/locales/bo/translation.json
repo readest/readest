@@ -2631,5 +2631,10 @@
   "All Books": "དཔེ་དེབ་ཡོངས།",
   "Words": "ཚིག",
   "No words match": "མཐུན་པའི་ཚིག་མེད།",
-  "Select a word": "ཚིག་གཅིག་འདེམས།"
+  "Select a word": "ཚིག་གཅིག་འདེམས།",
+  "Find on Page": "ཤོག་ངོས་ནང་འཚོལ།",
+  "Next Match": "མཐུན་པ་རྗེས་མ།",
+  "Previous Match": "མཐུན་པ་སྔོན་མ།",
+  "Extend Selection": "འདེམས་ཁོངས་རྒྱ་སྐྱེད།",
+  "Pattern not found: {{term}}": "དཔེ་གཞི་རྙེད་མ་བྱུང་། {{term}}"
 }

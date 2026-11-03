@@ -2631,5 +2631,10 @@
   "All Books": "Semua buku",
   "Words": "Perkataan",
   "No words match": "Tiada perkataan sepadan",
-  "Select a word": "Pilih perkataan"
+  "Select a word": "Pilih perkataan",
+  "Find on Page": "Cari di halaman",
+  "Next Match": "Padanan seterusnya",
+  "Previous Match": "Padanan sebelumnya",
+  "Extend Selection": "Luaskan pilihan",
+  "Pattern not found: {{term}}": "Corak tidak ditemui: {{term}}"
 }

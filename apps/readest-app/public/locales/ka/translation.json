@@ -2700,5 +2700,10 @@
   "All Books": "ყველა წიგნი",
   "Words": "სიტყვები",
   "No words match": "შესაბამისი სიტყვები არ არის",
-  "Select a word": "აირჩიეთ სიტყვა"
+  "Select a word": "აირჩიეთ სიტყვა",
+  "Find on Page": "გვერდზე პოვნა",
+  "Next Match": "შემდეგი დამთხვევა",
+  "Previous Match": "წინა დამთხვევა",
+  "Extend Selection": "მონიშვნის გაფართოება",
+  "Pattern not found: {{term}}": "შაბლონი ვერ მოიძებნა: {{term}}"
 }

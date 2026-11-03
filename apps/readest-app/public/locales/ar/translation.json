@@ -2976,5 +2976,10 @@
   "All Books": "كل الكتب",
   "Words": "الكلمات",
   "No words match": "لا توجد كلمات مطابقة",
-  "Select a word": "اختر كلمة"
+  "Select a word": "اختر كلمة",
+  "Find on Page": "البحث في الصفحة",
+  "Next Match": "التطابق التالي",
+  "Previous Match": "التطابق السابق",
+  "Extend Selection": "توسيع التحديد",
+  "Pattern not found: {{term}}": "لم يتم العثور على النمط: {{term}}"
 }

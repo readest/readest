@@ -2838,5 +2838,10 @@
   "All Books": "Vse knjige",
   "Words": "Besede",
   "No words match": "Ni ujemajočih se besed",
-  "Select a word": "Izberite besedo"
+  "Select a word": "Izberite besedo",
+  "Find on Page": "Najdi na strani",
+  "Next Match": "Naslednje ujemanje",
+  "Previous Match": "Prejšnje ujemanje",
+  "Extend Selection": "Razširi izbor",
+  "Pattern not found: {{term}}": "Vzorca ni mogoče najti: {{term}}"
 }

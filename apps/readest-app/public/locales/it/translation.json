@@ -2769,5 +2769,10 @@
   "All Books": "Tutti i libri",
   "Words": "Parole",
   "No words match": "Nessuna parola corrispondente",
-  "Select a word": "Seleziona una parola"
+  "Select a word": "Seleziona una parola",
+  "Find on Page": "Trova nella pagina",
+  "Next Match": "Corrispondenza successiva",
+  "Previous Match": "Corrispondenza precedente",
+  "Extend Selection": "Estendi selezione",
+  "Pattern not found: {{term}}": "Modello non trovato: {{term}}"
 }

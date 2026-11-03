@@ -158,9 +158,9 @@ const SideBar = ({}) => {
     handleHideSideBar,
   ]);
 
-  const handleSearchResultClick = async (cfi: string) => {
+  const handleSearchResultClick = (cfi: string) => {
     onNavigateEvent();
-    getView(sideBarBookKey)?.select(cfi);
+    getView(sideBarBookKey)?.goTo(cfi);
   };
 
   if (!sideBarBookKey) return null;

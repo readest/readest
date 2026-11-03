@@ -2700,5 +2700,10 @@
   "All Books": "සියලු පොත්",
   "Words": "වචන",
   "No words match": "ගැළපෙන වචන නැත",
-  "Select a word": "වචනයක් තෝරන්න"
+  "Select a word": "වචනයක් තෝරන්න",
+  "Find on Page": "පිටුවේ සොයන්න",
+  "Next Match": "මීළඟ ගැළපීම",
+  "Previous Match": "පෙර ගැළපීම",
+  "Extend Selection": "තේරීම දිගු කරන්න",
+  "Pattern not found: {{term}}": "රටාව හමු නොවීය: {{term}}"
 }

@@ -2769,5 +2769,10 @@
   "All Books": "Toate cărțile",
   "Words": "Cuvinte",
   "No words match": "Niciun cuvânt nu se potrivește",
-  "Select a word": "Selectează un cuvânt"
+  "Select a word": "Selectează un cuvânt",
+  "Find on Page": "Găsește în pagină",
+  "Next Match": "Potrivirea următoare",
+  "Previous Match": "Potrivirea anterioară",
+  "Extend Selection": "Extinde selecția",
+  "Pattern not found: {{term}}": "Model negăsit: {{term}}"
 }

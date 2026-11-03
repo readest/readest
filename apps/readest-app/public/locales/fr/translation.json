@@ -2769,5 +2769,10 @@
   "All Books": "Tous les livres",
   "Words": "Mots",
   "No words match": "Aucun mot ne correspond",
-  "Select a word": "Sélectionnez un mot"
+  "Select a word": "Sélectionnez un mot",
+  "Find on Page": "Rechercher dans la page",
+  "Next Match": "Occurrence suivante",
+  "Previous Match": "Occurrence précédente",
+  "Extend Selection": "Étendre la sélection",
+  "Pattern not found: {{term}}": "Motif introuvable : {{term}}"
 }

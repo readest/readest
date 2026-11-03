@@ -20,7 +20,8 @@ import {
 } from '@/services/constants';
 import { getParagraphActionForKey } from '@/utils/paragraphPresentation';
 import { getScrollGapAttr } from '@/utils/webtoon';
-import { extendSelectionFromContents, KeyModifiers } from '@/utils/sel';
+import { applyVimMotion, extendSelectionFromContents, KeyModifiers } from '@/utils/sel';
+import { getLiveVimFind, useVimFindStore } from '@/store/vimFindStore';
 import { getReadingAreaRect, keyboardTurnDirection } from './useAutoPageTurn';
 import { viewPagination } from './usePagination';
 import useShortcuts from '@/hooks/useShortcuts';
@@ -138,6 +139,51 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
       else if (dir === 'prev') view?.prev();
     }
     return extended;
+  };
+
+  // Vim-style find (#7281). Each returns false unless this book's search is
+  // live, so the same keys turn pages and open the Notebook otherwise.
+  const openVimFind = () => {
+    if (!sideBarBookKey) return false;
+    useVimFindStore.getState().openFind(sideBarBookKey);
+    return true;
+  };
+
+  const stepVimMatch = (step: 1 | -1) => {
+    const find = getLiveVimFind(sideBarBookKey);
+    if (!find) return false;
+    const { matches, searching } = find;
+    const next = Math.max(find.index, 0) + step;
+    // Wrap around only once every match is in: mid-search, the end of the
+    // list so far isn't the end of the book.
+    if (matches.length === 0 || (searching && (next < 0 || next >= matches.length))) return true;
+    const index = (next + matches.length) % matches.length;
+    useVimFindStore.setState({ index });
+    getView(sideBarBookKey)?.select(matches[index]!);
+    return true;
+  };
+
+  const extendVimSelection = (event?: KeyboardEvent | MessageEvent) => {
+    if (!getLiveVimFind(sideBarBookKey)) return false;
+    const key = event instanceof KeyboardEvent ? event.key : event?.data?.key;
+    const view = getView(sideBarBookKey);
+    const contents = view?.renderer?.getContents?.() ?? [];
+    const sel = contents.map(({ doc }) => doc.getSelection()).find((s) => s && !s.isCollapsed);
+    if (!sel || !key || !applyVimMotion(sel, key)) return false;
+    // Turn the page when the moving end leaves it, as Shift+←/→ does (#4741).
+    if (!getViewSettings(sideBarBookKey ?? '')?.scrolled) {
+      const dir = keyboardTurnDirection(contents, getReadingAreaRect(sideBarBookKey ?? ''));
+      if (dir === 'next') view?.next();
+      else if (dir === 'prev') view?.prev();
+    }
+    return true;
+  };
+
+  const exitVimFind = () => {
+    if (!getLiveVimFind(sideBarBookKey)) return false;
+    useVimFindStore.getState().closeFind();
+    getView(sideBarBookKey)?.deselect();
+    return true;
   };
 
   const goLeft = () => {
@@ -501,6 +547,12 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
       // Listed first so an active selection intercepts Shift+←/→ before the
       // page-navigation actions below can turn the page (#4728).
       onAdjustTextSelection: adjustTextSelection,
+      // Ahead of page navigation and the Notebook for the same reason (#7281).
+      onVimFind: openVimFind,
+      onVimNextMatch: () => stepVimMatch(1),
+      onVimPrevMatch: () => stepVimMatch(-1),
+      onVimExtendSelection: extendVimSelection,
+      onEscape: exitVimFind,
       onSwitchSideBar: switchSideBar,
       onToggleSideBar: toggleSideBar,
       onOpenTableOfContents: openTableOfContents,
