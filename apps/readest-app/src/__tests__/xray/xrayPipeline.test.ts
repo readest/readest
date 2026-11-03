@@ -70,6 +70,36 @@ describe('XRayPipeline', () => {
     await db.close();
   });
 
+  it('reads source and committed state together without writing after cancellation', async () => {
+    let release = () => {};
+    const hold = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const readThrough = vi.fn(async () => {
+      await hold;
+      return slice('index-1', [0]);
+    });
+    const getState = vi.spyOn(store, 'getState');
+    const saveState = vi.spyOn(store, 'saveState');
+    const extract = vi.fn<XRayExtractionModel['extract']>();
+    const controller = new AbortController();
+    const update = new XRayPipeline({ readThrough }, store, { extract }).update(
+      BOOK_HASH,
+      'current',
+      { signal: controller.signal },
+    );
+    try {
+      await vi.waitFor(() => expect(readThrough).toHaveBeenCalledOnce());
+      expect(getState).toHaveBeenCalledWith(BOOK_HASH);
+      expect(extract).not.toHaveBeenCalled();
+    } finally {
+      controller.abort();
+      release();
+      await expect(update).rejects.toMatchObject({ name: 'AbortError' });
+    }
+    expect(saveState).not.toHaveBeenCalled();
+  });
+
   it('extracts only new units in bounded batches and resumes from the committed cursor', async () => {
     const readThrough = vi.fn().mockResolvedValue(slice('index-1', [0, 1, 2]));
     const extract = vi.fn(async ({ units }: { units: readonly XRaySourceUnit[] }) =>

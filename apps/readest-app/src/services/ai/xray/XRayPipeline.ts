@@ -84,8 +84,11 @@ export class XRayPipeline {
     options: XRayUpdateOptions,
   ): Promise<XRayUpdateResult> {
     options.signal?.throwIfAborted();
-    const source = await this.source.readThrough(bookHash, currentCfi);
-    let state = await this.store.getState(bookHash);
+    const [source, savedState] = await Promise.all([
+      this.source.readThrough(bookHash, currentCfi),
+      this.store.getState(bookHash),
+    ]);
+    let state = savedState;
     options.signal?.throwIfAborted();
 
     if (

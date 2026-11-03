@@ -9,11 +9,12 @@ import { ReedyXRaySource } from '@/services/ai/xray/source/ReedyXRaySource';
 import type { DatabaseService } from '@/types/database';
 import type { AppService } from '@/types/system';
 
-const mocks = vi.hoisted(() => ({ openNativeDatabase: vi.fn() }));
+const mocks = vi.hoisted(() => ({ openNativeDatabase: vi.fn(), loadNativeDatabase: vi.fn() }));
 
-vi.mock('@/services/database/nativeDatabaseService', () => ({
-  NativeDatabaseService: { open: mocks.openNativeDatabase },
-}));
+vi.mock('@/services/database/nativeDatabaseService', () => {
+  mocks.loadNativeDatabase();
+  return { NativeDatabaseService: { open: mocks.openNativeDatabase } };
+});
 
 const BOOK_HASH = 'book-a';
 const MODEL_ID = 'embedding-a';
@@ -63,13 +64,28 @@ describe('ReedyXRaySource', () => {
 
   it('opens the canonical Reedy database without creating a second index', async () => {
     const databaseExists = vi.fn().mockResolvedValue(true);
-    const resolveFilePath = vi.fn().mockResolvedValue('/data/reedy.db');
+    let release = () => {};
+    const hold = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const resolveFilePath = vi.fn(async () => {
+      await hold;
+      return '/data/reedy.db';
+    });
     const openDatabase = vi.fn();
 
-    await ReedyXRaySource.open(
+    const opening = ReedyXRaySource.open(
       { databaseExists, resolveFilePath, openDatabase } as unknown as AppService,
       MODEL_ID,
     );
+    try {
+      await vi.waitFor(() => expect(mocks.loadNativeDatabase).toHaveBeenCalledOnce());
+      expect(resolveFilePath).toHaveBeenCalledWith('reedy.db', 'Data');
+      expect(mocks.openNativeDatabase).not.toHaveBeenCalled();
+    } finally {
+      release();
+      await opening;
+    }
 
     expect(databaseExists).toHaveBeenCalledWith('reedy.db', 'Data');
     expect(resolveFilePath).toHaveBeenCalledWith('reedy.db', 'Data');

@@ -172,8 +172,10 @@ const openExistingReedyDatabase = async (
   appService: AppService,
 ): Promise<ReedyConnection | null> => {
   if (!(await appService.databaseExists('reedy.db', 'Data'))) return null;
-  const fullPath = await appService.resolveFilePath('reedy.db', 'Data');
-  const { NativeDatabaseService } = await import('@/services/database/nativeDatabaseService');
+  const [fullPath, { NativeDatabaseService }] = await Promise.all([
+    appService.resolveFilePath('reedy.db', 'Data'),
+    import('@/services/database/nativeDatabaseService'),
+  ]);
   const db = await NativeDatabaseService.open(`sqlite:${fullPath}`, {
     experimental: ['index_method'],
   });
