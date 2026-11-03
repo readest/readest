@@ -182,6 +182,20 @@ describe('context dictionary streaming (#7279)', () => {
     expect(await pending).toMatchObject({ definition: 'river side' });
   });
 
+  it('preserves the message of an error sent inside an SSE response', async () => {
+    fetchMock.mockResolvedValue(
+      new Response('data: {"error":{"message":"Insufficient credits","code":402}}\n\n', {
+        headers: { 'Content-Type': 'text/event-stream' },
+      }),
+    );
+    const pending = lookupInContext(translator, input, new AbortController().signal);
+    const outcome = pending.catch((error: unknown) => error);
+    await settle();
+    const error = await outcome;
+    expect(error).toBeInstanceOf(Error);
+    expect(String(error)).toContain('Insufficient credits');
+  });
+
   it('surfaces a stream error and does not cache the partial answer', async () => {
     const stream = responseStream();
     fetchMock

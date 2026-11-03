@@ -115,7 +115,19 @@ export const generateChatText = async (
     let text = '';
     // textStream omits error events, including a rejected thinking parameter.
     for await (const part of streamText(args).fullStream) {
-      if (part.type === 'error') throw part.error;
+      if (part.type === 'error') {
+        const error = part.error;
+        if (
+          !(error instanceof Error) &&
+          typeof error === 'object' &&
+          error !== null &&
+          'message' in error &&
+          typeof error.message === 'string'
+        ) {
+          throw new Error(error.message);
+        }
+        throw error;
+      }
       settings.abortSignal.throwIfAborted();
       if (part.type === 'abort') throw new DOMException('Aborted', 'AbortError');
       onProgress?.();
