@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { corsAllMethods, runMiddleware } from '@/utils/cors';
 import { isLanAddress } from '@/utils/network';
+import { publicFetch } from '@/utils/publicFetch';
 import type { BookOrbitProxyPayload } from '@/types/bookorbit';
 
 const validEndpoints = [
@@ -57,7 +58,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const targetUrl = `${serverUrl.replace(/\/$/, '')}/api/v1/koreader${endpoint}`;
 
   try {
-    const response = await fetch(targetUrl, {
+    const response = await publicFetch(targetUrl, {
       method: method,
       headers: {
         ...clientHeaders,
@@ -65,11 +66,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         'Content-Type': 'application/json',
       },
       body: clientBody ? JSON.stringify(clientBody) : null,
-      // Never follow redirects: a public server answering 3xx could steer the
-      // proxy onto a private address that the isLanAddress gate above already
-      // rejected (redirect-based SSRF).
-      redirect: 'error',
     });
+    // Never follow redirects: a public server answering 3xx could steer the
+    // proxy onto a private address that the isLanAddress gate above already
+    // rejected (redirect-based SSRF). publicFetch returns the 3xx unfollowed;
+    // Cloudflare Workers rejects redirect: 'error', so check the status here.
+    if (response.status >= 300 && response.status < 400) {
+      await response.body?.cancel();
+      throw new Error(`Redirects are not followed (status ${response.status})`);
+    }
 
     const data = await response.text();
     res.status(response.status);
