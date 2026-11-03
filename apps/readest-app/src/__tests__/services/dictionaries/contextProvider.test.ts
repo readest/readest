@@ -128,6 +128,7 @@ describe('context dictionary provider', () => {
     expect(mocks.lookupInContext.mock.calls[0]![3]).toEqual({
       systemPrompt: 'Explain etymology.',
       maxOutputTokens: 4096,
+      onUpdate: expect.any(Function),
     });
     expect(container.querySelector('h2')?.textContent).toBe('Origins');
     expect(container.querySelector('strong')?.textContent).toBe('River');
@@ -171,6 +172,28 @@ describe('context dictionary provider', () => {
 
     expect(outcome.ok).toBe(true);
     expect(container.textContent).toContain('Unauthorized');
+  });
+
+  it('replaces partial entries, sanitizes streamed Markdown, and ignores late updates after cancellation', async () => {
+    setTranslators([llm('a')]);
+    const caller = new AbortController();
+    const container = document.createElement('div');
+    const onUpdate = vi.fn();
+    mocks.lookupInContext.mockImplementation(async (_translator, _input, _signal, options) => {
+      options.onUpdate({ ...entry, markdown: '**River** <img src=x onerror="alert(1)">' });
+      expect(container.querySelector('strong')?.textContent).toBe('River');
+      expect(container.querySelector('[onerror]')).toBeNull();
+      options.onUpdate(entry);
+      expect(container.querySelectorAll('h1')).toHaveLength(1);
+      caller.abort();
+      options.onUpdate({ ...entry, definition: 'stale answer' });
+      expect(container.textContent).not.toContain('stale answer');
+      return entry;
+    });
+    expect(
+      (await contextProvider.lookup('bank', { container, signal: caller.signal, onUpdate })).ok,
+    ).toBe(false);
+    expect(onUpdate).toHaveBeenCalledTimes(2);
   });
 
   it('does not render an entry for a lookup cancelled while it was pending', async () => {

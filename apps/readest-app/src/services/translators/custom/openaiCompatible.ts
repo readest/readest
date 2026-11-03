@@ -98,12 +98,33 @@ export const generateChatText = async (
     maxOutputTokens?: number;
     maxRetries: number;
     abortSignal: AbortSignal;
+    /** When provided, request SSE and publish the accumulated answer. */
+    onText?: (text: string) => void | Promise<void>;
+    onProgress?: () => void;
   },
 ): Promise<string> => {
-  const [{ generateText }] = await loadSDK();
+  const [{ generateText, streamText }] = await loadSDK();
+  const { onText, onProgress, ...settings } = options;
   const run = async (thinkingOff: boolean) => {
     const model = await createChatModel(config, thinkingOff);
-    const { text } = await generateText({ ...options, model, temperature: config.temperature });
+    const args = { ...settings, model, temperature: config.temperature };
+    if (!onText) {
+      const { text } = await generateText(args);
+      return text;
+    }
+    let text = '';
+    // textStream omits error events, including a rejected thinking parameter.
+    for await (const part of streamText(args).fullStream) {
+      if (part.type === 'error') throw part.error;
+      settings.abortSignal.throwIfAborted();
+      if (part.type === 'abort') throw new DOMException('Aborted', 'AbortError');
+      onProgress?.();
+      if (part.type === 'text-delta') {
+        text += part.text;
+        await onText(text);
+      }
+    }
+    settings.abortSignal.throwIfAborted();
     return text;
   };
   const key = `${config.baseUrl}\n${config.model}`;

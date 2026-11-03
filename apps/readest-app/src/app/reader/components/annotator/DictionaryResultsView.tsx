@@ -350,6 +350,14 @@ export function useDictionaryResults({
                 fg: themeCode.fg,
                 autoPlayPronunciation: autoPlayPronunciation && provider.id === autoPlayProviderId,
                 selection: currentSelection,
+                onUpdate: () => {
+                  if (controller.signal.aborted) return;
+                  setCards((prev) => {
+                    const old = prev[provider.id];
+                    if (!old || old.loadKey !== loadKey || old.state !== 'loading') return prev;
+                    return { ...prev, [provider.id]: { ...old, state: 'loaded' } };
+                  });
+                },
               });
               if (controller.signal.aborted) return;
               if (outcome.ok || outcome.reason !== 'empty') break;

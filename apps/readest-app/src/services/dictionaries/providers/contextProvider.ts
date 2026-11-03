@@ -112,11 +112,21 @@ export const contextProvider: DictionaryProvider = {
           bookAuthor: selection?.bookAuthor,
         },
         ctx.signal,
-        { systemPrompt, maxOutputTokens: settings.contextMaxOutputTokens },
+        {
+          systemPrompt,
+          maxOutputTokens: settings.contextMaxOutputTokens,
+          onUpdate: (entry) => {
+            if (ctx.signal.aborted) return;
+            ctx.container.replaceChildren();
+            renderEntry(ctx.container, word, entry);
+            ctx.onUpdate?.();
+          },
+        },
       );
       // A cache hit resolves without looking at the signal; once cancelled,
       // the container belongs to the next lookup.
       if (ctx.signal.aborted) return { ok: false, reason: 'error', message: 'aborted' };
+      ctx.container.replaceChildren();
       renderEntry(ctx.container, word, entry);
       return { ok: true, headword: entry.headword || word, sourceLabel: translator.name };
     } catch (err) {
