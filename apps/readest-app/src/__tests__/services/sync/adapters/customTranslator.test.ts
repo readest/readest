@@ -70,13 +70,16 @@ describe('customTranslatorAdapter', () => {
     expect(out).toEqual({ ...translator, id: '' });
   });
 
-  test('switching Thinking back to Default clears Off on other devices', () => {
-    // The server merges fields per key, so a key left out of the push keeps its old value.
-    const offFields = envelopes(customTranslatorAdapter.pack({ ...translator, thinking: 'off' }));
-    const { thinking: _, ...defaultTranslator } = translator;
-    const merged = { ...offFields, ...envelopes(customTranslatorAdapter.pack(defaultTranslator)) };
-    const restored = customTranslatorAdapter.unpackRow(makeRow(CUSTOM_TRANSLATOR_KIND, merged), '');
-    expect(restored?.thinking).toBeUndefined();
+  // The server merges fields per key, so a key left out of the push keeps its old value.
+  test.each([
+    'thinking',
+    'disabled',
+    'temperature',
+  ] as const)('clearing %s reaches other devices', (key) => {
+    const before = envelopes(customTranslatorAdapter.pack(translator));
+    const after = envelopes(customTranslatorAdapter.pack({ ...translator, [key]: undefined }));
+    const row = makeRow(CUSTOM_TRANSLATOR_KIND, { ...before, ...after });
+    expect(customTranslatorAdapter.unpackRow(row, '')).not.toHaveProperty(key);
   });
 
   test('computeId is the record id', async () => {

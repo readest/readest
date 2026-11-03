@@ -65,10 +65,11 @@ export const customTranslatorAdapter: ReplicaAdapter<CustomTranslator> = {
     };
     if (t.baseUrl !== undefined) fields['baseUrl'] = t.baseUrl;
     if (t.model !== undefined) fields['model'] = t.model;
-    if (t.temperature !== undefined) fields['temperature'] = t.temperature;
-    // Always sent: fields merge per key, so a missing key would keep a peer's old 'off'.
+    // Always sent, so clearing one reaches other devices: fields merge per key,
+    // and a key left out keeps its old value there.
+    fields['temperature'] = t.temperature ?? null;
     fields['thinking'] = t.thinking ?? 'default';
-    if (t.disabled !== undefined) fields['disabled'] = t.disabled;
+    fields['disabled'] = t.disabled ?? false;
     // Plaintext here; replicaCryptoMiddleware encrypts (or drops) it.
     if (t.apiKey !== undefined) fields['apiKey'] = t.apiKey;
     return fields;
