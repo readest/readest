@@ -110,7 +110,6 @@ vi.mock('@/services/constants', () => ({
 }));
 vi.mock('@/utils/style', () => ({ getStyles: vi.fn() }));
 vi.mock('@/utils/nav', () => ({ navigateToLogin: vi.fn() }));
-vi.mock('@/utils/webtoon', () => ({ getScrollGapAttr: vi.fn() }));
 vi.mock('@/app/reader/hooks/useCapturedTurn', () => ({ applyPageTurnAttributes: vi.fn() }));
 vi.mock('@/utils/config', () => ({ getMaxInlineSize: () => 720 }));
 vi.mock('@/utils/ambientLight', () => ({ nextThemeMode: (mode: string) => mode }));
@@ -118,6 +117,43 @@ vi.mock('@/utils/window', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/utils/window')>()),
   tauriHandleToggleFullScreen: vi.fn(),
 }));
+
+describe('ViewMenu transparent image backgrounds (#7045)', () => {
+  afterEach(() => {
+    cleanup();
+    mockBookData.book.format = 'PDF';
+  });
+
+  it('announces the image toggle state and persists it for EPUBs', async () => {
+    vi.clearAllMocks();
+    mockBookData.book.format = 'EPUB';
+    render(<ViewMenu bookKey='book-1' />);
+    fireEvent.click(
+      screen.getByRole('menuitem', { name: 'Make White Image Backgrounds Transparent - OFF' }),
+    );
+    expect(
+      screen.getByRole('menuitem', { name: 'Make White Image Backgrounds Transparent - ON' }),
+    ).toBeTruthy();
+    await waitFor(() =>
+      expect(mockSaveViewSettings).toHaveBeenCalledWith(
+        expect.anything(),
+        'book-1',
+        'transparentImageBackground',
+        true,
+        true,
+        true,
+      ),
+    );
+  });
+
+  it('does not offer image transparency for PDF pages', () => {
+    mockBookData.book.format = 'PDF';
+    render(<ViewMenu bookKey='book-1' />);
+    expect(
+      screen.queryByRole('menuitem', { name: 'Make White Image Backgrounds Transparent' }),
+    ).toBeNull();
+  });
+});
 
 describe('ViewMenu fullscreen', () => {
   const requestFullscreen = vi.fn();
@@ -233,6 +269,57 @@ describe('ViewMenu right-to-left pages toggle', () => {
       expect(mockView.book.dir).toBe('ltr');
       expect(mockRecreateViewer).toHaveBeenCalledWith(expect.anything(), 'book-1');
     });
+  });
+});
+
+describe('ViewMenu gapless scrolling (#7219)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    currentViewSettings.scrolled = true;
+    currentViewSettings.scrolledDirection = 'horizontal';
+    currentViewSettings.webtoonMode = false;
+    currentViewSettings.zoomLevel = 100;
+    mockBookData.isFixedLayout = true;
+  });
+
+  afterEach(() => {
+    cleanup();
+    currentViewSettings.scrolled = false;
+    currentViewSettings.scrolledDirection = 'vertical';
+    currentViewSettings.webtoonMode = false;
+  });
+
+  it('removes the page gap without changing horizontal scrolling', () => {
+    render(<ViewMenu bookKey='book-1' />);
+
+    fireEvent.click(screen.getByText('Webtoon Mode'));
+
+    expect(mockView.renderer.setAttribute).toHaveBeenCalledWith('scroll-gap', '0');
+    expect(currentViewSettings.scrolledDirection).toBe('horizontal');
+    expect(currentViewSettings.webtoonMode).toBe(true);
+  });
+
+  it('keeps pages gapless when switching from vertical to horizontal scrolling', () => {
+    currentViewSettings.scrolledDirection = 'vertical';
+    currentViewSettings.webtoonMode = true;
+    render(<ViewMenu bookKey='book-1' />);
+
+    fireEvent.click(screen.getByTitle('Horizontal Scrolling'));
+
+    expect(currentViewSettings.scrolledDirection).toBe('horizontal');
+    expect(currentViewSettings.webtoonMode).toBe(true);
+    expect(mockView.renderer.setAttribute).not.toHaveBeenCalledWith('scroll-gap', '4');
+  });
+
+  it('still enters vertical scrolling when enabled from paginated reading', () => {
+    currentViewSettings.scrolled = false;
+    render(<ViewMenu bookKey='book-1' />);
+
+    fireEvent.click(screen.getByText('Webtoon Mode'));
+
+    expect(currentViewSettings.scrolled).toBe(true);
+    expect(currentViewSettings.scrolledDirection).toBe('vertical');
+    expect(mockView.renderer.setAttribute).toHaveBeenCalledWith('scroll-gap', '0');
   });
 });
 

@@ -54,7 +54,7 @@ const parseIntentOpenWithFiles = async (appService: AppService | null) => {
       .map((url) => {
         if (url.startsWith('file://')) {
           if (appService?.isIOSApp) {
-            return decodeURI(url);
+            return url;
           } else {
             return decodeURI(url.replace('file://', ''));
           }

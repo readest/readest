@@ -229,6 +229,14 @@ impl<R: Runtime> NativeBridge<R> {
         Err(crate::Error::UnsupportedPlatformError)
     }
 
+    pub fn get_lookup_apps(&self) -> crate::Result<GetLookupAppsResponse> {
+        Err(crate::Error::UnsupportedPlatformError)
+    }
+
+    pub fn set_lookup_app(&self, _payload: SetLookupAppRequest) -> crate::Result<()> {
+        Err(crate::Error::UnsupportedPlatformError)
+    }
+
     pub fn select_directory(&self) -> crate::Result<SelectDirectoryResponse> {
         Err(crate::Error::UnsupportedPlatformError)
     }

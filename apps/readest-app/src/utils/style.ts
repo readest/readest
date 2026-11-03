@@ -19,6 +19,7 @@ import { isDialogueHighlightActive } from './dialogueHighlight';
 import { readStoredAmbientIsDarkMode } from './ambientLight';
 import { INLINE_FORMATTING_SELECTOR } from './inlineTags';
 import { getOSPlatform } from './misc';
+import { WHITE_TRANSPARENCY_FILTER } from './imageBackground';
 import {
   LINK_HIT_AREA_CLASS,
   LINK_HIT_AREA_PX,
@@ -301,30 +302,44 @@ const getDialogueHighlightStyles = (viewSettings: ViewSettings, themeCode: Theme
     viewSettings.dialogueHighlightCustomTextColor && viewSettings.dialogueHighlightTextColor
       ? `\n    color: ${viewSettings.dialogueHighlightTextColor} !important;`
       : '';
+  // A thin outline works even when the font has only regular/bold faces.
+  const weight =
+    viewSettings.dialogueHighlightWeight === 'slightly-heavier'
+      ? '\n    -webkit-text-stroke: 0.2px currentColor !important;'
+      : viewSettings.dialogueHighlightWeight === 'bold'
+        ? '\n    font-weight: bold !important;'
+        : '';
   return `
   /* Dialogue lines tinted with the custom color or, by default, the theme's
      primary color. !important so the tint survives "Override Book Color",
      which repaints spans/paragraphs with the theme background at the same
      importance level but lower specificity. */
-  .readest-dialogue {${bgDecl(22)}${text}
+  .readest-dialogue {${bgDecl(22)}${text}${weight}
     border-radius: 0.2em;
     box-decoration-break: clone;
     -webkit-box-decoration-break: clone;
   }
-  .readest-dialogue-block {${bgDecl(12)}${text}
+  .readest-dialogue-block {${bgDecl(12)}${text}${weight}
     border-radius: 0.3em;
   }${
     viewSettings.dialogueHighlightItalic
       ? `
   /* Italic runs marked like quoted dialogue; nested marks drop their own
      tint so overlapping translucent backgrounds don't stack. */
-  :is(i, em) {${bgDecl(22)}${text}
+  :is(i, em) {${bgDecl(22)}${text}${weight}
     border-radius: 0.2em;
     box-decoration-break: clone;
     -webkit-box-decoration-break: clone;
   }
   :is(i, em) :is(i, em, .readest-dialogue), .readest-dialogue :is(i, em) {
     background-color: transparent !important;
+  }`
+      : ''
+  }${
+    viewSettings.dialogueHighlightWeight === 'bold'
+      ? `
+  .readest-dialogue-block *, .readest-dialogue *${viewSettings.dialogueHighlightItalic ? ', :is(i, em) *' : ''} {
+    font-weight: bold !important;
   }`
       : ''
   }
@@ -337,9 +352,12 @@ const getColorStyles = (
   themeCode: ThemeCode,
   backgroundTextureId: string,
   isEink: boolean,
+  isFootnote: boolean,
+  transparentImageBackground: boolean,
 ) => {
   const { bg, fg, primary, isDarkMode } = themeCode;
   const hasBackgroundTexture = !!backgroundTextureId && backgroundTextureId !== 'none';
+  const texturedFootnote = isFootnote && hasBackgroundTexture;
   // Over a background texture, Override Book Color still forces the text
   // colors but fills backgrounds with transparent so the texture shows (#6712).
   const overrideBg = hasBackgroundTexture ? 'transparent' : bg;
@@ -352,7 +370,7 @@ const getColorStyles = (
       --override-color: ${overrideColor};
       color-scheme: ${isDarkMode ? 'dark' : 'light'};
     }
-    html, body {
+    ${texturedFootnote && !overrideColor ? 'html' : 'html, body'} {
       color: ${fg};
     }
     ${isEink ? getEinkSelectionStyles() : isDarkMode ? getDarkSelectionStyles(primary) : ''}
@@ -364,7 +382,8 @@ const getColorStyles = (
       background: var(--background-set, none);
     }
     body {
-      ${isEink ? `background-color: ${bg} !important;` : ''}
+      ${isEink && !texturedFootnote ? `background-color: ${bg} !important;` : ''}
+      ${texturedFootnote && overrideColor ? 'background-color: transparent !important;' : ''}
     }
     section, aside, blockquote, article, nav, header, footer, main, figure,
     div, p, font, h1, h2, h3, h4, h5, h6, li, span {
@@ -383,15 +402,21 @@ const getColorStyles = (
       text-decoration: ${isEink ? 'underline' : 'none'};
     }
     body.pbg {
-      ${isDarkMode ? `background-color: ${bg} !important;` : ''}
+      ${isDarkMode && !texturedFootnote ? `background-color: ${bg} !important;` : ''}
     }
     /* When inverting in dark mode, invert(100%) must stay the effective filter
        (a later filter declaration would discard it), and multiply must not
        apply: multiply with a dark page background erases the image (#5250). */
     img {
-      ${isDarkMode && invertImgColorInDark ? 'filter: invert(100%);' : ''}
-      ${isDarkMode && !invertImgColorInDark && overrideColor ? 'filter: grayscale(100%) contrast(1.2) brightness(1.2);' : ''}
-      ${overrideColor && !(isDarkMode && invertImgColorInDark) ? 'mix-blend-mode: multiply;' : ''}
+      ${transparentImageBackground ? `filter: ${WHITE_TRANSPARENCY_FILTER}${isDarkMode && invertImgColorInDark ? ' invert(100%)' : ''};` : isDarkMode && invertImgColorInDark ? 'filter: invert(100%);' : ''}
+      ${!transparentImageBackground && isDarkMode && !invertImgColorInDark && overrideColor ? 'filter: grayscale(100%) contrast(1.2) brightness(1.2);' : ''}
+      ${!transparentImageBackground && overrideColor && !(isDarkMode && invertImgColorInDark) ? 'mix-blend-mode: multiply;' : ''}
+    }
+    ${
+      transparentImageBackground
+        ? `svg image { filter: ${WHITE_TRANSPARENCY_FILTER}${isDarkMode && invertImgColorInDark ? ' invert(100%)' : ''}; }
+    img, svg image { mix-blend-mode: normal !important; background-color: transparent !important; }`
+        : ''
     }
     svg, img {
       ${overrideColor ? `background-color: transparent !important;` : ''};
@@ -1146,6 +1171,7 @@ export const getStyles = (
   viewSettings: ViewSettings,
   themeCode?: ThemeCode,
   customFonts: CustomFont[] = [],
+  isFootnote = false,
 ) => {
   if (!themeCode) {
     themeCode = getThemeCode();
@@ -1197,6 +1223,8 @@ export const getStyles = (
     themeCode,
     viewSettings.backgroundTextureId,
     viewSettings.isEink,
+    isFootnote,
+    !!viewSettings.transparentImageBackground,
   );
   const translationStyles = getTranslationStyles(viewSettings);
   const warichuStyles = getWarichuStyles();
@@ -1945,6 +1973,8 @@ export const applyFixedlayoutStyles = (
   // are to be inverted; inverting or blending it again would darken or flip the
   // theme colors (#6548).
   const isThemedPDF = format === 'PDF' && viewSettings.applyThemeToPDF;
+  const transparentImages = !!viewSettings.transparentImageBackground && format !== 'PDF';
+  if (transparentImages) imgFilters.push(WHITE_TRANSPARENCY_FILTER);
   // hue-rotate flips the hues back, so a blue link stays blue
   if (isDarkMode && invertImgColorInDark && !isThemedPDF) {
     imgFilters.push('invert(100%) hue-rotate(180deg)');
@@ -1983,7 +2013,13 @@ export const applyFixedlayoutStyles = (
     }
     img, canvas {
       ${imgFilter}
-      ${overrideColor && !isThemedPDF ? `mix-blend-mode: ${isDarkMode ? darkMixBlendMode : 'multiply'};` : ''}
+      ${!transparentImages && overrideColor && !isThemedPDF ? `mix-blend-mode: ${isDarkMode ? darkMixBlendMode : 'multiply'};` : ''}
+    }
+    ${
+      transparentImages
+        ? `svg image { ${imgFilter} }
+    img, svg image { mix-blend-mode: normal !important; background-color: transparent !important; }`
+        : ''
     }
     img.singlePage {
       position: relative;

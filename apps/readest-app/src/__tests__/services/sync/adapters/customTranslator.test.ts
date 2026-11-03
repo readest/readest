@@ -19,6 +19,7 @@ const translator: CustomTranslator = {
   apiKey: 'sk-secret',
   model: 'gpt-x',
   temperature: 0.3,
+  thinking: 'off',
   disabled: true,
   addedAt: 1700000000000,
   updatedAt: 1700000000001,
@@ -67,6 +68,18 @@ describe('customTranslatorAdapter', () => {
   test('pack ∘ unpack round-trips every synced field', () => {
     const out = customTranslatorAdapter.unpack(customTranslatorAdapter.pack(translator));
     expect(out).toEqual({ ...translator, id: '' });
+  });
+
+  // The server merges fields per key, so a key left out of the push keeps its old value.
+  test.each([
+    'thinking',
+    'disabled',
+    'temperature',
+  ] as const)('clearing %s reaches other devices', (key) => {
+    const before = envelopes(customTranslatorAdapter.pack(translator));
+    const after = envelopes(customTranslatorAdapter.pack({ ...translator, [key]: undefined }));
+    const row = makeRow(CUSTOM_TRANSLATOR_KIND, { ...before, ...after });
+    expect(customTranslatorAdapter.unpackRow(row, '')).not.toHaveProperty(key);
   });
 
   test('computeId is the record id', async () => {

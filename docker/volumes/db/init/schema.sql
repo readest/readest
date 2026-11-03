@@ -8,6 +8,7 @@ CREATE TABLE public.books (
   format text NULL,
   title text NULL,
   source_title text NULL,
+  original_filename text NULL,
   author text NULL,
   "group" text NULL,
   tags text[] NULL,

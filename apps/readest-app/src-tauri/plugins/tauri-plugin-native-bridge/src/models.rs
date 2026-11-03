@@ -356,6 +356,35 @@ pub struct OpenExternalUrlResponse {
 #[serde(rename_all = "camelCase")]
 pub struct ShowLookupPopoverRequest {
     pub word: String,
+    /// iOS only. Omitted by older clients to keep the compact presentation.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub full_screen: Option<bool>,
+}
+
+/// Android: an app that handles `ACTION_PROCESS_TEXT`, for the lookup app picker.
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LookupApp {
+    pub package_name: String,
+    pub class_name: String,
+    pub label: String,
+    pub selected: bool,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GetLookupAppsResponse {
+    pub apps: Vec<LookupApp>,
+}
+
+/// Android: the app lookups go to; both fields omitted clears the choice.
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SetLookupAppRequest {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub package_name: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub class_name: Option<String>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]

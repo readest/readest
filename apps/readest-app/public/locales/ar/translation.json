@@ -1764,8 +1764,6 @@
   "Search on Goodreads": "البحث في Goodreads",
   "Reference Pages": "صفحات مرجعية",
   "Reference Page Count": "عدد الصفحات المرجعية",
-  "Lookup app reset. The next lookup will ask again.": "تمت إعادة تعيين تطبيق البحث. سيُطلب منك الاختيار في المرة التالية.",
-  "System Lookup App": "تطبيق البحث في النظام",
   "Share": "مشاركة",
   "Share text after selection": "مشاركة النص بعد التحديد",
   "Customize Toolbar": "تخصيص شريط الأدوات",
@@ -2999,5 +2997,13 @@
   "For this book only": "لهذا الكتاب فقط",
   "Tap": "نقرة",
   "Click": "نقر",
-  "Long Press": "ضغط مطوّل"
+  "Long Press": "ضغط مطوّل",
+  "Weight": "سُمك الخط",
+  "Slightly heavier": "أكثر سُمكًا قليلًا",
+  "Search history": "سجل البحث",
+  "Clear All": "مسح الكل",
+  "Remove {{term}} from search history": "إزالة {{term}} من سجل البحث",
+  "Remove from history": "إزالة من السجل",
+  "Lookup App": "تطبيق البحث",
+  "Thinking": "التفكير"
 }

@@ -5,13 +5,12 @@ import { getIndexFromCfi } from '@/utils/cfi';
 export const DIALOGUE_SPAN_CLASS = 'readest-dialogue';
 export const DIALOGUE_BLOCK_CLASS = 'readest-dialogue-block';
 
-/**
- * Whether dialogue marking is active at all. Background and text are
- * independent: text coloring keeps working with the background off, so the
- * section must be wrapped (and styled) when either switch is on.
- */
+/** Background, text color and weight can each enable dialogue marking. */
 export const isDialogueHighlightActive = (viewSettings: ViewSettings): boolean =>
-  !!viewSettings.dialogueHighlight || !!viewSettings.dialogueHighlightCustomTextColor;
+  !!viewSettings.dialogueHighlight ||
+  !!viewSettings.dialogueHighlightCustomTextColor ||
+  viewSettings.dialogueHighlightWeight === 'slightly-heavier' ||
+  viewSettings.dialogueHighlightWeight === 'bold';
 
 // Paired quotation marks used for dialogue across CJK and Western books:
 // Chinese “”/‘’, Japanese 「」/『』, French «», German „“ plus ASCII "".
@@ -34,12 +33,13 @@ export const isDialogueHighlightActive = (viewSettings: ViewSettings): boolean =
 // the pairing and tint the narration instead of the dialogue.
 //
 // Each pair stops at its next opening mark (ASCII "" at the end of the block),
-// so an unclosed quote can't swallow the next one. ‘’ is capped at 300
-// characters, since a mis-curled apostrophe (‘80s) opens a quote that nothing
-// closes; every quote is capped at MAX_QUOTE_LENGTH in case a malformed book
-// pairs two marks pages apart.
+// so an unclosed quote can't swallow the next one. For ‘’, only a punctuated
+// closing mark in the same paragraph allows a long quote. The looser fallback
+// stays capped at 300 characters, since a mis-curled apostrophe (‘80s) opens a
+// quote that nothing closes. Every quote is capped at MAX_QUOTE_LENGTH in case
+// a malformed book pairs two marks pages apart.
 const DIALOGUE_PATTERN =
-  /“[^“”]+?[”"]|„[^„“]+?[“"]|"[^"\n]+?"|«[^«»]+?[»]|「[^「」]+?[」]|『[^『』]+?[』]|‘(?:[^‘’\n]|’(?=\p{L})|\p{L}’(?=[\s\p{Pd}])){0,300}?(?![‘’“”„«»「」『』"'])\p{P}’(?!\p{L})|‘(?:[^‘’]|’(?=\p{L})){1,300}?’(?!\p{L})/gu;
+  /“[^“”]+?[”"]|„[^„“]+?[“"]|"[^"\n]+?"|«[^«»]+?[»]|「[^「」]+?[」]|『[^『』]+?[』]|‘(?:[^‘’\n]|’(?=\p{L})|\p{L}’(?=[\s\p{Pd}]))*?(?![‘’“”„«»「」『』"'])\p{P}’(?!\p{L})|‘(?:[^‘’]|’(?=\p{L})){1,300}?’(?!\p{L})/gu;
 
 // A quote holding inner quotes in the same marks (“my spiritual “children”;
 // my dog”). Only within one paragraph: across paragraphs an opening mark
@@ -48,7 +48,14 @@ const DIALOGUE_PATTERN =
 const NESTED_DIALOGUE_PATTERN =
   /“[^“”\n]*(?:“[^“”\n]*”[^“”\n]*)+”|„[^„“\n]*(?:„[^„“\n]*“[^„“\n]*)+“|«[^«»\n]*(?:«[^«»\n]*»[^«»\n]*)+»/gu;
 
+// An unclosed quote may run to the end of its block when the next block
+// starts with the same opening mark. Keep the existing closing-quote rules:
+// only apostrophes within words are unambiguously part of a single quote.
+const CONTINUED_DIALOGUE_PATTERN =
+  /“[^“”"]+$|„[^„“"]+$|«[^«»]+$|「[^「」]+$|『[^『』]+$|‘(?:[^‘’]|’(?=\p{L}))+$/gu;
+
 const MAX_QUOTE_LENGTH = 2048;
+const SINGLE_QUOTE_FALLBACK_PATTERN = /‘(?:[^‘’]|’(?=\p{L})){1,300}?’(?!\p{L})/uy;
 
 // Paragraph-leading dashes marking dialogue lines (French/Russian/CJK style).
 // The ASCII hyphen is left out: it leads list items in converted text.
@@ -64,6 +71,8 @@ const isSkipped = (node: Text): boolean => {
 };
 
 type TextEntry = { node: Text; start: number; end: number };
+type Region = { start: number; end: number };
+type TextBlock = Region & { firstCharacter: string; firstCharacterEligible: boolean };
 
 const BLOCK_SELECTOR =
   'p, div, li, blockquote, dd, dt, h1, h2, h3, h4, h5, h6, td, th, caption, figcaption, section, article, aside, body';
@@ -72,33 +81,66 @@ const BLOCK_SELECTOR =
 // <br> and inline boundaries contribute zero characters, so a match range can
 // transparently cross them and is mapped back to node slices below; a block
 // boundary contributes a newline that belongs to no node.
-const collectEntries = (doc: Document): { entries: TextEntry[]; text: string } => {
+const collectEntries = (
+  doc: Document,
+): { entries: TextEntry[]; text: string; blocks: TextBlock[] } => {
   const showText = doc.defaultView?.NodeFilter.SHOW_TEXT ?? 4;
   const walker = doc.createTreeWalker(doc.body ?? doc.documentElement, showText);
   const entries: TextEntry[] = [];
+  const blocks: TextBlock[] = [];
   let text = '';
   let block: Element | null = null;
   let node = walker.nextNode() as Text | null;
+  let textBlock: Element | null = null;
   while (node) {
-    if (!isSkipped(node)) {
-      const content = node.textContent ?? '';
-      if (content) {
-        const nodeBlock = node.parentElement!.closest(BLOCK_SELECTOR);
+    const content = node.textContent ?? '';
+    if (content && !node.parentElement?.closest('script, style')) {
+      const nodeBlock = node.parentElement?.closest(BLOCK_SELECTOR) ?? null;
+      if (blocks.length === 0 || nodeBlock !== textBlock) {
+        blocks.push({
+          start: text.length,
+          end: text.length,
+          firstCharacter: '',
+          firstCharacterEligible: false,
+        });
+      }
+      textBlock = nodeBlock;
+      const currentBlock = blocks[blocks.length - 1]!;
+      const eligible = !isSkipped(node);
+      if (!currentBlock.firstCharacter) {
+        currentBlock.firstCharacter = content.trimStart().charAt(0);
+        currentBlock.firstCharacterEligible = eligible;
+      }
+      if (eligible) {
         if (block && nodeBlock !== block) text += '\n';
+        if (currentBlock.start === currentBlock.end) currentBlock.start = text.length;
         block = nodeBlock;
         entries.push({ node, start: text.length, end: text.length + content.length });
         text += content;
+        currentBlock.end = text.length;
       }
     }
     node = walker.nextNode() as Text | null;
   }
-  return { entries, text };
+  return { entries, text, blocks };
 };
 
-type Region = { start: number; end: number };
-
-const findRegions = (text: string): Region[] => {
+const findRegions = (text: string, blocks: TextBlock[]): Region[] => {
   const raw: Region[] = [];
+  // Whitespace between elements is not a paragraph. Include skipped text in
+  // the leading character so code cannot hide narration before an opening mark.
+  const paragraphs = blocks.filter((block) => block.firstCharacter);
+  for (let i = 0; i < paragraphs.length - 1; i++) {
+    const block = paragraphs[i]!;
+    const next = paragraphs[i + 1]!;
+    const content = text.slice(block.start, block.end).trimEnd();
+    CONTINUED_DIALOGUE_PATTERN.lastIndex = 0;
+    const match = CONTINUED_DIALOGUE_PATTERN.exec(content);
+    if (!match || !next.firstCharacterEligible || match[0][0] !== next.firstCharacter) continue;
+    const limit = match[0][0] === '‘' ? 301 : MAX_QUOTE_LENGTH;
+    if (match[0].length > limit) continue;
+    raw.push({ start: block.start + match.index, end: block.start + content.length });
+  }
   for (const pattern of [DIALOGUE_PATTERN, NESTED_DIALOGUE_PATTERN]) {
     pattern.lastIndex = 0;
     let match: RegExpExecArray | null;
@@ -107,6 +149,15 @@ const findRegions = (text: string): Region[] => {
       // rejected span are still found.
       if (match[0].length > MAX_QUOTE_LENGTH) {
         pattern.lastIndex = match.index + 1;
+        if (pattern === DIALOGUE_PATTERN && match[0][0] === '‘') {
+          // The long alternative won before the loose fallback could run.
+          SINGLE_QUOTE_FALLBACK_PATTERN.lastIndex = match.index;
+          const fallback = SINGLE_QUOTE_FALLBACK_PATTERN.exec(text);
+          if (fallback) {
+            raw.push({ start: match.index, end: match.index + fallback[0].length });
+            pattern.lastIndex = match.index + fallback[0].length;
+          }
+        }
         continue;
       }
       raw.push({ start: match.index, end: match.index + match[0].length });
@@ -207,9 +258,9 @@ export const manageDialogueHighlight = (doc: Document, viewSettings: ViewSetting
   clearDialogueHighlight(doc);
   if (!isDialogueHighlightActive(viewSettings)) return;
   if (!doc.body && !doc.documentElement) return;
-  const { entries, text } = collectEntries(doc);
+  const { entries, text, blocks } = collectEntries(doc);
   if (entries.length === 0) return;
-  wrapRegions(doc, entries, findRegions(text));
+  wrapRegions(doc, entries, findRegions(text, blocks));
   markDashBlocks(doc);
 };
 

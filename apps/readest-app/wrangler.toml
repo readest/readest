@@ -13,6 +13,13 @@ preview_urls = true
 [triggers]
 crons = ["*/10 * * * *"]
 
+# Run the Worker near its back end (Supabase, us-east-1) instead of in every
+# location: API routes make 1-3 Supabase round trips each, and fewer locations
+# means fewer cold isolates, which carry most of the CPU bill. Static assets
+# are still served from the location nearest the reader.
+[placement]
+mode = "smart"
+
 [[routes]]
 pattern = "web-cf.readest.com"
 zone_name = "readest.com"

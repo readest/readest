@@ -1632,8 +1632,6 @@
   "Search on Goodreads": "Keresés a Goodreadson",
   "Reference Pages": "Referenciaoldalak",
   "Reference Page Count": "Referenciaoldalak száma",
-  "Lookup app reset. The next lookup will ask again.": "A keresőalkalmazás visszaállítva. A következő keresésnél újra rákérdez.",
-  "System Lookup App": "Rendszer keresőalkalmazás",
   "Share": "Megosztás",
   "Share text after selection": "Szöveg megosztása kijelölés után",
   "Customize Toolbar": "Eszköztár testreszabása",
@@ -2723,5 +2721,13 @@
   "For this book only": "Csak ennél a könyvnél",
   "Tap": "Koppintás",
   "Click": "Kattintás",
-  "Long Press": "Hosszú nyomás"
+  "Long Press": "Hosszú nyomás",
+  "Weight": "Vastagság",
+  "Slightly heavier": "Kissé vastagabb",
+  "Search history": "Keresési előzmények",
+  "Clear All": "Összes törlése",
+  "Remove {{term}} from search history": "{{term}} eltávolítása a keresési előzményekből",
+  "Remove from history": "Eltávolítás az előzményekből",
+  "Lookup App": "Keresőalkalmazás",
+  "Thinking": "Gondolkodás"
 }

@@ -1632,8 +1632,6 @@
   "Search on Goodreads": "Zoeken op Goodreads",
   "Reference Pages": "Referentiepagina's",
   "Reference Page Count": "Aantal referentiepagina's",
-  "Lookup app reset. The next lookup will ask again.": "Opzoekapp gereset. De volgende keer wordt het opnieuw gevraagd.",
-  "System Lookup App": "Systeem-opzoekapp",
   "Share": "Delen",
   "Share text after selection": "Tekst delen na selectie",
   "Customize Toolbar": "Werkbalk aanpassen",
@@ -2723,5 +2721,13 @@
   "For this book only": "Alleen voor dit boek",
   "Tap": "Tikken",
   "Click": "Klikken",
-  "Long Press": "Lang indrukken"
+  "Long Press": "Lang indrukken",
+  "Weight": "Dikte",
+  "Slightly heavier": "Iets dikker",
+  "Search history": "Zoekgeschiedenis",
+  "Clear All": "Alles wissen",
+  "Remove {{term}} from search history": "{{term}} uit de zoekgeschiedenis verwijderen",
+  "Remove from history": "Uit geschiedenis verwijderen",
+  "Lookup App": "Opzoek-app",
+  "Thinking": "Denken"
 }

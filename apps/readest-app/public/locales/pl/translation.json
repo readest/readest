@@ -1698,8 +1698,6 @@
   "Search on Goodreads": "Szukaj w Goodreads",
   "Reference Pages": "Strony referencyjne",
   "Reference Page Count": "Liczba stron referencyjnych",
-  "Lookup app reset. The next lookup will ask again.": "Zresetowano aplikację wyszukiwania. Przy następnym wyszukiwaniu zapyta ponownie.",
-  "System Lookup App": "Aplikacja wyszukiwania systemowego",
   "Share": "Udostępnij",
   "Share text after selection": "Udostępnij tekst po zaznaczeniu",
   "Customize Toolbar": "Dostosuj pasek narzędzi",
@@ -2861,5 +2859,13 @@
   "For this book only": "Tylko dla tej książki",
   "Tap": "Dotknięcie",
   "Click": "Kliknięcie",
-  "Long Press": "Długie naciśnięcie"
+  "Long Press": "Długie naciśnięcie",
+  "Weight": "Grubość",
+  "Slightly heavier": "Nieco grubsza",
+  "Search history": "Historia wyszukiwania",
+  "Clear All": "Wyczyść wszystko",
+  "Remove {{term}} from search history": "Usuń {{term}} z historii wyszukiwania",
+  "Remove from history": "Usuń z historii",
+  "Lookup App": "Aplikacja do wyszukiwania",
+  "Thinking": "Rozumowanie"
 }

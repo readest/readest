@@ -36,6 +36,7 @@ import {
   type MediaOverlaySection,
 } from '@/services/tts/mediaOverlay/MediaOverlaySection';
 import { MediaOverlayClient } from '@/services/tts/mediaOverlay/MediaOverlayClient';
+import { NativeNarrationPlayer } from '@/services/tts/mediaOverlay/NativeNarrationPlayer';
 
 const par = (id: string, begin: number, end: number) =>
   `<par><text src="ch1.xhtml#${id}"/><audio src="ch1.mp4" clipBegin="${begin}s" clipEnd="${end}s"/></par>`;
@@ -61,7 +62,10 @@ const WINDOW = { path: '/books/hash/book.epub', start: 64, end: 72 };
 
 let book: BookDoc;
 
-const setup = async (media: BookMediaSource | null = WINDOW) => {
+const setup = async (
+  media: BookMediaSource | null = WINDOW,
+  app = { isIOSApp: true } as AppService,
+) => {
   const doc = new DOMParser().parseFromString(
     `<!DOCTYPE html><html lang="en"><body>${HTML}</body></html>`,
     'text/html',
@@ -74,10 +78,7 @@ const setup = async (media: BookMediaSource | null = WINDOW) => {
     media: { narrator: 'Jane Reader' },
   } as unknown as BookDoc;
   section = (await loadMediaOverlaySection(book, 0, doc, 'en'))!;
-  client = new MediaOverlayClient(
-    { dispatchSpeakMark: vi.fn() } as unknown as TTSController,
-    { isIOSApp: true } as AppService,
-  );
+  client = new MediaOverlayClient({ dispatchSpeakMark: vi.fn() } as unknown as TTSController, app);
   await client.init();
   client.attachBook(book);
   client.setSection(section);
@@ -116,6 +117,239 @@ afterEach(async () => {
   vi.unstubAllEnvs();
   vi.unstubAllGlobals();
   platform.os = 'ios';
+});
+
+describe('NativeNarrationPlayer source selection', () => {
+  test('opens a compressed local source without staging it', async () => {
+    const player = new NativeNarrationPlayer({ isLinuxApp: true } as AppService);
+    const loadBlob = vi.fn(async () => new Blob([new Uint8Array(8)]));
+    try {
+      expect(
+        await player.loadSource(
+          'chapter.m4a',
+          {
+            loadBlob,
+            getMediaSource: async () => ({ path: '/books/book.epub', entry: 'audio/chapter.m4a' }),
+          },
+          'audio/mp4',
+        ),
+      ).toBe(true);
+      expect(controlCalls.find((call) => call['action'] === 'load')).toMatchObject({
+        path: '/books/book.epub',
+        entry: 'audio/chapter.m4a',
+        contentType: 'audio/mp4',
+      });
+      expect(loadBlob).not.toHaveBeenCalled();
+      expect(writeFile).not.toHaveBeenCalled();
+    } finally {
+      await player.shutdown();
+    }
+  });
+
+  test.each([
+    'chapter.mp3',
+    'chapter.opus',
+    'chapter.webm',
+  ])('declines %s before resolving its source', async (href) => {
+    const player = new NativeNarrationPlayer({ isLinuxApp: true } as AppService);
+    const loadBlob = vi.fn(async () => new Blob());
+    const resolvePath = vi.fn(async () => `/books/${href}`);
+    expect(await player.loadSource(href, { loadBlob, resolvePath }, 'audio/mpeg')).toBe(false);
+    expect(resolvePath).not.toHaveBeenCalled();
+    expect(loadBlob).not.toHaveBeenCalled();
+    expect(controlCalls).toEqual([]);
+  });
+});
+
+describe('MediaOverlayClient on Linux Tauri', () => {
+  const linux = { isLinuxApp: true } as AppService;
+  const entry = { path: '/books/hash/book.epub', entry: 'OEBPS/Chapter 1 #é.m4a' };
+
+  test.each([
+    WINDOW,
+    entry,
+  ])('plays local EPUB audio directly through native playout: %j', async (media) => {
+    await setup(media as BookMediaSource, linux);
+    const iter = client.speak(section.ssmlForBlock(0)!, new AbortController().signal);
+
+    expect((await iter.next()).value?.code).toBe('boundary');
+    expect(controlCalls.find((call) => call['action'] === 'load')).toMatchObject({
+      ...media,
+      contentType: 'audio/mp4',
+    });
+    expect(book.loadBlob).not.toHaveBeenCalled();
+    expect(writeFile).not.toHaveBeenCalled();
+    expect(addPluginListener).toHaveBeenCalledWith(
+      'native-tts',
+      'playout_events',
+      expect.any(Function),
+    );
+  });
+
+  test.each([
+    WINDOW,
+    entry,
+  ])('surfaces native load failures without extracting local audio: %j', async (media) => {
+    await setup(media as BookMediaSource, linux);
+    const control = vi.mocked(invoke).getMockImplementation()!;
+    vi.mocked(invoke).mockImplementation(async (cmd: string, args?: unknown) => {
+      const payload = (args as { payload?: Record<string, unknown> })?.payload;
+      if (cmd === 'plugin:native-tts|playout_control' && payload?.['action'] === 'load') {
+        throw new Error('Native narration codec unavailable');
+      }
+      return control(cmd, args as Parameters<typeof invoke>[1]);
+    });
+    const iter = client.speak(section.ssmlForBlock(0)!, new AbortController().signal);
+
+    expect((await iter.next()).value).toMatchObject({
+      code: 'error',
+      message: 'Native narration codec unavailable',
+    });
+    expect(book.loadBlob).not.toHaveBeenCalled();
+    expect(writeFile).not.toHaveBeenCalled();
+  });
+
+  test('plays a paired local recording from its original path', async () => {
+    await setup(null, linux);
+    const loadBlob = vi.fn(async () => new Blob([new Uint8Array(8)]));
+    const resolveUrl = vi.fn(async () => 'http://asset.localhost/audio.m4b');
+    client.attachSource({
+      loadBlob,
+      resolveUrl,
+      resolvePath: async () => '/books/hash/audio.m4b',
+    });
+    const iter = client.speak(section.ssmlForBlock(0)!, new AbortController().signal);
+
+    expect((await iter.next()).value?.code).toBe('boundary');
+    expect(controlCalls.find((call) => call['action'] === 'load')).toMatchObject({
+      path: '/books/hash/audio.m4b',
+    });
+    expect(resolveUrl).not.toHaveBeenCalled();
+    expect(loadBlob).not.toHaveBeenCalled();
+    expect(writeFile).not.toHaveBeenCalled();
+  });
+
+  test.each([
+    ['invalidatePlayback', 'start-session'],
+    ['invalidatePlayback', 'load'],
+    ['shutdown', 'start-session'],
+    ['shutdown', 'load'],
+    ['stop', 'start-session'],
+    ['stop', 'load'],
+  ] as const)('does not resume after %s during Linux %s', async (stop, action) => {
+    await setup(entry as BookMediaSource, linux);
+    const control = vi.mocked(invoke).getMockImplementation()!;
+    let finishLoad!: () => void;
+    const gate = new Promise<void>((resolve) => {
+      finishLoad = resolve;
+    });
+    vi.mocked(invoke).mockImplementation(async (cmd: string, args?: unknown) => {
+      const payload = (args as { payload?: Record<string, unknown> })?.payload;
+      const result = await control(cmd, args as Parameters<typeof invoke>[1]);
+      if (cmd === 'plugin:native-tts|playout_control' && payload?.['action'] === action) {
+        await gate;
+      }
+      return result;
+    });
+    const iter = client.speak(section.ssmlForBlock(0)!, new AbortController().signal);
+    const pending = iter.next();
+    await vi.waitFor(() =>
+      expect(controlCalls.some((call) => call['action'] === action)).toBe(true),
+    );
+    await client[stop]();
+    finishLoad();
+
+    expect(await pending).toEqual({ done: true, value: undefined });
+    expect(controlCalls.some((call) => call['action'] === 'resume')).toBe(false);
+    expect(controlCalls.some((call) => call['action'] === 'abort')).toBe(true);
+  });
+
+  test.each([
+    'speak',
+    'playback',
+  ])('suppresses a rejected load after %s cancellation', async (kind) => {
+    await setup(entry as BookMediaSource, linux);
+    const control = vi.mocked(invoke).getMockImplementation()!;
+    let rejectLoad!: (error: Error) => void;
+    const gate = new Promise<never>((_resolve, reject) => {
+      rejectLoad = reject;
+    });
+    vi.mocked(invoke).mockImplementation(async (cmd: string, args?: unknown) => {
+      const result = await control(cmd, args as Parameters<typeof invoke>[1]);
+      const payload = (args as { payload?: Record<string, unknown> })?.payload;
+      if (cmd === 'plugin:native-tts|playout_control' && payload?.['action'] === 'load') {
+        await gate;
+      }
+      return result;
+    });
+    const abort = new AbortController();
+    const pending = client.speak(section.ssmlForBlock(0)!, abort.signal).next();
+    await vi.waitFor(() =>
+      expect(controlCalls.some((call) => call['action'] === 'load')).toBe(true),
+    );
+    if (kind === 'speak') abort.abort();
+    else client.invalidatePlayback();
+    rejectLoad(new Error('Narration load cancelled'));
+
+    expect(await pending).toEqual({ done: true, value: undefined });
+    expect(controlCalls.some((call) => call['action'] === 'resume')).toBe(false);
+  });
+
+  test('keeps Linux handover playback continuous without aborting the native session', async () => {
+    await setup(entry as BookMediaSource, linux);
+    const iter = client.speak(section.ssmlForBlock(0)!, new AbortController().signal);
+    await iter.next();
+    controlCalls.length = 0;
+
+    await client.stop(true);
+
+    expect(controlCalls).toHaveLength(0);
+    await client.stop();
+  });
+
+  test('ignores a stale start-session completion after the replacement session is ready', async () => {
+    const player = new NativeNarrationPlayer();
+    const control = vi.mocked(invoke).getMockImplementation()!;
+    let finishOld!: (value: { session: number }) => void;
+    const oldSession = new Promise<{ session: number }>((resolve) => {
+      finishOld = resolve;
+    });
+    let starts = 0;
+    vi.mocked(invoke).mockImplementation(async (cmd: string, args?: unknown) => {
+      const payload = (args as { payload?: Record<string, unknown> })?.payload;
+      if (cmd === 'plugin:native-tts|playout_control' && payload?.['action'] === 'start-session') {
+        starts++;
+        return starts === 1 ? oldSession : { session: 8 };
+      }
+      if (cmd === 'plugin:native-tts|playout_position') {
+        return { session: 8, index: 0, positionMs: 2000, playing: false };
+      }
+      return control(cmd, args as Parameters<typeof invoke>[1]);
+    });
+    try {
+      const oldReady = player.ensureReady();
+      await vi.waitFor(() => expect(starts).toBe(1));
+      player.invalidateSession(true);
+      await player.ensureReady();
+      finishOld({ session: 7 });
+      await oldReady;
+
+      expect(await player.sync()).toMatchObject({ session: 8, positionMs: 2000 });
+      expect(player.currentTime).toBe(2);
+    } finally {
+      await player.shutdown();
+    }
+  });
+
+  test('forwards native playback errors to the waiting utterance', async () => {
+    await setup(entry as BookMediaSource, linux);
+    const iter = client.speak(section.ssmlForBlock(0)!, new AbortController().signal);
+    await iter.next();
+    const pending = iter.next();
+    playoutEvents!({ type: 'error', session: 7, index: 0 });
+
+    expect((await pending).value?.code).toBe('error');
+  });
 });
 
 describe('MediaOverlayClient on iOS Tauri', () => {

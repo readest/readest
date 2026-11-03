@@ -7,7 +7,7 @@ import {
   DEFAULT_STORAGE_QUOTA,
 } from '@/services/constants';
 import { isWebAppPlatform } from '@/services/environment';
-import { getDailyUsage } from '@/services/translators/utils';
+import { getDailyUsage } from '@/services/translators/dailyUsage';
 import { getRuntimeConfig } from '@/services/runtimeConfig';
 
 interface Token {

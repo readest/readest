@@ -1632,8 +1632,6 @@
   "Search on Goodreads": "جستجو در Goodreads",
   "Reference Pages": "صفحات مرجع",
   "Reference Page Count": "تعداد صفحات مرجع",
-  "Lookup app reset. The next lookup will ask again.": "برنامهٔ جستجو بازنشانی شد. در جستجوی بعدی دوباره پرسیده می‌شود.",
-  "System Lookup App": "برنامهٔ جستجوی سیستم",
   "Share": "اشتراک‌گذاری",
   "Share text after selection": "اشتراک‌گذاری متن پس از انتخاب",
   "Customize Toolbar": "سفارشی‌سازی نوار ابزار",
@@ -2723,5 +2721,13 @@
   "For this book only": "فقط برای این کتاب",
   "Tap": "ضربه",
   "Click": "کلیک",
-  "Long Press": "لمس طولانی"
+  "Long Press": "لمس طولانی",
+  "Weight": "ضخامت",
+  "Slightly heavier": "کمی ضخیم‌تر",
+  "Search history": "تاریخچه جستجو",
+  "Clear All": "پاک کردن همه",
+  "Remove {{term}} from search history": "حذف {{term}} از تاریخچه جستجو",
+  "Remove from history": "حذف از تاریخچه",
+  "Lookup App": "برنامه جستجو",
+  "Thinking": "تفکر"
 }

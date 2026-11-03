@@ -10,11 +10,23 @@ pub fn init<R: Runtime, C: DeserializeOwned>(
     app: &AppHandle<R>,
     _api: PluginApi<R, C>,
 ) -> crate::Result<NativeTts<R>> {
-    Ok(NativeTts(app.clone(), Listeners::default()))
+    let listeners = Listeners::default();
+    #[cfg(target_os = "linux")]
+    let player = crate::linux::Player::new(listeners.clone());
+    Ok(NativeTts(
+        app.clone(),
+        listeners,
+        #[cfg(target_os = "linux")]
+        player,
+    ))
 }
 
 /// Access to the native-tts APIs.
-pub struct NativeTts<R: Runtime>(AppHandle<R>, Listeners);
+pub struct NativeTts<R: Runtime>(
+    AppHandle<R>,
+    Listeners,
+    #[cfg(target_os = "linux")] crate::linux::Player,
+);
 
 impl<R: Runtime> NativeTts<R> {
     pub fn init(&self) -> crate::Result<InitResponse> {
@@ -86,6 +98,14 @@ impl<R: Runtime> NativeTts<R> {
     ) -> crate::Result<PlayoutEnqueueResponse> {
         Err(crate::Error::UnsupportedPlatformError)
     }
+    #[cfg(target_os = "linux")]
+    pub(crate) fn playout_control_enqueue(
+        &self,
+        payload: PlayoutControlRequest,
+    ) -> crate::Result<crate::linux::PendingReply> {
+        self.2.enqueue(&self.0, payload)
+    }
+    #[cfg(not(target_os = "linux"))]
     pub fn playout_control(
         &self,
         _payload: PlayoutControlRequest,
@@ -93,6 +113,13 @@ impl<R: Runtime> NativeTts<R> {
         Err(crate::Error::UnsupportedPlatformError)
     }
     pub fn playout_position(&self) -> crate::Result<PlayoutPositionResponse> {
-        Err(crate::Error::UnsupportedPlatformError)
+        #[cfg(target_os = "linux")]
+        {
+            Ok(self.2.position())
+        }
+        #[cfg(not(target_os = "linux"))]
+        {
+            Err(crate::Error::UnsupportedPlatformError)
+        }
     }
 }

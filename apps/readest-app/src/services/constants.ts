@@ -45,8 +45,7 @@ import {
   DEFAULT_MARKER_WIDTH,
 } from './handwriting/model';
 import { DEFAULT_ANNOTATION_TOOLBAR_ITEMS } from '@/utils/annotationToolbar';
-import { DEFAULT_SENTENCE_GAP_SEC } from './tts/EdgeTTSClient';
-import { DEFAULT_PARAGRAPH_GAP_SEC } from './tts/TTSController';
+import { DEFAULT_PARAGRAPH_GAP_SEC, DEFAULT_SENTENCE_GAP_SEC } from './tts/gap';
 
 export const DATA_SUBDIR = 'Readest';
 export const LOCAL_BOOKS_SUBDIR = `${DATA_SUBDIR}/Books`;
@@ -431,6 +430,7 @@ export const DEFAULT_BOOK_STYLE: BookStyle = {
   dialogueHighlightCustomTextColor: false,
   dialogueHighlightTextColor: '',
   dialogueHighlightItalic: false,
+  dialogueHighlightWeight: 'normal',
   userStylesheet: '',
   userUIStylesheet: '',
 
@@ -443,6 +443,7 @@ export const DEFAULT_BOOK_STYLE: BookStyle = {
   spreadMode: 'auto',
   keepCoverSpread: true,
   invertImgColorInDark: false,
+  transparentImageBackground: false,
   applyThemeToPDF: false,
   contrast: 100,
 };

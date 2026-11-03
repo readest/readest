@@ -1636,8 +1636,6 @@
   "Search on Goodreads": "Goodreads'te ara",
   "Reference Pages": "Referans sayfaları",
   "Reference Page Count": "Referans sayfa sayısı",
-  "Lookup app reset. The next lookup will ask again.": "Arama uygulaması sıfırlandı. Sonraki aramada tekrar sorulacak.",
-  "System Lookup App": "Sistem arama uygulaması",
   "Share": "Paylaş",
   "Share text after selection": "Seçimden sonra metni paylaş",
   "Customize Toolbar": "Araç Çubuğunu Özelleştir",
@@ -2723,5 +2721,13 @@
   "For this book only": "Yalnızca bu kitap için",
   "Tap": "Dokunma",
   "Click": "Tıklama",
-  "Long Press": "Uzun basma"
+  "Long Press": "Uzun basma",
+  "Weight": "Kalınlık",
+  "Slightly heavier": "Biraz daha kalın",
+  "Search history": "Arama geçmişi",
+  "Clear All": "Tümünü temizle",
+  "Remove {{term}} from search history": "{{term}} aramasını arama geçmişinden kaldır",
+  "Remove from history": "Geçmişten kaldır",
+  "Lookup App": "Arama uygulaması",
+  "Thinking": "Düşünme"
 }

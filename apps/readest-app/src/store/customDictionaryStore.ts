@@ -125,8 +125,15 @@ interface DictionaryStoreState {
   setFontScale(scale: number): void;
   /** Auto-play a looked-up word's bundled pronunciation audio (#6265). */
   setAutoPlayPronunciation(enabled: boolean): void;
+  setSystemDictionaryFullscreen(enabled: boolean): void;
   /** Pick the custom translator the context dictionary asks (#5544). */
   setContextTranslatorId(id: string): void;
+  setContextOptions(
+    options: Pick<
+      DictionarySettings,
+      'contextPromptId' | 'contextSystemPrompt' | 'contextMaxOutputTokens'
+    >,
+  ): void;
 
   /** Add a custom web search (id is generated). Appended + enabled by default. */
   addWebSearch(name: string, urlTemplate: string): WebSearchEntry;
@@ -143,8 +150,8 @@ interface DictionaryStoreState {
    */
   applyRemoteDictionarySettings(patch: Partial<DictionarySettings>): void;
 
-  /** Hydrate from `settings.customDictionaries` + `settings.dictionarySettings` + check on-disk availability. */
-  loadCustomDictionaries(envConfig: EnvConfigType): Promise<void>;
+  /** Hydrate settings and check on-disk availability; return whether loading succeeded. */
+  loadCustomDictionaries(envConfig: EnvConfigType): Promise<boolean>;
   /**
    * Persist current state back into settings (which then syncs to
    * cloud). Pass `{ publishOrderChange: true }` from explicit user
@@ -460,10 +467,20 @@ export const useCustomDictionaryStore = create<DictionaryStoreState>((set, get) 
     }));
   },
 
+  setSystemDictionaryFullscreen: (enabled) => {
+    set((state) => ({
+      settings: { ...state.settings, systemDictionaryFullscreen: enabled },
+    }));
+  },
+
   setContextTranslatorId: (id) => {
     set((state) => ({
       settings: { ...state.settings, contextTranslatorId: id },
     }));
+  },
+
+  setContextOptions: (options) => {
+    set((state) => ({ settings: { ...state.settings, ...options } }));
   },
 
   addWebSearch: (name, urlTemplate) => {
@@ -536,7 +553,6 @@ export const useCustomDictionaryStore = create<DictionaryStoreState>((set, get) 
     try {
       const { settings } = useSettingsStore.getState();
       const persisted = settings?.customDictionaries ?? [];
-      const persistedSettings = settings?.dictionarySettings ?? DEFAULT_DICTIONARY_SETTINGS;
       const appService = await envConfig.getAppService();
       const pluginDictionaries = persisted.filter(
         (dict) => !dict.deletedAt && dict.kind === 'plugin',
@@ -591,6 +607,9 @@ export const useCustomDictionaryStore = create<DictionaryStoreState>((set, get) 
       const tombstonedIds = new Set(persisted.filter((d) => d.deletedAt).map((d) => d.id));
       const dropTombstoned = (id: string) => !tombstonedIds.has(id);
 
+      // File checks can outlive a settings edit; hydrate the latest saved values.
+      const persistedSettings =
+        useSettingsStore.getState().settings?.dictionarySettings ?? DEFAULT_DICTIONARY_SETTINGS;
       // Merge defaults to back-fill any missing keys (e.g. new builtin added in a release).
       // For providerOrder, we append any newly-defaulted ids (like the
       // built-in web searches added in this release) so existing users see
@@ -651,11 +670,17 @@ export const useCustomDictionaryStore = create<DictionaryStoreState>((set, get) 
         autoPlayPronunciation:
           persistedSettings.autoPlayPronunciation ??
           DEFAULT_DICTIONARY_SETTINGS.autoPlayPronunciation,
+        systemDictionaryFullscreen: persistedSettings.systemDictionaryFullscreen ?? false,
         contextTranslatorId: persistedSettings.contextTranslatorId,
+        contextPromptId: persistedSettings.contextPromptId,
+        contextSystemPrompt: persistedSettings.contextSystemPrompt,
+        contextMaxOutputTokens: persistedSettings.contextMaxOutputTokens,
       };
       set({ dictionaries, settings: settingsMerged });
+      return true;
     } catch (error) {
       console.error('Failed to load custom dictionaries settings:', error);
+      return false;
     }
   },
 

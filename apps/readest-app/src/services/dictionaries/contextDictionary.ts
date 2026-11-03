@@ -9,11 +9,7 @@
 import type { CustomTranslator } from '@/types/translation';
 import { md5Fingerprint } from '@/utils/md5';
 import { renderPrompt } from '@/services/translators/custom/prompts';
-import {
-  createChatModel,
-  loadSDK,
-  stripReasoning,
-} from '@/services/translators/custom/openaiCompatible';
+import { generateChatText, stripReasoning } from '@/services/translators/custom/openaiCompatible';
 
 const REQUEST_TIMEOUT_MS = 60_000;
 const MAX_CACHE_ENTRIES = 100;
@@ -47,7 +43,14 @@ export interface ContextLookupInput {
   bookAuthor?: string;
 }
 
+export interface ContextLookupOptions {
+  systemPrompt?: string;
+  maxOutputTokens?: number;
+}
+
 export interface ContextEntry {
+  /** Custom prompts return free-form Markdown instead of the built-in JSON entry. */
+  markdown?: string;
   headword: string;
   pronunciation?: string;
   grammar?: string;
@@ -148,11 +151,19 @@ export const lookupInContext = async (
   translator: CustomTranslator,
   input: ContextLookupInput,
   signal: AbortSignal,
+  options: ContextLookupOptions = {},
 ): Promise<ContextEntry> => {
-  const system = renderPrompt(CONTEXT_DICTIONARY_PROMPT, {
+  const customPrompt = options.systemPrompt?.trim();
+  const system = renderPrompt(customPrompt || CONTEXT_DICTIONARY_PROMPT, {
     sourceLang: input.sourceLang || 'AUTO',
     targetLang: input.targetLang,
+    bookTitle: input.bookTitle,
+    bookAuthor: input.bookAuthor,
   });
+  const maxOutputTokens =
+    Number.isSafeInteger(options.maxOutputTokens) && options.maxOutputTokens! > 0
+      ? options.maxOutputTokens
+      : undefined;
   const prompt = JSON.stringify({
     selectedText: input.text,
     before: input.before,
@@ -161,7 +172,14 @@ export const lookupInContext = async (
     bookAuthor: input.bookAuthor ?? '',
   });
   const key = md5Fingerprint(
-    JSON.stringify([translator.id, translator.updatedAt, translator.model, system, prompt]),
+    JSON.stringify([
+      translator.id,
+      translator.updatedAt,
+      translator.model,
+      system,
+      prompt,
+      maxOutputTokens,
+    ]),
   );
   const cached = cache.get(key);
   if (cached) return cached;
@@ -175,16 +193,18 @@ export const lookupInContext = async (
   const timer = setTimeout(abort, REQUEST_TIMEOUT_MS);
   signal.addEventListener('abort', abort, { once: true });
   try {
-    const [{ generateText }] = await loadSDK();
-    const { text } = await generateText({
-      model: await createChatModel(translator),
+    const text = await generateChatText(translator, {
       system,
       prompt,
-      temperature: translator.temperature,
+      maxOutputTokens,
       maxRetries: 1,
       abortSignal: controller.signal,
     });
-    const entry = parseContextEntry(text);
+    const markdown = stripReasoning(text);
+    if (!markdown) throw new Error('The AI provider returned an incomplete entry.');
+    const entry: ContextEntry = customPrompt
+      ? { headword: input.text, definition: '', examples: [], synonyms: [], markdown }
+      : parseContextEntry(text);
     if (cache.size >= MAX_CACHE_ENTRIES) cache.delete(cache.keys().next().value!);
     cache.set(key, entry);
     return entry;

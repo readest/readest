@@ -317,6 +317,20 @@ impl<R: Runtime> NativeBridge<R> {
 }
 
 impl<R: Runtime> NativeBridge<R> {
+    pub fn get_lookup_apps(&self) -> crate::Result<GetLookupAppsResponse> {
+        self.0
+            .run_mobile_plugin("get_lookup_apps", ())
+            .map_err(Into::into)
+    }
+
+    pub fn set_lookup_app(&self, payload: SetLookupAppRequest) -> crate::Result<()> {
+        self.0
+            .run_mobile_plugin("set_lookup_app", payload)
+            .map_err(Into::into)
+    }
+}
+
+impl<R: Runtime> NativeBridge<R> {
     pub fn select_directory(&self) -> crate::Result<SelectDirectoryResponse> {
         self.0
             .run_mobile_plugin("select_directory", ())

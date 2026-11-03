@@ -249,6 +249,21 @@ pub(crate) async fn show_lookup_popover<R: Runtime>(
 }
 
 #[command]
+pub(crate) async fn get_lookup_apps<R: Runtime>(
+    app: AppHandle<R>,
+) -> Result<GetLookupAppsResponse> {
+    app.native_bridge().get_lookup_apps()
+}
+
+#[command]
+pub(crate) async fn set_lookup_app<R: Runtime>(
+    app: AppHandle<R>,
+    payload: SetLookupAppRequest,
+) -> Result<()> {
+    app.native_bridge().set_lookup_app(payload)
+}
+
+#[command]
 pub(crate) async fn select_directory<R: Runtime>(
     app: AppHandle<R>,
     callback_state: State<'_, DirectoryCallbackState<R>>,

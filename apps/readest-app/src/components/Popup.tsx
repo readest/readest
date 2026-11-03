@@ -197,6 +197,7 @@ const Popup = ({
             'popup-triangle-inner text-base-300 theme-dark:text-base-100 absolute z-50',
             triangleHidden ? 'invisible' : 'visible',
           )}
+          data-direction={trianglePosition.dir}
           style={innerTriangleStyles}
         />
       )}
