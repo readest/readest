@@ -26,15 +26,30 @@ vi.mock('@/hooks/usePullToRefresh', () => ({
 }));
 
 import { useSettingsStore } from '@/store/settingsStore';
+import {
+  setCachedUserPlan,
+  setCachedCustomizationPurchased,
+} from '@/services/sync/cloudSyncProvider';
+
+vi.mock('@/services/runtimeConfig', () => ({ getRuntimeConfig: () => ({ selfHosted: false }) }));
 import { useLibraryRefresh } from '@/app/library/hooks/useLibraryRefresh';
 
 const defaults = DEFAULT_SYSTEM_SETTINGS as SystemSettings;
 beforeEach(() => {
   vi.clearAllMocks();
   h.user = null;
+  vi.stubEnv('SELF_HOSTED', 'false');
+  vi.stubEnv('NEXT_PUBLIC_SELF_HOSTED', 'false');
+  setCachedUserPlan('plus');
+  setCachedCustomizationPurchased(false);
   useSettingsStore.setState({ settings: { ...defaults, opdsCatalogs: [], absServers: [] } });
 });
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.unstubAllEnvs();
+  setCachedUserPlan(undefined);
+  setCachedCustomizationPurchased(false);
+});
 
 for (const [stage, fullRefresh] of [false, true].entries()) {
   describe(`library refresh stage ${stage + 1}`, () => {
@@ -69,6 +84,34 @@ for (const [stage, fullRefresh] of [false, true].entries()) {
       await refresh();
       expect(h.login).not.toHaveBeenCalled();
       expect(h.pull).toHaveBeenCalledWith(fullRefresh, true);
+    });
+
+    it('prompts for sign-in when the only file backend is paused by the plan gate', async () => {
+      setCachedUserPlan('free');
+      const settings = useSettingsStore.getState().settings;
+      useSettingsStore.setState({
+        settings: { ...settings, webdav: { ...settings.webdav, enabled: true } },
+      });
+      await refresh();
+      expect(h.login).toHaveBeenCalledWith(h.router);
+      expect(h.pull).not.toHaveBeenCalled();
+    });
+
+    it('refreshes OPDS even when a configured file backend is paused', async () => {
+      setCachedUserPlan('free');
+      const settings = useSettingsStore.getState().settings;
+      useSettingsStore.setState({
+        settings: {
+          ...settings,
+          webdav: { ...settings.webdav, enabled: true },
+          opdsCatalogs: [
+            { id: 'opds', name: 'Books', url: 'https://books.example/opds', autoDownload: true },
+          ],
+        },
+      });
+      await refresh();
+      expect(h.login).not.toHaveBeenCalled();
+      expect(h.opds).toHaveBeenCalledWith(true);
     });
 
     it('refreshes Audiobookshelf without a Readest account', async () => {

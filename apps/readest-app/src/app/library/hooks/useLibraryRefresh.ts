@@ -5,7 +5,7 @@ import { useABSSync } from '@/hooks/useABSSync';
 import { useOPDSSubscriptions } from '@/hooks/useOPDSSubscriptions';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { useSettingsStore } from '@/store/settingsStore';
-import { hasAnyThirdPartyEnabled } from '@/services/sync/cloudSyncProvider';
+import { getActiveFileSyncBackends } from '@/services/sync/cloudSyncProvider';
 import { navigateToLogin } from '@/utils/nav';
 
 export function useLibraryRefresh(
@@ -20,7 +20,7 @@ export function useLibraryRefresh(
   const refresh = async (fullRefresh: boolean) => {
     const { settings } = useSettingsStore.getState();
     const hasExternalSources =
-      hasAnyThirdPartyEnabled(settings) ||
+      getActiveFileSyncBackends(settings).length > 0 ||
       settings.opdsCatalogs?.some((c) => !c.disabled && !c.deletedAt) ||
       settings.absServers?.some((s) => !s.disabled && !s.deletedAt) ||
       settings.kosync?.enabled ||
