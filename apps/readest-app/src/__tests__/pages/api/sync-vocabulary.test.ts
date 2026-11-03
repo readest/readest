@@ -111,6 +111,19 @@ describe('GET /api/sync/vocabulary', () => {
     expect(chain).toContainEqual({ method: 'limit', args: [1000] });
   });
 
+  it('rejects a since_ts that is not a timestamp before querying', async () => {
+    const res = await get('since_ts=nope');
+    expect(res.status).toBe(400);
+    expect(queries).toHaveLength(0);
+  });
+
+  it('keeps database error details out of the response', async () => {
+    responses.push({ data: null, error: { message: 'column "secret" does not exist' } });
+    const res = await get('');
+    expect(res.status).toBe(500);
+    expect(JSON.stringify(await res.json())).not.toContain('secret');
+  });
+
   it('rejects an unauthenticated request', async () => {
     authed = false;
     expect((await get('')).status).toBe(401);
@@ -157,6 +170,13 @@ describe('POST /api/sync/vocabulary', () => {
     expect(body.rejected).toEqual(['en:big', 'en:walk', 'en:a"b']);
     const upsert = queries[1]!.find((c) => c.method === 'upsert')!;
     expect((upsert.args[0] as VocabularyRow[]).map((r) => r.id)).toEqual(['en:run']);
+  });
+
+  it('keeps database error details out of a failed push', async () => {
+    responses.push({ data: null, error: { message: 'relation "secret" does not exist' } });
+    const res = await post({ rows: [row()] });
+    expect(res.status).toBe(500);
+    expect(JSON.stringify(await res.json())).not.toContain('secret');
   });
 
   it('rejects more than 100 rows', async () => {

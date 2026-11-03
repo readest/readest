@@ -34,6 +34,7 @@ export async function GET(req: NextRequest) {
   const params = new URL(req.url).searchParams;
   const sinceTs = params.get('since_ts');
   const sinceId = params.get('since_id') ?? '';
+  if (sinceTs && Number.isNaN(Date.parse(sinceTs))) return errorResponse(400, 'Invalid since_ts');
   const requested = Math.floor(Number(params.get('limit')));
   const limit = requested > 0 ? Math.min(requested, MAX_PULL_ROWS) : MAX_PULL_ROWS;
 
@@ -48,7 +49,7 @@ export async function GET(req: NextRequest) {
     .limit(limit);
   if (error) {
     console.error('pull vocabulary failed', error);
-    return errorResponse(500, error.message);
+    return errorResponse(500, 'Failed to pull vocabulary');
   }
   return NextResponse.json({ rows: data ?? [] }, { status: 200 });
 }
@@ -86,7 +87,7 @@ export async function POST(req: NextRequest) {
     );
   if (readError) {
     console.error('read vocabulary failed', readError);
-    return errorResponse(500, readError.message);
+    return errorResponse(500, 'Failed to read vocabulary');
   }
 
   const stored = new Map((existing as VocabularyRow[] | null)?.map((r) => [r.id, r]) ?? []);
@@ -104,7 +105,7 @@ export async function POST(req: NextRequest) {
     .select('*');
   if (error) {
     console.error('upsert vocabulary failed', error);
-    return errorResponse(500, error.message);
+    return errorResponse(500, 'Failed to save vocabulary');
   }
   return NextResponse.json({ rows: data ?? [], rejected }, { status: 200 });
 }
