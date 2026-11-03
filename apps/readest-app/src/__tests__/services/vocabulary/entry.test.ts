@@ -122,4 +122,20 @@ describe('mergeEntries', () => {
     expect(m.occurrences.map((o) => o.sentence)).toEqual(['New.']);
     expect(mergeEntries(relooked, deleted)).toEqual(m);
   });
+  it('revives a word looked up after the delete on a device that missed it', () => {
+    // Lookups don't move modifiedAt, so the stale copy is older than the delete.
+    const deleted = entry({ deletedAt: 20, modifiedAt: 20, occurrences: [] });
+    const stale = entry({
+      state: 'learning',
+      hint: '旧',
+      modifiedAt: 15,
+      occurrences: [occ('New.', 30), occ('Old.', 5)],
+    });
+    const m = mergeEntries(deleted, stale);
+    expect(m.deletedAt).toBeNull();
+    expect(m.state).toBe('none');
+    expect(m.hint).toBeUndefined();
+    expect(m.occurrences.map((o) => o.sentence)).toEqual(['New.']);
+    expect(mergeEntries(stale, deleted)).toEqual(m);
+  });
 });

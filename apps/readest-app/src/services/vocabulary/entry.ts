@@ -60,7 +60,19 @@ export const mergeEntries = (a: VocabularyEntry, b: VocabularyEntry): Vocabulary
       ? [a, b]
       : [b, a];
   const { dirty: _dirty, ...base } = winner;
-  if (winner.deletedAt) return { ...base, occurrences: [] };
+  if (winner.deletedAt) {
+    // Lookups don't move modifiedAt, so a device that missed the delete can
+    // hold sentences from after it: those bring the word back, unmarked.
+    const after = loser.occurrences.filter((o) => o.at > winner.deletedAt!);
+    if (!after.length) return { ...base, occurrences: [] };
+    const { hint: _hint, ...alive } = base;
+    return {
+      ...alive,
+      state: 'none',
+      deletedAt: null,
+      occurrences: normalizeOccurrences(after),
+    };
+  }
   const deletedAt = loser.deletedAt ?? 0;
   const occurrences = normalizeOccurrences(
     [...winner.occurrences, ...loser.occurrences].filter((o) => o.at > deletedAt),
