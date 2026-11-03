@@ -44,12 +44,18 @@ export const styleTransformer: Transformer = {
       tag.replace(/(\s([\w:.-]+)\s*=\s*)("[^"]*"|'[^']*')/g, (attr, prefix, name, value) => {
         if (name.toLowerCase() !== 'style') return attr;
         const quote = value[0];
-        // The `;` of `&quot;` would end the declaration early; inside a
-        // `"`-quoted value a `'` quotes the font name just as well.
-        let css = value.slice(1, -1);
-        if (quote === '"') css = css.replaceAll('&quot;', "'");
+        // The `;` of `&quot;` would end the declaration early. A `"`-quoted
+        // value holds no raw `"`, so decoding and re-encoding is exact.
+        const encoded = value.slice(1, -1);
+        const css = quote === '"' ? encoded.replaceAll('&quot;', '"') : encoded;
         const transformed = transformInlineFonts(toColumnBreaks(css));
-        return transformed === css ? attr : prefix + quote + transformed + quote;
+        if (transformed === css) return attr;
+        return (
+          prefix +
+          quote +
+          (quote === '"' ? transformed.replaceAll('"', '&quot;') : transformed) +
+          quote
+        );
       }),
     );
 

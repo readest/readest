@@ -30,6 +30,7 @@ const BOOK_CSS = `
 const BODY =
   '<p id="serif">a</p><p id="sans">b</p><p id="mono">c</p><p id="decorative">d</p>' +
   '<p id="inline" style="font-family: &quot;Inline Serif&quot;, serif">e</p>' +
+  '<p id="apostrophe" style="font-family: &quot;O\'Neill&quot;, serif">h</p>' +
   '<p id="inline-font" style=\'font: bold 1em "Inline Sans", sans-serif\'>f</p>' +
   '<p id="plain">g</p>';
 
@@ -76,7 +77,7 @@ const render = async () => {
   return { apply, font, style };
 };
 
-const IDS = ['serif', 'sans', 'mono', 'decorative', 'inline', 'inline-font', 'plain'];
+const IDS = ['serif', 'sans', 'mono', 'decorative', 'inline', 'apostrophe', 'inline-font', 'plain'];
 
 describe('Ignore publisher font names', () => {
   it('keeps the book fonts while every switch is off', async () => {
@@ -86,6 +87,7 @@ describe('Ignore publisher font names', () => {
     expect(font('sans')).toMatch(/^PublisherSans, sans-serif$/);
     expect(font('mono')).toMatch(/^PublisherMono, /);
     expect(font('inline')).toMatch(/^"Inline Serif", serif$/);
+    expect(font('apostrophe')).toBe(`"O'Neill", serif`);
     expect(font('inline-font')).toMatch(/^"Inline Sans", sans-serif$/);
   });
 
@@ -94,6 +96,7 @@ describe('Ignore publisher font names', () => {
     apply({ ignorePublisherFonts: ['serif'] });
     expect(font('serif')).toMatch(/^ReaderSerif,/);
     expect(font('inline')).toMatch(/^ReaderSerif,/);
+    expect(font('apostrophe')).toMatch(/^ReaderSerif,/);
     expect(font('sans')).toMatch(/^PublisherSans/);
     expect(font('mono')).toMatch(/^PublisherMono/);
 
