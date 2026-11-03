@@ -27,7 +27,8 @@ export interface VocabularySyncDeps {
   pageSize?: number;
   pushChunk?: number;
   pull(since: { ts: string; id: string } | null, limit: number): Promise<VocabularyRow[]>;
-  push(rows: VocabularyRow[]): Promise<VocabularyRow[]>;
+  /** The merged rows the server stored, and ids of rows it skipped as malformed. */
+  push(rows: VocabularyRow[]): Promise<{ rows: VocabularyRow[]; rejected: string[] }>;
   getCursor(): VocabularyCursor | null;
   setCursor(cursor: VocabularyCursor): void;
 }
@@ -55,16 +56,18 @@ export const pullVocabulary = async (deps: VocabularySyncDeps): Promise<void> =>
 };
 
 export const pushVocabulary = async (deps: VocabularySyncDeps): Promise<void> => {
-  const chunk = deps.pushChunk ?? MAX_PUSH_ROWS;
+  // Half the server cap keeps a batch of full rows under the request body limit.
+  const chunk = deps.pushChunk ?? MAX_PUSH_ROWS / 2;
   const dirty = Object.values(useVocabularyStore.getState().entries).filter((e) => e.dirty);
   for (let i = 0; i < dirty.length; i += chunk) {
     const batch = dirty.slice(i, i + chunk);
-    const merged = await deps.push(batch.map(entryToRow));
+    const { rows } = await deps.push(batch.map(entryToRow));
     const store = useVocabularyStore.getState();
     // Clear dirty first (only on entries unchanged since the snapshot), then
-    // fold in the server's merge so it can't re-mark them.
+    // fold in the server's merge so it can't re-mark them. Rows the server
+    // rejected are cleared too: resending them would only fail again.
     store.markPushed(batch);
-    store.applyRemote(merged.map(rowToEntry));
+    store.applyRemote(rows.map(rowToEntry));
   }
 };
 
@@ -112,13 +115,14 @@ const defaultDeps = async (): Promise<VocabularySyncDeps | null> => {
       }
       return (await request<{ rows: VocabularyRow[] }>(`${endpoint()}?${qs}`)).rows;
     },
-    push: async (rows) =>
-      (
-        await request<{ rows: VocabularyRow[] }>(endpoint(), {
-          method: 'POST',
-          body: JSON.stringify({ rows }),
-        })
-      ).rows,
+    push: async (rows) => {
+      const res = await request<{ rows?: VocabularyRow[]; rejected?: string[] }>(endpoint(), {
+        method: 'POST',
+        body: JSON.stringify({ rows }),
+      });
+      if (res.rejected?.length) console.warn('[vocabulary] server skipped rows', res.rejected);
+      return { rows: res.rows ?? [], rejected: res.rejected ?? [] };
+    },
     getCursor: readCursor,
     setCursor: (cursor) => {
       try {
@@ -142,7 +146,8 @@ export const syncVocabulary = (
       if (!isSyncCategoryEnabled('vocabulary')) return;
       const deps = await makeDeps();
       if (!deps) return;
-      await pushVocabulary(deps);
+      // A failed push must not stop this device from receiving other devices' words.
+      await pushVocabulary(deps).catch((err) => console.warn('[vocabulary] push failed', err));
       await pullVocabulary(deps);
     } catch (err) {
       console.warn('[vocabulary] sync failed', err);

@@ -65,13 +65,16 @@ export async function POST(req: NextRequest) {
   }
   if (!Array.isArray(rows)) return errorResponse(400, '"rows" must be an array');
   if (rows.length > MAX_PUSH_ROWS) return errorResponse(413, `at most ${MAX_PUSH_ROWS} rows`);
-  for (let i = 0; i < rows.length; i++) {
-    const problem = validateRow(rows[i]);
-    if (problem) return errorResponse(422, `row[${i}]: ${problem}`);
+  // A malformed row is skipped and reported rather than failing the batch:
+  // otherwise one bad word would block every later push from that device.
+  const incoming: VocabularyRow[] = [];
+  const rejected: string[] = [];
+  for (const r of rows) {
+    if (validateRow(r)) rejected.push(String((r as { id?: unknown })?.id ?? ''));
+    else incoming.push(r as VocabularyRow);
   }
-  if (!rows.length) return NextResponse.json({ rows: [] }, { status: 200 });
+  if (!incoming.length) return NextResponse.json({ rows: [], rejected }, { status: 200 });
 
-  const incoming = rows as VocabularyRow[];
   const supabase = createSupabaseClient(token);
   const { data: existing, error: readError } = await supabase
     .from('vocabulary')
@@ -103,7 +106,7 @@ export async function POST(req: NextRequest) {
     console.error('upsert vocabulary failed', error);
     return errorResponse(500, error.message);
   }
-  return NextResponse.json({ rows: data ?? [] }, { status: 200 });
+  return NextResponse.json({ rows: data ?? [], rejected }, { status: 200 });
 }
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {

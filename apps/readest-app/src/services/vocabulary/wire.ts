@@ -61,6 +61,8 @@ export const validateRow = (value: unknown): string | null => {
     return 'lang, word_key and word must be strings';
   }
   if (!r['word_key'] || r['id'] !== entryId(r['lang'], r['word_key'])) return 'id mismatch';
+  // postgrest-js quotes `.in()` values but doesn't escape a double quote.
+  if (r['id'].includes('"')) return 'bad id';
   if (!STATES.includes(r['state'] as VocabularyState)) return 'bad state';
   if (r['hint'] != null && !isString(r['hint'])) return 'bad hint';
   if (!isNumber(r['created_at']) || !isNumber(r['modified_at'])) return 'bad timestamps';

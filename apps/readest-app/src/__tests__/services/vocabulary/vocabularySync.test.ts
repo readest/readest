@@ -36,7 +36,10 @@ const makeDeps = (patch: Partial<VocabularySyncDeps> = {}) => {
     userId: 'u1',
     pageSize: 2,
     pull: vi.fn(async () => []),
-    push: vi.fn(async (rows: VocabularyRow[]) => rows.map((r) => ({ ...r, updated_at: 't' }))),
+    push: vi.fn(async (rows: VocabularyRow[]) => ({
+      rows: rows.map((r) => ({ ...r, updated_at: 't' })),
+      rejected: [],
+    })),
     getCursor: () => cursor,
     setCursor: (c) => {
       cursor = c;
@@ -120,7 +123,7 @@ describe('pushVocabulary', () => {
       push: vi.fn(async (rows: VocabularyRow[]) => {
         vi.setSystemTime(2000);
         useVocabularyStore.getState().setState(id, 'mastered');
-        return rows;
+        return { rows, rejected: [] };
       }),
     });
     await pushVocabulary(deps);
@@ -132,6 +135,24 @@ describe('pushVocabulary', () => {
 });
 
 describe('syncVocabulary', () => {
+  it('still pulls when the push fails', async () => {
+    useSettingsStore.setState({ settings: { syncCategories: {} } as unknown as SystemSettings });
+    useVocabularyStore.getState().ensureEntry('run', 'en');
+    const deps = makeDeps({ push: vi.fn(async () => Promise.reject(new Error('500'))) });
+    await syncVocabulary(async () => deps);
+    expect(deps.pull).toHaveBeenCalled();
+  });
+
+  it('clears dirty on rows the server rejected so they stop blocking pushes', async () => {
+    const s = useVocabularyStore.getState();
+    s.ensureEntry('run', 'en');
+    const deps = makeDeps({
+      push: vi.fn(async () => ({ rows: [], rejected: ['en:run'] })),
+    });
+    await pushVocabulary(deps);
+    expect(useVocabularyStore.getState().entries['en:run']!.dirty).toBeFalsy();
+  });
+
   it('does nothing when the Vocabulary sync category is off', async () => {
     useSettingsStore.setState({
       settings: { syncCategories: { vocabulary: false } } as unknown as SystemSettings,

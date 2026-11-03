@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   MAX_OCCURRENCES,
+  MAX_SENTENCE_LEN,
   addOccurrence,
   entryId,
   extractSentence,
@@ -65,6 +66,15 @@ describe('extractSentence', () => {
   it('falls back to the word when there is no context', () => {
     expect(extractSentence('', 'word', '')).toBe('word');
   });
+  it('keeps a long sentence to a window around the word', () => {
+    const filler = 'word '.repeat(200);
+    const s = extractSentence(filler, 'serendipity', ` ${filler}.`);
+    expect(s.length).toBeLessThanOrEqual(MAX_SENTENCE_LEN + 2);
+    expect(s).toContain('serendipity');
+    expect(s.startsWith('…')).toBe(true);
+    expect(s.endsWith('…')).toBe(true);
+  });
+
   it('collapses whitespace and newlines', () => {
     expect(extractSentence('Line one.\n\nThe  ', 'cat', '\n sat.')).toBe('The cat sat.');
   });

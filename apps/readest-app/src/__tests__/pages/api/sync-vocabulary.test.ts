@@ -140,14 +140,23 @@ describe('POST /api/sync/vocabulary', () => {
     expect(queries[0]!).toContainEqual({ method: 'in', args: ['id', ['en:run']] });
   });
 
-  it('rejects a row with too many sentences', async () => {
+  it('skips malformed rows, reports them, and still writes the rest', async () => {
     const occurrences = Array.from({ length: 21 }, (_, i) => ({ sentence: `S${i}.`, at: i }));
-    expect((await post({ rows: [row({ occurrences })] })).status).toBe(422);
-    expect(fromMock).not.toHaveBeenCalled();
-  });
-
-  it('rejects a row whose id does not match its language and word', async () => {
-    expect((await post({ rows: [row({ id: 'en:walk' })] })).status).toBe(422);
+    responses.push({ data: [], error: null }); // existing rows
+    responses.push({ data: [{ ...row(), updated_at: 'x' }], error: null }); // upsert
+    const res = await post({
+      rows: [
+        row({ id: 'en:big', word_key: 'big', occurrences }),
+        row({ id: 'en:walk' }),
+        row({ id: 'en:a"b', word_key: 'a"b' }),
+        row(),
+      ],
+    });
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { rejected: string[] };
+    expect(body.rejected).toEqual(['en:big', 'en:walk', 'en:a"b']);
+    const upsert = queries[1]!.find((c) => c.method === 'upsert')!;
+    expect((upsert.args[0] as VocabularyRow[]).map((r) => r.id)).toEqual(['en:run']);
   });
 
   it('rejects more than 100 rows', async () => {

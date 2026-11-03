@@ -17,7 +17,15 @@ export const vocabularyLang = (tag?: string | null): string =>
 
 const SENTENCE_END = /[.!?。！？…]/;
 
-/** The sentence around `word`, given the text right before and after it. */
+export const MAX_SENTENCE_LEN = 300;
+
+const collapse = (s: string) => s.replace(/\s+/g, ' ');
+
+/**
+ * The sentence around `word`, given the text right before and after it. A very
+ * long sentence (or a block with no terminators) is cut to a window around the
+ * word so one lookup can't bloat its synced row.
+ */
 export const extractSentence = (before: string, word: string, after: string): string => {
   let start = before.length;
   while (start > 0 && !SENTENCE_END.test(before[start - 1]!)) start--;
@@ -25,7 +33,13 @@ export const extractSentence = (before: string, word: string, after: string): st
   while (end < after.length && !SENTENCE_END.test(after[end]!)) end++;
   // Keep the terminator (and any run of them, "?!").
   while (end < after.length && SENTENCE_END.test(after[end]!)) end++;
-  return `${before.slice(start)}${word}${after.slice(0, end)}`.replace(/\s+/g, ' ').trim();
+  let pre = collapse(before.slice(start)).trimStart();
+  let post = collapse(after.slice(0, end)).trimEnd();
+  const w = collapse(word);
+  const half = Math.max(0, Math.floor((MAX_SENTENCE_LEN - w.length) / 2));
+  if (pre.length > half) pre = `…${pre.slice(-half).trimStart()}`;
+  if (post.length > half) post = `${post.slice(0, half).trimEnd()}…`;
+  return `${pre}${w}${post}`.trim();
 };
 
 // The same sentence in the same book is one occurrence; its CFI can shift
