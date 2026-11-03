@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: 5d5b5ba3-ec6e-4b2a-afff-e7793066579e
-  modified: 2026-10-12T11:13:41.518Z
+  modified: 2026-11-02T18:45:18.525Z
 ---
 
 chrox is considering migrating Readest Cloud off Supabase (decided 2026-10-12). Plan, driven by Supabase allowing EITHER a vanity subdomain OR a custom domain, not both:
@@ -16,10 +16,14 @@ chrox is considering migrating Readest Cloud off Supabase (decided 2026-10-12). 
 2. After old clients drain (measure `readest.supabase.co` Host in edge_logs): remove vanity subdomain, activate custom domain `auth.readest.com` (CNAME, NOT an HTTP redirect: CORS preflights can't follow redirects), ship clients pointing at it.
 3. Point `auth.readest.com` at a self-hosted GoTrue/Postgres; second drain for project-ref-only clients.
 
+**Decision 2026-11-03 (chrox):** go with the custom domain (step 2) for #6416 (India ISP blocks on *.supabase.co), NOT a reverse proxy (proxy can't fix OAuth callbacks/email links, and needs a secret key + Sb-Forwarded-For to avoid shared per-IP auth rate limits). Revisit the drain between 2026-11-17 and 2026-12-01, then switch once old-host clients are few. VPS/Hetzner offload of sync was weighed and judged not worth it.
+
+Drain measurements, the server-side callers that were repointed, and the edge_logs query recipe are in [[private-supabase-host-drain-2026-11]] (local only, gitignored).
+
 **Gotchas:**
 - OAuth `redirect_uri` is set by the auth server, not the client host: it becomes the project-ref callback when the vanity subdomain is removed and `auth.readest.com/auth/v1/callback` after activation. Register both at Google/Apple/etc BEFORE step 2.
 - Both hostnames share Cloudflare IPs, so a host switch doesn't fix VPN "Load failed (readest.supabase.co)" errors (that report was a VPN issue, fixed by switching VPN).
 - Check Cloudflare build/Worker env for `SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_URL` overriding the default (not verified in-repo).
-- Step 3 keeps sessions valid only if the ES256 private key (keychain) and legacy HS256 secret move too; see [[supabase-signing-keys-migration-2026-10-12]].
+- Step 3 keeps sessions valid only if the ES256 private key and legacy HS256 secret move too; see [[private-supabase-signing-keys-migration-2026-10-12]].
 - DB access is already server-side only (API routes); auth is the client-facing lock-in.
 - Alternative weighed: Worker reverse proxy at auth.readest.com (one release) — risk: Supabase Auth per-IP rate limits would see Worker IPs.
