@@ -2705,5 +2705,6 @@
   "Next Match": "Nächster Treffer",
   "Previous Match": "Vorheriger Treffer",
   "Extend Selection": "Auswahl erweitern",
-  "Pattern not found: {{term}}": "Muster nicht gefunden: {{term}}"
+  "Pattern not found: {{term}}": "Muster nicht gefunden: {{term}}",
+  "Ignore publisher font names": "Schriftnamen des Verlags ignorieren"
 }

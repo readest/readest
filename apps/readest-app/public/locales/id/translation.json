@@ -2636,5 +2636,6 @@
   "Next Match": "Kecocokan berikutnya",
   "Previous Match": "Kecocokan sebelumnya",
   "Extend Selection": "Perluas pilihan",
-  "Pattern not found: {{term}}": "Pola tidak ditemukan: {{term}}"
+  "Pattern not found: {{term}}": "Pola tidak ditemukan: {{term}}",
+  "Ignore publisher font names": "Abaikan nama font penerbit"
 }

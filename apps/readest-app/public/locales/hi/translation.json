@@ -2705,5 +2705,6 @@
   "Next Match": "अगला मिलान",
   "Previous Match": "पिछला मिलान",
   "Extend Selection": "चयन बढ़ाएँ",
-  "Pattern not found: {{term}}": "पैटर्न नहीं मिला: {{term}}"
+  "Pattern not found: {{term}}": "पैटर्न नहीं मिला: {{term}}",
+  "Ignore publisher font names": "प्रकाशक के फ़ॉन्ट नामों को अनदेखा करें"
 }

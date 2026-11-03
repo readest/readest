@@ -2774,5 +2774,6 @@
   "Next Match": "Próxima correspondência",
   "Previous Match": "Correspondência anterior",
   "Extend Selection": "Estender seleção",
-  "Pattern not found: {{term}}": "Padrão não encontrado: {{term}}"
+  "Pattern not found: {{term}}": "Padrão não encontrado: {{term}}",
+  "Ignore publisher font names": "Ignorar nomes de fontes da editora"
 }

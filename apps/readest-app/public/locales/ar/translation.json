@@ -2981,5 +2981,6 @@
   "Next Match": "التطابق التالي",
   "Previous Match": "التطابق السابق",
   "Extend Selection": "توسيع التحديد",
-  "Pattern not found: {{term}}": "لم يتم العثور على النمط: {{term}}"
+  "Pattern not found: {{term}}": "لم يتم العثور على النمط: {{term}}",
+  "Ignore publisher font names": "تجاهل أسماء خطوط الناشر"
 }

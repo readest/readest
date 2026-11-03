@@ -2705,5 +2705,6 @@
   "Next Match": "Következő találat",
   "Previous Match": "Előző találat",
   "Extend Selection": "Kijelölés bővítése",
-  "Pattern not found: {{term}}": "A minta nem található: {{term}}"
+  "Pattern not found: {{term}}": "A minta nem található: {{term}}",
+  "Ignore publisher font names": "A kiadó betűtípusneveinek figyelmen kívül hagyása"
 }

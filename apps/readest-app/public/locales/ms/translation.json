@@ -2636,5 +2636,6 @@
   "Next Match": "Padanan seterusnya",
   "Previous Match": "Padanan sebelumnya",
   "Extend Selection": "Luaskan pilihan",
-  "Pattern not found: {{term}}": "Corak tidak ditemui: {{term}}"
+  "Pattern not found: {{term}}": "Corak tidak ditemui: {{term}}",
+  "Ignore publisher font names": "Abaikan nama fon penerbit"
 }

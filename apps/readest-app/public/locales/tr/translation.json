@@ -2705,5 +2705,6 @@
   "Next Match": "Sonraki eşleşme",
   "Previous Match": "Önceki eşleşme",
   "Extend Selection": "Seçimi genişlet",
-  "Pattern not found: {{term}}": "Desen bulunamadı: {{term}}"
+  "Pattern not found: {{term}}": "Desen bulunamadı: {{term}}",
+  "Ignore publisher font names": "Yayıncının yazı tipi adlarını yok say"
 }

@@ -2843,5 +2843,6 @@
   "Next Match": "Naslednje ujemanje",
   "Previous Match": "Prejšnje ujemanje",
   "Extend Selection": "Razširi izbor",
-  "Pattern not found: {{term}}": "Vzorca ni mogoče najti: {{term}}"
+  "Pattern not found: {{term}}": "Vzorca ni mogoče najti: {{term}}",
+  "Ignore publisher font names": "Prezri imena pisav založnika"
 }

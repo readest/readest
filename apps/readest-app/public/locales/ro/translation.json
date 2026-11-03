@@ -2774,5 +2774,6 @@
   "Next Match": "Potrivirea următoare",
   "Previous Match": "Potrivirea anterioară",
   "Extend Selection": "Extinde selecția",
-  "Pattern not found: {{term}}": "Model negăsit: {{term}}"
+  "Pattern not found: {{term}}": "Model negăsit: {{term}}",
+  "Ignore publisher font names": "Ignoră numele fonturilor editorului"
 }

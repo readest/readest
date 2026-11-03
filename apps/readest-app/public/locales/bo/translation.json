@@ -2636,5 +2636,6 @@
   "Next Match": "མཐུན་པ་རྗེས་མ།",
   "Previous Match": "མཐུན་པ་སྔོན་མ།",
   "Extend Selection": "འདེམས་ཁོངས་རྒྱ་སྐྱེད།",
-  "Pattern not found: {{term}}": "དཔེ་གཞི་རྙེད་མ་བྱུང་། {{term}}"
+  "Pattern not found: {{term}}": "དཔེ་གཞི་རྙེད་མ་བྱུང་། {{term}}",
+  "Ignore publisher font names": "དཔེ་སྐྲུན་པའི་ཡིག་གཟུགས་མིང་སྣང་མེད་བྱེད།"
 }

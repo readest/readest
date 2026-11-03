@@ -2636,5 +2636,6 @@
   "Next Match": "下一個符合項目",
   "Previous Match": "上一個符合項目",
   "Extend Selection": "擴展選取範圍",
-  "Pattern not found: {{term}}": "找不到符合項目：{{term}}"
+  "Pattern not found: {{term}}": "找不到符合項目：{{term}}",
+  "Ignore publisher font names": "忽略出版方字型名稱"
 }

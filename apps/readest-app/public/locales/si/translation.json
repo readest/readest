@@ -2705,5 +2705,6 @@
   "Next Match": "මීළඟ ගැළපීම",
   "Previous Match": "පෙර ගැළපීම",
   "Extend Selection": "තේරීම දිගු කරන්න",
-  "Pattern not found: {{term}}": "රටාව හමු නොවීය: {{term}}"
+  "Pattern not found: {{term}}": "රටාව හමු නොවීය: {{term}}",
+  "Ignore publisher font names": "ප්‍රකාශකයාගේ අකුරු රටා නම් නොසලකා හරින්න"
 }
