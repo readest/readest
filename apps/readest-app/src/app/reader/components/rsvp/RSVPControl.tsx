@@ -1,6 +1,15 @@
 'use client';
 
-import { useState, useRef, useEffect, useCallback, useImperativeHandle, forwardRef } from 'react';
+import {
+  useState,
+  useRef,
+  useEffect,
+  useCallback,
+  useImperativeHandle,
+  useMemo,
+  forwardRef,
+} from 'react';
+import { vocabularyLang } from '@/services/vocabulary/entry';
 import { createPortal } from 'react-dom';
 import { useReaderStore } from '@/store/readerStore';
 import { useBookProgress } from '@/store/readerProgressStore';
@@ -1059,6 +1068,19 @@ const RSVPControl = forwardRef<RSVPControlHandle, RSVPControlProps>(function RSV
 
   // Book language drives dictionary provider selection for context lookups (#4475).
   const dictionaryLang = bookData?.bookDoc?.metadata?.language as string | undefined;
+  const book = bookData?.book;
+  const vocabularyBook = useMemo(
+    () =>
+      book
+        ? {
+            lang: vocabularyLang(book.primaryLanguage),
+            hash: book.hash,
+            title: book.title,
+            author: book.author,
+          }
+        : undefined,
+    [book],
+  );
   const handleManageDictionary = useCallback(() => {
     // Open dictionary management OVER the RSVP overlay (RSVP stays open). The
     // settings dialog is raised above the overlay's z-[100] (see SettingsDialog),
@@ -1138,6 +1160,7 @@ const RSVPControl = forwardRef<RSVPControlHandle, RSVPControlProps>(function RSV
             currentChapterHref={currentChapterHref}
             fontFamily={fontFamily}
             lang={dictionaryLang}
+            vocabularyBook={vocabularyBook}
             ttsSyncStatus={ttsSyncStatus}
             estimated={ttsEstimated}
             ttsActive={ttsActive}

@@ -1,6 +1,19 @@
-import type { GlossEntry, GlossOccurrence, GlossSource, WordLensSourceLang } from './types';
+import type {
+  GlossEntry,
+  GlossOccurrence,
+  GlossSource,
+  VocabularyMarks,
+  WordLensSourceLang,
+} from './types';
 import { isDifficult } from './difficulty';
-import { baseFormCandidates, cleanGloss, glossMentionsWord, glossesShareMeaning } from './gloss';
+import {
+  baseFormCandidates,
+  capForDisplay,
+  cleanGloss,
+  glossMentionsWord,
+  glossesShareMeaning,
+} from './gloss';
+import { normalizeWordKey } from '@/services/vocabulary/entry';
 
 export interface PlanOptions {
   sourceLang: WordLensSourceLang;
@@ -15,6 +28,8 @@ export interface PlanOptions {
    * formatted at build time, so cleanGloss must preserve it (no sense-split / cut).
    */
   monolingual?: boolean;
+  /** Learning words are always hinted, Mastered words never (#6613). */
+  vocabulary?: VocabularyMarks;
 }
 
 // A foliate "section" is usually a whole chapter, so this is a per-chapter bound:
@@ -69,9 +84,24 @@ export const planGlosses = (
         : []
       : tokenizeLatin(text);
 
+  const marks = opts.vocabulary && expandMarks(opts.vocabulary, source);
   const occurrences: GlossOccurrence[] = [];
   for (const t of tokens) {
     const entry = source.lookup(t.word);
+    if (marks) {
+      const keys = [normalizeWordKey(t.word), source.lemma?.(t.word)];
+      if (keys.some((k) => k && marks.mastered.has(k))) continue;
+      const key = keys.find((k) => k && marks.learning.has(k));
+      if (key) {
+        // A saved hint is the reader's own text: shown as written, only capped.
+        const saved = marks.learning.get(key)?.replace(/\s+/g, ' ').trim();
+        const packGloss = (entry ?? source.lookup(key))?.gloss ?? '';
+        const gloss = saved ? capForDisplay(saved) : cleanGloss(packGloss, opts.monolingual);
+        if (gloss) occurrences.push({ start: t.start, end: t.end, word: t.word, gloss });
+        if (occurrences.length >= cap) break;
+        continue;
+      }
+    }
     if (!entry || !isDifficult(entry.rank, opts.rankCutoff)) continue;
     // English derivations inherit a known base's lower rank (lazily ⇐ lazy), so
     // they drop below the cutoff and aren't hinted. Gated to English source.
@@ -93,6 +123,23 @@ export const planGlosses = (
     }
   }
   return occurrences;
+};
+
+// Index the marks by lemma too, so marking `running` covers `run` and `ran`.
+// A saved hint is kept; a lemma never overwrites a word's own entry.
+const expandMarks = (marks: VocabularyMarks, source: GlossSource): VocabularyMarks => {
+  if (!source.lemma) return marks;
+  const learning = new Map(marks.learning);
+  for (const [k, hint] of marks.learning) {
+    const l = source.lemma(k);
+    if (l && !learning.has(l)) learning.set(l, hint);
+  }
+  const mastered = new Set(marks.mastered);
+  for (const k of marks.mastered) {
+    const l = source.lemma(k);
+    if (l) mastered.add(l);
+  }
+  return { learning, mastered };
 };
 
 // Lowest rank among the word itself and any base form that exists in the index

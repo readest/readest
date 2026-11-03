@@ -397,7 +397,8 @@ export type SyncCategory =
   | 'custom_tts'
   | 'settings'
   | 'credentials'
-  | 'stats';
+  | 'stats'
+  | 'vocabulary';
 
 export const SYNC_CATEGORIES: readonly SyncCategory[] = [
   'book',
@@ -413,6 +414,7 @@ export const SYNC_CATEGORIES: readonly SyncCategory[] = [
   'custom_tts',
   'settings',
   'stats',
+  'vocabulary',
   'credentials',
 ] as const;
 

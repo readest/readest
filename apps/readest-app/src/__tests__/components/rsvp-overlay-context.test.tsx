@@ -38,8 +38,16 @@ vi.mock('@/app/reader/components/annotator/DictionarySheet', () => ({
 }));
 
 vi.mock('@/app/reader/components/annotator/DictionaryPopup', () => ({
-  default: ({ word, onDismiss }: { word: string; onDismiss: () => void }) => (
-    <div data-testid='rsvp-dict-popup' data-word={word}>
+  default: ({
+    word,
+    capture,
+    onDismiss,
+  }: {
+    word: string;
+    capture?: unknown;
+    onDismiss: () => void;
+  }) => (
+    <div data-testid='rsvp-dict-popup' data-word={word} data-capture={JSON.stringify(capture)}>
       <button aria-label='close-dict' onClick={onDismiss}>
         x
       </button>
@@ -107,6 +115,7 @@ const renderOverlay = (
   state: RsvpState,
   fontFamily?: string,
   gridInsets: Insets = { top: 0, bottom: 0, left: 0, right: 0 },
+  extra: Partial<React.ComponentProps<typeof RSVPOverlay>> = {},
 ) => {
   const controller = buildController(state);
   const onClose = vi.fn();
@@ -120,6 +129,7 @@ const renderOverlay = (
       onClose={onClose}
       onChapterSelect={vi.fn()}
       onRequestNextPage={vi.fn()}
+      {...extra}
     />,
   );
   return { ...result, controller, onClose };
@@ -546,6 +556,23 @@ describe('RSVPOverlay — dictionary lookup (#4475)', () => {
     const popup = container.querySelector('[data-testid="rsvp-dict-popup"]');
     expect(popup).not.toBeNull();
     expect(popup!.getAttribute('data-word')).toBe('serendipity');
+  });
+
+  test('saves the lookup to the vocabulary under the book (#789)', () => {
+    const book = { lang: 'en', hash: 'b1', title: 'Dune', author: 'Herbert' };
+    const { container } = renderOverlay(wordsState(), undefined, undefined, {
+      vocabularyBook: book,
+    });
+    const panel = container.querySelector('[data-testid="rsvp-context-panel"]') as HTMLElement;
+    mockSelection('serendipity', panel);
+    fireEvent.mouseUp(panel);
+    fireEvent.click(container.querySelector('[aria-label="Look up"]') as HTMLElement);
+    const popup = container.querySelector('[data-testid="rsvp-dict-popup"]')!;
+    const capture = JSON.parse(popup.getAttribute('data-capture')!);
+    expect(capture).toMatchObject({
+      lang: 'en',
+      occurrence: { sentence: 'serendipity', bookHash: 'b1', bookTitle: 'Dune' },
+    });
   });
 
   test('clicking outside the popup dismisses it', () => {

@@ -8,6 +8,7 @@ import {
   useDictionaryResults,
   DictionaryResultsHeader,
   DictionaryResultsBody,
+  type VocabularyCapture,
 } from './DictionaryResultsView';
 import type { DictionarySelectionContext } from '@/services/dictionaries/types';
 
@@ -15,6 +16,8 @@ interface DictionaryPopupProps {
   word: string;
   lang?: string;
   selection?: DictionarySelectionContext;
+  /** Save this lookup to the vocabulary builder and show the Learning / Mastered chips. */
+  capture?: VocabularyCapture;
   position: Position;
   trianglePosition: Position;
   popupWidth: number;
@@ -32,6 +35,7 @@ const DictionaryPopup: React.FC<DictionaryPopupProps> = ({
   word,
   lang,
   selection,
+  capture,
   position,
   trianglePosition,
   popupWidth,
@@ -39,7 +43,7 @@ const DictionaryPopup: React.FC<DictionaryPopupProps> = ({
   onDismiss,
   onManage,
 }) => {
-  const state = useDictionaryResults({ word, lang, selection });
+  const state = useDictionaryResults({ word, lang, selection, capture });
   return (
     <Popup
       width={popupWidth}
@@ -60,6 +64,7 @@ const DictionaryPopup: React.FC<DictionaryPopupProps> = ({
           onManage={onManage}
           onSpeak={state.speakWord}
           speaking={state.isSpeaking}
+          vocabularyLang={state.vocabularyLang}
         />
         <div className='min-h-0 flex-1'>
           <DictionaryResultsBody {...state} />
