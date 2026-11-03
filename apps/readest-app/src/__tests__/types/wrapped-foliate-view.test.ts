@@ -61,9 +61,10 @@ describe('wrappedFoliateView select', () => {
     } as unknown as FoliateView['renderer'];
     try {
       const wrapped = wrappedFoliateView(view);
-      await wrapped.select('search-cfi');
-      expect(originalSelect).toHaveBeenCalledWith('search-cfi');
-      expect(view.resolveCFI).toHaveBeenCalledWith('search-cfi');
+      const cfi = 'epubcfi(/6/4)';
+      await wrapped.select(cfi);
+      expect(originalSelect).toHaveBeenCalledWith(cfi);
+      expect(view.resolveCFI).toHaveBeenCalledWith(cfi);
       expect(bookDoc.defaultView?.getSelection()?.toString()).toBe('selected search result');
     } finally {
       frame.remove();
