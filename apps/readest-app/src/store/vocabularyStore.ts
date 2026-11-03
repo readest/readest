@@ -39,6 +39,8 @@ interface VocabularyStore {
   remove(id: string): void;
   /** Merge entries pulled from the server; the result isn't pushed back. */
   applyRemote(entries: VocabularyEntry[]): void;
+  /** Write the list to the data file now instead of after the save delay. */
+  flush(): Promise<void>;
   /** Clear `dirty` on entries unchanged since this snapshot was pushed. */
   markPushed(pushed: VocabularyEntry[]): void;
   getLearningAndMastered(lang: string): {
@@ -178,6 +180,13 @@ export const useVocabularyStore = create<VocabularyStore>((set, get) => {
           return local.dirty ? { ...merged, dirty: true } : merged;
         }),
       );
+    },
+
+    flush: async () => {
+      if (persistTimer) clearTimeout(persistTimer);
+      persistTimer = null;
+      if (!appServiceRef) return;
+      await writeVocabularyFile(appServiceRef, Object.values(get().entries));
     },
 
     markPushed: (pushed) => {

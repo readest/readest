@@ -49,7 +49,9 @@ export const pullVocabulary = async (deps: VocabularySyncDeps): Promise<void> =>
     useVocabularyStore.getState().applyRemote(rows.map(rowToEntry));
     const last = rows[rows.length - 1]!;
     since = { ts: last.updated_at!, id: last.id };
-    // Advance only after the page is applied, so an interrupted pull resumes.
+    // Advance only after the page is applied and saved, so an interrupted pull
+    // (or the app quitting before the delayed save) resumes from it.
+    await useVocabularyStore.getState().flush();
     // Compare as times: Postgres hands back `+00:00` where the client writes `Z`.
     if (!saved || saved.userId !== deps.userId || Date.parse(since.ts) >= Date.parse(saved.ts)) {
       deps.setCursor({ userId: deps.userId, ...since });

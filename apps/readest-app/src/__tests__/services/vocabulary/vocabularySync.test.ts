@@ -10,6 +10,7 @@ import { useVocabularyStore } from '@/store/vocabularyStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import type { VocabularyRow } from '@/services/vocabulary/wire';
 import type { SystemSettings } from '@/types/settings';
+import type { AppService } from '@/types/system';
 
 const row = (
   key: string,
@@ -74,6 +75,27 @@ describe('pullVocabulary', () => {
       'en:c',
     ]);
     expect(deps.getCursor()).toEqual({ userId: 'u1', ts: '2026-11-03T00:00:02.000Z', id: 'en:c' });
+  });
+
+  it('writes the pulled words to the data file before moving the cursor', async () => {
+    const files: Record<string, string> = {};
+    const appService = {
+      exists: vi.fn(async () => false),
+      writeFile: vi.fn(async (path: string, _base: string, content: string) => {
+        files[path] = content;
+      }),
+    } as unknown as AppService;
+    await useVocabularyStore.getState().load(appService);
+    const onDisk: string[][] = [];
+    const deps = makeDeps({
+      pull: vi.fn(async () => [row('a', '2026-11-03T00:00:01.000Z')]),
+      setCursor: () => {
+        const saved = files['vocabulary.json'];
+        onDisk.push(saved ? JSON.parse(saved).entries.map((e: { id: string }) => e.id) : []);
+      },
+    });
+    await pullVocabulary(deps);
+    expect(onDisk).toEqual([['en:a']]);
   });
 
   it('re-reads the last minute before the saved cursor, for writes committed late', async () => {
