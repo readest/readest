@@ -8,7 +8,7 @@ import { MAX_PULL_ROWS, MAX_PUSH_ROWS, entryToRow, rowToEntry, type VocabularyRo
 // Client side of /api/sync/vocabulary (#789): push dirty entries, then pull
 // everything changed since this device's cursor, one keyset page at a time.
 
-const ENDPOINT = `${getAPIBaseUrl()}/sync/vocabulary`;
+const endpoint = () => `${getAPIBaseUrl()}/sync/vocabulary`;
 const CURSOR_KEY = 'readest_vocabulary_sync_cursor_v1';
 // The server stamps updated_at before its write commits, so a slow write can
 // land behind a cursor already handed out. Re-reading the last minute catches
@@ -110,11 +110,11 @@ const defaultDeps = async (): Promise<VocabularySyncDeps | null> => {
         qs.set('since_ts', since.ts);
         qs.set('since_id', since.id);
       }
-      return (await request<{ rows: VocabularyRow[] }>(`${ENDPOINT}?${qs}`)).rows;
+      return (await request<{ rows: VocabularyRow[] }>(`${endpoint()}?${qs}`)).rows;
     },
     push: async (rows) =>
       (
-        await request<{ rows: VocabularyRow[] }>(ENDPOINT, {
+        await request<{ rows: VocabularyRow[] }>(endpoint(), {
           method: 'POST',
           body: JSON.stringify({ rows }),
         })
