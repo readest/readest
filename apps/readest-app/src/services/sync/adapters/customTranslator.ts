@@ -34,6 +34,7 @@ const toTranslator = (id: string, get: (key: string) => unknown): CustomTranslat
   if (apiKey !== undefined) translator.apiKey = apiKey;
   if (model !== undefined) translator.model = model;
   if (temperature !== undefined) translator.temperature = temperature;
+  if (get('thinking') === 'off') translator.thinking = 'off';
   if (get('disabled') === true) translator.disabled = true;
   return translator;
 };
@@ -64,8 +65,11 @@ export const customTranslatorAdapter: ReplicaAdapter<CustomTranslator> = {
     };
     if (t.baseUrl !== undefined) fields['baseUrl'] = t.baseUrl;
     if (t.model !== undefined) fields['model'] = t.model;
-    if (t.temperature !== undefined) fields['temperature'] = t.temperature;
-    if (t.disabled !== undefined) fields['disabled'] = t.disabled;
+    // Always sent, so clearing one reaches other devices: fields merge per key,
+    // and a key left out keeps its old value there.
+    fields['temperature'] = t.temperature ?? null;
+    fields['thinking'] = t.thinking ?? 'default';
+    fields['disabled'] = t.disabled ?? false;
     // Plaintext here; replicaCryptoMiddleware encrypts (or drops) it.
     if (t.apiKey !== undefined) fields['apiKey'] = t.apiKey;
     return fields;

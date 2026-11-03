@@ -14,6 +14,8 @@ export interface CustomTranslator {
   apiKey?: string;
   model?: string;
   temperature?: number;
+  /** 'off' asks the service to skip the model's thinking; unset keeps the model's default. */
+  thinking?: 'off';
   disabled?: boolean;
   addedAt: number;
   updatedAt: number;

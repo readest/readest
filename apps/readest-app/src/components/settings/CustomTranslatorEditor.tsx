@@ -106,6 +106,7 @@ const CustomTranslatorEditor: React.FC<CustomTranslatorEditorProps> = ({
       baseUrl: isLLM ? draft.baseUrl?.trim() : undefined,
       model: isLLM ? draft.model?.trim() : undefined,
       temperature: isLLM ? draft.temperature : undefined,
+      thinking: isLLM ? draft.thinking : undefined,
     };
     if (translator) store.updateTranslator(translator.id, cleaned);
     else store.addTranslator(cleaned);
@@ -236,6 +237,19 @@ const CustomTranslatorEditor: React.FC<CustomTranslatorEditorProps> = ({
               placeholder={_('Default')}
             />
           </Field>
+        )}
+        {isLLM && (
+          <SettingsRow label={_('Thinking')}>
+            <SettingsSelect
+              value={draft.thinking ?? 'default'}
+              onChange={(e) => update({ thinking: e.target.value === 'off' ? 'off' : undefined })}
+              ariaLabel={_('Thinking')}
+              options={[
+                { value: 'default', label: _('Default') },
+                { value: 'off', label: _('Off') },
+              ]}
+            />
+          </SettingsRow>
         )}
         <SettingsSwitchRow
           label={_('Enabled')}

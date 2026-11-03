@@ -2603,5 +2603,6 @@
   "Clear All": "すべてクリア",
   "Remove {{term}} from search history": "検索履歴から{{term}}を削除",
   "Remove from history": "履歴から削除",
-  "Lookup App": "検索アプリ"
+  "Lookup App": "検索アプリ",
+  "Thinking": "思考"
 }
