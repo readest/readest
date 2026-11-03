@@ -36,6 +36,7 @@ export const extractSentence = (before: string, word: string, after: string): st
   let pre = collapse(before.slice(start)).trimStart();
   let post = collapse(after.slice(0, end)).trimEnd();
   const w = collapse(word);
+  if (w.length >= MAX_SENTENCE_LEN) return `${w.slice(0, MAX_SENTENCE_LEN).trimEnd()}…`;
   const half = Math.max(0, Math.floor((MAX_SENTENCE_LEN - w.length) / 2));
   if (pre.length > half) pre = `…${pre.slice(-half).trimStart()}`;
   if (post.length > half) post = `${post.slice(0, half).trimEnd()}…`;

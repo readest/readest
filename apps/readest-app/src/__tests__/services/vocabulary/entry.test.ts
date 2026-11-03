@@ -53,6 +53,13 @@ describe('entryId', () => {
 });
 
 describe('extractSentence', () => {
+  it('caps a selection longer than the limit', () => {
+    const long = 'word '.repeat(80).trim();
+    const s = extractSentence('Before. Some context ', long, ' after it. Next.');
+    expect(s.length).toBeLessThanOrEqual(MAX_SENTENCE_LEN + 2);
+    expect(s.startsWith('word word')).toBe(true);
+  });
+
   it('cuts the surrounding text to the sentence holding the word', () => {
     expect(extractSentence('He paused. It was pure ', 'serendipity', ' that we met. Then')).toBe(
       'It was pure serendipity that we met.',
