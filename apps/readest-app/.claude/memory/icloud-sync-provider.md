@@ -26,7 +26,7 @@ derived from the OneDrive translations (zh uses Apple's official
 
 **Apple portal DONE (2026-08-06, verified in Chrome):** iCloud capability
 (CloudKit-support mode) enabled on App ID `com.bilingify.readest`
-(record W2MFVY8AR6); account has exactly ONE container,
+(record id in [[private-icloud-sync-provider]]); account has exactly ONE container,
 `iCloud.com.bilingify.readest` — matches the entitlements pin and the
 code's nil-identifier default-container resolution. Side effect: the
 capability change INVALIDATED most provisioning profiles
@@ -59,8 +59,8 @@ work from automated Chrome clicks; use POST-signed JWT + GET
 /v1/profiles?filter[name]=X&fields[profiles]=profileContent). TWO traps hit:
 1. **Launch error 153** (RBSRequestErrorDomain 5, silent exec-kill, no
    amfid log): the Mac was registered in the portal by HARDWARE UUID
-   (B1180B75..., 2024-era) but Apple Silicon AMFI validates the
-   **Provisioning UDID** (00006000-000648A93CA3801E, from system_profiler).
+   (2024-era) but Apple Silicon AMFI validates the
+   **Provisioning UDID** (from system_profiler; both ids in [[private-icloud-sync-provider]]).
    Fix: register a second device with the Provisioning UDID (ASC API
    POST /v1/devices platform MAC_OS), add it to the profile, refetch.
    No `com.apple.application-identifier` entitlement needed (tested).
@@ -104,7 +104,7 @@ two-device sync verified working by user.
 - Mac App Store: `tauri.appstore.conf.json` embeds
   `certs/apple/MacAppStore251202.provisionprofile` — local file WAS the
   old invalidated no-iCloud copy; REFRESHED 2026-08-06 via ASC API
-  (uuid d3bdf01c, 4 icloud hits, exp 2026-12-01). Backup at
+  (4 icloud hits, exp 2026-12-01). Backup at
   /tmp/MacAppStore251202.provisionprofile.bak-preicloud.
   Entitlements-appstore{,-dev}.plist already carry iCloud keys.
 - GitHub Actions release/nightly (direct macOS): NO changes needed —
@@ -116,9 +116,9 @@ two-device sync verified working by user.
 
 **Developer ID spike RESOLVED 2026-08-06: iCloud Documents IS supported
 under Developer ID.** ASC API `POST /v1/profiles` with
-profileType=MAC_APP_DIRECT (bundleId W2MFVY8AR6 + the 4 Developer ID
+profileType=MAC_APP_DIRECT (bundleId = the App ID record + the 4 Developer ID
 Application certs) issued profile `Readest-DeveloperID-iCloud-spike`
-(id B8J9N8U79R, ACTIVE, expires 2027-02-01 = cert expiry,
+(ACTIVE, expires 2027-02-01 = cert expiry,
 ProvisionsAllDevices=true) whose Entitlements grant icloud-services=*,
 ubiquity-container-identifiers AND icloud-container-identifiers
 (environment=Production, fixed). END-TO-END VERIFIED locally: universal
@@ -137,14 +137,14 @@ cert renewal.
 
 **Developer ID productionized: MERGED as `0e518d1f6` (#5537, 2026-08-06);
 worktree and branch removed.** Portal profile renamed
-to `Readest-DeveloperID` (id GU2694KMF7; spike profile deleted). Repo:
+to `Readest-DeveloperID` (spike profile deleted). Repo:
 `src-tauri/profiles/{ReadestDeveloperID.provisionprofile,direct-entitlements.plist}`
 + `src-tauri/tauri.macos-nonestore.conf.json` overlay (renamed per user; matches the gitignored `tauri.*.conf.json` pattern so it carries a `!` negation in .gitignore), wired via `--config` into
 release.yml + nightly.yml macOS matrix args + `build-macos-universial`.
 VERIFIED full pipeline locally: notarization Accepted + stapled; DMG app
 = 4 icloud entitlements + embedded profile + spctl "Notarized Developer
-ID". Gotchas hit: worktree lacks gitignored `private_keys/` (notarytool
-key path is relative — copy dir in); STALE /Volumes/Readest mounts made a
+ID". Gotchas hit: worktree lacks the notarytool API key (copy
+it in; location in [[private-icloud-sync-provider]]); STALE /Volumes/Readest mounts made a
 fresh DMG look entitlement-less (mount with explicit -mountpoint before
 inspecting). Profile dies with the Dev ID cert 2027-02: regenerate +
 recommit on renewal.

@@ -431,6 +431,9 @@ export interface ViewConfig {
   readingRulerPosition: number;
   readingRulerOpacity: number;
   readingRulerColor: ReadingRulerColor;
+  readingRulerStyle: 'band' | 'line';
+  readingRulerLineColor: string;
+  readingRulerLineThickness: number;
 }
 
 export interface TTSConfig {

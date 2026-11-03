@@ -9,7 +9,11 @@
 import type { CustomTranslator } from '@/types/translation';
 import { md5Fingerprint } from '@/utils/md5';
 import { renderPrompt } from '@/services/translators/custom/prompts';
-import { generateChatText, stripReasoning } from '@/services/translators/custom/openaiCompatible';
+import {
+  generateChatText,
+  loadSDK,
+  stripReasoning,
+} from '@/services/translators/custom/openaiCompatible';
 
 const REQUEST_TIMEOUT_MS = 60_000;
 const MAX_CACHE_ENTRIES = 100;
@@ -46,6 +50,7 @@ export interface ContextLookupInput {
 export interface ContextLookupOptions {
   systemPrompt?: string;
   maxOutputTokens?: number;
+  onUpdate?: (entry: ContextEntry) => void;
 }
 
 export interface ContextEntry {
@@ -123,6 +128,10 @@ export const parseContextEntry = (reply: string): ContextEntry => {
   } catch {
     throw new Error('The AI provider returned an invalid reply.');
   }
+  return readContextEntry(parsed);
+};
+
+const readContextEntry = (parsed: unknown): ContextEntry => {
   if (!isRecord(parsed)) throw new Error('The AI provider returned an invalid reply.');
   const definition = readString(parsed, 'definition');
   if (!definition) throw new Error('The AI provider returned an incomplete entry.');
@@ -190,16 +199,44 @@ export const lookupInContext = async (
   // finished request's signal fires (see openaiCompatible.ts).
   const controller = new AbortController();
   const abort = () => controller.abort();
-  const timer = setTimeout(abort, REQUEST_TIMEOUT_MS);
+  let timer = setTimeout(abort, REQUEST_TIMEOUT_MS);
+  const onProgress = () => {
+    clearTimeout(timer);
+    timer = setTimeout(abort, REQUEST_TIMEOUT_MS);
+  };
   signal.addEventListener('abort', abort, { once: true });
   try {
+    const [{ parsePartialJson }] = await loadSDK();
     const text = await generateChatText(translator, {
       system,
       prompt,
       maxOutputTokens,
       maxRetries: 1,
       abortSignal: controller.signal,
+      onProgress,
+      onText: async (reply) => {
+        if (!options.onUpdate || signal.aborted) return;
+        const markdown = stripReasoning(reply);
+        // A leading reasoning block may itself arrive across several chunks.
+        if (!markdown || '<think>'.startsWith(markdown) || markdown.startsWith('<think>')) return;
+        if (customPrompt) {
+          options.onUpdate({
+            headword: input.text,
+            definition: '',
+            examples: [],
+            synonyms: [],
+            markdown,
+          });
+          return;
+        }
+        const start = markdown.indexOf('{');
+        if (start < 0) return;
+        const { value } = await parsePartialJson(markdown.slice(start).replace(/\s*```\s*$/, ''));
+        if (!isRecord(value) || !readString(value, 'definition') || signal.aborted) return;
+        options.onUpdate(readContextEntry(value));
+      },
     });
+    signal.throwIfAborted();
     const markdown = stripReasoning(text);
     if (!markdown) throw new Error('The AI provider returned an incomplete entry.');
     const entry: ContextEntry = customPrompt

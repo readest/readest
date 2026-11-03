@@ -24,6 +24,8 @@ export interface DictionaryLookupContext {
   signal: AbortSignal;
   /** Tab pane to render into. Provider populates this; never touch `document` selectors. */
   container: HTMLElement;
+  /** Reveal content written while an incremental lookup is still running. */
+  onUpdate?(): void;
   /**
    * Called when the provider intercepts an in-popup link click and wants the
    * shell to navigate (push to per-tab history). Optional — providers without
@@ -233,6 +235,11 @@ export interface DictionarySettings {
    * it; nothing is spoken when the entry has no recording.
    */
   autoPlayPronunciation?: boolean;
+  /**
+   * Save every word looked up in the dictionary popup to the vocabulary
+   * builder with its sentence (#789). Unset means on.
+   */
+  saveLookupsToVocabulary?: boolean;
   /** Use a full-screen native dictionary on iOS; unset keeps the compact presentation. */
   systemDictionaryFullscreen?: boolean;
   /**

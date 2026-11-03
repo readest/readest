@@ -501,6 +501,10 @@ pub struct WebBrowserRequest {
     pub download_dir: String,
     pub capture_script: String,
     #[serde(default)]
+    pub select_image: Option<bool>,
+    #[serde(default)]
+    pub image_selection_script: String,
+    #[serde(default)]
     pub background: Option<String>,
     #[serde(default)]
     pub foreground: Option<String>,
@@ -518,6 +522,26 @@ pub struct WebBrowserResponse {
     pub open_book_hash: Option<String>,
     #[serde(default)]
     pub page: Option<WebBrowserPage>,
+    #[serde(default)]
+    pub image: Option<WebBrowserImage>,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct WebBrowserImage {
+    pub url: String,
+    pub page_url: String,
+}
+
+impl WebBrowserImage {
+    /// Selection never transfers page-local data/blob URLs or native schemes.
+    pub fn is_valid(&self) -> bool {
+        [&self.url, &self.page_url].iter().all(|value| {
+            tauri::Url::parse(value).is_ok_and(|url| {
+                matches!(url.scheme(), "http" | "https") && url.host_str().is_some()
+            })
+        })
+    }
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]

@@ -132,6 +132,28 @@ describe("background book download", function()
         assert.is_nil(require("lfs").attributes(tmp .. "/Book.epub.part"))
     end)
 
+    it("keeps a cover under a temporary name until it is complete (#6685)", function()
+        local lfs, at_dst, at_part, calls = require("lfs"), "unset", nil, 0
+        package.loaded["socket.http"].request = function(req)
+            req.sink("png")
+            at_dst = lfs.attributes(tmp .. "/h1.png", "mode")
+            -- Named by worker pid: a manual and an automatic download can overlap.
+            at_part = lfs.attributes(tmp .. "/h1.png.123.part", "mode")
+            req.sink(nil)
+            return 1, 200
+        end
+        opts.covers_dir = tmp
+        syncbooks.downloadCover(book, opts, function(ok) assert.is_true(ok); calls = calls + 1 end)
+        child(123, 42)
+        assert.is_nil(at_dst)
+        assert.are.equal("file", at_part)
+        assert.is_nil(lfs.attributes(tmp .. "/h1.png.123.part"))
+        done = true
+        stubs.UIManager:drain()
+        assert.are.equal(1, calls)
+        local f = assert(io.open(tmp .. "/h1.png", "rb"))
+        assert.are.equal("png", f:read("*a")); f:close()
+    end)
     it("reports fork failure without a synchronous fallback", function()
         fork_ok = false
         local success

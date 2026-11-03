@@ -10,6 +10,7 @@ import { ABSServer } from './audiobookshelf';
 import type { CustomTranslator, TranslationPrompt } from './translation';
 import type { CustomTTSService } from './customTTS';
 import type { AISettings } from '@/services/ai/types';
+import type { CoverSearchEngine } from '@/services/metadata/coverSearch';
 import type { NotebookTab } from '@/store/notebookStore';
 import type { DictionarySettings, ImportedDictionary } from '@/services/dictionaries/types';
 
@@ -397,7 +398,8 @@ export type SyncCategory =
   | 'custom_tts'
   | 'settings'
   | 'credentials'
-  | 'stats';
+  | 'stats'
+  | 'vocabulary';
 
 export const SYNC_CATEGORIES: readonly SyncCategory[] = [
   'book',
@@ -413,6 +415,7 @@ export const SYNC_CATEGORIES: readonly SyncCategory[] = [
   'custom_tts',
   'settings',
   'stats',
+  'vocabulary',
   'credentials',
 ] as const;
 
@@ -564,6 +567,8 @@ export interface SystemSettings {
   customTTSServices?: CustomTTSService[];
   /** Saved sites for the "From Web Browser" import (#5775). Device-local. */
   webSources?: WebSource[];
+  /** Additional image-search engines for the cover editor. Device-local. */
+  coverSearchEngines?: CoverSearchEngine[];
   metadataSeriesCollapsed: boolean;
   metadataOthersCollapsed: boolean;
   metadataDescriptionCollapsed: boolean;

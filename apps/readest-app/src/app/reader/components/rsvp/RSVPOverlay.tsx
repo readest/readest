@@ -30,6 +30,8 @@ import { getPopupPosition, Position } from '@/utils/sel';
 import { Overlay } from '@/components/Overlay';
 import DictionarySheet from '@/app/reader/components/annotator/DictionarySheet';
 import DictionaryPopup from '@/app/reader/components/annotator/DictionaryPopup';
+import type { VocabularyCapture } from '@/app/reader/components/annotator/DictionaryResultsView';
+import { sentenceAt } from '@/services/vocabulary/sentence';
 import TTSFollowIndicator, { TtsSyncStatus } from '@/app/reader/components/tts/TTSFollowIndicator';
 import { Toggle } from '@/components/primitives/toggle';
 
@@ -162,6 +164,15 @@ const WpmEntry: React.FC<WpmEntryProps> = ({ controller, wpm, bgColor }) => {
   );
 };
 
+// The sentence a looked-up word sits in; the bare word if the range can't be read.
+const sentenceAround = (range: Range, word: string): string => {
+  try {
+    return sentenceAt(range) || word;
+  } catch {
+    return word;
+  }
+};
+
 interface RSVPOverlayProps {
   gridInsets: Insets;
   controller: RSVPController;
@@ -198,6 +209,8 @@ interface RSVPOverlayProps {
   onRequestNextPage: () => void;
   /** Opens the dictionary management settings from the lookup header gear. */
   onManageDictionary?: () => void;
+  /** The book lookups are saved under in the vocabulary builder (#789). */
+  vocabularyBook?: { lang: string; hash?: string; title?: string; author?: string };
 }
 
 const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
@@ -207,6 +220,7 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
   currentChapterHref,
   fontFamily,
   lang,
+  vocabularyBook,
   ttsSyncStatus = 'idle',
   estimated = false,
   ttsActive = false,
@@ -294,6 +308,7 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
     word: string;
     position: Position;
     trianglePosition: Position;
+    capture?: VocabularyCapture;
   } | null>(null);
   const touchStartX = useRef(0);
   const touchStartY = useRef(0);
@@ -673,9 +688,19 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
       DICT_POPUP_PADDING,
     );
 
-    setDict({ word: lookup.text, position, trianglePosition });
+    const capture: VocabularyCapture | undefined = vocabularyBook && {
+      lang: vocabularyBook.lang,
+      occurrence: {
+        sentence: sentenceAround(lookup.range, lookup.text),
+        bookHash: vocabularyBook.hash,
+        bookTitle: vocabularyBook.title,
+        bookAuthor: vocabularyBook.author,
+        at: Date.now(),
+      },
+    };
+    setDict({ word: lookup.text, position, trianglePosition, capture });
     setLookup(null);
-  }, [lookup, state.playing, controller]);
+  }, [lookup, state.playing, controller, vocabularyBook]);
 
   const closeLookup = useCallback(() => {
     setDict(null);
@@ -1437,6 +1462,7 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
           <DictionarySheet
             word={dict.word}
             lang={lang}
+            capture={dict.capture}
             onDismiss={closeLookup}
             onManage={onManageDictionary}
           />
@@ -1448,6 +1474,7 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
             <DictionaryPopup
               word={dict.word}
               lang={lang}
+              capture={dict.capture}
               position={dict.position}
               trianglePosition={dict.trianglePosition}
               popupWidth={Math.min(

@@ -25,8 +25,14 @@ vi.mock('@/store/settingsStore', () => ({
     settings: { globalReadSettings: { highlightStyle: 'highlight', highlightStyles: {} } },
   }),
 }));
+let isIPhoneDuo = false;
 vi.mock('@/store/themeStore', () => ({
-  useThemeStore: () => ({ isDarkMode: false, systemUIVisible: true, statusBarHeight: 0 }),
+  useThemeStore: () => ({
+    isDarkMode: false,
+    systemUIVisible: true,
+    statusBarHeight: 0,
+    isIPhoneDuo,
+  }),
 }));
 vi.mock('@/store/sidebarStore', () => ({
   useSidebarStore: () => ({ isSideBarVisible: false, getIsSideBarVisible: () => false }),
@@ -110,11 +116,19 @@ afterEach(() => {
   useEnvMock.mockReset();
   setHoveredBookKey.mockReset();
   currentBookData = null;
+  isIPhoneDuo = false;
 });
 
 describe('HeaderBar sidebar toggle', () => {
-  it('is hidden on tablet portrait, where the footer bar owns the TOC tab', () => {
+  it('is shown on tablet portrait, top-left as on desktop (#7292)', () => {
     setViewport(834, 1194);
+    renderHeader();
+    expect(screen.getByText('sidebar-toggler')).toBeTruthy();
+  });
+
+  it('stays hidden on iPhone Duo, which keeps the phone bars in every pose', () => {
+    isIPhoneDuo = true;
+    setViewport(951, 669);
     renderHeader();
     expect(screen.queryByText('sidebar-toggler')).toBeNull();
   });

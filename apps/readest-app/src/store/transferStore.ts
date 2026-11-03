@@ -1,10 +1,11 @@
 import { create } from 'zustand';
 import type { BaseDir } from '@/types/system';
+import type { CloudSyncProviderKind } from '@/services/sync/cloudSyncProvider';
 import { INDETERMINATE_PROGRESS } from '@/utils/transfer';
 
 export type TransferType = 'upload' | 'download' | 'delete';
 export type TransferStatus = 'pending' | 'in_progress' | 'completed' | 'failed' | 'cancelled';
-export type TransferKind = 'book' | 'replica';
+export type TransferKind = 'book' | 'replica' | 'file';
 /**
  * Why a transfer was cancelled. 'user' = an explicit cancel action;
  * 'policy' = the app cancelled it because Readest Cloud is not the
@@ -26,6 +27,8 @@ export interface TransferItem {
   kind: TransferKind;
   bookHash: string;
   bookTitle: string;
+  provider?: CloudSyncProviderKind;
+  filePath?: string;
   replicaKind?: string;
   replicaId?: string;
   replicaReincarnation?: string;
@@ -79,6 +82,8 @@ interface TransferState {
       reincarnation?: string;
     },
   ) => string;
+  addFileTransfer: (provider: CloudSyncProviderKind, path: string, type: TransferType) => string;
+  setTransferProvider: (transferId: string, provider: CloudSyncProviderKind) => void;
   removeTransfer: (transferId: string) => void;
   updateTransferProgress: (
     transferId: string,
@@ -242,6 +247,53 @@ export const useTransferStore = create<TransferState>((set, get) => ({
     return id;
   },
 
+  // These rows observe work owned by a sync provider, not executable queue jobs.
+  addFileTransfer: (provider, path, type) => {
+    const id = generateTransferId();
+    const now = Date.now();
+    const transfer: TransferItem = {
+      id,
+      kind: 'file',
+      provider,
+      filePath: path,
+      bookHash: '',
+      bookTitle: path.split('/').filter(Boolean).pop() ?? path,
+      type,
+      status: 'in_progress',
+      progress: INDETERMINATE_PROGRESS,
+      totalBytes: 0,
+      transferredBytes: 0,
+      transferSpeed: 0,
+      retryCount: 0,
+      maxRetries: 0,
+      createdAt: now,
+      startedAt: now,
+      priority: 10,
+      isBackground: true,
+    };
+    set((state) => {
+      const transfers = { ...state.transfers, [id]: transfer };
+      // Automatic config/index sync can run throughout a reading session.
+      // Bound its history without dropping active operations or queued jobs.
+      const history = Object.values(transfers)
+        .filter(
+          (entry) => entry.kind === 'file' && !['pending', 'in_progress'].includes(entry.status),
+        )
+        .sort((a, b) => b.createdAt - a.createdAt);
+      for (const entry of history.slice(500)) delete transfers[entry.id];
+      return { transfers };
+    });
+    return id;
+  },
+
+  setTransferProvider: (id, provider) => {
+    set((state) => {
+      const transfer = state.transfers[id];
+      if (!transfer || transfer.provider === provider) return state;
+      return { transfers: { ...state.transfers, [id]: { ...transfer, provider } } };
+    });
+  },
+
   removeTransfer: (transferId) => {
     set((state) => {
       const { [transferId]: _, ...remaining } = state.transfers;
@@ -318,6 +370,7 @@ export const useTransferStore = create<TransferState>((set, get) => ({
       if (!transfer) return state;
       // Policy cancellations are not retryable: the provider gate would
       // re-cancel the row immediately (cancel-retry-cancel loop).
+      if (transfer.kind === 'file') return state;
       if (transfer.status === 'cancelled' && transfer.cancelReason === 'policy') return state;
 
       return {
@@ -398,11 +451,15 @@ export const useTransferStore = create<TransferState>((set, get) => ({
   clearAll: () => set({ transfers: {} }),
 
   getPendingTransfers: () => {
-    return Object.values(get().transfers).filter((t) => t.status === 'pending');
+    return Object.values(get().transfers).filter(
+      (t) => t.kind !== 'file' && t.status === 'pending',
+    );
   },
 
   getActiveTransfers: () => {
-    return Object.values(get().transfers).filter((t) => t.status === 'in_progress');
+    return Object.values(get().transfers).filter(
+      (t) => t.kind !== 'file' && t.status === 'in_progress',
+    );
   },
 
   getFailedTransfers: () => {
@@ -457,7 +514,14 @@ export const useTransferStore = create<TransferState>((set, get) => ({
       // restore.
       if (transfer.status === 'cancelled' && transfer.cancelReason === 'policy') return;
       const withKind: TransferItem = { ...transfer, kind: transfer.kind ?? 'book' };
-      if (withKind.status === 'in_progress') {
+      if (withKind.kind === 'file' && ['pending', 'in_progress'].includes(withKind.status)) {
+        restoredTransfers[id] = {
+          ...withKind,
+          status: 'cancelled',
+          cancelReason: 'user',
+          completedAt: Date.now(),
+        };
+      } else if (withKind.status === 'in_progress') {
         restoredTransfers[id] = {
           ...withKind,
           status: 'pending',

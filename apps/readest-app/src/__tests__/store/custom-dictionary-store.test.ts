@@ -895,6 +895,33 @@ describe('customDictionaryStore — autoPlayPronunciation (#6265)', () => {
   });
 });
 
+describe('customDictionaryStore — saveLookupsToVocabulary (#789)', () => {
+  it('setSaveLookupsToVocabulary updates the setting', () => {
+    useCustomDictionaryStore.getState().setSaveLookupsToVocabulary(false);
+    expect(useCustomDictionaryStore.getState().settings.saveLookupsToVocabulary).toBe(false);
+  });
+
+  it('loadCustomDictionaries keeps a persisted off value', async () => {
+    type SettingsState = ReturnType<typeof useSettingsStore.getState>;
+    useSettingsStore.setState({
+      settings: {
+        customDictionaries: [],
+        dictionarySettings: {
+          providerOrder: ['builtin:wikipedia'],
+          providerEnabled: { 'builtin:wikipedia': true },
+          webSearches: [],
+          saveLookupsToVocabulary: false,
+        },
+      } as unknown as SettingsState['settings'],
+    } as unknown as SettingsState);
+    const fakeEnv = {
+      getAppService: () => Promise.resolve({ exists: vi.fn().mockResolvedValue(false) }),
+    } as unknown as EnvConfigType;
+    await useCustomDictionaryStore.getState().loadCustomDictionaries(fakeEnv);
+    expect(useCustomDictionaryStore.getState().settings.saveLookupsToVocabulary).toBe(false);
+  });
+});
+
 describe('customDictionaryStore — system dictionary fullscreen (#7101)', () => {
   it.each([true, false])('keeps fullscreen=%s saved during a pending load', async (enabled) => {
     type SettingsState = ReturnType<typeof useSettingsStore.getState>;

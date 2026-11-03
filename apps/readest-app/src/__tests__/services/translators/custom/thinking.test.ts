@@ -62,9 +62,25 @@ describe('custom translator thinking off', () => {
   });
 
   it('applies to the AI context dictionary too', async () => {
-    fetchMock.mockImplementation(async () =>
-      reply(JSON.stringify({ headword: 'bank', definition: 'the land beside a river' })),
-    );
+    fetchMock.mockImplementation(async () => {
+      const chunk = JSON.stringify({
+        id: 'x',
+        created: 0,
+        model: 'm',
+        choices: [
+          {
+            index: 0,
+            delta: {
+              content: JSON.stringify({ headword: 'bank', definition: 'the land beside a river' }),
+            },
+            finish_reason: 'stop',
+          },
+        ],
+      });
+      return new Response(`data: ${chunk}\n\ndata: [DONE]\n\n`, {
+        headers: { 'content-type': 'text/event-stream' },
+      });
+    });
     await lookupInContext(
       {
         id: 't',

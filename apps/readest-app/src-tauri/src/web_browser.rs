@@ -9,9 +9,10 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use tauri::Url;
-use tauri_plugin_native_bridge::WebBrowserPage;
+use tauri_plugin_native_bridge::{WebBrowserImage, WebBrowserPage};
 
 const CAPTURE_JS: &str = include_str!("web_browser_capture.js");
+const IMAGE_SELECTION_JS: &str = include_str!("web_browser_image_selection.js");
 
 #[derive(Deserialize, Default, Clone)]
 #[serde(rename_all = "camelCase", default)]
@@ -19,6 +20,8 @@ pub struct WebBrowserOptions {
     pub background: Option<String>,
     pub foreground: Option<String>,
     pub is_eink: Option<bool>,
+    pub select_image: Option<bool>,
+    pub direction: Option<String>,
     pub labels: HashMap<String, String>,
 }
 
@@ -49,6 +52,8 @@ pub struct WebBrowserResult {
     pub open_book_hash: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub page: Option<WebBrowserPage>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub image: Option<WebBrowserImage>,
 }
 
 pub const SENTINEL_HOST: &str = "readest-browser.invalid";
@@ -58,6 +63,7 @@ pub enum SentinelAction {
     Open(String),
     Close,
     Capture,
+    Image(WebBrowserImage),
 }
 
 /// Accept only http(s). A bare host ("calibre.example.com") gets `https://`.
@@ -221,6 +227,14 @@ pub fn sentinel_action(url: &Url) -> Option<SentinelAction> {
         }
         (Some("close"), _) => Some(SentinelAction::Close),
         (Some("capture"), None) => Some(SentinelAction::Capture),
+        (Some("image"), None) => {
+            let params: HashMap<_, _> = url.query_pairs().into_owned().collect();
+            let image = WebBrowserImage {
+                url: params.get("url")?.clone(),
+                page_url: params.get("pageUrl")?.clone(),
+            };
+            image.is_valid().then_some(SentinelAction::Image(image))
+        }
         _ => None,
     }
 }
@@ -238,13 +252,30 @@ const CHROME_JS: &str = include_str!("web_browser_chrome.js");
 /// labels and theme colours cannot break out of the string context.
 #[cfg(desktop)]
 pub fn chrome_script(options: &WebBrowserOptions) -> String {
-    let options_json = serde_json::json!({
+    let chrome = CHROME_JS.replace(
+        "__READEST_BROWSER_OPTIONS__",
+        &browser_options_json(options),
+    );
+    format!("{chrome}\n{}", image_selection_script(options))
+}
+
+fn browser_options_json(options: &WebBrowserOptions) -> String {
+    serde_json::json!({
         "background": options.background,
         "foreground": options.foreground,
         "isEink": options.is_eink.unwrap_or(false),
+        "selectImage": options.select_image.unwrap_or(false),
+        "direction": options.direction.as_deref().unwrap_or("ltr"),
         "labels": options.labels,
-    });
-    CHROME_JS.replace("__READEST_BROWSER_OPTIONS__", &options_json.to_string())
+    })
+    .to_string()
+}
+
+fn image_selection_script(options: &WebBrowserOptions) -> String {
+    IMAGE_SELECTION_JS.replace(
+        "__READEST_BROWSER_OPTIONS__",
+        &browser_options_json(options),
+    )
 }
 
 #[cfg(desktop)]
@@ -321,6 +352,7 @@ pub async fn open_web_browser<R: tauri::Runtime>(
     let nav_app = app.clone();
     let nav_label = label.clone();
     let nav_result = result.clone();
+    let select_image = options.select_image.unwrap_or(false);
     let new_window_app = app.clone();
     let new_window_label = label.clone();
     let dl_app = app.clone();
@@ -348,6 +380,7 @@ pub async fn open_web_browser<R: tauri::Runtime>(
                     tauri::async_runtime::spawn(async move {
                         match action {
                             SentinelAction::Capture => {
+                                if select_image { return; }
                                 capture_browser_page(window, result);
                                 return;
                             }
@@ -357,6 +390,10 @@ pub async fn open_web_browser<R: tauri::Runtime>(
                                     .unwrap_or_else(|e| e.into_inner())
                                     .open_book_hash = Some(hash);
                             }
+                            SentinelAction::Image(image) => {
+                                if !select_image { return; }
+                                result.lock().unwrap_or_else(|e| e.into_inner()).image = Some(image);
+                            }
                             SentinelAction::Close => {}
                         }
                         let _ = window.close();
@@ -364,6 +401,7 @@ pub async fn open_web_browser<R: tauri::Runtime>(
                 }
                 return false;
             }
+            if url.host_str() == Some(SENTINEL_HOST) { return false; }
             match url.scheme() {
                 "http" | "https" | "about" | "blob" | "data" => true,
                 _ => {
@@ -388,6 +426,7 @@ pub async fn open_web_browser<R: tauri::Runtime>(
         })
         .on_download(move |webview, event| match event {
             DownloadEvent::Requested { url, destination } => {
+                if select_image { return false; }
                 let suggested = destination
                     .file_name()
                     .and_then(|n| n.to_str())
@@ -407,6 +446,7 @@ pub async fn open_web_browser<R: tauri::Runtime>(
                 true
             }
             DownloadEvent::Finished { url, path, success } => {
+                if select_image { return true; }
                 let chosen = dl_pending
                     .lock()
                     .unwrap_or_else(|e| e.into_inner())
@@ -561,6 +601,8 @@ pub async fn open_web_browser(
         url: parsed.to_string(),
         download_dir: download_dir.to_string_lossy().into_owned(),
         capture_script: CAPTURE_JS.to_string(),
+        image_selection_script: image_selection_script(&options),
+        select_image: options.select_image,
         background: options.background,
         foreground: options.foreground,
         is_eink: options.is_eink,
@@ -576,6 +618,9 @@ pub async fn open_web_browser(
     Ok(WebBrowserResult {
         open_book_hash: response.open_book_hash,
         page: response.page,
+        image: response
+            .image
+            .filter(|image| options.select_image == Some(true) && image.is_valid()),
     })
 }
 
@@ -603,6 +648,54 @@ pub async fn set_web_browser_status(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn sentinel_image_action_validates_both_urls() {
+        let valid = Url::parse("https://readest-browser.invalid/image?url=https%3A%2F%2Fcdn.example%2Fcover.jpg%3Fx%3D1%26y%3D2&pageUrl=https%3A%2F%2Fsearch.example%2Fimages").unwrap();
+        assert_eq!(
+            sentinel_action(&valid),
+            Some(SentinelAction::Image(WebBrowserImage {
+                url: "https://cdn.example/cover.jpg?x=1&y=2".into(),
+                page_url: "https://search.example/images".into(),
+            })),
+            "explicit image selection must preserve both URLs"
+        );
+        for missing in [
+            "https://readest-browser.invalid/image",
+            "https://readest-browser.invalid/image?url=https://example/cover.jpg",
+            "https://other.example/image?url=https://example/cover.jpg&pageUrl=https://example/",
+        ] {
+            assert!(sentinel_action(&Url::parse(missing).unwrap()).is_none());
+        }
+        for value in [
+            "javascript:alert(1)",
+            "file:///cover.jpg",
+            "data:image/png;base64,AA",
+            "blob:https://example/id",
+            "example.com/cover.jpg",
+            "",
+        ] {
+            for field in ["url", "pageUrl"] {
+                let mut invalid = valid.clone();
+                let pairs: Vec<_> = valid
+                    .query_pairs()
+                    .map(|(key, current)| {
+                        let value = if key == field {
+                            value.to_string()
+                        } else {
+                            current.into_owned()
+                        };
+                        (key.into_owned(), value)
+                    })
+                    .collect();
+                invalid.query_pairs_mut().clear().extend_pairs(pairs);
+                assert!(
+                    sentinel_action(&invalid).is_none(),
+                    "must reject {field}={value}"
+                );
+            }
+        }
+    }
 
     #[test]
     fn parse_browsable_url_accepts_http_and_https_only() {

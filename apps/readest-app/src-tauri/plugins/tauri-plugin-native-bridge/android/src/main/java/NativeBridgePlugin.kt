@@ -2142,7 +2142,7 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
                 event.error?.let { payload.put("error", it) }
                 emitOrQueue("web-browser-download", payload)
             },
-            completion = { hash, page ->
+            completion = { hash, page, image ->
                 activeWebBrowser = null
                 val ret = JSObject()
                 if (hash != null) ret.put("openBookHash", hash)
@@ -2151,6 +2151,12 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
                     captured.put("url", page.url)
                     captured.put("html", page.html)
                     ret.put("page", captured)
+                }
+                if (image != null) {
+                    val selected = JSObject()
+                    selected.put("url", image.url)
+                    selected.put("pageUrl", image.pageUrl)
+                    ret.put("image", selected)
                 }
                 invoke.resolve(ret)
             },
