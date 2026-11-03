@@ -733,10 +733,12 @@ const getOutput = (
 export class ComicTextDetector {
   readonly #options: ComicTextDetectorOptions;
   readonly #onDownloadProgress?: (progress: ModelDownloadProgress) => void;
-  readonly #abortController = new AbortController();
+  #abortController: AbortController | null = null;
   readonly #activeRuns = new Set<Promise<InferenceSession.ReturnType>>();
-  #runtimePromise: Promise<typeof import('onnxruntime-web/wasm')> | null = null;
-  #sessionPromise: Promise<InferenceSession> | null = null;
+  #sessionPromise: Promise<{
+    runtime: typeof import('onnxruntime-web/wasm');
+    session: InferenceSession;
+  }> | null = null;
   #terminated = false;
 
   constructor(options: ComicTextDetectorOptions = {}) {
@@ -762,8 +764,7 @@ export class ComicTextDetector {
       COMIC_TEXT_DETECTOR_INPUT_SIZE,
       COMIC_TEXT_DETECTOR_INPUT_SIZE,
     ).data;
-    const runtime = await this.#getRuntime();
-    const session = await this.#getSession(runtime);
+    const { runtime, session } = await this.#getSession();
     if (this.#terminated) throw new Error('Comic text detector has been terminated');
     const input = new runtime.Tensor(
       'float32',
@@ -804,12 +805,12 @@ export class ComicTextDetector {
   async terminate(): Promise<void> {
     if (this.#terminated) return;
     this.#terminated = true;
-    this.#abortController.abort();
+    this.#abortController?.abort();
     const sessionPromise = this.#sessionPromise;
     this.#sessionPromise = null;
     if (!sessionPromise) return;
     try {
-      const session = await sessionPromise;
+      const { session } = await sessionPromise;
       await Promise.allSettled([...this.#activeRuns]);
       await session.release();
     } catch {
@@ -817,41 +818,47 @@ export class ComicTextDetector {
     }
   }
 
-  #getRuntime(): Promise<typeof import('onnxruntime-web/wasm')> {
-    if (this.#runtimePromise) return this.#runtimePromise;
-    const runtimePromise = import('onnxruntime-web/wasm');
-    this.#runtimePromise = runtimePromise;
-    void runtimePromise.catch(() => {
-      if (this.#runtimePromise === runtimePromise && !this.#terminated) this.#runtimePromise = null;
-    });
-    return runtimePromise;
-  }
-
-  #getSession(runtime: typeof import('onnxruntime-web/wasm')): Promise<InferenceSession> {
+  #getSession(): Promise<{
+    runtime: typeof import('onnxruntime-web/wasm');
+    session: InferenceSession;
+  }> {
     if (this.#terminated)
       return Promise.reject(new Error('Comic text detector has been terminated'));
     if (this.#sessionPromise) return this.#sessionPromise;
-    runtime.env.wasm.numThreads = globalThis.crossOriginIsolated
-      ? Math.min(8, Math.ceil((navigator.hardwareConcurrency || 1) / 2))
-      : 1;
-    runtime.env.wasm.proxy = typeof document !== 'undefined';
-    runtime.env.wasm.wasmPaths = '/vendor/onnxruntime/';
-    const sessionPromise = fetchVerifiedModelAsset({
-      ...COMIC_TEXT_DETECTOR_MODEL_ASSET,
-      signal: this.#abortController.signal,
-      onProgress: this.#onDownloadProgress,
-    }).then(async (model) => {
-      const session = await runtime.InferenceSession.create(model, {
-        executionProviders: ['wasm'],
-        executionMode: 'sequential',
-        graphOptimizationLevel: 'all',
+
+    const controller = new AbortController();
+    this.#abortController = controller;
+
+    const sessionPromise = Promise.all([
+      import('onnxruntime-web/wasm'),
+      fetchVerifiedModelAsset({
+        ...COMIC_TEXT_DETECTOR_MODEL_ASSET,
+        signal: controller.signal,
+        onProgress: this.#onDownloadProgress,
+      }),
+    ])
+      .then(async ([runtime, model]) => {
+        if (this.#terminated) throw new Error('Comic text detector has been terminated');
+        runtime.env.wasm.numThreads = globalThis.crossOriginIsolated
+          ? Math.min(8, Math.ceil((navigator.hardwareConcurrency || 1) / 2))
+          : 1;
+        runtime.env.wasm.proxy = typeof document !== 'undefined';
+        runtime.env.wasm.wasmPaths = '/vendor/onnxruntime/';
+        const session = await runtime.InferenceSession.create(model, {
+          executionProviders: ['wasm'],
+          executionMode: 'sequential',
+          graphOptimizationLevel: 'all',
+        });
+        if (this.#terminated) {
+          await session.release();
+          throw new Error('Comic text detector has been terminated');
+        }
+        return { runtime, session };
+      })
+      .catch((error: unknown) => {
+        controller.abort(error);
+        throw error;
       });
-      if (this.#terminated) {
-        await session.release();
-        throw new Error('Comic text detector has been terminated');
-      }
-      return session;
-    });
     this.#sessionPromise = sessionPromise;
     void sessionPromise.catch(() => {
       if (this.#sessionPromise === sessionPromise && !this.#terminated) this.#sessionPromise = null;
@@ -864,7 +871,7 @@ export class ComicTextDetector {
     if (!sessionPromise) return;
     let activeSession: InferenceSession;
     try {
-      activeSession = await sessionPromise;
+      activeSession = (await sessionPromise).session;
     } catch {
       return;
     }
