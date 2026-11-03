@@ -166,6 +166,22 @@ describe('refreshSectionGlosses vocabulary marks (#6613)', () => {
     expect(hintsIn(doc)).toEqual(['尼莫']);
   });
 
+  it('leaves drawn hints alone until a live selection clears', async () => {
+    const doc = document.implementation.createHTMLDocument('t');
+    doc.body.innerHTML = '<p>Captain Nemo smiled.</p>';
+    const vocabulary = marks([['nemo', '尼莫']]);
+    await refreshSectionGlosses(doc, viewSettings(), ctx({ appLang: 'zh-CN', vocabulary }));
+    expect(hintsIn(doc)).toEqual(['尼莫']);
+    const fake = { isCollapsed: false, rangeCount: 1 };
+    vi.spyOn(doc, 'getSelection').mockReturnValue(fake as unknown as Selection);
+    const off = viewSettings({ wordLensEnabled: false });
+    await refreshSectionGlosses(doc, off, ctx({ appLang: 'zh-CN', vocabulary }));
+    expect(hintsIn(doc)).toEqual(['尼莫']);
+    fake.isCollapsed = true;
+    doc.dispatchEvent(new Event('selectionchange'));
+    await vi.waitFor(() => expect(hintsIn(doc)).toEqual([]));
+  });
+
   it('drops a waiting draw once a newer refresh has run', async () => {
     const doc = document.implementation.createHTMLDocument('t');
     doc.body.innerHTML = '<p>Captain Nemo smiled.</p>';

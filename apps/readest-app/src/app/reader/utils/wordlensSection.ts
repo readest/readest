@@ -70,6 +70,12 @@ export const refreshSectionGlosses = async (
   try {
     const myGen = (refreshGen.get(doc) ?? 0) + 1;
     refreshGen.set(doc, myGen);
+    // Clearing unwraps the <ruby> under a live selection; redo the whole
+    // refresh once it clears. The bump above drops any older pending draw.
+    if (hasLiveSelection(doc)) {
+      whenSelectionClears(doc, () => void refreshSectionGlosses(doc, viewSettings, ctx));
+      return;
+    }
     clearGlosses(doc);
     if (!viewSettings.wordLensEnabled) return;
     const source = toWordLensSource(ctx.bookLang);
@@ -130,9 +136,13 @@ const pendingUntilClear = new WeakMap<Document, () => void>();
  * (marking a word in the dictionary popup) would collapse the selection and
  * close the popup the reader is using.
  */
-export const whenSelectionClears = (doc: Document, fn: () => void): void => {
+const hasLiveSelection = (doc: Document) => {
   const sel = doc.getSelection();
-  if (!sel || sel.isCollapsed || !sel.rangeCount) {
+  return !!sel && !sel.isCollapsed && sel.rangeCount > 0;
+};
+
+export const whenSelectionClears = (doc: Document, fn: () => void): void => {
+  if (!hasLiveSelection(doc)) {
     pendingUntilClear.delete(doc);
     fn();
     return;
@@ -141,8 +151,7 @@ export const whenSelectionClears = (doc: Document, fn: () => void): void => {
   pendingUntilClear.set(doc, fn);
   if (waiting) return;
   const onChange = () => {
-    const current = doc.getSelection();
-    if (current && !current.isCollapsed && current.rangeCount) return;
+    if (hasLiveSelection(doc)) return;
     doc.removeEventListener('selectionchange', onChange);
     const run = pendingUntilClear.get(doc);
     pendingUntilClear.delete(doc);
