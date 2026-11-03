@@ -107,11 +107,18 @@ describe('bookorbit proxy handler', () => {
     vi.unstubAllGlobals();
   });
 
-  it('forwards allowed requests without following redirects', async () => {
-    const fetchMock = vi.fn(async () => ({
-      status: 200,
-      text: async () => '{"ok":true}',
-    }));
+  // Cloudflare Workers (the hosted web build) rejects redirect: 'error' outright:
+  // 'Invalid redirect value, must be one of "follow" or "manual"'.
+  const workersFetch = (upstream: () => Response) =>
+    vi.fn(async (_url: string, init: RequestInit) => {
+      if (init.redirect !== 'manual' && init.redirect !== 'follow') {
+        throw new TypeError('Invalid redirect value, must be one of "follow" or "manual"');
+      }
+      return upstream();
+    });
+
+  it('forwards allowed requests on Cloudflare Workers', async () => {
+    const fetchMock = workersFetch(() => new Response('{"ok":true}'));
     vi.stubGlobal('fetch', fetchMock);
     const res = makeRes();
     await handler(
@@ -119,16 +126,38 @@ describe('bookorbit proxy handler', () => {
         serverUrl: 'https://books.example.com',
         endpoint: '/plugin/version',
         method: 'GET',
+        headers: { 'CF-Access-Client-Id': 'id', 'CF-Access-Client-Secret': 'secret' },
       }) as never,
       res as never,
     );
     expect(res.statusCode).toBe(200);
+    expect(res.body).toEqual({ ok: true });
     expect(fetchMock).toHaveBeenCalledTimes(1);
     const [url, init] = fetchMock.mock.calls[0]! as unknown as [string, RequestInit];
     expect(url).toBe('https://books.example.com/api/v1/koreader/plugin/version');
-    // A redirecting upstream must fail rather than steer the proxy to a new
-    // host (redirect-based SSRF).
-    expect(init.redirect).toBe('error');
+    expect(new Headers(init.headers).get('CF-Access-Client-Id')).toBe('id');
+    expect(new Headers(init.headers).get('CF-Access-Client-Secret')).toBe('secret');
+    vi.unstubAllGlobals();
+  });
+
+  it('does not follow a redirect (redirect-based SSRF)', async () => {
+    const fetchMock = workersFetch(
+      () => new Response(null, { status: 302, headers: { location: 'http://169.254.169.254/' } }),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+    const res = makeRes();
+    await handler(
+      makeReq({
+        serverUrl: 'https://books.example.com',
+        endpoint: '/users/auth',
+        method: 'GET',
+      }) as never,
+      res as never,
+    );
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [, init] = fetchMock.mock.calls[0]! as unknown as [string, RequestInit];
+    expect(init.redirect).toBe('manual');
+    expect(res.statusCode).toBe(500);
     vi.unstubAllGlobals();
   });
 });
