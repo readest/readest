@@ -1969,11 +1969,12 @@ class NativeBridgePlugin: Plugin {
         if let error = event.error { data["error"] = error }
         self?.trigger("web-browser-download", data: data)
       }
-      controller.onFinish = { [weak self] hash, page in
+      controller.onFinish = { [weak self] hash, page, image in
         self?.activeWebBrowser = nil
         var ret = JSObject()
         if let hash = hash { ret["openBookHash"] = hash }
         if let page = page { ret["page"] = ["url": page.url, "html": page.html] }
+        if let image = image { ret["image"] = ["url": image.url, "pageUrl": image.pageUrl] }
         invoke.resolve(ret)
       }
       self.activeWebBrowser = controller
