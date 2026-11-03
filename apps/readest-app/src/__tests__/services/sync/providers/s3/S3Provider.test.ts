@@ -187,13 +187,28 @@ describe('S3Provider — transport', () => {
     );
   });
 
-  test('deleteDir scans the bucket root with the same trailing slash', async () => {
+  test('deleteDir scans the bucket root with a trailing slash and deletes ordinary keys', async () => {
     const h = makeS3();
-    h.fetchMock.mockResolvedValueOnce(xml(emptyList));
+    const keys = new Set(['library.json', 'Readest/books/h1/config.json']);
+    h.fetchMock.mockImplementation(async (url: string, init?: RequestInit) => {
+      const requestUrl = new URL(url);
+      if (init?.method === 'DELETE') {
+        keys.delete(decodeURIComponent(requestUrl.pathname.slice('/readest/'.length)));
+        return new Response(null, { status: 204 });
+      }
+      const prefix = requestUrl.searchParams.get('prefix') ?? '';
+      return xml(
+        listPage({
+          keys: [...keys].filter((key) => key.startsWith(prefix)).map((key) => ({ key })),
+        }),
+      );
+    });
 
     await h.provider.deleteDir('/');
     expect(new URL(h.url(0)).pathname).toBe('/readest/');
     expect(h.url(0)).toContain('list-type=2');
+    expect([...keys]).toEqual([]);
+    expect(new URL(h.url(0)).searchParams.get('prefix')).toBe('');
   });
 
   test('writeText PUTs the body with its content type; ensureDir never fetches', async () => {

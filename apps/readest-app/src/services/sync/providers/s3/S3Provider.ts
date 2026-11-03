@@ -319,7 +319,8 @@ class S3ProviderImpl {
   async ensureDir(_paths: string[]): Promise<void> {}
 
   async deleteDir(path: string): Promise<void> {
-    const prefix = `${keyFor(path)}/`;
+    const key = keyFor(path);
+    const prefix = key ? `${key}/` : '';
     let token: string | undefined;
     do {
       // Prefix scan at the bucket root — same trailing-slash rule as
