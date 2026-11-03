@@ -87,9 +87,15 @@ describe('vocabulary in backups', () => {
     await wait(600);
     expect(release).not.toBeNull();
 
+    // Release the stalled save only once the restore is waiting on it.
+    const flush = vi.spyOn(useVocabularyStore.getState(), 'flush');
     const restoring = restoreFromBackupZip(target.appService, new Blob([zip]));
-    await wait(50);
-    release!();
+    try {
+      await vi.waitFor(() => expect(flush).toHaveBeenCalled());
+    } finally {
+      // Never leave the shared write chain stalled for later tests.
+      release!();
+    }
     await restoring;
     await wait(10);
     const ids = JSON.parse(target.files[VOCABULARY_FILENAME]!).entries.map(
