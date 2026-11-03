@@ -65,6 +65,8 @@ import { applyScrollableStyle, applyTableTouchScroll } from '@/utils/scrollable'
 import { mountAdditionalFonts, mountCustomFont } from '@/styles/fonts';
 import { layoutWarichu, relayoutWarichu } from '@/utils/warichu';
 import { refreshSectionGlosses } from '@/app/reader/utils/wordlensSection';
+import { useVocabularyStore } from '@/store/vocabularyStore';
+import { vocabularyLang } from '@/services/vocabulary/entry';
 import { getBookDirFromLanguage, getBookDirFromWritingMode } from '@/utils/book';
 import { getIndexFromCfi } from '@/utils/cfi';
 import { useUICSS } from '@/hooks/useUICSS';
@@ -700,6 +702,17 @@ const FoliateViewer: React.FC<{
   // lives in the Word Lens settings panel). `wordLensToastShownRef` de-dupes the
   // toast across the multiple section docs a refresh pass touches.
   const wordLensToastShownRef = useRef(false);
+  // Re-render hints when this language's Learning / Mastered marks change, not
+  // on every lookup the vocabulary records.
+  const vocabularyMarksSignature = useVocabularyStore((s) => {
+    const { learning, mastered } = s.getLearningAndMastered(
+      vocabularyLang(getBookData(bookKey)?.book?.primaryLanguage),
+    );
+    return JSON.stringify([[...learning], [...mastered]]);
+  });
+  useEffect(() => {
+    if (appService) void useVocabularyStore.getState().load(appService);
+  }, [appService]);
   const buildWordLensCtx = (bookLang?: string | null) => {
     // Read the live setting (not the first-render `settings` snapshot closed over
     // by the empty-deps `stabilizedHandler`) so toggling Auto-download mid-session
@@ -712,6 +725,7 @@ const FoliateViewer: React.FC<{
       bookLang,
       appLang: getLocale(),
       allowDownload,
+      vocabulary: useVocabularyStore.getState().getLearningAndMastered(vocabularyLang(bookLang)),
       onProgress: () => {
         if (wordLensToastShownRef.current) return;
         wordLensToastShownRef.current = true;
@@ -1316,7 +1330,12 @@ const FoliateViewer: React.FC<{
       if (doc) void refreshSectionGlosses(doc, vs, buildWordLensCtx(bookLang));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [viewSettings?.wordLensEnabled, viewSettings?.wordLensLevel, viewSettings?.wordLensHintLang]);
+  }, [
+    viewSettings?.wordLensEnabled,
+    viewSettings?.wordLensLevel,
+    viewSettings?.wordLensHintLang,
+    vocabularyMarksSignature,
+  ]);
 
   useEffect(() => {
     const mountCustomFonts = async () => {

@@ -111,3 +111,38 @@ describe('refreshSectionGlosses Traditional Chinese hints', () => {
     expect(await glossOf('', 'zh-Hans-CN')).toBe('电脑');
   });
 });
+
+describe('refreshSectionGlosses vocabulary marks (#6613)', () => {
+  const marks = (learning: [string, string | undefined][], mastered: string[] = []) => ({
+    learning: new Map(learning),
+    mastered: new Set(mastered),
+  });
+  const render = async (vs: ViewSettings, extra: Record<string, unknown>) => {
+    const doc = document.implementation.createHTMLDocument('t');
+    doc.body.innerHTML = '<p>Captain Nemo smiled.</p>';
+    await refreshSectionGlosses(doc, vs, ctx({ appLang: 'zh-CN', ...extra }));
+    return [...doc.querySelectorAll('ruby.wl-gloss > rt')].map((rt) => rt.textContent);
+  };
+
+  it('hints a Learning word with a saved hint even when no pack is available', async () => {
+    mockedLoad.mockResolvedValue(null);
+    expect(await render(viewSettings(), { vocabulary: marks([['nemo', '尼莫']]) })).toEqual([
+      '尼莫',
+    ]);
+  });
+
+  it('draws nothing when Word Lens is off', async () => {
+    const vs = viewSettings({ wordLensEnabled: false });
+    expect(await render(vs, { vocabulary: marks([['nemo', '尼莫']]) })).toEqual([]);
+    expect(mockedLoad).not.toHaveBeenCalled();
+  });
+
+  it('skips a Mastered word the pack would hint', async () => {
+    const pack = {
+      lookup: (w: string) => (w.toLowerCase() === 'smiled' ? { rank: 99999, gloss: '笑' } : null),
+    } as unknown as GlossIndex;
+    mockedLoad.mockResolvedValue(pack);
+    expect(await render(viewSettings(), {})).toEqual(['笑']);
+    expect(await render(viewSettings(), { vocabulary: marks([], ['smiled']) })).toEqual([]);
+  });
+});

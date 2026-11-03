@@ -4,6 +4,7 @@ import type { ProgressHandler } from '@/utils/transfer';
 import { canTokenizeSource, getRankCutoff } from '@/services/wordlens/difficulty';
 import { loadGlossIndex } from '@/services/wordlens/glossPacks';
 import { planGlosses } from '@/services/wordlens/planner';
+import type { GlossSource, VocabularyMarks } from '@/services/wordlens/types';
 import { buildSectionTextModel, applyGlosses, clearGlosses } from '@/app/reader/utils/wordlensRuby';
 import { cutZh, isJiebaReady, initJieba } from '@/utils/jieba';
 import { initSimpleCC, runSimpleCC } from '@/utils/simplecc';
@@ -43,7 +44,11 @@ interface RefreshContext {
    */
   allowDownload?: boolean;
   onProgress?: ProgressHandler;
+  /** The reader's Learning / Mastered words for the book's language. */
+  vocabulary?: VocabularyMarks;
 }
+
+const NO_PACK: GlossSource = { lookup: () => null };
 
 // Per-document generation counter. Dragging the difficulty slider fires the
 // settings effect repeatedly, producing overlapping refresh calls. A later call
@@ -79,7 +84,8 @@ export const refreshSectionGlosses = async (
       allowDownload: ctx.allowDownload,
     });
     if (refreshGen.get(doc) !== myGen) return; // a newer refresh superseded us
-    if (!index) return;
+    // Without a pack, only Learning words with a saved hint can be drawn.
+    if (!index && !ctx.vocabulary?.learning.size) return;
     if (source === 'zh' && !isJiebaReady()) {
       void initJieba();
       return;
@@ -90,11 +96,12 @@ export const refreshSectionGlosses = async (
       if (refreshGen.get(doc) !== myGen) return;
     }
     const model = buildSectionTextModel(doc);
-    const occ = planGlosses(model.text, index, {
+    const occ = planGlosses(model.text, index ?? NO_PACK, {
       sourceLang: source,
       rankCutoff: getRankCutoff(source, viewSettings.wordLensLevel),
       cutZh: source === 'zh' ? cutZh : undefined,
       monolingual: hint === source, // en-en: gloss is a build-formatted definition
+      vocabulary: ctx.vocabulary,
     });
     if (zhVariant) for (const o of occ) o.gloss = runSimpleCC(o.gloss, zhVariant);
     if (occ.length) applyGlosses(doc, model, occ);

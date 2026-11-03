@@ -133,3 +133,68 @@ describe('planGlosses against a zh-en fixture', () => {
     expect(occ.map((o) => o.word)).not.toContain(word);
   });
 });
+
+describe('planGlosses vocabulary marks (#6613)', () => {
+  // A pack-like source with an inflection table: running/ran → run.
+  const withLemma: GlossSource = {
+    lookup: (word) =>
+      source.lookup(word) ?? (word.toLowerCase() === 'run' ? { rank: 500, gloss: '跑' } : null),
+    lemma: (word) => {
+      const w = word.toLowerCase();
+      if (w === 'running' || w === 'ran') return 'run';
+      return source.lookup(w) || w === 'run' ? w : null;
+    },
+  };
+  const opts = (vocabulary: {
+    learning?: [string, string | undefined][];
+    mastered?: string[];
+  }) => ({
+    sourceLang: 'en',
+    rankCutoff: 7000,
+    vocabulary: {
+      learning: new Map(vocabulary.learning ?? []),
+      mastered: new Set(vocabulary.mastered ?? []),
+    },
+  });
+
+  it('hints a Learning word the pack ranks as easy, with the pack gloss', () => {
+    const occ = planGlosses('the cryptic', withLemma, opts({ learning: [['the', undefined]] }));
+    expect(occ.map((o) => [o.word, o.gloss])).toEqual([
+      ['the', '这'],
+      ['cryptic', '晦涩的'],
+    ]);
+  });
+
+  it('hints a Learning word missing from the pack with its saved hint', () => {
+    const occ = planGlosses('Captain Nemo', withLemma, opts({ learning: [['nemo', '尼莫']] }));
+    expect(occ).toEqual([{ start: 8, end: 12, word: 'Nemo', gloss: '尼莫' }]);
+  });
+
+  it('skips a Learning word with neither a saved hint nor a pack entry', () => {
+    expect(
+      planGlosses('Captain Nemo', withLemma, opts({ learning: [['nemo', undefined]] })),
+    ).toEqual([]);
+  });
+
+  it('prefers the saved hint over the pack gloss', () => {
+    const occ = planGlosses('cryptic', withLemma, opts({ learning: [['cryptic', '神秘']] }));
+    expect(occ[0]!.gloss).toBe('神秘');
+  });
+
+  it('never hints a Mastered word', () => {
+    expect(planGlosses('A cryptic note.', withLemma, opts({ mastered: ['cryptic'] }))).toEqual([]);
+  });
+
+  it('matches inflections both ways through the pack lemma table', () => {
+    const learnRun = opts({ learning: [['run', undefined]] });
+    expect(planGlosses('He ran.', withLemma, learnRun).map((o) => o.word)).toEqual(['ran']);
+    const masterRunning = opts({ mastered: ['running'] });
+    masterRunning.rankCutoff = 100; // the pack would hint run/ran at this level
+    expect(planGlosses('run ran running', withLemma, masterRunning)).toEqual([]);
+  });
+
+  it('counts Learning words toward the occurrence cap', () => {
+    const o = { ...opts({ learning: [['the', undefined]] }), maxOccurrences: 2 };
+    expect(planGlosses('the the the', withLemma, o)).toHaveLength(2);
+  });
+});

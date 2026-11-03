@@ -6,6 +6,7 @@ import {
   extractSentence,
   mergeEntries,
   normalizeWordKey,
+  vocabularyLang,
 } from '@/services/vocabulary/entry';
 import type { VocabularyEntry, VocabularyOccurrence } from '@/services/vocabulary/types';
 
@@ -137,5 +138,14 @@ describe('mergeEntries', () => {
     expect(m.hint).toBeUndefined();
     expect(m.occurrences.map((o) => o.sentence)).toEqual(['New.']);
     expect(mergeEntries(stale, deleted)).toEqual(m);
+  });
+});
+
+describe('vocabularyLang', () => {
+  it('uses the base code and falls back to und', () => {
+    expect(vocabularyLang('en-US')).toBe('en');
+    expect(vocabularyLang('ZH')).toBe('zh');
+    expect(vocabularyLang(undefined)).toBe('und');
+    expect(vocabularyLang('')).toBe('und');
   });
 });

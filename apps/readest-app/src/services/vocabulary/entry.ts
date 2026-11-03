@@ -11,6 +11,10 @@ export const normalizeWordKey = (word: string): string =>
 
 export const entryId = (lang: string, key: string): string => `${lang}:${key}`;
 
+/** Base language code a book tag files its words under (`en-US` → `en`), `und` if unknown. */
+export const vocabularyLang = (tag?: string | null): string =>
+  (typeof tag === 'string' && tag.toLowerCase().split('-')[0]) || 'und';
+
 const SENTENCE_END = /[.!?。！？…]/;
 
 /** The sentence around `word`, given the text right before and after it. */
