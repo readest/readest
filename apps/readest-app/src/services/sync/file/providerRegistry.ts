@@ -11,6 +11,7 @@
  * keychain token, so it needs no settings to construct.
  */
 import type { FileSyncProvider } from './provider';
+import { withTransferLog } from './transferLog';
 import type { S3Settings, WebDAVSettings } from '@/types/settings';
 import { createWebDAVProvider } from '@/services/sync/providers/webdav/WebDAVProvider';
 import { buildGoogleDriveProvider } from '@/services/sync/providers/gdrive/buildGoogleDriveProvider';
@@ -45,7 +46,10 @@ export interface FileSyncBackendsSettings {
  * {@link resetFileSyncProviderCache} — their token source changes identity
  * without any key input changing.
  */
-const providerCache = new Map<FileSyncBackendKind, { key: string; provider: FileSyncProvider }>();
+const providerCache = new Map<
+  FileSyncBackendKind,
+  { key: string; provider: FileSyncProvider; logged: FileSyncProvider }
+>();
 
 const providerCacheKey = (
   kind: FileSyncBackendKind,
@@ -76,10 +80,22 @@ export const resetFileSyncProviderCache = (): void => {
 export const createFileSyncProvider = async (
   kind: FileSyncBackendKind,
   settings: FileSyncBackendsSettings,
+  parentTransferId?: string,
 ): Promise<FileSyncProvider | null> => {
+  const cached = await getFileSyncProvider(kind, settings);
+  if (!cached) return null;
+  return parentTransferId
+    ? withTransferLog(cached.provider, kind, parentTransferId)
+    : cached.logged;
+};
+
+const getFileSyncProvider = async (
+  kind: FileSyncBackendKind,
+  settings: FileSyncBackendsSettings,
+): Promise<{ key: string; provider: FileSyncProvider; logged: FileSyncProvider } | null> => {
   const key = providerCacheKey(kind, settings);
   const cached = providerCache.get(kind);
-  if (cached?.key === key) return cached.provider;
+  if (cached?.key === key) return cached;
   const provider =
     kind === 'webdav'
       ? settings.webdav
@@ -94,6 +110,8 @@ export const createFileSyncProvider = async (
           : kind === 'icloud'
             ? await buildICloudProvider()
             : await buildGoogleDriveProvider();
-  if (provider) providerCache.set(kind, { key, provider });
-  return provider;
+  if (!provider) return null;
+  const entry = { key, provider, logged: withTransferLog(provider, kind) };
+  providerCache.set(kind, entry);
+  return entry;
 };
