@@ -9,7 +9,8 @@
  *
  * Every bar must answer this the same way. While only the footer computed it,
  * the header kept showing its own copies of the footer's TOC and font controls
- * on tablet portrait (#5634, #5652).
+ * on tablet portrait (#5634, #5652). The header's sidebar toggle was later
+ * brought back on tablets, outside iPhone Duo, to match desktop (#7292).
  *
  * iPhone Duo is the exception: viewport size cannot identify it, so with
  * `isIPhoneDuo` every pose at least 640 wide (the inner display in landscape,

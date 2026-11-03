@@ -378,7 +378,7 @@ const colorPanelItems = [
   },
   {
     id: 'settings.color.transparentImageBackground',
-    labelKey: _('Make White Image Backgrounds Transparent'),
+    labelKey: _('Transparent Image Background'),
     keywords: ['image', 'white', 'background', 'transparent', 'diagram'],
     section: 'Theme',
   },
