@@ -633,16 +633,11 @@ const ThemePanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
           <label
             data-setting-id='settings.color.transparentImageBackground'
             className={clsx(
-              'flex items-center justify-between gap-4 px-4',
+              'flex items-center justify-between px-4',
               isPDF ? 'cursor-not-allowed opacity-50' : 'cursor-pointer',
             )}
           >
-            <div className='flex min-w-0 flex-col'>
-              <SettingLabel>{_('Make White Image Backgrounds Transparent')}</SettingLabel>
-              <span className='text-base-content/65 line-clamp-1 text-[0.8em] leading-snug'>
-                {_('Remove white and near-white pixels from images while preserving other colors')}
-              </span>
-            </div>
+            <SettingLabel>{_('Transparent Image Background')}</SettingLabel>
             <Toggle
               checked={transparentImageBackground}
               disabled={isPDF}

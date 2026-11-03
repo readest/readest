@@ -128,11 +128,9 @@ describe('ViewMenu transparent image backgrounds (#7045)', () => {
     vi.clearAllMocks();
     mockBookData.book.format = 'EPUB';
     render(<ViewMenu bookKey='book-1' />);
-    fireEvent.click(
-      screen.getByRole('menuitem', { name: 'Make White Image Backgrounds Transparent - OFF' }),
-    );
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Transparent Image Background - OFF' }));
     expect(
-      screen.getByRole('menuitem', { name: 'Make White Image Backgrounds Transparent - ON' }),
+      screen.getByRole('menuitem', { name: 'Transparent Image Background - ON' }),
     ).toBeTruthy();
     await waitFor(() =>
       expect(mockSaveViewSettings).toHaveBeenCalledWith(
@@ -149,9 +147,7 @@ describe('ViewMenu transparent image backgrounds (#7045)', () => {
   it('does not offer image transparency for PDF pages', () => {
     mockBookData.book.format = 'PDF';
     render(<ViewMenu bookKey='book-1' />);
-    expect(
-      screen.queryByRole('menuitem', { name: 'Make White Image Backgrounds Transparent' }),
-    ).toBeNull();
+    expect(screen.queryByRole('menuitem', { name: 'Transparent Image Background' })).toBeNull();
   });
 });
 

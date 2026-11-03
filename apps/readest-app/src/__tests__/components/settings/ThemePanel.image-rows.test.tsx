@@ -2,8 +2,8 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, cleanup } from '@testing-library/react';
 
 /**
- * Issue #7292: "Make White Image Backgrounds Transparent" sat in its own
- * BoxedList card, so it showed a shaded box between the plain "Invert Image
+ * Issue #7292: the image-transparency row sat in its own BoxedList card with a
+ * description line, so it showed a shaded box between the plain "Invert Image
  * In Dark Mode" and "Override Book Color" rows around it.
  */
 
@@ -59,7 +59,7 @@ import ThemePanel from '@/components/settings/ThemePanel';
 afterEach(() => cleanup());
 
 describe('ThemePanel image rows (#7292)', () => {
-  it('renders the transparent-background row like its plain sibling rows, not in a card', () => {
+  it('renders the transparent-background row as a plain one-line row like its siblings', () => {
     const { container } = render(<ThemePanel bookKey='' onRegisterReset={vi.fn()} />);
 
     const row = container.querySelector(
@@ -71,7 +71,6 @@ describe('ThemePanel image rows (#7292)', () => {
     expect(row).not.toBeNull();
     expect(row.closest('.card')).toBeNull();
     expect(row.parentElement).toBe(sibling.parentElement);
-    expect(row.textContent).toContain('Make White Image Backgrounds Transparent');
-    expect(row.textContent).toContain('Remove white and near-white pixels');
+    expect(row.textContent).toBe('Transparent Image Background');
   });
 });
