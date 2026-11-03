@@ -163,7 +163,7 @@ export function useDictionaryResults({
   // in-popup links.
   const currentSelection = historyStack.length === 1 ? stableSelection : undefined;
 
-  // Kindle-style capture: the word selected in the book, with its sentence.
+  // Automatic capture: the word selected in the book, with its sentence.
   // Words reached through in-entry links have no sentence and aren't saved.
   const saveLookups = settings.saveLookupsToVocabulary !== false;
   useEffect(() => {

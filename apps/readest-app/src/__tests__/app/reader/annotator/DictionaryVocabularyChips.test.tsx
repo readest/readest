@@ -1,5 +1,5 @@
 /**
- * Learning / Mastered chips in the dictionary header and Kindle-style capture
+ * Learning / Mastered chips in the dictionary header and automatic capture
  * of lookups into the vocabulary builder (#789, #6613).
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
