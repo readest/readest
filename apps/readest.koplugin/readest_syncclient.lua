@@ -95,13 +95,15 @@ function ReadestSyncClient.useIPv4InWorker()
     end
 end
 
--- Workers record their pid here so KOReader's exit can wait for them.
-function ReadestSyncClient.trackWorker(pid) workers[pid] = true end
+-- Workers record their pid here so KOReader's exit can wait for them, with
+-- the poll that delivers their result when they have one.
+function ReadestSyncClient.trackWorker(pid, collect) workers[pid] = collect or true end
 function ReadestSyncClient.untrackWorker(pid) workers[pid] = nil end
 
 -- Exiting from a book quits about a second after the close-time pushes
--- start, before their polls run (#6685). Give running workers up to 5 s to
--- finish the upload, then kill and collect the rest before KOReader tears
+-- start, before their polls run (#6685). Give running workers up to 5 s:
+-- a finished worker's result is delivered here, so a rotated refresh token
+-- is still saved. Then kill and collect the rest before KOReader tears
 -- down, so no worker outlives it (a Kindle reported segfaults at exit then).
 local quit = UIManager.quit
 UIManager.quit = function(...)
@@ -109,8 +111,14 @@ UIManager.quit = function(...)
         local FFIUtil = require("ffi/util")
         logger.info("ReadestSyncClient: waiting for sync workers before exit")
         for _ = 1, 50 do
+            local done = {}
             for pid in pairs(workers) do
-                if FFIUtil.isSubProcessDone(pid) then workers[pid] = nil end
+                if FFIUtil.isSubProcessDone(pid) then done[#done + 1] = pid end
+            end
+            for _, pid in ipairs(done) do
+                local collect = workers[pid]
+                workers[pid] = nil
+                if type(collect) == "function" then pcall(collect) end
             end
             if not next(workers) then break end
             FFIUtil.usleep(100000)
@@ -186,7 +194,6 @@ function ReadestSyncClient:_dispatchInSubprocess(name, args, timeouts, receive, 
         receive(false, "cannot start sync worker")
         return
     end
-    ReadestSyncClient.trackWorker(pid)
 
     -- Bound every RPC, including DNS stalls. Refreshes pass a longer
     -- deadline: the auth coordinator releases UI waiters separately, and a
@@ -216,6 +223,7 @@ function ReadestSyncClient:_dispatchInSubprocess(name, args, timeouts, receive, 
             receive(false, "sync worker returned no response")
         end
     end
+    ReadestSyncClient.trackWorker(pid, poll)
     UIManager:scheduleIn(0.1, poll)
 end
 

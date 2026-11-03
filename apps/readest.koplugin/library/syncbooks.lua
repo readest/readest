@@ -723,7 +723,9 @@ function M.downloadCover(book, opts, cb)
                         local ltn12      = require("ltn12")
                         require("readest_syncclient").useIPv4InWorker()
 
-                        local f, ferr = io.open(dst, "wb")
+                        -- A worker killed at exit must not leave a partial
+                        -- cover at dst, which the cache would take as done.
+                        local f, ferr = io.open(dst .. ".part", "wb")
                         if not f then
                             result = "error:open:" .. tostring(ferr)
                             return
@@ -735,7 +737,7 @@ function M.downloadCover(book, opts, cb)
                             sink    = ltn12.sink.file(f),
                         })
                         socketutil:reset_timeout()
-                        if code == 200 then
+                        if code == 200 and os.rename(dst .. ".part", dst) then
                             result = "ok"
                         elseif code == 404 then
                             result = "404"
@@ -770,10 +772,10 @@ function M.downloadCover(book, opts, cb)
                     if result == "ok" then
                         if cb then cb(true, dst) end
                     elseif result == "404" then
-                        os.remove(dst)
+                        os.remove(dst .. ".part")
                         if cb then cb(false, "no-cover", 404) end
                     else
-                        os.remove(dst)
+                        os.remove(dst .. ".part")
                         if cb then cb(false, result, nil) end
                     end
                 else
