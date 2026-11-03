@@ -174,6 +174,41 @@ describe('context dictionary provider', () => {
     expect(container.textContent).toContain('Unauthorized');
   });
 
+  it.each([
+    'connection lost',
+    'Request cancelled',
+    'The AI provider returned an invalid reply.',
+  ])('clears a partial entry before displaying a lookup failure: %s', async (message) => {
+    setTranslators([llm('a')]);
+    const container = document.createElement('div');
+    mocks.lookupInContext.mockImplementation(async (_translator, _input, _signal, options) => {
+      options.onUpdate(entry);
+      expect(container.textContent).toContain(entry.definition);
+      throw new Error(message);
+    });
+
+    expect((await lookup(container)).ok).toBe(true);
+    expect(container.textContent).toContain(`Context Dictionary failed: ${message}`);
+    expect(container.textContent).not.toContain(entry.definition);
+    expect(container.querySelector('h1')).toBeNull();
+  });
+
+  it('leaves the next lookup content untouched when an aborted stream rejects', async () => {
+    setTranslators([llm('a')]);
+    const controller = new AbortController();
+    const container = document.createElement('div');
+    mocks.lookupInContext.mockImplementation(async (_translator, _input, _signal, options) => {
+      options.onUpdate(entry);
+      controller.abort();
+      container.textContent = 'Next lookup';
+      throw new Error('Request cancelled');
+    });
+
+    const outcome = await contextProvider.lookup('bank', { container, signal: controller.signal });
+    expect(outcome.ok).toBe(false);
+    expect(container.textContent).toBe('Next lookup');
+  });
+
   it('replaces partial entries, sanitizes streamed Markdown, and ignores late updates after cancellation', async () => {
     setTranslators([llm('a')]);
     const caller = new AbortController();

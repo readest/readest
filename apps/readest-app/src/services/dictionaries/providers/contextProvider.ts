@@ -133,6 +133,7 @@ export const contextProvider: DictionaryProvider = {
       if (ctx.signal.aborted) return { ok: false, reason: 'error', message: 'aborted' };
       // Unlike a dictionary miss, a failed AI request (bad key, quota, model
       // name) is something the user has to fix, so it stays visible.
+      ctx.container.replaceChildren();
       append(
         ctx.container,
         'p',
