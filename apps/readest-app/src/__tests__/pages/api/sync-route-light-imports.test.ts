@@ -13,6 +13,7 @@ describe('hot sync API routes', () => {
   it.each([
     ['/api/sync', () => import('@/pages/api/sync')],
     ['/api/sync/replicas', () => import('@/pages/api/sync/replicas')],
+    ['/api/sync/vocabulary', () => import('@/pages/api/sync/vocabulary')],
     ['/api/send/inbox/claim', () => import('@/pages/api/send/inbox/claim')],
   ])('%s does not load language detection or DOMPurify', async (_route, load) => {
     const loaded: string[] = [];
