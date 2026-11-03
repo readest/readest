@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: cb51df53-15ef-424f-9bd4-07f9f549b5d5
-  modified: 2026-10-11T07:21:17.588Z
+  modified: 2026-11-03T15:52:29.889Z
 ---
 
 Hit 2026-10-11 building PR #6674 for the iPad Air M2 (iPadOS 27, Xcode 26.3) from `readest-pr-6674`.
@@ -29,3 +29,7 @@ Hit 2026-10-11 building PR #6674 for the iPad Air M2 (iPadOS 27, Xcode 26.3) fro
    dir cleared, every iOS build fails: "could not find native static library `Tauri`". Fix MERGED in #7160:
    build.rs reruns the swift command with `--show-bin-path` and links that dir.
    Check: `nm <lib>.a | grep <new command>`.
+5. Seeded `target/` from another worktree (2026-11-03, #7294): BUILD FAILED with `missing required module
+   'SwiftShims'` and "precompiled file ... was compiled with module cache path '/Users/chrox/dev/readest-<other
+   worktree>/target/...'". Same fix as item 2 (`rm -rf target/aarch64-apple-ios/release/{build,.fingerprint}/tauri*`);
+   do it BEFORE the first iOS build in any new worktree to save a failed ~15 min run.

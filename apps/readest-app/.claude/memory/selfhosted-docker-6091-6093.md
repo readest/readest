@@ -87,4 +87,4 @@ for anyone selling plans off this image. Guarded by
 `src/__tests__/docker-image-defaults.test.ts`, which greps the production stage —
 dropping that ENV silently re-gates every self-hoster.
 
-See [[storage-customization-entitlement-split]].
+See [[private-storage-customization-entitlement-split]].
