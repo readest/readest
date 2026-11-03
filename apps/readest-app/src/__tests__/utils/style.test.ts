@@ -224,6 +224,43 @@ describe('transformStylesheet', () => {
     });
   });
 
+  describe('publisher font list parsing (#7276)', () => {
+    it.each([
+      '"Decorative, serif, ornaments", fantasy',
+      '"A /* serif, */ B", fantasy',
+      String.raw`"A \"quoted, serif\" name", fantasy`,
+      String.raw`Publisher\,serif, fantasy`,
+      'var(--publisher, serif), fantasy',
+    ])('preserves quoted, escaped and functional names: %s', (families) => {
+      const css = `p { font-family: ${families}; }`;
+      expect(transformStylesheet(css, VW, VH, VERTICAL)).toBe(css);
+      expect(transformInlineFonts(`font-family: ${families}`)).toBe(`font-family: ${families}`);
+      expect(transformInlineFonts(`font: 16px ${families}`)).toBe(`font: 16px ${families}`);
+    });
+
+    it('recognizes generics surrounded by comments without altering quoted comment text', () => {
+      const families = '"A /* serif, */ B", /* fallback */ serif /* end */';
+      expect(transformStylesheet(`p { font-family: ${families}; }`, VW, VH, VERTICAL)).toContain(
+        'var(--book-serif, "A /* serif, */ B", /* fallback */ var(--serif, serif) /* end */)',
+      );
+      for (const prefix of ['font-family:', 'font: 16px']) {
+        expect(transformInlineFonts(`${prefix} ${families}`)).toBe(
+          `${prefix} var(--book-serif, ${families})`,
+        );
+      }
+    });
+
+    it('nests every eligible category in list order', () => {
+      const families = 'Publisher, serif, monospace';
+      expect(transformInlineFonts(`font-family: ${families}`)).toBe(
+        `font-family: var(--book-serif, var(--book-monospace, ${families}))`,
+      );
+      expect(transformInlineFonts(`font: 16px ${families}`)).toBe(
+        `font: 16px var(--book-serif, var(--book-monospace, ${families}))`,
+      );
+    });
+  });
+
   describe('font-family generic replacements', () => {
     it('replaces serif with var(--serif, serif)', () => {
       const css = '.text { font-family: serif; }';
@@ -253,7 +290,7 @@ describe('transformStylesheet', () => {
       const css = '.text { font-family: Helvetica, sans-serif, monospace; }';
       const result = transformStylesheet(css, VW, VH, VERTICAL);
       expect(result).toContain(
-        'font-family: var(--book-sans-serif, Helvetica, var(--sans-serif, sans-serif), var(--monospace, monospace))',
+        'font-family: var(--book-sans-serif, var(--book-monospace, Helvetica, var(--sans-serif, sans-serif), var(--monospace, monospace)))',
       );
     });
 

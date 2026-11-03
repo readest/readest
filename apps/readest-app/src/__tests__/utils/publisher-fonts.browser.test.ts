@@ -25,6 +25,10 @@ const BOOK_CSS = `
   #sans { font: italic 20px/1.5 PublisherSans, sans-serif; }
   #mono { font-family: PublisherMono, monospace; }
   #decorative { font-family: Decorative, fantasy; }
+  #quoted { font-family: "Decorative, serif, ornaments", fantasy; }
+  #commented { font-family: PublisherSerif, /* fallback */ serif; }
+  #mixed { font-family: PublisherMixed, serif, monospace; }
+  #mixed-short { font: 16px PublisherMixed, serif, monospace; }
 `;
 
 const BODY =
@@ -32,7 +36,9 @@ const BODY =
   '<p id="inline" style="font-family: &quot;Inline Serif&quot;, serif">e</p>' +
   '<p id="apostrophe" style="font-family: &quot;O\'Neill&quot;, serif">h</p>' +
   '<p id="inline-font" style=\'font: bold 1em "Inline Sans", sans-serif\'>f</p>' +
-  '<p id="plain">g</p>';
+  '<p id="plain">g</p><p id="quoted">i</p><p id="commented">j</p>' +
+  '<p id="mixed">k</p><p id="mixed-short">l</p>' +
+  '<p id="commented-inline" style="font-family: PublisherSerif, /* fallback */ serif">m</p>';
 
 const render = async () => {
   const frame = document.createElement('iframe');
@@ -110,6 +116,31 @@ describe('Ignore publisher font names', () => {
     apply({});
     expect(font('sans')).toMatch(/^PublisherSans/);
     expect(font('mono')).toMatch(/^PublisherMono/);
+  });
+
+  it('preserves quoted names and recognizes commented generic entries', async () => {
+    const { apply, font } = await render();
+    apply({});
+    expect(font('quoted')).toBe('"Decorative, serif, ornaments", fantasy');
+    expect(font('commented')).toMatch(/^PublisherSerif,/);
+    apply({ ignorePublisherFonts: ['serif'] });
+    expect(font('quoted')).toBe('"Decorative, serif, ornaments", fantasy');
+    expect(font('commented')).toMatch(/^ReaderSerif,/);
+    expect(font('commented-inline')).toMatch(/^ReaderSerif,/);
+  });
+
+  it('uses a later enabled category and restores mixed publisher lists', async () => {
+    const { apply, font } = await render();
+    for (const id of ['mixed', 'mixed-short']) {
+      apply({});
+      expect(font(id)).toMatch(/^PublisherMixed,/);
+      apply({ ignorePublisherFonts: ['monospace'] });
+      expect(font(id)).toMatch(/^ReaderMono,/);
+      apply({ ignorePublisherFonts: ['serif', 'monospace'] });
+      expect(font(id)).toMatch(/^ReaderSerif,/);
+      apply({});
+      expect(font(id)).toMatch(/^PublisherMixed,/);
+    }
   });
 
   it('keeps the rest of a font shorthand', async () => {
