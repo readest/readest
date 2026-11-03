@@ -137,6 +137,13 @@ describe('vocabularyStore', () => {
     expect(Object.keys(useVocabularyStore.getState().entries)).toHaveLength(0);
   });
 
+  it('keeps an unreadable file aside instead of saving over it', async () => {
+    const files: Record<string, string> = { [VOCABULARY_FILENAME]: '{"entries": [tru' };
+    await useVocabularyStore.getState().load(makeAppService(files));
+    expect(useVocabularyStore.getState()).toMatchObject({ loaded: true, loadedCount: 0 });
+    expect(files[`${VOCABULARY_FILENAME}.bak`]).toBe('{"entries": [tru');
+  });
+
   it('merges remote entries without marking them dirty', () => {
     const s = useVocabularyStore.getState();
     s.applyRemote([

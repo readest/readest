@@ -11,13 +11,22 @@ import {
   mergeEntries,
   normalizeWordKey,
 } from '@/services/vocabulary/entry';
-import { readVocabularyFile, writeVocabularyFile } from '@/services/vocabulary/persistence';
+import {
+  VOCABULARY_FILENAME,
+  readVocabularyFile,
+  writeVocabularyFile,
+} from '@/services/vocabulary/persistence';
 
 const PERSIST_DELAY_MS = 500;
 
 interface VocabularyStore {
   entries: Record<string, VocabularyEntry>;
   loaded: boolean;
+  /**
+   * Words the data file held at load (0 when missing or unreadable). Sync
+   * ignores its saved cursor then, so the server can rebuild the list.
+   */
+  loadedCount: number;
   /** Bumped on every change, so Word Lens can re-render on it. */
   version: number;
   load(appService: AppService): Promise<void>;
@@ -57,6 +66,16 @@ const schedulePersist = () => {
 // modifiedAt 0: an entry made by a lookup carries no edit, so it must never
 // outrank a Learning / Mastered mark or hint set on another device. Explicit
 // edits stamp the current time.
+// Copy an unreadable data file aside before the next save replaces it.
+const keepUnreadableCopy = async (appService: AppService) => {
+  try {
+    const raw = await appService.readFile(VOCABULARY_FILENAME, 'Data', 'text');
+    await appService.writeFile(`${VOCABULARY_FILENAME}.bak`, 'Data', raw as string);
+  } catch (err) {
+    console.warn('[vocabulary] could not keep a copy of the data file', err);
+  }
+};
+
 const freshEntry = (word: string, lang: string, key: string, now: number): VocabularyEntry => ({
   id: entryId(lang, key),
   lang,
@@ -86,23 +105,25 @@ export const useVocabularyStore = create<VocabularyStore>((set, get) => {
   return {
     entries: {},
     loaded: false,
+    loadedCount: 0,
     version: 0,
 
     load: async (appService) => {
       appServiceRef = appService;
       if (get().loaded) return;
+      let list: VocabularyEntry[] = [];
       try {
-        const list = await readVocabularyFile(appService);
-        set((s) => {
-          const entries = { ...s.entries };
-          // Lookups recorded before the file finished loading win the merge.
-          for (const e of list) entries[e.id] = entries[e.id] ? mergeEntries(e, entries[e.id]!) : e;
-          return { entries, loaded: true, version: s.version + 1 };
-        });
+        list = await readVocabularyFile(appService);
       } catch (err) {
-        console.warn('[vocabulary] failed to load', err);
-        set({ loaded: true });
+        console.warn('[vocabulary] unreadable data file, keeping a copy', err);
+        await keepUnreadableCopy(appService);
       }
+      set((s) => {
+        const entries = { ...s.entries };
+        // Lookups recorded before the file finished loading win the merge.
+        for (const e of list) entries[e.id] = entries[e.id] ? mergeEntries(e, entries[e.id]!) : e;
+        return { entries, loaded: true, loadedCount: list.length, version: s.version + 1 };
+      });
     },
 
     recordLookup: ({ word, lang, occurrence }) => {

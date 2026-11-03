@@ -50,7 +50,7 @@ const makeDeps = (patch: Partial<VocabularySyncDeps> = {}) => {
 };
 
 beforeEach(() => {
-  useVocabularyStore.setState({ entries: {}, loaded: true, version: 0 });
+  useVocabularyStore.setState({ entries: {}, loaded: true, loadedCount: 1, version: 0 });
 });
 
 describe('pullVocabulary', () => {
@@ -86,6 +86,24 @@ describe('pullVocabulary', () => {
     await pullVocabulary(overlap);
     expect(overlap.getCursor()!.ts).toBe('2026-11-03T00:10:00.000Z');
     expect(deps.getCursor()).toEqual({ userId: 'u1', ts: '2026-11-03T00:10:00.000Z', id: 'en:z' });
+  });
+
+  it('pulls from the start when the local file had no words (lost or unreadable)', async () => {
+    useVocabularyStore.setState({ loadedCount: 0 });
+    const deps = makeDeps();
+    deps.setCursor({ userId: 'u1', ts: '2026-11-03T00:10:00.000Z', id: 'en:z' });
+    await pullVocabulary(deps);
+    expect(deps.pull).toHaveBeenCalledWith(null, 2);
+  });
+
+  it('trusts the cursor again once a full pull has filled the list', async () => {
+    useVocabularyStore.setState({ loadedCount: 0 });
+    const deps = makeDeps({ pull: vi.fn(async () => [row('a', '2026-11-03T00:00:01.000Z')]) });
+    await pullVocabulary(deps);
+    vi.mocked(deps.pull).mockResolvedValue([]);
+    await pullVocabulary(deps);
+    // Back to the saved cursor (less the one-minute overlap), not from the start.
+    expect(deps.pull).toHaveBeenLastCalledWith({ ts: '2026-11-02T23:59:01.000Z', id: '' }, 2);
   });
 
   it("ignores another account's cursor", async () => {

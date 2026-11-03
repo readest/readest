@@ -35,14 +35,17 @@ export interface VocabularySyncDeps {
 
 export const pullVocabulary = async (deps: VocabularySyncDeps): Promise<void> => {
   const pageSize = deps.pageSize ?? MAX_PULL_ROWS;
-  const saved = deps.getCursor();
+  // A cursor only means something next to the words it was pulled into: with
+  // a missing or unreadable data file, start over.
+  const local = useVocabularyStore.getState().loadedCount > 0;
+  const saved = local ? deps.getCursor() : null;
   let since =
     saved && saved.userId === deps.userId
       ? { ts: new Date(Date.parse(saved.ts) - OVERLAP_MS).toISOString(), id: '' }
       : null;
   for (;;) {
     const rows = await deps.pull(since, pageSize);
-    if (!rows.length) return;
+    if (!rows.length) break;
     useVocabularyStore.getState().applyRemote(rows.map(rowToEntry));
     const last = rows[rows.length - 1]!;
     since = { ts: last.updated_at!, id: last.id };
@@ -51,8 +54,10 @@ export const pullVocabulary = async (deps: VocabularySyncDeps): Promise<void> =>
     if (!saved || saved.userId !== deps.userId || Date.parse(since.ts) >= Date.parse(saved.ts)) {
       deps.setCursor({ userId: deps.userId, ...since });
     }
-    if (rows.length < pageSize) return;
+    if (rows.length < pageSize) break;
   }
+  // The list now matches the cursor, so later pulls can resume from it.
+  if (!local) useVocabularyStore.setState({ loadedCount: 1 });
 };
 
 export const pushVocabulary = async (deps: VocabularySyncDeps): Promise<void> => {
