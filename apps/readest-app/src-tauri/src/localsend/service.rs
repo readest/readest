@@ -668,14 +668,7 @@ fn handle_file_upload<R: Runtime>(
 
     let dir = staging_dir(app);
     let _ = std::fs::create_dir_all(&dir);
-    let Ok(path) = unique_path(&dir, &file.file_name) else {
-        // No inbox file: dropping target_tx fails the request.
-        if let Some(session) = receiving.lock().unwrap().get_mut(&session_id) {
-            session.in_progress.remove(&file_id);
-            session.failed_files += 1;
-        }
-        return;
-    };
+    let reserved = unique_path(&dir, &file.file_name).map_err(|e| e.to_string());
 
     let (progress_tx, mut progress_rx) = mpsc::channel::<u64>(16);
     {
@@ -691,16 +684,21 @@ fn handle_file_upload<R: Runtime>(
     {
         let app = app.clone();
         let receiving = receiving.clone();
-        let path = path.clone();
+        let path = reserved.clone().ok();
         let file_name = file.file_name.clone();
         tauri::async_runtime::spawn(async move {
             let result = match result_rx.await {
                 Ok(result) => result,
                 Err(_) => Err("upload aborted".to_string()),
             };
+            let remove_reserved = || {
+                if let Some(path) = &path {
+                    let _ = std::fs::remove_file(path);
+                }
+            };
             let mut sessions = receiving.lock().unwrap();
             let Some(session) = sessions.get_mut(&session_id) else {
-                let _ = std::fs::remove_file(&path);
+                remove_reserved();
                 return;
             };
             session.in_progress.remove(&file_id);
@@ -709,11 +707,11 @@ fn handle_file_upload<R: Runtime>(
                     session.finished_files += 1;
                     session.finalized_bytes +=
                         session.files.get(&file_id).map(|f| f.size).unwrap_or(0);
-                    (Some(path.to_string_lossy().to_string()), None)
+                    (path.as_ref().map(|p| p.to_string_lossy().to_string()), None)
                 }
                 Err(err) => {
                     session.failed_files += 1;
-                    let _ = std::fs::remove_file(&path);
+                    remove_reserved();
                     (None, Some(err))
                 }
             };
@@ -731,11 +729,19 @@ fn handle_file_upload<R: Runtime>(
         });
     }
 
-    let _ = target_tx.send(FileUploadTarget::Path {
-        path,
-        result_tx,
-        progress_tx: Some(progress_tx),
-    });
+    match reserved {
+        Ok(path) => {
+            let _ = target_tx.send(FileUploadTarget::Path {
+                path,
+                result_tx,
+                progress_tx: Some(progress_tx),
+            });
+        }
+        // Report it like any failed upload; dropping target_tx fails the request.
+        Err(err) => {
+            let _ = result_tx.send(Err(err));
+        }
+    }
 }
 
 fn maybe_emit_receive_end<R: Runtime>(
