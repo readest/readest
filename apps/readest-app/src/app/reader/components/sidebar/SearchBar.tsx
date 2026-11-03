@@ -295,8 +295,8 @@ const SearchBar: React.FC<SearchBarProps> = ({ isVisible, bookKey, onHideSearchB
             if (item === 'done') break;
             const firstMatch = results.find((result) => result.subitems.length > 0)?.subitems[0];
             if (firstMatch) {
-              currentView.goTo(firstMatch.cfi);
-              await currentView.select(firstMatch.cfi);
+              currentView?.goTo(firstMatch.cfi);
+              await currentView?.select(firstMatch.cfi);
             }
           }
         }

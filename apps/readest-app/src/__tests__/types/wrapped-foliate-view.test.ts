@@ -34,3 +34,46 @@ describe('wrappedFoliateView goTo events', () => {
     expect(order).toEqual(['start', 'end']);
   });
 });
+
+describe('wrappedFoliateView select', () => {
+  it('preserves the original method context and selects the resolved range', async () => {
+    const bookDoc = document.implementation.createHTMLDocument('book');
+    const text = bookDoc.createTextNode('selected search result');
+    bookDoc.body.append(text);
+    const range = bookDoc.createRange();
+    range.setStart(text, 0);
+    range.setEnd(text, text.length);
+    const view = document.createElement('div') as unknown as FoliateView;
+    const originalSelect = vi.fn(function (this: FoliateView) {
+      expect(this).toBe(view);
+    });
+    view.addAnnotation = vi.fn() as unknown as FoliateView['addAnnotation'];
+    view.goTo = vi.fn() as unknown as FoliateView['goTo'];
+    view.select = originalSelect as unknown as FoliateView['select'];
+    view.resolveCFI = vi.fn().mockReturnValue({
+      index: 3,
+      anchor: () => range,
+    });
+    view.renderer = {
+      getContents: () => [{ index: 3, doc: bookDoc }],
+    } as unknown as FoliateView['renderer'];
+    const wrapped = wrappedFoliateView(view);
+    await wrapped.select('search-cfi');
+    expect(originalSelect).toHaveBeenCalledWith('search-cfi');
+    expect(view.resolveCFI).toHaveBeenCalledWith('search-cfi');
+    expect(bookDoc.defaultView?.getSelection()?.toString()).toBe('selected search result');
+  });
+
+  it('does not resolve or create a DOM selection for non-CFI targets', async () => {
+    const view = document.createElement('div') as unknown as FoliateView;
+    const resolveCFI = vi.fn();
+    view.addAnnotation = vi.fn() as unknown as FoliateView['addAnnotation'];
+    view.goTo = vi.fn() as unknown as FoliateView['goTo'];
+    view.select = vi.fn() as unknown as FoliateView['select'];
+    view.resolveCFI = resolveCFI;
+    view.renderer = {} as FoliateView['renderer'];
+    const wrapped = wrappedFoliateView(view);
+    await wrapped.select(2);
+    expect(resolveCFI).not.toHaveBeenCalled();
+  });
+});
