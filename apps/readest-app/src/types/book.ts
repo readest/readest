@@ -344,6 +344,8 @@ export interface BookFont {
   serifFont: string;
   sansSerifFont: string;
   monospaceFont: string;
+  // Generic families whose book font lists resolve to the reader's font (#7276).
+  ignorePublisherFonts: ('serif' | 'sans-serif' | 'monospace')[];
   defaultFont: string;
   defaultCJKFont: string;
   defaultFontSize: number;

@@ -123,6 +123,7 @@ const getFontStyles = (
   minFontSize: number,
   fontWeight: number,
   overrideFont: boolean,
+  ignorePublisherFonts: string[],
 ) => {
   const families = buildFontFamilyLists(serif, sansSerif, monospace, defaultCJKFont);
   const defaultFontFamily = defaultFont.toLowerCase() === 'serif' ? '--serif' : '--sans-serif';
@@ -141,6 +142,7 @@ const getFontStyles = (
       --serif: ${families.serif};
       --sans-serif: ${families.sansSerif};
       --monospace: ${families.monospace};
+      ${overrideFont ? '' : ignorePublisherFonts.map((f) => `--book-${f}: var(--${f});`).join(' ')}
       --font-size: ${fontSize}px;
       --min-font-size: ${minFontSize}px;
       --font-weight: ${fontWeight};
@@ -1208,6 +1210,7 @@ export const getStyles = (
     viewSettings.minimumFontSize!,
     viewSettings.fontWeight!,
     viewSettings.overrideFont!,
+    viewSettings.ignorePublisherFonts ?? [],
   );
   // Inline `@font-face` rules for the caller-supplied custom fonts so
   // they ship to the iframe synchronously with the rest of the
@@ -1275,6 +1278,47 @@ export const applyTranslationStyle = (viewSettings: ViewSettings) => {
 
   document.head.appendChild(styleElement);
 };
+
+// "Ignore publisher font names" (#7276): a list that names a generic family is
+// wrapped as `var(--book-serif, Palatino, serif)`. --book-serif is only defined
+// while that category's switch is on, so until then the book's list applies.
+const wrapPublisherFonts = (families: string, rewritten = families) => {
+  const generic = families
+    .split(',')
+    .map((family) => family.trim().toLowerCase())
+    .find((family) => /^(serif|sans-serif|monospace)$/.test(family));
+  if (!generic) return rewritten;
+  const list = rewritten.trim();
+  const lead = rewritten.slice(0, rewritten.indexOf(list));
+  return `${lead}var(--book-${generic}, ${list})${rewritten.slice(lead.length + list.length)}`;
+};
+
+const FONT_SIZE =
+  /^(?:(?:\d+(?:\.\d+)?|\.\d+)(?:[a-z]+|%)|x*-?(?:small|large)|medium|smaller|larger)$/i;
+
+// In a `font` shorthand the family list comes last, after the size and an
+// optional `/line-height`, e.g. `font: italic 1em/1.2 Palatino, serif`.
+const wrapFontShorthand = (match: string, prefix: string, value: string) => {
+  const [main = '', ...important] = value.split('!');
+  const words = [...main.matchAll(/[^\s/]+|\//g)];
+  const size = words.findIndex((word) => FONT_SIZE.test(word[0]));
+  if (size < 0) return match;
+  const start = words[words[size + 1]?.[0] === '/' ? size + 3 : size + 1]?.index;
+  if (start === undefined) return match;
+  const wrapped = wrapPublisherFonts(main.slice(start));
+  return [prefix + main.slice(0, start) + wrapped, ...important].join('!');
+};
+
+const FONT_SHORTHAND_REGEX = /((?:^|[\s;{])font\s*:)([^;{}]*)/gi;
+
+const wrapFontFamily = (_match: string, prefix: string, families: string) =>
+  prefix + wrapPublisherFonts(families);
+
+// `style` attributes don't pass through transformStylesheet.
+export const transformInlineFonts = (css: string) =>
+  css
+    .replace(/(font-family\s*:)([^;{}!]*)/gi, wrapFontFamily)
+    .replace(FONT_SHORTHAND_REGEX, wrapFontShorthand);
 
 export const transformStylesheet = (
   css: string,
@@ -1606,7 +1650,7 @@ export const transformStylesheet = (
           return family.replace(generic[1]!, `var(--${name}, ${name})`);
         })
         .join(',');
-      return prefix + rewritten + (important ? important[0] : '');
+      return prefix + wrapPublisherFonts(families, rewritten) + (important ? important[0] : '');
     })
     .replace(/([\s;])font-weight\s*:\s*normal/gi, '$1font-weight: var(--font-weight)')
     .replace(/([\s;])color\s*:\s*black/gi, '$1color: var(--theme-fg-color)')
@@ -1632,7 +1676,7 @@ export const transformStylesheet = (
     });
   }
 
-  return css;
+  return css.replace(FONT_SHORTHAND_REGEX, wrapFontShorthand);
 };
 
 export const applyThemeModeClass = (document: Document, isDarkMode: boolean) => {

@@ -1,4 +1,4 @@
-import { transformStylesheet } from '@/utils/style';
+import { transformInlineFonts, transformStylesheet } from '@/utils/style';
 import type { Transformer } from './types';
 
 // In paginated mode each column is a page, and a `page` break doesn't break a
@@ -41,11 +41,16 @@ export const styleTransformer: Transformer = {
     // Only `style` attributes inside opening tags, not text that reads like one.
     // Walking every quoted attribute keeps `style=` inside another value untouched.
     result = result.replace(/<[a-z][^>"']*(?:(?:"[^"]*"|'[^']*')[^>"']*)*>/gi, (tag) =>
-      tag.replace(/(\s([\w:.-]+)\s*=\s*)("[^"]*"|'[^']*')/g, (attr, prefix, name, value) =>
-        name.toLowerCase() === 'style' && /break-before/i.test(value)
-          ? prefix + toColumnBreaks(value)
-          : attr,
-      ),
+      tag.replace(/(\s([\w:.-]+)\s*=\s*)("[^"]*"|'[^']*')/g, (attr, prefix, name, value) => {
+        if (name.toLowerCase() !== 'style') return attr;
+        const quote = value[0];
+        // The `;` of `&quot;` would end the declaration early; inside a
+        // `"`-quoted value a `'` quotes the font name just as well.
+        let css = value.slice(1, -1);
+        if (quote === '"') css = css.replaceAll('&quot;', "'");
+        const transformed = transformInlineFonts(toColumnBreaks(css));
+        return transformed === css ? attr : prefix + quote + transformed + quote;
+      }),
     );
 
     return result;

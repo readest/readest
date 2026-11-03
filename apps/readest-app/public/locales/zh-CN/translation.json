@@ -2636,5 +2636,6 @@
   "Next Match": "下一个匹配",
   "Previous Match": "上一个匹配",
   "Extend Selection": "扩展选区",
-  "Pattern not found: {{term}}": "未找到匹配：{{term}}"
+  "Pattern not found: {{term}}": "未找到匹配：{{term}}",
+  "Ignore publisher font names": "忽略出版方字体名称"
 }

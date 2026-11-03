@@ -359,6 +359,7 @@ export const DEFAULT_BOOK_FONT: BookFont = {
   serifFont: 'Bitter',
   sansSerifFont: 'Roboto',
   monospaceFont: 'Consolas',
+  ignorePublisherFonts: [],
   defaultFont: 'Serif',
   defaultCJKFont: 'LXGW WenKai GB Screen',
   defaultFontSize: 16,

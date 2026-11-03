@@ -2843,5 +2843,6 @@
   "Next Match": "Następne dopasowanie",
   "Previous Match": "Poprzednie dopasowanie",
   "Extend Selection": "Rozszerz zaznaczenie",
-  "Pattern not found: {{term}}": "Nie znaleziono wzorca: {{term}}"
+  "Pattern not found: {{term}}": "Nie znaleziono wzorca: {{term}}",
+  "Ignore publisher font names": "Ignoruj nazwy czcionek wydawcy"
 }

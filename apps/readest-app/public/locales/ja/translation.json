@@ -2636,5 +2636,6 @@
   "Next Match": "次の一致",
   "Previous Match": "前の一致",
   "Extend Selection": "選択範囲を拡張",
-  "Pattern not found: {{term}}": "パターンが見つかりません: {{term}}"
+  "Pattern not found: {{term}}": "パターンが見つかりません: {{term}}",
+  "Ignore publisher font names": "出版社のフォント名を無視する"
 }

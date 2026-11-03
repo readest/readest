@@ -2636,5 +2636,6 @@
   "Next Match": "รายการที่ตรงถัดไป",
   "Previous Match": "รายการที่ตรงก่อนหน้า",
   "Extend Selection": "ขยายส่วนที่เลือก",
-  "Pattern not found: {{term}}": "ไม่พบรูปแบบ: {{term}}"
+  "Pattern not found: {{term}}": "ไม่พบรูปแบบ: {{term}}",
+  "Ignore publisher font names": "ละเว้นชื่อแบบอักษรของผู้จัดพิมพ์"
 }

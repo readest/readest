@@ -2843,5 +2843,6 @@
   "Next Match": "Наступний збіг",
   "Previous Match": "Попередній збіг",
   "Extend Selection": "Розширити виділення",
-  "Pattern not found: {{term}}": "Шаблон не знайдено: {{term}}"
+  "Pattern not found: {{term}}": "Шаблон не знайдено: {{term}}",
+  "Ignore publisher font names": "Ігнорувати назви шрифтів видавця"
 }

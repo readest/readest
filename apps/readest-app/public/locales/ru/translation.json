@@ -2843,5 +2843,6 @@
   "Next Match": "Следующее совпадение",
   "Previous Match": "Предыдущее совпадение",
   "Extend Selection": "Расширить выделение",
-  "Pattern not found: {{term}}": "Шаблон не найден: {{term}}"
+  "Pattern not found: {{term}}": "Шаблон не найден: {{term}}",
+  "Ignore publisher font names": "Игнорировать названия шрифтов издателя"
 }

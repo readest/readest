@@ -2705,5 +2705,6 @@
   "Next Match": "Nästa träff",
   "Previous Match": "Föregående träff",
   "Extend Selection": "Utöka markering",
-  "Pattern not found: {{term}}": "Mönstret hittades inte: {{term}}"
+  "Pattern not found: {{term}}": "Mönstret hittades inte: {{term}}",
+  "Ignore publisher font names": "Ignorera utgivarens typsnittsnamn"
 }

@@ -2774,5 +2774,6 @@
   "Next Match": "Occurrence suivante",
   "Previous Match": "Occurrence précédente",
   "Extend Selection": "Étendre la sélection",
-  "Pattern not found: {{term}}": "Motif introuvable : {{term}}"
+  "Pattern not found: {{term}}": "Motif introuvable : {{term}}",
+  "Ignore publisher font names": "Ignorer les noms de polices de l’éditeur"
 }

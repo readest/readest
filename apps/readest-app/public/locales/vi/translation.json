@@ -2636,5 +2636,6 @@
   "Next Match": "Kết quả tiếp theo",
   "Previous Match": "Kết quả trước",
   "Extend Selection": "Mở rộng vùng chọn",
-  "Pattern not found: {{term}}": "Không tìm thấy mẫu: {{term}}"
+  "Pattern not found: {{term}}": "Không tìm thấy mẫu: {{term}}",
+  "Ignore publisher font names": "Bỏ qua tên phông chữ của nhà xuất bản"
 }

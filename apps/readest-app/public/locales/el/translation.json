@@ -2705,5 +2705,6 @@
   "Next Match": "Επόμενο αποτέλεσμα",
   "Previous Match": "Προηγούμενο αποτέλεσμα",
   "Extend Selection": "Επέκταση επιλογής",
-  "Pattern not found: {{term}}": "Το μοτίβο δεν βρέθηκε: {{term}}"
+  "Pattern not found: {{term}}": "Το μοτίβο δεν βρέθηκε: {{term}}",
+  "Ignore publisher font names": "Αγνόηση ονομάτων γραμματοσειρών του εκδότη"
 }

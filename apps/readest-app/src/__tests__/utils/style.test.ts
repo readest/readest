@@ -8,7 +8,7 @@ vi.mock('@/utils/misc', async (importOriginal) => {
   };
 });
 
-import { transformStylesheet, getFootnoteStyles } from '@/utils/style';
+import { transformStylesheet, transformInlineFonts, getFootnoteStyles } from '@/utils/style';
 
 describe('transformStylesheet', () => {
   const VW = 1000;
@@ -198,6 +198,32 @@ describe('transformStylesheet', () => {
     });
   });
 
+  describe('font shorthand publisher fonts (#7276)', () => {
+    it('wraps the family list after the size and line-height', () => {
+      expect(
+        transformInlineFonts('font: italic bold 1.2em / 1.5 "Futura", sans-serif !important'),
+      ).toBe(
+        'font: italic bold 1.2em / 1.5 var(--book-sans-serif, "Futura", sans-serif) !important',
+      );
+      expect(
+        transformStylesheet('p { font: small-caps 700 12px Palatino, serif; }', VW, VH, VERTICAL),
+      ).toContain('font: small-caps 700 12px var(--book-serif, Palatino, serif);');
+    });
+
+    it('leaves a shorthand without a size or a generic alone', () => {
+      expect(transformInlineFonts('font: caption')).toBe('font: caption');
+      expect(transformInlineFonts('font: 1em Papyrus, fantasy')).toBe('font: 1em Papyrus, fantasy');
+    });
+
+    // A quadratic match took over 2 s on 20,000 spaces after `font:`.
+    it('stays linear on long runs of whitespace', () => {
+      const css = `p { font:${' '.repeat(50_000)}}`;
+      const start = performance.now();
+      transformInlineFonts(css);
+      expect(performance.now() - start).toBeLessThan(200);
+    });
+  });
+
   describe('font-family generic replacements', () => {
     it('replaces serif with var(--serif, serif)', () => {
       const css = '.text { font-family: serif; }';
@@ -220,14 +246,14 @@ describe('transformStylesheet', () => {
     it('keeps a trailing !important on the declaration', () => {
       const css = '.text { font-family: serif !important; }';
       const result = transformStylesheet(css, VW, VH, VERTICAL);
-      expect(result).toContain('font-family: var(--serif, serif) !important');
+      expect(result).toContain('font-family: var(--book-serif, var(--serif, serif)) !important');
     });
 
     it('replaces every generic in a list, not just the first', () => {
       const css = '.text { font-family: Helvetica, sans-serif, monospace; }';
       const result = transformStylesheet(css, VW, VH, VERTICAL);
       expect(result).toContain(
-        'font-family: Helvetica, var(--sans-serif, sans-serif), var(--monospace, monospace)',
+        'font-family: var(--book-sans-serif, Helvetica, var(--sans-serif, sans-serif), var(--monospace, monospace))',
       );
     });
 
@@ -244,13 +270,17 @@ describe('transformStylesheet', () => {
         'body { font-family: Source Han Serif CN, serif; }';
       const result = transformStylesheet(css, VW, VH, VERTICAL);
       expect(result).toContain('@font-face { font-family: Source Han Serif CN;');
-      expect(result).toContain('font-family: Source Han Serif CN, var(--serif, serif)');
+      expect(result).toContain(
+        'font-family: var(--book-serif, Source Han Serif CN, var(--serif, serif))',
+      );
     });
 
     it('leaves a quoted font name containing "Serif" untouched', () => {
       const css = 'p { font-family: "Comic Serif Face", serif; }';
       const result = transformStylesheet(css, VW, VH, VERTICAL);
-      expect(result).toContain('font-family: "Comic Serif Face", var(--serif, serif)');
+      expect(result).toContain(
+        'font-family: var(--book-serif, "Comic Serif Face", var(--serif, serif))',
+      );
     });
 
     it('leaves font names containing sans-serif/monospace words untouched', () => {

@@ -2705,5 +2705,6 @@
   "Next Match": "அடுத்த பொருத்தம்",
   "Previous Match": "முந்தைய பொருத்தம்",
   "Extend Selection": "தேர்வை நீட்டு",
-  "Pattern not found: {{term}}": "வடிவம் கிடைக்கவில்லை: {{term}}"
+  "Pattern not found: {{term}}": "வடிவம் கிடைக்கவில்லை: {{term}}",
+  "Ignore publisher font names": "பதிப்பாளரின் எழுத்துருப் பெயர்களைப் புறக்கணி"
 }

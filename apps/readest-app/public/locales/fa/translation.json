@@ -2705,5 +2705,6 @@
   "Next Match": "مورد بعدی",
   "Previous Match": "مورد قبلی",
   "Extend Selection": "گسترش انتخاب",
-  "Pattern not found: {{term}}": "الگو پیدا نشد: {{term}}"
+  "Pattern not found: {{term}}": "الگو پیدا نشد: {{term}}",
+  "Ignore publisher font names": "نادیده گرفتن نام قلم‌های ناشر"
 }

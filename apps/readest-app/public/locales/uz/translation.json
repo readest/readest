@@ -2705,5 +2705,6 @@
   "Next Match": "Keyingi moslik",
   "Previous Match": "Oldingi moslik",
   "Extend Selection": "Tanlovni kengaytirish",
-  "Pattern not found: {{term}}": "Namuna topilmadi: {{term}}"
+  "Pattern not found: {{term}}": "Namuna topilmadi: {{term}}",
+  "Ignore publisher font names": "Nashriyot shrift nomlarini e’tiborsiz qoldirish"
 }

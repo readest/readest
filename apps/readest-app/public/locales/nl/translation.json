@@ -2705,5 +2705,6 @@
   "Next Match": "Volgende overeenkomst",
   "Previous Match": "Vorige overeenkomst",
   "Extend Selection": "Selectie uitbreiden",
-  "Pattern not found: {{term}}": "Patroon niet gevonden: {{term}}"
+  "Pattern not found: {{term}}": "Patroon niet gevonden: {{term}}",
+  "Ignore publisher font names": "Lettertypenamen van de uitgever negeren"
 }

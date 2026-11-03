@@ -2774,5 +2774,6 @@
   "Next Match": "Siguiente coincidencia",
   "Previous Match": "Coincidencia anterior",
   "Extend Selection": "Ampliar selección",
-  "Pattern not found: {{term}}": "Patrón no encontrado: {{term}}"
+  "Pattern not found: {{term}}": "Patrón no encontrado: {{term}}",
+  "Ignore publisher font names": "Ignorar los nombres de fuentes de la editorial"
 }

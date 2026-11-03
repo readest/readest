@@ -2774,5 +2774,6 @@
   "Next Match": "ההתאמה הבאה",
   "Previous Match": "ההתאמה הקודמת",
   "Extend Selection": "הרחבת הבחירה",
-  "Pattern not found: {{term}}": "התבנית לא נמצאה: {{term}}"
+  "Pattern not found: {{term}}": "התבנית לא נמצאה: {{term}}",
+  "Ignore publisher font names": "התעלמות משמות הגופנים של ההוצאה לאור"
 }

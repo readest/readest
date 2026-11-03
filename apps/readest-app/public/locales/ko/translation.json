@@ -2636,5 +2636,6 @@
   "Next Match": "다음 일치 항목",
   "Previous Match": "이전 일치 항목",
   "Extend Selection": "선택 영역 확장",
-  "Pattern not found: {{term}}": "패턴을 찾을 수 없음: {{term}}"
+  "Pattern not found: {{term}}": "패턴을 찾을 수 없음: {{term}}",
+  "Ignore publisher font names": "출판사 글꼴 이름 무시"
 }
