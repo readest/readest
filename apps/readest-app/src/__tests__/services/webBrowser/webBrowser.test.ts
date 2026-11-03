@@ -50,6 +50,9 @@ describe('getWebBrowserOptions', () => {
     expect(options.isEink).toBe(true);
     expect(options.labels.back).toBe('t:Back');
     expect(options.labels.added).toBe('t:Added to library');
+    expect(options.labels.selectImage).toBe('t:Choose cover');
+    expect(options.labels.imageSelectionHint).toBe('t:Choose an image on this page.');
+    expect(options.selectImage).toBeUndefined();
     expect(Object.keys(options.labels).sort()).toEqual(
       [
         'added',
@@ -61,6 +64,16 @@ describe('getWebBrowserOptions', () => {
         'failed',
         'forward',
         'importing',
+        'imageSelectionHint',
+        'imageSelectionUnavailable',
+        'useImage',
+        'cancel',
+        'bookCover',
+        'imageBrowseHint',
+        'imageSelected',
+        'imageConfirmHint',
+        'chooseAnother',
+        'selectImage',
         'menu',
         'notSecure',
         'open',
@@ -84,6 +97,21 @@ describe('openWebBrowser', () => {
       options,
     });
     expect(result).toEqual({ openBookHash: 'h1' });
+  });
+
+  it('passes image selection mode and returns both selected URLs', async () => {
+    const image = {
+      url: 'https://cdn.example/cover.jpg',
+      pageUrl: 'https://search.example/images',
+    };
+    invokeMock.mockResolvedValue({ image });
+    const options = { ...getWebBrowserOptions(_, false), selectImage: true };
+    const result = await openWebBrowser('https://search.example/images', options);
+    expect(invokeMock).toHaveBeenCalledWith('open_web_browser', {
+      url: 'https://search.example/images',
+      options,
+    });
+    expect(result.image).toEqual(image);
   });
 
   it('normalises a null result to an empty object', async () => {
