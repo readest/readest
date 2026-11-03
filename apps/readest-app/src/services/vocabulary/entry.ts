@@ -71,8 +71,9 @@ export const addOccurrence = (
 
 // Newer edit wins. A tie (same ms on two devices) must pick the same side on
 // every device and on the server, whatever the argument order: a delete
-// first, then the larger state/hint.
-const tieKey = (e: VocabularyEntry) => `${e.deletedAt ? 1 : 0}|${e.state}|${e.hint ?? ''}`;
+// first, then the larger state/hint, then the larger display word.
+const tieKey = (e: VocabularyEntry) =>
+  `${e.deletedAt ? 1 : 0}|${e.state}|${e.hint ?? ''}|${e.word}`;
 const aWins = (a: VocabularyEntry, b: VocabularyEntry) =>
   a.modifiedAt !== b.modifiedAt ? a.modifiedAt > b.modifiedAt : tieKey(a) >= tieKey(b);
 

@@ -120,6 +120,12 @@ describe('addOccurrence', () => {
 });
 
 describe('mergeEntries', () => {
+  it('keeps the same display word whatever the argument order', () => {
+    const a = entry({ word: 'Serendipity', modifiedAt: 0 });
+    const b = entry({ word: 'serendipity', modifiedAt: 0 });
+    expect(mergeEntries(a, b).word).toBe(mergeEntries(b, a).word);
+  });
+
   it('takes state and hint from the newer side and unions occurrences', () => {
     const a = entry({
       state: 'learning',
