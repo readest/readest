@@ -35,13 +35,7 @@ import { PREDEFINED_TEXTURES } from '@/styles/textures';
 import { useAtmosphereStore } from '@/store/atmosphereStore';
 import { DefaultHighlightColor, HighlightColor, UserHighlightColor } from '@/types/book';
 import clsx from 'clsx';
-import {
-  BoxedList,
-  SettingsSwitchRow,
-  ScopeSwitch,
-  SectionTitle,
-  SettingLabel,
-} from './primitives';
+import { ScopeSwitch, SectionTitle, SettingLabel } from './primitives';
 import { HIGHLIGHT_COLOR_HEX } from '@/services/constants';
 import ThemeEditor from './theme/ThemeEditor';
 import ThemeModeSelector from './theme/ThemeModeSelector';
@@ -69,6 +63,8 @@ const ThemePanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
   const { settings, setSettings, saveSettings } = useSettingsStore();
   const { getView, getViewSettings } = useReaderStore();
   const viewSettings = getViewSettings(bookKey) || settings.globalViewSettings;
+  const isPDF =
+    !!bookKey && useBookDataStore.getState().getBookData(bookKey)?.book?.format === 'PDF';
 
   // The Background Image picker edits one of two scopes (issue #5306): the
   // library's own texture (#4743 fields, per-field fallback to reader/global)
@@ -634,21 +630,25 @@ const ThemePanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
             />
           </label>
 
-          <BoxedList>
-            <SettingsSwitchRow
-              data-setting-id='settings.color.transparentImageBackground'
-              label={_('Make White Image Backgrounds Transparent')}
-              description={_(
-                'Remove white and near-white pixels from images while preserving other colors',
-              )}
+          <label
+            data-setting-id='settings.color.transparentImageBackground'
+            className={clsx(
+              'flex items-center justify-between gap-4 px-4',
+              isPDF ? 'cursor-not-allowed opacity-50' : 'cursor-pointer',
+            )}
+          >
+            <div className='flex min-w-0 flex-col'>
+              <SettingLabel>{_('Make White Image Backgrounds Transparent')}</SettingLabel>
+              <span className='text-base-content/65 line-clamp-1 text-[0.8em] leading-snug'>
+                {_('Remove white and near-white pixels from images while preserving other colors')}
+              </span>
+            </div>
+            <Toggle
               checked={transparentImageBackground}
-              disabled={
-                !!bookKey &&
-                useBookDataStore.getState().getBookData(bookKey)?.book?.format === 'PDF'
-              }
+              disabled={isPDF}
               onChange={() => setTransparentImageBackground(!transparentImageBackground)}
             />
-          </BoxedList>
+          </label>
 
           <label
             data-setting-id='settings.color.overrideBookColor'
