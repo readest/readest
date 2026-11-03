@@ -136,6 +136,7 @@ describe('bookorbit proxy handler', () => {
     const [url, init] = fetchMock.mock.calls[0]! as unknown as [string, RequestInit];
     expect(url).toBe('https://books.example.com/api/v1/koreader/plugin/version');
     expect(new Headers(init.headers).get('CF-Access-Client-Id')).toBe('id');
+    expect(new Headers(init.headers).get('CF-Access-Client-Secret')).toBe('secret');
     vi.unstubAllGlobals();
   });
 
@@ -154,6 +155,8 @@ describe('bookorbit proxy handler', () => {
       res as never,
     );
     expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [, init] = fetchMock.mock.calls[0]! as unknown as [string, RequestInit];
+    expect(init.redirect).toBe('manual');
     expect(res.statusCode).toBe(500);
     vi.unstubAllGlobals();
   });
