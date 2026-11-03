@@ -2700,5 +2700,10 @@
   "All Books": "Alle boeken",
   "Words": "Woorden",
   "No words match": "Geen woorden gevonden",
-  "Select a word": "Selecteer een woord"
+  "Select a word": "Selecteer een woord",
+  "Find on Page": "Zoeken op pagina",
+  "Next Match": "Volgende overeenkomst",
+  "Previous Match": "Vorige overeenkomst",
+  "Extend Selection": "Selectie uitbreiden",
+  "Pattern not found: {{term}}": "Patroon niet gevonden: {{term}}"
 }

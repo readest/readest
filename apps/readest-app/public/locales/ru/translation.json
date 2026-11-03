@@ -2838,5 +2838,10 @@
   "All Books": "Все книги",
   "Words": "Слова",
   "No words match": "Нет подходящих слов",
-  "Select a word": "Выберите слово"
+  "Select a word": "Выберите слово",
+  "Find on Page": "Найти на странице",
+  "Next Match": "Следующее совпадение",
+  "Previous Match": "Предыдущее совпадение",
+  "Extend Selection": "Расширить выделение",
+  "Pattern not found: {{term}}": "Шаблон не найден: {{term}}"
 }

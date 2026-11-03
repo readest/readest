@@ -2700,5 +2700,10 @@
   "All Books": "सभी किताबें",
   "Words": "शब्द",
   "No words match": "कोई मेल खाता शब्द नहीं",
-  "Select a word": "एक शब्द चुनें"
+  "Select a word": "एक शब्द चुनें",
+  "Find on Page": "पृष्ठ पर खोजें",
+  "Next Match": "अगला मिलान",
+  "Previous Match": "पिछला मिलान",
+  "Extend Selection": "चयन बढ़ाएँ",
+  "Pattern not found: {{term}}": "पैटर्न नहीं मिला: {{term}}"
 }

@@ -178,6 +178,12 @@ export const useTextSelector = (
   // selectionchange dispatches a task after the mutation.
   const programmaticSelectionRef = useRef(false);
   const programmaticClearTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // `view.select()` (vim find, #7281) selects its target from the relocate it
+  // fires, before that selection's selectionchange. A selection made by
+  // navigation, and the keyboard extending it, is not a long-press: it opens
+  // the toolbar, never the instant quick action. Ends at the next pointer press
+  // or when the selection is cleared.
+  const navigatedSelectionRef = useRef(false);
 
   // Cross-page selection (#5809). Fixed-layout pages are separate iframes, so a
   // selection dragged onto the next page is kept as one native selection per
@@ -518,6 +524,7 @@ export const useTextSelector = (
     wordGesture = false,
   ) => {
     isTextSelected.current = true;
+    const navigated = navigatedSelectionRef.current;
     const liveRange = sel.getRangeAt(0);
     const lastGesture = wordGestureRef.current;
     if (wordGesture) {
@@ -533,12 +540,16 @@ export const useTextSelector = (
       sel.addRange(liveRange);
     }
     // One page holds the live selection: drop a stale one left on another page
-    // (the far part of an earlier cross-page selection), guarded so its
-    // selectionchange doesn't dismiss the popup this selection is opening.
+    // (the far part of an earlier cross-page selection, or the last vim find
+    // match), guarded so its selectionchange doesn't dismiss the popup this
+    // selection is opening.
     const ownerDoc = liveRange.startContainer?.ownerDocument;
-    const stale = crossPageEnabled()
-      ? getContents().filter((c) => c.doc && c.doc !== ownerDoc && c.doc.getSelection()?.rangeCount)
-      : [];
+    const stale =
+      crossPageEnabled() || navigated
+        ? getContents().filter(
+            (c) => c.doc && c.doc !== ownerDoc && c.doc.getSelection()?.rangeCount,
+          )
+        : [];
     if (stale.length > 0) {
       guardProgrammaticSelection();
       stale.forEach((c) => c.doc.getSelection()?.removeAllRanges());
@@ -559,7 +570,12 @@ export const useTextSelector = (
       range,
       index,
       handlesSuppressed,
+      ...(navigated && { quickActionHandled: true }),
     });
+  };
+
+  const handleRendererRelocate = (event: Event) => {
+    if ((event as CustomEvent).detail?.reason === 'selection') navigatedSelectionRef.current = true;
   };
 
   const startInstantAnnotating = (
@@ -740,6 +756,7 @@ export const useTextSelector = (
   };
 
   const handlePointerDown = (doc: Document, index: number, ev: PointerEvent) => {
+    navigatedSelectionRef.current = false;
     beginSelectionDrag();
     setImageHoldClick(bookKey, null);
     lastPointerType.current = ev.pointerType;
@@ -1303,6 +1320,7 @@ export const useTextSelector = (
     } else {
       // Selection cleared (e.g. clicking outside the selection).
       // Dismiss immediately on all platforms.
+      navigatedSelectionRef.current = false;
       if (isTextSelected.current) {
         handleDismissPopup();
         isTextSelected.current = false;
@@ -1414,6 +1432,7 @@ export const useTextSelector = (
     handlePointerUp,
     handleDoubleClick,
     handleSelectionchange,
+    handleRendererRelocate,
     handleShowPopup,
     handleUpToPopup,
     handleContextmenu,

@@ -2700,5 +2700,10 @@
   "All Books": "همهٔ کتاب‌ها",
   "Words": "واژه‌ها",
   "No words match": "واژه‌ای پیدا نشد",
-  "Select a word": "یک واژه انتخاب کنید"
+  "Select a word": "یک واژه انتخاب کنید",
+  "Find on Page": "یافتن در صفحه",
+  "Next Match": "مورد بعدی",
+  "Previous Match": "مورد قبلی",
+  "Extend Selection": "گسترش انتخاب",
+  "Pattern not found: {{term}}": "الگو پیدا نشد: {{term}}"
 }

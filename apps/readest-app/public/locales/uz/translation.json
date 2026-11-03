@@ -2700,5 +2700,10 @@
   "All Books": "Barcha kitoblar",
   "Words": "So‘zlar",
   "No words match": "Mos so‘z topilmadi",
-  "Select a word": "So‘zni tanlang"
+  "Select a word": "So‘zni tanlang",
+  "Find on Page": "Sahifadan topish",
+  "Next Match": "Keyingi moslik",
+  "Previous Match": "Oldingi moslik",
+  "Extend Selection": "Tanlovni kengaytirish",
+  "Pattern not found: {{term}}": "Namuna topilmadi: {{term}}"
 }

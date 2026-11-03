@@ -2838,5 +2838,10 @@
   "All Books": "Wszystkie książki",
   "Words": "Słowa",
   "No words match": "Brak pasujących słów",
-  "Select a word": "Wybierz słowo"
+  "Select a word": "Wybierz słowo",
+  "Find on Page": "Znajdź na stronie",
+  "Next Match": "Następne dopasowanie",
+  "Previous Match": "Poprzednie dopasowanie",
+  "Extend Selection": "Rozszerz zaznaczenie",
+  "Pattern not found: {{term}}": "Nie znaleziono wzorca: {{term}}"
 }

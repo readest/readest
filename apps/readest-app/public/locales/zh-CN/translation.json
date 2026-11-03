@@ -2631,5 +2631,10 @@
   "All Books": "全部书籍",
   "Words": "单词",
   "No words match": "没有匹配的单词",
-  "Select a word": "选择一个单词"
+  "Select a word": "选择一个单词",
+  "Find on Page": "页内查找",
+  "Next Match": "下一个匹配",
+  "Previous Match": "上一个匹配",
+  "Extend Selection": "扩展选区",
+  "Pattern not found: {{term}}": "未找到匹配：{{term}}"
 }

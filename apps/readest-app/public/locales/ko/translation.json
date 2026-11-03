@@ -2631,5 +2631,10 @@
   "All Books": "모든 책",
   "Words": "단어",
   "No words match": "일치하는 단어 없음",
-  "Select a word": "단어를 선택하세요"
+  "Select a word": "단어를 선택하세요",
+  "Find on Page": "페이지에서 찾기",
+  "Next Match": "다음 일치 항목",
+  "Previous Match": "이전 일치 항목",
+  "Extend Selection": "선택 영역 확장",
+  "Pattern not found: {{term}}": "패턴을 찾을 수 없음: {{term}}"
 }

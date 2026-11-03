@@ -2700,5 +2700,10 @@
   "All Books": "Όλα τα βιβλία",
   "Words": "Λέξεις",
   "No words match": "Δεν βρέθηκαν λέξεις",
-  "Select a word": "Επιλέξτε μια λέξη"
+  "Select a word": "Επιλέξτε μια λέξη",
+  "Find on Page": "Εύρεση στη σελίδα",
+  "Next Match": "Επόμενο αποτέλεσμα",
+  "Previous Match": "Προηγούμενο αποτέλεσμα",
+  "Extend Selection": "Επέκταση επιλογής",
+  "Pattern not found: {{term}}": "Το μοτίβο δεν βρέθηκε: {{term}}"
 }

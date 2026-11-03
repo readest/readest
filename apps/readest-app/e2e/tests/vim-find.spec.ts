@@ -1,0 +1,156 @@
+import type { Page } from '@playwright/test';
+import { expect, test } from '../fixtures/base';
+
+// Vim-style find (#7281): `/` searches the book and selects the match, `n`/`N`
+// step through matches, motion keys extend the selection until Esc.
+
+// The selection in any rendered section, with the text node it starts in, so a
+// test can tell one match from another.
+const bookSelection = (page: Page) =>
+  page.evaluate(() => {
+    type Renderer = { getContents: () => { doc: Document }[] };
+    const view = document.querySelector('foliate-view') as unknown as { renderer?: Renderer };
+    for (const { doc } of view?.renderer?.getContents() ?? []) {
+      const sel = doc.getSelection();
+      if (sel && sel.rangeCount && !sel.isCollapsed) {
+        return { text: sel.toString(), context: sel.anchorNode?.textContent ?? '' };
+      }
+    }
+    return { text: '', context: '' };
+  });
+
+const selectedText = async (page: Page) => (await bookSelection(page)).text;
+
+const find = async (page: Page, term: string) => {
+  // `/` acts on a rendered book; wait for the first section to be laid out.
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        type Renderer = { getContents: () => unknown[] };
+        const view = document.querySelector('foliate-view') as unknown as { renderer?: Renderer };
+        return (view?.renderer?.getContents() ?? []).length;
+      }),
+    )
+    .toBeGreaterThan(0);
+  await page.keyboard.press('/');
+  const input = page.getByRole('textbox', { name: 'Find on Page' });
+  await input.fill(term);
+  await input.press('Enter');
+};
+
+test.describe('Vim find', () => {
+  test('/ selects the first match and shows the match count', async ({ openBook, page }) => {
+    const reader = await openBook();
+
+    await find(page, 'Alice');
+
+    await expect.poll(() => selectedText(page)).toBe('Alice');
+    await expect(reader.annotationPopup).toBeVisible();
+    await expect(page.locator('.vim-command-line')).toContainText('/Alice');
+    await expect(page.locator('.vim-command-line')).toContainText(/\[1\/\d+\]/);
+  });
+
+  test('n and N step through matches instead of opening the Notebook', async ({
+    openBook,
+    page,
+  }) => {
+    const reader = await openBook();
+    await find(page, 'Alice');
+    await expect.poll(() => selectedText(page)).toBe('Alice');
+    // `[1/N]` without the trailing `+`: every match is in.
+    await expect(page.locator('.vim-command-line')).toContainText(/\[1\/\d+\]/);
+    const first = (await bookSelection(page)).context;
+
+    await page.keyboard.press('n');
+    await expect.poll(async () => (await bookSelection(page)).context).not.toBe(first);
+    await expect(page.locator('.vim-command-line')).toContainText(/\[2\/\d+\]/);
+    await expect(reader.notebook).toBeHidden();
+
+    await page.keyboard.press('Shift+N');
+    await expect.poll(async () => (await bookSelection(page)).context).toBe(first);
+    await expect(page.locator('.vim-command-line')).toContainText(/\[1\/\d+\]/);
+  });
+
+  test('motion keys extend the selection and o swaps its ends', async ({ openBook, page }) => {
+    const reader = await openBook();
+    await find(page, 'Alice was beginning');
+    await expect.poll(() => selectedText(page)).toBe('Alice was beginning');
+
+    await page.keyboard.press('e');
+    await expect.poll(() => selectedText(page)).toBe('Alice was beginning to');
+    await page.keyboard.press('w');
+    await expect.poll(() => selectedText(page)).toBe('Alice was beginning to ');
+    await page.keyboard.press('b');
+    await expect.poll(() => selectedText(page)).toBe('Alice was beginning ');
+    await page.keyboard.press('h');
+    await expect.poll(() => selectedText(page)).toBe('Alice was beginning');
+    await page.keyboard.press('o');
+    await page.keyboard.press('l');
+    await expect.poll(() => selectedText(page)).toBe('lice was beginning');
+    await expect(reader.annotationPopup).toBeVisible();
+  });
+
+  test('line and paragraph motions reach their boundaries', async ({ openBook, page }) => {
+    await openBook();
+    await find(page, 'Alice was beginning');
+    await expect.poll(() => selectedText(page)).toBe('Alice was beginning');
+
+    await page.keyboard.press('Shift+$');
+    await expect.poll(() => selectedText(page)).toMatch(/^Alice was beginning to get [^\n]+$/);
+    await page.keyboard.press('Shift+}');
+    await expect.poll(() => selectedText(page)).toMatch(/conversation\?”$/);
+    await page.keyboard.press('Shift+}');
+    await expect.poll(() => selectedText(page)).toMatch(/ran close by her\.$/);
+    const paragraphs = await selectedText(page);
+    // Start of the line the moving end is on: within the second paragraph.
+    await page.keyboard.press('0');
+    await expect
+      .poll(async () => (await selectedText(page)).length)
+      .toBeLessThan(paragraphs.length);
+    expect(await selectedText(page)).toMatch(/conversation\?”\s+So she/);
+    // Start of that paragraph: only the first one stays selected.
+    await page.keyboard.press('Shift+{');
+    await expect.poll(async () => (await selectedText(page)).trimEnd()).toMatch(/conversation\?”$/);
+  });
+
+  test('a match never runs the instant quick action, nor does extending it', async ({
+    openBook,
+    page,
+  }) => {
+    const reader = await openBook();
+    await reader.setQuickAction('Dictionary');
+
+    await find(page, 'Alice');
+    await expect(reader.annotationPopup).toBeVisible();
+    await expect(reader.dictionaryPopup).toBeHidden();
+
+    await page.keyboard.press('e');
+    await expect.poll(() => selectedText(page)).not.toBe('Alice');
+    await expect(reader.annotationPopup).toBeVisible();
+    await expect(reader.dictionaryPopup).toBeHidden();
+  });
+
+  test('Esc ends vim mode and gives the keys back', async ({ openBook, page }) => {
+    const reader = await openBook();
+    await find(page, 'Alice');
+    await expect.poll(() => selectedText(page)).toBe('Alice');
+
+    await page.keyboard.press('Escape');
+
+    await expect.poll(() => selectedText(page)).toBe('');
+    await expect(page.locator('.vim-command-line')).toBeHidden();
+    await page.keyboard.press('n');
+    await expect(reader.notebook).toBeVisible();
+  });
+
+  // The sidebar search keeps its behaviour: a result is gone to, not selected.
+  test('a sidebar search result is still only navigated to', async ({ openBook, page }) => {
+    const reader = await openBook();
+    await reader.search('Alice');
+    await reader.searchResults.nth(1).click();
+    await page.waitForTimeout(1000);
+
+    expect(await selectedText(page)).toBe('');
+    await expect(reader.annotationPopup).toBeHidden();
+  });
+});

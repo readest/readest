@@ -2631,5 +2631,10 @@
   "All Books": "Tất cả sách",
   "Words": "Từ",
   "No words match": "Không có từ phù hợp",
-  "Select a word": "Chọn một từ"
+  "Select a word": "Chọn một từ",
+  "Find on Page": "Tìm trên trang",
+  "Next Match": "Kết quả tiếp theo",
+  "Previous Match": "Kết quả trước",
+  "Extend Selection": "Mở rộng vùng chọn",
+  "Pattern not found: {{term}}": "Không tìm thấy mẫu: {{term}}"
 }

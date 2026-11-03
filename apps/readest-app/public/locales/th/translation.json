@@ -2631,5 +2631,10 @@
   "All Books": "หนังสือทั้งหมด",
   "Words": "คำ",
   "No words match": "ไม่มีคำที่ตรงกัน",
-  "Select a word": "เลือกคำ"
+  "Select a word": "เลือกคำ",
+  "Find on Page": "ค้นหาในหน้า",
+  "Next Match": "รายการที่ตรงถัดไป",
+  "Previous Match": "รายการที่ตรงก่อนหน้า",
+  "Extend Selection": "ขยายส่วนที่เลือก",
+  "Pattern not found: {{term}}": "ไม่พบรูปแบบ: {{term}}"
 }
