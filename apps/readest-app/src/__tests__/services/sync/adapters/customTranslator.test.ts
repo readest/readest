@@ -70,6 +70,15 @@ describe('customTranslatorAdapter', () => {
     expect(out).toEqual({ ...translator, id: '' });
   });
 
+  test('switching Thinking back to Default clears Off on other devices', () => {
+    // The server merges fields per key, so a key left out of the push keeps its old value.
+    const offFields = envelopes(customTranslatorAdapter.pack({ ...translator, thinking: 'off' }));
+    const { thinking: _, ...defaultTranslator } = translator;
+    const merged = { ...offFields, ...envelopes(customTranslatorAdapter.pack(defaultTranslator)) };
+    const restored = customTranslatorAdapter.unpackRow(makeRow(CUSTOM_TRANSLATOR_KIND, merged), '');
+    expect(restored?.thinking).toBeUndefined();
+  });
+
   test('computeId is the record id', async () => {
     expect(await customTranslatorAdapter.computeId(translator)).toBe('t-1');
   });

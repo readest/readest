@@ -4,6 +4,7 @@ const { fetchMock } = vi.hoisted(() => ({ fetchMock: vi.fn() }));
 vi.mock('@/services/ai/utils/httpFetch', () => ({ getAIFetch: () => fetchMock }));
 
 import { createOpenAICompatibleTranslator } from '@/services/translators/custom/openaiCompatible';
+import { lookupInContext } from '@/services/dictionaries/contextDictionary';
 import type { CustomTranslator } from '@/types/translation';
 
 const reply = (content: string) =>
@@ -58,6 +59,27 @@ describe('custom translator thinking off', () => {
   ])('sends the parameter %s understands', async (baseUrl, expected) => {
     await translator(baseUrl, { thinking: 'off' }).translate(['Hello'], 'en', 'fr');
     expect(bodies()[0]).toMatchObject(expected);
+  });
+
+  it('applies to the AI context dictionary too', async () => {
+    fetchMock.mockImplementation(async () =>
+      reply(JSON.stringify({ headword: 'bank', definition: 'the land beside a river' })),
+    );
+    await lookupInContext(
+      {
+        id: 't',
+        type: 'openai-compatible',
+        name: 'LLM',
+        baseUrl: 'https://api.siliconflow.cn/v1',
+        model: 'qwen3',
+        thinking: 'off',
+        addedAt: 0,
+        updatedAt: 0,
+      },
+      { text: 'bank', before: 'along the', after: 'until dusk.', targetLang: 'fr' },
+      new AbortController().signal,
+    );
+    expect(bodies()[0]).toMatchObject({ enable_thinking: false });
   });
 
   it('sends no thinking parameter by default', async () => {
