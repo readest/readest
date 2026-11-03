@@ -700,7 +700,7 @@ function M.downloadCover(book, opts, cb)
             local url = body.downloadUrl
 
             local pid, parent_read_fd = FFIUtil.runInSubProcess(
-                function(_child_pid, child_write_fd)
+                function(child_pid, child_write_fd)
                     -- Runs in a forked child. Two hard rules, both to keep
                     -- KOReader alive on Boox / Adreno devices (issue #4165):
                     --
@@ -725,7 +725,9 @@ function M.downloadCover(book, opts, cb)
 
                         -- A worker killed at exit must not leave a partial
                         -- cover at dst, which the cache would take as done.
-                        local f, ferr = io.open(dst .. ".part", "wb")
+                        -- One file per worker: a manual and an automatic
+                        -- download of the same cover can overlap.
+                        local f, ferr = io.open(dst .. "." .. child_pid .. ".part", "wb")
                         if not f then
                             result = "error:open:" .. tostring(ferr)
                             return
@@ -737,7 +739,7 @@ function M.downloadCover(book, opts, cb)
                             sink    = ltn12.sink.file(f),
                         })
                         socketutil:reset_timeout()
-                        if code == 200 and os.rename(dst .. ".part", dst) then
+                        if code == 200 and os.rename(dst .. "." .. child_pid .. ".part", dst) then
                             result = "ok"
                         elseif code == 404 then
                             result = "404"
@@ -772,10 +774,10 @@ function M.downloadCover(book, opts, cb)
                     if result == "ok" then
                         if cb then cb(true, dst) end
                     elseif result == "404" then
-                        os.remove(dst .. ".part")
+                        os.remove(dst .. "." .. pid .. ".part")
                         if cb then cb(false, "no-cover", 404) end
                     else
-                        os.remove(dst .. ".part")
+                        os.remove(dst .. "." .. pid .. ".part")
                         if cb then cb(false, result, nil) end
                     end
                 else
