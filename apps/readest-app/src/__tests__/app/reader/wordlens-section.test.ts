@@ -146,3 +146,30 @@ describe('refreshSectionGlosses vocabulary marks (#6613)', () => {
     expect(await render(viewSettings(), { vocabulary: marks([], ['smiled']) })).toEqual([]);
   });
 });
+
+describe('whenSelectionClears', () => {
+  // Re-rendering hints unwraps <ruby> around the selected word, which collapses
+  // the selection and closes the dictionary popup the reader is using.
+  it('runs at once without a selection, otherwise after it collapses', async () => {
+    const { whenSelectionClears } = await import('@/app/reader/utils/wordlensSection');
+    const doc = document.implementation.createHTMLDocument('t');
+    doc.body.innerHTML = '<p>Captain Nemo smiled.</p>';
+    const run = vi.fn();
+    const fake = { isCollapsed: false, rangeCount: 1 };
+    vi.spyOn(doc, 'getSelection').mockReturnValue(fake as unknown as Selection);
+
+    whenSelectionClears(doc, run);
+    expect(run).not.toHaveBeenCalled();
+    doc.dispatchEvent(new Event('selectionchange'));
+    expect(run).not.toHaveBeenCalled();
+    fake.isCollapsed = true;
+    doc.dispatchEvent(new Event('selectionchange'));
+    expect(run).toHaveBeenCalledTimes(1);
+    doc.dispatchEvent(new Event('selectionchange'));
+    expect(run).toHaveBeenCalledTimes(1);
+
+    const now = vi.fn();
+    whenSelectionClears(doc, now);
+    expect(now).toHaveBeenCalledTimes(1);
+  });
+});

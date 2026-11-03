@@ -109,3 +109,33 @@ export const refreshSectionGlosses = async (
     console.warn('[wordlens] refresh failed', err);
   }
 };
+
+// Latest deferred refresh per document; a newer one replaces it.
+const pendingUntilClear = new WeakMap<Document, () => void>();
+
+/**
+ * Run `fn` now, or once the document's selection collapses. Re-rendering hints
+ * unwraps the <ruby> around a hinted word, so doing it under a live selection
+ * (marking a word in the dictionary popup) would collapse the selection and
+ * close the popup the reader is using.
+ */
+export const whenSelectionClears = (doc: Document, fn: () => void): void => {
+  const sel = doc.getSelection();
+  if (!sel || sel.isCollapsed || !sel.rangeCount) {
+    pendingUntilClear.delete(doc);
+    fn();
+    return;
+  }
+  const waiting = pendingUntilClear.has(doc);
+  pendingUntilClear.set(doc, fn);
+  if (waiting) return;
+  const onChange = () => {
+    const current = doc.getSelection();
+    if (current && !current.isCollapsed && current.rangeCount) return;
+    doc.removeEventListener('selectionchange', onChange);
+    const run = pendingUntilClear.get(doc);
+    pendingUntilClear.delete(doc);
+    run?.();
+  };
+  doc.addEventListener('selectionchange', onChange);
+};
