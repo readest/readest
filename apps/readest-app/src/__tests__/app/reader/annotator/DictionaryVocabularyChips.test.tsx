@@ -97,6 +97,11 @@ describe('dictionary vocabulary chips', () => {
     expect(entries()).toHaveLength(0);
   });
 
+  it('shows no chips for a selection with no letters', () => {
+    render(<DictionarySheet word='—' onDismiss={() => {}} capture={{ lang: 'en' }} />);
+    expect(screen.queryByRole('button', { name: 'Learning' })).toBeNull();
+  });
+
   it('shows no chips without a capture context', () => {
     sheet();
     expect(screen.queryByRole('button', { name: 'Learning' })).toBeNull();

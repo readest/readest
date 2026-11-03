@@ -83,7 +83,8 @@ describe('vocabularyStore', () => {
     s.recordLookup({ word: 'cryptic', lang: 'en', occurrence: occurrence('New.', 3000) });
     const e = useVocabularyStore.getState().entries[id]!;
     expect(e.deletedAt).toBeNull();
-    expect(e.modifiedAt).toBe(3000);
+    // A lookup never outranks an explicit edit made on another device.
+    expect(e.modifiedAt).toBe(0);
     expect(e.occurrences.map((o) => o.sentence)).toEqual(['New.']);
   });
 
@@ -106,6 +107,34 @@ describe('vocabularyStore', () => {
     useVocabularyStore.setState({ entries: {}, loaded: false, version: 0 });
     await useVocabularyStore.getState().load(appService);
     expect(useVocabularyStore.getState().entries['en:cryptic']!.state).toBe('mastered');
+  });
+
+  it('keeps a Learning mark made elsewhere when this device first looks the word up', () => {
+    vi.setSystemTime(9000);
+    const s = useVocabularyStore.getState();
+    s.recordLookup({ word: 'serendipity', lang: 'en', occurrence: occurrence('B.', 9000) });
+    s.applyRemote([
+      {
+        id: 'en:serendipity',
+        lang: 'en',
+        key: 'serendipity',
+        word: 'serendipity',
+        state: 'learning',
+        hint: '意外',
+        occurrences: [occurrence('A.', 100)],
+        createdAt: 50,
+        modifiedAt: 500,
+        deletedAt: null,
+      },
+    ]);
+    const e = useVocabularyStore.getState().entries['en:serendipity']!;
+    expect(e).toMatchObject({ state: 'learning', hint: '意外' });
+    expect(e.occurrences.map((o) => o.sentence)).toEqual(['B.', 'A.']);
+  });
+
+  it('does not create an entry for a selection with no letters', () => {
+    expect(useVocabularyStore.getState().ensureEntry('—', 'en')).toBe('');
+    expect(Object.keys(useVocabularyStore.getState().entries)).toHaveLength(0);
   });
 
   it('merges remote entries without marking them dirty', () => {

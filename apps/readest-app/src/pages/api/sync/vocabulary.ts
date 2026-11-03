@@ -14,7 +14,7 @@ import {
 } from '@/services/vocabulary/wire';
 
 // Vocabulary builder sync (#789). One row per word in `public.vocabulary`
-// (migration 031). The pull is keyset-paged on the server-stamped
+// (migration 032). The pull is keyset-paged on the server-stamped
 // (updated_at, id), so a page cut inside a run of rows sharing one timestamp
 // can't skip any. The push merges each row with the stored one (state and hint
 // from the newer edit, sentences unioned) instead of overwriting it.

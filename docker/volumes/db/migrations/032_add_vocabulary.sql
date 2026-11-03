@@ -1,4 +1,4 @@
--- Migration 031: vocabulary builder sync (#789, #6613).
+-- Migration 032: vocabulary builder sync (#789, #6613).
 -- Deploy this migration and the /api/sync/vocabulary route before releasing
 -- clients that push vocabulary.
 --

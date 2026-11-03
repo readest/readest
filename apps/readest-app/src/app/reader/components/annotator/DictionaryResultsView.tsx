@@ -601,7 +601,7 @@ export const DictionaryResultsHeader: React.FC<DictionaryResultsHeaderProps> = (
           ) : null}
         </div>
       </div>
-      {vocabularyLang && currentWord ? (
+      {vocabularyLang && normalizeWordKey(currentWord) ? (
         <VocabularyChips word={currentWord} lang={vocabularyLang} />
       ) : null}
     </div>

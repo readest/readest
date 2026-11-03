@@ -5,7 +5,7 @@ export const MAX_PUSH_ROWS = 100;
 export const MAX_PULL_ROWS = 1000;
 export const MAX_ROW_BYTES = 64 * 1024;
 
-/** A `public.vocabulary` row (migration 031). */
+/** A `public.vocabulary` row (migration 032). */
 export interface VocabularyRow {
   user_id?: string;
   id: string;

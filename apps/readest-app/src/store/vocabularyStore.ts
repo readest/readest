@@ -23,7 +23,7 @@ interface VocabularyStore {
   load(appService: AppService): Promise<void>;
   /** Save a dictionary lookup. Never moves modifiedAt of a live entry. */
   recordLookup(input: { word: string; lang: string; occurrence?: VocabularyOccurrence }): void;
-  /** The entry id for a word, creating an empty live entry if needed. */
+  /** The entry id for a word, creating an empty live entry if needed; '' for no letters. */
   ensureEntry(word: string, lang: string): string;
   setState(id: string, state: VocabularyState): void;
   setHint(id: string, hint: string): void;
@@ -54,6 +54,9 @@ const schedulePersist = () => {
   }, PERSIST_DELAY_MS);
 };
 
+// modifiedAt 0: an entry made by a lookup carries no edit, so it must never
+// outrank a Learning / Mastered mark or hint set on another device. Explicit
+// edits stamp the current time.
 const freshEntry = (word: string, lang: string, key: string, now: number): VocabularyEntry => ({
   id: entryId(lang, key),
   lang,
@@ -62,7 +65,7 @@ const freshEntry = (word: string, lang: string, key: string, now: number): Vocab
   state: 'none',
   occurrences: [],
   createdAt: now,
-  modifiedAt: now,
+  modifiedAt: 0,
   deletedAt: null,
 });
 
@@ -113,6 +116,7 @@ export const useVocabularyStore = create<VocabularyStore>((set, get) => {
 
     ensureEntry: (word, lang) => {
       const key = normalizeWordKey(word);
+      if (!key) return '';
       const id = entryId(lang, key);
       const current = get().entries[id];
       if (!current || current.deletedAt) {
