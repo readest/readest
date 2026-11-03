@@ -160,10 +160,7 @@ const SideBar = ({}) => {
 
   const handleSearchResultClick = async (cfi: string) => {
     onNavigateEvent();
-    const view = getView(sideBarBookKey);
-    if (!view) return;
-    view.goTo(cfi);
-    await view.select(cfi);
+    getView(sideBarBookKey)?.select(cfi);
   };
 
   if (!sideBarBookKey) return null;
