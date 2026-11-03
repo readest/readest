@@ -67,6 +67,7 @@ export interface UseDictionaryResultsArgs {
 export interface VocabularyCapture {
   /** Vocabulary language of the book (see `vocabularyLang`). */
   lang: string;
+  /** The sentence to save; without it the lookup isn't recorded, only the chips show. */
   occurrence?: VocabularyOccurrence;
 }
 
@@ -166,7 +167,8 @@ export function useDictionaryResults({
   // Words reached through in-entry links have no sentence and aren't saved.
   const saveLookups = settings.saveLookupsToVocabulary !== false;
   useEffect(() => {
-    if (!capture || !saveLookups) return;
+    // No sentence means a re-lookup (from the vocabulary window): chips only.
+    if (!capture?.occurrence || !saveLookups) return;
     useVocabularyStore.getState().recordLookup({
       word,
       lang: capture.lang,
@@ -497,7 +499,7 @@ interface DictionaryResultsHeaderProps {
   vocabularyLang?: string;
 }
 
-const VocabularyChips: React.FC<{ word: string; lang: string }> = ({ word, lang }) => {
+export const VocabularyChips: React.FC<{ word: string; lang: string }> = ({ word, lang }) => {
   const _ = useTranslation();
   const id = entryId(lang, normalizeWordKey(word));
   const state = useVocabularyStore((s) => {

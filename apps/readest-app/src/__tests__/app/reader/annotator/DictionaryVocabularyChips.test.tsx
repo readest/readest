@@ -91,6 +91,12 @@ describe('dictionary vocabulary chips', () => {
     expect(entries()[0]).toMatchObject({ state: 'mastered', occurrences: [] });
   });
 
+  it('shows chips without recording when the capture has no sentence', () => {
+    sheet({ capture: { lang: 'en' } });
+    expect(screen.getByRole('button', { name: 'Learning' })).toBeTruthy();
+    expect(entries()).toHaveLength(0);
+  });
+
   it('shows no chips without a capture context', () => {
     sheet();
     expect(screen.queryByRole('button', { name: 'Learning' })).toBeNull();
