@@ -147,7 +147,7 @@ describe('ViewMenu transparent image backgrounds (#7045)', () => {
   it('does not offer image transparency for PDF pages', () => {
     mockBookData.book.format = 'PDF';
     render(<ViewMenu bookKey='book-1' />);
-    expect(screen.queryByRole('menuitem', { name: 'Transparent Image Background' })).toBeNull();
+    expect(screen.queryByRole('menuitem', { name: /^Transparent Image Background/ })).toBeNull();
   });
 });
 
