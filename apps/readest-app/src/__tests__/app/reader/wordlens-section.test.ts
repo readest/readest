@@ -137,6 +137,47 @@ describe('refreshSectionGlosses vocabulary marks (#6613)', () => {
     expect(mockedLoad).not.toHaveBeenCalled();
   });
 
+  // Marking a word can start a refresh; a reader may select text while the pack
+  // index loads, and drawing hints then would close the dictionary popup.
+  const selectDuringLoad = (doc: Document) => {
+    const fake = { isCollapsed: true, rangeCount: 0 };
+    vi.spyOn(doc, 'getSelection').mockReturnValue(fake as unknown as Selection);
+    mockedLoad.mockImplementation(async () => {
+      fake.isCollapsed = false;
+      fake.rangeCount = 1;
+      return null;
+    });
+    return () => {
+      fake.isCollapsed = true;
+      doc.dispatchEvent(new Event('selectionchange'));
+    };
+  };
+  const hintsIn = (doc: Document) =>
+    [...doc.querySelectorAll('ruby.wl-gloss > rt')].map((rt) => rt.textContent);
+
+  it('waits to draw hints when a selection starts while the pack loads', async () => {
+    const doc = document.implementation.createHTMLDocument('t');
+    doc.body.innerHTML = '<p>Captain Nemo smiled.</p>';
+    const clearSelection = selectDuringLoad(doc);
+    const vocabulary = marks([['nemo', '尼莫']]);
+    await refreshSectionGlosses(doc, viewSettings(), ctx({ appLang: 'zh-CN', vocabulary }));
+    expect(hintsIn(doc)).toEqual([]);
+    clearSelection();
+    expect(hintsIn(doc)).toEqual(['尼莫']);
+  });
+
+  it('drops a waiting draw once a newer refresh has run', async () => {
+    const doc = document.implementation.createHTMLDocument('t');
+    doc.body.innerHTML = '<p>Captain Nemo smiled.</p>';
+    const clearSelection = selectDuringLoad(doc);
+    const vocabulary = marks([['nemo', '尼莫']]);
+    await refreshSectionGlosses(doc, viewSettings(), ctx({ appLang: 'zh-CN', vocabulary }));
+    const off = viewSettings({ wordLensEnabled: false });
+    await refreshSectionGlosses(doc, off, ctx({ appLang: 'zh-CN', vocabulary }));
+    clearSelection();
+    expect(hintsIn(doc)).toEqual([]);
+  });
+
   it('skips a Mastered word the pack would hint', async () => {
     const pack = {
       lookup: (w: string) => (w.toLowerCase() === 'smiled' ? { rank: 99999, gloss: '笑' } : null),

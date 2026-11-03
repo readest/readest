@@ -95,16 +95,27 @@ export const refreshSectionGlosses = async (
       await initSimpleCC();
       if (refreshGen.get(doc) !== myGen) return;
     }
-    const model = buildSectionTextModel(doc);
-    const occ = planGlosses(model.text, index ?? NO_PACK, {
-      sourceLang: source,
-      rankCutoff: getRankCutoff(source, viewSettings.wordLensLevel),
-      cutZh: source === 'zh' ? cutZh : undefined,
-      monolingual: hint === source, // en-en: gloss is a build-formatted definition
-      vocabulary: ctx.vocabulary,
+    const apply = () => {
+      if (refreshGen.get(doc) !== myGen) return;
+      const model = buildSectionTextModel(doc);
+      const occ = planGlosses(model.text, index ?? NO_PACK, {
+        sourceLang: source,
+        rankCutoff: getRankCutoff(source, viewSettings.wordLensLevel),
+        cutZh: source === 'zh' ? cutZh : undefined,
+        monolingual: hint === source, // en-en: gloss is a build-formatted definition
+        vocabulary: ctx.vocabulary,
+      });
+      if (zhVariant) for (const o of occ) o.gloss = runSimpleCC(o.gloss, zhVariant);
+      if (occ.length) applyGlosses(doc, model, occ);
+    };
+    // The reader may have selected text while the pack loaded.
+    whenSelectionClears(doc, () => {
+      try {
+        apply();
+      } catch (err) {
+        console.warn('[wordlens] refresh failed', err);
+      }
     });
-    if (zhVariant) for (const o of occ) o.gloss = runSimpleCC(o.gloss, zhVariant);
-    if (occ.length) applyGlosses(doc, model, occ);
   } catch (err) {
     console.warn('[wordlens] refresh failed', err);
   }
