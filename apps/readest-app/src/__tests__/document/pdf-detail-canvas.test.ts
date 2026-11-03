@@ -211,6 +211,16 @@ describe('PDF detail canvas (#7100)', () => {
     expect(canvases(doc)).toHaveLength(1);
   });
 
+  it('drops the detail canvas when its page scrolls off the screen', async () => {
+    vi.useFakeTimers();
+    const { doc, scroll } = await setup({ dpr: 3, userAgent: IPHONE_UA });
+    expect(canvases(doc)).toHaveLength(2);
+    // The 1900.8 px page now ends about 99 px above the screen.
+    await scroll({ x: 0, y: 2000 });
+    expect(canvases(doc)).toHaveLength(1);
+    expect(canvases(doc)[0]!.style.clipPath).toBe('');
+  });
+
   it('adds nothing where the page bitmap already matches the screen', async () => {
     vi.useFakeTimers();
     const { doc } = await setup({ dpr: 2, userAgent: DESKTOP_UA });
