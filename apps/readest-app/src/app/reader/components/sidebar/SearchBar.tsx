@@ -20,7 +20,6 @@ import { BookSearchConfig, BookSearchMatch, BookSearchResult } from '@/types/boo
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { debounce } from '@/utils/debounce';
 import { isCJKStr } from '@/utils/lang';
-import { goToAndSelectSearchResult } from '@/utils/selectSearchResult';
 import Dropdown from '@/components/Dropdown';
 import SearchOptions from './SearchOptions';
 
@@ -296,7 +295,8 @@ const SearchBar: React.FC<SearchBarProps> = ({ isVisible, bookKey, onHideSearchB
             if (item === 'done') break;
             const firstMatch = results.find((result) => result.subitems.length > 0)?.subitems[0];
             if (firstMatch) {
-              await goToAndSelectSearchResult(currentView, firstMatch.cfi);
+              currentView.goTo(firstMatch.cfi);
+              await currentView.select(firstMatch.cfi);
             }
           }
         }

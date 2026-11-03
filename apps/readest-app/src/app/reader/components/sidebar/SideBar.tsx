@@ -9,7 +9,6 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { eventDispatcher } from '@/utils/event';
 import { getBookDirFromLanguage } from '@/utils/book';
 import { getPanelHorizontalInsetStyle, getPanelTopInset } from '@/utils/insets';
-import { goToAndSelectSearchResult } from '@/utils/selectSearchResult';
 import { useEnv } from '@/context/EnvContext';
 import { useSwipeToDismiss } from '@/hooks/useSwipeToDismiss';
 import { usePanelResize } from '@/hooks/usePanelResize';
@@ -163,7 +162,8 @@ const SideBar = ({}) => {
     onNavigateEvent();
     const view = getView(sideBarBookKey);
     if (!view) return;
-    await goToAndSelectSearchResult(view, cfi);
+    view.goTo(cfi);
+    await view.select(cfi);
   };
 
   if (!sideBarBookKey) return null;
