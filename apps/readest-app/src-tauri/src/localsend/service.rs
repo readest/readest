@@ -617,24 +617,30 @@ fn staging_dir<R: Runtime>(app: &AppHandle<R>) -> std::path::PathBuf {
 
 /// "name.epub" -> "name (2).epub" until unused, like the upstream CLI.
 /// `file_name` comes from the sending peer: only its last path component is
-/// used, so `../`, absolute paths and folders can't leave `dir`.
-fn unique_path(dir: &std::path::Path, file_name: &str) -> std::path::PathBuf {
+/// used, so `../`, absolute paths and folders can't leave `dir`. The name is
+/// reserved with an empty file, so concurrent uploads never share a path.
+fn unique_path(dir: &std::path::Path, file_name: &str) -> std::io::Result<std::path::PathBuf> {
     let file_name = std::path::Path::new(file_name)
         .file_name()
         .and_then(|n| n.to_str())
         .unwrap_or("file");
-    let candidate = dir.join(file_name);
-    if !candidate.exists() {
-        return candidate;
-    }
     let (stem, ext) = match file_name.rsplit_once('.') {
         Some((s, e)) => (s.to_string(), format!(".{e}")),
         None => (file_name.to_string(), String::new()),
     };
-    for n in 2u32.. {
-        let candidate = dir.join(format!("{stem} ({n}){ext}"));
-        if !candidate.exists() {
-            return candidate;
+    for n in 1u32.. {
+        let candidate = match n {
+            1 => dir.join(file_name),
+            _ => dir.join(format!("{stem} ({n}){ext}")),
+        };
+        match std::fs::OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(&candidate)
+        {
+            Ok(_) => return Ok(candidate),
+            Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => continue,
+            Err(e) => return Err(e),
         }
     }
     unreachable!()
@@ -662,7 +668,14 @@ fn handle_file_upload<R: Runtime>(
 
     let dir = staging_dir(app);
     let _ = std::fs::create_dir_all(&dir);
-    let path = unique_path(&dir, &file.file_name);
+    let Ok(path) = unique_path(&dir, &file.file_name) else {
+        // No inbox file: dropping target_tx fails the request.
+        if let Some(session) = receiving.lock().unwrap().get_mut(&session_id) {
+            session.in_progress.remove(&file_id);
+            session.failed_files += 1;
+        }
+        return;
+    };
 
     let (progress_tx, mut progress_rx) = mpsc::channel::<u64>(16);
     {
@@ -1076,10 +1089,10 @@ mod tests {
     fn unique_path_appends_counter_before_extension() {
         let dir = std::env::temp_dir().join(format!("ls-up-{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
-        let first = unique_path(&dir, "book.epub");
+        let first = unique_path(&dir, "book.epub").unwrap();
         assert_eq!(first, dir.join("book.epub"));
         std::fs::write(&first, b"x").unwrap();
-        let second = unique_path(&dir, "book.epub");
+        let second = unique_path(&dir, "book.epub").unwrap();
         assert_eq!(second, dir.join("book (2).epub"));
         let _ = std::fs::remove_dir_all(&dir);
     }
@@ -1096,11 +1109,30 @@ mod tests {
             ("", "file"),
         ];
         for (sent, saved) in cases {
-            assert_eq!(unique_path(&dir, sent), dir.join(saved), "{sent:?}");
+            let path = unique_path(&dir, sent).unwrap();
+            assert_eq!(path, dir.join(saved), "{sent:?}");
+            std::fs::remove_file(path).unwrap();
         }
         // The duplicate counter must not reintroduce the sent path either.
         std::fs::write(dir.join("evil.epub"), b"x").unwrap();
-        assert_eq!(unique_path(&dir, "../evil.epub"), dir.join("evil (2).epub"));
+        assert_eq!(
+            unique_path(&dir, "../evil.epub").unwrap(),
+            dir.join("evil (2).epub")
+        );
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn unique_path_reserves_the_name_it_returns() {
+        // Uploads in one session run concurrently, and `a/book.epub` and
+        // `b/book.epub` both reduce to `book.epub`: a name handed out must be
+        // taken before any bytes are written to it.
+        let dir = std::env::temp_dir().join(format!("ls-up-res-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let first = unique_path(&dir, "a/book.epub").unwrap();
+        let second = unique_path(&dir, "b/book.epub").unwrap();
+        assert_eq!(first, dir.join("book.epub"));
+        assert_eq!(second, dir.join("book (2).epub"));
         let _ = std::fs::remove_dir_all(&dir);
     }
 
