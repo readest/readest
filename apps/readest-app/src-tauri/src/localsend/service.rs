@@ -616,7 +616,13 @@ fn staging_dir<R: Runtime>(app: &AppHandle<R>) -> std::path::PathBuf {
 }
 
 /// "name.epub" -> "name (2).epub" until unused, like the upstream CLI.
+/// `file_name` comes from the sending peer: only its last path component is
+/// used, so `../`, absolute paths and folders can't leave `dir`.
 fn unique_path(dir: &std::path::Path, file_name: &str) -> std::path::PathBuf {
+    let file_name = std::path::Path::new(file_name)
+        .file_name()
+        .and_then(|n| n.to_str())
+        .unwrap_or("file");
     let candidate = dir.join(file_name);
     if !candidate.exists() {
         return candidate;
@@ -1075,6 +1081,26 @@ mod tests {
         std::fs::write(&first, b"x").unwrap();
         let second = unique_path(&dir, "book.epub");
         assert_eq!(second, dir.join("book (2).epub"));
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn unique_path_keeps_peer_file_names_inside_the_inbox() {
+        let dir = std::env::temp_dir().join(format!("ls-up-trav-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let cases = [
+            ("../../evil.epub", "evil.epub"),
+            ("sub/dir/book.epub", "book.epub"),
+            ("/etc/cron.d/evil.epub", "evil.epub"),
+            ("..", "file"),
+            ("", "file"),
+        ];
+        for (sent, saved) in cases {
+            assert_eq!(unique_path(&dir, sent), dir.join(saved), "{sent:?}");
+        }
+        // The duplicate counter must not reintroduce the sent path either.
+        std::fs::write(dir.join("evil.epub"), b"x").unwrap();
+        assert_eq!(unique_path(&dir, "../evil.epub"), dir.join("evil (2).epub"));
         let _ = std::fs::remove_dir_all(&dir);
     }
 
