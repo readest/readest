@@ -149,3 +149,14 @@ describe('vocabularyLang', () => {
     expect(vocabularyLang('')).toBe('und');
   });
 });
+
+describe('mergeEntries tie-break', () => {
+  it('picks the same winner whatever the order when modifiedAt ties', () => {
+    const a = entry({ state: 'learning', modifiedAt: 10 });
+    const b = entry({ state: 'mastered', modifiedAt: 10 });
+    expect(mergeEntries(a, b).state).toBe(mergeEntries(b, a).state);
+    const h1 = entry({ state: 'learning', hint: 'x', modifiedAt: 10 });
+    const h2 = entry({ state: 'learning', hint: 'y', modifiedAt: 10 });
+    expect(mergeEntries(h1, h2).hint).toBe(mergeEntries(h2, h1).hint);
+  });
+});

@@ -69,6 +69,10 @@ const useCategoryCopy = (): Record<SyncCategory, CategoryCopy> => {
       title: _('TTS Services'),
       description: _('Custom text-to-speech services and (encrypted) API keys'),
     },
+    vocabulary: {
+      title: _('Vocabulary'),
+      description: _('Looked-up words, their sentences, and Learning / Mastered marks'),
+    },
     settings: {
       // Dictionary preferences ride this row too, but they're gated by the
       // Dictionaries toggle above, so they're deliberately not listed here.

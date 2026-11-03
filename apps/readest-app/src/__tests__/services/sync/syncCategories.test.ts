@@ -253,7 +253,7 @@ describe('translator category', () => {
 });
 
 describe('SYNC_CATEGORIES', () => {
-  test('covers all fourteen user-facing categories (incl. book_data + settings + stats + credentials)', () => {
+  test('covers all fifteen user-facing categories (incl. book_data + settings + stats + vocabulary + credentials)', () => {
     expect([...SYNC_CATEGORIES].sort()).toEqual(
       [
         'abs_server',
@@ -270,6 +270,7 @@ describe('SYNC_CATEGORIES', () => {
         'settings',
         'stats',
         'texture',
+        'vocabulary',
       ].sort(),
     );
   });

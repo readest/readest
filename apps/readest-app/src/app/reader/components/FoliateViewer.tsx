@@ -67,6 +67,7 @@ import { layoutWarichu, relayoutWarichu } from '@/utils/warichu';
 import { refreshSectionGlosses } from '@/app/reader/utils/wordlensSection';
 import { useVocabularyStore } from '@/store/vocabularyStore';
 import { vocabularyLang } from '@/services/vocabulary/entry';
+import { initVocabularySync } from '@/services/vocabulary/vocabularySync';
 import { getBookDirFromLanguage, getBookDirFromWritingMode } from '@/utils/book';
 import { getIndexFromCfi } from '@/utils/cfi';
 import { useUICSS } from '@/hooks/useUICSS';
@@ -711,7 +712,11 @@ const FoliateViewer: React.FC<{
     return JSON.stringify([[...learning], [...mastered]]);
   });
   useEffect(() => {
-    if (appService) void useVocabularyStore.getState().load(appService);
+    if (!appService) return;
+    void useVocabularyStore
+      .getState()
+      .load(appService)
+      .then(() => initVocabularySync());
   }, [appService]);
   const buildWordLensCtx = (bookLang?: string | null) => {
     // Read the live setting (not the first-render `settings` snapshot closed over

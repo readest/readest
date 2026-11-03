@@ -52,6 +52,13 @@ export const addOccurrence = (
   occurrences: normalizeOccurrences([occurrence, ...entry.occurrences]),
 });
 
+// Newer edit wins. A tie (same ms on two devices) must pick the same side on
+// every device and on the server, whatever the argument order: a delete
+// first, then the larger state/hint.
+const tieKey = (e: VocabularyEntry) => `${e.deletedAt ? 1 : 0}|${e.state}|${e.hint ?? ''}`;
+const aWins = (a: VocabularyEntry, b: VocabularyEntry) =>
+  a.modifiedAt !== b.modifiedAt ? a.modifiedAt > b.modifiedAt : tieKey(a) >= tieKey(b);
+
 /**
  * Merge two copies of one entry. The side changed last wins the state, hint
  * and tombstone; sentences are unioned. A delete drops every sentence from
@@ -59,10 +66,7 @@ export const addOccurrence = (
  * the new sentences.
  */
 export const mergeEntries = (a: VocabularyEntry, b: VocabularyEntry): VocabularyEntry => {
-  const [winner, loser] =
-    a.modifiedAt > b.modifiedAt || (a.modifiedAt === b.modifiedAt && !!a.deletedAt)
-      ? [a, b]
-      : [b, a];
+  const [winner, loser] = aWins(a, b) ? [a, b] : [b, a];
   const { dirty: _dirty, ...base } = winner;
   if (winner.deletedAt) {
     // Lookups don't move modifiedAt, so a device that missed the delete can
