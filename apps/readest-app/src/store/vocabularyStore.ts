@@ -120,8 +120,14 @@ export const useVocabularyStore = create<VocabularyStore>((set, get) => {
       }
       set((s) => {
         const entries = { ...s.entries };
-        // Lookups recorded before the file finished loading win the merge.
-        for (const e of list) entries[e.id] = entries[e.id] ? mergeEntries(e, entries[e.id]!) : e;
+        // Lookups recorded before the file finished loading win the merge, and
+        // a change still waiting to be pushed on either side stays pending.
+        for (const e of list) {
+          const cur = entries[e.id];
+          if (!cur) entries[e.id] = e;
+          else if (e.dirty || cur.dirty) entries[e.id] = { ...mergeEntries(e, cur), dirty: true };
+          else entries[e.id] = mergeEntries(e, cur);
+        }
         return { entries, loaded: true, loadedCount: list.length, version: s.version + 1 };
       });
     },

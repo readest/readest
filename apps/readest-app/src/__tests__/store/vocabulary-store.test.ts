@@ -144,6 +144,35 @@ describe('vocabularyStore', () => {
     expect(files[`${VOCABULARY_FILENAME}.bak`]).toBe('{"entries": [tru');
   });
 
+  it('keeps unpushed changes pending when the file loads over them', async () => {
+    const saved = (key: string, dirty?: boolean) => ({
+      id: `en:${key}`,
+      lang: 'en',
+      key,
+      word: key,
+      state: 'learning' as const,
+      occurrences: [occurrence('Old.', 100)],
+      createdAt: 50,
+      modifiedAt: 500,
+      deletedAt: null,
+      ...(dirty ? { dirty } : {}),
+    });
+    const files: Record<string, string> = {
+      // `restored` was written dirty by a backup restore; `looked` is clean on disk.
+      [VOCABULARY_FILENAME]: JSON.stringify({
+        version: 1,
+        entries: [saved('restored', true), saved('looked')],
+      }),
+    };
+    const s = useVocabularyStore.getState();
+    useVocabularyStore.setState({ entries: { 'en:restored': saved('restored') } });
+    s.recordLookup({ word: 'looked', lang: 'en', occurrence: occurrence('New.', 900) });
+    await s.load(makeAppService(files));
+    const { entries } = useVocabularyStore.getState();
+    expect(entries['en:restored']!.dirty).toBe(true);
+    expect(entries['en:looked']!.dirty).toBe(true);
+  });
+
   it('merges remote entries without marking them dirty', () => {
     const s = useVocabularyStore.getState();
     s.applyRemote([
