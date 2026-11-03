@@ -2,7 +2,6 @@ import { BookDoc } from '@/libs/document';
 import { BookNote, BookSearchConfig, BookSearchResult } from '@/types/book';
 import { TTSGranularity } from '@/services/tts';
 import { TTS } from 'foliate-js/tts.js';
-import * as CFI from 'foliate-js/epubcfi.js';
 import type { MediaOverlayTTS } from '@/services/tts/mediaOverlay/MediaOverlayTTS';
 import { LocaleWithTextInfo } from './misc';
 
@@ -177,7 +176,7 @@ export const wrappedFoliateView = (originalView: FoliateView): FoliateView => {
   const originalSelect = originalView.select?.bind(originalView);
   originalView.select = async (target: string | number | { fraction: number }): Promise<void> => {
     if (originalSelect) await Promise.resolve(originalSelect(target));
-    if (typeof target !== 'string' || !CFI.isCFI.test(target)) return;
+    if (typeof target !== 'string') return;
     const resolved = originalView.resolveCFI(target);
     const content = originalView.renderer
       .getContents()
