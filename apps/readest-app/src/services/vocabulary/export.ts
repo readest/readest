@@ -16,10 +16,10 @@ const UNSPACED = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script
 /** Bold `word` inside an already-escaped sentence. */
 const boldWord = (sentence: string, word: string): string => {
   const w = escapeRegExp(escapeHtml(word));
-  const re = UNSPACED.test(word)
-    ? new RegExp(w, 'giu')
-    : new RegExp(`(?<![\\p{L}\\p{M}\\p{N}])${w}(?![\\p{L}\\p{M}\\p{N}])`, 'giu');
-  return sentence.replace(re, (m) => `<b>${m}</b>`);
+  if (UNSPACED.test(word)) return sentence.replace(new RegExp(w, 'giu'), (m) => `<b>${m}</b>`);
+  // No lookbehind (WebKit < 16.4 rejects it): consume the boundary before the word.
+  const re = new RegExp(`(^|[^\\p{L}\\p{M}\\p{N}])(${w})(?![\\p{L}\\p{M}\\p{N}])`, 'giu');
+  return sentence.replace(re, (_m, pre: string, hit: string) => `${pre}<b>${hit}</b>`);
 };
 
 const latest = (e: VocabularyEntry) => e.occurrences[0];
@@ -53,7 +53,9 @@ export const toAnkiText = (entries: VocabularyEntry[]): string => {
 };
 
 const csvField = (v: string | number) => {
-  const s = String(v);
+  // Book text and hints are untrusted: keep spreadsheet apps from running a
+  // cell that starts like a formula.
+  const s = typeof v === 'string' && /^[=+\-@\t\r]/.test(v) ? `'${v}` : String(v);
   return /[",\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 };
 

@@ -99,3 +99,40 @@ describe('toCsv', () => {
     );
   });
 });
+
+describe('export on older engines', () => {
+  // WebKit before 16.4 throws on lookbehind, and the build rejects it in chunks.
+  it('bolds whole words without lookbehind support', () => {
+    const Native = RegExp;
+    globalThis.RegExp = function (pattern: string | RegExp, flags?: string) {
+      const src = typeof pattern === 'string' ? pattern : pattern.source;
+      if (src.includes('(?<!') || src.includes('(?<=')) throw new SyntaxError('lookbehind');
+      return new Native(pattern, flags);
+    } as unknown as RegExpConstructor;
+    try {
+      const text = toAnkiText([
+        entry({ word: 'run', occurrences: [{ sentence: 'Run, run! Rerun.', at: 1 }] }),
+      ]);
+      expect(text).toContain('<div><b>Run</b>, <b>run</b>! Rerun.</div>');
+    } finally {
+      globalThis.RegExp = Native;
+    }
+  });
+});
+
+describe('toCsv formulas', () => {
+  it('stops spreadsheet apps from running a cell as a formula', () => {
+    const csv = toCsv([
+      entry({
+        word: '=HYPERLINK("x")',
+        hint: '+1',
+        occurrences: [{ sentence: '-Go, he said.', at: 1, bookTitle: '@home' }],
+      }),
+    ]);
+    const row = csv.split('\r\n')[1]!;
+    expect(row.startsWith(`"'=HYPERLINK(""x"")",`)).toBe(true);
+    expect(row).toContain(",'+1,");
+    expect(row).toContain(`"'-Go, he said."`);
+    expect(row).toContain(",'@home,");
+  });
+});
