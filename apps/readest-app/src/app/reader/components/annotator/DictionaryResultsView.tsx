@@ -525,7 +525,8 @@ export const VocabularyChips: React.FC<{ word: string; lang: string }> = ({ word
             aria-pressed={active}
             onClick={() => toggle(chip.state)}
             className={clsx(
-              'h-6 rounded-full border px-3 text-xs',
+              'min-h-8 rounded-full border px-3 text-xs',
+              'focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-base-content/15',
               active
                 ? 'btn-contrast'
                 : 'eink-bordered border-base-content/20 text-base-content/70 not-eink:hover:bg-base-200/60',
