@@ -53,6 +53,15 @@ describe('entryId', () => {
 });
 
 describe('extractSentence', () => {
+  it('caps the context when the selection leaves no room for it', () => {
+    const before = `Start. ${'a '.repeat(200)}`;
+    const after = ` ${'b '.repeat(200)}end.`;
+    for (const len of [MAX_SENTENCE_LEN - 1, MAX_SENTENCE_LEN - 2]) {
+      const s = extractSentence(before, 'x'.repeat(len), after);
+      expect(s.length).toBeLessThanOrEqual(MAX_SENTENCE_LEN + 2);
+    }
+  });
+
   it('caps a selection longer than the limit', () => {
     const long = 'word '.repeat(80).trim();
     const s = extractSentence('Before. Some context ', long, ' after it. Next.');

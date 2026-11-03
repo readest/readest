@@ -38,8 +38,9 @@ export const extractSentence = (before: string, word: string, after: string): st
   const w = collapse(word);
   if (w.length >= MAX_SENTENCE_LEN) return `${w.slice(0, MAX_SENTENCE_LEN).trimEnd()}…`;
   const half = Math.max(0, Math.floor((MAX_SENTENCE_LEN - w.length) / 2));
-  if (pre.length > half) pre = `…${pre.slice(-half).trimStart()}`;
-  if (post.length > half) post = `${post.slice(0, half).trimEnd()}…`;
+  // slice(-0) would keep everything: with no room left, drop the context.
+  if (pre.length > half) pre = half ? `…${pre.slice(-half).trimStart()}` : '';
+  if (post.length > half) post = half ? `${post.slice(0, half).trimEnd()}…` : '';
   return `${pre}${w}${post}`.trim();
 };
 
