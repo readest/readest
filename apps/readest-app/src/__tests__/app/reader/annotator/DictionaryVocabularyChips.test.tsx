@@ -60,6 +60,19 @@ describe('dictionary vocabulary chips', () => {
     expect(entries()[0]!.occurrences[0]!.sentence).toBe('It was pure serendipity.');
   });
 
+  it('records a new sentence for the same word while the popup stays open', () => {
+    const { rerender } = sheet({ capture });
+    const next = {
+      lang: 'en',
+      occurrence: { sentence: 'Serendipity again.', at: 200, bookHash: 'b1', cfi: 'c2' },
+    };
+    rerender(<DictionarySheet word='Serendipity' onDismiss={() => {}} capture={next} />);
+    expect(entries()[0]!.occurrences.map((o) => o.sentence)).toEqual([
+      'Serendipity again.',
+      'It was pure serendipity.',
+    ]);
+  });
+
   it('toggles Learning on and off', () => {
     sheet({ capture });
     const learning = screen.getByRole('button', { name: 'Learning' });

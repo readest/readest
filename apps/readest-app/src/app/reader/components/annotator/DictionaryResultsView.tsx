@@ -174,8 +174,16 @@ export function useDictionaryResults({
       lang: capture.lang,
       occurrence: capture.occurrence,
     });
+    // Keyed on the occurrence's book and sentence rather than the capture
+    // object, so a new sentence for the same word is saved too.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [word]);
+  }, [
+    word,
+    capture?.lang,
+    capture?.occurrence?.bookHash,
+    capture?.occurrence?.sentence,
+    saveLookups,
+  ]);
 
   // Reset the history when the host reopens with a new word from outside
   // (selection change in the reader). A double-click selection can carry
