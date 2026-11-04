@@ -291,6 +291,14 @@ describe('a re-packaged copy of a book', () => {
     expect(h.rows.has('h2|n1')).toBe(false);
   });
 
+  test('pushes no live rows of its own to give them xpointers', async () => {
+    const bare = { xpointer0: undefined, xpointer1: undefined };
+    openBook('h2', [note('n1', bare), note('n2', bare)], NOW - 2.5 * DAY);
+    await elapse(12_000);
+    expect(pushed.flat().filter((n) => !n['deletedAt'])).toEqual([]);
+    expect(h.rows.has('h2|n1')).toBe(false);
+  });
+
   test('leaves other devices with the edit and the deletion', async () => {
     openBook('h2', [note('n1'), note('n2')], NOW - 2.5 * DAY);
     await elapse(12_000);

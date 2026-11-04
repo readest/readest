@@ -27,6 +27,12 @@ export const useNotesSync = (bookKey: string) => {
 
   const config = getConfig(bookKey);
 
+  // A note pulled from another copy of the book has no row under this one:
+  // pushing it for an xpointer or an anchor would insert a row stamped now, and
+  // that stale copy would outrank the real one everywhere.
+  const isFromThisCopy = (note: BookNote) =>
+    !note.bookHash || note.bookHash === getBookData(bookKey)?.book?.hash;
+
   // Fixed-layout formats have no xpointers.
   const needsXPointer = (note: BookNote) => {
     const format = getBookData(bookKey)?.book?.format;
@@ -37,14 +43,13 @@ export const useNotesSync = (bookKey: string) => {
       xpointerTriedRef.current.get(note.id) !== note.cfi &&
       !!format &&
       !FIXED_LAYOUT_FORMATS.has(format) &&
-      !!getView(bookKey)
+      !!getView(bookKey) &&
+      isFromThisCopy(note)
     );
   };
 
   // CrossPoint reads EPUBs: their highlights carry its anchor too, the way
-  // every note carries KOReader's xpointers. A note pulled from another copy of
-  // the book has no row under this one: pushing it for an anchor would insert a
-  // row stamped now, and that stale copy would outrank the real one everywhere.
+  // every note carries KOReader's xpointers.
   const needsCrossPointAnchor = (note: BookNote) => {
     const bookData = getBookData(bookKey);
     return (
@@ -55,7 +60,7 @@ export const useNotesSync = (bookKey: string) => {
       anchorTriedRef.current.get(note.id) !== note.cfi &&
       bookData?.book?.format === 'EPUB' &&
       !!bookData.bookDoc &&
-      (!note.bookHash || note.bookHash === bookData.book.hash)
+      isFromThisCopy(note)
     );
   };
 
