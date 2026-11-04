@@ -62,6 +62,20 @@ describe('customTTSAdapter', () => {
     expect(unpacked!.apiKey).toBe('');
   });
 
+  test.each([
+    'instructions',
+    'responseFormat',
+    'voices',
+    'disabled',
+  ] as const)('clearing %s reaches other devices', (key) => {
+    const before = customTTSAdapter.pack(service);
+    const after = customTTSAdapter.pack({ ...service, [key]: undefined });
+    // undefined would pass `toHaveProperty` but is dropped by JSON.
+    expect(after[key]).toBe(key === 'disabled' ? false : null);
+    const unpacked = customTTSAdapter.unpackRow(row({ ...before, ...after }), '');
+    expect(unpacked).not.toHaveProperty(key);
+  });
+
   test('rejects rows without a name, base URL or model', () => {
     const { id: _id, ...fields } = service;
     for (const missing of ['name', 'baseUrl', 'model']) {
