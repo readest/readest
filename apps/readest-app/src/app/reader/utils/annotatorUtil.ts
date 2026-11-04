@@ -381,39 +381,6 @@ export function decideAnnotationDraw(
 }
 
 /**
- * Overlayer draw function for a copy of a global annotation: a dashed
- * underline in the theme's text color, laid out like `Overlayer.underline`.
- * The stroke is the CSS variable rather than a resolved color because
- * overlays aren't redrawn on a theme switch; it's set as a style since SVG
- * presentation attributes can't read variables.
- */
-export function drawDashedUnderline(
-  rects: Array<{ left: number; right: number; top: number; bottom: number }>,
-  options: { opacity?: number; width?: number; padding?: number; writingMode?: string } = {},
-): SVGGElement {
-  const { opacity = 0.5, width = 1, padding = 0, writingMode } = options;
-  const svg = (tag: string) => document.createElementNS('http://www.w3.org/2000/svg', tag);
-  const g = svg('g') as SVGGElement;
-  g.style.setProperty('stroke', 'var(--color-base-content)');
-  g.setAttribute('stroke-opacity', `${opacity}`);
-  g.setAttribute('stroke-width', `${width}`);
-  g.setAttribute('stroke-dasharray', `${width * 2} ${width * 2}`);
-  const vertical = writingMode === 'vertical-rl' || writingMode === 'vertical-lr';
-  for (const { left, right, top, bottom } of rects) {
-    const line = svg('line');
-    const [x1, y1, x2, y2] = vertical
-      ? [right + padding, top, right + padding, bottom]
-      : [left, bottom + padding, right, bottom + padding];
-    line.setAttribute('x1', `${x1}`);
-    line.setAttribute('y1', `${y1}`);
-    line.setAttribute('x2', `${x2}`);
-    line.setAttribute('y2', `${y2}`);
-    g.append(line);
-  }
-  return g;
-}
-
-/**
  * Style callback for foliate's `draw-annotation` overlay event. Shared by the
  * main view (Annotator) and the footnote popup view (FootnotePopup, which
  * draws mapped copies of annotations inside the popup document).
@@ -465,9 +432,15 @@ export function drawAnnotationOverlay(
       ? (lineHeightValue - fontSizeValue) / 2 - strokeWidth + verticalCompensation
       : (lineHeightValue - fontSizeValue) / 2 - strokeWidth + horizontalCompensation;
     if (kind === 'global') {
-      // Full opacity on black-and-white e-ink, which can't show a faded stroke.
-      // Still dashed, so a copy stays distinct from an underline highlight.
-      draw(drawDashedUnderline, { writingMode, padding, opacity: isBwEink ? 1 : 0.5 });
+      // The theme variable, not a resolved color: overlays aren't redrawn on a
+      // theme switch. Full opacity on black-and-white e-ink, which can't show a
+      // faded stroke; still dashed, so a copy stays distinct from an underline.
+      draw(Overlayer.dashedUnderline, {
+        writingMode,
+        padding,
+        color: 'var(--color-base-content)',
+        opacity: isBwEink ? 1 : 0.5,
+      });
       return;
     }
     draw(Overlayer[kind], {
