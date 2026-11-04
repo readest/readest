@@ -264,6 +264,41 @@ pub(crate) async fn set_lookup_app<R: Runtime>(
 }
 
 #[command]
+pub(crate) async fn anki_status<R: Runtime>(app: AppHandle<R>) -> Result<AnkiStatusResponse> {
+    app.native_bridge().anki_status()
+}
+
+#[command]
+pub(crate) async fn anki_request_permission<R: Runtime>(
+    app: AppHandle<R>,
+) -> Result<AnkiPermissionResponse> {
+    app.native_bridge().anki_request_permission()
+}
+
+#[command]
+pub(crate) async fn anki_list_decks<R: Runtime>(
+    app: AppHandle<R>,
+) -> Result<AnkiListDecksResponse> {
+    app.native_bridge().anki_list_decks()
+}
+
+#[command]
+pub(crate) async fn anki_read_deck<R: Runtime>(
+    app: AppHandle<R>,
+    payload: AnkiReadDeckRequest,
+) -> Result<AnkiReadDeckResponse> {
+    app.native_bridge().anki_read_deck(payload)
+}
+
+#[command]
+pub(crate) async fn anki_add_notes<R: Runtime>(
+    app: AppHandle<R>,
+    payload: AnkiAddNotesRequest,
+) -> Result<AnkiAddNotesResponse> {
+    app.native_bridge().anki_add_notes(payload)
+}
+
+#[command]
 pub(crate) async fn select_directory<R: Runtime>(
     app: AppHandle<R>,
     callback_state: State<'_, DirectoryCallbackState<R>>,

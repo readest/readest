@@ -58,11 +58,13 @@ import androidx.browser.customtabs.CustomTabsIntent
 import app.tauri.annotation.Command
 import app.tauri.annotation.InvokeArg
 import app.tauri.annotation.Permission
+import app.tauri.annotation.PermissionCallback
 import app.tauri.annotation.TauriPlugin
 import app.tauri.plugin.JSObject
 import app.tauri.plugin.JSArray
 import app.tauri.plugin.Plugin
 import app.tauri.plugin.Invoke
+import app.tauri.PermissionState
 import org.json.JSONArray
 import java.io.*
 import kotlin.math.abs
@@ -143,6 +145,24 @@ class OpenExternalUrlArgs {
 @InvokeArg
 class ShowLookupPopoverArgs {
     var word: String? = null
+}
+
+@InvokeArg
+class AnkiReadDeckArgs {
+    var deckId: Long = 0
+    var withCards: Boolean = false
+}
+
+@InvokeArg
+class AnkiOutgoingNoteArg {
+    var fields: Array<String> = emptyArray()
+    var tags: Array<String> = emptyArray()
+}
+
+@InvokeArg
+class AnkiAddNotesArgs {
+    var deckName: String = ""
+    var notes: Array<AnkiOutgoingNoteArg> = emptyArray()
 }
 
 @InvokeArg
@@ -257,6 +277,7 @@ interface KeyDownInterceptor {
 @TauriPlugin(
   permissions = [
     Permission(strings = [Manifest.permission.MANAGE_EXTERNAL_STORAGE], alias = "manageStorage"),
+    Permission(strings = [AnkiDroidLink.PERMISSION], alias = "anki"),
   ]
 )
 class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
@@ -2087,6 +2108,113 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
                 .apply()
         }
         invoke.resolve()
+    }
+
+    // AnkiDroid link (#789): the Vocabulary window sends words to an
+    // AnkiDroid deck and imports decks back. Expected failures resolve with
+    // `error` ("permission", "not_ready") so the UI can explain them.
+
+    @Command
+    fun anki_status(invoke: Invoke) {
+        val installed = try {
+            activity.packageManager.getPackageInfo(AnkiDroidLink.PACKAGE, 0)
+            true
+        } catch (e: PackageManager.NameNotFoundException) {
+            false
+        }
+        invoke.resolve(JSObject().apply {
+            put("installed", installed)
+            put("granted", getPermissionState("anki") == PermissionState.GRANTED)
+        })
+    }
+
+    @Command
+    fun anki_request_permission(invoke: Invoke) {
+        if (getPermissionState("anki") == PermissionState.GRANTED) {
+            invoke.resolve(JSObject().apply { put("granted", true) })
+        } else {
+            requestPermissionForAlias("anki", invoke, "ankiPermissionCallback")
+        }
+    }
+
+    @PermissionCallback
+    private fun ankiPermissionCallback(invoke: Invoke) {
+        invoke.resolve(JSObject().apply {
+            put("granted", getPermissionState("anki") == PermissionState.GRANTED)
+        })
+    }
+
+    private fun ankiCall(invoke: Invoke, work: (android.content.ContentResolver) -> JSObject) {
+        pluginScope.launch {
+            try {
+                invoke.resolve(withContext(Dispatchers.IO) { work(activity.contentResolver) })
+            } catch (e: SecurityException) {
+                invoke.resolve(JSObject().apply { put("error", "permission") })
+            } catch (e: IllegalStateException) {
+                // AnkiDroid has not set up its collection yet (never opened).
+                invoke.resolve(JSObject().apply { put("error", "not_ready") })
+            } catch (e: Exception) {
+                Log.e("NativeBridgePlugin", "AnkiDroid call failed", e)
+                invoke.reject("AnkiDroid call failed: ${e.message}")
+            }
+        }
+    }
+
+    @Command
+    fun anki_list_decks(invoke: Invoke) = ankiCall(invoke) { cr ->
+        val decks = JSArray()
+        AnkiDroidLink.listDecks(cr).forEach { d ->
+            decks.put(JSObject().apply {
+                put("id", d.id)
+                put("name", d.name)
+            })
+        }
+        JSObject().apply { put("decks", decks) }
+    }
+
+    @Command
+    fun anki_read_deck(invoke: Invoke) {
+        val args = invoke.parseArgs(AnkiReadDeckArgs::class.java)
+        ankiCall(invoke) { cr ->
+            val notes = JSArray()
+            AnkiDroidLink.readNotes(cr, args.deckId).forEach { n ->
+                notes.put(JSObject().apply {
+                    put("id", n.id)
+                    put("fields", JSArray(n.fields))
+                    put("tags", n.tags)
+                })
+            }
+            val res = JSObject().apply { put("notes", notes) }
+            if (args.withCards) {
+                // The cards URI arrived in AnkiDroid 2.24; older versions reject it.
+                val cards = try {
+                    AnkiDroidLink.readCards(cr, args.deckId)
+                } catch (e: IllegalArgumentException) {
+                    null
+                }
+                if (cards != null) {
+                    val list = JSArray()
+                    cards.forEach { c ->
+                        list.put(JSObject().apply {
+                            put("noteId", c.noteId)
+                            put("cardType", c.type)
+                            put("interval", c.interval)
+                        })
+                    }
+                    res.put("cards", list)
+                }
+            }
+            res
+        }
+    }
+
+    @Command
+    fun anki_add_notes(invoke: Invoke) {
+        val args = invoke.parseArgs(AnkiAddNotesArgs::class.java)
+        ankiCall(invoke) { cr ->
+            val notes = args.notes.map { it.fields.toList() to it.tags.toList() }
+            JSObject().apply { put("added", AnkiDroidLink.addNotes(cr, args.deckName, notes)) }
+        }
     }
 
     /**

@@ -323,6 +323,42 @@ impl<R: Runtime> NativeBridge<R> {
             .map_err(Into::into)
     }
 
+    pub fn anki_status(&self) -> crate::Result<AnkiStatusResponse> {
+        self.0
+            .run_mobile_plugin("anki_status", ())
+            .map_err(Into::into)
+    }
+
+    pub fn anki_request_permission(&self) -> crate::Result<AnkiPermissionResponse> {
+        self.0
+            .run_mobile_plugin("anki_request_permission", ())
+            .map_err(Into::into)
+    }
+
+    pub fn anki_list_decks(&self) -> crate::Result<AnkiListDecksResponse> {
+        self.0
+            .run_mobile_plugin("anki_list_decks", ())
+            .map_err(Into::into)
+    }
+
+    pub fn anki_read_deck(
+        &self,
+        payload: AnkiReadDeckRequest,
+    ) -> crate::Result<AnkiReadDeckResponse> {
+        self.0
+            .run_mobile_plugin("anki_read_deck", payload)
+            .map_err(Into::into)
+    }
+
+    pub fn anki_add_notes(
+        &self,
+        payload: AnkiAddNotesRequest,
+    ) -> crate::Result<AnkiAddNotesResponse> {
+        self.0
+            .run_mobile_plugin("anki_add_notes", payload)
+            .map_err(Into::into)
+    }
+
     pub fn set_lookup_app(&self, payload: SetLookupAppRequest) -> crate::Result<()> {
         self.0
             .run_mobile_plugin("set_lookup_app", payload)
