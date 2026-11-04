@@ -2,6 +2,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { jwtDecode } from 'jwt-decode';
 import {
   getCustomizationPurchased,
+  isAnkiAllowed,
   isCustomizationAllowed,
   isCustomTranslatorAllowed,
   isSelfHosted,
@@ -106,5 +107,15 @@ describe('isCustomTranslatorAllowed', () => {
   it('allows a signed-out reader on a self-hosted deployment', () => {
     vi.stubEnv('NEXT_PUBLIC_SELF_HOSTED', 'true');
     expect(isCustomTranslatorAllowed(null)).toBe(true);
+  });
+});
+
+describe('isAnkiAllowed', () => {
+  it('needs a paid plan or the customization purchase', () => {
+    expect(isAnkiAllowed('free', false)).toBe(false);
+    expect(isAnkiAllowed('plus', false)).toBe(true);
+    expect(isAnkiAllowed('pro', false)).toBe(true);
+    expect(isAnkiAllowed('free', true)).toBe(true);
+    expect(isAnkiAllowed('purchase', false)).toBe(false);
   });
 });
