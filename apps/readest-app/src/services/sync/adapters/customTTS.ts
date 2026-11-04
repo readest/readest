@@ -48,8 +48,7 @@ export const customTTSAdapter: ReplicaAdapter<CustomTTSService> = {
       updatedAt: s.updatedAt,
     };
     // Always sent, so clearing one reaches other devices: fields merge per key,
-    // and a key left out keeps its old value there (re-enabling a service
-    // would otherwise be undone by the next pull).
+    // and a key left out keeps its old value there.
     fields['instructions'] = s.instructions ?? null;
     fields['responseFormat'] = s.responseFormat ?? null;
     fields['voices'] = s.voices ?? null;

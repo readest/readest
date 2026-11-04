@@ -62,7 +62,6 @@ describe('customTTSAdapter', () => {
     expect(unpacked!.apiKey).toBe('');
   });
 
-  // The server merges fields per key, so a key left out of the push keeps its old value.
   test.each(['instructions', 'responseFormat', 'voices', 'disabled'] as const)(
     'clearing %s reaches other devices',
     (key) => {
