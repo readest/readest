@@ -101,10 +101,11 @@ describe('drawAnnotationOverlay for a global copy', () => {
     expect(line.getAttribute('y1')).toBe(line.getAttribute('y2'));
   });
 
-  it('draws solid ink on black-and-white e-ink', () => {
+  it('draws at full opacity, still dashed, on black-and-white e-ink', () => {
     const g = render(true);
     expect(g.style.getPropertyValue('stroke')).toBe('var(--color-base-content)');
     expect(g.getAttribute('stroke-opacity')).toBe('1');
+    expect(g.getAttribute('stroke-dasharray')).toBe('2 2');
   });
 });
 
@@ -123,6 +124,7 @@ describe('resolveAnnotationClick', () => {
       annotation: global,
       cfi: 'epubcfi(/6/4!/4)',
       isNote: true,
+      isCopy: true,
     });
   });
 
@@ -132,6 +134,7 @@ describe('resolveAnnotationClick', () => {
       annotation: plain,
       cfi: 'epubcfi(/6/4!/4)',
       isNote: false,
+      isCopy: true,
     });
   });
 

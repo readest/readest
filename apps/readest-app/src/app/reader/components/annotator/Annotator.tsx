@@ -855,7 +855,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
     const { booknotes = [] } = getConfig(bookKey)!;
     const resolved = resolveAnnotationClick(value, booknotes);
     if (!resolved) return;
-    const { annotation, cfi, isNote } = resolved;
+    const { annotation, cfi, isNote, isCopy } = resolved;
 
     const { style, color, text, note } = annotation;
     const selection = {
@@ -884,7 +884,9 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
         setSelectedStyle(style);
         setSelectedColor(color);
       }
-      if (style && range) {
+      // No range handles on a copy of a global annotation: dragging them would
+      // move the annotation itself to the copy's text.
+      if (style && range && !isCopy) {
         setEditingAnnotation(annotation);
       }
     }
@@ -1671,8 +1673,11 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
     // Popup-window selections carry the CFI mapped into the pristine section;
     // recomputing from the popup range would yield an unresolvable path.
     const parts = selection.segments ?? [selection];
+    // An annotated selection keeps the CFI of the record it opened: on a copy
+    // of a global highlight the range is the copy's, not the record's.
+    const keepCfi = selection.popup || (selection.annotated && parts.length === 1);
     const cfis = parts.map((part) =>
-      selection.popup ? selection.cfi : view?.getCFI(part.index, part.range),
+      keepCfi ? selection.cfi : view?.getCFI(part.index, part.range),
     );
     const findExisting = (cfi: string) =>
       annotations.findIndex(

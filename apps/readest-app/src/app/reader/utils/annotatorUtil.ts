@@ -465,7 +465,8 @@ export function drawAnnotationOverlay(
       ? (lineHeightValue - fontSizeValue) / 2 - strokeWidth + verticalCompensation
       : (lineHeightValue - fontSizeValue) / 2 - strokeWidth + horizontalCompensation;
     if (kind === 'global') {
-      // Solid on black-and-white e-ink, which can't show a faded stroke.
+      // Full opacity on black-and-white e-ink, which can't show a faded stroke.
+      // Still dashed, so a copy stays distinct from an underline highlight.
       draw(drawDashedUnderline, { writingMode, padding, opacity: isBwEink ? 1 : 0.5 });
       return;
     }
@@ -485,7 +486,7 @@ export function drawAnnotationOverlay(
 export function resolveAnnotationClick(
   value: string,
   booknotes: BookNote[],
-): { annotation: BookNote; cfi: string; isNote: boolean } | undefined {
+): { annotation: BookNote; cfi: string; isNote: boolean; isCopy: boolean } | undefined {
   let isNote = value.startsWith(NOTE_PREFIX);
   const rawValue = isNote ? value.replace(NOTE_PREFIX, '') : value;
   const isCopy = isSyntheticGlobalValue(rawValue);
@@ -495,7 +496,7 @@ export function resolveAnnotationClick(
   );
   if (isCopy && candidates.some((b) => b.note?.trim())) isNote = true;
   const annotation = candidates.find((b) => (!isNote && b.style) || (isNote && b.note));
-  return annotation ? { annotation, cfi, isNote } : undefined;
+  return annotation ? { annotation, cfi, isNote, isCopy } : undefined;
 }
 
 /**
