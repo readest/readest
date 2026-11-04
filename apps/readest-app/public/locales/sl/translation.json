@@ -2864,17 +2864,12 @@
   "Added {{count}} words to Anki_two": "Dodano v Anki: {{count}}",
   "Added {{count}} words to Anki_few": "Dodano v Anki: {{count}}",
   "Added {{count}} words to Anki_other": "Dodano v Anki: {{count}}",
-  "{{count}} already in Anki_one": "Že v Ankiju: {{count}}",
-  "{{count}} already in Anki_two": "Že v Ankiju: {{count}}",
-  "{{count}} already in Anki_few": "Že v Ankiju: {{count}}",
-  "{{count}} already in Anki_other": "Že v Ankiju: {{count}}",
   "No decks in AnkiDroid.": "V AnkiDroidu ni kompletov.",
   "{{count}} skipped_one": "Preskočeno: {{count}}",
   "{{count}} skipped_two": "Preskočeno: {{count}}",
   "{{count}} skipped_few": "Preskočeno: {{count}}",
   "{{count}} skipped_other": "Preskočeno: {{count}}",
   "Update AnkiDroid to bring back mastered words.": "Posodobite AnkiDroid, da vrnete osvojene besede.",
-  "Send to Anki": "Pošlji v Anki",
   "Imported {{count}} new words_one": "Uvoženih novih besed: {{count}}",
   "Imported {{count}} new words_two": "Uvoženih novih besed: {{count}}",
   "Imported {{count}} new words_few": "Uvoženih novih besed: {{count}}",
@@ -2882,5 +2877,8 @@
   "{{count}} now Mastered_one": "Zdaj »Osvojeno«: {{count}}",
   "{{count}} now Mastered_two": "Zdaj »Osvojeno«: {{count}}",
   "{{count}} now Mastered_few": "Zdaj »Osvojeno«: {{count}}",
-  "{{count}} now Mastered_other": "Zdaj »Osvojeno«: {{count}}"
+  "{{count}} now Mastered_other": "Zdaj »Osvojeno«: {{count}}",
+  "Sync with Anki": "Sinhroniziraj z Ankijem",
+  "Import Anki Deck...": "Uvozi komplet iz Ankija...",
+  "Already in sync with Anki": "Že sinhronizirano z Ankijem"
 }

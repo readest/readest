@@ -2726,15 +2726,15 @@
   "Could not reach AnkiDroid.": "AnkiDroid-ஐ அணுக முடியவில்லை.",
   "Added {{count}} words to Anki_one": "Anki-இல் {{count}} சொல் சேர்க்கப்பட்டது",
   "Added {{count}} words to Anki_other": "Anki-இல் {{count}} சொற்கள் சேர்க்கப்பட்டன",
-  "{{count}} already in Anki_one": "{{count}} ஏற்கெனவே Anki-இல் உள்ளது",
-  "{{count}} already in Anki_other": "{{count}} ஏற்கெனவே Anki-இல் உள்ளன",
   "No decks in AnkiDroid.": "AnkiDroid-இல் டெக்குகள் இல்லை.",
   "{{count}} skipped_one": "{{count}} தவிர்க்கப்பட்டது",
   "{{count}} skipped_other": "{{count}} தவிர்க்கப்பட்டன",
   "Update AnkiDroid to bring back mastered words.": "கற்ற சொற்களைத் திரும்பப் பெற AnkiDroid-ஐப் புதுப்பிக்கவும்.",
-  "Send to Anki": "Anki-க்கு அனுப்பு",
   "Imported {{count}} new words_one": "{{count}} புதிய சொல் இறக்குமதி செய்யப்பட்டது",
   "Imported {{count}} new words_other": "{{count}} புதிய சொற்கள் இறக்குமதி செய்யப்பட்டன",
   "{{count}} now Mastered_one": "{{count}} இப்போது “கற்றுவிட்டேன்”",
-  "{{count}} now Mastered_other": "{{count}} இப்போது “கற்றுவிட்டேன்”"
+  "{{count}} now Mastered_other": "{{count}} இப்போது “கற்றுவிட்டேன்”",
+  "Sync with Anki": "Anki உடன் ஒத்திசைக்கவும்",
+  "Import Anki Deck...": "Anki டெக்கை இறக்குமதி செய்...",
+  "Already in sync with Anki": "ஏற்கனவே Anki உடன் ஒத்திசைக்கப்பட்டது"
 }

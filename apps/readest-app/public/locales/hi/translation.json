@@ -2726,15 +2726,15 @@
   "Could not reach AnkiDroid.": "AnkiDroid से संपर्क नहीं हो सका।",
   "Added {{count}} words to Anki_one": "Anki में {{count}} शब्द जोड़ा गया",
   "Added {{count}} words to Anki_other": "Anki में {{count}} शब्द जोड़े गए",
-  "{{count}} already in Anki_one": "{{count}} पहले से Anki में है",
-  "{{count}} already in Anki_other": "{{count}} पहले से Anki में हैं",
   "No decks in AnkiDroid.": "AnkiDroid में कोई डेक नहीं है।",
   "{{count}} skipped_one": "{{count}} छोड़ा गया",
   "{{count}} skipped_other": "{{count}} छोड़े गए",
   "Update AnkiDroid to bring back mastered words.": "सीखे गए शब्द वापस लाने के लिए AnkiDroid अपडेट करें।",
-  "Send to Anki": "Anki पर भेजें",
   "Imported {{count}} new words_one": "{{count}} नया शब्द इम्पोर्ट हुआ",
   "Imported {{count}} new words_other": "{{count}} नए शब्द इम्पोर्ट हुए",
   "{{count}} now Mastered_one": "{{count}} अब “सीख लिया”",
-  "{{count}} now Mastered_other": "{{count}} अब “सीख लिया”"
+  "{{count}} now Mastered_other": "{{count}} अब “सीख लिया”",
+  "Sync with Anki": "Anki के साथ सिंक करें",
+  "Import Anki Deck...": "Anki डेक इम्पोर्ट करें...",
+  "Already in sync with Anki": "Anki के साथ पहले से सिंक है"
 }

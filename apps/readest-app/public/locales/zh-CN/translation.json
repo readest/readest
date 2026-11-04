@@ -2657,11 +2657,12 @@
   "Open AnkiDroid once, then try again.": "请先打开一次 AnkiDroid，然后重试。",
   "Could not reach AnkiDroid.": "无法连接 AnkiDroid。",
   "Added {{count}} words to Anki_other": "已向 Anki 添加 {{count}} 个词",
-  "{{count}} already in Anki_other": "{{count}} 个已在 Anki 中",
   "No decks in AnkiDroid.": "AnkiDroid 中没有牌组。",
   "{{count}} skipped_other": "已跳过 {{count}} 个",
   "Update AnkiDroid to bring back mastered words.": "请更新 AnkiDroid 以导回已掌握的词。",
-  "Send to Anki": "发送到 Anki",
   "Imported {{count}} new words_other": "已导入 {{count}} 个新词",
-  "{{count}} now Mastered_other": "{{count}} 个变为“已掌握”"
+  "{{count}} now Mastered_other": "{{count}} 个变为“已掌握”",
+  "Sync with Anki": "与 Anki 同步",
+  "Import Anki Deck...": "导入 Anki 牌组...",
+  "Already in sync with Anki": "已与 Anki 同步"
 }

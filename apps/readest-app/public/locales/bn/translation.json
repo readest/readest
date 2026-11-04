@@ -2726,15 +2726,15 @@
   "Could not reach AnkiDroid.": "AnkiDroid-এর সাথে সংযোগ করা যায়নি।",
   "Added {{count}} words to Anki_one": "Anki-তে {{count}}টি শব্দ যোগ হয়েছে",
   "Added {{count}} words to Anki_other": "Anki-তে {{count}}টি শব্দ যোগ হয়েছে",
-  "{{count}} already in Anki_one": "{{count}}টি আগে থেকেই Anki-তে আছে",
-  "{{count}} already in Anki_other": "{{count}}টি আগে থেকেই Anki-তে আছে",
   "No decks in AnkiDroid.": "AnkiDroid-এ কোনো ডেক নেই।",
   "{{count}} skipped_one": "{{count}}টি বাদ দেওয়া হয়েছে",
   "{{count}} skipped_other": "{{count}}টি বাদ দেওয়া হয়েছে",
   "Update AnkiDroid to bring back mastered words.": "আয়ত্ত করা শব্দ ফিরিয়ে আনতে AnkiDroid আপডেট করুন।",
-  "Send to Anki": "Anki-তে পাঠান",
   "Imported {{count}} new words_one": "{{count}}টি নতুন শব্দ ইমপোর্ট হয়েছে",
   "Imported {{count}} new words_other": "{{count}}টি নতুন শব্দ ইমপোর্ট হয়েছে",
   "{{count}} now Mastered_one": "{{count}}টি এখন “আয়ত্ত”",
-  "{{count}} now Mastered_other": "{{count}}টি এখন “আয়ত্ত”"
+  "{{count}} now Mastered_other": "{{count}}টি এখন “আয়ত্ত”",
+  "Sync with Anki": "Anki-এর সাথে সিঙ্ক করুন",
+  "Import Anki Deck...": "Anki ডেক ইমপোর্ট করুন...",
+  "Already in sync with Anki": "Anki-এর সাথে ইতিমধ্যে সিঙ্ক করা আছে"
 }

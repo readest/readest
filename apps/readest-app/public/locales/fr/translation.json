@@ -2795,19 +2795,18 @@
   "Added {{count}} words to Anki_one": "{{count}} mot ajouté à Anki",
   "Added {{count}} words to Anki_many": "{{count}} mots ajoutés à Anki",
   "Added {{count}} words to Anki_other": "{{count}} mots ajoutés à Anki",
-  "{{count}} already in Anki_one": "{{count}} déjà dans Anki",
-  "{{count}} already in Anki_many": "{{count}} déjà dans Anki",
-  "{{count}} already in Anki_other": "{{count}} déjà dans Anki",
   "No decks in AnkiDroid.": "Aucun paquet dans AnkiDroid.",
   "{{count}} skipped_one": "{{count}} ignoré",
   "{{count}} skipped_many": "{{count}} ignorés",
   "{{count}} skipped_other": "{{count}} ignorés",
   "Update AnkiDroid to bring back mastered words.": "Mettez à jour AnkiDroid pour récupérer les mots maîtrisés.",
-  "Send to Anki": "Envoyer vers Anki",
   "Imported {{count}} new words_one": "{{count}} nouveau mot importé",
   "Imported {{count}} new words_many": "{{count}} nouveaux mots importés",
   "Imported {{count}} new words_other": "{{count}} nouveaux mots importés",
   "{{count}} now Mastered_one": "{{count}} passe en « Maîtrisé »",
   "{{count}} now Mastered_many": "{{count}} passent en « Maîtrisé »",
-  "{{count}} now Mastered_other": "{{count}} passent en « Maîtrisé »"
+  "{{count}} now Mastered_other": "{{count}} passent en « Maîtrisé »",
+  "Sync with Anki": "Synchroniser avec Anki",
+  "Import Anki Deck...": "Importer un paquet Anki...",
+  "Already in sync with Anki": "Déjà synchronisé avec Anki"
 }

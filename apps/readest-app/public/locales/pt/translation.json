@@ -2795,19 +2795,18 @@
   "Added {{count}} words to Anki_one": "{{count}} palavra adicionada ao Anki",
   "Added {{count}} words to Anki_many": "{{count}} palavras adicionadas ao Anki",
   "Added {{count}} words to Anki_other": "{{count}} palavras adicionadas ao Anki",
-  "{{count}} already in Anki_one": "{{count}} já está no Anki",
-  "{{count}} already in Anki_many": "{{count}} já estão no Anki",
-  "{{count}} already in Anki_other": "{{count}} já estão no Anki",
   "No decks in AnkiDroid.": "Nenhum baralho no AnkiDroid.",
   "{{count}} skipped_one": "{{count}} ignorada",
   "{{count}} skipped_many": "{{count}} ignoradas",
   "{{count}} skipped_other": "{{count}} ignoradas",
   "Update AnkiDroid to bring back mastered words.": "Atualize o AnkiDroid para recuperar as palavras dominadas.",
-  "Send to Anki": "Enviar para o Anki",
   "Imported {{count}} new words_one": "{{count}} palavra nova importada",
   "Imported {{count}} new words_many": "{{count}} palavras novas importadas",
   "Imported {{count}} new words_other": "{{count}} palavras novas importadas",
   "{{count}} now Mastered_one": "{{count}} agora “Dominada”",
   "{{count}} now Mastered_many": "{{count}} agora “Dominada”",
-  "{{count}} now Mastered_other": "{{count}} agora “Dominada”"
+  "{{count}} now Mastered_other": "{{count}} agora “Dominada”",
+  "Sync with Anki": "Sincronizar com o Anki",
+  "Import Anki Deck...": "Importar baralho do Anki...",
+  "Already in sync with Anki": "Já sincronizado com o Anki"
 }

@@ -2657,11 +2657,12 @@
   "Open AnkiDroid once, then try again.": "เปิด AnkiDroid หนึ่งครั้ง แล้วลองอีกครั้ง",
   "Could not reach AnkiDroid.": "ไม่สามารถติดต่อ AnkiDroid ได้",
   "Added {{count}} words to Anki_other": "เพิ่ม {{count}} คำไปยัง Anki แล้ว",
-  "{{count}} already in Anki_other": "มีอยู่ใน Anki แล้ว {{count}} คำ",
   "No decks in AnkiDroid.": "ไม่มีสำรับใน AnkiDroid",
   "{{count}} skipped_other": "ข้าม {{count}} รายการ",
   "Update AnkiDroid to bring back mastered words.": "อัปเดต AnkiDroid เพื่อนำคำที่จำได้แล้วกลับมา",
-  "Send to Anki": "ส่งไปยัง Anki",
   "Imported {{count}} new words_other": "นำเข้าคำใหม่ {{count}} คำ",
-  "{{count}} now Mastered_other": "{{count}} คำเป็น “จำได้แล้ว”"
+  "{{count}} now Mastered_other": "{{count}} คำเป็น “จำได้แล้ว”",
+  "Sync with Anki": "ซิงค์กับ Anki",
+  "Import Anki Deck...": "นำเข้าสำรับ Anki...",
+  "Already in sync with Anki": "ซิงค์กับ Anki แล้ว"
 }

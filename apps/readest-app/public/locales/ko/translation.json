@@ -2657,11 +2657,12 @@
   "Open AnkiDroid once, then try again.": "AnkiDroid를 한 번 연 다음 다시 시도하세요.",
   "Could not reach AnkiDroid.": "AnkiDroid에 연결할 수 없습니다.",
   "Added {{count}} words to Anki_other": "Anki에 단어 {{count}}개를 추가했습니다",
-  "{{count}} already in Anki_other": "{{count}}개는 이미 Anki에 있습니다",
   "No decks in AnkiDroid.": "AnkiDroid에 덱이 없습니다.",
   "{{count}} skipped_other": "{{count}}개 건너뜀",
   "Update AnkiDroid to bring back mastered words.": "익힌 단어를 가져오려면 AnkiDroid를 업데이트하세요.",
-  "Send to Anki": "Anki로 보내기",
   "Imported {{count}} new words_other": "새 단어 {{count}}개를 가져왔습니다",
-  "{{count}} now Mastered_other": "{{count}}개가 '익힘'으로 바뀜"
+  "{{count}} now Mastered_other": "{{count}}개가 '익힘'으로 바뀜",
+  "Sync with Anki": "Anki와 동기화",
+  "Import Anki Deck...": "Anki 덱 가져오기...",
+  "Already in sync with Anki": "이미 Anki와 동기화되어 있습니다"
 }

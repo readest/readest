@@ -2795,19 +2795,18 @@
   "Added {{count}} words to Anki_one": "{{count}} parola aggiunta ad Anki",
   "Added {{count}} words to Anki_many": "{{count}} parole aggiunte ad Anki",
   "Added {{count}} words to Anki_other": "{{count}} parole aggiunte ad Anki",
-  "{{count}} already in Anki_one": "{{count}} già in Anki",
-  "{{count}} already in Anki_many": "{{count}} già in Anki",
-  "{{count}} already in Anki_other": "{{count}} già in Anki",
   "No decks in AnkiDroid.": "Nessun mazzo in AnkiDroid.",
   "{{count}} skipped_one": "{{count}} saltata",
   "{{count}} skipped_many": "{{count}} saltate",
   "{{count}} skipped_other": "{{count}} saltate",
   "Update AnkiDroid to bring back mastered words.": "Aggiorna AnkiDroid per recuperare le parole imparate.",
-  "Send to Anki": "Invia ad Anki",
   "Imported {{count}} new words_one": "{{count}} nuova parola importata",
   "Imported {{count}} new words_many": "{{count}} nuove parole importate",
   "Imported {{count}} new words_other": "{{count}} nuove parole importate",
   "{{count}} now Mastered_one": "{{count}} ora «Imparata»",
   "{{count}} now Mastered_many": "{{count}} ora «Imparata»",
-  "{{count}} now Mastered_other": "{{count}} ora «Imparata»"
+  "{{count}} now Mastered_other": "{{count}} ora «Imparata»",
+  "Sync with Anki": "Sincronizza con Anki",
+  "Import Anki Deck...": "Importa mazzo Anki...",
+  "Already in sync with Anki": "Già sincronizzato con Anki"
 }

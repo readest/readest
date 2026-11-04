@@ -2657,11 +2657,12 @@
   "Open AnkiDroid once, then try again.": "AnkiDroid ཐེངས་གཅིག་ཁ་ཕྱེ་ནས་ཡང་བསྐྱར་ཚོད་ལྟ་གྱིས།",
   "Could not reach AnkiDroid.": "AnkiDroid ལ་འབྲེལ་བ་བྱེད་མ་ཐུབ།",
   "Added {{count}} words to Anki_other": "Anki ལ་ཚིག་ {{count}} སྣོན་ཟིན།",
-  "{{count}} already in Anki_other": "{{count}} Anki ནང་ཡོད་ཟིན།",
   "No decks in AnkiDroid.": "AnkiDroid ནང་ཤོག་བུ་ཚོགས་མེད།",
   "{{count}} skipped_other": "{{count}} མཆོང་ཟིན།",
   "Update AnkiDroid to bring back mastered words.": "ཤེས་ཟིན་པའི་ཚིག་ཕྱིར་ལེན་པར་ AnkiDroid གསར་སྒྱུར་གྱིས།",
-  "Send to Anki": "Anki ལ་བསྐུར།",
   "Imported {{count}} new words_other": "ཚིག་གསར་པ་ {{count}} ནང་འདྲེན་བྱས།",
-  "{{count}} now Mastered_other": "{{count}} ད་ “ཤེས་ཟིན་པ།”"
+  "{{count}} now Mastered_other": "{{count}} ད་ “ཤེས་ཟིན་པ།”",
+  "Sync with Anki": "Anki དང་མཉམ་སྦྲེལ།",
+  "Import Anki Deck...": "Anki ཡི་ཤོག་བུ་ཚོགས་ནང་འདྲེན།...",
+  "Already in sync with Anki": "Anki དང་མཉམ་སྦྲེལ་ཟིན།"
 }

@@ -2726,15 +2726,15 @@
   "Could not reach AnkiDroid.": "AnkiDroid'e ulaşılamadı.",
   "Added {{count}} words to Anki_one": "Anki'ye {{count}} kelime eklendi",
   "Added {{count}} words to Anki_other": "Anki'ye {{count}} kelime eklendi",
-  "{{count}} already in Anki_one": "{{count}} kelime zaten Anki'de",
-  "{{count}} already in Anki_other": "{{count}} kelime zaten Anki'de",
   "No decks in AnkiDroid.": "AnkiDroid'de deste yok.",
   "{{count}} skipped_one": "{{count}} atlandı",
   "{{count}} skipped_other": "{{count}} atlandı",
   "Update AnkiDroid to bring back mastered words.": "Öğrenilen kelimeleri geri getirmek için AnkiDroid'i güncelleyin.",
-  "Send to Anki": "Anki'ye gönder",
   "Imported {{count}} new words_one": "{{count}} yeni kelime içe aktarıldı",
   "Imported {{count}} new words_other": "{{count}} yeni kelime içe aktarıldı",
   "{{count}} now Mastered_one": "{{count}} kelime artık “Öğrenildi”",
-  "{{count}} now Mastered_other": "{{count}} kelime artık “Öğrenildi”"
+  "{{count}} now Mastered_other": "{{count}} kelime artık “Öğrenildi”",
+  "Sync with Anki": "Anki ile senkronize et",
+  "Import Anki Deck...": "Anki destesini içe aktar...",
+  "Already in sync with Anki": "Anki ile zaten senkronize"
 }

@@ -2864,17 +2864,12 @@
   "Added {{count}} words to Anki_few": "Додано в Anki: {{count}}",
   "Added {{count}} words to Anki_many": "Додано в Anki: {{count}}",
   "Added {{count}} words to Anki_other": "Додано в Anki: {{count}}",
-  "{{count}} already in Anki_one": "Уже в Anki: {{count}}",
-  "{{count}} already in Anki_few": "Уже в Anki: {{count}}",
-  "{{count}} already in Anki_many": "Уже в Anki: {{count}}",
-  "{{count}} already in Anki_other": "Уже в Anki: {{count}}",
   "No decks in AnkiDroid.": "В AnkiDroid немає колод.",
   "{{count}} skipped_one": "Пропущено: {{count}}",
   "{{count}} skipped_few": "Пропущено: {{count}}",
   "{{count}} skipped_many": "Пропущено: {{count}}",
   "{{count}} skipped_other": "Пропущено: {{count}}",
   "Update AnkiDroid to bring back mastered words.": "Оновіть AnkiDroid, щоб повернути вивчені слова.",
-  "Send to Anki": "Надіслати в Anki",
   "Imported {{count}} new words_one": "Імпортовано нових слів: {{count}}",
   "Imported {{count}} new words_few": "Імпортовано нових слів: {{count}}",
   "Imported {{count}} new words_many": "Імпортовано нових слів: {{count}}",
@@ -2882,5 +2877,8 @@
   "{{count}} now Mastered_one": "Тепер «Вивчено»: {{count}}",
   "{{count}} now Mastered_few": "Тепер «Вивчено»: {{count}}",
   "{{count}} now Mastered_many": "Тепер «Вивчено»: {{count}}",
-  "{{count}} now Mastered_other": "Тепер «Вивчено»: {{count}}"
+  "{{count}} now Mastered_other": "Тепер «Вивчено»: {{count}}",
+  "Sync with Anki": "Синхронізувати з Anki",
+  "Import Anki Deck...": "Імпортувати колоду Anki...",
+  "Already in sync with Anki": "Уже синхронізовано з Anki"
 }

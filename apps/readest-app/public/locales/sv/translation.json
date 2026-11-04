@@ -2726,15 +2726,15 @@
   "Could not reach AnkiDroid.": "Kunde inte nå AnkiDroid.",
   "Added {{count}} words to Anki_one": "{{count}} ord har lagts till i Anki",
   "Added {{count}} words to Anki_other": "{{count}} ord har lagts till i Anki",
-  "{{count}} already in Anki_one": "{{count}} finns redan i Anki",
-  "{{count}} already in Anki_other": "{{count}} finns redan i Anki",
   "No decks in AnkiDroid.": "Inga kortlekar i AnkiDroid.",
   "{{count}} skipped_one": "{{count}} hoppades över",
   "{{count}} skipped_other": "{{count}} hoppades över",
   "Update AnkiDroid to bring back mastered words.": "Uppdatera AnkiDroid för att få tillbaka behärskade ord.",
-  "Send to Anki": "Skicka till Anki",
   "Imported {{count}} new words_one": "{{count}} nytt ord importerat",
   "Imported {{count}} new words_other": "{{count}} nya ord importerade",
   "{{count}} now Mastered_one": "{{count}} nu ”Behärskar”",
-  "{{count}} now Mastered_other": "{{count}} nu ”Behärskar”"
+  "{{count}} now Mastered_other": "{{count}} nu ”Behärskar”",
+  "Sync with Anki": "Synkronisera med Anki",
+  "Import Anki Deck...": "Importera Anki-kortlek...",
+  "Already in sync with Anki": "Redan synkroniserad med Anki"
 }

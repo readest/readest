@@ -3002,12 +3002,6 @@
   "Added {{count}} words to Anki_few": "أُضيفت إلى Anki: {{count}}",
   "Added {{count}} words to Anki_many": "أُضيفت إلى Anki: {{count}}",
   "Added {{count}} words to Anki_other": "أُضيفت إلى Anki: {{count}}",
-  "{{count}} already in Anki_zero": "موجودة مسبقًا في Anki: {{count}}",
-  "{{count}} already in Anki_one": "موجودة مسبقًا في Anki: {{count}}",
-  "{{count}} already in Anki_two": "موجودة مسبقًا في Anki: {{count}}",
-  "{{count}} already in Anki_few": "موجودة مسبقًا في Anki: {{count}}",
-  "{{count}} already in Anki_many": "موجودة مسبقًا في Anki: {{count}}",
-  "{{count}} already in Anki_other": "موجودة مسبقًا في Anki: {{count}}",
   "No decks in AnkiDroid.": "لا توجد رزم في AnkiDroid.",
   "{{count}} skipped_zero": "تم تخطيها: {{count}}",
   "{{count}} skipped_one": "تم تخطيها: {{count}}",
@@ -3016,7 +3010,6 @@
   "{{count}} skipped_many": "تم تخطيها: {{count}}",
   "{{count}} skipped_other": "تم تخطيها: {{count}}",
   "Update AnkiDroid to bring back mastered words.": "حدّث AnkiDroid لاستعادة الكلمات المتقنة.",
-  "Send to Anki": "إرسال إلى Anki",
   "Imported {{count}} new words_zero": "كلمات جديدة مستوردة: {{count}}",
   "Imported {{count}} new words_one": "كلمات جديدة مستوردة: {{count}}",
   "Imported {{count}} new words_two": "كلمات جديدة مستوردة: {{count}}",
@@ -3028,5 +3021,8 @@
   "{{count}} now Mastered_two": "أصبحت «متقنة»: {{count}}",
   "{{count}} now Mastered_few": "أصبحت «متقنة»: {{count}}",
   "{{count}} now Mastered_many": "أصبحت «متقنة»: {{count}}",
-  "{{count}} now Mastered_other": "أصبحت «متقنة»: {{count}}"
+  "{{count}} now Mastered_other": "أصبحت «متقنة»: {{count}}",
+  "Sync with Anki": "المزامنة مع Anki",
+  "Import Anki Deck...": "استيراد رزمة Anki...",
+  "Already in sync with Anki": "متزامن مع Anki بالفعل"
 }

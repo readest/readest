@@ -2726,15 +2726,15 @@
   "Could not reach AnkiDroid.": "AnkiDroid bilan bog‘lanib bo‘lmadi.",
   "Added {{count}} words to Anki_one": "Anki’ga {{count}} ta so‘z qo‘shildi",
   "Added {{count}} words to Anki_other": "Anki’ga {{count}} ta so‘z qo‘shildi",
-  "{{count}} already in Anki_one": "{{count}} tasi Anki’da allaqachon bor",
-  "{{count}} already in Anki_other": "{{count}} tasi Anki’da allaqachon bor",
   "No decks in AnkiDroid.": "AnkiDroid’da to‘plamlar yo‘q.",
   "{{count}} skipped_one": "{{count}} ta o‘tkazib yuborildi",
   "{{count}} skipped_other": "{{count}} ta o‘tkazib yuborildi",
   "Update AnkiDroid to bring back mastered words.": "O‘zlashtirilgan so‘zlarni qaytarish uchun AnkiDroid’ni yangilang.",
-  "Send to Anki": "Anki’ga yuborish",
   "Imported {{count}} new words_one": "{{count}} ta yangi so‘z import qilindi",
   "Imported {{count}} new words_other": "{{count}} ta yangi so‘z import qilindi",
   "{{count}} now Mastered_one": "{{count}} tasi endi “O‘zlashtirildi”",
-  "{{count}} now Mastered_other": "{{count}} tasi endi “O‘zlashtirildi”"
+  "{{count}} now Mastered_other": "{{count}} tasi endi “O‘zlashtirildi”",
+  "Sync with Anki": "Anki bilan sinxronlash",
+  "Import Anki Deck...": "Anki to‘plamini import qilish...",
+  "Already in sync with Anki": "Anki bilan allaqachon sinxronlangan"
 }

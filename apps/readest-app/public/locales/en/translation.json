@@ -137,8 +137,6 @@
   "Lookup App": "Lookup App",
   "Added {{count}} words to Anki_one": "Added {{count}} word to Anki",
   "Added {{count}} words to Anki_other": "Added {{count}} words to Anki",
-  "{{count}} already in Anki_one": "{{count}} already in Anki",
-  "{{count}} already in Anki_other": "{{count}} already in Anki",
   "{{count}} skipped_one": "{{count}} skipped",
   "{{count}} skipped_other": "{{count}} skipped",
   "Imported {{count}} new words_one": "Imported {{count}} new word",

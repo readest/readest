@@ -2657,11 +2657,12 @@
   "Open AnkiDroid once, then try again.": "AnkiDroidを一度開いてから、もう一度お試しください。",
   "Could not reach AnkiDroid.": "AnkiDroidに接続できませんでした。",
   "Added {{count}} words to Anki_other": "{{count}}語をAnkiに追加しました",
-  "{{count}} already in Anki_other": "{{count}}語はAnkiに登録済み",
   "No decks in AnkiDroid.": "AnkiDroidにデッキがありません。",
   "{{count}} skipped_other": "{{count}}件をスキップ",
   "Update AnkiDroid to bring back mastered words.": "習得済みの単語を取り込むにはAnkiDroidを更新してください。",
-  "Send to Anki": "Ankiに送る",
   "Imported {{count}} new words_other": "新しい単語を{{count}}件インポート",
-  "{{count}} now Mastered_other": "{{count}}件が「習得済み」に"
+  "{{count}} now Mastered_other": "{{count}}件が「習得済み」に",
+  "Sync with Anki": "Ankiと同期",
+  "Import Anki Deck...": "Ankiデッキをインポート...",
+  "Already in sync with Anki": "Ankiとは同期済みです"
 }

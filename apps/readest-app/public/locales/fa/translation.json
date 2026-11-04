@@ -2726,15 +2726,15 @@
   "Could not reach AnkiDroid.": "دسترسی به AnkiDroid ممکن نشد.",
   "Added {{count}} words to Anki_one": "{{count}} واژه به Anki افزوده شد",
   "Added {{count}} words to Anki_other": "{{count}} واژه به Anki افزوده شد",
-  "{{count}} already in Anki_one": "{{count}} واژه از قبل در Anki هست",
-  "{{count}} already in Anki_other": "{{count}} واژه از قبل در Anki هست",
   "No decks in AnkiDroid.": "در AnkiDroid هیچ دسته‌ای نیست.",
   "{{count}} skipped_one": "{{count}} مورد رد شد",
   "{{count}} skipped_other": "{{count}} مورد رد شد",
   "Update AnkiDroid to bring back mastered words.": "برای بازگرداندن واژه‌های آموخته‌شده، AnkiDroid را به‌روزرسانی کنید.",
-  "Send to Anki": "ارسال به Anki",
   "Imported {{count}} new words_one": "{{count}} واژهٔ تازه وارد شد",
   "Imported {{count}} new words_other": "{{count}} واژهٔ تازه وارد شد",
   "{{count}} now Mastered_one": "{{count}} اکنون «آموخته‌شده»",
-  "{{count}} now Mastered_other": "{{count}} اکنون «آموخته‌شده»"
+  "{{count}} now Mastered_other": "{{count}} اکنون «آموخته‌شده»",
+  "Sync with Anki": "همگام‌سازی با Anki",
+  "Import Anki Deck...": "وارد کردن دسته Anki...",
+  "Already in sync with Anki": "از قبل با Anki همگام است"
 }

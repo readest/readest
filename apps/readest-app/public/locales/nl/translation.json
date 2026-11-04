@@ -2726,15 +2726,15 @@
   "Could not reach AnkiDroid.": "Kan AnkiDroid niet bereiken.",
   "Added {{count}} words to Anki_one": "{{count}} woord aan Anki toegevoegd",
   "Added {{count}} words to Anki_other": "{{count}} woorden aan Anki toegevoegd",
-  "{{count}} already in Anki_one": "{{count}} al in Anki",
-  "{{count}} already in Anki_other": "{{count}} al in Anki",
   "No decks in AnkiDroid.": "Geen stapels in AnkiDroid.",
   "{{count}} skipped_one": "{{count}} overgeslagen",
   "{{count}} skipped_other": "{{count}} overgeslagen",
   "Update AnkiDroid to bring back mastered words.": "Werk AnkiDroid bij om beheerste woorden terug te halen.",
-  "Send to Anki": "Naar Anki sturen",
   "Imported {{count}} new words_one": "{{count}} nieuw woord geïmporteerd",
   "Imported {{count}} new words_other": "{{count}} nieuwe woorden geïmporteerd",
   "{{count}} now Mastered_one": "{{count}} nu ‘Beheerst’",
-  "{{count}} now Mastered_other": "{{count}} nu ‘Beheerst’"
+  "{{count}} now Mastered_other": "{{count}} nu ‘Beheerst’",
+  "Sync with Anki": "Synchroniseren met Anki",
+  "Import Anki Deck...": "Anki-stapel importeren...",
+  "Already in sync with Anki": "Al gesynchroniseerd met Anki"
 }

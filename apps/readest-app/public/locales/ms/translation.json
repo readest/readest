@@ -2657,11 +2657,12 @@
   "Open AnkiDroid once, then try again.": "Buka AnkiDroid sekali, kemudian cuba lagi.",
   "Could not reach AnkiDroid.": "Tidak dapat menghubungi AnkiDroid.",
   "Added {{count}} words to Anki_other": "{{count}} perkataan ditambah ke Anki",
-  "{{count}} already in Anki_other": "{{count}} sudah ada dalam Anki",
   "No decks in AnkiDroid.": "Tiada dek dalam AnkiDroid.",
   "{{count}} skipped_other": "{{count}} dilangkau",
   "Update AnkiDroid to bring back mastered words.": "Kemas kini AnkiDroid untuk membawa kembali perkataan yang dikuasai.",
-  "Send to Anki": "Hantar ke Anki",
   "Imported {{count}} new words_other": "{{count}} perkataan baharu diimport",
-  "{{count}} now Mastered_other": "{{count}} kini “Dikuasai”"
+  "{{count}} now Mastered_other": "{{count}} kini “Dikuasai”",
+  "Sync with Anki": "Segerakkan dengan Anki",
+  "Import Anki Deck...": "Import Dek Anki...",
+  "Already in sync with Anki": "Sudah segerak dengan Anki"
 }

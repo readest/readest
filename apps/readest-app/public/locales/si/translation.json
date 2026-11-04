@@ -2726,15 +2726,15 @@
   "Could not reach AnkiDroid.": "AnkiDroid වෙත සම්බන්ධ විය නොහැකි විය.",
   "Added {{count}} words to Anki_one": "වචන {{count}}ක් Anki වෙත එක් කළා",
   "Added {{count}} words to Anki_other": "වචන {{count}}ක් Anki වෙත එක් කළා",
-  "{{count}} already in Anki_one": "{{count}}ක් දැනටමත් Anki තුළ ඇත",
-  "{{count}} already in Anki_other": "{{count}}ක් දැනටමත් Anki තුළ ඇත",
   "No decks in AnkiDroid.": "AnkiDroid තුළ ඩෙක් නැත.",
   "{{count}} skipped_one": "{{count}}ක් මඟ හැරියා",
   "{{count}} skipped_other": "{{count}}ක් මඟ හැරියා",
   "Update AnkiDroid to bring back mastered words.": "ප්‍රගුණ කළ වචන නැවත ගෙන ඒමට AnkiDroid යාවත්කාලීන කරන්න.",
-  "Send to Anki": "Anki වෙත යවන්න",
   "Imported {{count}} new words_one": "නව වචන {{count}}ක් ආයාත කළා",
   "Imported {{count}} new words_other": "නව වචන {{count}}ක් ආයාත කළා",
   "{{count}} now Mastered_one": "{{count}}ක් දැන් “ප්‍රගුණ කළා”",
-  "{{count}} now Mastered_other": "{{count}}ක් දැන් “ප්‍රගුණ කළා”"
+  "{{count}} now Mastered_other": "{{count}}ක් දැන් “ප්‍රගුණ කළා”",
+  "Sync with Anki": "Anki සමඟ සමමුහුර්ත කරන්න",
+  "Import Anki Deck...": "Anki ඩෙක් ආයාත කරන්න...",
+  "Already in sync with Anki": "දැනටමත් Anki සමඟ සමමුහුර්තයි"
 }
