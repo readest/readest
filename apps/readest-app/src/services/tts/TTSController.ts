@@ -295,6 +295,8 @@ export class TTSController extends EventTarget {
   ttsCustomVoices: TTSVoice[] = [];
   ttsNativeVoices: TTSVoice[] = [];
   ttsTargetLang: string = '';
+  // The clients whose init succeeded, in priority order.
+  #availableClients: TTSClient[] = [];
 
   options: TTSHighlightOptions = { style: 'highlight', color: 'gray' };
 
@@ -513,7 +515,8 @@ export class TTSController extends EventTarget {
   }
 
   async init() {
-    const availableClients = [];
+    const availableClients: TTSClient[] = [];
+    this.#availableClients = availableClients;
     // Started together: each can take seconds (Edge synthesizes a probe
     // sentence, system TTS waits for its voices), and play waits on them all.
     // Results are still taken in priority order.
@@ -2187,6 +2190,18 @@ export class TTSController extends EventTarget {
     }
   }
 
+  // Pauses for a voice preview by stopping, as pause() does for an engine that
+  // cannot pause: a preview may speak through the same engine (the shared Web
+  // Speech queue, the system synthesizer), which would drop or replay a paused
+  // utterance. Playing again re-reads from the current sentence.
+  async suspend() {
+    if (this.state !== 'playing') return;
+    this.state = 'paused';
+    this.#syncAudioKeepAlive();
+    await this.stop();
+    this.state = 'stop-paused';
+  }
+
   async resume() {
     this.state = 'playing';
     await this.ttsClient.resume().catch((e) => this.error(e));
@@ -2293,6 +2308,11 @@ export class TTSController extends EventTarget {
 
   async setLang(lang: string) {
     this.ttsLang = lang;
+    // The engine chosen for this language (its default voice) wins over the
+    // global one; the book's own narration wins over both.
+    const preferred = TTSUtils.getPreferredClientForLang(lang);
+    const languageClient = this.#availableClients.find((client) => client.name === preferred);
+    if (languageClient && !this.narrationActive) this.ttsClient = languageClient;
     // Readest Voice is a remembered choice, never a default: for a book in a
     // language it has no voice for, the default engine reads instead, and the
     // choice stays remembered for books it can read.
@@ -2425,7 +2445,8 @@ export class TTSController extends EventTarget {
       this.ttsClient = this.ttsWebClient;
       await this.ttsClient.setRate(this.ttsRate);
     }
-    TTSUtils.setPreferredClient(this.ttsClient.name);
+    // Remembered for the book's language too, so it reads that language next time.
+    TTSUtils.setPreferredClient(this.ttsClient.name, this.ttsLang);
     TTSUtils.setPreferredVoice(this.ttsClient.name, lang, voiceId);
     await this.ttsClient.setVoice(voiceId);
     // A different voice speaks at a different pace: re-estimate the timeline

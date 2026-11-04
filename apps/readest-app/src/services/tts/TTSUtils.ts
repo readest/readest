@@ -1,4 +1,4 @@
-import { TTSVoice } from './types';
+import { MULTILINGUAL_LANG, TTSVoice } from './types';
 
 export class TTSUtils {
   private static readonly LOCAL_STORAGE_KEY = 'ttsPreferredVoices';
@@ -9,10 +9,15 @@ export class TTSUtils {
     return language.toLowerCase().slice(0, 2);
   }
 
-  static setPreferredClient(engine: string): void {
+  // The engine is remembered globally, and per language when one is given: a
+  // language's own engine wins over the global one (see getPreferredClient).
+  static setPreferredClient(engine: string, language?: string): void {
     if (!engine) return;
     const preferences = this.getPreferences();
     preferences[this.PREFERRED_CLIENT_KEY] = engine;
+    if (language) {
+      preferences[`${this.PREFERRED_CLIENT_KEY}-${this.normalizeLanguage(language)}`] = engine;
+    }
     localStorage.setItem(this.LOCAL_STORAGE_KEY, JSON.stringify(preferences));
   }
 
@@ -24,15 +29,46 @@ export class TTSUtils {
     localStorage.setItem(this.LOCAL_STORAGE_KEY, JSON.stringify(preferences));
   }
 
-  static getPreferredClient(): string | null {
+  static getPreferredClient(language?: string): string | null {
     const preferences = this.getPreferences();
-    return preferences[this.PREFERRED_CLIENT_KEY] || null;
+    return (
+      (language && this.getPreferredClientForLang(language)) ||
+      preferences[this.PREFERRED_CLIENT_KEY] ||
+      null
+    );
+  }
+
+  static getPreferredClientForLang(language: string): string | null {
+    const preferences = this.getPreferences();
+    return preferences[`${this.PREFERRED_CLIENT_KEY}-${this.normalizeLanguage(language)}`] || null;
   }
 
   static getPreferredVoice(engine: string, language: string): string | null {
     const preferences = this.getPreferences();
     const lang = this.normalizeLanguage(language);
     return preferences[`${engine}-${lang}`] || null;
+  }
+
+  // A language's default voice, set in Settings: its engine for that language
+  // only, leaving the other languages and the global engine as they are.
+  static setDefaultVoice(engine: string, language: string, voiceId: string): void {
+    if (!engine || !language || !voiceId) return;
+    const preferences = this.getPreferences();
+    const lang = this.normalizeLanguage(language);
+    preferences[`${this.PREFERRED_CLIENT_KEY}-${lang}`] = engine;
+    preferences[`${engine}-${lang}`] = voiceId;
+    localStorage.setItem(this.LOCAL_STORAGE_KEY, JSON.stringify(preferences));
+  }
+
+  // The voice a language is read with when one was chosen: the language's
+  // engine (else the global one) and its voice for the language, or the
+  // multilingual voice it reads every language with.
+  static getDefaultVoice(language: string): { engine: string; voiceId: string } | null {
+    const engine = this.getPreferredClient(language);
+    if (!engine) return null;
+    const voiceId =
+      this.getPreferredVoice(engine, language) ?? this.getPreferredVoice(engine, MULTILINGUAL_LANG);
+    return voiceId ? { engine, voiceId } : null;
   }
 
   private static getPreferences(): Record<string, string> {

@@ -114,6 +114,38 @@ const newLane = (name: TTSLane): Lane => ({
   retryTimer: null,
 });
 
+let previewClientId: string | null = null;
+
+// A voice preview: one sample in any offered voice, open to every signed-in
+// reader (the stream route's 'preview' lane). Resolves with its audio, or
+// throws the route's error code (DAILY_QUOTA_EXCEEDED, BUSY, ...).
+export const fetchReadestVoicePreview = async (
+  req: { text: string; voice: string; lang: string },
+  signal: AbortSignal,
+): Promise<ArrayBuffer> => {
+  previewClientId ??= crypto.randomUUID();
+  const res = await fetchWithAuth(`${getReadestVoiceAPIBaseUrl()}/tts/readest/stream`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      client: previewClientId,
+      lane: 'preview',
+      lang: req.lang,
+      segments: [{ id: 'preview', text: req.text, voice: req.voice }],
+    }),
+    signal,
+  });
+  if (!res.body) throw new Error('UPSTREAM_FAILED');
+  for await (const raw of readNDJSON(res.body, signal)) {
+    const line = raw as WindowLine;
+    if (typeof line.audio === 'string') return decodeBase64(line.audio);
+    if (line.done || line.error) {
+      throw new Error(typeof line.error === 'string' ? line.error : 'UPSTREAM_FAILED');
+    }
+  }
+  throw new Error(signal.aborted ? 'CANCELLED' : 'UPSTREAM_FAILED');
+};
+
 const SAVED_CATALOG_KEY = 'readest-voice-catalog';
 
 const readSavedCatalog = (): TTSVoice[] | null => {

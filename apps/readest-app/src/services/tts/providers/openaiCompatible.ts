@@ -94,6 +94,12 @@ const KOKORO_LANGS: Record<string, string> = {
   z: 'zh-CN',
 };
 
+// A Kokoro name's gender letter; other services do not say.
+const voiceGender = ({ name }: ListedVoice): TTSVoice['gender'] => {
+  const letter = name.match(/^[a-z]([fm])_/)?.[1];
+  return letter ? (letter === 'f' ? 'female' : 'male') : undefined;
+};
+
 // A voice's language: the one the service states, else the one a Kokoro name
 // carries, else any (OpenAI's voices speak every language).
 const voiceLang = ({ name, lang }: ListedVoice): string =>
@@ -205,12 +211,16 @@ export class OpenAICompatibleSpeechProvider implements SpeechProvider {
     const services = this.getServices();
     const lists = await Promise.all(services.map(fetchServiceVoices));
     return services.flatMap((service, i) =>
-      lists[i]!.map((voice) => ({
-        id: customVoiceId(service.id, voice.name),
-        name: voice.label ?? voice.name,
-        literalName: true,
-        lang: voiceLang(voice),
-      })),
+      lists[i]!.map((voice) => {
+        const gender = voiceGender(voice);
+        return {
+          id: customVoiceId(service.id, voice.name),
+          name: voice.label ?? voice.name,
+          literalName: true,
+          lang: voiceLang(voice),
+          ...(gender && { gender }),
+        };
+      }),
     );
   }
 

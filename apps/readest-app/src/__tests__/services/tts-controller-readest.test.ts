@@ -148,6 +148,7 @@ vi.mock('@/services/tts/providers/bookCacheStore', async (orig) => ({
 vi.mock('@/services/tts/TTSUtils', () => ({
   TTSUtils: {
     getPreferredClient: vi.fn().mockReturnValue(null),
+    getPreferredClientForLang: vi.fn().mockReturnValue(null),
     setPreferredClient: vi.fn(),
     setPreferredVoice: vi.fn(),
     getPreferredVoice: vi.fn().mockReturnValue(null),
@@ -188,6 +189,7 @@ beforeEach(() => {
   h.customVoices = null;
   h.warmup.mockReset();
   vi.mocked(TTSUtils.getPreferredClient).mockReturnValue(null);
+  vi.mocked(TTSUtils.getPreferredClientForLang).mockReturnValue(null);
   vi.mocked(createBookTTSCacheStore).mockClear();
   controller = new TTSController(appService, view, true);
 });
@@ -310,6 +312,35 @@ describe('book language', () => {
   });
 });
 
+describe('default voice per language', () => {
+  test("the engine chosen for the book's language wins over the global one", async () => {
+    vi.mocked(TTSUtils.getPreferredClientForLang).mockImplementation((lang) =>
+      lang.startsWith('en') ? 'readest-tts' : null,
+    );
+    await controller.init();
+    expect(controller.ttsClient.name).toBe('edge-tts');
+    await controller.setLang('en-US');
+    expect(controller.ttsClient).toBe(readest());
+    await controller.setLang('de');
+    expect(controller.ttsClient.name).toBe('edge-tts');
+  });
+
+  test('an engine that failed to start is passed over', async () => {
+    h.readestInit = false;
+    vi.mocked(TTSUtils.getPreferredClientForLang).mockReturnValue('readest-tts');
+    await controller.init();
+    await controller.setLang('en');
+    expect(controller.ttsClient.name).toBe('edge-tts');
+  });
+
+  test("picking a voice remembers its engine for the book's language", async () => {
+    await controller.init();
+    await controller.setLang('en-GB');
+    await controller.setVoice('kokoro:af_heart', 'en-US');
+    expect(TTSUtils.setPreferredClient).toHaveBeenCalledWith('readest-tts', 'en-GB');
+  });
+});
+
 describe('setVoice', () => {
   test("the engine-default voice ('') never selects Readest Voice", async () => {
     await controller.init();
@@ -321,7 +352,7 @@ describe('setVoice', () => {
     await controller.init();
     await controller.setVoice('kokoro:af_heart', 'en');
     expect(controller.ttsClient).toBe(readest());
-    expect(TTSUtils.setPreferredClient).toHaveBeenCalledWith('readest-tts');
+    expect(TTSUtils.setPreferredClient).toHaveBeenCalledWith('readest-tts', '');
     expect(readest().setVoice).toHaveBeenCalledWith('kokoro:af_heart');
   });
 
@@ -401,7 +432,7 @@ describe('custom TTS services', () => {
     await controller.init();
     await controller.setVoice('svc:nova', 'en');
     expect(controller.ttsClient).toBe(custom());
-    expect(TTSUtils.setPreferredClient).toHaveBeenCalledWith('custom-tts');
+    expect(TTSUtils.setPreferredClient).toHaveBeenCalledWith('custom-tts', '');
     expect(custom().setVoice).toHaveBeenCalledWith('svc:nova');
     await controller.setLang('ja');
     expect(controller.ttsClient).toBe(custom());

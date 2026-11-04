@@ -155,6 +155,71 @@ describe('gating', () => {
   });
 });
 
+describe('voice previews', () => {
+  const preview = (voice = 'omnivoice:clara', text = 'Hello there, this is how I sound.') => ({
+    client: 'phone',
+    lane: 'preview',
+    lang: 'en-US',
+    segments: [seg('p0', text, voice)],
+  });
+
+  it.each([
+    'free',
+    'plus',
+  ])('lets a signed-in %s reader hear any offered voice, as its own listening client', async (plan) => {
+    m.getSubscriptionPlan.mockReturnValue(plan);
+    streams([{ id: 'p0', audio: 'AAA', boundaries: B }, { done: true }]);
+    const res = await POST(post(preview()));
+    expect(res.status).toBe(200);
+    await lines(res);
+    expect(m.service.admitWindow).toHaveBeenCalledWith({
+      token: expect.any(String),
+      userId: 'user-1',
+      clientId: 'phone:preview',
+      lane: 'listen',
+    });
+    expect(m.trackUsage).toHaveBeenCalledWith(
+      'user-1',
+      'tts_chars',
+      33,
+      expect.objectContaining({ lane: 'preview' }),
+    );
+  });
+
+  it('still needs a signed-in reader and an offered voice', async () => {
+    m.getSubscriptionPlan.mockReturnValue('free');
+    let res = await POST(post(preview('qwen3:ryan')));
+    expect(res.status).toBe(403);
+    expect(await res.json()).toEqual({ error: 'VOICE_TIER_REQUIRED' });
+    m.validateUserAndToken.mockResolvedValue({});
+    res = await POST(post(preview()));
+    expect(res.status).toBe(403);
+    expect(await res.json()).toEqual({ error: 'NOT_AUTHENTICATED' });
+    expect(m.service.admitWindow).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['two segments', { ...preview(), segments: [seg('p0'), seg('p1')] }],
+    ['a sample over 400 chars', preview('omnivoice:clara', 'a'.repeat(401))],
+  ])('400s on %s', async (_name, body) => {
+    m.getSubscriptionPlan.mockReturnValue('free');
+    const res = await POST(post(body));
+    expect(res.status).toBe(400);
+    expect(await res.json()).toEqual({ error: 'INVALID_INPUT' });
+  });
+
+  it('gives a plan without Readest Voice a small daily allowance', async () => {
+    m.getSubscriptionPlan.mockReturnValue('free');
+    m.getCurrentUsage.mockResolvedValue(6_000 - 20);
+    const res = await POST(post(preview()));
+    expect(res.status).toBe(429);
+    expect(await res.json()).toEqual({ error: 'DAILY_QUOTA_EXCEEDED' });
+    // A plan's own quota, when larger, still applies to its previews.
+    m.getSubscriptionPlan.mockReturnValue('plus');
+    expect((await POST(post(preview()))).status).toBe(200);
+  });
+});
+
 describe('window validation', () => {
   it.each([
     ['9 listen segments', listen(...Array.from({ length: 9 }, (_, i) => seg(`s${i}`)))],

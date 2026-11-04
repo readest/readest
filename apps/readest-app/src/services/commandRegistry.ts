@@ -419,6 +419,12 @@ const colorPanelItems = [
     section: 'TTS',
   },
   {
+    id: 'settings.tts.voices',
+    labelKey: _('Voice Library'),
+    keywords: ['tts', 'voice', 'preview', 'default', 'language', 'gender', 'read aloud'],
+    section: 'TTS',
+  },
+  {
     id: 'settings.tts.customServices',
     labelKey: _('Custom TTS Services'),
     keywords: ['tts', 'custom', 'voice', 'api key', 'openai', 'kokoro', 'speech', 'byok'],

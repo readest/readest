@@ -1061,6 +1061,12 @@ export const DEFAULT_DAILY_TTS_QUOTA: UserDailyTTSQuota = {
   purchase: 0,
 };
 
+// Readest Voice previews: one sample of at most this many characters, open to
+// any signed-in reader, within this daily allowance when their plan's quota is
+// smaller (about 30 typical samples).
+export const READEST_VOICE_PREVIEW_MAX_CHARS = 400;
+export const READEST_VOICE_PREVIEW_DAILY_CHARS = 6_000;
+
 export const DOUBLE_CLICK_INTERVAL_THRESHOLD_MS = 250;
 export const DISABLE_DOUBLE_CLICK_ON_MOBILE = true;
 export const LONG_HOLD_THRESHOLD = 500;

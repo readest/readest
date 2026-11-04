@@ -107,6 +107,16 @@ describe('OpenAICompatibleSpeechProvider', () => {
     ]);
   });
 
+  it("tells a Kokoro voice's gender from its name; others state none", async () => {
+    fetchMock.mockResolvedValue(Response.json({ voices: ['af_heart', 'jm_kumo', 'nova'] }));
+    const voices = await provider.getAllVoices();
+    expect(voices.map((v) => [v.name, v.gender])).toEqual([
+      ['af_heart', 'female'],
+      ['jm_kumo', 'male'],
+      ['nova', undefined],
+    ]);
+  });
+
   it("shows a listed voice's name but speaks with its id", async () => {
     fetchMock.mockResolvedValueOnce(
       Response.json({

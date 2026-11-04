@@ -692,6 +692,7 @@ export class MediaOverlayClient implements TTSClient {
       {
         id: 'media-overlay',
         name: _('Narration'),
+        engine: this.name,
         voices: this.#voices(),
       },
     ];
