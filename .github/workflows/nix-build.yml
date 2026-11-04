@@ -4,8 +4,7 @@ on:
   push:
     branches: [main]
 concurrency:
-  group: nix-${{ github.ref }}
-  cancel-in-progress: true
+  group: nix-${{ github.sha }}
 
 permissions:
   contents: read
