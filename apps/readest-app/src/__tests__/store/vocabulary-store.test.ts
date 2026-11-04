@@ -297,4 +297,18 @@ describe('vocabularyStore', () => {
       occurrences: [occurrence('Saved.', 1)],
     });
   });
+
+  it('import never lowers a word, even from a plan made before it moved up', () => {
+    // Sync made the word Mastered while an import planned it as a new Learning word.
+    useVocabularyStore.setState({
+      entries: { 'en:dune': { ...occurrenceEntry('dune'), state: 'mastered' } },
+    });
+    useVocabularyStore
+      .getState()
+      .importWords([{ word: 'dune', lang: 'en', state: 'learning', hint: 'a desert' }]);
+    expect(useVocabularyStore.getState().entries['en:dune']).toMatchObject({
+      state: 'mastered',
+      hint: 'a desert',
+    });
+  });
 });

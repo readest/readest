@@ -52,6 +52,8 @@ interface VocabularyStore {
   };
 }
 
+const STATE_RANK: Record<VocabularyState, number> = { none: 0, learning: 1, mastered: 2 };
+
 let appServiceRef: AppService | null = null;
 let persistTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -192,9 +194,12 @@ export const useVocabularyStore = create<VocabularyStore>((set, get) => {
         if (!key) continue;
         const current = get().entries[entryId(lang, key)];
         const base = current && !current.deletedAt ? current : freshEntry(word, lang, key, now);
+        // Imports only move a word up: a plan made before the word moved up
+        // (Sync and an import running together) must not undo it.
+        const raise = state && STATE_RANK[state] > STATE_RANK[base.state];
         next.push({
           ...base,
-          ...(state ? { state } : {}),
+          ...(raise ? { state } : {}),
           ...(hint ? { hint } : {}),
           modifiedAt: now,
           dirty: true,
