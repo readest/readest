@@ -28,8 +28,9 @@ class AnkiDroidLinkTest {
     }
 
     @Test
-    fun matureCardSearch_asksOnlyForLongIntervals() {
-        assertEquals("did:1,2 prop:ivl>=21", AnkiDroidLink.matureCardSearch(listOf(1L, 2L)))
+    fun matureCardSearch_groupsTheDecksSoTheIntervalStillApplies() {
+        // Ungrouped, `did:1,2 prop:ivl>=21` returned every card of the decks on AnkiDroid 2.25.3.
+        assertEquals("(did:1,2) prop:ivl>=21", AnkiDroidLink.matureCardSearch(listOf(1L, 2L)))
     }
 
     @Test

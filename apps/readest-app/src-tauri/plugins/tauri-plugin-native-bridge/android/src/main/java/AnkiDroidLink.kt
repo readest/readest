@@ -39,9 +39,13 @@ object AnkiDroidLink {
     /** Anki search for these decks by id, so no deck name needs escaping. */
     fun deckSearch(deckIds: List<Long>): String = "did:" + deckIds.joinToString(",")
 
-    /** Only mature cards: AnkiDroid renders every card row it returns. */
+    /**
+     * Only mature cards: AnkiDroid renders every card row it returns. The deck
+     * term is grouped: ungrouped, `did:` swallowed the interval and AnkiDroid
+     * 2.25.3 returned every card of the decks.
+     */
     fun matureCardSearch(deckIds: List<Long>): String =
-        "${deckSearch(deckIds)} prop:ivl>=$MATURE_INTERVAL"
+        "(${deckSearch(deckIds)}) prop:ivl>=$MATURE_INTERVAL"
 
     /**
      * Insert [rows] [size] at a time. ContentResolver.bulkInsert returns 0 when
