@@ -12,6 +12,9 @@ use std::sync::{mpsc, Arc, Mutex};
 use std::time::{Duration, Instant};
 
 const TIMEOUT: Duration = Duration::from_secs(3);
+// espeak-ng sends ~15k voice rows, 0.4 s on a fast desktop. Stays under the
+// reader's 15 s engine init limit.
+const LIST_TIMEOUT: Duration = Duration::from_secs(10);
 static CONNECTION_ID: AtomicU64 = AtomicU64::new(0);
 
 type Emit = Arc<dyn Fn(Event) + Send + Sync>;
@@ -140,7 +143,7 @@ impl Connection {
         })
     }
 
-    fn request(&mut self, data: &str) -> Result<Reply, String> {
+    fn request(&mut self, data: &str, timeout: Duration) -> Result<Reply, String> {
         if !self.alive.load(Ordering::Acquire) {
             return Err("Speech Dispatcher disconnected".into());
         }
@@ -149,9 +152,12 @@ impl Connection {
             .write_all(data.as_bytes())
             .map_err(|e| e.to_string())
             .and_then(|()| {
-                self.replies
-                    .recv_timeout(TIMEOUT)
-                    .map_err(|e| e.to_string())
+                self.replies.recv_timeout(timeout).map_err(|e| match e {
+                    mpsc::RecvTimeoutError::Timeout => {
+                        "Speech Dispatcher did not answer in time".into()
+                    }
+                    mpsc::RecvTimeoutError::Disconnected => "Speech Dispatcher disconnected".into(),
+                })
             });
         let reply = match reply {
             Ok(reply) => reply,
@@ -174,21 +180,23 @@ impl Connection {
         if command.contains(['\r', '\n', '\0']) {
             return Err("Invalid speech command".into());
         }
-        self.request(&format!("{command}\r\n"))
+        self.request(&format!("{command}\r\n"), TIMEOUT)
     }
 
     fn voices(&mut self) -> Result<Vec<Voice>, String> {
         let modules = self.command("LIST OUTPUT_MODULES")?.data;
         let mut voices = Vec::new();
         for module in modules {
-            if self
+            let reply = self
                 .command(&format!("SET SELF OUTPUT_MODULE {module}"))
-                .is_err()
-            {
-                continue;
-            }
-            let Ok(reply) = self.command("LIST SYNTHESIS_VOICES") else {
-                continue;
+                .and_then(|_| self.request("LIST SYNTHESIS_VOICES\r\n", LIST_TIMEOUT));
+            let reply = match reply {
+                Ok(reply) => reply,
+                // A module without voices is skipped; a lost connection ends the listing.
+                Err(error) if !self.alive.load(Ordering::Acquire) => {
+                    return Err(format!("{error} while listing {module} voices"));
+                }
+                Err(_) => continue,
             };
             for row in reply.data {
                 let fields: Vec<_> = row.split('\t').collect();
@@ -239,7 +247,7 @@ impl Connection {
 
     fn speak(&mut self, text: &str) -> Result<String, String> {
         self.command("SPEAK")?;
-        let reply = self.request(&speech_data(text))?;
+        let reply = self.request(&speech_data(text), TIMEOUT)?;
         let id = reply
             .data
             .first()
@@ -568,6 +576,56 @@ mod tests {
             .map(|voice| voice.synthesis_voice)
             .collect();
         assert_eq!(voices, ["English (America)", "English (Great Britain)"]);
+        worker.join().unwrap();
+    }
+
+    #[test]
+    fn waits_for_a_slow_voice_list() {
+        // espeak-ng sends ~15k voice rows; that takes 0.4 s on a fast desktop.
+        let (client, mut server) = UnixStream::pair().unwrap();
+        let mut connection = Connection::new(client, Arc::new(|_| {})).unwrap();
+        let worker = std::thread::spawn(move || {
+            let mut reader = BufReader::new(server.try_clone().unwrap());
+            for (delay, reply) in [
+                (Duration::ZERO, "250-espeak-ng\r\n250 OK\r\n"),
+                (Duration::ZERO, "200 OK\r\n"),
+                (
+                    TIMEOUT + Duration::from_millis(500),
+                    "249-English (America)\ten-US\tnone\r\n249 OK\r\n",
+                ),
+            ] {
+                let mut line = String::new();
+                reader.read_line(&mut line).unwrap();
+                std::thread::sleep(delay);
+                server.write_all(reply.as_bytes()).unwrap();
+            }
+        });
+        let voices = connection
+            .voices()
+            .expect("a voice list slower than one command must still arrive");
+        assert_eq!(voices.len(), 1);
+        worker.join().unwrap();
+    }
+
+    #[test]
+    fn a_lost_connection_while_listing_voices_reports_the_cause() {
+        let (client, server) = UnixStream::pair().unwrap();
+        let mut connection = Connection::new(client, Arc::new(|_| {})).unwrap();
+        let worker = std::thread::spawn(move || {
+            let mut reader = BufReader::new(server.try_clone().unwrap());
+            for reply in ["250-espeak-ng\r\n250-piper\r\n250 OK\r\n", "200 OK\r\n"] {
+                let mut line = String::new();
+                reader.read_line(&mut line).unwrap();
+                (&server).write_all(reply.as_bytes()).unwrap();
+            }
+            let mut line = String::new();
+            reader.read_line(&mut line).unwrap();
+            server.shutdown(Shutdown::Both).unwrap();
+        });
+        assert_eq!(
+            connection.voices().err().as_deref(),
+            Some("Speech Dispatcher disconnected while listing espeak-ng voices")
+        );
         worker.join().unwrap();
     }
 
