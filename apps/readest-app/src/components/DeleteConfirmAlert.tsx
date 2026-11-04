@@ -31,6 +31,15 @@ const ToggleRow: React.FC<{
         className={clsx('toggle toggle-sm shrink-0', danger && 'not-eink:toggle-error')}
         checked={checked}
         onChange={(e) => onChange(e.target.checked)}
+        // Alert confirms on any Enter. On a focused toggle, Enter flips it
+        // instead, so it can't run a delete the toggle was meant to change.
+        // The capture phase runs before Alert's listener on the surface.
+        onKeyDownCapture={(e) => {
+          if (e.key !== 'Enter') return;
+          e.preventDefault();
+          e.stopPropagation();
+          onChange(!checked);
+        }}
         aria-label={label}
       />
     </label>

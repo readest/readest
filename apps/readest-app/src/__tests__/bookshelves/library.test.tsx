@@ -1,6 +1,6 @@
 import React from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type { Book, BooksGroup } from '@/types/book';
 import type { ShelfSection } from '@/app/library/components/BookshelfStream';
 import type { BookshelfDefinition } from '@/types/bookshelf';
@@ -19,6 +19,7 @@ import { applyBookshelfDraft } from '@/services/bookshelves/state';
 import { createBookGroups } from '@/app/library/utils/libraryUtils';
 import { LibraryGroupByType } from '@/types/settings';
 import Bookshelf from '@/app/library/components/Bookshelf';
+import { eventDispatcher } from '@/utils/event';
 const mocks = vi.hoisted(() => ({
   params: new URLSearchParams(),
   env: {},
@@ -530,6 +531,19 @@ describe('library bookshelf integration', () => {
         .getAllByRole('button', { name: 'Book 19' })
         .every((b) => b.getAttribute('aria-pressed') === 'true'),
     ).toBe(true);
+  });
+  it('deletes the books after an earlier delete confirmation was cancelled', async () => {
+    const handleBookDelete = vi.fn(async () => true);
+    render(<Bookshelf {...props} handleBookDelete={handleBookDelete} />);
+    const openDelete = async () => {
+      await act(() => eventDispatcher.dispatch('delete-books', { ids: ['1', '2'] }));
+      return within(document.querySelector('.delete-alert') as HTMLElement);
+    };
+    fireEvent.click((await openDelete()).getByRole('button', { name: 'Cancel' }));
+    await waitFor(() => expect(document.querySelector('.delete-alert')).toBeNull());
+    fireEvent.click((await openDelete()).getByRole('button', { name: 'Delete' }));
+    await waitFor(() => expect(document.querySelector('.delete-alert')).toBeNull());
+    expect(handleBookDelete).toHaveBeenCalledTimes(2);
   });
   it('includes every group member in selection and toggles overlapping cards together', async () => {
     const grouped = books.map((b) => ({ ...b, groupName: 'Fiction/Stories' }));

@@ -497,6 +497,9 @@ const Bookshelf: React.FC<BookshelfProps> = ({
     books: Book[],
     deleteBook: (book: Book, syncBooks?: boolean) => Promise<boolean>,
   ) => {
+    // Cancel sets the flag even when nothing is running; clear it so an
+    // earlier cancelled confirmation doesn't stop this run before it starts.
+    abortDeletionRef.current = false;
     const concurrency = 20;
 
     for (let i = 0; i < books.length; i += concurrency) {

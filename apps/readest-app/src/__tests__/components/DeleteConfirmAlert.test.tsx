@@ -107,6 +107,17 @@ describe('DeleteConfirmAlert device-only toggle', () => {
     expect(onConfirm).not.toHaveBeenCalled();
   });
 
+  it('toggles instead of confirming when Enter is pressed on a toggle', () => {
+    const onConfirmDeviceOnly = vi.fn();
+    const { onConfirm } = setup({ deviceOnlyCount: 3, onConfirmDeviceOnly });
+
+    const toggle = screen.getByRole('checkbox', { name: 'Remove from Device Only' });
+    fireEvent.keyDown(toggle, { key: 'Enter' });
+    expect(onConfirm).not.toHaveBeenCalled();
+    expect(onConfirmDeviceOnly).not.toHaveBeenCalled();
+    expect((toggle as HTMLInputElement).checked).toBe(true);
+  });
+
   it('still deletes from cloud and device when the toggle is left off', () => {
     const onConfirmDeviceOnly = vi.fn();
     const { onConfirm } = setup({ deviceOnlyCount: 3, onConfirmDeviceOnly });
