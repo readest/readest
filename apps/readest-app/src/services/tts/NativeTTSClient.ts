@@ -106,16 +106,22 @@ export class NativeTTSClient implements TTSClient {
     return this.initialized;
   }
 
-  async *speakMark(mark: TTSMark, preload: boolean, signal: AbortSignal) {
+  // `previewVoice`: speak with this voice for a preview, leaving the voice the
+  // session reads with as it is.
+  async *speakMark(mark: TTSMark, preload: boolean, signal: AbortSignal, previewVoice?: string) {
     if (preload) {
       yield { code: 'end', message: 'Dummy preload finished' } as TTSMessageEvent;
       return;
     }
     const { language: voiceLang } = mark;
-    const voiceId = await this.getVoiceIdFromLang(voiceLang);
-    this.#currentVoiceId = voiceId;
-    this.#speakingLang = voiceLang;
-    await this.setVoice(voiceId);
+    if (previewVoice) {
+      await invoke('plugin:native-tts|set_voice', { payload: { voice: previewVoice } });
+    } else {
+      const voiceId = await this.getVoiceIdFromLang(voiceLang);
+      this.#currentVoiceId = voiceId;
+      this.#speakingLang = voiceLang;
+      await this.setVoice(voiceId);
+    }
     if (signal.aborted) return;
     const pendingEvents: TTSEventPayload[] = [];
     this.#pendingSpeakEvents.add(pendingEvents);
@@ -198,6 +204,15 @@ export class NativeTTSClient implements TTSClient {
       throw error;
     } finally {
       this.#pendingSpeakEvents.delete(pendingEvents);
+    }
+  }
+
+  // Speaks `text` with `voiceId` until it ends or `signal` aborts.
+  async preview(voiceId: string, text: string, lang: string, signal: AbortSignal) {
+    if (!this.initialized && !(await this.init())) throw new Error('System TTS unavailable');
+    const mark: TTSMark = { offset: 0, name: 'preview', text, language: lang };
+    for await (const event of this.speakMark(mark, false, signal, voiceId)) {
+      if (event.code === 'error' && !signal.aborted) throw new Error(event.message);
     }
   }
 
@@ -322,6 +337,7 @@ export class NativeTTSClient implements TTSClient {
           ({
             id: groupId,
             name: TTSEngines[groupId] || groupId,
+            engine: this.name,
             voices: voices.sort(TTSUtils.sortVoicesPreferLocaleFunc(locale)),
             disabled: !this.initialized || voices.length === 0,
           }) as TTSVoicesGroup,

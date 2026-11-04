@@ -1351,11 +1351,13 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
   );
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
+  // `resume`: read on with the new voice even though reading is stopped (a
+  // voice preview stopped it).
   const handleSetVoice = useCallback(
-    throttle(async (voice: string, lang: string) => {
+    throttle(async (voice: string, lang: string, resume?: boolean) => {
       const ttsController = ttsControllerRef.current;
       if (ttsController) {
-        if (ttsController.state === 'playing') {
+        if (ttsController.state === 'playing' || resume) {
           await ttsController.stop();
           await ttsController.setVoice(voice, lang);
           await ttsController.start();

@@ -45,6 +45,7 @@ vi.mock('@/services/tts/WebAudioPlayer', async (importActual) => ({
 vi.mock('@/services/tts/TTSUtils', () => ({
   TTSUtils: {
     getPreferredClient: vi.fn().mockReturnValue(null),
+    getPreferredClientForLang: vi.fn().mockReturnValue(null),
     setPreferredClient: vi.fn(),
     setPreferredVoice: vi.fn(),
     getPreferredVoice: vi.fn().mockReturnValue(null),
@@ -414,7 +415,7 @@ describe('TTSController', () => {
 
       expect(controller.ttsClient.name).toBe('edge');
       expect(controller.state).toBe('setvoice-paused');
-      expect(TTSUtils.setPreferredClient).toHaveBeenCalledWith('edge');
+      expect(TTSUtils.setPreferredClient).toHaveBeenCalledWith('edge', '');
       expect(TTSUtils.setPreferredVoice).toHaveBeenCalledWith('edge', 'en', 'edge-voice-1');
     });
 
