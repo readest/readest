@@ -17,7 +17,7 @@ import {
   StatPageRecord,
 } from '@/libs/sync';
 import { validateUserAndToken } from '@/utils/access';
-import { DBBook, DBBookConfig } from '@/types/records';
+import { DBBook, DBBookConfig, DBBookNote } from '@/types/records';
 import {
   getStatsArchiveEnv,
   readSegment,
@@ -116,6 +116,54 @@ export function resolvePageCountMerge(
 ): number | null {
   const [winner, loser] = clientIsNewer ? [client, server] : [server, client];
   return winner.page_count ?? loser.page_count ?? null;
+}
+
+/**
+ * Keep what is stored for the book_notes columns a push leaves out. They came
+ * after clients shipped: older apps and the KOReader plugin never send them,
+ * and a bulk upsert writes every column any row in the batch names, as NULL
+ * for a row without it. An explicit null still clears one. New text means the
+ * range moved, so the anchor of the old range goes with it.
+ */
+export function keepOmittedNoteColumns(client: DBBookNote, server: DBBookNote): DBBookNote {
+  const keptAnchor = client.text === server.text ? server.crosspoint : null;
+  return {
+    ...client,
+    global: client.global === undefined ? server.global : client.global,
+    ink: client.ink === undefined ? server.ink : client.ink,
+    crosspoint: client.crosspoint === undefined ? keptAnchor : client.crosspoint,
+  };
+}
+
+/**
+ * The same for book_configs, whose position columns stay out of it. A pull takes
+ * the further of location and xpointer, so a location kept beside KOReader's
+ * newer xpointer would pull the reader to it.
+ */
+export function keepOmittedConfigColumns(client: DBBookConfig, server: DBBookConfig): DBBookConfig {
+  return {
+    ...client,
+    rsvp_position: client.rsvp_position === undefined ? server.rsvp_position : client.rsvp_position,
+    search_config: client.search_config === undefined ? server.search_config : client.search_config,
+    view_settings: client.view_settings === undefined ? server.view_settings : client.view_settings,
+  };
+}
+
+/**
+ * Whether a note that lost the row can still give it a CrossPoint anchor. An
+ * anchor says where a reader finds a highlight, not that it changed, so it goes
+ * on a row with none and updated_at stays: a client stamping its copy to get one
+ * in would overwrite whatever other devices did to the note. The same text means
+ * the same range, for a row with no cfi as well: KOReader's highlights have none.
+ */
+export function takesNoteAnchor(client: DBBookNote, server: DBBookNote): boolean {
+  return (
+    !!client.crosspoint &&
+    !server.crosspoint &&
+    !server.deleted_at &&
+    client.text === server.text &&
+    (!server.cfi || client.cfi === server.cfi)
+  );
 }
 
 const parseTTSPacks = (value: unknown): TTSPacks | undefined => {
@@ -292,6 +340,17 @@ export function dedupeLatest<T extends ChangeStamps>(records: T[], keys: (keyof 
     const key = keyOf(rec);
     return !key || latest.get(key)?.rec === rec;
   });
+}
+
+/**
+ * Whether a note outranks the row another copy of the book holds for it, by
+ * dedupeLatest's rule: an insert is stamped now, so one that doesn't would put
+ * a stale copy ahead of that row, or bring back a note deleted since.
+ */
+export function outranksCopy(client: ChangeStamps, copy: ChangeStamps): boolean {
+  const at = latestChangeMs(client);
+  const copyAt = latestChangeMs(copy);
+  return at > copyAt || (at === copyAt && !!client.deleted_at && !copy.deleted_at);
 }
 
 const transformsToDB = {
@@ -754,9 +813,35 @@ export async function POST(req: NextRequest) {
         serverRecordsMap.set(key, record);
       });
 
+      // A note with no row here may have one under another copy of the book, an
+      // OPDS re-download say. The insert below would stamp it now and outrank
+      // that row in dedupeLatest, so a copy no newer than it stays out.
+      const otherCopies = new Map<string, BookDataRecord>();
+      if (table === 'book_notes') {
+        const ids = dbRecords
+          .filter(
+            ({ original }) =>
+              !serverRecordsMap.has(primaryKeys.map((pk) => original[pk]).join('|')),
+          )
+          .map(({ original }) => original.id as string);
+        if (ids.length > 0) {
+          const { data, error } = await supabase
+            .from(table)
+            .select()
+            .eq('user_id', user.id)
+            .in('id', ids);
+          if (error) return { error: error.message };
+          const rows = (data ?? []).filter((row) => row.meta_hash) as (BookDataRecord &
+            DBBookNote)[];
+          for (const row of dedupeLatest(rows, ['id', 'meta_hash'])) {
+            otherCopies.set(`${row.id}|${row.meta_hash}`, row);
+          }
+        }
+      }
+
       // Separate into inserts and updates
-      const toInsert: (DBBook | DBBookConfig | DBBookConfig)[] = [];
-      const toUpdate: (DBBook | DBBookConfig | DBBookConfig)[] = [];
+      const toInsert: (DBBook | DBBookConfig | DBBookNote)[] = [];
+      const toUpdate: (DBBook | DBBookConfig | DBBookNote)[] = [];
       const batchAuthoritativeRecords: BookDataRecord[] = [];
 
       for (const { original, db: dbRec } of dbRecords) {
@@ -764,6 +849,11 @@ export async function POST(req: NextRequest) {
         const serverData = serverRecordsMap.get(key);
 
         if (!serverData) {
+          const otherCopy = otherCopies.get(`${original.id}|${dbRec.meta_hash}`);
+          if (otherCopy && !outranksCopy(dbRec, otherCopy)) {
+            batchAuthoritativeRecords.push(otherCopy);
+            continue;
+          }
           const packOnly =
             table === 'book_configs' &&
             (original as unknown as BookConfig).updatedAt === 0 &&
@@ -898,7 +988,12 @@ export async function POST(req: NextRequest) {
             );
             if (clientIsNewer) {
               if (ttsPacks.value) (dbRec as DBBookConfig).tts_packs = ttsPacks.value;
-              toUpdate.push(dbRec);
+              toUpdate.push(
+                keepOmittedConfigColumns(
+                  dbRec as DBBookConfig,
+                  serverData as unknown as DBBookConfig,
+                ),
+              );
             } else if (ttsPacks.changed) {
               // Server wins the row; graft the packs without touching
               // updated_at, so no device's progress is overridden. Readers
@@ -909,6 +1004,16 @@ export async function POST(req: NextRequest) {
                 ...(serverData as unknown as DBBookConfig),
                 tts_packs: ttsPacks.value ?? undefined,
               });
+            } else {
+              batchAuthoritativeRecords.push(serverData);
+            }
+          } else if (table === 'book_notes') {
+            const clientNote = dbRec as DBBookNote;
+            const serverNote = serverData as unknown as DBBookNote;
+            if (clientIsNewer) {
+              toUpdate.push(keepOmittedNoteColumns(clientNote, serverNote));
+            } else if (takesNoteAnchor(clientNote, serverNote)) {
+              toUpdate.push({ ...serverNote, crosspoint: clientNote.crosspoint });
             } else {
               batchAuthoritativeRecords.push(serverData);
             }

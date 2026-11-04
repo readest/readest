@@ -36,6 +36,8 @@ const h = vi.hoisted(() => {
     book: { hash: 'h1', format: 'EPUB', metaHash: 'm1' },
     state: {
       syncedNotes: null as unknown[] | null,
+      syncInited: true,
+      viewReady: true,
       config: { location: undefined as string | undefined, booknotes: [] as unknown[] },
     },
     setConfigMock: vi.fn(),
@@ -59,6 +61,7 @@ vi.mock('@/hooks/useSync', () => ({
     syncedNotes: h.state.syncedNotes,
     syncNotes: h.syncNotesMock,
     lastSyncedAtNotes: 2000,
+    useSyncInited: h.state.syncInited,
   }),
 }));
 
@@ -71,7 +74,10 @@ vi.mock('@/store/bookDataStore', () => ({
 }));
 
 vi.mock('@/store/readerStore', () => ({
-  useReaderStore: h.makeStore({ getView: () => h.view, getViewsById: () => [h.view] }),
+  useReaderStore: h.makeStore({
+    getView: () => (h.state.viewReady ? h.view : null),
+    getViewsById: () => [h.view],
+  }),
 }));
 
 vi.mock('@/utils/xcfi', () => ({
@@ -104,6 +110,8 @@ describe('useNotesSync with CrossPoint anchors', () => {
     vi.clearAllMocks();
     h.book.format = 'EPUB';
     h.state.syncedNotes = null;
+    h.state.syncInited = true;
+    h.state.viewReady = true;
   });
 
   afterEach(() => {
@@ -121,8 +129,8 @@ describe('useNotesSync with CrossPoint anchors', () => {
       xpointer0: h.highlight.xpointer0,
       crosspoint: { spine: 1, start_offset: 10, end_offset: 15 },
     });
-    // Newer than the stored row, so other devices pull the anchor.
-    expect(note!.updatedAt).toBeGreaterThan(h.highlight.updatedAt);
+    // An anchor isn't an edit: a stamp would let this copy beat a newer row.
+    expect(note!.updatedAt).toBe(h.highlight.updatedAt);
   });
 
   test('tries a highlight it cannot anchor once, not on every sync', async () => {
@@ -144,6 +152,87 @@ describe('useNotesSync with CrossPoint anchors', () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+
+  test('tries a moved highlight again: its range is new', async () => {
+    vi.useFakeTimers();
+    try {
+      h.anchorMock.mockResolvedValue(null);
+      const { rerender } = open([{ ...h.highlight }]);
+      await vi.advanceTimersByTimeAsync(0);
+
+      const cfi = 'epubcfi(/6/4!/4/2,/1:9,/1:12)';
+      h.state.config = {
+        location: h.location,
+        booknotes: [{ ...h.highlight, cfi, crosspoint: null, updatedAt: 3000 }],
+      };
+      rerender();
+      await vi.advanceTimersByTimeAsync(10_000);
+      expect(h.anchorMock).toHaveBeenLastCalledWith(cfi, { sections: [] });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  test('hands the try back when the push fails', async () => {
+    vi.useFakeTimers();
+    try {
+      h.anchorMock.mockResolvedValue(null);
+      h.syncNotesMock.mockResolvedValueOnce(false as never);
+      const { rerender } = open([{ ...h.highlight }]);
+      await vi.advanceTimersByTimeAsync(0);
+
+      h.state.config = { location: h.location, booknotes: [{ ...h.highlight }] };
+      rerender();
+      await vi.advanceTimersByTimeAsync(10_000);
+      expect(h.anchorMock).toHaveBeenCalledTimes(2);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  test('spends no try before useSync can push', async () => {
+    h.state.syncInited = false;
+    open([{ ...h.highlight }]);
+    await Promise.resolve();
+    expect(h.anchorMock).not.toHaveBeenCalled();
+  });
+
+  test('anchors on the first push, which goes out before the view exists', async () => {
+    h.state.viewReady = false;
+    h.anchorMock.mockResolvedValue({ spine: 1, start_offset: 10, end_offset: 15 });
+    open([{ ...h.highlight }]);
+    await waitFor(() => expect(h.syncNotesMock).toHaveBeenCalled());
+    expect(pushed()[0]).toMatchObject({ crosspoint: { spine: 1 } });
+  });
+
+  test('does not push a note of another copy to fill it in', async () => {
+    open([{ ...h.highlight, bookHash: 'other-copy', xpointer0: undefined }]);
+    await waitFor(() => expect(h.syncNotesMock).toHaveBeenCalled());
+    expect(pushed() ?? []).toEqual([]);
+  });
+
+  test('wants no xpointer for a note of a PDF', async () => {
+    h.book.format = 'PDF';
+    open([{ ...h.highlight, xpointer0: undefined }]);
+    await waitFor(() => expect(h.syncNotesMock).toHaveBeenCalled());
+    expect(pushed() ?? []).toEqual([]);
+  });
+
+  test('takes the anchors of a reply that ties, for the same range', async () => {
+    const anchor = { spine: 1, start_offset: 10, end_offset: 15 };
+    h.state.syncedNotes = [{ ...h.highlight, bookHash: 'h1', crosspoint: anchor, updatedAt: 3000 }];
+    const local = { ...h.highlight, xpointer0: undefined, crosspoint: null, updatedAt: 3000 };
+    open([{ ...local, note: 'kept' }]);
+    await waitFor(() => expect(h.setConfigMock).toHaveBeenCalled());
+    const saved = h.setConfigMock.mock.calls.at(-1)![1] as { booknotes: BookNote[] };
+    expect(saved.booknotes).toEqual([
+      expect.objectContaining({
+        note: 'kept',
+        crosspoint: anchor,
+        xpointer0: h.highlight.xpointer0,
+      }),
+    ]);
   });
 
   test('leaves highlights of books CrossPoint cannot read, and drawings, alone', async () => {

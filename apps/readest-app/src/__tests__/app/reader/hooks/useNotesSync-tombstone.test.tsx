@@ -59,6 +59,7 @@ vi.mock('@/hooks/useSync', () => ({
     syncedNotes: h.state.syncedNotes,
     syncNotes: h.syncNotesMock,
     lastSyncedAtNotes: 2000,
+    useSyncInited: true,
   }),
 }));
 
