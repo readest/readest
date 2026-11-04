@@ -1649,6 +1649,13 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
     setQuoteCard(null);
   };
 
+  // Whether a selection's own `cfi` names what it is on, rather than one
+  // recomputed from its range. A popup-window selection carries the CFI mapped
+  // into the pristine section. An annotated one keeps the CFI of the record it
+  // opened: on a copy of a global highlight the range is the copy's.
+  const keepsSelectionCfi = (sel: TextSelection) =>
+    sel.popup || (sel.annotated && (sel.segments ?? [sel]).length === 1);
+
   // Returns the brand-new highlight records (one per page of a cross-page
   // selection): only those are placeholders the note-cancel flow may remove;
   // restyling/toggling an existing one must never tear down the user's record.
@@ -1673,9 +1680,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
     // Popup-window selections carry the CFI mapped into the pristine section;
     // recomputing from the popup range would yield an unresolvable path.
     const parts = selection.segments ?? [selection];
-    // An annotated selection keeps the CFI of the record it opened: on a copy
-    // of a global highlight the range is the copy's, not the record's.
-    const keepCfi = selection.popup || (selection.annotated && parts.length === 1);
+    const keepCfi = keepsSelectionCfi(selection);
     const cfis = parts.map((part) =>
       keepCfi ? selection.cfi : view?.getCFI(part.index, part.range),
     );
@@ -1852,7 +1857,9 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
     // A note goes onto an existing highlight as it is, without restyling it to
     // the last used style and color; only unhighlighted parts get a highlight.
     const created = handleHighlight(false, undefined, true);
-    const cfi = selection.popup ? selection.cfi : view?.getCFI(selection.index, selection.range);
+    const cfi = keepsSelectionCfi(selection)
+      ? selection.cfi
+      : view?.getCFI(selection.index, selection.range);
     const target =
       created[0] ??
       getConfig(bookKey)?.booknotes?.find(

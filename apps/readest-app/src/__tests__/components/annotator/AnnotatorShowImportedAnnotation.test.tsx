@@ -232,6 +232,9 @@ vi.mock('@/app/reader/components/annotator/ExportMarkdownDialog', () => ({ defau
 vi.mock('@/app/reader/components/annotator/ImportAnnotationsDialog', () => ({
   default: () => null,
 }));
+vi.mock('@/app/reader/components/annotator/NoteEditorSheet', () => ({
+  default: () => <div data-testid='note-editor' />,
+}));
 vi.mock('@/app/reader/components/annotator/AnnotationPopup', () => ({
   default: () => <div data-testid='annotation-toolbar' />,
 }));
@@ -316,6 +319,26 @@ describe('tapping a copy of a global highlight without a note', () => {
     expect(notes.map((n) => ({ cfi: n.cfi, deleted: !!n.deletedAt }))).toEqual([
       { cfi: IMPORTED_CFI, deleted: true },
     ]);
+  });
+
+  test('Annotate opens the note editor on the global highlight', () => {
+    h.progress = { page: 1 };
+    h.config.booknotes = [globalHighlight()];
+    // A short window shows the editor as a sheet, which renders outside the
+    // (mocked) toolbar popup.
+    const height = window.innerHeight;
+    window.innerHeight = 500;
+    try {
+      const { queryByTestId } = renderAnnotator();
+      tapAnnotation(`${IMPORTED_CFI}#g3-0`);
+      act(() => {
+        h.actions?.['onAnnotateSelection']?.();
+      });
+      expect(queryByTestId('note-editor')).not.toBeNull();
+      expect(h.config.booknotes).toHaveLength(1);
+    } finally {
+      window.innerHeight = height;
+    }
   });
 
   test('shows no range handles on the copy, which would move the global highlight', () => {
