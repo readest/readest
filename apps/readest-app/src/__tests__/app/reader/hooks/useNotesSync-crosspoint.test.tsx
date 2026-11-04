@@ -59,6 +59,7 @@ vi.mock('@/hooks/useSync', () => ({
     syncedNotes: h.state.syncedNotes,
     syncNotes: h.syncNotesMock,
     lastSyncedAtNotes: 2000,
+    useSyncInited: true,
   }),
 }));
 
@@ -121,8 +122,9 @@ describe('useNotesSync with CrossPoint anchors', () => {
       xpointer0: h.highlight.xpointer0,
       crosspoint: { spine: 1, start_offset: 10, end_offset: 15 },
     });
-    // Newer than the stored row, so other devices pull the anchor.
-    expect(note!.updatedAt).toBeGreaterThan(h.highlight.updatedAt);
+    // An anchor isn't an edit: a newer stamp would let this copy beat a newer
+    // one on the server. The server stores it without one.
+    expect(note!.updatedAt).toBe(h.highlight.updatedAt);
   });
 
   test('tries a highlight it cannot anchor once, not on every sync', async () => {
@@ -144,6 +146,81 @@ describe('useNotesSync with CrossPoint anchors', () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+
+  test('tries a moved highlight again in the same session: its range is new', async () => {
+    vi.useFakeTimers();
+    try {
+      h.anchorMock.mockResolvedValue(null);
+      const { rerender } = open([{ ...h.highlight }]);
+      await vi.advanceTimersByTimeAsync(0);
+      expect(h.anchorMock).toHaveBeenCalledTimes(1);
+
+      const movedCfi = 'epubcfi(/6/4!/4/2,/1:9,/1:12)';
+      const anchor = { spine: 1, start_offset: 9, end_offset: 12 };
+      h.anchorMock.mockResolvedValue(anchor);
+      h.state.config = {
+        location: h.location,
+        booknotes: [{ ...h.highlight, cfi: movedCfi, crosspoint: null, updatedAt: 3000 }],
+      };
+      rerender();
+      await vi.advanceTimersByTimeAsync(10_000);
+
+      expect(h.anchorMock).toHaveBeenLastCalledWith(movedCfi, { sections: [] });
+      expect(pushed()[0]).toMatchObject({ cfi: movedCfi, crosspoint: anchor });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  test('tries a range again after the highlight moved away and back', async () => {
+    vi.useFakeTimers();
+    try {
+      h.anchorMock.mockResolvedValue(null);
+      const { rerender } = open([{ ...h.highlight }]);
+      await vi.advanceTimersByTimeAsync(0);
+
+      const movedTo = (cfi: string, updatedAt: number) => {
+        h.state.config = {
+          location: h.location,
+          booknotes: [{ ...h.highlight, cfi, crosspoint: null, updatedAt }],
+        };
+        rerender();
+        return vi.advanceTimersByTimeAsync(10_000);
+      };
+      await movedTo('epubcfi(/6/4!/4/2,/1:9,/1:12)', 3000);
+      expect(h.anchorMock).toHaveBeenCalledTimes(2);
+      await movedTo(h.highlight.cfi, 4000);
+      expect(h.anchorMock).toHaveBeenCalledTimes(3);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  describe('a reply that ties with the local note', () => {
+    const anchor = { spine: 1, start_offset: 10, end_offset: 15 };
+    const reply = (cfi: string) => {
+      h.state.syncedNotes = [
+        { ...h.highlight, cfi, bookHash: 'h1', crosspoint: anchor, updatedAt: 3000 },
+      ];
+    };
+    const saved = () =>
+      (h.setConfigMock.mock.calls.at(-1)![1] as { booknotes: BookNote[] }).booknotes;
+    const local = { ...h.highlight, crosspoint: null, note: 'kept', updatedAt: 3000 };
+
+    test('fills in its anchor for the same range, and keeps the local note', async () => {
+      reply(h.highlight.cfi);
+      open([local]);
+      await waitFor(() => expect(h.setConfigMock).toHaveBeenCalled());
+      expect(saved()).toEqual([expect.objectContaining({ note: 'kept', crosspoint: anchor })]);
+    });
+
+    test('leaves out an anchor for the range the highlight moved away from', async () => {
+      reply('epubcfi(/6/4!/4/2,/1:9,/1:12)');
+      open([local]);
+      await waitFor(() => expect(h.setConfigMock).toHaveBeenCalled());
+      expect(saved()).toEqual([expect.objectContaining({ note: 'kept', crosspoint: null })]);
+    });
   });
 
   test('leaves highlights of books CrossPoint cannot read, and drawings, alone', async () => {
