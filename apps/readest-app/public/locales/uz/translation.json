@@ -2718,6 +2718,8 @@
   "Voices are busy right now. Try again in a moment": "Ovozlar hozir band. Birozdan keyin qayta urinib koʻring",
   "You have used today's voice previews. Try again tomorrow": "Bugungi ovoz tinglashlaridan foydalanib boʻldingiz. Ertaga qayta urinib koʻring",
   "Voice Library": "Ovozlar kutubxonasi",
+  "Remove the downloaded files of {{count}} book(s) and keep them in the cloud._one": "{{count}} ta kitobning yuklab olingan faylini olib tashlash va uni bulutda saqlash.",
+  "Remove the downloaded files of {{count}} book(s) and keep them in the cloud._other": "{{count}} ta kitobning yuklab olingan fayllarini olib tashlash va ularni bulutda saqlash.",
   "Import from Anki": "Anki’dan import qilish",
   "Deck": "To‘plam",
   "New words come in as Learning. Words Anki counts as mature come in as Mastered.": "Yangi so‘zlar “O‘rganilmoqda” sifatida qo‘shiladi. Anki pishgan deb hisoblagan so‘zlar “O‘zlashtirildi” sifatida qo‘shiladi.",

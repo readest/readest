@@ -244,6 +244,15 @@ export const selectAbsOfflineBooks = (
   );
 };
 
+/**
+ * Whether a bulk "Remove from Device Only" may drop this book's local file
+ * (#7318): only when the book stays somewhere else — the cloud, or the
+ * Audiobookshelf server for an offline ABS download — so the library keeps a
+ * copy to download again.
+ */
+export const canRemoveFromDeviceOnly = (book: Book): boolean =>
+  (!!book.downloadedAt && !!book.uploadedAt) || !!book.absDownloadedAt;
+
 // Calibre custom column names and values, flattened for searching (#4811).
 const getCalibreColumnsText = (item: Book) =>
   (item.metadata?.calibreColumns ?? [])

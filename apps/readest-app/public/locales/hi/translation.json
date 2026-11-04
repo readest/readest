@@ -2718,6 +2718,8 @@
   "Voices are busy right now. Try again in a moment": "आवाज़ें अभी व्यस्त हैं। थोड़ी देर में फिर से कोशिश करें",
   "You have used today's voice previews. Try again tomorrow": "आपने आज के आवाज़ पूर्वावलोकन इस्तेमाल कर लिए हैं। कल फिर से कोशिश करें",
   "Voice Library": "आवाज़ लाइब्रेरी",
+  "Remove the downloaded files of {{count}} book(s) and keep them in the cloud._one": "{{count}} पुस्तक की डाउनलोड की गई फ़ाइल हटाएँ और उसे क्लाउड में रखें।",
+  "Remove the downloaded files of {{count}} book(s) and keep them in the cloud._other": "{{count}} पुस्तकों की डाउनलोड की गई फ़ाइलें हटाएँ और उन्हें क्लाउड में रखें।",
   "Import from Anki": "Anki से इम्पोर्ट करें",
   "Deck": "डेक",
   "New words come in as Learning. Words Anki counts as mature come in as Mastered.": "नए शब्द “सीख रहे हैं” के रूप में आते हैं। Anki जिन शब्दों को परिपक्व मानता है, वे “सीख लिया” के रूप में आते हैं।",

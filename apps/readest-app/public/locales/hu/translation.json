@@ -2718,6 +2718,8 @@
   "Voices are busy right now. Try again in a moment": "A hangok most foglaltak. Próbálja újra egy pillanat múlva",
   "You have used today's voice previews. Try again tomorrow": "Felhasználta a mai hangelőnézeteket. Próbálja újra holnap",
   "Voice Library": "Hangtár",
+  "Remove the downloaded files of {{count}} book(s) and keep them in the cloud._one": "{{count}} könyv letöltött fájljának eltávolítása, a könyv a felhőben marad.",
+  "Remove the downloaded files of {{count}} book(s) and keep them in the cloud._other": "{{count}} könyv letöltött fájljainak eltávolítása, a könyvek a felhőben maradnak.",
   "Import from Anki": "Importálás az Ankiból",
   "Deck": "Pakli",
   "New words come in as Learning. Words Anki counts as mature come in as Mastered.": "Az új szavak „Tanulom” állapotba kerülnek, amit az Anki érettnek tart, az „Elsajátítva” állapotba.",

@@ -2093,6 +2093,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
               handleBookDownload={handleBookDownload}
               handleBookDelete={handleBookDelete('both')}
               handleBookPurge={handleBookDelete('purge')}
+              handleBookDeleteLocalCopy={handleBookDelete('local')}
               handleSetSelectMode={handleSetSelectMode}
               handleShowDetailsBook={handleShowDetailsBook}
               handleLibraryNavigation={handleLibraryNavigation}

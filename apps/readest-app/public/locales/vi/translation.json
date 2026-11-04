@@ -2650,6 +2650,7 @@
   "Voices are busy right now. Try again in a moment": "Các giọng đọc đang bận. Hãy thử lại sau giây lát",
   "You have used today's voice previews. Try again tomorrow": "Bạn đã dùng hết lượt nghe thử giọng đọc hôm nay. Hãy thử lại vào ngày mai",
   "Voice Library": "Thư viện giọng đọc",
+  "Remove the downloaded files of {{count}} book(s) and keep them in the cloud._other": "Xóa tệp đã tải xuống của {{count}} cuốn sách và giữ chúng trên Đám mây.",
   "Import from Anki": "Nhập từ Anki",
   "Deck": "Bộ thẻ",
   "New words come in as Learning. Words Anki counts as mature come in as Mastered.": "Từ mới được thêm với trạng thái “Đang học”. Những từ Anki coi là đã thuần thục được thêm với trạng thái “Đã thuộc”.",

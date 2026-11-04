@@ -2650,6 +2650,7 @@
   "Voices are busy right now. Try again in a moment": "現在音声が混み合っています。しばらくしてからもう一度お試しください",
   "You have used today's voice previews. Try again tomorrow": "本日の試聴回数の上限に達しました。明日もう一度お試しください",
   "Voice Library": "音声ライブラリ",
+  "Remove the downloaded files of {{count}} book(s) and keep them in the cloud._other": "{{count}}冊のダウンロード済みファイルを削除し、クラウドには残します。",
   "Import from Anki": "Ankiからインポート",
   "Deck": "デッキ",
   "New words come in as Learning. Words Anki counts as mature come in as Mastered.": "新しい単語は「学習中」として追加されます。Ankiで成熟したカードの単語は「習得済み」として追加されます。",

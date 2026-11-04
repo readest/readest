@@ -135,6 +135,8 @@
   "Restored collection \"{{name}}\" ({{count}} books)_one": "Restored collection \"{{name}}\" ({{count}} book)",
   "Restored collection \"{{name}}\" ({{count}} books)_other": "Restored collection \"{{name}}\" ({{count}} books)",
   "Lookup App": "Lookup App",
+  "Remove the downloaded files of {{count}} book(s) and keep them in the cloud._one": "Remove the downloaded file of {{count}} book and keep it in the cloud.",
+  "Remove the downloaded files of {{count}} book(s) and keep them in the cloud._other": "Remove the downloaded files of {{count}} books and keep them in the cloud.",
   "Added {{count}} words to Anki_one": "Added {{count}} word to Anki",
   "Added {{count}} words to Anki_other": "Added {{count}} words to Anki",
   "{{count}} skipped_one": "{{count}} skipped",

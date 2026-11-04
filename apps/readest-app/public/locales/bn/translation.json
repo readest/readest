@@ -2718,6 +2718,8 @@
   "Voices are busy right now. Try again in a moment": "কণ্ঠস্বরগুলো এখন ব্যস্ত। একটু পরে আবার চেষ্টা করুন",
   "You have used today's voice previews. Try again tomorrow": "আপনি আজকের কণ্ঠস্বর প্রিভিউ ব্যবহার করে ফেলেছেন। আগামীকাল আবার চেষ্টা করুন",
   "Voice Library": "কণ্ঠস্বর লাইব্রেরি",
+  "Remove the downloaded files of {{count}} book(s) and keep them in the cloud._one": "{{count}}টি বইয়ের ডাউনলোড করা ফাইল সরান এবং বইটি ক্লাউডে রাখুন।",
+  "Remove the downloaded files of {{count}} book(s) and keep them in the cloud._other": "{{count}}টি বইয়ের ডাউনলোড করা ফাইল সরান এবং বইগুলি ক্লাউডে রাখুন।",
   "Import from Anki": "Anki থেকে ইমপোর্ট করুন",
   "Deck": "ডেক",
   "New words come in as Learning. Words Anki counts as mature come in as Mastered.": "নতুন শব্দ “শিখছি” হিসেবে যোগ হয়। Anki যেসব শব্দকে পরিপক্ব ধরে, সেগুলো “আয়ত্ত” হিসেবে যোগ হয়।",

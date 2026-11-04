@@ -2650,6 +2650,7 @@
   "Voices are busy right now. Try again in a moment": "语音服务繁忙，请稍后再试",
   "You have used today's voice previews. Try again tomorrow": "今日的语音试听次数已用完，请明天再试",
   "Voice Library": "语音库",
+  "Remove the downloaded files of {{count}} book(s) and keep them in the cloud._other": "移除 {{count}} 本书已下载的文件，并保留在云端。",
   "Import from Anki": "从 Anki 导入",
   "Deck": "牌组",
   "New words come in as Learning. Words Anki counts as mature come in as Mastered.": "新词以“学习中”导入。Anki 中已成熟的卡片对应的词以“已掌握”导入。",

@@ -2718,6 +2718,8 @@
   "Voices are busy right now. Try again in a moment": "Οι φωνές είναι απασχολημένες αυτή τη στιγμή. Δοκιμάστε ξανά σε λίγο",
   "You have used today's voice previews. Try again tomorrow": "Χρησιμοποιήσατε τις σημερινές δοκιμές φωνής. Δοκιμάστε ξανά αύριο",
   "Voice Library": "Βιβλιοθήκη φωνών",
+  "Remove the downloaded files of {{count}} book(s) and keep them in the cloud._one": "Αφαίρεση του ληφθέντος αρχείου {{count}} βιβλίου και διατήρησή του στο Cloud.",
+  "Remove the downloaded files of {{count}} book(s) and keep them in the cloud._other": "Αφαίρεση των ληφθέντων αρχείων {{count}} βιβλίων και διατήρησή τους στο Cloud.",
   "Import from Anki": "Εισαγωγή από το Anki",
   "Deck": "Τράπουλα",
   "New words come in as Learning. Words Anki counts as mature come in as Mastered.": "Οι νέες λέξεις προστίθενται ως «Σε εκμάθηση». Όσες το Anki θεωρεί ώριμες προστίθενται ως «Κατακτημένη».",

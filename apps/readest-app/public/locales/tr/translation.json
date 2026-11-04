@@ -2718,6 +2718,8 @@
   "Voices are busy right now. Try again in a moment": "Sesler şu anda meşgul. Birazdan tekrar deneyin",
   "You have used today's voice previews. Try again tomorrow": "Bugünkü ses önizlemelerini kullandınız. Yarın tekrar deneyin",
   "Voice Library": "Ses kitaplığı",
+  "Remove the downloaded files of {{count}} book(s) and keep them in the cloud._one": "{{count}} kitabın indirilen dosyasını kaldır ve kitabı bulutta tut.",
+  "Remove the downloaded files of {{count}} book(s) and keep them in the cloud._other": "{{count}} kitabın indirilen dosyalarını kaldır ve kitapları bulutta tut.",
   "Import from Anki": "Anki'den içe aktar",
   "Deck": "Deste",
   "New words come in as Learning. Words Anki counts as mature come in as Mastered.": "Yeni kelimeler “Öğreniliyor” olarak eklenir. Anki'nin olgun saydığı kelimeler “Öğrenildi” olarak eklenir.",

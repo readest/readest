@@ -2650,6 +2650,7 @@
   "Voices are busy right now. Try again in a moment": "지금은 음성이 혼잡합니다. 잠시 후 다시 시도하세요",
   "You have used today's voice previews. Try again tomorrow": "오늘의 음성 미리 듣기를 모두 사용했습니다. 내일 다시 시도하세요",
   "Voice Library": "음성 라이브러리",
+  "Remove the downloaded files of {{count}} book(s) and keep them in the cloud._other": "{{count}}권의 다운로드한 파일을 삭제하고 클라우드에는 유지합니다.",
   "Import from Anki": "Anki에서 가져오기",
   "Deck": "덱",
   "New words come in as Learning. Words Anki counts as mature come in as Mastered.": "새 단어는 '학습 중'으로 추가됩니다. Anki에서 숙달된 카드의 단어는 '익힘'으로 추가됩니다.",

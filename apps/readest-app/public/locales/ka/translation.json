@@ -2718,6 +2718,8 @@
   "Voices are busy right now. Try again in a moment": "ხმები ახლა დაკავებულია. სცადეთ ცოტა ხანში",
   "You have used today's voice previews. Try again tomorrow": "დღევანდელი ხმის მოსმენები ამოწურეთ. სცადეთ ხვალ",
   "Voice Library": "ხმების ბიბლიოთეკა",
+  "Remove the downloaded files of {{count}} book(s) and keep them in the cloud._one": "{{count}} წიგნის ჩამოტვირთული ფაილის მოშორება და წიგნის ღრუბელში შენარჩუნება.",
+  "Remove the downloaded files of {{count}} book(s) and keep them in the cloud._other": "{{count}} წიგნის ჩამოტვირთული ფაილების მოშორება და წიგნების ღრუბელში შენარჩუნება.",
   "Import from Anki": "Anki-დან იმპორტი",
   "Deck": "დასტა",
   "New words come in as Learning. Words Anki counts as mature come in as Mastered.": "ახალი სიტყვები ემატება როგორც „ვსწავლობ“. სიტყვები, რომლებსაც Anki მომწიფებულად თვლის, ემატება როგორც „ნასწავლი“.",
