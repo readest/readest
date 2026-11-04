@@ -477,7 +477,7 @@ describe('note card over the popup box', () => {
     createdAt: 1,
     updatedAt: 1,
   };
-  const renderNote = (dir: 'up' | 'down', eink: boolean) => {
+  const renderNote = (dir: 'up' | 'down', eink: boolean, editor = false) => {
     // Triangle above the text (dir 'up' points down at it from below the box)
     // or below it (dir 'down').
     const triangleY = dir === 'up' ? NOTE_Y : NOTE_Y - 7;
@@ -489,7 +489,8 @@ describe('note card over the popup box', () => {
           dir='ltr'
           isVertical={false}
           buttons={toolButtons}
-          notes={[note]}
+          notes={editor ? [] : [note]}
+          noteEditor={editor ? { value: note.note, onSave: vi.fn(), onCancel: vi.fn() } : null}
           position={{ dir, point: { x: 20, y: popupY } }}
           trianglePosition={{ dir, point: { x: 20 + POPUP_W / 2, y: triangleY } }}
           highlightOptionsVisible={false}
@@ -509,19 +510,25 @@ describe('note card over the popup box', () => {
     ['down', false],
     ['up', true],
     ['down', true],
-  ] as const)('triangle %s, e-ink %s: the card covers the box edge to edge', (dir, eink) => {
-    const { container } = renderNote(dir, eink);
-    const box = (
-      container.querySelector('#popup-container') as HTMLElement
-    ).getBoundingClientRect();
-    const card = (
-      container.querySelector('.annotation-notes .popup-container') as HTMLElement
-    ).getBoundingClientRect();
+  ] as const)('triangle %s, e-ink %s: the card and the editor cover the box', (dir, eink) => {
     const edge = dir === 'up' ? 'bottom' : 'top';
-    expect({ left: card.left, right: card.right, [edge]: card[edge] }).toEqual({
-      left: box.left,
-      right: box.right,
-      [edge]: box[edge],
-    });
+    // The note card, then the note editor that opens in the same box.
+    for (const [editor, selector] of [
+      [false, '.annotation-notes .popup-container'],
+      [true, '.annotation-note-editor'],
+    ] as const) {
+      const { container, unmount } = renderNote(dir, eink, editor);
+      const box = (
+        container.querySelector('#popup-container') as HTMLElement
+      ).getBoundingClientRect();
+      const panel = (container.querySelector(selector) as HTMLElement).getBoundingClientRect();
+      expect({ selector, left: panel.left, right: panel.right, [edge]: panel[edge] }).toEqual({
+        selector,
+        left: box.left,
+        right: box.right,
+        [edge]: box[edge],
+      });
+      unmount();
+    }
   });
 });
