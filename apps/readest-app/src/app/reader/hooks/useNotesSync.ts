@@ -205,10 +205,6 @@ export const useNotesSync = (bookKey: string) => {
         lastSyncedAtNotes < note.updatedAt ||
         lastSyncedAtNotes < (note.deletedAt ?? 0),
     );
-    newNotes.forEach((note) => {
-      note.bookHash = book.hash;
-      note.metaHash = book.metaHash;
-    });
     return {
       notes: newNotes,
       lastSyncedAt: lastSyncedAtNotes,
@@ -222,7 +218,14 @@ export const useNotesSync = (bookKey: string) => {
         const book = getBookData(bookKey)?.book;
         const newNotes = getNewNotes();
         if (newNotes.notes?.length) {
-          populateXPointersForPush(newNotes.notes).then((enriched) => {
+          // Stamped with this copy's hashes only now: until here the hash says
+          // which copy a note came from, and so whether it wants back-filling.
+          populateXPointersForPush(newNotes.notes).then((filled) => {
+            const enriched = filled.map((note) => ({
+              ...note,
+              bookHash: book?.hash,
+              metaHash: book?.metaHash,
+            }));
             enriched.forEach((note) => {
               if (!pushedAtRef.current.has(note.id)) {
                 pushedAtRef.current.set(note.id, note.updatedAt);

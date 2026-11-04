@@ -135,6 +135,13 @@ export function keepOmittedNoteColumns(client: DBBookNote, server: DBBookNote): 
   };
 }
 
+/** Whether a pushed row wins over a stored one: its deletion or its edit is newer. */
+export function isNewerThanStored(client: ChangeStamps, server: ChangeStamps): boolean {
+  return (
+    ms(client.deleted_at) > ms(server.deleted_at) || ms(client.updated_at) > ms(server.updated_at)
+  );
+}
+
 /**
  * The same for book_configs, whose position columns stay out of it. A pull takes
  * the further of location and xpointer, so a location kept beside KOReader's
@@ -802,6 +809,32 @@ export async function POST(req: NextRequest) {
         serverRecordsMap.set(key, record);
       });
 
+      // A note with no row here may have one under another copy of the book, an
+      // OPDS re-download say. The insert below would stamp it now and outrank
+      // that row in dedupeLatest, so a copy no newer than it stays out.
+      const otherCopies = new Map<string, BookDataRecord>();
+      if (table === 'book_notes') {
+        const ids = dbRecords
+          .filter(
+            ({ original }) =>
+              !serverRecordsMap.has(primaryKeys.map((pk) => original[pk]).join('|')),
+          )
+          .map(({ original }) => original.id as string);
+        if (ids.length > 0) {
+          const { data, error } = await supabase
+            .from(table)
+            .select()
+            .eq('user_id', user.id)
+            .in('id', ids);
+          if (error) return { error: error.message };
+          const rows = (data ?? []).filter((row) => row.meta_hash) as (BookDataRecord &
+            DBBookNote)[];
+          for (const row of dedupeLatest(rows, ['id', 'meta_hash'])) {
+            otherCopies.set(`${row.id}|${row.meta_hash}`, row);
+          }
+        }
+      }
+
       // Separate into inserts and updates
       const toInsert: (DBBook | DBBookConfig | DBBookNote)[] = [];
       const toUpdate: (DBBook | DBBookConfig | DBBookNote)[] = [];
@@ -812,6 +845,11 @@ export async function POST(req: NextRequest) {
         const serverData = serverRecordsMap.get(key);
 
         if (!serverData) {
+          const otherCopy = otherCopies.get(`${original.id}|${dbRec.meta_hash}`);
+          if (otherCopy && !isNewerThanStored(dbRec, otherCopy)) {
+            batchAuthoritativeRecords.push(otherCopy);
+            continue;
+          }
           const packOnly =
             table === 'book_configs' &&
             (original as unknown as BookConfig).updatedAt === 0 &&
@@ -821,16 +859,7 @@ export async function POST(req: NextRequest) {
           dbRec.updated_at = new Date(packOnly ? 1 : Date.now()).toISOString();
           toInsert.push(dbRec);
         } else {
-          const clientUpdatedAt = dbRec.updated_at ? new Date(dbRec.updated_at).getTime() : 0;
-          const serverUpdatedAt = serverData.updated_at
-            ? new Date(serverData.updated_at).getTime()
-            : 0;
-          const clientDeletedAt = dbRec.deleted_at ? new Date(dbRec.deleted_at).getTime() : 0;
-          const serverDeletedAt = serverData.deleted_at
-            ? new Date(serverData.deleted_at).getTime()
-            : 0;
-          const clientIsNewer =
-            clientDeletedAt > serverDeletedAt || clientUpdatedAt > serverUpdatedAt;
+          const clientIsNewer = isNewerThanStored(dbRec, serverData);
 
           if (table === 'books') {
             // `dbRec` is DBBook | DBBookConfig; in the 'books' branch it is always DBBook.

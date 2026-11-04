@@ -32,6 +32,11 @@ const h = vi.hoisted(() => {
       const url = new URL(input.toString());
       if (init?.method !== 'POST') {
         let out = [...rows.values()];
+        const ids = url.searchParams.get('id')?.match(/^in\.\((.*)\)$/)?.[1];
+        if (ids !== undefined) {
+          const wanted = new Set(ids.split(',').map((id) => id.replaceAll('"', '')));
+          out = out.filter((r) => wanted.has(r['id'] as string));
+        }
         for (const clause of url.searchParams.getAll('or')) {
           const since = clause.match(/updated_at\.gt\.([^,)]+)/);
           if (since) {
@@ -297,6 +302,49 @@ describe('a re-packaged copy of a book', () => {
     await elapse(12_000);
     expect(pushed.flat().filter((n) => !n['deletedAt'])).toEqual([]);
     expect(h.rows.has('h2|n1')).toBe(false);
+  });
+
+  describe('with a note newer than the sync cursor', () => {
+    // After the cursor, which starts a day behind the last sync, and before the
+    // tablet's edit.
+    const recent = { updatedAt: NOW - DAY - HOUR / 2 };
+    const peerSees = async () => {
+      const { notes } = await pull(0, 'h1', 'm1');
+      return Object.fromEntries((notes as Row[]).map((n) => [n['id'], n]));
+    };
+
+    test.each([
+      ['with an xpointer', recent],
+      ['without one', { ...recent, xpointer0: undefined, xpointer1: undefined }],
+    ])('keeps a stale copy of it off the server, %s', async (_name, fields) => {
+      openBook('h2', [note('n1', fields)], NOW - HOUR);
+      await elapse(12_000);
+      expect(h.rows.has('h2|n1')).toBe(false);
+      expect((await peerSees())['n1']).toMatchObject({ note: 'written on the tablet' });
+    });
+
+    test('still sends an edit made on this copy', async () => {
+      const edit = note('n1', { note: 'written on this copy', updatedAt: NOW - 1000 });
+      openBook('h2', [edit], NOW - HOUR);
+      await elapse(12_000);
+      expect((await peerSees())['n1']).toMatchObject({ note: 'written on this copy' });
+    });
+
+    test('does not take a note of another book for a copy', async () => {
+      const other = note('n9', { bookHash: 'h9', metaHash: 'm9', updatedAt: NOW });
+      store(other);
+      const mine = note('n9', { bookHash: undefined, updatedAt: NOW - 1000 });
+      openBook('h2', [mine], NOW - HOUR);
+      await elapse(12_000);
+      expect(h.rows.has('h2|n9')).toBe(true);
+    });
+
+    test('still sends a deletion made on this copy', async () => {
+      const gone = NOW - 1000;
+      openBook('h2', [note('n1', { updatedAt: gone, deletedAt: gone })], NOW - HOUR);
+      await elapse(12_000);
+      expect((await peerSees())['n1']!['deleted_at']).toBeTruthy();
+    });
   });
 
   test('leaves other devices with the edit and the deletion', async () => {
