@@ -167,21 +167,21 @@ const VocabularyView: React.FC<VocabularyViewProps> = ({ onOpenBook }) => {
               disabled={!shown.length}
               onClick={() => void exportAs('csv')}
             />
-            {anki.available ? (
+            <MenuItem
+              label={_('Export to Anki')}
+              description={anki.premiumBadge}
+              Icon={PiCardsThree}
+              transient
+              disabled={!shown.length}
+              onClick={() => void exportAs('anki')}
+            />
+            {anki.available && (
               <MenuItem
                 label={_('Import Anki Deck...')}
                 description={anki.premiumBadge}
                 Icon={PiDownloadSimple}
                 transient
                 onClick={() => void anki.openImport()}
-              />
-            ) : (
-              <MenuItem
-                label={_('Export to Anki')}
-                description={anki.premiumBadge}
-                Icon={PiCardsThree}
-                transient
-                onClick={() => void exportAs('anki')}
               />
             )}
           </Menu>

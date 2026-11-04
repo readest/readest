@@ -518,6 +518,16 @@ describe('VocabularyView Anki link', () => {
     expect(anki.ankiStatus).not.toHaveBeenCalled();
   });
 
+  it('keeps the Anki file export next to deck import when AnkiDroid is there', async () => {
+    renderWithMenu();
+    await syncButton();
+    openMenu('More');
+    expect(screen.getByRole('menuitem', { name: /Import Anki Deck/ })).toBeTruthy();
+    fireEvent.click(screen.getByRole('menuitem', { name: /Export to Anki/ }));
+    await waitFor(() => expect(saveFile).toHaveBeenCalled());
+    expect((saveFile.mock.calls[0] as unknown as [string])[0]).toBe('readest-vocabulary-anki.txt');
+  });
+
   it('gates the Anki file export behind premium', () => {
     appService.isAndroidApp = false;
     account.plan = 'free';
