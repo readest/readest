@@ -156,8 +156,12 @@ describe('paginator last page of the book (browser)', () => {
     expect(el.atEnd).toBe(true);
     // Right to left, the last column fills the right half.
     const x = offsetInPage(el, 'a-last');
+    const columnWidth = el
+      .getContents()[0]!
+      .doc.getElementById('a-last')!
+      .getBoundingClientRect().width;
     expect(x).toBeGreaterThanOrEqual(pageWidth / 2 - 1);
-    expect(x).toBeLessThan(pageWidth);
+    expect(x + columnWidth).toBeLessThanOrEqual(pageWidth + 1);
   });
 
   it.each(widths)('ends on the last column of a vertical book at height %s', async (height) => {
