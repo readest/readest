@@ -2786,7 +2786,7 @@
   "Voices are busy right now. Try again in a moment": "Vocile sunt ocupate acum. Încercați din nou peste câteva momente",
   "You have used today's voice previews. Try again tomorrow": "Ați folosit previzualizările de voce de azi. Încercați din nou mâine",
   "Voice Library": "Bibliotecă de voci",
-  "Remove the downloaded files of {{count}} book(s) and keep them in the cloud._one": "Eliminați fișierul descărcat al {{count}} carte și păstrați-o în Cloud.",
-  "Remove the downloaded files of {{count}} book(s) and keep them in the cloud._few": "Eliminați fișierele descărcate ale {{count}} cărți și păstrați-le în Cloud.",
-  "Remove the downloaded files of {{count}} book(s) and keep them in the cloud._other": "Eliminați fișierele descărcate ale celor {{count}} de cărți și păstrați-le în Cloud."
+  "Remove the downloaded files of {{count}} book(s) and keep them in the cloud._one": "Eliminați fișierul descărcat pentru {{count}} carte și păstrați-o în Cloud.",
+  "Remove the downloaded files of {{count}} book(s) and keep them in the cloud._few": "Eliminați fișierele descărcate pentru {{count}} cărți și păstrați-le în Cloud.",
+  "Remove the downloaded files of {{count}} book(s) and keep them in the cloud._other": "Eliminați fișierele descărcate pentru {{count}} de cărți și păstrați-le în Cloud."
 }

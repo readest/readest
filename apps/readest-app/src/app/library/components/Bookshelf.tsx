@@ -202,7 +202,8 @@ const Bookshelf: React.FC<BookshelfProps> = ({
   const [tagBookHashes, setTagBookHashes] = useState<string[] | null>(null);
   const [importBookUrl] = useState(searchParams?.get('url') || '');
 
-  const abortDeletionRef = useRef(false);
+  // Bumped by each deletion run and by Cancel; a run stops once it is stale.
+  const deletionRunRef = useRef(0);
   const selectAllAppliedRef = useRef(false);
   const isImportingBook = useRef(false);
   const iconSize15 = useResponsiveSize(15);
@@ -497,20 +498,17 @@ const Bookshelf: React.FC<BookshelfProps> = ({
     books: Book[],
     deleteBook: (book: Book, syncBooks?: boolean) => Promise<boolean>,
   ) => {
-    // Cancel sets the flag even when nothing is running; clear it so an
-    // earlier cancelled confirmation doesn't stop this run before it starts.
-    abortDeletionRef.current = false;
+    const run = ++deletionRunRef.current;
     const concurrency = 20;
 
-    for (let i = 0; i < books.length; i += concurrency) {
-      if (abortDeletionRef.current) {
-        abortDeletionRef.current = false;
-        break;
-      }
+    for (let i = 0; i < books.length && run === deletionRunRef.current; i += concurrency) {
       const batch = books.slice(i, i + concurrency);
       await Promise.all(batch.map((book) => deleteBook(book, false)));
     }
     handlePushLibrary();
+    // Cancel already closed this run's alert, and a newer run owns the one
+    // that may be open now.
+    if (run !== deletionRunRef.current) return;
     setSelectedBooks([]);
     setShowDeleteAlert(false);
     setShowSelectModeActions(true);
@@ -1172,7 +1170,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
             showPurgeToggle
             deviceOnlyCount={getBooksToDelete().filter(canRemoveFromDeviceOnly).length}
             onCancel={() => {
-              abortDeletionRef.current = true;
+              deletionRunRef.current++;
               setShowDeleteAlert(false);
               setShowSelectModeActions(true);
             }}
