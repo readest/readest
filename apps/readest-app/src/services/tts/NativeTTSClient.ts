@@ -49,6 +49,8 @@ export class NativeTTSClient implements TTSClient {
   #pitch = 1.0;
 
   #eventListener: PluginListener | null = null;
+  // A local engine can finish a short sentence before invoke returns its ID.
+  #pendingSpeakEvents = new Set<TTSEventPayload[]>();
   #activeUtterances = new Map<
     string,
     {
@@ -72,7 +74,10 @@ export class NativeTTSClient implements TTSClient {
           const { utteranceId, code, message, mark } = event;
 
           const utteranceData = this.#activeUtterances.get(utteranceId);
-          if (!utteranceData) return;
+          if (!utteranceData) {
+            for (const pending of this.#pendingSpeakEvents) pending.push(event);
+            return;
+          }
 
           const ttsEvent: TTSMessageEvent = { code, message, mark };
           utteranceData.eventQueue.push(ttsEvent);
@@ -96,7 +101,7 @@ export class NativeTTSClient implements TTSClient {
     const result = await invoke<{ success: boolean }>('plugin:native-tts|init');
     this.initialized = result.success;
     if (this.initialized) {
-      this.setupEventListener();
+      await this.setupEventListener();
     }
     return this.initialized;
   }
@@ -111,16 +116,21 @@ export class NativeTTSClient implements TTSClient {
     this.#currentVoiceId = voiceId;
     this.#speakingLang = voiceLang;
     await this.setVoice(voiceId);
+    if (signal.aborted) return;
+    const pendingEvents: TTSEventPayload[] = [];
+    this.#pendingSpeakEvents.add(pendingEvents);
     try {
       const result = await invoke<{ utteranceId: string }>('plugin:native-tts|speak', {
         payload: { text: mark.text, preload },
       });
 
       const utteranceId = result.utteranceId;
+      const earlyEvents = pendingEvents.filter((ev) => ev.utteranceId === utteranceId);
+      this.#pendingSpeakEvents.delete(pendingEvents);
       this.#activeUtterances.set(utteranceId, {
-        eventQueue: [],
+        eventQueue: earlyEvents,
         resolver: null,
-        finished: false,
+        finished: earlyEvents.some((ev) => ev.code === 'end' || ev.code === 'error'),
       });
 
       const abortHandler = () => {
@@ -130,12 +140,23 @@ export class NativeTTSClient implements TTSClient {
           utteranceData.resolver({ value: error, done: true });
           utteranceData.resolver = null;
         }
-        this.stop();
+        // A delayed reply from canceled speech must not stop its replacement.
+        if (this.controller?.appService?.isLinuxApp) {
+          void invoke('plugin:native-tts|stop', { payload: { utteranceId } }).catch((error) =>
+            console.warn('Native TTS cancellation failed:', error),
+          );
+        } else {
+          void this.stop();
+        }
       };
 
       signal.addEventListener('abort', abortHandler);
 
       try {
+        if (signal.aborted) {
+          abortHandler();
+          return;
+        }
         while (true) {
           const utteranceData = this.#activeUtterances.get(utteranceId);
           if (!utteranceData) break;
@@ -175,6 +196,8 @@ export class NativeTTSClient implements TTSClient {
     } catch (error) {
       console.error('Failed to speak:', error);
       throw error;
+    } finally {
+      this.#pendingSpeakEvents.delete(pendingEvents);
     }
   }
 
@@ -229,8 +252,10 @@ export class NativeTTSClient implements TTSClient {
   }
 
   async setRate(rate: number) {
-    // Power the rate to match the EdgeTTS behavior
-    this.#rate = parseFloat(Math.pow(rate, 2.5).toFixed(2));
+    // Mobile APIs need the exponent; speech-dispatcher uses a relative rate.
+    this.#rate = this.controller?.appService?.isLinuxApp
+      ? rate
+      : parseFloat(Math.pow(rate, 2.5).toFixed(2));
     await invoke('plugin:native-tts|set_rate', { payload: { rate: this.#rate } });
   }
 

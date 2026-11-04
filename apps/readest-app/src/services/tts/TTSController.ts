@@ -330,9 +330,8 @@ export class TTSController extends EventTarget {
       this,
       appService,
     );
-    // Native TTS is backed by Android TextToSpeech and iOS AVSpeechSynthesizer.
-    // TODO: implement native TTS client for desktop platforms.
-    if (appService?.isAndroidApp || appService?.isIOSApp) {
+    // Android TextToSpeech, iOS AVSpeechSynthesizer, or Linux speech-dispatcher.
+    if (appService?.isAndroidApp || appService?.isIOSApp || appService?.isLinuxApp) {
       this.ttsNativeClient = new NativeTTSClient(this);
     }
     this.ttsMediaOverlayClient = new MediaOverlayClient(this, appService);
