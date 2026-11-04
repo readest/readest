@@ -35,6 +35,13 @@ describe('middleware CORS preflight', () => {
     const res = preflight();
     expect(res.headers.get('Access-Control-Allow-Headers')).toBe('Authorization, Content-Type');
   });
+
+  it('allows PATCH so the native apps can approve a pending Send to Readest sender', () => {
+    // The apps call this API cross-origin, so the webview drops any method
+    // missing from this list before the request reaches the route.
+    const methods = preflight().headers.get('Access-Control-Allow-Methods')?.split(', ');
+    expect(methods).toContain('PATCH');
+  });
 });
 
 describe('middleware cross-origin isolation headers', () => {
