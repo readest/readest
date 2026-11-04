@@ -1,5 +1,8 @@
 import React, { useMemo, useState } from 'react';
 import clsx from 'clsx';
+import { MdArrowDropDown, MdSearch } from 'react-icons/md';
+import { IoMdCloseCircle } from 'react-icons/io';
+import { PiBooks, PiCardsThree, PiExport, PiFileCsv } from 'react-icons/pi';
 
 import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -9,6 +12,9 @@ import { toAnkiText, toCsv } from '@/services/vocabulary/export';
 import type { VocabularyState } from '@/services/vocabulary/types';
 import { eventDispatcher } from '@/utils/event';
 import { getLocale } from '@/utils/misc';
+import Dropdown from '@/components/Dropdown';
+import Menu from '@/components/Menu';
+import MenuItem from '@/components/MenuItem';
 import VocabularyDetail from './VocabularyDetail';
 
 interface VocabularyViewProps {
@@ -45,6 +51,9 @@ const VocabularyView: React.FC<VocabularyViewProps> = ({ onOpenBook }) => {
     { state: 'mastered', label: _('Mastered') },
   ];
 
+  const revealChip = (chip: Element | null) =>
+    chip?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+
   const exportAs = async (format: 'csv' | 'anki') => {
     const content = format === 'csv' ? toCsv(shown) : toAnkiText(shown);
     const filename = format === 'csv' ? 'readest-vocabulary.csv' : 'readest-vocabulary-anki.txt';
@@ -70,34 +79,57 @@ const VocabularyView: React.FC<VocabularyViewProps> = ({ onOpenBook }) => {
 
   return (
     <div className='flex h-full min-h-0 flex-col'>
-      <div className='flex flex-wrap items-center gap-2 pb-2'>
-        <input
-          type='search'
-          aria-label={_('Search')}
-          placeholder={_('Search words')}
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          className='eink-bordered input input-sm border-base-content/20 min-w-0 flex-1'
-        />
-        <button
-          type='button'
-          className='btn btn-ghost btn-sm eink-bordered'
+      <div className='flex items-center gap-2 pb-3'>
+        <label className='eink-bordered bg-base-200 not-eink:focus-within:bg-base-300/60 eink:focus-within:ring-2 eink:focus-within:ring-base-content flex h-10 min-w-0 flex-1 items-center gap-2 rounded-full px-3.5'>
+          <MdSearch aria-hidden='true' className='text-base-content/50 h-5 w-5 shrink-0' />
+          <input
+            type='search'
+            aria-label={_('Search')}
+            placeholder={_('Search words')}
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            className='min-w-0 flex-1 bg-transparent text-sm focus:outline-hidden [&::-webkit-search-cancel-button]:hidden'
+          />
+          {query && (
+            <button
+              type='button'
+              aria-label={_('Clear')}
+              onClick={() => setQuery('')}
+              className='-me-2 flex h-8 w-8 shrink-0 items-center justify-center'
+            >
+              <IoMdCloseCircle className='text-base-content/50 h-4 w-4' />
+            </button>
+          )}
+        </label>
+        <Dropdown
+          label={_('Export')}
           disabled={!shown.length}
-          onClick={() => void exportAs('csv')}
+          className='dropdown-bottom dropdown-end'
+          buttonClassName='btn btn-ghost btn-circle eink-bordered bg-base-200 h-10 min-h-10 w-10 p-0 disabled:opacity-40'
+          toggleButton={<PiExport className='h-5 w-5' />}
         >
-          {_('Export CSV')}
-        </button>
-        <button
-          type='button'
-          className='btn btn-ghost btn-sm eink-bordered'
-          disabled={!shown.length}
-          onClick={() => void exportAs('anki')}
-        >
-          {_('Export to Anki')}
-        </button>
+          <Menu className='dropdown-content no-triangle border-base-300 bg-base-100 z-20 mt-1 min-w-48 rounded-lg border shadow-lg'>
+            <MenuItem
+              label={_('Export CSV')}
+              Icon={PiFileCsv}
+              transient
+              onClick={() => void exportAs('csv')}
+            />
+            <MenuItem
+              label={_('Export to Anki')}
+              Icon={PiCardsThree}
+              transient
+              onClick={() => void exportAs('anki')}
+            />
+          </Menu>
+        </Dropdown>
       </div>
 
-      <div className='flex flex-wrap items-center gap-2 pb-2'>
+      <div
+        role='group'
+        aria-label={_('Filter')}
+        className='no-scrollbar -mx-4 flex scroll-px-4 items-center gap-2 overflow-x-auto px-4 pb-3 sm:-mx-6 sm:scroll-px-6 sm:px-6'
+      >
         {stateFilters.map((f) => {
           const active = state === f.state;
           const count = f.state ? byBook.filter((e) => e.state === f.state).length : byBook.length;
@@ -108,29 +140,50 @@ const VocabularyView: React.FC<VocabularyViewProps> = ({ onOpenBook }) => {
               aria-pressed={active}
               onClick={() => setState(f.state)}
               className={clsx(
-                'h-7 rounded-full border px-3 text-xs',
-                active
-                  ? 'btn-contrast'
-                  : 'eink-bordered border-base-content/20 not-eink:hover:bg-base-200/60',
+                'flex h-8 shrink-0 items-center gap-1.5 rounded-full px-3.5 text-sm whitespace-nowrap',
+                active ? 'btn-contrast' : 'eink-bordered bg-base-200 not-eink:hover:bg-base-300/60',
               )}
             >
-              {`${f.label} ${count}`}
+              <span>{f.label}</span>
+              <span className='not-eink:opacity-60 text-xs tabular-nums'>{count}</span>
             </button>
           );
         })}
-        <select
-          aria-label={_('Book')}
-          value={bookHash}
-          onChange={(e) => setBookHash(e.target.value)}
-          className='eink-bordered select select-sm border-base-content/20 ms-auto max-w-48'
+        <div
+          // The picker lines up with this chip's edge; a half-hidden chip at the
+          // end of the row would open a half-hidden picker.
+          onPointerDown={(e) => revealChip(e.currentTarget)}
+          className={clsx(
+            '[anchor-name:--settings-select] [anchor-scope:--settings-select]',
+            'relative flex h-8 max-w-52 shrink-0 items-center rounded-full',
+            'has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-base-content/15 eink:has-[:focus-visible]:ring-base-content',
+            bookHash ? 'btn-contrast' : 'eink-bordered bg-base-200',
+          )}
         >
-          <option value=''>{_('All Books')}</option>
-          {books.map((b) => (
-            <option key={b.hash} value={b.hash}>
-              {b.title}
-            </option>
-          ))}
-        </select>
+          <PiBooks aria-hidden='true' className='pointer-events-none absolute start-3 h-4 w-4' />
+          <select
+            aria-label={_('Book')}
+            value={bookHash}
+            onChange={(e) => {
+              setBookHash(e.target.value);
+              // The chip widens to the book's title; keep all of it in view.
+              const chip = e.currentTarget.parentElement;
+              requestAnimationFrame(() => revealChip(chip));
+            }}
+            className='select h-8 min-h-8 min-w-0 cursor-pointer truncate rounded-full border-0! bg-transparent! bg-none! ps-8! pe-7! text-sm text-inherit shadow-none! outline-hidden!'
+          >
+            <option value=''>{_('All Books')}</option>
+            {books.map((b) => (
+              <option key={b.hash} value={b.hash}>
+                {b.title}
+              </option>
+            ))}
+          </select>
+          <MdArrowDropDown
+            aria-hidden='true'
+            className='pointer-events-none absolute end-1.5 h-5 w-5 opacity-60'
+          />
+        </div>
       </div>
 
       <div className='border-base-content/10 flex min-h-0 flex-1 border-t'>

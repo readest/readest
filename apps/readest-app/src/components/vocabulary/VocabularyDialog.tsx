@@ -42,7 +42,7 @@ export const VocabularyDialog: React.FC = () => {
       isOpen={isOpen}
       title={_('Vocabulary')}
       onClose={() => setIsOpen(false)}
-      boxClassName='sm:h-[85%]! sm:w-[760px]! sm:max-w-(--breakpoint-md)!'
+      boxClassName='sm:h-[85%]! sm:w-[760px]! sm:max-w-[90vw]!'
       contentClassName='px-4! sm:px-6! flex flex-col min-h-0'
     >
       {isOpen && <VocabularyView onOpenBook={() => setIsOpen(false)} />}

@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { MdArrowBack } from 'react-icons/md';
+import { LuBookA, LuTrash2 } from 'react-icons/lu';
 import { useRouter } from 'next/navigation';
 import clsx from 'clsx';
 
@@ -161,17 +162,40 @@ const VocabularyDetail: React.FC<VocabularyDetailProps> = ({ entry, onBack, onOp
 
   return (
     <section aria-label={entry.word} className='flex min-h-0 flex-1 flex-col overflow-y-auto p-4'>
-      <button
-        type='button'
-        aria-label={_('Back')}
-        onClick={onBack}
-        className='btn btn-ghost btn-sm btn-square mb-2 sm:hidden'
-      >
-        <MdArrowBack size={20} className='rtl:rotate-180' />
-      </button>
-      <h2 dir='auto' className='text-xl font-bold break-words'>
-        {entry.word}
-      </h2>
+      <div className='-ms-3 -me-3 flex items-center gap-1'>
+        <button
+          type='button'
+          aria-label={_('Back')}
+          onClick={onBack}
+          className='btn btn-ghost btn-circle h-11 min-h-11 w-11 shrink-0 p-0 sm:hidden'
+        >
+          <MdArrowBack size={20} className='rtl:rotate-180' />
+        </button>
+        <h2 dir='auto' className='min-w-0 flex-1 text-xl font-bold break-words sm:ps-3'>
+          {entry.word}
+        </h2>
+        <button
+          type='button'
+          aria-label={_('Look up')}
+          title={_('Look up')}
+          onClick={() => setLookingUp(true)}
+          className='btn btn-ghost btn-circle h-11 min-h-11 w-11 shrink-0 p-0'
+        >
+          <LuBookA size={20} />
+        </button>
+        <button
+          type='button'
+          aria-label={_('Delete')}
+          title={_('Delete')}
+          onClick={() => {
+            useVocabularyStore.getState().remove(entry.id);
+            onBack();
+          }}
+          className='btn btn-ghost btn-circle h-11 min-h-11 w-11 shrink-0 p-0'
+        >
+          <LuTrash2 size={19} className='not-eink:text-error' />
+        </button>
+      </div>
 
       <div className='mt-2'>
         {editing ? (
@@ -231,26 +255,6 @@ const VocabularyDetail: React.FC<VocabularyDetailProps> = ({ entry, onBack, onOp
           ))}
         </ul>
       )}
-
-      <div className='mt-4 flex gap-2'>
-        <button
-          type='button'
-          className='btn btn-ghost btn-sm eink-bordered'
-          onClick={() => setLookingUp(true)}
-        >
-          {_('Look up')}
-        </button>
-        <button
-          type='button'
-          className='btn btn-ghost btn-sm eink-bordered'
-          onClick={() => {
-            useVocabularyStore.getState().remove(entry.id);
-            onBack();
-          }}
-        >
-          {_('Delete')}
-        </button>
-      </div>
 
       {lookingUp && (
         <DictionarySheet
