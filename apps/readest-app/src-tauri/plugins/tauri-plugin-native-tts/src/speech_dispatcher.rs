@@ -266,6 +266,13 @@ impl Drop for Connection {
     }
 }
 
+// SSIP rates run from -100 to 100 around the module's normal speed; spread the
+// reader's 0.5x-1x and 1x-3x over each half so every speed is distinct.
+pub(crate) fn ssip_rate(rate: f32) -> i32 {
+    let scale = if rate < 1. { 200. } else { 50. };
+    ((rate - 1.) * scale).round().clamp(-100., 100.) as i32
+}
+
 fn speech_data(text: &str) -> String {
     let normalized = text
         .replace("\r\n", "\n")
@@ -699,6 +706,16 @@ mod tests {
         let mut sent = String::new();
         io::Read::read_to_string(&mut &server, &mut sent).unwrap();
         assert_eq!(sent, "CANCEL SELF\r\n");
+    }
+
+    #[test]
+    fn every_reader_speed_has_its_own_ssip_rate() {
+        // The speed ruler and RSVP offer 0.5x to 3x.
+        let rates: Vec<_> = [0.5, 0.75, 1.0, 1.5, 2.0, 2.5, 3.0]
+            .into_iter()
+            .map(ssip_rate)
+            .collect();
+        assert_eq!(rates, [-100, -50, 0, 25, 50, 75, 100]);
     }
 
     #[test]

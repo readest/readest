@@ -79,7 +79,7 @@ impl<R: Runtime> NativeTts<R> {
             .map_err(crate::Error::NativeTTSError)
     }
     pub fn set_rate(&self, window: &str, args: SetRateArgs) -> crate::Result<()> {
-        let rate = ((args.rate - 1.) * 100.).round().clamp(-100., 100.) as i32;
+        let rate = crate::speech_dispatcher::ssip_rate(args.rate);
         self.3
             .get(window)
             .command(&format!("SET SELF RATE {rate}"))
