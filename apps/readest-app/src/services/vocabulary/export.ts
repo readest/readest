@@ -26,6 +26,23 @@ const latest = (e: VocabularyEntry) => e.occurrences[0];
 
 const bookTag = (title?: string) => (title ? title.trim().replace(/\s+/g, '_') : '');
 
+/** The card a word becomes in Anki, for the file export and the AnkiDroid link. */
+export const ankiCardOf = (e: VocabularyEntry): { front: string; back: string; tags: string[] } => {
+  const occ = latest(e);
+  const word = escapeHtml(oneLine(e.word));
+  const sentence = occ ? boldWord(escapeHtml(oneLine(occ.sentence)), oneLine(e.word)) : '';
+  const front = `<div style="font-size:1.6em">${word}</div>${sentence ? `<div>${sentence}</div>` : ''}`;
+  const source = [occ?.bookTitle, occ?.bookAuthor].filter(Boolean).map((s) => oneLine(s!));
+  const back = [
+    escapeHtml(oneLine(e.hint ?? '')),
+    source.length ? `<small>${escapeHtml(source.join(' — '))}</small>` : '',
+  ]
+    .filter(Boolean)
+    .join('<br>');
+  const tags = ['readest', bookTag(occ?.bookTitle)].filter(Boolean);
+  return { front, back, tags };
+};
+
 export const toAnkiText = (entries: VocabularyEntry[]): string => {
   const lines = [
     '#separator:tab',
@@ -35,19 +52,8 @@ export const toAnkiText = (entries: VocabularyEntry[]): string => {
     '#tags column:3',
   ];
   for (const e of entries) {
-    const occ = latest(e);
-    const word = escapeHtml(oneLine(e.word));
-    const sentence = occ ? boldWord(escapeHtml(oneLine(occ.sentence)), oneLine(e.word)) : '';
-    const front = `<div style="font-size:1.6em">${word}</div>${sentence ? `<div>${sentence}</div>` : ''}`;
-    const source = [occ?.bookTitle, occ?.bookAuthor].filter(Boolean).map((s) => oneLine(s!));
-    const back = [
-      escapeHtml(oneLine(e.hint ?? '')),
-      source.length ? `<small>${escapeHtml(source.join(' — '))}</small>` : '',
-    ]
-      .filter(Boolean)
-      .join('<br>');
-    const tags = ['readest', bookTag(occ?.bookTitle)].filter(Boolean).join(' ');
-    lines.push([front, back, tags].join('\t'));
+    const { front, back, tags } = ankiCardOf(e);
+    lines.push([front, back, tags.join(' ')].join('\t'));
   }
   return `${lines.join('\n')}\n`;
 };

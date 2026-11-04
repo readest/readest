@@ -4,7 +4,7 @@
 import { TRANSLATOR_LANGS } from '@/services/constants';
 import { getLanguageName } from '@/utils/lang';
 import { entryId, normalizeWordKey, vocabularyLang } from './entry';
-import { UNSPACED } from './export';
+import { UNSPACED, ankiCardOf } from './export';
 import type { VocabularyEntry, VocabularyImport } from './types';
 
 const MAX_WORD_LEN = 40;
@@ -174,4 +174,38 @@ export const defaultImportLang = (entries: Record<string, VocabularyEntry>): str
     if (code !== 'und' && n > max) [best, max] = [code, n];
   }
   return best;
+};
+
+/** A note the AnkiDroid link adds: Front and Back, plus tags. */
+export interface AnkiOutgoingNote {
+  fields: [string, string];
+  tags: string[];
+}
+
+/**
+ * The notes Send adds. A word is left out when the deck already has a note for
+ * it, under any note type, tagged with the same language or with none.
+ */
+export const ankiNotesToSend = (
+  entries: VocabularyEntry[],
+  existing: { fields: string[]; tags: string }[],
+): { notes: AnkiOutgoingNote[]; skipped: number } => {
+  const have = new Set<string>();
+  for (const n of existing) {
+    const word = ankiWordOf(n.fields);
+    const key = word ? normalizeWordKey(word) : '';
+    if (key) have.add(`${ankiLangOf(n.tags) ?? '*'}:${key}`);
+  }
+  const notes: AnkiOutgoingNote[] = [];
+  let skipped = 0;
+  for (const e of entries) {
+    if (e.deletedAt) continue;
+    if (have.has(`${e.lang}:${e.key}`) || have.has(`*:${e.key}`)) {
+      skipped++;
+      continue;
+    }
+    const { front, back, tags } = ankiCardOf(e);
+    notes.push({ fields: [front, back], tags: [...tags, ankiLangTag(e.lang)] });
+  }
+  return { notes, skipped };
 };

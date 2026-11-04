@@ -7,9 +7,11 @@ import {
   ankiWordOf,
   cleanAnkiField,
   defaultImportLang,
+  ankiNotesToSend,
   importLanguageOptions,
   planAnkiImport,
 } from '@/services/vocabulary/anki';
+import { ankiCardOf } from '@/services/vocabulary/export';
 import type { VocabularyEntry } from '@/services/vocabulary/types';
 
 const entry = (key: string, patch: Partial<VocabularyEntry> = {}): VocabularyEntry => ({
@@ -212,5 +214,43 @@ describe('import languages', () => {
     expect(codes).not.toContain('zh-CN');
     expect(codes).toContain('la');
     expect(new Set(codes).size).toBe(codes.length);
+  });
+});
+
+describe('ankiNotesToSend', () => {
+  const spice = entry('spice', {
+    state: 'learning',
+    hint: 'a drug',
+    occurrences: [{ sentence: 'The spice must flow.', at: 1, bookTitle: 'Dune' }],
+  });
+
+  it('builds the file export card plus a language tag', () => {
+    const { notes, skipped } = ankiNotesToSend([spice], []);
+    const card = ankiCardOf(spice);
+    expect(notes).toEqual([
+      { fields: [card.front, card.back], tags: [...card.tags, 'readest::lang::en'] },
+    ]);
+    expect(skipped).toBe(0);
+  });
+
+  it('skips a word already in the deck under any note type', () => {
+    expect(ankiNotesToSend([spice], [{ fields: ['Spice', 'x'], tags: '' }]).skipped).toBe(1);
+  });
+
+  it('skips a word a Readest note already carries in the same language', () => {
+    const sent = ankiNotesToSend([spice], []).notes[0]!;
+    const existing = [{ fields: sent.fields, tags: sent.tags.join(' ') }];
+    expect(ankiNotesToSend([spice], existing)).toEqual({ notes: [], skipped: 1 });
+  });
+
+  it('does not skip the same word in another language', () => {
+    const fr = entry('pain', { lang: 'fr' });
+    expect(
+      ankiNotesToSend([fr], [{ fields: ['pain'], tags: 'readest::lang::en' }]).notes,
+    ).toHaveLength(1);
+  });
+
+  it('never sends a deleted word', () => {
+    expect(ankiNotesToSend([entry('gone', { deletedAt: 3 })], []).notes).toEqual([]);
   });
 });
