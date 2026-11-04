@@ -107,24 +107,28 @@ const saveLink = async (
   document: string,
   bookHash: string,
 ): Promise<Link> => {
-  const { error: linkError } = await supabase
-    .from('crosspoint_documents')
-    .upsert(
-      { user_id: userId, document, book_hash: bookHash },
-      { onConflict: 'user_id,document', ignoreDuplicates: true },
-    );
-  if (linkError) return { bookHash: null, error: linkError };
   // The reader syncs clippings before progress, so the copy's first clippings
-  // were saved under its own id. A failed move never fails the sync.
+  // were saved under its own id. They move before the link is saved: once
+  // linked, the copy's id is never read again, so a failed move fails this
+  // sync and the next one tries again.
   const { error: moveError } = await supabase
     .from('book_notes')
     .update({ book_hash: bookHash, updated_at: new Date().toISOString() })
     .eq('user_id', userId)
     .eq('book_hash', document)
     .not('crosspoint', 'is', null);
-  if (moveError) console.warn('Could not move clippings of', document, moveError.message);
-  return { bookHash, error: null };
+  if (moveError) return { bookHash: null, error: moveError };
+  const { error: linkError } = await supabase
+    .from('crosspoint_documents')
+    .upsert(
+      { user_id: userId, document, book_hash: bookHash },
+      { onConflict: 'user_id,document', ignoreDuplicates: true },
+    );
+  return linkError ? { bookHash: null, error: linkError } : { bookHash, error: null };
 };
+
+// PostgREST answers at most this many rows a request (Supabase's db-max-rows).
+const PAGE_ROWS = 1000;
 
 /**
  * The library book a reader's document is (null if none, or if it is the
@@ -147,17 +151,27 @@ export const resolveDocument = async (
     .maybeSingle();
   if (ownError) return { bookHash: null, error: ownError };
   if (own?.book_hash === document) return NO_LINK;
-  const { data, error } = await supabase
-    .from('books')
-    .select('book_hash, original_filename, updated_at')
-    .eq('user_id', userId)
-    .not('original_filename', 'is', null)
-    .is('deleted_at', null);
-  if (error) return { bookHash: null, error };
-  const [book] = (data ?? [])
-    .filter((b) => typeof b.original_filename === 'string' && md5(b.original_filename) === document)
-    .sort((a, b) => recent(b) - recent(a));
-  return book ? saveLink(supabase, userId, document, book.book_hash as string) : NO_LINK;
+  const named: { book_hash: string; updated_at?: unknown }[] = [];
+  for (let from = 0; ; from += PAGE_ROWS) {
+    const { data, error } = await supabase
+      .from('books')
+      .select('book_hash, original_filename, updated_at')
+      .eq('user_id', userId)
+      .not('original_filename', 'is', null)
+      .is('deleted_at', null)
+      .order('book_hash')
+      .range(from, from + PAGE_ROWS - 1);
+    if (error) return { bookHash: null, error };
+    const page = data ?? [];
+    named.push(
+      ...page.filter(
+        (b) => typeof b.original_filename === 'string' && md5(b.original_filename) === document,
+      ),
+    );
+    if (page.length < PAGE_ROWS) break;
+  }
+  const [book] = named.sort((a, b) => recent(b) - recent(a));
+  return book ? saveLink(supabase, userId, document, book.book_hash) : NO_LINK;
 };
 
 // The books row stores metadata as a JSON string.

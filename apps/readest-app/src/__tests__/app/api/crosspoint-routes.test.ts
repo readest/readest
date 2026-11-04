@@ -1346,6 +1346,36 @@ describe('KOSync clippings', () => {
       ]),
     );
   });
+
+  it('links a copy only once its clippings have moved, so a failed move is tried again', async () => {
+    results['books.select'] = {
+      data: [{ book_hash: BOOK, title: 'Alice', format: 'EPUB', author: 'Lewis Carroll' }],
+      error: null,
+    };
+    const upload = () =>
+      progressPUT(
+        new Request(`${BASE}/syncs/progress`, {
+          method: 'PUT',
+          headers: deviceHeaders('kosync'),
+          body: JSON.stringify({
+            document: DOC,
+            progress: XPOINTER,
+            percentage: 0.5,
+            metadata: { title: 'Alice', authors: 'Lewis Carroll' },
+          }),
+        }),
+      );
+    results['book_notes.update'] = { data: null, error: boom };
+    expect((await upload()).status).toBe(500);
+    expect(wrote('crosspoint_documents')).toBe(false);
+    expect(wrote('book_configs')).toBe(false);
+
+    delete results['book_notes.update'];
+    calls = [];
+    expect((await upload()).status).toBe(200);
+    expect(calls).toContainEqual(['book_notes', 'update', { book_hash: BOOK, updated_at: NOW }]);
+    expect(wrote('crosspoint_documents')).toBe(true);
+  });
 });
 
 // A reader set to match documents by file name (CrossPoint's default, and its
@@ -1449,6 +1479,31 @@ describe('a document named by its file name', () => {
     };
     await progress();
     expect(calls).toContainEqual(linkWrite);
+  });
+
+  it('finds the book past the first 1000 imported under a name', async () => {
+    // PostgREST answers at most 1000 rows a request (Supabase's db-max-rows).
+    const others = Array.from({ length: 1000 }, (_, i) =>
+      book({ book_hash: md5(`other ${i}`), original_filename: `Other ${i}.epub` }),
+    );
+    Object.defineProperty(results, 'books.select', {
+      configurable: true,
+      enumerable: true,
+      get: () => {
+        const range = calls.filter(([t, m]) => t === 'books' && m === 'range').at(-1);
+        const from = range?.[2] ?? 0;
+        return { data: from === 0 ? others : from === 1000 ? [book()] : [], error: null };
+      },
+    });
+    expect((await progress()).status).toBe(200);
+    expect(calls).toEqual(
+      expect.arrayContaining([
+        ['books', 'order', 'book_hash'],
+        ['books', 'range', 0, 999],
+        ['books', 'range', 1000, 1999],
+        linkWrite,
+      ]),
+    );
   });
 
   it('keeps a document no book was imported under as it is', async () => {
