@@ -80,15 +80,14 @@ import {
   mergeRestyledAnnotation,
   removeBookNoteOverlays,
   removeEmptyAnnotationPlaceholder,
+  resolveAnnotationClick,
 } from '../../utils/annotatorUtil';
 import { buildAnnotationIndex, selectLocationAnnotations } from '../../utils/annotationIndex';
 import { findContentAtPoint } from '../../utils/crossDocSelection';
 import {
   expandAllRenderedSections,
   expandGlobalAnnotation,
-  isSyntheticGlobalValue,
   removeGlobalAnnotationOverlays,
-  sourceCfiFromSyntheticValue,
 } from '../../utils/globalAnnotations';
 import { annotationToolButtons } from './AnnotationTools';
 import AnnotationRangeEditor from './AnnotationRangeEditor';
@@ -854,20 +853,9 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
     const detail = (event as CustomEvent).detail;
     const { value, index, range } = detail;
     const { booknotes = [] } = getConfig(bookKey)!;
-    const isNote = value.startsWith(NOTE_PREFIX);
-    const rawValue = isNote ? value.replace(NOTE_PREFIX, '') : value;
-    // A click on a fan-out copy of a global annotation reports a
-    // synthetic value (`${cfi}#g${i}`); map it back to the source
-    // booknote so the popup behaves identically to clicking the
-    // original anchor.
-    const cfi = isSyntheticGlobalValue(rawValue) ? sourceCfiFromSyntheticValue(rawValue) : rawValue;
-    const annotations = booknotes.filter(
-      (booknote) => booknote.type === 'annotation' && !booknote.deletedAt && booknote.cfi === cfi,
-    );
-    const annotation = annotations.find(
-      (annotation) => (!isNote && annotation.style) || (isNote && annotation.note),
-    );
-    if (!annotation) return;
+    const resolved = resolveAnnotationClick(value, booknotes);
+    if (!resolved) return;
+    const { annotation, cfi, isNote } = resolved;
 
     const { style, color, text, note } = annotation;
     const selection = {

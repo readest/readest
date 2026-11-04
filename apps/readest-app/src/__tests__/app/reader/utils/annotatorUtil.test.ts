@@ -1,13 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import {
   decideAnnotationDraw,
+  drawAnnotationOverlay,
   filterBooknotes,
   filterExportGroups,
   findAnnotationAtCfi,
   getAnnotationOverlayColor,
   mergeRestyledAnnotation,
+  resolveAnnotationClick,
   summarizeAnnotationHub,
 } from '@/app/reader/utils/annotatorUtil';
+import { SystemSettings } from '@/types/settings';
+import { ViewSettings } from '@/types/book';
 import { BookNote, BooknoteGroup } from '@/types/book';
 import { NOTE_PREFIX } from '@/types/view';
 
@@ -36,6 +40,104 @@ describe('decideAnnotationDraw', () => {
   it('returns none when there is no style and it is not a note overlay', () => {
     expect(decideAnnotationDraw('epubcfi(/6/4!/4)', undefined)).toBe('none');
     expect(decideAnnotationDraw(undefined, undefined)).toBe('none');
+  });
+
+  it('returns global for a copy of a global annotation, whatever its style', () => {
+    expect(decideAnnotationDraw('epubcfi(/6/4!/4)#g3-0', 'highlight')).toBe('global');
+    expect(decideAnnotationDraw('epubcfi(/6/4!/4)#g3-0', undefined)).toBe('global');
+  });
+});
+
+describe('drawAnnotationOverlay for a global copy', () => {
+  const draw = (eink = false) => {
+    const calls: Array<{ func: unknown; opts?: Record<string, unknown> }> = [];
+    const range = document.createRange();
+    range.selectNodeContents(document.body);
+    drawAnnotationOverlay(
+      {
+        draw: (func, opts) => calls.push({ func, opts }),
+        annotation: { ...makeNote({ style: 'highlight', color: 'yellow' }), value: 'cfi#g0-0' },
+        doc: document,
+        range,
+      },
+      {
+        settings: {
+          globalReadSettings: { customHighlightColors: {} },
+        } as unknown as SystemSettings,
+        viewSettings: {
+          isEink: eink,
+          isColorEink: false,
+          vertical: false,
+          defaultFontSize: 16,
+          lineHeight: 1.5,
+        } as ViewSettings,
+        isDarkMode: false,
+        isMobile: false,
+      },
+    );
+    return calls;
+  };
+
+  const render = (eink = false) => {
+    const calls = draw(eink);
+    expect(calls).toHaveLength(1);
+    const { func, opts } = calls[0]!;
+    const rects = [{ left: 10, top: 0, right: 50, bottom: 20, width: 40, height: 20 }];
+    return (func as (r: unknown, o: unknown) => SVGGElement)(rects, opts);
+  };
+
+  it('draws a dashed underline in the tinted text color, not the highlight', () => {
+    const g = render();
+    // The theme variable, not a resolved color: overlays aren't redrawn on a
+    // theme switch, so a baked-in dark-mode color stayed on a light page.
+    expect(g.style.getPropertyValue('stroke')).toBe('var(--color-base-content)');
+    expect(g.getAttribute('stroke-opacity')).toBe('0.5');
+    // A fine dotted rule: 1px, with dashes as long as the gaps.
+    expect(g.getAttribute('stroke-width')).toBe('1');
+    expect(g.getAttribute('stroke-dasharray')).toBe('2 2');
+    const line = g.querySelector('line')!;
+    expect(line.getAttribute('x1')).toBe('10');
+    expect(line.getAttribute('x2')).toBe('50');
+    expect(line.getAttribute('y1')).toBe(line.getAttribute('y2'));
+  });
+
+  it('draws solid ink on black-and-white e-ink', () => {
+    const g = render(true);
+    expect(g.style.getPropertyValue('stroke')).toBe('var(--color-base-content)');
+    expect(g.getAttribute('stroke-opacity')).toBe('1');
+  });
+});
+
+describe('resolveAnnotationClick', () => {
+  const global = makeNote({
+    id: 'g',
+    cfi: 'epubcfi(/6/4!/4)',
+    style: 'highlight',
+    color: 'yellow',
+    note: 'Dwarf king',
+    global: true,
+  });
+
+  it('opens the note when a copy of a global annotation with a note is clicked', () => {
+    expect(resolveAnnotationClick('epubcfi(/6/4!/4)#g2-0', [global])).toEqual({
+      annotation: global,
+      cfi: 'epubcfi(/6/4!/4)',
+      isNote: true,
+    });
+  });
+
+  it('opens the highlight when a copy of a global annotation without a note is clicked', () => {
+    const plain = { ...global, note: '' };
+    expect(resolveAnnotationClick('epubcfi(/6/4!/4)#g2-0', [plain])).toEqual({
+      annotation: plain,
+      cfi: 'epubcfi(/6/4!/4)',
+      isNote: false,
+    });
+  });
+
+  it('keeps the highlight and the bubble apart at the home anchor', () => {
+    expect(resolveAnnotationClick('epubcfi(/6/4!/4)', [global])?.isNote).toBe(false);
+    expect(resolveAnnotationClick(`${NOTE_PREFIX}epubcfi(/6/4!/4)`, [global])?.isNote).toBe(true);
   });
 });
 

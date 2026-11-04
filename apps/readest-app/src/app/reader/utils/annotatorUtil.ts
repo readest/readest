@@ -13,7 +13,11 @@ import { nextBooknoteStamp } from '@/utils/booknoteStamp';
 import { SystemSettings } from '@/types/settings';
 import { FoliateView, NOTE_PREFIX } from '@/types/view';
 import { Point, snapRangeToWords } from '@/utils/sel';
-import { expandAllRenderedSections, removeGlobalAnnotationOverlays } from './globalAnnotations';
+import {
+  isSyntheticGlobalValue,
+  removeGlobalAnnotationOverlays,
+  sourceCfiFromSyntheticValue,
+} from './globalAnnotations';
 
 export const isDefaultHighlightColor = (
   color: HighlightColor,
@@ -323,7 +327,13 @@ export function buildTTSSentenceHighlight(
   };
 }
 
-export type AnnotationDrawKind = 'bubble' | 'highlight' | 'underline' | 'squiggly' | 'none';
+export type AnnotationDrawKind =
+  | 'bubble'
+  | 'highlight'
+  | 'underline'
+  | 'squiggly'
+  | 'global'
+  | 'none';
 
 /** Overlay styles the reader draws: the annotation styles plus the extra
  *  strokes only the TTS highlight offers. */
@@ -364,9 +374,43 @@ export function decideAnnotationDraw(
   style: HighlightStyle | undefined,
 ): AnnotationDrawKind {
   if (value?.startsWith(NOTE_PREFIX)) return 'bubble';
+  if (value && isSyntheticGlobalValue(value)) return 'global';
   if (style === 'highlight') return 'highlight';
   if (style === 'underline' || style === 'squiggly') return style;
   return 'none';
+}
+
+/**
+ * Overlayer draw function for a copy of a global annotation: a dashed
+ * underline in the theme's text color, laid out like `Overlayer.underline`.
+ * The stroke is the CSS variable rather than a resolved color because
+ * overlays aren't redrawn on a theme switch; it's set as a style since SVG
+ * presentation attributes can't read variables.
+ */
+export function drawDashedUnderline(
+  rects: Array<{ left: number; right: number; top: number; bottom: number }>,
+  options: { opacity?: number; width?: number; padding?: number; writingMode?: string } = {},
+): SVGGElement {
+  const { opacity = 0.5, width = 1, padding = 0, writingMode } = options;
+  const svg = (tag: string) => document.createElementNS('http://www.w3.org/2000/svg', tag);
+  const g = svg('g') as SVGGElement;
+  g.style.setProperty('stroke', 'var(--color-base-content)');
+  g.setAttribute('stroke-opacity', `${opacity}`);
+  g.setAttribute('stroke-width', `${width}`);
+  g.setAttribute('stroke-dasharray', `${width * 2} ${width * 2}`);
+  const vertical = writingMode === 'vertical-rl' || writingMode === 'vertical-lr';
+  for (const { left, right, top, bottom } of rects) {
+    const line = svg('line');
+    const [x1, y1, x2, y2] = vertical
+      ? [right + padding, top, right + padding, bottom]
+      : [left, bottom + padding, right, bottom + padding];
+    line.setAttribute('x1', `${x1}`);
+    line.setAttribute('y1', `${y1}`);
+    line.setAttribute('x2', `${x2}`);
+    line.setAttribute('y2', `${y2}`);
+    g.append(line);
+  }
+  return g;
 }
 
 /**
@@ -410,7 +454,7 @@ export function drawAnnotationOverlay(
       color: getAnnotationOverlayColor('highlight', hexColor, { isBwEink, isDarkMode }),
       vertical: viewSettings.vertical,
     });
-  } else if (kind === 'underline' || kind === 'squiggly') {
+  } else if (kind === 'underline' || kind === 'squiggly' || kind === 'global') {
     const { writingMode, lineHeight, fontSize } = doc.defaultView!.getComputedStyle(startElement());
     const fontSizeValue = parseFloat(fontSize) || viewSettings.defaultFontSize;
     const lineHeightValue = parseFloat(lineHeight) || viewSettings.lineHeight * fontSizeValue;
@@ -420,12 +464,38 @@ export function drawAnnotationOverlay(
     const padding = viewSettings.vertical
       ? (lineHeightValue - fontSizeValue) / 2 - strokeWidth + verticalCompensation
       : (lineHeightValue - fontSizeValue) / 2 - strokeWidth + horizontalCompensation;
+    if (kind === 'global') {
+      // Solid on black-and-white e-ink, which can't show a faded stroke.
+      draw(drawDashedUnderline, { writingMode, padding, opacity: isBwEink ? 1 : 0.5 });
+      return;
+    }
     draw(Overlayer[kind], {
       writingMode,
       color: getAnnotationOverlayColor(kind, hexColor, { isBwEink, isDarkMode }),
       padding,
     });
   }
+}
+
+/**
+ * The booknote a click on an overlay opens, and whether it opens as its note.
+ * A copy of a global annotation (`${cfi}#g…`) maps back to its source note and
+ * opens the note when there is one, since the copy draws no bubble.
+ */
+export function resolveAnnotationClick(
+  value: string,
+  booknotes: BookNote[],
+): { annotation: BookNote; cfi: string; isNote: boolean } | undefined {
+  let isNote = value.startsWith(NOTE_PREFIX);
+  const rawValue = isNote ? value.replace(NOTE_PREFIX, '') : value;
+  const isCopy = isSyntheticGlobalValue(rawValue);
+  const cfi = isCopy ? sourceCfiFromSyntheticValue(rawValue) : rawValue;
+  const candidates = booknotes.filter(
+    (b) => b.type === 'annotation' && !b.deletedAt && b.cfi === cfi,
+  );
+  if (isCopy && candidates.some((b) => b.note?.trim())) isNote = true;
+  const annotation = candidates.find((b) => (!isNote && b.style) || (isNote && b.note));
+  return annotation ? { annotation, cfi, isNote } : undefined;
 }
 
 /**
@@ -569,10 +639,5 @@ export function applyNoteBubbleTransition(
   if (transition === 'none') return;
   for (const view of views) {
     view.addAnnotation({ ...note, value: `${NOTE_PREFIX}${note.cfi}` }, transition === 'remove');
-    // The copies of a global annotation carry the bubble too: redraw them.
-    if (note.global) {
-      removeGlobalAnnotationOverlays(view, note);
-      expandAllRenderedSections(view, note);
-    }
   }
 }
