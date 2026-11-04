@@ -53,17 +53,29 @@ import {
 } from './bookContent';
 
 /**
+ * Formats whose metaHash is salted with the import filename, because their
+ * metadata often doesn't tell files apart: PDF boilerplate like "PowerPoint
+ * Presentation" (issue #5411), and HTML chapters a web-novel downloader saves
+ * one per file under the book's title and author (issue #7313). A library row
+ * no longer knows its import filename, so the salted hash is never recomputed.
+ * Keep in sync with FILENAME_SALTED in readest.koplugin/readest_syncconfig.lua.
+ */
+function isFilenameSalted(format: Book['format']) {
+  return format === 'PDF' || format === 'HTML';
+}
+
+/**
  * Whether a bare UUID identifier of this format can be dropped from the
  * import-time dedup key (issue #5959).
  *
- * PDFs are left out: #5411 deliberately scopes their identity to the filename,
- * and a library row no longer knows the filename it was imported from.
+ * Filename-salted formats are left out: their identity is deliberately scoped
+ * to the filename.
  * FB2/FBZ are left out: their document-info id is a GUID minted once for the
  * document and kept across revisions, so it is what tells two FB2s of the
  * same title apart (issue #7150).
  */
 function hasVolatileIdentifiers(format: Book['format']) {
-  return format !== 'PDF' && format !== 'FB2' && format !== 'FBZ';
+  return !isFilenameSalted(format) && format !== 'FB2' && format !== 'FBZ';
 }
 
 /**
@@ -732,11 +744,11 @@ export async function importBook(
       ? lookupIndex.byHash.get(hash)
       : books.find((b) => b.hash === hash);
     const metaHash =
-      format === 'PDF' && existingBook
+      isFilenameSalted(format) && existingBook
         ? existingBook.metaHash
         : getMetadataHash(
             loadedBook.metadata,
-            format === 'PDF' ? getBaseFilename(filename) : undefined,
+            isFilenameSalted(format) ? getBaseFilename(filename) : undefined,
           );
     const stableHash = hasVolatileIdentifiers(format)
       ? getStableMetadataHash(loadedBook.metadata)
@@ -1324,9 +1336,9 @@ export async function refreshBookMetadata(fs: FileSystem, book: Book): Promise<b
     if (!bookDoc) return false;
 
     book.metadata = bookDoc.metadata;
-    // PDF metaHash is salted with the original import filename (issue #5411),
-    // which is lost after import — keep the value stamped at import time.
-    if (book.format !== 'PDF' || !book.metaHash) {
+    // A filename-salted metaHash can't be reproduced after import (the
+    // original filename is lost), so keep the value stamped at import time.
+    if (!isFilenameSalted(book.format) || !book.metaHash) {
       book.metaHash = getMetadataHash(bookDoc.metadata);
     }
     const primaryLanguage = getPrimaryLanguage(bookDoc.metadata.language);
