@@ -47,10 +47,13 @@ export const customTTSAdapter: ReplicaAdapter<CustomTTSService> = {
       addedAt: s.addedAt,
       updatedAt: s.updatedAt,
     };
-    if (s.instructions !== undefined) fields['instructions'] = s.instructions;
-    if (s.responseFormat !== undefined) fields['responseFormat'] = s.responseFormat;
-    if (s.voices !== undefined) fields['voices'] = s.voices;
-    if (s.disabled !== undefined) fields['disabled'] = s.disabled;
+    // Always sent, so clearing one reaches other devices: fields merge per key,
+    // and a key left out keeps its old value there (re-enabling a service
+    // would otherwise be undone by the next pull).
+    fields['instructions'] = s.instructions ?? null;
+    fields['responseFormat'] = s.responseFormat ?? null;
+    fields['voices'] = s.voices ?? null;
+    fields['disabled'] = s.disabled ?? false;
     // Plaintext here; replicaCryptoMiddleware encrypts (or drops) it.
     if (s.apiKey !== undefined) fields['apiKey'] = s.apiKey;
     return fields;
