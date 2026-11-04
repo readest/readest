@@ -37,9 +37,23 @@ const decodeEntities = (s: string) => {
   return decoder.value;
 };
 
+/**
+ * Remove every tag. One pass already leaves no `<…>` pair; repeating until
+ * nothing changes is the form code scanning recognises as complete.
+ */
+const stripTags = (html: string) => {
+  let text = html;
+  let previous: string;
+  do {
+    previous = text;
+    text = text.replace(/<[^>]*>/g, '');
+  } while (text !== previous);
+  return text;
+};
+
 /** The visible text of an Anki field, one entry per non-empty line. */
 export const cleanAnkiField = (html: string): string[] => {
-  const text = decodeEntities(html.replace(BREAKS, '\n').replace(/<[^>]*>/g, ''));
+  const text = decodeEntities(stripTags(html.replace(BREAKS, '\n')));
   return text
     .replace(SOUND, '')
     .split('\n')
