@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 import { useAuth } from '@/context/AuthContext';
@@ -7,21 +7,25 @@ import { useQuotaStats } from '@/hooks/useQuotaStats';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useVocabularyStore } from '@/store/vocabularyStore';
 import {
+  type AnkiImportPlan,
   ankiNotesToSend,
+  ankiTagUpdates,
   defaultImportLang,
   importLanguageOptions,
   planAnkiImport,
 } from '@/services/vocabulary/anki';
 import {
+  type AnkiCardRow,
   type AnkiDeck,
+  type AnkiNoteRow,
   AnkiError,
   ankiAddNotes,
   ankiListDecks,
   ankiReadDeck,
   ankiRequestPermission,
   ankiStatus,
+  ankiUpdateTags,
 } from '@/services/vocabulary/ankiDroid';
-import type { VocabularyEntry } from '@/services/vocabulary/types';
 import { isAnkiAllowed } from '@/utils/access';
 import { eventDispatcher } from '@/utils/event';
 import { navigateToLogin, navigateToProfile } from '@/utils/nav';
@@ -34,6 +38,16 @@ const MATURE_INTERVAL = 21;
 const deckFamily = (decks: AnkiDeck[], name: string): number[] =>
   decks.filter((d) => d.name === name || d.name.startsWith(`${name}::`)).map((d) => d.id);
 
+/** Notes as the import planner reads them: mature when any of their cards is. */
+const importNotes = (notes: AnkiNoteRow[], cards?: AnkiCardRow[]) => {
+  const mature = new Set(
+    (cards ?? [])
+      .filter((c) => c.cardType === 2 && c.interval >= MATURE_INTERVAL)
+      .map((c) => c.noteId),
+  );
+  return notes.map((n) => ({ fields: n.fields, tags: n.tags, mature: mature.has(n.id) }));
+};
+
 export interface AnkiImportState {
   decks: AnkiDeck[];
   languages: { code: string; label: string }[];
@@ -42,8 +56,9 @@ export interface AnkiImportState {
 }
 
 /**
- * The Vocabulary window's link to AnkiDroid (#789): Send to Anki, Import from
- * Anki, and the premium gate shared with the Anki file export.
+ * The Vocabulary window's link to AnkiDroid (#789): Sync with Anki, the pull
+ * when the window opens, importing another deck, and the premium gate shared
+ * with the Anki file export.
  */
 export const useAnkiLink = () => {
   const _ = useTranslation();
@@ -51,14 +66,16 @@ export const useAnkiLink = () => {
   const { appService } = useEnv();
   const { user } = useAuth();
   const { userProfilePlan, customizationPurchased } = useQuotaStats();
-  const [available, setAvailable] = useState(false);
+  const [status, setStatus] = useState<{ installed: boolean; granted: boolean } | null>(null);
   const [importState, setImportState] = useState<AnkiImportState | null>(null);
+  const [syncing, setSyncing] = useState(false);
+  const pulledOnOpen = useRef(false);
   const isAndroid = !!appService?.isAndroidApp;
 
   useEffect(() => {
     if (!isAndroid) return;
     let live = true;
-    void ankiStatus().then((s) => live && setAvailable(s.installed));
+    void ankiStatus().then((s) => live && setStatus(s));
     return () => {
       live = false;
     };
@@ -84,12 +101,12 @@ export const useAnkiLink = () => {
 
   // Read on every tap: access can be revoked, or AnkiDroid removed, at any time.
   const ready = async (): Promise<boolean> => {
-    const status = await ankiStatus();
-    if (!status.installed) {
-      setAvailable(false);
+    const now = await ankiStatus();
+    if (!now.installed) {
+      setStatus(now);
       return false;
     }
-    if (status.granted || (await ankiRequestPermission())) return true;
+    if (now.granted || (await ankiRequestPermission())) return true;
     toast('warning', _('Allow Readest to access AnkiDroid in system settings.'));
     return false;
   };
@@ -105,20 +122,64 @@ export const useAnkiLink = () => {
     }
   };
 
-  const send = async (entries: VocabularyEntry[]) => {
+  /**
+   * Read the Readest deck family and apply it to the list: mature cards make
+   * words Mastered, notes for words Readest doesn't have come in as Learning.
+   */
+  const pull = async () => {
+    const ids = deckFamily(await ankiListDecks(), DECK_NAME);
+    const { notes, cards } = ids.length
+      ? await ankiReadDeck(ids, true)
+      : { notes: [], cards: [] as AnkiCardRow[] };
+    const store = useVocabularyStore.getState();
+    // Notes without a language tag were added in Anki; file them like Import does.
+    const lang = defaultImportLang(store.entries);
+    const plan = planAnkiImport(importNotes(notes, cards), store.entries, lang);
+    store.importWords(plan.ops);
+    return { notes, lang, plan, cardsRead: !!cards };
+  };
+
+  const pullSummary = (plan: AnkiImportPlan) => [
+    ...(plan.added ? [_('Imported {{count}} new words', { count: plan.added })] : []),
+    ...(plan.mastered ? [_('{{count}} now Mastered', { count: plan.mastered })] : []),
+  ];
+
+  // Pull on open: only reads, never asks for access, and stays quiet unless
+  // something changed.
+  useEffect(() => {
+    if (!status?.granted || !entitled || pulledOnOpen.current) return;
+    pulledOnOpen.current = true;
+    pull()
+      .then(({ plan }) => {
+        const parts = pullSummary(plan);
+        if (parts.length) toast('success', parts.join(' · '));
+      })
+      .catch((err) => console.warn('[anki] pull on open failed', err));
+  }, [status, entitled]);
+
+  /** Pull, then add Learning words the deck lacks, then bring mark tags in step. */
+  const sync = async () => {
     if (!guard()) return;
+    setSyncing(true);
     try {
       if (!(await ready())) return;
-      const deckIds = deckFamily(await ankiListDecks(), DECK_NAME);
-      const existing = deckIds.length ? (await ankiReadDeck(deckIds, false)).notes : [];
-      const notes = ankiNotesToSend(entries, existing);
-      const skipped = entries.filter((e) => !e.deletedAt).length - notes.length;
-      const added = notes.length ? await ankiAddNotes(DECK_NAME, notes) : 0;
-      const parts = added ? [_('Added {{count}} words to Anki', { count: added })] : [];
-      if (skipped) parts.push(_('{{count}} already in Anki', { count: skipped }));
-      toast('success', parts.join(' · '));
+      const { notes, lang, plan, cardsRead } = await pull();
+      const { entries } = useVocabularyStore.getState();
+      const learning = Object.values(entries).filter((e) => e.state === 'learning');
+      const outgoing = ankiNotesToSend(learning, notes);
+      const sent = outgoing.length ? await ankiAddNotes(DECK_NAME, outgoing) : 0;
+      const updates = ankiTagUpdates(notes, entries, lang);
+      if (updates.length) await ankiUpdateTags(updates);
+      const parts = [
+        ...(sent ? [_('Added {{count}} words to Anki', { count: sent })] : []),
+        ...pullSummary(plan),
+      ];
+      if (!cardsRead) parts.push(_('Update AnkiDroid to bring back mastered words.'));
+      toast('success', parts.length ? parts.join(' · ') : _('Already in sync with Anki'));
     } catch (err) {
       fail(err);
+    } finally {
+      setSyncing(false);
     }
   };
 
@@ -148,17 +209,8 @@ export const useAnkiLink = () => {
       const decks = importState?.decks ?? [];
       const name = decks.find((d) => d.id === deckId)?.name;
       const { notes, cards } = await ankiReadDeck(name ? deckFamily(decks, name) : [deckId], true);
-      const mature = new Set(
-        (cards ?? [])
-          .filter((c) => c.cardType === 2 && c.interval >= MATURE_INTERVAL)
-          .map((c) => c.noteId),
-      );
       const store = useVocabularyStore.getState();
-      const plan = planAnkiImport(
-        notes.map((n) => ({ fields: n.fields, tags: n.tags, mature: mature.has(n.id) })),
-        store.entries,
-        lang,
-      );
+      const plan = planAnkiImport(importNotes(notes, cards), store.entries, lang);
       store.importWords(plan.ops);
       setImportState(null);
       const parts = [_('Imported {{count}} new words', { count: plan.added })];
@@ -172,9 +224,10 @@ export const useAnkiLink = () => {
   };
 
   return {
-    available,
+    available: !!status?.installed,
     premiumBadge,
-    send,
+    syncing,
+    sync,
     openImport,
     importState,
     runImport,

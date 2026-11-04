@@ -2,7 +2,15 @@ import React, { useMemo, useState } from 'react';
 import clsx from 'clsx';
 import { MdArrowDropDown, MdSearch } from 'react-icons/md';
 import { IoMdCloseCircle } from 'react-icons/io';
-import { PiBooks, PiCardsThree, PiDownloadSimple, PiExport, PiFileCsv } from 'react-icons/pi';
+import {
+  PiArrowsClockwise,
+  PiBooks,
+  PiCardsThree,
+  PiDotsThreeVertical,
+  PiDownloadSimple,
+  PiExport,
+  PiFileCsv,
+} from 'react-icons/pi';
 
 import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -128,35 +136,44 @@ const VocabularyView: React.FC<VocabularyViewProps> = ({ onOpenBook }) => {
         {anki.available && (
           <button
             type='button'
-            aria-label={_('Import from Anki')}
-            title={_('Import from Anki')}
-            onClick={() => void anki.openImport()}
-            className='btn btn-ghost btn-circle eink-bordered bg-base-200 h-10 min-h-10 w-10 p-0'
+            aria-label={_('Sync with Anki')}
+            title={_('Sync with Anki')}
+            disabled={anki.syncing}
+            onClick={() => void anki.sync()}
+            className='btn btn-ghost btn-circle eink-bordered bg-base-200 h-10 min-h-10 w-10 p-0 disabled:opacity-40'
           >
-            <PiDownloadSimple className='h-5 w-5' />
+            <PiArrowsClockwise className='h-5 w-5' />
           </button>
         )}
         <Dropdown
-          label={_('Export')}
-          disabled={!shown.length}
+          // With AnkiDroid the menu also imports, so it isn't only Export.
+          label={anki.available ? _('More') : _('Export')}
+          disabled={!shown.length && !anki.available}
           className='dropdown-bottom dropdown-end'
           buttonClassName='btn btn-ghost btn-circle eink-bordered bg-base-200 h-10 min-h-10 w-10 p-0 disabled:opacity-40'
-          toggleButton={<PiExport className='h-5 w-5' />}
+          toggleButton={
+            anki.available ? (
+              <PiDotsThreeVertical className='h-5 w-5' />
+            ) : (
+              <PiExport className='h-5 w-5' />
+            )
+          }
         >
           <Menu className='dropdown-content no-triangle border-base-300 bg-base-100 z-20 mt-1 min-w-48 rounded-lg border shadow-lg'>
             <MenuItem
               label={_('Export CSV')}
               Icon={PiFileCsv}
               transient
+              disabled={!shown.length}
               onClick={() => void exportAs('csv')}
             />
             {anki.available ? (
               <MenuItem
-                label={_('Send to Anki')}
+                label={_('Import Anki Deck...')}
                 description={anki.premiumBadge}
-                Icon={PiCardsThree}
+                Icon={PiDownloadSimple}
                 transient
-                onClick={() => void anki.send(shown)}
+                onClick={() => void anki.openImport()}
               />
             ) : (
               <MenuItem
