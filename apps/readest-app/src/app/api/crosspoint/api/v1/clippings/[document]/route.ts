@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createSupabaseAdminClient } from '@/utils/supabase';
-import { authenticateDevice, BOOK_HASH, linkedBook } from '@/libs/crosspoint';
+import { authenticateDevice, BOOK_HASH, resolveDocument } from '@/libs/crosspoint';
 
 // CrossPoint 2.0 syncs a book's clippings (highlights) before its progress,
 // through crosspoint-sync's clippings API (sync_version 2) under the KOSync
@@ -103,7 +103,7 @@ const resolveBook = async (
   const { document } = await params;
   if (!BOOK_HASH.test(document))
     return NextResponse.json({ message: 'Invalid document' }, { status: 400 });
-  const link = await linkedBook(supabase, userId, document);
+  const link = await resolveDocument(supabase, userId, document);
   if (link.error)
     return NextResponse.json({ message: 'Could not sync clippings' }, { status: 500 });
   return { userId, document, bookHash: link.bookHash ?? document };

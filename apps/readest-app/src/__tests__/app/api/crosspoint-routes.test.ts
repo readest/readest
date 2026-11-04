@@ -1347,3 +1347,144 @@ describe('KOSync clippings', () => {
     );
   });
 });
+
+// A reader set to match documents by file name (CrossPoint's default, and its
+// Smart Sync fallback lookup) sends md5 of the book's file name, as KOReader
+// does. Readest keeps the name a book was imported under as original_filename.
+describe('a document named by its file name', () => {
+  const BOOK = '0123456789abcdef0123456789abcdef';
+  const FILE = 'Le Petit Prince – Saint-Exupéry.epub';
+  const FILE_DOC = md5(FILE);
+  const book = (fields: Record<string, unknown> = {}) => ({
+    book_hash: BOOK,
+    original_filename: FILE,
+    updated_at: '2026-10-03T00:00:00.000Z',
+    ...fields,
+  });
+  const linkWrite = [
+    'crosspoint_documents',
+    'upsert',
+    { user_id: USER, document: FILE_DOC, book_hash: BOOK },
+    { onConflict: 'user_id,document', ignoreDuplicates: true },
+  ];
+  const progress = () =>
+    progressGET(
+      new Request(`${BASE}/syncs/progress/${FILE_DOC}`, { headers: deviceHeaders('kosync') }),
+      { params: Promise.resolve({ document: FILE_DOC }) },
+    );
+  const clippings = () =>
+    clippingsGET(
+      new Request(`${BASE}/api/v1/clippings/${FILE_DOC}?cursor=0&limit=1&format=reader`, {
+        headers: deviceHeaders('kosync'),
+      }),
+      { params: Promise.resolve({ document: FILE_DOC }) },
+    );
+  const session = () =>
+    sessionsPOST(
+      post(
+        '/sessions',
+        { document: FILE_DOC, start_time: 1790000000, duration: 600, start_bp: 2500, end_bp: 3000 },
+        deviceHeaders(),
+      ),
+    );
+  const upload = () =>
+    progressPUT(
+      new Request(`${BASE}/syncs/progress`, {
+        method: 'PUT',
+        headers: deviceHeaders('kosync'),
+        body: JSON.stringify({ document: FILE_DOC, progress: XPOINTER, percentage: 0.5 }),
+      }),
+    );
+
+  beforeEach(() => {
+    results['book_configs.select'] = {
+      data: { xpointer: XPOINTER, progress: '[30,120]', updated_at: NOW },
+      error: null,
+    };
+  });
+
+  it('syncs it as the library book imported under that name, linked on first sight', async () => {
+    results['books.select'] = { data: [book()], error: null };
+    for (const request of [progress, clippings, session, upload]) {
+      calls = [];
+      expect((await request()).status).toBe(200);
+      expect(calls).toEqual(
+        expect.arrayContaining([
+          ['books', 'not', 'original_filename', 'is', null],
+          ['books', 'is', 'deleted_at', null],
+          linkWrite,
+        ]),
+      );
+      const table = request === clippings ? 'book_notes' : 'book_configs';
+      expect(calls).toContainEqual([table, 'eq', 'book_hash', BOOK]);
+      // Only moving the clippings saved under the file name's id uses it.
+      const underFileName = calls.filter(
+        ([t, m, ...args]) =>
+          t === table && m === 'eq' && args[0] === 'book_hash' && args[1] === FILE_DOC,
+      );
+      expect(underFileName).toHaveLength(table === 'book_notes' ? 1 : 0);
+    }
+  });
+
+  it('moves the clippings it synced before the book was in the library', async () => {
+    results['books.select'] = { data: [book()], error: null };
+    await clippings();
+    expect(calls).toEqual(
+      expect.arrayContaining([
+        ['book_notes', 'update', { book_hash: BOOK, updated_at: NOW }],
+        ['book_notes', 'eq', 'book_hash', FILE_DOC],
+        ['book_notes', 'not', 'crosspoint', 'is', null],
+      ]),
+    );
+  });
+
+  it('picks the most recently read book when two were imported under that name', async () => {
+    results['books.select'] = {
+      data: [
+        book({ book_hash: 'f'.repeat(32), updated_at: '2026-02-10T00:00:00.000Z' }),
+        book(),
+        book({ book_hash: 'e'.repeat(32), updated_at: '2026-05-01T00:00:00.000Z' }),
+      ],
+      error: null,
+    };
+    await progress();
+    expect(calls).toContainEqual(linkWrite);
+  });
+
+  it('keeps a document no book was imported under as it is', async () => {
+    // Another name, the same name in another Unicode form, or no name recorded.
+    results['books.select'] = {
+      data: [
+        book({ original_filename: 'Le Petit Prince.epub' }),
+        book({ original_filename: FILE.normalize('NFD') }),
+        book({ original_filename: null }),
+      ],
+      error: null,
+    };
+    expect((await progress()).status).toBe(200);
+    expect(wrote('crosspoint_documents')).toBe(false);
+    expect(calls).toContainEqual(['book_configs', 'eq', 'book_hash', FILE_DOC]);
+  });
+
+  it("never looks up a library book's own id by file name", async () => {
+    results['books.select'] = { data: { book_hash: FILE_DOC }, error: null };
+    await progress();
+    expect(calls).toContainEqual(['books', 'eq', 'book_hash', FILE_DOC]);
+    expect(calls).not.toContainEqual(['books', 'not', 'original_filename', 'is', null]);
+    expect(wrote('crosspoint_documents')).toBe(false);
+  });
+
+  // Never answered under the file name's own id: the reader retries.
+  it('reports database failures', async () => {
+    for (const request of [progress, clippings, session, upload]) {
+      results['books.select'] = { data: null, error: boom };
+      expect((await request()).status).toBe(500);
+      results['books.select'] = { data: [book()], error: null };
+      results['crosspoint_documents.upsert'] = { data: null, error: boom };
+      expect((await request()).status).toBe(500);
+      delete results['crosspoint_documents.upsert'];
+    }
+    expect(wrote('book_configs')).toBe(false);
+    expect(wrote('stat_pages')).toBe(false);
+  });
+});
