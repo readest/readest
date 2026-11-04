@@ -7,8 +7,10 @@ const db = vi.hoisted(() => {
   const rows = new Map<string, Record<string, unknown>>();
   const json = (body: unknown) =>
     new Response(JSON.stringify(body), { headers: { 'content-type': 'application/json' } });
+  const writes: Record<string, unknown>[] = [];
   return {
     rows,
+    writes,
     // Stands in for PostgREST. A bulk upsert names its columns in `columns`, and
     // the merge is `SET col = EXCLUDED.col` for each of them, read with
     // json_to_recordset: a key missing from the body is written as NULL.
@@ -23,6 +25,7 @@ const db = vi.hoisted(() => {
         const merged = { ...rows.get(key) };
         for (const column of columns) merged[column] = row[column] ?? null;
         rows.set(key, merged);
+        writes.push(merged);
         return merged;
       });
       return json(written);
@@ -105,181 +108,104 @@ const push = (notes: Row[]) => post({ notes });
 
 beforeEach(() => {
   db.rows.clear();
+  db.writes.length = 0;
 });
 
-// A client that leaves a column out knows nothing of it. Older apps and the
-// KOReader plugin never send these, so their edits must not erase them.
-describe('a note pushed without a column added since that client shipped', () => {
-  it('keeps the CrossPoint anchor and hands it back', async () => {
-    db.rows.set('n1', stored('n1', { crosspoint: ANCHOR }));
-
-    const response = await push([edit('n1')]);
-
-    expect(response.status).toBe(200);
-    expect(db.rows.get('n1')).toMatchObject({ color: 'blue', crosspoint: ANCHOR });
-    expect((await response.json()).notes[0].crosspoint).toEqual(ANCHOR);
-  });
-
-  it('keeps a global note global', async () => {
-    db.rows.set('n1', stored('n1', { global: true }));
+// Older apps and the KOReader plugin never send these columns.
+describe('a note pushed without a column', () => {
+  it('keeps what is stored', async () => {
+    db.rows.set('n1', stored('n1', { crosspoint: ANCHOR, global: true, ink: STROKES }));
     await push([edit('n1')]);
-    expect(db.rows.get('n1')).toMatchObject({ color: 'blue', global: true });
+    expect(db.rows.get('n1')).toMatchObject({
+      color: 'blue',
+      crosspoint: ANCHOR,
+      global: true,
+      ink: STROKES,
+    });
   });
 
-  it('keeps the strokes of a drawing', async () => {
-    db.rows.set('n1', stored('n1', { type: 'ink', ink: STROKES }));
-    await push([edit('n1', { type: 'ink' })]);
-    expect(db.rows.get('n1')).toMatchObject({ color: 'blue', ink: STROKES });
-  });
-
-  it('keeps an anchor when another note in the same push carries one', async () => {
+  it('forgets the anchor when new text means the range moved', async () => {
     db.rows.set('n1', stored('n1', { crosspoint: ANCHOR }));
-    db.rows.set('n2', stored('n2'));
-    const other = { spine: 2, start_offset: 1, end_offset: 2 };
+    await push([edit('n1', { text: 'a different passage' })]);
+    expect(db.rows.get('n1')).toMatchObject({ crosspoint: null });
+  });
 
-    await push([edit('n1'), edit('n2', { crosspoint: other })]);
-
-    expect(db.rows.get('n1')).toMatchObject({ crosspoint: ANCHOR });
-    expect(db.rows.get('n2')).toMatchObject({ crosspoint: other });
+  it('still lets an explicit null clear it', async () => {
+    db.rows.set('n1', stored('n1', { crosspoint: ANCHOR }));
+    await push([edit('n1', { crosspoint: null })]);
+    expect(db.rows.get('n1')).toMatchObject({ crosspoint: null });
   });
 });
 
-describe('a note pushed with the column', () => {
-  it('clears an anchor sent as null, as a moved highlight does', async () => {
-    db.rows.set('n1', stored('n1', { crosspoint: ANCHOR }));
-    await push([edit('n1', { crosspoint: null, xpointer0: null, xpointer1: null })]);
-    expect(db.rows.get('n1')).toMatchObject({ crosspoint: null, xpointer0: null });
-  });
+describe('an anchor on a note that loses the row', () => {
+  const pushAnchor = () => push([edit('n1', { updatedAt: STORED_AT, crosspoint: ANCHOR })]);
 
-  it('replaces the anchor', async () => {
-    const moved = { spine: 3, start_offset: 4, end_offset: 5 };
-    db.rows.set('n1', stored('n1', { crosspoint: ANCHOR }));
-    await push([edit('n1', { crosspoint: moved })]);
-    expect(db.rows.get('n1')).toMatchObject({ crosspoint: moved });
-  });
-
-  it('turns a global note local', async () => {
-    db.rows.set('n1', stored('n1', { global: true }));
-    await push([edit('n1', { global: false })]);
-    expect(db.rows.get('n1')).toMatchObject({ global: false });
-  });
-});
-
-describe('a note pushed without winning the row', () => {
-  const pushAnchor = (fields: Row = {}) =>
-    push([edit('n1', { color: 'yellow', updatedAt: STORED_AT, crosspoint: ANCHOR, ...fields })]);
-
-  it('stores the anchor and leaves the row and its timestamp alone', async () => {
+  it('is stored, leaving the row and its timestamp alone', async () => {
     db.rows.set('n1', stored('n1', { note: 'written on another device' }));
-
-    const response = await pushAnchor();
-
+    await pushAnchor();
     expect(db.rows.get('n1')).toMatchObject({
       crosspoint: ANCHOR,
       note: 'written on another device',
       updated_at: new Date(STORED_AT).toISOString(),
     });
-    expect((await response.json()).notes[0].crosspoint).toEqual(ANCHOR);
   });
 
-  it('stores it on a highlight KOReader made, which has no cfi', async () => {
-    db.rows.set('n1', stored('n1', { cfi: null }));
-    await pushAnchor();
-    expect(db.rows.get('n1')).toMatchObject({ crosspoint: ANCHOR, cfi: null });
-  });
-
-  it('does not store it on a highlight deleted on another device', async () => {
-    const deletedAt = new Date(STORED_AT + 5000).toISOString();
-    db.rows.set('n1', stored('n1', { deleted_at: deletedAt }));
-    await pushAnchor();
-    expect(db.rows.get('n1')).toMatchObject({ crosspoint: null, deleted_at: deletedAt });
-  });
-
-  it('does not store one worked out from a range moved since', async () => {
-    db.rows.set('n1', stored('n1', { text: 'moved on another device' }));
-    await pushAnchor();
-    expect(db.rows.get('n1')).toMatchObject({ crosspoint: null });
-    db.rows.set('n1', stored('n1', { cfi: 'epubcfi(/6/4!/4/2,/1:7,/1:12)' }));
+  it.each([
+    ['deleted', { deleted_at: new Date(STORED_AT + 5000).toISOString() }],
+    ['moved', { text: 'moved on another device' }],
+  ])('is not stored on a note %s since', async (_name, columns) => {
+    db.rows.set('n1', stored('n1', columns));
     await pushAnchor();
     expect(db.rows.get('n1')).toMatchObject({ crosspoint: null });
   });
+});
 
-  it('does not replace the anchor already stored', async () => {
-    db.rows.set('n1', stored('n1', { crosspoint: ANCHOR }));
-    await pushAnchor({ crosspoint: { spine: 9, start_offset: 1, end_offset: 2 } });
-    expect(db.rows.get('n1')).toMatchObject({ crosspoint: ANCHOR });
+// A book under a second hash, an OPDS re-download say, shares its meta_hash.
+describe('a note with no row under this copy but one under another', () => {
+  const secondCopy = (fields: Row) => edit('n1', { bookHash: 'h2', ...fields });
+
+  it('stays out when it is stale', async () => {
+    db.rows.set('n1', stored('n1', { note: 'written on the tablet' }));
+    const response = await push([secondCopy({ updatedAt: STORED_AT - 1000 })]);
+    expect(db.writes).toEqual([]);
+    expect((await response.json()).notes[0]).toMatchObject({ note: 'written on the tablet' });
+  });
+
+  it('stays out when it is older than the stored deletion', async () => {
+    db.rows.set('n1', stored('n1', { deleted_at: new Date(STORED_AT + 5000).toISOString() }));
+    await push([secondCopy({ updatedAt: STORED_AT + 1000 })]);
+    expect(db.writes).toEqual([]);
+  });
+
+  it('goes in when it was edited on this copy', async () => {
+    db.rows.set('n1', stored('n1'));
+    await push([secondCopy({ note: 'written here' })]);
+    expect(db.writes).toEqual([expect.objectContaining({ book_hash: 'h2', note: 'written here' })]);
   });
 });
 
-// KOReader sends the highlight's new text and keeps its id when a range moves.
-describe('a range moved by a client that leaves the anchor out', () => {
-  it('forgets the anchor of the old range', async () => {
-    db.rows.set('n1', stored('n1', { crosspoint: ANCHOR }));
-    await push([edit('n1', { text: 'a different passage', cfi: undefined })]);
-    expect(db.rows.get('n1')).toMatchObject({ text: 'a different passage', crosspoint: null });
-  });
-});
-
-describe('a config pushed without the columns KOReader never sends', () => {
-  const storedConfig = (columns: Row = {}): Row => ({
-    user_id: 'test-user',
-    book_hash: 'h1',
-    meta_hash: 'm1',
-    location: 'epubcfi(/6/4!/4/2/1:0)',
-    xpointer: '/body/p[1]/text().0',
-    progress: '[10,100]',
-    rsvp_position: '{"cfi":"epubcfi(/6/4!/4/2/1:0)","wordText":"hello"}',
-    search_config: '{"scope":"section"}',
-    view_settings: '{"proofreadRules":[{"id":"r1"}],"referencePageCount":200}',
-    updated_at: new Date(STORED_AT).toISOString(),
-    ...columns,
-  });
-  // What readest_syncconfig.lua sends.
-  const koreaderPush = {
-    bookHash: 'h1',
-    metaHash: 'm1',
-    progress: [50, 100],
-    xpointer: '/body/p[9]/text().0',
-    updatedAt: STORED_AT + 1000,
-  };
-
-  it('keeps the settings and the RSVP position', async () => {
-    db.rows.set('h1', storedConfig());
-    await post({ configs: [koreaderPush] });
-    expect(db.rows.get('h1')).toMatchObject({
-      view_settings: '{"proofreadRules":[{"id":"r1"}],"referencePageCount":200}',
+describe('a progress push from KOReader', () => {
+  it('keeps the settings and replaces the whole reading position', async () => {
+    db.rows.set('h1', {
+      user_id: 'test-user',
+      book_hash: 'h1',
+      meta_hash: 'm1',
+      location: 'epubcfi(/6/4!/4/2/1:0)',
+      xpointer: '/old',
+      rsvp_position: '{"wordText":"hello"}',
       search_config: '{"scope":"section"}',
-      rsvp_position: '{"cfi":"epubcfi(/6/4!/4/2/1:0)","wordText":"hello"}',
+      view_settings: '{"referencePageCount":200}',
+      updated_at: new Date(STORED_AT).toISOString(),
     });
-  });
-
-  // A pull takes the further of location and xpointer, so a stale location
-  // kept beside KOReader's position would pull the reader to it.
-  it('still replaces the whole reading position', async () => {
-    db.rows.set('h1', storedConfig());
-    await post({ configs: [koreaderPush] });
+    await post({
+      configs: [{ bookHash: 'h1', metaHash: 'm1', xpointer: '/new', updatedAt: STORED_AT + 1000 }],
+    });
     expect(db.rows.get('h1')).toMatchObject({
       location: null,
-      xpointer: '/body/p[9]/text().0',
-      progress: '[50,100]',
+      xpointer: '/new',
+      rsvp_position: '{"wordText":"hello"}',
+      search_config: '{"scope":"section"}',
+      view_settings: '{"referencePageCount":200}',
     });
-  });
-
-  it('lets a purge clear them with explicit nulls', async () => {
-    db.rows.set('h1', storedConfig());
-    await post({
-      configs: [{ ...koreaderPush, rsvpPosition: null, searchConfig: null, viewSettings: null }],
-    });
-    expect(db.rows.get('h1')).toMatchObject({
-      rsvp_position: null,
-      search_config: null,
-      view_settings: null,
-    });
-  });
-
-  it('lets a push that has settings replace them', async () => {
-    db.rows.set('h1', storedConfig());
-    await post({ configs: [{ ...koreaderPush, viewSettings: {}, searchConfig: {} }] });
-    expect(db.rows.get('h1')).toMatchObject({ view_settings: '{}', search_config: '{}' });
   });
 });

@@ -135,13 +135,6 @@ export function keepOmittedNoteColumns(client: DBBookNote, server: DBBookNote): 
   };
 }
 
-/** Whether a pushed row wins over a stored one: its deletion or its edit is newer. */
-export function isNewerThanStored(client: ChangeStamps, server: ChangeStamps): boolean {
-  return (
-    ms(client.deleted_at) > ms(server.deleted_at) || ms(client.updated_at) > ms(server.updated_at)
-  );
-}
-
 /**
  * The same for book_configs, whose position columns stay out of it. A pull takes
  * the further of location and xpointer, so a location kept beside KOReader's
@@ -347,6 +340,17 @@ export function dedupeLatest<T extends ChangeStamps>(records: T[], keys: (keyof 
     const key = keyOf(rec);
     return !key || latest.get(key)?.rec === rec;
   });
+}
+
+/**
+ * Whether a note outranks the row another copy of the book holds for it, by
+ * dedupeLatest's rule: an insert is stamped now, so one that doesn't would put
+ * a stale copy ahead of that row, or bring back a note deleted since.
+ */
+export function outranksCopy(client: ChangeStamps, copy: ChangeStamps): boolean {
+  const at = latestChangeMs(client);
+  const copyAt = latestChangeMs(copy);
+  return at > copyAt || (at === copyAt && !!client.deleted_at && !copy.deleted_at);
 }
 
 const transformsToDB = {
@@ -846,7 +850,7 @@ export async function POST(req: NextRequest) {
 
         if (!serverData) {
           const otherCopy = otherCopies.get(`${original.id}|${dbRec.meta_hash}`);
-          if (otherCopy && !isNewerThanStored(dbRec, otherCopy)) {
+          if (otherCopy && !outranksCopy(dbRec, otherCopy)) {
             batchAuthoritativeRecords.push(otherCopy);
             continue;
           }
@@ -859,7 +863,16 @@ export async function POST(req: NextRequest) {
           dbRec.updated_at = new Date(packOnly ? 1 : Date.now()).toISOString();
           toInsert.push(dbRec);
         } else {
-          const clientIsNewer = isNewerThanStored(dbRec, serverData);
+          const clientUpdatedAt = dbRec.updated_at ? new Date(dbRec.updated_at).getTime() : 0;
+          const serverUpdatedAt = serverData.updated_at
+            ? new Date(serverData.updated_at).getTime()
+            : 0;
+          const clientDeletedAt = dbRec.deleted_at ? new Date(dbRec.deleted_at).getTime() : 0;
+          const serverDeletedAt = serverData.deleted_at
+            ? new Date(serverData.deleted_at).getTime()
+            : 0;
+          const clientIsNewer =
+            clientDeletedAt > serverDeletedAt || clientUpdatedAt > serverUpdatedAt;
 
           if (table === 'books') {
             // `dbRec` is DBBook | DBBookConfig; in the 'books' branch it is always DBBook.
