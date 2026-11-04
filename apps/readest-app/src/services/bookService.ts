@@ -744,7 +744,7 @@ export async function importBook(
       ? lookupIndex.byHash.get(hash)
       : books.find((b) => b.hash === hash);
     const metaHash =
-      isFilenameSalted(format) && existingBook
+      isFilenameSalted(format) && existingBook?.metaHash
         ? existingBook.metaHash
         : getMetadataHash(
             loadedBook.metadata,

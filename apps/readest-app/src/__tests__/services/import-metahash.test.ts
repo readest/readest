@@ -1648,6 +1648,19 @@ describe('importBook PDF filename-aware dedup', () => {
     expect(books.filter((b) => !b.deletedAt)).toHaveLength(2);
   });
 
+  it('salts the metaHash when re-importing an HTML book that has none', async () => {
+    const books: Book[] = [makeBook({ hash: 'html-old', format: 'HTML' })];
+    mockPartialMD5.mockResolvedValue('html-old');
+    mockOpen.mockResolvedValue({
+      book: { metadata: { ...PDF_METADATA }, getCover: vi.fn().mockResolvedValue(null) },
+      format: 'HTML',
+    });
+
+    const book = await service.importBook(new File(['chapter'], '0003.html'), books);
+
+    expect(book!.metaHash).toBe(getMetadataHash(PDF_METADATA, '0003'));
+  });
+
   it('refreshBookMetadata preserves the salted metaHash for HTML', async () => {
     const book = makeBook({ hash: 'html-hash', format: 'HTML', metaHash: 'salted-import-hash' });
     const fs = service.getFs();
