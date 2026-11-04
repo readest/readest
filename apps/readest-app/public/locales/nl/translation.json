@@ -2717,5 +2717,21 @@
   "Stop Preview": "Voorbeeld stoppen",
   "Voices are busy right now. Try again in a moment": "De stemmen zijn nu bezet. Probeer het zo meteen opnieuw",
   "You have used today's voice previews. Try again tomorrow": "Je hebt de stemvoorbeelden van vandaag gebruikt. Probeer het morgen opnieuw",
-  "Voice Library": "Stemmenbibliotheek"
+  "Voice Library": "Stemmenbibliotheek",
+  "Import from Anki": "Importeren uit Anki",
+  "Deck": "Stapel",
+  "New words come in as Learning. Words Anki counts as mature come in as Mastered.": "Nieuwe woorden komen binnen als ‘Aan het leren’. Woorden die Anki als volgroeid ziet, komen binnen als ‘Beheerst’.",
+  "Allow Readest to access AnkiDroid in system settings.": "Geef Readest in de systeeminstellingen toegang tot AnkiDroid.",
+  "Open AnkiDroid once, then try again.": "Open AnkiDroid één keer en probeer het opnieuw.",
+  "Could not reach AnkiDroid.": "Kan AnkiDroid niet bereiken.",
+  "Added {{count}} words to Anki_one": "{{count}} woord aan Anki toegevoegd",
+  "Added {{count}} words to Anki_other": "{{count}} woorden aan Anki toegevoegd",
+  "{{count}} already in Anki_one": "{{count}} al in Anki",
+  "{{count}} already in Anki_other": "{{count}} al in Anki",
+  "No decks in AnkiDroid.": "Geen stapels in AnkiDroid.",
+  "Imported {{added}} new words, {{mastered}} marked Mastered": "{{added}} nieuwe woorden geïmporteerd, {{mastered}} gemarkeerd als ‘Beheerst’",
+  "{{count}} skipped_one": "{{count}} overgeslagen",
+  "{{count}} skipped_other": "{{count}} overgeslagen",
+  "Update AnkiDroid to bring back mastered words.": "Werk AnkiDroid bij om beheerste woorden terug te halen.",
+  "Send to Anki": "Naar Anki sturen"
 }

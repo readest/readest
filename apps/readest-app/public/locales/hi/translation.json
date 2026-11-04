@@ -2717,5 +2717,21 @@
   "Stop Preview": "पूर्वावलोकन रोकें",
   "Voices are busy right now. Try again in a moment": "आवाज़ें अभी व्यस्त हैं। थोड़ी देर में फिर से कोशिश करें",
   "You have used today's voice previews. Try again tomorrow": "आपने आज के आवाज़ पूर्वावलोकन इस्तेमाल कर लिए हैं। कल फिर से कोशिश करें",
-  "Voice Library": "आवाज़ लाइब्रेरी"
+  "Voice Library": "आवाज़ लाइब्रेरी",
+  "Import from Anki": "Anki से इम्पोर्ट करें",
+  "Deck": "डेक",
+  "New words come in as Learning. Words Anki counts as mature come in as Mastered.": "नए शब्द “सीख रहे हैं” के रूप में आते हैं। Anki जिन शब्दों को परिपक्व मानता है, वे “सीख लिया” के रूप में आते हैं।",
+  "Allow Readest to access AnkiDroid in system settings.": "सिस्टम सेटिंग्स में Readest को AnkiDroid तक पहुँच की अनुमति दें।",
+  "Open AnkiDroid once, then try again.": "AnkiDroid को एक बार खोलें, फिर दोबारा कोशिश करें।",
+  "Could not reach AnkiDroid.": "AnkiDroid से संपर्क नहीं हो सका।",
+  "Added {{count}} words to Anki_one": "Anki में {{count}} शब्द जोड़ा गया",
+  "Added {{count}} words to Anki_other": "Anki में {{count}} शब्द जोड़े गए",
+  "{{count}} already in Anki_one": "{{count}} पहले से Anki में है",
+  "{{count}} already in Anki_other": "{{count}} पहले से Anki में हैं",
+  "No decks in AnkiDroid.": "AnkiDroid में कोई डेक नहीं है।",
+  "Imported {{added}} new words, {{mastered}} marked Mastered": "{{added}} नए शब्द इम्पोर्ट हुए, {{mastered}} “सीख लिया” चिह्नित",
+  "{{count}} skipped_one": "{{count}} छोड़ा गया",
+  "{{count}} skipped_other": "{{count}} छोड़े गए",
+  "Update AnkiDroid to bring back mastered words.": "सीखे गए शब्द वापस लाने के लिए AnkiDroid अपडेट करें।",
+  "Send to Anki": "Anki पर भेजें"
 }

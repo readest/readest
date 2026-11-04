@@ -8,13 +8,37 @@ import { useVocabularyStore } from '@/store/vocabularyStore';
 import { useLibraryStore } from '@/store/libraryStore';
 import type { VocabularyEntry } from '@/services/vocabulary/types';
 import type { Book } from '@/types/book';
+import { eventDispatcher } from '@/utils/event';
 
 const saveFile = vi.fn(async () => true);
 const push = vi.fn();
+const appService = { saveFile, isAndroidApp: false };
+
+const anki = vi.hoisted(() => ({
+  ankiStatus: vi.fn(),
+  ankiRequestPermission: vi.fn(),
+  ankiListDecks: vi.fn(),
+  ankiReadDeck: vi.fn(),
+  ankiAddNotes: vi.fn(),
+}));
+const account = vi.hoisted(() => ({
+  user: { id: 'u1' } as { id: string } | null,
+  plan: 'plus' as string | undefined,
+}));
 
 vi.mock('@/hooks/useTranslation', () => ({ useTranslation: () => (s: string) => s }));
 vi.mock('@/context/EnvContext', () => ({
-  useEnv: () => ({ envConfig: {}, appService: { saveFile } }),
+  useEnv: () => ({ envConfig: {}, appService }),
+}));
+vi.mock('@/context/AuthContext', () => ({
+  useAuth: () => ({ user: account.user, token: account.user ? 'token' : null }),
+}));
+vi.mock('@/hooks/useQuotaStats', () => ({
+  useQuotaStats: () => ({ userProfilePlan: account.plan, customizationPurchased: false }),
+}));
+vi.mock('@/services/vocabulary/ankiDroid', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/services/vocabulary/ankiDroid')>()),
+  ...anki,
 }));
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push }) }));
 vi.mock('@/app/reader/components/annotator/DictionarySheet', () => ({
@@ -63,6 +87,16 @@ beforeEach(() => {
   useLibraryStore.setState({ library: [{ hash: 'd', title: 'Dune' } as Book] });
   saveFile.mockClear();
   push.mockClear();
+  appService.isAndroidApp = false;
+  account.user = { id: 'u1' };
+  account.plan = 'plus';
+  anki.ankiStatus.mockReset().mockResolvedValue({ installed: true, granted: true });
+  anki.ankiRequestPermission.mockReset().mockResolvedValue(true);
+  anki.ankiListDecks.mockReset().mockResolvedValue([{ id: 7, name: 'Readest Vocabulary' }]);
+  anki.ankiReadDeck.mockReset().mockResolvedValue({ notes: [], cards: [] });
+  anki.ankiAddNotes
+    .mockReset()
+    .mockImplementation(async (_deck: string, notes: unknown[]) => notes.length);
 });
 afterEach(() => cleanup());
 
@@ -184,5 +218,132 @@ describe('VocabularyView', () => {
     expect(filename).toBe('readest-vocabulary.csv');
     expect(content).toContain('ball');
     expect(content).not.toContain('sandworm');
+  });
+});
+
+const renderWithMenu = () =>
+  render(
+    <DropdownProvider>
+      <VocabularyView />
+    </DropdownProvider>,
+  );
+
+const openExportMenu = () => fireEvent.click(screen.getByRole('button', { name: 'Export' }));
+
+describe('VocabularyView Anki link', () => {
+  beforeEach(() => {
+    appService.isAndroidApp = true;
+  });
+
+  it('sends the shown words to AnkiDroid, skipping ones already in the deck', async () => {
+    anki.ankiReadDeck.mockResolvedValue({ notes: [{ id: 1, fields: ['spice', 'x'], tags: '' }] });
+    renderWithMenu();
+    await screen.findByRole('button', { name: 'Import from Anki' });
+    openExportMenu();
+    expect(screen.queryByRole('menuitem', { name: /Export to Anki/ })).toBeNull();
+    fireEvent.click(screen.getByRole('menuitem', { name: /Send to Anki/ }));
+    await waitFor(() => expect(anki.ankiAddNotes).toHaveBeenCalled());
+    expect(anki.ankiReadDeck).toHaveBeenCalledWith(7, false);
+    const [deck, notes] = anki.ankiAddNotes.mock.calls[0] as [
+      string,
+      { fields: [string, string]; tags: string[] }[],
+    ];
+    expect(deck).toBe('Readest Vocabulary');
+    expect(notes.map((n) => n.fields[0].match(/>(\w+)</)?.[1]).sort()).toEqual([
+      'ball',
+      'sandworm',
+    ]);
+    expect(notes[0]!.tags).toContain('readest::lang::en');
+  });
+
+  it('reads AnkiDroid status again on every send', async () => {
+    renderWithMenu();
+    await screen.findByRole('button', { name: 'Import from Anki' });
+    for (let i = 0; i < 2; i++) {
+      openExportMenu();
+      fireEvent.click(screen.getByRole('menuitem', { name: /Send to Anki/ }));
+      await waitFor(() => expect(anki.ankiAddNotes).toHaveBeenCalledTimes(i + 1));
+    }
+    // Once on open, then once per send.
+    expect(anki.ankiStatus).toHaveBeenCalledTimes(3);
+  });
+
+  it('sends a free account to the plans page instead of AnkiDroid', async () => {
+    account.plan = 'free';
+    renderWithMenu();
+    await screen.findByRole('button', { name: /Import from Anki/ });
+    openExportMenu();
+    const send = screen.getByRole('menuitem', { name: /Send to Anki/ });
+    expect(send.textContent).toContain('Premium');
+    fireEvent.click(send);
+    expect(push).toHaveBeenCalledWith(expect.stringContaining('/user?redirect='));
+    expect(anki.ankiAddNotes).not.toHaveBeenCalled();
+  });
+
+  it('imports a deck, bringing a mature new word in as Mastered', async () => {
+    anki.ankiReadDeck.mockResolvedValue({
+      notes: [{ id: 1, fields: ['ephemeral', 'short-lived'], tags: '' }],
+      cards: [{ noteId: 1, cardType: 2, interval: 30 }],
+    });
+    renderWithMenu();
+    fireEvent.click(await screen.findByRole('button', { name: 'Import from Anki' }));
+    const deck = (await screen.findByRole('combobox', { name: 'Deck' })) as HTMLSelectElement;
+    expect(deck.value).toBe('7');
+    expect((screen.getByRole('combobox', { name: 'Language' }) as HTMLSelectElement).value).toBe(
+      'en',
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Import' }));
+    await waitFor(() =>
+      expect(useVocabularyStore.getState().entries['en:ephemeral']).toMatchObject({
+        state: 'mastered',
+        hint: 'short-lived',
+      }),
+    );
+    expect(anki.ankiReadDeck).toHaveBeenCalledWith(7, true);
+    expect(screen.queryByRole('combobox', { name: 'Deck' })).toBeNull();
+  });
+
+  it('stops when access to AnkiDroid is refused', async () => {
+    const dispatch = vi.spyOn(eventDispatcher, 'dispatch');
+    anki.ankiStatus.mockResolvedValue({ installed: true, granted: false });
+    anki.ankiRequestPermission.mockResolvedValue(false);
+    renderWithMenu();
+    fireEvent.click(await screen.findByRole('button', { name: 'Import from Anki' }));
+    await waitFor(() =>
+      expect(dispatch).toHaveBeenCalledWith(
+        'toast',
+        expect.objectContaining({
+          message: 'Allow Readest to access AnkiDroid in system settings.',
+        }),
+      ),
+    );
+    expect(anki.ankiListDecks).not.toHaveBeenCalled();
+    dispatch.mockRestore();
+  });
+
+  it('offers import on the empty screen', async () => {
+    seed([]);
+    renderWithMenu();
+    expect(await screen.findByRole('button', { name: 'Import from Anki' })).toBeTruthy();
+  });
+
+  it('keeps the Anki file export where AnkiDroid is not available', async () => {
+    appService.isAndroidApp = false;
+    renderWithMenu();
+    openExportMenu();
+    expect(screen.getByRole('menuitem', { name: /Export to Anki/ })).toBeTruthy();
+    expect(screen.queryByRole('menuitem', { name: /Send to Anki/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Import from Anki' })).toBeNull();
+    expect(anki.ankiStatus).not.toHaveBeenCalled();
+  });
+
+  it('gates the Anki file export behind premium', () => {
+    appService.isAndroidApp = false;
+    account.plan = 'free';
+    renderWithMenu();
+    openExportMenu();
+    fireEvent.click(screen.getByRole('menuitem', { name: /Export to Anki/ }));
+    expect(push).toHaveBeenCalledWith(expect.stringContaining('/user?redirect='));
+    expect(saveFile).not.toHaveBeenCalled();
   });
 });

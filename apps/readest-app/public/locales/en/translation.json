@@ -134,5 +134,11 @@
   "{{count}} book(s) omitted (file not available locally)_other": "{{count}} books omitted (files not available locally)",
   "Restored collection \"{{name}}\" ({{count}} books)_one": "Restored collection \"{{name}}\" ({{count}} book)",
   "Restored collection \"{{name}}\" ({{count}} books)_other": "Restored collection \"{{name}}\" ({{count}} books)",
-  "Lookup App": "Lookup App"
+  "Lookup App": "Lookup App",
+  "Added {{count}} words to Anki_one": "Added {{count}} word to Anki",
+  "Added {{count}} words to Anki_other": "Added {{count}} words to Anki",
+  "{{count}} already in Anki_one": "{{count}} already in Anki",
+  "{{count}} already in Anki_other": "{{count}} already in Anki",
+  "{{count}} skipped_one": "{{count}} skipped",
+  "{{count}} skipped_other": "{{count}} skipped"
 }

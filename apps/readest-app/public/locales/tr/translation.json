@@ -2717,5 +2717,21 @@
   "Stop Preview": "Önizlemeyi durdur",
   "Voices are busy right now. Try again in a moment": "Sesler şu anda meşgul. Birazdan tekrar deneyin",
   "You have used today's voice previews. Try again tomorrow": "Bugünkü ses önizlemelerini kullandınız. Yarın tekrar deneyin",
-  "Voice Library": "Ses kitaplığı"
+  "Voice Library": "Ses kitaplığı",
+  "Import from Anki": "Anki'den içe aktar",
+  "Deck": "Deste",
+  "New words come in as Learning. Words Anki counts as mature come in as Mastered.": "Yeni kelimeler “Öğreniliyor” olarak eklenir. Anki'nin olgun saydığı kelimeler “Öğrenildi” olarak eklenir.",
+  "Allow Readest to access AnkiDroid in system settings.": "Sistem ayarlarından Readest'in AnkiDroid'e erişmesine izin verin.",
+  "Open AnkiDroid once, then try again.": "AnkiDroid'i bir kez açın, ardından tekrar deneyin.",
+  "Could not reach AnkiDroid.": "AnkiDroid'e ulaşılamadı.",
+  "Added {{count}} words to Anki_one": "Anki'ye {{count}} kelime eklendi",
+  "Added {{count}} words to Anki_other": "Anki'ye {{count}} kelime eklendi",
+  "{{count}} already in Anki_one": "{{count}} kelime zaten Anki'de",
+  "{{count}} already in Anki_other": "{{count}} kelime zaten Anki'de",
+  "No decks in AnkiDroid.": "AnkiDroid'de deste yok.",
+  "Imported {{added}} new words, {{mastered}} marked Mastered": "{{added}} yeni kelime içe aktarıldı, {{mastered}} kelime “Öğrenildi” olarak işaretlendi",
+  "{{count}} skipped_one": "{{count}} atlandı",
+  "{{count}} skipped_other": "{{count}} atlandı",
+  "Update AnkiDroid to bring back mastered words.": "Öğrenilen kelimeleri geri getirmek için AnkiDroid'i güncelleyin.",
+  "Send to Anki": "Anki'ye gönder"
 }

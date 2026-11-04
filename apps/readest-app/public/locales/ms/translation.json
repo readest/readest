@@ -2649,5 +2649,18 @@
   "Stop Preview": "Henti pratonton",
   "Voices are busy right now. Try again in a moment": "Suara sedang sibuk sekarang. Cuba lagi sebentar lagi",
   "You have used today's voice previews. Try again tomorrow": "Anda telah menggunakan pratonton suara hari ini. Cuba lagi esok",
-  "Voice Library": "Pustaka suara"
+  "Voice Library": "Pustaka suara",
+  "Import from Anki": "Import daripada Anki",
+  "Deck": "Dek",
+  "New words come in as Learning. Words Anki counts as mature come in as Mastered.": "Perkataan baharu dimasukkan sebagai “Sedang dipelajari”. Perkataan yang dianggap matang oleh Anki dimasukkan sebagai “Dikuasai”.",
+  "Allow Readest to access AnkiDroid in system settings.": "Benarkan Readest mengakses AnkiDroid dalam tetapan sistem.",
+  "Open AnkiDroid once, then try again.": "Buka AnkiDroid sekali, kemudian cuba lagi.",
+  "Could not reach AnkiDroid.": "Tidak dapat menghubungi AnkiDroid.",
+  "Added {{count}} words to Anki_other": "{{count}} perkataan ditambah ke Anki",
+  "{{count}} already in Anki_other": "{{count}} sudah ada dalam Anki",
+  "No decks in AnkiDroid.": "Tiada dek dalam AnkiDroid.",
+  "Imported {{added}} new words, {{mastered}} marked Mastered": "{{added}} perkataan baharu diimport, {{mastered}} ditanda “Dikuasai”",
+  "{{count}} skipped_other": "{{count}} dilangkau",
+  "Update AnkiDroid to bring back mastered words.": "Kemas kini AnkiDroid untuk membawa kembali perkataan yang dikuasai.",
+  "Send to Anki": "Hantar ke Anki"
 }

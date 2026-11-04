@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import clsx from 'clsx';
 import { MdArrowDropDown, MdSearch } from 'react-icons/md';
 import { IoMdCloseCircle } from 'react-icons/io';
-import { PiBooks, PiCardsThree, PiExport, PiFileCsv } from 'react-icons/pi';
+import { PiBooks, PiCardsThree, PiDownloadSimple, PiExport, PiFileCsv } from 'react-icons/pi';
 
 import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -15,7 +15,9 @@ import { getLocale } from '@/utils/misc';
 import Dropdown from '@/components/Dropdown';
 import Menu from '@/components/Menu';
 import MenuItem from '@/components/MenuItem';
+import AnkiImportPanel from './AnkiImportPanel';
 import VocabularyDetail from './VocabularyDetail';
+import { useAnkiLink } from './useAnkiLink';
 
 interface VocabularyViewProps {
   /** Called before leaving for the reader (Open in book), to close the window. */
@@ -30,6 +32,7 @@ const VocabularyView: React.FC<VocabularyViewProps> = ({ onOpenBook }) => {
   const [bookHash, setBookHash] = useState('');
   const [query, setQuery] = useState('');
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const anki = useAnkiLink();
 
   const all = useMemo(() => Object.values(entries), [entries]);
   const books = useMemo(() => listBooks(all), [all]);
@@ -55,6 +58,7 @@ const VocabularyView: React.FC<VocabularyViewProps> = ({ onOpenBook }) => {
     chip?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
 
   const exportAs = async (format: 'csv' | 'anki') => {
+    if (format === 'anki' && !anki.guardFileExport()) return;
     const content = format === 'csv' ? toCsv(shown) : toAnkiText(shown);
     const filename = format === 'csv' ? 'readest-vocabulary.csv' : 'readest-vocabulary-anki.txt';
     const saved = await appService?.saveFile(filename, content, {
@@ -67,12 +71,32 @@ const VocabularyView: React.FC<VocabularyViewProps> = ({ onOpenBook }) => {
     });
   };
 
+  const importPanel = anki.importState && (
+    <AnkiImportPanel {...anki.importState} onImport={anki.runImport} onCancel={anki.closeImport} />
+  );
+
   if (all.every((e) => e.deletedAt)) {
     return (
-      <div className='flex h-full flex-col items-center justify-center px-6 py-12 text-center'>
-        <p className='not-eink:opacity-70 text-sm'>
-          {_('Words you look up while reading appear here.')}
-        </p>
+      <div className='flex h-full flex-col items-center justify-center gap-4 px-6 py-12 text-center'>
+        {importPanel || (
+          <>
+            <p className='not-eink:opacity-70 text-sm'>
+              {_('Words you look up while reading appear here.')}
+            </p>
+            {anki.available && (
+              <button
+                type='button'
+                className='btn btn-contrast btn-sm gap-2'
+                onClick={() => void anki.openImport()}
+              >
+                {_('Import from Anki')}
+                {anki.premiumBadge && (
+                  <span className='badge badge-sm badge-ghost'>{anki.premiumBadge}</span>
+                )}
+              </button>
+            )}
+          </>
+        )}
       </div>
     );
   }
@@ -101,6 +125,17 @@ const VocabularyView: React.FC<VocabularyViewProps> = ({ onOpenBook }) => {
             </button>
           )}
         </label>
+        {anki.available && (
+          <button
+            type='button'
+            aria-label={_('Import from Anki')}
+            title={_('Import from Anki')}
+            onClick={() => void anki.openImport()}
+            className='btn btn-ghost btn-circle eink-bordered bg-base-200 h-10 min-h-10 w-10 p-0'
+          >
+            <PiDownloadSimple className='h-5 w-5' />
+          </button>
+        )}
         <Dropdown
           label={_('Export')}
           disabled={!shown.length}
@@ -115,12 +150,23 @@ const VocabularyView: React.FC<VocabularyViewProps> = ({ onOpenBook }) => {
               transient
               onClick={() => void exportAs('csv')}
             />
-            <MenuItem
-              label={_('Export to Anki')}
-              Icon={PiCardsThree}
-              transient
-              onClick={() => void exportAs('anki')}
-            />
+            {anki.available ? (
+              <MenuItem
+                label={_('Send to Anki')}
+                description={anki.premiumBadge}
+                Icon={PiCardsThree}
+                transient
+                onClick={() => void anki.send(shown)}
+              />
+            ) : (
+              <MenuItem
+                label={_('Export to Anki')}
+                description={anki.premiumBadge}
+                Icon={PiCardsThree}
+                transient
+                onClick={() => void exportAs('anki')}
+              />
+            )}
           </Menu>
         </Dropdown>
       </div>
@@ -187,69 +233,75 @@ const VocabularyView: React.FC<VocabularyViewProps> = ({ onOpenBook }) => {
       </div>
 
       <div className='border-base-content/10 flex min-h-0 flex-1 border-t'>
-        <ul
-          aria-label={_('Words')}
-          className={clsx(
-            'min-h-0 w-full overflow-y-auto sm:w-2/5 sm:border-e sm:border-base-content/10',
-            detail ? 'hidden sm:block' : 'block',
-          )}
-        >
-          {shown.map((e) => (
-            <li key={e.id}>
-              <button
-                type='button'
-                aria-label={e.word}
-                data-word={e.key}
-                aria-current={e.id === detail?.id}
-                onClick={() => setSelectedId(e.id)}
-                className={clsx(
-                  'border-base-content/5 flex w-full flex-col items-start border-b px-3 py-2 text-start',
-                  e.id === detail?.id ? 'bg-base-200' : 'not-eink:hover:bg-base-200/60',
-                )}
-              >
-                <span className='flex w-full items-center gap-2'>
-                  <span dir='auto' className='min-w-0 truncate font-semibold'>
-                    {e.word}
-                  </span>
-                  {e.state !== 'none' && (
-                    <span
-                      className={clsx(
-                        'rounded-full border px-1.5 text-[10px]',
-                        e.state === 'learning'
-                          ? 'btn-contrast'
-                          : 'eink-bordered border-base-content/30',
+        {importPanel || (
+          <>
+            <ul
+              aria-label={_('Words')}
+              className={clsx(
+                'min-h-0 w-full overflow-y-auto sm:w-2/5 sm:border-e sm:border-base-content/10',
+                detail ? 'hidden sm:block' : 'block',
+              )}
+            >
+              {shown.map((e) => (
+                <li key={e.id}>
+                  <button
+                    type='button'
+                    aria-label={e.word}
+                    data-word={e.key}
+                    aria-current={e.id === detail?.id}
+                    onClick={() => setSelectedId(e.id)}
+                    className={clsx(
+                      'border-base-content/5 flex w-full flex-col items-start border-b px-3 py-2 text-start',
+                      e.id === detail?.id ? 'bg-base-200' : 'not-eink:hover:bg-base-200/60',
+                    )}
+                  >
+                    <span className='flex w-full items-center gap-2'>
+                      <span dir='auto' className='min-w-0 truncate font-semibold'>
+                        {e.word}
+                      </span>
+                      {e.state !== 'none' && (
+                        <span
+                          className={clsx(
+                            'rounded-full border px-1.5 text-[10px]',
+                            e.state === 'learning'
+                              ? 'btn-contrast'
+                              : 'eink-bordered border-base-content/30',
+                          )}
+                        >
+                          {e.state === 'learning' ? _('Learning') : _('Mastered')}
+                        </span>
                       )}
-                    >
-                      {e.state === 'learning' ? _('Learning') : _('Mastered')}
                     </span>
-                  )}
-                </span>
-                <span className='not-eink:opacity-60 w-full truncate text-xs'>
-                  {[
-                    e.occurrences[0]?.bookTitle,
-                    new Date(lastSeen(e)).toLocaleDateString(getLocale()),
-                  ]
-                    .filter(Boolean)
-                    .join(' · ')}
-                </span>
-              </button>
-            </li>
-          ))}
-          {!shown.length && (
-            <li className='not-eink:opacity-60 p-4 text-center text-sm'>{_('No words match')}</li>
-          )}
-        </ul>
-        <div className={clsx('min-h-0 flex-1', detail ? 'flex' : 'hidden sm:flex')}>
-          {detail ? (
-            <VocabularyDetail
-              entry={detail}
-              onBack={() => setSelectedId(null)}
-              onOpenBook={onOpenBook}
-            />
-          ) : (
-            <p className='not-eink:opacity-60 m-auto p-4 text-sm'>{_('Select a word')}</p>
-          )}
-        </div>
+                    <span className='not-eink:opacity-60 w-full truncate text-xs'>
+                      {[
+                        e.occurrences[0]?.bookTitle,
+                        new Date(lastSeen(e)).toLocaleDateString(getLocale()),
+                      ]
+                        .filter(Boolean)
+                        .join(' · ')}
+                    </span>
+                  </button>
+                </li>
+              ))}
+              {!shown.length && (
+                <li className='not-eink:opacity-60 p-4 text-center text-sm'>
+                  {_('No words match')}
+                </li>
+              )}
+            </ul>
+            <div className={clsx('min-h-0 flex-1', detail ? 'flex' : 'hidden sm:flex')}>
+              {detail ? (
+                <VocabularyDetail
+                  entry={detail}
+                  onBack={() => setSelectedId(null)}
+                  onOpenBook={onOpenBook}
+                />
+              ) : (
+                <p className='not-eink:opacity-60 m-auto p-4 text-sm'>{_('Select a word')}</p>
+              )}
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

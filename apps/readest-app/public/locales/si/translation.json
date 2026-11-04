@@ -2717,5 +2717,21 @@
   "Stop Preview": "පෙරදසුන නවත්වන්න",
   "Voices are busy right now. Try again in a moment": "හඬ දැන් කාර්යබහුලයි. මොහොතකින් නැවත උත්සාහ කරන්න",
   "You have used today's voice previews. Try again tomorrow": "ඔබ අද දින හඬ පෙරදසුන් භාවිත කර අවසන්. හෙට නැවත උත්සාහ කරන්න",
-  "Voice Library": "හඬ පුස්තකාලය"
+  "Voice Library": "හඬ පුස්තකාලය",
+  "Import from Anki": "Anki වෙතින් ආයාත කරන්න",
+  "Deck": "ඩෙක්",
+  "New words come in as Learning. Words Anki counts as mature come in as Mastered.": "නව වචන “ඉගෙනගනිමින්” ලෙස එක් වේ. Anki පරිණත ලෙස සලකන වචන “ප්‍රගුණ කළා” ලෙස එක් වේ.",
+  "Allow Readest to access AnkiDroid in system settings.": "පද්ධති සැකසුම් තුළ Readest හට AnkiDroid වෙත ප්‍රවේශයට ඉඩ දෙන්න.",
+  "Open AnkiDroid once, then try again.": "AnkiDroid එක් වරක් විවෘත කර නැවත උත්සාහ කරන්න.",
+  "Could not reach AnkiDroid.": "AnkiDroid වෙත සම්බන්ධ විය නොහැකි විය.",
+  "Added {{count}} words to Anki_one": "වචන {{count}}ක් Anki වෙත එක් කළා",
+  "Added {{count}} words to Anki_other": "වචන {{count}}ක් Anki වෙත එක් කළා",
+  "{{count}} already in Anki_one": "{{count}}ක් දැනටමත් Anki තුළ ඇත",
+  "{{count}} already in Anki_other": "{{count}}ක් දැනටමත් Anki තුළ ඇත",
+  "No decks in AnkiDroid.": "AnkiDroid තුළ ඩෙක් නැත.",
+  "Imported {{added}} new words, {{mastered}} marked Mastered": "නව වචන {{added}}ක් ආයාත කළා, {{mastered}}ක් “ප්‍රගුණ කළා” ලෙස සලකුණු කළා",
+  "{{count}} skipped_one": "{{count}}ක් මඟ හැරියා",
+  "{{count}} skipped_other": "{{count}}ක් මඟ හැරියා",
+  "Update AnkiDroid to bring back mastered words.": "ප්‍රගුණ කළ වචන නැවත ගෙන ඒමට AnkiDroid යාවත්කාලීන කරන්න.",
+  "Send to Anki": "Anki වෙත යවන්න"
 }

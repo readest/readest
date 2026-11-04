@@ -2717,5 +2717,21 @@
   "Stop Preview": "Tinglashni toʻxtatish",
   "Voices are busy right now. Try again in a moment": "Ovozlar hozir band. Birozdan keyin qayta urinib koʻring",
   "You have used today's voice previews. Try again tomorrow": "Bugungi ovoz tinglashlaridan foydalanib boʻldingiz. Ertaga qayta urinib koʻring",
-  "Voice Library": "Ovozlar kutubxonasi"
+  "Voice Library": "Ovozlar kutubxonasi",
+  "Import from Anki": "Anki’dan import qilish",
+  "Deck": "To‘plam",
+  "New words come in as Learning. Words Anki counts as mature come in as Mastered.": "Yangi so‘zlar “O‘rganilmoqda” sifatida qo‘shiladi. Anki pishgan deb hisoblagan so‘zlar “O‘zlashtirildi” sifatida qo‘shiladi.",
+  "Allow Readest to access AnkiDroid in system settings.": "Tizim sozlamalarida Readest’ga AnkiDroid’dan foydalanishga ruxsat bering.",
+  "Open AnkiDroid once, then try again.": "AnkiDroid’ni bir marta oching, so‘ng qayta urinib ko‘ring.",
+  "Could not reach AnkiDroid.": "AnkiDroid bilan bog‘lanib bo‘lmadi.",
+  "Added {{count}} words to Anki_one": "Anki’ga {{count}} ta so‘z qo‘shildi",
+  "Added {{count}} words to Anki_other": "Anki’ga {{count}} ta so‘z qo‘shildi",
+  "{{count}} already in Anki_one": "{{count}} tasi Anki’da allaqachon bor",
+  "{{count}} already in Anki_other": "{{count}} tasi Anki’da allaqachon bor",
+  "No decks in AnkiDroid.": "AnkiDroid’da to‘plamlar yo‘q.",
+  "Imported {{added}} new words, {{mastered}} marked Mastered": "{{added}} ta yangi so‘z import qilindi, {{mastered}} tasi “O‘zlashtirildi” deb belgilandi",
+  "{{count}} skipped_one": "{{count}} ta o‘tkazib yuborildi",
+  "{{count}} skipped_other": "{{count}} ta o‘tkazib yuborildi",
+  "Update AnkiDroid to bring back mastered words.": "O‘zlashtirilgan so‘zlarni qaytarish uchun AnkiDroid’ni yangilang.",
+  "Send to Anki": "Anki’ga yuborish"
 }

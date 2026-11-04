@@ -2649,5 +2649,18 @@
   "Stop Preview": "Dừng nghe thử",
   "Voices are busy right now. Try again in a moment": "Các giọng đọc đang bận. Hãy thử lại sau giây lát",
   "You have used today's voice previews. Try again tomorrow": "Bạn đã dùng hết lượt nghe thử giọng đọc hôm nay. Hãy thử lại vào ngày mai",
-  "Voice Library": "Thư viện giọng đọc"
+  "Voice Library": "Thư viện giọng đọc",
+  "Import from Anki": "Nhập từ Anki",
+  "Deck": "Bộ thẻ",
+  "New words come in as Learning. Words Anki counts as mature come in as Mastered.": "Từ mới được thêm với trạng thái “Đang học”. Những từ Anki coi là đã thuần thục được thêm với trạng thái “Đã thuộc”.",
+  "Allow Readest to access AnkiDroid in system settings.": "Hãy cho phép Readest truy cập AnkiDroid trong cài đặt hệ thống.",
+  "Open AnkiDroid once, then try again.": "Hãy mở AnkiDroid một lần rồi thử lại.",
+  "Could not reach AnkiDroid.": "Không thể kết nối với AnkiDroid.",
+  "Added {{count}} words to Anki_other": "Đã thêm {{count}} từ vào Anki",
+  "{{count}} already in Anki_other": "{{count}} từ đã có trong Anki",
+  "No decks in AnkiDroid.": "Không có bộ thẻ nào trong AnkiDroid.",
+  "Imported {{added}} new words, {{mastered}} marked Mastered": "Đã nhập {{added}} từ mới, {{mastered}} từ được đánh dấu “Đã thuộc”",
+  "{{count}} skipped_other": "Đã bỏ qua {{count}}",
+  "Update AnkiDroid to bring back mastered words.": "Hãy cập nhật AnkiDroid để lấy lại các từ đã thuộc.",
+  "Send to Anki": "Gửi sang Anki"
 }

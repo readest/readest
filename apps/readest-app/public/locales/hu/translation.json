@@ -2717,5 +2717,21 @@
   "Stop Preview": "Előnézet leállítása",
   "Voices are busy right now. Try again in a moment": "A hangok most foglaltak. Próbálja újra egy pillanat múlva",
   "You have used today's voice previews. Try again tomorrow": "Felhasználta a mai hangelőnézeteket. Próbálja újra holnap",
-  "Voice Library": "Hangtár"
+  "Voice Library": "Hangtár",
+  "Import from Anki": "Importálás az Ankiból",
+  "Deck": "Pakli",
+  "New words come in as Learning. Words Anki counts as mature come in as Mastered.": "Az új szavak „Tanulom” állapotba kerülnek, amit az Anki érettnek tart, az „Elsajátítva” állapotba.",
+  "Allow Readest to access AnkiDroid in system settings.": "Engedélyezd a Readestnek az AnkiDroid elérését a rendszerbeállításokban.",
+  "Open AnkiDroid once, then try again.": "Nyisd meg egyszer az AnkiDroidot, majd próbáld újra.",
+  "Could not reach AnkiDroid.": "Az AnkiDroid nem érhető el.",
+  "Added {{count}} words to Anki_one": "{{count}} szó hozzáadva az Ankihoz",
+  "Added {{count}} words to Anki_other": "{{count}} szó hozzáadva az Ankihoz",
+  "{{count}} already in Anki_one": "{{count}} már az Ankiban van",
+  "{{count}} already in Anki_other": "{{count}} már az Ankiban van",
+  "No decks in AnkiDroid.": "Nincsenek paklik az AnkiDroidban.",
+  "Imported {{added}} new words, {{mastered}} marked Mastered": "{{added}} új szó importálva, {{mastered}} „Elsajátítva” jelölést kapott",
+  "{{count}} skipped_one": "{{count}} kihagyva",
+  "{{count}} skipped_other": "{{count}} kihagyva",
+  "Update AnkiDroid to bring back mastered words.": "Frissítsd az AnkiDroidot az elsajátított szavak visszahozásához.",
+  "Send to Anki": "Küldés az Ankiba"
 }

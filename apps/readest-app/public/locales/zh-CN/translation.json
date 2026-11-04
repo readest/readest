@@ -2649,5 +2649,18 @@
   "Stop Preview": "停止试听",
   "Voices are busy right now. Try again in a moment": "语音服务繁忙，请稍后再试",
   "You have used today's voice previews. Try again tomorrow": "今日的语音试听次数已用完，请明天再试",
-  "Voice Library": "语音库"
+  "Voice Library": "语音库",
+  "Import from Anki": "从 Anki 导入",
+  "Deck": "牌组",
+  "New words come in as Learning. Words Anki counts as mature come in as Mastered.": "新词以“学习中”导入。Anki 中已成熟的卡片对应的词以“已掌握”导入。",
+  "Allow Readest to access AnkiDroid in system settings.": "请在系统设置中允许 Readest 访问 AnkiDroid。",
+  "Open AnkiDroid once, then try again.": "请先打开一次 AnkiDroid，然后重试。",
+  "Could not reach AnkiDroid.": "无法连接 AnkiDroid。",
+  "Added {{count}} words to Anki_other": "已向 Anki 添加 {{count}} 个词",
+  "{{count}} already in Anki_other": "{{count}} 个已在 Anki 中",
+  "No decks in AnkiDroid.": "AnkiDroid 中没有牌组。",
+  "Imported {{added}} new words, {{mastered}} marked Mastered": "已导入 {{added}} 个新词，{{mastered}} 个标记为“已掌握”",
+  "{{count}} skipped_other": "已跳过 {{count}} 个",
+  "Update AnkiDroid to bring back mastered words.": "请更新 AnkiDroid 以导回已掌握的词。",
+  "Send to Anki": "发送到 Anki"
 }

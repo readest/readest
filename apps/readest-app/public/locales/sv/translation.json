@@ -2717,5 +2717,21 @@
   "Stop Preview": "Stoppa förhandslyssning",
   "Voices are busy right now. Try again in a moment": "Rösterna är upptagna just nu. Försök igen om en stund",
   "You have used today's voice previews. Try again tomorrow": "Du har använt dagens röstprov. Försök igen i morgon",
-  "Voice Library": "Röstbibliotek"
+  "Voice Library": "Röstbibliotek",
+  "Import from Anki": "Importera från Anki",
+  "Deck": "Kortlek",
+  "New words come in as Learning. Words Anki counts as mature come in as Mastered.": "Nya ord läggs till som ”Lär mig”. Ord som Anki räknar som mogna läggs till som ”Behärskar”.",
+  "Allow Readest to access AnkiDroid in system settings.": "Ge Readest åtkomst till AnkiDroid i systeminställningarna.",
+  "Open AnkiDroid once, then try again.": "Öppna AnkiDroid en gång och försök sedan igen.",
+  "Could not reach AnkiDroid.": "Kunde inte nå AnkiDroid.",
+  "Added {{count}} words to Anki_one": "{{count}} ord har lagts till i Anki",
+  "Added {{count}} words to Anki_other": "{{count}} ord har lagts till i Anki",
+  "{{count}} already in Anki_one": "{{count}} finns redan i Anki",
+  "{{count}} already in Anki_other": "{{count}} finns redan i Anki",
+  "No decks in AnkiDroid.": "Inga kortlekar i AnkiDroid.",
+  "Imported {{added}} new words, {{mastered}} marked Mastered": "{{added}} nya ord importerade, {{mastered}} markerade som ”Behärskar”",
+  "{{count}} skipped_one": "{{count}} hoppades över",
+  "{{count}} skipped_other": "{{count}} hoppades över",
+  "Update AnkiDroid to bring back mastered words.": "Uppdatera AnkiDroid för att få tillbaka behärskade ord.",
+  "Send to Anki": "Skicka till Anki"
 }

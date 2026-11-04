@@ -2717,5 +2717,21 @@
   "Stop Preview": "მოსმენის შეჩერება",
   "Voices are busy right now. Try again in a moment": "ხმები ახლა დაკავებულია. სცადეთ ცოტა ხანში",
   "You have used today's voice previews. Try again tomorrow": "დღევანდელი ხმის მოსმენები ამოწურეთ. სცადეთ ხვალ",
-  "Voice Library": "ხმების ბიბლიოთეკა"
+  "Voice Library": "ხმების ბიბლიოთეკა",
+  "Import from Anki": "Anki-დან იმპორტი",
+  "Deck": "დასტა",
+  "New words come in as Learning. Words Anki counts as mature come in as Mastered.": "ახალი სიტყვები ემატება როგორც „ვსწავლობ“. სიტყვები, რომლებსაც Anki მომწიფებულად თვლის, ემატება როგორც „ნასწავლი“.",
+  "Allow Readest to access AnkiDroid in system settings.": "სისტემის პარამეტრებში მიეცით Readest-ს AnkiDroid-ზე წვდომის ნებართვა.",
+  "Open AnkiDroid once, then try again.": "ერთხელ გახსენით AnkiDroid და სცადეთ ხელახლა.",
+  "Could not reach AnkiDroid.": "AnkiDroid-თან დაკავშირება ვერ მოხერხდა.",
+  "Added {{count}} words to Anki_one": "Anki-ს დაემატა {{count}} სიტყვა",
+  "Added {{count}} words to Anki_other": "Anki-ს დაემატა {{count}} სიტყვა",
+  "{{count}} already in Anki_one": "{{count}} უკვე არის Anki-ში",
+  "{{count}} already in Anki_other": "{{count}} უკვე არის Anki-ში",
+  "No decks in AnkiDroid.": "AnkiDroid-ში დასტები არ არის.",
+  "Imported {{added}} new words, {{mastered}} marked Mastered": "იმპორტირდა {{added}} ახალი სიტყვა, {{mastered}} მოინიშნა როგორც „ნასწავლი“",
+  "{{count}} skipped_one": "გამოტოვებულია {{count}}",
+  "{{count}} skipped_other": "გამოტოვებულია {{count}}",
+  "Update AnkiDroid to bring back mastered words.": "განაახლეთ AnkiDroid, რომ ნასწავლი სიტყვები დააბრუნოთ.",
+  "Send to Anki": "Anki-ში გაგზავნა"
 }

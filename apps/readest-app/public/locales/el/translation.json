@@ -2717,5 +2717,21 @@
   "Stop Preview": "Διακοπή προεπισκόπησης",
   "Voices are busy right now. Try again in a moment": "Οι φωνές είναι απασχολημένες αυτή τη στιγμή. Δοκιμάστε ξανά σε λίγο",
   "You have used today's voice previews. Try again tomorrow": "Χρησιμοποιήσατε τις σημερινές δοκιμές φωνής. Δοκιμάστε ξανά αύριο",
-  "Voice Library": "Βιβλιοθήκη φωνών"
+  "Voice Library": "Βιβλιοθήκη φωνών",
+  "Import from Anki": "Εισαγωγή από το Anki",
+  "Deck": "Τράπουλα",
+  "New words come in as Learning. Words Anki counts as mature come in as Mastered.": "Οι νέες λέξεις προστίθενται ως «Σε εκμάθηση». Όσες το Anki θεωρεί ώριμες προστίθενται ως «Κατακτημένη».",
+  "Allow Readest to access AnkiDroid in system settings.": "Επιτρέψτε στο Readest την πρόσβαση στο AnkiDroid από τις ρυθμίσεις συστήματος.",
+  "Open AnkiDroid once, then try again.": "Ανοίξτε το AnkiDroid μία φορά και δοκιμάστε ξανά.",
+  "Could not reach AnkiDroid.": "Δεν ήταν δυνατή η σύνδεση με το AnkiDroid.",
+  "Added {{count}} words to Anki_one": "Προστέθηκε {{count}} λέξη στο Anki",
+  "Added {{count}} words to Anki_other": "Προστέθηκαν {{count}} λέξεις στο Anki",
+  "{{count}} already in Anki_one": "{{count}} υπάρχει ήδη στο Anki",
+  "{{count}} already in Anki_other": "{{count}} υπάρχουν ήδη στο Anki",
+  "No decks in AnkiDroid.": "Δεν υπάρχουν τράπουλες στο AnkiDroid.",
+  "Imported {{added}} new words, {{mastered}} marked Mastered": "Εισήχθησαν {{added}} νέες λέξεις, {{mastered}} σημειώθηκαν ως «Κατακτημένη»",
+  "{{count}} skipped_one": "{{count}} παραλείφθηκε",
+  "{{count}} skipped_other": "{{count}} παραλείφθηκαν",
+  "Update AnkiDroid to bring back mastered words.": "Ενημερώστε το AnkiDroid για να επαναφέρετε τις κατακτημένες λέξεις.",
+  "Send to Anki": "Αποστολή στο Anki"
 }

@@ -2717,5 +2717,21 @@
   "Stop Preview": "முன்னோட்டத்தை நிறுத்து",
   "Voices are busy right now. Try again in a moment": "குரல்கள் இப்போது பிஸியாக உள்ளன. சிறிது நேரத்தில் மீண்டும் முயலவும்",
   "You have used today's voice previews. Try again tomorrow": "இன்றைய குரல் முன்னோட்டங்களைப் பயன்படுத்திவிட்டீர்கள். நாளை மீண்டும் முயலவும்",
-  "Voice Library": "குரல் நூலகம்"
+  "Voice Library": "குரல் நூலகம்",
+  "Import from Anki": "Anki இலிருந்து இறக்குமதி செய்",
+  "Deck": "டெக்",
+  "New words come in as Learning. Words Anki counts as mature come in as Mastered.": "புதிய சொற்கள் “கற்றுக்கொண்டிருக்கிறேன்” ஆகச் சேர்க்கப்படும். Anki முதிர்ந்தவை எனக் கருதும் சொற்கள் “கற்றுவிட்டேன்” ஆகச் சேர்க்கப்படும்.",
+  "Allow Readest to access AnkiDroid in system settings.": "கணினி அமைப்புகளில் Readest-க்கு AnkiDroid அணுகலை அனுமதிக்கவும்.",
+  "Open AnkiDroid once, then try again.": "AnkiDroid-ஐ ஒருமுறை திறந்து, பிறகு மீண்டும் முயலவும்.",
+  "Could not reach AnkiDroid.": "AnkiDroid-ஐ அணுக முடியவில்லை.",
+  "Added {{count}} words to Anki_one": "Anki-இல் {{count}} சொல் சேர்க்கப்பட்டது",
+  "Added {{count}} words to Anki_other": "Anki-இல் {{count}} சொற்கள் சேர்க்கப்பட்டன",
+  "{{count}} already in Anki_one": "{{count}} ஏற்கெனவே Anki-இல் உள்ளது",
+  "{{count}} already in Anki_other": "{{count}} ஏற்கெனவே Anki-இல் உள்ளன",
+  "No decks in AnkiDroid.": "AnkiDroid-இல் டெக்குகள் இல்லை.",
+  "Imported {{added}} new words, {{mastered}} marked Mastered": "{{added}} புதிய சொற்கள் இறக்குமதி செய்யப்பட்டன, {{mastered}} “கற்றுவிட்டேன்” எனக் குறிக்கப்பட்டன",
+  "{{count}} skipped_one": "{{count}} தவிர்க்கப்பட்டது",
+  "{{count}} skipped_other": "{{count}} தவிர்க்கப்பட்டன",
+  "Update AnkiDroid to bring back mastered words.": "கற்ற சொற்களைத் திரும்பப் பெற AnkiDroid-ஐப் புதுப்பிக்கவும்.",
+  "Send to Anki": "Anki-க்கு அனுப்பு"
 }
