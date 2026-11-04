@@ -477,22 +477,39 @@ describe('note card over the popup box', () => {
     createdAt: 1,
     updatedAt: 1,
   };
-  const renderNote = (dir: 'up' | 'down', eink: boolean, editor = false) => {
-    // Triangle above the text (dir 'up' points down at it from below the box)
-    // or below it (dir 'down').
-    const triangleY = dir === 'up' ? NOTE_Y : NOTE_Y - 7;
-    const popupY = dir === 'up' ? NOTE_Y - POPUP_H : NOTE_Y;
+  type Dir = 'up' | 'down' | 'left' | 'right';
+  const renderNote = (dir: Dir, eink: boolean, editor = false) => {
+    // Horizontal text: the box sits above the text (triangle 'up', pointing
+    // down at it from the box's bottom) or below it ('down'). Vertical text:
+    // the box sits to the text's left ('left', triangle on the box's right)
+    // or right ('right'). The vertical box swaps the toolbar's width and height.
+    const isVertical = dir === 'left' || dir === 'right';
+    const boxW = isVertical ? POPUP_H : POPUP_W;
+    const boxH = isVertical ? POPUP_W : POPUP_H;
+    const at = { x: 200, y: NOTE_Y };
+    const position = {
+      up: { x: at.x, y: at.y - boxH },
+      down: { x: at.x, y: at.y },
+      left: { x: at.x - boxW, y: 20 },
+      right: { x: at.x, y: 20 },
+    }[dir];
+    const triangle = {
+      up: { x: at.x + boxW / 2, y: at.y },
+      down: { x: at.x + boxW / 2, y: at.y - 7 },
+      left: { x: at.x, y: 20 + boxH / 2 },
+      right: { x: at.x - 7, y: 20 + boxH / 2 },
+    }[dir];
     return render(
       <div data-theme='default-light' data-eink={eink ? 'true' : undefined}>
         <AnnotationPopup
           bookKey='test'
           dir='ltr'
-          isVertical={false}
+          isVertical={isVertical}
           buttons={toolButtons}
           notes={editor ? [] : [note]}
           noteEditor={editor ? { value: note.note, onSave: vi.fn(), onCancel: vi.fn() } : null}
-          position={{ dir, point: { x: 20, y: popupY } }}
-          trianglePosition={{ dir, point: { x: 20 + POPUP_W / 2, y: triangleY } }}
+          position={{ dir, point: position }}
+          trianglePosition={{ dir, point: triangle }}
           highlightOptionsVisible={false}
           selectedStyle='highlight'
           selectedColor='yellow'
@@ -505,13 +522,19 @@ describe('note card over the popup box', () => {
     );
   };
 
-  it.each([
-    ['up', false],
-    ['down', false],
-    ['up', true],
-    ['down', true],
-  ] as const)('triangle %s, e-ink %s: the card and the editor cover the box', (dir, eink) => {
-    const edge = dir === 'up' ? 'bottom' : 'top';
+  // The triangle's edge, and the two edges across from it, must coincide.
+  const edges = {
+    up: ['bottom', 'left', 'right'],
+    down: ['top', 'left', 'right'],
+    left: ['right', 'top', 'bottom'],
+    right: ['left', 'top', 'bottom'],
+  } as const;
+
+  it.each(
+    (['up', 'down', 'left', 'right'] as const).flatMap((dir) =>
+      [false, true].map((eink) => [dir, eink] as const),
+    ),
+  )('triangle %s, e-ink %s: the card and the editor cover the box', (dir, eink) => {
     // The note card, then the note editor that opens in the same box.
     for (const [editor, selector] of [
       [false, '.annotation-notes .popup-container'],
@@ -522,12 +545,8 @@ describe('note card over the popup box', () => {
         container.querySelector('#popup-container') as HTMLElement
       ).getBoundingClientRect();
       const panel = (container.querySelector(selector) as HTMLElement).getBoundingClientRect();
-      expect({ selector, left: panel.left, right: panel.right, [edge]: panel[edge] }).toEqual({
-        selector,
-        left: box.left,
-        right: box.right,
-        [edge]: box[edge],
-      });
+      const pick = (r: DOMRect) => Object.fromEntries(edges[dir].map((e) => [e, r[e]]));
+      expect({ selector, ...pick(panel) }).toEqual({ selector, ...pick(box) });
       unmount();
     }
   });
