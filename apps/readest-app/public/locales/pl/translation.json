@@ -2884,5 +2884,5 @@
   "{{count}} now Mastered_other": "Teraz „Opanowane”: {{count}}",
   "Sync with Anki": "Synchronizuj z Anki",
   "Import Anki Deck...": "Importuj talię Anki...",
-  "Already in sync with Anki": "Już zsynchronizowano z Anki"
+  "In sync with Anki": "Zsynchronizowano z Anki"
 }

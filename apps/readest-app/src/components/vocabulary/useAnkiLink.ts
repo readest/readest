@@ -179,7 +179,7 @@ export const useAnkiLink = () => {
         ...pullSummary(plan),
       ];
       if (!cardsRead) parts.push(_('Update AnkiDroid to bring back mastered words.'));
-      toast('success', parts.length ? parts.join(' · ') : _('Already in sync with Anki'));
+      toast('success', parts.length ? parts.join(' · ') : _('In sync with Anki'));
     } catch (err) {
       fail(err);
     } finally {

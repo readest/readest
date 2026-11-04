@@ -2665,5 +2665,5 @@
   "{{count}} now Mastered_other": "{{count}}件が「習得済み」に",
   "Sync with Anki": "Ankiと同期",
   "Import Anki Deck...": "Ankiデッキをインポート...",
-  "Already in sync with Anki": "Ankiとは同期済みです"
+  "In sync with Anki": "Ankiと同期済み"
 }

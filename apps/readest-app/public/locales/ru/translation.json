@@ -2884,5 +2884,5 @@
   "{{count}} now Mastered_other": "Теперь «Выучено»: {{count}}",
   "Sync with Anki": "Синхронизировать с Anki",
   "Import Anki Deck...": "Импортировать колоду Anki...",
-  "Already in sync with Anki": "Уже синхронизировано с Anki"
+  "In sync with Anki": "Синхронизировано с Anki"
 }

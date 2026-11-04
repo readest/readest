@@ -318,7 +318,7 @@ describe('VocabularyView Anki link', () => {
     ]);
   });
 
-  it('says when Anki is already in sync', async () => {
+  it('says when Anki is in sync', async () => {
     const dispatch = vi.spyOn(eventDispatcher, 'dispatch');
     anki.ankiReadDeck.mockResolvedValue({
       notes: [{ id: 1, fields: ['spice'], tags: 'readest::lang::en readest::learning' }],
@@ -326,11 +326,26 @@ describe('VocabularyView Anki link', () => {
     });
     renderWithMenu();
     fireEvent.click(await syncButton());
-    await waitFor(() =>
-      expect(dispatch).toHaveBeenCalledWith(...toastOf('Already in sync with Anki')),
-    );
+    await waitFor(() => expect(dispatch).toHaveBeenCalledWith(...toastOf('In sync with Anki')));
     expect(anki.ankiAddNotes).not.toHaveBeenCalled();
     expect(anki.ankiUpdateTags).not.toHaveBeenCalled();
+    dispatch.mockRestore();
+  });
+
+  it('does not say "already" in sync after it rewrote mark tags', async () => {
+    const dispatch = vi.spyOn(eventDispatcher, 'dispatch');
+    // Marked Mastered in Readest since the last Sync; only the tag moves.
+    seed([entry('spice', { state: 'mastered' })]);
+    anki.ankiReadDeck.mockResolvedValue({
+      notes: [{ id: 1, fields: ['spice'], tags: 'readest::lang::en readest::learning' }],
+      cards: [],
+    });
+    renderWithMenu();
+    fireEvent.click(await syncButton());
+    await waitFor(() => expect(dispatch).toHaveBeenCalledWith(...toastOf('In sync with Anki')));
+    expect(anki.ankiUpdateTags).toHaveBeenCalledWith([
+      { id: 1, tags: ['readest::lang::en', 'readest::mastered'] },
+    ]);
     dispatch.mockRestore();
   });
 

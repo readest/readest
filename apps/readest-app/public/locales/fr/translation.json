@@ -2811,5 +2811,5 @@
   "{{count}} now Mastered_other": "{{count}} passent en « Maîtrisé »",
   "Sync with Anki": "Synchroniser avec Anki",
   "Import Anki Deck...": "Importer un paquet Anki...",
-  "Already in sync with Anki": "Déjà synchronisé avec Anki"
+  "In sync with Anki": "Synchronisé avec Anki"
 }

@@ -2665,5 +2665,5 @@
   "{{count}} now Mastered_other": "{{count}}개가 '익힘'으로 바뀜",
   "Sync with Anki": "Anki와 동기화",
   "Import Anki Deck...": "Anki 덱 가져오기...",
-  "Already in sync with Anki": "이미 Anki와 동기화되어 있습니다"
+  "In sync with Anki": "Anki와 동기화됨"
 }
