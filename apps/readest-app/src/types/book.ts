@@ -232,10 +232,29 @@ export interface BookNote {
    * services/handwriting.
    */
   ink?: InkStroke[];
+  /**
+   * Where a CrossPoint reader anchors this highlight, the way `xpointer0` is
+   * KOReader's. Set on a clipping a reader synced, or by a Readest app for a
+   * highlight in an EPUB. See utils/crosspointClipping.
+   */
+  crosspoint?: CrossPointAnchor;
 
   createdAt: number;
   updatedAt: number;
   deletedAt?: number | null;
+}
+
+/**
+ * A CrossPoint clipping's position: its spine index and the [start, end) code
+ * points it covers in that section's text. The firmware's own clippings also
+ * carry its layout hints (pages, words, paragraph, chapter title), kept as
+ * sent so the reader gets them back unchanged.
+ */
+export interface CrossPointAnchor {
+  spine: number;
+  start_offset?: number;
+  end_offset?: number;
+  [hint: string]: unknown;
 }
 
 export interface BooknoteGroup {
