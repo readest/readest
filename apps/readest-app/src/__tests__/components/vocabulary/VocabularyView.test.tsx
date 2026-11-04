@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 
 import VocabularyView from '@/components/vocabulary/VocabularyView';
+import { DropdownProvider } from '@/context/DropdownContext';
 import { useVocabularyStore } from '@/store/vocabularyStore';
 import { useLibraryStore } from '@/store/libraryStore';
 import type { VocabularyEntry } from '@/services/vocabulary/types';
@@ -152,10 +153,27 @@ describe('VocabularyView', () => {
     );
   });
 
-  it('exports only the words the filters show', async () => {
+  it('brings the book chip fully into view before its picker opens', () => {
+    // The chip sits last in a sideways-scrolling row; its picker lines up with
+    // the chip's edge, so a half-hidden chip opens a half-hidden picker.
+    const scrollIntoView = vi.fn();
+    Element.prototype.scrollIntoView = scrollIntoView;
     render(<VocabularyView />);
+    const select = screen.getByRole('combobox', { name: 'Book' });
+    fireEvent.pointerDown(select);
+    expect(scrollIntoView).toHaveBeenCalledWith({ block: 'nearest', inline: 'nearest' });
+    expect(scrollIntoView.mock.contexts[0]).toBe(select.parentElement);
+  });
+
+  it('exports only the words the filters show', async () => {
+    render(
+      <DropdownProvider>
+        <VocabularyView />
+      </DropdownProvider>,
+    );
     fireEvent.change(screen.getByRole('combobox', { name: 'Book' }), { target: { value: 'emma' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Export CSV' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Export' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Export CSV' }));
     await waitFor(() => expect(saveFile).toHaveBeenCalled());
     const [filename, content] = saveFile.mock.calls[0] as unknown as [string, string];
     expect(filename).toBe('readest-vocabulary.csv');
