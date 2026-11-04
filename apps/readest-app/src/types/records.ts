@@ -53,8 +53,8 @@ export interface DBBookNote {
   id: string;
   type: string;
   cfi?: string;
-  xpointer0?: string;
-  xpointer1?: string;
+  xpointer0?: string | null;
+  xpointer1?: string | null;
   page?: number;
   text?: string;
   style?: string;

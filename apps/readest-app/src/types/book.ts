@@ -211,8 +211,8 @@ export interface BookNote {
   id: string;
   type: BookNoteType;
   cfi: string; // Canonicalized CFI for the note location
-  xpointer0?: string; // Start XPointer for the note location
-  xpointer1?: string; // End XPointer for the note location
+  xpointer0?: string | null; // Start XPointer for the note location
+  xpointer1?: string | null; // End XPointer for the note location
   page?: number;
   text?: string;
   style?: HighlightStyle;
@@ -237,7 +237,7 @@ export interface BookNote {
    * KOReader's. Set on a clipping a reader synced, or by a Readest app for a
    * highlight in an EPUB. See utils/crosspointClipping.
    */
-  crosspoint?: CrossPointAnchor;
+  crosspoint?: CrossPointAnchor | null;
 
   createdAt: number;
   updatedAt: number;

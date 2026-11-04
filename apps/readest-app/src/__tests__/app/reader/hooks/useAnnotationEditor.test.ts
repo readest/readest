@@ -109,12 +109,14 @@ describe('useAnnotationEditor applyAnnotationRange', () => {
 
     await result.current.applyAnnotationRange(range, 2, false, false);
 
-    // The next push anchors the new range for both readers again.
+    // The next push anchors the new range for both readers again. Cleared as
+    // null, not dropped, so the server forgets the old range even when the
+    // new one can't be anchored.
     const [, [saved]] = h.updateBooknotes.mock.calls.at(-1) as unknown as [string, BookNote[]];
     expect(saved).toMatchObject({ cfi: 'new-cfi', text: 'edited text' });
-    expect(saved!.xpointer0).toBeUndefined();
-    expect(saved!.xpointer1).toBeUndefined();
-    expect(saved!.crosspoint).toBeUndefined();
+    expect(saved!.xpointer0).toBeNull();
+    expect(saved!.xpointer1).toBeNull();
+    expect(saved!.crosspoint).toBeNull();
   });
 
   // #6390: a range in the footnote popup's document means nothing to the main
