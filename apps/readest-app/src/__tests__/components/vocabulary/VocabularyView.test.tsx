@@ -36,6 +36,11 @@ vi.mock('@/context/AuthContext', () => ({
 vi.mock('@/hooks/useQuotaStats', () => ({
   useQuotaStats: () => ({ userProfilePlan: account.plan, customizationPurchased: false }),
 }));
+// Android-only hooks (back-key interception) call the native bridge.
+vi.mock('@/utils/bridge', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/utils/bridge')>()),
+  interceptKeys: vi.fn(async () => {}),
+}));
 vi.mock('@/services/vocabulary/ankiDroid', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/services/vocabulary/ankiDroid')>()),
   ...anki,
