@@ -162,16 +162,16 @@ const VocabularyDetail: React.FC<VocabularyDetailProps> = ({ entry, onBack, onOp
 
   return (
     <section aria-label={entry.word} className='flex min-h-0 flex-1 flex-col overflow-y-auto p-4'>
-      <div className='-ms-2 -me-2 flex items-center gap-1'>
+      <div className='-ms-3 -me-3 flex items-center gap-1'>
         <button
           type='button'
           aria-label={_('Back')}
           onClick={onBack}
-          className='btn btn-ghost btn-circle h-9 min-h-9 w-9 shrink-0 p-0 sm:hidden'
+          className='btn btn-ghost btn-circle h-11 min-h-11 w-11 shrink-0 p-0 sm:hidden'
         >
           <MdArrowBack size={20} className='rtl:rotate-180' />
         </button>
-        <h2 dir='auto' className='min-w-0 flex-1 text-xl font-bold break-words sm:ps-2'>
+        <h2 dir='auto' className='min-w-0 flex-1 text-xl font-bold break-words sm:ps-3'>
           {entry.word}
         </h2>
         <button
@@ -179,7 +179,7 @@ const VocabularyDetail: React.FC<VocabularyDetailProps> = ({ entry, onBack, onOp
           aria-label={_('Look up')}
           title={_('Look up')}
           onClick={() => setLookingUp(true)}
-          className='btn btn-ghost btn-circle h-9 min-h-9 w-9 shrink-0 p-0'
+          className='btn btn-ghost btn-circle h-11 min-h-11 w-11 shrink-0 p-0'
         >
           <LuBookA size={20} />
         </button>
@@ -191,7 +191,7 @@ const VocabularyDetail: React.FC<VocabularyDetailProps> = ({ entry, onBack, onOp
             useVocabularyStore.getState().remove(entry.id);
             onBack();
           }}
-          className='btn btn-ghost btn-circle h-9 min-h-9 w-9 shrink-0 p-0'
+          className='btn btn-ghost btn-circle h-11 min-h-11 w-11 shrink-0 p-0'
         >
           <LuTrash2 size={19} className='not-eink:text-error' />
         </button>

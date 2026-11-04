@@ -175,6 +175,11 @@ describe('VocabularyView', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Export' }));
     fireEvent.click(screen.getByRole('menuitem', { name: 'Export CSV' }));
     await waitFor(() => expect(saveFile).toHaveBeenCalled());
+    // Choosing a format closes the menu and its overlay.
+    expect(screen.queryByRole('menuitem', { name: 'Export CSV' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Export' }).getAttribute('aria-expanded')).toBe(
+      'false',
+    );
     const [filename, content] = saveFile.mock.calls[0] as unknown as [string, string];
     expect(filename).toBe('readest-vocabulary.csv');
     expect(content).toContain('ball');

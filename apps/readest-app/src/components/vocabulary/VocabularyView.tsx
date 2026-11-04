@@ -80,7 +80,7 @@ const VocabularyView: React.FC<VocabularyViewProps> = ({ onOpenBook }) => {
   return (
     <div className='flex h-full min-h-0 flex-col'>
       <div className='flex items-center gap-2 pb-3'>
-        <label className='eink-bordered bg-base-200 not-eink:focus-within:bg-base-300/60 flex h-10 min-w-0 flex-1 items-center gap-2 rounded-full px-3.5'>
+        <label className='eink-bordered bg-base-200 not-eink:focus-within:bg-base-300/60 eink:focus-within:ring-2 eink:focus-within:ring-base-content flex h-10 min-w-0 flex-1 items-center gap-2 rounded-full px-3.5'>
           <MdSearch aria-hidden='true' className='text-base-content/50 h-5 w-5 shrink-0' />
           <input
             type='search'
@@ -95,7 +95,7 @@ const VocabularyView: React.FC<VocabularyViewProps> = ({ onOpenBook }) => {
               type='button'
               aria-label={_('Clear')}
               onClick={() => setQuery('')}
-              className='-me-1.5 flex h-7 w-7 shrink-0 items-center justify-center'
+              className='-me-2 flex h-8 w-8 shrink-0 items-center justify-center'
             >
               <IoMdCloseCircle className='text-base-content/50 h-4 w-4' />
             </button>
@@ -112,11 +112,13 @@ const VocabularyView: React.FC<VocabularyViewProps> = ({ onOpenBook }) => {
             <MenuItem
               label={_('Export CSV')}
               Icon={PiFileCsv}
+              transient
               onClick={() => void exportAs('csv')}
             />
             <MenuItem
               label={_('Export to Anki')}
               Icon={PiCardsThree}
+              transient
               onClick={() => void exportAs('anki')}
             />
           </Menu>
@@ -154,6 +156,7 @@ const VocabularyView: React.FC<VocabularyViewProps> = ({ onOpenBook }) => {
           className={clsx(
             '[anchor-name:--settings-select] [anchor-scope:--settings-select]',
             'relative flex h-8 max-w-52 shrink-0 items-center rounded-full',
+            'has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-base-content/15 eink:has-[:focus-visible]:ring-base-content',
             bookHash ? 'btn-contrast' : 'eink-bordered bg-base-200',
           )}
         >
