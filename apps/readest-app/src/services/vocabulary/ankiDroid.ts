@@ -55,14 +55,17 @@ export const ankiRequestPermission = async (): Promise<boolean> =>
 export const ankiListDecks = async (): Promise<AnkiDeck[]> =>
   (await call<{ decks?: AnkiDeck[]; error?: string }>('anki_list_decks')).decks ?? [];
 
-/** A deck's notes and, unless AnkiDroid is older than 2.24, their cards. */
+/**
+ * The notes in these decks and, unless AnkiDroid is older than 2.24, their
+ * mature cards (only those are returned).
+ */
 export const ankiReadDeck = async (
-  deckId: number,
+  deckIds: number[],
   withCards: boolean,
 ): Promise<{ notes: AnkiNoteRow[]; cards?: AnkiCardRow[] }> => {
   const res = await call<{ notes?: AnkiNoteRow[]; cards?: AnkiCardRow[]; error?: string }>(
     'anki_read_deck',
-    { deckId, withCards },
+    { deckIds, withCards },
   );
   return { notes: res.notes ?? [], cards: res.cards };
 };

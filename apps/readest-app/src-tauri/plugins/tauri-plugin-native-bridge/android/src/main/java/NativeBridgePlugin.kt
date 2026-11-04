@@ -149,7 +149,7 @@ class ShowLookupPopoverArgs {
 
 @InvokeArg
 class AnkiReadDeckArgs {
-    var deckId: Long = 0
+    var deckIds: Array<Long> = emptyArray()
     var withCards: Boolean = false
 }
 
@@ -2177,7 +2177,7 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
         val args = invoke.parseArgs(AnkiReadDeckArgs::class.java)
         ankiCall(invoke) { cr ->
             val notes = JSArray()
-            AnkiDroidLink.readNotes(cr, args.deckId).forEach { n ->
+            AnkiDroidLink.readNotes(cr, args.deckIds.toList()).forEach { n ->
                 notes.put(JSObject().apply {
                     put("id", n.id)
                     put("fields", JSArray(n.fields))
@@ -2188,7 +2188,7 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
             if (args.withCards) {
                 // The cards URI arrived in AnkiDroid 2.24; older versions reject it.
                 val cards = try {
-                    AnkiDroidLink.readCards(cr, args.deckId)
+                    AnkiDroidLink.readCards(cr, args.deckIds.toList())
                 } catch (e: IllegalArgumentException) {
                     null
                 }

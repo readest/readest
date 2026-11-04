@@ -248,7 +248,7 @@ describe('VocabularyView Anki link', () => {
     expect(screen.queryByRole('menuitem', { name: /Export to Anki/ })).toBeNull();
     fireEvent.click(screen.getByRole('menuitem', { name: /Send to Anki/ }));
     await waitFor(() => expect(anki.ankiAddNotes).toHaveBeenCalled());
-    expect(anki.ankiReadDeck).toHaveBeenCalledWith(7, false);
+    expect(anki.ankiReadDeck).toHaveBeenCalledWith([7], false);
     const [deck, notes] = anki.ankiAddNotes.mock.calls[0] as [
       string,
       { fields: [string, string]; tags: string[] }[],
@@ -304,7 +304,7 @@ describe('VocabularyView Anki link', () => {
         hint: 'short-lived',
       }),
     );
-    expect(anki.ankiReadDeck).toHaveBeenCalledWith(7, true);
+    expect(anki.ankiReadDeck).toHaveBeenCalledWith([7], true);
     expect(screen.queryByRole('combobox', { name: 'Deck' })).toBeNull();
   });
 
@@ -389,5 +389,51 @@ describe('VocabularyView Anki link', () => {
       }),
     );
     dispatch.mockRestore();
+  });
+
+  it('reads a deck together with its subdecks', async () => {
+    anki.ankiListDecks.mockResolvedValue([
+      { id: 7, name: 'Readest Vocabulary' },
+      { id: 8, name: 'Readest Vocabulary::Dune' },
+      { id: 9, name: 'Readest Vocabulary 2' },
+    ]);
+    renderWithMenu();
+    await screen.findByRole('button', { name: 'Import from Anki' });
+    openExportMenu();
+    fireEvent.click(screen.getByRole('menuitem', { name: /Send to Anki/ }));
+    await waitFor(() => expect(anki.ankiAddNotes).toHaveBeenCalled());
+    expect(anki.ankiReadDeck).toHaveBeenCalledWith([7, 8], false);
+    fireEvent.click(screen.getByRole('button', { name: 'Import from Anki' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Import' }));
+    await waitFor(() => expect(anki.ankiReadDeck).toHaveBeenCalledWith([7, 8], true));
+  });
+
+  it('lets an entitled account send while its plan is still loading', async () => {
+    account.plan = undefined;
+    const quota = await import('@/hooks/useQuotaStats');
+    const spy = vi
+      .spyOn(quota, 'useQuotaStats')
+      .mockReturnValue({ userProfilePlan: undefined, customizationPurchased: true } as never);
+    renderWithMenu();
+    await screen.findByRole('button', { name: 'Import from Anki' });
+    openExportMenu();
+    fireEvent.click(screen.getByRole('menuitem', { name: /Send to Anki/ }));
+    await waitFor(() => expect(anki.ankiAddNotes).toHaveBeenCalled());
+    spy.mockRestore();
+  });
+
+  it('lets a signed-out reader on a self-hosted server use it', async () => {
+    vi.stubEnv('NEXT_PUBLIC_SELF_HOSTED', 'true');
+    account.user = null;
+    account.plan = undefined;
+    renderWithMenu();
+    await screen.findByRole('button', { name: 'Import from Anki' });
+    openExportMenu();
+    const send = screen.getByRole('menuitem', { name: /Send to Anki/ });
+    expect(send.textContent).not.toContain('Premium');
+    fireEvent.click(send);
+    await waitFor(() => expect(anki.ankiAddNotes).toHaveBeenCalled());
+    expect(push).not.toHaveBeenCalled();
+    vi.unstubAllEnvs();
   });
 });

@@ -15,7 +15,8 @@ const MAX_HINT_LEN = 80;
 
 const LANG_TAG_PREFIX = 'readest::lang::';
 
-const BREAKS = /<br\s*\/?>|<\/(?:div|p|li|h[1-6]|tr)\s*>/gi;
+// Older Anki editors start each new line with an opening <div>, newer ones close it.
+const BREAKS = /<br\s*\/?>|<\/?(?:div|p|li|h[1-6]|tr)\b[^>]*>/gi;
 const SOUND = /\[sound:[^\]]*\]/g;
 const CLOZE = /\{\{c\d+::(.*?)(?:::.*?)?\}\}/;
 
@@ -45,16 +46,26 @@ const tooLong = (word: string) =>
   word.split(' ').length > MAX_WORD_COUNT ||
   (UNSPACED.test(word) && word.length > MAX_UNSPACED_LEN);
 
-/** The headword a note stands for, or null when it holds no usable word. */
-export const ankiWordOf = (fields: string[]): string | null => {
+/** What a note's first field names: its first cloze answer, else its first line. */
+export const ankiHeadwordOf = (fields: string[]): string => {
   const lines = cleanAnkiField(fields[0] ?? '');
   const cloze = lines.join('\n').match(CLOZE);
-  const word = (cloze ? cloze[1]!.trim() : lines[0]) ?? '';
+  return (cloze ? cloze[1]!.trim() : lines[0]) ?? '';
+};
+
+/** The headword a note stands for, or null when it holds no usable word. */
+export const ankiWordOf = (fields: string[]): string | null => {
+  const word = ankiHeadwordOf(fields);
   return word && !tooLong(word) ? word : null;
 };
 
-export const ankiHintOf = (fields: string[]): string | undefined => {
-  const line = cleanAnkiField(fields[1] ?? '')[0];
+const isReadestNote = (tags: string) => tags.split(/\s+/).includes('readest');
+
+export const ankiHintOf = (fields: string[], tags = ''): string | undefined => {
+  let back = fields[1] ?? '';
+  // A Readest card's back ends with the book line in <small>; it is never the hint.
+  if (isReadestNote(tags)) back = back.replace(/<small>[\s\S]*?<\/small>/gi, '');
+  const line = cleanAnkiField(back)[0];
   return line ? line.slice(0, MAX_HINT_LEN) : undefined;
 };
 
@@ -102,7 +113,7 @@ export const planAnkiImport = (
     }
     const noteLang = ankiLangOf(n.tags) ?? lang;
     const id = entryId(noteLang, key);
-    const hint = ankiHintOf(n.fields);
+    const hint = ankiHintOf(n.fields, n.tags);
     const seen = byId.get(id);
     if (seen) {
       seen.mature ||= n.mature;
@@ -190,21 +201,24 @@ export const ankiNotesToSend = (
   entries: VocabularyEntry[],
   existing: { fields: string[]; tags: string }[],
 ): { notes: AnkiOutgoingNote[]; skipped: number } => {
+  // Both sides are keyed by what the card's first field shows, without the
+  // import's length limits, so anything Send wrote is recognised next time.
+  const keyOf = (fields: string[]) => normalizeWordKey(ankiHeadwordOf(fields));
   const have = new Set<string>();
   for (const n of existing) {
-    const word = ankiWordOf(n.fields);
-    const key = word ? normalizeWordKey(word) : '';
+    const key = keyOf(n.fields);
     if (key) have.add(`${ankiLangOf(n.tags) ?? '*'}:${key}`);
   }
   const notes: AnkiOutgoingNote[] = [];
   let skipped = 0;
   for (const e of entries) {
     if (e.deletedAt) continue;
-    if (have.has(`${e.lang}:${e.key}`) || have.has(`*:${e.key}`)) {
+    const { front, back, tags } = ankiCardOf(e);
+    const key = keyOf([front]);
+    if (have.has(`${e.lang}:${key}`) || have.has(`*:${key}`)) {
       skipped++;
       continue;
     }
-    const { front, back, tags } = ankiCardOf(e);
     notes.push({ fields: [front, back], tags: [...tags, ankiLangTag(e.lang)] });
   }
   return { notes, skipped };

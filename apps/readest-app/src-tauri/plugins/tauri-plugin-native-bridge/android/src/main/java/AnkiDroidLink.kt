@@ -4,6 +4,7 @@ import android.content.ContentResolver
 import android.content.ContentValues
 import android.database.Cursor
 import android.net.Uri
+import java.io.IOException
 
 /**
  * AnkiDroid's content provider (`FlashCardsContract`), read and written
@@ -17,6 +18,10 @@ object AnkiDroidLink {
     const val NOTE_TYPE_NAME = "Readest Vocabulary"
 
     private const val FIELD_SEPARATOR = "\u001f"
+    /** Notes per bulkInsert: one Binder transaction carries at most about 1 MB. */
+    private const val INSERT_CHUNK = 200
+    /** Anki calls a review card mature from a 21-day interval. */
+    private const val MATURE_INTERVAL = 21
     private const val CARD_CSS =
         ".card { font-family: sans-serif; font-size: 20px; text-align: center; }"
 
@@ -28,8 +33,23 @@ object AnkiDroidLink {
 
     fun splitFields(flds: String): List<String> = flds.split(FIELD_SEPARATOR)
 
-    /** Anki search for one deck by id, so no deck name needs escaping. */
-    fun deckSearch(deckId: Long): String = "did:$deckId"
+    /** Anki search for these decks by id, so no deck name needs escaping. */
+    fun deckSearch(deckIds: List<Long>): String = "did:" + deckIds.joinToString(",")
+
+    /** Only mature cards: AnkiDroid renders every card row it returns. */
+    fun matureCardSearch(deckIds: List<Long>): String =
+        "${deckSearch(deckIds)} prop:ivl>=$MATURE_INTERVAL"
+
+    /**
+     * Insert [rows] [size] at a time. ContentResolver.bulkInsert returns 0 when
+     * a transaction is too large, so a short count fails loudly instead.
+     */
+    fun <T> insertInChunks(rows: List<T>, size: Int, insert: (List<T>) -> Int): Int =
+        rows.chunked(size).sumOf { chunk ->
+            val added = insert(chunk)
+            if (added < chunk.size) throw IOException("AnkiDroid added $added of ${chunk.size} notes")
+            added
+        }
 
     // Built on use: android.net.Uri is a stub in host-JVM unit tests.
     private fun uri(path: String): Uri = Uri.parse("content://$PACKAGE.flashcards/$path")
@@ -42,8 +62,8 @@ object AnkiDroidLink {
             Deck(it.getLong(it.getColumnIndexOrThrow("deck_id")), it.getString(it.getColumnIndexOrThrow("deck_name")))
         }
 
-    fun readNotes(cr: ContentResolver, deckId: Long): List<Note> =
-        cr.query(uri("notes"), arrayOf("_id", "flds", "tags"), deckSearch(deckId), null, null).rows {
+    fun readNotes(cr: ContentResolver, deckIds: List<Long>): List<Note> =
+        cr.query(uri("notes"), arrayOf("_id", "flds", "tags"), deckSearch(deckIds), null, null).rows {
             Note(
                 it.getLong(it.getColumnIndexOrThrow("_id")),
                 splitFields(it.getString(it.getColumnIndexOrThrow("flds")) ?: ""),
@@ -51,9 +71,9 @@ object AnkiDroidLink {
             )
         }
 
-    /** Every card in the deck in one query; throws IllegalArgumentException before AnkiDroid 2.24. */
-    fun readCards(cr: ContentResolver, deckId: Long): List<Card> =
-        cr.query(uri("cards"), arrayOf("note_id", "type", "interval"), deckSearch(deckId), null, null).rows {
+    /** The decks' mature cards in one query; throws IllegalArgumentException before AnkiDroid 2.24. */
+    fun readCards(cr: ContentResolver, deckIds: List<Long>): List<Card> =
+        cr.query(uri("cards"), arrayOf("note_id", "type", "interval"), matureCardSearch(deckIds), null, null).rows {
             Card(
                 it.getLong(it.getColumnIndexOrThrow("note_id")),
                 it.getInt(it.getColumnIndexOrThrow("type")),
@@ -103,8 +123,8 @@ object AnkiDroidLink {
                 put("flds", joinFields(fields))
                 put("tags", tags.joinToString(" "))
             }
-        }.toTypedArray()
+        }
         val target = uri("notes").buildUpon().appendQueryParameter("deckId", deckId.toString()).build()
-        return cr.bulkInsert(target, rows)
+        return insertInChunks(rows, INSERT_CHUNK) { cr.bulkInsert(target, it.toTypedArray()) }
     }
 }

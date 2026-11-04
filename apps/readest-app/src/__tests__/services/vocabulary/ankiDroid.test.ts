@@ -15,16 +15,16 @@ beforeEach(() => {
 describe('ankiDroid', () => {
   it('reads a deck by id through the native bridge', async () => {
     invokeSpy.mockResolvedValue({ notes: [{ id: 1, fields: ['a'], tags: '' }] });
-    const deck = await ankiReadDeck(5, true);
+    const deck = await ankiReadDeck([5, 6], true);
     expect(invokeSpy).toHaveBeenCalledWith('plugin:native-bridge|anki_read_deck', {
-      payload: { deckId: 5, withCards: true },
+      payload: { deckIds: [5, 6], withCards: true },
     });
     expect(deck).toEqual({ notes: [{ id: 1, fields: ['a'], tags: '' }], cards: undefined });
   });
 
   it('turns an error field into an AnkiError with its code', async () => {
     invokeSpy.mockResolvedValue({ error: 'not_ready' });
-    const err = await ankiReadDeck(5, true).catch((e: unknown) => e);
+    const err = await ankiReadDeck([5], true).catch((e: unknown) => e);
     expect(err).toBeInstanceOf(AnkiError);
     expect((err as AnkiError).code).toBe('not_ready');
   });

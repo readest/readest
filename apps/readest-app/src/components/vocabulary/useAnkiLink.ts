@@ -30,6 +30,10 @@ const DECK_NAME = 'Readest Vocabulary';
 /** Anki calls a review card mature from a 21-day interval. */
 const MATURE_INTERVAL = 21;
 
+/** A deck and its subdecks (`Name::Sub`), which Anki reads as one deck. */
+const deckFamily = (decks: AnkiDeck[], name: string): number[] =>
+  decks.filter((d) => d.name === name || d.name.startsWith(`${name}::`)).map((d) => d.id);
+
 export interface AnkiImportState {
   decks: AnkiDeck[];
   languages: { code: string; label: string }[];
@@ -60,10 +64,11 @@ export const useAnkiLink = () => {
     };
   }, [isAndroid]);
 
-  const allowed = isAnkiAllowed(userProfilePlan ?? 'free', customizationPurchased);
-  // Only badge users who can't use it yet; never flash it while a plan loads.
+  const entitled = isAnkiAllowed(userProfilePlan ?? 'free', customizationPurchased);
+  // Only badge users who can't use it yet: signed out, or a resolved plan
+  // without it. Never an entitled user, or one whose plan is still loading.
   const premiumBadge =
-    !user || (userProfilePlan !== undefined && !allowed) ? _('Premium') : undefined;
+    !entitled && (!user || userProfilePlan !== undefined) ? _('Premium') : undefined;
 
   // Results use `success`: unlike `info`, it wraps instead of cutting a summary off.
   const toast = (type: 'success' | 'warning' | 'error', message: string) =>
@@ -71,16 +76,10 @@ export const useAnkiLink = () => {
 
   /** True when the reader may go on; otherwise sends them to sign in or to the plans. */
   const guard = (): boolean => {
-    if (!user) {
-      navigateToLogin(router);
-      return false;
-    }
-    if (userProfilePlan === undefined) return false;
-    if (!allowed) {
-      navigateToProfile(router);
-      return false;
-    }
-    return true;
+    if (entitled) return true;
+    if (!user) navigateToLogin(router);
+    else if (userProfilePlan !== undefined) navigateToProfile(router);
+    return false;
   };
 
   // Read on every tap: access can be revoked, or AnkiDroid removed, at any time.
@@ -110,8 +109,8 @@ export const useAnkiLink = () => {
     if (!guard()) return;
     try {
       if (!(await ready())) return;
-      const deck = (await ankiListDecks()).find((d) => d.name === DECK_NAME);
-      const existing = deck ? (await ankiReadDeck(deck.id, false)).notes : [];
+      const deckIds = deckFamily(await ankiListDecks(), DECK_NAME);
+      const existing = deckIds.length ? (await ankiReadDeck(deckIds, false)).notes : [];
       const { notes, skipped } = ankiNotesToSend(entries, existing);
       const added = notes.length ? await ankiAddNotes(DECK_NAME, notes) : 0;
       const parts = added ? [_('Added {{count}} words to Anki', { count: added })] : [];
@@ -145,7 +144,9 @@ export const useAnkiLink = () => {
 
   const runImport = async (deckId: number, lang: string) => {
     try {
-      const { notes, cards } = await ankiReadDeck(deckId, true);
+      const decks = importState?.decks ?? [];
+      const name = decks.find((d) => d.id === deckId)?.name;
+      const { notes, cards } = await ankiReadDeck(name ? deckFamily(decks, name) : [deckId], true);
       const mature = new Set(
         (cards ?? [])
           .filter((c) => c.cardType === 2 && c.interval >= MATURE_INTERVAL)

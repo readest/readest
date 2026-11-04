@@ -49,6 +49,11 @@ describe('cleanAnkiField', () => {
     ]);
   });
 
+  it('splits fields older Anki editors wrote with opening div tags', () => {
+    expect(cleanAnkiField('spice<div>(noun)</div>')).toEqual(['spice', '(noun)']);
+    expect(ankiWordOf(['spice<div>(noun)</div>'])).toBe('spice');
+  });
+
   it('returns nothing for image-only fields', () => {
     expect(cleanAnkiField('<img src="a.jpg">')).toEqual([]);
   });
@@ -101,6 +106,15 @@ describe('ankiHintOf', () => {
 
   it('is undefined with one field', () => {
     expect(ankiHintOf(['x'])).toBeUndefined();
+  });
+
+  it('never takes the book line of a Readest note as the hint', () => {
+    expect(
+      ankiHintOf(['x', '<small>Dune — Frank Herbert</small>'], 'readest Dune'),
+    ).toBeUndefined();
+    expect(ankiHintOf(['x', 'a drug<br><small>Dune — Frank Herbert</small>'], 'readest')).toBe(
+      'a drug',
+    );
   });
 });
 
@@ -241,6 +255,38 @@ describe('ankiNotesToSend', () => {
     const sent = ankiNotesToSend([spice], []).notes[0]!;
     const existing = [{ fields: sent.fields, tags: sent.tags.join(' ') }];
     expect(ankiNotesToSend([spice], existing)).toEqual({ notes: [], skipped: 1 });
+  });
+
+  it('recognises a sent phrase longer than an imported word may be', () => {
+    const phrase = entry('the spice must flow on arrakis', {
+      word: 'the spice must flow on Arrakis',
+    });
+    const sent = ankiNotesToSend([phrase], []).notes[0]!;
+    expect(ankiNotesToSend([phrase], [{ fields: sent.fields, tags: sent.tags.join(' ') }])).toEqual(
+      { notes: [], skipped: 1 },
+    );
+  });
+
+  it('recognises a sent word whose spacing the card normalizes', () => {
+    const spaced = entry('ice  cream', { word: 'ice\u00a0 cream' });
+    const sent = ankiNotesToSend([spaced], []).notes[0]!;
+    expect(
+      ankiNotesToSend([spaced], [{ fields: sent.fields, tags: sent.tags.join(' ') }]).skipped,
+    ).toBe(1);
+  });
+
+  it('round-trips a word without a hint without inventing one', () => {
+    const plain = entry('kettle', {
+      occurrences: [
+        { sentence: 'A kettle boiling.', at: 1, bookTitle: 'The Hobbit', bookAuthor: 'Tolkien' },
+      ],
+    });
+    const sent = ankiNotesToSend([plain], []).notes[0]!;
+    const back = { fields: [...sent.fields], tags: sent.tags.join(' '), mature: false };
+    expect(planAnkiImport([back], { 'en:kettle': plain }, 'en').ops).toEqual([]);
+    expect(planAnkiImport([back], {}, 'en').ops).toEqual([
+      { word: 'kettle', lang: 'en', state: 'learning', hint: undefined },
+    ]);
   });
 
   it('does not skip the same word in another language', () => {

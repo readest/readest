@@ -967,7 +967,8 @@ pub struct AnkiListDecksResponse {
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AnkiReadDeckRequest {
-    pub deck_id: i64,
+    /// A deck and its subdecks.
+    pub deck_ids: Vec<i64>,
     pub with_cards: bool,
 }
 
