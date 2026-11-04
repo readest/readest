@@ -266,4 +266,35 @@ describe('vocabularyStore', () => {
     expect(useVocabularyStore.getState().entries['en:run']).toMatchObject({ state: 'learning' });
     expect(useVocabularyStore.getState().entries['en:run']!.dirty).toBeFalsy();
   });
+
+  it('imports a batch of words in one change', () => {
+    const before = useVocabularyStore.getState().version;
+    useVocabularyStore.getState().importWords([
+      { word: 'Spice', lang: 'en', state: 'learning', hint: 'a drug' },
+      { word: 'sand', lang: 'en', state: 'mastered' },
+    ]);
+    const { entries, version } = useVocabularyStore.getState();
+    expect(version).toBe(before + 1);
+    expect(entries['en:spice']).toMatchObject({
+      word: 'Spice',
+      state: 'learning',
+      hint: 'a drug',
+      dirty: true,
+      modifiedAt: 1000,
+    });
+    expect(entries['en:sand']).toMatchObject({ state: 'mastered', dirty: true, modifiedAt: 1000 });
+    expect(entries['en:sand']!.hint).toBeUndefined();
+  });
+
+  it('import keeps what it is not told to change', () => {
+    useVocabularyStore.setState({
+      entries: { 'en:dune': { ...occurrenceEntry('dune'), state: 'learning', hint: 'mine' } },
+    });
+    useVocabularyStore.getState().importWords([{ word: 'dune', lang: 'en', state: 'mastered' }]);
+    expect(useVocabularyStore.getState().entries['en:dune']).toMatchObject({
+      state: 'mastered',
+      hint: 'mine',
+      occurrences: [occurrence('Saved.', 1)],
+    });
+  });
 });

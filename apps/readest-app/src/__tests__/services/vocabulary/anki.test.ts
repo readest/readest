@@ -1,11 +1,35 @@
 import { describe, expect, it } from 'vitest';
 import {
+  type AnkiImportNote,
   ankiHintOf,
   ankiLangOf,
   ankiLangTag,
   ankiWordOf,
   cleanAnkiField,
+  defaultImportLang,
+  importLanguageOptions,
+  planAnkiImport,
 } from '@/services/vocabulary/anki';
+import type { VocabularyEntry } from '@/services/vocabulary/types';
+
+const entry = (key: string, patch: Partial<VocabularyEntry> = {}): VocabularyEntry => ({
+  id: `${patch.lang ?? 'en'}:${key}`,
+  lang: 'en',
+  key,
+  word: key,
+  state: 'none',
+  occurrences: [],
+  createdAt: 1,
+  modifiedAt: 1,
+  deletedAt: null,
+  ...patch,
+});
+
+const note = (fields: string[], mature = false, tags = ''): AnkiImportNote => ({
+  fields,
+  tags,
+  mature,
+});
 
 describe('cleanAnkiField', () => {
   it('splits block HTML into lines', () => {
@@ -85,5 +109,108 @@ describe('language tag', () => {
 
   it('is undefined without one', () => {
     expect(ankiLangOf('readest Dune')).toBeUndefined();
+  });
+});
+
+describe('planAnkiImport', () => {
+  it('adds new words as Learning, or Mastered when mature', () => {
+    const p = planAnkiImport([note(['spice', 'a drug']), note(['worm'], true)], {}, 'en');
+    expect(p.ops).toEqual([
+      { word: 'spice', lang: 'en', state: 'learning', hint: 'a drug' },
+      { word: 'worm', lang: 'en', state: 'mastered', hint: undefined },
+    ]);
+    expect([p.added, p.mastered, p.skipped]).toEqual([2, 1, 0]);
+  });
+
+  it('leaves a Looked Up word Looked Up unless mature', () => {
+    const p = planAnkiImport([note(['spice'])], { 'en:spice': entry('spice') }, 'en');
+    expect(p.ops).toEqual([]);
+  });
+
+  it('raises an existing word to Mastered when mature, never lowers', () => {
+    const entries = {
+      'en:a': entry('a', { state: 'learning' }),
+      'en:b': entry('b', { state: 'mastered' }),
+    };
+    const p = planAnkiImport([note(['a'], true), note(['b'], false)], entries, 'en');
+    expect(p.ops).toEqual([{ word: 'a', lang: 'en', state: 'mastered' }]);
+    expect(p.mastered).toBe(1);
+  });
+
+  it('fills a hint only when the word has none', () => {
+    const entries = { 'en:a': entry('a', { hint: 'mine' }), 'en:b': entry('b') };
+    const p = planAnkiImport([note(['a', 'theirs']), note(['b', 'theirs'])], entries, 'en');
+    expect(p.ops).toEqual([{ word: 'b', lang: 'en', hint: 'theirs' }]);
+  });
+
+  it('skips words deleted in Readest', () => {
+    const p = planAnkiImport([note(['a'])], { 'en:a': entry('a', { deletedAt: 5 }) }, 'en');
+    expect([p.ops.length, p.skipped]).toEqual([0, 1]);
+  });
+
+  it('skips notes without a usable word', () => {
+    const p = planAnkiImport([note(['<img src="a.jpg">']), note(['...'])], {}, 'en');
+    expect([p.ops.length, p.skipped]).toEqual([0, 2]);
+  });
+
+  it('files a tagged note under its own language', () => {
+    const p = planAnkiImport([note(['pain'], false, 'readest readest::lang::fr')], {}, 'en');
+    expect(p.ops[0]!.lang).toBe('fr');
+  });
+
+  it('merges duplicate notes for one word', () => {
+    const p = planAnkiImport([note(['a']), note(['A', 'first hint'], true)], {}, 'en');
+    expect(p.ops).toEqual([{ word: 'a', lang: 'en', state: 'mastered', hint: 'first hint' }]);
+    expect([p.added, p.mastered]).toEqual([1, 1]);
+  });
+
+  it('plans 5,000 HTML notes in one pass', () => {
+    const notes = Array.from({ length: 5000 }, (_, i) =>
+      note([
+        `<div style="font-size:1.6em">w${i}x</div><div>The <b>w${i}x</b> &amp; more.</div>`,
+        `hint ${i}<br><small>Dune &mdash; Herbert</small>`,
+      ]),
+    );
+    const started = performance.now();
+    const plan = planAnkiImport(notes, {}, 'en');
+    expect(plan.added).toBe(5000);
+    expect(plan.ops[4999]).toEqual({
+      word: 'w4999x',
+      lang: 'en',
+      state: 'learning',
+      hint: 'hint 4999',
+    });
+    expect(performance.now() - started).toBeLessThan(2000);
+  });
+});
+
+describe('import languages', () => {
+  it('defaults to the most common language, ignoring und', () => {
+    expect(
+      defaultImportLang({
+        a: entry('a', { lang: 'fr' }),
+        b: entry('b', { lang: 'und' }),
+        c: entry('c', { lang: 'und' }),
+      }),
+    ).toBe('fr');
+    expect(defaultImportLang({})).toBe('en');
+  });
+
+  it('ignores deleted words for the default', () => {
+    expect(
+      defaultImportLang({
+        a: entry('a', { lang: 'fr', deletedAt: 1 }),
+        b: entry('b', { lang: 'de' }),
+      }),
+    ).toBe('de');
+  });
+
+  it('offers base codes once, plus languages already in the list', () => {
+    const codes = importLanguageOptions({ a: entry('a', { lang: 'la' }) }).map((o) => o.code);
+    expect(codes).toContain('zh');
+    expect(codes).toContain('pt');
+    expect(codes).not.toContain('zh-CN');
+    expect(codes).toContain('la');
+    expect(new Set(codes).size).toBe(codes.length);
   });
 });

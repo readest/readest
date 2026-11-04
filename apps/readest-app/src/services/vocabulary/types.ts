@@ -40,3 +40,11 @@ export interface VocabularyEntry {
   /** Local only: changed since the last successful push. */
   dirty?: boolean;
 }
+
+/** One word an import creates or changes; unset fields are left as they are. */
+export interface VocabularyImport {
+  word: string;
+  lang: string;
+  state?: VocabularyState;
+  hint?: string;
+}
