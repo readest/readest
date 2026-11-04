@@ -34,6 +34,16 @@ class AnkiDroidLinkTest {
     }
 
     @Test
+    fun rows_failsWhenAnkiDroidGivesNoCursor() {
+        // A null cursor means the provider is gone; reading it as "no rows" made
+        // Sync treat the deck as missing and send every word again.
+        val none: android.database.Cursor? = null
+        assertThrows(java.io.IOException::class.java) {
+            with(AnkiDroidLink) { none.rows { it.getLong(0) } }
+        }
+    }
+
+    @Test
     fun insertInChunks_staysUnderTheBinderLimit() {
         val sizes = mutableListOf<Int>()
         val added = AnkiDroidLink.insertInChunks((1..450).toList(), 200) { sizes.add(it.size); it.size }

@@ -61,22 +61,29 @@ object AnkiDroidLink {
     // Built on use: android.net.Uri is a stub in host-JVM unit tests.
     private fun uri(path: String): Uri = Uri.parse("content://$PACKAGE.flashcards/$path")
 
-    private inline fun <T> Cursor?.rows(read: (Cursor) -> T): List<T> =
-        this?.use { c -> buildList { while (c.moveToNext()) add(read(c)) } } ?: emptyList()
+    /** The rows of a query; no cursor at all means AnkiDroid's provider is unavailable. */
+    internal inline fun <T> Cursor?.rows(read: (Cursor) -> T): List<T> =
+        (this ?: throw IOException("AnkiDroid returned no cursor")).use { c ->
+            buildList { while (c.moveToNext()) add(read(c)) }
+        }
 
     fun listDecks(cr: ContentResolver): List<Deck> =
         cr.query(uri("decks"), arrayOf("deck_id", "deck_name"), null, null, null).rows {
             Deck(it.getLong(it.getColumnIndexOrThrow("deck_id")), it.getString(it.getColumnIndexOrThrow("deck_name")))
         }
 
-    fun readNotes(cr: ContentResolver, deckIds: List<Long>): List<Note> =
-        cr.query(uri("notes"), arrayOf("_id", "flds", "tags"), deckSearch(deckIds), null, null).rows {
+    fun readNotes(cr: ContentResolver, deckIds: List<Long>): List<Note> {
+        // AnkiDroid answers a notes search that matches nothing with no cursor.
+        val cursor = cr.query(uri("notes"), arrayOf("_id", "flds", "tags"), deckSearch(deckIds), null, null)
+            ?: return emptyList()
+        return cursor.rows {
             Note(
                 it.getLong(it.getColumnIndexOrThrow("_id")),
                 splitFields(it.getString(it.getColumnIndexOrThrow("flds")) ?: ""),
                 it.getString(it.getColumnIndexOrThrow("tags")) ?: "",
             )
         }
+    }
 
     /** The decks' mature cards in one query; throws IllegalArgumentException before AnkiDroid 2.24. */
     fun readCards(cr: ContentResolver, deckIds: List<Long>): List<Card> =
