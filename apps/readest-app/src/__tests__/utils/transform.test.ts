@@ -85,6 +85,12 @@ describe('transformBookNoteToDB with a CrossPoint anchor', () => {
     expect('crosspoint' in pulled).toBe(false);
     expect({ ...highlight, ...pulled }.crosspoint).toEqual(highlight.crosspoint);
   });
+
+  it('sends anchors cleared by a moved range as null, so the server forgets them', () => {
+    const moved = { ...highlight, xpointer0: null, xpointer1: null, crosspoint: null };
+    const db = JSON.parse(JSON.stringify(transformBookNoteToDB(moved, 'user1')));
+    expect(db).toMatchObject({ xpointer0: null, xpointer1: null, crosspoint: null });
+  });
 });
 
 describe('transformBookNoteToDB with xpointer fields', () => {

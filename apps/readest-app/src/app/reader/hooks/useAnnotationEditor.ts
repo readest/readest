@@ -83,9 +83,11 @@ export const useAnnotationEditor = ({
             cfi: newCfi,
             text: newText,
             // Anchors of the old range: the next push sets them for this one.
-            xpointer0: undefined,
-            xpointer1: undefined,
-            crosspoint: undefined,
+            // Null, not undefined, which the push would drop: the server must
+            // forget the old range even if the new one can't be anchored.
+            xpointer0: null,
+            xpointer1: null,
+            crosspoint: null,
             updatedAt: nextBooknoteStamp(existingAnnotation),
           };
 
