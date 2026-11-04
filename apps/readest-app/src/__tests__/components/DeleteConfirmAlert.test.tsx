@@ -82,3 +82,37 @@ describe('DeleteConfirmAlert purge toggle', () => {
     expect(onCancel).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('DeleteConfirmAlert device-only toggle', () => {
+  // #7318: the bulk delete offers "Remove from Device Only" for the selected
+  // books that have a cloud copy.
+  it('omits the device-only toggle unless some books can be removed from the device', () => {
+    setup({ deviceOnlyCount: 0, onConfirmDeviceOnly: vi.fn() });
+    expect(screen.queryByText('Remove from Device Only')).toBeNull();
+  });
+
+  it('confirms a device-only removal instead of a delete when the toggle is on', () => {
+    const onConfirmDeviceOnly = vi.fn();
+    const { onConfirm } = setup({ deviceOnlyCount: 3, onConfirmDeviceOnly });
+
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Remove from Device Only' }));
+    // A device-only removal cannot also purge, so the purge toggle goes away.
+    expect(screen.queryByRole('checkbox', { name: 'Purge all reading data' })).toBeNull();
+    // Nor is it a delete: the delete count gives way to the toggle's own count.
+    expect(screen.queryByText('Are you sure to delete the selected book?')).toBeNull();
+
+    const confirm = screen.getByText('Remove').closest('button')!;
+    fireEvent.click(confirm);
+    expect(onConfirmDeviceOnly).toHaveBeenCalledTimes(1);
+    expect(onConfirm).not.toHaveBeenCalled();
+  });
+
+  it('still deletes from cloud and device when the toggle is left off', () => {
+    const onConfirmDeviceOnly = vi.fn();
+    const { onConfirm } = setup({ deviceOnlyCount: 3, onConfirmDeviceOnly });
+
+    fireEvent.click(screen.getByText('Delete').closest('button')!);
+    expect(onConfirm).toHaveBeenCalledWith(false);
+    expect(onConfirmDeviceOnly).not.toHaveBeenCalled();
+  });
+});

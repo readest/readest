@@ -2717,5 +2717,7 @@
   "Stop Preview": "توقف پیش‌نمایش",
   "Voices are busy right now. Try again in a moment": "صداها اکنون مشغول هستند. لحظاتی دیگر دوباره امتحان کنید",
   "You have used today's voice previews. Try again tomorrow": "پیش‌نمایش‌های صدای امروز را استفاده کرده‌اید. فردا دوباره امتحان کنید",
-  "Voice Library": "کتابخانهٔ صداها"
+  "Voice Library": "کتابخانهٔ صداها",
+  "Remove the downloaded files of {{count}} book(s) and keep them in the cloud._one": "فایل دانلودشدهٔ {{count}} کتاب حذف شود و در فضای ابری باقی بماند.",
+  "Remove the downloaded files of {{count}} book(s) and keep them in the cloud._other": "فایل‌های دانلودشدهٔ {{count}} کتاب حذف شوند و در فضای ابری باقی بمانند."
 }

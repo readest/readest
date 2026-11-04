@@ -2649,5 +2649,6 @@
   "Stop Preview": "Henti pratonton",
   "Voices are busy right now. Try again in a moment": "Suara sedang sibuk sekarang. Cuba lagi sebentar lagi",
   "You have used today's voice previews. Try again tomorrow": "Anda telah menggunakan pratonton suara hari ini. Cuba lagi esok",
-  "Voice Library": "Pustaka suara"
+  "Voice Library": "Pustaka suara",
+  "Remove the downloaded files of {{count}} book(s) and keep them in the cloud._other": "Alih keluar fail yang dimuat turun bagi {{count}} buku dan simpan dalam Awan."
 }

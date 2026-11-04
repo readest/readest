@@ -2853,5 +2853,9 @@
   "Stop Preview": "Остановить прослушивание",
   "Voices are busy right now. Try again in a moment": "Голоса сейчас заняты. Повторите попытку через мгновение",
   "You have used today's voice previews. Try again tomorrow": "Вы использовали сегодняшние прослушивания голосов. Попробуйте завтра",
-  "Voice Library": "Библиотека голосов"
+  "Voice Library": "Библиотека голосов",
+  "Remove the downloaded files of {{count}} book(s) and keep them in the cloud._one": "Удалить загруженный файл {{count}} книги и оставить её в облаке.",
+  "Remove the downloaded files of {{count}} book(s) and keep them in the cloud._few": "Удалить загруженные файлы {{count}} книг и оставить их в облаке.",
+  "Remove the downloaded files of {{count}} book(s) and keep them in the cloud._many": "Удалить загруженные файлы {{count}} книг и оставить их в облаке.",
+  "Remove the downloaded files of {{count}} book(s) and keep them in the cloud._other": "Удалить загруженные файлы {{count}} книги и оставить их в облаке."
 }

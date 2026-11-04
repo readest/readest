@@ -2717,5 +2717,7 @@
   "Stop Preview": "Vorschau beenden",
   "Voices are busy right now. Try again in a moment": "Die Stimmen sind gerade ausgelastet. Versuchen Sie es gleich noch einmal",
   "You have used today's voice previews. Try again tomorrow": "Sie haben die heutigen Stimmproben aufgebraucht. Versuchen Sie es morgen wieder",
-  "Voice Library": "Stimmenbibliothek"
+  "Voice Library": "Stimmenbibliothek",
+  "Remove the downloaded files of {{count}} book(s) and keep them in the cloud._one": "Die heruntergeladene Datei von {{count}} Buch entfernen und das Buch in der Cloud behalten.",
+  "Remove the downloaded files of {{count}} book(s) and keep them in the cloud._other": "Die heruntergeladenen Dateien von {{count}} Büchern entfernen und die Bücher in der Cloud behalten."
 }

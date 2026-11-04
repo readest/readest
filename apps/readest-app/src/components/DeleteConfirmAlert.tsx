@@ -3,6 +3,40 @@ import React, { useState } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import Alert from './Alert';
 
+const ToggleRow: React.FC<{
+  label: string;
+  description: string;
+  checked: boolean;
+  destructive?: boolean;
+  onChange: (checked: boolean) => void;
+}> = ({ label, description, checked, destructive = false, onChange }) => {
+  const danger = checked && destructive;
+  return (
+    <label
+      className={clsx(
+        'eink-bordered flex cursor-pointer items-center gap-3 rounded-lg border p-3 transition-colors',
+        danger
+          ? 'not-eink:border-error/40 not-eink:bg-error/10'
+          : 'not-eink:border-base-content/10 not-eink:bg-base-100/60',
+      )}
+    >
+      <div className='flex min-w-0 flex-1 flex-col gap-0.5'>
+        <span className={clsx('text-sm font-medium', danger && 'not-eink:text-error')}>
+          {label}
+        </span>
+        <span className='text-neutral-content text-xs'>{description}</span>
+      </div>
+      <input
+        type='checkbox'
+        className={clsx('toggle toggle-sm shrink-0', danger && 'not-eink:toggle-error')}
+        checked={checked}
+        onChange={(e) => onChange(e.target.checked)}
+        aria-label={label}
+      />
+    </label>
+  );
+};
+
 /**
  * Delete confirmation alert with an optional, opt-in "purge all reading data"
  * toggle. Used by both the single-book delete (BookDetailModal) and the
@@ -14,55 +48,70 @@ import Alert from './Alert';
  * (wipes the book's reading progress, notes, and bookmarks), signalled by the
  * red button + relabel so the irreversible choice reads clearly even on e-ink
  * where colour alone is not enough.
+ *
+ * The bulk delete also offers "Remove from Device Only" (#7318) for the
+ * `deviceOnlyCount` selected books that have a cloud copy. Turning it on
+ * replaces the delete with `onConfirmDeviceOnly`, which keeps every book in
+ * the library, so the delete message and purge toggle are hidden while it is
+ * on.
  */
 const DeleteConfirmAlert: React.FC<{
   title: string;
   message: string;
   showPurgeToggle?: boolean;
+  deviceOnlyCount?: number;
   onCancel: () => void;
   onConfirm: (purgeData: boolean) => void;
-}> = ({ title, message, showPurgeToggle = false, onCancel, onConfirm }) => {
+  onConfirmDeviceOnly?: () => void;
+}> = ({
+  title,
+  message,
+  showPurgeToggle = false,
+  deviceOnlyCount = 0,
+  onCancel,
+  onConfirm,
+  onConfirmDeviceOnly,
+}) => {
   const _ = useTranslation();
   const [purgeData, setPurgeData] = useState(false);
+  const [deviceOnly, setDeviceOnly] = useState(false);
+  const showDeviceOnlyToggle = !!onConfirmDeviceOnly && deviceOnlyCount > 0;
 
   return (
     <Alert
       title={title}
-      message={message}
-      confirmLabel={purgeData ? _('Purge & Delete') : _('Delete')}
-      confirmButtonClassName={purgeData ? 'btn-error' : 'btn-warning'}
+      // The toggle's own text says what a device-only removal does.
+      message={deviceOnly ? undefined : message}
+      confirmLabel={deviceOnly ? _('Remove') : purgeData ? _('Purge & Delete') : _('Delete')}
+      confirmButtonClassName={purgeData && !deviceOnly ? 'btn-error' : 'btn-warning'}
       onCancel={onCancel}
-      onConfirm={() => onConfirm(purgeData)}
+      onConfirm={() => (deviceOnly ? onConfirmDeviceOnly?.() : onConfirm(purgeData))}
     >
-      {showPurgeToggle && (
-        <label
-          className={clsx(
-            'eink-bordered flex cursor-pointer items-center gap-3 rounded-lg border p-3 transition-colors',
-            purgeData
-              ? 'not-eink:border-error/40 not-eink:bg-error/10'
-              : 'not-eink:border-base-content/10 not-eink:bg-base-100/60',
+      {showDeviceOnlyToggle && (
+        <ToggleRow
+          label={_('Remove from Device Only')}
+          description={_(
+            'Remove the downloaded files of {{count}} book(s) and keep them in the cloud.',
+            { count: deviceOnlyCount },
           )}
-        >
-          <div className='flex min-w-0 flex-1 flex-col gap-0.5'>
-            <span className={clsx('text-sm font-medium', purgeData && 'not-eink:text-error')}>
-              {_('Purge all reading data')}
-            </span>
-            <span className='text-neutral-content text-xs'>
-              {purgeData
-                ? _(
-                    'This permanently erases reading progress, notes, and bookmarks. This cannot be undone.',
-                  )
-                : _('Also erase reading progress, notes, and bookmarks.')}
-            </span>
-          </div>
-          <input
-            type='checkbox'
-            className={clsx('toggle toggle-sm shrink-0', purgeData && 'not-eink:toggle-error')}
-            checked={purgeData}
-            onChange={(e) => setPurgeData(e.target.checked)}
-            aria-label={_('Purge all reading data')}
-          />
-        </label>
+          checked={deviceOnly}
+          onChange={setDeviceOnly}
+        />
+      )}
+      {showPurgeToggle && !deviceOnly && (
+        <ToggleRow
+          label={_('Purge all reading data')}
+          description={
+            purgeData
+              ? _(
+                  'This permanently erases reading progress, notes, and bookmarks. This cannot be undone.',
+                )
+              : _('Also erase reading progress, notes, and bookmarks.')
+          }
+          checked={purgeData}
+          destructive
+          onChange={setPurgeData}
+        />
       )}
     </Alert>
   );

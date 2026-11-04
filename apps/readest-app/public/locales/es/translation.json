@@ -2785,5 +2785,8 @@
   "Stop Preview": "Detener la vista previa",
   "Voices are busy right now. Try again in a moment": "Las voces están ocupadas ahora mismo. Inténtalo de nuevo en un momento",
   "You have used today's voice previews. Try again tomorrow": "Has usado las muestras de voz de hoy. Inténtalo de nuevo mañana",
-  "Voice Library": "Biblioteca de voces"
+  "Voice Library": "Biblioteca de voces",
+  "Remove the downloaded files of {{count}} book(s) and keep them in the cloud._one": "Eliminar el archivo descargado de {{count}} libro y conservarlo en la nube.",
+  "Remove the downloaded files of {{count}} book(s) and keep them in the cloud._many": "Eliminar los archivos descargados de {{count}} libros y conservarlos en la nube.",
+  "Remove the downloaded files of {{count}} book(s) and keep them in the cloud._other": "Eliminar los archivos descargados de {{count}} libros y conservarlos en la nube."
 }

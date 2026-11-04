@@ -2649,5 +2649,6 @@
   "Stop Preview": "หยุดฟังตัวอย่าง",
   "Voices are busy right now. Try again in a moment": "เสียงไม่ว่างในขณะนี้ โปรดลองอีกครั้งในอีกสักครู่",
   "You have used today's voice previews. Try again tomorrow": "คุณใช้การฟังตัวอย่างเสียงของวันนี้หมดแล้ว โปรดลองอีกครั้งพรุ่งนี้",
-  "Voice Library": "คลังเสียง"
+  "Voice Library": "คลังเสียง",
+  "Remove the downloaded files of {{count}} book(s) and keep them in the cloud._other": "ลบไฟล์ที่ดาวน์โหลดของหนังสือ {{count}} เล่ม และเก็บไว้บนคลาวด์"
 }

@@ -2649,5 +2649,6 @@
   "Stop Preview": "ཉན་ཞིབ་མཚམས་འཇོག",
   "Voices are busy right now. Try again in a moment": "སྐད་གདངས་ད་ལྟ་བྲེལ་བ་ཡོད། ཅུང་ཙམ་སྒུག་ནས་ཡང་བསྐྱར་ཚོད་ལྟ་བྱོས།",
   "You have used today's voice previews. Try again tomorrow": "དེ་རིང་གི་སྐད་གདངས་ཉན་ཞིབ་ཚང་མ་བེད་སྤྱད་ཟིན། སང་ཉིན་ཡང་བསྐྱར་ཚོད་ལྟ་བྱོས།",
-  "Voice Library": "སྐད་གདངས་དཔེ་མཛོད།"
+  "Voice Library": "སྐད་གདངས་དཔེ་མཛོད།",
+  "Remove the downloaded files of {{count}} book(s) and keep them in the cloud._other": "དཔེ་དེབ་ {{count}} གི་ཕབ་ལེན་ཡིག་ཆ་བསུབ་ནས་སྤྲི་དོན་ཐོག་ཉར་བ།"
 }

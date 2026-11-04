@@ -2717,5 +2717,7 @@
   "Stop Preview": "පෙරදසුන නවත්වන්න",
   "Voices are busy right now. Try again in a moment": "හඬ දැන් කාර්යබහුලයි. මොහොතකින් නැවත උත්සාහ කරන්න",
   "You have used today's voice previews. Try again tomorrow": "ඔබ අද දින හඬ පෙරදසුන් භාවිත කර අවසන්. හෙට නැවත උත්සාහ කරන්න",
-  "Voice Library": "හඬ පුස්තකාලය"
+  "Voice Library": "හඬ පුස්තකාලය",
+  "Remove the downloaded files of {{count}} book(s) and keep them in the cloud._one": "පොත් {{count}} ක බාගත කළ ගොනුව ඉවත් කර එය Cloud එකේ තබා ගන්න.",
+  "Remove the downloaded files of {{count}} book(s) and keep them in the cloud._other": "පොත් {{count}} ක බාගත කළ ගොනු ඉවත් කර ඒවා Cloud එකේ තබා ගන්න."
 }

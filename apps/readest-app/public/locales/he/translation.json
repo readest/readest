@@ -2785,5 +2785,8 @@
   "Stop Preview": "עצירת התצוגה המקדימה",
   "Voices are busy right now. Try again in a moment": "הקולות עמוסים כרגע. נסו שוב בעוד רגע",
   "You have used today's voice previews. Try again tomorrow": "ניצלתם את דגימות הקול של היום. נסו שוב מחר",
-  "Voice Library": "ספריית קולות"
+  "Voice Library": "ספריית קולות",
+  "Remove the downloaded files of {{count}} book(s) and keep them in the cloud._one": "הסר את הקובץ שהורד של ספר אחד והשאר אותו בענן.",
+  "Remove the downloaded files of {{count}} book(s) and keep them in the cloud._two": "הסר את הקבצים שהורדו של {{count}} ספרים והשאר אותם בענן.",
+  "Remove the downloaded files of {{count}} book(s) and keep them in the cloud._other": "הסר את הקבצים שהורדו של {{count}} ספרים והשאר אותם בענן."
 }

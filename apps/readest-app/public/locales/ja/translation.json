@@ -2649,5 +2649,6 @@
   "Stop Preview": "試聴を停止",
   "Voices are busy right now. Try again in a moment": "現在音声が混み合っています。しばらくしてからもう一度お試しください",
   "You have used today's voice previews. Try again tomorrow": "本日の試聴回数の上限に達しました。明日もう一度お試しください",
-  "Voice Library": "音声ライブラリ"
+  "Voice Library": "音声ライブラリ",
+  "Remove the downloaded files of {{count}} book(s) and keep them in the cloud._other": "{{count}}冊のダウンロード済みファイルを削除し、クラウドには残します。"
 }
