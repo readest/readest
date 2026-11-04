@@ -3,10 +3,7 @@ import {
   expandGlobalAnnotation,
   removeGlobalAnnotationOverlays,
 } from '@/app/reader/utils/globalAnnotations';
-import {
-  applyNoteBubbleTransition,
-  removeBookNoteOverlays,
-} from '@/app/reader/utils/annotatorUtil';
+import { removeBookNoteOverlays } from '@/app/reader/utils/annotatorUtil';
 import { BookNote } from '@/types/book';
 import { FoliateView, NOTE_PREFIX } from '@/types/view';
 
@@ -134,7 +131,7 @@ describe('expandGlobalAnnotation idempotency (issue #4575)', () => {
  * reachable from every occurrence, so each fan-out copy carries the note
  * bubble too, not only the home anchor.
  */
-describe('global annotation note bubbles (issue #6186)', () => {
+describe('global annotation copies (issue #6186)', () => {
   const makeDrawingView = (docs: Document[]) => {
     const overlayer = { add: vi.fn(), remove: vi.fn() };
     const drawn: string[] = [];
@@ -154,7 +151,7 @@ describe('global annotation note bubbles (issue #6186)', () => {
   };
   const bubbles = (values: string[]) => values.filter((v) => v.startsWith(NOTE_PREFIX));
 
-  it('draws a note bubble on every occurrence of a global note', () => {
+  it('draws one copy per occurrence and no note bubble for a global note', () => {
     const doc = makeDoc('Thorin', 3);
     const { view, drawn } = makeDrawingView([doc]);
     const added = expandGlobalAnnotation(
@@ -163,18 +160,11 @@ describe('global annotation note bubbles (issue #6186)', () => {
       doc,
       0,
     );
-    expect(bubbles(added)).toHaveLength(3);
-    expect(bubbles(drawn)).toHaveLength(3);
-  });
-
-  it('draws no bubbles for a global highlight without a note', () => {
-    const doc = makeDoc('Thorin', 3);
-    const { view, drawn } = makeDrawingView([doc]);
-    expandGlobalAnnotation(view, note({ id: 'no-note', text: 'Thorin' }), doc, 0);
+    expect(added).toHaveLength(3);
     expect(bubbles(drawn)).toHaveLength(0);
   });
 
-  it('removes the fan-out bubbles along with the highlights', () => {
+  it('removes the copies', () => {
     const doc = makeDoc('Thorin', 2);
     const { view, overlayer } = makeDrawingView([doc]);
     const n = note({ id: 'remove-note', text: 'Thorin', note: 'Dwarf king' });
@@ -182,28 +172,6 @@ describe('global annotation note bubbles (issue #6186)', () => {
     removeGlobalAnnotationOverlays(view, n);
     const removed = overlayer.remove.mock.calls.map(([value]) => value);
     for (const value of added) expect(removed).toContain(value);
-  });
-
-  it('adds bubbles to the copies when a note is written on a global highlight', () => {
-    const doc = makeDoc('Thorin', 2);
-    const { view, drawn } = makeDrawingView([doc]);
-    const n = note({ id: 'add-note', text: 'Thorin', updatedAt: 1 });
-    expandGlobalAnnotation(view, n, doc, 0);
-    expect(bubbles(drawn)).toHaveLength(0);
-
-    applyNoteBubbleTransition([view], { ...n, note: 'Dwarf king', updatedAt: 2 }, 'add');
-    expect(bubbles(drawn)).toHaveLength(2);
-  });
-
-  it("removes the copies' bubbles when the note is cleared", () => {
-    const doc = makeDoc('Thorin', 2);
-    const { view, overlayer } = makeDrawingView([doc]);
-    const n = note({ id: 'clear-note', text: 'Thorin', note: 'Dwarf king', updatedAt: 1 });
-    const added = expandGlobalAnnotation(view, n, doc, 0);
-
-    applyNoteBubbleTransition([view], { ...n, note: '', updatedAt: 2 }, 'remove');
-    const removed = overlayer.remove.mock.calls.map(([value]) => value);
-    for (const value of bubbles(added)) expect(removed).toContain(value);
   });
 
   it('removes the copies when a global note is deleted', () => {

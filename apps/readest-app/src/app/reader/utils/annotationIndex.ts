@@ -20,9 +20,9 @@ export interface AnnotationIndex {
  * overlays (see `removeBookNoteOverlays`), so a note-only annotation with no
  * style must still be tracked.
  *
- * `global` highlights are split into their own pre-filtered array: their
- * semantics is book-wide so they're fanned out across every rendered section
- * rather than matched against the current location.
+ * `global` highlights are also listed in their own pre-filtered array: their
+ * copies are fanned out across every rendered section rather than matched
+ * against the current location.
  */
 export function buildAnnotationIndex(booknotes: BookNote[]): AnnotationIndex {
   const bySection = new Map<string, BookNote[]>();
@@ -33,12 +33,9 @@ export function buildAnnotationIndex(booknotes: BookNote[]): AnnotationIndex {
     const hasNote = !!item.note && item.note.trim().length > 0;
     if (!item.style && !hasNote) continue;
     // Globals fan out a highlight across every occurrence of `text`, so they
-    // require a style; a note-only annotation is never global and falls
-    // through to the per-section bucket like any other local note.
-    if (item.style && item.global) {
-      globals.push(item);
-      continue;
-    }
+    // require a style; a note-only annotation is never global. A global is
+    // also bucketed under its home section, where its note bubble is drawn.
+    if (item.style && item.global) globals.push(item);
     const spine = getCfiSpinePrefix(item.cfi);
     if (!spine) continue;
     const bucket = bySection.get(spine);
