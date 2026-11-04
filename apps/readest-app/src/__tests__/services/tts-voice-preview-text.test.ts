@@ -58,4 +58,12 @@ describe('getPagePreviewText', () => {
     expect(getPagePreviewText(pageRange('<p id="a"> </p>', '#a'), 'en')).toBeNull();
     expect(getPagePreviewText(null, 'en')).toBeNull();
   });
+
+  it('is null while a remount has left the section document without a root', () => {
+    const range = pageRange('<p id="a">It was a bright cold day in April.</p>', '#a');
+    const doc = range.startContainer.ownerDocument!;
+    doc.documentElement.remove();
+    expect(range.startContainer).toBe(doc);
+    expect(getPagePreviewText(range, 'en')).toBeNull();
+  });
 });
