@@ -231,6 +231,31 @@ export const ankiNotesToSend = (
   return notes;
 };
 
+/**
+ * Notes with their language made explicit, as Sync reads them. A note without a
+ * language tag (added by hand, or from the file export) belongs to the word
+ * Readest already has with its key: a live one before a deleted one, `lang`
+ * before another language. Otherwise it gets `lang`. The tag is added so the
+ * pull, the push and the tag mirror all file the note the same way.
+ */
+export const withNoteLangs = <T extends { fields: string[]; tags: string }>(
+  notes: T[],
+  entries: Record<string, VocabularyEntry>,
+  lang: string,
+): T[] => {
+  const rank = (e: VocabularyEntry) => (e.deletedAt ? 2 : 0) + (e.lang === lang ? 0 : 1);
+  const best = new Map<string, VocabularyEntry>();
+  for (const e of Object.values(entries)) {
+    const seen = best.get(e.key);
+    if (!seen || rank(e) < rank(seen)) best.set(e.key, e);
+  }
+  return notes.map((n) => {
+    if (ankiLangOf(n.tags)) return n;
+    const noteLang = best.get(noteKey(n.fields))?.lang ?? lang;
+    return { ...n, tags: `${n.tags.trim()} ${ankiLangTag(noteLang)}`.trim() };
+  });
+};
+
 /** A note's full tag list, as Sync writes it back. */
 export interface AnkiTagUpdate {
   id: number;

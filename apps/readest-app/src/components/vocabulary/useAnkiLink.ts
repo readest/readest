@@ -13,6 +13,7 @@ import {
   defaultImportLang,
   importLanguageOptions,
   planAnkiImport,
+  withNoteLangs,
 } from '@/services/vocabulary/anki';
 import {
   type AnkiCardRow,
@@ -128,12 +129,12 @@ export const useAnkiLink = () => {
    */
   const pull = async () => {
     const ids = deckFamily(await ankiListDecks(), DECK_NAME);
-    const { notes, cards } = ids.length
+    const { notes: rows, cards } = ids.length
       ? await ankiReadDeck(ids, true)
       : { notes: [], cards: [] as AnkiCardRow[] };
     const store = useVocabularyStore.getState();
-    // Notes without a language tag were added in Anki; file them like Import does.
     const lang = defaultImportLang(store.entries);
+    const notes = withNoteLangs(rows, store.entries, lang);
     const plan = planAnkiImport(importNotes(notes, cards), store.entries, lang);
     store.importWords(plan.ops);
     return { notes, lang, plan, cardsRead: !!cards };
@@ -165,7 +166,10 @@ export const useAnkiLink = () => {
       if (!(await ready())) return;
       const { notes, lang, plan, cardsRead } = await pull();
       const { entries } = useVocabularyStore.getState();
-      const learning = Object.values(entries).filter((e) => e.state === 'learning');
+      // Words with no sentence came in from Anki, so they're already there.
+      const learning = Object.values(entries).filter(
+        (e) => e.state === 'learning' && e.occurrences.length,
+      );
       const outgoing = ankiNotesToSend(learning, notes);
       const sent = outgoing.length ? await ankiAddNotes(DECK_NAME, outgoing) : 0;
       const updates = ankiTagUpdates(notes, entries, lang);

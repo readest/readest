@@ -9,6 +9,7 @@ import {
   defaultImportLang,
   ankiNotesToSend,
   ankiTagUpdates,
+  withNoteLangs,
   importLanguageOptions,
   planAnkiImport,
 } from '@/services/vocabulary/anki';
@@ -355,5 +356,40 @@ describe('ankiTagUpdates', () => {
       { id: 1, tags: ['readest::lang::fr', 'readest::learning'] },
       { id: 2, tags: ['readest::mastered'] },
     ]);
+  });
+});
+
+describe('withNoteLangs', () => {
+  const words = (...list: VocabularyEntry[]) => Object.fromEntries(list.map((e) => [e.id, e]));
+  const row = (word: string, tags = '') => ({ id: 1, fields: [word], tags });
+  const langOf = (n: { tags: string }) => ankiLangOf(n.tags);
+
+  it("keeps a note's own language", () => {
+    expect(withNoteLangs([row('pain', 'x readest::lang::fr')], {}, 'en')[0]!.tags).toBe(
+      'x readest::lang::fr',
+    );
+  });
+
+  it('files an untagged note under the word Readest has with its key, in any language', () => {
+    const list = words(entry('pain', { lang: 'fr' }));
+    expect(langOf(withNoteLangs([row('Pain', 'mine')], list, 'en')[0]!)).toBe('fr');
+  });
+
+  it('prefers the given language when the word is in several', () => {
+    const list = words(entry('pain', { lang: 'fr' }), entry('pain', { lang: 'en' }));
+    expect(langOf(withNoteLangs([row('pain')], list, 'en')[0]!)).toBe('en');
+  });
+
+  it('prefers a live word over a deleted one, and a deleted one over none', () => {
+    const live = words(entry('pain', { lang: 'en', deletedAt: 3 }), entry('pain', { lang: 'fr' }));
+    expect(langOf(withNoteLangs([row('pain')], live, 'en')[0]!)).toBe('fr');
+    const gone = words(entry('pain', { lang: 'fr', deletedAt: 3 }));
+    expect(langOf(withNoteLangs([row('pain')], gone, 'en')[0]!)).toBe('fr');
+  });
+
+  it('falls back to the given language', () => {
+    expect(withNoteLangs([row('pain', ' mine ')], {}, 'de')[0]!.tags).toBe(
+      'mine readest::lang::de',
+    );
   });
 });

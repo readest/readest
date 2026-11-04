@@ -236,9 +236,22 @@ const settle = () => act(async () => new Promise((r) => setTimeout(r, 0)));
 describe('VocabularyView Anki link', () => {
   beforeEach(() => {
     appService.isAndroidApp = true;
+    // spice was met while reading, so Sync may send it.
+    seed([
+      entry('spice', { state: 'learning', hint: '香料' }),
+      entry('sandworm', {}),
+      entry('ball', {}, 'emma'),
+    ]);
   });
 
-  it('syncs only Learning words, tagged with their mark', async () => {
+  it('syncs only Learning words met while reading, tagged with their mark', async () => {
+    seed([
+      entry('spice', { state: 'learning' }),
+      // Came in from another Anki deck: already in Anki, so it stays there.
+      entry('kettle', { state: 'learning', occurrences: [] }),
+      entry('sandworm', {}),
+      entry('melange', { state: 'mastered' }),
+    ]);
     renderWithMenu();
     fireEvent.click(await syncButton());
     await waitFor(() => expect(anki.ankiAddNotes).toHaveBeenCalled());
@@ -273,7 +286,7 @@ describe('VocabularyView Anki link', () => {
     expect(entries['en:kettle']).toMatchObject({ state: 'learning', hint: 'a pot' });
     expect(anki.ankiUpdateTags).toHaveBeenCalledWith([
       { id: 1, tags: ['readest', 'readest::lang::en', 'readest::mastered'] },
-      { id: 2, tags: ['readest::learning'] },
+      { id: 2, tags: ['readest::lang::en', 'readest::learning'] },
     ]);
     expect(anki.ankiAddNotes).not.toHaveBeenCalled();
     await waitFor(() =>
@@ -282,6 +295,27 @@ describe('VocabularyView Anki link', () => {
       ),
     );
     dispatch.mockRestore();
+  });
+
+  it('files an untagged note under the word Readest already has, in any language', async () => {
+    seed([
+      entry('spice', { state: 'learning', occurrences: [] }),
+      entry('pain', { id: 'fr:pain', lang: 'fr', state: 'learning' }),
+    ]);
+    anki.ankiReadDeck.mockResolvedValue({
+      notes: [{ id: 1, fields: ['pain', 'bread'], tags: '' }],
+      cards: [],
+    });
+    renderWithMenu();
+    fireEvent.click(await syncButton());
+    await waitFor(() => expect(anki.ankiUpdateTags).toHaveBeenCalled());
+    const { entries } = useVocabularyStore.getState();
+    expect(entries['en:pain']).toBeUndefined();
+    expect(entries['fr:pain']?.hint).toBe('bread');
+    expect(anki.ankiAddNotes).not.toHaveBeenCalled();
+    expect(anki.ankiUpdateTags).toHaveBeenCalledWith([
+      { id: 1, tags: ['readest::lang::fr', 'readest::learning'] },
+    ]);
   });
 
   it('says when Anki is already in sync', async () => {
