@@ -18,6 +18,11 @@ class AnkiDroidLinkTest {
     }
 
     @Test
+    fun joinTags_separatesWithSpaces() {
+        assertEquals("readest readest::learning", AnkiDroidLink.joinTags(listOf("readest", "readest::learning")))
+    }
+
+    @Test
     fun deckSearch_matchesEveryGivenDeckById() {
         assertEquals("did:1700000000000,42", AnkiDroidLink.deckSearch(listOf(1700000000000L, 42L)))
     }

@@ -33,6 +33,9 @@ object AnkiDroidLink {
 
     fun splitFields(flds: String): List<String> = flds.split(FIELD_SEPARATOR)
 
+    /** A note's tags column: tags separated by spaces. */
+    fun joinTags(tags: List<String>): String = tags.joinToString(" ")
+
     /** Anki search for these decks by id, so no deck name needs escaping. */
     fun deckSearch(deckIds: List<Long>): String = "did:" + deckIds.joinToString(",")
 
@@ -121,10 +124,16 @@ object AnkiDroidLink {
             ContentValues().apply {
                 put("mid", mid)
                 put("flds", joinFields(fields))
-                put("tags", tags.joinToString(" "))
+                put("tags", joinTags(tags))
             }
         }
         val target = uri("notes").buildUpon().appendQueryParameter("deckId", deckId.toString()).build()
         return insertInChunks(rows, INSERT_CHUNK) { cr.bulkInsert(target, it.toTypedArray()) }
     }
+
+    /** Replace the tags of existing notes; resolves with how many AnkiDroid updated. */
+    fun updateTags(cr: ContentResolver, notes: List<Pair<Long, List<String>>>): Int =
+        notes.sumOf { (id, tags) ->
+            cr.update(uri("notes/$id"), ContentValues().apply { put("tags", joinTags(tags)) }, null, null)
+        }
 }

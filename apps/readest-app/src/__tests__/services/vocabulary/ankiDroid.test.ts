@@ -6,7 +6,13 @@ vi.mock('@tauri-apps/api/core', async (importOriginal) => ({
   invoke: invokeSpy,
 }));
 
-import { AnkiError, ankiAddNotes, ankiReadDeck, ankiStatus } from '@/services/vocabulary/ankiDroid';
+import {
+  AnkiError,
+  ankiAddNotes,
+  ankiReadDeck,
+  ankiStatus,
+  ankiUpdateTags,
+} from '@/services/vocabulary/ankiDroid';
 
 beforeEach(() => {
   invokeSpy.mockReset();
@@ -35,6 +41,18 @@ describe('ankiDroid', () => {
     await expect(ankiAddNotes('Readest Vocabulary', notes)).resolves.toBe(2);
     expect(invokeSpy).toHaveBeenCalledWith('plugin:native-bridge|anki_add_notes', {
       payload: { deckName: 'Readest Vocabulary', notes },
+    });
+  });
+
+  it('updates note tags and returns how many changed', async () => {
+    invokeSpy.mockResolvedValue({ updated: 2 });
+    const notes = [
+      { id: 1, tags: ['readest', 'readest::mastered'] },
+      { id: 2, tags: ['readest::learning'] },
+    ];
+    await expect(ankiUpdateTags(notes)).resolves.toBe(2);
+    expect(invokeSpy).toHaveBeenCalledWith('plugin:native-bridge|anki_update_tags', {
+      payload: { notes },
     });
   });
 

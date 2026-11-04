@@ -1,7 +1,7 @@
 // AnkiDroid's content provider, reached through the native bridge (Android
 // only). See docs/superpowers/specs/2026-11-04-anki-link-design.md
 import { invoke } from '@tauri-apps/api/core';
-import type { AnkiOutgoingNote } from './anki';
+import type { AnkiOutgoingNote, AnkiTagUpdate } from './anki';
 
 /** `permission`: Readest can't use AnkiDroid. `not_ready`: AnkiDroid was never opened. */
 export type AnkiErrorCode = 'permission' | 'not_ready';
@@ -74,3 +74,7 @@ export const ankiReadDeck = async (
 export const ankiAddNotes = async (deckName: string, notes: AnkiOutgoingNote[]): Promise<number> =>
   (await call<{ added?: number; error?: string }>('anki_add_notes', { deckName, notes })).added ??
   0;
+
+/** Replace the tags of existing notes; resolves with how many were updated. */
+export const ankiUpdateTags = async (notes: AnkiTagUpdate[]): Promise<number> =>
+  (await call<{ updated?: number; error?: string }>('anki_update_tags', { notes })).updated ?? 0;

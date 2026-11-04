@@ -166,6 +166,17 @@ class AnkiAddNotesArgs {
 }
 
 @InvokeArg
+class AnkiTagUpdateArg {
+    var id: Long = 0
+    var tags: Array<String> = emptyArray()
+}
+
+@InvokeArg
+class AnkiUpdateTagsArgs {
+    var notes: Array<AnkiTagUpdateArg> = emptyArray()
+}
+
+@InvokeArg
 class SetLookupAppArgs {
     var packageName: String? = null
     var className: String? = null
@@ -2110,8 +2121,8 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
         invoke.resolve()
     }
 
-    // AnkiDroid link (#789): the Vocabulary window sends words to an
-    // AnkiDroid deck and imports decks back. Expected failures resolve with
+    // AnkiDroid link (#789): the Vocabulary window syncs with an AnkiDroid
+    // deck and imports other decks. Expected failures resolve with
     // `error` ("permission", "not_ready") so the UI can explain them.
 
     @Command
@@ -2214,6 +2225,15 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
         ankiCall(invoke) { cr ->
             val notes = args.notes.map { it.fields.toList() to it.tags.toList() }
             JSObject().apply { put("added", AnkiDroidLink.addNotes(cr, args.deckName, notes)) }
+        }
+    }
+
+    @Command
+    fun anki_update_tags(invoke: Invoke) {
+        val args = invoke.parseArgs(AnkiUpdateTagsArgs::class.java)
+        ankiCall(invoke) { cr ->
+            val notes = args.notes.map { it.id to it.tags.toList() }
+            JSObject().apply { put("updated", AnkiDroidLink.updateTags(cr, notes)) }
         }
     }
 

@@ -36,6 +36,7 @@ permissions = [
   "allow-anki-list-decks",
   "allow-anki-read-deck",
   "allow-anki-add-notes",
+  "allow-anki-update-tags",
   "allow-select-directory",
   "allow-show-file-picker",
   "allow-get-storefront-region-code",

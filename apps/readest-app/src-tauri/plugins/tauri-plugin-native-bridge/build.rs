@@ -34,6 +34,7 @@ const COMMANDS: &[&str] = &[
     "anki_list_decks",
     "anki_read_deck",
     "anki_add_notes",
+    "anki_update_tags",
     "select_directory",
     "show_file_picker",
     "get_storefront_region_code",
