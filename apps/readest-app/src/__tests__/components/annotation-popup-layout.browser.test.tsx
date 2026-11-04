@@ -16,6 +16,8 @@ import type { UserHighlightColor } from '@/types/book';
 
 // ── Tailwind / DaisyUI styles ───────────────────────────────────────────
 import '@/styles/globals.css';
+// The note card's relative timestamp needs dayjs's relativeTime plugin.
+import '@/utils/time';
 
 // ── Per-test state read by mocks ────────────────────────────────────────
 let mockUserColors: UserHighlightColor[] = [];
@@ -457,5 +459,69 @@ describe('five-action toolbar', () => {
     expect(strip.getBoundingClientRect()[end]).toBeLessThanOrEqual(
       options.getBoundingClientRect()[end],
     );
+  });
+});
+
+// A note opens as its own bordered card inside the toolbar's popup box. The
+// card must cover that box exactly: inset by the box's 1px border it left the
+// box's frame showing around it, and with the triangle below, the triangle's
+// fill missed the card's border and drew a line across its base.
+describe('note card over the popup box', () => {
+  const NOTE_Y = 200;
+  const note = {
+    id: 'n1',
+    type: 'annotation' as const,
+    cfi: 'epubcfi(/6/4!/4)',
+    note: 'The curious girl who falls down the rabbit hole',
+    text: 'Alice',
+    createdAt: 1,
+    updatedAt: 1,
+  };
+  const renderNote = (dir: 'up' | 'down', eink: boolean) => {
+    // Triangle above the text (dir 'up' points down at it from below the box)
+    // or below it (dir 'down').
+    const triangleY = dir === 'up' ? NOTE_Y : NOTE_Y - 7;
+    const popupY = dir === 'up' ? NOTE_Y - POPUP_H : NOTE_Y;
+    return render(
+      <div data-theme='default-light' data-eink={eink ? 'true' : undefined}>
+        <AnnotationPopup
+          bookKey='test'
+          dir='ltr'
+          isVertical={false}
+          buttons={toolButtons}
+          notes={[note]}
+          position={{ dir, point: { x: 20, y: popupY } }}
+          trianglePosition={{ dir, point: { x: 20 + POPUP_W / 2, y: triangleY } }}
+          highlightOptionsVisible={false}
+          selectedStyle='highlight'
+          selectedColor='yellow'
+          popupWidth={POPUP_W}
+          popupHeight={POPUP_H}
+          onHighlight={vi.fn()}
+          onDismiss={vi.fn()}
+        />
+      </div>,
+    );
+  };
+
+  it.each([
+    ['up', false],
+    ['down', false],
+    ['up', true],
+    ['down', true],
+  ] as const)('triangle %s, e-ink %s: the card covers the box edge to edge', (dir, eink) => {
+    const { container } = renderNote(dir, eink);
+    const box = (
+      container.querySelector('#popup-container') as HTMLElement
+    ).getBoundingClientRect();
+    const card = (
+      container.querySelector('.annotation-notes .popup-container') as HTMLElement
+    ).getBoundingClientRect();
+    const edge = dir === 'up' ? 'bottom' : 'top';
+    expect({ left: card.left, right: card.right, [edge]: card[edge] }).toEqual({
+      left: box.left,
+      right: box.right,
+      [edge]: box[edge],
+    });
   });
 });
