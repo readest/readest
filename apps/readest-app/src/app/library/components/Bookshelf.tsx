@@ -22,6 +22,7 @@ import { useBookshelfDate } from '@/hooks/useBookshelfDate';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { navigateToLibrary, navigateToReader, showReaderWindow } from '@/utils/nav';
 import {
+  canRemoveFromDeviceOnly,
   createBookFilter,
   createBookSorter,
   ensureLibraryGroupByType,
@@ -87,6 +88,7 @@ interface BookshelfProps {
   handleBookUpload: (book: Book, syncBooks?: boolean) => Promise<boolean>;
   handleBookDelete: (book: Book, syncBooks?: boolean) => Promise<boolean>;
   handleBookPurge: (book: Book, syncBooks?: boolean) => Promise<boolean>;
+  handleBookDeleteLocalCopy: (book: Book, syncBooks?: boolean) => Promise<boolean>;
   handleSetSelectMode: (selectMode: boolean) => void;
   handleShowDetailsBook: (book: Book) => void;
   handleLibraryNavigation: (targetGroup: string, shelfId?: string) => void;
@@ -111,6 +113,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
   handleBookDownload,
   handleBookDelete,
   handleBookPurge,
+  handleBookDeleteLocalCopy,
   handleSetSelectMode,
   handleShowDetailsBook,
   handleLibraryNavigation,
@@ -199,7 +202,8 @@ const Bookshelf: React.FC<BookshelfProps> = ({
   const [tagBookHashes, setTagBookHashes] = useState<string[] | null>(null);
   const [importBookUrl] = useState(searchParams?.get('url') || '');
 
-  const abortDeletionRef = useRef(false);
+  // Bumped by each deletion run and by Cancel; a run stops once it is stale.
+  const deletionRunRef = useRef(0);
   const selectAllAppliedRef = useRef(false);
   const isImportingBook = useRef(false);
   const iconSize15 = useResponsiveSize(15);
@@ -490,27 +494,36 @@ const Bookshelf: React.FC<BookshelfProps> = ({
     return filteredBooks.filter((book) => wanted.has(book.hash) && !book.deletedAt);
   };
 
-  const confirmDelete = async (purgeData: boolean) => {
-    const books = getBooksToDelete();
-    // Toggling "purge all reading data" on the confirmation routes the whole
-    // batch through the purge path, which also wipes each book's reading-data
-    // sidecars (config/nav) instead of leaving the metadata folder behind.
-    const deleteBook = purgeData ? handleBookPurge : handleBookDelete;
+  const runDeletion = async (
+    books: Book[],
+    deleteBook: (book: Book, syncBooks?: boolean) => Promise<boolean>,
+  ) => {
+    const run = ++deletionRunRef.current;
     const concurrency = 20;
 
-    for (let i = 0; i < books.length; i += concurrency) {
-      if (abortDeletionRef.current) {
-        abortDeletionRef.current = false;
-        break;
-      }
+    for (let i = 0; i < books.length && run === deletionRunRef.current; i += concurrency) {
       const batch = books.slice(i, i + concurrency);
       await Promise.all(batch.map((book) => deleteBook(book, false)));
     }
     handlePushLibrary();
+    // Cancel already closed this run's alert, and a newer run owns the one
+    // that may be open now.
+    if (run !== deletionRunRef.current) return;
     setSelectedBooks([]);
     setShowDeleteAlert(false);
     setShowSelectModeActions(true);
   };
+
+  // Toggling "purge all reading data" on the confirmation routes the whole
+  // batch through the purge path, which also wipes each book's reading-data
+  // sidecars (config/nav) instead of leaving the metadata folder behind.
+  const confirmDelete = (purgeData: boolean) =>
+    runDeletion(getBooksToDelete(), purgeData ? handleBookPurge : handleBookDelete);
+
+  // "Remove from Device Only" (#7318) skips the selected books that would be
+  // left with no copy anywhere, or that have nothing on this device.
+  const confirmDeleteLocalCopies = () =>
+    runDeletion(getBooksToDelete().filter(canRemoveFromDeviceOnly), handleBookDeleteLocalCopy);
 
   const deleteSelectedBooks = () => {
     // Expand any group ids in the selection into the book hashes they
@@ -1155,12 +1168,14 @@ const Bookshelf: React.FC<BookshelfProps> = ({
               count: getBooksToDelete().length,
             })}
             showPurgeToggle
+            deviceOnlyCount={getBooksToDelete().filter(canRemoveFromDeviceOnly).length}
             onCancel={() => {
-              abortDeletionRef.current = true;
+              deletionRunRef.current++;
               setShowDeleteAlert(false);
               setShowSelectModeActions(true);
             }}
             onConfirm={confirmDelete}
+            onConfirmDeviceOnly={confirmDeleteLocalCopies}
           />
         </div>
       )}

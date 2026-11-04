@@ -2717,5 +2717,7 @@
   "Stop Preview": "Stoppa förhandslyssning",
   "Voices are busy right now. Try again in a moment": "Rösterna är upptagna just nu. Försök igen om en stund",
   "You have used today's voice previews. Try again tomorrow": "Du har använt dagens röstprov. Försök igen i morgon",
-  "Voice Library": "Röstbibliotek"
+  "Voice Library": "Röstbibliotek",
+  "Remove the downloaded files of {{count}} book(s) and keep them in the cloud._one": "Ta bort den nedladdade filen för {{count}} bok och behåll den i molnet.",
+  "Remove the downloaded files of {{count}} book(s) and keep them in the cloud._other": "Ta bort de nedladdade filerna för {{count}} böcker och behåll dem i molnet."
 }

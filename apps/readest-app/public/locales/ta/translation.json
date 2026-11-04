@@ -2717,5 +2717,7 @@
   "Stop Preview": "முன்னோட்டத்தை நிறுத்து",
   "Voices are busy right now. Try again in a moment": "குரல்கள் இப்போது பிஸியாக உள்ளன. சிறிது நேரத்தில் மீண்டும் முயலவும்",
   "You have used today's voice previews. Try again tomorrow": "இன்றைய குரல் முன்னோட்டங்களைப் பயன்படுத்திவிட்டீர்கள். நாளை மீண்டும் முயலவும்",
-  "Voice Library": "குரல் நூலகம்"
+  "Voice Library": "குரல் நூலகம்",
+  "Remove the downloaded files of {{count}} book(s) and keep them in the cloud._one": "{{count}} புத்தகத்தின் பதிவிறக்கிய கோப்பை நீக்கி, அதை Cloud இல் வைத்திருக்கவும்.",
+  "Remove the downloaded files of {{count}} book(s) and keep them in the cloud._other": "{{count}} புத்தகங்களின் பதிவிறக்கிய கோப்புகளை நீக்கி, அவற்றை Cloud இல் வைத்திருக்கவும்."
 }

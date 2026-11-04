@@ -2853,5 +2853,9 @@
   "Stop Preview": "Ustavi predogled",
   "Voices are busy right now. Try again in a moment": "Glasovi so trenutno zasedeni. Poskusite znova čez trenutek",
   "You have used today's voice previews. Try again tomorrow": "Današnje predoglede glasov ste porabili. Poskusite znova jutri",
-  "Voice Library": "Knjižnica glasov"
+  "Voice Library": "Knjižnica glasov",
+  "Remove the downloaded files of {{count}} book(s) and keep them in the cloud._one": "Odstrani preneseno datoteko {{count}} knjige in jo obdrži v oblaku.",
+  "Remove the downloaded files of {{count}} book(s) and keep them in the cloud._two": "Odstrani prenesene datoteke {{count}} knjig in jih obdrži v oblaku.",
+  "Remove the downloaded files of {{count}} book(s) and keep them in the cloud._few": "Odstrani prenesene datoteke {{count}} knjig in jih obdrži v oblaku.",
+  "Remove the downloaded files of {{count}} book(s) and keep them in the cloud._other": "Odstrani prenesene datoteke {{count}} knjig in jih obdrži v oblaku."
 }
