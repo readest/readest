@@ -8,6 +8,7 @@ import {
   cleanAnkiField,
   defaultImportLang,
   ankiNotesToSend,
+  ankiTagUpdates,
   importLanguageOptions,
   planAnkiImport,
 } from '@/services/vocabulary/anki';
@@ -238,41 +239,42 @@ describe('ankiNotesToSend', () => {
     occurrences: [{ sentence: 'The spice must flow.', at: 1, bookTitle: 'Dune' }],
   });
 
-  it('builds the file export card plus a language tag', () => {
-    const { notes, skipped } = ankiNotesToSend([spice], []);
+  it('builds the file export card plus language and mark tags', () => {
     const card = ankiCardOf(spice);
-    expect(notes).toEqual([
-      { fields: [card.front, card.back], tags: [...card.tags, 'readest::lang::en'] },
+    expect(ankiNotesToSend([spice], [])).toEqual([
+      {
+        fields: [card.front, card.back],
+        tags: [...card.tags, 'readest::lang::en', 'readest::learning'],
+      },
     ]);
-    expect(skipped).toBe(0);
   });
 
   it('skips a word already in the deck under any note type', () => {
-    expect(ankiNotesToSend([spice], [{ fields: ['Spice', 'x'], tags: '' }]).skipped).toBe(1);
+    expect(ankiNotesToSend([spice], [{ fields: ['Spice', 'x'], tags: '' }])).toEqual([]);
   });
 
   it('skips a word a Readest note already carries in the same language', () => {
-    const sent = ankiNotesToSend([spice], []).notes[0]!;
+    const sent = ankiNotesToSend([spice], [])[0]!;
     const existing = [{ fields: sent.fields, tags: sent.tags.join(' ') }];
-    expect(ankiNotesToSend([spice], existing)).toEqual({ notes: [], skipped: 1 });
+    expect(ankiNotesToSend([spice], existing)).toEqual([]);
   });
 
   it('recognises a sent phrase longer than an imported word may be', () => {
     const phrase = entry('the spice must flow on arrakis', {
       word: 'the spice must flow on Arrakis',
     });
-    const sent = ankiNotesToSend([phrase], []).notes[0]!;
+    const sent = ankiNotesToSend([phrase], [])[0]!;
     expect(ankiNotesToSend([phrase], [{ fields: sent.fields, tags: sent.tags.join(' ') }])).toEqual(
-      { notes: [], skipped: 1 },
+      [],
     );
   });
 
   it('recognises a sent word whose spacing the card normalizes', () => {
     const spaced = entry('ice  cream', { word: 'ice\u00a0 cream' });
-    const sent = ankiNotesToSend([spaced], []).notes[0]!;
-    expect(
-      ankiNotesToSend([spaced], [{ fields: sent.fields, tags: sent.tags.join(' ') }]).skipped,
-    ).toBe(1);
+    const sent = ankiNotesToSend([spaced], [])[0]!;
+    expect(ankiNotesToSend([spaced], [{ fields: sent.fields, tags: sent.tags.join(' ') }])).toEqual(
+      [],
+    );
   });
 
   it('round-trips a word without a hint without inventing one', () => {
@@ -281,7 +283,7 @@ describe('ankiNotesToSend', () => {
         { sentence: 'A kettle boiling.', at: 1, bookTitle: 'The Hobbit', bookAuthor: 'Tolkien' },
       ],
     });
-    const sent = ankiNotesToSend([plain], []).notes[0]!;
+    const sent = ankiNotesToSend([plain], [])[0]!;
     const back = { fields: [...sent.fields], tags: sent.tags.join(' '), mature: false };
     expect(planAnkiImport([back], { 'en:kettle': plain }, 'en').ops).toEqual([]);
     expect(planAnkiImport([back], {}, 'en').ops).toEqual([
@@ -291,12 +293,67 @@ describe('ankiNotesToSend', () => {
 
   it('does not skip the same word in another language', () => {
     const fr = entry('pain', { lang: 'fr' });
-    expect(
-      ankiNotesToSend([fr], [{ fields: ['pain'], tags: 'readest::lang::en' }]).notes,
-    ).toHaveLength(1);
+    expect(ankiNotesToSend([fr], [{ fields: ['pain'], tags: 'readest::lang::en' }])).toHaveLength(
+      1,
+    );
   });
 
   it('never sends a deleted word', () => {
-    expect(ankiNotesToSend([entry('gone', { deletedAt: 3 })], []).notes).toEqual([]);
+    expect(ankiNotesToSend([entry('gone', { deletedAt: 3 })], [])).toEqual([]);
+  });
+});
+
+describe('ankiTagUpdates', () => {
+  const words = (...list: VocabularyEntry[]) => Object.fromEntries(list.map((e) => [e.id, e]));
+  const row = (id: number, word: string, tags: string) => ({ id, fields: [word], tags });
+
+  it("tags a Learning word's note, keeping its other tags", () => {
+    expect(
+      ankiTagUpdates(
+        [row(1, 'spice', ' readest Dune ')],
+        words(entry('spice', { state: 'learning' })),
+        'en',
+      ),
+    ).toEqual([{ id: 1, tags: ['readest', 'Dune', 'readest::learning'] }]);
+  });
+
+  it('replaces learning with mastered', () => {
+    expect(
+      ankiTagUpdates(
+        [row(1, 'spice', 'readest readest::learning')],
+        words(entry('spice', { state: 'mastered' })),
+        'en',
+      ),
+    ).toEqual([{ id: 1, tags: ['readest', 'readest::mastered'] }]);
+  });
+
+  it("removes the mark from a Looked Up word's note", () => {
+    expect(
+      ankiTagUpdates([row(1, 'spice', 'x readest::mastered')], words(entry('spice')), 'en'),
+    ).toEqual([{ id: 1, tags: ['x'] }]);
+  });
+
+  it('leaves a note alone when its mark already matches, in any case', () => {
+    const spice = words(entry('spice', { state: 'learning' }));
+    expect(ankiTagUpdates([row(1, 'spice', 'Readest::Learning')], spice, 'en')).toEqual([]);
+    expect(ankiTagUpdates([row(2, 'sandworm', 'x')], words(entry('sandworm')), 'en')).toEqual([]);
+  });
+
+  it('leaves notes without a live word alone', () => {
+    const gone = words(entry('gone', { state: 'learning', deletedAt: 3 }));
+    expect(ankiTagUpdates([row(1, 'gone', ''), row(2, 'unknown', '')], gone, 'en')).toEqual([]);
+  });
+
+  it('files a note by its language tag, else the given language', () => {
+    const list = words(
+      entry('pain', { lang: 'fr', state: 'learning' }),
+      entry('brot', { lang: 'de', state: 'mastered' }),
+    );
+    expect(
+      ankiTagUpdates([row(1, 'pain', 'readest::lang::fr'), row(2, 'Brot', '')], list, 'de'),
+    ).toEqual([
+      { id: 1, tags: ['readest::lang::fr', 'readest::learning'] },
+      { id: 2, tags: ['readest::mastered'] },
+    ]);
   });
 });

@@ -111,7 +111,8 @@ export const useAnkiLink = () => {
       if (!(await ready())) return;
       const deckIds = deckFamily(await ankiListDecks(), DECK_NAME);
       const existing = deckIds.length ? (await ankiReadDeck(deckIds, false)).notes : [];
-      const { notes, skipped } = ankiNotesToSend(entries, existing);
+      const notes = ankiNotesToSend(entries, existing);
+      const skipped = entries.filter((e) => !e.deletedAt).length - notes.length;
       const added = notes.length ? await ankiAddNotes(DECK_NAME, notes) : 0;
       const parts = added ? [_('Added {{count}} words to Anki', { count: added })] : [];
       if (skipped) parts.push(_('{{count}} already in Anki', { count: skipped }));

@@ -5,7 +5,7 @@ import { TRANSLATOR_LANGS } from '@/services/constants';
 import { getLanguageName } from '@/utils/lang';
 import { entryId, normalizeWordKey, vocabularyLang } from './entry';
 import { UNSPACED, ankiCardOf } from './export';
-import type { VocabularyEntry, VocabularyImport } from './types';
+import type { VocabularyEntry, VocabularyImport, VocabularyState } from './types';
 
 const MAX_WORD_LEN = 40;
 const MAX_WORD_COUNT = 5;
@@ -14,6 +14,12 @@ const MAX_UNSPACED_LEN = 12;
 const MAX_HINT_LEN = 80;
 
 const LANG_TAG_PREFIX = 'readest::lang::';
+// The mark tag Sync keeps on each note in step with the word (none for Looked Up).
+const MARK_TAGS: Partial<Record<VocabularyState, string>> = {
+  learning: 'readest::learning',
+  mastered: 'readest::mastered',
+};
+const isMarkTag = (tag: string) => Object.values(MARK_TAGS).includes(tag.toLowerCase());
 
 // Older Anki editors start each new line with an opening <div>, newer ones close it.
 const BREAKS = /<br\s*\/?>|<\/?(?:div|p|li|h[1-6]|tr)\b[^>]*>/gi;
@@ -193,33 +199,66 @@ export interface AnkiOutgoingNote {
   tags: string[];
 }
 
+// Keyed by what the card's first field shows, without the import's length
+// limits, so anything Sync wrote is recognised next time.
+const noteKey = (fields: string[]) => normalizeWordKey(ankiHeadwordOf(fields));
+
 /**
- * The notes Send adds. A word is left out when the deck already has a note for
+ * The notes Sync adds. A word is left out when the deck already has a note for
  * it, under any note type, tagged with the same language or with none.
  */
 export const ankiNotesToSend = (
   entries: VocabularyEntry[],
   existing: { fields: string[]; tags: string }[],
-): { notes: AnkiOutgoingNote[]; skipped: number } => {
-  // Both sides are keyed by what the card's first field shows, without the
-  // import's length limits, so anything Send wrote is recognised next time.
-  const keyOf = (fields: string[]) => normalizeWordKey(ankiHeadwordOf(fields));
+): AnkiOutgoingNote[] => {
   const have = new Set<string>();
   for (const n of existing) {
-    const key = keyOf(n.fields);
+    const key = noteKey(n.fields);
     if (key) have.add(`${ankiLangOf(n.tags) ?? '*'}:${key}`);
   }
   const notes: AnkiOutgoingNote[] = [];
-  let skipped = 0;
   for (const e of entries) {
     if (e.deletedAt) continue;
     const { front, back, tags } = ankiCardOf(e);
-    const key = keyOf([front]);
-    if (have.has(`${e.lang}:${key}`) || have.has(`*:${key}`)) {
-      skipped++;
-      continue;
-    }
-    notes.push({ fields: [front, back], tags: [...tags, ankiLangTag(e.lang)] });
+    const key = noteKey([front]);
+    if (have.has(`${e.lang}:${key}`) || have.has(`*:${key}`)) continue;
+    const mark = MARK_TAGS[e.state];
+    notes.push({
+      fields: [front, back],
+      tags: [...tags, ankiLangTag(e.lang), ...(mark ? [mark] : [])],
+    });
   }
-  return { notes, skipped };
+  return notes;
+};
+
+/** A note's full tag list, as Sync writes it back. */
+export interface AnkiTagUpdate {
+  id: number;
+  tags: string[];
+}
+
+/**
+ * The notes whose mark tag no longer matches their word in Readest. Notes
+ * without a live word are left as they are, and so are their other tags.
+ */
+export const ankiTagUpdates = (
+  notes: { id: number; fields: string[]; tags: string }[],
+  entries: Record<string, VocabularyEntry>,
+  lang: string,
+): AnkiTagUpdate[] => {
+  const updates: AnkiTagUpdate[] = [];
+  for (const n of notes) {
+    const key = noteKey(n.fields);
+    const e = key ? entries[entryId(ankiLangOf(n.tags) ?? lang, key)] : undefined;
+    if (!e || e.deletedAt) continue;
+    const tags = n.tags.split(/\s+/).filter(Boolean);
+    const marks = tags.filter(isMarkTag).map((t) => t.toLowerCase());
+    const want = MARK_TAGS[e.state];
+    if (want ? marks.length === 1 && marks[0] === want : !marks.length) continue;
+    updates.push({
+      id: n.id,
+      tags: [...tags.filter((t) => !isMarkTag(t)), ...(want ? [want] : [])],
+    });
+  }
+  return updates;
 };
