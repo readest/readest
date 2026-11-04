@@ -330,8 +330,9 @@ export function useSync(bookKey?: string) {
     async (bookNotes?: BookNote[], bookId?: string, metaHash?: string, op: SyncOp = 'both') => {
       if (!lastSyncedAtInited) return;
       if (!isSyncCategoryEnabled('note')) return;
+      let pushed: boolean | undefined;
       if ((op === 'push' || op === 'both') && bookNotes?.length) {
-        const pushed = await pushChanges({ notes: bookNotes });
+        pushed = await pushChanges({ notes: bookNotes });
         if (pushed && bookId && bookKey) {
           setConfig(bookKey, { lastPushedAtNotes: Date.now() });
         }
@@ -346,6 +347,7 @@ export function useSync(bookKey?: string) {
           metaHash,
         );
       }
+      return pushed;
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [lastSyncedAtInited, lastSyncedAtNotes],

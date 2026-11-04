@@ -42,7 +42,9 @@ export const useNotesSync = (bookKey: string) => {
   };
 
   // CrossPoint reads EPUBs: their highlights carry its anchor too, the way
-  // every note carries KOReader's xpointers.
+  // every note carries KOReader's xpointers. A note pulled from another copy of
+  // the book has no row under this one: pushing it for an anchor would insert a
+  // row stamped now, and that stale copy would outrank the real one everywhere.
   const needsCrossPointAnchor = (note: BookNote) => {
     const bookData = getBookData(bookKey);
     return (
@@ -52,7 +54,8 @@ export const useNotesSync = (bookKey: string) => {
       !note.deletedAt &&
       anchorTriedRef.current.get(note.id) !== note.cfi &&
       bookData?.book?.format === 'EPUB' &&
-      !!bookData.bookDoc
+      !!bookData.bookDoc &&
+      (!note.bookHash || note.bookHash === bookData.book.hash)
     );
   };
 
@@ -220,7 +223,14 @@ export const useNotesSync = (bookKey: string) => {
                 pushedAtRef.current.set(note.id, note.updatedAt);
               }
             });
-            syncNotes(enriched, book?.hash, book?.metaHash, 'both');
+            syncNotes(enriched, book?.hash, book?.metaHash, 'both').then((pushed) => {
+              if (pushed !== false) return;
+              // What the tries worked out went with the push: try again.
+              enriched.forEach((note) => {
+                xpointerTriedRef.current.delete(note.id);
+                anchorTriedRef.current.delete(note.id);
+              });
+            });
           });
         } else {
           syncNotes(newNotes.notes, book?.hash, book?.metaHash, 'both');
@@ -249,12 +259,18 @@ export const useNotesSync = (bookKey: string) => {
   }, [hasLocation, hasView, config?.booknotes, handleAutoSync]);
 
   useEffect(() => {
-    // A reply's anchor for the same range fills in a local copy that won the
-    // merge: the local null is what cleared the old range's, not this one.
-    const withReplyAnchor = (merged: BookNote, reply: BookNote): BookNote =>
-      !merged.crosspoint && reply.crosspoint && merged.cfi === reply.cfi
-        ? { ...merged, crosspoint: reply.crosspoint }
-        : merged;
+    // A local copy that won the merge still takes the reply's xpointers and
+    // anchor for the same range, or it would look unanchored and be stamped and
+    // pushed again. A local null only cleared the old range's.
+    const withReplyAnchors = (merged: BookNote, reply: BookNote): BookNote => {
+      if (merged.cfi !== reply.cfi) return merged;
+      const { xpointer0, xpointer1, crosspoint } = reply;
+      return {
+        ...merged,
+        ...(!merged.xpointer0 && xpointer0 ? { xpointer0, xpointer1 } : {}),
+        ...(!merged.crosspoint && crosspoint ? { crosspoint } : {}),
+      };
+    };
     const processNewNote = (note: BookNote) => {
       const config = getConfig(bookKey);
       const oldNotes = config?.booknotes ?? [];
@@ -273,7 +289,7 @@ export const useNotesSync = (bookKey: string) => {
           // first push of a drawing was in flight. Keep ours, stamped after
           // the reply so the next sync pushes it. A deletion may come from
           // another device, so it goes through the usual newest-wins rule.
-          return withReplyAnchor(
+          return withReplyAnchors(
             {
               ...note,
               ...existingNote,
@@ -297,7 +313,7 @@ export const useNotesSync = (bookKey: string) => {
         } else {
           // The local note wins; a losing tombstone must not leak its
           // deletedAt through a key the live note never had.
-          return withReplyAnchor(
+          return withReplyAnchors(
             { ...note, ...existingNote, deletedAt: existingNote.deletedAt },
             note,
           );

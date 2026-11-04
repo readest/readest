@@ -215,6 +215,19 @@ describe('useNotesSync with CrossPoint anchors', () => {
       expect(saved()).toEqual([expect.objectContaining({ note: 'kept', crosspoint: anchor })]);
     });
 
+    test('fills in its xpointers for the same range', async () => {
+      reply(h.highlight.cfi);
+      open([{ ...local, xpointer0: undefined, xpointer1: undefined }]);
+      await waitFor(() => expect(h.setConfigMock).toHaveBeenCalled());
+      expect(saved()).toEqual([
+        expect.objectContaining({
+          note: 'kept',
+          xpointer0: h.highlight.xpointer0,
+          xpointer1: h.highlight.xpointer1,
+        }),
+      ]);
+    });
+
     test('leaves out an anchor for the range the highlight moved away from', async () => {
       reply('epubcfi(/6/4!/4/2,/1:9,/1:12)');
       open([local]);
