@@ -2729,9 +2729,12 @@
   "{{count}} already in Anki_one": "{{count}} υπάρχει ήδη στο Anki",
   "{{count}} already in Anki_other": "{{count}} υπάρχουν ήδη στο Anki",
   "No decks in AnkiDroid.": "Δεν υπάρχουν τράπουλες στο AnkiDroid.",
-  "Imported {{added}} new words, {{mastered}} marked Mastered": "Εισήχθησαν {{added}} νέες λέξεις, {{mastered}} σημειώθηκαν ως «Κατακτημένη»",
   "{{count}} skipped_one": "{{count}} παραλείφθηκε",
   "{{count}} skipped_other": "{{count}} παραλείφθηκαν",
   "Update AnkiDroid to bring back mastered words.": "Ενημερώστε το AnkiDroid για να επαναφέρετε τις κατακτημένες λέξεις.",
-  "Send to Anki": "Αποστολή στο Anki"
+  "Send to Anki": "Αποστολή στο Anki",
+  "Imported {{count}} new words_one": "Εισήχθη {{count}} νέα λέξη",
+  "Imported {{count}} new words_other": "Εισήχθησαν {{count}} νέες λέξεις",
+  "{{count}} now Mastered_one": "{{count}} τώρα «Κατακτημένη»",
+  "{{count}} now Mastered_other": "{{count}} τώρα «Κατακτημένη»"
 }

@@ -2869,11 +2869,18 @@
   "{{count}} already in Anki_few": "Že v Ankiju: {{count}}",
   "{{count}} already in Anki_other": "Že v Ankiju: {{count}}",
   "No decks in AnkiDroid.": "V AnkiDroidu ni kompletov.",
-  "Imported {{added}} new words, {{mastered}} marked Mastered": "Uvoženih novih besed: {{added}}, označenih kot »Osvojeno«: {{mastered}}",
   "{{count}} skipped_one": "Preskočeno: {{count}}",
   "{{count}} skipped_two": "Preskočeno: {{count}}",
   "{{count}} skipped_few": "Preskočeno: {{count}}",
   "{{count}} skipped_other": "Preskočeno: {{count}}",
   "Update AnkiDroid to bring back mastered words.": "Posodobite AnkiDroid, da vrnete osvojene besede.",
-  "Send to Anki": "Pošlji v Anki"
+  "Send to Anki": "Pošlji v Anki",
+  "Imported {{count}} new words_one": "Uvoženih novih besed: {{count}}",
+  "Imported {{count}} new words_two": "Uvoženih novih besed: {{count}}",
+  "Imported {{count}} new words_few": "Uvoženih novih besed: {{count}}",
+  "Imported {{count}} new words_other": "Uvoženih novih besed: {{count}}",
+  "{{count}} now Mastered_one": "Zdaj »Osvojeno«: {{count}}",
+  "{{count}} now Mastered_two": "Zdaj »Osvojeno«: {{count}}",
+  "{{count}} now Mastered_few": "Zdaj »Osvojeno«: {{count}}",
+  "{{count}} now Mastered_other": "Zdaj »Osvojeno«: {{count}}"
 }

@@ -2659,8 +2659,9 @@
   "Added {{count}} words to Anki_other": "Anki ལ་ཚིག་ {{count}} སྣོན་ཟིན།",
   "{{count}} already in Anki_other": "{{count}} Anki ནང་ཡོད་ཟིན།",
   "No decks in AnkiDroid.": "AnkiDroid ནང་ཤོག་བུ་ཚོགས་མེད།",
-  "Imported {{added}} new words, {{mastered}} marked Mastered": "ཚིག་གསར་པ་ {{added}} ནང་འདྲེན་བྱས། {{mastered}} “ཤེས་ཟིན་པ།”ཞེས་རྟགས་བཀོད།",
   "{{count}} skipped_other": "{{count}} མཆོང་ཟིན།",
   "Update AnkiDroid to bring back mastered words.": "ཤེས་ཟིན་པའི་ཚིག་ཕྱིར་ལེན་པར་ AnkiDroid གསར་སྒྱུར་གྱིས།",
-  "Send to Anki": "Anki ལ་བསྐུར།"
+  "Send to Anki": "Anki ལ་བསྐུར།",
+  "Imported {{count}} new words_other": "ཚིག་གསར་པ་ {{count}} ནང་འདྲེན་བྱས།",
+  "{{count}} now Mastered_other": "{{count}} ད་ “ཤེས་ཟིན་པ།”"
 }

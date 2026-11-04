@@ -2659,8 +2659,9 @@
   "Added {{count}} words to Anki_other": "已向 Anki 新增 {{count}} 個字詞",
   "{{count}} already in Anki_other": "{{count}} 個已在 Anki 中",
   "No decks in AnkiDroid.": "AnkiDroid 中沒有牌組。",
-  "Imported {{added}} new words, {{mastered}} marked Mastered": "已匯入 {{added}} 個新字詞，{{mastered}} 個標記為「已掌握」",
   "{{count}} skipped_other": "已略過 {{count}} 個",
   "Update AnkiDroid to bring back mastered words.": "請更新 AnkiDroid 以匯回已掌握的字詞。",
-  "Send to Anki": "傳送到 Anki"
+  "Send to Anki": "傳送到 Anki",
+  "Imported {{count}} new words_other": "已匯入 {{count}} 個新字詞",
+  "{{count}} now Mastered_other": "{{count}} 個變為「已掌握」"
 }

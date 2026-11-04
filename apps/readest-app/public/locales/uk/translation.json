@@ -2869,11 +2869,18 @@
   "{{count}} already in Anki_many": "Уже в Anki: {{count}}",
   "{{count}} already in Anki_other": "Уже в Anki: {{count}}",
   "No decks in AnkiDroid.": "В AnkiDroid немає колод.",
-  "Imported {{added}} new words, {{mastered}} marked Mastered": "Імпортовано нових слів: {{added}}, позначено «Вивчено»: {{mastered}}",
   "{{count}} skipped_one": "Пропущено: {{count}}",
   "{{count}} skipped_few": "Пропущено: {{count}}",
   "{{count}} skipped_many": "Пропущено: {{count}}",
   "{{count}} skipped_other": "Пропущено: {{count}}",
   "Update AnkiDroid to bring back mastered words.": "Оновіть AnkiDroid, щоб повернути вивчені слова.",
-  "Send to Anki": "Надіслати в Anki"
+  "Send to Anki": "Надіслати в Anki",
+  "Imported {{count}} new words_one": "Імпортовано нових слів: {{count}}",
+  "Imported {{count}} new words_few": "Імпортовано нових слів: {{count}}",
+  "Imported {{count}} new words_many": "Імпортовано нових слів: {{count}}",
+  "Imported {{count}} new words_other": "Імпортовано нових слів: {{count}}",
+  "{{count}} now Mastered_one": "Тепер «Вивчено»: {{count}}",
+  "{{count}} now Mastered_few": "Тепер «Вивчено»: {{count}}",
+  "{{count}} now Mastered_many": "Тепер «Вивчено»: {{count}}",
+  "{{count}} now Mastered_other": "Тепер «Вивчено»: {{count}}"
 }

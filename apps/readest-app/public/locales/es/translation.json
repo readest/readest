@@ -2799,10 +2799,15 @@
   "{{count}} already in Anki_many": "{{count}} ya están en Anki",
   "{{count}} already in Anki_other": "{{count}} ya están en Anki",
   "No decks in AnkiDroid.": "No hay mazos en AnkiDroid.",
-  "Imported {{added}} new words, {{mastered}} marked Mastered": "{{added}} palabras nuevas importadas, {{mastered}} marcadas como «Dominada»",
   "{{count}} skipped_one": "{{count}} omitida",
   "{{count}} skipped_many": "{{count}} omitidas",
   "{{count}} skipped_other": "{{count}} omitidas",
   "Update AnkiDroid to bring back mastered words.": "Actualiza AnkiDroid para recuperar las palabras dominadas.",
-  "Send to Anki": "Enviar a Anki"
+  "Send to Anki": "Enviar a Anki",
+  "Imported {{count}} new words_one": "{{count}} palabra nueva importada",
+  "Imported {{count}} new words_many": "{{count}} palabras nuevas importadas",
+  "Imported {{count}} new words_other": "{{count}} palabras nuevas importadas",
+  "{{count}} now Mastered_one": "{{count}} pasa a «Dominada»",
+  "{{count}} now Mastered_many": "{{count}} pasan a «Dominada»",
+  "{{count}} now Mastered_other": "{{count}} pasan a «Dominada»"
 }

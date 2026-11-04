@@ -2729,9 +2729,12 @@
   "{{count}} already in Anki_one": "{{count}}ක් දැනටමත් Anki තුළ ඇත",
   "{{count}} already in Anki_other": "{{count}}ක් දැනටමත් Anki තුළ ඇත",
   "No decks in AnkiDroid.": "AnkiDroid තුළ ඩෙක් නැත.",
-  "Imported {{added}} new words, {{mastered}} marked Mastered": "නව වචන {{added}}ක් ආයාත කළා, {{mastered}}ක් “ප්‍රගුණ කළා” ලෙස සලකුණු කළා",
   "{{count}} skipped_one": "{{count}}ක් මඟ හැරියා",
   "{{count}} skipped_other": "{{count}}ක් මඟ හැරියා",
   "Update AnkiDroid to bring back mastered words.": "ප්‍රගුණ කළ වචන නැවත ගෙන ඒමට AnkiDroid යාවත්කාලීන කරන්න.",
-  "Send to Anki": "Anki වෙත යවන්න"
+  "Send to Anki": "Anki වෙත යවන්න",
+  "Imported {{count}} new words_one": "නව වචන {{count}}ක් ආයාත කළා",
+  "Imported {{count}} new words_other": "නව වචන {{count}}ක් ආයාත කළා",
+  "{{count}} now Mastered_one": "{{count}}ක් දැන් “ප්‍රගුණ කළා”",
+  "{{count}} now Mastered_other": "{{count}}ක් දැන් “ප්‍රගුණ කළා”"
 }

@@ -2729,9 +2729,12 @@
   "{{count}} already in Anki_one": "{{count}} al in Anki",
   "{{count}} already in Anki_other": "{{count}} al in Anki",
   "No decks in AnkiDroid.": "Geen stapels in AnkiDroid.",
-  "Imported {{added}} new words, {{mastered}} marked Mastered": "{{added}} nieuwe woorden geïmporteerd, {{mastered}} gemarkeerd als ‘Beheerst’",
   "{{count}} skipped_one": "{{count}} overgeslagen",
   "{{count}} skipped_other": "{{count}} overgeslagen",
   "Update AnkiDroid to bring back mastered words.": "Werk AnkiDroid bij om beheerste woorden terug te halen.",
-  "Send to Anki": "Naar Anki sturen"
+  "Send to Anki": "Naar Anki sturen",
+  "Imported {{count}} new words_one": "{{count}} nieuw woord geïmporteerd",
+  "Imported {{count}} new words_other": "{{count}} nieuwe woorden geïmporteerd",
+  "{{count}} now Mastered_one": "{{count}} nu ‘Beheerst’",
+  "{{count}} now Mastered_other": "{{count}} nu ‘Beheerst’"
 }

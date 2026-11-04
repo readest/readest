@@ -2869,11 +2869,18 @@
   "{{count}} already in Anki_many": "Już w Anki: {{count}}",
   "{{count}} already in Anki_other": "Już w Anki: {{count}}",
   "No decks in AnkiDroid.": "Brak talii w AnkiDroid.",
-  "Imported {{added}} new words, {{mastered}} marked Mastered": "Zaimportowano nowe słowa: {{added}}, oznaczono jako „Opanowane”: {{mastered}}",
   "{{count}} skipped_one": "Pominięto: {{count}}",
   "{{count}} skipped_few": "Pominięto: {{count}}",
   "{{count}} skipped_many": "Pominięto: {{count}}",
   "{{count}} skipped_other": "Pominięto: {{count}}",
   "Update AnkiDroid to bring back mastered words.": "Zaktualizuj AnkiDroid, aby przywrócić opanowane słowa.",
-  "Send to Anki": "Wyślij do Anki"
+  "Send to Anki": "Wyślij do Anki",
+  "Imported {{count}} new words_one": "Zaimportowano nowe słowa: {{count}}",
+  "Imported {{count}} new words_few": "Zaimportowano nowe słowa: {{count}}",
+  "Imported {{count}} new words_many": "Zaimportowano nowe słowa: {{count}}",
+  "Imported {{count}} new words_other": "Zaimportowano nowe słowa: {{count}}",
+  "{{count}} now Mastered_one": "Teraz „Opanowane”: {{count}}",
+  "{{count}} now Mastered_few": "Teraz „Opanowane”: {{count}}",
+  "{{count}} now Mastered_many": "Teraz „Opanowane”: {{count}}",
+  "{{count}} now Mastered_other": "Teraz „Opanowane”: {{count}}"
 }

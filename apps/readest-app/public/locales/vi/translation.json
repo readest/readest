@@ -2659,8 +2659,9 @@
   "Added {{count}} words to Anki_other": "Đã thêm {{count}} từ vào Anki",
   "{{count}} already in Anki_other": "{{count}} từ đã có trong Anki",
   "No decks in AnkiDroid.": "Không có bộ thẻ nào trong AnkiDroid.",
-  "Imported {{added}} new words, {{mastered}} marked Mastered": "Đã nhập {{added}} từ mới, {{mastered}} từ được đánh dấu “Đã thuộc”",
   "{{count}} skipped_other": "Đã bỏ qua {{count}}",
   "Update AnkiDroid to bring back mastered words.": "Hãy cập nhật AnkiDroid để lấy lại các từ đã thuộc.",
-  "Send to Anki": "Gửi sang Anki"
+  "Send to Anki": "Gửi sang Anki",
+  "Imported {{count}} new words_other": "Đã nhập {{count}} từ mới",
+  "{{count}} now Mastered_other": "{{count}} từ giờ là “Đã thuộc”"
 }

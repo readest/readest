@@ -2659,8 +2659,9 @@
   "Added {{count}} words to Anki_other": "เพิ่ม {{count}} คำไปยัง Anki แล้ว",
   "{{count}} already in Anki_other": "มีอยู่ใน Anki แล้ว {{count}} คำ",
   "No decks in AnkiDroid.": "ไม่มีสำรับใน AnkiDroid",
-  "Imported {{added}} new words, {{mastered}} marked Mastered": "นำเข้าคำใหม่ {{added}} คำ ทำเครื่องหมาย “จำได้แล้ว” {{mastered}} คำ",
   "{{count}} skipped_other": "ข้าม {{count}} รายการ",
   "Update AnkiDroid to bring back mastered words.": "อัปเดต AnkiDroid เพื่อนำคำที่จำได้แล้วกลับมา",
-  "Send to Anki": "ส่งไปยัง Anki"
+  "Send to Anki": "ส่งไปยัง Anki",
+  "Imported {{count}} new words_other": "นำเข้าคำใหม่ {{count}} คำ",
+  "{{count}} now Mastered_other": "{{count}} คำเป็น “จำได้แล้ว”"
 }

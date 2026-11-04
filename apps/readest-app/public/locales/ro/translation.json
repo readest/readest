@@ -2799,10 +2799,15 @@
   "{{count}} already in Anki_few": "Deja în Anki: {{count}}",
   "{{count}} already in Anki_other": "Deja în Anki: {{count}}",
   "No decks in AnkiDroid.": "Nu există pachete în AnkiDroid.",
-  "Imported {{added}} new words, {{mastered}} marked Mastered": "Cuvinte noi importate: {{added}}, marcate „Stăpânit”: {{mastered}}",
   "{{count}} skipped_one": "Omise: {{count}}",
   "{{count}} skipped_few": "Omise: {{count}}",
   "{{count}} skipped_other": "Omise: {{count}}",
   "Update AnkiDroid to bring back mastered words.": "Actualizează AnkiDroid pentru a aduce înapoi cuvintele stăpânite.",
-  "Send to Anki": "Trimite în Anki"
+  "Send to Anki": "Trimite în Anki",
+  "Imported {{count}} new words_one": "Cuvinte noi importate: {{count}}",
+  "Imported {{count}} new words_few": "Cuvinte noi importate: {{count}}",
+  "Imported {{count}} new words_other": "Cuvinte noi importate: {{count}}",
+  "{{count}} now Mastered_one": "Acum „Stăpânit”: {{count}}",
+  "{{count}} now Mastered_few": "Acum „Stăpânit”: {{count}}",
+  "{{count}} now Mastered_other": "Acum „Stăpânit”: {{count}}"
 }

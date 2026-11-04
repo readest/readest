@@ -2729,9 +2729,12 @@
   "{{count}} already in Anki_one": "{{count}} واژه از قبل در Anki هست",
   "{{count}} already in Anki_other": "{{count}} واژه از قبل در Anki هست",
   "No decks in AnkiDroid.": "در AnkiDroid هیچ دسته‌ای نیست.",
-  "Imported {{added}} new words, {{mastered}} marked Mastered": "{{added}} واژهٔ تازه وارد شد، {{mastered}} واژه «آموخته‌شده» علامت خورد",
   "{{count}} skipped_one": "{{count}} مورد رد شد",
   "{{count}} skipped_other": "{{count}} مورد رد شد",
   "Update AnkiDroid to bring back mastered words.": "برای بازگرداندن واژه‌های آموخته‌شده، AnkiDroid را به‌روزرسانی کنید.",
-  "Send to Anki": "ارسال به Anki"
+  "Send to Anki": "ارسال به Anki",
+  "Imported {{count}} new words_one": "{{count}} واژهٔ تازه وارد شد",
+  "Imported {{count}} new words_other": "{{count}} واژهٔ تازه وارد شد",
+  "{{count}} now Mastered_one": "{{count}} اکنون «آموخته‌شده»",
+  "{{count}} now Mastered_other": "{{count}} اکنون «آموخته‌شده»"
 }

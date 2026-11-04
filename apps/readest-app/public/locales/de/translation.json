@@ -2729,9 +2729,12 @@
   "{{count}} already in Anki_one": "{{count}} bereits in Anki",
   "{{count}} already in Anki_other": "{{count}} bereits in Anki",
   "No decks in AnkiDroid.": "Keine Stapel in AnkiDroid.",
-  "Imported {{added}} new words, {{mastered}} marked Mastered": "{{added}} neue Wörter importiert, {{mastered}} als „Gemeistert“ markiert",
   "{{count}} skipped_one": "{{count}} übersprungen",
   "{{count}} skipped_other": "{{count}} übersprungen",
   "Update AnkiDroid to bring back mastered words.": "Aktualisiere AnkiDroid, um gemeisterte Wörter zu übernehmen.",
-  "Send to Anki": "An Anki senden"
+  "Send to Anki": "An Anki senden",
+  "Imported {{count}} new words_one": "{{count}} neues Wort importiert",
+  "Imported {{count}} new words_other": "{{count}} neue Wörter importiert",
+  "{{count}} now Mastered_one": "{{count}} jetzt „Gemeistert“",
+  "{{count}} now Mastered_other": "{{count}} jetzt „Gemeistert“"
 }

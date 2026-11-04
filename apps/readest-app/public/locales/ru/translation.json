@@ -2869,11 +2869,18 @@
   "{{count}} already in Anki_many": "Уже в Anki: {{count}}",
   "{{count}} already in Anki_other": "Уже в Anki: {{count}}",
   "No decks in AnkiDroid.": "В AnkiDroid нет колод.",
-  "Imported {{added}} new words, {{mastered}} marked Mastered": "Импортировано новых слов: {{added}}, отмечено «Выучено»: {{mastered}}",
   "{{count}} skipped_one": "Пропущено: {{count}}",
   "{{count}} skipped_few": "Пропущено: {{count}}",
   "{{count}} skipped_many": "Пропущено: {{count}}",
   "{{count}} skipped_other": "Пропущено: {{count}}",
   "Update AnkiDroid to bring back mastered words.": "Обновите AnkiDroid, чтобы вернуть выученные слова.",
-  "Send to Anki": "Отправить в Anki"
+  "Send to Anki": "Отправить в Anki",
+  "Imported {{count}} new words_one": "Импортировано новых слов: {{count}}",
+  "Imported {{count}} new words_few": "Импортировано новых слов: {{count}}",
+  "Imported {{count}} new words_many": "Импортировано новых слов: {{count}}",
+  "Imported {{count}} new words_other": "Импортировано новых слов: {{count}}",
+  "{{count}} now Mastered_one": "Теперь «Выучено»: {{count}}",
+  "{{count}} now Mastered_few": "Теперь «Выучено»: {{count}}",
+  "{{count}} now Mastered_many": "Теперь «Выучено»: {{count}}",
+  "{{count}} now Mastered_other": "Теперь «Выучено»: {{count}}"
 }

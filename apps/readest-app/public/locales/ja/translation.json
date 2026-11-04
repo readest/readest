@@ -2659,8 +2659,9 @@
   "Added {{count}} words to Anki_other": "{{count}}語をAnkiに追加しました",
   "{{count}} already in Anki_other": "{{count}}語はAnkiに登録済み",
   "No decks in AnkiDroid.": "AnkiDroidにデッキがありません。",
-  "Imported {{added}} new words, {{mastered}} marked Mastered": "新しい単語を{{added}}件インポートし、{{mastered}}件を「習得済み」にしました",
   "{{count}} skipped_other": "{{count}}件をスキップ",
   "Update AnkiDroid to bring back mastered words.": "習得済みの単語を取り込むにはAnkiDroidを更新してください。",
-  "Send to Anki": "Ankiに送る"
+  "Send to Anki": "Ankiに送る",
+  "Imported {{count}} new words_other": "新しい単語を{{count}}件インポート",
+  "{{count}} now Mastered_other": "{{count}}件が「習得済み」に"
 }

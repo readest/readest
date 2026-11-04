@@ -65,7 +65,8 @@ export const useAnkiLink = () => {
   const premiumBadge =
     !user || (userProfilePlan !== undefined && !allowed) ? _('Premium') : undefined;
 
-  const toast = (type: 'info' | 'warning' | 'error', message: string) =>
+  // Results use `success`: unlike `info`, it wraps instead of cutting a summary off.
+  const toast = (type: 'success' | 'warning' | 'error', message: string) =>
     eventDispatcher.dispatch('toast', { type, message, timeout: 3000 });
 
   /** True when the reader may go on; otherwise sends them to sign in or to the plans. */
@@ -113,9 +114,9 @@ export const useAnkiLink = () => {
       const existing = deck ? (await ankiReadDeck(deck.id, false)).notes : [];
       const { notes, skipped } = ankiNotesToSend(entries, existing);
       const added = notes.length ? await ankiAddNotes(DECK_NAME, notes) : 0;
-      const parts = [_('Added {{count}} words to Anki', { count: added })];
+      const parts = added ? [_('Added {{count}} words to Anki', { count: added })] : [];
       if (skipped) parts.push(_('{{count}} already in Anki', { count: skipped }));
-      toast('info', parts.join(' · '));
+      toast('success', parts.join(' · '));
     } catch (err) {
       fail(err);
     }
@@ -127,7 +128,7 @@ export const useAnkiLink = () => {
       if (!(await ready())) return;
       const decks = await ankiListDecks();
       if (!decks.length) {
-        toast('info', _('No decks in AnkiDroid.'));
+        toast('warning', _('No decks in AnkiDroid.'));
         return;
       }
       const { entries } = useVocabularyStore.getState();
@@ -158,15 +159,11 @@ export const useAnkiLink = () => {
       );
       store.importWords(plan.ops);
       setImportState(null);
-      const parts = [
-        _('Imported {{added}} new words, {{mastered}} marked Mastered', {
-          added: plan.added,
-          mastered: plan.mastered,
-        }),
-      ];
+      const parts = [_('Imported {{count}} new words', { count: plan.added })];
+      if (plan.mastered) parts.push(_('{{count}} now Mastered', { count: plan.mastered }));
       if (plan.skipped) parts.push(_('{{count}} skipped', { count: plan.skipped }));
       if (!cards) parts.push(_('Update AnkiDroid to bring back mastered words.'));
-      toast('info', parts.join(' · '));
+      toast('success', parts.join(' · '));
     } catch (err) {
       fail(err);
     }

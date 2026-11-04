@@ -2799,10 +2799,15 @@
   "{{count}} already in Anki_two": "כבר ב-Anki: {{count}}",
   "{{count}} already in Anki_other": "כבר ב-Anki: {{count}}",
   "No decks in AnkiDroid.": "אין חפיסות ב-AnkiDroid.",
-  "Imported {{added}} new words, {{mastered}} marked Mastered": "מילים חדשות שיובאו: {{added}}, סומנו כ„נלמדה”: {{mastered}}",
   "{{count}} skipped_one": "דולגו: {{count}}",
   "{{count}} skipped_two": "דולגו: {{count}}",
   "{{count}} skipped_other": "דולגו: {{count}}",
   "Update AnkiDroid to bring back mastered words.": "יש לעדכן את AnkiDroid כדי להחזיר מילים שנלמדו.",
-  "Send to Anki": "שליחה ל-Anki"
+  "Send to Anki": "שליחה ל-Anki",
+  "Imported {{count}} new words_one": "מילים חדשות שיובאו: {{count}}",
+  "Imported {{count}} new words_two": "מילים חדשות שיובאו: {{count}}",
+  "Imported {{count}} new words_other": "מילים חדשות שיובאו: {{count}}",
+  "{{count}} now Mastered_one": "עכשיו „נלמדה”: {{count}}",
+  "{{count}} now Mastered_two": "עכשיו „נלמדה”: {{count}}",
+  "{{count}} now Mastered_other": "עכשיו „נלמדה”: {{count}}"
 }

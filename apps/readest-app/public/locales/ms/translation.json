@@ -2659,8 +2659,9 @@
   "Added {{count}} words to Anki_other": "{{count}} perkataan ditambah ke Anki",
   "{{count}} already in Anki_other": "{{count}} sudah ada dalam Anki",
   "No decks in AnkiDroid.": "Tiada dek dalam AnkiDroid.",
-  "Imported {{added}} new words, {{mastered}} marked Mastered": "{{added}} perkataan baharu diimport, {{mastered}} ditanda “Dikuasai”",
   "{{count}} skipped_other": "{{count}} dilangkau",
   "Update AnkiDroid to bring back mastered words.": "Kemas kini AnkiDroid untuk membawa kembali perkataan yang dikuasai.",
-  "Send to Anki": "Hantar ke Anki"
+  "Send to Anki": "Hantar ke Anki",
+  "Imported {{count}} new words_other": "{{count}} perkataan baharu diimport",
+  "{{count}} now Mastered_other": "{{count}} kini “Dikuasai”"
 }

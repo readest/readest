@@ -140,5 +140,9 @@
   "{{count}} already in Anki_one": "{{count}} already in Anki",
   "{{count}} already in Anki_other": "{{count}} already in Anki",
   "{{count}} skipped_one": "{{count}} skipped",
-  "{{count}} skipped_other": "{{count}} skipped"
+  "{{count}} skipped_other": "{{count}} skipped",
+  "Imported {{count}} new words_one": "Imported {{count}} new word",
+  "Imported {{count}} new words_other": "Imported {{count}} new words",
+  "{{count}} now Mastered_one": "{{count}} now Mastered",
+  "{{count}} now Mastered_other": "{{count}} now Mastered"
 }

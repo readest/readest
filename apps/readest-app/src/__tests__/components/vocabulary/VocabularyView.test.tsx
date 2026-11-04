@@ -351,4 +351,43 @@ describe('VocabularyView Anki link', () => {
     expect(push).toHaveBeenCalledWith(expect.stringContaining('/user?redirect='));
     expect(saveFile).not.toHaveBeenCalled();
   });
+
+  it('reports a send that added nothing without "Added 0", in a toast that wraps', async () => {
+    const dispatch = vi.spyOn(eventDispatcher, 'dispatch');
+    anki.ankiReadDeck.mockResolvedValue({
+      notes: ['spice', 'sandworm', 'ball'].map((w, i) => ({ id: i, fields: [w], tags: '' })),
+    });
+    renderWithMenu();
+    await screen.findByRole('button', { name: 'Import from Anki' });
+    openExportMenu();
+    fireEvent.click(screen.getByRole('menuitem', { name: /Send to Anki/ }));
+    await waitFor(() =>
+      expect(dispatch).toHaveBeenCalledWith('toast', {
+        type: 'success',
+        message: '{{count}} already in Anki',
+        timeout: 3000,
+      }),
+    );
+    expect(anki.ankiAddNotes).not.toHaveBeenCalled();
+    dispatch.mockRestore();
+  });
+
+  it('reports an import with plural-aware counts in a toast that wraps', async () => {
+    const dispatch = vi.spyOn(eventDispatcher, 'dispatch');
+    anki.ankiReadDeck.mockResolvedValue({
+      notes: [{ id: 1, fields: ['ephemeral'], tags: '' }],
+      cards: [{ noteId: 1, cardType: 2, interval: 30 }],
+    });
+    renderWithMenu();
+    fireEvent.click(await screen.findByRole('button', { name: 'Import from Anki' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Import' }));
+    await waitFor(() =>
+      expect(dispatch).toHaveBeenCalledWith('toast', {
+        type: 'success',
+        message: 'Imported {{count}} new words · {{count}} now Mastered',
+        timeout: 3000,
+      }),
+    );
+    dispatch.mockRestore();
+  });
 });
