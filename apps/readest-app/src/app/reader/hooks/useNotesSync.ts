@@ -7,6 +7,7 @@ import { useReaderStore } from '@/store/readerStore';
 import { SYNC_NOTES_INTERVAL_SEC } from '@/services/constants';
 import { throttle } from '@/utils/throttle';
 import { getXPointerFromCFI, getCFIFromXPointer, getCFIFromXPointerRange } from '@/utils/xcfi';
+import { getCFIFromCrossPointAnchor, getCrossPointAnchorFromCFI } from '@/utils/crosspointClipping';
 import { getIndexFromCfi } from '@/utils/cfi';
 import { incomingNoteWins, nextBooknoteStamp } from '@/utils/booknoteStamp';
 import { removeBookNoteOverlays } from '../utils/annotatorUtil';
@@ -18,8 +19,20 @@ export const useNotesSync = (bookKey: string) => {
   const { getView, getViewsById } = useReaderStore();
   // The updatedAt of each note's oldest push not yet answered by the server.
   const pushedAtRef = useRef(new Map<string, number>());
+  // Highlights pushed this session to get a CrossPoint anchor, so one that
+  // can't get one is not pushed again on every sync.
+  const anchorTriedRef = useRef(new Set<string>());
 
   const config = getConfig(bookKey);
+
+  // CrossPoint reads EPUBs: their highlights carry its anchor too, the way
+  // every note carries KOReader's xpointers.
+  const needsCrossPointAnchor = (note: BookNote) =>
+    note.type === 'annotation' &&
+    !!note.cfi &&
+    !note.crosspoint &&
+    !note.deletedAt &&
+    getBookData(bookKey)?.book?.format === 'EPUB';
 
   const populateXPointersForPush = async (notes: BookNote[]): Promise<BookNote[]> => {
     const bookData = getBookData(bookKey);
@@ -30,7 +43,7 @@ export const useNotesSync = (bookKey: string) => {
     if (!view) return notes;
 
     const enriched: BookNote[] = [];
-    for (const note of notes) {
+    for (let note of notes) {
       // KOReader turns any pulled note with an xpointer into a highlight, so a
       // drawing never gets one; without it every plugin version skips it.
       if (note.type !== 'ink' && note.cfi && !note.xpointer0) {
@@ -46,7 +59,7 @@ export const useNotesSync = (bookKey: string) => {
               bookData.bookDoc ?? undefined,
               bookData.book?.format,
             );
-            enriched.push({
+            note = {
               ...note,
               xpointer0: xpResult.pos0 || xpResult.xpointer,
               xpointer1: xpResult.pos1,
@@ -55,11 +68,18 @@ export const useNotesSync = (bookKey: string) => {
               // without manufacturing a newer content revision; otherwise an
               // older client can repeatedly win LWW with unchanged Markdown.
               updatedAt: note.type === 'notebook' ? note.updatedAt : Date.now(),
-            });
-            continue;
+            };
           }
         } catch {
           // Conversion failed — push without xpointers
+        }
+      }
+      if (needsCrossPointAnchor(note) && bookData.bookDoc) {
+        try {
+          const crosspoint = await getCrossPointAnchorFromCFI(note.cfi, bookData.bookDoc);
+          if (crosspoint) note = { ...note, crosspoint, updatedAt: Date.now() };
+        } catch {
+          // Conversion failed — push without it
         }
       }
       enriched.push(note);
@@ -81,10 +101,19 @@ export const useNotesSync = (bookKey: string) => {
         // A tombstone only needs its id to mark the local copy deleted; never
         // drop it because its xpointer can't be resolved to a cfi (#5818).
         converted.push(note);
-      } else if (note.xpointer0 && !note.cfi) {
+      } else if ((note.xpointer0 || note.crosspoint) && !note.cfi) {
         try {
-          let cfi: string | undefined;
-          if (note.xpointer1) {
+          let cfi: string | null | undefined;
+          if (!note.xpointer0) {
+            // A clipping a CrossPoint reader synced.
+            if (bookData.bookDoc && book.format === 'EPUB') {
+              cfi = await getCFIFromCrossPointAnchor(
+                note.crosspoint!,
+                note.text ?? '',
+                bookData.bookDoc,
+              );
+            }
+          } else if (note.xpointer1) {
             cfi = await getCFIFromXPointerRange(
               note.xpointer0,
               note.xpointer1,
@@ -121,7 +150,7 @@ export const useNotesSync = (bookKey: string) => {
       } else if (note.cfi) {
         converted.push(note);
       }
-      // Discard notes with neither cfi nor xpointer
+      // Discard notes with no anchor this book can resolve
     }
     return converted;
   };
@@ -132,11 +161,19 @@ export const useNotesSync = (bookKey: string) => {
     if (!config?.location || !book || !user) return {};
 
     const bookNotes = config.booknotes ?? [];
+    // A highlight without a CrossPoint anchor goes once a session to get one.
+    const unanchored = new Set(
+      bookNotes
+        .filter((note) => needsCrossPointAnchor(note) && !anchorTriedRef.current.has(note.id))
+        .map((note) => note.id),
+    );
+    unanchored.forEach((id) => anchorTriedRef.current.add(id));
     // A note without an xpointer is pushed until it gets one; a drawing never
     // does (see populateXPointersForPush), so it goes only when it changed.
     const newNotes = bookNotes.filter(
       (note) =>
         (!note.xpointer0 && note.type !== 'ink') ||
+        unanchored.has(note.id) ||
         lastSyncedAtNotes < note.updatedAt ||
         lastSyncedAtNotes < (note.deletedAt ?? 0),
     );

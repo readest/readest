@@ -82,6 +82,10 @@ export const useAnnotationEditor = ({
             ...existingAnnotation,
             cfi: newCfi,
             text: newText,
+            // Anchors of the old range: the next push sets them for this one.
+            xpointer0: undefined,
+            xpointer1: undefined,
+            crosspoint: undefined,
             updatedAt: nextBooknoteStamp(existingAnnotation),
           };
 

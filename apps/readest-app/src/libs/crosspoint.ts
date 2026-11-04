@@ -167,7 +167,17 @@ export const linkCopy = async (
       { user_id: userId, document, book_hash: bookHash },
       { onConflict: 'user_id,document', ignoreDuplicates: true },
     );
-  return linkError ? { bookHash: null, error: linkError } : { bookHash, error: null };
+  if (linkError) return { bookHash: null, error: linkError };
+  // The reader syncs clippings before progress, so the copy's first clippings
+  // were saved under its own id. A failed move never fails the sync.
+  const { error: moveError } = await supabase
+    .from('book_notes')
+    .update({ book_hash: bookHash, updated_at: new Date().toISOString() })
+    .eq('user_id', userId)
+    .eq('book_hash', document)
+    .not('crosspoint', 'is', null);
+  if (moveError) console.warn('Could not move clippings of', document, moveError.message);
+  return { bookHash, error: null };
 };
 
 /** A book config's `[current, total]` progress, stored as a JSON string. */

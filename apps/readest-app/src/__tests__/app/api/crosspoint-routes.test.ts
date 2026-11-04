@@ -73,6 +73,10 @@ import { GET as authGET } from '@/app/api/crosspoint/users/auth/route';
 import { GET as progressGET } from '@/app/api/crosspoint/syncs/progress/[document]/route';
 import { PUT as progressPUT } from '@/app/api/crosspoint/syncs/progress/route';
 import { DELETE as keyDELETE } from '@/app/api/crosspoint/keys/[id]/route';
+import {
+  GET as clippingsGET,
+  PUT as clippingsPUT,
+} from '@/app/api/crosspoint/api/v1/clippings/[document]/route';
 
 const BASE = 'https://web.readest.com/api/crosspoint';
 const NOW = '2026-10-02T00:00:00.000Z';
@@ -1011,5 +1015,335 @@ describe('KOSync progress', () => {
     expect((await put({})).status).toBe(500);
     expect((await get()).status).toBe(500);
     warn.mockRestore();
+  });
+});
+
+// CrossPoint 2.0 syncs a book's clippings (highlights) before its progress,
+// with crosspoint-sync's clippings API at {KOSync server}/api/v1/clippings,
+// and stops the whole sync, progress included, when that fails.
+describe('KOSync clippings', () => {
+  const BOOK = '0123456789abcdef0123456789abcdef';
+  const DEVICE_ID = '7f3a9c0d2b4e6f8091a2b3c4d5e6f708';
+  // What CrossPoint sends for a clipping it saved (ClippingSync.cpp encode).
+  const deviceClipping = {
+    id: DEVICE_ID,
+    spine: 7,
+    start_page: 3,
+    end_page: 3,
+    pages: 19,
+    start_word: 40,
+    end_word: 52,
+    words: 13,
+    para: 12,
+    chapter: 'SIX',
+    text: 'and the start of three months of playing cards',
+    created_at: 1790800000,
+    layout_signature: 2864434397,
+    start_offset: 5120,
+    end_offset: 5167,
+  };
+  const { id: _id, text: _text, created_at: _created, ...deviceAnchor } = deviceClipping;
+  const url = (query = '') => `${BASE}/api/v1/clippings/${DOC}${query}`;
+  const get = (query = '?cursor=0&limit=1&format=reader') =>
+    clippingsGET(new Request(url(query), { headers: deviceHeaders('kosync') }), {
+      params: Promise.resolve({ document: DOC }),
+    });
+  const put = (body: unknown) =>
+    clippingsPUT(
+      new Request(url(), {
+        method: 'PUT',
+        headers: { ...deviceHeaders('kosync'), 'Content-Type': 'application/json' },
+        body: typeof body === 'string' ? body : JSON.stringify(body),
+      }),
+      { params: Promise.resolve({ document: DOC }) },
+    );
+
+  // The checks CrossPoint runs on each downloaded item (ClippingSync.cpp
+  // decode); one failure stops the whole sync.
+  const u16 = (v: unknown) => Number.isInteger(v) && (v as number) >= 0 && (v as number) <= 0xffff;
+  const u32 = (v: unknown) =>
+    Number.isInteger(v) && (v as number) >= 0 && (v as number) <= 0xffffffff;
+  const decodes = (item: Record<string, unknown>) => {
+    const { id, deleted, text, start_offset, end_offset, revision, para } = item;
+    if (typeof id !== 'string' || !/^[!-~]{1,64}$/.test(id)) return false;
+    if (deleted !== 0 && deleted !== 1) return false;
+    if (deleted === 1) return true;
+    if (typeof text !== 'string' || !text || new TextEncoder().encode(text).length > 4096)
+      return false;
+    const offsets = [start_offset, end_offset];
+    return (
+      Number.isSafeInteger(revision) &&
+      ['spine', 'start_page', 'end_page', 'pages', 'start_word', 'end_word', 'words'].every((k) =>
+        u16(item[k]),
+      ) &&
+      u32(item['created_at']) &&
+      u32(item['layout_signature']) &&
+      (para === undefined || u16(para)) &&
+      (offsets.every((v) => v === undefined) ||
+        (offsets.every(u32) && (offsets[0] as number) < (offsets[1] as number)))
+    );
+  };
+
+  const row = (fields: Record<string, unknown>) => ({
+    text: 'a highlight',
+    created_at: '2026-09-30T00:00:00.000Z',
+    updated_at: '2026-10-01T00:00:00.000Z',
+    deleted_at: null,
+    ...fields,
+  });
+
+  it('answers the probe with sync_version 2 and pages one item at a time', async () => {
+    results['book_notes.select'] = {
+      data: [
+        // A clipping the reader synced: its layout hints go back unchanged.
+        row({
+          id: DEVICE_ID,
+          text: deviceClipping.text,
+          created_at: '2026-09-30T20:26:40.000Z',
+          crosspoint: deviceAnchor,
+        }),
+        // A highlight a Readest app anchored.
+        row({ id: 'k3j9x0a', crosspoint: { spine: 2, start_offset: 10, end_offset: 21 } }),
+        // Deleted in Readest.
+        row({ id: 'q8w2e4r', deleted_at: '2026-10-01T00:00:00.000Z', crosspoint: { spine: 1 } }),
+      ],
+      error: null,
+    };
+    const first = await (await get()).json();
+    expect(first).toEqual({
+      document: DOC,
+      sync_version: 2,
+      cursor: 1,
+      more: true,
+      items: [
+        {
+          ...deviceClipping,
+          deleted: 0,
+          revision: Date.parse('2026-10-01T00:00:00.000Z'),
+        },
+      ],
+    });
+    expect(calls).toEqual(
+      expect.arrayContaining([
+        ['book_notes', 'eq', 'user_id', USER],
+        ['book_notes', 'eq', 'book_hash', DOC],
+        ['book_notes', 'eq', 'type', 'annotation'],
+        ['book_notes', 'not', 'crosspoint', 'is', null],
+        ['book_notes', 'order', 'created_at', { ascending: true }],
+        ['book_notes', 'order', 'id', { ascending: true }],
+      ]),
+    );
+
+    const second = await (await get('?limit=1&format=reader&cursor=1')).json();
+    expect(second).toMatchObject({ cursor: 2, more: true });
+    // The reader needs every layout field; a Readest highlight has none.
+    expect(second.items).toEqual([
+      {
+        id: 'k3j9x0a',
+        deleted: 0,
+        revision: Date.parse('2026-10-01T00:00:00.000Z'),
+        spine: 2,
+        start_page: 0,
+        end_page: 0,
+        pages: 0,
+        start_word: 0,
+        end_word: 0,
+        words: 0,
+        chapter: '',
+        text: 'a highlight',
+        created_at: 1790726400,
+        layout_signature: 0,
+        start_offset: 10,
+        end_offset: 21,
+      },
+    ]);
+
+    const third = await (await get('?limit=1&format=reader&cursor=2')).json();
+    expect(third).toMatchObject({ cursor: 3, more: false, items: [{ id: 'q8w2e4r', deleted: 1 }] });
+    const past = await (await get('?limit=1&format=reader&cursor=3')).json();
+    expect(past).toMatchObject({ cursor: 3, more: false, items: [] });
+
+    for (const page of [first, second, third]) expect(page.items.every(decodes)).toBe(true);
+  });
+
+  it('sends only items the reader can decode, and no more than it can hold', async () => {
+    const long = 'é'.repeat(3000); // 6000 bytes
+    results['book_notes.select'] = {
+      data: [
+        row({ id: 'has space', crosspoint: { spine: 1 } }),
+        row({ id: 'x'.repeat(65), crosspoint: { spine: 1 } }),
+        row({ id: 'notext', text: '', crosspoint: { spine: 1 } }),
+        row({ id: 'nospine', crosspoint: { start_offset: 1, end_offset: 2 } }),
+        row({ id: 'badrange', crosspoint: { spine: 1, start_offset: 9, end_offset: 9 } }),
+        row({ id: 'hugepage', crosspoint: { spine: 1, pages: 70000, para: -1 } }),
+        row({ id: 'long', text: long, crosspoint: { spine: 1 } }),
+      ],
+      error: null,
+    };
+    const items = (await (await get('?cursor=0&limit=50')).json()).items;
+    expect(items.map((item: { id: string }) => item.id)).toEqual(['badrange', 'hugepage', 'long']);
+    expect(items.every(decodes)).toBe(true);
+    // Offsets that cover nothing are dropped, not sent.
+    expect(items[0]).not.toHaveProperty('start_offset');
+    expect(items[1]).toMatchObject({ pages: 0 });
+    expect(items[1]).not.toHaveProperty('para');
+    // Cut at a character boundary to CrossPoint's 4096 bytes.
+    expect(items[2].text).toBe('é'.repeat(2048));
+
+    // An X3/X4 holds 256 clippings a book; one more new one stops its sync.
+    results['book_notes.select'] = {
+      data: [
+        ...Array.from({ length: 300 }, (_, i) => row({ id: `n${i}`, crosspoint: { spine: 1 } })),
+        row({ id: 'gone', deleted_at: NOW, crosspoint: { spine: 1 } }),
+      ],
+      error: null,
+    };
+    const all = await (await get('?cursor=0&limit=100')).json();
+    expect(all.more).toBe(true);
+    const ids: string[] = [];
+    for (let cursor = 0, more = true; more; ) {
+      const page = await (await get(`?cursor=${cursor}&limit=100`)).json();
+      ids.push(...page.items.map((item: { id: string }) => item.id));
+      ({ cursor, more } = page);
+    }
+    expect(ids).toHaveLength(257);
+    expect(ids.slice(0, 2)).toEqual(['n0', 'n1']);
+    expect(ids).toContain('n255');
+    expect(ids).not.toContain('n256');
+    expect(ids).toContain('gone');
+  });
+
+  it("serves a rewritten copy the library book's highlights", async () => {
+    results['crosspoint_documents.select'] = { data: { book_hash: BOOK }, error: null };
+    results['book_notes.select'] = { data: [], error: null };
+    expect(await (await get()).json()).toMatchObject({ sync_version: 2, more: false, items: [] });
+    expect(calls).toContainEqual(['book_notes', 'eq', 'book_hash', BOOK]);
+  });
+
+  it("saves a reader's clipping as a highlight Readest anchors when it opens the book", async () => {
+    const res = await put({ items: [deviceClipping] });
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ until: 1790899200, accepted: 1 });
+    expect(calls).toContainEqual([
+      'book_notes',
+      'upsert',
+      {
+        user_id: USER,
+        book_hash: DOC,
+        id: DEVICE_ID,
+        type: 'annotation',
+        style: 'highlight',
+        color: 'yellow',
+        text: deviceClipping.text,
+        note: '',
+        crosspoint: deviceAnchor,
+        created_at: '2026-09-30T20:26:40.000Z',
+        updated_at: NOW,
+      },
+      // A retried upload, or a clipping deleted meanwhile, is left as it is:
+      // a deletion is never undone by a late upload.
+      { onConflict: 'user_id,book_hash,id', ignoreDuplicates: true },
+    ]);
+  });
+
+  it('keeps only the anchor fields a reader sends', async () => {
+    await put({
+      items: [{ ...deviceClipping, chapter: 'c'.repeat(100), extra: 'x'.repeat(1000) }],
+    });
+    const [, , row] = calls.find(([t, m]) => t === 'book_notes' && m === 'upsert')!;
+    expect((row as { crosspoint: unknown }).crosspoint).toEqual({
+      ...deviceAnchor,
+      chapter: 'c'.repeat(64),
+    });
+  });
+
+  it("saves a rewritten copy's clipping under the library book", async () => {
+    results['crosspoint_documents.select'] = { data: { book_hash: BOOK }, error: null };
+    await put({ items: [deviceClipping] });
+    expect(calls).toContainEqual(
+      expect.arrayContaining([
+        'book_notes',
+        'upsert',
+        expect.objectContaining({ book_hash: BOOK }),
+      ]),
+    );
+  });
+
+  it('deletes a highlight the reader deleted', async () => {
+    const res = await put({ items: [{ id: DEVICE_ID, deleted: 1 }] });
+    expect(await res.json()).toEqual({ until: 1790899200, accepted: 1 });
+    expect(calls).toEqual(
+      expect.arrayContaining([
+        ['book_notes', 'update', { deleted_at: NOW, updated_at: NOW }],
+        ['book_notes', 'eq', 'user_id', USER],
+        ['book_notes', 'eq', 'book_hash', DOC],
+        ['book_notes', 'eq', 'id', DEVICE_ID],
+        ['book_notes', 'is', 'deleted_at', null],
+      ]),
+    );
+  });
+
+  it('rejects malformed uploads and unknown keys without writing', async () => {
+    for (const body of [
+      'not json',
+      {},
+      { items: [] },
+      { items: Array.from({ length: 51 }, () => deviceClipping) },
+      { items: [{ ...deviceClipping, id: 'has space' }] },
+      { items: [{ ...deviceClipping, text: '' }] },
+      { items: [{ ...deviceClipping, text: 'x'.repeat(4097) }] },
+      { items: [{ ...deviceClipping, spine: -1 }] },
+      { items: [{ ...deviceClipping, start_offset: undefined }] },
+      { items: [{ ...deviceClipping, end_offset: deviceClipping.start_offset }] },
+    ]) {
+      expect((await put(body)).status).toBe(400);
+    }
+    expect(wrote('book_notes')).toBe(false);
+
+    results['crosspoint_devices.select'] = { data: [], error: null };
+    expect((await put({ items: [deviceClipping] })).status).toBe(401);
+    expect((await get()).status).toBe(401);
+    expect(wrote('book_notes')).toBe(false);
+  });
+
+  it('reports database failures', async () => {
+    results['book_notes.upsert'] = { data: null, error: boom };
+    expect((await put({ items: [deviceClipping] })).status).toBe(500);
+    results['book_notes.update'] = { data: null, error: boom };
+    expect((await put({ items: [{ id: DEVICE_ID, deleted: 1 }] })).status).toBe(500);
+    results['book_notes.select'] = { data: null, error: boom };
+    expect((await get()).status).toBe(500);
+    results['crosspoint_documents.select'] = { data: null, error: boom };
+    expect((await get()).status).toBe(500);
+  });
+
+  it("moves a rewritten copy's clippings to the library book it gets linked to", async () => {
+    // A reader syncs clippings before progress, so a copy's first clippings
+    // are saved under its own id before its progress upload links it.
+    results['books.select'] = {
+      data: [{ book_hash: BOOK, title: 'Alice', format: 'EPUB', author: 'Lewis Carroll' }],
+      error: null,
+    };
+    const res = await progressPUT(
+      new Request(`${BASE}/syncs/progress`, {
+        method: 'PUT',
+        headers: deviceHeaders('kosync'),
+        body: JSON.stringify({
+          document: DOC,
+          progress: XPOINTER,
+          percentage: 0.5,
+          metadata: { title: 'Alice', authors: 'Lewis Carroll' },
+        }),
+      }),
+    );
+    expect(res.status).toBe(200);
+    expect(calls).toEqual(
+      expect.arrayContaining([
+        ['book_notes', 'update', { book_hash: BOOK, updated_at: NOW }],
+        ['book_notes', 'eq', 'user_id', USER],
+        ['book_notes', 'eq', 'book_hash', DOC],
+        ['book_notes', 'not', 'crosspoint', 'is', null],
+      ]),
+    );
   });
 });
