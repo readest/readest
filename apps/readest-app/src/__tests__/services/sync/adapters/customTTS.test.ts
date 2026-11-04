@@ -70,7 +70,8 @@ describe('customTTSAdapter', () => {
   ] as const)('clearing %s reaches other devices', (key) => {
     const before = customTTSAdapter.pack(service);
     const after = customTTSAdapter.pack({ ...service, [key]: undefined });
-    expect(after).toHaveProperty(key);
+    // undefined would pass `toHaveProperty` but is dropped by JSON.
+    expect(after[key]).toBe(key === 'disabled' ? false : null);
     const unpacked = customTTSAdapter.unpackRow(row({ ...before, ...after }), '');
     expect(unpacked).not.toHaveProperty(key);
   });
