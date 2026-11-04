@@ -11,7 +11,7 @@ const oneLine = (s: string) => s.replace(/[\t\r\n]+/g, ' ');
 const escapeRegExp = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 // Scripts written without spaces have no word boundaries to respect.
-const UNSPACED = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Thai}]/u;
+export const UNSPACED = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Thai}]/u;
 
 /** Bold `word` inside an already-escaped sentence. */
 const boldWord = (sentence: string, word: string): string => {
