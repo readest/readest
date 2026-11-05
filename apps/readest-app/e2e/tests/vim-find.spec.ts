@@ -24,6 +24,29 @@ const bookSelection = (page: Page) =>
 
 const selectedText = async (page: Page) => (await bookSelection(page)).text;
 
+// Whether the selection lies inside the renderer's viewport, mapped through the
+// (possibly scaled) frame of the page it is on.
+const selectionOnScreen = (page: Page) =>
+  page.evaluate(() => {
+    type Renderer = HTMLElement & { getContents: () => { doc: Document }[] };
+    const view = document.querySelector('foliate-view') as unknown as { renderer?: Renderer };
+    const renderer = view?.renderer;
+    for (const { doc } of renderer?.getContents() ?? []) {
+      const sel = doc.getSelection();
+      const frame = doc.defaultView?.frameElement as HTMLElement | null;
+      if (!renderer || !frame || !sel?.rangeCount || sel.isCollapsed) continue;
+      const box = frame.getBoundingClientRect();
+      const scale = box.height / frame.offsetHeight;
+      const rect = sel.getRangeAt(0).getBoundingClientRect();
+      const viewport = renderer.getBoundingClientRect();
+      return (
+        box.top + rect.top * scale >= viewport.top &&
+        box.top + rect.bottom * scale <= viewport.bottom
+      );
+    }
+    return false;
+  });
+
 const find = async (page: Page, term: string) => {
   // `/` acts on a rendered book; wait for the first section to be laid out.
   await expect
@@ -230,6 +253,8 @@ test.describe('Vim find in a PDF', () => {
     await find(page, 'Dinah');
 
     await expect.poll(() => bookSelection(page)).toMatchObject({ text: 'Dinah', index: 3 });
+    // The page was pages below the view: the match is scrolled on screen.
+    await expect.poll(() => selectionOnScreen(page)).toBe(true);
     await expect(reader.annotationPopup).toBeVisible();
   });
 });
