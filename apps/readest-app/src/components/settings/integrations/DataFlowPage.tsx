@@ -417,12 +417,12 @@ const DataFlowPage: React.FC<DataFlowPageProps> = ({ onBack, onOpenSettings }) =
               />
             </div>
           </div>
-          <div className='flex items-center justify-between gap-3 px-4'>
+          <div className='flex flex-wrap items-center justify-between gap-x-3 gap-y-1 px-4'>
             <span className='flex flex-wrap gap-x-3 text-sm'>
               <span className='whitespace-nowrap'>{`${health.ok}: ${counts.ok}`}</span>
               <span className='whitespace-nowrap'>{`${health.failed}: ${counts.failed}`}</span>
             </span>
-            <div className='flex shrink-0 items-center gap-1'>
+            <div className='ms-auto flex flex-wrap items-center justify-end gap-1'>
               <button
                 type='button'
                 onClick={resetCounts}
