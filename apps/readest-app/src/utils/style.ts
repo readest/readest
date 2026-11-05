@@ -792,11 +792,18 @@ const getParagraphLayoutStyles = (
     hanging-punctuation: allow-end last;
     widows: 2;
   }
+  /* A book's li { margin: 0 2em } narrows the text again at every list level.
+     Override Book Layout drops the end side only: with ul { padding: 0 } the
+     start side is what keeps an outside marker on the page. */
   li {
     line-height: ${lineSpacing} ${overrideLayout ? '!important' : ''};
     -webkit-hyphens: ${hyphenate ? 'auto' : 'manual'} ${overrideLayout ? '!important' : ''};
     hyphens: ${hyphenate ? 'auto' : 'manual'} ${overrideLayout ? '!important' : ''};
+    ${overrideLayout ? 'margin-inline-end: unset !important;' : ''}
   }
+  /* Replaces the browser's 40px list padding. :where() has no specificity, so
+     any padding the book writes on a list still wins. */
+  ${overrideLayout ? ':where(ul, ol) { padding-inline-start: 1.5em; }' : ''}
   p.aligned-center, blockquote.aligned-center,
   dd.aligned-center, div.aligned-center {
     text-align: center ${overrideLayout ? '!important' : ''};
