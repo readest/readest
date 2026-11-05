@@ -31,7 +31,11 @@ const h = vi.hoisted(() => {
     saveSettings: vi.fn(async (_env: unknown, _settings: SystemSettings) => {}),
   };
 
-  return { baseSettings, storeState };
+  return {
+    baseSettings,
+    storeState,
+    bookConfig: null as { location: string; lastSyncedAtNotes?: number } | null,
+  };
 });
 
 vi.mock('next/navigation', () => ({
@@ -66,7 +70,7 @@ vi.mock('@/store/settingsStore', () => {
 });
 
 vi.mock('@/store/bookDataStore', () => ({
-  useBookDataStore: () => ({ getConfig: () => null, setConfig: vi.fn() }),
+  useBookDataStore: () => ({ getConfig: () => h.bookConfig, setConfig: vi.fn() }),
 }));
 
 vi.mock('@/store/readerStore', () => ({
@@ -86,6 +90,7 @@ import { readFlowState } from '@/services/sync/dataFlow/log';
 
 beforeEach(() => {
   h.storeState.settings = h.baseSettings();
+  h.bookConfig = null;
   h.storeState.setSettings.mockClear();
   h.storeState.saveSettings.mockClear();
   syncClientMock.pullChanges.mockReset();
@@ -188,6 +193,22 @@ describe('useSync data flow', () => {
     h.storeState.settings.lastSyncedAtNotes = 5000;
 
     await push({ notes: [{ updatedAt: 4000 }, { updatedAt: 6000 }] } as unknown as SyncData);
+
+    expect(readFlowState().totals['readest-cloud:push:notes']?.count).toBe(1);
+  });
+
+  test("measures an open book's push against the book's own last sync", async () => {
+    // Opening a book re-sends notes from before its sync look-back. The
+    // library-wide cursor doesn't know this book, so it can't tell them apart.
+    h.storeState.settings.lastSyncedAtNotes = 0;
+    h.bookConfig = { location: 'epubcfi(/6/4)', lastSyncedAtNotes: 5000 };
+    const { result } = renderHook(() => useSync('book-key'));
+
+    await act(async () => {
+      await result.current.pushChanges({
+        notes: [{ updatedAt: 4000 }, { updatedAt: 4500 }, { updatedAt: 6000 }],
+      } as unknown as SyncData);
+    });
 
     expect(readFlowState().totals['readest-cloud:push:notes']?.count).toBe(1);
   });

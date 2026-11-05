@@ -304,7 +304,7 @@ export function useSync(bookKey?: string) {
       const result = await syncClient.pushChanges(payload);
       setSyncResult(result);
       for (const type of pushedTypes) {
-        const seenUpTo = lastSeenAt(type);
+        const seenUpTo = lastSeenAt(type, bookKey);
         const rows = (payload[type] ?? []) as { updatedAt?: number }[];
         const changed = rows.filter((row) => (row.updatedAt ?? seenUpTo + 1) > seenUpTo);
         recordCloudFlow('push', type, changed.length);
