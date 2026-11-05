@@ -792,11 +792,19 @@ const getParagraphLayoutStyles = (
     hanging-punctuation: allow-end last;
     widows: 2;
   }
+  /* A book's li { margin: 0 2em } narrows the text again at every list level.
+     Override Book Layout drops the end side only: with ul { padding: 0 } the
+     start side is what keeps an outside marker on the page. */
   li {
     line-height: ${lineSpacing} ${overrideLayout ? '!important' : ''};
     -webkit-hyphens: ${hyphenate ? 'auto' : 'manual'} ${overrideLayout ? '!important' : ''};
     hyphens: ${hyphenate ? 'auto' : 'manual'} ${overrideLayout ? '!important' : ''};
+    ${overrideLayout ? 'margin-inline-end: unset !important;' : ''}
   }
+  /* Shrinks the browser's 40px list padding, and never grows it at large font
+     sizes. The layer loses to every unlayered book rule, a reset like
+     * { padding: 0 } included, and still beats the browser's. */
+  ${overrideLayout ? '@layer list-indent { ul, ol { padding-inline-start: min(1.5em, 40px); } }' : ''}
   p.aligned-center, blockquote.aligned-center,
   dd.aligned-center, div.aligned-center {
     text-align: center ${overrideLayout ? '!important' : ''};
