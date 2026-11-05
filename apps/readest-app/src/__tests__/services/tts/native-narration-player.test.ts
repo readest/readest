@@ -126,6 +126,40 @@ describe('NativeNarrationPlayer', () => {
     await player.shutdown();
   });
 
+  test('a load that overtakes its queued preload waits for the same write', async () => {
+    let finishWrite = () => {};
+    vi.mocked(writeFile).mockImplementation(
+      () => new Promise<void>((resolve) => (finishWrite = resolve)),
+    );
+    const player = new NativeNarrationPlayer();
+    const blob = new Blob([new Uint8Array(4)]);
+
+    const first = player.load('Audio/ch1.mp4', blob);
+    const second = player.load('Audio/ch1.mp4', blob, 5);
+    await vi.waitFor(() => expect(writeFile).toHaveBeenCalled());
+    await new Promise((resolve) => setTimeout(resolve));
+
+    expect(writeFile).toHaveBeenCalledOnce();
+    expect(controlCalls.some((call) => call['action'] === 'load')).toBe(false);
+
+    finishWrite();
+    await Promise.all([first, second]);
+    expect(writeFile).toHaveBeenCalledOnce();
+    await player.shutdown();
+  });
+
+  test('stages again after a failed write', async () => {
+    vi.mocked(writeFile).mockRejectedValueOnce(new Error('No space left on device'));
+    const player = new NativeNarrationPlayer();
+    const blob = new Blob([new Uint8Array(4)]);
+
+    await expect(player.load('Audio/ch1.mp4', blob)).rejects.toThrow('No space left');
+    await player.load('Audio/ch1.mp4', blob);
+
+    expect(writeFile).toHaveBeenCalledTimes(2);
+    await player.shutdown();
+  });
+
   test('loads an existing local audiobook path without copying or deleting it', async () => {
     const player = new NativeNarrationPlayer();
     await player.loadPath('hash/audiobook/book.m4b', '/books/hash/audiobook/book.m4b', 20);

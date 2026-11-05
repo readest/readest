@@ -86,6 +86,10 @@ export class NativeNarrationPlayer {
   #loads = 0;
   // Staged copies of book audio this player wrote, by href.
   #staged = new Map<string, string>();
+  // Writes in flight, by href. Streaming a chapter takes long enough for a
+  // load to overtake its queued preload; a second write would truncate the
+  // file under the first, and the first would hand the player a partial one.
+  #staging = new Map<string, Promise<string>>();
   #rate = 1;
   #userPaused = true;
   #ended = false;
@@ -409,6 +413,15 @@ export class NativeNarrationPlayer {
     // file (possibly the whole book) and is never staged or removed.
     const staged = this.#staged.get(href);
     if (staged) return staged;
+    let staging = this.#staging.get(href);
+    if (!staging) {
+      staging = this.#writeStaged(href, blob).finally(() => this.#staging.delete(href));
+      this.#staging.set(href, staging);
+    }
+    return staging;
+  }
+
+  async #writeStaged(href: string, blob: Blob): Promise<string> {
     const name = `mo-narration-${hashHref(href)}.${fileExtension(href)}`;
     // Streamed: Android's IPC sends bytes as JSON, so one write of a 67 MB
     // chapter took gigabytes and Android killed the WebView, and the app with
