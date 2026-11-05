@@ -556,6 +556,55 @@ export const VocabularyChips: React.FC<{ word: string; lang: string }> = ({ word
   );
 };
 
+/**
+ * The Word Lens hint for a Learning word, typed while its definition is in
+ * view (#7325). Saves on Enter, on blur, and when the popup closes mid-edit.
+ */
+const LearningHintField: React.FC<{ word: string; lang: string }> = ({ word, lang }) => {
+  const _ = useTranslation();
+  const id = entryId(lang, normalizeWordKey(word));
+  const learning = useVocabularyStore((s) => {
+    const e = s.entries[id];
+    return !!e && !e.deletedAt && e.state === 'learning';
+  });
+  const [value, setValue] = useState(() => useVocabularyStore.getState().entries[id]?.hint ?? '');
+  // What the reader typed and hasn't saved yet; null until they type, so a
+  // hint synced in meanwhile isn't overwritten by the stale field.
+  const editRef = useRef<string | null>(null);
+
+  const save = useCallback(() => {
+    const typed = editRef.current;
+    editRef.current = null;
+    const store = useVocabularyStore.getState();
+    if (typed !== null && typed.trim() !== (store.entries[id]?.hint ?? '')) {
+      store.setHint(id, typed);
+    }
+  }, [id]);
+  useEffect(() => (learning ? save : undefined), [learning, save]);
+
+  if (!learning) return null;
+  return (
+    <div className='px-4 pb-1'>
+      <input
+        aria-label={_('Hint')}
+        value={value}
+        maxLength={80}
+        onChange={(e) => {
+          setValue(e.target.value);
+          editRef.current = e.target.value;
+        }}
+        onBlur={save}
+        onKeyDown={(e) => {
+          // keyCode 229: WebKit's Enter that confirms an IME composition.
+          if (e.key === 'Enter' && !e.nativeEvent.isComposing && e.keyCode !== 229) save();
+        }}
+        placeholder={_('Short hint shown above the word')}
+        className='eink-bordered input input-sm border-base-content/20 w-full'
+      />
+    </div>
+  );
+};
+
 export const DictionaryResultsHeader: React.FC<DictionaryResultsHeaderProps> = ({
   headerClassName,
   currentWord,
@@ -619,7 +668,10 @@ export const DictionaryResultsHeader: React.FC<DictionaryResultsHeaderProps> = (
         </div>
       </div>
       {vocabularyLang && normalizeWordKey(currentWord) ? (
-        <VocabularyChips word={currentWord} lang={vocabularyLang} />
+        <>
+          <VocabularyChips word={currentWord} lang={vocabularyLang} />
+          <LearningHintField key={currentWord} word={currentWord} lang={vocabularyLang} />
+        </>
       ) : null}
     </div>
   );
