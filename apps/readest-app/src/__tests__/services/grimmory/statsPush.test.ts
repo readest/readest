@@ -7,7 +7,7 @@ import {
   pushStatsToGrimmory,
   SESSION_GAP_SECONDS,
 } from '@/services/grimmory/statsPush';
-import type { GrimmoryReadingSession } from '@/services/grimmory/types';
+import type { GrimmoryReadingSession, GrimmorySessionPage } from '@/services/grimmory/types';
 
 const T0 = 1_800_000_000;
 const ev = (bookMd5: string, startTime: number, page: number, duration = 60): PageStatEvent =>
@@ -59,9 +59,11 @@ describe('pushStatsToGrimmory', () => {
       })),
     };
     const client = {
-      getReadingSessions: vi.fn(async () => ({
-        content: serverStarts.map((startTime) => ({ startTime })),
-      })),
+      getReadingSessions: vi.fn(
+        async (_bookId: number, _page: number): Promise<GrimmorySessionPage> => ({
+          content: serverStarts.map((startTime) => ({ startTime })),
+        }),
+      ),
       recordReadingSession: vi.fn(async (body: GrimmoryReadingSession) => {
         posted.push(body);
       }),
@@ -121,6 +123,56 @@ describe('pushStatsToGrimmory', () => {
     );
     await pushStatsToGrimmory({ db, client, store, account: 'x', now: T0 + 3600 });
     expect(posted).toEqual([]);
+  });
+
+  test('keeps a cursor per account', async () => {
+    const cursors = new Map<string, number>();
+    const { client, store, posted } = setup([]);
+    const db = {
+      getCursor: vi.fn(async (key: string) => cursors.get(key) ?? 0),
+      setCursor: vi.fn(async (key: string, value: number) => {
+        cursors.set(key, value);
+      }),
+      getEventsForPush: vi.fn(async (since: number) => ({
+        events: [ev('a', T0, 10)].filter((e) => e.startTime > since),
+      })),
+    };
+    await pushStatsToGrimmory({ db, client, store, account: 'one', now: T0 + 3600 });
+    await pushStatsToGrimmory({ db, client, store, account: 'two', now: T0 + 3600 });
+    expect(posted).toHaveLength(2);
+  });
+
+  test('two pushes at once for one account send each session once', async () => {
+    const { db, client, store, posted } = setup([ev('a', T0, 10)]);
+    const serverStarts: string[] = [];
+    client.getReadingSessions.mockImplementation(async () => ({
+      content: serverStarts.map((startTime) => ({ startTime })),
+    }));
+    client.recordReadingSession.mockImplementation(async (body: GrimmoryReadingSession) => {
+      await new Promise((resolve) => setTimeout(resolve, 5));
+      posted.push(body);
+      serverStarts.push(body.startTime);
+    });
+    await Promise.all([
+      pushStatsToGrimmory({ db, client, store, account: 'x', now: T0 + 3600 }),
+      pushStatsToGrimmory({ db, client, store, account: 'x', now: T0 + 3600 }),
+    ]);
+    expect(posted).toHaveLength(1);
+  });
+
+  test('looks past the first page of server sessions before sending', async () => {
+    // A failed push already sent the oldest 140 of these 150 sessions.
+    const events = Array.from({ length: 150 }, (_, i) => ev('a', T0 + i * 1000, 10));
+    const iso = (e: PageStatEvent) => new Date(e.startTime * 1000).toISOString();
+    const { db, client, store, posted } = setup(events);
+    // Newest first, 100 a page, as Grimmory v3.5.0 pages them.
+    const serverStarts = events.slice(0, 140).map(iso).reverse();
+    client.getReadingSessions.mockImplementation(async (_bookId: number, page: number) => ({
+      content: serverStarts.slice(page * 100, page * 100 + 100).map((startTime) => ({ startTime })),
+      page: { number: page, totalPages: Math.ceil(serverStarts.length / 100) },
+    }));
+    await pushStatsToGrimmory({ db, client, store, account: 'x', now: T0 + 1_000_000 });
+    expect(posted.map((s) => s.startTime)).toEqual(events.slice(140).map(iso));
   });
 
   test('keeps the cursor when a send fails, and skips a book deleted from the server', async () => {

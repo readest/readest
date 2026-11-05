@@ -47,19 +47,15 @@ export const groupReadingSessions = (events: PageStatEvent[]): ReadingSessionDra
   return sessions;
 };
 
+type CursorKey = `grimmory-push:${string}`;
+
 export interface GrimmoryStatsDb {
-  getCursor(key: 'grimmory-push'): Promise<number>;
-  setCursor(key: 'grimmory-push', value: number): Promise<void>;
+  getCursor(key: CursorKey): Promise<number>;
+  setCursor(key: CursorKey, value: number): Promise<void>;
   getEventsForPush(sinceStartTime: number): Promise<{ events: PageStatEvent[] }>;
 }
 
-/**
- * Sends the reading sessions recorded since the last push to Grimmory, for
- * the books matched to it. The book still being read keeps its last session
- * until it has ended, so one sitting isn't sent as many sessions. A session
- * the server already has (same start) is not sent again.
- */
-export const pushStatsToGrimmory = async (params: {
+type PushParams = {
   db: GrimmoryStatsDb;
   client: Pick<GrimmoryClient, 'getReadingSessions' | 'recordReadingSession'>;
   store: Pick<GrimmorySyncStore, 'getBooks'>;
@@ -68,9 +64,54 @@ export const pushStatsToGrimmory = async (params: {
   now: number;
   /** Hash of the book open in the reader, if any. */
   readingHash?: string;
-}): Promise<void> => {
+};
+
+const toSeconds = (startTime?: string | null) =>
+  startTime ? Math.floor(Date.parse(startTime) / 1000) : 0;
+
+/**
+ * Start times of the book's sessions on the server, back to `since`.
+ * Grimmory pages them newest first.
+ */
+const serverStartTimes = async (
+  client: PushParams['client'],
+  bookId: number,
+  since: number,
+): Promise<Set<number>> => {
+  const starts = new Set<number>();
+  for (let page = 0; ; page++) {
+    const result = await client.getReadingSessions(bookId, page);
+    const times = result.content.map((s) => toSeconds(s.startTime));
+    for (const time of times) starts.add(time);
+    const totalPages = result.page?.totalPages ?? 1;
+    if (times.length === 0 || page + 1 >= totalPages || Math.min(...times) < since) return starts;
+  }
+};
+
+const pushQueues = new Map<string, Promise<unknown>>();
+
+/**
+ * Sends the reading sessions recorded since the last push to Grimmory, for
+ * the books matched to it. The book still being read keeps its last session
+ * until it has ended, so one sitting isn't sent as many sessions. A session
+ * the server already has (same start) is not sent again. Pushes to one
+ * account take turns, so two of them can't both send the same session.
+ */
+export const pushStatsToGrimmory = (params: PushParams): Promise<void> => {
+  const run = () => pushOnce(params);
+  const result = (pushQueues.get(params.account) ?? Promise.resolve()).then(run, run);
+  const settled = result.catch(() => undefined);
+  pushQueues.set(params.account, settled);
+  void settled.then(() => {
+    if (pushQueues.get(params.account) === settled) pushQueues.delete(params.account);
+  });
+  return result;
+};
+
+const pushOnce = async (params: PushParams): Promise<void> => {
   const { db, client, store, account, now, readingHash } = params;
-  const cursor = await db.getCursor('grimmory-push');
+  const cursorKey: CursorKey = `grimmory-push:${account}`;
+  const cursor = await db.getCursor(cursorKey);
   const { events: rawEvents } = await db.getEventsForPush(cursor);
   const events = rawEvents.filter((e) => e.startTime >= 1 && e.totalPages >= 1 && e.duration > 0);
   if (events.length === 0) return;
@@ -89,10 +130,7 @@ export const pushStatsToGrimmory = async (params: {
   for (const [hash, bookSessions] of byBook) {
     const match = matches.get(hash)!;
     try {
-      const page = await client.getReadingSessions(match.bookId, 0);
-      const sent = new Set(
-        page.content.map((s) => (s.startTime ? Math.floor(Date.parse(s.startTime) / 1000) : 0)),
-      );
+      const sent = await serverStartTimes(client, match.bookId, bookSessions[0]!.startTime);
       for (const session of bookSessions) {
         if (sent.has(session.startTime)) continue;
         await client.recordReadingSession({
@@ -115,5 +153,5 @@ export const pushStatsToGrimmory = async (params: {
   const next = held.length
     ? Math.min(...held.map((s) => s.startTime)) - 1
     : events[events.length - 1]!.startTime;
-  if (next > cursor) await db.setCursor('grimmory-push', next);
+  if (next > cursor) await db.setCursor(cursorKey, next);
 };

@@ -49,12 +49,33 @@ const toMatch = (row: BookRow): GrimmoryBookMatch => ({
 export class GrimmorySyncStore {
   constructor(private appService: AppService) {}
 
-  private async withDb<T>(fn: (db: OpenDb) => Promise<T>): Promise<T> {
-    const db = await this.appService.openDatabase(DB_SCHEMA, DB_PATH, 'Data');
+  // The native plugin keeps one connection per path and close() drops it for
+  // every caller, so calls take turns: one could otherwise close the database
+  // under another, or open a transaction inside another's.
+  private static queue: Promise<unknown> = Promise.resolve();
+
+  private withDb<T>(fn: (db: OpenDb) => Promise<T>): Promise<T> {
+    const run = async () => {
+      const db = await this.appService.openDatabase(DB_SCHEMA, DB_PATH, 'Data');
+      try {
+        return await fn(db);
+      } finally {
+        await db.close();
+      }
+    };
+    const result = GrimmorySyncStore.queue.then(run, run);
+    GrimmorySyncStore.queue = result.catch(() => undefined);
+    return result;
+  }
+
+  private static async inTransaction(db: OpenDb, fn: () => Promise<void>): Promise<void> {
+    await db.execute('BEGIN');
     try {
-      return await fn(db);
-    } finally {
-      await db.close();
+      await fn();
+      await db.execute('COMMIT');
+    } catch (error) {
+      await db.execute('ROLLBACK');
+      throw error;
     }
   }
 
@@ -104,16 +125,18 @@ export class GrimmorySyncStore {
 
   /** Forget a match and its links, e.g. when the Grimmory book was deleted. */
   deleteBook(account: string, bookHash: string): Promise<void> {
-    return this.withDb(async (db) => {
-      await db.execute(`DELETE FROM grimmory_books WHERE account = ? AND book_hash = ?`, [
-        account,
-        bookHash,
-      ]);
-      await db.execute(`DELETE FROM grimmory_note_links WHERE account = ? AND book_hash = ?`, [
-        account,
-        bookHash,
-      ]);
-    });
+    return this.withDb((db) =>
+      GrimmorySyncStore.inTransaction(db, async () => {
+        await db.execute(`DELETE FROM grimmory_books WHERE account = ? AND book_hash = ?`, [
+          account,
+          bookHash,
+        ]);
+        await db.execute(`DELETE FROM grimmory_note_links WHERE account = ? AND book_hash = ?`, [
+          account,
+          bookHash,
+        ]);
+      }),
+    );
   }
 
   getLinks(account: string, bookHash: string): Promise<GrimmoryNoteLink[]> {
@@ -132,26 +155,31 @@ export class GrimmorySyncStore {
     });
   }
 
-  /** Replace every link of one kind for a book. */
+  /**
+   * Replace every link of one kind for a book, all or nothing: the planner
+   * reads a missing link as "never synced".
+   */
   setLinks(
     account: string,
     bookHash: string,
     kind: GrimmoryNoteKind,
     links: GrimmoryNoteLink[],
   ): Promise<void> {
-    return this.withDb(async (db) => {
-      await db.execute(
-        `DELETE FROM grimmory_note_links WHERE account = ? AND book_hash = ? AND kind = ?`,
-        [account, bookHash, kind],
-      );
-      for (const link of links) {
+    return this.withDb((db) =>
+      GrimmorySyncStore.inTransaction(db, async () => {
         await db.execute(
-          `INSERT OR REPLACE INTO grimmory_note_links
-             (account, book_hash, note_id, kind, server_id, local_updated_at)
-           VALUES (?, ?, ?, ?, ?, ?)`,
-          [account, bookHash, link.noteId, kind, link.serverId, link.localUpdatedAt],
+          `DELETE FROM grimmory_note_links WHERE account = ? AND book_hash = ? AND kind = ?`,
+          [account, bookHash, kind],
         );
-      }
-    });
+        for (const link of links) {
+          await db.execute(
+            `INSERT OR REPLACE INTO grimmory_note_links
+               (account, book_hash, note_id, kind, server_id, local_updated_at)
+             VALUES (?, ?, ?, ?, ?, ?)`,
+            [account, bookHash, link.noteId, kind, link.serverId, link.localUpdatedAt],
+          );
+        }
+      }),
+    );
   }
 }

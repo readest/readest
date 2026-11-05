@@ -206,6 +206,24 @@ describe('runGrimmoryPass', () => {
     expect(server.annotations).toEqual([]);
   });
 
+  test('an edit not yet sent when a pass fails is sent by the next pass, not overwritten', async () => {
+    const other: BookNote = { ...highlight, id: 'n2', cfi: 'epubcfi(/6/8!/4/2/12,/1:0,/1:9)' };
+    const { server, state, deps } = setup([highlight, other]);
+    await runGrimmoryPass(deps);
+    expect(server.annotations).toHaveLength(2);
+
+    state.notes = [
+      { ...highlight, note: 'edited here', updatedAt: 2000 },
+      { ...other, deletedAt: 2000, updatedAt: 2000 },
+    ];
+    server.deleteAnnotation.mockRejectedValueOnce(new GrimmoryRequestError(503, 'down'));
+    await expect(runGrimmoryPass(deps)).rejects.toThrow();
+
+    await runGrimmoryPass(deps);
+    expect(state.notes.find((n) => n.id === 'n1')!.note).toBe('edited here');
+    expect(server.annotations).toEqual([expect.objectContaining({ note: 'edited here' })]);
+  });
+
   test('brings in, updates and removes a server highlight across passes', async () => {
     const { server, state, deps } = setup();
     server.annotations = [

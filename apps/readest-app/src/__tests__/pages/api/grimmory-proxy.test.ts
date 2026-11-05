@@ -7,7 +7,12 @@ const fetchMock = vi.hoisted(() => vi.fn());
 vi.mock('@/utils/publicFetch', () => ({ publicFetch: fetchMock }));
 
 const call = async (serverUrl: string, path = '/api/v1/books', method = 'GET') => {
-  const res = { status: vi.fn().mockReturnThis(), json: vi.fn(), send: vi.fn() };
+  const res = {
+    status: vi.fn().mockReturnThis(),
+    setHeader: vi.fn(),
+    json: vi.fn(),
+    send: vi.fn(),
+  };
   await handler(
     { method: 'POST', body: { serverUrl, path, method } } as NextApiRequest,
     res as unknown as NextApiResponse,
@@ -46,11 +51,29 @@ describe('Grimmory proxy boundaries', () => {
     expect(res.status).toHaveBeenCalledWith(400);
   });
 
-  it('drops trailing slashes from the server URL', async () => {
+  it.each([
+    'https://books.example.com/api/v1/books/2#',
+    'https://books.example.com/api/v1/books/2?',
+    'https://user:pass@books.example.com',
+  ])('refuses %s, which would move the allowed path elsewhere', async (serverUrl) => {
+    fetchMock.mockClear();
+    const res = await call(serverUrl, '/api/v1/bookmarks/7', 'DELETE');
+    expect(res.status).toHaveBeenLastCalledWith(400);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('drops trailing slashes from the server URL and keeps its sub-path', async () => {
     fetchMock.mockResolvedValue(new Response('[]', { status: 200 }));
-    await call('https://books.example.com//');
-    expect(fetchMock).toHaveBeenCalledWith(
+    const res = await call('https://books.example.com//');
+    expect(res.status).toHaveBeenLastCalledWith(200);
+    expect(fetchMock).toHaveBeenLastCalledWith(
       'https://books.example.com/api/v1/books',
+      expect.objectContaining({ method: 'GET' }),
+    );
+
+    await call('https://example.com/grimmory/');
+    expect(fetchMock).toHaveBeenLastCalledWith(
+      'https://example.com/grimmory/api/v1/books',
       expect.objectContaining({ method: 'GET' }),
     );
   });
@@ -58,7 +81,12 @@ describe('Grimmory proxy boundaries', () => {
   it('builds the URL quickly from a server URL with many inner slashes', async () => {
     fetchMock.mockResolvedValue(new Response('[]', { status: 200 }));
     const start = performance.now();
-    await call(`https://books.example.com${'/'.repeat(50_000)}x`);
+    const res = await call(`https://books.example.com${'/'.repeat(50_000)}x`);
     expect(performance.now() - start).toBeLessThan(500);
+    expect(res.status).toHaveBeenLastCalledWith(200);
+    expect(fetchMock).toHaveBeenLastCalledWith(
+      expect.stringMatching(/x\/api\/v1\/books$/),
+      expect.objectContaining({ method: 'GET' }),
+    );
   });
 });

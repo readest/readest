@@ -82,17 +82,25 @@ const GrimmoryForm: React.FC<GrimmoryFormProps> = ({ onBack }) => {
       customHeaders: hasCustomHeaders(parsedHeaders.headers) ? parsedHeaders.headers : undefined,
       allowSelfSignedCert,
     };
-    const result = await new GrimmoryClient(config).connect();
-    if (result.success) {
-      await save({ ...config, enabled: true });
-    } else {
+    const fail = (message: string) =>
       eventDispatcher.dispatch('toast', {
-        message: `${_('Failed to connect')}: ${_(result.message || 'Connection error')}`,
+        message: `${_('Failed to connect')}: ${message}`,
         type: 'error',
       });
+    try {
+      const result = await new GrimmoryClient(config).connect();
+      if (result.success) {
+        await save({ ...config, enabled: true });
+      } else {
+        fail(_(result.message || 'Connection error'));
+      }
+    } catch (error) {
+      // Connected, but the settings could not be saved.
+      fail(error instanceof Error ? error.message : String(error));
+    } finally {
+      setIsConnecting(false);
+      setPassword('');
     }
-    setIsConnecting(false);
-    setPassword('');
   };
 
   const handleDisconnect = async () => {
@@ -232,7 +240,7 @@ const GrimmoryForm: React.FC<GrimmoryFormProps> = ({ onBack }) => {
                 id='grimmory-server-url'
                 type='text'
                 placeholder='https://books.example.com'
-                className='input eink-bordered h-11 w-full text-sm focus:outline-hidden'
+                className='input eink-bordered settings-content h-11 w-full focus:outline-hidden'
                 spellCheck='false'
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
@@ -252,7 +260,7 @@ const GrimmoryForm: React.FC<GrimmoryFormProps> = ({ onBack }) => {
                 id='grimmory-username'
                 type='text'
                 placeholder={_('Your Username')}
-                className='input eink-bordered h-11 w-full text-sm focus:outline-hidden'
+                className='input eink-bordered settings-content h-11 w-full focus:outline-hidden'
                 spellCheck='false'
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
@@ -268,7 +276,7 @@ const GrimmoryForm: React.FC<GrimmoryFormProps> = ({ onBack }) => {
                 id='grimmory-password'
                 type='password'
                 placeholder={_('Your Password')}
-                className='input eink-bordered h-11 w-full text-sm focus:outline-hidden'
+                className='input eink-bordered settings-content h-11 w-full focus:outline-hidden'
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 autoComplete='current-password'
@@ -291,7 +299,7 @@ const GrimmoryForm: React.FC<GrimmoryFormProps> = ({ onBack }) => {
                 type='submit'
                 disabled={isConnecting || !url || !username || !password}
                 className={clsx(
-                  'btn btn-primary',
+                  'btn btn-contrast',
                   'h-10 min-h-10 rounded-lg border-0 px-5 text-sm font-medium',
                   'focus-visible:ring-primary/40 focus-visible:outline-hidden focus-visible:ring-2',
                   isConnecting && 'opacity-60',

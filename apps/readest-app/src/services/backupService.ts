@@ -116,6 +116,8 @@ export const BACKUP_SETTINGS_CREDENTIAL_FIELDS = [
   'bookorbit.password',
   'grimmory.username',
   'grimmory.password',
+  // Custom headers can carry access secrets (e.g. CF-Access-Client-Secret).
+  'grimmory.customHeaders',
   'readwise.accessToken',
   'hardcover.accessToken',
   'hardcover.oauth',

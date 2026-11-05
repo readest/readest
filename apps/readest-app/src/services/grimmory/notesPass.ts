@@ -92,7 +92,13 @@ const syncKind = async (
     deps.mergeNotes(plan.upsertLocal, plan.deleteLocal);
   }
 
-  const nextLinks: GrimmoryNoteLink[] = [...plan.links];
+  // An edit stays marked as unsent (localUpdatedAt 0) until the server takes
+  // it, so a pass that stops early sends it next time instead of letting the
+  // server copy overwrite it.
+  const pending = new Set(plan.updateRemote.map(({ note }) => note.id));
+  const nextLinks: GrimmoryNoteLink[] = plan.links.map((link) =>
+    pending.has(link.noteId) ? { ...link, localUpdatedAt: 0 } : link,
+  );
   try {
     for (const serverId of plan.deleteRemote) {
       if (kind === 'annotation') await client.deleteAnnotation(serverId);
@@ -105,11 +111,10 @@ const syncKind = async (
         } else {
           await client.updateBookmark(serverId, bookmarkUpdateBody(note));
         }
+        const link = nextLinks.find((l) => l.noteId === note.id);
+        if (link) link.localUpdatedAt = note.updatedAt;
       } catch (error) {
         if (isStatus(error, 401)) throw error;
-        // Keep it marked as edited here so the next pass sends it again.
-        const link = nextLinks.find((l) => l.noteId === note.id);
-        if (link) link.localUpdatedAt = 0;
         console.warn('[Grimmory] update failed', error);
       }
     }

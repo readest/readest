@@ -3,7 +3,11 @@ import { FIXED_LAYOUT_FORMATS } from '@/types/book';
 import type { Book } from '@/types/book';
 import type { AppService } from '@/types/system';
 import { resolveGrimmoryBook } from '@/services/grimmory/bookMatch';
-import { GrimmoryClient, grimmoryAccountKey } from '@/services/grimmory/GrimmoryClient';
+import {
+  GrimmoryClient,
+  GrimmoryRequestError,
+  grimmoryAccountKey,
+} from '@/services/grimmory/GrimmoryClient';
 import { GrimmorySyncStore } from '@/services/grimmory/GrimmorySyncStore';
 import { grimmoryProgressBody, grimmoryRemoteProgress } from '@/services/grimmory/progress';
 import type { KosyncEngineConfig, KosyncProgressProvider, ProgressSyncClient } from './useKOSync';
@@ -24,6 +28,12 @@ const createGrimmoryProgressClient = (
       hash: book.hash,
       fileSize: useBookDataStore.getState().getBookData(book.hash)?.file?.size,
     });
+  // The book was removed from Grimmory: forget it so the next call looks again.
+  const forgetIfGone = async (book: Book, error: unknown) => {
+    if (error instanceof GrimmoryRequestError && error.status === 404) {
+      await store.deleteBook(account, book.hash).catch(() => undefined);
+    }
+  };
 
   return {
     getDocumentDigest: (book) => book.hash,
@@ -35,6 +45,7 @@ const createGrimmoryProgressClient = (
         return grimmoryRemoteProgress(remote, FIXED_LAYOUT_FORMATS.has(book.format));
       } catch (error) {
         console.warn('[Grimmory] Failed to get progress', error);
+        await forgetIfGone(book, error);
         return null;
       }
     },
@@ -46,6 +57,7 @@ const createGrimmoryProgressClient = (
         return true;
       } catch (error) {
         console.warn('[Grimmory] Failed to update progress', error);
+        await forgetIfGone(book, error);
         return false;
       }
     },

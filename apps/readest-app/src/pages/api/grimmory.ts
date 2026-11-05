@@ -37,10 +37,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(400).json({ error: 'Invalid endpoint' });
   }
 
+  let parsed: URL;
   try {
-    const parsed = new URL(serverUrl);
+    parsed = new URL(serverUrl);
     if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
       return res.status(400).json({ error: 'Only http and https URLs are allowed' });
+    }
+    // A sub-path is allowed, but no credentials, query or fragment: a `?` or
+    // `#` would swallow the allowlisted path and send the request elsewhere.
+    if (parsed.username || parsed.password || serverUrl.includes('?') || serverUrl.includes('#')) {
+      return res.status(400).json({ error: 'Invalid serverUrl' });
     }
   } catch {
     return res.status(400).json({ error: 'Invalid serverUrl' });
@@ -51,11 +57,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .json({ error: 'Requests to private/internal addresses are not allowed' });
   }
 
-  let base = serverUrl;
-  while (base.endsWith('/')) base = base.slice(0, -1);
+  let basePath = parsed.pathname;
+  while (basePath.endsWith('/')) basePath = basePath.slice(0, -1);
 
   try {
-    const response = await publicFetch(`${base}${path}`, {
+    const response = await publicFetch(`${parsed.origin}${basePath}${path}`, {
       method,
       headers: headers ?? {},
       body: body ?? null,

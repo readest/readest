@@ -123,9 +123,9 @@ export interface GrimmoryReadingSession {
 }
 
 export interface GrimmorySessionPage {
+  /** Newest first. */
   content: { startTime?: string | null }[];
-  last?: boolean;
-  totalPages?: number;
+  page?: { number: number; totalPages: number };
 }
 
 /** Body of POST /api/grimmory, the web build's proxy for public servers. */
