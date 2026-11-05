@@ -21,7 +21,8 @@ import {
   RiAppleLine,
   RiHeadphoneLine,
   RiBookShelfLine,
-  RiFlowChart,
+  RiAlertLine,
+  RiInformationLine,
 } from 'react-icons/ri';
 import { useAppRouter } from '@/hooks/useAppRouter';
 import { useEnv } from '@/context/EnvContext';
@@ -536,10 +537,10 @@ const IntegrationsPanel: React.FC = () => {
   const flowProblems = flowConnectors.filter(
     ({ id }) => getConnectorHealth(flowState, id) === 'failed',
   ).length;
-  const flowStatus =
+  const flowLabel =
     flowProblems > 0
-      ? `${_('Needs attention')}: ${flowProblems}`
-      : `${_('Working')}: ${flowConnectors.length}`;
+      ? `${_('Data Flow')}: ${_('Needs attention')}: ${flowProblems}`
+      : _('Data Flow');
 
   const koSyncStatus = settings.kosync?.enabled
     ? settings.kosync.username
@@ -673,7 +674,23 @@ const IntegrationsPanel: React.FC = () => {
   return (
     <div className='my-4 w-full space-y-6'>
       <div className='w-full px-4'>
-        <h2 className='mb-1.5 text-lg font-semibold tracking-tight'>{_('Integrations')}</h2>
+        <div className='mb-1.5 flex items-center justify-between gap-2'>
+          <h2 className='text-lg font-semibold tracking-tight'>{_('Integrations')}</h2>
+          <button
+            type='button'
+            title={flowLabel}
+            aria-label={flowLabel}
+            onClick={() => setSubPage('data-flow')}
+            className='btn btn-ghost touch-target h-8 min-h-8 shrink-0 gap-1 rounded-full px-1.5 font-normal'
+          >
+            {flowProblems > 0 ? (
+              <RiAlertLine aria-hidden='true' className='h-4 w-4' />
+            ) : (
+              <RiInformationLine aria-hidden='true' className='h-4 w-4' />
+            )}
+            {flowProblems > 0 && <span className='text-sm tabular-nums'>{flowProblems}</span>}
+          </button>
+        </div>
         <p className='text-base-content/70 text-sm leading-relaxed'>
           {_('Connect Readest to external services for sync, highlights, and catalogs.')}
         </p>
@@ -936,20 +953,6 @@ const IntegrationsPanel: React.FC = () => {
                 onChange={toggleDiscordPresence}
               />
             </div>
-          </div>
-        </div>
-      )}
-
-      {flowConnectors.length > 0 && (
-        <div className='w-full' data-setting-id='settings.integrations.dataFlow'>
-          <SectionTitle className='mb-2'>{_('Reading Data')}</SectionTitle>
-          <div className='card eink-bordered border-base-200 bg-base-100 overflow-hidden border'>
-            <IntegrationRow
-              icon={RiFlowChart}
-              title={_('Data Flow')}
-              status={flowStatus}
-              onClick={() => setSubPage('data-flow')}
-            />
           </div>
         </div>
       )}

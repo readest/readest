@@ -37,6 +37,7 @@ vi.mock('@/app/opds/components/CatalogManager', () => ({ CatalogManager: () => n
 import IntegrationsPanel from '@/components/settings/IntegrationsPanel';
 import { useLocalSendStore } from '@/store/localsendStore';
 import { isLocalSendEnabled, setLocalSendEnabled } from '@/services/localsend/devicePrefs';
+import { recordFlow } from '@/services/sync/dataFlow/log';
 import { eventDispatcher } from '@/utils/event';
 
 const bookDropSection = () =>
@@ -53,15 +54,6 @@ afterEach(() => {
 });
 
 describe('IntegrationsPanel Nearby BookDrop section', () => {
-  it('puts Data Flow last, after every integration it reports on', () => {
-    render(<IntegrationsPanel />);
-    const sections = Array.from(document.querySelectorAll('[data-setting-id]')).map((el) =>
-      el.getAttribute('data-setting-id'),
-    );
-    expect(sections.at(-1)).toBe('settings.integrations.dataFlow');
-    expect(sections).toContain('settings.integrations.discord');
-  });
-
   it('puts BookDrop in its own section ahead of every other integration', () => {
     render(<IntegrationsPanel />);
     const sections = Array.from(document.querySelectorAll('[data-setting-id]')).map((el) =>
@@ -101,5 +93,37 @@ describe('IntegrationsPanel Nearby BookDrop section', () => {
     return vi.waitFor(() =>
       expect(screen.getByLabelText<HTMLInputElement>('Enable Nearby BookDrop').checked).toBe(false),
     );
+  });
+});
+
+describe('IntegrationsPanel Data Flow icon', () => {
+  const heading = () => screen.getByRole('heading', { name: 'Integrations' }).parentElement!;
+
+  it('sits in the header as a quiet info icon when nothing is wrong', () => {
+    render(<IntegrationsPanel />);
+
+    const icon = within(heading()).getByRole('button', { name: 'Data Flow' });
+    expect(icon.textContent).toBe('');
+    expect(screen.queryByText('Reading Data')).toBeNull();
+  });
+
+  it('turns into a count of what needs attention', () => {
+    recordFlow({ connector: 'localsend', direction: 'push', kind: 'books', error: 'Reset' });
+    render(<IntegrationsPanel />);
+
+    const icon = within(heading()).getByRole('button', {
+      name: 'Data Flow: Needs attention: 1',
+    });
+    expect(icon.textContent).toBe('1');
+  });
+
+  it('opens the Data Flow page', () => {
+    render(<IntegrationsPanel />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Data Flow' }));
+
+    expect(
+      screen.getByText('See where your reading data comes from and where it goes'),
+    ).toBeTruthy();
   });
 });
