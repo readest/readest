@@ -178,3 +178,25 @@ describe('Scrolled Mode and the page-turn attributes', () => {
     expect(applyPageTurnAttributes).toHaveBeenCalled();
   });
 });
+
+// #6872: Open Images follows the global/book scope like the other behavior
+// settings, so a choice made with global settings on reaches every book.
+describe('Settings > Behavior > Open Images', () => {
+  it('saves the gesture with the global scope, with no per-book note', () => {
+    render(<ControlPanel bookKey='test' onRegisterReset={() => {}} />);
+    expect(screen.queryByText('For this book only')).toBeNull();
+
+    fireEvent.change(screen.getByRole('combobox', { name: 'Open Images' }), {
+      target: { value: 'longPress' },
+    });
+
+    expect(saveViewSettings).toHaveBeenLastCalledWith(
+      {},
+      'test',
+      'imageViewerGesture',
+      'longPress',
+      false,
+      false,
+    );
+  });
+});

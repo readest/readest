@@ -722,16 +722,17 @@ export const useTextSelector = (
     const doc = (event.target as Node).ownerDocument!;
     // A long press on text selects it, PDF text over a scanned page included.
     if (isTouch && isTextAtPoint(doc, clientX, clientY)) return false;
-    const getImage = getContextMenuImage(event);
-    if (!getImage) return false;
-    // A book whose images open on a long press opens the viewer instead (#7145).
-    // PDF images have no file of their own to show, so they keep the menu.
+    // A book whose images and tables open on a long press opens the viewer
+    // instead (#7145, #6872). PDF images have no file of their own to show, so
+    // they keep the menu.
     const media = isTouch ? detectMediaTarget(event.target as HTMLElement) : null;
-    if (media?.elementType === 'image' && getImageViewerGesture(bookKey) === 'longPress') {
+    if (media && getImageViewerGesture(bookKey) === 'longPress') {
       setImageHoldClick(bookKey, event.target);
       window.postMessage({ type: 'iframe-open-media', bookKey, ...media }, '*');
       return true;
     }
+    const getImage = getContextMenuImage(event);
+    if (!getImage) return false;
     const { x, y } = toParentViewportPoint(doc, clientX, clientY);
     eventDispatcher.dispatch('image-context-menu', { bookKey, getImage, x, y });
     return true;

@@ -510,7 +510,7 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
   const handleSelectImageViewerGesture = (event: React.ChangeEvent<HTMLSelectElement>) => {
     const gesture = event.target.value as ImageViewerGesture;
     setImageViewerGesture(gesture);
-    saveViewSettings(envConfig, bookKey, 'imageViewerGesture', gesture, true, false);
+    saveViewSettings(envConfig, bookKey, 'imageViewerGesture', gesture, false, false);
   };
 
   const handleSelectAnnotationQuickAction = (event: React.ChangeEvent<HTMLSelectElement>) => {
@@ -603,7 +603,6 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
         {bookData && (
           <SettingsRow
             label={_('Open Images')}
-            description={_('For this book only')}
             data-setting-id='settings.control.imageViewerGesture'
           >
             <SettingsSelect
