@@ -582,6 +582,12 @@ const controlPanelItems = [
     section: 'Device',
   },
   {
+    id: 'settings.control.alwaysShowStatusBar',
+    labelKey: _('Always Show Status Bar'),
+    keywords: ['status', 'bar', 'system', 'clock', 'battery', 'fullscreen'],
+    section: 'Device',
+  },
+  {
     id: 'settings.control.screenWakeLock',
     labelKey: _('Keep Screen Awake'),
     keywords: ['screen', 'wake', 'lock', 'awake', 'sleep', 'display'],

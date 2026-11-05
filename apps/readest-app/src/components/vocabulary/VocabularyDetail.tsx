@@ -15,6 +15,7 @@ import { canAskAIForHint, hintFromAI, hintFromDictionary } from '@/services/voca
 import { VocabularyChips } from '@/app/reader/components/annotator/DictionaryResultsView';
 import DictionarySheet from '@/app/reader/components/annotator/DictionarySheet';
 import type { VocabularyEntry } from '@/services/vocabulary/types';
+import { eventDispatcher } from '@/utils/event';
 import { navigateToReader } from '@/utils/nav';
 import { getLocale } from '@/utils/misc';
 
@@ -157,6 +158,11 @@ const VocabularyDetail: React.FC<VocabularyDetailProps> = ({ entry, onBack, onOp
     !!hash && library.some((b) => b.hash === hash && !b.deletedAt);
   const openInBook = (hash: string, cfi: string) => {
     onOpenBook?.();
+    // A mounted reader doesn't re-init on router.push, so switch the book in place.
+    if (window.location.pathname.startsWith('/reader')) {
+      eventDispatcher.dispatch('open-book-in-reader', { bookHash: hash, cfi });
+      return;
+    }
     navigateToReader(router, [hash], `cfi=${encodeURIComponent(cfi)}`);
   };
 

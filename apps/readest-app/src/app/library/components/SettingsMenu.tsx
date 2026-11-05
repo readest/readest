@@ -56,7 +56,6 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
   const { themeMode, setThemeMode } = useThemeStore();
   const { settings, setSettingsDialogOpen } = useSettingsStore();
   const [isAlwaysOnTop, setIsAlwaysOnTop] = useState(settings.alwaysOnTop);
-  const [isAlwaysShowStatusBar, setIsAlwaysShowStatusBar] = useState(settings.alwaysShowStatusBar);
   const [isOpenLastBooks, setIsOpenLastBooks] = useState(settings.openLastBooks);
   const [isAutoImportBooksOnOpen, setIsAutoImportBooksOnOpen] = useState(
     settings.autoImportBooksOnOpen,
@@ -148,12 +147,6 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
     setIsAlwaysOnTop(newValue);
     tauriHandleSetAlwaysOnTop(newValue);
     setIsDropdownOpen?.(false);
-  };
-
-  const toggleAlwaysShowStatusBar = () => {
-    const newValue = !settings.alwaysShowStatusBar;
-    saveSysSettings(envConfig, 'alwaysShowStatusBar', newValue);
-    setIsAlwaysShowStatusBar(newValue);
   };
 
   const toggleAutoImportBooksOnOpen = () => {
@@ -406,13 +399,6 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
       )}
       {appService?.hasWindow && (
         <MenuItem label={_('Always on Top')} toggled={isAlwaysOnTop} onClick={toggleAlwaysOnTop} />
-      )}
-      {appService?.isMobileApp && (
-        <MenuItem
-          label={_('Always Show Status Bar')}
-          toggled={isAlwaysShowStatusBar}
-          onClick={toggleAlwaysShowStatusBar}
-        />
       )}
       <MenuItem
         label={themeModeLabel}

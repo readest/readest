@@ -79,6 +79,9 @@ vi.mock('@/hooks/useCloudSyncStatus', () => ({
   useCloudSyncStatus: () => mockSyncStatus,
 }));
 vi.mock('@/helpers/settings', () => ({ saveViewSettings: vi.fn() }));
+vi.mock('@/components/vocabulary/VocabularyDialog', () => ({
+  setVocabularyDialogVisible: vi.fn(),
+}));
 vi.mock('@/services/constants', () => ({
   MAX_ZOOM_LEVEL: 200,
   MIN_ZOOM_LEVEL: 50,
