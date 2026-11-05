@@ -801,9 +801,10 @@ const getParagraphLayoutStyles = (
     hyphens: ${hyphenate ? 'auto' : 'manual'} ${overrideLayout ? '!important' : ''};
     ${overrideLayout ? 'margin-inline-end: unset !important;' : ''}
   }
-  /* Replaces the browser's 40px list padding. :where() has no specificity, so
-     any padding the book writes on a list still wins. */
-  ${overrideLayout ? ':where(ul, ol) { padding-inline-start: 1.5em; }' : ''}
+  /* Replaces the browser's 40px list padding. The layer loses to every unlayered
+     book rule, a reset like * { padding: 0 } included, and still beats the
+     browser's. */
+  ${overrideLayout ? '@layer list-indent { ul, ol { padding-inline-start: 1.5em; } }' : ''}
   p.aligned-center, blockquote.aligned-center,
   dd.aligned-center, div.aligned-center {
     text-align: center ${overrideLayout ? '!important' : ''};

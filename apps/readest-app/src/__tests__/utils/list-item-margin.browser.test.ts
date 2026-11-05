@@ -176,6 +176,10 @@ describe('default list indent', () => {
     });
   });
 
+  test('keeps a universal reset under Override Book Layout', () => {
+    expect(listPadding('ul', '* { padding: 0; }', override).left).toBe('0px');
+  });
+
   test('follows the inline axis in right-to-left text', () => {
     expect(listPadding('ul', '', override, 'direction: rtl')).toMatchObject({
       left: '0px',
