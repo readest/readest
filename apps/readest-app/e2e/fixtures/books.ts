@@ -15,3 +15,9 @@ export const SAMPLE_EPUB = path.join(
   fixturesDir,
   '../../src/__tests__/fixtures/data/sample-alice.epub',
 );
+
+/** The same book as a 69-page PDF, for the fixed-layout renderer. */
+export const SAMPLE_PDF = path.join(
+  fixturesDir,
+  '../../src/__tests__/fixtures/data/sample-alice.pdf',
+);
