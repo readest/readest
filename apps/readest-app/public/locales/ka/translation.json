@@ -2796,7 +2796,7 @@
   "Choose another": "სხვის არჩევა",
   "Clear Deleted Books": "წაშლილი წიგნების გასუფთავება",
   "Also removes the covers, progress, and notes they left behind": "ასევე შლის დარჩენილ ყდებს, პროგრესსა და შენიშვნებს",
-  "This will delete all cached files and everything left behind by deleted books. This cannot be undone.": "ეს წაშლის ყველა ქეშირებულ ფაილს და ყველაფერს, რაც წაშლილი წიგნებისგან დარჩა. ამის გაუქმება შეუძლებელია.",
   "Exit Parallel Sync": "პარალელური სინქრონიზაციიდან გასვლა",
-  "Enter Parallel Sync": "პარალელურ სინქრონიზაციაში შესვლა"
+  "Enter Parallel Sync": "პარალელურ სინქრონიზაციაში შესვლა",
+  "This will delete all cached files and the files left behind by deleted books. This cannot be undone.": "ეს წაშლის ყველა ქეშირებულ ფაილს და წაშლილი წიგნებისგან დარჩენილ ფაილებს. ამის გაუქმება შეუძლებელია."
 }

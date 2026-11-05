@@ -2796,7 +2796,7 @@
   "Choose another": "অন্য একটি বেছে নিন",
   "Clear Deleted Books": "মুছে ফেলা বই পরিষ্কার করুন",
   "Also removes the covers, progress, and notes they left behind": "অবশিষ্ট প্রচ্ছদ, অগ্রগতি ও নোটও সরিয়ে দেয়",
-  "This will delete all cached files and everything left behind by deleted books. This cannot be undone.": "এটি সব ক্যাশ ফাইল এবং মুছে ফেলা বইগুলোর অবশিষ্ট সবকিছু মুছে ফেলবে। এটি পূর্বাবস্থায় ফেরানো যাবে না।",
   "Exit Parallel Sync": "সমান্তরাল সিঙ্ক থেকে বের হন",
-  "Enter Parallel Sync": "সমান্তরাল সিঙ্কে প্রবেশ করুন"
+  "Enter Parallel Sync": "সমান্তরাল সিঙ্কে প্রবেশ করুন",
+  "This will delete all cached files and the files left behind by deleted books. This cannot be undone.": "এটি সব ক্যাশ ফাইল এবং মুছে ফেলা বইগুলোর অবশিষ্ট ফাইল মুছে ফেলবে। এটি পূর্বাবস্থায় ফেরানো যাবে না।"
 }

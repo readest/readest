@@ -2869,7 +2869,7 @@
   "Choose another": "Alegeți alta",
   "Clear Deleted Books": "Curăță cărțile șterse",
   "Also removes the covers, progress, and notes they left behind": "Elimină și copertele, progresul și notițele rămase",
-  "This will delete all cached files and everything left behind by deleted books. This cannot be undone.": "Vor fi șterse toate fișierele din cache și tot ce au lăsat în urmă cărțile șterse. Această acțiune nu poate fi anulată.",
   "Exit Parallel Sync": "Ieși din sincronizarea paralelă",
-  "Enter Parallel Sync": "Intră în sincronizarea paralelă"
+  "Enter Parallel Sync": "Intră în sincronizarea paralelă",
+  "This will delete all cached files and the files left behind by deleted books. This cannot be undone.": "Vor fi șterse toate fișierele din cache și fișierele lăsate în urmă de cărțile șterse. Această acțiune nu poate fi anulată."
 }

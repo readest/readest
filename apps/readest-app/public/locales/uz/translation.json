@@ -2796,7 +2796,7 @@
   "Choose another": "Boshqasini tanlash",
   "Clear Deleted Books": "Oʻchirilgan kitoblarni tozalash",
   "Also removes the covers, progress, and notes they left behind": "Qolgan muqovalar, oʻqish jarayoni va qaydlarni ham oʻchiradi",
-  "This will delete all cached files and everything left behind by deleted books. This cannot be undone.": "Bu barcha kesh fayllarni va oʻchirilgan kitoblardan qolgan hamma narsani oʻchiradi. Buni ortga qaytarib boʻlmaydi.",
   "Exit Parallel Sync": "Parallel sinxronlashdan chiqish",
-  "Enter Parallel Sync": "Parallel sinxronlashga kirish"
+  "Enter Parallel Sync": "Parallel sinxronlashga kirish",
+  "This will delete all cached files and the files left behind by deleted books. This cannot be undone.": "Bu barcha kesh fayllarni va oʻchirilgan kitoblardan qolgan fayllarni oʻchiradi. Buni ortga qaytarib boʻlmaydi."
 }

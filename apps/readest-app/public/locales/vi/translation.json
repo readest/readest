@@ -2723,7 +2723,7 @@
   "Choose another": "Chọn ảnh khác",
   "Clear Deleted Books": "Dọn sách đã xóa",
   "Also removes the covers, progress, and notes they left behind": "Đồng thời xóa bìa, tiến độ và ghi chú còn sót lại",
-  "This will delete all cached files and everything left behind by deleted books. This cannot be undone.": "Thao tác này sẽ xóa tất cả tệp bộ nhớ đệm và mọi thứ còn sót lại của sách đã xóa. Không thể hoàn tác.",
   "Exit Parallel Sync": "Thoát đồng bộ song song",
-  "Enter Parallel Sync": "Vào đồng bộ song song"
+  "Enter Parallel Sync": "Vào đồng bộ song song",
+  "This will delete all cached files and the files left behind by deleted books. This cannot be undone.": "Thao tác này sẽ xóa tất cả tệp bộ nhớ đệm và các tệp còn sót lại của sách đã xóa. Không thể hoàn tác."
 }

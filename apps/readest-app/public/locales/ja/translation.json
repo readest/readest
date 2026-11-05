@@ -2723,7 +2723,7 @@
   "Choose another": "別の画像を選択",
   "Clear Deleted Books": "削除した書籍を消去",
   "Also removes the covers, progress, and notes they left behind": "残っている表紙、進捗、メモも削除します",
-  "This will delete all cached files and everything left behind by deleted books. This cannot be undone.": "すべてのキャッシュファイルと、削除した書籍の残存データを削除します。この操作は元に戻せません。",
   "Exit Parallel Sync": "並行同期を終了",
-  "Enter Parallel Sync": "並行同期を開始"
+  "Enter Parallel Sync": "並行同期を開始",
+  "This will delete all cached files and the files left behind by deleted books. This cannot be undone.": "すべてのキャッシュファイルと、削除した書籍の残存ファイルを削除します。この操作は元に戻せません。"
 }

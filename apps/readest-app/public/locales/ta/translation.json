@@ -2796,7 +2796,7 @@
   "Choose another": "வேறொன்றைத் தேர்ந்தெடு",
   "Clear Deleted Books": "நீக்கிய நூல்களை அழி",
   "Also removes the covers, progress, and notes they left behind": "மீதமுள்ள அட்டைகள், முன்னேற்றம், குறிப்புகளையும் அகற்றும்",
-  "This will delete all cached files and everything left behind by deleted books. This cannot be undone.": "இது அனைத்து தற்காலிக கோப்புகளையும் நீக்கிய நூல்களின் மீதமுள்ள அனைத்தையும் நீக்கும். இதை மீட்டமைக்க முடியாது.",
   "Exit Parallel Sync": "இணை ஒத்திசைவிலிருந்து வெளியேறு",
-  "Enter Parallel Sync": "இணை ஒத்திசைவில் நுழை"
+  "Enter Parallel Sync": "இணை ஒத்திசைவில் நுழை",
+  "This will delete all cached files and the files left behind by deleted books. This cannot be undone.": "இது அனைத்து தற்காலிக கோப்புகளையும் நீக்கிய நூல்களின் மீதமுள்ள கோப்புகளையும் நீக்கும். இதை மீட்டமைக்க முடியாது."
 }

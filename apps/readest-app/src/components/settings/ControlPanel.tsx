@@ -358,14 +358,18 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
   }, [pageTurnStyle]);
 
   useEffect(() => {
-    saveViewSettings(envConfig, bookKey, 'isEink', isEink);
+    const saveEink = async () => {
+      await saveViewSettings(envConfig, bookKey, 'isEink', isEink);
+      // Captured turns are off in e-ink mode. A global save reaches this book
+      // after the ones before it, so refresh once the save is done.
+      applyTurnAttributes();
+    };
+    saveEink();
     if (isEink) {
       getView(bookKey)?.renderer.setAttribute('eink', '');
     } else {
       getView(bookKey)?.renderer.removeAttribute('eink');
     }
-    // Captured turns are off in e-ink mode.
-    applyTurnAttributes();
     applyEinkMode(isEink);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isEink]);

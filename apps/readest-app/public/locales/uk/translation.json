@@ -2942,7 +2942,7 @@
   "Choose another": "Вибрати іншу",
   "Clear Deleted Books": "Очистити видалені книги",
   "Also removes the covers, progress, and notes they left behind": "Також вилучає обкладинки, прогрес і нотатки, що залишилися",
-  "This will delete all cached files and everything left behind by deleted books. This cannot be undone.": "Буде видалено всі кешовані файли та все, що залишилося від видалених книг. Цю дію неможливо скасувати.",
   "Exit Parallel Sync": "Вийти з паралельної синхронізації",
-  "Enter Parallel Sync": "Увімкнути паралельну синхронізацію"
+  "Enter Parallel Sync": "Увімкнути паралельну синхронізацію",
+  "This will delete all cached files and the files left behind by deleted books. This cannot be undone.": "Буде видалено всі кешовані файли та файли, що залишилися від видалених книг. Цю дію неможливо скасувати."
 }

@@ -2869,7 +2869,7 @@
   "Choose another": "Escolher outra",
   "Clear Deleted Books": "Limpar livros excluídos",
   "Also removes the covers, progress, and notes they left behind": "Também remove as capas, o progresso e as notas que ficaram",
-  "This will delete all cached files and everything left behind by deleted books. This cannot be undone.": "Isso excluirá todos os arquivos em cache e tudo o que os livros excluídos deixaram. Esta ação não pode ser desfeita.",
   "Exit Parallel Sync": "Sair da sincronização paralela",
-  "Enter Parallel Sync": "Entrar na sincronização paralela"
+  "Enter Parallel Sync": "Entrar na sincronização paralela",
+  "This will delete all cached files and the files left behind by deleted books. This cannot be undone.": "Isso excluirá todos os arquivos em cache e os arquivos deixados pelos livros excluídos. Esta ação não pode ser desfeita."
 }

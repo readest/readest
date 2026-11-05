@@ -1028,6 +1028,7 @@ function M.handleHold(item, opts)
                 local_present         = keep_file and 1 or 0,
                 deleted_at            = now,
                 _force_cloud_present  = true,
+                _clear_fields         = { "uploaded_at" },
             })
             -- Build a tombstone wire row from the in-memory entry
             -- row (which already has format/meta_hash/etc) plus
@@ -1036,6 +1037,7 @@ function M.handleHold(item, opts)
             for k, v in pairs(row) do tombstone[k] = v end
             tombstone.deleted_at = now
             tombstone.updated_at = now
+            tombstone.uploaded_at = nil
             syncbooks.pushBook(tombstone, {
                 sync_auth = opts.sync_auth,
                 sync_path = opts.sync_path,
@@ -1044,7 +1046,9 @@ function M.handleHold(item, opts)
             M.refresh()
         end
         if on_cloud then
-            doCloudDelete(function() finish_local() end)
+            doCloudDelete(function(success)
+                if success then finish_local() end
+            end)
         else
             finish_local()
         end
@@ -1060,7 +1064,10 @@ function M.handleHold(item, opts)
             ok_callback = function() removeFromLibrary(false) end,
         })
     end)
-    if on_local then
+    -- local_present can outlive the file, and this action removes the cloud
+    -- copy, so check the file itself: it may be the only copy left.
+    local lfs = require("libs/libkoreader-lfs")
+    if row.file_path and lfs.attributes(row.file_path, "mode") == "file" then
         add_row(_("Remove from Library, Keep File"), function()
             close()
             UIManager:show(ConfirmBox:new{

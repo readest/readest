@@ -3088,7 +3088,7 @@
   "Choose another": "اختيار صورة أخرى",
   "Clear Deleted Books": "مسح الكتب المحذوفة",
   "Also removes the covers, progress, and notes they left behind": "يزيل أيضًا الأغلفة والتقدم والملاحظات المتبقية",
-  "This will delete all cached files and everything left behind by deleted books. This cannot be undone.": "سيؤدي هذا إلى حذف جميع الملفات المخزنة مؤقتًا وكل ما تبقى من الكتب المحذوفة. لا يمكن التراجع عن هذا الإجراء.",
   "Exit Parallel Sync": "الخروج من المزامنة المتوازية",
-  "Enter Parallel Sync": "الدخول إلى المزامنة المتوازية"
+  "Enter Parallel Sync": "الدخول إلى المزامنة المتوازية",
+  "This will delete all cached files and the files left behind by deleted books. This cannot be undone.": "سيؤدي هذا إلى حذف جميع الملفات المخزنة مؤقتًا والملفات المتبقية من الكتب المحذوفة. لا يمكن التراجع عن هذا الإجراء."
 }

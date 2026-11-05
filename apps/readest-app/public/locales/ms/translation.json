@@ -2723,7 +2723,7 @@
   "Choose another": "Pilih yang lain",
   "Clear Deleted Books": "Kosongkan buku yang dipadam",
   "Also removes the covers, progress, and notes they left behind": "Turut membuang kulit buku, kemajuan dan nota yang tertinggal",
-  "This will delete all cached files and everything left behind by deleted books. This cannot be undone.": "Ini akan memadam semua fail cache dan semua yang ditinggalkan oleh buku yang dipadam. Tindakan ini tidak boleh dibatalkan.",
   "Exit Parallel Sync": "Keluar daripada penyegerakan selari",
-  "Enter Parallel Sync": "Masuk ke penyegerakan selari"
+  "Enter Parallel Sync": "Masuk ke penyegerakan selari",
+  "This will delete all cached files and the files left behind by deleted books. This cannot be undone.": "Ini akan memadam semua fail cache dan fail yang ditinggalkan oleh buku yang dipadam. Tindakan ini tidak boleh dibatalkan."
 }

@@ -145,7 +145,7 @@ const SideBar = ({}) => {
   // On mobile, dismissing the sidebar closes a search bar with nothing typed,
   // so the next open starts on the TOC rather than on an empty search bar.
   useEffect(() => {
-    if (!appService?.isMobile || isSideBarVisible || !isSearchBarVisible) return;
+    if (!(appService?.isMobile || isMobile) || isSideBarVisible || !isSearchBarVisible) return;
     if (!sideBarBookKey || getSearchNavState(sideBarBookKey).searchTerm) return;
     handleHideSearchBar();
     // eslint-disable-next-line react-hooks/exhaustive-deps

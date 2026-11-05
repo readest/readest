@@ -2796,7 +2796,7 @@
   "Choose another": "වෙනත් එකක් තෝරන්න",
   "Clear Deleted Books": "මකන ලද පොත් ඉවත් කරන්න",
   "Also removes the covers, progress, and notes they left behind": "ඉතිරි වූ කවර, ප්‍රගතිය සහ සටහන් ද ඉවත් කරයි",
-  "This will delete all cached files and everything left behind by deleted books. This cannot be undone.": "මෙය සියලු හැඹිලි ගොනු සහ මකන ලද පොත්වල ඉතිරි වූ සියල්ල මකා දමයි. මෙය අහෝසි කළ නොහැක.",
   "Exit Parallel Sync": "සමාන්තර සමමුහුර්තයෙන් ඉවත් වන්න",
-  "Enter Parallel Sync": "සමාන්තර සමමුහුර්තයට ඇතුළු වන්න"
+  "Enter Parallel Sync": "සමාන්තර සමමුහුර්තයට ඇතුළු වන්න",
+  "This will delete all cached files and the files left behind by deleted books. This cannot be undone.": "මෙය සියලු හැඹිලි ගොනු සහ මකන ලද පොත්වල ඉතිරි වූ ගොනු මකා දමයි. මෙය අහෝසි කළ නොහැක."
 }

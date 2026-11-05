@@ -2796,7 +2796,7 @@
   "Choose another": "दूसरा चुनें",
   "Clear Deleted Books": "हटाई गई पुस्तकें साफ़ करें",
   "Also removes the covers, progress, and notes they left behind": "बचे हुए कवर, प्रगति और नोट्स भी हटा देता है",
-  "This will delete all cached files and everything left behind by deleted books. This cannot be undone.": "इससे सभी कैश फ़ाइलें और हटाई गई पुस्तकों का बचा हुआ सब कुछ हट जाएगा। इसे पूर्ववत नहीं किया जा सकता।",
   "Exit Parallel Sync": "समानांतर सिंक से बाहर निकलें",
-  "Enter Parallel Sync": "समानांतर सिंक में प्रवेश करें"
+  "Enter Parallel Sync": "समानांतर सिंक में प्रवेश करें",
+  "This will delete all cached files and the files left behind by deleted books. This cannot be undone.": "इससे सभी कैश फ़ाइलें और हटाई गई पुस्तकों की बची हुई फ़ाइलें हट जाएँगी। इसे पूर्ववत नहीं किया जा सकता।"
 }

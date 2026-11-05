@@ -2796,7 +2796,7 @@
   "Choose another": "انتخاب تصویر دیگر",
   "Clear Deleted Books": "پاک‌سازی کتاب‌های حذف‌شده",
   "Also removes the covers, progress, and notes they left behind": "جلدها، پیشرفت مطالعه و یادداشت‌های باقی‌مانده را هم حذف می‌کند",
-  "This will delete all cached files and everything left behind by deleted books. This cannot be undone.": "همه فایل‌های کش و هر آنچه از کتاب‌های حذف‌شده باقی مانده حذف می‌شود. این کار قابل بازگشت نیست.",
   "Exit Parallel Sync": "خروج از همگام‌سازی موازی",
-  "Enter Parallel Sync": "ورود به همگام‌سازی موازی"
+  "Enter Parallel Sync": "ورود به همگام‌سازی موازی",
+  "This will delete all cached files and the files left behind by deleted books. This cannot be undone.": "همه فایل‌های کش و فایل‌های باقی‌مانده از کتاب‌های حذف‌شده حذف می‌شوند. این کار قابل بازگشت نیست."
 }

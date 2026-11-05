@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   RiDatabase2Line,
   RiCheckboxCircleFill,
@@ -82,9 +82,13 @@ export const CacheManagerWindow = () => {
   const [progress, setProgress] = useState<CacheClearProgress>({ current: 0, total: 0 });
   const [errorMessage, setErrorMessage] = useState('');
   const [includeDeletedBooks, setIncludeDeletedBooks] = useState(false);
+  // Only the latest scan may fill the dialog: an older one could offer files
+  // the current option doesn't cover.
+  const scanIdRef = useRef(0);
 
   const scanCache = async (includeDeleted = includeDeletedBooks) => {
     if (!appService) return;
+    const scanId = ++scanIdRef.current;
     setStatus('scanning');
     setErrorMessage('');
     try {
@@ -95,6 +99,7 @@ export const CacheManagerWindow = () => {
         { books: library, loaded: libraryLoaded },
         includeDeleted,
       );
+      if (scanId !== scanIdRef.current) return;
       const stats = getCacheStats(entries);
       setEntries(entries);
       setCount(stats.count);
@@ -102,6 +107,7 @@ export const CacheManagerWindow = () => {
       setSize(stats.size);
       setStatus('idle');
     } catch (error) {
+      if (scanId !== scanIdRef.current) return;
       console.error('Error scanning cache:', error);
       setErrorMessage(_('Failed to read cache'));
       setStatus('error');
@@ -174,6 +180,7 @@ export const CacheManagerWindow = () => {
     setProgress({ current: 0, total: 0 });
     setErrorMessage('');
     setIncludeDeletedBooks(false);
+    scanIdRef.current++;
   };
 
   const progressPercentage =
@@ -287,7 +294,7 @@ export const CacheManagerWindow = () => {
               <RiErrorWarningFill className='text-warning h-4 w-4 shrink-0' aria-hidden='true' />
               {includeDeletedBooks
                 ? _(
-                    'This will delete all cached files and everything left behind by deleted books. This cannot be undone.',
+                    'This will delete all cached files and the files left behind by deleted books. This cannot be undone.',
                   )
                 : orphanCount > 0
                   ? _(

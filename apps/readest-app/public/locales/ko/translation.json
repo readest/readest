@@ -2723,7 +2723,7 @@
   "Choose another": "다른 이미지 선택",
   "Clear Deleted Books": "삭제된 책 정리",
   "Also removes the covers, progress, and notes they left behind": "남아 있는 표지, 진행률, 메모도 함께 삭제합니다",
-  "This will delete all cached files and everything left behind by deleted books. This cannot be undone.": "모든 캐시 파일과 삭제된 책이 남긴 데이터를 모두 삭제합니다. 이 작업은 되돌릴 수 없습니다.",
   "Exit Parallel Sync": "병렬 동기화 종료",
-  "Enter Parallel Sync": "병렬 동기화 시작"
+  "Enter Parallel Sync": "병렬 동기화 시작",
+  "This will delete all cached files and the files left behind by deleted books. This cannot be undone.": "모든 캐시 파일과 삭제된 책이 남긴 파일을 삭제합니다. 이 작업은 되돌릴 수 없습니다."
 }

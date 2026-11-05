@@ -2723,7 +2723,7 @@
   "Choose another": "เลือกรูปภาพอื่น",
   "Clear Deleted Books": "ล้างหนังสือที่ลบแล้ว",
   "Also removes the covers, progress, and notes they left behind": "ลบปก ความคืบหน้า และบันทึกที่เหลืออยู่ด้วย",
-  "This will delete all cached files and everything left behind by deleted books. This cannot be undone.": "การดำเนินการนี้จะลบไฟล์แคชทั้งหมดและทุกอย่างที่หนังสือที่ลบแล้วทิ้งไว้ ไม่สามารถยกเลิกได้",
   "Exit Parallel Sync": "ออกจากการซิงค์คู่ขนาน",
-  "Enter Parallel Sync": "เข้าสู่การซิงค์คู่ขนาน"
+  "Enter Parallel Sync": "เข้าสู่การซิงค์คู่ขนาน",
+  "This will delete all cached files and the files left behind by deleted books. This cannot be undone.": "การดำเนินการนี้จะลบไฟล์แคชทั้งหมดและไฟล์ที่หนังสือที่ลบแล้วทิ้งไว้ ไม่สามารถยกเลิกได้"
 }

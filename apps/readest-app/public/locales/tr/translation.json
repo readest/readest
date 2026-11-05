@@ -2796,7 +2796,7 @@
   "Choose another": "Başka birini seç",
   "Clear Deleted Books": "Silinen kitapları temizle",
   "Also removes the covers, progress, and notes they left behind": "Geride kalan kapakları, ilerlemeyi ve notları da kaldırır",
-  "This will delete all cached files and everything left behind by deleted books. This cannot be undone.": "Bu işlem tüm önbellek dosyalarını ve silinen kitaplardan kalan her şeyi siler. Bu işlem geri alınamaz.",
   "Exit Parallel Sync": "Paralel senkronizasyondan çık",
-  "Enter Parallel Sync": "Paralel senkronizasyona gir"
+  "Enter Parallel Sync": "Paralel senkronizasyona gir",
+  "This will delete all cached files and the files left behind by deleted books. This cannot be undone.": "Bu işlem tüm önbellek dosyalarını ve silinen kitaplardan kalan dosyaları siler. Bu işlem geri alınamaz."
 }

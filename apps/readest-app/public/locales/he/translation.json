@@ -2869,7 +2869,7 @@
   "Choose another": "בחר אחרת",
   "Clear Deleted Books": "ניקוי ספרים שנמחקו",
   "Also removes the covers, progress, and notes they left behind": "מסיר גם כריכות, התקדמות והערות שנותרו",
-  "This will delete all cached files and everything left behind by deleted books. This cannot be undone.": "פעולה זו תמחק את כל קובצי המטמון וכל מה שנותר מספרים שנמחקו. לא ניתן לבטל פעולה זו.",
   "Exit Parallel Sync": "יציאה מסנכרון מקביל",
-  "Enter Parallel Sync": "כניסה לסנכרון מקביל"
+  "Enter Parallel Sync": "כניסה לסנכרון מקביל",
+  "This will delete all cached files and the files left behind by deleted books. This cannot be undone.": "פעולה זו תמחק את כל קובצי המטמון ואת הקבצים שנותרו מספרים שנמחקו. לא ניתן לבטל פעולה זו."
 }

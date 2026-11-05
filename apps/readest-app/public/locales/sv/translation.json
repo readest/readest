@@ -2796,7 +2796,7 @@
   "Choose another": "Välj ett annat",
   "Clear Deleted Books": "Rensa borttagna böcker",
   "Also removes the covers, progress, and notes they left behind": "Tar också bort kvarvarande omslag, läsframsteg och anteckningar",
-  "This will delete all cached files and everything left behind by deleted books. This cannot be undone.": "Detta raderar alla cachade filer och allt som borttagna böcker lämnat kvar. Det går inte att ångra.",
   "Exit Parallel Sync": "Avsluta parallell synkronisering",
-  "Enter Parallel Sync": "Starta parallell synkronisering"
+  "Enter Parallel Sync": "Starta parallell synkronisering",
+  "This will delete all cached files and the files left behind by deleted books. This cannot be undone.": "Detta raderar alla cachade filer och de filer som borttagna böcker lämnat kvar. Det går inte att ångra."
 }

@@ -2942,7 +2942,7 @@
   "Choose another": "Wybierz inną",
   "Clear Deleted Books": "Wyczyść usunięte książki",
   "Also removes the covers, progress, and notes they left behind": "Usuwa też pozostałe okładki, postęp i notatki",
-  "This will delete all cached files and everything left behind by deleted books. This cannot be undone.": "Spowoduje to usunięcie wszystkich plików z pamięci podręcznej oraz wszystkiego, co pozostało po usuniętych książkach. Tej operacji nie można cofnąć.",
   "Exit Parallel Sync": "Wyjdź z synchronizacji równoległej",
-  "Enter Parallel Sync": "Włącz synchronizację równoległą"
+  "Enter Parallel Sync": "Włącz synchronizację równoległą",
+  "This will delete all cached files and the files left behind by deleted books. This cannot be undone.": "Spowoduje to usunięcie wszystkich plików z pamięci podręcznej oraz plików pozostałych po usuniętych książkach. Tej operacji nie można cofnąć."
 }

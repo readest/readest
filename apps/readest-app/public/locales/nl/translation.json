@@ -2796,7 +2796,7 @@
   "Choose another": "Een andere kiezen",
   "Clear Deleted Books": "Verwijderde boeken opruimen",
   "Also removes the covers, progress, and notes they left behind": "Verwijdert ook de achtergebleven omslagen, voortgang en notities",
-  "This will delete all cached files and everything left behind by deleted books. This cannot be undone.": "Hiermee worden alle cachebestanden en alles wat verwijderde boeken hebben achtergelaten verwijderd. Dit kan niet ongedaan worden gemaakt.",
   "Exit Parallel Sync": "Parallelle synchronisatie verlaten",
-  "Enter Parallel Sync": "Parallelle synchronisatie starten"
+  "Enter Parallel Sync": "Parallelle synchronisatie starten",
+  "This will delete all cached files and the files left behind by deleted books. This cannot be undone.": "Hiermee worden alle cachebestanden en de bestanden die verwijderde boeken hebben achtergelaten verwijderd. Dit kan niet ongedaan worden gemaakt."
 }
