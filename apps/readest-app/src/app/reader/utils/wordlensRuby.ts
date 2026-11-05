@@ -69,11 +69,13 @@ const occurrenceRange = (
   occ: GlossOccurrence,
 ): Range | null => {
   const s = model.locate(occ.start);
-  const e = model.locate(occ.end);
+  // Locate the last character, not the exclusive end: a word ending where its
+  // text node ends (`<i>word</i>`, `word<sup>`) would resolve into the next node.
+  const e = model.locate(occ.end - 1);
   if (s.node !== e.node) return null;
   const range = doc.createRange();
   range.setStart(s.node, s.offset);
-  range.setEnd(e.node, e.offset);
+  range.setEnd(e.node, e.offset + 1);
   return range;
 };
 
