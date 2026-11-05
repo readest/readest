@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, test, vi } from 'vitest';
 import type { BookDoc } from '@/libs/document';
 import { loadMediaOverlaySection } from '@/services/tts/mediaOverlay/MediaOverlaySection';
 import { parseSSMLMarks } from '@/utils/ssml';
+import * as CFI from 'foliate-js/epubcfi.js';
 
 const SMIL_HREF = 'OEBPS/ch1.smil';
 
@@ -167,15 +168,86 @@ describe('loadMediaOverlaySection', () => {
     expect((range.endContainer as Text).data).toContain('end.');
   });
 
-  test('drops pars whose element has no readable text', async () => {
+  test('drops pars whose element has neither text nor an image', async () => {
     const section = (await loadMediaOverlaySection(
-      makeBook(smil(par('img', 0, 1) + par('s1', 1, 2))),
+      makeBook(smil(par('empty', 0, 1) + par('s1', 1, 2))),
       0,
-      makeDoc(`<p id="img"><img alt=""/></p>${SENTENCE_LEVEL.html}`),
+      makeDoc(`<p id="empty"> </p>${SENTENCE_LEVEL.html}`),
       'en',
     ))!;
 
     expect(section.pars.map((p) => p.range.toString())).toEqual(['First sentence here.']);
+  });
+
+  // #7342: a title page drawn as a picture, or a map whose alt text the narrator
+  // reads, used to be dropped, so its clip was never heard.
+  test.each([
+    ['an img inside the target', '<span id="t"><img src="t.jpg" alt="Title. Author."/></span>'],
+    ['the target is the img', '<img id="t" src="t.jpg" alt="Title. Author."/>'],
+    ['an img with empty alt', '<span id="t"><img src="t.jpg" alt=""/></span>'],
+    ['an svg figure', '<figure id="t"><svg><image href="map.jpg"/></svg></figure>'],
+  ])('keeps the clip of an image-only par: %s', async (_shape, html) => {
+    const section = (await loadMediaOverlaySection(
+      makeBook(smil(par('t', 13.192, 22.036) + par('s1', 22.036, 25))),
+      0,
+      makeDoc(`${html}${SENTENCE_LEVEL.html}`),
+      'en',
+    ))!;
+
+    expect(section.pars.map((p) => [p.clipBegin, p.clipEnd])).toEqual([
+      [13.192, 22.036],
+      [22.036, 25],
+    ]);
+    const image = section.pars[0]!;
+    const doc = image.range.startContainer.ownerDocument!;
+    expect(image.range.collapsed).toBe(false);
+    expect(image.range.intersectsNode(doc.querySelector('img, svg')!)).toBe(true);
+    // Each mark keeps its own text run, so the controller steps onto the next par.
+    const { marks } = parseSSMLMarks(section.ssmlForBlock(0)!);
+    expect(marks.map((m) => m.name)).toEqual(['0']);
+    expect(section.blockCount).toBe(2);
+  });
+
+  test("carries an image's description as the par's text", async () => {
+    const section = (await loadMediaOverlaySection(
+      makeBook(smil(par('t', 0, 9))),
+      0,
+      makeDoc('<span id="t"><img src="t.jpg" alt="Tomorrow. Gabrielle Zevin."/></span>'),
+      'en',
+    ))!;
+
+    expect(section.pars[0]!.text).toBe('Tomorrow. Gabrielle Zevin.');
+  });
+
+  // The highlighter re-anchors every range through a CFI before painting, and
+  // the overlayer paints the images the anchored range intersects.
+  test.each([
+    ['a span around the img', 'Intro. <span id="t"><img src="t.jpg" alt="x"/></span> After.'],
+    [
+      'a figure with whitespace',
+      'Intro.<figure id="t">\n<img src="t.jpg" alt="x"/>\n</figure>After.',
+    ],
+    // Readest appends a cfi-inert skip link inside a section's last element,
+    // which on a title page drawn as a picture is the narrated span itself.
+    [
+      'a span ending in the skip link',
+      'Intro. <span id="t"><img src="t.jpg" alt="x"/><span cfi-inert="" aria-label="Skip"></span></span>',
+    ],
+  ])('re-anchors an image par over the image alone: %s', async (_shape, html) => {
+    const doc = makeDoc(`<div>${html}</div>`);
+    const section = (await loadMediaOverlaySection(makeBook(smil(par('t', 0, 9))), 0, doc, 'en'))!;
+
+    const anchored = CFI.toRange(doc, CFI.parse(CFI.fromRange(section.pars[0]!.range))) as Range;
+    expect(anchored.intersectsNode(doc.querySelector('img')!)).toBe(true);
+    expect(anchored.toString().trim()).toBe('');
+  });
+
+  test('never re-anchors a bare img target over the text around it', async () => {
+    const doc = makeDoc('<p>Intro <img id="t" src="t.jpg" alt="x"/> after.</p>');
+    const section = (await loadMediaOverlaySection(makeBook(smil(par('t', 0, 9))), 0, doc, 'en'))!;
+
+    const anchored = CFI.toRange(doc, CFI.parse(CFI.fromRange(section.pars[0]!.range))) as Range;
+    expect(anchored.toString()).toBe('');
   });
 
   test('builds SSML whose marks round-trip through parseSSMLMarks', async () => {
