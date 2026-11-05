@@ -217,9 +217,9 @@ const BookMenu: React.FC<BookMenuProps> = ({ menuClassName, setIsDropdownOpen })
       </MenuItem>
       {bookKeys.length > 1 &&
         (parallelViews.length > 0 ? (
-          <MenuItem label={_('Exit Parallel Read')} onClick={handleUnsetParallel} />
+          <MenuItem label={_('Exit Parallel Sync')} onClick={handleUnsetParallel} />
         ) : (
-          <MenuItem label={_('Enter Parallel Read')} onClick={handleSetParallel} />
+          <MenuItem label={_('Enter Parallel Sync')} onClick={handleSetParallel} />
         ))}
       {(settings.kosync.enabled ||
         bookOrbitProgressSync ||

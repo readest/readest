@@ -532,8 +532,6 @@
   "Translation Disabled": "Переклад вимкнено",
   "Minimize": "Згорнути",
   "Maximize or Restore": "Збільшити або відновити",
-  "Exit Parallel Read": "Вийти з паралельного читання",
-  "Enter Parallel Read": "Ввійти в паралельне читання",
   "Zoom Level": "Рівень масштабування",
   "Zoom Out": "Зменшити масштаб",
   "Reset Zoom": "Скинути масштаб",
@@ -2941,5 +2939,10 @@
   "Book cover": "Обкладинка книги",
   "Browse for a cover, then choose it here.": "Знайдіть обкладинку, а потім виберіть її тут.",
   "Cover selected": "Обкладинку вибрано",
-  "Choose another": "Вибрати іншу"
+  "Choose another": "Вибрати іншу",
+  "Clear Deleted Books": "Очистити видалені книги",
+  "Also removes the covers, progress, and notes they left behind": "Також вилучає обкладинки, прогрес і нотатки, що залишилися",
+  "This will delete all cached files and everything left behind by deleted books. This cannot be undone.": "Буде видалено всі кешовані файли та все, що залишилося від видалених книг. Цю дію неможливо скасувати.",
+  "Exit Parallel Sync": "Вийти з паралельної синхронізації",
+  "Enter Parallel Sync": "Увімкнути паралельну синхронізацію"
 }

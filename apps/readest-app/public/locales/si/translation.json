@@ -526,8 +526,6 @@
   "Translation Disabled": "පරිවර්තනය අක්‍රීය කර ඇත",
   "Minimize": "අඩු කරන්න",
   "Maximize or Restore": "ඉහළ නැංවීම හෝ ප්‍රතිසංස්කරණය",
-  "Exit Parallel Read": "සමාන්තර කියවීමෙන් පිටවන්න",
-  "Enter Parallel Read": "සමාන්තර කියවීමේදී පිවිසෙන්න",
   "Zoom Level": "සංයුතිය මට්ටම",
   "Zoom Out": "සංයුතිය අඩු කරන්න",
   "Reset Zoom": "සංයුතිය නැවත සකසන්න",
@@ -2795,5 +2793,10 @@
   "Book cover": "පොතේ ආවරණය",
   "Browse for a cover, then choose it here.": "ආවරණයක් සොයා බලා, පසුව එය මෙහි තෝරන්න.",
   "Cover selected": "ආවරණය තෝරා ගන්නා ලදී",
-  "Choose another": "වෙනත් එකක් තෝරන්න"
+  "Choose another": "වෙනත් එකක් තෝරන්න",
+  "Clear Deleted Books": "මකන ලද පොත් ඉවත් කරන්න",
+  "Also removes the covers, progress, and notes they left behind": "ඉතිරි වූ කවර, ප්‍රගතිය සහ සටහන් ද ඉවත් කරයි",
+  "This will delete all cached files and everything left behind by deleted books. This cannot be undone.": "මෙය සියලු හැඹිලි ගොනු සහ මකන ලද පොත්වල ඉතිරි වූ සියල්ල මකා දමයි. මෙය අහෝසි කළ නොහැක.",
+  "Exit Parallel Sync": "සමාන්තර සමමුහුර්තයෙන් ඉවත් වන්න",
+  "Enter Parallel Sync": "සමාන්තර සමමුහුර්තයට ඇතුළු වන්න"
 }

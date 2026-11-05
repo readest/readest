@@ -529,8 +529,6 @@
   "Translation Disabled": "Traducción Deshabilitada",
   "Minimize": "Minimizar",
   "Maximize or Restore": "Maximizar o Restaurar",
-  "Exit Parallel Read": "Salir de Lectura Paralela",
-  "Enter Parallel Read": "Entrar en Lectura Paralela",
   "Zoom Level": "Nivel de Zoom",
   "Zoom Out": "Alejar",
   "Reset Zoom": "Restablecer Zoom",
@@ -2868,5 +2866,10 @@
   "Book cover": "Portada del libro",
   "Browse for a cover, then choose it here.": "Busca una portada y luego elígela aquí.",
   "Cover selected": "Portada seleccionada",
-  "Choose another": "Elegir otra"
+  "Choose another": "Elegir otra",
+  "Clear Deleted Books": "Borrar libros eliminados",
+  "Also removes the covers, progress, and notes they left behind": "También elimina las portadas, el progreso y las notas que dejaron",
+  "This will delete all cached files and everything left behind by deleted books. This cannot be undone.": "Se eliminarán todos los archivos en caché y todo lo que dejaron los libros eliminados. Esta acción no se puede deshacer.",
+  "Exit Parallel Sync": "Salir de la sincronización paralela",
+  "Enter Parallel Sync": "Entrar en la sincronización paralela"
 }

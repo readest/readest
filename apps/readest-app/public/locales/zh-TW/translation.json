@@ -523,8 +523,6 @@
   "Translation Disabled": "翻譯已禁用",
   "Minimize": "最小化",
   "Maximize or Restore": "最大化或還原",
-  "Exit Parallel Read": "退出並排閱讀",
-  "Enter Parallel Read": "進入並排閱讀",
   "Zoom Level": "縮放級別",
   "Zoom Out": "縮小",
   "Reset Zoom": "重置縮放",
@@ -2722,5 +2720,10 @@
   "Book cover": "書籍封面",
   "Browse for a cover, then choose it here.": "瀏覽找到封面後，在此處選擇。",
   "Cover selected": "已選擇封面",
-  "Choose another": "重新選擇"
+  "Choose another": "重新選擇",
+  "Clear Deleted Books": "清理已刪除書籍",
+  "Also removes the covers, progress, and notes they left behind": "同時移除它們遺留的封面、進度和筆記",
+  "This will delete all cached files and everything left behind by deleted books. This cannot be undone.": "這將刪除所有快取檔案以及已刪除書籍遺留的全部內容。此操作無法復原。",
+  "Exit Parallel Sync": "退出並排同步",
+  "Enter Parallel Sync": "進入並排同步"
 }

@@ -185,6 +185,12 @@ msgstr "Удалить эту книгу из облака и устройств
 msgid "Remove"
 msgstr "Удалить"
 
+msgid "Remove from Library, Keep File"
+msgstr "Удалить из библиотеки, оставить файл"
+
+msgid "Remove this book from your library and the cloud? The file stays on this device."
+msgstr "Удалить эту книгу из библиотеки и облака? Файл останется на этом устройстве."
+
 msgid "Remove from Cloud Only"
 msgstr "Удалить только из облака"
 

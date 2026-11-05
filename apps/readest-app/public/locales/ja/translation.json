@@ -523,8 +523,6 @@
   "Translation Disabled": "翻訳が無効化されました",
   "Minimize": "最小化",
   "Maximize or Restore": "最大化または復元",
-  "Exit Parallel Read": "並行読書を終了",
-  "Enter Parallel Read": "並行読書に入る",
   "Zoom Level": "ズームレベル",
   "Zoom Out": "ズームアウト",
   "Reset Zoom": "ズームリセット",
@@ -2722,5 +2720,10 @@
   "Book cover": "本の表紙",
   "Browse for a cover, then choose it here.": "表紙を探して、ここで選択してください。",
   "Cover selected": "表紙を選択しました",
-  "Choose another": "別の画像を選択"
+  "Choose another": "別の画像を選択",
+  "Clear Deleted Books": "削除した書籍を消去",
+  "Also removes the covers, progress, and notes they left behind": "残っている表紙、進捗、メモも削除します",
+  "This will delete all cached files and everything left behind by deleted books. This cannot be undone.": "すべてのキャッシュファイルと、削除した書籍の残存データを削除します。この操作は元に戻せません。",
+  "Exit Parallel Sync": "並行同期を終了",
+  "Enter Parallel Sync": "並行同期を開始"
 }

@@ -22,6 +22,8 @@ import {
 } from '@/utils/cache';
 import { AppService } from '@/types/system';
 import Dialog from '@/components/Dialog';
+import BoxedList from '@/components/settings/primitives/BoxedList';
+import SettingsSwitchRow from '@/components/settings/primitives/SettingsSwitchRow';
 
 export const setCacheManagerDialogVisible = (visible: boolean) => {
   const dialog = document.getElementById('cache_manager_window');
@@ -79,8 +81,9 @@ export const CacheManagerWindow = () => {
   const [size, setSize] = useState(0);
   const [progress, setProgress] = useState<CacheClearProgress>({ current: 0, total: 0 });
   const [errorMessage, setErrorMessage] = useState('');
+  const [includeDeletedBooks, setIncludeDeletedBooks] = useState(false);
 
-  const scanCache = async () => {
+  const scanCache = async (includeDeleted = includeDeletedBooks) => {
     if (!appService) return;
     setStatus('scanning');
     setErrorMessage('');
@@ -90,6 +93,7 @@ export const CacheManagerWindow = () => {
         appService,
         await getCacheSources(appService),
         { books: library, loaded: libraryLoaded },
+        includeDeleted,
       );
       const stats = getCacheStats(entries);
       setEntries(entries);
@@ -124,6 +128,11 @@ export const CacheManagerWindow = () => {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [appService]);
+
+  const handleToggleDeletedBooks = () => {
+    setIncludeDeletedBooks(!includeDeletedBooks);
+    scanCache(!includeDeletedBooks);
+  };
 
   const handleClearClick = () => {
     if (status === 'idle' && count > 0) {
@@ -164,6 +173,7 @@ export const CacheManagerWindow = () => {
     setStatus('scanning');
     setProgress({ current: 0, total: 0 });
     setErrorMessage('');
+    setIncludeDeletedBooks(false);
   };
 
   const progressPercentage =
@@ -230,6 +240,19 @@ export const CacheManagerWindow = () => {
             </div>
           </div>
 
+          {status !== 'clearing' && status !== 'done' && (
+            <BoxedList
+              description={_('Also removes the covers, progress, and notes they left behind')}
+            >
+              <SettingsSwitchRow
+                label={_('Clear Deleted Books')}
+                checked={includeDeletedBooks}
+                onChange={handleToggleDeletedBooks}
+                disabled={status !== 'idle'}
+              />
+            </BoxedList>
+          )}
+
           {/* Clearing progress */}
           {status === 'clearing' && (
             <div className='space-y-2'>
@@ -262,11 +285,15 @@ export const CacheManagerWindow = () => {
           {status === 'confirming' && (
             <p className='text-base-content/60 flex items-center justify-center gap-1.5 text-center text-[13px] leading-relaxed'>
               <RiErrorWarningFill className='text-warning h-4 w-4 shrink-0' aria-hidden='true' />
-              {orphanCount > 0
+              {includeDeletedBooks
                 ? _(
-                    'This will delete all cached files and orphaned book files not in your library. This cannot be undone.',
+                    'This will delete all cached files and everything left behind by deleted books. This cannot be undone.',
                   )
-                : _('This will delete all cached files. This cannot be undone.')}
+                : orphanCount > 0
+                  ? _(
+                      'This will delete all cached files and orphaned book files not in your library. This cannot be undone.',
+                    )
+                  : _('This will delete all cached files. This cannot be undone.')}
             </p>
           )}
 

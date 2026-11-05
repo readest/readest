@@ -1019,11 +1019,7 @@ const FoliateViewer: React.FC<{
       if (appService?.isMobileApp) {
         await lockScreenOrientation({ orientation: screenOrientation });
       }
-      if (animated) {
-        view.renderer.setAttribute('animated', '');
-      } else {
-        view.renderer.removeAttribute('animated');
-      }
+      view.renderer.toggleAttribute('animated', animated && !eink);
       // Arms the foliate CursorAutohider — goes on the view element itself,
       // not the renderer, and is re-checked on every mousemove so the
       // ControlPanel toggle takes effect without recreating the view.

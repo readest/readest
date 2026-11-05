@@ -523,8 +523,6 @@
   "Translation Disabled": "Terjemahan Dinonaktifkan",
   "Minimize": "Minimalkan",
   "Maximize or Restore": "Maksimalkan atau Pulihkan",
-  "Exit Parallel Read": "Keluar dari Baca Paralel",
-  "Enter Parallel Read": "Masuk ke Baca Paralel",
   "Zoom Level": "Level Zoom",
   "Zoom Out": "Perbesar Zoom",
   "Reset Zoom": "Reset Zoom",
@@ -2722,5 +2720,10 @@
   "Book cover": "Sampul buku",
   "Browse for a cover, then choose it here.": "Telusuri sampul, lalu pilih di sini.",
   "Cover selected": "Sampul dipilih",
-  "Choose another": "Pilih yang lain"
+  "Choose another": "Pilih yang lain",
+  "Clear Deleted Books": "Bersihkan buku yang dihapus",
+  "Also removes the covers, progress, and notes they left behind": "Juga menghapus sampul, progres, dan catatan yang tersisa",
+  "This will delete all cached files and everything left behind by deleted books. This cannot be undone.": "Ini akan menghapus semua file cache dan semua yang tersisa dari buku yang dihapus. Tindakan ini tidak dapat dibatalkan.",
+  "Exit Parallel Sync": "Keluar dari sinkronisasi paralel",
+  "Enter Parallel Sync": "Masuk ke sinkronisasi paralel"
 }

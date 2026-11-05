@@ -185,6 +185,12 @@ msgstr "මෙම පොත වළාකුළු සහ උපාංගයෙ�
 msgid "Remove"
 msgstr "ඉවත් කරන්න"
 
+msgid "Remove from Library, Keep File"
+msgstr "පුස්තකාලයෙන් ඉවත් කරන්න, ගොනුව තබා ගන්න"
+
+msgid "Remove this book from your library and the cloud? The file stays on this device."
+msgstr "මෙම පොත ඔබේ පුස්තකාලයෙන් සහ වලාකුළෙන් ඉවත් කරන්නද? ගොනුව මෙම උපාංගයේ පවතී."
+
 msgid "Remove from Cloud Only"
 msgstr "වළාකුළුවෙන් පමණක් ඉවත් කරන්න"
 

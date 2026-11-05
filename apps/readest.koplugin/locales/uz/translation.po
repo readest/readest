@@ -185,6 +185,12 @@ msgstr "Ushbu kitobni bulut va qurilmadan olib tashlaysizmi?"
 msgid "Remove"
 msgstr "Olib tashlash"
 
+msgid "Remove from Library, Keep File"
+msgstr "Kutubxonadan olib tashlash, faylni saqlash"
+
+msgid "Remove this book from your library and the cloud? The file stays on this device."
+msgstr "Bu kitob kutubxonangiz va bulutdan olib tashlansinmi? Fayl shu qurilmada qoladi."
+
 msgid "Remove from Cloud Only"
 msgstr "Faqat bulutdan olib tashlash"
 

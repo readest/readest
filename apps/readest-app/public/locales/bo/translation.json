@@ -523,8 +523,6 @@
   "Translation Disabled": "ཡིག་སྒྱུར་མེད།",
   "Minimize": "ཆུང་དུ་བསྡུ།",
   "Maximize or Restore": "ཆེན་པོ་བཟོ/གསོག།",
-  "Exit Parallel Read": "མཉམ་དུ་ཀློག་ཕྱིར་འཐེན།",
-  "Enter Parallel Read": "མཉམ་དུ་ཀློག་འཛུལ།",
   "Zoom Level": "རྒྱབ་སྐོར་གྱི་གདམ་ཁ",
   "Zoom Out": "རྒྱབ་སྐོར་བཏང་བ།",
   "Reset Zoom": "རྒྱབ་སྐོར་རྩོལ་བ།",
@@ -2722,5 +2720,10 @@
   "Book cover": "དཔེ་དེབ་ཀྱི་མདུན་ཤོག",
   "Browse for a cover, then choose it here.": "མདུན་ཤོག་ཞིག་ལྟ་བཤེར་བྱས་ནས་འདིར་འདེམས།",
   "Cover selected": "མདུན་ཤོག་བདམས་ཟིན།",
-  "Choose another": "གཞན་ཞིག་འདེམས།"
+  "Choose another": "གཞན་ཞིག་འདེམས།",
+  "Clear Deleted Books": "བསུབས་ཟིན་པའི་དཔེ་དེབ་གཙང་སེལ།",
+  "Also removes the covers, progress, and notes they left behind": "ལྷག་མའི་ཁ་ཤོག་དང་ཀློག་འགྲོས། ཟིན་བྲིས་ཀྱང་སུབ་རྒྱུ།",
+  "This will delete all cached files and everything left behind by deleted books. This cannot be undone.": "འདིས་འདྲ་བཟོས་ཡིག་ཆ་ཡོངས་རྫོགས་དང་བསུབས་ཟིན་པའི་དཔེ་དེབ་ཀྱི་ལྷག་མ་ཚང་མ་སུབ་ངེས། འདི་ཕྱིར་ལྡོག་བྱེད་མི་ཐུབ།",
+  "Exit Parallel Sync": "གྲལ་སྤྲོད་མཉམ་འགྲིག་ནས་ཕྱིར་འབུད།",
+  "Enter Parallel Sync": "གྲལ་སྤྲོད་མཉམ་འགྲིག་ལ་འཛུལ།"
 }

@@ -526,8 +526,6 @@
   "Translation Disabled": "अनुवाद अक्षम",
   "Minimize": "न्यूनतम करें",
   "Maximize or Restore": "अधिकतम या पुनर्स्थापित करें",
-  "Exit Parallel Read": "पैरालल रीड से बाहर निकलें",
-  "Enter Parallel Read": "पैरालल रीड में प्रवेश करें",
   "Zoom Level": "ज़ूम स्तर",
   "Zoom Out": "ज़ूम आउट",
   "Reset Zoom": "ज़ूम रीसेट करें",
@@ -2795,5 +2793,10 @@
   "Book cover": "पुस्तक कवर",
   "Browse for a cover, then choose it here.": "कोई कवर ब्राउज़ करें, फिर उसे यहाँ चुनें।",
   "Cover selected": "कवर चुना गया",
-  "Choose another": "दूसरा चुनें"
+  "Choose another": "दूसरा चुनें",
+  "Clear Deleted Books": "हटाई गई पुस्तकें साफ़ करें",
+  "Also removes the covers, progress, and notes they left behind": "बचे हुए कवर, प्रगति और नोट्स भी हटा देता है",
+  "This will delete all cached files and everything left behind by deleted books. This cannot be undone.": "इससे सभी कैश फ़ाइलें और हटाई गई पुस्तकों का बचा हुआ सब कुछ हट जाएगा। इसे पूर्ववत नहीं किया जा सकता।",
+  "Exit Parallel Sync": "समानांतर सिंक से बाहर निकलें",
+  "Enter Parallel Sync": "समानांतर सिंक में प्रवेश करें"
 }

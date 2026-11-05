@@ -526,8 +526,6 @@
   "Translation Disabled": "Vertaling Uitgeschakeld",
   "Minimize": "Minimaliseren",
   "Maximize or Restore": "Maximaliseren of Herstellen",
-  "Exit Parallel Read": "Parallel Lezen Afsluiten",
-  "Enter Parallel Read": "Parallel Lezen Starten",
   "Zoom Level": "Zoomniveau",
   "Zoom Out": "Zoom Verkleinen",
   "Reset Zoom": "Zoom Reset",
@@ -2795,5 +2793,10 @@
   "Book cover": "Boekomslag",
   "Browse for a cover, then choose it here.": "Zoek een omslag en kies deze daarna hier.",
   "Cover selected": "Omslag geselecteerd",
-  "Choose another": "Een andere kiezen"
+  "Choose another": "Een andere kiezen",
+  "Clear Deleted Books": "Verwijderde boeken opruimen",
+  "Also removes the covers, progress, and notes they left behind": "Verwijdert ook de achtergebleven omslagen, voortgang en notities",
+  "This will delete all cached files and everything left behind by deleted books. This cannot be undone.": "Hiermee worden alle cachebestanden en alles wat verwijderde boeken hebben achtergelaten verwijderd. Dit kan niet ongedaan worden gemaakt.",
+  "Exit Parallel Sync": "Parallelle synchronisatie verlaten",
+  "Enter Parallel Sync": "Parallelle synchronisatie starten"
 }

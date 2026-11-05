@@ -561,8 +561,6 @@
   "Preferred Font": "Előnyben részesített betűtípus",
   "Disable": "Letiltás",
   "Enable": "Engedélyezés",
-  "Exit Parallel Read": "Kilépés a párhuzamos olvasásból",
-  "Enter Parallel Read": "Párhuzamos olvasás indítása",
   "KOReader Sync": "KOReader szinkronizálás",
   "Push Progress": "Haladás küldése",
   "Pull Progress": "Haladás letöltése",
@@ -2795,5 +2793,10 @@
   "Book cover": "Könyvborító",
   "Browse for a cover, then choose it here.": "Keressen egy borítót, majd válassza ki itt.",
   "Cover selected": "Borító kiválasztva",
-  "Choose another": "Másik kiválasztása"
+  "Choose another": "Másik kiválasztása",
+  "Clear Deleted Books": "Törölt könyvek eltávolítása",
+  "Also removes the covers, progress, and notes they left behind": "A visszamaradt borítókat, előrehaladást és jegyzeteket is eltávolítja",
+  "This will delete all cached files and everything left behind by deleted books. This cannot be undone.": "Ez törli az összes gyorsítótárazott fájlt és mindent, ami a törölt könyvekből visszamaradt. A művelet nem vonható vissza.",
+  "Exit Parallel Sync": "Kilépés a párhuzamos szinkronból",
+  "Enter Parallel Sync": "Belépés a párhuzamos szinkronba"
 }

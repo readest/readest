@@ -251,8 +251,6 @@
   "Preferred Font": "Fon Pilihan",
   "Disable": "Lumpuhkan",
   "Enable": "Aktifkan",
-  "Exit Parallel Read": "Keluar Baca Selari",
-  "Enter Parallel Read": "Masuk Baca Selari",
   "KOReader Sync": "Segerak KOReader",
   "Push Progress": "Hantar Kemajuan",
   "Pull Progress": "Tarik Kemajuan",
@@ -2722,5 +2720,10 @@
   "Book cover": "Kulit buku",
   "Browse for a cover, then choose it here.": "Semak imbas kulit, kemudian pilihnya di sini.",
   "Cover selected": "Kulit dipilih",
-  "Choose another": "Pilih yang lain"
+  "Choose another": "Pilih yang lain",
+  "Clear Deleted Books": "Kosongkan buku yang dipadam",
+  "Also removes the covers, progress, and notes they left behind": "Turut membuang kulit buku, kemajuan dan nota yang tertinggal",
+  "This will delete all cached files and everything left behind by deleted books. This cannot be undone.": "Ini akan memadam semua fail cache dan semua yang ditinggalkan oleh buku yang dipadam. Tindakan ini tidak boleh dibatalkan.",
+  "Exit Parallel Sync": "Keluar daripada penyegerakan selari",
+  "Enter Parallel Sync": "Masuk ke penyegerakan selari"
 }

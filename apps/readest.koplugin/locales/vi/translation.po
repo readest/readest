@@ -185,6 +185,12 @@ msgstr "Xóa sách này khỏi đám mây và thiết bị?"
 msgid "Remove"
 msgstr "Xóa"
 
+msgid "Remove from Library, Keep File"
+msgstr "Xóa khỏi thư viện, giữ tệp"
+
+msgid "Remove this book from your library and the cloud? The file stays on this device."
+msgstr "Xóa sách này khỏi thư viện và đám mây? Tệp vẫn còn trên thiết bị này."
+
 msgid "Remove from Cloud Only"
 msgstr "Chỉ xóa khỏi đám mây"
 

@@ -523,8 +523,6 @@
   "Translation Disabled": "Dịch thuật đã tắt",
   "Minimize": "Thu nhỏ",
   "Maximize or Restore": "Tối đa hóa hoặc Khôi phục",
-  "Exit Parallel Read": "Thoát Đọc Song Song",
-  "Enter Parallel Read": "Vào Đọc Song Song",
   "Zoom Level": "Độ phóng to",
   "Zoom Out": "Thu nhỏ",
   "Reset Zoom": "Đặt lại độ phóng to",
@@ -2722,5 +2720,10 @@
   "Book cover": "Bìa sách",
   "Browse for a cover, then choose it here.": "Duyệt tìm bìa, sau đó chọn tại đây.",
   "Cover selected": "Đã chọn bìa",
-  "Choose another": "Chọn ảnh khác"
+  "Choose another": "Chọn ảnh khác",
+  "Clear Deleted Books": "Dọn sách đã xóa",
+  "Also removes the covers, progress, and notes they left behind": "Đồng thời xóa bìa, tiến độ và ghi chú còn sót lại",
+  "This will delete all cached files and everything left behind by deleted books. This cannot be undone.": "Thao tác này sẽ xóa tất cả tệp bộ nhớ đệm và mọi thứ còn sót lại của sách đã xóa. Không thể hoàn tác.",
+  "Exit Parallel Sync": "Thoát đồng bộ song song",
+  "Enter Parallel Sync": "Vào đồng bộ song song"
 }

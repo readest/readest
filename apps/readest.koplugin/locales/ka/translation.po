@@ -185,6 +185,12 @@ msgstr "წავშალოთ ეს წიგნი ღრუბლიდა
 msgid "Remove"
 msgstr "წაშლა"
 
+msgid "Remove from Library, Keep File"
+msgstr "ბიბლიოთეკიდან წაშლა, ფაილის შენახვა"
+
+msgid "Remove this book from your library and the cloud? The file stays on this device."
+msgstr "წაიშალოს ეს წიგნი თქვენი ბიბლიოთეკიდან და ღრუბლიდან? ფაილი ამ მოწყობილობაზე დარჩება."
+
 msgid "Remove from Cloud Only"
 msgstr "მოშორება მხოლოდ ღრუბლიდან"
 

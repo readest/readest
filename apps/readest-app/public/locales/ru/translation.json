@@ -532,8 +532,6 @@
   "Translation Disabled": "Перевод отключен",
   "Minimize": "Свернуть",
   "Maximize or Restore": "Максимизировать или восстановить",
-  "Exit Parallel Read": "Выйти из параллельного чтения",
-  "Enter Parallel Read": "Войти в параллельное чтение",
   "Zoom Level": "Уровень масштабирования",
   "Zoom Out": "Уменьшить масштаб",
   "Reset Zoom": "Сбросить масштаб",
@@ -2941,5 +2939,10 @@
   "Book cover": "Обложка книги",
   "Browse for a cover, then choose it here.": "Найдите обложку, затем выберите её здесь.",
   "Cover selected": "Обложка выбрана",
-  "Choose another": "Выбрать другую"
+  "Choose another": "Выбрать другую",
+  "Clear Deleted Books": "Очистить удалённые книги",
+  "Also removes the covers, progress, and notes they left behind": "Также удаляет оставшиеся обложки, прогресс и заметки",
+  "This will delete all cached files and everything left behind by deleted books. This cannot be undone.": "Будут удалены все кэшированные файлы и всё, что осталось от удалённых книг. Это действие нельзя отменить.",
+  "Exit Parallel Sync": "Выйти из параллельной синхронизации",
+  "Enter Parallel Sync": "Включить параллельную синхронизацию"
 }

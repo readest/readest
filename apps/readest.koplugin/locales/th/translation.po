@@ -185,6 +185,12 @@ msgstr "ลบหนังสือเล่มนี้จากคลาวด
 msgid "Remove"
 msgstr "ลบ"
 
+msgid "Remove from Library, Keep File"
+msgstr "ลบออกจากคลัง เก็บไฟล์ไว้"
+
+msgid "Remove this book from your library and the cloud? The file stays on this device."
+msgstr "ลบหนังสือเล่มนี้ออกจากคลังและคลาวด์หรือไม่? ไฟล์จะยังอยู่ในอุปกรณ์นี้"
+
 msgid "Remove from Cloud Only"
 msgstr "ลบจากคลาวด์เท่านั้น"
 
