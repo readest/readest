@@ -230,6 +230,17 @@ export interface NotionSettings {
 }
 
 /**
+ * Writes each book's highlights into a Markdown note in an Obsidian vault
+ * folder (#7061). Per device: the folder is a local path, so this slice is
+ * not in the synced settings allowlist.
+ */
+export interface ObsidianSettings {
+  enabled: boolean;
+  /** Absolute path of the vault folder the book notes go into. */
+  folder: string;
+}
+
+/**
  * Sort field for the WebDAV browser listing. 'name' reproduces the
  * legacy directories-first/alphabetical default; the date fields drive
  * the "pull up recent books" use case ('created' relies on the server
@@ -620,6 +631,7 @@ export interface SystemSettings {
   hardcover: HardcoverSettings;
   pagebound: PageboundSettings;
   notion: NotionSettings;
+  obsidian: ObsidianSettings;
   /** Optional by design — see {@link ReadestCloudSettings}. Never defaulted. */
   readestCloud?: ReadestCloudSettings;
   webdav: WebDAVSettings;

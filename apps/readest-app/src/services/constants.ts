@@ -26,6 +26,7 @@ import {
   LibraryGroupByType,
   LibrarySortByType,
   NotionSettings,
+  ObsidianSettings,
   ReadSettings,
   ReadwiseSettings,
   SystemSettings,
@@ -162,6 +163,11 @@ export const DEFAULT_NOTION_SETTINGS = {
   includeChapterHeading: true,
 } as NotionSettings;
 
+export const DEFAULT_OBSIDIAN_SETTINGS: ObsidianSettings = {
+  enabled: false,
+  folder: '',
+};
+
 export const DEFAULT_WEBDAV_SETTINGS = {
   enabled: false,
   serverUrl: '',
@@ -287,6 +293,7 @@ export const DEFAULT_SYSTEM_SETTINGS: Partial<SystemSettings> = {
   hardcover: DEFAULT_HARDCOVER_SETTINGS,
   pagebound: DEFAULT_PAGEBOUND_SETTINGS,
   notion: DEFAULT_NOTION_SETTINGS,
+  obsidian: DEFAULT_OBSIDIAN_SETTINGS,
   webdav: DEFAULT_WEBDAV_SETTINGS,
   googleDrive: DEFAULT_GOOGLE_DRIVE_SETTINGS,
   s3: DEFAULT_S3_SETTINGS,

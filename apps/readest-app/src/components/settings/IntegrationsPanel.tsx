@@ -9,6 +9,7 @@ import {
   RiBook3Line,
   RiBookmark3Line,
   RiFileList3Line,
+  RiMarkdownLine,
   RiDiscordLine,
   RiSendPlaneLine,
   RiWifiLine,
@@ -55,6 +56,7 @@ import ReadwiseForm from './integrations/ReadwiseForm';
 import HardcoverForm from './integrations/HardcoverForm';
 import PageboundForm from './integrations/PageboundForm';
 import NotionForm from './integrations/NotionForm';
+import ObsidianForm from './integrations/ObsidianForm';
 import SendToReadestForm from './integrations/SendToReadestForm';
 import LocalSendForm from './integrations/LocalSendForm';
 import WebDAVForm from './integrations/WebDAVForm';
@@ -95,6 +97,7 @@ type SubPage =
   | 'hardcover'
   | 'pagebound'
   | 'notion'
+  | 'obsidian'
   | 'opds'
   | 'audiobookshelf'
   | 'send'
@@ -489,6 +492,12 @@ const IntegrationsPanel: React.FC = () => {
         <NotionForm onBack={() => setSubPage(null)} />
       </div>
     );
+  if (subPage === 'obsidian')
+    return (
+      <div className='my-4 w-full'>
+        <ObsidianForm onBack={() => setSubPage(null)} />
+      </div>
+    );
   if (subPage === 'opds')
     return (
       <div className='my-4 w-full'>
@@ -540,6 +549,8 @@ const IntegrationsPanel: React.FC = () => {
     settings.notion?.enabled && settings.notion.accessToken && settings.notion.databaseId
       ? _('Connected')
       : _('Not connected');
+  const obsidianStatus =
+    settings.obsidian?.enabled && settings.obsidian.folder ? _('On') : _('Off');
 
   // Cloud sync providers are independently selectable (#5062): any subset of
   // {Readest Cloud, WebDAV, Google Drive, S3, OneDrive, iCloud} can sync the
@@ -719,6 +730,15 @@ const IntegrationsPanel: React.FC = () => {
               status={notionStatus}
               onClick={() => setSubPage('notion')}
             />
+            {/* Writes into a local vault folder: desktop and Android only for now. */}
+            {(appService?.isDesktopApp || appService?.isAndroidApp) && (
+              <IntegrationRow
+                icon={RiMarkdownLine}
+                title={_('Obsidian')}
+                status={obsidianStatus}
+                onClick={() => setSubPage('obsidian')}
+              />
+            )}
           </div>
         </div>
       </div>
