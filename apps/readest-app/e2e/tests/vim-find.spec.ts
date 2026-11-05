@@ -74,6 +74,10 @@ test.describe('Vim find', () => {
     await expect(reader.annotationPopup).toBeVisible();
     await expect(page.locator('.vim-command-line')).toContainText('/Alice');
     await expect(page.locator('.vim-command-line')).toContainText(/\[1\/\d+\]/);
+    // The Enter that ran the search isn't also Toggle Toolbar, which would
+    // raise the bars and put the keys on a footer button.
+    expect(await reader.isHeaderRevealed()).toBe(false);
+    expect(await page.evaluate(() => !!document.activeElement?.closest('.footer-bar'))).toBe(false);
   });
 
   test('n and N step through matches instead of opening the Notebook', async ({
