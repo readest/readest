@@ -567,10 +567,15 @@ const LearningHintField: React.FC<{ word: string; lang: string }> = ({ word, lan
     const e = s.entries[id];
     return !!e && !e.deletedAt && e.state === 'learning';
   });
-  const [value, setValue] = useState(() => useVocabularyStore.getState().entries[id]?.hint ?? '');
+  const savedHint = useVocabularyStore((s) => s.entries[id]?.hint ?? '');
+  const [value, setValue] = useState(savedHint);
   // What the reader typed and hasn't saved yet; null until they type, so a
   // hint synced in meanwhile isn't overwritten by the stale field.
   const editRef = useRef<string | null>(null);
+  // An untouched field follows the saved hint; typing keeps the reader's text.
+  useEffect(() => {
+    if (editRef.current === null) setValue(savedHint);
+  }, [savedHint]);
 
   const save = useCallback(() => {
     const typed = editRef.current;

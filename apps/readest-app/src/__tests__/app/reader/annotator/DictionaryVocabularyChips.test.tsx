@@ -3,7 +3,7 @@
  * of lookups into the vocabulary builder (#789, #6613).
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, cleanup, fireEvent } from '@testing-library/react';
+import { render, screen, cleanup, fireEvent, act } from '@testing-library/react';
 import type { ReactNode } from 'react';
 
 import DictionarySheet from '@/app/reader/components/annotator/DictionarySheet';
@@ -185,6 +185,16 @@ describe('dictionary hint field (#7325)', () => {
     fireEvent.blur(hintField());
     cleanup();
     expect(entries()[0]!.hint).toBe('from another device');
+  });
+
+  it('shows a hint saved elsewhere in the untouched field, but not over typing', () => {
+    sheet({ capture });
+    learn();
+    act(() => useVocabularyStore.getState().setHint('en:serendipity', 'synced'));
+    expect(hintField().value).toBe('synced');
+    fireEvent.change(hintField(), { target: { value: 'mine' } });
+    act(() => useVocabularyStore.getState().setHint('en:serendipity', 'synced again'));
+    expect(hintField().value).toBe('mine');
   });
 
   it('does not save on the Enter that confirms an IME composition', () => {
