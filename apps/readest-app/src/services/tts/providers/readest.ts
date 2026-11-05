@@ -27,9 +27,9 @@ import {
 //   current paragraph is waiting on fill a window before background preloads
 //   of later paragraphs, never mixing languages. A window frees the lane as
 //   soon as its last sentence arrives.
-// - download: chapter downloads, in windows of up to 2000 characters (about
-//   two minutes of audio, so progress moves often and work spreads across
-//   workers), submitted as durable jobs that any worker may run
+// - download: chapter downloads, in windows of up to 16 sentences or 512
+//   characters (about 30 s of audio, so progress moves often and work spreads
+//   across workers), submitted as durable jobs that any worker may run
 //   (/api/tts/readest/jobs), up to two at a time, and collected when done.
 //   A server without jobs (off Workers) gets streamed windows instead, one
 //   at a time, like listening.
@@ -43,9 +43,9 @@ const LISTEN_WINDOW_SEC = 20;
 // A window of background preloads only: nobody waits on it, so it may carry
 // more audio, amortizing the per-request overhead and batching on the GPU.
 const LISTEN_BACKGROUND_WINDOW_SEC = 60;
-// The most sentences a download window may hold (the route's limit).
-const DOWNLOAD_WINDOW_SENTENCES = 64;
-const DOWNLOAD_WINDOW_CHARS = 2000;
+// The route allows more; these keep windows short. A longer sentence goes alone.
+const DOWNLOAD_WINDOW_SENTENCES = 16;
+const DOWNLOAD_WINDOW_CHARS = 512;
 // Download jobs in flight per app: enough to keep two workers busy (the
 // GPU endpoint runs at most two) without one download taking every worker.
 const DOWNLOAD_JOBS = 2;
