@@ -93,33 +93,36 @@ const escapeRegExp = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 // Learning entries of two or more words ("matter is decreed") never match a
 // single token, so find them in the text itself (#7325): any whitespace between
-// the words, either apostrophe, whole words only outside Chinese. A phrase the
-// page can't draw (split by inline markup) is dropped so its words keep their
-// own hints. Overlapping matches keep the earlier, then the longer.
+// the words, either apostrophe. Outside Chinese a match must start and end on
+// the text's own token edges, so `ice cream` skips `ice cream-maker`. A phrase
+// the page can't draw (split by inline markup) is dropped so its words keep
+// their own hints. Overlapping matches keep the earlier, then the longer.
 const planPhrases = (
   text: string,
+  tokens: Token[],
   marks: VocabularyMarks,
   source: GlossSource,
   opts: PlanOptions,
 ): GlossOccurrence[] => {
   const found: GlossOccurrence[] = [];
+  const aligned = opts.sourceLang !== 'zh';
+  const starts = new Set(tokens.map((t) => t.start));
+  const ends = new Set(tokens.map((t) => t.end));
   for (const [key, hint] of marks.learning) {
     if (tokenize(key, opts).length < 2) continue;
     const gloss = learningGloss(hint, source.lookup(key), opts);
     if (!gloss) continue;
     const words = key.trim().split(/\s+/).map(escapeRegExp);
-    const phrase = words.join('\\s+').replace(/'/g, "['’‘]");
-    // The web build rejects lookbehind (older WebViews), so the leading
-    // boundary is a consumed character outside the phrase group.
-    const pattern =
-      opts.sourceLang === 'zh'
-        ? `()(${phrase})`
-        : `(^|[^\\p{L}\\p{M}\\p{N}])(${phrase})(?![\\p{L}\\p{M}\\p{N}])`;
-    for (const m of text.matchAll(new RegExp(pattern, 'giu'))) {
-      const start = m.index + m[1]!.length;
-      const end = start + m[2]!.length;
-      if (opts.canRender && !opts.canRender(start, end)) continue;
-      found.push({ start, end, word: m[2]!, gloss });
+    const re = new RegExp(words.join('\\s+').replace(/'/g, "['’‘]"), 'giu');
+    for (let m = re.exec(text); m; m = re.exec(text)) {
+      const start = m.index;
+      const end = start + m[0].length;
+      const ok =
+        (!aligned || (starts.has(start) && ends.has(end))) &&
+        (!opts.canRender || opts.canRender(start, end));
+      if (ok) found.push({ start, end, word: m[0], gloss });
+      // A rejected match may hide an overlapping one: retry one character on.
+      else re.lastIndex = start + 1;
     }
   }
   found.sort((a, b) => a.start - b.start || b.end - a.end);
@@ -141,7 +144,7 @@ export const planGlosses = (
   const tokens = tokenize(text, opts);
 
   const marks = opts.vocabulary && expandMarks(opts.vocabulary, source);
-  const phrases = marks ? planPhrases(text, marks, source, opts) : [];
+  const phrases = marks ? planPhrases(text, tokens, marks, source, opts) : [];
   const occurrences: GlossOccurrence[] = [];
   let p = 0;
   for (const t of tokens) {
