@@ -218,7 +218,7 @@ describe('runGrimmoryPass', () => {
       book: { ...deps.book, hash: 'f'.repeat(32) },
     });
 
-    expect(counts).toEqual({ pushed: 0, pulled: 0 });
+    expect(counts).toMatchObject({ pushed: 0, pulled: 0, unmatched: true });
   });
 
   test('creates, edits and deletes a highlight on the server across passes', async () => {

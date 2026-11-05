@@ -15,6 +15,7 @@ import { withTransferLog } from './transferLog';
 import { buildBasePath, SYNC_LIBRARY_FILE } from './layout';
 import type { S3Settings, WebDAVSettings } from '@/types/settings';
 import { createWebDAVProvider } from '@/services/sync/providers/webdav/WebDAVProvider';
+import { checkConnection as checkWebDAVConnection } from '@/services/sync/providers/webdav/client';
 import { buildGoogleDriveProvider } from '@/services/sync/providers/gdrive/buildGoogleDriveProvider';
 import { buildOneDriveProvider } from '@/services/sync/providers/onedrive/buildOneDriveProvider';
 import { buildICloudProvider } from '@/services/sync/providers/icloud/buildICloudProvider';
@@ -101,7 +102,13 @@ export const checkFileSyncBackend = async (
   const cached = await getFileSyncProvider(kind, settings);
   if (!cached) return false;
   const { provider } = cached;
-  await provider.head(`${buildBasePath(provider.rootPath)}/${SYNC_LIBRARY_FILE}`);
+  const index = await provider.head(`${buildBasePath(provider.rootPath)}/${SYNC_LIBRARY_FILE}`);
+  // WebDAV answers 404 for a missing index and a missing root alike.
+  if (!index && kind === 'webdav' && settings.webdav) {
+    const { serverUrl, username, password, rootPath } = settings.webdav;
+    const root = await checkWebDAVConnection({ serverUrl, username, password }, rootPath);
+    if (root.code === 'ROOT_NOT_FOUND') throw new Error('Root directory not found');
+  }
   return true;
 };
 

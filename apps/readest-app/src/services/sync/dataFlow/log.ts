@@ -95,9 +95,11 @@ export const recordConnectionCheck = (connector: ConnectorId, check: ConnectionC
 /** One two-way exchange: what moved each way, then the failure if it stopped partway. */
 export const recordExchange = (
   entry: Pick<FlowEntryInput, 'connector' | 'kind' | 'bookTitle'>,
-  counts: { pushed: number; pulled: number },
+  counts: { pushed: number; pulled: number; unmatched?: boolean },
   error?: string,
 ) => {
+  // A book the server doesn't have ran no exchange, so it says nothing either way.
+  if (counts.unmatched && !error && !counts.pushed && !counts.pulled) return;
   recordFlow({ ...entry, direction: 'push', count: counts.pushed });
   recordFlow({ ...entry, direction: 'pull', count: counts.pulled });
   if (!error) return;

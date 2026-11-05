@@ -242,7 +242,32 @@ describe('runBookOrbitNotesPass', () => {
     const deps = makeDeps();
     (deps.client.matchCheck as ReturnType<typeof vi.fn>).mockResolvedValue({ matches: [] });
 
-    expect(await runBookOrbitNotesPass(deps)).toEqual({ pushed: 0, pulled: 0 });
+    expect(await runBookOrbitNotesPass(deps)).toMatchObject({
+      pushed: 0,
+      pulled: 0,
+      unmatched: true,
+    });
+  });
+
+  it('counts the chunks the server took before a later chunk failed', async () => {
+    const notes = Array.from({ length: 51 }, (_, i) =>
+      makeNote({
+        id: `n${i}`,
+        cfi: `epubcfi(/6/8!/4/2/${i}:0)`,
+        createdAt: NOW + i,
+        updatedAt: NOW,
+      }),
+    );
+    const deps = makeDeps({ getNotes: () => notes });
+    (deps.client.exchangeAnnotations as ReturnType<typeof vi.fn>)
+      .mockResolvedValueOnce(emptyExchangeResponse())
+      .mockRejectedValueOnce(new Error('HTTP 503'));
+    const counts = { pushed: 0, pulled: 0 };
+
+    await expect(runBookOrbitNotesPass(deps, counts)).rejects.toThrow('HTTP 503');
+
+    expect(counts.pushed).toBeGreaterThan(0);
+    expect(counts.pushed).toBeLessThan(51);
   });
 
   it('applies pushed-down adds, acks them, and persists identities', async () => {

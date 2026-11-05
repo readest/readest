@@ -34,6 +34,8 @@ export interface NotesPassBook {
 export interface NotesPassCounts {
   pushed: number;
   pulled: number;
+  /** The server doesn't have this book. */
+  unmatched?: boolean;
 }
 
 export interface NotesPassDeps {
@@ -133,6 +135,7 @@ const exchangeNotes = async (deps: NotesPassDeps, counts: NotesPassCounts): Prom
         unmatched = true;
         break;
       }
+      counts.pushed += chunks[i]!.length;
       more = outcome.more;
     }
     while (!unmatched && more) {
@@ -142,9 +145,9 @@ const exchangeNotes = async (deps: NotesPassDeps, counts: NotesPassCounts): Prom
     }
     if (unmatched) {
       deps.onUnmatched();
+      counts.unmatched = true;
       return;
     }
-    counts.pushed += phase.changes.length;
     await store.setWatermark(hash, phase.kind, passStart);
     await store.flush();
   };
@@ -292,6 +295,7 @@ export const runBookOrbitNotesPass = async (
   ]);
   if (!matchResult.matches.some((match) => match.hash === hash)) {
     deps.onUnmatched();
+    counts.unmatched = true;
     return counts;
   }
 

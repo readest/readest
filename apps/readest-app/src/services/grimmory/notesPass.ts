@@ -28,6 +28,8 @@ const READ_STATUS: Record<ReadingStatus, GrimmoryReadStatus> = {
 export interface GrimmoryPassCounts {
   pushed: number;
   pulled: number;
+  /** The server doesn't have this book. */
+  unmatched?: boolean;
 }
 
 export interface GrimmoryPassDeps {
@@ -181,6 +183,7 @@ export const runGrimmoryPass = async (
   });
   if (!match) {
     deps.onUnmatched();
+    counts.unmatched = true;
     return counts;
   }
 

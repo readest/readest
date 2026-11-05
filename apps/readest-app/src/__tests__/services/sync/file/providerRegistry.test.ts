@@ -1,5 +1,11 @@
 import { afterEach, describe, expect, test, vi } from 'vitest';
 
+const webdavClient = vi.hoisted(() => ({ checkConnection: vi.fn(), headFile: vi.fn() }));
+vi.mock('@/services/sync/providers/webdav/client', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/services/sync/providers/webdav/client')>()),
+  ...webdavClient,
+}));
+
 vi.mock('@/services/sync/providers/gdrive/buildGoogleDriveProvider', () => ({
   buildGoogleDriveProvider: vi.fn(),
 }));
@@ -16,6 +22,7 @@ import { buildGoogleDriveProvider } from '@/services/sync/providers/gdrive/build
 import { buildOneDriveProvider } from '@/services/sync/providers/onedrive/buildOneDriveProvider';
 import { buildICloudProvider } from '@/services/sync/providers/icloud/buildICloudProvider';
 import {
+  checkFileSyncBackend,
   createFileSyncProvider,
   resetFileSyncProviderCache,
 } from '@/services/sync/file/providerRegistry';
@@ -43,6 +50,36 @@ const s3: S3Settings = {
 afterEach(() => {
   vi.clearAllMocks();
   resetFileSyncProviderCache();
+});
+
+describe('checkFileSyncBackend', () => {
+  const webdav = {
+    enabled: true,
+    serverUrl: 'http://dav',
+    username: 'u',
+    password: 'p',
+    rootPath: '/books',
+  } as WebDAVSettings;
+
+  test('fails when the WebDAV root is gone, which looks like a missing index', async () => {
+    webdavClient.headFile.mockResolvedValue(null);
+    webdavClient.checkConnection.mockResolvedValue({
+      success: false,
+      status: 404,
+      code: 'ROOT_NOT_FOUND',
+    });
+
+    await expect(checkFileSyncBackend('webdav', { webdav })).rejects.toThrow(
+      'Root directory not found',
+    );
+  });
+
+  test('passes a WebDAV root with no library index yet', async () => {
+    webdavClient.headFile.mockResolvedValue(null);
+    webdavClient.checkConnection.mockResolvedValue({ success: true, status: 207 });
+
+    await expect(checkFileSyncBackend('webdav', { webdav })).resolves.toBe(true);
+  });
 });
 
 describe('createFileSyncProvider', () => {

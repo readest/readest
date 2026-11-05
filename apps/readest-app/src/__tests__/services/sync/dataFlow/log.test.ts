@@ -251,6 +251,18 @@ describe('data flow log', () => {
       expect(totals['grimmory:pull:notes']?.count).toBe(1);
     });
 
+    it('records nothing for a book the server does not have, as no exchange ran', () => {
+      recordExchange(notes, { pushed: 0, pulled: 0, unmatched: true });
+
+      expect(readFlowState().totals).toEqual({});
+    });
+
+    it('keeps what moved before a later phase found the book unmatched', () => {
+      recordExchange(notes, { pushed: 2, pulled: 0, unmatched: true });
+
+      expect(readFlowState().totals['grimmory:push:notes']?.count).toBe(2);
+    });
+
     it('keeps what moved before a failure and flags both sides', () => {
       recordExchange(notes, { pushed: 2, pulled: 1 }, 'HTTP 503');
 

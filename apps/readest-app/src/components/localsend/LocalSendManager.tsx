@@ -331,7 +331,6 @@ const LocalSendManager: React.FC = () => {
                   },
                 );
                 if (book) importedBooks.push(book);
-                recordFlow({ ...BOOK_RECEIVED, bookTitle: book?.title, count: book ? 1 : 0 });
               } catch (err) {
                 console.error('Failed to ingest book from pack:', err);
                 recordFlow({ ...BOOK_RECEIVED, error: errorText(err) });
@@ -339,6 +338,9 @@ const LocalSendManager: React.FC = () => {
             }
             if (importedBooks.length === 0) throw new Error('No books imported from pack');
             await updateBooks(envConfig, importedBooks);
+            for (const { title } of importedBooks) {
+              recordFlow({ ...BOOK_RECEIVED, bookTitle: title });
+            }
             if (pack.collectionName) {
               toast(
                 _('Restored collection "{{name}}" ({{count}} books)', {

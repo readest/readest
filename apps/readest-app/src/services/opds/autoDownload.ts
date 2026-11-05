@@ -353,16 +353,18 @@ export async function syncSubscribedCatalogs(
   const allNewBooks: Book[] = [];
   const errors: SyncResult['errors'] = [];
   const failures: FlowFailure[] = [];
+  let retriesPending = false;
 
   for (const catalog of eligible) {
     try {
-      const { newBooks, failedDownloads, error } = await syncCatalog(
+      const { newBooks, state, failedDownloads, error } = await syncCatalog(
         catalog,
         appService,
         books,
         onBooksImported,
       );
       failures.push(...failedDownloads);
+      retriesPending ||= state.failedEntries.length > 0;
       // Take the books committed before the failure, then let the existing
       // error path run — those batches are already on disk and marked known.
       allNewBooks.push(...newBooks);
@@ -381,8 +383,10 @@ export async function syncSubscribedCatalogs(
       }
     }
   }
-  // Last, so one catalog's success doesn't hide another's failure.
+  // Last, so one catalog's success doesn't hide another's failure. A clean pass
+  // with nothing new still counts, or an old failure would never clear.
   for (const failure of failures) recordFlow({ ...BOOK_PULL, ...failure });
+  if (failures.length === 0 && !retriesPending) recordFlow({ ...BOOK_PULL, count: 0 });
 
   return {
     newBooks: allNewBooks,

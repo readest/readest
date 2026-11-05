@@ -362,6 +362,28 @@ describe('OPDS auto-download orchestrator', () => {
     expect(readFlowState().entries[0]).toMatchObject({ error: 'corrupt file' });
   });
 
+  it('clears an earlier failure when a later pass finds nothing new', async () => {
+    localStorage.clear();
+    const catalogs: OPDSCatalog[] = [
+      { id: 'cat-1', name: 'Shelf', url: 'https://shelf.example.com/opds', autoDownload: true },
+    ];
+    const state = { catalogId: 'cat-1', lastCheckedAt: 0, knownEntryIds: [], failedEntries: [] };
+    vi.mocked(loadSubscriptionState).mockResolvedValueOnce(state);
+    vi.mocked(loadSubscriptionState).mockResolvedValueOnce(state);
+    vi.mocked(loadSubscriptionState).mockResolvedValueOnce(state);
+    vi.mocked(checkFeedForNewItems).mockRejectedValueOnce(new Error('feed unreachable'));
+    await syncSubscribedCatalogs(catalogs, appService, []);
+    expect(getConnectorSyncStatus(readFlowState(), 'opds').status).toBe('failed');
+
+    vi.mocked(checkFeedForNewItems).mockResolvedValue([]);
+    const realNow = Date.now();
+    const now = vi.spyOn(Date, 'now').mockReturnValue(realNow + 60000);
+    await syncSubscribedCatalogs(catalogs, appService, []);
+    now.mockRestore();
+
+    expect(getConnectorSyncStatus(readFlowState(), 'opds').status).toBe('ok');
+  });
+
   it('keeps showing a catalog that failed when a later one succeeds', async () => {
     const catalogs: OPDSCatalog[] = [
       { id: 'cat-1', name: 'Down', url: 'https://down.example.com/opds', autoDownload: true },
