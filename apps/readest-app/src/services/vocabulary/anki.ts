@@ -110,6 +110,8 @@ export interface AnkiImportPlan {
   added: number;
   mastered: number;
   skipped: number;
+  /** The live words whose cards are mature: `applied` for the next plan. */
+  matured: string[];
 }
 
 // Anki collapses each run of whitespace on a card, so a word Readest saved with
@@ -132,12 +134,15 @@ const byCardId = (entries: Record<string, VocabularyEntry>) => {
 /**
  * What importing a deck changes. New words come in as Learning (Mastered when
  * mature); words already there only move up to Mastered, and only get a hint
- * when they have none. Deleted words stay deleted.
+ * when they have none. Deleted words stay deleted. A word in `applied` already
+ * had its mature card applied, so a word lowered since stays lowered until
+ * the card lapses and matures again.
  */
 export const planAnkiImport = (
   notes: AnkiImportNote[],
   entries: Record<string, VocabularyEntry>,
   lang: string,
+  applied: ReadonlySet<string> = new Set(),
 ): AnkiImportPlan => {
   let skipped = 0;
   const byId = new Map<string, { word: string; lang: string; mature: boolean; hint?: string }>();
@@ -161,6 +166,7 @@ export const planAnkiImport = (
   }
 
   const ops: VocabularyImport[] = [];
+  const matured: string[] = [];
   const index = byCardId(entries);
   let added = 0;
   let mastered = 0;
@@ -170,6 +176,7 @@ export const planAnkiImport = (
       skipped++;
       continue;
     }
+    if (w.mature) matured.push(current?.id ?? id);
     if (!current) {
       ops.push({
         word: w.word,
@@ -181,7 +188,7 @@ export const planAnkiImport = (
       if (w.mature) mastered++;
     } else {
       const op: VocabularyImport = { word: current.word, lang: current.lang };
-      if (w.mature && current.state !== 'mastered') {
+      if (w.mature && !applied.has(current.id) && current.state !== 'mastered') {
         op.state = 'mastered';
         mastered++;
       }
@@ -189,7 +196,7 @@ export const planAnkiImport = (
       if (op.state || op.hint) ops.push(op);
     }
   }
-  return { ops, added, mastered, skipped };
+  return { ops, added, mastered, skipped, matured };
 };
 
 const liveLangCounts = (entries: Record<string, VocabularyEntry>) => {

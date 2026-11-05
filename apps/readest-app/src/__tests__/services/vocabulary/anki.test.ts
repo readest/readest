@@ -182,13 +182,30 @@ describe('planAnkiImport', () => {
     expect([p.added, p.mastered]).toEqual([1, 1]);
   });
 
+  it('does not raise a word again for a card whose maturity it already applied', () => {
+    const entries = { 'en:a': entry('a', { state: 'learning' }) };
+    const p = planAnkiImport([note(['a'], true)], entries, 'en', new Set(['en:a']));
+    expect([p.ops, p.mastered]).toEqual([[], 0]);
+    expect(p.matured).toEqual(['en:a']);
+  });
+
+  it('lists the live words whose cards are mature, to remember for next time', () => {
+    const entries = { 'en:b': entry('b'), 'en:gone': entry('gone', { deletedAt: 5 }) };
+    const p = planAnkiImport(
+      [note(['a'], true), note(['b'], true), note(['c']), note(['gone'], true)],
+      entries,
+      'en',
+    );
+    expect(p.matured).toEqual(['en:a', 'en:b']);
+  });
+
   it('matches a word saved with odd spacing instead of adding it again', () => {
     const spaced = entry('ice\u00a0 cream', { state: 'learning' });
     const sent = ankiNotesToSend([{ ...spaced, occurrences: [{ sentence: 'x', at: 1 }] }], [])[0]!;
     const back = { fields: [...sent.fields], tags: sent.tags.join(' '), mature: true };
     const p = planAnkiImport([back], { [spaced.id]: spaced }, 'en');
     expect(p.ops).toEqual([{ word: 'ice\u00a0 cream', lang: 'en', state: 'mastered' }]);
-    expect(p.added).toBe(0);
+    expect([p.added, p.matured]).toEqual([0, [spaced.id]]);
   });
 
   it('prefers a live word, then the exact spelling, when spacing makes several match', () => {

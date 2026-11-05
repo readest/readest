@@ -35,6 +35,22 @@ const DECK_NAME = 'Readest Vocabulary';
 /** Anki calls a review card mature from a 21-day interval. */
 const MATURE_INTERVAL = 21;
 
+// The words whose mature cards this device has applied. A word lowered after
+// that stays lowered until its card lapses and matures again.
+const MATURED_KEY = 'readest-anki-matured';
+const readMatured = (): Set<string> => {
+  try {
+    return new Set(JSON.parse(localStorage.getItem(MATURED_KEY) ?? '[]') as string[]);
+  } catch {
+    return new Set();
+  }
+};
+const saveMatured = (ids: string[]) => {
+  try {
+    localStorage.setItem(MATURED_KEY, JSON.stringify(ids));
+  } catch {}
+};
+
 /** A deck and its subdecks (`Name::Sub`), which Anki reads as one deck. */
 const deckFamily = (decks: AnkiDeck[], name: string): number[] =>
   decks.filter((d) => d.name === name || d.name.startsWith(`${name}::`)).map((d) => d.id);
@@ -124,8 +140,8 @@ export const useAnkiLink = () => {
   };
 
   /**
-   * Read the Readest deck family and apply it to the list: mature cards make
-   * words Mastered, notes for words Readest doesn't have come in as Learning.
+   * Read the Readest deck family and apply it to the list: newly mature cards
+   * make words Mastered, notes for words Readest doesn't have come in as Learning.
    */
   const pull = async () => {
     const ids = deckFamily(await ankiListDecks(), DECK_NAME);
@@ -135,8 +151,10 @@ export const useAnkiLink = () => {
     const store = useVocabularyStore.getState();
     const lang = defaultImportLang(store.entries);
     const notes = withNoteLangs(rows, store.entries, lang);
-    const plan = planAnkiImport(importNotes(notes, cards), store.entries, lang);
+    const plan = planAnkiImport(importNotes(notes, cards), store.entries, lang, readMatured());
     store.importWords(plan.ops);
+    // Without the cards no card reads as mature, which says nothing about lapses.
+    if (cards) saveMatured(plan.matured);
     return { notes, lang, plan, cardsRead: !!cards };
   };
 

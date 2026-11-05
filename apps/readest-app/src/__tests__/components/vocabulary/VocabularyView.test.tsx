@@ -94,6 +94,7 @@ beforeEach(() => {
   saveFile.mockClear();
   push.mockClear();
   appService.isAndroidApp = false;
+  localStorage.clear();
   account.user = { id: 'u1' };
   account.plan = 'plus';
   anki.ankiStatus.mockReset().mockResolvedValue({ installed: true, granted: true });
@@ -295,6 +296,62 @@ describe('VocabularyView Anki link', () => {
       ),
     );
     dispatch.mockRestore();
+  });
+
+  it('keeps a word lowered after a mature card raised it, until the card matures again', async () => {
+    const spice = { id: 1, fields: ['spice'], tags: 'readest::lang::en readest::learning' };
+    const mature = { notes: [spice], cards: [{ noteId: 1, cardType: 2, interval: 30 }] };
+    const state = () => useVocabularyStore.getState().entries['en:spice']?.state;
+    anki.ankiReadDeck.mockResolvedValue(mature);
+    renderWithMenu();
+    await waitFor(() => expect(state()).toBe('mastered'));
+    act(() => useVocabularyStore.getState().setState('en:spice', 'learning'));
+    const sync = await syncButton();
+    const syncOnce = async () => {
+      anki.ankiUpdateTags.mockClear();
+      fireEvent.click(sync);
+      await waitFor(() => expect((sync as HTMLButtonElement).disabled).toBe(false));
+      await settle();
+    };
+    await syncOnce();
+    expect(state()).toBe('learning');
+    expect(anki.ankiUpdateTags).not.toHaveBeenCalled();
+    // The card lapses (the deck holds no mature card), then matures again.
+    anki.ankiReadDeck.mockResolvedValue({ notes: [spice], cards: [] });
+    await syncOnce();
+    expect(state()).toBe('learning');
+    anki.ankiReadDeck.mockResolvedValue(mature);
+    await syncOnce();
+    expect(state()).toBe('mastered');
+    expect(anki.ankiUpdateTags).toHaveBeenCalledWith([
+      { id: 1, tags: ['readest::lang::en', 'readest::mastered'] },
+    ]);
+  });
+
+  it('remembers applied maturity only when it could read the cards', async () => {
+    const spice = { id: 1, fields: ['spice'], tags: 'readest::lang::en readest::learning' };
+    anki.ankiReadDeck.mockResolvedValue({
+      notes: [spice],
+      cards: [{ noteId: 1, cardType: 2, interval: 30 }],
+    });
+    renderWithMenu();
+    await waitFor(() =>
+      expect(useVocabularyStore.getState().entries['en:spice']?.state).toBe('mastered'),
+    );
+    act(() => useVocabularyStore.getState().setState('en:spice', 'learning'));
+    // An AnkiDroid without the cards query reads nothing as mature.
+    anki.ankiReadDeck.mockResolvedValue({ notes: [spice] });
+    const sync = await syncButton();
+    fireEvent.click(sync);
+    await waitFor(() => expect((sync as HTMLButtonElement).disabled).toBe(false));
+    anki.ankiReadDeck.mockResolvedValue({
+      notes: [spice],
+      cards: [{ noteId: 1, cardType: 2, interval: 30 }],
+    });
+    fireEvent.click(sync);
+    await waitFor(() => expect(anki.ankiReadDeck).toHaveBeenCalledTimes(3));
+    await settle();
+    expect(useVocabularyStore.getState().entries['en:spice']?.state).toBe('learning');
   });
 
   it('reads back a word saved with odd spacing without adding it again', async () => {
