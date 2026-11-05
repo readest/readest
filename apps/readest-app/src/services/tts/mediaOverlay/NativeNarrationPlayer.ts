@@ -9,7 +9,7 @@
 
 import { addPluginListener, invoke, PluginListener } from '@tauri-apps/api/core';
 import { appCacheDir, join } from '@tauri-apps/api/path';
-import { BaseDirectory, remove, writeFile } from '@tauri-apps/plugin-fs';
+import { BaseDirectory, remove, writeFile, type WriteFileOptions } from '@tauri-apps/plugin-fs';
 import type { BookMediaSource } from '@/libs/document';
 import type { AppService } from '@/types/system';
 
@@ -410,10 +410,16 @@ export class NativeNarrationPlayer {
     const staged = this.#staged.get(href);
     if (staged) return staged;
     const name = `mo-narration-${hashHref(href)}.${fileExtension(href)}`;
-    const bytes = new Uint8Array(await blob.arrayBuffer());
+    // Streamed: Android's IPC sends bytes as JSON, so one write of a 67 MB
+    // chapter took gigabytes and Android killed the WebView, and the app with
+    // it. Truncated: writing a stream opens the file, and a shorter recording
+    // would keep the end of one staged earlier under the same name.
     // App cache, not Temp: older Android versions resolve Temp to the
     // unwritable /data/local/tmp.
-    await writeFile(name, bytes, { baseDir: BaseDirectory.AppCache });
+    await writeFile(name, blob.stream(), {
+      baseDir: BaseDirectory.AppCache,
+      truncate: true,
+    } as WriteFileOptions);
     const path = await join(await appCacheDir(), name);
     this.#staged.set(href, path);
     return path;

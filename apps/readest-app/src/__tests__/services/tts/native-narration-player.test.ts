@@ -91,7 +91,9 @@ describe('NativeNarrationPlayer', () => {
     try {
       await player.load('Audio/ch1.mp4', blob);
       const name = vi.mocked(writeFile).mock.calls[0]![0];
-      expect(writeFile).toHaveBeenCalledWith(name, bytes, { baseDir: BaseDirectory.AppCache });
+      expect(vi.mocked(writeFile).mock.calls[0]![2]).toMatchObject({
+        baseDir: BaseDirectory.AppCache,
+      });
       expect(controlCalls.find((call) => call['action'] === 'load')?.['path']).toBe(
         `${directory}/${name}`,
       );
@@ -102,6 +104,26 @@ describe('NativeNarrationPlayer', () => {
       await player.shutdown();
     }
     expect(remove).toHaveBeenCalledWith(`${directory}/${vi.mocked(writeFile).mock.calls[0]![0]}`);
+  });
+
+  test('streams a staged recording rather than sending it through the IPC whole', async () => {
+    const bytes = new Uint8Array([1, 2, 3, 4]);
+    const blob = new Blob([bytes]);
+    const wholeRead = vi.spyOn(blob, 'arrayBuffer');
+    const player = new NativeNarrationPlayer();
+
+    await player.load('Audio/ch1.mp4', blob);
+
+    expect(wholeRead).not.toHaveBeenCalled();
+    const [, data, options] = vi.mocked(writeFile).mock.calls[0]!;
+    expect(data).toBeInstanceOf(ReadableStream);
+    const written = await new Response(data as ReadableStream<Uint8Array>).arrayBuffer();
+    expect(new Uint8Array(written)).toEqual(bytes);
+    // Staged names come from the href alone and Storyteller's repeat across
+    // books, so a shorter recording must not keep the end of a longer one.
+    expect(options).toMatchObject({ truncate: true });
+
+    await player.shutdown();
   });
 
   test('loads an existing local audiobook path without copying or deleting it', async () => {

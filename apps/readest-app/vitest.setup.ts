@@ -39,6 +39,19 @@ if (typeof globalWithCSS.CSS.escape !== 'function') {
   };
 }
 
+// jsdom's Blob has no stream(); every WebView the app runs in does.
+if (typeof Blob !== 'undefined' && !Blob.prototype.stream) {
+  const { arrayBuffer } = Blob.prototype;
+  Blob.prototype.stream = function (this: Blob) {
+    return new ReadableStream({
+      pull: async (controller) => {
+        controller.enqueue(new Uint8Array(await arrayBuffer.call(this)));
+        controller.close();
+      },
+    });
+  } as Blob['stream'];
+}
+
 // matchMedia mock
 if (typeof window !== 'undefined' && !window.matchMedia) {
   window.matchMedia = (query: string) =>
