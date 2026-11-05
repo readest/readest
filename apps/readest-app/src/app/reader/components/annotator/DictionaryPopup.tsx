@@ -135,21 +135,23 @@ const DictionaryPopup: React.FC<DictionaryPopupProps> = ({
           speaking={state.isSpeaking}
           vocabularyLang={state.vocabularyLang}
         />
-        {/* pb-5 ends the body's scrollbar above the resize grip, which would
-            otherwise cover its down arrow. */}
+        {/* pb-5 ends the body's scrollbar above the resize grip and its hit
+            area, which would otherwise cover its down arrow. */}
         <div className='min-h-0 flex-1 pb-5'>
           <DictionaryResultsBody {...state} />
         </div>
       </div>
       {/* Pointer affordance in the bottom-end corner; the popup container is
-          its containing block. */}
+          its containing block. The 16px icon sits 4px in from the corner, and
+          its 32px hit area (DESIGN.md's minimum) reaches 12px past the popup's
+          edges, so inside it stays below the body's pb-5. */}
       <div
         {...gripProps}
         data-dictionary-popup-resize
         aria-hidden
-        className='text-base-content/40 absolute bottom-1 end-1 z-20 h-4 w-4 cursor-nwse-resize touch-none rtl:cursor-nesw-resize'
+        className='text-base-content/40 absolute -bottom-3 -end-3 z-20 h-8 w-8 cursor-nwse-resize touch-none rtl:cursor-nesw-resize'
       >
-        <svg viewBox='0 0 16 16' className='h-full w-full rtl:-scale-x-100'>
+        <svg viewBox='0 0 16 16' className='absolute bottom-4 end-4 h-4 w-4 rtl:-scale-x-100'>
           <path
             d='M15 6 6 15M15 11l-4 4'
             stroke='currentColor'
