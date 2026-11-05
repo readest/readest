@@ -2811,5 +2811,14 @@
   "{{count}} now Mastered_other": "עכשיו „נלמדה”: {{count}}",
   "Sync with Anki": "סנכרון עם Anki",
   "Import Anki Deck...": "ייבוא חפיסת Anki...",
-  "In sync with Anki": "מסונכרן עם Anki"
+  "In sync with Anki": "מסונכרן עם Anki",
+  "Grimmory": "Grimmory",
+  "Grimmory Sync": "סנכרון Grimmory",
+  "Connect to your Grimmory server.": "התחברו לשרת ה-Grimmory שלכם.",
+  "Sign in with your Grimmory account.": "היכנסו עם חשבון ה-Grimmory שלכם.",
+  "Books are matched by file: a book syncs when the same file is in your Grimmory library.": "ספרים מותאמים לפי קובץ: ספר מסתנכרן כשאותו קובץ נמצא בספריית ה-Grimmory שלכם.",
+  "Book not found in Grimmory. Add the same file to Grimmory to sync it.": "הספר לא נמצא ב-Grimmory. הוסיפו את אותו קובץ ל-Grimmory כדי לסנכרן אותו.",
+  "Not a Grimmory server. Check the Server URL.": "זה אינו שרת Grimmory. בדקו את כתובת השרת.",
+  "Invalid credentials.": "פרטי התחברות שגויים.",
+  "Connection error.": "שגיאת חיבור."
 }

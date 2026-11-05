@@ -3030,5 +3030,14 @@
   "{{count}} now Mastered_other": "أصبحت «متقنة»: {{count}}",
   "Sync with Anki": "المزامنة مع Anki",
   "Import Anki Deck...": "استيراد رزمة Anki...",
-  "In sync with Anki": "متزامن مع Anki"
+  "In sync with Anki": "متزامن مع Anki",
+  "Grimmory": "Grimmory",
+  "Grimmory Sync": "مزامنة Grimmory",
+  "Connect to your Grimmory server.": "اتصل بخادم Grimmory الخاص بك.",
+  "Sign in with your Grimmory account.": "سجّل الدخول بحسابك في Grimmory.",
+  "Books are matched by file: a book syncs when the same file is in your Grimmory library.": "تُطابَق الكتب حسب الملف: يُزامَن الكتاب عندما يكون الملف نفسه في مكتبتك على Grimmory.",
+  "Book not found in Grimmory. Add the same file to Grimmory to sync it.": "لم يُعثر على الكتاب في Grimmory. أضف الملف نفسه إلى Grimmory لمزامنته.",
+  "Not a Grimmory server. Check the Server URL.": "ليس خادم Grimmory. تحقق من عنوان URL للخادم.",
+  "Invalid credentials.": "بيانات اعتماد غير صالحة.",
+  "Connection error.": "خطأ في الاتصال."
 }

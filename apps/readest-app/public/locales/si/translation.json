@@ -2738,5 +2738,14 @@
   "{{count}} now Mastered_other": "{{count}}ක් දැන් “ප්‍රගුණ කළා”",
   "Sync with Anki": "Anki සමඟ සමමුහුර්ත කරන්න",
   "Import Anki Deck...": "Anki ඩෙක් ආයාත කරන්න...",
-  "In sync with Anki": "Anki සමඟ සමමුහුර්තයි"
+  "In sync with Anki": "Anki සමඟ සමමුහුර්තයි",
+  "Grimmory": "Grimmory",
+  "Grimmory Sync": "Grimmory සමමුහුර්තය",
+  "Connect to your Grimmory server.": "ඔබගේ Grimmory සේවාදායකයට සම්බන්ධ වන්න.",
+  "Sign in with your Grimmory account.": "ඔබගේ Grimmory ගිණුමෙන් පුරනය වන්න.",
+  "Books are matched by file: a book syncs when the same file is in your Grimmory library.": "පොත් ගොනුව අනුව ගළපනු ලැබේ: එම ගොනුවම ඔබගේ Grimmory පුස්තකාලයේ ඇති විට පොත සමමුහුර්ත වේ.",
+  "Book not found in Grimmory. Add the same file to Grimmory to sync it.": "පොත Grimmory හි හමු නොවීය. සමමුහුර්ත කිරීමට එම ගොනුවම Grimmory වෙත එක් කරන්න.",
+  "Not a Grimmory server. Check the Server URL.": "මෙය Grimmory සේවාදායකයක් නොවේ. සේවාදායක URL පරීක්ෂා කරන්න.",
+  "Invalid credentials.": "අවලංගු අක්තපත්‍ර.",
+  "Connection error.": "සම්බන්ධතා දෝෂය."
 }

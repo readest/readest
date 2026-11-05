@@ -42,6 +42,7 @@ import { useAutoFocus } from '@/hooks/useAutoFocus';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useEinkMode } from '@/hooks/useEinkMode';
 import { bookOrbitProgressProvider } from '../hooks/bookOrbitProgressProvider';
+import { grimmoryProgressProvider } from '../hooks/grimmoryProgressProvider';
 import { useKOSync } from '../hooks/useKOSync';
 import { useFileSync } from '../hooks/useFileSync';
 import {
@@ -238,6 +239,7 @@ const FoliateViewer: React.FC<{
   useBookCoverAutoSave(bookKey);
   const { syncState, conflictDetails, resolveWithLocal, resolveWithRemote } = useKOSync(bookKey);
   const bookOrbitSync = useKOSync(bookKey, bookOrbitProgressProvider);
+  const grimmorySync = useKOSync(bookKey, grimmoryProgressProvider);
   useFileSync(bookKey);
   useTextTranslation(bookKey, viewRef.current);
 
@@ -1553,6 +1555,14 @@ const FoliateViewer: React.FC<{
           onResolveWithLocal={bookOrbitSync.resolveWithLocal}
           onResolveWithRemote={bookOrbitSync.resolveWithRemote}
           onClose={bookOrbitSync.resolveWithLocal}
+        />
+      )}
+      {grimmorySync.syncState === 'conflict' && grimmorySync.conflictDetails && (
+        <KOSyncConflictResolver
+          details={grimmorySync.conflictDetails}
+          onResolveWithLocal={grimmorySync.resolveWithLocal}
+          onResolveWithRemote={grimmorySync.resolveWithRemote}
+          onClose={grimmorySync.resolveWithLocal}
         />
       )}
     </>

@@ -2738,5 +2738,14 @@
   "{{count}} now Mastered_other": "{{count}} most „Elsajátítva”",
   "Sync with Anki": "Szinkronizálás az Ankival",
   "Import Anki Deck...": "Anki-pakli importálása...",
-  "In sync with Anki": "Szinkronban az Ankival"
+  "In sync with Anki": "Szinkronban az Ankival",
+  "Grimmory": "Grimmory",
+  "Grimmory Sync": "Grimmory szinkronizálás",
+  "Connect to your Grimmory server.": "Csatlakozás a Grimmory-szerveredhez.",
+  "Sign in with your Grimmory account.": "Jelentkezz be a Grimmory-fiókoddal.",
+  "Books are matched by file: a book syncs when the same file is in your Grimmory library.": "A könyvek fájl alapján párosulnak: egy könyv akkor szinkronizálódik, ha ugyanaz a fájl megvan a Grimmory-könyvtáradban.",
+  "Book not found in Grimmory. Add the same file to Grimmory to sync it.": "A könyv nem található a Grimmoryban. A szinkronizáláshoz add hozzá ugyanazt a fájlt a Grimmoryhoz.",
+  "Not a Grimmory server. Check the Server URL.": "Ez nem Grimmory-szerver. Ellenőrizd a szerver URL-jét.",
+  "Invalid credentials.": "Érvénytelen hitelesítő adatok.",
+  "Connection error.": "Csatlakozási hiba."
 }

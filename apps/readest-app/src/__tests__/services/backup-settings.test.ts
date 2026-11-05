@@ -264,6 +264,22 @@ describe('sanitizeSettingsForBackup - credentials', () => {
     expect(out.customTTSServices![0]!.baseUrl).toBe('https://tts.example.com/v1');
   });
 
+  it('strips Grimmory custom headers, which can hold access secrets', () => {
+    const settings = makeSettings();
+    const out = sanitizeSettingsForBackup({
+      ...settings,
+      grimmory: {
+        ...settings.grimmory,
+        serverUrl: 'https://grimmory.example',
+        password: 'gpass',
+        customHeaders: { 'CF-Access-Client-Secret': 'secret' },
+      },
+    });
+    expect(rec(out.grimmory)['password']).toBeUndefined();
+    expect(rec(out.grimmory)['customHeaders']).toBeUndefined();
+    expect(out.grimmory.serverUrl).toBe('https://grimmory.example');
+  });
+
   it('keeps non-credential OPDS catalog fields when stripping credentials', () => {
     const out = sanitizeSettingsForBackup(makeSettings());
     expect(out.opdsCatalogs[0]!.id).toBe('cat-1');

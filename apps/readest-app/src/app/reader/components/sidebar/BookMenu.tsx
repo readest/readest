@@ -115,13 +115,14 @@ const BookMenu: React.FC<BookMenuProps> = ({ menuClassName, setIsDropdownOpen })
     setProofreadRulesVisibility(true);
     setIsDropdownOpen?.(false);
   };
-  // `provider` addresses one sync backend: KOSync and BookOrbit speak the same
-  // protocol through the same hook and would otherwise both answer.
-  const handlePullKOSync = (provider: 'kosync' | 'bookorbit') => () => {
+  // `provider` addresses one sync backend: KOSync, BookOrbit and Grimmory sync
+  // progress through the same hook and would otherwise all answer.
+  type ProgressProvider = 'kosync' | 'bookorbit' | 'grimmory';
+  const handlePullKOSync = (provider: ProgressProvider) => () => {
     eventDispatcher.dispatch('pull-kosync', { bookKey: sideBarBookKey, provider });
     setIsDropdownOpen?.(false);
   };
-  const handlePushKOSync = (provider: 'kosync' | 'bookorbit') => () => {
+  const handlePushKOSync = (provider: ProgressProvider) => () => {
     eventDispatcher.dispatch('push-kosync', { bookKey: sideBarBookKey, provider });
     setIsDropdownOpen?.(false);
   };
@@ -159,6 +160,7 @@ const BookMenu: React.FC<BookMenuProps> = ({ menuClassName, setIsDropdownOpen })
   const pageboundLink = sideBarBookKey ? getConfig(sideBarBookKey)?.pagebound : undefined;
   const pageboundEnabled = !!(settings.pagebound?.enabled && settings.pagebound.refreshToken);
   const bookOrbitProgressSync = settings.bookorbit.enabled && settings.bookorbit.syncProgress;
+  const grimmoryProgressSync = settings.grimmory.enabled && settings.grimmory.syncProgress;
   // Routed through Annotator (per-book, long-lived) so that the
   // confirmation dialog isn't unmounted with the dropdown menu.
   const handleClearAnnotations = () => {
@@ -216,6 +218,7 @@ const BookMenu: React.FC<BookMenuProps> = ({ menuClassName, setIsDropdownOpen })
         ))}
       {(settings.kosync.enabled ||
         bookOrbitProgressSync ||
+        grimmoryProgressSync ||
         settings.readwise.enabled ||
         settings.hardcover.enabled ||
         pageboundEnabled ||
@@ -235,6 +238,14 @@ const BookMenu: React.FC<BookMenuProps> = ({ menuClassName, setIsDropdownOpen })
           <ul className='flex flex-col ps-1'>
             <MenuItem label={_('Push Progress')} noIcon onClick={handlePushKOSync('bookorbit')} />
             <MenuItem label={_('Pull Progress')} noIcon onClick={handlePullKOSync('bookorbit')} />
+          </ul>
+        </MenuItem>
+      )}
+      {grimmoryProgressSync && (
+        <MenuItem label={_('Grimmory Sync')} detailsOpen={false} buttonClass='py-2'>
+          <ul className='flex flex-col ps-1'>
+            <MenuItem label={_('Push Progress')} noIcon onClick={handlePushKOSync('grimmory')} />
+            <MenuItem label={_('Pull Progress')} noIcon onClick={handlePullKOSync('grimmory')} />
           </ul>
         </MenuItem>
       )}

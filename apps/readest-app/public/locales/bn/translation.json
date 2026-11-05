@@ -2738,5 +2738,14 @@
   "{{count}} now Mastered_other": "{{count}}টি এখন “আয়ত্ত”",
   "Sync with Anki": "Anki-এর সাথে সিঙ্ক করুন",
   "Import Anki Deck...": "Anki ডেক ইমপোর্ট করুন...",
-  "In sync with Anki": "Anki-এর সাথে সিঙ্ক করা আছে"
+  "In sync with Anki": "Anki-এর সাথে সিঙ্ক করা আছে",
+  "Grimmory": "Grimmory",
+  "Grimmory Sync": "Grimmory সিঙ্ক",
+  "Connect to your Grimmory server.": "আপনার Grimmory সার্ভারে সংযোগ করুন।",
+  "Sign in with your Grimmory account.": "আপনার Grimmory অ্যাকাউন্ট দিয়ে সাইন ইন করুন।",
+  "Books are matched by file: a book syncs when the same file is in your Grimmory library.": "বই ফাইল অনুযায়ী মেলানো হয়: একই ফাইল আপনার Grimmory লাইব্রেরিতে থাকলে বইটি সিঙ্ক হয়।",
+  "Book not found in Grimmory. Add the same file to Grimmory to sync it.": "Grimmory-তে বইটি পাওয়া যায়নি। সিঙ্ক করতে একই ফাইল Grimmory-তে যোগ করুন।",
+  "Not a Grimmory server. Check the Server URL.": "এটি Grimmory সার্ভার নয়। সার্ভার URL যাচাই করুন।",
+  "Invalid credentials.": "অবৈধ শংসাপত্র।",
+  "Connection error.": "সংযোগ ত্রুটি।"
 }

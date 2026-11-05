@@ -21,6 +21,7 @@ import {
   HardcoverSettings,
   PageboundSettings,
   BookOrbitSettings,
+  GrimmorySettings,
   KOSyncSettings,
   LibraryGroupByType,
   LibrarySortByType,
@@ -112,6 +113,18 @@ export const DEFAULT_BOOKORBIT_SETTINGS = {
   syncBookStates: true,
   autoSync: true,
 } as BookOrbitSettings;
+
+export const DEFAULT_GRIMMORY_SETTINGS: GrimmorySettings = {
+  enabled: false,
+  serverUrl: '',
+  username: '',
+  password: '',
+  strategy: 'prompt',
+  syncProgress: true,
+  syncNotes: true,
+  syncStats: true,
+  syncBookStates: true,
+};
 
 export const READWISE_API_BASE_URL = 'https://readwise.io/api/v2';
 
@@ -269,6 +282,7 @@ export const DEFAULT_SYSTEM_SETTINGS: Partial<SystemSettings> = {
 
   kosync: DEFAULT_KOSYNC_SETTINGS,
   bookorbit: DEFAULT_BOOKORBIT_SETTINGS,
+  grimmory: DEFAULT_GRIMMORY_SETTINGS,
   readwise: DEFAULT_READWISE_SETTINGS,
   hardcover: DEFAULT_HARDCOVER_SETTINGS,
   pagebound: DEFAULT_PAGEBOUND_SETTINGS,

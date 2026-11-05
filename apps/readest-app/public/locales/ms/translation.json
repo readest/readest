@@ -2665,5 +2665,14 @@
   "{{count}} now Mastered_other": "{{count}} kini “Dikuasai”",
   "Sync with Anki": "Segerakkan dengan Anki",
   "Import Anki Deck...": "Import Dek Anki...",
-  "In sync with Anki": "Segerak dengan Anki"
+  "In sync with Anki": "Segerak dengan Anki",
+  "Grimmory": "Grimmory",
+  "Grimmory Sync": "Penyegerakan Grimmory",
+  "Connect to your Grimmory server.": "Sambung ke pelayan Grimmory anda.",
+  "Sign in with your Grimmory account.": "Log masuk dengan akaun Grimmory anda.",
+  "Books are matched by file: a book syncs when the same file is in your Grimmory library.": "Buku dipadankan mengikut fail: buku disegerakkan apabila fail yang sama ada dalam perpustakaan Grimmory anda.",
+  "Book not found in Grimmory. Add the same file to Grimmory to sync it.": "Buku tidak ditemui dalam Grimmory. Tambah fail yang sama ke Grimmory untuk menyegerakkannya.",
+  "Not a Grimmory server. Check the Server URL.": "Bukan pelayan Grimmory. Semak URL pelayan.",
+  "Invalid credentials.": "Bukti kelayakan tidak sah.",
+  "Connection error.": "Ralat sambungan."
 }

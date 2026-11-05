@@ -2884,5 +2884,14 @@
   "{{count}} now Mastered_other": "Teraz „Opanowane”: {{count}}",
   "Sync with Anki": "Synchronizuj z Anki",
   "Import Anki Deck...": "Importuj talię Anki...",
-  "In sync with Anki": "Zsynchronizowano z Anki"
+  "In sync with Anki": "Zsynchronizowano z Anki",
+  "Grimmory": "Grimmory",
+  "Grimmory Sync": "Synchronizacja Grimmory",
+  "Connect to your Grimmory server.": "Połącz się ze swoim serwerem Grimmory.",
+  "Sign in with your Grimmory account.": "Zaloguj się na swoje konto Grimmory.",
+  "Books are matched by file: a book syncs when the same file is in your Grimmory library.": "Książki są dopasowywane po pliku: książka synchronizuje się, gdy ten sam plik jest w Twojej bibliotece Grimmory.",
+  "Book not found in Grimmory. Add the same file to Grimmory to sync it.": "Nie znaleziono książki w Grimmory. Dodaj ten sam plik do Grimmory, aby ją synchronizować.",
+  "Not a Grimmory server. Check the Server URL.": "To nie jest serwer Grimmory. Sprawdź adres URL serwera.",
+  "Invalid credentials.": "Nieprawidłowe dane logowania.",
+  "Connection error.": "Błąd połączenia."
 }

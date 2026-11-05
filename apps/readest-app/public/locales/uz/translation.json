@@ -2738,5 +2738,14 @@
   "{{count}} now Mastered_other": "{{count}} tasi endi “O‘zlashtirildi”",
   "Sync with Anki": "Anki bilan sinxronlash",
   "Import Anki Deck...": "Anki to‘plamini import qilish...",
-  "In sync with Anki": "Anki bilan sinxronlangan"
+  "In sync with Anki": "Anki bilan sinxronlangan",
+  "Grimmory": "Grimmory",
+  "Grimmory Sync": "Grimmory sinxronlash",
+  "Connect to your Grimmory server.": "Grimmory serveringizga ulaning.",
+  "Sign in with your Grimmory account.": "Grimmory hisobingiz bilan kiring.",
+  "Books are matched by file: a book syncs when the same file is in your Grimmory library.": "Kitoblar fayl bo‘yicha moslanadi: xuddi shu fayl Grimmory kutubxonangizda bo‘lsa, kitob sinxronlanadi.",
+  "Book not found in Grimmory. Add the same file to Grimmory to sync it.": "Kitob Grimmory’da topilmadi. Sinxronlash uchun xuddi shu faylni Grimmory’ga qo‘shing.",
+  "Not a Grimmory server. Check the Server URL.": "Bu Grimmory serveri emas. Server URL manzilini tekshiring.",
+  "Invalid credentials.": "Hisob ma’lumotlari noto‘g‘ri.",
+  "Connection error.": "Ulanish xatosi."
 }

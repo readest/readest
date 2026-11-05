@@ -150,6 +150,24 @@ export interface BookOrbitSettings {
   allowSelfSignedCert?: boolean;
 }
 
+export interface GrimmorySettings {
+  enabled: boolean;
+  /** Base server origin, e.g. https://books.example.com (no /api path). */
+  serverUrl: string;
+  username: string;
+  /** Kept to sign in again once the server's refresh token runs out. */
+  password: string;
+  strategy: KOSyncStrategy;
+  syncProgress: boolean;
+  /** Highlights, notes and bookmarks. */
+  syncNotes: boolean;
+  syncStats: boolean;
+  syncBookStates: boolean;
+  customHeaders?: Record<string, string>;
+  /** Unset means accepted, as for the other servers; see `allowsSelfSignedCert`. */
+  allowSelfSignedCert?: boolean;
+}
+
 export interface ReadwiseSettings {
   enabled: boolean;
   accessToken: string;
@@ -597,6 +615,7 @@ export interface SystemSettings {
 
   kosync: KOSyncSettings;
   bookorbit: BookOrbitSettings;
+  grimmory: GrimmorySettings;
   readwise: ReadwiseSettings;
   hardcover: HardcoverSettings;
   pagebound: PageboundSettings;
