@@ -5,6 +5,7 @@ import { findGlossWord } from '@/app/reader/utils/wordlensRuby';
 import { TURN_GESTURE_LEFT_INSET_ATTRIBUTE } from './brightnessGesture';
 import { hasScrollRoomY } from './wheelGesture';
 import { toParentViewportPoint } from './annotatorUtil';
+import { isTextAtPoint } from './crossDocSelection';
 import {
   createTurnGestureIntent,
   NATIVE_CAPTURED_TURN_ATTRIBUTE,
@@ -555,6 +556,16 @@ export const getContextMenuImage = (
   return doc.getImageAt?.(event.clientX, event.clientY) ?? null;
 };
 
+// A hold on blank table space, with no text selected in the section.
+const isBlankTableHold = (event: MouseEvent) => {
+  const doc = (event.target as Node | null)?.ownerDocument;
+  return (
+    !!doc &&
+    doc.getSelection()?.isCollapsed !== false &&
+    !isTextAtPoint(doc, event.clientX, event.clientY)
+  );
+};
+
 // A full-bleed cover or full-page illustration spans the page-turn zones, so
 // tapping it has to stay a page turn (#6424). Half a page separates such pages
 // from inline figures.
@@ -677,16 +688,17 @@ export const handleClick = (
       !footnote && !opensNote(element) && !(isFixedLayout && element?.closest('a'))
         ? detectMediaTarget(element)
         : null;
-    // A book whose images open on a long press taps through them (#7145).
-    const heldImage =
-      target?.elementType === 'image' && getImageViewerGesture(bookKey) === 'longPress'
-        ? target
-        : null;
-    const media = heldImage ? null : target;
+    // A book whose images and tables open on a long press taps through them
+    // (#7145, #6872). A hold on a table's text, or a drag selecting it, is
+    // left to text selection.
+    const longPressMedia = getImageViewerGesture(bookKey) === 'longPress' ? target : null;
+    const heldMedia =
+      longPressMedia?.elementType === 'table' && !isBlankTableHold(event) ? null : longPressMedia;
+    const media = longPressMedia ? null : target;
     const pageMedia = media && element && (isFixedLayout || fillsPage(element)) ? media : null;
     if (
       !media &&
-      !(heldImage && isLongHold) &&
+      !(heldMedia && isLongHold) &&
       element?.closest('sup, a, audio, video') &&
       !element?.closest('a.duokan-footnote:not([href])')
     ) {
@@ -715,9 +727,9 @@ export const handleClick = (
     }
 
     // if long hold is detected, we don't want to send single click event; a
-    // mouse held on an image is the long press that opens the viewer.
+    // mouse held on an image or table is the long press that opens the viewer.
     if (isLongHold) {
-      if (heldImage) window.postMessage({ type: 'iframe-open-media', bookKey, ...heldImage }, '*');
+      if (heldMedia) window.postMessage({ type: 'iframe-open-media', bookKey, ...heldMedia }, '*');
       return;
     }
 
