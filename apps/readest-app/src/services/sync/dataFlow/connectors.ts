@@ -20,9 +20,10 @@ import { PageboundClient, type PageboundSession } from '@/services/pagebound';
 import { ReadwiseClient } from '@/services/readwise';
 import { isInboxDrainEnabled } from '@/services/send/devicePrefs';
 import { checkFileSyncBackend } from '@/services/sync/file/providerRegistry';
-import { getReadyFileSyncBackends } from '@/services/sync/file/runLibrarySync';
+import { canBackendRun } from '@/services/sync/file/runLibrarySync';
 import {
   cloudProviderDisplayName,
+  getActiveFileSyncBackends,
   isReadestCloudEnabled,
   settingsKeyForBackend,
 } from '@/services/sync/cloudSyncProvider';
@@ -99,7 +100,11 @@ const readingConnectors = ({ settings, envConfig }: ConnectorContext): FlowConne
       title: _('BookOrbit'),
       sources: [...(progress?.sources ?? []), ...notes],
       sinks: [...(progress?.sinks ?? []), ...notes],
-      check: async () => fromResult(await new BookOrbitClient(bookorbit).connect()),
+      check: async () => {
+        const { success, message } = await new BookOrbitClient(bookorbit).connect();
+        // A message on success means no plugin API: progress works without it, notes don't.
+        return { ok: success && !(message && bookorbit.syncNotes), message };
+      },
     });
   }
   if (grimmory?.enabled && grimmory.serverUrl && grimmory.username && grimmory.password) {
@@ -201,7 +206,11 @@ const cloudConnectors = ({ settings, signedIn, plan }: ConnectorContext): FlowCo
       },
     });
   }
-  for (const kind of getReadyFileSyncBackends(settings, plan)) {
+  // Web Google Drive can't run once its token is gone, but it's still set up.
+  const backends = getActiveFileSyncBackends(settings, plan).filter(
+    (kind) => kind === 'gdrive' || canBackendRun(kind),
+  );
+  for (const kind of backends) {
     const slice = settings[settingsKeyForBackend(kind)];
     const kinds: FlowKind[] = [
       ...((slice?.syncProgress ?? true) ? (['progress'] as const) : []),
@@ -212,7 +221,10 @@ const cloudConnectors = ({ settings, signedIn, plan }: ConnectorContext): FlowCo
       id: kind,
       title: cloudProviderDisplayName(kind),
       ...byStrategy(slice?.strategy, kinds),
-      check: async () => passes(await checkFileSyncBackend(kind, settings)),
+      check: async () =>
+        canBackendRun(kind)
+          ? passes(await checkFileSyncBackend(kind, settings))
+          : { ok: false, message: _('Sign-in expired') },
     });
   }
   return connectors;

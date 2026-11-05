@@ -199,6 +199,16 @@ describe('runGrimmoryPass', () => {
     expect((await runGrimmoryPass(deps)).pulled).toBe(1);
   });
 
+  test('keeps what moved before a pass failed, in counts the caller holds', async () => {
+    const { server, deps } = setup([highlight]);
+    server.getBookmarks.mockRejectedValueOnce(new GrimmoryRequestError(503, 'down'));
+    const counts = { pushed: 0, pulled: 0 };
+
+    await expect(runGrimmoryPass(deps, counts)).rejects.toThrow();
+
+    expect(counts).toEqual({ pushed: 1, pulled: 0 });
+  });
+
   test('counts nothing for a book Grimmory does not have', async () => {
     const { server, deps } = setup([highlight]);
     server.files.set(2, makeFile(LOCAL.length, 3));

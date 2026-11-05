@@ -8,6 +8,7 @@ import {
   runConnectionCheck,
   type ConnectorContext,
 } from '@/services/sync/dataFlow/connectors';
+import { BookOrbitClient } from '@/services/bookorbit/BookOrbitClient';
 import { readFlowState } from '@/services/sync/dataFlow/log';
 import { fetchWithAuth } from '@/utils/fetch';
 
@@ -16,9 +17,10 @@ vi.mock('@/utils/fetch', () => ({ fetchWithAuth: vi.fn() }));
 vi.mock('@/services/environment', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/services/environment')>()),
   isTauriAppPlatform: () => h.tauri,
+  isWebAppPlatform: () => h.web,
 }));
 
-const h = vi.hoisted(() => ({ tauri: false }));
+const h = vi.hoisted(() => ({ tauri: false, web: false }));
 
 const context = (overrides: Partial<ConnectorContext> = {}): ConnectorContext => ({
   settings: {} as SystemSettings,
@@ -141,6 +143,45 @@ describe('getFlowConnectors', () => {
       ok: false,
       message: 'Folder not available',
     });
+  });
+
+  it('keeps showing web Google Drive when its token is gone, as needing attention', async () => {
+    h.web = true;
+    const ctx = context({
+      plan: 'plus',
+      settings: settings({ googleDrive: { enabled: true } }),
+    });
+
+    const drive = byId(ctx, 'gdrive');
+    expect(drive).toBeDefined();
+    await runConnectionCheck(drive!);
+    h.web = false;
+
+    expect(readFlowState().checks.gdrive).toMatchObject({ ok: false, message: 'Sign-in expired' });
+  });
+
+  it('fails the BookOrbit check without the plugin API only when notes need it', async () => {
+    vi.spyOn(BookOrbitClient.prototype, 'connect').mockResolvedValue({
+      success: true,
+      capabilities: [],
+      message: 'Connected, but the server does not expose the BookOrbit plugin API.',
+    });
+    const bookorbit = {
+      enabled: true,
+      serverUrl: 'http://orbit',
+      username: 'u',
+      userkey: 'k',
+      syncProgress: true,
+      strategy: 'silent',
+    };
+
+    const withNotes = settings({ bookorbit: { ...bookorbit, syncNotes: true } });
+    await runConnectionCheck(byId(context({ settings: withNotes }), 'bookorbit')!);
+    expect(readFlowState().checks.bookorbit).toMatchObject({ ok: false });
+
+    const progressOnly = settings({ bookorbit: { ...bookorbit, syncNotes: false } });
+    await runConnectionCheck(byId(context({ settings: progressOnly }), 'bookorbit')!);
+    expect(readFlowState().checks.bookorbit).toMatchObject({ ok: true });
   });
 
   it('needs a Notion target as well as a token', () => {

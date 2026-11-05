@@ -59,6 +59,7 @@ vi.mock('@/services/opds/subscriptionState', () => ({
 }));
 
 import { syncSubscribedCatalogs } from '@/services/opds/autoDownload';
+import { findBookByOPDSSources } from '@/services/opds/sourceMap';
 import { getConnectorSyncStatus } from '@/services/sync/dataFlow/log';
 import { checkFeedForNewItems } from '@/services/opds/feedChecker';
 import { saveSubscriptionState, loadSubscriptionState } from '@/services/opds/subscriptionState';
@@ -313,6 +314,52 @@ describe('OPDS auto-download orchestrator', () => {
     expect(savedState.failedEntries[0]!.entryId).toBe('urn:fail:1');
     expect(savedState.failedEntries[0]!.attempts).toBe(1);
     expect(savedState.knownEntryIds).not.toContain('urn:fail:1');
+  });
+
+  it('does not count a book it already had as downloaded', async () => {
+    localStorage.clear();
+    const catalogs: OPDSCatalog[] = [
+      { id: 'cat-1', name: 'Shelf', url: 'https://shelf.example.com/opds', autoDownload: true },
+    ];
+    vi.mocked(checkFeedForNewItems).mockResolvedValue([
+      {
+        entryId: 'urn:shelf:1',
+        title: 'Issue 1',
+        acquisitionHref: '/dl/1.epub',
+        mimeType: 'application/epub+zip',
+        baseURL: 'https://shelf.example.com/opds',
+      },
+    ]);
+    vi.mocked(findBookByOPDSSources).mockResolvedValueOnce({ hash: 'h1' } as never);
+
+    await syncSubscribedCatalogs(catalogs, appService, []);
+
+    const total = readFlowState().totals['opds:pull:books'];
+    expect(total?.count).toBe(0);
+    expect(total?.lastSuccessAt).toBeGreaterThan(0);
+  });
+
+  it('records the error message, without an Error prefix', async () => {
+    localStorage.clear();
+    const catalogs: OPDSCatalog[] = [
+      { id: 'cat-1', name: 'Shelf', url: 'https://shelf.example.com/opds', autoDownload: true },
+    ];
+    vi.mocked(checkFeedForNewItems).mockResolvedValue([
+      {
+        entryId: 'urn:shelf:1',
+        title: 'Issue 1',
+        acquisitionHref: '/dl/1.epub',
+        mimeType: 'application/epub+zip',
+        baseURL: 'https://shelf.example.com/opds',
+      },
+    ]);
+    (appService.importBook as ReturnType<typeof vi.fn>).mockRejectedValue(
+      new Error('corrupt file'),
+    );
+
+    await syncSubscribedCatalogs(catalogs, appService, []);
+
+    expect(readFlowState().entries[0]).toMatchObject({ error: 'corrupt file' });
   });
 
   it('keeps showing a catalog that failed when a later one succeeds', async () => {

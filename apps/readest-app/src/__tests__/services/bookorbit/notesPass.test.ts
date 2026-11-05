@@ -440,4 +440,23 @@ describe('isBookOrbitPassEnabled', () => {
     expect(isBookOrbitPassEnabled({ ...base, syncProgress: true, enabled: false })).toBe(false);
     expect(isBookOrbitPassEnabled({ ...base, syncProgress: true, userkey: '' })).toBe(false);
   });
+
+  it('keeps what moved before a pass failed, in counts the caller holds', async () => {
+    const deps = makeDeps({
+      getNotes: () => [makeNote({ updatedAt: NOW })],
+    });
+    (deps.client.exchangeBookmarks as ReturnType<typeof vi.fn>).mockRejectedValue(
+      new Error('HTTP 503'),
+    );
+    (deps.client.getVersion as ReturnType<typeof vi.fn>).mockResolvedValue({
+      pluginVersion: '1',
+      serverVersion: '1',
+      capabilities: ['bookmarkSync'],
+    });
+    const counts = { pushed: 0, pulled: 0 };
+
+    await expect(runBookOrbitNotesPass(deps, counts)).rejects.toThrow('HTTP 503');
+
+    expect(counts.pushed).toBeGreaterThan(0);
+  });
 });

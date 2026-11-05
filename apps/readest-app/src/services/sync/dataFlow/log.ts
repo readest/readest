@@ -92,6 +92,19 @@ export const recordConnectionCheck = (connector: ConnectorId, check: ConnectionC
   });
 };
 
+/** One two-way exchange: what moved each way, then the failure if it stopped partway. */
+export const recordExchange = (
+  entry: Pick<FlowEntryInput, 'connector' | 'kind' | 'bookTitle'>,
+  counts: { pushed: number; pulled: number },
+  error?: string,
+) => {
+  recordFlow({ ...entry, direction: 'push', count: counts.pushed });
+  recordFlow({ ...entry, direction: 'pull', count: counts.pulled });
+  if (!error) return;
+  recordFlow({ ...entry, direction: 'push', error });
+  recordFlow({ ...entry, direction: 'pull', error });
+};
+
 /** Zero the counts and history. Connection checks describe now, not the past, so they stay. */
 export const resetFlowLog = () => {
   writeFlowState({ ...EMPTY_STATE, checks: readFlowState().checks });

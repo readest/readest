@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+  recordExchange,
   getConnectorHealth,
   getConnectorSyncStatus,
   getConnectorTotals,
@@ -237,5 +238,27 @@ describe('data flow log', () => {
       recordFlow({ connector: 'readwise', direction: 'push', kind: 'notes', count: 1 }),
     ).not.toThrow();
     spy.mockRestore();
+  });
+
+  describe('recordExchange', () => {
+    const notes = { connector: 'grimmory', kind: 'notes', bookTitle: 'Dune' } as const;
+
+    it('records what went each way', () => {
+      recordExchange(notes, { pushed: 2, pulled: 1 });
+
+      const { totals } = readFlowState();
+      expect(totals['grimmory:push:notes']?.count).toBe(2);
+      expect(totals['grimmory:pull:notes']?.count).toBe(1);
+    });
+
+    it('keeps what moved before a failure and flags both sides', () => {
+      recordExchange(notes, { pushed: 2, pulled: 1 }, 'HTTP 503');
+
+      const state = readFlowState();
+      expect(state.totals['grimmory:push:notes']?.count).toBe(2);
+      expect(state.totals['grimmory:pull:notes']?.count).toBe(1);
+      expect(getConnectorSyncStatus(state, 'grimmory', 'push').status).toBe('failed');
+      expect(getConnectorSyncStatus(state, 'grimmory', 'pull').status).toBe('failed');
+    });
   });
 });

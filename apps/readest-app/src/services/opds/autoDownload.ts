@@ -43,7 +43,7 @@ async function downloadAndImport(
   catalog: OPDSCatalog,
   appService: AppService,
   books: Book[],
-): Promise<Book> {
+): Promise<{ book: Book; downloaded: boolean }> {
   const url = resolveURL(item.acquisitionHref, item.baseURL);
   // Identity gate (#5859): if this OPDS source already maps to a book still in
   // the library, it is already imported. Re-importing it would mint a NEW
@@ -69,7 +69,7 @@ async function downloadAndImport(
   }
   if (existing) {
     console.log(`[OPDS] "${item.title}" already imported for this source — skipping re-download`);
-    return existing;
+    return { book: existing, downloaded: false };
   }
   const username = catalog.username ?? '';
   const password = catalog.password ?? '';
@@ -172,7 +172,7 @@ async function downloadAndImport(
     console.error('OPDS sync: failed to update source map:', error);
   }
   console.log(`[OPDS] imported "${item.title}"`);
-  return book;
+  return { book, downloaded: true };
 }
 
 /**
@@ -270,7 +270,7 @@ async function syncCatalog(
       for (const outcome of downloadResults) {
         const item = outcome.item;
         if ('result' in outcome) {
-          batchBooks.push(outcome.result);
+          batchBooks.push(outcome.result.book);
           newKnownIds.push(item.entryId);
         } else {
           const attempts = (priorAttempts.get(item.entryId) ?? 0) + 1;
@@ -304,9 +304,17 @@ async function syncCatalog(
       }
       for (const outcome of downloadResults) {
         if ('result' in outcome) {
-          recordFlow({ ...BOOK_PULL, bookTitle: outcome.item.title });
+          recordFlow({
+            ...BOOK_PULL,
+            bookTitle: outcome.item.title,
+            count: outcome.result.downloaded ? 1 : 0,
+          });
         } else {
-          failedDownloads.push({ bookTitle: outcome.item.title, error: String(outcome.error) });
+          const { error } = outcome;
+          failedDownloads.push({
+            bookTitle: outcome.item.title,
+            error: error instanceof Error ? error.message : String(error),
+          });
         }
       }
 

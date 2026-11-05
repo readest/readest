@@ -167,9 +167,11 @@ const syncKind = async (
  * One Grimmory pass for an open book: find it on the server, sync its
  * highlights and bookmarks both ways, and send its reading status.
  */
-export const runGrimmoryPass = async (deps: GrimmoryPassDeps): Promise<GrimmoryPassCounts> => {
+export const runGrimmoryPass = async (
+  deps: GrimmoryPassDeps,
+  counts: GrimmoryPassCounts = { pushed: 0, pulled: 0 },
+): Promise<GrimmoryPassCounts> => {
   const { client, store, account, book } = deps;
-  const counts = { pushed: 0, pulled: 0 };
   const match = await resolveGrimmoryBook({
     client,
     store,

@@ -66,6 +66,8 @@ interface ServerStatePayload {
 const BOOK_RECEIVED = { connector: 'localsend', direction: 'pull', kind: 'books' } as const;
 const BOOK_SENT = { connector: 'localsend', direction: 'push', kind: 'books' } as const;
 
+const errorText = (err: unknown) => (err instanceof Error ? err.message : String(err));
+
 /**
  * Background controller for the LocalSend integration. Mounted in the library
  * and reader shells (Tauri only): starts/stops the Rust service to match the
@@ -329,10 +331,10 @@ const LocalSendManager: React.FC = () => {
                   },
                 );
                 if (book) importedBooks.push(book);
-                recordFlow({ ...BOOK_RECEIVED, bookTitle: book?.title });
+                recordFlow({ ...BOOK_RECEIVED, bookTitle: book?.title, count: book ? 1 : 0 });
               } catch (err) {
                 console.error('Failed to ingest book from pack:', err);
-                recordFlow({ ...BOOK_RECEIVED, error: String(err) });
+                recordFlow({ ...BOOK_RECEIVED, error: errorText(err) });
               }
             }
             if (importedBooks.length === 0) throw new Error('No books imported from pack');
@@ -362,11 +364,15 @@ const LocalSendManager: React.FC = () => {
           },
         );
         if (book) await useLibraryStore.getState().updateBooks(envConfig, [book]);
-        recordFlow({ ...BOOK_RECEIVED, bookTitle: book?.title ?? payload.fileName });
+        recordFlow({
+          ...BOOK_RECEIVED,
+          bookTitle: book?.title ?? payload.fileName,
+          count: book ? 1 : 0,
+        });
         await appService.deleteFile(payload.path, 'None').catch(() => {});
       } catch (err) {
         console.error('LocalSend import failed:', err);
-        recordFlow({ ...BOOK_RECEIVED, bookTitle: payload.fileName, error: String(err) });
+        recordFlow({ ...BOOK_RECEIVED, bookTitle: payload.fileName, error: errorText(err) });
         toast(_('Failed to import {{filename}}', { filename: payload.fileName }), 'error');
       }
     },
@@ -421,6 +427,10 @@ const LocalSendManager: React.FC = () => {
           if (reason === 'cancelled') {
             toast(_('Transfer from {{alias}} cancelled', { alias: owned.alias }));
           } else if (failed > 0) {
+            recordFlow({
+              ...BOOK_RECEIVED,
+              error: `${failed} of ${received + failed} files failed`,
+            });
             haptic();
             toast(
               _('Received {{count}} book(s) from {{alias}}, {{failed}} failed', {

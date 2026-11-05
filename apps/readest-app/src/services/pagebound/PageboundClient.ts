@@ -153,7 +153,10 @@ export class PageboundClient {
 
   /** Throws when the session is gone and can't be renewed. */
   async checkConnection(): Promise<void> {
-    await this.ensureSession();
+    if ((await this.fetchApi('/auth/get_authed_user')).ok) return;
+    await this.renewSession();
+    const { ok, status } = await this.fetchApi('/auth/get_authed_user');
+    if (!ok) throw new Error(`Pagebound API error (HTTP ${status})`);
   }
 
   private async request<T>(path: string, method = 'GET', body?: unknown): Promise<T> {

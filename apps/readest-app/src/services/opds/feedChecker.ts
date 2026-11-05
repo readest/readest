@@ -364,7 +364,10 @@ export async function checkCatalogFeed(catalog: OPDSCatalog): Promise<boolean> {
     customHeaders,
     catalog,
   );
-  return !!root;
+  if (!root) return false;
+  // JSON is cast to a feed unchecked, so any JSON page would otherwise pass.
+  const { navigation, publications, groups, links } = root.feed;
+  return [navigation, publications, groups, links].some(Array.isArray);
 }
 
 /**
