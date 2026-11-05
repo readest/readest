@@ -54,7 +54,10 @@ const quote = (text: string, prefix: string) =>
 
 export const renderHighlight = (highlight: VaultHighlight, bookTitle: string): string => {
   const color = highlight.color.toLowerCase().replace(/[^a-z0-9-]/g, '') || 'yellow';
-  const label = (highlight.chapter || bookTitle).replace(/[[\]]/g, '\\$&');
+  const label = (highlight.chapter || bookTitle)
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/[\\[\]]/g, '\\$&');
   const url = highlight.url.replace(
     /[()]/g,
     (c) => `%${c.charCodeAt(0).toString(16).toUpperCase()}`,
@@ -121,7 +124,10 @@ export const mergeVaultNote = (
   const normalized = existing.replace(/\r\n?/g, '\n');
   let { frontmatter, body } = splitFrontmatter(normalized);
   if (book.progress !== null) {
-    frontmatter = frontmatter.replace(/^progress:.*$/m, `progress: ${book.progress}`);
+    const progress = `progress: ${book.progress}`;
+    frontmatter = /^progress:/m.test(frontmatter)
+      ? frontmatter.replace(/^progress:.*$/m, progress)
+      : frontmatter.replace(/^readest_book_id:/m, `${progress}\n$&`);
   }
   const lines = body.replace(/\s+$/, '').split('\n');
   const written: WrittenBlocks = { ...previous };

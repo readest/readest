@@ -162,6 +162,15 @@ describe('sanitizeSettingsForBackup - blacklist', () => {
     expect(out['savedBookCoverForLockScreenPath']).toBeUndefined();
   });
 
+  it('strips the per-device Obsidian vault settings', () => {
+    const out = rec(
+      sanitizeSettingsForBackup(
+        makeSettings({ obsidian: { enabled: true, folder: '/Users/me/Vault/Readest' } }),
+      ),
+    );
+    expect(out['obsidian']).toBeUndefined();
+  });
+
   it('strips per-device identity fields', () => {
     const out = rec(sanitizeSettingsForBackup(makeSettings()));
     expect(out['replicaDeviceId']).toBeUndefined();

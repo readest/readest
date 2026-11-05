@@ -83,6 +83,13 @@ describe('renderHighlight', () => {
       '> [!quote|ff00aa] [A \\[Book\\]](https://x/a?cfi=epubcfi%28%2F6%29)',
     );
   });
+
+  it('keeps a multi-line chapter label on the callout line and escapes backslashes', () => {
+    const out = renderHighlight(hl('a1', { chapter: ' Part One\n  C:\\ Two ' }), 'T');
+    expect(out.split('\n')[0]).toBe(
+      '> [!quote|yellow] [Part One C:\\\\ Two](https://web.readest.com/o/book/bookhash1/annotation/a1)',
+    );
+  });
 });
 
 describe('mergeVaultNote', () => {
@@ -184,5 +191,11 @@ describe('mergeVaultNote', () => {
     );
     expect(text).toContain('\nprogress: 80\n');
     expect(text).not.toContain('progress: 12');
+  });
+
+  it('adds the progress property to a note created before progress was known', () => {
+    const first = sync(createVaultNote({ ...book, progress: null }), [hl('a1')]);
+    const { text } = sync(first.text, [hl('a1')], first.written);
+    expect(text).toContain('\nprogress: 12\nreadest_book_id: bookhash1\n');
   });
 });
