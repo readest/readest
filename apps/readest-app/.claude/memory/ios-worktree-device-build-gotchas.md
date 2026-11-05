@@ -33,3 +33,7 @@ Hit 2026-10-11 building PR #6674 for the iPad Air M2 (iPadOS 27, Xcode 26.3) fro
    'SwiftShims'` and "precompiled file ... was compiled with module cache path '/Users/chrox/dev/readest-<other
    worktree>/target/...'". Same fix as item 2 (`rm -rf target/aarch64-apple-ios/release/{build,.fingerprint}/tauri*`);
    do it BEFORE the first iOS build in any new worktree to save a failed ~15 min run.
+6. Seeded `target/` again (2026-11-04, #7100): clearing only `tauri*` was NOT enough. First run: 4 plugins failed at once with
+   "The folder artifacts doesn't exist"; second: `module '_DarwinFoundation1' is defined in both '/Users/chrox/dev/readest/target/...ModuleCache...'
+   and '<worktree>/target/...'` (swift-frontend signal 11). Fix that worked: `rm -rf target/aarch64-apple-ios/release` (full iOS
+   Rust recompile, ~20 min). Do this up front in a worktree whose target/ was seeded from the main checkout.
