@@ -106,6 +106,140 @@ describe('Android native page-turn pipeline', () => {
     }
   });
 
+  // Hiding the toolbars as a turn starts changes the system UI, which invalidates
+  // the native pages while the live page is parked on a neighbour for its capture.
+  it('keeps the cover and its sheet through an invalidation during a cold turn', async () => {
+    const f = fixture();
+    const { controller } = f;
+    const host = (controller as unknown as { host: CapturedTurnHost }).host;
+    host.onCovered = async () => controller.invalidateNativePages();
+    try {
+      expect(await controller.turn(true, false)).toBe(true);
+      expect(f.events).toEqual([
+        'capture',
+        'cover',
+        'capture',
+        'start',
+        'animate',
+        'navigate',
+        'finish',
+        'invalidate',
+      ]);
+    } finally {
+      controller.dispose();
+    }
+  });
+
+  // A warmed turn hides the toolbars only after its scene has started.
+  it('finishes a started turn when an invalidation follows it', async () => {
+    const f = fixture();
+    const { controller } = f;
+    const host = (controller as unknown as { host: CapturedTurnHost }).host;
+    try {
+      await controller.prepareCapture('curl');
+      host.onCovered = async () => controller.invalidateNativePages();
+      f.events.length = 0;
+      expect(await controller.turn(true, false)).toBe(true);
+      expect(f.events).toEqual(['start', 'animate', 'navigate', 'finish', 'invalidate']);
+    } finally {
+      controller.dispose();
+    }
+  });
+
+  it('keeps the cover through an invalidation during a rollback', async () => {
+    const f = fixture();
+    const { controller } = f;
+    const host = (controller as unknown as { host: CapturedTurnHost }).host;
+    host.onCancelled = async () => controller.invalidateNativePages();
+    const call = f.call.getMockImplementation()!;
+    f.call.mockImplementation(async (args) => {
+      if (args.op === 'start') throw new Error('start failed');
+      return call(args);
+    });
+    try {
+      await expect(controller.beginDrag(true, false)).rejects.toThrow('start failed');
+      expect(f.events.indexOf('finish')).toBeGreaterThan(-1);
+      expect(f.events.indexOf('finish')).toBeLessThan(f.events.indexOf('invalidate'));
+    } finally {
+      controller.dispose();
+    }
+  });
+
+  describe('resident pages reported during a held invalidation', () => {
+    // The native bank lists every resident page, including those the held
+    // invalidation is about to delete.
+    const withNativeBank = () => {
+      const f = fixture();
+      const resident = new Set<string>();
+      const call = f.call.getMockImplementation()!;
+      f.call.mockImplementation(async (args) => {
+        const result = await call(args);
+        if (args.op === 'invalidate') resident.clear();
+        if (args.op !== 'capture') return result;
+        resident.add(args.key!);
+        return { ...result, keys: [...resident] };
+      });
+      const host = (f.controller as unknown as { host: CapturedTurnHost }).host;
+      return { ...f, host };
+    };
+
+    it('recaptures a destination that was resident before the invalidation', async () => {
+      const f = withNativeBank();
+      try {
+        await f.controller.prepareCapture('curl');
+        f.host.onBeforeCapture = () => f.controller.invalidateNativePages();
+        f.call.mockClear();
+        expect(await f.controller.turn(true, false)).toBe(true);
+        const captured = f.call.mock.calls.filter(([args]) => args.op === 'capture');
+        expect(captured.map(([args]) => args.key)).toEqual(['1', '2']);
+      } finally {
+        f.controller.dispose();
+      }
+    });
+
+    it('forgets every page once the held invalidation reaches native', async () => {
+      const f = withNativeBank();
+      f.host.onCovered = async () => f.controller.invalidateNativePages();
+      try {
+        expect(await f.controller.turn(true, false)).toBe(true);
+        f.host.onCovered = undefined;
+        f.events.length = 0;
+        await f.controller.prepareCapture('curl');
+        expect(f.events.slice(0, 2)).toEqual(['capture', 'cover']);
+      } finally {
+        f.controller.dispose();
+      }
+    });
+  });
+
+  it('keeps the cover through an invalidation while warming the neighbouring pages', async () => {
+    const f = fixture();
+    const preview = f.renderer.previewPage!;
+    let invalidated = false;
+    f.renderer.previewPage = async (forward, read, signal) => {
+      if (!invalidated) {
+        invalidated = true;
+        f.controller.invalidateNativePages();
+      }
+      return preview(forward, read, signal);
+    };
+    try {
+      await f.controller.prepareCapture('curl');
+      expect(f.events.indexOf('cover')).toBeLessThan(f.events.indexOf('idle'));
+      expect(f.events.indexOf('idle')).toBeLessThan(f.events.indexOf('invalidate'));
+      expect(f.events.filter((op) => op === 'invalidate')).toHaveLength(1);
+    } finally {
+      f.controller.dispose();
+    }
+  });
+
+  it('invalidates the native pages at once when nothing holds the cover', async () => {
+    const f = fixture();
+    f.controller.invalidateNativePages();
+    expect(f.events).toEqual(['invalidate']);
+    f.controller.dispose();
+  });
+
   it('turns a renderer without page previews by navigating under the cover', async () => {
     const f = fixture();
     delete (f.renderer as { previewPage?: unknown }).previewPage;
