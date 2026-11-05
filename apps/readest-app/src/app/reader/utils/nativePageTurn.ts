@@ -68,6 +68,7 @@ export class NativePageTurn extends CapturedPageTurn {
   #cancellations = new Set<Promise<unknown>>();
   #invalidations: Promise<unknown> = Promise.resolve();
   #invalidationHeld = false;
+  #restoring = false;
 
   constructor(
     private host: CapturedTurnHost,
@@ -243,7 +244,7 @@ export class NativePageTurn extends CapturedPageTurn {
   }
   /** Send the invalidation held back by a warm-up or turn once neither remains. */
   #releaseInvalidation() {
-    if (!this.#invalidationHeld || this.#warming || this.#scene) return;
+    if (!this.#invalidationHeld || this.#warming || this.#scene || this.#restoring) return;
     this.#invalidationHeld = false;
     if (this.#dead) return;
     this.#invalidations = Promise.allSettled([
@@ -418,6 +419,7 @@ export class NativePageTurn extends CapturedPageTurn {
   async #restore(scene: Scene) {
     if (this.#scene !== scene) return;
     this.#scene = null;
+    this.#restoring = true;
     // A native failure can destroy the EGL context and its whole texture bank.
     this.#keys.clear();
     try {
@@ -425,6 +427,7 @@ export class NativePageTurn extends CapturedPageTurn {
       await this.host.onCancelled?.('curl');
     } finally {
       await this.#call({ op: 'finish', turnId: scene.session.id }).catch(() => {});
+      this.#restoring = false;
       this.#releaseInvalidation();
     }
   }

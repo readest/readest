@@ -146,6 +146,25 @@ describe('Android native page-turn pipeline', () => {
     }
   });
 
+  it('keeps the cover through an invalidation during a rollback', async () => {
+    const f = fixture();
+    const { controller } = f;
+    const host = (controller as unknown as { host: CapturedTurnHost }).host;
+    host.onCancelled = async () => controller.invalidateNativePages();
+    const call = f.call.getMockImplementation()!;
+    f.call.mockImplementation(async (args) => {
+      if (args.op === 'start') throw new Error('start failed');
+      return call(args);
+    });
+    try {
+      await expect(controller.beginDrag(true, false)).rejects.toThrow('start failed');
+      expect(f.events.indexOf('finish')).toBeGreaterThan(-1);
+      expect(f.events.indexOf('finish')).toBeLessThan(f.events.indexOf('invalidate'));
+    } finally {
+      controller.dispose();
+    }
+  });
+
   it('keeps the cover through an invalidation while warming the neighbouring pages', async () => {
     const f = fixture();
     const preview = f.renderer.previewPage!;
