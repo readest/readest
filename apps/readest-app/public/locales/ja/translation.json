@@ -2752,5 +2752,6 @@
   "Books downloaded": "ダウンロードした本",
   "Books uploaded": "アップロードした本",
   "Reset Counts": "カウントをリセット",
-  "Reset the counts and sync history on this device?": "このデバイスのカウントと同期履歴をリセットしますか？"
+  "Reset the counts and sync history on this device?": "このデバイスのカウントと同期履歴をリセットしますか？",
+  "Folder not available": "フォルダーを利用できません"
 }

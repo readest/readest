@@ -109,6 +109,40 @@ describe('getFlowConnectors', () => {
     expect(byId(ctx, 'notion')).toMatchObject({ sources: [], sinks: ['notes'] });
   });
 
+  it('shows Obsidian as a place notes go, once it has a folder', () => {
+    const obsidian = { enabled: true, folder: '/vault/Readest' };
+
+    expect(byId(context({ settings: settings({ obsidian }) }), 'obsidian')).toMatchObject({
+      sources: [],
+      sinks: ['notes'],
+    });
+    expect(
+      byId(context({ settings: settings({ obsidian: { ...obsidian, folder: '' } }) }), 'obsidian'),
+    ).toBeUndefined();
+    expect(
+      byId(
+        context({ settings: settings({ obsidian: { ...obsidian, enabled: false } }) }),
+        'obsidian',
+      ),
+    ).toBeUndefined();
+  });
+
+  it('flags a vault folder this device can no longer open', async () => {
+    const isDirectory = vi.fn(async () => false);
+    const ctx = context({
+      settings: settings({ obsidian: { enabled: true, folder: '/vault/Readest' } }),
+      envConfig: { getAppService: async () => ({ isDirectory }) } as unknown as EnvConfigType,
+    });
+
+    await runConnectionCheck(byId(ctx, 'obsidian')!);
+
+    expect(isDirectory).toHaveBeenCalledWith('/vault/Readest', 'None');
+    expect(readFlowState().checks.obsidian).toMatchObject({
+      ok: false,
+      message: 'Folder not available',
+    });
+  });
+
   it('needs a Notion target as well as a token', () => {
     const ctx = context({ settings: settings({ notion: { enabled: true, accessToken: 't' } }) });
     expect(byId(ctx, 'notion')).toBeUndefined();

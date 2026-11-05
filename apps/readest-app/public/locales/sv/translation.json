@@ -2825,5 +2825,6 @@
   "Books downloaded": "Nedladdade böcker",
   "Books uploaded": "Uppladdade böcker",
   "Reset Counts": "Nollställ räknare",
-  "Reset the counts and sync history on this device?": "Nollställ räknare och synkroniseringshistorik på den här enheten?"
+  "Reset the counts and sync history on this device?": "Nollställ räknare och synkroniseringshistorik på den här enheten?",
+  "Folder not available": "Mappen är inte tillgänglig"
 }

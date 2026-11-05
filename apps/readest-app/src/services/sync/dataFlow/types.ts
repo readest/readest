@@ -15,6 +15,7 @@ export type ConnectorId =
   | 'hardcover'
   | 'pagebound'
   | 'notion'
+  | 'obsidian'
   | 'audiobookshelf'
   | 'opds'
   | 'localsend'

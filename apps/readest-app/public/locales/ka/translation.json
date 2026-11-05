@@ -2825,5 +2825,6 @@
   "Books downloaded": "ჩამოტვირთული წიგნები",
   "Books uploaded": "ატვირთული წიგნები",
   "Reset Counts": "მრიცხველების გადატვირთვა",
-  "Reset the counts and sync history on this device?": "გადაიტვირთოს მრიცხველები და სინქრონიზაციის ისტორია ამ მოწყობილობაზე?"
+  "Reset the counts and sync history on this device?": "გადაიტვირთოს მრიცხველები და სინქრონიზაციის ისტორია ამ მოწყობილობაზე?",
+  "Folder not available": "საქაღალდე მიუწვდომელია"
 }

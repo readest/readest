@@ -2825,5 +2825,6 @@
   "Books downloaded": "බාගත කළ පොත්",
   "Books uploaded": "උඩුගත කළ පොත්",
   "Reset Counts": "ගණන් යළි සකසන්න",
-  "Reset the counts and sync history on this device?": "මෙම උපාංගයේ ගණන් සහ සමමුහුර්ත ඉතිහාසය යළි සකසන්නද?"
+  "Reset the counts and sync history on this device?": "මෙම උපාංගයේ ගණන් සහ සමමුහුර්ත ඉතිහාසය යළි සකසන්නද?",
+  "Folder not available": "ෆෝල්ඩරය ලබා ගත නොහැක"
 }

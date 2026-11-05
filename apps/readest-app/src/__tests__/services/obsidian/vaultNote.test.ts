@@ -206,4 +206,30 @@ describe('mergeVaultNote', () => {
     expect(text.match(/progress/g)).toHaveLength(1);
     expect(text).toContain('\nprogress: 12\n');
   });
+
+  describe('changed', () => {
+    it('counts the blocks a sync added, rewrote or removed', () => {
+      const added = sync(createVaultNote(book), [hl('a1'), hl('a2')]);
+      expect(added.changed).toBe(2);
+
+      const rewritten = sync(added.text, [hl('a1', { note: 'n' }), hl('a2')], added.written);
+      expect(rewritten.changed).toBe(1);
+
+      const removed = sync(
+        rewritten.text,
+        [hl('a1', { note: 'n', deleted: true }), hl('a2')],
+        rewritten.written,
+      );
+      expect(removed.changed).toBe(1);
+    });
+
+    it('leaves out blocks with nothing to do and blocks the user owns', () => {
+      const first = sync(createVaultNote(book), [hl('a1'), hl('a2')]);
+      expect(sync(first.text, [hl('a1'), hl('a2')], first.written).changed).toBe(0);
+
+      const edited = first.text.replace('text a1', 'my own words');
+      expect(edited).not.toBe(first.text);
+      expect(sync(edited, [hl('a1', { note: 'n' }), hl('a2')], first.written).changed).toBe(0);
+    });
+  });
 });

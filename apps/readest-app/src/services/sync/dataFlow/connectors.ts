@@ -80,7 +80,8 @@ const passes = (ok: boolean) => ({ ok, message: ok ? undefined : _('Server unrea
 
 const readingConnectors = ({ settings, envConfig }: ConnectorContext): FlowConnector[] => {
   const connectors: FlowConnector[] = [];
-  const { kosync, bookorbit, grimmory, readwise, hardcover, pagebound, notion } = settings;
+  const { kosync, bookorbit, grimmory, readwise, hardcover, pagebound, notion, obsidian } =
+    settings;
 
   if (kosync?.enabled && kosync.username) {
     connectors.push({
@@ -162,6 +163,19 @@ const readingConnectors = ({ settings, envConfig }: ConnectorContext): FlowConne
       sources: [],
       sinks: ['notes'],
       check: async () => fromToken(await new NotionClient(notion).validateToken()),
+    });
+  }
+  if (obsidian?.enabled && obsidian.folder) {
+    connectors.push({
+      id: 'obsidian',
+      title: _('Obsidian'),
+      sources: [],
+      sinks: ['notes'],
+      check: async () => {
+        const appService = await envConfig.getAppService();
+        const ok = await appService.isDirectory(obsidian.folder, 'None');
+        return { ok, message: ok ? undefined : _('Folder not available') };
+      },
     });
   }
   return connectors;

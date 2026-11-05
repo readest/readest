@@ -2971,5 +2971,6 @@
   "Books downloaded": "Pobrane książki",
   "Books uploaded": "Przesłane książki",
   "Reset Counts": "Resetuj liczniki",
-  "Reset the counts and sync history on this device?": "Zresetować liczniki i historię synchronizacji na tym urządzeniu?"
+  "Reset the counts and sync history on this device?": "Zresetować liczniki i historię synchronizacji na tym urządzeniu?",
+  "Folder not available": "Folder niedostępny"
 }

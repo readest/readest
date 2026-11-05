@@ -2752,5 +2752,6 @@
   "Books downloaded": "หนังสือที่ดาวน์โหลด",
   "Books uploaded": "หนังสือที่อัปโหลด",
   "Reset Counts": "รีเซ็ตจำนวน",
-  "Reset the counts and sync history on this device?": "รีเซ็ตจำนวนและประวัติการซิงค์บนอุปกรณ์นี้หรือไม่"
+  "Reset the counts and sync history on this device?": "รีเซ็ตจำนวนและประวัติการซิงค์บนอุปกรณ์นี้หรือไม่",
+  "Folder not available": "โฟลเดอร์ไม่พร้อมใช้งาน"
 }

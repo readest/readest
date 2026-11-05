@@ -14,6 +14,7 @@ const h = vi.hoisted(() => {
     notion: { enabled: true, accessToken: 't', databaseId: 'd' },
     hardcover: { enabled: true, accessToken: 't', autoSync: false },
     pagebound: { enabled: true, refreshToken: 'r', autoSync: false },
+    obsidian: { enabled: true, folder: '/vault/Readest' },
   };
   const bookData = {
     getConfig: () => config,
@@ -29,6 +30,7 @@ const h = vi.hoisted(() => {
     hardcoverNotes: vi.fn(),
     hardcoverProgress: vi.fn(),
     pageboundPush: vi.fn(),
+    obsidianSync: vi.fn(),
   };
 });
 
@@ -71,6 +73,10 @@ vi.mock('@/services/pagebound', () => ({
     pushProgress = h.pageboundPush;
   },
 }));
+vi.mock('@/services/obsidian/vaultSync', () => ({
+  syncBookToVault: h.obsidianSync,
+  toVaultHighlights: () => [],
+}));
 vi.mock('@/services/hardcover', () => {
   class HardcoverUnmatchedError extends Error {}
   class HardcoverAuthError extends Error {}
@@ -90,6 +96,7 @@ vi.mock('@/services/hardcover', () => {
 import { HardcoverUnmatchedError } from '@/services/hardcover';
 import { useHardcoverSync } from '@/app/reader/hooks/useHardcoverSync';
 import { useNotionSync } from '@/app/reader/hooks/useNotionSync';
+import { useObsidianSync } from '@/app/reader/hooks/useObsidianSync';
 import { usePageboundSync } from '@/app/reader/hooks/usePageboundSync';
 import { useReadwiseSync } from '@/app/reader/hooks/useReadwiseSync';
 
@@ -206,5 +213,42 @@ describe('exporters report what they moved', () => {
     h.pageboundPush.mockRejectedValueOnce(new Error('Session expired'));
     await fire('pagebound-push-progress');
     expect(readFlowState().entries[0]).toMatchObject({ error: 'Session expired' });
+  });
+
+  it('Obsidian: counts the highlights it changed in the vault', async () => {
+    h.obsidianSync.mockResolvedValue(3);
+    renderHook(() => useObsidianSync('k'));
+
+    await fire('obsidian-push-all');
+
+    expect(readFlowState().entries[0]).toMatchObject({
+      connector: 'obsidian',
+      direction: 'push',
+      kind: 'notes',
+      count: 3,
+      bookTitle: 'Dune',
+    });
+  });
+
+  it('Obsidian: a sync with nothing to change still reads as working', async () => {
+    h.obsidianSync.mockResolvedValue(0);
+    renderHook(() => useObsidianSync('k'));
+
+    await fire('obsidian-push-all');
+
+    expect(readFlowState().entries).toEqual([]);
+    expect(readFlowState().totals['obsidian:push:notes']?.lastSuccessAt).toBeTypeOf('number');
+  });
+
+  it('Obsidian: logs a write that failed', async () => {
+    h.obsidianSync.mockRejectedValue(new Error('Permission denied'));
+    renderHook(() => useObsidianSync('k'));
+
+    await fire('obsidian-push-all');
+
+    expect(readFlowState().entries[0]).toMatchObject({
+      connector: 'obsidian',
+      error: 'Permission denied',
+    });
   });
 });

@@ -2752,5 +2752,6 @@
   "Books downloaded": "ཕབ་ལེན་བྱས་པའི་དཔེ་ཆ།",
   "Books uploaded": "ཡར་སྐྱེལ་བྱས་པའི་དཔེ་ཆ།",
   "Reset Counts": "གྲངས་ཚད་བསྐྱར་སྒྲིག",
-  "Reset the counts and sync history on this device?": "སྒྲིག་ཆས་འདིའི་གྲངས་ཚད་དང་མཉམ་སྡེབ་ལོ་རྒྱུས་བསྐྱར་སྒྲིག་བྱེད་དམ།"
+  "Reset the counts and sync history on this device?": "སྒྲིག་ཆས་འདིའི་གྲངས་ཚད་དང་མཉམ་སྡེབ་ལོ་རྒྱུས་བསྐྱར་སྒྲིག་བྱེད་དམ།",
+  "Folder not available": "ཡིག་སྣོད་མི་རག"
 }

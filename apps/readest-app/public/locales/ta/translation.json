@@ -2825,5 +2825,6 @@
   "Books downloaded": "பதிவிறக்கிய புத்தகங்கள்",
   "Books uploaded": "பதிவேற்றிய புத்தகங்கள்",
   "Reset Counts": "எண்ணிக்கையை மீட்டமை",
-  "Reset the counts and sync history on this device?": "இந்தச் சாதனத்தில் எண்ணிக்கைகளையும் ஒத்திசைவு வரலாற்றையும் மீட்டமைக்கவா?"
+  "Reset the counts and sync history on this device?": "இந்தச் சாதனத்தில் எண்ணிக்கைகளையும் ஒத்திசைவு வரலாற்றையும் மீட்டமைக்கவா?",
+  "Folder not available": "கோப்புறை கிடைக்கவில்லை"
 }
