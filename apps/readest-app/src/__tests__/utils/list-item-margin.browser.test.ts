@@ -68,7 +68,7 @@ const renderList = (bookCss: string, settings: Partial<ViewSettings>, htmlAttrs 
   readerStyle.textContent = getStyles(makeViewSettings(settings), themeCode);
   doc.head.appendChild(readerStyle);
   if (htmlAttrs) doc.documentElement.setAttribute('style', htmlAttrs);
-  doc.body.innerHTML = `<ul class="exe"><li class="item">One</li></ul><ol><li>Two</li></ol>`;
+  doc.body.innerHTML = `<ul class="exe"><li class="item">One<ul><li>Nested</li></ul></li></ul><ol><li>Two</li></ol>`;
   return iframe;
 };
 
@@ -174,6 +174,12 @@ describe('default list indent', () => {
       left: '20.8px',
       right: '20.8px',
     });
+  });
+
+  test('never indents more than the browser default at a large font size', () => {
+    const large = { ...override, defaultFontSize: 40 };
+    expect(listPadding('ul', '', large).left).toBe('40px');
+    expect(listPadding('ul ul', '', large).left).toBe('40px');
   });
 
   test('keeps a universal reset under Override Book Layout', () => {

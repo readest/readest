@@ -801,10 +801,10 @@ const getParagraphLayoutStyles = (
     hyphens: ${hyphenate ? 'auto' : 'manual'} ${overrideLayout ? '!important' : ''};
     ${overrideLayout ? 'margin-inline-end: unset !important;' : ''}
   }
-  /* Replaces the browser's 40px list padding. The layer loses to every unlayered
-     book rule, a reset like * { padding: 0 } included, and still beats the
-     browser's. */
-  ${overrideLayout ? '@layer list-indent { ul, ol { padding-inline-start: 1.5em; } }' : ''}
+  /* Shrinks the browser's 40px list padding, and never grows it at large font
+     sizes. The layer loses to every unlayered book rule, a reset like
+     * { padding: 0 } included, and still beats the browser's. */
+  ${overrideLayout ? '@layer list-indent { ul, ol { padding-inline-start: min(1.5em, 40px); } }' : ''}
   p.aligned-center, blockquote.aligned-center,
   dd.aligned-center, div.aligned-center {
     text-align: center ${overrideLayout ? '!important' : ''};
