@@ -2884,5 +2884,14 @@
   "{{count}} now Mastered_other": "Zdaj »Osvojeno«: {{count}}",
   "Sync with Anki": "Sinhroniziraj z Ankijem",
   "Import Anki Deck...": "Uvozi komplet iz Ankija...",
-  "In sync with Anki": "Sinhronizirano z Ankijem"
+  "In sync with Anki": "Sinhronizirano z Ankijem",
+  "Grimmory": "Grimmory",
+  "Grimmory Sync": "Sinhronizacija Grimmory",
+  "Connect to your Grimmory server.": "Povežite se s svojim strežnikom Grimmory.",
+  "Sign in with your Grimmory account.": "Prijavite se s svojim računom Grimmory.",
+  "Books are matched by file: a book syncs when the same file is in your Grimmory library.": "Knjige se ujemajo po datoteki: knjiga se sinhronizira, ko je ista datoteka v vaši knjižnici Grimmory.",
+  "Book not found in Grimmory. Add the same file to Grimmory to sync it.": "Knjige ni v Grimmory. Za sinhronizacijo dodajte isto datoteko v Grimmory.",
+  "Not a Grimmory server. Check the Server URL.": "To ni strežnik Grimmory. Preverite URL strežnika.",
+  "Invalid credentials.": "Neveljavni poverilni podatki.",
+  "Connection error.": "Napaka povezave."
 }

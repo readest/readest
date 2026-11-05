@@ -2738,5 +2738,14 @@
   "{{count}} now Mastered_other": "{{count}} இப்போது “கற்றுவிட்டேன்”",
   "Sync with Anki": "Anki உடன் ஒத்திசைக்கவும்",
   "Import Anki Deck...": "Anki டெக்கை இறக்குமதி செய்...",
-  "In sync with Anki": "Anki உடன் ஒத்திசைக்கப்பட்டது"
+  "In sync with Anki": "Anki உடன் ஒத்திசைக்கப்பட்டது",
+  "Grimmory": "Grimmory",
+  "Grimmory Sync": "Grimmory ஒத்திசைவு",
+  "Connect to your Grimmory server.": "உங்கள் Grimmory சேவையகத்துடன் இணைக்கவும்.",
+  "Sign in with your Grimmory account.": "உங்கள் Grimmory கணக்கில் உள்நுழையவும்.",
+  "Books are matched by file: a book syncs when the same file is in your Grimmory library.": "புத்தகங்கள் கோப்பின் மூலம் பொருத்தப்படுகின்றன: அதே கோப்பு உங்கள் Grimmory நூலகத்தில் இருந்தால் புத்தகம் ஒத்திசைக்கப்படும்.",
+  "Book not found in Grimmory. Add the same file to Grimmory to sync it.": "Grimmory-இல் புத்தகம் கிடைக்கவில்லை. ஒத்திசைக்க அதே கோப்பை Grimmory-இல் சேர்க்கவும்.",
+  "Not a Grimmory server. Check the Server URL.": "இது Grimmory சேவையகம் அல்ல. சேவையக URL-ஐச் சரிபார்க்கவும்.",
+  "Invalid credentials.": "தவறான நற்சான்றுகள்.",
+  "Connection error.": "இணைப்புப் பிழை."
 }

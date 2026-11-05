@@ -2738,5 +2738,14 @@
   "{{count}} now Mastered_other": "{{count}} ახლა „ნასწავლი“",
   "Sync with Anki": "Anki-სთან სინქრონიზაცია",
   "Import Anki Deck...": "Anki-ს დასტის იმპორტი...",
-  "In sync with Anki": "სინქრონიზებულია Anki-სთან"
+  "In sync with Anki": "სინქრონიზებულია Anki-სთან",
+  "Grimmory": "Grimmory",
+  "Grimmory Sync": "Grimmory სინქრონიზაცია",
+  "Connect to your Grimmory server.": "დაუკავშირდით თქვენს Grimmory სერვერს.",
+  "Sign in with your Grimmory account.": "შედით თქვენი Grimmory ანგარიშით.",
+  "Books are matched by file: a book syncs when the same file is in your Grimmory library.": "წიგნები ფაილის მიხედვით ემთხვევა: წიგნი სინქრონიზდება, როცა იგივე ფაილი თქვენს Grimmory ბიბლიოთეკაშია.",
+  "Book not found in Grimmory. Add the same file to Grimmory to sync it.": "წიგნი Grimmory-ში ვერ მოიძებნა. სინქრონიზაციისთვის დაამატეთ იგივე ფაილი Grimmory-ში.",
+  "Not a Grimmory server. Check the Server URL.": "ეს არ არის Grimmory სერვერი. შეამოწმეთ სერვერის URL.",
+  "Invalid credentials.": "არასწორი ავტორიზაციის მონაცემები.",
+  "Connection error.": "კავშირის შეცდომა."
 }

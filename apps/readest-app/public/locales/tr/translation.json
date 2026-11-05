@@ -2738,5 +2738,14 @@
   "{{count}} now Mastered_other": "{{count}} kelime artık “Öğrenildi”",
   "Sync with Anki": "Anki ile senkronize et",
   "Import Anki Deck...": "Anki destesini içe aktar...",
-  "In sync with Anki": "Anki ile senkronize"
+  "In sync with Anki": "Anki ile senkronize",
+  "Grimmory": "Grimmory",
+  "Grimmory Sync": "Grimmory Senkronizasyonu",
+  "Connect to your Grimmory server.": "Grimmory sunucunuza bağlanın.",
+  "Sign in with your Grimmory account.": "Grimmory hesabınızla oturum açın.",
+  "Books are matched by file: a book syncs when the same file is in your Grimmory library.": "Kitaplar dosyaya göre eşleştirilir: aynı dosya Grimmory kitaplığınızda olduğunda kitap senkronize edilir.",
+  "Book not found in Grimmory. Add the same file to Grimmory to sync it.": "Kitap Grimmory’de bulunamadı. Senkronize etmek için aynı dosyayı Grimmory’ye ekleyin.",
+  "Not a Grimmory server. Check the Server URL.": "Bu bir Grimmory sunucusu değil. Sunucu URL’sini kontrol edin.",
+  "Invalid credentials.": "Geçersiz kimlik bilgileri.",
+  "Connection error.": "Bağlantı hatası."
 }

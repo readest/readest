@@ -2811,5 +2811,14 @@
   "{{count}} now Mastered_other": "{{count}} ora «Imparata»",
   "Sync with Anki": "Sincronizza con Anki",
   "Import Anki Deck...": "Importa mazzo Anki...",
-  "In sync with Anki": "Sincronizzato con Anki"
+  "In sync with Anki": "Sincronizzato con Anki",
+  "Grimmory": "Grimmory",
+  "Grimmory Sync": "Sincronizzazione Grimmory",
+  "Connect to your Grimmory server.": "Connettiti al tuo server Grimmory.",
+  "Sign in with your Grimmory account.": "Accedi con il tuo account Grimmory.",
+  "Books are matched by file: a book syncs when the same file is in your Grimmory library.": "I libri vengono abbinati per file: un libro si sincronizza quando lo stesso file è nella tua libreria Grimmory.",
+  "Book not found in Grimmory. Add the same file to Grimmory to sync it.": "Libro non trovato in Grimmory. Aggiungi lo stesso file a Grimmory per sincronizzarlo.",
+  "Not a Grimmory server. Check the Server URL.": "Non è un server Grimmory. Controlla l’URL del server.",
+  "Invalid credentials.": "Credenziali non valide.",
+  "Connection error.": "Errore di connessione."
 }

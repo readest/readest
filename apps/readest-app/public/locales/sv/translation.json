@@ -2738,5 +2738,14 @@
   "{{count}} now Mastered_other": "{{count}} nu ”Behärskar”",
   "Sync with Anki": "Synkronisera med Anki",
   "Import Anki Deck...": "Importera Anki-kortlek...",
-  "In sync with Anki": "Synkroniserad med Anki"
+  "In sync with Anki": "Synkroniserad med Anki",
+  "Grimmory": "Grimmory",
+  "Grimmory Sync": "Grimmory-synkronisering",
+  "Connect to your Grimmory server.": "Anslut till din Grimmory-server.",
+  "Sign in with your Grimmory account.": "Logga in med ditt Grimmory-konto.",
+  "Books are matched by file: a book syncs when the same file is in your Grimmory library.": "Böcker matchas efter fil: en bok synkroniseras när samma fil finns i ditt Grimmory-bibliotek.",
+  "Book not found in Grimmory. Add the same file to Grimmory to sync it.": "Boken hittades inte i Grimmory. Lägg till samma fil i Grimmory för att synkronisera den.",
+  "Not a Grimmory server. Check the Server URL.": "Inte en Grimmory-server. Kontrollera serverns URL.",
+  "Invalid credentials.": "Ogiltiga inloggningsuppgifter.",
+  "Connection error.": "Anslutningsfel."
 }

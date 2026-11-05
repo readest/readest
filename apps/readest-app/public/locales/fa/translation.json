@@ -2738,5 +2738,14 @@
   "{{count}} now Mastered_other": "{{count}} اکنون «آموخته‌شده»",
   "Sync with Anki": "همگام‌سازی با Anki",
   "Import Anki Deck...": "وارد کردن دسته Anki...",
-  "In sync with Anki": "با Anki همگام است"
+  "In sync with Anki": "با Anki همگام است",
+  "Grimmory": "Grimmory",
+  "Grimmory Sync": "همگام‌سازی Grimmory",
+  "Connect to your Grimmory server.": "به سرور Grimmory خود متصل شوید.",
+  "Sign in with your Grimmory account.": "با حساب Grimmory خود وارد شوید.",
+  "Books are matched by file: a book syncs when the same file is in your Grimmory library.": "کتاب‌ها بر اساس فایل تطبیق داده می‌شوند: کتاب زمانی همگام می‌شود که همان فایل در کتابخانه Grimmory شما باشد.",
+  "Book not found in Grimmory. Add the same file to Grimmory to sync it.": "کتاب در Grimmory یافت نشد. برای همگام‌سازی، همان فایل را به Grimmory اضافه کنید.",
+  "Not a Grimmory server. Check the Server URL.": "این سرور Grimmory نیست. نشانی سرور را بررسی کنید.",
+  "Invalid credentials.": "اطلاعات ورود نامعتبر است.",
+  "Connection error.": "خطای اتصال."
 }

@@ -2665,5 +2665,14 @@
   "{{count}} now Mastered_other": "{{count}} ད་ “ཤེས་ཟིན་པ།”",
   "Sync with Anki": "Anki དང་མཉམ་སྦྲེལ།",
   "Import Anki Deck...": "Anki ཡི་ཤོག་བུ་ཚོགས་ནང་འདྲེན།...",
-  "In sync with Anki": "Anki དང་མཉམ་སྦྲེལ་ཟིན།"
+  "In sync with Anki": "Anki དང་མཉམ་སྦྲེལ་ཟིན།",
+  "Grimmory": "Grimmory",
+  "Grimmory Sync": "Grimmory མཉམ་འགྲིག",
+  "Connect to your Grimmory server.": "ཁྱེད་ཀྱི་ Grimmory ཞབས་ཞུ་འཕྲུལ་ཆས་ལ་སྦྲེལ།",
+  "Sign in with your Grimmory account.": "ཁྱེད་ཀྱི་ Grimmory རྩིས་ཐོ་ཡིས་ནང་འཛུལ་བྱེད།",
+  "Books are matched by file: a book syncs when the same file is in your Grimmory library.": "དེབ་རྣམས་ཡིག་ཆ་ལྟར་མཐུན་སྒྲིག་བྱེད། ཡིག་ཆ་གཅིག་པ་ཁྱེད་ཀྱི་ Grimmory དཔེ་མཛོད་ནང་ཡོད་ན་དེབ་དེ་མཉམ་འགྲིག་བྱེད།",
+  "Book not found in Grimmory. Add the same file to Grimmory to sync it.": "Grimmory ནང་དེབ་མ་རྙེད། མཉམ་འགྲིག་བྱེད་པར་ཡིག་ཆ་གཅིག་པ་ Grimmory ལ་སྣོན།",
+  "Not a Grimmory server. Check the Server URL.": "Grimmory ཞབས་ཞུ་འཕྲུལ་ཆས་མིན། ཞབས་ཞུ་འཕྲུལ་ཆས་ཀྱི་ URL ཞིབ་བཤེར་བྱེད།",
+  "Invalid credentials.": "ར་སྤྲོད་ཡིག་ཆ་ནོར་འདུག",
+  "Connection error.": "འབྲེལ་མཐུད་ནོར་འཁྲུལ།"
 }

@@ -2738,5 +2738,14 @@
   "{{count}} now Mastered_other": "{{count}} अब “सीख लिया”",
   "Sync with Anki": "Anki के साथ सिंक करें",
   "Import Anki Deck...": "Anki डेक इम्पोर्ट करें...",
-  "In sync with Anki": "Anki के साथ सिंक है"
+  "In sync with Anki": "Anki के साथ सिंक है",
+  "Grimmory": "Grimmory",
+  "Grimmory Sync": "Grimmory सिंक",
+  "Connect to your Grimmory server.": "अपने Grimmory सर्वर से कनेक्ट करें।",
+  "Sign in with your Grimmory account.": "अपने Grimmory खाते से साइन इन करें।",
+  "Books are matched by file: a book syncs when the same file is in your Grimmory library.": "किताबें फ़ाइल से मिलाई जाती हैं: जब वही फ़ाइल आपकी Grimmory लाइब्रेरी में हो, तब किताब सिंक होती है।",
+  "Book not found in Grimmory. Add the same file to Grimmory to sync it.": "Grimmory में किताब नहीं मिली। सिंक करने के लिए वही फ़ाइल Grimmory में जोड़ें।",
+  "Not a Grimmory server. Check the Server URL.": "यह Grimmory सर्वर नहीं है। सर्वर URL जाँचें।",
+  "Invalid credentials.": "अमान्य क्रेडेंशियल।",
+  "Connection error.": "कनेक्शन त्रुटि।"
 }

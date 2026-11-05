@@ -19,6 +19,7 @@ import {
   RiMicrosoftLine,
   RiAppleLine,
   RiHeadphoneLine,
+  RiBookShelfLine,
 } from 'react-icons/ri';
 import { useAppRouter } from '@/hooks/useAppRouter';
 import { useEnv } from '@/context/EnvContext';
@@ -48,6 +49,7 @@ import { navigateToLogin, navigateToProfile } from '@/utils/nav';
 import { eventDispatcher } from '@/utils/event';
 import ABSForm from './integrations/ABSForm';
 import BookOrbitForm from './integrations/BookOrbitForm';
+import GrimmoryForm from './integrations/GrimmoryForm';
 import KOSyncForm from './integrations/KOSyncForm';
 import ReadwiseForm from './integrations/ReadwiseForm';
 import HardcoverForm from './integrations/HardcoverForm';
@@ -82,6 +84,7 @@ import { BoxedList, NavigationRow, SectionTitle, SettingLabel, Tips } from './pr
 type SubPage =
   | 'kosync'
   | 'bookorbit'
+  | 'grimmory'
   | 'webdav'
   | 'gdrive'
   | 's3'
@@ -229,6 +232,7 @@ const IntegrationsPanel: React.FC = () => {
     if (
       requestedSubPage === 'kosync' ||
       requestedSubPage === 'bookorbit' ||
+      requestedSubPage === 'grimmory' ||
       requestedSubPage === 'webdav' ||
       requestedSubPage === 'gdrive' ||
       requestedSubPage === 's3' ||
@@ -271,6 +275,12 @@ const IntegrationsPanel: React.FC = () => {
     return (
       <div className='my-4 w-full'>
         <BookOrbitForm onBack={() => setSubPage(null)} />
+      </div>
+    );
+  if (subPage === 'grimmory')
+    return (
+      <div className='my-4 w-full'>
+        <GrimmoryForm onBack={() => setSubPage(null)} />
       </div>
     );
   if (subPage === 'webdav')
@@ -516,6 +526,10 @@ const IntegrationsPanel: React.FC = () => {
       : _('Connected')
     : _('Not connected');
 
+  const grimmoryStatus = settings.grimmory?.enabled
+    ? _('Connected as {{user}}', { user: settings.grimmory.username })
+    : _('Not connected');
+
   const readwiseStatus = settings.readwise?.enabled ? _('Connected') : _('Not connected');
   const hardcoverStatus = settings.hardcover?.enabled ? _('Connected') : _('Not connected');
   const pageboundStatus =
@@ -671,6 +685,12 @@ const IntegrationsPanel: React.FC = () => {
               title={_('BookOrbit')}
               status={bookOrbitStatus}
               onClick={() => setSubPage('bookorbit')}
+            />
+            <IntegrationRow
+              icon={RiBookShelfLine}
+              title={_('Grimmory')}
+              status={grimmoryStatus}
+              onClick={() => setSubPage('grimmory')}
             />
             <IntegrationRow
               icon={RiBookReadLine}

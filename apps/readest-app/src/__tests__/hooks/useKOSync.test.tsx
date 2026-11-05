@@ -933,3 +933,71 @@ describe('useKOSync — fixed-layout page numbers (#7330)', () => {
     expect(h.updateProgressMock).toHaveBeenCalledWith(h.book, '27', 27 / 70);
   });
 });
+
+describe('useKOSync — a provider with its own client and CFI positions (#7337)', () => {
+  // Grimmory stores the EPUB CFI its own foliate-based reader writes, so a
+  // Grimmory position is pushed and applied as a CFI, never as an XPointer.
+  const REMOTE_CFI = 'epubcfi(/6/8!/4/2/10)';
+  const cfiProvider: KosyncProgressProvider = {
+    name: 'grimmory',
+    selectConfig: (settings) => settings.kosync,
+    positions: 'cfi',
+    createClient: () => ({
+      getDocumentDigest: (book: Book) => book.hash,
+      getProgress: () => h.getProgressMock(),
+      updateProgress: (...args: unknown[]) => h.updateProgressMock(...args),
+    }),
+  };
+
+  test('pushes the CFI, not an XPointer', async () => {
+    vi.mocked(getXPointerFromCFI).mockClear();
+    h.getProgressMock.mockResolvedValue(null);
+    renderHook(() => useKOSync('h1-view1', cfiProvider));
+    await settle();
+    await advance(KOSYNC_PUSH_DEBOUNCE_MS + 500);
+
+    expect(h.updateProgressMock).toHaveBeenCalledWith(h.book, 'epubcfi(/6/4!/4/2/2)', 0.14);
+    expect(getXPointerFromCFI).not.toHaveBeenCalled();
+  });
+
+  test('silent: goes to the remote CFI', async () => {
+    h.settings.kosync.strategy = 'silent';
+    h.getProgressMock.mockResolvedValue({ ...h.remote, progress: REMOTE_CFI, percentage: 0.5 });
+    renderHook(() => useKOSync('h1-view1', cfiProvider));
+    await settle();
+
+    expect(h.goTo).toHaveBeenCalledWith(REMOTE_CFI);
+    expect(h.goToFraction).not.toHaveBeenCalled();
+  });
+
+  test('prompt: compares where the CFI is in this copy, not the remote percentage', async () => {
+    // The remote reader paginates differently: 50% there is this page here.
+    h.view.getCFIProgress.mockResolvedValueOnce({ fraction: 0.14 });
+    h.getProgressMock.mockResolvedValue({ ...h.remote, progress: REMOTE_CFI, percentage: 0.5 });
+    const { result } = renderHook(() => useKOSync('h1-view1', cfiProvider));
+    await settle();
+
+    expect(h.view.getCFIProgress).toHaveBeenCalledWith(REMOTE_CFI);
+    expect(result.current.syncState).toBe('synced');
+  });
+
+  test('prompt: a remote CFI on the page shown here is not a conflict', async () => {
+    // Our own earlier push read back: the CFI's start sits a page before the
+    // page-end percentage this device reports, but it is the same page.
+    h.localProgress = {
+      ...(h.localProgress as Record<string, unknown>),
+      location: 'epubcfi(/6/8!/4/2,/10/1:0,/12/1:40)',
+    };
+    h.view.getCFIProgress.mockResolvedValueOnce({ fraction: 0.13 });
+    h.getProgressMock.mockResolvedValue({
+      ...h.remote,
+      progress: 'epubcfi(/6/8!/4/2,/10/1:0,/12/1:40)',
+      percentage: 0.14,
+    });
+    const { result } = renderHook(() => useKOSync('h1-view1', cfiProvider));
+    await settle();
+
+    expect(result.current.conflictDetails).toBeNull();
+    expect(result.current.syncState).toBe('synced');
+  });
+});

@@ -2738,5 +2738,14 @@
   "{{count}} now Mastered_other": "{{count}} τώρα «Κατακτημένη»",
   "Sync with Anki": "Συγχρονισμός με το Anki",
   "Import Anki Deck...": "Εισαγωγή τράπουλας Anki...",
-  "In sync with Anki": "Συγχρονισμένο με το Anki"
+  "In sync with Anki": "Συγχρονισμένο με το Anki",
+  "Grimmory": "Grimmory",
+  "Grimmory Sync": "Συγχρονισμός Grimmory",
+  "Connect to your Grimmory server.": "Συνδεθείτε στον διακομιστή Grimmory σας.",
+  "Sign in with your Grimmory account.": "Συνδεθείτε με τον λογαριασμό σας στο Grimmory.",
+  "Books are matched by file: a book syncs when the same file is in your Grimmory library.": "Τα βιβλία αντιστοιχίζονται βάσει αρχείου: ένα βιβλίο συγχρονίζεται όταν το ίδιο αρχείο υπάρχει στη βιβλιοθήκη σας στο Grimmory.",
+  "Book not found in Grimmory. Add the same file to Grimmory to sync it.": "Το βιβλίο δεν βρέθηκε στο Grimmory. Προσθέστε το ίδιο αρχείο στο Grimmory για να συγχρονιστεί.",
+  "Not a Grimmory server. Check the Server URL.": "Δεν είναι διακομιστής Grimmory. Ελέγξτε το URL του διακομιστή.",
+  "Invalid credentials.": "Μη έγκυρα διαπιστευτήρια.",
+  "Connection error.": "Σφάλμα σύνδεσης."
 }

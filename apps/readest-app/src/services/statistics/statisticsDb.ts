@@ -14,7 +14,7 @@ interface BookRow extends DatabaseRow {
   pages: number;
 }
 
-type CursorKey = 'push' | 'pull' | 'bookorbit-push';
+type CursorKey = 'push' | 'pull' | 'bookorbit-push' | 'grimmory-push';
 
 // Readest caps one page visit at this, so a longer event spans several pages
 // (a CrossPoint session recorded in whole percents) and says nothing about pace.

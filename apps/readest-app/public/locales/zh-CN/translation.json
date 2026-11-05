@@ -2665,5 +2665,14 @@
   "{{count}} now Mastered_other": "{{count}} 个变为“已掌握”",
   "Sync with Anki": "与 Anki 同步",
   "Import Anki Deck...": "导入 Anki 牌组...",
-  "In sync with Anki": "已与 Anki 同步"
+  "In sync with Anki": "已与 Anki 同步",
+  "Grimmory": "Grimmory",
+  "Grimmory Sync": "Grimmory 同步",
+  "Connect to your Grimmory server.": "连接到你的 Grimmory 服务器。",
+  "Sign in with your Grimmory account.": "使用你的 Grimmory 账户登录。",
+  "Books are matched by file: a book syncs when the same file is in your Grimmory library.": "书籍按文件匹配：当你的 Grimmory 书库中有相同文件时，该书即可同步。",
+  "Book not found in Grimmory. Add the same file to Grimmory to sync it.": "在 Grimmory 中未找到此书。将相同文件添加到 Grimmory 即可同步。",
+  "Not a Grimmory server. Check the Server URL.": "不是 Grimmory 服务器。请检查服务器地址。",
+  "Invalid credentials.": "凭据无效。",
+  "Connection error.": "连接错误。"
 }

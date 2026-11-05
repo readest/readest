@@ -2738,5 +2738,14 @@
   "{{count}} now Mastered_other": "{{count}} nu ‘Beheerst’",
   "Sync with Anki": "Synchroniseren met Anki",
   "Import Anki Deck...": "Anki-stapel importeren...",
-  "In sync with Anki": "Gesynchroniseerd met Anki"
+  "In sync with Anki": "Gesynchroniseerd met Anki",
+  "Grimmory": "Grimmory",
+  "Grimmory Sync": "Grimmory-synchronisatie",
+  "Connect to your Grimmory server.": "Verbind met je Grimmory-server.",
+  "Sign in with your Grimmory account.": "Log in met je Grimmory-account.",
+  "Books are matched by file: a book syncs when the same file is in your Grimmory library.": "Boeken worden op bestand gekoppeld: een boek synchroniseert als hetzelfde bestand in je Grimmory-bibliotheek staat.",
+  "Book not found in Grimmory. Add the same file to Grimmory to sync it.": "Boek niet gevonden in Grimmory. Voeg hetzelfde bestand toe aan Grimmory om het te synchroniseren.",
+  "Not a Grimmory server. Check the Server URL.": "Geen Grimmory-server. Controleer de server-URL.",
+  "Invalid credentials.": "Ongeldige inloggegevens.",
+  "Connection error.": "Verbindingsfout."
 }

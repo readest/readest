@@ -2665,5 +2665,14 @@
   "{{count}} now Mastered_other": "{{count}} từ giờ là “Đã thuộc”",
   "Sync with Anki": "Đồng bộ với Anki",
   "Import Anki Deck...": "Nhập bộ thẻ Anki...",
-  "In sync with Anki": "Đã đồng bộ với Anki"
+  "In sync with Anki": "Đã đồng bộ với Anki",
+  "Grimmory": "Grimmory",
+  "Grimmory Sync": "Đồng bộ Grimmory",
+  "Connect to your Grimmory server.": "Kết nối với máy chủ Grimmory của bạn.",
+  "Sign in with your Grimmory account.": "Đăng nhập bằng tài khoản Grimmory của bạn.",
+  "Books are matched by file: a book syncs when the same file is in your Grimmory library.": "Sách được ghép theo tệp: một cuốn sách được đồng bộ khi cùng tệp đó có trong thư viện Grimmory của bạn.",
+  "Book not found in Grimmory. Add the same file to Grimmory to sync it.": "Không tìm thấy sách trong Grimmory. Thêm cùng tệp vào Grimmory để đồng bộ.",
+  "Not a Grimmory server. Check the Server URL.": "Không phải máy chủ Grimmory. Kiểm tra URL máy chủ.",
+  "Invalid credentials.": "Thông tin đăng nhập không hợp lệ.",
+  "Connection error.": "Lỗi kết nối."
 }

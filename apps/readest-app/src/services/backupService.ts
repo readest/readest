@@ -114,6 +114,8 @@ export const BACKUP_SETTINGS_CREDENTIAL_FIELDS = [
   'bookorbit.username',
   'bookorbit.userkey',
   'bookorbit.password',
+  'grimmory.username',
+  'grimmory.password',
   'readwise.accessToken',
   'hardcover.accessToken',
   'hardcover.oauth',

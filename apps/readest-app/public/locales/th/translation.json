@@ -2665,5 +2665,14 @@
   "{{count}} now Mastered_other": "{{count}} คำเป็น “จำได้แล้ว”",
   "Sync with Anki": "ซิงค์กับ Anki",
   "Import Anki Deck...": "นำเข้าสำรับ Anki...",
-  "In sync with Anki": "ซิงค์กับ Anki แล้ว"
+  "In sync with Anki": "ซิงค์กับ Anki แล้ว",
+  "Grimmory": "Grimmory",
+  "Grimmory Sync": "ซิงค์ Grimmory",
+  "Connect to your Grimmory server.": "เชื่อมต่อกับเซิร์ฟเวอร์ Grimmory ของคุณ",
+  "Sign in with your Grimmory account.": "ลงชื่อเข้าใช้ด้วยบัญชี Grimmory ของคุณ",
+  "Books are matched by file: a book syncs when the same file is in your Grimmory library.": "หนังสือจะจับคู่ตามไฟล์: หนังสือจะซิงค์เมื่อมีไฟล์เดียวกันอยู่ในคลัง Grimmory ของคุณ",
+  "Book not found in Grimmory. Add the same file to Grimmory to sync it.": "ไม่พบหนังสือใน Grimmory เพิ่มไฟล์เดียวกันลงใน Grimmory เพื่อซิงค์",
+  "Not a Grimmory server. Check the Server URL.": "ไม่ใช่เซิร์ฟเวอร์ Grimmory ตรวจสอบ URL ของเซิร์ฟเวอร์",
+  "Invalid credentials.": "ข้อมูลรับรองไม่ถูกต้อง",
+  "Connection error.": "การเชื่อมต่อผิดพลาด"
 }

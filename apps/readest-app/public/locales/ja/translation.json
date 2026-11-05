@@ -2665,5 +2665,14 @@
   "{{count}} now Mastered_other": "{{count}}件が「習得済み」に",
   "Sync with Anki": "Ankiと同期",
   "Import Anki Deck...": "Ankiデッキをインポート...",
-  "In sync with Anki": "Ankiと同期済み"
+  "In sync with Anki": "Ankiと同期済み",
+  "Grimmory": "Grimmory",
+  "Grimmory Sync": "Grimmory 同期",
+  "Connect to your Grimmory server.": "Grimmory サーバーに接続します。",
+  "Sign in with your Grimmory account.": "Grimmory アカウントでサインインしてください。",
+  "Books are matched by file: a book syncs when the same file is in your Grimmory library.": "本はファイルで照合されます。同じファイルが Grimmory のライブラリにあると同期されます。",
+  "Book not found in Grimmory. Add the same file to Grimmory to sync it.": "Grimmory に本が見つかりません。同期するには同じファイルを Grimmory に追加してください。",
+  "Not a Grimmory server. Check the Server URL.": "Grimmory サーバーではありません。サーバー URL を確認してください。",
+  "Invalid credentials.": "認証情報が無効です。",
+  "Connection error.": "接続エラー。"
 }

@@ -322,7 +322,7 @@ describe('settingsAdapter', () => {
     expect(settingsAdapter.encryptedFields).toContain('bookorbit.customHeaders');
   });
 
-  test('declares encryptedFields covering kosync / bookorbit / readwise / hardcover / webdav / s3 credentials only (not serverUrl / endpoint)', () => {
+  test('declares encryptedFields covering kosync / bookorbit / grimmory / readwise / hardcover / webdav / s3 credentials only (not serverUrl / endpoint)', () => {
     expect(settingsAdapter.encryptedFields).toEqual([
       'kosync.username',
       'kosync.userkey',
@@ -332,6 +332,9 @@ describe('settingsAdapter', () => {
       'bookorbit.userkey',
       'bookorbit.password',
       'bookorbit.customHeaders',
+      'grimmory.username',
+      'grimmory.password',
+      'grimmory.customHeaders',
       'readwise.accessToken',
       'hardcover.accessToken',
       'notion.accessToken',
