@@ -37,7 +37,12 @@ vi.mock('@/context/AuthContext', () => ({
 }));
 
 vi.mock('@/hooks/useSync', () => ({
-  useSync: () => ({ syncedNotes: null, syncNotes: h.syncNotesMock, lastSyncedAtNotes: 2000 }),
+  useSync: () => ({
+    syncedNotes: null,
+    syncNotes: h.syncNotesMock,
+    lastSyncedAtNotes: 2000,
+    useSyncInited: true,
+  }),
 }));
 
 vi.mock('@/store/bookDataStore', () => ({
@@ -49,7 +54,10 @@ vi.mock('@/store/bookDataStore', () => ({
 }));
 
 vi.mock('@/store/readerStore', () => ({
-  useReaderStore: h.makeStore({ getView: () => null, getViewsById: () => [] }),
+  useReaderStore: h.makeStore({
+    getView: () => ({ renderer: { getContents: () => [], primaryIndex: 0 } }),
+    getViewsById: () => [],
+  }),
 }));
 
 import { useNotesSync } from '@/app/reader/hooks/useNotesSync';

@@ -51,7 +51,12 @@ vi.mock('@/context/AuthContext', () => ({
 }));
 
 vi.mock('@/hooks/useSync', () => ({
-  useSync: () => ({ syncedNotes: null, syncNotes: h.syncNotesMock, lastSyncedAtNotes: 2000 }),
+  useSync: () => ({
+    syncedNotes: null,
+    syncNotes: h.syncNotesMock,
+    lastSyncedAtNotes: 2000,
+    useSyncInited: true,
+  }),
 }));
 
 vi.mock('@/store/bookDataStore', () => ({

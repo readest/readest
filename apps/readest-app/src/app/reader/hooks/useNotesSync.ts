@@ -14,44 +14,75 @@ import { removeBookNoteOverlays } from '../utils/annotatorUtil';
 
 export const useNotesSync = (bookKey: string) => {
   const { user } = useAuth();
-  const { syncedNotes, syncNotes, lastSyncedAtNotes } = useSync(bookKey);
+  const { syncedNotes, syncNotes, lastSyncedAtNotes, useSyncInited } = useSync(bookKey);
   const { getConfig, setConfig, getBookData } = useBookDataStore();
   const { getView, getViewsById } = useReaderStore();
   // The updatedAt of each note's oldest push not yet answered by the server.
   const pushedAtRef = useRef(new Map<string, number>());
-  // Highlights pushed this session to get a CrossPoint anchor, so one that
-  // can't get one is not pushed again on every sync.
-  const anchorTriedRef = useRef(new Set<string>());
+  // The range each note last tried for an xpointer and a CrossPoint anchor this
+  // session. A range gets one try, so a note that can't get one, or a server
+  // that doesn't store it, doesn't push the same notes on every sync.
+  const xpointerTriedRef = useRef(new Map<string, string>());
+  const anchorTriedRef = useRef(new Map<string, string>());
 
   const config = getConfig(bookKey);
 
+  // A note pulled from another copy of the book has no row under this one:
+  // pushing it for an xpointer or an anchor would insert a row stamped now, and
+  // that stale copy would outrank the real one everywhere.
+  const isFromThisCopy = (note: BookNote) =>
+    !note.bookHash || note.bookHash === getBookData(bookKey)?.book?.hash;
+
+  // Fixed-layout formats have no xpointers.
+  const needsXPointer = (note: BookNote) => {
+    const format = getBookData(bookKey)?.book?.format;
+    return (
+      note.type !== 'ink' &&
+      !!note.cfi &&
+      !note.xpointer0 &&
+      xpointerTriedRef.current.get(note.id) !== note.cfi &&
+      !!format &&
+      !FIXED_LAYOUT_FORMATS.has(format) &&
+      !!getView(bookKey) &&
+      isFromThisCopy(note)
+    );
+  };
+
   // CrossPoint reads EPUBs: their highlights carry its anchor too, the way
   // every note carries KOReader's xpointers.
-  const needsCrossPointAnchor = (note: BookNote) =>
-    note.type === 'annotation' &&
-    !!note.cfi &&
-    !note.crosspoint &&
-    !note.deletedAt &&
-    getBookData(bookKey)?.book?.format === 'EPUB';
+  const needsCrossPointAnchor = (note: BookNote) => {
+    const bookData = getBookData(bookKey);
+    return (
+      note.type === 'annotation' &&
+      !!note.cfi &&
+      !note.crosspoint &&
+      !note.deletedAt &&
+      anchorTriedRef.current.get(note.id) !== note.cfi &&
+      bookData?.book?.format === 'EPUB' &&
+      !!bookData.bookDoc &&
+      isFromThisCopy(note)
+    );
+  };
 
   const populateXPointersForPush = async (notes: BookNote[]): Promise<BookNote[]> => {
     const bookData = getBookData(bookKey);
     const book = bookData?.book;
     if (!book || FIXED_LAYOUT_FORMATS.has(book.format)) return notes;
 
+    // Not there yet on the first push of a book, which only delays the xpointers.
     const view = getView(bookKey);
-    if (!view) return notes;
 
     const enriched: BookNote[] = [];
     for (let note of notes) {
       // KOReader turns any pulled note with an xpointer into a highlight, so a
       // drawing never gets one; without it every plugin version skips it.
-      if (note.type !== 'ink' && note.cfi && !note.xpointer0) {
+      if (view && needsXPointer(note)) {
         try {
           const contents = view.renderer.getContents();
           const primaryIndex = view.renderer.primaryIndex;
           const content = contents.find((x) => x.index === primaryIndex) ?? contents[0];
           if (content) {
+            xpointerTriedRef.current.set(note.id, note.cfi);
             const xpResult = await getXPointerFromCFI(
               note.cfi,
               content.doc,
@@ -75,9 +106,12 @@ export const useNotesSync = (bookKey: string) => {
         }
       }
       if (needsCrossPointAnchor(note) && bookData.bookDoc) {
+        anchorTriedRef.current.set(note.id, note.cfi);
         try {
+          // No new stamp: an anchor isn't an edit, and a stamp would let this
+          // copy beat a newer one on the server, which stores an anchor by itself.
           const crosspoint = await getCrossPointAnchorFromCFI(note.cfi, bookData.bookDoc);
-          if (crosspoint) note = { ...note, crosspoint, updatedAt: Date.now() };
+          if (crosspoint) note = { ...note, crosspoint };
         } catch {
           // Conversion failed — push without it
         }
@@ -161,26 +195,16 @@ export const useNotesSync = (bookKey: string) => {
     if (!config?.location || !book || !user) return {};
 
     const bookNotes = config.booknotes ?? [];
-    // A highlight without a CrossPoint anchor goes once a session to get one.
-    const unanchored = new Set(
-      bookNotes
-        .filter((note) => needsCrossPointAnchor(note) && !anchorTriedRef.current.has(note.id))
-        .map((note) => note.id),
-    );
-    unanchored.forEach((id) => anchorTriedRef.current.add(id));
-    // A note without an xpointer is pushed until it gets one; a drawing never
-    // does (see populateXPointersForPush), so it goes only when it changed.
+    // A note without an xpointer goes until it has had its try, and a highlight
+    // without a CrossPoint anchor likewise; a drawing never gets an xpointer (see
+    // populateXPointersForPush), so it goes only when it changed.
     const newNotes = bookNotes.filter(
       (note) =>
-        (!note.xpointer0 && note.type !== 'ink') ||
-        unanchored.has(note.id) ||
+        needsXPointer(note) ||
+        needsCrossPointAnchor(note) ||
         lastSyncedAtNotes < note.updatedAt ||
         lastSyncedAtNotes < (note.deletedAt ?? 0),
     );
-    newNotes.forEach((note) => {
-      note.bookHash = book.hash;
-      note.metaHash = book.metaHash;
-    });
     return {
       notes: newNotes,
       lastSyncedAt: lastSyncedAtNotes,
@@ -194,13 +218,27 @@ export const useNotesSync = (bookKey: string) => {
         const book = getBookData(bookKey)?.book;
         const newNotes = getNewNotes();
         if (newNotes.notes?.length) {
-          populateXPointersForPush(newNotes.notes).then((enriched) => {
+          // Stamped with this copy's hashes only now: until here the hash says
+          // which copy a note came from, and so whether it wants back-filling.
+          populateXPointersForPush(newNotes.notes).then((filled) => {
+            const enriched = filled.map((note) => ({
+              ...note,
+              bookHash: book?.hash,
+              metaHash: book?.metaHash,
+            }));
             enriched.forEach((note) => {
               if (!pushedAtRef.current.has(note.id)) {
                 pushedAtRef.current.set(note.id, note.updatedAt);
               }
             });
-            syncNotes(enriched, book?.hash, book?.metaHash, 'both');
+            syncNotes(enriched, book?.hash, book?.metaHash, 'both').then((pushed) => {
+              if (pushed !== false) return;
+              // What the tries worked out went with the push: try again.
+              enriched.forEach((note) => {
+                xpointerTriedRef.current.delete(note.id);
+                anchorTriedRef.current.delete(note.id);
+              });
+            });
           });
         } else {
           syncNotes(newNotes.notes, book?.hash, book?.metaHash, 'both');
@@ -218,13 +256,29 @@ export const useNotesSync = (bookKey: string) => {
   // A book's first reading position is saved after its notes load, and that
   // write keeps the same booknotes array, so re-run once it appears.
   const hasLocation = !!config?.location;
+  // The first push of a book goes out before the view exists.
+  const hasView = !!getView(bookKey);
   useEffect(() => {
-    if (!hasLocation || !user) return;
+    // Until useSync is ready its syncNotes drops the push, and the one anchor
+    // try a highlight gets each session would go with it.
+    if (!hasLocation || !user || !useSyncInited) return;
     handleAutoSync();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hasLocation, config?.booknotes, handleAutoSync]);
+  }, [hasLocation, hasView, config?.booknotes, handleAutoSync]);
 
   useEffect(() => {
+    // A local copy that won the merge still takes the reply's xpointers and
+    // anchor for the same range, or it would look unanchored and be stamped and
+    // pushed again. A local null only cleared the old range's.
+    const withReplyAnchors = (merged: BookNote, reply: BookNote): BookNote => {
+      if (merged.cfi !== reply.cfi) return merged;
+      const { xpointer0, xpointer1, crosspoint } = reply;
+      return {
+        ...merged,
+        ...(!merged.xpointer0 && xpointer0 ? { xpointer0, xpointer1 } : {}),
+        ...(!merged.crosspoint && crosspoint ? { crosspoint } : {}),
+      };
+    };
     const processNewNote = (note: BookNote) => {
       const config = getConfig(bookKey);
       const oldNotes = config?.booknotes ?? [];
@@ -243,12 +297,15 @@ export const useNotesSync = (bookKey: string) => {
           // first push of a drawing was in flight. Keep ours, stamped after
           // the reply so the next sync pushes it. A deletion may come from
           // another device, so it goes through the usual newest-wins rule.
-          return {
-            ...note,
-            ...existingNote,
-            deletedAt: existingNote.deletedAt,
-            updatedAt: nextBooknoteStamp(note),
-          };
+          return withReplyAnchors(
+            {
+              ...note,
+              ...existingNote,
+              deletedAt: existingNote.deletedAt,
+              updatedAt: nextBooknoteStamp(note),
+            },
+            note,
+          );
         }
         if (incomingNoteWins(existingNote, note)) {
           // A tombstone from KOReader carries no cfi; keep the local anchor or
@@ -264,7 +321,10 @@ export const useNotesSync = (bookKey: string) => {
         } else {
           // The local note wins; a losing tombstone must not leak its
           // deletedAt through a key the live note never had.
-          return { ...note, ...existingNote, deletedAt: existingNote.deletedAt };
+          return withReplyAnchors(
+            { ...note, ...existingNote, deletedAt: existingNote.deletedAt },
+            note,
+          );
         }
       }
       return note;
