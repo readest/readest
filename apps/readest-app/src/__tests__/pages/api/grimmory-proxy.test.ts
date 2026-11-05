@@ -3,6 +3,8 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import handler, { isValidGrimmoryRequest } from '@/pages/api/grimmory';
 
 vi.mock('@/utils/cors', () => ({ corsAllMethods: {}, runMiddleware: vi.fn() }));
+const fetchMock = vi.hoisted(() => vi.fn());
+vi.mock('@/utils/publicFetch', () => ({ publicFetch: fetchMock }));
 
 const call = async (serverUrl: string, path = '/api/v1/books', method = 'GET') => {
   const res = { status: vi.fn().mockReturnThis(), json: vi.fn(), send: vi.fn() };
@@ -42,5 +44,21 @@ describe('Grimmory proxy boundaries', () => {
   ])('refuses %s', async (serverUrl) => {
     const res = await call(serverUrl);
     expect(res.status).toHaveBeenCalledWith(400);
+  });
+
+  it('drops trailing slashes from the server URL', async () => {
+    fetchMock.mockResolvedValue(new Response('[]', { status: 200 }));
+    await call('https://books.example.com//');
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://books.example.com/api/v1/books',
+      expect.objectContaining({ method: 'GET' }),
+    );
+  });
+
+  it('builds the URL quickly from a server URL with many inner slashes', async () => {
+    fetchMock.mockResolvedValue(new Response('[]', { status: 200 }));
+    const start = performance.now();
+    await call(`https://books.example.com${'/'.repeat(50_000)}x`);
+    expect(performance.now() - start).toBeLessThan(500);
   });
 });

@@ -51,8 +51,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .json({ error: 'Requests to private/internal addresses are not allowed' });
   }
 
+  let base = serverUrl;
+  while (base.endsWith('/')) base = base.slice(0, -1);
+
   try {
-    const response = await publicFetch(`${serverUrl.replace(/\/+$/, '')}${path}`, {
+    const response = await publicFetch(`${base}${path}`, {
       method,
       headers: headers ?? {},
       body: body ?? null,
