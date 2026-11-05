@@ -129,6 +129,7 @@ Index only — one line per memory. Detail lives in the topic files; do not rest
 - [RSVP let the screen sleep](rsvp-screen-wake-lock.md) MERGED #7200 UNRELEASED…
 - [Book li margins: keep like calibre](list-item-end-margin-bullets.md) owner rule; Override drops li end margin + implicit list indent 1.5em; MERGED #7338 UNRELEASED, worktree removed; normal-mode 45px column unfixed, owner decides
 - [open-book-in-reader skips guarded close](open-book-in-reader-skips-guarded-close.md) UNFIXED; #7348 made it reachable from Vocabulary; notebook recovery + final save skipped
+- [#7364 narration staging OOM via Android JSON IPC](narration-stage-ipc-oom-7364.md) stored audio fixed by unreleased #7010; deflated fix MERGED #7367 UNRELEASED; Linux unverified
 - [#7360 E-Ink two-book fix unlanded](eink-all-open-books-unlanded.md) local branch fix/eink-all-open-books unpushed; second open book keeps animating in e-ink
 - Resolved/stable → [Reader Feature Fixes](reader-feature-fixes.md)
 - [#1750 Notion sync](notion-sync-pr-5949-review.md) MERGED #5949 as 295d6e7…
