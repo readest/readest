@@ -5,8 +5,9 @@
  *
  * Needs real layout and the real stylesheet, so it runs as a browser test.
  */
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render } from '@testing-library/react';
+import { page } from 'vitest/browser';
 
 vi.mock('@/hooks/useResponsiveSize', () => ({
   useResponsiveSize: (value: number) => value,
@@ -65,16 +66,24 @@ const boxIn = (cell: HTMLElement, el: HTMLElement) => {
   return { x: r.left - c.left, y: r.top - c.top, w: r.width, h: r.height };
 };
 
+// Presses where the browser's hit test finds the grip 6px outside the popup's
+// corner, so the part of the hit area past the popup's edges must be reachable.
 const drag = (grip: HTMLElement, dx: number, dy: number) => {
-  const r = grip.getBoundingClientRect();
-  const x = r.left + r.width / 2;
-  const y = r.top + r.height / 2;
-  fireEvent.pointerDown(grip, { pointerId: 1, button: 0, buttons: 1, clientX: x, clientY: y });
+  const p = grip.closest('.popup-container')!.getBoundingClientRect();
+  const x = p.right + 6;
+  const y = p.bottom + 6;
+  const hit = document.elementFromPoint(x, y);
+  expect(hit && grip.contains(hit), 'the grip is hit outside the popup').toBe(true);
+  fireEvent.pointerDown(hit!, { pointerId: 1, button: 0, buttons: 1, clientX: x, clientY: y });
   fireEvent.pointerMove(grip, { pointerId: 1, buttons: 1, clientX: x + dx, clientY: y + dy });
   fireEvent.pointerUp(grip, { pointerId: 1, clientX: x + dx, clientY: y + dy });
 };
 
 describe('DictionaryPopup resize grip in real layout', () => {
+  // Room for the whole cell: a hit test finds nothing outside the viewport.
+  beforeAll(async () => {
+    await page.viewport(CELL.w + 100, CELL.h + 100);
+  });
   afterEach(cleanup);
 
   it('has a hit area of at least 32px that stays clear of the scroll area', () => {
