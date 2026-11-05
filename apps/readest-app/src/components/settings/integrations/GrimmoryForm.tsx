@@ -87,18 +87,22 @@ const GrimmoryForm: React.FC<GrimmoryFormProps> = ({ onBack }) => {
         message: `${_('Failed to connect')}: ${message}`,
         type: 'error',
       });
-    const previous = useSettingsStore.getState().settings.grimmory;
     try {
       const result = await new GrimmoryClient(config).connect();
       if (result.success) {
-        await save({ ...config, enabled: true });
+        const { settings } = useSettingsStore.getState();
+        const newSettings = {
+          ...settings,
+          grimmory: { ...settings.grimmory, ...config, enabled: true },
+        };
+        // Show the connection only once it is stored, so a failed save leaves
+        // nothing to undo.
+        await saveSettings(envConfig, newSettings);
+        setSettings(newSettings);
       } else {
         fail(_(result.message || 'Connection error'));
       }
     } catch (error) {
-      // Connected, but the settings could not be saved: undo the change in
-      // memory too, so the form doesn't show a connection that isn't stored.
-      setSettings({ ...useSettingsStore.getState().settings, grimmory: previous });
       fail(error instanceof Error ? error.message : String(error));
     } finally {
       setIsConnecting(false);

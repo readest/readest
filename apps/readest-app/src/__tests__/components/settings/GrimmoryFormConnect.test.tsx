@@ -73,4 +73,39 @@ describe('GrimmoryForm connect', () => {
       false,
     );
   });
+
+  test('shows the connection only once it is stored, and a failure keeps other changes', async () => {
+    let rejectSave: (error: Error) => void = () => {};
+    useSettingsStore.setState({
+      saveSettings: vi.fn(
+        () =>
+          new Promise<void>((_resolve, reject) => {
+            rejectSave = reject;
+          }),
+      ),
+    } as never);
+    render(<GrimmoryForm onBack={vi.fn()} />);
+    fireEvent.change(screen.getByPlaceholderText('Your Password'), {
+      target: { value: 'secret' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Connect' }));
+    await waitFor(() => expect(useSettingsStore.getState().saveSettings).toHaveBeenCalled());
+
+    // While the save is pending the form isn't connected yet.
+    expect(useSettingsStore.getState().settings.grimmory.enabled).toBe(false);
+    // Something else changes a setting meanwhile.
+    const current = useSettingsStore.getState().settings;
+    useSettingsStore.setState({
+      settings: { ...current, grimmory: { ...current.grimmory, syncStats: false } },
+    });
+    rejectSave(new Error('disk full'));
+
+    await waitFor(() =>
+      expect((screen.getByRole('button', { name: 'Connect' }) as HTMLButtonElement).disabled).toBe(
+        true,
+      ),
+    );
+    expect(useSettingsStore.getState().settings.grimmory.syncStats).toBe(false);
+    expect(useSettingsStore.getState().settings.grimmory.enabled).toBe(false);
+  });
 });
