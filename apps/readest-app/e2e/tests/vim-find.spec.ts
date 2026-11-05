@@ -47,6 +47,21 @@ const selectionOnScreen = (page: Page) =>
     return false;
   });
 
+// The renderer's flow: `scrolled` once Shift+J has taken effect.
+const flow = (page: Page) =>
+  page.evaluate(() => {
+    const view = document.querySelector('foliate-view') as unknown as { renderer?: HTMLElement };
+    return view?.renderer?.getAttribute('flow');
+  });
+
+// The renderer's scroll offset, after setting it when `top` is given.
+const scrollTop = (page: Page, top?: number) =>
+  page.evaluate((top) => {
+    const view = document.querySelector('foliate-view') as unknown as { renderer: HTMLElement };
+    if (top !== undefined) view.renderer.scrollTop = top;
+    return view.renderer.scrollTop;
+  }, top);
+
 const find = async (page: Page, term: string) => {
   // `/` acts on a rendered book; wait for the first section to be laid out.
   await expect
@@ -242,23 +257,45 @@ test.describe('Vim find in a PDF', () => {
     // Right away, while the PDF is still opening: that switch once left the
     // scrolled strip hidden.
     await page.keyboard.press('Shift+J');
-    await expect
-      .poll(() =>
-        page.evaluate(() => {
-          type Renderer = { getAttribute: (name: string) => string | null };
-          const view = document.querySelector('foliate-view') as unknown as {
-            renderer?: Renderer;
-          };
-          return view?.renderer?.getAttribute('flow');
-        }),
-      )
-      .toBe('scrolled');
+    await expect.poll(() => flow(page)).toBe('scrolled');
 
     await find(page, 'Dinah');
 
     await expect.poll(() => bookSelection(page)).toMatchObject({ text: 'Dinah', index: 3 });
     // The page was pages below the view: the match is scrolled on screen.
     await expect.poll(() => selectionOnScreen(page)).toBe(true);
+    await expect(reader.annotationPopup).toBeVisible();
+  });
+
+  test('scrolled mode leaves the view alone for a match already on screen', async ({
+    openBook,
+    page,
+  }) => {
+    const reader = await openBook(SAMPLE_PDF);
+    await page.keyboard.press('Shift+J');
+    await expect.poll(() => flow(page)).toBe('scrolled');
+    await expect
+      .poll(() =>
+        page.evaluate(() => {
+          type Renderer = { getContents: () => { doc: Document; index?: number }[] };
+          const view = document.querySelector('foliate-view') as unknown as { renderer?: Renderer };
+          const first = view?.renderer?.getContents().find((c) => c.index === 0);
+          return first?.doc.querySelectorAll('.textLayer span').length ?? 0;
+        }),
+      )
+      .toBeGreaterThan(0);
+    // A little way into page 1, "Release Date" is on screen below the middle,
+    // so neither centring it nor going to the page's top would leave this be.
+    await scrollTop(page, 150);
+    await page.waitForTimeout(500);
+    const before = await scrollTop(page);
+
+    await find(page, 'Release Date');
+
+    await expect.poll(() => bookSelection(page)).toMatchObject({ text: 'Release Date', index: 0 });
+    await page.waitForTimeout(500);
+    expect(await selectionOnScreen(page)).toBe(true);
+    expect(await scrollTop(page)).toBe(before);
     await expect(reader.annotationPopup).toBeVisible();
   });
 });
