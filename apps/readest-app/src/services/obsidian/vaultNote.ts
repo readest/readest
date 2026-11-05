@@ -125,8 +125,9 @@ export const mergeVaultNote = (
   let { frontmatter, body } = splitFrontmatter(normalized);
   if (book.progress !== null) {
     const progress = `progress: ${book.progress}`;
-    frontmatter = /^progress:/m.test(frontmatter)
-      ? frontmatter.replace(/^progress:.*$/m, progress)
+    const key = /^(["']?)progress\1:.*$/m;
+    frontmatter = key.test(frontmatter)
+      ? frontmatter.replace(key, progress)
       : frontmatter.replace(/^readest_book_id:/m, `${progress}\n$&`);
   }
   const lines = body.replace(/\s+$/, '').split('\n');

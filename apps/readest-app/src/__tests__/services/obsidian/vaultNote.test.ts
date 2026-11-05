@@ -198,4 +198,12 @@ describe('mergeVaultNote', () => {
     const { text } = sync(first.text, [hl('a1')], first.written);
     expect(text).toContain('\nprogress: 12\nreadest_book_id: bookhash1\n');
   });
+
+  it('updates a quoted progress key instead of adding a second one', () => {
+    const first = sync(createVaultNote(book), [hl('a1')]);
+    const quoted = first.text.replace('progress: 12', '"progress": 20');
+    const { text } = sync(quoted, [hl('a1')], first.written);
+    expect(text.match(/progress/g)).toHaveLength(1);
+    expect(text).toContain('\nprogress: 12\n');
+  });
 });
