@@ -89,7 +89,10 @@ vi.mock('@/context/EnvContext', () => ({
 }));
 
 vi.mock('@/hooks/useTranslation', () => ({
-  useTranslation: () => (s: string) => s,
+  useTranslation: () => (s: string, params?: Record<string, unknown>) =>
+    s.replace(/\{\{(\w+)\}\}/g, (m, k: string) =>
+      params?.[k] !== undefined ? String(params[k]) : m,
+    ),
 }));
 
 vi.mock('@/app/reader/hooks/useWindowActiveChanged', () => ({
@@ -832,12 +835,33 @@ describe('useKOSync — a remote position with only a percentage (#7330)', () =>
     expect(result.current.syncState).toBe('conflict');
     // The page comes from the local page count, so it is only approximate.
     expect(result.current.conflictDetails?.remote.preview).toBe(
-      'Approximately page {{page}} of {{total}} ({{percentage}}%)',
+      'Approximately page 27 of 70 (38.60%)',
     );
     await act(async () => {
       await result.current.resolveWithRemote();
     });
     expect(h.view.select).toHaveBeenCalledWith(26);
+  });
+
+  test('prompt: the page count shown is the local one', async () => {
+    h.localProgress = { ...h.localProgress, section: { current: 26, total: 70 } };
+    h.remote = { ...h.remote, percentage: 0.001 };
+    h.getProgressMock.mockResolvedValue(h.remote);
+    const { result } = renderHook(() => useKOSync('h1-view1'));
+    await settle();
+
+    expect(result.current.conflictDetails?.remote.preview).toBe(
+      'Approximately page 1 of 70 (0.10%)',
+    );
+  });
+
+  test('prompt: no conflict when the percentage names the page already open', async () => {
+    h.localProgress = { ...h.localProgress, section: { current: 26, total: 70 } };
+    const { result } = renderHook(() => useKOSync('h1-view1'));
+    await settle();
+
+    expect(result.current.syncState).toBe('synced');
+    expect(h.view.select).not.toHaveBeenCalled();
   });
 
   test('does not push the stale local page over it', async () => {

@@ -279,11 +279,13 @@ export const useKOSync = (bookKey: string, provider: KosyncProgressProvider = ko
       const remotePage = getRemotePage(remote, localPageInfo?.total ?? 0);
       if (remotePage !== undefined && remotePercentage > 0) {
         const localTotalPages = localPageInfo?.total ?? 0;
-        const remoteTotalPages = Math.round(remotePage / remotePercentage);
-        // A page derived from a percentage alone is only approximate.
-        const pagesMatch =
-          !isNaN(parseInt(remote.progress ?? '', 10)) &&
-          Math.abs(localTotalPages - remoteTotalPages) <= 1;
+        const hasRemotePage = !isNaN(parseInt(remote.progress ?? '', 10));
+        // A page derived from a percentage alone is a page of the local copy,
+        // and only approximate.
+        const remoteTotalPages = hasRemotePage
+          ? Math.round(remotePage / remotePercentage)
+          : localTotalPages;
+        const pagesMatch = hasRemotePage && Math.abs(localTotalPages - remoteTotalPages) <= 1;
 
         if (pagesMatch) {
           remotePreview = _('Page {{page}} of {{total}} ({{percentage}}%)', {
@@ -298,8 +300,11 @@ export const useKOSync = (bookKey: string, provider: KosyncProgressProvider = ko
             percentage: formatProgressPercentage(remotePercentage),
           });
         }
-        showConflictDetails =
-          Math.abs(localPercentage - remotePercentage) > conflictProgressDiffThreshold;
+        // A rounded percentage won't equal the local one even on the same
+        // page, so compare the page it names.
+        showConflictDetails = hasRemotePage
+          ? Math.abs(localPercentage - remotePercentage) > conflictProgressDiffThreshold
+          : remotePage !== (localPageInfo?.current ?? 0) + 1;
       } else {
         remotePreview = _('Approximately {{percentage}}%', {
           percentage: formatProgressPercentage(remotePercentage),
