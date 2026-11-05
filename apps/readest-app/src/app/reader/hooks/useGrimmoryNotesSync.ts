@@ -5,6 +5,7 @@ import { HIGHLIGHT_COLOR_HEX, SYNC_NOTES_INTERVAL_SEC } from '@/services/constan
 import { GrimmoryClient, grimmoryAccountKey } from '@/services/grimmory/GrimmoryClient';
 import { GrimmorySyncStore } from '@/services/grimmory/GrimmorySyncStore';
 import { runGrimmoryPass } from '@/services/grimmory/notesPass';
+import { recordExchange } from '@/services/sync/dataFlow/log';
 import { findTocItemBS } from '@/services/nav';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useReaderStore } from '@/store/readerStore';
@@ -101,35 +102,43 @@ export const useGrimmoryNotesSync = (bookKey: string) => {
     if (!book || !bookData?.bookDoc || !getConfig(bookKey)?.location) return;
 
     passRunning.current = true;
+    const notes = { connector: 'grimmory', kind: 'notes', bookTitle: book.title } as const;
+    const counts = { pushed: 0, pulled: 0 };
     try {
-      await runGrimmoryPass({
-        ...target,
-        book: {
-          hash: book.hash,
-          fileSize: bookData.file?.size,
-          readingStatus: book.readingStatus,
-          readingStatusUpdatedAt: book.readingStatusUpdatedAt,
+      await runGrimmoryPass(
+        {
+          ...target,
+          book: {
+            hash: book.hash,
+            fileSize: bookData.file?.size,
+            readingStatus: book.readingStatus,
+            readingStatusUpdatedAt: book.readingStatusUpdatedAt,
+          },
+          syncNotes: grimmory.syncNotes && !FIXED_LAYOUT_FORMATS.has(book.format),
+          syncBookStates: grimmory.syncBookStates,
+          getNotes: () => getConfig(bookKey)?.booknotes ?? [],
+          mergeNotes,
+          chapterForNote: (note) => findTocItemBS(bookData.bookDoc?.toc ?? [], note.cfi)?.label,
+          palette: { ...HIGHLIGHT_COLOR_HEX, ...settings.globalReadSettings.customHighlightColors },
+          now: () => Date.now(),
+          newId: uuidv4,
+          onUnmatched: () => {
+            if (unmatchedHinted.current) return;
+            unmatchedHinted.current = true;
+            eventDispatcher.dispatch('toast', {
+              type: 'warning',
+              timeout: 8000,
+              message: _('Book not found in Grimmory. Add the same file to Grimmory to sync it.'),
+            });
+          },
         },
-        syncNotes: grimmory.syncNotes && !FIXED_LAYOUT_FORMATS.has(book.format),
-        syncBookStates: grimmory.syncBookStates,
-        getNotes: () => getConfig(bookKey)?.booknotes ?? [],
-        mergeNotes,
-        chapterForNote: (note) => findTocItemBS(bookData.bookDoc?.toc ?? [], note.cfi)?.label,
-        palette: { ...HIGHLIGHT_COLOR_HEX, ...settings.globalReadSettings.customHighlightColors },
-        now: () => Date.now(),
-        newId: uuidv4,
-        onUnmatched: () => {
-          if (unmatchedHinted.current) return;
-          unmatchedHinted.current = true;
-          eventDispatcher.dispatch('toast', {
-            type: 'warning',
-            timeout: 8000,
-            message: _('Book not found in Grimmory. Add the same file to Grimmory to sync it.'),
-          });
-        },
-      });
+        counts,
+      );
+      recordExchange(notes, counts);
     } catch (error) {
       console.warn('[Grimmory] sync failed', error);
+      // One exchange carries both ways, so a failure stops both.
+      recordExchange(notes, counts, error instanceof Error ? error.message : String(error));
     } finally {
       passRunning.current = false;
     }

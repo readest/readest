@@ -5,6 +5,7 @@ import { useBookDataStore } from '@/store/bookDataStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { findTocItemBS } from '@/services/nav';
 import { syncBookToVault, toVaultHighlights } from '@/services/obsidian/vaultSync';
+import { recordFlow } from '@/services/sync/dataFlow/log';
 import type { BookNote } from '@/types/book';
 import { debounce } from '@/utils/debounce';
 import { eventDispatcher } from '@/utils/event';
@@ -12,7 +13,7 @@ import { eventDispatcher } from '@/utils/event';
 const OBSIDIAN_SYNC_DEBOUNCE_MS = 5000;
 
 // Two windows can have the same book open: serialize writes to its note.
-const withBookLock = async (bookHash: string, task: () => Promise<void>) => {
+const withBookLock = async <T>(bookHash: string, task: () => Promise<T>): Promise<T> => {
   if (!globalThis.navigator?.locks) return task();
   return globalThis.navigator.locks.request(`readest-obsidian-sync-${bookHash}`, task);
 };
@@ -31,9 +32,15 @@ export const useObsidianSync = (bookKey: string) => {
     if (!obsidian?.enabled || !obsidian.folder || !book || !notes) return false;
     const toc = getBookData(bookKey)?.bookDoc?.toc ?? [];
     const chapterForNote = (note: BookNote) => findTocItemBS(toc, note.cfi)?.label ?? null;
+    const flow = {
+      connector: 'obsidian',
+      direction: 'push',
+      kind: 'notes',
+      bookTitle: book.title,
+    } as const;
     try {
       const appService = await envConfig.getAppService();
-      await withBookLock(book.hash, () =>
+      const count = await withBookLock(book.hash, () =>
         syncBookToVault(
           appService,
           obsidian.folder,
@@ -42,9 +49,11 @@ export const useObsidianSync = (bookKey: string) => {
           toVaultHighlights(book.hash, notes, chapterForNote),
         ),
       );
+      recordFlow({ ...flow, count });
       return true;
     } catch (error) {
       console.error('Obsidian sync failed:', error);
+      recordFlow({ ...flow, error: error instanceof Error ? error.message : String(error) });
       return false;
     }
   }, [bookKey, envConfig, getBookData, getConfig]);

@@ -28,16 +28,11 @@ const createGrimmoryProgressClient = (
       hash: book.hash,
       fileSize: useBookDataStore.getState().getBookData(book.hash)?.file?.size,
     });
-  // The book was removed from Grimmory: forget it so the next call looks again.
-  const forgetIfGone = async (book: Book, error: unknown) => {
-    if (error instanceof GrimmoryRequestError && error.status === 404) {
-      await store.deleteBook(account, book.hash).catch(() => undefined);
-    }
-  };
-
-  return {
+  const progressClient: ProgressSyncClient = {
+    lastError: null,
     getDocumentDigest: (book) => book.hash,
     async getProgress(book) {
+      progressClient.lastError = null;
       try {
         const match = await resolve(book);
         if (!match) return null;
@@ -45,11 +40,12 @@ const createGrimmoryProgressClient = (
         return grimmoryRemoteProgress(remote, FIXED_LAYOUT_FORMATS.has(book.format));
       } catch (error) {
         console.warn('[Grimmory] Failed to get progress', error);
-        await forgetIfGone(book, error);
+        await noteFailure(book, error);
         return null;
       }
     },
     async updateProgress(book, progress, percentage) {
+      progressClient.lastError = null;
       try {
         const match = await resolve(book);
         if (!match) return false;
@@ -57,11 +53,21 @@ const createGrimmoryProgressClient = (
         return true;
       } catch (error) {
         console.warn('[Grimmory] Failed to update progress', error);
-        await forgetIfGone(book, error);
+        await noteFailure(book, error);
         return false;
       }
     },
   };
+  // A book removed from Grimmory isn't a failed sync: forget it so the next
+  // call looks again.
+  const noteFailure = async (book: Book, error: unknown) => {
+    if (error instanceof GrimmoryRequestError && error.status === 404) {
+      await store.deleteBook(account, book.hash).catch(() => undefined);
+      return;
+    }
+    progressClient.lastError = error instanceof Error ? error.message : String(error);
+  };
+  return progressClient;
 };
 
 /**

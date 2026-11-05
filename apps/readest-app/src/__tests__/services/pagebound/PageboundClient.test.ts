@@ -367,4 +367,23 @@ describe('PageboundClient', () => {
     ).rejects.toThrow(/Sign in again/);
     expect(calls('GET', '/api/v1/books/')).toHaveLength(0);
   });
+
+  describe('checkConnection', () => {
+    const renewed: Route = (url) =>
+      url.includes('securetoken') ? json({ id_token: 'id', refresh_token: 'r2' }) : undefined;
+
+    test('passes when Pagebound knows the user', async () => {
+      route();
+      await expect(newClient().checkConnection()).resolves.toBeUndefined();
+    });
+
+    test('fails when the API still errors after the session renews', async () => {
+      route(
+        on('GET', '/auth/get_authed_user', () => json({}, 503)),
+        renewed,
+        on('POST', '/auth/firebase_auth', () => json({ token: 't2' })),
+      );
+      await expect(newClient().checkConnection()).rejects.toThrow();
+    });
+  });
 });

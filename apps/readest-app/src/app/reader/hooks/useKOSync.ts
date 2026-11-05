@@ -5,6 +5,7 @@ import { useReaderStore } from '@/store/readerStore';
 import { useBookProgress } from '@/store/readerProgressStore';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useTranslation } from '@/hooks/useTranslation';
+import { recordFlow } from '@/services/sync/dataFlow/log';
 import { KOSyncClient, KoSyncProgress } from '@/services/sync/KOSyncClient';
 import { Book, BookProgress, FIXED_LAYOUT_FORMATS } from '@/types/book';
 import type { KOSyncSettings, SystemSettings } from '@/types/settings';
@@ -53,6 +54,8 @@ export interface ProgressSyncClient {
   getDocumentDigest(book: Book): string;
   getProgress(book: Book): Promise<KoSyncProgress | null>;
   updateProgress(book: Book, progress: string, percentage: number): Promise<unknown>;
+  /** Why the last read or write failed, or null when it didn't. */
+  lastError?: string | null;
 }
 
 /**
@@ -269,6 +272,12 @@ export const useKOSync = (bookKey: string, provider: KosyncProgressProvider = ko
       bookKey,
       message: _('Reading Progress Synced'),
     });
+    recordFlow({
+      connector: provider.name,
+      direction: 'pull',
+      kind: 'progress',
+      bookTitle: book.title,
+    });
     return true;
   };
 
@@ -415,7 +424,19 @@ export const useKOSync = (bookKey: string, provider: KosyncProgressProvider = ko
         const put = pendingPut.current.then(async () => {
           if (generation !== checksumGeneration.current) return;
           console.log('[KOSync] Pushing progress');
-          await kosyncClient.updateProgress(currentBook, progress.koProgress, progress.percentage);
+          const sent = await kosyncClient.updateProgress(
+            currentBook,
+            progress.koProgress,
+            progress.percentage,
+          );
+          recordFlow({
+            connector: provider.name,
+            direction: 'push',
+            kind: 'progress',
+            bookTitle: currentBook.title,
+            count: sent ? 1 : 0,
+            error: kosyncClient.lastError ?? undefined,
+          });
         });
         pendingPut.current = put.catch(() => undefined);
         await put;
@@ -449,6 +470,14 @@ export const useKOSync = (bookKey: string, provider: KosyncProgressProvider = ko
       if (generation !== checksumGeneration.current) return;
       const remoteProgress = await kosyncClient.getProgress(book);
       if (generation !== checksumGeneration.current) return;
+      recordFlow({
+        connector: provider.name,
+        direction: 'pull',
+        kind: 'progress',
+        bookTitle: book.title,
+        count: 0,
+        error: kosyncClient.lastError ?? undefined,
+      });
       // A position may be a percentage alone (Grimmory's own reader, #7330).
       if (
         !remoteProgress ||

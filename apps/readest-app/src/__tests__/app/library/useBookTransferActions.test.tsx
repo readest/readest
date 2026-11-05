@@ -1,3 +1,4 @@
+import { readFlowState } from '@/services/sync/dataFlow/log';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import type { SetStateAction } from 'react';
@@ -260,6 +261,7 @@ describe('useBookTransferActions download routing (issue #5062)', () => {
   });
 
   it('falls back to an immediate Readest Cloud download when opening a cloud-shelf book', async () => {
+    localStorage.clear();
     routing.readestEnabled = true;
     routing.backends = ['webdav'];
     runFileBookDownload.mockResolvedValueOnce(false);
@@ -274,6 +276,12 @@ describe('useBookTransferActions download routing (issue #5062)', () => {
     expect(queueDownload).not.toHaveBeenCalled();
     expect(updateBook).toHaveBeenCalledWith(envConfig, book);
     expect(ok).toBe(true);
+    expect(readFlowState().entries[0]).toMatchObject({
+      connector: 'readest-cloud',
+      direction: 'pull',
+      kind: 'books',
+      count: 1,
+    });
   });
 
   it('falls back to a file backend when the book is not in Readest Cloud storage', async () => {

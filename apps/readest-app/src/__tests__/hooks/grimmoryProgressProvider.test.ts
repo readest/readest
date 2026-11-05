@@ -53,6 +53,21 @@ describe('grimmoryProgressProvider', () => {
     expect(mocks.deleteBook).toHaveBeenCalledWith(expect.any(String), 'abc');
   });
 
+  test('says why a read or a write failed, and clears it after one that works', async () => {
+    const client = grimmoryProgressProvider.createClient!(config, {} as AppService);
+    mocks.getBook.mockRejectedValueOnce(new GrimmoryRequestError(503, 'down'));
+    await client.getProgress(book);
+    expect(client.lastError).toBe('down');
+
+    mocks.updateProgress.mockResolvedValueOnce(undefined);
+    await client.updateProgress(book, 'epubcfi(/6/2!/4/2)', 0.1);
+    expect(client.lastError).toBeNull();
+
+    mocks.updateProgress.mockRejectedValueOnce(new GrimmoryRequestError(500, 'boom'));
+    await client.updateProgress(book, 'epubcfi(/6/2!/4/2)', 0.1);
+    expect(client.lastError).toBe('boom');
+  });
+
   test('keeps the match on other errors', async () => {
     const client = grimmoryProgressProvider.createClient!(config, {} as AppService);
     mocks.getBook.mockRejectedValueOnce(new GrimmoryRequestError(503, 'down'));
