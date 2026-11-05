@@ -726,7 +726,9 @@ export const useTextSelector = (
     // instead (#7145, #6872). PDF images have no file of their own to show, so
     // they keep the menu.
     const media = isTouch ? detectMediaTarget(event.target as HTMLElement) : null;
-    if (media && getImageViewerGesture(bookKey) === 'longPress') {
+    // A table held while text is selected is left to the selection.
+    const selecting = media?.elementType === 'table' && doc.getSelection()?.isCollapsed === false;
+    if (media && !selecting && getImageViewerGesture(bookKey) === 'longPress') {
       setImageHoldClick(bookKey, event.target);
       window.postMessage({ type: 'iframe-open-media', bookKey, ...media }, '*');
       return true;

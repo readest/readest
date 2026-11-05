@@ -357,6 +357,19 @@ describe('useTextSelector long press opens the image viewer (#7145)', () => {
     );
   });
 
+  test('an Android long press on blank table space while text is selected opens nothing', () => {
+    h.appService = { isAndroidApp: true, isMobile: true };
+    listen();
+    document.body.innerHTML = '<p>Intro</p><table><tr><td>Cell</td></tr></table>';
+    document.getSelection()!.selectAllChildren(document.querySelector('p')!);
+    try {
+      rightClick(document.querySelector('td')!, 50, 50, 'touch');
+      expect(openedMedia()).toEqual([]);
+    } finally {
+      document.getSelection()!.removeAllRanges();
+    }
+  });
+
   test('an iOS touch hold on blank table space opens the table zoom', () => {
     vi.useFakeTimers();
     try {
