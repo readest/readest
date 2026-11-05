@@ -1,6 +1,6 @@
 import { invoke } from '@tauri-apps/api/core';
 import { addPluginListener, PluginListener } from '@tauri-apps/api/core';
-import { getUserLocale } from '@/utils/misc';
+import { getOSPlatform, getUserLocale } from '@/utils/misc';
 import { isSameLang } from '@/utils/lang';
 import { parseSSMLMarks } from '@/utils/ssml';
 import { stubTranslation as _ } from '@/utils/misc';
@@ -207,9 +207,10 @@ export class NativeTTSClient implements TTSClient {
     }
   }
 
-  // Speaks `text` with `voiceId` until it ends or `signal` aborts.
-  async preview(voiceId: string, text: string, lang: string, signal: AbortSignal) {
+  // Speaks `text` with `voiceId` at `rate` until it ends or `signal` aborts.
+  async preview(voiceId: string, text: string, lang: string, rate: number, signal: AbortSignal) {
     if (!this.initialized && !(await this.init())) throw new Error('System TTS unavailable');
+    await this.setRate(rate);
     const mark: TTSMark = { offset: 0, name: 'preview', text, language: lang };
     for await (const event of this.speakMark(mark, false, signal, voiceId)) {
       if (event.code === 'error' && !signal.aborted) throw new Error(event.message);
@@ -268,9 +269,9 @@ export class NativeTTSClient implements TTSClient {
 
   async setRate(rate: number) {
     // Mobile APIs need the exponent; speech-dispatcher uses a relative rate.
-    this.#rate = this.controller?.appService?.isLinuxApp
-      ? rate
-      : parseFloat(Math.pow(rate, 2.5).toFixed(2));
+    // A preview's client may have no controller to ask.
+    const isLinux = this.controller?.appService?.isLinuxApp ?? getOSPlatform() === 'linux';
+    this.#rate = isLinux ? rate : parseFloat(Math.pow(rate, 2.5).toFixed(2));
     await invoke('plugin:native-tts|set_rate', { payload: { rate: this.#rate } });
   }
 

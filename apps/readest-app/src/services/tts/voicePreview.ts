@@ -1,5 +1,6 @@
 import { EdgeSpeechTTS } from '@/libs/edgeTTS';
 import { isTauriAppPlatform } from '@/services/environment';
+import { useSettingsStore } from '@/store/settingsStore';
 import type { CustomTTSService } from '@/types/customTTS';
 import { getAccessToken } from '@/utils/access';
 import { NativeTTSClient } from './NativeTTSClient';
@@ -87,12 +88,18 @@ export const suspendReadingForPreview = async (): Promise<boolean> => {
   return true;
 };
 
+// The player's speed: the live session's, else the one the player last saved.
+const getPlayerRate = () => {
+  const controller = asTTSController(ttsSessionManager.getActiveSession()?.controller);
+  return controller?.ttsRate ?? useSettingsStore.getState().settings.globalViewSettings.ttsRate;
+};
+
 const audioType = (data: ArrayBuffer) => {
   const magic = String.fromCharCode(...new Uint8Array(data.slice(0, 4)));
   return magic === 'RIFF' ? 'audio/wav' : magic === 'OggS' ? 'audio/ogg' : 'audio/mpeg';
 };
 
-const playAudio = (data: ArrayBuffer, signal: AbortSignal, onStart: () => void) =>
+const playAudio = (data: ArrayBuffer, rate: number, signal: AbortSignal, onStart: () => void) =>
   new Promise<void>((resolve, reject) => {
     const element = (audio ??= new Audio());
     const url = URL.createObjectURL(new Blob([data], { type: audioType(data) }));
@@ -112,6 +119,8 @@ const playAudio = (data: ArrayBuffer, signal: AbortSignal, onStart: () => void) 
     element.onended = () => done();
     element.onerror = () => done(new Error('PLAYBACK_FAILED'));
     element.src = url;
+    // Setting src resets playbackRate to the default rate.
+    element.defaultPlaybackRate = element.playbackRate = rate;
     element.play().catch((error) => {
       if (!signal.aborted) done(error);
     });
@@ -134,13 +143,14 @@ const synthesizeEdge = async ({ voiceId, lang, text }: VoicePreview) => {
 // fire its end.
 let utterance: SpeechSynthesisUtterance | null = null;
 
-const speakWebSpeech = ({ voiceId, lang, text }: VoicePreview, signal: AbortSignal) =>
+const speakWebSpeech = ({ voiceId, lang, text }: VoicePreview, rate: number, signal: AbortSignal) =>
   new Promise<void>((resolve, reject) => {
     const synth = window.speechSynthesis;
     const voice = synth.getVoices().find((v) => (v.voiceURI || v.name) === voiceId);
     const current = new SpeechSynthesisUtterance(text);
     if (voice) current.voice = voice;
     current.lang = voice?.lang ?? lang;
+    current.rate = rate;
     const onAbort = () => synth.cancel();
     const done = (error?: Error) => {
       signal.removeEventListener('abort', onAbort);
@@ -180,13 +190,14 @@ export const playVoicePreview = async (
   }: { onStart?: () => void; customServices?: () => CustomTTSService[] } = {},
 ): Promise<void> => {
   const { engine, voiceId, lang, text } = preview;
+  const rate = getPlayerRate();
   if (engine === WEB_SPEECH_ENGINE) {
     onStart();
-    return speakWebSpeech(preview, signal);
+    return speakWebSpeech(preview, rate, signal);
   }
   if (engine === NATIVE_TTS_ENGINE) {
     onStart();
-    return getNativeClient().preview(voiceId, text, lang, signal);
+    return getNativeClient().preview(voiceId, text, lang, rate, signal);
   }
   let data: ArrayBuffer;
   if (engine === EDGE_TTS_ENGINE) {
@@ -200,5 +211,5 @@ export const playVoicePreview = async (
     throw new Error(`No preview for ${engine}`);
   }
   if (signal.aborted) return;
-  await playAudio(data, signal, onStart);
+  await playAudio(data, rate, signal, onStart);
 };
