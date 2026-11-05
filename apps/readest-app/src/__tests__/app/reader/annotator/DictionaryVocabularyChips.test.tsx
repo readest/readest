@@ -3,7 +3,7 @@
  * of lookups into the vocabulary builder (#789, #6613).
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, cleanup, fireEvent } from '@testing-library/react';
+import { render, screen, cleanup, fireEvent, act } from '@testing-library/react';
 import type { ReactNode } from 'react';
 
 import DictionarySheet from '@/app/reader/components/annotator/DictionarySheet';
@@ -119,5 +119,89 @@ describe('dictionary vocabulary chips', () => {
     sheet();
     expect(screen.queryByRole('button', { name: 'Learning' })).toBeNull();
     expect(entries()).toHaveLength(0);
+  });
+});
+
+describe('dictionary hint field (#7325)', () => {
+  const hintField = () => screen.queryByRole('textbox', { name: 'Hint' }) as HTMLInputElement;
+  const learn = () => fireEvent.click(screen.getByRole('button', { name: 'Learning' }));
+
+  it('shows the hint field only while the word is Learning', () => {
+    sheet({ capture });
+    expect(hintField()).toBeNull();
+    learn();
+    expect(hintField()).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Mastered' }));
+    expect(hintField()).toBeNull();
+  });
+
+  it('prefills the saved hint', () => {
+    sheet({ capture });
+    learn();
+    useVocabularyStore.getState().setHint('en:serendipity', 'happy accident');
+    cleanup();
+    sheet({ capture });
+    expect(hintField().value).toBe('happy accident');
+  });
+
+  it('saves the hint on Enter', () => {
+    sheet({ capture });
+    learn();
+    fireEvent.change(hintField(), { target: { value: ' lucky find ' } });
+    expect(entries()[0]!.hint).toBeUndefined();
+    fireEvent.keyDown(hintField(), { key: 'Enter' });
+    expect(entries()[0]!.hint).toBe('lucky find');
+  });
+
+  it('saves the hint on blur', () => {
+    sheet({ capture });
+    learn();
+    fireEvent.change(hintField(), { target: { value: 'lucky find' } });
+    fireEvent.blur(hintField());
+    expect(entries()[0]!.hint).toBe('lucky find');
+  });
+
+  it('saves the hint when the popup closes while typing', () => {
+    sheet({ capture });
+    learn();
+    fireEvent.change(hintField(), { target: { value: 'lucky find' } });
+    cleanup();
+    expect(entries()[0]!.hint).toBe('lucky find');
+  });
+
+  it('leaves the entry untouched when the hint did not change', () => {
+    sheet({ capture });
+    learn();
+    const before = entries()[0]!.modifiedAt;
+    fireEvent.blur(hintField());
+    cleanup();
+    expect(entries()[0]!.modifiedAt).toBe(before);
+  });
+
+  it('keeps a hint saved elsewhere while the popup is open and untouched', () => {
+    sheet({ capture });
+    learn();
+    useVocabularyStore.getState().setHint('en:serendipity', 'from another device');
+    fireEvent.blur(hintField());
+    cleanup();
+    expect(entries()[0]!.hint).toBe('from another device');
+  });
+
+  it('shows a hint saved elsewhere in the untouched field, but not over typing', () => {
+    sheet({ capture });
+    learn();
+    act(() => useVocabularyStore.getState().setHint('en:serendipity', 'synced'));
+    expect(hintField().value).toBe('synced');
+    fireEvent.change(hintField(), { target: { value: 'mine' } });
+    act(() => useVocabularyStore.getState().setHint('en:serendipity', 'synced again'));
+    expect(hintField().value).toBe('mine');
+  });
+
+  it('does not save on the Enter that confirms an IME composition', () => {
+    sheet({ capture });
+    learn();
+    fireEvent.change(hintField(), { target: { value: '幸运' } });
+    fireEvent.keyDown(hintField(), { key: 'Enter', keyCode: 229 });
+    expect(entries()[0]!.hint).toBeUndefined();
   });
 });
