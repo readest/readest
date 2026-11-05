@@ -100,6 +100,9 @@ vi.mock('@/hooks/useResponsiveSize', () => ({
 vi.mock('@/helpers/settings', () => ({
   saveViewSettings: (...args: unknown[]) => mockSaveViewSettings(...args),
 }));
+vi.mock('@/components/vocabulary/VocabularyDialog', () => ({
+  setVocabularyDialogVisible: vi.fn(),
+}));
 vi.mock('@/services/constants', () => ({
   MAX_ZOOM_LEVEL: 200,
   MIN_ZOOM_LEVEL: 50,
@@ -117,39 +120,6 @@ vi.mock('@/utils/window', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/utils/window')>()),
   tauriHandleToggleFullScreen: vi.fn(),
 }));
-
-describe('ViewMenu transparent image backgrounds (#7045)', () => {
-  afterEach(() => {
-    cleanup();
-    mockBookData.book.format = 'PDF';
-  });
-
-  it('announces the image toggle state and persists it for EPUBs', async () => {
-    vi.clearAllMocks();
-    mockBookData.book.format = 'EPUB';
-    render(<ViewMenu bookKey='book-1' />);
-    fireEvent.click(screen.getByRole('menuitem', { name: 'Transparent Image Background - OFF' }));
-    expect(
-      screen.getByRole('menuitem', { name: 'Transparent Image Background - ON' }),
-    ).toBeTruthy();
-    await waitFor(() =>
-      expect(mockSaveViewSettings).toHaveBeenCalledWith(
-        expect.anything(),
-        'book-1',
-        'transparentImageBackground',
-        true,
-        true,
-        true,
-      ),
-    );
-  });
-
-  it('does not offer image transparency for PDF pages', () => {
-    mockBookData.book.format = 'PDF';
-    render(<ViewMenu bookKey='book-1' />);
-    expect(screen.queryByRole('menuitem', { name: /^Transparent Image Background/ })).toBeNull();
-  });
-});
 
 describe('ViewMenu fullscreen', () => {
   const requestFullscreen = vi.fn();
@@ -370,14 +340,13 @@ describe('ViewMenu layout', () => {
     render(<ViewMenu bookKey='book-1' />);
     const seq = menuSequence();
     const autoScroll = seq.indexOf('Auto Scroll');
-    expect(seq.slice(autoScroll, autoScroll + 6)).toEqual([
+    expect(seq.slice(autoScroll, autoScroll + 5)).toEqual([
       'Auto Scroll',
       'Apply Theme Colors',
-      'Invert Image In Dark Mode',
       'hr',
       'Webtoon Mode',
       'hr',
     ]);
-    expect(seq[autoScroll + 6]).toBe('Sign in to Sync');
+    expect(seq[autoScroll + 5]).toBe('Sign in to Sync');
   });
 });

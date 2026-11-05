@@ -87,6 +87,7 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
   // "Auto Full Refresh" row is only offered when true, so it never appears on
   // panels (or phones) where the deep refresh silently does nothing.
   const einkRefreshSupported = useEinkRefreshSupported();
+  const [alwaysShowStatusBar, setAlwaysShowStatusBar] = useState(settings.alwaysShowStatusBar);
   const [autoScreenBrightness, setAutoScreenBrightness] = useState(settings.autoScreenBrightness);
   const [swipeBrightnessGesture, setSwipeBrightnessGesture] = useState(
     settings.swipeBrightnessGesture,
@@ -380,6 +381,12 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [einkAutoRefreshInterval]);
+
+  useEffect(() => {
+    if (alwaysShowStatusBar === settings.alwaysShowStatusBar) return;
+    saveSysSettings(envConfig, 'alwaysShowStatusBar', alwaysShowStatusBar);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [alwaysShowStatusBar]);
 
   useEffect(() => {
     if (autoScreenBrightness === settings.autoScreenBrightness) return;
@@ -745,6 +752,14 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
           onChange={() => setHideBookshelfPageButtons(!hideBookshelfPageButtons)}
           data-setting-id='settings.control.hideBookshelfPageButtons'
         />
+        {appService?.isMobileApp && (
+          <SettingsSwitchRow
+            label={_('Always Show Status Bar')}
+            checked={alwaysShowStatusBar}
+            onChange={() => setAlwaysShowStatusBar(!alwaysShowStatusBar)}
+            data-setting-id='settings.control.alwaysShowStatusBar'
+          />
+        )}
         {appService?.isMobileApp && (
           <SettingsSwitchRow
             label={_('System Screen Brightness')}
