@@ -2650,5 +2650,20 @@
   "Voices are busy right now. Try again in a moment": "เสียงไม่ว่างในขณะนี้ โปรดลองอีกครั้งในอีกสักครู่",
   "You have used today's voice previews. Try again tomorrow": "คุณใช้การฟังตัวอย่างเสียงของวันนี้หมดแล้ว โปรดลองอีกครั้งพรุ่งนี้",
   "Voice Library": "คลังเสียง",
-  "Remove the downloaded files of {{count}} book(s) and keep them in the cloud._other": "ลบไฟล์ที่ดาวน์โหลดของหนังสือ {{count}} เล่ม และเก็บไว้บนคลาวด์"
+  "Remove the downloaded files of {{count}} book(s) and keep them in the cloud._other": "ลบไฟล์ที่ดาวน์โหลดของหนังสือ {{count}} เล่ม และเก็บไว้บนคลาวด์",
+  "Import from Anki": "นำเข้าจาก Anki",
+  "Deck": "สำรับ",
+  "New words come in as Learning. Words Anki counts as mature come in as Mastered.": "คำใหม่จะเข้ามาเป็น “กำลังเรียน” คำที่ Anki ถือว่าจำได้ดีแล้วจะเข้ามาเป็น “จำได้แล้ว”",
+  "Allow Readest to access AnkiDroid in system settings.": "อนุญาตให้ Readest เข้าถึง AnkiDroid ในการตั้งค่าระบบ",
+  "Open AnkiDroid once, then try again.": "เปิด AnkiDroid หนึ่งครั้ง แล้วลองอีกครั้ง",
+  "Could not reach AnkiDroid.": "ไม่สามารถติดต่อ AnkiDroid ได้",
+  "Added {{count}} words to Anki_other": "เพิ่ม {{count}} คำไปยัง Anki แล้ว",
+  "No decks in AnkiDroid.": "ไม่มีสำรับใน AnkiDroid",
+  "{{count}} skipped_other": "ข้าม {{count}} รายการ",
+  "Update AnkiDroid to bring back mastered words.": "อัปเดต AnkiDroid เพื่อนำคำที่จำได้แล้วกลับมา",
+  "Imported {{count}} new words_other": "นำเข้าคำใหม่ {{count}} คำ",
+  "{{count}} now Mastered_other": "{{count}} คำเป็น “จำได้แล้ว”",
+  "Sync with Anki": "ซิงค์กับ Anki",
+  "Import Anki Deck...": "นำเข้าสำรับ Anki...",
+  "In sync with Anki": "ซิงค์กับ Anki แล้ว"
 }

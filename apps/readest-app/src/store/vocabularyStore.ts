@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import type { AppService } from '@/types/system';
 import type {
   VocabularyEntry,
+  VocabularyImport,
   VocabularyOccurrence,
   VocabularyState,
 } from '@/services/vocabulary/types';
@@ -37,6 +38,8 @@ interface VocabularyStore {
   setState(id: string, state: VocabularyState): void;
   setHint(id: string, hint: string): void;
   remove(id: string): void;
+  /** Create or update many words in one change, as edits (they sync). */
+  importWords(items: VocabularyImport[]): void;
   /** Merge entries pulled from the server; the result isn't pushed back. */
   applyRemote(entries: VocabularyEntry[]): void;
   /** Write the list to the data file now instead of after the save delay. */
@@ -48,6 +51,8 @@ interface VocabularyStore {
     mastered: Set<string>;
   };
 }
+
+const STATE_RANK: Record<VocabularyState, number> = { none: 0, learning: 1, mastered: 2 };
 
 let appServiceRef: AppService | null = null;
 let persistTimer: ReturnType<typeof setTimeout> | null = null;
@@ -180,6 +185,28 @@ export const useVocabularyStore = create<VocabularyStore>((set, get) => {
         const { hint: _hint, ...rest } = e;
         return { ...rest, state: 'none', occurrences: [], deletedAt: Date.now() };
       }),
+
+    importWords: (items) => {
+      const now = Date.now();
+      const next: VocabularyEntry[] = [];
+      for (const { word, lang, state, hint } of items) {
+        const key = normalizeWordKey(word);
+        if (!key) continue;
+        const current = get().entries[entryId(lang, key)];
+        const base = current && !current.deletedAt ? current : freshEntry(word, lang, key, now);
+        // Imports only move a word up: a plan made before the word moved up
+        // (Sync and an import running together) must not undo it.
+        const raise = state && STATE_RANK[state] > STATE_RANK[base.state];
+        next.push({
+          ...base,
+          ...(raise ? { state } : {}),
+          ...(hint ? { hint } : {}),
+          modifiedAt: now,
+          dirty: true,
+        });
+      }
+      if (next.length) put(next);
+    },
 
     applyRemote: (remote) => {
       const { entries } = get();

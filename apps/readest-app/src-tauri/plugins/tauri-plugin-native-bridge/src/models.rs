@@ -932,3 +932,115 @@ pub struct WebBrowserCookiesRequest {
 pub struct WebBrowserCookiesResponse {
     pub cookies: String,
 }
+
+/// Android: whether AnkiDroid is installed and Readest may use its provider (#789).
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AnkiStatusResponse {
+    pub installed: bool,
+    pub granted: bool,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AnkiPermissionResponse {
+    pub granted: bool,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AnkiDeck {
+    pub id: i64,
+    pub name: String,
+}
+
+/// `error` is "permission" or "not_ready" when AnkiDroid can't be read.
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AnkiListDecksResponse {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub decks: Option<Vec<AnkiDeck>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub error: Option<String>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AnkiReadDeckRequest {
+    /// A deck and its subdecks.
+    pub deck_ids: Vec<i64>,
+    pub with_cards: bool,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AnkiNoteRow {
+    pub id: i64,
+    pub fields: Vec<String>,
+    pub tags: String,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AnkiCardRow {
+    pub note_id: i64,
+    pub card_type: i32,
+    pub interval: i64,
+}
+
+/// `cards` is omitted on AnkiDroid older than 2.24, which has no cards query.
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AnkiReadDeckResponse {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub notes: Option<Vec<AnkiNoteRow>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub cards: Option<Vec<AnkiCardRow>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub error: Option<String>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AnkiOutgoingNote {
+    pub fields: Vec<String>,
+    pub tags: Vec<String>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AnkiAddNotesRequest {
+    pub deck_name: String,
+    pub notes: Vec<AnkiOutgoingNote>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AnkiAddNotesResponse {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub added: Option<i64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub error: Option<String>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AnkiTagUpdate {
+    pub id: i64,
+    pub tags: Vec<String>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AnkiUpdateTagsRequest {
+    pub notes: Vec<AnkiTagUpdate>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AnkiUpdateTagsResponse {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub updated: Option<i64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub error: Option<String>,
+}

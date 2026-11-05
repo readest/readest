@@ -2650,5 +2650,20 @@
   "Voices are busy right now. Try again in a moment": "Suara sedang sibuk. Coba lagi sebentar lagi",
   "You have used today's voice previews. Try again tomorrow": "Anda telah menggunakan pratinjau suara hari ini. Coba lagi besok",
   "Voice Library": "Pustaka suara",
-  "Remove the downloaded files of {{count}} book(s) and keep them in the cloud._other": "Hapus file unduhan dari {{count}} buku dan simpan di Cloud."
+  "Remove the downloaded files of {{count}} book(s) and keep them in the cloud._other": "Hapus file unduhan dari {{count}} buku dan simpan di Cloud.",
+  "Import from Anki": "Impor dari Anki",
+  "Deck": "Dek",
+  "New words come in as Learning. Words Anki counts as mature come in as Mastered.": "Kata baru masuk sebagai “Sedang dipelajari”. Kata yang dianggap matang oleh Anki masuk sebagai “Dikuasai”.",
+  "Allow Readest to access AnkiDroid in system settings.": "Izinkan Readest mengakses AnkiDroid di pengaturan sistem.",
+  "Open AnkiDroid once, then try again.": "Buka AnkiDroid sekali, lalu coba lagi.",
+  "Could not reach AnkiDroid.": "Tidak dapat terhubung ke AnkiDroid.",
+  "Added {{count}} words to Anki_other": "{{count}} kata ditambahkan ke Anki",
+  "No decks in AnkiDroid.": "Tidak ada dek di AnkiDroid.",
+  "{{count}} skipped_other": "{{count}} dilewati",
+  "Update AnkiDroid to bring back mastered words.": "Perbarui AnkiDroid untuk membawa kembali kata yang dikuasai.",
+  "Imported {{count}} new words_other": "{{count}} kata baru diimpor",
+  "{{count}} now Mastered_other": "{{count}} kini “Dikuasai”",
+  "Sync with Anki": "Sinkronkan dengan Anki",
+  "Import Anki Deck...": "Impor Dek Anki...",
+  "In sync with Anki": "Sinkron dengan Anki"
 }

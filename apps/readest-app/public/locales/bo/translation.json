@@ -2650,5 +2650,20 @@
   "Voices are busy right now. Try again in a moment": "སྐད་གདངས་ད་ལྟ་བྲེལ་བ་ཡོད། ཅུང་ཙམ་སྒུག་ནས་ཡང་བསྐྱར་ཚོད་ལྟ་བྱོས།",
   "You have used today's voice previews. Try again tomorrow": "དེ་རིང་གི་སྐད་གདངས་ཉན་ཞིབ་ཚང་མ་བེད་སྤྱད་ཟིན། སང་ཉིན་ཡང་བསྐྱར་ཚོད་ལྟ་བྱོས།",
   "Voice Library": "སྐད་གདངས་དཔེ་མཛོད།",
-  "Remove the downloaded files of {{count}} book(s) and keep them in the cloud._other": "དཔེ་དེབ་ {{count}} གི་ཕབ་ལེན་ཡིག་ཆ་བསུབ་ནས་སྤྲི་དོན་ཐོག་ཉར་བ།"
+  "Remove the downloaded files of {{count}} book(s) and keep them in the cloud._other": "དཔེ་དེབ་ {{count}} གི་ཕབ་ལེན་ཡིག་ཆ་བསུབ་ནས་སྤྲི་དོན་ཐོག་ཉར་བ།",
+  "Import from Anki": "Anki ནས་ནང་འདྲེན།",
+  "Deck": "ཤོག་བུ་ཚོགས།",
+  "New words come in as Learning. Words Anki counts as mature come in as Mastered.": "ཚིག་གསར་པ་“སློབ་སྦྱོང་བྱེད་བཞིན་པ།”ཞེས་ནང་འཇུག་འགྲོ། Anki ཡིས་སྨིན་ཟིན་པར་བརྩིས་པའི་ཚིག་“ཤེས་ཟིན་པ།”ཞེས་ནང་འཇུག་འགྲོ།",
+  "Allow Readest to access AnkiDroid in system settings.": "མ་ལག་སྒྲིག་འགོད་ནང་ Readest ལ་ AnkiDroid སྤྱོད་པའི་ཆོག་མཆན་སྤྲོད།",
+  "Open AnkiDroid once, then try again.": "AnkiDroid ཐེངས་གཅིག་ཁ་ཕྱེ་ནས་ཡང་བསྐྱར་ཚོད་ལྟ་གྱིས།",
+  "Could not reach AnkiDroid.": "AnkiDroid ལ་འབྲེལ་བ་བྱེད་མ་ཐུབ།",
+  "Added {{count}} words to Anki_other": "Anki ལ་ཚིག་ {{count}} སྣོན་ཟིན།",
+  "No decks in AnkiDroid.": "AnkiDroid ནང་ཤོག་བུ་ཚོགས་མེད།",
+  "{{count}} skipped_other": "{{count}} མཆོང་ཟིན།",
+  "Update AnkiDroid to bring back mastered words.": "ཤེས་ཟིན་པའི་ཚིག་ཕྱིར་ལེན་པར་ AnkiDroid གསར་སྒྱུར་གྱིས།",
+  "Imported {{count}} new words_other": "ཚིག་གསར་པ་ {{count}} ནང་འདྲེན་བྱས།",
+  "{{count}} now Mastered_other": "{{count}} ད་ “ཤེས་ཟིན་པ།”",
+  "Sync with Anki": "Anki དང་མཉམ་སྦྲེལ།",
+  "Import Anki Deck...": "Anki ཡི་ཤོག་བུ་ཚོགས་ནང་འདྲེན།...",
+  "In sync with Anki": "Anki དང་མཉམ་སྦྲེལ་ཟིན།"
 }

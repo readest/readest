@@ -2650,5 +2650,20 @@
   "Voices are busy right now. Try again in a moment": "語音服務忙碌中，請稍後再試",
   "You have used today's voice previews. Try again tomorrow": "今日的語音試聽次數已用完，請明天再試",
   "Voice Library": "語音庫",
-  "Remove the downloaded files of {{count}} book(s) and keep them in the cloud._other": "移除 {{count}} 本書已下載的檔案，並保留在雲端。"
+  "Remove the downloaded files of {{count}} book(s) and keep them in the cloud._other": "移除 {{count}} 本書已下載的檔案，並保留在雲端。",
+  "Import from Anki": "從 Anki 匯入",
+  "Deck": "牌組",
+  "New words come in as Learning. Words Anki counts as mature come in as Mastered.": "新字詞以「學習中」匯入。Anki 中已成熟的卡片對應的字詞以「已掌握」匯入。",
+  "Allow Readest to access AnkiDroid in system settings.": "請在系統設定中允許 Readest 存取 AnkiDroid。",
+  "Open AnkiDroid once, then try again.": "請先開啟一次 AnkiDroid，再重試。",
+  "Could not reach AnkiDroid.": "無法連線至 AnkiDroid。",
+  "Added {{count}} words to Anki_other": "已向 Anki 新增 {{count}} 個字詞",
+  "No decks in AnkiDroid.": "AnkiDroid 中沒有牌組。",
+  "{{count}} skipped_other": "已略過 {{count}} 個",
+  "Update AnkiDroid to bring back mastered words.": "請更新 AnkiDroid 以匯回已掌握的字詞。",
+  "Imported {{count}} new words_other": "已匯入 {{count}} 個新字詞",
+  "{{count}} now Mastered_other": "{{count}} 個變為「已掌握」",
+  "Sync with Anki": "與 Anki 同步",
+  "Import Anki Deck...": "匯入 Anki 牌組...",
+  "In sync with Anki": "已與 Anki 同步"
 }
