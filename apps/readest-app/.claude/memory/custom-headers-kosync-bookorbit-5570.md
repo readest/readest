@@ -65,9 +65,14 @@ patterns and `isValidKoSyncEndpoint` is exported for tests; the kosync
 hardening notes are in [[private-custom-headers-kosync-bookorbit-5570]] (local only).
 
 **Open, not fixed:**
-- `/api/bookorbit` returns **404 in production** while `/api/kosync` returns 405.
-  Source is on main (#5487) — the web deploy is simply behind, so BookOrbit sync
-  over web does not work at all yet, headers or no headers.
+- `/api/bookorbit` 500'd on EVERY request in production (#7291): it used
+  `redirect: 'error'`, which Cloudflare Workers rejects ("Invalid redirect
+  value, must be one of follow or manual"). Unit tests stub fetch, so they never
+  saw it. Fix PR #7296 switches to `publicFetch` (manual) + refuses 3xx;
+  verified on `pnpm preview` (local workerd). Server code on the web build must
+  never pass `redirect: 'error'`. Probe prod with a POST to `/api/bookorbit`
+  `{serverUrl:"https://httpbin.org",endpoint:"/users/auth",method:"GET"}`: a
+  relayed 404 = works, a 500 with `details` = broken.
 - OPDS catalog `customHeaders` sync follow-up: [[private-custom-headers-kosync-bookorbit-5570]] (local only).
 - Error strings from `parseCustomHeadersInput` are hardcoded English rendered raw
   (pre-existing from OPDS, now also in Settings).

@@ -18,6 +18,8 @@ chrox is considering migrating Readest Cloud off Supabase (decided 2026-10-12). 
 
 **Decision 2026-11-03 (chrox):** go with the custom domain (step 2) for #6416 (India ISP blocks on *.supabase.co), NOT a reverse proxy (proxy can't fix OAuth callbacks/email links, and needs a secret key + Sb-Forwarded-For to avoid shared per-IP auth rate limits). Revisit the drain between 2026-11-17 and 2026-12-01, then switch once old-host clients are few. VPS/Hetzner offload of sync was weighed and judged not worth it.
 
+**Update 2026-11-06 (chrox):** for now, ALSO proxy email/password through a Worker (`workers/auth-proxy`, host `auth-cf.readest.com`; `auth.readest.com` stays reserved for step 2). Client MERGED #7355 UNRELEASED; Worker DEPLOYED 2026-11-05. Partial fix: #6416 stays open. KOReader and Calibre plugins still sign in directly. Client rewrites only password + refresh_token grants and /logout, on Readest Cloud hosts. OAuth, magic links and reset links still need the custom domain. Must use an `sb_secret_` key + `security_sb_forwarded_for_enabled` BEFORE clients ship: Worker traffic is one IP to Supabase, and auth-js signs users out on a refresh 429/4xx/HTML 500 (`refreshSession` runs every launch). Chromium `--host-resolver-rules` was silently ignored under Playwright; block hosts with `page.route` + `abort('namenotresolved')` and always run the old code to prove the block.
+
 Drain measurements, the server-side callers that were repointed, and the edge_logs query recipe are in [[private-supabase-host-drain-2026-11]] (local only, gitignored).
 
 **Gotchas:**
