@@ -405,6 +405,29 @@ describe('runFileLibrarySyncPass data flow', () => {
     });
   });
 
+  test('counts a downloaded book file under the backend that served it', async () => {
+    enableWebdav();
+    downloadBookFile.mockResolvedValueOnce(true);
+
+    await runFileBookDownload(envConfig, makeBook('h1'));
+
+    expect(readFlowState().entries[0]).toMatchObject({
+      connector: 'webdav',
+      direction: 'pull',
+      kind: 'books',
+      count: 1,
+    });
+  });
+
+  test('records a failed download', async () => {
+    enableWebdav();
+    downloadBookFile.mockRejectedValueOnce(new Error('404'));
+
+    await runFileBookDownload(envConfig, makeBook('h1'));
+
+    expect(readFlowState().entries[0]).toMatchObject({ connector: 'webdav', error: '404' });
+  });
+
   test('does not count a file the backend already had', async () => {
     enableWebdav();
     pushBookFile.mockResolvedValueOnce({ uploaded: false, reason: 'remote-matches' });

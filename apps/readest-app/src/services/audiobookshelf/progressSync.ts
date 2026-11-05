@@ -11,6 +11,8 @@ import type { AppService } from '@/types/system';
 import type { Book } from '@/types/book';
 import { useLibraryStore } from '@/store/libraryStore';
 
+const PROGRESS_FLOW = { connector: 'audiobookshelf', kind: 'progress' } as const;
+
 // Mirrors TTSSessionManager's PERSIST_THROTTLE_MS pattern: the in-memory
 // library store is updated on every hook so the UI stays current, but the
 // disk write it triggers is throttled to this interval.
@@ -153,6 +155,8 @@ export class AbsProgressSyncer {
       localLastPlayedAt,
     });
     this.#lastSyncedPosition = resume;
+    // Counts only when the server's position won over this device's own.
+    recordFlow({ ...PROGRESS_FLOW, direction: 'pull', count: resume === localCurrentTime ? 0 : 1 });
     return resume;
   }
 
@@ -193,17 +197,30 @@ export class AbsProgressSyncer {
     // otherwise regress the resume position on next open).
     this.#cacheLocally(pos, true);
     if (this.#sessionId) {
-      this.#client
-        .closeSession(this.#sessionId, { currentTime: pos, timeListened, duration: this.#duration })
-        .catch(console.warn);
+      this.#reportPush(
+        this.#client.closeSession(this.#sessionId, {
+          currentTime: pos,
+          timeListened,
+          duration: this.#duration,
+        }),
+      );
     }
   }
 
   #syncSession(pos: number, timeListened: number): void {
     if (!this.#sessionId) return;
-    const push = { connector: 'audiobookshelf', direction: 'push', kind: 'progress' } as const;
-    this.#client
-      .syncSession(this.#sessionId, { currentTime: pos, timeListened, duration: this.#duration })
+    this.#reportPush(
+      this.#client.syncSession(this.#sessionId, {
+        currentTime: pos,
+        timeListened,
+        duration: this.#duration,
+      }),
+    );
+  }
+
+  #reportPush(sent: Promise<unknown>): void {
+    const push = { ...PROGRESS_FLOW, direction: 'push' } as const;
+    sent
       .then(() => recordFlow(push))
       .catch((error) => {
         console.warn(error);

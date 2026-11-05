@@ -270,6 +270,21 @@ describe('AbsProgressSyncer', () => {
       );
     });
 
+    it('reports the position read when a session opens', async () => {
+      await syncer.begin(0, 0);
+
+      expect(readFlowState().totals['audiobookshelf:pull:progress']?.count).toBe(1);
+    });
+
+    it('reports the final position sent when a session ends', async () => {
+      await syncer.begin(0, 0);
+      syncer.hooks().onEnd!(600);
+
+      await vi.waitFor(() =>
+        expect(readFlowState().entries[0]).toMatchObject({ direction: 'push', kind: 'progress' }),
+      );
+    });
+
     it('reports a failed session sync', async () => {
       client.syncSession.mockRejectedValueOnce(new Error('offline'));
       await syncer.begin(0, 0);

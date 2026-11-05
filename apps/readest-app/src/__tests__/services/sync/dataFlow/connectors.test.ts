@@ -13,6 +13,12 @@ import { fetchWithAuth } from '@/utils/fetch';
 
 vi.mock('@tauri-apps/plugin-http', () => ({ fetch: vi.fn() }));
 vi.mock('@/utils/fetch', () => ({ fetchWithAuth: vi.fn() }));
+vi.mock('@/services/environment', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/services/environment')>()),
+  isTauriAppPlatform: () => h.tauri,
+}));
+
+const h = vi.hoisted(() => ({ tauri: false }));
 
 const context = (overrides: Partial<ConnectorContext> = {}): ConnectorContext => ({
   settings: {} as SystemSettings,
@@ -123,6 +129,14 @@ describe('getFlowConnectors', () => {
       sinks: [],
     });
     expect(byId(context({ opdsCatalogs: [{ ...catalog, deletedAt: 1 }] }), 'opds')).toBeUndefined();
+  });
+
+  it('shows BookDrop both ways, since it receives and sends book files', () => {
+    h.tauri = true;
+    const connector = byId(context(), 'localsend');
+    h.tauri = false;
+
+    expect(connector).toMatchObject({ sources: ['books'], sinks: ['books'] });
   });
 
   it('shows Send to Readest only when this device drains the inbox', () => {

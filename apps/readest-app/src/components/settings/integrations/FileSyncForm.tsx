@@ -19,6 +19,8 @@ import {
 } from '@/services/sync/file/providerRegistry';
 import type { KOSyncStrategy } from '@/types/settings';
 import { BoxedList, SettingsRow, SettingsSelect, SettingsSwitchRow } from '../primitives';
+import { recordFlow } from '@/services/sync/dataFlow/log';
+import { recordLibraryPass } from '@/services/sync/file/runLibrarySync';
 
 /** The settings fields the shared sync controls read/write (WebDAV + Drive share these). */
 export interface FileSyncFormSettings {
@@ -163,6 +165,7 @@ const FileSyncForm: React.FC<FileSyncFormProps> = ({
         },
       });
 
+      recordLibraryPass(kind, result);
       const failure = formatSyncFailure(result, _);
       setLastError(kind, failure);
       if (!failure) {
@@ -173,7 +176,9 @@ const FileSyncForm: React.FC<FileSyncFormProps> = ({
         });
       }
     } catch (e) {
-      setLastError(kind, e instanceof Error ? e.message : String(e));
+      const message = e instanceof Error ? e.message : String(e);
+      setLastError(kind, message);
+      recordFlow({ connector: kind, direction: 'push', kind: 'books', error: message });
       eventDispatcher.dispatch('toast', { type: 'error', message: formatSyncError(_, e) });
     } finally {
       endSync(kind);

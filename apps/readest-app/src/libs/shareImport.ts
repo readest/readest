@@ -4,6 +4,7 @@ import type { AppService } from '@/types/system';
 import { useLibraryStore } from '@/store/libraryStore';
 import { getAPIBaseUrl, isTauriAppPlatform } from '@/services/environment';
 import { ShareApiError, getShare, type ImportShareResponse, type ShareMetadata } from './share';
+import { recordFlow } from '@/services/sync/dataFlow/log';
 
 interface EnsureSharedBookLocalArgs {
   token: string;
@@ -86,6 +87,12 @@ export const ensureSharedBookLocal = async ({
     if (!(await appService.isBookAvailable(existing))) {
       throw new Error('Could not download shared book');
     }
+    recordFlow({
+      connector: 'readest-cloud',
+      direction: 'pull',
+      kind: 'books',
+      bookTitle: existing.title,
+    });
     if (!existing.downloadedAt) existing.downloadedAt = Date.now();
     existing.updatedAt = Date.now();
     await persistLibrary();

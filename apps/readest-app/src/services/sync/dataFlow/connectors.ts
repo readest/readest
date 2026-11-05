@@ -237,7 +237,7 @@ const contentConnectors = (ctx: ConnectorContext): FlowConnector[] => {
       id: 'localsend',
       title: _('Nearby BookDrop'),
       sources: ['books'],
-      sinks: [],
+      sinks: ['books'],
       check: async () => ({
         ok: !!useLocalSendStore.getState().status?.running,
         message: useLocalSendStore.getState().status?.running ? undefined : _('Not running'),

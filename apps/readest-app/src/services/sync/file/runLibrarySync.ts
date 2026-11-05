@@ -74,7 +74,10 @@ const buildEngine = async (
   return new FileSyncEngine(fileProvider, store);
 };
 
-const recordLibraryPass = (connector: FileSyncBackendKind, result: SyncLibraryResult) => {
+const bookFile = (connector: FileSyncBackendKind, direction: FlowDirection) =>
+  ({ connector, direction, kind: 'books' }) as const;
+
+export const recordLibraryPass = (connector: FileSyncBackendKind, result: SyncLibraryResult) => {
   const add = (direction: FlowDirection, kind: FlowKind, count: number) =>
     recordFlow({ connector, direction, kind, count });
   add('push', 'progress', result.configsUploaded ?? 0);
@@ -225,14 +228,7 @@ export const runFileBookUpload = async (envConfig: EnvConfigType, book: Book): P
       const engine = await buildEngine(envConfig, kind);
       if (!engine) continue;
       const result = await engine.pushBookFile(book);
-      if (result.uploaded) {
-        recordFlow({
-          connector: kind,
-          direction: 'push',
-          kind: 'books',
-          bookTitle: book.title,
-        });
-      }
+      if (result.uploaded) recordFlow({ ...bookFile(kind, 'push'), bookTitle: book.title });
       if (!result.uploaded && result.reason !== 'remote-matches') continue;
       anyUploaded = true;
       try {
@@ -266,11 +262,17 @@ export const runFileBookDownload = async (
       const engine = await buildEngine(envConfig, kind, parentTransferId);
       if (!engine) continue;
       if (!(await engine.downloadBookFile(book, onProgress))) continue;
+      recordFlow({ ...bookFile(kind, 'pull'), bookTitle: book.title });
       book.downloadedAt = Date.now();
       if (!book.coverDownloadedAt) book.coverDownloadedAt = Date.now();
       return true;
     } catch (e) {
       console.warn('[cloudSync] book download failed', kind, book.hash, e);
+      recordFlow({
+        ...bookFile(kind, 'pull'),
+        bookTitle: book.title,
+        error: e instanceof Error ? e.message : String(e),
+      });
     }
   }
   return false;

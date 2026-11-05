@@ -64,6 +64,7 @@ interface ServerStatePayload {
 }
 
 const BOOK_RECEIVED = { connector: 'localsend', direction: 'pull', kind: 'books' } as const;
+const BOOK_SENT = { connector: 'localsend', direction: 'push', kind: 'books' } as const;
 
 /**
  * Background controller for the LocalSend integration. Mounted in the library
@@ -451,6 +452,7 @@ const LocalSendManager: React.FC = () => {
           if (!sendState) return; // another window's transfer
           const { status, error, filesSent } = event.payload;
           if (status === 'sent') {
+            recordFlow({ ...BOOK_SENT, count: filesSent });
             toast(
               _('Sent {{count}} book(s) to {{alias}}', {
                 count: filesSent,
@@ -463,6 +465,7 @@ const LocalSendManager: React.FC = () => {
           } else if (status === 'cancelled') {
             toast(_('Transfer cancelled'));
           } else {
+            recordFlow({ ...BOOK_SENT, error: error || 'Transfer failed' });
             toast(error || _('Transfer failed'), 'error');
           }
         }),

@@ -699,20 +699,6 @@ const IntegrationsPanel: React.FC = () => {
         </div>
       )}
 
-      {flowConnectors.length > 0 && (
-        <div className='w-full' data-setting-id='settings.integrations.dataFlow'>
-          <SectionTitle className='mb-2'>{_('Reading Data')}</SectionTitle>
-          <div className='card eink-bordered border-base-200 bg-base-100 overflow-hidden border'>
-            <IntegrationRow
-              icon={RiFlowChart}
-              title={_('Data Flow')}
-              status={flowStatus}
-              onClick={() => setSubPage('data-flow')}
-            />
-          </div>
-        </div>
-      )}
-
       <div className='w-full' data-setting-id='settings.integrations.sync'>
         <SectionTitle className='mb-2'>{_('Reading Sync')}</SectionTitle>
         <div className='card eink-bordered border-base-200 bg-base-100 overflow-hidden border'>
@@ -950,6 +936,20 @@ const IntegrationsPanel: React.FC = () => {
                 onChange={toggleDiscordPresence}
               />
             </div>
+          </div>
+        </div>
+      )}
+
+      {flowConnectors.length > 0 && (
+        <div className='w-full' data-setting-id='settings.integrations.dataFlow'>
+          <SectionTitle className='mb-2'>{_('Reading Data')}</SectionTitle>
+          <div className='card eink-bordered border-base-200 bg-base-100 overflow-hidden border'>
+            <IntegrationRow
+              icon={RiFlowChart}
+              title={_('Data Flow')}
+              status={flowStatus}
+              onClick={() => setSubPage('data-flow')}
+            />
           </div>
         </div>
       )}

@@ -182,7 +182,10 @@ export function useInboxDrainer(): void {
       if (failed > 0) recordFlow({ ...INBOX_PULL, error: `${failed} failed` });
     } catch (err) {
       console.warn('Inbox drain pass failed:', err);
-      recordFlow({ ...INBOX_PULL, error: err instanceof Error ? err.message : String(err) });
+      const error = err instanceof Error ? err.message : String(err);
+      // At startup the drain can beat the session. A session that's really
+      // gone fails the connection check, so this isn't a broken inbox.
+      if (error !== 'Not authenticated') recordFlow({ ...INBOX_PULL, error });
     } finally {
       runningRef.current = false;
     }

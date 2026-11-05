@@ -754,6 +754,12 @@ export default function BrowserPage() {
         }
       } catch (e) {
         console.error('Download error:', e);
+        recordFlow({
+          connector: 'opds',
+          direction: 'pull',
+          kind: 'books',
+          error: e instanceof Error ? e.message : String(e),
+        });
         throw e;
       }
     },

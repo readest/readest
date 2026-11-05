@@ -699,7 +699,7 @@ describe('TransferManager', () => {
         });
       });
 
-      test('counts a downloaded book file under the backend that served it', async () => {
+      test('leaves a file backend download to the backend that served it', async () => {
         const book = makeBook({ hash: 'h1', title: 'Dune' });
         await setup(makeAppService(), book);
 
@@ -707,12 +707,7 @@ describe('TransferManager', () => {
         useTransferStore.getState().setTransferProvider(id, 'webdav');
         await vi.advanceTimersByTimeAsync(500);
 
-        expect(readFlowState().entries[0]).toMatchObject({
-          connector: 'webdav',
-          direction: 'pull',
-          kind: 'books',
-          count: 1,
-        });
+        expect(readFlowState().entries).toEqual([]);
       });
 
       test('records a transfer only after its last retry fails', async () => {

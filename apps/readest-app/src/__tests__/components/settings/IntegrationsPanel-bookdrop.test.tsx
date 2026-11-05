@@ -53,6 +53,15 @@ afterEach(() => {
 });
 
 describe('IntegrationsPanel Nearby BookDrop section', () => {
+  it('puts Data Flow last, after every integration it reports on', () => {
+    render(<IntegrationsPanel />);
+    const sections = Array.from(document.querySelectorAll('[data-setting-id]')).map((el) =>
+      el.getAttribute('data-setting-id'),
+    );
+    expect(sections.at(-1)).toBe('settings.integrations.dataFlow');
+    expect(sections).toContain('settings.integrations.discord');
+  });
+
   it('puts BookDrop in its own section ahead of every other integration', () => {
     render(<IntegrationsPanel />);
     const sections = Array.from(document.querySelectorAll('[data-setting-id]')).map((el) =>

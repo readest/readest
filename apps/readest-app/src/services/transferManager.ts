@@ -629,9 +629,10 @@ class TransferManager {
     if (transfer.kind !== 'book' || transfer.type === 'delete') return;
     const book = this.getLibrary!().find((b) => b.hash === transfer.bookHash);
     const provider = useTransferStore.getState().transfers[transfer.id]?.provider;
-    const backend = !provider || provider === 'readest' ? 'readest-cloud' : provider;
+    // runFileBookDownload knows which backend served the file and records it.
+    if (provider && provider !== 'readest') return;
     recordFlow({
-      connector: book?.format === 'ABS' ? 'audiobookshelf' : backend,
+      connector: book?.format === 'ABS' ? 'audiobookshelf' : 'readest-cloud',
       direction: transfer.type === 'upload' ? 'push' : 'pull',
       kind: 'books',
       bookTitle: transfer.bookTitle,
