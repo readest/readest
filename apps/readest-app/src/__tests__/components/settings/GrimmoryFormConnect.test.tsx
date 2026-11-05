@@ -38,7 +38,6 @@ const settings = {
 beforeEach(() => {
   useSettingsStore.setState({
     settings,
-    setSettings: vi.fn(),
     saveSettings: vi.fn(async () => {
       throw new Error('disk full');
     }),
@@ -62,6 +61,9 @@ describe('GrimmoryForm connect', () => {
         expect.objectContaining({ type: 'error', message: 'Failed to connect: disk full' }),
       ),
     );
+    // Nothing was saved, so the form stays unconnected.
+    expect(useSettingsStore.getState().settings.grimmory.enabled).toBe(false);
+    expect(useSettingsStore.getState().settings.grimmory.password).toBe('');
     // The spinner is gone (the button has its label back) and a new password
     // can be tried.
     fireEvent.change(screen.getByPlaceholderText('Your Password'), {
