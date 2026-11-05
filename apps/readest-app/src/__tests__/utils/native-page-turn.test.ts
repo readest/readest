@@ -106,6 +106,58 @@ describe('Android native page-turn pipeline', () => {
     }
   });
 
+  // Hiding the toolbars as a turn starts changes the system UI, which invalidates
+  // the native pages while the live page is parked on a neighbour for its capture.
+  it('keeps the cover and its sheet through an invalidation during a cold turn', async () => {
+    const f = fixture();
+    const { controller } = f;
+    const host = (controller as unknown as { host: CapturedTurnHost }).host;
+    host.onCovered = async () => controller.invalidateNativePages();
+    try {
+      expect(await controller.turn(true, false)).toBe(true);
+      expect(f.events).toEqual([
+        'capture',
+        'cover',
+        'capture',
+        'start',
+        'animate',
+        'navigate',
+        'finish',
+        'invalidate',
+      ]);
+    } finally {
+      controller.dispose();
+    }
+  });
+
+  it('keeps the cover through an invalidation while warming the neighbouring pages', async () => {
+    const f = fixture();
+    const preview = f.renderer.previewPage!;
+    let invalidated = false;
+    f.renderer.previewPage = async (forward, read, signal) => {
+      if (!invalidated) {
+        invalidated = true;
+        f.controller.invalidateNativePages();
+      }
+      return preview(forward, read, signal);
+    };
+    try {
+      await f.controller.prepareCapture('curl');
+      expect(f.events.indexOf('cover')).toBeLessThan(f.events.indexOf('idle'));
+      expect(f.events.indexOf('idle')).toBeLessThan(f.events.indexOf('invalidate'));
+      expect(f.events.filter((op) => op === 'invalidate')).toHaveLength(1);
+    } finally {
+      f.controller.dispose();
+    }
+  });
+
+  it('invalidates the native pages at once when nothing holds the cover', async () => {
+    const f = fixture();
+    f.controller.invalidateNativePages();
+    expect(f.events).toEqual(['invalidate']);
+    f.controller.dispose();
+  });
+
   it('turns a renderer without page previews by navigating under the cover', async () => {
     const f = fixture();
     delete (f.renderer as { previewPage?: unknown }).previewPage;
