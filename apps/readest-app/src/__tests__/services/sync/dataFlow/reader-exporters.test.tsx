@@ -119,7 +119,7 @@ describe('exporters report what they moved', () => {
   });
 
   it('Readwise: counts the notes it pushed', async () => {
-    h.readwisePush.mockResolvedValue({ success: true });
+    h.readwisePush.mockResolvedValue({ success: true, sent: 1 });
     renderHook(() => useReadwiseSync('k'));
 
     await fire('readwise-push-all');
@@ -131,6 +131,16 @@ describe('exporters report what they moved', () => {
       count: 1,
       bookTitle: 'Dune',
     });
+  });
+
+  it('Readwise: leaves out notes it did not send, such as deleted ones', async () => {
+    h.readwisePush.mockResolvedValue({ success: true, sent: 0 });
+    renderHook(() => useReadwiseSync('k'));
+
+    await fire('readwise-push-all');
+
+    expect(readFlowState().entries).toEqual([]);
+    expect(readFlowState().totals['readwise:push:notes']?.lastSuccessAt).toBeGreaterThan(0);
   });
 
   it('Readwise: logs a refused push', async () => {

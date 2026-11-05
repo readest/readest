@@ -96,8 +96,18 @@ describe('useFileSync data flow', () => {
     );
   });
 
+  test('does not count a pull that changed nothing, though it shows the sync worked', async () => {
+    h.pullBookConfig.mockResolvedValue({ applied: true, changed: false, mergedConfig: {} });
+    renderHook(() => useFileSync('k'));
+
+    await waitFor(() =>
+      expect(readFlowState().totals['webdav:pull:progress']?.lastSuccessAt).toBeGreaterThan(0),
+    );
+    expect(readFlowState().totals['webdav:pull:progress']?.count).toBe(0);
+  });
+
   test('records a pull that applied a newer config', async () => {
-    h.pullBookConfig.mockResolvedValue({ applied: true, mergedConfig: {} });
+    h.pullBookConfig.mockResolvedValue({ applied: true, changed: true, mergedConfig: {} });
     renderHook(() => useFileSync('k'));
 
     await waitFor(() =>

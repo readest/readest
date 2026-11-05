@@ -185,10 +185,15 @@ export function useSync(bookKey?: string) {
   /** Newest change this device already had before a sync, from the live store. */
   const lastSeenAt = (type: SyncType, bookId?: string) => {
     const latest = useSettingsStore.getState().settings;
+    // The live config: a push moments ago moved lastPushedAt, and a pull brings
+    // this device's own push back, since the server doesn't tell devices apart.
+    const book = bookId && bookKey ? getConfig(bookKey) : null;
     if (type === 'configs') {
-      return (bookId ? config?.lastSyncedAtConfig : latest.lastSyncedAtConfigs) ?? 0;
+      if (!bookId) return latest.lastSyncedAtConfigs ?? 0;
+      return Math.max(book?.lastSyncedAtConfig ?? 0, book?.lastPushedAtConfig ?? 0);
     }
-    return (bookId ? config?.lastSyncedAtNotes : latest.lastSyncedAtNotes) ?? 0;
+    if (!bookId) return latest.lastSyncedAtNotes ?? 0;
+    return Math.max(book?.lastSyncedAtNotes ?? 0, book?.lastPushedAtNotes ?? 0);
   };
 
   // bookId is for configs and notes only, if bookId is provided, only pull changes for that book

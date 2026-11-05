@@ -34,7 +34,11 @@ const h = vi.hoisted(() => {
   return {
     baseSettings,
     storeState,
-    bookConfig: null as { location: string; lastSyncedAtNotes?: number } | null,
+    bookConfig: null as {
+      location: string;
+      lastSyncedAtNotes?: number;
+      lastPushedAtNotes?: number;
+    } | null,
   };
 });
 
@@ -211,6 +215,20 @@ describe('useSync data flow', () => {
     });
 
     expect(readFlowState().totals['readest-cloud:push:notes']?.count).toBe(1);
+  });
+
+  test("does not count this device's own push coming back in a pull", async () => {
+    h.bookConfig = { location: 'epubcfi(/6/4)', lastSyncedAtNotes: 5000, lastPushedAtNotes: 7000 };
+    syncClientMock.pullChanges.mockResolvedValue({
+      notes: [{ updated_at: iso(6000) }, { updated_at: iso(8000) }],
+    });
+    const { result } = renderHook(() => useSync('book-key'));
+
+    await act(async () => {
+      await result.current.pullChanges('notes', 0, vi.fn(), vi.fn(), 'book-id');
+    });
+
+    expect(readFlowState().totals['readest-cloud:pull:notes']?.count).toBe(1);
   });
 
   test('records a failed push', async () => {

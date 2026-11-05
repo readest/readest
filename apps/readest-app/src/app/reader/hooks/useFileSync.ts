@@ -476,7 +476,7 @@ export const useFileSync = (bookKey: string) => {
           ...flowOf(kind, wantProgress),
           direction: 'pull',
           bookTitle: book.title,
-          count: result.applied ? 1 : 0,
+          count: result.changed ? 1 : 0,
         });
         lastPulledAtRef.current = Date.now();
         // This backend's getAccessToken succeeded — clear its own

@@ -55,7 +55,7 @@ export const useReadwiseSync = (bookKey: string) => {
             ? await getPublicCoverUrl(book, appService)
             : undefined;
         const result = await client.pushHighlights(newNotes, book, coverImageUrl);
-        recordPush(book.title, newNotes.length, result.success ? undefined : result.message);
+        recordPush(book.title, result.sent ?? 0, result.success ? undefined : result.message);
         if (result.success) {
           await updateLastSyncedAt(Date.now());
         } else if (!result.isNetworkError) {
@@ -79,7 +79,7 @@ export const useReadwiseSync = (bookKey: string) => {
         ? await getPublicCoverUrl(book, appService)
         : undefined;
     const result = await client.pushHighlights(config.booknotes, book, coverImageUrl);
-    recordPush(book.title, config.booknotes.length, result.success ? undefined : result.message);
+    recordPush(book.title, result.sent ?? 0, result.success ? undefined : result.message);
     if (result.success) {
       await updateLastSyncedAt(Date.now());
       eventDispatcher.dispatch('toast', {
