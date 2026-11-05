@@ -110,6 +110,7 @@ export const refreshSectionGlosses = async (
         cutZh: source === 'zh' ? cutZh : undefined,
         monolingual: hint === source, // en-en: gloss is a build-formatted definition
         vocabulary: ctx.vocabulary,
+        canRender: model.canRender,
       });
       if (zhVariant) for (const o of occ) o.gloss = runSimpleCC(o.gloss, zhVariant);
       if (occ.length) applyGlosses(doc, model, occ);

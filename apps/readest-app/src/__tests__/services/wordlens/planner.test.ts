@@ -237,6 +237,30 @@ describe('planGlosses vocabulary marks (#6613)', () => {
     ]);
   });
 
+  it('keeps the earliest hints in text order when the cap is hit', () => {
+    const o = { ...opts({ learning: [['cryptic note', '密信']] }), maxOccurrences: 1 };
+    expect(planGlosses('cryptic cryptic note', withLemma, o)).toEqual([
+      { start: 0, end: 7, word: 'cryptic', gloss: '晦涩的' },
+    ]);
+  });
+
+  it('drops a phrase the page cannot draw and keeps its words hinted', () => {
+    const o = { ...opts({ learning: [['cryptic note', '密信']] }), canRender: () => false };
+    expect(planGlosses('a cryptic note', withLemma, o).map((x) => x.word)).toEqual(['cryptic']);
+  });
+
+  it('hints back-to-back Learning phrases separated by one space', () => {
+    const occ = planGlosses(
+      'matter is decreed matter is decreed',
+      withLemma,
+      opts({ learning: [['matter is decreed', 'x']] }),
+    );
+    expect(occ.map((o) => [o.start, o.end])).toEqual([
+      [0, 17],
+      [18, 35],
+    ]);
+  });
+
   it('hints a Chinese Learning phrase the segmenter splits', () => {
     const cut = (t: string) =>
       t === '斟酌了' ? ['斟酌', '了'] : ['他', '再三', '斟酌', '了', '一下'];

@@ -30,6 +30,8 @@ export interface PlanOptions {
   monolingual?: boolean;
   /** Learning words are always hinted, Mastered words never (#6613). */
   vocabulary?: VocabularyMarks;
+  /** Whether a [start, end) span can be drawn as one hint; phrases that can't are dropped. */
+  canRender?: (start: number, end: number) => boolean;
 }
 
 // A foliate "section" is usually a whole chapter, so this is a per-chapter bound:
@@ -91,8 +93,9 @@ const escapeRegExp = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 // Learning entries of two or more words ("matter is decreed") never match a
 // single token, so find them in the text itself (#7325): any whitespace between
-// the words, either apostrophe, whole words only outside Chinese. Overlapping
-// matches keep the earlier, then the longer.
+// the words, either apostrophe, whole words only outside Chinese. A phrase the
+// page can't draw (split by inline markup) is dropped so its words keep their
+// own hints. Overlapping matches keep the earlier, then the longer.
 const planPhrases = (
   text: string,
   marks: VocabularyMarks,
@@ -105,12 +108,18 @@ const planPhrases = (
     const gloss = learningGloss(hint, source.lookup(key), opts);
     if (!gloss) continue;
     const words = key.trim().split(/\s+/).map(escapeRegExp);
-    let pattern = words.join('\\s+').replace(/'/g, "['’‘]");
-    if (opts.sourceLang !== 'zh') {
-      pattern = `(?<![\\p{L}\\p{M}\\p{N}])${pattern}(?![\\p{L}\\p{M}\\p{N}])`;
-    }
+    const phrase = words.join('\\s+').replace(/'/g, "['’‘]");
+    // The web build rejects lookbehind (older WebViews), so the leading
+    // boundary is a consumed character outside the phrase group.
+    const pattern =
+      opts.sourceLang === 'zh'
+        ? `()(${phrase})`
+        : `(^|[^\\p{L}\\p{M}\\p{N}])(${phrase})(?![\\p{L}\\p{M}\\p{N}])`;
     for (const m of text.matchAll(new RegExp(pattern, 'giu'))) {
-      found.push({ start: m.index, end: m.index + m[0].length, word: m[0], gloss });
+      const start = m.index + m[1]!.length;
+      const end = start + m[2]!.length;
+      if (opts.canRender && !opts.canRender(start, end)) continue;
+      found.push({ start, end, word: m[2]!, gloss });
     }
   }
   found.sort((a, b) => a.start - b.start || b.end - a.end);
@@ -133,7 +142,7 @@ export const planGlosses = (
 
   const marks = opts.vocabulary && expandMarks(opts.vocabulary, source);
   const phrases = marks ? planPhrases(text, marks, source, opts) : [];
-  const occurrences: GlossOccurrence[] = phrases.slice(0, cap);
+  const occurrences: GlossOccurrence[] = [];
   let p = 0;
   for (const t of tokens) {
     if (occurrences.length >= cap) break;
@@ -171,7 +180,9 @@ export const planGlosses = (
       break;
     }
   }
-  return phrases.length ? occurrences.sort((a, b) => a.start - b.start) : occurrences;
+  if (!phrases.length) return occurrences;
+  // Keep the earliest hints in text order when the cap is hit.
+  return [...phrases, ...occurrences].sort((a, b) => a.start - b.start).slice(0, cap);
 };
 
 // Index the marks by lemma too, so marking `running` covers `run` and `ran`.
