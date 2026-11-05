@@ -120,7 +120,7 @@ export const mergeVaultNote = (
   book: VaultBook,
   highlights: VaultHighlight[],
   previous: WrittenBlocks,
-): { text: string; written: WrittenBlocks } => {
+): { text: string; written: WrittenBlocks; changed: number } => {
   const normalized = existing.replace(/\r\n?/g, '\n');
   let { frontmatter, body } = splitFrontmatter(normalized);
   if (book.progress !== null) {
@@ -132,6 +132,7 @@ export const mergeVaultNote = (
   }
   const lines = body.replace(/\s+$/, '').split('\n');
   const written: WrittenBlocks = { ...previous };
+  let changed = 0;
   const untouched = (noteId: string, unit: Unit) => written[noteId] === hash(unit.callout);
 
   for (const highlight of highlights) {
@@ -142,6 +143,7 @@ export const mergeVaultNote = (
       if (!lines[unit.start - 1]?.trim() && !lines[unit.start]?.trim()) {
         lines.splice(unit.start, 1);
       }
+      changed++;
     }
     delete written[highlight.id];
   }
@@ -163,6 +165,7 @@ export const mergeVaultNote = (
         lines.splice(unit.start, unit.idLine - unit.start + 1, ...replacement);
         written[highlight.id] = hash(rendered);
         cursor = unit.start + replacement.length;
+        changed++;
         continue;
       }
       cursor = unit.idLine + 1;
@@ -176,7 +179,8 @@ export const mergeVaultNote = (
     lines.splice(cursor, 0, ...insert);
     cursor += insert.length - (insert.at(-1) === '' ? 1 : 0);
     written[highlight.id] = hash(rendered);
+    changed++;
   }
 
-  return { text: `${frontmatter}${lines.join('\n').replace(/\s+$/, '')}\n`, written };
+  return { text: `${frontmatter}${lines.join('\n').replace(/\s+$/, '')}\n`, written, changed };
 };

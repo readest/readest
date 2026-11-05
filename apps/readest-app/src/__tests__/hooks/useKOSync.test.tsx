@@ -76,7 +76,8 @@ const h = vi.hoisted(() => {
     // Whether the XPointer→CFI conversion succeeds.
     cfiResolves: true,
     getProgressMock: vi.fn(),
-    updateProgressMock: vi.fn(async (..._args: unknown[]) => {}),
+    updateProgressMock: vi.fn(async (..._args: unknown[]): Promise<boolean | void> => {}),
+    clientError: null as string | null,
     eventListeners: new Map<string, Set<(e: CustomEvent) => void>>(),
     // Captured useWindowActiveChanged callback — lets tests simulate the
     // window losing/regaining visibility (e.g. a system dictionary popup).
@@ -161,6 +162,9 @@ vi.mock('@/services/sync/KOSyncClient', async (importOriginal) => {
       updateProgress(...args: unknown[]) {
         return h.updateProgressMock(...args);
       }
+      get lastError() {
+        return h.clientError;
+      }
     },
   };
 });
@@ -180,6 +184,7 @@ vi.mock('@/utils/event', () => ({
 }));
 
 import { useKOSync, type KosyncProgressProvider } from '@/app/reader/hooks/useKOSync';
+import { readFlowState } from '@/services/sync/dataFlow/log';
 import { getCFIFromXPointer, getXPointerFromCFI } from '@/utils/xcfi';
 
 const flushMicrotasks = async () => {
@@ -226,6 +231,8 @@ beforeEach(() => {
   h.book.originalFilename = '';
   h.book.format = 'EPUB';
   h.cfiResolves = true;
+  h.clientError = null;
+  localStorage.clear();
   h.getProgressMock.mockReset();
   h.getProgressMock.mockResolvedValue(h.remote);
   h.updateProgressMock.mockClear();
@@ -999,5 +1006,81 @@ describe('useKOSync — a provider with its own client and CFI positions (#7337)
 
     expect(result.current.conflictDetails).toBeNull();
     expect(result.current.syncState).toBe('synced');
+  });
+});
+
+describe('useKOSync — data flow', () => {
+  const bookOrbit: KosyncProgressProvider = {
+    name: 'bookorbit',
+    selectConfig: (settings) => settings.kosync,
+  };
+
+  const turnPage = async (rerender: () => void) => {
+    h.localProgress = {
+      ...(h.localProgress as Record<string, unknown>),
+      location: 'epubcfi(/6/4!/4/2/8)',
+    };
+    rerender();
+    await advance(KOSYNC_PUSH_DEBOUNCE_MS + 500);
+  };
+
+  test('records a remote position it applied', async () => {
+    h.settings.kosync.strategy = 'silent';
+    renderHook(() => useKOSync('h1-view1'));
+    await settle();
+
+    expect(readFlowState().entries[0]).toMatchObject({
+      connector: 'kosync',
+      direction: 'pull',
+      kind: 'progress',
+      count: 1,
+      bookTitle: 'Old title',
+    });
+  });
+
+  test('records a pull that found nothing new as working, with nothing moved', async () => {
+    h.settings.kosync.strategy = 'silent';
+    h.getProgressMock.mockResolvedValue(null);
+    renderHook(() => useKOSync('h1-view1'));
+    await settle();
+
+    const state = readFlowState();
+    expect(state.entries).toEqual([]);
+    expect(state.totals['kosync:pull:progress']?.lastSuccessAt).toBeGreaterThan(0);
+  });
+
+  test('records a failed pull', async () => {
+    h.settings.kosync.strategy = 'silent';
+    h.getProgressMock.mockResolvedValue(null);
+    h.clientError = 'HTTP 500';
+    renderHook(() => useKOSync('h1-view1'));
+    await settle();
+
+    expect(readFlowState().entries[0]).toMatchObject({ direction: 'pull', error: 'HTTP 500' });
+  });
+
+  test('records a push under the connector that made it', async () => {
+    h.settings.kosync.strategy = 'send';
+    h.updateProgressMock.mockResolvedValue(true);
+    const { rerender } = renderHook(() => useKOSync('h1-view1', bookOrbit));
+    await settle();
+    await turnPage(rerender);
+
+    const [entry] = readFlowState().entries;
+    expect(entry).toMatchObject({ connector: 'bookorbit', direction: 'push' });
+    expect(entry?.count).toBeGreaterThan(0);
+  });
+
+  test('records a refused push', async () => {
+    h.settings.kosync.strategy = 'send';
+    h.updateProgressMock.mockImplementation(async () => {
+      h.clientError = 'HTTP 403';
+      return false;
+    });
+    const { rerender } = renderHook(() => useKOSync('h1-view1'));
+    await settle();
+    await turnPage(rerender);
+
+    expect(readFlowState().entries[0]).toMatchObject({ direction: 'push', error: 'HTTP 403' });
   });
 });

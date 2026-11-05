@@ -182,6 +182,45 @@ describe('runGrimmoryPass', () => {
     expect(server.createAnnotation).not.toHaveBeenCalled();
   });
 
+  test('returns how many notes went each way', async () => {
+    const { server, state, deps } = setup([highlight]);
+
+    expect(await runGrimmoryPass(deps)).toEqual({ pushed: 1, pulled: 0 });
+    expect(await runGrimmoryPass(deps)).toEqual({ pushed: 0, pulled: 0 });
+
+    state.notes = [{ ...highlight, note: 'a note', updatedAt: 2000 }];
+    expect(await runGrimmoryPass(deps)).toEqual({ pushed: 1, pulled: 0 });
+
+    server.annotations.push({
+      ...server.annotations[0]!,
+      id: 99,
+      cfi: 'epubcfi(/6/8!/4/2/14,/1:0,/1:9)',
+    });
+    expect((await runGrimmoryPass(deps)).pulled).toBe(1);
+  });
+
+  test('keeps what moved before a pass failed, in counts the caller holds', async () => {
+    const { server, deps } = setup([highlight]);
+    server.getBookmarks.mockRejectedValueOnce(new GrimmoryRequestError(503, 'down'));
+    const counts = { pushed: 0, pulled: 0 };
+
+    await expect(runGrimmoryPass(deps, counts)).rejects.toThrow();
+
+    expect(counts).toEqual({ pushed: 1, pulled: 0 });
+  });
+
+  test('counts nothing for a book Grimmory does not have', async () => {
+    const { server, deps } = setup([highlight]);
+    server.files.set(2, makeFile(LOCAL.length, 3));
+
+    const counts = await runGrimmoryPass({
+      ...deps,
+      book: { ...deps.book, hash: 'f'.repeat(32) },
+    });
+
+    expect(counts).toMatchObject({ pushed: 0, pulled: 0, unmatched: true });
+  });
+
   test('creates, edits and deletes a highlight on the server across passes', async () => {
     const { server, state, deps } = setup([highlight]);
 

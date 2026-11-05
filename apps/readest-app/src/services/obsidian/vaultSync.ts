@@ -87,16 +87,19 @@ export const toVaultHighlights = (
       deleted: !!note.deletedAt || !note.text,
     }));
 
-/** Write the book's highlights into its note in `folder`, creating the note if needed. */
+/**
+ * Write the book's highlights into its note in `folder`, creating the note if
+ * needed. Returns how many highlights it added, rewrote or removed.
+ */
 export const syncBookToVault = async (
   appService: AppService,
   folder: string,
   book: Book,
   progress: [number, number] | undefined,
   highlights: VaultHighlight[],
-): Promise<void> => {
+): Promise<number> => {
   const state = await readState(appService, book.hash);
-  if (!state.file && !highlights.some((h) => !h.deleted)) return;
+  if (!state.file && !highlights.some((h) => !h.deleted)) return 0;
   const vaultBook: VaultBook = {
     hash: book.hash,
     title: book.title,
@@ -119,8 +122,9 @@ export const syncBookToVault = async (
     state.written = {};
   }
 
-  const { text, written } = mergeVaultNote(existing, vaultBook, highlights, state.written);
+  const { text, written, changed } = mergeVaultNote(existing, vaultBook, highlights, state.written);
   if (text !== existing) await appService.writeFile(`${folder}/${file}`, 'None', text);
   await appService.createDir('obsidian', 'Settings');
   await appService.writeFile(statePath(book.hash), 'Settings', JSON.stringify({ file, written }));
+  return changed;
 };

@@ -6,6 +6,7 @@ import {
   getActiveFileSyncBackends,
   isReadestCloudStorageActive,
 } from '@/services/sync/cloudSyncProvider';
+import { recordFlow } from '@/services/sync/dataFlow/log';
 import { isSyncCategoryEnabled } from '@/services/sync/syncCategories';
 import { TranslationFunc } from '@/hooks/useTranslation';
 import { createProgressThrottle, ProgressHandler, ProgressPayload } from '@/utils/transfer';
@@ -517,6 +518,7 @@ class TransferManager {
       // Land the final progress value that the throttle may still be holding.
       progressThrottle.flush();
       useTransferStore.getState().setTransferStatus(transfer.id, 'completed');
+      this.recordBookFile(transfer);
 
       const messages = getTransferMessages(transfer, _);
 
@@ -583,6 +585,7 @@ class TransferManager {
         }
 
         useTransferStore.getState().setTransferStatus(transfer.id, 'failed', errorMessage);
+        this.recordBookFile(transfer, errorMessage);
       }
     } finally {
       // Drop any pending throttled progress + its trailing timer (a
@@ -618,6 +621,42 @@ class TransferManager {
         count === 1
           ? _('Insufficient storage quota')
           : _('{{count}} uploads failed: insufficient storage quota', { count }),
+    });
+  }
+
+  /** A book entry in the data flow log is a file that moved, never its metadata. */
+  private recordBookFile(transfer: TransferItem, error?: string): void {
+    if (transfer.kind !== 'book' || transfer.type === 'delete') return;
+    const book = this.getLibrary!().find((b) => b.hash === transfer.bookHash);
+    const provider = useTransferStore.getState().transfers[transfer.id]?.provider;
+    const settings = useSettingsStore.getState().settings;
+    const isAudiobook = book?.format === 'ABS';
+    // With no cloud copy to fall back on, this download was the file backends' alone.
+    if (
+      error &&
+      transfer.type === 'download' &&
+      !isAudiobook &&
+      !isReadestCloudStorageActive(settings)
+    ) {
+      for (const connector of getActiveFileSyncBackends(settings)) {
+        recordFlow({
+          connector,
+          direction: 'pull',
+          kind: 'books',
+          bookTitle: transfer.bookTitle,
+          error,
+        });
+      }
+      return;
+    }
+    // runFileBookDownload knows which backend served the file and records it.
+    if (provider && provider !== 'readest') return;
+    recordFlow({
+      connector: isAudiobook ? 'audiobookshelf' : 'readest-cloud',
+      direction: transfer.type === 'upload' ? 'push' : 'pull',
+      kind: 'books',
+      bookTitle: transfer.bookTitle,
+      error,
     });
   }
 

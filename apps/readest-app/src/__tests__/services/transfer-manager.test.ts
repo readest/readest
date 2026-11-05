@@ -22,6 +22,7 @@ vi.mock('@/utils/event', () => ({
 // After the module-level mock declarations, import the SUT
 import { transferManager } from '@/services/transferManager';
 import { eventDispatcher } from '@/utils/event';
+import { readFlowState } from '@/services/sync/dataFlow/log';
 import type { Book } from '@/types/book';
 
 // ── Helpers ──────────────────────────────────────────────────────────
@@ -671,6 +672,95 @@ describe('TransferManager', () => {
 
   // ── Queue processing (integration-style) ─────────────────────────
   describe('queue processing', () => {
+    describe('data flow', () => {
+      const setup = async (appService: ReturnType<typeof makeAppService>, book: Book) => {
+        localStorage.clear();
+        await transferManager.initialize(
+          appService as never,
+          () => [book],
+          vi.fn().mockResolvedValue(undefined),
+          translationFn,
+        );
+      };
+
+      test('counts an uploaded book file under Readest Cloud', async () => {
+        const book = makeBook({ hash: 'h1', title: 'Dune' });
+        await setup(makeAppService(), book);
+
+        transferManager.queueUpload(book);
+        await vi.advanceTimersByTimeAsync(500);
+
+        expect(readFlowState().entries[0]).toMatchObject({
+          connector: 'readest-cloud',
+          direction: 'push',
+          kind: 'books',
+          count: 1,
+          bookTitle: 'Dune',
+        });
+      });
+
+      test('leaves a file backend download to the backend that served it', async () => {
+        const book = makeBook({ hash: 'h1', title: 'Dune' });
+        await setup(makeAppService(), book);
+
+        const id = transferManager.queueDownload(book)!;
+        useTransferStore.getState().setTransferProvider(id, 'webdav');
+        await vi.advanceTimersByTimeAsync(500);
+
+        expect(readFlowState().entries).toEqual([]);
+      });
+
+      test('records a transfer only after its last retry fails', async () => {
+        const book = makeBook({ hash: 'h1', title: 'Dune' });
+        const appService = makeAppService();
+        appService['uploadBook'] = vi
+          .fn()
+          .mockRejectedValue(new Error('Insufficient storage quota'));
+        await setup(appService, book);
+
+        transferManager.queueUpload(book);
+        await vi.advanceTimersByTimeAsync(500);
+
+        expect(readFlowState().entries[0]).toMatchObject({
+          direction: 'push',
+          error: 'Insufficient storage quota',
+        });
+      });
+
+      test('flags the file backend when it does not hold a book and there is no cloud copy', async () => {
+        setCachedUserPlan('plus');
+        useSettingsStore.setState({
+          settings: {
+            version: 1,
+            readestCloud: { enabled: false },
+            webdav: { enabled: true, serverUrl: 'http://dav', username: 'u', password: 'p' },
+            googleDrive: { enabled: false },
+          } as unknown as SystemSettings,
+        });
+        vi.mocked(runFileBookDownload).mockResolvedValue(false);
+        const book = makeBook({ hash: 'h1', title: 'Dune' });
+        await setup(makeAppService(), book);
+
+        transferManager.queueDownload(book);
+        await vi.advanceTimersByTimeAsync(30000);
+
+        const { entries } = readFlowState();
+        expect(entries[0]).toMatchObject({ connector: 'webdav', direction: 'pull', kind: 'books' });
+        expect(entries[0]?.error).toBeTruthy();
+        expect(entries.some((entry) => entry.connector === 'readest-cloud')).toBe(false);
+      });
+
+      test('leaves cloud deletes out of the counts', async () => {
+        const book = makeBook({ hash: 'h1', title: 'Dune' });
+        await setup(makeAppService(), book);
+
+        transferManager.queueDelete(book);
+        await vi.advanceTimersByTimeAsync(500);
+
+        expect(readFlowState().entries).toEqual([]);
+      });
+    });
+
     test('successful upload calls appService.uploadBook and updates book', async () => {
       const book = makeBook({ hash: 'h1', title: 'Test Upload' });
       const appService = makeAppService();

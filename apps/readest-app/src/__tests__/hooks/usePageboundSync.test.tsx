@@ -44,6 +44,7 @@ vi.mock('@/store/bookDataStore', () => ({
 }));
 vi.mock('@/store/readerProgressStore', () => ({ useBookProgress: () => null }));
 vi.mock('@/services/pagebound', () => ({
+  PageboundBookError: class extends Error {},
   PageboundClient: class {
     constructor(_session: unknown, onSessionChange: typeof h.onSessionChange) {
       h.onSessionChange = onSessionChange;

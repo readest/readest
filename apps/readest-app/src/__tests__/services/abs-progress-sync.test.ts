@@ -1,3 +1,4 @@
+import { readFlowState } from '@/services/sync/dataFlow/log';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
   resolveResumePosition,
@@ -250,6 +251,49 @@ describe('AbsProgressSyncer', () => {
     client.syncSession.mockRejectedValueOnce(new Error('offline'));
     await syncer.begin(0, 0);
     expect(() => syncer.hooks().onTick!(15)).not.toThrow();
+  });
+
+  describe('data flow', () => {
+    beforeEach(() => localStorage.clear());
+
+    it('reports each session sync', async () => {
+      await syncer.begin(0, 0);
+      syncer.hooks().onTick!(15);
+
+      await vi.waitFor(() =>
+        expect(readFlowState().entries[0]).toMatchObject({
+          connector: 'audiobookshelf',
+          direction: 'push',
+          kind: 'progress',
+          count: 1,
+        }),
+      );
+    });
+
+    it('reports the position read when a session opens', async () => {
+      await syncer.begin(0, 0);
+
+      expect(readFlowState().totals['audiobookshelf:pull:progress']?.count).toBe(1);
+    });
+
+    it('reports the final position sent when a session ends', async () => {
+      await syncer.begin(0, 0);
+      syncer.hooks().onEnd!(600);
+
+      await vi.waitFor(() =>
+        expect(readFlowState().entries[0]).toMatchObject({ direction: 'push', kind: 'progress' }),
+      );
+    });
+
+    it('reports a failed session sync', async () => {
+      client.syncSession.mockRejectedValueOnce(new Error('offline'));
+      await syncer.begin(0, 0);
+      syncer.hooks().onTick!(15);
+
+      await vi.waitFor(() =>
+        expect(readFlowState().entries[0]).toMatchObject({ error: 'offline' }),
+      );
+    });
   });
 
   describe('local cache', () => {

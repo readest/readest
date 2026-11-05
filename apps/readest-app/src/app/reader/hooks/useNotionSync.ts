@@ -7,6 +7,7 @@ import { eventDispatcher } from '@/utils/event';
 import { debounce } from '@/utils/debounce';
 import { findTocItemBS } from '@/services/nav';
 import { NotionClient, NotionSyncStore } from '@/services/notion';
+import { recordFlow } from '@/services/sync/dataFlow/log';
 import { BookNote } from '@/types/book';
 
 const NOTION_SYNC_DEBOUNCE_MS = 5000;
@@ -86,6 +87,14 @@ export const useNotionSync = (bookKey: string) => {
           config.booknotes,
           chapterForNote,
         );
+        recordFlow({
+          connector: 'notion',
+          direction: 'push',
+          kind: 'notes',
+          bookTitle: bookData.book.title,
+          count: result.success ? result.inserted + result.updated + result.deleted : 0,
+          error: result.success ? undefined : result.message,
+        });
         if (result.success) {
           await updateLastSyncedAt(Date.now());
           return true;

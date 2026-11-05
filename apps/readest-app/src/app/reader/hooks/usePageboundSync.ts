@@ -7,13 +7,17 @@ import { useBookProgress } from '@/store/readerProgressStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { eventDispatcher } from '@/utils/event';
 import { debounce } from '@/utils/debounce';
-import { PageboundClient, type PageboundSession } from '@/services/pagebound';
+import { PageboundBookError, PageboundClient, type PageboundSession } from '@/services/pagebound';
+import { recordFlow } from '@/services/sync/dataFlow/log';
 import type { PageboundSettings } from '@/types/settings';
 import type { PageboundBookLink } from '@/types/book';
 
 // Every push adds a reading update to the user's Pagebound stats, so auto-sync
 // sends at most one a minute.
 const PAGEBOUND_SYNC_DEBOUNCE_MS = 60000;
+
+const recordPush = (bookTitle: string, error?: string) =>
+  recordFlow({ connector: 'pagebound', direction: 'push', kind: 'progress', bookTitle, error });
 
 const savePagebound = async (envConfig: EnvConfigType, patch: Partial<PageboundSettings>) => {
   const { settings, setSettings, saveSettings } = useSettingsStore.getState();
@@ -63,6 +67,7 @@ export const usePageboundSync = (bookKey: string) => {
         // Only an explicit push is shared with followers, like a manual
         // update in Pagebound; page-turn syncs stay out of their feeds.
         const link = await client.pushProgress(book, config, { broadcast: !silent });
+        recordPush(book.title);
         await rememberLink(link);
         await savePagebound(envConfig, { lastSyncedAt: Date.now() });
         if (!silent) {
@@ -73,6 +78,10 @@ export const usePageboundSync = (bookKey: string) => {
         }
       } catch (error) {
         console.error('Pagebound progress sync failed:', error);
+        // One book it can't take says nothing about the connection.
+        if (!(error instanceof PageboundBookError)) {
+          recordPush(book.title, error instanceof Error ? error.message : String(error));
+        }
         if (!silent) {
           eventDispatcher.dispatch('toast', {
             message: _('Pagebound progress sync failed: {{error}}', {

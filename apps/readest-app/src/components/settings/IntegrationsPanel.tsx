@@ -21,6 +21,8 @@ import {
   RiAppleLine,
   RiHeadphoneLine,
   RiBookShelfLine,
+  RiAlertLine,
+  RiInformationLine,
 } from 'react-icons/ri';
 import { useAppRouter } from '@/hooks/useAppRouter';
 import { useEnv } from '@/context/EnvContext';
@@ -80,6 +82,9 @@ import {
 } from '@/services/sync/cloudSyncProvider';
 import type { FileSyncBackendKind } from '@/services/sync/file/providerRegistry';
 import { canBackendRun } from '@/services/sync/file/runLibrarySync';
+import { getConnectorHealth } from '@/services/sync/dataFlow/log';
+import DataFlowPage from './integrations/DataFlowPage';
+import { useFlowConnectors, useFlowState } from './integrations/useFlowConnectors';
 import SubPageHeader from './SubPageHeader';
 import { BoxedList, NavigationRow, SectionTitle, SettingLabel, Tips } from './primitives';
 
@@ -102,6 +107,7 @@ type SubPage =
   | 'audiobookshelf'
   | 'send'
   | 'localsend'
+  | 'data-flow'
   | null;
 
 /**
@@ -174,6 +180,8 @@ const IntegrationsPanel: React.FC = () => {
     : undefined;
 
   const [subPage, setSubPage] = useState<SubPage>(null);
+  const flowConnectors = useFlowConnectors();
+  const flowState = useFlowState();
 
   // Hydrate the OPDS store from settings so the row's catalog count is
   // accurate on first open. Without this the store starts empty and the
@@ -516,12 +524,23 @@ const IntegrationsPanel: React.FC = () => {
         <ABSForm onBack={() => setSubPage(null)} />
       </div>
     );
+  if (subPage === 'data-flow')
+    return <DataFlowPage onBack={() => setSubPage(null)} onOpenSettings={setSubPage} />;
+
   if (subPage === 'send')
     return (
       <div className='my-4 w-full'>
         <SendToReadestForm onBack={() => setSubPage(null)} />
       </div>
     );
+
+  const flowProblems = flowConnectors.filter(
+    ({ id }) => getConnectorHealth(flowState, id) === 'failed',
+  ).length;
+  const flowLabel =
+    flowProblems > 0
+      ? `${_('Data Flow')}: ${_('Needs attention')}: ${flowProblems}`
+      : _('Data Flow');
 
   const koSyncStatus = settings.kosync?.enabled
     ? settings.kosync.username
@@ -655,7 +674,23 @@ const IntegrationsPanel: React.FC = () => {
   return (
     <div className='my-4 w-full space-y-6'>
       <div className='w-full px-4'>
-        <h2 className='mb-1.5 text-lg font-semibold tracking-tight'>{_('Integrations')}</h2>
+        <div className='mb-1.5 flex items-center justify-between gap-2'>
+          <h2 className='text-lg font-semibold tracking-tight'>{_('Integrations')}</h2>
+          <button
+            type='button'
+            title={flowLabel}
+            aria-label={flowLabel}
+            onClick={() => setSubPage('data-flow')}
+            className='btn btn-ghost touch-target h-8 min-h-8 shrink-0 gap-1 rounded-full px-1.5 font-normal'
+          >
+            {flowProblems > 0 ? (
+              <RiAlertLine aria-hidden='true' className='h-4 w-4' />
+            ) : (
+              <RiInformationLine aria-hidden='true' className='h-4 w-4' />
+            )}
+            {flowProblems > 0 && <span className='text-sm tabular-nums'>{flowProblems}</span>}
+          </button>
+        </div>
         <p className='text-base-content/70 text-sm leading-relaxed'>
           {_('Connect Readest to external services for sync, highlights, and catalogs.')}
         </p>

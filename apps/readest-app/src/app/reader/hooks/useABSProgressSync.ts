@@ -19,6 +19,10 @@ import { SYNC_PROGRESS_INTERVAL_SEC } from '@/services/constants';
 import { isAbsEbook, parseAbsFilePath } from '@/utils/audiobook';
 import { debounce } from '@/utils/debounce';
 import { eventDispatcher } from '@/utils/event';
+import { recordFlow } from '@/services/sync/dataFlow/log';
+import type { FlowDirection } from '@/services/sync/dataFlow/types';
+
+const describeError = (error: unknown) => (error instanceof Error ? error.message : String(error));
 
 /**
  * Two-way reading-progress sync for an ebook streamed from an Audiobookshelf
@@ -44,6 +48,16 @@ export const useABSProgressSync = (bookKey: string) => {
 
   const pullStarted = useRef(false);
   const pullSettled = useRef(false);
+
+  const recordProgress = (direction: FlowDirection, count: number, error?: unknown) =>
+    recordFlow({
+      connector: 'audiobookshelf',
+      direction,
+      kind: 'progress',
+      bookTitle: getBookData(bookKey)?.book?.title,
+      count,
+      error: error === undefined ? undefined : describeError(error),
+    });
 
   /** The ABS client and item id for this book, or null when it isn't an ABS ebook. */
   const getTarget = useCallback(async () => {
@@ -75,10 +89,12 @@ export const useABSProgressSync = (bookKey: string) => {
         target.itemId,
         buildAbsEbookProgressPatch({ location: position?.location, fraction }),
       );
+      recordProgress('push', 1);
     } catch (error) {
       // Best-effort: a server that is off, unreachable, or has since been
       // removed must not interrupt reading. The next page turn retries.
       console.warn('Failed to push reading progress to Audiobookshelf', error);
+      recordProgress('push', 0, error);
     }
   }, [bookKey, getTarget]);
 
@@ -123,6 +139,7 @@ export const useABSProgressSync = (bookKey: string) => {
         localLastReadAt: readLocalLastPlayedAt(target.hash),
       });
       const view = getView(bookKey);
+      recordProgress('pull', resume && view ? 1 : 0);
       if (!resume || !view) return;
       if (useReaderStore.getState().getViewState(bookKey)?.previewMode) return;
       if (resume.kind === 'location') {
@@ -133,6 +150,7 @@ export const useABSProgressSync = (bookKey: string) => {
       eventDispatcher.dispatch('hint', { bookKey, message: _('Reading Progress Synced') });
     } catch (error) {
       console.warn('Failed to pull reading progress from Audiobookshelf', error);
+      recordProgress('pull', 0, error);
     } finally {
       // Releases the push gate below whatever the outcome, so an unreachable
       // server can't strand this device's own progress forever.
