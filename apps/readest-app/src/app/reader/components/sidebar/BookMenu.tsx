@@ -134,6 +134,10 @@ const BookMenu: React.FC<BookMenuProps> = ({ menuClassName, setIsDropdownOpen })
     eventDispatcher.dispatch('notion-push-all', { bookKey: sideBarBookKey });
     setIsDropdownOpen?.(false);
   };
+  const handlePushObsidian = () => {
+    eventDispatcher.dispatch('obsidian-push-all', { bookKey: sideBarBookKey });
+    setIsDropdownOpen?.(false);
+  };
   const handlePushHardcoverNotes = () => {
     eventDispatcher.dispatch('hardcover-push-notes', { bookKey: sideBarBookKey });
     setIsDropdownOpen?.(false);
@@ -159,6 +163,7 @@ const BookMenu: React.FC<BookMenuProps> = ({ menuClassName, setIsDropdownOpen })
   };
   const pageboundLink = sideBarBookKey ? getConfig(sideBarBookKey)?.pagebound : undefined;
   const pageboundEnabled = !!(settings.pagebound?.enabled && settings.pagebound.refreshToken);
+  const obsidianEnabled = !!(settings.obsidian?.enabled && settings.obsidian.folder);
   const bookOrbitProgressSync = settings.bookorbit.enabled && settings.bookorbit.syncProgress;
   const grimmoryProgressSync = settings.grimmory.enabled && settings.grimmory.syncProgress;
   // Routed through Annotator (per-book, long-lived) so that the
@@ -222,6 +227,7 @@ const BookMenu: React.FC<BookMenuProps> = ({ menuClassName, setIsDropdownOpen })
         settings.readwise.enabled ||
         settings.hardcover.enabled ||
         pageboundEnabled ||
+        obsidianEnabled ||
         (settings.notion.enabled && settings.notion.accessToken && settings.notion.databaseId)) && (
         <hr aria-hidden='true' className='border-base-200 my-1' />
       )}
@@ -260,6 +266,13 @@ const BookMenu: React.FC<BookMenuProps> = ({ menuClassName, setIsDropdownOpen })
         <MenuItem label={_('Notion Sync')} detailsOpen={false} buttonClass='py-2'>
           <ul className='flex flex-col ps-1'>
             <MenuItem label={_('Push Notes')} noIcon onClick={handlePushNotion} />
+          </ul>
+        </MenuItem>
+      )}
+      {obsidianEnabled && (
+        <MenuItem label={_('Obsidian Sync')} detailsOpen={false} buttonClass='py-2'>
+          <ul className='flex flex-col ps-1'>
+            <MenuItem label={_('Push Notes')} noIcon onClick={handlePushObsidian} />
           </ul>
         </MenuItem>
       )}

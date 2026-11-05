@@ -271,7 +271,10 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
       // then shows the old progress on the next launch (#6623).
       await flushPendingLibrarySave();
       await Promise.race([
-        eventDispatcher.dispatch('flush-notion-sync', { bookKey }),
+        Promise.all([
+          eventDispatcher.dispatch('flush-notion-sync', { bookKey }),
+          eventDispatcher.dispatch('flush-obsidian-sync', { bookKey }),
+        ]),
         new Promise<void>((resolve) => setTimeout(resolve, NOTION_FLUSH_TIMEOUT_MS)),
       ]);
     }
