@@ -24,6 +24,12 @@ const READ_STATUS: Record<ReadingStatus, GrimmoryReadStatus> = {
   abandoned: 'PAUSED',
 };
 
+/** Notes that went each way in one pass. */
+export interface GrimmoryPassCounts {
+  pushed: number;
+  pulled: number;
+}
+
 export interface GrimmoryPassDeps {
   client: Pick<
     GrimmoryClient,
@@ -68,6 +74,7 @@ const syncKind = async (
   deps: GrimmoryPassDeps,
   match: GrimmoryBookMatch,
   kind: GrimmoryNoteKind,
+  counts: GrimmoryPassCounts,
 ): Promise<void> => {
   const { client, store, account, palette } = deps;
   const { hash } = deps.book;
@@ -90,6 +97,7 @@ const syncKind = async (
 
   if (plan.upsertLocal.length > 0 || plan.deleteLocal.length > 0) {
     deps.mergeNotes(plan.upsertLocal, plan.deleteLocal);
+    counts.pulled += plan.upsertLocal.length + plan.deleteLocal.length;
   }
 
   // An edit stays marked as unsent (localUpdatedAt 0) until the server takes
@@ -103,6 +111,7 @@ const syncKind = async (
     for (const serverId of plan.deleteRemote) {
       if (kind === 'annotation') await client.deleteAnnotation(serverId);
       else await client.deleteBookmark(serverId);
+      counts.pushed++;
     }
     for (const { note, serverId } of plan.updateRemote) {
       try {
@@ -111,6 +120,7 @@ const syncKind = async (
         } else {
           await client.updateBookmark(serverId, bookmarkUpdateBody(note));
         }
+        counts.pushed++;
         const link = nextLinks.find((l) => l.noteId === note.id);
         if (link) link.localUpdatedAt = note.updatedAt;
       } catch (error) {
@@ -140,6 +150,7 @@ const syncKind = async (
             localUpdatedAt: note.updatedAt,
           });
         }
+        counts.pushed++;
       } catch (error) {
         if (isStatus(error, 401)) throw error;
         // 409: created at this CFI by another client meanwhile; the next pass
@@ -156,8 +167,9 @@ const syncKind = async (
  * One Grimmory pass for an open book: find it on the server, sync its
  * highlights and bookmarks both ways, and send its reading status.
  */
-export const runGrimmoryPass = async (deps: GrimmoryPassDeps): Promise<void> => {
+export const runGrimmoryPass = async (deps: GrimmoryPassDeps): Promise<GrimmoryPassCounts> => {
   const { client, store, account, book } = deps;
+  const counts = { pushed: 0, pulled: 0 };
   const match = await resolveGrimmoryBook({
     client,
     store,
@@ -167,13 +179,13 @@ export const runGrimmoryPass = async (deps: GrimmoryPassDeps): Promise<void> => 
   });
   if (!match) {
     deps.onUnmatched();
-    return;
+    return counts;
   }
 
   try {
     if (deps.syncNotes) {
-      await syncKind(deps, match, 'annotation');
-      await syncKind(deps, match, 'bookmark');
+      await syncKind(deps, match, 'annotation', counts);
+      await syncKind(deps, match, 'bookmark', counts);
     }
     const statusAt = book.readingStatusUpdatedAt ?? 0;
     if (deps.syncBookStates && book.readingStatus && statusAt > match.statusPushedAt) {
@@ -185,4 +197,5 @@ export const runGrimmoryPass = async (deps: GrimmoryPassDeps): Promise<void> => 
     if (isStatus(error, 404)) await store.deleteBook(account, book.hash);
     throw error;
   }
+  return counts;
 };

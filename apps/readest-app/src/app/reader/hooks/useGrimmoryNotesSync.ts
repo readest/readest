@@ -5,6 +5,7 @@ import { HIGHLIGHT_COLOR_HEX, SYNC_NOTES_INTERVAL_SEC } from '@/services/constan
 import { GrimmoryClient, grimmoryAccountKey } from '@/services/grimmory/GrimmoryClient';
 import { GrimmorySyncStore } from '@/services/grimmory/GrimmorySyncStore';
 import { runGrimmoryPass } from '@/services/grimmory/notesPass';
+import { recordFlow } from '@/services/sync/dataFlow/log';
 import { findTocItemBS } from '@/services/nav';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useReaderStore } from '@/store/readerStore';
@@ -101,8 +102,9 @@ export const useGrimmoryNotesSync = (bookKey: string) => {
     if (!book || !bookData?.bookDoc || !getConfig(bookKey)?.location) return;
 
     passRunning.current = true;
+    const notes = { connector: 'grimmory', kind: 'notes', bookTitle: book.title } as const;
     try {
-      await runGrimmoryPass({
+      const { pushed, pulled } = await runGrimmoryPass({
         ...target,
         book: {
           hash: book.hash,
@@ -128,8 +130,15 @@ export const useGrimmoryNotesSync = (bookKey: string) => {
           });
         },
       });
+      recordFlow({ ...notes, direction: 'push', count: pushed });
+      recordFlow({ ...notes, direction: 'pull', count: pulled });
     } catch (error) {
       console.warn('[Grimmory] sync failed', error);
+      recordFlow({
+        ...notes,
+        direction: 'push',
+        error: error instanceof Error ? error.message : String(error),
+      });
     } finally {
       passRunning.current = false;
     }

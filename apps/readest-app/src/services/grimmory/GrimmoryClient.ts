@@ -168,6 +168,13 @@ export class GrimmoryClient {
     throw new GrimmoryRequestError(response.status, await errorMessage(response));
   }
 
+  private connectionFailure(error: unknown) {
+    if (error instanceof GrimmoryRequestError && error.status === 401) {
+      return { success: false, message: _('Invalid credentials.') };
+    }
+    return { success: false, message: (error as Error).message || _('Connection error.') };
+  }
+
   async connect(): Promise<{ success: boolean; message?: string }> {
     try {
       tokens.delete(this.accountKey);
@@ -175,10 +182,17 @@ export class GrimmoryClient {
       await this.json<{ current?: string }>('/api/v1/version');
       return { success: true };
     } catch (error) {
-      if (error instanceof GrimmoryRequestError && error.status === 401) {
-        return { success: false, message: _('Invalid credentials.') };
-      }
-      return { success: false, message: (error as Error).message || _('Connection error.') };
+      return this.connectionFailure(error);
+    }
+  }
+
+  /** Reuses the session, unlike {@link connect}: a sync may be using that token. */
+  async checkConnection(): Promise<{ success: boolean; message?: string }> {
+    try {
+      await this.json<{ current?: string }>('/api/v1/version');
+      return { success: true };
+    } catch (error) {
+      return this.connectionFailure(error);
     }
   }
 

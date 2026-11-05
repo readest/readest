@@ -54,6 +54,8 @@ export interface ProgressSyncClient {
   getDocumentDigest(book: Book): string;
   getProgress(book: Book): Promise<KoSyncProgress | null>;
   updateProgress(book: Book, progress: string, percentage: number): Promise<unknown>;
+  /** Why the last read or write failed, or null when it didn't. */
+  lastError?: string | null;
 }
 
 /**

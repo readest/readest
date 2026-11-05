@@ -66,6 +66,35 @@ describe('getFlowConnectors', () => {
     });
   });
 
+  it('shows Grimmory with what it is set to carry, both ways', () => {
+    const grimmory = {
+      enabled: true,
+      serverUrl: 'https://g',
+      username: 'a',
+      password: 'p',
+      strategy: 'silent',
+      syncProgress: true,
+      syncNotes: true,
+    };
+
+    expect(byId(context({ settings: settings({ grimmory }) }), 'grimmory')).toMatchObject({
+      sources: ['progress', 'notes'],
+      sinks: ['progress', 'notes'],
+    });
+    expect(
+      byId(
+        context({ settings: settings({ grimmory: { ...grimmory, strategy: 'send' } }) }),
+        'grimmory',
+      ),
+    ).toMatchObject({ sources: ['notes'], sinks: ['progress', 'notes'] });
+    expect(
+      byId(
+        context({ settings: settings({ grimmory: { ...grimmory, enabled: false } }) }),
+        'grimmory',
+      ),
+    ).toBeUndefined();
+  });
+
   it('shows exporters only as sinks', () => {
     const ctx = context({
       settings: settings({

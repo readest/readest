@@ -1006,6 +1006,8 @@ describe('useKOSync — a provider with its own client and CFI positions (#7337)
 
     expect(result.current.conflictDetails).toBeNull();
     expect(result.current.syncState).toBe('synced');
+  });
+});
 
 describe('useKOSync — data flow', () => {
   const bookOrbit: KosyncProgressProvider = {

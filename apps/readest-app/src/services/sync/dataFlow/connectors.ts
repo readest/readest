@@ -6,6 +6,7 @@ import type { UserPlan } from '@/types/quota';
 import { getAPIBaseUrl, isTauriAppPlatform } from '@/services/environment';
 import { createAbsClient } from '@/services/audiobookshelf/createClient';
 import { BookOrbitClient } from '@/services/bookorbit/BookOrbitClient';
+import { GrimmoryClient } from '@/services/grimmory/GrimmoryClient';
 import {
   createHardcoverTokenStore,
   HardcoverClient,
@@ -79,7 +80,7 @@ const passes = (ok: boolean) => ({ ok, message: ok ? undefined : _('Server unrea
 
 const readingConnectors = ({ settings, envConfig }: ConnectorContext): FlowConnector[] => {
   const connectors: FlowConnector[] = [];
-  const { kosync, bookorbit, readwise, hardcover, pagebound, notion } = settings;
+  const { kosync, bookorbit, grimmory, readwise, hardcover, pagebound, notion } = settings;
 
   if (kosync?.enabled && kosync.username) {
     connectors.push({
@@ -98,6 +99,17 @@ const readingConnectors = ({ settings, envConfig }: ConnectorContext): FlowConne
       sources: [...(progress?.sources ?? []), ...notes],
       sinks: [...(progress?.sinks ?? []), ...notes],
       check: async () => fromResult(await new BookOrbitClient(bookorbit).connect()),
+    });
+  }
+  if (grimmory?.enabled && grimmory.serverUrl && grimmory.username && grimmory.password) {
+    const progress = grimmory.syncProgress ? byStrategy(grimmory.strategy, ['progress']) : null;
+    const notes: FlowKind[] = grimmory.syncNotes ? ['notes'] : [];
+    connectors.push({
+      id: 'grimmory',
+      title: _('Grimmory'),
+      sources: [...(progress?.sources ?? []), ...notes],
+      sinks: [...(progress?.sinks ?? []), ...notes],
+      check: async () => fromResult(await new GrimmoryClient(grimmory).checkConnection()),
     });
   }
   if (readwise?.enabled && readwise.accessToken) {

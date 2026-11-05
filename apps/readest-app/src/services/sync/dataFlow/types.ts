@@ -10,6 +10,7 @@ export type ConnectorId =
   | 'readest-cloud'
   | 'kosync'
   | 'bookorbit'
+  | 'grimmory'
   | 'readwise'
   | 'hardcover'
   | 'pagebound'
