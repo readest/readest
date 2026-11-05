@@ -249,6 +249,33 @@ describe('planGlosses vocabulary marks (#6613)', () => {
     expect(planGlosses('a cryptic note', withLemma, o).map((x) => x.word)).toEqual(['cryptic']);
   });
 
+  it('matches a phrase only on whole tokens, hyphens and apostrophes included', () => {
+    const learn = opts({ learning: [['ice cream', '冰淇淋']] });
+    expect(planGlosses('an ice cream-maker', withLemma, learn)).toEqual([]);
+    expect(planGlosses('de-ice cream', withLemma, learn)).toEqual([]);
+    expect(planGlosses('an ice cream.', withLemma, learn).map((o) => o.word)).toEqual([
+      'ice cream',
+    ]);
+  });
+
+  it('tries an overlapping match after one the page cannot draw', () => {
+    const o = { ...opts({ learning: [['go go', 'x']] }), canRender: (s: number) => s !== 0 };
+    expect(planGlosses('go go go', withLemma, o).map((x) => [x.start, x.end])).toEqual([[3, 8]]);
+  });
+
+  it('matches a phrase before a closing quote', () => {
+    const learn = opts({ learning: [['ice cream', '冰淇淋']] });
+    expect(planGlosses("she said 'ice cream'.", withLemma, learn).map((o) => o.word)).toEqual([
+      'ice cream',
+    ]);
+    expect(planGlosses('‘ice cream’', withLemma, learn).map((o) => o.word)).toEqual(['ice cream']);
+  });
+
+  it('moves past a rejected match that starts outside the BMP', () => {
+    const o = { ...opts({ learning: [['𐐀 hello', 'x']] }), canRender: () => false };
+    expect(planGlosses('𐐀 hello', withLemma, o)).toEqual([]);
+  });
+
   it('hints back-to-back Learning phrases separated by one space', () => {
     const occ = planGlosses(
       'matter is decreed matter is decreed',
