@@ -21,6 +21,7 @@ import {
 import {
   decideRemoteConflict,
   getRemoteFraction,
+  getRemotePage,
   isXPointerProgress,
   resolveRemoteLocalFraction,
   type RemoteFractionResolution,
@@ -136,10 +137,11 @@ export const useKOSync = (bookKey: string, provider: KosyncProgressProvider = ko
     let koProgress = '';
     let percentage: number;
     if (bookData.isFixedLayout) {
-      const page = progress.section?.current ?? 0;
+      // KOReader's progress for a paged document is the 1-based page number.
+      const page = (progress.section?.current ?? 0) + 1;
       const totalPages = progress.section?.total ?? 0;
       koProgress = page.toString();
-      percentage = totalPages > 0 ? (page + 1) / totalPages : 0;
+      percentage = totalPages > 0 ? page / totalPages : 0;
     } else {
       const view = getView(bookKey);
       const config = getConfig(bookKey);
@@ -202,8 +204,8 @@ export const useKOSync = (bookKey: string, provider: KosyncProgressProvider = ko
     if (!view || !bookData) return false;
 
     if (FIXED_LAYOUT_FORMATS.has(book.format)) {
-      const pageToGo = parseInt(remote.progress!, 10);
-      if (isNaN(pageToGo)) return false;
+      const pageToGo = getRemotePage(remote, getProgress(bookKey)?.section?.total ?? 0);
+      if (pageToGo === undefined) return false;
       view.select(pageToGo - 1);
     } else {
       // KOReader stores positions as CREngine XPointers, which name an exact
@@ -274,11 +276,16 @@ export const useKOSync = (bookKey: string, provider: KosyncProgressProvider = ko
 
     if (isFixedLayout) {
       const localPageInfo = local.section;
-      const remotePage = parseInt(remote.progress!, 10);
-      if (!isNaN(remotePage) && remotePercentage > 0) {
+      const remotePage = getRemotePage(remote, localPageInfo?.total ?? 0);
+      if (remotePage !== undefined && remotePercentage > 0) {
         const localTotalPages = localPageInfo?.total ?? 0;
-        const remoteTotalPages = Math.round(remotePage / remotePercentage);
-        const pagesMatch = Math.abs(localTotalPages - remoteTotalPages) <= 1;
+        const hasRemotePage = !isNaN(parseInt(remote.progress ?? '', 10));
+        // A page derived from a percentage alone is a page of the local copy,
+        // and only approximate.
+        const remoteTotalPages = hasRemotePage
+          ? Math.round(remotePage / remotePercentage)
+          : localTotalPages;
+        const pagesMatch = hasRemotePage && Math.abs(localTotalPages - remoteTotalPages) <= 1;
 
         if (pagesMatch) {
           remotePreview = _('Page {{page}} of {{total}} ({{percentage}}%)', {
@@ -293,8 +300,11 @@ export const useKOSync = (bookKey: string, provider: KosyncProgressProvider = ko
             percentage: formatProgressPercentage(remotePercentage),
           });
         }
-        showConflictDetails =
-          Math.abs(localPercentage - remotePercentage) > conflictProgressDiffThreshold;
+        // A rounded percentage won't equal the local one even on the same
+        // page, so compare the page it names.
+        showConflictDetails = hasRemotePage
+          ? Math.abs(localPercentage - remotePercentage) > conflictProgressDiffThreshold
+          : remotePage !== (localPageInfo?.current ?? 0) + 1;
       } else {
         remotePreview = _('Approximately {{percentage}}%', {
           percentage: formatProgressPercentage(remotePercentage),
@@ -410,7 +420,11 @@ export const useKOSync = (bookKey: string, provider: KosyncProgressProvider = ko
       if (generation !== checksumGeneration.current) return;
       const remoteProgress = await kosyncClient.getProgress(book);
       if (generation !== checksumGeneration.current) return;
-      if (!remoteProgress || !remoteProgress.progress) {
+      // A position may be a percentage alone (Grimmory's own reader, #7330).
+      if (
+        !remoteProgress ||
+        (!remoteProgress.progress && getRemoteFraction(remoteProgress) === undefined)
+      ) {
         setSyncState('synced');
         return;
       }
@@ -430,6 +444,7 @@ export const useKOSync = (bookKey: string, provider: KosyncProgressProvider = ko
         const isAlreadyResolved =
           !!resolved &&
           resolved.progress === remoteProgress.progress &&
+          resolved.percentage === remoteProgress.percentage &&
           resolved.timestamp === remoteProgress.timestamp &&
           resolved.device_id === remoteProgress.device_id;
         if (isAlreadyResolved) {

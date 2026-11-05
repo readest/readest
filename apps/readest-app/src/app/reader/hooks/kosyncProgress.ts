@@ -37,6 +37,19 @@ export const getRemoteFraction = (remote: KoSyncProgress): number | undefined =>
 };
 
 /**
+ * The 1-based page a remote fixed-layout position names. KOReader sends the
+ * page number as `progress`; Grimmory sends only a percentage for progress
+ * made in its own PDF reader (page / total), so the page comes from that.
+ */
+export const getRemotePage = (remote: KoSyncProgress, totalPages: number): number | undefined => {
+  const page = parseInt(remote.progress ?? '', 10);
+  if (!isNaN(page)) return page;
+  const fraction = getRemoteFraction(remote);
+  if (fraction === undefined || totalPages <= 0) return undefined;
+  return Math.max(1, Math.round(fraction * totalPages));
+};
+
+/**
  * Outcome of resolving a remote KOReader position against the LOCAL book.
  *
  * The distinction between `unresolved` and `not-xpointer` is critical for
