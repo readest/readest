@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { afterEach, describe, test, expect, vi } from 'vitest';
 import type { BookNote } from '@/types/book';
 import { mergeImportedBookNotes } from '@/services/annotation/providers/mrexpt';

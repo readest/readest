@@ -6,7 +6,9 @@ WebDriverIO with Mocha.
 
 ## Unit Tests (`pnpm test`)
 
-Runs tests in a **jsdom** environment. No browser or Tauri runtime required.
+Runs tests in a **jsdom** environment by default, or plain **node** for tests
+that start with `// @vitest-environment node`. No browser or Tauri runtime
+required.
 
 ```bash
 pnpm test                                       # Run all unit tests
@@ -16,8 +18,16 @@ pnpm test --watch                               # Watch mode
 
 - **Config:** `vitest.config.mts`
 - **Pattern:** `src/**/*.test.ts` (excludes `*.browser.test.ts` and `*.tauri.test.ts`)
-- **Environment:** jsdom
+- **Environment:** jsdom, or node per file
 - **Use for:** Pure logic, utilities, services that don't need real browser APIs or Tauri IPC.
+
+Setting up jsdom costs about 0.7 s per file, more than most tests take to run.
+A test that needs no DOM starts with `// @vitest-environment node`. Use it
+only when the test passes under node without changing the code path it
+checks: modules that branch on `typeof window`, `document`, `navigator` or
+`localStorage` (the custom font, texture and theme stores, `statisticsDb`)
+take another branch under node, so tests that reach them unmocked stay on
+jsdom.
 
 Unit tests use at most **four workers**, including the full pre-push suite,
 matching PR CI. Higher concurrency can make CPU-heavy tests exceed the default

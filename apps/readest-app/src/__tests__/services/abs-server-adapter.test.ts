@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect } from 'vitest';
 import { absServerAdapter, computeAbsServerContentId } from '@/services/sync/adapters/absServer';
 import type { ABSServer } from '@/types/audiobookshelf';

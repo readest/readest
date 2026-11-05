@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect, vi } from 'vitest';
 
 import { HandwritingEditor } from '@/services/handwriting/editor';

@@ -1,3 +1,4 @@
+// @vitest-environment node
 // A book streamed from Audiobookshelf keeps `format: 'ABS'` in the library, so
 // the reader store records the format the document parsed as next to bookDoc.
 import { beforeEach, describe, expect, test, vi } from 'vitest';

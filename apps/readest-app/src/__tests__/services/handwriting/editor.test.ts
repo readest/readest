@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect } from 'vitest';
 import { HandwritingEditor } from '@/services/handwriting/editor';
 import type { InkStroke } from '@/services/handwriting/model';

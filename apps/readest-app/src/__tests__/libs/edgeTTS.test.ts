@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
 
 // Mock isomorphic-ws so that if the legacy (non-fetch) path is hit on

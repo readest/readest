@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { filterEntries, listBooks } from '@/services/vocabulary/filter';
 import type { VocabularyEntry } from '@/services/vocabulary/types';
