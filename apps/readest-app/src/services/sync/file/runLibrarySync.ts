@@ -2,6 +2,8 @@ import { v4 as uuidv4 } from 'uuid';
 import { formatSyncFailure } from './syncResult';
 
 import type { Book } from '@/types/book';
+import { recordFlow } from '@/services/sync/dataFlow/log';
+import type { FlowDirection, FlowKind } from '@/services/sync/dataFlow/types';
 import type { EnvConfigType } from '@/services/environment';
 import type { ProgressHandler } from '@/utils/transfer';
 import type { TranslationFunc } from '@/hooks/useTranslation';
@@ -72,6 +74,21 @@ const buildEngine = async (
   return new FileSyncEngine(fileProvider, store);
 };
 
+const recordLibraryPass = (connector: FileSyncBackendKind, result: SyncLibraryResult) => {
+  const add = (direction: FlowDirection, kind: FlowKind, count: number) =>
+    recordFlow({ connector, direction, kind, count });
+  add('push', 'progress', result.configsUploaded ?? 0);
+  add('pull', 'progress', result.configsDownloaded ?? 0);
+  add('push', 'books', result.filesUploaded ?? 0);
+  add('pull', 'books', result.booksAdded ?? 0);
+  const failed = { connector, direction: 'push', kind: 'books' } as const;
+  for (const { title, hash, reason } of result.failedBooks) {
+    recordFlow({ ...failed, bookTitle: title || hash, error: reason });
+  }
+  if (result.indexPushFailed)
+    recordFlow({ ...failed, error: 'Failed to upload the library index' });
+};
+
 /** One backend's library sync. Throws; the caller isolates the failure. */
 const syncOneBackend = async (
   envConfig: EnvConfigType,
@@ -111,6 +128,7 @@ const syncOneBackend = async (
     },
   });
 
+  recordLibraryPass(kind, result);
   if (!result.failures && !result.indexPushFailed) {
     const latest = useSettingsStore.getState().settings;
     const next = { ...latest, [key]: { ...latest[key], lastSyncedAt: Date.now() } };
@@ -179,6 +197,7 @@ export const runFileLibrarySyncPass = async (
       } catch (e) {
         const message = e instanceof Error ? e.message : String(e);
         useFileSyncStore.getState().setLastError(kind, message);
+        recordFlow({ connector: kind, direction: 'push', kind: 'books', error: message });
         console.warn('[cloudSync] library file sync failed', kind, e);
       }
     }

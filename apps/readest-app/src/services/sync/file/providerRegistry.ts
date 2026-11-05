@@ -12,6 +12,7 @@
  */
 import type { FileSyncProvider } from './provider';
 import { withTransferLog } from './transferLog';
+import { buildBasePath, SYNC_LIBRARY_FILE } from './layout';
 import type { S3Settings, WebDAVSettings } from '@/types/settings';
 import { createWebDAVProvider } from '@/services/sync/providers/webdav/WebDAVProvider';
 import { buildGoogleDriveProvider } from '@/services/sync/providers/gdrive/buildGoogleDriveProvider';
@@ -87,6 +88,21 @@ export const createFileSyncProvider = async (
   return parentTransferId
     ? withTransferLog(cached.provider, kind, parentTransferId)
     : cached.logged;
+};
+
+/**
+ * Read-only reachability probe. HEAD resolves null for a missing library index,
+ * which still proves the backend answered with a valid login; it throws otherwise.
+ */
+export const checkFileSyncBackend = async (
+  kind: FileSyncBackendKind,
+  settings: FileSyncBackendsSettings,
+): Promise<boolean> => {
+  const cached = await getFileSyncProvider(kind, settings);
+  if (!cached) return false;
+  const { provider } = cached;
+  await provider.head(`${buildBasePath(provider.rootPath)}/${SYNC_LIBRARY_FILE}`);
+  return true;
 };
 
 const getFileSyncProvider = async (

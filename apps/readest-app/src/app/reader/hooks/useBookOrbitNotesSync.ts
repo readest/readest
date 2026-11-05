@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useEnv } from '@/context/EnvContext';
+import { recordFlow } from '@/services/sync/dataFlow/log';
 import type { ChapterResolver, PositionResolver } from '@/services/bookorbit/annotationExchange';
 import { BookOrbitClient } from '@/services/bookorbit/BookOrbitClient';
 import { BookOrbitSyncStore } from '@/services/bookorbit/BookOrbitSyncStore';
@@ -185,8 +186,9 @@ export const useBookOrbitNotesSync = (bookKey: string) => {
     if (passRunning.current) return;
 
     passRunning.current = true;
+    const notes = { connector: 'bookorbit', kind: 'notes', bookTitle: book.title } as const;
     try {
-      await runBookOrbitNotesPass({
+      const { pushed, pulled } = await runBookOrbitNotesPass({
         client,
         store,
         book: {
@@ -218,8 +220,15 @@ export const useBookOrbitNotesSync = (bookKey: string) => {
           });
         },
       });
+      recordFlow({ ...notes, direction: 'push', count: pushed });
+      recordFlow({ ...notes, direction: 'pull', count: pulled });
     } catch (error) {
       console.warn('[BookOrbit] notes sync failed', error);
+      recordFlow({
+        ...notes,
+        direction: 'push',
+        error: error instanceof Error ? error.message : String(error),
+      });
     } finally {
       passRunning.current = false;
     }

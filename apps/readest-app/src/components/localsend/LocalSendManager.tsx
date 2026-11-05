@@ -8,6 +8,7 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { useLibraryStore } from '@/store/libraryStore';
 import { useLocalSendStore } from '@/store/localsendStore';
 import { isTauriAppPlatform } from '@/services/environment';
+import { recordFlow } from '@/services/sync/dataFlow/log';
 import { ingestFile } from '@/services/ingestService';
 import { isNearbyPairingAllowed } from '@/utils/access';
 import {
@@ -61,6 +62,8 @@ interface ServerStatePayload {
   port: number;
   error: string | null;
 }
+
+const BOOK_RECEIVED = { connector: 'localsend', direction: 'pull', kind: 'books' } as const;
 
 /**
  * Background controller for the LocalSend integration. Mounted in the library
@@ -325,8 +328,10 @@ const LocalSendManager: React.FC = () => {
                   },
                 );
                 if (book) importedBooks.push(book);
+                recordFlow({ ...BOOK_RECEIVED, bookTitle: book?.title });
               } catch (err) {
                 console.error('Failed to ingest book from pack:', err);
+                recordFlow({ ...BOOK_RECEIVED, error: String(err) });
               }
             }
             if (importedBooks.length === 0) throw new Error('No books imported from pack');
@@ -356,9 +361,11 @@ const LocalSendManager: React.FC = () => {
           },
         );
         if (book) await useLibraryStore.getState().updateBooks(envConfig, [book]);
+        recordFlow({ ...BOOK_RECEIVED, bookTitle: book?.title ?? payload.fileName });
         await appService.deleteFile(payload.path, 'None').catch(() => {});
       } catch (err) {
         console.error('LocalSend import failed:', err);
+        recordFlow({ ...BOOK_RECEIVED, bookTitle: payload.fileName, error: String(err) });
         toast(_('Failed to import {{filename}}', { filename: payload.fileName }), 'error');
       }
     },

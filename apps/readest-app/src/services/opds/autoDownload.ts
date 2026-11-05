@@ -7,6 +7,7 @@ import { needsProxy, getProxiedURL, probeAuth, probeFilename } from '@/app/opds/
 import { resolveURL, parseMediaType, getFileExtFromPath } from '@/app/opds/utils/opdsUtils';
 import { normalizeCustomHeaders } from '@/utils/customHeaders';
 import { allowsSelfSignedCertAt } from '@/utils/tls';
+import { recordFlow } from '@/services/sync/dataFlow/log';
 import { READEST_OPDS_USER_AGENT } from '@/services/constants';
 import { applyOPDSCover } from './cover';
 import { applyOPDSMetadata } from './metadata';
@@ -287,6 +288,15 @@ async function syncCatalog(
       if (batchBooks.length > 0) {
         await onBooksImported?.(batchBooks);
         newBooks.push(...batchBooks);
+      }
+      for (const outcome of downloadResults) {
+        recordFlow({
+          connector: 'opds',
+          direction: 'pull',
+          kind: 'books',
+          bookTitle: outcome.item.title,
+          error: 'result' in outcome ? undefined : String(outcome.error),
+        });
       }
 
       state.knownEntryIds = pruneKnownEntryIds([...state.knownEntryIds, ...newKnownIds]);

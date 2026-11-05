@@ -3,6 +3,8 @@ import { useRouter } from 'next/navigation';
 import { useEnv } from '@/context/EnvContext';
 import { useSyncContext } from '@/context/SyncContext';
 import { SyncData, SyncOp, SyncResult, SyncType } from '@/libs/sync';
+import { recordFlow } from '@/services/sync/dataFlow/log';
+import type { FlowDirection } from '@/services/sync/dataFlow/types';
 import { isSyncCategoryEnabled } from '@/services/sync/syncCategories';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useBookDataStore } from '@/store/bookDataStore';
@@ -54,6 +56,19 @@ export const countSyncedRecords = (
 ): number => {
   if (!records?.length) return 0;
   return records.filter((rec) => !rec.deleted_at && (type !== 'books' || !!rec.uploaded_at)).length;
+};
+
+const FLOW_KINDS = { books: 'books', configs: 'progress', notes: 'notes' } as const;
+
+const recordCloudFlow = (
+  direction: FlowDirection,
+  type: SyncType,
+  count: number,
+  error?: string,
+) => {
+  if (type === 'stats') return;
+  const kind = FLOW_KINDS[type];
+  recordFlow({ connector: 'readest-cloud', direction, kind, count, error });
 };
 
 export const BOOKS_PULL_PAGE_SIZE = 1000;
@@ -201,6 +216,7 @@ export function useSync(bookKey?: string) {
         records = (result as unknown as Record<string, BookDataRecord[] | null | undefined>)[type];
       }
       setSyncResult({ ...syncResult, [type]: records });
+      recordCloudFlow('pull', type, countSyncedRecords(type, records));
       if (since > 1000 && !records?.length) return 0;
       // For since <= 1000, we set lastSyncedAt to now if no records returned
       const maxTime = records?.length ? computeMaxTimestamp(records) : Date.now();
@@ -234,6 +250,12 @@ export function useSync(bookKey?: string) {
       return countSyncedRecords(type, records);
     } catch (err: unknown) {
       console.error(err);
+      recordCloudFlow(
+        'pull',
+        type,
+        0,
+        err instanceof Error ? err.message : `Error pulling ${type}`,
+      );
       if (err instanceof Error) {
         // Read live store settings, not the stale hook closure (see below).
         const latest = useSettingsStore.getState().settings;
@@ -262,13 +284,17 @@ export function useSync(bookKey?: string) {
   const pushChanges = async (payload: SyncData): Promise<boolean> => {
     setSyncing(true);
     setSyncError(null);
+    const pushedTypes = (['books', 'configs', 'notes'] as const).filter((type) => payload[type]);
 
     try {
       const result = await syncClient.pushChanges(payload);
       setSyncResult(result);
+      for (const type of pushedTypes) recordCloudFlow('push', type, payload[type]?.length ?? 0);
       return true;
     } catch (err: unknown) {
       console.error(err);
+      const message = err instanceof Error ? err.message : 'Error pushing changes';
+      for (const type of pushedTypes) recordCloudFlow('push', type, 0, message);
       if (err instanceof Error) {
         setSyncError(err.message || 'Error pushing changes');
       } else {

@@ -227,6 +227,24 @@ describe('runBookOrbitNotesPass', () => {
     expect(followUp.keysComplete).toBe(false);
   });
 
+  it('returns how many notes went out', async () => {
+    const notes = [
+      makeNote({ id: 'n1', xpointer0: '/body/DocFragment[4]/body/p[1]/text().0' }),
+      makeNote({ id: 'n2', xpointer0: '/body/DocFragment[4]/body/p[2]/text().0' }),
+    ];
+
+    const counts = await runBookOrbitNotesPass(makeDeps({ getNotes: () => notes }));
+
+    expect(counts).toEqual({ pushed: 2, pulled: 0 });
+  });
+
+  it('counts nothing for a book BookOrbit does not know', async () => {
+    const deps = makeDeps();
+    (deps.client.matchCheck as ReturnType<typeof vi.fn>).mockResolvedValue({ matches: [] });
+
+    expect(await runBookOrbitNotesPass(deps)).toEqual({ pushed: 0, pulled: 0 });
+  });
+
   it('applies pushed-down adds, acks them, and persists identities', async () => {
     const deps = makeDeps();
     const response = emptyExchangeResponse();
@@ -249,7 +267,7 @@ describe('runBookOrbitNotesPass', () => {
     ];
     (deps.client.exchangeAnnotations as ReturnType<typeof vi.fn>).mockResolvedValue(response);
 
-    await runBookOrbitNotesPass(deps);
+    expect((await runBookOrbitNotesPass(deps)).pulled).toBe(1);
 
     const merged = (deps.mergeNotes as ReturnType<typeof vi.fn>).mock.calls.find(
       (call) => (call[0] as BookNote[]).length > 0,

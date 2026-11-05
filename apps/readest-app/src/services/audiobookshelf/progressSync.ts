@@ -4,6 +4,7 @@
 // disk, throttled) so the reader shows fresh progress even before the next
 // server round-trip lands.
 
+import { recordFlow } from '@/services/sync/dataFlow/log';
 import type { ABSClient } from '@/services/audiobookshelf/client';
 import type { AudiobookProgressHooks } from '@/services/audiobook/AudiobookController';
 import type { AppService } from '@/types/system';
@@ -200,9 +201,14 @@ export class AbsProgressSyncer {
 
   #syncSession(pos: number, timeListened: number): void {
     if (!this.#sessionId) return;
+    const push = { connector: 'audiobookshelf', direction: 'push', kind: 'progress' } as const;
     this.#client
       .syncSession(this.#sessionId, { currentTime: pos, timeListened, duration: this.#duration })
-      .catch(console.warn);
+      .then(() => recordFlow(push))
+      .catch((error) => {
+        console.warn(error);
+        recordFlow({ ...push, error: error instanceof Error ? error.message : String(error) });
+      });
   }
 
   // Updates the library book's cached progress and, throttled, persists the

@@ -1,3 +1,4 @@
+import { recordFlow } from '@/services/sync/dataFlow/log';
 import { ABSClient } from '@/services/audiobookshelf/client';
 import { createAbsClient } from '@/services/audiobookshelf/createClient';
 import {
@@ -278,6 +279,8 @@ export const backfillAbsCovers = async (appService: AppService): Promise<void> =
 };
 
 /** Orchestrates: fetch, reconcile, apply to the library store, download missing covers. */
+const LIBRARY_PULL = { connector: 'audiobookshelf', direction: 'pull', kind: 'books' } as const;
+
 export const syncAbsServer = async (appService: AppService, server: ABSServer): Promise<void> => {
   const client = createAbsClient(appService, server);
 
@@ -338,6 +341,7 @@ export const syncAbsServer = async (appService: AppService, server: ABSServer): 
 
   useABSServerStore.getState().updateServer(server.id, { lastSyncedAt: now });
   await useABSServerStore.getState().saveABSServers(toEnvConfig(appService));
+  recordFlow({ ...LIBRARY_PULL, count: upserts.length });
 };
 
 export const syncAllAbsServers = async (appService: AppService): Promise<void> => {
@@ -350,6 +354,10 @@ export const syncAllAbsServers = async (appService: AppService): Promise<void> =
       await syncAbsServer(appService, server);
     } catch (error) {
       console.error(`[ABS] sync failed for server "${server.name}":`, error);
+      recordFlow({
+        ...LIBRARY_PULL,
+        error: error instanceof Error ? error.message : String(error),
+      });
     }
   }
 };

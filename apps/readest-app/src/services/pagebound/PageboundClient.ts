@@ -148,6 +148,11 @@ export class PageboundClient {
     if (!res.ok) await this.renewSession();
   }
 
+  /** Throws when the session is gone and can't be renewed. */
+  async checkConnection(): Promise<void> {
+    await this.ensureSession();
+  }
+
   private async request<T>(path: string, method = 'GET', body?: unknown): Promise<T> {
     const res = await this.fetchApi(path, method, body);
     const data = await readJson(res);

@@ -1,3 +1,4 @@
+import { readFlowState } from '@/services/sync/dataFlow/log';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { Book } from '@/types/book';
 import type { OPDSCatalog } from '@/types/opds';
@@ -131,9 +132,16 @@ describe('OPDS auto-download orchestrator', () => {
     ];
     vi.mocked(checkFeedForNewItems).mockResolvedValue(pendingItems);
 
+    localStorage.clear();
     const result = await syncSubscribedCatalogs(catalogs, appService, []);
     expect(result.totalNewBooks).toBe(1);
     expect(result.newBooks).toHaveLength(1);
+    expect(readFlowState().entries[0]).toMatchObject({
+      connector: 'opds',
+      direction: 'pull',
+      kind: 'books',
+      count: 1,
+    });
     expect(saveSubscriptionState).toHaveBeenCalled();
 
     const savedState = vi.mocked(saveSubscriptionState).mock.calls[0]![1] as OPDSSubscriptionState;

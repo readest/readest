@@ -30,6 +30,12 @@ export interface NotesPassBook {
   readingStatusUpdatedAt?: number;
 }
 
+/** Notes that went each way in one pass. */
+export interface NotesPassCounts {
+  pushed: number;
+  pulled: number;
+}
+
 export interface NotesPassDeps {
   client: Pick<
     BookOrbitClient,
@@ -87,7 +93,8 @@ interface ExchangePhase<TChange> {
 }
 
 /** Annotation exchange (+ack), then bookmark exchange when the server supports it. */
-const exchangeNotes = async (deps: NotesPassDeps): Promise<void> => {
+const exchangeNotes = async (deps: NotesPassDeps): Promise<NotesPassCounts> => {
+  const counts = { pushed: 0, pulled: 0 };
   const { client, store } = deps;
   const hash = deps.book.hash;
 
@@ -138,6 +145,7 @@ const exchangeNotes = async (deps: NotesPassDeps): Promise<void> => {
       deps.onUnmatched();
       return;
     }
+    counts.pushed += phase.changes.length;
     await store.setWatermark(hash, phase.kind, passStart);
     await store.flush();
   };
@@ -171,6 +179,7 @@ const exchangeNotes = async (deps: NotesPassDeps): Promise<void> => {
         );
         if (plan.upserts.length > 0 || plan.deleteNoteIds.length > 0) {
           deps.mergeNotes(plan.upserts, plan.deleteNoteIds);
+          counts.pulled += plan.upserts.length + plan.deleteNoteIds.length;
         }
         if (plan.ack.applied.length > 0 || plan.ack.deleted.length > 0) {
           await client.ackAnnotations([plan.ack]);
@@ -223,6 +232,7 @@ const exchangeNotes = async (deps: NotesPassDeps): Promise<void> => {
         );
         if (plan.upserts.length > 0 || plan.deleteNoteIds.length > 0) {
           deps.mergeNotes(plan.upserts, plan.deleteNoteIds);
+          counts.pulled += plan.upserts.length + plan.deleteNoteIds.length;
         }
         if (plan.ack.applied.length > 0 || plan.ack.deleted.length > 0) {
           await client.ackBookmarks([plan.ack]);
@@ -241,6 +251,7 @@ const exchangeNotes = async (deps: NotesPassDeps): Promise<void> => {
       },
     });
   }
+  return counts;
 };
 
 /** Whether the reader should run the pass: connected, with any sync option on. */
@@ -262,7 +273,7 @@ export const isBookOrbitPassEnabled = (bookorbit: BookOrbitSettings): boolean =>
  * stats are silently rejected. Watermarks only advance after a phase
  * completes, so a failed pass repeats its changes next time.
  */
-export const runBookOrbitNotesPass = async (deps: NotesPassDeps): Promise<void> => {
+export const runBookOrbitNotesPass = async (deps: NotesPassDeps): Promise<NotesPassCounts> => {
   const { client, book } = deps;
   const hash = book.hash;
 
@@ -280,10 +291,10 @@ export const runBookOrbitNotesPass = async (deps: NotesPassDeps): Promise<void> 
   ]);
   if (!matchResult.matches.some((match) => match.hash === hash)) {
     deps.onUnmatched();
-    return;
+    return { pushed: 0, pulled: 0 };
   }
 
-  if (deps.syncNotes) await exchangeNotes(deps);
+  const counts = deps.syncNotes ? await exchangeNotes(deps) : { pushed: 0, pulled: 0 };
 
   if (deps.syncBookStates) {
     const status = readingStatusToBookOrbit(book.readingStatus);
@@ -301,4 +312,5 @@ export const runBookOrbitNotesPass = async (deps: NotesPassDeps): Promise<void> 
       }
     }
   }
+  return counts;
 };

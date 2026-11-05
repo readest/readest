@@ -8,6 +8,7 @@ import { getAPIBaseUrl } from '@/services/environment';
 import { isTauriAppPlatform } from '@/services/environment';
 import { ingestFile } from '@/services/ingestService';
 import { drainInbox, DEFAULT_MAX_ITEMS_PER_PASS } from '@/services/send/inboxDrainer';
+import { recordFlow } from '@/services/sync/dataFlow/log';
 import { isInboxDrainEnabled } from '@/services/send/devicePrefs';
 import {
   convertToEpubWithWorker,
@@ -145,7 +146,7 @@ export function useInboxDrainer(): void {
         await useLibraryStore.getState().updateBooks(envConfig, [book]);
       };
 
-      await drainInbox(
+      const { processed, failed } = await drainInbox(
         {
           claimItem: claimRow,
           renewClaim: async (id) => {
@@ -175,6 +176,9 @@ export function useInboxDrainer(): void {
         },
         DEFAULT_MAX_ITEMS_PER_PASS,
       );
+      const pull = { connector: 'send', direction: 'pull', kind: 'books' } as const;
+      recordFlow({ ...pull, count: processed });
+      if (failed > 0) recordFlow({ ...pull, error: `${failed} failed` });
     } catch (err) {
       console.warn('Inbox drain pass failed:', err);
     } finally {

@@ -239,6 +239,91 @@ describe('KOSyncClient.connect – server validation', () => {
   });
 });
 
+describe('KOSyncClient.checkConnection', () => {
+  beforeEach(() => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
+
+  it('never registers an account when the credentials are refused', async () => {
+    const fetchMock = setFetch(async () => jsonResponse(401, { message: 'Unauthorized' }));
+
+    const result = await new KOSyncClient(makeConfig()).checkConnection();
+
+    expect(result).toEqual({ success: false, message: 'Invalid credentials.' });
+    expect(fetchMock.mock.calls.length).toBeGreaterThan(0);
+    for (const [url] of fetchMock.mock.calls) expect(String(url)).toContain('/users/auth');
+  });
+
+  it('passes for a KOReader Sync server that accepts the login', async () => {
+    setFetch(async () => jsonResponse(200, { authorized: 'OK' }));
+
+    expect((await new KOSyncClient(makeConfig()).checkConnection()).success).toBe(true);
+  });
+
+  it('fails on a web page answering at the server URL', async () => {
+    setFetch(async () => htmlPage());
+
+    expect((await new KOSyncClient(makeConfig()).checkConnection()).success).toBe(false);
+  });
+
+  it('reports an unreachable server', async () => {
+    setFetch(async () => {
+      throw new Error('Network down');
+    });
+
+    expect(await new KOSyncClient(makeConfig()).checkConnection()).toEqual({
+      success: false,
+      message: 'Network down',
+    });
+  });
+});
+
+describe('KOSyncClient.lastError', () => {
+  beforeEach(() => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
+
+  const client = () => new KOSyncClient(makeConfig({ userkey: 'key' }));
+
+  it('names a failed read', async () => {
+    setFetch(async () => jsonResponse(500, {}));
+    const kosync = client();
+
+    expect(await kosync.getProgress(makeBook())).toBeNull();
+    expect(kosync.lastError).toBe('HTTP 500');
+  });
+
+  it('stays empty when the server has no position for the book', async () => {
+    setFetch(async () => jsonResponse(404, {}));
+    const kosync = client();
+
+    expect(await kosync.getProgress(makeBook())).toBeNull();
+    expect(kosync.lastError).toBeNull();
+  });
+
+  it('names a refused write and clears after one that works', async () => {
+    setFetch(async () => jsonResponse(403, {}));
+    const kosync = client();
+
+    expect(await kosync.updateProgress(makeBook(), 'pos', 0.5)).toBe(false);
+    expect(kosync.lastError).toBe('HTTP 403');
+
+    setFetch(async () => jsonResponse(200, {}));
+    expect(await kosync.updateProgress(makeBook(), 'pos', 0.5)).toBe(true);
+    expect(kosync.lastError).toBeNull();
+  });
+});
+
 describe('KOSyncClient – custom headers', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
