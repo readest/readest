@@ -341,7 +341,8 @@ export const syncAbsServer = async (appService: AppService, server: ABSServer): 
 
   useABSServerStore.getState().updateServer(server.id, { lastSyncedAt: now });
   await useABSServerStore.getState().saveABSServers(toEnvConfig(appService));
-  recordFlow({ ...LIBRARY_PULL, count: upserts.length });
+  // These are streaming stubs: only an offline download moves a file.
+  recordFlow({ ...LIBRARY_PULL, count: 0 });
 };
 
 export const syncAllAbsServers = async (appService: AppService): Promise<void> => {

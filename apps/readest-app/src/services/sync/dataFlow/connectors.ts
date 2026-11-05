@@ -3,7 +3,7 @@ import type { ABSServer } from '@/types/audiobookshelf';
 import type { OPDSCatalog } from '@/types/opds';
 import type { KOSyncStrategy, SystemSettings } from '@/types/settings';
 import type { UserPlan } from '@/types/quota';
-import { isTauriAppPlatform } from '@/services/environment';
+import { getAPIBaseUrl, isTauriAppPlatform } from '@/services/environment';
 import { createAbsClient } from '@/services/audiobookshelf/createClient';
 import { BookOrbitClient } from '@/services/bookorbit/BookOrbitClient';
 import {
@@ -30,6 +30,7 @@ import { isSyncCategoryEnabled } from '@/services/sync/syncCategories';
 import { SyncClient } from '@/libs/sync';
 import { useLocalSendStore } from '@/store/localsendStore';
 import { useSettingsStore } from '@/store/settingsStore';
+import { fetchWithAuth } from '@/utils/fetch';
 import { stubTranslation as _ } from '@/utils/misc';
 import { recordConnectionCheck } from './log';
 import type { ConnectionCheck, ConnectorId, FlowKind } from './types';
@@ -47,7 +48,7 @@ export interface FlowConnector {
   sources: FlowKind[];
   sinks: FlowKind[];
   /** Must be read-only: it runs whenever the data flow page opens. */
-  check?: () => Promise<ConnectionCheck>;
+  check: () => Promise<ConnectionCheck>;
 }
 
 export interface ConnectorContext {
@@ -218,7 +219,18 @@ const contentConnectors = (ctx: ConnectorContext): FlowConnector[] => {
     });
   }
   if (ctx.signedIn && isInboxDrainEnabled()) {
-    connectors.push({ id: 'send', title: _('Send to Readest'), sources: ['books'], sinks: [] });
+    connectors.push({
+      id: 'send',
+      title: _('Send to Readest'),
+      sources: ['books'],
+      sinks: [],
+      // Lists the inbox rather than calling /send/inbox/claim: a claim leases
+      // the oldest item and can't be handed back. The drainer reports real claims.
+      check: async () => {
+        await fetchWithAuth(`${getAPIBaseUrl()}/send/inbox`, { method: 'GET' });
+        return { ok: true };
+      },
+    });
   }
   if (isTauriAppPlatform() && isLocalSendEnabled()) {
     connectors.push({
@@ -242,7 +254,6 @@ export const getFlowConnectors = (ctx: ConnectorContext): FlowConnector[] =>
   );
 
 export const runConnectionCheck = async (connector: FlowConnector) => {
-  if (!connector.check) return;
   try {
     recordConnectionCheck(connector.id, await connector.check());
   } catch (error) {

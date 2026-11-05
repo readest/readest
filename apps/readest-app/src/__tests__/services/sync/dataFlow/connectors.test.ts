@@ -9,8 +9,10 @@ import {
   type ConnectorContext,
 } from '@/services/sync/dataFlow/connectors';
 import { readFlowState } from '@/services/sync/dataFlow/log';
+import { fetchWithAuth } from '@/utils/fetch';
 
 vi.mock('@tauri-apps/plugin-http', () => ({ fetch: vi.fn() }));
+vi.mock('@/utils/fetch', () => ({ fetchWithAuth: vi.fn() }));
 
 const context = (overrides: Partial<ConnectorContext> = {}): ConnectorContext => ({
   settings: {} as SystemSettings,
@@ -128,6 +130,30 @@ describe('getFlowConnectors', () => {
 
     localStorage.setItem('readest-send-drain-enabled', 'false');
     expect(byId(context({ signedIn: true }), 'send')).toBeUndefined();
+  });
+});
+
+describe('Send to Readest connection check', () => {
+  const sendConnector = () => byId(context({ signedIn: true }), 'send')!;
+
+  beforeEach(() => localStorage.clear());
+
+  it('reads the inbox and never claims from it', async () => {
+    vi.mocked(fetchWithAuth).mockResolvedValue({ ok: true } as Response);
+
+    expect(await sendConnector().check()).toEqual({ ok: true });
+
+    const [url, init] = vi.mocked(fetchWithAuth).mock.calls.at(-1)!;
+    expect(String(url)).toMatch(/\/send\/inbox$/);
+    expect(init?.method).toBe('GET');
+  });
+
+  it('fails when the inbox refuses', async () => {
+    vi.mocked(fetchWithAuth).mockRejectedValue(new Error('Not authenticated'));
+
+    await runConnectionCheck(sendConnector());
+
+    expect(readFlowState().checks.send).toMatchObject({ ok: false, message: 'Not authenticated' });
   });
 });
 

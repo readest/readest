@@ -63,6 +63,15 @@ afterEach(() => {
 });
 
 describe('useInboxDrainer', () => {
+  test('reports a pass that failed', async () => {
+    localStorage.clear();
+    mockedDrain.mockRejectedValueOnce(new Error('HTTP 403'));
+    renderHook(() => useInboxDrainer());
+    await advance(0);
+
+    expect(readFlowState().entries[0]).toMatchObject({ connector: 'send', error: 'HTTP 403' });
+  });
+
   test('reports imported and failed items as book pulls', async () => {
     localStorage.clear();
     mockedDrain.mockResolvedValueOnce({ processed: 2, failed: 1 });

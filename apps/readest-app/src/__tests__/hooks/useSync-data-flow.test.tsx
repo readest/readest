@@ -114,9 +114,12 @@ describe('useSync data flow', () => {
     });
   };
 
-  test('counts the notes a pull brought in', async () => {
+  const iso = (ms: number) => new Date(ms).toISOString();
+
+  test('counts the notes that are new to this device', async () => {
+    h.storeState.settings.lastSyncedAtNotes = 5000;
     syncClientMock.pullChanges.mockResolvedValue({
-      notes: [{ updated_at: 'x' }, { updated_at: 'y' }, { deleted_at: 'z' }],
+      notes: [{ updated_at: iso(6000) }, { updated_at: iso(7000) }, { deleted_at: iso(8000) }],
     });
 
     await pull('notes');
@@ -129,12 +132,39 @@ describe('useSync data flow', () => {
     });
   });
 
+  test('does not count notes delivered again by the sync look-back', async () => {
+    h.storeState.settings.lastSyncedAtNotes = 5000;
+    syncClientMock.pullChanges.mockResolvedValue({
+      notes: [{ updated_at: iso(4000) }, { updated_at: iso(5000) }],
+    });
+
+    await pull('notes');
+
+    const state = readFlowState();
+    expect(state.entries).toEqual([]);
+    expect(state.totals['readest-cloud:pull:notes']?.lastSuccessAt).toBeGreaterThan(0);
+  });
+
   test('files configs under reading progress', async () => {
-    syncClientMock.pullChanges.mockResolvedValue({ configs: [{ updated_at: 'x' }] });
+    syncClientMock.pullChanges.mockResolvedValue({ configs: [{ updated_at: iso(1000) }] });
 
     await pull('configs');
 
     expect(readFlowState().entries[0]).toMatchObject({ kind: 'progress', count: 1 });
+  });
+
+  test('never counts book metadata as books, though it shows the sync worked', async () => {
+    syncClientMock.pullChanges.mockResolvedValue({
+      books: [{ uploaded_at: iso(1000), updated_at: iso(1000) }],
+    });
+    await pull('books');
+    await push({ books: [{}, {}] } as unknown as SyncData);
+
+    const { entries, totals } = readFlowState();
+    expect(entries).toEqual([]);
+    expect(totals['readest-cloud:pull:books']).toMatchObject({ count: 0 });
+    expect(totals['readest-cloud:push:books']).toMatchObject({ count: 0 });
+    expect(totals['readest-cloud:pull:books']?.lastSuccessAt).toBeGreaterThan(0);
   });
 
   test('records a failed pull', async () => {
@@ -152,6 +182,14 @@ describe('useSync data flow', () => {
     expect(totals['readest-cloud:push:notes']?.count).toBe(2);
     expect(totals['readest-cloud:push:progress']?.count).toBe(1);
     expect(totals['readest-cloud:push:books']).toBeUndefined();
+  });
+
+  test('does not count notes pushed again by the sync look-back', async () => {
+    h.storeState.settings.lastSyncedAtNotes = 5000;
+
+    await push({ notes: [{ updatedAt: 4000 }, { updatedAt: 6000 }] } as unknown as SyncData);
+
+    expect(readFlowState().totals['readest-cloud:push:notes']?.count).toBe(1);
   });
 
   test('records a failed push', async () => {

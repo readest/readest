@@ -60,6 +60,7 @@ export const countSyncedRecords = (
 
 const FLOW_KINDS = { books: 'books', configs: 'progress', notes: 'notes' } as const;
 
+// Book rows are metadata: their files are counted by the transfer manager.
 const recordCloudFlow = (
   direction: FlowDirection,
   type: SyncType,
@@ -68,7 +69,8 @@ const recordCloudFlow = (
 ) => {
   if (type === 'stats') return;
   const kind = FLOW_KINDS[type];
-  recordFlow({ connector: 'readest-cloud', direction, kind, count, error });
+  const entries = type === 'books' ? 0 : count;
+  recordFlow({ connector: 'readest-cloud', direction, kind, count: entries, error });
 };
 
 export const BOOKS_PULL_PAGE_SIZE = 1000;
@@ -180,6 +182,15 @@ export function useSync(bookKey?: string) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bookKey, settings, config]);
 
+  /** Newest change this device already had before a sync, from the live store. */
+  const lastSeenAt = (type: SyncType, bookId?: string) => {
+    const latest = useSettingsStore.getState().settings;
+    if (type === 'configs') {
+      return (bookId ? config?.lastSyncedAtConfig : latest.lastSyncedAtConfigs) ?? 0;
+    }
+    return (bookId ? config?.lastSyncedAtNotes : latest.lastSyncedAtNotes) ?? 0;
+  };
+
   // bookId is for configs and notes only, if bookId is provided, only pull changes for that book
   // and update the lastSyncedAt for that book in the book config
   const pullChanges = async (
@@ -216,7 +227,10 @@ export function useSync(bookKey?: string) {
         records = (result as unknown as Record<string, BookDataRecord[] | null | undefined>)[type];
       }
       setSyncResult({ ...syncResult, [type]: records });
-      recordCloudFlow('pull', type, countSyncedRecords(type, records));
+      // A pull looks back further than the cursor, so it brings records again.
+      const seenUpTo = lastSeenAt(type, bookId);
+      const newRecords = records?.filter((rec) => computeMaxTimestamp([rec]) > seenUpTo);
+      recordCloudFlow('pull', type, countSyncedRecords(type, newRecords));
       if (since > 1000 && !records?.length) return 0;
       // For since <= 1000, we set lastSyncedAt to now if no records returned
       const maxTime = records?.length ? computeMaxTimestamp(records) : Date.now();
@@ -289,7 +303,12 @@ export function useSync(bookKey?: string) {
     try {
       const result = await syncClient.pushChanges(payload);
       setSyncResult(result);
-      for (const type of pushedTypes) recordCloudFlow('push', type, payload[type]?.length ?? 0);
+      for (const type of pushedTypes) {
+        const seenUpTo = lastSeenAt(type);
+        const rows = (payload[type] ?? []) as { updatedAt?: number }[];
+        const changed = rows.filter((row) => (row.updatedAt ?? seenUpTo + 1) > seenUpTo);
+        recordCloudFlow('push', type, changed.length);
+      }
       return true;
     } catch (err: unknown) {
       console.error(err);

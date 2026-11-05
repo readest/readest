@@ -356,7 +356,8 @@ describe('runFileLibrarySyncPass data flow', () => {
     expect(totals['webdav:push:progress']?.count).toBe(2);
     expect(totals['webdav:pull:progress']?.count).toBe(3);
     expect(totals['webdav:push:books']?.count).toBe(1);
-    expect(totals['webdav:pull:books']?.count).toBe(4);
+    // Books added to the shelf are metadata: their files aren't downloaded.
+    expect(totals['webdav:pull:books']?.count).toBe(0);
   });
 
   test('reports a pass that failed', async () => {
@@ -387,5 +388,29 @@ describe('runFileLibrarySyncPass data flow', () => {
       bookTitle: 'Dune',
       error: 'quota exceeded',
     });
+  });
+
+  test('counts an explicit upload of a book file', async () => {
+    enableWebdav();
+    pushBookFile.mockResolvedValueOnce({ uploaded: true });
+
+    await runFileBookUpload(envConfig, makeBook('h1'));
+
+    expect(readFlowState().entries[0]).toMatchObject({
+      connector: 'webdav',
+      direction: 'push',
+      kind: 'books',
+      count: 1,
+      bookTitle: 'Book h1',
+    });
+  });
+
+  test('does not count a file the backend already had', async () => {
+    enableWebdav();
+    pushBookFile.mockResolvedValueOnce({ uploaded: false, reason: 'remote-matches' });
+
+    await runFileBookUpload(envConfig, makeBook('h1'));
+
+    expect(readFlowState().entries).toEqual([]);
   });
 });

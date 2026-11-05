@@ -40,6 +40,8 @@ function getDeviceId(): string {
   }
 }
 
+const INBOX_PULL = { connector: 'send', direction: 'pull', kind: 'books' } as const;
+
 /**
  * Background controller that drains the Send to Readest inbox. Mounted once in
  * the library/app shell — runs when the app returns to the foreground and on a
@@ -176,11 +178,11 @@ export function useInboxDrainer(): void {
         },
         DEFAULT_MAX_ITEMS_PER_PASS,
       );
-      const pull = { connector: 'send', direction: 'pull', kind: 'books' } as const;
-      recordFlow({ ...pull, count: processed });
-      if (failed > 0) recordFlow({ ...pull, error: `${failed} failed` });
+      recordFlow({ ...INBOX_PULL, count: processed });
+      if (failed > 0) recordFlow({ ...INBOX_PULL, error: `${failed} failed` });
     } catch (err) {
       console.warn('Inbox drain pass failed:', err);
+      recordFlow({ ...INBOX_PULL, error: err instanceof Error ? err.message : String(err) });
     } finally {
       runningRef.current = false;
     }

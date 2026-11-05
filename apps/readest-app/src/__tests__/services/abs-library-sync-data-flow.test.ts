@@ -22,7 +22,10 @@ vi.mock('@/store/absServerStore', () => {
 import { syncAllAbsServers } from '@/services/audiobookshelf/librarySync';
 import { readFlowState } from '@/services/sync/dataFlow/log';
 
-const appService = { saveLibraryBooks: vi.fn(async () => {}) } as unknown as AppService;
+const appService = {
+  saveLibraryBooks: vi.fn(async () => {}),
+  exists: vi.fn(async () => true),
+} as unknown as AppService;
 
 describe('syncAllAbsServers data flow', () => {
   beforeEach(() => {
@@ -33,11 +36,23 @@ describe('syncAllAbsServers data flow', () => {
     h.client.getMe.mockReset().mockResolvedValue({ mediaProgress: [] });
   });
 
-  it('records a pass as a working book pull', async () => {
+  it('counts streaming stubs as no files, though it shows the sync worked', async () => {
+    h.client.getLibraries.mockResolvedValue([{ id: 'l1', mediaType: 'book' }]);
+    h.client.getLibraryItems.mockResolvedValue([
+      {
+        id: 'i1',
+        mediaType: 'book',
+        media: { metadata: { title: 'Dune' }, duration: 3600, numAudioFiles: 3 },
+      },
+    ]);
     await syncAllAbsServers(appService);
+    expect(appService.saveLibraryBooks).toHaveBeenCalledWith(
+      expect.arrayContaining([expect.objectContaining({ title: 'Dune' })]),
+    );
 
     const total = readFlowState().totals['audiobookshelf:pull:books'];
     expect(total?.lastSuccessAt).toBeGreaterThan(0);
+    expect(total?.count).toBe(0);
   });
 
   it('records a server that failed', async () => {

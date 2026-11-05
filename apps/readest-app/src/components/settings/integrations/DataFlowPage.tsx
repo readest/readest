@@ -22,12 +22,14 @@ import {
   RiSubtractLine,
   RiWifiLine,
 } from 'react-icons/ri';
+import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
 import { runConnectionCheck, type FlowConnector } from '@/services/sync/dataFlow/connectors';
 import {
   getConnectorHealth,
   getConnectorTotals,
   readFlowState,
+  resetFlowLog,
 } from '@/services/sync/dataFlow/log';
 import type {
   ConnectorId,
@@ -81,9 +83,9 @@ const useFlowLabels = () => {
     pull: {
       progress: _('Progress received'),
       notes: _('Notes received'),
-      books: _('Books received'),
+      books: _('Books downloaded'),
     },
-    push: { progress: _('Progress sent'), notes: _('Notes sent'), books: _('Books sent') },
+    push: { progress: _('Progress sent'), notes: _('Notes sent'), books: _('Books uploaded') },
   };
   return { health, flows };
 };
@@ -250,29 +252,25 @@ const ConnectorDetail: React.FC<{
       />
       <div className='space-y-6'>
         <BoxedList title={_('Connection')}>
-          {connector.check ? (
-            <SettingsRow
-              asLabel={false}
-              label={!check ? _('Not checked yet') : check.ok ? _('Connected') : _('Not connected')}
-              description={
-                check &&
-                (check.message
-                  ? _(check.message)
-                  : _('Checked {{time}}', { time: formatSyncTimeFromNow(check.at) }))
-              }
+          <SettingsRow
+            asLabel={false}
+            label={!check ? _('Not checked yet') : check.ok ? _('Connected') : _('Not connected')}
+            description={
+              check &&
+              (check.message
+                ? _(check.message)
+                : _('Checked {{time}}', { time: formatSyncTimeFromNow(check.at) }))
+            }
+          >
+            <button
+              type='button'
+              onClick={recheck}
+              disabled={checking}
+              className='btn btn-ghost btn-sm eink-bordered shrink-0'
             >
-              <button
-                type='button'
-                onClick={recheck}
-                disabled={checking}
-                className='btn btn-ghost btn-sm eink-bordered shrink-0'
-              >
-                {checking ? _('Checking…') : _('Check')}
-              </button>
-            </SettingsRow>
-          ) : (
-            <SettingsRow asLabel={false} label={_('This integration has no connection check')} />
-          )}
+              {checking ? _('Checking…') : _('Check')}
+            </button>
+          </SettingsRow>
         </BoxedList>
 
         <BoxedList title={_('Synced')}>
@@ -329,6 +327,7 @@ interface DataFlowPageProps {
  */
 const DataFlowPage: React.FC<DataFlowPageProps> = ({ onBack, onOpenSettings }) => {
   const _ = useTranslation();
+  const { appService } = useEnv();
   const { health } = useFlowLabels();
   const connectors = useFlowConnectors();
   const state = useFlowState();
@@ -341,11 +340,16 @@ const DataFlowPage: React.FC<DataFlowPageProps> = ({ onBack, onOpenSettings }) =
     setChecking(false);
   };
 
+  const resetCounts = async () => {
+    if (await appService?.ask(_('Reset the counts and sync history on this device?'))) {
+      resetFlowLog();
+    }
+  };
+
   useEffect(() => {
     const { checks } = readFlowState();
     const stale = connectors.filter(
-      (connector) =>
-        connector.check && Date.now() - (checks[connector.id]?.at ?? 0) > RECHECK_AFTER_MS,
+      (connector) => Date.now() - (checks[connector.id]?.at ?? 0) > RECHECK_AFTER_MS,
     );
     if (stale.length > 0) void runChecks(stale);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -414,14 +418,23 @@ const DataFlowPage: React.FC<DataFlowPageProps> = ({ onBack, onOpenSettings }) =
               <span className='whitespace-nowrap'>{`${health.ok}: ${counts.ok}`}</span>
               <span className='whitespace-nowrap'>{`${health.failed}: ${counts.failed}`}</span>
             </span>
-            <button
-              type='button'
-              onClick={() => runChecks(connectors.filter((connector) => connector.check))}
-              disabled={checking}
-              className='btn btn-ghost btn-sm eink-bordered shrink-0'
-            >
-              {checking ? _('Checking…') : _('Check All')}
-            </button>
+            <div className='flex shrink-0 items-center gap-1'>
+              <button
+                type='button'
+                onClick={resetCounts}
+                className='btn btn-ghost btn-sm eink-bordered'
+              >
+                {_('Reset Counts')}
+              </button>
+              <button
+                type='button'
+                onClick={() => runChecks(connectors)}
+                disabled={checking}
+                className='btn btn-ghost btn-sm eink-bordered'
+              >
+                {checking ? _('Checking…') : _('Check All')}
+              </button>
+            </div>
           </div>
         </div>
       )}

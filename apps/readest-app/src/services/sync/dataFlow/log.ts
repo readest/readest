@@ -92,6 +92,11 @@ export const recordConnectionCheck = (connector: ConnectorId, check: ConnectionC
   });
 };
 
+/** Zero the counts and history. Connection checks describe now, not the past, so they stay. */
+export const resetFlowLog = () => {
+  writeFlowState({ ...EMPTY_STATE, checks: readFlowState().checks });
+};
+
 export const subscribeFlowState = (listener: () => void) => {
   const onStorage = (event: StorageEvent) => {
     if (event.key === STORAGE_KEY) listener();

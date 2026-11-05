@@ -80,7 +80,8 @@ const recordLibraryPass = (connector: FileSyncBackendKind, result: SyncLibraryRe
   add('push', 'progress', result.configsUploaded ?? 0);
   add('pull', 'progress', result.configsDownloaded ?? 0);
   add('push', 'books', result.filesUploaded ?? 0);
-  add('pull', 'books', result.booksAdded ?? 0);
+  // booksAdded are shelf rows: their files download on demand.
+  add('pull', 'books', 0);
   const failed = { connector, direction: 'push', kind: 'books' } as const;
   for (const { title, hash, reason } of result.failedBooks) {
     recordFlow({ ...failed, bookTitle: title || hash, error: reason });
@@ -224,6 +225,14 @@ export const runFileBookUpload = async (envConfig: EnvConfigType, book: Book): P
       const engine = await buildEngine(envConfig, kind);
       if (!engine) continue;
       const result = await engine.pushBookFile(book);
+      if (result.uploaded) {
+        recordFlow({
+          connector: kind,
+          direction: 'push',
+          kind: 'books',
+          bookTitle: book.title,
+        });
+      }
       if (!result.uploaded && result.reason !== 'remote-matches') continue;
       anyUploaded = true;
       try {

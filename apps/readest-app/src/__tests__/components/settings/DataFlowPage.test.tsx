@@ -3,11 +3,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { FlowConnector } from '@/services/sync/dataFlow/connectors';
 import { readFlowState, recordConnectionCheck, recordFlow } from '@/services/sync/dataFlow/log';
 
-const h = vi.hoisted(() => ({ connectors: [] as unknown[] }));
+const h = vi.hoisted(() => ({ connectors: [] as unknown[], ask: vi.fn() }));
 
 vi.mock('@/hooks/useTranslation', () => ({
   useTranslation: () => (s: string, o?: Record<string, unknown>) =>
     s.replace(/\{\{(\w+)\}\}/g, (_m, k) => String(o?.[k] ?? '')),
+}));
+vi.mock('@/context/EnvContext', () => ({
+  useEnv: () => ({ appService: { ask: h.ask } }),
 }));
 vi.mock('@/components/settings/integrations/useFlowConnectors', async (importOriginal) => ({
   ...(await importOriginal<
@@ -107,6 +110,35 @@ describe('DataFlowPage diagram', () => {
   });
 });
 
+describe('DataFlowPage reset', () => {
+  const seed = async () => {
+    h.connectors = [kosync()];
+    recordConnectionCheck('kosync', { ok: true });
+    recordFlow({ connector: 'kosync', direction: 'push', kind: 'progress', count: 42 });
+    await renderPage();
+  };
+
+  it('clears the counts once confirmed', async () => {
+    h.ask.mockResolvedValue(true);
+    await seed();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Reset Counts' }));
+
+    await waitFor(() => expect(column('Destinations').queryByText('42')).toBeNull());
+    expect(readFlowState().entries).toEqual([]);
+  });
+
+  it('keeps the counts when the reader says no', async () => {
+    h.ask.mockResolvedValue(false);
+    await seed();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Reset Counts' }));
+
+    await waitFor(() => expect(h.ask).toHaveBeenCalled());
+    expect(column('Destinations').getByText('42')).toBeTruthy();
+  });
+});
+
 describe('DataFlowPage connection checks', () => {
   it('checks every integration when the page opens', async () => {
     const first = kosync();
@@ -178,17 +210,6 @@ describe('DataFlowPage integration details', () => {
 
     expect(screen.queryByText('Emma')).toBeNull();
     expect(screen.getByText('Nothing has synced yet')).toBeTruthy();
-  });
-
-  it('says so when an integration has no connection check', async () => {
-    h.connectors = [
-      { id: 'send', title: 'Send to Readest', sources: ['books'], sinks: [] },
-    ] satisfies FlowConnector[];
-    await renderPage();
-    fireEvent.click(column('Sources').getByLabelText(/Send to Readest/));
-
-    expect(screen.getByText('This integration has no connection check')).toBeTruthy();
-    expect(screen.queryByRole('button', { name: 'Check' })).toBeNull();
   });
 
   it('opens the settings of the integration', async () => {

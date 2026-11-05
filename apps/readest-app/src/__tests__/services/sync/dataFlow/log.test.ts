@@ -6,6 +6,7 @@ import {
   readFlowState,
   recordConnectionCheck,
   recordFlow,
+  resetFlowLog,
   subscribeFlowState,
 } from '@/services/sync/dataFlow/log';
 
@@ -200,6 +201,22 @@ describe('data flow log', () => {
     window.dispatchEvent(new StorageEvent('storage', { key: 'readest-data-flow' }));
 
     expect(listener).toHaveBeenCalledTimes(1);
+    unsubscribe();
+  });
+
+  it('resets counts and history but keeps the last connection checks', () => {
+    recordFlow({ connector: 'readwise', direction: 'push', kind: 'notes', count: 5 });
+    recordConnectionCheck('readwise', { ok: true });
+    const listener = vi.fn();
+    const unsubscribe = subscribeFlowState(listener);
+
+    resetFlowLog();
+
+    const state = readFlowState();
+    expect(state.totals).toEqual({});
+    expect(state.entries).toEqual([]);
+    expect(state.checks.readwise?.ok).toBe(true);
+    expect(listener).toHaveBeenCalled();
     unsubscribe();
   });
 
