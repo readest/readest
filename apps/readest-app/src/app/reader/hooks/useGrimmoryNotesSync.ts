@@ -17,12 +17,16 @@ import { eventDispatcher } from '@/utils/event';
 import { throttle } from '@/utils/throttle';
 import { useWindowActiveChanged } from './useWindowActiveChanged';
 
-const isPassEnabled = (grimmory: GrimmorySettings) =>
+/**
+ * The pass also runs for reading statistics alone: it is what finds the open
+ * book on the server, and sessions go only to books found there.
+ */
+export const isPassEnabled = (grimmory: GrimmorySettings) =>
   grimmory.enabled &&
   !!grimmory.serverUrl &&
   !!grimmory.username &&
   !!grimmory.password &&
-  (grimmory.syncNotes || grimmory.syncBookStates);
+  (grimmory.syncNotes || grimmory.syncBookStates || grimmory.syncStats);
 
 /**
  * Per-book Grimmory pass, mounted beside useNotesSync: finds the book on the
