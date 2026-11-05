@@ -182,6 +182,29 @@ describe('planAnkiImport', () => {
     expect([p.added, p.mastered]).toEqual([1, 1]);
   });
 
+  it('matches a word saved with odd spacing instead of adding it again', () => {
+    const spaced = entry('ice\u00a0 cream', { state: 'learning' });
+    const sent = ankiNotesToSend([{ ...spaced, occurrences: [{ sentence: 'x', at: 1 }] }], [])[0]!;
+    const back = { fields: [...sent.fields], tags: sent.tags.join(' '), mature: true };
+    const p = planAnkiImport([back], { [spaced.id]: spaced }, 'en');
+    expect(p.ops).toEqual([{ word: 'ice\u00a0 cream', lang: 'en', state: 'mastered' }]);
+    expect(p.added).toBe(0);
+  });
+
+  it('prefers a live word, then the exact spelling, when spacing makes several match', () => {
+    const spaced = entry('ice\u00a0cream', { state: 'learning' });
+    const exact = entry('ice cream', { state: 'learning' });
+    const both = { [spaced.id]: spaced, [exact.id]: exact };
+    expect(planAnkiImport([note(['ice cream'], true)], both, 'en').ops).toEqual([
+      { word: 'ice cream', lang: 'en', state: 'mastered' },
+    ]);
+    const gone = { ...exact, deletedAt: 5 };
+    const live = { [gone.id]: gone, [spaced.id]: spaced };
+    expect(planAnkiImport([note(['ice cream'], true)], live, 'en').ops).toEqual([
+      { word: 'ice\u00a0cream', lang: 'en', state: 'mastered' },
+    ]);
+  });
+
   it('plans 5,000 HTML notes in one pass', () => {
     const notes = Array.from({ length: 5000 }, (_, i) =>
       note([
@@ -345,6 +368,13 @@ describe('ankiTagUpdates', () => {
     expect(ankiTagUpdates([row(1, 'gone', ''), row(2, 'unknown', '')], gone, 'en')).toEqual([]);
   });
 
+  it('tags the note of a word saved with odd spacing', () => {
+    const spaced = entry('ice\u00a0 cream', { state: 'mastered' });
+    expect(ankiTagUpdates([row(1, 'ice cream', 'readest::learning')], words(spaced), 'en')).toEqual(
+      [{ id: 1, tags: ['readest::mastered'] }],
+    );
+  });
+
   it('files a note by its language tag, else the given language', () => {
     const list = words(
       entry('pain', { lang: 'fr', state: 'learning' }),
@@ -385,6 +415,19 @@ describe('withNoteLangs', () => {
     expect(langOf(withNoteLangs([row('pain')], live, 'en')[0]!)).toBe('fr');
     const gone = words(entry('pain', { lang: 'fr', deletedAt: 3 }));
     expect(langOf(withNoteLangs([row('pain')], gone, 'en')[0]!)).toBe('fr');
+  });
+
+  it('files an untagged note under a word saved with odd spacing', () => {
+    const list = words(entry('ice\u00a0 cream', { id: 'fr:ice\u00a0 cream', lang: 'fr' }));
+    expect(langOf(withNoteLangs([row('ice cream')], list, 'en')[0]!)).toBe('fr');
+  });
+
+  it('prefers the exact spelling when spacing makes several match', () => {
+    const list = words(
+      entry('ice\u00a0cream', { id: 'fr:ice\u00a0cream', lang: 'fr' }),
+      entry('ice cream', { id: 'de:ice cream', lang: 'de' }),
+    );
+    expect(langOf(withNoteLangs([row('ice cream')], list, 'en')[0]!)).toBe('de');
   });
 
   it('falls back to the given language', () => {

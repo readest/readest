@@ -112,6 +112,23 @@ export interface AnkiImportPlan {
   skipped: number;
 }
 
+// Anki collapses each run of whitespace on a card, so a word Readest saved with
+// a no-break or double space is found by its collapsed key.
+const collapseKey = (key: string) => key.replace(/\s+/g, ' ');
+
+/** Words by the id a card's key gives: a live word first, then the exact spelling. */
+const byCardId = (entries: Record<string, VocabularyEntry>) => {
+  const rank = (e: VocabularyEntry) =>
+    (e.deletedAt ? 2 : 0) + (collapseKey(e.key) === e.key ? 0 : 1);
+  const index = new Map<string, VocabularyEntry>();
+  for (const e of Object.values(entries)) {
+    const id = entryId(e.lang, collapseKey(e.key));
+    const seen = index.get(id);
+    if (!seen || rank(e) < rank(seen)) index.set(id, e);
+  }
+  return index;
+};
+
 /**
  * What importing a deck changes. New words come in as Learning (Mastered when
  * mature); words already there only move up to Mastered, and only get a hint
@@ -144,13 +161,16 @@ export const planAnkiImport = (
   }
 
   const ops: VocabularyImport[] = [];
+  const index = byCardId(entries);
   let added = 0;
   let mastered = 0;
   for (const [id, w] of byId) {
-    const current = entries[id];
+    const current = index.get(id);
     if (current?.deletedAt) {
       skipped++;
-    } else if (!current) {
+      continue;
+    }
+    if (!current) {
       ops.push({
         word: w.word,
         lang: w.lang,
@@ -160,7 +180,7 @@ export const planAnkiImport = (
       added++;
       if (w.mature) mastered++;
     } else {
-      const op: VocabularyImport = { word: w.word, lang: w.lang };
+      const op: VocabularyImport = { word: current.word, lang: current.lang };
       if (w.mature && current.state !== 'mastered') {
         op.state = 'mastered';
         mastered++;
@@ -249,19 +269,22 @@ export const ankiNotesToSend = (
  * Notes with their language made explicit, as Sync reads them. A note without a
  * language tag (added by hand, or from the file export) belongs to the word
  * Readest already has with its key: a live one before a deleted one, `lang`
- * before another language. Otherwise it gets `lang`. The tag is added so the
- * pull, the push and the tag mirror all file the note the same way.
+ * before another language, the exact spelling before one with odd spacing.
+ * Otherwise it gets `lang`. The tag is added so the pull, the push and the tag
+ * mirror all file the note the same way.
  */
 export const withNoteLangs = <T extends { fields: string[]; tags: string }>(
   notes: T[],
   entries: Record<string, VocabularyEntry>,
   lang: string,
 ): T[] => {
-  const rank = (e: VocabularyEntry) => (e.deletedAt ? 2 : 0) + (e.lang === lang ? 0 : 1);
+  const rank = (e: VocabularyEntry) =>
+    (e.deletedAt ? 4 : 0) + (e.lang === lang ? 0 : 2) + (collapseKey(e.key) === e.key ? 0 : 1);
   const best = new Map<string, VocabularyEntry>();
   for (const e of Object.values(entries)) {
-    const seen = best.get(e.key);
-    if (!seen || rank(e) < rank(seen)) best.set(e.key, e);
+    const key = collapseKey(e.key);
+    const seen = best.get(key);
+    if (!seen || rank(e) < rank(seen)) best.set(key, e);
   }
   return notes.map((n) => {
     if (ankiLangOf(n.tags)) return n;
@@ -286,9 +309,10 @@ export const ankiTagUpdates = (
   lang: string,
 ): AnkiTagUpdate[] => {
   const updates: AnkiTagUpdate[] = [];
+  const index = byCardId(entries);
   for (const n of notes) {
     const key = noteKey(n.fields);
-    const e = key ? entries[entryId(ankiLangOf(n.tags) ?? lang, key)] : undefined;
+    const e = key ? index.get(entryId(ankiLangOf(n.tags) ?? lang, key)) : undefined;
     if (!e || e.deletedAt) continue;
     const tags = n.tags.split(/\s+/).filter(Boolean);
     const marks = tags.filter(isMarkTag).map((t) => t.toLowerCase());

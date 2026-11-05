@@ -297,6 +297,24 @@ describe('VocabularyView Anki link', () => {
     dispatch.mockRestore();
   });
 
+  it('reads back a word saved with odd spacing without adding it again', async () => {
+    seed([entry('ice\u00a0cream', { state: 'learning' })]);
+    anki.ankiReadDeck.mockResolvedValue({
+      notes: [{ id: 1, fields: ['ice cream'], tags: 'readest::lang::en readest::learning' }],
+      cards: [{ noteId: 1, cardType: 2, interval: 30 }],
+    });
+    renderWithMenu();
+    fireEvent.click(await syncButton());
+    await waitFor(() => expect(anki.ankiUpdateTags).toHaveBeenCalled());
+    const { entries } = useVocabularyStore.getState();
+    expect(Object.keys(entries)).toEqual(['en:ice\u00a0cream']);
+    expect(entries['en:ice\u00a0cream']?.state).toBe('mastered');
+    expect(anki.ankiAddNotes).not.toHaveBeenCalled();
+    expect(anki.ankiUpdateTags).toHaveBeenCalledWith([
+      { id: 1, tags: ['readest::lang::en', 'readest::mastered'] },
+    ]);
+  });
+
   it('files an untagged note under the word Readest already has, in any language', async () => {
     seed([
       entry('spice', { state: 'learning', occurrences: [] }),
