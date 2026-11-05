@@ -130,6 +130,22 @@ describe('Android native page-turn pipeline', () => {
     }
   });
 
+  // A warmed turn hides the toolbars only after its scene has started.
+  it('finishes a started turn when an invalidation follows it', async () => {
+    const f = fixture();
+    const { controller } = f;
+    const host = (controller as unknown as { host: CapturedTurnHost }).host;
+    try {
+      await controller.prepareCapture('curl');
+      host.onCovered = async () => controller.invalidateNativePages();
+      f.events.length = 0;
+      expect(await controller.turn(true, false)).toBe(true);
+      expect(f.events).toEqual(['start', 'animate', 'navigate', 'finish', 'invalidate']);
+    } finally {
+      controller.dispose();
+    }
+  });
+
   it('keeps the cover through an invalidation while warming the neighbouring pages', async () => {
     const f = fixture();
     const preview = f.renderer.previewPage!;

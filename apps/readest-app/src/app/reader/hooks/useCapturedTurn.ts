@@ -697,10 +697,9 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
           ));
       const readerPixelsChanged = toolbarChanged || toolbarContentChanged || viewStateChanged;
       if (readerPixelsChanged) {
-        // Native textures cover only the renderer, not the toolbar.
-        // Hiding chrome as a turn starts must not destroy its selected sheets.
-        if (!(controller instanceof NativePageTurn && bufferedPagesEnabled()) || viewStateChanged)
-          invalidatePagePixels();
+        // Captured pages span the reader cell, so they hold the toolbars and
+        // the open panel. A turn in progress keeps its own native sheets.
+        invalidatePagePixels();
         invalidateAndSchedulePreparedCapture(
           toolbarChanged || toolbarContentChanged
             ? PREPARED_CAPTURE_CHROME_DELAY_MS

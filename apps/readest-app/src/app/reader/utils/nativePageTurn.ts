@@ -327,8 +327,7 @@ export class NativePageTurn extends CapturedPageTurn {
         await this.#restore(scene);
         throw error;
       } finally {
-        if (this.#scene === scene && (!this.#allowed() || !this.#keys.size))
-          await this.#restore(scene);
+        if (this.#scene === scene && !this.#allowed()) await this.#restore(scene);
       }
     });
     const ready = run.then(
