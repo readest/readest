@@ -627,8 +627,6 @@
   "Preferred Font": "Fonte preferida",
   "Disable": "Desativar",
   "Enable": "Ativar",
-  "Exit Parallel Read": "Sair da leitura paralela",
-  "Enter Parallel Read": "Entrar na leitura paralela",
   "KOReader Sync": "KOReader Sync",
   "Push Progress": "Enviar progresso",
   "Pull Progress": "Obter progresso",
@@ -2868,5 +2866,10 @@
   "Book cover": "Capa do livro",
   "Browse for a cover, then choose it here.": "Procure uma capa e depois escolha-a aqui.",
   "Cover selected": "Capa selecionada",
-  "Choose another": "Escolher outra"
+  "Choose another": "Escolher outra",
+  "Clear Deleted Books": "Limpar livros excluídos",
+  "Also removes the covers, progress, and notes they left behind": "Também remove as capas, o progresso e as notas que ficaram",
+  "Exit Parallel Sync": "Sair da sincronização paralela",
+  "Enter Parallel Sync": "Entrar na sincronização paralela",
+  "This will delete all cached files and the files left behind by deleted books. This cannot be undone.": "Isso excluirá todos os arquivos em cache e os arquivos deixados pelos livros excluídos. Esta ação não pode ser desfeita."
 }

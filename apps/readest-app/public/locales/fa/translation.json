@@ -526,8 +526,6 @@
   "Translation Disabled": "ترجمه غیرفعال است",
   "Minimize": "کوچک کردن",
   "Maximize or Restore": "بزرگ کردن یا بازگردانی",
-  "Exit Parallel Read": "خروج از خواندن موازی",
-  "Enter Parallel Read": "ورود به خواندن موازی",
   "Zoom Level": "اندازه بزرگ‌نمایی",
   "Zoom Out": "کوچک‌نمایی",
   "Reset Zoom": "بازنشانی بزرگ‌نمایی",
@@ -2795,5 +2793,10 @@
   "Book cover": "جلد کتاب",
   "Browse for a cover, then choose it here.": "جلدی را مرور کنید، سپس آن را اینجا انتخاب کنید.",
   "Cover selected": "جلد انتخاب شد",
-  "Choose another": "انتخاب تصویر دیگر"
+  "Choose another": "انتخاب تصویر دیگر",
+  "Clear Deleted Books": "پاک‌سازی کتاب‌های حذف‌شده",
+  "Also removes the covers, progress, and notes they left behind": "جلدها، پیشرفت مطالعه و یادداشت‌های باقی‌مانده را هم حذف می‌کند",
+  "Exit Parallel Sync": "خروج از همگام‌سازی موازی",
+  "Enter Parallel Sync": "ورود به همگام‌سازی موازی",
+  "This will delete all cached files and the files left behind by deleted books. This cannot be undone.": "همه فایل‌های کش و فایل‌های باقی‌مانده از کتاب‌های حذف‌شده حذف می‌شوند. این کار قابل بازگشت نیست."
 }

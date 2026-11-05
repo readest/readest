@@ -526,8 +526,6 @@
   "Translation Disabled": "Η μετάφραση είναι απενεργοποιημένη",
   "Minimize": "Ελαχιστοποίηση",
   "Maximize or Restore": "Μεγιστοποίηση ή Επαναφορά",
-  "Exit Parallel Read": "Έξοδος από την παράλληλη ανάγνωση",
-  "Enter Parallel Read": "Είσοδος στην παράλληλη ανάγνωση",
   "Zoom Level": "Επίπεδο ζουμ",
   "Zoom Out": "Μείωση ζουμ",
   "Reset Zoom": "Επαναφορά ζουμ",
@@ -2795,5 +2793,10 @@
   "Book cover": "Εξώφυλλο βιβλίου",
   "Browse for a cover, then choose it here.": "Αναζητήστε ένα εξώφυλλο και, στη συνέχεια, επιλέξτε το εδώ.",
   "Cover selected": "Το εξώφυλλο επιλέχθηκε",
-  "Choose another": "Επιλογή άλλου"
+  "Choose another": "Επιλογή άλλου",
+  "Clear Deleted Books": "Εκκαθάριση διαγραμμένων βιβλίων",
+  "Also removes the covers, progress, and notes they left behind": "Αφαιρεί επίσης τα εξώφυλλα, την πρόοδο και τις σημειώσεις που απέμειναν",
+  "Exit Parallel Sync": "Έξοδος από τον παράλληλο συγχρονισμό",
+  "Enter Parallel Sync": "Είσοδος στον παράλληλο συγχρονισμό",
+  "This will delete all cached files and the files left behind by deleted books. This cannot be undone.": "Θα διαγραφούν όλα τα αρχεία της κρυφής μνήμης και τα αρχεία που απέμειναν από τα διαγραμμένα βιβλία. Αυτή η ενέργεια δεν αναιρείται."
 }

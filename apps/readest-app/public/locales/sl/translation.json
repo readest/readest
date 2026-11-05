@@ -533,8 +533,6 @@
   "Preferred Font": "Prednostna pisava",
   "Disable": "Onemogoči",
   "Enable": "Omogoči",
-  "Exit Parallel Read": "Zapusti vzporedno branje",
-  "Enter Parallel Read": "Vstopi v vzporedno branje",
   "KOReader Sync": "KOReader Sync",
   "Push Progress": "Pošlji napredek",
   "Pull Progress": "Prejmi napredek",
@@ -2941,5 +2939,10 @@
   "Book cover": "Naslovnica knjige",
   "Browse for a cover, then choose it here.": "Poiščite naslovnico in jo nato izberite tukaj.",
   "Cover selected": "Naslovnica izbrana",
-  "Choose another": "Izberi drugo"
+  "Choose another": "Izberi drugo",
+  "Clear Deleted Books": "Počisti izbrisane knjige",
+  "Also removes the covers, progress, and notes they left behind": "Odstrani tudi preostale naslovnice, napredek in zapiske",
+  "Exit Parallel Sync": "Izhod iz vzporedne sinhronizacije",
+  "Enter Parallel Sync": "Vstop v vzporedno sinhronizacijo",
+  "This will delete all cached files and the files left behind by deleted books. This cannot be undone.": "Izbrisane bodo vse predpomnjene datoteke in datoteke, ki so ostale od izbrisanih knjig. Tega ni mogoče razveljaviti."
 }

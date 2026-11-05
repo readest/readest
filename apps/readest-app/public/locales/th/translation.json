@@ -523,8 +523,6 @@
   "Translation Disabled": "การแปลถูกปิดใช้งาน",
   "Minimize": "ย่อ",
   "Maximize or Restore": "ขยายหรือคืนค่า",
-  "Exit Parallel Read": "ออกจากการอ่านคู่ขนาน",
-  "Enter Parallel Read": "เริ่มการอ่านคู่ขนาน",
   "Zoom Level": "ระดับการซูม",
   "Zoom Out": "ลดระดับการซูม",
   "Reset Zoom": "รีเซ็ตระดับการซูม",
@@ -2722,5 +2720,10 @@
   "Book cover": "ปกหนังสือ",
   "Browse for a cover, then choose it here.": "เรียกดูปก แล้วเลือกที่นี่",
   "Cover selected": "เลือกปกแล้ว",
-  "Choose another": "เลือกรูปภาพอื่น"
+  "Choose another": "เลือกรูปภาพอื่น",
+  "Clear Deleted Books": "ล้างหนังสือที่ลบแล้ว",
+  "Also removes the covers, progress, and notes they left behind": "ลบปก ความคืบหน้า และบันทึกที่เหลืออยู่ด้วย",
+  "Exit Parallel Sync": "ออกจากการซิงค์คู่ขนาน",
+  "Enter Parallel Sync": "เข้าสู่การซิงค์คู่ขนาน",
+  "This will delete all cached files and the files left behind by deleted books. This cannot be undone.": "การดำเนินการนี้จะลบไฟล์แคชทั้งหมดและไฟล์ที่หนังสือที่ลบแล้วทิ้งไว้ ไม่สามารถยกเลิกได้"
 }

@@ -530,8 +530,6 @@
   "Translation Disabled": "Çeviri Devre Dışı",
   "Minimize": "Küçült",
   "Maximize or Restore": "Büyüt veya Geri Yükle",
-  "Exit Parallel Read": "Paralel Okumadan Çık",
-  "Enter Parallel Read": "Paralel Okumaya Gir",
   "Zoom Level": "Yakınlaştırma Düzeyi",
   "Zoom Out": "Yakınlaştırmayı Kaldır",
   "Reset Zoom": "Yakınlaştırmayı Sıfırla",
@@ -2795,5 +2793,10 @@
   "Book cover": "Kitap kapağı",
   "Browse for a cover, then choose it here.": "Bir kapak bulun, ardından burada seçin.",
   "Cover selected": "Kapak seçildi",
-  "Choose another": "Başka birini seç"
+  "Choose another": "Başka birini seç",
+  "Clear Deleted Books": "Silinen kitapları temizle",
+  "Also removes the covers, progress, and notes they left behind": "Geride kalan kapakları, ilerlemeyi ve notları da kaldırır",
+  "Exit Parallel Sync": "Paralel senkronizasyondan çık",
+  "Enter Parallel Sync": "Paralel senkronizasyona gir",
+  "This will delete all cached files and the files left behind by deleted books. This cannot be undone.": "Bu işlem tüm önbellek dosyalarını ve silinen kitaplardan kalan dosyaları siler. Bu işlem geri alınamaz."
 }

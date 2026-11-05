@@ -532,8 +532,6 @@
   "Translation Disabled": "Tłumaczenie wyłączone",
   "Minimize": "Minimalizuj",
   "Maximize or Restore": "Maksymalizuj lub Przywróć",
-  "Exit Parallel Read": "Wyjdź z czytania równoległego",
-  "Enter Parallel Read": "Wejdź w czytanie równoległe",
   "Zoom Level": "Poziom powiększenia",
   "Zoom Out": "Zoom Wydłuż",
   "Reset Zoom": "Resetuj Zoom",
@@ -2941,5 +2939,10 @@
   "Book cover": "Okładka książki",
   "Browse for a cover, then choose it here.": "Wyszukaj okładkę, a następnie wybierz ją tutaj.",
   "Cover selected": "Wybrano okładkę",
-  "Choose another": "Wybierz inną"
+  "Choose another": "Wybierz inną",
+  "Clear Deleted Books": "Wyczyść usunięte książki",
+  "Also removes the covers, progress, and notes they left behind": "Usuwa też pozostałe okładki, postęp i notatki",
+  "Exit Parallel Sync": "Wyjdź z synchronizacji równoległej",
+  "Enter Parallel Sync": "Włącz synchronizację równoległą",
+  "This will delete all cached files and the files left behind by deleted books. This cannot be undone.": "Spowoduje to usunięcie wszystkich plików z pamięci podręcznej oraz plików pozostałych po usuniętych książkach. Tej operacji nie można cofnąć."
 }

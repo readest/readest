@@ -505,8 +505,6 @@
   "Preferred Font": "גופן מועדף",
   "Disable": "השבת",
   "Enable": "הפעל",
-  "Exit Parallel Read": "צא מקריאה מקבילה",
-  "Enter Parallel Read": "היכנס לקריאה מקבילה",
   "KOReader Sync": "סנכרון KOReader",
   "Push Progress": "דחף התקדמות",
   "Pull Progress": "משוך התקדמות",
@@ -2868,5 +2866,10 @@
   "Book cover": "כריכת הספר",
   "Browse for a cover, then choose it here.": "חפש כריכה, ואז בחר אותה כאן.",
   "Cover selected": "הכריכה נבחרה",
-  "Choose another": "בחר אחרת"
+  "Choose another": "בחר אחרת",
+  "Clear Deleted Books": "ניקוי ספרים שנמחקו",
+  "Also removes the covers, progress, and notes they left behind": "מסיר גם כריכות, התקדמות והערות שנותרו",
+  "Exit Parallel Sync": "יציאה מסנכרון מקביל",
+  "Enter Parallel Sync": "כניסה לסנכרון מקביל",
+  "This will delete all cached files and the files left behind by deleted books. This cannot be undone.": "פעולה זו תמחק את כל קובצי המטמון ואת הקבצים שנותרו מספרים שנמחקו. לא ניתן לבטל פעולה זו."
 }

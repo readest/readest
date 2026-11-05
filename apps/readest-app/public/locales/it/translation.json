@@ -529,8 +529,6 @@
   "Translation Disabled": "Terjemahan Dinonaktifkan",
   "Minimize": "Minimalkan",
   "Maximize or Restore": "Maksimalkan atau Pulihkan",
-  "Exit Parallel Read": "Esci dalla lettura parallela",
-  "Enter Parallel Read": "Entra nella lettura parallela",
   "Zoom Level": "Livello di zoom",
   "Zoom Out": "Riduci zoom",
   "Reset Zoom": "Ripristina zoom",
@@ -2868,5 +2866,10 @@
   "Book cover": "Copertina del libro",
   "Browse for a cover, then choose it here.": "Cerca una copertina, quindi sceglila qui.",
   "Cover selected": "Copertina selezionata",
-  "Choose another": "Scegline un'altra"
+  "Choose another": "Scegline un'altra",
+  "Clear Deleted Books": "Cancella libri eliminati",
+  "Also removes the covers, progress, and notes they left behind": "Rimuove anche copertine, progressi e note rimasti",
+  "Exit Parallel Sync": "Esci dalla sincronizzazione parallela",
+  "Enter Parallel Sync": "Entra nella sincronizzazione parallela",
+  "This will delete all cached files and the files left behind by deleted books. This cannot be undone.": "Verranno eliminati tutti i file nella cache e i file rimasti dei libri eliminati. L'operazione non può essere annullata."
 }

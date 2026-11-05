@@ -526,8 +526,6 @@
   "Translation Disabled": "மொழிபெயர்ப்பு முடக்கப்பட்டுள்ளது",
   "Minimize": "சிறிது செய்யவும்",
   "Maximize or Restore": "அதிகரிக்கவும் அல்லது மீட்டமைக்கவும்",
-  "Exit Parallel Read": "இணை வாசிப்பை வெளியேறு",
-  "Enter Parallel Read": "இணை வாசிப்பில் நுழையவும்",
   "Zoom Level": "ஜூம் நிலை",
   "Zoom Out": "ஜூம் குறைக்கவும்",
   "Reset Zoom": "ஜூம் மீட்டமைக்கவும்",
@@ -2795,5 +2793,10 @@
   "Book cover": "புத்தக அட்டை",
   "Browse for a cover, then choose it here.": "ஒரு அட்டையை உலாவித் தேடி, பின்னர் அதை இங்கே தேர்ந்தெடுக்கவும்.",
   "Cover selected": "அட்டை தேர்ந்தெடுக்கப்பட்டது",
-  "Choose another": "வேறொன்றைத் தேர்ந்தெடு"
+  "Choose another": "வேறொன்றைத் தேர்ந்தெடு",
+  "Clear Deleted Books": "நீக்கிய நூல்களை அழி",
+  "Also removes the covers, progress, and notes they left behind": "மீதமுள்ள அட்டைகள், முன்னேற்றம், குறிப்புகளையும் அகற்றும்",
+  "Exit Parallel Sync": "இணை ஒத்திசைவிலிருந்து வெளியேறு",
+  "Enter Parallel Sync": "இணை ஒத்திசைவில் நுழை",
+  "This will delete all cached files and the files left behind by deleted books. This cannot be undone.": "இது அனைத்து தற்காலிக கோப்புகளையும் நீக்கிய நூல்களின் மீதமுள்ள கோப்புகளையும் நீக்கும். இதை மீட்டமைக்க முடியாது."
 }

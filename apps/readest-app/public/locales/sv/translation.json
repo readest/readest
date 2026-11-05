@@ -234,8 +234,6 @@
   "Preferred Font": "Önskat typsnitt",
   "Disable": "Inaktivera",
   "Enable": "Aktivera",
-  "Exit Parallel Read": "Avsluta parallell läsning",
-  "Enter Parallel Read": "Starta parallell läsning",
   "KOReader Sync": "KOReader-synk",
   "Push Progress": "Skicka framsteg",
   "Pull Progress": "Hämta framsteg",
@@ -2795,5 +2793,10 @@
   "Book cover": "Bokomslag",
   "Browse for a cover, then choose it here.": "Leta upp ett omslag och välj det sedan här.",
   "Cover selected": "Omslag valt",
-  "Choose another": "Välj ett annat"
+  "Choose another": "Välj ett annat",
+  "Clear Deleted Books": "Rensa borttagna böcker",
+  "Also removes the covers, progress, and notes they left behind": "Tar också bort kvarvarande omslag, läsframsteg och anteckningar",
+  "Exit Parallel Sync": "Avsluta parallell synkronisering",
+  "Enter Parallel Sync": "Starta parallell synkronisering",
+  "This will delete all cached files and the files left behind by deleted books. This cannot be undone.": "Detta raderar alla cachade filer och de filer som borttagna böcker lämnat kvar. Det går inte att ångra."
 }

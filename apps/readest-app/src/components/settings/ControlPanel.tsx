@@ -337,15 +337,19 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
 
   useEffect(() => {
     saveViewSettings(envConfig, bookKey, 'animated', animated, false, false);
-    if (animated) {
-      getView(bookKey)?.renderer.setAttribute('animated', '');
-    } else {
-      getView(bookKey)?.renderer.removeAttribute('animated');
-    }
     // Mesh-curl eligibility depends on `animated`.
     applyTurnAttributes();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [animated]);
+
+  useEffect(() => {
+    if (animated && !isEink) {
+      getView(bookKey)?.renderer.setAttribute('animated', '');
+    } else {
+      getView(bookKey)?.renderer.removeAttribute('animated');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [animated, isEink]);
 
   useEffect(() => {
     saveViewSettings(envConfig, bookKey, 'pageTurnStyle', pageTurnStyle, false, false);
@@ -354,7 +358,13 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
   }, [pageTurnStyle]);
 
   useEffect(() => {
-    saveViewSettings(envConfig, bookKey, 'isEink', isEink);
+    const saveEink = async () => {
+      await saveViewSettings(envConfig, bookKey, 'isEink', isEink);
+      // Captured turns are off in e-ink mode. A global save reaches this book
+      // after the ones before it, so refresh once the save is done.
+      applyTurnAttributes();
+    };
+    saveEink();
     if (isEink) {
       getView(bookKey)?.renderer.setAttribute('eink', '');
     } else {
@@ -696,8 +706,9 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
       <BoxedList title={_('Animation')} data-setting-id='settings.control.pagingAnimation'>
         <SettingsSwitchRow
           label={_('Paging Animation')}
-          checked={animated}
+          checked={animated && !isEink}
           onChange={() => setAnimated(!animated)}
+          disabled={isEink}
         />
         <SettingsRow label={_('Animation Style')} data-setting-id='settings.control.pageTurnStyle'>
           <SettingsSelect
@@ -709,7 +720,7 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
             onChange={(e) => setPageTurnStyle(e.target.value as PageTurnStyle)}
             ariaLabel={_('Animation Style')}
             options={turnStyleOptions}
-            disabled={!animated}
+            disabled={!animated || isEink}
           />
         </SettingsRow>
       </BoxedList>

@@ -560,8 +560,6 @@
   "Preferred Font": "Font preferat",
   "Disable": "Dezactivează",
   "Enable": "Activează",
-  "Exit Parallel Read": "Ieși din citirea paralelă",
-  "Enter Parallel Read": "Intră în citirea paralelă",
   "KOReader Sync": "Sincronizare KOReader",
   "Push Progress": "Trimite progresul (Push)",
   "Pull Progress": "Preia progresul (Pull)",
@@ -2868,5 +2866,10 @@
   "Book cover": "Coperta cărții",
   "Browse for a cover, then choose it here.": "Căutați o copertă, apoi alegeți-o aici.",
   "Cover selected": "Copertă selectată",
-  "Choose another": "Alegeți alta"
+  "Choose another": "Alegeți alta",
+  "Clear Deleted Books": "Curăță cărțile șterse",
+  "Also removes the covers, progress, and notes they left behind": "Elimină și copertele, progresul și notițele rămase",
+  "Exit Parallel Sync": "Ieși din sincronizarea paralelă",
+  "Enter Parallel Sync": "Intră în sincronizarea paralelă",
+  "This will delete all cached files and the files left behind by deleted books. This cannot be undone.": "Vor fi șterse toate fișierele din cache și fișierele lăsate în urmă de cărțile șterse. Această acțiune nu poate fi anulată."
 }

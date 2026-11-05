@@ -185,6 +185,12 @@ msgstr "从云端和设备移除这本书？"
 msgid "Remove"
 msgstr "移除"
 
+msgid "Remove from Library, Keep File"
+msgstr "从书库移除,保留文件"
+
+msgid "Remove this book from your library and the cloud? The file stays on this device."
+msgstr "要从书库和云端移除这本书吗?文件会保留在此设备上。"
+
 msgid "Remove from Cloud Only"
 msgstr "仅从云端移除"
 

@@ -185,6 +185,12 @@ msgstr "להסיר את הספר הזה מהענן ומהמכשיר?"
 msgid "Remove"
 msgstr "הסר"
 
+msgid "Remove from Library, Keep File"
+msgstr "הסרה מהספרייה, שמירת הקובץ"
+
+msgid "Remove this book from your library and the cloud? The file stays on this device."
+msgstr "להסיר את הספר מהספרייה ומהענן? הקובץ יישאר במכשיר זה."
+
 msgid "Remove from Cloud Only"
 msgstr "הסר רק מהענן"
 

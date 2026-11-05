@@ -615,8 +615,6 @@
   "Preferred Font": "Afzal koʻrilgan shrift",
   "Disable": "Oʻchirish",
   "Enable": "Yoqish",
-  "Exit Parallel Read": "Parallel oʻqishdan chiqish",
-  "Enter Parallel Read": "Parallel oʻqishga kirish",
   "KOReader Sync": "KOReader sinxronlash",
   "Push Progress": "Jarayonni yuborish",
   "Pull Progress": "Jarayonni olish",
@@ -2795,5 +2793,10 @@
   "Book cover": "Kitob muqovasi",
   "Browse for a cover, then choose it here.": "Muqovani toping, soʻng uni shu yerda tanlang.",
   "Cover selected": "Muqova tanlandi",
-  "Choose another": "Boshqasini tanlash"
+  "Choose another": "Boshqasini tanlash",
+  "Clear Deleted Books": "Oʻchirilgan kitoblarni tozalash",
+  "Also removes the covers, progress, and notes they left behind": "Qolgan muqovalar, oʻqish jarayoni va qaydlarni ham oʻchiradi",
+  "Exit Parallel Sync": "Parallel sinxronlashdan chiqish",
+  "Enter Parallel Sync": "Parallel sinxronlashga kirish",
+  "This will delete all cached files and the files left behind by deleted books. This cannot be undone.": "Bu barcha kesh fayllarni va oʻchirilgan kitoblardan qolgan fayllarni oʻchiradi. Buni ortga qaytarib boʻlmaydi."
 }

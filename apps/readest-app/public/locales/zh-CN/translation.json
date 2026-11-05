@@ -524,8 +524,6 @@
   "Translation Disabled": "翻译已禁用",
   "Minimize": "最小化",
   "Maximize or Restore": "最大化或还原",
-  "Exit Parallel Read": "退出并排阅读",
-  "Enter Parallel Read": "进入并排阅读",
   "Zoom Level": "缩放级别",
   "Zoom Out": "缩小",
   "Reset Zoom": "重置缩放",
@@ -2722,5 +2720,10 @@
   "Book cover": "书籍封面",
   "Browse for a cover, then choose it here.": "浏览找到封面后，在此处选择。",
   "Cover selected": "已选择封面",
-  "Choose another": "重新选择"
+  "Choose another": "重新选择",
+  "Clear Deleted Books": "清理已删除书籍",
+  "Also removes the covers, progress, and notes they left behind": "同时移除它们遗留的封面、进度和笔记",
+  "Exit Parallel Sync": "退出并排同步",
+  "Enter Parallel Sync": "进入并排同步",
+  "This will delete all cached files and the files left behind by deleted books. This cannot be undone.": "这将删除所有缓存文件以及已删除书籍遗留的文件。此操作无法撤销。"
 }

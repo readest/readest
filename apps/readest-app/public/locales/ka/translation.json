@@ -844,8 +844,6 @@
   "Preferred Font": "სასურველი შრიფტი",
   "Disable": "გამორთვა",
   "Enable": "ჩართვა",
-  "Exit Parallel Read": "პარალელური კითხვიდან გასვლა",
-  "Enter Parallel Read": "პარალელურ კითხვაში შესვლა",
   "KOReader Sync": "KOReader სინქრონიზაცია",
   "Push Progress": "პროგრესის გაგზავნა",
   "Pull Progress": "პროგრესის მიღება",
@@ -2795,5 +2793,10 @@
   "Book cover": "წიგნის ყდა",
   "Browse for a cover, then choose it here.": "მოძებნეთ ყდა, შემდეგ აირჩიეთ ის აქ.",
   "Cover selected": "ყდა არჩეულია",
-  "Choose another": "სხვის არჩევა"
+  "Choose another": "სხვის არჩევა",
+  "Clear Deleted Books": "წაშლილი წიგნების გასუფთავება",
+  "Also removes the covers, progress, and notes they left behind": "ასევე შლის დარჩენილ ყდებს, პროგრესსა და შენიშვნებს",
+  "Exit Parallel Sync": "პარალელური სინქრონიზაციიდან გასვლა",
+  "Enter Parallel Sync": "პარალელურ სინქრონიზაციაში შესვლა",
+  "This will delete all cached files and the files left behind by deleted books. This cannot be undone.": "ეს წაშლის ყველა ქეშირებულ ფაილს და წაშლილი წიგნებისგან დარჩენილ ფაილებს. ამის გაუქმება შეუძლებელია."
 }
