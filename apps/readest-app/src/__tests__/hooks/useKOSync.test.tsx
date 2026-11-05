@@ -34,7 +34,7 @@ const h = vi.hoisted(() => {
     hash: 'h1',
     title: 'Old title',
     originalFilename: '',
-    format: 'EPUB',
+    format: 'EPUB' as string,
     updatedAt: 1,
   };
   const bookDoc = {};
@@ -116,7 +116,12 @@ vi.mock('@/store/readerStore', () => ({
 
 vi.mock('@/store/bookDataStore', () => ({
   useBookDataStore: h.makeStore({
-    getBookData: () => ({ book: h.book, bookDoc: h.bookDoc, config: h.config }),
+    getBookData: () => ({
+      book: h.book,
+      bookDoc: h.bookDoc,
+      config: h.config,
+      isFixedLayout: h.book.format === 'PDF',
+    }),
     getConfig: () => h.config,
     setConfig: (_key: string, patch: Record<string, unknown>) => Object.assign(h.config, patch),
   }),
@@ -216,12 +221,14 @@ beforeEach(() => {
   };
   h.book.title = 'Old title';
   h.book.originalFilename = '';
+  h.book.format = 'EPUB';
   h.cfiResolves = true;
   h.getProgressMock.mockReset();
   h.getProgressMock.mockResolvedValue(h.remote);
   h.updateProgressMock.mockClear();
   h.goTo.mockClear();
   h.goToFraction.mockClear();
+  h.view.select.mockClear();
   h.eventListeners.clear();
   h.activeCallback = null;
 });
@@ -789,5 +796,89 @@ describe('useKOSync — provider-scoped manual sync events (#6029)', () => {
     await fire('pull-kosync', { bookKey: 'h1-view1', provider: 'bookorbit' });
 
     expect(h.getProgressMock).not.toHaveBeenCalled();
+  });
+});
+
+describe('useKOSync — a remote position with only a percentage (#7330)', () => {
+  // Grimmory reports progress made in its own reader as a percentage with
+  // `progress: null`; for PDFs it never has a page to send. The pull must
+  // still move the reader there instead of treating it as "no progress" and
+  // letting the next page turn push the stale local page over it.
+  beforeEach(() => {
+    h.book.format = 'PDF';
+    h.localProgress = {
+      location: '0',
+      pageinfo: { current: 0, total: 70 },
+      section: { current: 0, total: 70 },
+    };
+    // Grimmory's reader saves page / total: page 27 of 70.
+    h.remote = { ...h.remote, progress: null, percentage: 0.386, device_id: 'Grimmory' };
+    h.getProgressMock.mockResolvedValue(h.remote);
+  });
+
+  test('silent: goes to the page the percentage names', async () => {
+    h.settings.kosync.strategy = 'silent';
+    const { result } = renderHook(() => useKOSync('h1-view1'));
+    await settle();
+
+    expect(h.view.select).toHaveBeenCalledWith(26);
+    expect(result.current.syncState).toBe('synced');
+  });
+
+  test('prompt: offers the page, and taking it goes there', async () => {
+    const { result } = renderHook(() => useKOSync('h1-view1'));
+    await settle();
+
+    expect(result.current.syncState).toBe('conflict');
+    expect(result.current.conflictDetails?.remote.preview).toBe(
+      'Page {{page}} of {{total}} ({{percentage}}%)',
+    );
+    await act(async () => {
+      await result.current.resolveWithRemote();
+    });
+    expect(h.view.select).toHaveBeenCalledWith(26);
+  });
+
+  test('does not push the stale local page over it', async () => {
+    renderHook(() => useKOSync('h1-view1'));
+    await settle();
+    await advance(KOSYNC_PUSH_DEBOUNCE_MS + 500);
+
+    expect(h.updateProgressMock).not.toHaveBeenCalled();
+  });
+
+  test('reflowable: goes to the fraction', async () => {
+    h.book.format = 'EPUB';
+    h.localProgress = {
+      location: 'epubcfi(/6/4!/4/2/2)',
+      sectionLabel: 'Chapter 9',
+      pageinfo: { current: 13, total: 100 },
+      section: { current: 0, total: 0 },
+    };
+    h.settings.kosync.strategy = 'silent';
+    renderHook(() => useKOSync('h1-view1'));
+    await settle();
+
+    expect(h.goToFraction).toHaveBeenCalledWith(0.386);
+  });
+});
+
+describe('useKOSync — fixed-layout page numbers (#7330)', () => {
+  // KOReader's progress for a PDF is the 1-based page number, which is also
+  // what the pull reads. Pushing the 0-based index put every other reader one
+  // page back, and Readest itself stepped back a page on each round trip.
+  test('pushes the 1-based page number', async () => {
+    h.book.format = 'PDF';
+    h.localProgress = {
+      location: '26',
+      pageinfo: { current: 26, total: 70 },
+      section: { current: 26, total: 70 },
+    };
+    h.getProgressMock.mockResolvedValue(null);
+    renderHook(() => useKOSync('h1-view1'));
+    await settle();
+    await advance(KOSYNC_PUSH_DEBOUNCE_MS + 500);
+
+    expect(h.updateProgressMock).toHaveBeenCalledWith(h.book, '27', 27 / 70);
   });
 });
