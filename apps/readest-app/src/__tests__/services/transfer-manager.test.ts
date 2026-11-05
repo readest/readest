@@ -727,6 +727,29 @@ describe('TransferManager', () => {
         });
       });
 
+      test('flags the file backend when it does not hold a book and there is no cloud copy', async () => {
+        setCachedUserPlan('plus');
+        useSettingsStore.setState({
+          settings: {
+            version: 1,
+            readestCloud: { enabled: false },
+            webdav: { enabled: true, serverUrl: 'http://dav', username: 'u', password: 'p' },
+            googleDrive: { enabled: false },
+          } as unknown as SystemSettings,
+        });
+        vi.mocked(runFileBookDownload).mockResolvedValue(false);
+        const book = makeBook({ hash: 'h1', title: 'Dune' });
+        await setup(makeAppService(), book);
+
+        transferManager.queueDownload(book);
+        await vi.advanceTimersByTimeAsync(30000);
+
+        const { entries } = readFlowState();
+        expect(entries[0]).toMatchObject({ connector: 'webdav', direction: 'pull', kind: 'books' });
+        expect(entries[0]?.error).toBeTruthy();
+        expect(entries.some((entry) => entry.connector === 'readest-cloud')).toBe(false);
+      });
+
       test('leaves cloud deletes out of the counts', async () => {
         const book = makeBook({ hash: 'h1', title: 'Dune' });
         await setup(makeAppService(), book);

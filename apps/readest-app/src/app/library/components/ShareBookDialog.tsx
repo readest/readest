@@ -116,6 +116,15 @@ const ShareBookDialog: React.FC<ShareBookDialogProps> = ({ isOpen, book, cfi, on
             kind: 'books',
             bookTitle: book.title,
           });
+        } catch (error) {
+          recordFlow({
+            connector: 'readest-cloud',
+            direction: 'push',
+            kind: 'books',
+            bookTitle: book.title,
+            error: error instanceof Error ? error.message : String(error),
+          });
+          throw error;
         } finally {
           setUploadProgress(null);
         }

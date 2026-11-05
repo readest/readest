@@ -134,11 +134,10 @@ export const useGrimmoryNotesSync = (bookKey: string) => {
       recordFlow({ ...notes, direction: 'pull', count: pulled });
     } catch (error) {
       console.warn('[Grimmory] sync failed', error);
-      recordFlow({
-        ...notes,
-        direction: 'push',
-        error: error instanceof Error ? error.message : String(error),
-      });
+      // One exchange carries both ways, so a failure stops both.
+      const message = error instanceof Error ? error.message : String(error);
+      recordFlow({ ...notes, direction: 'pull', error: message });
+      recordFlow({ ...notes, direction: 'push', error: message });
     } finally {
       passRunning.current = false;
     }

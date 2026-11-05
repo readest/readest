@@ -303,9 +303,7 @@ const ConnectorDetail: React.FC<{
           {entries.length > 0 ? (
             entries
               .slice(0, HISTORY_ROWS)
-              .map((entry) => (
-                <HistoryRow key={`${entry.at}-${entry.direction}-${entry.kind}`} entry={entry} />
-              ))
+              .map((entry, index) => <HistoryRow key={`${entry.at}-${index}`} entry={entry} />)
           ) : (
             <SettingsRow asLabel={false} label={_('Nothing has synced yet')} />
           )}

@@ -28,6 +28,13 @@ import type { PendingItem, SyncResult, OPDSSubscriptionState, FailedEntry } from
 import { runWithConcurrency } from '@/utils/concurrency';
 import { uniqueId } from '@/utils/misc';
 
+const BOOK_PULL = { connector: 'opds', direction: 'pull', kind: 'books' } as const;
+
+interface FlowFailure {
+  bookTitle?: string;
+  error: string;
+}
+
 /**
  * Download a single item and import it into the library.
  */
@@ -182,7 +189,12 @@ async function syncCatalog(
   appService: AppService,
   books: Book[],
   onBooksImported?: (newBooks: Book[]) => Promise<void>,
-): Promise<{ newBooks: Book[]; state: OPDSSubscriptionState; error?: unknown }> {
+): Promise<{
+  newBooks: Book[];
+  state: OPDSSubscriptionState;
+  failedDownloads: FlowFailure[];
+  error?: unknown;
+}> {
   const state = await loadSubscriptionState(appService, catalog.id);
 
   // Discovery: find new items from feeds
@@ -221,7 +233,7 @@ async function syncCatalog(
   if (allItems.length === 0) {
     state.lastCheckedAt = Date.now();
     await saveSubscriptionState(appService, state);
-    return { newBooks: [], state };
+    return { newBooks: [], state, failedDownloads: [] };
   }
 
   // Acquisition: download with bounded concurrency, in batches.
@@ -233,6 +245,7 @@ async function syncCatalog(
   // the sync could never converge however often it was retried. Batching
   // bounds that loss to one batch and lets successive runs make progress.
   const newBooks: Book[] = [];
+  const failedDownloads: FlowFailure[] = [];
   const updatedFailedEntries: FailedEntry[] = [
     // Keep non-retry-eligible failures as-is
     ...state.failedEntries.filter((fe) => !isRetryEligible(fe)),
@@ -290,13 +303,11 @@ async function syncCatalog(
         newBooks.push(...batchBooks);
       }
       for (const outcome of downloadResults) {
-        recordFlow({
-          connector: 'opds',
-          direction: 'pull',
-          kind: 'books',
-          bookTitle: outcome.item.title,
-          error: 'result' in outcome ? undefined : String(outcome.error),
-        });
+        if ('result' in outcome) {
+          recordFlow({ ...BOOK_PULL, bookTitle: outcome.item.title });
+        } else {
+          failedDownloads.push({ bookTitle: outcome.item.title, error: String(outcome.error) });
+        }
       }
 
       state.knownEntryIds = pruneKnownEntryIds([...state.knownEntryIds, ...newKnownIds]);
@@ -305,10 +316,10 @@ async function syncCatalog(
       await saveSubscriptionState(appService, state);
     }
   } catch (error) {
-    return { newBooks, state, error };
+    return { newBooks, state, failedDownloads, error };
   }
 
-  return { newBooks, state };
+  return { newBooks, state, failedDownloads };
 }
 
 /**
@@ -333,21 +344,26 @@ export async function syncSubscribedCatalogs(
 
   const allNewBooks: Book[] = [];
   const errors: SyncResult['errors'] = [];
+  const failures: FlowFailure[] = [];
 
   for (const catalog of eligible) {
     try {
-      const { newBooks, error } = await syncCatalog(catalog, appService, books, onBooksImported);
+      const { newBooks, failedDownloads, error } = await syncCatalog(
+        catalog,
+        appService,
+        books,
+        onBooksImported,
+      );
+      failures.push(...failedDownloads);
       // Take the books committed before the failure, then let the existing
       // error path run — those batches are already on disk and marked known.
       allNewBooks.push(...newBooks);
       if (error) throw error;
     } catch (reason) {
       console.error(`OPDS sync: catalog "${catalog.name}" failed:`, reason);
-      errors.push({
-        catalogId: catalog.id,
-        catalogName: catalog.name,
-        error: reason instanceof Error ? reason.message : String(reason),
-      });
+      const error = reason instanceof Error ? reason.message : String(reason);
+      errors.push({ catalogId: catalog.id, catalogName: catalog.name, error });
+      failures.push({ error });
       try {
         const state = await loadSubscriptionState(appService, catalog.id);
         state.lastCheckedAt = Date.now();
@@ -357,6 +373,8 @@ export async function syncSubscribedCatalogs(
       }
     }
   }
+  // Last, so one catalog's success doesn't hide another's failure.
+  for (const failure of failures) recordFlow({ ...BOOK_PULL, ...failure });
 
   return {
     newBooks: allNewBooks,

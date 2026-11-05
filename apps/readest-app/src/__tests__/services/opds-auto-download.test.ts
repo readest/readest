@@ -59,6 +59,7 @@ vi.mock('@/services/opds/subscriptionState', () => ({
 }));
 
 import { syncSubscribedCatalogs } from '@/services/opds/autoDownload';
+import { getConnectorSyncStatus } from '@/services/sync/dataFlow/log';
 import { checkFeedForNewItems } from '@/services/opds/feedChecker';
 import { saveSubscriptionState, loadSubscriptionState } from '@/services/opds/subscriptionState';
 import { upsertOPDSSourceMapping } from '@/services/opds/sourceMap';
@@ -312,6 +313,35 @@ describe('OPDS auto-download orchestrator', () => {
     expect(savedState.failedEntries[0]!.entryId).toBe('urn:fail:1');
     expect(savedState.failedEntries[0]!.attempts).toBe(1);
     expect(savedState.knownEntryIds).not.toContain('urn:fail:1');
+  });
+
+  it('keeps showing a catalog that failed when a later one succeeds', async () => {
+    const catalogs: OPDSCatalog[] = [
+      { id: 'cat-1', name: 'Down', url: 'https://down.example.com/opds', autoDownload: true },
+      { id: 'cat-2', name: 'Up', url: 'https://up.example.com/opds', autoDownload: true },
+    ];
+    vi.mocked(checkFeedForNewItems)
+      .mockRejectedValueOnce(new Error('feed unreachable'))
+      .mockResolvedValue([
+        {
+          entryId: 'urn:up:1',
+          title: 'Good Book',
+          acquisitionHref: '/dl/good.epub',
+          mimeType: 'application/epub+zip',
+          baseURL: 'https://up.example.com',
+        },
+      ]);
+    const realNow = Date.now();
+    const now = vi.spyOn(Date, 'now');
+    now.mockImplementation(() => realNow + now.mock.calls.length);
+
+    await syncSubscribedCatalogs(catalogs, appService, []);
+    now.mockRestore();
+
+    expect(getConnectorSyncStatus(readFlowState(), 'opds')).toMatchObject({
+      status: 'failed',
+      error: 'feed unreachable',
+    });
   });
 
   it('returns empty result when no catalogs have autoDownload', async () => {

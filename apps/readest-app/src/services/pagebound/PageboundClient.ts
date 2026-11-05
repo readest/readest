@@ -43,6 +43,9 @@ type BookResponse = {
 };
 
 // Pagebound dates are M/D/YYYY in local time, as its web app sends them.
+/** Pagebound can't take this one book. The connection itself is fine. */
+export class PageboundBookError extends Error {}
+
 const today = () => {
   const d = new Date();
   return `${d.getMonth() + 1}/${d.getDate()}/${d.getFullYear()}`;
@@ -209,7 +212,9 @@ export class PageboundClient {
       const match = matches.find((hit) => compactName(hit.author) === author) ?? matches[0];
       if (match) return { bookId: match.bookId, uuid: match.uuid, title: match.title };
     }
-    throw new Error('Unable to find this book on Pagebound. Use Link Book to choose it.');
+    throw new PageboundBookError(
+      'Unable to find this book on Pagebound. Use Link Book to choose it.',
+    );
   }
 
   private getBook(uuid: string) {
@@ -241,7 +246,7 @@ export class PageboundClient {
     // Reopening a finished book here would start a new read on Pagebound and
     // rewrite the user's stats; a re-read is the user's call, made there.
     if (userBook?.status === 'finished') {
-      throw new Error('This book is already marked as finished on Pagebound');
+      throw new PageboundBookError('This book is already marked as finished on Pagebound');
     }
 
     if (!userBook || userBook.status !== 'current') {

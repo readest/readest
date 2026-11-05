@@ -629,10 +629,30 @@ class TransferManager {
     if (transfer.kind !== 'book' || transfer.type === 'delete') return;
     const book = this.getLibrary!().find((b) => b.hash === transfer.bookHash);
     const provider = useTransferStore.getState().transfers[transfer.id]?.provider;
+    const settings = useSettingsStore.getState().settings;
+    const isAudiobook = book?.format === 'ABS';
+    // With no cloud copy to fall back on, this download was the file backends' alone.
+    if (
+      error &&
+      transfer.type === 'download' &&
+      !isAudiobook &&
+      !isReadestCloudStorageActive(settings)
+    ) {
+      for (const connector of getActiveFileSyncBackends(settings)) {
+        recordFlow({
+          connector,
+          direction: 'pull',
+          kind: 'books',
+          bookTitle: transfer.bookTitle,
+          error,
+        });
+      }
+      return;
+    }
     // runFileBookDownload knows which backend served the file and records it.
     if (provider && provider !== 'readest') return;
     recordFlow({
-      connector: book?.format === 'ABS' ? 'audiobookshelf' : 'readest-cloud',
+      connector: isAudiobook ? 'audiobookshelf' : 'readest-cloud',
       direction: transfer.type === 'upload' ? 'push' : 'pull',
       kind: 'books',
       bookTitle: transfer.bookTitle,

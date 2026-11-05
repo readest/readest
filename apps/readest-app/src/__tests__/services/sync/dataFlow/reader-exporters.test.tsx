@@ -72,6 +72,7 @@ vi.mock('@/services/pagebound', () => ({
   PageboundClient: class {
     pushProgress = h.pageboundPush;
   },
+  PageboundBookError: class extends Error {},
 }));
 vi.mock('@/services/obsidian/vaultSync', () => ({
   syncBookToVault: h.obsidianSync,
@@ -94,6 +95,7 @@ vi.mock('@/services/hardcover', () => {
 });
 
 import { HardcoverUnmatchedError } from '@/services/hardcover';
+import { PageboundBookError } from '@/services/pagebound';
 import { useHardcoverSync } from '@/app/reader/hooks/useHardcoverSync';
 import { useNotionSync } from '@/app/reader/hooks/useNotionSync';
 import { useObsidianSync } from '@/app/reader/hooks/useObsidianSync';
@@ -213,6 +215,15 @@ describe('exporters report what they moved', () => {
     h.pageboundPush.mockRejectedValueOnce(new Error('Session expired'));
     await fire('pagebound-push-progress');
     expect(readFlowState().entries[0]).toMatchObject({ error: 'Session expired' });
+  });
+
+  it('Pagebound: a book it cannot take is not a broken sync', async () => {
+    h.pageboundPush.mockRejectedValueOnce(new PageboundBookError('No match'));
+    renderHook(() => usePageboundSync('k'));
+
+    await fire('pagebound-push-progress');
+
+    expect(readFlowState().entries).toEqual([]);
   });
 
   it('Obsidian: counts the highlights it changed in the vault', async () => {

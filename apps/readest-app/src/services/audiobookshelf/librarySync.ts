@@ -350,17 +350,17 @@ export const syncAllAbsServers = async (appService: AppService): Promise<void> =
     .getState()
     .getAvailableServers()
     .filter((s) => !s.disabled);
+  const failures: string[] = [];
   for (const server of servers) {
     try {
       await syncAbsServer(appService, server);
     } catch (error) {
       console.error(`[ABS] sync failed for server "${server.name}":`, error);
-      recordFlow({
-        ...LIBRARY_PULL,
-        error: error instanceof Error ? error.message : String(error),
-      });
+      failures.push(error instanceof Error ? error.message : String(error));
     }
   }
+  // Last, so one server's success doesn't hide another's failure.
+  for (const error of failures) recordFlow({ ...LIBRARY_PULL, error });
 };
 
 /** Tombstone all books belonging to a removed server. */

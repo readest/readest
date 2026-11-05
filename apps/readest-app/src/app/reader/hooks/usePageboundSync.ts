@@ -7,7 +7,7 @@ import { useBookProgress } from '@/store/readerProgressStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { eventDispatcher } from '@/utils/event';
 import { debounce } from '@/utils/debounce';
-import { PageboundClient, type PageboundSession } from '@/services/pagebound';
+import { PageboundBookError, PageboundClient, type PageboundSession } from '@/services/pagebound';
 import { recordFlow } from '@/services/sync/dataFlow/log';
 import type { PageboundSettings } from '@/types/settings';
 import type { PageboundBookLink } from '@/types/book';
@@ -78,7 +78,10 @@ export const usePageboundSync = (bookKey: string) => {
         }
       } catch (error) {
         console.error('Pagebound progress sync failed:', error);
-        recordPush(book.title, error instanceof Error ? error.message : String(error));
+        // One book it can't take says nothing about the connection.
+        if (!(error instanceof PageboundBookError)) {
+          recordPush(book.title, error instanceof Error ? error.message : String(error));
+        }
         if (!silent) {
           eventDispatcher.dispatch('toast', {
             message: _('Pagebound progress sync failed: {{error}}', {

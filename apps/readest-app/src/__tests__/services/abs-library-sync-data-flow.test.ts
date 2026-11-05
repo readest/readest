@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AppService } from '@/types/system';
 
 const h = vi.hoisted(() => ({
+  servers: [{ id: 's1', name: 'Home', url: 'http://abs' }],
   client: {
     getLibraries: vi.fn(),
     getLibraryItems: vi.fn(),
@@ -12,7 +13,7 @@ const h = vi.hoisted(() => ({
 vi.mock('@/services/audiobookshelf/createClient', () => ({ createAbsClient: () => h.client }));
 vi.mock('@/store/absServerStore', () => {
   const state = {
-    getAvailableServers: () => [{ id: 's1', name: 'Home', url: 'http://abs' }],
+    getAvailableServers: () => h.servers,
     updateServer: vi.fn(),
     saveABSServers: vi.fn(async () => {}),
   };
@@ -20,7 +21,7 @@ vi.mock('@/store/absServerStore', () => {
 });
 
 import { syncAllAbsServers } from '@/services/audiobookshelf/librarySync';
-import { readFlowState } from '@/services/sync/dataFlow/log';
+import { getConnectorSyncStatus, readFlowState } from '@/services/sync/dataFlow/log';
 
 const appService = {
   saveLibraryBooks: vi.fn(async () => {}),
@@ -34,6 +35,7 @@ describe('syncAllAbsServers data flow', () => {
     h.client.getLibraries.mockReset().mockResolvedValue([]);
     h.client.getLibraryItems.mockReset().mockResolvedValue([]);
     h.client.getMe.mockReset().mockResolvedValue({ mediaProgress: [] });
+    h.servers = [{ id: 's1', name: 'Home', url: 'http://abs' }];
   });
 
   it('counts streaming stubs as no files, though it shows the sync worked', async () => {
@@ -64,6 +66,26 @@ describe('syncAllAbsServers data flow', () => {
       connector: 'audiobookshelf',
       direction: 'pull',
       kind: 'books',
+      error: 'Unauthorized',
+    });
+  });
+
+  it('keeps showing a failed server when a later one succeeds', async () => {
+    h.servers = [
+      { id: 's1', name: 'Home', url: 'http://abs' },
+      { id: 's2', name: 'Office', url: 'http://abs2' },
+    ];
+    h.client.getLibraries.mockRejectedValueOnce(new Error('Unauthorized')).mockResolvedValue([]);
+    const realNow = Date.now();
+    // The second server finishes later than the first, as it always does in use.
+    const now = vi.spyOn(Date, 'now');
+    now.mockImplementation(() => realNow + now.mock.calls.length);
+
+    await syncAllAbsServers(appService);
+    now.mockRestore();
+
+    expect(getConnectorSyncStatus(readFlowState(), 'audiobookshelf')).toMatchObject({
+      status: 'failed',
       error: 'Unauthorized',
     });
   });

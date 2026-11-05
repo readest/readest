@@ -85,12 +85,18 @@ export const recordLibraryPass = (connector: FileSyncBackendKind, result: SyncLi
   add('push', 'books', result.filesUploaded ?? 0);
   // booksAdded are shelf rows: their files download on demand.
   add('pull', 'books', 0);
-  const failed = { connector, direction: 'push', kind: 'books' } as const;
-  for (const { title, hash, reason } of result.failedBooks) {
-    recordFlow({ ...failed, bookTitle: title || hash, error: reason });
+  for (const { title, hash, reason, phase } of result.failedBooks) {
+    const direction = phase === 'download' ? 'pull' : 'push';
+    recordFlow({ ...bookFile(connector, direction), bookTitle: title || hash, error: reason });
   }
   if (result.indexPushFailed)
-    recordFlow({ ...failed, error: 'Failed to upload the library index' });
+    recordFlow({ ...bookFile(connector, 'push'), error: 'Failed to upload the library index' });
+};
+
+/** A pass that stopped partway doesn't say which side broke, so both are flagged. */
+export const recordLibraryPassFailure = (connector: FileSyncBackendKind, error: string) => {
+  recordFlow({ ...bookFile(connector, 'pull'), error });
+  recordFlow({ ...bookFile(connector, 'push'), error });
 };
 
 /** One backend's library sync. Throws; the caller isolates the failure. */
@@ -201,7 +207,7 @@ export const runFileLibrarySyncPass = async (
       } catch (e) {
         const message = e instanceof Error ? e.message : String(e);
         useFileSyncStore.getState().setLastError(kind, message);
-        recordFlow({ connector: kind, direction: 'push', kind: 'books', error: message });
+        recordLibraryPassFailure(kind, message);
         console.warn('[cloudSync] library file sync failed', kind, e);
       }
     }
@@ -238,6 +244,11 @@ export const runFileBookUpload = async (envConfig: EnvConfigType, book: Book): P
       }
     } catch (e) {
       console.warn('[cloudSync] book upload failed', kind, book.hash, e);
+      recordFlow({
+        ...bookFile(kind, 'push'),
+        bookTitle: book.title,
+        error: e instanceof Error ? e.message : String(e),
+      });
     }
   }
   return anyUploaded;
