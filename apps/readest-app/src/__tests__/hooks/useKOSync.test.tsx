@@ -830,8 +830,9 @@ describe('useKOSync — a remote position with only a percentage (#7330)', () =>
     await settle();
 
     expect(result.current.syncState).toBe('conflict');
+    // The page comes from the local page count, so it is only approximate.
     expect(result.current.conflictDetails?.remote.preview).toBe(
-      'Page {{page}} of {{total}} ({{percentage}}%)',
+      'Approximately page {{page}} of {{total}} ({{percentage}}%)',
     );
     await act(async () => {
       await result.current.resolveWithRemote();
@@ -845,6 +846,32 @@ describe('useKOSync — a remote position with only a percentage (#7330)', () =>
     await advance(KOSYNC_PUSH_DEBOUNCE_MS + 500);
 
     expect(h.updateProgressMock).not.toHaveBeenCalled();
+  });
+
+  test('prompt: a new percentage after resolving prompts again, even with no timestamp', async () => {
+    h.remote = { ...h.remote, timestamp: undefined };
+    h.getProgressMock.mockResolvedValue(h.remote);
+    const { result } = renderHook(() => useKOSync('h1-view1'));
+    await settle();
+    expect(result.current.syncState).toBe('conflict');
+
+    await act(async () => {
+      result.current.resolveWithLocal();
+      await flushMicrotasks();
+    });
+    expect(result.current.syncState).toBe('synced');
+
+    h.getProgressMock.mockResolvedValue({ ...h.remote, percentage: 0.5 });
+    await act(async () => {
+      h.activeCallback?.(false);
+      await flushMicrotasks();
+    });
+    await act(async () => {
+      h.activeCallback?.(true);
+      await flushMicrotasks();
+    });
+
+    expect(result.current.syncState).toBe('conflict');
   });
 
   test('reflowable: goes to the fraction', async () => {

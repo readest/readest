@@ -280,7 +280,10 @@ export const useKOSync = (bookKey: string, provider: KosyncProgressProvider = ko
       if (remotePage !== undefined && remotePercentage > 0) {
         const localTotalPages = localPageInfo?.total ?? 0;
         const remoteTotalPages = Math.round(remotePage / remotePercentage);
-        const pagesMatch = Math.abs(localTotalPages - remoteTotalPages) <= 1;
+        // A page derived from a percentage alone is only approximate.
+        const pagesMatch =
+          !isNaN(parseInt(remote.progress ?? '', 10)) &&
+          Math.abs(localTotalPages - remoteTotalPages) <= 1;
 
         if (pagesMatch) {
           remotePreview = _('Page {{page}} of {{total}} ({{percentage}}%)', {
@@ -436,6 +439,7 @@ export const useKOSync = (bookKey: string, provider: KosyncProgressProvider = ko
         const isAlreadyResolved =
           !!resolved &&
           resolved.progress === remoteProgress.progress &&
+          resolved.percentage === remoteProgress.percentage &&
           resolved.timestamp === remoteProgress.timestamp &&
           resolved.device_id === remoteProgress.device_id;
         if (isAlreadyResolved) {
