@@ -206,4 +206,69 @@ describe('planGlosses vocabulary marks (#6613)', () => {
     const o = { ...opts({ learning: [['the', undefined]] }), maxOccurrences: 2 };
     expect(planGlosses('the the the', withLemma, o)).toHaveLength(2);
   });
+
+  it('hints a Learning phrase as one occurrence with its saved hint (#7325)', () => {
+    const text = 'The matter is decreed, Divine aid is at hand.';
+    const occ = planGlosses(text, withLemma, opts({ learning: [['matter is decreed', 'test']] }));
+    expect(occ).toEqual([{ start: 4, end: 21, word: 'matter is decreed', gloss: 'test' }]);
+  });
+
+  it('matches a Learning phrase across case, line breaks and curly apostrophes', () => {
+    const text = "It's the Captain’s\n    log today.";
+    const occ = planGlosses(text, withLemma, opts({ learning: [["captain's log", '航海日志']] }));
+    expect(occ.map((o) => o.word)).toEqual(['Captain’s\n    log']);
+  });
+
+  it('matches a Learning phrase only on word boundaries', () => {
+    const learn = opts({ learning: [['matter is decreed', 'test']] });
+    expect(planGlosses('No smatter is decreed.', withLemma, learn)).toEqual([]);
+    expect(planGlosses('The matter is decreedly so.', withLemma, learn)).toEqual([]);
+  });
+
+  it('gives the words inside a hinted phrase no hint of their own', () => {
+    const occ = planGlosses(
+      'A cryptic note, a cryptic one.',
+      withLemma,
+      opts({ learning: [['cryptic note', '密信']] }),
+    );
+    expect(occ.map((o) => [o.word, o.gloss])).toEqual([
+      ['cryptic note', '密信'],
+      ['cryptic', '晦涩的'],
+    ]);
+  });
+
+  it('keeps the earliest hints in text order when the cap is hit', () => {
+    const o = { ...opts({ learning: [['cryptic note', '密信']] }), maxOccurrences: 1 };
+    expect(planGlosses('cryptic cryptic note', withLemma, o)).toEqual([
+      { start: 0, end: 7, word: 'cryptic', gloss: '晦涩的' },
+    ]);
+  });
+
+  it('drops a phrase the page cannot draw and keeps its words hinted', () => {
+    const o = { ...opts({ learning: [['cryptic note', '密信']] }), canRender: () => false };
+    expect(planGlosses('a cryptic note', withLemma, o).map((x) => x.word)).toEqual(['cryptic']);
+  });
+
+  it('hints back-to-back Learning phrases separated by one space', () => {
+    const occ = planGlosses(
+      'matter is decreed matter is decreed',
+      withLemma,
+      opts({ learning: [['matter is decreed', 'x']] }),
+    );
+    expect(occ.map((o) => [o.start, o.end])).toEqual([
+      [0, 17],
+      [18, 35],
+    ]);
+  });
+
+  it('hints a Chinese Learning phrase the segmenter splits', () => {
+    const cut = (t: string) =>
+      t === '斟酌了' ? ['斟酌', '了'] : ['他', '再三', '斟酌', '了', '一下'];
+    const occ = planGlosses('他再三斟酌了一下', withLemma, {
+      ...opts({ learning: [['斟酌了', 'weighed']] }),
+      sourceLang: 'zh',
+      cutZh: cut,
+    });
+    expect(occ).toEqual([{ start: 3, end: 6, word: '斟酌了', gloss: 'weighed' }]);
+  });
 });

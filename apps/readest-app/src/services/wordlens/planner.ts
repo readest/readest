@@ -30,6 +30,8 @@ export interface PlanOptions {
   monolingual?: boolean;
   /** Learning words are always hinted, Mastered words never (#6613). */
   vocabulary?: VocabularyMarks;
+  /** Whether a [start, end) span can be drawn as one hint; phrases that can't are dropped. */
+  canRender?: (start: number, end: number) => boolean;
 }
 
 // A foliate "section" is usually a whole chapter, so this is a per-chapter bound:
@@ -70,6 +72,65 @@ const tokenizeChinese = (text: string, cutZh: (t: string) => string[]): Token[] 
   return tokens;
 };
 
+const tokenize = (text: string, opts: PlanOptions): Token[] =>
+  opts.sourceLang === 'zh'
+    ? opts.cutZh
+      ? tokenizeChinese(text, opts.cutZh)
+      : []
+    : tokenizeLatin(text);
+
+// A saved hint is the reader's own text: shown as written, only capped.
+const learningGloss = (
+  hint: string | undefined,
+  entry: GlossEntry | null | undefined,
+  opts: PlanOptions,
+): string => {
+  const saved = hint?.replace(/\s+/g, ' ').trim();
+  return saved ? capForDisplay(saved) : cleanGloss(entry?.gloss ?? '', opts.monolingual);
+};
+
+const escapeRegExp = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+// Learning entries of two or more words ("matter is decreed") never match a
+// single token, so find them in the text itself (#7325): any whitespace between
+// the words, either apostrophe, whole words only outside Chinese. A phrase the
+// page can't draw (split by inline markup) is dropped so its words keep their
+// own hints. Overlapping matches keep the earlier, then the longer.
+const planPhrases = (
+  text: string,
+  marks: VocabularyMarks,
+  source: GlossSource,
+  opts: PlanOptions,
+): GlossOccurrence[] => {
+  const found: GlossOccurrence[] = [];
+  for (const [key, hint] of marks.learning) {
+    if (tokenize(key, opts).length < 2) continue;
+    const gloss = learningGloss(hint, source.lookup(key), opts);
+    if (!gloss) continue;
+    const words = key.trim().split(/\s+/).map(escapeRegExp);
+    const phrase = words.join('\\s+').replace(/'/g, "['’‘]");
+    // The web build rejects lookbehind (older WebViews), so the leading
+    // boundary is a consumed character outside the phrase group.
+    const pattern =
+      opts.sourceLang === 'zh'
+        ? `()(${phrase})`
+        : `(^|[^\\p{L}\\p{M}\\p{N}])(${phrase})(?![\\p{L}\\p{M}\\p{N}])`;
+    for (const m of text.matchAll(new RegExp(pattern, 'giu'))) {
+      const start = m.index + m[1]!.length;
+      const end = start + m[2]!.length;
+      if (opts.canRender && !opts.canRender(start, end)) continue;
+      found.push({ start, end, word: m[2]!, gloss });
+    }
+  }
+  found.sort((a, b) => a.start - b.start || b.end - a.end);
+  let lastEnd = -1;
+  return found.filter((o) => {
+    if (o.start < lastEnd) return false;
+    lastEnd = o.end;
+    return true;
+  });
+};
+
 export const planGlosses = (
   text: string,
   source: GlossSource,
@@ -77,28 +138,25 @@ export const planGlosses = (
 ): GlossOccurrence[] => {
   if (!text) return [];
   const cap = opts.maxOccurrences ?? DEFAULT_CAP;
-  const tokens =
-    opts.sourceLang === 'zh'
-      ? opts.cutZh
-        ? tokenizeChinese(text, opts.cutZh)
-        : []
-      : tokenizeLatin(text);
+  const tokens = tokenize(text, opts);
 
   const marks = opts.vocabulary && expandMarks(opts.vocabulary, source);
+  const phrases = marks ? planPhrases(text, marks, source, opts) : [];
   const occurrences: GlossOccurrence[] = [];
+  let p = 0;
   for (const t of tokens) {
+    if (occurrences.length >= cap) break;
+    // A word inside a hinted phrase is covered by the phrase's hint.
+    while (p < phrases.length && phrases[p]!.end <= t.start) p++;
+    if (p < phrases.length && phrases[p]!.start < t.end) continue;
     const entry = source.lookup(t.word);
     if (marks) {
       const keys = [normalizeWordKey(t.word), source.lemma?.(t.word)];
       if (keys.some((k) => k && marks.mastered.has(k))) continue;
       const key = keys.find((k) => k && marks.learning.has(k));
       if (key) {
-        // A saved hint is the reader's own text: shown as written, only capped.
-        const saved = marks.learning.get(key)?.replace(/\s+/g, ' ').trim();
-        const packGloss = (entry ?? source.lookup(key))?.gloss ?? '';
-        const gloss = saved ? capForDisplay(saved) : cleanGloss(packGloss, opts.monolingual);
+        const gloss = learningGloss(marks.learning.get(key), entry ?? source.lookup(key), opts);
         if (gloss) occurrences.push({ start: t.start, end: t.end, word: t.word, gloss });
-        if (occurrences.length >= cap) break;
         continue;
       }
     }
@@ -122,7 +180,9 @@ export const planGlosses = (
       break;
     }
   }
-  return occurrences;
+  if (!phrases.length) return occurrences;
+  // Keep the earliest hints in text order when the cap is hit.
+  return [...phrases, ...occurrences].sort((a, b) => a.start - b.start).slice(0, cap);
 };
 
 // Index the marks by lemma too, so marking `running` covers `run` and `ran`.

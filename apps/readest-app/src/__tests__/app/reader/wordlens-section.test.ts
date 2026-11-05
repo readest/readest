@@ -194,6 +194,27 @@ describe('refreshSectionGlosses vocabulary marks (#6613)', () => {
     expect(hintsIn(doc)).toEqual([]);
   });
 
+  it('hints a Learning phrase inside one text node (#7325)', async () => {
+    const doc = document.implementation.createHTMLDocument('t');
+    doc.body.innerHTML = '<p>The matter is decreed, Divine aid is at hand.</p>';
+    const vocabulary = marks([['matter is decreed', 'test']]);
+    await refreshSectionGlosses(doc, viewSettings(), ctx({ appLang: 'zh-CN', vocabulary }));
+    expect(doc.querySelector('ruby.wl-gloss')?.firstChild?.textContent).toBe('matter is decreed');
+  });
+
+  it('keeps the word hints of a phrase split across inline markup', async () => {
+    const pack = {
+      lookup: (w: string) =>
+        w.toLowerCase() === 'cryptic' ? { rank: 99999, gloss: '晦涩' } : null,
+    } as unknown as GlossIndex;
+    mockedLoad.mockResolvedValue(pack);
+    const doc = document.implementation.createHTMLDocument('t');
+    doc.body.innerHTML = '<p>A cryptic <i>note</i>.</p>';
+    const vocabulary = marks([['cryptic note', '密信']]);
+    await refreshSectionGlosses(doc, viewSettings(), ctx({ appLang: 'zh-CN', vocabulary }));
+    expect(hintsIn(doc)).toEqual(['晦涩']);
+  });
+
   it('skips a Mastered word the pack would hint', async () => {
     const pack = {
       lookup: (w: string) => (w.toLowerCase() === 'smiled' ? { rank: 99999, gloss: '笑' } : null),
