@@ -165,6 +165,53 @@ describe('Android native page-turn pipeline', () => {
     }
   });
 
+  describe('resident pages reported during a held invalidation', () => {
+    // The native bank lists every resident page, including those the held
+    // invalidation is about to delete.
+    const withNativeBank = () => {
+      const f = fixture();
+      const resident = new Set<string>();
+      const call = f.call.getMockImplementation()!;
+      f.call.mockImplementation(async (args) => {
+        const result = await call(args);
+        if (args.op === 'invalidate') resident.clear();
+        if (args.op !== 'capture') return result;
+        resident.add(args.key!);
+        return { ...result, keys: [...resident] };
+      });
+      const host = (f.controller as unknown as { host: CapturedTurnHost }).host;
+      return { ...f, host };
+    };
+
+    it('recaptures a destination that was resident before the invalidation', async () => {
+      const f = withNativeBank();
+      try {
+        await f.controller.prepareCapture('curl');
+        f.host.onBeforeCapture = () => f.controller.invalidateNativePages();
+        f.call.mockClear();
+        expect(await f.controller.turn(true, false)).toBe(true);
+        const captured = f.call.mock.calls.filter(([args]) => args.op === 'capture');
+        expect(captured.map(([args]) => args.key)).toEqual(['1', '2']);
+      } finally {
+        f.controller.dispose();
+      }
+    });
+
+    it('forgets every page once the held invalidation reaches native', async () => {
+      const f = withNativeBank();
+      f.host.onCovered = async () => f.controller.invalidateNativePages();
+      try {
+        expect(await f.controller.turn(true, false)).toBe(true);
+        f.host.onCovered = undefined;
+        f.events.length = 0;
+        await f.controller.prepareCapture('curl');
+        expect(f.events.slice(0, 2)).toEqual(['capture', 'cover']);
+      } finally {
+        f.controller.dispose();
+      }
+    });
+  });
+
   it('keeps the cover through an invalidation while warming the neighbouring pages', async () => {
     const f = fixture();
     const preview = f.renderer.previewPage!;

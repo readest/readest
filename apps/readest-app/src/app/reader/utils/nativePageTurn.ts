@@ -156,7 +156,8 @@ export class NativePageTurn extends CapturedPageTurn {
         result.ready === false
       )
         return false;
-      if (result.keys) this.#keys = new Set(result.keys);
+      // A held invalidation will delete the other pages native reports.
+      if (result.keys && !this.#invalidationHeld) this.#keys = new Set(result.keys);
       else this.#keys.add(key);
       while (this.#keys.size > 3) this.#keys.delete(this.#keys.values().next().value!);
       return true;
@@ -246,6 +247,7 @@ export class NativePageTurn extends CapturedPageTurn {
   #releaseInvalidation() {
     if (!this.#invalidationHeld || this.#warming || this.#scene || this.#restoring) return;
     this.#invalidationHeld = false;
+    this.#keys.clear();
     if (this.#dead) return;
     this.#invalidations = Promise.allSettled([
       this.#invalidations,
