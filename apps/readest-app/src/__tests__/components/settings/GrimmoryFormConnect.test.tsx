@@ -108,4 +108,36 @@ describe('GrimmoryForm connect', () => {
     expect(useSettingsStore.getState().settings.grimmory.syncStats).toBe(false);
     expect(useSettingsStore.getState().settings.grimmory.enabled).toBe(false);
   });
+
+  test('a setting changed while the connection is saved is kept and stored', async () => {
+    let resolveSave: () => void = () => {};
+    const saveSettings = vi
+      .fn<(env: unknown, settings: SystemSettings) => Promise<void>>()
+      .mockImplementationOnce(
+        () =>
+          new Promise<void>((resolve) => {
+            resolveSave = resolve;
+          }),
+      )
+      .mockResolvedValue(undefined);
+    useSettingsStore.setState({ saveSettings } as never);
+    render(<GrimmoryForm onBack={vi.fn()} />);
+    fireEvent.change(screen.getByPlaceholderText('Your Password'), {
+      target: { value: 'secret' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Connect' }));
+    await waitFor(() => expect(saveSettings).toHaveBeenCalled());
+
+    // Something else changes a setting while the write is pending.
+    const current = useSettingsStore.getState().settings;
+    useSettingsStore.setState({
+      settings: { ...current, grimmory: { ...current.grimmory, syncStats: false } },
+    });
+    resolveSave();
+
+    await waitFor(() => expect(useSettingsStore.getState().settings.grimmory.enabled).toBe(true));
+    expect(useSettingsStore.getState().settings.grimmory.syncStats).toBe(false);
+    const stored = saveSettings.mock.calls.at(-1)?.[1];
+    expect(stored?.grimmory).toMatchObject({ enabled: true, password: 'secret', syncStats: false });
+  });
 });

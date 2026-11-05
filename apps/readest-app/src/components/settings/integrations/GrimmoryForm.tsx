@@ -5,7 +5,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useSettingsStore } from '@/store/settingsStore';
 import { eventDispatcher } from '@/utils/event';
 import { GrimmoryClient, normalizeGrimmoryServerUrl } from '@/services/grimmory/GrimmoryClient';
-import type { GrimmorySettings, KOSyncStrategy } from '@/types/settings';
+import type { GrimmorySettings, KOSyncStrategy, SystemSettings } from '@/types/settings';
 import { debounce } from '@/utils/debounce';
 import {
   formatCustomHeadersInput,
@@ -90,15 +90,18 @@ const GrimmoryForm: React.FC<GrimmoryFormProps> = ({ onBack }) => {
     try {
       const result = await new GrimmoryClient(config).connect();
       if (result.success) {
-        const { settings } = useSettingsStore.getState();
-        const newSettings = {
-          ...settings,
-          grimmory: { ...settings.grimmory, ...config, enabled: true },
-        };
+        const connected = (s: SystemSettings) => ({
+          ...s,
+          grimmory: { ...s.grimmory, ...config, enabled: true },
+        });
+        const before = useSettingsStore.getState().settings;
         // Show the connection only once it is stored, so a failed save leaves
         // nothing to undo.
-        await saveSettings(envConfig, newSettings);
-        setSettings(newSettings);
+        await saveSettings(envConfig, connected(before));
+        // Keep, and store, anything else that changed during the write.
+        const latest = useSettingsStore.getState().settings;
+        setSettings(connected(latest));
+        if (latest !== before) await saveSettings(envConfig, connected(latest));
       } else {
         fail(_(result.message || 'Connection error'));
       }
