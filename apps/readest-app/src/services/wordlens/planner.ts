@@ -107,7 +107,11 @@ const planPhrases = (
   const found: GlossOccurrence[] = [];
   const aligned = opts.sourceLang !== 'zh';
   const starts = new Set(tokens.map((t) => t.start));
-  const ends = new Set(tokens.map((t) => t.end));
+  // A token keeps a trailing apostrophe or hyphen (`'ice cream'` → `cream'`);
+  // the phrase may end before it, as before a closing quote.
+  const ends = new Set(
+    tokens.flatMap((t) => [t.end, t.start + t.word.replace(/[’'-]+$/, '').length]),
+  );
   for (const [key, hint] of marks.learning) {
     if (tokenize(key, opts).length < 2) continue;
     const gloss = learningGloss(hint, source.lookup(key), opts);
@@ -121,8 +125,9 @@ const planPhrases = (
         (!aligned || (starts.has(start) && ends.has(end))) &&
         (!opts.canRender || opts.canRender(start, end));
       if (ok) found.push({ start, end, word: m[0], gloss });
-      // A rejected match may hide an overlapping one: retry one character on.
-      else re.lastIndex = start + 1;
+      // A rejected match may hide an overlapping one: retry one code point on.
+      // Mid-surrogate, a `u` regex rewinds to the same match and never ends.
+      else re.lastIndex = start + (text.codePointAt(start)! > 0xffff ? 2 : 1);
     }
   }
   found.sort((a, b) => a.start - b.start || b.end - a.end);

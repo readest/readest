@@ -263,6 +263,19 @@ describe('planGlosses vocabulary marks (#6613)', () => {
     expect(planGlosses('go go go', withLemma, o).map((x) => [x.start, x.end])).toEqual([[3, 8]]);
   });
 
+  it('matches a phrase before a closing quote', () => {
+    const learn = opts({ learning: [['ice cream', '冰淇淋']] });
+    expect(planGlosses("she said 'ice cream'.", withLemma, learn).map((o) => o.word)).toEqual([
+      'ice cream',
+    ]);
+    expect(planGlosses('‘ice cream’', withLemma, learn).map((o) => o.word)).toEqual(['ice cream']);
+  });
+
+  it('moves past a rejected match that starts outside the BMP', () => {
+    const o = { ...opts({ learning: [['𐐀 hello', 'x']] }), canRender: () => false };
+    expect(planGlosses('𐐀 hello', withLemma, o)).toEqual([]);
+  });
+
   it('hints back-to-back Learning phrases separated by one space', () => {
     const occ = planGlosses(
       'matter is decreed matter is decreed',
