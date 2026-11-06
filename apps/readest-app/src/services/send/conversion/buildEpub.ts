@@ -20,6 +20,13 @@ const escapeXml = (str: string): string => {
     .replace(/'/g, '&apos;');
 };
 
+// Chapter HTML leaves void elements (`<br>`, `<img>`) unclosed and may carry
+// HTML-only entities (`&nbsp;`), neither of which is well-formed XML. Strict
+// XML readers (CrossPoint's Expat) refuse such a chapter, so re-serialize the
+// parsed body as XHTML.
+const toXhtmlBody = (html: string): string =>
+  new XMLSerializer().serializeToString(new DOMParser().parseFromString(html, 'text/html').body);
+
 // System font stack only — the bundled EPUB stays self-contained and never
 // reaches out to the network when opened offline.
 const CSS = `
@@ -135,7 +142,7 @@ export async function buildEpub(
     <title>${escapeXml(chapter.title)}</title>
     <link rel="stylesheet" type="text/css" href="../style.css"/>
   </head>
-  <body>${chapter.html}</body>
+  ${toXhtmlBody(chapter.html)}
 </html>`;
     await zipWriter.add(`OEBPS/chapter${i + 1}.xhtml`, new TextReader(xhtml), zipWriteOptions);
   }
