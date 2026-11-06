@@ -23,9 +23,12 @@ const escapeXml = (str: string): string => {
 // Chapter HTML leaves void elements (`<br>`, `<img>`) unclosed and may carry
 // HTML-only entities (`&nbsp;`), neither of which is well-formed XML. Strict
 // XML readers (CrossPoint's Expat) refuse such a chapter, so re-serialize the
-// parsed body as XHTML.
+// parsed body as XHTML. The HTML parser drops a newline right after `<pre>`
+// (XML keeps it), so that newline is doubled first to survive the parse.
 const toXhtmlBody = (html: string): string =>
-  new XMLSerializer().serializeToString(new DOMParser().parseFromString(html, 'text/html').body);
+  new XMLSerializer().serializeToString(
+    new DOMParser().parseFromString(html.replace(/(<pre\b[^>]*>)\n/gi, '$1\n\n'), 'text/html').body,
+  );
 
 // System font stack only — the bundled EPUB stays self-contained and never
 // reaches out to the network when opened offline.
