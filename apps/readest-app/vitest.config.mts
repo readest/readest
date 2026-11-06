@@ -3,6 +3,23 @@ import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import tsconfigPaths from 'vite-tsconfig-paths';
 
+const prebundled = [
+  '@testing-library/react',
+  'react-dom',
+  'react-dom/client',
+  'zod',
+  'iso-639-3',
+  'iso-639-2',
+  'franc-min',
+  'react-icons/md',
+  'react-icons/pi',
+  'react-icons/ri',
+  '@supabase/supabase-js',
+  'react-i18next',
+  'i18next',
+  'i18next-browser-languagedetector',
+];
+
 export default defineConfig({
   plugins: [tsconfigPaths(), react()],
   resolve: {
@@ -31,6 +48,16 @@ export default defineConfig({
     pool: 'threads',
     environment: 'jsdom',
     silent: 'passed-only',
+    // Bundle the heaviest dependencies once rather than loading their files
+    // in every test file (imports took 170 s instead of 197 s in a full run).
+    // Leave out a package whose subpaths register into it: dayjs locales
+    // imported as dayjs/locale/* would register into another dayjs copy.
+    deps: {
+      optimizer: {
+        client: { enabled: true, include: prebundled },
+        ssr: { enabled: true, include: prebundled },
+      },
+    },
     setupFiles: ['./vitest.setup.ts'],
     exclude: [
       '**/node_modules/**',
