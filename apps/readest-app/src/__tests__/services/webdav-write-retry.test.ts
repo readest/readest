@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 import { mkdir, putFile, putFileBinary } from '@/services/sync/providers/webdav/client';
 const config = { serverUrl: 'https://dav.example.com', username: 'test', password: 'test' };

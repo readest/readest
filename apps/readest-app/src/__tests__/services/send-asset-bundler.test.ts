@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { describe, expect, test, beforeEach, vi, afterEach } from 'vitest';
 import { bundleAssets } from '@/services/send/conversion/assetBundler';
 

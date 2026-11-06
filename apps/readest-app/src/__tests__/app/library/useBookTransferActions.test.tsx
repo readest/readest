@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { readFlowState } from '@/services/sync/dataFlow/log';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { renderHook } from '@testing-library/react';

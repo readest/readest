@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { describe, test, expect, vi, beforeEach } from 'vitest';
 
 // Controllable WebSocket fake for the browser (isomorphic-ws) transport.

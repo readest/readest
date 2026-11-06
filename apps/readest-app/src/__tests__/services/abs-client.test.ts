@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { ABSClient } from '@/services/audiobookshelf/client';
 import { isWebAppPlatform } from '@/services/environment';

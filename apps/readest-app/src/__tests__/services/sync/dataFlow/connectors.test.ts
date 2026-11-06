@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { EnvConfigType } from '@/services/environment';
 import type { ABSServer } from '@/types/audiobookshelf';

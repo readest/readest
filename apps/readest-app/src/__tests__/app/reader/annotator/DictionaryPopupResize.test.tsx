@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 /**
  * The desktop / tablet dictionary popup can be resized from a corner grip
  * (#7344). The size lasts for the lookup only: the next lookup opens at the

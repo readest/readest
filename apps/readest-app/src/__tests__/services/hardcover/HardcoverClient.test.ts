@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { describe, test, expect, vi, beforeEach } from 'vitest';
 import { HardcoverClient } from '@/services/hardcover/HardcoverClient';
 import { getContentMd5 } from '@/utils/misc';

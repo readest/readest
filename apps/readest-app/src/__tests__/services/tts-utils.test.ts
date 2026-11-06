@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { describe, test, expect, beforeEach } from 'vitest';
 import { TTSUtils } from '@/services/tts/TTSUtils';
 

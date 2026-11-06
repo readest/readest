@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { describe, expect, it } from 'vitest';
 import { render } from '@testing-library/react';
 import QRCode from '@/components/settings/integrations/QRCode';

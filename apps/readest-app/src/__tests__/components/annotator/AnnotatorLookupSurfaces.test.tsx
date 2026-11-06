@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 /**
  * When a lookup surface (dictionary / translator / proofread) may open, and when
  * it must stay shut.

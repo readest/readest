@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 /**
  * Learning / Mastered chips in the dictionary header and automatic capture
  * of lookups into the vocabulary builder (#789, #6613).

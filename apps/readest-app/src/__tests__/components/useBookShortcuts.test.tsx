@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { cleanup, render } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import useBookShortcuts from '@/app/reader/hooks/useBookShortcuts';

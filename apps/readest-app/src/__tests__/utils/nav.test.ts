@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { describe, test, expect, beforeEach, vi } from 'vitest';
 
 // ── Module mocks ─────────────────────────────────────────────────────

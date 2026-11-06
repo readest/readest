@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { describe, test, expect, vi } from 'vitest';
 
 // mock the types module to avoid import issues

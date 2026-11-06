@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { afterEach, describe, expect, test, vi } from 'vitest';
 
 const webdavClient = vi.hoisted(() => ({ checkConnection: vi.fn(), headFile: vi.fn() }));
