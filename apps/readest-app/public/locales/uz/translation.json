@@ -2826,5 +2826,9 @@
   "Books uploaded": "Yuklangan kitoblar",
   "Reset Counts": "Hisoblagichlarni tiklash",
   "Reset the counts and sync history on this device?": "Bu qurilmadagi hisoblagichlar va sinxronlash tarixi tiklansinmi?",
-  "Folder not available": "Jild mavjud emas"
+  "Folder not available": "Jild mavjud emas",
+  "Reading Calendar": "Mutolaa taqvimi",
+  "Previous Month": "Oldingi oy",
+  "Next Month": "Keyingi oy",
+  "No reading activity on this day": "Bu kuni mutolaa qayd etilmagan"
 }

@@ -2753,5 +2753,9 @@
   "Books uploaded": "ཡར་སྐྱེལ་བྱས་པའི་དཔེ་ཆ།",
   "Reset Counts": "གྲངས་ཚད་བསྐྱར་སྒྲིག",
   "Reset the counts and sync history on this device?": "སྒྲིག་ཆས་འདིའི་གྲངས་ཚད་དང་མཉམ་སྡེབ་ལོ་རྒྱུས་བསྐྱར་སྒྲིག་བྱེད་དམ།",
-  "Folder not available": "ཡིག་སྣོད་མི་རག"
+  "Folder not available": "ཡིག་སྣོད་མི་རག",
+  "Reading Calendar": "ཀློག་འདོན་ཟླ་ཐོ",
+  "Previous Month": "ཟླ་བ་སྔ་མ",
+  "Next Month": "ཟླ་བ་རྗེས་མ",
+  "No reading activity on this day": "ཉིན་འདིར་ཀློག་འདོན་ཟིན་ཐོ་མེད"
 }

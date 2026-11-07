@@ -2899,5 +2899,9 @@
   "Books uploaded": "Libros subidos",
   "Reset Counts": "Restablecer contadores",
   "Reset the counts and sync history on this device?": "¿Restablecer los contadores y el historial de sincronización en este dispositivo?",
-  "Folder not available": "Carpeta no disponible"
+  "Folder not available": "Carpeta no disponible",
+  "Reading Calendar": "Calendario de lectura",
+  "Previous Month": "Mes anterior",
+  "Next Month": "Mes siguiente",
+  "No reading activity on this day": "No hay actividad de lectura este día"
 }

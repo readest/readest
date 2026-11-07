@@ -2826,5 +2826,9 @@
   "Books uploaded": "Yüklenen kitaplar",
   "Reset Counts": "Sayaçları Sıfırla",
   "Reset the counts and sync history on this device?": "Bu cihazdaki sayaçlar ve eşitleme geçmişi sıfırlansın mı?",
-  "Folder not available": "Klasör kullanılamıyor"
+  "Folder not available": "Klasör kullanılamıyor",
+  "Reading Calendar": "Okuma takvimi",
+  "Previous Month": "Önceki ay",
+  "Next Month": "Sonraki ay",
+  "No reading activity on this day": "Bu gün için okuma etkinliği yok"
 }

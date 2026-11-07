@@ -2753,5 +2753,9 @@
   "Books uploaded": "Buku diunggah",
   "Reset Counts": "Atur Ulang Hitungan",
   "Reset the counts and sync history on this device?": "Atur ulang hitungan dan riwayat sinkronisasi di perangkat ini?",
-  "Folder not available": "Folder tidak tersedia"
+  "Folder not available": "Folder tidak tersedia",
+  "Reading Calendar": "Kalender membaca",
+  "Previous Month": "Bulan sebelumnya",
+  "Next Month": "Bulan berikutnya",
+  "No reading activity on this day": "Tidak ada aktivitas membaca pada hari ini"
 }

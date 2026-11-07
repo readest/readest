@@ -2826,5 +2826,9 @@
   "Books uploaded": "Geüploade boeken",
   "Reset Counts": "Tellers resetten",
   "Reset the counts and sync history on this device?": "Tellers en synchronisatiegeschiedenis op dit apparaat resetten?",
-  "Folder not available": "Map niet beschikbaar"
+  "Folder not available": "Map niet beschikbaar",
+  "Reading Calendar": "Leeskalender",
+  "Previous Month": "Vorige maand",
+  "Next Month": "Volgende maand",
+  "No reading activity on this day": "Geen leesactiviteit op deze dag"
 }

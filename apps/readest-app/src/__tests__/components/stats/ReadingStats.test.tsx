@@ -133,6 +133,7 @@ describe('ReadingStatsDialog', () => {
   it('formats all-time counts with the app locale', async () => {
     db.open.mockResolvedValue({
       getQuarterHourDurations: async () => [],
+      getBookQuarterHourDurations: async () => [],
       getReadingTotals: async () => ({ seconds: 0, books: 1234, pages: 56789 }),
     });
     await openDialog();
@@ -148,6 +149,7 @@ describe('ReadingStatsDialog', () => {
     });
     db.open.mockResolvedValue({
       getQuarterHourDurations: async () => [],
+      getBookQuarterHourDurations: async () => [],
       getReadingTotals: async () => ({ seconds: 0, books: pulled ? 40 : 3, pages: 0 }),
     });
     await openDialog();
@@ -161,5 +163,30 @@ describe('ReadingStatsDialog', () => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
     await openDialog();
     expect(await screen.findByText('Failed to load reading statistics')).toBeTruthy();
+  });
+
+  it('opens the calendar from a compact entry below the heatmap and returns to statistics', async () => {
+    const calendarQuery = vi.fn(async () => []);
+    db.open.mockResolvedValue({
+      getQuarterHourDurations: async () => [],
+      getBookQuarterHourDurations: calendarQuery,
+      getReadingTotals: async () => ({ seconds: 0, books: 0, pages: 0 }),
+    });
+    await openDialog();
+    await screen.findByText('All Time');
+    expect(screen.queryByRole('group', { name: 'Reading Calendar' })).toBeNull();
+    const entry = screen.getByRole('button', { name: 'Reading Calendar' });
+    const heatmap = screen.getByRole('group', { name: 'Reading activity' });
+    expect(heatmap.compareDocumentPosition(entry) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(calendarQuery).not.toHaveBeenCalled();
+
+    fireEvent.click(entry);
+    expect(await screen.findByRole('group', { name: 'Reading Calendar' })).toBeTruthy();
+    expect(screen.queryByText('All Time')).toBeNull();
+    expect(calendarQuery).toHaveBeenCalledTimes(1);
+    fireEvent.click(screen.getByRole('button', { name: 'Reading Statistics' }));
+    expect(screen.getByText('All Time')).toBeTruthy();
+    expect(screen.queryByRole('group', { name: 'Reading Calendar' })).toBeNull();
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Reading Calendar' }));
   });
 });

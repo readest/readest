@@ -2899,5 +2899,9 @@
   "Books uploaded": "Livros enviados",
   "Reset Counts": "Redefinir contagens",
   "Reset the counts and sync history on this device?": "Redefinir as contagens e o histórico de sincronização neste dispositivo?",
-  "Folder not available": "Pasta indisponível"
+  "Folder not available": "Pasta indisponível",
+  "Reading Calendar": "Calendário de leitura",
+  "Previous Month": "Mês anterior",
+  "Next Month": "Próximo mês",
+  "No reading activity on this day": "Nenhuma atividade de leitura neste dia"
 }

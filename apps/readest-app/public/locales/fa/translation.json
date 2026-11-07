@@ -2826,5 +2826,9 @@
   "Books uploaded": "کتاب‌های بارگذاری‌شده",
   "Reset Counts": "بازنشانی شمارش‌ها",
   "Reset the counts and sync history on this device?": "شمارش‌ها و تاریخچه همگام‌سازی در این دستگاه بازنشانی شوند؟",
-  "Folder not available": "پوشه در دسترس نیست"
+  "Folder not available": "پوشه در دسترس نیست",
+  "Reading Calendar": "تقویم مطالعه",
+  "Previous Month": "ماه قبل",
+  "Next Month": "ماه بعد",
+  "No reading activity on this day": "در این روز مطالعه‌ای ثبت نشده است"
 }

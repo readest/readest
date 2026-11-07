@@ -2826,5 +2826,9 @@
   "Books uploaded": "பதிவேற்றிய புத்தகங்கள்",
   "Reset Counts": "எண்ணிக்கையை மீட்டமை",
   "Reset the counts and sync history on this device?": "இந்தச் சாதனத்தில் எண்ணிக்கைகளையும் ஒத்திசைவு வரலாற்றையும் மீட்டமைக்கவா?",
-  "Folder not available": "கோப்புறை கிடைக்கவில்லை"
+  "Folder not available": "கோப்புறை கிடைக்கவில்லை",
+  "Reading Calendar": "வாசிப்பு நாட்காட்டி",
+  "Previous Month": "முந்தைய மாதம்",
+  "Next Month": "அடுத்த மாதம்",
+  "No reading activity on this day": "இந்த நாளில் வாசிப்புச் செயல்பாடு இல்லை"
 }

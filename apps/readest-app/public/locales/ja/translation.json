@@ -2753,5 +2753,9 @@
   "Books uploaded": "アップロードした本",
   "Reset Counts": "カウントをリセット",
   "Reset the counts and sync history on this device?": "このデバイスのカウントと同期履歴をリセットしますか？",
-  "Folder not available": "フォルダーを利用できません"
+  "Folder not available": "フォルダーを利用できません",
+  "Reading Calendar": "読書カレンダー",
+  "Previous Month": "前の月",
+  "Next Month": "次の月",
+  "No reading activity on this day": "この日の読書記録はありません"
 }

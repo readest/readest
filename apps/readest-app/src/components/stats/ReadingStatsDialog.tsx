@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import { MdCalendarMonth } from 'react-icons/md';
 import Dialog from '@/components/Dialog';
 import { useEnv } from '@/context/EnvContext';
 import { useAuth } from '@/context/AuthContext';
@@ -6,11 +7,13 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { StatisticsDb } from '@/services/statistics/statisticsDb';
 import { isSyncCategoryEnabled } from '@/services/sync/syncCategories';
 import { getDailySeconds, getStreaks, toDateKey } from '@/services/statistics/readingStats';
-import { BoxedList, SettingsRow } from '@/components/settings/primitives';
+import { BoxedList, NavigationRow, SettingsRow } from '@/components/settings/primitives';
+import SubPageHeader from '@/components/settings/SubPageHeader';
 import { formatDuration } from '@/utils/duration';
 import { getLocale } from '@/utils/misc';
 import ReadingTimeChart from './ReadingTimeChart';
 import ReadingHeatmap from './ReadingHeatmap';
+import ReadingCalendar from './ReadingCalendar';
 
 export const setReadingStatsDialogVisible = (visible: boolean) => {
   const dialog = document.getElementById('reading_stats_window');
@@ -23,6 +26,7 @@ export const setReadingStatsDialogVisible = (visible: boolean) => {
 };
 
 interface ReadingStats {
+  db: StatisticsDb;
   daily: Map<string, number>;
   totals: { seconds: number; books: number; pages: number };
 }
@@ -33,6 +37,24 @@ const ReadingStatsContent: React.FC = () => {
   const { user } = useAuth();
   const [stats, setStats] = useState<ReadingStats | null>(null);
   const [failed, setFailed] = useState(false);
+  const [showCalendar, setShowCalendar] = useState(false);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const navigationPending = useRef(false);
+
+  const navigateCalendar = (visible: boolean) => {
+    navigationPending.current = true;
+    setShowCalendar(visible);
+  };
+
+  useEffect(() => {
+    if (!navigationPending.current) return;
+    const target = contentRef.current?.querySelector<HTMLElement>(
+      showCalendar ? '[data-calendar-heading]' : '[data-setting-id="stats.readingCalendar"]',
+    );
+    target?.focus();
+    if (showCalendar) target?.scrollIntoView?.({ block: 'start' });
+    navigationPending.current = false;
+  }, [showCalendar]);
 
   useEffect(() => {
     if (!appService) return;
@@ -42,7 +64,7 @@ const ReadingStatsContent: React.FC = () => {
         db.getQuarterHourDurations(),
         db.getReadingTotals(),
       ]);
-      if (!cancelled) setStats({ daily: getDailySeconds(quarters), totals });
+      if (!cancelled) setStats({ db, daily: getDailySeconds(quarters), totals });
     };
     StatisticsDb.open(appService)
       .then(async (db) => {
@@ -85,13 +107,39 @@ const ReadingStatsContent: React.FC = () => {
   const time = (seconds: number) => formatDuration(Math.floor(seconds / 60), _);
   const days = (count: number) => _('{{count}} days', { count });
 
+  if (showCalendar) {
+    return (
+      <div ref={contentRef} className='pb-6'>
+        <div tabIndex={-1} data-calendar-heading className='outline-hidden'>
+          <SubPageHeader
+            parentLabel={_('Reading Statistics')}
+            currentLabel={_('Reading Calendar')}
+            onBack={() => navigateCalendar(false)}
+          />
+        </div>
+        <BoxedList innerClassName='px-2! py-3'>
+          <ReadingCalendar db={stats.db} daily={daily} />
+        </BoxedList>
+      </div>
+    );
+  }
+
   return (
-    <div className='flex flex-col gap-6 pb-6'>
+    <div ref={contentRef} className='flex flex-col gap-6 pb-6'>
       <BoxedList title={_('Reading Time')} innerClassName='pe-4 py-4'>
         <ReadingTimeChart daily={daily} />
       </BoxedList>
-      <BoxedList title={_('Activity')} innerClassName='pe-4 py-4'>
-        <ReadingHeatmap daily={daily} />
+      <BoxedList title={_('Activity')} innerClassName='pe-4 pt-4'>
+        <div className='pb-4'>
+          <ReadingHeatmap daily={daily} />
+        </div>
+        <NavigationRow
+          title={_('Reading Calendar')}
+          icon={MdCalendarMonth}
+          onClick={() => navigateCalendar(true)}
+          data-setting-id='stats.readingCalendar'
+          className='pe-0 text-start'
+        />
       </BoxedList>
       <BoxedList title={_('Overview')}>
         <SettingsRow label={_('Today')}>

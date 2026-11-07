@@ -2972,5 +2972,9 @@
   "Books uploaded": "Загруженные книги",
   "Reset Counts": "Сбросить счётчики",
   "Reset the counts and sync history on this device?": "Сбросить счётчики и историю синхронизации на этом устройстве?",
-  "Folder not available": "Папка недоступна"
+  "Folder not available": "Папка недоступна",
+  "Reading Calendar": "Календарь чтения",
+  "Previous Month": "Предыдущий месяц",
+  "Next Month": "Следующий месяц",
+  "No reading activity on this day": "В этот день нет записей о чтении"
 }

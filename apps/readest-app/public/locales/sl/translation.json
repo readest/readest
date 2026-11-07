@@ -2972,5 +2972,9 @@
   "Books uploaded": "Naložene knjige",
   "Reset Counts": "Ponastavi števce",
   "Reset the counts and sync history on this device?": "Želite ponastaviti števce in zgodovino sinhronizacije v tej napravi?",
-  "Folder not available": "Mapa ni na voljo"
+  "Folder not available": "Mapa ni na voljo",
+  "Reading Calendar": "Koledar branja",
+  "Previous Month": "Prejšnji mesec",
+  "Next Month": "Naslednji mesec",
+  "No reading activity on this day": "Na ta dan ni bralne dejavnosti"
 }
