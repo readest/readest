@@ -6,6 +6,8 @@ import type { Renderer } from '@/types/view';
 type Fxl = HTMLElement & {
   open(book: unknown): void;
   goToSpread(index: number, side: string, reason?: string): Promise<void>;
+  next(): Promise<void>;
+  prev(): Promise<void>;
   index: number;
   pageColors: { background?: string; foreground?: string };
   preparePageTurn?: (forward: boolean) => Promise<boolean>;
@@ -147,6 +149,7 @@ describe('retained fixed-layout page turns', () => {
     ).toBe('none');
     expect(current.getBoundingClientRect().toJSON()).toEqual(before);
 
+    const preparedStyle = next.style.cssText;
     expect(await renderer.beginPageTurn?.(dir === 'ltr')).toBe(true);
     expect(getComputedStyle(next).visibility).toBe('visible');
     expect([...renderer.shadowRoot!.querySelectorAll('[data-page-turn-view="outgoing"]')]).toEqual([
@@ -161,8 +164,16 @@ describe('retained fixed-layout page turns', () => {
       expect(next.getBoundingClientRect().toJSON()).toEqual(landing);
       expect(renderer.index).toBe(Number(next.querySelector('iframe')!.dataset['sectionIndex']));
     } else {
-      expect(getComputedStyle(next).visibility).toBe('hidden');
+      expect(next.style.cssText, 'cancellation must restore the prepared sibling exactly').toBe(
+        preparedStyle,
+      );
+      expect(getComputedStyle(next).display).toBe('none');
       expect(current.getBoundingClientRect().toJSON()).toEqual(before);
+      await (dir === 'ltr' ? renderer.next() : renderer.prev());
+      expect(renderer.index).toBe(Number(next.querySelector('iframe')!.dataset['sectionIndex']));
+      expect(getComputedStyle(next).display).toBe('block');
+      expect(getComputedStyle(next).visibility).toBe('visible');
+      expect(getComputedStyle(next).position).toBe('relative');
     }
   });
 
