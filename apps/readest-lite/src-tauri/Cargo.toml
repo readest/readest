@@ -1,0 +1,21 @@
+[package]
+name = "readest-lite"
+version = "0.1.0"
+edition = "2024"
+publish = false
+description = "Readest Lite: readest-app's React UI on tauri-runtime-blitz (no browser engine)"
+
+[dependencies]
+tauri = { path = "../vendor/tauri/crates/tauri", default-features = false, features = ["compression", "dynamic-acl"] }
+tauri-runtime-blitz = { path = "../crates/tauri-runtime-blitz" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tauri-plugin-fs = "2"
+tauri-plugin-os = "2"
+
+[build-dependencies]
+tauri-build = { path = "../vendor/tauri/crates/tauri-build" }
+
+[features]
+# A desktop window to use the UI (BLITZ_TAURI_WINDOW=1): `cargo run --features window`.
+window = ["tauri-runtime-blitz/window"]

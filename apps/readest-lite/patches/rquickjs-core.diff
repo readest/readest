@@ -1,0 +1,106 @@
+diff -ruN rquickjs-core/src/runtime/raw.rs rquickjs-core/src/runtime/raw.rs
+--- rquickjs-core/src/runtime/raw.rs
++++ rquickjs-core/src/runtime/raw.rs
+@@ -382,7 +382,7 @@
+     /// exception and return control flow to the caller.
+     pub unsafe fn set_interrupt_handler(&mut self, handler: Option<InterruptHandler>) {
+         unsafe extern "C" fn interrupt_handler_trampoline(
+-            _rt: *mut qjs::JSRuntime,
++            _ctx: *mut qjs::JSContext,
+             opaque: *mut ::core::ffi::c_void,
+         ) -> ::core::ffi::c_int {
+             // This should be safe as the value is set below to a non-null pointer.
+diff -ruN rquickjs-core/src/value/array_buffer.rs rquickjs-core/src/value/array_buffer.rs
+--- rquickjs-core/src/value/array_buffer.rs
++++ rquickjs-core/src/value/array_buffer.rs
+@@ -52,12 +52,18 @@
+         let capacity = src.capacity();
+         let size = src.len() * size_of::<T>();
+ 
+-        extern "C" fn drop_raw<T>(_rt: *mut qjs::JSRuntime, opaque: *mut c_void, ptr: *mut c_void) {
++        // QuickJS-NG 0.18: a realloc-style callback; size 0 frees. Resizing is refused (NULL),
++        // so these buffers stay fixed-length.
++        extern "C" fn drop_raw<T>(_rt: *mut qjs::JSRuntime, opaque: *mut c_void, ptr: *mut c_void, size: qjs::size_t) -> *mut c_void {
++            if size != 0 {
++                return core::ptr::null_mut();
++            }
+             let ptr = ptr as *mut T;
+             let capacity = opaque as usize;
+             // reconstruct vector in order to free data
+             // the length of actual data does not matter for copyable types
+             unsafe { Vec::from_raw_parts(ptr, capacity, capacity) };
++            core::ptr::null_mut()
+         }
+ 
+         Ok(Self(Object(unsafe {
+@@ -65,6 +71,7 @@
+                 ctx.as_ptr(),
+                 ptr as _,
+                 size as _,
++                0,
+                 Some(drop_raw::<T>),
+                 capacity as _,
+                 false,
+diff -ruN rquickjs-core/src/value/atom/predefined.rs rquickjs-core/src/value/atom/predefined.rs
+--- rquickjs-core/src/value/atom/predefined.rs
++++ rquickjs-core/src/value/atom/predefined.rs
+@@ -177,8 +177,6 @@
+     Apply = qjs::JS_ATOM_apply as u32,
+     /// "join"
+     Join = qjs::JS_ATOM_join as u32,
+-    /// "concat"
+-    Concat = qjs::JS_ATOM_concat as u32,
+     /// "split"
+     Split = qjs::JS_ATOM_split as u32,
+     /// "construct"
+@@ -520,7 +518,6 @@
+             PredefinedAtom::DefineProperties => "defineProperties",
+             PredefinedAtom::Apply => "apply",
+             PredefinedAtom::Join => "join",
+-            PredefinedAtom::Concat => "concat",
+             PredefinedAtom::Split => "split",
+             PredefinedAtom::Construct => "construct",
+             PredefinedAtom::GetPrototypeOf => "getPrototypeOf",
+@@ -734,7 +731,6 @@
+             PredefinedAtom::DefineProperties,
+             PredefinedAtom::Apply,
+             PredefinedAtom::Join,
+-            PredefinedAtom::Concat,
+             PredefinedAtom::Split,
+             PredefinedAtom::Construct,
+             PredefinedAtom::GetPrototypeOf,
+diff -ruN rquickjs-core/src/value/module.rs rquickjs-core/src/value/module.rs
+--- rquickjs-core/src/value/module.rs
++++ rquickjs-core/src/value/module.rs
+@@ -415,7 +415,7 @@
+             let base_name_c_str =
+                 qjs::JS_AtomToCStringLen(ctx.as_ptr(), null_mut(), base_name.atom);
+ 
+-            let res = qjs::JS_LoadModule(ctx.as_ptr(), base_name_c_str, specifier.as_ptr());
++            let res = qjs::JS_LoadModule(ctx.as_ptr(), base_name_c_str, specifier.as_ptr(), qjs::JS_UNDEFINED);
+ 
+             qjs::JS_FreeCString(ctx.as_ptr(), base_name_c_str);
+ 
+diff -ruN rquickjs-core/src/value.rs rquickjs-core/src/value.rs
+--- rquickjs-core/src/value.rs
++++ rquickjs-core/src/value.rs
+@@ -325,7 +325,9 @@
+     /// Check if the value is a string
+     #[inline]
+     pub fn is_string(&self) -> bool {
+-        qjs::JS_TAG_STRING == unsafe { qjs::JS_VALUE_GET_TAG(self.value) }
++        // QuickJS-NG 0.18 hands out rope strings (JS_TAG_STRING_ROPE) too.
++        let tag = unsafe { qjs::JS_VALUE_GET_TAG(self.value) };
++        qjs::JS_TAG_STRING == tag || qjs::JS_TAG_STRING_ROPE == tag
+     }
+ 
+     /// Check if the value is a symbol
+@@ -524,7 +526,7 @@
+     Bool: bool => JS_TAG_BOOL,
+     Int: int => JS_TAG_INT,
+     Float: float => JS_TAG_FLOAT64,
+-    String: string => JS_TAG_STRING,
++    String: string => JS_TAG_STRING | JS_TAG_STRING_ROPE,
+     Symbol: symbol => JS_TAG_SYMBOL,
+     Array: array => JS_TAG_OBJECT,
+     Constructor: constructor => JS_TAG_OBJECT,

@@ -1,0 +1,27 @@
+# Readest Lite: readest-app's React UI on a Tauri runtime with no browser engine
+# (tauri-runtime-blitz: a Blitz document scripted by QuickJS-NG, painted by cairo), for e-ink
+# readers with 512 MB of RAM. Its own workspace, out of the repository's: Lite uses cairo-rs 0.22,
+# Readest's Tauri build reaches cairo-sys-rs 0.18 through GTK, and both declare `links = "cairo"`,
+# which Cargo allows once per resolve.
+[workspace]
+members = ["src-tauri", "crates/tauri-runtime-blitz", "crates/blitz-qjs-script", "crates/anyrender_cairo"]
+# Patched upstream code (PATCHES.md), each in its own workspace.
+exclude = ["vendor"]
+resolver = "3"
+
+[patch.crates-io]
+# QuickJS-NG 0.18.0 under rquickjs 0.10 (blitz-qjs-script).
+rquickjs-sys = { path = "vendor/rquickjs-sys" }
+rquickjs-core = { path = "vendor/rquickjs-core" }
+# muda 0.19.3 with a no-op Linux backend when its `gtk` feature is off.
+muda = { path = "vendor/muda" }
+# Tauri plugins from crates.io link the same tauri. Their build scripts keep crates.io tauri-plugin
+# (the fork's moved to schemars 1), as in Readest's own workspace.
+tauri = { path = "vendor/tauri/crates/tauri" }
+
+# Dependencies optimized in dev builds: an -O0 QuickJS takes minutes to run Readest's bundle.
+[profile.dev.package."*"]
+opt-level = 2
+# The runtime too: its per-frame conversions (window, BLITZ_TAURI_OUT) are slow at -O0.
+[profile.dev.package.tauri-runtime-blitz]
+opt-level = 2

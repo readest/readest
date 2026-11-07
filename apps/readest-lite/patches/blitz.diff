@@ -1,0 +1,414 @@
+diff -ruN blitz/Cargo.toml blitz/Cargo.toml
+--- blitz/Cargo.toml
++++ blitz/Cargo.toml
+@@ -1,34 +1,15 @@
++# Blitz (DioxusLabs/blitz f9d0e8c76, 0.3.0-beta.4), only the packages Readest Lite builds, with
++# Readest's patches (see ../PATCHES.md). The workspace root keeps upstream's [workspace.package] and
++# [workspace.dependencies] so the packages' `workspace = true` entries resolve unchanged.
+ [workspace]
+ members = [
+-    "packages/accesskit_xplat",
+     "packages/debug_timer",
+     "packages/blitz-traits",
+     "packages/blitz-dom",
+     "packages/blitz-html",
+-    "packages/blitz-net",
+     "packages/blitz-paint",
+-    "packages/blitz-vibey-script",
+-    "packages/blitz-shell",
+-    "packages/blitz-vibey-cdp-server",
+-    "packages/blitz",
+     "packages/stylo_taffy",
+-    "packages/dioxus-native",
+-    "packages/dioxus-native-dom",
+-    "packages/blitz-test-harness",
+-    "packages/parley_code_editor",
+-    "apps/browser",
+-    "apps/browser/persistence",
+-    "apps/readme",
+-    "wpt/runner",
+-    "tests/blitz-tests",
+-    "examples/counter",
+-    "examples/transparent",
+-    "examples/seven_guis",
+-    "examples/todomvc",
+-    "examples/wgpu_texture",
+-    "examples/wasm_hello",
+ ]
+-exclude = ["sites"]
+ resolver = "2"
+ 
+ [workspace.package]
+@@ -201,140 +182,3 @@
+ icu_properties = { version = "2.3", default-features = false, features = ["compiled_data"] }
+ icu_segmenter = { version = "2.3", default-features = false, features = ["compiled_data"] }
+ writeable = { version = "0.6", default-features = false }
+-
+-[profile.profile]
+-inherits = "release"
+-debug = true
+-
+-[profile.production]
+-inherits = "release"
+-opt-level = 3
+-debug = false
+-lto = true
+-codegen-units = 1
+-strip = true
+-incremental = false
+-
+-[profile.p2]
+-inherits = "production"
+-opt-level = 2
+-
+-[profile.small]
+-inherits = "production"
+-opt-level = "s"
+-panic = "abort"
+-
+-[profile.small-panic]
+-inherits = "small"
+-panic = "unwind"
+-
+-[profile.tiny]
+-inherits = "small"
+-opt-level = "z"
+-
+-[profile.tiny.package.fearless_simd]
+-opt-level = 3
+-[profile.tiny.package.vello_cpu]
+-opt-level = 3
+-[profile.tiny.package.taffy]
+-opt-level = 3
+-[profile.tiny.package.harfrust]
+-opt-level = 3
+-[profile.tiny.package.skrifa]
+-opt-level = 3
+-
+-# This is a "virtual package"
+-# It is not meant to be published, but is used so "cargo run --example XYZ" works properly
+-[package]
+-name = "blitz-examples"
+-version = "0.0.1"
+-authors = ["Jonathan Kelley"]
+-edition = "2024"
+-description = "Top level crate for Blitz"
+-license = "MIT OR Apache-2.0"
+-keywords = ["dom", "ui", "gui", "react", "wasm"]
+-rust-version = "1.91.0"
+-publish = false
+-
+-[features]
+-log-times = ["log-frame-times", "log-phase-times"]
+-log-frame-times = ["dioxus-native/log-frame-times"]
+-log-phase-times = ["dioxus-native/log-phase-times"]
+-
+-[dev-dependencies]
+-anyrender = { workspace = true }
+-anyrender_vello = { workspace = true }
+-anyrender_vello_cpu = { workspace = true, features = ["multithreading"] }
+-anyrender_vello_hybrid = { workspace = true }
+-blitz-dom = { workspace = true, features = ["default"] }
+-blitz-html = { workspace = true }
+-blitz-traits = { workspace = true }
+-blitz-paint = { workspace = true }
+-blitz-shell = { workspace = true }
+-blitz-net = { workspace = true }
+-blitz-vibey-script = { workspace = true }
+-blitz = { workspace = true, features = ["net"] }
+-dioxus = { workspace = true }
+-dioxus-native = { workspace = true, features = [
+-    "vello-hybrid",
+-    "floats",
+-    "svg",
+-    "prelude",
+-    "data-uri",
+-] }
+-euclid = { workspace = true }
+-url = { workspace = true }
+-reqwest = { workspace = true }
+-tokio = { workspace = true, features = ["macros"] }
+-image = { workspace = true }
+-png = { workspace = true }
+-rand = "0.9"
+-peniko = { workspace = true }
+-color = { workspace = true }
+-env_logger = "0.11"
+-tracing-subscriber = "0.3"
+-vello = "0.11"
+-vello_cpu = "0.3"
+-vello_gpu = "0.3"
+-vello_common = "0.3"
+-wgpu = { workspace = true }
+-wgpu_context = { workspace = true }
+-rustc-hash = { workspace = true }
+-
+-# glifo 0.4.0 with the unhinted embolden fix (linebender/vello#2049). Drop once it ships.
+-[patch.crates-io]
+-glifo = { git = "https://github.com/DioxusLabs/vello", branch = "devin/glifo-0.4.0-embolden-2049" }
+-vello_common = { git = "https://github.com/DioxusLabs/vello", branch = "devin/glifo-0.4.0-embolden-2049" }
+-vello_cpu = { git = "https://github.com/DioxusLabs/vello", branch = "devin/glifo-0.4.0-embolden-2049" }
+-vello_gpu = { git = "https://github.com/DioxusLabs/vello", branch = "devin/glifo-0.4.0-embolden-2049" }
+-
+-# [patch.crates-io]
+-# anyrender = { path = "../anyrender/crates/anyrender" }
+-# anyrender_skia = { path = "../anyrender/crates/anyrender_skia" }
+-# anyrender_vello = { path = "../anyrender/crates/anyrender_vello" }
+-# anyrender_vello_cpu = { path = "../anyrender/crates/anyrender_vello_cpu" }
+-# anyrender_vello_hybrid = { path = "../anyrender/crates/anyrender_vello_hybrid" }
+-# anyrender_svg = { path = "../anyrender/crates/anyrender_svg" }
+-# wgpu_context = { path = "../anyrender/crates/wgpu_context" }
+-
+-# vello = { path = "../vello/vello" }
+-# vello_cpu = { path = "../vello/sparse_strips/vello_cpu" }
+-# vello_gpu = { path = "../vello/sparse_strips/vello_gpu" }
+-# vello_common = { path = "../vello/sparse_strips/vello_common" }
+-# glifo = { path = "../vello/glifo" }
+-
+-# [patch.crates-io]
+-# style = { path = "../stylo/style", package = "stylo" }
+-# style_traits = { path = "../stylo/style_traits", package = "stylo_traits" }
+-# style_atoms = { path = "../stylo/stylo_atoms", package = "stylo_atoms" }
+-# style_config = { path = "../stylo/stylo_config", package = "stylo_config" }
+-# style_dom = { path = "../stylo/stylo_dom", package = "stylo_dom" }
+-# selectors = { path = "../stylo/selectors", package = "selectors" }
+-
+-# [patch.crates-io]
+-# [patch."https://github.com/dioxuslabs/taffy"]
+-# taffy = { path = "../taffy" }
+-
+-# [patch."https://github.com/linebender/parley"]
+-# parley = { path = "../parley/parley" }
+-# fontique = { path = "../parley/fontique" }
+diff -ruN blitz/packages/blitz-dom/src/layout/construct.rs blitz/packages/blitz-dom/src/layout/construct.rs
+--- blitz/packages/blitz-dom/src/layout/construct.rs
++++ blitz/packages/blitz-dom/src/layout/construct.rs
+@@ -875,6 +875,10 @@
+     } else {
+         node.attr(local_name!("value")).unwrap_or("").to_string()
+     };
++    let placeholder = node
++        .attr(local_name!("placeholder"))
++        .filter(|p| !p.is_empty())
++        .map(str::to_owned);
+     let is_focussed = node.is_focussed();
+     let element = &mut node.data.downcast_element_mut().unwrap();
+     if !matches!(element.special_data, SpecialElementData::TextInput(_)) {
+@@ -894,33 +898,52 @@
+         unreachable!();
+     };
+ 
+-    let editor = &mut text_input_data.editor;
+-    editor.set_scale(doc.viewport.scale_f64() as f32);
+-    editor.set_width(None);
+-
+-    let styles = editor.edit_styles();
+-    styles.retain(|_| false);
+-    styles.insert(StyleProperty::FontFamily(parley_style.font_family));
+-    styles.insert(StyleProperty::FontSize(parley_style.font_size));
+-    styles.insert(StyleProperty::FontWidth(parley_style.font_width));
+-    styles.insert(StyleProperty::FontStyle(parley_style.font_style));
+-    styles.insert(StyleProperty::FontWeight(parley_style.font_weight));
+-    styles.insert(StyleProperty::FontVariations(parley_style.font_variations));
+-    styles.insert(StyleProperty::FontFeatures(parley_style.font_features));
+-    styles.insert(StyleProperty::LineHeight(parley_style.line_height));
+-    styles.insert(StyleProperty::WordSpacing(parley_style.word_spacing));
+-    styles.insert(StyleProperty::LetterSpacing(parley_style.letter_spacing));
+-    styles.insert(StyleProperty::WordBreak(parley_style.word_break));
+-    styles.insert(StyleProperty::OverflowWrap(parley_style.overflow_wrap));
+-    styles.insert(StyleProperty::TextWrapMode(parley_style.text_wrap_mode));
+-    styles.insert(StyleProperty::WhiteSpaceCollapse(
+-        parley_style.white_space_collapse,
+-    ));
+-    styles.insert(StyleProperty::Brush(parley_style.brush));
+-    editor.set_alignment(alignment);
+-    editor.set_base_direction(base_direction);
++    let props = [
++        StyleProperty::FontFamily(parley_style.font_family),
++        StyleProperty::FontSize(parley_style.font_size),
++        StyleProperty::FontWidth(parley_style.font_width),
++        StyleProperty::FontStyle(parley_style.font_style),
++        StyleProperty::FontWeight(parley_style.font_weight),
++        StyleProperty::FontVariations(parley_style.font_variations),
++        StyleProperty::FontFeatures(parley_style.font_features),
++        StyleProperty::LineHeight(parley_style.line_height),
++        StyleProperty::WordSpacing(parley_style.word_spacing),
++        StyleProperty::LetterSpacing(parley_style.letter_spacing),
++        StyleProperty::WordBreak(parley_style.word_break),
++        StyleProperty::OverflowWrap(parley_style.overflow_wrap),
++        StyleProperty::TextWrapMode(parley_style.text_wrap_mode),
++        StyleProperty::WhiteSpaceCollapse(parley_style.white_space_collapse),
++        StyleProperty::Brush(parley_style.brush),
++    ];
++    let scale = doc.viewport.scale_f64() as f32;
++    let mut font_ctx = doc.font_ctx.lock().unwrap();
++    let configure = |editor: &mut parley::PlainEditor<crate::node::TextBrush>| {
++        editor.set_scale(scale);
++        editor.set_width(None);
++        let styles = editor.edit_styles();
++        styles.retain(|_| false);
++        for p in &props {
++            styles.insert(p.clone());
++        }
++        editor.set_alignment(alignment);
++        editor.set_base_direction(base_direction);
++    };
+ 
+-    editor.refresh_layout(&mut doc.font_ctx.lock().unwrap(), &mut doc.layout_ctx);
++    configure(&mut text_input_data.editor);
++    text_input_data.editor.refresh_layout(&mut font_ctx, &mut doc.layout_ctx);
++
++    text_input_data.placeholder = placeholder.map(|text| {
++        let mut editor = text_input_data
++            .placeholder
++            .take()
++            .unwrap_or_else(|| Box::new(parley::PlainEditor::new(16.0)));
++        if editor.raw_text() != text {
++            editor.set_text(&text);
++        }
++        configure(&mut editor);
++        editor.refresh_layout(&mut font_ctx, &mut doc.layout_ctx);
++        editor
++    });
+ }
+ 
+ fn create_checkbox_input(doc: &mut BaseDocument, input_element_id: NodeId) {
+diff -ruN blitz/packages/blitz-dom/src/layout/damage.rs blitz/packages/blitz-dom/src/layout/damage.rs
+--- blitz/packages/blitz-dom/src/layout/damage.rs
++++ blitz/packages/blitz-dom/src/layout/damage.rs
+@@ -527,6 +527,10 @@
+                 input.editor.set_scale(scale);
+                 let mut font_ctx = font_ctx.lock().unwrap();
+                 input.editor.refresh_layout(&mut font_ctx, layout_ctx);
++                if let Some(ph) = input.placeholder.as_mut() {
++                    ph.set_scale(scale);
++                    ph.refresh_layout(&mut font_ctx, layout_ctx);
++                }
+                 node.insert_damage(ONLY_RELAYOUT);
+             }
+         }
+diff -ruN blitz/packages/blitz-dom/src/layout/mod.rs blitz/packages/blitz-dom/src/layout/mod.rs
+--- blitz/packages/blitz-dom/src/layout/mod.rs
++++ blitz/packages/blitz-dom/src/layout/mod.rs
+@@ -317,11 +317,13 @@
+                             .downcast_element_mut()
+                             .and_then(|el| el.text_input_data_mut())
+                         {
++                            let mut font_ctx = doc.font_ctx.lock().unwrap();
+                             input.editor.set_width(Some(content_width * scale));
+-                            input.editor.refresh_layout(
+-                                &mut doc.font_ctx.lock().unwrap(),
+-                                &mut doc.layout_ctx,
+-                            );
++                            input.editor.refresh_layout(&mut font_ctx, &mut doc.layout_ctx);
++                            if let Some(ph) = input.placeholder.as_mut() {
++                                ph.set_width(Some(content_width * scale));
++                                ph.refresh_layout(&mut font_ctx, &mut doc.layout_ctx);
++                            }
+                         }
+                     }
+                     return output;
+diff -ruN blitz/packages/blitz-dom/src/node/serialize.rs blitz/packages/blitz-dom/src/node/serialize.rs
+--- blitz/packages/blitz-dom/src/node/serialize.rs
++++ blitz/packages/blitz-dom/src/node/serialize.rs
+@@ -123,7 +123,9 @@
+             .then(|| self.primary_styles())
+             .flatten()
+             .map(|style| style.clone_color())
+-            .map(|color| color.to_css_string());
++            // As rgb()/rgba(): usvg can't parse oklab()/color-mix() results (Tailwind's `text-x/60`),
++            // and falls back to black.
++            .map(|color| color.into_srgb_legacy().to_css_string());
+ 
+         match &self.data {
+             NodeData::Document(_) => {}
+diff -ruN blitz/packages/blitz-dom/src/node/text.rs blitz/packages/blitz-dom/src/node/text.rs
+--- blitz/packages/blitz-dom/src/node/text.rs
++++ blitz/packages/blitz-dom/src/node/text.rs
+@@ -80,6 +80,9 @@
+     /// `final_layout`. Paint draws text from the unrounded origin so that it keeps its sub-pixel
+     /// position while box edges stay snapped. Set by the `writing-mode` layout pass; zero otherwise.
+     pub content_box_subpixel_offset: taffy::Point<f32>,
++    /// The `placeholder` attribute laid out with the input's styles; painted while the input is
++    /// empty.
++    pub placeholder: Option<Box<parley::PlainEditor<TextBrush>>>,
+ }
+ 
+ // FIXME: Implement Clone for PlainEditor
+@@ -97,6 +100,7 @@
+             is_multiline,
+             scroll_offset: 0.0,
+             content_box_subpixel_offset: taffy::Point::ZERO,
++            placeholder: None,
+         }
+     }
+ 
+diff -ruN blitz/packages/blitz-paint/src/render/box_shadow.rs blitz/packages/blitz-paint/src/render/box_shadow.rs
+--- blitz/packages/blitz-paint/src/render/box_shadow.rs
++++ blitz/packages/blitz-paint/src/render/box_shadow.rs
+@@ -104,8 +104,10 @@
+                 .color
+                 .resolve_to_absolute(&current_color)
+                 .as_srgb_color();
+-            if shadow_color == Color::TRANSPARENT {
+-                return;
++            // Any fully transparent colour (daisyUI's depth-0 `oklch(100% 0 0 / 0)`), not only
++            // transparent black; and the next shadow may still be visible.
++            if shadow_color.components[3] == 0.0 {
++                continue;
+             }
+ 
+             // TODO draw shadows with matching individual radii instead of averaging
+diff -ruN blitz/packages/blitz-paint/src/render.rs blitz/packages/blitz-paint/src/render.rs
+--- blitz/packages/blitz-paint/src/render.rs
++++ blitz/packages/blitz-paint/src/render.rs
+@@ -1076,6 +1076,32 @@
+                 };
+             }
+ 
++            // An empty input shows its placeholder at half the text colour's opacity (the
++            // default `::placeholder` look; `::placeholder` rules themselves aren't matched).
++            let placeholder = input_data
++                .placeholder
++                .as_ref()
++                .filter(|_| input_data.editor.raw_text().is_empty())
++                .and_then(|ph| ph.try_layout());
++            if let Some(layout) = placeholder {
++                let color = self.style.clone_color().into_srgb_legacy().as_srgb_color();
++                let color = color.with_alpha(color.components[3] * 0.5);
++                let mut draw_text_context = self.context.draw_text_context.borrow_mut();
++                crate::text::stroke_text(
++                    scene,
++                    layout.lines(),
++                    self.context.dom,
++                    transform,
++                    TextPaintOptions {
++                        scale: self.scale,
++                        brush_override: Some(color),
++                    },
++                    self.node.id,
++                    &mut draw_text_context,
++                );
++                return;
++            }
++
+             // Render text
+             let mut draw_text_context = self.context.draw_text_context.borrow_mut();
+             crate::text::stroke_text(
+diff -ruN blitz/packages/blitz-paint/src/text.rs blitz/packages/blitz-paint/src/text.rs
+--- blitz/packages/blitz-paint/src/text.rs
++++ blitz/packages/blitz-paint/src/text.rs
+@@ -622,9 +622,12 @@
+                 let metrics = run.font_metrics();
+                 let style = glyph_run.style();
+                 let synthesis = run.synthesis();
++                // Painters apply glyph_transform in y-down layout space (vello_cpu after its
++                // FLIP_Y, cairo's font matrix, skia's canvas), where a positive x-skew moves
++                // glyph tops left. Negate it so a faux italic leans forward.
+                 let glyph_xform = synthesis
+                     .skew()
+-                    .map(|angle| Affine::skew(angle.to_radians().tan() as f64, 0.0));
++                    .map(|angle| Affine::skew(-angle.to_radians().tan() as f64, 0.0));
+ 
+                 let css_font_size = font_size as f64 / scale;
+ 

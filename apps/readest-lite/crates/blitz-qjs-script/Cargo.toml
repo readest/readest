@@ -1,0 +1,25 @@
+[package]
+name = "blitz-qjs-script"
+description = "JavaScript execution for Blitz on QuickJS-NG (rquickjs), with bytecode caching"
+version = "0.1.0"
+license = "MIT OR Apache-2.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+blitz-dom = { path = "../../vendor/blitz/packages/blitz-dom", default-features = false }
+blitz-html = { path = "../../vendor/blitz/packages/blitz-html", default-features = false }
+blitz-traits = { path = "../../vendor/blitz/packages/blitz-traits", default-features = false }
+# Computed values for getComputedStyle (Blitz's stylo).
+style = { version = "0.23.0", git = "https://github.com/servo/stylo", rev = "2dca34592ced37c6aa01733e94206a767194cf9d", package = "stylo" }
+# bindgen everywhere: the vendored rquickjs-sys carries QuickJS-NG 0.18.0, and its pregenerated
+# bindings are for 0.10.1.
+rquickjs = { version = "0.10", default-features = false, features = ["bindgen"] }
+url = "2.5.0"
+log = "0.4"
+
+
+# build.rs compiles bootstrap.js to bytecode with a host build of the same QuickJS; the bytecode
+# is portable across targets of the same QuickJS version (checked x86-64 -> armv7).
+[build-dependencies]
+rquickjs = { version = "0.10", default-features = false, features = ["bindgen"] }

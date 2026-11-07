@@ -8,6 +8,9 @@ members = [
   "apps/readest-app/src-tauri"
 ]
 exclude = [
+  # Readest Lite is its own workspace: its cairo-rs 0.22 and GTK's cairo-sys-rs 0.18 both declare
+  # `links = "cairo"` (apps/readest-lite/Cargo.toml).
+  "apps/readest-lite",
   "packages/qcms",
   # The tauri fork is its own cargo workspace and its crates use
   # `workspace = true` inheritance. Keep it out of this workspace so those
