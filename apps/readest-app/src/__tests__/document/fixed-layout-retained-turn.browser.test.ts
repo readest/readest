@@ -116,10 +116,13 @@ describe('retained fixed-layout page turns', () => {
   });
 
   it.each(
-    ['ltr', 'rtl'].flatMap((dir) => [100, 200].map((zoom) => ({ dir, zoom }))),
-  )('keeps the other portrait page hidden while preparing ($dir, $zoom%)', async ({
+    ['ltr', 'rtl'].flatMap((dir) =>
+      [100, 200].flatMap((zoom) => [false, true].map((commit) => ({ dir, zoom, commit }))),
+    ),
+  )('keeps the other portrait page hidden until its turn ($dir, $zoom%, commit=$commit)', async ({
     dir,
     zoom,
+    commit,
   }) => {
     await mount(dir, 'auto');
     renderer.setAttribute('scale-factor', String(zoom));
@@ -149,10 +152,18 @@ describe('retained fixed-layout page turns', () => {
     expect([...renderer.shadowRoot!.querySelectorAll('[data-page-turn-view="outgoing"]')]).toEqual([
       current.parentElement,
     ]);
-    renderer.movePageTurn(0.4);
-    await renderer.endPageTurn(false, 0);
-    expect(getComputedStyle(next).visibility).toBe('hidden');
-    expect(current.getBoundingClientRect().toJSON()).toEqual(before);
+    renderer.movePageTurn(commit ? 1 : 0.4);
+    const landing = next.getBoundingClientRect().toJSON();
+    await renderer.endPageTurn(commit, 0);
+    if (commit) {
+      expect(getComputedStyle(next).display, 'the landed page must remain visible').toBe('block');
+      expect(getComputedStyle(next).visibility).toBe('visible');
+      expect(next.getBoundingClientRect().toJSON()).toEqual(landing);
+      expect(renderer.index).toBe(Number(next.querySelector('iframe')!.dataset['sectionIndex']));
+    } else {
+      expect(getComputedStyle(next).visibility).toBe('hidden');
+      expect(current.getBoundingClientRect().toJSON()).toEqual(before);
+    }
   });
 
   it('cancels safely when the viewport resizes during a drag', async () => {
