@@ -30,7 +30,11 @@ interface BookDetailModalProps {
   handleBookDeleteCloudBackup?: (book: Book) => void;
   handleBookDeleteLocalCopy?: (book: Book) => void;
   handleBookPurge?: (book: Book) => void;
-  handleBookMetadataUpdate?: (book: Book, updatedMetadata: BookMetadata, tags: string[]) => void;
+  handleBookMetadataUpdate?: (
+    book: Book,
+    updatedMetadata: BookMetadata,
+    tags: string[],
+  ) => void | Promise<void>;
   handleBookOfflineDownload?: (book: Book) => void;
   offlinePremiumLabel?: string;
   onMetadataValueClick?: (type: 'tag' | 'subject', value: string) => void;
@@ -170,6 +174,29 @@ const BookDetailModal: React.FC<BookDetailModalProps> = ({
     }
   };
 
+  const handleRefreshMetadata = async () => {
+    if (!appService || !handleBookMetadataUpdate || fileSize === null || isLoading) return;
+    setIsLoading(true);
+    try {
+      const refreshed = { ...displayBook };
+      if (!(await appService.refreshBookMetadata(refreshed)) || !refreshed.metadata) {
+        throw new Error('No metadata found in the book file');
+      }
+      const metadata = refreshed.metadata;
+      await handleBookMetadataUpdate(book, { ...metadata }, bookTags);
+      setBookMeta(metadata);
+      setDisplayBook(getBookWithUpdatedMetadata(displayBook, metadata, bookTags));
+    } catch (error) {
+      console.error('Failed to refresh metadata:', error);
+      eventDispatcher.dispatch('toast', {
+        type: 'error',
+        message: _('Failed to refresh metadata'),
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleDeleteAction = (action: DeleteMenuAction) => {
     setActiveDeleteAction(action);
   };
@@ -285,6 +312,11 @@ const BookDetailModal: React.FC<BookDetailModalProps> = ({
                 fileSize={fileSize}
                 shareEnabled={shareEnabled}
                 onEdit={handleBookMetadataUpdate ? handleEditMetadata : undefined}
+                onRefreshMetadata={
+                  handleBookMetadataUpdate && appService && !isLoading
+                    ? handleRefreshMetadata
+                    : undefined
+                }
                 onDelete={handleBookDelete ? handleDelete : undefined}
                 onDeleteCloudBackup={
                   handleBookDeleteCloudBackup ? handleDeleteCloudBackup : undefined

@@ -9,9 +9,15 @@ vi.mock('@/hooks/useTranslation', () => ({
   useTranslation: () => (s: string) => s,
 }));
 
+const fileMetadata = { title: 'Title from file', author: 'File Author', language: 'en' };
+
 const appSvc = {
   getBookFileSize: vi.fn(async () => 1024),
   fetchBookDetails: vi.fn(async () => null),
+  refreshBookMetadata: vi.fn(async (book: Book) => {
+    book.metadata = { ...fileMetadata };
+    return true;
+  }),
 };
 
 vi.mock('@/context/EnvContext', () => ({
@@ -112,6 +118,24 @@ const makeBook = (): Book =>
       coverImageUrl: 'old-cover',
     },
   }) as Book;
+
+it('refreshes metadata from the current book file and saves it through the edit path', async () => {
+  const book = { ...makeBook(), tags: ['keep'] };
+  const onUpdate = vi.fn();
+  render(
+    <DropdownProvider>
+      <BookDetailModal book={book} isOpen onClose={vi.fn()} handleBookMetadataUpdate={onUpdate} />
+    </DropdownProvider>,
+  );
+  fireEvent.click(screen.getByRole('button', { name: 'More Actions' }));
+  const action = await screen.findByRole('menuitem', { name: 'Refresh Metadata from File' });
+  fireEvent.click(action);
+  await waitFor(() =>
+    expect(onUpdate).toHaveBeenCalledExactlyOnceWith(book, fileMetadata, ['keep']),
+  );
+  expect(await screen.findByText('Title from file')).toBeTruthy();
+  expect(book.metadata?.title).toBe('Old Title');
+});
 
 describe('BookDetailModal cover refresh after save', () => {
   it('updates the Book Details view cover when the cover is edited and saved', async () => {
