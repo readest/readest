@@ -787,6 +787,30 @@ describe('SqliteTTSCacheStore pack portability', () => {
     expect(imported).toHaveBeenCalledTimes(1);
   });
 
+  test('a section a synced pack already covers is not packed again', async () => {
+    const sidecar = await readSidecar();
+    const bytes = packFs.files.get(await packName())!;
+    const otherDb = await NodeDatabaseService.open(':memory:');
+    const otherFs = new FakePackFs();
+    const other = new SqliteTTSCacheStore(otherDb, {
+      budgetBytes: 1024 * 1024,
+      now: () => clock.t++,
+      packFs: otherFs,
+    });
+    expect(await other.importPack(bytes.slice().buffer as ArrayBuffer, sidecar)).toBe(true);
+    // Downloading or playing the section records the same sentences.
+    await other.registerSectionMarks(3, ['m1', 'm2']);
+    await other.recordMarkKey(3, 0, 'k1');
+    await other.recordMarkKey(3, 1, 'k2');
+    const files = [...otherFs.files.keys()].sort();
+    const readRange = vi.spyOn(otherFs, 'readRange');
+
+    expect(await other.compact()).toBe(0);
+    // Neither re-read the section's audio nor wrote a second pack.
+    expect(readRange).not.toHaveBeenCalled();
+    expect([...otherFs.files.keys()].sort()).toEqual(files);
+  });
+
   test('a packed sentence counts as cached only while its pack file is there', async () => {
     const sidecar = await readSidecar();
     const bytes = packFs.files.get(await packName())!;

@@ -86,15 +86,19 @@ const ORPHAN_SETTLE_MS = 60 * 60 * 1000;
  * (a book file a cloud tombstone never removed, a paired audiobook copy, a
  * feed's article cache). Root-level library metadata is never an orphan.
  * Neither kind shows in the library UI, which is how they went unnoticed in
- * #5837.
+ * #5837. With `includeDeletedBooks`, a soft-deleted book's dir gives up its
+ * kept sidecars and audiobook copies too, the same files a purge removes. Its
+ * row already exists, so the import settle window doesn't apply to it.
  */
 export const getOrphanedBookEntries = async (
   appService: AppService,
   books: Book[],
+  includeDeletedBooks = false,
 ): Promise<CacheEntry[]> => {
   // Any live row protects its dir, even if a legacy library.json also carries
   // a tombstone for the same hash.
   const liveHashes = new Set(books.filter((book) => !book.deletedAt).map((book) => book.hash));
+  const deletedHashes = new Set(books.filter((book) => book.deletedAt).map((book) => book.hash));
   let files: FileItem[];
   try {
     // Scan by absolute path: a base-relative read of 'Books' resolves to a
@@ -125,9 +129,11 @@ export const getOrphanedBookEntries = async (
     const dir = getBookDirOfPath(file.path);
     if (!dir || liveHashes.has(dir)) continue;
     const path = file.path.replace(/\\/g, '/');
-    if (KEPT_SIDECARS.has(path.slice(dir.length + 1))) continue;
-    if (path.startsWith(`${getAudiobookDirectory(dir)}/`)) continue;
-    if (!(await isSettled(dir))) continue;
+    if (!includeDeletedBooks || !deletedHashes.has(dir)) {
+      if (KEPT_SIDECARS.has(path.slice(dir.length + 1))) continue;
+      if (path.startsWith(`${getAudiobookDirectory(dir)}/`)) continue;
+      if (!(await isSettled(dir))) continue;
+    }
     entries.push({ base: 'Books', path: file.path, size: file.size || 0 });
   }
   return entries;
@@ -156,11 +162,12 @@ export const getClearableEntries = async (
   appService: AppService,
   sources: CacheSource[],
   library: { books: Book[]; loaded: boolean },
+  includeDeletedBooks = false,
 ): Promise<{ entries: CacheEntry[]; orphanCount: number }> => {
   const cacheEntries = await getCacheEntries(appService, sources);
   const orphanEntries =
     library.loaded && library.books.length > 0
-      ? await getOrphanedBookEntries(appService, library.books)
+      ? await getOrphanedBookEntries(appService, library.books, includeDeletedBooks)
       : [];
   return { entries: [...cacheEntries, ...orphanEntries], orphanCount: orphanEntries.length };
 };

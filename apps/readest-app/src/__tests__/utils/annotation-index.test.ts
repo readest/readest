@@ -38,11 +38,18 @@ describe('buildAnnotationIndex / selectLocationAnnotations', () => {
     expect(bySection.get('/6/6')).toEqual([noteOnly]);
   });
 
-  it('splits styled global highlights into their own array', () => {
+  it('lists styled global highlights in their own array and under their home section', () => {
     const global = note({ style: 'highlight', color: 'yellow', text: 'x', global: true });
     const { bySection, globals } = buildAnnotationIndex([global]);
     expect(globals).toEqual([global]);
-    expect(bySection.size).toBe(0);
+    expect(bySection.get('/6/6')).toEqual([global]);
+  });
+
+  it("draws a global note's bubble at its home anchor", () => {
+    // Its copies carry no bubble, so the home anchor's is the only one.
+    const global = note({ style: 'highlight', text: 'x', note: 'hi', global: true });
+    const { notes } = selectLocationAnnotations(buildAnnotationIndex([global]), location);
+    expect(notes).toEqual([global]);
   });
 
   it('skips deleted, non-annotation, and empty (no style, no note) entries', () => {

@@ -9,6 +9,7 @@ import {
   RiBook3Line,
   RiBookmark3Line,
   RiFileList3Line,
+  RiMarkdownLine,
   RiDiscordLine,
   RiSendPlaneLine,
   RiWifiLine,
@@ -19,6 +20,9 @@ import {
   RiMicrosoftLine,
   RiAppleLine,
   RiHeadphoneLine,
+  RiBookShelfLine,
+  RiAlertLine,
+  RiInformationLine,
 } from 'react-icons/ri';
 import { useAppRouter } from '@/hooks/useAppRouter';
 import { useEnv } from '@/context/EnvContext';
@@ -48,11 +52,13 @@ import { navigateToLogin, navigateToProfile } from '@/utils/nav';
 import { eventDispatcher } from '@/utils/event';
 import ABSForm from './integrations/ABSForm';
 import BookOrbitForm from './integrations/BookOrbitForm';
+import GrimmoryForm from './integrations/GrimmoryForm';
 import KOSyncForm from './integrations/KOSyncForm';
 import ReadwiseForm from './integrations/ReadwiseForm';
 import HardcoverForm from './integrations/HardcoverForm';
 import PageboundForm from './integrations/PageboundForm';
 import NotionForm from './integrations/NotionForm';
+import ObsidianForm from './integrations/ObsidianForm';
 import SendToReadestForm from './integrations/SendToReadestForm';
 import LocalSendForm from './integrations/LocalSendForm';
 import WebDAVForm from './integrations/WebDAVForm';
@@ -76,12 +82,16 @@ import {
 } from '@/services/sync/cloudSyncProvider';
 import type { FileSyncBackendKind } from '@/services/sync/file/providerRegistry';
 import { canBackendRun } from '@/services/sync/file/runLibrarySync';
+import { getConnectorHealth } from '@/services/sync/dataFlow/log';
+import DataFlowPage from './integrations/DataFlowPage';
+import { useFlowConnectors, useFlowState } from './integrations/useFlowConnectors';
 import SubPageHeader from './SubPageHeader';
 import { BoxedList, NavigationRow, SectionTitle, SettingLabel, Tips } from './primitives';
 
 type SubPage =
   | 'kosync'
   | 'bookorbit'
+  | 'grimmory'
   | 'webdav'
   | 'gdrive'
   | 's3'
@@ -92,10 +102,12 @@ type SubPage =
   | 'hardcover'
   | 'pagebound'
   | 'notion'
+  | 'obsidian'
   | 'opds'
   | 'audiobookshelf'
   | 'send'
   | 'localsend'
+  | 'data-flow'
   | null;
 
 /**
@@ -168,6 +180,8 @@ const IntegrationsPanel: React.FC = () => {
     : undefined;
 
   const [subPage, setSubPage] = useState<SubPage>(null);
+  const flowConnectors = useFlowConnectors();
+  const flowState = useFlowState();
 
   // Hydrate the OPDS store from settings so the row's catalog count is
   // accurate on first open. Without this the store starts empty and the
@@ -229,6 +243,7 @@ const IntegrationsPanel: React.FC = () => {
     if (
       requestedSubPage === 'kosync' ||
       requestedSubPage === 'bookorbit' ||
+      requestedSubPage === 'grimmory' ||
       requestedSubPage === 'webdav' ||
       requestedSubPage === 'gdrive' ||
       requestedSubPage === 's3' ||
@@ -271,6 +286,12 @@ const IntegrationsPanel: React.FC = () => {
     return (
       <div className='my-4 w-full'>
         <BookOrbitForm onBack={() => setSubPage(null)} />
+      </div>
+    );
+  if (subPage === 'grimmory')
+    return (
+      <div className='my-4 w-full'>
+        <GrimmoryForm onBack={() => setSubPage(null)} />
       </div>
     );
   if (subPage === 'webdav')
@@ -479,6 +500,12 @@ const IntegrationsPanel: React.FC = () => {
         <NotionForm onBack={() => setSubPage(null)} />
       </div>
     );
+  if (subPage === 'obsidian')
+    return (
+      <div className='my-4 w-full'>
+        <ObsidianForm onBack={() => setSubPage(null)} />
+      </div>
+    );
   if (subPage === 'opds')
     return (
       <div className='my-4 w-full'>
@@ -497,12 +524,23 @@ const IntegrationsPanel: React.FC = () => {
         <ABSForm onBack={() => setSubPage(null)} />
       </div>
     );
+  if (subPage === 'data-flow')
+    return <DataFlowPage onBack={() => setSubPage(null)} onOpenSettings={setSubPage} />;
+
   if (subPage === 'send')
     return (
       <div className='my-4 w-full'>
         <SendToReadestForm onBack={() => setSubPage(null)} />
       </div>
     );
+
+  const flowProblems = flowConnectors.filter(
+    ({ id }) => getConnectorHealth(flowState, id) === 'failed',
+  ).length;
+  const flowLabel =
+    flowProblems > 0
+      ? `${_('Data Flow')}: ${_('Needs attention')}: ${flowProblems}`
+      : _('Data Flow');
 
   const koSyncStatus = settings.kosync?.enabled
     ? settings.kosync.username
@@ -516,6 +554,10 @@ const IntegrationsPanel: React.FC = () => {
       : _('Connected')
     : _('Not connected');
 
+  const grimmoryStatus = settings.grimmory?.enabled
+    ? _('Connected as {{user}}', { user: settings.grimmory.username })
+    : _('Not connected');
+
   const readwiseStatus = settings.readwise?.enabled ? _('Connected') : _('Not connected');
   const hardcoverStatus = settings.hardcover?.enabled ? _('Connected') : _('Not connected');
   const pageboundStatus =
@@ -526,6 +568,8 @@ const IntegrationsPanel: React.FC = () => {
     settings.notion?.enabled && settings.notion.accessToken && settings.notion.databaseId
       ? _('Connected')
       : _('Not connected');
+  const obsidianStatus =
+    settings.obsidian?.enabled && settings.obsidian.folder ? _('On') : _('Off');
 
   // Cloud sync providers are independently selectable (#5062): any subset of
   // {Readest Cloud, WebDAV, Google Drive, S3, OneDrive, iCloud} can sync the
@@ -630,7 +674,23 @@ const IntegrationsPanel: React.FC = () => {
   return (
     <div className='my-4 w-full space-y-6'>
       <div className='w-full px-4'>
-        <h2 className='mb-1.5 text-lg font-semibold tracking-tight'>{_('Integrations')}</h2>
+        <div className='mb-1.5 flex items-center justify-between gap-2'>
+          <h2 className='text-lg font-semibold tracking-tight'>{_('Integrations')}</h2>
+          <button
+            type='button'
+            title={flowLabel}
+            aria-label={flowLabel}
+            onClick={() => setSubPage('data-flow')}
+            className='btn btn-ghost touch-target h-8 min-h-8 shrink-0 gap-1 rounded-full px-1.5 font-normal'
+          >
+            {flowProblems > 0 ? (
+              <RiAlertLine aria-hidden='true' className='h-4 w-4' />
+            ) : (
+              <RiInformationLine aria-hidden='true' className='h-4 w-4' />
+            )}
+            {flowProblems > 0 && <span className='text-sm tabular-nums'>{flowProblems}</span>}
+          </button>
+        </div>
         <p className='text-base-content/70 text-sm leading-relaxed'>
           {_('Connect Readest to external services for sync, highlights, and catalogs.')}
         </p>
@@ -673,6 +733,12 @@ const IntegrationsPanel: React.FC = () => {
               onClick={() => setSubPage('bookorbit')}
             />
             <IntegrationRow
+              icon={RiBookShelfLine}
+              title={_('Grimmory')}
+              status={grimmoryStatus}
+              onClick={() => setSubPage('grimmory')}
+            />
+            <IntegrationRow
               icon={RiBookReadLine}
               title={_('Readwise')}
               status={readwiseStatus}
@@ -699,6 +765,15 @@ const IntegrationsPanel: React.FC = () => {
               status={notionStatus}
               onClick={() => setSubPage('notion')}
             />
+            {/* Writes into a local vault folder: desktop and Android only for now. */}
+            {(appService?.isDesktopApp || appService?.isAndroidApp) && (
+              <IntegrationRow
+                icon={RiMarkdownLine}
+                title={_('Obsidian')}
+                status={obsidianStatus}
+                onClick={() => setSubPage('obsidian')}
+              />
+            )}
           </div>
         </div>
       </div>

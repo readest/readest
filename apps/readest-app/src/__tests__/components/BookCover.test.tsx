@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
 import { render, cleanup, fireEvent, waitFor, act } from '@testing-library/react';
+import tinycolor from 'tinycolor2';
 
 const requestCoverThumbnailMock = vi.fn();
 
@@ -64,6 +65,82 @@ const makeBook = (overrides?: Partial<Book>): Book =>
   }) as Book;
 
 describe('BookCover', () => {
+  it.each([
+    'crop',
+    'fit',
+  ] as const)('renders a colored Classic cover without artwork (%s)', (coverFit) => {
+    const { container } = render(
+      <BookCover
+        book={makeBook({ hash: '6e16b9ea78d31201', format: 'TXT', coverImageUrl: null })}
+        coverFit={coverFit}
+      />,
+    );
+    const cover = container.querySelector<HTMLElement>('.fallback-cover')!;
+
+    expect(cover.textContent).toContain('TXT');
+    expect(cover.textContent).toContain('Test Book');
+    expect(cover.textContent).toContain('Test Author');
+    expect(cover.style.backgroundColor).toBe('rgb(161, 85, 67)');
+    expect(container.querySelector('img')).toBeNull();
+  });
+
+  it('keeps the book color across edits, layout changes and remounts', () => {
+    const book = makeBook({ coverImageUrl: null });
+    const { container, rerender, unmount } = render(<BookCover book={book} />);
+    const color = container.querySelector<HTMLElement>('.fallback-cover')!.style.backgroundColor;
+    expect(color).not.toBe('');
+
+    rerender(
+      <BookCover
+        book={{ ...book, title: 'Renamed', author: 'Edited Author', updatedAt: 2 }}
+        mode='list'
+        coverFit='fit'
+      />,
+    );
+    expect(container.querySelector<HTMLElement>('.fallback-cover')!.style.backgroundColor).toBe(
+      color,
+    );
+    expect(container.querySelector('.fallback-cover')?.textContent).toContain('Renamed');
+    unmount();
+
+    const remounted = render(<BookCover book={{ ...book }} isPreview />);
+    expect(
+      remounted.container.querySelector<HTMLElement>('.fallback-cover')!.style.backgroundColor,
+    ).toBe(color);
+  });
+
+  it('provides eight readable cover colors from stable book hashes', () => {
+    const colors = new Set<string>();
+    for (let i = 0; i < 8; i++) {
+      const { container, unmount } = render(
+        <BookCover book={makeBook({ hash: `${i}`, coverImageUrl: null })} />,
+      );
+      const cover = container.querySelector<HTMLElement>('.fallback-cover')!;
+      colors.add(cover.style.backgroundColor);
+      expect(
+        tinycolor.readability(cover.style.backgroundColor, cover.style.color),
+      ).toBeGreaterThanOrEqual(4.5);
+      unmount();
+    }
+    expect(colors.size).toBe(8);
+  });
+
+  it('supports a metadata-source preview without a book hash or file format', () => {
+    const { container } = render(
+      <BookCover book={{ title: 'Metadata result', author: 'Author' } as Book} mode='list' />,
+    );
+    expect(container.querySelector('.fallback-cover')?.textContent).toContain('Metadata result');
+  });
+
+  it.each([
+    'ABS',
+    'OPDSAUDIO',
+    'BOOKORBIT',
+  ] as const)('does not label a streaming source code as a file format (%s)', (format) => {
+    const { container } = render(<BookCover book={makeBook({ format, coverImageUrl: null })} />);
+    expect(container.querySelector('.fallback-cover')?.textContent).not.toContain(format);
+  });
+
   it('passes loading="lazy" to crop-mode Image', () => {
     const { container } = render(<BookCover book={makeBook()} coverFit='crop' />);
     const img = container.querySelector('img.cover-image');
@@ -113,6 +190,9 @@ describe('BookCover', () => {
     fireEvent.error(container.querySelector('img')!);
 
     expect(container.querySelector('.fallback-cover')?.classList.contains('invisible')).toBe(false);
+    expect(container.querySelector<HTMLElement>('.fallback-cover')!.style.backgroundColor).not.toBe(
+      '',
+    );
     expect(onImageError).toHaveBeenCalledOnce();
   });
 
@@ -290,6 +370,8 @@ describe('BookCover', () => {
       expect(fallback).toBeTruthy();
       expect(fallback?.classList.contains('invisible')).toBe(false);
       expect(fallback?.textContent).toContain('Test Book');
+      expect((fallback as HTMLElement).style.backgroundColor).toBe('');
+      expect(fallback?.textContent).not.toContain('EPUB');
     });
 
     it('does not request thumbnail optimization when covers are hidden', async () => {

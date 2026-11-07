@@ -1,5 +1,11 @@
 import { afterEach, describe, expect, test, vi } from 'vitest';
 
+const webdavClient = vi.hoisted(() => ({ checkConnection: vi.fn(), headFile: vi.fn() }));
+vi.mock('@/services/sync/providers/webdav/client', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/services/sync/providers/webdav/client')>()),
+  ...webdavClient,
+}));
+
 vi.mock('@/services/sync/providers/gdrive/buildGoogleDriveProvider', () => ({
   buildGoogleDriveProvider: vi.fn(),
 }));
@@ -16,6 +22,7 @@ import { buildGoogleDriveProvider } from '@/services/sync/providers/gdrive/build
 import { buildOneDriveProvider } from '@/services/sync/providers/onedrive/buildOneDriveProvider';
 import { buildICloudProvider } from '@/services/sync/providers/icloud/buildICloudProvider';
 import {
+  checkFileSyncBackend,
   createFileSyncProvider,
   resetFileSyncProviderCache,
 } from '@/services/sync/file/providerRegistry';
@@ -45,6 +52,36 @@ afterEach(() => {
   resetFileSyncProviderCache();
 });
 
+describe('checkFileSyncBackend', () => {
+  const webdav = {
+    enabled: true,
+    serverUrl: 'http://dav',
+    username: 'u',
+    password: 'p',
+    rootPath: '/books',
+  } as WebDAVSettings;
+
+  test('fails when the WebDAV root is gone, which looks like a missing index', async () => {
+    webdavClient.headFile.mockResolvedValue(null);
+    webdavClient.checkConnection.mockResolvedValue({
+      success: false,
+      status: 404,
+      code: 'ROOT_NOT_FOUND',
+    });
+
+    await expect(checkFileSyncBackend('webdav', { webdav })).rejects.toThrow(
+      'Root directory not found',
+    );
+  });
+
+  test('passes a WebDAV root with no library index yet', async () => {
+    webdavClient.headFile.mockResolvedValue(null);
+    webdavClient.checkConnection.mockResolvedValue({ success: true, status: 207 });
+
+    await expect(checkFileSyncBackend('webdav', { webdav })).resolves.toBe(true);
+  });
+});
+
 describe('createFileSyncProvider', () => {
   test('builds a WebDAV provider from its settings', async () => {
     const provider = await createFileSyncProvider('webdav', { webdav });
@@ -72,7 +109,7 @@ describe('createFileSyncProvider', () => {
   test('delegates gdrive to buildGoogleDriveProvider', async () => {
     const fake = { rootPath: '/' } as unknown as FileSyncProvider;
     vi.mocked(buildGoogleDriveProvider).mockResolvedValueOnce(fake);
-    expect(await createFileSyncProvider('gdrive', {})).toBe(fake);
+    expect((await createFileSyncProvider('gdrive', {}))?.rootPath).toBe(fake.rootPath);
     expect(buildGoogleDriveProvider).toHaveBeenCalledTimes(1);
   });
 
@@ -183,9 +220,9 @@ describe('per-backend provider cache', () => {
     const fake = { rootPath: '/' } as FileSyncProvider;
     vi.mocked(buildICloudProvider).mockResolvedValue(fake);
     const first = await createFileSyncProvider('icloud', {});
-    expect(first).toBe(fake);
+    expect(first?.rootPath).toBe(fake.rootPath);
     const second = await createFileSyncProvider('icloud', {});
-    expect(second).toBe(fake);
+    expect(second).toBe(first);
     expect(buildICloudProvider).toHaveBeenCalledTimes(1);
   });
 

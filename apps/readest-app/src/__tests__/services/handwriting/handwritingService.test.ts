@@ -365,3 +365,19 @@ describe('HandwritingService pen width on a wide page (#7094)', () => {
     expect(editor.strokes('sec:1')[0]!.width).toBe(0.03);
   });
 });
+
+describe('HandwritingService cancelled input', () => {
+  it('drops already-flushed palm points before committing the pen stroke', () => {
+    const editor = new HandwritingEditor();
+    const service = new HandwritingService(editor, 'pdf:1', rect);
+    const input = service as unknown as {
+      onBatch: (points: InkPoint[], kind: string, erase: boolean) => void;
+    };
+    input.onBatch([[0.8, 0.8]], 'move', false);
+    expect(service.liveStrokes()).toHaveLength(1);
+    input.onBatch([], 'cancel', false);
+    expect(service.liveStrokes()).toEqual([]);
+    input.onBatch([[0.1, 0.1, 0.8]], 'end', false);
+    expect(editor.strokes('pdf:1')[0]!.points).toEqual([[0.1, 0.1, 0.8]]);
+  });
+});

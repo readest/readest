@@ -95,7 +95,7 @@ fn on_main<R: Runtime>(app: &AppHandle<R>, f: impl FnOnce(&mut Session) + Send +
     let _ = app.run_on_main_thread(move || SESSION.with(|s| f(&mut s.borrow_mut())));
 }
 
-fn emit(listeners: &Listeners, event: &str, payload: Value) {
+pub(crate) fn emit(listeners: &Listeners, event: &str, payload: Value) {
     if let Some(channels) = listeners.lock().unwrap().get(event) {
         for channel in channels {
             let _ = channel.send(payload.clone());

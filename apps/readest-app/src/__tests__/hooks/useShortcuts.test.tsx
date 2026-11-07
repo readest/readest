@@ -113,6 +113,26 @@ describe('useShortcuts input handling', () => {
     expect(event.defaultPrevented).toBe(true);
   });
 
+  // The vim find line closes on Enter or Escape, so its input is gone before
+  // the key reaches the window: the key was still typed in it.
+  it.each([
+    ['Enter', 'onToggleToolbar'],
+    ['Escape', 'onEscape'],
+  ] as const)('skips %s typed in an input its own handler removes', (key, action) => {
+    const handler = vi.fn();
+    render(<ShortcutHarness actions={{ [action]: handler }} />);
+    const field = document.createElement('input');
+    document.body.append(field);
+    field.focus();
+    field.addEventListener('keydown', () => field.remove());
+
+    const event = keyboardEventFor(field, { key });
+
+    expect(document.activeElement).toBe(document.body);
+    expect(handler).not.toHaveBeenCalled();
+    expect(event.defaultPrevented).toBe(false);
+  });
+
   it('preserves mouse defaults when a contextual shortcut declines the action', () => {
     localStorage.setItem('customShortcuts', JSON.stringify({ onHighlightSelection: ['MouseX1'] }));
     const onHighlightSelection = vi.fn(() => false);

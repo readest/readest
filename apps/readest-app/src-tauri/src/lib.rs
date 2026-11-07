@@ -672,6 +672,10 @@ pub fn run() {
             is_updater_disabled,
             allow_paths_in_scopes,
             cover_thumbnail::optimize_cover_thumbnails,
+            #[cfg(target_os = "windows")]
+            windows::get_explorer_thumbnails_enabled,
+            #[cfg(target_os = "windows")]
+            windows::set_explorer_thumbnails_enabled,
             dir_scanner::read_dir,
             backup_zip::write_backup_zip,
             backup_zip::extract_backup_zip,
@@ -770,12 +774,17 @@ pub fn run() {
     #[cfg(desktop)]
     let builder = builder.plugin(window_state::init());
 
+    // The in-app browser window gets a new `browser-N` label on every open;
+    // pool them under one state key so it reopens where it was last closed
+    // (see `web_browser::window_state_label`).
+    #[cfg(desktop)]
+    let window_state = tauri_plugin_window_state::Builder::default();
+    #[cfg(desktop)]
+    let window_state = window_state.map_label(web_browser::window_state_label);
     // The main window restores its saved geometry manually on Windows (see
     // `restore_main_window_state`): restoring into the freshly created hidden
     // window bakes the stale creation-time client area into the saved size,
     // growing the window on every launch (#6373).
-    #[cfg(desktop)]
-    let window_state = tauri_plugin_window_state::Builder::default();
     #[cfg(all(desktop, windows))]
     let window_state = window_state.skip_initial_state("main");
     #[cfg(desktop)]

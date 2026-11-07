@@ -133,3 +133,169 @@ describe('planGlosses against a zh-en fixture', () => {
     expect(occ.map((o) => o.word)).not.toContain(word);
   });
 });
+
+describe('planGlosses vocabulary marks (#6613)', () => {
+  // A pack-like source with an inflection table: running/ran → run.
+  const withLemma: GlossSource = {
+    lookup: (word) =>
+      source.lookup(word) ?? (word.toLowerCase() === 'run' ? { rank: 500, gloss: '跑' } : null),
+    lemma: (word) => {
+      const w = word.toLowerCase();
+      if (w === 'running' || w === 'ran') return 'run';
+      return source.lookup(w) || w === 'run' ? w : null;
+    },
+  };
+  const opts = (vocabulary: {
+    learning?: [string, string | undefined][];
+    mastered?: string[];
+  }) => ({
+    sourceLang: 'en',
+    rankCutoff: 7000,
+    vocabulary: {
+      learning: new Map(vocabulary.learning ?? []),
+      mastered: new Set(vocabulary.mastered ?? []),
+    },
+  });
+
+  it('hints a Learning word the pack ranks as easy, with the pack gloss', () => {
+    const occ = planGlosses('the cryptic', withLemma, opts({ learning: [['the', undefined]] }));
+    expect(occ.map((o) => [o.word, o.gloss])).toEqual([
+      ['the', '这'],
+      ['cryptic', '晦涩的'],
+    ]);
+  });
+
+  it('hints a Learning word missing from the pack with its saved hint', () => {
+    const occ = planGlosses('Captain Nemo', withLemma, opts({ learning: [['nemo', '尼莫']] }));
+    expect(occ).toEqual([{ start: 8, end: 12, word: 'Nemo', gloss: '尼莫' }]);
+  });
+
+  it('skips a Learning word with neither a saved hint nor a pack entry', () => {
+    expect(
+      planGlosses('Captain Nemo', withLemma, opts({ learning: [['nemo', undefined]] })),
+    ).toEqual([]);
+  });
+
+  it('prefers the saved hint over the pack gloss', () => {
+    const occ = planGlosses('cryptic', withLemma, opts({ learning: [['cryptic', '神秘']] }));
+    expect(occ[0]!.gloss).toBe('神秘');
+  });
+
+  it('shows a typed hint as written, only shortened to the display cap', () => {
+    const occ = planGlosses(
+      'cryptic',
+      withLemma,
+      opts({ learning: [['cryptic', 'odd, unclear / vague']] }),
+    );
+    expect(occ[0]!.gloss).toBe('odd, unclear / vague');
+  });
+
+  it('never hints a Mastered word', () => {
+    expect(planGlosses('A cryptic note.', withLemma, opts({ mastered: ['cryptic'] }))).toEqual([]);
+  });
+
+  it('matches inflections both ways through the pack lemma table', () => {
+    const learnRun = opts({ learning: [['run', undefined]] });
+    expect(planGlosses('He ran.', withLemma, learnRun).map((o) => o.word)).toEqual(['ran']);
+    const masterRunning = opts({ mastered: ['running'] });
+    masterRunning.rankCutoff = 100; // the pack would hint run/ran at this level
+    expect(planGlosses('run ran running', withLemma, masterRunning)).toEqual([]);
+  });
+
+  it('counts Learning words toward the occurrence cap', () => {
+    const o = { ...opts({ learning: [['the', undefined]] }), maxOccurrences: 2 };
+    expect(planGlosses('the the the', withLemma, o)).toHaveLength(2);
+  });
+
+  it('hints a Learning phrase as one occurrence with its saved hint (#7325)', () => {
+    const text = 'The matter is decreed, Divine aid is at hand.';
+    const occ = planGlosses(text, withLemma, opts({ learning: [['matter is decreed', 'test']] }));
+    expect(occ).toEqual([{ start: 4, end: 21, word: 'matter is decreed', gloss: 'test' }]);
+  });
+
+  it('matches a Learning phrase across case, line breaks and curly apostrophes', () => {
+    const text = "It's the Captain’s\n    log today.";
+    const occ = planGlosses(text, withLemma, opts({ learning: [["captain's log", '航海日志']] }));
+    expect(occ.map((o) => o.word)).toEqual(['Captain’s\n    log']);
+  });
+
+  it('matches a Learning phrase only on word boundaries', () => {
+    const learn = opts({ learning: [['matter is decreed', 'test']] });
+    expect(planGlosses('No smatter is decreed.', withLemma, learn)).toEqual([]);
+    expect(planGlosses('The matter is decreedly so.', withLemma, learn)).toEqual([]);
+  });
+
+  it('gives the words inside a hinted phrase no hint of their own', () => {
+    const occ = planGlosses(
+      'A cryptic note, a cryptic one.',
+      withLemma,
+      opts({ learning: [['cryptic note', '密信']] }),
+    );
+    expect(occ.map((o) => [o.word, o.gloss])).toEqual([
+      ['cryptic note', '密信'],
+      ['cryptic', '晦涩的'],
+    ]);
+  });
+
+  it('keeps the earliest hints in text order when the cap is hit', () => {
+    const o = { ...opts({ learning: [['cryptic note', '密信']] }), maxOccurrences: 1 };
+    expect(planGlosses('cryptic cryptic note', withLemma, o)).toEqual([
+      { start: 0, end: 7, word: 'cryptic', gloss: '晦涩的' },
+    ]);
+  });
+
+  it('drops a phrase the page cannot draw and keeps its words hinted', () => {
+    const o = { ...opts({ learning: [['cryptic note', '密信']] }), canRender: () => false };
+    expect(planGlosses('a cryptic note', withLemma, o).map((x) => x.word)).toEqual(['cryptic']);
+  });
+
+  it('matches a phrase only on whole tokens, hyphens and apostrophes included', () => {
+    const learn = opts({ learning: [['ice cream', '冰淇淋']] });
+    expect(planGlosses('an ice cream-maker', withLemma, learn)).toEqual([]);
+    expect(planGlosses('de-ice cream', withLemma, learn)).toEqual([]);
+    expect(planGlosses('an ice cream.', withLemma, learn).map((o) => o.word)).toEqual([
+      'ice cream',
+    ]);
+  });
+
+  it('tries an overlapping match after one the page cannot draw', () => {
+    const o = { ...opts({ learning: [['go go', 'x']] }), canRender: (s: number) => s !== 0 };
+    expect(planGlosses('go go go', withLemma, o).map((x) => [x.start, x.end])).toEqual([[3, 8]]);
+  });
+
+  it('matches a phrase before a closing quote', () => {
+    const learn = opts({ learning: [['ice cream', '冰淇淋']] });
+    expect(planGlosses("she said 'ice cream'.", withLemma, learn).map((o) => o.word)).toEqual([
+      'ice cream',
+    ]);
+    expect(planGlosses('‘ice cream’', withLemma, learn).map((o) => o.word)).toEqual(['ice cream']);
+  });
+
+  it('moves past a rejected match that starts outside the BMP', () => {
+    const o = { ...opts({ learning: [['𐐀 hello', 'x']] }), canRender: () => false };
+    expect(planGlosses('𐐀 hello', withLemma, o)).toEqual([]);
+  });
+
+  it('hints back-to-back Learning phrases separated by one space', () => {
+    const occ = planGlosses(
+      'matter is decreed matter is decreed',
+      withLemma,
+      opts({ learning: [['matter is decreed', 'x']] }),
+    );
+    expect(occ.map((o) => [o.start, o.end])).toEqual([
+      [0, 17],
+      [18, 35],
+    ]);
+  });
+
+  it('hints a Chinese Learning phrase the segmenter splits', () => {
+    const cut = (t: string) =>
+      t === '斟酌了' ? ['斟酌', '了'] : ['他', '再三', '斟酌', '了', '一下'];
+    const occ = planGlosses('他再三斟酌了一下', withLemma, {
+      ...opts({ learning: [['斟酌了', 'weighed']] }),
+      sourceLang: 'zh',
+      cutZh: cut,
+    });
+    expect(occ).toEqual([{ start: 3, end: 6, word: '斟酌了', gloss: 'weighed' }]);
+  });
+});

@@ -7,8 +7,12 @@ import { eventDispatcher } from '@/utils/event';
 import { debounce } from '@/utils/debounce';
 import { getPublicCoverUrl } from '@/utils/cover';
 import { ReadwiseClient } from '@/services/readwise';
+import { recordFlow } from '@/services/sync/dataFlow/log';
 
 const READWISE_SYNC_DEBOUNCE_MS = 5000;
+
+const recordPush = (bookTitle: string, count: number, error?: string) =>
+  recordFlow({ connector: 'readwise', direction: 'push', kind: 'notes', bookTitle, count, error });
 
 export const useReadwiseSync = (bookKey: string) => {
   const _ = useTranslation();
@@ -51,6 +55,7 @@ export const useReadwiseSync = (bookKey: string) => {
             ? await getPublicCoverUrl(book, appService)
             : undefined;
         const result = await client.pushHighlights(newNotes, book, coverImageUrl);
+        recordPush(book.title, result.sent ?? 0, result.success ? undefined : result.message);
         if (result.success) {
           await updateLastSyncedAt(Date.now());
         } else if (!result.isNetworkError) {
@@ -74,6 +79,7 @@ export const useReadwiseSync = (bookKey: string) => {
         ? await getPublicCoverUrl(book, appService)
         : undefined;
     const result = await client.pushHighlights(config.booknotes, book, coverImageUrl);
+    recordPush(book.title, result.sent ?? 0, result.success ? undefined : result.message);
     if (result.success) {
       await updateLastSyncedAt(Date.now());
       eventDispatcher.dispatch('toast', {

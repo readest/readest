@@ -40,7 +40,12 @@ vi.mock('@/context/AuthContext', () => ({
 // The cursor stays where it is: the sync after a highlight's round trip pulls
 // nothing new, so lastSyncedAtNotes (and syncNotes) don't change.
 vi.mock('@/hooks/useSync', () => ({
-  useSync: () => ({ syncedNotes: null, syncNotes: h.syncNotesMock, lastSyncedAtNotes: 2000 }),
+  useSync: () => ({
+    syncedNotes: null,
+    syncNotes: h.syncNotesMock,
+    lastSyncedAtNotes: 2000,
+    useSyncInited: true,
+  }),
 }));
 
 vi.mock('@/store/bookDataStore', () => ({

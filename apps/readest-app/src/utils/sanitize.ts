@@ -1,10 +1,5 @@
 import DOMPurify from 'dompurify';
 
-export const sanitizeString = (str?: string) => {
-  if (!str) return str;
-  return str.replace(/\u0000/g, '');
-};
-
 /**
  * Strip untrusted HTML (Send-to-Readest email/web/DOCX conversion, OPDS feed
  * descriptions, etc.) down to safe, EPUB-appropriate structural markup. Removes

@@ -176,7 +176,9 @@ function SupabaseAuthClient:sign_out(access_token, callback)
     socketutil:set_timeout(AUTH_TIMEOUTS[1], AUTH_TIMEOUTS[2])
     local co = coroutine.create(function()
         local ok, res = pcall(function()
-            return self.client:sign_out()
+            -- Only this device, like the app: Supabase's default scope
+            -- (global) signs the account out everywhere.
+            return self.client:sign_out({ scope = "local" })
         end)
         callback(unwrap("sign_out", 204, ok, res))
     end)

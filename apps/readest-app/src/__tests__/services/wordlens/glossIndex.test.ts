@@ -16,6 +16,11 @@ describe('GlossIndex', () => {
     expect(index.lookup('running')).toEqual({ rank: 312, gloss: '跑；经营' });
     expect(index.lookup('RAN')).toEqual({ rank: 312, gloss: '跑；经营' });
   });
+  it('names the headword an inflected form comes from', () => {
+    expect(index.lemma('Running')).toBe('run');
+    expect(index.lemma('run')).toBe('run');
+    expect(index.lemma('zzzq')).toBeNull();
+  });
   it('returns null for unknown words', () => {
     expect(index.lookup('zzzq')).toBeNull();
   });

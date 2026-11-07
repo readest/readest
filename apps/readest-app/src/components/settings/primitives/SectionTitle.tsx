@@ -1,6 +1,6 @@
 import clsx from 'clsx';
 import React from 'react';
-import { isCaselessUILang } from '@/utils/misc';
+import { isCaselessUILang } from '@/utils/lang';
 
 type SectionTitleProps<T extends React.ElementType = 'h3'> = {
   /** Element/component to render. Defaults to `<h3>` for section dividers;

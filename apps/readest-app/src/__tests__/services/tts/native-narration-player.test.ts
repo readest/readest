@@ -91,7 +91,9 @@ describe('NativeNarrationPlayer', () => {
     try {
       await player.load('Audio/ch1.mp4', blob);
       const name = vi.mocked(writeFile).mock.calls[0]![0];
-      expect(writeFile).toHaveBeenCalledWith(name, bytes, { baseDir: BaseDirectory.AppCache });
+      expect(vi.mocked(writeFile).mock.calls[0]![2]).toMatchObject({
+        baseDir: BaseDirectory.AppCache,
+      });
       expect(controlCalls.find((call) => call['action'] === 'load')?.['path']).toBe(
         `${directory}/${name}`,
       );
@@ -102,6 +104,60 @@ describe('NativeNarrationPlayer', () => {
       await player.shutdown();
     }
     expect(remove).toHaveBeenCalledWith(`${directory}/${vi.mocked(writeFile).mock.calls[0]![0]}`);
+  });
+
+  test('streams a staged recording rather than sending it through the IPC whole', async () => {
+    const bytes = new Uint8Array([1, 2, 3, 4]);
+    const blob = new Blob([bytes]);
+    const wholeRead = vi.spyOn(blob, 'arrayBuffer');
+    const player = new NativeNarrationPlayer();
+
+    await player.load('Audio/ch1.mp4', blob);
+
+    expect(wholeRead).not.toHaveBeenCalled();
+    const [, data, options] = vi.mocked(writeFile).mock.calls[0]!;
+    expect(data).toBeInstanceOf(ReadableStream);
+    const written = await new Response(data as ReadableStream<Uint8Array>).arrayBuffer();
+    expect(new Uint8Array(written)).toEqual(bytes);
+    // Staged names come from the href alone and Storyteller's repeat across
+    // books, so a shorter recording must not keep the end of a longer one.
+    expect(options).toMatchObject({ truncate: true });
+
+    await player.shutdown();
+  });
+
+  test('a load that overtakes its queued preload waits for the same write', async () => {
+    let finishWrite = () => {};
+    vi.mocked(writeFile).mockImplementation(
+      () => new Promise<void>((resolve) => (finishWrite = resolve)),
+    );
+    const player = new NativeNarrationPlayer();
+    const blob = new Blob([new Uint8Array(4)]);
+
+    const first = player.load('Audio/ch1.mp4', blob);
+    const second = player.load('Audio/ch1.mp4', blob, 5);
+    await vi.waitFor(() => expect(writeFile).toHaveBeenCalled());
+    await new Promise((resolve) => setTimeout(resolve));
+
+    expect(writeFile).toHaveBeenCalledOnce();
+    expect(controlCalls.some((call) => call['action'] === 'load')).toBe(false);
+
+    finishWrite();
+    await Promise.all([first, second]);
+    expect(writeFile).toHaveBeenCalledOnce();
+    await player.shutdown();
+  });
+
+  test('stages again after a failed write', async () => {
+    vi.mocked(writeFile).mockRejectedValueOnce(new Error('No space left on device'));
+    const player = new NativeNarrationPlayer();
+    const blob = new Blob([new Uint8Array(4)]);
+
+    await expect(player.load('Audio/ch1.mp4', blob)).rejects.toThrow('No space left');
+    await player.load('Audio/ch1.mp4', blob);
+
+    expect(writeFile).toHaveBeenCalledTimes(2);
+    await player.shutdown();
   });
 
   test('loads an existing local audiobook path without copying or deleting it', async () => {
@@ -140,8 +196,21 @@ describe('NativeNarrationPlayer', () => {
     await player.ensureReady();
     const ended = vi.fn();
     player.addEventListener('ended', ended);
+    // Both plugins clear the current item before they send `ended`.
+    position = { session: 3, index: -1, positionMs: 18000, playing: false };
     playoutEvents!({ type: 'ended', session: 3, index: 0 });
-    expect(ended).toHaveBeenCalledOnce();
+    await vi.waitFor(() => expect(ended).toHaveBeenCalledOnce());
+    await player.shutdown();
+  });
+
+  test('an ended event while a file is still current does not end it', async () => {
+    const player = new NativeNarrationPlayer();
+    await player.ensureReady();
+    const ended = vi.fn();
+    player.addEventListener('ended', ended);
+    playoutEvents!({ type: 'ended', session: 3, index: 0 });
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(ended).not.toHaveBeenCalled();
     await player.shutdown();
   });
 
@@ -159,14 +228,35 @@ describe('NativeNarrationPlayer', () => {
     await player.shutdown();
   });
 
-  test('freezes the clock when the native player reports no current item', async () => {
+  test('recovers an ended event missed while the WebView was suspended', async () => {
     const player = new NativeNarrationPlayer();
     await player.load('ch1.mp3', new Blob([new Uint8Array(4)]), 0);
+    const ended = vi.fn();
+    player.addEventListener('ended', ended);
     await player.play();
     expect(player.paused).toBe(false);
 
     position = { session: 3, index: -1, positionMs: 0, playing: false };
-    await vi.waitFor(() => expect(player.paused).toBe(true));
+    await vi.waitFor(() => expect(ended).toHaveBeenCalledOnce());
+    expect(player.paused).toBe(true);
+    playoutEvents!({ type: 'ended', session: 3, index: 0 });
+    expect(ended).toHaveBeenCalledOnce();
+    await player.shutdown();
+  });
+
+  test('queues the next file and detects its native transition after suspension', async () => {
+    const player = new NativeNarrationPlayer();
+    await player.loadPath('one.mp3', '/books/one.mp3');
+    await player.queuePath('two.mp3', '/books/two.mp3', 'one.mp3');
+    expect(controlCalls.find((call) => call['action'] === 'queue')).toMatchObject({
+      path: '/books/two.mp3',
+    });
+
+    const ended = vi.fn();
+    player.addEventListener('ended', ended);
+    await player.play();
+    position = { session: 3, index: 1, positionMs: 4000, playing: true };
+    await vi.waitFor(() => expect(ended).toHaveBeenCalledOnce());
     await player.shutdown();
   });
 

@@ -59,6 +59,40 @@ describe('transformBookNoteToDB with handwriting', () => {
   });
 });
 
+describe('transformBookNoteToDB with a CrossPoint anchor', () => {
+  const highlight: BookNote = {
+    bookHash: 'abc123',
+    id: 'k3j9x0a',
+    type: 'annotation',
+    cfi: 'epubcfi(/6/4!/4/2,/1:0,/1:5)',
+    text: 'words',
+    note: '',
+    crosspoint: { spine: 1, start_offset: 10, end_offset: 15, pages: 19 },
+    createdAt: 1700000000000,
+    updatedAt: 1700000001000,
+  };
+
+  it('carries the anchor in the crosspoint column, both ways', () => {
+    const db = transformBookNoteToDB(highlight, 'user1');
+    expect(db.crosspoint).toEqual(highlight.crosspoint);
+    expect(transformBookNoteFromDB(db).crosspoint).toEqual(highlight.crosspoint);
+  });
+
+  it('never sends or pulls a key that would clear an anchor', () => {
+    const db = transformBookNoteToDB({ ...highlight, crosspoint: undefined }, 'user1');
+    expect('crosspoint' in JSON.parse(JSON.stringify(db))).toBe(false);
+    const pulled = transformBookNoteFromDB({ ...db, crosspoint: null });
+    expect('crosspoint' in pulled).toBe(false);
+    expect({ ...highlight, ...pulled }.crosspoint).toEqual(highlight.crosspoint);
+  });
+
+  it('sends anchors cleared by a moved range as null, so the server forgets them', () => {
+    const moved = { ...highlight, xpointer0: null, xpointer1: null, crosspoint: null };
+    const db = JSON.parse(JSON.stringify(transformBookNoteToDB(moved, 'user1')));
+    expect(db).toMatchObject({ xpointer0: null, xpointer1: null, crosspoint: null });
+  });
+});
+
 describe('transformBookNoteToDB with xpointer fields', () => {
   it('round-trips the reserved Notebook type and Markdown content', () => {
     const note: BookNote = {
@@ -497,6 +531,36 @@ describe('transformBook metadataUpdatedAt (issue #5438)', () => {
   });
 });
 
+describe('book original filename', () => {
+  const book: Book = {
+    hash: 'h',
+    format: 'EPUB',
+    title: 'T',
+    author: 'A',
+    originalFilename: '原書 (original edition).epub',
+    createdAt: 1,
+    updatedAt: 2,
+  };
+
+  it('round-trips the original import filename through the DB record', () => {
+    const db = transformBookToDB(book, 'u');
+    expect(db).toMatchObject({ original_filename: book.originalFilename });
+    expect(transformBookFromDB(db).originalFilename).toBe(book.originalFilename);
+  });
+
+  it('omits the outgoing column when no original filename is known', () => {
+    const db = transformBookToDB({ ...book, originalFilename: undefined }, 'u');
+    expect(JSON.parse(JSON.stringify(db))).not.toHaveProperty('original_filename');
+  });
+
+  it.each([undefined, null])('keeps the local filename when the DB value is %s', (value) => {
+    const row = transformBookToDB(book, 'u');
+    const pulled = transformBookFromDB({ ...row, original_filename: value });
+    expect(pulled).not.toHaveProperty('originalFilename');
+    expect({ ...book, ...pulled }.originalFilename).toBe(book.originalFilename);
+  });
+});
+
 describe('book page count', () => {
   const book: Book = {
     hash: 'h',
@@ -518,5 +582,24 @@ describe('book page count', () => {
     // A key holding undefined would wipe the local count in the pull merge's
     // `{ ...local, ...remote }` spread.
     expect('pageCount' in transformBookFromDB({ ...row, page_count: null })).toBe(false);
+  });
+});
+
+describe('book config read-aloud packs', () => {
+  it('round-trips the packs each destination holds', () => {
+    const config = {
+      bookHash: 'h',
+      updatedAt: 1,
+      ttsPacks: { readest: ['3-a.mp3'], webdav: [] },
+    } as BookConfig;
+    const db = transformBookConfigToDB(config, 'u');
+    expect(transformBookConfigFromDB(db).ttsPacks).toEqual({ readest: ['3-a.mp3'], webdav: [] });
+  });
+
+  it('sends no column when the config never recorded packs', () => {
+    // Only a book with Read Aloud history writes the new column.
+    const db = transformBookConfigToDB({ bookHash: 'h', updatedAt: 1 } as BookConfig, 'u');
+    expect('tts_packs' in db).toBe(false);
+    expect(transformBookConfigFromDB(db).ttsPacks).toBeUndefined();
   });
 });

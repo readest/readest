@@ -1,9 +1,11 @@
 import { DOUBLE_CLICK_INTERVAL_THRESHOLD_MS, LONG_HOLD_THRESHOLD } from '@/services/constants';
 import { eventDispatcher } from '@/utils/event';
+import type { ImageViewerGesture, ViewSettings } from '@/types/book';
 import { findGlossWord } from '@/app/reader/utils/wordlensRuby';
 import { TURN_GESTURE_LEFT_INSET_ATTRIBUTE } from './brightnessGesture';
 import { hasScrollRoomY } from './wheelGesture';
 import { toParentViewportPoint } from './annotatorUtil';
+import { isTextAtPoint } from './crossDocSelection';
 import {
   createTurnGestureIntent,
   NATIVE_CAPTURED_TURN_ATTRIBUTE,
@@ -28,6 +30,32 @@ interface TouchGesture {
   turnIntent?: TurnGestureIntent;
 }
 const touchGestures = new Map<string, TouchGesture>();
+
+// Each open book's gesture for the image viewer, kept in step by the reader.
+const imageViewerGestures = new Map<string, ImageViewerGesture>();
+export const setImageViewerGesture = (bookKey: string, gesture: ImageViewerGesture) => {
+  imageViewerGestures.set(bookKey, gesture);
+};
+export const getImageViewerGesture = (bookKey: string) => imageViewerGestures.get(bookKey) ?? 'tap';
+
+// A comic or PDF page is all image, so a tap there turns the page or shows the
+// toolbar unless the book is set to open its images on a tap (#7145).
+export const resolveImageViewerGesture = (
+  viewSettings: Pick<ViewSettings, 'imageViewerGesture'>,
+  isFixedLayout: boolean,
+): ImageViewerGesture => viewSettings.imageViewerGesture ?? (isFixedLayout ? 'longPress' : 'tap');
+
+const imageHoldClicks = new Map<string, { target: EventTarget; until: number }>();
+export const setImageHoldClick = (bookKey: string, target: EventTarget | null) => {
+  if (target)
+    imageHoldClicks.set(bookKey, { target, until: Date.now() + SYNTHESIZED_CLICK_SUPPRESSION_MS });
+  else imageHoldClicks.delete(bookKey);
+};
+export const releaseImageHoldClick = (bookKey: string) => {
+  const hold = imageHoldClicks.get(bookKey);
+  if (hold) hold.until = Date.now() + SYNTHESIZED_CLICK_SUPPRESSION_MS;
+};
+
 const suppressedSwipeClicks = new Map<string, { until: number; endX: number; endY: number }>();
 interface LayeredTurnTouchClaim {
   claimed: boolean;
@@ -166,6 +194,14 @@ const suppressDomClick = (event: MouseEvent) => {
 };
 
 const consumeSuppressedDomClick = (bookKey: string, event: MouseEvent, now: number) => {
+  const imageHold = imageHoldClicks.get(bookKey);
+  if (imageHold) {
+    imageHoldClicks.delete(bookKey);
+    if (now <= imageHold.until && event.target === imageHold.target) {
+      suppressDomClick(event);
+      return true;
+    }
+  }
   const suppressedSwipe = suppressedSwipeClicks.get(bookKey);
   if (suppressedSwipe) {
     if (now > suppressedSwipe.until) {
@@ -191,11 +227,27 @@ const consumeSuppressedDomClick = (bookKey: string, event: MouseEvent, now: numb
   return false;
 };
 
-// Runs before Foliate's bubble-phase link handler. Only recognized swipes are
-// intercepted here; ordinary clicks retain their existing listener order and
-// link/media/footnote behavior.
-export const handleClickCapture = (bookKey: string, event: MouseEvent) => {
-  consumeSuppressedDomClick(bookKey, event, Date.now());
+// Runs before Foliate's bubble-phase link handler, so a held linked image can
+// open the viewer without also following its link.
+export const handleClickCapture = (bookKey: string, event: MouseEvent, isFixedLayout = false) => {
+  if (consumeSuppressedDomClick(bookKey, event, Date.now())) return;
+  const element = event.target as HTMLElement | null;
+  if (
+    isFixedLayout ||
+    isMouseDown ||
+    longHoldTimeout ||
+    getImageViewerGesture(bookKey) !== 'longPress' ||
+    !element?.closest('a[href]') ||
+    opensNote(element) ||
+    element.closest(
+      '.js_readerFooterNote, .zhangyue-footnote, .duokan-footnote, .qqreader-footnote',
+    )
+  )
+    return;
+  const media = detectMediaTarget(element);
+  if (media?.elementType !== 'image') return;
+  suppressDomClick(event);
+  window.postMessage({ type: 'iframe-open-media', bookKey, ...media }, '*');
 };
 
 // The event's position in main-window viewport coordinates: iframe client
@@ -327,6 +379,7 @@ export const handleKeyup = (bookKey: string, event: KeyboardEvent) => {
 
 export const handleMousedown = (bookKey: string, event: MouseEvent) => {
   isMouseDown = true;
+  if (longHoldTimeout) clearTimeout(longHoldTimeout);
   longHoldTimeout = setTimeout(() => {
     longHoldTimeout = null;
   }, LONG_HOLD_THRESHOLD);
@@ -462,7 +515,7 @@ const pagesCovered = (element: Element) => {
   return (width * height) / pageArea;
 };
 
-const detectMediaTarget = (target: HTMLElement | null): MediaTarget | null => {
+export const detectMediaTarget = (target: HTMLElement | null): MediaTarget | null => {
   if (!target) return null;
   if (target.localName === 'img') {
     return { elementType: 'image', src: (target as HTMLImageElement).src };
@@ -501,6 +554,16 @@ export const getContextMenuImage = (
   if (media?.elementType === 'image') return () => fetch(media.src).then((res) => res.blob());
   const doc = target.ownerDocument as PDFPageDocument;
   return doc.getImageAt?.(event.clientX, event.clientY) ?? null;
+};
+
+// A hold on blank table space, with no text selected in the section.
+const isBlankTableHold = (event: MouseEvent) => {
+  const doc = (event.target as Node | null)?.ownerDocument;
+  return (
+    !!doc &&
+    doc.getSelection()?.isCollapsed !== false &&
+    !isTextAtPoint(doc, event.clientX, event.clientY)
+  );
 };
 
 // A full-bleed cover or full-page illustration spans the page-turn zones, so
@@ -555,6 +618,8 @@ export const handleClick = (
 ) => {
   const now = Date.now();
   if (consumeSuppressedDomClick(bookKey, event, now)) return;
+  // Decide at release; waiting for a possible double-click must not extend a hold.
+  const isLongHold = !longHoldTimeout;
 
   if (!doubleClickDisabled.current && now - lastClickTime < DOUBLE_CLICK_INTERVAL_THRESHOLD_MS) {
     lastClickTime = now;
@@ -619,13 +684,21 @@ export const handleClick = (
     // popup/navigation behavior. Fixed-layout pages (comics/manga) keep
     // tap-to-turn, so their media rides along on the single click like media
     // filling a reflowable page, and a linked image there stays a link.
-    const media =
+    const target =
       !footnote && !opensNote(element) && !(isFixedLayout && element?.closest('a'))
         ? detectMediaTarget(element)
         : null;
+    // A book whose images and tables open on a long press taps through them
+    // (#7145, #6872). A hold on a table's text, or a drag selecting it, is
+    // left to text selection.
+    const longPressMedia = getImageViewerGesture(bookKey) === 'longPress' ? target : null;
+    const heldMedia =
+      longPressMedia?.elementType === 'table' && !isBlankTableHold(event) ? null : longPressMedia;
+    const media = longPressMedia ? null : target;
     const pageMedia = media && element && (isFixedLayout || fillsPage(element)) ? media : null;
     if (
       !media &&
+      !(heldMedia && isLongHold) &&
       element?.closest('sup, a, audio, video') &&
       !element?.closest('a.duokan-footnote:not([href])')
     ) {
@@ -653,8 +726,10 @@ export const handleClick = (
       return;
     }
 
-    // if long hold is detected, we don't want to send single click event
-    if (!longHoldTimeout) {
+    // if long hold is detected, we don't want to send single click event; a
+    // mouse held on an image or table is the long press that opens the viewer.
+    if (isLongHold) {
+      if (heldMedia) window.postMessage({ type: 'iframe-open-media', bookKey, ...heldMedia }, '*');
       return;
     }
 

@@ -22,7 +22,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-    timeout-minutes: 3
+    # A normal run takes about a minute; the rest is room for retries.
+    timeout-minutes: 10
     strategy:
       fail-fast: false
     env:
@@ -32,16 +33,20 @@ jobs:
       RELEASE_R2_SECRET_ACCESS_KEY: ${{ secrets.RELEASE_R2_SECRET_ACCESS_KEY }}
 
     steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          sparse-checkout: .github/scripts
+
       - name: Download release assets
         run: |
-          gh release download "${{ inputs.tag }}" --repo readest/readest --dir ./release-assets
+          .github/scripts/retry.sh gh release download "${{ inputs.tag }}" --repo readest/readest --dir ./release-assets --clobber
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Install rclone
         run: |
-          sudo apt-get update
-          sudo apt-get install -y rclone
+          sudo apt-get -o Acquire::Retries=3 update
+          sudo apt-get -o Acquire::Retries=3 install -y rclone
 
       - name: Configure rclone
         run: |

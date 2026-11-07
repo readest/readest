@@ -159,6 +159,7 @@ vi.mock('@/hooks/useFileSelector', () => ({
 
 vi.mock('@/app/reader/hooks/useNotesSync', () => ({ useNotesSync: () => {} }));
 vi.mock('@/app/reader/hooks/useBookOrbitNotesSync', () => ({ useBookOrbitNotesSync: () => {} }));
+vi.mock('@/app/reader/hooks/useGrimmoryNotesSync', () => ({ useGrimmoryNotesSync: () => {} }));
 vi.mock('@/app/reader/hooks/useReadwiseSync', () => ({ useReadwiseSync: () => {} }));
 vi.mock('@/app/reader/hooks/useHardcoverSync', () => ({ useHardcoverSync: () => {} }));
 vi.mock('@/app/reader/hooks/usePageboundSync', () => ({ usePageboundSync: () => {} }));
@@ -224,11 +225,16 @@ vi.mock('@/services/transformService', () => ({
   transformContent: ({ content }: { content: string }) => Promise.resolve(content),
 }));
 
-vi.mock('@/app/reader/components/annotator/AnnotationRangeEditor', () => ({ default: () => null }));
+vi.mock('@/app/reader/components/annotator/AnnotationRangeEditor', () => ({
+  default: () => <div data-testid='range-editor' />,
+}));
 vi.mock('@/app/reader/components/annotator/SelectionRangeEditor', () => ({ default: () => null }));
 vi.mock('@/app/reader/components/annotator/ExportMarkdownDialog', () => ({ default: () => null }));
 vi.mock('@/app/reader/components/annotator/ImportAnnotationsDialog', () => ({
   default: () => null,
+}));
+vi.mock('@/app/reader/components/annotator/NoteEditorSheet', () => ({
+  default: () => <div data-testid='note-editor' />,
 }));
 vi.mock('@/app/reader/components/annotator/AnnotationPopup', () => ({
   default: () => <div data-testid='annotation-toolbar' />,
@@ -276,5 +282,74 @@ describe('tapping a highlight that carries no page', () => {
     tapAnnotation(IMPORTED_CFI);
 
     expect(h.handleUpToPopup).toHaveBeenCalledTimes(1);
+  });
+});
+
+// A copy of a global highlight (`${cfi}#g…`) reports the copy's range, while
+// the highlight it belongs to is anchored elsewhere (view.getCFI above returns
+// a CFI that isn't the source's).
+describe('tapping a copy of a global highlight without a note', () => {
+  const globalHighlight = () => ({
+    id: 'global-1',
+    type: 'annotation',
+    cfi: IMPORTED_CFI,
+    text: 'Alice',
+    note: '',
+    style: 'highlight',
+    color: 'yellow',
+    global: true,
+    page: 1,
+    createdAt: 1,
+    updatedAt: 1,
+  });
+  const renderAnnotator = () =>
+    render(<Annotator bookKey='book-1' contentInsets={{ top: 0, right: 0, bottom: 0, left: 0 }} />);
+
+  test('Delete Highlight deletes the global highlight instead of adding one at the copy', () => {
+    h.progress = { page: 1 };
+    h.config.booknotes = [globalHighlight()];
+    renderAnnotator();
+
+    tapAnnotation(`${IMPORTED_CFI}#g3-0`);
+    // The same toggle the toolbar's Delete Highlight button runs.
+    act(() => {
+      h.actions?.['onHighlightSelection']?.();
+    });
+
+    const notes = h.config.booknotes as Array<{ cfi: string; deletedAt?: number }>;
+    expect(notes.map((n) => ({ cfi: n.cfi, deleted: !!n.deletedAt }))).toEqual([
+      { cfi: IMPORTED_CFI, deleted: true },
+    ]);
+  });
+
+  test('Annotate opens the note editor on the global highlight', () => {
+    h.progress = { page: 1 };
+    h.config.booknotes = [globalHighlight()];
+    // A short window shows the editor as a sheet, which renders outside the
+    // (mocked) toolbar popup.
+    const height = window.innerHeight;
+    window.innerHeight = 500;
+    try {
+      const { queryByTestId } = renderAnnotator();
+      tapAnnotation(`${IMPORTED_CFI}#g3-0`);
+      act(() => {
+        h.actions?.['onAnnotateSelection']?.();
+      });
+      expect(queryByTestId('note-editor')).not.toBeNull();
+      expect(h.config.booknotes).toHaveLength(1);
+    } finally {
+      window.innerHeight = height;
+    }
+  });
+
+  test('shows no range handles on the copy, which would move the global highlight', () => {
+    h.config.booknotes = [globalHighlight()];
+    const { queryByTestId } = renderAnnotator();
+
+    tapAnnotation(`${IMPORTED_CFI}#g3-0`);
+    expect(queryByTestId('range-editor')).toBeNull();
+
+    tapAnnotation(IMPORTED_CFI);
+    expect(queryByTestId('range-editor')).not.toBeNull();
   });
 });

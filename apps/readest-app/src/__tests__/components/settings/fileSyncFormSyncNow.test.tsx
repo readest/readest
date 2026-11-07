@@ -1,3 +1,4 @@
+import { readFlowState } from '@/services/sync/dataFlow/log';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 
@@ -47,7 +48,6 @@ vi.mock('@/services/sync/file/engine', () => ({
   }),
 }));
 
-import FileSyncReport from '@/components/FileSyncReport';
 import FileSyncForm from '@/components/settings/integrations/FileSyncForm';
 
 const stored = {
@@ -71,7 +71,6 @@ beforeEach(() => {
     byKind: {},
     activeKind: null,
     lastErrorByKind: {},
-    reportByKind: {},
   });
 });
 
@@ -94,6 +93,36 @@ describe('FileSyncForm — Sync now health reporting', () => {
     expect(useFileSyncStore.getState().byKind.webdav?.isSyncing ?? false).toBe(false);
   });
 
+  test('Sync now reports what moved to Data Flow', async () => {
+    localStorage.clear();
+    syncLibrary.mockResolvedValueOnce({
+      booksSynced: 1,
+      failures: 0,
+      totalBooks: 1,
+      failedBooks: [],
+      configsUploaded: 2,
+    });
+    renderForm();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Sync now' }));
+
+    await waitFor(() => {
+      expect(readFlowState().totals['webdav:push:progress']?.count).toBe(2);
+    });
+  });
+
+  test('a failed Sync now reaches Data Flow', async () => {
+    localStorage.clear();
+    syncLibrary.mockRejectedValueOnce(new Error('boom'));
+    renderForm();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Sync now' }));
+
+    await waitFor(() => {
+      expect(readFlowState().entries[0]).toMatchObject({ connector: 'webdav', error: 'boom' });
+    });
+  });
+
   test('a failed run records lastError for the health surfaces', async () => {
     syncLibrary.mockRejectedValueOnce(new Error('boom'));
     renderForm();
@@ -110,7 +139,7 @@ describe('FileSyncForm — Sync now health reporting', () => {
 test.each([
   { failures: 1, indexPushFailed: false },
   { failures: 0, indexPushFailed: true },
-])('keeps incomplete results visible and does not stamp success: %j', async (failure) => {
+])('records incomplete results as a sync error and does not stamp success: %j', async (failure) => {
   const persist = vi.fn(async () => {});
   syncLibrary.mockResolvedValueOnce({
     booksSynced: 1,
@@ -118,18 +147,9 @@ test.each([
     failedBooks: [{ hash: 'a', title: 'Failed PDF', phase: 'upload-file', reason: 'HTTP 507' }],
     ...failure,
   });
-  render(
-    <>
-      <FileSyncForm kind='webdav' stored={stored} persist={persist} />
-      <FileSyncReport />
-    </>,
-  );
+  render(<FileSyncForm kind='webdav' stored={stored} persist={persist} />);
   fireEvent.click(screen.getByRole('button', { name: 'Sync now' }));
   await waitFor(() => expect(useFileSyncStore.getState().byKind.webdav?.isSyncing).toBe(false));
   expect(persist).not.toHaveBeenCalled();
-  expect(useFileSyncStore.getState().lastErrorByKind.webdav).toBeTruthy();
-  expect(screen.getByText(/HTTP 507/)).toBeTruthy();
-  fireEvent.click(screen.getByRole('button', { name: 'Dismiss' }));
-  expect(screen.queryByText(/HTTP 507/)).toBeNull();
-  expect(useFileSyncStore.getState().lastErrorByKind.webdav).toBeTruthy();
+  expect(useFileSyncStore.getState().lastErrorByKind.webdav).toMatch(/HTTP 507/);
 });

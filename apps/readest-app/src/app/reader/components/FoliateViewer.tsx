@@ -42,6 +42,7 @@ import { useAutoFocus } from '@/hooks/useAutoFocus';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useEinkMode } from '@/hooks/useEinkMode';
 import { bookOrbitProgressProvider } from '../hooks/bookOrbitProgressProvider';
+import { grimmoryProgressProvider } from '../hooks/grimmoryProgressProvider';
 import { useKOSync } from '../hooks/useKOSync';
 import { useFileSync } from '../hooks/useFileSync';
 import {
@@ -64,7 +65,10 @@ import {
 import { applyScrollableStyle, applyTableTouchScroll } from '@/utils/scrollable';
 import { mountAdditionalFonts, mountCustomFont } from '@/styles/fonts';
 import { layoutWarichu, relayoutWarichu } from '@/utils/warichu';
-import { refreshSectionGlosses } from '@/app/reader/utils/wordlensSection';
+import { refreshSectionGlosses, whenSelectionClears } from '@/app/reader/utils/wordlensSection';
+import { useVocabularyStore } from '@/store/vocabularyStore';
+import { vocabularyLang } from '@/services/vocabulary/entry';
+import { initVocabularySync } from '@/services/vocabulary/vocabularySync';
 import { getBookDirFromLanguage, getBookDirFromWritingMode } from '@/utils/book';
 import { getIndexFromCfi } from '@/utils/cfi';
 import { useUICSS } from '@/hooks/useUICSS';
@@ -82,6 +86,8 @@ import {
   handleTouchMove,
   handleTouchEnd,
   handleTouchCancel,
+  resolveImageViewerGesture,
+  setImageViewerGesture,
 } from '../utils/iframeEventHandlers';
 import { getCurrentRendererLayout, useDuoPose } from '@/hooks/useDuoPose';
 import { applyRendererLayout } from '@/utils/duo';
@@ -233,6 +239,7 @@ const FoliateViewer: React.FC<{
   useBookCoverAutoSave(bookKey);
   const { syncState, conflictDetails, resolveWithLocal, resolveWithRemote } = useKOSync(bookKey);
   const bookOrbitSync = useKOSync(bookKey, bookOrbitProgressProvider);
+  const grimmorySync = useKOSync(bookKey, grimmoryProgressProvider);
   useFileSync(bookKey);
   useTextTranslation(bookKey, viewRef.current);
 
@@ -645,9 +652,11 @@ const FoliateViewer: React.FC<{
         detail.doc.addEventListener('mouseup', handleMouseup.bind(null, bookKey));
         detail.doc.addEventListener('mousemove', handleMousemove.bind(null, bookKey));
         detail.doc.addEventListener('auxclick', handleAuxclick.bind(null, bookKey));
-        detail.doc.addEventListener('click', handleClickCapture.bind(null, bookKey), {
-          capture: true,
-        });
+        detail.doc.addEventListener(
+          'click',
+          (event: MouseEvent) => handleClickCapture(bookKey, event, !!bookData?.isFixedLayout),
+          { capture: true },
+        );
         detail.doc.addEventListener(
           'click',
           handleClick.bind(
@@ -696,6 +705,21 @@ const FoliateViewer: React.FC<{
   // lives in the Word Lens settings panel). `wordLensToastShownRef` de-dupes the
   // toast across the multiple section docs a refresh pass touches.
   const wordLensToastShownRef = useRef(false);
+  // Re-render hints when this language's Learning / Mastered marks change, not
+  // on every lookup the vocabulary records.
+  const vocabularyMarksSignature = useVocabularyStore((s) => {
+    const { learning, mastered } = s.getLearningAndMastered(
+      vocabularyLang(getBookData(bookKey)?.book?.primaryLanguage),
+    );
+    return JSON.stringify([[...learning], [...mastered]]);
+  });
+  useEffect(() => {
+    if (!appService) return;
+    void useVocabularyStore
+      .getState()
+      .load(appService)
+      .then(() => initVocabularySync());
+  }, [appService]);
   const buildWordLensCtx = (bookLang?: string | null) => {
     // Read the live setting (not the first-render `settings` snapshot closed over
     // by the empty-deps `stabilizedHandler`) so toggling Auto-download mid-session
@@ -708,6 +732,7 @@ const FoliateViewer: React.FC<{
       bookLang,
       appLang: getLocale(),
       allowDownload,
+      vocabulary: useVocabularyStore.getState().getLearningAndMastered(vocabularyLang(bookLang)),
       onProgress: () => {
         if (wordLensToastShownRef.current) return;
         wordLensToastShownRef.current = true;
@@ -994,11 +1019,7 @@ const FoliateViewer: React.FC<{
       if (appService?.isMobileApp) {
         await lockScreenOrientation({ orientation: screenOrientation });
       }
-      if (animated) {
-        view.renderer.setAttribute('animated', '');
-      } else {
-        view.renderer.removeAttribute('animated');
-      }
+      view.renderer.toggleAttribute('animated', animated && !eink);
       // Arms the foliate CursorAutohider — goes on the view element itself,
       // not the renderer, and is re-checked on every mousemove so the
       // ControlPanel toggle takes effect without recreating the view.
@@ -1263,6 +1284,7 @@ const FoliateViewer: React.FC<{
     isDarkMode,
     viewSettings?.scrolled,
     viewSettings?.overrideColor,
+    viewSettings?.transparentImageBackground,
     viewSettings?.invertImgColorInDark,
     viewSettings?.applyThemeToPDF,
     viewSettings?.contrast,
@@ -1308,10 +1330,19 @@ const FoliateViewer: React.FC<{
     // one-time "Downloading…" toast fire again for it.
     wordLensToastShownRef.current = false;
     for (const { doc } of contents) {
-      if (doc) void refreshSectionGlosses(doc, vs, buildWordLensCtx(bookLang));
+      if (!doc) continue;
+      whenSelectionClears(doc, () => {
+        const latest = getViewSettings(bookKey);
+        if (latest) void refreshSectionGlosses(doc, latest, buildWordLensCtx(bookLang));
+      });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [viewSettings?.wordLensEnabled, viewSettings?.wordLensLevel, viewSettings?.wordLensHintLang]);
+  }, [
+    viewSettings?.wordLensEnabled,
+    viewSettings?.wordLensLevel,
+    viewSettings?.wordLensHintLang,
+    vocabularyMarksSignature,
+  ]);
 
   useEffect(() => {
     const mountCustomFonts = async () => {
@@ -1344,6 +1375,15 @@ const FoliateViewer: React.FC<{
       doubleClickDisabled.current = !!viewSettings?.disableDoubleClick;
     }
   }, [viewSettings?.disableDoubleClick]);
+
+  useEffect(() => {
+    if (!viewSettings) return;
+    setImageViewerGesture(
+      bookKey,
+      resolveImageViewerGesture(viewSettings, !!bookData?.isFixedLayout),
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bookKey, viewSettings?.imageViewerGesture, bookData?.isFixedLayout]);
 
   // A section can flip the writing axis mid-book — a vertical chapter inside an
   // otherwise horizontal one. `getMaxInlineSize` measures the other screen axis
@@ -1511,6 +1551,14 @@ const FoliateViewer: React.FC<{
           onResolveWithLocal={bookOrbitSync.resolveWithLocal}
           onResolveWithRemote={bookOrbitSync.resolveWithRemote}
           onClose={bookOrbitSync.resolveWithLocal}
+        />
+      )}
+      {grimmorySync.syncState === 'conflict' && grimmorySync.conflictDetails && (
+        <KOSyncConflictResolver
+          details={grimmorySync.conflictDetails}
+          onResolveWithLocal={grimmorySync.resolveWithLocal}
+          onResolveWithRemote={grimmorySync.resolveWithRemote}
+          onClose={grimmorySync.resolveWithLocal}
         />
       )}
     </>

@@ -12,7 +12,11 @@
             <action android:name="android.intent.action.PROCESS_TEXT" />
             <data android:mimeType="text/plain" />
         </intent>
+        <!-- AnkiDroid's content provider, for the vocabulary Anki link (#789). -->
+        <package android:name="com.ichi2.anki" />
     </queries>
+
+    <uses-permission android:name="com.ichi2.anki.permission.READ_WRITE_DATABASE" />
 
     <application>
         <!-- Receives the EXTRA_CHOSEN_COMPONENT callback from the

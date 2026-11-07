@@ -68,3 +68,47 @@ describe('FontDropdown system fonts sub-list', () => {
     expect(onSelect).toHaveBeenCalledWith('Avenir');
   });
 });
+
+describe('FontDropdown font search', () => {
+  const fonts = (names: string[]) => names.map((option) => ({ option }));
+
+  it('filters bundled and system fonts by name', async () => {
+    const onSelect = vi.fn();
+    render(
+      <div style={{ padding: 400 }}>
+        <FontDropdown
+          family='serif'
+          selected='Literata'
+          options={fonts(['Literata', 'Lora', 'Merriweather', 'EB Garamond', 'Bitter'])}
+          moreOptions={fonts(['Georgia', 'Garamond Premier', 'Palatino', 'Times', 'Baskerville'])}
+          onSelect={onSelect}
+          onGetFontFamily={(option) => option}
+        />
+      </div>,
+    );
+    await page.elementLocator(document.querySelector('button.btn')!).click();
+    const search = page.getByRole('searchbox');
+    expect(document.querySelector('input[type="search"]')).not.toBeNull();
+    await search.fill('gara');
+
+    const shown = () =>
+      Array.from(document.querySelectorAll<HTMLElement>('[role="option"]')).map(
+        (el) => el.textContent,
+      );
+    expect(shown()).toEqual(['EB Garamond', 'Garamond Premier']);
+    expect(document.body.textContent).not.toContain('System Fonts');
+
+    await page.getByRole('button', { name: 'Garamond Premier' }).click();
+    expect(onSelect).toHaveBeenCalledWith('Garamond Premier');
+
+    await search.fill('zzz');
+    expect(shown()).toEqual([]);
+    expect(document.body.textContent).toContain('No search results found');
+  });
+
+  it('has no search field when every font fits', async () => {
+    renderDropdown();
+    await page.elementLocator(document.querySelector('button.btn')!).click();
+    expect(document.querySelector('input[type="search"]')).toBeNull();
+  });
+});

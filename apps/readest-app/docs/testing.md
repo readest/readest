@@ -19,6 +19,16 @@ pnpm test --watch                               # Watch mode
 - **Environment:** jsdom
 - **Use for:** Pure logic, utilities, services that don't need real browser APIs or Tauri IPC.
 
+Unit tests use at most **four workers**, including the full pre-push suite,
+matching PR CI. Higher concurrency can make CPU-heavy tests exceed the default
+five-second timeout on shared machines (#7239).
+
+Use `pnpm test --run --maxWorkers=2` to lower concurrency, or
+`VITEST_MAX_WORKERS=2 git push` to apply it to the pre-push hook. Vitest's
+`VITEST_MAX_WORKERS` environment variable takes precedence over the config and
+CLI flag. Keep timeouts unchanged when investigating contention, and compare
+complete runs rather than treating isolated retries as a passing full suite.
+
 ## Browser Tests (`pnpm test:browser`)
 
 Runs tests in a **real Chromium** browser via Playwright. Required for code that depends on Web Workers, SharedArrayBuffer, OPFS, or other browser-only APIs.

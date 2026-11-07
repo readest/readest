@@ -38,6 +38,12 @@ pub struct SpeakResponse {
     pub utterance_id: String,
 }
 
+#[derive(Debug, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct StopArgs {
+    pub utterance_id: Option<String>,
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SetRateArgs {
@@ -146,6 +152,8 @@ pub struct PlayoutControlRequest {
     pub start: Option<u64>,
     pub end: Option<u64>,
     pub content_type: Option<String>,
+    // Linux reads compressed narration directly from this ZIP entry.
+    pub entry: Option<String>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -161,4 +169,7 @@ pub struct PlayoutPositionResponse {
     pub index: i32,
     pub position_ms: f64,
     pub playing: bool,
+    // Android: the item the playlist ended on, once nothing is current.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub ended_index: Option<i32>,
 }

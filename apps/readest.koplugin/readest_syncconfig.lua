@@ -27,6 +27,10 @@ local function normalizeIdentifier(identifier)
     return identifier
 end
 
+-- Formats whose metadata often doesn't tell files apart, so the hash is
+-- salted with the base filename: PDF (#5411) and HTML (#7313).
+local FILENAME_SALTED = { pdf = true, html = true, htm = true, xhtml = true, xhtm = true, mhtml = true, mht = true }
+
 local function normalizeAuthor(author)
     author = author:gsub("^%s*(.-)%s*$", "%1")
     return author
@@ -88,9 +92,10 @@ function SyncConfig:computeMetadataHashInfo(doc_props, doc_path)
 
     local hash_source = title .. "|" .. table.concat(authors_list, ",") .. "|" .. table.concat(identifiers_list, ",")
     -- PDF metadata is often generic boilerplate (every PowerPoint export is
-    -- titled "PowerPoint Presentation"), so Readest salts PDF hashes with the
-    -- import filename (issue #5411). Salt with ours the same way.
-    if suffix and suffix:lower() == "pdf" then
+    -- titled "PowerPoint Presentation", issue #5411), and web-novel plugins
+    -- save each chapter as an HTML file with the book's title and author
+    -- (issue #7313). Readest salts these with the import filename; so do we.
+    if suffix and FILENAME_SALTED[suffix:lower()] then
         hash_source = hash_source .. "|" .. basename
     end
     return {

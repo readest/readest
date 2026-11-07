@@ -35,6 +35,7 @@ import {
   useTouchInterceptor,
 } from './useTouchInterceptor';
 import { setFixedLayoutZoom } from './usePagination';
+import { hasReaderOverlay, subscribeReaderOverlays } from '../utils/readerOverlay';
 
 // Once the native snapshot fails (older webview, capture bug), stop trying
 // for the rest of the session: the renderer's own `turn-style` animations
@@ -159,30 +160,12 @@ const SLIDE_RELEASE_PROJECTION_MS = 240;
 const PREPARED_CAPTURE_DELAY_MS = 160;
 const PREPARED_CAPTURE_CHROME_DELAY_MS = 360;
 
-// Native webview capture sees composited pixels, not just the reader cell.
-// Keep renderer-ready surfaces out of any host UI that visually covers the
-// page. These selectors intentionally follow shared HTML/ARIA state instead
-// of subscribing to every dialog or popup store independently.
-const CAPTURE_BLOCKING_OVERLAY_SELECTOR = [
-  'dialog[open]',
-  'dialog.modal-open',
-  '[role="dialog"][aria-modal="true"]:not([aria-hidden="true"])',
-  '[role="dialog"].modal-open',
-  '[role="alertdialog"]:not([aria-hidden="true"])',
-  '[aria-haspopup][aria-expanded="true"]',
-  '[role="menu"][data-state="open"]',
-  '[role="listbox"][data-state="open"]',
-  '[data-capture-blocking-overlay="true"]',
-  '.fixed.inset-0 [role="alert"]:not([aria-hidden="true"])',
-].join(',');
 const CAPTURE_INVALIDATING_OVERLAY_SELECTOR = '[data-capture-invalidating-overlay="true"]';
 const PIXEL_CAPTURE_FILTER_CLASS = 'captured-turn-filter-transient-overlays';
 let pixelCaptureFilterDepth = 0;
 
 const isCapturedSurfaceBlockedByOverlay = () =>
-  useSettingsStore.getState().isSettingsDialogOpen ||
-  (typeof document !== 'undefined' &&
-    document.querySelector(CAPTURE_BLOCKING_OVERLAY_SELECTOR) !== null);
+  useSettingsStore.getState().isSettingsDialogOpen || hasReaderOverlay();
 
 // Transient, non-interactive chrome (for example Toast) must invalidate idle
 // work but must not disable a Slide/Curl gesture while paginator no-swipe is
@@ -210,47 +193,6 @@ const acquirePixelCaptureFilter = () => {
   return () => {
     clearTimeout(safetyTimer);
     release();
-  };
-};
-
-const captureBlockingOverlayListeners = new Set<() => void>();
-let captureBlockingOverlayObserver: MutationObserver | null = null;
-
-/** Share one document observer across every mounted reader cell. */
-const subscribeCaptureBlockingOverlay = (listener: () => void) => {
-  captureBlockingOverlayListeners.add(listener);
-  if (
-    !captureBlockingOverlayObserver &&
-    typeof MutationObserver !== 'undefined' &&
-    typeof document !== 'undefined' &&
-    document.body
-  ) {
-    captureBlockingOverlayObserver = new MutationObserver(() => {
-      for (const notify of captureBlockingOverlayListeners) notify();
-    });
-    captureBlockingOverlayObserver.observe(document.body, {
-      childList: true,
-      subtree: true,
-      attributes: true,
-      // Static role/class semantics are observed through mount/unmount. Watch
-      // only state attributes here so ordinary React class updates do not make
-      // every mounted reader cell rescan the full document for overlays.
-      attributeFilter: [
-        'open',
-        'aria-expanded',
-        'aria-hidden',
-        'data-state',
-        'data-capture-blocking-overlay',
-        'data-capture-invalidating-overlay',
-      ],
-    });
-  }
-  return () => {
-    captureBlockingOverlayListeners.delete(listener);
-    if (captureBlockingOverlayListeners.size === 0) {
-      captureBlockingOverlayObserver?.disconnect();
-      captureBlockingOverlayObserver = null;
-    }
   };
 };
 
@@ -755,10 +697,9 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
           ));
       const readerPixelsChanged = toolbarChanged || toolbarContentChanged || viewStateChanged;
       if (readerPixelsChanged) {
-        // Native textures cover only the renderer, not the toolbar.
-        // Hiding chrome as a turn starts must not destroy its selected sheets.
-        if (!(controller instanceof NativePageTurn && bufferedPagesEnabled()) || viewStateChanged)
-          invalidatePagePixels();
+        // Captured pages span the reader cell, so they hold the toolbars and
+        // the open panel. A turn in progress keeps its own native sheets.
+        invalidatePagePixels();
         invalidateAndSchedulePreparedCapture(
           toolbarChanged || toolbarContentChanged
             ? PREPARED_CAPTURE_CHROME_DELAY_MS
@@ -820,7 +761,7 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
       // shared gate closed until the mutation observer sees it leave the DOM.
       syncCaptureBlockingOverlay();
     });
-    const unsubscribeBlockingOverlay = subscribeCaptureBlockingOverlay(syncCaptureBlockingOverlay);
+    const unsubscribeBlockingOverlay = subscribeReaderOverlays(syncCaptureBlockingOverlay);
     const handleVisibilityChange = () => {
       if (document.hidden) {
         cancelPreparedCaptureSchedule();

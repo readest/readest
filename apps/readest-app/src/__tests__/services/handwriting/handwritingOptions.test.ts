@@ -27,8 +27,8 @@ describe('handwriting pen options', () => {
     expect(DEFAULT_HANDWRITING_WIDTH).toBe(0.006);
   });
 
-  it('offers no hairline pen: the finest is still a solid line on a phone', () => {
-    expect(Math.min(...HANDWRITING_WIDTHS)).toBeGreaterThanOrEqual(0.004);
+  it('offers a fine pen for stylus handwriting', () => {
+    expect(Math.min(...HANDWRITING_WIDTHS)).toBeLessThanOrEqual(0.001);
   });
 
   it('exposes the default color as the first swatch, so a fresh install has a selected dot', () => {

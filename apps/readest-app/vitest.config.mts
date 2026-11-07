@@ -23,6 +23,9 @@ export default defineConfig({
     },
   },
   test: {
+    // Match PR CI's budget: more workers can push CPU-heavy tests past 5s
+    // on shared machines (#7239). Override with --maxWorkers when needed.
+    maxWorkers: 4,
     environment: 'jsdom',
     silent: 'passed-only',
     setupFiles: ['./vitest.setup.ts'],

@@ -116,7 +116,10 @@ export type BookMetadata = {
   absFileHash?: string;
 };
 
-export type BookMediaSource = { blob: Blob } | { path: string; start: number; end: number };
+export type BookMediaSource =
+  | { blob: Blob }
+  | { path: string; start: number; end: number }
+  | { path: string; entry: string };
 
 export interface BookDoc {
   metadata: BookMetadata;
@@ -148,10 +151,9 @@ export interface BookDoc {
   // manifest items.
   loadText?(href: string): Promise<string | null>;
   loadBlob?(href: string): Promise<Blob>;
-  // Where a stored (uncompressed) entry's bytes lie in the book file, so a
-  // large media entry can be played in place instead of copied out whole:
-  // a slice of the file, or its byte window [start, end) on disk. Null for a
-  // compressed entry or a file that can't be sliced lazily.
+  // Play media in place: a lazy slice, its byte window [start, end) on disk,
+  // or a compressed ZIP entry's raw name for Linux native playout. Null when
+  // the platform cannot play the entry directly.
   getMediaSource?(href: string, type: string): Promise<BookMediaSource | null>;
   // EPUB 3 `media:*` package metadata, used to name the narrator.
   media?: { narrator?: string; duration?: number };
@@ -437,7 +439,18 @@ export class DocumentLoader {
     // field lengths can differ from the central directory's copy.
     const getMediaSource = async (name: string, type: string): Promise<BookMediaSource | null> => {
       const entry = getEntry(name);
-      if (!entry || entry.directory || entry.encrypted || entry.compressionMethod !== 0) {
+      if (!entry || entry.directory || entry.encrypted) return null;
+      if (entry.compressionMethod !== 0) {
+        // Linux playout reads a deflated entry directly from the EPUB. Keep its
+        // actual ZIP name (including case, spaces and '#'), not a media URL.
+        if (
+          entry.compressionMethod === 8 &&
+          process.env['NEXT_PUBLIC_APP_PLATFORM'] === 'tauri' &&
+          getOSPlatform() === 'linux' &&
+          this.nativeFilePath?.startsWith('/')
+        ) {
+          return { path: this.nativeFilePath, entry: entry.filename };
+        }
         return null;
       }
       const header = new DataView(

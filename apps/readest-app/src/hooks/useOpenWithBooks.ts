@@ -62,7 +62,7 @@ export function useOpenWithBooks() {
       const filePaths: string[] = [];
       for (let url of urls) {
         if (url.startsWith('file://')) {
-          url = appService?.isIOSApp ? decodeURI(url) : decodeURI(url.replace('file://', ''));
+          url = appService?.isIOSApp ? url : decodeURI(url.replace('file://', ''));
         }
         if (!/^(https?:|data:|blob:|readest:)/i.test(url)) {
           filePaths.push(url);

@@ -318,6 +318,27 @@ export const listFiles = async (params?: ListFilesParams): Promise<ListFilesResp
   }
 };
 
+// Every file a listing matches, one page of the route's largest size at a time.
+// Sorted by key, which is unique, so no row moves between pages as they load.
+export const listAllFiles = async (
+  params: Pick<ListFilesParams, 'bookHash' | 'search'>,
+): Promise<FileRecord[]> => {
+  const files = new Map<string, FileRecord>();
+  for (let page = 1, totalPages = 1; page <= totalPages; page++) {
+    const result = await listFiles({
+      ...params,
+      page,
+      pageSize: 1000,
+      sortBy: 'file_key',
+      sortOrder: 'asc',
+    });
+    // Each page also carries the rest of its books' files; keep each file once.
+    for (const file of result.files ?? []) files.set(file.file_key, file);
+    totalPages = result.totalPages ?? 0;
+  }
+  return [...files.values()];
+};
+
 interface PurgeFilesResult {
   success: string[];
   failed: Array<{ fileKey: string; error: string }>;

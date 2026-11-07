@@ -848,6 +848,17 @@ Readest ships on **macOS, Windows, Linux, iOS, Android, web**. Adwaita is deskto
 native; we adapt where the host OS has strong conventions, but never at the cost of
 identity.
 
+#### Placeholder book covers
+
+Books without usable cover art use the Classic placeholder: a solid muted color,
+thin spine rule, centered serif title, and a small format label and author in the
+grid. Compact list thumbnails show the title alone. Colors come from a fixed
+palette keyed by the book's file hash, so sorting, metadata edits, syncing and
+theme changes do not change the color. These colors are cover art, rather than
+UI surface or brand colors; cream text has at least 4.5:1 contrast on every color.
+E-ink replaces the color with theme paper and ink, opaque rules and a 1px border.
+The explicit Hide Covers setting retains its neutral title panels.
+
 #### iOS
 
 - Slightly larger corner radii feel native (`rounded-xl` on dialogs, `rounded-lg` on

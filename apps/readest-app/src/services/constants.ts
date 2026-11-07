@@ -21,10 +21,12 @@ import {
   HardcoverSettings,
   PageboundSettings,
   BookOrbitSettings,
+  GrimmorySettings,
   KOSyncSettings,
   LibraryGroupByType,
   LibrarySortByType,
   NotionSettings,
+  ObsidianSettings,
   ReadSettings,
   ReadwiseSettings,
   SystemSettings,
@@ -45,8 +47,7 @@ import {
   DEFAULT_MARKER_WIDTH,
 } from './handwriting/model';
 import { DEFAULT_ANNOTATION_TOOLBAR_ITEMS } from '@/utils/annotationToolbar';
-import { DEFAULT_SENTENCE_GAP_SEC } from './tts/EdgeTTSClient';
-import { DEFAULT_PARAGRAPH_GAP_SEC } from './tts/TTSController';
+import { DEFAULT_PARAGRAPH_GAP_SEC, DEFAULT_SENTENCE_GAP_SEC } from './tts/gap';
 
 export const DATA_SUBDIR = 'Readest';
 export const LOCAL_BOOKS_SUBDIR = `${DATA_SUBDIR}/Books`;
@@ -114,6 +115,18 @@ export const DEFAULT_BOOKORBIT_SETTINGS = {
   autoSync: true,
 } as BookOrbitSettings;
 
+export const DEFAULT_GRIMMORY_SETTINGS: GrimmorySettings = {
+  enabled: false,
+  serverUrl: '',
+  username: '',
+  password: '',
+  strategy: 'prompt',
+  syncProgress: true,
+  syncNotes: true,
+  syncStats: true,
+  syncBookStates: true,
+};
+
 export const READWISE_API_BASE_URL = 'https://readwise.io/api/v2';
 
 export const DEFAULT_READWISE_SETTINGS = {
@@ -149,6 +162,11 @@ export const DEFAULT_NOTION_SETTINGS = {
   lastSyncedAt: 0,
   includeChapterHeading: true,
 } as NotionSettings;
+
+export const DEFAULT_OBSIDIAN_SETTINGS: ObsidianSettings = {
+  enabled: false,
+  folder: '',
+};
 
 export const DEFAULT_WEBDAV_SETTINGS = {
   enabled: false,
@@ -270,10 +288,12 @@ export const DEFAULT_SYSTEM_SETTINGS: Partial<SystemSettings> = {
 
   kosync: DEFAULT_KOSYNC_SETTINGS,
   bookorbit: DEFAULT_BOOKORBIT_SETTINGS,
+  grimmory: DEFAULT_GRIMMORY_SETTINGS,
   readwise: DEFAULT_READWISE_SETTINGS,
   hardcover: DEFAULT_HARDCOVER_SETTINGS,
   pagebound: DEFAULT_PAGEBOUND_SETTINGS,
   notion: DEFAULT_NOTION_SETTINGS,
+  obsidian: DEFAULT_OBSIDIAN_SETTINGS,
   webdav: DEFAULT_WEBDAV_SETTINGS,
   googleDrive: DEFAULT_GOOGLE_DRIVE_SETTINGS,
   s3: DEFAULT_S3_SETTINGS,
@@ -360,6 +380,7 @@ export const DEFAULT_BOOK_FONT: BookFont = {
   serifFont: 'Bitter',
   sansSerifFont: 'Roboto',
   monospaceFont: 'Consolas',
+  ignorePublisherFonts: [],
   defaultFont: 'Serif',
   defaultCJKFont: 'LXGW WenKai GB Screen',
   defaultFontSize: 16,
@@ -431,6 +452,7 @@ export const DEFAULT_BOOK_STYLE: BookStyle = {
   dialogueHighlightCustomTextColor: false,
   dialogueHighlightTextColor: '',
   dialogueHighlightItalic: false,
+  dialogueHighlightWeight: 'normal',
   userStylesheet: '',
   userUIStylesheet: '',
 
@@ -443,6 +465,7 @@ export const DEFAULT_BOOK_STYLE: BookStyle = {
   spreadMode: 'auto',
   keepCoverSpread: true,
   invertImgColorInDark: false,
+  transparentImageBackground: false,
   applyThemeToPDF: false,
   contrast: 100,
 };
@@ -521,6 +544,9 @@ export const DEFAULT_VIEW_CONFIG: ViewConfig = {
   readingRulerPosition: 33,
   readingRulerOpacity: 0.5,
   readingRulerColor: 'transparent',
+  readingRulerStyle: 'band',
+  readingRulerLineColor: '#808080',
+  readingRulerLineThickness: 2,
 };
 
 export const DEFAULT_TTS_CONFIG: TTSConfig = {
@@ -1055,6 +1081,12 @@ export const DEFAULT_DAILY_TTS_QUOTA: UserDailyTTSQuota = {
   pro: 1_000_000,
   purchase: 0,
 };
+
+// Readest Voice previews: one sample of at most this many characters, open to
+// any signed-in reader, within this daily allowance when their plan's quota is
+// smaller (about 30 typical samples).
+export const READEST_VOICE_PREVIEW_MAX_CHARS = 400;
+export const READEST_VOICE_PREVIEW_DAILY_CHARS = 6_000;
 
 export const DOUBLE_CLICK_INTERVAL_THRESHOLD_MS = 250;
 export const DISABLE_DOUBLE_CLICK_ON_MOBILE = true;

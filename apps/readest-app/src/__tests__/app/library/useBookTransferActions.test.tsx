@@ -1,3 +1,4 @@
+import { readFlowState } from '@/services/sync/dataFlow/log';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import type { SetStateAction } from 'react';
@@ -20,7 +21,7 @@ import { INDETERMINATE_PROGRESS, type ProgressHandler } from '@/utils/transfer';
 const routing = vi.hoisted(() => ({
   readestEnabled: true,
   booksSyncEnabled: true,
-  backends: [] as ('webdav' | 'gdrive' | 's3' | 'onedrive')[],
+  backends: [] as ('webdav' | 'gdrive' | 's3' | 'onedrive' | 'icloud')[],
 }));
 
 const runFileBookUpload = vi.hoisted(() => vi.fn(async () => true));
@@ -193,6 +194,34 @@ describe('useBookTransferActions upload with Books sync off', () => {
 });
 
 describe('useBookTransferActions download routing (issue #5062)', () => {
+  it.each([
+    'webdav',
+    'gdrive',
+    's3',
+    'onedrive',
+    'icloud',
+  ] as const)('downloads selected books silently from %s with Readest Cloud off (#6715)', async (provider) => {
+    routing.readestEnabled = false;
+    routing.backends = [provider];
+    const dispatchSpy = vi.spyOn(eventDispatcher, 'dispatch');
+    const { result, updateBook } = setup();
+    const books = [
+      makeBook({ uploadedAt: 12345 }),
+      makeBook({ hash: 'book-2', uploadedAt: 12345 }),
+    ];
+
+    const results = await Promise.all(
+      books.map((book) => result.current.handleBookDownload(book, { queued: true, silent: true })),
+    );
+
+    expect(results).toEqual([true, true]);
+    for (const book of books) {
+      expect(runFileBookDownload).toHaveBeenCalledWith(envConfig, book, expect.any(Function));
+      expect(updateBook).toHaveBeenCalledWith(envConfig, book);
+    }
+    expect(queueDownload).not.toHaveBeenCalled();
+    expect(dispatchSpy.mock.calls.filter(([event]) => event === 'toast')).toHaveLength(0);
+  });
   it('tries file mirrors first because uploadedAt does not identify which provider has the book (#5009)', async () => {
     routing.readestEnabled = true;
     routing.backends = ['webdav'];
@@ -232,6 +261,7 @@ describe('useBookTransferActions download routing (issue #5062)', () => {
   });
 
   it('falls back to an immediate Readest Cloud download when opening a cloud-shelf book', async () => {
+    localStorage.clear();
     routing.readestEnabled = true;
     routing.backends = ['webdav'];
     runFileBookDownload.mockResolvedValueOnce(false);
@@ -246,6 +276,12 @@ describe('useBookTransferActions download routing (issue #5062)', () => {
     expect(queueDownload).not.toHaveBeenCalled();
     expect(updateBook).toHaveBeenCalledWith(envConfig, book);
     expect(ok).toBe(true);
+    expect(readFlowState().entries[0]).toMatchObject({
+      connector: 'readest-cloud',
+      direction: 'pull',
+      kind: 'books',
+      count: 1,
+    });
   });
 
   it('falls back to a file backend when the book is not in Readest Cloud storage', async () => {

@@ -133,8 +133,10 @@ describe('KeyboardShortcutsSettings', () => {
 
     fireEvent.click(screen.getByText('Replace'));
     // The re-recorded binding takes the place of the one that was clicked.
+    // `n` is also Next Match of vim find (#7281); Replace frees it from both.
     expect(JSON.parse(localStorage.getItem('customShortcuts') ?? '{}')).toEqual({
       onToggleNotebook: [],
+      onVimNextMatch: [],
       onOpenBooks: ['n'],
     });
   });
@@ -144,22 +146,22 @@ describe('KeyboardShortcutsSettings', () => {
 
     fireEvent.click(screen.getByLabelText('Add: Toggle Notebook'));
     expect(screen.getByLabelText('Toggle Notebook: Listening…')).toBeTruthy();
-    fireEvent.keyDown(window, { key: 'N', shiftKey: true });
+    fireEvent.keyDown(window, { key: 'O', shiftKey: true });
 
     expect(screen.getByLabelText('Toggle Notebook: N')).toBeTruthy();
-    expect(screen.getByLabelText('Toggle Notebook: Shift+N')).toBeTruthy();
+    expect(screen.getByLabelText('Toggle Notebook: Shift+O')).toBeTruthy();
     expect(JSON.parse(localStorage.getItem('customShortcuts') ?? '{}')).toEqual({
-      onToggleNotebook: ['n', 'shift+N'],
+      onToggleNotebook: ['n', 'shift+O'],
     });
 
     fireEvent.click(screen.getByLabelText('Toggle Notebook: N'));
     fireEvent.keyDown(window, { key: 'm' });
     expect(JSON.parse(localStorage.getItem('customShortcuts') ?? '{}')).toEqual({
-      onToggleNotebook: ['m', 'shift+N'],
+      onToggleNotebook: ['m', 'shift+O'],
     });
 
-    fireEvent.click(screen.getByLabelText('Remove: Toggle Notebook (Shift+N)'));
-    expect(screen.queryByLabelText('Toggle Notebook: Shift+N')).toBeNull();
+    fireEvent.click(screen.getByLabelText('Remove: Toggle Notebook (Shift+O)'));
+    expect(screen.queryByLabelText('Toggle Notebook: Shift+O')).toBeNull();
     expect(JSON.parse(localStorage.getItem('customShortcuts') ?? '{}')).toEqual({
       onToggleNotebook: ['m'],
     });

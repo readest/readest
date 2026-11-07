@@ -57,6 +57,7 @@ vi.mock('@/services/sync/providers/icloud/buildICloudProvider', () => ({
   buildICloudProvider: vi.fn(async () => null),
 }));
 
+import { readFlowState } from '@/services/sync/dataFlow/log';
 import { isWebAppPlatform } from '@/services/environment';
 import { hasValidWebDriveToken } from '@/services/sync/providers/gdrive/auth/webTokenStore';
 import {
@@ -327,5 +328,112 @@ describe('getReadyFileSyncBackends', () => {
 
   test('rules icloud out off Apple platforms (canBackendRun false)', () => {
     expect(canBackendRun('icloud')).toBe(false);
+  });
+});
+
+describe('runFileLibrarySyncPass data flow', () => {
+  const enableWebdav = () => {
+    setCachedUserPlan('pro');
+    useSettingsStore.getState().setSettings({
+      webdav: { enabled: true, serverUrl: 'https://dav', syncBooks: true },
+    } as unknown as SystemSettings);
+    useLibraryStore.setState({ library: [], libraryLoaded: true });
+    useFileSyncStore.setState({ byKind: {}, activeKind: null, lastErrorByKind: {} });
+    syncLibrary.mockReset().mockResolvedValue(syncResult());
+  };
+
+  beforeEach(() => localStorage.clear());
+
+  test('reports what the pass moved each way', async () => {
+    enableWebdav();
+    syncLibrary.mockResolvedValueOnce(
+      syncResult({ configsUploaded: 2, configsDownloaded: 3, filesUploaded: 1, booksAdded: 4 }),
+    );
+
+    await runFileLibrarySyncPass(envConfig, translationFn);
+
+    const { totals } = readFlowState();
+    expect(totals['webdav:push:progress']?.count).toBe(2);
+    expect(totals['webdav:pull:progress']?.count).toBe(3);
+    expect(totals['webdav:push:books']?.count).toBe(1);
+    // Books added to the shelf are metadata: their files aren't downloaded.
+    expect(totals['webdav:pull:books']?.count).toBe(0);
+  });
+
+  test('reports a pass that failed', async () => {
+    enableWebdav();
+    syncLibrary.mockRejectedValueOnce(new Error('401 Unauthorized'));
+
+    await runFileLibrarySyncPass(envConfig, translationFn);
+
+    expect(readFlowState().entries[0]).toMatchObject({
+      connector: 'webdav',
+      error: '401 Unauthorized',
+    });
+  });
+
+  test('reports books that failed inside a pass', async () => {
+    enableWebdav();
+    syncLibrary.mockResolvedValueOnce(
+      syncResult({
+        failures: 1,
+        failedBooks: [{ hash: 'a', title: 'Dune', reason: 'quota exceeded' }],
+      }),
+    );
+
+    await runFileLibrarySyncPass(envConfig, translationFn);
+
+    expect(readFlowState().entries[0]).toMatchObject({
+      connector: 'webdav',
+      bookTitle: 'Dune',
+      error: 'quota exceeded',
+    });
+  });
+
+  test('counts an explicit upload of a book file', async () => {
+    enableWebdav();
+    pushBookFile.mockResolvedValueOnce({ uploaded: true });
+
+    await runFileBookUpload(envConfig, makeBook('h1'));
+
+    expect(readFlowState().entries[0]).toMatchObject({
+      connector: 'webdav',
+      direction: 'push',
+      kind: 'books',
+      count: 1,
+      bookTitle: 'Book h1',
+    });
+  });
+
+  test('counts a downloaded book file under the backend that served it', async () => {
+    enableWebdav();
+    downloadBookFile.mockResolvedValueOnce(true);
+
+    await runFileBookDownload(envConfig, makeBook('h1'));
+
+    expect(readFlowState().entries[0]).toMatchObject({
+      connector: 'webdav',
+      direction: 'pull',
+      kind: 'books',
+      count: 1,
+    });
+  });
+
+  test('records a failed download', async () => {
+    enableWebdav();
+    downloadBookFile.mockRejectedValueOnce(new Error('404'));
+
+    await runFileBookDownload(envConfig, makeBook('h1'));
+
+    expect(readFlowState().entries[0]).toMatchObject({ connector: 'webdav', error: '404' });
+  });
+
+  test('does not count a file the backend already had', async () => {
+    enableWebdav();
+    pushBookFile.mockResolvedValueOnce({ uploaded: false, reason: 'remote-matches' });
+
+    await runFileBookUpload(envConfig, makeBook('h1'));
+
+    expect(readFlowState().entries).toEqual([]);
   });
 });

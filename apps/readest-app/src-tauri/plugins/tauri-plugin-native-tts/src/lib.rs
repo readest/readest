@@ -7,10 +7,14 @@ pub use models::*;
 
 #[cfg(desktop)]
 mod desktop;
+#[cfg(target_os = "linux")]
+mod linux;
 #[cfg(mobile)]
 mod mobile;
 #[cfg(desktop)]
 mod now_playing;
+#[cfg(target_os = "linux")]
+mod speech_dispatcher;
 
 mod commands;
 mod error;
@@ -56,18 +60,31 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
             commands::update_media_library,
             commands::update_carplay_state,
             commands::playout_enqueue,
-            commands::playout_control,
             commands::playout_position $(, $extra)*]
         };
     }
     let builder = Builder::new("native-tts");
-    #[cfg(desktop)]
+    #[cfg(target_os = "linux")]
+    let builder = builder.invoke_handler({
+        let fallback: fn(tauri::ipc::Invoke<R>) -> bool =
+            handler!(commands::register_listener, commands::remove_listener);
+        move |invoke: tauri::ipc::Invoke<R>| {
+            if invoke.message.command() == "playout_control" {
+                commands::playout_control(invoke);
+                true
+            } else {
+                fallback(invoke)
+            }
+        }
+    });
+    #[cfg(all(desktop, not(target_os = "linux")))]
     let builder = builder.invoke_handler(handler!(
+        commands::playout_control,
         commands::register_listener,
         commands::remove_listener
     ));
     #[cfg(mobile)]
-    let builder = builder.invoke_handler(handler!());
+    let builder = builder.invoke_handler(handler!(commands::playout_control));
     builder
         .setup(|app, api| {
             #[cfg(mobile)]
@@ -76,6 +93,19 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
             let native_tts = desktop::init(app, api)?;
             app.manage(native_tts);
             Ok(())
+        })
+        .on_event(|app, event| {
+            #[cfg(target_os = "linux")]
+            if let tauri::RunEvent::WindowEvent {
+                label,
+                event: tauri::WindowEvent::Destroyed,
+                ..
+            } = event
+            {
+                app.native_tts().remove_speech_session(label);
+            }
+            #[cfg(not(target_os = "linux"))]
+            let _ = (app, event);
         })
         .build()
 }

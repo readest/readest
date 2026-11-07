@@ -745,6 +745,35 @@ describe('DictionarySheet — empty state', () => {
   });
 });
 
+describe('DictionarySheet — streaming results', () => {
+  it('reveals an entry while its provider is still generating (#7279)', async () => {
+    let context!: DictionaryLookupContext;
+    let finish!: (outcome: DictionaryLookupOutcome) => void;
+    providersForNextRender.push({
+      id: 'streaming',
+      kind: 'builtin',
+      label: 'Streaming',
+      lookup(_word, ctx) {
+        context = ctx;
+        return new Promise((resolve) => {
+          finish = resolve;
+        });
+      },
+    });
+    renderSheet({ word: 'bank' });
+    await waitFor(() => expect(context).toBeDefined());
+    await act(async () => {
+      context.container.textContent = 'A river side';
+      (context as DictionaryLookupContext & { onUpdate?: () => void }).onUpdate?.();
+    });
+    expect(context.container.classList.contains('hidden')).toBe(false);
+    expect(screen.queryByTestId('dict-card-skeleton')).toBeNull();
+    await act(async () => {
+      finish({ ok: true });
+    });
+  });
+});
+
 describe('DictionarySheet — abort on unmount', () => {
   it('aborts in-flight provider lookups when the sheet unmounts', async () => {
     const observer = { aborted: false };

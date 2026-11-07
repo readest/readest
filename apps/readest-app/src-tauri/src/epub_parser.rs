@@ -333,7 +333,9 @@ fn zip_entry_sizes<R: Read + Seek>(zip: &mut ZipArchive<R>) -> HashMap<String, u
         if entry.is_dir() {
             continue;
         }
-        sizes.insert(entry.name().to_string(), entry.size());
+        if let Ok(name) = entry.name() {
+            sizes.insert(name.into_owned(), entry.size());
+        }
     }
     sizes
 }
@@ -795,9 +797,9 @@ fn is_undeclared_cover_name(name: &str) -> bool {
 /// Entries are walked in central-directory order, so the first match wins.
 fn find_undeclared_cover_entry<R: Read + Seek>(zip: &ZipArchive<R>) -> Option<String> {
     (0..zip.len())
-        .filter_map(|i| zip.name_for_index(i))
+        .filter_map(|i| zip.name_for_index(i)?.ok())
         .find(|name| is_undeclared_cover_name(name))
-        .map(str::to_string)
+        .map(Cow::into_owned)
 }
 
 fn resolve_relative(opf_path: &str, href: &str) -> String {

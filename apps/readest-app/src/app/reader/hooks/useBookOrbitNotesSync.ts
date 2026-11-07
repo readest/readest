@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useEnv } from '@/context/EnvContext';
+import { recordExchange } from '@/services/sync/dataFlow/log';
 import type { ChapterResolver, PositionResolver } from '@/services/bookorbit/annotationExchange';
 import { BookOrbitClient } from '@/services/bookorbit/BookOrbitClient';
 import { BookOrbitSyncStore } from '@/services/bookorbit/BookOrbitSyncStore';
@@ -185,41 +186,49 @@ export const useBookOrbitNotesSync = (bookKey: string) => {
     if (passRunning.current) return;
 
     passRunning.current = true;
+    const notes = { connector: 'bookorbit', kind: 'notes', bookTitle: book.title } as const;
+    const counts = { pushed: 0, pulled: 0 };
     try {
-      await runBookOrbitNotesPass({
-        client,
-        store,
-        book: {
-          hash: book.hash,
-          title: book.title,
-          author: book.author,
-          readingStatus: book.readingStatus,
-          readingStatusUpdatedAt: book.readingStatusUpdatedAt,
+      await runBookOrbitNotesPass(
+        {
+          client,
+          store,
+          book: {
+            hash: book.hash,
+            title: book.title,
+            author: book.author,
+            readingStatus: book.readingStatus,
+            readingStatusUpdatedAt: book.readingStatusUpdatedAt,
+          },
+          getNotes: () => getConfig(bookKey)?.booknotes ?? [],
+          mergeNotes,
+          resolvePosition,
+          populateXPointers,
+          chapterForNote,
+          syncNotes: bookorbit.syncNotes,
+          syncBookStates: bookorbit.syncBookStates,
+          now: () => Date.now(),
+          onUnmatched: () => {
+            if (unmatchedHinted.current) return;
+            unmatchedHinted.current = true;
+            // Until it is linked, BookOrbit rejects this book's progress and
+            // stats too, so this needs to be seen, not a 2-second header hint.
+            eventDispatcher.dispatch('toast', {
+              type: 'warning',
+              timeout: 8000,
+              message: _(
+                'Book not found in BookOrbit. Link it under Unmatched KOReader Books in BookOrbit to sync it.',
+              ),
+            });
+          },
         },
-        getNotes: () => getConfig(bookKey)?.booknotes ?? [],
-        mergeNotes,
-        resolvePosition,
-        populateXPointers,
-        chapterForNote,
-        syncNotes: bookorbit.syncNotes,
-        syncBookStates: bookorbit.syncBookStates,
-        now: () => Date.now(),
-        onUnmatched: () => {
-          if (unmatchedHinted.current) return;
-          unmatchedHinted.current = true;
-          // Until it is linked, BookOrbit rejects this book's progress and
-          // stats too, so this needs to be seen, not a 2-second header hint.
-          eventDispatcher.dispatch('toast', {
-            type: 'warning',
-            timeout: 8000,
-            message: _(
-              'Book not found in BookOrbit. Link it under Unmatched KOReader Books in BookOrbit to sync it.',
-            ),
-          });
-        },
-      });
+        counts,
+      );
+      recordExchange(notes, counts);
     } catch (error) {
       console.warn('[BookOrbit] notes sync failed', error);
+      // One exchange carries both ways, so a failure stops both.
+      recordExchange(notes, counts, error instanceof Error ? error.message : String(error));
     } finally {
       passRunning.current = false;
     }
