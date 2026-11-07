@@ -410,6 +410,8 @@ async function collectBackupEntries(
     // Offline Audiobookshelf audio (#6256) is re-downloadable and can run to
     // gigabytes, each file read into memory here.
     .filter(({ entryName }) => !isAbsOfflineEntry(entryName))
+    // Per-book search indexes are rebuilt from the book on demand.
+    .filter(({ entryName }) => !/^[^/]+\/search\.db(?:-(?:wal|shm|journal))?$/.test(entryName))
     // A restore killed mid-file leaves its `.part` temp file behind.
     .filter(({ entryName }) => !entryName.endsWith('.part'));
   return { texts, files: bookFiles };
