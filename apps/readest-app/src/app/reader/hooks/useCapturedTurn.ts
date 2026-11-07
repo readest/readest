@@ -563,7 +563,7 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
     };
     const onRetainedCommit = () => {
       const settings = getViewSettings(bookKey);
-      if (settings && settings.zoomLevel !== 100) {
+      if (settings && settings.zoomLevel !== 100 && isPanningFixedLayout(settings)) {
         settings.zoomLevel = 100;
         useReaderStore.getState().setViewSettings(bookKey, settings);
       }

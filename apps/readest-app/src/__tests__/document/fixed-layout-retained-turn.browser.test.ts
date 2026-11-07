@@ -163,6 +163,20 @@ describe('retained fixed-layout page turns', () => {
       expect(getComputedStyle(next).visibility).toBe('visible');
       expect(next.getBoundingClientRect().toJSON()).toEqual(landing);
       expect(renderer.index).toBe(Number(next.querySelector('iframe')!.dataset['sectionIndex']));
+      await (dir === 'ltr' ? renderer.prev() : renderer.next());
+      expect(getComputedStyle(current.parentElement!).visibility).toBe('visible');
+      expect(getComputedStyle(current.parentElement!).position).toBe('relative');
+      await (dir === 'ltr' ? renderer.next() : renderer.prev());
+      Object.assign(renderer.style, { width: '1200px', height: '600px' });
+      await vi.waitFor(() => {
+        for (const page of [current.parentElement!, next]) {
+          expect(getComputedStyle(page).display).toBe('block');
+          expect(getComputedStyle(page).visibility, 'rotation must show both pages').toBe(
+            'visible',
+          );
+          expect(getComputedStyle(page).position).toBe('relative');
+        }
+      });
     } else {
       expect(next.style.cssText, 'cancellation must restore the prepared sibling exactly').toBe(
         preparedStyle,
@@ -177,12 +191,34 @@ describe('retained fixed-layout page turns', () => {
     }
   });
 
+  it.each([
+    { zoom: 50, mode: 'fit-page', expected: 50 },
+    { zoom: 80, mode: 'fit-page', expected: 80 },
+    { zoom: 50, mode: 'fit-width', expected: 100 },
+  ])('lands at $expected% after a $zoom% $mode push', async ({ zoom, mode, expected }) => {
+    await mount();
+    renderer.setAttribute('zoom', mode);
+    renderer.setAttribute('scale-factor', String(zoom));
+    await new Promise((resolve) => setTimeout(resolve, 30));
+    expect(await renderer.beginPageTurn?.(true)).toBe(true);
+    const next = docAt(3).defaultView!.frameElement!.parentElement!;
+    expect(parseFloat(next.style.width)).toBeCloseTo((renderer.clientWidth * expected) / 100, 1);
+    renderer.movePageTurn(1);
+    const landing = next.getBoundingClientRect().toJSON();
+    await renderer.endPageTurn(true, 0);
+    expect(renderer.getAttribute('scale-factor')).toBe(String(expected));
+    expect(next.getBoundingClientRect().toJSON()).toEqual(landing);
+    expect(getComputedStyle(next).display).toBe(expected < 100 ? 'flex' : 'block');
+  });
+
   it('cancels safely when the viewport resizes during a drag', async () => {
     await mount();
     expect(await renderer.beginPageTurn?.(true)).toBe(true);
     renderer.movePageTurn(0.5);
     renderer.style.width = '500px';
-    await new Promise((resolve) => setTimeout(resolve, 50));
+    await vi.waitFor(() =>
+      expect(renderer.shadowRoot!.querySelector('[data-page-turn-view]')).toBeNull(),
+    );
     expect(await renderer.endPageTurn(true, 0)).toBe(false);
     expect(renderer.index).toBe(2);
     expect(renderer.style.width).toBe('500px');

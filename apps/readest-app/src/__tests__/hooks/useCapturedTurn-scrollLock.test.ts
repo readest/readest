@@ -28,6 +28,7 @@ const h = vi.hoisted(() => ({
   macos: false,
   ios: false,
   nativeCommit: false,
+  retainedCommit: null as (() => void) | null,
   controllerHost: null as null | {
     navigate: (forward: boolean) => Promise<void>;
     onBeforeCapture?: (style: 'curl' | 'slide') => Promise<void> | void;
@@ -237,6 +238,7 @@ beforeEach(() => {
   h.viewListeners.clear();
   h.renderer.listeners.clear();
   h.controllerHost = null;
+  h.retainedCommit = null;
   h.hoveredBookKey = 'book-1';
   h.settingsDialogOpen = false;
   h.settingsListeners.clear();
@@ -367,6 +369,50 @@ describe('useCapturedTurn scroll-lock gate', () => {
       unmount();
       invalidate.mockRestore();
       warn.mockRestore();
+    }
+  });
+
+  test.each([
+    { zoom: 50, mode: 'fit-page', expected: 50 },
+    { zoom: 80, mode: 'fit-page', expected: 80 },
+    { zoom: 50, mode: 'fit-width', expected: 100 },
+    { zoom: 200, mode: 'fit-page', expected: 100 },
+  ] as const)('stores $expected% after a retained $zoom% $mode turn', async ({
+    zoom,
+    mode,
+    expected,
+  }) => {
+    vi.resetModules();
+    const { NativePageTurn } = await import('@/app/reader/utils/nativePageTurn');
+    vi.doMock('@/app/reader/utils/retainedPageTurn', () => ({
+      RetainedPageTurn: class extends NativePageTurn {
+        constructor(
+          host: ConstructorParameters<typeof NativePageTurn>[0],
+          native: ConstructorParameters<typeof NativePageTurn>[1],
+          committed: () => void,
+        ) {
+          super(host, native);
+          h.retainedCommit = committed;
+        }
+      },
+    }));
+    const { useCapturedTurn: useFreshCapturedTurn } = await import(
+      '@/app/reader/hooks/useCapturedTurn'
+    );
+    h.isFixedLayout = true;
+    h.renderer.beginPageTurn = async () => true;
+    h.viewSettings.zoomLevel = zoom;
+    h.viewSettings.zoomMode = mode;
+    const { unmount } = renderHook(() => useFreshCapturedTurn('book-1', { current: makeView() }));
+    try {
+      expect(h.retainedCommit).not.toBeNull();
+      act(() => h.retainedCommit!());
+      expect(h.viewSettings.zoomLevel).toBe(expected);
+      expect(h.setViewSettings).toHaveBeenCalledTimes(zoom === expected ? 0 : 1);
+    } finally {
+      unmount();
+      vi.doUnmock('@/app/reader/utils/retainedPageTurn');
+      vi.resetModules();
     }
   });
 
