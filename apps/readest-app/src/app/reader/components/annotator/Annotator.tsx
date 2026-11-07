@@ -330,7 +330,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
       ? annotPopupMaxWidth
       : Math.min(
           Math.max(
-            Math.max(toolbarToolTypes.length, 1) * annotPopupToolSize,
+            (toolbarToolTypes.length + 1) * annotPopupToolSize,
             highlightOptionsAvailable ? highlightOptionsMinWidth : 0,
           ),
           annotPopupMaxWidth,

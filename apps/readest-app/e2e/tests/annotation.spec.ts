@@ -20,6 +20,32 @@ test.describe('Annotation', () => {
     await expect(reader.annotationItems).toHaveCount(1);
   });
 
+  test('Done dismisses the toolbar without moving the page or removing a highlight', async ({
+    openBook,
+  }) => {
+    const reader = await openBook();
+    await reader.selectText();
+    const position = await reader.readingProgress();
+    expect(position).toBeGreaterThanOrEqual(0);
+    await expect(reader.popupTool('Done')).toBeVisible();
+    await reader.popupTool('Done').click();
+    await expect(reader.annotationPopup).toBeHidden();
+    expect(await reader.readingProgress()).toBe(position);
+
+    await reader.selectText();
+    await reader.highlightSelection();
+    await reader.dismissPopup();
+    await reader.clickHighlight();
+    const highlightPaths = reader.foliateView.locator('svg g path');
+    const pathCount = await highlightPaths.count();
+    expect(pathCount).toBeGreaterThan(0);
+    await reader.popupTool('Done').click();
+    await expect(reader.annotationPopup).toBeHidden();
+    expect(await reader.readingProgress()).toBe(position);
+
+    await expect(highlightPaths).toHaveCount(pathCount);
+  });
+
   test('closing the dictionary popup returns to the selection toolbar (#5213)', async ({
     openBook,
   }) => {

@@ -1,7 +1,9 @@
 import clsx from 'clsx';
 import React from 'react';
+import { MdCheck } from 'react-icons/md';
 import { Position } from '@/utils/sel';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
+import { useTranslation } from '@/hooks/useTranslation';
 import { BookNote, HighlightColor, HighlightStyle } from '@/types/book';
 import Popup from '@/components/Popup';
 import AnnotationToolButton from './AnnotationToolButton';
@@ -70,6 +72,7 @@ const AnnotationPopup: React.FC<AnnotationPopupProps> = ({
   onHighlight,
   onDismiss,
 }) => {
+  const _ = useTranslation();
   // Tall enough for a few lines plus the Cancel/Save row, so the editor opens
   // at a usable size instead of the 44px toolbar height it replaces.
   const noteEditorSize = useResponsiveSize(180);
@@ -119,6 +122,12 @@ const AnnotationPopup: React.FC<AnnotationPopupProps> = ({
             )}
             style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
           >
+            <AnnotationToolButton
+              showTooltip={!highlightOptionsVisible}
+              tooltipText={_('Done')}
+              Icon={MdCheck}
+              onClick={onDismiss}
+            />
             {buttons.map((button, index) => {
               if (button.visible === false) return null;
               return (
