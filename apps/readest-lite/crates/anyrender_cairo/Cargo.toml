@@ -1,0 +1,13 @@
+[package]
+name = "anyrender_cairo"
+version = "0.1.0"
+edition = "2024"
+publish = false
+license = "MIT OR Apache-2.0"
+description = "An anyrender PaintScene on cairo/pixman: Blitz painting on CPUs without the SIMD vello_cpu needs (armv7)"
+
+[dependencies]
+anyrender = { git = "https://github.com/DioxusLabs/anyrender", branch = "main" }
+peniko = "0.6.0"
+# No `use_glib`: nothing links glib/gobject (lib.rs works around the no-glib FontFace clone).
+cairo-rs = { version = "0.22", default-features = false }

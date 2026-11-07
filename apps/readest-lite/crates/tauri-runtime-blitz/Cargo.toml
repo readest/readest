@@ -1,0 +1,49 @@
+[package]
+name = "tauri-runtime-blitz"
+version = "0.0.1"
+edition = "2024"
+publish = false
+license = "Apache-2.0 OR MIT"
+# A Tauri runtime whose webview is a Blitz document scripted by QuickJS (blitz-qjs-script), painted
+# by cairo (anyrender_cairo), headless or in an X11 window. Readest Lite's runtime: Tauri commands, plugins, events and the asset/IPC
+# protocols run unchanged; the page gets Blitz's DOM + Stylo CSS instead of a browser engine.
+# lib.rs started from tauri's MockRuntime (crates/tauri/src/test/mock_runtime.rs, Apache-2.0 OR MIT).
+
+[dependencies]
+tauri-runtime = { path = "../../vendor/tauri/crates/tauri-runtime", default-features = false }
+tauri-utils = { path = "../../vendor/tauri/crates/tauri-utils" }
+blitz-dom = { path = "../../vendor/blitz/packages/blitz-dom", default-features = false, features = ["custom-widget", "svg"] }
+blitz-html = { path = "../../vendor/blitz/packages/blitz-html", default-features = false }
+blitz-paint = { path = "../../vendor/blitz/packages/blitz-paint", default-features = false, features = ["svg"] }
+blitz-traits = { path = "../../vendor/blitz/packages/blitz-traits", default-features = false }
+blitz-qjs-script = { path = "../blitz-qjs-script" }
+anyrender_cairo = { path = "../anyrender_cairo" }
+anyrender = { git = "https://github.com/DioxusLabs/anyrender", branch = "main" }
+peniko = "0.6.0"
+# A GTK build (feature `gtk`) would need 0.18 to share cairo-sys-rs with gtk 0.18 (one
+# `links = "cairo"` per resolve).
+cairo-rs = { version = "0.22", default-features = false }
+atomic_refcell = "0.1.13"
+fontique = { version = "0.12", default-features = false, features = ["std"] }
+memmap2 = "0.9"
+rquickjs = { version = "0.10", default-features = false }
+url = "2.5.0"
+http = "1"
+bytes = "1"
+raw-window-handle = "0.6"
+log = "0.4"
+x11rb = { version = "0.13", optional = true }
+
+[features]
+default = ["system-fonts"]
+system-fonts = ["blitz-dom/system-fonts"]
+# Only to sit in a tauri build that has GTK on (the trait then has GTK methods); Blitz never uses it.
+gtk = ["dep:gtk", "tauri-runtime/gtk"]
+# BLITZ_TAURI_WINDOW: show frames in an X11 window and take mouse/keyboard input (display.rs).
+window = ["dep:x11rb"]
+# Mirrors tauri-runtime: the trait has `transparent` on macOS only with it.
+macos-private-api = ["tauri-runtime/macos-private-api"]
+
+[target.'cfg(target_os = "linux")'.dependencies]
+# tauri-runtime's WindowDispatch hands out GTK types on Linux when its `gtk` feature is on.
+gtk = { version = "0.18", features = ["v3_24"], optional = true }

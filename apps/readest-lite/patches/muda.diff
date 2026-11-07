@@ -1,0 +1,206 @@
+diff -ruN muda/src/platform_impl/mod.rs muda/src/platform_impl/mod.rs
+--- muda/src/platform_impl/mod.rs
++++ muda/src/platform_impl/mod.rs
+@@ -17,6 +17,18 @@
+ ))]
+ #[path = "gtk/mod.rs"]
+ mod platform;
++#[cfg(all(
++    any(
++        target_os = "linux",
++        target_os = "dragonfly",
++        target_os = "freebsd",
++        target_os = "netbsd",
++        target_os = "openbsd"
++    ),
++    not(feature = "gtk")
++))]
++#[path = "stub/mod.rs"]
++mod platform;
+ #[cfg(target_os = "macos")]
+ #[path = "macos/mod.rs"]
+ mod platform;
+diff -ruN muda/src/platform_impl/stub/mod.rs muda/src/platform_impl/stub/mod.rs
+--- muda/src/platform_impl/stub/mod.rs
++++ muda/src/platform_impl/stub/mod.rs
+@@ -0,0 +1,180 @@
++// Copyright 2022-2022 Tauri Programme within The Commons Conservancy
++// SPDX-License-Identifier: Apache-2.0
++// SPDX-License-Identifier: MIT
++
++//! Linux/BSD without the `gtk` feature: menus keep their state (text, enabled, checked, icon,
++//! children) but are never shown, so nothing links GTK. For apps that draw their own UI.
++
++use crate::{
++    accelerator::KeyAccelerator,
++    icon::{BadIcon, Icon, NativeIcon},
++    items::*,
++    util::{AddOp, Counter},
++    IsMenuItem, MenuId, MenuItemKind, MenuItemType,
++};
++use std::{cell::RefCell, rc::Rc};
++
++static COUNTER: Counter = Counter::new();
++
++#[derive(Debug, Clone)]
++pub(crate) struct PlatformIcon;
++
++impl PlatformIcon {
++    pub fn from_rgba(_rgba: Vec<u8>, _width: u32, _height: u32) -> Result<Self, BadIcon> {
++        Ok(Self)
++    }
++}
++
++fn insert(list: &mut Vec<Rc<RefCell<MenuChild>>>, item: &dyn IsMenuItem, op: AddOp) {
++    let child = item.child();
++    match op {
++        AddOp::Append => list.push(child),
++        AddOp::Insert(i) => list.insert(i.min(list.len()), child),
++    }
++}
++
++fn remove(list: &mut Vec<Rc<RefCell<MenuChild>>>, item: &dyn IsMenuItem) -> crate::Result<()> {
++    let id = item.id().clone();
++    let pos = list.iter().position(|c| c.borrow().id() == &id).ok_or(crate::Error::NotAChildOfThisMenu)?;
++    list.remove(pos);
++    Ok(())
++}
++
++pub struct Menu {
++    id: MenuId,
++    children: Vec<Rc<RefCell<MenuChild>>>,
++}
++
++impl Menu {
++    pub fn new(id: Option<MenuId>) -> Self {
++        Self { id: id.unwrap_or_else(|| MenuId(COUNTER.next().to_string())), children: Vec::new() }
++    }
++
++    pub fn id(&self) -> &MenuId {
++        &self.id
++    }
++
++    pub fn add_menu_item(&mut self, item: &dyn IsMenuItem, op: AddOp) -> crate::Result<()> {
++        insert(&mut self.children, item, op);
++        Ok(())
++    }
++
++    pub fn remove(&mut self, item: &dyn IsMenuItem) -> crate::Result<()> {
++        remove(&mut self.children, item)
++    }
++
++    pub fn items(&self) -> Vec<MenuItemKind> {
++        self.children.iter().map(|c| c.borrow().kind(c.clone())).collect()
++    }
++}
++
++pub struct MenuChild {
++    item_type: MenuItemType,
++    text: String,
++    enabled: bool,
++    id: MenuId,
++    accelerator: Option<KeyAccelerator>,
++    predefined_item_type: Option<PredefinedMenuItemType>,
++    checked: bool,
++    icon: Option<Icon>,
++    pub children: Option<Vec<Rc<RefCell<MenuChild>>>>,
++}
++
++impl MenuChild {
++    fn base(item_type: MenuItemType, text: &str, enabled: bool, id: Option<MenuId>) -> Self {
++        Self {
++            item_type,
++            text: text.to_string(),
++            enabled,
++            id: id.unwrap_or_else(|| MenuId(COUNTER.next().to_string())),
++            accelerator: None,
++            predefined_item_type: None,
++            checked: false,
++            icon: None,
++            children: None,
++        }
++    }
++
++    pub fn new(text: &str, enabled: bool, key_accelerator: Option<KeyAccelerator>, id: Option<MenuId>) -> Self {
++        Self { accelerator: key_accelerator, ..Self::base(MenuItemType::MenuItem, text, enabled, id) }
++    }
++
++    pub fn new_submenu(text: &str, enabled: bool, id: Option<MenuId>) -> Self {
++        Self { children: Some(Vec::new()), ..Self::base(MenuItemType::Submenu, text, enabled, id) }
++    }
++
++    pub(crate) fn new_predefined(item_type: PredefinedMenuItemType, text: Option<String>) -> Self {
++        let text = text.unwrap_or_else(|| item_type.text().to_string());
++        Self {
++            accelerator: item_type.accelerator().map(Into::into),
++            predefined_item_type: Some(item_type),
++            ..Self::base(MenuItemType::Predefined, &text, true, None)
++        }
++    }
++
++    pub fn new_check(text: &str, enabled: bool, checked: bool, key_accelerator: Option<KeyAccelerator>, id: Option<MenuId>) -> Self {
++        Self { checked, accelerator: key_accelerator, ..Self::base(MenuItemType::Check, text, enabled, id) }
++    }
++
++    pub fn new_icon(text: &str, enabled: bool, icon: Option<Icon>, key_accelerator: Option<KeyAccelerator>, id: Option<MenuId>) -> Self {
++        Self { icon, accelerator: key_accelerator, ..Self::base(MenuItemType::Icon, text, enabled, id) }
++    }
++
++    pub fn new_native_icon(text: &str, enabled: bool, _native_icon: Option<NativeIcon>, key_accelerator: Option<KeyAccelerator>, id: Option<MenuId>) -> Self {
++        Self { accelerator: key_accelerator, ..Self::base(MenuItemType::Icon, text, enabled, id) }
++    }
++
++    pub(crate) fn item_type(&self) -> MenuItemType {
++        self.item_type
++    }
++
++    pub fn id(&self) -> &MenuId {
++        &self.id
++    }
++
++    pub fn text(&self) -> String {
++        self.text.clone()
++    }
++
++    pub fn set_text(&mut self, text: &str) {
++        self.text = text.to_string();
++    }
++
++    pub fn is_enabled(&self) -> bool {
++        self.enabled
++    }
++
++    pub fn set_enabled(&mut self, enabled: bool) {
++        self.enabled = enabled;
++    }
++
++    pub fn set_key_accelerator(&mut self, accelerator: Option<KeyAccelerator>) -> crate::Result<()> {
++        self.accelerator = accelerator;
++        Ok(())
++    }
++
++    pub fn is_checked(&self) -> bool {
++        self.checked
++    }
++
++    pub fn set_checked(&mut self, checked: bool) {
++        self.checked = checked;
++    }
++
++    pub fn set_icon(&mut self, icon: Option<Icon>) {
++        self.icon = icon;
++    }
++
++    pub fn add_menu_item(&mut self, item: &dyn IsMenuItem, op: AddOp) -> crate::Result<()> {
++        insert(self.children.get_or_insert_with(Vec::new), item, op);
++        Ok(())
++    }
++
++    pub fn remove(&mut self, item: &dyn IsMenuItem) -> crate::Result<()> {
++        remove(self.children.get_or_insert_with(Vec::new), item)
++    }
++
++    pub fn items(&self) -> Vec<MenuItemKind> {
++        self.children.iter().flatten().map(|c| c.borrow().kind(c.clone())).collect()
++    }
++}

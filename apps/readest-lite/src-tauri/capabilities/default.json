@@ -1,0 +1,105 @@
+{
+  "identifier": "default",
+  "description": "Readest's default capability, cut to the plugins Readest Lite registers (core, fs, os)",
+  "windows": ["main"],
+  "permissions": [
+    "core:default",
+    "fs:default",
+    "fs:read-meta",
+    "fs:allow-open",
+    "fs:allow-write",
+    "fs:allow-read",
+    "fs:allow-rename",
+    "fs:allow-copy-file",
+    "fs:allow-mkdir",
+    "fs:allow-remove",
+    "fs:allow-stat",
+    "fs:allow-fstat",
+    "fs:allow-lstat",
+    "fs:read-all",
+    "fs:write-all",
+    {
+      "identifier": "fs:scope-appconfig-recursive",
+      "allow": [
+        {
+          "path": "$APPCONFIG"
+        }
+      ]
+    },
+    {
+      "identifier": "fs:scope-appdata-recursive",
+      "allow": [
+        {
+          "path": "$APPDATA/Readest/**/*"
+        }
+      ],
+      "deny": []
+    },
+    {
+      "identifier": "fs:allow-appdata-read",
+      "allow": [
+        {
+          "path": "$APPDATA/settings.json"
+        }
+      ]
+    },
+    {
+      "identifier": "fs:allow-appdata-write",
+      "allow": [
+        {
+          "path": "$APPDATA/settings.json"
+        }
+      ]
+    },
+    {
+      "identifier": "fs:scope",
+      "allow": [
+        {
+          "path": "**/Readest"
+        },
+        {
+          "path": "**/Readest/**/*"
+        },
+        {
+          "path": "**/com.github.johnfactotum.Foliate/**/*"
+        },
+        {
+          "path": "**/last-book-cover.png"
+        },
+        {
+          "path": "$TEMP/**/*"
+        },
+        {
+          "path": "$APPCACHE"
+        },
+        {
+          "path": "$APPCACHE/**/*"
+        },
+        {
+          "path": "/private/var/mobile/Containers/Data/Application/**/*"
+        }
+      ]
+    },
+    "os:default",
+    "core:window:default",
+    "core:window:allow-close",
+    "core:window:allow-center",
+    "core:window:allow-show",
+    "core:window:allow-minimize",
+    "core:window:allow-unminimize",
+    "core:window:allow-maximize",
+    "core:window:allow-unmaximize",
+    "core:window:allow-set-size",
+    "core:window:allow-set-position",
+    "core:window:allow-set-title",
+    "core:window:allow-set-focus",
+    "core:window:allow-is-maximized",
+    "core:window:allow-start-dragging",
+    "core:window:allow-toggle-maximize",
+    "core:window:allow-set-fullscreen",
+    "core:window:allow-set-always-on-top",
+    "core:window:allow-destroy",
+    "core:webview:allow-create-webview-window",
+    "core:path:allow-resolve-directory"
+  ]
+}

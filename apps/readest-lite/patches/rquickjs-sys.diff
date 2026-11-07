@@ -1,0 +1,78 @@
+diff -ruN rquickjs-sys/build.rs rquickjs-sys/build.rs
+--- rquickjs-sys/build.rs
++++ rquickjs-sys/build.rs
+@@ -123,28 +123,14 @@
+     let out_dir = env::var("OUT_DIR").expect("No OUT_DIR env var is set by cargo");
+     let out_dir = Path::new(&out_dir);
+ 
+-    let header_files = [
+-        "builtin-array-fromasync.h",
+-        "dtoa.h",
+-        "libregexp-opcode.h",
+-        "libregexp.h",
+-        "libunicode-table.h",
+-        "libunicode.h",
+-        "list.h",
+-        "quickjs-atom.h",
+-        "quickjs-opcode.h",
+-        "quickjs-c-atomics.h",
+-        "quickjs.h",
+-        "cutils.h",
+-    ];
+-
+-    let source_files = [
+-        "libregexp.c",
+-        "libunicode.c",
+-        "cutils.c",
+-        "quickjs.c",
+-        "dtoa.c",
+-    ];
++    // QuickJS-NG 0.18.0 (vendored for Readest Lite): every header, and no cutils.c any more.
++    let header_files: Vec<String> = fs::read_dir(src_dir)
++        .unwrap()
++        .filter_map(|e| e.ok()?.file_name().into_string().ok())
++        .filter(|f| f.ends_with(".h"))
++        .collect();
++
++    let source_files = ["libregexp.c", "libunicode.c", "quickjs.c", "dtoa.c"];
+ 
+     let mut defines: Vec<(String, Option<&str>)> = vec![("_GNU_SOURCE".into(), None)];
+ 
+@@ -206,7 +192,8 @@
+         defines.push(("FE_UPWARD".into(), Some("0")));
+     }
+ 
+-    for file in source_files.iter().chain(header_files.iter()) {
++    for file in source_files.iter().map(|s| s.to_string()).chain(header_files.iter().cloned()) {
++        let file = &file;
+         fs::copy(src_dir.join(file), out_dir.join(file))
+             .expect("Unable to copy source; try 'git submodule update --init'");
+     }
+diff -ruN rquickjs-sys/src/inlines/ptr_64.rs rquickjs-sys/src/inlines/ptr_64.rs
+--- rquickjs-sys/src/inlines/ptr_64.rs
++++ rquickjs-sys/src/inlines/ptr_64.rs
+@@ -10,12 +10,13 @@
+ 
+ #[inline]
+ pub unsafe fn JS_VALUE_GET_INT(v: JSValue) -> i32 {
+-    v.u.int32
++    // QuickJS-NG 0.18: ints and bools live in the low half of `uint64`.
++    v.u.uint64 as i32
+ }
+ 
+ #[inline]
+ pub unsafe fn JS_VALUE_GET_BOOL(v: JSValue) -> bool {
+-    v.u.int32 != 0
++    v.u.uint64 as i32 != 0
+ }
+ 
+ #[inline]
+@@ -31,7 +32,7 @@
+ #[inline]
+ pub const fn JS_MKVAL(tag: i32, val: i32) -> JSValue {
+     JSValue {
+-        u: JSValueUnion { int32: val },
++        u: JSValueUnion { uint64: val as u32 as u64 },
+         tag: tag as _,
+     }
+ }

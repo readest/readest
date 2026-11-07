@@ -1,0 +1,657 @@
+diff -ruN tauri/Cargo.toml tauri/Cargo.toml
+--- tauri/Cargo.toml
++++ tauri/Cargo.toml
+@@ -1,41 +1,15 @@
++# The readest/tauri fork (feat/cef, d6ef6e4c7), only the crates Readest Lite builds, with Readest
++# Lite's patch (an optional, default-on `gtk` feature; see ../PATCHES.md). The workspace root keeps
++# the fork's [workspace.package] and [workspace.dependencies] for the crates' `workspace = true`.
+ [workspace]
+ members = [
+   "crates/tauri",
+   "crates/tauri-runtime",
+-  "crates/tauri-runtime-wry",
+-  "crates/tauri-runtime-cef",
+   "crates/tauri-macros",
+   "crates/tauri-utils",
+   "crates/tauri-build",
+   "crates/tauri-codegen",
+   "crates/tauri-plugin",
+-  "crates/tauri-schema-generator",
+-  "crates/tauri-schema-worker",
+-  "crates/tauri-cli",
+-  "crates/tauri-bundler",
+-  "crates/tauri-macos-sign",
+-  "crates/tauri-driver",
+-  "crates/tauri-examples",
+-
+-  # @tauri-apps/cli rust project
+-  "packages/cli",
+-
+-  # integration tests
+-  "crates/tests/restart",
+-  "crates/tests/acl",
+-
+-  # bench
+-  "bench",
+-  "bench/tests/cpu_intensive/src-tauri",
+-  "bench/tests/files_transfer/src-tauri",
+-  "bench/tests/helloworld/src-tauri",
+-
+-  # examples
+-  "examples/cef/src-tauri",
+-  "examples/file-associations/src-tauri",
+-  "examples/resources/src-tauri",
+-  "examples/api/src-tauri",
+-  "examples/api/src-tauri/tauri-plugin-sample",
+ ]
+ resolver = "2"
+ 
+@@ -50,39 +24,10 @@
+ 
+ [workspace.dependencies]
+ tauri = { version = "2.11.5", path = "./crates/tauri", default-features = false }
+-tauri-runtime = { version = "~2.11.3", path = "./crates/tauri-runtime" }
+-tauri-runtime-wry = { version = "~2.11.4", path = "./crates/tauri-runtime-wry", default-features = false }
+-tauri-runtime-cef = { version = "~0.1.0", path = "./crates/tauri-runtime-cef", default-features = false }
++tauri-runtime = { version = "~2.11.3", path = "./crates/tauri-runtime", default-features = false }
+ tauri-build = { version = "2.6.3", path = "./crates/tauri-build", default-features = false }
+ tauri-macros = { version = "~2.6.3", path = "./crates/tauri-macros" }
+ tauri-codegen = { version = "~2.6.3", path = "./crates/tauri-codegen" }
+ tauri-utils = { version = "~2.9.3", path = "./crates/tauri-utils" }
+ tauri-plugin = { version = "2.6.3", path = "./crates/tauri-plugin", default-features = false }
+-tauri-bundler = { version = "=2.9.4", path = "./crates/tauri-bundler", default-features = false }
+-tauri-macos-sign = { version = "=2.3.4", path = "./crates/tauri-macos-sign" }
+-
+-# default to small, optimized workspace release binaries
+-[profile.release]
+-panic = "abort"
+-codegen-units = 1
+-lto = true
+-incremental = false
+-opt-level = "s"
+-strip = true
+-
+-# profiles for tauri-cli
+-[profile.dev.package.miniz_oxide]
+-opt-level = 3
+-
+-[profile.release-size-optimized]
+-inherits = "release"
+-codegen-units = 1
+-lto = true
+-incremental = false
+-opt-level = "s"
+ 
+-[patch.crates-io]
+-tauri = { path = "./crates/tauri" }
+-tauri-plugin = { path = "./crates/tauri-plugin" }
+-tauri-utils = { path = "./crates/tauri-utils" }
+-tauri-plugin-log = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "feat/cef" }
+diff -ruN tauri/crates/tauri/Cargo.toml tauri/crates/tauri/Cargo.toml
+--- tauri/crates/tauri/Cargo.toml
++++ tauri/crates/tauri/Cargo.toml
+@@ -96,7 +96,6 @@
+ [target.'cfg(any(target_os = "linux", target_os = "dragonfly", target_os = "freebsd", target_os = "openbsd", target_os = "netbsd", target_os = "windows", target_os = "macos"))'.dependencies]
+ muda = { version = "0.19", default-features = false, features = [
+   "serde",
+-  "gtk",
+ ] }
+ tray-icon = { version = "0.24", default-features = false, features = [
+   "serde",
+@@ -105,7 +104,7 @@
+ 
+ # linux
+ [target.'cfg(any(target_os = "linux", target_os = "dragonfly", target_os = "freebsd", target_os = "openbsd", target_os = "netbsd"))'.dependencies]
+-gtk = { version = "0.18", features = ["v3_24"] }
++gtk = { version = "0.18", features = ["v3_24"], optional = true }
+ 
+ # darwin
+ [target.'cfg(target_vendor = "apple")'.dependencies]
+@@ -178,7 +177,10 @@
+ http-range = "0.1.5"
+ 
+ [features]
+-default = ["compression", "common-controls-v6", "dynamic-acl"]
++default = ["compression", "common-controls-v6", "dynamic-acl", "gtk"]
++# readest: GTK 3 on Linux/BSD (native menus, gtk_window/default_vbox). Off: menus keep their state
++# but are never shown (muda's no-op backend), and nothing links GTK; for runtimes that draw their own UI.
++gtk = ["dep:gtk", "tauri-runtime/gtk", "muda/gtk"]
+ # readest: no-op stand-ins for the runtime features that moved to the runtime
+ # crates. Readest keeps one app manifest for this branch (Linux) and its wry
+ # fork (every other platform), and Cargo resolves the lockfile with every
+diff -ruN tauri/crates/tauri/src/manager/menu.rs tauri/crates/tauri/src/manager/menu.rs
+--- tauri/crates/tauri/src/manager/menu.rs
++++ tauri/crates/tauri/src/manager/menu.rs
+@@ -76,13 +76,13 @@
+             .unwrap_or(muda::MenuTheme::Auto);
+           let _ = unsafe { menu.inner().init_for_hwnd_with_theme(raw.hwnd as _, theme) };
+         }
+-        #[cfg(any(
++        #[cfg(all(any(
+           target_os = "linux",
+           target_os = "dragonfly",
+           target_os = "freebsd",
+           target_os = "netbsd",
+           target_os = "openbsd"
+-        ))]
++        ), feature = "gtk"))]
+         let _ = menu
+           .inner()
+           .init_for_gtk_window(raw.gtk_window, raw.default_vbox);
+diff -ruN tauri/crates/tauri/src/menu/menu.rs tauri/crates/tauri/src/menu/menu.rs
+--- tauri/crates/tauri/src/menu/menu.rs
++++ tauri/crates/tauri/src/menu/menu.rs
+@@ -56,13 +56,13 @@
+         }
+       }
+ 
+-      #[cfg(any(
++      #[cfg(all(any(
+         target_os = "linux",
+         target_os = "dragonfly",
+         target_os = "freebsd",
+         target_os = "netbsd",
+         target_os = "openbsd"
+-      ))]
++      ), feature = "gtk"))]
+       if let Ok(w) = window.gtk_window() {
+         self_
+           .inner()
+diff -ruN tauri/crates/tauri/src/menu/submenu.rs tauri/crates/tauri/src/menu/submenu.rs
+--- tauri/crates/tauri/src/menu/submenu.rs
++++ tauri/crates/tauri/src/menu/submenu.rs
+@@ -49,13 +49,13 @@
+         }
+       }
+ 
+-      #[cfg(any(
++      #[cfg(all(any(
+         target_os = "linux",
+         target_os = "dragonfly",
+         target_os = "freebsd",
+         target_os = "netbsd",
+         target_os = "openbsd"
+-      ))]
++      ), feature = "gtk"))]
+       if let Ok(w) = window.gtk_window() {
+         self_
+           .inner()
+diff -ruN tauri/crates/tauri/src/webview/webview_window.rs tauri/crates/tauri/src/webview/webview_window.rs
+--- tauri/crates/tauri/src/webview/webview_window.rs
++++ tauri/crates/tauri/src/webview/webview_window.rs
+@@ -757,13 +757,13 @@
+   /// Sets the window to be created transient for parent.
+   ///
+   /// See <https://docs.gtk.org/gtk3/method.Window.set_transient_for.html>
+-  #[cfg(any(
++  #[cfg(all(any(
+     target_os = "linux",
+     target_os = "dragonfly",
+     target_os = "freebsd",
+     target_os = "netbsd",
+     target_os = "openbsd"
+-  ))]
++  ), feature = "gtk"))]
+   pub fn transient_for(mut self, parent: &WebviewWindow<R>) -> crate::Result<Self> {
+     self.window_builder = self.window_builder.transient_for(&parent.window)?;
+     Ok(self)
+@@ -772,13 +772,13 @@
+   /// Sets the window to be created transient for parent.
+   ///
+   /// See <https://docs.gtk.org/gtk3/method.Window.set_transient_for.html>
+-  #[cfg(any(
++  #[cfg(all(any(
+     target_os = "linux",
+     target_os = "dragonfly",
+     target_os = "freebsd",
+     target_os = "netbsd",
+     target_os = "openbsd"
+-  ))]
++  ), feature = "gtk"))]
+   #[must_use]
+   pub fn transient_for_raw(mut self, parent: &impl gtk::glib::IsA<gtk::Window>) -> Self {
+     self.window_builder = self.window_builder.transient_for_raw(parent);
+@@ -1925,13 +1925,13 @@
+   /// Returns the `ApplicationWindow` from gtk crate that is used by this window.
+   ///
+   /// Note that this type can only be used on the main thread.
+-  #[cfg(any(
++  #[cfg(all(any(
+     target_os = "linux",
+     target_os = "dragonfly",
+     target_os = "freebsd",
+     target_os = "netbsd",
+     target_os = "openbsd"
+-  ))]
++  ), feature = "gtk"))]
+   pub fn gtk_window(&self) -> crate::Result<gtk::ApplicationWindow> {
+     self.window.gtk_window()
+   }
+@@ -1939,13 +1939,13 @@
+   /// Returns the vertical [`gtk::Box`] that is added by default as the sole child of this window.
+   ///
+   /// Note that this type can only be used on the main thread.
+-  #[cfg(any(
++  #[cfg(all(any(
+     target_os = "linux",
+     target_os = "dragonfly",
+     target_os = "freebsd",
+     target_os = "netbsd",
+     target_os = "openbsd"
+-  ))]
++  ), feature = "gtk"))]
+   pub fn default_vbox(&self) -> crate::Result<gtk::Box> {
+     self.window.default_vbox()
+   }
+diff -ruN tauri/crates/tauri/src/window/mod.rs tauri/crates/tauri/src/window/mod.rs
+--- tauri/crates/tauri/src/window/mod.rs
++++ tauri/crates/tauri/src/window/mod.rs
+@@ -652,13 +652,13 @@
+       self.window_builder = self.window_builder.owner(parent.hwnd()?);
+     }
+ 
+-    #[cfg(any(
++    #[cfg(all(any(
+       target_os = "linux",
+       target_os = "dragonfly",
+       target_os = "freebsd",
+       target_os = "netbsd",
+       target_os = "openbsd"
+-    ))]
++    ), feature = "gtk"))]
+     {
+       self.window_builder = self.window_builder.transient_for(&parent.gtk_window()?);
+     }
+@@ -733,13 +733,13 @@
+   /// See <https://docs.gtk.org/gtk3/method.Window.set_transient_for.html>
+   ///
+   /// **Note:** This is a low level API. See [`Self::parent`] for a higher level wrapper for Tauri windows.
+-  #[cfg(any(
++  #[cfg(all(any(
+     target_os = "linux",
+     target_os = "dragonfly",
+     target_os = "freebsd",
+     target_os = "netbsd",
+     target_os = "openbsd"
+-  ))]
++  ), feature = "gtk"))]
+   pub fn transient_for(mut self, parent: &Window<R>) -> crate::Result<Self> {
+     self.window_builder = self.window_builder.transient_for(&parent.gtk_window()?);
+     Ok(self)
+@@ -750,13 +750,13 @@
+   /// See <https://docs.gtk.org/gtk3/method.Window.set_transient_for.html>
+   ///
+   /// **Note:** This is a low level API. See [`Self::parent`] and [`Self::transient_for`] for higher level wrappers for Tauri windows.
+-  #[cfg(any(
++  #[cfg(all(any(
+     target_os = "linux",
+     target_os = "dragonfly",
+     target_os = "freebsd",
+     target_os = "netbsd",
+     target_os = "openbsd"
+-  ))]
++  ), feature = "gtk"))]
+   #[must_use]
+   pub fn transient_for_raw(mut self, parent: &impl gtk::glib::IsA<gtk::Window>) -> Self {
+     self.window_builder = self.window_builder.transient_for(parent);
+@@ -1309,13 +1309,13 @@
+ 
+         let _ = unsafe { menu_.inner().init_for_hwnd_with_theme(hwnd.0 as _, theme) };
+       }
+-      #[cfg(any(
++      #[cfg(all(any(
+         target_os = "linux",
+         target_os = "dragonfly",
+         target_os = "freebsd",
+         target_os = "netbsd",
+         target_os = "openbsd"
+-      ))]
++      ), feature = "gtk"))]
+       if let (Ok(gtk_window), Ok(gtk_box)) = (window.gtk_window(), window.default_vbox()) {
+         let _ = menu_
+           .inner()
+@@ -1350,13 +1350,13 @@
+         if let Ok(hwnd) = window.hwnd() {
+           let _ = unsafe { menu.inner().remove_for_hwnd(hwnd.0 as _) };
+         }
+-        #[cfg(any(
++        #[cfg(all(any(
+           target_os = "linux",
+           target_os = "dragonfly",
+           target_os = "freebsd",
+           target_os = "netbsd",
+           target_os = "openbsd"
+-        ))]
++        ), feature = "gtk"))]
+         if let Ok(gtk_window) = window.gtk_window() {
+           let _ = menu.inner().remove_for_gtk_window(&gtk_window);
+         }
+@@ -1386,13 +1386,13 @@
+         if let Ok(hwnd) = window.hwnd() {
+           let _ = unsafe { menu_.inner().hide_for_hwnd(hwnd.0 as _) };
+         }
+-        #[cfg(any(
++        #[cfg(all(any(
+           target_os = "linux",
+           target_os = "dragonfly",
+           target_os = "freebsd",
+           target_os = "netbsd",
+           target_os = "openbsd"
+-        ))]
++        ), feature = "gtk"))]
+         if let Ok(gtk_window) = window.gtk_window() {
+           let _ = menu_.inner().hide_for_gtk_window(&gtk_window);
+         }
+@@ -1418,13 +1418,13 @@
+         if let Ok(hwnd) = window.hwnd() {
+           let _ = unsafe { menu_.inner().show_for_hwnd(hwnd.0 as _) };
+         }
+-        #[cfg(any(
++        #[cfg(all(any(
+           target_os = "linux",
+           target_os = "dragonfly",
+           target_os = "freebsd",
+           target_os = "netbsd",
+           target_os = "openbsd"
+-        ))]
++        ), feature = "gtk"))]
+         if let Ok(gtk_window) = window.gtk_window() {
+           let _ = menu_.inner().show_for_gtk_window(&gtk_window);
+         }
+@@ -1451,13 +1451,13 @@
+         if let Ok(hwnd) = window.hwnd() {
+           let _ = tx.send(unsafe { menu_.inner().is_visible_on_hwnd(hwnd.0 as _) });
+         }
+-        #[cfg(any(
++        #[cfg(all(any(
+           target_os = "linux",
+           target_os = "dragonfly",
+           target_os = "freebsd",
+           target_os = "netbsd",
+           target_os = "openbsd"
+-        ))]
++        ), feature = "gtk"))]
+         if let Ok(gtk_window) = window.gtk_window() {
+           let _ = tx.send(menu_.inner().is_visible_on_gtk_window(&gtk_window));
+         }
+@@ -1702,13 +1702,13 @@
+   /// Returns the `ApplicationWindow` from gtk crate that is used by this window.
+   ///
+   /// Note that this type can only be used on the main thread.
+-  #[cfg(any(
++  #[cfg(all(any(
+     target_os = "linux",
+     target_os = "dragonfly",
+     target_os = "freebsd",
+     target_os = "netbsd",
+     target_os = "openbsd"
+-  ))]
++  ), feature = "gtk"))]
+   pub fn gtk_window(&self) -> crate::Result<gtk::ApplicationWindow> {
+     self.window.dispatcher.gtk_window().map_err(Into::into)
+   }
+@@ -1716,13 +1716,13 @@
+   /// Returns the vertical [`gtk::Box`] that is added by default as the sole child of this window.
+   ///
+   /// Note that this type can only be used on the main thread.
+-  #[cfg(any(
++  #[cfg(all(any(
+     target_os = "linux",
+     target_os = "dragonfly",
+     target_os = "freebsd",
+     target_os = "netbsd",
+     target_os = "openbsd"
+-  ))]
++  ), feature = "gtk"))]
+   pub fn default_vbox(&self) -> crate::Result<gtk::Box> {
+     self.window.dispatcher.default_vbox().map_err(Into::into)
+   }
+diff -ruN tauri/crates/tauri-runtime/Cargo.toml tauri/crates/tauri-runtime/Cargo.toml
+--- tauri/crates/tauri-runtime/Cargo.toml
++++ tauri/crates/tauri-runtime/Cargo.toml
+@@ -40,7 +40,7 @@
+ features = ["Win32_Foundation", "Win32_System_WinRT"]
+ 
+ [target."cfg(any(target_os = \"linux\", target_os = \"dragonfly\", target_os = \"freebsd\", target_os = \"openbsd\", target_os = \"netbsd\"))".dependencies]
+-gtk = { version = "0.18", features = ["v3_24"] }
++gtk = { version = "0.18", features = ["v3_24"], optional = true }
+ 
+ [target."cfg(target_os = \"android\")".dependencies]
+ jni = "0.21"
+@@ -58,5 +58,9 @@
+ url = "2"
+ objc2 = "0.6"
+ [features]
++default = ["gtk"]
++# readest: off drops GTK 3 from the runtime trait (no gtk_window/default_vbox/transient_for),
++# for runtimes that draw without GTK (tauri-runtime-blitz).
++gtk = ["dep:gtk"]
+ devtools = []
+ macos-private-api = []
+diff -ruN tauri/crates/tauri-runtime/src/dynamic.rs tauri/crates/tauri-runtime/src/dynamic.rs
+--- tauri/crates/tauri-runtime/src/dynamic.rs
++++ tauri/crates/tauri-runtime/src/dynamic.rs
+@@ -248,13 +248,13 @@
+   Parent(windows::Win32::Foundation::HWND),
+   #[cfg(target_os = "macos")]
+   Parent(*mut std::ffi::c_void),
+-  #[cfg(any(
++  #[cfg(all(any(
+     target_os = "linux",
+     target_os = "dragonfly",
+     target_os = "freebsd",
+     target_os = "netbsd",
+     target_os = "openbsd"
+-  ))]
++  ), feature = "gtk"))]
+   TransientFor(gtk::Window),
+   #[cfg(windows)]
+   DragAndDrop(bool),
+@@ -320,13 +320,13 @@
+       Self::Owner(v) => f.debug_tuple("Owner").field(v).finish(),
+       #[cfg(any(windows, target_os = "macos"))]
+       Self::Parent(v) => f.debug_tuple("Parent").field(v).finish(),
+-      #[cfg(any(
++      #[cfg(all(any(
+         target_os = "linux",
+         target_os = "dragonfly",
+         target_os = "freebsd",
+         target_os = "netbsd",
+         target_os = "openbsd"
+-      ))]
++      ), feature = "gtk"))]
+       Self::TransientFor(v) => f.debug_tuple("TransientFor").field(v).finish(),
+       #[cfg(windows)]
+       Self::DragAndDrop(v) => f.debug_tuple("DragAndDrop").field(v).finish(),
+@@ -424,13 +424,13 @@
+         WindowBuilderOp::Owner(v) => builder.owner(v),
+         #[cfg(any(windows, target_os = "macos"))]
+         WindowBuilderOp::Parent(v) => builder.parent(v),
+-        #[cfg(any(
++        #[cfg(all(any(
+           target_os = "linux",
+           target_os = "dragonfly",
+           target_os = "freebsd",
+           target_os = "netbsd",
+           target_os = "openbsd"
+-        ))]
++        ), feature = "gtk"))]
+         WindowBuilderOp::TransientFor(v) => builder.transient_for(&v),
+         #[cfg(windows)]
+         WindowBuilderOp::DragAndDrop(v) => builder.drag_and_drop(v),
+@@ -624,13 +624,13 @@
+     self.push(WindowBuilderOp::Parent(parent))
+   }
+ 
+-  #[cfg(any(
++  #[cfg(all(any(
+     target_os = "linux",
+     target_os = "dragonfly",
+     target_os = "freebsd",
+     target_os = "netbsd",
+     target_os = "openbsd"
+-  ))]
++  ), feature = "gtk"))]
+   fn transient_for(self, parent: &impl gtk::glib::IsA<gtk::Window>) -> Self {
+     use gtk::glib::Cast;
+     self.push(WindowBuilderOp::TransientFor(parent.clone().upcast()))
+@@ -1224,21 +1224,21 @@
+   fn primary_monitor(&self) -> Result<Option<Monitor>>;
+   fn monitor_from_point(&self, x: f64, y: f64) -> Result<Option<Monitor>>;
+   fn available_monitors(&self) -> Result<Vec<Monitor>>;
+-  #[cfg(any(
++  #[cfg(all(any(
+     target_os = "linux",
+     target_os = "dragonfly",
+     target_os = "freebsd",
+     target_os = "netbsd",
+     target_os = "openbsd"
+-  ))]
++  ), feature = "gtk"))]
+   fn gtk_window(&self) -> Result<gtk::ApplicationWindow>;
+-  #[cfg(any(
++  #[cfg(all(any(
+     target_os = "linux",
+     target_os = "dragonfly",
+     target_os = "freebsd",
+     target_os = "netbsd",
+     target_os = "openbsd"
+-  ))]
++  ), feature = "gtk"))]
+   fn default_vbox(&self) -> Result<gtk::Box>;
+   #[cfg(target_os = "android")]
+   fn activity_name(&self) -> Result<String>;
+@@ -1408,24 +1408,24 @@
+     WindowDispatch::available_monitors(self)
+   }
+ 
+-  #[cfg(any(
++  #[cfg(all(any(
+     target_os = "linux",
+     target_os = "dragonfly",
+     target_os = "freebsd",
+     target_os = "netbsd",
+     target_os = "openbsd"
+-  ))]
++  ), feature = "gtk"))]
+   fn gtk_window(&self) -> Result<gtk::ApplicationWindow> {
+     WindowDispatch::gtk_window(self)
+   }
+ 
+-  #[cfg(any(
++  #[cfg(all(any(
+     target_os = "linux",
+     target_os = "dragonfly",
+     target_os = "freebsd",
+     target_os = "netbsd",
+     target_os = "openbsd"
+-  ))]
++  ), feature = "gtk"))]
+   fn default_vbox(&self) -> Result<gtk::Box> {
+     WindowDispatch::default_vbox(self)
+   }
+@@ -1797,24 +1797,24 @@
+     self.inner.available_monitors()
+   }
+ 
+-  #[cfg(any(
++  #[cfg(all(any(
+     target_os = "linux",
+     target_os = "dragonfly",
+     target_os = "freebsd",
+     target_os = "netbsd",
+     target_os = "openbsd"
+-  ))]
++  ), feature = "gtk"))]
+   fn gtk_window(&self) -> Result<gtk::ApplicationWindow> {
+     self.inner.gtk_window()
+   }
+ 
+-  #[cfg(any(
++  #[cfg(all(any(
+     target_os = "linux",
+     target_os = "dragonfly",
+     target_os = "freebsd",
+     target_os = "netbsd",
+     target_os = "openbsd"
+-  ))]
++  ), feature = "gtk"))]
+   fn default_vbox(&self) -> Result<gtk::Box> {
+     self.inner.default_vbox()
+   }
+diff -ruN tauri/crates/tauri-runtime/src/lib.rs tauri/crates/tauri-runtime/src/lib.rs
+--- tauri/crates/tauri-runtime/src/lib.rs
++++ tauri/crates/tauri-runtime/src/lib.rs
+@@ -893,23 +893,23 @@
+   fn available_monitors(&self) -> Result<Vec<Monitor>>;
+ 
+   /// Returns the `ApplicationWindow` from gtk crate that is used by this window.
+-  #[cfg(any(
++  #[cfg(all(any(
+     target_os = "linux",
+     target_os = "dragonfly",
+     target_os = "freebsd",
+     target_os = "netbsd",
+     target_os = "openbsd"
+-  ))]
++  ), feature = "gtk"))]
+   fn gtk_window(&self) -> Result<gtk::ApplicationWindow>;
+ 
+   /// Returns the vertical [`gtk::Box`] that is added by default as the sole child of this window.
+-  #[cfg(any(
++  #[cfg(all(any(
+     target_os = "linux",
+     target_os = "dragonfly",
+     target_os = "freebsd",
+     target_os = "netbsd",
+     target_os = "openbsd"
+-  ))]
++  ), feature = "gtk"))]
+   fn default_vbox(&self) -> Result<gtk::Box>;
+ 
+   /// Returns the name of the Android activity associated with this window.
+diff -ruN tauri/crates/tauri-runtime/src/window.rs tauri/crates/tauri-runtime/src/window.rs
+--- tauri/crates/tauri-runtime/src/window.rs
++++ tauri/crates/tauri-runtime/src/window.rs
+@@ -448,13 +448,13 @@
+   /// Sets the window to be created transient for parent.
+   ///
+   /// See <https://docs.gtk.org/gtk3/method.Window.set_transient_for.html>
+-  #[cfg(any(
++  #[cfg(all(any(
+     target_os = "linux",
+     target_os = "dragonfly",
+     target_os = "freebsd",
+     target_os = "netbsd",
+     target_os = "openbsd"
+-  ))]
++  ), feature = "gtk"))]
+   fn transient_for(self, parent: &impl gtk::glib::IsA<gtk::Window>) -> Self;
+ 
+   /// Enables or disables drag and drop support.
+@@ -651,21 +651,21 @@
+ pub struct RawWindow<'a> {
+   #[cfg(windows)]
+   pub hwnd: isize,
+-  #[cfg(any(
++  #[cfg(all(any(
+     target_os = "linux",
+     target_os = "dragonfly",
+     target_os = "freebsd",
+     target_os = "netbsd",
+     target_os = "openbsd"
+-  ))]
++  ), feature = "gtk"))]
+   pub gtk_window: &'a gtk::ApplicationWindow,
+-  #[cfg(any(
++  #[cfg(all(any(
+     target_os = "linux",
+     target_os = "dragonfly",
+     target_os = "freebsd",
+     target_os = "netbsd",
+     target_os = "openbsd"
+-  ))]
++  ), feature = "gtk"))]
+   pub default_vbox: Option<&'a gtk::Box>,
+   pub _marker: &'a PhantomData<()>,
+ }
