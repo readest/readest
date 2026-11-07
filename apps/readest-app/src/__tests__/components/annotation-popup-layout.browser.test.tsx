@@ -162,7 +162,7 @@ const renderPopup = (
         selectedStyle='highlight'
         selectedColor='yellow'
         popupWidth={
-          compact ? (globalToggleAvailable ? 236 : 202) : actionCount === 5 ? 236 : POPUP_W
+          compact ? (globalToggleAvailable ? 236 : 220) : actionCount === 5 ? 264 : POPUP_W
         }
         popupHeight={POPUP_H}
         globalToggleAvailable={globalToggleAvailable}
@@ -370,7 +370,7 @@ describe('compact four-action toolbar', () => {
   it.each([
     false,
     true,
-  ])('keeps four colors visible and scrolls extras (vertical=%s)', async (vertical) => {
+  ])('keeps five colors visible and scrolls extras (vertical=%s)', async (vertical) => {
     const { container } = renderPopup([{ hex: '#f97316' }, { hex: '#06b6d4' }], true, vertical);
     const options = container.querySelector<HTMLElement>('.highlight-options')!;
     const strip = options.lastElementChild as HTMLElement;
@@ -379,7 +379,7 @@ describe('compact four-action toolbar', () => {
     const start = vertical ? 'top' : 'left';
     const end = vertical ? 'bottom' : 'right';
     const length = vertical ? 'height' : 'width';
-    expect(container.querySelectorAll('.selection-buttons button')).toHaveLength(4);
+    expect(container.querySelectorAll('.selection-buttons button')).toHaveLength(5);
     const styleButtons = [...styles.querySelectorAll('button')];
     expect(
       styleButtons[1]!.getBoundingClientRect()[start] -
@@ -388,11 +388,11 @@ describe('compact four-action toolbar', () => {
     expect(
       strip.getBoundingClientRect()[start] - styles.getBoundingClientRect()[end],
     ).toBeLessThanOrEqual(4);
-    expect(strip.getBoundingClientRect()[length]).toBeLessThanOrEqual(101);
-    expect(colors[3]!.getBoundingClientRect()[end]).toBeLessThanOrEqual(
+    expect(strip.getBoundingClientRect()[length]).toBeLessThanOrEqual(119);
+    expect(colors[4]!.getBoundingClientRect()[end]).toBeLessThanOrEqual(
       strip.getBoundingClientRect()[end] - 1,
     );
-    expect(colors[4]!.getBoundingClientRect()[end]).toBeGreaterThan(
+    expect(colors[5]!.getBoundingClientRect()[end]).toBeGreaterThan(
       strip.getBoundingClientRect()[end],
     );
     if (vertical) strip.scrollTop = strip.scrollHeight;
@@ -452,7 +452,7 @@ describe('five-action toolbar', () => {
     const strip = options.lastElementChild as HTMLElement;
     const colors = strip.querySelectorAll('button');
     const end = vertical ? 'bottom' : 'right';
-    expect(container.querySelectorAll('.selection-buttons button')).toHaveLength(5);
+    expect(container.querySelectorAll('.selection-buttons button')).toHaveLength(6);
     expect(colors[4]!.getBoundingClientRect()[end]).toBeLessThanOrEqual(
       strip.getBoundingClientRect()[end] - 1,
     );
