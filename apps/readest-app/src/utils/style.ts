@@ -533,6 +533,11 @@ const getPageLayoutStyles = (
     -webkit-touch-callout: none;
     -webkit-user-select: text;
   }
+  /* EBPAJ vertical title pages size this box to the root's full height.
+     Reserve the paginator's root padding so end-aligned credits stay visible. */
+  body.paginated-mode.p-titlepage > .main.vrtl.height-100per {
+    height: calc(100% - var(--page-margin-top, 0px) - var(--page-margin-bottom, 0px)) !important;
+  }
   body {
     overflow: unset;
     zoom: ${zoomLevel};

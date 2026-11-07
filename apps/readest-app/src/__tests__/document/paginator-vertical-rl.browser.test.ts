@@ -2,6 +2,9 @@ import { describe, it, expect, beforeAll, afterEach } from 'vitest';
 import { DocumentLoader } from '@/libs/document';
 import type { BookDoc } from '@/libs/document';
 import type { Renderer } from '@/types/view';
+import { applyScrollModeClass, getStyles } from '@/utils/style';
+import type { ViewSettings } from '@/types/book';
+import { DEFAULT_BOOK_FONT, DEFAULT_BOOK_LAYOUT, DEFAULT_BOOK_STYLE } from '@/services/constants';
 
 // Regression tests for readest#624: books with writing-mode: vertical-rl
 // (Japanese/Chinese vertical text) must turn pages horizontally like printed
@@ -104,6 +107,55 @@ describe('Vertical-rl pagination (browser)', () => {
     const contents = paginator.getContents();
     const doc = contents[0]!.doc;
     expect(getDirection(doc)).toEqual({ vertical: true, rtl: true });
+  });
+
+  it('keeps a bottom-aligned EBPAJ title-page credit inside the page margins', async () => {
+    const source = URL.createObjectURL(
+      new Blob(
+        [
+          '<!doctype html><html class="hltr" lang="ja"><head><style>' +
+            '.vrtl { writing-mode: vertical-rl; } .height-100per { height: 100%; }' +
+            '.align-end { text-align: end; margin: 0; }</style></head>' +
+            '<body class="p-titlepage"><div class="main vrtl height-100per">' +
+            '<p class="align-end"><span id="credit">著者</span></p></div></body></html>',
+        ],
+        { type: 'text/html' },
+      ),
+    );
+    try {
+      paginator = createPaginator();
+      paginator.setAttribute('margin-top', '24px');
+      paginator.setAttribute('margin-bottom', '24px');
+      paginator.setStyles?.(
+        getStyles({
+          ...DEFAULT_BOOK_FONT,
+          ...DEFAULT_BOOK_LAYOUT,
+          ...DEFAULT_BOOK_STYLE,
+          vertical: true,
+        } as ViewSettings),
+      );
+      paginator.addEventListener('load', (event) => {
+        applyScrollModeClass((event as CustomEvent<{ doc: Document }>).detail.doc, false);
+      });
+      // The paginator only needs a loadable section for this layout fixture.
+      paginator.open({
+        dir: 'rtl',
+        sections: [{ id: 'title', load: async () => source }],
+      } as unknown as BookDoc);
+      const stabilized = waitForStabilized(paginator);
+      await paginator.goTo({ index: 0 });
+      await stabilized;
+
+      const { doc } = paginator.getContents()[0]!;
+      const root = doc.documentElement;
+      const bottomMargin = parseFloat(doc.defaultView!.getComputedStyle(root).paddingBottom);
+      expect(bottomMargin).toBeGreaterThan(0);
+      expect(doc.getElementById('credit')!.getBoundingClientRect().bottom).toBeLessThanOrEqual(
+        root.getBoundingClientRect().bottom - bottomMargin + 1,
+      );
+    } finally {
+      URL.revokeObjectURL(source);
+    }
   });
 
   const makeTouch = (x: number, y: number) =>
