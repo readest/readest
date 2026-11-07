@@ -30,22 +30,36 @@
     }
   }
 
+  const parseQuery = (s) => {
+    const dec = (s) => decodeURIComponent(s.replace(/\+/g, ' '));
+    const list = [];
+    for (const part of s.replace(/^\?/, '').split('&')) {
+      if (!part) continue;
+      const i = part.indexOf('=');
+      list.push(i < 0 ? [dec(part), ''] : [dec(part.slice(0, i)), dec(part.slice(i + 1))]);
+    }
+    return list;
+  };
+  // application/x-www-form-urlencoded: only *-._ and alphanumerics stay, space is '+'.
+  const formEncode = (s) =>
+    encodeURIComponent(s)
+      .replace(/[!'()~]/g, (c) => `%${c.charCodeAt(0).toString(16).toUpperCase()}`)
+      .replace(/%20/g, '+');
+  // A URL's searchParams (`_url`) writes every change back to the URL's query.
   class URLSearchParams {
     constructor(init = '') {
       this._list = [];
-      if (typeof init === 'string') {
-        for (const part of init.replace(/^\?/, '').split('&')) {
-          if (!part) continue;
-          const i = part.indexOf('=');
-          const dec = (s) => decodeURIComponent(s.replace(/\+/g, ' '));
-          this._list.push(
-            i < 0 ? [dec(part), ''] : [dec(part.slice(0, i)), dec(part.slice(i + 1))],
-          );
-        }
-      } else if (init) {
+      this._url = null;
+      if (typeof init === 'string') this._list = parseQuery(init);
+      else if (init)
         for (const [k, v] of Symbol.iterator in init ? init : Object.entries(init))
           this._list.push([String(k), String(v)]);
-      }
+    }
+    _update() {
+      this._url?._set('search', this.toString());
+    }
+    get size() {
+      return this._list.length;
     }
     get(k) {
       const e = this._list.find(([n]) => n === k);
@@ -54,21 +68,34 @@
     getAll(k) {
       return this._list.filter(([n]) => n === k).map(([, v]) => v);
     }
-    has(k) {
-      return this._list.some(([n]) => n === k);
+    has(k, v) {
+      return this._list.some(([n, x]) => n === k && (v === undefined || x === String(v)));
     }
     set(k, v) {
-      this.delete(k);
-      this._list.push([k, String(v)]);
+      const i = this._list.findIndex(([n]) => n === k);
+      if (i < 0) this._list.push([k, String(v)]);
+      else {
+        this._list = this._list.filter(([n], j) => n !== k || j <= i);
+        this._list[i] = [k, String(v)];
+      }
+      this._update();
     }
     append(k, v) {
       this._list.push([k, String(v)]);
+      this._update();
     }
-    delete(k) {
-      this._list = this._list.filter(([n]) => n !== k);
+    delete(k, v) {
+      this._list = this._list.filter(([n, x]) => n !== k || (v !== undefined && x !== String(v)));
+      this._update();
     }
+    sort() {
+      this._list.sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
+      this._update();
+    }
+    // Live, as in browsers: entries deleted by the callback are skipped.
     forEach(f, self) {
-      for (const [k, v] of this._list) f.call(self, v, k, this);
+      for (let i = 0; i < this._list.length; i++)
+        f.call(self, this._list[i][1], this._list[i][0], this);
     }
     entries() {
       return this._list[Symbol.iterator]();
@@ -83,9 +110,7 @@
       return this.entries();
     }
     toString() {
-      return this._list
-        .map(([k, v]) => encodeURIComponent(k) + '=' + encodeURIComponent(v))
-        .join('&');
+      return this._list.map(([k, v]) => `${formEncode(k)}=${formEncode(v)}`).join('&');
     }
   }
 
@@ -102,33 +127,55 @@
     'hash',
     'origin',
   ];
+  const parseUrl = (href, base) => {
+    const p = t.parseUrl(String(href), base === undefined ? null : String(base));
+    if (!p) throw new TypeError(`Invalid URL: ${href}`);
+    return p;
+  };
+  // The parsed parts stay in one array (`URL_PARTS` order): one property per URL object.
   class URL {
     constructor(href, base) {
-      const p = t.parseUrl(String(href), base === undefined ? null : String(base));
-      if (!p) throw new TypeError(`Invalid URL: ${href}`);
-      URL_PARTS.forEach((k, i) => {
-        this['_' + k] = p[i];
-      });
+      this._p = parseUrl(href, base);
+      this._sp = null;
     }
     static canParse(href, base) {
       return !!t.parseUrl(String(href), base === undefined ? null : String(base));
     }
+    // The WHATWG setters, in Rust (`setUrl`).
+    _set(part, value) {
+      const p = t.setUrl(this.href, part, String(value));
+      if (!p) throw new TypeError(`Invalid URL: ${value}`);
+      this._p = p;
+      if (this._sp) this._sp._list = parseQuery(this.search);
+    }
     get searchParams() {
-      return new URLSearchParams(this._search);
+      if (!this._sp) {
+        this._sp = new URLSearchParams(this.search);
+        this._sp._url = this;
+      }
+      return this._sp;
     }
     toString() {
-      return this._href;
+      return this.href;
     }
     toJSON() {
-      return this._href;
+      return this.href;
     }
   }
-  for (const k of URL_PARTS)
+  // Every part but origin is writable, as in browsers (strict-mode code assigns them).
+  URL_PARTS.forEach((k, i) =>
     Object.defineProperty(URL.prototype, k, {
       get() {
-        return this['_' + k];
+        return this._p[i];
       },
-    });
+      set:
+        k === 'origin'
+          ? undefined
+          : function (v) {
+              this._set(k, v);
+            },
+    }),
+  );
 
   class Headers {
     constructor(init) {
@@ -172,7 +219,8 @@
     }
   }
 
-  // Blob/File over one ArrayBuffer.
+  // Blob/File over one ArrayBuffer. As in browsers, type/size/name/lastModified are prototype
+  // getters (state in _fields), so subclasses can override them (readest-app's NativeFile does).
   const partBytes = (p) => {
     if (p instanceof Blob) return new Uint8Array(p._buf);
     if (p instanceof ArrayBuffer) return new Uint8Array(p);
@@ -189,7 +237,10 @@
         o += b.length;
       }
       this._buf = all.buffer;
-      this.type = String(opts.type || '').toLowerCase();
+      this._type = String(opts.type || '').toLowerCase();
+    }
+    get type() {
+      return this._type;
     }
     get size() {
       return this._buf.byteLength;
@@ -206,12 +257,36 @@
     text() {
       return Promise.resolve(t.utf8Decode(this._buf));
     }
+    stream() {
+      return bytesStream(this.arrayBuffer());
+    }
   }
+  // A one-chunk ReadableStream of an ArrayBuffer promise.
+  const bytesStream = (bufPromise) =>
+    new ReadableStream({
+      async pull(c) {
+        c.enqueue(new Uint8Array(await bufPromise));
+        c.close();
+      },
+    });
+  const readAll = async (stream) => {
+    const reader = stream.getReader();
+    const chunks = [];
+    for (let r = await reader.read(); !r.done; r = await reader.read())
+      chunks.push(partBytes(r.value));
+    return new Blob(chunks)._buf;
+  };
   class File extends Blob {
     constructor(parts, name, opts = {}) {
       super(parts, opts);
-      this.name = String(name);
-      this.lastModified = opts.lastModified ?? Date.now();
+      this._name = String(name);
+      this._lastModified = opts.lastModified ?? Date.now();
+    }
+    get name() {
+      return this._name;
+    }
+    get lastModified() {
+      return this._lastModified;
     }
   }
 
@@ -226,9 +301,12 @@
     return t.utf8Encode(String(body));
   };
 
+  // The body is bytes, or a ReadableStream read to the end on first use (zip.js's BlobWriter
+  // is `new Response(readable).blob()`).
   class Response {
     constructor(body = null, init = {}) {
-      this._buf = toBuffer(body) || new ArrayBuffer(0);
+      this._stream = body instanceof ReadableStream ? body : null;
+      this._buf = this._stream ? null : toBuffer(body) || new ArrayBuffer(0);
       this.status = init.status === undefined ? 200 : init.status;
       this.statusText = init.statusText || '';
       this.headers = new Headers(init.headers);
@@ -236,24 +314,32 @@
       this.url = init.url || '';
       this.bodyUsed = false;
     }
+    get body() {
+      return this._stream || bytesStream(Promise.resolve(this._buf));
+    }
     arrayBuffer() {
       this.bodyUsed = true;
-      return Promise.resolve(this._buf);
+      return this._stream ? readAll(this._stream) : Promise.resolve(this._buf);
+    }
+    bytes() {
+      return this.arrayBuffer().then((b) => new Uint8Array(b));
     }
     text() {
-      this.bodyUsed = true;
-      return Promise.resolve(t.utf8Decode(this._buf));
+      return this.arrayBuffer().then((b) => t.utf8Decode(b));
     }
     json() {
       return this.text().then(JSON.parse);
     }
     blob() {
-      this.bodyUsed = true;
-      return Promise.resolve(
-        new Blob([this._buf], { type: this.headers.get('content-type') || '' }),
-      );
+      const type = this.headers.get('content-type') || '';
+      return this.arrayBuffer().then((b) => new Blob([b], { type }));
     }
     clone() {
+      if (this._stream) {
+        const [a, b] = this._stream.tee();
+        this._stream = a;
+        return new Response(b, this);
+      }
       return new Response(this._buf.slice(0), {
         status: this.status,
         statusText: this.statusText,
@@ -397,7 +483,101 @@
     }
   }
 
+  class DOMException extends Error {
+    constructor(message = '', name = 'Error') {
+      super(message);
+      this.name = name;
+    }
+  }
+  class AbortSignal extends EventTarget {
+    constructor() {
+      super();
+      this.aborted = false;
+      this.reason = undefined;
+      this.onabort = null;
+    }
+    throwIfAborted() {
+      if (this.aborted) throw this.reason;
+    }
+    _abort(reason = new DOMException('signal is aborted without reason', 'AbortError')) {
+      if (this.aborted) return;
+      this.aborted = true;
+      this.reason = reason;
+      const ev = new Event('abort');
+      this.onabort?.(ev);
+      this.dispatchEvent(ev);
+    }
+    static abort(reason) {
+      const s = new AbortSignal();
+      s._abort(reason);
+      return s;
+    }
+    static timeout(ms) {
+      const s = new AbortSignal();
+      setTimeout(() => s._abort(new DOMException('signal timed out', 'TimeoutError')), ms);
+      return s;
+    }
+    static any(signals) {
+      const s = new AbortSignal();
+      for (const o of signals) {
+        if (o.aborted) s._abort(o.reason);
+        else o.addEventListener('abort', () => s._abort(o.reason), { once: true });
+      }
+      return s;
+    }
+  }
+  class AbortController {
+    constructor() {
+      this.signal = new AbortSignal();
+    }
+    abort(reason) {
+      this.signal._abort(reason);
+    }
+  }
+
+  // CompressionStream/DecompressionStream ("deflate", "deflate-raw", "gzip") on Rust's zlib: the
+  // chunks are kept and (de)compressed in one native call when the stream ends.
+  const zlibStream = (compress, format) => {
+    const f = String(format);
+    if (!['deflate', 'deflate-raw', 'gzip'].includes(f))
+      throw new TypeError(`Unsupported compression format: '${f}'`);
+    const chunks = [];
+    const { readable, writable } = new TransformStream({
+      transform(chunk) {
+        chunks.push(new Uint8Array(partBytes(chunk)));
+      },
+      flush(controller) {
+        const all = new Uint8Array(chunks.reduce((n, c) => n + c.length, 0));
+        let o = 0;
+        for (const c of chunks) {
+          all.set(c, o);
+          o += c.length;
+        }
+        chunks.length = 0;
+        const out = t.zlib(compress, f, all.buffer);
+        if (!out) throw new TypeError(`Invalid ${f} data`);
+        controller.enqueue(new Uint8Array(out));
+      },
+    });
+    return { readable, writable };
+  };
+  class CompressionStream {
+    constructor(format) {
+      Object.assign(this, zlibStream(true, format));
+    }
+  }
+  class DecompressionStream {
+    constructor(format) {
+      Object.assign(this, zlibStream(false, format));
+    }
+  }
+
   define(globalThis, {
+    DOMException,
+    AbortSignal,
+    AbortController,
+    CompressionStream,
+    DecompressionStream,
     Storage,
     localStorage: new Storage(),
     sessionStorage: new Storage(),

@@ -1,7 +1,7 @@
 // node --test apps/readest-lite/src/*.test.js
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { XMLDOMParser } from './xml.js';
+import '../crates/tauri-runtime-blitz/src/dom-parser.js';
 
 const OPF = `<?xml version="1.0" encoding="utf-8"?>
 <package xmlns="http://www.idpf.org/2007/opf" xmlns:dc="http://purl.org/dc/elements/1.1/" version="3.0">
@@ -16,7 +16,7 @@ const OPF = `<?xml version="1.0" encoding="utf-8"?>
   <spine><itemref idref="c1"/></spine>
 </package>`;
 
-const parse = (s) => new XMLDOMParser().parseFromString(s, 'application/xml');
+const parse = (s) => new DOMParser().parseFromString(s, 'application/xml');
 
 test('elements get their namespace from the default and prefixed declarations', () => {
   const doc = parse(OPF);

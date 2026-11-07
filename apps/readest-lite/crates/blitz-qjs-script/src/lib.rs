@@ -77,6 +77,8 @@ pub struct QjsDocument {
     base: Option<Url>,
     scripts_executed: bool,
     next_timer_ms: Option<f64>,
+    /// When queued rAF callbacks are due (they run with the timers, but never delay a paint).
+    next_frame_ms: Option<f64>,
     /// Compile external scripts to `<path>.qjsc` once and read that on later runs.
     pub bytecode_cache: bool,
     pub stats: ScriptStats,
@@ -154,6 +156,7 @@ unsafe fn load(
 
 /// Runs a script from the embedder's loader: its shipped bytecode `<url>.qjsc` if the loader has
 /// one this QuickJS can read (`qjs-precompile` output), else its source through [`eval_cached`].
+/// `BLITZ_QJS_SHIPPED=off` skips shipped bytecode (stripped: its stacks have no file or line).
 pub(crate) fn run_loader_script(
     ctx: &Ctx<'_>,
     shared: &Rc<RefCell<Shared>>,
@@ -166,8 +169,10 @@ pub(crate) fn run_loader_script(
         bytes
     };
     let raw = ctx.as_raw().as_ptr();
+    let shipped = std::env::var_os("BLITZ_QJS_SHIPPED").is_none_or(|v| v != "off");
     if let Some(bc) = Url::parse(&format!("{url}.qjsc"))
         .ok()
+        .filter(|_| shipped)
         .and_then(|u| fetch(&u))
     {
         // SAFETY: raw QuickJS calls on this context; JS_EvalFunction consumes `func`.
@@ -396,6 +401,7 @@ impl QjsDocument {
             base,
             scripts_executed: false,
             next_timer_ms: None,
+            next_frame_ms: None,
             bytecode_cache: false,
             stats,
         };
@@ -642,23 +648,39 @@ impl QjsDocument {
         out
     }
 
-    /// Runs due timers (and rAF callbacks); returns whether any ran.
+    /// Runs due timers and rAF callbacks; returns whether any ran.
     pub fn run_due_timers(&mut self) -> bool {
         let now = self.shared.borrow().start.elapsed().as_secs_f64() * 1000.0;
-        if self.next_timer_ms.is_some_and(|t| t > now) {
+        let next = self.next_wake_ms();
+        if next.is_some_and(|t| t > now) {
             return false;
         }
-        let ran_before = self.next_timer_ms.is_some();
         self.call_global("__blitzTimers", (now,));
         // After the timers' promise jobs, which may have added timers of their own.
         self.refresh_timers();
-        ran_before
+        next.is_some()
     }
 
-    pub fn next_timer_deadline(&self) -> Option<Instant> {
+    fn next_wake_ms(&self) -> Option<f64> {
+        [self.next_timer_ms, self.next_frame_ms]
+            .into_iter()
+            .flatten()
+            .reduce(f64::min)
+    }
+
+    fn deadline(&self, ms: Option<f64>) -> Option<Instant> {
         let start = self.shared.borrow().start;
-        self.next_timer_ms
-            .map(|ms| start + std::time::Duration::from_secs_f64(ms / 1000.0))
+        ms.map(|ms| start + std::time::Duration::from_secs_f64(ms / 1000.0))
+    }
+
+    /// When the next JS timer is due (rAF callbacks excluded).
+    pub fn next_timer_deadline(&self) -> Option<Instant> {
+        self.deadline(self.next_timer_ms)
+    }
+
+    /// When the loop must wake for this document: the next timer or rAF frame.
+    pub fn next_wake_deadline(&self) -> Option<Instant> {
+        self.deadline(self.next_wake_ms())
     }
 
     pub fn take_js_errors(&mut self) -> Vec<String> {
@@ -678,6 +700,8 @@ impl QjsDocument {
     fn refresh_timers(&mut self) {
         let next = self.call_global("__blitzNextTimer", ()).unwrap_or(-1.0);
         self.next_timer_ms = (next >= 0.0).then_some(next);
+        let frame = self.call_global("__blitzNextFrame", ()).unwrap_or(-1.0);
+        self.next_frame_ms = (frame >= 0.0).then_some(frame);
     }
 }
 
