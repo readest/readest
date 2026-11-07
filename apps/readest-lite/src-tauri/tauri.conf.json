@@ -4,7 +4,7 @@
   "identifier": "com.bilingify.readest-lite",
   "build": { "frontendDist": "../dist" },
   "app": {
-    "windows": [{ "label": "main", "title": "Readest Lite", "width": 494, "height": 659 }],
+    "windows": [],
     "security": { "csp": null }
   },
   "bundle": { "active": false, "icon": ["icons/icon.png"] }

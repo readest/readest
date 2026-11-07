@@ -147,6 +147,12 @@
       this.detail = i.detail === undefined ? null : i.detail;
     }
   }
+  class PopStateEvent extends Event {
+    constructor(t, i = {}) {
+      super(t, i);
+      this.state = i.state === undefined ? null : i.state;
+    }
+  }
 
   class EventTarget {
     addEventListener(type, cb, opts) {
@@ -300,8 +306,11 @@
         return c;
       }
       n.insert(this._id, c._id, ref ? ref._id : null);
-      if (c.nodeType === 1 && !c._started && n.local(c._id) === 'script' && c.isConnected)
-        startScript(c);
+      if (c.nodeType === 1 && !c._started && c.isConnected) {
+        const tag = n.local(c._id);
+        if (tag === 'script') startScript(c);
+        else if (tag === 'link') watchSheet(c);
+      }
       return c;
     }
     removeChild(c) {
@@ -1149,6 +1158,35 @@
     );
   }
 
+  // <link rel=stylesheet> inserted after parsing fires `load` once Blitz has added its sheet,
+  // checked after each layout (`__blitzAfterLayout`): React holds a commit until new stylesheets
+  // load. Blitz drops failed loads silently, so a sheet still missing after SHEET_MS is an `error`.
+  // Blitz fetches nothing for rel=preload; React waits on it before inserting the stylesheet itself,
+  // so it "loads" on the next tick.
+  const SHEET_MS = 10000;
+  const pendingSheets = new Map();
+  function watchSheet(el) {
+    el._started = true;
+    const rel = ` ${String(el.getAttribute('rel') || '').toLowerCase()} `;
+    if (!el.getAttribute('href')) return;
+    if (rel.includes(' preload '))
+      return void addTimer(() => el.dispatchEvent(new Event('load')), 0, [], false);
+    if (!rel.includes(' stylesheet ')) return;
+    pendingSheets.set(el, n.now() + SHEET_MS);
+    addTimer(checkSheets, SHEET_MS, [], false);
+  }
+  function checkSheets() {
+    let fired = 0;
+    for (const [el, due] of pendingSheets) {
+      const loaded = n.hasSheet(el._id);
+      if (!loaded && n.now() < due) continue;
+      pendingSheets.delete(el);
+      el.dispatchEvent(new Event(loaded ? 'load' : 'error'));
+      fired++;
+    }
+    return fired;
+  }
+
   // ---- Window ----
   const document = wrap(n.root());
   const timers = new Map();
@@ -1172,28 +1210,103 @@
             typeof x === 'string'
               ? x
               : x instanceof Error
-                ? x.stack || x.message
+                ? `${x.name}: ${x.message}${x.stack ? `\n${x.stack}` : ''}`
                 : (JSON.stringify(x) ?? String(x)),
           )
           .join(' '),
       );
+  // location follows history.pushState/replaceState (Next's router reads it back). Loading
+  // another document is not supported: assign/replace/reload only warn.
+  let href = n.href;
+  const hrefParts = () => {
+    const m = /^([a-z][a-z0-9+.-]*:)(?:\/\/([^/?#]*))?([^?#]*)(\?[^#]*)?(#.*)?$/i.exec(href) || [];
+    const host = m[2] || '';
+    return {
+      protocol: m[1] || '',
+      host,
+      pathname: m[3] || '/',
+      search: m[4] || '',
+      hash: m[5] || '',
+    };
+  };
+  const navigateAway = (url) => console.warn(`location: cannot load another document (${url})`);
   const location = {
-    href: n.href,
+    get href() {
+      return href;
+    },
+    set href(url) {
+      navigateAway(url);
+    },
     toString() {
-      return n.href;
+      return href;
     },
     get protocol() {
-      return n.href.split(':')[0] + ':';
+      return hrefParts().protocol;
     },
-    host: '',
-    hostname: '',
-    pathname: n.href.replace(/^[a-z]+:\/\/[^/]*/, ''),
-    search: '',
-    hash: '',
-    origin: 'null',
-    assign() {},
-    replace() {},
-    reload() {},
+    get host() {
+      return hrefParts().host;
+    },
+    get hostname() {
+      return hrefParts().host.replace(/:\d+$/, '');
+    },
+    get port() {
+      return (/:(\d+)$/.exec(hrefParts().host) || [])[1] || '';
+    },
+    get pathname() {
+      return hrefParts().pathname;
+    },
+    get search() {
+      return hrefParts().search;
+    },
+    get hash() {
+      return hrefParts().hash;
+    },
+    get origin() {
+      const p = hrefParts();
+      return p.host ? `${p.protocol}//${p.host}` : 'null';
+    },
+    assign: navigateAway,
+    replace: navigateAway,
+    reload() {
+      navigateAway(href);
+    },
+  };
+  const entries = [{ state: null, href }];
+  let entry = 0;
+  const setEntry = (state, url) => {
+    if (url !== undefined && url !== null) href = new URL(String(url), href).href;
+    entries[entry] = { state: state ?? null, href };
+  };
+  const history = {
+    get length() {
+      return entries.length;
+    },
+    get state() {
+      return entries[entry].state;
+    },
+    scrollRestoration: 'auto',
+    pushState(state, _title, url) {
+      entries.length = ++entry;
+      setEntry(state, url);
+    },
+    replaceState(state, _title, url) {
+      setEntry(state, url);
+    },
+    go(delta = 0) {
+      const to = entry + delta;
+      if (!delta || to < 0 || to >= entries.length) return;
+      entry = to;
+      href = entries[to].href;
+      setTimeout(() =>
+        window.dispatchEvent(new PopStateEvent('popstate', { state: history.state })),
+      );
+    },
+    back() {
+      history.go(-1);
+    },
+    forward() {
+      history.go(1);
+    },
   };
   // Observers. MutationObserver never reports; IntersectionObserver reports every target visible
   // once; ResizeObserver reports a target's size on observe and whenever it changes after a layout
@@ -1301,7 +1414,27 @@
   const window = globalThis;
   Object.setPrototypeOf(window, EventTarget.prototype);
   window._parentTarget = () => null;
-  const raf = (cb) => addTimer(() => cb(n.now()), 16, [], false);
+  // rAF callbacks run together once per frame (16 ms apart), before the host paints; they are
+  // not timers, so a page polling with rAF does not hold painting back. Ids share the timers'.
+  let frameCallbacks = new Map();
+  let lastFrame = -Infinity;
+  const raf = (cb) => {
+    const id = nextTimerId++;
+    frameCallbacks.set(id, cb);
+    return id;
+  };
+  function runFrame(now) {
+    const cbs = frameCallbacks;
+    frameCallbacks = new Map();
+    lastFrame = now;
+    for (const cb of cbs.values()) {
+      try {
+        cb(now);
+      } catch (e) {
+        reportError(e);
+      }
+    }
+  }
   define(window, {
     window,
     self: window,
@@ -1318,15 +1451,7 @@
       maxTouchPoints: 1,
       onLine: true,
     },
-    history: {
-      length: 1,
-      state: null,
-      pushState() {},
-      replaceState() {},
-      back() {},
-      forward() {},
-      go() {},
-    },
+    history,
     performance: { now: () => n.now(), timeOrigin: Date.now() - n.now(), mark() {}, measure() {} },
     console: {
       log: consoleFn('log'),
@@ -1345,7 +1470,7 @@
     clearTimeout: (id) => timers.delete(id),
     clearInterval: (id) => timers.delete(id),
     requestAnimationFrame: raf,
-    cancelAnimationFrame: (id) => timers.delete(id),
+    cancelAnimationFrame: (id) => frameCallbacks.delete(id),
     requestIdleCallback: (cb) =>
       addTimer(() => cb({ didTimeout: false, timeRemaining: () => 10 }), 1, [], false),
     cancelIdleCallback: (id) => timers.delete(id),
@@ -1415,7 +1540,7 @@
     ResizeObserver,
     // Called by the host after a layout: delivers ResizeObserver changes; returns how many fired.
     __blitzAfterLayout() {
-      let k = 0;
+      let k = pendingSheets.size ? checkSheets() : 0;
       for (const o of resizeObservers) k += o._check();
       return k;
     },
@@ -1435,6 +1560,7 @@
     InputEvent,
     FocusEvent,
     CustomEvent,
+    PopStateEvent,
     PromiseRejectionEvent,
     EventTarget,
     Node,
@@ -1492,12 +1618,17 @@
           reportError(e);
         }
       }
+      if (frameCallbacks.size && now >= lastFrame + 16) runFrame(now);
       return window.__blitzNextTimer();
     },
     __blitzNextTimer() {
       let m = -1;
       for (const t of timers.values()) if (m < 0 || t.due < m) m = t.due;
       return m;
+    },
+    // When the next frame's rAF callbacks are due (-1: none queued).
+    __blitzNextFrame() {
+      return frameCallbacks.size ? Math.max(lastFrame + 16, 0) : -1;
     },
     // Set by the document around each parse-time script (id < 0: none).
     __blitzCurrentScript(id) {

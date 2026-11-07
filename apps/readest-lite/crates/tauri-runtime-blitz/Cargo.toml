@@ -30,6 +30,8 @@ rquickjs = { version = "0.10", default-features = false }
 url = "2.5.0"
 http = "1"
 bytes = "1"
+# CompressionStream/DecompressionStream (zip.js reads EPUBs through them).
+flate2 = "1"
 raw-window-handle = "0.6"
 log = "0.4"
 x11rb = { version = "0.13", optional = true }

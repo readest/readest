@@ -82,6 +82,11 @@ pub(crate) fn install(ctx: &Ctx<'_>, shared: Rc<RefCell<Shared>>, base: Option<&
             .unwrap_or_default()
     });
     let dd = d(&doc);
+    // Whether a <link>/<style> node's stylesheet has been loaded and added (for link `load`).
+    op!("hasSheet", move |n: f64| -> bool {
+        dd.borrow().node_has_stylesheet(nid(n))
+    });
+    let dd = d(&doc);
     op!("ns", move |n: f64| -> String {
         dd.borrow()
             .get_node(nid(n))

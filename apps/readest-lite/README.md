@@ -14,10 +14,10 @@ nearly all of it QuickJS running Readest's startup JS. Performance work comes ne
 | Path | What |
 | --- | --- |
 | `src-tauri/` | `readest-lite`: the Tauri app (fs + os plugins, stubs of the Readest commands its startup calls) |
-| `crates/tauri-runtime-blitz/` | The Tauri runtime: web APIs (`web.js`), IPC and custom schemes, the event loop, painting (headless or an X11 window) |
+| `crates/tauri-runtime-blitz/` | The Tauri runtime: web APIs (`web.js`, `dom-parser.js`), IPC and custom schemes, the event loop, painting (headless or an X11 window) |
 | `crates/blitz-qjs-script/` | The DOM for QuickJS: Rust ops on Blitz nodes + a JS bootstrap; bytecode cache; `qjs-precompile` |
 | `crates/anyrender_cairo/` | Blitz's painter on cairo/pixman (vello_cpu has no armv7 SIMD) |
-| `src/` | Reader building blocks for Blitz: `paginate.js` (pages from line boxes, as foliate-js's multi-column paginator can't run here) and `xml.js` (a `DOMParser` for epub.js) |
+| `src/` | Reader building blocks for Blitz: `paginate.js` (pages from line boxes, as foliate-js's multi-column paginator can't run here) |
 | `patches/` | Readest's patches to the upstream code in `vendor/` |
 | `vendor/` | Built by `scripts/vendor.sh`, gitignored: the patched upstream code, and web-streams-polyfill (npm) that the runtime embeds |
 
@@ -52,6 +52,7 @@ Tests for `src/`: `node --test apps/readest-lite/src/*.test.js` (from the reposi
 | `BLITZ_TAURI_TAPS="x,y;#sel"`, `BLITZ_TAURI_TAP_MS` | Scripted taps (CSS px or a selector), one per painted frame |
 | `BLITZ_TAURI_EVAL=file.js`, `BLITZ_TAURI_EVAL_MS` | Evaluate a probe script after a delay |
 | `BLITZ_TAURI_QJS_CACHE=DIR\|off` | Local bytecode cache (default `$HOME/.cache/tauri-runtime-blitz/qjs`) |
+| `BLITZ_QJS_SHIPPED=off` | Ignore shipped `.qjsc` bytecode (for stacks with file and line) |
 | `BLITZ_FONTS=DIR` | Bundled fonts instead of fontconfig |
 | `BLITZ_TAURI_TRACE_FETCH`, `BLITZ_TAURI_TRACE_LOOP` | Trace IPC/fetch and slow event-loop turns to stderr |
 

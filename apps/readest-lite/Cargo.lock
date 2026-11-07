@@ -1934,9 +1934,13 @@ dependencies = [
 
 [[package]]
 name = "idna_adapter"
-version = "1.0.0"
+version = "1.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cfdf4f5d937a025381f5ab13624b1c5f51414bfe5c9885663226eae8d6d39560"
+checksum = "cb68373c0d6620ef8105e855e7745e18b0d00d3bdb07fb532e434244cdb9a714"
+dependencies = [
+ "icu_normalizer",
+ "icu_properties",
+]
 
 [[package]]
 name = "image"
@@ -3192,6 +3196,7 @@ dependencies = [
  "tauri-plugin-fs",
  "tauri-plugin-os",
  "tauri-runtime-blitz",
+ "url",
 ]
 
 [[package]]
@@ -4388,6 +4393,7 @@ dependencies = [
  "blitz-traits",
  "bytes",
  "cairo-rs 0.22.9",
+ "flate2",
  "fontique",
  "gtk",
  "http",

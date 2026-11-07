@@ -49,9 +49,12 @@ pub(crate) type IpcHandler = Box<dyn Fn(http::Request<String>)>;
 pub(crate) type PageLoadHandler = Box<dyn Fn(Url, tauri_runtime::webview::PageLoadEvent) + Send>;
 
 const WEB_JS: &str = include_str!("web.js");
+/// `DOMParser` (XML), where the page has none: foliate-js reads EPUB package files with it.
+const DOM_PARSER_JS: &str = include_str!("dom-parser.js");
 /// ReadableStream/WritableStream/TransformStream (MIT, web-streams-polyfill 3.3.3): Next.js reads its
 /// React Server Components payload through streams.
-const STREAMS_JS: &str = include_str!("../../../vendor/web-streams-polyfill/polyfill.es2018.min.js");
+const STREAMS_JS: &str =
+    include_str!("../../../vendor/web-streams-polyfill/polyfill.es2018.min.js");
 
 /// Set when the runtime is created; log lines carry `t_ms` since then.
 pub(crate) static START: std::sync::OnceLock<Instant> = std::sync::OnceLock::new();
@@ -69,6 +72,28 @@ fn origin(url: &Url) -> String {
         (Some(h), None) => format!("{}://{h}", url.scheme()),
         _ => url.scheme().to_owned(),
     }
+}
+
+/// A URL's parts in web.js's `URL_PARTS` order, as the WHATWG getters give them, except `origin`:
+/// `scheme://host` for any scheme with a host, as WebKit does for Tauri's `tauri://localhost`.
+fn url_parts(u: &Url) -> Vec<String> {
+    use url::quirks as q;
+    [
+        q::href(u),
+        q::protocol(u),
+        q::username(u),
+        q::password(u),
+        q::host(u),
+        q::hostname(u),
+        q::port(u),
+        q::pathname(u),
+        q::search(u),
+        q::hash(u),
+    ]
+    .into_iter()
+    .map(str::to_owned)
+    .chain([origin(u)])
+    .collect()
 }
 
 /// Calls a custom-scheme handler and waits for its answer. Tauri's asset handler answers inline;
@@ -284,6 +309,7 @@ impl BlitzWebview {
             .with(|ctx| install_ops(&ctx, self.ops.clone(), &parsed));
         doc.eval(STREAMS_JS, "web-streams-polyfill.js");
         doc.eval(WEB_JS, "web.js");
+        doc.eval(DOM_PARSER_JS, "dom-parser.js");
         for (i, s) in self.init_scripts.iter().enumerate() {
             doc.eval(&s.script, &format!("init-{i}"));
         }
@@ -371,7 +397,7 @@ impl BlitzWebview {
     /// When the loop should wake for this webview: a due JS timer, a pending paint or tap.
     pub fn deadline(&self) -> Option<Instant> {
         let now = Instant::now();
-        let timer = self.doc.as_ref().and_then(QjsDocument::next_timer_deadline);
+        let timer = self.doc.as_ref().and_then(QjsDocument::next_wake_deadline);
         let shown = self.visible.load(std::sync::atomic::Ordering::Relaxed);
         let soon = ((self.dirty && shown) || !self.net.0.lock().unwrap().is_empty()).then_some(now);
         [
@@ -610,6 +636,25 @@ fn send_pointer(
     });
 }
 
+/// `format` as in the Compression Streams spec: "deflate" (zlib), "deflate-raw" or "gzip".
+/// `None` for an unknown format or corrupt input.
+fn zlib(compress: bool, format: &str, data: &[u8]) -> Option<Vec<u8>> {
+    use flate2::{Compression, read};
+    use std::io::Read;
+    let mut out = Vec::new();
+    let level = Compression::default();
+    let res = match (compress, format) {
+        (true, "deflate") => read::ZlibEncoder::new(data, level).read_to_end(&mut out),
+        (true, "deflate-raw") => read::DeflateEncoder::new(data, level).read_to_end(&mut out),
+        (true, "gzip") => read::GzEncoder::new(data, level).read_to_end(&mut out),
+        (false, "deflate") => read::ZlibDecoder::new(data).read_to_end(&mut out),
+        (false, "deflate-raw") => read::DeflateDecoder::new(data).read_to_end(&mut out),
+        (false, "gzip") => read::MultiGzDecoder::new(data).read_to_end(&mut out),
+        _ => return None,
+    };
+    res.ok().map(|_| out)
+}
+
 fn install_ops<'js>(ctx: &Ctx<'js>, st: Rc<OpState>, page: &Url) {
     let t = Object::new(ctx.clone()).unwrap();
     macro_rules! op {
@@ -641,6 +686,15 @@ fn install_ops<'js>(ctx: &Ctx<'js>, st: Rc<OpState>, page: &Url) {
         }
         ArrayBuffer::new(ctx, buf)
     });
+    // CompressionStream/DecompressionStream (web.js): one (de)compression of a whole stream.
+    op!("zlib", |ctx: Ctx<'js>,
+                 compress: bool,
+                 format: String,
+                 data: ArrayBuffer<'js>|
+     -> rquickjs::Result<Option<ArrayBuffer<'js>>> {
+        let out = zlib(compress, &format, data.as_bytes().unwrap_or_default());
+        out.map(|v| ArrayBuffer::new(ctx, v)).transpose()
+    });
     op!("parseUrl", |href: String,
                      base: Option<String>|
      -> Option<Vec<String>> {
@@ -648,24 +702,30 @@ fn install_ops<'js>(ctx: &Ctx<'js>, st: Rc<OpState>, page: &Url) {
             Some(b) => Url::parse(&b).ok()?.join(&href).ok()?,
             None => Url::parse(&href).ok()?,
         };
-        let host = match u.port() {
-            Some(p) => format!("{}:{p}", u.host_str().unwrap_or_default()),
-            None => u.host_str().unwrap_or_default().to_owned(),
-        };
-        let q = |s: Option<&str>, p: &str| s.map(|s| format!("{p}{s}")).unwrap_or_default();
-        Some(vec![
-            u.to_string(),
-            format!("{}:", u.scheme()),
-            u.username().to_owned(),
-            u.password().unwrap_or_default().to_owned(),
-            host,
-            u.host_str().unwrap_or_default().to_owned(),
-            u.port().map(|p| p.to_string()).unwrap_or_default(),
-            u.path().to_owned(),
-            q(u.query(), "?"),
-            q(u.fragment(), "#"),
-            origin(&u),
-        ])
+        Some(url_parts(&u))
+    });
+    // A URL setter (web.js): `href` with `part` set to `value`, or None when `href` is set to
+    // something that does not parse (the others ignore invalid values, as browsers do).
+    op!("setUrl", |href: String,
+                   part: String,
+                   value: String|
+     -> Option<Vec<String>> {
+        use url::quirks as q;
+        let mut u = Url::parse(&href).ok()?;
+        match part.as_str() {
+            "href" => q::set_href(&mut u, &value).ok()?,
+            "protocol" => q::set_protocol(&mut u, &value).unwrap_or(()),
+            "username" => q::set_username(&mut u, &value).unwrap_or(()),
+            "password" => q::set_password(&mut u, &value).unwrap_or(()),
+            "host" => q::set_host(&mut u, &value).unwrap_or(()),
+            "hostname" => q::set_hostname(&mut u, &value).unwrap_or(()),
+            "port" => q::set_port(&mut u, &value).unwrap_or(()),
+            "pathname" => q::set_pathname(&mut u, &value),
+            "search" => q::set_search(&mut u, &value),
+            "hash" => q::set_hash(&mut u, &value),
+            _ => return None,
+        }
+        Some(url_parts(&u))
     });
 
     let s = st.clone();
