@@ -115,6 +115,46 @@ describe('retained fixed-layout page turns', () => {
     });
   });
 
+  it.each(
+    ['ltr', 'rtl'].flatMap((dir) => [100, 200].map((zoom) => ({ dir, zoom }))),
+  )('keeps the other portrait page hidden while preparing ($dir, $zoom%)', async ({
+    dir,
+    zoom,
+  }) => {
+    await mount(dir, 'auto');
+    renderer.setAttribute('scale-factor', String(zoom));
+    await new Promise((resolve) => setTimeout(resolve, 30));
+    const frames = [...renderer.shadowRoot!.querySelectorAll('iframe')];
+    const inCurrentSpread = frames.filter(
+      (frame) => getComputedStyle(frame.parentElement!).visibility === 'visible',
+    );
+    const current = inCurrentSpread.find(
+      (frame) => getComputedStyle(frame.parentElement!).display !== 'none',
+    )!;
+    const next = inCurrentSpread.find(
+      (frame) => getComputedStyle(frame.parentElement!).display === 'none',
+    )!.parentElement!;
+    const before = current.getBoundingClientRect().toJSON();
+    expect(getComputedStyle(next).display).toBe('none');
+
+    expect(await renderer.preparePageTurn?.(dir === 'ltr')).toBe(true);
+    expect(
+      getComputedStyle(next).display,
+      'preparation must keep the other page hidden and out of flow',
+    ).toBe('none');
+    expect(current.getBoundingClientRect().toJSON()).toEqual(before);
+
+    expect(await renderer.beginPageTurn?.(dir === 'ltr')).toBe(true);
+    expect(getComputedStyle(next).visibility).toBe('visible');
+    expect([...renderer.shadowRoot!.querySelectorAll('[data-page-turn-view="outgoing"]')]).toEqual([
+      current.parentElement,
+    ]);
+    renderer.movePageTurn(0.4);
+    await renderer.endPageTurn(false, 0);
+    expect(getComputedStyle(next).visibility).toBe('hidden');
+    expect(current.getBoundingClientRect().toJSON()).toEqual(before);
+  });
+
   it('cancels safely when the viewport resizes during a drag', async () => {
     await mount();
     expect(await renderer.beginPageTurn?.(true)).toBe(true);

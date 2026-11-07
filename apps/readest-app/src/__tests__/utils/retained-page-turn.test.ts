@@ -94,6 +94,35 @@ describe('retained page-turn controller', () => {
     expect(committed).not.toHaveBeenCalled();
     expect(navigate).not.toHaveBeenCalled();
   });
+  it('keeps following a drag through routine capture invalidation', async () => {
+    await controller.beginDrag(true, false, 'push');
+    controller.invalidatePreparedCapture();
+    expect(api.cancelPageTurn).not.toHaveBeenCalled();
+    await controller.endDrag(true);
+    expect(committed).toHaveBeenCalledOnce();
+  });
+  it.each([
+    false,
+    true,
+  ])('only cancels a settling turn when interaction is blocked (%s)', async (blocked) => {
+    let finish!: (commit: boolean) => void;
+    api.endPageTurn.mockImplementationOnce(
+      () =>
+        new Promise<boolean>((resolve) => {
+          finish = resolve;
+        }),
+    );
+    await controller.beginDrag(true, false, 'push');
+    const ending = controller.endDrag(true);
+    await vi.waitFor(() => expect(api.endPageTurn).toHaveBeenCalledOnce());
+    allowed = !blocked;
+    api.cancelPageTurn.mockImplementationOnce(() => finish(false));
+    controller.invalidatePreparedCapture();
+    finish(!blocked);
+    await ending;
+    expect(api.cancelPageTurn).toHaveBeenCalledTimes(blocked ? 1 : 0);
+    expect(committed).toHaveBeenCalledTimes(blocked ? 0 : 1);
+  });
   it('does not commit if an overlay cancels the interaction', async () => {
     await controller.beginDrag(true, false, 'push');
     allowed = false;

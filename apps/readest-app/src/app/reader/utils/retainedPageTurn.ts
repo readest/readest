@@ -128,9 +128,12 @@ export class RetainedPageTurn extends NativePageTurn {
     return true;
   }
 
+  /** Keep an active turn through pixel refreshes; cancel it when interaction is blocked. */
   override invalidatePreparedCapture() {
-    this.renderer.cancelPageTurn?.();
-    if (this.push) this.push.ready = false;
+    if (this.pageHost.isCaptureAllowed?.() === false) {
+      this.renderer.cancelPageTurn?.();
+      if (this.push) this.push.ready = false;
+    }
     super.invalidatePreparedCapture();
   }
 

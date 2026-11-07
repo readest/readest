@@ -258,17 +258,17 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
   // - a layered turn already recognized it (including at a book boundary),
   //   or a programmatic turn took ownership while the finger was still down.
   const gestureClaimed = useRef(false);
+  const turnOwnsTouch = useRef(false);
   const restoreToolbarOnCancelRef = useRef(false);
   const view = viewRef.current;
 
   const isFixedLayout = () => !!getBookData(bookKey)?.isFixedLayout;
 
-  const markCaptureBroken = (error: unknown) => {
+  const markCaptureBroken = (error: unknown, style: CapturedTurnStyle) => {
     const viewSettings = getViewSettings(bookKey);
-    const style = viewSettings ? getCapturedTurnStyle(viewSettings, isFixedLayout()) : null;
     if (
       controllerRef.current instanceof NativePageTurn &&
-      (controllerRef.current instanceof RetainedPageTurn ||
+      ((controllerRef.current instanceof RetainedPageTurn && style === 'push') ||
         controllerRef.current.canQueueNativeTurn(style))
     ) {
       // The native controller releases the failed scene and recreates its
@@ -838,12 +838,13 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
         dragRef.current = null;
         gestureIntentRef.current = null;
         gestureClaimed.current = true;
+        turnOwnsTouch.current = true;
         if (rawTouchActive) setLayeredTurnTouchClaimed(bookKey, true);
       }
       try {
         await controller.turn(forward, viewSettings.rtl, style);
       } catch (error) {
-        markCaptureBroken(error);
+        markCaptureBroken(error, style);
         return forward ? originals.next() : originals.prev();
       } finally {
         programmaticTurnsInFlightRef.current.delete(programmaticTurn);
@@ -952,6 +953,7 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
       dragRef.current = null;
       gestureIntentRef.current = null;
       gestureClaimed.current = false;
+      turnOwnsTouch.current = false;
       controllerRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1047,6 +1049,7 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
           );
         gestureClaimed.current =
           programmaticInputBlocked || selectionActive || overlayBlocksCapture;
+        turnOwnsTouch.current = programmaticInputBlocked;
 
         // These interactions can change the live pixels while the finger is
         // down. Remove a low-alpha idle surface immediately rather than leave
@@ -1173,6 +1176,7 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
           // be replayed as a synthesized toolbar click on release.
           setLayeredTurnTouchClaimed(bookKey, true);
           gestureClaimed.current = true;
+          turnOwnsTouch.current = true;
           if (forward ? currentView.renderer.atEnd : currentView.renderer.atStart) {
             controller.releasePreparedCapture();
             return true;
@@ -1225,7 +1229,7 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
             .catch((error) => {
               if (dragRef.current === startedState) dragRef.current = null;
               forgetEdgeTurn(startedState);
-              markCaptureBroken(error);
+              markCaptureBroken(error, style);
             });
           return true;
         }
@@ -1241,7 +1245,7 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
         schedulePreparedCaptureRef.current?.();
         // Native tracking may have already released this claimed gesture.
         // Consume its late DOM release so the swipe fallback cannot turn again.
-        return gestureClaimed.current;
+        return turnOwnsTouch.current;
       }
       continueDrag(state, detail);
       return true;

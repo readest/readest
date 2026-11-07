@@ -25,6 +25,7 @@ const h = vi.hoisted(() => ({
     ) => void
   >(),
   android: false,
+  macos: false,
   ios: false,
   nativeCommit: false,
   controllerHost: null as null | {
@@ -64,6 +65,7 @@ const h = vi.hoisted(() => ({
   selection: null as { rangeCount: number; isCollapsed: boolean } | null,
   renderer: {
     getPageTurnKey: undefined as Renderer['getPageTurnKey'],
+    beginPageTurn: undefined as Renderer['beginPageTurn'],
     previewPage: undefined as Renderer['previewPage'],
     listeners: new Map<string, Set<EventListener>>(),
     scrollLocked: false,
@@ -154,8 +156,8 @@ vi.mock('@/utils/viewTransition', () => ({ detectViewTransitionGroup: () => fals
 vi.mock('@/services/environment', () => ({
   isTauriAppPlatform: () => process.env['NEXT_PUBLIC_APP_PLATFORM'] === 'tauri',
   getInitializedAppService: () => ({
-    isMobileApp: process.env['NEXT_PUBLIC_APP_PLATFORM'] === 'tauri',
-    isMacOSApp: false,
+    isMobileApp: process.env['NEXT_PUBLIC_APP_PLATFORM'] === 'tauri' && !h.macos,
+    isMacOSApp: h.macos,
     isAndroidApp: h.android,
     isIOSApp: h.ios,
   }),
@@ -213,9 +215,11 @@ const setSettingsDialogOpen = (open: boolean) => {
 
 beforeEach(() => {
   h.android = false;
+  h.macos = false;
   h.ios = false;
   h.nativeCommit = false;
   h.renderer.previewPage = undefined;
+  h.renderer.beginPageTurn = undefined;
   h.renderer.getPageTurnKey = undefined;
   h.readerListeners.clear();
   vi.clearAllMocks();
@@ -295,6 +299,70 @@ describe('useCapturedTurn scroll-lock gate', () => {
       });
       expect(h.controller.turn).toHaveBeenCalledTimes(native ? 2 : 1);
       expect(originalNext).toHaveBeenCalledTimes(native ? 1 : 2);
+    } finally {
+      unmount();
+      invalidate.mockRestore();
+      warn.mockRestore();
+    }
+  });
+
+  test.each([
+    'curl',
+    'slide',
+  ] as const)('falls back after a desktop fixed-layout %s capture fails', async (style) => {
+    vi.resetModules();
+    const { useCapturedTurn: useFreshCapturedTurn } = await import(
+      '@/app/reader/hooks/useCapturedTurn'
+    );
+    h.isFixedLayout = true;
+    h.macos = true;
+    h.renderer.beginPageTurn = async () => true;
+    h.renderer.getPageTurnKey = () => '1';
+    h.renderer.previewPage = async () => null;
+    h.viewSettings.pageTurnStyle = style;
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const view = makeView();
+    const originalNext = vi.mocked(view.next);
+    h.controller.turn.mockRejectedValueOnce(new Error('capture failed'));
+    const { unmount } = renderHook(() => useFreshCapturedTurn('book-1', { current: view }));
+    try {
+      await act(async () => {
+        await view.next();
+        await view.next();
+      });
+      expect(h.controller.turn).toHaveBeenCalledOnce();
+      expect(originalNext).toHaveBeenCalledTimes(2);
+    } finally {
+      unmount();
+      warn.mockRestore();
+    }
+  });
+
+  test('retries an edge push when the configured curl style is disabled by zoom', async () => {
+    vi.resetModules();
+    const { useCapturedTurn: useFreshCapturedTurn } = await import(
+      '@/app/reader/hooks/useCapturedTurn'
+    );
+    const { dispatchTouchInterceptors: dispatch } = await import(
+      '@/app/reader/hooks/useTouchInterceptor'
+    );
+    const { NativePageTurn } = await import('@/app/reader/utils/nativePageTurn');
+    h.isFixedLayout = true;
+    h.renderer.beginPageTurn = async () => true;
+    h.renderer.panX = 1;
+    h.viewSettings.zoomLevel = 200;
+    const invalidate = vi.spyOn(NativePageTurn.prototype, 'invalidateNativePages');
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    h.controller.beginDrag.mockRejectedValueOnce(new Error('interrupted turn'));
+    const { unmount } = renderHook(() => useFreshCapturedTurn('book-1', { current: makeView() }));
+    try {
+      invalidate.mockClear();
+      dispatch('book-1', detail('start', 0, 0, 0, 150));
+      await act(async () => {
+        dispatch('book-1', detail('move', -60, 0, 16, 150));
+      });
+      expect(h.controller.beginDrag).toHaveBeenCalledWith(true, false, 'push');
+      expect(invalidate).toHaveBeenCalledOnce();
     } finally {
       unmount();
       invalidate.mockRestore();
@@ -949,6 +1017,7 @@ describe('useCapturedTurn scroll-lock gate', () => {
 
     expect(h.controller.beginDrag).not.toHaveBeenCalled();
     expect(h.controller.releasePreparedCapture).toHaveBeenCalledTimes(2);
+    expect(dispatchTouchInterceptors('book-1', detail('end', -1, 0, 100, 285))).toBe(true);
   });
 
   test('claims a central drag after two coherent samples at 6px', () => {
@@ -1297,6 +1366,7 @@ describe('useCapturedTurn scroll-lock gate', () => {
     expect(h.controller.turn).toHaveBeenCalledWith(true, false, 'curl');
     expect(consumed).toBe(false);
     expect(h.controller.beginDrag).not.toHaveBeenCalled();
+    expect(dispatchTouchInterceptors('book-1', detail('end', -60, 0, 100, 150))).toBe(true);
   });
 
   test('a touch that starts during a programmatic turn stays rejected until its release', async () => {
@@ -1365,6 +1435,18 @@ describe('useCapturedTurn scroll-lock gate', () => {
     expect(consumed).toBe(false);
     expect(h.controller.beginDrag).not.toHaveBeenCalled();
     expect(h.controller.invalidatePreparedCapture).toHaveBeenCalledOnce();
+  });
+
+  test.each([
+    false,
+    true,
+  ])('leaves a selection-blocked tap release unconsumed (deselected=%s)', (deselected) => {
+    renderHook(() => useCapturedTurn('book-1', { current: makeView() }));
+    h.selection = { rangeCount: 1, isCollapsed: false };
+    dispatchTouchInterceptors('book-1', detail('start', 0, 0, 0, 150));
+    if (deselected) h.selection = null;
+    expect(dispatchTouchInterceptors('book-1', detail('end', 0, 0, 100, 150))).toBe(false);
+    expect(h.controller.beginDrag).not.toHaveBeenCalled();
   });
 
   test('a collapsed selection does not block the captured turn', () => {
