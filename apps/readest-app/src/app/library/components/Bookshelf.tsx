@@ -40,8 +40,25 @@ import {
   evaluateBookshelves,
   matchBookshelves,
 } from '@/services/bookshelves/evaluate';
-import { getGlobalBookshelfSort, resolveBookshelfSort } from '@/services/bookshelves/sorting';
-import { getActiveBookshelfGroupBy } from '@/services/bookshelves/grouping';
+import {
+  getGlobalBookshelfSort,
+  resolveBookshelfSort,
+  resolveBookshelfMetadataSort,
+} from '@/services/bookshelves/sorting';
+import {
+  getActiveBookshelfGroupBy,
+  resolveBookshelfGroupBy,
+} from '@/services/bookshelves/grouping';
+import { updateBookshelf } from '@/services/bookshelves/persistence';
+import { saveBookshelfGroupChanges } from '@/services/bookshelves/groupChanges';
+import {
+  bookshelfItemId,
+  bookshelfOrderScope,
+  groupDroppedBook,
+  moveBookshelfItem,
+  moveBookshelfItemToParent,
+  renameBookshelfGroupOrder,
+} from '@/services/bookshelves/ordering';
 import { presentBookshelf } from '@/services/bookshelves/presentation';
 import type { BookshelfDefinition } from '@/types/bookshelf';
 import { resolveBookshelfLayout } from '@/services/bookshelves/definitions';
@@ -50,6 +67,7 @@ import { eventDispatcher } from '@/utils/event';
 import { getLocalBookFilename } from '@/utils/book';
 import { MIMETYPES, EXTS } from '@/libs/document';
 import { makeSafeFilename } from '@/utils/misc';
+import { md5Fingerprint } from '@/utils/md5';
 import { isTauriAppPlatform } from '@/services/environment';
 import { isLocalSendEnabled } from '@/services/localsend/devicePrefs';
 import { splitLibraryOpenIds } from '@/utils/audiobook';
@@ -59,6 +77,7 @@ import DeleteConfirmAlert from '@/components/DeleteConfirmAlert';
 import Spinner from '@/components/Spinner';
 import ModalPortal from '@/components/ModalPortal';
 import BookshelfItem from './BookshelfItem';
+import { BookshelfDragDrop, BookshelfDragItem, type BookshelfDrop } from './BookshelfDragDrop';
 import SelectModeActions from './SelectModeActions';
 import ShareBookDialog from './ShareBookDialog';
 import { createCollectionPack, READEST_PACK_MIME } from '@/services/pack/packService';
@@ -188,9 +207,10 @@ const Bookshelf: React.FC<BookshelfProps> = ({
   const activeShelf = definitions.find((s) => s.id === activeShelfId);
   const showTimeRemaining = queryTerm
     ? globalSort.by === 'timeRemaining' || globalSort.thenBy === 'timeRemaining'
-    : definitions.some(
-        (s) => s.enabled && (s.sort.by === 'timeRemaining' || s.sort.thenBy === 'timeRemaining'),
-      );
+    : definitions.some((s) => {
+        const sort = resolveBookshelfMetadataSort(s);
+        return s.enabled && (sort.by === 'timeRemaining' || sort.thenBy === 'timeRemaining');
+      });
 
   const [loading, setLoading] = useState(false);
   const [showSelectModeActions, setShowSelectModeActions] = useState(false);
@@ -206,6 +226,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
   const deletionRunRef = useRef(0);
   const selectAllAppliedRef = useRef(false);
   const isImportingBook = useRef(false);
+  const parentAfterMove = useRef<{ groupId: string; parent: string } | null>(null);
   const iconSize15 = useResponsiveSize(15);
   const autofocusRef = useAutoFocus<HTMLDivElement>();
   useSpatialNavigation(autofocusRef);
@@ -223,6 +244,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
   const updateUrlParams = useCallback(
     (updates: Record<string, string | null>) => {
       const params = new URLSearchParams(window.location.search);
+      const wasInsideGroup = !!params.get('group');
 
       Object.entries(updates).forEach(([key, value]) => {
         if (value === null || value === '') {
@@ -239,7 +261,8 @@ const Bookshelf: React.FC<BookshelfProps> = ({
       if (params.get('cover') === 'crop') params.delete('cover');
       if (params.get('view') === 'grid') params.delete('view');
 
-      const newParamString = params.toString();
+      const newParamString =
+        params.toString() || (wasInsideGroup && updates['group'] === null ? 'group=' : '');
       const currentParamString = window.location.search.slice(1);
 
       if (newParamString !== currentParamString) {
@@ -397,8 +420,21 @@ const Bookshelf: React.FC<BookshelfProps> = ({
     // A search with no hits filters the group down to nothing; that must not
     // throw the user back to the library root.
     if (!groupId || queryTerm) return;
-    if ((!unscopedGroup && !activeShelf?.enabled) || currentShelfBooks.length === 0)
-      updateUrlParams({ group: null, shelf: null });
+    if (!unscopedGroup && !activeShelf?.enabled) updateUrlParams({ group: null, shelf: null });
+    else if (currentShelfBooks.length === 0) {
+      const slash = manualGroupName?.lastIndexOf('/') ?? -1;
+      const parent =
+        parentAfterMove.current?.groupId === groupId
+          ? parentAfterMove.current.parent
+          : slash > 0
+            ? manualGroupName!.slice(0, slash)
+            : '';
+      parentAfterMove.current = null;
+      updateUrlParams({
+        group: parent ? md5Fingerprint(parent) : null,
+        shelf: parent ? shelfId : null,
+      });
+    }
   }, [
     groupId,
     queryTerm,
@@ -406,6 +442,8 @@ const Bookshelf: React.FC<BookshelfProps> = ({
     activeShelf?.enabled,
     currentShelfBooks.length,
     updateUrlParams,
+    manualGroupName,
+    shelfId,
   ]);
 
   useEffect(() => {
@@ -921,6 +959,154 @@ const Bookshelf: React.FC<BookshelfProps> = ({
     [openBook],
   );
 
+  const dropPending = useRef(false);
+  const [savingOrder, setSavingOrder] = useState(false);
+  const dragDisabled =
+    isSelectMode || savingOrder || !!queryTerm || !!contentSearch?.query.trim() || !appService;
+  const handleBookshelfDrop = useCallback(
+    async ({ source, target, shelf, mode }: BookshelfDrop) => {
+      if (dropPending.current) return;
+      const section = sections.find((section) => section.definition.id === shelf.id);
+      if (!section) return;
+      dropPending.current = true;
+      setSavingOrder(true);
+      try {
+        const grouping = resolveBookshelfGroupBy(shelf, globalGroupBy);
+        const parent = grouping === 'group' ? manualGroupName || '' : groupId;
+        const scope = bookshelfOrderScope(grouping, parent);
+        if (mode === 'parent') {
+          if (grouping !== 'group' || !manualGroupName) return;
+          const moved = moveBookshelfItemToParent(
+            source,
+            manualGroupName,
+            useLibraryStore.getState().library,
+          );
+          if (!moved?.books.length) return;
+          const parentScope = bookshelfOrderScope('group', moved.parent);
+          const result = unscopedGroup
+            ? { definition: shelf, books: visibleBooks, matching: visibleBooks.length, excluded: 0 }
+            : results.find((result) => result.definition.id === shelf.id);
+          const parentItems = result
+            ? presentBookshelf(
+                { ...result, definition: shelf },
+                { libraryGroupBy: globalGroupBy },
+                uiLanguage,
+                pageDurations,
+                moved.parent ? md5Fingerprint(moved.parent) : '',
+                moved.parent,
+              )
+            : [];
+          const base = readBookshelves(useSettingsStore.getState().settings);
+          const names = useLibraryStore
+            .getState()
+            .getGroups()
+            .map((group) => group.name);
+          const draft = base.map((current): BookshelfDefinition => {
+            const renamed =
+              moved.oldGroupName && moved.newGroupName
+                ? renameBookshelfGroupOrder(
+                    current.manualOrder,
+                    names,
+                    moved.oldGroupName,
+                    moved.newGroupName,
+                  )
+                : current.manualOrder;
+            if (current.id !== shelf.id)
+              return renamed === current.manualOrder
+                ? current
+                : { ...current, manualOrder: renamed };
+            const order =
+              (shelf.sort.by === 'custom' ? renamed?.[scope] : undefined) ??
+              section.items.map(bookshelfItemId);
+            const above =
+              (shelf.sort.by === 'custom' ? renamed?.[parentScope] : undefined) ??
+              parentItems.map(bookshelfItemId);
+            return {
+              ...current,
+              useGlobalSort: false,
+              customSortFallback:
+                shelf.sort.by === 'custom' ? current.customSortFallback : shelf.sort,
+              sort: { by: 'custom', ascending: true, thenBy: 'none', thenAscending: true },
+              manualOrder: {
+                ...renamed,
+                [scope]: order.filter(
+                  (id) => id !== bookshelfItemId(source) && id !== moved.itemId,
+                ),
+                [parentScope]: [...above.filter((id) => id !== moved.itemId), moved.itemId],
+              },
+            };
+          });
+          parentAfterMove.current = { groupId, parent: moved.parent };
+          await saveBookshelfGroupChanges(envConfig, base, draft, moved.books);
+          return;
+        }
+        const grouped =
+          mode === 'group' && 'hash' in source && grouping === 'group'
+            ? groupDroppedBook(
+                source,
+                target,
+                useLibraryStore.getState().library,
+                _('Untitled Group'),
+                parent,
+              )
+            : null;
+        const update = (current: BookshelfDefinition): BookshelfDefinition => {
+          let order = moveBookshelfItem(
+            section.items,
+            shelf.sort.by === 'custom' ? current.manualOrder?.[scope] : undefined,
+            bookshelfItemId(source),
+            bookshelfItemId(target),
+            mode === 'after',
+          );
+          if (grouped) {
+            const destination =
+              'books' in target ? bookshelfItemId(target) : `g:${grouped.groupId}`;
+            order = order
+              .filter((id) => id !== bookshelfItemId(source))
+              .map((id) => (id === bookshelfItemId(target) ? destination : id));
+          }
+          return {
+            ...current,
+            useGlobalSort: false,
+            customSortFallback:
+              shelf.sort.by === 'custom' ? current.customSortFallback : shelf.sort,
+            sort: { by: 'custom', ascending: true, thenBy: 'none', thenAscending: true },
+            manualOrder: { ...current.manualOrder, [scope]: order },
+          };
+        };
+        if (grouped) {
+          const base = readBookshelves(useSettingsStore.getState().settings);
+          const draft = base.map((current) =>
+            current.id === shelf.id ? update(current) : current,
+          );
+          await saveBookshelfGroupChanges(envConfig, base, draft, grouped.books);
+        } else await updateBookshelf(envConfig, shelf.id, update);
+      } catch {
+        parentAfterMove.current = null;
+        eventDispatcher.dispatch('toast', {
+          type: 'error',
+          message: _('Failed to save bookshelves.'),
+        });
+      } finally {
+        dropPending.current = false;
+        setSavingOrder(false);
+      }
+    },
+    [
+      sections,
+      globalGroupBy,
+      manualGroupName,
+      groupId,
+      envConfig,
+      results,
+      unscopedGroup,
+      visibleBooks,
+      uiLanguage,
+      pageDurations,
+      _,
+    ],
+  );
+
   // Cover transfer overlay progress for every book on screen, from both
   // sources: queued downloads live in the transfer store, direct ones in
   // `booksTransferProgress`. Merged on read so neither has to reconcile
@@ -944,35 +1130,38 @@ const Bookshelf: React.FC<BookshelfProps> = ({
 
   const renderBookshelfItem = useCallback(
     (item: Book | BooksGroup, mode: LibraryViewModeType, shelf: BookshelfDefinition) => (
-      <BookshelfItem
-        item={item}
-        mode={mode}
-        coverFit={shelf.coverFit || 'crop'}
-        skeuomorphicCovers={shelf.skeuomorphicCovers}
-        showPageCount={shelf.showPageCount}
-        isSelectMode={isSelectMode}
-        itemSelected={
-          'hash' in item
-            ? selectedBookSet.has(item.hash)
-            : item.books.every((book) => selectedBookSet.has(book.hash)) ||
-              selectedBookSet.has(item.id)
-        }
-        setLoading={setLoading}
-        toggleSelection={(id) => toggleSelection(id, 'books' in item ? item : undefined)}
-        handleGroupBooks={groupSelectedBooks}
-        handleBookUpload={handleBookUpload}
-        handleBookDownload={handleBookDownload}
-        handleBookDelete={handleBookDelete}
-        handleSetSelectMode={handleSetSelectMode}
-        handleShowDetailsBook={handleShowDetailsBook}
-        handleLibraryNavigation={(group) => handleLibraryNavigation(group, shelf.id)}
-        handleUpdateReadingStatus={handleUpdateReadingStatus}
-        transferProgress={'hash' in item ? (transferProgress[item.hash] ?? null) : null}
-        showTimeRemaining={
-          shelf.sort.by === 'timeRemaining' || shelf.sort.thenBy === 'timeRemaining'
-        }
-        showSeriesIndex={showSeriesIndex}
-      />
+      <BookshelfDragItem item={item} shelf={shelf} disabled={dragDisabled}>
+        <BookshelfItem
+          dragEnabled={!dragDisabled}
+          item={item}
+          mode={mode}
+          coverFit={shelf.coverFit || 'crop'}
+          skeuomorphicCovers={shelf.skeuomorphicCovers}
+          showPageCount={shelf.showPageCount}
+          isSelectMode={isSelectMode}
+          itemSelected={
+            'hash' in item
+              ? selectedBookSet.has(item.hash)
+              : item.books.every((book) => selectedBookSet.has(book.hash)) ||
+                selectedBookSet.has(item.id)
+          }
+          setLoading={setLoading}
+          toggleSelection={(id) => toggleSelection(id, 'books' in item ? item : undefined)}
+          handleGroupBooks={groupSelectedBooks}
+          handleBookUpload={handleBookUpload}
+          handleBookDownload={handleBookDownload}
+          handleBookDelete={handleBookDelete}
+          handleSetSelectMode={handleSetSelectMode}
+          handleShowDetailsBook={handleShowDetailsBook}
+          handleLibraryNavigation={(group) => handleLibraryNavigation(group, shelf.id)}
+          handleUpdateReadingStatus={handleUpdateReadingStatus}
+          transferProgress={'hash' in item ? (transferProgress[item.hash] ?? null) : null}
+          showTimeRemaining={
+            shelf.sort.by === 'timeRemaining' || shelf.sort.thenBy === 'timeRemaining'
+          }
+          showSeriesIndex={showSeriesIndex}
+        />
+      </BookshelfDragItem>
     ),
     [
       isSelectMode,
@@ -988,6 +1177,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
       handleUpdateReadingStatus,
       transferProgress,
       showSeriesIndex,
+      dragDisabled,
     ],
   );
   const lastShelf = sections.at(-1)?.definition;
@@ -1064,25 +1254,33 @@ const Bookshelf: React.FC<BookshelfProps> = ({
         // purpose: OS decorates this subtree with its own DOM, and letting
         // React swap children inside it caused NotFoundError crashes on
         // WebKit when a search was cleared.
-        <div className='min-h-0 flex-1'>
-          <BookshelfStream
-            scrollKey={searchParams?.toString() ?? ''}
-            pageNavigation={!!settings.globalViewSettings?.isEink}
-            hidePageButtons={settings.hideBookshelfPageButtons}
-            navigationBottomInset={
-              selectModeActionsHeight ||
-              (appService?.hasSafeAreaInset ? (safeAreaInsets?.bottom || 0) * 0.33 : 0)
-            }
-            pageDurations={pageDurations}
+        <div className='relative min-h-0 flex-1'>
+          <BookshelfDragDrop
             sections={sections}
-            autoColumns={settings.libraryAutoColumns}
-            fixedColumns={settings.libraryColumns}
-            footerHeight={footerHeight}
-            importAction={importAction}
-            importTile={importTile}
-            renderItem={renderBookshelfItem}
-            onScrollerRef={handleScrollerRef}
-          />
+            groupBy={globalGroupBy}
+            disabled={dragDisabled}
+            onDrop={handleBookshelfDrop}
+            parentGroupName={manualGroupName}
+          >
+            <BookshelfStream
+              scrollKey={searchParams?.toString() ?? ''}
+              pageNavigation={!!settings.globalViewSettings?.isEink}
+              hidePageButtons={settings.hideBookshelfPageButtons}
+              navigationBottomInset={
+                selectModeActionsHeight ||
+                (appService?.hasSafeAreaInset ? (safeAreaInsets?.bottom || 0) * 0.33 : 0)
+              }
+              pageDurations={pageDurations}
+              sections={sections}
+              autoColumns={settings.libraryAutoColumns}
+              fixedColumns={settings.libraryColumns}
+              footerHeight={footerHeight}
+              importAction={importAction}
+              importTile={importTile}
+              renderItem={renderBookshelfItem}
+              onScrollerRef={handleScrollerRef}
+            />
+          </BookshelfDragDrop>
         </div>
       )}
       {loading && (

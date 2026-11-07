@@ -44,7 +44,7 @@ export const usePullToRefresh = (
 
     function handleTouchStart(startEvent: TouchEvent) {
       const el = ref.current;
-      if (!el) return;
+      if (!el || el.closest('[data-dragging="true"]')) return;
 
       const atTop = el.scrollTop <= 0;
       const atBottom = el.scrollTop >= el.scrollHeight - el.clientHeight - 1;
@@ -80,6 +80,10 @@ export const usePullToRefresh = (
       function handleTouchMove(moveEvent: TouchEvent) {
         const el = ref.current;
         if (!el) return;
+        if (el.closest('[data-dragging="true"]')) {
+          handleTouchCancel();
+          return;
+        }
         if (isLoading) return;
 
         const currentX = moveEvent.touches[0]!.clientX;
@@ -171,6 +175,10 @@ export const usePullToRefresh = (
       async function handleTouchEnd(endEvent: TouchEvent) {
         const el = ref.current;
         if (!el) return;
+        if (el.closest('[data-dragging="true"]')) {
+          handleTouchCancel();
+          return;
+        }
 
         const wrappers = nativeBounce ? [] : getWrappers(el);
         const parentEl = el.parentNode as HTMLDivElement;

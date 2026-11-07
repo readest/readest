@@ -17,6 +17,7 @@ import type { DictionarySettings, ImportedDictionary } from '@/services/dictiona
 export type ThemeType = 'light' | 'dark' | 'auto';
 export type LibraryViewModeType = 'grid' | 'list';
 export const LibrarySortByType = {
+  Custom: 'custom',
   Title: 'title',
   Author: 'author',
   Updated: 'updated',

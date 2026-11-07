@@ -61,6 +61,23 @@ const mockScrollMetrics = (
 };
 
 describe('usePullToRefresh', () => {
+  it.each([
+    false,
+    true,
+  ])('does not refresh when a held touch becomes an item drag (active at start: %s)', (activeAtStart) => {
+    const onRefresh = vi.fn();
+    const { getByTestId } = render(<Harness onRefresh={onRefresh} />);
+    const scroller = getByTestId('scroller');
+    if (activeAtStart) scroller.parentElement!.dataset['dragging'] = 'true';
+    scroller.dispatchEvent(touchEvent('touchstart', 0, 0));
+    scroller.parentElement!.dataset['dragging'] = 'true';
+    scroller.dispatchEvent(touchEvent('touchmove', 0, 200));
+    scroller.dispatchEvent(touchEvent('touchend', 0, 200));
+    expect(onRefresh).not.toHaveBeenCalled();
+    expect(scroller.parentElement!.querySelector('.pull-refresh-loading')).toBeNull();
+    expect(getByTestId('book-grid').style.transform).not.toContain('translate3d');
+  });
+
   it('drags every transform-wrapper in the scroller during the pull', () => {
     const { getByTestId } = render(<Harness onRefresh={() => {}} />);
     const scroller = getByTestId('scroller');

@@ -144,5 +144,6 @@
   "Imported {{count}} new words_one": "Imported {{count}} new word",
   "Imported {{count}} new words_other": "Imported {{count}} new words",
   "{{count}} now Mastered_one": "{{count}} now Mastered",
-  "{{count}} now Mastered_other": "{{count}} now Mastered"
+  "{{count}} now Mastered_other": "{{count}} now Mastered",
+  "Move to parent group": "Move to parent group"
 }

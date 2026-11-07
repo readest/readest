@@ -1633,3 +1633,103 @@
 .tabular-nums {
   font-variant-numeric: tabular-nums;
 }
+
+/* Library drag feedback uses the same calm, neutral surfaces as the shelf. */
+.bookshelf-drag-item {
+  transition:
+    transform 180ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    opacity 150ms ease-out;
+}
+.bookshelf-drag-preview {
+  transition: transform 180ms ease-out;
+}
+.bookshelf-drag-preview[data-grouping='true'] {
+  transform: scale(0.94);
+}
+.bookshelf-drag-cover {
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.16);
+}
+.bookshelf-drag-action {
+  box-shadow: 0 2px 8px rgb(0 0 0 / 0.08);
+}
+.bookshelf-parent-drop {
+  box-shadow: 0 2px 12px rgb(0 0 0 / 0.08);
+  transition:
+    background-color 150ms ease-out,
+    border-color 150ms ease-out;
+  animation: bookshelf-parent-reveal 150ms ease-out;
+}
+@keyframes bookshelf-parent-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.bookshelf-parent-drop[data-over='true'] {
+  background: var(--color-base-200);
+  border-color: color-mix(in srgb, var(--color-base-content) 50%, transparent);
+}
+.bookshelf-group-target {
+  background: color-mix(in srgb, var(--color-base-200) 35%, transparent);
+  transition:
+    background-color 150ms ease-out,
+    border-color 150ms ease-out;
+}
+[data-drop-intent='group'] .bookshelf-group-target {
+  border-color: color-mix(in srgb, var(--color-base-content) 65%, transparent);
+  background: color-mix(in srgb, var(--color-base-200) 55%, transparent);
+}
+.bookshelf-group-progress {
+  transform-origin: 0 50%;
+  animation: bookshelf-group-dwell 450ms linear forwards;
+}
+[dir='rtl'] .bookshelf-group-progress {
+  transform-origin: 100% 50%;
+}
+@keyframes bookshelf-group-dwell {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bookshelf-drag-item,
+  .bookshelf-drag-preview {
+    transition: none;
+    transform: none !important;
+  }
+  .bookshelf-group-progress {
+    animation: none;
+  }
+  .bookshelf-parent-drop {
+    animation: none;
+  }
+}
+[data-eink='true'] .bookshelf-drag-item,
+[data-eink='true'] .bookshelf-drag-preview {
+  transition: none;
+  transform: none !important;
+}
+[data-eink='true'] .bookshelf-drag-cover,
+[data-eink='true'] .bookshelf-drag-action,
+[data-eink='true'] .bookshelf-parent-drop {
+  box-shadow: none;
+}
+[data-eink='true'] .bookshelf-group-target {
+  background: transparent;
+  border-color: var(--color-base-content);
+}
+[data-eink='true'] .bookshelf-group-progress {
+  animation: none;
+}
+[data-eink='true'] .bookshelf-parent-drop,
+[data-eink='true'] .bookshelf-group-target {
+  animation: none;
+  transition: none;
+}

@@ -2826,5 +2826,6 @@
   "Books uploaded": "Βιβλία που μεταφορτώθηκαν",
   "Reset Counts": "Επαναφορά μετρητών",
   "Reset the counts and sync history on this device?": "Επαναφορά των μετρητών και του ιστορικού συγχρονισμού σε αυτήν τη συσκευή;",
-  "Folder not available": "Ο φάκελος δεν είναι διαθέσιμος"
+  "Folder not available": "Ο φάκελος δεν είναι διαθέσιμος",
+  "Move to parent group": "Μετακίνηση στην ανώτερη ομάδα"
 }

@@ -2753,5 +2753,6 @@
   "Books uploaded": "Sách đã tải lên",
   "Reset Counts": "Đặt lại số liệu",
   "Reset the counts and sync history on this device?": "Đặt lại số liệu và lịch sử đồng bộ trên thiết bị này?",
-  "Folder not available": "Thư mục không khả dụng"
+  "Folder not available": "Thư mục không khả dụng",
+  "Move to parent group": "Chuyển lên nhóm cha"
 }

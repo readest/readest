@@ -2753,5 +2753,6 @@
   "Books uploaded": "アップロードした本",
   "Reset Counts": "カウントをリセット",
   "Reset the counts and sync history on this device?": "このデバイスのカウントと同期履歴をリセットしますか？",
-  "Folder not available": "フォルダーを利用できません"
+  "Folder not available": "フォルダーを利用できません",
+  "Move to parent group": "上位グループに移動"
 }

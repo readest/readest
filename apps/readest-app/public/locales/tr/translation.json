@@ -2826,5 +2826,6 @@
   "Books uploaded": "Yüklenen kitaplar",
   "Reset Counts": "Sayaçları Sıfırla",
   "Reset the counts and sync history on this device?": "Bu cihazdaki sayaçlar ve eşitleme geçmişi sıfırlansın mı?",
-  "Folder not available": "Klasör kullanılamıyor"
+  "Folder not available": "Klasör kullanılamıyor",
+  "Move to parent group": "Üst gruba taşı"
 }

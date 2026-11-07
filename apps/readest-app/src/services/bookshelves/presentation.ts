@@ -1,9 +1,11 @@
 import { Book, BooksGroup } from '@/types/book';
 import { BOOK_UNGROUPED_ID, BOOK_UNGROUPED_NAME } from '@/services/constants';
 import { md5Fingerprint } from '@/utils/md5';
-import { LibraryGroupByType, type SystemSettings } from '@/types/settings';
+import { LibraryGroupByType, LibrarySortByType, type SystemSettings } from '@/types/settings';
 import type { BookshelfResult } from './evaluate';
 import { resolveBookshelfGroupBy } from './grouping';
+import { resolveBookshelfMetadataSort } from './sorting';
+import { bookshelfOrderScope, orderBookshelfItems } from './ordering';
 import {
   createBookGroups,
   createBookSorter,
@@ -89,7 +91,15 @@ export const presentBookshelf = (
     result.definition,
     settings.libraryGroupBy || LibraryGroupByType.Group,
   );
-  const { by, ascending, thenBy, thenAscending } = result.definition.sort;
+  const custom = result.definition.sort.by === LibrarySortByType.Custom;
+  const { by, ascending, thenBy, thenAscending } = resolveBookshelfMetadataSort(result.definition);
+  const finish = <T extends Book | BooksGroup>(items: T[]) =>
+    custom
+      ? orderBookshelfItems(
+          items,
+          result.definition.manualOrder?.[bookshelfOrderScope(groupBy, manualGroupName || groupId)],
+        )
+      : items;
   const sortBy = by;
   const thenSortBy = thenBy;
   const sortOrder = ascending ? 'asc' : 'desc';
@@ -143,7 +153,7 @@ export const presentBookshelf = (
     ungroupedBooks.sort(withinGroupSorter);
     // When inside a group, books are already sorted correctly — return directly
     // to avoid the merge sort below overriding the within-group sort order
-    return ungroupedBooks;
+    return finish(ungroupedBooks);
   } else {
     ungroupedBooks.sort(withTimeRemainingLast<Book>(sortBy, bookSorter));
   }
@@ -181,5 +191,5 @@ export const presentBookshelf = (
     }),
   );
 
-  return allItems;
+  return finish(allItems);
 };

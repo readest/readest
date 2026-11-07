@@ -16,9 +16,17 @@ import type { BookshelfDefinition } from '@/types/bookshelf';
 import type { ShelfSection } from '@/app/library/components/BookshelfStream';
 import { createBookshelf, defaultBookshelves } from '@/services/bookshelves/definitions';
 import { applyBookshelfDraft } from '@/services/bookshelves/state';
+import {
+  createBookshelfOrderModeRow,
+  createBookshelfOrderRows,
+} from '@/services/bookshelves/orderRecords';
 import { HlcGenerator } from '@/libs/crdt';
 
 const save = vi.hoisted(() => vi.fn().mockResolvedValue(undefined));
+const pace = vi.hoisted(() => ({
+  appService: null as object | null,
+  load: vi.fn<() => Promise<Record<string, number>>>().mockResolvedValue({}),
+}));
 const searchParamsRef = vi.hoisted(() => ({ current: new URLSearchParams() }));
 // Mirrors the real router.replace: updates the same searchParamsRef the app
 // reads, so a test can verify a "later reopen" doesn't see cleared params.
@@ -32,13 +40,17 @@ vi.mock('next/navigation', () => ({
   useSearchParams: () => searchParamsRef.current,
 }));
 vi.mock('@/utils/nav', () => ({ navigateToLibrary: vi.fn() }));
-vi.mock('@/context/EnvContext', () => ({ useEnv: () => ({ envConfig: {} }) }));
+vi.mock('@/context/EnvContext', () => ({
+  useEnv: () => ({ envConfig: {}, appService: pace.appService }),
+}));
 vi.mock('@/services/bookshelves/persistence', () => ({ saveBookshelfDraft: save }));
 vi.mock('@/hooks/useTranslation', () => ({
   useTranslation: () => (s: string, values?: Record<string, unknown>) =>
     s.replace(/\{\{(\w+)\}\}/g, (_, key: string) => String(values?.[key] ?? '')),
 }));
-vi.mock('@/hooks/useMedianPageDurationSecs', () => ({ useMedianPageDurationsSecs: () => ({}) }));
+vi.mock('@/services/statistics/statisticsDb', () => ({
+  StatisticsDb: { open: async () => ({ getMedianPageDurationsSecs: pace.load }) },
+}));
 vi.mock('@/app/library/components/BookItem', () => ({
   default: ({ book }: { book: Book }) => <span>{book.title}</span>,
 }));
@@ -96,6 +108,8 @@ beforeEach(() => {
     },
   );
   save.mockReset().mockResolvedValue(undefined);
+  pace.appService = null;
+  pace.load.mockReset().mockResolvedValue({});
   // version: real settings always have one; its absence is what
   // useEnsureSettingsLoaded (BookshelvesDialog) treats as "not hydrated yet".
   useSettingsStore.setState({
@@ -120,6 +134,84 @@ afterEach(async () => {
   vi.unstubAllGlobals();
 });
 describe('bookshelf editor', () => {
+  it.each([
+    'primary',
+    'secondary',
+  ] as const)('loads reading pace for custom order with a time-remaining %s fallback', async (key) => {
+    pace.appService = {};
+    pace.load.mockResolvedValue({ slow: 60, fast: 1, pinned: 30 });
+    useLibraryStore.setState({
+      library: [
+        { hash: 'slow', title: 'Slow', progress: [1, 51] as [number, number] },
+        { hash: 'fast', title: 'Fast', progress: [1, 101] as [number, number] },
+        { hash: 'pinned', title: 'Pinned', progress: [1, 11] as [number, number] },
+      ].map((book) => ({
+        ...book,
+        author: 'Writer',
+        format: 'EPUB' as const,
+        createdAt: 0,
+        updatedAt: 0,
+      })),
+    });
+    const base = defaultBookshelves(DEFAULT_SYSTEM_SETTINGS);
+    const clock = new HlcGenerator('pace');
+    const draft = base.map((shelf) =>
+      shelf.id === 'default'
+        ? {
+            ...shelf,
+            useGlobalSort: false,
+            sort: {
+              by: 'custom' as const,
+              ascending: true,
+              thenBy: 'none' as const,
+              thenAscending: true,
+            },
+            customSortFallback: {
+              by: key === 'primary' ? ('timeRemaining' as const) : ('author' as const),
+              ascending: true,
+              thenBy: key === 'primary' ? ('none' as const) : ('timeRemaining' as const),
+              thenAscending: true,
+            },
+            manualOrder: { 'none:': ['b:pinned'] },
+          }
+        : { ...shelf, enabled: false },
+    );
+    const state = applyBookshelfDraft({ rows: {} }, base, draft, {
+      userId: '',
+      deviceId: 'pace',
+      next: () => clock.next(),
+    }).state;
+    const orderClock = { userId: '', deviceId: 'pace', next: () => clock.next() };
+    const records = [
+      ...createBookshelfOrderRows('default', 'none:', ['b:pinned'], orderClock),
+      createBookshelfOrderModeRow(
+        'default',
+        true,
+        state.rows['default']!.fields_jsonb['definition']!.t,
+        orderClock,
+      ),
+    ];
+    for (const row of records) state.rows[row.replica_id] = row;
+    useSettingsStore.setState({
+      settings: {
+        ...DEFAULT_SYSTEM_SETTINGS,
+        version: 1,
+        libraryGroupBy: 'none',
+        bookshelves: state,
+      },
+    });
+    render(<BookshelvesEditor />);
+    fireEvent.click(screen.getByRole('button', { name: 'Default' }));
+    await waitFor(() => expect(pace.load).toHaveBeenCalledOnce());
+    await waitFor(() =>
+      expect(
+        Array.from(screen.getByTestId('preview').querySelectorAll('span')).map(
+          (node) => node.textContent,
+        ),
+      ).toEqual(['Pinned', 'Fast', 'Slow']),
+    );
+  });
+
   it('shows the shelf tabs in the dialog header in place of a title', async () => {
     render(<BookshelvesDialog />);
     await act(async () => {

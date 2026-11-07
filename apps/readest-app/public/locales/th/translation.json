@@ -2753,5 +2753,6 @@
   "Books uploaded": "หนังสือที่อัปโหลด",
   "Reset Counts": "รีเซ็ตจำนวน",
   "Reset the counts and sync history on this device?": "รีเซ็ตจำนวนและประวัติการซิงค์บนอุปกรณ์นี้หรือไม่",
-  "Folder not available": "โฟลเดอร์ไม่พร้อมใช้งาน"
+  "Folder not available": "โฟลเดอร์ไม่พร้อมใช้งาน",
+  "Move to parent group": "ย้ายไปยังกลุ่มหลัก"
 }

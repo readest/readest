@@ -51,6 +51,7 @@ export const resolveBookshelfLayout = (
 ): BookshelfLayout =>
   shelf.layout === 'carousel' ? 'carousel' : viewMode === 'list' ? 'list' : 'grid';
 export const BOOKSHELF_SORT_LABELS: Record<LibrarySortByType, string> = {
+  custom: _('Custom'),
   title: _('Title'),
   author: _('Author'),
   updated: _('Date Read'),
@@ -138,7 +139,18 @@ const groupSchema = (depth: number): z.ZodType<BookshelfFilterGroup> =>
         .max(50),
     })
     .strict();
-export const bookshelfSchema: z.ZodType<BookshelfDefinition> = z
+const bookshelfSortSchema = z
+  .object({
+    by: z.enum(Object.values(LibrarySortByType).filter((value) => value !== 'custom')),
+    ascending: z.boolean(),
+    thenBy: z.enum([
+      ...Object.values(LibrarySortByType).filter((value) => value !== 'custom'),
+      'none',
+    ]),
+    thenAscending: z.boolean(),
+  })
+  .strict();
+export const persistedBookshelfSchema: z.ZodType<BookshelfDefinition> = z
   .object({
     id: bookshelfIdSchema,
     name: z.string().max(120),
@@ -152,14 +164,7 @@ export const bookshelfSchema: z.ZodType<BookshelfDefinition> = z
     useGlobalGrouping: z.boolean().optional(),
     groupBy: z.enum(Object.values(LibraryGroupByType)).optional(),
     useGlobalSort: z.boolean().optional(),
-    sort: z
-      .object({
-        by: z.enum(Object.values(LibrarySortByType)),
-        ascending: z.boolean(),
-        thenBy: z.enum([...Object.values(LibrarySortByType), 'none']),
-        thenAscending: z.boolean(),
-      })
-      .strict(),
+    sort: bookshelfSortSchema,
     limit: z.number().int().positive().max(Number.MAX_SAFE_INTEGER).optional(),
     exclusive: z.boolean(),
     includeExclusiveBooks: z.boolean(),
@@ -177,6 +182,39 @@ export const bookshelfSchema: z.ZodType<BookshelfDefinition> = z
   // position field and envelope stamps, or the server rejects the row forever.
   .refine((s) => new TextEncoder().encode(JSON.stringify(s)).length <= 60000, {
     message: _('This bookshelf has too many or too long filter conditions.'),
+  });
+/** Keep the shared definition readable by clients predating custom ordering. */
+export const persistedBookshelfDefinition = (shelf: BookshelfDefinition): BookshelfDefinition => {
+  const { manualOrder: _order, customSortFallback, ...definition } = shelf;
+  if (definition.sort.by === 'custom') {
+    definition.sort =
+      customSortFallback && customSortFallback.by !== 'custom'
+        ? customSortFallback
+        : { by: 'updated', ascending: false, thenBy: 'none', thenAscending: true };
+  }
+  return definition;
+};
+// Editors receive hydrated order and mode; both have their own replica records.
+export const bookshelfSchema: z.ZodType<BookshelfDefinition> = z
+  .unknown()
+  .transform((value, ctx) => {
+    let definition = value;
+    if (
+      value &&
+      typeof value === 'object' &&
+      !Array.isArray(value) &&
+      'sort' in value &&
+      value.sort &&
+      typeof value.sort === 'object'
+    ) {
+      definition = persistedBookshelfDefinition(value as BookshelfDefinition);
+    }
+    const parsed = persistedBookshelfSchema.safeParse(definition);
+    if (!parsed.success) {
+      for (const issue of parsed.error.issues) ctx.addIssue({ ...issue });
+      return z.NEVER;
+    }
+    return value as BookshelfDefinition;
   });
 export const createBookshelf = (name: string, id = crypto.randomUUID()): BookshelfDefinition => ({
   id,

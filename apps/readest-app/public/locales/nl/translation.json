@@ -2826,5 +2826,6 @@
   "Books uploaded": "Geüploade boeken",
   "Reset Counts": "Tellers resetten",
   "Reset the counts and sync history on this device?": "Tellers en synchronisatiegeschiedenis op dit apparaat resetten?",
-  "Folder not available": "Map niet beschikbaar"
+  "Folder not available": "Map niet beschikbaar",
+  "Move to parent group": "Naar bovenliggende groep verplaatsen"
 }

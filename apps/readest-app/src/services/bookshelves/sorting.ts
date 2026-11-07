@@ -47,3 +47,14 @@ export function getGlobalBookshelfSort(
 
 export const resolveBookshelfSort = (shelf: BookshelfDefinition, globalSort: BookshelfSort) =>
   shelf.useGlobalSort === false ? shelf.sort : globalSort;
+
+/** Metadata still orders unpinned items when a shelf has a manual order. */
+export const resolveBookshelfMetadataSort = (
+  shelf: Pick<BookshelfDefinition, 'sort' | 'customSortFallback'>,
+): BookshelfSort => {
+  if (shelf.sort.by !== 'custom') return shelf.sort;
+  const fallback = shelf.customSortFallback;
+  return fallback && fallback.by !== 'custom'
+    ? fallback
+    : { by: 'updated', ascending: false, thenBy: 'none', thenAscending: true };
+};

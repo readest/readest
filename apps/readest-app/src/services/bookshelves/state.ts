@@ -6,6 +6,7 @@ import type { Hlc, ReplicaRow } from '@/types/replica';
 import { hlcPack } from '@/libs/crdt';
 import {
   bookshelfSchema,
+  persistedBookshelfDefinition,
   defaultBookshelves,
   isBuiltinBookshelf,
   BUILTIN_BOOKSHELF_IDS,
@@ -14,6 +15,7 @@ import {
   RECENT_BOOKSHELF_ID,
 } from './definitions';
 import { stubTranslation as _ } from '@/utils/misc';
+import { readBookshelfItemOrders, readBookshelfOrderModes } from './orderRecords';
 
 export { mergeBookshelfRows } from './replica';
 export const mergeBookshelfStates = (a?: BookshelfState, b?: BookshelfState): BookshelfState => {
@@ -47,16 +49,20 @@ const crowded = (lo: number, position: number) => {
 };
 export const readBookshelves = (settings: Partial<SystemSettings>): BookshelfDefinition[] => {
   const definitions = new Map(defaultBookshelves(settings).map((s) => [s.id, s]));
+  const orderRows: ReplicaRow[] = [];
+  const definitionStamps = new Map<string, string>();
   for (const [id, cached] of Object.entries(settings.bookshelves?.rows || {})) {
     const row = resolveLocalBookshelf(cached);
     if (!row) continue;
     if (!bookshelfReplicaSchema.safeParse(row).success || row.replica_id !== id) continue;
+    orderRows.push(row);
     if (row.deleted_at_ts && !isBuiltinBookshelf(id)) {
       definitions.delete(id);
       continue;
     }
     const parsed = bookshelfSchema.safeParse(row.fields_jsonb['definition']?.v);
-    if (parsed.success && parsed.data.id === id)
+    if (parsed.success && parsed.data.id === id) {
+      definitionStamps.set(id, row.fields_jsonb['definition']!.t);
       definitions.set(id, {
         ...parsed.data,
         hideCovers: parsed.data.hideCovers ?? settings.libraryHideCovers ?? false,
@@ -64,13 +70,37 @@ export const readBookshelves = (settings: Partial<SystemSettings>): BookshelfDef
         skeuomorphicCovers:
           parsed.data.skeuomorphicCovers ?? settings.librarySkeuomorphicCovers ?? false,
       });
+    }
   }
-  return [...definitions.values()].sort((a, b) => {
-    return (
-      positionOf(settings.bookshelves, a.id) - positionOf(settings.bookshelves, b.id) ||
-      a.id.localeCompare(b.id)
-    );
-  });
+  const orders = readBookshelfItemOrders(orderRows);
+  const modes = readBookshelfOrderModes(orderRows);
+  return [...definitions.values()]
+    .map((shelf) => {
+      const mode = modes.get(shelf.id);
+      const custom =
+        mode?.active &&
+        shelf.useGlobalSort === false &&
+        mode.definitionStamp === (definitionStamps.get(shelf.id) ?? null);
+      return {
+        ...shelf,
+        ...(orders[shelf.id] && { manualOrder: orders[shelf.id] }),
+        ...(custom && {
+          customSortFallback: shelf.sort,
+          sort: {
+            by: 'custom' as const,
+            ascending: true,
+            thenBy: 'none' as const,
+            thenAscending: true,
+          },
+        }),
+      };
+    })
+    .sort((a, b) => {
+      return (
+        positionOf(settings.bookshelves, a.id) - positionOf(settings.bookshelves, b.id) ||
+        a.id.localeCompare(b.id)
+      );
+    });
 };
 
 export interface BookshelfCoverSettings {
@@ -155,6 +185,9 @@ export const applyBookshelfDraft = (
   clock: DraftClock,
   settings: Partial<SystemSettings> = {},
 ): { state: BookshelfState; operations: ReplicaRow[] } => {
+  // Item order has its own bounded records, not the definition's size budget.
+  base = base.map(persistedBookshelfDefinition);
+  draft = draft.map(persistedBookshelfDefinition);
   if (new Set(draft.map((s) => s.id)).size !== draft.length)
     throw new Error(_('Duplicate bookshelf.'));
   for (const s of draft) bookshelfSchema.parse(s);

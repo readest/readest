@@ -2899,5 +2899,6 @@
   "Books uploaded": "Livros carregados",
   "Reset Counts": "Repor contagens",
   "Reset the counts and sync history on this device?": "Repor as contagens e o histórico de sincronização neste dispositivo?",
-  "Folder not available": "Pasta indisponível"
+  "Folder not available": "Pasta indisponível",
+  "Move to parent group": "Mover para o grupo superior"
 }

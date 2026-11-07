@@ -10,6 +10,11 @@ import { setBookGroup } from '@/utils/book';
 import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useLibraryStore } from '@/store/libraryStore';
+import { useSettingsStore } from '@/store/settingsStore';
+import { readBookshelves } from '@/services/bookshelves/state';
+import { saveBookshelfGroupChanges } from '@/services/bookshelves/groupChanges';
+import { renameBookshelfGroupOrder } from '@/services/bookshelves/ordering';
+import { eventDispatcher } from '@/utils/event';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { useKeyDownActions } from '@/hooks/useKeyDownActions';
 import { BOOK_UNGROUPED_ID, BOOK_UNGROUPED_NAME } from '@/services/constants';
@@ -34,7 +39,7 @@ const GroupingModal: React.FC<GroupingModalProps> = ({
   onConfirm,
 }) => {
   const _ = useTranslation();
-  const { appService } = useEnv();
+  const { appService, envConfig } = useEnv();
   const {
     setLibrary,
     addGroup,
@@ -138,27 +143,45 @@ const GroupingModal: React.FC<GroupingModalProps> = ({
     onConfirm();
   };
 
-  const handleConfirmCreateGroup = () => {
+  const handleConfirmCreateGroup = async () => {
     let groupName = editGroupName.trim();
     if (groupName) {
       if (isRenaming && originalGroupName) {
         // Renaming existing group
         const oldGroupName = originalGroupName;
-
-        // Update the group name for all books in this group and nested groups
-        libraryBooks.forEach((book) => {
-          if (book.groupName === oldGroupName) {
-            setBookGroup(book, getGroupId(groupName), groupName);
-          } else if (book.groupName?.startsWith(oldGroupName + '/')) {
-            const newName = book.groupName.replace(oldGroupName, groupName);
-            setBookGroup(book, getGroupId(newName), newName);
-          }
+        const base = readBookshelves(useSettingsStore.getState().settings);
+        const names = getGroups().map((group) => group.name);
+        const draft = base.map((shelf) => {
+          const manualOrder = renameBookshelfGroupOrder(
+            shelf.manualOrder,
+            names,
+            oldGroupName,
+            groupName,
+          );
+          return manualOrder === shelf.manualOrder ? shelf : { ...shelf, manualOrder };
         });
-
-        setLibrary([...libraryBooks]);
-        appService?.saveLibraryBooks(libraryBooks);
-
-        refreshGroups();
+        const changed = useLibraryStore
+          .getState()
+          .library.filter(
+            (book) =>
+              !book.deletedAt &&
+              (book.groupName === oldGroupName || book.groupName?.startsWith(oldGroupName + '/')),
+          )
+          .map((book) => {
+            const next = { ...book };
+            const newName = groupName + book.groupName!.slice(oldGroupName.length);
+            setBookGroup(next, getGroupId(newName), newName);
+            return next;
+          });
+        try {
+          await saveBookshelfGroupChanges(envConfig, base, draft, changed);
+        } catch {
+          eventDispatcher.dispatch('toast', {
+            type: 'error',
+            message: _('Failed to save bookshelves.'),
+          });
+          return;
+        }
         // A rename is complete on its own. Left open, Confirm would move the
         // whole selected subtree into one group and flatten its nested groups.
         onConfirm();

@@ -2899,5 +2899,6 @@
   "Books uploaded": "Livres envoyés sur le serveur",
   "Reset Counts": "Réinitialiser les compteurs",
   "Reset the counts and sync history on this device?": "Réinitialiser les compteurs et l'historique de synchronisation sur cet appareil ?",
-  "Folder not available": "Dossier indisponible"
+  "Folder not available": "Dossier indisponible",
+  "Move to parent group": "Déplacer vers le groupe parent"
 }

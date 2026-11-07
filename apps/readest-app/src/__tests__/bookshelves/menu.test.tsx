@@ -36,6 +36,39 @@ beforeEach(() => {
 afterEach(cleanup);
 const env = {} as EnvConfigType;
 describe('bookshelf layouts from the View menu', () => {
+  it('shows custom order and exits it through a normal sort choice without discarding saved positions', async () => {
+    const base = readBookshelves(useSettingsStore.getState().settings);
+    await saveBookshelfDraft(
+      env,
+      base,
+      base.map((shelf) =>
+        shelf.id === 'default'
+          ? {
+              ...shelf,
+              useGlobalSort: false,
+              sort: { by: 'custom', ascending: true, thenBy: 'none', thenAscending: true },
+              manualOrder: { 'group:': ['b:second', 'b:first'] },
+            }
+          : shelf,
+      ),
+    );
+    render(<ViewMenu />);
+    const custom = screen.getByText('Custom').closest('button')!;
+    expect(custom.querySelector('svg')).toBeTruthy();
+    fireEvent.click(screen.getAllByText('Title')[0]!);
+    await waitFor(() =>
+      expect(
+        readBookshelves(useSettingsStore.getState().settings).find(
+          (shelf) => shelf.id === 'default',
+        )?.useGlobalSort,
+      ).toBe(true),
+    );
+    expect(
+      readBookshelves(useSettingsStore.getState().settings).find((shelf) => shelf.id === 'default')
+        ?.manualOrder,
+    ).toEqual({ 'group:': ['b:second', 'b:first'] });
+  });
+
   it('changes global sorting without rewriting shelf definitions or their pending edits', async () => {
     const base = readBookshelves(useSettingsStore.getState().settings);
     await saveBookshelfDraft(
