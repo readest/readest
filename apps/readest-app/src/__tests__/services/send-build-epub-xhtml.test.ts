@@ -30,6 +30,15 @@ describe('buildEpub — chapters are well-formed XHTML', () => {
     );
   });
 
+  test('keeps a leading newline inside <pre>', async () => {
+    // What sanitizeHtml yields for `<pre>\n\nfirst line</pre>`: the HTML
+    // parser already ate one LF, the remaining one is a real blank line.
+    const html = '<pre>\nfirst line</pre>';
+    const xhtml = await readChapter(await buildEpub([{ title: 'C', html }], meta));
+    const doc = new DOMParser().parseFromString(xhtml, 'application/xhtml+xml');
+    expect(doc.querySelector('pre')?.textContent).toBe('\nfirst line');
+  });
+
   test('keeps the image and its attributes', async () => {
     const html = '<figure><img src="images/example.jpg" alt="x"></figure>';
     const xhtml = await readChapter(await buildEpub([{ title: 'C', html }], meta));
