@@ -306,7 +306,7 @@ const VocabularyView: React.FC<VocabularyViewProps> = ({ onOpenBook }) => {
                 </li>
               )}
             </ul>
-            <div className={clsx('min-h-0 flex-1', detail ? 'flex' : 'hidden sm:flex')}>
+            <div className={clsx('min-h-0 min-w-0 flex-1', detail ? 'flex' : 'hidden sm:flex')}>
               {detail ? (
                 <VocabularyDetail
                   entry={detail}
