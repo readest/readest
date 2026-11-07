@@ -9,6 +9,8 @@ import { useReaderStore } from '@/store/readerStore';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useThemeStore } from '@/store/themeStore';
+import { useVocabularyStore } from '@/store/vocabularyStore';
+import { vocabularyLang } from '@/services/vocabulary/entry';
 import { useFoliateEvents } from '../hooks/useFoliateEvents';
 import { useCustomFontStore } from '@/store/customFontStore';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
@@ -32,6 +34,7 @@ import { getCfiSpinePrefix } from '@/utils/cfi';
 import { isLinkTargetVisible, shouldCheckAsFootnote } from '../utils/footnoteHeuristics';
 import { showTransientHighlight } from '../utils/transientHighlight';
 import { drawAnnotationOverlay } from '../utils/annotatorUtil';
+import { refreshSectionGlosses } from '../utils/wordlensSection';
 import {
   FootnoteExtractMapping,
   getFootnoteLocalCfi,
@@ -39,6 +42,7 @@ import {
 } from '../utils/footnoteCfi';
 import { FoliateView, NOTE_PREFIX } from '@/types/view';
 import { isCJKLang } from '@/utils/lang';
+import { getLocale } from '@/utils/misc';
 import { Overlay } from '@/components/Overlay';
 import Popup from '@/components/Popup';
 
@@ -395,6 +399,23 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
           popupMapRef.current = { ...info, doc };
         }
         trackPopupContentSize(popupView, doc);
+        const viewSettings = getViewSettings(bookKey);
+        if (
+          appService &&
+          viewSettings?.wordLensEnabled &&
+          bookDoc.rendition?.layout !== 'pre-paginated'
+        ) {
+          const bookLang = bookData.book?.primaryLanguage;
+          void refreshSectionGlosses(doc, viewSettings, {
+            appService,
+            bookLang,
+            appLang: getLocale(),
+            allowDownload: false,
+            vocabulary: useVocabularyStore
+              .getState()
+              .getLearningAndMastered(vocabularyLang(bookLang)),
+          });
+        }
         setPopupContentEpoch((epoch) => epoch + 1);
       });
       // Style callback for annotation overlays drawn in the popup document

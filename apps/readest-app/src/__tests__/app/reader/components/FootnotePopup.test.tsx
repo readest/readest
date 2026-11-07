@@ -23,6 +23,9 @@ const hoisted = vi.hoisted(() => ({
   showTransientHighlight: vi.fn(),
   isLinkTargetVisible: vi.fn(),
   applyLinkHitArea: vi.fn(),
+  wordLensEnabled: false,
+  loadGlossIndex: vi.fn().mockResolvedValue(null),
+  vocabulary: { learning: new Map([['spice', 'seasoning']]), mastered: new Set<string>() },
 }));
 
 vi.mock('foliate-js/footnotes.js', () => {
@@ -54,6 +57,14 @@ vi.mock('@/context/EnvContext', () => ({
   useEnv: () => ({ appService: { isMobile: false } }),
 }));
 
+vi.mock('@/services/wordlens/glossPacks', () => ({
+  loadGlossIndex: hoisted.loadGlossIndex,
+}));
+
+vi.mock('@/store/vocabularyStore', () => ({
+  useVocabularyStore: { getState: () => ({ getLearningAndMastered: () => hoisted.vocabulary }) },
+}));
+
 const bookDataState = {
   booksData: { bookid: { config: { booknotes: [] } } },
   getBookData: () => ({ book: { primaryLanguage: 'en' } }),
@@ -74,6 +85,7 @@ vi.mock('@/store/readerStore', () => ({
       defaultFontSize: 22,
       lineHeight: 1.8,
       fontWeight: 300,
+      wordLensEnabled: hoisted.wordLensEnabled,
     }),
   }),
 }));
@@ -242,6 +254,36 @@ describe('FootnotePopup link hit area', () => {
 
     expect(hoisted.applyLinkHitArea).toHaveBeenCalledWith(doc);
   });
+});
+
+it('renders existing Word Lens hints in the active footnote without downloading a pack', async () => {
+  hoisted.wordLensEnabled = true;
+  vi.stubGlobal(
+    'ResizeObserver',
+    class {
+      observe() {}
+      disconnect() {}
+    },
+  );
+  try {
+    await renderPopup();
+    const view = await openFootnotePopup();
+    const doc = document.implementation.createHTMLDocument();
+    doc.body.innerHTML = '<p>Add some spice.</p>';
+    await act(async () => {
+      view.dispatchEvent(new CustomEvent('load', { detail: { doc, index: 3 } }));
+    });
+    expect(doc.querySelector('.wl-gloss rt')?.textContent).toBe('seasoning');
+    expect(hoisted.loadGlossIndex).toHaveBeenCalledWith(
+      expect.anything(),
+      'en',
+      expect.any(String),
+      expect.objectContaining({ allowDownload: false }),
+    );
+  } finally {
+    hoisted.wordLensEnabled = false;
+    vi.unstubAllGlobals();
+  }
 });
 
 describe('FootnotePopup jump to location', () => {
