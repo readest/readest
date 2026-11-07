@@ -109,6 +109,36 @@ beforeEach(() => {
 afterEach(() => cleanup());
 
 describe('VocabularyView', () => {
+  it('sorts the visible vocabulary by saved sentences, date added, or word', () => {
+    const first = entry('zebra', { createdAt: 1, occurrences: [] });
+    const second = entry('apple', { createdAt: 2 });
+    const third = entry('mango', {
+      createdAt: 3,
+      occurrences: [
+        { sentence: 'A mango.', at: 5 },
+        { sentence: 'Another mango.', at: 4 },
+      ],
+    });
+    seed([first, second, third]);
+    render(
+      <DropdownProvider>
+        <VocabularyView />
+      </DropdownProvider>,
+    );
+    expect(listWords()).toEqual(['apple', 'mango', 'zebra']);
+    const choose = (name: string) => {
+      fireEvent.click(screen.getByRole('button', { name: 'Sort by' }));
+      fireEvent.click(screen.getByRole('menuitem', { name: `${name} - OFF` }));
+      return listWords();
+    };
+    expect(choose('Most Saved Sentences')).toEqual(['mango', 'apple', 'zebra']);
+    expect(choose('Newest Added')).toEqual(['mango', 'apple', 'zebra']);
+    expect(choose('Oldest Added')).toEqual(['zebra', 'apple', 'mango']);
+    expect(choose('Alphabetical A-Z')).toEqual(['apple', 'mango', 'zebra']);
+    expect(choose('Alphabetical Z-A')).toEqual(['zebra', 'mango', 'apple']);
+    expect(choose('Last Looked Up')).toEqual(['apple', 'mango', 'zebra']);
+  });
+
   it('filters the list by state', () => {
     render(<VocabularyView />);
     expect(listWords().sort()).toEqual(['ball', 'sandworm', 'spice']);
