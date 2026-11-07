@@ -39,6 +39,7 @@ const h = vi.hoisted(() => ({
   },
   hoveredBookKey: 'book-1' as string | null,
   isFixedLayout: false,
+  format: 'EPUB',
   pageRect: null as DOMRect | null,
   overlay: null as SVGSVGElement | null,
   setHoveredBookKey: vi.fn(),
@@ -127,7 +128,9 @@ vi.mock('@/store/readerStore', () => {
   return { useReaderStore };
 });
 vi.mock('@/store/bookDataStore', () => ({
-  useBookDataStore: () => ({ getBookData: () => ({ isFixedLayout: h.isFixedLayout }) }),
+  useBookDataStore: () => ({
+    getBookData: () => ({ isFixedLayout: h.isFixedLayout, book: { format: h.format } }),
+  }),
 }));
 vi.mock('@/store/settingsStore', () => {
   const useSettingsStore = () => ({ isSettingsDialogOpen: h.settingsDialogOpen });
@@ -168,6 +171,7 @@ vi.mock('@/app/reader/utils/capturedTurn', () => ({
 
 import { useCapturedTurn } from '@/app/reader/hooks/useCapturedTurn';
 import { dispatchTouchInterceptors } from '@/app/reader/hooks/useTouchInterceptor';
+import { eventDispatcher } from '@/utils/event';
 
 const makeView = () =>
   ({
@@ -234,6 +238,7 @@ beforeEach(() => {
   h.settingsListeners.clear();
   h.viewSettings.pageTurnStyle = 'curl';
   h.isFixedLayout = false;
+  h.format = 'EPUB';
   h.viewSettings.zoomLevel = 100;
   h.viewSettings.zoomMode = 'fit-page';
   h.pageRect = null;
@@ -1812,6 +1817,42 @@ describe('useCapturedTurn on a zoomed fixed-layout page', () => {
     expect(h.renderer.scrollTop).toBe(40);
   });
 
+  // pdf.js redraws the restored zoom asynchronously, and foliate re-emits
+  // create-overlayer when it has. Until then the page shows at the old scale.
+  test('a cancelled turn on a PDF settles only once the zoomed page has redrawn', async () => {
+    h.format = 'PDF';
+    h.renderer.panX = 1;
+    drag(-60);
+    await turnToNextPage();
+    const settled = vi.fn();
+    const cancel = h.controllerHost!.navigate(false).then(settled);
+    await act(async () => new Promise((r) => setTimeout(r, 0)));
+    expect(h.viewSettings.zoomLevel).toBe(200);
+    expect(settled).not.toHaveBeenCalled();
+    h.renderer.dispatchEvent(new Event('create-overlayer'));
+    await act(async () => cancel);
+    expect(settled).toHaveBeenCalled();
+  });
+
+  test('a cancelled turn on a PDF stops waiting for a redraw that never reports', async () => {
+    h.format = 'PDF';
+    h.renderer.panX = 1;
+    drag(-60);
+    await turnToNextPage();
+    vi.useFakeTimers();
+    try {
+      const settled = vi.fn();
+      const cancel = h.controllerHost!.navigate(false).then(settled);
+      await act(async () => vi.advanceTimersByTimeAsync(999));
+      expect(settled).not.toHaveBeenCalled();
+      await act(async () => vi.advanceTimersByTimeAsync(1));
+      await act(async () => cancel);
+      expect(settled).toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   test('a cancelled turn still restores its page when the next drag starts first', async () => {
     h.renderer.panX = 1;
     h.renderer.scrollLeft = 120;
@@ -1843,6 +1884,182 @@ describe('useCapturedTurn on a zoomed fixed-layout page', () => {
       expect(h.controller.beginDrag).not.toHaveBeenCalled();
     } finally {
       h.viewSettings.animated = true;
+    }
+  });
+
+  describe('native continuation of a lost iOS edge drag', () => {
+    const nativeTouch = (
+      type: 'touchstart' | 'touchmove' | 'touchend' | 'touchcancel',
+      x: number,
+      y: number,
+      timestamp: number,
+    ) =>
+      eventDispatcher.dispatch('native-touch', {
+        type,
+        x,
+        y,
+        timestamp,
+        pointerId: 0,
+        pointerCount: 1,
+        pressure: 1,
+      });
+
+    beforeEach(() => {
+      h.ios = true;
+      h.renderer.panX = 1;
+      vi.useFakeTimers();
+      vi.stubGlobal('devicePixelRatio', 3);
+    });
+
+    afterEach(() => vi.unstubAllGlobals());
+
+    const start = async () => {
+      renderHook(() => useCapturedTurn('book-1', { current: makeView() }));
+      await nativeTouch('touchstart', 1200, 900, 1000);
+      dispatchTouchInterceptors('book-1', detail('start', 0, 0, 0, 150));
+      dispatchTouchInterceptors('book-1', detail('move', -60, 0, 16, 150));
+      h.controller.moveDrag.mockClear();
+    };
+
+    test('keeps following the native finger when the page stops sending moves', async () => {
+      await start();
+      await act(async () => vi.advanceTimersByTimeAsync(60));
+      await nativeTouch('touchmove', 750, 1020, 1100);
+      // Native coordinates are physical pixels in the webview; only their
+      // displacement belongs to the DOM gesture, whose screen origin differs.
+      expect(h.controller.moveDrag).toHaveBeenLastCalledWith(
+        90 / window.innerWidth,
+        0.5 + 40 / window.innerHeight,
+      );
+    });
+
+    test('uses the native release position to finish a lost swipe', async () => {
+      await start();
+      await nativeTouch('touchend', -900, 900, 1400);
+      await act(async () => vi.advanceTimersByTimeAsync(250));
+      expect(h.controller.moveDrag).toHaveBeenLastCalledWith(640 / window.innerWidth, 0.5);
+      expect(h.controller.endDrag).toHaveBeenCalledExactlyOnceWith(true, expect.any(Number));
+    });
+
+    test('lets the finger return to the original page before releasing', async () => {
+      await start();
+      await act(async () => vi.advanceTimersByTimeAsync(60));
+      await nativeTouch('touchmove', -900, 900, 1400);
+      await nativeTouch('touchend', 1170, 900, 1600);
+      await act(async () => vi.advanceTimersByTimeAsync(250));
+      expect(h.controller.moveDrag).toHaveBeenLastCalledWith(0, 0.5);
+      expect(h.controller.endDrag).toHaveBeenCalledExactlyOnceWith(false, expect.any(Number));
+    });
+
+    test('keeps recent DOM samples and their release authoritative', async () => {
+      await start();
+      await nativeTouch('touchmove', 750, 900, 1100);
+      expect(h.controller.moveDrag).not.toHaveBeenCalled();
+      await nativeTouch('touchend', -900, 900, 1400);
+      dispatchTouchInterceptors('book-1', detail('end', -20, 0, 400, 150));
+      await act(async () => vi.advanceTimersByTimeAsync(1000));
+      expect(h.controller.endDrag).toHaveBeenCalledExactlyOnceWith(false, expect.any(Number));
+    });
+
+    test('cancels a lost drag when a second finger interrupts it', async () => {
+      await start();
+      await nativeTouch('touchcancel', -900, 900, 1400);
+      await act(async () => vi.advanceTimersByTimeAsync(250));
+      expect(h.controller.endDrag).toHaveBeenCalledExactlyOnceWith(false);
+    });
+
+    test('consumes a DOM release that arrives after native settlement', async () => {
+      await start();
+      await nativeTouch('touchend', -900, 900, 1400);
+      await act(async () => vi.advanceTimersByTimeAsync(250));
+      // Otherwise the lower-priority fixed-layout swipe fallback can turn
+      // another page using this same late release.
+      expect(dispatchTouchInterceptors('book-1', detail('end', -700, 0, 400, 150))).toBe(true);
+      expect(h.controller.endDrag).toHaveBeenCalledExactlyOnceWith(true, expect.any(Number));
+    });
+
+    test('accepts the native start when the DOM claim arrives first', async () => {
+      renderHook(() => useCapturedTurn('book-1', { current: makeView() }));
+      dispatchTouchInterceptors('book-1', detail('start', 0, 0, 0, 150));
+      dispatchTouchInterceptors('book-1', detail('move', -60, 0, 16, 150));
+      await nativeTouch('touchstart', 1200, 900, 1000);
+      await act(async () => vi.advanceTimersByTimeAsync(60));
+      await nativeTouch('touchmove', 750, 900, 1100);
+      expect(h.controller.moveDrag).toHaveBeenLastCalledWith(90 / window.innerWidth, 0.5);
+    });
+
+    test('continues a rightward next-page swipe in RTL', async () => {
+      h.viewSettings.rtl = true;
+      h.renderer.panX = 0;
+      renderHook(() => useCapturedTurn('book-1', { current: makeView() }));
+      await nativeTouch('touchstart', 0, 900, 1000);
+      dispatchTouchInterceptors('book-1', detail('start', 0, 0, 0, 150));
+      dispatchTouchInterceptors('book-1', detail('move', 60, 0, 16, 150));
+      await act(async () => vi.advanceTimersByTimeAsync(60));
+      await nativeTouch('touchmove', 450, 900, 1100);
+      expect(h.controller.moveDrag).toHaveBeenLastCalledWith(90 / window.innerWidth, 0.5);
+      await nativeTouch('touchend', 2100, 900, 1400);
+      await act(async () => vi.advanceTimersByTimeAsync(250));
+      expect(h.controller.endDrag).toHaveBeenCalledExactlyOnceWith(true, expect.any(Number));
+    });
+
+    test('does not apply a queued native release to the following drag', async () => {
+      await start();
+      await nativeTouch('touchend', -900, 900, 1400);
+      await nativeTouch('touchstart', 1200, 900, 1500);
+      dispatchTouchInterceptors('book-1', detail('start', 0, 0, 0, 150));
+      dispatchTouchInterceptors('book-1', detail('move', -60, 0, 16, 150));
+      await act(async () => vi.advanceTimersByTimeAsync(250));
+      // The replacement DOM start cancels the old drag once. Its queued
+      // native lift must neither commit it nor release the replacement.
+      expect(h.controller.endDrag).toHaveBeenCalledExactlyOnceWith(false);
+    });
+
+    test('does not drive a pan that has not claimed a page turn', async () => {
+      h.renderer.panX = 0.5;
+      await start();
+      await act(async () => vi.advanceTimersByTimeAsync(60));
+      await nativeTouch('touchmove', -900, 900, 1400);
+      await nativeTouch('touchend', -900, 900, 1450);
+      await act(async () => vi.advanceTimersByTimeAsync(250));
+      expect(h.controller.beginDrag).not.toHaveBeenCalled();
+      expect(h.controller.moveDrag).not.toHaveBeenCalled();
+      expect(h.controller.endDrag).not.toHaveBeenCalled();
+    });
+  });
+
+  // WebKit can stop delivering a touch's DOM events partway through a drag, so
+  // its release never arrives. The native touch stream still sees the lift.
+  const lift = () => eventDispatcher.dispatch('native-touch', { type: 'touchend' });
+
+  test('a drag whose release never reaches the page settles back once the finger lifts', async () => {
+    h.renderer.panX = 1;
+    vi.useFakeTimers();
+    try {
+      drag(-60);
+      await act(async () => {
+        await lift();
+        await vi.advanceTimersByTimeAsync(249);
+      });
+      expect(h.controller.endDrag).not.toHaveBeenCalled();
+      await act(async () => vi.advanceTimersByTimeAsync(1));
+      expect(h.controller.endDrag).toHaveBeenCalledExactlyOnceWith(false);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  test('a release that reaches the page after the lift still decides the turn', async () => {
+    h.renderer.panX = 1;
+    vi.useFakeTimers();
+    try {
+      drag(-60);
+      await act(async () => lift());
+      dispatchTouchInterceptors('book-1', detail('end', -900, 0, 400, 150));
+      await act(async () => vi.advanceTimersByTimeAsync(1000));
+      expect(h.controller.endDrag).toHaveBeenCalledExactlyOnceWith(true, expect.any(Number));
+    } finally {
+      vi.useRealTimers();
     }
   });
 });

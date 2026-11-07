@@ -385,8 +385,9 @@ private final class SelectionTouchObserver: UIGestureRecognizer {
 
   override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent) {
     guard let touch = trackedTouch, touches.contains(touch) else { return }
-    // Match Android's ~10/s bridge rate; start/end/cancel are never throttled.
-    guard touch.timestamp - lastMoveTime >= 0.1 else { return }
+    // Edge page turns also use this stream when WebKit loses the DOM touch.
+    // Keep their fallback finger tracking at display cadence, rather than 10Hz.
+    guard touch.timestamp - lastMoveTime >= 1.0 / 60.0 else { return }
     lastMoveTime = touch.timestamp
     forward("touchmove", touch: touch)
   }
