@@ -566,7 +566,7 @@ diff -ruN blitz/packages/blitz-dom/src/events/pointer.rs blitz/packages/blitz-do
 diff -ruN blitz/packages/blitz-dom/src/layout/columns.rs blitz/packages/blitz-dom/src/layout/columns.rs
 --- blitz/packages/blitz-dom/src/layout/columns.rs
 +++ blitz/packages/blitz-dom/src/layout/columns.rs
-@@ -0,0 +1,351 @@
+@@ -0,0 +1,353 @@
 +//! Columns of the root element: CSS multi-column with `column-fill: auto` and a definite height,
 +//! as foliate-js's paginator styles an EPUB section (one column per page, the columns overflowing
 +//! to the right, the iframe as wide as all of them).
@@ -761,7 +761,9 @@ diff -ruN blitz/packages/blitz-dom/src/layout/columns.rs blitz/packages/blitz-do
 +        if style.get_position().height.is_auto() {
 +            return None;
 +        }
-+        let layout = root.final_layout();
++        // Unrounded: a fractional padding (foliate-js's side margins) would otherwise move every
++        // column by its rounding error once more.
++        let layout = root.unrounded_layout();
 +        let content_left = layout.border.left + layout.padding.left;
 +        let content_top = layout.border.top + layout.padding.top;
 +        let width = layout.size.width - content_left - layout.border.right - layout.padding.right;
@@ -1758,7 +1760,7 @@ diff -ruN blitz/packages/blitz-dom/src/util.rs blitz/packages/blitz-dom/src/util
 diff -ruN blitz/packages/blitz-html/src/html_document.rs blitz/packages/blitz-html/src/html_document.rs
 --- blitz/packages/blitz-html/src/html_document.rs
 +++ blitz/packages/blitz-html/src/html_document.rs
-@@ -68,3 +68,341 @@
+@@ -68,3 +68,349 @@
          self.into()
      }
  }
@@ -2053,6 +2055,14 @@ diff -ruN blitz/packages/blitz-html/src/html_document.rs blitz/packages/blitz-ht
 +        // 2 lines at a column's bottom, then 1 (Readest's novel, Chromium's break): with orphans
 +        // and widows 2, the paragraph is not moved whole.
 +        assert_eq!(first(&lines(&[3, 3], ""), "p1"), (0.0, 60.0, 40.0));
++    }
++
++    #[test]
++    fn columns_are_as_wide_as_the_unrounded_content_box() {
++        // foliate-js's paginator: a fractional side padding, one column per root width.
++        let css = "width:464px;box-sizing:border-box;padding:0 16.2105px;column-width:399px;column-gap:32.4211px";
++        let (x, _, _) = first(&lines(&[5, 5], css), "p1");
++        assert!((x - (464.0 + 16.2105)).abs() < 0.01, "the second column at {x}, not 480.21");
 +    }
 +
 +    fn doc_rects(doc: &HtmlDocument, id: &str) -> Vec<(f64, f64, f64)> {
