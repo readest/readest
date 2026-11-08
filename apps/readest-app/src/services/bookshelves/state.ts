@@ -72,7 +72,7 @@ export const readBookshelves = (settings: Partial<SystemSettings>): BookshelfDef
       });
     }
   }
-  const orders = readBookshelfItemOrders(orderRows);
+  const { orders, updatedAt: orderUpdatedAt } = readBookshelfItemOrders(orderRows);
   const modes = readBookshelfOrderModes(orderRows);
   return [...definitions.values()]
     .map((shelf) => {
@@ -83,7 +83,10 @@ export const readBookshelves = (settings: Partial<SystemSettings>): BookshelfDef
         mode.definitionStamp === (definitionStamps.get(shelf.id) ?? null);
       return {
         ...shelf,
-        ...(orders[shelf.id] && { manualOrder: orders[shelf.id] }),
+        ...(orders[shelf.id] && {
+          manualOrder: orders[shelf.id],
+          manualOrderUpdatedAt: orderUpdatedAt[shelf.id],
+        }),
         ...(custom && {
           customSortFallback: shelf.sort,
           sort: {

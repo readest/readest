@@ -124,11 +124,17 @@ export const saveBookshelfDraft = async (
     ])) {
       const ids = shelf.manualOrder?.[scope] ?? [];
       if (JSON.stringify(ids) === JSON.stringify(previous?.[scope] ?? [])) continue;
-      const rows = createBookshelfOrderRows(shelf.id, scope, ids, {
-        userId,
-        deviceId,
-        next: () => hlc.next(),
-      });
+      const rows = createBookshelfOrderRows(
+        shelf.id,
+        scope,
+        ids,
+        {
+          userId,
+          deviceId,
+          next: () => hlc.next(),
+        },
+        shelf.manualOrderUpdatedAt?.[scope] ?? original?.manualOrderUpdatedAt?.[scope],
+      );
       orderOperations.push(...rows);
     }
   }

@@ -102,6 +102,7 @@ describe('bookshelf persistence and sync integration', () => {
       sort: { ...baseline, by: 'custom' },
       customSortFallback: baseline,
       manualOrder: { 'group:': ['b:second', 'b:first'] },
+      manualOrderUpdatedAt: { 'group:': 100 },
     }));
     const definition =
       useSettingsStore.getState().settings.bookshelves!.rows[custom.id]!.fields_jsonb['definition']!
@@ -111,8 +112,10 @@ describe('bookshelf persistence and sync integration', () => {
       readBookshelves(useSettingsStore.getState().settings).find((s) => s.id === custom.id)!;
     expect(read().sort.by).toBe('custom');
     expect(read().customSortFallback).toEqual(baseline);
+    expect(read().manualOrderUpdatedAt?.['group:']).toBe(100);
     await updateBookshelf(env, custom.id, (shelf) => ({ ...shelf, name: 'Renamed' }));
     expect(read().sort.by).toBe('custom');
+    expect(read().manualOrderUpdatedAt?.['group:']).toBe(100);
     await updateBookshelf(env, custom.id, (shelf) => ({ ...shelf, sort: baseline }));
     expect(read().sort.by).toBe('title');
     expect(read().manualOrder?.['group:']).toEqual(['b:second', 'b:first']);

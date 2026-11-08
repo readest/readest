@@ -116,6 +116,10 @@ describe('saving group membership and shelf order together', () => {
         readBookshelves(useSettingsStore.getState().settings).find((s) => s.id === 'default')
           ?.manualOrder?.['group:A/B'],
       ).toEqual(['b:one']);
+      expect(
+        readBookshelves(useSettingsStore.getState().settings).find((s) => s.id === 'default')
+          ?.manualOrderUpdatedAt?.['group:A/B'],
+      ).toBe(base.find((s) => s.id === 'default')?.manualOrderUpdatedAt?.['group:A/B']);
     } finally {
       unsubscribe();
     }

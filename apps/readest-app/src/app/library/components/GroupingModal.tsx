@@ -13,7 +13,10 @@ import { useLibraryStore } from '@/store/libraryStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { readBookshelves } from '@/services/bookshelves/state';
 import { saveBookshelfGroupChanges } from '@/services/bookshelves/groupChanges';
-import { renameBookshelfGroupOrder } from '@/services/bookshelves/ordering';
+import {
+  renameBookshelfGroupOrder,
+  renameBookshelfOrderTimes,
+} from '@/services/bookshelves/ordering';
 import { eventDispatcher } from '@/utils/event';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { useKeyDownActions } from '@/hooks/useKeyDownActions';
@@ -158,7 +161,17 @@ const GroupingModal: React.FC<GroupingModalProps> = ({
             oldGroupName,
             groupName,
           );
-          return manualOrder === shelf.manualOrder ? shelf : { ...shelf, manualOrder };
+          return manualOrder === shelf.manualOrder
+            ? shelf
+            : {
+                ...shelf,
+                manualOrder,
+                manualOrderUpdatedAt: renameBookshelfOrderTimes(
+                  shelf.manualOrderUpdatedAt,
+                  oldGroupName,
+                  groupName,
+                ),
+              };
         });
         const changed = useLibraryStore
           .getState()

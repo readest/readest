@@ -49,7 +49,11 @@ export const saveBookshelfGroupChanges = async (
       const before = base.find((s) => s.id === shelf.id);
       const attempted = draft.find((s) => s.id === shelf.id);
       if (!before || !attempted) return shelf;
-      const next = { ...shelf, manualOrder: { ...shelf.manualOrder } };
+      const next = {
+        ...shelf,
+        manualOrder: { ...shelf.manualOrder },
+        manualOrderUpdatedAt: { ...shelf.manualOrderUpdatedAt },
+      };
       // Revert only this operation's fields, leaving independent sync edits intact.
       for (const key of ['sort', 'useGlobalSort', 'customSortFallback'] as const) {
         if (!equal(before[key], attempted[key]) && equal(shelf[key], attempted[key]))
@@ -61,8 +65,12 @@ export const saveBookshelfGroupChanges = async (
       ])) {
         const oldOrder = before.manualOrder?.[scope] ?? [];
         const newOrder = attempted.manualOrder?.[scope] ?? [];
-        if (!equal(oldOrder, newOrder) && equal(shelf.manualOrder?.[scope] ?? [], newOrder))
+        if (!equal(oldOrder, newOrder) && equal(shelf.manualOrder?.[scope] ?? [], newOrder)) {
           next.manualOrder[scope] = oldOrder;
+          const orderedAt = before.manualOrderUpdatedAt?.[scope];
+          if (orderedAt === undefined) delete next.manualOrderUpdatedAt[scope];
+          else next.manualOrderUpdatedAt[scope] = orderedAt;
+        }
       }
       return next;
     });

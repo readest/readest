@@ -58,6 +58,8 @@ import {
   moveBookshelfItem,
   moveBookshelfItemToParent,
   renameBookshelfGroupOrder,
+  renameBookshelfOrderTimes,
+  mergeBookshelfVisibleOrder,
 } from '@/services/bookshelves/ordering';
 import { presentBookshelf } from '@/services/bookshelves/presentation';
 import type { BookshelfDefinition } from '@/types/bookshelf';
@@ -1011,29 +1013,37 @@ const Bookshelf: React.FC<BookshelfProps> = ({
                     moved.newGroupName,
                   )
                 : current.manualOrder;
+            const renamedTimes =
+              moved.oldGroupName && moved.newGroupName
+                ? renameBookshelfOrderTimes(
+                    current.manualOrderUpdatedAt,
+                    moved.oldGroupName,
+                    moved.newGroupName,
+                  )
+                : current.manualOrderUpdatedAt;
             if (current.id !== shelf.id)
               return renamed === current.manualOrder
                 ? current
-                : { ...current, manualOrder: renamed };
-            const order =
-              (shelf.sort.by === 'custom' ? renamed?.[scope] : undefined) ??
-              section.items.map(bookshelfItemId);
-            const above =
-              (shelf.sort.by === 'custom' ? renamed?.[parentScope] : undefined) ??
-              parentItems.map(bookshelfItemId);
+                : { ...current, manualOrder: renamed, manualOrderUpdatedAt: renamedTimes };
+            const manualOrder = { ...renamed };
+            if (shelf.sort.by === 'custom') {
+              if (renamed?.[scope])
+                manualOrder[scope] = mergeBookshelfVisibleOrder(
+                  section.items,
+                  renamed[scope],
+                ).filter((id) => id !== bookshelfItemId(source) && id !== moved.itemId);
+              if (renamed?.[parentScope])
+                manualOrder[parentScope] = [
+                  ...mergeBookshelfVisibleOrder(parentItems, renamed[parentScope]).filter(
+                    (id) => id !== moved.itemId,
+                  ),
+                  moved.itemId,
+                ];
+            }
             return {
               ...current,
-              useGlobalSort: false,
-              customSortFallback:
-                shelf.sort.by === 'custom' ? current.customSortFallback : shelf.sort,
-              sort: { by: 'custom', ascending: true, thenBy: 'none', thenAscending: true },
-              manualOrder: {
-                ...renamed,
-                [scope]: order.filter(
-                  (id) => id !== bookshelfItemId(source) && id !== moved.itemId,
-                ),
-                [parentScope]: [...above.filter((id) => id !== moved.itemId), moved.itemId],
-              },
+              manualOrder,
+              manualOrderUpdatedAt: renamedTimes,
             };
           });
           parentAfterMove.current = { groupId, parent: moved.parent };
@@ -1051,6 +1061,8 @@ const Bookshelf: React.FC<BookshelfProps> = ({
               )
             : null;
         const update = (current: BookshelfDefinition): BookshelfDefinition => {
+          if (grouped && (shelf.sort.by !== 'custom' || !current.manualOrder?.[scope]))
+            return current;
           let order = moveBookshelfItem(
             section.items,
             shelf.sort.by === 'custom' ? current.manualOrder?.[scope] : undefined,
@@ -1072,6 +1084,12 @@ const Bookshelf: React.FC<BookshelfProps> = ({
               shelf.sort.by === 'custom' ? current.customSortFallback : shelf.sort,
             sort: { by: 'custom', ascending: true, thenBy: 'none', thenAscending: true },
             manualOrder: { ...current.manualOrder, [scope]: order },
+            manualOrderUpdatedAt: grouped
+              ? current.manualOrderUpdatedAt
+              : {
+                  ...current.manualOrderUpdatedAt,
+                  [scope]: Date.now(),
+                },
           };
         };
         if (grouped) {

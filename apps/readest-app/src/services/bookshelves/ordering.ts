@@ -7,6 +7,21 @@ export const bookshelfItemId = (item: Book | BooksGroup) =>
 
 export const bookshelfOrderScope = (groupBy: string, parent = '') => `${groupBy}:${parent}`;
 
+const renameOrderScope = (scope: string, oldName: string, newName: string) =>
+  scope === `group:${oldName}` || scope.startsWith(`group:${oldName}/`)
+    ? `group:${newName}${scope.slice(`group:${oldName}`.length)}`
+    : scope;
+
+export const renameBookshelfOrderTimes = (
+  times: Record<string, number> | undefined,
+  oldName: string,
+  newName: string,
+) =>
+  times &&
+  Object.fromEntries(
+    Object.entries(times).map(([scope, time]) => [renameOrderScope(scope, oldName, newName), time]),
+  );
+
 export const renameBookshelfGroupOrder = (
   order: Record<string, string[]> | undefined,
   groupNames: string[],
@@ -24,10 +39,7 @@ export const renameBookshelfGroupOrder = (
   );
   const renamed: Record<string, string[]> = {};
   for (const [scope, ids] of Object.entries(order)) {
-    const nextScope =
-      scope === `group:${oldName}` || scope.startsWith(`group:${oldName}/`)
-        ? `group:${newName}${scope.slice(`group:${oldName}`.length)}`
-        : scope;
+    const nextScope = renameOrderScope(scope, oldName, newName);
     renamed[nextScope] = [
       ...new Set([
         ...(renamed[nextScope] ?? []),
@@ -41,12 +53,32 @@ export const renameBookshelfGroupOrder = (
 export const orderBookshelfItems = <T extends Book | BooksGroup>(
   items: T[],
   order: string[] = [],
+  orderedAt?: number,
 ) => {
   const ranks = new Map(order.map((id, index) => [id, index]));
-  return [...items].sort(
-    (a, b) =>
-      (ranks.get(bookshelfItemId(a)) ?? Infinity) - (ranks.get(bookshelfItemId(b)) ?? Infinity),
-  );
+  return [...items].sort((a, b) => {
+    const recentA = orderedAt !== undefined && a.updatedAt > orderedAt;
+    const recentB = orderedAt !== undefined && b.updatedAt > orderedAt;
+    if (recentA || recentB) return Number(recentB) - Number(recentA) || b.updatedAt - a.updatedAt;
+    return (
+      (ranks.get(bookshelfItemId(a)) ?? Infinity) - (ranks.get(bookshelfItemId(b)) ?? Infinity)
+    );
+  });
+};
+
+export const mergeBookshelfVisibleOrder = (
+  items: (Book | BooksGroup)[],
+  saved: string[] | undefined,
+) => {
+  const visible = items.map(bookshelfItemId);
+  const visibleIds = new Set(visible);
+  let index = 0;
+  return [
+    ...new Set([
+      ...[...new Set(saved ?? [])].map((id) => (visibleIds.has(id) ? visible[index++]! : id)),
+      ...visible.slice(index),
+    ]),
+  ];
 };
 
 export const moveBookshelfItem = (
@@ -56,9 +88,7 @@ export const moveBookshelfItem = (
   target: string,
   after: boolean,
 ) => {
-  const order = [
-    ...new Set([...(saved ?? items.map(bookshelfItemId)), ...items.map(bookshelfItemId)]),
-  ];
+  const order = mergeBookshelfVisibleOrder(items, saved);
   if (source === target || !order.includes(source) || !order.includes(target)) return order;
   const next = order.filter((id) => id !== source);
   next.splice(next.indexOf(target) + Number(after), 0, source);

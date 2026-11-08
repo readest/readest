@@ -185,7 +185,12 @@ export const persistedBookshelfSchema: z.ZodType<BookshelfDefinition> = z
   });
 /** Keep the shared definition readable by clients predating custom ordering. */
 export const persistedBookshelfDefinition = (shelf: BookshelfDefinition): BookshelfDefinition => {
-  const { manualOrder: _order, customSortFallback, ...definition } = shelf;
+  const {
+    manualOrder: _order,
+    manualOrderUpdatedAt: _orderUpdatedAt,
+    customSortFallback,
+    ...definition
+  } = shelf;
   if (definition.sort.by === 'custom') {
     definition.sort =
       customSortFallback && customSortFallback.by !== 'custom'

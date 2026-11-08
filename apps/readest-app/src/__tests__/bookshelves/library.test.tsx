@@ -17,6 +17,7 @@ import {
 } from '@/services/bookshelves/definitions';
 import { applyBookshelfDraft, readBookshelves } from '@/services/bookshelves/state';
 import { saveBookshelfDraft } from '@/services/bookshelves/persistence';
+import { presentBookshelf } from '@/services/bookshelves/presentation';
 import { createBookGroups } from '@/app/library/utils/libraryUtils';
 import { LibraryGroupByType } from '@/types/settings';
 import Bookshelf from '@/app/library/components/Bookshelf';
@@ -228,6 +229,115 @@ afterEach(() => {
   vi.useRealTimers();
 });
 describe('library bookshelf integration', () => {
+  it('retains date-read sorting after grouping so later reading still moves the group first', async () => {
+    localStorage.clear();
+    mocks.appService = {};
+    useLibraryStore.getState().setLibrary(books.slice(0, 3));
+    const originalSave = useSettingsStore.getState().saveSettings;
+    useSettingsStore.setState({
+      settings: {
+        ...DEFAULT_SYSTEM_SETTINGS,
+        libraryGroupBy: 'group',
+        libraryRecentShelfEnabled: false,
+      },
+      saveSettings: vi.fn(async () => {}),
+    });
+    const LiveBookshelf = () => (
+      <Bookshelf {...props} libraryBooks={useLibraryStore((s) => s.library)} isSelectMode={false} />
+    );
+    try {
+      render(<LiveBookshelf />);
+      const shelf = readBookshelves(useSettingsStore.getState().settings).find(
+        (s) => s.id === 'default',
+      )!;
+      await act(async () =>
+        mocks.drop!({ source: books[0]!, target: books[1]!, shelf, mode: 'group' }),
+      );
+      expect(
+        readBookshelves(useSettingsStore.getState().settings).find((s) => s.id === 'default')?.sort
+          .by,
+      ).toBe('updated');
+      expect(within(screen.getByTestId('default')).getAllByRole('button')[0]?.textContent).toBe(
+        'Book 2',
+      );
+      act(() => useLibraryStore.getState().updateBookProgress('0', [2, 100], undefined));
+      expect(within(screen.getByTestId('default')).getAllByRole('button')[0]?.textContent).toBe(
+        'Untitled Group 1',
+      );
+    } finally {
+      useSettingsStore.setState({ saveSettings: originalSave });
+      localStorage.clear();
+    }
+  });
+
+  it('moves recently read books ahead of a saved drag order and retains the other positions after another drag', async () => {
+    localStorage.clear();
+    vi.useFakeTimers({ now: new Date('2026-11-08T12:00:00'), toFake: ['Date'] });
+    mocks.appService = {};
+    const input = books.slice(0, 3);
+    useLibraryStore.getState().setLibrary(input);
+    const originalSave = useSettingsStore.getState().saveSettings;
+    useSettingsStore.setState({
+      settings: {
+        ...DEFAULT_SYSTEM_SETTINGS,
+        libraryGroupBy: 'none',
+        libraryRecentShelfEnabled: false,
+      },
+      saveSettings: vi.fn(async () => {}),
+    });
+    const LiveBookshelf = () => (
+      <Bookshelf {...props} libraryBooks={useLibraryStore((s) => s.library)} isSelectMode={false} />
+    );
+    const shown = () =>
+      within(screen.getByTestId('default'))
+        .getAllByRole('button')
+        .map((button) => button.textContent);
+    const currentShelf = () =>
+      readBookshelves(useSettingsStore.getState().settings).find((s) => s.id === 'default')!;
+    try {
+      const view = render(<LiveBookshelf />);
+      expect(shown()).toEqual(['Book 2', 'Book 1', 'Book 0']);
+      await act(async () =>
+        mocks.drop!({
+          source: input[0]!,
+          target: input[2]!,
+          shelf: currentShelf(),
+          mode: 'before',
+        }),
+      );
+      expect(shown()).toEqual(['Book 0', 'Book 2', 'Book 1']);
+      vi.setSystemTime(Date.now() + 1000);
+      act(() => useLibraryStore.getState().updateBookProgress('1', [2, 100], undefined));
+      expect(shown()).toEqual(['Book 1', 'Book 0', 'Book 2']);
+      vi.setSystemTime(Date.now() + 1000);
+      act(() => useLibraryStore.getState().updateBookProgress('2', [2, 100], undefined));
+      expect(shown()).toEqual(['Book 2', 'Book 1', 'Book 0']);
+      vi.setSystemTime(Date.now() + 1000);
+      await act(async () =>
+        mocks.drop!({
+          source: input[0]!,
+          target: input[1]!,
+          shelf: currentShelf(),
+          mode: 'before',
+        }),
+      );
+      expect(shown()).toEqual(['Book 2', 'Book 0', 'Book 1']);
+      const saved = JSON.parse(
+        JSON.stringify(useSettingsStore.getState().settings),
+      ) as SystemSettings;
+      view.unmount();
+      useSettingsStore.setState({ settings: saved });
+      render(<LiveBookshelf />);
+      expect(shown()).toEqual(['Book 2', 'Book 0', 'Book 1']);
+      vi.setSystemTime(Date.now() + 1000);
+      act(() => useLibraryStore.getState().updateBookProgress('0', [2, 100], undefined));
+      expect(shown()).toEqual(['Book 0', 'Book 2', 'Book 1']);
+    } finally {
+      useSettingsStore.setState({ saveSettings: originalSave });
+      localStorage.clear();
+    }
+  });
+
   it('keeps the visible metadata order when moving up after leaving custom sorting', async () => {
     localStorage.clear();
     mocks.appService = {};
@@ -243,7 +353,16 @@ describe('library bookshelf integration', () => {
     mocks.params = new URLSearchParams({ group: md5Fingerprint('A'), shelf: 'default' });
     const originalUpdate = useLibraryStore.getState().updateBooks;
     const originalSave = useSettingsStore.getState().saveSettings;
-    useLibraryStore.setState({ updateBooks: vi.fn(async () => {}) });
+    useLibraryStore.setState({
+      updateBooks: async (_env, updates) => {
+        const changed = new Map(updates.map((book) => [book.hash, book]));
+        useLibraryStore
+          .getState()
+          .setLibrary(
+            useLibraryStore.getState().library.map((book) => changed.get(book.hash) ?? book),
+          );
+      },
+    });
     useSettingsStore.setState({
       settings: {
         ...DEFAULT_SYSTEM_SETTINGS,
@@ -285,11 +404,31 @@ describe('library bookshelf integration', () => {
           mode: 'parent',
         });
       });
-      const order = readBookshelves(useSettingsStore.getState().settings).find(
+      const after = readBookshelves(useSettingsStore.getState().settings).find(
         (s) => s.id === 'default',
-      )!.manualOrder!;
-      expect(order['group:A']).toEqual(['b:2', 'b:1']);
-      expect(order['group:']?.filter((id) => id.startsWith('b:'))).toEqual(['b:3', 'b:4', 'b:0']);
+      )!;
+      expect(after.sort.by).toBe('title');
+      const result = {
+        definition: after,
+        books: useLibraryStore.getState().library,
+        matching: 5,
+        excluded: 0,
+      };
+      expect(
+        presentBookshelf(
+          result,
+          { libraryGroupBy: 'group' },
+          'en',
+          undefined,
+          md5Fingerprint('A'),
+          'A',
+        ).map((item) => ('hash' in item ? item.hash : item.id)),
+      ).toEqual(['2', '1']);
+      expect(
+        presentBookshelf(result, { libraryGroupBy: 'group' }, 'en')
+          .filter((item) => 'hash' in item)
+          .map((book) => book.hash),
+      ).toEqual(['0', '3', '4']);
     } finally {
       useLibraryStore.setState({ updateBooks: originalUpdate });
       useSettingsStore.setState({ saveSettings: originalSave });
@@ -532,6 +671,22 @@ describe('library bookshelf integration', () => {
     const store = useLibraryStore.getState();
     const originalUpdate = store.updateBooks;
     const originalSave = useSettingsStore.getState().saveSettings;
+    useSettingsStore.setState({ saveSettings: vi.fn(async () => {}) });
+    const initial = readBookshelves(useSettingsStore.getState().settings);
+    await saveBookshelfDraft(
+      mocks.env as Parameters<typeof saveBookshelfDraft>[0],
+      initial,
+      initial.map((s) =>
+        s.id === 'default'
+          ? {
+              ...s,
+              useGlobalSort: false,
+              sort: { by: 'custom', ascending: true, thenBy: 'none', thenAscending: true },
+              manualOrder: { 'group:': books.map((book) => `b:${book.hash}`) },
+            }
+          : s,
+      ),
+    );
     const update = vi.fn<typeof originalUpdate>(async () => {});
     useLibraryStore.setState({ updateBooks: update });
     useSettingsStore.setState({
@@ -542,7 +697,7 @@ describe('library bookshelf integration', () => {
     });
     try {
       render(<Bookshelf {...props} isSelectMode={false} />);
-      const shelf = defaultBookshelves(DEFAULT_SYSTEM_SETTINGS).find(
+      const shelf = readBookshelves(useSettingsStore.getState().settings).find(
         (shelf) => shelf.id === 'default',
       )!;
       let running!: Promise<void>;

@@ -98,6 +98,9 @@ export const presentBookshelf = (
       ? orderBookshelfItems(
           items,
           result.definition.manualOrder?.[bookshelfOrderScope(groupBy, manualGroupName || groupId)],
+          result.definition.manualOrderUpdatedAt?.[
+            bookshelfOrderScope(groupBy, manualGroupName || groupId)
+          ],
         )
       : items;
   const sortBy = by;

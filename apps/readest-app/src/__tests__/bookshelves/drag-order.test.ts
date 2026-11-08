@@ -9,6 +9,7 @@ import {
   moveBookshelfItem,
   orderBookshelfItems,
   moveBookshelfItemToParent,
+  renameBookshelfOrderTimes,
 } from '@/services/bookshelves/ordering';
 import { md5Fingerprint } from '@/utils/md5';
 
@@ -22,6 +23,96 @@ const books: Book[] = ['a', 'b', 'c'].map((hash, index) => ({
 }));
 
 describe('manual bookshelf order', () => {
+  it('keeps the reading baseline when a group or nested scope is renamed', () => {
+    expect(
+      renameBookshelfOrderTimes(
+        {
+          'group:': 1,
+          'group:A': 100,
+          'group:A/B': 110,
+          'group:Another': 120,
+        },
+        'A',
+        'Renamed',
+      ),
+    ).toEqual({
+      'group:': 1,
+      'group:Renamed': 100,
+      'group:Renamed/B': 110,
+      'group:Another': 120,
+    });
+  });
+
+  it('promotes books read after a manual reorder while retaining the other manual positions', () => {
+    const definition = {
+      ...createBookshelf('', 'default'),
+      sort: {
+        by: 'custom' as const,
+        ascending: true,
+        thenBy: 'none' as const,
+        thenAscending: true,
+      },
+      manualOrder: { 'group:': ['b:b', 'b:c', 'b:a'] },
+      manualOrderUpdatedAt: { 'group:': 100 },
+    };
+    const present = (input: Book[]) =>
+      presentBookshelf(
+        { definition, books: input, matching: input.length, excluded: 0 },
+        { libraryGroupBy: 'group' },
+        'en',
+      ).map(bookshelfItemId);
+    expect(present(books)).toEqual(['b:b', 'b:c', 'b:a']);
+    const readA = books.map((book) => (book.hash === 'a' ? { ...book, updatedAt: 101 } : book));
+    expect(present(readA)).toEqual(['b:a', 'b:b', 'b:c']);
+    const readC = readA.map((book) => (book.hash === 'c' ? { ...book, updatedAt: 102 } : book));
+    expect(present(readC)).toEqual(['b:c', 'b:a', 'b:b']);
+    definition.manualOrder = { 'group:': ['b:c', 'b:b', 'b:a'] };
+    definition.manualOrderUpdatedAt = { 'group:': 103 };
+    expect(present(readC)).toEqual(['b:c', 'b:b', 'b:a']);
+  });
+
+  it('promotes the recently read group and its member without changing untouched manual positions', () => {
+    const groupId = md5Fingerprint('Fiction');
+    const grouped = books.map((book) => ({
+      ...book,
+      ...(book.hash !== 'a' && { groupName: 'Fiction', groupId }),
+      ...(book.hash === 'c' && { updatedAt: 101 }),
+    }));
+    const definition = {
+      ...createBookshelf('', 'default'),
+      sort: {
+        by: 'custom' as const,
+        ascending: true,
+        thenBy: 'none' as const,
+        thenAscending: true,
+      },
+      manualOrder: { 'group:': ['b:a', `g:${groupId}`], 'group:Fiction': ['b:b', 'b:c'] },
+      manualOrderUpdatedAt: { 'group:': 100, 'group:Fiction': 100 },
+    };
+    const result = { definition, books: grouped, matching: 3, excluded: 0 };
+    expect(
+      presentBookshelf(result, { libraryGroupBy: 'group' }, 'en').map(bookshelfItemId),
+    ).toEqual([`g:${groupId}`, 'b:a']);
+    expect(
+      presentBookshelf(
+        result,
+        { libraryGroupBy: 'group' },
+        'en',
+        undefined,
+        groupId,
+        'Fiction',
+      ).map(bookshelfItemId),
+    ).toEqual(['b:c', 'b:b']);
+  });
+
+  it('starts the next drag from the visible order after a book has been promoted', () => {
+    expect(moveBookshelfItem(books, ['b:b', 'b:c', 'b:a'], 'b:c', 'b:b', false)).toEqual([
+      'b:a',
+      'b:c',
+      'b:b',
+    ]);
+  });
+
   it('moves books up exactly one level and ungroups books moved out of a top-level group', () => {
     const source = {
       ...books[0]!,
@@ -97,7 +188,13 @@ describe('manual bookshelf order', () => {
   it('moves in either direction while retaining hidden entries and appending newly imported books', () => {
     expect(moveBookshelfItem(books, undefined, 'b:a', 'b:c', true)).toEqual(['b:b', 'b:c', 'b:a']);
     expect(
-      moveBookshelfItem(books, ['b:c', 'b:hidden', 'b:a', 'b:b'], 'b:b', 'b:c', false),
+      moveBookshelfItem(
+        orderBookshelfItems(books, ['b:c', 'b:a', 'b:b']),
+        ['b:c', 'b:hidden', 'b:a', 'b:b'],
+        'b:b',
+        'b:c',
+        false,
+      ),
     ).toEqual(['b:b', 'b:c', 'b:hidden', 'b:a']);
     expect(orderBookshelfItems(books, ['b:removed', 'b:b']).map(bookshelfItemId)).toEqual([
       'b:b',
