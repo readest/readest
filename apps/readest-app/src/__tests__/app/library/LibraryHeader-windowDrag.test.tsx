@@ -54,7 +54,7 @@ vi.mock('@/app/library/components/ImportMenu', () => ({ default: () => null }));
 vi.mock('@/app/library/components/LibrarySearchOptionsMenu', () => ({ default: () => null }));
 vi.mock('@/app/library/components/ViewMenu', () => ({ default: () => null }));
 
-const renderHeader = (isSelectMode: boolean) =>
+const renderHeader = (isSelectMode: boolean, onToggleSelectMode = vi.fn()) =>
   render(
     <LibraryHeader
       isSelectMode={isSelectMode}
@@ -63,7 +63,7 @@ const renderHeader = (isSelectMode: boolean) =>
       onImportBooksFromFiles={vi.fn()}
       onOpenCatalogManager={vi.fn()}
       onOpenFeeds={vi.fn()}
-      onToggleSelectMode={vi.fn()}
+      onToggleSelectMode={onToggleSelectMode}
       onSelectAll={vi.fn()}
       onDeselectAll={vi.fn()}
       searchQuery=''
@@ -86,6 +86,15 @@ describe('LibraryHeader window drag (#6917)', () => {
   afterEach(() => {
     cleanup();
     startDragging.mockClear();
+    vi.unstubAllGlobals();
+  });
+
+  it('keeps book selection reachable on a narrow touch layout', () => {
+    vi.stubGlobal('innerWidth', 390);
+    const toggle = vi.fn();
+    const { getByRole } = renderHeader(false, toggle);
+    fireEvent.click(getByRole('button', { name: 'Select Books' }));
+    expect(toggle).toHaveBeenCalledOnce();
   });
 
   it('drags the window from the header outside select mode', async () => {

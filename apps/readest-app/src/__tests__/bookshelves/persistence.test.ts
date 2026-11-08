@@ -169,24 +169,36 @@ describe('bookshelf persistence and sync integration', () => {
       manualOrder: { 'group:': ids },
     }));
     const previous = JSON.parse(JSON.stringify(useSettingsStore.getState().settings));
-    const write = Storage.prototype.setItem;
+    const storage = localStorage;
+    const write = storage.setItem.bind(storage);
     let count = 0;
-    const interrupted = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(function (
-      this: Storage,
-      key,
-      value,
-    ) {
+    const interrupted = vi.fn((key: string, value: string) => {
       if (key.startsWith('readest.bookshelf.pending.v1:') && ++count === 2)
         throw new DOMException('Interrupted write', 'QuotaExceededError');
-      write.call(this, key, value);
+      write(key, value);
     });
-    await expect(
-      updateBookshelf(env, 'default', (shelf) => ({
-        ...shelf,
-        manualOrder: { 'group:': [...ids].reverse() },
-      })),
-    ).rejects.toThrow('Interrupted write');
-    interrupted.mockRestore();
+    // happy-dom binds Storage methods before this test installs its failure;
+    // a prototype spy would miss those calls. Delegate to the real storage.
+    vi.stubGlobal('localStorage', {
+      getItem: storage.getItem.bind(storage),
+      setItem: interrupted,
+      removeItem: storage.removeItem.bind(storage),
+      clear: storage.clear.bind(storage),
+      key: storage.key.bind(storage),
+      get length() {
+        return storage.length;
+      },
+    });
+    try {
+      await expect(
+        updateBookshelf(env, 'default', (shelf) => ({
+          ...shelf,
+          manualOrder: { 'group:': [...ids].reverse() },
+        })),
+      ).rejects.toThrow('Interrupted write');
+    } finally {
+      vi.unstubAllGlobals();
+    }
     useSettingsStore.setState({ settings: previous });
     await replayBookshelfOperations(env);
     expect(

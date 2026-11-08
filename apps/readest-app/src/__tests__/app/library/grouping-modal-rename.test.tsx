@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { Book } from '@/types/book';
 import { md5Fingerprint } from '@/utils/md5';
 import { useLibraryStore } from '@/store/libraryStore';
@@ -49,7 +49,7 @@ beforeEach(() => {
 afterEach(cleanup);
 
 // Selecting the `A` tile selects every book in its subtree.
-const renameA = (onConfirm = vi.fn()) => {
+const renameA = (onConfirm = vi.fn(), save = true) => {
   render(
     <GroupingModal
       libraryBooks={library}
@@ -62,13 +62,45 @@ const renameA = (onConfirm = vi.fn()) => {
   );
   fireEvent.click(screen.getByRole('button', { name: 'Rename Group' }));
   fireEvent.change(screen.getByDisplayValue('A'), { target: { value: 'Z' } });
-  fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+  if (save) fireEvent.click(screen.getByRole('button', { name: 'Save' }));
   return onConfirm;
 };
 const groupNames = () =>
   Object.fromEntries(useLibraryStore.getState().library.map((b) => [b.hash, b.groupName]));
 
 describe('renaming a group with nested groups', () => {
+  it('saves the edited name with Enter before the dialog confirms the selection', async () => {
+    const confirm = renameA(vi.fn(), false);
+    fireEvent.keyDown(screen.getByDisplayValue('Z'), { key: 'Enter' });
+    await waitFor(() => expect(saveLibraryBooks).toHaveBeenCalledOnce());
+    await waitFor(() => expect(confirm).toHaveBeenCalledOnce());
+    expect(groupNames()).toEqual({ direct: 'Z', nested: 'Z/B', deep: 'Z/C/D', other: 'X' });
+  });
+
+  it('lets Escape cancel editing without closing the group dialog', () => {
+    const confirm = renameA(vi.fn(), false);
+    fireEvent.keyDown(screen.getByDisplayValue('Z'), { key: 'Escape' });
+    expect(screen.queryByDisplayValue('Z')).toBeNull();
+    expect(screen.getByRole('heading', { name: 'Group Books' })).toBeTruthy();
+    expect(confirm).not.toHaveBeenCalled();
+    expect(saveLibraryBooks).not.toHaveBeenCalled();
+  });
+
+  it('saves a pending rename only once across repeated Save and Enter actions', async () => {
+    const pending = Promise.withResolvers<void>();
+    saveLibraryBooks.mockReturnValueOnce(pending.promise);
+    const confirm = renameA();
+    await waitFor(() => expect(saveLibraryBooks).toHaveBeenCalledOnce());
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    fireEvent.keyDown(screen.getByDisplayValue('Z'), { key: 'Enter' });
+    await Promise.resolve();
+    expect(saveLibraryBooks).toHaveBeenCalledOnce();
+    await act(async () => pending.resolve());
+    expect(saveLibraryBooks).toHaveBeenCalledOnce();
+    expect(confirm).toHaveBeenCalledOnce();
+    expect(groupNames()).toEqual({ direct: 'Z', nested: 'Z/B', deep: 'Z/C/D', other: 'X' });
+  });
+
   it('preserves imported books and reading updates received while saving the renamed order', async () => {
     useLibraryStore.getState().refreshGroups();
     const base = readBookshelves(useSettingsStore.getState().settings);
@@ -118,6 +150,10 @@ describe('renaming a group with nested groups', () => {
       expect(groupNames()).toEqual({ direct: 'A', nested: 'A/B', deep: 'A/C/D', other: 'X' }),
     );
     expect(confirm).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    await waitFor(() => expect(confirm).toHaveBeenCalledOnce());
+    expect(saveLibraryBooks).toHaveBeenCalledTimes(2);
+    expect(groupNames()).toEqual({ direct: 'Z', nested: 'Z/B', deep: 'Z/C/D', other: 'X' });
   });
   it('keeps the dragged group position and the order inside renamed descendants', async () => {
     useLibraryStore.getState().refreshGroups();

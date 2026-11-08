@@ -71,6 +71,8 @@ enabled as their individual sorting defaults.
 Drag books or groups near another card's edge to reorder them; on touchscreens, long-press
 before dragging. Keyboard users can focus a card and use Alt + Left/Right/Up/Down. Reordering
 enables Custom sorting for that shelf and saves an independent order for each opened group.
+Use **Select Books** in the header for multiple selection on desktop and mobile; long-press
+remains available for dragging on touchscreens.
 Items updated after the last manual rearrangement, including newly read books, appear first
 by recency; remaining items retain their manual relative order. The next drag starts from the
 visible order. The previous metadata sort remains the fallback for new items and reading-time labels.

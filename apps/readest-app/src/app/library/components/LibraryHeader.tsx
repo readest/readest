@@ -138,8 +138,6 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
 
   if (!insets) return null;
 
-  const isMobile = appService?.isMobile || window.innerWidth <= 640;
-
   return (
     <div
       ref={headerRef}
@@ -308,20 +306,18 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
                     onOpenFeeds={onOpenFeeds}
                   />
                 </Dropdown>
-                {isMobile ? null : (
-                  <button
-                    onClick={onToggleSelectMode}
-                    aria-label={_('Select Books')}
-                    title={_('Select Books')}
-                    className='h-6'
-                  >
-                    {isSelectMode ? (
-                      <PiSelectionAllFill role='button' className='text-base-content/60 h-6 w-6' />
-                    ) : (
-                      <PiSelectionAll role='button' className='text-base-content/60 h-6 w-6' />
-                    )}
-                  </button>
-                )}
+                <button
+                  onClick={onToggleSelectMode}
+                  aria-label={_('Select Books')}
+                  title={_('Select Books')}
+                  className='h-6'
+                >
+                  {isSelectMode ? (
+                    <PiSelectionAllFill role='button' className='text-base-content/60 h-6 w-6' />
+                  ) : (
+                    <PiSelectionAll role='button' className='text-base-content/60 h-6 w-6' />
+                  )}
+                </button>
               </>
             )}
           </div>

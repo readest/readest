@@ -61,7 +61,13 @@ const GroupingModal: React.FC<GroupingModalProps> = ({
   const [isRenaming, setIsRenaming] = useState(false);
   const [originalGroupName, setOriginalGroupName] = useState<string | null>(null);
 
-  const divRef = useKeyDownActions({ onCancel, onConfirm });
+  const savingRef = useRef(false);
+  const divRef = useKeyDownActions({
+    onCancel,
+    onConfirm: () => {
+      if (!showInput && !savingRef.current) onConfirm();
+    },
+  });
   const editorRef = useRef<HTMLInputElement>(null);
   const iconSize = useResponsiveSize(16);
 
@@ -147,6 +153,7 @@ const GroupingModal: React.FC<GroupingModalProps> = ({
   };
 
   const handleConfirmCreateGroup = async () => {
+    if (savingRef.current) return;
     let groupName = editGroupName.trim();
     if (groupName) {
       if (isRenaming && originalGroupName) {
@@ -186,6 +193,7 @@ const GroupingModal: React.FC<GroupingModalProps> = ({
             setBookGroup(next, getGroupId(newName), newName);
             return next;
           });
+        savingRef.current = true;
         try {
           await saveBookshelfGroupChanges(envConfig, base, draft, changed);
         } catch {
@@ -194,6 +202,8 @@ const GroupingModal: React.FC<GroupingModalProps> = ({
             message: _('Failed to save bookshelves.'),
           });
           return;
+        } finally {
+          savingRef.current = false;
         }
         // A rename is complete on its own. Left open, Confirm would move the
         // whole selected subtree into one group and flatten its nested groups.
@@ -326,7 +336,7 @@ const GroupingModal: React.FC<GroupingModalProps> = ({
                 ref={editorRef}
                 value={editGroupName}
                 onChange={(e) => setEditGroupName(e.target.value)}
-                onKeyDown={(e) => {
+                onKeyDownCapture={(e) => {
                   if (e.key === 'Enter') handleConfirmCreateGroup();
                   if (e.key === 'Escape') {
                     setShowInput(false);
