@@ -267,7 +267,48 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      }
  
      // Takes (x, y) co-ordinates (relative to the )
-@@ -2447,17 +2508,36 @@
+@@ -2440,6 +2501,40 @@
+         (pos, *self.nodes[node_id].unrounded_layout())
+     }
+ 
++    /// The map from a node's border-box coordinates to the document's, in CSS px: each box's
++    /// location and transform (about its own border box, as painted) up the containing-block
++    /// chain, and the scroll offset of each box it passes into. CSSOM View's element and range
++    /// rects are boxes under this map.
++    pub(crate) fn border_box_to_document(&self, node_id: NodeId) -> kurbo::Affine {
++        use kurbo::Affine;
++        let scale = self.viewport.scale_f64();
++        let mut m = Affine::IDENTITY;
++        let mut current = Some(node_id);
++        while let Some(id) = current {
++            let node = &self.nodes[id];
++            let loc = node.unrounded_layout().location;
++            // Stored for paint, its translation in device px.
++            let t = node.transform().as_deref().map_or(Affine::IDENTITY, |t| {
++                let [a, b, c, d, e, f] = t.as_coeffs();
++                Affine::new([a, b, c, d, e / scale, f / scale])
++            });
++            m = Affine::translate((f64::from(loc.x), f64::from(loc.y))) * t * m;
++            current = node.containing_block();
++            if let Some(cb) = current {
++                let s = self.nodes[cb].scroll_offset();
++                m = Affine::translate((-s.x, -s.y)) * m;
++            }
++        }
++        m
++    }
++
++    /// The same for coordinates of the node's content (its border box moved by its own scroll
++    /// offset), where its inline layout is.
++    fn content_to_document(&self, node_id: NodeId) -> kurbo::Affine {
++        let s = self.nodes[node_id].scroll_offset();
++        self.border_box_to_document(node_id) * kurbo::Affine::translate((-s.x, -s.y))
++    }
++
+     /// Computes the size and position of the `Node` relative to the viewport
+     pub fn get_client_bounding_rect(&self, node_id: NodeId) -> Option<BoundingRect> {
+         // Non-atomic inline elements have no layout box of their own: return
+@@ -2447,17 +2542,27 @@
          if let Some(rects) = self.inline_fragment_rects(node_id) {
              return rects.reduce(BoundingRect::union);
          }
@@ -275,14 +316,8 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
 +    }
  
 -        self.get_node(node_id)?;
-+    /// A node's border box relative to the viewport, as the fragments the root's columns break
-+    /// it into (one rect outside them).
-+    fn box_fragments(&self, node_id: NodeId) -> Option<Vec<BoundingRect>> {
-+        let node = self.get_node(node_id)?;
-+        // The geometry is the origin of the node's content, which its own scroll offset moves;
-+        // its border box stays put.
-         let (pos, layout) = self.physical_unrounded_geometry(node_id);
-         let size = layout.size;
+-        let (pos, layout) = self.physical_unrounded_geometry(node_id);
+-        let size = layout.size;
 -
 -        Some(BoundingRect {
 -            x: snap_to_layout_unit(pos.x as f64 - self.viewport_scroll().x),
@@ -290,13 +325,12 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
 -            width: snap_to_layout_unit(size.width as f64),
 -            height: snap_to_layout_unit(size.height as f64),
 -        })
-+        let scroll = node.scroll_offset();
-+        let flow = BoundingRect {
-+            x: pos.x as f64 + scroll.x,
-+            y: pos.y as f64 + scroll.y,
-+            width: size.width as f64,
-+            height: size.height as f64,
-+        };
++    /// A node's border box relative to the viewport, as the fragments the root's columns break
++    /// it into (one rect outside them).
++    fn box_fragments(&self, node_id: NodeId) -> Option<Vec<BoundingRect>> {
++        let size = self.get_node(node_id)?.unrounded_layout().size;
++        let border_box = kurbo::Rect::new(0.0, 0.0, f64::from(size.width), f64::from(size.height));
++        let flow = to_bounding_rect(self.border_box_to_document(node_id).transform_rect_bbox(border_box));
 +        let (sx, sy) = (self.viewport_scroll().x, self.viewport_scroll().y);
 +        Some(
 +            self.column_fragments(node_id, flow)
@@ -312,7 +346,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      }
  
      /// CSSOM View's `offsetLeft`/`offsetTop`/`offsetWidth`/`offsetHeight` as a single rect:
-@@ -2528,7 +2608,7 @@
+@@ -2528,7 +2633,7 @@
      pub fn node_client_rects(&self, node_id: NodeId) -> Vec<BoundingRect> {
          match self.inline_fragment_rects(node_id) {
              Some(rects) => rects.collect(),
@@ -321,7 +355,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
          }
      }
  
-@@ -2543,20 +2623,176 @@
+@@ -2543,20 +2648,168 @@
  
          // Only non-atomic inline elements lack their own layout box: they are
          // flattened into the containing inline root's text layout as style spans.
@@ -330,6 +364,16 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
          let inline_root = node.inline_root_ancestor()?;
  
 -        // Fragment boxes are relative to the inline root's border box.
+-        let (root_pos, _) = self.physical_unrounded_geometry(inline_root.id);
+-        let origin_x = root_pos.x as f64 - self.viewport_scroll().x;
+-        let origin_y = root_pos.y as f64 - self.viewport_scroll().y;
+-
+-        Some(fragments.map(move |rect| BoundingRect {
+-            x: snap_to_layout_unit(origin_x + rect.left as f64),
+-            y: snap_to_layout_unit(origin_y + rect.top as f64),
+-            width: snap_to_layout_unit((rect.right - rect.left) as f64),
+-            height: snap_to_layout_unit((rect.bottom - rect.top) as f64),
+-        }))
 +        // An element with no glyphs (an empty span) still has an inline box: no width, at the
 +        // point in the text where it sits, as browsers give it.
 +        let empty = if fragments.peek().is_none() {
@@ -340,20 +384,14 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
 +            Vec::new()
 +        };
 +
-+        // Fragment boxes are relative to the inline root's border box; in the root's columns
-+        // each line box is in one column.
-         let (root_pos, _) = self.physical_unrounded_geometry(inline_root.id);
--        let origin_x = root_pos.x as f64 - self.viewport_scroll().x;
--        let origin_y = root_pos.y as f64 - self.viewport_scroll().y;
++        // Fragment boxes are relative to the inline root's content; in the root's columns each
++        // line box is in one column.
++        let to_document = self.content_to_document(inline_root.id);
 +        let (scroll_x, scroll_y) = (self.viewport_scroll().x, self.viewport_scroll().y);
 +
 +        Some(empty.into_iter().chain(fragments.flat_map(move |rect| {
-+            let flow = BoundingRect {
-+                x: root_pos.x as f64 + rect.left as f64,
-+                y: root_pos.y as f64 + rect.top as f64,
-+                width: (rect.right - rect.left) as f64,
-+                height: (rect.bottom - rect.top) as f64,
-+            };
++            let r = kurbo::Rect::new(rect.left.into(), rect.top.into(), rect.right.into(), rect.bottom.into());
++            let flow = to_bounding_rect(to_document.transform_rect_bbox(r));
 +            self.column_fragments(node_id, flow)
 +                .into_iter()
 +                .map(move |r| BoundingRect {
@@ -398,13 +436,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
 +        let (a, b) = (at(start.min(end)), at(start.max(end)));
 +        self.laid_out_rects(node_id, root, text, a, b)
 +    }
- 
--        Some(fragments.map(move |rect| BoundingRect {
--            x: snap_to_layout_unit(origin_x + rect.left as f64),
--            y: snap_to_layout_unit(origin_y + rect.top as f64),
--            width: snap_to_layout_unit((rect.right - rect.left) as f64),
--            height: snap_to_layout_unit((rect.bottom - rect.top) as f64),
--        }))
++
 +    /// The boxes of `a..b` (byte offsets into `text.text`) of the inline layout of `root`, one
 +    /// per line, relative to the viewport. `a == b` is a caret: no width, the line's height.
 +    fn laid_out_rects(
@@ -483,19 +515,15 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
 +        // Layout boxes are relative to the inline root's content box; in the root's columns
 +        // each line is in one column.
 +        let l = root.unrounded_layout();
-+        let (root_pos, _) = self.physical_unrounded_geometry(root.id);
-+        let ox = f64::from(root_pos.x + l.border.left + l.padding.left);
-+        let oy = f64::from(root_pos.y + l.border.top + l.padding.top + text.block_offset);
++        let ox = f64::from(l.border.left + l.padding.left);
++        let oy = f64::from(l.border.top + l.padding.top + text.block_offset);
++        let to_document = self.content_to_document(root.id);
 +        let (sx, sy) = (self.viewport_scroll().x, self.viewport_scroll().y);
 +        boxes
 +            .into_iter()
 +            .flat_map(|(x0, y0, x1, y1)| {
-+                let flow = BoundingRect {
-+                    x: ox + x0 / scale,
-+                    y: oy + y0 / scale,
-+                    width: (x1 - x0) / scale,
-+                    height: (y1 - y0) / scale,
-+                };
++                let r = kurbo::Rect::new(ox + x0 / scale, oy + y0 / scale, ox + x1 / scale, oy + y1 / scale);
++                let flow = to_bounding_rect(to_document.transform_rect_bbox(r));
 +                self.column_fragments(node_id, flow)
 +            })
 +            .map(|r| BoundingRect {
@@ -508,7 +536,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      }
  
      /// The first element in tree order with the given tag name. The root element and
-@@ -2944,6 +3180,36 @@
+@@ -2944,6 +3197,36 @@
  /// Snap a CSSOM geometry value to a 1/64px grid (the precision of Blink's `LayoutUnit`).
  /// Layout values are accumulated in `f32`, so e.g. seven `55/7`-wide flex items would
  /// otherwise end at `55.0000005` and appear to overflow their 55px container.
@@ -545,6 +573,14 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
  fn snap_to_layout_unit(value: f64) -> f64 {
      (value * 64.0).round() / 64.0
  }
+@@ -3781,3 +4064,7 @@
+         );
+     }
+ }
++
++fn to_bounding_rect(r: kurbo::Rect) -> BoundingRect {
++    BoundingRect { x: r.x0, y: r.y0, width: r.width(), height: r.height() }
++}
 diff -ruN blitz/packages/blitz-dom/src/events/pointer.rs blitz/packages/blitz-dom/src/events/pointer.rs
 --- blitz/packages/blitz-dom/src/events/pointer.rs
 +++ blitz/packages/blitz-dom/src/events/pointer.rs
@@ -1760,7 +1796,7 @@ diff -ruN blitz/packages/blitz-dom/src/util.rs blitz/packages/blitz-dom/src/util
 diff -ruN blitz/packages/blitz-html/src/html_document.rs blitz/packages/blitz-html/src/html_document.rs
 --- blitz/packages/blitz-html/src/html_document.rs
 +++ blitz/packages/blitz-html/src/html_document.rs
-@@ -68,3 +68,349 @@
+@@ -68,3 +68,395 @@
          self.into()
      }
  }
@@ -2108,6 +2144,52 @@ diff -ruN blitz/packages/blitz-html/src/html_document.rs blitz/packages/blitz-ht
 +        doc.resolve(0.0);
 +        assert_eq!(doc.get_client_bounding_rect(bx).unwrap().x, 50.0, "the scroll container");
 +        assert_eq!(doc.get_client_bounding_rect(wide).unwrap().x, -250.0, "its content");
++    }
++}
++
++#[cfg(test)]
++mod transform_rect_tests {
++    use crate::{HtmlDocument, HtmlProvider};
++    use blitz_dom::DocumentConfig;
++    use blitz_traits::shell::{ColorScheme, Viewport};
++    use std::sync::Arc;
++
++    fn doc(body: &str) -> HtmlDocument {
++        let config = DocumentConfig {
++            html_parser_provider: Some(Arc::new(HtmlProvider)),
++            viewport: Some(Viewport::new(800, 600, 1.0, ColorScheme::Light)),
++            ..Default::default()
++        };
++        let mut doc = HtmlDocument::from_html(&format!("<html><body style='margin:0'>{body}</body></html>"), config);
++        doc.resolve(0.0);
++        doc
++    }
++
++    fn rect(doc: &HtmlDocument, id: &str) -> (f64, f64, f64, f64) {
++        let r = doc.get_client_bounding_rect(doc.get_element_by_id(id).unwrap()).unwrap();
++        (r.x, r.y, r.width, r.height)
++    }
++
++    // CSSOM View: an element's rects are its boxes as transformed, by its own transform and its
++    // ancestors'. Readest's closed dialogs are scaled to 95%.
++    #[test]
++    fn rects_include_transforms() {
++        let d = doc("<div id='d' style='margin-left:100px;width:200px;height:100px;transform:scale(0.5)'>\
++                     <div id='c' style='width:100px;height:40px'></div><span id='s'>word</span></div>\
++                     <div style='transform:translateX(30px)'><p id='p' style='margin:0;width:100px;height:10px'></p></div>");
++        assert_eq!(rect(&d, "d"), (150.0, 25.0, 100.0, 50.0), "scaled about its centre");
++        assert_eq!(rect(&d, "c"), (150.0, 25.0, 50.0, 20.0), "a child of a scaled box");
++        assert_eq!(rect(&d, "p").0, 30.0, "a child of a translated box");
++        let s = doc_text_rect(&d, "s");
++        let unscaled = doc_text_rect(&doc("<span id='s'>word</span>"), "s");
++        assert!((s.2 - unscaled.2 / 2.0).abs() < 0.02, "a range in a scaled box: {s:?}, unscaled {unscaled:?}");
++        assert!((rect(&d, "s").2 - unscaled.2 / 2.0).abs() < 0.02, "an inline element in a scaled box");
++    }
++
++    fn doc_text_rect(doc: &HtmlDocument, id: &str) -> (f64, f64, f64, f64) {
++        let t = doc.get_node(doc.get_element_by_id(id).unwrap()).unwrap().children[0];
++        let r = doc.text_rects(t, 0, 4)[0];
++        (r.x, r.y, r.width, r.height)
 +    }
 +}
 diff -ruN blitz/packages/blitz-html/src/html_sink.rs blitz/packages/blitz-html/src/html_sink.rs

@@ -99,6 +99,10 @@
 - `blitz-dom` layout/columns: column metrics come from the root's unrounded layout. foliate-js
   gives the root a fractional side padding; from the rounded one each column was 0.42 px wider
   than Chromium's, and the error added up column by column.
+- `blitz-dom` document: element and range rects include transforms (`border_box_to_document`:
+  each box's location and transform up the containing-block chain, and the scroll offsets
+  passed), as CSSOM View gives them. Readest's closed dialogs are scaled to 95%; their rects were
+  the unscaled boxes.
 - `blitz-dom` util, node, document: the space at a line's end has no box (CSS Text 3 removes it).
   Parley keeps it in the line's last glyph run and reports it as `hanging_advance`; an inline
   element's piece on that line and a range's rect stop where the line's content does, instead of
