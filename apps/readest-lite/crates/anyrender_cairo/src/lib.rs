@@ -4,7 +4,7 @@
 //! cached across pages by blob id, as a reader app would keep them.
 //!
 //! Left out (prototype): filters and backdrop filters, box-shadow blur (drawn unblurred), sweep
-//! gradients (first stop), variable-font coordinates, non-sRGB gradient interpolation.
+//! gradients (first stop), non-sRGB gradient interpolation.
 
 use std::{collections::HashMap, ffi::c_void, sync::Arc};
 
@@ -30,6 +30,7 @@ unsafe extern "C" {
         index: std::ffi::c_long,
         face: *mut *mut c_void,
     ) -> i32;
+    fn FT_Set_Var_Blend_Coordinates(face: *mut c_void, num_coords: u32, coords: *const std::ffi::c_long) -> i32;
     fn cairo_ft_font_face_create_for_ft_face(
         face: *mut c_void,
         load_flags: i32,
@@ -50,7 +51,8 @@ fn share(face: &cairo::FontFace) -> cairo::FontFace {
 /// What outlives a page: font faces (with the blob their FT_Face reads) and image surfaces.
 pub struct Caches {
     ft: *mut c_void,
-    fonts: HashMap<(u64, u32, bool), (cairo::FontFace, peniko::Blob<u8>)>,
+    /// By font, index, synthetic bold and variation coordinates (trailing defaults dropped).
+    fonts: HashMap<(u64, u32, bool, Vec<NormalizedCoord>), (cairo::FontFace, peniko::Blob<u8>)>,
     images: HashMap<u64, ImageSurface>,
 }
 
@@ -78,7 +80,10 @@ impl Caches {
         eprintln!("cairo caches: {} font faces", self.fonts.len());
     }
 
-    fn font(&mut self, font: &FontData, bold: bool) -> Option<cairo::FontFace> {
+    /// A face of `font` at variation coordinates `coords` (normalized, after `avar`: as shaping
+    /// used them), each set of coordinates its own FT_Face.
+    fn font(&mut self, font: &FontData, bold: bool, coords: &[NormalizedCoord]) -> Option<cairo::FontFace> {
+        let coords = &coords[..coords.iter().rposition(|&c| c != 0).map_or(0, |i| i + 1)];
         // By content: each chapter document hands over the same font files as new blobs.
         let bytes = font.data.data();
         let key = {
@@ -86,7 +91,7 @@ impl Caches {
             let mut h = std::collections::hash_map::DefaultHasher::new();
             bytes[..bytes.len().min(4096)].hash(&mut h);
             bytes[bytes.len().saturating_sub(4096)..].hash(&mut h);
-            (h.finish() ^ bytes.len() as u64, font.index, bold)
+            (h.finish() ^ bytes.len() as u64, font.index, bold, coords.to_vec())
         };
         if let Some((face, _)) = self.fonts.get(&key) {
             return Some(share(face));
@@ -103,6 +108,11 @@ impl Caches {
             ) != 0
             {
                 return None;
+            }
+            if !coords.is_empty() {
+                // F2Dot14 to FreeType's 16.16
+                let fixed: Vec<std::ffi::c_long> = coords.iter().map(|&c| std::ffi::c_long::from(c) << 2).collect();
+                FT_Set_Var_Blend_Coordinates(ft_face, fixed.len() as u32, fixed.as_ptr());
             }
             let raw = cairo_ft_font_face_create_for_ft_face(ft_face, 0);
             if bold {
@@ -441,7 +451,7 @@ impl PaintScene for CairoScene<'_> {
         font: &'b FontData,
         font_size: f32,
         hint: bool,
-        _normalized_coords: &'b [NormalizedCoord],
+        normalized_coords: &'b [NormalizedCoord],
         embolden: peniko::kurbo::Vec2,
         style: impl Into<StyleRef<'b>>,
         brush: impl Into<PaintRef<'b>>,
@@ -450,7 +460,7 @@ impl PaintScene for CairoScene<'_> {
         glyph_transform: Option<Affine>,
         glyphs: impl Iterator<Item = Glyph> + Clone,
     ) {
-        let Some(face) = self.caches.font(font, embolden.x > 0.0 || embolden.y > 0.0) else {
+        let Some(face) = self.caches.font(font, embolden.x > 0.0 || embolden.y > 0.0, normalized_coords) else {
             return;
         };
         self.cr.set_matrix(Self::matrix(transform));
