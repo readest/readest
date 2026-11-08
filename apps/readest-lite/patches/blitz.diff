@@ -2514,6 +2514,35 @@ diff -ruN blitz/packages/blitz-dom/src/stylo.rs blitz/packages/blitz-dom/src/sty
          let (Some(pe_node_id), Some(pe_style)) = (pe_node_id, pe_style) else {
              continue;
          };
+diff -ruN blitz/packages/blitz-dom/src/stylo_to_parley.rs blitz/packages/blitz-dom/src/stylo_to_parley.rs
+--- blitz/packages/blitz-dom/src/stylo_to_parley.rs
++++ blitz/packages/blitz-dom/src/stylo_to_parley.rs
+@@ -429,11 +429,14 @@
+     let font_styles = style.get_font();
+     let itext_styles = style.get_inherited_text();
+ 
+-    // Convert font size and line height
++    // Convert font size and line height. Text is shaped at its size truncated to a 64th of a
++    // pixel, as Chromium on Linux sizes FreeType fonts (Skia's SkScalarToFDot6), so lines break
++    // where Readest's do; a unitless line height is still a multiple of the computed size.
+     let font_size = font_styles.font_size.used_size.0.px();
++    let shaped_size = (font_size * 64.0).trunc() / 64.0;
+     let line_height = match font_styles.line_height {
+         stylo::LineHeight::Normal => parley::LineHeight::NORMAL,
+-        stylo::LineHeight::Number(num) => parley::LineHeight::FontSizeRelative(num.0),
++        stylo::LineHeight::Number(num) => parley::LineHeight::Absolute(num.0 * font_size),
+         stylo::LineHeight::Length(value) => parley::LineHeight::Absolute(value.0.px()),
+     };
+     let vertical_align = self::vertical_align(style);
+@@ -517,7 +520,7 @@
+     parley::TextStyle {
+         // font_family: parley::FontFamily::Single(FontFamilyName::Generic(GenericFamily::SystemUi)),
+         font_family: parley::FontFamily::List(Cow::Owned(families)),
+-        font_size,
++        font_size: shaped_size,
+         font_width,
+         font_style,
+         font_weight,
 diff -ruN blitz/packages/blitz-dom/src/traversal.rs blitz/packages/blitz-dom/src/traversal.rs
 --- blitz/packages/blitz-dom/src/traversal.rs
 +++ blitz/packages/blitz-dom/src/traversal.rs
@@ -2608,7 +2637,7 @@ diff -ruN blitz/packages/blitz-dom/src/util.rs blitz/packages/blitz-dom/src/util
 diff -ruN blitz/packages/blitz-html/src/html_document.rs blitz/packages/blitz-html/src/html_document.rs
 --- blitz/packages/blitz-html/src/html_document.rs
 +++ blitz/packages/blitz-html/src/html_document.rs
-@@ -68,3 +68,570 @@
+@@ -68,3 +68,609 @@
          self.into()
      }
  }
@@ -3177,6 +3206,45 @@ diff -ruN blitz/packages/blitz-html/src/html_document.rs blitz/packages/blitz-ht
 +        // the letter is laid out once: the text after it starts at its right edge
 +        assert!((next[0].x - (letter[0].x + letter[0].width)).abs() < 0.5, "{letter:?} {next:?}");
 +        assert!(letter[0].width > 20.0, "a 40px P: {letter:?}");
++    }
++}
++
++#[cfg(test)]
++mod font_size_tests {
++    use crate::{HtmlDocument, HtmlProvider};
++    use blitz_dom::DocumentConfig;
++    use blitz_traits::shell::{ColorScheme, Viewport};
++    use std::sync::Arc;
++
++    // Chromium on Linux sizes FreeType fonts in 26.6 fixed point, truncated (Skia's
++    // SkScalarToFDot6): 14.4px text is shaped at 921/64 = 14.390625px. Lines break where the
++    // shaped widths say, so text set at the exact size broke differently from Readest's.
++    #[test]
++    fn text_is_shaped_at_its_size_truncated_to_a_64th_of_a_pixel() {
++        let config = DocumentConfig {
++            html_parser_provider: Some(Arc::new(HtmlProvider)),
++            viewport: Some(Viewport::new(800, 600, 1.0, ColorScheme::Light)),
++            ..Default::default()
++        };
++        let span = |size: &str| {
++            format!("<div><span id='s{}' style='font-size:{size}px;white-space:pre'>eeeeeeeeeeeeeeeeeeee</span></div>", size.replace('.', "_"))
++        };
++        // Stylo snaps sizes to a 60th of a pixel first; 16px is exact on both grids.
++        let html = format!(
++            "<html><body style='margin:0'>{}{}\
++             <p id='p' style='margin:0;font-size:14.4px;line-height:1.25'>x</p></body></html>",
++            span("14.4"),
++            span("16")
++        );
++        let mut doc = HtmlDocument::from_html(&html, config);
++        doc.resolve(0.0);
++        let width = |id| doc.get_client_bounding_rect(doc.get_element_by_id(id).unwrap()).unwrap().width;
++        let (w, w16) = (width("s14_4"), width("s16"));
++        let (truncated, exact) = (w16 * 14.390625 / 16.0, w16 * 14.4 / 16.0);
++        assert!((w - truncated).abs() < 0.02, "14.4px text {w}, at 14.390625px {truncated}, at 14.4px {exact}");
++        // the line height is the computed size's, not the truncated one's
++        let p = doc.get_client_bounding_rect(doc.get_element_by_id("p").unwrap()).unwrap();
++        assert_eq!(p.height, 18.0);
 +    }
 +}
 diff -ruN blitz/packages/blitz-html/src/html_sink.rs blitz/packages/blitz-html/src/html_sink.rs
