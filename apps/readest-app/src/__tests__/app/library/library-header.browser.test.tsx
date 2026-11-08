@@ -43,15 +43,15 @@ afterEach(() => {
   localStorage.clear();
 });
 
-const renderHeader = () =>
+const renderHeader = (searchQuery = '', searchTarget: 'books' | 'text' = 'books') =>
   render(
     <DropdownProvider>
       <div className='relative w-full'>
         <LibraryHeader
           isSelectMode={false}
           isSelectAll={false}
-          searchQuery=''
-          searchTarget='books'
+          searchQuery={searchQuery}
+          searchTarget={searchTarget}
           searchConfig={DEFAULT_BOOK_SEARCH_CONFIG}
           onPullLibrary={noop}
           onImportBooksFromFiles={noop}
@@ -112,6 +112,22 @@ describe('library search history layout', () => {
 describe('library search actions', () => {
   for (const width of [390, 768, 1200]) {
     for (const dir of ['ltr', 'rtl']) {
+      for (const target of ['books', 'text'] as const) {
+        it(`keeps ${target} query text clear of actions at ${width}px in ${dir}`, async () => {
+          await page.viewport(width, 900);
+          document.documentElement.dir = dir;
+          const { getByRole } = renderHeader('A long book title to search for', target);
+          const input = getByRole('textbox');
+          const bounds = input.getBoundingClientRect();
+          const style = getComputedStyle(input);
+          const textLeft = bounds.left + Number.parseFloat(style.paddingLeft);
+          const textRight = bounds.right - Number.parseFloat(style.paddingRight);
+          const clear = getByRole('button', { name: 'Clear Search' }).getBoundingClientRect();
+          if (dir === 'ltr') expect(textRight).toBeLessThanOrEqual(clear.left - 4);
+          else expect(textLeft).toBeGreaterThanOrEqual(clear.right + 4);
+          expect(textRight - textLeft).toBeGreaterThanOrEqual(24);
+        });
+      }
       it(`centers Select Books between Import and the input end at ${width}px in ${dir}`, async () => {
         await page.viewport(width, 900);
         document.documentElement.dir = dir;
