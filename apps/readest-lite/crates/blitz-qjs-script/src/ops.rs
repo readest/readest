@@ -372,45 +372,6 @@ fn in_tree_of(doc: &BaseDocument, scope: NodeId, node: NodeId) -> bool {
     true
 }
 
-/// Line and image boxes of a laid-out document for pagination by height: [contentHeight, top0,
-/// bottom0, top1, bottom1, ...] in CSS px, in tree order.
-fn lines(sd: &BaseDocument) -> Vec<f64> {
-    let scale = f64::from(sd.viewport().scale());
-    let root = sd.root_element();
-    let mut out = vec![f64::from(root.scroll_height())];
-    let mut stack = vec![root.id];
-    while let Some(id) = stack.pop() {
-        let Some(node) = sd.get_node(id) else {
-            continue;
-        };
-        if let Some(el) = node.element_data() {
-            let layout = node.final_layout();
-            let origin = node.absolute_position(0.0, 0.0);
-            if let Some(text) = el
-                .inline_layout_data
-                .as_ref()
-                .filter(|_| node.flags.is_inline_root())
-            {
-                let top = f64::from(
-                    origin.y + layout.border.top + layout.padding.top + text.block_offset,
-                );
-                for line in text.layout.lines() {
-                    let m = line.metrics();
-                    out.push(top + f64::from(m.block_min_coord) / scale);
-                    out.push(top + f64::from(m.block_max_coord) / scale);
-                }
-            } else if el.image_data().is_some() {
-                out.push(f64::from(origin.y));
-                out.push(f64::from(origin.y + layout.size.height));
-            }
-        }
-        stack.extend(node.children.iter().rev().copied());
-    }
-    let bottom = out[1..].iter().copied().fold(0.0, f64::max);
-    out[0] = out[0].max(bottom);
-    out
-}
-
 pub(crate) fn install(ctx: &Ctx<'_>, shared: Rc<RefCell<Shared>>, base: Option<&Url>) {
     let n = Object::new(ctx.clone()).unwrap();
     let docs = Docs {
@@ -816,34 +777,6 @@ pub(crate) fn install(ctx: &Ctx<'_>, shared: Rc<RefCell<Shared>>, base: Option<&
             (!sd.has_pending_critical_resources()).then(|| sd.id() as f64)
         })
         .flatten()
-    });
-    let d = docs.clone();
-    // An iframe's laid-out content for pagination by height: null until its sub-document for
-    // `url` (absolute; an older document may still be attached while the new one loads) is
-    // attached with its stylesheets loaded, then `lines()`.
-    op!("subdocLines", move |iframe: f64,
-                             url: String|
-          -> Option<Vec<f64>> {
-        d.resolve();
-        d.with(iframe, |doc, n, _| {
-            let sub = doc.get_node(n)?.element_data()?.sub_doc_data()?;
-            let sd = sub.inner();
-            (sd.url().as_str() == url && !sd.has_pending_critical_resources()).then(|| lines(&sd))
-        })
-        .flatten()
-    });
-    let d = docs.clone();
-    // Scrolls an iframe's sub-document to `y` CSS px (a page of a paginated section): paint only.
-    op!("subdocScroll", move |iframe: f64, y: f64| -> bool {
-        d.with(iframe, |doc, n, _| {
-            let sub = doc.get_node_mut(n)?.subdoc_mut()?;
-            let mut sd = sub.inner_mut();
-            sd.set_viewport_scroll(blitz_dom::Point { x: 0.0, y });
-            sd.shell_provider.request_redraw();
-            Some(())
-        })
-        .flatten()
-        .is_some()
     });
     let d = docs.clone();
     // Computed value of one longhand or custom property ("" for shorthands and unstyled nodes).
