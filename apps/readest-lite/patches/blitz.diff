@@ -321,7 +321,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
          }
      }
  
-@@ -2543,20 +2623,172 @@
+@@ -2543,20 +2623,176 @@
  
          // Only non-atomic inline elements lack their own layout box: they are
          // flattened into the containing inline root's text layout as style spans.
@@ -451,7 +451,11 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
 +                    } else {
 +                        (r.start < b && r.end > a).then_some((x, x + adv))
 +                    };
-+                    if let Some((l, rt)) = edges.map(|(l, rt)| (l.clamp(lo, hi), rt.clamp(lo, hi))) {
++                    // A cluster wholly in the space removed at the line's end has no box.
++                    let edges = edges
++                        .map(|(l, rt)| (l.clamp(lo, hi), rt.clamp(lo, hi)))
++                        .filter(|&(l, rt)| a == b || adv == 0.0 || rt > l);
++                    if let Some((l, rt)) = edges {
 +                        // The first run on the line with a selected cluster sets the extent;
 +                        // later ones widen it.
 +                        (y0, y1) = match span {
@@ -504,7 +508,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      }
  
      /// The first element in tree order with the given tag name. The root element and
-@@ -2944,6 +3176,36 @@
+@@ -2944,6 +3180,36 @@
  /// Snap a CSSOM geometry value to a 1/64px grid (the precision of Blink's `LayoutUnit`).
  /// Layout values are accumulated in `f32`, so e.g. seven `55/7`-wide flex items would
  /// otherwise end at `55.0000005` and appear to overflow their 55px container.
@@ -1369,7 +1373,7 @@ diff -ruN blitz/packages/blitz-dom/src/node/node.rs blitz/packages/blitz-dom/src
  
              for item in line.items() {
                  match item {
-@@ -1849,15 +1922,9 @@
+@@ -1849,15 +1922,13 @@
                          if !is_in_target(glyph_run.style().brush.id) {
                              continue;
                          }
@@ -1384,11 +1388,15 @@ diff -ruN blitz/packages/blitz-dom/src/node/node.rs blitz/packages/blitz-dom/src
 -                        let y1 = line_metrics.block_max_coord;
 +                        let x0 = glyph_run.offset().clamp(lo, hi);
 +                        let x1 = (glyph_run.offset() + glyph_run.advance()).clamp(lo, hi);
++                        // A run wholly in the space removed at the line's end has no box.
++                        if x1 == x0 && glyph_run.advance() > 0.0 {
++                            continue;
++                        }
 +                        let (y0, y1) = crate::util::content_area(&glyph_run);
                          union(&mut line_rect, x0, y0, x1, y1);
                      }
                      PositionedLayoutItem::InlineBox(inline_box) => {
-@@ -1962,6 +2029,15 @@
+@@ -1962,6 +2033,15 @@
  
      fn cssom_scroll_size(&self) -> taffy::Size<f32> {
          let layout = self.final_layout();
@@ -1748,7 +1756,7 @@ diff -ruN blitz/packages/blitz-dom/src/util.rs blitz/packages/blitz-dom/src/util
 diff -ruN blitz/packages/blitz-html/src/html_document.rs blitz/packages/blitz-html/src/html_document.rs
 --- blitz/packages/blitz-html/src/html_document.rs
 +++ blitz/packages/blitz-html/src/html_document.rs
-@@ -68,3 +68,335 @@
+@@ -68,3 +68,338 @@
          self.into()
      }
  }
@@ -1925,6 +1933,9 @@ diff -ruN blitz/packages/blitz-html/src/html_document.rs blitz/packages/blitz-ht
 +        let text = doc.get_node(doc.get_element_by_id("w").unwrap()).unwrap().children[0];
 +        let r = doc.text_rects(text, 0, 4);
 +        assert_eq!(r[0].width, a[0].width, "the range \"aaa \": {r:?}");
++        // A range of only that space has no rects, as in browsers: foliate-js bisects a page's
++        // visible range with them, and ends it before the space.
++        assert_eq!(doc.text_rects(text, 3, 4), [], "the range \" \"");
 +    }
 +}
 +
