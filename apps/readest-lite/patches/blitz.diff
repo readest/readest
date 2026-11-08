@@ -1459,7 +1459,28 @@ diff -ruN blitz/packages/blitz-dom/src/tree.rs blitz/packages/blitz-dom/src/tree
 diff -ruN blitz/packages/blitz-html/src/html_sink.rs blitz/packages/blitz-html/src/html_sink.rs
 --- blitz/packages/blitz-html/src/html_sink.rs
 +++ blitz/packages/blitz-html/src/html_sink.rs
-@@ -99,26 +99,30 @@
+@@ -54,6 +54,12 @@
+     /// The document's quirks mode.
+     pub quirks_mode: Cell<QuirksMode>,
+     pub is_xml: bool,
++
++    /// While parsing a fragment: where to put the fragment's root, which html5ever appends to
++    /// the document node. It is kept detached instead, so the document node's child list never
++    /// changes: such a change restyles every element when a selector tested `:first-child` or
++    /// similar on the root element (as daisyUI's `.stack` rules do).
++    fragment_root: Option<&'m Cell<Option<NodeId>>>,
+ }
+ 
+ impl<'m, 'doc> DocumentHtmlParser<'m, 'doc> {
+@@ -71,6 +77,7 @@
+             errors: RefCell::new(Vec::new()),
+             quirks_mode: Cell::new(QuirksMode::NoQuirks),
+             is_xml: false,
++            fragment_root: None,
+         }
+     }
+ 
+@@ -99,26 +106,30 @@
          if is_xhtml_doc {
              Self::parse_xml_into_mutator(mutr, html);
          } else {
@@ -1507,6 +1528,112 @@ diff -ruN blitz/packages/blitz-html/src/html_sink.rs blitz/packages/blitz-html/s
      /// Parse the input as XML (XHTML), regardless of its content.
      ///
      /// [`parse_into_mutator`](Self::parse_into_mutator) sniffs the content to decide between HTML
+@@ -140,7 +151,9 @@
+         element_id: NodeId,
+         html: &str,
+     ) {
+-        let sink = DocumentHtmlParser::new(mutr);
++        let fragment_root = Cell::new(None);
++        let mut sink = DocumentHtmlParser::new(mutr);
++        sink.fragment_root = Some(&fragment_root);
+ 
+         let opts = ParseOpts {
+             tokenizer: TokenizerOpts::default(),
+@@ -157,10 +170,9 @@
+             .read_from(&mut html.as_bytes())
+             .unwrap();
+ 
+-        // html5ever creates a new fragment root node under the document node and parses the nodes into that fragment root.
++        // html5ever parses the nodes into a fragment root (kept detached, see `fragment_root`).
+         // So here we move the children of the fragment root to element_id and then drop the fragment root.
+-        let document_id = mutr.doc.root_node().id;
+-        let fragment_root_id = mutr.last_child_id(document_id).unwrap();
++        let fragment_root_id = fragment_root.get().unwrap();
+         let child_ids = mutr.child_ids(fragment_root_id);
+         mutr.append_children(element_id, &child_ids);
+         mutr.remove_and_drop_node(fragment_root_id);
+@@ -219,6 +231,20 @@
+     }
+ 
+     fn append(&self, parent_id: &Self::Handle, child: NodeOrText<Self::Handle>) {
++        if let Some(root) = self.fragment_root {
++            if *parent_id == self.get_document() {
++                // The fragment's root stays detached; anything else for the document node (a
++                // comment after `</html>`) is not part of the fragment.
++                if let NodeOrText::AppendNode(id) = child {
++                    if root.get().is_none() {
++                        root.set(Some(id));
++                    } else {
++                        self.mutr().remove_and_drop_node(id);
++                    }
++                }
++                return;
++            }
++        }
+         match child {
+             NodeOrText::AppendNode(id) => self.mutr().append_children(*parent_id, &[id]),
+             // If content to append is text, first attempt to append it to the last child of parent.
+@@ -331,3 +357,60 @@
+ 
+     // Now our tree should have some nodes in it
+ }
++
++#[cfg(test)]
++mod inner_html_tests {
++    use crate::{HtmlDocument, HtmlProvider};
++    use blitz_dom::{DocumentConfig, NodeId, RestyleHint};
++    use std::sync::Arc;
++
++    fn page() -> (HtmlDocument, NodeId, NodeId) {
++        let config = DocumentConfig {
++            html_parser_provider: Some(Arc::new(HtmlProvider)),
++            ..Default::default()
++        };
++        let mut doc = HtmlDocument::from_html(
++            // daisyUI's `.stack` rule: `:is()` defeats the ancestor filter, so `:first-child` is
++            // tested on every element and flags every parent, the document node too. A change
++            // to the document node's child list then restyles every element.
++            "<html><head><style>:is(.stack, .stack.stack-bottom) > :first-child { order: 1 }</style></head>\
++             <body><p id='other'>text</p><div id='target'><span>old</span></div></body></html>",
++            config,
++        );
++        doc.resolve(0.0);
++        let other = doc.get_element_by_id("other").unwrap();
++        let target = doc.get_element_by_id("target").unwrap();
++        (doc, other, target)
++    }
++
++    #[test]
++    fn setting_inner_html_restyles_only_the_element_it_changes() {
++        for html in ["", "<b>new</b>"] {
++            let (mut doc, _, target) = page();
++            doc.mutate().set_inner_html(target, html);
++            // What the next resolve will restyle: not the whole document.
++            let root = doc.root_element();
++            let hint = root.try_stylo_element_data().unwrap().get().unwrap().hint;
++            assert!(
++                !hint.contains(RestyleHint::RESTYLE_DESCENDANTS),
++                "innerHTML = {html:?}: {hint:?}"
++            );
++        }
++    }
++
++    #[test]
++    fn inner_html_replaces_the_children_and_leaves_the_document_alone() {
++        let (mut doc, _, target) = page();
++        let root = doc.root_node().id;
++        let root_children = doc.get_node(root).unwrap().children.clone();
++        doc.mutate().set_inner_html(target, "<b>new</b> text");
++        doc.resolve(0.0);
++        assert_eq!(doc.get_node(root).unwrap().children, root_children);
++        let mut out = String::new();
++        let node = doc.get_node(target).unwrap();
++        for &child in &node.children {
++            out.push_str(&doc.get_node(child).unwrap().outer_html());
++        }
++        assert_eq!(out, "<b>new</b> text");
++    }
++}
 diff -ruN blitz/packages/blitz-paint/src/render/background.rs blitz/packages/blitz-paint/src/render/background.rs
 --- blitz/packages/blitz-paint/src/render/background.rs
 +++ blitz/packages/blitz-paint/src/render/background.rs
