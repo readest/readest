@@ -392,7 +392,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
          }
      }
  
-@@ -2543,20 +2652,168 @@
+@@ -2543,20 +2652,257 @@
  
          // Only non-atomic inline elements lack their own layout box: they are
          // flattened into the containing inline root's text layout as style spans.
@@ -474,6 +474,79 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
 +        self.laid_out_rects(node_id, root, text, a, b)
 +    }
 +
++    /// Where (in layout units) a caret for `node` at byte `at` of the text sits beside the
++    /// in-flow atomic inlines on `line` inserted there: the left edge of the first after `node` in
++    /// tree order, or else the right edge of the last before it.
++    fn atomic_inline_edge(
++        &self,
++        layout: &parley::Layout<crate::node::TextBrush>,
++        line: &parley::Line<'_, crate::node::TextBrush>,
++        node: NodeId,
++        at: usize,
++    ) -> Option<f32> {
++        let (mut after, mut before) = (None::<f32>, None::<f32>);
++        for item in line.items() {
++            let parley::PositionedLayoutItem::InlineBox(b) = item else {
++                continue;
++            };
++            if b.kind != parley::InlineBoxKind::InFlow
++                || !layout.inline_boxes().any(|ib| ib.id == b.id && ib.index == at)
++            {
++                continue;
++            }
++            if self.follows(NodeId::from_u64(b.id), node) {
++                after = Some(after.map_or(b.x, |x| x.min(b.x)));
++            } else {
++                before = Some(before.map_or(b.x + b.width, |x| x.max(b.x + b.width)));
++            }
++        }
++        after.or(before)
++    }
++
++    /// The rounded ascent and descent (in layout units at `scale`) of the primary font of
++    /// `node` (an element, or a text node's parent), as a text run of it would have.
++    fn font_extent(&self, node: NodeId, scale: f32) -> Option<(f32, f32)> {
++        let n = self.get_node(node)?;
++        let el = if n.is_element() { n } else { self.get_node(n.parent?)? };
++        let style = crate::stylo_to_parley::style(el.id, el.primary_styles().as_ref()?);
++        let mut font_ctx = self.font_ctx.lock().ok()?;
++        let mut layout_ctx = parley::LayoutContext::<TextBrush>::new();
++        let mut builder = layout_ctx.tree_builder(&mut font_ctx, scale, true, &style);
++        builder.push_text("x");
++        let mut layout = parley::Layout::new();
++        builder.build_into(&mut layout);
++        layout.break_all_lines(None);
++        let line = layout.lines().next()?;
++        line.items().find_map(|item| match item {
++            parley::PositionedLayoutItem::GlyphRun(run) => {
++                let m = run.run().font_metrics();
++                Some((m.ascent.round(), m.descent.round()))
++            }
++            _ => None,
++        })
++    }
++
++    /// Whether `a` comes after `b` in tree order (false when one contains the other).
++    fn follows(&self, a: NodeId, b: NodeId) -> bool {
++        let chain = |mut id: NodeId| {
++            let mut ids = vec![id];
++            while let Some(p) = self.nodes.get(id).and_then(|n| n.parent) {
++                ids.push(p);
++                id = p;
++            }
++            ids.reverse();
++            ids
++        };
++        let (ca, cb) = (chain(a), chain(b));
++        let common = ca.iter().zip(&cb).take_while(|(x, y)| x == y).count();
++        if common == 0 || common == ca.len() || common == cb.len() {
++            return false;
++        }
++        let parent = &self.nodes[ca[common - 1]];
++        let pos = |id| parent.children.iter().position(|&c| c == id);
++        pos(ca[common]) > pos(cb[common])
++    }
++
 +    /// The boxes of `a..b` (byte offsets into `text.text`) of the inline layout of `root`, one
 +    /// per line, relative to the viewport. `a == b` is a caret: no width, the line's height.
 +    fn laid_out_rects(
@@ -495,6 +568,22 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
 +        for line in layout.lines() {
 +            let m = line.metrics();
 +            let (lo, hi) = crate::util::line_extent(layout, &line);
++            // An atomic inline has no text: a caret at its insertion point sits at its edge, in
++            // the content area of the line's text, or of the node's font when it has none.
++            if a == b && let Some(x) = self.atomic_inline_edge(layout, &line, node_id, a) {
++                let run = line.items().find_map(|item| match item {
++                    parley::PositionedLayoutItem::GlyphRun(run) => Some(crate::util::content_area(&run)),
++                    _ => None,
++                });
++                let (top, bottom) = run
++                    .or_else(|| {
++                        let (ascent, descent) = self.font_extent(node_id, layout.scale())?;
++                        Some((m.baseline - ascent, m.baseline + descent))
++                    })
++                    .unwrap_or((m.block_min_coord, m.block_max_coord));
++                boxes.push((f64::from(x), f64::from(top), f64::from(x), f64::from(bottom)));
++                break;
++            }
 +            let (mut y0, mut y1) = (f64::from(m.block_min_coord), f64::from(m.block_max_coord));
 +            let mut span: Option<(f32, f32)> = None;
 +            // Spans that change only the brush don't split shaping: their glyph runs share one
@@ -573,7 +662,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      }
  
      /// The first element in tree order with the given tag name. The root element and
-@@ -2944,6 +3201,36 @@
+@@ -2944,6 +3290,36 @@
  /// Snap a CSSOM geometry value to a 1/64px grid (the precision of Blink's `LayoutUnit`).
  /// Layout values are accumulated in `f32`, so e.g. seven `55/7`-wide flex items would
  /// otherwise end at `55.0000005` and appear to overflow their 55px container.
@@ -610,7 +699,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
  fn snap_to_layout_unit(value: f64) -> f64 {
      (value * 64.0).round() / 64.0
  }
-@@ -3781,3 +4068,7 @@
+@@ -3781,3 +4157,7 @@
          );
      }
  }
@@ -2057,7 +2146,7 @@ diff -ruN blitz/packages/blitz-dom/src/util.rs blitz/packages/blitz-dom/src/util
 diff -ruN blitz/packages/blitz-html/src/html_document.rs blitz/packages/blitz-html/src/html_document.rs
 --- blitz/packages/blitz-html/src/html_document.rs
 +++ blitz/packages/blitz-html/src/html_document.rs
-@@ -68,3 +68,501 @@
+@@ -68,3 +68,535 @@
          self.into()
      }
  }
@@ -2200,6 +2289,40 @@ diff -ruN blitz/packages/blitz-html/src/html_document.rs blitz/packages/blitz-ht
 +        let rects = doc.text_rects(c, 0, 1);
 +        assert_eq!(rects.len(), 1);
 +        assert!((rects[0].x - e.x).abs() < 0.5 && rects[0].width < 20.0, "{rects:?}, span at {e:?}");
++    }
++
++    #[test]
++    fn an_empty_inline_element_next_to_an_atomic_inline_sits_at_its_edge() {
++        // An EPUB's page-break span before a full-height image: the white space around it
++        // collapses away, so no text is where it sits; Chromium puts it at the image's left edge
++        // (and one after the image at its right edge), in the font's content area.
++        // With text after the box, and (as in the EPUB) with only white space: no text on the line.
++        for after_box in ["x", "\n\t"] {
++            let config = DocumentConfig {
++                html_parser_provider: Some(Arc::new(HtmlProvider)),
++                viewport: Some(Viewport::new(800, 600, 1.0, ColorScheme::Light)),
++                ..Default::default()
++            };
++            let mut doc = HtmlDocument::from_html(
++                &format!(
++                    "<html><body style='margin:0'><div style='width:400px;text-align:center;font-size:20px'>\n\t\
++                       <span id='before'></span>\n\t<span id='box' style='display:inline-block;width:200px;height:100px'></span>\
++                       <span id='after'></span>{after_box}</div></body></html>"
++                ),
++                config,
++            );
++            doc.resolve(0.0);
++            let rect = |id| doc.get_client_bounding_rect(doc.get_element_by_id(id).unwrap()).unwrap();
++            let (b, before, after) = (rect("box"), rect("before"), rect("after"));
++            assert!(b.x > 50.0, "the line is centred: {b:?}");
++            assert_eq!((before.x, before.width), (b.x, 0.0), "{after_box:?} before: {before:?}, box {b:?}");
++            assert_eq!((after.x, after.width), (b.x + b.width, 0.0), "{after_box:?} after: {after:?}, box {b:?}");
++            for r in [before, after] {
++                assert!((15.0..40.0).contains(&r.height), "{after_box:?}: the font's content area: {r:?}");
++                // on the baseline (the box's bottom), its descent below it
++                assert!(r.y < b.y + b.height && r.y + r.height > b.y + b.height, "{r:?}, box {b:?}");
++            }
++        }
 +    }
 +
 +    #[test]

@@ -85,7 +85,12 @@
   block's fragments do; they stopped at the column cut and were merged into one.
 - `blitz-dom` layout/inline/build, document, node/text: inline elements are recorded in
   `TextLayout::text_nodes` too, so an element with no glyphs (an empty span, such as an EPUB
-  page-break marker) has a zero-width box where it sits instead of none. Range rects walk each
+  page-break marker) has a zero-width box where it sits instead of none. Beside an atomic inline
+  inserted at its text offset (white space collapsed away around a page-break span before a
+  full-page image), the box is at that inline's edge: the left of the first after it in tree
+  order, else the right of the last before it. On a line with no text, its height is the
+  content area of its own primary font, as Chromium's; it took the next text's position, or the
+  whole line box. Range rects walk each
   shaped run's clusters once: spans that change only the brush share one shaped run, which was
   walked again from every span's offset, shifting the rects of text after a span.
 - `blitz-paint` text: faux italics lean forward. The glyph skew is applied in y-down space,
