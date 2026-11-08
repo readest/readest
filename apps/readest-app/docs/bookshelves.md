@@ -73,6 +73,8 @@ before dragging. Keyboard users can focus a card and use Alt + Left/Right/Up/Dow
 enables Custom sorting for that shelf and saves an independent order for each opened group.
 Use **Select Books** in the header for multiple selection on desktop and mobile; long-press
 remains available for dragging on touchscreens.
+On screens up to 360px wide, searching keeps Clear Search and Select Books available;
+clearing the query restores the header's Import Books action.
 Items updated after the last manual rearrangement, including newly read books, appear first
 by recency; remaining items retain their manual relative order. The next drag starts from the
 visible order. The previous metadata sort remains the fallback for new items and reading-time labels.
@@ -80,6 +82,10 @@ Pause over a card's center to create or join a manually managed group. Inside a 
 **Move to parent group**, or use Alt + Shift + Up, to move a book or nested group to its parent.
 Grouping alone preserves metadata sorting. Insertion and settling feedback respects RTL,
 reduced-motion preferences and e-ink mode.
+Interrupted group moves recover their membership and affected orders when the library loads,
+including offline and anonymous sessions. A move that cannot save because storage access was
+denied reports the failure and restores its previous order. Recovery preserves reading progress,
+imported books, deletion tombstones and newer independent ordering changes.
 Custom item orders are stored in separate bounded replica rows rather than adding fields to
 the strict shelf definition, so older clients can continue reading the existing shelf configuration.
 

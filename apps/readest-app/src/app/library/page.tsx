@@ -90,6 +90,7 @@ import {
 } from '@/utils/window';
 
 import { getActiveBookshelfGroupBy } from '@/services/bookshelves/grouping';
+import { recoverBookshelfGroupChanges } from '@/services/bookshelves/groupChanges';
 import { LibraryGroupByType } from '@/types/settings';
 import { BookMetadata } from '@/libs/document';
 import { AboutWindow } from '@/components/AboutWindow';
@@ -790,7 +791,10 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
       }
 
       // Reuse the library from the store when we return from the reader
-      const library = hasCachedLibrary ? libraryBooks : await appService.loadLibraryBooks();
+      const library = await recoverBookshelfGroupChanges(
+        envConfig,
+        hasCachedLibrary ? libraryBooks : await appService.loadLibraryBooks(),
+      );
       let opened = false;
       if (checkOpenWithBooks) {
         opened = await handleOpenWithBooks(appService, library);
