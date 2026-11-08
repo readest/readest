@@ -90,7 +90,10 @@ import {
 } from '@/utils/window';
 
 import { getActiveBookshelfGroupBy } from '@/services/bookshelves/grouping';
-import { recoverBookshelfGroupChanges } from '@/services/bookshelves/groupChanges';
+import {
+  BookshelfGroupRecoveryError,
+  recoverBookshelfGroupChanges,
+} from '@/services/bookshelves/groupChanges';
 import { LibraryGroupByType } from '@/types/settings';
 import { BookMetadata } from '@/libs/document';
 import { AboutWindow } from '@/components/AboutWindow';
@@ -797,7 +800,11 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
       } catch (error) {
         // A readable library remains usable while an interrupted move waits for
         // write access. Its recovery journal is retained for the next load.
-        console.error('Failed to recover bookshelf group changes:', error);
+        if (error instanceof BookshelfGroupRecoveryError) library = error.library;
+        console.error(
+          'Failed to recover bookshelf group changes:',
+          error instanceof BookshelfGroupRecoveryError ? error.cause : error,
+        );
         eventDispatcher.dispatch('toast', {
           type: 'error',
           message: _('Failed to save bookshelves.'),

@@ -22,6 +22,17 @@ interface GroupChange {
   books: Membership[];
   rollback: boolean;
 }
+export class BookshelfGroupRecoveryError extends Error {
+  constructor(
+    readonly library: Book[],
+    cause: unknown,
+  ) {
+    super(cause instanceof Error ? cause.message : 'Failed to recover bookshelf group changes', {
+      cause,
+    });
+    this.name = 'BookshelfGroupRecoveryError';
+  }
+}
 let writes: Promise<unknown> = Promise.resolve();
 const serialize = <T>(operation: () => Promise<T>): Promise<T> => {
   const next = writes.catch(() => {}).then(operation);
@@ -170,7 +181,7 @@ const updateMembership = (library: Book[], changes: Map<string, Membership>) =>
 const saveMembership = async (
   env: EnvConfigType,
   changes: Map<string, Membership>,
-  committed: () => void,
+  committed: (library: Book[]) => void,
   source?: Book[],
 ) => {
   const initial = useLibraryStore.getState().library;
@@ -178,11 +189,20 @@ const saveMembership = async (
   let library = source ?? useLibraryStore.getState().library;
   if (useLibraryStore.getState().libraryLoaded && initial !== useLibraryStore.getState().library)
     library = useLibraryStore.getState().library;
+  let saved = false;
   while (true) {
     const snapshot = useLibraryStore.getState().library;
     const updates = updateMembership(library, changes);
-    await appService.saveLibraryBooks(updates, { throwOnFailure: true });
-    committed();
+    try {
+      await appService.saveLibraryBooks(updates, { throwOnFailure: true });
+    } catch (error) {
+      // Membership is already durable; do not discard newer live progress just
+      // because retrying that progress alongside it could not reach disk.
+      if (saved) committed(updates);
+      throw error;
+    }
+    saved = true;
+    committed(updates);
     if (snapshot === useLibraryStore.getState().library) return updates;
     library = useLibraryStore.getState().library;
   }
@@ -213,27 +233,36 @@ export const recoverBookshelfGroupChanges = (env: EnvConfigType, books: Book[]) 
         /* Keep unreadable recovery records for a later retry. */
       }
     }
-    for (const { key, change } of records.sort((a, b) => a.change.createdAt - b.change.createdAt)) {
-      const current = readBookshelves(useSettingsStore.getState().settings);
-      await saveGroupOrders(
-        env,
-        current,
-        applyOrderChanges(
-          current,
-          change.rollback ? change.after : change.before,
-          change.rollback ? change.before : change.after,
-        ),
-        key,
-        change,
-      );
-      if (!change.rollback)
-        library = await saveMembership(
+    try {
+      for (const { key, change } of records.sort(
+        (a, b) => a.change.createdAt - b.change.createdAt,
+      )) {
+        const current = readBookshelves(useSettingsStore.getState().settings);
+        await saveGroupOrders(
           env,
-          new Map(change.books.map((book) => [book.hash, book])),
-          () => {},
-          library,
+          current,
+          applyOrderChanges(
+            current,
+            change.rollback ? change.after : change.before,
+            change.rollback ? change.before : change.after,
+          ),
+          key,
+          change,
         );
-      localStorage.removeItem(key);
+        if (!change.rollback)
+          library = await saveMembership(
+            env,
+            new Map(change.books.map((book) => [book.hash, book])),
+            (updates) => {
+              library = updates;
+            },
+            library,
+          );
+        localStorage.removeItem(key);
+      }
+    } catch (error) {
+      // Earlier writes must remain visible even if a later move needs retry.
+      throw new BookshelfGroupRecoveryError(library, error);
     }
     return library;
   });

@@ -90,6 +90,37 @@ afterEach(() => {
   localStorage.clear();
 });
 
+const interruptMove = async (
+  before: BookshelfDefinition[],
+  after: BookshelfDefinition[],
+  book: Book,
+) => {
+  let pending: ReturnType<typeof snapshot> | undefined;
+  save.mockImplementationOnce(async () => {
+    pending = snapshot();
+    throw new Error('process terminated');
+  });
+  await expect(saveBookshelfGroupChanges(env, before, after, [book])).rejects.toThrow(
+    'process terminated',
+  );
+  restart(pending!);
+};
+
+const pendingMoves = async () => {
+  await interruptMove(base, draft, changed);
+  const second = { ...original, hash: 'two' };
+  useLibraryStore.getState().setLibrary([original, second]);
+  const current = readBookshelves(useSettingsStore.getState().settings);
+  const next = current.map((s) =>
+    s.id === 'default' ? { ...s, manualOrder: { ...s.manualOrder, 'group:C': ['b:two'] } } : s,
+  );
+  const moved = { ...second };
+  setBookGroup(moved, md5Fingerprint('C'), 'C');
+  await interruptMove(current, next, moved);
+  expect(groupJournalKeys()).toHaveLength(2);
+  return [original, second];
+};
+
 describe('saving group membership and shelf order together', () => {
   it('retains concurrent deletion tombstones and imported books in the persisted retry', async () => {
     const pending = Promise.withResolvers<void>();
@@ -459,42 +490,65 @@ describe('saving group membership and shelf order together', () => {
   });
 
   it('keeps separate intents for multiple unfinished moves and replays both', async () => {
-    const pending: ReturnType<typeof snapshot>[] = [];
-    const interrupt = async () => {
-      pending.push(snapshot());
-      throw new Error('process terminated');
-    };
-    save.mockImplementationOnce(interrupt);
-    await expect(saveBookshelfGroupChanges(env, base, draft, [changed])).rejects.toThrow(
-      'process terminated',
-    );
-    restart(pending[0]!);
-    const second = { ...original, hash: 'two' };
-    useLibraryStore.getState().setLibrary([original, second]);
-    const current = readBookshelves(useSettingsStore.getState().settings);
-    const next = current.map((s) =>
-      s.id === 'default'
-        ? {
-            ...s,
-            manualOrder: { ...s.manualOrder, 'group:C': ['b:two'] },
-          }
-        : s,
-    );
-    const moved = { ...second };
-    setBookGroup(moved, md5Fingerprint('C'), 'C');
-    save.mockImplementationOnce(interrupt);
-    await expect(saveBookshelfGroupChanges(env, current, next, [moved])).rejects.toThrow(
-      'process terminated',
-    );
-    restart(pending[1]!);
-    expect(groupJournalKeys()).toHaveLength(2);
-    const recovered = await recoverBookshelfGroupChanges(env, [original, second]);
+    const books = await pendingMoves();
+    const recovered = await recoverBookshelfGroupChanges(env, books);
     expect(recovered.map((book) => book.groupName)).toEqual(['B', 'C']);
     const shelf = readBookshelves(useSettingsStore.getState().settings).find(
       (s) => s.id === 'default',
     )!;
     expect(shelf.manualOrder?.['group:B']).toEqual(['b:one']);
     expect(shelf.manualOrder?.['group:C']).toEqual(['b:two']);
+    expect(groupJournalKeys()).toEqual([]);
+  });
+
+  it('returns earlier recovered membership with the error when the next intent cannot be saved', async () => {
+    const books = await pendingMoves();
+    const keys = groupJournalKeys();
+    let persisted: Book[] = [];
+    const unavailable = new Error('second move unavailable');
+    save.mockImplementation(async (updates) => {
+      persisted = structuredClone(updates);
+    });
+    save.mockImplementationOnce(async (updates) => {
+      persisted = structuredClone(updates);
+    });
+    save.mockRejectedValueOnce(unavailable);
+    const failure = await recoverBookshelfGroupChanges(env, books).catch((error: unknown) => error);
+    expect(failure).toBeInstanceOf(Error);
+    expect(failure).toHaveProperty('library');
+    const partial = (failure as Error & { library: Book[] }).library;
+    expect(partial.map((book) => book.groupName)).toEqual(['B', 'A/B']);
+    expect(persisted).toEqual(partial);
+    expect(groupJournalKeys()).toEqual([keys[1]]);
+    expect(useLibraryStore.getState().library).toEqual([]);
+    // A subsequent routine save must not overwrite the completed first move.
+    await save(partial);
+    expect(persisted[0]?.groupName).toBe('B');
+    const recovered = await recoverBookshelfGroupChanges(env, partial);
+    expect(recovered.map((book) => book.groupName)).toEqual(['B', 'C']);
+    expect(groupJournalKeys()).toEqual([]);
+  });
+
+  it('returns a saved membership if a later concurrent-progress retry fails during recovery', async () => {
+    await interruptMove(base, draft, changed);
+    let persisted: Book[] = [];
+    save.mockImplementationOnce(async (updates) => {
+      persisted = structuredClone(updates);
+      useLibraryStore.getState().setLibrary([{ ...original, progress: [8, 10], updatedAt: 900 }]);
+    });
+    save.mockRejectedValueOnce(new Error('progress retry unavailable'));
+    const failure = await recoverBookshelfGroupChanges(env, [original]).catch(
+      (error: unknown) => error,
+    );
+    expect(failure).toBeInstanceOf(Error);
+    expect(failure).toHaveProperty('library');
+    const partial = (failure as Error & { library: Book[] }).library;
+    expect(partial[0]?.groupName).toBe('B');
+    expect(partial[0]?.progress).toEqual([8, 10]);
+    expect(persisted[0]?.groupName).toBe('B');
+    expect(groupJournalKeys()).toHaveLength(1);
+    const recovered = await recoverBookshelfGroupChanges(env, partial);
+    expect(recovered[0]?.groupName).toBe('B');
     expect(groupJournalKeys()).toEqual([]);
   });
 
