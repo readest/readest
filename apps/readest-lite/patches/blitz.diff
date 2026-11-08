@@ -295,7 +295,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
          })
      }
  
-@@ -2546,19 +2618,133 @@
+@@ -2546,19 +2618,141 @@
          let fragments = node.inline_fragment_boxes()?;
          let inline_root = node.inline_root_ancestor()?;
  
@@ -371,24 +371,32 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
 +        let mut caret_after = None;
 +        for line in layout.lines() {
 +            let m = line.metrics();
-+            let (y0, y1) = (f64::from(m.block_min_coord), f64::from(m.block_max_coord));
++            let (mut y0, mut y1) = (f64::from(m.block_min_coord), f64::from(m.block_max_coord));
 +            let mut span: Option<(f32, f32)> = None;
 +            for item in line.items() {
 +                let parley::PositionedLayoutItem::GlyphRun(run) = item else {
 +                    continue;
 +                };
++                let (top, bottom) = crate::util::content_area(&run);
++                let (top, bottom) = (f64::from(top), f64::from(bottom));
 +                let mut x = run.offset();
 +                for c in run.run().visual_clusters() {
 +                    let (r, adv) = (c.text_range(), c.advance());
 +                    let edges = if a == b {
 +                        if r.end == a {
-+                            caret_after = Some((x + adv, y0, y1));
++                            caret_after = Some((x + adv, top, bottom));
 +                        }
 +                        (r.start == a).then_some((x, x))
 +                    } else {
 +                        (r.start < b && r.end > a).then_some((x, x + adv))
 +                    };
 +                    if let Some((l, rt)) = edges {
++                        // The first run on the line with a selected cluster sets the extent;
++                        // later ones widen it.
++                        (y0, y1) = match span {
++                            None => (top, bottom),
++                            Some(_) => (y0.min(top), y1.max(bottom)),
++                        };
 +                        span = Some(span.map_or((l, rt), |(sl, sr)| (sl.min(l), sr.max(rt))));
 +                    }
 +                    x += adv;
@@ -437,7 +445,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      /// The first element in tree order with the given tag name. The root element and
      /// its children are checked first as a fast path before a full tree search, making
      /// this suitable for the `documentElement`/`head`/`body` document accessors.
-@@ -2944,6 +3130,36 @@
+@@ -2944,6 +3138,36 @@
  /// Snap a CSSOM geometry value to a 1/64px grid (the precision of Blink's `LayoutUnit`).
  /// Layout values are accumulated in `f32`, so e.g. seven `55/7`-wide flex items would
  /// otherwise end at `55.0000005` and appear to overflow their 55px container.
@@ -1239,7 +1247,30 @@ diff -ruN blitz/packages/blitz-dom/src/node/node.rs blitz/packages/blitz-dom/src
          let size = self.final_layout().size;
          let matches_self = !(x < self.scroll_offset().x as f32
              || x > size.width + self.scroll_offset().x as f32
-@@ -1962,6 +2035,15 @@
+@@ -1840,7 +1913,6 @@
+ 
+         // One rect per line box: the union of all of the target's fragments on that line
+         Some(layout.lines().filter_map(move |line| {
+-            let line_metrics = line.metrics();
+             let mut line_rect: Option<taffy::Rect<f32>> = None;
+ 
+             for item in line.items() {
+@@ -1851,13 +1923,7 @@
+                         }
+                         let x0 = glyph_run.offset();
+                         let x1 = x0 + glyph_run.advance();
+-                        // Use the line box's block extent rather than the
+-                        // run's font ascent/descent: fonts with small
+-                        // typographic metrics would otherwise produce rects
+-                        // that clip the rendered glyphs. This matches the
+-                        // geometry used for text selection highlights.
+-                        let y0 = line_metrics.block_min_coord;
+-                        let y1 = line_metrics.block_max_coord;
++                        let (y0, y1) = crate::util::content_area(&glyph_run);
+                         union(&mut line_rect, x0, y0, x1, y1);
+                     }
+                     PositionedLayoutItem::InlineBox(inline_box) => {
+@@ -1962,6 +2028,15 @@
  
      fn cssom_scroll_size(&self) -> taffy::Size<f32> {
          let layout = self.final_layout();
@@ -1560,10 +1591,25 @@ diff -ruN blitz/packages/blitz-dom/src/tree.rs blitz/packages/blitz-dom/src/tree
      pub fn viewport_scroll(&self) -> crate::Point<f64> {
          self.viewport_scroll
      }
+diff -ruN blitz/packages/blitz-dom/src/util.rs blitz/packages/blitz-dom/src/util.rs
+--- blitz/packages/blitz-dom/src/util.rs
++++ blitz/packages/blitz-dom/src/util.rs
+@@ -254,3 +254,11 @@
+         }
+     };
+ }
++
++/// A glyph run's content area in the layout's units: its font's ascent above the baseline and
++/// descent below it, each rounded to a whole pixel as browsers do. CSSOM View gives this, not the
++/// line box, as the height of an inline box and of a text range's rects.
++pub(crate) fn content_area<B: parley::Brush>(run: &parley::GlyphRun<'_, B>) -> (f32, f32) {
++    let m = run.run().font_metrics();
++    (run.baseline() - m.ascent.round(), run.baseline() + m.descent.round())
++}
 diff -ruN blitz/packages/blitz-html/src/html_document.rs blitz/packages/blitz-html/src/html_document.rs
 --- blitz/packages/blitz-html/src/html_document.rs
 +++ blitz/packages/blitz-html/src/html_document.rs
-@@ -68,3 +68,85 @@
+@@ -68,3 +68,137 @@
          self.into()
      }
  }
@@ -1649,6 +1695,58 @@ diff -ruN blitz/packages/blitz-html/src/html_document.rs blitz/packages/blitz-ht
 +        assert!(hidden(&doc, "d"), "after a radio inside it is checked");
 +    }
 +}
++
++#[cfg(test)]
++mod inline_box_tests {
++    use crate::{HtmlDocument, HtmlProvider};
++    use blitz_dom::DocumentConfig;
++    use blitz_traits::shell::{ColorScheme, Viewport};
++    use std::sync::Arc;
++
++    // A tall line: the font's content area is far smaller than the line box.
++    const PAGE: &str = "<html><body style='margin:0'>\
++        <p id='p' style='margin:0;font-size:20px;line-height:100px'>a <span id='s'>word</span> b</p>\
++        </body></html>";
++
++    fn page() -> HtmlDocument {
++        let config = DocumentConfig {
++            html_parser_provider: Some(Arc::new(HtmlProvider)),
++            viewport: Some(Viewport::new(800, 600, 1.0, ColorScheme::Light)),
++            ..Default::default()
++        };
++        let mut doc = HtmlDocument::from_html(PAGE, config);
++        doc.resolve(0.0);
++        doc
++    }
++
++    // CSSOM View: an inline box's border box is its font's content area (ascent + descent,
++    // centred in the line by the half-leading), not the line box, as in browsers.
++    fn assert_content_area(what: &str, y: f64, height: f64) {
++        assert!((15.0..40.0).contains(&height), "{what}: height {height}, the line box is 100");
++        let mid = y + height / 2.0;
++        assert!((30.0..70.0).contains(&mid), "{what}: middle at {mid}, outside the line's middle");
++        assert_eq!(height, height.round(), "{what}: ascent and descent are whole pixels");
++    }
++
++    #[test]
++    fn an_inline_element_box_is_its_font_content_area() {
++        let doc = page();
++        let span = doc.get_element_by_id("s").unwrap();
++        let r = doc.get_client_bounding_rect(span).unwrap();
++        assert_content_area("span", r.y, r.height);
++    }
++
++    #[test]
++    fn a_text_range_box_is_its_font_content_area() {
++        let doc = page();
++        let span = doc.get_element_by_id("s").unwrap();
++        let text = doc.get_node(span).unwrap().children[0];
++        let rects = doc.text_rects(text, 0, 4);
++        assert_eq!(rects.len(), 1);
++        assert_content_area("range", rects[0].y, rects[0].height);
++    }
++}
++
 diff -ruN blitz/packages/blitz-html/src/html_sink.rs blitz/packages/blitz-html/src/html_sink.rs
 --- blitz/packages/blitz-html/src/html_sink.rs
 +++ blitz/packages/blitz-html/src/html_sink.rs
