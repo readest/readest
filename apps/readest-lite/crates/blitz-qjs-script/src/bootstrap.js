@@ -2372,8 +2372,10 @@
     },
   };
   // Observers. MutationObserver never reports; IntersectionObserver reports every target visible
-  // once; ResizeObserver reports a target's size on observe and whenever it changes after a layout
-  // (`__blitzAfterLayout`, called by the host after it resolves layout).
+  // once; ResizeObserver reports a target's size on observe and whenever its observed box changes
+  // after a layout (`__blitzAfterLayout`, called by the host after it resolves layout). Its sizes
+  // are the layout's, untransformed: `contentRect` the content box (at the padding's offset), and
+  // the box option says which box's change is reported.
   class MutationObserver {
     constructor(cb) {
       this._cb = cb;
@@ -2427,8 +2429,11 @@
       this._cb = cb;
       this._targets = new Map();
     }
-    observe(el) {
-      this._targets.set(el, null);
+    observe(el, options) {
+      // 'content-box', 'border-box' or 'device-pixel-content-box' (OverlayScrollbars tests for
+      // the option by reading it).
+      const box = options?.box ?? 'content-box';
+      this._targets.set(el, { box, last: null });
       resizeObservers.add(this);
       addTimer(() => this._check(), 0, [], false);
     }
@@ -2441,27 +2446,21 @@
     }
     _check() {
       const entries = [];
-      for (const [el, last] of this._targets) {
+      for (const [el, t] of this._targets) {
         if (!el.isConnected) continue;
-        const r = el.getBoundingClientRect();
-        if (last && last[0] === r.width && last[1] === r.height) continue;
-        this._targets.set(el, [r.width, r.height]);
-        const box = [{ inlineSize: r.width, blockSize: r.height }];
+        const [bw, bh, x, y, w, h] = n.boxSizes(el._id);
+        const size = t.box === 'border-box' ? [bw, bh] : [w, h];
+        if (t.last && t.last[0] === size[0] && t.last[1] === size[1]) continue;
+        t.last = size;
+        const content = [{ inlineSize: w, blockSize: h }];
         entries.push({
           target: el,
-          contentRect: {
-            x: 0,
-            y: 0,
-            width: r.width,
-            height: r.height,
-            top: 0,
-            left: 0,
-            right: r.width,
-            bottom: r.height,
-          },
-          borderBoxSize: box,
-          contentBoxSize: box,
-          devicePixelContentBoxSize: box,
+          contentRect: new DOMRect(x, y, w, h),
+          borderBoxSize: [{ inlineSize: bw, blockSize: bh }],
+          contentBoxSize: content,
+          devicePixelContentBoxSize: [
+            { inlineSize: w * devicePixelRatio, blockSize: h * devicePixelRatio },
+          ],
         });
       }
       if (entries.length)
