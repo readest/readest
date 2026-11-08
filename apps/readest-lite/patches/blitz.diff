@@ -321,24 +321,33 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
          }
      }
  
-@@ -2546,19 +2626,141 @@
-         let fragments = node.inline_fragment_boxes()?;
+@@ -2543,20 +2623,171 @@
+ 
+         // Only non-atomic inline elements lack their own layout box: they are
+         // flattened into the containing inline root's text layout as style spans.
+-        let fragments = node.inline_fragment_boxes()?;
++        let mut fragments = node.inline_fragment_boxes()?.peekable();
          let inline_root = node.inline_root_ancestor()?;
  
 -        // Fragment boxes are relative to the inline root's border box.
++        // An element with no glyphs (an empty span) still has an inline box: no width, at the
++        // point in the text where it sits, as browsers give it.
++        let empty = if fragments.peek().is_none() {
++            let text = inline_root.element_data()?.inline_layout_data.as_deref()?;
++            let &(_, at, _) = text.text_nodes.iter().find(|t| t.0 == node_id)?;
++            self.laid_out_rects(node_id, inline_root, text, at, at)
++        } else {
++            Vec::new()
++        };
++
 +        // Fragment boxes are relative to the inline root's border box; in the root's columns
 +        // each line box is in one column.
          let (root_pos, _) = self.physical_unrounded_geometry(inline_root.id);
 -        let origin_x = root_pos.x as f64 - self.viewport_scroll().x;
 -        let origin_y = root_pos.y as f64 - self.viewport_scroll().y;
 +        let (scroll_x, scroll_y) = (self.viewport_scroll().x, self.viewport_scroll().y);
- 
--        Some(fragments.map(move |rect| BoundingRect {
--            x: snap_to_layout_unit(origin_x + rect.left as f64),
--            y: snap_to_layout_unit(origin_y + rect.top as f64),
--            width: snap_to_layout_unit((rect.right - rect.left) as f64),
--            height: snap_to_layout_unit((rect.bottom - rect.top) as f64),
-+        Some(fragments.flat_map(move |rect| {
++
++        Some(empty.into_iter().chain(fragments.flat_map(move |rect| {
 +            let flow = BoundingRect {
 +                x: root_pos.x as f64 + rect.left as f64,
 +                y: root_pos.y as f64 + rect.top as f64,
@@ -353,9 +362,9 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
 +                    width: snap_to_layout_unit(r.width),
 +                    height: snap_to_layout_unit(r.height),
 +                })
-         }))
-     }
- 
++        })))
++    }
++
 +    /// The boxes of the text `start..end` (byte offsets into its content) of text node
 +    /// `node_id`, one per line, relative to the viewport (CSSOM View's Range rects). A collapsed
 +    /// range is a caret: no width, the line's height. Empty when the node is not laid out.
@@ -387,6 +396,25 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
 +            });
 +        let at = |offset| laid_out_offset(&data.content, offset, &text.text, from, collapse);
 +        let (a, b) = (at(start.min(end)), at(start.max(end)));
++        self.laid_out_rects(node_id, root, text, a, b)
++    }
+ 
+-        Some(fragments.map(move |rect| BoundingRect {
+-            x: snap_to_layout_unit(origin_x + rect.left as f64),
+-            y: snap_to_layout_unit(origin_y + rect.top as f64),
+-            width: snap_to_layout_unit((rect.right - rect.left) as f64),
+-            height: snap_to_layout_unit((rect.bottom - rect.top) as f64),
+-        }))
++    /// The boxes of `a..b` (byte offsets into `text.text`) of the inline layout of `root`, one
++    /// per line, relative to the viewport. `a == b` is a caret: no width, the line's height.
++    fn laid_out_rects(
++        &self,
++        node_id: NodeId,
++        root: &Node,
++        text: &crate::node::TextLayout,
++        a: usize,
++        b: usize,
++    ) -> Vec<BoundingRect> {
 +
 +        // Per line, the clusters in `a..b` (for a caret, the edge at `a`), as element boxes are
 +        // found from glyph runs (parley's selection geometry puts an edge at a run boundary one
@@ -399,10 +427,16 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
 +            let m = line.metrics();
 +            let (mut y0, mut y1) = (f64::from(m.block_min_coord), f64::from(m.block_max_coord));
 +            let mut span: Option<(f32, f32)> = None;
++            // Spans that change only the brush don't split shaping: their glyph runs share one
++            // shaped run, whose clusters are walked once, from its first glyph run.
++            let mut last_run = None;
 +            for item in line.items() {
 +                let parley::PositionedLayoutItem::GlyphRun(run) = item else {
 +                    continue;
 +                };
++                if last_run.replace(run.run().index()) == Some(run.run().index()) {
++                    continue;
++                }
 +                let (top, bottom) = crate::util::content_area(&run);
 +                let (top, bottom) = (f64::from(top), f64::from(bottom));
 +                let mut x = run.offset();
@@ -466,12 +500,10 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
 +                height: snap_to_layout_unit(r.height),
 +            })
 +            .collect()
-+    }
-+
+     }
+ 
      /// The first element in tree order with the given tag name. The root element and
-     /// its children are checked first as a fast path before a full tree search, making
-     /// this suitable for the `documentElement`/`head`/`body` document accessors.
-@@ -2944,6 +3146,36 @@
+@@ -2944,6 +3175,36 @@
  /// Snap a CSSOM geometry value to a 1/64px grid (the precision of Blink's `LayoutUnit`).
  /// Layout values are accumulated in `f32`, so e.g. seven `55/7`-wide flex items would
  /// otherwise end at `55.0000005` and appear to overflow their 55px container.
@@ -1012,7 +1044,13 @@ diff -ruN blitz/packages/blitz-dom/src/layout/inline/build.rs blitz/packages/bli
                                  nodes,
                                  child_id,
                                  &text_transform,
-@@ -238,6 +245,7 @@
+@@ -233,11 +240,13 @@
+                                 });
+ 
+                             builder.push_style_span(style);
++                            let start = builder.text().len();
+ 
+                             if let Some(before_id) = node.before() {
                                  build_inline_layout_recursive(
                                      builder,
                                      text_transformer,
@@ -1020,7 +1058,7 @@ diff -ruN blitz/packages/blitz-dom/src/layout/inline/build.rs blitz/packages/bli
                                      nodes,
                                      before_id,
                                      &text_transform,
-@@ -248,6 +256,7 @@
+@@ -248,6 +257,7 @@
                                  build_inline_layout_recursive(
                                      builder,
                                      text_transformer,
@@ -1028,7 +1066,7 @@ diff -ruN blitz/packages/blitz-dom/src/layout/inline/build.rs blitz/packages/bli
                                      nodes,
                                      child_id,
                                      &text_transform,
-@@ -257,6 +266,7 @@
+@@ -257,11 +267,13 @@
                                  build_inline_layout_recursive(
                                      builder,
                                      text_transformer,
@@ -1036,7 +1074,13 @@ diff -ruN blitz/packages/blitz-dom/src/layout/inline/build.rs blitz/packages/bli
                                      nodes,
                                      after_id,
                                      &text_transform,
-@@ -294,7 +304,9 @@
+                                 );
+                             }
++                            text_nodes.push((node_id, start, builder.text().len()));
+ 
+                             builder.pop_style_span();
+                         }
+@@ -294,7 +306,9 @@
  
                  let text =
                      text_transformer.transform(&data.content, parent_text_transform, builder);
@@ -1414,17 +1458,18 @@ diff -ruN blitz/packages/blitz-dom/src/node/svg.rs blitz/packages/blitz-dom/src/
 diff -ruN blitz/packages/blitz-dom/src/node/text.rs blitz/packages/blitz-dom/src/node/text.rs
 --- blitz/packages/blitz-dom/src/node/text.rs
 +++ blitz/packages/blitz-dom/src/node/text.rs
-@@ -37,6 +37,9 @@
+@@ -37,6 +37,10 @@
      /// `final_layout`. Paint draws text from the unrounded origin so that it keeps its sub-pixel
      /// position while box edges stay snapped. Set by the `writing-mode` layout pass; zero otherwise.
      pub content_box_subpixel_offset: taffy::Point<f32>,
-+    /// Each text node laid out here, with the `start..end` of `text` it became (before any
-+    /// collapsible white space after it; white space collapsed with the text before it may lead).
++    /// Each text node and non-atomic inline element laid out here, with the `start..end` of
++    /// `text` it became (before any collapsible white space after it; white space collapsed with
++    /// the text before it may lead).
 +    pub text_nodes: Vec<(NodeId, usize, usize)>,
  }
  
  impl TextLayout {
-@@ -80,6 +83,9 @@
+@@ -80,6 +84,9 @@
      /// `final_layout`. Paint draws text from the unrounded origin so that it keeps its sub-pixel
      /// position while box edges stay snapped. Set by the `writing-mode` layout pass; zero otherwise.
      pub content_box_subpixel_offset: taffy::Point<f32>,
@@ -1434,7 +1479,7 @@ diff -ruN blitz/packages/blitz-dom/src/node/text.rs blitz/packages/blitz-dom/src
  }
  
  // FIXME: Implement Clone for PlainEditor
-@@ -97,6 +103,7 @@
+@@ -97,6 +104,7 @@
              is_multiline,
              scroll_offset: 0.0,
              content_box_subpixel_offset: taffy::Point::ZERO,
@@ -1648,7 +1693,7 @@ diff -ruN blitz/packages/blitz-dom/src/util.rs blitz/packages/blitz-dom/src/util
 diff -ruN blitz/packages/blitz-html/src/html_document.rs blitz/packages/blitz-html/src/html_document.rs
 --- blitz/packages/blitz-html/src/html_document.rs
 +++ blitz/packages/blitz-html/src/html_document.rs
-@@ -68,3 +68,236 @@
+@@ -68,3 +68,254 @@
          self.into()
      }
  }
@@ -1744,7 +1789,7 @@ diff -ruN blitz/packages/blitz-html/src/html_document.rs blitz/packages/blitz-ht
 +
 +    // A tall line: the font's content area is far smaller than the line box.
 +    const PAGE: &str = "<html><body style='margin:0'>\
-+        <p id='p' style='margin:0;font-size:20px;line-height:100px'>a <span id='s'>word</span> b</p>\
++        <p id='p' style='margin:0;font-size:20px;line-height:100px'>a <span id='s'>word</span> b<span id='e'></span>c</p>\
 +        </body></html>";
 +
 +    fn page() -> HtmlDocument {
@@ -1773,6 +1818,24 @@ diff -ruN blitz/packages/blitz-html/src/html_document.rs blitz/packages/blitz-ht
 +        let span = doc.get_element_by_id("s").unwrap();
 +        let r = doc.get_client_bounding_rect(span).unwrap();
 +        assert_content_area("span", r.y, r.height);
++    }
++
++    #[test]
++    fn an_empty_inline_element_has_a_zero_width_box_where_it_sits() {
++        // As in browsers: foliate-js places page-break markers (empty spans) by their rects.
++        let doc = page();
++        let s = doc.get_client_bounding_rect(doc.get_element_by_id("s").unwrap()).unwrap();
++        let e = doc.get_client_bounding_rect(doc.get_element_by_id("e").unwrap()).unwrap();
++        assert_eq!(e.width, 0.0);
++        assert!(e.x > s.x + s.width, "after \"word b\": {e:?}, word at {s:?}");
++        assert_content_area("empty span", e.y, e.height);
++        // The text after it starts there: a span splitting the line doesn't shift range rects.
++        let e_node = doc.get_node(doc.get_element_by_id("e").unwrap()).unwrap();
++        let p = doc.get_node(e_node.parent.unwrap()).unwrap();
++        let c = *p.children.last().unwrap();
++        let rects = doc.text_rects(c, 0, 1);
++        assert_eq!(rects.len(), 1);
++        assert!((rects[0].x - e.x).abs() < 0.5 && rects[0].width < 20.0, "{rects:?}, span at {e:?}");
 +    }
 +
 +    #[test]
