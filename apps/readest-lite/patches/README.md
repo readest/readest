@@ -96,6 +96,10 @@
   can't hold, the natural break stays. Readest sets 2 for Latin text and 1 for CJK; a column ended
   at the first line that didn't fit, so pages differed from Readest's wherever a paragraph met a
   column's end.
+- `blitz-dom` util, node, document: the space at a line's end has no box (CSS Text 3 removes it).
+  Parley keeps it in the line's last glyph run and reports it as `hanging_advance`; an inline
+  element's piece on that line and a range's rect stop where the line's content does, instead of
+  reaching a space's width past the paragraph's edge.
 
 ## stylo.diff (servo/stylo 2dca34592, 0.23.0)
 
