@@ -8,6 +8,85 @@
   // Documents of their own by tag (WeakRefs) and live NodeIterators (WeakRefs); see below.
   const ownedDocs = new Map();
   const liveIterators = new Set();
+  // MutationObserver registrations: node id → Map(observer → options). Each change asks which
+  // observers want it (none, cheaply, while nothing is observed) before building a record.
+  const mutationTargets = new Map();
+  const resolved = Promise.resolve(); // the native Promise, as queueMicrotask's below
+  // The observers interested in a `type` change of node `id` (its attribute `name`), each mapped
+  // to whether it wants the old value; null when there are none.
+  function mutationObservers(id, type, name) {
+    if (!mutationTargets.size) return null;
+    let found = null;
+    for (let t = id, self = true; t != null; t = n.parent(t), self = false) {
+      const regs = mutationTargets.get(t);
+      if (regs)
+        for (const [o, opts] of regs) {
+          if (!opts[type] || (!self && !opts.subtree)) continue;
+          if (type === 'attributes' && opts.attributeFilter && !opts.attributeFilter.includes(name))
+            continue;
+          const old =
+            type === 'attributes'
+              ? opts.attributeOldValue
+              : type === 'characterData' && opts.characterDataOldValue;
+          if (!found) found = new Map();
+          found.set(o, found.get(o) || old);
+        }
+      if (shadowIds.has(t)) break; // a shadow root is not in its host's subtree
+    }
+    return found;
+  }
+  function queueMutation(observers, record, oldValue) {
+    for (const [o, wantsOld] of observers) {
+      o._records.push(new MutationRecord(record, wantsOld ? oldValue : null));
+      if (!o._queued) {
+        o._queued = true;
+        resolved.then(() => o._deliver());
+      }
+    }
+  }
+  // Removing `c` from its parent, as a pending [observers, record] (null if no one is watching).
+  function removal(c) {
+    const p = mutationTargets.size ? c.parentNode : null;
+    const obs = p && mutationObservers(p._id, 'childList');
+    return obs
+      ? [
+          obs,
+          {
+            type: 'childList',
+            target: p,
+            removedNodes: [c],
+            previousSibling: c.previousSibling,
+            nextSibling: c.nextSibling,
+          },
+        ]
+      : null;
+  }
+  // Runs `replace`, which swaps all of `el`'s children, and records it as one change. The old
+  // children are detached first, so the records' nodes stay readable (the native replace frees
+  // the children it drops).
+  function replaceAll(el, replace) {
+    const obs = mutationObservers(el._id, 'childList');
+    const removedNodes = obs ? [...el.childNodes] : null;
+    if (obs) for (const c of removedNodes) n.remove(c._id);
+    replace();
+    if (!obs) return;
+    const addedNodes = [...el.childNodes];
+    if (removedNodes.length || addedNodes.length)
+      queueMutation(obs, { type: 'childList', target: el, removedNodes, addedNodes });
+  }
+  function setData(node, v) {
+    const obs = mutationObservers(node._id, 'characterData');
+    const oldValue = obs ? n.text(node._id) : null;
+    n.setText(node._id, v);
+    if (obs) queueMutation(obs, { type: 'characterData', target: node }, oldValue);
+  }
+  // Runs `change` to attribute `name` of `el`, recording it with the value it had before.
+  function changeAttr(el, name, change) {
+    const obs = mutationObservers(el._id, 'attributes', name);
+    const oldValue = obs ? n.getAttr(el._id, name) : null;
+    if (change() !== false && obs)
+      queueMutation(obs, { type: 'attributes', target: el, attributeName: name }, oldValue);
+  }
   const kebab = (s) =>
     s.startsWith('--')
       ? s
@@ -402,19 +481,41 @@
     appendChild(c) {
       return this.insertBefore(c, null);
     }
-    insertBefore(c, ref) {
+    // `quiet`: a fragment's children, recorded together as one insertion.
+    insertBefore(c, ref, quiet) {
       if (c instanceof DocumentFragment) {
-        for (const k of c._kids.splice(0)) this.insertBefore(k, ref);
+        const kids = c._kids.splice(0);
+        const obs = kids.length ? mutationObservers(this._id, 'childList') : null;
+        for (const k of kids) this.insertBefore(k, ref, true);
+        if (obs)
+          queueMutation(obs, {
+            type: 'childList',
+            target: this,
+            addedNodes: kids,
+            previousSibling: kids[0].previousSibling,
+            nextSibling: kids[kids.length - 1].nextSibling,
+          });
         return c;
       }
       const moved = defs.size > 0 && c.nodeType === 1 && c.isConnected;
       if (liveIterators.size && c.parentNode) preRemove(c);
+      const removed = removal(c);
       // A node from another document is adopted only when it is a lone text or comment node.
       if (
         !n.insert(this._id, c._id, ref ? ref._id : null) &&
         !(adopt(c, docOf(this)) && n.insert(this._id, c._id, ref ? ref._id : null))
       )
         throw domError('The node belongs to another document', 'WrongDocumentError');
+      if (removed) queueMutation(...removed);
+      const obs = quiet ? null : mutationObservers(this._id, 'childList');
+      if (obs)
+        queueMutation(obs, {
+          type: 'childList',
+          target: this,
+          addedNodes: [c],
+          previousSibling: c.previousSibling,
+          nextSibling: c.nextSibling,
+        });
       if (c.nodeType !== 1 || !c.isConnected) return c;
       if (!c._started) {
         const tag = n.local(c._id);
@@ -429,7 +530,9 @@
     }
     removeChild(c) {
       if (liveIterators.size) preRemove(c);
+      const removed = removal(c);
       n.remove(c._id);
+      if (removed) queueMutation(...removed);
       if (connectedCustom.size) disconnectCustom();
       return c;
     }
@@ -440,14 +543,19 @@
     }
     remove() {
       if (liveIterators.size && this.parentNode) preRemove(this);
+      const removed = removal(this);
       n.remove(this._id);
+      if (removed) queueMutation(...removed);
       if (connectedCustom.size) disconnectCustom();
     }
     get textContent() {
       return this.nodeType === 9 ? null : n.text(this._id);
     }
     set textContent(v) {
-      keepShadow(this, () => n.setText(this._id, v == null ? '' : String(v)));
+      const text = v == null ? '' : String(v);
+      const k = this.nodeType;
+      if (k === 3 || k === 8) return setData(this, text);
+      replaceAll(this, () => keepShadow(this, () => n.setText(this._id, text)));
       if (connectedCustom.size) disconnectCustom();
     }
     get nodeValue() {
@@ -456,7 +564,7 @@
     }
     set nodeValue(v) {
       const k = this.nodeType;
-      if (k === 3 || k === 8) n.setText(this._id, String(v));
+      if (k === 3 || k === 8) setData(this, String(v));
     }
     cloneNode() {
       throw new Error('cloneNode is not implemented');
@@ -487,7 +595,7 @@
       return n.text(this._id);
     }
     set data(v) {
-      n.setText(this._id, String(v));
+      setData(this, String(v));
     }
     get length() {
       return this.data.length;
@@ -524,7 +632,9 @@
     }
     insertBefore(c, ref) {
       if (liveIterators.size && c.parentNode) preRemove(c);
+      const removed = removal(c);
       n.remove(c._id);
+      if (removed) queueMutation(...removed);
       const i = ref ? this._kids.indexOf(ref) : -1;
       if (i < 0) this._kids.push(c);
       else this._kids.splice(i, 0, c);
@@ -541,20 +651,43 @@
 
   // CSSStyleDeclaration: a Proxy so `style.fontSize = "18px"` and `style.setProperty` both
   // reach blitz-dom's inline style; reads come from what was set here.
+  // A change here is a change of the style attribute to MutationObserver.
   function makeStyle(el) {
     const vals = new Map();
+    const set = (name, value) => {
+      if (value == null || value === '') return del(name);
+      vals.set(name, String(value));
+      n.setStyle(el._id, name, String(value));
+    };
+    const del = (name) => {
+      const old = vals.get(name) || '';
+      vals.delete(name);
+      n.delStyle(el._id, name);
+      return old;
+    };
+    const setText = (text) => {
+      for (const k of [...vals.keys()]) del(k);
+      for (const d of String(text).split(';')) {
+        const i = d.indexOf(':');
+        if (i > 0) set(d.slice(0, i).trim(), d.slice(i + 1).trim());
+      }
+    };
+    const recorded = (change) => {
+      const obs = mutationObservers(el._id, 'attributes', 'style');
+      const oldValue = obs ? (vals.size ? api.cssText : n.getAttr(el._id, 'style')) : null;
+      const r = change();
+      if (obs)
+        queueMutation(obs, { type: 'attributes', target: el, attributeName: 'style' }, oldValue);
+      return r;
+    };
     const api = {
       setProperty(name, value) {
-        if (value == null || value === '') return api.removeProperty(name);
-        vals.set(name, String(value));
-        n.setStyle(el._id, name, String(value));
+        recorded(() => set(name, value));
       },
       removeProperty(name) {
-        const old = vals.get(name) || '';
-        vals.delete(name);
-        n.delStyle(el._id, name);
-        return old;
+        return vals.has(name) ? recorded(() => del(name)) : '';
       },
+      _setText: setText,
       getPropertyValue(name) {
         return vals.get(name) || '';
       },
@@ -571,11 +704,7 @@
         return [...vals].map(([k, v]) => `${k}: ${v};`).join(' ');
       },
       set cssText(text) {
-        for (const k of [...vals.keys()]) api.removeProperty(k);
-        for (const d of String(text).split(';')) {
-          const i = d.indexOf(':');
-          if (i > 0) api.setProperty(d.slice(0, i).trim(), d.slice(i + 1).trim());
-        }
+        recorded(() => setText(text));
       },
     };
     return new Proxy(api, {
@@ -651,17 +780,21 @@
     setAttribute(k, v) {
       k = this._an(k);
       const old = this._ce?.observed.has(k) ? this.getAttribute(k) : undefined;
-      if (k === 'style') {
-        this.style.cssText = v;
-      }
-      n.setAttr(this._id, k, String(v));
+      changeAttr(this, k, () => {
+        if (k === 'style') this.style._setText(v);
+        n.setAttr(this._id, k, String(v));
+      });
       if (old !== undefined) reaction(this, 'attributeChangedCallback', k, old, String(v));
     }
     removeAttribute(k) {
       k = this._an(k);
       const old = this._ce?.observed.has(k) ? this.getAttribute(k) : null;
-      if (k === 'style' && this._style) this._style.cssText = '';
-      n.delAttr(this._id, k);
+      changeAttr(this, k, () => {
+        const had = n.getAttr(this._id, k) != null;
+        if (k === 'style' && this._style) this._style._setText('');
+        n.delAttr(this._id, k);
+        return had; // removing an absent attribute is no change
+      });
       if (old !== null) reaction(this, 'attributeChangedCallback', k, old, null);
     }
     hasAttribute(k) {
@@ -810,7 +943,7 @@
       return this.children.length;
     }
     set innerHTML(html) {
-      keepShadow(this, () => n.setInnerHtml(this._id, String(html)));
+      replaceAll(this, () => keepShadow(this, () => n.setInnerHtml(this._id, String(html))));
       if (connectedCustom.size) disconnectCustom();
       if (defs.size && this.isConnected) connectCustom(n.queryAllDeep(this._id, defSelector));
     }
@@ -2052,7 +2185,7 @@
         /(<style\b[^>]*>)([\s\S]*?)(<\/style\s*>)/gi,
         (_, open, css, close) => open + scopeCss(css, key) + close,
       );
-      n.setInnerHtml(this._id, html);
+      replaceAll(this, () => n.setInnerHtml(this._id, html));
       if (connectedCustom.size) disconnectCustom();
       if (defs.size && this.isConnected) connectCustom(n.queryAllDeep(this._id, defSelector));
     }
@@ -2372,19 +2505,78 @@
       history.go(1);
     },
   };
-  // Observers. MutationObserver never reports; IntersectionObserver reports every target visible
-  // once; ResizeObserver reports a target's size on observe and whenever its observed box changes
-  // after a layout (`__blitzAfterLayout`, called by the host after it resolves layout). Its sizes
-  // are the layout's, untransformed: `contentRect` the content box (at the padding's offset), and
-  // the box option says which box's change is reported.
+  // Observers. MutationObserver reports as the DOM spec says (no transient registrations: a node
+  // removed from an observed subtree is not followed); IntersectionObserver reports every target
+  // visible once; ResizeObserver reports a target's size on observe and whenever its observed box
+  // changes after a layout (`__blitzAfterLayout`, called by the host after it resolves layout).
+  // Its sizes are the layout's, untransformed: `contentRect` the content box (at the padding's
+  // offset), and the box option says which box's change is reported.
+  class MutationRecord {
+    constructor(r, oldValue) {
+      this.type = r.type;
+      this.target = r.target;
+      this.addedNodes = withItem(r.addedNodes || []);
+      this.removedNodes = withItem(r.removedNodes || []);
+      this.previousSibling = r.previousSibling || null;
+      this.nextSibling = r.nextSibling || null;
+      this.attributeName = r.attributeName ?? null;
+      this.attributeNamespace = null;
+      this.oldValue = oldValue ?? null;
+    }
+  }
   class MutationObserver {
     constructor(cb) {
       this._cb = cb;
+      this._records = [];
+      this._targets = new Set();
     }
-    observe() {}
-    disconnect() {}
+    observe(target, options = {}) {
+      const o = options;
+      const attributes =
+        o.attributes ?? (o.attributeOldValue !== undefined || o.attributeFilter !== undefined);
+      const characterData = o.characterData ?? o.characterDataOldValue !== undefined;
+      if (!o.childList && !attributes && !characterData)
+        throw new TypeError('One of childList, attributes or characterData must be true');
+      if ((o.attributeOldValue || o.attributeFilter) && !attributes)
+        throw new TypeError('attributeOldValue and attributeFilter need attributes');
+      if (o.characterDataOldValue && !characterData)
+        throw new TypeError('characterDataOldValue needs characterData');
+      const id = target._id;
+      if (id === -1) return; // a DocumentFragment: never mutated through the native tree
+      let regs = mutationTargets.get(id);
+      if (!regs) mutationTargets.set(id, (regs = new Map()));
+      regs.set(this, {
+        childList: !!o.childList,
+        attributes: !!attributes,
+        characterData: !!characterData,
+        subtree: !!o.subtree,
+        attributeOldValue: !!o.attributeOldValue,
+        characterDataOldValue: !!o.characterDataOldValue,
+        attributeFilter: o.attributeFilter ? [...o.attributeFilter].map(String) : null,
+      });
+      this._targets.add(id);
+    }
+    disconnect() {
+      for (const id of this._targets) {
+        const regs = mutationTargets.get(id);
+        regs?.delete(this);
+        if (regs && !regs.size) mutationTargets.delete(id);
+      }
+      this._targets.clear();
+      this._records = [];
+    }
     takeRecords() {
-      return [];
+      return this._records.splice(0);
+    }
+    _deliver() {
+      this._queued = false;
+      const records = this.takeRecords();
+      if (!records.length) return;
+      try {
+        this._cb.call(this, records, this);
+      } catch (e) {
+        reportError(e);
+      }
     }
   }
   class IntersectionObserver {
