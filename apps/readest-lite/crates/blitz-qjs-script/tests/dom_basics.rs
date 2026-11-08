@@ -116,3 +116,19 @@ fn node_lists_have_item() {
     assert_eq!(doc.take_js_errors(), Vec::<String>::new());
     assert_eq!(logs, ["log: true null b", "log: a c c"]);
 }
+
+#[test]
+fn computed_writing_mode_is_horizontal() {
+    // Layout here is horizontal only. OverlayScrollbars measures a viewport's scroll range by
+    // scrolling it to its ends when its writing mode isn't `horizontal-tb`, and took "" for one.
+    let html = "<!DOCTYPE html><html><body><div id='d' style='writing-mode:vertical-rl'>x</div></body></html>";
+    let mut doc = QjsDocument::from_html(html, DocumentConfig::default());
+    doc.eval(
+        "const s = getComputedStyle(document.body), d = getComputedStyle(document.getElementById('d'));
+        console.log(s.writingMode, s.getPropertyValue('writing-mode'), d.writingMode);",
+        "test",
+    );
+    let logs = doc.take_messages();
+    assert_eq!(doc.take_js_errors(), Vec::<String>::new());
+    assert_eq!(logs, ["log: horizontal-tb horizontal-tb horizontal-tb"]);
+}
