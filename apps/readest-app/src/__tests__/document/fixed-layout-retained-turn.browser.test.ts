@@ -9,6 +9,7 @@ type Fxl = HTMLElement & {
   next(): Promise<void>;
   prev(): Promise<void>;
   index: number;
+  getContents(): { doc: Document; index: number }[];
   pageColors: { background?: string; foreground?: string };
   preparePageTurn?: (forward: boolean) => Promise<boolean>;
   beginPageTurn?: (forward: boolean) => Promise<boolean>;
@@ -82,6 +83,7 @@ describe('retained fixed-layout page turns', () => {
     expect(renderer.shadowRoot!.querySelector('canvas')).toBeNull();
     expect(await renderer.endPageTurn(true, 0)).toBe(true);
     expect(renderer.index).toBe(3);
+    expect(renderer.getContents().map(({ index }) => index)).toEqual([3]);
     expect(docAt(3)).toBe(incoming);
     expect(incoming.querySelector('canvas')).toBe(nextCanvas);
     expect(rasterized.mock.calls.filter(([index]) => index === 2 || index === 3).length).toBe(
@@ -225,6 +227,12 @@ describe('retained fixed-layout page turns', () => {
     }
     const first = docAt(renderer.index).defaultView!.frameElement!.parentElement!;
     const expected = renderer.index + (dir === 'ltr' ? 1 : -1);
+    expect(
+      renderer
+        .getContents()
+        .map(({ index }) => index)
+        .sort((a, b) => a - b),
+    ).toEqual([renderer.index, expected].sort((a, b) => a - b));
     await (dir === 'ltr' ? renderer.next() : renderer.prev());
     expect(renderer.index).toBe(expected);
     const second = docAt(expected).defaultView!.frameElement!.parentElement!;
