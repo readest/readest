@@ -650,6 +650,41 @@ pub(crate) fn install(ctx: &Ctx<'_>, shared: Rc<RefCell<Shared>>, base: Option<&
         .unwrap_or(vec![0.0; 4])
     });
     let d = docs.clone();
+    // CSSOM View's offsetLeft/Top/Width/Height: untransformed, from the offsetParent.
+    op!("offset", move |h: f64| -> Vec<f64> {
+        d.resolve();
+        d.with(h, |doc, n, _| {
+            doc.offset_rect(n)
+                .map(|r| vec![r.x, r.y, r.width, r.height])
+        })
+        .flatten()
+        .unwrap_or(vec![0.0; 4])
+    });
+    let d = docs.clone();
+    // CSSOM View's offsetParent: none for an element that is not rendered, the root, `body` or a
+    // fixed box.
+    op!("offsetParent", move |h: f64| -> Option<f64> {
+        d.resolve();
+        d.with(h, |doc, n, tag| {
+            use style::computed_values::position::T as Position;
+            let node = doc.get_node(n)?;
+            let mut a = Some(node);
+            while let Some(e) = a.filter(|e| e.is_element()) {
+                if e.primary_styles()?.get_box().display.is_none() {
+                    return None;
+                }
+                a = e.parent.and_then(|p| doc.get_node(p));
+            }
+            let fixed = node.primary_styles()?.get_box().position == Position::Fixed;
+            let body = node.element_data().is_some_and(|e| &*e.name.local == "body");
+            if fixed || body || doc.try_root_element().is_some_and(|r| r.id == n) {
+                return None;
+            }
+            node.offset_parent().map(|p| d.enc(tag, p.id))
+        })
+        .flatten()
+    });
+    let d = docs.clone();
     // An element's box fragments (one per line for an inline): [x0, y0, w0, h0, x1, ...].
     op!("rects", move |h: f64| -> Vec<f64> {
         d.resolve();
