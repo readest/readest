@@ -204,7 +204,24 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
          #[cfg(feature = "writing-mode")]
          {
              style_config::set_pref!("layout.css.writing-mode.enabled", true);
-@@ -1684,6 +1689,62 @@
+@@ -394,6 +399,8 @@
+     pub(crate) controls_to_form: HashMap<NodeId, NodeId>,
+     /// Nodes that contain sub documents
+     pub(crate) sub_document_nodes: HashSet<NodeId>,
++    /// The `position: sticky` boxes (layout/sticky), found after each relayout.
++    pub(crate) sticky_nodes: Vec<NodeId>,
+     /// Load state (abort controller and in-flight request id) for each
+     /// `<iframe>` element whose sub-document is loaded automatically
+     pub(crate) iframe_loads: HashMap<NodeId, crate::iframe::IframeLoad>,
+@@ -565,6 +572,7 @@
+             subdoc_is_animating: false,
+             has_canvas: false,
+             sub_document_nodes: HashSet::new(),
++            sticky_nodes: Vec::new(),
+             iframe_loads: HashMap::new(),
+ 
+             #[cfg(feature = "custom-widget")]
+@@ -1684,6 +1692,62 @@
              self.snapshot_node_state_only(node_id);
          }
          cb(&mut self.nodes[node_id]);
@@ -267,7 +284,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      }
  
      // Takes (x, y) co-ordinates (relative to the )
-@@ -2440,6 +2501,40 @@
+@@ -2440,6 +2504,40 @@
          (pos, *self.nodes[node_id].unrounded_layout())
      }
  
@@ -308,7 +325,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      /// Computes the size and position of the `Node` relative to the viewport
      pub fn get_client_bounding_rect(&self, node_id: NodeId) -> Option<BoundingRect> {
          // Non-atomic inline elements have no layout box of their own: return
-@@ -2447,17 +2542,27 @@
+@@ -2447,17 +2545,27 @@
          if let Some(rects) = self.inline_fragment_rects(node_id) {
              return rects.reduce(BoundingRect::union);
          }
@@ -346,7 +363,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      }
  
      /// CSSOM View's `offsetLeft`/`offsetTop`/`offsetWidth`/`offsetHeight` as a single rect:
-@@ -2528,7 +2633,7 @@
+@@ -2528,7 +2636,7 @@
      pub fn node_client_rects(&self, node_id: NodeId) -> Vec<BoundingRect> {
          match self.inline_fragment_rects(node_id) {
              Some(rects) => rects.collect(),
@@ -355,7 +372,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
          }
      }
  
-@@ -2543,20 +2648,168 @@
+@@ -2543,20 +2651,168 @@
  
          // Only non-atomic inline elements lack their own layout box: they are
          // flattened into the containing inline root's text layout as style spans.
@@ -536,7 +553,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      }
  
      /// The first element in tree order with the given tag name. The root element and
-@@ -2944,6 +3197,36 @@
+@@ -2944,6 +3200,36 @@
  /// Snap a CSSOM geometry value to a 1/64px grid (the precision of Blink's `LayoutUnit`).
  /// Layout values are accumulated in `f32`, so e.g. seven `55/7`-wide flex items would
  /// otherwise end at `55.0000005` and appear to overflow their 55px container.
@@ -573,7 +590,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
  fn snap_to_layout_unit(value: f64) -> f64 {
      (value * 64.0).round() / 64.0
  }
-@@ -3781,3 +4064,7 @@
+@@ -3781,3 +4067,7 @@
          );
      }
  }
@@ -1169,7 +1186,7 @@ diff -ruN blitz/packages/blitz-dom/src/layout/inline/build.rs blitz/packages/bli
 diff -ruN blitz/packages/blitz-dom/src/layout/mod.rs blitz/packages/blitz-dom/src/layout/mod.rs
 --- blitz/packages/blitz-dom/src/layout/mod.rs
 +++ blitz/packages/blitz-dom/src/layout/mod.rs
-@@ -23,6 +23,7 @@
+@@ -23,12 +23,14 @@
      compute_oof_layout, prelude::*,
  };
  
@@ -1177,7 +1194,14 @@ diff -ruN blitz/packages/blitz-dom/src/layout/mod.rs blitz/packages/blitz-dom/sr
  pub(crate) mod construct;
  pub(crate) mod damage;
  pub(crate) mod inline;
-@@ -317,11 +318,13 @@
+ pub(crate) mod list;
+ pub(crate) mod paint_tree;
+ pub(crate) mod replaced;
++pub(crate) mod sticky;
+ pub(crate) mod table;
+ pub(crate) mod text_transform;
+ #[cfg(feature = "writing-mode")]
+@@ -317,11 +319,13 @@
                              .downcast_element_mut()
                              .and_then(|el| el.text_input_data_mut())
                          {
@@ -1278,6 +1302,166 @@ diff -ruN blitz/packages/blitz-dom/src/layout/paint_tree.rs blitz/packages/blitz
              || self.element_data().is_some_and(|e| {
                  e.raster_image_data().is_some()
                      || e.sub_doc_data().is_some()
+diff -ruN blitz/packages/blitz-dom/src/layout/sticky.rs blitz/packages/blitz-dom/src/layout/sticky.rs
+--- blitz/packages/blitz-dom/src/layout/sticky.rs
++++ blitz/packages/blitz-dom/src/layout/sticky.rs
+@@ -0,0 +1,156 @@
++//! `position: sticky` (CSS Positioned Layout 3 §3.4). Taffy lays a sticky box out where a static
++//! one would be and leaves its offset to the caller. After each resolve and each scroll, the
++//! offset that keeps the box its non-auto insets inside the scrollport (the nearest scroll
++//! container's padding box, or the viewport), without leaving its containing block (its parent's
++//! content box), becomes a translation ahead of the box's transform. Paint, hit testing and
++//! element rects all read that transform.
++
++use crate::{BaseDocument, NodeId};
++use kurbo::{Affine, Rect};
++use style::computed_values::overflow_x::T as Overflow;
++use style::computed_values::position::T as Position;
++use style::values::computed::{CSSPixelLength, LengthPercentage};
++use style::values::generics::position::Inset;
++
++fn inset<P>(v: &Inset<P, LengthPercentage>, basis: f64) -> Option<f64> {
++    match v {
++        Inset::LengthPercentage(lp) => Some(f64::from(lp.resolve(CSSPixelLength::new(basis as f32)).px())),
++        _ => None,
++    }
++}
++
++/// How far `[lo, hi]` (the box) moves on one axis: pushed to `start`/`end` (the scrollport less
++/// the insets, `None` for auto), the start inset winning, and kept in `[cb_lo, cb_hi]` (the
++/// containing block less the box's margins).
++fn shift(lo: f64, hi: f64, start: Option<f64>, end: Option<f64>, cb_lo: f64, cb_hi: f64) -> f64 {
++    let mut d = 0.0f64;
++    if let Some(end) = end {
++        d = d.min(end - hi);
++    }
++    if let Some(start) = start {
++        d = d.max(start - lo);
++    }
++    if d > 0.0 {
++        d.min(cb_hi - hi).max(0.0)
++    } else {
++        d.max(cb_lo - lo).min(0.0)
++    }
++}
++
++impl BaseDocument {
++    /// The sticky boxes, after a relayout.
++    pub(crate) fn collect_sticky(&mut self) {
++        self.sticky_nodes = self
++            .nodes
++            .iter()
++            .filter(|(_, n)| {
++                n.primary_styles()
++                    .is_some_and(|s| s.get_box().position == Position::Sticky)
++            })
++            .map(|(id, _)| id)
++            .collect();
++    }
++
++    /// A node's border box in document coordinates (as layout placed it: transforms aside).
++    fn border_box(&self, id: NodeId) -> Rect {
++        let node = &self.nodes[id];
++        let p = node.absolute_position(0.0, 0.0);
++        let s = node.scroll_offset();
++        let size = node.final_layout().size;
++        let (x, y) = (f64::from(p.x) + s.x, f64::from(p.y) + s.y);
++        Rect::new(x, y, x + f64::from(size.width), y + f64::from(size.height))
++    }
++
++    /// Sets each sticky box's offset for the current scroll positions.
++    pub(crate) fn update_sticky(&mut self) {
++        if self.sticky_nodes.is_empty() {
++            return;
++        }
++        let scale = self.viewport.scale_f64();
++        let ids = std::mem::take(&mut self.sticky_nodes);
++        for &id in &ids {
++            let Some(offset) = self.sticky_offset(id) else {
++                continue;
++            };
++            let node = &mut self.nodes[id];
++            let transform = node.set_transform(scale as f32);
++            if offset != (0.0, 0.0) {
++                let t = Affine::translate((offset.0 * scale, offset.1 * scale))
++                    * transform.unwrap_or(Affine::IDENTITY);
++                *node.transform_mut() = Some(Box::new(t));
++            }
++        }
++        self.sticky_nodes = ids;
++        self.nodes.bump_geometry_generation();
++    }
++
++    fn sticky_offset(&self, id: NodeId) -> Option<(f64, f64)> {
++        let node = self.nodes.get(id)?;
++        let style = node.primary_styles()?;
++        let parent = node.layout_parent.get().or(node.parent)?;
++        // The scrollport: the nearest scroll container's padding box, or the viewport.
++        let mut scroller = Some(parent);
++        while let Some(s) = scroller {
++            let scrolls = self.nodes[s]
++                .primary_styles()
++                .is_some_and(|st| {
++                    let b = st.get_box();
++                    !matches!(b.overflow_x, Overflow::Visible | Overflow::Clip)
++                        || !matches!(b.overflow_y, Overflow::Visible | Overflow::Clip)
++                });
++            if scrolls {
++                break;
++            }
++            scroller = self.nodes[s].layout_parent.get().or(self.nodes[s].parent);
++        }
++        let port = match scroller {
++            Some(s) if s != self.root_node().id => {
++                let b = self.nodes[s].final_layout().border;
++                let r = self.border_box(s);
++                Rect::new(
++                    r.x0 + f64::from(b.left),
++                    r.y0 + f64::from(b.top),
++                    r.x1 - f64::from(b.right),
++                    r.y1 - f64::from(b.bottom),
++                )
++            }
++            _ => {
++                let s = self.viewport_scroll();
++                let scale = self.viewport.scale_f64();
++                let (w, h) = self.viewport.window_size;
++                Rect::new(s.x, s.y, s.x + f64::from(w) / scale, s.y + f64::from(h) / scale)
++            }
++        };
++        let cb = {
++            let l = self.nodes[parent].final_layout();
++            let r = self.border_box(parent);
++            Rect::new(
++                r.x0 + f64::from(l.border.left + l.padding.left),
++                r.y0 + f64::from(l.border.top + l.padding.top),
++                r.x1 - f64::from(l.border.right + l.padding.right),
++                r.y1 - f64::from(l.border.bottom + l.padding.bottom),
++            )
++        };
++        let b = self.border_box(id);
++        let m = node.final_layout().margin;
++        let pos = style.get_position();
++        let (w, h) = (port.width(), port.height());
++        let dx = shift(
++            b.x0,
++            b.x1,
++            inset(&pos.left, w).map(|v| port.x0 + v),
++            inset(&pos.right, w).map(|v| port.x1 - v),
++            cb.x0 + f64::from(m.left),
++            cb.x1 - f64::from(m.right),
++        );
++        let dy = shift(
++            b.y0,
++            b.y1,
++            inset(&pos.top, h).map(|v| port.y0 + v),
++            inset(&pos.bottom, h).map(|v| port.y1 - v),
++            cb.y0 + f64::from(m.top),
++            cb.y1 - f64::from(m.bottom),
++        );
++        Some((dx, dy))
++    }
++}
 diff -ruN blitz/packages/blitz-dom/src/lib.rs blitz/packages/blitz-dom/src/lib.rs
 --- blitz/packages/blitz-dom/src/lib.rs
 +++ blitz/packages/blitz-dom/src/lib.rs
@@ -1603,7 +1787,18 @@ diff -ruN blitz/packages/blitz-dom/src/resolve.rs blitz/packages/blitz-dom/src/r
          timer.record_time("damage");
  
          // Fix up tree for layout (insert anonymous blocks as necessary, etc)
-@@ -123,10 +134,18 @@
+@@ -115,6 +126,10 @@
+ 
+         // Resolve transforms
+         self.resolve_transforms(root_node_id);
++        if relayout {
++            self.collect_sticky();
++        }
++        self.update_sticky();
+         timer.record_time("transform");
+ 
+         // Build paint children / stacking contexts for damaged subtrees. Runs
+@@ -123,10 +138,18 @@
          self.build_paint_tree(root_node_id);
          timer.record_time("paint_tree");
  
@@ -1622,7 +1817,7 @@ diff -ruN blitz/packages/blitz-dom/src/resolve.rs blitz/packages/blitz-dom/src/r
          timer.record_time("c_damage");
  
          // Re-resolve the hover node from the pointer position against the fresh
-@@ -138,6 +157,29 @@
+@@ -138,6 +161,29 @@
          // if the hovered node actually changes.
          self.refresh_hover();
  
@@ -1652,7 +1847,7 @@ diff -ruN blitz/packages/blitz-dom/src/resolve.rs blitz/packages/blitz-dom/src/r
          let mut subdoc_is_animating = false;
          for &node_id in &self.sub_document_nodes {
              let node = &mut self.nodes[node_id];
-@@ -163,9 +205,6 @@
+@@ -163,9 +209,6 @@
              }
          }
          self.subdoc_is_animating = subdoc_is_animating;
@@ -1662,7 +1857,7 @@ diff -ruN blitz/packages/blitz-dom/src/resolve.rs blitz/packages/blitz-dom/src/r
      }
  
      fn resolve_transforms(&mut self, node_id: NodeId) -> Rect {
-@@ -462,3 +501,70 @@
+@@ -462,3 +505,70 @@
          // taffy::print_tree(self, root_node_id)
      }
  }
@@ -1733,6 +1928,25 @@ diff -ruN blitz/packages/blitz-dom/src/resolve.rs blitz/packages/blitz-dom/src/r
 +        assert_eq!(width(&doc, div), 30.0);
 +    }
 +}
+diff -ruN blitz/packages/blitz-dom/src/scrolling.rs blitz/packages/blitz-dom/src/scrolling.rs
+--- blitz/packages/blitz-dom/src/scrolling.rs
++++ blitz/packages/blitz-dom/src/scrolling.rs
+@@ -298,6 +298,7 @@
+                 if offset == initial {
+                     return false;
+                 }
++                self.update_sticky();
+ 
+                 if let Some(root) = self.try_root_element() {
+                     let root_id = root.id;
+@@ -332,6 +333,7 @@
+                 let scroll_height = node.scroll_height();
+                 let layout = *node.final_layout();
+                 self.nodes.bump_geometry_generation();
++                self.update_sticky();
+                 let event = BlitzScrollEvent {
+                     scroll_top: offset.y,
+                     scroll_left: offset.x,
 diff -ruN blitz/packages/blitz-dom/src/tree.rs blitz/packages/blitz-dom/src/tree.rs
 --- blitz/packages/blitz-dom/src/tree.rs
 +++ blitz/packages/blitz-dom/src/tree.rs
@@ -1796,7 +2010,7 @@ diff -ruN blitz/packages/blitz-dom/src/util.rs blitz/packages/blitz-dom/src/util
 diff -ruN blitz/packages/blitz-html/src/html_document.rs blitz/packages/blitz-html/src/html_document.rs
 --- blitz/packages/blitz-html/src/html_document.rs
 +++ blitz/packages/blitz-html/src/html_document.rs
-@@ -68,3 +68,395 @@
+@@ -68,3 +68,447 @@
          self.into()
      }
  }
@@ -2190,6 +2404,58 @@ diff -ruN blitz/packages/blitz-html/src/html_document.rs blitz/packages/blitz-ht
 +        let t = doc.get_node(doc.get_element_by_id(id).unwrap()).unwrap().children[0];
 +        let r = doc.text_rects(t, 0, 4)[0];
 +        (r.x, r.y, r.width, r.height)
++    }
++}
++
++#[cfg(test)]
++mod sticky_tests {
++    use crate::{HtmlDocument, HtmlProvider};
++    use blitz_dom::{DocumentConfig, ScrollBehavior};
++    use blitz_traits::shell::{ColorScheme, Viewport};
++    use std::sync::Arc;
++
++    fn doc(body: &str) -> HtmlDocument {
++        let config = DocumentConfig {
++            html_parser_provider: Some(Arc::new(HtmlProvider)),
++            viewport: Some(Viewport::new(800, 600, 1.0, ColorScheme::Light)),
++            ..Default::default()
++        };
++        let mut doc = HtmlDocument::from_html(&format!("<html><body style='margin:0'>{body}</body></html>"), config);
++        doc.resolve(0.0);
++        doc
++    }
++
++    fn y(doc: &HtmlDocument, id: &str) -> f64 {
++        doc.get_client_bounding_rect(doc.get_element_by_id(id).unwrap()).unwrap().y
++    }
++
++    // Readest's dialog header: `sticky top-1` in its scrolling modal box.
++    const PAGE: &str = "<div id='sc' style='height:100px;overflow:auto'>\
++        <div id='h' style='position:sticky;top:4px;height:20px'></div>\
++        <div style='height:60px'><div id='k' style='position:sticky;top:0;height:20px'></div></div>\
++        <div style='height:500px'></div></div>";
++
++    #[test]
++    fn a_sticky_box_keeps_its_inset_from_the_scrollport() {
++        let mut d = doc(PAGE);
++        assert_eq!(y(&d, "h"), 4.0, "unscrolled, pushed down to top: 4px");
++        let sc = d.get_element_by_id("sc").unwrap();
++        d.scroll_to(sc, 0.0, 50.0, ScrollBehavior::Instant);
++        d.resolve(0.0);
++        assert_eq!(y(&d, "h"), 4.0, "scrolled, it stays");
++        // At 22 (#k, stuck at 0..20, is painted over it above that).
++        let hit = d.hit(10.0, 22.0).map(|h| h.node_id);
++        assert_eq!(hit, d.get_element_by_id("h"), "and is hit where it is");
++    }
++
++    #[test]
++    fn a_sticky_box_stays_in_its_containing_block() {
++        let mut d = doc(PAGE);
++        let sc = d.get_element_by_id("sc").unwrap();
++        // #k's block spans 20..80 of the content; scrolled by 70, 10 px of it show.
++        d.scroll_to(sc, 0.0, 70.0, ScrollBehavior::Instant);
++        d.resolve(0.0);
++        assert_eq!(y(&d, "k"), -10.0, "its bottom at its block's bottom");
 +    }
 +}
 diff -ruN blitz/packages/blitz-html/src/html_sink.rs blitz/packages/blitz-html/src/html_sink.rs
