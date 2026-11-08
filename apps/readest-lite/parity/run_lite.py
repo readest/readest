@@ -40,6 +40,8 @@ env = {k: v for k, v in os.environ.items() if k != 'DBUS_SESSION_BUS_ADDRESS'
 env.update(HOME=home, BLITZ_TAURI_SIZE=f'{w}x{h}', BLITZ_TAURI_SCALE='1', BLITZ_TAURI_OUT=frames_dir,
            BLITZ_TAURI_INIT=init, BLITZ_TAURI_TAPS=';'.join(steps),
            BLITZ_TAURI_TAP_MS=str(scenario.get('step_ms', 3000)))
+if scenario.get('fonts'):  # the only fonts installed (run_cef.mjs gives Readest the same)
+    env['BLITZ_FONTS'] = scenario['fonts']
 args = ['dbus-run-session', '--', binary] + ([scenario['book']] if scenario.get('book') else [])
 proc = subprocess.Popen(args, env=env, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, text=True, errors='replace')
 captures, inputs, frames, log = [], [], [], open(f'{out}/stderr.log', 'w')

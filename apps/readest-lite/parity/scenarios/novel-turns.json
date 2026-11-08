@@ -2,6 +2,7 @@
   "name": "novel-turns",
   "book": "/run/media/chrox/Backup/dev/kindle-cef/share/books/novel.epub",
   "size": [1200, 800],
+  "fonts": "/run/media/chrox/Backup/dev/kindle-cef/share/fonts/latin",
   "steps": [
     "wait:8000",
     "key:ArrowRight",
