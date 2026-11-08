@@ -86,6 +86,8 @@ Interrupted group moves recover their membership and affected orders when the li
 including offline and anonymous sessions. A move that cannot save because storage access was
 denied reports the failure and restores its previous order. Recovery preserves reading progress,
 imported books, deletion tombstones and newer independent ordering changes.
+If storage remains readable but cannot be written, the library stays visible and the pending
+move is retried on a later load after write access is restored.
 Custom item orders are stored in separate bounded replica rows rather than adding fields to
 the strict shelf definition, so older clients can continue reading the existing shelf configuration.
 
