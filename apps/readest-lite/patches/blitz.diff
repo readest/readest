@@ -195,16 +195,17 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
  use smallvec::SmallVec;
  use std::any::Any;
  use std::cell::RefCell;
-@@ -95,6 +98,8 @@
+@@ -95,6 +98,9 @@
          style_config::set_pref!("layout.css.font-variations.enabled", true);
          style_config::set_pref!("layout.css.text-indent-keywords.enabled", true);
          style_config::set_pref!("layout.css.word-break.break-word.enabled", true);
 +        // Without it `:has()` does not parse, and a selector list holding one is dropped whole.
 +        style_config::set_pref!("layout.css.has-selector.enabled", true);
++        style_config::set_pref!("layout.css.line-clamp.enabled", true);
          #[cfg(feature = "writing-mode")]
          {
              style_config::set_pref!("layout.css.writing-mode.enabled", true);
-@@ -394,6 +399,8 @@
+@@ -394,6 +400,8 @@
      pub(crate) controls_to_form: HashMap<NodeId, NodeId>,
      /// Nodes that contain sub documents
      pub(crate) sub_document_nodes: HashSet<NodeId>,
@@ -213,7 +214,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      /// Load state (abort controller and in-flight request id) for each
      /// `<iframe>` element whose sub-document is loaded automatically
      pub(crate) iframe_loads: HashMap<NodeId, crate::iframe::IframeLoad>,
-@@ -565,6 +572,7 @@
+@@ -565,6 +573,7 @@
              subdoc_is_animating: false,
              has_canvas: false,
              sub_document_nodes: HashSet::new(),
@@ -221,7 +222,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
              iframe_loads: HashMap::new(),
  
              #[cfg(feature = "custom-widget")]
-@@ -1684,6 +1692,62 @@
+@@ -1684,6 +1693,62 @@
              self.snapshot_node_state_only(node_id);
          }
          cb(&mut self.nodes[node_id]);
@@ -284,7 +285,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      }
  
      // Takes (x, y) co-ordinates (relative to the )
-@@ -2440,6 +2504,40 @@
+@@ -2440,6 +2505,40 @@
          (pos, *self.nodes[node_id].unrounded_layout())
      }
  
@@ -325,7 +326,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      /// Computes the size and position of the `Node` relative to the viewport
      pub fn get_client_bounding_rect(&self, node_id: NodeId) -> Option<BoundingRect> {
          // Non-atomic inline elements have no layout box of their own: return
-@@ -2447,17 +2545,27 @@
+@@ -2447,17 +2546,27 @@
          if let Some(rects) = self.inline_fragment_rects(node_id) {
              return rects.reduce(BoundingRect::union);
          }
@@ -363,7 +364,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      }
  
      /// CSSOM View's `offsetLeft`/`offsetTop`/`offsetWidth`/`offsetHeight` as a single rect:
-@@ -2528,7 +2636,7 @@
+@@ -2528,7 +2637,7 @@
      pub fn node_client_rects(&self, node_id: NodeId) -> Vec<BoundingRect> {
          match self.inline_fragment_rects(node_id) {
              Some(rects) => rects.collect(),
@@ -372,7 +373,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
          }
      }
  
-@@ -2543,20 +2651,168 @@
+@@ -2543,20 +2652,168 @@
  
          // Only non-atomic inline elements lack their own layout box: they are
          // flattened into the containing inline root's text layout as style spans.
@@ -553,7 +554,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      }
  
      /// The first element in tree order with the given tag name. The root element and
-@@ -2944,6 +3200,36 @@
+@@ -2944,6 +3201,36 @@
  /// Snap a CSSOM geometry value to a 1/64px grid (the precision of Blink's `LayoutUnit`).
  /// Layout values are accumulated in `f32`, so e.g. seven `55/7`-wide flex items would
  /// otherwise end at `55.0000005` and appear to overflow their 55px container.
@@ -590,7 +591,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
  fn snap_to_layout_unit(value: f64) -> f64 {
      (value * 64.0).round() / 64.0
  }
-@@ -3781,3 +4067,7 @@
+@@ -3781,3 +4068,7 @@
          );
      }
  }
@@ -1183,6 +1184,33 @@ diff -ruN blitz/packages/blitz-dom/src/layout/inline/build.rs blitz/packages/bli
              }
              NodeData::Comment { .. } => {
                  // node.remove_damage(CONSTRUCT_DESCENDENT | CONSTRUCT_FC | CONSTRUCT_BOX);
+diff -ruN blitz/packages/blitz-dom/src/layout/inline/layout.rs blitz/packages/blitz-dom/src/layout/inline/layout.rs
+--- blitz/packages/blitz-dom/src/layout/inline/layout.rs
++++ blitz/packages/blitz-dom/src/layout/inline/layout.rs
+@@ -1030,6 +1030,23 @@
+             }
+         }
+ 
++        // `line-clamp` (and the legacy `-webkit-line-clamp`, which Chromium honours only in a
++        // `display: -webkit-box`): the content box ends after that many lines (CSS Overflow 4);
++        // the rest overflows, clipped by the `overflow: hidden` it comes with. No ellipsis yet.
++        let clamp = self.nodes[node_id].primary_styles().and_then(|s| {
++            match s.get_box().line_clamp.max_lines.lines {
++                style::values::generics::Optional::Some(n) => usize::try_from(n.0).ok(),
++                style::values::generics::Optional::None => None,
++            }
++        });
++        if has_inline_content
++            && let Some(n) = clamp
++            && n < trailing_empty_line.unwrap_or(line_count)
++            && let Some(line) = inline_layout.layout.get(n - 1)
++        {
++            height = line.metrics().block_max_coord;
++        }
++
+         #[cfg(feature = "floats")]
+         {
+             if is_bfc_root {
 diff -ruN blitz/packages/blitz-dom/src/layout/mod.rs blitz/packages/blitz-dom/src/layout/mod.rs
 --- blitz/packages/blitz-dom/src/layout/mod.rs
 +++ blitz/packages/blitz-dom/src/layout/mod.rs
@@ -2010,7 +2038,7 @@ diff -ruN blitz/packages/blitz-dom/src/util.rs blitz/packages/blitz-dom/src/util
 diff -ruN blitz/packages/blitz-html/src/html_document.rs blitz/packages/blitz-html/src/html_document.rs
 --- blitz/packages/blitz-html/src/html_document.rs
 +++ blitz/packages/blitz-html/src/html_document.rs
-@@ -68,3 +68,447 @@
+@@ -68,3 +68,480 @@
          self.into()
      }
  }
@@ -2456,6 +2484,39 @@ diff -ruN blitz/packages/blitz-html/src/html_document.rs blitz/packages/blitz-ht
 +        d.scroll_to(sc, 0.0, 70.0, ScrollBehavior::Instant);
 +        d.resolve(0.0);
 +        assert_eq!(y(&d, "k"), -10.0, "its bottom at its block's bottom");
++    }
++}
++
++#[cfg(test)]
++mod line_clamp_tests {
++    use crate::{HtmlDocument, HtmlProvider};
++    use blitz_dom::DocumentConfig;
++    use blitz_traits::shell::{ColorScheme, Viewport};
++    use std::sync::Arc;
++
++    fn height(style: &str) -> f64 {
++        let config = DocumentConfig {
++            html_parser_provider: Some(Arc::new(HtmlProvider)),
++            viewport: Some(Viewport::new(800, 600, 1.0, ColorScheme::Light)),
++            ..Default::default()
++        };
++        // One word per line: five 15 px lines.
++        let html = format!(
++            "<html><body style='margin:0'><div id='d' style='width:1px;line-height:15px;{style}'>aa bb cc dd ee</div></body></html>"
++        );
++        let mut doc = HtmlDocument::from_html(&html, config);
++        doc.resolve(0.0);
++        doc.get_client_bounding_rect(doc.get_element_by_id("d").unwrap()).unwrap().height
++    }
++
++    #[test]
++    fn line_clamp_ends_the_content_after_its_lines() {
++        assert_eq!(height(""), 75.0);
++        // Tailwind's line-clamp-3
++        let tailwind = "overflow:hidden;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3";
++        assert_eq!(height(tailwind), 45.0, "-webkit-line-clamp: 3");
++        assert_eq!(height("line-clamp:2"), 30.0, "line-clamp: 2");
++        assert_eq!(height("-webkit-line-clamp:9"), 75.0, "more lines than there are");
 +    }
 +}
 diff -ruN blitz/packages/blitz-html/src/html_sink.rs blitz/packages/blitz-html/src/html_sink.rs

@@ -42,3 +42,16 @@ diff -ruN stylo/style/properties/longhands.toml stylo/style/properties/longhands
  [hyphens]
  struct = "inherited_text"
  servo_pref = "layout.css.hyphens.enabled"
+diff -ruN stylo/style/properties/shorthands.toml stylo/style/properties/shorthands.toml
+--- stylo/style/properties/shorthands.toml
++++ stylo/style/properties/shorthands.toml
+@@ -555,8 +555,8 @@
+ spec = "https://compat.spec.whatwg.org/#the-webkit-text-stroke"
+ derive_serialize = true
+ 
++# Servo too: Blitz clamps a block's lines (Tailwind's line-clamp-N sets this).
+ [-webkit-line-clamp]
+-engine = "gecko"
+ flags = "IS_LEGACY_SHORTHAND ALLOWS_DISABLED_SUBPROPERTIES"
+ sub_properties = ["line-clamp"]
+ spec = "https://drafts.csswg.org/css-overflow-4/#webkit-line-clamp"
