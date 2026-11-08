@@ -20,6 +20,9 @@ export interface RsvpState {
   startDelaySeconds: number;
   hasCJK: boolean;
   progress: number;
+  chunkSize: number;
+  enableWarmup: boolean;
+  adaptiveLongWordDelay: boolean;
 }
 
 export interface RsvpPosition {

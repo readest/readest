@@ -201,7 +201,7 @@ interface RSVPOverlayProps {
 }
 
 const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
-  gridInsets,
+  gridInsets = { top: 0, bottom: 0, left: 0, right: 0 },
   controller,
   chapters,
   currentChapterHref,
@@ -239,6 +239,7 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
   const [showChapterDropdown, setShowChapterDropdown] = useState(false);
   const chapterDropdownRef = useRef<HTMLDivElement>(null);
   const [showWpmDropdown, setShowWpmDropdown] = useState(false);
+  const [showChunkDropdown, setShowChunkDropdown] = useState(false);
   const [showRateDropdown, setShowRateDropdown] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [contextCollapsed, setContextCollapsed] = useState(() => {
@@ -306,8 +307,9 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
 
   // Flatten chapters for dropdown
   const flatChapters = useMemo(() => {
-    const flatten = (items: TOCItem[], level = 0): FlatChapter[] => {
+    const flatten = (items: TOCItem[] = [], level = 0): FlatChapter[] => {
       const result: FlatChapter[] = [];
+      if (!items || !Array.isArray(items)) return result;
       for (const item of items) {
         result.push({ label: item.label || '', href: item.href || '', level });
         if (item.subitems?.length) {
@@ -409,6 +411,16 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
           event.stopPropagation();
           controller.prevWord();
           break;
+        case '[':
+          event.preventDefault();
+          event.stopPropagation();
+          controller.setChunkSize((state.chunkSize || 1) - 1);
+          break;
+        case ']':
+          event.preventDefault();
+          event.stopPropagation();
+          controller.setChunkSize((state.chunkSize || 1) + 1);
+          break;
       }
     };
 
@@ -433,6 +445,9 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
   // visual order. Render them whole instead, like CJK Highlight Word (#4630).
   const isRTLWord = currentWord ? isRTLText(currentWord.text) : false;
   const isWholeWord = isRTLWord || (isCJKWord && highlightWholeWord);
+  const currentChunk = controller.currentChunk ?? (currentWord ? [currentWord] : []);
+  const currentChunkIndices = controller.currentChunkIndices ?? [state.currentIndex];
+  const isMultiWord = (state.chunkSize || 1) > 1 && currentChunk.length > 1;
   const wordLetterSpacing = undefined;
   // The before/after text sits half a focus letter away from the center. A
   // focus cluster of several code points (Bengali কি, ন্তু) is wider than one
@@ -851,6 +866,58 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
           )}
         </div>
 
+        {/* Chunk Size selector */}
+        <div className='relative shrink-0'>
+          <button
+            className='flex items-center gap-1 rounded-full border border-gray-500/20 bg-gray-500/10 px-3 py-1.5 text-sm tabular-nums transition-colors hover:bg-gray-500/20'
+            onClick={() => setShowChunkDropdown(!showChunkDropdown)}
+            aria-label={_('Words per flash')}
+            title={_('Words per flash ([ / ])')}
+          >
+            <span className='font-semibold'>{state.chunkSize || 1}</span>
+            <span className='ms-0.5 text-xs opacity-50'>
+              {(state.chunkSize || 1) > 1 ? _('words') : _('word')}
+            </span>
+            <svg
+              viewBox='0 0 24 24'
+              fill='none'
+              stroke='currentColor'
+              strokeWidth='2.5'
+              className='ms-0.5 h-3 w-3 shrink-0 opacity-50'
+            >
+              <path d='M6 9l6 6 6-6' />
+            </svg>
+          </button>
+          {showChunkDropdown && (
+            <>
+              <Overlay onDismiss={() => setShowChunkDropdown(false)} />
+              <div
+                data-testid='rsvp-chunk-dropdown'
+                className='absolute end-0 top-full z-[100] mt-1.5 min-w-[7rem] overflow-y-auto rounded-2xl border border-gray-500/20 shadow-2xl'
+                style={{ backgroundColor: bgColor }}
+              >
+                {(controller.chunkSizeOptions || [1, 2, 3, 4, 5]).map((size) => (
+                  <button
+                    key={size}
+                    className={clsx(
+                      'flex w-full items-center justify-between gap-3 whitespace-nowrap rounded-md border-none bg-transparent px-4 py-1.5 text-sm tabular-nums transition-colors first:rounded-t-2xl last:rounded-b-2xl hover:bg-gray-500/15',
+                      (state.chunkSize || 1) === size &&
+                        'bg-[color-mix(in_srgb,var(--rsvp-accent)_15%,transparent)] font-semibold',
+                    )}
+                    onClick={() => {
+                      controller.setChunkSize(size);
+                      setShowChunkDropdown(false);
+                    }}
+                  >
+                    <span>{size}</span>
+                    <span className='text-xs opacity-40'>{size > 1 ? _('words') : _('word')}</span>
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+
         {/* WPM selector — while RSVP follows TTS the timer no longer paces, so it
             becomes an "Audio pace" affordance that opens a TTS rate picker
             instead (decision 6). It stays a real, enabled button (it opens the
@@ -1017,14 +1084,14 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
               {hasMoreBefore && <span className='opacity-30'>… </span>}
               {state.words.slice(contextWindow.start, contextWindow.end).map((w, i) => {
                 const wordIndex = contextWindow.start + i;
-                const isCurrent = wordIndex === state.currentIndex;
+                const isCurrent = currentChunkIndices.includes(wordIndex);
                 return (
                   <ContextWord
                     key={wordIndex}
                     text={w.text}
                     wordIndex={wordIndex}
                     isCurrent={isCurrent}
-                    currentRef={isCurrent ? contextWordRef : undefined}
+                    currentRef={wordIndex === state.currentIndex ? contextWordRef : undefined}
                     orpColor={isCurrent ? effectiveOrpColor : undefined}
                   />
                 );
@@ -1071,7 +1138,35 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
                 }}
               >
                 {currentWord ? (
-                  isWholeWord ? (
+                  isMultiWord ? (
+                    <div className='flex flex-wrap items-center justify-center gap-x-4 text-center'>
+                      {currentChunk.map((chunkWord, idx) => {
+                        const isRtl = isRTLText(chunkWord.text);
+                        if (isRtl) {
+                          return (
+                            <span
+                              key={idx}
+                              className='rsvp-chunk-word font-bold'
+                              style={{ color: effectiveOrpColor }}
+                              dir='rtl'
+                            >
+                              {chunkWord.text}
+                            </span>
+                          );
+                        }
+                        const parts = splitAtFocus(chunkWord.text, chunkWord.orpIndex);
+                        return (
+                          <span key={idx} className='rsvp-chunk-word inline-block tracking-normal'>
+                            <span className='opacity-60'>{parts.before}</span>
+                            <span className='font-bold' style={{ color: effectiveOrpColor }}>
+                              {parts.focus}
+                            </span>
+                            <span className='opacity-60'>{parts.after}</span>
+                          </span>
+                        );
+                      })}
+                    </div>
+                  ) : isWholeWord ? (
                     // Whole-word mode: center the full word and color it, instead
                     // of anchoring a single focus character. Used for CJK Highlight
                     // Word and always for RTL words, whose shaping/order would
@@ -1227,10 +1322,10 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
           </button>
 
           <button
-            aria-label={_('Previous word')}
+            aria-label={(state.chunkSize || 1) > 1 ? _('Previous chunk') : _('Previous word')}
             className='flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-full border-none bg-transparent transition-colors hover:bg-gray-500/20 active:scale-95 md:h-9 md:w-9'
             onClick={() => controller.prevWord()}
-            title={_('Previous word (,)')}
+            title={(state.chunkSize || 1) > 1 ? _('Previous chunk (,)') : _('Previous word (,)')}
           >
             <IoCaretBack className='h-4 w-4 md:h-5 md:w-5' />
           </button>
@@ -1252,10 +1347,10 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
           </button>
 
           <button
-            aria-label={_('Next word')}
+            aria-label={(state.chunkSize || 1) > 1 ? _('Next chunk') : _('Next word')}
             className='flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-full border-none bg-transparent transition-colors hover:bg-gray-500/20 active:scale-95 md:h-9 md:w-9'
             onClick={() => controller.nextWord()}
-            title={_('Next word (.)')}
+            title={(state.chunkSize || 1) > 1 ? _('Next chunk (.)') : _('Next word (.)')}
           >
             <IoCaretForward className='h-4 w-4 md:h-5 md:w-5' />
           </button>
@@ -1332,6 +1427,44 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
                 ))}
               </select>
             </label>
+
+            {/* Chunk Size */}
+            <label className='flex cursor-pointer items-center gap-1.5 font-medium opacity-80'>
+              <span className='mr-0.5 font-medium opacity-50'>{_('Chunk Size')}</span>
+              <select
+                data-testid='rsvp-chunk-size-select'
+                className='cursor-pointer rounded-sm border border-gray-500/30 bg-gray-500/20 px-1.5 py-1 text-xs font-medium transition-colors hover:border-gray-500/40 hover:bg-gray-500/30'
+                style={{ color: 'inherit' }}
+                value={state.chunkSize || 1}
+                onChange={(e) => controller.setChunkSize(parseInt(e.target.value, 10))}
+              >
+                {(controller.chunkSizeOptions || [1, 2, 3, 4, 5]).map((option) => (
+                  <option key={option} value={option}>
+                    {option} {option > 1 ? _('words') : _('word')}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            {/* Warm-up Speed Ramp */}
+            <div className='flex items-center gap-2'>
+              <span className='opacity-50'>{_('Warm-up Ramp')}</span>
+              <Toggle
+                data-testid='rsvp-warmup-toggle'
+                checked={state.enableWarmup}
+                onChange={(e) => controller.setEnableWarmup(e.target.checked)}
+              />
+            </div>
+
+            {/* Adaptive Long Word Delay */}
+            <div className='flex items-center gap-2'>
+              <span className='opacity-50'>{_('Adaptive Delay')}</span>
+              <Toggle
+                data-testid='rsvp-adaptive-delay-toggle'
+                checked={state.adaptiveLongWordDelay}
+                onChange={(e) => controller.setAdaptiveLongWordDelay(e.target.checked)}
+              />
+            </div>
 
             {/* Font size */}
             <div className='flex items-center gap-0.5'>

@@ -60,6 +60,9 @@ const buildState = (overrides: Partial<RsvpState> = {}): RsvpState => ({
   startDelaySeconds: 3,
   hasCJK: false,
   progress: 0,
+  chunkSize: 1,
+  enableWarmup: false,
+  adaptiveLongWordDelay: true,
   ...overrides,
 });
 

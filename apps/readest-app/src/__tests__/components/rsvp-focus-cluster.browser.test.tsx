@@ -30,6 +30,9 @@ const buildState = (text: string, orpIndex: number, hasCJK = false): RsvpState =
   startDelaySeconds: 3,
   hasCJK,
   progress: 0,
+  chunkSize: 1,
+  enableWarmup: false,
+  adaptiveLongWordDelay: true,
 });
 
 const renderWord = (text: string, orpIndex: number, hasCJK = false) => {
