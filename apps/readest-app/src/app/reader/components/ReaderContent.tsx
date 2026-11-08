@@ -77,7 +77,10 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
   const { bookKeys, dismissBook, getNextBookKey } = useBooksManager();
   const { sideBarBookKey, setSideBarBookKey } = useSidebarStore();
   const { saveSettings } = useSettingsStore();
-  const { getConfig, setConfig, getBookData, saveConfig } = useBookDataStore();
+  const getConfig = useBookDataStore((s) => s.getConfig);
+  const setConfig = useBookDataStore((s) => s.setConfig);
+  const getBookData = useBookDataStore((s) => s.getBookData);
+  const saveConfig = useBookDataStore((s) => s.saveConfig);
   const { getView, setBookKeys, getViewSettings } = useReaderStore();
   const { initViewState, getViewState, clearViewState } = useReaderStore();
   const { isSettingsDialogOpen, settingsDialogBookKey } = useSettingsStore();
@@ -85,6 +88,11 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
   const [audiobookBookKey, setAudiobookBookKey] = useState<string | null>(null);
   const [hardcoverLinkBookKey, setHardcoverLinkBookKey] = useState<string | null>(null);
   const [pageboundLinkBookKey, setPageboundLinkBookKey] = useState<string | null>(null);
+  // What the render reads from the book data: which books are loaded, not their configs, which
+  // change on every page turn.
+  useBookDataStore((s) => s.getBookData(bookKeys?.[0] ?? '')?.book);
+  useBookDataStore((s) => s.getBookData(bookKeys?.[0] ?? '')?.bookDoc);
+  useBookDataStore((s) => (audiobookBookKey ? s.getBookData(audiobookBookKey)?.bookDoc : null));
   const [shareDialogState, setShareDialogState] = useState<{
     book: Book;
     cfi: string | null;

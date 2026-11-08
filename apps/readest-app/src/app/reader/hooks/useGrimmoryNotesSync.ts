@@ -7,7 +7,7 @@ import { GrimmorySyncStore } from '@/services/grimmory/GrimmorySyncStore';
 import { runGrimmoryPass } from '@/services/grimmory/notesPass';
 import { recordExchange } from '@/services/sync/dataFlow/log';
 import { findTocItemBS } from '@/services/nav';
-import { useBookDataStore } from '@/store/bookDataStore';
+import { useBookDataStore, useBookConfig } from '@/store/bookDataStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -39,10 +39,14 @@ export const useGrimmoryNotesSync = (bookKey: string) => {
   const _ = useTranslation();
   const { appService } = useEnv();
   const { settings } = useSettingsStore();
-  const { getConfig, setConfig, getBookData } = useBookDataStore();
+  const getConfig = useBookDataStore((s) => s.getConfig);
+  const setConfig = useBookDataStore((s) => s.setConfig);
+  const getBookData = useBookDataStore((s) => s.getBookData);
   const { getView } = useReaderStore();
 
-  const config = getConfig(bookKey);
+  const config = useBookConfig(bookKey);
+  // Each page turn moves it; the sync passes below follow it.
+  const location = useBookDataStore((s) => s.getConfig(bookKey)?.location);
   const passRunning = useRef(false);
   const unmatchedHinted = useRef(false);
 
@@ -156,9 +160,9 @@ export const useGrimmoryNotesSync = (bookKey: string) => {
   );
 
   useEffect(() => {
-    if (!target || !config?.location) return;
+    if (!target || !location) return;
     throttledPass();
-  }, [target, config?.location, config?.booknotes, throttledPass]);
+  }, [target, location, config?.booknotes, throttledPass]);
 
   // The reader's Sync row and closing the book.
   useEffect(() => {

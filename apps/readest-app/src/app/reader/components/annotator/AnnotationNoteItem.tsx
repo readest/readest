@@ -43,7 +43,8 @@ const AnnotationNoteItem: React.FC<AnnotationNoteItemProps> = ({
 }) => {
   const _ = useTranslation();
   const { appService } = useEnv();
-  const { getConfig, setConfig } = useBookDataStore();
+  const getConfig = useBookDataStore((s) => s.getConfig);
+  const setConfig = useBookDataStore((s) => s.setConfig);
   const { setHoveredBookKey } = useReaderStore();
   const { setSideBarVisible } = useSidebarStore();
   const size16 = useResponsiveSize(16);

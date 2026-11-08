@@ -20,7 +20,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
   onSearchResultChange,
 }) => {
   const _ = useTranslation();
-  const { getConfig } = useBookDataStore();
+  const getConfig = useBookDataStore((s) => s.getConfig);
   const [searchTerm, setSearchTerm] = useState(term);
   const inputRef = useRef<HTMLInputElement>(null);
   const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);

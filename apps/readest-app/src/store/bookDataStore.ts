@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { useShallow } from 'zustand/react/shallow';
 import { SystemSettings } from '@/types/settings';
 import { Book, BookConfig, BookFormat, BookNote } from '@/types/book';
 import { EnvConfigType } from '@/services/environment';
@@ -218,3 +219,31 @@ export const useBookDataStore = create<BookDataState>((set, get) => ({
     return updatedConfig;
   },
 }));
+
+// Every page turn writes the book's progress and location into its config, which replaces the
+// book's entry and config objects. Components that render from them subscribe with these hooks:
+// each re-renders only when a field it returns changes.
+
+/** A book's data without its config (see useBookConfig). */
+export const useBookData = (key: string | null): Omit<BookData, 'config'> | null =>
+  useBookDataStore(
+    useShallow((s) => {
+      const data = key ? s.getBookData(key) : null;
+      if (!data) return null;
+      const { config: _config, ...rest } = data;
+      return rest;
+    }),
+  );
+
+/** A book's config without the progress and location a page turn writes (useBookProgress has them). */
+export const useBookConfig = (
+  key: string | null,
+): Omit<BookConfig, 'progress' | 'location'> | null =>
+  useBookDataStore(
+    useShallow((s) => {
+      const config = s.getConfig(key);
+      if (!config) return null;
+      const { progress: _progress, location: _location, ...rest } = config;
+      return rest;
+    }),
+  );

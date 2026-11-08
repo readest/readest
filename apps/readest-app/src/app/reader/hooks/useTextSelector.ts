@@ -3,7 +3,7 @@ import { BookNote } from '@/types/book';
 import { Insets } from '@/types/misc';
 import { useEnv } from '@/context/EnvContext';
 import { useReaderStore } from '@/store/readerStore';
-import { useBookDataStore } from '@/store/bookDataStore';
+import { useBookData } from '@/store/bookDataStore';
 import { getOSPlatform } from '@/utils/misc';
 import { eventDispatcher } from '@/utils/event';
 import { LONG_HOLD_THRESHOLD } from '@/services/constants';
@@ -76,10 +76,9 @@ export const useTextSelector = (
   handleDismissPopup: () => void,
 ) => {
   const { appService } = useEnv();
-  const { getBookData } = useBookDataStore();
   const { getView, getViewSettings, getProgress } = useReaderStore();
   const view = getView(bookKey);
-  const bookData = getBookData(bookKey);
+  const bookData = useBookData(bookKey);
   const osPlatform = getOSPlatform();
 
   // Corner-dwell auto page-turn (#1354), now driven by every selection gesture

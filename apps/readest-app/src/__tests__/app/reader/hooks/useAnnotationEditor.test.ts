@@ -1,4 +1,5 @@
 // @vitest-environment happy-dom
+import { bookDataStoreHooks } from '@/__tests__/helpers/book-data-store-mock';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { cleanup, renderHook } from '@testing-library/react';
 import type { BookNote } from '@/types/book';
@@ -19,11 +20,11 @@ const h = vi.hoisted(() => ({
 vi.mock('@/context/EnvContext', () => ({ useEnv: () => ({ envConfig: {} }) }));
 vi.mock('@/store/settingsStore', () => ({ useSettingsStore: () => ({ settings: {} }) }));
 vi.mock('@/store/bookDataStore', () => ({
-  useBookDataStore: () => ({
+  ...bookDataStoreHooks(() => ({
     getConfig: () => ({ booknotes: h.annotations }),
     saveConfig: h.saveConfig,
     updateBooknotes: h.updateBooknotes,
-  }),
+  })),
 }));
 vi.mock('@/store/readerStore', () => ({
   useReaderStore: () => ({

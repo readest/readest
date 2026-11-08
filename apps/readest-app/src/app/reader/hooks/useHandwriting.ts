@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { useBookDataStore } from '@/store/bookDataStore';
+import { useBookDataStore, useBookConfig, useBookData } from '@/store/bookDataStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useBookProgress } from '@/store/readerProgressStore';
@@ -74,12 +74,14 @@ const measureFixedPage = (view: FoliateView | null): PageRect | null => {
 };
 
 export function useHandwriting(bookKey: string) {
-  const { getBookData, getConfig, setConfig, saveConfig } = useBookDataStore();
+  const getConfig = useBookDataStore((s) => s.getConfig);
+  const setConfig = useBookDataStore((s) => s.setConfig);
+  const saveConfig = useBookDataStore((s) => s.saveConfig);
   const { getView, getViewSettings } = useReaderStore();
   const { settings } = useSettingsStore();
   const { envConfig } = useEnv();
   const progress = useBookProgress(bookKey);
-  const isFixedLayout = !!getBookData(bookKey)?.isFixedLayout;
+  const isFixedLayout = !!useBookData(bookKey)?.isFixedLayout;
   // Scrolled views show several pages at once; strokes are routed per page.
   const scrolled = !!getViewSettings(bookKey)?.scrolled;
   // Each tool keeps its own color and width; the dock shows the active one's.
@@ -151,7 +153,7 @@ export function useHandwriting(bookKey: string) {
 
   // An ink annotation deleted from the sidebar, or ink pulled by sync,
   // changes the notes without this hook; pick it up.
-  const booknotes = getConfig(bookKey)?.booknotes;
+  const booknotes = useBookConfig(bookKey)?.booknotes;
   useEffect(() => {
     if (inkSignature(booknotes) !== inkSignatureRef.current) reload();
   }, [booknotes, reload]);

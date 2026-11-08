@@ -1,4 +1,5 @@
 // @vitest-environment happy-dom
+import { bookDataStoreHooks } from '@/__tests__/helpers/book-data-store-mock';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, renderHook } from '@testing-library/react';
 import { eventDispatcher } from '@/utils/event';
@@ -52,7 +53,7 @@ vi.mock('@/store/settingsStore', () => {
   };
   return { useSettingsStore: Object.assign(() => state, { getState: () => state }) };
 });
-vi.mock('@/store/bookDataStore', () => ({ useBookDataStore: () => h.bookData }));
+vi.mock('@/store/bookDataStore', () => ({ ...bookDataStoreHooks(() => h.bookData) }));
 vi.mock('@/store/readerProgressStore', () => ({ useBookProgress: () => null }));
 vi.mock('@/utils/cover', () => ({ getPublicCoverUrl: vi.fn(async () => undefined) }));
 vi.mock('@/services/nav', () => ({ findTocItemBS: () => null }));
