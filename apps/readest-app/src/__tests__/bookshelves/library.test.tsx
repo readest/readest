@@ -92,6 +92,7 @@ vi.mock('@/app/library/components/BookshelfItem', () => ({
     isSelectMode,
     handleLibraryNavigation,
     showSeriesIndex,
+    showTimeRemaining,
   }: {
     item: Book | BooksGroup;
     toggleSelection: (id: string) => void;
@@ -102,6 +103,7 @@ vi.mock('@/app/library/components/BookshelfItem', () => ({
     isSelectMode: boolean;
     handleLibraryNavigation: (group: string) => void;
     showSeriesIndex?: boolean;
+    showTimeRemaining: boolean;
   }) => {
     // Keep the mode-entry callback here to verify selection reads the live
     // store even when a child retains an older callback. The real card also
@@ -120,6 +122,7 @@ vi.mock('@/app/library/components/BookshelfItem', () => ({
         data-skeuomorphic-covers={skeuomorphicCovers}
         data-show-page-count={showPageCount}
         data-show-series-index={showSeriesIndex}
+        data-show-time-remaining={showTimeRemaining}
         aria-pressed={itemSelected}
         onClick={onClick}
       >
@@ -229,6 +232,50 @@ afterEach(() => {
   vi.useRealTimers();
 });
 describe('library bookshelf integration', () => {
+  it.each([
+    'primary',
+    'secondary',
+  ] as const)('retains remaining-time labels after dragging a shelf with a %s time sort', async (key) => {
+    localStorage.clear();
+    mocks.appService = {};
+    const originalSave = useSettingsStore.getState().saveSettings;
+    const definitions = defaultBookshelves(DEFAULT_SYSTEM_SETTINGS).map((shelf) =>
+      shelf.id === 'default'
+        ? {
+            ...shelf,
+            useGlobalSort: false,
+            sort: {
+              by: key === 'primary' ? ('timeRemaining' as const) : ('title' as const),
+              ascending: true,
+              thenBy: key === 'secondary' ? ('timeRemaining' as const) : ('none' as const),
+              thenAscending: true,
+            },
+          }
+        : shelf,
+    );
+    configure(definitions);
+    useSettingsStore.setState({ saveSettings: vi.fn(async () => {}) });
+    try {
+      render(<Bookshelf {...props} isSelectMode={false} />);
+      const cards = () => within(screen.getByTestId('default')).getAllByRole('button');
+      expect(
+        cards().every((card) => card.getAttribute('data-show-time-remaining') === 'true'),
+      ).toBe(true);
+      const shelf = readBookshelves(useSettingsStore.getState().settings).find(
+        (s) => s.id === 'default',
+      )!;
+      await act(async () =>
+        mocks.drop!({ source: books[0]!, target: books[1]!, shelf, mode: 'before' }),
+      );
+      expect(
+        cards().every((card) => card.getAttribute('data-show-time-remaining') === 'true'),
+      ).toBe(true);
+    } finally {
+      useSettingsStore.setState({ saveSettings: originalSave });
+      localStorage.clear();
+    }
+  });
+
   it('retains date-read sorting after grouping so later reading still moves the group first', async () => {
     localStorage.clear();
     mocks.appService = {};

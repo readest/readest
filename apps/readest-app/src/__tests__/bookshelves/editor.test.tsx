@@ -13,7 +13,6 @@ import type { SystemSettings } from '@/types/settings';
 const DEFAULT_SYSTEM_SETTINGS = partialSettings as SystemSettings;
 import type { Book } from '@/types/book';
 import type { BookshelfDefinition } from '@/types/bookshelf';
-import type { ShelfSection } from '@/app/library/components/BookshelfStream';
 import { createBookshelf, defaultBookshelves } from '@/services/bookshelves/definitions';
 import { applyBookshelfDraft } from '@/services/bookshelves/state';
 import {
@@ -51,16 +50,23 @@ vi.mock('@/hooks/useTranslation', () => ({
 vi.mock('@/services/statistics/statisticsDb', () => ({
   StatisticsDb: { open: async () => ({ getMedianPageDurationsSecs: pace.load }) },
 }));
-vi.mock('@/app/library/components/BookItem', () => ({
-  default: ({ book }: { book: Book }) => <span>{book.title}</span>,
+vi.mock('@/app/library/components/BookshelfItem', () => ({
+  default: ({ item, showTimeRemaining }: { item: Book; showTimeRemaining: boolean }) => (
+    <span data-show-time-remaining={showTimeRemaining}>{item.title}</span>
+  ),
 }));
 vi.mock('@/app/library/components/GroupItem', () => ({ default: () => null }));
 vi.mock('@/app/library/components/BookshelfStream', () => ({
-  default: ({ sections }: { sections: ShelfSection[] }) => (
+  default: ({
+    sections,
+    renderItem,
+  }: React.ComponentProps<typeof import('@/app/library/components/BookshelfStream').default>) => (
     <div data-testid='preview'>
       {sections.map((s) => (
         <div key={s.definition.id} data-layout={s.definition.layout}>
-          {s.items.map((b) => ('hash' in b ? <span key={b.hash}>{b.title}</span> : null))}
+          {s.items.map((b) =>
+            'hash' in b ? <div key={b.hash}>{renderItem(b, 'grid', s.definition)}</div> : null,
+          )}
         </div>
       ))}
     </div>
@@ -210,6 +216,11 @@ describe('bookshelf editor', () => {
         ),
       ).toEqual(['Pinned', 'Fast', 'Slow']),
     );
+    expect(
+      Array.from(
+        screen.getByTestId('preview').querySelectorAll('[data-show-time-remaining]'),
+      ).every((card) => card.getAttribute('data-show-time-remaining') === 'true'),
+    ).toBe(true);
   });
 
   it('shows the shelf tabs in the dialog header in place of a title', async () => {

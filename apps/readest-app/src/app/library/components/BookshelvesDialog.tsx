@@ -542,7 +542,8 @@ export function BookshelvesEditor({
           handleLibraryNavigation={noop}
           handleUpdateReadingStatus={noop}
           showTimeRemaining={
-            shelf.sort.by === 'timeRemaining' || shelf.sort.thenBy === 'timeRemaining'
+            resolveBookshelfMetadataSort(shelf).by === 'timeRemaining' ||
+            resolveBookshelfMetadataSort(shelf).thenBy === 'timeRemaining'
           }
         />
       </div>

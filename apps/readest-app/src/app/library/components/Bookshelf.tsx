@@ -1175,7 +1175,8 @@ const Bookshelf: React.FC<BookshelfProps> = ({
           handleUpdateReadingStatus={handleUpdateReadingStatus}
           transferProgress={'hash' in item ? (transferProgress[item.hash] ?? null) : null}
           showTimeRemaining={
-            shelf.sort.by === 'timeRemaining' || shelf.sort.thenBy === 'timeRemaining'
+            resolveBookshelfMetadataSort(shelf).by === 'timeRemaining' ||
+            resolveBookshelfMetadataSort(shelf).thenBy === 'timeRemaining'
           }
           showSeriesIndex={showSeriesIndex}
         />
