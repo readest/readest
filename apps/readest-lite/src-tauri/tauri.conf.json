@@ -5,7 +5,22 @@
   "build": { "frontendDist": "../dist" },
   "app": {
     "windows": [],
-    "security": { "csp": null }
+    "security": {
+      "csp": null,
+      "assetProtocol": {
+        "enable": true,
+        "scope": {
+          "allow": [
+            "$RESOURCE/**",
+            "$APPDATA/**/*",
+            "$APPCACHE/**/*",
+            "$TEMP/**/*",
+            "**/Readest/**/*"
+          ],
+          "deny": []
+        }
+      }
+    }
   },
   "bundle": { "active": false, "icon": ["icons/icon.png"] }
 }
