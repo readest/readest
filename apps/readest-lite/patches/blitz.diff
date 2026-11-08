@@ -402,7 +402,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
          }
      }
  
-@@ -2543,20 +2655,289 @@
+@@ -2543,20 +2655,304 @@
  
          // Only non-atomic inline elements lack their own layout box: they are
          // flattened into the containing inline root's text layout as style spans.
@@ -425,7 +425,22 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
 +        // point in the text where it sits, as browsers give it.
 +        let empty = if fragments.peek().is_none() {
 +            let text = inline_root.element_data()?.inline_layout_data.as_deref()?;
-+            let &(_, at, _) = text.text_nodes.iter().find(|t| t.0 == node_id)?;
++            let &(_, mut at, _) = text.text_nodes.iter().find(|t| t.0 == node_id)?;
++            // White space before the element collapses into the text after it, so it is laid
++            // out after the element's offset: when the next text doesn't start with it, it
++            // came from before, and the element sits after it.
++            let space = text.text[at..].chars().next().filter(|c| c.is_whitespace());
++            let next_text = text
++                .text_nodes
++                .iter()
++                .filter(|t| t.1 >= at && self.nodes[t.0].is_text_node())
++                .min_by_key(|t| t.1)
++                .and_then(|t| self.nodes[t.0].text_data());
++            if let (Some(space), Some(next)) = (space, next_text)
++                && !next.content.starts_with(char::is_whitespace)
++            {
++                at += space.len_utf8();
++            }
 +            self.laid_out_rects(node_id, inline_root, text, at, at)
 +        } else {
 +            Vec::new()
@@ -704,7 +719,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      }
  
      /// The first element in tree order with the given tag name. The root element and
-@@ -2944,6 +3325,36 @@
+@@ -2944,6 +3340,36 @@
  /// Snap a CSSOM geometry value to a 1/64px grid (the precision of Blink's `LayoutUnit`).
  /// Layout values are accumulated in `f32`, so e.g. seven `55/7`-wide flex items would
  /// otherwise end at `55.0000005` and appear to overflow their 55px container.
@@ -741,7 +756,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
  fn snap_to_layout_unit(value: f64) -> f64 {
      (value * 64.0).round() / 64.0
  }
-@@ -3781,3 +4192,7 @@
+@@ -3781,3 +4207,7 @@
          );
      }
  }
@@ -2637,7 +2652,7 @@ diff -ruN blitz/packages/blitz-dom/src/util.rs blitz/packages/blitz-dom/src/util
 diff -ruN blitz/packages/blitz-html/src/html_document.rs blitz/packages/blitz-html/src/html_document.rs
 --- blitz/packages/blitz-html/src/html_document.rs
 +++ blitz/packages/blitz-html/src/html_document.rs
-@@ -68,3 +68,609 @@
+@@ -68,3 +68,635 @@
          self.into()
      }
  }
@@ -2814,6 +2829,32 @@ diff -ruN blitz/packages/blitz-html/src/html_document.rs blitz/packages/blitz-ht
 +                assert!(r.y < b.y + b.height && r.y + r.height > b.y + b.height, "{r:?}, box {b:?}");
 +            }
 +        }
++    }
++
++    #[test]
++    fn an_empty_inline_element_after_a_space_sits_after_it() {
++        // An EPUB's page-break span between words ("the <span/>carefully"): the space before it
++        // is laid out with the text after it (white space collapses there), and the span
++        // belongs after the space, at the next word, as in Chromium; on a justified line the
++        // space is wide.
++        let config = DocumentConfig {
++            html_parser_provider: Some(Arc::new(HtmlProvider)),
++            viewport: Some(Viewport::new(800, 600, 1.0, ColorScheme::Light)),
++            ..Default::default()
++        };
++        let mut doc = HtmlDocument::from_html(
++            "<html><body style='margin:0'><p id='p' style='margin:0;width:300px;text-align:justify;font-size:20px'>\
++             one two the <span id='s'></span>carefully crafted words of a line that wraps</p></body></html>",
++            config,
++        );
++        doc.resolve(0.0);
++        let s = doc.get_client_bounding_rect(doc.get_element_by_id("s").unwrap()).unwrap();
++        let next = doc.get_node(doc.get_element_by_id("s").unwrap()).unwrap();
++        let p = doc.get_node(next.parent.unwrap()).unwrap();
++        let after = p.children[2];
++        let c = doc.text_rects(after, 0, 1);
++        assert_eq!(c.len(), 1);
++        assert!((s.x - c[0].x).abs() < 0.01, "span {s:?}, the next word's first letter {:?}", c[0]);
 +    }
 +
 +    #[test]
