@@ -853,11 +853,25 @@
     getClientRects() {
       return rectList(n.rects(this._id));
     }
+    // CSSOM View's offset* are integers: positions rounded, sizes snapped against them (the
+    // rounded far edge less the rounded near one), as in Chromium.
+    get offsetParent() {
+      const p = n.offsetParent(this._id);
+      return p == null ? null : wrap(p);
+    }
+    get offsetLeft() {
+      return Math.round(n.offset(this._id)[0]);
+    }
+    get offsetTop() {
+      return Math.round(n.offset(this._id)[1]);
+    }
     get offsetWidth() {
-      return n.rect(this._id)[2];
+      const [x, , w] = n.offset(this._id);
+      return Math.round(x + w) - Math.round(x);
     }
     get offsetHeight() {
-      return n.rect(this._id)[3];
+      const [, y, , h] = n.offset(this._id);
+      return Math.round(y + h) - Math.round(y);
     }
     get clientWidth() {
       return n.sizes(this._id)[0];
