@@ -566,7 +566,7 @@ diff -ruN blitz/packages/blitz-dom/src/events/pointer.rs blitz/packages/blitz-do
 diff -ruN blitz/packages/blitz-dom/src/layout/columns.rs blitz/packages/blitz-dom/src/layout/columns.rs
 --- blitz/packages/blitz-dom/src/layout/columns.rs
 +++ blitz/packages/blitz-dom/src/layout/columns.rs
-@@ -0,0 +1,349 @@
+@@ -0,0 +1,351 @@
 +//! Columns of the root element: CSS multi-column with `column-fill: auto` and a definite height,
 +//! as foliate-js's paginator styles an EPUB section (one column per page, the columns overflowing
 +//! to the right, the iframe as wide as all of them).
@@ -685,14 +685,16 @@ diff -ruN blitz/packages/blitz-dom/src/layout/columns.rs blitz/packages/blitz-do
 +}
 +
 +/// Where a page that would end at the top of `line` ends instead: at least `widows` of its
-+/// paragraph's lines after the break and `orphans` before it on the page, or the whole paragraph
-+/// on the next page. When nothing satisfies both, the break stays (CSS Fragmentation 3 §4.4).
++/// paragraph's lines after the break and `orphans` before it on the page, as Chromium breaks.
++/// When both can't hold, orphans win; when the lines that fit are fewer than `orphans`, the
++/// paragraph goes to the next page whole, unless it starts the page (CSS Fragmentation 3 §4.4).
 +fn keep_lines(line: Line, tops: &[f32], start: f32) -> f32 {
 +    let first = tops.iter().position(|&t| t >= start).unwrap_or(line.index);
-+    let mut k = line.index.min(tops.len().saturating_sub(line.widows));
-+    if k < first + line.orphans {
-+        k = first;
-+    }
++    let k = line
++        .index
++        .min(tops.len().saturating_sub(line.widows))
++        .max(first + line.orphans);
++    let k = if k <= line.index { k } else { first };
 +    if tops[k] > start { tops[k] } else { tops[line.index] }
 +}
 +
@@ -1756,7 +1758,7 @@ diff -ruN blitz/packages/blitz-dom/src/util.rs blitz/packages/blitz-dom/src/util
 diff -ruN blitz/packages/blitz-html/src/html_document.rs blitz/packages/blitz-html/src/html_document.rs
 --- blitz/packages/blitz-html/src/html_document.rs
 +++ blitz/packages/blitz-html/src/html_document.rs
-@@ -68,3 +68,338 @@
+@@ -68,3 +68,341 @@
          self.into()
      }
  }
@@ -2042,12 +2044,15 @@ diff -ruN blitz/packages/blitz-html/src/html_document.rs blitz/packages/blitz-ht
 +    }
 +
 +    #[test]
-+    fn orphans_and_widows_that_cannot_both_hold_keep_the_natural_break() {
-+        // A 6-line paragraph at a column's top with widows 3 and orphans 4: no break leaves both.
++    fn orphans_win_when_orphans_and_widows_cannot_both_hold() {
++        // As in Chromium. A 6-line paragraph with orphans 4 and widows 3: 4 lines, then 2.
 +        assert_eq!(
 +            doc_rects(&lines(&[6], "orphans:4;widows:3"), "p0"),
-+            [(0.0, 0.0, 100.0), (240.0, 0.0, 20.0)]
++            [(0.0, 0.0, 100.0), (240.0, 0.0, 40.0)]
 +        );
++        // 2 lines at a column's bottom, then 1 (Readest's novel, Chromium's break): with orphans
++        // and widows 2, the paragraph is not moved whole.
++        assert_eq!(first(&lines(&[3, 3], ""), "p1"), (0.0, 60.0, 40.0));
 +    }
 +
 +    fn doc_rects(doc: &HtmlDocument, id: &str) -> Vec<(f64, f64, f64)> {

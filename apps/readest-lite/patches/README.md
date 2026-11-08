@@ -93,7 +93,7 @@
 - `blitz-dom` layout/columns: a column ends early to honour `orphans` and `widows` (with
   stylo.diff): at least `widows` lines of a paragraph start the next column, and a paragraph that
   would leave fewer than `orphans` lines at a column's bottom moves to the next one; when both
-  can't hold, the natural break stays. Readest sets 2 for Latin text and 1 for CJK; a column ended
+  can't hold, orphans win, as in Chromium. Readest sets 2 for Latin text and 1 for CJK; a column ended
   at the first line that didn't fit, so pages differed from Readest's wherever a paragraph met a
   column's end.
 - `blitz-dom` util, node, document: the space at a line's end has no box (CSS Text 3 removes it).
