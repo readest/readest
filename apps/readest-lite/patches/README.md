@@ -99,7 +99,9 @@
 - `blitz-dom` util, node, document: the space at a line's end has no box (CSS Text 3 removes it).
   Parley keeps it in the line's last glyph run and reports it as `hanging_advance`; an inline
   element's piece on that line and a range's rect stop where the line's content does, instead of
-  reaching a space's width past the paragraph's edge.
+  reaching a space's width past the paragraph's edge. A range or line piece holding only that
+  space has no rect, as in browsers; foliate-js bisects a page's visible range on it and ends the
+  range before the space.
 
 ## stylo.diff (servo/stylo 2dca34592, 0.23.0)
 
