@@ -100,3 +100,19 @@ fn dom_rects() {
         ]
     );
 }
+
+#[test]
+fn node_lists_have_item() {
+    // react-virtuoso measures a list's rows with `children.item(i)`
+    let html = "<!DOCTYPE html><html><body><div id='d'><p>a</p>b<p>c</p></div></body></html>";
+    let mut doc = QjsDocument::from_html(html, DocumentConfig::default());
+    doc.eval(
+        "const d = document.getElementById('d');
+        console.log(d.children.item(1) === d.lastElementChild, d.children.item(2), d.childNodes.item(1).data);
+        console.log(d.querySelectorAll('p').item(0).textContent, document.querySelectorAll('p').item(1).textContent, document.getElementsByTagName('p').item(1).textContent);",
+        "test",
+    );
+    let logs = doc.take_messages();
+    assert_eq!(doc.take_js_errors(), Vec::<String>::new());
+    assert_eq!(logs, ["log: true null b", "log: a c c"]);
+}

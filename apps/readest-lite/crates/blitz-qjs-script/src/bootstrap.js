@@ -155,11 +155,12 @@
       this.force = i.force ?? 0.5;
     }
   }
-  const touchList = (touches = []) => {
-    const list = touches.slice();
+  // Arrays standing for NodeList, HTMLCollection and TouchList: they have `item()`.
+  const withItem = (list) => {
     list.item = (i) => list[i] ?? null;
     return list;
   };
+  const touchList = (touches = []) => withItem(touches.slice());
   class TouchEvent extends UIEvent {
     constructor(t, i = {}) {
       super(t, i);
@@ -343,7 +344,7 @@
     get childNodes() {
       const c = n.children(this._id).map(wrap);
       if (this._shadow) c.shift();
-      return c;
+      return withItem(c);
     }
     get firstChild() {
       let c = n.first(this._id);
@@ -513,7 +514,7 @@
       return null;
     }
     get childNodes() {
-      return this._kids.slice();
+      return withItem(this._kids.slice());
     }
     get firstChild() {
       return this._kids[0] || null;
@@ -786,7 +787,7 @@
       );
     }
     get children() {
-      return this.childNodes.filter((c) => c.nodeType === 1);
+      return withItem(this.childNodes.filter((c) => c.nodeType === 1));
     }
     get firstElementChild() {
       return this.children[0] || null;
@@ -824,7 +825,7 @@
       return r == null ? null : wrap(r);
     }
     querySelectorAll(s) {
-      return n.queryAll(this._id, s).map(wrap);
+      return withItem(n.queryAll(this._id, s).map(wrap));
     }
     getElementsByTagName(t) {
       return this.querySelectorAll(t);
@@ -1303,7 +1304,7 @@
       return r == null ? null : wrap(r);
     }
     querySelectorAll(s) {
-      return n.queryAll(this._id, s).map(wrap);
+      return withItem(n.queryAll(this._id, s).map(wrap));
     }
     getElementsByTagName(t) {
       return this.querySelectorAll(t);
