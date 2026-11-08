@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, fireEvent } from '@testing-library/react';
 import { page } from 'vitest/browser';
+import { useState } from 'react';
 import { DropdownProvider } from '@/context/DropdownContext';
 import Menu from '@/components/Menu';
 import LibraryHeader from '@/app/library/components/LibraryHeader';
@@ -48,32 +49,40 @@ afterEach(() => {
 const renderHeader = (
   searchQuery = '',
   searchTarget: 'books' | 'text' = 'books',
-  onSearchQueryChange = noop,
+  onSearchQueryChange: (query: string) => void = noop,
   onToggleSelectMode = noop,
-) =>
-  render(
-    <DropdownProvider>
-      <div className='relative w-full'>
-        <LibraryHeader
-          isSelectMode={false}
-          isSelectAll={false}
-          searchQuery={searchQuery}
-          searchTarget={searchTarget}
-          searchConfig={DEFAULT_BOOK_SEARCH_CONFIG}
-          onPullLibrary={noop}
-          onImportBooksFromFiles={noop}
-          onOpenCatalogManager={noop}
-          onOpenFeeds={noop}
-          onToggleSelectMode={onToggleSelectMode}
-          onSelectAll={noop}
-          onDeselectAll={noop}
-          onSearchConfigChange={noop}
-          onSearchQueryChange={onSearchQueryChange}
-          onSearchTargetChange={noop}
-        />
-      </div>
-    </DropdownProvider>,
-  );
+) => {
+  const Header = () => {
+    const [query, setQuery] = useState(searchQuery);
+    return (
+      <DropdownProvider>
+        <div className='relative w-full'>
+          <LibraryHeader
+            isSelectMode={false}
+            isSelectAll={false}
+            searchQuery={query}
+            searchTarget={searchTarget}
+            searchConfig={DEFAULT_BOOK_SEARCH_CONFIG}
+            onPullLibrary={noop}
+            onImportBooksFromFiles={noop}
+            onOpenCatalogManager={noop}
+            onOpenFeeds={noop}
+            onToggleSelectMode={onToggleSelectMode}
+            onSelectAll={noop}
+            onDeselectAll={noop}
+            onSearchConfigChange={noop}
+            onSearchQueryChange={(next) => {
+              setQuery(next);
+              onSearchQueryChange(next);
+            }}
+            onSearchTargetChange={noop}
+          />
+        </div>
+      </DropdownProvider>
+    );
+  };
+  return render(<Header />);
+};
 
 describe('library search history layout', () => {
   for (const width of [320, 390, 768, 1200]) {
@@ -144,12 +153,10 @@ describe('library search actions', () => {
         expect(select).toHaveBeenCalledOnce();
         await page.getByRole('button', { name: 'Clear Search' }).click();
         expect(clear).toHaveBeenCalledWith('');
-        cleanup();
-        const restored = renderHeader();
         await page.getByRole('button', { name: 'Import Books' }).click();
-        expect(
-          restored.getByRole('button', { name: 'Import Books' }).getAttribute('aria-expanded'),
-        ).toBe('true');
+        expect(getByRole('button', { name: 'Import Books' }).getAttribute('aria-expanded')).toBe(
+          'true',
+        );
       });
     }
   }
