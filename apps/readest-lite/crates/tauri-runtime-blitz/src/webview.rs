@@ -11,7 +11,7 @@
 //! Output is headless: frames are painted with cairo and, with `BLITZ_TAURI_OUT=DIR`, written as
 //! PGM files. `BLITZ_TAURI_TAPS="x,y;#sel"` taps CSS-pixel points or the centre of the first
 //! element matching a selector, or press `key:Name` (e.g. `key:ArrowRight`), one per painted
-//! frame (`BLITZ_TAURI_TAP_MS` apart, default 800).
+//! frame (`BLITZ_TAURI_TAP_MS` apart, default 800); `wait:MS` holds the next one back MS ms more.
 
 use anyrender_cairo as cairo_scene;
 
@@ -460,7 +460,14 @@ impl BlitzWebview {
         let tap_due = self.next_tap.is_some_and(|t| t <= Instant::now());
         // Input lines carry the time the input was sent and how long its handlers ran.
         let t0 = t_ms();
-        if tap_due && let Some(name) = self.taps.front().and_then(|t| t.strip_prefix("key:")) {
+        // `wait:MS` holds the next input back MS ms more (e.g. while a book opens).
+        if tap_due
+            && let Some(ms) = self.taps.front().and_then(|t| t.strip_prefix("wait:"))
+        {
+            let ms = ms.parse().unwrap_or(0);
+            self.taps.pop_front();
+            self.next_tap = Some(Instant::now() + Duration::from_millis(ms));
+        } else if tap_due && let Some(name) = self.taps.front().and_then(|t| t.strip_prefix("key:")) {
             let ok = [true, false]
                 .into_iter()
                 .all(|down| send_key(doc, name, down));

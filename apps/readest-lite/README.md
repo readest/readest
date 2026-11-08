@@ -49,7 +49,7 @@ Tests for `src/`: `node --test apps/readest-lite/src/*.test.js` (from the reposi
 | `BLITZ_TAURI_WINDOW=1\|gray` | Show frames in an X11 window (feature `window`); clicks, wheel and arrow keys are input |
 | `BLITZ_TAURI_OUT=DIR` | Write each frame as `DIR/<label>-NNN.pgm` |
 | `BLITZ_TAURI_SIZE=WxH`, `BLITZ_TAURI_SCALE` | Viewport in device pixels (default 1236x1648, a Paperwhite 5) and scale (2.5) |
-| `BLITZ_TAURI_TAPS="x,y;#sel"`, `BLITZ_TAURI_TAP_MS` | Scripted taps (CSS px or a selector), one per painted frame |
+| `BLITZ_TAURI_TAPS="x,y;#sel"`, `BLITZ_TAURI_TAP_MS` | Scripted taps (CSS px or a selector), `key:Name` presses and `wait:MS` pauses, one per painted frame |
 | `BLITZ_TAURI_EVAL=file.js`, `BLITZ_TAURI_EVAL_MS` | Evaluate a probe script after a delay |
 | `BLITZ_TAURI_INIT=file.js` | Evaluate a script before the page's scripts |
 | `BLITZ_QJS_PROFILE=FILE` | Sample the running JS stack (at most once a millisecond) into FILE |
