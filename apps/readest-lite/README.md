@@ -17,7 +17,7 @@ nearly all of it QuickJS running Readest's startup JS. Performance work comes ne
 | `crates/tauri-runtime-blitz/` | The Tauri runtime: web APIs (`web.js`, `dom-parser.js`), IPC and custom schemes, the event loop, painting (headless or an X11 window) |
 | `crates/blitz-qjs-script/` | The DOM for QuickJS: Rust ops on Blitz nodes + a JS bootstrap; bytecode cache; `qjs-precompile` |
 | `crates/anyrender_cairo/` | Blitz's painter on cairo/pixman (vello_cpu has no armv7 SIMD) |
-| `src/` | Reader building blocks for Blitz: `paginate.js` (pages from line boxes, as foliate-js's multi-column paginator can't run here) |
+| `src/` | Node tests of the runtime's JS (`dom-parser.test.js`) |
 | `patches/` | Readest's patches to the upstream code in `vendor/` |
 | `vendor/` | Built by `scripts/vendor.sh`, gitignored: the patched upstream code, and web-streams-polyfill (npm) that the runtime embeds |
 
