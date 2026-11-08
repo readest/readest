@@ -272,7 +272,7 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
           <div
             className={clsx(
               'text-base-content/50 absolute flex items-center gap-1',
-              searchTarget === 'text' ? 'end-14' : 'end-4',
+              searchTarget === 'text' ? 'end-14' : 'end-7',
             )}
           >
             {searchQuery && (

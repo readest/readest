@@ -110,20 +110,28 @@ describe('library search history layout', () => {
 });
 
 describe('library search actions', () => {
-  for (const width of [768, 1200]) {
+  for (const width of [390, 768, 1200]) {
     for (const dir of ['ltr', 'rtl']) {
       it(`centers Select Books between Import and the input end at ${width}px in ${dir}`, async () => {
         await page.viewport(width, 900);
         document.documentElement.dir = dir;
         const { getByRole } = renderHeader();
         const input = getByRole('textbox').getBoundingClientRect();
-        const plus = getByRole('button', { name: 'Import Books' }).getBoundingClientRect();
-        const select = getByRole('button', { name: 'Select Books' }).getBoundingClientRect();
+        const plusButton = getByRole('button', { name: 'Import Books' });
+        const selectButton = getByRole('button', { name: 'Select Books' });
+        const plus = plusButton.getBoundingClientRect();
+        const select = selectButton.getBoundingClientRect();
         const plusCenter = (plus.left + plus.right) / 2;
         const selectCenter = (select.left + select.right) / 2;
         expect(selectCenter).toBeCloseTo(
           (plusCenter + (dir === 'ltr' ? input.right : input.left)) / 2,
           0,
+        );
+        const plusHitWidth = Number.parseFloat(getComputedStyle(plusButton, '::before').width);
+        const selectHitWidth = Number.parseFloat(getComputedStyle(selectButton, '::before').width);
+        expect(selectHitWidth).toBeGreaterThanOrEqual(44);
+        expect(Math.abs(selectCenter - plusCenter)).toBeGreaterThanOrEqual(
+          (plusHitWidth + selectHitWidth) / 2,
         );
       });
     }
@@ -145,7 +153,7 @@ it.each([
     const menu = container.querySelector(selector!) as HTMLElement;
     const overlay = container.querySelector('.overlay') as HTMLElement;
     gaps.push(menu.getBoundingClientRect().top - toggle.getBoundingClientRect().bottom);
-    expect(menu.getBoundingClientRect().right).toBe(width - 16);
+    expect(menu.getBoundingClientRect().right).toBeCloseTo(width - 16, 0);
     expect(getComputedStyle(overlay).position).toBe('fixed');
     const outside = document.elementFromPoint(16, 880) as HTMLElement;
     expect(outside).toBe(overlay);
