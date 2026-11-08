@@ -311,6 +311,23 @@
     hasChildNodes() {
       return this.firstChild != null;
     }
+    // Merges adjacent text nodes and drops empty ones, in the whole subtree.
+    normalize() {
+      for (let c = this.firstChild; c; ) {
+        if (c.nodeType === 3) {
+          for (let t; (t = c.nextSibling)?.nodeType === 3; ) {
+            c.data += t.data;
+            this.removeChild(t);
+          }
+          const after = c.nextSibling;
+          if (!c.data) this.removeChild(c);
+          c = after;
+          continue;
+        }
+        if (c.nodeType === 1) c.normalize();
+        c = c.nextSibling;
+      }
+    }
     getRootNode(opts) {
       let t = this;
       while (t.parentNode) t = t.parentNode;
@@ -1025,6 +1042,8 @@
   }))
     byTag[tag] = moreElements[name] || mk(name);
   byTag.video = mk('HTMLVideoElement', HTMLMediaElement);
+  // No 2D or WebGL context: getContext gives null, as for an unsupported context type.
+  byTag.canvas.prototype.getContext = () => null;
   byTag.audio = mk('HTMLAudioElement', HTMLMediaElement);
   const reflectUrl = (cls, props) => {
     for (const p of props)
@@ -1304,6 +1323,7 @@
       top: { value: window },
       innerWidth: { get: () => size()[0] },
       innerHeight: { get: () => size()[1] },
+      getSelection: { value: () => doc.getSelection() },
       _listeners: { value: Object.create(null), writable: true },
       _on: { value: Object.create(null), writable: true },
     });
@@ -1624,6 +1644,68 @@
   }
   Document.prototype.createTreeWalker = function (root, whatToShow, filter) {
     return new TreeWalker(root, whatToShow, filter);
+  };
+
+  // One range per document, kept in JS: Blitz's own text selection is not tied to it yet.
+  class Selection {
+    constructor() {
+      this._r = null;
+    }
+    get rangeCount() {
+      return this._r ? 1 : 0;
+    }
+    get anchorNode() {
+      return this._r?.startContainer ?? null;
+    }
+    get anchorOffset() {
+      return this._r?.startOffset ?? 0;
+    }
+    get focusNode() {
+      return this._r?.endContainer ?? null;
+    }
+    get focusOffset() {
+      return this._r?.endOffset ?? 0;
+    }
+    get isCollapsed() {
+      return !this._r || this._r.collapsed;
+    }
+    get type() {
+      return !this._r ? 'None' : this._r.collapsed ? 'Caret' : 'Range';
+    }
+    getRangeAt(i) {
+      if (i !== 0 || !this._r) throw domError('There is no range at that index', 'IndexSizeError');
+      return this._r;
+    }
+    addRange(r) {
+      this._r ??= r;
+    }
+    removeRange(r) {
+      if (this._r === r) this._r = null;
+    }
+    removeAllRanges() {
+      this._r = null;
+    }
+    empty() {
+      this._r = null;
+    }
+    collapse(node, offset = 0) {
+      if (!node) return this.removeAllRanges();
+      const r = docOf(node).createRange();
+      r.setStart(node, offset);
+      this._r = r;
+    }
+    setBaseAndExtent(anchor, anchorOffset, focus, focusOffset) {
+      const r = docOf(anchor).createRange();
+      r.setStart(anchor, anchorOffset);
+      r.setEnd(focus, focusOffset);
+      this._r = r;
+    }
+    toString() {
+      return this._r?.toString() ?? '';
+    }
+  }
+  Document.prototype.getSelection = function () {
+    return (this._selection ??= new Selection());
   };
 
   // ---- Shadow roots ----
@@ -2130,6 +2212,8 @@
     ShadowRoot,
     Range,
     TreeWalker,
+    Selection,
+    getSelection: () => document.getSelection(),
     NodeFilter: {
       FILTER_ACCEPT: 1,
       FILTER_REJECT: 2,

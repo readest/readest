@@ -128,10 +128,40 @@ fn ranges_in_an_iframe_document() {
         const r = d.createRange();
         r.selectNodeContents(d.body);
         const w = d.createTreeWalker(d.body, NodeFilter.SHOW_TEXT);
-        console.log(r.startContainer === d.body, r.toString(), w.nextNode().data, d.defaultView.Range === Range);",
+        console.log(r.startContainer === d.body, r.toString(), w.nextNode().data, d.defaultView.Range === Range);
+        console.log(d.defaultView.getSelection() === d.getSelection(), d.getSelection() !== document.getSelection());",
         "test",
     );
     let logs: Vec<_> = doc.take_messages();
     assert_eq!(doc.take_js_errors(), Vec::<String>::new());
-    assert_eq!(logs, ["log: true hi hi true"]);
+    assert_eq!(logs, ["log: true hi hi true", "log: true true"]);
+}
+
+#[test]
+fn selection_holds_a_range_per_document() {
+    let (logs, errors) = run("
+        const s = window.getSelection();
+        console.log(s === document.getSelection(), s.rangeCount, s.anchorNode, s.isCollapsed, s.type);
+        const r = document.createRange();
+        r.setStart(t1, 1);
+        r.setEnd(bt, 2);
+        s.addRange(r);
+        console.log(s.rangeCount, s.getRangeAt(0) === r, s.anchorNode === t1, s.anchorOffset, s.focusNode === bt, s.focusOffset, s.isCollapsed, s.type, s.toString());
+        s.collapse(t3, 2);
+        console.log(s.rangeCount, s.isCollapsed, s.anchorNode === t3, s.focusOffset, s.type);
+        s.removeAllRanges();
+        console.log(s.rangeCount, s.anchorNode);
+        try { s.getRangeAt(0); } catch (e) { console.log(e.name); }
+    ");
+    assert_eq!(errors, Vec::<String>::new());
+    assert_eq!(
+        logs,
+        [
+            "true 0 null true None",
+            "1 true true 1 true 2 false Range ne tw",
+            "1 true true 2 Caret",
+            "0 null",
+            "IndexSizeError",
+        ]
+    );
 }
