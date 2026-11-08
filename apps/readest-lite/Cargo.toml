@@ -19,6 +19,20 @@ muda = { path = "vendor/muda" }
 # (the fork's moved to schemars 1), as in Readest's own workspace.
 tauri = { path = "vendor/tauri/crates/tauri" }
 
+# Stylo at Blitz's pin, with orphans/widows. Every crate of the repository, so there is one of each.
+[patch."https://github.com/servo/stylo"]
+stylo = { path = "vendor/stylo/style" }
+stylo_traits = { path = "vendor/stylo/style_traits" }
+stylo_atoms = { path = "vendor/stylo/stylo_atoms" }
+stylo_derive = { path = "vendor/stylo/style_derive" }
+stylo_dom = { path = "vendor/stylo/stylo_dom" }
+stylo_malloc_size_of = { path = "vendor/stylo/malloc_size_of" }
+stylo_static_prefs = { path = "vendor/stylo/stylo_static_prefs" }
+selectors = { path = "vendor/stylo/selectors" }
+servo_arc = { path = "vendor/stylo/servo_arc" }
+to_shmem = { path = "vendor/stylo/to_shmem" }
+to_shmem_derive = { path = "vendor/stylo/to_shmem_derive" }
+
 # Dependencies optimized in dev builds: an -O0 QuickJS takes minutes to run Readest's bundle.
 [profile.dev.package."*"]
 opt-level = 2

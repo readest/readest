@@ -1,0 +1,44 @@
+diff -ruN stylo/style/properties/counted_unknown_properties.py stylo/style/properties/counted_unknown_properties.py
+--- stylo/style/properties/counted_unknown_properties.py
++++ stylo/style/properties/counted_unknown_properties.py
+@@ -7,8 +7,6 @@
+     "speak",
+     "text-size-adjust",
+     "-webkit-user-drag",
+-    "orphans",
+-    "widows",
+     "-webkit-user-modify",
+     "-webkit-margin-before",
+     "-webkit-margin-after",
+diff -ruN stylo/style/properties/longhands.toml stylo/style/properties/longhands.toml
+--- stylo/style/properties/longhands.toml
++++ stylo/style/properties/longhands.toml
+@@ -3961,6 +3961,28 @@
+ type = "EmptyCells"
+ initial = "computed::EmptyCells::Show"
+ 
++# Servo only: Blitz's root columns keep this many lines of a paragraph at a column's bottom
++# (orphans) and top (widows).
++[orphans]
++type = "Integer"
++initial = "2"
++struct = "inherited_text"
++engine = "servo"
++parse_method = "parse_positive"
++spec = "https://drafts.csswg.org/css-break/#widows-orphans"
++servo_restyle_damage = "rebuild_box"
++affects = "layout"
++
++[widows]
++type = "Integer"
++initial = "2"
++struct = "inherited_text"
++engine = "servo"
++parse_method = "parse_positive"
++spec = "https://drafts.csswg.org/css-break/#widows-orphans"
++servo_restyle_damage = "rebuild_box"
++affects = "layout"
++
+ [hyphens]
+ struct = "inherited_text"
+ servo_pref = "layout.css.hyphens.enabled"

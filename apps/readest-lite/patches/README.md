@@ -90,6 +90,20 @@
   walked again from every span's offset, shifting the rects of text after a span.
 - `blitz-paint` text: faux italics lean forward. The glyph skew is applied in y-down space,
   so its sign is negated; every synthesized italic used to slant backwards.
+- `blitz-dom` layout/columns: a column ends early to honour `orphans` and `widows` (with
+  stylo.diff): at least `widows` lines of a paragraph start the next column, and a paragraph that
+  would leave fewer than `orphans` lines at a column's bottom moves to the next one; when both
+  can't hold, the natural break stays. Readest sets 2 for Latin text and 1 for CJK; a column ended
+  at the first line that didn't fit, so pages differed from Readest's wherever a paragraph met a
+  column's end.
+
+## stylo.diff (servo/stylo 2dca34592, 0.23.0)
+
+Blitz's pin, all eleven crates of the repository (the root `Cargo.toml` patches each, so there is
+one of each).
+
+- `style` properties: `orphans` and `widows` are inherited Servo longhands (positive integers,
+  initially 2). Stylo had them only as counted unknown properties, which drops the declarations.
 
 ## tauri.diff (readest/tauri d6ef6e4c7, feat/cef)
 

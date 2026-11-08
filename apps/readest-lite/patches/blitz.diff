@@ -561,7 +561,7 @@ diff -ruN blitz/packages/blitz-dom/src/events/pointer.rs blitz/packages/blitz-do
 diff -ruN blitz/packages/blitz-dom/src/layout/columns.rs blitz/packages/blitz-dom/src/layout/columns.rs
 --- blitz/packages/blitz-dom/src/layout/columns.rs
 +++ blitz/packages/blitz-dom/src/layout/columns.rs
-@@ -0,0 +1,318 @@
+@@ -0,0 +1,349 @@
 +//! Columns of the root element: CSS multi-column with `column-fill: auto` and a definite height,
 +//! as foliate-js's paginator styles an EPUB section (one column per page, the columns overflowing
 +//! to the right, the iframe as wide as all of them).
@@ -570,8 +570,8 @@ diff -ruN blitz/packages/blitz-dom/src/layout/columns.rs blitz/packages/blitz-do
 +//! layout it is cut into column slices at line boundaries; paint, element rects and hit testing
 +//! then map between that single-column flow and the columns: slice `i` (`start..end` of the
 +//! flow) is shown `i * stride` to the right and `start` higher up. Nothing is laid out again to
-+//! turn a page. Only the root element is supported, and break-* properties are not honoured
-+//! (Stylo parses them only for Gecko).
++//! turn a page. Only the root element is supported. `orphans` and `widows` are honoured; break-*
++//! properties are not (Stylo parses them only for Gecko).
 +
 +use crate::{BaseDocument, BoundingRect, Node, NodeId};
 +use style::values::computed::length::NonNegativeLengthPercentageOrNormal;
@@ -669,20 +669,44 @@ diff -ruN blitz/packages/blitz-dom/src/layout/columns.rs blitz/packages/blitz-do
 +    }
 +}
 +
-+/// Pages from boxes `(top, bottom)` of a flow `content_height` tall: a page ends at the top of
-+/// the first box that would not fit, unless nothing is on the page yet; a box taller than a page
-+/// is sliced, except that a page holding only that box crops up to `SLACK` px of it (the strut
-+/// under a page-tall image). Margins after the last box make no page.
++/// A line box of a paragraph: its index among the paragraph's `tops`, and the paragraph's
++/// `orphans` and `widows`.
++#[derive(Clone, Copy, Debug)]
++pub(crate) struct Line {
++    pub para: usize,
++    pub index: usize,
++    pub orphans: usize,
++    pub widows: usize,
++}
++
++/// Where a page that would end at the top of `line` ends instead: at least `widows` of its
++/// paragraph's lines after the break and `orphans` before it on the page, or the whole paragraph
++/// on the next page. When nothing satisfies both, the break stays (CSS Fragmentation 3 §4.4).
++fn keep_lines(line: Line, tops: &[f32], start: f32) -> f32 {
++    let first = tops.iter().position(|&t| t >= start).unwrap_or(line.index);
++    let mut k = line.index.min(tops.len().saturating_sub(line.widows));
++    if k < first + line.orphans {
++        k = first;
++    }
++    if tops[k] > start { tops[k] } else { tops[line.index] }
++}
++
++/// Pages from boxes `(top, bottom, line)` of a flow `content_height` tall: a page ends at the top
++/// of the first box that would not fit (moved up for orphans and widows when it is a line of
++/// `paras`, the line tops of each paragraph), unless nothing is on the page yet; a box taller
++/// than a page is sliced, except that a page holding only that box crops up to `SLACK` px of it
++/// (the strut under a page-tall image). Margins after the last box make no page.
 +pub(crate) fn paginate(
 +    content_height: f32,
-+    mut boxes: Vec<(f32, f32)>,
++    mut boxes: Vec<(f32, f32, Option<Line>)>,
++    paras: &[Vec<f32>],
 +    page: f32,
 +) -> Vec<(f32, f32)> {
 +    const SLACK: f32 = 16.0;
 +    boxes.sort_by(|a, b| a.0.total_cmp(&b.0));
 +    let mut pages = Vec::new();
 +    let (mut start, mut filled, mut last, mut limit) = (0.0f32, false, 0.0f32, page);
-+    for (top, bottom) in boxes {
++    for (top, bottom, line) in boxes {
 +        last = last.max(bottom);
 +        if bottom - start <= limit {
 +            filled = true;
@@ -694,7 +718,7 @@ diff -ruN blitz/packages/blitz-dom/src/layout/columns.rs blitz/packages/blitz-do
 +            continue;
 +        }
 +        let end = if filled && top > start {
-+            top
++            line.map_or(top, |l| keep_lines(l, &paras[l.para], start))
 +        } else {
 +            start + page
 +        };
@@ -752,7 +776,7 @@ diff -ruN blitz/packages/blitz-dom/src/layout/columns.rs blitz/packages/blitz-do
 +
 +        // Line boxes and replaced boxes of the flow, in content-box coordinates.
 +        let scale = self.viewport.scale();
-+        let mut boxes = Vec::new();
++        let (mut boxes, mut paras) = (Vec::new(), Vec::new());
 +        let mut stack: Vec<&Node> = root.children.iter().map(|&id| &self.nodes[id]).collect();
 +        while let Some(node) = stack.pop() {
 +            if let Some(el) = node.element_data() {
@@ -764,15 +788,22 @@ diff -ruN blitz/packages/blitz-dom/src/layout/columns.rs blitz/packages/blitz-do
 +                    .filter(|_| node.flags.is_inline_root())
 +                {
 +                    let lines_top = y + l.border.top + l.padding.top + text.block_offset;
-+                    for line in text.layout.lines() {
++                    let t = node.primary_styles().map(|s| {
++                        let t = s.get_inherited_text();
++                        (t.orphans.max(1) as usize, t.widows.max(1) as usize)
++                    });
++                    let (orphans, widows) = t.unwrap_or((2, 2));
++                    let mut tops = Vec::new();
++                    for (index, line) in text.layout.lines().enumerate() {
 +                        let m = line.metrics();
-+                        boxes.push((
-+                            lines_top + m.block_min_coord / scale,
-+                            lines_top + m.block_max_coord / scale,
-+                        ));
++                        let top = lines_top + m.block_min_coord / scale;
++                        tops.push(top);
++                        let line = Line { para: paras.len(), index, orphans, widows };
++                        boxes.push((top, lines_top + m.block_max_coord / scale, Some(line)));
 +                    }
++                    paras.push(tops);
 +                } else if el.image_data().is_some() {
-+                    boxes.push((y, y + l.size.height));
++                    boxes.push((y, y + l.size.height, None));
 +                }
 +            }
 +            stack.extend(node.children.iter().map(|&id| &self.nodes[id]));
@@ -781,7 +812,7 @@ diff -ruN blitz/packages/blitz-dom/src/layout/columns.rs blitz/packages/blitz-do
 +            layout.scrollable_overflow_rect.bottom() - content_top,
 +            f32::max,
 +        );
-+        let slices = paginate(flow_height, boxes, page);
++        let slices = paginate(flow_height, boxes, &paras, page);
 +        Some(Columns {
 +            root: root.id,
 +            origin: (origin.x, origin.y),
@@ -828,10 +859,10 @@ diff -ruN blitz/packages/blitz-dom/src/layout/columns.rs blitz/packages/blitz-do
 +    #[test]
 +    fn lines_are_cut_at_the_first_line_that_does_not_fit() {
 +        let lines = (0..5)
-+            .map(|i| (i as f32 * 20.0, i as f32 * 20.0 + 20.0))
++            .map(|i| (i as f32 * 20.0, i as f32 * 20.0 + 20.0, None))
 +            .collect();
 +        assert_eq!(
-+            paginate(100.0, lines, 50.0),
++            paginate(100.0, lines, &[], 50.0),
 +            [(0.0, 40.0), (40.0, 80.0), (80.0, 100.0)]
 +        );
 +    }
@@ -839,7 +870,7 @@ diff -ruN blitz/packages/blitz-dom/src/layout/columns.rs blitz/packages/blitz-do
 +    #[test]
 +    fn a_page_tall_image_with_its_strut_is_one_page() {
 +        assert_eq!(
-+            paginate(615.0, vec![(8.0, 607.2), (8.0, 603.0)], 595.0),
++            paginate(615.0, vec![(8.0, 607.2, None), (8.0, 603.0, None)], &[], 595.0),
 +            [(0.0, 615.0)]
 +        );
 +    }
@@ -875,7 +906,7 @@ diff -ruN blitz/packages/blitz-dom/src/layout/columns.rs blitz/packages/blitz-do
 +    #[test]
 +    fn a_box_taller_than_a_page_is_sliced() {
 +        assert_eq!(
-+            paginate(1300.0, vec![(10.0, 1300.0)], 595.0),
++            paginate(1300.0, vec![(10.0, 1300.0, None)], &[], 595.0),
 +            [(0.0, 595.0), (595.0, 1190.0), (1190.0, 1300.0)]
 +        );
 +    }
@@ -1693,7 +1724,7 @@ diff -ruN blitz/packages/blitz-dom/src/util.rs blitz/packages/blitz-dom/src/util
 diff -ruN blitz/packages/blitz-html/src/html_document.rs blitz/packages/blitz-html/src/html_document.rs
 --- blitz/packages/blitz-html/src/html_document.rs
 +++ blitz/packages/blitz-html/src/html_document.rs
-@@ -68,3 +68,254 @@
+@@ -68,3 +68,312 @@
          self.into()
      }
  }
@@ -1847,6 +1878,7 @@ diff -ruN blitz/packages/blitz-html/src/html_document.rs blitz/packages/blitz-ht
 +        assert_eq!(rects.len(), 1);
 +        assert_content_area("range", rects[0].y, rects[0].height);
 +    }
++
 +}
 +
 +#[cfg(test)]
@@ -1909,6 +1941,64 @@ diff -ruN blitz/packages/blitz-html/src/html_document.rs blitz/packages/blitz-ht
 +        assert_eq!((b.x, b.y, b.height), (0.0, 0.0, 300.0), "the union");
 +    }
 +
++    // Paragraphs of `lines` 20 px lines in 100 px columns (5 lines each), `css` on the root.
++    fn lines(paragraphs: &[usize], css: &str) -> HtmlDocument {
++        let body: String = paragraphs
++            .iter()
++            .enumerate()
++            .map(|(i, &n)| format!("<p id='p{i}' style='margin:0'>{}</p>", vec!["a"; n].join("<br>")))
++            .collect();
++        let html = format!(
++            "<html style='height:100vh;column-width:200px;column-gap:20px;column-fill:auto;padding:0;margin:0;{css}'>\
++             <body style='margin:0;line-height:20px'>{body}</body></html>"
++        );
++        let config = DocumentConfig {
++            html_parser_provider: Some(Arc::new(HtmlProvider)),
++            viewport: Some(Viewport::new(220, 100, 1.0, ColorScheme::Light)),
++            ..Default::default()
++        };
++        let mut doc = HtmlDocument::from_html(&html, config);
++        doc.resolve(0.0);
++        doc
++    }
++
++    // The first piece of a paragraph: (x, y, height).
++    fn first(doc: &HtmlDocument, id: &str) -> (f64, f64, f64) {
++        let r = doc.node_client_rects(doc.get_element_by_id(id).unwrap())[0];
++        (r.x, r.y, r.height)
++    }
++
++    #[test]
++    fn a_paragraph_with_fewer_than_orphans_lines_at_a_column_bottom_moves_to_the_next() {
++        // 4 lines, then a paragraph whose first line alone would end the column.
++        assert_eq!(first(&lines(&[4, 3], ""), "p1"), (240.0, 0.0, 60.0));
++        assert_eq!(first(&lines(&[4, 3], "orphans:1"), "p1"), (0.0, 80.0, 20.0));
++    }
++
++    #[test]
++    fn a_column_breaks_early_to_leave_widows_lines_after_it() {
++        // 6 lines: 5 fit, which would leave 1 at the next column's top.
++        let rects = doc_rects(&lines(&[6], ""), "p0");
++        assert_eq!(rects, [(0.0, 0.0, 100.0), (240.0, 0.0, 40.0)], "4 lines, then 2");
++        assert_eq!(doc_rects(&lines(&[6], "widows:1"), "p0"), [(0.0, 0.0, 100.0), (240.0, 0.0, 20.0)]);
++    }
++
++    #[test]
++    fn orphans_and_widows_that_cannot_both_hold_keep_the_natural_break() {
++        // A 6-line paragraph at a column's top with widows 3 and orphans 4: no break leaves both.
++        assert_eq!(
++            doc_rects(&lines(&[6], "orphans:4;widows:3"), "p0"),
++            [(0.0, 0.0, 100.0), (240.0, 0.0, 20.0)]
++        );
++    }
++
++    fn doc_rects(doc: &HtmlDocument, id: &str) -> Vec<(f64, f64, f64)> {
++        doc.node_client_rects(doc.get_element_by_id(id).unwrap())
++            .iter()
++            .map(|r| (r.x, r.y, r.height))
++            .collect()
++    }
++
 +    #[test]
 +    fn columns_follow_a_viewport_change() {
 +        let mut doc = page(16, 300);
@@ -1947,7 +2037,6 @@ diff -ruN blitz/packages/blitz-html/src/html_document.rs blitz/packages/blitz-ht
 +        assert_eq!(doc.get_client_bounding_rect(wide).unwrap().x, -250.0, "its content");
 +    }
 +}
-+
 diff -ruN blitz/packages/blitz-html/src/html_sink.rs blitz/packages/blitz-html/src/html_sink.rs
 --- blitz/packages/blitz-html/src/html_sink.rs
 +++ blitz/packages/blitz-html/src/html_sink.rs

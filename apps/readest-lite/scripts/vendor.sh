@@ -6,6 +6,7 @@
 # Upstream (patches/README.md says what each patch changes):
 #   blitz          DioxusLabs/blitz f9d0e8c76 (0.3.0-beta.4): the 6 packages tauri-runtime-blitz uses
 #   tauri          readest/tauri d6ef6e4c7 (feat/cef): the 7 crates Lite builds (no tests/changelog)
+#   stylo          servo/stylo 2dca34592 (0.23.0, Blitz's pin): its 11 crates
 #   muda           crates.io 0.19.3
 #   rquickjs-core  crates.io 0.10.0
 #   rquickjs-sys   crates.io 0.10.0, its QuickJS replaced by QuickJS-NG v0.18.0's sources
@@ -14,8 +15,9 @@ set -e
 cd "$(dirname "$0")/.."
 BLITZ_REV=f9d0e8c76a5fd9ca10d426ac2c065a4f2ecaecb3
 TAURI_REV=d6ef6e4c755228713e7358a27794a89cfd30969f
+STYLO_REV=2dca34592ced37c6aa01733e94206a767194cf9d
 QUICKJS_REV=d7215b0ad3fc2c562e8317fd9bca058fd4863804 # quickjs-ng v0.18.0
-TREES="blitz tauri muda rquickjs-core rquickjs-sys"
+TREES="blitz tauri stylo muda rquickjs-core rquickjs-sys"
 
 tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT
@@ -50,6 +52,13 @@ upstream() { # DIR: the unpatched trees
     rm -rf "$1/tauri/crates/$c/test" "$1/tauri/crates/$c/CHANGELOG.md"
   done
   cp "$tmp/tauri/Cargo.toml" "$tmp"/tauri/LICENSE* "$1/tauri/"
+  git_at https://github.com/servo/stylo "$STYLO_REV" "$tmp/stylo"
+  mkdir -p "$1/stylo"
+  for c in malloc_size_of selectors servo_arc style style_derive style_traits stylo_atoms stylo_dom \
+    stylo_static_prefs to_shmem to_shmem_derive; do
+    cp -R "$tmp/stylo/$c" "$1/stylo/"
+  done
+  cp "$tmp/stylo/Cargo.toml" "$1/stylo/"
   crate muda 0.19.3 "$1/muda"
   crate rquickjs-core 0.10.0 "$1/rquickjs-core"
   crate rquickjs-sys 0.10.0 "$1/rquickjs-sys"
