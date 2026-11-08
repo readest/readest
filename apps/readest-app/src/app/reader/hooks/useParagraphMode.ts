@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useReaderStore } from '@/store/readerStore';
-import { useBookDataStore } from '@/store/bookDataStore';
+import { useBookData } from '@/store/bookDataStore';
 import { useEnv } from '@/context/EnvContext';
 import { FoliateView } from '@/types/view';
 import { eventDispatcher } from '@/utils/event';
@@ -45,11 +45,10 @@ export interface ParagraphState {
 export const useParagraphMode = ({ bookKey, viewRef }: UseParagraphModeProps) => {
   const { envConfig } = useEnv();
   const { getViewSettings, setViewSettings, getProgress } = useReaderStore();
-  const { getBookData } = useBookDataStore();
 
   // Fixed-layout gate (D7): paragraph mode must never engage TTS sync for a
   // fixed-layout book. Mirrors how other reader code reads the flag.
-  const isFixedLayout = getBookData(bookKey)?.isFixedLayout ?? false;
+  const isFixedLayout = useBookData(bookKey)?.isFixedLayout ?? false;
 
   const iteratorRef = useRef<ParagraphIterator | null>(null);
   const currentDocIndexRef = useRef<number | undefined>(undefined);

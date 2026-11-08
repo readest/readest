@@ -215,7 +215,7 @@ const hasActiveSelection = (view: FoliateView) => {
  */
 export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<FoliateView | null>) => {
   const { getViewSettings, setHoveredBookKey } = useReaderStore();
-  const { getBookData } = useBookDataStore();
+  const getBookData = useBookDataStore((s) => s.getBookData);
   const controllerRef = useRef<CapturedPageTurn | null>(null);
   const dragRef = useRef<DragState | null>(null);
   const gestureIntentRef = useRef<TurnGestureIntent | null>(null);

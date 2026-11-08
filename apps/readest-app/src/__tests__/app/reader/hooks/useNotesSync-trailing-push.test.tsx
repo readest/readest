@@ -1,4 +1,5 @@
 // @vitest-environment happy-dom
+import { bookDataStoreHooks } from '@/__tests__/helpers/book-data-store-mock';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { act, cleanup, renderHook } from '@testing-library/react';
 
@@ -50,11 +51,13 @@ vi.mock('@/hooks/useSync', () => ({
 }));
 
 vi.mock('@/store/bookDataStore', () => ({
-  useBookDataStore: h.makeStore({
-    getConfig: () => h.state.config,
-    setConfig: vi.fn(),
-    getBookData: () => ({ book: { hash: 'h1', format: 'EPUB', metaHash: 'm1' } }),
-  }),
+  ...bookDataStoreHooks(
+    h.makeStore({
+      getConfig: () => h.state.config,
+      setConfig: vi.fn(),
+      getBookData: () => ({ book: { hash: 'h1', format: 'EPUB', metaHash: 'm1' } }),
+    }),
+  ),
 }));
 
 vi.mock('@/store/readerStore', () => ({

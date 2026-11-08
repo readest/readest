@@ -6,7 +6,8 @@ import { MdDeleteOutline } from 'react-icons/md';
 
 import { useEnv } from '@/context/EnvContext';
 import { useSettingsStore } from '@/store/settingsStore';
-import { useBookDataStore } from '@/store/bookDataStore';
+import { useBookDataStore, useBookConfig, useBookData } from '@/store/bookDataStore';
+import { getBookProgress } from '@/store/readerProgressStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useSidebarStore } from '@/store/sidebarStore';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -42,9 +43,10 @@ const SearchBar: React.FC<SearchBarProps> = ({ isVisible, bookKey, onHideSearchB
   const _ = useTranslation();
   const { envConfig, appService } = useEnv();
   const { settings } = useSettingsStore();
-  const { getBookData } = useBookDataStore();
-  const { getConfig, setConfig, saveConfig } = useBookDataStore();
-  const { getView, getProgress, getViewSettings } = useReaderStore();
+  const getConfig = useBookDataStore((s) => s.getConfig);
+  const setConfig = useBookDataStore((s) => s.setConfig);
+  const saveConfig = useBookDataStore((s) => s.saveConfig);
+  const { getView, getViewSettings } = useReaderStore();
   const { setSearchTerm, setSearchResults, setSearchProgress, setSearchError } = useSidebarStore();
   const { getSearchNavState, getSearchStatus, setSearchStatus } = useSidebarStore();
   const viewSettings = getViewSettings(bookKey);
@@ -116,9 +118,8 @@ const SearchBar: React.FC<SearchBarProps> = ({ isVisible, bookKey, onHideSearchB
     },
     [],
   );
-  const config = getConfig(bookKey)!;
-  const bookData = getBookData(bookKey)!;
-  const progress = getProgress(bookKey);
+  const config = useBookConfig(bookKey)!;
+  const bookData = useBookData(bookKey)!;
   const searchMode = (config.searchConfig as BookSearchConfig).mode;
 
   const iconSize12 = useResponsiveSize(12);
@@ -211,7 +212,8 @@ const SearchBar: React.FC<SearchBarProps> = ({ isVisible, bookKey, onHideSearchB
       // progress is null until the book emits its first relocate event, so a
       // search fired right after opening has no current section to scope to.
       // Fall back to searching the whole book rather than throwing.
-      const sectionIndex = searchConfig.scope === 'section' ? progress?.section.current : undefined;
+      const sectionIndex =
+        searchConfig.scope === 'section' ? getBookProgress(bookKey)?.section.current : undefined;
 
       const results: BookSearchResult[] = [];
       const stopped = () =>
@@ -306,7 +308,6 @@ const SearchBar: React.FC<SearchBarProps> = ({ isVisible, bookKey, onHideSearchB
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [
-      progress,
       bookKey,
       bookData,
       appService,

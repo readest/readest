@@ -1,4 +1,5 @@
 // @vitest-environment happy-dom
+import { bookDataStoreHooks } from '@/__tests__/helpers/book-data-store-mock';
 import { act, cleanup, renderHook, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import type { TTSController } from '@/services/tts/TTSController';
@@ -35,7 +36,7 @@ vi.mock('@/hooks/useTranslation', () => ({
 }));
 
 vi.mock('@/store/bookDataStore', () => ({
-  useBookDataStore: () => ({ getBookData: mocks.getBookData }),
+  ...bookDataStoreHooks(() => ({ getBookData: mocks.getBookData })),
 }));
 
 import { useTTSDownloads } from '@/app/reader/hooks/useTTSDownloads';

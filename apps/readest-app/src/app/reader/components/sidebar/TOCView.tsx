@@ -6,6 +6,7 @@ import 'overlayscrollbars/overlayscrollbars.css';
 import { BookDoc, TOCItem } from '@/libs/document';
 import { BookProgress } from '@/types/book';
 import { useReaderStore } from '@/store/readerStore';
+import { useBookProgress } from '@/store/readerProgressStore';
 import { useSidebarStore } from '@/store/sidebarStore';
 import { eventDispatcher } from '@/utils/event';
 import { useTextTranslation } from '../../hooks/useTextTranslation';
@@ -73,7 +74,7 @@ const TOCView: React.FC<{
 }> = ({ bookKey, bookDoc, toc }) => {
   const { getView, getViewSettings, getProgress } = useReaderStore();
   const { sideBarBookKey, isSideBarVisible } = useSidebarStore();
-  const progress = getProgress(bookKey);
+  const progress = useBookProgress(bookKey);
   const viewSettings = getViewSettings(bookKey);
   const isEink = !!viewSettings?.isEink;
 

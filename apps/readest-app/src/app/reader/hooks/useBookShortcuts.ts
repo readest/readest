@@ -42,7 +42,9 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
     useSidebarStore();
   const { settings, setSettingsDialogOpen, setSettingsDialogBookKey } = useSettingsStore();
   const { envConfig } = useEnv();
-  const { getBookData, getConfig, setConfig } = useBookDataStore();
+  const getBookData = useBookDataStore((s) => s.getBookData);
+  const getConfig = useBookDataStore((s) => s.getConfig);
+  const setConfig = useBookDataStore((s) => s.setConfig);
   const { toggleNotebook } = useNotebookStore();
   const { getNextBookKey } = useBooksManager();
   const lastParagraphToggleRef = useRef(0);

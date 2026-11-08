@@ -2,7 +2,7 @@ import clsx from 'clsx';
 import React, { useCallback, useEffect, useState } from 'react';
 
 import { useSettingsStore } from '@/store/settingsStore';
-import { useBookDataStore } from '@/store/bookDataStore';
+import { useBookDataStore, useBookData, useBookConfig } from '@/store/bookDataStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useSidebarStore } from '@/store/sidebarStore';
 import { useNotebookStore } from '@/store/notebookStore';
@@ -52,7 +52,10 @@ const Notebook: React.FC = () => {
     toggleNotebookPin,
     setNotebookActiveTab,
   } = useNotebookStore();
-  const { getBookData, getConfig, setConfig, updateBooknotes, saveConfig } = useBookDataStore();
+  const getConfig = useBookDataStore((s) => s.getConfig);
+  const setConfig = useBookDataStore((s) => s.setConfig);
+  const updateBooknotes = useBookDataStore((s) => s.updateBooknotes);
+  const saveConfig = useBookDataStore((s) => s.saveConfig);
   const { getViewSettings } = useReaderStore();
   const { activeConversationId } = useAIChatStore();
 
@@ -173,9 +176,10 @@ const Notebook: React.FC = () => {
       onResize: handleNotebookResize,
     });
 
+  const bookData = useBookData(sideBarBookKey);
+  const bookConfig = useBookConfig(sideBarBookKey);
   if (!sideBarBookKey) return null;
-  const bookData = getBookData(sideBarBookKey);
-  const excerptNotes = (getConfig(sideBarBookKey)?.booknotes ?? [])
+  const excerptNotes = (bookConfig?.booknotes ?? [])
     .filter((note) => note.type === 'excerpt' && note.text && !note.deletedAt)
     .sort((a, b) => a.createdAt - b.createdAt);
   const viewSettings = getViewSettings(sideBarBookKey);

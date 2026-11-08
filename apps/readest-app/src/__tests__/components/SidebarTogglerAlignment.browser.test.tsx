@@ -35,11 +35,13 @@ vi.mock('@/store/readerStore', () => ({
     setHoveredBookKey: vi.fn(),
   }),
 }));
-vi.mock('@/store/bookDataStore', () => {
+vi.mock('@/store/bookDataStore', async () => {
+  const { bookDataStoreHooks } = await import('@/__tests__/helpers/book-data-store-mock');
   const state = { getBookData: () => null, getConfig: () => null };
   return {
-    useBookDataStore: (selector?: (store: typeof state) => unknown) =>
+    ...bookDataStoreHooks((selector?: (store: typeof state) => unknown) =>
       selector ? selector(state) : state,
+    ),
   };
 });
 vi.mock('@/store/trafficLightStore', () => ({

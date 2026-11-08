@@ -1,4 +1,5 @@
 // @vitest-environment happy-dom
+import { bookDataStoreHooks } from '@/__tests__/helpers/book-data-store-mock';
 import { act, cleanup, render } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -35,19 +36,22 @@ vi.mock('@/store/settingsStore', () => ({
 }));
 
 vi.mock('@/store/bookDataStore', () => ({
-  useBookDataStore: () => ({
+  ...bookDataStoreHooks(() => ({
     getBookData: () => ({ book: { hash: 'book-hash', primaryLanguage: 'en' } }),
     getConfig: () => ({ searchConfig: { scope: 'section', mode: 'contains' } }),
     setConfig: vi.fn(),
     saveConfig: vi.fn(),
-  }),
+  })),
+}));
+
+vi.mock('@/store/readerProgressStore', () => ({
+  getBookProgress: () => mocks.progress,
 }));
 
 vi.mock('@/store/readerStore', () => ({
   useReaderStore: () => ({
     getView: () =>
       mocks.viewAvailable ? { search: mocks.viewSearch, clearSearch: vi.fn() } : null,
-    getProgress: () => mocks.progress,
     getViewSettings: () => ({}),
   }),
 }));

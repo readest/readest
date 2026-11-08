@@ -1,4 +1,5 @@
 // @vitest-environment happy-dom
+import { bookDataStoreHooks } from '@/__tests__/helpers/book-data-store-mock';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { cleanup, renderHook, waitFor } from '@testing-library/react';
 import type { BookNote } from '@/types/book';
@@ -65,12 +66,14 @@ vi.mock('@/hooks/useSync', () => ({
 }));
 
 vi.mock('@/store/bookDataStore', () => ({
-  useBookDataStore: h.makeStore({
-    getConfig: () => h.state.config,
-    setConfig: h.setConfigMock,
-    // No sections: an xpointer-only note cannot be converted to a cfi.
-    getBookData: () => ({ book: h.book, bookDoc: { sections: [] } }),
-  }),
+  ...bookDataStoreHooks(
+    h.makeStore({
+      getConfig: () => h.state.config,
+      setConfig: h.setConfigMock,
+      // No sections: an xpointer-only note cannot be converted to a cfi.
+      getBookData: () => ({ book: h.book, bookDoc: { sections: [] } }),
+    }),
+  ),
 }));
 
 vi.mock('@/store/readerStore', () => ({
