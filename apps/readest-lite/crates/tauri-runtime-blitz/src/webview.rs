@@ -98,9 +98,14 @@ fn url_parts(u: &Url) -> Vec<String> {
 
 /// Calls a custom-scheme handler and waits for its answer. Tauri's asset handler answers inline;
 /// one that answers from the main thread would deadlock here, hence the timeout.
-fn get_sync(protocols: &Protocols, label: &str, url: &Url) -> Option<Vec<u8>> {
-    if url.scheme() == "file" {
-        return std::fs::read(url.to_file_path().ok()?).ok();
+/// `blob:` URLs (URL.createObjectURL in web.js) and their bytes.
+pub(crate) type Blobs = Arc<Mutex<HashMap<String, Vec<u8>>>>;
+
+fn get_sync(protocols: &Protocols, blobs: &Blobs, label: &str, url: &Url) -> Option<Vec<u8>> {
+    match url.scheme() {
+        "file" => return std::fs::read(url.to_file_path().ok()?).ok(),
+        "blob" => return blobs.lock().unwrap().get(url.as_str()).cloned(),
+        _ => {}
     }
     let handler = protocols.get(url.scheme())?;
     let (tx, rx) = std::sync::mpsc::channel();
@@ -149,6 +154,7 @@ struct OpState {
     id: u32,
     label: String,
     protocols: Protocols,
+    blobs: Blobs,
     ipc: Option<IpcHandler>,
     tx: Sender<Message>,
     url: Arc<Mutex<String>>,
@@ -247,6 +253,7 @@ impl BlitzWebview {
                 id: init.id,
                 label: init.label,
                 protocols: init.protocols,
+                blobs: Blobs::default(),
                 ipc: init.ipc,
                 tx: init.tx,
                 url: init.url,
@@ -282,10 +289,11 @@ impl BlitzWebview {
             return;
         };
         *self.url.lock().unwrap() = url.to_owned();
-        let html = get_sync(&self.ops.protocols, &self.label, &parsed).unwrap_or_else(|| {
-            log::error!("webview {}: cannot load {url}", self.label);
-            Vec::new()
-        });
+        let html = get_sync(&self.ops.protocols, &self.ops.blobs, &self.label, &parsed)
+            .unwrap_or_else(|| {
+                log::error!("webview {}: cannot load {url}", self.label);
+                Vec::new()
+            });
         let font_ctx = std::env::var("BLITZ_FONTS")
             .ok()
             .filter(|d| !d.is_empty())
@@ -313,8 +321,12 @@ impl BlitzWebview {
         for (i, s) in self.init_scripts.iter().enumerate() {
             doc.eval(&s.script, &format!("init-{i}"));
         }
-        let (protocols, label) = (self.ops.protocols.clone(), self.label.clone());
-        doc.set_script_loader(Box::new(move |u| get_sync(&protocols, &label, u)));
+        let (protocols, blobs, label) = (
+            self.ops.protocols.clone(),
+            self.ops.blobs.clone(),
+            self.label.clone(),
+        );
+        doc.set_script_loader(Box::new(move |u| get_sync(&protocols, &blobs, &label, u)));
         // BLITZ_TAURI_QJS_CACHE=DIR|off (default $HOME/.cache/tauri-runtime-blitz/qjs): page scripts
         // run from cached bytecode after the first launch.
         let cache = match std::env::var("BLITZ_TAURI_QJS_CACHE") {
@@ -418,7 +430,7 @@ impl BlitzWebview {
         let queue = std::mem::take(&mut *self.net.0.lock().unwrap());
         for (req, handler) in queue {
             let url = req.url.to_string();
-            match get_sync(&self.ops.protocols, &self.label, &req.url) {
+            match get_sync(&self.ops.protocols, &self.ops.blobs, &self.label, &req.url) {
                 Some(b) => handler.bytes(url, Bytes::from(b)),
                 None => handler.error(url, "not found".into()),
             }
@@ -694,6 +706,26 @@ fn install_ops<'js>(ctx: &Ctx<'js>, st: Rc<OpState>, page: &Url) {
      -> rquickjs::Result<Option<ArrayBuffer<'js>>> {
         let out = zlib(compress, &format, data.as_bytes().unwrap_or_default());
         out.map(|v| ArrayBuffer::new(ctx, v)).transpose()
+    });
+    // URL.createObjectURL/revokeObjectURL and fetch(blob:) (web.js); Blitz's loads read the same
+    // store (get_sync).
+    let s = st.clone();
+    op!("blobPut", move |url: String, data: ArrayBuffer<'js>| {
+        let bytes = data.as_bytes().unwrap_or_default().to_vec();
+        s.blobs.lock().unwrap().insert(url, bytes);
+    });
+    let s = st.clone();
+    op!("blobDel", move |url: String| {
+        s.blobs.lock().unwrap().remove(&url);
+    });
+    let s = st.clone();
+    op!("blobGet", move |ctx: Ctx<'js>,
+                         url: String|
+          -> rquickjs::Result<
+        Option<ArrayBuffer<'js>>,
+    > {
+        let bytes = s.blobs.lock().unwrap().get(&url).cloned();
+        bytes.map(|b| ArrayBuffer::new(ctx, b)).transpose()
     });
     op!("parseUrl", |href: String,
                      base: Option<String>|

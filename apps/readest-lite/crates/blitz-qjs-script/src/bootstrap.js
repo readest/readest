@@ -260,13 +260,15 @@
     }
     _parentTarget() {
       const p = this.parentNode;
-      return p || (this.nodeType === 9 ? window : null);
+      return p || (this.nodeType === 9 ? this.defaultView : null);
     }
     get nodeType() {
       return n.kind(this._id);
     }
+    // Negative handles below -1 are in an iframe's document (ops.rs); -1 is a fragment.
     get ownerDocument() {
-      return this.nodeType === 9 ? null : document;
+      if (this.nodeType === 9) return null;
+      return this._id < -1 ? wrap(n.root(this._id)) : document;
     }
     get parentNode() {
       const p = n.parent(this._id);
@@ -301,7 +303,7 @@
     }
     // Shadow-including: shadow trees are in the native tree under their hosts.
     get isConnected() {
-      if (this._id < 0) return false;
+      if (this._id === -1) return false;
       let id = this._id;
       for (let p = n.parent(id); p != null; p = n.parent(p)) id = p;
       return n.kind(id) === 9;
@@ -318,9 +320,6 @@
       for (let t = other; t; t = t.parentNode) if (t === this) return true;
       return false;
     }
-    compareDocumentPosition(other) {
-      return this.contains(other) ? 20 : other.contains(this) ? 10 : 4;
-    }
     appendChild(c) {
       return this.insertBefore(c, null);
     }
@@ -330,14 +329,19 @@
         return c;
       }
       const moved = defs.size > 0 && c.nodeType === 1 && c.isConnected;
-      n.insert(this._id, c._id, ref ? ref._id : null);
+      // Nodes stay in the document that created them (no adoption).
+      if (!n.insert(this._id, c._id, ref ? ref._id : null))
+        throw domError('The node belongs to another document', 'WrongDocumentError');
       if (c.nodeType !== 1 || !c.isConnected) return c;
       if (!c._started) {
         const tag = n.local(c._id);
         if (tag === 'script') startScript(c);
         else if (tag === 'link') watchSheet(c);
+        else if (tag === 'iframe' && (c.hasAttribute('src') || c.hasAttribute('srcdoc')))
+          loadingFrames.add(c);
       }
-      if (defs.size && !moved) connectCustom([c._id, ...n.queryAllDeep(c._id, defSelector)]);
+      if (defs.size && !moved && c._id >= 0)
+        connectCustom([c._id, ...n.queryAllDeep(c._id, defSelector)]);
       return c;
     }
     removeChild(c) {
@@ -534,7 +538,7 @@
       if (this._shadow)
         throw domError('This element already hosts a shadow root', 'NotSupportedError');
       const key = String(++shadowCount);
-      const id = n.createElement(HTML_NS, 'blitz-shadow-root');
+      const id = n.createElement(this._id, HTML_NS, 'blitz-shadow-root');
       n.setAttr(id, 'style', 'display: contents');
       n.setAttr(id, 'blitz-shadow-root', key);
       n.setAttr(this._id, 'blitz-shadow-host', key);
@@ -750,7 +754,7 @@
       );
     }
     matches(s) {
-      const p = this.parentNode || document;
+      const p = this.parentNode || this.ownerDocument;
       return p.querySelectorAll(s).includes(this);
     }
     closest(s) {
@@ -795,12 +799,16 @@
     }
     append(...nodes) {
       for (const c of nodes)
-        this.appendChild(typeof c === 'string' ? document.createTextNode(c) : c);
+        this.appendChild(typeof c === 'string' ? docOf(this).createTextNode(c) : c);
     }
     prepend(...nodes) {
       const f = this.firstChild;
       for (const c of nodes)
-        this.insertBefore(typeof c === 'string' ? document.createTextNode(c) : c, f);
+        this.insertBefore(typeof c === 'string' ? docOf(this).createTextNode(c) : c, f);
+    }
+    replaceChildren(...nodes) {
+      for (let c; (c = this.firstChild); ) this.removeChild(c);
+      this.append(...nodes);
     }
   }
   class HTMLElement extends Element {
@@ -810,7 +818,7 @@
     constructor() {
       const def = defsByCtor.get(new.target);
       if (!def) throw new TypeError('Illegal constructor');
-      const el = upgradeTarget || wrap(n.createElement(HTML_NS, def.name));
+      const el = upgradeTarget || wrap(n.createElement(document._id, HTML_NS, def.name));
       upgradeTarget = null;
       el._ce = def;
       // biome-ignore lint/correctness/noConstructorReturn: the subclass's `this` is the wrapper
@@ -939,7 +947,26 @@
   reflect(HTMLAnchorElement, ['href', 'target', 'rel']);
   class HTMLImageElement extends HTMLElement {}
   reflect(HTMLImageElement, ['src', 'alt']);
-  class HTMLIFrameElement extends HTMLElement {}
+  // contentDocument is the document Blitz loaded from src or srcdoc; `load` fires once it is
+  // attached with its stylesheets loaded (checkFrames, after each layout).
+  class HTMLIFrameElement extends HTMLElement {
+    get contentDocument() {
+      const h = n.subdoc(this._id);
+      if (h == null) return null;
+      const doc = wrap(h);
+      doc._frame = this;
+      return doc;
+    }
+    get contentWindow() {
+      return this.contentDocument?.defaultView ?? null;
+    }
+    setAttribute(k, v) {
+      super.setAttribute(k, v);
+      const a = this._an(k);
+      if (a === 'src' || a === 'srcdoc') loadingFrames.add(this);
+    }
+  }
+  reflect(HTMLIFrameElement, ['src', 'srcdoc']);
   class HTMLFormElement extends HTMLElement {}
   class HTMLDivElement extends HTMLElement {}
   class HTMLSpanElement extends HTMLElement {}
@@ -1075,8 +1102,11 @@
     get body() {
       return this.querySelector('body');
     }
+    get links() {
+      return this.querySelectorAll('a[href], area[href]');
+    }
     get defaultView() {
-      return window;
+      return this === document ? window : (this._view ??= frameWindow(this));
     }
     get activeElement() {
       return this._active || this.body;
@@ -1114,17 +1144,18 @@
     }
     createElement(tag) {
       const name = String(tag).toLowerCase();
-      const def = defs.get(name);
-      return def ? new def.ctor() : wrap(n.createElement(HTML_NS, name));
+      // Custom elements are the page's (one registry).
+      const def = this === document && defs.get(name);
+      return def ? new def.ctor() : wrap(n.createElement(this._id, HTML_NS, name));
     }
     createElementNS(ns, q) {
-      return wrap(n.createElement(ns || HTML_NS, String(q).replace(/^.*:/, '')));
+      return wrap(n.createElement(this._id, ns || HTML_NS, String(q).replace(/^.*:/, '')));
     }
     createTextNode(s) {
-      return wrap(n.createText(String(s)));
+      return wrap(n.createText(this._id, String(s)));
     }
     createComment(s) {
-      return wrap(n.createComment(String(s)));
+      return wrap(n.createComment(this._id, String(s)));
     }
     createDocumentFragment() {
       return new DocumentFragment();
@@ -1257,6 +1288,344 @@
     return fired;
   }
 
+  // ---- Documents in iframes ----
+  const docOf = (node) => (node.nodeType === 9 ? node : node.ownerDocument);
+  // An iframe document's window: the page's globals, with its own document, size, listeners
+  // and frameElement. Timers, rAF and getComputedStyle are the page's.
+  function frameWindow(doc) {
+    const w = Object.create(window);
+    const size = () => n.viewport(doc._id);
+    Object.defineProperties(w, {
+      window: { get: () => w },
+      self: { get: () => w },
+      document: { value: doc },
+      frameElement: { get: () => doc._frame ?? null },
+      parent: { value: window },
+      top: { value: window },
+      innerWidth: { get: () => size()[0] },
+      innerHeight: { get: () => size()[1] },
+      _listeners: { value: Object.create(null), writable: true },
+      _on: { value: Object.create(null), writable: true },
+    });
+    return w;
+  }
+  const loadingFrames = new Set();
+  function checkFrames() {
+    let fired = 0;
+    for (const f of loadingFrames) {
+      if (!f.isConnected) continue;
+      const id = n.subdocReady(f._id);
+      if (id == null || id === f._frameDoc) continue;
+      f._frameDoc = id;
+      loadingFrames.delete(f);
+      f.dispatchEvent(new Event('load'));
+      fired++;
+    }
+    return fired;
+  }
+
+  // ---- Tree order, Range and TreeWalker ----
+  // Boundary points and traversal as the DOM specifies them, over the wrappers. A range's rects
+  // are its common ancestor element's box: text geometry inside a line is not reachable yet.
+  const indexOf = (node) => {
+    let i = 0;
+    for (let s = node.previousSibling; s; s = s.previousSibling) i++;
+    return i;
+  };
+  const nodeLength = (node) => {
+    const t = node.nodeType;
+    return t === 3 || t === 8 || t === 7 ? node.data.length : node.childNodes.length;
+  };
+  const ancestors = (node) => {
+    const out = [];
+    for (let t = node; t; t = t.parentNode) out.push(t);
+    return out.reverse();
+  };
+  // -1 when `a` comes before `b` in tree order, 1 after, 0 when they are one node, null when they
+  // are in different trees.
+  function treeOrder(a, b) {
+    if (a === b) return 0;
+    const pa = ancestors(a),
+      pb = ancestors(b);
+    if (pa[0] !== pb[0]) return null;
+    let i = 1;
+    while (i < pa.length && i < pb.length && pa[i] === pb[i]) i++;
+    if (i === pa.length) return -1; // a is an ancestor of b
+    if (i === pb.length) return 1;
+    return indexOf(pa[i]) < indexOf(pb[i]) ? -1 : 1;
+  }
+  Node.prototype.compareDocumentPosition = function (other) {
+    const o = treeOrder(this, other);
+    if (o === 0) return 0;
+    if (o === null) return 1 | 32 | 4;
+    if (this.contains(other)) return 16 | 4;
+    if (other.contains(this)) return 8 | 2;
+    return o < 0 ? 4 : 2;
+  };
+  function comparePoints(na, oa, nb, ob) {
+    if (na === nb) return Math.sign(oa - ob);
+    if (treeOrder(na, nb) > 0) return -comparePoints(nb, ob, na, oa);
+    if (na.contains(nb)) {
+      let child = nb;
+      while (child.parentNode !== na) child = child.parentNode;
+      return indexOf(child) < oa ? 1 : -1;
+    }
+    return -1;
+  }
+  const checkPoint = (node, offset) => {
+    if (node.nodeType === 10) throw domError('The node is a doctype', 'InvalidNodeTypeError');
+    if (offset > nodeLength(node)) throw domError('The offset is past the node', 'IndexSizeError');
+  };
+
+  class Range {
+    constructor() {
+      this.startContainer = this.endContainer = document;
+      this.startOffset = this.endOffset = 0;
+    }
+    get collapsed() {
+      return this.startContainer === this.endContainer && this.startOffset === this.endOffset;
+    }
+    get commonAncestorContainer() {
+      let a = this.startContainer;
+      while (!a.contains(this.endContainer)) a = a.parentNode;
+      return a;
+    }
+    setStart(node, offset) {
+      checkPoint(node, offset);
+      this.startContainer = node;
+      this.startOffset = offset;
+      const o = treeOrder(node, this.endContainer);
+      if (o === null || comparePoints(node, offset, this.endContainer, this.endOffset) > 0)
+        this.collapse(true);
+    }
+    setEnd(node, offset) {
+      checkPoint(node, offset);
+      this.endContainer = node;
+      this.endOffset = offset;
+      const o = treeOrder(this.startContainer, node);
+      if (o === null || comparePoints(this.startContainer, this.startOffset, node, offset) > 0)
+        this.collapse(false);
+    }
+    setStartBefore(node) {
+      this.setStart(node.parentNode, indexOf(node));
+    }
+    setStartAfter(node) {
+      this.setStart(node.parentNode, indexOf(node) + 1);
+    }
+    setEndBefore(node) {
+      this.setEnd(node.parentNode, indexOf(node));
+    }
+    setEndAfter(node) {
+      this.setEnd(node.parentNode, indexOf(node) + 1);
+    }
+    selectNode(node) {
+      const p = node.parentNode,
+        i = indexOf(node);
+      this.setStart(p, i);
+      this.setEnd(p, i + 1);
+    }
+    selectNodeContents(node) {
+      this.setStart(node, 0);
+      this.setEnd(node, nodeLength(node));
+    }
+    collapse(toStart = false) {
+      if (toStart) {
+        this.endContainer = this.startContainer;
+        this.endOffset = this.startOffset;
+      } else {
+        this.startContainer = this.endContainer;
+        this.startOffset = this.endOffset;
+      }
+    }
+    cloneRange() {
+      const r = new Range();
+      Object.assign(r, this);
+      return r;
+    }
+    compareBoundaryPoints(how, src) {
+      const [n1, o1] =
+        how === 0 || how === 3
+          ? [this.startContainer, this.startOffset]
+          : [this.endContainer, this.endOffset];
+      const [n2, o2] =
+        how === 0 || how === 1
+          ? [src.startContainer, src.startOffset]
+          : [src.endContainer, src.endOffset];
+      return comparePoints(n1, o1, n2, o2);
+    }
+    comparePoint(node, offset) {
+      checkPoint(node, offset);
+      if (comparePoints(node, offset, this.startContainer, this.startOffset) < 0) return -1;
+      if (comparePoints(node, offset, this.endContainer, this.endOffset) > 0) return 1;
+      return 0;
+    }
+    isPointInRange(node, offset) {
+      if (treeOrder(node, this.startContainer) === null) return false;
+      return this.comparePoint(node, offset) === 0;
+    }
+    intersectsNode(node) {
+      const p = node.parentNode;
+      if (!p) return treeOrder(node, this.startContainer) !== null;
+      const i = indexOf(node);
+      return (
+        comparePoints(p, i, this.endContainer, this.endOffset) < 0 &&
+        comparePoints(p, i + 1, this.startContainer, this.startOffset) > 0
+      );
+    }
+    toString() {
+      const { startContainer: sc, startOffset: so, endContainer: ec, endOffset: eo } = this;
+      if (sc === ec && sc.nodeType === 3) return sc.data.slice(so, eo);
+      const out = [];
+      const w = new TreeWalker(this.commonAncestorContainer, 0x4);
+      for (let t; (t = w.nextNode()); ) {
+        if (t === sc) out.push(t.data.slice(so));
+        else if (t === ec) out.push(t.data.slice(0, eo));
+        else if (comparePoints(t, 0, sc, so) >= 0 && comparePoints(t, t.length, ec, eo) <= 0)
+          out.push(t.data);
+      }
+      return out.join('');
+    }
+    getBoundingClientRect() {
+      const a = this.commonAncestorContainer;
+      return (
+        a.nodeType === 1 ? a : (a.parentElement ?? docOf(a).documentElement)
+      ).getBoundingClientRect();
+    }
+    getClientRects() {
+      return [this.getBoundingClientRect()];
+    }
+    detach() {}
+  }
+  Object.assign(Range, { START_TO_START: 0, START_TO_END: 1, END_TO_END: 2, END_TO_START: 3 });
+  Document.prototype.createRange = function () {
+    const r = new Range();
+    r.startContainer = r.endContainer = this;
+    return r;
+  };
+
+  const ACCEPT = 1,
+    REJECT = 2,
+    SKIP = 3;
+  class TreeWalker {
+    constructor(root, whatToShow = 0xffffffff, filter = null) {
+      this.root = this.currentNode = root;
+      this.whatToShow = whatToShow;
+      this.filter = filter;
+    }
+    _accept(node) {
+      if (!(this.whatToShow & (1 << (node.nodeType - 1)))) return SKIP;
+      const f = this.filter;
+      if (!f) return ACCEPT;
+      return typeof f === 'function' ? f(node) : f.acceptNode(node);
+    }
+    parentNode() {
+      let node = this.currentNode;
+      while (node && node !== this.root) {
+        node = node.parentNode;
+        if (node && this._accept(node) === ACCEPT) return (this.currentNode = node);
+      }
+      return null;
+    }
+    _children(first) {
+      let node = first ? this.currentNode.firstChild : this.currentNode.lastChild;
+      while (node) {
+        const result = this._accept(node);
+        if (result === ACCEPT) return (this.currentNode = node);
+        if (result === SKIP) {
+          const child = first ? node.firstChild : node.lastChild;
+          if (child) {
+            node = child;
+            continue;
+          }
+        }
+        while (node) {
+          const sibling = first ? node.nextSibling : node.previousSibling;
+          if (sibling) {
+            node = sibling;
+            break;
+          }
+          const parent = node.parentNode;
+          if (!parent || parent === this.root || parent === this.currentNode) return null;
+          node = parent;
+        }
+      }
+      return null;
+    }
+    firstChild() {
+      return this._children(true);
+    }
+    lastChild() {
+      return this._children(false);
+    }
+    _siblings(next) {
+      let node = this.currentNode;
+      if (node === this.root) return null;
+      for (;;) {
+        let sibling = next ? node.nextSibling : node.previousSibling;
+        while (sibling) {
+          node = sibling;
+          const result = this._accept(node);
+          if (result === ACCEPT) return (this.currentNode = node);
+          sibling = next ? node.firstChild : node.lastChild;
+          if (result === REJECT || !sibling)
+            sibling = next ? node.nextSibling : node.previousSibling;
+        }
+        node = node.parentNode;
+        if (!node || node === this.root || this._accept(node) === ACCEPT) return null;
+      }
+    }
+    nextSibling() {
+      return this._siblings(true);
+    }
+    previousSibling() {
+      return this._siblings(false);
+    }
+    nextNode() {
+      let node = this.currentNode,
+        result = ACCEPT;
+      for (;;) {
+        while (result !== REJECT && node.firstChild) {
+          node = node.firstChild;
+          result = this._accept(node);
+          if (result === ACCEPT) return (this.currentNode = node);
+        }
+        let sibling = null;
+        for (let t = node; t; t = t.parentNode) {
+          if (t === this.root) return null;
+          sibling = t.nextSibling;
+          if (sibling) break;
+        }
+        if (!sibling) return null;
+        node = sibling;
+        result = this._accept(node);
+        if (result === ACCEPT) return (this.currentNode = node);
+      }
+    }
+    previousNode() {
+      let node = this.currentNode;
+      while (node !== this.root) {
+        let sibling = node.previousSibling;
+        while (sibling) {
+          node = sibling;
+          let result = this._accept(node);
+          while (result !== REJECT && node.lastChild) {
+            node = node.lastChild;
+            result = this._accept(node);
+          }
+          if (result === ACCEPT) return (this.currentNode = node);
+          sibling = node.previousSibling;
+        }
+        if (node === this.root || !node.parentNode) return null;
+        node = node.parentNode;
+        if (this._accept(node) === ACCEPT) return (this.currentNode = node);
+      }
+      return null;
+    }
+  }
+  Document.prototype.createTreeWalker = function (root, whatToShow, filter) {
+    return new TreeWalker(root, whatToShow, filter);
+  };
+
   // ---- Shadow roots ----
   // Blitz has no shadow DOM, so a shadow tree is laid out in place: its root is an element
   // (`blitz-shadow-root`, display: contents) that is its host's first native child, which Blitz
@@ -1313,6 +1682,7 @@
         'getElementsByClassName',
         'append',
         'prepend',
+        'replaceChildren',
       ],
     ],
   ])
@@ -1758,7 +2128,8 @@
     history,
     customElements,
     ShadowRoot,
-    // Constants only (foliate-js reads them when its modules load); there is no TreeWalker yet.
+    Range,
+    TreeWalker,
     NodeFilter: {
       FILTER_ACCEPT: 1,
       FILTER_REJECT: 2,
@@ -1805,7 +2176,7 @@
     reportError,
     // Computed values from Stylo, read on access (pseudo-elements not supported).
     getComputedStyle: (el) => {
-      const get = (name) => (el && el._id >= 0 ? n.computed(el._id, String(name)) : '');
+      const get = (name) => (el && el._id !== -1 ? n.computed(el._id, String(name)) : '');
       const api = {
         getPropertyValue: get,
         getPropertyPriority: () => '',
@@ -1863,6 +2234,7 @@
     // Called by the host after a layout: delivers ResizeObserver changes; returns how many fired.
     __blitzAfterLayout() {
       let k = pendingSheets.size ? checkSheets() : 0;
+      if (loadingFrames.size) k += checkFrames();
       for (const o of resizeObservers) k += o._check();
       return k;
     },
