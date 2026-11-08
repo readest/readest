@@ -268,6 +268,35 @@ describe('Paginator scrolled mode (browser)', () => {
     expect(loadedIndices()).toContain(F);
     expect(loadedIndices()).not.toContain(F - 1);
 
+    // The placeholder itself is already viewport-sized before its iframe
+    // finishes loading. Keep the target in place on that first painted frame,
+    // rather than correcting the jump only after create-overlayer fires.
+    const container = paginator.shadowRoot!.getElementById('container')!;
+    const targetDoc = paginator.getContents().find((c) => c.index === F)!.doc;
+    const targetView = Array.from(container.children).find(
+      (child) => child.querySelector('iframe')?.contentDocument === targetDoc,
+    )!;
+    const firstPrependedFrame = new Promise<number | null>((resolve, reject) => {
+      const observer = new MutationObserver((records) => {
+        if (
+          !records.some((record) =>
+            Array.from(record.addedNodes).some(
+              (node) => node instanceof HTMLElement && node.nextElementSibling === targetView,
+            ),
+          )
+        )
+          return;
+        observer.disconnect();
+        clearTimeout(timer);
+        requestAnimationFrame(() => resolve(visibleTopIndex()));
+      });
+      const timer = setTimeout(() => {
+        observer.disconnect();
+        reject(new Error('previous section placeholder was never prepended'));
+      }, 8000);
+      observer.observe(container, { childList: true });
+    });
+
     // 2) Arm the measurement: capture the section shown at the top of the
     //    viewport the instant F-1 is prepended above the target.
     const driftAtPrepend = new Promise<number | null>((resolve, reject) => {
@@ -286,7 +315,11 @@ describe('Paginator scrolled mode (browser)', () => {
     //    debounced backward-preload then inserts F-1 above it.
     await paginator.goTo({ index: F, anchor: 0 });
 
-    const visibleWhenPrepended = await driftAtPrepend;
+    const [visibleOnFirstFrame, visibleWhenPrepended] = await Promise.all([
+      firstPrependedFrame,
+      driftAtPrepend,
+    ]);
+    expect(visibleOnFirstFrame).toBe(F);
     expect(visibleWhenPrepended).toBe(F);
   });
 
