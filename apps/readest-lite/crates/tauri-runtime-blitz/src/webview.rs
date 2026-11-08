@@ -51,6 +51,8 @@ pub(crate) type PageLoadHandler = Box<dyn Fn(Url, tauri_runtime::webview::PageLo
 const WEB_JS: &str = include_str!("web.js");
 /// `DOMParser` (XML), where the page has none: foliate-js reads EPUB package files with it.
 const DOM_PARSER_JS: &str = include_str!("dom-parser.js");
+/// `Intl` (QuickJS has none): plural rules, segmentation, collation and English formats.
+const INTL_JS: &str = include_str!("intl.js");
 /// ReadableStream/WritableStream/TransformStream (MIT, web-streams-polyfill 3.3.3): Next.js reads its
 /// React Server Components payload through streams.
 const STREAMS_JS: &str =
@@ -318,6 +320,7 @@ impl BlitzWebview {
         doc.eval(STREAMS_JS, "web-streams-polyfill.js");
         doc.eval(WEB_JS, "web.js");
         doc.eval(DOM_PARSER_JS, "dom-parser.js");
+        doc.eval(INTL_JS, "intl.js");
         for (i, s) in self.init_scripts.iter().enumerate() {
             doc.eval(&s.script, &format!("init-{i}"));
         }
