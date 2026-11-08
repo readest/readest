@@ -67,6 +67,26 @@ afterEach(() => {
 });
 
 describe('ReadingCalendar', () => {
+  it('does not carry rejected keyboard focus into a later date activation', async () => {
+    const { container } = render(<ReadingCalendar db={db} daily={daily} />);
+    await screen.findByText('No reading activity on this day');
+    const today = container.querySelector<HTMLButtonElement>('[data-calendar-date="2026-11-07"]')!;
+    const yesterday = container.querySelector<HTMLButtonElement>(
+      '[data-calendar-date="2026-11-06"]',
+    )!;
+    today.focus();
+    const focus = vi.spyOn(HTMLElement.prototype, 'focus');
+    try {
+      fireEvent.keyDown(today, { key: 'ArrowRight' });
+      expect(today.getAttribute('aria-pressed')).toBe('true');
+      fireEvent.click(yesterday);
+      expect(yesterday.getAttribute('aria-pressed')).toBe('true');
+      expect(focus).not.toHaveBeenCalled();
+    } finally {
+      focus.mockRestore();
+    }
+  });
+
   it('slides the old and new date grids in the month direction and cleans up interrupted transitions', async () => {
     const original = HTMLElement.prototype.animate;
     const cancel = vi.fn();

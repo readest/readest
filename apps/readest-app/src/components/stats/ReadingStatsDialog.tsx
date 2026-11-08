@@ -114,6 +114,7 @@ const ReadingStatsContent: React.FC = () => {
           <SubPageHeader
             parentLabel={_('Reading Statistics')}
             currentLabel={_('Reading Calendar')}
+            description={_('See which books you read each day and for how long')}
             onBack={() => navigateCalendar(false)}
           />
         </div>

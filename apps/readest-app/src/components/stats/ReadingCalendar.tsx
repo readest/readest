@@ -310,8 +310,10 @@ const ReadingCalendar: React.FC<ReadingCalendarProps> = ({ db, daily }) => {
     event.preventDefault();
     const next = new Date(`${selected}T00:00:00`);
     next.setDate(next.getDate() + step);
+    const nextKey = toDateKey(next);
+    if (nextKey > today) return;
     focusDay.current = true;
-    selectDate(toDateKey(next));
+    selectDate(nextKey);
   };
 
   return (
