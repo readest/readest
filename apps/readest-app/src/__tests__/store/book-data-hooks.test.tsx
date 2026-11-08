@@ -90,4 +90,16 @@ describe('useBookConfig', () => {
     expect(renders).toBe(before + 1);
     expect(result.current?.booknotes).toEqual([note]);
   });
+
+  test("does not re-render when the auto-save after a turn stamps the config's updatedAt", () => {
+    let renders = 0;
+    renderHook(() => {
+      renders++;
+      return useBookConfig('h1-view');
+    });
+    const before = renders;
+    // What saveConfig writes about 1.5 s after each page turn.
+    act(() => useBookDataStore.getState().setConfig('h1-view', { updatedAt: 12345 }));
+    expect(renders).toBe(before);
+  });
 });
