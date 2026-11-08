@@ -69,6 +69,10 @@
   Gecko's dependency-based invalidation, never finer). Without the pref a selector list holding
   `:has()` was dropped whole, and Readest's book paragraph rule (`p, blockquote,
   div:not(:has(…))`) with it, so book text had `line-height: normal`.
+- `blitz-dom` node, document, util: an inline element's box and a text range's rects span their
+  font's content area (ascent above the baseline, descent below, each rounded to a whole pixel),
+  as CSSOM View and browsers give, instead of the whole line box. foliate-js finds the visible
+  range and places highlights from these rects.
 - `blitz-paint` text: faux italics lean forward. The glyph skew is applied in y-down space,
   so its sign is negated; every synthesized italic used to slant backwards.
 
