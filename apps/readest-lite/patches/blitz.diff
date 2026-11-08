@@ -180,6 +180,25 @@ diff -ruN blitz/Cargo.toml blitz/Cargo.toml
 -# [patch."https://github.com/linebender/parley"]
 -# parley = { path = "../parley/parley" }
 -# fontique = { path = "../parley/fontique" }
+diff -ruN blitz/packages/blitz-dom/assets/default.css blitz/packages/blitz-dom/assets/default.css
+--- blitz/packages/blitz-dom/assets/default.css
++++ blitz/packages/blitz-dom/assets/default.css
+@@ -65,6 +65,15 @@
+     margin: 3px 3px 3px 4px;
+ }
+ 
++/* Chromium's slider size (Blitz paints no slider). */
++input[type="range" i] {
++    width: 129px;
++    height: 16px;
++    margin: 2px;
++    padding: initial;
++    border: initial;
++}
++
+ input[type="radio"] {
+     width: 14px;
+     height: 14px;
 diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/document.rs
 --- blitz/packages/blitz-dom/src/document.rs
 +++ blitz/packages/blitz-dom/src/document.rs
@@ -2038,7 +2057,7 @@ diff -ruN blitz/packages/blitz-dom/src/util.rs blitz/packages/blitz-dom/src/util
 diff -ruN blitz/packages/blitz-html/src/html_document.rs blitz/packages/blitz-html/src/html_document.rs
 --- blitz/packages/blitz-html/src/html_document.rs
 +++ blitz/packages/blitz-html/src/html_document.rs
-@@ -68,3 +68,480 @@
+@@ -68,3 +68,501 @@
          self.into()
      }
  }
@@ -2517,6 +2536,27 @@ diff -ruN blitz/packages/blitz-html/src/html_document.rs blitz/packages/blitz-ht
 +        assert_eq!(height(tailwind), 45.0, "-webkit-line-clamp: 3");
 +        assert_eq!(height("line-clamp:2"), 30.0, "line-clamp: 2");
 +        assert_eq!(height("-webkit-line-clamp:9"), 75.0, "more lines than there are");
++    }
++}
++
++#[cfg(test)]
++mod form_control_tests {
++    use crate::{HtmlDocument, HtmlProvider};
++    use blitz_dom::DocumentConfig;
++    use blitz_traits::shell::{ColorScheme, Viewport};
++    use std::sync::Arc;
++
++    #[test]
++    fn a_range_input_has_chromiums_slider_size() {
++        let config = DocumentConfig {
++            html_parser_provider: Some(Arc::new(HtmlProvider)),
++            viewport: Some(Viewport::new(800, 600, 1.0, ColorScheme::Light)),
++            ..Default::default()
++        };
++        let mut doc = HtmlDocument::from_html("<html><body style='margin:0'><input id='r' type='range'></body></html>", config);
++        doc.resolve(0.0);
++        let r = doc.get_client_bounding_rect(doc.get_element_by_id("r").unwrap()).unwrap();
++        assert_eq!((r.x, r.width, r.height), (2.0, 129.0, 16.0));
 +    }
 +}
 diff -ruN blitz/packages/blitz-html/src/html_sink.rs blitz/packages/blitz-html/src/html_sink.rs
