@@ -305,16 +305,20 @@
         for (const k of c._kids.splice(0)) this.insertBefore(k, ref);
         return c;
       }
+      const moved = defs.size > 0 && c.nodeType === 1 && c.isConnected;
       n.insert(this._id, c._id, ref ? ref._id : null);
-      if (c.nodeType === 1 && !c._started && c.isConnected) {
+      if (c.nodeType !== 1 || !c.isConnected) return c;
+      if (!c._started) {
         const tag = n.local(c._id);
         if (tag === 'script') startScript(c);
         else if (tag === 'link') watchSheet(c);
       }
+      if (defs.size && !moved) connectCustom([c._id, ...n.queryAll(c._id, defSelector)]);
       return c;
     }
     removeChild(c) {
       n.remove(c._id);
+      if (connectedCustom.size) disconnectCustom();
       return c;
     }
     replaceChild(nc, oc) {
@@ -324,12 +328,14 @@
     }
     remove() {
       n.remove(this._id);
+      if (connectedCustom.size) disconnectCustom();
     }
     get textContent() {
       return this.nodeType === 9 ? null : n.text(this._id);
     }
     set textContent(v) {
       n.setText(this._id, v == null ? '' : String(v));
+      if (connectedCustom.size) disconnectCustom();
     }
     get nodeValue() {
       const k = this.nodeType;
@@ -516,15 +522,19 @@
     }
     setAttribute(k, v) {
       k = this._an(k);
+      const old = this._ce?.observed.has(k) ? this.getAttribute(k) : undefined;
       if (k === 'style') {
         this.style.cssText = v;
       }
       n.setAttr(this._id, k, String(v));
+      if (old !== undefined) reaction(this, 'attributeChangedCallback', k, old, String(v));
     }
     removeAttribute(k) {
       k = this._an(k);
+      const old = this._ce?.observed.has(k) ? this.getAttribute(k) : null;
       if (k === 'style' && this._style) this._style.cssText = '';
       n.delAttr(this._id, k);
+      if (old !== null) reaction(this, 'attributeChangedCallback', k, old, null);
     }
     hasAttribute(k) {
       return n.getAttr(this._id, this._an(k)) != null;
@@ -670,6 +680,8 @@
     }
     set innerHTML(html) {
       n.setInnerHtml(this._id, String(html));
+      if (connectedCustom.size) disconnectCustom();
+      if (defs.size && this.isConnected) connectCustom(n.queryAll(this._id, defSelector));
     }
     get innerHTML() {
       return this.childNodes.map((c) => (c.nodeType === 3 ? c.data : '')).join('');
@@ -748,6 +760,18 @@
     }
   }
   class HTMLElement extends Element {
+    // Only a defined custom element class constructs (`new`, createElement or an upgrade). An
+    // upgrade hands it the existing wrapper, which becomes the class's object.
+    // biome-ignore lint/correctness/noUnreachableSuper: returns the wrapper instead of super()'s object
+    constructor() {
+      const def = defsByCtor.get(new.target);
+      if (!def) throw new TypeError('Illegal constructor');
+      const el = upgradeTarget || wrap(n.createElement(HTML_NS, def.name));
+      upgradeTarget = null;
+      el._ce = def;
+      // biome-ignore lint/correctness/noConstructorReturn: the subclass's `this` is the wrapper
+      return Object.setPrototypeOf(el, new.target.prototype);
+    }
     get title() {
       return this.getAttribute('title') || '';
     }
@@ -1045,7 +1069,9 @@
       return { ready: Promise.resolve(), addEventListener() {}, removeEventListener() {} };
     }
     createElement(tag) {
-      return wrap(n.createElement(HTML_NS, String(tag).toLowerCase()));
+      const name = String(tag).toLowerCase();
+      const def = defs.get(name);
+      return def ? new def.ctor() : wrap(n.createElement(HTML_NS, name));
     }
     createElementNS(ns, q) {
       return wrap(n.createElement(ns || HTML_NS, String(q).replace(/^.*:/, '')));
@@ -1186,6 +1212,109 @@
     }
     return fired;
   }
+
+  // ---- Custom elements ----
+  // Autonomous custom elements (no `extends`). An element is upgraded in place when its name is
+  // defined while it is in the document, when it is inserted into the document, or by
+  // customElements.upgrade(). Reactions run synchronously; a move within the document fires no
+  // connected/disconnected. Shadow roots are not searched (they are detached fragments here).
+  const defs = new Map();
+  const defsByCtor = new Map();
+  const pendingDefs = new Map();
+  let defSelector = '';
+  let upgradeTarget = null;
+  // Connected custom elements with a disconnectedCallback, checked after each removal.
+  const connectedCustom = new Set();
+  const domError = (message, name) => Object.assign(new Error(message), { name });
+  function reaction(el, cb, ...args) {
+    if (typeof el[cb] !== 'function') return;
+    try {
+      el[cb](...args);
+    } catch (e) {
+      reportError(e);
+    }
+  }
+  function upgrade(el) {
+    if (el._ce || el._ceFailed || n.ns(el._id) !== HTML_NS) return;
+    const def = defs.get(n.local(el._id));
+    if (!def) return;
+    upgradeTarget = el;
+    try {
+      new def.ctor();
+    } catch (e) {
+      el._ceFailed = true;
+      reportError(e);
+      return;
+    } finally {
+      upgradeTarget = null;
+    }
+    for (const a of def.observed) {
+      const v = el.getAttribute(a);
+      if (v !== null) reaction(el, 'attributeChangedCallback', a, null, v);
+    }
+    if (el.isConnected) connected(el);
+  }
+  function connected(el) {
+    if (typeof el.disconnectedCallback === 'function') connectedCustom.add(el);
+    reaction(el, 'connectedCallback');
+  }
+  // Elements (ids) that just entered the document: upgrade them, or tell the custom ones.
+  function connectCustom(ids) {
+    for (const id of ids) {
+      const el = wrap(id);
+      if (el._ce) connected(el);
+      else upgrade(el);
+    }
+  }
+  function disconnectCustom() {
+    for (const el of connectedCustom) {
+      if (el.isConnected) continue;
+      connectedCustom.delete(el);
+      reaction(el, 'disconnectedCallback');
+    }
+  }
+  const customElements = {
+    define(name, ctor) {
+      name = String(name);
+      if (!/^[a-z][-.0-9_a-z\u00b7\u00c0-\uffff]*$/.test(name) || !name.includes('-'))
+        throw domError(`'${name}' is not a valid custom element name`, 'SyntaxError');
+      if (typeof ctor !== 'function') throw new TypeError('The constructor is not a function');
+      if (defs.has(name) || defsByCtor.has(ctor))
+        throw domError(`'${name}' or its constructor is already defined`, 'NotSupportedError');
+      const def = { name, ctor, observed: new Set(ctor.observedAttributes ?? []) };
+      defs.set(name, def);
+      defsByCtor.set(ctor, def);
+      defSelector = [...defs.keys()].join(',');
+      for (const id of n.queryAll(document._id, name)) upgrade(wrap(id));
+      pendingDefs.get(name)?.resolve(ctor);
+      pendingDefs.delete(name);
+    },
+    get(name) {
+      return defs.get(String(name))?.ctor;
+    },
+    getName(ctor) {
+      return defsByCtor.get(ctor)?.name ?? null;
+    },
+    whenDefined(name) {
+      name = String(name);
+      if (defs.has(name)) return Promise.resolve(defs.get(name).ctor);
+      let d = pendingDefs.get(name);
+      if (!d) {
+        d = {};
+        d.promise = new Promise((resolve) => {
+          d.resolve = resolve;
+        });
+        pendingDefs.set(name, d);
+      }
+      return d.promise;
+    },
+    upgrade(root) {
+      if (!defs.size) return;
+      for (const k of root instanceof DocumentFragment ? root.childNodes : [root])
+        if (k.nodeType === 1)
+          for (const id of [k._id, ...n.queryAll(k._id, defSelector)]) upgrade(wrap(id));
+    },
+  };
 
   // ---- Window ----
   const document = wrap(n.root());
@@ -1452,6 +1581,23 @@
       onLine: true,
     },
     history,
+    customElements,
+    // Constants only (foliate-js reads them when its modules load); there is no TreeWalker yet.
+    NodeFilter: {
+      FILTER_ACCEPT: 1,
+      FILTER_REJECT: 2,
+      FILTER_SKIP: 3,
+      SHOW_ALL: 0xffffffff,
+      SHOW_ELEMENT: 0x1,
+      SHOW_ATTRIBUTE: 0x2,
+      SHOW_TEXT: 0x4,
+      SHOW_CDATA_SECTION: 0x8,
+      SHOW_PROCESSING_INSTRUCTION: 0x40,
+      SHOW_COMMENT: 0x80,
+      SHOW_DOCUMENT: 0x100,
+      SHOW_DOCUMENT_TYPE: 0x200,
+      SHOW_DOCUMENT_FRAGMENT: 0x400,
+    },
     performance: { now: () => n.now(), timeOrigin: Date.now() - n.now(), mark() {}, measure() {} },
     console: {
       log: consoleFn('log'),
