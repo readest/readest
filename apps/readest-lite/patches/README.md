@@ -108,6 +108,10 @@
   insets kept inside the nearest scroll container's padding box or the viewport, the box kept in
   its parent's content box) becomes a translation ahead of its transform, which paint, hit
   testing and rects read. Readest's dialog headers (`sticky top-1`) sat 4 px high.
+- `blitz-dom` document, layout/inline/layout (with stylo.diff): `line-clamp` and the legacy
+  `-webkit-line-clamp` (Tailwind's `line-clamp-N`) end a block's content box after that many
+  lines; the `overflow: hidden` that comes with them clips the rest. Chromium honours the legacy
+  property only in a `display: -webkit-box`; Blitz clamps any block, and draws no ellipsis yet.
 - `blitz-dom` util, node, document: the space at a line's end has no box (CSS Text 3 removes it).
   Parley keeps it in the line's last glyph run and reports it as `hanging_advance`; an inline
   element's piece on that line and a range's rect stop where the line's content does, instead of
@@ -122,6 +126,8 @@ one of each).
 
 - `style` properties: `orphans` and `widows` are inherited Servo longhands (positive integers,
   initially 2). Stylo had them only as counted unknown properties, which drops the declarations.
+- `style` properties: the `-webkit-line-clamp` shorthand is parsed for Servo too (it sets
+  `line-clamp`, which Blitz enables with its pref).
 
 ## tauri.diff (readest/tauri d6ef6e4c7, feat/cef)
 
