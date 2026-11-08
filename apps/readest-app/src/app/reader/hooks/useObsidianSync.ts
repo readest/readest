@@ -94,7 +94,7 @@ export const useObsidianSync = (bookKey: string) => {
 
   // Opening a book also syncs it, so highlights made before the integration
   // was turned on reach the vault too.
-  const booknotes = getConfig(bookKey)?.booknotes;
+  const booknotes = useBookDataStore((s) => s.getConfig(bookKey)?.booknotes);
   useEffect(() => {
     debouncedPush();
   }, [booknotes, debouncedPush]);
