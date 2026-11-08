@@ -500,6 +500,49 @@ pub(crate) fn install(ctx: &Ctx<'_>, shared: Rc<RefCell<Shared>>, base: Option<&
         .unwrap_or(vec![0.0; 4])
     });
     let d = docs.clone();
+    // An element's scroll offset: [scrollLeft, scrollTop].
+    op!("scroll", move |h: f64| -> Vec<f64> {
+        d.with(h, |doc, n, _| {
+            doc.get_node(n).map(|node| {
+                let o = node.scroll_offset();
+                vec![o.x, o.y]
+            })
+        })
+        .flatten()
+        .unwrap_or(vec![0.0; 2])
+    });
+    let d = docs.clone();
+    // Scrolls an element to (x, y) CSS px, clamped to what it can scroll; false when it did not move.
+    op!("scrollTo", move |h: f64, x: f64, y: f64| -> bool {
+        d.resolve();
+        d.with(h, |doc, n, _| {
+            let before = doc.get_node(n).map(|node| *node.scroll_offset());
+            doc.scroll_to(n, x, y, blitz_dom::ScrollBehavior::Instant);
+            before != doc.get_node(n).map(|node| *node.scroll_offset())
+        })
+        .unwrap_or(false)
+    });
+    let d = docs.clone();
+    // CSSOM View sizes: [clientWidth, clientHeight, scrollWidth, scrollHeight].
+    op!("sizes", move |h: f64| -> Vec<f64> {
+        d.resolve();
+        d.with(h, |doc, n, _| {
+            let node = doc.get_node(n)?;
+            Some(
+                [
+                    node.client_width(),
+                    node.client_height(),
+                    node.scroll_width(),
+                    node.scroll_height(),
+                ]
+                .map(f64::from)
+                .to_vec(),
+            )
+        })
+        .flatten()
+        .unwrap_or(vec![0.0; 4])
+    });
+    let d = docs.clone();
     // An iframe's document: its root's handle, or null while it has none.
     op!("subdoc", move |iframe: f64| -> Option<f64> {
         let d2 = d.clone();
