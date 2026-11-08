@@ -4,7 +4,7 @@ Writes OUT/captures.jsonl (capture.js per step), OUT/timing.json (per step: hand
 latency of the first and last frame) and OUT/step-NNN.pgm (the frame shown when the step was
 captured). Runs under a scratch HOME in OUT/home and a private D-Bus session.
 """
-import json, os, shutil, subprocess, sys, time
+import json, os, shutil, signal, subprocess, sys, threading, time
 
 scenario, out, binary = json.load(open(sys.argv[1])), sys.argv[2], sys.argv[3]
 here = os.path.dirname(os.path.abspath(__file__))
@@ -43,23 +43,35 @@ env.update(HOME=home, BLITZ_TAURI_SIZE=f'{w}x{h}', BLITZ_TAURI_SCALE='1', BLITZ_
 if scenario.get('fonts'):  # the only fonts installed (run_cef.mjs gives Readest the same)
     env['BLITZ_FONTS'] = scenario['fonts']
 args = ['dbus-run-session', '--', binary] + ([scenario['book']] if scenario.get('book') else [])
-proc = subprocess.Popen(args, env=env, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, text=True, errors='replace')
+# Its own process group, ended however this script ends: the app outlives a signal to
+# dbus-run-session alone, and a silent app would hold the loop below past the deadline.
+proc = subprocess.Popen(args, env=env, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, text=True, errors='replace',
+                        start_new_session=True)
+def stop(sig=signal.SIGTERM):
+    try: os.killpg(proc.pid, sig)
+    except ProcessLookupError: pass
+signal.signal(signal.SIGTERM, lambda *_: (stop(), sys.exit(1)))
+signal.signal(signal.SIGINT, lambda *_: (stop(), sys.exit(1)))
+watchdog = threading.Timer(scenario.get('timeout_s', 90 + 5 * len(steps)), stop)
+watchdog.start()
 captures, inputs, frames, log = [], [], [], open(f'{out}/stderr.log', 'w')
-deadline = time.time() + scenario.get('timeout_s', 90 + 5 * len(steps))
-for line in proc.stderr:
-    log.write(line)
-    if 'PARITY ' in line:
-        captures.append(json.loads(line.split('PARITY ', 1)[1]))
-        if len(captures) == len(input_steps) + 1: break
-    elif line.startswith('{'):
-        try: e = json.loads(line)
-        except ValueError: continue
-        if e.get('label') in ('key', 'tap'): inputs.append(e)
-        elif e.get('label') == 'frame': frames.append(e)
-    if time.time() > deadline: break
-proc.terminate()
-try: proc.wait(10)
-except subprocess.TimeoutExpired: proc.kill()
+try:
+    for line in proc.stderr:
+        log.write(line)
+        if 'PARITY ' in line:
+            captures.append(json.loads(line.split('PARITY ', 1)[1]))
+            if len(captures) == len(input_steps) + 1: break
+        elif line.startswith('{'):
+            try: e = json.loads(line)
+            except ValueError: continue
+            if e.get('label') in ('key', 'tap'): inputs.append(e)
+            elif e.get('label') == 'frame': frames.append(e)
+finally:
+    watchdog.cancel()
+    stop()
+    try: proc.wait(10)
+    except subprocess.TimeoutExpired: stop(signal.SIGKILL)
+    log.close()
 
 with open(f'{out}/captures.jsonl', 'w') as f:
     for c in captures: f.write(json.dumps(c) + '\n')
