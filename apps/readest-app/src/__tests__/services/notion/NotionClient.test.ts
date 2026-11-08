@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
 import { NOTION_API_BASE_URL, NOTION_API_VERSION } from '@/services/constants';

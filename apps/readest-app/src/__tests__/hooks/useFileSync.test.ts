@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { act, cleanup, renderHook, waitFor as waitForWithOptions } from '@testing-library/react';
 import type { Book, BookConfig, BookNote } from '@/types/book';

@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, test, expect, beforeAll } from 'vitest';
 // Import the web build directly. Vitest runs in Node, which would otherwise
 // pick the `node` export — that build has no async `init()` and instantiates

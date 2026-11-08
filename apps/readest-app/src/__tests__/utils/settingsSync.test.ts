@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { describe, expect, test, vi, beforeEach } from 'vitest';
 import type { SystemSettings } from '@/types/settings';
 import type { FileSystem } from '@/types/system';

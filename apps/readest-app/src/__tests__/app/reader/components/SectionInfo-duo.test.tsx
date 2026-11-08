@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { afterEach, describe, it, expect, vi } from 'vitest';
 import { cleanup, render } from '@testing-library/react';
 import SectionInfo from '@/app/reader/components/SectionInfo';

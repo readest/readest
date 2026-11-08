@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { describe, expect, it } from 'vitest';
 import { syncBookToVault } from '@/services/obsidian/vaultSync';
 import type { VaultHighlight } from '@/services/obsidian/vaultNote';

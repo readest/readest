@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import type { ZipWriter } from '@zip.js/zip.js';
 import { addBackupEntriesToZip } from '@/services/backupService';

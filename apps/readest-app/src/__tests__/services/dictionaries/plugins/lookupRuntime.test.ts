@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { expect, test, vi } from 'vitest';
 import { acquirePluginLookupRuntime } from '@/services/dictionaries/plugins/lookupRuntime';
 import type { BundledPluginDefinition } from '@/services/plugins/catalog';

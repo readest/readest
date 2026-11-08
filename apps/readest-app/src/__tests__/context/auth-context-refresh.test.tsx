@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { cleanup, renderHook } from '@testing-library/react';
 import { afterEach, expect, it, vi } from 'vitest';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
