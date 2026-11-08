@@ -78,13 +78,25 @@ for (let i = 0; i < 120 && !page; i++) {
 }
 const cdp = await page.context().newCDPSession(page);
 await page.waitForLoadState('load');
+// The app navigates while it starts (library, then the reader), which drops what an evaluation
+// was running: evaluations are retried across navigations.
+const evaluate = async (fn, arg) => {
+  for (let k = 0; ; k++) {
+    try {
+      return await page.evaluate(fn, arg);
+    } catch (e) {
+      if (k >= 20 || !/context was destroyed|navigation/i.test(String(e))) throw e;
+      await sleep(500);
+    }
+  }
+};
 // The real window at the scenario's size (its inner size: Xvfb has no window manager).
-const metrics = () => page.evaluate(() => [innerWidth, innerHeight, devicePixelRatio]);
+const metrics = () => evaluate(() => [innerWidth, innerHeight, devicePixelRatio]);
 console.error(`window at start: ${await metrics()}`);
 for (let k = 0; k < 20; k++) {
   const [iw, ih, dpr] = await metrics();
   if (iw === w && ih === h && dpr === 1) break;
-  await page.evaluate(([width, height]) => window.__TAURI_INTERNALS__.invoke('plugin:window|set_size',
+  await evaluate(([width, height]) => window.__TAURI_INTERNALS__.invoke('plugin:window|set_size',
     { label: 'main', value: { Logical: { width, height } } }), [w, h]).catch((e) => console.error(String(e)));
   await sleep(500);
 }
@@ -95,19 +107,11 @@ if (got[0] !== w || got[1] !== h || got[2] !== 1) throw new Error(`window is ${g
 const scripts = fs.readFileSync(path.join(here, 'capture.js'), 'utf8') +
   (scenario.probe ? fs.readFileSync(scenario.probe, 'utf8') : '');
 const inject = async () => {
-  for (let k = 0; k < 20; k++) {
-    try {
-      if (!(await page.evaluate(() => typeof __parityCapture === 'function'))) await page.evaluate(scripts);
-      return;
-    } catch (e) {
-      if (!/context was destroyed|navigation/i.test(String(e))) throw e;
-      await sleep(500);
-    }
-  }
+  if (!(await evaluate(() => typeof __parityCapture === 'function'))) await evaluate(scripts);
 };
 await inject();
 // Per input: the next frame after it, and (in the reader) the frame after the relocate it causes.
-await page.evaluate(() => {
+await evaluate(() => {
   const t = (globalThis.__parityTiming = []);
   const onInput = () => {
     const e = { t0: performance.now() };
@@ -134,8 +138,16 @@ await page.evaluate(() => {
 
 const captures = [];
 const capture = async (i) => {
-  await inject();
-  captures.push(await page.evaluate((s) => __parityCapture(s), i));
+  // A navigation between injecting the script and calling it drops it again.
+  for (let k = 0; ; k++) {
+    await inject();
+    try {
+      captures.push(await evaluate((s) => __parityCapture(s), i));
+      break;
+    } catch (e) {
+      if (k >= 5 || !/__parityCapture is not defined/.test(String(e))) throw e;
+    }
+  }
   // A clip at scale 1: CEF's own captures are at the display's device scale (1.59 here) and
   // cropped to the viewport's size, so they showed only its top-left part, enlarged.
   const { data } = await cdp.send('Page.captureScreenshot', {
@@ -161,7 +173,7 @@ for (const s of scenario.steps) {
   await sleep(Math.max(0, stepMs - delay));
 }
 if (inputs.length === 0) { await sleep(scenario.settle_ms ?? 8000); await capture(0); }
-const timing = (await page.evaluate(() => globalThis.__parityTiming)).map((e, k) => ({
+const timing = ((await evaluate(() => globalThis.__parityTiming)) ?? []).map((e, k) => ({
   step: k + 1, input: inputs[k], frame_ms: e.frame && +e.frame.toFixed(1),
   relocate_ms: e.relocate && +e.relocate.toFixed(1), relocate_frame_ms: e.relocateFrame && +e.relocateFrame.toFixed(1),
 }));
