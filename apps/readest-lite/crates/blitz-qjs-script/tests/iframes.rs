@@ -40,6 +40,9 @@ fn content_document_is_the_iframes_own() {
         d.body.append(s, 'tail');
         console.log(s.ownerDocument === d, d.body.lastChild.data, d.querySelectorAll('span').length, document.querySelectorAll('span').length);
         try { d.body.appendChild(document.createElement('b')); } catch (e) { console.log(e.name); }
+        // foliate-js's paginator focuses the section's window after each turn
+        w.focus(); w.blur(); window.focus();
+        console.log(typeof w.focus, typeof window.blur);
     "#]);
     assert_eq!(errors, Vec::<String>::new());
     assert_eq!(
@@ -51,6 +54,7 @@ fn content_document_is_the_iframes_own() {
             "50px 50 50px",
             "true tail 1 0",
             "WrongDocumentError",
+            "function function",
         ]
     );
 }

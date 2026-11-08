@@ -2624,6 +2624,9 @@
     scrollTo() {},
     scrollBy() {},
     scroll() {},
+    // One window, always focused: foliate-js's paginator focuses a section's window per turn.
+    focus() {},
+    blur() {},
     // The page and its frames share one realm, so the source is always the page.
     postMessage(data) {
       const target = this && this !== globalThis ? this : window;
