@@ -553,12 +553,18 @@
 
   // Installed only where the platform has none.
   globalThis.DOMParser ??= class DOMParser {
+    // text/html is parsed by the page's HTML parser into a document of the page's DOM, as in a
+    // browser (DOMPurify works on that DOM); the XML types into the tree above.
     parseFromString(str, contentType) {
+      if (contentType === 'text/html' && globalThis.__blitzParseHTML)
+        return globalThis.__blitzParseHTML(String(str));
       return parseXML(String(str), contentType);
     }
   };
   globalThis.XMLSerializer ??= class XMLSerializer {
     serializeToString(node) {
+      // A node of the page's DOM (text/html documents among them).
+      if (!(node instanceof XNode)) return globalThis.__blitzSerializeXML(node);
       const out = [];
       serialize(node, node._doc.contentType === 'text/html', out);
       return out.join('');

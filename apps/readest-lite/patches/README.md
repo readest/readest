@@ -49,6 +49,9 @@
   mix-blend-mode are written for usvg (the root's are painted as CSS; the blend mode joins
   the `style` attribute, the only place usvg reads it). Inline styles set by script are not
   attributes, and usvg can't read `var()`: Readest's highlights take both from CSS variables.
+- `blitz-html` html_sink: `DocumentHtmlParser::parse_html_into_mutator` parses as HTML
+  without sniffing for XHTML, as `DOMParser` does for `text/html` (readest-lite's
+  `DOMParser` gives such documents to DOMPurify, which sanitizes every book section).
 - `blitz-paint` text: faux italics lean forward. The glyph skew is applied in y-down space,
   so its sign is negated; every synthesized italic used to slant backwards.
 

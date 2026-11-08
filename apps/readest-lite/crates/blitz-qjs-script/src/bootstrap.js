@@ -5,6 +5,9 @@
   const n = globalThis.__n;
   const HTML_NS = 'http://www.w3.org/1999/xhtml';
   const wrappers = new Map();
+  // Documents of their own by tag (WeakRefs) and live NodeIterators (WeakRefs); see below.
+  const ownedDocs = new Map();
+  const liveIterators = new Set();
   const kebab = (s) =>
     s.startsWith('--')
       ? s
@@ -202,6 +205,7 @@
     }
   }
 
+  class NamedNodeMap {}
   class EventTarget {
     addEventListener(type, cb, opts) {
       if (!cb) return;
@@ -313,6 +317,15 @@
     get nodeType() {
       return n.kind(this._id);
     }
+    // Node's own, for any node (DOMPurify reads it from Node.prototype); subclasses' match it.
+    get nodeName() {
+      const t = this.nodeType;
+      if (t === 1) {
+        const l = n.local(this._id);
+        return n.ns(this._id) === HTML_NS ? l.toUpperCase() : l;
+      }
+      return { 3: '#text', 8: '#comment', 9: '#document', 11: '#document-fragment' }[t] ?? '';
+    }
     // Negative handles below -1 are in an iframe's document (ops.rs); -1 is a fragment.
     get ownerDocument() {
       if (this.nodeType === 9) return null;
@@ -394,8 +407,12 @@
         return c;
       }
       const moved = defs.size > 0 && c.nodeType === 1 && c.isConnected;
-      // Nodes stay in the document that created them (no adoption).
-      if (!n.insert(this._id, c._id, ref ? ref._id : null))
+      if (liveIterators.size && c.parentNode) preRemove(c);
+      // A node from another document is adopted only when it is a lone text or comment node.
+      if (
+        !n.insert(this._id, c._id, ref ? ref._id : null) &&
+        !(adopt(c, docOf(this)) && n.insert(this._id, c._id, ref ? ref._id : null))
+      )
         throw domError('The node belongs to another document', 'WrongDocumentError');
       if (c.nodeType !== 1 || !c.isConnected) return c;
       if (!c._started) {
@@ -410,6 +427,7 @@
       return c;
     }
     removeChild(c) {
+      if (liveIterators.size) preRemove(c);
       n.remove(c._id);
       if (connectedCustom.size) disconnectCustom();
       return c;
@@ -420,6 +438,7 @@
       return oc;
     }
     remove() {
+      if (liveIterators.size && this.parentNode) preRemove(this);
       n.remove(this._id);
       if (connectedCustom.size) disconnectCustom();
     }
@@ -503,6 +522,7 @@
       return this._kids[this._kids.length - 1] || null;
     }
     insertBefore(c, ref) {
+      if (liveIterators.size && c.parentNode) preRemove(c);
       n.remove(c._id);
       const i = ref ? this._kids.indexOf(ref) : -1;
       if (i < 0) this._kids.push(c);
@@ -680,35 +700,32 @@
               specified: true,
               ownerElement: el,
             };
-      return new Proxy(
-        {},
-        {
-          get(_, k) {
-            if (k === 'length') return attrNames(el).length;
-            if (k === Symbol.iterator)
-              return function* () {
-                for (const name of attrNames(el)) yield attr(name);
-              };
-            if (k === 'item') return (i) => attr(attrNames(el)[i]) || null;
-            if (k === 'getNamedItem')
-              return (name) => (el.hasAttribute(name) ? attr(el._an(name)) : null);
-            if (k === 'removeNamedItem')
-              return (name) => {
-                const a = attr(el._an(name));
-                el.removeAttribute(name);
-                return a;
-              };
-            if (typeof k === 'string' && /^[0-9]+$/.test(k)) return attr(attrNames(el)[+k]);
-            return undefined;
-          },
-          has(_, k) {
-            return (
-              k === 'length' ||
-              (typeof k === 'string' && /^[0-9]+$/.test(k) && +k < attrNames(el).length)
-            );
-          },
+      return new Proxy(Object.create(NamedNodeMap.prototype), {
+        get(_, k) {
+          if (k === 'length') return attrNames(el).length;
+          if (k === Symbol.iterator)
+            return function* () {
+              for (const name of attrNames(el)) yield attr(name);
+            };
+          if (k === 'item') return (i) => attr(attrNames(el)[i]) || null;
+          if (k === 'getNamedItem')
+            return (name) => (el.hasAttribute(name) ? attr(el._an(name)) : null);
+          if (k === 'removeNamedItem')
+            return (name) => {
+              const a = attr(el._an(name));
+              el.removeAttribute(name);
+              return a;
+            };
+          if (typeof k === 'string' && /^[0-9]+$/.test(k)) return attr(attrNames(el)[+k]);
+          return undefined;
         },
-      );
+        has(_, k) {
+          return (
+            k === 'length' ||
+            (typeof k === 'string' && /^[0-9]+$/.test(k) && +k < attrNames(el).length)
+          );
+        },
+      });
     }
     getAttributeNode(name) {
       return this.attributes.getNamedItem(name);
@@ -797,7 +814,10 @@
       if (defs.size && this.isConnected) connectCustom(n.queryAllDeep(this._id, defSelector));
     }
     get innerHTML() {
-      return this.childNodes.map((c) => (c.nodeType === 3 ? c.data : '')).join('');
+      return n.serialize(this._id, false, false);
+    }
+    get outerHTML() {
+      return n.serialize(this._id, true, false);
     }
     querySelector(s) {
       const r = n.query(this._id, s);
@@ -1199,7 +1219,11 @@
       return this.querySelectorAll('a[href], area[href]');
     }
     get defaultView() {
-      return this === document ? window : (this._view ??= frameWindow(this));
+      if (this === document) return window;
+      return this._nodes ? null : (this._view ??= frameWindow(this));
+    }
+    get implementation() {
+      return domImplementation;
     }
     get activeElement() {
       return this._active || this.body;
@@ -1287,6 +1311,17 @@
   function wrap(id) {
     let w = wrappers.get(id);
     if (w) return w;
+    let cache = wrappers;
+    let owner = null;
+    if (id < -1 && ownedDocs.size) {
+      const tag = n.ownedTag(id);
+      owner = (tag && ownedDocs.get(tag)?.deref()) || null;
+      if (owner) {
+        cache = owner._nodes;
+        w = cache.get(id);
+        if (w) return w;
+      }
+    }
     const k = n.kind(id);
     let cls = Node;
     if (k === 9) cls = Document;
@@ -1295,8 +1330,54 @@
     else if (k === 1) cls = n.ns(id) === HTML_NS ? byTag[n.local(id)] || HTMLElement : SVGElement;
     w = Object.create(cls.prototype);
     w._id = id;
-    wrappers.set(id, w);
+    // A node keeps its document alive (and with it the Blitz document).
+    if (owner) w._owner = owner;
+    cache.set(id, w);
     return w;
+  }
+
+  // ---- Documents of their own: DOMParser's text/html, createHTMLDocument ----
+  // A separate Blitz document parsed as HTML, which loads nothing and runs no script. Its node
+  // wrappers are kept by its document's wrapper, not the page's table, and each holds the
+  // document: once none is reachable the Blitz document is freed.
+  const ownedFree = new FinalizationRegistry((tag) => {
+    ownedDocs.delete(tag);
+    n.dropDoc(tag);
+  });
+  function parseHTMLDocument(html) {
+    const h = n.parseHtml(String(html));
+    const d = Object.create(Document.prototype);
+    d._id = h;
+    d._nodes = new Map([[h, d]]);
+    d._ready = 'complete';
+    const tag = n.ownedTag(h);
+    ownedDocs.set(tag, new WeakRef(d));
+    ownedFree.register(d, tag);
+    return d;
+  }
+  const domImplementation = {
+    createHTMLDocument(title) {
+      const d = parseHTMLDocument('<!DOCTYPE html><html><head></head><body></body></html>');
+      if (title !== undefined) {
+        const t = d.createElement('title');
+        t.textContent = String(title);
+        d.head.append(t);
+      }
+      return d;
+    },
+    hasFeature: () => true,
+  };
+  // A lone text or comment node from another document becomes a copy in `doc`, which its
+  // wrapper takes over (the DOM adopts it; Blitz nodes can't change documents).
+  function adopt(c, doc) {
+    const t = c.nodeType;
+    if ((t !== 3 && t !== 8) || c.parentNode || docOf(c) === doc) return false;
+    const copy = t === 3 ? n.createText(doc._id, c.data) : n.createComment(doc._id, c.data);
+    (c._owner ? c._owner._nodes : wrappers).delete(c._id);
+    c._id = copy;
+    c._owner = doc._nodes ? doc : undefined;
+    (doc._nodes ?? wrappers).set(copy, c);
+    return true;
   }
 
   // Scripts inserted after parsing (Turbopack's chunk loader, JSONP): `src` loads on a 0 ms timer through
@@ -1783,6 +1864,77 @@
       return null;
     }
   }
+  // NodeIterator, with the DOM's pre-removing steps: DOMPurify removes the node it is on and
+  // must go on from the next one (stopping there would leave the rest unsanitized).
+  const lastDescendant = (x) => {
+    while (x.lastChild) x = x.lastChild;
+    return x;
+  };
+  class NodeIterator {
+    constructor(root, whatToShow = 0xffffffff, filter = null) {
+      this.root = this.referenceNode = root;
+      this.pointerBeforeReferenceNode = true;
+      this.whatToShow = whatToShow;
+      this.filter = filter;
+      liveIterators.add(new WeakRef(this));
+    }
+    _step(forward) {
+      let node = this.referenceNode;
+      let before = this.pointerBeforeReferenceNode;
+      for (;;) {
+        if (forward && before) before = false;
+        else if (!forward && !before) before = true;
+        else if (forward) {
+          let next = node.firstChild;
+          for (let x = node; !next && x && x !== this.root; x = x.parentNode) next = x.nextSibling;
+          if (!next) return null;
+          node = next;
+        } else {
+          if (node === this.root) return null;
+          const prev = node.previousSibling;
+          node = prev ? lastDescendant(prev) : node.parentNode;
+        }
+        if (TreeWalker.prototype._accept.call(this, node) === ACCEPT) break;
+      }
+      this.referenceNode = node;
+      this.pointerBeforeReferenceNode = before;
+      return node;
+    }
+    nextNode() {
+      return this._step(true);
+    }
+    previousNode() {
+      return this._step(false);
+    }
+    detach() {}
+    _preRemove(gone) {
+      if (gone === this.root) return;
+      let x = this.referenceNode;
+      while (x && x !== gone) x = x.parentNode;
+      if (!x) return;
+      if (this.pointerBeforeReferenceNode) {
+        let next = null;
+        for (let y = gone; !next && y && y !== this.root; y = y.parentNode) next = y.nextSibling;
+        if (next) {
+          this.referenceNode = next;
+          return;
+        }
+        this.pointerBeforeReferenceNode = false;
+      }
+      const prev = gone.previousSibling;
+      this.referenceNode = prev ? lastDescendant(prev) : gone.parentNode;
+    }
+  }
+  function preRemove(node) {
+    for (const r of liveIterators) {
+      const it = r.deref();
+      if (it) it._preRemove(node);
+      else liveIterators.delete(r);
+    }
+  }
+  Document.prototype.createNodeIterator = function (root, whatToShow, filter) {
+    return new NodeIterator(root, whatToShow, filter);
+  };
   Document.prototype.createTreeWalker = function (root, whatToShow, filter) {
     return new TreeWalker(root, whatToShow, filter);
   };
@@ -2490,6 +2642,11 @@
     InputEvent,
     FocusEvent,
     CustomEvent,
+    NamedNodeMap,
+    NodeIterator,
+    // For dom-parser.js: DOMParser's text/html, XMLSerializer over the page's nodes.
+    __blitzParseHTML: parseHTMLDocument,
+    __blitzSerializeXML: (node) => n.serialize(node._id, true, true),
     Touch,
     TouchEvent,
     MessageEvent,

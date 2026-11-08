@@ -7,7 +7,9 @@
 
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
-use blitz_dom::{BaseDocument, LocalName, Namespace, NodeId, QualName, node::NodeData};
+use blitz_dom::{
+    BaseDocument, DocumentConfig, LocalName, Namespace, NodeId, QualName, node::NodeData,
+};
 use rquickjs::{Ctx, Function, Object, function::Opt};
 use url::Url;
 
@@ -33,12 +35,14 @@ struct Handles {
     next: u64,
 }
 
-/// An iframe's document: the iframe (in the document tagged `parent`) and the sub-document's id.
+/// An iframe's document: the iframe (in the document tagged `parent`) and the sub-document's id;
+/// or a document of its own (`DOMParser`'s), kept until JS drops it.
 struct Frame {
     parent: u32,
     iframe: NodeId,
     doc: usize,
     live: bool,
+    own: Option<Rc<RefCell<BaseDocument>>>,
 }
 
 /// The page and the iframe documents JS has reached (tag = index + 1).
@@ -79,6 +83,9 @@ impl Docs {
     /// Runs `f` on the document of handle `h`, with the node and the document's tag.
     fn with<R>(&self, h: f64, f: impl FnOnce(&mut BaseDocument, NodeId, u32) -> R) -> Option<R> {
         let (tag, node) = self.dec(h);
+        if let Some(own) = self.owned(tag) {
+            return Some(f(&mut own.borrow_mut(), node, tag));
+        }
         let path = self.path(tag)?;
         descend(&mut self.main.borrow_mut(), &path, |doc| f(doc, node, tag))
     }
@@ -88,7 +95,9 @@ impl Docs {
         let frames = self.frames.borrow();
         let mut path = Vec::new();
         while tag != 0 {
-            let f = frames.get(tag as usize - 1).filter(|f| f.live)?;
+            let f = frames
+                .get(tag as usize - 1)
+                .filter(|f| f.live && f.own.is_none())?;
             path.push((f.iframe, f.doc));
             tag = f.parent;
         }
@@ -97,11 +106,9 @@ impl Docs {
     }
 
     pub(crate) fn tag_for(&self, parent: u32, iframe: NodeId, doc: usize) -> u32 {
-        let found = self
-            .frames
-            .borrow()
-            .iter()
-            .position(|f| f.live && f.parent == parent && f.iframe == iframe && f.doc == doc);
+        let found = self.frames.borrow().iter().position(|f| {
+            f.live && f.own.is_none() && f.parent == parent && f.iframe == iframe && f.doc == doc
+        });
         if let Some(i) = found {
             return i as u32 + 1;
         }
@@ -112,8 +119,46 @@ impl Docs {
             iframe,
             doc,
             live: true,
+            own: None,
         });
         frames.len() as u32
+    }
+
+    /// The document tagged `tag` when it is one of its own.
+    fn owned(&self, tag: u32) -> Option<Rc<RefCell<BaseDocument>>> {
+        let frames = self.frames.borrow();
+        let f = frames.get((tag as usize).checked_sub(1)?)?;
+        f.own.clone().filter(|_| f.live)
+    }
+
+    /// Keeps `doc` as a document of its own; returns its tag.
+    fn own(&self, doc: BaseDocument) -> u32 {
+        let mut frames = self.frames.borrow_mut();
+        frames.push(Frame {
+            parent: 0,
+            iframe: NodeId::default(),
+            doc: doc.id(),
+            live: true,
+            own: Some(Rc::new(RefCell::new(doc))),
+        });
+        frames.len() as u32
+    }
+
+    /// Frees a document of its own and its handles.
+    fn drop_own(&self, tag: u32) {
+        if self.owned(tag).is_none() {
+            return;
+        }
+        let f = &mut self.frames.borrow_mut()[tag as usize - 1];
+        f.live = false;
+        f.own = None;
+        self.forget(&[tag]);
+    }
+
+    fn forget(&self, dead: &[u32]) {
+        let mut h = self.handles.borrow_mut();
+        h.of.retain(|(t, _), _| !dead.contains(t));
+        h.at.retain(|_, (t, _)| !dead.contains(t));
     }
 
     /// Forgets the frames whose document is gone (iframe removed or navigated, or a frame above
@@ -123,7 +168,11 @@ impl Docs {
         let count = self.frames.borrow().len();
         for i in 0..count {
             let tag = i as u32 + 1;
-            if !self.frames.borrow()[i].live {
+            let skip = {
+                let f = &self.frames.borrow()[i];
+                !f.live || f.own.is_some()
+            };
+            if skip {
                 continue;
             }
             let gone = self
@@ -135,9 +184,7 @@ impl Docs {
             }
         }
         if !dead.is_empty() {
-            let mut h = self.handles.borrow_mut();
-            h.of.retain(|(t, _), _| !dead.contains(t));
-            h.at.retain(|_, (t, _)| !dead.contains(t));
+            self.forget(&dead);
         }
     }
 
@@ -168,6 +215,140 @@ fn flat(rects: Vec<blitz_dom::BoundingRect>) -> Vec<f64> {
         .into_iter()
         .flat_map(|r| [r.x, r.y, r.width, r.height])
         .collect()
+}
+
+const XML_NS: &str = "http://www.w3.org/XML/1998/namespace";
+const XMLNS_NS: &str = "http://www.w3.org/2000/xmlns/";
+const XLINK_NS: &str = "http://www.w3.org/1999/xlink";
+const VOID: &[&str] = &[
+    "area", "base", "basefont", "bgsound", "br", "col", "embed", "frame", "hr", "img", "input",
+    "keygen", "link", "meta", "param", "source", "track", "wbr",
+];
+const RAW_TEXT: &[&str] = &[
+    "style",
+    "script",
+    "xmp",
+    "iframe",
+    "noembed",
+    "noframes",
+    "plaintext",
+];
+
+/// Markup of `id` (with `outer`) or of its children: HTML's fragment serialization, or with `xml`
+/// XMLSerializer's (well-formed, namespaces declared where they change). Shadow trees are left
+/// out.
+fn serialize(doc: &BaseDocument, id: NodeId, outer: bool, xml: bool) -> String {
+    let mut out = String::new();
+    let Some(node) = doc.get_node(id) else {
+        return out;
+    };
+    // XMLSerializer starts with no namespace in scope: the node it starts from declares its own.
+    if outer {
+        write_node(doc, id, xml, None, false, &mut out);
+    } else {
+        let raw = !xml
+            && node
+                .element_data()
+                .is_some_and(|e| RAW_TEXT.contains(&&*e.name.local));
+        let ns = node.element_data().map(|e| e.name.ns.to_string());
+        for &c in &node.children {
+            write_node(doc, c, xml, ns.as_deref(), raw, &mut out);
+        }
+    }
+    out
+}
+
+fn escape(s: &str, attr: bool, xml: bool, out: &mut String) {
+    for c in s.chars() {
+        match c {
+            '&' => out.push_str("&amp;"),
+            '<' => out.push_str("&lt;"),
+            '>' => out.push_str("&gt;"),
+            '"' if attr => out.push_str("&quot;"),
+            '\u{a0}' if !xml => out.push_str("&nbsp;"),
+            c => out.push(c),
+        }
+    }
+}
+
+fn write_node(
+    doc: &BaseDocument,
+    id: NodeId,
+    xml: bool,
+    ns: Option<&str>,
+    raw: bool,
+    out: &mut String,
+) {
+    let Some(node) = doc.get_node(id) else { return };
+    match &node.data {
+        NodeData::Text(t) if raw => out.push_str(&t.content),
+        NodeData::Text(t) => escape(&t.content, false, xml, out),
+        NodeData::Comment { contents } => {
+            out.push_str("<!--");
+            out.push_str(contents);
+            out.push_str("-->");
+        }
+        NodeData::Document(_) => {
+            for &c in &node.children {
+                write_node(doc, c, xml, ns, false, out);
+            }
+        }
+        NodeData::Element(el) if &*el.name.local != SHADOW_ROOT => {
+            let local = &*el.name.local;
+            let el_ns = &*el.name.ns;
+            let name = match &el.name.prefix {
+                Some(p) if xml => format!("{p}:{local}"),
+                _ => local.to_owned(),
+            };
+            out.push('<');
+            out.push_str(&name);
+            if xml
+                && el.name.prefix.is_none()
+                && ns != Some(el_ns)
+                && !el.attrs().iter().any(|a| &*a.name.local == "xmlns")
+            {
+                out.push_str(" xmlns=\"");
+                escape(el_ns, true, xml, out);
+                out.push('"');
+            }
+            for a in el.attrs() {
+                out.push(' ');
+                let (an, al) = (&*a.name.ns, &*a.name.local);
+                match an {
+                    "" => out.push_str(al),
+                    XML_NS => out.push_str(&format!("xml:{al}")),
+                    XMLNS_NS if al == "xmlns" => out.push_str("xmlns"),
+                    XMLNS_NS => out.push_str(&format!("xmlns:{al}")),
+                    XLINK_NS => out.push_str(&format!("xlink:{al}")),
+                    _ => match &a.name.prefix {
+                        Some(p) => out.push_str(&format!("{p}:{al}")),
+                        None => out.push_str(al),
+                    },
+                }
+                out.push_str("=\"");
+                escape(&a.value, true, xml, out);
+                out.push('"');
+            }
+            let html = el_ns == HTML_NS;
+            if html && VOID.contains(&local) {
+                out.push_str(if xml { " />" } else { ">" });
+                return;
+            }
+            if xml && !html && node.children.is_empty() {
+                out.push_str("/>");
+                return;
+            }
+            out.push('>');
+            let raw = !xml && html && RAW_TEXT.contains(&local);
+            for &c in &node.children {
+                write_node(doc, c, xml, Some(el_ns), raw, out);
+            }
+            out.push_str("</");
+            out.push_str(&name);
+            out.push('>');
+        }
+        _ => {}
+    }
 }
 
 /// The element bootstrap.js lays a shadow tree out in (`attachShadow`).
@@ -600,6 +781,32 @@ pub(crate) fn install(ctx: &Ctx<'_>, shared: Rc<RefCell<Shared>>, base: Option<&
         let (n, id, root) = sub;
         Some(d2.enc(d2.tag_for(parent, n, id), root))
     });
+    let d = docs.clone();
+    // Markup of a node (`outer`) or of its children, as HTML or (`xml`) as XMLSerializer writes it.
+    op!("serialize", move |h: f64,
+                           outer: bool,
+                           xml: bool|
+          -> String {
+        d.with(h, |doc, n, _| serialize(doc, n, outer, xml))
+            .unwrap_or_default()
+    });
+    let d = docs.clone();
+    // `html` parsed as HTML (never sniffed as XML) into a document of its own, which loads
+    // nothing and runs no script: its document node's handle.
+    op!("parseHtml", move |html: String| -> f64 {
+        let mut doc = BaseDocument::new(crate::with_html_parser(DocumentConfig::default()));
+        blitz_html::DocumentHtmlParser::parse_html_into_mutator(&mut doc.mutate(), &html);
+        let root = doc.root_node().id;
+        d.enc(d.own(doc), root)
+    });
+    let d = docs.clone();
+    // The tag of the document of its own that `h` is in, or 0.
+    op!("ownedTag", move |h: f64| -> u32 {
+        let (tag, _) = d.dec(h);
+        if d.owned(tag).is_some() { tag } else { 0 }
+    });
+    let d = docs.clone();
+    op!("dropDoc", move |tag: u32| d.drop_own(tag));
     let d = docs.clone();
     // The id of an iframe's document once it is attached with its stylesheets loaded (its `load`).
     op!("subdocReady", move |iframe: f64| -> Option<f64> {
