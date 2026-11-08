@@ -810,7 +810,7 @@ diff -ruN blitz/packages/blitz-dom/src/events/pointer.rs blitz/packages/blitz-do
 diff -ruN blitz/packages/blitz-dom/src/layout/columns.rs blitz/packages/blitz-dom/src/layout/columns.rs
 --- blitz/packages/blitz-dom/src/layout/columns.rs
 +++ blitz/packages/blitz-dom/src/layout/columns.rs
-@@ -0,0 +1,353 @@
+@@ -0,0 +1,382 @@
 +//! Columns of the root element: CSS multi-column with `column-fill: auto` and a definite height,
 +//! as foliate-js's paginator styles an EPUB section (one column per page, the columns overflowing
 +//! to the right, the iframe as wide as all of them).
@@ -898,11 +898,13 @@ diff -ruN blitz/packages/blitz-dom/src/layout/columns.rs blitz/packages/blitz-do
 +            if rect.height >= 1.0 && b - t < 1.0 {
 +                continue;
 +            }
-+            // A box that goes on in the next column fills this one to its bottom.
-+            let b = if bottom > end {
++            // A box that goes on in the next column fills this one to its bottom. One that ends
++            // under a pixel past the cut does not go on (that sliver is dropped above): it ends
++            // where it ends.
++            let b = if bottom - end >= 1.0 {
 +                f64::from(self.slices[i].0 + self.height)
 +            } else {
-+                b
++                bottom
 +            };
 +            out.push(BoundingRect {
 +                x: rect.x + f64::from(dx),
@@ -1154,6 +1156,33 @@ diff -ruN blitz/packages/blitz-dom/src/layout/columns.rs blitz/packages/blitz-do
 +            (f[0].x, f[0].y.round(), f[0].height.round()),
 +            (120.0, 0.0, 20.0)
 +        );
++    }
++
++    #[test]
++    fn a_box_a_fraction_past_a_cut_ends_where_it_ends() {
++        // The mirror of the case above: a paragraph whose unrounded bottom is a fraction below
++        // the cut (at the next paragraph's rounded top) does not go on in the next column, so
++        // its rect is its own height, not the column's.
++        let c = Columns {
++            root: NodeId::from_u64(0),
++            origin: (0.0, 0.0),
++            content_left: 0.0,
++            content_top: 0.0,
++            width: 100.0,
++            gap: 20.0,
++            stride: 120.0,
++            height: 50.0,
++            slices: vec![(0.0, 40.0), (40.0, 80.0)],
++        };
++        let para = BoundingRect {
++            x: 0.0,
++            y: 3.9,
++            width: 100.0,
++            height: 36.4,
++        };
++        let f = c.fragments(para);
++        assert_eq!(f.len(), 1, "{f:?}");
++        assert_eq!((f[0].x, f[0].y, f[0].height), (0.0, 3.9, 36.4));
 +    }
 +
 +    #[test]

@@ -82,7 +82,9 @@
   container's own box no longer moves with its scroll offset (foliate-js's paginator container
   reported its scrolled-away position). A box broken across the root's columns has one client
   rect per column, each reaching the column's bottom while the box goes on, as a fragmented
-  block's fragments do; they stopped at the column cut and were merged into one.
+  block's fragments do; they stopped at the column cut and were merged into one. A box that ends
+  under a pixel past a cut (its unrounded bottom against the next box's rounded top) does not
+  go on: its rect ends at its own bottom.
 - `blitz-dom` layout/inline/build, document, node/text: inline elements are recorded in
   `TextLayout::text_nodes` too, so an element with no glyphs (an empty span, such as an EPUB
   page-break marker) has a zero-width box where it sits instead of none. Beside an atomic inline
