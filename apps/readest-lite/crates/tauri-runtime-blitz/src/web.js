@@ -275,6 +275,49 @@
       return bytesStream(this.arrayBuffer());
     }
   }
+  // FileReader over a Blob's bytes (readest-app turns blob: images into data: URLs with it).
+  class FileReader extends EventTarget {
+    constructor() {
+      super();
+      this.readyState = 0;
+      this.result = null;
+      this.error = null;
+    }
+    _read(blob, as) {
+      this.readyState = 1;
+      this.result = null;
+      blob
+        .arrayBuffer()
+        .then(
+          (buf) => {
+            this.result = as(buf);
+            this.readyState = 2;
+            this._fire('load');
+          },
+          (e) => {
+            this.error = e;
+            this.readyState = 2;
+            this._fire('error');
+          },
+        )
+        .then(() => this._fire('loadend'));
+    }
+    _fire(type) {
+      const e = new Event(type);
+      this.dispatchEvent(e);
+      this[`on${type}`]?.call(this, e);
+    }
+    readAsArrayBuffer(blob) {
+      this._read(blob, (buf) => buf);
+    }
+    readAsText(blob) {
+      this._read(blob, (buf) => t.utf8Decode(buf));
+    }
+    readAsDataURL(blob) {
+      const type = blob.type || 'application/octet-stream';
+      this._read(blob, (buf) => `data:${type};base64,${t.base64(buf)}`);
+    }
+  }
   // A one-chunk ReadableStream of an ArrayBuffer promise.
   const bytesStream = (bufPromise) =>
     new ReadableStream({
@@ -603,6 +646,7 @@
     sessionStorage: new Storage(),
     Blob,
     File,
+    FileReader,
     FormData,
     WebSocket,
     TextEncoder,
