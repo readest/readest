@@ -73,6 +73,11 @@
   font's content area (ascent above the baseline, descent below, each rounded to a whole pixel),
   as CSSOM View and browsers give, instead of the whole line box. foliate-js finds the visible
   range and places highlights from these rects.
+- `blitz-dom` resolve: the root's columns are recomputed after every relayout. They were gated
+  on the damage the root keeps, whose relayout bit damage propagation clears once it has dropped
+  the layout cache, so after the first layout each section kept stale column cuts: a later
+  restyle or viewport change moved the text but not the cuts, cutting lines in two and skipping
+  columns.
 - `blitz-paint` text: faux italics lean forward. The glyph skew is applied in y-down space,
   so its sign is negated; every synthesized italic used to slant backwards.
 

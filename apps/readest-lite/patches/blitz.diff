@@ -1423,17 +1423,20 @@ diff -ruN blitz/packages/blitz-dom/src/resolve.rs blitz/packages/blitz-dom/src/r
          let root_node_id = self.root_element().id;
          debug_timer!(timer, feature = "log-phase-times");
  
-@@ -94,6 +101,9 @@
+@@ -92,7 +99,11 @@
+         }
+ 
          // Propagate damage flags (from mutation and restyles) up and down the tree
-         self.propagate_damage_flags(root_node_id);
+-        self.propagate_damage_flags(root_node_id);
++        // The damage the root passes up, not the damage it keeps: propagation clears a node's
++        // relayout bit once it has dropped the node's layout cache.
++        let relayout = self
++            .propagate_damage_flags(root_node_id)
++            .contains(style::selector_parser::RestyleDamage::RELAYOUT);
          timer.record_time("damage");
-+        let relayout = self.nodes[root_node_id]
-+            .damage()
-+            .is_none_or(|d| d.contains(style::selector_parser::RestyleDamage::RELAYOUT));
  
          // Fix up tree for layout (insert anonymous blocks as necessary, etc)
-         self.resolve_layout_children();
-@@ -123,10 +133,18 @@
+@@ -123,10 +134,18 @@
          self.build_paint_tree(root_node_id);
          timer.record_time("paint_tree");
  
@@ -1452,7 +1455,7 @@ diff -ruN blitz/packages/blitz-dom/src/resolve.rs blitz/packages/blitz-dom/src/r
          timer.record_time("c_damage");
  
          // Re-resolve the hover node from the pointer position against the fresh
-@@ -138,6 +156,29 @@
+@@ -138,6 +157,29 @@
          // if the hovered node actually changes.
          self.refresh_hover();
  
@@ -1482,7 +1485,7 @@ diff -ruN blitz/packages/blitz-dom/src/resolve.rs blitz/packages/blitz-dom/src/r
          let mut subdoc_is_animating = false;
          for &node_id in &self.sub_document_nodes {
              let node = &mut self.nodes[node_id];
-@@ -163,9 +204,6 @@
+@@ -163,9 +205,6 @@
              }
          }
          self.subdoc_is_animating = subdoc_is_animating;
@@ -1492,7 +1495,7 @@ diff -ruN blitz/packages/blitz-dom/src/resolve.rs blitz/packages/blitz-dom/src/r
      }
  
      fn resolve_transforms(&mut self, node_id: NodeId) -> Rect {
-@@ -462,3 +500,70 @@
+@@ -462,3 +501,70 @@
          // taffy::print_tree(self, root_node_id)
      }
  }
@@ -1609,7 +1612,7 @@ diff -ruN blitz/packages/blitz-dom/src/util.rs blitz/packages/blitz-dom/src/util
 diff -ruN blitz/packages/blitz-html/src/html_document.rs blitz/packages/blitz-html/src/html_document.rs
 --- blitz/packages/blitz-html/src/html_document.rs
 +++ blitz/packages/blitz-html/src/html_document.rs
-@@ -68,3 +68,137 @@
+@@ -68,3 +68,187 @@
          self.into()
      }
  }
@@ -1744,6 +1747,56 @@ diff -ruN blitz/packages/blitz-html/src/html_document.rs blitz/packages/blitz-ht
 +        let rects = doc.text_rects(text, 0, 4);
 +        assert_eq!(rects.len(), 1);
 +        assert_content_area("range", rects[0].y, rects[0].height);
++    }
++}
++
++#[cfg(test)]
++mod column_tests {
++    use crate::{HtmlDocument, HtmlProvider};
++    use blitz_dom::DocumentConfig;
++    use blitz_traits::shell::{ColorScheme, Viewport};
++    use std::sync::Arc;
++
++    // foliate-js's paginator: columns on the root with a definite height.
++    fn page(font_size: u32, height: u32) -> HtmlDocument {
++        let paragraphs: String = (0..40).map(|i| format!("<p id='p{i}'>line {i}</p>")).collect();
++        let html = format!(
++            "<html style='height:100vh;column-width:200px;column-gap:20px;column-fill:auto;padding:0;margin:0'>\
++             <body style='margin:0'><div id='d' style='font-size:{font_size}px'>{paragraphs}</div></body></html>"
++        );
++        let config = DocumentConfig {
++            html_parser_provider: Some(Arc::new(HtmlProvider)),
++            viewport: Some(Viewport::new(220, height, 1.0, ColorScheme::Light)),
++            ..Default::default()
++        };
++        let mut doc = HtmlDocument::from_html(&html, config);
++        doc.resolve(0.0);
++        doc
++    }
++
++    fn last(doc: &HtmlDocument) -> (f64, f64) {
++        let r = doc.get_client_bounding_rect(doc.get_element_by_id("p39").unwrap()).unwrap();
++        (r.x, r.y)
++    }
++
++    #[test]
++    fn columns_follow_a_relayout_below_the_root() {
++        let mut doc = page(16, 300);
++        let d = doc.get_element_by_id("d").unwrap();
++        let style = html5ever::QualName::new(None, html5ever::ns!(), html5ever::local_name!("style"));
++        doc.mutate().set_attribute(d, style, "font-size:24px");
++        doc.resolve(0.0);
++        assert_eq!(last(&doc), last(&page(24, 300)));
++    }
++
++    #[test]
++    fn columns_follow_a_viewport_change() {
++        let mut doc = page(16, 300);
++        doc.set_viewport(Viewport::new(220, 500, 1.0, ColorScheme::Light));
++        doc.resolve(0.0);
++        let mut fresh = page(16, 500);
++        fresh.resolve(0.0);
++        assert_eq!(last(&doc), last(&fresh));
 +    }
 +}
 +
