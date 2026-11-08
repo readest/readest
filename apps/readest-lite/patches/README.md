@@ -21,6 +21,14 @@
   in tree order (CSS 2.1 Appendix E), clipped to the padding boxes of the clipping boxes they
   were lifted past (`lifted_clip_rect`). foliate-js's section views (`position: relative` in a
   static `overflow: hidden` container) were painted under its positioned white background.
+- Columns on the root element (`blitz-dom` layout/columns, document, node, resolve, tree;
+  `blitz-paint` render): CSS multi-column with a definite height, as foliate-js's paginator
+  styles a section. The content is laid out once as one column; after layout it is cut into
+  column slices at line boundaries, and paint, element rects, `scrollWidth`/`scrollHeight`
+  and hit testing map between that flow and the columns. Turning a page lays out nothing.
+  break-* properties are not honoured (Stylo parses them only for Gecko).
+- `blitz-paint` render: clip rectangles (columns, lifted boxes) are in the painter's clip
+  space, without its initial offset; in an iframe they were off by the iframe's position.
 - `blitz-paint` text: faux italics lean forward. The glyph skew is applied in y-down space,
   so its sign is negated; every synthesized italic used to slant backwards.
 

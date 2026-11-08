@@ -180,6 +180,351 @@ diff -ruN blitz/Cargo.toml blitz/Cargo.toml
 -# [patch."https://github.com/linebender/parley"]
 -# parley = { path = "../parley/parley" }
 -# fontique = { path = "../parley/fontique" }
+diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/document.rs
+--- blitz/packages/blitz-dom/src/document.rs
++++ blitz/packages/blitz-dom/src/document.rs
+@@ -2451,12 +2451,23 @@
+         self.get_node(node_id)?;
+         let (pos, layout) = self.physical_unrounded_geometry(node_id);
+         let size = layout.size;
++        let flow = BoundingRect {
++            x: pos.x as f64,
++            y: pos.y as f64,
++            width: size.width as f64,
++            height: size.height as f64,
++        };
++        // A box broken across the root's columns: the union of its fragments.
++        let rect = self
++            .column_fragments(node_id, flow)
++            .into_iter()
++            .reduce(BoundingRect::union)?;
+ 
+         Some(BoundingRect {
+-            x: snap_to_layout_unit(pos.x as f64 - self.viewport_scroll().x),
+-            y: snap_to_layout_unit(pos.y as f64 - self.viewport_scroll().y),
+-            width: snap_to_layout_unit(size.width as f64),
+-            height: snap_to_layout_unit(size.height as f64),
++            x: snap_to_layout_unit(rect.x - self.viewport_scroll().x),
++            y: snap_to_layout_unit(rect.y - self.viewport_scroll().y),
++            width: snap_to_layout_unit(rect.width),
++            height: snap_to_layout_unit(rect.height),
+         })
+     }
+ 
+@@ -2546,16 +2557,26 @@
+         let fragments = node.inline_fragment_boxes()?;
+         let inline_root = node.inline_root_ancestor()?;
+ 
+-        // Fragment boxes are relative to the inline root's border box.
++        // Fragment boxes are relative to the inline root's border box; in the root's columns
++        // each line box is in one column.
+         let (root_pos, _) = self.physical_unrounded_geometry(inline_root.id);
+-        let origin_x = root_pos.x as f64 - self.viewport_scroll().x;
+-        let origin_y = root_pos.y as f64 - self.viewport_scroll().y;
++        let (scroll_x, scroll_y) = (self.viewport_scroll().x, self.viewport_scroll().y);
+ 
+-        Some(fragments.map(move |rect| BoundingRect {
+-            x: snap_to_layout_unit(origin_x + rect.left as f64),
+-            y: snap_to_layout_unit(origin_y + rect.top as f64),
+-            width: snap_to_layout_unit((rect.right - rect.left) as f64),
+-            height: snap_to_layout_unit((rect.bottom - rect.top) as f64),
++        Some(fragments.flat_map(move |rect| {
++            let flow = BoundingRect {
++                x: root_pos.x as f64 + rect.left as f64,
++                y: root_pos.y as f64 + rect.top as f64,
++                width: (rect.right - rect.left) as f64,
++                height: (rect.bottom - rect.top) as f64,
++            };
++            self.column_fragments(node_id, flow)
++                .into_iter()
++                .map(move |r| BoundingRect {
++                    x: snap_to_layout_unit(r.x - scroll_x),
++                    y: snap_to_layout_unit(r.y - scroll_y),
++                    width: snap_to_layout_unit(r.width),
++                    height: snap_to_layout_unit(r.height),
++                })
+         }))
+     }
+ 
+diff -ruN blitz/packages/blitz-dom/src/layout/columns.rs blitz/packages/blitz-dom/src/layout/columns.rs
+--- blitz/packages/blitz-dom/src/layout/columns.rs
++++ blitz/packages/blitz-dom/src/layout/columns.rs
+@@ -0,0 +1,275 @@
++//! Columns of the root element: CSS multi-column with `column-fill: auto` and a definite height,
++//! as foliate-js's paginator styles an EPUB section (one column per page, the columns overflowing
++//! to the right, the iframe as wide as all of them).
++//!
++//! The root's content is laid out once as a single column of the content-box width. After
++//! layout it is cut into column slices at line boundaries; paint, element rects and hit testing
++//! then map between that single-column flow and the columns: slice `i` (`start..end` of the
++//! flow) is shown `i * stride` to the right and `start` higher up. Nothing is laid out again to
++//! turn a page. Only the root element is supported, and break-* properties are not honoured
++//! (Stylo parses them only for Gecko).
++
++use crate::{BaseDocument, BoundingRect, Node, NodeId};
++use style::values::computed::length::NonNegativeLengthPercentageOrNormal;
++use style::values::generics::length::GenericLengthPercentageOrNormal;
++
++/// The root element's columns, in CSS px.
++#[derive(Clone, Debug)]
++pub struct Columns {
++    /// The root element.
++    pub root: NodeId,
++    /// The root's border-box origin in document coordinates.
++    pub origin: (f32, f32),
++    /// The content box's offset from the border-box origin.
++    pub content_left: f32,
++    pub content_top: f32,
++    /// Column width (the content-box width) and the distance between column starts.
++    pub width: f32,
++    pub gap: f32,
++    pub stride: f32,
++    /// The flow's `[start, end)` shown in each column, in content-box coordinates.
++    pub slices: Vec<(f32, f32)>,
++}
++
++const FAR: f32 = 1.0e7;
++
++impl Columns {
++    /// The part of the flow column `i` shows, open-ended before the first and after the last.
++    pub fn visible_slice(&self, i: usize) -> (f32, f32) {
++        let (start, end) = self.slices[i];
++        let start = if i == 0 { -FAR } else { start };
++        let end = if i + 1 == self.slices.len() { FAR } else { end };
++        (start, end)
++    }
++
++    /// Where column `i`'s content is painted relative to the flow: `(dx, dy)`.
++    pub fn offset(&self, i: usize) -> (f32, f32) {
++        (i as f32 * self.stride, -self.slices[i].0)
++    }
++
++    /// The column at `x` (root border-box coordinates), clamped to the columns there are.
++    pub fn column_at_x(&self, x: f32) -> usize {
++        let i = ((x - self.content_left + self.gap / 2.0) / self.stride).floor();
++        (i.max(0.0) as usize).min(self.slices.len() - 1)
++    }
++
++    /// A point in root border-box coordinates as painted -> the same point in the flow.
++    pub fn to_flow(&self, x: f32, y: f32) -> (f32, f32) {
++        let (dx, dy) = self.offset(self.column_at_x(x));
++        (x - dx, y - dy)
++    }
++
++    /// A rect of the flow (document coordinates) as the fragments the columns paint.
++    pub fn fragments(&self, rect: BoundingRect) -> Vec<BoundingRect> {
++        let base = f64::from(self.origin.1 + self.content_top);
++        let top = rect.y - base;
++        let bottom = top + rect.height;
++        let mut out = Vec::new();
++        for i in 0..self.slices.len() {
++            let (start, end) = self.visible_slice(i);
++            let (start, end) = (f64::from(start), f64::from(end));
++            let hit = if rect.height > 0.0 {
++                top < end && bottom > start
++            } else {
++                top >= start && top < end
++            };
++            if !hit {
++                continue;
++            }
++            let (dx, dy) = self.offset(i);
++            let (t, b) = (top.max(start), bottom.min(end));
++            out.push(BoundingRect {
++                x: rect.x + f64::from(dx),
++                y: base + t + f64::from(dy),
++                width: rect.width,
++                height: b - t,
++            });
++        }
++        if out.is_empty() {
++            out.push(rect);
++        }
++        out
++    }
++}
++
++/// Pages from boxes `(top, bottom)` of a flow `content_height` tall: a page ends at the top of
++/// the first box that would not fit, unless nothing is on the page yet; a box taller than a page
++/// is sliced, except that a page holding only that box crops up to `SLACK` px of it (the strut
++/// under a page-tall image). Margins after the last box make no page.
++pub(crate) fn paginate(
++    content_height: f32,
++    mut boxes: Vec<(f32, f32)>,
++    page: f32,
++) -> Vec<(f32, f32)> {
++    const SLACK: f32 = 16.0;
++    boxes.sort_by(|a, b| a.0.total_cmp(&b.0));
++    let mut pages = Vec::new();
++    let (mut start, mut filled, mut last, mut limit) = (0.0f32, false, 0.0f32, page);
++    for (top, bottom) in boxes {
++        last = last.max(bottom);
++        if bottom - start <= limit {
++            filled = true;
++            continue;
++        }
++        if !filled && bottom - start - page <= SLACK {
++            limit = bottom - start;
++            filled = true;
++            continue;
++        }
++        let end = if filled && top > start {
++            top
++        } else {
++            start + page
++        };
++        pages.push((start, end));
++        start = end;
++        limit = page;
++        while bottom - start > page {
++            pages.push((start, start + page));
++            start += page;
++        }
++        filled = bottom > start;
++    }
++    if last > start + SLACK || pages.is_empty() {
++        pages.push((start, content_height.max(start)));
++    }
++    pages
++}
++
++impl BaseDocument {
++    /// Recomputes the root element's columns (after layout).
++    pub(crate) fn update_columns(&mut self) {
++        let columns = self.compute_columns();
++        self.nodes.columns = columns;
++    }
++
++    fn compute_columns(&self) -> Option<Columns> {
++        let root = self.try_root_element()?;
++        let style = root.primary_styles()?;
++        let column = style.get_column();
++        if column.column_width.is_auto() && column.column_count.is_auto() {
++            return None;
++        }
++        if style.get_position().height.is_auto() {
++            return None;
++        }
++        let layout = root.final_layout();
++        let content_left = layout.border.left + layout.padding.left;
++        let content_top = layout.border.top + layout.padding.top;
++        let width = layout.size.width - content_left - layout.border.right - layout.padding.right;
++        let page = layout.size.height - content_top - layout.border.bottom - layout.padding.bottom;
++        if width <= 0.0 || page <= 1.0 {
++            return None;
++        }
++        let gap = match &style.get_position().column_gap {
++            NonNegativeLengthPercentageOrNormal::Normal => {
++                style.get_font().font_size.computed_size().px()
++            }
++            GenericLengthPercentageOrNormal::LengthPercentage(lp) => {
++                lp.0.resolve(style::values::computed::Length::new(width))
++                    .px()
++            }
++        };
++        let origin = root.absolute_position(0.0, 0.0);
++        let top = origin.y + content_top;
++
++        // Line boxes and replaced boxes of the flow, in content-box coordinates.
++        let scale = self.viewport.scale();
++        let mut boxes = Vec::new();
++        let mut stack: Vec<&Node> = root.children.iter().map(|&id| &self.nodes[id]).collect();
++        while let Some(node) = stack.pop() {
++            if let Some(el) = node.element_data() {
++                let l = node.final_layout();
++                let y = node.absolute_position(0.0, 0.0).y - top;
++                if let Some(text) = el
++                    .inline_layout_data
++                    .as_ref()
++                    .filter(|_| node.flags.is_inline_root())
++                {
++                    let lines_top = y + l.border.top + l.padding.top + text.block_offset;
++                    for line in text.layout.lines() {
++                        let m = line.metrics();
++                        boxes.push((
++                            lines_top + m.block_min_coord / scale,
++                            lines_top + m.block_max_coord / scale,
++                        ));
++                    }
++                } else if el.image_data().is_some() {
++                    boxes.push((y, y + l.size.height));
++                }
++            }
++            stack.extend(node.children.iter().map(|&id| &self.nodes[id]));
++        }
++        let flow_height = boxes.iter().map(|b| b.1).fold(
++            layout.scrollable_overflow_rect.bottom() - content_top,
++            f32::max,
++        );
++        let slices = paginate(flow_height, boxes, page);
++        Some(Columns {
++            root: root.id,
++            origin: (origin.x, origin.y),
++            content_left,
++            content_top,
++            width,
++            gap,
++            stride: width + gap,
++            slices,
++        })
++    }
++
++    /// `rect` (document coordinates of the flow) as painted, for a node in the root's columns.
++    pub(crate) fn column_fragments(
++        &self,
++        node_id: NodeId,
++        rect: BoundingRect,
++    ) -> Vec<BoundingRect> {
++        match self.nodes.columns() {
++            Some(c) if in_columns(self, c, node_id) => c.fragments(rect),
++            _ => vec![rect],
++        }
++    }
++}
++
++/// Whether `node_id` is laid out in the columns: a descendant of their root.
++fn in_columns(doc: &BaseDocument, columns: &Columns, node_id: NodeId) -> bool {
++    let mut current = doc.nodes.get(node_id).and_then(|n| n.parent);
++    while let Some(id) = current {
++        if id == columns.root {
++            return true;
++        }
++        current = doc.nodes.get(id).and_then(|n| n.parent);
++    }
++    false
++}
++
++#[cfg(test)]
++mod tests {
++    use super::paginate;
++
++    #[test]
++    fn lines_are_cut_at_the_first_line_that_does_not_fit() {
++        let lines = (0..5)
++            .map(|i| (i as f32 * 20.0, i as f32 * 20.0 + 20.0))
++            .collect();
++        assert_eq!(
++            paginate(100.0, lines, 50.0),
++            [(0.0, 40.0), (40.0, 80.0), (80.0, 100.0)]
++        );
++    }
++
++    #[test]
++    fn a_page_tall_image_with_its_strut_is_one_page() {
++        assert_eq!(
++            paginate(615.0, vec![(8.0, 607.2), (8.0, 603.0)], 595.0),
++            [(0.0, 615.0)]
++        );
++    }
++
++    #[test]
++    fn a_box_taller_than_a_page_is_sliced() {
++        assert_eq!(
++            paginate(1300.0, vec![(10.0, 1300.0)], 595.0),
++            [(0.0, 595.0), (595.0, 1190.0), (1190.0, 1300.0)]
++        );
++    }
++}
 diff -ruN blitz/packages/blitz-dom/src/layout/construct.rs blitz/packages/blitz-dom/src/layout/construct.rs
 --- blitz/packages/blitz-dom/src/layout/construct.rs
 +++ blitz/packages/blitz-dom/src/layout/construct.rs
@@ -290,7 +635,15 @@ diff -ruN blitz/packages/blitz-dom/src/layout/damage.rs blitz/packages/blitz-dom
 diff -ruN blitz/packages/blitz-dom/src/layout/mod.rs blitz/packages/blitz-dom/src/layout/mod.rs
 --- blitz/packages/blitz-dom/src/layout/mod.rs
 +++ blitz/packages/blitz-dom/src/layout/mod.rs
-@@ -317,11 +317,13 @@
+@@ -23,6 +23,7 @@
+     compute_oof_layout, prelude::*,
+ };
+ 
++pub(crate) mod columns;
+ pub(crate) mod construct;
+ pub(crate) mod damage;
+ pub(crate) mod inline;
+@@ -317,11 +318,13 @@
                              .downcast_element_mut()
                              .and_then(|el| el.text_input_data_mut())
                          {
@@ -394,17 +747,49 @@ diff -ruN blitz/packages/blitz-dom/src/layout/paint_tree.rs blitz/packages/blitz
 diff -ruN blitz/packages/blitz-dom/src/lib.rs blitz/packages/blitz-dom/src/lib.rs
 --- blitz/packages/blitz-dom/src/lib.rs
 +++ blitz/packages/blitz-dom/src/lib.rs
-@@ -84,7 +84,9 @@
+@@ -84,7 +84,10 @@
  #[cfg(feature = "accessibility")]
  mod accessibility;
  
 -pub use crate::layout::paint_tree::{HoistedPaintChild, StackingContext, hoisted_child_position};
++pub use crate::layout::columns::Columns;
 +pub use crate::layout::paint_tree::{
 +    HoistedPaintChild, StackingContext, hoisted_child_position, lifted_clip_rect,
 +};
  pub use crate::layout::replaced::IntrinsicSizes;
  pub use crate::layout::text_transform::{full_size_kana, full_width};
  #[cfg(feature = "custom-widget")]
+diff -ruN blitz/packages/blitz-dom/src/node/node.rs blitz/packages/blitz-dom/src/node/node.rs
+--- blitz/packages/blitz-dom/src/node/node.rs
++++ blitz/packages/blitz-dom/src/node/node.rs
+@@ -1460,6 +1460,11 @@
+             y = (p.y / scale) as f32;
+         }
+ 
++        // In the root's columns, the point in the column under it -> the same point in the flow.
++        if let Some(c) = self.tree().columns().filter(|c| c.root == self.id) {
++            (x, y) = c.to_flow(x, y);
++        }
++
+         let size = self.final_layout().size;
+         let matches_self = !(x < self.scroll_offset().x as f32
+             || x > size.width + self.scroll_offset().x as f32
+@@ -1962,6 +1967,15 @@
+ 
+     fn cssom_scroll_size(&self) -> taffy::Size<f32> {
+         let layout = self.final_layout();
++        // The root's columns overflow to the right, never down.
++        if let Some(c) = self.tree().columns().filter(|c| c.root == self.id) {
++            let n = c.slices.len() as f32;
++            return taffy::Size {
++                width: (c.content_left + n * c.stride - c.gap + layout.padding.right)
++                    .max(self.client_width()),
++                height: self.client_height(),
++            };
++        }
+         if self.primary_styles().is_none() {
+             return taffy::Size {
+                 width: self.client_width() + layout.scroll_width(),
 diff -ruN blitz/packages/blitz-dom/src/node/serialize.rs blitz/packages/blitz-dom/src/node/serialize.rs
 --- blitz/packages/blitz-dom/src/node/serialize.rs
 +++ blitz/packages/blitz-dom/src/node/serialize.rs
@@ -440,6 +825,59 @@ diff -ruN blitz/packages/blitz-dom/src/node/text.rs blitz/packages/blitz-dom/src
          }
      }
  
+diff -ruN blitz/packages/blitz-dom/src/resolve.rs blitz/packages/blitz-dom/src/resolve.rs
+--- blitz/packages/blitz-dom/src/resolve.rs
++++ blitz/packages/blitz-dom/src/resolve.rs
+@@ -94,6 +94,9 @@
+         // Propagate damage flags (from mutation and restyles) up and down the tree
+         self.propagate_damage_flags(root_node_id);
+         timer.record_time("damage");
++        let relayout = self.nodes[root_node_id]
++            .damage()
++            .is_none_or(|d| d.contains(style::selector_parser::RestyleDamage::RELAYOUT));
+ 
+         // Fix up tree for layout (insert anonymous blocks as necessary, etc)
+         self.resolve_layout_children();
+@@ -123,6 +126,11 @@
+         self.build_paint_tree(root_node_id);
+         timer.record_time("paint_tree");
+ 
++        // Column breaks follow the layout of the root's content.
++        if relayout || self.nodes.columns.is_none() {
++            self.update_columns();
++        }
++
+         // Clear all damage and dirty flags, walking only subtrees which are
+         // marked as (potentially) containing damage.
+         let doc_node_id = self.root_node().id;
+diff -ruN blitz/packages/blitz-dom/src/tree.rs blitz/packages/blitz-dom/src/tree.rs
+--- blitz/packages/blitz-dom/src/tree.rs
++++ blitz/packages/blitz-dom/src/tree.rs
+@@ -41,6 +41,8 @@
+     /// Scroll offset of the viewport (the root element scrolls the viewport,
+     /// so its offset lives here rather than on the node).
+     viewport_scroll: crate::Point<f64>,
++    /// The root element's columns, when it is a multi-column container (`layout::columns`).
++    pub(crate) columns: Option<crate::layout::columns::Columns>,
+ }
+ 
+ impl NodeTree {
+@@ -49,9 +51,15 @@
+             map: SlotMap::with_key(),
+             geometry_generation: AtomicU64::new(1),
+             viewport_scroll: crate::Point::ZERO,
++            columns: None,
+         }
+     }
+ 
++    /// The root element's columns, when it is a multi-column container.
++    pub fn columns(&self) -> Option<&crate::layout::columns::Columns> {
++        self.columns.as_ref()
++    }
++
+     pub fn viewport_scroll(&self) -> crate::Point<f64> {
+         self.viewport_scroll
+     }
 diff -ruN blitz/packages/blitz-paint/src/render/box_shadow.rs blitz/packages/blitz-paint/src/render/box_shadow.rs
 --- blitz/packages/blitz-paint/src/render/box_shadow.rs
 +++ blitz/packages/blitz-paint/src/render/box_shadow.rs
@@ -459,7 +897,32 @@ diff -ruN blitz/packages/blitz-paint/src/render/box_shadow.rs blitz/packages/bli
 diff -ruN blitz/packages/blitz-paint/src/render.rs blitz/packages/blitz-paint/src/render.rs
 --- blitz/packages/blitz-paint/src/render.rs
 +++ blitz/packages/blitz-paint/src/render.rs
-@@ -1076,6 +1076,32 @@
+@@ -288,6 +288,15 @@
+         }
+     }
+ 
++    /// `transform` (into the scene) followed by the move into the space clip rectangles are in:
++    /// the scene with the painter's initial offset (an iframe's position) subtracted.
++    fn clip_space(&self, transform: Affine) -> Affine {
++        Affine::translate(Vec2 {
++            x: -self.initial_x,
++            y: -self.initial_y,
++        }) * transform
++    }
++
+     fn node_transform(&self, node: &Node, parent: Affine) -> Affine {
+         let location = node.final_layout().location;
+         parent
+@@ -688,7 +697,7 @@
+                                 cx.draw_text_input_text(scene, content_position);
+                                 cx.draw_inline_layout(scene, content_position);
+                                 cx.draw_marker(scene, content_position);
+-                                cx.draw_children(scene, cx.transform, child_clip_rect);
++                                cx.draw_children_in_columns(scene, child_clip_rect);
+                             },
+                         );
+ 
+@@ -1076,6 +1085,32 @@
                  };
              }
  
@@ -492,7 +955,71 @@ diff -ruN blitz/packages/blitz-paint/src/render.rs blitz/packages/blitz-paint/sr
              // Render text
              let mut draw_text_context = self.context.draw_text_context.borrow_mut();
              crate::text::stroke_text(
-@@ -1183,7 +1209,9 @@
+@@ -1152,6 +1187,63 @@
+         }
+     }
+ 
++    /// The children, or for the root of the document's columns (`blitz_dom::Columns`) each
++    /// column's slice of them, moved into place and clipped to the column; columns outside
++    /// `clip_rect` are skipped.
++    fn draw_children_in_columns(&self, scene: &mut impl PaintScene, clip_rect: Rect) {
++        let tree = self.context.dom.as_ref().tree();
++        let Some(c) = tree.columns().filter(|c| c.root == self.node.id) else {
++            return self.draw_children(scene, self.transform, clip_rect);
++        };
++        // Device px; cairo's fixed-point coordinates overflow far beyond this.
++        const FAR: f64 = 1.0e6;
++        let s = self.scale;
++        let last = c.slices.len() - 1;
++        for i in 0..=last {
++            let (dx, dy) = c.offset(i);
++            let (start, end) = c.visible_slice(i);
++            let column = Rect::new(
++                if i == 0 {
++                    -FAR
++                } else {
++                    f64::from(c.content_left + dx - c.gap / 2.0) * s
++                },
++                (f64::from(c.content_top + start + dy) * s).max(-FAR),
++                if i == last {
++                    FAR
++                } else {
++                    f64::from(c.content_left + dx + c.width + c.gap / 2.0) * s
++                },
++                (f64::from(c.content_top + end + dy) * s).min(FAR),
++            );
++            let visible = self
++                .context
++                .clip_space(self.transform)
++                .transform_rect_bbox(column)
++                .intersect(clip_rect);
++            if visible.is_zero_area() {
++                continue;
++            }
++            let layer_manager = &self.context.layer_manager;
++            let pushed = layer_manager.maybe_push_layer(
++                scene,
++                true,
++                BlendMode::default(),
++                1.0,
++                self.transform,
++                &column,
++                None,
++                None,
++            );
++            let transform = self.transform.pre_translate(kurbo::Vec2 {
++                x: f64::from(dx) * s,
++                y: f64::from(dy) * s,
++            });
++            self.draw_children(scene, transform, visible);
++            layer_manager.maybe_pop_layer(scene, pushed);
++        }
++    }
++
+     fn draw_children(
+         &self,
+         scene: &mut impl PaintScene,
+@@ -1183,7 +1275,9 @@
                  // the viewport and do not scroll with it, so cancel out the viewport
                  // scroll (applied in `paint_scene`). A fixed box contained by a
                  // transformed ancestor scrolls with it like any out-of-flow box.
@@ -503,12 +1030,12 @@ diff -ruN blitz/packages/blitz-paint/src/render.rs blitz/packages/blitz-paint/sr
                  let child_transform = if child.taffy_position() == taffy::Position::Fixed
                      && Some(self.node.id) == self.context.root_element_id
                  {
-@@ -1193,6 +1221,15 @@
+@@ -1193,6 +1287,15 @@
                          y: scroll.y * self.scale,
                      })
                  } else if let Some(offset) = child.lifted_paint_offset(self.node.id) {
-+                    lifted_clip = blitz_dom::lifted_clip_rect(tree, self.node.id, *child_id)
-+                        .map(|r| {
++                    lifted_clip =
++                        blitz_dom::lifted_clip_rect(tree, self.node.id, *child_id).map(|r| {
 +                            Rect::new(
 +                                r.left as f64 * self.scale,
 +                                r.top as f64 * self.scale,
@@ -519,7 +1046,7 @@ diff -ruN blitz/packages/blitz-paint/src/render.rs blitz/packages/blitz-paint/sr
                      parent_style_transform.pre_translate(kurbo::Vec2 {
                          x: offset.x as f64 * self.scale,
                          y: offset.y as f64 * self.scale,
-@@ -1200,7 +1237,34 @@
+@@ -1200,7 +1303,37 @@
                  } else {
                      parent_style_transform
                  };
@@ -530,7 +1057,10 @@ diff -ruN blitz/packages/blitz-paint/src/render.rs blitz/packages/blitz-paint/sr
 +                    self.render_node(scene, *child_id, child_transform, clip_rect);
 +                    continue;
 +                };
-+                let screen_clip = parent_style_transform.transform_rect_bbox(lifted_clip);
++                let screen_clip = self
++                    .context
++                    .clip_space(parent_style_transform)
++                    .transform_rect_bbox(lifted_clip);
 +                if screen_clip.intersect(clip_rect).is_zero_area() {
 +                    continue;
 +                }
