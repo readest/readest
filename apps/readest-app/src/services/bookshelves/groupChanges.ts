@@ -1,5 +1,5 @@
 import type { Book } from '@/types/book';
-import type { BookshelfDefinition } from '@/types/bookshelf';
+import type { BookshelfDefinition, BookshelfState } from '@/types/bookshelf';
 import type { EnvConfigType } from '@/services/environment';
 import { useLibraryStore } from '@/store/libraryStore';
 import { useSettingsStore } from '@/store/settingsStore';
@@ -10,13 +10,9 @@ import { readBookshelves } from './state';
 const equal = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
 const PREFIX = 'readest.bookshelf.group-change.v1:';
 const ORDER_FIELDS = ['sort', 'useGlobalSort', 'customSortFallback'] as const;
-type OrderSnapshot = Pick<BookshelfDefinition, 'id'> &
-  Partial<
-    Pick<
-      BookshelfDefinition,
-      (typeof ORDER_FIELDS)[number] | 'manualOrder' | 'manualOrderUpdatedAt'
-    >
-  >;
+type OrderSnapshot = { id: string; sortVersion?: string } & Partial<
+  Pick<BookshelfDefinition, (typeof ORDER_FIELDS)[number] | 'manualOrder' | 'manualOrderUpdatedAt'>
+>;
 type Membership = Pick<Book, 'hash' | 'groupId' | 'groupName' | 'groupUpdatedAt'>;
 interface GroupChange {
   account: string;
@@ -34,6 +30,17 @@ const serialize = <T>(operation: () => Promise<T>): Promise<T> => {
 };
 const account = () =>
   (JSON.parse(localStorage.getItem('user') || '{}') as { id?: string }).id || '';
+const sortVersion = (state: BookshelfState | undefined, id: string) => {
+  const mode = Object.values(state?.rows ?? {}).find(
+    (row) =>
+      !row.deleted_at_ts &&
+      (row.fields_jsonb['itemOrderMode']?.v as { shelfId?: string } | undefined)?.shelfId === id,
+  );
+  return JSON.stringify([
+    state?.rows[id]?.fields_jsonb['definition']?.t ?? null,
+    mode?.fields_jsonb['itemOrderMode']?.t ?? null,
+  ]);
+};
 
 const orderChanges = (base: BookshelfDefinition[], draft: BookshelfDefinition[]) => {
   const before: OrderSnapshot[] = [];
@@ -66,6 +73,7 @@ const orderChanges = (base: BookshelfDefinition[], draft: BookshelfDefinition[])
       if (nextTime !== undefined) (next.manualOrderUpdatedAt ??= {})[scope] = nextTime;
     }
     if (Object.keys(old).length > 1 || Object.keys(next).length > 1) {
+      old.sortVersion = sortVersion(useSettingsStore.getState().settings.bookshelves, shelf.id);
       before.push(old);
       after.push(next);
     }
@@ -91,7 +99,10 @@ const applyOrderChanges = (
     for (const key of ORDER_FIELDS) {
       if (
         (key in old || key in next) &&
-        (equal(shelf[key], old[key]) || equal(shelf[key], next[key]))
+        !equal(shelf[key], next[key]) &&
+        equal(shelf[key], old[key]) &&
+        old.sortVersion !== undefined &&
+        sortVersion(useSettingsStore.getState().settings.bookshelves, shelf.id) === old.sortVersion
       )
         Object.assign(result, { [key]: next[key] });
     }
@@ -116,6 +127,25 @@ const applyOrderChanges = (
     }
     return result;
   });
+
+const saveGroupOrders = (
+  env: EnvConfigType,
+  base: BookshelfDefinition[],
+  draft: BookshelfDefinition[],
+  key: string,
+  change: GroupChange,
+) => {
+  const previous = useSettingsStore.getState().settings.bookshelves;
+  const target = change.rollback ? change.before : change.after;
+  return saveBookshelfDraft(env, base, draft, (state) => {
+    for (const shelf of target) {
+      const version = sortVersion(state, shelf.id);
+      // A no-op must not claim a newer independent metadata choice as ours.
+      if (version !== sortVersion(previous, shelf.id)) shelf.sortVersion = version;
+    }
+    localStorage.setItem(key, JSON.stringify(change));
+  });
+};
 
 const updateMembership = (library: Book[], changes: Map<string, Membership>) =>
   library.map((book) => {
@@ -185,7 +215,7 @@ export const recoverBookshelfGroupChanges = (env: EnvConfigType, books: Book[]) 
     }
     for (const { key, change } of records.sort((a, b) => a.change.createdAt - b.change.createdAt)) {
       const current = readBookshelves(useSettingsStore.getState().settings);
-      await saveBookshelfDraft(
+      await saveGroupOrders(
         env,
         current,
         applyOrderChanges(
@@ -193,6 +223,8 @@ export const recoverBookshelfGroupChanges = (env: EnvConfigType, books: Book[]) 
           change.rollback ? change.after : change.before,
           change.rollback ? change.before : change.after,
         ),
+        key,
+        change,
       );
       if (!change.rollback)
         library = await saveMembership(
@@ -224,9 +256,12 @@ export const saveBookshelfGroupChanges = (
     const prepared = draft.map((shelf) => {
       const original = base.find((candidate) => candidate.id === shelf.id);
       const times = { ...shelf.manualOrderUpdatedAt };
-      for (const scope of Object.keys(shelf.manualOrder ?? {}))
+      for (const scope of new Set([
+        ...Object.keys(original?.manualOrder ?? {}),
+        ...Object.keys(shelf.manualOrder ?? {}),
+      ]))
         if (
-          !equal(shelf.manualOrder?.[scope], original?.manualOrder?.[scope]) &&
+          !equal(shelf.manualOrder?.[scope] ?? [], original?.manualOrder?.[scope] ?? []) &&
           times[scope] === undefined
         )
           times[scope] = original?.manualOrderUpdatedAt?.[scope] ?? createdAt;
@@ -248,7 +283,7 @@ export const saveBookshelfGroupChanges = (
     localStorage.setItem(key, JSON.stringify(change));
     let committed = false;
     try {
-      await saveBookshelfDraft(env, base, prepared);
+      await saveGroupOrders(env, base, prepared, key, change);
       await saveMembership(env, changes, () => {
         committed = true;
       });
@@ -256,12 +291,15 @@ export const saveBookshelfGroupChanges = (
       // A successful first write commits the move. A failed later progress retry
       // must not roll its orders back while the new membership is already on disk.
       if (committed) throw error;
-      localStorage.setItem(key, JSON.stringify({ ...change, rollback: true }));
+      change.rollback = true;
+      localStorage.setItem(key, JSON.stringify(change));
       const current = readBookshelves(useSettingsStore.getState().settings);
-      await saveBookshelfDraft(
+      await saveGroupOrders(
         env,
         current,
         applyOrderChanges(current, change.after, change.before),
+        key,
+        change,
       );
       localStorage.removeItem(key);
       throw error;

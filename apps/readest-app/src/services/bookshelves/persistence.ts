@@ -74,6 +74,7 @@ export const saveBookshelfDraft = async (
   env: EnvConfigType,
   base: BookshelfDefinition[],
   draft: BookshelfDefinition[],
+  onPrepared?: (state: BookshelfState) => void,
 ) => {
   recoverBookshelfBatches();
   // AuthContext persists this identity on every platform. A native getUserID()
@@ -144,8 +145,10 @@ export const saveBookshelfDraft = async (
       rows: Object.fromEntries(orderOperations.map((row) => [row.replica_id, row])),
     });
   }
-  if (!operations.length) return;
-  hlcStore.save(hlc.serialize());
+  if (!operations.length) {
+    onPrepared?.(state);
+    return;
+  }
   const prepared: BookshelfReplicaRow[] = [];
   for (const row of operations) {
     const previous = settings.bookshelves?.rows[row.replica_id];
@@ -169,6 +172,10 @@ export const saveBookshelfDraft = async (
       ...(localOnly ? { localOnly: true as const } : {}),
     });
   }
+  // Cross-file group moves journal the planned definition/mode stamps before
+  // any row or settings write can make that revision durable.
+  onPrepared?.(state);
+  hlcStore.save(hlc.serialize());
   const journaled = orderOperations.length
     ? journalBookshelfBatch(prepared)
     : prepared.map(journalBookshelfOperation);

@@ -282,6 +282,125 @@ describe('saving group membership and shelf order together', () => {
     expect(recovered.manualOrder?.['group:independent']).toEqual(['b:other']);
   });
 
+  it.each([
+    true,
+    false,
+  ])('preserves a newer explicit metadata choice on recovery (initial global sorting: %s)', async (inherit) => {
+    const initial = readBookshelves(useSettingsStore.getState().settings);
+    await saveBookshelfDraft(
+      env,
+      initial,
+      initial.map((s) => (s.id === 'default' ? { ...s, useGlobalSort: inherit } : s)),
+    );
+    const before = readBookshelves(useSettingsStore.getState().settings);
+    const originalShelf = before.find((s) => s.id === 'default')!;
+    const custom = before.map((s) =>
+      s.id === 'default'
+        ? {
+            ...s,
+            useGlobalSort: false,
+            customSortFallback: s.sort,
+            sort: {
+              by: 'custom' as const,
+              ascending: true,
+              thenBy: 'none' as const,
+              thenAscending: true,
+            },
+            manualOrder: { 'group:A/B': [], 'group:B': ['b:one'] },
+          }
+        : s,
+    );
+    const originalStamp =
+      useSettingsStore.getState().settings.bookshelves!.rows['default']?.fields_jsonb['definition']
+        ?.t;
+    let interrupted: ReturnType<typeof snapshot> | undefined;
+    save.mockImplementationOnce(async () => {
+      interrupted = snapshot();
+      throw new Error('process terminated');
+    });
+    await expect(saveBookshelfGroupChanges(env, before, custom, [changed])).rejects.toThrow(
+      'process terminated',
+    );
+    restart(interrupted!);
+    if (!inherit)
+      expect(
+        useSettingsStore.getState().settings.bookshelves!.rows['default']!.fields_jsonb[
+          'definition'
+        ]!.t,
+      ).toBe(originalStamp);
+    const current = readBookshelves(useSettingsStore.getState().settings);
+    await saveBookshelfDraft(
+      env,
+      current,
+      current.map((s) =>
+        s.id === 'default'
+          ? {
+              ...s,
+              sort: originalShelf.sort,
+              useGlobalSort: originalShelf.useGlobalSort,
+              customSortFallback: originalShelf.customSortFallback,
+            }
+          : s,
+      ),
+    );
+    const explicit = readBookshelves(useSettingsStore.getState().settings).find(
+      (s) => s.id === 'default',
+    )!;
+    expect(explicit.sort.by).not.toBe('custom');
+    const recovered = await recoverBookshelfGroupChanges(env, [original]);
+    const shelf = readBookshelves(useSettingsStore.getState().settings).find(
+      (s) => s.id === 'default',
+    )!;
+    expect(shelf.sort).toEqual(explicit.sort);
+    expect(shelf.useGlobalSort).toBe(explicit.useGlobalSort);
+    expect(recovered[0]?.groupName).toBe('B');
+  });
+
+  it('does not roll back a newer Custom choice after a metadata round trip', async () => {
+    const custom = base.map((s) =>
+      s.id === 'default'
+        ? {
+            ...s,
+            useGlobalSort: false,
+            customSortFallback: s.sort,
+            sort: {
+              by: 'custom' as const,
+              ascending: true,
+              thenBy: 'none' as const,
+              thenAscending: true,
+            },
+            manualOrder: { 'group:A/B': [], 'group:B': ['b:one'] },
+          }
+        : s,
+    );
+    const started = Promise.withResolvers<void>();
+    const release = Promise.withResolvers<void>();
+    save.mockImplementationOnce(async () => {
+      started.resolve();
+      await release.promise;
+    });
+    const running = saveBookshelfGroupChanges(env, base, custom, [changed]);
+    const rejected = expect(running).rejects.toThrow('permission denied');
+    await started.promise;
+    const current = readBookshelves(useSettingsStore.getState().settings);
+    const metadata = current.map((s) =>
+      s.id === 'default' ? { ...s, sort: base.find((s) => s.id === 'default')!.sort } : s,
+    );
+    await saveBookshelfDraft(env, current, metadata);
+    await saveBookshelfDraft(env, metadata, custom);
+    const explicit = readBookshelves(useSettingsStore.getState().settings).find(
+      (s) => s.id === 'default',
+    )!;
+    expect(explicit.sort.by).toBe('custom');
+    release.reject(new Error('permission denied'));
+    await rejected;
+    const restored = readBookshelves(useSettingsStore.getState().settings).find(
+      (s) => s.id === 'default',
+    )!;
+    expect(restored.sort).toEqual(explicit.sort);
+    expect(restored.useGlobalSort).toBe(false);
+  });
+
   it('waits for a live move instead of replaying its unfinished journal on a remount', async () => {
     const started = Promise.withResolvers<void>();
     const release = Promise.withResolvers<void>();

@@ -48,6 +48,34 @@ beforeEach(() => {
   });
 });
 describe('bookshelf persistence and sync integration', () => {
+  it('exposes planned revision stamps before writing settings, HLC or journal rows', async () => {
+    const base = readBookshelves(useSettingsStore.getState().settings);
+    const entries = () =>
+      Array.from({ length: localStorage.length }, (_, index) => {
+        const key = localStorage.key(index)!;
+        return [key, localStorage.getItem(key)];
+      });
+    const previous = entries();
+    const settings = useSettingsStore.getState().settings;
+    const prepared = vi.fn((state) => {
+      expect(state.rows['default']?.fields_jsonb['definition']?.t).toBeDefined();
+      expect(entries()).toEqual(previous);
+      throw new Error('intent unavailable');
+    });
+    await expect(
+      saveBookshelfDraft(
+        env,
+        base,
+        base.map((s) => (s.id === 'default' ? { ...s, useGlobalSort: false } : s)),
+        prepared,
+      ),
+    ).rejects.toThrow('intent unavailable');
+    expect(prepared).toHaveBeenCalledTimes(1);
+    expect(useSettingsStore.getState().settings).toBe(settings);
+    expect(entries()).toEqual(previous);
+    expect(mocks.saveSettings).not.toHaveBeenCalled();
+  });
+
   it('keeps reordered definitions readable by legacy clients and roundtrips custom mode separately', async () => {
     // The pre-custom client rejects unknown keys and sort enum values.
     const legacySort = z
