@@ -58,6 +58,11 @@
   starts below it and the damage pass returns before clearing it, so after any change that
   damaged nothing every later resolve redid all layout. foliate-js reads hundreds of element and
   range rects per page turn, each resolving first; a clean one went from 0.2–0.4 ms to under 10 µs.
+- `blitz-html` html_sink: a fragment (`innerHTML`) is parsed under a detached root. html5ever
+  appends the fragment's root to the document node, and a change to the document node's child
+  list restyled every element once a selector had tested `:first-child` on the root element, as
+  daisyUI's `:is(.stack, …) > :first-child` does. foliate-js clears its background layer with
+  `innerHTML = ''` three times per page turn; each made the next rect query ~18 ms.
 - `blitz-paint` text: faux italics lean forward. The glyph skew is applied in y-down space,
   so its sign is negated; every synthesized italic used to slant backwards.
 
