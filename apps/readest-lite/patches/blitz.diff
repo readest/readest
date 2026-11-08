@@ -402,7 +402,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
          }
      }
  
-@@ -2543,20 +2655,324 @@
+@@ -2543,20 +2655,329 @@
  
          // Only non-atomic inline elements lack their own layout box: they are
          // flattened into the containing inline root's text layout as style spans.
@@ -428,8 +428,13 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
 +            let &(_, mut at, _) = text.text_nodes.iter().find(|t| t.0 == node_id)?;
 +            // White space before the element collapses into the text after it, so it is laid
 +            // out after the element's offset: when the next text doesn't start with it, it
-+            // came from before, and the element sits after it.
-+            let space = text.text[at..].chars().next().filter(|c| c.is_whitespace());
++            // came from before, and the element sits after it, unless the line breaks there
++            // (the element then ends that line).
++            let space = text.text[at..]
++                .chars()
++                .next()
++                .filter(|c| c.is_whitespace())
++                .filter(|_| !parley::Cluster::from_byte_index(&text.layout, at).is_some_and(|c| c.is_end_of_line()));
 +            let next_text = text
 +                .text_nodes
 +                .iter()
@@ -739,7 +744,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      }
  
      /// The first element in tree order with the given tag name. The root element and
-@@ -2944,6 +3360,36 @@
+@@ -2944,6 +3365,36 @@
  /// Snap a CSSOM geometry value to a 1/64px grid (the precision of Blink's `LayoutUnit`).
  /// Layout values are accumulated in `f32`, so e.g. seven `55/7`-wide flex items would
  /// otherwise end at `55.0000005` and appear to overflow their 55px container.
@@ -776,7 +781,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
  fn snap_to_layout_unit(value: f64) -> f64 {
      (value * 64.0).round() / 64.0
  }
-@@ -3781,3 +4227,7 @@
+@@ -3781,3 +4232,7 @@
          );
      }
  }
@@ -2672,7 +2677,7 @@ diff -ruN blitz/packages/blitz-dom/src/util.rs blitz/packages/blitz-dom/src/util
 diff -ruN blitz/packages/blitz-html/src/html_document.rs blitz/packages/blitz-html/src/html_document.rs
 --- blitz/packages/blitz-html/src/html_document.rs
 +++ blitz/packages/blitz-html/src/html_document.rs
-@@ -68,3 +68,654 @@
+@@ -68,3 +68,676 @@
          self.into()
      }
  }
@@ -2875,6 +2880,28 @@ diff -ruN blitz/packages/blitz-html/src/html_document.rs blitz/packages/blitz-ht
 +        let c = doc.text_rects(after, 0, 1);
 +        assert_eq!(c.len(), 1);
 +        assert!((s.x - c[0].x).abs() < 0.01, "span {s:?}, the next word's first letter {:?}", c[0]);
++    }
++
++    #[test]
++    fn an_empty_inline_element_after_a_line_breaking_space_ends_the_line() {
++        // When the space before the span is where the line breaks, Chromium keeps the span at
++        // the end of that line, not at the next word on the next line.
++        let config = DocumentConfig {
++            html_parser_provider: Some(Arc::new(HtmlProvider)),
++            viewport: Some(Viewport::new(800, 600, 1.0, ColorScheme::Light)),
++            ..Default::default()
++        };
++        let mut doc = HtmlDocument::from_html(
++            "<html><body style='margin:0'><p id='p' style='margin:0;width:120px;text-align:justify;font-size:20px'>\\
++             aa bb <span id='s'></span>cccccccccc dd</p></body></html>",
++            config,
++        );
++        doc.resolve(0.0);
++        let s = doc.get_client_bounding_rect(doc.get_element_by_id("s").unwrap()).unwrap();
++        let p = doc.get_node(doc.get_element_by_id("p").unwrap()).unwrap();
++        let first = doc.text_rects(p.children[0], 0, 1);
++        assert_eq!(first.len(), 1);
++        assert_eq!((s.y, s.x), (first[0].y, 120.0), "span {s:?}, the first line's text {:?}", first[0]);
 +    }
 +
 +    #[test]
