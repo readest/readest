@@ -308,6 +308,103 @@ diff -ruN blitz/packages/blitz-dom/src/layout/mod.rs blitz/packages/blitz-dom/sr
                          }
                      }
                      return output;
+diff -ruN blitz/packages/blitz-dom/src/layout/paint_tree.rs blitz/packages/blitz-dom/src/layout/paint_tree.rs
+--- blitz/packages/blitz-dom/src/layout/paint_tree.rs
++++ blitz/packages/blitz-dom/src/layout/paint_tree.rs
+@@ -66,6 +66,55 @@
+     position
+ }
+ 
++/// The clip, in the coordinates of `painter_id`'s border box (unscrolled), for a box painted by
++/// `painter_id` past static ancestors that clip their contents: the intersection of the padding
++/// boxes of the clipping boxes strictly between the two on `child_id`'s positioning chain, per
++/// axis (`overflow-x` clips only horizontally). `None` when none of them clips.
++pub fn lifted_clip_rect(tree: &NodeTree, painter_id: NodeId, child_id: NodeId) -> Option<Rect<f32>> {
++    use style::values::computed::{Contain, Overflow};
++
++    const FAR: f32 = 1.0e6;
++    let mut clip: Option<Rect<f32>> = None;
++    let mut current = tree[child_id].containing_block();
++    while let Some(id) = current {
++        if id == painter_id {
++            break;
++        }
++        let node = tree.get(id)?;
++        if let Some(style) = node.primary_styles() {
++            let box_style = style.get_box();
++            let paint = box_style.slow_clone_contain().contains(Contain::PAINT);
++            let clip_x = paint || !matches!(box_style.overflow_x, Overflow::Visible);
++            let clip_y = paint || !matches!(box_style.overflow_y, Overflow::Visible);
++            if clip_x || clip_y {
++                let origin = hoisted_child_position(tree, painter_id, id);
++                let layout = node.final_layout();
++                let left = origin.x + layout.location.x + layout.border.left;
++                let top = origin.y + layout.location.y + layout.border.top;
++                let right = origin.x + layout.location.x + layout.size.width - layout.border.right;
++                let bottom = origin.y + layout.location.y + layout.size.height - layout.border.bottom;
++                let rect = Rect {
++                    left: if clip_x { left } else { -FAR },
++                    right: if clip_x { right } else { FAR },
++                    top: if clip_y { top } else { -FAR },
++                    bottom: if clip_y { bottom } else { FAR },
++                };
++                clip = Some(match clip {
++                    None => rect,
++                    Some(c) => Rect {
++                        left: c.left.max(rect.left),
++                        right: c.right.min(rect.right),
++                        top: c.top.max(rect.top),
++                        bottom: c.bottom.min(rect.bottom),
++                    },
++                });
++            }
++        }
++        current = node.containing_block();
++    }
++    clip
++}
++
+ /// A child with a z_index that is hoisted up to it's containing Stacking Context for paint purposes
+ #[derive(Debug, Clone)]
+ pub struct HoistedPaintChild {
+@@ -453,19 +502,15 @@
+ impl Node {
+     /// Whether this node paints its positioned descendants itself (CSS 2.1
+     /// Appendix E step 8) rather than leaving them to an ancestor: positioned
+-    /// boxes, and boxes that clip their contents. Stacking-context roots are
+-    /// handled by the caller.
++    /// boxes. Stacking-context roots are handled by the caller. A static box
++    /// that clips its contents is not one: its positioned descendants paint
++    /// at the positioned level of the nearest positioned ancestor, clipped by
++    /// it ([`lifted_clip_rect`]).
+     fn is_paint_layer_root(&self) -> bool {
+-        use style::values::computed::{Contain, Overflow};
+-
+         let Some(style) = self.primary_styles() else {
+             return true;
+         };
+-        let box_style = style.get_box();
+         style.clone_position() != Position::Static
+-            || !matches!(box_style.overflow_x, Overflow::Visible)
+-            || !matches!(box_style.overflow_y, Overflow::Visible)
+-            || box_style.slow_clone_contain().contains(Contain::PAINT)
+             || self.element_data().is_some_and(|e| {
+                 e.raster_image_data().is_some()
+                     || e.sub_doc_data().is_some()
+diff -ruN blitz/packages/blitz-dom/src/lib.rs blitz/packages/blitz-dom/src/lib.rs
+--- blitz/packages/blitz-dom/src/lib.rs
++++ blitz/packages/blitz-dom/src/lib.rs
+@@ -84,7 +84,9 @@
+ #[cfg(feature = "accessibility")]
+ mod accessibility;
+ 
+-pub use crate::layout::paint_tree::{HoistedPaintChild, StackingContext, hoisted_child_position};
++pub use crate::layout::paint_tree::{
++    HoistedPaintChild, StackingContext, hoisted_child_position, lifted_clip_rect,
++};
+ pub use crate::layout::replaced::IntrinsicSizes;
+ pub use crate::layout::text_transform::{full_size_kana, full_width};
+ #[cfg(feature = "custom-widget")]
 diff -ruN blitz/packages/blitz-dom/src/node/serialize.rs blitz/packages/blitz-dom/src/node/serialize.rs
 --- blitz/packages/blitz-dom/src/node/serialize.rs
 +++ blitz/packages/blitz-dom/src/node/serialize.rs
@@ -395,6 +492,69 @@ diff -ruN blitz/packages/blitz-paint/src/render.rs blitz/packages/blitz-paint/sr
              // Render text
              let mut draw_text_context = self.context.draw_text_context.borrow_mut();
              crate::text::stroke_text(
+@@ -1183,7 +1209,9 @@
+                 // the viewport and do not scroll with it, so cancel out the viewport
+                 // scroll (applied in `paint_scene`). A fixed box contained by a
+                 // transformed ancestor scrolls with it like any out-of-flow box.
+-                let child = &self.context.dom.as_ref().tree()[*child_id];
++                let tree = self.context.dom.as_ref().tree();
++                let child = &tree[*child_id];
++                let mut lifted_clip = None;
+                 let child_transform = if child.taffy_position() == taffy::Position::Fixed
+                     && Some(self.node.id) == self.context.root_element_id
+                 {
+@@ -1193,6 +1221,15 @@
+                         y: scroll.y * self.scale,
+                     })
+                 } else if let Some(offset) = child.lifted_paint_offset(self.node.id) {
++                    lifted_clip = blitz_dom::lifted_clip_rect(tree, self.node.id, *child_id)
++                        .map(|r| {
++                            Rect::new(
++                                r.left as f64 * self.scale,
++                                r.top as f64 * self.scale,
++                                r.right as f64 * self.scale,
++                                r.bottom as f64 * self.scale,
++                            )
++                        });
+                     parent_style_transform.pre_translate(kurbo::Vec2 {
+                         x: offset.x as f64 * self.scale,
+                         y: offset.y as f64 * self.scale,
+@@ -1200,7 +1237,34 @@
+                 } else {
+                     parent_style_transform
+                 };
+-                self.render_node(scene, *child_id, child_transform, clip_rect);
++                // A positioned box lifted past static boxes that clip their contents is still
++                // clipped by them.
++                let Some(lifted_clip) = lifted_clip else {
++                    self.render_node(scene, *child_id, child_transform, clip_rect);
++                    continue;
++                };
++                let screen_clip = parent_style_transform.transform_rect_bbox(lifted_clip);
++                if screen_clip.intersect(clip_rect).is_zero_area() {
++                    continue;
++                }
++                let layer_manager = &self.context.layer_manager;
++                let pushed = layer_manager.maybe_push_layer(
++                    scene,
++                    true,
++                    BlendMode::default(),
++                    1.0,
++                    parent_style_transform,
++                    &lifted_clip,
++                    None,
++                    None,
++                );
++                self.render_node(
++                    scene,
++                    *child_id,
++                    child_transform,
++                    clip_rect.intersect(screen_clip),
++                );
++                layer_manager.maybe_pop_layer(scene, pushed);
+             }
+         }
+ 
 diff -ruN blitz/packages/blitz-paint/src/text.rs blitz/packages/blitz-paint/src/text.rs
 --- blitz/packages/blitz-paint/src/text.rs
 +++ blitz/packages/blitz-paint/src/text.rs

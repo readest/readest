@@ -15,6 +15,12 @@
   icons take their CSS colour instead of black.
 - `blitz-paint` render/box_shadow: fully transparent inset shadows are skipped. daisyUI's
   depth-0 buttons have one, and drawing it as a hole erased the button's background.
+- `blitz-dom` layout/paint_tree, `blitz-paint` render: a static box that clips its contents
+  (`overflow` other than visible, `contain: paint`) no longer paints its positioned
+  descendants itself. They paint at the positioned level of the nearest positioned ancestor,
+  in tree order (CSS 2.1 Appendix E), clipped to the padding boxes of the clipping boxes they
+  were lifted past (`lifted_clip_rect`). foliate-js's section views (`position: relative` in a
+  static `overflow: hidden` container) were painted under its positioned white background.
 - `blitz-paint` text: faux italics lean forward. The glyph skew is applied in y-down space,
   so its sign is negated; every synthesized italic used to slant backwards.
 
