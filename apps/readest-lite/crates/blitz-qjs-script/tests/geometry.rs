@@ -1,5 +1,6 @@
-//! CSSOM View's offset geometry: offsetParent, offsetLeft/Top and offsetWidth/Height, integers
-//! and untransformed (Readest's closed dialogs are scaled to 95%).
+//! Element geometry that layout gives untransformed: `offsetWidth`/`offsetHeight` and the sizes
+//! ResizeObserver reports (CSSOM View, Resize Observer). Readest's closed dialogs are scaled to
+//! 95%; OverlayScrollbars and react-virtuoso size its lists from ResizeObserver.
 
 use blitz_dom::{Document as _, DocumentConfig};
 use blitz_qjs_script::QjsDocument;
@@ -27,6 +28,22 @@ const BOX: &str = "<div id='b' style='width:100px;height:50px;padding:10px;borde
 fn offset_sizes_ignore_transforms() {
     let logs = run(BOX, "console.log($('b').offsetWidth, $('b').offsetHeight, $('b').getBoundingClientRect().width);");
     assert_eq!(logs, ["124 74 62"]);
+}
+
+#[test]
+fn resize_observer_reports_the_untransformed_content_box() {
+    let logs = run(
+        BOX,
+        "let read = false;
+        new ResizeObserver((entries) => {
+            const e = entries[0], r = e.contentRect;
+            console.log(r.x, r.y, r.width, r.height, e.contentBoxSize[0].inlineSize, e.borderBoxSize[0].inlineSize, e.borderBoxSize[0].blockSize);
+        }).observe($('b'), { get box() { read = true; return 'content-box'; } });
+        // OverlayScrollbars tests for the box option by reading it
+        console.log(read);
+        __blitzAfterLayout();",
+    );
+    assert_eq!(logs, ["true", "10 10 100 50 100 124 74"]);
 }
 
 #[test]

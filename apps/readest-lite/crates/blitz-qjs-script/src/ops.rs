@@ -685,6 +685,32 @@ pub(crate) fn install(ctx: &Ctx<'_>, shared: Rc<RefCell<Shared>>, base: Option<&
         .flatten()
     });
     let d = docs.clone();
+    // The layout's boxes, untransformed (ResizeObserver): [border-box width, height, content-box
+    // x, y (the padding's left and top), width, height]; zeros for a box with no layout.
+    op!("boxSizes", move |h: f64| -> Vec<f64> {
+        d.resolve();
+        d.with(h, |doc, n, _| {
+            let node = doc.get_node(n)?;
+            node.element_data()?;
+            let l = node.unrounded_layout();
+            let (b, p) = (l.border, l.padding);
+            Some(
+                [
+                    l.size.width,
+                    l.size.height,
+                    p.left,
+                    p.top,
+                    (l.size.width - b.left - b.right - p.left - p.right).max(0.0),
+                    (l.size.height - b.top - b.bottom - p.top - p.bottom).max(0.0),
+                ]
+                .map(f64::from)
+                .to_vec(),
+            )
+        })
+        .flatten()
+        .unwrap_or(vec![0.0; 6])
+    });
+    let d = docs.clone();
     // An element's box fragments (one per line for an inline): [x0, y0, w0, h0, x1, ...].
     op!("rects", move |h: f64| -> Vec<f64> {
         d.resolve();
