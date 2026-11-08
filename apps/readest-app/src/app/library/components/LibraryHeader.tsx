@@ -310,12 +310,12 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
                   onClick={onToggleSelectMode}
                   aria-label={_('Select Books')}
                   title={_('Select Books')}
-                  className='h-6'
+                  className='touch-target focus-visible:ring-base-content/15 ms-3 flex h-8 min-h-8 w-8 items-center justify-center rounded-full focus-visible:outline-hidden focus-visible:ring-2'
                 >
                   {isSelectMode ? (
-                    <PiSelectionAllFill role='button' className='text-base-content/60 h-6 w-6' />
+                    <PiSelectionAllFill role='none' className='text-base-content/60 h-6 w-6' />
                   ) : (
-                    <PiSelectionAll role='button' className='text-base-content/60 h-6 w-6' />
+                    <PiSelectionAll role='none' className='text-base-content/60 h-6 w-6' />
                   )}
                 </button>
               </>

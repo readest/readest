@@ -337,13 +337,14 @@ const GroupingModal: React.FC<GroupingModalProps> = ({
                 value={editGroupName}
                 onChange={(e) => setEditGroupName(e.target.value)}
                 onKeyDownCapture={(e) => {
+                  e.stopPropagation();
+                  if (e.nativeEvent.isComposing || e.keyCode === 229) return;
                   if (e.key === 'Enter') handleConfirmCreateGroup();
                   if (e.key === 'Escape') {
                     setShowInput(false);
                     setIsRenaming(false);
                     setOriginalGroupName(null);
                   }
-                  e.stopPropagation();
                 }}
                 className='input input-ghost w-full border-0 px-2 text-base outline-hidden! sm:text-sm'
               />

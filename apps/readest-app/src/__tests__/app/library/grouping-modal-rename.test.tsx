@@ -69,6 +69,28 @@ const groupNames = () =>
   Object.fromEntries(useLibraryStore.getState().library.map((b) => [b.hash, b.groupName]));
 
 describe('renaming a group with nested groups', () => {
+  it.each([
+    { key: 'Enter', isComposing: true },
+    { key: 'Enter', keyCode: 229 },
+    { key: 'Escape', isComposing: true },
+  ])('keeps IME confirmation in the name editor (%o)', async (key) => {
+    const confirm = renameA(vi.fn(), false);
+    const input = screen.getByDisplayValue('Z');
+    fireEvent.keyDown(input, key);
+    expect(screen.getByDisplayValue('Z')).toBeTruthy();
+    expect(saveLibraryBooks).not.toHaveBeenCalled();
+    expect(confirm).not.toHaveBeenCalled();
+    fireEvent.change(input, { target: { value: '中文组' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+    await waitFor(() => expect(confirm).toHaveBeenCalledOnce());
+    expect(groupNames()).toEqual({
+      direct: '中文组',
+      nested: '中文组/B',
+      deep: '中文组/C/D',
+      other: 'X',
+    });
+  });
+
   it('saves the edited name with Enter before the dialog confirms the selection', async () => {
     const confirm = renameA(vi.fn(), false);
     fireEvent.keyDown(screen.getByDisplayValue('Z'), { key: 'Enter' });
