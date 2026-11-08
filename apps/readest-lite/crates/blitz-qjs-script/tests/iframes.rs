@@ -87,3 +87,16 @@ fn events_bubble_to_the_iframes_window_and_load_fires_on_a_new_document() {
         ]
     );
 }
+
+#[test]
+fn a_change_in_an_iframe_is_laid_out_while_the_page_is_unchanged() {
+    // the page was laid out by the first query and nothing in it changes after
+    let (logs, errors) = run(&[r#"
+        const p = document.querySelector('iframe').contentDocument.getElementById('x');
+        console.log(p.getBoundingClientRect().width);
+        p.style.width = '80px';
+        console.log(p.getBoundingClientRect().width, document.querySelector('iframe').getBoundingClientRect().width);
+    "#]);
+    assert_eq!(errors, Vec::<String>::new());
+    assert_eq!(logs, ["50", "80 300"]);
+}
