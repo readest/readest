@@ -780,7 +780,7 @@
     }
     getBoundingClientRect() {
       const [x, y, width, height] = n.rect(this._id);
-      return { x, y, width, height, left: x, top: y, right: x + width, bottom: y + height };
+      return new DOMRect(x, y, width, height);
     }
     getClientRects() {
       return [this.getBoundingClientRect()];
@@ -792,19 +792,45 @@
       return n.rect(this._id)[3];
     }
     get clientWidth() {
-      return this.offsetWidth;
+      return n.sizes(this._id)[0];
     }
     get clientHeight() {
-      return this.offsetHeight;
+      return n.sizes(this._id)[1];
+    }
+    get scrollWidth() {
+      return n.sizes(this._id)[2];
+    }
+    get scrollHeight() {
+      return n.sizes(this._id)[3];
     }
     get scrollTop() {
-      return 0;
+      return n.scroll(this._id)[1];
     }
-    set scrollTop(_) {}
+    set scrollTop(v) {
+      this.scrollTo(this.scrollLeft, v);
+    }
     get scrollLeft() {
-      return 0;
+      return n.scroll(this._id)[0];
     }
-    set scrollLeft(_) {}
+    set scrollLeft(v) {
+      this.scrollTo(v, this.scrollTop);
+    }
+    // Instant (`behavior` is ignored); one `scroll` event per task, as browsers fire it per frame.
+    scrollTo(x, y) {
+      if (x && typeof x === 'object') ({ left: x = this.scrollLeft, top: y = this.scrollTop } = x);
+      if (n.scrollTo(this._id, Number(x) || 0, Number(y) || 0) && !this._scrollEvent)
+        this._scrollEvent = setTimeout(() => {
+          this._scrollEvent = 0;
+          this.dispatchEvent(new Event('scroll'));
+        }, 0);
+    }
+    scroll(x, y) {
+      this.scrollTo(x, y);
+    }
+    scrollBy(x, y) {
+      if (x && typeof x === 'object') ({ left: x = 0, top: y = 0 } = x);
+      this.scrollTo(this.scrollLeft + (Number(x) || 0), this.scrollTop + (Number(y) || 0));
+    }
     focus() {
       document._active = this;
     }
@@ -1343,6 +1369,36 @@
     }
     return fired;
   }
+
+  // ---- DOMRect ----
+  class DOMRectReadOnly {
+    constructor(x = 0, y = 0, width = 0, height = 0) {
+      this.x = +x;
+      this.y = +y;
+      this.width = +width;
+      this.height = +height;
+    }
+    get left() {
+      return Math.min(this.x, this.x + this.width);
+    }
+    get right() {
+      return Math.max(this.x, this.x + this.width);
+    }
+    get top() {
+      return Math.min(this.y, this.y + this.height);
+    }
+    get bottom() {
+      return Math.max(this.y, this.y + this.height);
+    }
+    toJSON() {
+      const { x, y, width, height, top, right, bottom, left } = this;
+      return { x, y, width, height, top, right, bottom, left };
+    }
+    static fromRect(r = {}) {
+      return new this(r.x, r.y, r.width, r.height);
+    }
+  }
+  class DOMRect extends DOMRectReadOnly {}
 
   // ---- Tree order, Range and TreeWalker ----
   // Boundary points and traversal as the DOM specifies them, over the wrappers. A range's rects
@@ -2212,6 +2268,8 @@
     ShadowRoot,
     Range,
     TreeWalker,
+    DOMRect,
+    DOMRectReadOnly,
     Selection,
     getSelection: () => document.getSelection(),
     NodeFilter: {
