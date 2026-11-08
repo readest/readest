@@ -7,6 +7,7 @@ import LibraryHeader from '@/app/library/components/LibraryHeader';
 import { DEFAULT_BOOK_SEARCH_CONFIG } from '@/services/constants';
 import { addLibrarySearchHistory } from '@/app/library/utils/searchHistory';
 
+const platform = vi.hoisted(() => ({ trafficLightVisible: false }));
 vi.mock('@/context/EnvContext', () => ({ useEnv: () => ({ appService: null }) }));
 vi.mock('@/hooks/useTranslation', () => ({
   useTranslation: () => (key: string, values?: Record<string, string>) =>
@@ -16,7 +17,7 @@ vi.mock('@/hooks/useTranslation', () => ({
     ),
 }));
 vi.mock('@/hooks/useTrafficLight', () => ({
-  useTrafficLight: () => ({ isTrafficLightVisible: false }),
+  useTrafficLight: () => ({ isTrafficLightVisible: platform.trafficLightVisible }),
 }));
 vi.mock('@/hooks/useShortcuts', () => ({ default: () => {} }));
 vi.mock('@/app/library/components/SettingsMenu', () => ({
@@ -37,6 +38,7 @@ await import('@/styles/globals.css');
 const noop = () => {};
 afterEach(() => {
   cleanup();
+  platform.trafficLightVisible = false;
   document.documentElement.dir = 'ltr';
   document.documentElement.removeAttribute('data-eink');
   document.documentElement.removeAttribute('data-theme');
@@ -115,6 +117,14 @@ describe('library search history layout', () => {
 });
 
 describe('library search actions', () => {
+  it('keeps native window button clearance in a narrow RTL window', async () => {
+    await page.viewport(390, 900);
+    document.documentElement.dir = 'rtl';
+    platform.trafficLightVisible = true;
+    const { container } = renderHeader();
+    const header = container.querySelector('.titlebar')!;
+    expect(getComputedStyle(header).paddingLeft).toBe('64px');
+  });
   for (const width of [320, 360]) {
     for (const dir of ['ltr', 'rtl']) {
       it(`keeps narrow search actions reachable at ${width}px in ${dir}`, async () => {

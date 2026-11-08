@@ -142,9 +142,9 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
     <div
       ref={headerRef}
       className={clsx(
-        'titlebar z-10 flex h-[52px] w-full items-center py-2 pr-4 max-sm:rtl:pl-4 max-sm:rtl:pr-0 sm:h-[44px]',
+        'titlebar z-10 flex h-[52px] w-full items-center py-2 pr-4 sm:h-[44px]',
         windowButtonVisible ? 'sm:pr-4' : 'sm:pr-6',
-        isTrafficLightVisible ? 'pl-16' : 'pl-0 sm:pl-2',
+        isTrafficLightVisible ? 'pl-16' : 'pl-0 max-sm:rtl:pl-4 max-sm:rtl:pr-0 sm:pl-2',
       )}
       style={{
         marginTop: appService?.hasSafeAreaInset
