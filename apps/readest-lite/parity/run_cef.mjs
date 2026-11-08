@@ -90,8 +90,22 @@ for (let k = 0; k < 20; k++) {
 }
 const got = await metrics();
 if (got[0] !== w || got[1] !== h || got[2] !== 1) throw new Error(`window is ${got}, wanted ${w}x${h}@1`);
-await page.evaluate(fs.readFileSync(path.join(here, 'capture.js'), 'utf8'));
-if (scenario.probe) await page.evaluate(fs.readFileSync(scenario.probe, 'utf8'));
+// The app navigates while it starts (library, then the reader): a navigation drops what was
+// evaluated in the page, so the capture script is put back whenever it is missing.
+const scripts = fs.readFileSync(path.join(here, 'capture.js'), 'utf8') +
+  (scenario.probe ? fs.readFileSync(scenario.probe, 'utf8') : '');
+const inject = async () => {
+  for (let k = 0; k < 20; k++) {
+    try {
+      if (!(await page.evaluate(() => typeof __parityCapture === 'function'))) await page.evaluate(scripts);
+      return;
+    } catch (e) {
+      if (!/context was destroyed|navigation/i.test(String(e))) throw e;
+      await sleep(500);
+    }
+  }
+};
+await inject();
 // Per input: the next frame after it, and (in the reader) the frame after the relocate it causes.
 await page.evaluate(() => {
   const t = (globalThis.__parityTiming = []);
@@ -120,6 +134,7 @@ await page.evaluate(() => {
 
 const captures = [];
 const capture = async (i) => {
+  await inject();
   captures.push(await page.evaluate((s) => __parityCapture(s), i));
   // A clip at scale 1: CEF's own captures are at the display's device scale (1.59 here) and
   // cropped to the viewport's size, so they showed only its top-left part, enlarged.
