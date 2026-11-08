@@ -112,6 +112,9 @@
   `-webkit-line-clamp` (Tailwind's `line-clamp-N`) end a block's content box after that many
   lines; the `overflow: hidden` that comes with them clips the rest. Chromium honours the legacy
   property only in a `display: -webkit-box`; Blitz clamps any block, and draws no ellipsis yet.
+- `blitz-dom` assets/default.css: a range input has Chromium's slider size (129 x 16, 2 px
+  margin, no border or padding). It had no intrinsic size, so Readest's footer slider was 0 px
+  tall. Blitz paints no slider.
 - `blitz-dom` util, node, document: the space at a line's end has no box (CSS Text 3 removes it).
   Parley keeps it in the line's last glyph run and reports it as `hanging_advance`; an inline
   element's piece on that line and a range's rect stop where the line's content does, instead of
