@@ -211,6 +211,39 @@ describe('retained fixed-layout page turns', () => {
     expect(getComputedStyle(next).display).toBe(expected < 100 ? 'flex' : 'block');
   });
 
+  it.each(
+    ['ltr', 'rtl'].flatMap((dir) => [50, 100].map((zoom) => ({ dir, zoom }))),
+  )('activates both pages when a portrait turn enters a new spread ($dir, $zoom%)', async ({
+    dir,
+    zoom,
+  }) => {
+    await mount(dir, 'auto');
+    renderer.setAttribute('scale-factor', String(zoom));
+    for (let i = 0; i < 2; i++) {
+      expect(await renderer.beginPageTurn?.(dir === 'ltr')).toBe(true);
+      await renderer.endPageTurn(true, 0);
+    }
+    const first = docAt(renderer.index).defaultView!.frameElement!.parentElement!;
+    const expected = renderer.index + (dir === 'ltr' ? 1 : -1);
+    await (dir === 'ltr' ? renderer.next() : renderer.prev());
+    expect(renderer.index).toBe(expected);
+    const second = docAt(expected).defaultView!.frameElement!.parentElement!;
+    expect(getComputedStyle(second).display).not.toBe('none');
+    expect(
+      getComputedStyle(second).visibility,
+      'normal navigation must reveal the preloaded sibling',
+    ).toBe('visible');
+    expect(getComputedStyle(second).position).toBe('relative');
+    Object.assign(renderer.style, { width: '1200px', height: '600px' });
+    await vi.waitFor(() => {
+      for (const page of [first, second]) {
+        expect(getComputedStyle(page).display).not.toBe('none');
+        expect(getComputedStyle(page).visibility).toBe('visible');
+        expect(getComputedStyle(page).position).toBe('relative');
+      }
+    });
+  });
+
   it('cancels safely when the viewport resizes during a drag', async () => {
     await mount();
     expect(await renderer.beginPageTurn?.(true)).toBe(true);
