@@ -25,5 +25,28 @@ fn replace_children_and_links() {
     );
     let logs = doc.take_messages();
     assert_eq!(doc.take_js_errors(), Vec::<String>::new());
-    assert_eq!(logs, ["log: 2 true text", "log: 0", "log: 2 u", "log: 1 #x 1"]);
+    assert_eq!(
+        logs,
+        ["log: 2 true text", "log: 0", "log: 2 u", "log: 1 #x 1"]
+    );
+}
+
+#[test]
+fn normalize_and_canvas_context() {
+    let html = "<!DOCTYPE html><html><body><p id='p'>a</p><canvas></canvas></body></html>";
+    let mut doc = QjsDocument::from_html(html, DocumentConfig::default());
+    doc.eval(
+        "const p = document.getElementById('p');
+        p.append('b', '', 'c');
+        const i = document.createElement('i');
+        i.append('', '', document.createElement('u'), 'x', 'y');
+        p.append(i, '');
+        document.body.normalize();
+        console.log(p.childNodes.length, p.firstChild.data, i.childNodes.length, i.firstChild.localName, i.lastChild.data);
+        console.log(document.querySelector('canvas').getContext('2d'));",
+        "test",
+    );
+    let logs = doc.take_messages();
+    assert_eq!(doc.take_js_errors(), Vec::<String>::new());
+    assert_eq!(logs, ["log: 2 abc 2 u xy", "log: null"]);
 }
