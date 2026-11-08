@@ -103,6 +103,11 @@
   each box's location and transform up the containing-block chain, and the scroll offsets
   passed), as CSSOM View gives them. Readest's closed dialogs are scaled to 95%; their rects were
   the unscaled boxes.
+- `blitz-dom` layout/sticky, resolve, scrolling, document: `position: sticky`. Taffy lays a
+  sticky box out as a static one; after each resolve and each scroll its offset (its non-auto
+  insets kept inside the nearest scroll container's padding box or the viewport, the box kept in
+  its parent's content box) becomes a translation ahead of its transform, which paint, hit
+  testing and rects read. Readest's dialog headers (`sticky top-1`) sat 4 px high.
 - `blitz-dom` util, node, document: the space at a line's end has no box (CSS Text 3 removes it).
   Parley keeps it in the line's last glyph run and reports it as `hanging_advance`; an inline
   element's piece on that line and a range's rect stop where the line's content does, instead of
