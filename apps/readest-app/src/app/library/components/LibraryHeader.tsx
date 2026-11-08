@@ -142,7 +142,7 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
     <div
       ref={headerRef}
       className={clsx(
-        'titlebar z-10 flex h-[52px] w-full items-center py-2 pr-4 sm:h-[44px]',
+        'titlebar z-10 flex h-[52px] w-full items-center py-2 pr-4 max-sm:rtl:pl-4 max-sm:rtl:pr-0 sm:h-[44px]',
         windowButtonVisible ? 'sm:pr-4' : 'sm:pr-6',
         isTrafficLightVisible ? 'pl-16' : 'pl-0 sm:pl-2',
       )}
@@ -158,7 +158,7 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
           : {}),
       }}
     >
-      <div className='flex w-full items-center justify-between space-x-6 sm:space-x-12'>
+      <div className='flex w-full items-center justify-between space-x-6 max-[361px]:space-x-2 sm:space-x-12'>
         <div
           ref={searchRef}
           className='exclude-title-bar-mousedown relative flex w-full items-center ps-4'
@@ -236,7 +236,11 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
               spellCheck='false'
               className={clsx(
                 'window-drag-input search-input input h-9 w-full rounded-full ps-10 sm:h-7',
-                searchTarget === 'text' ? 'pe-20' : searchQuery ? 'pe-40' : 'pe-32',
+                searchTarget === 'text'
+                  ? 'pe-20'
+                  : searchQuery
+                    ? 'pe-40 max-[361px]:pe-28'
+                    : 'pe-32',
                 'bg-base-300/45 border-0',
                 'font-sans text-sm font-light',
                 'placeholder:text-base-content/50 truncate',
@@ -288,9 +292,15 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
             )}
             {searchTarget !== 'text' && (
               <>
-                <span className='bg-base-content/50 mx-2 h-4 w-[0.5px]'></span>
+                <span
+                  className={clsx(
+                    'bg-base-content/50 mx-2 h-4 w-[0.5px]',
+                    searchQuery && 'max-[361px]:hidden',
+                  )}
+                ></span>
                 <Dropdown
                   label={_('Import Books')}
+                  containerClassName={searchQuery ? 'max-[361px]:hidden' : undefined}
                   className={clsx(
                     'exclude-title-bar-mousedown dropdown-bottom dropdown-center cursor-pointer',
                   )}

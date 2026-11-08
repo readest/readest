@@ -43,7 +43,12 @@ afterEach(() => {
   localStorage.clear();
 });
 
-const renderHeader = (searchQuery = '', searchTarget: 'books' | 'text' = 'books') =>
+const renderHeader = (
+  searchQuery = '',
+  searchTarget: 'books' | 'text' = 'books',
+  onSearchQueryChange = noop,
+  onToggleSelectMode = noop,
+) =>
   render(
     <DropdownProvider>
       <div className='relative w-full'>
@@ -57,11 +62,11 @@ const renderHeader = (searchQuery = '', searchTarget: 'books' | 'text' = 'books'
           onImportBooksFromFiles={noop}
           onOpenCatalogManager={noop}
           onOpenFeeds={noop}
-          onToggleSelectMode={noop}
+          onToggleSelectMode={onToggleSelectMode}
           onSelectAll={noop}
           onDeselectAll={noop}
           onSearchConfigChange={noop}
-          onSearchQueryChange={noop}
+          onSearchQueryChange={onSearchQueryChange}
           onSearchTargetChange={noop}
         />
       </div>
@@ -69,7 +74,7 @@ const renderHeader = (searchQuery = '', searchTarget: 'books' | 'text' = 'books'
   );
 
 describe('library search history layout', () => {
-  for (const width of [390, 768, 1200]) {
+  for (const width of [320, 390, 768, 1200]) {
     for (const dir of ['ltr', 'rtl']) {
       for (const eink of [false, true]) {
         it(`fits the search field at ${width}px in ${dir}, e-ink ${eink}`, async () => {
@@ -110,7 +115,35 @@ describe('library search history layout', () => {
 });
 
 describe('library search actions', () => {
-  for (const width of [390, 768, 1200]) {
+  for (const width of [320, 360]) {
+    for (const dir of ['ltr', 'rtl']) {
+      it(`keeps narrow search actions reachable at ${width}px in ${dir}`, async () => {
+        await page.viewport(width, 900);
+        document.documentElement.dir = dir;
+        const clear = vi.fn();
+        const select = vi.fn();
+        const { queryByRole, getByRole } = renderHeader('Dune', 'books', clear, select);
+        expect(queryByRole('button', { name: 'Import Books' })).toBeNull();
+        const clearBounds = getByRole('button', { name: 'Clear Search' }).getBoundingClientRect();
+        const selectBounds = getByRole('button', { name: 'Select Books' }).getBoundingClientRect();
+        const distance = Math.abs(
+          (clearBounds.left + clearBounds.right - selectBounds.left - selectBounds.right) / 2,
+        );
+        expect(distance).toBeGreaterThanOrEqual(clearBounds.width / 2 + 22);
+        await page.getByRole('button', { name: 'Select Books' }).click();
+        expect(select).toHaveBeenCalledOnce();
+        await page.getByRole('button', { name: 'Clear Search' }).click();
+        expect(clear).toHaveBeenCalledWith('');
+        cleanup();
+        const restored = renderHeader();
+        await page.getByRole('button', { name: 'Import Books' }).click();
+        expect(
+          restored.getByRole('button', { name: 'Import Books' }).getAttribute('aria-expanded'),
+        ).toBe('true');
+      });
+    }
+  }
+  for (const width of [320, 390, 768, 1200]) {
     for (const dir of ['ltr', 'rtl']) {
       for (const target of ['books', 'text'] as const) {
         it(`keeps ${target} query text clear of actions at ${width}px in ${dir}`, async () => {
@@ -125,7 +158,8 @@ describe('library search actions', () => {
           const clear = getByRole('button', { name: 'Clear Search' }).getBoundingClientRect();
           if (dir === 'ltr') expect(textRight).toBeLessThanOrEqual(clear.left - 4);
           else expect(textLeft).toBeGreaterThanOrEqual(clear.right + 4);
-          expect(textRight - textLeft).toBeGreaterThanOrEqual(24);
+          expect(textRight - textLeft).toBeGreaterThanOrEqual(width === 320 ? 48 : 24);
+          expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(width);
         });
       }
       it(`centers Select Books between Import and the input end at ${width}px in ${dir}`, async () => {
