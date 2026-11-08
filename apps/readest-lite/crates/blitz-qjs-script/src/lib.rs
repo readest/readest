@@ -820,6 +820,12 @@ impl QjsDocument {
         std::mem::take(&mut self.shared.borrow_mut().messages)
     }
 
+    /// Collects garbage now, cycles included (the documents `DOMParser` made that nothing reaches
+    /// are freed once the jobs after it run).
+    pub fn run_gc(&mut self) {
+        self.rt.run_gc();
+    }
+
     /// QuickJS heap use: (malloc'd bytes, objects).
     pub fn js_memory(&self) -> (i64, i64) {
         let m = self.rt.memory_usage();

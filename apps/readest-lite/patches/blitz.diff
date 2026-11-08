@@ -1324,6 +1324,57 @@ diff -ruN blitz/packages/blitz-dom/src/tree.rs blitz/packages/blitz-dom/src/tree
      pub fn viewport_scroll(&self) -> crate::Point<f64> {
          self.viewport_scroll
      }
+diff -ruN blitz/packages/blitz-html/src/html_sink.rs blitz/packages/blitz-html/src/html_sink.rs
+--- blitz/packages/blitz-html/src/html_sink.rs
++++ blitz/packages/blitz-html/src/html_sink.rs
+@@ -99,26 +99,30 @@
+         if is_xhtml_doc {
+             Self::parse_xml_into_mutator(mutr, html);
+         } else {
+-            // Parse as HTML
+-            let mut sink = DocumentHtmlParser::new(mutr);
+-            sink.is_xml = false;
+-            let opts = ParseOpts {
+-                tokenizer: TokenizerOpts::default(),
+-                tree_builder: TreeBuilderOpts {
+-                    exact_errors: false,
+-                    scripting_enabled: false, // Enables parsing of <noscript> tags
+-                    iframe_srcdoc: false,
+-                    drop_doctype: true,
+-                    quirks_mode: QuirksMode::NoQuirks,
+-                },
+-            };
+-            html5ever::parse_document(sink, opts)
+-                .from_utf8()
+-                .read_from(&mut html.as_bytes())
+-                .unwrap();
++            Self::parse_html_into_mutator(mutr, html);
+         }
+     }
+ 
++    /// Parse the input as HTML, regardless of its content (as `DOMParser` does for `text/html`).
++    pub fn parse_html_into_mutator<'a, 'd>(mutr: &'a mut DocumentMutator<'d>, html: &str) {
++        let mut sink = DocumentHtmlParser::new(mutr);
++        sink.is_xml = false;
++        let opts = ParseOpts {
++            tokenizer: TokenizerOpts::default(),
++            tree_builder: TreeBuilderOpts {
++                exact_errors: false,
++                scripting_enabled: false, // Enables parsing of <noscript> tags
++                iframe_srcdoc: false,
++                drop_doctype: true,
++                quirks_mode: QuirksMode::NoQuirks,
++            },
++        };
++        html5ever::parse_document(sink, opts)
++            .from_utf8()
++            .read_from(&mut html.as_bytes())
++            .unwrap();
++    }
++
+     /// Parse the input as XML (XHTML), regardless of its content.
+     ///
+     /// [`parse_into_mutator`](Self::parse_into_mutator) sniffs the content to decide between HTML
 diff -ruN blitz/packages/blitz-paint/src/render/background.rs blitz/packages/blitz-paint/src/render/background.rs
 --- blitz/packages/blitz-paint/src/render/background.rs
 +++ blitz/packages/blitz-paint/src/render/background.rs
