@@ -43,14 +43,14 @@ struct Frame {
 
 /// The page and the iframe documents JS has reached (tag = index + 1).
 #[derive(Clone)]
-struct Docs {
+pub(crate) struct Docs {
     main: Rc<RefCell<BaseDocument>>,
     frames: Rc<RefCell<Vec<Frame>>>,
     handles: Rc<RefCell<Handles>>,
 }
 
 impl Docs {
-    fn enc(&self, tag: u32, n: NodeId) -> f64 {
+    pub(crate) fn enc(&self, tag: u32, n: NodeId) -> f64 {
         if tag == 0 {
             return n.as_u64() as f64;
         }
@@ -96,7 +96,7 @@ impl Docs {
         Some(path)
     }
 
-    fn tag_for(&self, parent: u32, iframe: NodeId, doc: usize) -> u32 {
+    pub(crate) fn tag_for(&self, parent: u32, iframe: NodeId, doc: usize) -> u32 {
         let found = self
             .frames
             .borrow()
@@ -161,6 +161,13 @@ fn descend<R>(
         return None;
     }
     descend(&mut inner, rest, f)
+}
+
+fn flat(rects: Vec<blitz_dom::BoundingRect>) -> Vec<f64> {
+    rects
+        .into_iter()
+        .flat_map(|r| [r.x, r.y, r.width, r.height])
+        .collect()
 }
 
 /// The element bootstrap.js lays a shadow tree out in (`attachShadow`).
@@ -230,6 +237,7 @@ pub(crate) fn install(ctx: &Ctx<'_>, shared: Rc<RefCell<Shared>>, base: Option<&
         frames: Rc::default(),
         handles: Rc::default(),
     };
+    shared.borrow_mut().docs = Some(docs.clone());
     macro_rules! op {
         ($name:literal, $f:expr) => {
             n.set(
@@ -500,6 +508,39 @@ pub(crate) fn install(ctx: &Ctx<'_>, shared: Rc<RefCell<Shared>>, base: Option<&
         .unwrap_or(vec![0.0; 4])
     });
     let d = docs.clone();
+    // An element's box fragments (one per line for an inline): [x0, y0, w0, h0, x1, ...].
+    op!("rects", move |h: f64| -> Vec<f64> {
+        d.resolve();
+        d.with(h, |doc, n, _| flat(doc.node_client_rects(n)))
+            .unwrap_or_default()
+    });
+    let d = docs.clone();
+    // The boxes of a text node's UTF-16 range `start..end`, one per line: [x0, y0, w0, h0, ...].
+    op!("textRects", move |h: f64,
+                           start: f64,
+                           end: f64|
+          -> Vec<f64> {
+        d.resolve();
+        d.with(h, |doc, n, _| {
+            let Some(NodeData::Text(t)) = doc.get_node(n).map(|n| &n.data) else {
+                return Vec::new();
+            };
+            let byte = |u16_offset: f64| {
+                let mut units = 0;
+                for (i, c) in t.content.char_indices() {
+                    if units >= u16_offset as usize {
+                        return i;
+                    }
+                    units += c.len_utf16();
+                }
+                t.content.len()
+            };
+            let (a, b) = (byte(start), byte(end));
+            flat(doc.text_rects(n, a, b))
+        })
+        .unwrap_or_default()
+    });
+    let d = docs.clone();
     // An element's scroll offset: [scrollLeft, scrollTop].
     op!("scroll", move |h: f64| -> Vec<f64> {
         d.with(h, |doc, n, _| {
@@ -528,15 +569,18 @@ pub(crate) fn install(ctx: &Ctx<'_>, shared: Rc<RefCell<Shared>>, base: Option<&
         d.resolve();
         d.with(h, |doc, n, _| {
             let node = doc.get_node(n)?;
+            // The root element's client size is the viewport's (CSSOM View).
+            let (cw, ch) = if doc.try_root_element().is_some_and(|r| r.id == n) {
+                let v = doc.viewport();
+                let s = v.hidpi_scale;
+                (v.window_size.0 as f32 / s, v.window_size.1 as f32 / s)
+            } else {
+                (node.client_width() as f32, node.client_height() as f32)
+            };
             Some(
-                [
-                    node.client_width(),
-                    node.client_height(),
-                    node.scroll_width(),
-                    node.scroll_height(),
-                ]
-                .map(f64::from)
-                .to_vec(),
+                [cw, ch, node.scroll_width(), node.scroll_height()]
+                    .map(f64::from)
+                    .to_vec(),
             )
         })
         .flatten()

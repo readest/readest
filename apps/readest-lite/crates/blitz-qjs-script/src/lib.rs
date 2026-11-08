@@ -20,10 +20,12 @@ use std::{
 };
 
 use blitz_dom::{
-    BaseDocument, DocGuard, DocGuardMut, Document, DocumentConfig, EventDriver, EventHandler,
-    NodeId,
+    BaseDocument, DocGuard, DocGuardMut, Document, DocumentConfig, DocumentMutator, EventDriver,
+    EventHandler, HtmlParserProvider, NodeId,
 };
-use blitz_traits::events::{DomEvent, DomEventData, EventState, UiEvent};
+use blitz_traits::events::{
+    BlitzPointerEvent, BlitzPointerId, DomEvent, DomEventData, EventState, PointerCoords, UiEvent,
+};
 use rquickjs::{Array, CatchResultExt, Context, Ctx, Function, Object, Runtime, Value, qjs};
 use url::Url;
 
@@ -67,6 +69,8 @@ pub(crate) struct Shared {
     pub start: Instant,
     pub errors: Vec<String>,
     pub messages: Vec<String>,
+    /// The page's and its iframes' node handles (set by `ops::install`).
+    pub docs: Option<ops::Docs>,
 }
 
 pub struct QjsDocument {
@@ -292,8 +296,132 @@ pub fn animation_time() -> f64 {
 fn with_html_parser(mut config: DocumentConfig) -> DocumentConfig {
     config
         .html_parser_provider
-        .get_or_insert_with(|| std::sync::Arc::new(blitz_html::HtmlProvider));
+        .get_or_insert_with(|| std::sync::Arc::new(FrameParser));
     config
+}
+
+/// Blitz's HTML parser, whose iframe documents are [`FrameDoc`]s.
+struct FrameParser;
+
+impl HtmlParserProvider for FrameParser {
+    fn parse_inner_html<'m, 'doc>(
+        &self,
+        mutr: &'m mut DocumentMutator<'doc>,
+        element_id: NodeId,
+        html: &str,
+    ) {
+        blitz_html::HtmlProvider.parse_inner_html(mutr, element_id, html);
+    }
+
+    fn parse_document(&self, html: &str, config: DocumentConfig) -> Box<dyn Document> {
+        let doc: BaseDocument = blitz_html::HtmlDocument::from_html(html, config).into();
+        Box::new(FrameDoc(Rc::new(RefCell::new(doc))))
+    }
+}
+
+/// An iframe's document, shared so that the page's event handler can run the frame's own event
+/// driver (whose events reach JS) while the page is not borrowed.
+struct FrameDoc(Rc<RefCell<BaseDocument>>);
+
+impl Document for FrameDoc {
+    fn inner(&self) -> DocGuard<'_> {
+        DocGuard::RefCell(self.0.borrow())
+    }
+
+    fn inner_mut(&mut self) -> DocGuardMut<'_> {
+        DocGuardMut::RefCell(self.0.borrow_mut())
+    }
+
+    /// Blitz forwards the input sent to the iframe element here: [`JsEvents`] has delivered it.
+    fn handle_ui_event(&mut self, _event: UiEvent) {}
+}
+
+/// An iframe's document and where its viewport is in the iframe's document.
+struct FrameAt {
+    doc: Rc<RefCell<BaseDocument>>,
+    id: usize,
+    /// The content box's client position.
+    x: f32,
+    y: f32,
+    scroll: (f32, f32),
+}
+
+impl FrameAt {
+    fn of(doc: &dyn Document, iframe: NodeId) -> Option<Self> {
+        let d = doc.inner();
+        let node = d.get_node(iframe)?;
+        let frame = (node.subdoc()? as &dyn std::any::Any).downcast_ref::<FrameDoc>()?;
+        let rect = d.get_client_bounding_rect(iframe)?;
+        let l = node.final_layout();
+        let sub = frame.0.borrow();
+        let scroll = sub.viewport_scroll();
+        Some(Self {
+            doc: frame.0.clone(),
+            id: sub.id(),
+            x: rect.x as f32 + l.border.left + l.padding.left,
+            y: rect.y as f32 + l.border.top + l.padding.top,
+            scroll: (scroll.x as f32, scroll.y as f32),
+        })
+    }
+
+    fn coords(&self, c: &PointerCoords) -> PointerCoords {
+        let (x, y) = (c.client_x - self.x, c.client_y - self.y);
+        PointerCoords {
+            client_x: x,
+            client_y: y,
+            page_x: x + self.scroll.0,
+            page_y: y + self.scroll.1,
+            ..*c
+        }
+    }
+
+    /// The input `data` sent to the iframe element, for the frame's document.
+    fn ui_event(&self, data: &DomEventData) -> Option<UiEvent> {
+        use DomEventData as D;
+        let at = |p: &BlitzPointerEvent| BlitzPointerEvent {
+            coords: self.coords(&p.coords),
+            ..p.clone()
+        };
+        Some(match data {
+            D::PointerMove(p) => UiEvent::PointerMove(at(p)),
+            D::PointerDown(p) => UiEvent::PointerDown(at(p)),
+            D::PointerUp(p) => UiEvent::PointerUp(at(p)),
+            D::PointerCancel(p) => UiEvent::PointerCancel(at(p)),
+            D::PointerLeave(p) => UiEvent::PointerLeave(at(p)),
+            D::Wheel(w) => {
+                let mut w = w.clone();
+                w.coords = self.coords(&w.coords);
+                UiEvent::Wheel(w)
+            }
+            D::KeyDown(k) => UiEvent::KeyDown(k.clone()),
+            D::KeyUp(k) => UiEvent::KeyUp(k.clone()),
+            D::Ime(i) => UiEvent::Ime(i.clone()),
+            D::AppleStandardKeybinding(k) => UiEvent::AppleStandardKeybinding(k.clone()),
+            _ => return None,
+        })
+    }
+}
+
+/// Input inside an iframe, which its document gets instead of the page (enter, leave, over, out
+/// and focus also fire on the iframe element).
+fn is_frame_input(data: &DomEventData) -> bool {
+    use DomEventData as D;
+    !matches!(
+        data,
+        D::PointerEnter(_)
+            | D::PointerLeave(_)
+            | D::PointerOver(_)
+            | D::PointerOut(_)
+            | D::MouseEnter(_)
+            | D::MouseLeave(_)
+            | D::MouseOver(_)
+            | D::MouseOut(_)
+            | D::Focus(_)
+            | D::Blur(_)
+            | D::FocusIn(_)
+            | D::FocusOut(_)
+            | D::Scroll(_)
+    )
 }
 
 impl QjsDocument {
@@ -328,6 +456,7 @@ impl QjsDocument {
             start: Instant::now(),
             errors: Vec::new(),
             messages: Vec::new(),
+            docs: None,
         }));
         let rt = Runtime::new().expect("a QuickJS runtime");
         // BLITZ_QJS_INTERRUPT_MS=N: from N ms after the document is made, abort all JS (diagnostics:
@@ -745,11 +874,14 @@ fn event_init<'js>(ctx: &Ctx<'js>, data: &DomEventData) -> rquickjs::Result<Obje
             o.set(
                 "pointerType",
                 match p.id {
-                    blitz_traits::events::BlitzPointerId::Mouse => "mouse",
-                    blitz_traits::events::BlitzPointerId::Pen => "pen",
-                    blitz_traits::events::BlitzPointerId::Finger(_) => "touch",
+                    BlitzPointerId::Mouse => "mouse",
+                    BlitzPointerId::Pen => "pen",
+                    BlitzPointerId::Finger(_) => "touch",
                 },
             )?;
+            if let BlitzPointerId::Finger(id) = p.id {
+                o.set("identifier", id as f64)?;
+            }
         }
         D::KeyDown(k) | D::KeyUp(k) | D::KeyPress(k) => {
             o.set("kind", "key")?;
@@ -771,6 +903,8 @@ fn event_init<'js>(ctx: &Ctx<'js>, data: &DomEventData) -> rquickjs::Result<Obje
 struct JsEvents<'a> {
     ctx: &'a Context,
     shared: Rc<RefCell<Shared>>,
+    /// The document the events are in (0: the page; see `ops::Docs`).
+    tag: u32,
 }
 
 impl EventHandler for JsEvents<'_> {
@@ -778,15 +912,36 @@ impl EventHandler for JsEvents<'_> {
         &mut self,
         chain: &[NodeId],
         event: &mut DomEvent,
-        _doc: &mut dyn Document,
+        doc: &mut dyn Document,
         state: &mut EventState,
     ) {
         let shared = self.shared.clone();
+        let Some(docs) = shared.borrow().docs.clone() else {
+            return;
+        };
+        // Input over an iframe: the frame's own driver hit-tests it in the frame's document and
+        // dispatches there (with mouse, touch and click events of its own).
+        if let Some(&target) = chain.first()
+            && let Some(frame) = FrameAt::of(doc, target)
+        {
+            if let Some(ui) = frame.ui_event(&event.data) {
+                let handler = JsEvents {
+                    ctx: self.ctx,
+                    shared: shared.clone(),
+                    tag: docs.tag_for(self.tag, target, frame.id),
+                };
+                let mut sub = frame.doc;
+                EventDriver::new(&mut sub, handler).handle_ui_event(ui);
+            }
+            if is_frame_input(&event.data) {
+                return;
+            }
+        }
         let flags = self.ctx.with(|ctx| -> Option<i32> {
             let f: Function = ctx.globals().get("__blitzDispatch").ok()?;
             let ids = Array::new(ctx.clone()).ok()?;
-            for (i, id) in chain.iter().enumerate() {
-                ids.set(i, id.as_u64() as f64).ok()?;
+            for (i, &id) in chain.iter().enumerate() {
+                ids.set(i, docs.enc(self.tag, id)).ok()?;
             }
             let init = event_init(&ctx, &event.data).ok()?;
             match f
@@ -829,6 +984,7 @@ impl Document for QjsDocument {
         let handler = JsEvents {
             ctx: &self.ctx,
             shared: self.shared.clone(),
+            tag: 0,
         };
         let mut driver = EventDriver::new(&mut self.inner, handler);
         driver.handle_ui_event(event);
