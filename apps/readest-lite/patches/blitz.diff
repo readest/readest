@@ -211,7 +211,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
          })
      }
  
-@@ -2546,16 +2557,26 @@
+@@ -2546,19 +2557,133 @@
          let fragments = node.inline_fragment_boxes()?;
          let inline_root = node.inline_root_ancestor()?;
  
@@ -246,10 +246,172 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
          }))
      }
  
++    /// The boxes of the text `start..end` (byte offsets into its content) of text node
++    /// `node_id`, one per line, relative to the viewport (CSSOM View's Range rects). A collapsed
++    /// range is a caret: no width, the line's height. Empty when the node is not laid out.
++    pub fn text_rects(&self, node_id: NodeId, start: usize, end: usize) -> Vec<BoundingRect> {
++        let Some(node) = self.get_node(node_id) else {
++            return Vec::new();
++        };
++        let NodeData::Text(data) = &node.data else {
++            return Vec::new();
++        };
++        let Some(root) = node.inline_root_ancestor() else {
++            return Vec::new();
++        };
++        let Some(text) = root
++            .element_data()
++            .and_then(|e| e.inline_layout_data.as_deref())
++        else {
++            return Vec::new();
++        };
++        let Some(&(_, from, _)) = text.text_nodes.iter().find(|t| t.0 == node_id) else {
++            return Vec::new();
++        };
++        let collapse = node
++            .parent
++            .and_then(|p| self.get_node(p)?.primary_styles())
++            .is_none_or(|s| {
++                s.get_inherited_text().white_space_collapse
++                    == style::computed_values::white_space_collapse::T::Collapse
++            });
++        let at = |offset| laid_out_offset(&data.content, offset, &text.text, from, collapse);
++        let (a, b) = (at(start.min(end)), at(start.max(end)));
++
++        // Per line, the clusters in `a..b` (for a caret, the edge at `a`), as element boxes are
++        // found from glyph runs (parley's selection geometry puts an edge at a run boundary one
++        // cluster early).
++        let layout = &text.layout;
++        let scale = f64::from(layout.scale());
++        let mut boxes = Vec::new();
++        let mut caret_after = None;
++        for line in layout.lines() {
++            let m = line.metrics();
++            let (y0, y1) = (f64::from(m.block_min_coord), f64::from(m.block_max_coord));
++            let mut span: Option<(f32, f32)> = None;
++            for item in line.items() {
++                let parley::PositionedLayoutItem::GlyphRun(run) = item else {
++                    continue;
++                };
++                let mut x = run.offset();
++                for c in run.run().visual_clusters() {
++                    let (r, adv) = (c.text_range(), c.advance());
++                    let edges = if a == b {
++                        if r.end == a {
++                            caret_after = Some((x + adv, y0, y1));
++                        }
++                        (r.start == a).then_some((x, x))
++                    } else {
++                        (r.start < b && r.end > a).then_some((x, x + adv))
++                    };
++                    if let Some((l, rt)) = edges {
++                        span = Some(span.map_or((l, rt), |(sl, sr)| (sl.min(l), sr.max(rt))));
++                    }
++                    x += adv;
++                }
++            }
++            if let Some((l, r)) = span {
++                boxes.push((f64::from(l), y0, f64::from(r), y1));
++                if a == b {
++                    break;
++                }
++            }
++        }
++        if boxes.is_empty()
++            && let Some((x, y0, y1)) = caret_after
++        {
++            boxes.push((f64::from(x), y0, f64::from(x), y1));
++        }
++
++        // Layout boxes are relative to the inline root's content box; in the root's columns
++        // each line is in one column.
++        let l = root.unrounded_layout();
++        let (root_pos, _) = self.physical_unrounded_geometry(root.id);
++        let ox = f64::from(root_pos.x + l.border.left + l.padding.left);
++        let oy = f64::from(root_pos.y + l.border.top + l.padding.top + text.block_offset);
++        let (sx, sy) = (self.viewport_scroll().x, self.viewport_scroll().y);
++        boxes
++            .into_iter()
++            .flat_map(|(x0, y0, x1, y1)| {
++                let flow = BoundingRect {
++                    x: ox + x0 / scale,
++                    y: oy + y0 / scale,
++                    width: (x1 - x0) / scale,
++                    height: (y1 - y0) / scale,
++                };
++                self.column_fragments(node_id, flow)
++            })
++            .map(|r| BoundingRect {
++                x: snap_to_layout_unit(r.x - sx),
++                y: snap_to_layout_unit(r.y - sy),
++                width: snap_to_layout_unit(r.width),
++                height: snap_to_layout_unit(r.height),
++            })
++            .collect()
++    }
++
+     /// The first element in tree order with the given tag name. The root element and
+     /// its children are checked first as a fast path before a full tree search, making
+     /// this suitable for the `documentElement`/`head`/`body` document accessors.
+@@ -2944,6 +3069,36 @@
+ /// Snap a CSSOM geometry value to a 1/64px grid (the precision of Blink's `LayoutUnit`).
+ /// Layout values are accumulated in `f32`, so e.g. seven `55/7`-wide flex items would
+ /// otherwise end at `55.0000005` and appear to overflow their 55px container.
++/// Byte `offset` of a text node's `content` -> the same place in the inline layout's `text`,
++/// where the node's text starts at `from`. Collapsible white space there is one space or none: a
++/// space collapsed from the text before may lead (it is skipped), and the node's own trailing
++/// space comes after the end the builder recorded (it is reached).
++fn laid_out_offset(content: &str, offset: usize, text: &str, from: usize, collapse: bool) -> usize {
++    let space = |c: char| matches!(c, ' ' | '\t' | '\n' | '\r' | '\u{c}');
++    let laid = &text[from.min(text.len())..];
++    let mut li = 0;
++    if collapse && laid.starts_with(' ') && !content.starts_with(space) {
++        li = 1;
++    }
++    let mut in_space = false;
++    for (i, c) in content.char_indices() {
++        if i >= offset {
++            break;
++        }
++        let next = laid[li..].chars().next();
++        if collapse && space(c) {
++            if !in_space && next.is_some_and(space) {
++                li += 1;
++            }
++            in_space = true;
++            continue;
++        }
++        in_space = false;
++        li += next.map_or(0, char::len_utf8);
++    }
++    from + li
++}
++
+ fn snap_to_layout_unit(value: f64) -> f64 {
+     (value * 64.0).round() / 64.0
+ }
+diff -ruN blitz/packages/blitz-dom/src/events/pointer.rs blitz/packages/blitz-dom/src/events/pointer.rs
+--- blitz/packages/blitz-dom/src/events/pointer.rs
++++ blitz/packages/blitz-dom/src/events/pointer.rs
+@@ -598,6 +598,14 @@
+         }
+     }
+ 
++    // A tap (finger or pen) fires the compatibility mouse events before its click
++    if do_click && event.button == MouseEventButton::Main && !event.is_mouse() {
++        let mut down = event.clone();
++        down.buttons |= MouseEventButtons::Primary;
++        dispatch_event(DomEvent::new(target, DomEventData::MouseDown(down)));
++        dispatch_event(DomEvent::new(target, DomEventData::MouseUp(event.clone())));
++    }
++
+     // Dispatch a click event
+     if do_click && event.button == MouseEventButton::Main {
+         dispatch_event(DomEvent::new(target, DomEventData::Click(event.clone())));
 diff -ruN blitz/packages/blitz-dom/src/layout/columns.rs blitz/packages/blitz-dom/src/layout/columns.rs
 --- blitz/packages/blitz-dom/src/layout/columns.rs
 +++ blitz/packages/blitz-dom/src/layout/columns.rs
-@@ -0,0 +1,275 @@
+@@ -0,0 +1,308 @@
 +//! Columns of the root element: CSS multi-column with `column-fill: auto` and a definite height,
 +//! as foliate-js's paginator styles an EPUB section (one column per page, the columns overflowing
 +//! to the right, the iframe as wide as all of them).
@@ -330,6 +492,11 @@ diff -ruN blitz/packages/blitz-dom/src/layout/columns.rs blitz/packages/blitz-do
 +            }
 +            let (dx, dy) = self.offset(i);
 +            let (t, b) = (top.max(start), bottom.min(end));
++            // Pagination cuts at rounded positions and rects are unrounded: a sliver under a
++            // pixel at a cut belongs to the other column.
++            if rect.height >= 1.0 && b - t < 1.0 {
++                continue;
++            }
 +            out.push(BoundingRect {
 +                x: rect.x + f64::from(dx),
 +                y: base + t + f64::from(dy),
@@ -496,7 +663,8 @@ diff -ruN blitz/packages/blitz-dom/src/layout/columns.rs blitz/packages/blitz-do
 +
 +#[cfg(test)]
 +mod tests {
-+    use super::paginate;
++    use super::{Columns, paginate};
++    use crate::{BoundingRect, NodeId};
 +
 +    #[test]
 +    fn lines_are_cut_at_the_first_line_that_does_not_fit() {
@@ -514,6 +682,33 @@ diff -ruN blitz/packages/blitz-dom/src/layout/columns.rs blitz/packages/blitz-do
 +        assert_eq!(
 +            paginate(615.0, vec![(8.0, 607.2), (8.0, 603.0)], 595.0),
 +            [(0.0, 615.0)]
++        );
++    }
++
++    #[test]
++    fn a_line_a_fraction_above_a_cut_is_in_the_next_column_only() {
++        // pagination works on rounded positions, rects on unrounded ones
++        let c = Columns {
++            root: NodeId::from_u64(0),
++            origin: (0.0, 0.0),
++            content_left: 0.0,
++            content_top: 0.0,
++            width: 100.0,
++            gap: 20.0,
++            stride: 120.0,
++            slices: vec![(0.0, 40.0), (40.0, 80.0)],
++        };
++        let line = BoundingRect {
++            x: 0.0,
++            y: 39.7,
++            width: 50.0,
++            height: 20.0,
++        };
++        let f = c.fragments(line);
++        assert_eq!(f.len(), 1, "{f:?}");
++        assert_eq!(
++            (f[0].x, f[0].y.round(), f[0].height.round()),
++            (120.0, 0.0, 20.0)
 +        );
 +    }
 +
@@ -539,7 +734,7 @@ diff -ruN blitz/packages/blitz-dom/src/layout/construct.rs blitz/packages/blitz-
      let is_focussed = node.is_focussed();
      let element = &mut node.data.downcast_element_mut().unwrap();
      if !matches!(element.special_data, SpecialElementData::TextInput(_)) {
-@@ -894,33 +898,52 @@
+@@ -894,33 +898,54 @@
          unreachable!();
      };
  
@@ -601,7 +796,9 @@ diff -ruN blitz/packages/blitz-dom/src/layout/construct.rs blitz/packages/blitz-
  
 -    editor.refresh_layout(&mut doc.font_ctx.lock().unwrap(), &mut doc.layout_ctx);
 +    configure(&mut text_input_data.editor);
-+    text_input_data.editor.refresh_layout(&mut font_ctx, &mut doc.layout_ctx);
++    text_input_data
++        .editor
++        .refresh_layout(&mut font_ctx, &mut doc.layout_ctx);
 +
 +    text_input_data.placeholder = placeholder.map(|text| {
 +        let mut editor = text_input_data
@@ -632,6 +829,95 @@ diff -ruN blitz/packages/blitz-dom/src/layout/damage.rs blitz/packages/blitz-dom
                  node.insert_damage(ONLY_RELAYOUT);
              }
          }
+diff -ruN blitz/packages/blitz-dom/src/layout/inline/build.rs blitz/packages/blitz-dom/src/layout/inline/build.rs
+--- blitz/packages/blitz-dom/src/layout/inline/build.rs
++++ blitz/packages/blitz-dom/src/layout/inline/build.rs
+@@ -86,11 +86,13 @@
+     // The marker is a separate box, so words in the content don't continue from it.
+     let mut text_transformer = TextTransformer::default();
+     text_transformer.word_break(&builder);
++    let mut text_nodes = Vec::new();
+ 
+     if let Some(before_id) = root_node.before() {
+         build_inline_layout_recursive(
+             &mut builder,
+             &mut text_transformer,
++            &mut text_nodes,
+             nodes,
+             before_id,
+             &text_transform,
+@@ -100,6 +102,7 @@
+         build_inline_layout_recursive(
+             &mut builder,
+             &mut text_transformer,
++            &mut text_nodes,
+             nodes,
+             child_id,
+             &text_transform,
+@@ -109,6 +112,7 @@
+         build_inline_layout_recursive(
+             &mut builder,
+             &mut text_transformer,
++            &mut text_nodes,
+             nodes,
+             after_id,
+             &text_transform,
+@@ -116,11 +120,13 @@
+     }
+ 
+     text_layout.text = builder.build_into(&mut text_layout.layout);
++    text_layout.text_nodes = text_nodes;
+     return;
+ 
+     fn build_inline_layout_recursive(
+         builder: &mut TreeBuilder<TextBrush>,
+         text_transformer: &mut TextTransformer,
++        text_nodes: &mut Vec<(NodeId, usize, usize)>,
+         nodes: &crate::NodeTree,
+         node_id: NodeId,
+         parent_text_transform: &CaseTransform,
+@@ -183,6 +189,7 @@
+                             build_inline_layout_recursive(
+                                 builder,
+                                 text_transformer,
++                                text_nodes,
+                                 nodes,
+                                 child_id,
+                                 &text_transform,
+@@ -238,6 +245,7 @@
+                                 build_inline_layout_recursive(
+                                     builder,
+                                     text_transformer,
++                                    text_nodes,
+                                     nodes,
+                                     before_id,
+                                     &text_transform,
+@@ -248,6 +256,7 @@
+                                 build_inline_layout_recursive(
+                                     builder,
+                                     text_transformer,
++                                    text_nodes,
+                                     nodes,
+                                     child_id,
+                                     &text_transform,
+@@ -257,6 +266,7 @@
+                                 build_inline_layout_recursive(
+                                     builder,
+                                     text_transformer,
++                                    text_nodes,
+                                     nodes,
+                                     after_id,
+                                     &text_transform,
+@@ -294,7 +304,9 @@
+ 
+                 let text =
+                     text_transformer.transform(&data.content, parent_text_transform, builder);
++                let start = builder.text().len();
+                 builder.push_text(text);
++                text_nodes.push((node_id, start, builder.text().len()));
+             }
+             NodeData::Comment { .. } => {
+                 // node.remove_damage(CONSTRUCT_DESCENDENT | CONSTRUCT_FC | CONSTRUCT_BOX);
 diff -ruN blitz/packages/blitz-dom/src/layout/mod.rs blitz/packages/blitz-dom/src/layout/mod.rs
 --- blitz/packages/blitz-dom/src/layout/mod.rs
 +++ blitz/packages/blitz-dom/src/layout/mod.rs
@@ -762,7 +1048,74 @@ diff -ruN blitz/packages/blitz-dom/src/lib.rs blitz/packages/blitz-dom/src/lib.r
 diff -ruN blitz/packages/blitz-dom/src/node/node.rs blitz/packages/blitz-dom/src/node/node.rs
 --- blitz/packages/blitz-dom/src/node/node.rs
 +++ blitz/packages/blitz-dom/src/node/node.rs
-@@ -1460,6 +1460,11 @@
+@@ -1421,6 +1421,66 @@
+         self.hit_inner(x, y, scale, &mut None)
+     }
+ 
++    /// Whether `(x, y)`, in border-box coordinates, is inside the element's `clip-path`.
++    /// `inset()`, `polygon()` and reference boxes clip; other shapes do not yet.
++    fn in_clip_path(&self, x: f32, y: f32) -> bool {
++        use kurbo::Shape as _;
++        use style::values::computed::basic_shape::ClipPath;
++        use style::values::generics::basic_shape::{GenericBasicShape, ShapeBox, ShapeGeometryBox};
++
++        let Some(style) = self.primary_styles() else {
++            return true;
++        };
++        let (shape, geometry_box) = match style.get_clip_path() {
++            ClipPath::Shape(shape, b) => (Some(&**shape), b),
++            ClipPath::Box(b) => (None, b),
++            ClipPath::None | ClipPath::Url(_) => return true,
++        };
++        let l = self.final_layout();
++        let (b, p) = (l.border, l.padding);
++        let (w, h) = (l.size.width, l.size.height);
++        // The reference box (margin-box falls back to the border box, as in paint).
++        let (ox, oy, w, h) = match geometry_box {
++            ShapeGeometryBox::ShapeBox(ShapeBox::PaddingBox) => {
++                (b.left, b.top, w - b.left - b.right, h - b.top - b.bottom)
++            }
++            ShapeGeometryBox::FillBox | ShapeGeometryBox::ShapeBox(ShapeBox::ContentBox) => (
++                b.left + p.left,
++                b.top + p.top,
++                w - b.left - b.right - p.left - p.right,
++                h - b.top - b.bottom - p.top - p.bottom,
++            ),
++            _ => (0.0, 0.0, w, h),
++        };
++        let lp = |v: &style::values::computed::LengthPercentage, basis: f32| {
++            v.resolve(style::values::computed::Length::new(basis)).px()
++        };
++        let (x, y) = (x - ox, y - oy);
++        // Half-open, so that an empty box clips everything.
++        let within = |x0: f32, y0: f32, x1: f32, y1: f32| x >= x0 && x < x1 && y >= y0 && y < y1;
++        match shape {
++            None => within(0.0, 0.0, w, h),
++            Some(GenericBasicShape::Rect(inset)) => {
++                let r = &inset.rect;
++                within(lp(&r.3, w), lp(&r.0, h), w - lp(&r.1, w), h - lp(&r.2, h))
++            }
++            Some(GenericBasicShape::Polygon(polygon)) => {
++                let mut path = kurbo::BezPath::new();
++                for (i, c) in polygon.coordinates.iter().enumerate() {
++                    let pt = kurbo::Point::new(lp(&c.0, w) as f64, lp(&c.1, h) as f64);
++                    if i == 0 {
++                        path.move_to(pt);
++                    } else {
++                        path.line_to(pt);
++                    }
++                }
++                path.close_path();
++                path.contains(kurbo::Point::new(x as f64, y as f64))
++            }
++            Some(_) => true,
++        }
++    }
++
+     /// [`hit`](Self::hit), also resolving the innermost overlay scrollbar
+     /// thumb under the point into `scrollbar` during the same descent (so
+     /// thumb hit-testing shares the exact coordinate handling — transforms
+@@ -1460,6 +1520,19 @@
              y = (p.y / scale) as f32;
          }
  
@@ -771,10 +1124,18 @@ diff -ruN blitz/packages/blitz-dom/src/node/node.rs blitz/packages/blitz-dom/src
 +            (x, y) = c.to_flow(x, y);
 +        }
 +
++        // Outside its clip-path, neither the element nor its descendants are hit.
++        if !self.in_clip_path(
++            x - self.scroll_offset().x as f32,
++            y - self.scroll_offset().y as f32,
++        ) {
++            return None;
++        }
++
          let size = self.final_layout().size;
          let matches_self = !(x < self.scroll_offset().x as f32
              || x > size.width + self.scroll_offset().x as f32
-@@ -1962,6 +1967,15 @@
+@@ -1962,6 +2035,15 @@
  
      fn cssom_scroll_size(&self) -> taffy::Size<f32> {
          let layout = self.final_layout();
@@ -804,10 +1165,95 @@ diff -ruN blitz/packages/blitz-dom/src/node/serialize.rs blitz/packages/blitz-do
  
          match &self.data {
              NodeData::Document(_) => {}
+@@ -180,19 +182,46 @@
+                     writer.push('"');
+                 }
+ 
++                // Inside the SVG (the root's own effects are painted as CSS), the computed opacity
++                // and blend mode: inline styles set by script are not attributes, and usvg can't
++                // read `var()`. usvg takes the blend mode only as a style declaration.
++                let effects = (opts.resolve_current_color && nesting > 0)
++                    .then(|| self.primary_styles())
++                    .flatten();
++                let has = |name: &str| data.attrs().iter().any(|a| &*a.name.local == name);
++                let mut blend = effects
++                    .as_ref()
++                    .map(|s| s.get_effects().mix_blend_mode)
++                    .filter(|&m| m != style::computed_values::mix_blend_mode::T::Normal)
++                    .map(|m| format!("mix-blend-mode: {}", m.to_css_string()));
++
+                 for attr in data.attrs() {
+                     writer.push(' ');
+                     write_attr_name(&attr.name, writer);
+                     writer.push_str("=\"");
+-                    #[allow(clippy::unnecessary_unwrap)] // Convert to if-let chain once stabilised
+-                    if current_color.is_some() && attr.value.contains("currentColor") {
+-                        let value = attr
+-                            .value
+-                            .replace("currentColor", current_color.as_ref().unwrap());
+-                        encode_quoted_attribute_to_string(&value, writer);
+-                    } else {
+-                        encode_quoted_attribute_to_string(&attr.value, writer);
++                    let mut value = std::borrow::Cow::Borrowed(&*attr.value);
++                    if let Some(color) = &current_color
++                        && value.contains("currentColor")
++                    {
++                        value = value.replace("currentColor", color).into();
++                    }
++                    if &*attr.name.local == "style"
++                        && let Some(decl) = blend.take()
++                    {
++                        value = format!("{value}; {decl}").into();
++                    }
++                    encode_quoted_attribute_to_string(&value, writer);
++                    writer.push('"');
++                }
++                if let Some(style) = &effects {
++                    let opacity = style.get_effects().opacity;
++                    if opacity < 1.0 && !has("opacity") {
++                        writer.push_str(&format!(" opacity=\"{opacity}\""));
+                     }
++                }
++                if let Some(decl) = blend {
++                    writer.push_str(" style=\"");
++                    writer.push_str(&decl);
+                     writer.push('"');
+                 }
+                 if !has_children {
+diff -ruN blitz/packages/blitz-dom/src/node/svg.rs blitz/packages/blitz-dom/src/node/svg.rs
+--- blitz/packages/blitz-dom/src/node/svg.rs
++++ blitz/packages/blitz-dom/src/node/svg.rs
+@@ -144,12 +144,13 @@
+ 
+     /// The transform from the rendered tree (in [`usvg::Tree::size`] units) to a
+     /// viewport of the given size, applying the root `viewBox` and
+-    /// `preserveAspectRatio`. Without a `viewBox` the tree is stretched to fill it.
+-    pub fn viewport_transform(&self, width: f32, height: f32) -> usvg::Transform {
++    /// `preserveAspectRatio`. Without a `viewBox` a user unit is a CSS px (`scale` device px):
++    /// nothing else is scaled (usvg sizes such a tree to its content, which it does not move).
++    pub fn viewport_transform(&self, width: f32, height: f32, scale: f32) -> usvg::Transform {
+         let size = self.tree.size();
+         let stretch = usvg::Transform::from_scale(width / size.width(), height / size.height());
+         let Some(view_box) = self.intrinsic_dimensions.view_box else {
+-            return stretch;
++            return usvg::Transform::from_scale(scale, scale);
+         };
+         let aspect = self.intrinsic_dimensions.preserve_aspect_ratio;
+         // usvg has already mapped the `viewBox` onto `Tree::size`, so undo that first.
 diff -ruN blitz/packages/blitz-dom/src/node/text.rs blitz/packages/blitz-dom/src/node/text.rs
 --- blitz/packages/blitz-dom/src/node/text.rs
 +++ blitz/packages/blitz-dom/src/node/text.rs
-@@ -80,6 +80,9 @@
+@@ -37,6 +37,9 @@
+     /// `final_layout`. Paint draws text from the unrounded origin so that it keeps its sub-pixel
+     /// position while box edges stay snapped. Set by the `writing-mode` layout pass; zero otherwise.
+     pub content_box_subpixel_offset: taffy::Point<f32>,
++    /// Each text node laid out here, with the `start..end` of `text` it became (before any
++    /// collapsible white space after it; white space collapsed with the text before it may lead).
++    pub text_nodes: Vec<(NodeId, usize, usize)>,
+ }
+ 
+ impl TextLayout {
+@@ -80,6 +83,9 @@
      /// `final_layout`. Paint draws text from the unrounded origin so that it keeps its sub-pixel
      /// position while box edges stay snapped. Set by the `writing-mode` layout pass; zero otherwise.
      pub content_box_subpixel_offset: taffy::Point<f32>,
@@ -817,7 +1263,7 @@ diff -ruN blitz/packages/blitz-dom/src/node/text.rs blitz/packages/blitz-dom/src
  }
  
  // FIXME: Implement Clone for PlainEditor
-@@ -97,6 +100,7 @@
+@@ -97,6 +103,7 @@
              is_multiline,
              scroll_offset: 0.0,
              content_box_subpixel_offset: taffy::Point::ZERO,
@@ -878,6 +1324,17 @@ diff -ruN blitz/packages/blitz-dom/src/tree.rs blitz/packages/blitz-dom/src/tree
      pub fn viewport_scroll(&self) -> crate::Point<f64> {
          self.viewport_scroll
      }
+diff -ruN blitz/packages/blitz-paint/src/render/background.rs blitz/packages/blitz-paint/src/render/background.rs
+--- blitz/packages/blitz-paint/src/render/background.rs
++++ blitz/packages/blitz-paint/src/render/background.rs
+@@ -480,6 +480,7 @@
+             svg,
+             (bg_size.width * self.scale) as f32,
+             (bg_size.height * self.scale) as f32,
++            self.scale,
+         );
+ 
+         let bg_pos = compute_layer_position(
 diff -ruN blitz/packages/blitz-paint/src/render/box_shadow.rs blitz/packages/blitz-paint/src/render/box_shadow.rs
 --- blitz/packages/blitz-paint/src/render/box_shadow.rs
 +++ blitz/packages/blitz-paint/src/render/box_shadow.rs
@@ -922,7 +1379,23 @@ diff -ruN blitz/packages/blitz-paint/src/render.rs blitz/packages/blitz-paint/sr
                              },
                          );
  
-@@ -1076,6 +1085,32 @@
+@@ -794,8 +803,13 @@
+ 
+ /// The transform from an SVG's rendered tree to a viewport of the given size.
+ #[cfg(feature = "svg")]
+-fn svg_viewport_affine(svg: &blitz_dom::node::SvgImageData, width: f32, height: f32) -> Affine {
+-    let t = svg.viewport_transform(width, height);
++fn svg_viewport_affine(
++    svg: &blitz_dom::node::SvgImageData,
++    width: f32,
++    height: f32,
++    scale: f64,
++) -> Affine {
++    let t = svg.viewport_transform(width, height, scale as f32);
+     Affine::new([t.sx, t.ky, t.kx, t.sy, t.tx, t.ty].map(f64::from))
+ }
+ 
+@@ -1076,6 +1090,32 @@
                  };
              }
  
@@ -955,7 +1428,7 @@ diff -ruN blitz/packages/blitz-paint/src/render.rs blitz/packages/blitz-paint/sr
              // Render text
              let mut draw_text_context = self.context.draw_text_context.borrow_mut();
              crate::text::stroke_text(
-@@ -1152,6 +1187,63 @@
+@@ -1152,6 +1192,63 @@
          }
      }
  
@@ -1019,7 +1492,7 @@ diff -ruN blitz/packages/blitz-paint/src/render.rs blitz/packages/blitz-paint/sr
      fn draw_children(
          &self,
          scene: &mut impl PaintScene,
-@@ -1183,7 +1275,9 @@
+@@ -1183,7 +1280,9 @@
                  // the viewport and do not scroll with it, so cancel out the viewport
                  // scroll (applied in `paint_scene`). A fixed box contained by a
                  // transformed ancestor scrolls with it like any out-of-flow box.
@@ -1030,7 +1503,7 @@ diff -ruN blitz/packages/blitz-paint/src/render.rs blitz/packages/blitz-paint/sr
                  let child_transform = if child.taffy_position() == taffy::Position::Fixed
                      && Some(self.node.id) == self.context.root_element_id
                  {
-@@ -1193,6 +1287,15 @@
+@@ -1193,6 +1292,15 @@
                          y: scroll.y * self.scale,
                      })
                  } else if let Some(offset) = child.lifted_paint_offset(self.node.id) {
@@ -1046,7 +1519,7 @@ diff -ruN blitz/packages/blitz-paint/src/render.rs blitz/packages/blitz-paint/sr
                      parent_style_transform.pre_translate(kurbo::Vec2 {
                          x: offset.x as f64 * self.scale,
                          y: offset.y as f64 * self.scale,
-@@ -1200,7 +1303,37 @@
+@@ -1200,7 +1308,37 @@
                  } else {
                      parent_style_transform
                  };
@@ -1085,6 +1558,15 @@ diff -ruN blitz/packages/blitz-paint/src/render.rs blitz/packages/blitz-paint/sr
              }
          }
  
+@@ -1269,7 +1407,7 @@
+         let x = x + x_offset.px() as f64;
+         let y = y + y_offset.px() as f64;
+ 
+-        let viewport = svg_viewport_affine(svg, paint_size.width, paint_size.height);
++        let viewport = svg_viewport_affine(svg, paint_size.width, paint_size.height, self.scale);
+         let transform = (self.transform * viewport).then_translate(Vec2 { x, y });
+ 
+         self.with_replaced_content_clip(
 diff -ruN blitz/packages/blitz-paint/src/text.rs blitz/packages/blitz-paint/src/text.rs
 --- blitz/packages/blitz-paint/src/text.rs
 +++ blitz/packages/blitz-paint/src/text.rs

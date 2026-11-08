@@ -141,6 +141,54 @@
       this.reason = i.reason;
     }
   }
+  class Touch {
+    constructor(i = {}) {
+      this.identifier = i.identifier ?? 0;
+      this.target = i.target ?? null;
+      for (const k of ['clientX', 'clientY', 'pageX', 'pageY', 'screenX', 'screenY'])
+        this[k] = i[k] || 0;
+      this.radiusX = this.radiusY = 1;
+      this.rotationAngle = 0;
+      this.force = i.force ?? 0.5;
+    }
+  }
+  const touchList = (touches = []) => {
+    const list = touches.slice();
+    list.item = (i) => list[i] ?? null;
+    return list;
+  };
+  class TouchEvent extends UIEvent {
+    constructor(t, i = {}) {
+      super(t, i);
+      this.touches = touchList(i.touches);
+      this.targetTouches = touchList(i.targetTouches);
+      this.changedTouches = touchList(i.changedTouches);
+      for (const k of ['altKey', 'ctrlKey', 'metaKey', 'shiftKey']) this[k] = !!i[k];
+    }
+  }
+  // Fingers down, by identifier: a touch keeps the target it started on.
+  const activeTouches = new Map();
+  function touchInit(type, init, target) {
+    const t = new Touch({ ...init, target: activeTouches.get(init.identifier)?.target ?? target });
+    if (type === 'touchend' || type === 'touchcancel') activeTouches.delete(t.identifier);
+    else activeTouches.set(t.identifier, t);
+    const touches = [...activeTouches.values()];
+    return {
+      touches,
+      targetTouches: touches.filter((x) => x.target === t.target),
+      changedTouches: [t],
+    };
+  }
+  class MessageEvent extends Event {
+    constructor(t, i = {}) {
+      super(t, i);
+      this.data = i.data === undefined ? null : i.data;
+      this.origin = i.origin ?? '';
+      this.lastEventId = i.lastEventId ?? '';
+      this.source = i.source ?? null;
+      this.ports = i.ports ?? [];
+    }
+  }
   class CustomEvent extends Event {
     constructor(t, i = {}) {
       super(t, i);
@@ -783,7 +831,7 @@
       return new DOMRect(x, y, width, height);
     }
     getClientRects() {
-      return [this.getBoundingClientRect()];
+      return rectList(n.rects(this._id));
     }
     get offsetWidth() {
       return n.rect(this._id)[2];
@@ -1370,6 +1418,25 @@
     return fired;
   }
 
+  // [x0, y0, w0, h0, x1, ...] -> a DOMRectList.
+  function rectList(flat) {
+    const list = [];
+    for (let i = 0; i + 3 < flat.length; i += 4)
+      list.push(new DOMRect(flat[i], flat[i + 1], flat[i + 2], flat[i + 3]));
+    list.item = (i) => list[i] ?? null;
+    return list;
+  }
+  // The union of the rects that are not empty (or the first, when all are).
+  function unionRect(rects) {
+    const solid = rects.filter((r) => r.width || r.height);
+    if (!solid.length) return rects[0] ?? new DOMRect();
+    const x0 = Math.min(...solid.map((r) => r.left)),
+      y0 = Math.min(...solid.map((r) => r.top));
+    const x1 = Math.max(...solid.map((r) => r.right)),
+      y1 = Math.max(...solid.map((r) => r.bottom));
+    return new DOMRect(x0, y0, x1 - x0, y1 - y0);
+  }
+
   // ---- DOMRect ----
   class DOMRectReadOnly {
     constructor(x = 0, y = 0, width = 0, height = 0) {
@@ -1561,14 +1628,32 @@
       }
       return out.join('');
     }
-    getBoundingClientRect() {
-      const a = this.commonAncestorContainer;
-      return (
-        a.nodeType === 1 ? a : (a.parentElement ?? docOf(a).documentElement)
-      ).getBoundingClientRect();
-    }
+    // CSSOM View: the boxes of the elements the range selects (whose parent it does not) and
+    // of the text it selects or partly selects.
     getClientRects() {
-      return [this.getBoundingClientRect()];
+      const { startContainer: sc, startOffset: so, endContainer: ec, endOffset: eo } = this;
+      if (sc === ec && sc.nodeType === 3) return rectList(n.textRects(sc._id, so, eo));
+      const contained = (x) => {
+        const p = x.parentNode;
+        if (!p) return false;
+        let i = 0;
+        for (let c = x.previousSibling; c; c = c.previousSibling) i++;
+        return comparePoints(p, i, sc, so) >= 0 && comparePoints(p, i + 1, ec, eo) <= 0;
+      };
+      const out = [];
+      if (sc.nodeType === 3) out.push(...n.textRects(sc._id, so, sc.length));
+      const w = new TreeWalker(this.commonAncestorContainer, 0x5);
+      for (let x; (x = w.nextNode()); ) {
+        if (x === sc || x === ec) continue;
+        if (!contained(x)) continue;
+        if (x.nodeType === 3) out.push(...n.textRects(x._id, 0, x.length));
+        else if (!contained(x.parentNode)) out.push(...n.rects(x._id));
+      }
+      if (ec.nodeType === 3) out.push(...n.textRects(ec._id, 0, eo));
+      return rectList(out);
+    }
+    getBoundingClientRect() {
+      return unionRect(this.getClientRects());
     }
     detach() {}
   }
@@ -2387,6 +2472,15 @@
     scrollTo() {},
     scrollBy() {},
     scroll() {},
+    // The page and its frames share one realm, so the source is always the page.
+    postMessage(data) {
+      const target = this && this !== globalThis ? this : window;
+      setTimeout(() => {
+        target.dispatchEvent(
+          new MessageEvent('message', { data, origin: location.origin, source: window }),
+        );
+      }, 0);
+    },
     CSS: { escape: (s) => String(s).replace(/([^\w-])/g, '\\$1'), supports: () => false },
     Event,
     UIEvent,
@@ -2396,6 +2490,9 @@
     InputEvent,
     FocusEvent,
     CustomEvent,
+    Touch,
+    TouchEvent,
+    MessageEvent,
     PopStateEvent,
     PromiseRejectionEvent,
     EventTarget,
@@ -2420,22 +2517,36 @@
     HTMLDivElement,
     HTMLSpanElement,
     HTMLParagraphElement,
+    // `chain`: the target and its ancestors in the page or in an iframe's document.
     __blitzDispatch(chain, type, bubbles, cancelable, init) {
+      const path = chain.map(wrap);
+      const last = path[path.length - 1];
+      const doc = last.nodeType === 9 ? last : (last.ownerDocument ?? document);
+      if (last !== doc) path.push(doc);
+      const view = doc.defaultView ?? window;
+      path.push(view);
       const p = init.kind === 'pointer';
+      const touch = p && type.startsWith('touch');
       const cls = type.startsWith('pointer')
         ? PointerEvent
-        : p
-          ? MouseEvent
-          : init.kind === 'key'
-            ? KeyboardEvent
-            : init.kind === 'input'
-              ? InputEvent
-              : Event;
-      const ev = new cls(type, { ...init, bubbles, cancelable, composed: true, view: window });
+        : touch
+          ? TouchEvent
+          : p
+            ? MouseEvent
+            : init.kind === 'key'
+              ? KeyboardEvent
+              : init.kind === 'input'
+                ? InputEvent
+                : Event;
+      const ev = new cls(type, {
+        ...init,
+        ...(touch ? touchInit(type, init, path[0]) : null),
+        bubbles,
+        cancelable,
+        composed: true,
+        view,
+      });
       ev.isTrusted = true;
-      const path = chain.map(wrap);
-      if (path[path.length - 1] !== document) path.push(document);
-      path.push(window);
       anyCalled = false;
       dispatch(path, ev);
       return (ev.defaultPrevented ? 1 : 0) | (ev._stop ? 2 : 0) | (anyCalled ? 4 : 0);

@@ -29,6 +29,26 @@
   break-* properties are not honoured (Stylo parses them only for Gecko).
 - `blitz-paint` render: clip rectangles (columns, lifted boxes) are in the painter's clip
   space, without its initial offset; in an iframe they were off by the iframe's position.
+- `blitz-dom` node: `clip-path` clips hit testing (`inset()`, `polygon()` and reference
+  boxes; other shapes do not yet). Readest clips full-page overlays down with `inset()`, so
+  every tap on the page hit its top-inset strip.
+- `blitz-dom` events/pointer: a finger or pen tap fires `mousedown` and `mouseup` before its
+  `click`, as browsers' compatibility mouse events. Readest times a long hold from
+  `mousedown`; without it every tap read as a hold.
+- `blitz-dom` layout/inline/build, node/text, document: each inline layout records the byte
+  range of its text that every text node became (`TextLayout::text_nodes`), and
+  `BaseDocument::text_rects` gives the per-line boxes of part of a text node (DOM offsets
+  mapped across collapsed white space, boxes from glyph-run clusters as element boxes are, in
+  the root's columns): CSSOM View's Range rects, which foliate-js uses for the visible range,
+  highlights and popups.
+- `blitz-dom` node/svg, `blitz-paint` render: an SVG without a `viewBox` is not stretched (a
+  user unit is a CSS px, scaled only by the device scale, as in browsers); usvg sizes such a
+  tree to its content, and stretching that over the box moved every shape. foliate-js's
+  Overlayer draws highlights in a CSS-sized `<svg>` with no viewBox.
+- `blitz-dom` node/serialize: inside an inline SVG, an element's computed opacity and
+  mix-blend-mode are written for usvg (the root's are painted as CSS; the blend mode joins
+  the `style` attribute, the only place usvg reads it). Inline styles set by script are not
+  attributes, and usvg can't read `var()`: Readest's highlights take both from CSS variables.
 - `blitz-paint` text: faux italics lean forward. The glyph skew is applied in y-down space,
   so its sign is negated; every synthesized italic used to slant backwards.
 

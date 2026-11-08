@@ -10,7 +10,8 @@
 //!
 //! Output is headless: frames are painted with cairo and, with `BLITZ_TAURI_OUT=DIR`, written as
 //! PGM files. `BLITZ_TAURI_TAPS="x,y;#sel"` taps CSS-pixel points or the centre of the first
-//! element matching a selector, one per painted frame (`BLITZ_TAURI_TAP_MS` apart, default 800).
+//! element matching a selector, or press `key:Name` (e.g. `key:ArrowRight`), one per painted
+//! frame (`BLITZ_TAURI_TAP_MS` apart, default 800).
 
 use anyrender_cairo as cairo_scene;
 
@@ -449,9 +450,19 @@ impl BlitzWebview {
             doc.eval(&src, "probe");
             doc.run_jobs();
         }
-        if self.next_tap.is_some_and(|t| t <= Instant::now())
-            && let Some(target) = self.taps.pop_front()
-        {
+        let tap_due = self.next_tap.is_some_and(|t| t <= Instant::now());
+        if tap_due && let Some(name) = self.taps.front().and_then(|t| t.strip_prefix("key:")) {
+            let ok = [true, false]
+                .into_iter()
+                .all(|down| send_key(doc, name, down));
+            eprintln!(
+                "{{\"label\": \"key\", \"t_ms\": {:.1}, \"key\": \"{name}\", \"ok\": {ok}}}",
+                t_ms()
+            );
+            self.taps.pop_front();
+            self.next_tap = None;
+            self.dirty = true;
+        } else if tap_due && let Some(target) = self.taps.pop_front() {
             let point = match target
                 .split_once(',')
                 .and_then(|(x, y)| Some((x.trim().parse().ok()?, y.trim().parse().ok()?)))
@@ -649,6 +660,35 @@ fn send_pointer(
     } else {
         UiEvent::PointerUp(p)
     });
+}
+
+/// A key press or release: `name` is a key name such as `ArrowRight`, also taken as its code.
+/// False when it is not both.
+fn send_key(doc: &mut QjsDocument, name: &str, down: bool) -> bool {
+    use blitz_traits::events::{BlitzKeyEvent, KeyState};
+    let (Ok(key), Ok(code)) = (name.parse(), name.parse()) else {
+        return false;
+    };
+    let k = BlitzKeyEvent {
+        key,
+        code,
+        modifiers: Default::default(),
+        location: Default::default(),
+        is_auto_repeating: false,
+        is_composing: false,
+        state: if down {
+            KeyState::Pressed
+        } else {
+            KeyState::Released
+        },
+        text: None,
+    };
+    doc.handle_ui_event(if down {
+        UiEvent::KeyDown(k)
+    } else {
+        UiEvent::KeyUp(k)
+    });
+    true
 }
 
 /// `format` as in the Compression Streams spec: "deflate" (zlib), "deflate-raw" or "gzip".

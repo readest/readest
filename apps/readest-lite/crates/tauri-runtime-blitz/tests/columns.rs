@@ -94,9 +94,11 @@ fn the_root_scrolls_sideways_only() {
     let mut doc = doc();
     let logs = logs(
         &mut doc,
-        "const e = document.documentElement; console.log(e.scrollWidth, e.scrollHeight, e.clientHeight);",
+        "const e = document.documentElement; console.log(e.scrollWidth, e.scrollHeight, e.clientWidth, e.clientHeight);",
     );
-    assert_eq!(logs, ["log: 600 50 50"]);
+    // the root's client size is the viewport's (CSSOM View), not its box: Readest scales a
+    // frame point to the window by the iframe's width over it
+    assert_eq!(logs, ["log: 600 50 640 80"]);
 }
 
 #[test]
