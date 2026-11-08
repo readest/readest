@@ -78,6 +78,11 @@
   the layout cache, so after the first layout each section kept stale column cuts: a later
   restyle or viewport change moved the text but not the cuts, cutting lines in two and skipping
   columns.
+- `blitz-dom` document, layout/columns: element rects as browsers give them. A scroll
+  container's own box no longer moves with its scroll offset (foliate-js's paginator container
+  reported its scrolled-away position). A box broken across the root's columns has one client
+  rect per column, each reaching the column's bottom while the box goes on, as a fragmented
+  block's fragments do; they stopped at the column cut and were merged into one.
 - `blitz-paint` text: faux italics lean forward. The glyph skew is applied in y-down space,
   so its sign is negated; every synthesized italic used to slant backwards.
 
