@@ -734,6 +734,26 @@ fn install_ops<'js>(ctx: &Ctx<'js>, st: Rc<OpState>, page: &Url) {
         b.as_bytes().unwrap_or_default()
     )
     .into_owned());
+    // FileReader.readAsDataURL (web.js): standard base64 with padding.
+    op!("base64", |b: ArrayBuffer<'js>| {
+        const A: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+        let bytes = b.as_bytes().unwrap_or_default();
+        let mut out = String::with_capacity(bytes.len().div_ceil(3) * 4);
+        for c in bytes.chunks(3) {
+            let n = c
+                .iter()
+                .enumerate()
+                .fold(0u32, |n, (i, &x)| n | u32::from(x) << (16 - 8 * i));
+            for i in 0..4 {
+                out.push(if i <= c.len() {
+                    A[(n >> (18 - 6 * i) & 63) as usize] as char
+                } else {
+                    '='
+                });
+            }
+        }
+        out
+    });
     op!("random", |ctx: Ctx<'js>, n: usize| {
         let mut buf = vec![0u8; n];
         if let Ok(mut f) = std::fs::File::open("/dev/urandom") {
@@ -866,4 +886,67 @@ fn install_ops<'js>(ctx: &Ctx<'js>, st: Rc<OpState>, page: &Url) {
         None
     });
     ctx.globals().set("__tauri", t).unwrap();
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Runs `script` after web.js, as on a page; returns the console.log lines.
+    fn page(script: &str) -> Vec<String> {
+        let url = Url::parse("tauri://localhost/").unwrap();
+        let st = Rc::new(OpState {
+            id: 0,
+            label: "test".into(),
+            protocols: Arc::new(HashMap::new()),
+            blobs: Blobs::default(),
+            ipc: None,
+            tx: std::sync::mpsc::channel().0,
+            url: Arc::new(Mutex::new(url.to_string())),
+        });
+        let mut doc =
+            QjsDocument::from_html("<html><body></body></html>", DocumentConfig::default());
+        doc.context().with(|ctx| install_ops(&ctx, st, &url));
+        doc.eval(STREAMS_JS, "web-streams-polyfill.js");
+        doc.eval(WEB_JS, "web.js");
+        doc.eval(script, "test");
+        doc.run_jobs();
+        assert_eq!(doc.take_js_errors(), Vec::<String>::new());
+        doc.take_messages()
+            .into_iter()
+            .filter_map(|m| m.strip_prefix("log: ").map(str::to_owned))
+            .collect()
+    }
+
+    #[test]
+    fn file_reader_reads_a_blob() {
+        // readest-app's convertBlobUrlToDataUrl: onloadend, then `result`
+        let logs = page(
+            "const b = new Blob([new Uint8Array([0xff, 0, 0x80, 0x41]), 'é'], { type: 'image/png' });
+            const r = new FileReader();
+            r.onloadend = () => console.log('url', r.readyState, r.result);
+            r.readAsDataURL(b);
+            const a = new FileReader();
+            a.addEventListener('load', (e) => console.log('buffer', e.target === a, new Uint8Array(a.result).join(' ')));
+            a.readAsArrayBuffer(b.slice(0, 3));
+            const s = new FileReader();
+            s.onload = () => console.log('text', s.result);
+            s.readAsText(new Blob(['héllo']));
+            const p = new FileReader();
+            p.onload = () => console.log('padded', p.result);
+            p.readAsDataURL(new Blob(['ab']));
+            console.log('sync', r.readyState, r.result);",
+        );
+        assert_eq!(
+            logs,
+            [
+                "sync 1 null",
+                "buffer true 255 0 128",
+                "text héllo",
+                "padded data:application/octet-stream;base64,YWI=",
+                // loadend follows load
+                "url 2 data:image/png;base64,/wCAQcOp",
+            ]
+        );
+    }
 }
