@@ -51,6 +51,8 @@ Tests for `src/`: `node --test apps/readest-lite/src/*.test.js` (from the reposi
 | `BLITZ_TAURI_SIZE=WxH`, `BLITZ_TAURI_SCALE` | Viewport in device pixels (default 1236x1648, a Paperwhite 5) and scale (2.5) |
 | `BLITZ_TAURI_TAPS="x,y;#sel"`, `BLITZ_TAURI_TAP_MS` | Scripted taps (CSS px or a selector), one per painted frame |
 | `BLITZ_TAURI_EVAL=file.js`, `BLITZ_TAURI_EVAL_MS` | Evaluate a probe script after a delay |
+| `BLITZ_TAURI_INIT=file.js` | Evaluate a script before the page's scripts |
+| `BLITZ_QJS_PROFILE=FILE` | Sample the running JS stack (at most once a millisecond) into FILE |
 | `BLITZ_TAURI_QJS_CACHE=DIR\|off` | Local bytecode cache (default `$HOME/.cache/tauri-runtime-blitz/qjs`) |
 | `BLITZ_QJS_SHIPPED=off` | Ignore shipped `.qjsc` bytecode (for stacks with file and line) |
 | `BLITZ_FONTS=DIR` | Bundled fonts instead of fontconfig |

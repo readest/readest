@@ -468,7 +468,38 @@ impl QjsDocument {
             let deadline = Instant::now() + std::time::Duration::from_millis(ms);
             rt.set_interrupt_handler(Some(Box::new(move || Instant::now() >= deadline)));
         }
+        // BLITZ_QJS_PROFILE=FILE: a sampling profiler (diagnostics). At most once a millisecond,
+        // QuickJS's interrupt check appends the running JS stack to FILE as
+        // `<unix ms>\t<outermost frame>;...;<innermost frame>`.
+        let profiled = Rc::new(std::cell::Cell::new(0usize));
+        if let Some(path) = std::env::var_os("BLITZ_QJS_PROFILE") {
+            let mut out = std::fs::File::create(path).expect("BLITZ_QJS_PROFILE file");
+            let (raw, mut last) = (profiled.clone(), Instant::now());
+            rt.set_interrupt_handler(Some(Box::new(move || {
+                let ctx = raw.get() as *mut qjs::JSContext;
+                if ctx.is_null() || last.elapsed() < std::time::Duration::from_millis(1) {
+                    return false;
+                }
+                last = Instant::now();
+                if let Some(stack) = unsafe { js_stack(ctx) } {
+                    let frames: Vec<&str> = stack
+                        .lines()
+                        .filter_map(|l| l.trim().strip_prefix("at "))
+                        .collect();
+                    let ms = std::time::SystemTime::now()
+                        .duration_since(std::time::UNIX_EPOCH)
+                        .map_or(0, |d| d.as_millis());
+                    let folded: Vec<&str> = frames.into_iter().rev().collect();
+                    let _ = std::io::Write::write_fmt(
+                        &mut out,
+                        format_args!("{ms}\t{}\n", folded.join(";")),
+                    );
+                }
+                false
+            })));
+        }
         let ctx = Context::full(&rt).expect("a QuickJS context");
+        profiled.set(ctx.as_raw().as_ptr() as usize);
         // BLITZ_QJS_REJECTIONS=1: report promise rejections that have no handler when they happen
         // (diagnostics; a handler attached later still shows up here).
         if std::env::var_os("BLITZ_QJS_REJECTIONS").is_some() {
@@ -1005,5 +1036,28 @@ impl Document for QjsDocument {
             return true;
         }
         self.run_due_timers()
+    }
+}
+
+/// The JS stack where `ctx` is running: the `stack` of an Error made there.
+unsafe fn js_stack(ctx: *mut qjs::JSContext) -> Option<String> {
+    unsafe {
+        let err = qjs::JS_NewError(ctx);
+        if qjs::JS_IsException(err) {
+            return None;
+        }
+        let stack = qjs::JS_GetPropertyStr(ctx, err, c"stack".as_ptr());
+        let mut len = 0;
+        let p = qjs::JS_ToCStringLen2(ctx, &mut len, stack, false);
+        let out = (!p.is_null()).then(|| {
+            String::from_utf8_lossy(std::slice::from_raw_parts(p.cast::<u8>(), len as usize))
+                .into_owned()
+        });
+        if !p.is_null() {
+            qjs::JS_FreeCString(ctx, p);
+        }
+        qjs::JS_FreeValue(ctx, stack);
+        qjs::JS_FreeValue(ctx, err);
+        out
     }
 }
