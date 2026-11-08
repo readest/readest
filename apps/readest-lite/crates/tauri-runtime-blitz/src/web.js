@@ -132,6 +132,7 @@
     if (!p) throw new TypeError(`Invalid URL: ${href}`);
     return p;
   };
+  const blobTypes = new Map(); // blob: URL -> its Blob's type
   // The parsed parts stay in one array (`URL_PARTS` order): one property per URL object.
   class URL {
     constructor(href, base) {
@@ -140,6 +141,19 @@
     }
     static canParse(href, base) {
       return !!t.parseUrl(String(href), base === undefined ? null : String(base));
+    }
+    // Blob URLs keep their bytes in the runtime (blobPut), where Blitz's loads and fetch read them.
+    static createObjectURL(blob) {
+      const url = `blob:${location.origin}/${crypto.randomUUID()}`;
+      blobTypes.set(url, blob.type);
+      // A subclass that keeps its bytes elsewhere (readest-app's NativeFile) is stored once read.
+      if (blob.arrayBuffer === Blob.prototype.arrayBuffer) t.blobPut(url, blob._buf);
+      else blob.arrayBuffer().then((b) => blobTypes.has(url) && t.blobPut(url, b));
+      return url;
+    }
+    static revokeObjectURL(url) {
+      blobTypes.delete(String(url));
+      t.blobDel(String(url));
     }
     // The WHATWG setters, in Rust (`setUrl`).
     _set(part, value) {
@@ -369,6 +383,12 @@
   function fetch(input, init = {}) {
     const req = input instanceof Request && !init.method ? input : new Request(input, init);
     const url = new URL(req.url, location.href).href;
+    if (url.startsWith('blob:')) {
+      const bytes = t.blobGet(url);
+      if (!bytes) return Promise.reject(new TypeError(`Failed to fetch ${url}`));
+      const headers = { 'content-type': blobTypes.get(url) || '' };
+      return Promise.resolve(new Response(bytes, { headers, url }));
+    }
     const headers = [];
     req.headers.forEach((v, k) => headers.push(k, v));
     if (!req.headers.has('origin')) headers.push('origin', t.origin);
