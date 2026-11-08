@@ -170,7 +170,9 @@
     }
     dispatchEvent(ev) {
       const path = [];
-      for (let t = this; t; t = t._parentTarget()) path.push(t);
+      // An event that is not composed stops at the shadow root.
+      for (let t = this; t; t = t instanceof ShadowRoot && !ev.composed ? null : t._parentTarget())
+        path.push(t);
       return !dispatch(path, ev);
     }
     _parentTarget() {
@@ -208,25 +210,41 @@
       }
     }
   }
+  // The target each path entry sees: past a shadow root, its host (null: no shadow roots exist).
+  function retargets(path) {
+    if (!shadowIds.size) return null;
+    const out = [];
+    let t = path[0];
+    for (const p of path) {
+      out.push(t);
+      if (p instanceof ShadowRoot) t = p.host;
+    }
+    return out;
+  }
   // path: target first, then ancestors (and document, window). Returns defaultPrevented.
   function dispatch(path, ev) {
+    const targets = retargets(path);
+    const at = (i) => {
+      if (targets) ev.target = targets[i];
+      return path[i];
+    };
     ev.target = path[0];
     ev._path = path;
     const prev = globalThis.event;
     globalThis.event = ev;
     for (let i = path.length - 1; i > 0 && !ev._stop; i--) {
       ev.eventPhase = 1;
-      invoke(path[i], ev, true);
+      invoke(at(i), ev, true);
     }
     if (!ev._stop) {
       ev.eventPhase = 2;
-      invoke(path[0], ev, true);
+      invoke(at(0), ev, true);
       if (!ev._stopNow) invoke(path[0], ev, false);
     }
     if (ev.bubbles)
       for (let i = 1; i < path.length && !ev._stop; i++) {
         ev.eventPhase = 3;
-        invoke(path[i], ev, false);
+        invoke(at(i), ev, false);
       }
     ev.eventPhase = 0;
     ev.currentTarget = null;
@@ -258,16 +276,20 @@
       const p = this.parentNode;
       return p && p.nodeType === 1 ? p : null;
     }
+    // A host's shadow root is its first native child (attachShadow), not one of its children.
     get childNodes() {
-      return n.children(this._id).map(wrap);
+      const c = n.children(this._id).map(wrap);
+      if (this._shadow) c.shift();
+      return c;
     }
     get firstChild() {
-      const c = n.first(this._id);
+      let c = n.first(this._id);
+      if (this._shadow && c != null) c = n.sibling(c, 1);
       return c == null ? null : wrap(c);
     }
     get lastChild() {
       const c = n.last(this._id);
-      return c == null ? null : wrap(c);
+      return c == null || c === this._shadow?._id ? null : wrap(c);
     }
     get nextSibling() {
       const c = n.sibling(this._id, 1);
@@ -275,20 +297,22 @@
     }
     get previousSibling() {
       const c = n.sibling(this._id, -1);
-      return c == null ? null : wrap(c);
+      return c == null || shadowIds.has(c) ? null : wrap(c);
     }
+    // Shadow-including: shadow trees are in the native tree under their hosts.
     get isConnected() {
-      let t = this;
-      while (t.parentNode) t = t.parentNode;
-      return t.nodeType === 9;
+      if (this._id < 0) return false;
+      let id = this._id;
+      for (let p = n.parent(id); p != null; p = n.parent(p)) id = p;
+      return n.kind(id) === 9;
     }
     hasChildNodes() {
-      return n.first(this._id) != null;
+      return this.firstChild != null;
     }
-    getRootNode() {
+    getRootNode(opts) {
       let t = this;
       while (t.parentNode) t = t.parentNode;
-      return t;
+      return opts?.composed && t instanceof ShadowRoot ? t.host.getRootNode(opts) : t;
     }
     contains(other) {
       for (let t = other; t; t = t.parentNode) if (t === this) return true;
@@ -313,7 +337,7 @@
         if (tag === 'script') startScript(c);
         else if (tag === 'link') watchSheet(c);
       }
-      if (defs.size && !moved) connectCustom([c._id, ...n.queryAll(c._id, defSelector)]);
+      if (defs.size && !moved) connectCustom([c._id, ...n.queryAllDeep(c._id, defSelector)]);
       return c;
     }
     removeChild(c) {
@@ -334,7 +358,7 @@
       return this.nodeType === 9 ? null : n.text(this._id);
     }
     set textContent(v) {
-      n.setText(this._id, v == null ? '' : String(v));
+      keepShadow(this, () => n.setText(this._id, v == null ? '' : String(v)));
       if (connectedCustom.size) disconnectCustom();
     }
     get nodeValue() {
@@ -483,6 +507,11 @@
     });
   }
 
+  // A host's attributes, without the one its shadow root's styles select it by.
+  const attrNames = (el) => {
+    const a = n.attrNames(el._id);
+    return el._shadow ? a.filter((k) => k !== 'blitz-shadow-host') : a;
+  };
   class Element extends Node {
     get nodeName() {
       return this.tagName;
@@ -500,11 +529,20 @@
     get style() {
       return this._style || (this._style = makeStyle(this));
     }
-    // Shadow roots are detached fragments: their content is kept but never rendered.
+    // See "Shadow roots" below.
     attachShadow(init = {}) {
-      const r = new DocumentFragment();
-      r.host = this;
-      r.mode = init.mode;
+      if (this._shadow)
+        throw domError('This element already hosts a shadow root', 'NotSupportedError');
+      const key = String(++shadowCount);
+      const id = n.createElement(HTML_NS, 'blitz-shadow-root');
+      n.setAttr(id, 'style', 'display: contents');
+      n.setAttr(id, 'blitz-shadow-root', key);
+      n.setAttr(this._id, 'blitz-shadow-host', key);
+      n.insert(this._id, id, n.first(this._id));
+      const r = Object.create(ShadowRoot.prototype);
+      Object.assign(r, { _id: id, _key: key, host: this, mode: init.mode });
+      wrappers.set(id, r);
+      shadowIds.add(id);
       this._shadow = r;
       return r;
     }
@@ -539,6 +577,12 @@
     hasAttribute(k) {
       return n.getAttr(this._id, this._an(k)) != null;
     }
+    toggleAttribute(k, force) {
+      const on = force === undefined ? !this.hasAttribute(k) : !!force;
+      if (on && !this.hasAttribute(k)) this.setAttribute(k, '');
+      else if (!on) this.removeAttribute(k);
+      return on;
+    }
     getAttributeNS(_ns, k) {
       return this.getAttribute(k);
     }
@@ -549,7 +593,7 @@
       this.removeAttribute(k);
     }
     getAttributeNames() {
-      return n.attrNames(this._id);
+      return attrNames(this);
     }
     // Live, like a NamedNodeMap: React empties singletons with `while (a.length) removeAttributeNode(a[0])`.
     get attributes() {
@@ -571,12 +615,12 @@
         {},
         {
           get(_, k) {
-            if (k === 'length') return n.attrNames(el._id).length;
+            if (k === 'length') return attrNames(el).length;
             if (k === Symbol.iterator)
               return function* () {
-                for (const name of n.attrNames(el._id)) yield attr(name);
+                for (const name of attrNames(el)) yield attr(name);
               };
-            if (k === 'item') return (i) => attr(n.attrNames(el._id)[i]) || null;
+            if (k === 'item') return (i) => attr(attrNames(el)[i]) || null;
             if (k === 'getNamedItem')
               return (name) => (el.hasAttribute(name) ? attr(el._an(name)) : null);
             if (k === 'removeNamedItem')
@@ -585,13 +629,13 @@
                 el.removeAttribute(name);
                 return a;
               };
-            if (typeof k === 'string' && /^[0-9]+$/.test(k)) return attr(n.attrNames(el._id)[+k]);
+            if (typeof k === 'string' && /^[0-9]+$/.test(k)) return attr(attrNames(el)[+k]);
             return undefined;
           },
           has(_, k) {
             return (
               k === 'length' ||
-              (typeof k === 'string' && /^[0-9]+$/.test(k) && +k < n.attrNames(el._id).length)
+              (typeof k === 'string' && /^[0-9]+$/.test(k) && +k < attrNames(el).length)
             );
           },
         },
@@ -679,9 +723,9 @@
       return this.children.length;
     }
     set innerHTML(html) {
-      n.setInnerHtml(this._id, String(html));
+      keepShadow(this, () => n.setInnerHtml(this._id, String(html)));
       if (connectedCustom.size) disconnectCustom();
-      if (defs.size && this.isConnected) connectCustom(n.queryAll(this._id, defSelector));
+      if (defs.size && this.isConnected) connectCustom(n.queryAllDeep(this._id, defSelector));
     }
     get innerHTML() {
       return this.childNodes.map((c) => (c.nodeType === 3 ? c.data : '')).join('');
@@ -1213,11 +1257,142 @@
     return fired;
   }
 
+  // ---- Shadow roots ----
+  // Blitz has no shadow DOM, so a shadow tree is laid out in place: its root is an element
+  // (`blitz-shadow-root`, display: contents) that is its host's first native child, which Blitz
+  // styles, lays out and paints. The DOM keeps it apart: a host's children leave it out,
+  // queries do not enter it (ops.rs), its parentNode is null, and events cross it to the host,
+  // retargeted. Its <style>s set through innerHTML are scoped by rewriting their selectors.
+  // Not supported: <slot> (light children render after the shadow tree), adoptedStyleSheets;
+  // and the page's styles reach into shadow trees.
+  const shadowIds = new Set();
+  let shadowCount = 0;
+  class ShadowRoot extends DocumentFragment {
+    get nextSibling() {
+      return null;
+    }
+    get previousSibling() {
+      return null;
+    }
+    _parentTarget() {
+      return this.host;
+    }
+    get activeElement() {
+      return null;
+    }
+    getElementById(id) {
+      const r = n.query(this._id, `#${CSS.escape(String(id))}`);
+      return r == null ? null : wrap(r);
+    }
+    get innerHTML() {
+      return Object.getOwnPropertyDescriptor(Element.prototype, 'innerHTML').get.call(this);
+    }
+    set innerHTML(html) {
+      const key = this._key;
+      html = String(html).replace(
+        /(<style\b[^>]*>)([\s\S]*?)(<\/style\s*>)/gi,
+        (_, open, css, close) => open + scopeCss(css, key) + close,
+      );
+      n.setInnerHtml(this._id, html);
+      if (connectedCustom.size) disconnectCustom();
+      if (defs.size && this.isConnected) connectCustom(n.queryAllDeep(this._id, defSelector));
+    }
+  }
+  for (const [proto, names] of [
+    [Node.prototype, ['childNodes', 'firstChild', 'lastChild', 'insertBefore', 'removeChild']],
+    [
+      Element.prototype,
+      [
+        'children',
+        'firstElementChild',
+        'lastElementChild',
+        'childElementCount',
+        'querySelector',
+        'querySelectorAll',
+        'getElementsByTagName',
+        'getElementsByClassName',
+        'append',
+        'prepend',
+      ],
+    ],
+  ])
+    for (const k of names)
+      Object.defineProperty(ShadowRoot.prototype, k, Object.getOwnPropertyDescriptor(proto, k));
+
+  // Replaces a host's children natively, keeping its shadow root as the first native child.
+  function keepShadow(el, replace) {
+    const r = el._shadow;
+    if (r) n.remove(r._id);
+    replace();
+    if (r) n.insert(el._id, r._id, n.first(el._id));
+  }
+
+  // Index of the first of `stops` at nesting depth 0 from `i` (s.length if none), past strings
+  // and comments.
+  function scan(s, i, stops) {
+    let depth = 0;
+    for (; i < s.length; i++) {
+      const c = s[i];
+      if (c === '"' || c === "'") {
+        for (i++; i < s.length && s[i] !== c; i++) if (s[i] === '\\') i++;
+      } else if (c === '/' && s[i + 1] === '*') {
+        const e = s.indexOf('*/', i + 2);
+        i = e < 0 ? s.length : e + 1;
+      } else if (depth === 0 && stops.includes(c)) return i;
+      else if (c === '(' || c === '[' || c === '{') depth++;
+      else if (c === ')' || c === ']' || c === '}') depth--;
+    }
+    return s.length;
+  }
+  // A shadow tree's stylesheet scoped to it: `:host` and `:host(X)` select the host, any other
+  // top-level selector is put under the shadow root element; nested rules follow their parents.
+  function scopeCss(css, key) {
+    const host = `[blitz-shadow-host="${key}"]`;
+    const root = `[blitz-shadow-root="${key}"] `;
+    const scopeSelector = (s) => {
+      s = s.replace(/\/\*[\s\S]*?\*\//g, '').trim();
+      if (!/^:host(?![-\w])/.test(s)) return root + s;
+      const rest = s.slice(5);
+      if (rest[0] !== '(') return host + rest;
+      const end = scan(rest, 1, ')');
+      const inner = rest.slice(1, end).trim();
+      const type = /^(\*|[a-zA-Z][-\w]*)?/.exec(inner)[0];
+      return type + host + inner.slice(type.length) + rest.slice(end + 1);
+    };
+    let out = '';
+    for (let i = 0; i < css.length; ) {
+      const start = i;
+      i = scan(css, i, '{;');
+      if (i >= css.length || css[i] === ';') {
+        out += css.slice(start, i + 1);
+        i++;
+        continue;
+      }
+      const prelude = css.slice(start, i);
+      const end = scan(css, i + 1, '}');
+      const body = css.slice(i + 1, end);
+      const p = prelude.trim();
+      if (p[0] === '@')
+        out += `${prelude}{${/^@(media|supports|container|layer)\b/i.test(p) ? scopeCss(body, key) : body}}`;
+      else {
+        const selectors = [];
+        for (let j = 0; j <= prelude.length; ) {
+          const k = scan(prelude, j, ',');
+          selectors.push(scopeSelector(prelude.slice(j, k)));
+          j = k + 1;
+        }
+        out += `${selectors.join(', ')} {${body}}`;
+      }
+      i = end + 1;
+    }
+    return out;
+  }
+
   // ---- Custom elements ----
   // Autonomous custom elements (no `extends`). An element is upgraded in place when its name is
   // defined while it is in the document, when it is inserted into the document, or by
   // customElements.upgrade(). Reactions run synchronously; a move within the document fires no
-  // connected/disconnected. Shadow roots are not searched (they are detached fragments here).
+  // connected/disconnected. Shadow trees are searched too (they are in the native tree).
   const defs = new Map();
   const defsByCtor = new Map();
   const pendingDefs = new Map();
@@ -1285,7 +1460,7 @@
       defs.set(name, def);
       defsByCtor.set(ctor, def);
       defSelector = [...defs.keys()].join(',');
-      for (const id of n.queryAll(document._id, name)) upgrade(wrap(id));
+      for (const id of n.queryAllDeep(document._id, name)) upgrade(wrap(id));
       pendingDefs.get(name)?.resolve(ctor);
       pendingDefs.delete(name);
     },
@@ -1312,7 +1487,7 @@
       if (!defs.size) return;
       for (const k of root instanceof DocumentFragment ? root.childNodes : [root])
         if (k.nodeType === 1)
-          for (const id of [k._id, ...n.queryAll(k._id, defSelector)]) upgrade(wrap(id));
+          for (const id of [k._id, ...n.queryAllDeep(k._id, defSelector)]) upgrade(wrap(id));
     },
   };
 
@@ -1582,6 +1757,7 @@
     },
     history,
     customElements,
+    ShadowRoot,
     // Constants only (foliate-js reads them when its modules load); there is no TreeWalker yet.
     NodeFilter: {
       FILTER_ACCEPT: 1,
@@ -1741,7 +1917,7 @@
             : init.kind === 'input'
               ? InputEvent
               : Event;
-      const ev = new cls(type, { ...init, bubbles, cancelable, view: window });
+      const ev = new cls(type, { ...init, bubbles, cancelable, composed: true, view: window });
       ev.isTrusted = true;
       const path = chain.map(wrap);
       if (path[path.length - 1] !== document) path.push(document);

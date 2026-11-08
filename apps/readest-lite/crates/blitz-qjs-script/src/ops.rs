@@ -28,6 +28,27 @@ fn nid(x: f64) -> NodeId {
     NodeId::from_u64(x as u64)
 }
 
+/// The element bootstrap.js lays a shadow tree out in (`attachShadow`).
+const SHADOW_ROOT: &str = "blitz-shadow-root";
+
+/// Whether `node`, a descendant of `scope`, is in `scope`'s tree: no shadow root between them.
+fn in_tree_of(doc: &BaseDocument, scope: NodeId, node: NodeId) -> bool {
+    let mut p = doc.get_node(node).and_then(|n| n.parent);
+    while let Some(pid) = p.filter(|&p| p != scope) {
+        let Some(parent) = doc.get_node(pid) else {
+            return true;
+        };
+        if parent
+            .element_data()
+            .is_some_and(|e| &*e.name.local == SHADOW_ROOT)
+        {
+            return false;
+        }
+        p = parent.parent;
+    }
+    true
+}
+
 pub(crate) fn install(ctx: &Ctx<'_>, shared: Rc<RefCell<Shared>>, base: Option<&Url>) {
     let n = Object::new(ctx.clone()).unwrap();
     let doc = shared.borrow().doc.clone();
@@ -221,15 +242,35 @@ pub(crate) fn install(ctx: &Ctx<'_>, shared: Rc<RefCell<Shared>>, base: Option<&
             .remove_style_property(nid(n), &prop);
     });
     let dd = d(&doc);
+    // Queries stay in `scope`'s tree: shadow trees are laid out in place (bootstrap.js), so the
+    // matches under a shadow root below `scope` are dropped. `queryAllDeep` keeps them.
     op!("query", move |scope: f64, sel: String| -> Option<f64> {
-        dd.borrow()
-            .query_selector_in(nid(scope), &sel)
-            .ok()
-            .flatten()
+        let doc = dd.borrow();
+        let scope = nid(scope);
+        let first = doc.query_selector_in(scope, &sel).ok().flatten()?;
+        if in_tree_of(&doc, scope, first) {
+            return Some(id(first));
+        }
+        let all = doc.query_selector_all_in(scope, &sel).ok()?;
+        all.into_iter()
+            .find(|&n| in_tree_of(&doc, scope, n))
             .map(id)
     });
     let dd = d(&doc);
     op!("queryAll", move |scope: f64, sel: String| -> Vec<f64> {
+        let doc = dd.borrow();
+        let scope = nid(scope);
+        doc.query_selector_all_in(scope, &sel)
+            .map(|v| {
+                v.into_iter()
+                    .filter(|&n| in_tree_of(&doc, scope, n))
+                    .map(id)
+                    .collect()
+            })
+            .unwrap_or_default()
+    });
+    let dd = d(&doc);
+    op!("queryAllDeep", move |scope: f64, sel: String| -> Vec<f64> {
         dd.borrow()
             .query_selector_all_in(nid(scope), &sel)
             .map(|v| v.iter().map(|&n| id(n)).collect())
