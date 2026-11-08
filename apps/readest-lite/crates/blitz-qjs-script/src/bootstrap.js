@@ -1031,21 +1031,55 @@
     set scrollLeft(v) {
       this.scrollTo(v, this.scrollTop);
     }
-    // Instant (`behavior` is ignored); one `scroll` event per task, as browsers fire it per frame.
+    // One `scroll` event per task, as browsers fire it per frame. `behavior: 'smooth'` animates as
+    // Chromium's programmatic smooth scrolls do: 6 frames (at 60 Hz) up to 120 px, 12 from 480,
+    // eased in and out; any later scroll of the element replaces it.
     scrollTo(x, y) {
-      if (x && typeof x === 'object') ({ left: x = this.scrollLeft, top: y = this.scrollTop } = x);
-      if (n.scrollTo(this._id, Number(x) || 0, Number(y) || 0) && !this._scrollEvent)
+      let smooth = false;
+      if (x && typeof x === 'object') {
+        smooth = x.behavior === 'smooth';
+        ({ left: x = this.scrollLeft, top: y = this.scrollTop } = x);
+      }
+      if (this._smooth) cancelAnimationFrame(this._smooth);
+      this._smooth = 0;
+      (x = Number(x) || 0), (y = Number(y) || 0);
+      if (smooth) this._scrollSmoothly(x, y);
+      else this._scrollNow(x, y);
+    }
+    _scrollNow(x, y) {
+      if (n.scrollTo(this._id, x, y) && !this._scrollEvent)
         this._scrollEvent = setTimeout(() => {
           this._scrollEvent = 0;
           this.dispatchEvent(new Event('scroll'));
         }, 0);
     }
+    _scrollSmoothly(x, y) {
+      const [x0, y0] = [this.scrollLeft, this.scrollTop];
+      y = Math.min(Math.max(y, 0), Math.max(0, this.scrollHeight - this.clientHeight));
+      const d = Math.max(Math.abs(x - x0), Math.abs(y - y0));
+      if (!d) return;
+      const ms = ((6 + 6 * Math.min(1, Math.max(0, (d - 120) / 360))) * 1000) / 60;
+      const ease = (p) => (p < 0.5 ? 4 * p * p * p : 1 - (2 - 2 * p) ** 3 / 2);
+      let start = null;
+      const frame = (now) => {
+        if (start === null) start = now;
+        const p = Math.min(1, (now - start) / ms);
+        this._scrollNow(x0 + (x - x0) * ease(p), y0 + (y - y0) * ease(p));
+        this._smooth = p < 1 ? requestAnimationFrame(frame) : 0;
+      };
+      this._smooth = requestAnimationFrame(frame);
+    }
     scroll(x, y) {
       this.scrollTo(x, y);
     }
     scrollBy(x, y) {
-      if (x && typeof x === 'object') ({ left: x = 0, top: y = 0 } = x);
-      this.scrollTo(this.scrollLeft + (Number(x) || 0), this.scrollTop + (Number(y) || 0));
+      let behavior;
+      if (x && typeof x === 'object') ({ left: x = 0, top: y = 0, behavior } = x);
+      this.scrollTo({
+        left: this.scrollLeft + (Number(x) || 0),
+        top: this.scrollTop + (Number(y) || 0),
+        behavior,
+      });
     }
     focus() {
       document._active = this;
