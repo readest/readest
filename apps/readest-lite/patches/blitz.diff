@@ -241,7 +241,17 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
              iframe_loads: HashMap::new(),
  
              #[cfg(feature = "custom-widget")]
-@@ -1684,6 +1693,62 @@
+@@ -1093,6 +1102,9 @@
+             if let Some(before) = node.before() {
+                 self.drop_node_ignoring_parent_with(before, on_drop);
+             }
++            if let Some(first_letter) = node.first_letter() {
++                self.drop_node_ignoring_parent_with(first_letter, on_drop);
++            }
+             if let Some(after) = node.after() {
+                 self.drop_node_ignoring_parent_with(after, on_drop);
+             }
+@@ -1684,6 +1696,62 @@
              self.snapshot_node_state_only(node_id);
          }
          cb(&mut self.nodes[node_id]);
@@ -304,7 +314,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      }
  
      // Takes (x, y) co-ordinates (relative to the )
-@@ -2440,6 +2505,40 @@
+@@ -2440,6 +2508,40 @@
          (pos, *self.nodes[node_id].unrounded_layout())
      }
  
@@ -345,7 +355,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      /// Computes the size and position of the `Node` relative to the viewport
      pub fn get_client_bounding_rect(&self, node_id: NodeId) -> Option<BoundingRect> {
          // Non-atomic inline elements have no layout box of their own: return
-@@ -2447,17 +2546,27 @@
+@@ -2447,17 +2549,27 @@
          if let Some(rects) = self.inline_fragment_rects(node_id) {
              return rects.reduce(BoundingRect::union);
          }
@@ -383,7 +393,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      }
  
      /// CSSOM View's `offsetLeft`/`offsetTop`/`offsetWidth`/`offsetHeight` as a single rect:
-@@ -2528,7 +2637,7 @@
+@@ -2528,7 +2640,7 @@
      pub fn node_client_rects(&self, node_id: NodeId) -> Vec<BoundingRect> {
          match self.inline_fragment_rects(node_id) {
              Some(rects) => rects.collect(),
@@ -392,7 +402,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
          }
      }
  
-@@ -2543,20 +2652,257 @@
+@@ -2543,20 +2655,289 @@
  
          // Only non-atomic inline elements lack their own layout box: they are
          // flattened into the containing inline root's text layout as style spans.
@@ -469,9 +479,41 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
 +                s.get_inherited_text().white_space_collapse
 +                    == style::computed_values::white_space_collapse::T::Collapse
 +            });
-+        let at = |offset| laid_out_offset(&data.content, offset, &text.text, from, collapse);
-+        let (a, b) = (at(start.min(end)), at(start.max(end)));
-+        self.laid_out_rects(node_id, root, text, a, b)
++        let (start, end) = (start.min(end), start.max(end));
++        // A floated (or otherwise not inline) `::first-letter` box holds part of this text: the
++        // offsets in it are that box's text, the others this text's without it. An inline one is
++        // laid out in this text's place, so its offsets are this text's.
++        let skip = crate::layout::inline::first_letter_skip(&self.nodes, node_id).filter(|&(b, _)| {
++            !self.nodes[b].display_style().is_some_and(|d| {
++                d.outside() == style::values::specified::box_::DisplayOutside::Inline
++                    && d.inside() == style::values::specified::box_::DisplayInside::Flow
++            })
++        });
++        let Some((letter_box, skip)) = skip else {
++            let at = |offset| laid_out_offset(&data.content, offset, &text.text, from, collapse);
++            return self.laid_out_rects(node_id, root, text, at(start), at(end));
++        };
++        let rest = [&data.content[..skip.start], &data.content[skip.end..]].concat();
++        let at = |offset: usize| {
++            let offset = if offset <= skip.start { offset } else { offset.max(skip.end) - skip.len() };
++            laid_out_offset(&rest, offset, &text.text, from, collapse)
++        };
++        let in_letter = |o: usize| skip.contains(&o);
++        let mut rects = Vec::new();
++        if start < skip.start || (start == end && !in_letter(start)) {
++            let to = if start == end { start } else { end.min(skip.start) };
++            rects.extend(self.laid_out_rects(node_id, root, text, at(start), at(to)));
++        }
++        if (start < skip.end && end > skip.start) || (start == end && in_letter(start)) {
++            if let Some(&letter) = self.nodes[letter_box].children.first() {
++                let (a, b) = (start.max(skip.start) - skip.start, end.min(skip.end) - skip.start);
++                rects.extend(self.text_rects(letter, a, b.max(a)));
++            }
++        }
++        if end > skip.end && start != end {
++            rects.extend(self.laid_out_rects(node_id, root, text, at(start.max(skip.end)), at(end)));
++        }
++        rects
 +    }
 +
 +    /// Where (in layout units) a caret for `node` at byte `at` of the text sits beside the
@@ -662,7 +704,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      }
  
      /// The first element in tree order with the given tag name. The root element and
-@@ -2944,6 +3290,36 @@
+@@ -2944,6 +3325,36 @@
  /// Snap a CSSOM geometry value to a 1/64px grid (the precision of Blink's `LayoutUnit`).
  /// Layout values are accumulated in `f32`, so e.g. seven `55/7`-wide flex items would
  /// otherwise end at `55.0000005` and appear to overflow their 55px container.
@@ -699,7 +741,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
  fn snap_to_layout_unit(value: f64) -> f64 {
      (value * 64.0).round() / 64.0
  }
-@@ -3781,3 +4157,7 @@
+@@ -3781,3 +4192,7 @@
          );
      }
  }
@@ -1085,7 +1127,224 @@ diff -ruN blitz/packages/blitz-dom/src/layout/columns.rs blitz/packages/blitz-do
 diff -ruN blitz/packages/blitz-dom/src/layout/construct.rs blitz/packages/blitz-dom/src/layout/construct.rs
 --- blitz/packages/blitz-dom/src/layout/construct.rs
 +++ blitz/packages/blitz-dom/src/layout/construct.rs
-@@ -875,6 +875,10 @@
+@@ -180,6 +180,9 @@
+     if let Some(before) = node.before() {
+         layout_children.push(before);
+     }
++    if let Some(first_letter) = node.first_letter() {
++        layout_children.push(first_letter);
++    }
+     layout_children.extend(node.children.iter().copied().filter(|child_id| {
+         let child_node = node.with(*child_id);
+         child_node.data.kind() != NodeKind::Comment
+@@ -253,6 +256,9 @@
+     if let Some(before) = doc.nodes[container_node_id].before() {
+         push_hoisted_child(doc, before, out, wrap);
+     }
++    if let Some(first_letter) = doc.nodes[container_node_id].first_letter() {
++        push_hoisted_child(doc, first_letter, out, wrap);
++    }
+     // Take children array from node to avoid borrow checker issues.
+     let children = std::mem::take(&mut doc.nodes[container_node_id].children);
+     for child_id in children.iter().copied() {
+@@ -272,6 +278,9 @@
+     if let Some(before) = node.before() {
+         layout_children.push(before);
+     }
++    if let Some(first_letter) = node.first_letter() {
++        layout_children.push(first_letter);
++    }
+     layout_children.extend(node.children.iter().copied().filter(|child_id| {
+         let child_node = node.with(*child_id);
+         !child_node.is_whitespace_node() && child_node.data.kind() != NodeKind::Comment
+@@ -318,7 +327,7 @@
+     // transparent for box generation, so its children (e.g. generated text) participate
+     // in the container's formatting context, and any other pseudo generates its own
+     // inline or block box in that formatting context.
+-    let pseudo_ids = node.before().into_iter().chain(node.after());
++    let pseudo_ids = node.before().into_iter().chain(node.first_letter()).chain(node.after());
+     let child_ids = node.children.iter().copied().chain(pseudo_ids);
+     for child_id in child_ids {
+         let child = &doc.nodes[child_id];
+@@ -795,6 +804,177 @@
+             }
+         }
+     }
++
++    flush_first_letter(doc, node_id);
++}
++
++/// Syncs the `::first-letter` box (CSS Pseudo-Elements 4 §2.3) of a block container whose own
++/// inline content starts with text: an anonymous node, laid out after `::before`, holding the
++/// first letter with the punctuation around it. The text it comes from is laid out without it
++/// (see `first_letter_skip`). A block whose first line starts with `::before` content, or whose
++/// letter is in a descendant block, gets none.
++fn flush_first_letter(doc: &mut BaseDocument, node_id: NodeId) {
++    use style::selector_parser::PseudoElement;
++    let node = &doc.nodes[node_id];
++    let style = node
++        .try_stylo_element_data()
++        .and_then(|s| s.get())
++        .and_then(|d| d.styles.pseudos.as_array()[PseudoElement::FirstLetter.eager_index()].clone());
++    let is_block_container = node.display_style().is_some_and(|d| {
++        matches!(d.inside(), DisplayInside::Flow | DisplayInside::FlowRoot)
++            && !(d.outside() == DisplayOutside::Inline && d.inside() == DisplayInside::Flow)
++    });
++    let source = style
++        .as_ref()
++        .filter(|_| is_block_container && node.before().is_none())
++        .and_then(|_| first_letter_source(doc, node_id));
++    let existing = node.first_letter();
++    let old_source = node.element_data().and_then(|e| e.first_letter_source.clone());
++
++    let (Some(style), Some((text_id, range))) = (style, source.clone()) else {
++        if let Some(pe_id) = existing {
++            doc.remove_and_drop_pe(pe_id);
++            let node = &mut doc.nodes[node_id];
++            if let Some(el) = node.element_data_mut() {
++                el.first_letter = None;
++                el.first_letter_source = None;
++            }
++            node.insert_damage(ALL_DAMAGE);
++        }
++        return;
++    };
++    let letter = doc.nodes[text_id].text_data().unwrap().content[range.clone()].to_string();
++
++    let pe_id = match existing {
++        Some(pe_id) => pe_id,
++        None => {
++            let pe_id = doc.create_node(NodeData::AnonymousBlock(Box::new(ElementData::new(
++                DUMMY_NAME,
++                Vec::new(),
++            ))));
++            doc.nodes[pe_id].parent = Some(node_id);
++            doc.nodes[pe_id].layout_parent.set(Some(node_id));
++            if doc.nodes[node_id].flags.contains(NodeFlags::IS_IN_DOCUMENT) {
++                doc.nodes[pe_id].flags.insert(NodeFlags::IS_IN_DOCUMENT);
++            }
++            let letter_id = doc.create_text_node(&letter);
++            doc.nodes[letter_id].parent = Some(pe_id);
++            doc.nodes[pe_id].children.push(letter_id);
++            *doc.nodes[pe_id].stylo_element_data_mut().ensure_init_mut() = StyloElementData::default();
++            if let Some(el) = doc.nodes[node_id].element_data_mut() {
++                el.first_letter = Some(pe_id);
++            }
++            doc.nodes[node_id].insert_damage(ALL_DAMAGE);
++            pe_id
++        }
++    };
++    if old_source != source {
++        let letter_id = doc.nodes[pe_id].children[0];
++        doc.nodes[letter_id].text_data_mut().unwrap().content = letter;
++        if let Some(el) = doc.nodes[node_id].element_data_mut() {
++            el.first_letter_source = source;
++        }
++        doc.nodes[node_id].insert_damage(ALL_DAMAGE);
++    }
++    doc.nodes[pe_id].record_out_of_flow(&style);
++    let restyled = {
++        let data = doc.nodes[pe_id].stylo_element_data_mut();
++        let mut data = data.ensure_init_mut();
++        let changed = !data.styles.primary.as_ref().is_some_and(|s| std::ptr::eq(&**s, &*style));
++        if changed {
++            data.styles.primary = Some(style);
++            data.set_restyled();
++            data.damage = ALL_DAMAGE;
++        }
++        changed
++    };
++    if restyled {
++        doc.nodes[node_id].insert_damage(ALL_DAMAGE);
++    }
++}
++
++/// Where the first letter of block `block_id`'s own inline content is: a text node and the byte
++/// range of the letter with the punctuation before and after it. Out-of-flow boxes are passed
++/// over; any other box before the first text (an image, an inline-block, a block, a `<br>`)
++/// means there is none.
++fn first_letter_source(doc: &BaseDocument, block_id: NodeId) -> Option<(NodeId, std::ops::Range<usize>)> {
++    use icu_properties::props::{GeneralCategory, GeneralCategoryGroup};
++    use icu_properties::CodePointMapData;
++    let category = |c: char| CodePointMapData::<GeneralCategory>::new().get(c);
++    let punctuation = |c: char| {
++        matches!(
++            category(c),
++            GeneralCategory::OpenPunctuation
++                | GeneralCategory::ClosePunctuation
++                | GeneralCategory::InitialPunctuation
++                | GeneralCategory::FinalPunctuation
++                | GeneralCategory::OtherPunctuation
++        )
++    };
++    let letter = |c: char| {
++        let g = category(c);
++        GeneralCategoryGroup::Letter.contains(g) || GeneralCategoryGroup::Number.contains(g)
++    };
++    let mark = |c: char| GeneralCategoryGroup::Mark.contains(category(c));
++
++    // Ok(found), Err(true): stop, there is none; Err(false): nothing here, go on.
++    fn walk(
++        doc: &BaseDocument,
++        parent: NodeId,
++        find: &dyn Fn(&str) -> Option<Result<std::ops::Range<usize>, ()>>,
++    ) -> Result<(NodeId, std::ops::Range<usize>), bool> {
++        for &child_id in &doc.nodes[parent].children {
++            let child = &doc.nodes[child_id];
++            match &child.data {
++                NodeData::Text(t) => match find(&t.content) {
++                    Some(Ok(range)) => return Ok((child_id, range)),
++                    Some(Err(())) => return Err(true),
++                    None => continue,
++                },
++                NodeData::Element(_) => {
++                    let Some(style) = child.primary_styles() else { continue };
++                    let display = style.get_box().display;
++                    if display.is_none()
++                        || style.get_box().position.is_absolutely_positioned()
++                        || style.get_box().float != style::computed_values::float::T::None
++                    {
++                        continue;
++                    }
++                    let inline = display.outside() == DisplayOutside::Inline
++                        && display.inside() == DisplayInside::Flow
++                        && !crate::layout::replaced::is_inline_box_element(
++                            &child.element_data().unwrap().name.local,
++                        )
++                        && child.before().is_none();
++                    if !inline {
++                        return Err(true);
++                    }
++                    match walk(doc, child_id, find) {
++                        Err(false) => continue,
++                        found => return found,
++                    }
++                }
++                _ => continue,
++            }
++        }
++        Err(false)
++    }
++
++    // In one text: after its white space, punctuation, one letter or digit (with the marks on it),
++    // punctuation. None: only white space; Some(Err): text that starts otherwise.
++    let find = |text: &str| -> Option<Result<std::ops::Range<usize>, ()>> {
++        let start = text.find(|c: char| !c.is_whitespace())?;
++        let mut chars = text[start..].char_indices().map(|(i, c)| (start + i, c)).peekable();
++        while chars.next_if(|&(_, c)| punctuation(c)).is_some() {}
++        if chars.next_if(|&(_, c)| letter(c)).is_none() {
++            return Some(Err(()));
++        }
++        while chars.next_if(|&(_, c)| mark(c)).is_some() {}
++        while chars.next_if(|&(_, c)| punctuation(c)).is_some() {}
++        let end = chars.peek().map_or(text.len(), |&(i, _)| i);
++        Some(Ok(start..end))
++    };
++    walk(doc, block_id, &find).ok()
+ }
+ 
+ /// Handles the cases where there are text nodes or inline nodes that need to be wrapped in an anonymous block node
+@@ -875,6 +1055,10 @@
      } else {
          node.attr(local_name!("value")).unwrap_or("").to_string()
      };
@@ -1096,7 +1355,7 @@ diff -ruN blitz/packages/blitz-dom/src/layout/construct.rs blitz/packages/blitz-
      let is_focussed = node.is_focussed();
      let element = &mut node.data.downcast_element_mut().unwrap();
      if !matches!(element.special_data, SpecialElementData::TextInput(_)) {
-@@ -894,33 +898,54 @@
+@@ -894,33 +1078,54 @@
          unreachable!();
      };
  
@@ -1180,7 +1439,36 @@ diff -ruN blitz/packages/blitz-dom/src/layout/construct.rs blitz/packages/blitz-
 diff -ruN blitz/packages/blitz-dom/src/layout/damage.rs blitz/packages/blitz-dom/src/layout/damage.rs
 --- blitz/packages/blitz-dom/src/layout/damage.rs
 +++ blitz/packages/blitz-dom/src/layout/damage.rs
-@@ -527,6 +527,10 @@
+@@ -84,6 +84,9 @@
+         if let Some(before_id) = self.nodes[node_id].before() {
+             damage_from_children |= self.propagate_damage_flags(before_id);
+         }
++        if let Some(first_letter_id) = self.nodes[node_id].first_letter() {
++            damage_from_children |= self.propagate_damage_flags(first_letter_id);
++        }
+         if let Some(after_id) = self.nodes[node_id].after() {
+             damage_from_children |= self.propagate_damage_flags(after_id);
+         }
+@@ -306,7 +309,7 @@
+         }
+         let anonymous_blocks = std::mem::take(&mut node.anonymous_blocks);
+         let children = std::mem::take(&mut node.children);
+-        let (before, after) = (node.before(), node.after());
++        let (before, first_letter, after) = (node.before(), node.first_letter(), node.after());
+ 
+         for anon_id in anonymous_blocks.iter() {
+             self.clear_damage_and_dirty_flags(*anon_id);
+@@ -319,6 +322,9 @@
+         if let Some(before_id) = before {
+             self.clear_damage_and_dirty_flags(before_id);
+         }
++        if let Some(first_letter_id) = first_letter {
++            self.clear_damage_and_dirty_flags(first_letter_id);
++        }
+         if let Some(after_id) = after {
+             self.clear_damage_and_dirty_flags(after_id);
+         }
+@@ -527,6 +533,10 @@
                  input.editor.set_scale(scale);
                  let mut font_ctx = font_ctx.lock().unwrap();
                  input.editor.refresh_layout(&mut font_ctx, layout_ctx);
@@ -1282,16 +1570,62 @@ diff -ruN blitz/packages/blitz-dom/src/layout/inline/build.rs blitz/packages/bli
  
                              builder.pop_style_span();
                          }
-@@ -294,7 +306,9 @@
+@@ -292,9 +304,26 @@
+                 // node.remove_damage(CONSTRUCT_DESCENDENT | CONSTRUCT_FC | CONSTRUCT_BOX);
+                 // dbg!(&data.content);
  
-                 let text =
-                     text_transformer.transform(&data.content, parent_text_transform, builder);
+-                let text =
+-                    text_transformer.transform(&data.content, parent_text_transform, builder);
+-                builder.push_text(text);
++                // The letter a `::first-letter` box holds is laid out by that box, in its place.
 +                let start = builder.text().len();
-                 builder.push_text(text);
++                if let Some((letter_box, r)) = first_letter_skip(nodes, node_id) {
++                    let text = text_transformer.transform(&data.content[..r.start], parent_text_transform, builder);
++                    builder.push_text(text);
++                    build_inline_layout_recursive(
++                        builder,
++                        text_transformer,
++                        text_nodes,
++                        nodes,
++                        letter_box,
++                        parent_text_transform,
++                    );
++                    let text = text_transformer.transform(&data.content[r.end..], parent_text_transform, builder);
++                    builder.push_text(text);
++                } else {
++                    let text = text_transformer.transform(&data.content, parent_text_transform, builder);
++                    builder.push_text(text);
++                }
 +                text_nodes.push((node_id, start, builder.text().len()));
              }
              NodeData::Comment { .. } => {
                  // node.remove_damage(CONSTRUCT_DESCENDENT | CONSTRUCT_FC | CONSTRUCT_BOX);
+@@ -303,3 +332,25 @@
+         }
+     }
+ }
++
++/// The `::first-letter` box of text node `text_id`'s block and the byte range of the text it
++/// holds, if it holds part of this text.
++pub(crate) fn first_letter_skip(
++    nodes: &crate::NodeTree,
++    text_id: NodeId,
++) -> Option<(NodeId, std::ops::Range<usize>)> {
++    let mut parent = nodes[text_id].parent;
++    while let Some(id) = parent {
++        let node = &nodes[id];
++        if let Some((source, range)) = node.element_data().and_then(|e| e.first_letter_source.as_ref()) {
++            return if *source == text_id { Some((node.first_letter()?, range.clone())) } else { None };
++        }
++        // The letter's text is in its block's inline content: stop at the first other box.
++        let display = node.display_style()?;
++        if !(display.outside() == DisplayOutside::Inline && display.inside() == DisplayInside::Flow) {
++            return None;
++        }
++        parent = node.parent;
++    }
++    None
++}
 diff -ruN blitz/packages/blitz-dom/src/layout/inline/layout.rs blitz/packages/blitz-dom/src/layout/inline/layout.rs
 --- blitz/packages/blitz-dom/src/layout/inline/layout.rs
 +++ blitz/packages/blitz-dom/src/layout/inline/layout.rs
@@ -1319,6 +1653,15 @@ diff -ruN blitz/packages/blitz-dom/src/layout/inline/layout.rs blitz/packages/bl
          #[cfg(feature = "floats")]
          {
              if is_bfc_root {
+diff -ruN blitz/packages/blitz-dom/src/layout/inline/mod.rs blitz/packages/blitz-dom/src/layout/inline/mod.rs
+--- blitz/packages/blitz-dom/src/layout/inline/mod.rs
++++ blitz/packages/blitz-dom/src/layout/inline/mod.rs
+@@ -1,4 +1,4 @@
+ mod build;
+ mod layout;
+ 
+-pub(crate) use build::build_inline_layout_into;
++pub(crate) use build::{build_inline_layout_into, first_letter_skip};
 diff -ruN blitz/packages/blitz-dom/src/layout/mod.rs blitz/packages/blitz-dom/src/layout/mod.rs
 --- blitz/packages/blitz-dom/src/layout/mod.rs
 +++ blitz/packages/blitz-dom/src/layout/mod.rs
@@ -1633,10 +1976,56 @@ diff -ruN blitz/packages/blitz-dom/src/mutator.rs blitz/packages/blitz-dom/src/m
          let parent = &self.doc.nodes[parent_id];
          let flags = parent.selector_flags().get();
          let mut hint = RestyleHint::empty();
+diff -ruN blitz/packages/blitz-dom/src/node/element.rs blitz/packages/blitz-dom/src/node/element.rs
+--- blitz/packages/blitz-dom/src/node/element.rs
++++ blitz/packages/blitz-dom/src/node/element.rs
+@@ -118,6 +118,11 @@
+     // Pseudo element nodes
+     pub before: Option<NodeId>,
+     pub after: Option<NodeId>,
++    /// The `::first-letter` box (CSS Pseudo-Elements 4 §2.3): an anonymous node holding the
++    /// letter, laid out right after `::before`.
++    pub first_letter: Option<NodeId>,
++    /// Where that letter is in the DOM: a byte range of a text node, which is laid out without it.
++    pub first_letter_source: Option<(NodeId, std::ops::Range<usize>)>,
+ 
+     /// Detailed layout information from the most recent layout (currently
+     /// grid track sizing information for grid containers only). Used by
+@@ -337,6 +342,8 @@
+             may_have_animations: AtomicBool::new(false),
+             before: None,
+             after: None,
++            first_letter: None,
++            first_letter_source: None,
+             detailed_layout_info: taffy::DetailedLayoutInfo::None,
+             display_constructed_as: StyloDisplay::Block,
+             layout_data: None,
+@@ -451,6 +458,8 @@
+             may_have_animations: AtomicBool::new(false),
+             before: None,
+             after: None,
++            first_letter: None,
++            first_letter_source: None,
+             detailed_layout_info: taffy::DetailedLayoutInfo::None,
+             display_constructed_as: StyloDisplay::Block,
+             layout_data: None,
 diff -ruN blitz/packages/blitz-dom/src/node/node.rs blitz/packages/blitz-dom/src/node/node.rs
 --- blitz/packages/blitz-dom/src/node/node.rs
 +++ blitz/packages/blitz-dom/src/node/node.rs
-@@ -1421,6 +1421,66 @@
+@@ -391,6 +391,12 @@
+     pub fn after(&self) -> Option<NodeId> {
+         self.element_data().and_then(|data| data.after)
+     }
++
++    /// The `::first-letter` box, laid out right after `::before`.
++    #[inline]
++    pub fn first_letter(&self) -> Option<NodeId> {
++        self.element_data().and_then(|data| data.first_letter)
++    }
+ }
+ 
+ impl Node {
+@@ -1421,6 +1427,66 @@
          self.hit_inner(x, y, scale, &mut None)
      }
  
@@ -1703,7 +2092,7 @@ diff -ruN blitz/packages/blitz-dom/src/node/node.rs blitz/packages/blitz-dom/src
      /// [`hit`](Self::hit), also resolving the innermost overlay scrollbar
      /// thumb under the point into `scrollbar` during the same descent (so
      /// thumb hit-testing shares the exact coordinate handling — transforms
-@@ -1460,6 +1520,19 @@
+@@ -1460,6 +1526,19 @@
              y = (p.y / scale) as f32;
          }
  
@@ -1723,7 +2112,7 @@ diff -ruN blitz/packages/blitz-dom/src/node/node.rs blitz/packages/blitz-dom/src
          let size = self.final_layout().size;
          let matches_self = !(x < self.scroll_offset().x as f32
              || x > size.width + self.scroll_offset().x as f32
-@@ -1840,8 +1913,8 @@
+@@ -1840,8 +1919,8 @@
  
          // One rect per line box: the union of all of the target's fragments on that line
          Some(layout.lines().filter_map(move |line| {
@@ -1733,7 +2122,7 @@ diff -ruN blitz/packages/blitz-dom/src/node/node.rs blitz/packages/blitz-dom/src
  
              for item in line.items() {
                  match item {
-@@ -1849,15 +1922,13 @@
+@@ -1849,15 +1928,13 @@
                          if !is_in_target(glyph_run.style().brush.id) {
                              continue;
                          }
@@ -1756,7 +2145,7 @@ diff -ruN blitz/packages/blitz-dom/src/node/node.rs blitz/packages/blitz-dom/src
                          union(&mut line_rect, x0, y0, x1, y1);
                      }
                      PositionedLayoutItem::InlineBox(inline_box) => {
-@@ -1962,6 +2033,15 @@
+@@ -1962,6 +2039,15 @@
  
      fn cssom_scroll_size(&self) -> taffy::Size<f32> {
          let layout = self.final_layout();
@@ -1993,7 +2382,17 @@ diff -ruN blitz/packages/blitz-dom/src/resolve.rs blitz/packages/blitz-dom/src/r
      }
  
      fn resolve_transforms(&mut self, node_id: NodeId) -> Rect {
-@@ -462,3 +505,70 @@
+@@ -222,7 +265,8 @@
+             overflow = overflow.union(child_rect_in_self);
+         }
+         *self.nodes[node_id].hoisted_children.borrow_mut() = hoisted_children;
+-        for pseudo in [self.nodes[node_id].before(), self.nodes[node_id].after()] {
++        let node = &self.nodes[node_id];
++        for pseudo in [node.before(), node.first_letter(), node.after()] {
+             let Some(pseudo) = pseudo else { continue };
+             if self.nodes[pseudo].is_out_of_flow() {
+                 continue;
+@@ -462,3 +506,70 @@
          // taffy::print_tree(self, root_node_id)
      }
  }
@@ -2083,6 +2482,69 @@ diff -ruN blitz/packages/blitz-dom/src/scrolling.rs blitz/packages/blitz-dom/src
                  let event = BlitzScrollEvent {
                      scroll_top: offset.y,
                      scroll_left: offset.x,
+diff -ruN blitz/packages/blitz-dom/src/stylo.rs blitz/packages/blitz-dom/src/stylo.rs
+--- blitz/packages/blitz-dom/src/stylo.rs
++++ blitz/packages/blitz-dom/src/stylo.rs
+@@ -1509,7 +1509,8 @@
+ ) {
+     let before_node_id = el.before();
+     let after_node_id = el.after();
+-    if before_node_id.is_none() && after_node_id.is_none() {
++    let first_letter_node_id = el.first_letter();
++    if before_node_id.is_none() && after_node_id.is_none() && first_letter_node_id.is_none() {
+         return;
+     }
+ 
+@@ -1517,11 +1518,17 @@
+     let pseudos = data.styles.pseudos.as_array();
+     let before_style = pseudos[1].clone();
+     let after_style = pseudos[0].clone();
++    let first_letter_style =
++        pseudos[style::selector_parser::PseudoElement::FirstLetter.eager_index()].clone();
+ 
+     // Creation and removal of pseudo-elements is handled during box construction
+     // (Stylo generates construction damage for those cases), so only the case
+     // where the pseudo-element both was and remains present is handled here.
+-    for (pe_node_id, pe_style) in [(before_node_id, before_style), (after_node_id, after_style)] {
++    for (pe_node_id, pe_style) in [
++        (before_node_id, before_style),
++        (first_letter_node_id, first_letter_style),
++        (after_node_id, after_style),
++    ] {
+         let (Some(pe_node_id), Some(pe_style)) = (pe_node_id, pe_style) else {
+             continue;
+         };
+diff -ruN blitz/packages/blitz-dom/src/traversal.rs blitz/packages/blitz-dom/src/traversal.rs
+--- blitz/packages/blitz-dom/src/traversal.rs
++++ blitz/packages/blitz-dom/src/traversal.rs
+@@ -24,12 +24,16 @@
+ 
+         // Copy before, after, and take children
+         let before = node.before();
++        let first_letter = node.first_letter();
+         let after = node.after();
+         let children = core::mem::take(&mut node.children);
+ 
+         if let Some(before) = before {
+             $cb(before)
+         }
++        if let Some(first_letter) = first_letter {
++            $cb(first_letter)
++        }
+         for child_id in children.iter().copied() {
+             $cb(child_id)
+         }
+@@ -182,6 +186,10 @@
+         }
+         self.nodes[node_id].set_pe_by_index(1, before);
+ 
++        if let Some(first_letter) = self.nodes[node_id].first_letter() {
++            cb(first_letter, self)
++        }
++
+         self.iter_children_mut(node_id, &mut cb);
+ 
+         let after = self.nodes[node_id].after();
 diff -ruN blitz/packages/blitz-dom/src/tree.rs blitz/packages/blitz-dom/src/tree.rs
 --- blitz/packages/blitz-dom/src/tree.rs
 +++ blitz/packages/blitz-dom/src/tree.rs
@@ -2146,7 +2608,7 @@ diff -ruN blitz/packages/blitz-dom/src/util.rs blitz/packages/blitz-dom/src/util
 diff -ruN blitz/packages/blitz-html/src/html_document.rs blitz/packages/blitz-html/src/html_document.rs
 --- blitz/packages/blitz-html/src/html_document.rs
 +++ blitz/packages/blitz-html/src/html_document.rs
-@@ -68,3 +68,535 @@
+@@ -68,3 +68,570 @@
          self.into()
      }
  }
@@ -2680,6 +3142,41 @@ diff -ruN blitz/packages/blitz-html/src/html_document.rs blitz/packages/blitz-ht
 +        doc.resolve(0.0);
 +        let r = doc.get_client_bounding_rect(doc.get_element_by_id("r").unwrap()).unwrap();
 +        assert_eq!((r.x, r.width, r.height), (2.0, 129.0, 16.0));
++    }
++}
++
++#[cfg(test)]
++mod first_letter_tests {
++    use crate::{HtmlDocument, HtmlProvider};
++    use blitz_dom::DocumentConfig;
++    use blitz_traits::shell::{ColorScheme, Viewport};
++    use std::sync::Arc;
++
++    // CSS Pseudo-Elements 4 §2.3: the first letter of a block's first line, after the white
++    // space before it, takes the `::first-letter` style. Books style it as a drop cap.
++    #[test]
++    fn the_first_letter_takes_its_style() {
++        let config = DocumentConfig {
++            html_parser_provider: Some(Arc::new(HtmlProvider)),
++            viewport: Some(Viewport::new(800, 600, 1.0, ColorScheme::Light)),
++            ..Default::default()
++        };
++        let mut doc = HtmlDocument::from_html(
++            "<html><head><style>p::first-letter { font-size: 40px }</style></head>\
++             <body style='margin:0'><p id='p' style='margin:0;font-size:16px'>\n\t\tPaul sat</p></body></html>",
++            config,
++        );
++        doc.resolve(0.0);
++        let p = doc.get_node(doc.get_element_by_id("p").unwrap()).unwrap();
++        let text = p.children[0];
++        assert_eq!(doc.get_node(text).unwrap().text_data().unwrap().content, "\n\t\tPaul sat");
++        let letter = doc.text_rects(text, 3, 4);
++        let next = doc.text_rects(text, 4, 5);
++        assert_eq!((letter.len(), next.len()), (1, 1), "{letter:?} {next:?}");
++        assert!(letter[0].height > 1.8 * next[0].height, "P {:?} against a {:?}", letter[0], next[0]);
++        // the letter is laid out once: the text after it starts at its right edge
++        assert!((next[0].x - (letter[0].x + letter[0].width)).abs() < 0.5, "{letter:?} {next:?}");
++        assert!(letter[0].width > 20.0, "a 40px P: {letter:?}");
 +    }
 +}
 diff -ruN blitz/packages/blitz-html/src/html_sink.rs blitz/packages/blitz-html/src/html_sink.rs

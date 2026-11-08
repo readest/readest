@@ -33,3 +33,29 @@ fn text_runs_beside_a_left_float() {
     );
     assert_eq!(logs, ["0 0 100 50"]);
 }
+
+#[test]
+fn a_floated_first_letter_is_a_drop_cap() {
+    // As the novel's chapter openings: `p::first-letter { font-size: 2.6em; line-height: 0.85;
+    // float: left }` after the white space that starts the paragraph's text.
+    let logs = run(
+        "<style>p::first-letter { font-size: 2.6em; line-height: 0.85; float: left }</style>\
+         <p id='p' style='margin:0;width:200px;font-size:16px;line-height:20px'>\n\t\tPaul sat on the edge of his bed and began stripping off his desert boots.</p>",
+        "const t = document.getElementById('p').firstChild, r = document.createRange();
+        const at = (i) => { r.setStart(t, i); r.setEnd(t, i + 1); const b = r.getBoundingClientRect(); return [b.x, b.y, b.width, b.height]; };
+        const [px, py, pw, ph] = at(3), [ax, ay] = at(4);
+        // the first word of each line: lines 1 and 2 run beside the cap (34 px tall), line 3 not
+        const firsts = {};
+        for (const m of t.data.matchAll(/\\S+/g)) {
+            const [x, y] = at(m.index);
+            const line = Math.floor((y + 2) / 20);
+            if (!(line in firsts)) firsts[line] = Math.round(x);
+        }
+        console.log(JSON.stringify(t.data.slice(0, 7)), document.getElementById('p').textContent.length === t.data.length);
+        console.log(px, py < 5, ph > 30, ax >= px + pw, ay < 5);
+        console.log(firsts[1] >= px + pw, firsts[2] < 5, JSON.stringify(firsts));",
+    );
+    assert_eq!(logs[0], "\"\\n\\t\\tPaul\" true");
+    assert_eq!(logs[1], "0 true true true true");
+    assert!(logs[2].starts_with("true true "), "{}", logs[2]);
+}

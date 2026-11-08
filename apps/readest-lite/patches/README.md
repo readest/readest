@@ -93,6 +93,13 @@
   whole line box. Range rects walk each
   shaped run's clusters once: spans that change only the brush share one shaped run, which was
   walked again from every span's offset, shifting the rects of text after a span.
+- `blitz-dom` layout/construct, layout/inline/build, document, node, stylo, traversal, damage,
+  resolve: `::first-letter` (CSS Pseudo-Elements 4 §2.3). A block container whose own inline
+  content starts with text gets an anonymous box after `::before` holding the first letter with
+  the punctuation around it, styled by Stylo's eager `::first-letter` style; the text node is laid
+  out with that box in the letter's place, so a floated one is a drop cap. Range rects of the
+  letter's offsets are that box's when it is not inline. A block whose first line starts with
+  `::before` content, or whose letter is in a descendant block, gets none.
 - `blitz-paint` text: faux italics lean forward. The glyph skew is applied in y-down space,
   so its sign is negated; every synthesized italic used to slant backwards.
 - `blitz-dom` layout/columns: a column ends early to honour `orphans` and `widows` (with
