@@ -13,7 +13,7 @@ license = "Apache-2.0 OR MIT"
 tauri-runtime = { path = "../../vendor/tauri/crates/tauri-runtime", default-features = false }
 tauri-utils = { path = "../../vendor/tauri/crates/tauri-utils" }
 # woff: Readest's UI font (Inter) is WOFF2.
-blitz-dom = { path = "../../vendor/blitz/packages/blitz-dom", default-features = false, features = ["custom-widget", "svg", "woff"] }
+blitz-dom = { path = "../../vendor/blitz/packages/blitz-dom", default-features = false, features = ["custom-widget", "floats", "svg", "woff"] }
 blitz-html = { path = "../../vendor/blitz/packages/blitz-html", default-features = false }
 blitz-paint = { path = "../../vendor/blitz/packages/blitz-paint", default-features = false, features = ["svg"] }
 blitz-traits = { path = "../../vendor/blitz/packages/blitz-traits", default-features = false }
