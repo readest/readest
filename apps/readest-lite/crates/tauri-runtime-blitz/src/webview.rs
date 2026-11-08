@@ -325,6 +325,13 @@ impl BlitzWebview {
         for (i, s) in self.init_scripts.iter().enumerate() {
             doc.eval(&s.script, &format!("init-{i}"));
         }
+        // BLITZ_TAURI_INIT=file.js: one more initialization script (diagnostics, e.g. hooks that
+        // must exist before the page's scripts run).
+        if let Some(src) =
+            std::env::var_os("BLITZ_TAURI_INIT").and_then(|p| std::fs::read_to_string(p).ok())
+        {
+            doc.eval(&src, "init-env");
+        }
         let (protocols, blobs, label) = (
             self.ops.protocols.clone(),
             self.ops.blobs.clone(),
@@ -451,13 +458,15 @@ impl BlitzWebview {
             doc.run_jobs();
         }
         let tap_due = self.next_tap.is_some_and(|t| t <= Instant::now());
+        // Input lines carry the time the input was sent and how long its handlers ran.
+        let t0 = t_ms();
         if tap_due && let Some(name) = self.taps.front().and_then(|t| t.strip_prefix("key:")) {
             let ok = [true, false]
                 .into_iter()
                 .all(|down| send_key(doc, name, down));
             eprintln!(
-                "{{\"label\": \"key\", \"t_ms\": {:.1}, \"key\": \"{name}\", \"ok\": {ok}}}",
-                t_ms()
+                "{{\"label\": \"key\", \"t_ms\": {t0:.1}, \"handler_ms\": {:.1}, \"key\": \"{name}\", \"ok\": {ok}}}",
+                t_ms() - t0
             );
             self.taps.pop_front();
             self.next_tap = None;
@@ -483,12 +492,13 @@ impl BlitzWebview {
                 self.next_tap = None;
                 return;
             };
+            let t0 = t_ms();
             for down in [true, false] {
                 send_pointer(doc, &self.pointers, x, y, down);
             }
             eprintln!(
-                "{{\"label\": \"tap\", \"t_ms\": {:.1}, \"target\": \"{target}\", \"x\": {x:.0}, \"y\": {y:.0}}}",
-                t_ms()
+                "{{\"label\": \"tap\", \"t_ms\": {t0:.1}, \"handler_ms\": {:.1}, \"target\": \"{target}\", \"x\": {x:.0}, \"y\": {y:.0}}}",
+                t_ms() - t0
             );
             self.next_tap = None;
             self.dirty = true;
