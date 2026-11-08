@@ -40,6 +40,7 @@ fn create_element_constructs_a_defined_element() {
             el.setAttribute('a', '1');
             el.setAttribute('b', '2');
             el.removeAttribute('a');
+            console.log(el.toggleAttribute('a'), el.toggleAttribute('a', true), el.toggleAttribute('a'), el.hasAttribute('a'));
             document.body.appendChild(el);
             el.remove();
             console.log(log.join('|'));
@@ -52,7 +53,8 @@ fn create_element_constructs_a_defined_element() {
         logs,
         [
             "true true x-log true",
-            "construct null|attr a null 1|attr a 1 null|connected|disconnected",
+            "true true false false",
+            "construct null|attr a null 1|attr a 1 null|attr a null |attr a  null|connected|disconnected",
             "x-log null x-log",
         ]
     );
