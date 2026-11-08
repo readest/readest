@@ -1274,7 +1274,21 @@ diff -ruN blitz/packages/blitz-dom/src/node/text.rs blitz/packages/blitz-dom/src
 diff -ruN blitz/packages/blitz-dom/src/resolve.rs blitz/packages/blitz-dom/src/resolve.rs
 --- blitz/packages/blitz-dom/src/resolve.rs
 +++ blitz/packages/blitz-dom/src/resolve.rs
-@@ -94,6 +94,9 @@
+@@ -72,6 +72,13 @@
+                 .retain(|_, last| last.elapsed() < FADE_DELAY + FADE_DURATION);
+         }
+ 
++        // Nothing changed since the last resolve: its styles and layout stand. Only the iframes
++        // may have changed on their own.
++        if self.is_resolved() {
++            self.resolve_subdocs(current_time_for_animations);
++            return;
++        }
++
+         let root_node_id = self.root_element().id;
+         debug_timer!(timer, feature = "log-phase-times");
+ 
+@@ -94,6 +101,9 @@
          // Propagate damage flags (from mutation and restyles) up and down the tree
          self.propagate_damage_flags(root_node_id);
          timer.record_time("damage");
@@ -1284,7 +1298,7 @@ diff -ruN blitz/packages/blitz-dom/src/resolve.rs blitz/packages/blitz-dom/src/r
  
          // Fix up tree for layout (insert anonymous blocks as necessary, etc)
          self.resolve_layout_children();
-@@ -123,6 +126,11 @@
+@@ -123,10 +133,18 @@
          self.build_paint_tree(root_node_id);
          timer.record_time("paint_tree");
  
@@ -1296,6 +1310,124 @@ diff -ruN blitz/packages/blitz-dom/src/resolve.rs blitz/packages/blitz-dom/src/r
          // Clear all damage and dirty flags, walking only subtrees which are
          // marked as (potentially) containing damage.
          let doc_node_id = self.root_node().id;
+         self.clear_damage_and_dirty_flags(doc_node_id);
++        // The style traversal cleared the elements' flags; the document node is above it (and
++        // with no damage, the pass above returns before clearing it).
++        self.nodes[doc_node_id].unset_dirty_descendants();
+         timer.record_time("c_damage");
+ 
+         // Re-resolve the hover node from the pointer position against the fresh
+@@ -138,6 +156,29 @@
+         // if the hovered node actually changes.
+         self.refresh_hover();
+ 
++        self.resolve_subdocs(current_time_for_animations);
++        timer.record_time("subdocs");
++
++        timer.print_times(&format!("Resolve({}): ", self.id()));
++    }
++
++    /// Whether a resolve would change nothing: no node is dirty (marking a node marks its
++    /// ancestors up to the document node) or damaged, and no stylesheet, device, animation or
++    /// deferred work is pending.
++    fn is_resolved(&self) -> bool {
++        let doc = self.root_node();
++        self.incremental_layout
++            && !doc.has_dirty_descendants()
++            && !doc.has_damaged_descendants()
++            && self.snapshots.is_empty()
++            && self.pending_device_changes.is_empty()
++            && !self.stylist.stylesheets_have_changed()
++            && self.animations.sets.read().is_empty()
++            && self.deferred_construction_nodes.is_empty()
++            && self.pending_style_image_nodes.is_empty()
++    }
++
++    fn resolve_subdocs(&mut self, current_time_for_animations: f64) {
+         let mut subdoc_is_animating = false;
+         for &node_id in &self.sub_document_nodes {
+             let node = &mut self.nodes[node_id];
+@@ -163,9 +204,6 @@
+             }
+         }
+         self.subdoc_is_animating = subdoc_is_animating;
+-        timer.record_time("subdocs");
+-
+-        timer.print_times(&format!("Resolve({}): ", self.id()));
+     }
+ 
+     fn resolve_transforms(&mut self, node_id: NodeId) -> Rect {
+@@ -462,3 +500,70 @@
+         // taffy::print_tree(self, root_node_id)
+     }
+ }
++
++#[cfg(test)]
++mod tests {
++    use crate::{BaseDocument, DocumentConfig, NodeId, qual_name};
++
++    /// `<html><body><div style="width:50px; height:20px"></div></body></html>`, resolved.
++    fn page() -> (BaseDocument, NodeId) {
++        let mut doc = BaseDocument::new(DocumentConfig::default());
++        let root = doc.root_node().id;
++        let mut m = doc.mutate();
++        let html = m.create_element(qual_name!("html", html), vec![]);
++        let body = m.create_element(qual_name!("body", html), vec![]);
++        let div = m.create_element(qual_name!("div", html), vec![]);
++        m.set_attribute(div, qual_name!("style"), "width:50px; height:20px");
++        m.append_children(body, &[div]);
++        m.append_children(html, &[body]);
++        m.append_children(root, &[html]);
++        drop(m);
++        doc.resolve(0.0);
++        (doc, div)
++    }
++
++    fn width(doc: &BaseDocument, id: NodeId) -> f32 {
++        doc.get_client_bounding_rect(id).unwrap().width as f32
++    }
++
++    #[test]
++    fn a_resolve_with_nothing_changed_lays_out_nothing() {
++        let (mut doc, div) = page();
++        let generation = doc.nodes.geometry_generation();
++        doc.resolve(0.0);
++        doc.resolve(0.0);
++        assert_eq!(doc.nodes.geometry_generation(), generation);
++        assert_eq!(width(&doc, div), 50.0);
++    }
++
++    #[test]
++    fn a_change_that_changes_no_style_leaves_the_document_clean() {
++        // a class that no rule matches: restyled, nothing damaged
++        let (mut doc, div) = page();
++        doc.mutate().set_attribute(div, qual_name!("class"), "unmatched");
++        doc.resolve(0.0);
++        let generation = doc.nodes.geometry_generation();
++        doc.resolve(0.0);
++        assert_eq!(doc.nodes.geometry_generation(), generation);
++    }
++
++    #[test]
++    fn changes_after_a_clean_resolve_are_laid_out() {
++        let (mut doc, div) = page();
++        doc.resolve(0.0);
++        doc.mutate()
++            .set_attribute(div, qual_name!("style"), "width:80px; height:20px");
++        doc.resolve(0.0);
++        assert_eq!(width(&doc, div), 80.0);
++        // a new stylesheet marks no node; it changes the stylist
++        let body = doc.get_node(div).unwrap().parent.unwrap();
++        let mut m = doc.mutate();
++        let style = m.create_element(qual_name!("style", html), vec![]);
++        let text = m.create_text_node("div { width: 30px !important }");
++        m.append_children(style, &[text]);
++        m.append_children(body, &[style]);
++        drop(m);
++        doc.resolve(0.0);
++        assert_eq!(width(&doc, div), 30.0);
++    }
++}
 diff -ruN blitz/packages/blitz-dom/src/tree.rs blitz/packages/blitz-dom/src/tree.rs
 --- blitz/packages/blitz-dom/src/tree.rs
 +++ blitz/packages/blitz-dom/src/tree.rs

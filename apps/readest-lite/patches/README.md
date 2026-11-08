@@ -52,6 +52,12 @@
 - `blitz-html` html_sink: `DocumentHtmlParser::parse_html_into_mutator` parses as HTML
   without sniffing for XHTML, as `DOMParser` does for `text/html` (readest-lite's
   `DOMParser` gives such documents to DOMPurify, which sanitizes every book section).
+- `blitz-dom` resolve: a resolve with nothing to do (no dirty or damaged node, no stylesheet,
+  device, animation or deferred change) skips style, layout and paint-tree work and only resolves
+  the iframes. After a resolve the document node's dirty flag is cleared too: the style traversal
+  starts below it and the damage pass returns before clearing it, so after any change that
+  damaged nothing every later resolve redid all layout. foliate-js reads hundreds of element and
+  range rects per page turn, each resolving first; a clean one went from 0.2–0.4 ms to under 10 µs.
 - `blitz-paint` text: faux italics lean forward. The glyph skew is applied in y-down space,
   so its sign is negated; every synthesized italic used to slant backwards.
 
