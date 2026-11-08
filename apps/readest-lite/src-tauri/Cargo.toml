@@ -6,7 +6,7 @@ publish = false
 description = "Readest Lite: readest-app's React UI on tauri-runtime-blitz (no browser engine)"
 
 [dependencies]
-tauri = { path = "../vendor/tauri/crates/tauri", default-features = false, features = ["compression", "dynamic-acl"] }
+tauri = { path = "../vendor/tauri/crates/tauri", default-features = false, features = ["compression", "dynamic-acl", "protocol-asset"] }
 tauri-runtime-blitz = { path = "../crates/tauri-runtime-blitz" }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
