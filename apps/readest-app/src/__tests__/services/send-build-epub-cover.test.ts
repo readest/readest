@@ -1,4 +1,3 @@
-// @vitest-environment node
 import { describe, test, expect } from 'vitest';
 import { buildEpub } from '@/services/send/conversion/buildEpub';
 import { configureZip } from '@/utils/zip';
