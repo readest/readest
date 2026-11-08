@@ -841,7 +841,12 @@ pub(crate) fn install(ctx: &Ctx<'_>, shared: Rc<RefCell<Shared>>, base: Option<&
     });
     let d = docs.clone();
     // Computed value of one longhand or custom property ("" for shorthands and unstyled nodes).
+    // `writing-mode` is `horizontal-tb`: layout is horizontal only, and Stylo parses the property
+    // only behind a pref left off so that vertical books are laid out (and paginated) as horizontal.
     op!("computed", move |h: f64, prop: String| -> String {
+        if prop == "writing-mode" {
+            return "horizontal-tb".into();
+        }
         let Ok(id) = style::properties::PropertyId::parse_enabled_for_all_content(&prop) else {
             return String::new();
         };
