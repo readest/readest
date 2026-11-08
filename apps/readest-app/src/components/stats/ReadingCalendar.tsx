@@ -257,6 +257,18 @@ const ReadingCalendar: React.FC<ReadingCalendarProps> = ({ db, daily }) => {
   useEffect(() => {
     const grid = gridRef.current;
     if (!grid) return;
+    const handleTouchMove = (event: TouchEvent) => {
+      if (swipe.current?.horizontal && event.touches.length === 1) event.preventDefault();
+    };
+    // Pointer capture alone lets Android swallow the next tap after a swipe.
+    // Cancel only claimed horizontal touches; React's touchmove listener is passive.
+    grid.addEventListener('touchmove', handleTouchMove, { passive: false });
+    return () => grid.removeEventListener('touchmove', handleTouchMove);
+  }, []);
+
+  useEffect(() => {
+    const grid = gridRef.current;
+    if (!grid) return;
     const handleWheel = (event: WheelEvent) => {
       const x = event.deltaX || (event.shiftKey ? event.deltaY : 0);
       const y = event.shiftKey ? 0 : event.deltaY;

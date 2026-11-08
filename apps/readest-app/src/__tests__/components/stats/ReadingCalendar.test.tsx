@@ -43,6 +43,13 @@ const pointer = (element: Element, type: string, options: PointerEventInit = {})
   fireEvent(element, event);
 };
 
+const touchMove = (element: Element, count = 1) => {
+  const event = new Event('touchmove', { bubbles: true, cancelable: true });
+  Object.defineProperty(event, 'touches', { value: Array.from({ length: count }, () => ({})) });
+  fireEvent(element, event);
+  return event;
+};
+
 const wheel = (element: Element, options: WheelEventInit, timeStamp: number) => {
   const event = new WheelEvent('wheel', { bubbles: true, cancelable: true, ...options });
   Object.defineProperty(event, 'timeStamp', { value: timeStamp });
@@ -116,6 +123,30 @@ describe('ReadingCalendar', () => {
     pointer(grid, 'pointermove', { pointerType, clientX: 100, clientY: 155 });
     pointer(grid, 'pointerup', { pointerType, clientX: 80, clientY: 155 });
     expect(screen.getByText('November 2026')).toBeTruthy();
+  });
+
+  it('cancels native touch scrolling only for a claimed month swipe so the next Today tap can activate', async () => {
+    const { container } = render(<ReadingCalendar db={db} daily={daily} />);
+    await screen.findByText('No reading activity on this day');
+    const grid = container.querySelector('[aria-busy]')!;
+    pointer(grid, 'pointerdown', { clientX: 80, clientY: 150 });
+    expect(touchMove(grid).defaultPrevented).toBe(false);
+    pointer(grid, 'pointermove', { clientX: 200, clientY: 155 });
+    expect(touchMove(grid).defaultPrevented).toBe(true);
+    expect(touchMove(grid, 2).defaultPrevented).toBe(false);
+    pointer(grid, 'pointerup', { clientX: 220, clientY: 155 });
+    expect(screen.getByText('October 2026')).toBeTruthy();
+    expect(touchMove(grid).defaultPrevented).toBe(false);
+    const today = screen.getByRole('button', { name: 'Today' });
+    pointer(today, 'pointerdown');
+    pointer(today, 'pointerup');
+    fireEvent.click(today, { detail: 1 });
+    expect(screen.getByRole('button', { pressed: true }).dataset['calendarDate']).toBe(
+      '2026-11-07',
+    );
+    pointer(grid, 'pointerdown', { clientX: 100, clientY: 100 });
+    pointer(grid, 'pointermove', { clientX: 102, clientY: 180 });
+    expect(touchMove(grid).defaultPrevented).toBe(false);
   });
 
   it('leaves vertical scrolls, short drags, cancellations, multitouch and mouse selection alone', async () => {
