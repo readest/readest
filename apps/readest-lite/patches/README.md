@@ -63,6 +63,12 @@
   list restyled every element once a selector had tested `:first-child` on the root element, as
   daisyUI's `:is(.stack, …) > :first-child` does. foliate-js clears its background layer with
   `innerHTML = ''` three times per page turn; each made the next rect query ~18 ms.
+- `blitz-dom` document, mutator: `:has()` is parsed (`layout.css.has-selector.enabled`), and a
+  change to an element's attributes, state or child list restyles the `:has()` anchors whose
+  search reached it (from Stylo's search-direction and anchor selector flags; coarser than
+  Gecko's dependency-based invalidation, never finer). Without the pref a selector list holding
+  `:has()` was dropped whole, and Readest's book paragraph rule (`p, blockquote,
+  div:not(:has(…))`) with it, so book text had `line-height: normal`.
 - `blitz-paint` text: faux italics lean forward. The glyph skew is applied in y-down space,
   so its sign is negated; every synthesized italic used to slant backwards.
 

@@ -183,7 +183,91 @@ diff -ruN blitz/Cargo.toml blitz/Cargo.toml
 diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/document.rs
 --- blitz/packages/blitz-dom/src/document.rs
 +++ blitz/packages/blitz-dom/src/document.rs
-@@ -2451,12 +2451,23 @@
+@@ -29,7 +29,10 @@
+ use linebender_resource_handle::Blob;
+ use markup5ever::{LocalName, local_name};
+ use parley::{FontContext, PlainEditorDriver};
+-use selectors::{Element, matching::QuirksMode};
++use selectors::{
++    Element,
++    matching::{ElementSelectorFlags, QuirksMode},
++};
+ use smallvec::SmallVec;
+ use std::any::Any;
+ use std::cell::RefCell;
+@@ -95,6 +98,8 @@
+         style_config::set_pref!("layout.css.font-variations.enabled", true);
+         style_config::set_pref!("layout.css.text-indent-keywords.enabled", true);
+         style_config::set_pref!("layout.css.word-break.break-word.enabled", true);
++        // Without it `:has()` does not parse, and a selector list holding one is dropped whole.
++        style_config::set_pref!("layout.css.has-selector.enabled", true);
+         #[cfg(feature = "writing-mode")]
+         {
+             style_config::set_pref!("layout.css.writing-mode.enabled", true);
+@@ -1684,6 +1689,62 @@
+             self.snapshot_node_state_only(node_id);
+         }
+         cb(&mut self.nodes[node_id]);
++        self.restyle_relative_selector_anchors(node_id);
++    }
++
++    /// Restyle the elements whose `:has()` match a change at `node_id` (its attributes, state or
++    /// child list) can flip. Matching a `:has()` flags the elements its search visited with the
++    /// search's direction, and the element it was tested on as an anchor, so this walks from the
++    /// changed element through the visited ones and restyles each anchor on the way. Coarser
++    /// than Gecko's dependency-based invalidation (any change an anchor's search could see
++    /// restyles it), never finer.
++    pub(crate) fn restyle_relative_selector_anchors(&mut self, node_id: NodeId) {
++        const ANCESTOR: ElementSelectorFlags =
++            ElementSelectorFlags::RELATIVE_SELECTOR_SEARCH_DIRECTION_ANCESTOR;
++        const SIBLING: ElementSelectorFlags =
++            ElementSelectorFlags::RELATIVE_SELECTOR_SEARCH_DIRECTION_SIBLING;
++        let mut id = node_id;
++        loop {
++            let flags = self.nodes[id].selector_flags().get();
++            if !flags.intersects(ANCESTOR | SIBLING) {
++                break;
++            }
++            let parent = self.nodes[id].parent;
++            if flags.contains(SIBLING) {
++                // A `:has(+ …)` or `:has(~ …)` anchor is an earlier sibling.
++                if let Some(parent) = parent {
++                    let siblings = &self.nodes[parent].children;
++                    let at = siblings.iter().position(|c| *c == id).unwrap_or(0);
++                    for sibling in siblings[..at].to_vec() {
++                        self.restyle_relative_selector_anchor(sibling);
++                    }
++                }
++            }
++            let Some(parent) = parent.filter(|_| flags.contains(ANCESTOR)) else {
++                break;
++            };
++            self.restyle_relative_selector_anchor(parent);
++            id = parent;
++        }
++    }
++
++    fn restyle_relative_selector_anchor(&mut self, id: NodeId) {
++        let node = &mut self.nodes[id];
++        let flags = node.selector_flags().get();
++        if flags.contains(ElementSelectorFlags::ANCHORS_RELATIVE_SELECTOR_NON_SUBJECT) {
++            // The `:has()` styles another element: one below the anchor, or after it.
++            let all = RestyleHint::RESTYLE_SELF | RestyleHint::RESTYLE_DESCENDANTS;
++            node.set_restyle_hint(all);
++            if let Some(parent) = node.parent {
++                let siblings = &self.nodes[parent].children;
++                let at = siblings.iter().position(|c| *c == id).unwrap_or(siblings.len());
++                for sibling in siblings[at + 1..].to_vec() {
++                    self.nodes[sibling].set_restyle_hint(all);
++                }
++            }
++        } else if flags.contains(ElementSelectorFlags::ANCHORS_RELATIVE_SELECTOR) {
++            node.set_restyle_hint(RestyleHint::RESTYLE_SELF);
++        }
+     }
+ 
+     // Takes (x, y) co-ordinates (relative to the )
+@@ -2451,12 +2512,23 @@
          self.get_node(node_id)?;
          let (pos, layout) = self.physical_unrounded_geometry(node_id);
          let size = layout.size;
@@ -211,7 +295,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
          })
      }
  
-@@ -2546,19 +2557,133 @@
+@@ -2546,19 +2618,133 @@
          let fragments = node.inline_fragment_boxes()?;
          let inline_root = node.inline_root_ancestor()?;
  
@@ -353,7 +437,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      /// The first element in tree order with the given tag name. The root element and
      /// its children are checked first as a fast path before a full tree search, making
      /// this suitable for the `documentElement`/`head`/`body` document accessors.
-@@ -2944,6 +3069,36 @@
+@@ -2944,6 +3130,36 @@
  /// Snap a CSSOM geometry value to a 1/64px grid (the precision of Blink's `LayoutUnit`).
  /// Layout values are accumulated in `f32`, so e.g. seven `55/7`-wide flex items would
  /// otherwise end at `55.0000005` and appear to overflow their 55px container.
@@ -1045,6 +1129,26 @@ diff -ruN blitz/packages/blitz-dom/src/lib.rs blitz/packages/blitz-dom/src/lib.r
  pub use crate::layout::replaced::IntrinsicSizes;
  pub use crate::layout::text_transform::{full_size_kana, full_width};
  #[cfg(feature = "custom-widget")]
+diff -ruN blitz/packages/blitz-dom/src/mutator.rs blitz/packages/blitz-dom/src/mutator.rs
+--- blitz/packages/blitz-dom/src/mutator.rs
++++ blitz/packages/blitz-dom/src/mutator.rs
+@@ -744,6 +744,7 @@
+         }
+         // Mark ancestors dirty so the style traversal visits this subtree.
+         node.mark_ancestors_dirty();
++        self.doc.restyle_relative_selector_anchors(node_id);
+     }
+ 
+     /// Restyle an in-document element whose child list changed, `changed` being the position
+@@ -751,6 +752,8 @@
+     /// children are styled by the traversal regardless; the element and its other children
+     /// only need restyling where its selector flags record a selector that depends on them.
+     fn restyle_for_child_list_change(&mut self, parent_id: NodeId, changed: Range<usize>) {
++        // A `:has()` above the parent may see the change too.
++        self.doc.restyle_relative_selector_anchors(parent_id);
+         let parent = &self.doc.nodes[parent_id];
+         let flags = parent.selector_flags().get();
+         let mut hint = RestyleHint::empty();
 diff -ruN blitz/packages/blitz-dom/src/node/node.rs blitz/packages/blitz-dom/src/node/node.rs
 --- blitz/packages/blitz-dom/src/node/node.rs
 +++ blitz/packages/blitz-dom/src/node/node.rs
@@ -1456,6 +1560,95 @@ diff -ruN blitz/packages/blitz-dom/src/tree.rs blitz/packages/blitz-dom/src/tree
      pub fn viewport_scroll(&self) -> crate::Point<f64> {
          self.viewport_scroll
      }
+diff -ruN blitz/packages/blitz-html/src/html_document.rs blitz/packages/blitz-html/src/html_document.rs
+--- blitz/packages/blitz-html/src/html_document.rs
++++ blitz/packages/blitz-html/src/html_document.rs
+@@ -68,3 +68,85 @@
+         self.into()
+     }
+ }
++
++#[cfg(test)]
++mod has_selector_tests {
++    use crate::{HtmlDocument, HtmlProvider};
++    use blitz_dom::DocumentConfig;
++    use std::sync::Arc;
++
++    fn page(css: &str, body: &str) -> HtmlDocument {
++        let config = DocumentConfig {
++            html_parser_provider: Some(Arc::new(HtmlProvider)),
++            ..Default::default()
++        };
++        let mut doc = HtmlDocument::from_html(
++            &format!("<html><head><style>{css}</style></head><body>{body}</body></html>"),
++            config,
++        );
++        doc.resolve(0.0);
++        doc
++    }
++
++    fn hidden(doc: &HtmlDocument, id: &str) -> bool {
++        let node = doc.get_node(doc.get_element_by_id(id).unwrap()).unwrap();
++        node.primary_styles().unwrap().get_box().display.is_none()
++    }
++
++    #[test]
++    fn a_rule_whose_selector_list_has_has_applies() {
++        // Readest's book paragraph rule: a selector list that can't be parsed is dropped whole,
++        // so without `:has()` its `p` lost the rule too.
++        let doc = page(
++            "p, blockquote, div:not(:has(:not(b, i))) { display: none }",
++            "<p id='p'>text</p><div id='plain'><b>bold</b> text</div><div id='mixed'><span>x</span></div>",
++        );
++        assert!(hidden(&doc, "p"), "p");
++        assert!(hidden(&doc, "plain"), "a div holding only <b>");
++        assert!(!hidden(&doc, "mixed"), "a div holding a <span>");
++    }
++
++    #[test]
++    fn has_follows_a_change_of_children() {
++        let mut doc = page("div:has(> b) { display: none }", "<div id='d'><span>x</span></div>");
++        assert!(!hidden(&doc, "d"));
++        let d = doc.get_element_by_id("d").unwrap();
++        doc.mutate().set_inner_html(d, "<b>x</b>");
++        doc.resolve(0.0);
++        assert!(hidden(&doc, "d"), "after a <b> child is added");
++        doc.mutate().set_inner_html(d, "<i>x</i>");
++        doc.resolve(0.0);
++        assert!(!hidden(&doc, "d"), "after it is removed");
++    }
++
++    #[test]
++    fn has_follows_a_class_change_deep_below() {
++        // daisyUI's `:root:has(.modal-open)`: a dialog deep in the page changes the root's style.
++        let mut doc = page(
++            ":root:has(.open) #flag { display: none }",
++            "<div id='flag'>f</div><div><section><p id='deep'>x</p></section></div>",
++        );
++        assert!(!hidden(&doc, "flag"));
++        let deep = doc.get_element_by_id("deep").unwrap();
++        let class = html5ever::QualName::new(None, html5ever::ns!(), html5ever::local_name!("class"));
++        doc.mutate().set_attribute(deep, class.clone(), "open");
++        doc.resolve(0.0);
++        assert!(hidden(&doc, "flag"), "after a descendant gains the class");
++        doc.mutate().clear_attribute(deep, class);
++        doc.resolve(0.0);
++        assert!(!hidden(&doc, "flag"), "after it loses it");
++    }
++
++    #[test]
++    fn has_follows_a_state_change_below() {
++        let mut doc = page(
++            "div:has(:checked) { display: none }",
++            "<div id='d'><input type='radio' name='r' id='a'><input type='radio' name='r'></div>",
++        );
++        assert!(!hidden(&doc, "d"));
++        let a = doc.get_element_by_id("a").unwrap();
++        doc.toggle_radio("r".into(), a);
++        doc.resolve(0.0);
++        assert!(hidden(&doc, "d"), "after a radio inside it is checked");
++    }
++}
 diff -ruN blitz/packages/blitz-html/src/html_sink.rs blitz/packages/blitz-html/src/html_sink.rs
 --- blitz/packages/blitz-html/src/html_sink.rs
 +++ blitz/packages/blitz-html/src/html_sink.rs
