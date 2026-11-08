@@ -402,7 +402,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
          }
      }
  
-@@ -2543,20 +2655,304 @@
+@@ -2543,20 +2655,324 @@
  
          // Only non-atomic inline elements lack their own layout box: they are
          // flattened into the containing inline root's text layout as style spans.
@@ -441,7 +441,27 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
 +            {
 +                at += space.len_utf8();
 +            }
-+            self.laid_out_rects(node_id, inline_root, text, at, at)
++            let rects = self.laid_out_rects(node_id, inline_root, text, at, at);
++            if rects.is_empty() && text.layout.lines().all(|l| l.items().next().is_none()) {
++                // Its line box holds nothing, so has no height (CSS 2 §9.4.2): the element is
++                // a 0x0 box where that line starts.
++                let l = inline_root.unrounded_layout();
++                let (x, y) = (
++                    f64::from(l.border.left + l.padding.left),
++                    f64::from(l.border.top + l.padding.top + text.block_offset),
++                );
++                let to_document = self.content_to_document(inline_root.id);
++                let r = to_bounding_rect(to_document.transform_rect_bbox(kurbo::Rect::new(x, y, x, y)));
++                let (sx, sy) = (self.viewport_scroll().x, self.viewport_scroll().y);
++                vec![BoundingRect {
++                    x: snap_to_layout_unit(r.x - sx),
++                    y: snap_to_layout_unit(r.y - sy),
++                    width: 0.0,
++                    height: 0.0,
++                }]
++            } else {
++                rects
++            }
 +        } else {
 +            Vec::new()
 +        };
@@ -719,7 +739,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      }
  
      /// The first element in tree order with the given tag name. The root element and
-@@ -2944,6 +3340,36 @@
+@@ -2944,6 +3360,36 @@
  /// Snap a CSSOM geometry value to a 1/64px grid (the precision of Blink's `LayoutUnit`).
  /// Layout values are accumulated in `f32`, so e.g. seven `55/7`-wide flex items would
  /// otherwise end at `55.0000005` and appear to overflow their 55px container.
@@ -756,7 +776,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
  fn snap_to_layout_unit(value: f64) -> f64 {
      (value * 64.0).round() / 64.0
  }
-@@ -3781,3 +4207,7 @@
+@@ -3781,3 +4227,7 @@
          );
      }
  }
@@ -2652,7 +2672,7 @@ diff -ruN blitz/packages/blitz-dom/src/util.rs blitz/packages/blitz-dom/src/util
 diff -ruN blitz/packages/blitz-html/src/html_document.rs blitz/packages/blitz-html/src/html_document.rs
 --- blitz/packages/blitz-html/src/html_document.rs
 +++ blitz/packages/blitz-html/src/html_document.rs
-@@ -68,3 +68,635 @@
+@@ -68,3 +68,654 @@
          self.into()
      }
  }
@@ -2855,6 +2875,25 @@ diff -ruN blitz/packages/blitz-html/src/html_document.rs blitz/packages/blitz-ht
 +        let c = doc.text_rects(after, 0, 1);
 +        assert_eq!(c.len(), 1);
 +        assert!((s.x - c[0].x).abs() < 0.01, "span {s:?}, the next word's first letter {:?}", c[0]);
++    }
++
++    #[test]
++    fn an_empty_inline_element_on_an_empty_line_is_at_its_start() {
++        // A page-break span alone (with white space) before a block: its line box holds
++        // nothing, so it has no height, and the span is a 0x0 box where that line starts.
++        let config = DocumentConfig {
++            html_parser_provider: Some(Arc::new(HtmlProvider)),
++            viewport: Some(Viewport::new(800, 600, 1.0, ColorScheme::Light)),
++            ..Default::default()
++        };
++        let mut doc = HtmlDocument::from_html(
++            "<html><body style='margin:0'><div style='margin-top:10px;padding-left:5px'>\n\t\
++             <a id='a'></a>\n\t<span id='s'></span>\n\t<p style='margin:0'>x</p></div></body></html>",
++            config,
++        );
++        doc.resolve(0.0);
++        let s = doc.get_client_bounding_rect(doc.get_element_by_id("s").unwrap()).unwrap();
++        assert_eq!((s.x, s.y, s.width, s.height), (5.0, 10.0, 0.0, 0.0));
 +    }
 +
 +    #[test]
