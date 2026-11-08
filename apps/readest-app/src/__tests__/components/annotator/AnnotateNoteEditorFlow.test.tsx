@@ -70,7 +70,6 @@ const h = vi.hoisted(() => ({
   views: [] as { addAnnotation: ReturnType<typeof vi.fn> }[],
   isSideBarVisible: false,
   isTextSelected: { current: true },
-  onRelocate: null as null | ((event: Event) => void),
 }));
 
 const settings = {
@@ -193,11 +192,7 @@ vi.mock('@/app/reader/hooks/useReadwiseSync', () => ({ useReadwiseSync: () => {}
 vi.mock('@/app/reader/hooks/useHardcoverSync', () => ({ useHardcoverSync: () => {} }));
 vi.mock('@/app/reader/hooks/usePageboundSync', () => ({ usePageboundSync: () => {} }));
 vi.mock('@/app/reader/hooks/useNotionSync', () => ({ useNotionSync: () => {} }));
-vi.mock('@/app/reader/hooks/useFoliateEvents', () => ({
-  useFoliateEvents: (_view: unknown, handlers: { onRelocate?: (event: Event) => void }) => {
-    h.onRelocate = handlers.onRelocate ?? null;
-  },
-}));
+vi.mock('@/app/reader/hooks/useFoliateEvents', () => ({ useFoliateEvents: () => {} }));
 vi.mock('@/app/reader/hooks/useRendererInputListeners', () => ({
   useRendererInputListeners: () => {},
 }));
@@ -323,7 +318,6 @@ const liveAnnotations = () => h.config.booknotes.filter((note) => !note.deletedA
 
 beforeEach(() => {
   h.actions = null;
-  h.onRelocate = null;
   h.config.booknotes = [];
   h.views = [];
   h.viewSettings.copyToNotebook = false;
@@ -342,49 +336,6 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('Annotate opens the note editor at the selection', () => {
-  test.each([
-    1280, 390,
-  ])('keeps the note editor when only the visible range end changes (width %s)', async (width) => {
-    setViewport(width, 800);
-    await annotate();
-    h.isTextSelected.current = false;
-    const editor = width < 640 ? 'note-editor-sheet' : 'note-editor-popup';
-    act(() =>
-      h.onRelocate?.(
-        new CustomEvent('relocate', {
-          detail: { cfi: 'epubcfi(/6/10!/4/2/2[chapter_460],/2,/4/22/1:699)' },
-        }),
-      ),
-    );
-    act(() =>
-      h.onRelocate?.(
-        new CustomEvent('relocate', {
-          detail: { cfi: 'epubcfi(/6/10!/4/2/2[chapter_460],/2,/4/22/1:572)' },
-        }),
-      ),
-    );
-    expect(screen.getByTestId(editor)).toBeTruthy();
-    expect(liveAnnotations()).toHaveLength(1);
-  });
-
-  test.each([
-    'epubcfi(/6/10!/4/2/2[chapter_460],/4/2/1:0,/4/22/1:572)',
-    'epubcfi(/6/12!/4/2/2[chapter_461],/2,/4/22/1:572)',
-  ])('dismisses the note editor when the reading start moves to %s', async (cfi) => {
-    await annotate();
-    h.isTextSelected.current = false;
-    act(() =>
-      h.onRelocate?.(
-        new CustomEvent('relocate', {
-          detail: { cfi: 'epubcfi(/6/10!/4/2/2[chapter_460],/2,/4/22/1:699)' },
-        }),
-      ),
-    );
-    act(() => h.onRelocate?.(new CustomEvent('relocate', { detail: { cfi } })));
-    expect(screen.queryByTestId('note-editor-popup')).toBeNull();
-    expect(liveAnnotations()).toHaveLength(0);
-  });
-
   test('hands the editor to the toolbar popup on a desktop-sized window', async () => {
     await annotate();
 

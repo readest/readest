@@ -408,50 +408,57 @@ export class ReaderPage extends BasePage {
   async selectText(): Promise<void> {
     await this.openTocChapter(3);
     await this.page.waitForLoadState('networkidle');
-    await this.foliateView.evaluate((element) => {
-      const view = element as FoliateView;
-      const viewport = element.closest('.foliate-viewer')!.getBoundingClientRect();
-      // A spread may show two sections; the primary section or a paragraph's
-      // multi-column bounding box does not identify the text actually on screen.
-      for (const { doc } of view.renderer.getContents()) {
-        const frame = doc.defaultView?.frameElement?.getBoundingClientRect();
-        if (!frame) continue;
-        for (const paragraph of doc.querySelectorAll('p')) {
-          if ((paragraph.textContent ?? '').trim().length <= 60) continue;
-          const walker = doc.createTreeWalker(paragraph, NodeFilter.SHOW_TEXT);
-          let node = walker.nextNode();
-          while (node && (node.textContent ?? '').trim().length < 20) node = walker.nextNode();
-          if (!node) continue;
-          const range = doc.createRange();
-          range.setStart(node, 0);
-          range.setEnd(node, Math.min(node.textContent?.length ?? 0, 80));
-          const rect = range.getClientRects()[0];
-          if (!rect) continue;
-          const x = frame.left + rect.left,
-            y = frame.top + rect.top;
-          if (
-            x < viewport.left ||
-            x + rect.width > viewport.right ||
-            y < viewport.top ||
-            y + rect.height > viewport.bottom
-          )
-            continue;
-          const selection = doc.getSelection();
-          selection?.removeAllRanges();
-          selection?.addRange(range);
-          doc.dispatchEvent(
-            new PointerEvent('pointerup', {
-              clientX: rect.left + Math.min(20, rect.width / 2),
-              clientY: rect.top + rect.height / 2,
-              bubbles: true,
-              pointerType: 'mouse',
-            }),
-          );
-          return;
-        }
-      }
-      throw new Error('no visible text span found in the loaded book sections');
-    });
+    await expect
+      .poll(
+        () =>
+          this.foliateView.evaluate((element) => {
+            const view = element as FoliateView;
+            const viewport = element.closest('.foliate-viewer')!.getBoundingClientRect();
+            // A spread may show two sections; the primary section or a paragraph's
+            // multi-column bounding box does not identify the text actually on screen.
+            for (const { doc } of view.renderer.getContents()) {
+              const frame = doc.defaultView?.frameElement?.getBoundingClientRect();
+              if (!frame) continue;
+              for (const paragraph of doc.querySelectorAll('p')) {
+                if ((paragraph.textContent ?? '').trim().length <= 60) continue;
+                const walker = doc.createTreeWalker(paragraph, NodeFilter.SHOW_TEXT);
+                let node = walker.nextNode();
+                while (node && (node.textContent ?? '').trim().length < 20)
+                  node = walker.nextNode();
+                if (!node) continue;
+                const range = doc.createRange();
+                range.setStart(node, 0);
+                range.setEnd(node, Math.min(node.textContent?.length ?? 0, 80));
+                const rect = range.getClientRects()[0];
+                if (!rect) continue;
+                const x = frame.left + rect.left,
+                  y = frame.top + rect.top;
+                if (
+                  x < viewport.left ||
+                  x + rect.width > viewport.right ||
+                  y < viewport.top ||
+                  y + rect.height > viewport.bottom
+                )
+                  continue;
+                const selection = doc.getSelection();
+                selection?.removeAllRanges();
+                selection?.addRange(range);
+                doc.dispatchEvent(
+                  new PointerEvent('pointerup', {
+                    clientX: rect.left + Math.min(20, rect.width / 2),
+                    clientY: rect.top + rect.height / 2,
+                    bubbles: true,
+                    pointerType: 'mouse',
+                  }),
+                );
+                return true;
+              }
+            }
+            return false;
+          }),
+        { message: 'no visible text span found in the loaded book sections' },
+      )
+      .toBe(true);
     await this.annotationPopup.waitFor({ state: 'visible' });
   }
 
