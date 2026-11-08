@@ -33,6 +33,25 @@ const env = Object.fromEntries(Object.entries(process.env).filter(([k]) =>
   !k.startsWith('XDG_') || k === 'XDG_RUNTIME_DIR' || k === 'XDG_SESSION_TYPE'));
 delete env.DBUS_SESSION_BUS_ADDRESS;
 Object.assign(env, { HOME: path.resolve(`${out}/home`), READEST_CDP_PORT: String(port) });
+// Offline, as Readest Lite is (it fetches nothing over the network): every http(s) request goes
+// to a closed port, so web fonts fall back in both apps and the engines are compared alike.
+for (const k of ['http_proxy', 'https_proxy', 'all_proxy', 'HTTP_PROXY', 'HTTPS_PROXY', 'ALL_PROXY']) {
+  env[k] = 'http://127.0.0.1:9';
+}
+env.no_proxy = env.NO_PROXY = '127.0.0.1,localhost';
+// The scenario's `fonts` directory is the only one fontconfig sees (Readest Lite takes it as
+// BLITZ_FONTS); the system's rules still apply, so Chromium's default "Times New Roman" and
+// "Arial" find that directory's serif and sans-serif faces.
+if (scenario.fonts) {
+  fs.writeFileSync(`${out}/fonts.conf`, `<?xml version="1.0"?>
+<!DOCTYPE fontconfig SYSTEM "urn:fontconfig:fonts.dtd">
+<fontconfig><dir>${path.resolve(scenario.fonts)}</dir><cachedir>${path.resolve(out)}/fc-cache</cachedir>
+<include ignore_missing="yes">/etc/fonts/conf.d</include></fontconfig>
+`);
+  env.FONTCONFIG_FILE = path.resolve(`${out}/fonts.conf`);
+}
+// Chromium reads the proxy from the environment only outside a known desktop session.
+for (const k of ['DESKTOP_SESSION', 'GDMSESSION', 'GNOME_DESKTOP_SESSION_ID', 'KDE_FULL_SESSION']) delete env[k];
 const display = `:${scenario.x_display ?? 97}`;
 const xvfb = spawn('Xvfb', [display, '-screen', '0', '2400x1600x24', '-dpi', '96', '-nolisten', 'tcp'], { stdio: 'ignore' });
 await sleep(1500);
