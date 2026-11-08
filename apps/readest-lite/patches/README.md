@@ -83,6 +83,11 @@
   reported its scrolled-away position). A box broken across the root's columns has one client
   rect per column, each reaching the column's bottom while the box goes on, as a fragmented
   block's fragments do; they stopped at the column cut and were merged into one.
+- `blitz-dom` layout/inline/build, document, node/text: inline elements are recorded in
+  `TextLayout::text_nodes` too, so an element with no glyphs (an empty span, such as an EPUB
+  page-break marker) has a zero-width box where it sits instead of none. Range rects walk each
+  shaped run's clusters once: spans that change only the brush share one shaped run, which was
+  walked again from every span's offset, shifting the rects of text after a span.
 - `blitz-paint` text: faux italics lean forward. The glyph skew is applied in y-down space,
   so its sign is negated; every synthesized italic used to slant backwards.
 
