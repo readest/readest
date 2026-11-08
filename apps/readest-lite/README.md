@@ -42,6 +42,17 @@ After editing anything under `vendor/`, `scripts/vendor.sh diff` rewrites `patch
 
 Tests for `src/`: `node --test apps/readest-lite/src/*.test.js` (from the repository root).
 
+Rust tests, in two runs:
+
+```sh
+cargo test -p blitz-dom -p blitz-html                 # the vendored engine
+cargo test -p blitz-qjs-script -p tauri-runtime-blitz # the script layer and the runtime
+```
+
+blitz-dom's own tests assume its default features (system fonts among them). In one run with
+blitz-qjs-script, which takes blitz-dom without them, cargo builds blitz-dom without them too and
+`hover_styles_apply_and_clear` and `scroll_by_clamps_and_bubbles` fail.
+
 ## Runtime switches
 
 | Variable | Effect |
