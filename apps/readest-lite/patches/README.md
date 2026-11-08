@@ -91,7 +91,9 @@
   order, else the right of the last before it. On a line with no text, its height is the
   content area of its own primary font, as Chromium's; it took the next text's position, or the
   whole line box. After a space that collapses into the text after it (`the <span/>carefully`),
-  the box is after that space, at the next word, as in Chromium. Range rects walk each
+  the box is after that space, at the next word, as in Chromium. When its inline root's lines
+  hold nothing (only white space and empty inlines), its line box has no height and the element
+  is a 0x0 box at the root's content start; it had no rect. Range rects walk each
   shaped run's clusters once: spans that change only the brush share one shaped run, which was
   walked again from every span's offset, shifting the rects of text after a span.
 - `blitz-dom` layout/construct, layout/inline/build, document, node, stylo, traversal, damage,
