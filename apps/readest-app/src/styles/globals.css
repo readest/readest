@@ -5,6 +5,9 @@
     light --default,
     dark --prefersdark;
   logs: false;
+  /* Unused, and Tailwind would emit them for the words in the source. Their rules
+     (`:is(.stack, …) > :first-child`) are tried on every element and mark every parent. */
+  exclude: stack, breadcrumbs;
 }
 /* The built-in Readest themes, compiled from themes.ts (see daisyui-themes.ts). */
 @plugin './daisyui-themes.ts';
