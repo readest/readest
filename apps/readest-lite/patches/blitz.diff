@@ -267,35 +267,61 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      }
  
      // Takes (x, y) co-ordinates (relative to the )
-@@ -2451,12 +2512,23 @@
-         self.get_node(node_id)?;
+@@ -2447,17 +2508,36 @@
+         if let Some(rects) = self.inline_fragment_rects(node_id) {
+             return rects.reduce(BoundingRect::union);
+         }
++        self.box_fragments(node_id)?.into_iter().reduce(BoundingRect::union)
++    }
+ 
+-        self.get_node(node_id)?;
++    /// A node's border box relative to the viewport, as the fragments the root's columns break
++    /// it into (one rect outside them).
++    fn box_fragments(&self, node_id: NodeId) -> Option<Vec<BoundingRect>> {
++        let node = self.get_node(node_id)?;
++        // The geometry is the origin of the node's content, which its own scroll offset moves;
++        // its border box stays put.
          let (pos, layout) = self.physical_unrounded_geometry(node_id);
          let size = layout.size;
-+        let flow = BoundingRect {
-+            x: pos.x as f64,
-+            y: pos.y as f64,
-+            width: size.width as f64,
-+            height: size.height as f64,
-+        };
-+        // A box broken across the root's columns: the union of its fragments.
-+        let rect = self
-+            .column_fragments(node_id, flow)
-+            .into_iter()
-+            .reduce(BoundingRect::union)?;
- 
-         Some(BoundingRect {
+-
+-        Some(BoundingRect {
 -            x: snap_to_layout_unit(pos.x as f64 - self.viewport_scroll().x),
 -            y: snap_to_layout_unit(pos.y as f64 - self.viewport_scroll().y),
 -            width: snap_to_layout_unit(size.width as f64),
 -            height: snap_to_layout_unit(size.height as f64),
-+            x: snap_to_layout_unit(rect.x - self.viewport_scroll().x),
-+            y: snap_to_layout_unit(rect.y - self.viewport_scroll().y),
-+            width: snap_to_layout_unit(rect.width),
-+            height: snap_to_layout_unit(rect.height),
-         })
+-        })
++        let scroll = node.scroll_offset();
++        let flow = BoundingRect {
++            x: pos.x as f64 + scroll.x,
++            y: pos.y as f64 + scroll.y,
++            width: size.width as f64,
++            height: size.height as f64,
++        };
++        let (sx, sy) = (self.viewport_scroll().x, self.viewport_scroll().y);
++        Some(
++            self.column_fragments(node_id, flow)
++                .into_iter()
++                .map(|r| BoundingRect {
++                    x: snap_to_layout_unit(r.x - sx),
++                    y: snap_to_layout_unit(r.y - sy),
++                    width: snap_to_layout_unit(r.width),
++                    height: snap_to_layout_unit(r.height),
++                })
++                .collect(),
++        )
      }
  
-@@ -2546,19 +2618,141 @@
+     /// CSSOM View's `offsetLeft`/`offsetTop`/`offsetWidth`/`offsetHeight` as a single rect:
+@@ -2528,7 +2608,7 @@
+     pub fn node_client_rects(&self, node_id: NodeId) -> Vec<BoundingRect> {
+         match self.inline_fragment_rects(node_id) {
+             Some(rects) => rects.collect(),
+-            None => self.get_client_bounding_rect(node_id).into_iter().collect(),
++            None => self.box_fragments(node_id).unwrap_or_default(),
+         }
+     }
+ 
+@@ -2546,19 +2626,141 @@
          let fragments = node.inline_fragment_boxes()?;
          let inline_root = node.inline_root_ancestor()?;
  
@@ -445,7 +471,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      /// The first element in tree order with the given tag name. The root element and
      /// its children are checked first as a fast path before a full tree search, making
      /// this suitable for the `documentElement`/`head`/`body` document accessors.
-@@ -2944,6 +3138,36 @@
+@@ -2944,6 +3146,36 @@
  /// Snap a CSSOM geometry value to a 1/64px grid (the precision of Blink's `LayoutUnit`).
  /// Layout values are accumulated in `f32`, so e.g. seven `55/7`-wide flex items would
  /// otherwise end at `55.0000005` and appear to overflow their 55px container.
@@ -503,7 +529,7 @@ diff -ruN blitz/packages/blitz-dom/src/events/pointer.rs blitz/packages/blitz-do
 diff -ruN blitz/packages/blitz-dom/src/layout/columns.rs blitz/packages/blitz-dom/src/layout/columns.rs
 --- blitz/packages/blitz-dom/src/layout/columns.rs
 +++ blitz/packages/blitz-dom/src/layout/columns.rs
-@@ -0,0 +1,308 @@
+@@ -0,0 +1,318 @@
 +//! Columns of the root element: CSS multi-column with `column-fill: auto` and a definite height,
 +//! as foliate-js's paginator styles an EPUB section (one column per page, the columns overflowing
 +//! to the right, the iframe as wide as all of them).
@@ -533,6 +559,8 @@ diff -ruN blitz/packages/blitz-dom/src/layout/columns.rs blitz/packages/blitz-do
 +    pub width: f32,
 +    pub gap: f32,
 +    pub stride: f32,
++    /// The columns' height (the content-box height).
++    pub height: f32,
 +    /// The flow's `[start, end)` shown in each column, in content-box coordinates.
 +    pub slices: Vec<(f32, f32)>,
 +}
@@ -589,6 +617,12 @@ diff -ruN blitz/packages/blitz-dom/src/layout/columns.rs blitz/packages/blitz-do
 +            if rect.height >= 1.0 && b - t < 1.0 {
 +                continue;
 +            }
++            // A box that goes on in the next column fills this one to its bottom.
++            let b = if bottom > end {
++                f64::from(self.slices[i].0 + self.height)
++            } else {
++                b
++            };
 +            out.push(BoundingRect {
 +                x: rect.x + f64::from(dx),
 +                y: base + t + f64::from(dy),
@@ -724,6 +758,7 @@ diff -ruN blitz/packages/blitz-dom/src/layout/columns.rs blitz/packages/blitz-do
 +            width,
 +            gap,
 +            stride: width + gap,
++            height: page,
 +            slices,
 +        })
 +    }
@@ -788,6 +823,7 @@ diff -ruN blitz/packages/blitz-dom/src/layout/columns.rs blitz/packages/blitz-do
 +            width: 100.0,
 +            gap: 20.0,
 +            stride: 120.0,
++            height: 50.0,
 +            slices: vec![(0.0, 40.0), (40.0, 80.0)],
 +        };
 +        let line = BoundingRect {
@@ -1612,7 +1648,7 @@ diff -ruN blitz/packages/blitz-dom/src/util.rs blitz/packages/blitz-dom/src/util
 diff -ruN blitz/packages/blitz-html/src/html_document.rs blitz/packages/blitz-html/src/html_document.rs
 --- blitz/packages/blitz-html/src/html_document.rs
 +++ blitz/packages/blitz-html/src/html_document.rs
-@@ -68,3 +68,187 @@
+@@ -68,3 +68,236 @@
          self.into()
      }
  }
@@ -1759,7 +1795,7 @@ diff -ruN blitz/packages/blitz-html/src/html_document.rs blitz/packages/blitz-ht
 +
 +    // foliate-js's paginator: columns on the root with a definite height.
 +    fn page(font_size: u32, height: u32) -> HtmlDocument {
-+        let paragraphs: String = (0..40).map(|i| format!("<p id='p{i}'>line {i}</p>")).collect();
++        let paragraphs: String = (0..40).map(|i| format!("<p id='p{i}' style='margin:0'>line {i}</p>")).collect();
 +        let html = format!(
 +            "<html style='height:100vh;column-width:200px;column-gap:20px;column-fill:auto;padding:0;margin:0'>\
 +             <body style='margin:0'><div id='d' style='font-size:{font_size}px'>{paragraphs}</div></body></html>"
@@ -1790,6 +1826,27 @@ diff -ruN blitz/packages/blitz-html/src/html_document.rs blitz/packages/blitz-ht
 +    }
 +
 +    #[test]
++    fn a_block_split_across_columns_has_a_rect_per_column_to_its_bottom() {
++        // 40 lines in 300 px columns: #d runs through several.
++        let doc = page(16, 300);
++        let d = doc.get_element_by_id("d").unwrap();
++        let rects = doc.node_client_rects(d);
++        let r: Vec<_> = rects.iter().map(|r| (r.x, r.y, r.y + r.height)).collect();
++        assert!(r.len() >= 3, "{r:?}");
++        // One piece per column, left to right; each but the last reaches its column's bottom,
++        // and the later ones start at its top.
++        let stride = r[1].0 - r[0].0;
++        for (i, piece) in r.iter().enumerate() {
++            assert_eq!((piece.0, piece.1), (i as f64 * stride, 0.0), "{r:?}");
++            if i + 1 < r.len() {
++                assert_eq!(piece.2, 300.0, "{r:?}");
++            }
++        }
++        let b = doc.get_client_bounding_rect(d).unwrap();
++        assert_eq!((b.x, b.y, b.height), (0.0, 0.0, 300.0), "the union");
++    }
++
++    #[test]
 +    fn columns_follow_a_viewport_change() {
 +        let mut doc = page(16, 300);
 +        doc.set_viewport(Viewport::new(220, 500, 1.0, ColorScheme::Light));
@@ -1797,6 +1854,34 @@ diff -ruN blitz/packages/blitz-html/src/html_document.rs blitz/packages/blitz-ht
 +        let mut fresh = page(16, 500);
 +        fresh.resolve(0.0);
 +        assert_eq!(last(&doc), last(&fresh));
++    }
++}
++
++#[cfg(test)]
++mod scroll_rect_tests {
++    use crate::{HtmlDocument, HtmlProvider};
++    use blitz_dom::{DocumentConfig, ScrollBehavior};
++    use blitz_traits::shell::{ColorScheme, Viewport};
++    use std::sync::Arc;
++
++    #[test]
++    fn scrolling_moves_the_content_not_the_scroll_container() {
++        let config = DocumentConfig {
++            html_parser_provider: Some(Arc::new(HtmlProvider)),
++            viewport: Some(Viewport::new(800, 600, 1.0, ColorScheme::Light)),
++            ..Default::default()
++        };
++        let mut doc = HtmlDocument::from_html(
++            "<html><body style='margin:0'><div id='box' style='margin-left:50px;width:200px;height:100px;overflow:hidden'>\
++             <div id='wide' style='width:1000px;height:100px'></div></div></body></html>",
++            config,
++        );
++        doc.resolve(0.0);
++        let (bx, wide) = (doc.get_element_by_id("box").unwrap(), doc.get_element_by_id("wide").unwrap());
++        doc.scroll_to(bx, 300.0, 0.0, ScrollBehavior::Instant);
++        doc.resolve(0.0);
++        assert_eq!(doc.get_client_bounding_rect(bx).unwrap().x, 50.0, "the scroll container");
++        assert_eq!(doc.get_client_bounding_rect(wide).unwrap().x, -250.0, "its content");
 +    }
 +}
 +
