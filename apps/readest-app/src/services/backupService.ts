@@ -7,7 +7,7 @@ import { Book, BookConfig, BookNote } from '@/types/book';
 import { SystemSettings } from '@/types/settings';
 import type { PageStatEvent, StatBook } from '@/types/statistics';
 import { StatisticsDb } from '@/services/statistics/statisticsDb';
-import { getBookDirOfPath, getLibraryFilename } from '@/utils/book';
+import { getBookDirOfPath, getLibraryFilename, getLocalBookFilename } from '@/utils/book';
 import { getAbsOfflineDir } from '@/utils/audiobook';
 import { stampBookConfigSchema } from '@/utils/serializer';
 import { configureZip } from '@/utils/zip';
@@ -410,11 +410,19 @@ async function collectBackupEntries(
     // Offline Audiobookshelf audio (#6256) is re-downloadable and can run to
     // gigabytes, each file read into memory here.
     .filter(({ entryName }) => !isAbsOfflineEntry(entryName))
-    // Per-book search indexes are rebuilt from the book on demand.
-    .filter(({ entryName }) => !/^[^/]+\/search\.db(?:-(?:wal|shm|journal))?$/.test(entryName))
     // A restore killed mid-file leaves its `.part` temp file behind.
     .filter(({ entryName }) => !entryName.endsWith('.part'));
-  return { texts, files: bookFiles };
+  // A book's search index is rebuilt from its file on demand, so leave it out
+  // when that file is in this backup (#7390). A cloud-only or external book
+  // keeps its index: library search reads it without the file.
+  const entryNames = new Set(bookFiles.map(({ entryName }) => entryName));
+  const bookByHash = new Map(books.map((book) => [book.hash, book]));
+  const isRebuildableIndex = (entryName: string) => {
+    if (!/^[^/]+\/search\.db(?:-(?:wal|shm|journal))?$/.test(entryName)) return false;
+    const book = bookByHash.get(getBookDirOfPath(entryName)!);
+    return !!book && entryNames.has(getLocalBookFilename(book));
+  };
+  return { texts, files: bookFiles.filter(({ entryName }) => !isRebuildableIndex(entryName)) };
 }
 
 /**
