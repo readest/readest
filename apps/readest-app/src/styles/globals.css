@@ -1633,3 +1633,29 @@
 .tabular-nums {
   font-variant-numeric: tabular-nums;
 }
+/* ====================================================
+   SISTEMA DE LECTURA GENERALIZADO (ESTILO AO3) 
+   Desacopla los colores de la interfaz de la lectura
+   ==================================================== */
+
+/* 1. SECCIÓN DE LECTURA CLARA (Para cuando uses temas claros: Morado claro, Verde, Blanco) */
+html:not([data-theme-mode="dark"]) .book-content-wrapper,
+html:not([data-theme-mode="dark"]) iframe,
+html:not([data-theme-mode="dark"]) .reader-container,
+html:not([data-theme-mode="dark"]) [class*="reader-text"] {
+  --readest-reader-bg: #ffffff !important;
+  --readest-reader-text: #1a1a1a !important;
+  background-color: #ffffff !important;
+  color: #1a1a1a !important;
+}
+
+/* 2. SECCIÓN DE LECTURA OSCURA (Para cuando uses temas oscuros: Morado noche, Negro, Midnight) */
+html[data-theme-mode="dark"] .book-content-wrapper,
+html[data-theme-mode="dark"] iframe,
+html[data-theme-mode="dark"] .reader-container,
+html[data-theme-mode="dark"] [class*="reader-text"] {
+  --readest-reader-bg: #121212 !important;
+  --readest-reader-text: #e0e0e0 !important;
+  background-color: #121212 !important;
+  color: #e0e0e0 !important;
+}
