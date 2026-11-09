@@ -40,6 +40,16 @@ Readest's data directories under it.
 
 After editing anything under `vendor/`, `scripts/vendor.sh diff` rewrites `patches/`.
 
+### On a Kindle
+
+A jailbroken Kindle with KUAL; tried on a Voyage (firmware 5.13.6). `scripts/build-kindle.sh`
+builds one static armv7 binary; `KINDLE_FONTS=DIR scripts/deploy-kindle.sh BINARY` installs it
+with `kindle/` (the KUAL menu and `run.sh`) and the fonts in DIR as
+`/mnt/us/extensions/readest-lite`, over KOReader's SSH server. Start it from KUAL: Readest Lite.
+It is a full-screen window on the Kindle's X server at scale 2, in Readest's e-ink mode; the
+library stays in `/mnt/us/readest-lite`, Import starts in `/mnt/us/documents`, the log is
+`/mnt/us/readest-lite/readest-lite.log`, and Readest's close button quits.
+
 Tests for `src/`: `node --test apps/readest-lite/src/*.test.js` (from the repository root).
 
 Rust tests, in two runs:
