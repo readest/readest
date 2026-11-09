@@ -28,6 +28,8 @@ pub(crate) struct Display {
     h: u16,
     /// The last frame as sent (rows of the window's pixels), redrawn on Expose.
     last: Arc<Mutex<Vec<u8>>>,
+    /// The cairo frame `last` was made from (BGRX rows), to find what the next one changes.
+    prev: Mutex<Vec<u8>>,
 }
 
 impl Display {
@@ -129,6 +131,7 @@ impl Display {
             target,
             h,
             last: Arc::default(),
+            prev: Mutex::default(),
         };
         let (last, (cw, ch)) = (d.last.clone(), (f32::from(w), f32::from(h)));
         std::thread::spawn(move || {
@@ -148,9 +151,8 @@ impl Display {
                 match ev {
                     Event::Expose(e) if e.count == 0 => {
                         let rows = last.lock().unwrap();
-                        if let Some(all) = damage(&[], &rows, usize::from(w), format.bytes())
-                            .filter(|_| !rows.is_empty())
-                        {
+                        if !rows.is_empty() {
+                            let all = (0, 0, usize::from(w), usize::from(h));
                             let _ = put(&conn, target, &rows, all);
                         }
                     }
@@ -190,16 +192,15 @@ impl Display {
     /// that box, `None` when nothing changed.
     pub fn present(&self, data: &[u8], stride: usize) -> Option<Rect> {
         let Target { w, format, .. } = self.target;
-        let (w, h) = (usize::from(w), usize::from(self.h));
-        let rows = frame_rows(data, stride, w, h, format);
-        let mut last = self.last.lock().unwrap();
-        let rect = damage(&last, &rows, w, format.bytes());
+        let size = (usize::from(w), usize::from(self.h));
+        let mut shown = self.last.lock().unwrap();
+        let mut prev = self.prev.lock().unwrap();
+        let rect = update(&mut prev, &mut shown, data, stride, size, format);
         if let Some(rect) = rect
-            && let Err(e) = put(&self.conn, self.target, &rows, rect)
+            && let Err(e) = put(&self.conn, self.target, &shown, rect)
         {
             log::error!("BLITZ_TAURI_WINDOW: {e}");
         }
-        *last = rows;
         rect
     }
 }
@@ -232,61 +233,78 @@ impl PixelFormat {
     }
 }
 
-/// A cairo RGB24 frame as rows of the window's pixels.
-fn frame_rows(data: &[u8], stride: usize, w: usize, h: usize, format: PixelFormat) -> Vec<u8> {
+/// Cairo RGB24 pixels (BGRX on little-endian) as the window's pixels.
+fn convert(src: &[u8], dst: &mut [u8], format: PixelFormat) {
     let luma = |p: &[u8; 4]| {
         ((u32::from(p[2]) * 77 + u32::from(p[1]) * 150 + u32::from(p[0]) * 29) >> 8) as u8
     };
-    let mut rows = Vec::with_capacity(w * 4 * h);
+    let src = src.as_chunks::<4>().0;
+    match format {
+        PixelFormat::Bgrx { gray: true } => {
+            for (p, d) in src.iter().zip(dst.as_chunks_mut::<4>().0) {
+                let g = luma(p);
+                *d = [g, g, g, 0];
+            }
+        }
+        PixelFormat::Gray8 { invert } => {
+            for (p, d) in src.iter().zip(dst) {
+                *d = if invert { !luma(p) } else { luma(p) };
+            }
+        }
+        PixelFormat::Bgrx { gray: false } => dst.copy_from_slice(src.as_flattened()),
+    }
+}
+
+/// Brings `shown` (the window's pixels) and `prev` (the cairo frame they came from) up to the
+/// cairo frame `data` (`stride` bytes a row); returns the box of the window to send again, `None`
+/// when nothing changed. Each row is compared, and what changed in it converted, in one pass: a
+/// Kindle's memory, not its CPU, sets the pace.
+fn update(
+    prev: &mut Vec<u8>,
+    shown: &mut Vec<u8>,
+    data: &[u8],
+    stride: usize,
+    (w, h): (usize, usize),
+    format: PixelFormat,
+) -> Option<Rect> {
+    // 8-bit rows: spans start and end on 4-byte boundaries, so the box's rows need no padding
+    let (bytes, a) = (format.bytes(), 4 / format.bytes());
+    let first = prev.len() != w * 4 * h;
+    if first {
+        prev.resize(w * 4 * h, 0);
+        shown.resize(w * bytes * h, 0);
+    }
+    let (mut x0, mut y0, mut x1, mut y1) = (w, None, 0, 0);
     for y in 0..h {
         let src = &data[y * stride..y * stride + w * 4];
-        match format {
-            PixelFormat::Bgrx { gray: true } => {
-                for p in src.as_chunks::<4>().0 {
-                    let g = luma(p);
-                    rows.extend_from_slice(&[g, g, g, 0]);
-                }
-            }
-            PixelFormat::Gray8 { invert } => rows.extend(
-                src.as_chunks::<4>()
-                    .0
-                    .iter()
-                    .map(|p| if invert { !luma(p) } else { luma(p) }),
-            ),
-            PixelFormat::Bgrx { gray: false } => rows.extend_from_slice(src),
-        }
+        let old = &mut prev[y * w * 4..(y + 1) * w * 4];
+        let (l, r) = if first {
+            (0, w)
+        } else {
+            let (p, q) = (old.as_chunks::<4>().0, src.as_chunks::<4>().0);
+            let Some(l) = p.iter().zip(q).position(|(p, q)| p != q) else {
+                continue;
+            };
+            (l, p.iter().zip(q).rposition(|(p, q)| p != q).unwrap() + 1)
+        };
+        let (l, r) = (l / a * a, (r.div_ceil(a) * a).min(w));
+        let span = &src[l * 4..r * 4];
+        convert(
+            span,
+            &mut shown[(y * w + l) * bytes..(y * w + r) * bytes],
+            format,
+        );
+        old[l * 4..r * 4].copy_from_slice(span);
+        y0.get_or_insert(y);
+        y1 = y + 1;
+        x0 = x0.min(l);
+        x1 = x1.max(r);
     }
-    rows
+    y0.map(|y0| (x0, y0, x1, y1))
 }
 
 /// A box of pixels: left, top, right, bottom (right and bottom exclusive).
 pub(crate) type Rect = (usize, usize, usize, usize);
-
-/// Where `new` differs from `old`, two frames of `w`-pixel rows with `bytes` bytes a pixel:
-/// `None` when they are equal. Its left and right edges sit on 4-byte boundaries, so its rows
-/// need no padding in a PutImage.
-fn damage(old: &[u8], new: &[u8], w: usize, bytes: usize) -> Option<Rect> {
-    let row = w * bytes;
-    if old.len() != new.len() {
-        return Some((0, 0, w, new.len() / row));
-    }
-    let (mut x0, mut y0, mut x1, mut y1) = (row, None, 0, 0);
-    for (y, (a, b)) in old.chunks(row).zip(new.chunks(row)).enumerate() {
-        let Some(first) = a.iter().zip(b).position(|(p, q)| p != q) else {
-            continue;
-        };
-        let last = a.iter().zip(b).rposition(|(p, q)| p != q).unwrap();
-        y0.get_or_insert(y);
-        y1 = y + 1;
-        x0 = x0.min(first);
-        x1 = x1.max(last + 1);
-    }
-    let align = |b: usize| b / bytes;
-    y0.map(|y0| {
-        let (x0, x1) = (x0 / 4 * 4, (x1.div_ceil(4) * 4).min(row));
-        (align(x0), y0, align(x1).max(align(x0) + 1), y1)
-    })
-}
 
 /// PutImage in row bands that fit the server's request size.
 fn put(
@@ -330,26 +348,55 @@ fn put(
 
 #[cfg(test)]
 mod tests {
-    use super::{PixelFormat, damage, frame_rows};
+    use super::{PixelFormat, convert, update};
+
+    // Converting every frame to the window's pixels took 34 ms a frame on a Kindle, and half of
+    // a page turn's frames change nothing.
+    #[test]
+    fn a_frame_converts_only_the_box_that_changed() {
+        let (w, h, stride) = (16, 8, 16 * 4 + 8);
+        let white = vec![255u8; stride * h];
+        let gray = PixelFormat::Gray8 { invert: false };
+        let (mut prev, mut shown) = (Vec::new(), Vec::new());
+        let mut show = |frame: &[u8], shown: &mut Vec<u8>| {
+            update(&mut prev, shown, frame, stride, (w, h), gray)
+        };
+        assert_eq!(show(&white, &mut shown), Some((0, 0, w, h)));
+        assert_eq!(shown, vec![255u8; w * h]);
+        // a window pixel the frame doesn't explain stays: an unchanged frame converts nothing
+        shown[0] = 7;
+        assert_eq!(show(&white, &mut shown), None);
+        assert_eq!(shown[0], 7);
+        let mut new = white.clone();
+        new[3 * stride + 5 * 4..][..3].fill(0); // (5, 3) black
+        new[5 * stride + 9 * 4..][..3].fill(0); // (9, 5)
+        new[6 * stride + w * 4] = 0; // stride padding is not a pixel
+        // 8-bit rows: the box's edges on 4-byte boundaries, so they need no padding
+        assert_eq!(show(&new, &mut shown), Some((4, 3, 12, 6)));
+        assert_eq!(
+            (shown[3 * w + 5], shown[5 * w + 9], shown[3 * w + 4]),
+            (0, 0, 255)
+        );
+        assert_eq!(shown[0], 7);
+    }
 
     // Each frame sent to the window is an update on e-ink; a page turn paints several frames
     // that change nothing or only the page number, and each went out whole.
     #[test]
     fn a_frame_sends_only_what_changed() {
         let (w, h) = (16, 8);
-        let old = vec![255u8; w * h];
-        assert_eq!(damage(&old, &old, w, 1), None);
-        let mut new = old.clone();
-        new[3 * w + 5] = 0; // (5, 3)
-        new[5 * w + 9] = 0; // (9, 5)
-        assert_eq!(damage(&old, &new, w, 1), Some((4, 3, 12, 6)));
-        // 4 bytes a pixel: any column is on a 4-byte boundary
-        let old4 = vec![255u8; w * 4 * h];
-        let mut new4 = old4.clone();
-        new4[(3 * w + 5) * 4] = 0;
-        assert_eq!(damage(&old4, &new4, w, 4), Some((5, 3, 6, 4)));
+        let bgrx = PixelFormat::Bgrx { gray: false };
+        let old = vec![255u8; w * 4 * h];
+        let (mut prev, mut shown) = (Vec::new(), Vec::new());
+        let mut show = |frame: &[u8]| update(&mut prev, &mut shown, frame, w * 4, (w, h), bgrx);
         // the first frame, with nothing before it, goes out whole
-        assert_eq!(damage(&[], &new, w, 1), Some((0, 0, w, h)));
+        assert_eq!(show(&old), Some((0, 0, w, h)));
+        assert_eq!(show(&old), None);
+        let mut new = old.clone();
+        new[(3 * w + 5) * 4] = 0; // (5, 3)
+        new[(5 * w + 9) * 4 + 2] = 0; // (9, 5)
+        // 32-bit rows: any column is on a 4-byte boundary
+        assert_eq!(show(&new), Some((5, 3, 10, 6)));
     }
 
     // Kindle's X server has one 8-bit StaticGray visual: a pixel is one byte of gray. Rows of
@@ -357,8 +404,12 @@ mod tests {
     #[test]
     fn an_8_bit_gray_window_gets_one_byte_per_pixel() {
         // one row: white, red (BGRX), then 4 bytes of stride padding
-        let frame = [255, 255, 255, 0, 0, 0, 255, 0, 9, 9, 9, 9];
-        let rows = |invert| frame_rows(&frame, 12, 2, 1, PixelFormat::Gray8 { invert });
+        let frame = [255, 255, 255, 0, 0, 0, 255, 0];
+        let rows = |invert| {
+            let mut row = [0u8; 2];
+            convert(&frame, &mut row, PixelFormat::Gray8 { invert });
+            row
+        };
         assert_eq!(rows(false), [255, 76]);
         assert_eq!(rows(true), [0, 179]);
     }
