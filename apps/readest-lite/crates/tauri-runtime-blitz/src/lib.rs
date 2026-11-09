@@ -130,6 +130,10 @@ impl RuntimeContext {
         &self,
         pending: PendingWindow<T, BlitzRuntime>,
     ) -> Result<DetachedWindow<T, BlitzRuntime>> {
+        // The window table is the main thread's (a RefCell), as are documents and JS contexts.
+        if std::thread::current().id() != self.main_thread_id {
+            return Err(Error::CreateWindow);
+        }
         let id = self.next_window_id();
         let visible = Arc::new(AtomicBool::new(pending.window_builder.visible));
         self.windows.borrow_mut().insert(
@@ -1520,5 +1524,29 @@ impl<T: UserEvent> Runtime<T> for BlitzRuntime {
 
     fn cursor_position(&self) -> Result<PhysicalPosition<f64>> {
         Ok(PhysicalPosition::new(0.0, 0.0))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // Readest opens its reader window from a command, on a tokio worker. The window table is a
+    // main-thread RefCell: on a Kindle the worker's write met the loop's read and the worker
+    // panicked ("RefCell already borrowed"); elsewhere it left a window with no webview behind.
+    #[test]
+    fn a_window_asked_for_off_the_main_thread_is_refused_before_the_window_table() {
+        let runtime = BlitzRuntime::init();
+        let context = runtime.context.clone();
+        let refused = std::thread::spawn(move || {
+            let pending =
+                PendingWindow::<(), BlitzRuntime>::new(BlitzWindowBuilder::new(), "reader")
+                    .unwrap();
+            context.create_window(pending).is_err()
+        })
+        .join()
+        .unwrap();
+        assert!(refused);
+        assert_eq!(runtime.context.windows.borrow().len(), 0);
     }
 }
