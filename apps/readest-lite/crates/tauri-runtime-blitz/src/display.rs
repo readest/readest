@@ -35,7 +35,9 @@ pub(crate) struct Display {
 }
 
 impl Display {
-    /// `None` when the variable is unset or no X server answers.
+    /// `None` when the variable is unset or no X server answers. `BLITZ_TAURI_WM_NAME` replaces
+    /// the window title: Kindle's window manager places a window by its title
+    /// (`L:A_N:application_ID:<id>_PC:N_O:U` is a full-screen application with no Kindle bars).
     pub fn from_env(
         w: u32,
         h: u32,
@@ -45,7 +47,8 @@ impl Display {
         let mode = std::env::var("BLITZ_TAURI_WINDOW")
             .ok()
             .filter(|v| !v.is_empty() && v != "0")?;
-        match Self::open(w as u16, h as u16, title, mode == "gray", on_input) {
+        let title = std::env::var("BLITZ_TAURI_WM_NAME").unwrap_or_else(|_| title.into());
+        match Self::open(w as u16, h as u16, &title, mode == "gray", on_input) {
             Ok(d) => Some(d),
             Err(e) => {
                 log::error!("BLITZ_TAURI_WINDOW: no X11 window: {e}");
