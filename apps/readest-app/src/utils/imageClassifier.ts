@@ -208,12 +208,23 @@ export const classifyAndTagStandaloneDiagrams = (
         img.classList.add('monochrome-diagram');
       }
     } else {
+      if (img.hasAttribute('data-diagram-pending')) return;
+      img.setAttribute('data-diagram-pending', 'true');
       img.addEventListener(
         'load',
         () => {
+          img.removeAttribute('data-diagram-pending');
           if (isMonochromeGraphic(img, src)) {
             img.classList.add('monochrome-diagram');
           }
+        },
+        { once: true },
+      );
+      img.addEventListener(
+        'error',
+        () => {
+          img.removeAttribute('data-diagram-pending');
+          classificationCache.set(src, false);
         },
         { once: true },
       );

@@ -435,20 +435,14 @@ const getColorStyles = (
       mix-blend-mode: multiply;
     }
     /* inline images */
-    /* inline images */
     *:has(> img.has-text-siblings):not(body) {
       ${overrideColor ? `background-color: ${bg};` : ''}
     }
+    p img.has-text-siblings, span img.has-text-siblings, sup img.has-text-siblings {
+      mix-blend-mode: ${isDarkMode ? 'screen' : 'multiply'};
+    }
     *:has(> img.monochrome-diagram):not(body) {
       ${overrideColor ? `background-color: ${bg};` : ''}
-    }
-    p img.has-text-siblings, span img.has-text-siblings, sup img.has-text-siblings {
-      ${
-        isDarkMode && !invertImgColorInDark
-          ? `filter: ${transparentImageBackground ? `${WHITE_TRANSPARENCY_FILTER} ` : ''}invert(1) hue-rotate(180deg);`
-          : ''
-      }
-      mix-blend-mode: ${isDarkMode ? 'screen' : 'multiply'};
     }
     img.monochrome-diagram {
       ${
@@ -1946,9 +1940,7 @@ export const applyImageStyle = (document: Document, isDarkMode = false, isFixedL
       hr.classList.add('background-img');
     }
   });
-  if (isDarkMode && !isFixedLayout) {
-    classifyAndTagStandaloneDiagrams(document, isDarkMode, isFixedLayout);
-  }
+  classifyAndTagStandaloneDiagrams(document, isDarkMode, isFixedLayout);
 };
 
 // The enlarged link hit area positions every link and its ::before box, and
