@@ -2706,7 +2706,7 @@ diff -ruN blitz/packages/blitz-dom/src/util.rs blitz/packages/blitz-dom/src/util
 diff -ruN blitz/packages/blitz-html/src/html_document.rs blitz/packages/blitz-html/src/html_document.rs
 --- blitz/packages/blitz-html/src/html_document.rs
 +++ blitz/packages/blitz-html/src/html_document.rs
-@@ -68,3 +68,697 @@
+@@ -68,3 +68,724 @@
          self.into()
      }
  }
@@ -3404,6 +3404,33 @@ diff -ruN blitz/packages/blitz-html/src/html_document.rs blitz/packages/blitz-ht
 +    }
 +}
 +
++#[cfg(test)]
++mod layout_unit_tests {
++    use crate::{HtmlDocument, HtmlProvider};
++    use blitz_dom::DocumentConfig;
++    use blitz_traits::shell::{ColorScheme, Viewport};
++    use std::sync::Arc;
++
++    // Chromium keeps box lengths as LayoutUnits, 64ths of a pixel, truncated: foliate-js's
++    // 16.2105px side padding is 16.203125px each, so a 464px page's content box is 431.59375px
++    // wide, not 431.579. A line of text that fits that width broke a line early.
++    #[test]
++    fn a_fractional_padding_is_a_whole_number_of_64ths() {
++        let config = DocumentConfig {
++            html_parser_provider: Some(Arc::new(HtmlProvider)),
++            viewport: Some(Viewport::new(800, 600, 1.0, ColorScheme::Light)),
++            ..Default::default()
++        };
++        let mut doc = HtmlDocument::from_html(
++            "<html><body style='margin:0'><div style='width:464px;padding:0 16.2105px;box-sizing:border-box'>\
++             <p id='p' style='margin:0'>x</p></div></body></html>",
++            config,
++        );
++        doc.resolve(0.0);
++        let p = doc.get_client_bounding_rect(doc.get_element_by_id("p").unwrap()).unwrap();
++        assert_eq!((p.x, p.width), (16.203125, 431.59375));
++    }
++}
 diff -ruN blitz/packages/blitz-html/src/html_sink.rs blitz/packages/blitz-html/src/html_sink.rs
 --- blitz/packages/blitz-html/src/html_sink.rs
 +++ blitz/packages/blitz-html/src/html_sink.rs
@@ -3842,3 +3869,39 @@ diff -ruN blitz/packages/blitz-paint/src/text.rs blitz/packages/blitz-paint/src/
  
                  let css_font_size = font_size as f64 / scale;
  
+diff -ruN blitz/packages/stylo_taffy/src/convert.rs blitz/packages/stylo_taffy/src/convert.rs
+--- blitz/packages/stylo_taffy/src/convert.rs
++++ blitz/packages/stylo_taffy/src/convert.rs
+@@ -82,6 +82,14 @@
+     saturating_i16(input) as u16
+ }
+ 
++/// An absolute length as Chromium keeps box lengths: a whole number of 64ths of a pixel
++/// (`LayoutUnit`), truncated toward zero. A fractional padding then takes the same room as in
++/// Chromium, and the content box it leaves (where lines break) is as wide.
++#[inline]
++pub fn layout_unit(px: f32) -> f32 {
++    (px * 64.0).trunc() / 64.0
++}
++
+ #[inline]
+ pub fn length_percentage(val: &stylo::LengthPercentage) -> taffy::LengthPercentage {
+     match val.unpack() {
+@@ -91,7 +99,7 @@
+             // SAFETY: calc is a valid value for LengthPercentage
+             unsafe { taffy::LengthPercentage::from_raw(val) }
+         }
+-        stylo::UnpackedLengthPercentage::Length(len) => length(len.px()),
++        stylo::UnpackedLengthPercentage::Length(len) => length(layout_unit(len.px())),
+         stylo::UnpackedLengthPercentage::Percentage(percentage) => percent(percentage.0),
+     }
+ }
+@@ -107,7 +115,7 @@
+         stylo::Size::FitContent => taffy::Dimension::fit_content(),
+         stylo::Size::FitContentFunction(val) => match val.0.unpack() {
+             stylo::UnpackedLengthPercentage::Length(len) => {
+-                taffy::Dimension::fit_content_px(len.px())
++                taffy::Dimension::fit_content_px(layout_unit(len.px()))
+             }
+             stylo::UnpackedLengthPercentage::Percentage(percentage) => {
+                 taffy::Dimension::fit_content_percent(percentage.0)
