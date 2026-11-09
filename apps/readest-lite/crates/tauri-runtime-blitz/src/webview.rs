@@ -12,6 +12,8 @@
 //! PGM files. `BLITZ_TAURI_TAPS="x,y;#sel"` taps CSS-pixel points or the centre of the first
 //! element matching a selector, or press `key:Name` (e.g. `key:ArrowRight`), one per painted
 //! frame (`BLITZ_TAURI_TAP_MS` apart, default 800); `wait:MS` holds the next one back MS ms more.
+//! With `BLITZ_TAURI_TAP_IDLE_MS=Q` the next one goes as soon as nothing has painted for Q ms and
+//! no JS timer is due within Q; those delays become its latest time.
 
 use anyrender_cairo as cairo_scene;
 
@@ -186,6 +188,10 @@ pub(crate) struct BlitzWebview {
     out: Option<String>,
     taps: VecDeque<String>,
     next_tap: Option<Instant>,
+    /// `BLITZ_TAURI_TAP_IDLE_MS`: send a scripted input once the page has been this quiet,
+    /// before `next_tap` if it comes first.
+    tap_idle: Option<Duration>,
+    last_paint: Option<Instant>,
     /// Next frame of a running CSS animation/transition (BLITZ_TAURI_ANIM_MS apart, default 33).
     next_anim: Option<Instant>,
     /// BLITZ_TAURI_EVAL=file.js, evaluated once BLITZ_TAURI_EVAL_MS (default 5000) after navigate.
@@ -280,6 +286,11 @@ impl BlitzWebview {
             out: std::env::var("BLITZ_TAURI_OUT").ok(),
             taps,
             next_tap: None,
+            tap_idle: std::env::var("BLITZ_TAURI_TAP_IDLE_MS")
+                .ok()
+                .and_then(|v| v.parse().ok())
+                .map(Duration::from_millis),
+            last_paint: None,
             next_anim: None,
             probe: None,
             pointers: Default::default(),
@@ -433,6 +444,11 @@ impl BlitzWebview {
             timer,
             soon,
             self.next_tap,
+            self.tap_idle
+                .zip(self.last_paint)
+                .filter(|_| self.next_tap.is_some())
+                .map(|(q, p)| p + q)
+                .filter(|&t| t > now),
             self.next_anim,
             self.probe.as_ref().map(|p| p.0),
         ]
@@ -483,7 +499,13 @@ impl BlitzWebview {
             doc.eval(&src, "probe");
             doc.run_jobs();
         }
-        let tap_due = self.next_tap.is_some_and(|t| t <= Instant::now());
+        let now = Instant::now();
+        let tap_due = self.next_tap.is_some_and(|t| {
+            t <= now
+                || self.tap_idle.is_some_and(|q| {
+                    !self.dirty && page_is_quiet(self.last_paint, doc.next_timer_deadline(), q, now)
+                })
+        });
         // Input lines carry the time the input was sent and how long its handlers ran.
         let t0 = t_ms();
         // `wait:MS` holds the next input back MS ms more (e.g. while a book opens).
@@ -687,6 +709,7 @@ impl BlitzWebview {
         self.frames += 1;
         self.dirty = false;
         self.dirty_since = None;
+        self.last_paint = Some(Instant::now());
         // Keep painting only while something animates; an idle page paints nothing.
         self.next_anim = self
             .doc
@@ -698,6 +721,18 @@ impl BlitzWebview {
                 Some(Instant::now() + Duration::from_millis(env("BLITZ_TAURI_TAP_MS", 800)));
         }
     }
+}
+
+/// Whether a scripted input waiting for a quiet page (`BLITZ_TAURI_TAP_IDLE_MS`) can go: nothing
+/// painted for `quiet` and no JS timer due within it.
+fn page_is_quiet(
+    last_paint: Option<Instant>,
+    next_timer: Option<Instant>,
+    quiet: Duration,
+    now: Instant,
+) -> bool {
+    last_paint.is_some_and(|p| now.duration_since(p) >= quiet)
+        && next_timer.is_none_or(|d| d > now + quiet)
 }
 
 /// Whether a dirty page paints now: right after input changed it (a page turn shows its page
@@ -1030,6 +1065,20 @@ mod tests {
         // a page turn scrolls the book in the key handler; the work it schedules (a progress
         // update, the reader's re-render) runs after the new page is on screen
         assert!(should_paint(Some(now), Some(now), true, now));
+    }
+
+    // Page-turn timing runs pressed a key every 12 s to be sure the last turn's work was done;
+    // a quiet page lets the next key go as soon as it is.
+    #[test]
+    fn a_scripted_input_goes_once_the_page_is_quiet() {
+        let now = Instant::now();
+        let q = Duration::from_millis(1000);
+        let ago = |ms| Some(now - Duration::from_millis(ms));
+        let later = |ms| Some(now + Duration::from_millis(ms));
+        assert!(page_is_quiet(ago(1200), None, q, now));
+        assert!(page_is_quiet(ago(1200), later(5000), q, now));
+        assert!(!page_is_quiet(ago(400), None, q, now)); // painted recently
+        assert!(!page_is_quiet(ago(1200), later(300), q, now)); // a timer is about to run
     }
 
     #[test]
