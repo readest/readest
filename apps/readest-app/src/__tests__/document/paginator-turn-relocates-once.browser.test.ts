@@ -111,11 +111,14 @@ describe('Paginator page turn', () => {
     expect(relocates[1]!.fraction).toBeGreaterThan(turned);
   });
 
-  it('relocates again when the page reflows while the next section loads', async () => {
+  it.each([
+    { grown: 'the turned section', index: 1 },
+    { grown: 'the section before it', index: 0 },
+  ])('relocates again when $grown grows while the next section loads', async ({ index }) => {
     // Two columns a page: ch1 is 2 pages, ch2 4. Entering ch2 starts preloading
     // ch3, whose load never finishes, so the preload is still running when
-    // the next turn's page reflows; a view that grows while sections preload
-    // is not re-anchored.
+    // the next turn's page reflows. A view that grows while sections preload
+    // is not re-anchored, nor is a view before the turned one.
     await open({
       dir: 'ltr',
       sections: [
@@ -133,9 +136,9 @@ describe('Paginator page turn', () => {
 
     await paginator.next();
     const turned = relocates[0]!.range.startContainer.textContent;
-    const doc = paginator.getContents().find((c) => c.index === 1)!.doc;
+    const doc = paginator.getContents().find((c) => c.index === index)!.doc;
     const extra = doc.createElement('div');
-    extra.textContent = 'ch2 inserted column';
+    extra.textContent = 'inserted column';
     doc.body.prepend(extra);
     doc.body.children[1]!.setAttribute('style', 'break-before: column');
     await wait(800);
