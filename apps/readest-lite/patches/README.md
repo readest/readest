@@ -105,9 +105,11 @@
   out with that box in the letter's place, so a floated one is a drop cap. Range rects of the
   letter's offsets are that box's when it is not inline. A block whose first line starts with
   `::before` content, or whose letter is in a descendant block, gets none.
-- `blitz-dom` stylo_to_parley: text is shaped at its size truncated to a 64th of a pixel, as
-  Chromium on Linux sizes FreeType fonts (Skia's `SkScalarToFDot6`), so lines break where
-  Readest's do (14.4px text was 0.065% wider than Readest's). A unitless line height is passed as
+- `blitz-dom` stylo_to_parley: text is shaped at the size Chromium on Linux gives FreeType, so
+  lines break where Readest's do: floored to a hundredth of a pixel (Blink's font cache precision,
+  `FontDescription::EffectiveFontSize`), then truncated to a 64th (Skia's `SkScalarToFDot6`).
+  14.4px text was 0.065% wider than Readest's at the exact size; 8.672px text was 0.17% wider
+  when truncated to a 64th alone. A unitless line height is passed as
   a length from the computed size, so line boxes keep their height.
 - `blitz-paint` text: faux italics lean forward. The glyph skew is applied in y-down space,
   so its sign is negated; every synthesized italic used to slant backwards.

@@ -2586,16 +2586,18 @@ diff -ruN blitz/packages/blitz-dom/src/stylo.rs blitz/packages/blitz-dom/src/sty
 diff -ruN blitz/packages/blitz-dom/src/stylo_to_parley.rs blitz/packages/blitz-dom/src/stylo_to_parley.rs
 --- blitz/packages/blitz-dom/src/stylo_to_parley.rs
 +++ blitz/packages/blitz-dom/src/stylo_to_parley.rs
-@@ -429,11 +429,14 @@
+@@ -429,11 +429,16 @@
      let font_styles = style.get_font();
      let itext_styles = style.get_inherited_text();
  
 -    // Convert font size and line height
-+    // Convert font size and line height. Text is shaped at its size truncated to a 64th of a
-+    // pixel, as Chromium on Linux sizes FreeType fonts (Skia's SkScalarToFDot6), so lines break
-+    // where Readest's do; a unitless line height is still a multiple of the computed size.
++    // Convert font size and line height. Text is shaped at the size Chromium on Linux gives
++    // FreeType, so lines break where Readest's do: Blink floors the size to a hundredth of a
++    // pixel (its font cache precision, `FontDescription::EffectiveFontSize`), then Skia truncates
++    // that to a 64th (SkScalarToFDot6). A unitless line height is still a multiple of the
++    // computed size.
      let font_size = font_styles.font_size.used_size.0.px();
-+    let shaped_size = (font_size * 64.0).trunc() / 64.0;
++    let shaped_size = ((font_size * 100.0).floor() / 100.0 * 64.0).trunc() / 64.0;
      let line_height = match font_styles.line_height {
          stylo::LineHeight::Normal => parley::LineHeight::NORMAL,
 -        stylo::LineHeight::Number(num) => parley::LineHeight::FontSizeRelative(num.0),
@@ -2603,7 +2605,7 @@ diff -ruN blitz/packages/blitz-dom/src/stylo_to_parley.rs blitz/packages/blitz-d
          stylo::LineHeight::Length(value) => parley::LineHeight::Absolute(value.0.px()),
      };
      let vertical_align = self::vertical_align(style);
-@@ -517,7 +520,7 @@
+@@ -517,7 +522,7 @@
      parley::TextStyle {
          // font_family: parley::FontFamily::Single(FontFamilyName::Generic(GenericFamily::SystemUi)),
          font_family: parley::FontFamily::List(Cow::Owned(families)),
@@ -2706,7 +2708,7 @@ diff -ruN blitz/packages/blitz-dom/src/util.rs blitz/packages/blitz-dom/src/util
 diff -ruN blitz/packages/blitz-html/src/html_document.rs blitz/packages/blitz-html/src/html_document.rs
 --- blitz/packages/blitz-html/src/html_document.rs
 +++ blitz/packages/blitz-html/src/html_document.rs
-@@ -68,3 +68,724 @@
+@@ -68,3 +68,747 @@
          self.into()
      }
  }
@@ -3401,6 +3403,29 @@ diff -ruN blitz/packages/blitz-html/src/html_document.rs blitz/packages/blitz-ht
 +        // the line height is the computed size's, not the truncated one's
 +        let p = doc.get_client_bounding_rect(doc.get_element_by_id("p").unwrap()).unwrap();
 +        assert_eq!(p.height, 18.0);
++    }
++
++    // Blink creates a font at its size floored to a hundredth of a pixel first (the font cache
++    // key's precision, `FontDescription::EffectiveFontSize`): 8.672px (0.542em) is 8.67px, which
++    // FreeType gets as 554/64 = 8.65625px, not 555/64. A copyright line that fits on one line in
++    // Readest broke in two.
++    #[test]
++    fn text_is_shaped_at_its_size_floored_to_a_hundredth_then_a_64th() {
++        let config = DocumentConfig {
++            html_parser_provider: Some(Arc::new(HtmlProvider)),
++            viewport: Some(Viewport::new(800, 600, 1.0, ColorScheme::Light)),
++            ..Default::default()
++        };
++        let span = |id: &str, size: &str| {
++            format!("<div><span id='{id}' style='font-size:{size};white-space:pre'>{}</span></div>", "e".repeat(40))
++        };
++        let html = format!("<html><body style='margin:0;font-size:16px'>{}{}</body></html>", span("s", "0.542em"), span("s16", "16px"));
++        let mut doc = HtmlDocument::from_html(&html, config);
++        doc.resolve(0.0);
++        let width = |id| doc.get_client_bounding_rect(doc.get_element_by_id(id).unwrap()).unwrap().width;
++        let (w, w16) = (width("s"), width("s16"));
++        let (floored, truncated) = (w16 * 8.65625 / 16.0, w16 * 8.671875 / 16.0);
++        assert!((w - floored).abs() < 0.04, "8.672px text {w}, at 8.65625px {floored}, at 8.671875px {truncated}");
 +    }
 +}
 +
