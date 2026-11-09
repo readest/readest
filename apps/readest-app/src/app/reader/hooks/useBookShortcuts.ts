@@ -80,6 +80,7 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
       const flowMode = viewSettings.scrolled ? 'scrolled' : 'paginated';
       const view = getView(sideBarBookKey);
       view?.renderer.setAttribute('flow', flowMode);
+      // 进入滚动模式时重算 no-swipe，避免分页模式残留的手势捕获阻止单章边界滑动换章。
       if (view)
         applyPageTurnAttributes(view, viewSettings, !!getBookData(sideBarBookKey)?.isFixedLayout);
     }

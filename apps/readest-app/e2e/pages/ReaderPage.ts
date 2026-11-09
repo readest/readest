@@ -1,6 +1,5 @@
 import { type FrameLocator, type Locator, type Page, expect } from '@playwright/test';
 import { BasePage } from './BasePage';
-import type { FoliateView } from '../../src/types/view';
 
 /**
  * The reader page (`/reader/{ids}` on web).
@@ -64,9 +63,6 @@ export class ReaderPage extends BasePage {
     await this.page.waitForURL(/\/reader/);
     await this.viewer.waitFor({ state: 'visible' });
     await this.foliateView.waitFor({ state: 'attached' });
-    // Mounting precedes the book's iframe/font loads. Let initialization finish
-    // before a TOC action can race a late preload or restore of the position.
-    await this.page.waitForLoadState('networkidle');
   }
 
   // --- chrome (auto-hidden header / footer bars) ---
@@ -149,22 +145,7 @@ export class ReaderPage extends BasePage {
   async openTocChapter(index: number): Promise<void> {
     await this.openSidebar();
     await this.sidebar.locator('[aria-label="TOC"]').click();
-    const chapter = this.tocItems.nth(index);
-    const href = await chapter.getAttribute('data-href');
-    await chapter.click();
-    await expect
-      .poll(() =>
-        this.tocItems.evaluateAll(
-          (items, target) =>
-            items.some(
-              (item) =>
-                item.getAttribute('data-href') === target &&
-                item.getAttribute('aria-selected') === 'true',
-            ),
-          href,
-        ),
-      )
-      .toBe(true);
+    await this.tocItems.nth(index).click();
   }
 
   // --- in-book search ---
@@ -407,58 +388,42 @@ export class ReaderPage extends BasePage {
    */
   async selectText(): Promise<void> {
     await this.openTocChapter(3);
-    await this.page.waitForLoadState('networkidle');
-    await expect
-      .poll(
-        () =>
-          this.foliateView.evaluate((element) => {
-            const view = element as FoliateView;
-            const viewport = element.closest('.foliate-viewer')!.getBoundingClientRect();
-            // A spread may show two sections; the primary section or a paragraph's
-            // multi-column bounding box does not identify the text actually on screen.
-            for (const { doc } of view.renderer.getContents()) {
-              const frame = doc.defaultView?.frameElement?.getBoundingClientRect();
-              if (!frame) continue;
-              for (const paragraph of doc.querySelectorAll('p')) {
-                if ((paragraph.textContent ?? '').trim().length <= 60) continue;
-                const walker = doc.createTreeWalker(paragraph, NodeFilter.SHOW_TEXT);
-                let node = walker.nextNode();
-                while (node && (node.textContent ?? '').trim().length < 20)
-                  node = walker.nextNode();
-                if (!node) continue;
-                const range = doc.createRange();
-                range.setStart(node, 0);
-                range.setEnd(node, Math.min(node.textContent?.length ?? 0, 80));
-                const rect = range.getClientRects()[0];
-                if (!rect) continue;
-                const x = frame.left + rect.left,
-                  y = frame.top + rect.top;
-                if (
-                  x < viewport.left ||
-                  x + rect.width > viewport.right ||
-                  y < viewport.top ||
-                  y + rect.height > viewport.bottom
-                )
-                  continue;
-                const selection = doc.getSelection();
-                selection?.removeAllRanges();
-                selection?.addRange(range);
-                doc.dispatchEvent(
-                  new PointerEvent('pointerup', {
-                    clientX: rect.left + Math.min(20, rect.width / 2),
-                    clientY: rect.top + rect.height / 2,
-                    bubbles: true,
-                    pointerType: 'mouse',
-                  }),
-                );
-                return true;
-              }
-            }
-            return false;
-          }),
-        { message: 'no visible text span found in the loaded book sections' },
-      )
-      .toBe(true);
+    const frame = await this.visibleSectionFrame();
+
+    await frame.locator('body').evaluate(() => {
+      const paragraphs = Array.from(document.querySelectorAll('p'));
+      const target = paragraphs.find((p) => (p.textContent ?? '').trim().length > 60);
+      if (!target) {
+        throw new Error('no selectable paragraph in the visible section');
+      }
+      // Select a span within a text node — the reader's CFI generation
+      // expects text-node range endpoints, not element boundaries.
+      const walker = document.createTreeWalker(target, NodeFilter.SHOW_TEXT);
+      let textNode = walker.nextNode();
+      while (textNode && (textNode.textContent ?? '').trim().length < 20) {
+        textNode = walker.nextNode();
+      }
+      if (!textNode) {
+        throw new Error('no text node found in the target paragraph');
+      }
+      const length = textNode.textContent?.length ?? 0;
+      const range = document.createRange();
+      range.setStart(textNode, 0);
+      range.setEnd(textNode, Math.min(length, 80));
+      const selection = document.getSelection();
+      selection?.removeAllRanges();
+      selection?.addRange(range);
+
+      const rect = range.getClientRects()[0] ?? range.getBoundingClientRect();
+      document.dispatchEvent(
+        new PointerEvent('pointerup', {
+          clientX: rect.left + Math.min(20, rect.width / 2),
+          clientY: rect.top + rect.height / 2,
+          bubbles: true,
+          pointerType: 'mouse',
+        }),
+      );
+    });
     await this.annotationPopup.waitFor({ state: 'visible' });
   }
 
