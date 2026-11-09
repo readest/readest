@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { afterEach, describe, expect, test, vi } from 'vitest';
 import nextConfig from '../../next.config.mjs';
 import { SEND_INBOX_FILE_MAX_BYTES } from '@/services/constants';

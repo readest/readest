@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { HORIZONTAL_SCROLLBAR_LIFT } from '@/app/reader/components/footerbar/position';
 

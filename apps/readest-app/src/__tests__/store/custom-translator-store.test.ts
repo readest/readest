@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { findCustomTranslator, useCustomTranslatorStore } from '@/store/customTranslatorStore';
 import { useSettingsStore } from '@/store/settingsStore';

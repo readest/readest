@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { runSemanticContract, type ProviderScenario } from '../../file/providerSemanticContract';
 import {
   createOneDriveProvider,

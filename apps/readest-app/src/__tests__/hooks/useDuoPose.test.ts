@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DEFAULT_BOOK_LAYOUT } from '@/services/constants';
 import { useThemeStore } from '@/store/themeStore';

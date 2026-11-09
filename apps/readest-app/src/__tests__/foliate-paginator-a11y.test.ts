@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 // Regression test for readest/readest issues #4243 and #4259.
 //
 // In dual-page mode, when adjacent columns belong to *different* sections,

@@ -1,3 +1,4 @@
+// @vitest-environment node
 /**
  * groupBundlesByStem — MDict companion-MDD attachment.
  *

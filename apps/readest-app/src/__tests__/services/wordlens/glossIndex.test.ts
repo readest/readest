@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect } from 'vitest';
 import { GlossIndex } from '@/services/wordlens/glossIndex';
 import fixture from '../../fixtures/wordlens/en-zh.fixture.json';

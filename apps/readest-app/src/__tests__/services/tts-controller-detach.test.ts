@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 import { TTSController } from '@/services/tts/TTSController';
 import { TTSClient, TTSMessageEvent } from '@/services/tts/TTSClient';

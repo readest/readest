@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 /**
  * UpdaterContent — the "What's New in Readest" changelog.
  *

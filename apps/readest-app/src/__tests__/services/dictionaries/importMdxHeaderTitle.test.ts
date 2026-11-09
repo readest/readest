@@ -1,3 +1,4 @@
+// @vitest-environment node
 /**
  * The MDX header is XML, so its attribute values arrive escaped: OALD9 ships
  * `Title="Oxford Advanced Learner&apos;s Dictionary 9th edition"`. Lifting the

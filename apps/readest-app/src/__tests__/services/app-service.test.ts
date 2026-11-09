@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
 import { BaseDir, FileSystem, ResolvedPath } from '@/types/system';
 import { DatabaseOpts, DatabaseService } from '@/types/database';

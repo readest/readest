@@ -1,3 +1,5 @@
+// @vitest-environment happy-dom
+import { bookDataStoreHooks } from '@/__tests__/helpers/book-data-store-mock';
 import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, cleanup } from '@testing-library/react';
 
@@ -24,7 +26,7 @@ vi.mock('@/store/readerStore', () => ({
 }));
 
 vi.mock('@/store/bookDataStore', () => ({
-  useBookDataStore: () => ({ getBookData: mocks.getBookData }),
+  ...bookDataStoreHooks(() => ({ getBookData: mocks.getBookData })),
 }));
 
 vi.mock('@/utils/event', () => ({

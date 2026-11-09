@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { describe, it, expect } from 'vitest';
 import { shouldCheckAsFootnote } from '@/app/reader/utils/footnoteHeuristics';
 

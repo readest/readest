@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // Importing a shared book adds a `files` row to the recipient, either a fresh

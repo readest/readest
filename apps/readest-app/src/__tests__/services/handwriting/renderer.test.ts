@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect, vi } from 'vitest';
 import { renderStrokes } from '@/services/handwriting/renderer';
 import type { InkStroke } from '@/services/handwriting/model';

@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
 
 // getMediaSession() consults the platform helpers; mock them so each test can

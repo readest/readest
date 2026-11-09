@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useEnv } from '@/context/EnvContext';
 import { useSettingsStore } from '@/store/settingsStore';
-import { useBookDataStore } from '@/store/bookDataStore';
+import { useBookDataStore, useBookConfig } from '@/store/bookDataStore';
 import { useHardcoverSyncStore } from '@/store/hardcoverSyncStore';
 import { useBookProgress } from '@/store/readerProgressStore';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -35,7 +35,10 @@ interface PushOptions {
 export const useHardcoverSync = (bookKey: string) => {
   const _ = useTranslation();
   const { envConfig } = useEnv();
-  const { getConfig, getBookData, setConfig, saveConfig } = useBookDataStore();
+  const getConfig = useBookDataStore((s) => s.getConfig);
+  const getBookData = useBookDataStore((s) => s.getBookData);
+  const setConfig = useBookDataStore((s) => s.setConfig);
+  const saveConfig = useBookDataStore((s) => s.saveConfig);
   // Reactive page-turn signal — drives the auto-push effect below. The host
   // (Annotator) already subscribes to this, so it adds no extra renders.
   const progress = useBookProgress(bookKey);
@@ -310,7 +313,7 @@ export const useHardcoverSync = (bookKey: string) => {
   }, [progress?.location]);
 
   // Auto-push notes when annotations/excerpts change.
-  const config = getConfig(bookKey);
+  const config = useBookConfig(bookKey);
   useEffect(() => {
     debouncedAutoPushNotes();
     // eslint-disable-next-line react-hooks/exhaustive-deps

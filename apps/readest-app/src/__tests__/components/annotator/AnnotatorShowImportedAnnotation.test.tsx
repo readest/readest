@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 /**
  * #6160 - a highlight imported from ReadEra did nothing when tapped.
  *

@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, test } from 'vitest';
 import { parseRedirect } from '@/services/sync/providers/oauth/parseRedirect';
 
