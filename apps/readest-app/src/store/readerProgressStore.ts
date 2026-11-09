@@ -75,13 +75,43 @@ export const getBookProgress = (key: string | null): BookProgress | null => {
  * Imperative write — performs zustand setState only for this small store,
  * so subscribers to `useReaderStore()` are NOT touched.
  */
+const sameRange = (a: Range, b: Range) =>
+  a === b ||
+  (a.startContainer === b.startContainer &&
+    a.startOffset === b.startOffset &&
+    a.endContainer === b.endContainer &&
+    a.endOffset === b.endOffset);
+
+// Equal fields, objects compared one level down (foliate builds new page objects per relocate).
+const sameProgress = (a: BookProgress, b: BookProgress) =>
+  (Object.keys(a) as (keyof BookProgress)[]).every((k) => {
+    const x = a[k];
+    const y = b[k];
+    if (k === 'range') return !!x && !!y && sameRange(x as Range, y as Range);
+    if (x && y && typeof x === 'object' && typeof y === 'object') {
+      const xs = x as Record<string, unknown>;
+      const ys = y as Record<string, unknown>;
+      return (
+        Object.keys(xs).length === Object.keys(ys).length &&
+        Object.keys(xs).every((f) => xs[f] === ys[f])
+      );
+    }
+    return x === y;
+  }) && Object.keys(a).length === Object.keys(b).length;
+
 export const setBookProgress = (key: string, progress: BookProgress | null) => {
-  useReaderProgressStore.setState((state) => ({
-    progresses: {
-      ...state.progresses,
-      [key]: progress,
-    },
-  }));
+  useReaderProgressStore.setState((state) => {
+    const current = state.progresses[key];
+    // foliate repeats a page turn's relocate once its scroll settles: the same position, in new
+    // objects, must not re-render the progress readers again
+    if (current && progress && sameProgress(current, progress)) return state;
+    return {
+      progresses: {
+        ...state.progresses,
+        [key]: progress,
+      },
+    };
+  });
 };
 
 /**
