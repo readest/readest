@@ -708,12 +708,15 @@ impl BlitzWebview {
                 html,
             );
         }
-        let (heap, _) = doc.js_memory();
+        // BLITZ_TAURI_TRACE_HEAP=1: the JS heap size too. Measuring it walks every JS object
+        // (~20 ms on the host, more than a paint on a Kindle), so not on every frame by default.
+        let heap = std::env::var_os("BLITZ_TAURI_TRACE_HEAP").map_or(String::new(), |_| {
+            format!(", \"js_heap_kb\": {}", doc.js_memory().0 / 1024)
+        });
         eprintln!(
-            "{{\"label\": \"frame\", \"t_ms\": {:.1}, \"n\": {}, \"layout_ms\": {layout_ms:.1}, \"paint_ms\": {paint_ms:.1}, \"present_ms\": {present_ms:.1}, \"sent\": {sent}, \"js_heap_kb\": {}}}",
+            "{{\"label\": \"frame\", \"t_ms\": {:.1}, \"n\": {}, \"layout_ms\": {layout_ms:.1}, \"paint_ms\": {paint_ms:.1}, \"present_ms\": {present_ms:.1}, \"sent\": {sent}{heap}}}",
             t_ms(),
             self.frames,
-            heap / 1024
         );
         self.frames += 1;
         self.dirty = false;
