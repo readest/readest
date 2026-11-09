@@ -42,7 +42,9 @@ files: the manifest, `cargo-sources.json`, and `node-sources.json`.
    ```
 
 3. **Extract the lockfiles from the tag** (do not use the working tree — it may
-   be ahead of the tag). `$SCRATCH` is the session scratchpad directory:
+   be ahead of the tag). `$SCRATCH` is the session scratchpad directory.
+   Shell variables don't persist between Bash calls, so every block below sets
+   it again:
    ```bash
    SCRATCH=<session scratchpad>; mkdir -p $SCRATCH/src
    git -C /Users/chrox/dev/readest show {TAG}:pnpm-lock.yaml > $SCRATCH/src/pnpm-lock.yaml
@@ -53,7 +55,7 @@ files: the manifest, `cargo-sources.json`, and `node-sources.json`.
 
 4. **Set up the generators** (not installed on this machine; clone + venv each time):
    ```bash
-   cd $SCRATCH/src
+   SCRATCH=<session scratchpad>; cd $SCRATCH/src
    git clone --depth 1 https://github.com/flatpak/flatpak-builder-tools.git
    python3 -m venv venv
    ./venv/bin/pip install "aiohttp>=3.9.5,<4" "PyYAML>=6.0.2,<7" "tomlkit>=0.13.3,<1.0"
@@ -62,13 +64,17 @@ files: the manifest, `cargo-sources.json`, and `node-sources.json`.
 5. **Regenerate the source lists** (both need network; the shell already exports
    `http_proxy`/`https_proxy`):
    ```bash
-   cd $SCRATCH/src
+   SCRATCH=<session scratchpad>; cd $SCRATCH/src
+   rm -f cargo-sources.json node-sources.json
    ./venv/bin/python flatpak-builder-tools/cargo/flatpak-cargo-generator.py \
-       -o cargo-sources.json Cargo.cef.lock
+       -o cargo-sources.json Cargo.cef.lock &&
    PYTHONPATH=flatpak-builder-tools/node ./venv/bin/python -m flatpak_node_generator \
        -o node-sources.json --pnpm-store-version v11 --no-playwright-browsers \
-       pnpm pnpm-lock.yaml
+       pnpm pnpm-lock.yaml &&
+   cp cargo-sources.json node-sources.json /Users/chrox/dev/com.bilingify.readest/
    ```
+   - The `rm` and `&&` chain are there so a failed generator can't leave an
+     earlier run's output to be copied as this tag's.
    - `--no-playwright-browsers` is required: the manifest sets
      `PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD` and does not vendor those browsers.
      Without the flag the list gains five Playwright browser archives.
@@ -79,8 +85,6 @@ files: the manifest, `cargo-sources.json`, and `node-sources.json`.
    - The cargo run clones each git dependency. `readest/localsend` registers a
      `flutter` submodule with `update = none`; git and flatpak-builder both skip
      it, so no `disable-submodules` is needed.
-   - Copy both outputs into the checkout:
-     `cp $SCRATCH/src/cargo-sources.json $SCRATCH/src/node-sources.json /Users/chrox/dev/com.bilingify.readest/`
 
 6. **Update the manifest**
    - Bump only the readest `type: git` source's `commit` to the SHA from step 1.
