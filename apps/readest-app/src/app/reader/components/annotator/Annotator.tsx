@@ -524,7 +524,9 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
       setSelection(null);
       setShowAnnotPopup(false);
       setShowAnnotationNotes(false);
-      setAnnotationNotes([]);
+      // the same empty array when already empty: every page turn calls this, and with no popup
+      // open nothing here may change, or the Annotator re-renders with all its popups
+      setAnnotationNotes((notes) => (notes.length ? [] : notes));
       setShowDictionaryPopup(false);
       setShowDeepLPopup(false);
       setShowProofreadPopup(false);

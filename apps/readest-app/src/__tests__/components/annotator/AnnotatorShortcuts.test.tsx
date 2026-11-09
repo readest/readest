@@ -17,6 +17,8 @@ const h = vi.hoisted(() => ({
   saveConfig: vi.fn(),
   updateBooknotes: vi.fn(),
   view: null as unknown,
+  foliate: {} as Record<string, (event: Event) => void>,
+  sizeCalls: 0,
 }));
 
 const settings = {
@@ -41,7 +43,11 @@ vi.mock('@/hooks/useTranslation', () => ({
 }));
 
 vi.mock('@/hooks/useResponsiveSize', () => ({
-  useResponsiveSize: (value: number) => value,
+  // called on every Annotator render: counts them
+  useResponsiveSize: (value: number) => {
+    h.sizeCalls++;
+    return value;
+  },
 }));
 
 vi.mock('@/store/settingsStore', () => ({
@@ -131,7 +137,11 @@ vi.mock('@/app/reader/hooks/useReadwiseSync', () => ({ useReadwiseSync: () => {}
 vi.mock('@/app/reader/hooks/useHardcoverSync', () => ({ useHardcoverSync: () => {} }));
 vi.mock('@/app/reader/hooks/usePageboundSync', () => ({ usePageboundSync: () => {} }));
 vi.mock('@/app/reader/hooks/useNotionSync', () => ({ useNotionSync: () => {} }));
-vi.mock('@/app/reader/hooks/useFoliateEvents', () => ({ useFoliateEvents: () => {} }));
+vi.mock('@/app/reader/hooks/useFoliateEvents', () => ({
+  useFoliateEvents: (_view: unknown, handlers: Record<string, (event: Event) => void>) => {
+    h.foliate = handlers;
+  },
+}));
 vi.mock('@/app/reader/hooks/useRendererInputListeners', () => ({
   useRendererInputListeners: () => {},
 }));
@@ -341,5 +351,21 @@ describe('Annotator popup shortcuts', () => {
     const [excerpt] = h.config.booknotes as { id: string; updatedAt: number }[];
     expect(excerpt!.id).toBe('ex-1');
     expect(excerpt!.updatedAt).toBeGreaterThan(ahead);
+  });
+});
+
+describe('Annotator page turn', () => {
+  afterEach(() => cleanup());
+
+  // Every page turn dismisses the popups. With none open that must change nothing: an
+  // Annotator re-render re-renders the reader under it, costly on slow devices.
+  test('a page turn with no popup open does not re-render', () => {
+    render(<Annotator bookKey='book-1' contentInsets={{ top: 0, right: 0, bottom: 0, left: 0 }} />);
+    const relocate = (cfi: string) =>
+      act(() => h.foliate['onRelocate']!(new CustomEvent('relocate', { detail: { cfi } })));
+    relocate('epubcfi(/6/2!/4/2)');
+    const before = h.sizeCalls;
+    relocate('epubcfi(/6/2!/4/8)');
+    expect(h.sizeCalls).toBe(before);
   });
 });
