@@ -106,7 +106,8 @@ struct Entry {
 }
 
 /// A folder's sub-folders, then its files with one of `extensions` (any when empty; none when
-/// picking a folder), each sorted by name; hidden entries left out.
+/// picking a folder), each sorted by name. Hidden entries and KOReader's `.sdr` folders (a book's
+/// settings, kept beside it on e-readers) are left out.
 #[tauri::command]
 fn list_dir(path: PathBuf, extensions: Vec<String>, directory: bool) -> Result<Vec<Entry>, String> {
     let mut entries = Vec::new();
@@ -116,7 +117,12 @@ fn list_dir(path: PathBuf, extensions: Vec<String>, directory: bool) -> Result<V
     {
         let name = e.file_name().to_string_lossy().into_owned();
         let dir = e.path().is_dir();
-        if name.starts_with('.') || (!dir && (directory || !has_extension(&name, &extensions))) {
+        let skip = if dir {
+            name.ends_with(".sdr")
+        } else {
+            directory || !has_extension(&name, &extensions)
+        };
+        if name.starts_with('.') || skip {
             continue;
         }
         entries.push(Entry { name, dir });
@@ -164,11 +170,8 @@ mod tests {
             name: name.into(),
             dir,
         };
-        let folders = vec![
-            entry("A-folder", true),
-            entry("b-folder", true),
-            entry("x.sdr", true),
-        ];
+        // KOReader's `.sdr` folders (a book's settings, kept beside it) hold no books
+        let folders = vec![entry("A-folder", true), entry("b-folder", true)];
         let mut books = folders.clone();
         books.extend([
             entry("Alice.EPUB", false),
@@ -177,7 +180,7 @@ mod tests {
         ]);
         assert_eq!(names(&["epub", "pdf"], false), books);
         assert_eq!(names(&["epub", "pdf"], true), folders);
-        assert_eq!(names(&[], false).len(), 7);
+        assert_eq!(names(&[], false).len(), 6);
         std::fs::remove_dir_all(&dir).unwrap();
     }
 }
