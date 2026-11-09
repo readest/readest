@@ -1,6 +1,8 @@
 //! Readest Lite: readest-app's frontend on tauri-runtime-blitz, with the plugins and commands its
 //! startup reaches.
 
+mod picker;
+
 use tauri_plugin_fs::FsExt;
 
 /// Stubs of Readest's own commands (src-tauri/src/lib.rs) that the app service calls at start.
@@ -40,6 +42,7 @@ fn main() {
     tauri::Builder::<tauri_runtime_blitz::BlitzRuntime>::new()
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_os::init())
+        .plugin(picker::init())
         .invoke_handler(tauri::generate_handler![
             get_executable_dir,
             set_webview_info,
@@ -61,6 +64,7 @@ fn main() {
                 .title("Readest Lite")
                 .inner_size(494.0, 659.0)
                 .initialization_script(&script)
+                .initialization_script(include_str!("picker.js"))
                 .build()?;
             Ok(())
         })
