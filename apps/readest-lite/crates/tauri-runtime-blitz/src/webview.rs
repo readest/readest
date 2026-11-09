@@ -614,11 +614,24 @@ impl BlitzWebview {
         }
         surface.flush();
         let paint_ms = t.elapsed().as_secs_f64() * 1000.0 - layout_ms;
+        let t_present = Instant::now();
+        // the box sent to the window ("none": nothing changed)
+        #[allow(unused_mut)]
+        let mut sent = String::from("null");
         #[cfg(feature = "window")]
         if let Some(d) = &self.display {
             let stride = surface.stride() as usize;
-            let _ = surface.with_data(|data| d.present(data, stride));
+            let mut rect = None;
+            if surface
+                .with_data(|data| rect = d.present(data, stride))
+                .is_ok()
+            {
+                sent = rect.map_or("\"none\"".into(), |(x0, y0, x1, y1)| {
+                    format!("[{x0}, {y0}, {x1}, {y1}]")
+                });
+            }
         }
+        let present_ms = t_present.elapsed().as_secs_f64() * 1000.0;
         if let Some(out) = &self.out {
             let stride = surface.stride() as usize;
             let mut surface = surface;
@@ -649,7 +662,7 @@ impl BlitzWebview {
         }
         let (heap, _) = doc.js_memory();
         eprintln!(
-            "{{\"label\": \"frame\", \"t_ms\": {:.1}, \"n\": {}, \"layout_ms\": {layout_ms:.1}, \"paint_ms\": {paint_ms:.1}, \"js_heap_kb\": {}}}",
+            "{{\"label\": \"frame\", \"t_ms\": {:.1}, \"n\": {}, \"layout_ms\": {layout_ms:.1}, \"paint_ms\": {paint_ms:.1}, \"present_ms\": {present_ms:.1}, \"sent\": {sent}, \"js_heap_kb\": {}}}",
             t_ms(),
             self.frames,
             heap / 1024
