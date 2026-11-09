@@ -383,6 +383,8 @@ private final class SelectionTouchObserver: UIGestureRecognizer {
     forward("touchstart", touch: touch)
   }
 
+  /// Forwards the tracked finger at up to 60 Hz so claimed edge turns can
+  /// continue when WebKit suppresses DOM touch events. Other touches are ignored.
   override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent) {
     guard let touch = trackedTouch, touches.contains(touch) else { return }
     // Edge page turns also use this stream when WebKit loses the DOM touch.
