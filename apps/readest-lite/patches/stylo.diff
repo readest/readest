@@ -55,3 +55,19 @@ diff -ruN stylo/style/properties/shorthands.toml stylo/style/properties/shorthan
  flags = "IS_LEGACY_SHORTHAND ALLOWS_DISABLED_SUBPROPERTIES"
  sub_properties = ["line-clamp"]
  spec = "https://drafts.csswg.org/css-overflow-4/#webkit-line-clamp"
+diff -ruN stylo/style/values/specified/font.rs stylo/style/values/specified/font.rs
+--- stylo/style/values/specified/font.rs
++++ stylo/style/values/specified/font.rs
+@@ -1000,6 +1000,12 @@
+     /// of different styles and font instances when "random" floating-point sizes are used.
+     #[inline]
+     pub fn quantize_font_size(size: CSSPixelLength) -> CSSPixelLength {
++        // Servo: Blitz matches Chromium, which keeps the size it computes (0.813em of 16px is
++        // 13.008px, not 13px), so unitless line heights built on it match too.
++        #[cfg(feature = "servo")]
++        if size.px() < 1024.0 {
++            return size;
++        }
+         // If the size is < 1024px, just snap to an integer number of appUnits.
+         if size.px() < 1024.0 {
+             return CSSPixelLength::from(app_units::Au::from_f32_px(size.px()));

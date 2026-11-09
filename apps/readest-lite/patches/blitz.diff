@@ -2706,7 +2706,7 @@ diff -ruN blitz/packages/blitz-dom/src/util.rs blitz/packages/blitz-dom/src/util
 diff -ruN blitz/packages/blitz-html/src/html_document.rs blitz/packages/blitz-html/src/html_document.rs
 --- blitz/packages/blitz-html/src/html_document.rs
 +++ blitz/packages/blitz-html/src/html_document.rs
-@@ -68,3 +68,676 @@
+@@ -68,3 +68,697 @@
          self.into()
      }
  }
@@ -3352,6 +3352,26 @@ diff -ruN blitz/packages/blitz-html/src/html_document.rs blitz/packages/blitz-ht
 +    use blitz_traits::shell::{ColorScheme, Viewport};
 +    use std::sync::Arc;
 +
++    // Chromium keeps a computed font size as the float it computes (0.813em of 16px is
++    // 13.008px); Gecko's Stylo snaps it to a 60th of a pixel (13px), which shortened every
++    // unitless line height built on it.
++    #[test]
++    fn a_computed_font_size_is_not_snapped() {
++        let config = DocumentConfig {
++            html_parser_provider: Some(Arc::new(HtmlProvider)),
++            viewport: Some(Viewport::new(800, 600, 1.0, ColorScheme::Light)),
++            ..Default::default()
++        };
++        let mut doc = HtmlDocument::from_html(
++            "<html><body style='margin:0;font-size:16px'><p id='p' style='margin:0;font-size:0.813em;line-height:1.4'>x</p></body></html>",
++            config,
++        );
++        doc.resolve(0.0);
++        let p = doc.get_node(doc.get_element_by_id("p").unwrap()).unwrap();
++        let size = p.primary_styles().unwrap().get_font().font_size.computed_size().px();
++        assert!((size - 13.008).abs() < 1e-4, "computed font-size {size}");
++    }
++
 +    // Chromium on Linux sizes FreeType fonts in 26.6 fixed point, truncated (Skia's
 +    // SkScalarToFDot6): 14.4px text is shaped at 921/64 = 14.390625px. Lines break where the
 +    // shaped widths say, so text set at the exact size broke differently from Readest's.
@@ -3365,7 +3385,7 @@ diff -ruN blitz/packages/blitz-html/src/html_document.rs blitz/packages/blitz-ht
 +        let span = |size: &str| {
 +            format!("<div><span id='s{}' style='font-size:{size}px;white-space:pre'>eeeeeeeeeeeeeeeeeeee</span></div>", size.replace('.', "_"))
 +        };
-+        // Stylo snaps sizes to a 60th of a pixel first; 16px is exact on both grids.
++        // 16px is exact on every grid.
 +        let html = format!(
 +            "<html><body style='margin:0'>{}{}\
 +             <p id='p' style='margin:0;font-size:14.4px;line-height:1.25'>x</p></body></html>",
@@ -3383,6 +3403,7 @@ diff -ruN blitz/packages/blitz-html/src/html_document.rs blitz/packages/blitz-ht
 +        assert_eq!(p.height, 18.0);
 +    }
 +}
++
 diff -ruN blitz/packages/blitz-html/src/html_sink.rs blitz/packages/blitz-html/src/html_sink.rs
 --- blitz/packages/blitz-html/src/html_sink.rs
 +++ blitz/packages/blitz-html/src/html_sink.rs

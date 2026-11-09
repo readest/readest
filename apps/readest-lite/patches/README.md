@@ -152,6 +152,10 @@ one of each).
   initially 2). Stylo had them only as counted unknown properties, which drops the declarations.
 - `style` properties: the `-webkit-line-clamp` shorthand is parsed for Servo too (it sets
   `line-clamp`, which Blitz enables with its pref).
+- `style` values/specified/font: for Servo a computed font size under 1024 px is kept as computed,
+  as Chromium keeps it, instead of snapped to a 60th of a pixel. Readest's `0.813em` body text is
+  13.008px there and was 13px here, so every unitless line height built on it was 0.011 px short
+  and lines drifted down the page.
 
 ## tauri.diff (readest/tauri d6ef6e4c7, feat/cef)
 
