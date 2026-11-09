@@ -178,6 +178,10 @@ pub(crate) struct BlitzWebview {
     h: u32,
     scale: f32,
     dirty: bool,
+    /// When the page last became dirty (unpainted changes since then).
+    dirty_since: Option<Instant>,
+    /// Input arrived since the last turn: if it changed the page, paint before running timers.
+    input: bool,
     frames: u32,
     out: Option<String>,
     taps: VecDeque<String>,
@@ -270,6 +274,8 @@ impl BlitzWebview {
             h,
             scale: env("BLITZ_TAURI_SCALE", 2.5),
             dirty: false,
+            dirty_since: None,
+            input: false,
             frames: 0,
             out: std::env::var("BLITZ_TAURI_OUT").ok(),
             taps,
@@ -447,6 +453,23 @@ impl BlitzWebview {
             }
             self.dirty = true;
         }
+        if std::mem::take(&mut self.input) {
+            if self
+                .redraw
+                .0
+                .swap(false, std::sync::atomic::Ordering::Relaxed)
+            {
+                self.dirty = true;
+            }
+            if self.dirty && self.visible.load(std::sync::atomic::Ordering::Relaxed) {
+                let now = Instant::now();
+                let next_timer = doc.next_timer_deadline();
+                if should_paint(Some(now), next_timer, true, now) {
+                    self.paint();
+                }
+            }
+        }
+        let Some(doc) = self.doc.as_mut() else { return };
         doc.poll(None);
         if self
             .probe
@@ -478,6 +501,7 @@ impl BlitzWebview {
             self.taps.pop_front();
             self.next_tap = None;
             self.dirty = true;
+            self.input = true;
         } else if tap_due && let Some(target) = self.taps.pop_front() {
             let point = match target
                 .split_once(',')
@@ -509,6 +533,7 @@ impl BlitzWebview {
             );
             self.next_tap = None;
             self.dirty = true;
+            self.input = true;
         }
         if self
             .redraw
@@ -519,13 +544,15 @@ impl BlitzWebview {
             self.dirty = true;
         }
         self.report_js();
-        // Paint once the page has settled: nothing due within a frame.
-        let busy = self
-            .doc
-            .as_ref()
-            .and_then(QjsDocument::next_timer_deadline)
-            .is_some_and(|d| d <= Instant::now() + Duration::from_millis(16));
-        if self.dirty && !busy && self.visible.load(std::sync::atomic::Ordering::Relaxed) {
+        let now = Instant::now();
+        if self.dirty {
+            self.dirty_since.get_or_insert(now);
+        }
+        let next_timer = self.doc.as_ref().and_then(QjsDocument::next_timer_deadline);
+        let paint = self.dirty
+            && should_paint(self.dirty_since, next_timer, false, now)
+            && self.visible.load(std::sync::atomic::Ordering::Relaxed);
+        if paint {
             self.paint();
         }
     }
@@ -536,6 +563,7 @@ impl BlitzWebview {
     pub fn pointer(&mut self, x: f32, y: f32, down: bool) {
         let Some(doc) = self.doc.as_mut() else { return };
         send_pointer(doc, &self.pointers, x / self.scale, y / self.scale, down);
+        self.input = true;
     }
 
     fn report_js(&mut self) {
@@ -628,6 +656,7 @@ impl BlitzWebview {
         );
         self.frames += 1;
         self.dirty = false;
+        self.dirty_since = None;
         // Keep painting only while something animates; an idle page paints nothing.
         self.next_anim = self
             .doc
@@ -639,6 +668,21 @@ impl BlitzWebview {
                 Some(Instant::now() + Duration::from_millis(env("BLITZ_TAURI_TAP_MS", 800)));
         }
     }
+}
+
+/// Whether a dirty page paints now: right after input changed it (a page turn shows its page
+/// before the work it scheduled runs); once it has settled, with no JS timer due within a frame
+/// (each paint is a visible refresh on e-ink); or once it has waited 100 ms for timers that keep
+/// coming, as a browser paints at its next frame however many timers are queued.
+fn should_paint(
+    dirty_since: Option<Instant>,
+    next_timer: Option<Instant>,
+    input: bool,
+    now: Instant,
+) -> bool {
+    input
+        || next_timer.is_none_or(|d| d > now + Duration::from_millis(16))
+        || dirty_since.is_some_and(|t| now.duration_since(t) >= Duration::from_millis(100))
 }
 
 /// `__tauri.*`, the native side of `web.js`.
@@ -933,6 +977,29 @@ mod tests {
             .into_iter()
             .filter_map(|m| m.strip_prefix("log: ").map(str::to_owned))
             .collect()
+    }
+
+    #[test]
+    fn a_changed_page_waits_for_its_timers_but_not_for_long() {
+        let now = Instant::now();
+        let ms = |n| Duration::from_millis(n);
+        // settled: nothing due within a frame
+        assert!(should_paint(Some(now), None, false, now));
+        assert!(should_paint(Some(now), Some(now + ms(100)), false, now));
+        // a timer is about to run and may change the page again: wait for it
+        assert!(!should_paint(Some(now), Some(now + ms(5)), false, now));
+        assert!(!should_paint(Some(now - ms(50)), Some(now), false, now));
+        // but a page that keeps its timers busy still paints once it has waited long enough
+        // (on a Kindle a page turn's new page waited behind half a second of timers)
+        assert!(should_paint(Some(now - ms(100)), Some(now), false, now));
+    }
+
+    #[test]
+    fn a_page_changed_by_input_paints_before_its_timers_run() {
+        let now = Instant::now();
+        // a page turn scrolls the book in the key handler; the work it schedules (a progress
+        // update, the reader's re-render) runs after the new page is on screen
+        assert!(should_paint(Some(now), Some(now), true, now));
     }
 
     #[test]
