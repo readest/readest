@@ -55,17 +55,17 @@ files: the manifest, `cargo-sources.json`, and `node-sources.json`.
 
 4. **Set up the generators** (not installed on this machine; clone + venv each time):
    ```bash
-   SCRATCH=<session scratchpad>; cd $SCRATCH/src
-   git clone --depth 1 https://github.com/flatpak/flatpak-builder-tools.git
-   python3 -m venv venv
+   SCRATCH=<session scratchpad>; cd "$SCRATCH/src" &&
+   git clone --depth 1 https://github.com/flatpak/flatpak-builder-tools.git &&
+   python3 -m venv venv &&
    ./venv/bin/pip install "aiohttp>=3.9.5,<4" "PyYAML>=6.0.2,<7" "tomlkit>=0.13.3,<1.0"
    ```
 
 5. **Regenerate the source lists** (both need network; the shell already exports
    `http_proxy`/`https_proxy`):
    ```bash
-   SCRATCH=<session scratchpad>; cd $SCRATCH/src
-   rm -f cargo-sources.json node-sources.json
+   SCRATCH=<session scratchpad>; cd "$SCRATCH/src" &&
+   rm -f cargo-sources.json node-sources.json &&
    ./venv/bin/python flatpak-builder-tools/cargo/flatpak-cargo-generator.py \
        -o cargo-sources.json Cargo.cef.lock &&
    PYTHONPATH=flatpak-builder-tools/node ./venv/bin/python -m flatpak_node_generator \
@@ -73,7 +73,8 @@ files: the manifest, `cargo-sources.json`, and `node-sources.json`.
        pnpm pnpm-lock.yaml &&
    cp cargo-sources.json node-sources.json /Users/chrox/dev/com.bilingify.readest/
    ```
-   - The `rm` and `&&` chain are there so a failed generator can't leave an
+   - Everything chains from the `cd` with `&&`, so a failed `cd` can't run the
+     `rm` in the Flathub checkout, and a failed generator can't leave an
      earlier run's output to be copied as this tag's.
    - `--no-playwright-browsers` is required: the manifest sets
      `PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD` and does not vendor those browsers.
