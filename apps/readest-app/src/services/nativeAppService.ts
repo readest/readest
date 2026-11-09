@@ -75,6 +75,7 @@ declare global {
   interface Window {
     __READEST_IS_EINK?: boolean;
     __READEST_IS_APPIMAGE?: boolean;
+    __READEST_SINGLE_WINDOW?: boolean;
     __READEST_UPDATER_DISABLED?: boolean;
   }
 }
@@ -593,7 +594,10 @@ export class NativeAppService extends BaseAppService {
   override isAppImage = Boolean(window.__READEST_IS_APPIMAGE);
   override isEink = Boolean(window.__READEST_IS_EINK);
   override hasTrafficLight = OS_TYPE === 'macos';
-  override hasWindow = !(OS_TYPE === 'ios' || OS_TYPE === 'android');
+  // Readest Lite (one window, no second webview) sets __READEST_SINGLE_WINDOW: books open in
+  // that window, as on mobile.
+  override hasWindow =
+    !(OS_TYPE === 'ios' || OS_TYPE === 'android') && !window.__READEST_SINGLE_WINDOW;
   override hasWindowBar = !(OS_TYPE === 'ios' || OS_TYPE === 'android');
   override hasContextMenu = !(OS_TYPE === 'ios' || OS_TYPE === 'android');
   // No desktop platform draws a rounded, transparent window anymore: the Linux

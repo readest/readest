@@ -50,14 +50,15 @@ fn main() {
         ])
         .setup(|app| {
             // Books opened with the app: readable through the fs plugin, and handed to the
-            // library's open-with import (readest-app's `window.OPEN_WITH_FILES`).
+            // library's open-with import (readest-app's `window.OPEN_WITH_FILES`). Lite has one
+            // window and creates no others, so books open in it (`__READEST_SINGLE_WINDOW`).
             let files = files_from_args();
             for file in &files {
                 app.fs_scope().allow_file(file)?;
             }
             let files: Vec<_> = files.iter().map(|f| f.to_string_lossy()).collect();
             let script = format!(
-                "window.OPEN_WITH_FILES = {};",
+                "window.OPEN_WITH_FILES = {}; window.__READEST_SINGLE_WINDOW = true;",
                 serde_json::to_string(&files)?
             );
             tauri::WebviewWindowBuilder::new(app, "main", tauri::WebviewUrl::default())

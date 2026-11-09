@@ -146,6 +146,22 @@ describe('NativeAppService view transition capabilities', () => {
   });
 });
 
+describe('NativeAppService on a single-window runtime', () => {
+  // Readest Lite draws one window and cannot open another: books open in it and closing
+  // the last one returns to the library, as on mobile, while its window bar stays.
+  test('opens no windows when the runtime says it has only one', async () => {
+    expect((await loadServiceWithOS('linux')).hasWindow).toBe(true);
+    window.__READEST_SINGLE_WINDOW = true;
+    try {
+      const service = await loadServiceWithOS('linux');
+      expect(service.hasWindow).toBe(false);
+      expect(service.hasWindowBar).toBe(true);
+    } finally {
+      delete window.__READEST_SINGLE_WINDOW;
+    }
+  });
+});
+
 describe('NativeAppService cover optimization', () => {
   test('keeps original covers and only queues a visible cover on demand', async () => {
     let finishOptimization = () => {};
