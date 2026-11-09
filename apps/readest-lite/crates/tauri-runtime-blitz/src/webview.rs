@@ -145,12 +145,17 @@ impl NetProvider for Net {
 /// Set by Blitz when the rendered document changed (a DOM mutation in the document, an image
 /// loaded, ...): the only reason to paint. A JS timer that runs without touching the DOM (a
 /// polling interval) must not cost a repaint, which on e-ink is a visible refresh.
+/// `restyle`: only attributes the cascade reads changed; paint only if resolving the document
+/// damages something.
 #[derive(Default)]
-struct Redraw(std::sync::atomic::AtomicBool);
+struct Redraw(std::sync::atomic::AtomicBool, std::sync::atomic::AtomicBool);
 
 impl blitz_traits::shell::ShellProvider for Redraw {
     fn request_redraw(&self) {
         self.0.store(true, std::sync::atomic::Ordering::Relaxed);
+    }
+    fn request_restyle(&self) {
+        self.1.store(true, std::sync::atomic::Ordering::Relaxed);
     }
 }
 
@@ -180,9 +185,11 @@ pub(crate) struct BlitzWebview {
     h: u32,
     scale: f32,
     dirty: bool,
+    /// Only a restyle was asked for since the last paint: paint if it damages something.
+    restyled: bool,
     /// Why the page became dirty since the last paint (BLITZ_TAURI_TRACE_LOOP's frame lines): `l`
     /// page load, `n` a resource arrived, `k` scripted input, `r` Blitz asked for a redraw (a DOM
-    /// change, an image, ...), `a` an animation frame.
+    /// change, an image, ...), `s` a restyle that changed something, `a` an animation frame.
     causes: String,
     /// When the page last became dirty (unpainted changes since then).
     dirty_since: Option<Instant>,
@@ -284,6 +291,7 @@ impl BlitzWebview {
             h,
             scale: env("BLITZ_TAURI_SCALE", 2.5),
             dirty: false,
+            restyled: false,
             causes: String::new(),
             dirty_since: None,
             input: false,
@@ -487,7 +495,13 @@ impl BlitzWebview {
                 self.dirty = true;
                 cause(&mut self.causes, 'r');
             }
-            if self.dirty && self.visible.load(std::sync::atomic::Ordering::Relaxed) {
+            self.restyled |= self
+                .redraw
+                .1
+                .swap(false, std::sync::atomic::Ordering::Relaxed);
+            if (self.dirty || self.restyled)
+                && self.visible.load(std::sync::atomic::Ordering::Relaxed)
+            {
                 let now = Instant::now();
                 let next_timer = doc.next_timer_deadline();
                 if should_paint(Some(now), next_timer, true, now) {
@@ -511,7 +525,9 @@ impl BlitzWebview {
         let tap_due = self.next_tap.is_some_and(|t| {
             t <= now
                 || self.tap_idle.is_some_and(|q| {
-                    !self.dirty && page_is_quiet(self.last_paint, doc.next_timer_deadline(), q, now)
+                    !self.dirty
+                        && !self.restyled
+                        && page_is_quiet(self.last_paint, doc.next_timer_deadline(), q, now)
                 })
         });
         // Input lines carry the time the input was sent (also as the wall-clock time a JS profile
@@ -586,18 +602,22 @@ impl BlitzWebview {
             self.dirty = true;
             cause(&mut self.causes, 'r');
         }
+        self.restyled |= self
+            .redraw
+            .1
+            .swap(false, std::sync::atomic::Ordering::Relaxed);
         if self.next_anim.is_some_and(|t| t <= Instant::now()) {
             self.dirty = true;
             cause(&mut self.causes, 'a');
         }
         self.report_js();
         let now = Instant::now();
-        if self.dirty {
+        if self.dirty || self.restyled {
             self.dirty_since.get_or_insert(now);
         }
         let next_timer = self.doc.as_ref().and_then(QjsDocument::next_timer_deadline);
         let t_input = t_ms();
-        let paint = self.dirty
+        let paint = (self.dirty || self.restyled)
             && should_paint(self.dirty_since, next_timer, false, now)
             && self.visible.load(std::sync::atomic::Ordering::Relaxed);
         if paint {
@@ -641,6 +661,23 @@ impl BlitzWebview {
         let Some(doc) = self.doc.as_mut() else { return };
         let t = Instant::now();
         doc.inner_mut().resolve(blitz_qjs_script::animation_time());
+        // Only a restyle was asked for, and it changed nothing on the page: nothing to paint.
+        if self.restyled && !self.dirty {
+            self.restyled = false;
+            if !doc.inner().damaged_by_last_resolve() {
+                self.dirty_since = None;
+                if std::env::var_os("BLITZ_TAURI_TRACE_LOOP").is_some() {
+                    eprintln!(
+                        "{{\"label\": \"skip\", \"t_ms\": {:.1}, \"layout_ms\": {:.1}}}",
+                        t_ms(),
+                        t.elapsed().as_secs_f64() * 1000.0
+                    );
+                }
+                return;
+            }
+            cause(&mut self.causes, 's');
+        }
+        self.restyled = false;
         // ResizeObserver callbacks see the new layout; if any fired, the page is about to change
         // again, so paint once that settles (they only fire on size changes, so this ends).
         if doc.call_global("__blitzAfterLayout", ()).unwrap_or(0.0) > 0.0 {

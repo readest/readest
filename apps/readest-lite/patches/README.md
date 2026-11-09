@@ -155,6 +155,12 @@
   absent (Stylo's `prepare_for_update`, as CSSOM's `setProperty`). foliate-js sets its views'
   `aria-hidden` several times a page turn, and each set made the next layout read lay the page
   out again.
+- `blitz-traits` shell, `blitz-dom` mutator, resolve, document: a change to an input's `name`
+  asks the shell for a restyle (`ShellProvider::request_restyle`, which defaults to
+  `request_redraw`), not a redraw, and `BaseDocument::damaged_by_last_resolve` says whether the
+  next resolve damaged any node, subdocuments included. React 19 clears an input's `name` and
+  sets it back on every update of the input; the runtime resolves such a page and paints it only
+  if something was damaged.
 
 ## stylo.diff (servo/stylo 2dca34592, 0.23.0)
 
