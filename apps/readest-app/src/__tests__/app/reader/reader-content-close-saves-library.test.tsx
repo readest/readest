@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
-import { cleanup, render, waitFor } from '@testing-library/react';
+import { Profiler } from 'react';
+import { act, cleanup, render, waitFor } from '@testing-library/react';
 
 import type { Book, BookConfig } from '@/types/book';
 import type { SystemSettings } from '@/types/settings';
@@ -126,5 +127,69 @@ describe('ReaderContent window close', () => {
     expect(h.appService.saveLibraryBooks).toHaveBeenCalled();
     const saved = h.appService.saveLibraryBooks.mock.calls.at(-1)![0] as Book[];
     expect(saved.find((b) => b.hash === 'h1')?.progress).toEqual([29, 39]);
+  });
+});
+
+describe('ReaderContent subscriptions', () => {
+  beforeEach(() => {
+    useBookDataStore.setState({
+      booksData: {
+        h1: {
+          id: 'h1',
+          book,
+          file: null,
+          config: { progress: [29, 39], location: 'cfi-29', updatedAt: 1 } as BookConfig,
+          bookDoc: {} as NonNullable<
+            ReturnType<typeof useBookDataStore.getState>['booksData'][string]
+          >['bookDoc'],
+          isFixedLayout: false,
+        },
+      },
+    });
+    useReaderStore.setState({
+      viewStates: {
+        'h1-k1': { key: 'h1-k1', isPrimary: true, viewSettings: {} } as NonNullable<
+          ReturnType<ReturnType<typeof useReaderStore.getState>['getViewState']>
+        >,
+      },
+    });
+  });
+
+  afterEach(async () => {
+    cleanup();
+    await flushPendingLibrarySave();
+  });
+
+  // Every page turn writes the book's progress into its config; the reader below must not
+  // re-render for it
+  test('a progress write does not re-render it; a new book document does', async () => {
+    const onRender = vi.fn();
+    const { container } = render(
+      <Profiler id='reader' onRender={onRender}>
+        <ReaderContent settings={{} as SystemSettings} />
+      </Profiler>,
+    );
+    await waitFor(() => expect(container.querySelector('.reader-content')).not.toBeNull());
+    await act(async () => {});
+    onRender.mockClear();
+    act(() =>
+      useBookDataStore.setState((state) => ({
+        booksData: {
+          ...state.booksData,
+          h1: {
+            ...state.booksData['h1']!,
+            config: { ...state.booksData['h1']!.config!, progress: [30, 39], location: 'cfi-30' },
+          },
+        },
+      })),
+    );
+    expect(onRender).not.toHaveBeenCalled();
+    act(() =>
+      useBookDataStore.setState((state) => ({
+        booksData: { ...state.booksData, h1: { ...state.booksData['h1']!, bookDoc: null } },
+      })),
+    );
+    expect(onRender).toHaveBeenCalled();
+    expect(container.querySelector('.reader-content')).toBeNull();
   });
 });

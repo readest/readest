@@ -29,7 +29,10 @@ const savePagebound = async (envConfig: EnvConfigType, patch: Partial<PageboundS
 export const usePageboundSync = (bookKey: string) => {
   const _ = useTranslation();
   const { envConfig } = useEnv();
-  const { getConfig, getBookData, setConfig, saveConfig } = useBookDataStore();
+  const getConfig = useBookDataStore((s) => s.getConfig);
+  const getBookData = useBookDataStore((s) => s.getBookData);
+  const setConfig = useBookDataStore((s) => s.setConfig);
+  const saveConfig = useBookDataStore((s) => s.saveConfig);
   const progress = useBookProgress(bookKey);
   // Each push can add the book to the shelf and always adds a reading update,
   // so a push requested while one is running is dropped, not doubled.

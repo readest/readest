@@ -150,7 +150,7 @@ const PINCH_ACTIVATION_THRESHOLD = 24;
 const TWO_FINGER_PAN_THRESHOLD = 12;
 
 export const useTouchEvent = (bookKey: string) => {
-  const { getBookData } = useBookDataStore();
+  const getBookData = useBookDataStore((s) => s.getBookData);
   const { hoveredBookKey, setHoveredBookKey, getViewSettings, getView } = useReaderStore();
 
   const touchStartRef = useRef<IframeTouch | null>(null);

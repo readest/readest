@@ -1,3 +1,4 @@
+import { bookDataStoreHooks } from '@/__tests__/helpers/book-data-store-mock';
 import React from 'react';
 import {
   act,
@@ -49,13 +50,13 @@ let mockIsFixedLayout = false;
 const mockBooksData: Record<string, { config?: { booknotes?: unknown[] } }> = {};
 
 vi.mock('@/store/bookDataStore', () => ({
-  useBookDataStore: (selector?: (state: unknown) => unknown) => {
+  ...bookDataStoreHooks((selector?: (state: unknown) => unknown) => {
     const state = {
       getBookData: () => ({ isFixedLayout: mockIsFixedLayout }),
       booksData: mockBooksData,
     };
     return selector ? selector(state) : state;
-  },
+  }),
 }));
 
 vi.mock('@/context/EnvContext', () => ({

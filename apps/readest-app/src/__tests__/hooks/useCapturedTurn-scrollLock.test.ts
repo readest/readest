@@ -1,3 +1,4 @@
+import { bookDataStoreHooks } from '@/__tests__/helpers/book-data-store-mock';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { act, cleanup, renderHook } from '@testing-library/react';
 import type { FoliateView, Renderer } from '@/types/view';
@@ -127,7 +128,7 @@ vi.mock('@/store/readerStore', () => {
   return { useReaderStore };
 });
 vi.mock('@/store/bookDataStore', () => ({
-  useBookDataStore: () => ({ getBookData: () => ({ isFixedLayout: h.isFixedLayout }) }),
+  ...bookDataStoreHooks(() => ({ getBookData: () => ({ isFixedLayout: h.isFixedLayout }) })),
 }));
 vi.mock('@/store/settingsStore', () => {
   const useSettingsStore = () => ({ isSettingsDialogOpen: h.settingsDialogOpen });

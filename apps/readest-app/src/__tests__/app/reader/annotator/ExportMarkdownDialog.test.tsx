@@ -1,3 +1,4 @@
+import { bookDataStoreHooks } from '@/__tests__/helpers/book-data-store-mock';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { BooknoteGroup } from '@/types/book';
@@ -20,7 +21,7 @@ vi.mock('@/store/settingsStore', () => ({
 }));
 
 vi.mock('@/store/bookDataStore', () => ({
-  useBookDataStore: () => ({ getBookData: () => h.bookData }),
+  ...bookDataStoreHooks(() => ({ getBookData: () => h.bookData })),
 }));
 
 vi.mock('@/store/readerStore', () => ({

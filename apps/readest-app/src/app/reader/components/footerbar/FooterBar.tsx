@@ -3,9 +3,10 @@ import React, { useCallback, useMemo, useEffect, useRef } from 'react';
 import { useEnv } from '@/context/EnvContext';
 import { useSpatialNavigation } from '@/app/reader/hooks/useSpatialNavigation';
 import { useWindowFocusRestore } from '@/app/reader/hooks/useWindowFocusRestore';
+import { useBookProgress } from '@/store/readerProgressStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useSidebarStore } from '@/store/sidebarStore';
-import { useBookDataStore } from '@/store/bookDataStore';
+import { useBookDataStore, useBookConfig, useBookData } from '@/store/bookDataStore';
 import { FIXED_LAYOUT_FORMATS } from '@/types/book';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useDeviceControlStore } from '@/store/deviceStore';
@@ -31,17 +32,17 @@ const FooterBar: React.FC<FooterBarProps> = ({
   const _ = useTranslation();
   const { appService } = useEnv();
   const isIPhoneDuo = useThemeStore((s) => s.isIPhoneDuo);
-  const { getConfig, setConfig, getBookData } = useBookDataStore();
+  const setConfig = useBookDataStore((s) => s.setConfig);
   const { hoveredBookKey, setHoveredBookKey, bottomBarTab, setBottomBarTab } = useReaderStore();
-  const { getView, getViewState, getProgress, getViewSettings } = useReaderStore();
+  const { getView, getViewState, getViewSettings } = useReaderStore();
   const { isSideBarVisible, isSideBarPinned, setSideBarVisible } = useSidebarStore();
   const { acquireBackKeyInterception, releaseBackKeyInterception } = useDeviceControlStore();
 
   const view = getView(bookKey);
-  const config = getConfig(bookKey);
-  const bookData = getBookData(bookKey);
+  const config = useBookConfig(bookKey);
+  const bookData = useBookData(bookKey);
   const viewState = getViewState(bookKey);
-  const progress = getProgress(bookKey);
+  const progress = useBookProgress(bookKey);
   const viewSettings = getViewSettings(bookKey);
 
   const actionTab = hoveredBookKey === bookKey ? bottomBarTab : '';

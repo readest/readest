@@ -22,7 +22,8 @@ const withBookLock = async <T>(bookHash: string, task: () => Promise<T>): Promis
 export const useObsidianSync = (bookKey: string) => {
   const _ = useTranslation();
   const { envConfig } = useEnv();
-  const { getConfig, getBookData } = useBookDataStore();
+  const getConfig = useBookDataStore((s) => s.getConfig);
+  const getBookData = useBookDataStore((s) => s.getBookData);
 
   const pushNotes = useCallback(async (): Promise<boolean> => {
     const { obsidian } = useSettingsStore.getState().settings;
@@ -93,7 +94,7 @@ export const useObsidianSync = (bookKey: string) => {
 
   // Opening a book also syncs it, so highlights made before the integration
   // was turned on reach the vault too.
-  const booknotes = getConfig(bookKey)?.booknotes;
+  const booknotes = useBookDataStore((s) => s.getConfig(bookKey)?.booknotes);
   useEffect(() => {
     debouncedPush();
   }, [booknotes, debouncedPush]);

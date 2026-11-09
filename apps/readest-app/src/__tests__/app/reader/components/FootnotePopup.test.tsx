@@ -7,6 +7,7 @@
  * way out to the real page. Popups synthesized from a `data-*` attribute have
  * no location in the book and must not offer one.
  */
+import { bookDataStoreHooks } from '@/__tests__/helpers/book-data-store-mock';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { act, render, screen, fireEvent } from '@testing-library/react';
 import type { ReactNode } from 'react';
@@ -59,10 +60,12 @@ const bookDataState = {
   getBookData: () => ({ book: { primaryLanguage: 'en' } }),
 };
 vi.mock('@/store/bookDataStore', () => ({
-  useBookDataStore: Object.assign(
-    (selector?: (state: typeof bookDataState) => unknown) =>
-      selector ? selector(bookDataState) : bookDataState,
-    { getState: () => bookDataState },
+  ...bookDataStoreHooks(
+    Object.assign(
+      (selector?: (state: typeof bookDataState) => unknown) =>
+        selector ? selector(bookDataState) : bookDataState,
+      { getState: () => bookDataState },
+    ),
   ),
 }));
 

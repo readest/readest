@@ -46,7 +46,7 @@ import { shouldOpenTransient } from '@/helpers/openWith';
 export function useOpenWithBooks() {
   const router = useRouter();
   const { appService } = useEnv();
-  const { setCheckOpenWithBooks } = useLibraryStore();
+  const setCheckOpenWithBooks = useLibraryStore((s) => s.setCheckOpenWithBooks);
 
   useEffect(() => {
     if (!isTauriAppPlatform() || !appService) return;
