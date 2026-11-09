@@ -148,6 +148,13 @@
   number of 64ths of a pixel, truncated, as Chromium's `LayoutUnit`. foliate-js gives a section a
   fractional side padding (16.2105px); Lite kept it whole and its content box was 0.016 px
   narrower than Readest's, enough to wrap a line that fits there.
+- `blitz-dom` mutator, document, node/element: a write that leaves the element as it was restyles
+  nothing and asks for no repaint. That covers an attribute set to the value it has (an `src`
+  set again still loads; a `style` attribute set again still replaces the declarations script
+  changed), an absent attribute removed, and a style property set to its value or removed when
+  absent (Stylo's `prepare_for_update`, as CSSOM's `setProperty`). foliate-js sets its views'
+  `aria-hidden` several times a page turn, and each set made the next layout read lay the page
+  out again.
 
 ## stylo.diff (servo/stylo 2dca34592, 0.23.0)
 

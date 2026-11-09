@@ -241,7 +241,38 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
              iframe_loads: HashMap::new(),
  
              #[cfg(feature = "custom-widget")]
-@@ -1093,6 +1102,9 @@
+@@ -840,7 +849,8 @@
+         self.shell_provider.request_redraw();
+     }
+ 
+-    pub fn set_style_property(&mut self, node_id: NodeId, name: &str, value: &str) {
++    /// Whether it changed the element's style.
++    pub fn set_style_property(&mut self, node_id: NodeId, name: &str, value: &str) -> bool {
+         let node = &mut self.nodes[node_id];
+         let did_change = node.element_data_mut().unwrap().set_style_property(
+             name,
+@@ -851,9 +861,11 @@
+         if did_change {
+             node.set_restyle_hint(RestyleHint::RESTYLE_STYLE_ATTRIBUTE);
+         }
++        did_change
+     }
+ 
+-    pub fn remove_style_property(&mut self, node_id: NodeId, name: &str) {
++    /// Whether it changed the element's style.
++    pub fn remove_style_property(&mut self, node_id: NodeId, name: &str) -> bool {
+         let node = &mut self.nodes[node_id];
+         let did_change = node.element_data_mut().unwrap().remove_style_property(
+             name,
+@@ -863,6 +875,7 @@
+         if did_change {
+             node.set_restyle_hint(RestyleHint::RESTYLE_STYLE_ATTRIBUTE);
+         }
++        did_change
+     }
+ 
+     pub fn sub_document_node_ids(&self) -> Vec<NodeId> {
+@@ -1093,6 +1106,9 @@
              if let Some(before) = node.before() {
                  self.drop_node_ignoring_parent_with(before, on_drop);
              }
@@ -251,7 +282,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
              if let Some(after) = node.after() {
                  self.drop_node_ignoring_parent_with(after, on_drop);
              }
-@@ -1684,6 +1696,62 @@
+@@ -1684,6 +1700,62 @@
              self.snapshot_node_state_only(node_id);
          }
          cb(&mut self.nodes[node_id]);
@@ -314,7 +345,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      }
  
      // Takes (x, y) co-ordinates (relative to the )
-@@ -2440,6 +2508,40 @@
+@@ -2440,6 +2512,40 @@
          (pos, *self.nodes[node_id].unrounded_layout())
      }
  
@@ -355,7 +386,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      /// Computes the size and position of the `Node` relative to the viewport
      pub fn get_client_bounding_rect(&self, node_id: NodeId) -> Option<BoundingRect> {
          // Non-atomic inline elements have no layout box of their own: return
-@@ -2447,17 +2549,27 @@
+@@ -2447,17 +2553,27 @@
          if let Some(rects) = self.inline_fragment_rects(node_id) {
              return rects.reduce(BoundingRect::union);
          }
@@ -393,7 +424,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      }
  
      /// CSSOM View's `offsetLeft`/`offsetTop`/`offsetWidth`/`offsetHeight` as a single rect:
-@@ -2528,7 +2640,7 @@
+@@ -2528,7 +2644,7 @@
      pub fn node_client_rects(&self, node_id: NodeId) -> Vec<BoundingRect> {
          match self.inline_fragment_rects(node_id) {
              Some(rects) => rects.collect(),
@@ -402,7 +433,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
          }
      }
  
-@@ -2543,20 +2655,329 @@
+@@ -2543,20 +2659,329 @@
  
          // Only non-atomic inline elements lack their own layout box: they are
          // flattened into the containing inline root's text layout as style spans.
@@ -744,7 +775,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      }
  
      /// The first element in tree order with the given tag name. The root element and
-@@ -2944,6 +3365,36 @@
+@@ -2944,6 +3369,36 @@
  /// Snap a CSSOM geometry value to a 1/64px grid (the precision of Blink's `LayoutUnit`).
  /// Layout values are accumulated in `f32`, so e.g. seven `55/7`-wide flex items would
  /// otherwise end at `55.0000005` and appear to overflow their 55px container.
@@ -781,7 +812,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
  fn snap_to_layout_unit(value: f64) -> f64 {
      (value * 64.0).round() / 64.0
  }
-@@ -3781,3 +4232,7 @@
+@@ -3781,3 +4236,7 @@
          );
      }
  }
@@ -2028,7 +2059,66 @@ diff -ruN blitz/packages/blitz-dom/src/lib.rs blitz/packages/blitz-dom/src/lib.r
 diff -ruN blitz/packages/blitz-dom/src/mutator.rs blitz/packages/blitz-dom/src/mutator.rs
 --- blitz/packages/blitz-dom/src/mutator.rs
 +++ blitz/packages/blitz-dom/src/mutator.rs
-@@ -744,6 +744,7 @@
+@@ -321,7 +321,15 @@
+ 
+     pub fn set_attribute(&mut self, node_id: NodeId, name: QualName, value: &str) {
+         let node_is_in_document = self.doc.nodes[node_id].flags.is_in_document();
+-        if node_is_in_document {
++        // The value the attribute already has restyles nothing and leaves nothing to repaint
++        // (what it starts below, such as an `src` set again, still runs). A `style` attribute set
++        // again does replace the declarations script changed since.
++        let changed = name.local == local_name!("style")
++            || self.doc.nodes[node_id]
++                .element_data()
++                .and_then(|element| element.attrs.iter().find(|attr| attr.name == name))
++                .is_none_or(|attr| &*attr.value != value);
++        if node_is_in_document && changed {
+             self.doc.snapshot_node(node_id, &name.local);
+ 
+             self.restyle_for_attribute_change(node_id, &name.local);
+@@ -345,7 +353,7 @@
+             return;
+         };
+ 
+-        self.mutations_occurred |= node_is_in_document;
++        self.mutations_occurred |= node_is_in_document && changed;
+         // If element is a CustomWidget, then Ccall attribute_changed on it
+         #[cfg(feature = "custom-widget")]
+         if let SpecialElementData::CustomWidget(widget_data) = &mut element.special_data {
+@@ -455,6 +463,13 @@
+     }
+ 
+     pub fn clear_attribute(&mut self, node_id: NodeId, name: QualName) {
++        // Removing an attribute the element doesn't have changes nothing.
++        let has = self.doc.nodes[node_id]
++            .element_data()
++            .is_some_and(|element| element.attrs.iter().any(|attr| attr.name == name));
++        if !has {
++            return;
++        }
+         let node_is_in_document = self.doc.nodes[node_id].flags.is_in_document();
+         if node_is_in_document {
+             self.doc.snapshot_node(node_id, &name.local);
+@@ -563,14 +578,14 @@
+ 
+     pub fn set_style_property(&mut self, node_id: NodeId, name: &str, value: &str) {
+         let node_is_in_document = self.doc.nodes[node_id].flags.is_in_document();
+-        self.doc.set_style_property(node_id, name, value);
+-        self.mutations_occurred |= node_is_in_document;
++        let changed = self.doc.set_style_property(node_id, name, value);
++        self.mutations_occurred |= node_is_in_document && changed;
+     }
+ 
+     pub fn remove_style_property(&mut self, node_id: NodeId, name: &str) {
+         let node_is_in_document = self.doc.nodes[node_id].flags.is_in_document();
+-        self.doc.remove_style_property(node_id, name);
+-        self.mutations_occurred |= node_is_in_document;
++        let changed = self.doc.remove_style_property(node_id, name);
++        self.mutations_occurred |= node_is_in_document && changed;
+     }
+ 
+     pub fn set_sub_document(&mut self, node_id: NodeId, sub_document: Box<dyn Document>) {
+@@ -744,6 +759,7 @@
          }
          // Mark ancestors dirty so the style traversal visits this subtree.
          node.mark_ancestors_dirty();
@@ -2036,7 +2126,7 @@ diff -ruN blitz/packages/blitz-dom/src/mutator.rs blitz/packages/blitz-dom/src/m
      }
  
      /// Restyle an in-document element whose child list changed, `changed` being the position
-@@ -751,6 +752,8 @@
+@@ -751,6 +767,8 @@
      /// children are styled by the traversal regardless; the element and its other children
      /// only need restyling where its selector flags record a selector that depends on them.
      fn restyle_for_child_list_change(&mut self, parent_id: NodeId, changed: Range<usize>) {
@@ -2048,7 +2138,19 @@ diff -ruN blitz/packages/blitz-dom/src/mutator.rs blitz/packages/blitz-dom/src/m
 diff -ruN blitz/packages/blitz-dom/src/node/element.rs blitz/packages/blitz-dom/src/node/element.rs
 --- blitz/packages/blitz-dom/src/node/element.rs
 +++ blitz/packages/blitz-dom/src/node/element.rs
-@@ -118,6 +118,11 @@
+@@ -10,7 +10,10 @@
+ use std::sync::atomic::AtomicBool;
+ use style::Atom;
+ use style::parser::ParserContext;
+-use style::properties::{Importance, PropertyDeclaration, PropertyId, SourcePropertyDeclaration};
++use style::properties::{
++    Importance, PropertyDeclaration, PropertyId, SourcePropertyDeclaration,
++    SourcePropertyDeclarationUpdate,
++};
+ use style::stylesheets::{DocumentStyleSheet, Origin, UrlExtraData};
+ use style::values::computed::Display as StyloDisplay;
+ use style::{
+@@ -118,6 +121,11 @@
      // Pseudo element nodes
      pub before: Option<NodeId>,
      pub after: Option<NodeId>,
@@ -2060,7 +2162,7 @@ diff -ruN blitz/packages/blitz-dom/src/node/element.rs blitz/packages/blitz-dom/
  
      /// Detailed layout information from the most recent layout (currently
      /// grid track sizing information for grid containers only). Used by
-@@ -337,6 +342,8 @@
+@@ -337,6 +345,8 @@
              may_have_animations: AtomicBool::new(false),
              before: None,
              after: None,
@@ -2069,7 +2171,7 @@ diff -ruN blitz/packages/blitz-dom/src/node/element.rs blitz/packages/blitz-dom/
              detailed_layout_info: taffy::DetailedLayoutInfo::None,
              display_constructed_as: StyloDisplay::Block,
              layout_data: None,
-@@ -451,6 +458,8 @@
+@@ -451,6 +461,8 @@
              may_have_animations: AtomicBool::new(false),
              before: None,
              after: None,
@@ -2078,6 +2180,25 @@ diff -ruN blitz/packages/blitz-dom/src/node/element.rs blitz/packages/blitz-dom/
              detailed_layout_info: taffy::DetailedLayoutInfo::None,
              display_constructed_as: StyloDisplay::Block,
              layout_data: None,
+@@ -747,6 +759,18 @@
+             return false;
+         };
+ 
++        // A value the property already has changes nothing (as CSSOM's setProperty finds).
++        if let Some(block) = &self.style_attribute {
++            let mut updates = SourcePropertyDeclarationUpdate::default();
++            if !block.read_with(&guard.read()).prepare_for_update(
++                &source_property_declaration,
++                Importance::Normal,
++                &mut updates,
++            ) {
++                return false;
++            }
++        }
++
+         self.mutable_style_attribute(guard)
+             .write_with(&mut guard.write())
+             .extend(source_property_declaration.drain(), Importance::Normal);
 diff -ruN blitz/packages/blitz-dom/src/node/node.rs blitz/packages/blitz-dom/src/node/node.rs
 --- blitz/packages/blitz-dom/src/node/node.rs
 +++ blitz/packages/blitz-dom/src/node/node.rs
