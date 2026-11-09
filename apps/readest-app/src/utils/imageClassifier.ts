@@ -62,6 +62,7 @@ export const evaluatePixelDistribution = (data: Uint8ClampedArray): PixelDistrib
     const r = data[i];
     const g = data[i + 1];
     const b = data[i + 2];
+    if (r === undefined || g === undefined || b === undefined) break;
 
     totalColorDiff += Math.abs(r - g) + Math.abs(g - b);
 

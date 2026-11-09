@@ -8,6 +8,7 @@ import {
   classifyAndTagStandaloneDiagrams,
 } from '@/utils/imageClassifier';
 import { getStyles, type ThemeCode } from '@/utils/style';
+import type { Palette } from '@/styles/themes';
 import {
   DEFAULT_BOOK_STYLE,
   DEFAULT_BOOK_FONT,
@@ -40,7 +41,7 @@ const darkTheme: ThemeCode = {
   fg: '#e0e0e0',
   primary: '#0066cc',
   isDarkMode: true,
-  palette: {},
+  palette: {} as Palette,
 };
 
 const lightTheme: ThemeCode = {
@@ -48,7 +49,7 @@ const lightTheme: ThemeCode = {
   fg: '#121212',
   primary: '#0066cc',
   isDarkMode: false,
-  palette: {},
+  palette: {} as Palette,
 };
 
 describe('imageClassifier', () => {
@@ -157,8 +158,8 @@ describe('imageClassifier', () => {
       `;
       classifyAndTagStandaloneDiagrams(document, true, false);
       const imgs = document.querySelectorAll('img');
-      expect(imgs[0].classList.contains('monochrome-diagram')).toBe(false);
-      expect(imgs[1].classList.contains('monochrome-diagram')).toBe(false);
+      expect(imgs[0]?.classList.contains('monochrome-diagram')).toBe(false);
+      expect(imgs[1]?.classList.contains('monochrome-diagram')).toBe(false);
     });
 
     it('skips cover images', () => {
@@ -168,8 +169,8 @@ describe('imageClassifier', () => {
       `;
       classifyAndTagStandaloneDiagrams(document, true, false);
       const imgs = document.querySelectorAll('img');
-      expect(imgs[0].classList.contains('monochrome-diagram')).toBe(false);
-      expect(imgs[1].classList.contains('monochrome-diagram')).toBe(false);
+      expect(imgs[0]?.classList.contains('monochrome-diagram')).toBe(false);
+      expect(imgs[1]?.classList.contains('monochrome-diagram')).toBe(false);
     });
 
     it('uses memory cache for instant resolution', () => {
@@ -185,8 +186,8 @@ describe('imageClassifier', () => {
       classifyAndTagStandaloneDiagrams(document, true, false);
 
       const imgs = document.querySelectorAll('img');
-      expect(imgs[0].classList.contains('monochrome-diagram')).toBe(true);
-      expect(imgs[1].classList.contains('monochrome-diagram')).toBe(false);
+      expect(imgs[0]?.classList.contains('monochrome-diagram')).toBe(true);
+      expect(imgs[1]?.classList.contains('monochrome-diagram')).toBe(false);
     });
   });
 
