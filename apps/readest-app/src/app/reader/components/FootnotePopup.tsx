@@ -605,7 +605,13 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
     trianglePositionRef.current = triangPos;
 
     const { a: anchor } = detail as { a: HTMLAnchorElement };
-    const footnoteClasses = ['duokan-footnote', 'footnote-link', 'footnote'];
+    const footnoteClasses = [
+      'duokan-footnote',
+      'footnote-link',
+      'footnote',
+      'footnote-ref',
+      'noteref',
+    ];
     if (footnoteClasses.some((cls) => anchor.classList.contains(cls))) {
       detail['follow'] = true;
     }
