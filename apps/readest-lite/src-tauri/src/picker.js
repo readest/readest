@@ -1,18 +1,30 @@
 // The file picker Readest Lite draws for the dialog plugin's `open` (picker.rs). A full-page
 // overlay for e-ink: black on white, 1px borders, no shadows, and pages of rows turned by
-// buttons instead of scrolling (a Kindle's X server gives taps, not drags).
+// buttons instead of scrolling (a Kindle's X server gives taps, not drags). Its controls are
+// `div role=button`: Readest's e-ink mode recolours every <button> with the theme's text colour.
 (() => {
   const invoke = (cmd, args) => window.__TAURI_INTERNALS__.invoke(`plugin:dialog|${cmd}`, args);
   const ROW =
-    'display:block;width:100%;box-sizing:border-box;height:52px;line-height:52px;padding:0 16px;border:0;border-bottom:1px solid #000;background:#fff;color:#000;text-align:left;font:inherit;white-space:nowrap;overflow:hidden';
+    'display:block;height:52px;line-height:52px;padding:0 16px;border-bottom:1px solid #000;white-space:nowrap;overflow:hidden';
   const BUTTON =
-    'flex:1;height:48px;margin:0 4px;border:1px solid #000;border-radius:6px;background:#fff;color:#000;font:inherit';
+    'flex:1;display:flex;align-items:center;justify-content:center;height:48px;margin:0 4px;border:1px solid #000;border-radius:6px;background:#fff;color:#000';
   const el = (tag, css, text) => {
     const e = document.createElement(tag);
     e.style.cssText = css;
     if (text !== undefined) e.textContent = text;
     return e;
   };
+  const control = (css, text) => {
+    const e = el('div', css, text);
+    e.setAttribute('role', 'button');
+    return e;
+  };
+  // a control that does nothing when off, drawn in gray
+  const enable = (e, on) => {
+    e.dataset.off = on ? '' : '1';
+    e.style.color = on ? '' : '#888';
+  };
+  const on = (e, f) => e.addEventListener('click', () => e.dataset.off || f());
   const join = (dir, name) => (dir.endsWith('/') ? dir : `${dir}/`) + name;
   const parent = (dir) => dir.replace(/\/[^/]+\/?$/, '') || '/';
 
@@ -39,13 +51,13 @@
         'div',
         'display:flex;align-items:center;padding:8px 12px;border-top:1px solid #000',
       );
-      const prev = el('button', BUTTON, 'Previous');
+      const prev = control(BUTTON, 'Previous');
       const count = el('div', 'flex:1;text-align:center;font-size:14px');
-      const next = el('button', BUTTON, 'Next');
+      const next = control(BUTTON, 'Next');
       pager.append(prev, count, next);
       const actions = el('div', 'display:flex;padding:8px 12px 16px');
-      const cancel = el('button', BUTTON, 'Cancel');
-      const done = el('button', `${BUTTON};background:#000;color:#fff`);
+      const cancel = control(BUTTON, 'Cancel');
+      const done = control(`${BUTTON};background:#000;color:#fff`);
       actions.append(cancel, done);
       root.append(head, list, pager, actions);
 
@@ -66,25 +78,25 @@
         list.replaceChildren(
           ...rows.map((e) => {
             if (e.up) {
-              const row = el('button', ROW, '.. (up)');
+              const row = control(ROW, '.. (up)');
               row.addEventListener('click', () => go(parent(dir)));
               return row;
             }
             const path = join(dir, e.name),
-              on = chosen.has(path);
-            const row = el('button', `${ROW}${e.dir ? ';font-weight:bold' : ''}`);
+              picked = chosen.has(path);
+            const row = control(`${ROW}${e.dir ? ';font-weight:bold' : ''}`);
             if (!e.dir)
               row.append(
                 el(
                   'span',
-                  `display:inline-block;width:16px;height:16px;margin-right:12px;vertical-align:-2px;border:1px solid #000;background:${on ? '#000' : '#fff'}`,
+                  `display:inline-block;width:16px;height:16px;margin-right:12px;vertical-align:-2px;border:1px solid #000;background:${picked ? '#000' : '#fff'}`,
                 ),
               );
             row.append(e.dir ? `${e.name}/` : e.name);
             row.addEventListener('click', () => {
               if (e.dir) return go(path);
               if (!multiple) chosen.clear();
-              if (on) chosen.delete(path);
+              if (picked) chosen.delete(path);
               else chosen.add(path);
               render();
             });
@@ -93,10 +105,11 @@
         );
         count.textContent = `${page + 1} / ${pages}`;
         pager.style.display = pages > 1 ? 'flex' : 'none';
-        prev.disabled = page === 0;
-        next.disabled = page >= pages - 1;
+        enable(prev, page > 0);
+        enable(next, page < pages - 1);
         done.textContent = directory ? 'Select This Folder' : `Import (${chosen.size})`;
-        done.disabled = !directory && chosen.size === 0;
+        done.style.opacity = directory || chosen.size > 0 ? '1' : '0.4';
+        done.dataset.off = directory || chosen.size > 0 ? '' : '1';
       };
       const go = async (path) => {
         try {
@@ -109,16 +122,16 @@
         }
         render();
       };
-      prev.addEventListener('click', () => {
+      on(prev, () => {
         page--;
         render();
       });
-      next.addEventListener('click', () => {
+      on(next, () => {
         page++;
         render();
       });
-      cancel.addEventListener('click', () => finish(null));
-      done.addEventListener('click', () => finish(directory ? [dir] : [...chosen]));
+      on(cancel, () => finish(null));
+      on(done, () => finish(directory ? [dir] : [...chosen]));
       document.body.append(root);
       go(start);
     },
