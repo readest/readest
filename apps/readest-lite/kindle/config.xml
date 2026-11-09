@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<extension>
+	<information>
+		<name>Readest Lite</name>
+		<version>0.1</version>
+		<author>Readest</author>
+		<id>readest-lite</id>
+	</information>
+	<menus>
+		<menu type="json" dynamic="false">menu.json</menu>
+	</menus>
+</extension>
