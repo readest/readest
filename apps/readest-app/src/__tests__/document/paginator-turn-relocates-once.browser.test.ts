@@ -95,6 +95,22 @@ describe('Paginator page turn', () => {
     expect(relocates.map((d) => d.reason)).toEqual(['page', 'page']);
   });
 
+  // The visible range, its CFI and the host's relocate handlers change nothing
+  // on the turned page: it is shown first, and next() resolves once it relocated.
+  it.each(cases)('shows the turned page before relocating ($name)', async ({
+    dir,
+    writingMode,
+    step,
+  }) => {
+    await open(makeBook(dir, writingMode));
+    const before = paginator.containerPosition;
+    const turned = paginator.next();
+    expect(paginator.containerPosition).toBe(before + step * paginator.size);
+    expect(relocates).toEqual([]);
+    await turned;
+    expect(relocates.map((d) => d.reason)).toEqual(['page']);
+  });
+
   it.each(cases)('still relocates on a scroll the paginator did not make ($name)', async ({
     dir,
     writingMode,
