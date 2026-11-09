@@ -506,8 +506,12 @@ impl BlitzWebview {
                     !self.dirty && page_is_quiet(self.last_paint, doc.next_timer_deadline(), q, now)
                 })
         });
-        // Input lines carry the time the input was sent and how long its handlers ran.
+        // Input lines carry the time the input was sent (also as the wall-clock time a JS profile
+        // stamps its samples with) and how long its handlers ran.
         let t0 = t_ms();
+        let unix0 = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map_or(0, |d| d.as_millis());
         // `wait:MS` holds the next input back MS ms more (e.g. while a book opens).
         if tap_due
             && let Some(ms) = self.taps.front().and_then(|t| t.strip_prefix("wait:"))
@@ -520,7 +524,8 @@ impl BlitzWebview {
                 .into_iter()
                 .all(|down| send_key(doc, name, down));
             eprintln!(
-                "{{\"label\": \"key\", \"t_ms\": {t0:.1}, \"handler_ms\": {:.1}, \"key\": \"{name}\", \"ok\": {ok}}}",
+                "{{\"label\": \"key\", \"t_ms\": {t0:.1}, \"unix_ms\": {}, \"handler_ms\": {:.1}, \"key\": \"{name}\", \"ok\": {ok}}}",
+                unix0,
                 t_ms() - t0
             );
             self.taps.pop_front();
@@ -549,11 +554,15 @@ impl BlitzWebview {
                 return;
             };
             let t0 = t_ms();
+            let unix0 = std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .map_or(0, |d| d.as_millis());
             for down in [true, false] {
                 send_pointer(doc, &self.pointers, x, y, down);
             }
             eprintln!(
-                "{{\"label\": \"tap\", \"t_ms\": {t0:.1}, \"handler_ms\": {:.1}, \"target\": \"{target}\", \"x\": {x:.0}, \"y\": {y:.0}}}",
+                "{{\"label\": \"tap\", \"t_ms\": {t0:.1}, \"unix_ms\": {}, \"handler_ms\": {:.1}, \"target\": \"{target}\", \"x\": {x:.0}, \"y\": {y:.0}}}",
+                unix0,
                 t_ms() - t0
             );
             self.next_tap = None;
