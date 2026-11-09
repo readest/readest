@@ -87,6 +87,26 @@ fn range_boundaries() {
     );
 }
 
+// foliate-js measures every text node on a page turn (a range over its contents, then its box):
+// each boundary point set walked the tree several times, a native call a step, ~0.4 ms a range.
+#[test]
+fn setting_a_boundary_point_walks_up_once_from_each_point() {
+    let (logs, errors) = run("
+        const get = Object.getOwnPropertyDescriptor(Node.prototype, 'parentNode').get;
+        let reads = 0;
+        Object.defineProperty(Node.prototype, 'parentNode', { get() { reads++; return get.call(this); }, configurable: true });
+        const r = document.createRange();
+        r.selectNodeContents(bt);
+        const select = reads;
+        reads = 0;
+        // bt is 7 steps from the top (b, p1, a, body, html, document, null), t1 6
+        r.setStart(t1, 1);
+        console.log(select, reads, r.startContainer === t1, r.endContainer === bt);
+    ");
+    assert_eq!(errors, Vec::<String>::new());
+    assert_eq!(logs, ["0 13 true true"]);
+}
+
 #[test]
 fn tree_walker() {
     let (logs, errors) = run("
