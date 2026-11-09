@@ -20,6 +20,7 @@ import { readStoredAmbientIsDarkMode } from './ambientLight';
 import { INLINE_FORMATTING_SELECTOR } from './inlineTags';
 import { getOSPlatform } from './misc';
 import { WHITE_TRANSPARENCY_FILTER } from './imageBackground';
+import { classifyAndTagStandaloneDiagrams } from './imageClassifier';
 import {
   LINK_HIT_AREA_CLASS,
   LINK_HIT_AREA_PX,
@@ -434,10 +435,27 @@ const getColorStyles = (
       mix-blend-mode: multiply;
     }
     /* inline images */
+    /* inline images */
     *:has(> img.has-text-siblings):not(body) {
       ${overrideColor ? `background-color: ${bg};` : ''}
     }
+    *:has(> img.monochrome-diagram):not(body) {
+      ${overrideColor ? `background-color: ${bg};` : ''}
+    }
     p img.has-text-siblings, span img.has-text-siblings, sup img.has-text-siblings {
+      ${
+        isDarkMode && !invertImgColorInDark
+          ? `filter: ${transparentImageBackground ? `${WHITE_TRANSPARENCY_FILTER} ` : ''}invert(1) hue-rotate(180deg);`
+          : ''
+      }
+      mix-blend-mode: ${isDarkMode ? 'screen' : 'multiply'};
+    }
+    img.monochrome-diagram {
+      ${
+        isDarkMode && !invertImgColorInDark
+          ? `filter: ${transparentImageBackground ? `${WHITE_TRANSPARENCY_FILTER} ` : ''}invert(1) hue-rotate(180deg);`
+          : ''
+      }
       mix-blend-mode: ${isDarkMode ? 'screen' : 'multiply'};
     }
     table:has(> colgroup) {
@@ -1812,7 +1830,7 @@ export const applyScrollbarStyle = (document: Document, hideScrollbar: boolean) 
   }
 };
 
-export const applyImageStyle = (document: Document) => {
+export const applyImageStyle = (document: Document, isDarkMode = false, isFixedLayout = false) => {
   const win = document.defaultView ?? window;
   // Two-phase (read then write): reading getComputedStyle after a class/style
   // write forces a style recalc, so gather every decision first and apply the
@@ -1928,6 +1946,9 @@ export const applyImageStyle = (document: Document) => {
       hr.classList.add('background-img');
     }
   });
+  if (isDarkMode && !isFixedLayout) {
+    classifyAndTagStandaloneDiagrams(document, isDarkMode, isFixedLayout);
+  }
 };
 
 // The enlarged link hit area positions every link and its ::before box, and
