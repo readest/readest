@@ -531,7 +531,13 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
       if (progressPercentage >= 100 && existingBook.readingStatus !== 'finished') {
         newReadingStatus = 'finished';
       }
-      updateBookProgress(id, progress, newReadingStatus);
+      // foliate repeats a page turn's relocate once its scroll settles: an unchanged entry
+      // stays, so library subscribers don't re-render
+      const unchanged =
+        existingBook.progress?.[0] === progress[0] &&
+        existingBook.progress?.[1] === progress[1] &&
+        existingBook.readingStatus === newReadingStatus;
+      if (!unchanged) updateBookProgress(id, progress, newReadingStatus);
     }
 
     // Only the primary view persists progress into the shared bookData
@@ -542,6 +548,13 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
       useBookDataStore.setState((state) => {
         const existing = state.booksData[id];
         if (!existing) return state;
+        const { config } = existing;
+        if (
+          config?.location === location &&
+          config.progress?.[0] === progress[0] &&
+          config.progress?.[1] === progress[1]
+        )
+          return state;
         return {
           booksData: {
             ...state.booksData,

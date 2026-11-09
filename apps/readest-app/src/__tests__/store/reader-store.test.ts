@@ -357,6 +357,52 @@ describe('readerStore', () => {
     });
   });
 
+  describe('setProgress', () => {
+    // foliate repeats each page turn's relocate once its scroll settles, with the same location.
+    test('a repeated location leaves the library and the book config unchanged', () => {
+      seedViewState('abc-1', { isPrimary: true });
+      useBookDataStore.setState({
+        booksData: {
+          abc: { id: 'abc', config: { updatedAt: 0 }, isFixedLayout: false } as unknown as BookData,
+        },
+      });
+      const book: { hash: string; readingStatus: string; progress?: [number, number] } = {
+        hash: 'abc',
+        readingStatus: 'reading',
+      };
+      const { getBookByHash, updateBookProgress } = useLibraryStore.getState();
+      vi.mocked(getBookByHash).mockImplementation(() => book as never);
+      vi.mocked(updateBookProgress).mockReset();
+      vi.mocked(updateBookProgress).mockImplementation((_hash, progress) => {
+        book.progress = progress;
+      });
+      const listener = vi.fn();
+      const unsubscribe = useBookDataStore.subscribe(listener);
+      const relocate = () =>
+        useReaderStore
+          .getState()
+          .setProgress(
+            'abc-1',
+            'epubcfi(/6/4!/2)',
+            {} as never,
+            undefined,
+            { current: 0, total: 3 } as never,
+            { current: 4, next: 5, total: 100 } as never,
+            {} as never,
+            {} as Range,
+            0.05,
+          );
+      relocate();
+      relocate();
+      expect(updateBookProgress).toHaveBeenCalledTimes(1);
+      expect(listener).toHaveBeenCalledTimes(1);
+      expect(useBookDataStore.getState().booksData['abc']!.config!.location).toBe(
+        'epubcfi(/6/4!/2)',
+      );
+      unsubscribe();
+    });
+  });
+
   describe('setting a value a view state already holds', () => {
     // BookmarkToggler sets the ribbon after every page turn; each notification re-rendered every
     // component subscribed to the whole store, the reader page included
