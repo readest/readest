@@ -120,9 +120,9 @@ export const useKOSync = (bookKey: string, provider: KosyncProgressProvider = ko
   // any server report: its updatedAt is stamped when the record is created
   // on this open, after the other device's last sync. Under 'silent' that
   // kept the empty local record, left the reader at the start of the book
-  // and pushed that start over the other device's position. Cleared once a
-  // server position is applied; from then on the device has a position of
-  // its own and the timestamps decide.
+  // and pushed that start over the other device's position. Used only by the
+  // first pull that gets an answer: after it, the device has a position of
+  // its own (the server's, or the one read here) and the timestamps decide.
   const noLocalProgressRef = useRef(false);
   useEffect(() => {
     const config = getConfig(bookKey);
@@ -485,6 +485,10 @@ export const useKOSync = (bookKey: string, provider: KosyncProgressProvider = ko
       if (generation !== checksumGeneration.current) return;
       const remoteProgress = await kosyncClient.getProgress(book);
       if (generation !== checksumGeneration.current) return;
+      // Only the first answer after open can find the device without a
+      // position; from then on the timestamps decide, even if it was empty.
+      const noLocalProgress = noLocalProgressRef.current;
+      noLocalProgressRef.current = false;
       recordFlow({
         connector: provider.name,
         direction: 'pull',
@@ -510,11 +514,10 @@ export const useKOSync = (bookKey: string, provider: KosyncProgressProvider = ko
       const remoteIsNewer = remoteTimestamp > localTimestamp;
       // A record created on this open holds no position for the timestamps
       // to protect: take the server's.
-      const takeRemote = remoteIsNewer || noLocalProgressRef.current;
+      const takeRemote = remoteIsNewer || noLocalProgress;
       if (strategy === 'receive' || (strategy === 'silent' && takeRemote)) {
         const applied = await applyRemoteProgress(book, bookDoc, remoteProgress, generation);
         if (generation !== checksumGeneration.current) return;
-        if (applied) noLocalProgressRef.current = false;
         setSyncState(applied ? 'synced' : 'error');
       } else if (strategy === 'prompt') {
         const resolved = resolvedRemoteRef.current;

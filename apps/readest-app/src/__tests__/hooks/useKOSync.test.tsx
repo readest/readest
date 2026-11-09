@@ -909,6 +909,31 @@ describe('useKOSync — a book just added to this device (silent strategy)', () 
 
     expect(h.goTo).toHaveBeenCalledTimes(1);
   });
+
+  test('when the first pull finds nothing, a later older report does not move the reader', async () => {
+    // Opened with no position here and none on the server; the user then reads
+    // on this device. A report older than that reading arrives afterwards: the
+    // timestamps decide, as for any book with a position.
+    h.getProgressMock.mockResolvedValueOnce(null);
+    h.localProgress = null;
+    const { rerender } = renderHook(() => useKOSync('h1-view1'));
+    await settle();
+    await openAtStart(rerender);
+    expect(h.goTo).not.toHaveBeenCalled();
+
+    h.config.updatedAt = Date.now() + 1000;
+    await act(async () => {
+      h.activeCallback?.(false);
+      await flushMicrotasks();
+    });
+    await act(async () => {
+      h.activeCallback?.(true);
+      await flushMicrotasks();
+    });
+
+    expect(h.getProgressMock).toHaveBeenCalledTimes(2);
+    expect(h.goTo).not.toHaveBeenCalled();
+  });
 });
 
 describe('useKOSync — a remote position with only a percentage (#7330)', () => {
