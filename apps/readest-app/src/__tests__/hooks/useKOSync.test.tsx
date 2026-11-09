@@ -66,7 +66,13 @@ const h = vi.hoisted(() => {
       pageinfo: { current: 13, total: 100 },
       section: { current: 0, total: 0 },
     } as Record<string, unknown> | null,
-    config: { updatedAt: 1, xpointer: '' as string | undefined },
+    // No `location` by default: nothing has been read in this book on this
+    // device. Tests that model a device with a position of its own set one.
+    config: {
+      updatedAt: 1,
+      xpointer: '' as string | undefined,
+      location: undefined as string | undefined,
+    },
     // Remote payload returned by the server on GET.
     remote: {
       progress: XPOINTER,
@@ -221,7 +227,7 @@ beforeEach(() => {
     pageinfo: { current: 13, total: 100 },
     section: { current: 0, total: 0 },
   };
-  h.config = { updatedAt: 1, xpointer: '' };
+  h.config = { updatedAt: 1, xpointer: '', location: undefined };
   h.remote = {
     progress: h.XPOINTER,
     percentage: 0.14,
@@ -807,6 +813,146 @@ describe('useKOSync — provider-scoped manual sync events (#6029)', () => {
     await fire('pull-kosync', { bookKey: 'h1-view1', provider: 'bookorbit' });
 
     expect(h.getProgressMock).not.toHaveBeenCalled();
+  });
+});
+
+describe('useKOSync — a book just added to this device (silent strategy)', () => {
+  // The book was read on another device, which left its position on the
+  // server. It is then added to this device and opened under "Always use
+  // latest" (silent). The record this device creates for it has no position,
+  // and its updatedAt is stamped when the record is created, later than the
+  // server's last sync. So the timestamp rule kept the empty local record: the
+  // reader stayed at the start of the book, then pushed that start to the
+  // server, which dragged the other device back to the start as well.
+  const START_CFI = 'epubcfi(/6/2!/4/2/2)';
+  const REMOTE_CFI = 'epubcfi(/6/650!/4/2/6)';
+  const SAVED_CFI = 'epubcfi(/6/4!/4/2/2)';
+  const startProgress = () => ({
+    location: START_CFI,
+    sectionLabel: 'Chapter 1',
+    pageinfo: { current: 0, total: 100 },
+    section: { current: 0, total: 0 },
+  });
+
+  beforeEach(() => {
+    h.settings.kosync.strategy = 'silent';
+    // Created on this open: the local record is newer than the server's report.
+    h.config = { updatedAt: Date.now(), xpointer: '', location: undefined };
+    h.remote = {
+      progress: h.XPOINTER,
+      percentage: 0.6,
+      timestamp: Math.floor(Date.now() / 1000) - 3600,
+      device_id: 'other-device',
+    };
+    h.getProgressMock.mockResolvedValue(h.remote);
+  });
+
+  // Opening the book: the view's first relocate writes the start of the book
+  // into both the config and the progress store, and only then can the pull
+  // run. Whether this device had a position must be read before that.
+  const openAtStart = async (rerender: () => void) => {
+    h.config.location = START_CFI;
+    h.localProgress = startProgress();
+    rerender();
+    await settle();
+  };
+
+  test('applies the server position when this device has none, although the local record is newer', async () => {
+    h.localProgress = null;
+    const { rerender } = renderHook(() => useKOSync('h1-view1'));
+    await settle();
+    expect(h.getProgressMock).not.toHaveBeenCalled();
+
+    await openAtStart(rerender);
+
+    expect(h.getProgressMock).toHaveBeenCalled();
+    expect(h.goTo).toHaveBeenCalledWith(REMOTE_CFI);
+  });
+
+  test('keeps a position this device already has when the local record is newer', async () => {
+    h.config.location = SAVED_CFI;
+    const { result } = renderHook(() => useKOSync('h1-view1'));
+    await settle();
+
+    expect(h.getProgressMock).toHaveBeenCalled();
+    expect(h.goTo).not.toHaveBeenCalled();
+    expect(result.current.syncState).toBe('synced');
+  });
+
+  test('still applies a newer server position over a position this device has', async () => {
+    h.config.location = SAVED_CFI;
+    h.remote = { ...h.remote, timestamp: Math.floor(Date.now() / 1000) + 10_000 };
+    h.getProgressMock.mockResolvedValue(h.remote);
+    renderHook(() => useKOSync('h1-view1'));
+    await settle();
+
+    expect(h.goTo).toHaveBeenCalledWith(REMOTE_CFI);
+  });
+
+  test('after the server position is applied, a re-pull is back on the timestamp rule', async () => {
+    h.localProgress = null;
+    const { rerender } = renderHook(() => useKOSync('h1-view1'));
+    await settle();
+    await openAtStart(rerender);
+    expect(h.goTo).toHaveBeenCalledTimes(1);
+
+    // The device now has a position of its own. The window loses and regains
+    // focus, which pulls again; the server still holds the older report, and
+    // it must not move the reader a second time.
+    await act(async () => {
+      h.activeCallback?.(false);
+      await flushMicrotasks();
+    });
+    await act(async () => {
+      h.activeCallback?.(true);
+      await flushMicrotasks();
+    });
+
+    expect(h.goTo).toHaveBeenCalledTimes(1);
+  });
+
+  test('when the first pull finds nothing, a later older report does not move the reader', async () => {
+    // Opened with no position here and none on the server; the user then reads
+    // on this device. A report older than that reading arrives afterwards: the
+    // timestamps decide, as for any book with a position.
+    h.getProgressMock.mockResolvedValueOnce(null);
+    h.localProgress = null;
+    const { rerender } = renderHook(() => useKOSync('h1-view1'));
+    await settle();
+    await openAtStart(rerender);
+    expect(h.goTo).not.toHaveBeenCalled();
+
+    h.config.updatedAt = Date.now() + 1000;
+    await act(async () => {
+      h.activeCallback?.(false);
+      await flushMicrotasks();
+    });
+    await act(async () => {
+      h.activeCallback?.(true);
+      await flushMicrotasks();
+    });
+
+    expect(h.getProgressMock).toHaveBeenCalledTimes(2);
+    expect(h.goTo).not.toHaveBeenCalled();
+  });
+
+  test('reading on while the first pull is on its way keeps the new position', async () => {
+    let answer: (value: typeof h.remote) => void = () => {};
+    h.getProgressMock.mockReturnValueOnce(new Promise((resolve) => (answer = resolve)));
+    h.localProgress = null;
+    const { rerender } = renderHook(() => useKOSync('h1-view1'));
+    await settle();
+    await openAtStart(rerender);
+    expect(h.getProgressMock).toHaveBeenCalledTimes(1);
+
+    // The user turns a page before the server answers.
+    h.localProgress = { ...startProgress(), location: SAVED_CFI };
+    await act(async () => {
+      answer(h.remote);
+      await flushMicrotasks();
+    });
+
+    expect(h.goTo).not.toHaveBeenCalled();
   });
 });
 
