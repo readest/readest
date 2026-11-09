@@ -90,5 +90,6 @@ for i in range(len(input_steps) + 1):
                            frames=len(seg), layout_ms=sum(f['layout_ms'] for f in seg),
                            paint_ms=round(sum(f['paint_ms'] for f in seg), 1)))
 json.dump(timing, open(f'{out}/timing.json', 'w'), indent=1)
-shutil.rmtree(frames_dir, ignore_errors=True)  # the app may still be writing one
+if not os.environ.get('PARITY_KEEP_FRAMES'):  # every frame, to see what each turn showed
+    shutil.rmtree(frames_dir, ignore_errors=True)  # the app may still be writing one
 print(f'lite: {len(captures)}/{len(input_steps) + 1} captures, {len(frames)} frames -> {out}')
