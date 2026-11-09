@@ -180,6 +180,10 @@ pub(crate) struct BlitzWebview {
     h: u32,
     scale: f32,
     dirty: bool,
+    /// Why the page became dirty since the last paint (BLITZ_TAURI_TRACE_LOOP's frame lines): `l`
+    /// page load, `n` a resource arrived, `k` scripted input, `r` Blitz asked for a redraw (a DOM
+    /// change, an image, ...), `a` an animation frame.
+    causes: String,
     /// When the page last became dirty (unpainted changes since then).
     dirty_since: Option<Instant>,
     /// Input arrived since the last turn: if it changed the page, paint before running timers.
@@ -280,6 +284,7 @@ impl BlitzWebview {
             h,
             scale: env("BLITZ_TAURI_SCALE", 2.5),
             dirty: false,
+            causes: String::new(),
             dirty_since: None,
             input: false,
             frames: 0,
@@ -378,6 +383,7 @@ impl BlitzWebview {
         }
         self.doc = Some(doc);
         self.dirty = true;
+        cause(&mut self.causes, 'l');
         self.probe = std::env::var("BLITZ_TAURI_EVAL")
             .ok()
             .and_then(|f| std::fs::read_to_string(f).ok())
@@ -469,6 +475,7 @@ impl BlitzWebview {
                 None => handler.error(url, "not found".into()),
             }
             self.dirty = true;
+            cause(&mut self.causes, 'n');
         }
         let t_net = t_ms();
         if std::mem::take(&mut self.input) {
@@ -478,6 +485,7 @@ impl BlitzWebview {
                 .swap(false, std::sync::atomic::Ordering::Relaxed)
             {
                 self.dirty = true;
+                cause(&mut self.causes, 'r');
             }
             if self.dirty && self.visible.load(std::sync::atomic::Ordering::Relaxed) {
                 let now = Instant::now();
@@ -513,13 +521,12 @@ impl BlitzWebview {
             .duration_since(std::time::UNIX_EPOCH)
             .map_or(0, |d| d.as_millis());
         // `wait:MS` holds the next input back MS ms more (e.g. while a book opens).
-        if tap_due
-            && let Some(ms) = self.taps.front().and_then(|t| t.strip_prefix("wait:"))
-        {
+        if tap_due && let Some(ms) = self.taps.front().and_then(|t| t.strip_prefix("wait:")) {
             let ms = ms.parse().unwrap_or(0);
             self.taps.pop_front();
             self.next_tap = Some(Instant::now() + Duration::from_millis(ms));
-        } else if tap_due && let Some(name) = self.taps.front().and_then(|t| t.strip_prefix("key:")) {
+        } else if tap_due && let Some(name) = self.taps.front().and_then(|t| t.strip_prefix("key:"))
+        {
             let ok = [true, false]
                 .into_iter()
                 .all(|down| send_key(doc, name, down));
@@ -531,6 +538,7 @@ impl BlitzWebview {
             self.taps.pop_front();
             self.next_tap = None;
             self.dirty = true;
+            cause(&mut self.causes, 'k');
             self.input = true;
         } else if tap_due && let Some(target) = self.taps.pop_front() {
             let point = match target
@@ -567,15 +575,20 @@ impl BlitzWebview {
             );
             self.next_tap = None;
             self.dirty = true;
+            cause(&mut self.causes, 'k');
             self.input = true;
         }
         if self
             .redraw
             .0
             .swap(false, std::sync::atomic::Ordering::Relaxed)
-            || self.next_anim.is_some_and(|t| t <= Instant::now())
         {
             self.dirty = true;
+            cause(&mut self.causes, 'r');
+        }
+        if self.next_anim.is_some_and(|t| t <= Instant::now()) {
+            self.dirty = true;
+            cause(&mut self.causes, 'a');
         }
         self.report_js();
         let now = Instant::now();
@@ -710,9 +723,12 @@ impl BlitzWebview {
         }
         // BLITZ_TAURI_TRACE_HEAP=1: the JS heap size too. Measuring it walks every JS object
         // (~20 ms on the host, more than a paint on a Kindle), so not on every frame by default.
-        let heap = std::env::var_os("BLITZ_TAURI_TRACE_HEAP").map_or(String::new(), |_| {
+        let mut heap = std::env::var_os("BLITZ_TAURI_TRACE_HEAP").map_or(String::new(), |_| {
             format!(", \"js_heap_kb\": {}", doc.js_memory().0 / 1024)
         });
+        if std::env::var_os("BLITZ_TAURI_TRACE_LOOP").is_some() {
+            heap += &format!(", \"cause\": \"{}\"", std::mem::take(&mut self.causes));
+        }
         eprintln!(
             "{{\"label\": \"frame\", \"t_ms\": {:.1}, \"n\": {}, \"layout_ms\": {layout_ms:.1}, \"paint_ms\": {paint_ms:.1}, \"present_ms\": {present_ms:.1}, \"sent\": {sent}{heap}}}",
             t_ms(),
@@ -732,6 +748,13 @@ impl BlitzWebview {
             self.next_tap =
                 Some(Instant::now() + Duration::from_millis(env("BLITZ_TAURI_TAP_MS", 800)));
         }
+    }
+}
+
+/// Adds `c` to the causes of the coming frame (see `BlitzWebview::causes`).
+fn cause(causes: &mut String, c: char) {
+    if !causes.contains(c) {
+        causes.push(c);
     }
 }
 
