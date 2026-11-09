@@ -1,6 +1,6 @@
 import clsx from 'clsx';
 import React, { useEffect, useRef, useState } from 'react';
-import { getBookProgress, useReaderProgressStore } from '@/store/readerProgressStore';
+import { useBookProgress } from '@/store/readerProgressStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useBookData } from '@/store/bookDataStore';
@@ -40,12 +40,7 @@ const PageJumpInput: React.FC<PageJumpInputProps> = ({
   const { hoveredBookKey, getView, getViewSettings } = useReaderStore();
   const view = getView(bookKey);
   const bookData = useBookData(bookKey);
-  // Follows the reading position while the footer shows it; a hidden footer
-  // keeps its label rather than re-rendering on every page turn.
-  const shownProgress = useReaderProgressStore((s) =>
-    hoveredBookKey === bookKey ? (s.progresses[bookKey] ?? null) : null,
-  );
-  const progress = shownProgress ?? getBookProgress(bookKey);
+  const progress = useBookProgress(bookKey);
   const viewSettings = getViewSettings(bookKey);
   const progressStyle = viewSettings?.progressStyle || 'percentage';
 
