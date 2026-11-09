@@ -199,8 +199,7 @@ const acquirePixelCaptureFilter = () => {
   };
 };
 
-// pdf.js redraws a rezoomed page asynchronously, and foliate re-emits
-// create-overlayer once it has. The cap covers a redraw that never reports.
+/** Wait for a rezoomed PDF's overlayer, capped at one second if no event arrives. */
 const waitForPdfRedraw = (renderer: EventTarget) =>
   new Promise<void>((resolve) => {
     const done = () => {
@@ -231,7 +230,7 @@ const hasActiveSelection = (view: FoliateView) => {
  */
 export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<FoliateView | null>) => {
   const { getViewSettings, setHoveredBookKey } = useReaderStore();
-  const { getBookData } = useBookDataStore();
+  const getBookData = useBookDataStore((s) => s.getBookData);
   const controllerRef = useRef<CapturedPageTurn | null>(null);
   const dragRef = useRef<DragState | null>(null);
   const nativeTouchStartRef = useRef<NativeTouchEventType | null>(null);
@@ -561,6 +560,7 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
       call: (command: Parameters<typeof paperCurl<NativePaperResult>>[0]) =>
         paperCurl<NativePaperResult>(command),
     };
+    /** Persist the fit-page reset after a panning edge turn; retain ordinary selected zoom. */
     const onRetainedCommit = () => {
       const settings = getViewSettings(bookKey);
       if (settings && settings.zoomLevel !== 100 && isPanningFixedLayout(settings)) {

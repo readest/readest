@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { describe, expect, test, vi } from 'vitest';
 
 import type { Book, BookConfig } from '@/types/book';

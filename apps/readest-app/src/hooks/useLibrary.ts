@@ -5,7 +5,8 @@ import { useSettingsStore } from '@/store/settingsStore';
 
 export const useLibrary = () => {
   const { envConfig } = useEnv();
-  const { setLibrary, libraryLoaded: storeLibraryLoaded } = useLibraryStore();
+  const setLibrary = useLibraryStore((s) => s.setLibrary);
+  const storeLibraryLoaded = useLibraryStore((s) => s.libraryLoaded);
   const { setSettings } = useSettingsStore();
   // Skip the disk reload when another mount has already populated the store —
   // re-reading would clobber transient in-memory entries (e.g. OPDS-PSE

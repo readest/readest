@@ -77,11 +77,24 @@ if (typeof HTMLMediaElement !== 'undefined') {
 
 // Unit tests never reach the Readest Voice API: a controller built for a
 // signed-out reader would otherwise fetch the voice catalog over the network.
-// Tests that exercise the request spy on fetch themselves.
+// Nor the app's own origin: happy-dom resolves a relative URL such as i18n's
+// /locales/en/translation.json against http://localhost:3000 and connects,
+// so a running dev server would answer. It fails here as Node's fetch fails
+// on a relative URL under jsdom. Tests that exercise a request spy on fetch
+// themselves.
 if (typeof globalThis.fetch === 'function') {
   const realFetch = globalThis.fetch;
-  globalThis.fetch = (input, init) =>
-    String(input instanceof Request ? input.url : input).includes('/tts/readest')
-      ? Promise.resolve(Response.json({ error: 'NOT_CONFIGURED' }, { status: 503 }))
-      : realFetch(input, init);
+  globalThis.fetch = (input, init) => {
+    const url = String(input instanceof Request ? input.url : input);
+    if (url.includes('/tts/readest')) {
+      return Promise.resolve(Response.json({ error: 'NOT_CONFIGURED' }, { status: 503 }));
+    }
+    if (
+      url.startsWith('/') ||
+      (typeof location !== 'undefined' && url.startsWith(location.origin))
+    ) {
+      return Promise.reject(new TypeError(`Failed to parse URL from ${url}`));
+    }
+    return realFetch(input, init);
+  };
 }

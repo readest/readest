@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { BOOKORBIT_PAIRED_FILE_ID, buildBookOrbitPairing } from '@/services/bookorbit/pairing';
 import { MANIFEST_SCHEMA, SUPPORTED_SCHEMA_VERSION } from '@/services/bookorbit/manifest';

@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 
 import { getVisibleCfiSet } from '@/app/reader/components/sidebar/SearchResults';

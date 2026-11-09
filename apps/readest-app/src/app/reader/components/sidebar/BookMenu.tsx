@@ -3,7 +3,7 @@ import React from 'react';
 
 import { MdCheck } from 'react-icons/md';
 import { useEnv } from '@/context/EnvContext';
-import { useBookDataStore } from '@/store/bookDataStore';
+import { useBookDataStore, useBookData, useBookConfig } from '@/store/bookDataStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useLibraryStore } from '@/store/libraryStore';
 import { useSidebarStore } from '@/store/sidebarStore';
@@ -35,10 +35,11 @@ const BookMenu: React.FC<BookMenuProps> = ({ menuClassName, setIsDropdownOpen })
   const { getVisibleLibrary } = useLibraryStore();
   const { openParallelView } = useBooksManager();
   const { sideBarBookKey } = useSidebarStore();
-  const { getConfig, getBookData } = useBookDataStore();
+  const getConfig = useBookDataStore((s) => s.getConfig);
   const { parallelViews, setParallel, unsetParallel } = useParallelViewStore();
   const viewSettings = getViewSettings(sideBarBookKey!);
-  const bookData = sideBarBookKey ? getBookData(sideBarBookKey) : null;
+  const bookData = useBookData(sideBarBookKey);
+  const bookConfig = useBookConfig(sideBarBookKey);
   const showPairAudiobook = canPairAudiobook(bookData);
   const showTOCThumbnails = viewSettings?.showTOCThumbnails ?? true;
 
@@ -152,7 +153,7 @@ const BookMenu: React.FC<BookMenuProps> = ({ menuClassName, setIsDropdownOpen })
     eventDispatcher.dispatch('hardcover-link-book', { bookKey: sideBarBookKey });
     setIsDropdownOpen?.(false);
   };
-  const hardcoverLink = sideBarBookKey ? getConfig(sideBarBookKey)?.hardcover : undefined;
+  const hardcoverLink = bookConfig?.hardcover;
   const handlePushPageboundProgress = () => {
     eventDispatcher.dispatch('pagebound-push-progress', { bookKey: sideBarBookKey });
     setIsDropdownOpen?.(false);
@@ -161,7 +162,7 @@ const BookMenu: React.FC<BookMenuProps> = ({ menuClassName, setIsDropdownOpen })
     eventDispatcher.dispatch('pagebound-link-book', { bookKey: sideBarBookKey });
     setIsDropdownOpen?.(false);
   };
-  const pageboundLink = sideBarBookKey ? getConfig(sideBarBookKey)?.pagebound : undefined;
+  const pageboundLink = bookConfig?.pagebound;
   const pageboundEnabled = !!(settings.pagebound?.enabled && settings.pagebound.refreshToken);
   const obsidianEnabled = !!(settings.obsidian?.enabled && settings.obsidian.folder);
   const bookOrbitProgressSync = settings.bookorbit.enabled && settings.bookorbit.syncProgress;
@@ -307,9 +308,7 @@ const BookMenu: React.FC<BookMenuProps> = ({ menuClassName, setIsDropdownOpen })
       <MenuItem label={_('Proofread')} onClick={showProofreadRulesWindow} />
       {showPairAudiobook && (
         <MenuItem
-          label={
-            getConfig(sideBarBookKey!)?.audiobook ? _('Manage Audiobook') : _('Pair Audiobook')
-          }
+          label={bookConfig?.audiobook ? _('Manage Audiobook') : _('Pair Audiobook')}
           onClick={handleManageAudiobook}
         />
       )}

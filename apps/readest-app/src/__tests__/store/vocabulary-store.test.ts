@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useVocabularyStore } from '@/store/vocabularyStore';
 import { VOCABULARY_FILENAME } from '@/services/vocabulary/persistence';

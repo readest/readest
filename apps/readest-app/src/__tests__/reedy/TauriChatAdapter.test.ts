@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { Tool } from 'ai';
 import type { RetrievalBackend } from '@/services/ai/adapters/retrievalBackend';

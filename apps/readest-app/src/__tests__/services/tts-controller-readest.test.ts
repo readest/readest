@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import type { TTSClient, TTSMessageEvent } from '@/services/tts/TTSClient';
 import type { TTSGranularity, TTSVoice } from '@/services/tts/types';

@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, test, expect } from 'vitest';
 import { buildRequestUrl } from '@/services/sync/providers/webdav/client';
 

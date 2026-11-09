@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo } from 'react';
 import { useSettingsStore } from '@/store/settingsStore';
-import { useBookDataStore } from '@/store/bookDataStore';
+import { useBookDataStore, useBookConfig } from '@/store/bookDataStore';
 import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
 import { eventDispatcher } from '@/utils/event';
@@ -17,7 +17,8 @@ const recordPush = (bookTitle: string, count: number, error?: string) =>
 export const useReadwiseSync = (bookKey: string) => {
   const _ = useTranslation();
   const { envConfig, appService } = useEnv();
-  const { getConfig, getBookData } = useBookDataStore();
+  const getConfig = useBookDataStore((s) => s.getConfig);
+  const getBookData = useBookDataStore((s) => s.getBookData);
 
   // Read settings from store at call time to avoid stale closures
   const updateLastSyncedAt = useCallback(
@@ -115,7 +116,7 @@ export const useReadwiseSync = (bookKey: string) => {
   }, [bookKey, pushAllHighlights]);
 
   // Auto-sync whenever booknotes change; debouncedPush reads enabled state internally
-  const config = getConfig(bookKey);
+  const config = useBookConfig(bookKey);
   useEffect(() => {
     debouncedPush();
     // eslint-disable-next-line react-hooks/exhaustive-deps

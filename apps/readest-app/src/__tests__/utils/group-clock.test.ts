@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { getBookChangedAt, pickFresherGroup, setBookGroup } from '@/utils/book';
 import type { Book } from '@/types/book';

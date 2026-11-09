@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { RiBookmarkLine, RiBookmarkFill } from 'react-icons/ri';
 
 import { useSettingsStore } from '@/store/settingsStore';
-import { useBookDataStore } from '@/store/bookDataStore';
+import { useBookDataStore, useBookConfig } from '@/store/bookDataStore';
+import { useBookProgress } from '@/store/readerProgressStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useEnv } from '@/context/EnvContext';
@@ -23,11 +24,14 @@ const BookmarkToggler: React.FC<BookmarkTogglerProps> = ({ bookKey }) => {
   const _ = useTranslation();
   const { envConfig } = useEnv();
   const { settings } = useSettingsStore();
-  const { getConfig, saveConfig, getBookData, updateBooknotes } = useBookDataStore();
+  const getConfig = useBookDataStore((s) => s.getConfig);
+  const saveConfig = useBookDataStore((s) => s.saveConfig);
+  const getBookData = useBookDataStore((s) => s.getBookData);
+  const updateBooknotes = useBookDataStore((s) => s.updateBooknotes);
   const { getProgress, getViewState, setBookmarkRibbonVisibility } = useReaderStore();
   const [isBookmarked, setIsBookmarked] = useState(false);
-  const config = getConfig(bookKey);
-  const progress = getProgress(bookKey);
+  const config = useBookConfig(bookKey);
+  const progress = useBookProgress(bookKey);
   const iconSize18 = useResponsiveSize(18);
 
   const toggleBookmark = () => {

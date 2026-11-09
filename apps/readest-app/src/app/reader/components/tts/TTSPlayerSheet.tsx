@@ -28,7 +28,7 @@ import { useEnv } from '@/context/EnvContext';
 import { useAuth } from '@/context/AuthContext';
 import { useReaderStore } from '@/store/readerStore';
 import { useBookProgress } from '@/store/readerProgressStore';
-import { useBookDataStore } from '@/store/bookDataStore';
+import { useBookData } from '@/store/bookDataStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { TranslationFunc, useTranslation } from '@/hooks/useTranslation';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
@@ -171,7 +171,6 @@ const TTSPlayerSheet = ({
   const { envConfig } = useEnv();
   const { user } = useAuth();
   const { getViewSettings, setViewSettings } = useReaderStore();
-  const { getBookData } = useBookDataStore();
   const progress = useBookProgress(bookKey);
   const viewSettings = getViewSettings(bookKey);
 
@@ -210,7 +209,7 @@ const TTSPlayerSheet = ({
   const iconSize28 = useResponsiveSize(28);
   const iconSize32 = useResponsiveSize(32);
 
-  const book = getBookData(bookKey)?.book;
+  const book = useBookData(bookKey)?.book;
   const sectionLabel = useMemo(() => {
     if (activeSectionIndex === null || activeSectionIndex < 0) {
       return progress?.sectionLabel;

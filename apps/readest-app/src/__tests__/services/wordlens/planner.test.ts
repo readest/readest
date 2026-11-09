@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect } from 'vitest';
 import { planGlosses } from '@/services/wordlens/planner';
 import { GlossIndex } from '@/services/wordlens/glossIndex';

@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_BOOKORBIT_SETTINGS, DEFAULT_SYSTEM_SETTINGS } from '@/services/constants';
 import { SETTINGS_ENCRYPTED_FIELDS, SETTINGS_WHITELIST } from '@/services/sync/adapters/settings';
