@@ -934,6 +934,25 @@ describe('useKOSync — a book just added to this device (silent strategy)', () 
     expect(h.getProgressMock).toHaveBeenCalledTimes(2);
     expect(h.goTo).not.toHaveBeenCalled();
   });
+
+  test('reading on while the first pull is on its way keeps the new position', async () => {
+    let answer: (value: typeof h.remote) => void = () => {};
+    h.getProgressMock.mockReturnValueOnce(new Promise((resolve) => (answer = resolve)));
+    h.localProgress = null;
+    const { rerender } = renderHook(() => useKOSync('h1-view1'));
+    await settle();
+    await openAtStart(rerender);
+    expect(h.getProgressMock).toHaveBeenCalledTimes(1);
+
+    // The user turns a page before the server answers.
+    h.localProgress = { ...startProgress(), location: SAVED_CFI };
+    await act(async () => {
+      answer(h.remote);
+      await flushMicrotasks();
+    });
+
+    expect(h.goTo).not.toHaveBeenCalled();
+  });
 });
 
 describe('useKOSync — a remote position with only a percentage (#7330)', () => {

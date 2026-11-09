@@ -481,13 +481,16 @@ export const useKOSync = (bookKey: string, provider: KosyncProgressProvider = ko
       }
 
       setSyncState('checking');
+      const locationAtPull = getProgress(bookKey)?.location;
       await pendingPut.current;
       if (generation !== checksumGeneration.current) return;
       const remoteProgress = await kosyncClient.getProgress(book);
       if (generation !== checksumGeneration.current) return;
       // Only the first answer after open can find the device without a
       // position; from then on the timestamps decide, even if it was empty.
-      const noLocalProgress = noLocalProgressRef.current;
+      // Reading on while it was on its way gives the device a position too.
+      const noLocalProgress =
+        noLocalProgressRef.current && getProgress(bookKey)?.location === locationAtPull;
       noLocalProgressRef.current = false;
       recordFlow({
         connector: provider.name,
