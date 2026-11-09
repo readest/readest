@@ -1,8 +1,9 @@
 //! `BLITZ_TAURI_WINDOW=1|gray` (cargo feature `window`): shows each painted frame in an X11 window
 //! (XWayland works) so a person can use the page. Mouse clicks become pointer events at the same
 //! device pixels; the wheel, arrow keys, Space and Page Up/Down click the right or left third (the
-//! reader's page-turn zones). `gray` shows frames as an e-ink screen would. The window keeps the
-//! last frame for exposes and never paints on its own: what you see is what the runtime painted.
+//! reader's page-turn zones). `gray` shows frames as an e-ink screen would; an 8-bit gray screen
+//! (Kindle's X server) always gets gray. The window keeps the last frame for exposes and never
+//! paints on its own: what you see is what the runtime painted.
 use std::sync::{Arc, Mutex};
 
 use x11rb::connection::{Connection, RequestConnection as _};
@@ -28,8 +29,8 @@ pub(crate) struct Display {
     depth: u8,
     w: u16,
     h: u16,
-    gray: bool,
-    /// The last frame as sent (BGRX rows, `w * 4` bytes each), redrawn on Expose.
+    format: PixelFormat,
+    /// The last frame as sent (rows of the window's pixels), redrawn on Expose.
     last: Arc<Mutex<Vec<u8>>>,
 }
 
@@ -69,6 +70,13 @@ impl Display {
             screen.root_depth,
             screen.white_pixel,
         );
+        let format = if depth == 8 {
+            PixelFormat::Gray8 {
+                invert: white < screen.black_pixel,
+            }
+        } else {
+            PixelFormat::Bgrx { gray }
+        };
         let win = conn.generate_id()?;
         let events = EventMask::EXPOSURE
             | EventMask::BUTTON_PRESS
@@ -117,7 +125,7 @@ impl Display {
             depth,
             w,
             h,
-            gray,
+            format,
             last: Arc::default(),
         };
         let (last, (cw, ch)) = (d.last.clone(), (f32::from(w), f32::from(h)));
@@ -139,7 +147,7 @@ impl Display {
                     Event::Expose(e) if e.count == 0 => {
                         let rows = last.lock().unwrap();
                         if !rows.is_empty() {
-                            let _ = put(&conn, win, gc, depth, w, &rows);
+                            let _ = put(&conn, win, gc, depth, w, format, &rows);
                         }
                     }
                     Event::ButtonPress(e) | Event::ButtonRelease(e) if e.detail == 1 => {
@@ -175,25 +183,57 @@ impl Display {
 
     /// Shows a cairo RGB24 frame (`stride` bytes per row; BGRX on little-endian).
     pub fn present(&self, data: &[u8], stride: usize) {
-        let row = usize::from(self.w) * 4;
-        let mut rows = Vec::with_capacity(row * usize::from(self.h));
-        for y in 0..usize::from(self.h) {
-            let src = &data[y * stride..y * stride + row];
-            if self.gray {
-                for p in src.as_chunks::<4>().0 {
-                    let g = ((u32::from(p[2]) * 77 + u32::from(p[1]) * 150 + u32::from(p[0]) * 29)
-                        >> 8) as u8;
-                    rows.extend_from_slice(&[g, g, g, 0]);
-                }
-            } else {
-                rows.extend_from_slice(src);
-            }
-        }
-        if let Err(e) = put(&self.conn, self.win, self.gc, self.depth, self.w, &rows) {
+        let (w, h) = (usize::from(self.w), usize::from(self.h));
+        let rows = frame_rows(data, stride, w, h, self.format);
+        if let Err(e) = put(
+            &self.conn,
+            self.win,
+            self.gc,
+            self.depth,
+            self.w,
+            self.format,
+            &rows,
+        ) {
             log::error!("BLITZ_TAURI_WINDOW: {e}");
         }
         *self.last.lock().unwrap() = rows;
     }
+}
+
+/// How the window's pixels are laid out.
+#[derive(Clone, Copy)]
+enum PixelFormat {
+    /// 32 bits per pixel, BGRX; `gray` shows the frame as an e-ink screen would.
+    Bgrx { gray: bool },
+    /// 8 bits per pixel on a StaticGray visual (Kindle's X server); `invert` when white is 0.
+    Gray8 { invert: bool },
+}
+
+/// A cairo RGB24 frame as rows of the window's pixels.
+fn frame_rows(data: &[u8], stride: usize, w: usize, h: usize, format: PixelFormat) -> Vec<u8> {
+    let luma = |p: &[u8; 4]| {
+        ((u32::from(p[2]) * 77 + u32::from(p[1]) * 150 + u32::from(p[0]) * 29) >> 8) as u8
+    };
+    let mut rows = Vec::with_capacity(w * 4 * h);
+    for y in 0..h {
+        let src = &data[y * stride..y * stride + w * 4];
+        match format {
+            PixelFormat::Bgrx { gray: true } => {
+                for p in src.as_chunks::<4>().0 {
+                    let g = luma(p);
+                    rows.extend_from_slice(&[g, g, g, 0]);
+                }
+            }
+            PixelFormat::Gray8 { invert } => rows.extend(
+                src.as_chunks::<4>()
+                    .0
+                    .iter()
+                    .map(|p| if invert { !luma(p) } else { luma(p) }),
+            ),
+            PixelFormat::Bgrx { gray: false } => rows.extend_from_slice(src),
+        }
+    }
+    rows
 }
 
 /// PutImage in row bands that fit the server's request size.
@@ -203,9 +243,15 @@ fn put(
     gc: Gcontext,
     depth: u8,
     w: u16,
+    format: PixelFormat,
     rows: &[u8],
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let row = usize::from(w) * 4;
+    let bytes = if matches!(format, PixelFormat::Gray8 { .. }) {
+        1
+    } else {
+        4
+    };
+    let row = usize::from(w) * bytes;
     let band = ((conn.maximum_request_bytes() - 64) / row).max(1);
     for (i, chunk) in rows.chunks(band * row).enumerate() {
         let y = (i * band) as i16;
@@ -224,4 +270,20 @@ fn put(
     }
     conn.flush()?;
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{PixelFormat, frame_rows};
+
+    // Kindle's X server has one 8-bit StaticGray visual: a pixel is one byte of gray. Rows of
+    // 4-byte pixels were refused (BadLength), so the window stayed blank.
+    #[test]
+    fn an_8_bit_gray_window_gets_one_byte_per_pixel() {
+        // one row: white, red (BGRX), then 4 bytes of stride padding
+        let frame = [255, 255, 255, 0, 0, 0, 255, 0, 9, 9, 9, 9];
+        let rows = |invert| frame_rows(&frame, 12, 2, 1, PixelFormat::Gray8 { invert });
+        assert_eq!(rows(false), [255, 76]);
+        assert_eq!(rows(true), [0, 179]);
+    }
 }
