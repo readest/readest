@@ -1768,16 +1768,20 @@
     if (other.contains(this)) return 8 | 2;
     return o < 0 ? 4 : 2;
   };
-  function comparePoints(na, oa, nb, ob) {
+  // -1, 0 or 1 as boundary point (na, oa) comes before, at or after (nb, ob); null when they
+  // are in different trees. One walk up from each node.
+  function pointOrder(na, oa, nb, ob) {
     if (na === nb) return Math.sign(oa - ob);
-    if (treeOrder(na, nb) > 0) return -comparePoints(nb, ob, na, oa);
-    if (na.contains(nb)) {
-      let child = nb;
-      while (child.parentNode !== na) child = child.parentNode;
-      return indexOf(child) < oa ? 1 : -1;
-    }
-    return -1;
+    const pa = ancestors(na),
+      pb = ancestors(nb);
+    if (pa[0] !== pb[0]) return null;
+    let i = 1;
+    while (i < pa.length && i < pb.length && pa[i] === pb[i]) i++;
+    if (i === pa.length) return indexOf(pb[i]) < oa ? 1 : -1; // na is an ancestor of nb
+    if (i === pb.length) return indexOf(pa[i]) < ob ? -1 : 1;
+    return indexOf(pa[i]) < indexOf(pb[i]) ? -1 : 1;
   }
+  const comparePoints = (na, oa, nb, ob) => pointOrder(na, oa, nb, ob) ?? -1;
   const checkPoint = (node, offset) => {
     if (node.nodeType === 10) throw domError('The node is a doctype', 'InvalidNodeTypeError');
     if (offset > nodeLength(node)) throw domError('The offset is past the node', 'IndexSizeError');
@@ -1800,17 +1804,15 @@
       checkPoint(node, offset);
       this.startContainer = node;
       this.startOffset = offset;
-      const o = treeOrder(node, this.endContainer);
-      if (o === null || comparePoints(node, offset, this.endContainer, this.endOffset) > 0)
-        this.collapse(true);
+      const o = pointOrder(node, offset, this.endContainer, this.endOffset);
+      if (o === null || o > 0) this.collapse(true);
     }
     setEnd(node, offset) {
       checkPoint(node, offset);
       this.endContainer = node;
       this.endOffset = offset;
-      const o = treeOrder(this.startContainer, node);
-      if (o === null || comparePoints(this.startContainer, this.startOffset, node, offset) > 0)
-        this.collapse(false);
+      const o = pointOrder(this.startContainer, this.startOffset, node, offset);
+      if (o === null || o > 0) this.collapse(false);
     }
     setStartBefore(node) {
       this.setStart(node.parentNode, indexOf(node));
@@ -1831,8 +1833,10 @@
       this.setEnd(p, i + 1);
     }
     selectNodeContents(node) {
-      this.setStart(node, 0);
-      this.setEnd(node, nodeLength(node));
+      checkPoint(node, 0);
+      this.startContainer = this.endContainer = node;
+      this.startOffset = 0;
+      this.endOffset = nodeLength(node);
     }
     collapse(toStart = false) {
       if (toStart) {
