@@ -444,6 +444,7 @@ impl BlitzWebview {
     /// One loop turn: resources, due timers, a due tap, then a paint if anything changed.
     pub fn tick(&mut self) {
         let Some(doc) = self.doc.as_mut() else { return };
+        let t_start = t_ms();
         let queue = std::mem::take(&mut *self.net.0.lock().unwrap());
         for (req, handler) in queue {
             let url = req.url.to_string();
@@ -453,6 +454,7 @@ impl BlitzWebview {
             }
             self.dirty = true;
         }
+        let t_net = t_ms();
         if std::mem::take(&mut self.input) {
             if self
                 .redraw
@@ -471,6 +473,7 @@ impl BlitzWebview {
         }
         let Some(doc) = self.doc.as_mut() else { return };
         doc.poll(None);
+        let t_poll = t_ms();
         if self
             .probe
             .as_ref()
@@ -549,11 +552,25 @@ impl BlitzWebview {
             self.dirty_since.get_or_insert(now);
         }
         let next_timer = self.doc.as_ref().and_then(QjsDocument::next_timer_deadline);
+        let t_input = t_ms();
         let paint = self.dirty
             && should_paint(self.dirty_since, next_timer, false, now)
             && self.visible.load(std::sync::atomic::Ordering::Relaxed);
         if paint {
             self.paint();
+        }
+        // BLITZ_TAURI_TRACE_LOOP=1: turns over 5 ms, split into resources, timers and their jobs
+        // (poll), input and a paint (whose own line follows).
+        let end = t_ms();
+        if std::env::var_os("BLITZ_TAURI_TRACE_LOOP").is_some() && end - t_start > 5.0 {
+            eprintln!(
+                "{{\"label\": \"tick\", \"t_ms\": {t_start:.1}, \"net_ms\": {:.1}, \"poll_ms\": {:.1}, \"input_ms\": {:.1}, \"paint_ms\": {:.1}, \"dirty\": {}}}",
+                t_net - t_start,
+                t_poll - t_net,
+                t_input - t_poll,
+                if paint { end - t_input } else { 0.0 },
+                self.dirty
+            );
         }
     }
 
