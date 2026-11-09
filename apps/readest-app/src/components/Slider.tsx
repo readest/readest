@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 
 interface SliderProps {
   label: string;
@@ -66,9 +66,13 @@ const Slider: React.FC<SliderProps> = ({
     }
   };
 
-  useEffect(() => {
+  // Follows initialValue during render rather than in an effect, so a new
+  // value lands in the commit that brings it instead of one commit later.
+  const [shownInitialValue, setShownInitialValue] = useState(initialValue);
+  if (initialValue !== shownInitialValue) {
+    setShownInitialValue(initialValue);
     setValue(initialValue);
-  }, [initialValue]);
+  }
 
   const percentage = Math.max(0, Math.min(100, valueToPos(value, min, max)));
   const thumbRadius = heightPx / 2;

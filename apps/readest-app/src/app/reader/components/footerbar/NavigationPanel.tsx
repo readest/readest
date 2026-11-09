@@ -47,12 +47,15 @@ export const NavigationPanel: React.FC<NavigationPanelProps> = ({
     progressValid ? progressFraction * 100 : 0,
   );
 
-  useEffect(() => {
-    if (progressValid) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setProgressValue(progressFraction * 100);
-    }
-  }, [progressValid, progressFraction]);
+  // The panel is invisible until its tab opens, so it follows the reading
+  // position only while open, and during render: a closed slider that moved on
+  // every page turn changed the page in two extra commits, which on e-ink is a
+  // screen refresh that shows nothing. Opening it catches up in the same render.
+  const [shownFraction, setShownFraction] = React.useState<number | null>(null);
+  if (actionTab === 'progress' && progressValid && progressFraction !== shownFraction) {
+    setShownFraction(progressFraction);
+    setProgressValue(progressFraction * 100);
+  }
 
   // The page label previews the slider while it is dragged, until the reader
   // relocates and reports the real page.

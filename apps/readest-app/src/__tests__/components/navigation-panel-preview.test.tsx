@@ -1,5 +1,6 @@
 // @vitest-environment happy-dom
 import { describe, it, expect, vi, afterEach } from 'vitest';
+import { Profiler } from 'react';
 import { render, cleanup, fireEvent } from '@testing-library/react';
 import { NavigationPanel } from '@/app/reader/components/footerbar/NavigationPanel';
 
@@ -28,11 +29,11 @@ vi.mock('@/app/reader/components/footerbar/PageJumpInput', () => ({
 }));
 
 const noop = () => {};
-const panel = () => (
+const panel = (actionTab = 'progress', progressFraction = 0.5) => (
   <NavigationPanel
     bookKey='book1'
-    actionTab='progress'
-    progressFraction={0.5}
+    actionTab={actionTab}
+    progressFraction={progressFraction}
     progressValid
     bottomOffset='0px'
     sliderHeight={28}
@@ -60,5 +61,37 @@ describe('NavigationPanel', () => {
     mocks.progress = {};
     rerender(panel());
     expect(getByTestId('page-label').dataset['preview']).toBe('');
+  });
+
+  // The panel is invisible until its tab opens. A slider that followed every
+  // page turn there changed the page's DOM in two extra React commits per turn,
+  // and on e-ink each change is a screen refresh that shows nothing.
+  it('keeps a closed panel still while pages turn', () => {
+    let commits = 0;
+    const counted = (tab: string, fraction: number) => (
+      <Profiler id='panel' onRender={() => commits++}>
+        {panel(tab, fraction)}
+      </Profiler>
+    );
+    const { rerender, getByRole } = render(counted('', 0.5));
+    const valueNow = () => getByRole('slider').getAttribute('aria-valuenow');
+    expect(valueNow()).toBe('50');
+
+    commits = 0;
+    rerender(counted('', 0.6));
+    expect(valueNow()).toBe('50');
+    expect(commits).toBe(1);
+
+    // opening the panel shows the current position in the commit that opens it
+    commits = 0;
+    rerender(counted('progress', 0.6));
+    expect(valueNow()).toBe('60');
+    expect(commits).toBe(1);
+
+    // an open panel follows a page turn in that turn's commit
+    commits = 0;
+    rerender(counted('progress', 0.7));
+    expect(valueNow()).toBe('70');
+    expect(commits).toBe(1);
   });
 });
