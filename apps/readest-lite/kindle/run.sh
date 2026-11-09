@@ -15,3 +15,5 @@ HOME="$DATA" TMPDIR="$DATA/tmp" DISPLAY=:0 \
 	BLITZ_FONTS="$EXT/fonts" READEST_LITE_DOCUMENTS=/mnt/us/documents READEST_LITE_EINK=1 \
 	"$EXT/bin/readest-lite" "$@" > "$DATA/readest-lite.log" 2>&1
 lipc-set-prop com.lab126.powerd preventScreenSaver 0 2>/dev/null
+# the window under Lite (KUAL's, say) does not repaint by itself: show Home
+lipc-set-prop com.lab126.appmgrd start app://com.lab126.booklet.home 2>/dev/null
