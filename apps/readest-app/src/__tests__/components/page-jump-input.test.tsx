@@ -28,6 +28,9 @@ vi.mock('@/hooks/useTranslation', () => ({
 
 vi.mock('@/store/readerProgressStore', () => ({
   useBookProgress: () => mocks.state.progress,
+  getBookProgress: () => mocks.state.progress,
+  useReaderProgressStore: (select: (s: { progresses: Record<string, unknown> }) => unknown) =>
+    select({ progresses: { book1: mocks.state.progress } }),
 }));
 
 vi.mock('@/store/readerStore', () => ({
