@@ -142,6 +142,10 @@
   reaching a space's width past the paragraph's edge. A range or line piece holding only that
   space has no rect, as in browsers; foliate-js bisects a page's visible range on it and ends the
   range before the space.
+- `stylo_taffy` convert: an absolute length (padding, margin, width, `fit-content()`) is a whole
+  number of 64ths of a pixel, truncated, as Chromium's `LayoutUnit`. foliate-js gives a section a
+  fractional side padding (16.2105px); Lite kept it whole and its content box was 0.016 px
+  narrower than Readest's, enough to wrap a line that fits there.
 
 ## stylo.diff (servo/stylo 2dca34592, 0.23.0)
 
