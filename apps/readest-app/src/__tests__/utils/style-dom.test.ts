@@ -503,6 +503,32 @@ describe('getStyles', () => {
     const clampRule = css.match(/\n\s*img\.has-text-siblings\s*\{[^}]*\}/)![0];
     expect(clampRule).not.toContain('vertical-align');
   });
+
+  it('inverts inline glyphs and gaiji in dark mode under screen blending (#7373)', () => {
+    const vs = makeViewSettings({ invertImgColorInDark: false });
+    const themeCode: ThemeCode = {
+      bg: '#171717',
+      fg: '#ffffff',
+      primary: '#0066cc',
+      palette: {
+        'base-100': '#171717',
+        'base-200': '#222222',
+        'base-300': '#333333',
+        'base-content': '#ffffff',
+        neutral: '#cccccc',
+        'neutral-content': '#444444',
+        primary: '#0066cc',
+        secondary: '#3399ff',
+        accent: '#0055aa',
+      },
+      isDarkMode: true,
+    };
+    const css = getStyles(vs, themeCode);
+    expect(css).toMatch(
+      /img\[class\*="gaiji"\]\s*\{[^}]*filter:\s*invert\(100%\)\s*hue-rotate\(180deg\);/,
+    );
+    expect(css).toMatch(/img\[class\*="gaiji"\]\s*\{[^}]*mix-blend-mode:\s*screen;/);
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -599,6 +625,21 @@ describe('applyImageStyle', () => {
     const img = document.querySelector('img')!;
     expect(img.classList.contains('has-text-siblings')).toBe(true);
     expect(img.classList.contains('has-text-siblings-baseline')).toBe(false);
+  });
+
+  it('adds has-text-siblings to gaiji images even without text siblings (#7373)', () => {
+    document.body.innerHTML = '<p><img class="gaiji" src="test.png" /></p>';
+    applyImageStyle(document);
+    const img = document.querySelector('img')!;
+    expect(img.classList.contains('has-text-siblings')).toBe(true);
+  });
+
+  it('adds has-text-siblings when image is inside an inline wrapper with block text siblings (#7373)', () => {
+    document.body.innerHTML =
+      '<p>Prefix text <span class="tcy"><img src="test.png" /></span> suffix text</p>';
+    applyImageStyle(document);
+    const img = document.querySelector('img')!;
+    expect(img.classList.contains('has-text-siblings')).toBe(true);
   });
 
   it('sets pointer-events: none on img[zy-enlarge-src="none"] and keeps the attribute', () => {

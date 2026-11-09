@@ -433,11 +433,21 @@ const getColorStyles = (
     p[width][height] > img:only-child {
       mix-blend-mode: multiply;
     }
-    /* inline images */
-    *:has(> img.has-text-siblings):not(body) {
+    /* inline images and gaiji */
+    *:has(> img.has-text-siblings):not(body),
+    *:has(> img[class*="gaiji"]):not(body) {
       ${overrideColor ? `background-color: ${bg};` : ''}
     }
-    p img.has-text-siblings, span img.has-text-siblings, sup img.has-text-siblings {
+    p img.has-text-siblings,
+    span img.has-text-siblings,
+    sup img.has-text-siblings,
+    img.has-text-siblings,
+    img[class*="gaiji"] {
+      ${
+        isDarkMode && !invertImgColorInDark
+          ? `filter: ${transparentImageBackground ? `${WHITE_TRANSPARENCY_FILTER} ` : ''}invert(100%) hue-rotate(180deg);`
+          : ''
+      }
       mix-blend-mode: ${isDarkMode ? 'screen' : 'multiply'};
     }
     table:has(> colgroup) {
@@ -681,6 +691,9 @@ const getPageLayoutStyles = (
     height: 1em;
   }
   img.has-text-siblings {
+    ${vertical ? 'width: 1em;' : 'height: 1em;'}
+  }
+  img[class*="gaiji"] {
     ${vertical ? 'width: 1em;' : 'height: 1em;'}
   }
   /* Baseline is only Readest's default: applyImageStyle adds this class when the
@@ -1840,12 +1853,21 @@ export const applyImageStyle = (document: Document) => {
 
     let inlineWithText = false;
     let keepBaseline = false;
+    const isGaiji = !!(img.className && /(?:^|\s)gaiji(?:-|\s|$)/i.test(img.className));
     const parent = img.parentNode;
     if (parent && parent.nodeType === Node.ELEMENT_NODE) {
       const childNodes = Array.from(parent.childNodes);
-      const hasTextSiblings = childNodes.some(
+      let hasTextSiblings = childNodes.some(
         (node) => node.nodeType === Node.TEXT_NODE && node.textContent?.trim(),
       );
+      if (!hasTextSiblings && parent.parentElement) {
+        const parentTag = (parent as Element).tagName.toLowerCase();
+        if (['span', 'rb', 'ruby', 'a', 'em', 'strong'].includes(parentTag)) {
+          hasTextSiblings = Array.from(parent.parentElement.childNodes).some(
+            (node) => node.nodeType === Node.TEXT_NODE && node.textContent?.trim(),
+          );
+        }
+      }
       const isInline = childNodes.every(
         (node) => node.nodeType !== Node.ELEMENT_NODE || (node as Element).tagName !== 'BR',
       );
@@ -1855,7 +1877,7 @@ export const applyImageStyle = (document: Document) => {
       // also inside a calc() (serialized as e.g. `calc(30% - 1px)`).
       const width = img.computedStyleMap?.().get('width');
       const percentSized = !!width && width.toString().includes('%');
-      inlineWithText = hasTextSiblings && isInline && !percentSized;
+      inlineWithText = (hasTextSiblings || isGaiji) && isInline && !percentSized;
       if (inlineWithText) {
         // Only supply Readest's baseline default when the book leaves
         // vertical-align at its initial value; an author-set value (e.g. a CJK
