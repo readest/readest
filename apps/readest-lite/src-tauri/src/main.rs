@@ -57,10 +57,15 @@ fn main() {
                 app.fs_scope().allow_file(file)?;
             }
             let files: Vec<_> = files.iter().map(|f| f.to_string_lossy()).collect();
-            let script = format!(
+            let mut script = format!(
                 "window.OPEN_WITH_FILES = {}; window.__READEST_SINGLE_WINDOW = true;",
                 serde_json::to_string(&files)?
             );
+            // READEST_LITE_EINK=1 (the Kindle launcher): Readest starts in its e-ink mode, as on
+            // Android e-ink devices (`__READEST_IS_EINK`).
+            if std::env::var("READEST_LITE_EINK").as_deref() == Ok("1") {
+                script.push_str(" window.__READEST_IS_EINK = true;");
+            }
             tauri::WebviewWindowBuilder::new(app, "main", tauri::WebviewUrl::default())
                 .title("Readest Lite")
                 .inner_size(494.0, 659.0)
