@@ -434,7 +434,9 @@ const getColorStyles = (
       mix-blend-mode: multiply;
     }
     /* inline images and gaiji */
-    *:has(> img.has-text-siblings):not(body),
+    *:has(> img.has-text-siblings):not(body) {
+      ${overrideColor ? `background-color: ${bg};` : ''}
+    }
     *:has(> img[class*="gaiji"]):not(body) {
       ${overrideColor ? `background-color: ${bg};` : ''}
     }
@@ -445,7 +447,7 @@ const getColorStyles = (
     img[class*="gaiji"] {
       ${
         isDarkMode && !invertImgColorInDark
-          ? `filter: ${transparentImageBackground ? `${WHITE_TRANSPARENCY_FILTER} ` : ''}invert(100%) hue-rotate(180deg);`
+          ? `filter: ${transparentImageBackground ? `${WHITE_TRANSPARENCY_FILTER} ` : ''}invert(1) hue-rotate(180deg);`
           : ''
       }
       mix-blend-mode: ${isDarkMode ? 'screen' : 'multiply'};

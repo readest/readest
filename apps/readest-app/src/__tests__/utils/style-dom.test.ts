@@ -525,7 +525,7 @@ describe('getStyles', () => {
     };
     const css = getStyles(vs, themeCode);
     expect(css).toMatch(
-      /img\[class\*="gaiji"\]\s*\{[^}]*filter:\s*invert\(100%\)\s*hue-rotate\(180deg\);/,
+      /img\[class\*="gaiji"\]\s*\{[^}]*filter:\s*invert\(1\)\s*hue-rotate\(180deg\);/,
     );
     expect(css).toMatch(/img\[class\*="gaiji"\]\s*\{[^}]*mix-blend-mode:\s*screen;/);
   });
