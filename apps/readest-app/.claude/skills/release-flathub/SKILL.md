@@ -36,14 +36,15 @@ files: the manifest, `cargo-sources.json`, and `node-sources.json`.
 2. **Start from a clean flathub branch**
    ```bash
    cd /Users/chrox/dev/com.bilingify.readest
+   git status --short   # must print nothing; stop and ask if it does
    git fetch origin --prune
-   git checkout master && git reset --hard origin/master
-   git checkout -b release-{TAG}
+   git checkout -b release-{TAG} origin/master
    ```
 
 3. **Extract the lockfiles from the tag** (do not use the working tree — it may
-   be ahead of the tag):
+   be ahead of the tag). `$SCRATCH` is the session scratchpad directory:
    ```bash
+   SCRATCH=<session scratchpad>; mkdir -p $SCRATCH/src
    git -C /Users/chrox/dev/readest show {TAG}:pnpm-lock.yaml > $SCRATCH/src/pnpm-lock.yaml
    git -C /Users/chrox/dev/readest show {TAG}:Cargo.cef.lock > $SCRATCH/src/Cargo.cef.lock
    ```
@@ -52,6 +53,7 @@ files: the manifest, `cargo-sources.json`, and `node-sources.json`.
 
 4. **Set up the generators** (not installed on this machine; clone + venv each time):
    ```bash
+   cd $SCRATCH/src
    git clone --depth 1 https://github.com/flatpak/flatpak-builder-tools.git
    python3 -m venv venv
    ./venv/bin/pip install "aiohttp>=3.9.5,<4" "PyYAML>=6.0.2,<7" "tomlkit>=0.13.3,<1.0"
@@ -77,6 +79,8 @@ files: the manifest, `cargo-sources.json`, and `node-sources.json`.
    - The cargo run clones each git dependency. `readest/localsend` registers a
      `flutter` submodule with `update = none`; git and flatpak-builder both skip
      it, so no `disable-submodules` is needed.
+   - Copy both outputs into the checkout:
+     `cp $SCRATCH/src/cargo-sources.json $SCRATCH/src/node-sources.json /Users/chrox/dev/com.bilingify.readest/`
 
 6. **Update the manifest**
    - Bump only the readest `type: git` source's `commit` to the SHA from step 1.
@@ -84,6 +88,12 @@ files: the manifest, `cargo-sources.json`, and `node-sources.json`.
    - Check `packageManager` in the tag's `package.json` against the pinned
      `pnpm-*.tgz` archive source; if pnpm changed, update the URL and its
      `sha256` (and `--pnpm-store-version` if the major changed).
+   - Check the CEF pins the same way. The `cef` crate version in the tag's
+     `Cargo.cef.lock` (`151.8.1+151.3.24` means CEF 151.3.24) must match the
+     CEF archives and their `cef/<version>/` paths, and `CEF_CLI` in the tag's
+     `apps/readest-app/scripts/tauri.mjs` must match the `cli-cef` archives.
+     If either changed, update both architectures' URLs, checksums, the
+     `archive.json` contents and the versioned paths.
    - Do NOT modify build-commands, finish-args, runtime, etc.
    - Leave sdk-extensions and build-options alone unless a new dependency needs
      a tool the SDK lacks. Example: `soundtouch-ffi` runs bindgen, which needs
