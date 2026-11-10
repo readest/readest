@@ -288,6 +288,8 @@ describe('Scrolled strip keeps the reading position (browser)', () => {
     });
     scrollTo(viewStart(1, vertical) + 600, vertical);
     await atStripEnd;
+    // Measured in the frame the front matter loaded in: it can be dropped before the next one.
+    const frontMatterBefore = loaded().includes(0);
     const before = position(3, 'p79', vertical);
     const stop = track(3, 'p79', vertical);
     let samples: { at: number; frontMatter: boolean }[] = [];
@@ -298,8 +300,8 @@ describe('Scrolled strip keeps the reading position (browser)', () => {
       samples = stop();
     }
     expect(
-      samples.some((s) => s.frontMatter),
-      'sampled with the front matter in the strip',
+      frontMatterBefore || samples.some((s) => s.frontMatter),
+      'measured with the front matter in the strip',
     ).toBe(true);
     expect(
       moves(samples, before),
