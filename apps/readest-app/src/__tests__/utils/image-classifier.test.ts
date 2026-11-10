@@ -189,6 +189,23 @@ describe('imageClassifier', () => {
       expect(imgs[0]?.classList.contains('monochrome-diagram')).toBe(true);
       expect(imgs[1]?.classList.contains('monochrome-diagram')).toBe(false);
     });
+
+    it('cleans up event listeners and pending attribute on image error', async () => {
+      document.body.innerHTML = `
+        <p><img id="pending-img" src="https://example.com/pending-diag.png" /></p>
+      `;
+      classifyAndTagStandaloneDiagrams(document, true, false);
+      await new Promise((resolve) => setTimeout(resolve, 20));
+
+      const img = document.getElementById('pending-img') as HTMLImageElement;
+      expect(img.getAttribute('data-diagram-pending')).toBe('true');
+
+      img.dispatchEvent(new Event('error'));
+      expect(img.hasAttribute('data-diagram-pending')).toBe(false);
+      expect(getDiagramClassificationCache().get('https://example.com/pending-diag.png')).toBe(
+        false,
+      );
+    });
   });
 
   describe('CSS styling for monochrome diagrams in dark mode', () => {

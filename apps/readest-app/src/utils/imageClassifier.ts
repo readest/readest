@@ -210,24 +210,23 @@ export const classifyAndTagStandaloneDiagrams = (
     } else {
       if (img.hasAttribute('data-diagram-pending')) return;
       img.setAttribute('data-diagram-pending', 'true');
-      img.addEventListener(
-        'load',
-        () => {
-          img.removeAttribute('data-diagram-pending');
-          if (isMonochromeGraphic(img, src)) {
-            img.classList.add('monochrome-diagram');
-          }
-        },
-        { once: true },
-      );
-      img.addEventListener(
-        'error',
-        () => {
-          img.removeAttribute('data-diagram-pending');
-          classificationCache.set(src, false);
-        },
-        { once: true },
-      );
+      const cleanup = () => {
+        img.removeEventListener('load', onLoad);
+        img.removeEventListener('error', onError);
+        img.removeAttribute('data-diagram-pending');
+      };
+      const onLoad = () => {
+        cleanup();
+        if (isMonochromeGraphic(img, src)) {
+          img.classList.add('monochrome-diagram');
+        }
+      };
+      const onError = () => {
+        cleanup();
+        classificationCache.set(src, false);
+      };
+      img.addEventListener('load', onLoad);
+      img.addEventListener('error', onError);
     }
   };
 
