@@ -295,7 +295,9 @@ export function useTextTranslation(
   const observeTextNodes = () => {
     if (!view || !enabled.current) return;
 
-    const nodes = resolveTranslationSourceNodes(walkTextNodes(view, ['pre', 'code', 'math']));
+    const nodes = resolveTranslationSourceNodes(
+      walkTextNodes(view, ['pre', 'code', 'math', 'rt', 'rp']),
+    );
     console.log(
       'Observing text nodes for translation:',
       nodes.length,
