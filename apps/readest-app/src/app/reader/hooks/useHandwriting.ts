@@ -136,7 +136,9 @@ export function useHandwriting(bookKey: string) {
   // and its re-renders are skipped.
   const needsAnchoring = enabled || editorRef.current!.pageKeys().length > 0;
   const needsAnchoringRef = useRef(needsAnchoring);
-  needsAnchoringRef.current = needsAnchoring;
+  useEffect(() => {
+    needsAnchoringRef.current = needsAnchoring;
+  }, [needsAnchoring]);
 
   const visible = !!pageKey;
   const editable = visible;
