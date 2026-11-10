@@ -765,6 +765,37 @@ describe('transformStylesheet', () => {
       );
     });
 
+    it('splits the selector list on top-level commas only', () => {
+      // Cutting inside `:is(...)` produced
+      // `html[data-orientation='landscape'] :is(.a, html[data-orientation='landscape'] .b) p`,
+      // which is invalid and made the browser drop the rule.
+      const css = '@media (orientation: landscape) { :is(.a, .b) p { display: flex; } }';
+      const result = transformStylesheet(css, VW, VH, VERTICAL);
+      expect(result).toContain("html[data-orientation='landscape'] :is(.a, .b) p");
+    });
+
+    it('sees through a comment in front of a nested at-rule or a root selector', () => {
+      const css =
+        '@media (orientation: portrait) { /* c */ @supports (display: grid) { .a { display: grid; } } /* d */ :root { --x: 1; } }';
+      const result = transformStylesheet(css, VW, VH, VERTICAL);
+      expect(result).not.toContain('/*');
+      expect(result).toContain('@supports (display: grid)');
+      expect(result).toContain("html[data-orientation='portrait'] .a");
+      expect(result).toContain("html[data-orientation='portrait'] { --x: 1; }");
+    });
+
+    it('leaves a comma-joined or negated query alone instead of inventing invalid CSS', () => {
+      const listed = '@media (orientation: landscape), print { div { color: red; } }';
+      const listedResult = transformStylesheet(listed, VW, VH, VERTICAL);
+      expect(listedResult).toContain('@media (orientation: landscape), print');
+      expect(listedResult).not.toContain('@media ,');
+
+      const negated = '@media not all and (orientation: portrait) { div { color: blue; } }';
+      const negatedResult = transformStylesheet(negated, VW, VH, VERTICAL);
+      expect(negatedResult).toContain('@media not all and (orientation: portrait)');
+      expect(negatedResult).not.toContain("html[data-orientation='portrait']");
+    });
+
     it('walks nested at-rules so @supports blocks keep working', () => {
       const css =
         '@media (orientation: portrait) { @supports (display: grid) { .a { display: grid; } } }';

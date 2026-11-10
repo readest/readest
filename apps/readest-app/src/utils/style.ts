@@ -1368,6 +1368,34 @@ export const transformInlineFonts = (css: string) =>
 const ORIENTATION_MEDIA_AT_RULE = /@media([^{]*)\{/gi;
 const ORIENTATION_FEATURE = /\(\s*orientation\s*:\s*(landscape|portrait)\s*\)/i;
 
+// Split a selector list on top-level commas only. `:is(.a, .b) p` is a single
+// selector; cutting it at the inner comma yields
+// `html[data-orientation='x'] :is(.a, html[data-orientation='x'] .b) p`, which
+// is invalid and makes the browser drop the whole rule.
+const splitSelectorList = (list: string): string[] => {
+  const parts: string[] = [];
+  let depth = 0;
+  let start = 0;
+  for (let i = 0; i < list.length; i++) {
+    const char = list[i];
+    if (char === '(' || char === '[') depth++;
+    else if (char === ')' || char === ']') depth--;
+    else if (char === ',' && depth === 0) {
+      parts.push(list.slice(start, i));
+      start = i + 1;
+    }
+  }
+  parts.push(list.slice(start));
+  return parts;
+};
+
+// A comment may sit in front of a selector or a nested at-rule. Left in place
+// it defeats both the `@` test and the `:root`/`html` test below, so a
+// commented `@supports` would be prefixed as a plain selector and a commented
+// `:root` would become a descendant that matches nothing. Comments carry no
+// meaning at this position, so drop them before deciding.
+const stripSelectorComments = (text: string) => text.replace(/\/\*[\s\S]*?\*\//g, ' ');
+
 // Prefix every rule in a fragment with the orientation attribute selector.
 // Nested at-rules are walked so an `@supports` block keeps working; keyframes,
 // font-face and page rules hold no document selectors and are left untouched.
@@ -1382,7 +1410,7 @@ const prefixOrientationRules = (css: string, attr: string): string => {
       out += css.slice(cursor);
       break;
     }
-    const selector = css.slice(cursor, open).trim();
+    const selector = stripSelectorComments(css.slice(cursor, open)).trim();
     let depth = 1;
     let end = open + 1;
     for (; end < css.length && depth > 0; end++) {
@@ -1397,8 +1425,7 @@ const prefixOrientationRules = (css: string, attr: string): string => {
         ? `${selector} {${inner}}`
         : `${selector} {${prefixOrientationRules(inner, attr)}}`;
     } else {
-      const prefixed = selector
-        .split(',')
+      const prefixed = splitSelectorList(selector)
         .map((part) => {
           const s = part.trim();
           return /^(:root|html)\b/i.test(s)
@@ -1425,6 +1452,15 @@ const rewriteOrientationMediaQueries = (css: string): string => {
     const prelude = match[1] ?? '';
     const feature = ORIENTATION_FEATURE.exec(prelude);
     if (!feature) continue;
+    // A comma joins whole queries with OR and `not` inverts the query it
+    // belongs to. Rewriting only the first feature in the prelude would drop
+    // the OR (`@media (orientation: landscape), print` becomes the invalid
+    // `@media , print`, which the browser throws away along with the rules) or
+    // lose the inversion (`not all and (orientation: portrait)` would become a
+    // plain portrait gate). Both need a query-by-query rewrite; until then
+    // leave them untouched so they keep the behaviour they have today, where
+    // the feature is evaluated against the section strip.
+    if (prelude.includes(',') || /\bnot\b/i.test(prelude)) continue;
     let depth = 1;
     let end = ORIENTATION_MEDIA_AT_RULE.lastIndex;
     for (; end < css.length && depth > 0; end++) {
