@@ -3909,6 +3909,20 @@ diff -ruN blitz/packages/blitz-html/src/html_sink.rs blitz/packages/blitz-html/s
 +        assert_eq!(out, "<b>new</b> text");
 +    }
 +}
+diff -ruN blitz/packages/blitz-paint/src/kurbo_css/css_box.rs blitz/packages/blitz-paint/src/kurbo_css/css_box.rs
+--- blitz/packages/blitz-paint/src/kurbo_css/css_box.rs
++++ blitz/packages/blitz-paint/src/kurbo_css/css_box.rs
+@@ -667,7 +667,9 @@
+ 
+     use std::f64::consts::SQRT_2;
+     let sqrt_x = x.sqrt();
+-    let s = sqrt_x / (sqrt_x + SQRT_2);
++    // A zero-width border on the `bt` side makes `x` infinite, and `s` its limit, 1 (t = π/2),
++    // not ∞/∞ (NaN, which left the whole edge's path NaN).
++    let s = if x.is_infinite() { 1.0 } else { sqrt_x / (sqrt_x + SQRT_2) };
+     s.atan() * 2.0
+ }
+ 
 diff -ruN blitz/packages/blitz-paint/src/render/background.rs blitz/packages/blitz-paint/src/render/background.rs
 --- blitz/packages/blitz-paint/src/render/background.rs
 +++ blitz/packages/blitz-paint/src/render/background.rs
@@ -3920,6 +3934,21 @@ diff -ruN blitz/packages/blitz-paint/src/render/background.rs blitz/packages/bli
          );
  
          let bg_pos = compute_layer_position(
+diff -ruN blitz/packages/blitz-paint/src/render/border.rs blitz/packages/blitz-paint/src/render/border.rs
+--- blitz/packages/blitz-paint/src/render/border.rs
++++ blitz/packages/blitz-paint/src/render/border.rs
+@@ -236,6 +236,11 @@
+         let mut borders: SmallVec<[(Color, BezPath); 8]> = SmallVec::new();
+ 
+         for &edge in &[Edge::Top, Edge::Right, Edge::Bottom, Edge::Left] {
++            // A zero-width edge has no area. At a rounded corner between two of them, splitting
++            // the corner by the edges' widths divides zero by zero: the edge came out NaN.
++            if self.edge_width(edge) <= 0.0 {
++                continue;
++            }
+             let (color, edge_style) = match edge {
+                 Edge::Top => (&border.border_top_color, border.border_top_style),
+                 Edge::Right => (&border.border_right_color, border.border_right_style),
 diff -ruN blitz/packages/blitz-paint/src/render/box_shadow.rs blitz/packages/blitz-paint/src/render/box_shadow.rs
 --- blitz/packages/blitz-paint/src/render/box_shadow.rs
 +++ blitz/packages/blitz-paint/src/render/box_shadow.rs
