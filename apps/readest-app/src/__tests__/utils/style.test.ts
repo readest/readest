@@ -711,39 +711,66 @@ describe('transformStylesheet', () => {
   });
 
   // The paginator sizes the section iframe to the whole multi-column strip, so
-  // `(orientation: ...)` inside a section describes the strip, not a page — and
-  // the strip is derived from the content, so the query and the page count feed
-  // each other and the layout never settles (#6038).
+  // `(orientation: ...)` inside a section describes the strip, not a page, and
+  // the strip is derived from the content (#6038). Instead of resolving the
+  // feature once against the open-book viewport, the transform rewrites the
+  // at-rule into rules gated on the host's html[data-orientation] attribute,
+  // which FoliateViewer keeps in sync with the measured reading area.
   describe('orientation media queries', () => {
     const LANDSCAPE_CSS = '@media screen and (orientation: landscape) { div { column-count: 2; } }';
     const PORTRAIT_CSS = '@media screen and (orientation:portrait) { div { column-count: 2; } }';
 
-    it('keeps a landscape block when the reader viewport is landscape', () => {
-      const result = transformStylesheet(LANDSCAPE_CSS, 1000, 800, VERTICAL);
-      expect(result).toContain('@media screen and (min-width: 0px)');
-      expect(result).not.toContain('orientation');
+    it('keeps both orientations as attribute-gated rules', () => {
+      const result = transformStylesheet(`${LANDSCAPE_CSS}\n${PORTRAIT_CSS}`, VW, VH, VERTICAL);
+      expect(result).toContain("html[data-orientation='landscape'] div");
+      expect(result).toContain("html[data-orientation='portrait'] div");
+      expect(result).not.toContain('@media');
     });
 
-    it('drops a landscape block when the reader viewport is portrait', () => {
-      const result = transformStylesheet(LANDSCAPE_CSS, 800, 1000, VERTICAL);
-      expect(result).toContain('@media screen and (min-width: 999999px)');
-      expect(result).not.toContain('orientation');
+    it('no longer depends on the viewport sampled when the book opened', () => {
+      const css = `${LANDSCAPE_CSS}\n${PORTRAIT_CSS}`;
+      expect(transformStylesheet(css, 1000, 800, VERTICAL)).toBe(
+        transformStylesheet(css, 800, 1000, VERTICAL),
+      );
     });
 
-    it('keeps a portrait block when the reader viewport is portrait', () => {
-      const result = transformStylesheet(PORTRAIT_CSS, 800, 1000, VERTICAL);
-      expect(result).toContain('@media screen and (min-width: 0px)');
-    });
-
-    it('drops a portrait block when the reader viewport is landscape', () => {
-      const result = transformStylesheet(PORTRAIT_CSS, 1000, 800, VERTICAL);
-      expect(result).toContain('@media screen and (min-width: 999999px)');
-    });
-
-    it('leaves the rest of the query and its declarations intact', () => {
+    it('leaves the declarations intact and drops the always/never sentinels', () => {
       const result = transformStylesheet(LANDSCAPE_CSS, VW, VH, VERTICAL);
-      expect(result).toContain('div { column-count: 2; }');
-      expect(result.startsWith('@media screen and ')).toBe(true);
+      expect(result).toContain('column-count: 2;');
+      expect(result).not.toContain('(min-width: 999999px)');
+    });
+
+    it('keeps other media features and still resolves them statically', () => {
+      const css =
+        '@media screen and (orientation: landscape) and (min-width: 600px) { div { color: red; } }';
+      const wide = transformStylesheet(css, 1000, 800, VERTICAL);
+      const narrow = transformStylesheet(css, 390, 800, VERTICAL);
+      expect(wide).toContain('@media screen and (min-width: 0px)');
+      expect(narrow).toContain('@media screen and (min-width: 999999px)');
+      expect(wide).toContain("html[data-orientation='landscape'] div");
+    });
+
+    it('merges :root and html selectors instead of making them descendants', () => {
+      const css = '@media (orientation: portrait) { :root { --x: 1; } html.foo { color: red; } }';
+      const result = transformStylesheet(css, VW, VH, VERTICAL);
+      expect(result).toContain("html[data-orientation='portrait'] { --x: 1; }");
+      expect(result).toContain("html[data-orientation='portrait'].foo { color: red; }");
+    });
+
+    it('prefixes every selector in a comma-separated list', () => {
+      const css = '@media (orientation: landscape) { .a, .b { display: flex; } }';
+      const result = transformStylesheet(css, VW, VH, VERTICAL);
+      expect(result).toContain(
+        "html[data-orientation='landscape'] .a, html[data-orientation='landscape'] .b",
+      );
+    });
+
+    it('walks nested at-rules so @supports blocks keep working', () => {
+      const css =
+        '@media (orientation: portrait) { @supports (display: grid) { .a { display: grid; } } }';
+      const result = transformStylesheet(css, VW, VH, VERTICAL);
+      expect(result).toContain('@supports (display: grid)');
+      expect(result).toContain("html[data-orientation='portrait'] .a");
     });
 
     it('leaves a media query with no viewport feature alone', () => {
@@ -756,6 +783,27 @@ describe('transformStylesheet', () => {
       expect(transformStylesheet(css, VW, VH, VERTICAL)).toContain(
         'content: "(orientation: landscape)"',
       );
+    });
+
+    it('rewrites a real bilingual stylesheet with comments and adjacent rules', () => {
+      const css = `/*横屏样式*/
+@media (orientation: landscape) {
+  .paracol { display: flex; gap: 1em; }
+  section + section { margin-top: 0.5em; }
+  /* 原文 */ .yuanwen { flex: 53; }
+  .yiwen { flex: 47; }
+}
+/*竖屏样式*/
+@media (orientation: portrait) {
+  .paracol { display: block; margin-top: 1em; }
+  .yuanwen { width: 100%; }
+  .yiwen { width: 100%; }
+}`;
+      const result = transformStylesheet(css, VW, VH, VERTICAL);
+      expect(result).toContain("html[data-orientation='landscape'] .paracol { display: flex;");
+      expect(result).toContain("html[data-orientation='portrait'] .paracol { display: block;");
+      expect(result).toContain("html[data-orientation='landscape'] section + section");
+      expect(result).not.toContain('@media');
     });
 
     it('leaves the literal alone in an attribute selector', () => {

@@ -1365,6 +1365,90 @@ export const transformInlineFonts = (css: string) =>
     .replace(/(font-family\s*:)([^;{}!]*)/gi, wrapFontFamily)
     .replace(FONT_SHORTHAND_REGEX, wrapFontShorthand);
 
+const ORIENTATION_MEDIA_AT_RULE = /@media([^{]*)\{/gi;
+const ORIENTATION_FEATURE = /\(\s*orientation\s*:\s*(landscape|portrait)\s*\)/i;
+
+// Prefix every rule in a fragment with the orientation attribute selector.
+// Nested at-rules are walked so an `@supports` block keeps working; keyframes,
+// font-face and page rules hold no document selectors and are left untouched.
+// `:root`/`html` must merge with the attribute instead of becoming a
+// descendant, otherwise `html[data-orientation] :root` matches nothing.
+const prefixOrientationRules = (css: string, attr: string): string => {
+  let out = '';
+  let cursor = 0;
+  while (cursor < css.length) {
+    const open = css.indexOf('{', cursor);
+    if (open < 0) {
+      out += css.slice(cursor);
+      break;
+    }
+    const selector = css.slice(cursor, open).trim();
+    let depth = 1;
+    let end = open + 1;
+    for (; end < css.length && depth > 0; end++) {
+      if (css[end] === '{') depth++;
+      else if (css[end] === '}') depth--;
+    }
+    const inner = css.slice(open + 1, end - 1);
+    if (!selector) {
+      out += `{${inner}}`;
+    } else if (selector.startsWith('@')) {
+      out += /^@(keyframes|font-face|page)\b/i.test(selector)
+        ? `${selector} {${inner}}`
+        : `${selector} {${prefixOrientationRules(inner, attr)}}`;
+    } else {
+      const prefixed = selector
+        .split(',')
+        .map((part) => {
+          const s = part.trim();
+          return /^(:root|html)\b/i.test(s)
+            ? `${attr}${s.replace(/^(:root|html)/i, '')}`
+            : `${attr} ${s}`;
+        })
+        .join(', ');
+      out += `${prefixed} {${inner}}`;
+    }
+    cursor = end;
+  }
+  return out;
+};
+
+// Turn `@media (orientation: X)` into rules gated on the host attribute that
+// FoliateViewer keeps in sync with the measured reading area. Any other feature
+// in the same query is preserved for the prelude pass to resolve statically.
+const rewriteOrientationMediaQueries = (css: string): string => {
+  ORIENTATION_MEDIA_AT_RULE.lastIndex = 0;
+  let out = '';
+  let cursor = 0;
+  let match: RegExpExecArray | null;
+  while ((match = ORIENTATION_MEDIA_AT_RULE.exec(css)) !== null) {
+    const prelude = match[1] ?? '';
+    const feature = ORIENTATION_FEATURE.exec(prelude);
+    if (!feature) continue;
+    let depth = 1;
+    let end = ORIENTATION_MEDIA_AT_RULE.lastIndex;
+    for (; end < css.length && depth > 0; end++) {
+      if (css[end] === '{') depth++;
+      else if (css[end] === '}') depth--;
+    }
+    const body = css.slice(ORIENTATION_MEDIA_AT_RULE.lastIndex, end - 1);
+    const condition = prelude
+      .replace(feature[0], '')
+      .replace(/^\s*and\s+/i, '')
+      .replace(/\s+and\s*$/i, '')
+      .replace(/(?:\band\s+){2,}/gi, 'and ')
+      .replace(/\s{2,}/g, ' ')
+      .trim();
+    const attr = `html[data-orientation='${feature[1]!.toLowerCase()}']`;
+    const rules = prefixOrientationRules(body, attr);
+    const media = condition && !/^(all|screen)$/i.test(condition) ? `@media ${condition}` : '';
+    out += css.slice(cursor, match.index) + (media ? `${media} {${rules}}` : rules);
+    cursor = end;
+    ORIENTATION_MEDIA_AT_RULE.lastIndex = end;
+  }
+  return out + css.slice(cursor);
+};
+
 export const transformStylesheet = (
   css: string,
   vw: number,
@@ -1595,16 +1679,20 @@ export const transformStylesheet = (
   // rule that changes the content's height — `column-count: 2` in the IDPF
   // media-query sample — flips the query, which flips the page count, which
   // flips the query straight back, and the layout never settles (#6038).
-  // Resolve the feature against the reader's own viewport, the same thing the
-  // vw/vh rewrite below does and for the same reason, so the book gets the
-  // orientation the reader is actually in and the cycle cannot form.
-  // Width and height features are the same trap: a two-page section makes the
-  // strip twice as wide, so the sample's `(max-width: 480px)` block flips on the
-  // page count it is itself deciding. Both rewrites are confined to the prelude,
-  // between `@media` and the `{` that opens its block, so the same literal in a
-  // declaration value or an attribute selector is left as the book wrote it. The
-  // two sentinels below resolve to themselves, so the passes are order-free.
-  const isLandscape = vw > vh;
+  // Resolving the feature against the viewport sampled when the book opened
+  // broke that cycle but froze the layout for the whole session, so a book that
+  // switches between side-by-side and stacked text never followed a resize.
+  // The host now measures the reading area and mirrors it as
+  // html[data-orientation] (see applyOrientationAttribute); rewrite the at-rule
+  // into attribute-gated rules that stay live in paginated *and* scrolled mode.
+  // The signal comes from the host, not the content, so the cycle cannot form.
+  // Width and height features are still the old trap: a two-page section makes
+  // the strip twice as wide, so the sample's `(max-width: 480px)` block flips on
+  // the page count it is itself deciding. That rewrite is confined to the
+  // prelude, between `@media` and the `{` that opens its block, so the same
+  // literal in a declaration value or an attribute selector is left as the book
+  // wrote it. The two sentinels below resolve to themselves, so the passes are
+  // order-free.
   const always = '(min-width: 0px)';
   const never = '(min-width: 999999px)';
   // Park quoted values first, the same way the url() pass above does, so an
@@ -1614,25 +1702,22 @@ export const transformStylesheet = (
     quoted.push(value);
     return `READEST_STR_${quoted.length - 1}_PLACEHOLDER`;
   });
+  css = rewriteOrientationMediaQueries(css);
   css = css.replace(/@media[^{]*/gi, (prelude) =>
-    prelude
-      .replace(/\(\s*orientation\s*:\s*(landscape|portrait)\s*\)/gi, (_, mode: string) =>
-        (mode.toLowerCase() === 'landscape') === isLandscape ? always : never,
-      )
-      .replace(
-        /\(\s*(min|max)-(width|height)\s*:\s*([^)]+?)\s*\)/gi,
-        (feature, bound: string, axis: string, length: string) => {
-          // Only lengths that are already px can be resolved without guessing at
-          // the book's root font size; anything else keeps the authored feature.
-          const px = /^(\d*\.?\d+)(?:px)?$/.exec(length);
-          if (!px) return feature;
-          const viewport = axis.toLowerCase() === 'width' ? vw : vh;
-          const bounds = parseFloat(px[1]!);
-          return (bound.toLowerCase() === 'min' ? viewport >= bounds : viewport <= bounds)
-            ? always
-            : never;
-        },
-      ),
+    prelude.replace(
+      /\(\s*(min|max)-(width|height)\s*:\s*([^)]+?)\s*\)/gi,
+      (feature, bound: string, axis: string, length: string) => {
+        // Only lengths that are already px can be resolved without guessing at
+        // the book's root font size; anything else keeps the authored feature.
+        const px = /^(\d*\.?\d+)(?:px)?$/.exec(length);
+        if (!px) return feature;
+        const viewport = axis.toLowerCase() === 'width' ? vw : vh;
+        const bounds = parseFloat(px[1]!);
+        return (bound.toLowerCase() === 'min' ? viewport >= bounds : viewport <= bounds)
+          ? always
+          : never;
+      },
+    ),
   );
   css = css.replace(/READEST_STR_(\d+)_PLACEHOLDER/g, (_, i) => quoted[+i]!);
 
@@ -1790,6 +1875,45 @@ export const applyNamespacedAttributes = (document: Document) => {
  */
 export const applyEinkModeAttribute = (document: Document, isEink: boolean) => {
   document.documentElement.setAttribute('data-eink', isEink ? 'true' : 'false');
+};
+
+/**
+ * The aspect ratio a book's `@media (orientation: ...)` should resolve against.
+ *
+ * A section iframe cannot answer the question itself: in paginated mode it is
+ * sized to the whole multi-column strip, and in scrolled mode it is as tall as
+ * the chapter content. `transformStylesheet` therefore resolves orientation
+ * against a width/height sampled once when the book opened, which freezes the
+ * layout for the whole session. The host measures the reading area instead and
+ * mirrors it here, so both a book stylesheet (see the orientation rewrite in
+ * transformStylesheet) and `userStylesheet` can branch live on
+ * `html[data-orientation='portrait']`.
+ */
+export type ReadingAreaOrientation = 'landscape' | 'portrait';
+
+export const applyOrientationAttribute = (
+  document: Document,
+  orientation: ReadingAreaOrientation,
+) => {
+  document.documentElement.setAttribute('data-orientation', orientation);
+};
+
+/**
+ * Resolve the reading area's aspect ratio with a small hysteresis band so a
+ * window dragged across the 1:1 boundary does not flip the layout on every
+ * pixel. A zero-sized box (the view is not mounted yet) resolves to null.
+ */
+export const resolveReadingAreaOrientation = (
+  width: number,
+  height: number,
+  previous: ReadingAreaOrientation | null = null,
+  hysteresis = 0.02,
+): ReadingAreaOrientation | null => {
+  if (!(width > 0) || !(height > 0)) return null;
+  const ratio = width / height;
+  if (previous === null) return ratio >= 1 ? 'landscape' : 'portrait';
+  if (previous === 'landscape') return ratio >= 1 - hysteresis ? 'landscape' : 'portrait';
+  return ratio > 1 + hysteresis ? 'landscape' : 'portrait';
 };
 
 /**
