@@ -2192,16 +2192,20 @@ diff -ruN blitz/packages/blitz-dom/src/mutator.rs blitz/packages/blitz-dom/src/m
          let parent = &self.doc.nodes[parent_id];
          let flags = parent.selector_flags().get();
          let mut hint = RestyleHint::empty();
-@@ -3084,3 +3117,10 @@
+@@ -3084,3 +3117,14 @@
          );
      }
  }
 +
-+/// An attribute that reaches the screen only through the cascade (an attribute selector): a
-+/// change to it changes the output only if the restyle it starts damages something. Only `name`:
-+/// React 19 clears an input's `name` and sets it back on every update of the input.
++/// An attribute that reaches the screen only through the cascade (a class or attribute
++/// selector): a change to it changes the output only if the restyle it starts damages something.
++/// React 19 clears an input's `name` and sets it back on every update of the input; foliate-js
++/// marks the views it hides with `aria-hidden` on every page turn, and gives a section it loads
++/// classes, `tabindex` and `data-*` attributes.
 +fn restyle_only(attr: &LocalName) -> bool {
-+    *attr == local_name!("name")
++    matches!(&**attr, "name" | "class" | "role" | "tabindex" | "title")
++        || attr.starts_with("aria-")
++        || attr.starts_with("data-")
 +}
 diff -ruN blitz/packages/blitz-dom/src/node/element.rs blitz/packages/blitz-dom/src/node/element.rs
 --- blitz/packages/blitz-dom/src/node/element.rs

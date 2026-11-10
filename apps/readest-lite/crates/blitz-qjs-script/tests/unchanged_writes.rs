@@ -103,3 +103,49 @@ fn clearing_and_restoring_an_input_name_repaints_only_if_a_selector_sees_it() {
     doc.inner_mut().resolve(0.0);
     assert!(doc.inner().damaged_by_last_resolve());
 }
+
+// foliate-js's paginator marks the views it hides from assistive tech with `aria-hidden` on every
+// page turn, and a section it loads gets classes, `tabindex` and `data-*` attributes. None of them
+// reaches the screen but through a selector, yet each asked for a paint: on a Kindle, a frame per
+// turn identical to the one before (~50-70 ms).
+#[test]
+fn attributes_only_selectors_read_repaint_only_if_a_selector_sees_them() {
+    let html = "<!DOCTYPE html><html><head><style>.shown { color: red }\
+        [aria-hidden=true] { display: none }</style></head>\
+        <body><div id='d'>text</div></body></html>";
+    let requests = Arc::new(Requests::default());
+    let config = DocumentConfig {
+        shell_provider: Some(requests.clone()),
+        ..DocumentConfig::default()
+    };
+    let mut doc = QjsDocument::from_html(html, config);
+    doc.inner_mut().resolve(0.0);
+    let redraws = || requests.redraws.load(Ordering::Relaxed);
+    let before = redraws();
+    doc.eval(
+        "const d = document.getElementById('d'); d.setAttribute('aria-hidden', 'false'); \
+         d.setAttribute('aria-label', 'x'); d.setAttribute('data-k', 'v'); d.className = 'other'; \
+         d.tabIndex = -1; d.setAttribute('role', 'region'); d.title = 't'; \
+         d.removeAttribute('data-k');",
+        "test",
+    );
+    assert_eq!(doc.take_js_errors(), Vec::<String>::new());
+    assert_eq!(redraws(), before);
+    doc.inner_mut().resolve(0.0);
+    assert!(!doc.inner().damaged_by_last_resolve());
+
+    // the same attributes, now matched by a selector, damage the element
+    for change in [
+        "d.setAttribute('aria-hidden', 'true');",
+        "d.className = 'shown';",
+    ] {
+        doc.eval(change, "test");
+        doc.inner_mut().resolve(0.0);
+        assert!(doc.inner().damaged_by_last_resolve(), "{change}");
+        doc.eval(
+            "d.removeAttribute('aria-hidden'); d.className = '';",
+            "test",
+        );
+        doc.inner_mut().resolve(0.0);
+    }
+}
