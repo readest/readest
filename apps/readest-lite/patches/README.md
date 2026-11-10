@@ -163,6 +163,11 @@
   `name` and sets it back on every update of the input; foliate-js sets its views' `aria-hidden`
   on every page turn and gives a section it loads classes, `tabindex` and `data-*` attributes.
   The runtime resolves such a page and paints it only if something was damaged.
+- `blitz-dom` document, events/pointer: a hover change asks for a restyle, not a redraw (it
+  reaches the screen only through `:hover` styles, or the devtools hover outline, which still
+  redraws), and a press on text repaints only to remove a highlighted selection (the collapsed
+  selection it starts draws nothing). A page turn on a Kindle is a tap on the book's text; each
+  asked for two repaints of an unchanged frame, and the first one held back the pointer-up.
 
 ## stylo.diff (servo/stylo 2dca34592, 0.23.0)
 
