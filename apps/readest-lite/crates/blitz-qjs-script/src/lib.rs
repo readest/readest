@@ -83,6 +83,8 @@ pub struct QjsDocument {
     next_timer_ms: Option<f64>,
     /// When queued rAF callbacks are due (they run with the timers, but never delay a paint).
     next_frame_ms: Option<f64>,
+    /// rAF callbacks ran since [`take_frame`](Self::take_frame) last asked.
+    frame_ran: bool,
     /// Compile external scripts to `<path>.qjsc` once and read that on later runs.
     pub bytecode_cache: bool,
     pub stats: ScriptStats,
@@ -562,6 +564,7 @@ impl QjsDocument {
             scripts_executed: false,
             next_timer_ms: None,
             next_frame_ms: None,
+            frame_ran: false,
             bytecode_cache: false,
             stats,
         };
@@ -815,10 +818,16 @@ impl QjsDocument {
         if next.is_some_and(|t| t > now) {
             return false;
         }
-        self.call_global("__blitzTimers", (now,));
+        self.frame_ran |= self.call_global("__blitzTimers", (now,)) == Some(1.0);
         // After the timers' promise jobs, which may have added timers of their own.
         self.refresh_timers();
         next.is_some()
+    }
+
+    /// Whether rAF callbacks ran since the last call: a browser paints right after them, before
+    /// the tasks they queued (foliate shows a turned page that way before measuring it).
+    pub fn take_frame(&mut self) -> bool {
+        std::mem::take(&mut self.frame_ran)
     }
 
     fn next_wake_ms(&self) -> Option<f64> {
