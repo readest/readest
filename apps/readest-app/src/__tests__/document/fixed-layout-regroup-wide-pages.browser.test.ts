@@ -133,4 +133,15 @@ describe('fixed-layout regroups spreads when a page loads wide', () => {
     await r.endPageTurn(true, 0);
     expect(shown(r), 'the turn must land on the wide page, not skip it').toEqual([4]);
   });
+
+  it('turns back from a spread that a wide page before it would split', async () => {
+    const r = mount(3);
+    await r.goToSpread(3, 'left', 'page');
+    // The backward preload of [3 4] finds page 3 wide, which would make
+    // [0] [1 2] [3] [4 5] [6 7] and leave no spread holding the pages shown.
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    expect(shown(r)).toEqual([5, 6]);
+    await r.prev();
+    expect(shown(r), 'turning back must reach page 4').toEqual([4, 5]);
+  });
 });
