@@ -211,6 +211,8 @@ pub(crate) struct BlitzWebview {
     /// before `next_tap` if it comes first.
     tap_idle: Option<Duration>,
     last_paint: Option<Instant>,
+    /// The drawing commands of the last frame painted, and its size.
+    last_scene: Option<(u32, u32, anyrender::Scene)>,
     /// Next frame of a running CSS animation/transition (BLITZ_TAURI_ANIM_MS apart, default 33).
     next_anim: Option<Instant>,
     /// BLITZ_TAURI_EVAL=file.js, evaluated once BLITZ_TAURI_EVAL_MS (default 5000) after navigate.
@@ -323,6 +325,7 @@ impl BlitzWebview {
                 .and_then(|v| v.parse().ok())
                 .map(Duration::from_millis),
             last_paint: None,
+            last_scene: None,
             next_anim: None,
             probe: None,
             pointers: Default::default(),
@@ -713,6 +716,38 @@ impl BlitzWebview {
         }
         let Some(doc) = self.doc.as_mut() else { return };
         let layout_ms = t.elapsed().as_secs_f64() * 1000.0;
+        // The frame's drawing commands. When they are the last frame's, the page looks as it did
+        // (a section preloaded out of sight, a style written where it doesn't show): rasterizing
+        // and presenting it would change no pixel (~90 ms on a Kindle, where recording takes ~4).
+        let mut commands = anyrender::Scene::new();
+        paint_scene(
+            &mut commands,
+            &mut doc.inner_mut(),
+            f64::from(self.scale),
+            self.w,
+            self.h,
+            0,
+            0,
+        );
+        let record_ms = t.elapsed().as_secs_f64() * 1000.0 - layout_ms;
+        if self
+            .last_scene
+            .as_ref()
+            .is_some_and(|(w, h, last)| (*w, *h) == (self.w, self.h) && *last == commands)
+        {
+            if std::env::var_os("BLITZ_TAURI_TRACE_LOOP").is_some() {
+                eprintln!(
+                    "{{\"label\": \"skip\", \"t_ms\": {:.1}, \"layout_ms\": {layout_ms:.1}, \"record_ms\": {record_ms:.1}, \"same\": true, \"cause\": \"{}\"}}",
+                    t_ms(),
+                    std::mem::take(&mut self.causes)
+                );
+            }
+            self.dirty = false;
+            self.dirty_since = None;
+            self.after_frame();
+            return;
+        }
+        self.last_scene = Some((self.w, self.h, commands));
         let surface =
             cairo::ImageSurface::create(cairo::Format::Rgb24, self.w as i32, self.h as i32)
                 .unwrap();
@@ -738,7 +773,7 @@ impl BlitzWebview {
             );
         }
         surface.flush();
-        let paint_ms = t.elapsed().as_secs_f64() * 1000.0 - layout_ms;
+        let paint_ms = t.elapsed().as_secs_f64() * 1000.0 - layout_ms - record_ms;
         let t_present = Instant::now();
         // the box sent to the window ("none": nothing changed)
         #[allow(unused_mut)]
@@ -794,7 +829,7 @@ impl BlitzWebview {
             heap += &format!(", \"cause\": \"{}\"", std::mem::take(&mut self.causes));
         }
         eprintln!(
-            "{{\"label\": \"frame\", \"t_ms\": {:.1}, \"n\": {}, \"layout_ms\": {layout_ms:.1}, \"paint_ms\": {paint_ms:.1}, \"present_ms\": {present_ms:.1}, \"sent\": {sent}{heap}}}",
+            "{{\"label\": \"frame\", \"t_ms\": {:.1}, \"n\": {}, \"layout_ms\": {layout_ms:.1}, \"record_ms\": {record_ms:.1}, \"paint_ms\": {paint_ms:.1}, \"present_ms\": {present_ms:.1}, \"sent\": {sent}{heap}}}",
             t_ms(),
             self.frames,
         );
@@ -802,7 +837,12 @@ impl BlitzWebview {
         self.dirty = false;
         self.dirty_since = None;
         self.last_paint = Some(Instant::now());
-        // Keep painting only while something animates; an idle page paints nothing.
+        self.after_frame();
+    }
+
+    /// After a frame, painted or the same as the last: keep painting only while something
+    /// animates (an idle page paints nothing), and time the next scripted input from it.
+    fn after_frame(&mut self) {
         self.next_anim = self
             .doc
             .as_ref()
@@ -1214,6 +1254,68 @@ mod tests {
         }
         std::fs::remove_dir_all(&dir).ok();
         assert_eq!(painted, ["start", "turned", "measured"]);
+    }
+
+    // foliate-js lays out the section it preloads in a view scrolled out of sight, and each of
+    // its writes there asked for a paint: on a Kindle ~90 ms of rasterizing and presenting a
+    // frame identical to the one before, about once a page turn.
+    #[test]
+    fn a_change_out_of_sight_paints_nothing() {
+        let dir = std::env::temp_dir().join(format!("blitz-same-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let file = dir.join("same.html");
+        // #h is below the 40px box that clips it
+        std::fs::write(
+            &file,
+            "<!DOCTYPE html><html><body style='margin: 0'>
+            <div style='width: 40px; height: 40px; overflow: hidden'>
+              <div id='v' style='width: 20px; height: 20px; background: red'></div>
+              <div id='h' style='margin-top: 40px; width: 20px; height: 20px; background: red'></div>
+            </div><script>
+            const step = (s) => { document.body.title = s; };
+            step('start');
+            setTimeout(() => { document.getElementById('h').style.background = 'blue'; step('hidden'); }, 50);
+            setTimeout(() => { document.getElementById('v').style.background = 'blue'; step('shown'); }, 150);
+            </script></body></html>",
+        )
+        .unwrap();
+        let mut wv = BlitzWebview::new(WebviewInit {
+            id: 0,
+            label: "test".into(),
+            url: Arc::new(Mutex::new(String::new())),
+            protocols: Arc::new(HashMap::new()),
+            ipc: None,
+            init_scripts: Vec::new(),
+            page_load: None,
+            tx: std::sync::mpsc::channel().0,
+        });
+        wv.navigate(Url::from_file_path(&file).unwrap().as_str());
+        let step = |wv: &BlitzWebview| {
+            let doc = wv.doc.as_ref().unwrap().inner();
+            let body = doc.root_element().children[1];
+            doc.get_node(body)
+                .unwrap()
+                .attr(blitz_dom::local_name!("title"))
+                .map(str::to_owned)
+        };
+        let mut painted = Vec::new();
+        let end = Instant::now() + Duration::from_secs(5);
+        while painted
+            .last()
+            .is_none_or(|s: &Option<String>| s.as_deref() != Some("shown"))
+            && Instant::now() < end
+        {
+            let frames = wv.frames;
+            wv.tick();
+            if wv.frames > frames {
+                painted.push(step(&wv));
+            }
+            if let Some(d) = wv.deadline() {
+                std::thread::sleep(d.saturating_duration_since(Instant::now()));
+            }
+        }
+        std::fs::remove_dir_all(&dir).ok();
+        assert_eq!(painted, [Some("start".into()), Some("shown".into())]);
     }
 
     // Page-turn timing runs pressed a key every 12 s to be sure the last turn's work was done;
