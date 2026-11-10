@@ -814,9 +814,22 @@ pub(crate) fn install(ctx: &Ctx<'_>, shared: Rc<RefCell<Shared>>, base: Option<&
     });
     let d = docs.clone();
     // `html` parsed as HTML (never sniffed as XML) into a document of its own, which loads
-    // nothing and runs no script: its document node's handle.
+    // nothing and runs no script: its document node's handle. It is never laid out, so it gets
+    // no fonts: a scan of the system's took about a second on a Kindle, for each parse.
     op!("parseHtml", move |html: String| -> f64 {
-        let mut doc = BaseDocument::new(crate::with_html_parser(DocumentConfig::default()));
+        use fontique::{Collection, CollectionOptions, SourceCache};
+        let font_ctx = blitz_dom::FontContext {
+            collection: Collection::new(CollectionOptions {
+                shared: false,
+                system_fonts: false,
+            }),
+            source_cache: SourceCache::default(),
+        };
+        let config = DocumentConfig {
+            font_ctx: Some(font_ctx),
+            ..DocumentConfig::default()
+        };
+        let mut doc = BaseDocument::new(crate::with_html_parser(config));
         blitz_html::DocumentHtmlParser::parse_html_into_mutator(&mut doc.mutate(), &html);
         let root = doc.root_node().id;
         d.enc(d.own(doc), root)
