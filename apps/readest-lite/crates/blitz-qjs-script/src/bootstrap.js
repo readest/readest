@@ -1900,22 +1900,26 @@
     getClientRects() {
       const { startContainer: sc, startOffset: so, endContainer: ec, endOffset: eo } = this;
       if (sc === ec && sc.nodeType === 3) return rectList(n.textRects(sc._id, so, eo));
-      const contained = (x) => {
-        const p = x.parentNode;
-        if (!p) return false;
-        let i = 0;
-        for (let c = x.previousSibling; c; c = c.previousSibling) i++;
-        return comparePoints(p, i, sc, so) >= 0 && comparePoints(p, i + 1, ec, eo) <= 0;
-      };
       const out = [];
       if (sc.nodeType === 3) out.push(...n.textRects(sc._id, so, sc.length));
-      const w = new TreeWalker(this.commonAncestorContainer, 0x5);
-      for (let x; (x = w.nextNode()); ) {
-        if (x === sc || x === ec) continue;
-        if (!contained(x)) continue;
-        if (x.nodeType === 3) out.push(...n.textRects(x._id, 0, x.length));
-        else if (!contained(x.parentNode)) out.push(...n.rects(x._id));
-      }
+      // One walk in tree order. The range selects a node when it holds (parent, index) to
+      // (parent, index + 1); all under a selected node is selected, so only the children of
+      // unselected nodes are compared with the boundary points (foliate-js measures a section by
+      // a range over its whole body: per node comparisons cost a Kindle seconds).
+      const visit = (parent, parentSelected) => {
+        let i = 0;
+        for (let x = parent.firstChild; x; x = x.nextSibling, i++) {
+          const selected =
+            parentSelected ||
+            (comparePoints(parent, i, sc, so) >= 0 && comparePoints(parent, i + 1, ec, eo) <= 0);
+          if (selected && x !== sc && x !== ec) {
+            if (x.nodeType === 3) out.push(...n.textRects(x._id, 0, x.length));
+            else if (x.nodeType === 1 && !parentSelected) out.push(...n.rects(x._id));
+          }
+          if (x.firstChild) visit(x, selected);
+        }
+      };
+      visit(this.commonAncestorContainer, false);
       if (ec.nodeType === 3) out.push(...n.textRects(ec._id, 0, eo));
       return rectList(out);
     }
