@@ -1733,10 +1733,14 @@
   // ---- Tree order, Range and TreeWalker ----
   // Boundary points and traversal as the DOM specifies them, over the wrappers. A range's rects
   // are its common ancestor element's box: text geometry inside a line is not reachable yet.
+  // One native call: reading previousSibling back to the first child took a call and a wrapper
+  // per sibling. A host's shadow root is its first native child, not one of its child nodes.
   const indexOf = (node) => {
-    let i = 0;
-    for (let s = node.previousSibling; s; s = s.previousSibling) i++;
-    return i;
+    const p = n.parent(node._id);
+    if (p == null) return 0;
+    const kids = n.children(p);
+    const i = kids.indexOf(node._id);
+    return i > 0 && shadowIds.has(kids[0]) ? i - 1 : i;
   };
   const nodeLength = (node) => {
     const t = node.nodeType;

@@ -108,6 +108,38 @@ fn setting_a_boundary_point_walks_up_once_from_each_point() {
 }
 
 #[test]
+fn a_nodes_index_does_not_walk_its_earlier_siblings() {
+    // foliate-js compares the reading position with each print-page marker of a section
+    // (comparePoint). Each comparison found a paragraph's index by reading every sibling before
+    // it, a native call and a wrapper each: deep into a long chapter, a turn's progress took
+    // most of half a second on a Kindle.
+    let (logs, errors) = run("
+        for (let i = 0; i < 200; i++) {
+            const p = document.createElement('p');
+            p.id = 'n' + i;
+            document.body.append(p);
+        }
+        const get = Object.getOwnPropertyDescriptor(Node.prototype, 'previousSibling').get;
+        let reads = 0;
+        Object.defineProperty(Node.prototype, 'previousSibling', { get() { reads++; return get.call(this); }, configurable: true });
+        const r = document.createRange();
+        r.setStart($('n100'), 0);
+        reads = 0;
+        console.log(r.comparePoint($('n150'), 0), r.comparePoint($('n50'), 0), reads);
+        // a shadow host's shadow root is its first native child, not one of its child nodes
+        const host = $('z');
+        host.attachShadow({ mode: 'open' });
+        const i = document.createElement('i');
+        host.append(i);
+        const s = document.createRange();
+        s.setStartBefore(i);
+        console.log(s.startOffset, host.childNodes.length, host.childNodes[s.startOffset] === i);
+    ");
+    assert_eq!(errors, Vec::<String>::new());
+    assert_eq!(logs, ["1 -1 0", "1 2 true"]);
+}
+
+#[test]
 fn tree_walker() {
     let (logs, errors) = run("
         const names = (w) => { const out = []; for (let n; (n = w.nextNode()); ) out.push(n.nodeType === 3 ? n.data.trim() : n.nodeName); return out.join(','); };
