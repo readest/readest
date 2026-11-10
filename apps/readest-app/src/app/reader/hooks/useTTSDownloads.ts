@@ -45,7 +45,7 @@ export const useTTSDownloads = (
   clientsReady: boolean,
 ): UseTTSDownloadsResult => {
   const _ = useTranslation();
-  const { getBookData } = useBookDataStore();
+  const getBookData = useBookDataStore((s) => s.getBookData);
   const [chapters, setChapters] = useState<DownloadChapter[]>([]);
   const [statuses, setStatuses] = useState<Map<number, SectionCacheStatus>>(new Map());
   const [cacheBytes, setCacheBytes] = useState(0);

@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, test } from 'vitest';
 import { grimmoryProgressBody, grimmoryRemoteProgress } from '@/services/grimmory/progress';
 

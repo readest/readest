@@ -327,12 +327,14 @@ const SortableRuleItem: React.FC<React.ComponentProps<typeof RuleItem>> = (props
 const useReplacementRules = (bookKey: string | null) => {
   const { settings } = useSettingsStore();
   const { getViewSettings } = useReaderStore();
-  const { getConfig } = useBookDataStore();
+  // The book's persisted rules, not its config, which changes on every page turn
+  const persistedBookRules =
+    useBookDataStore((s) =>
+      bookKey ? s.getConfig(bookKey)?.viewSettings?.proofreadRules : undefined,
+    ) || [];
 
   const viewSettings = bookKey ? getViewSettings(bookKey) : null;
   const inMemoryRules = viewSettings?.proofreadRules || [];
-  const persistedConfig = bookKey ? getConfig(bookKey) : null;
-  const persistedBookRules = persistedConfig?.viewSettings?.proofreadRules || [];
 
   // Prefer persisted rules; fall back to in-memory. Drop tombstoned rules
   // (deletedAt set) — deletion is a soft tombstone now so it can sync across

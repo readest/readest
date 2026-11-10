@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { describe, expect, it } from 'vitest';
 import { firstSense, hintFromDictionary } from '@/services/vocabulary/hintSources';
 import type { DictionaryProvider } from '@/services/dictionaries/types';

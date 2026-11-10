@@ -1,3 +1,4 @@
+// @vitest-environment node
 // #6210: a comic's double-page spread is usually stored as one wide image.
 // Paired with the next page it shows at half size and shifts every later page
 // to the wrong side, so a wide page is laid out as a spread of its own.

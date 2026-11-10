@@ -1,8 +1,9 @@
 import clsx from 'clsx';
-import React, { useCallback, useMemo, useEffect, useRef } from 'react';
+import React, { useCallback, useMemo, useEffect, useRef, useState } from 'react';
 import { useEnv } from '@/context/EnvContext';
 import { useSpatialNavigation } from '@/app/reader/hooks/useSpatialNavigation';
 import { useWindowFocusRestore } from '@/app/reader/hooks/useWindowFocusRestore';
+import { getBookProgress } from '@/store/readerProgressStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useSidebarStore } from '@/store/sidebarStore';
 import { useBookDataStore } from '@/store/bookDataStore';
@@ -31,17 +32,18 @@ const FooterBar: React.FC<FooterBarProps> = ({
   const _ = useTranslation();
   const { appService } = useEnv();
   const isIPhoneDuo = useThemeStore((s) => s.isIPhoneDuo);
-  const { getConfig, setConfig, getBookData } = useBookDataStore();
+  // The book's config and progress change on every page turn and progress
+  // save; the footer shows neither, and its callbacks read them when they run.
+  const getConfig = useBookDataStore((s) => s.getConfig);
+  const setConfig = useBookDataStore((s) => s.setConfig);
+  const isFixedLayout = useBookDataStore((s) => !!s.getBookData(bookKey)?.isFixedLayout);
   const { hoveredBookKey, setHoveredBookKey, bottomBarTab, setBottomBarTab } = useReaderStore();
-  const { getView, getViewState, getProgress, getViewSettings } = useReaderStore();
+  const { getView, getViewState, getViewSettings } = useReaderStore();
   const { isSideBarVisible, isSideBarPinned, setSideBarVisible } = useSidebarStore();
   const { acquireBackKeyInterception, releaseBackKeyInterception } = useDeviceControlStore();
 
   const view = getView(bookKey);
-  const config = getConfig(bookKey);
-  const bookData = getBookData(bookKey);
   const viewState = getViewState(bookKey);
-  const progress = getProgress(bookKey);
   const viewSettings = getViewSettings(bookKey);
 
   const actionTab = hoveredBookKey === bookKey ? bottomBarTab : '';
@@ -51,9 +53,18 @@ const FooterBar: React.FC<FooterBarProps> = ({
   const pointerInDoc = docs.some(({ doc }) => doc?.body?.style.cursor === 'pointer');
   const isWindowFocusRestore = useWindowFocusRestore();
 
+  // A hidden footer keeps the position it last showed and catches up in the
+  // render that shows it: following every page turn re-rendered all its
+  // panels and buttons for nothing.
+  const [shown, setShown] = useState({ section, pageinfo });
+  if (isVisible && (shown.section !== section || shown.pageinfo !== pageinfo)) {
+    setShown({ section, pageinfo });
+  }
+  const shownSection = isVisible ? section : shown.section;
+  const shownPageinfo = isVisible ? pageinfo : shown.pageinfo;
   const progressInfo = useMemo(
-    () => (FIXED_LAYOUT_FORMATS.has(bookFormat) ? section : pageinfo),
-    [bookFormat, section, pageinfo],
+    () => (FIXED_LAYOUT_FORMATS.has(bookFormat) ? shownSection : shownPageinfo),
+    [bookFormat, shownSection, shownPageinfo],
   );
 
   const progressValid = !!progressInfo && progressInfo.total > 0 && progressInfo.current >= 0;
@@ -97,14 +108,16 @@ const FooterBar: React.FC<FooterBarProps> = ({
   }, [view]);
 
   const handleSpeakText = useCallback(async () => {
-    if (!view || !progress || !viewState) return;
+    const viewState = getViewState(bookKey);
+    if (!view || !getBookProgress(bookKey) || !viewState) return;
 
     const eventType = viewState.ttsEnabled ? 'tts-stop' : 'tts-speak';
     eventDispatcher.dispatch(eventType, { bookKey });
-  }, [view, progress, viewState, bookKey]);
+  }, [view, getViewState, bookKey]);
 
   const handleSetActionTab = useCallback(
     (tab: string) => {
+      const config = getConfig(bookKey);
       setBottomBarTab(bottomBarTab === tab ? '' : tab);
 
       if (tab === 'tts') {
@@ -129,7 +142,7 @@ const FooterBar: React.FC<FooterBarProps> = ({
       }
     },
     [
-      config,
+      getConfig,
       bookKey,
       bottomBarTab,
       viewState?.ttsEnabled,
@@ -217,7 +230,7 @@ const FooterBar: React.FC<FooterBarProps> = ({
 
   const needHorizontalScroll =
     (viewSettings?.vertical && viewSettings?.scrolled) ||
-    (bookData?.isFixedLayout && viewSettings?.zoomLevel && viewSettings.zoomLevel > 100);
+    (isFixedLayout && viewSettings?.zoomLevel && viewSettings.zoomLevel > 100);
 
   const containerClasses = clsx(
     'footer-bar shadow-xs bottom-0 left-0 z-10 flex w-full flex-col',

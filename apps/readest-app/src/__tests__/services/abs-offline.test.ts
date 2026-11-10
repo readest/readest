@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { downloadAbsForOffline, loadAbsOfflineManifest } from '@/services/audiobookshelf/offline';
 import { useABSServerStore } from '@/store/absServerStore';

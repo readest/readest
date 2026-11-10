@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 /**
  * TranslatorPopup error reporting (#5823): a failed lookup must say why it
  * failed, not just "try again later", and must only blame a missing login

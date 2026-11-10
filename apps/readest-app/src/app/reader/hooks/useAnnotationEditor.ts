@@ -31,7 +31,9 @@ export const useAnnotationEditor = ({
 }: UseAnnotationEditorProps) => {
   const { envConfig } = useEnv();
   const { settings } = useSettingsStore();
-  const { getConfig, saveConfig, updateBooknotes } = useBookDataStore();
+  const getConfig = useBookDataStore((s) => s.getConfig);
+  const saveConfig = useBookDataStore((s) => s.saveConfig);
+  const updateBooknotes = useBookDataStore((s) => s.updateBooknotes);
   const { getView, getProgress, getViewsById } = useReaderStore();
 
   const view = getView(bookKey);

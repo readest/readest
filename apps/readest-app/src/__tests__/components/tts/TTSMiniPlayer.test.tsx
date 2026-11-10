@@ -1,3 +1,5 @@
+// @vitest-environment happy-dom
+import { bookDataStoreHooks } from '@/__tests__/helpers/book-data-store-mock';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 
@@ -42,7 +44,7 @@ vi.mock('@/store/readerProgressStore', () => ({
 
 const getBookData = vi.fn();
 vi.mock('@/store/bookDataStore', () => ({
-  useBookDataStore: () => ({ getBookData }),
+  ...bookDataStoreHooks(() => ({ getBookData })),
 }));
 
 import TTSMiniPlayer from '@/app/reader/components/tts/TTSMiniPlayer';

@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { describe, it, expect, vi } from 'vitest';
 import type { BookDoc, SectionItem, TOCItem } from '@/libs/document';
 import { computeBookNav } from '@/services/nav';

@@ -19,7 +19,7 @@ import { Insets } from '@/types/misc';
 import { useEnv } from '@/context/EnvContext';
 import { useReaderStore } from '@/store/readerStore';
 import { useBookProgress } from '@/store/readerProgressStore';
-import { useBookDataStore } from '@/store/bookDataStore';
+import { useBookData } from '@/store/bookDataStore';
 import { useThemeStore } from '@/store/themeStore';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -116,7 +116,6 @@ const TTSMiniPlayer = ({
   const { appService } = useEnv();
   const isIPhoneDuo = useThemeStore((s) => s.isIPhoneDuo);
   const { hoveredBookKey, setHoveredBookKey, getViewSettings, bottomBarTab } = useReaderStore();
-  const { getBookData } = useBookDataStore();
   const progress = useBookProgress(bookKey);
   const playback = usePlaybackInfo({ bookKey, isEink, onGetPlaybackInfo });
   const timerLabel = useCountdownLabel(timeoutTimestamp);
@@ -126,7 +125,7 @@ const TTSMiniPlayer = ({
   const iconSize28 = useResponsiveSize(28);
   const iconSize40 = useResponsiveSize(40);
 
-  const book = getBookData(bookKey)?.book;
+  const book = useBookData(bookKey)?.book;
   const sectionLabel = progress?.sectionLabel;
 
   // Stack above whatever occupies the bottom edge: the bottom bar (or its

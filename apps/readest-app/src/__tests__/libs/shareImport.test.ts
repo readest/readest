@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { AppService } from '@/types/system';
 import type { ShareMetadata } from '@/libs/share';

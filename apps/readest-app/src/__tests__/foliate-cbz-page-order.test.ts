@@ -1,3 +1,4 @@
+// @vitest-environment node
 // Regression test for #5745: a CBZ chapter split across folders that share a
 // chapter number — `Chapter 0060/` and `Chapter 0060 (2)/` — rendered part 2
 // before part 1. The image paths were flattened and sorted as plain strings,

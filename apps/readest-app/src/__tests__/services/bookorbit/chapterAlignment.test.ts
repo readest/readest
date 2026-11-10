@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { alignEbookChapters, collectTopLevelChapterIds } from '@/services/bookorbit/pairing';
 import type { TOCItem } from '@/libs/document';

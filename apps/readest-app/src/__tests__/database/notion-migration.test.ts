@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { migrate } from '@/services/database/migrate';
 import { getMigrations } from '@/services/database/migrations';

@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { describe, test, it, expect } from 'vitest';
 import {
   alignBoundariesToSpeech,

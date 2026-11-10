@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // GHSA-pv88-3727-j7v8: `/api/stripe/check` retrieves a client-supplied

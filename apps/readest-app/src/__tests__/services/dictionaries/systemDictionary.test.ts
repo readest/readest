@@ -1,3 +1,4 @@
+// @vitest-environment node
 /**
  * System-dictionary native dispatch.
  *

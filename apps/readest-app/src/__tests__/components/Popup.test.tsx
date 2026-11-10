@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { cleanup, render } from '@testing-library/react';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
