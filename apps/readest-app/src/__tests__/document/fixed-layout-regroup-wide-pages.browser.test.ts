@@ -36,6 +36,8 @@ type Renderer = HTMLElement & {
   next(): Promise<void>;
   prev(): Promise<void>;
   goToSpread(index: number, side: string, reason?: string): Promise<void>;
+  beginPageTurn(forward: boolean): Promise<boolean>;
+  endPageTurn(commit: boolean, duration?: number): Promise<boolean>;
 };
 
 const frames = (renderer: HTMLElement) =>
@@ -112,5 +114,23 @@ describe('fixed-layout regroups spreads when a page loads wide', () => {
     expect(outgoing.isConnected).toBe(true);
     await r.prev();
     expect(shown(r)).toEqual([3]);
+  });
+
+  it('turns back onto a wide page found by the preload of the spread before', async () => {
+    const r = mount(4);
+    await r.goToSpread(3, 'left', 'page');
+    expect(shown(r)).toEqual([5, 6]);
+    // The backward preload of [3 4] finds page 4 wide: [0] [1 2] [3] [4] [5 6] [7]
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    await r.prev();
+    expect(shown(r), 'turning back must not skip the wide page').toEqual([4]);
+  });
+
+  it('lands a retained turn back on the wide page its own load finds', async () => {
+    const r = mount(4);
+    await r.goToSpread(3, 'left', 'page');
+    expect(await r.beginPageTurn(false)).toBe(true);
+    await r.endPageTurn(true, 0);
+    expect(shown(r), 'the turn must land on the wide page, not skip it').toEqual([4]);
   });
 });

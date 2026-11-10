@@ -20,6 +20,18 @@ type Fxl = HTMLElement & {
 let renderer: Fxl;
 const drawn = new WeakMap<Document, number>();
 const rasterized = vi.fn();
+// Hold a section's load or its draw until the test releases it.
+const loadGate = new Map<number, Promise<void>>();
+const drawGate = new Map<number, Promise<void>>();
+const hold = (gates: Map<number, Promise<void>>, index: number) => {
+  let release!: () => void;
+  gates.set(index, new Promise<void>((resolve) => (release = resolve)));
+  return release;
+};
+const cachedSections = () =>
+  [...renderer.shadowRoot!.querySelectorAll('iframe')].map((f) =>
+    Number(f.dataset['sectionIndex']),
+  );
 const docAt = (index: number) =>
   [...renderer.shadowRoot!.querySelectorAll('iframe')].find(
     (f) => f.dataset['sectionIndex'] === String(index),
@@ -36,9 +48,10 @@ const mount = async (dir = 'ltr', spread = 'none', scaleFactor = '100') => {
     sections: Array.from({ length: 7 }, (_, index) => ({
       linear: 'yes',
       load: async () => ({
-        src: 'srcdoc',
+        src: await Promise.resolve(loadGate.get(index)).then(() => 'srcdoc'),
         data: '<!doctype html><html><body style="margin:0"><canvas></canvas><span>Selectable page</span></body></html>',
         onZoom: async ({ doc, scale }: { doc: Document; scale: number }) => {
+          await drawGate.get(index);
           if (!doc || drawn.get(doc) === scale) return;
           drawn.set(doc, scale);
           rasterized(index, scale);
@@ -60,6 +73,8 @@ afterEach(() => {
   renderer?.cancelPageTurn?.();
   renderer?.remove();
   rasterized.mockClear();
+  loadGate.clear();
+  drawGate.clear();
 });
 
 describe('retained fixed-layout page turns', () => {
@@ -417,6 +432,53 @@ describe('retained fixed-layout page turns', () => {
       rasterized.mock.calls.filter(([index]) => index === 3),
       'the preloaded page must not be drawn again when it is shown',
     ).toEqual([]);
+  });
+
+  it('keeps the page it turned away from cached for a turn back', async () => {
+    await mount();
+    await vi.waitFor(() => expect(cachedSections().sort()).toEqual([1, 2, 3]));
+    expect(await renderer.beginPageTurn?.(true)).toBe(true);
+    await renderer.endPageTurn(true, 0);
+    await vi.waitFor(() => expect(cachedSections()).toContain(4));
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(cachedSections(), 'the trim must drop an older preload, not page 2').toContain(2);
+  });
+
+  it('keeps the destination of a turn back while a preload trims the cache', async () => {
+    await mount();
+    await vi.waitFor(() => expect(cachedSections().sort()).toEqual([1, 2, 3]));
+    const releaseLoad = hold(loadGate, 4);
+    expect(await renderer.beginPageTurn?.(true)).toBe(true);
+    await renderer.endPageTurn(true, 0);
+    const releaseDraw = hold(drawGate, 2);
+    const begun = renderer.beginPageTurn!(false);
+    releaseLoad();
+    await vi.waitFor(() => expect(cachedSections()).toContain(4));
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    releaseDraw();
+    expect(await begun).toBe(true);
+    await renderer.endPageTurn(true, 0);
+    expect(renderer.index).toBe(2);
+    const landed = [...renderer.shadowRoot!.querySelectorAll('iframe')].find(
+      (f) => f.dataset['sectionIndex'] === '2',
+    );
+    expect(landed?.isConnected, 'the turn must land on an attached page').toBe(true);
+  });
+
+  it('creates the overlayer of the hidden page a portrait turn brings in', async () => {
+    await mount('ltr', 'auto');
+    const created: number[] = [];
+    renderer.addEventListener('create-overlayer', (e) =>
+      created.push((e as CustomEvent<{ index: number }>).detail.index),
+    );
+    for (let i = 0; i < 2; i++) {
+      expect(await renderer.beginPageTurn?.(true)).toBe(true);
+      await renderer.endPageTurn(true, 0);
+    }
+    expect(renderer.index).toBe(5);
+    await renderer.next();
+    expect(renderer.index).toBe(6);
+    expect(created, 'page 6 needs an overlayer for its annotations').toContain(6);
   });
 
   it.each([
