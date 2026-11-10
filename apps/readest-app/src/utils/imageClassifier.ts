@@ -217,12 +217,16 @@ export const classifyAndTagStandaloneDiagrams = (
       };
       const onLoad = () => {
         cleanup();
+        const currentSrc = img.currentSrc || img.src;
+        if (currentSrc !== src) return;
         if (isMonochromeGraphic(img, src)) {
           img.classList.add('monochrome-diagram');
         }
       };
       const onError = () => {
         cleanup();
+        const currentSrc = img.currentSrc || img.src;
+        if (currentSrc !== src) return;
         classificationCache.set(src, false);
       };
       img.addEventListener('load', onLoad);

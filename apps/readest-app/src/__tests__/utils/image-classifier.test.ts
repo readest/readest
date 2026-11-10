@@ -206,6 +206,25 @@ describe('imageClassifier', () => {
         false,
       );
     });
+
+    it('ignores classification and cache update when src changes while pending', async () => {
+      document.body.innerHTML = `
+        <p><img id="changed-img" src="https://example.com/original.png" /></p>
+      `;
+      classifyAndTagStandaloneDiagrams(document, true, false);
+      await new Promise((resolve) => setTimeout(resolve, 20));
+
+      const img = document.getElementById('changed-img') as HTMLImageElement;
+      expect(img.getAttribute('data-diagram-pending')).toBe('true');
+
+      // Mutate src while load was pending
+      img.src = 'https://example.com/mutated.png';
+
+      img.dispatchEvent(new Event('load'));
+      expect(img.hasAttribute('data-diagram-pending')).toBe(false);
+      expect(img.classList.contains('monochrome-diagram')).toBe(false);
+      expect(getDiagramClassificationCache().has('https://example.com/original.png')).toBe(false);
+    });
   });
 
   describe('CSS styling for monochrome diagrams in dark mode', () => {
