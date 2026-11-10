@@ -14,8 +14,9 @@ export type VocabularySort = 'recent' | 'occurrences' | 'newest' | 'oldest' | 'a
 const compareEntries: Record<VocabularySort, (a: VocabularyEntry, b: VocabularyEntry) => number> = {
   recent: (a, b) => lastSeen(b) - lastSeen(a),
   occurrences: (a, b) => b.occurrences.length - a.occurrences.length || lastSeen(b) - lastSeen(a),
-  newest: (a, b) => b.createdAt - a.createdAt,
-  oldest: (a, b) => a.createdAt - b.createdAt,
+  // One Anki import gives every word the same createdAt.
+  newest: (a, b) => b.createdAt - a.createdAt || a.word.localeCompare(b.word),
+  oldest: (a, b) => a.createdAt - b.createdAt || a.word.localeCompare(b.word),
   az: (a, b) => a.word.localeCompare(b.word),
   za: (a, b) => b.word.localeCompare(a.word),
 };
