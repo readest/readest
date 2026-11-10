@@ -2,11 +2,11 @@ import type { FoliateView } from '@/types/view';
 
 // Heuristically classify a link as a possible footnote marker based on its
 // text content. Matches plain digits (1, 12), prefixed/bracketed digits
-// (a1, [1], (1), [1), CJK full-width digits/brackets (（注1）, 【2】, ［1］, 25）),
-// translation/editor note prefixes (訳注1, 原注2, 編注3), note ranges (61～69）),
-// circled numbers (①〜⑳), and common footnote symbols (＊, *, ※, †, ‡).
+// (a1, [1], (1), [1), CJK full-width digits/brackets (（注1）, 【2】, ［1］, 〖2〗, 25）),
+// translation/editor note prefixes (注1, 註1, 訳注1, 訳註1, 原注2, 編注3), note ranges (61～69）),
+// circled numbers (①〜⑳), and common footnote symbols with optional numbers (＊, ＊1, *, *1, ※, ※1, †, ‡).
 const FOOTNOTE_MARKER_RE =
-  /^[（(［\[【〔〈]?\s*(?:[＊*※†‡]|(?:[a-zA-Z]{1,2}|(?:訳|原|編)?注(?:釈)?|Notes?)\s*[0-9０-９]+(?:[〜～~-][0-9０-９]+)?|[①-⑳㉑-㊿]|[0-9０-９]+(?:[〜～~-][0-9０-９]+)?)\s*[）)］\]】〕〉]?$/i;
+  /^[（(［\[【〔〈〖]?\s*(?:[＊*※†‡]\s*[0-9０-９]*|(?:[a-zA-Z]{1,2}|(?:訳|原|編)?[注註](?:釈)?|Notes?)\s*[0-9０-９]+(?:[〜～~-][0-9０-９]+)?|[①-⑳㉑-㊿]|[0-9０-９]+(?:[〜～~-][0-9０-９]+)?)\s*[）)］\]】〕〉〗]?$/i;
 
 const isFootnoteMarkerText = (text: string | null | undefined) =>
   text != null && FOOTNOTE_MARKER_RE.test(text.trim());

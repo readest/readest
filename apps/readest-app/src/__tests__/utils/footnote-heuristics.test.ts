@@ -77,7 +77,18 @@ describe('shouldCheckAsFootnote', () => {
   });
 
   it('recognises bracketed and half-bracketed footnote markers', () => {
-    for (const marker of ['[1]', '(1)', '【1】', '［1］', '（1）', '25）', '〔1〕', '〈1〉']) {
+    for (const marker of [
+      '[1]',
+      '(1)',
+      '【1】',
+      '［1］',
+      '（1）',
+      '25）',
+      '〔1〕',
+      '〈1〉',
+      '〖2〗',
+      '〖10〗',
+    ]) {
       const body = parseHtml(`<p>Sample text<a href="#fn">${marker}</a> following text.</p>`);
       const a = getAnchorByText(body, marker);
       expect(shouldCheckAsFootnote(a)).toBe(true);
@@ -88,7 +99,10 @@ describe('shouldCheckAsFootnote', () => {
     for (const marker of [
       '（注1）',
       '注1',
+      '註1',
+      '（註1）',
       '訳注1',
+      '訳註1',
       '原注2',
       '編注3',
       '注釈1',
@@ -118,8 +132,8 @@ describe('shouldCheckAsFootnote', () => {
     }
   });
 
-  it('recognises footnote symbols', () => {
-    for (const marker of ['＊', '*', '※', '†', '‡']) {
+  it('recognises footnote symbols with optional numbers', () => {
+    for (const marker of ['＊', '＊1', '*', '*1', '※', '※1', '†', '†2', '‡']) {
       const body = parseHtml(`<p>Sample text<a href="#fn">${marker}</a> following text.</p>`);
       const a = getAnchorByText(body, marker);
       expect(shouldCheckAsFootnote(a)).toBe(true);
