@@ -168,6 +168,11 @@
   redraws), and a press on text repaints only to remove a highlighted selection (the collapsed
   selection it starts draws nothing). A page turn on a Kindle is a tap on the book's text; each
   asked for two repaints of an unchanged frame, and the first one held back the pointer-up.
+- `blitz-paint` render/border, kurbo_css/css_box: a border edge of width 0 draws nothing, and
+  a rounded corner next to one splits at its limit angle (π/2) instead of ∞/∞. Tailwind's
+  preflight gives every element `border: 0 solid`, so Blitz drew four empty edges per element;
+  on Readest's rounded `html` and `body` the corner split was NaN, which put a NaN fill in every
+  frame. A rounded box with one zero-width side drew its other edges washed out.
 
 ## stylo.diff (servo/stylo 2dca34592, 0.23.0)
 
