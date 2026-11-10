@@ -1848,6 +1848,34 @@ const INLINE_IMAGE_CONTAINER_TAGS = new Set([
   'q',
 ]);
 
+const hasInlineTextSibling = (container: Element, targetNode: Node): boolean => {
+  const childNodes = Array.from(container.childNodes);
+  const idx = childNodes.indexOf(targetNode as ChildNode);
+  if (idx === -1) return false;
+
+  for (let i = idx - 1; i >= 0; i--) {
+    const node = childNodes[i]!;
+    if (node.nodeType === Node.ELEMENT_NODE && (node as Element).tagName.toUpperCase() === 'BR') {
+      break;
+    }
+    if (node.nodeType === Node.TEXT_NODE && node.textContent?.trim()) {
+      return true;
+    }
+  }
+
+  for (let i = idx + 1; i < childNodes.length; i++) {
+    const node = childNodes[i]!;
+    if (node.nodeType === Node.ELEMENT_NODE && (node as Element).tagName.toUpperCase() === 'BR') {
+      break;
+    }
+    if (node.nodeType === Node.TEXT_NODE && node.textContent?.trim()) {
+      return true;
+    }
+  }
+
+  return false;
+};
+
 export const applyImageStyle = (document: Document) => {
   const win = document.defaultView ?? window;
   // Two-phase (read then write): reading getComputedStyle after a class/style
@@ -1880,29 +1908,23 @@ export const applyImageStyle = (document: Document) => {
     const parent = img.parentNode;
     if (parent && parent.nodeType === Node.ELEMENT_NODE) {
       let hasTextSiblings = false;
-      let isInline = true;
-
+      let targetNode: Node = img;
       let container: Element | null = parent as Element;
+
       while (container) {
-        const childNodes = Array.from(container.childNodes);
-        if (
-          childNodes.some(
-            (node) =>
-              node.nodeType === Node.ELEMENT_NODE &&
-              (node as Element).tagName.toUpperCase() === 'BR',
-          )
-        ) {
-          isInline = false;
-          break;
-        }
-        if (
-          childNodes.some((node) => node.nodeType === Node.TEXT_NODE && !!node.textContent?.trim())
-        ) {
+        if (hasInlineTextSibling(container, targetNode)) {
           hasTextSiblings = true;
           break;
         }
+        const hasBrInWrapper = Array.from(container.childNodes).some(
+          (node) =>
+            node.nodeType === Node.ELEMENT_NODE && (node as Element).tagName.toUpperCase() === 'BR',
+        );
+        if (hasBrInWrapper) break;
+
         const parentElem: Element | null = container.parentElement;
         if (parentElem && INLINE_IMAGE_CONTAINER_TAGS.has(container.tagName.toLowerCase())) {
+          targetNode = container;
           container = parentElem;
         } else {
           break;
@@ -1914,7 +1936,7 @@ export const applyImageStyle = (document: Document) => {
       // also inside a calc() (serialized as e.g. `calc(30% - 1px)`).
       const width = img.computedStyleMap?.().get('width');
       const percentSized = !!width && width.toString().includes('%');
-      inlineWithText = (hasTextSiblings || isGaiji) && isInline && !percentSized;
+      inlineWithText = (hasTextSiblings || isGaiji) && !percentSized;
       if (inlineWithText) {
         // Only supply Readest's baseline default when the book leaves
         // vertical-align at its initial value; an author-set value (e.g. a CJK

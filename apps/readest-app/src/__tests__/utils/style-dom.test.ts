@@ -657,6 +657,20 @@ describe('applyImageStyle', () => {
     expect(img.classList.contains('has-text-siblings')).toBe(true);
   });
 
+  it('adds has-text-siblings when wrapped image is followed by a BR later in the paragraph (#7373)', () => {
+    document.body.innerHTML = '<p>前<span><img src="glyph.png"></span>後<br>次</p>';
+    applyImageStyle(document);
+    const img = document.querySelector('img')!;
+    expect(img.classList.contains('has-text-siblings')).toBe(true);
+  });
+
+  it('adds has-text-siblings when unwrapped image is followed by a BR later in the paragraph (#7373)', () => {
+    document.body.innerHTML = '<p>前<img src="glyph.png">後<br>次</p>';
+    applyImageStyle(document);
+    const img = document.querySelector('img')!;
+    expect(img.classList.contains('has-text-siblings')).toBe(true);
+  });
+
   it('sets pointer-events: none on img[zy-enlarge-src="none"] and keeps the attribute', () => {
     document.body.innerHTML = '<img zy-enlarge-src="none" src="a.png" />';
 
