@@ -43,7 +43,7 @@ const PageNavigationButtons: React.FC<PageNavigationButtonsProps> = ({
       : 'h-20 w-20';
 
   const handleGoLeftPage = useCallback(() => {
-    viewPagination(view, viewSettings, 'left', 'page');
+    viewPagination(view, viewSettings, 'left', 'page', undefined, true);
   }, [view, viewSettings]);
 
   const handleGoLeftSection = useCallback(() => {
@@ -51,7 +51,7 @@ const PageNavigationButtons: React.FC<PageNavigationButtonsProps> = ({
   }, [view, viewSettings]);
 
   const handleGoRightPage = useCallback(() => {
-    viewPagination(view, viewSettings, 'right', 'page');
+    viewPagination(view, viewSettings, 'right', 'page', undefined, true);
   }, [view, viewSettings]);
 
   const handleGoRightSection = useCallback(() => {

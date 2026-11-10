@@ -86,6 +86,8 @@ describe('usePagination mouse wheel direction (#6439)', () => {
     const { view, wheel } = setup();
     await wheel(100);
     expect(view.next).toHaveBeenCalledTimes(1);
+    // A wheel turn waits for the last one: a wheel sends many events
+    expect(view.next).toHaveBeenCalledWith(undefined, { discrete: false });
     expect(view.prev).not.toHaveBeenCalled();
   });
 

@@ -108,6 +108,8 @@ describe('usePagination tap on a page-filling image (#6424)', () => {
     const { view, tap } = setup();
     await tap(900);
     expect(view.next).toHaveBeenCalledTimes(1);
+    // A tap may turn again once the turned page is on screen
+    expect(view.next).toHaveBeenCalledWith(undefined, { discrete: true });
     expect(postSpy).not.toHaveBeenCalled();
   });
 
