@@ -46,8 +46,9 @@ export interface Renderer extends HTMLElement {
   open: (book: BookDoc) => Promise<void>;
   setAttribute: (name: string, value: string | number) => void;
   removeAttribute: (name: string) => void;
-  next: () => Promise<void>;
-  prev: () => Promise<void>;
+  // `discrete`: a tap or key, which may turn again once the last turn's page is shown
+  next: (distance?: number, options?: { discrete?: boolean }) => Promise<void>;
+  prev: (distance?: number, options?: { discrete?: boolean }) => Promise<void>;
   nextSection?: () => Promise<void>;
   prevSection?: () => Promise<void>;
   render?: () => Promise<void>;
@@ -97,8 +98,8 @@ export interface FoliateView extends HTMLElement {
   goTo: (target: string | number) => void;
   goToFraction: (fraction: number) => void;
   getSectionFractions: () => number[];
-  prev: (distance?: number) => Promise<void>;
-  next: (distance?: number) => Promise<void>;
+  prev: (distance?: number, options?: { discrete?: boolean }) => Promise<void>;
+  next: (distance?: number, options?: { discrete?: boolean }) => Promise<void>;
   pan: (dx: number, dy: number) => void;
   isOverflowX: () => boolean;
   isOverflowY: () => boolean;

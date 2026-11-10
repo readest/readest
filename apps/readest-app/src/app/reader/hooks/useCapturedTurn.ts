@@ -352,7 +352,8 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
     // The foliate view.prev/next return the turn's promise; navigate() awaits
     // it so the overlay only starts animating once the instant jump underneath
     // has landed.
-    type TurnFn = (distance?: number) => Promise<void>;
+    type TurnOptions = { discrete?: boolean };
+    type TurnFn = (distance?: number, options?: TurnOptions) => Promise<void>;
     const originals: { prev: TurnFn; next: TurnFn } = {
       prev: view.prev.bind(view),
       next: view.next.bind(view),
@@ -775,7 +776,7 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
     document.addEventListener('visibilitychange', handleVisibilityChange);
     schedulePreparedCapture();
 
-    const capturedTurn = async (forward: boolean, distance?: number) => {
+    const capturedTurn = async (forward: boolean, distance?: number, options?: TurnOptions) => {
       const viewSettings = getViewSettings(bookKey);
       const boundary = forward ? view.renderer.atEnd : view.renderer.atStart;
       const style =
@@ -783,7 +784,7 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
           ? getCapturedTurnStyle(viewSettings, isFixedLayout())
           : null;
       if (!viewSettings || !style || isCapturedSurfaceBlockedByOverlay()) {
-        return forward ? originals.next(distance) : originals.prev(distance);
+        return forward ? originals.next(distance, options) : originals.prev(distance, options);
       }
       const programmaticTurn = Symbol('captured-turn');
       programmaticTurnsInFlightRef.current.add(programmaticTurn);
@@ -818,8 +819,9 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
     // isAutoTurning guard up until the turn settles — discarding it resolves
     // awaiters ~300ms early, and the #873 selection scroll-pin then snaps the
     // still-animating page straight back (nightly Android e2e regression).
-    view.prev = (distance?: number) => capturedTurn(false, distance);
-    view.next = (distance?: number) => capturedTurn(true, distance);
+    view.prev = (distance?: number, options?: TurnOptions) =>
+      capturedTurn(false, distance, options);
+    view.next = (distance?: number, options?: TurnOptions) => capturedTurn(true, distance, options);
 
     return () => {
       cleanedUp = true;

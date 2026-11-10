@@ -45,16 +45,16 @@ describe('viewPagination scrolling overlap', () => {
   test('fixed layout scrolls a viewport minus the overlap', () => {
     const view = makeView('pre-paginated');
     viewPagination(view as unknown as FoliateView, viewSettings, 'down');
-    expect(view.next).toHaveBeenCalledWith(SIZE - 100);
+    expect(view.next).toHaveBeenCalledWith(SIZE - 100, { discrete: false });
     viewPagination(view as unknown as FoliateView, viewSettings, 'up');
-    expect(view.prev).toHaveBeenCalledWith(SIZE - 100);
+    expect(view.prev).toHaveBeenCalledWith(SIZE - 100, { discrete: false });
   });
 
   test('reflowable ignores the overlap (line snapping keeps the lines whole)', () => {
     const view = makeView('reflowable');
     viewPagination(view as unknown as FoliateView, viewSettings, 'down');
-    expect(view.next).toHaveBeenCalledWith(SIZE);
+    expect(view.next).toHaveBeenCalledWith(SIZE, { discrete: false });
     viewPagination(view as unknown as FoliateView, viewSettings, 'up');
-    expect(view.prev).toHaveBeenCalledWith(SIZE);
+    expect(view.prev).toHaveBeenCalledWith(SIZE, { discrete: false });
   });
 });

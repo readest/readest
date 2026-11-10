@@ -235,7 +235,7 @@ describe('useBookShortcuts', () => {
     render(<Harness />);
     shortcutState.actions?.['onGoNext']?.();
 
-    expect(mockView.next).toHaveBeenCalledWith(72);
+    expect(mockView.next).toHaveBeenCalledWith(72, { discrete: true });
   });
 
   it('falls back to normal page navigation when the ruler cannot move further', () => {
@@ -244,7 +244,7 @@ describe('useBookShortcuts', () => {
     render(<Harness />);
     shortcutState.actions?.['onGoNext']?.();
 
-    expect(mockView.next).toHaveBeenCalledWith(72);
+    expect(mockView.next).toHaveBeenCalledWith(72, { discrete: true });
   });
 
   it('jumps to the start of the book on Home, ignoring the reading ruler (#5660)', () => {

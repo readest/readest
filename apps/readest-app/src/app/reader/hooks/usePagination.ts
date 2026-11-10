@@ -207,6 +207,8 @@ export const viewPagination = (
   side: PaginationSide,
   mode: PaginationMode = 'page',
   panDistance: number = 50,
+  // A tap or key: it may turn again once the last turn's page is on screen.
+  discrete = false,
 ) => {
   if (!view || !viewSettings) return;
   const renderer = view.renderer;
@@ -246,7 +248,9 @@ export const viewPagination = (
         // non-scrolled panning path below, which deliberately does not count).
         // So every scrolled turn reaching here is one page — counting all of
         // them keeps "Every N pages" at N viewports.
-        const navigation = forward ? view.next(snapped) : view.prev(snapped);
+        const navigation = forward
+          ? view.next(snapped, { discrete })
+          : view.prev(snapped, { discrete });
         noteEinkPageTurn(view, viewSettings, navigation);
         return navigation;
       }
@@ -257,7 +261,10 @@ export const viewPagination = (
     } else if (hasVerticalPanning(view, viewSettings) && (side === 'up' || side === 'down')) {
       return view.pan(0, side === 'up' ? -panDistance : panDistance);
     } else {
-      const navigation = side === 'left' || side === 'up' ? view.prev() : view.next();
+      const navigation =
+        side === 'left' || side === 'up'
+          ? view.prev(undefined, { discrete })
+          : view.next(undefined, { discrete });
       noteEinkPageTurn(view, viewSettings, navigation);
       return navigation;
     }
@@ -272,7 +279,10 @@ export const viewPagination = (
       case 'pan':
       case 'page':
       default: {
-        const navigation = side === 'left' || side === 'up' ? view.prev() : view.next();
+        const navigation =
+          side === 'left' || side === 'up'
+            ? view.prev(undefined, { discrete })
+            : view.next(undefined, { discrete });
         noteEinkPageTurn(view, viewSettings, navigation);
         return navigation;
       }
@@ -420,7 +430,7 @@ export const usePagination = (
                 return;
               }
 
-              viewPagination(viewRef.current, viewSettings, side);
+              viewPagination(viewRef.current, viewSettings, side, 'page', undefined, true);
             }
           }
         } else if (msg.data.type === 'iframe-wheel' && !viewSettings.scrolled) {
@@ -479,12 +489,12 @@ export const usePagination = (
           if (viewSettings.readingRulerEnabled && dispatchReadingRulerMove('up')) {
             return;
           }
-          viewPagination(viewRef.current, viewSettings, 'up');
+          viewPagination(viewRef.current, viewSettings, 'up', 'page', undefined, true);
         } else if (keyName === 'VolumeDown') {
           if (viewSettings.readingRulerEnabled && dispatchReadingRulerMove('down')) {
             return;
           }
-          viewPagination(viewRef.current, viewSettings, 'down');
+          viewPagination(viewRef.current, viewSettings, 'down', 'page', undefined, true);
         }
       }
     } else {
@@ -508,9 +518,9 @@ export const usePagination = (
         const viewSettings = getViewSettings(bookKey);
         if (!viewSettings?.disableClick) {
           if (clientX < leftThreshold) {
-            viewPagination(viewRef.current, viewSettings, 'left');
+            viewPagination(viewRef.current, viewSettings, 'left', 'page', undefined, true);
           } else if (clientX > rightThreshold) {
-            viewPagination(viewRef.current, viewSettings, 'right');
+            viewPagination(viewRef.current, viewSettings, 'right', 'page', undefined, true);
           }
         }
       }
@@ -574,7 +584,7 @@ export const usePagination = (
     ) {
       return true;
     }
-    viewPagination(viewRef.current, viewSettings, side, mode);
+    viewPagination(viewRef.current, viewSettings, side, mode, undefined, true);
     return true;
   };
 

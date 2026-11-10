@@ -199,7 +199,7 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
       return;
     }
     if (moveReadingRuler('left')) return;
-    viewPagination(getView(sideBarBookKey), viewSettings, 'left', 'pan', distance);
+    viewPagination(getView(sideBarBookKey), viewSettings, 'left', 'pan', distance, true);
   };
 
   const goRight = () => {
@@ -213,7 +213,7 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
       return;
     }
     if (moveReadingRuler('right')) return;
-    viewPagination(getView(sideBarBookKey), viewSettings, 'right', 'pan', distance);
+    viewPagination(getView(sideBarBookKey), viewSettings, 'right', 'pan', distance, true);
   };
 
   const goUp = (event?: KeyboardEvent | MessageEvent) => {
@@ -229,7 +229,7 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
     }
     if (moveReadingRuler('up')) return true;
     if (view?.renderer.scrolled && event instanceof MessageEvent) return false;
-    viewPagination(view, viewSettings, 'up', 'pan', distance);
+    viewPagination(view, viewSettings, 'up', 'pan', distance, true);
     return true;
   };
 
@@ -246,7 +246,7 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
     }
     if (moveReadingRuler('down')) return true;
     if (view?.renderer.scrolled && event instanceof MessageEvent) return false;
-    viewPagination(view, viewSettings, 'down', 'pan', distance);
+    viewPagination(view, viewSettings, 'down', 'pan', distance, true);
     return true;
   };
 
@@ -272,12 +272,12 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
 
   const goPrev = () => {
     if (moveReadingRuler('up')) return;
-    getView(sideBarBookKey)?.prev(distance);
+    getView(sideBarBookKey)?.prev(distance, { discrete: true });
   };
 
   const goNext = () => {
     if (moveReadingRuler('down')) return;
-    getView(sideBarBookKey)?.next(distance);
+    getView(sideBarBookKey)?.next(distance, { discrete: true });
   };
 
   // Home / End (#5660). The view is registered in the store before its opening
