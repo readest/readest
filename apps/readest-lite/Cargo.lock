@@ -316,6 +316,7 @@ dependencies = [
  "blitz-dom",
  "blitz-html",
  "blitz-traits",
+ "fontique",
  "log",
  "rquickjs",
  "stylo",

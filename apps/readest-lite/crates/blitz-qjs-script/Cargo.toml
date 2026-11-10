@@ -16,6 +16,8 @@ style = { version = "0.23.0", git = "https://github.com/servo/stylo", rev = "2dc
 # bindings are for 0.10.1.
 rquickjs = { version = "0.10", default-features = false, features = ["bindgen"] }
 url = "2.5.0"
+# An empty font collection for documents a script parses (they are never laid out).
+fontique = { version = "0.12", default-features = false, features = ["std"] }
 log = "0.4"
 
 
