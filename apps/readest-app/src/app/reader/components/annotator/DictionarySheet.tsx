@@ -48,6 +48,7 @@ const DictionarySheet: React.FC<DictionarySheetProps> = ({
           onSpeak={state.speakWord}
           speaking={state.isSpeaking}
           vocabularyLang={state.vocabularyLang}
+          manualVocabularyOccurrence={state.manualVocabularyOccurrence}
         />
       }
       contentClassName='px-0! mt-0!'
