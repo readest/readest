@@ -24,11 +24,11 @@ const docAt = (index: number) =>
   [...renderer.shadowRoot!.querySelectorAll('iframe')].find(
     (f) => f.dataset['sectionIndex'] === String(index),
   )!.contentDocument!;
-const mount = async (dir = 'ltr', spread = 'none') => {
+const mount = async (dir = 'ltr', spread = 'none', scaleFactor = '100') => {
   renderer = document.createElement('foliate-fxl') as Fxl;
   Object.assign(renderer.style, { width: '400px', height: '800px' });
   renderer.setAttribute('zoom', 'fit-page');
-  renderer.setAttribute('scale-factor', '100');
+  renderer.setAttribute('scale-factor', scaleFactor);
   document.body.append(renderer);
   renderer.open({
     dir,
@@ -401,6 +401,22 @@ describe('retained fixed-layout page turns', () => {
     expect(rasterized.mock.calls.filter(([index]) => index === 2 || index === 3).length).toBe(
       before,
     );
+  });
+
+  it.each([
+    '50',
+    '100',
+    '150',
+  ])('preloads the next page at the zoom a tap turn shows it (zoom %s)', async (zoom) => {
+    await mount('ltr', 'none', zoom);
+    await vi.waitFor(() => expect(rasterized).toHaveBeenCalledWith(3, expect.any(Number)));
+    rasterized.mockClear();
+    await renderer.next();
+    expect(renderer.index).toBe(3);
+    expect(
+      rasterized.mock.calls.filter(([index]) => index === 3),
+      'the preloaded page must not be drawn again when it is shown',
+    ).toEqual([]);
   });
 
   it.each([
