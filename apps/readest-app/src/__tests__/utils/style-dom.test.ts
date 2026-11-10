@@ -168,10 +168,15 @@ describe('applyOrientationAttribute', () => {
     paracol.className = 'paracol';
     document.body.appendChild(paracol);
     const portraitRule = "html[data-orientation='portrait'] .paracol";
+    // Query the document rather than the element: happy-dom memoises
+    // `Element.matches()` per element and never invalidates the entry when an
+    // ancestor's attribute changes, so the second call keeps answering with the
+    // first result. `document.querySelector` re-evaluates every time, and it is
+    // also what a stylesheet does to the book content.
     applyOrientationAttribute(document, 'landscape');
-    expect(paracol.matches(portraitRule)).toBe(false);
+    expect(document.querySelector(portraitRule)).toBeNull();
     applyOrientationAttribute(document, 'portrait');
-    expect(paracol.matches(portraitRule)).toBe(true);
+    expect(document.querySelector(portraitRule)).toBe(paracol);
     paracol.remove();
   });
 });
