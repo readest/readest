@@ -173,6 +173,10 @@
   preflight gives every element `border: 0 solid`, so Blitz drew four empty edges per element;
   on Readest's rounded `html` and `body` the corner split was NaN, which put a NaN fill in every
   frame. A rounded box with one zero-width side drew its other edges washed out.
+- `blitz-paint` render: an iframe's document culls against what its ancestors leave in view,
+  not its whole box, and the root of a document's columns is not culled by its flow box (its
+  columns cull themselves). foliate-js makes a section's iframe as wide as all its pages and
+  shows one, so every frame drew the whole section for the clip to discard.
 
 ## stylo.diff (servo/stylo 2dca34592, 0.23.0)
 
