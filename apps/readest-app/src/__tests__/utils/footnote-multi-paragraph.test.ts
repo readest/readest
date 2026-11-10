@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { isFootnoteBacklink, extractToBody } from 'foliate-js/footnotes.js';
+import { isFootnoteBacklink, getFootnoteRange, extractToBody } from 'foliate-js/footnotes.js';
 
 const parseHtml = (html: string): Document => new DOMParser().parseFromString(html, 'text/html');
 
@@ -53,7 +53,7 @@ describe('isFootnoteBacklink', () => {
   });
 });
 
-describe('multi-paragraph footnote extraction with trailing backlinks', () => {
+describe('getFootnoteRange and multi-paragraph footnote extraction', () => {
   it('includes trailing paragraphs containing return links instead of cutting off', () => {
     const doc = parseHtml(`
       <div class="footnote-area">
@@ -65,24 +65,9 @@ describe('multi-paragraph footnote extraction with trailing backlinks', () => {
     `);
 
     const el = doc.getElementById('fn-001')!;
-    const range = doc.createRange();
-    range.setStartBefore(el);
-
-    let next = el.nextElementSibling;
-    while (next) {
-      const anchors = Array.from(next.querySelectorAll('a'));
-      if (anchors.length > 0 && !anchors.every(isFootnoteBacklink)) break;
-      next = next.nextElementSibling;
-    }
-
-    if (next) {
-      range.setEndBefore(next);
-    } else {
-      range.setEndAfter(el.parentNode!.lastChild!);
-    }
+    const range = getFootnoteRange(doc, el);
 
     // Range should stop before #fn-002, thus including all 3 paragraphs of #fn-001
-    expect(next?.id).toBe('fn-002');
     expect(range.endContainer).toBe(doc.querySelector('.footnote-area'));
 
     const popupDoc = parseHtml('<!DOCTYPE html><html><body></body></html>');
@@ -91,5 +76,50 @@ describe('multi-paragraph footnote extraction with trailing backlinks', () => {
     expect(popupDoc.body.textContent).toContain('注釈の詳細な解説段落');
     expect(popupDoc.body.textContent).toContain('注釈の最後の段落');
     expect(popupDoc.body.textContent).not.toContain('次の注釈です');
+  });
+
+  it('stops before adjacent footnotes that have only backlinks and no separate marker anchors', () => {
+    const doc = parseHtml(`
+      <div class="footnotes">
+        <p id="fn1">1. First footnote content. <a class="footnote-backref" href="#ref1">↩</a></p>
+        <p id="fn2">2. Second footnote content. <a class="footnote-backref" href="#ref2">↩</a></p>
+        <p id="fn3">3. Third footnote content. <a class="footnote-backref" href="#ref3">↩</a></p>
+      </div>
+    `);
+
+    const fn1 = doc.getElementById('fn1')!;
+    const range1 = getFootnoteRange(doc, fn1);
+
+    const popupDoc1 = parseHtml('<!DOCTYPE html><html><body></body></html>');
+    extractToBody(popupDoc1, range1);
+    expect(popupDoc1.body.textContent).toContain('First footnote content');
+    expect(popupDoc1.body.textContent).not.toContain('Second footnote content');
+    expect(popupDoc1.body.textContent).not.toContain('Third footnote content');
+
+    const fn2 = doc.getElementById('fn2')!;
+    const range2 = getFootnoteRange(doc, fn2);
+
+    const popupDoc2 = parseHtml('<!DOCTYPE html><html><body></body></html>');
+    extractToBody(popupDoc2, range2);
+    expect(popupDoc2.body.textContent).toContain('Second footnote content');
+    expect(popupDoc2.body.textContent).not.toContain('First footnote content');
+    expect(popupDoc2.body.textContent).not.toContain('Third footnote content');
+  });
+
+  it('stops before adjacent footnotes distinguished by leading marker text without IDs', () => {
+    const doc = parseHtml(`
+      <div class="footnote-list">
+        <p>1. First note without id. <a href="#ref1">↩</a></p>
+        <p>2. Second note without id. <a href="#ref2">↩</a></p>
+      </div>
+    `);
+
+    const p1 = doc.querySelectorAll('p')[0]!;
+    const range = getFootnoteRange(doc, p1);
+
+    const popupDoc = parseHtml('<!DOCTYPE html><html><body></body></html>');
+    extractToBody(popupDoc, range);
+    expect(popupDoc.body.textContent).toContain('First note without id');
+    expect(popupDoc.body.textContent).not.toContain('Second note without id');
   });
 });
