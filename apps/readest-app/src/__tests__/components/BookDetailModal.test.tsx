@@ -128,7 +128,7 @@ it('refreshes metadata from the current book file and saves it through the edit 
     </DropdownProvider>,
   );
   fireEvent.click(screen.getByRole('button', { name: 'More Actions' }));
-  const action = await screen.findByRole('menuitem', { name: 'Refresh Metadata from File' });
+  const action = await screen.findByRole('menuitem', { name: 'Refresh Metadata' });
   fireEvent.click(action);
   await waitFor(() =>
     expect(onUpdate).toHaveBeenCalledExactlyOnceWith(book, fileMetadata, ['keep']),

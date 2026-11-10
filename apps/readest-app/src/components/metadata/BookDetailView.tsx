@@ -245,7 +245,7 @@ const BookDetailView: React.FC<BookDetailViewProps> = ({
                   <MenuItem
                     noIcon
                     transient
-                    label={_('Refresh Metadata from File')}
+                    label={_('Refresh Metadata')}
                     disabled={!hasLocalFile}
                     onClick={onRefreshMetadata}
                   />
