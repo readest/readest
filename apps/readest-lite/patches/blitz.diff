@@ -3968,7 +3968,35 @@ diff -ruN blitz/packages/blitz-paint/src/render/box_shadow.rs blitz/packages/bli
 diff -ruN blitz/packages/blitz-paint/src/render.rs blitz/packages/blitz-paint/src/render.rs
 --- blitz/packages/blitz-paint/src/render.rs
 +++ blitz/packages/blitz-paint/src/render.rs
-@@ -288,6 +288,15 @@
+@@ -137,6 +137,9 @@
+ 
+     // Pre-computed `Scene`s for each CustomWidget
+     pub(crate) custom_widget_scenes: &'a CustomWidgetSceneMap,
++    /// Elements outside it are culled too (screen coordinates, as the viewport's clip): the
++    /// part of an iframe that its document's ancestors leave in view.
++    clip: Option<Rect>,
+ }
+ 
+ impl<'dom, 'a> BlitzDomPainter<'dom, 'a> {
+@@ -175,6 +178,7 @@
+             draw_text_context: RefCell::new(DrawTextContext::default()),
+             selection_ranges,
+             custom_widget_scenes,
++            clip: None,
+         }
+     }
+ 
+@@ -244,6 +248,9 @@
+         // initial offset already subtracted). Elements outside of this are culled, and
+         // scrollports narrow this rectangle further for their descendants.
+         let viewport_clip_rect = Rect::new(0.0, 0.0, self.width as f64, self.height as f64);
++        let viewport_clip_rect = self
++            .clip
++            .map_or(viewport_clip_rect, |clip| viewport_clip_rect.intersect(clip));
+ 
+         self.render_element(
+             scene,
+@@ -288,6 +295,15 @@
          }
      }
  
@@ -3984,7 +4012,37 @@ diff -ruN blitz/packages/blitz-paint/src/render.rs blitz/packages/blitz-paint/sr
      fn node_transform(&self, node: &Node, parent: Affine) -> Affine {
          let location = node.final_layout().location;
          parent
-@@ -688,7 +697,7 @@
+@@ -482,10 +498,19 @@
+         // Cull elements that fall entirely outside the current clip rectangle. In addition to
+         // the viewport, `clip_rect` is narrowed by any ancestor scrollport (see below), so this
+         // also culls elements scrolled out of view inside a clipping/scrolling container.
+-        if screen_bbox.x1 < clip_rect.x0
+-            || screen_bbox.x0 > clip_rect.x1
+-            || screen_bbox.y1 < clip_rect.y0
+-            || screen_bbox.y0 > clip_rect.y1
++        // The root of the document's columns paints its content column by column, away from its
++        // own box, and culls each column itself.
++        let is_columns_root = self
++            .dom
++            .as_ref()
++            .tree()
++            .columns()
++            .is_some_and(|c| c.root == node.id);
++        if !is_columns_root
++            && (screen_bbox.x1 < clip_rect.x0
++                || screen_bbox.x0 > clip_rect.x1
++                || screen_bbox.y1 < clip_rect.y0
++                || screen_bbox.y0 > clip_rect.y1)
+         {
+             return;
+         }
+@@ -683,12 +708,12 @@
+                                 cx.draw_svg(scene);
+                                 #[cfg(feature = "custom-widget")]
+                                 cx.draw_custom_widget(scene);
+-                                cx.draw_sub_document(scene);
++                                cx.draw_sub_document(scene, child_clip_rect);
+                                 cx.draw_input(scene);
                                  cx.draw_text_input_text(scene, content_position);
                                  cx.draw_inline_layout(scene, content_position);
                                  cx.draw_marker(scene, content_position);
@@ -3993,7 +4051,7 @@ diff -ruN blitz/packages/blitz-paint/src/render.rs blitz/packages/blitz-paint/sr
                              },
                          );
  
-@@ -794,8 +803,13 @@
+@@ -794,8 +819,13 @@
  
  /// The transform from an SVG's rendered tree to a viewport of the given size.
  #[cfg(feature = "svg")]
@@ -4009,7 +4067,7 @@ diff -ruN blitz/packages/blitz-paint/src/render.rs blitz/packages/blitz-paint/sr
      Affine::new([t.sx, t.ky, t.kx, t.sy, t.tx, t.ty].map(f64::from))
  }
  
-@@ -1076,6 +1090,32 @@
+@@ -1076,6 +1106,32 @@
                  };
              }
  
@@ -4042,7 +4100,7 @@ diff -ruN blitz/packages/blitz-paint/src/render.rs blitz/packages/blitz-paint/sr
              // Render text
              let mut draw_text_context = self.context.draw_text_context.borrow_mut();
              crate::text::stroke_text(
-@@ -1152,6 +1192,63 @@
+@@ -1152,6 +1208,63 @@
          }
      }
  
@@ -4106,7 +4164,7 @@ diff -ruN blitz/packages/blitz-paint/src/render.rs blitz/packages/blitz-paint/sr
      fn draw_children(
          &self,
          scene: &mut impl PaintScene,
-@@ -1183,7 +1280,9 @@
+@@ -1183,7 +1296,9 @@
                  // the viewport and do not scroll with it, so cancel out the viewport
                  // scroll (applied in `paint_scene`). A fixed box contained by a
                  // transformed ancestor scrolls with it like any out-of-flow box.
@@ -4117,7 +4175,7 @@ diff -ruN blitz/packages/blitz-paint/src/render.rs blitz/packages/blitz-paint/sr
                  let child_transform = if child.taffy_position() == taffy::Position::Fixed
                      && Some(self.node.id) == self.context.root_element_id
                  {
-@@ -1193,6 +1292,15 @@
+@@ -1193,6 +1308,15 @@
                          y: scroll.y * self.scale,
                      })
                  } else if let Some(offset) = child.lifted_paint_offset(self.node.id) {
@@ -4133,7 +4191,7 @@ diff -ruN blitz/packages/blitz-paint/src/render.rs blitz/packages/blitz-paint/sr
                      parent_style_transform.pre_translate(kurbo::Vec2 {
                          x: offset.x as f64 * self.scale,
                          y: offset.y as f64 * self.scale,
-@@ -1200,7 +1308,37 @@
+@@ -1200,7 +1324,37 @@
                  } else {
                      parent_style_transform
                  };
@@ -4172,7 +4230,7 @@ diff -ruN blitz/packages/blitz-paint/src/render.rs blitz/packages/blitz-paint/sr
              }
          }
  
-@@ -1269,7 +1407,7 @@
+@@ -1269,7 +1423,7 @@
          let x = x + x_offset.px() as f64;
          let y = y + y_offset.px() as f64;
  
@@ -4181,6 +4239,41 @@ diff -ruN blitz/packages/blitz-paint/src/render.rs blitz/packages/blitz-paint/sr
          let transform = (self.transform * viewport).then_translate(Vec2 { x, y });
  
          self.with_replaced_content_clip(
+@@ -1377,7 +1531,8 @@
+         }
+     }
+ 
+-    fn draw_sub_document(&self, scene: &mut impl PaintScene) {
++    /// `clip`: what the document's ancestors leave in view, in its painter's screen coordinates.
++    fn draw_sub_document(&self, scene: &mut impl PaintScene, clip: Rect) {
+         if let Some(sub_doc) = self.element.sub_doc_data().map(|doc| doc.inner()) {
+             let scale = self.scale;
+             let width = self.frame.content_box.width() as u32;
+@@ -1389,7 +1544,7 @@
+             let initial_y = translation.y + self.frame.content_box.origin().y;
+             // let transform = self.transform.then_translate(Vec2 { x, y });
+ 
+-            let painter = BlitzDomPainter::new(
++            let mut painter = BlitzDomPainter::new(
+                 &sub_doc,
+                 scale,
+                 width,
+@@ -1398,6 +1553,15 @@
+                 initial_y,
+                 self.custom_widget_scenes,
+             );
++            // In the sub-document's screen coordinates, which start at its origin. foliate-js's
++            // section iframe is as wide as all its pages and shows one: without this every page
++            // was drawn, to be clipped away.
++            painter.clip = Some(
++                clip + Vec2::new(
++                    self.context.initial_x - initial_x,
++                    self.context.initial_y - initial_y,
++                ),
++            );
+             painter.paint_scene(scene);
+         }
+     }
 diff -ruN blitz/packages/blitz-paint/src/text.rs blitz/packages/blitz-paint/src/text.rs
 --- blitz/packages/blitz-paint/src/text.rs
 +++ blitz/packages/blitz-paint/src/text.rs
