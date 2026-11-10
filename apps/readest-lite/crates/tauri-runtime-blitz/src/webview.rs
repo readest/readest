@@ -70,6 +70,14 @@ fn t_ms() -> f64 {
         .map_or(0.0, |s| s.elapsed().as_secs_f64() * 1000.0)
 }
 
+/// Wall-clock milliseconds, the time a JS profile stamps its samples with.
+#[cfg_attr(not(feature = "window"), allow(dead_code))]
+fn unix_ms() -> u128 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map_or(0, |d| d.as_millis())
+}
+
 /// `scheme://host[:port]`, which Tauri's IPC handler wants in the `Origin` header.
 fn origin(url: &Url) -> String {
     match (url.host_str(), url.port()) {
@@ -256,6 +264,17 @@ impl BlitzWebview {
                 h,
                 &format!("Readest Lite ({})", init.label),
                 move |input| {
+                    // BLITZ_TAURI_TRACE_LOOP=1: when the window's input arrived, to set against
+                    // when the event loop got to it (the `pointer` line).
+                    if let crate::display::Input::Pointer { x, y, down } = input
+                        && std::env::var_os("BLITZ_TAURI_TRACE_LOOP").is_some()
+                    {
+                        eprintln!(
+                            "{{\"label\": \"input\", \"t_ms\": {:.1}, \"unix_ms\": {}, \"down\": {down}, \"x\": {x:.0}, \"y\": {y:.0}}}",
+                            t_ms(),
+                            unix_ms()
+                        );
+                    }
                     let _ = tx.send(match input {
                         crate::display::Input::Pointer { x, y, down } => Message::Pointer {
                             webview,
@@ -644,8 +663,15 @@ impl BlitzWebview {
     #[cfg_attr(not(feature = "window"), allow(dead_code))]
     pub fn pointer(&mut self, x: f32, y: f32, down: bool) {
         let Some(doc) = self.doc.as_mut() else { return };
+        let t0 = t_ms();
         send_pointer(doc, &self.pointers, x / self.scale, y / self.scale, down);
         self.input = true;
+        if std::env::var_os("BLITZ_TAURI_TRACE_LOOP").is_some() {
+            eprintln!(
+                "{{\"label\": \"pointer\", \"t_ms\": {t0:.1}, \"handler_ms\": {:.1}, \"down\": {down}}}",
+                t_ms() - t0
+            );
+        }
     }
 
     fn report_js(&mut self) {
