@@ -9,6 +9,7 @@ import {
 import { BookFormat, FIXED_LAYOUT_FORMATS, ViewSettings } from '@/types/book';
 import {
   themes,
+  getDefaultThemeColor,
   Palette,
   CustomTheme,
   generateLightPalette,
@@ -1139,7 +1140,7 @@ export const getThemeCode = () => {
   let ambientIsDarkMode = false;
   let customThemes: CustomTheme[] = [];
   if (typeof window !== 'undefined') {
-    themeColor = localStorage.getItem('themeColor') || 'default';
+    themeColor = localStorage.getItem('themeColor') || getDefaultThemeColor();
     themeMode = localStorage.getItem('themeMode') || 'auto';
     systemIsDarkMode = localStorage.getItem('systemIsDarkMode') === 'true';
     ambientIsDarkMode = readStoredAmbientIsDarkMode(
