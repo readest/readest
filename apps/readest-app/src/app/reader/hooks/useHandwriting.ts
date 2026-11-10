@@ -130,6 +130,14 @@ export function useHandwriting(bookKey: string) {
         ? fixedPageKey(sectionIndex)
         : sectionPageKey(sectionIndex);
 
+  // Ink is re-anchored to the text whenever the layout may have moved it. A
+  // page turn writes styles across the paginator many times, so with no ink in
+  // the book and the pen off (nothing to place, no stroke to anchor) that work
+  // and its re-renders are skipped.
+  const needsAnchoring = enabled || editorRef.current!.pageKeys().length > 0;
+  const needsAnchoringRef = useRef(needsAnchoring);
+  needsAnchoringRef.current = needsAnchoring;
+
   const visible = !!pageKey;
   const editable = visible;
   useEffect(() => {
@@ -211,7 +219,7 @@ export function useHandwriting(bookKey: string) {
       frameRequest = requestAnimationFrame(() => {
         frameRequest = 0;
         measure();
-        setLayoutTick((n) => n + 1);
+        if (needsAnchoringRef.current) setLayoutTick((n) => n + 1);
       });
     };
     measure();
@@ -288,12 +296,21 @@ export function useHandwriting(bookKey: string) {
   // Re-resolve text anchors whenever the layout may have moved them: a page
   // turn, a relayout (font, margins, spacing) or a resize.
   useEffect(() => {
-    if (isFixedLayout || sectionIndex === undefined) return;
+    if (isFixedLayout || sectionIndex === undefined || !needsAnchoring) return;
     const view = getView(bookKey);
     serviceRef.current?.setAnchoring(
       view && pageRect.width ? createInkAnchoring(view, sectionIndex, pageRect) : null,
     );
-  }, [isFixedLayout, sectionIndex, location, pageRect, layoutTick, getView, bookKey]);
+  }, [
+    isFixedLayout,
+    sectionIndex,
+    location,
+    pageRect,
+    layoutTick,
+    needsAnchoring,
+    getView,
+    bookKey,
+  ]);
 
   // Pen choice is a device-wide setting, so a change here retargets the live
   // session without disturbing the ink already committed.
