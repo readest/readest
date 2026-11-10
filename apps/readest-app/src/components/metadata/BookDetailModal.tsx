@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 import { Book } from '@/types/book';
 import { getBookWithUpdatedMetadata } from '@/utils/book';
@@ -80,6 +80,7 @@ const BookDetailModal: React.FC<BookDetailModalProps> = ({
   // save, so the details view tracks the saved book locally to refresh its
   // cover/title/author immediately (otherwise it shows the stale prop).
   const [displayBook, setDisplayBook] = useState<Book>(book);
+  const bookHashRef = useRef(book.hash);
 
   // Initialize metadata edit hook
   const {
@@ -139,6 +140,7 @@ const BookDetailModal: React.FC<BookDetailModalProps> = ({
   }, [book]);
 
   useEffect(() => {
+    bookHashRef.current = book.hash;
     setDisplayBook(book);
     setBookTags(book.tags ?? []);
   }, [book]);
@@ -184,6 +186,8 @@ const BookDetailModal: React.FC<BookDetailModalProps> = ({
       }
       const metadata = refreshed.metadata;
       await handleBookMetadataUpdate(book, { ...metadata }, bookTags);
+      // The modal may have moved to another book while the file was read.
+      if (bookHashRef.current !== book.hash) return;
       setBookMeta(metadata);
       setDisplayBook(getBookWithUpdatedMetadata(displayBook, metadata, bookTags));
     } catch (error) {
