@@ -493,6 +493,9 @@ export const DEFAULT_EINK_VIEW_SETTINGS: Partial<ViewSettings> = {
   isEink: true,
   animated: false,
   volumeKeysToFlip: true,
+  // Pages turn by tapping, as on phones: waiting out a double tap delays every
+  // turn (Readest Lite on a Kindle is e-ink without being mobile).
+  disableDoubleClick: true,
   // Matches the text-sm the header/footer used to hard-code in e-ink mode,
   // so e-ink devices keep their larger chrome once the size is configurable.
   headerFooterFontSize: 14,

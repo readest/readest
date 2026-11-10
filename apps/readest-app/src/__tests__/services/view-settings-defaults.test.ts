@@ -49,6 +49,25 @@ describe('view settings defaults', () => {
     expect((await loadBookConfig(fs, book, settings)).viewSettings?.spreadMode).toBe('none');
   });
 
+  // Waiting to see whether a tap is a double tap delays every page turn by
+  // 250 ms; e-ink devices turn pages by tapping, as phones do (Readest Lite on
+  // a Kindle is e-ink without being mobile).
+  it.each([
+    { platform: 'e-ink desktop (Kindle Lite)', isMobile: false, isEink: true, disabled: true },
+    { platform: 'e-ink mobile', isMobile: true, isEink: true, disabled: true },
+    { platform: 'mobile', isMobile: true, isEink: false, disabled: true },
+    { platform: 'desktop', isMobile: false, isEink: false, disabled: false },
+  ])('double tap is off by default on $platform: $disabled', ({ isMobile, isEink, disabled }) => {
+    const settings = getDefaultViewSettings({
+      fs: {} as FileSystem,
+      isDesktopApp: !isMobile,
+      isMobile,
+      isEink,
+      isAppDataSandbox: false,
+    });
+    expect(settings.disableDoubleClick).toBe(disabled);
+  });
+
   it('defaults scrolledDirection to vertical (readest#4995)', () => {
     expect(DEFAULT_BOOK_LAYOUT.scrolledDirection).toBe('vertical');
   });
