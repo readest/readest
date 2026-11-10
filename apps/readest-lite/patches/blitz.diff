@@ -357,7 +357,43 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      }
  
      // Takes (x, y) co-ordinates (relative to the )
-@@ -2440,6 +2515,40 @@
+@@ -2049,13 +2124,21 @@
+         }
+ 
+         self.hover_node_id = hover_node_id;
+-
+-        // Request redraw
+-        self.shell_provider.request_redraw();
++        self.request_hover_repaint();
+ 
+         true
+     }
+ 
++    /// Hover reaches the screen only through `:hover` styles (and the devtools hover outline):
++    /// a finger landing on text no rule styles on hover paints nothing.
++    fn request_hover_repaint(&self) {
++        if self.devtools().highlight_hover {
++            self.shell_provider.request_redraw();
++        } else {
++            self.shell_provider.request_restyle();
++        }
++    }
++
+     pub fn clear_hover(&mut self) -> bool {
+         // The pointer is no longer over the document, so stop re-resolving
+         // hover state against it.
+@@ -2073,9 +2156,7 @@
+ 
+         self.hover_node_id = None;
+         self.hover_node_is_text = false;
+-
+-        // Request redraw
+-        self.shell_provider.request_redraw();
++        self.request_hover_repaint();
+ 
+         true
+     }
+@@ -2440,6 +2521,40 @@
          (pos, *self.nodes[node_id].unrounded_layout())
      }
  
@@ -398,7 +434,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      /// Computes the size and position of the `Node` relative to the viewport
      pub fn get_client_bounding_rect(&self, node_id: NodeId) -> Option<BoundingRect> {
          // Non-atomic inline elements have no layout box of their own: return
-@@ -2447,17 +2556,27 @@
+@@ -2447,17 +2562,27 @@
          if let Some(rects) = self.inline_fragment_rects(node_id) {
              return rects.reduce(BoundingRect::union);
          }
@@ -436,7 +472,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      }
  
      /// CSSOM View's `offsetLeft`/`offsetTop`/`offsetWidth`/`offsetHeight` as a single rect:
-@@ -2528,7 +2647,7 @@
+@@ -2528,7 +2653,7 @@
      pub fn node_client_rects(&self, node_id: NodeId) -> Vec<BoundingRect> {
          match self.inline_fragment_rects(node_id) {
              Some(rects) => rects.collect(),
@@ -445,7 +481,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
          }
      }
  
-@@ -2543,20 +2662,329 @@
+@@ -2543,20 +2668,329 @@
  
          // Only non-atomic inline elements lack their own layout box: they are
          // flattened into the containing inline root's text layout as style spans.
@@ -787,7 +823,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      }
  
      /// The first element in tree order with the given tag name. The root element and
-@@ -2944,6 +3372,36 @@
+@@ -2944,6 +3378,36 @@
  /// Snap a CSSOM geometry value to a 1/64px grid (the precision of Blink's `LayoutUnit`).
  /// Layout values are accumulated in `f32`, so e.g. seven `55/7`-wide flex items would
  /// otherwise end at `55.0000005` and appear to overflow their 55px container.
@@ -824,7 +860,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
  fn snap_to_layout_unit(value: f64) -> f64 {
      (value * 64.0).round() / 64.0
  }
-@@ -3781,3 +4239,7 @@
+@@ -3781,3 +4245,7 @@
          );
      }
  }
@@ -835,7 +871,27 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
 diff -ruN blitz/packages/blitz-dom/src/events/pointer.rs blitz/packages/blitz-dom/src/events/pointer.rs
 --- blitz/packages/blitz-dom/src/events/pointer.rs
 +++ blitz/packages/blitz-dom/src/events/pointer.rs
-@@ -598,6 +598,14 @@
+@@ -499,13 +499,17 @@
+     match click_target {
+         ClickTarget::Disabled => (),
+         ClickTarget::SelectableText => {
+-            // Handle text selection for non-input elements
++            // Handle text selection for non-input elements. The collapsed selection a press
++            // starts paints nothing: repaint only to remove a highlighted one.
++            let had_selection = doc.has_text_selection();
+             if let Some((inline_root_id, byte_offset)) = doc.find_text_position(x, y) {
+                 doc.set_text_selection(inline_root_id, byte_offset, inline_root_id, byte_offset);
+-                doc.shell_provider.request_redraw();
+             } else {
+                 doc.clear_text_selection();
+             }
++            if had_selection {
++                doc.shell_provider.request_redraw();
++            }
+         }
+         ClickTarget::TextInput {
+             content_box_offset,
+@@ -598,6 +602,14 @@
          }
      }
  
