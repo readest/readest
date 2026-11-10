@@ -2959,7 +2959,7 @@
       dispatch(path, ev);
       return (ev.defaultPrevented ? 1 : 0) | (ev._stop ? 2 : 0) | (anyCalled ? 4 : 0);
     },
-    // Runs due timers; returns the next due time (ms on the document clock) or -1.
+    // Runs due timers, then the rAF callbacks once a frame is due; returns 1 when they ran.
     __blitzTimers(now) {
       const due = [...timers].filter(([, t]) => t.due <= now).sort((a, b) => a[1].due - b[1].due);
       for (const [id, t] of due) {
@@ -2973,8 +2973,9 @@
           reportError(e);
         }
       }
-      if (frameCallbacks.size && now >= lastFrame + 16) runFrame(now);
-      return window.__blitzNextTimer();
+      if (!frameCallbacks.size || now < lastFrame + 16) return 0;
+      runFrame(now);
+      return 1;
     },
     __blitzNextTimer() {
       let m = -1;

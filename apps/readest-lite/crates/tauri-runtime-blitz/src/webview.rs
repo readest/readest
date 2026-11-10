@@ -511,6 +511,7 @@ impl BlitzWebview {
         }
         let Some(doc) = self.doc.as_mut() else { return };
         doc.poll(None);
+        let frame = doc.take_frame();
         let t_poll = t_ms();
         if self
             .probe
@@ -618,7 +619,7 @@ impl BlitzWebview {
         let next_timer = self.doc.as_ref().and_then(QjsDocument::next_timer_deadline);
         let t_input = t_ms();
         let paint = (self.dirty || self.restyled)
-            && should_paint(self.dirty_since, next_timer, false, now)
+            && should_paint(self.dirty_since, next_timer, frame, now)
             && self.visible.load(std::sync::atomic::Ordering::Relaxed);
         if paint {
             self.paint();
@@ -807,17 +808,18 @@ fn page_is_quiet(
         && next_timer.is_none_or(|d| d > now + quiet)
 }
 
-/// Whether a dirty page paints now: right after input changed it (a page turn shows its page
-/// before the work it scheduled runs); once it has settled, with no JS timer due within a frame
-/// (each paint is a visible refresh on e-ink); or once it has waited 100 ms for timers that keep
-/// coming, as a browser paints at its next frame however many timers are queued.
+/// Whether a dirty page paints now: right after input changed it or its rAF callbacks ran
+/// (`frame`: a page turn shows its page before the work it scheduled runs); once it has settled,
+/// with no JS timer due within a frame (each paint is a visible refresh on e-ink); or once it has
+/// waited 100 ms for timers that keep coming, as a browser paints at its next frame however many
+/// timers are queued.
 fn should_paint(
     dirty_since: Option<Instant>,
     next_timer: Option<Instant>,
-    input: bool,
+    frame: bool,
     now: Instant,
 ) -> bool {
-    input
+    frame
         || next_timer.is_none_or(|d| d > now + Duration::from_millis(16))
         || dirty_since.is_some_and(|t| now.duration_since(t) >= Duration::from_millis(100))
 }
@@ -1137,6 +1139,55 @@ mod tests {
         // a page turn scrolls the book in the key handler; the work it schedules (a progress
         // update, the reader's re-render) runs after the new page is on screen
         assert!(should_paint(Some(now), Some(now), true, now));
+    }
+
+    // foliate shows a turned page before measuring it: it scrolls, then waits for a frame
+    // (`requestAnimationFrame`, then a task) before the relocate work. A browser paints right
+    // after a frame's callbacks; so must the loop, not wait for the task they queue (on a Kindle
+    // the turned page then waited behind over half a second of relocate work).
+    #[test]
+    fn a_page_paints_after_its_animation_frame_before_the_task_it_queues() {
+        let dir = std::env::temp_dir().join(format!("blitz-frame-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let file = dir.join("turn.html");
+        std::fs::write(
+            &file,
+            "<!DOCTYPE html><html><body><p id='p'>start</p><script>
+            const p = document.getElementById('p');
+            setTimeout(() => {
+                p.textContent = 'turned';
+                requestAnimationFrame(() => setTimeout(() => { p.textContent = 'measured'; }, 0));
+            }, 50);
+            </script></body></html>",
+        )
+        .unwrap();
+        let mut wv = BlitzWebview::new(WebviewInit {
+            id: 0,
+            label: "test".into(),
+            url: Arc::new(Mutex::new(String::new())),
+            protocols: Arc::new(HashMap::new()),
+            ipc: None,
+            init_scripts: Vec::new(),
+            page_load: None,
+            tx: std::sync::mpsc::channel().0,
+        });
+        wv.navigate(Url::from_file_path(&file).unwrap().as_str());
+        let mut painted: Vec<String> = Vec::new();
+        let end = Instant::now() + Duration::from_secs(5);
+        while painted.last().is_none_or(|t| t != "measured") && Instant::now() < end {
+            let frames = wv.frames;
+            wv.tick();
+            if wv.frames > frames {
+                let doc = wv.doc.as_ref().unwrap().inner();
+                let p = doc.get_element_by_id("p").unwrap();
+                painted.push(doc.get_node(p).unwrap().text_content());
+            }
+            if let Some(d) = wv.deadline() {
+                std::thread::sleep(d.saturating_duration_since(Instant::now()));
+            }
+        }
+        std::fs::remove_dir_all(&dir).ok();
+        assert_eq!(painted, ["start", "turned", "measured"]);
     }
 
     // Page-turn timing runs pressed a key every 12 s to be sure the last turn's work was done;
