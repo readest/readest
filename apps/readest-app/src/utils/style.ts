@@ -1827,6 +1827,27 @@ export const applyScrollbarStyle = (document: Document, hideScrollbar: boolean) 
   }
 };
 
+const INLINE_IMAGE_CONTAINER_TAGS = new Set([
+  'span',
+  'rb',
+  'ruby',
+  'rt',
+  'rp',
+  'a',
+  'em',
+  'strong',
+  'b',
+  'i',
+  'u',
+  's',
+  'small',
+  'sub',
+  'sup',
+  'mark',
+  'cite',
+  'q',
+]);
+
 export const applyImageStyle = (document: Document) => {
   const win = document.defaultView ?? window;
   // Two-phase (read then write): reading getComputedStyle after a class/style
@@ -1858,21 +1879,35 @@ export const applyImageStyle = (document: Document) => {
     const isGaiji = !!(img.className && /(?:^|\s)gaiji(?:-|\s|$)/i.test(img.className));
     const parent = img.parentNode;
     if (parent && parent.nodeType === Node.ELEMENT_NODE) {
-      const childNodes = Array.from(parent.childNodes);
-      let hasTextSiblings = childNodes.some(
-        (node) => node.nodeType === Node.TEXT_NODE && node.textContent?.trim(),
-      );
-      if (!hasTextSiblings && parent.parentElement) {
-        const parentTag = (parent as Element).tagName.toLowerCase();
-        if (['span', 'rb', 'ruby', 'a', 'em', 'strong'].includes(parentTag)) {
-          hasTextSiblings = Array.from(parent.parentElement.childNodes).some(
-            (node) => node.nodeType === Node.TEXT_NODE && node.textContent?.trim(),
-          );
+      let hasTextSiblings = false;
+      let isInline = true;
+
+      let container: Element | null = parent as Element;
+      while (container) {
+        const childNodes = Array.from(container.childNodes);
+        if (
+          childNodes.some(
+            (node) =>
+              node.nodeType === Node.ELEMENT_NODE &&
+              (node as Element).tagName.toUpperCase() === 'BR',
+          )
+        ) {
+          isInline = false;
+          break;
+        }
+        if (
+          childNodes.some((node) => node.nodeType === Node.TEXT_NODE && !!node.textContent?.trim())
+        ) {
+          hasTextSiblings = true;
+          break;
+        }
+        const parentElem: Element | null = container.parentElement;
+        if (parentElem && INLINE_IMAGE_CONTAINER_TAGS.has(container.tagName.toLowerCase())) {
+          container = parentElem;
+        } else {
+          break;
         }
       }
-      const isInline = childNodes.every(
-        (node) => node.nodeType !== Node.ELEMENT_NODE || (node as Element).tagName !== 'BR',
-      );
       // A glyph image standing in for a character is never sized as a share
       // of the line; a title image the book sizes that way keeps it (#7039).
       // computedStyleMap keeps the percentage that getComputedStyle resolves,

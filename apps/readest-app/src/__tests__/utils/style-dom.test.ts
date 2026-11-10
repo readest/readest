@@ -642,6 +642,21 @@ describe('applyImageStyle', () => {
     expect(img.classList.contains('has-text-siblings')).toBe(true);
   });
 
+  it('does not add has-text-siblings when wrapped image has BR siblings in parent container (#7373)', () => {
+    document.body.innerHTML = '<p>Caption<br><span><img src="photo.jpg"></span></p>';
+    applyImageStyle(document);
+    const img = document.querySelector('img')!;
+    expect(img.classList.contains('has-text-siblings')).toBe(false);
+  });
+
+  it('adds has-text-siblings when image is inside nested ruby elements with text siblings (#7373)', () => {
+    document.body.innerHTML =
+      '<p>Text <ruby><rb><img src="glyph.png"></rb><rt>reading</rt></ruby> text</p>';
+    applyImageStyle(document);
+    const img = document.querySelector('img')!;
+    expect(img.classList.contains('has-text-siblings')).toBe(true);
+  });
+
   it('sets pointer-events: none on img[zy-enlarge-src="none"] and keeps the attribute', () => {
     document.body.innerHTML = '<img zy-enlarge-src="none" src="a.png" />';
 
