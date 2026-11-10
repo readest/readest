@@ -201,7 +201,13 @@ export const classifyAndTagStandaloneDiagrams = (
   // 2. Offload uncached images requiring canvas analysis to browser idle time
   const processUncachedImage = (img: HTMLImageElement) => {
     const src = img.currentSrc || img.src;
-    if (!src || classificationCache.has(src)) return;
+    if (!src) return;
+    if (classificationCache.has(src)) {
+      if (classificationCache.get(src)) {
+        img.classList.add('monochrome-diagram');
+      }
+      return;
+    }
 
     if (img.complete && img.naturalWidth > 0) {
       if (isMonochromeGraphic(img, src)) {
@@ -218,7 +224,10 @@ export const classifyAndTagStandaloneDiagrams = (
       const onLoad = () => {
         cleanup();
         const currentSrc = img.currentSrc || img.src;
-        if (currentSrc !== src) return;
+        if (currentSrc !== src) {
+          processUncachedImage(img);
+          return;
+        }
         if (isMonochromeGraphic(img, src)) {
           img.classList.add('monochrome-diagram');
         }
@@ -226,7 +235,10 @@ export const classifyAndTagStandaloneDiagrams = (
       const onError = () => {
         cleanup();
         const currentSrc = img.currentSrc || img.src;
-        if (currentSrc !== src) return;
+        if (currentSrc !== src) {
+          processUncachedImage(img);
+          return;
+        }
         classificationCache.set(src, false);
       };
       img.addEventListener('load', onLoad);

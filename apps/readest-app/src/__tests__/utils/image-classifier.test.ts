@@ -207,7 +207,10 @@ describe('imageClassifier', () => {
       );
     });
 
-    it('ignores classification and cache update when src changes while pending', async () => {
+    it('restarts classification for the new source when src changes while pending', async () => {
+      const cache = getDiagramClassificationCache();
+      cache.set('https://example.com/cached-mutated.png', true);
+
       document.body.innerHTML = `
         <p><img id="changed-img" src="https://example.com/original.png" /></p>
       `;
@@ -218,12 +221,12 @@ describe('imageClassifier', () => {
       expect(img.getAttribute('data-diagram-pending')).toBe('true');
 
       // Mutate src while load was pending
-      img.src = 'https://example.com/mutated.png';
+      img.src = 'https://example.com/cached-mutated.png';
 
       img.dispatchEvent(new Event('load'));
       expect(img.hasAttribute('data-diagram-pending')).toBe(false);
-      expect(img.classList.contains('monochrome-diagram')).toBe(false);
-      expect(getDiagramClassificationCache().has('https://example.com/original.png')).toBe(false);
+      expect(cache.has('https://example.com/original.png')).toBe(false);
+      expect(img.classList.contains('monochrome-diagram')).toBe(true);
     });
   });
 
