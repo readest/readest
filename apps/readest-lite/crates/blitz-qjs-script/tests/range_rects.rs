@@ -126,3 +126,82 @@ fn text_in_columns_is_in_its_column() {
     );
     assert_eq!(logs, ["true true true"]);
 }
+
+// The rule `getClientRects` follows (CSSOM View), from public DOM calls: the boxes of each element
+// the range selects whose parent it does not select, and of each text node it selects or partly
+// selects, in tree order.
+const SELECTION_ORACLE: &str = "
+    const selected = (r, x) => {
+        const p = x.parentNode;
+        if (!p) return false;
+        const i = [...p.childNodes].indexOf(x);
+        return r.comparePoint(p, i) === 0 && r.comparePoint(p, i + 1) === 0;
+    };
+    const expected = (r) => {
+        const { startContainer: sc, startOffset: so, endContainer: ec, endOffset: eo } = r;
+        const text = (t, s, e) => [...range(t, s, e).getClientRects()];
+        if (sc === ec && sc.nodeType === 3) return text(sc, so, eo);
+        const out = sc.nodeType === 3 ? text(sc, so, sc.length) : [];
+        const w = document.createTreeWalker(r.commonAncestorContainer, 0x5);
+        for (let x; (x = w.nextNode()); ) {
+            if (x === sc || x === ec || !selected(r, x)) continue;
+            if (x.nodeType === 3) out.push(...text(x, 0, x.length));
+            else if (!selected(r, x.parentNode)) out.push(...x.getClientRects());
+        }
+        if (ec.nodeType === 3) out.push(...text(ec, 0, eo));
+        return out;
+    };
+    const same = (r) => {
+        const a = [...r.getClientRects()].map(box).join(' '), b = expected(r).map(box).join(' ');
+        return a === b || `${a} != ${b}`;
+    };";
+
+#[test]
+fn a_range_has_the_boxes_of_what_it_selects() {
+    // nested inline and block content, ranges from text to text, element to element, whole
+    // contents, and boundaries at different depths
+    let logs = run(
+        "<div id='d'><p id='a' style='margin:0'>•• <b id='b'>◦◦ <i id='i'>▪▪</i></b> ▪▪</p>\
+         <p id='c' style='margin:0'>◦◦<span id='s'>••</span></p><!-- c --><p id='e' style='margin:0'>▪</p></div>",
+        "",
+        &format!(
+            "{SELECTION_ORACLE}
+            const d = $('d'), a = $('a'), b = $('b'), i = $('i'), c = $('c');
+            const whole = document.createRange();
+            whole.selectNodeContents(document.body);
+            const shapes = [
+                whole,
+                range(a.firstChild, 1, 1, c.firstChild),
+                range(b.firstChild, 2, 1, i.firstChild),
+                range(d, 0, 2),
+                range(d, 1, 4),
+                range(a, 1, 1, $('s')),
+                range(i.firstChild, 0, 1, $('e').firstChild),
+                range(document.body, 0, 1, b),
+            ];
+            console.log(shapes.map(same).join(','));"
+        ),
+    );
+    assert_eq!(logs, ["true,true,true,true,true,true,true,true"]);
+}
+
+#[test]
+fn measuring_a_long_chapter_visits_each_node_a_bounded_number_of_times() {
+    // foliate-js sizes a section from the box of a range over its whole body: 400 paragraphs
+    // must not cost each paragraph a walk over the ones before it (a Kindle spent seconds there)
+    let paragraphs = "<p style='margin:0'>•• <b>◦◦</b></p>".repeat(400);
+    let logs = run(
+        &paragraphs,
+        "",
+        "const get = Object.getOwnPropertyDescriptor(Node.prototype, 'previousSibling').get;
+        let reads = 0;
+        Object.defineProperty(Node.prototype, 'previousSibling', {
+            get() { reads++; return get.call(this); }, configurable: true,
+        });
+        const r = document.createRange();
+        r.selectNodeContents(document.body);
+        const h = r.getBoundingClientRect().height;
+        console.log(h > 0, reads <= 4 * 400 * 4);",
+    );
+    assert_eq!(logs, ["true true"]);
+}
