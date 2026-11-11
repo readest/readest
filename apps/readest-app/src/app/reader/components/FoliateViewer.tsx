@@ -142,6 +142,37 @@ declare global {
   }
 }
 
+// The hooks that follow the reading position (progress sync and save, KOSync, file sync, the
+// translation of the shown page) subscribe to the progress, which every page turn writes. Here they
+// re-render on a turn without the viewer and everything it holds.
+const PositionFollowers: React.FC<{
+  bookKey: string;
+  viewRef: React.RefObject<FoliateView | null>;
+}> = ({ bookKey, viewRef }) => {
+  useProgressSync(bookKey);
+  useABSProgressSync(bookKey);
+  useProgressAutoSave(bookKey);
+  const syncs = [
+    useKOSync(bookKey),
+    useKOSync(bookKey, bookOrbitProgressProvider),
+    useKOSync(bookKey, grimmoryProgressProvider),
+  ];
+  useFileSync(bookKey);
+  useTextTranslation(bookKey, viewRef.current);
+
+  return syncs.map((sync, i) =>
+    sync.syncState === 'conflict' && sync.conflictDetails ? (
+      <KOSyncConflictResolver
+        key={i}
+        details={sync.conflictDetails}
+        onResolveWithLocal={sync.resolveWithLocal}
+        onResolveWithRemote={sync.resolveWithRemote}
+        onClose={sync.resolveWithLocal}
+      />
+    ) : null,
+  );
+};
+
 const FoliateViewer: React.FC<{
   bookKey: string;
   bookDoc: BookDoc;
@@ -233,15 +264,7 @@ const FoliateViewer: React.FC<{
   }, [toastMessage]);
 
   useUICSS(bookKey);
-  useProgressSync(bookKey);
-  useABSProgressSync(bookKey);
-  useProgressAutoSave(bookKey);
   useBookCoverAutoSave(bookKey);
-  const { syncState, conflictDetails, resolveWithLocal, resolveWithRemote } = useKOSync(bookKey);
-  const bookOrbitSync = useKOSync(bookKey, bookOrbitProgressProvider);
-  const grimmorySync = useKOSync(bookKey, grimmoryProgressProvider);
-  useFileSync(bookKey);
-  useTextTranslation(bookKey, viewRef.current);
 
   // Coalesce setProgress writes within a single animation frame.
   //
@@ -1537,30 +1560,7 @@ const FoliateViewer: React.FC<{
           <Spinner loading={true} />
         </div>
       )}
-      {syncState === 'conflict' && conflictDetails && (
-        <KOSyncConflictResolver
-          details={conflictDetails}
-          onResolveWithLocal={resolveWithLocal}
-          onResolveWithRemote={resolveWithRemote}
-          onClose={resolveWithLocal}
-        />
-      )}
-      {bookOrbitSync.syncState === 'conflict' && bookOrbitSync.conflictDetails && (
-        <KOSyncConflictResolver
-          details={bookOrbitSync.conflictDetails}
-          onResolveWithLocal={bookOrbitSync.resolveWithLocal}
-          onResolveWithRemote={bookOrbitSync.resolveWithRemote}
-          onClose={bookOrbitSync.resolveWithLocal}
-        />
-      )}
-      {grimmorySync.syncState === 'conflict' && grimmorySync.conflictDetails && (
-        <KOSyncConflictResolver
-          details={grimmorySync.conflictDetails}
-          onResolveWithLocal={grimmorySync.resolveWithLocal}
-          onResolveWithRemote={grimmorySync.resolveWithRemote}
-          onClose={grimmorySync.resolveWithLocal}
-        />
-      )}
+      <PositionFollowers bookKey={bookKey} viewRef={viewRef} />
     </>
   );
 };
