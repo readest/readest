@@ -27,6 +27,12 @@ export interface Renderer extends HTMLElement {
   atEnd: boolean;
   containerPosition: number;
   getPageTurnKey?: (delta?: number) => string | null;
+  /** Retained fixed-layout views: prepare, scrub and settle without snapshots. */
+  preparePageTurn?: (forward: boolean) => Promise<boolean>;
+  beginPageTurn?: (forward: boolean) => Promise<boolean>;
+  movePageTurn?: (progress: number) => void;
+  endPageTurn?: (commit: boolean, duration?: number) => Promise<boolean>;
+  cancelPageTurn?: () => void;
   previewPage?: <T>(
     forward: boolean,
     capture: () => Promise<T>,
