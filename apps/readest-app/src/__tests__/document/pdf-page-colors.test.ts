@@ -304,6 +304,42 @@ describe('PDF render with page colors (#6548)', () => {
     expect(wrong, 'pixels kept or themed against the picture').toEqual([]);
   });
 
+  it('copies each kept pixel once, however the images were joined', async () => {
+    // A strip scan is about a page of pixels: copying both the strips and the
+    // picture they join into would hold two of them while the page is themed.
+    const strips = {
+      fnArray: [OPS.transform, OPS.paintImageXObject, OPS.transform, OPS.paintImageXObject],
+      argsArray: [
+        [300, 0, 0, 100.6, 150, 599.4],
+        ['strip_1', 1, 1],
+        [1, 0, 0, 1, 0.4 / 300, -1],
+        ['strip_2', 1, 1],
+      ],
+    };
+    const at = (x: number, y: number) => [100.5, 0, 0, 100.5, x, 800 - y - 100.5];
+    const tiles = {
+      fnArray: Array(4).fill([OPS.save, OPS.transform, OPS.paintImageXObject, OPS.restore]).flat(),
+      argsArray: [
+        [100.25, 100.25],
+        [200.75, 200.75],
+        [200.75, 100.25],
+        [100.25, 200.75],
+      ].flatMap(([x, y]) => [[], at(x!, y!), ['tile', 1, 1], []]),
+    };
+    for (const layout of [strips, tiles]) {
+      draws = [];
+      operatorList = layout;
+      await renderWith({ foreground: '#e0e0e0', background: '#222222', keepImages: true });
+      const copied = snapshots().reduce((sum, [, , w, h]) => sum + w! * h!, 0);
+      const pixels = new Set(
+        snapshots().flatMap(([x, y, w, h]) =>
+          Array.from({ length: w! * h! }, (_, i) => `${x! + (i % w!)},${y! + Math.floor(i / w!)}`),
+        ),
+      );
+      expect(copied, 'pixels copied more than once').toBe(pixels.size);
+    }
+  });
+
   it('follows form and annotation transforms to the image', async () => {
     operatorList = {
       fnArray: [
