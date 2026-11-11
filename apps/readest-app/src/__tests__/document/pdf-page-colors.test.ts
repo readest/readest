@@ -260,6 +260,26 @@ describe('PDF render with page colors (#6548)', () => {
     expect(themed, 'no row between the strips may take the theme color').toEqual([]);
   });
 
+  it('keeps every pixel a strip covers when the strips are offset by under a pixel', async () => {
+    // The second strip sits 0.4 px right of the first: device x 150..450, then
+    // 150.4..450.4. The first strip alone fully covers column 150.
+    operatorList = {
+      fnArray: [OPS.transform, OPS.paintImageXObject, OPS.transform, OPS.paintImageXObject],
+      argsArray: [
+        [300, 0, 0, 100.6, 150, 599.4],
+        ['strip_1', 1, 1],
+        [1, 0, 0, 1, 0.4 / 300, -1],
+        ['strip_2', 1, 1],
+      ],
+    };
+    await renderWith({ foreground: '#e0e0e0', background: '#222222', keepImages: true });
+    const keeps = (x: number, y: number) =>
+      snapshots().some(([sx, sy, w, h]) => x >= sx! && x < sx! + w! && y >= sy! && y < sy! + h!);
+    // rows 101..199 belong to the first strip only
+    const themed = Array.from({ length: 99 }, (_, i) => 101 + i).filter((y) => !keeps(150, y));
+    expect(themed, 'column 150 of the first strip may not take the theme color').toEqual([]);
+  });
+
   it('keeps the seams of a picture stored as a grid of tiles', async () => {
     // 2x2 tiles of 100.5x100.5 from device (100.25, 100.25): seams at 200.75.
     const at = (x: number, y: number) => [100.5, 0, 0, 100.5, x, 800 - y - 100.5];
@@ -274,7 +294,50 @@ describe('PDF render with page colors (#6548)', () => {
     };
     await renderWith({ foreground: '#e0e0e0', background: '#222222', keepImages: true });
     // one picture: only its outer edge pixels are themed
-    expect(snapshots().map((args) => args.slice(0, 4))).toEqual([[101, 101, 200, 200]]);
+    const rects = snapshots();
+    const keeps = (x: number, y: number) =>
+      rects.some(([sx, sy, w, h]) => x >= sx! && x < sx! + w! && y >= sy! && y < sy! + h!);
+    const wrong: number[][] = [];
+    for (let y = 95; y < 310; y++)
+      for (let x = 95; x < 310; x++)
+        if (keeps(x, y) !== (x >= 101 && x < 301 && y >= 101 && y < 301)) wrong.push([x, y]);
+    expect(wrong, 'pixels kept or themed against the picture').toEqual([]);
+  });
+
+  it('copies each kept pixel once, however the images were joined', async () => {
+    // A strip scan is about a page of pixels: copying both the strips and the
+    // picture they join into would hold two of them while the page is themed.
+    const strips = {
+      fnArray: [OPS.transform, OPS.paintImageXObject, OPS.transform, OPS.paintImageXObject],
+      argsArray: [
+        [300, 0, 0, 100.6, 150, 599.4],
+        ['strip_1', 1, 1],
+        [1, 0, 0, 1, 0.4 / 300, -1],
+        ['strip_2', 1, 1],
+      ],
+    };
+    const at = (x: number, y: number) => [100.5, 0, 0, 100.5, x, 800 - y - 100.5];
+    const tiles = {
+      fnArray: Array(4).fill([OPS.save, OPS.transform, OPS.paintImageXObject, OPS.restore]).flat(),
+      argsArray: [
+        [100.25, 100.25],
+        [200.75, 200.75],
+        [200.75, 100.25],
+        [100.25, 200.75],
+      ].flatMap(([x, y]) => [[], at(x!, y!), ['tile', 1, 1], []]),
+    };
+    for (const layout of [strips, tiles]) {
+      draws = [];
+      operatorList = layout;
+      await renderWith({ foreground: '#e0e0e0', background: '#222222', keepImages: true });
+      const copied = snapshots().reduce((sum, [, , w, h]) => sum + w! * h!, 0);
+      const pixels = new Set(
+        snapshots().flatMap(([x, y, w, h]) =>
+          Array.from({ length: w! * h! }, (_, i) => `${x! + (i % w!)},${y! + Math.floor(i / w!)}`),
+        ),
+      );
+      expect(copied, 'pixels copied more than once').toBe(pixels.size);
+    }
   });
 
   it('follows form and annotation transforms to the image', async () => {
