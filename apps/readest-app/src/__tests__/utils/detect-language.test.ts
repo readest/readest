@@ -310,3 +310,34 @@ describe('getPDFSpeechLang', () => {
     expect(getPDFSpeechLang(undefined, '')).toBe('en');
   });
 });
+
+describe('detectLanguage - URLs and hashed file names (#7435)', () => {
+  // The header a TXT downloader writes before the book: links and hex file names.
+  const downloaderHeader = [
+    '书名：红楼梦',
+    '作者：曹雪芹',
+    '原始网址：https://www.example.com/book/1234567.html',
+    '封面图片地址：https://images.example.com/cover/9f2c1d7e4b6a8c0d3e5f7a9b1c2d4e6f_640_ori.file',
+    '简介：中国古典长篇章回小说。',
+    '本文件由小说下载器生成，软件地址：https://github.com/404-novel-project/novel-downloader',
+    '',
+    '第一回 甄士隐梦幻识通灵 贾雨村风尘怀闺秀',
+    '![https://i.example.com/a1/%E7%AC%AC%E4%B8%80%E5%9B%9E%E6%8F%92%E5%9B%BE1.png](chapter-8e6cd58956107bec68aecfb07415078b3eb77ca0.png)',
+    '![https://i.example.com/a2/%E7%AC%AC%E4%B8%80%E5%9B%9E%E6%8F%92%E5%9B%BE2.png](chapter-75e6f6ad5478b5e978c8a044a80d3bb595991b9a.png)',
+    '![https://i.example.com/a3/%E7%AC%AC%E4%B8%80%E5%9B%9E%E6%8F%92%E5%9B%BE3.png](chapter-0f35b696098b0db2c996dbf0c5483676d9ef4379.png)',
+    '此开卷第一回也。作者自云：因曾历过一番梦幻之后，故将真事隐去，而借通灵之说，撰此石头记一书也。',
+  ].join('\n');
+
+  it('detects Chinese when the header is full of links', () => {
+    // The TXT converter samples the first 1024 characters.
+    expect(detectLanguage(downloaderHeader.slice(0, 1024))).toBe('zh');
+  });
+
+  it('still detects English text that contains links', () => {
+    const englishWithLinks =
+      'Source: https://www.example.com/books/9f2c1d7e4b6a8c0d3e5f7a9b1c2d4e6f.html\n' +
+      'It was the best of times, it was the worst of times, it was the age of wisdom, ' +
+      'it was the age of foolishness, it was the epoch of belief.';
+    expect(detectLanguage(englishWithLinks)).toBe('en');
+  });
+});

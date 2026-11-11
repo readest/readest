@@ -160,9 +160,16 @@ export const inferLangFromScript = (text: string, lang: string): string => {
   return lang;
 };
 
+// URLs and long hex runs (hashed file names) are Latin letters that say nothing
+// about the book's language. TXT files saved by downloader tools open with a
+// header full of them, which pushed franc to guess Spanish, Italian or
+// Portuguese for a Chinese book. See issue #7435.
+const stripLanguageNoise = (text: string): string =>
+  text.replace(/[a-z][a-z\d+.-]*:\/\/\S+/gi, ' ').replace(/\b[\da-f]{16,}\b/gi, ' ');
+
 export const detectLanguage = (content: string): string => {
   try {
-    const sample = content.substring(0, 1000);
+    const sample = stripLanguageNoise(content).substring(0, 1000);
     const iso6393Lang = franc(sample);
     const iso6391Lang = code6393to6391(iso6393Lang);
     if (iso6391Lang) return iso6391Lang;
