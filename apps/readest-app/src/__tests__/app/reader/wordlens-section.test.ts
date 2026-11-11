@@ -267,6 +267,17 @@ describe('clearing hints', () => {
     expect(p.childNodes.length).toBe(2);
   });
 
+  it('hints a word split across adjacent text nodes when Word Lens is on', async () => {
+    // A translation's unwrapped tags leave its text in adjacent text nodes.
+    const doc = document.implementation.createHTMLDocument('t');
+    const p = doc.createElement('p');
+    p.append(doc.createTextNode('Captain Ne'), doc.createTextNode('mo smiled.'));
+    doc.body.append(p);
+    const vocabulary = { learning: new Map([['nemo', '尼莫']]), mastered: new Set<string>() };
+    await refreshSectionGlosses(doc, viewSettings(), ctx({ appLang: 'zh-CN', vocabulary }));
+    expect(doc.querySelector('ruby.wl-gloss > rt')?.textContent).toBe('尼莫');
+  });
+
   it('joins the text a hint split back into one node', () => {
     const doc = document.implementation.createHTMLDocument('t');
     doc.body.innerHTML = '<p>The quick fox</p>';
