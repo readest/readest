@@ -9,7 +9,8 @@
 import i18n from '@/i18n/i18n';
 import { getAccessToken, isCustomTranslatorAllowed } from '@/utils/access';
 import { getTargetLang } from '@/utils/misc';
-import { getLLMTranslators } from '@/store/customTranslatorStore';
+import { findTranslationPrompt, getLLMTranslators } from '@/store/customTranslatorStore';
+import { parseNoteMarkdown } from '@/app/reader/utils/noteMarkdown';
 import { useCustomDictionaryStore } from '@/store/customDictionaryStore';
 import type { CustomTranslator } from '@/types/translation';
 import type { DictionaryProvider } from '../types';
@@ -40,6 +41,19 @@ const renderEntry = (container: HTMLElement, word: string, entry: ContextEntry) 
   const meta = [entry.pronunciation, entry.grammar].filter(Boolean).join(' · ');
   if (meta) append(hgroup, 'p', 'text-sm italic not-eink:opacity-75', meta);
   container.append(hgroup);
+
+  if (entry.markdown !== undefined) {
+    const content = append(
+      container,
+      'div',
+      'prose theme-dark:prose-invert max-w-none text-inherit text-[length:inherit] mt-2 ' +
+        '[&_h1]:text-lg [&_h2]:text-base [&_h3]:text-base [&_h4]:text-base ' +
+        '[&_h1]:my-3 [&_h2]:my-3 [&_h3]:my-3 [&_h4]:my-3 [&_p]:my-2',
+      '',
+    );
+    content.innerHTML = parseNoteMarkdown(entry.markdown);
+    return;
+  }
 
   append(container, 'p', 'mt-2 font-medium', entry.definition);
   if (entry.explanation) append(container, 'p', 'mt-2', entry.explanation);
@@ -75,6 +89,16 @@ export const contextProvider: DictionaryProvider = {
     const translator = getContextTranslator();
     if (!translator) return { ok: false, reason: 'unsupported' };
     const { selection } = ctx;
+    const settings = useCustomDictionaryStore.getState().settings;
+    const savedPrompt = settings.contextPromptId
+      ? findTranslationPrompt(settings.contextPromptId)
+      : undefined;
+    const systemPrompt =
+      settings.contextPromptId === 'custom'
+        ? settings.contextSystemPrompt
+        : savedPrompt && !savedPrompt.deletedAt
+          ? savedPrompt.systemPrompt
+          : undefined;
     try {
       const entry = await lookupInContext(
         translator,
@@ -88,16 +112,28 @@ export const contextProvider: DictionaryProvider = {
           bookAuthor: selection?.bookAuthor,
         },
         ctx.signal,
+        {
+          systemPrompt,
+          maxOutputTokens: settings.contextMaxOutputTokens,
+          onUpdate: (entry) => {
+            if (ctx.signal.aborted) return;
+            ctx.container.replaceChildren();
+            renderEntry(ctx.container, word, entry);
+            ctx.onUpdate?.();
+          },
+        },
       );
       // A cache hit resolves without looking at the signal; once cancelled,
       // the container belongs to the next lookup.
       if (ctx.signal.aborted) return { ok: false, reason: 'error', message: 'aborted' };
+      ctx.container.replaceChildren();
       renderEntry(ctx.container, word, entry);
       return { ok: true, headword: entry.headword || word, sourceLabel: translator.name };
     } catch (err) {
       if (ctx.signal.aborted) return { ok: false, reason: 'error', message: 'aborted' };
       // Unlike a dictionary miss, a failed AI request (bad key, quota, model
       // name) is something the user has to fix, so it stays visible.
+      ctx.container.replaceChildren();
       append(
         ctx.container,
         'p',

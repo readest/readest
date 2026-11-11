@@ -1,3 +1,4 @@
+// @vitest-environment node
 /**
  * System-dictionary native dispatch.
  *
@@ -10,6 +11,7 @@
  * and routes it to the iOS plugin command path.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { useCustomDictionaryStore } from '@/store/customDictionaryStore';
 
 type OsFlags = { isMacOSApp: boolean; isIOSApp: boolean; isAndroidApp: boolean };
 
@@ -33,10 +35,10 @@ vi.mock('@tauri-apps/api/window', () => ({
 }));
 
 import {
-  clearRememberedLookupApp,
-  getRememberedLookupApp,
+  getLookupApps,
   invokeSystemDictionary,
   isSystemDictionarySupported,
+  setLookupApp,
 } from '@/services/dictionaries/systemDictionary';
 
 const MACOS_CMD = 'show_lookup_popover';
@@ -50,6 +52,7 @@ const flags = (os: 'macos' | 'ios' | 'android'): OsFlags => ({
 
 beforeEach(() => {
   env.tauri = true;
+  useCustomDictionaryStore.setState({ settings: { providerOrder: [], providerEnabled: {} } });
   // Default to iPad: native ios despite the desktop "Macintosh" UA.
   appService.value = flags('ios');
   invokeMock.mockReset();
@@ -69,6 +72,41 @@ describe('invokeSystemDictionary — native dispatch', () => {
     expect(invokeMock).toHaveBeenCalledWith(PLUGIN_CMD, { payload: { word: 'hello' } });
     // Must NOT hit the macOS-only Rust command that iOS doesn't register.
     expect(invokeMock).not.toHaveBeenCalledWith(MACOS_CMD, expect.anything());
+  });
+
+  it('forwards the fullscreen preference on iOS and applies changes to the next lookup', async () => {
+    useCustomDictionaryStore.setState({
+      settings: {
+        ...useCustomDictionaryStore.getState().settings,
+        systemDictionaryFullscreen: true,
+      },
+    });
+
+    expect(await invokeSystemDictionary(' hello ')).toBe(true);
+    expect(invokeMock).toHaveBeenLastCalledWith(PLUGIN_CMD, {
+      payload: { word: 'hello', fullScreen: true },
+    });
+
+    useCustomDictionaryStore.setState({
+      settings: {
+        ...useCustomDictionaryStore.getState().settings,
+        systemDictionaryFullscreen: false,
+      },
+    });
+    await invokeSystemDictionary('hello');
+    expect(invokeMock).toHaveBeenLastCalledWith(PLUGIN_CMD, { payload: { word: 'hello' } });
+  });
+
+  it('does not forward an iOS fullscreen preference to Android', async () => {
+    appService.value = flags('android');
+    useCustomDictionaryStore.setState({
+      settings: {
+        ...useCustomDictionaryStore.getState().settings,
+        systemDictionaryFullscreen: true,
+      },
+    });
+    await invokeSystemDictionary('hello');
+    expect(invokeMock).toHaveBeenLastCalledWith(PLUGIN_CMD, { payload: { word: 'hello' } });
   });
 
   it('routes a real macOS desktop to the bare Rust command', async () => {
@@ -103,50 +141,70 @@ describe('invokeSystemDictionary — native dispatch', () => {
   });
 });
 
-const GET_LOOKUP_CMD = 'plugin:native-bridge|get_lookup_dictionary';
-const CLEAR_LOOKUP_CMD = 'plugin:native-bridge|clear_lookup_dictionary';
+const GET_APPS_CMD = 'plugin:native-bridge|get_lookup_apps';
+const SET_APP_CMD = 'plugin:native-bridge|set_lookup_app';
 
-describe('getRememberedLookupApp — Android-only remembered dictionary', () => {
-  it('returns the remembered app on Android', async () => {
+describe('getLookupApps — Android lookup app picker', () => {
+  it('lists the installed lookup apps on Android', async () => {
     appService.value = flags('android');
-    invokeMock.mockResolvedValueOnce({ packageName: 'com.eusoft.eudic', label: 'Eudic' });
+    const apps = [
+      { packageName: 'com.qianyan.eudic', className: '.Lightpeek', label: 'Eudic', selected: true },
+      { packageName: 'com.baidu.searchbox', className: '.Search', label: 'Baidu', selected: false },
+    ];
+    invokeMock.mockResolvedValueOnce({ apps });
 
-    const app = await getRememberedLookupApp();
-
-    expect(app).toEqual({ packageName: 'com.eusoft.eudic', label: 'Eudic' });
-    expect(invokeMock).toHaveBeenCalledWith(GET_LOOKUP_CMD);
+    expect(await getLookupApps()).toEqual(apps);
+    expect(invokeMock).toHaveBeenCalledWith(GET_APPS_CMD);
   });
 
-  it('returns null when nothing is remembered (empty response)', async () => {
+  it('returns an empty list when the bridge fails', async () => {
     appService.value = flags('android');
-    invokeMock.mockResolvedValueOnce({});
+    invokeMock.mockRejectedValueOnce(new Error('No command getLookupApps found'));
 
-    expect(await getRememberedLookupApp()).toBeNull();
+    expect(await getLookupApps()).toEqual([]);
   });
 
   it('is a no-op on non-Android platforms', async () => {
     appService.value = flags('ios');
 
-    expect(await getRememberedLookupApp()).toBeNull();
-    expect(invokeMock).not.toHaveBeenCalledWith(GET_LOOKUP_CMD);
+    expect(await getLookupApps()).toEqual([]);
+    expect(invokeMock).not.toHaveBeenCalledWith(GET_APPS_CMD);
   });
 });
 
-describe('clearRememberedLookupApp — Android-only reset', () => {
-  it('invokes the clear command on Android', async () => {
+describe('setLookupApp — Android lookup app picker', () => {
+  it('saves the chosen app on Android', async () => {
     appService.value = flags('android');
 
-    await clearRememberedLookupApp();
+    expect(await setLookupApp({ packageName: 'com.qianyan.eudic', className: '.Lightpeek' })).toBe(
+      true,
+    );
+    expect(invokeMock).toHaveBeenCalledWith(SET_APP_CMD, {
+      payload: { packageName: 'com.qianyan.eudic', className: '.Lightpeek' },
+    });
+  });
 
-    expect(invokeMock).toHaveBeenCalledWith(CLEAR_LOOKUP_CMD);
+  it('clears the choice with null', async () => {
+    appService.value = flags('android');
+
+    await setLookupApp(null);
+
+    expect(invokeMock).toHaveBeenCalledWith(SET_APP_CMD, { payload: {} });
+  });
+
+  it('reports a save the bridge rejected', async () => {
+    appService.value = flags('android');
+    invokeMock.mockRejectedValueOnce(new Error('bridge down'));
+
+    expect(await setLookupApp(null)).toBe(false);
   });
 
   it('is a no-op on non-Android platforms', async () => {
     appService.value = flags('ios');
 
-    await clearRememberedLookupApp();
+    expect(await setLookupApp(null)).toBe(false);
 
-    expect(invokeMock).not.toHaveBeenCalledWith(CLEAR_LOOKUP_CMD);
+    expect(invokeMock).not.toHaveBeenCalledWith(SET_APP_CMD, expect.anything());
   });
 });
 

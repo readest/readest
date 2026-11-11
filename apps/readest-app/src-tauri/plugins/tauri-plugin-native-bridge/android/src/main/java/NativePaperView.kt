@@ -20,7 +20,7 @@ import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.util.concurrent.atomic.AtomicBoolean
 
-/** A native ES2 scene in a separate window: Activity PixelCopy never sees it. */
+/** A native GL scene in a separate window: Activity PixelCopy never sees it. */
 internal class NativePaperView(context: Context) : TextureView(context), TextureView.SurfaceTextureListener {
     private val thread = HandlerThread("ReadestPaperGL").apply { start() }
     private val worker = Handler(thread.looper)
@@ -59,6 +59,18 @@ internal class NativePaperView(context: Context) : TextureView(context), Texture
         @Volatile var timestamp = 0L
     }
     @Volatile private var presentation: PresentedFrame? = null
+    // Page Flip: the sheet's projected side-view profile, drawn per pixel.
+    @Volatile private var flipProgram = 0
+    private var shadowProgram = 0
+    private val quad = ByteBuffer.allocateDirect(8 * 4).order(ByteOrder.nativeOrder()).asFloatBuffer()
+        .apply { put(floatArrayOf(-1f, -1f, 1f, -1f, -1f, 1f, 1f, 1f)); position(0) }
+    private val flipFrame = FloatArray(PageFlipModel.FRAME_SIZE)
+    private val flipDraw = FloatArray(PageFlipModel.FRAME_SIZE)
+    @Volatile private var flipMode = false
+    /** Each page's paper colour, shown on the back of a flipped sheet. */
+    private val paperColors = java.util.concurrent.ConcurrentHashMap<String, Int>()
+    /** Page Flip needs GLSL ES 3.00; without it the scene curls. */
+    val supportsFlip get() = flipProgram != 0
 
     init {
         isOpaque = false
@@ -97,6 +109,7 @@ internal class NativePaperView(context: Context) : TextureView(context), Texture
                     GL.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_MAG_FILTER, GL.GL_LINEAR)
                     GL.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_WRAP_S, GL.GL_CLAMP_TO_EDGE)
                     GL.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_WRAP_T, GL.GL_CLAMP_TO_EDGE)
+                    paperColors[key] = bitmap.getPixel(2, 2)
                     GLUtils.texImage2D(GL.GL_TEXTURE_2D, 0, bitmap, 0)
                     check(GL.glGetError() == GL.GL_NO_ERROR) { "Cannot upload native page texture" }
                     if (!valid()) {
@@ -115,6 +128,7 @@ internal class NativePaperView(context: Context) : TextureView(context), Texture
                 null
             } catch (e: Exception) { e }
             finally { bitmap.recycle(); bitmaps.remove(bitmap) }
+            paperColors.keys.retainAll(textures.keys)
             val keys = textures.keys.toList()
             main.post { done(accepted, keys, error) }
         }
@@ -129,6 +143,13 @@ internal class NativePaperView(context: Context) : TextureView(context), Texture
             progress = p; grabY = y
             render()
         }
+    }
+
+    /** Hand over the latest [PageFlipModel.frame], or null to curl this scene. */
+    fun setFlip(frame: FloatArray?) {
+        if (frame == null) { flipMode = false; return }
+        synchronized(flipFrame) { frame.copyInto(flipFrame) }
+        flipMode = true
     }
 
     /** Draw the newest pose, coalescing updates that do not require an acknowledgement. */
@@ -221,6 +242,57 @@ internal class NativePaperView(context: Context) : TextureView(context), Texture
         GL.glDrawArrays(GL.GL_TRIANGLES, 0, count)
     }
 
+    /** Draw the flipped sheet's cast shadow, then the sheet, over the flat page beneath. */
+    private fun drawFlip(sheet: String?) {
+        val texture = textures[sheet] ?: return
+        synchronized(flipFrame) { flipFrame.copyInto(flipDraw) }
+        val runs = PageFlipModel.POINTS * 4
+        val shadow = runs + PageFlipModel.RUNS * 4
+        val mirror = if (rtl) 1f else 0f
+        GL.glDisable(GL.GL_DEPTH_TEST)
+        GL.glUseProgram(shadowProgram)
+        GL.glUniform2f(GL.glGetUniformLocation(shadowProgram, "uPage"), pixelsWide.toFloat(), pixelsHigh.toFloat())
+        GL.glUniform1f(GL.glGetUniformLocation(shadowProgram, "uMirror"), mirror)
+        GL.glUniform4fv(GL.glGetUniformLocation(shadowProgram, "uShadow"), 1, flipDraw, shadow)
+        drawQuad(shadowProgram)
+        GL.glUseProgram(flipProgram)
+        GL.glActiveTexture(GL.GL_TEXTURE0)
+        GL.glBindTexture(GL.GL_TEXTURE_2D, texture)
+        GL.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_MIN_FILTER, GL.GL_LINEAR)
+        GL.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_MAG_FILTER, GL.GL_LINEAR)
+        GL.glUniform1i(GL.glGetUniformLocation(flipProgram, "uTex"), 0)
+        GL.glUniform2f(GL.glGetUniformLocation(flipProgram, "uPage"), pixelsWide.toFloat(), pixelsHigh.toFloat())
+        GL.glUniform1f(GL.glGetUniformLocation(flipProgram, "uMirror"), mirror)
+        GL.glUniform4fv(GL.glGetUniformLocation(flipProgram, "uProfile"), PageFlipModel.POINTS, flipDraw, 0)
+        GL.glUniform4fv(GL.glGetUniformLocation(flipProgram, "uRuns"), PageFlipModel.RUNS, flipDraw, runs)
+        val paper = paperColors[sheet] ?: android.graphics.Color.WHITE
+        GL.glUniform3f(GL.glGetUniformLocation(flipProgram, "uPaper"),
+            android.graphics.Color.red(paper) / 255f, android.graphics.Color.green(paper) / 255f, android.graphics.Color.blue(paper) / 255f)
+        drawQuad(flipProgram)
+        GL.glEnable(GL.GL_DEPTH_TEST)
+        GL.glUseProgram(program)
+    }
+
+    private fun drawQuad(target: Int) {
+        val position = GL.glGetAttribLocation(target, "aQuad")
+        GL.glEnableVertexAttribArray(position)
+        quad.position(0)
+        GL.glVertexAttribPointer(position, 2, GL.GL_FLOAT, false, 0, quad)
+        // Left enabled: it may share a location with the page program's attributes.
+        GL.glDrawArrays(GL.GL_TRIANGLE_STRIP, 0, 4)
+    }
+
+    private fun link(vertexSource: String, fragmentSource: String): Int {
+        val vertex = shader(GL.GL_VERTEX_SHADER, vertexSource)
+        val fragment = shader(GL.GL_FRAGMENT_SHADER, fragmentSource)
+        val id = GL.glCreateProgram()
+        GL.glAttachShader(id, vertex); GL.glAttachShader(id, fragment); GL.glLinkProgram(id)
+        val status = IntArray(1); GL.glGetProgramiv(id, GL.GL_LINK_STATUS, status, 0)
+        GL.glDeleteShader(vertex); GL.glDeleteShader(fragment)
+        check(status[0] != 0) { GL.glGetProgramInfoLog(id) }
+        return id
+    }
+
     /** Draw both layers and submit the EGL buffer with a producer presentation timestamp. */
     private fun render(stamp: Long = System.nanoTime()) {
         if (!ready) return
@@ -237,8 +309,9 @@ internal class NativePaperView(context: Context) : TextureView(context), Texture
         val sheet = if (forward) current else destination
         val pose = if (forward) progress else 1f - progress
         drawPage(base, 0f, 0.5f)
+        if (flipMode && flipProgram != 0 && columns < 2) drawFlip(sheet)
         // A backward spread turn is the previous spread's forward turn, reversed.
-        if (columns >= 2) drawPage(sheet, pose, grabY, columns, base)
+        else if (columns >= 2) drawPage(sheet, pose, grabY, columns, base)
         else drawPage(sheet, pose, grabY)
         check(EGLExt.eglPresentationTimeANDROID(display, eglSurface, stamp)) { "Cannot timestamp native paper frame" }
         check(EGL14.eglSwapBuffers(display, eglSurface)) { "Native paper frame could not be presented" }
@@ -261,13 +334,16 @@ internal class NativePaperView(context: Context) : TextureView(context), Texture
             display = EGL14.eglGetDisplay(EGL14.EGL_DEFAULT_DISPLAY)
             check(EGL14.eglInitialize(display, null, 0, null, 0))
             val configs = arrayOfNulls<EGLConfig>(1); val count = IntArray(1)
-            val attrs = intArrayOf(EGL14.EGL_RENDERABLE_TYPE, EGL14.EGL_OPENGL_ES2_BIT,
+            fun attrs(renderable: Int) = intArrayOf(EGL14.EGL_RENDERABLE_TYPE, renderable,
                 EGL14.EGL_RED_SIZE, 8, EGL14.EGL_GREEN_SIZE, 8, EGL14.EGL_BLUE_SIZE, 8,
                 EGL14.EGL_ALPHA_SIZE, 8, EGL14.EGL_DEPTH_SIZE, 16, EGL14.EGL_NONE)
-            check(EGL14.eglChooseConfig(display, attrs, 0, configs, 0, 1, count, 0) && count[0] > 0)
+            // Page Flip's shader indexes its profile dynamically (GLSL ES 3.00);
+            // an ES3 context also runs the curl's ES2 shaders unchanged.
+            val es3 = EGL14.eglChooseConfig(display, attrs(EGLExt.EGL_OPENGL_ES3_BIT_KHR), 0, configs, 0, 1, count, 0) && count[0] > 0
+            if (!es3) check(EGL14.eglChooseConfig(display, attrs(EGL14.EGL_OPENGL_ES2_BIT), 0, configs, 0, 1, count, 0) && count[0] > 0)
             val config = configs[0]!!
             eglContext = EGL14.eglCreateContext(display, config, EGL14.EGL_NO_CONTEXT,
-                intArrayOf(EGL14.EGL_CONTEXT_CLIENT_VERSION, 2, EGL14.EGL_NONE), 0)
+                intArrayOf(EGL14.EGL_CONTEXT_CLIENT_VERSION, if (es3) 3 else 2, EGL14.EGL_NONE), 0)
             windowSurface = Surface(texture)
             eglSurface = EGL14.eglCreateWindowSurface(display, config, windowSurface,
                 intArrayOf(EGL14.EGL_NONE), 0)
@@ -292,6 +368,13 @@ internal class NativePaperView(context: Context) : TextureView(context), Texture
             shadeAttribute = GL.glGetAttribLocation(program, "aShade")
             GL.glEnableVertexAttribArray(posAttribute); GL.glEnableVertexAttribArray(surfaceAttribute)
             GL.glEnableVertexAttribArray(shadeAttribute)
+            if (es3) try {
+                shadowProgram = link(QUAD_VERTEX, SHADOW_FRAGMENT)
+                flipProgram = link(QUAD_VERTEX, FLIP_FRAGMENT)
+            } catch (error: Exception) {
+                android.util.Log.w("ReadestPaper", "Page Flip unavailable: ${error.message}")
+            }
+            GL.glUseProgram(program)
             GL.glEnable(GL.GL_DEPTH_TEST); GL.glDepthFunc(GL.GL_LEQUAL)
             GL.glEnable(GL.GL_BLEND); GL.glBlendFuncSeparate(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA, GL.GL_ONE, GL.GL_ONE_MINUS_SRC_ALPHA)
             ready = true
@@ -333,6 +416,82 @@ internal class NativePaperView(context: Context) : TextureView(context), Texture
     }
 
     companion object {
+        private const val QUAD_VERTEX = """#version 300 es
+            in vec2 aQuad;
+            void main() { gl_Position = vec4(aQuad, 0.0, 1.0); }
+        """
+        // Adapted from page-turn-core's page and shadow shaders (MIT, see
+        // PageFlipModel.kt): each pixel inverts the side-view profile along up
+        // to four screen-monotonic runs and keeps the paper nearest the viewer,
+        // with a perspective-correct lookup. uMirror puts the spine on the right.
+        private const val FLIP_FRAGMENT = """#version 300 es
+            precision highp float;
+            uniform sampler2D uTex;
+            uniform vec2 uPage;
+            uniform float uMirror;
+            uniform vec4 uProfile[65];
+            uniform vec4 uRuns[4];
+            uniform vec3 uPaper;
+            out vec4 color;
+            float pscale(float depth) { return min(1.34, 4.0 / max(0.001, 4.0 - max(0.0, depth))); }
+            vec4 sampleRun(float bookX, vec4 run) {
+              vec4 none = vec4(0.0, 1.0, -100000.0, 0.0);
+              if (run.w < 0.5) return none;
+              int low = int(run.x); int high = int(run.y);
+              float lowX = uProfile[low].x; float highX = uProfile[high].x;
+              if (bookX < min(lowX, highX) || bookX > max(lowX, highX)) return none;
+              for (int i = 0; i < 7; i++) {
+                if (high - low > 1) {
+                  int middle = (low + high) / 2;
+                  float middleX = uProfile[middle].x;
+                  if (run.z > 0.0 ? middleX <= bookX : middleX >= bookX) low = middle; else high = middle;
+                }
+              }
+              vec4 before = uProfile[low]; vec4 after = uProfile[high];
+              float deltaX = after.x - before.x;
+              if (abs(deltaX) < 0.000001) return none;
+              float t = clamp((bookX - before.x) / deltaX, 0.0, 1.0);
+              float a = pscale(before.y); float b = pscale(after.y);
+              float d = (1.0 - t) * a + t * b;
+              float progress = d <= 0.000001 ? t : t * b / d;
+              float material = (float(low) + progress) / 64.0;
+              float depth = mix(before.y, after.y, progress);
+              float normalZ = abs(mix(before.w, after.w, progress));
+              bool frontFacing = deltaX > 0.0;
+              float deformation = 1.0 - normalZ;
+              float shade = deformation * 0.16 + (frontFacing ? 0.0 : deformation * 0.055);
+              return vec4(material, 1.0 - min(0.2, shade), depth, frontFacing ? 1.0 : -1.0);
+            }
+            void main() {
+              vec2 position = vec2(gl_FragCoord.x, uPage.y - gl_FragCoord.y);
+              float bookX = mix(position.x / uPage.x, 1.0 - position.x / uPage.x, uMirror);
+              vec4 visible = vec4(0.0, 1.0, -100000.0, 0.0);
+              for (int r = 0; r < 4; r++) {
+                vec4 candidate = sampleRun(bookX, uRuns[r]);
+                if (candidate.z > visible.z) visible = candidate;
+              }
+              if (visible.z < -99999.0) { color = vec4(0.0); return; }
+              if (visible.w < 0.0) { color = vec4(uPaper * visible.y, 1.0); return; }
+              float sourceX = mix(visible.x, 1.0 - visible.x, uMirror);
+              float sourceY = 0.5 + (position.y / uPage.y - 0.5) / pscale(visible.z);
+              vec4 paper = texture(uTex, vec2(clamp(sourceX, 0.0, 1.0), clamp(sourceY, 0.0, 1.0)));
+              color = vec4(paper.rgb * visible.y, 1.0);
+            }
+        """
+        private const val SHADOW_FRAGMENT = """#version 300 es
+            precision highp float;
+            uniform vec2 uPage;
+            uniform float uMirror;
+            uniform vec4 uShadow;
+            out vec4 color;
+            void main() {
+              float bookX = mix(gl_FragCoord.x / uPage.x, 1.0 - gl_FragCoord.x / uPage.x, uMirror);
+              float distanceFromRoll = (bookX - uShadow.x) / max(0.035, uShadow.y);
+              float castShadow = exp(-distanceFromRoll * distanceFromRoll * 2.4) * uShadow.z;
+              float spineShadow = exp(-abs(bookX) * 44.0) * min(0.07, uShadow.z * 0.32);
+              color = vec4(0.0, 0.0, 0.0, clamp(castShadow + spineShadow, 0.0, 0.42));
+            }
+        """
         private const val VERTEX = """
             attribute vec2 aPos; attribute vec3 aSurface; attribute float aShade;
             uniform mediump vec2 uPage;

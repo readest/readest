@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, test, expect, vi, beforeEach } from 'vitest';
 
 // A fake cloudflare:sockets TLS socket: the test queues what the server
@@ -167,6 +168,19 @@ describe('connectWorkersWebSocket', () => {
     const long = clientFrame(server.written[2]!);
     expect(long.opcode).toBe(0x1);
     expect(new TextDecoder().decode(long.payload)).toBe(ssml);
+  });
+
+  test('closes the raw socket when aborted while the upgrade is pending', async () => {
+    // A stalled upgrade leaves the caller no WebSocket to close: the abort is
+    // its only way to release the connection.
+    const { connectWorkersWebSocket } = await import('@/libs/workersWebSocket');
+    const controller = new AbortController();
+    void connectWorkersWebSocket(URL_, {}, controller.signal).catch(() => {});
+    await flush();
+    expect(server.closed).toBe(false);
+    controller.abort();
+    await flush();
+    expect(server.closed).toBe(true);
   });
 
   test('rejects a handshake the server answers without 101', async () => {

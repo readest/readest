@@ -24,6 +24,7 @@ struct NativePaperArgs: Decodable {
   let commit: Bool?
   let velocity: Double?
   let columns: Int?
+  let flip: Bool?
 }
 
 private struct PaperError: LocalizedError {
@@ -151,6 +152,13 @@ final class NativePaperTurn {
   private var animation: FrameLink?
   private var animationPending: Pending?
   private var animationTarget: Float = 0
+  // Page Flip: the sheet's physics run here; the view only draws its frames.
+  private let flip = PageFlipModel()
+  private var flipFrame = [Float](repeating: 0, count: PageFlipModel.frameSize)
+  private var flipping = false
+  private var flipVisible = true
+  private var flipGrabX = 0.9
+  private var regionX: CGFloat = 0
   private var pending: [Pending] = []
   private var captures: [Int: Pending] = [:]
   private var latestCapture: [String: Int] = [:]
@@ -287,6 +295,7 @@ final class NativePaperTurn {
     }
     view = sheet
     sheet.place(webView.convert(rect, to: container))
+    regionX = rect.minX
     width = rect.width
     height = rect.height
     return true
@@ -334,6 +343,8 @@ final class NativePaperTurn {
         forward = true
         progress = 0
         grabY = 0.5
+        flipping = false
+        view.setFlip(nil)
         try view.scene(current, current, true, false, 0, 0.5, 1)
         view.alpha = 1
         painted(p) { p.resolve() }
@@ -360,6 +371,29 @@ final class NativePaperTurn {
         trackNativeTouch = finger && !released
         let bufferedRelease = released && progress > 0
         if bufferedRelease { progress = min(progress, 0.5) }
+        // A spread turns as a curl.
+        flipping = (args.flip ?? false) && (args.columns ?? 1) < 2
+        if flipping {
+          // A forward sheet is held where the finger took it; a backward one
+          // is taken by its free edge, off the page.
+          if !forward {
+            flipGrabX = 1
+          } else if trackNativeTouch {
+            let x = Double(min(max((down.x - regionX) / width, 0), 1))
+            flipGrabX = rtl ? 1 - x : x
+          } else {
+            flipGrabX = 0.9
+          }
+          if released {
+            flip.reset()
+          } else {
+            flip.beginDrag(flipGrabX, Double(grabY), CACurrentMediaTime())
+            dragFlip()
+          }
+          pushFlip()
+        } else {
+          view.setFlip(nil)
+        }
         if trackNativeTouch { updateFinger() }
         try view.scene(current, destination, forward, rtl, progress, grabY, args.columns ?? 1)
         active = true
@@ -370,11 +404,12 @@ final class NativePaperTurn {
         if active && dragging && !finger && animationPending == nil {
           progress = Float(args.progress ?? 0)
           grabY = Float(args.grabY ?? 0.5)
+          if flipping { dragFlip() }
           requestDraw()
         }
         p.resolve()
       case "animate":
-        animate(args, p)
+        if flipping { animateFlip(args, p) } else { animate(args, p) }
       case "complete":
         completeRequested = true
         p.resolve()
@@ -386,6 +421,10 @@ final class NativePaperTurn {
           completeAnimation()
         } else {
           progress = 0
+          if flipping {
+            flip.reset()
+            pushFlip()
+          }
           view?.alpha = 0
           requestDraw()
         }
@@ -503,6 +542,21 @@ final class NativePaperTurn {
     let distance = forward != rtl ? down.x - last.x : last.x - down.x
     progress = Float(min(max(distance / width, 0), 1))
     grabY = Float(0.5 + (last.y - down.y) / height)
+    if flipping { dragFlip() }
+  }
+
+  /// Drag the flipped sheet. A backward one arrives past its fold, so it shows from the first move.
+  private func dragFlip() {
+    let edge = PageFlipModel.minPressedEdgeX
+    let x =
+      forward ? flipGrabX - Double(progress) : edge - (1 + edge) * Double(progress)
+    flip.moveDrag(x, Double(grabY), CACurrentMediaTime())
+  }
+
+  /// Hand the sheet's current frame to the view, noting whether any of it is on the page.
+  private func pushFlip() {
+    flipVisible = flip.frame(&flipFrame, !forward)
+    view?.setFlip(flipFrame)
   }
 
   /// Coalesce finger-follow poses into one display refresh.
@@ -512,7 +566,10 @@ final class NativePaperTurn {
     FrameLink.after(1) { [weak self] in
       guard let self else { return }
       self.drawScheduled = false
-      if self.active && self.animationPending == nil { self.draw() }
+      if self.active && self.animationPending == nil {
+        if self.flipping { self.pushFlip() }
+        self.draw()
+      }
     }
   }
 
@@ -553,11 +610,53 @@ final class NativePaperTurn {
     }
   }
 
+  /// Settle the released flipped sheet, stepping its physics on every refresh.
+  private func animateFlip(_ args: NativePaperArgs, _ p: Pending) {
+    guard active else { return p.resolve(["cancelled": true]) }
+    guard animationPending == nil else { return p.reject("Native paper already settling") }
+    dragging = false
+    animationPending = p
+    let commit = (args.commit ?? false) && !cancelled
+    animationTarget = commit ? 1 : 0
+    flip.release(commit, CACurrentMediaTime())
+    pushFlip()
+    // A turned page leaves over the spine, and a cancelled backward sheet
+    // returns there: stop once nothing of it is left on the page. A
+    // backward sheet arrives from there: skip the poses before it shows.
+    let endsOffPage = commit == forward
+    var moving = true
+    var skipped = 0
+    while !endsOffPage && !flipVisible && moving && skipped < 240 {
+      skipped += 1
+      moving = flip.advance(1.0 / 120)
+      pushFlip()
+    }
+    var lastTime: CFTimeInterval = 0
+    animation = FrameLink { [weak self] _, now in
+      guard let self, self.animationPending === p, p.live else { return }
+      if lastTime != 0 {
+        // A following gesture hurries the tail rather than cutting it.
+        let dt = now - lastTime
+        moving = self.flip.advance(self.completeRequested ? dt * 2 : dt)
+        self.pushFlip()
+      }
+      lastTime = now
+      if moving && (self.flipVisible || !endsOffPage) { self.draw() } else { self.completeAnimation() }
+    }
+  }
+
   /// Present the terminal pose before acknowledging settlement.
   private func completeAnimation() {
     guard let p = animationPending else { return }
     stopAnimation()
     progress = animationTarget
+    if flipping {
+      // Lay the sheet flat: on the page for a turned-back or cancelled
+      // forward sheet, off it otherwise.
+      flip.reset()
+      flipVisible = flip.frame(&flipFrame, (animationTarget == 1) == forward)
+      view?.setFlip(flipFrame)
+    }
     do {
       try view?.draw(progress, grabY)
     } catch {
@@ -598,6 +697,10 @@ final class NativePaperView: UIView {
     let queue: MTLCommandQueue
     let pipeline: MTLRenderPipelineState
     let depthState: MTLDepthStencilState
+    // Page Flip draws whole-page passes over the flat page, untested by depth.
+    let flipPipeline: MTLRenderPipelineState
+    let shadowPipeline: MTLRenderPipelineState
+    let overlayDepthState: MTLDepthStencilState
     let nearest: MTLSamplerState
     let linear: MTLSamplerState
   }
@@ -619,6 +722,8 @@ final class NativePaperView: UIView {
   private var columns = 1
   private var progress: Float = 0
   private var grabY: Float = 0.5
+  /// The latest `PageFlipModel.frame`, or nil to curl this scene.
+  private var flipFrame: [Float]?
 
   init(scale: CGFloat) throws {
     gpu = try Self.makeGPU()
@@ -657,6 +762,12 @@ final class NativePaperView: UIView {
     let depthDescriptor = MTLDepthStencilDescriptor()
     depthDescriptor.depthCompareFunction = .lessEqual
     depthDescriptor.isDepthWriteEnabled = true
+    let overlay = { (fragment: String) throws -> MTLRenderPipelineState in
+      let flip = descriptor.copy() as! MTLRenderPipelineDescriptor
+      flip.vertexFunction = library.makeFunction(name: "flipVertex")
+      flip.fragmentFunction = library.makeFunction(name: fragment)
+      return try device.makeRenderPipelineState(descriptor: flip)
+    }
     let sampler = { (filter: MTLSamplerMinMagFilter) -> MTLSamplerState? in
       let descriptor = MTLSamplerDescriptor()
       descriptor.minFilter = filter
@@ -666,12 +777,15 @@ final class NativePaperView: UIView {
       return device.makeSamplerState(descriptor: descriptor)
     }
     guard let depthState = device.makeDepthStencilState(descriptor: depthDescriptor),
+      let overlayDepthState = device.makeDepthStencilState(descriptor: MTLDepthStencilDescriptor()),
       let nearest = sampler(.nearest), let linear = sampler(.linear)
     else { throw PaperError("Cannot create native paper GPU state") }
     let gpu = GPU(
       device: device, queue: queue,
       pipeline: try device.makeRenderPipelineState(descriptor: descriptor),
-      depthState: depthState, nearest: nearest, linear: linear)
+      depthState: depthState, flipPipeline: try overlay("flipFragment"),
+      shadowPipeline: try overlay("shadowFragment"), overlayDepthState: overlayDepthState,
+      nearest: nearest, linear: linear)
     shared = gpu
     return gpu
   }
@@ -740,6 +854,11 @@ final class NativePaperView: UIView {
     try draw(p, y)
   }
 
+  /// Hand over the latest `PageFlipModel.frame`, or nil to curl this scene.
+  func setFlip(_ frame: [Float]?) {
+    flipFrame = frame
+  }
+
   /// Draw a pose of the current scene.
   func draw(_ p: Float, _ y: Float) throws {
     progress = min(max(p, 0), 1)
@@ -791,8 +910,10 @@ final class NativePaperView: UIView {
     let sheet = forward ? current : destination
     let pose = forward ? progress : 1 - progress
     try drawPage(encoder, base, 0, 0.5)
-    // A backward spread turn is the previous spread's forward turn, reversed.
-    if columns >= 2 {
+    if let flipFrame, columns < 2 {
+      drawFlip(encoder, sheet, flipFrame)
+    } else if columns >= 2 {
+      // A backward spread turn is the previous spread's forward turn, reversed.
       try drawPage(encoder, sheet, pose, grabY, columns, back: base)
     } else {
       try drawPage(encoder, sheet, pose, grabY)
@@ -826,6 +947,25 @@ final class NativePaperView: UIView {
     // the projected, moving leaf needs interpolation.
     encoder.setFragmentSamplerState(p <= 0 ? gpu.nearest : gpu.linear, index: 0)
     encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: mesh.count / 6)
+  }
+
+  /// Draw the flipped sheet's cast shadow, then the sheet, over the flat page beneath.
+  private func drawFlip(_ encoder: MTLRenderCommandEncoder, _ key: String?, _ frame: [Float]) {
+    guard let key, let texture = textures[key] else { return }
+    var page = SIMD2<Float>(Float(pixelsWide), Float(pixelsHigh))
+    var mirror: Float = rtl ? 1 : 0
+    encoder.setDepthStencilState(gpu.overlayDepthState)
+    frame.withUnsafeBytes {
+      encoder.setFragmentBytes($0.baseAddress!, length: $0.count, index: 0)
+    }
+    encoder.setFragmentBytes(&page, length: MemoryLayout<SIMD2<Float>>.size, index: 1)
+    encoder.setFragmentBytes(&mirror, length: MemoryLayout<Float>.size, index: 2)
+    encoder.setRenderPipelineState(gpu.shadowPipeline)
+    encoder.drawPrimitives(type: .triangleStrip, vertexStart: 0, vertexCount: 4)
+    encoder.setRenderPipelineState(gpu.flipPipeline)
+    encoder.setFragmentTexture(texture, index: 0)
+    encoder.setFragmentSamplerState(gpu.linear, index: 0)
+    encoder.drawPrimitives(type: .triangleStrip, vertexStart: 0, vertexCount: 4)
   }
 
   private static let shaders = """
@@ -866,6 +1006,75 @@ final class NativePaperView: UIView {
         rgb = mix(rgb, float3(0.5), 0.4 * border);
       }
       return float4(rgb, color.a);
+    }
+    // Page Flip, adapted from page-turn-core's page and shadow shaders (MIT,
+    // see PageFlipModel.swift): each pixel inverts the side-view profile
+    // along up to four screen-monotonic runs and keeps the paper nearest the
+    // viewer, with a perspective-correct lookup. `frame` holds the 65 profile
+    // points, then the 4 runs, then the shadow; `mirror` puts the spine on the
+    // right. The back of the sheet shows its paper colour, read near a corner.
+    struct FlipOut { float4 position [[position]]; };
+    vertex FlipOut flipVertex(uint id [[vertex_id]]) {
+      FlipOut out;
+      out.position = float4(float(id & 1) * 2.0 - 1.0, float(id >> 1) * 2.0 - 1.0, 0.0, 1.0);
+      return out;
+    }
+    float flipScale(float depth) { return min(1.34, 4.0 / max(0.001, 4.0 - max(0.0, depth))); }
+    float4 flipRun(float bookX, float4 run, constant float4 *profile) {
+      float4 none = float4(0.0, 1.0, -100000.0, 0.0);
+      if (run.w < 0.5) return none;
+      int low = int(run.x); int high = int(run.y);
+      float lowX = profile[low].x; float highX = profile[high].x;
+      if (bookX < min(lowX, highX) || bookX > max(lowX, highX)) return none;
+      for (int i = 0; i < 7; i++) {
+        if (high - low > 1) {
+          int middle = (low + high) / 2;
+          float middleX = profile[middle].x;
+          if (run.z > 0.0 ? middleX <= bookX : middleX >= bookX) low = middle; else high = middle;
+        }
+      }
+      float4 before = profile[low]; float4 after = profile[high];
+      float deltaX = after.x - before.x;
+      if (abs(deltaX) < 0.000001) return none;
+      float t = clamp((bookX - before.x) / deltaX, 0.0, 1.0);
+      float a = flipScale(before.y); float b = flipScale(after.y);
+      float d = (1.0 - t) * a + t * b;
+      float progress = d <= 0.000001 ? t : t * b / d;
+      float material = (float(low) + progress) / 64.0;
+      float depth = mix(before.y, after.y, progress);
+      float normalZ = abs(mix(before.w, after.w, progress));
+      bool frontFacing = deltaX > 0.0;
+      float deformation = 1.0 - normalZ;
+      float shade = deformation * 0.16 + (frontFacing ? 0.0 : deformation * 0.055);
+      return float4(material, 1.0 - min(0.2, shade), depth, frontFacing ? 1.0 : -1.0);
+    }
+    fragment float4 flipFragment(FlipOut in [[stage_in]], texture2d<float> tex [[texture(0)]],
+                                 sampler s [[sampler(0)]], constant float4 *frame [[buffer(0)]],
+                                 constant float2 &page [[buffer(1)]],
+                                 constant float &mirror [[buffer(2)]]) {
+      float2 position = in.position.xy;
+      float bookX = mix(position.x / page.x, 1.0 - position.x / page.x, mirror);
+      float4 visible = float4(0.0, 1.0, -100000.0, 0.0);
+      for (int r = 0; r < 4; r++) {
+        float4 candidate = flipRun(bookX, frame[65 + r], frame);
+        if (candidate.z > visible.z) visible = candidate;
+      }
+      if (visible.z < -99999.0) return float4(0.0);
+      if (visible.w < 0.0) return float4(tex.read(uint2(2, 2)).rgb * visible.y, 1.0);
+      float sourceX = mix(visible.x, 1.0 - visible.x, mirror);
+      float sourceY = 0.5 + (position.y / page.y - 0.5) / flipScale(visible.z);
+      float4 paper = tex.sample(s, float2(clamp(sourceX, 0.0, 1.0), clamp(sourceY, 0.0, 1.0)));
+      return float4(paper.rgb * visible.y, 1.0);
+    }
+    fragment float4 shadowFragment(FlipOut in [[stage_in]], constant float4 *frame [[buffer(0)]],
+                                   constant float2 &page [[buffer(1)]],
+                                   constant float &mirror [[buffer(2)]]) {
+      float4 shadow = frame[69];
+      float bookX = mix(in.position.x / page.x, 1.0 - in.position.x / page.x, mirror);
+      float distanceFromRoll = (bookX - shadow.x) / max(0.035, shadow.y);
+      float castShadow = exp(-distanceFromRoll * distanceFromRoll * 2.4) * shadow.z;
+      float spineShadow = exp(-abs(bookX) * 44.0) * min(0.07, shadow.z * 0.32);
+      return float4(0.0, 0.0, 0.0, clamp(castShadow + spineShadow, 0.0, 0.42));
     }
     """
 }

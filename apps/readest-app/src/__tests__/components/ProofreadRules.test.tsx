@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, cleanup, within, act } from '@testing-library/react';
-import React from 'react';
+import React, { Profiler } from 'react';
 import { vi } from 'vitest';
 
 import {
@@ -85,6 +85,72 @@ function renderWithProviders(ui: React.ReactNode) {
     </EnvProvider>,
   );
 }
+
+describe('ProofreadRulesManager subscriptions', () => {
+  afterEach(() => {
+    cleanup();
+    vi.restoreAllMocks();
+  });
+
+  // The manager stays mounted while closed; every page turn writes the book's progress into its
+  // config
+  it('re-renders for the book rules, not for a progress write', async () => {
+    const rule: ProofreadRule = {
+      id: 'b1',
+      scope: 'book',
+      pattern: 'a',
+      replacement: 'b',
+      enabled: true,
+      isRegex: false,
+      caseSensitive: true,
+      order: 1,
+      wholeWord: true,
+    };
+    (useSettingsStore.setState as unknown as (state: unknown) => void)({
+      settings: DEFAULT_SYSTEM_SETTINGS,
+    });
+    (useReaderStore.setState as unknown as (state: unknown) => void)({ viewStates: {} });
+    (useBookDataStore.setState as unknown as (state: unknown) => void)({
+      booksData: {
+        book1: {
+          id: 'book1',
+          book: null,
+          file: null,
+          config: { progress: [1, 9], viewSettings: { proofreadRules: [rule] } },
+          bookDoc: null,
+          isFixedLayout: false,
+        },
+      },
+    });
+    useSidebarStore.setState({ sideBarBookKey: 'book1' });
+    const onRender = vi.fn();
+    renderWithProviders(
+      <Profiler id='rules' onRender={onRender}>
+        <ProofreadRulesManager />
+      </Profiler>,
+    );
+    await act(async () => {});
+    onRender.mockClear();
+    const write = (config: (c: Record<string, unknown>) => Record<string, unknown>) =>
+      act(() =>
+        (useBookDataStore.setState as unknown as (fn: (s: unknown) => unknown) => void)((state) => {
+          const { booksData } = state as {
+            booksData: Record<string, { config: Record<string, unknown> }>;
+          };
+          return {
+            booksData: {
+              ...booksData,
+              book1: { ...booksData['book1']!, config: config(booksData['book1']!.config) },
+            },
+          };
+        }),
+      );
+    write((c) => ({ ...c, progress: [2, 9] }));
+    expect(onRender).not.toHaveBeenCalled();
+    write((c) => ({ ...c, viewSettings: { proofreadRules: [{ ...rule, pattern: 'c' }] } }));
+    expect(onRender).toHaveBeenCalled();
+  });
+});
 
 describe('ProofreadRulesManager', () => {
   beforeEach(() => {

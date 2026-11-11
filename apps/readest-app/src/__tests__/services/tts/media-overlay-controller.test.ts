@@ -702,6 +702,40 @@ describe('narration mark source and timeline', () => {
     expect(stop).not.toHaveBeenCalled();
   });
 
+  test('offers the next section to the client on every preload, loading it once', async () => {
+    // The client takes it only once this section's last audio file plays, so
+    // an offer made earlier in the section must be repeated (#7193).
+    const controller = new TTSController(null, makeView([true, true]));
+    await controller.init();
+    await controller.initViewTTS(0);
+    const client = controller.ttsMediaOverlayClient;
+    const capabilities = client.getCapabilities();
+    vi.spyOn(client, 'getCapabilities').mockReturnValue({ ...capabilities, preloadsAudio: true });
+    const preloadSection = vi.spyOn(client, 'preloadSection').mockResolvedValue();
+
+    await controller.preloadNextSSML();
+    await controller.preloadNextSSML();
+
+    expect(preloadSection).toHaveBeenCalledTimes(2);
+    expect(preloadSection.mock.calls[1]![0]).toBe(preloadSection.mock.calls[0]![0]);
+  });
+
+  test('offers the next narrated section, stepping over one without a recording', async () => {
+    const view = makeView([true, false, true]);
+    const controller = new TTSController(null, view);
+    await controller.init();
+    await controller.initViewTTS(0);
+    const client = controller.ttsMediaOverlayClient;
+    const capabilities = client.getCapabilities();
+    vi.spyOn(client, 'getCapabilities').mockReturnValue({ ...capabilities, preloadsAudio: true });
+    const preloadSection = vi.spyOn(client, 'preloadSection').mockResolvedValue();
+
+    await controller.preloadNextSSML();
+
+    expect(preloadSection).toHaveBeenCalledOnce();
+    expect(view.book.sections![2]!.createDocument).toHaveBeenCalled();
+  });
+
   test('synthesis still uses foliate segmentation for the same book', async () => {
     const controller = new TTSController(null, makeView([true]));
     controller.useNarration = false;

@@ -2,7 +2,11 @@ import { Book } from '@/types/book';
 import { AppService, BaseDir } from '@/types/system';
 import { useTransferStore, TransferItem, ReplicaTransferFile } from '@/store/transferStore';
 import { useSettingsStore } from '@/store/settingsStore';
-import { isReadestCloudStorageActive } from '@/services/sync/cloudSyncProvider';
+import {
+  getActiveFileSyncBackends,
+  isReadestCloudStorageActive,
+} from '@/services/sync/cloudSyncProvider';
+import { recordFlow } from '@/services/sync/dataFlow/log';
 import { isSyncCategoryEnabled } from '@/services/sync/syncCategories';
 import { TranslationFunc } from '@/hooks/useTranslation';
 import { createProgressThrottle, ProgressHandler, ProgressPayload } from '@/utils/transfer';
@@ -36,10 +40,12 @@ class TransferManager {
   private isProcessing = false;
   private abortControllers: Map<string, AbortController> = new Map();
   private isInitialized = false;
+  private isInitializing = false;
   private getLibrary: (() => Book[]) | null = null;
   private updateBook: ((book: Book) => Promise<void>) | null = null;
   private _: TranslationFunc | null = null;
   private settingsUnsub: (() => void) | null = null;
+  private transfersUnsub: (() => void) | null = null;
   private quotaFailureCount = 0;
   private quotaToastTimer: ReturnType<typeof setTimeout> | null = null;
   private readyResolve: () => void = () => {};
@@ -117,6 +123,8 @@ class TransferManager {
     translationFn: TranslationFunc,
   ): Promise<void> {
     if (this.isInitialized) return;
+    if (this.isInitializing) return this.readyPromise;
+    this.isInitializing = true;
 
     this.appService = appService;
     this.getLibrary = getLibrary;
@@ -125,7 +133,24 @@ class TransferManager {
     await this.loadPersistedQueue();
     this.reconcileUploadsWithProvider();
     this.isInitialized = true;
+    this.isInitializing = false;
+    this.persistQueue();
     this.readyResolve();
+    // Provider-owned file operations bypass this queue, but share its history.
+    this.transfersUnsub?.();
+    this.transfersUnsub = useTransferStore.subscribe((state, previous) => {
+      // Queue jobs already persist at lifecycle boundaries. Observe only file
+      // starts/settles/removals here, not every streaming progress emission.
+      const changedFile =
+        Object.values(state.transfers).some(
+          (transfer) =>
+            transfer.kind === 'file' && transfer.status !== previous.transfers[transfer.id]?.status,
+        ) ||
+        Object.values(previous.transfers).some(
+          (transfer) => transfer.kind === 'file' && !state.transfers[transfer.id],
+        );
+      if (changedFile) this.persistQueue();
+    });
 
     // Re-gate when settings hydrate or the selected provider changes.
     this.settingsUnsub?.();
@@ -344,6 +369,7 @@ class TransferManager {
   }
 
   cancelTransfer(transferId: string): void {
+    if (useTransferStore.getState().transfers[transferId]?.kind === 'file') return;
     const controller = this.abortControllers.get(transferId);
     if (controller) {
       controller.abort();
@@ -492,6 +518,7 @@ class TransferManager {
       // Land the final progress value that the throttle may still be holding.
       progressThrottle.flush();
       useTransferStore.getState().setTransferStatus(transfer.id, 'completed');
+      this.recordBookFile(transfer);
 
       const messages = getTransferMessages(transfer, _);
 
@@ -558,6 +585,7 @@ class TransferManager {
         }
 
         useTransferStore.getState().setTransferStatus(transfer.id, 'failed', errorMessage);
+        this.recordBookFile(transfer, errorMessage);
       }
     } finally {
       // Drop any pending throttled progress + its trailing timer (a
@@ -596,6 +624,42 @@ class TransferManager {
     });
   }
 
+  /** A book entry in the data flow log is a file that moved, never its metadata. */
+  private recordBookFile(transfer: TransferItem, error?: string): void {
+    if (transfer.kind !== 'book' || transfer.type === 'delete') return;
+    const book = this.getLibrary!().find((b) => b.hash === transfer.bookHash);
+    const provider = useTransferStore.getState().transfers[transfer.id]?.provider;
+    const settings = useSettingsStore.getState().settings;
+    const isAudiobook = book?.format === 'ABS';
+    // With no cloud copy to fall back on, this download was the file backends' alone.
+    if (
+      error &&
+      transfer.type === 'download' &&
+      !isAudiobook &&
+      !isReadestCloudStorageActive(settings)
+    ) {
+      for (const connector of getActiveFileSyncBackends(settings)) {
+        recordFlow({
+          connector,
+          direction: 'pull',
+          kind: 'books',
+          bookTitle: transfer.bookTitle,
+          error,
+        });
+      }
+      return;
+    }
+    // runFileBookDownload knows which backend served the file and records it.
+    if (provider && provider !== 'readest') return;
+    recordFlow({
+      connector: isAudiobook ? 'audiobookshelf' : 'readest-cloud',
+      direction: transfer.type === 'upload' ? 'push' : 'pull',
+      kind: 'books',
+      bookTitle: transfer.bookTitle,
+      error,
+    });
+  }
+
   private async executeBookTransfer(
     transfer: TransferItem,
     progressHandler: (p: ProgressPayload) => void,
@@ -623,7 +687,24 @@ class TransferManager {
       book.uploadedAt = Date.now();
       await this.updateBook!(book);
     } else if (transfer.type === 'download') {
-      await this.appService!.downloadBook(book, false, false, progressHandler);
+      const settings = useSettingsStore.getState().settings;
+      let downloaded = false;
+      if (getActiveFileSyncBackends(settings).length > 0) {
+        const { runFileBookDownload } = await import('@/services/sync/file/runLibrarySync');
+        downloaded = await runFileBookDownload(
+          { getAppService: async () => this.appService! },
+          book,
+          progressHandler,
+          transfer.id,
+        );
+      }
+      if (!downloaded) {
+        if (!isReadestCloudStorageActive(settings)) {
+          throw new Error(_('Failed to download book: {{title}}', { title: book.title }));
+        }
+        useTransferStore.getState().setTransferProvider(transfer.id, 'readest');
+        await this.appService!.downloadBook(book, false, false, progressHandler);
+      }
       book.downloadedAt = Date.now();
       await this.updateBook!(book);
     } else if (transfer.type === 'delete') {
@@ -732,7 +813,9 @@ class TransferManager {
 
       // Restore all transfers using the store's restore method
       // This preserves the original IDs and handles in_progress -> pending conversion
+      const current = store.transfers;
       store.restoreTransfers(data.transfers, data.isQueuePaused);
+      useTransferStore.setState((state) => ({ transfers: { ...state.transfers, ...current } }));
     } catch (error) {
       console.error('Failed to load transfer queue:', error);
     }

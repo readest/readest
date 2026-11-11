@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const m = vi.hoisted(() => ({
@@ -606,14 +607,14 @@ describe('errors', () => {
 });
 
 describe('download lane, streamed (no jobs on the server)', () => {
-  it('uses windows of up to 64 sentences', async () => {
-    provider.prefetch(reqs(70), 'download', new AbortController().signal);
+  it('uses windows of up to 16 sentences', async () => {
+    provider.prefetch(reqs(20), 'download', new AbortController().signal);
     await flush();
     expect(windows[0]!.body.lane).toBe('download');
-    expect(texts(windows[0]!)).toHaveLength(64);
+    expect(texts(windows[0]!)).toHaveLength(16);
     windows[0]!.completeAll();
     await flush();
-    expect(texts(windows[1]!)).toHaveLength(6);
+    expect(texts(windows[1]!)).toHaveLength(4);
   });
 
   it('names its app instance on every window, so the server queues devices apart', async () => {
@@ -653,9 +654,9 @@ describe('download jobs', () => {
   });
   const all = () => jobs!;
 
-  it('submits jobs of up to 2000 characters, two at a time', async () => {
-    // 900-character sentences: two fit in a window, a third would not.
-    const long = Array.from({ length: 10 }, (_, i) => req(`${'a'.repeat(898)}${i}.`));
+  it('submits jobs of up to 512 characters, two at a time', async () => {
+    // 220-character sentences: two fit in a window, a third would not.
+    const long = Array.from({ length: 10 }, (_, i) => req(`${'a'.repeat(218)}${i}.`));
     provider.prefetch(long, 'download', new AbortController().signal);
     await flush(6);
     expect(all().map((j) => j.body.segments.length)).toEqual([2, 2]);
@@ -667,10 +668,20 @@ describe('download jobs', () => {
     expect(all().map((j) => j.body.segments.length)).toEqual([2, 2, 2]);
   });
 
-  it('caps a job at the 64 sentences a window may hold', async () => {
-    provider.prefetch(reqs(100), 'download', new AbortController().signal);
+  it('caps a job at the 16 sentences a window may hold', async () => {
+    provider.prefetch(reqs(20), 'download', new AbortController().signal);
     await flush(6);
-    expect(all().map((j) => j.body.segments.length)).toEqual([64, 36]);
+    expect(all().map((j) => j.body.segments.length)).toEqual([16, 4]);
+  });
+
+  it('sends a sentence over the character limit in a job of its own', async () => {
+    const long = req(`${'a'.repeat(600)}.`);
+    provider.prefetch([long, req('Short.')], 'download', new AbortController().signal);
+    await flush(6);
+    expect(all().map((j) => j.body.segments.map((seg) => seg.text))).toEqual([
+      [long.text],
+      ['Short.'],
+    ]);
   });
 
   it('takes over sentences only queued as listening preloads, as download jobs', async () => {
@@ -703,8 +714,8 @@ describe('download jobs', () => {
   });
 
   it('drops sentences the cache filled meanwhile, cancelling a job left with nothing to do', async () => {
-    // 900-character sentences: two per window, two windows sent, three queued.
-    const long = Array.from({ length: 10 }, (_, i) => req(`${'a'.repeat(898)}${i}.`));
+    // 220-character sentences: two per window, two windows sent, three queued.
+    const long = Array.from({ length: 10 }, (_, i) => req(`${'a'.repeat(218)}${i}.`));
     const delivered: string[] = [];
     provider.prefetch(long, 'download', new AbortController().signal, {
       onDelivered: (r) => delivered.push(r.text.slice(-2)),

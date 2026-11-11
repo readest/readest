@@ -33,6 +33,7 @@ export interface NativePaperCommand {
   commit?: boolean;
   velocity?: number;
   columns?: number;
+  flip?: boolean;
 }
 export interface NativePaperResult {
   ready?: boolean;
@@ -66,6 +67,8 @@ export class NativePageTurn extends CapturedPageTurn {
   #turn = 0;
   #cancellations = new Set<Promise<unknown>>();
   #invalidations: Promise<unknown> = Promise.resolve();
+  #invalidationHeld = false;
+  #restoring = false;
 
   constructor(
     private host: CapturedTurnHost,
@@ -153,7 +156,8 @@ export class NativePageTurn extends CapturedPageTurn {
         result.ready === false
       )
         return false;
-      if (result.keys) this.#keys = new Set(result.keys);
+      // A held invalidation will delete the other pages native reports.
+      if (result.keys && !this.#invalidationHeld) this.#keys = new Set(result.keys);
       else this.#keys.add(key);
       while (this.#keys.size > 3) this.#keys.delete(this.#keys.values().next().value!);
       return true;
@@ -206,6 +210,7 @@ export class NativePageTurn extends CapturedPageTurn {
       .finally(() => {
         if (this.#warming === run) this.#warming = null;
         if (this.#abort === abort) this.#abort = null;
+        this.#releaseInvalidation();
       });
     this.#warming = run;
     return run;
@@ -228,17 +233,33 @@ export class NativePageTurn extends CapturedPageTurn {
       void this.#call({ op: 'cancel', turnId: this.#scene.session.id }).catch(() => {});
     super.invalidatePreparedCapture();
   }
-  /** Advance the pixel generation and serialize invalidation of resident native textures. */
+  /** Retake the page on screen at the next warm-up. Its pixels changed after its
+   * sheet was taken, as when a PDF page draws its sharp layer only once shown. */
+  refreshCurrentPage() {
+    this.#stopWarm();
+    const key = this.#key();
+    if (key) this.#keys.delete(key);
+  }
+  /** Advance the pixel generation and serialize invalidation of resident native textures.
+   * Native invalidation lifts the cover and deletes its sheet, so it waits while a warm-up or
+   * turn may hold them: the live page under the cover can be parked on a neighbouring page. */
   invalidateNativePages() {
     this.#abort?.abort();
     this.#generation++;
     this.#keys.clear();
-    if (!this.#dead) {
-      this.#invalidations = Promise.allSettled([
-        this.#invalidations,
-        this.#call({ op: 'invalidate' }),
-      ]);
-    }
+    this.#invalidationHeld = true;
+    this.#releaseInvalidation();
+  }
+  /** Send the invalidation held back by a warm-up or turn once neither remains. */
+  #releaseInvalidation() {
+    if (!this.#invalidationHeld || this.#warming || this.#scene || this.#restoring) return;
+    this.#invalidationHeld = false;
+    this.#keys.clear();
+    if (this.#dead) return;
+    this.#invalidations = Promise.allSettled([
+      this.#invalidations,
+      this.#call({ op: 'invalidate' }),
+    ]);
   }
 
   /** Queue a scene, preparing missing sheets and rechecking boundaries before navigation. */
@@ -305,6 +326,8 @@ export class NativePageTurn extends CapturedPageTurn {
           grabY: session.grabY,
           // A spread turns its outer column as a leaf hinged at the spine.
           columns: this.host.getColumnCount?.() ?? 1,
+          // The native scene may still curl, e.g. a spread.
+          flip: this.host.isPageFlip?.() ?? false,
         });
         if (result.ready === false) throw new Error('Native paper scene was not started');
         scene.touchTracked = result.touchTracked === true;
@@ -314,8 +337,7 @@ export class NativePageTurn extends CapturedPageTurn {
         await this.#restore(scene);
         throw error;
       } finally {
-        if (this.#scene === scene && (!this.#allowed() || !this.#keys.size))
-          await this.#restore(scene);
+        if (this.#scene === scene && !this.#allowed()) await this.#restore(scene);
       }
     });
     const ready = run.then(
@@ -395,6 +417,7 @@ export class NativePageTurn extends CapturedPageTurn {
         throw error;
       } finally {
         if (this.#scene === scene) this.#scene = null;
+        this.#releaseInvalidation();
       }
     });
     this.#queue = run.catch(() => {});
@@ -405,6 +428,7 @@ export class NativePageTurn extends CapturedPageTurn {
   async #restore(scene: Scene) {
     if (this.#scene !== scene) return;
     this.#scene = null;
+    this.#restoring = true;
     // A native failure can destroy the EGL context and its whole texture bank.
     this.#keys.clear();
     try {
@@ -412,6 +436,8 @@ export class NativePageTurn extends CapturedPageTurn {
       await this.host.onCancelled?.('curl');
     } finally {
       await this.#call({ op: 'finish', turnId: scene.session.id }).catch(() => {});
+      this.#restoring = false;
+      this.#releaseInvalidation();
     }
   }
 

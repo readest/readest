@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { describe, expect, test, vi } from 'vitest';
 
 // Enter the module graph at EdgeTTSClient: constants.ts circularly imports it

@@ -58,11 +58,13 @@ import androidx.browser.customtabs.CustomTabsIntent
 import app.tauri.annotation.Command
 import app.tauri.annotation.InvokeArg
 import app.tauri.annotation.Permission
+import app.tauri.annotation.PermissionCallback
 import app.tauri.annotation.TauriPlugin
 import app.tauri.plugin.JSObject
 import app.tauri.plugin.JSArray
 import app.tauri.plugin.Plugin
 import app.tauri.plugin.Invoke
+import app.tauri.PermissionState
 import org.json.JSONArray
 import java.io.*
 import kotlin.math.abs
@@ -143,6 +145,41 @@ class OpenExternalUrlArgs {
 @InvokeArg
 class ShowLookupPopoverArgs {
     var word: String? = null
+}
+
+@InvokeArg
+class AnkiReadDeckArgs {
+    var deckIds: Array<Long> = emptyArray()
+    var withCards: Boolean = false
+}
+
+@InvokeArg
+class AnkiOutgoingNoteArg {
+    var fields: Array<String> = emptyArray()
+    var tags: Array<String> = emptyArray()
+}
+
+@InvokeArg
+class AnkiAddNotesArgs {
+    var deckName: String = ""
+    var notes: Array<AnkiOutgoingNoteArg> = emptyArray()
+}
+
+@InvokeArg
+class AnkiTagUpdateArg {
+    var id: Long = 0
+    var tags: Array<String> = emptyArray()
+}
+
+@InvokeArg
+class AnkiUpdateTagsArgs {
+    var notes: Array<AnkiTagUpdateArg> = emptyArray()
+}
+
+@InvokeArg
+class SetLookupAppArgs {
+    var packageName: String? = null
+    var className: String? = null
 }
 
 @InvokeArg
@@ -251,6 +288,7 @@ interface KeyDownInterceptor {
 @TauriPlugin(
   permissions = [
     Permission(strings = [Manifest.permission.MANAGE_EXTERNAL_STORAGE], alias = "manageStorage"),
+    Permission(strings = [AnkiDroidLink.PERMISSION], alias = "anki"),
   ]
 )
 class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
@@ -1882,6 +1920,8 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
      * web browsers so an OEM browser that registers `ACTION_PROCESS_TEXT`
      * (VIVO / iQOO OriginOS — issue #4559) can't swallow the lookup:
      *
+     * - **An app chosen in Settings (#4937) or from the chooser below that
+     *   still handles the intent** → launch it directly.
      * - **No browser among the handlers** → dispatch implicitly, exactly
      *   as before. A single handler goes straight through; multiple
      *   handlers raise the system disambiguation dialog with its native
@@ -1952,12 +1992,13 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
                         activity.startActivity(intent)
                     }
                     is LookupDispatch.DispatchChooser -> {
-                        // We only reach here when the remembered app (if any)
-                        // was stale — otherwise it would have been launched
-                        // directly. Drop it so a fresh pick replaces it.
-                        if (remembered != null) clearRememberedDictionary()
                         startBrowserExcludingChooser(intent, dispatch.exclude)
                     }
+                }
+                // A remembered app that wasn't launched no longer handles the
+                // intent (uninstalled); drop it so Settings shows no choice.
+                if (remembered != null && dispatch != LookupDispatch.DispatchExplicit(remembered)) {
+                    clearRememberedDictionary()
                 }
 
                 val ret = JSObject()
@@ -2023,43 +2064,177 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
     }
 
     /**
-     * Report the dictionary app currently remembered for the
-     * browser-excluding chooser (see [show_lookup_popover]), so the
-     * settings UI can offer a "reset" affordance. Resolves with
-     * `{ packageName, label }` when one is remembered and still
-     * installed, or `{}` otherwise (clearing a stale entry on the way).
+     * List the apps a lookup can be sent to — every non-browser
+     * `ACTION_PROCESS_TEXT` handler — for the Settings picker (#4937).
+     * Resolves with `{ apps: [{ packageName, className, label, selected }] }`;
+     * `selected` marks the app saved by [set_lookup_app] or remembered from
+     * the browser-excluding chooser.
      */
     @Command
-    fun get_lookup_dictionary(invoke: Invoke) {
-        val ret = JSObject()
-        val remembered = readRememberedDictionary() ?: return invoke.resolve(ret)
-        try {
-            val pm = activity.packageManager
-            val appInfo = pm.getApplicationInfo(remembered.packageName, 0)
-            ret.put("packageName", remembered.packageName)
-            ret.put("label", pm.getApplicationLabel(appInfo).toString())
-        } catch (e: PackageManager.NameNotFoundException) {
-            // App was uninstalled — drop the stale memory and report none.
-            clearRememberedDictionary()
-        } catch (e: Exception) {
-            Log.e("NativeBridgePlugin", "get_lookup_dictionary failed", e)
+    fun get_lookup_apps(invoke: Invoke) {
+        pluginScope.launch {
+            try {
+                val apps = withContext(Dispatchers.IO) {
+                    val pm = activity.packageManager
+                    val probe = Intent(Intent.ACTION_PROCESS_TEXT).setType("text/plain")
+                    val browserPackages = queryBrowserPackages(pm)
+                    val remembered = readRememberedDictionary()
+                    val list = JSArray()
+                    pm.queryIntentActivities(probe, 0)
+                        .filter { it.activityInfo.packageName !in browserPackages }
+                        .forEach {
+                            val handler = LookupHandler(it.activityInfo.packageName, it.activityInfo.name)
+                            list.put(JSObject().apply {
+                                put("packageName", handler.packageName)
+                                put("className", handler.className)
+                                put("label", it.loadLabel(pm).toString())
+                                put("selected", handler == remembered)
+                            })
+                        }
+                    list
+                }
+                invoke.resolve(JSObject().apply { put("apps", apps) })
+            } catch (e: Exception) {
+                Log.e("NativeBridgePlugin", "get_lookup_apps failed", e)
+                invoke.reject("Failed to list lookup apps: ${e.message}")
+            }
         }
-        invoke.resolve(ret)
     }
 
-    /** Forget the remembered dictionary app so the next lookup re-prompts. */
+    /**
+     * Save the app lookups go to, or forget it when `packageName` is
+     * omitted so the next lookup asks again.
+     */
     @Command
-    fun clear_lookup_dictionary(invoke: Invoke) {
-        val ret = JSObject()
-        try {
+    fun set_lookup_app(invoke: Invoke) {
+        val args = invoke.parseArgs(SetLookupAppArgs::class.java)
+        val pkg = args.packageName
+        val cls = args.className
+        if (pkg.isNullOrEmpty() || cls.isNullOrEmpty()) {
             clearRememberedDictionary()
-            ret.put("success", true)
-        } catch (e: Exception) {
-            Log.e("NativeBridgePlugin", "clear_lookup_dictionary failed", e)
-            ret.put("success", false)
-            ret.put("error", e.message ?: "unknown")
+        } else {
+            lookupPrefs().edit()
+                .putString(LOOKUP_PREF_PACKAGE, pkg)
+                .putString(LOOKUP_PREF_CLASS, cls)
+                .apply()
         }
-        invoke.resolve(ret)
+        invoke.resolve()
+    }
+
+    // AnkiDroid link (#789): the Vocabulary window syncs with an AnkiDroid
+    // deck and imports other decks. Expected failures resolve with
+    // `error` ("permission", "not_ready") so the UI can explain them.
+
+    @Command
+    fun anki_status(invoke: Invoke) {
+        val installed = try {
+            activity.packageManager.getPackageInfo(AnkiDroidLink.PACKAGE, 0)
+            true
+        } catch (e: PackageManager.NameNotFoundException) {
+            false
+        }
+        invoke.resolve(JSObject().apply {
+            put("installed", installed)
+            put("granted", getPermissionState("anki") == PermissionState.GRANTED)
+        })
+    }
+
+    @Command
+    fun anki_request_permission(invoke: Invoke) {
+        if (getPermissionState("anki") == PermissionState.GRANTED) {
+            invoke.resolve(JSObject().apply { put("granted", true) })
+        } else {
+            requestPermissionForAlias("anki", invoke, "ankiPermissionCallback")
+        }
+    }
+
+    @PermissionCallback
+    private fun ankiPermissionCallback(invoke: Invoke) {
+        invoke.resolve(JSObject().apply {
+            put("granted", getPermissionState("anki") == PermissionState.GRANTED)
+        })
+    }
+
+    private fun ankiCall(invoke: Invoke, work: (android.content.ContentResolver) -> JSObject) {
+        pluginScope.launch {
+            try {
+                invoke.resolve(withContext(Dispatchers.IO) { work(activity.contentResolver) })
+            } catch (e: SecurityException) {
+                invoke.resolve(JSObject().apply { put("error", "permission") })
+            } catch (e: IllegalStateException) {
+                // AnkiDroid has not set up its collection yet (never opened).
+                invoke.resolve(JSObject().apply { put("error", "not_ready") })
+            } catch (e: Exception) {
+                Log.e("NativeBridgePlugin", "AnkiDroid call failed", e)
+                invoke.reject("AnkiDroid call failed: ${e.message}")
+            }
+        }
+    }
+
+    @Command
+    fun anki_list_decks(invoke: Invoke) = ankiCall(invoke) { cr ->
+        val decks = JSArray()
+        AnkiDroidLink.listDecks(cr).forEach { d ->
+            decks.put(JSObject().apply {
+                put("id", d.id)
+                put("name", d.name)
+            })
+        }
+        JSObject().apply { put("decks", decks) }
+    }
+
+    @Command
+    fun anki_read_deck(invoke: Invoke) {
+        val args = invoke.parseArgs(AnkiReadDeckArgs::class.java)
+        ankiCall(invoke) { cr ->
+            val notes = JSArray()
+            AnkiDroidLink.readNotes(cr, args.deckIds.toList()).forEach { n ->
+                notes.put(JSObject().apply {
+                    put("id", n.id)
+                    put("fields", JSArray(n.fields))
+                    put("tags", n.tags)
+                })
+            }
+            val res = JSObject().apply { put("notes", notes) }
+            if (args.withCards) {
+                // The cards URI arrived in AnkiDroid 2.24; older versions reject it.
+                val cards = try {
+                    AnkiDroidLink.readCards(cr, args.deckIds.toList())
+                } catch (e: IllegalArgumentException) {
+                    null
+                }
+                if (cards != null) {
+                    val list = JSArray()
+                    cards.forEach { c ->
+                        list.put(JSObject().apply {
+                            put("noteId", c.noteId)
+                            put("cardType", c.type)
+                            put("interval", c.interval)
+                        })
+                    }
+                    res.put("cards", list)
+                }
+            }
+            res
+        }
+    }
+
+    @Command
+    fun anki_add_notes(invoke: Invoke) {
+        val args = invoke.parseArgs(AnkiAddNotesArgs::class.java)
+        ankiCall(invoke) { cr ->
+            val notes = args.notes.map { it.fields.toList() to it.tags.toList() }
+            JSObject().apply { put("added", AnkiDroidLink.addNotes(cr, args.deckName, notes)) }
+        }
+    }
+
+    @Command
+    fun anki_update_tags(invoke: Invoke) {
+        val args = invoke.parseArgs(AnkiUpdateTagsArgs::class.java)
+        ankiCall(invoke) { cr ->
+            val notes = args.notes.map { it.id to it.tags.toList() }
+            JSObject().apply { put("updated", AnkiDroidLink.updateTags(cr, notes)) }
+        }
     }
 
     /**
@@ -2115,7 +2290,7 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
                 event.error?.let { payload.put("error", it) }
                 emitOrQueue("web-browser-download", payload)
             },
-            completion = { hash, page ->
+            completion = { hash, page, image ->
                 activeWebBrowser = null
                 val ret = JSObject()
                 if (hash != null) ret.put("openBookHash", hash)
@@ -2124,6 +2299,12 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
                     captured.put("url", page.url)
                     captured.put("html", page.html)
                     ret.put("page", captured)
+                }
+                if (image != null) {
+                    val selected = JSObject()
+                    selected.put("url", image.url)
+                    selected.put("pageUrl", image.pageUrl)
+                    ret.put("image", selected)
                 }
                 invoke.resolve(ret)
             },
@@ -2401,6 +2582,9 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
                                 exitTransition = null
                                 isTouchable = false
                                 isClippingEnabled = false
+                                // Stay under the keyboard: Android drops IME touches that pass through this window (#7171).
+                                inputMethodMode = PopupWindow.INPUT_METHOD_NEEDED
+                                softInputMode = WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING
                                 setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
                                 if (Build.VERSION.SDK_INT >= 29) setIsLaidOutInScreen(true)
                             }

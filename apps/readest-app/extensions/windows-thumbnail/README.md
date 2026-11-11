@@ -46,7 +46,9 @@ cargo build --release --features cli
 
 ## Installation
 
-The thumbnail provider DLL is automatically registered when Readest is installed via the NSIS installer.
+The NSIS installer registers the DLL for Explorer previews. File Explorer thumbnails are **off by default**. Enable **Settings → Behavior → File Explorer → Use Readest for File Explorer thumbnails** to opt in on this Windows account. The preference stays on this device and survives updates. Turning it off removes only Readest's thumbnail registrations; preview-pane handlers and other providers remain unchanged.
+
+Upgrading from a version that registered thumbnails automatically removes those legacy registrations unless you have opted in. The setting requires the installed DLL; portable copies cannot enable it on their own.
 
 ### Manual Registration (for development)
 
@@ -133,7 +135,11 @@ This generates a thumbnail with the Readest overlay at the specified size.
 
 This ensures thumbnails only appear for files the user has associated with Readest.
 
-The installer claims an extension's thumbnail or preview slot only when it is empty or already Readest's, and the uninstaller only removes Readest's own entries, so handlers from other apps (e.g. Edge's PDF previewer, Adobe, SumatraPDF) are left alone.
+Thumbnail opt-in and preview registration claim an extension's slot only when it is empty or already Readest's. Opt-out and uninstall remove only Readest's own entries, so handlers from other apps (e.g. SageThumbs, Edge's PDF previewer, Adobe, SumatraPDF) are left alone.
+
+### Installer regression test
+
+From `src-tauri/nsis/tests`, compile `makensis explorer-thumbnails.nsi` and run `explorer-thumbnails-test.exe` in a disposable Windows user account or isolated Wine prefix. The harness writes fixture registry entries and reports its result in `explorer-thumbnails-test.log`; never run it against your normal Windows registry. It covers the default, legacy registration migration, per-user and machine install scopes, opt-in persistence, opt-out, uninstall, and third-party handlers.
 
 ## License
 

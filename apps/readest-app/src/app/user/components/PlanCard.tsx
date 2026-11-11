@@ -50,8 +50,12 @@ const PlanCard: React.FC<PlanCardProps> = ({
 
   return (
     <div
+      // No h-full: grid items already stretch to their row. Safari 16 resolved
+      // the percentage against the wrong height, and overflow-hidden then
+      // clipped every card to it (#7181).
+      data-plan-card
       className={clsx(
-        'bg-base-100 eink-bordered flex h-full flex-col overflow-hidden rounded-lg border',
+        'bg-base-100 eink-bordered flex flex-col overflow-hidden rounded-lg border',
         // The emphasised border marks the plan you are actually on, in that
         // tier's own colour — "recommended" is not a state the reader is in.
         isUserPlan ? accent.border : 'border-base-200',

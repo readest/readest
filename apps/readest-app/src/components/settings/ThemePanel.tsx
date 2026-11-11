@@ -63,6 +63,8 @@ const ThemePanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
   const { settings, setSettings, saveSettings } = useSettingsStore();
   const { getView, getViewSettings } = useReaderStore();
   const viewSettings = getViewSettings(bookKey) || settings.globalViewSettings;
+  const isPDF =
+    !!bookKey && useBookDataStore.getState().getBookData(bookKey)?.book?.format === 'PDF';
 
   // The Background Image picker edits one of two scopes (issue #5306): the
   // library's own texture (#4743 fields, per-field fallback to reader/global)
@@ -94,6 +96,9 @@ const ThemePanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
   const [invertImgColorInDark, setInvertImgColorInDark] = useState(
     viewSettings.invertImgColorInDark,
   );
+  const [transparentImageBackground, setTransparentImageBackground] = useState(
+    !!viewSettings.transparentImageBackground,
+  );
   const [editTheme, setEditTheme] = useState<CustomTheme | null>(null);
   const [customThemes, setCustomThemes] = useState<Theme[]>([]);
   const [showCustomThemeEditor, setShowCustomThemeEditor] = useState(false);
@@ -116,6 +121,9 @@ const ThemePanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
   const [dialogueHighlightItalic, setDialogueHighlightItalic] = useState(
     viewSettings.dialogueHighlightItalic,
   );
+  const [dialogueHighlightWeight, setDialogueHighlightWeight] = useState(
+    viewSettings.dialogueHighlightWeight ?? 'normal',
+  );
   const [selectedTextureId, setSelectedTextureId] = useState(currentTextureId);
   const [backgroundOpacity, setBackgroundOpacity] = useState(currentBackgroundOpacity);
   const [backgroundSize, setBackgroundSize] = useState(currentBackgroundSize);
@@ -134,6 +142,15 @@ const ThemePanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
   const [readingRulerLines, setReadingRulerLines] = useState(viewSettings.readingRulerLines);
   const [readingRulerOpacity, setReadingRulerOpacity] = useState(viewSettings.readingRulerOpacity);
   const [readingRulerColor, setReadingRulerColor] = useState(viewSettings.readingRulerColor);
+  const [readingRulerStyle, setReadingRulerStyle] = useState(
+    viewSettings.readingRulerStyle ?? 'band',
+  );
+  const [readingRulerLineColor, setReadingRulerLineColor] = useState(
+    viewSettings.readingRulerLineColor ?? '#808080',
+  );
+  const [readingRulerLineThickness, setReadingRulerLineThickness] = useState(
+    viewSettings.readingRulerLineThickness ?? 2,
+  );
 
   const {
     textures: customTextures,
@@ -152,6 +169,7 @@ const ThemePanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
     resetToDefaults({
       overrideColor: setOverrideColor,
       invertImgColorInDark: setInvertImgColorInDark,
+      transparentImageBackground: setTransparentImageBackground,
       highlightOpacity: setHighlightOpacity,
       codeHighlighting: setcodeHighlighting,
       codeLanguage: setCodeLanguage,
@@ -161,9 +179,13 @@ const ThemePanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
       dialogueHighlightCustomTextColor: setDialogueHighlightCustomTextColor,
       dialogueHighlightTextColor: setDialogueHighlightTextColor,
       dialogueHighlightItalic: setDialogueHighlightItalic,
+      dialogueHighlightWeight: setDialogueHighlightWeight,
       readingRulerEnabled: setReadingRulerEnabled,
       readingRulerLines: setReadingRulerLines,
       readingRulerOpacity: setReadingRulerOpacity,
+      readingRulerStyle: setReadingRulerStyle,
+      readingRulerLineColor: setReadingRulerLineColor,
+      readingRulerLineThickness: setReadingRulerLineThickness,
     });
     resetThemeScopes();
     setSelectedTextureId('none');
@@ -212,6 +234,12 @@ const ThemePanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
     saveViewSettings(envConfig, bookKey, 'invertImgColorInDark', invertImgColorInDark);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [invertImgColorInDark]);
+
+  useEffect(() => {
+    if (transparentImageBackground === !!viewSettings.transparentImageBackground) return;
+    saveViewSettings(envConfig, bookKey, 'transparentImageBackground', transparentImageBackground);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [transparentImageBackground]);
 
   useEffect(() => {
     if (overrideColor === viewSettings.overrideColor) return;
@@ -281,7 +309,14 @@ const ThemePanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
     // Capture before the saves below mutate viewSettings in place.
     const customTextColorChanged =
       dialogueHighlightCustomTextColor !== viewSettings.dialogueHighlightCustomTextColor;
+    const weightChanged =
+      dialogueHighlightWeight !== (viewSettings.dialogueHighlightWeight ?? 'normal');
     const saves: Promise<void>[] = [];
+    if (weightChanged) {
+      saves.push(
+        saveViewSettings(envConfig, bookKey, 'dialogueHighlightWeight', dialogueHighlightWeight),
+      );
+    }
     if (dialogueHighlightCustomColor !== viewSettings.dialogueHighlightCustomColor) {
       saves.push(
         saveViewSettings(
@@ -325,11 +360,11 @@ const ThemePanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
     // Recoloring is pure CSS (getStyles reads these fields), so the saved
     // viewSettings refresh via saveViewSettings -> setStyles is enough when
     // the background is on and spans are guaranteed present. With the
-    // background off, spans may not exist yet (text-only mode just turned
-    // on), so re-wrap — but only on that toggle transition, not on every
+    // background off, spans may not exist yet (text color or weight just
+    // enabled marking), so re-wrap on those transitions, not on every
     // color-picker tick, since each run clears and rewrites every document.
     // Wait for every save so each open book has the new settings first.
-    if (!dialogueHighlight && customTextColorChanged) {
+    if (!dialogueHighlight && (customTextColorChanged || weightChanged)) {
       Promise.all(saves).then(refreshDialogueMarks);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -339,6 +374,7 @@ const ThemePanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
     dialogueHighlightCustomTextColor,
     dialogueHighlightTextColor,
     dialogueHighlightItalic,
+    dialogueHighlightWeight,
   ]);
 
   useEffect(() => {
@@ -393,6 +429,35 @@ const ThemePanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
     saveViewSettings(envConfig, bookKey, 'readingRulerColor', readingRulerColor, false, false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [readingRulerColor]);
+
+  useEffect(() => {
+    saveViewSettings(envConfig, bookKey, 'readingRulerStyle', readingRulerStyle, false, false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [readingRulerStyle]);
+
+  useEffect(() => {
+    saveViewSettings(
+      envConfig,
+      bookKey,
+      'readingRulerLineColor',
+      readingRulerLineColor,
+      false,
+      false,
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [readingRulerLineColor]);
+
+  useEffect(() => {
+    saveViewSettings(
+      envConfig,
+      bookKey,
+      'readingRulerLineThickness',
+      readingRulerLineThickness,
+      false,
+      false,
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [readingRulerLineThickness]);
 
   // Re-apply the CURRENT page's resolved texture rather than the edited
   // values: editing the other page's scope must not repaint this page (the
@@ -566,6 +631,21 @@ const ThemePanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
           </label>
 
           <label
+            data-setting-id='settings.color.transparentImageBackground'
+            className={clsx(
+              'flex items-center justify-between px-4',
+              isPDF ? 'cursor-not-allowed opacity-50' : 'cursor-pointer',
+            )}
+          >
+            <SettingLabel>{_('Transparent Image Background')}</SettingLabel>
+            <Toggle
+              checked={transparentImageBackground}
+              disabled={isPDF}
+              onChange={() => setTransparentImageBackground(!transparentImageBackground)}
+            />
+          </label>
+
+          <label
             data-setting-id='settings.color.overrideBookColor'
             className='flex cursor-pointer items-center justify-between px-4'
           >
@@ -606,6 +686,12 @@ const ThemePanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
             lines={readingRulerLines}
             opacity={readingRulerOpacity}
             color={readingRulerColor}
+            rulerStyle={readingRulerStyle}
+            lineColor={readingRulerLineColor}
+            lineThickness={readingRulerLineThickness}
+            onStyleChange={setReadingRulerStyle}
+            onLineColorChange={setReadingRulerLineColor}
+            onLineThicknessChange={setReadingRulerLineThickness}
             onEnabledChange={setReadingRulerEnabled}
             onLinesChange={setReadingRulerLines}
             onOpacityChange={setReadingRulerOpacity}
@@ -632,6 +718,8 @@ const ThemePanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
             onBackgroundColorChange={setDialogueHighlightColor}
             onCustomTextColorToggle={setDialogueHighlightCustomTextColor}
             italic={dialogueHighlightItalic}
+            weight={dialogueHighlightWeight}
+            onWeightChange={setDialogueHighlightWeight}
             onTextColorChange={setDialogueHighlightTextColor}
             onItalicToggle={setDialogueHighlightItalic}
             data-setting-id='settings.color.dialogueHighlight'

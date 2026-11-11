@@ -13,6 +13,7 @@ import { Insets } from '@/types/misc';
 import { EnvConfigType } from '@/services/environment';
 import { FoliateView } from '@/types/view';
 import { isAbsEbook } from '@/utils/audiobook';
+import { partialMD5 } from '@/utils/md5';
 import { DocumentLoader, TOCItem } from '@/libs/document';
 import {
   isPseStreamFileName,
@@ -123,6 +124,27 @@ interface ReaderStore {
   setViewInited: (key: string, inited: boolean) => void;
   setPreviewMode: (key: string, previewMode: boolean) => void;
   recreateViewer: (envConfig: EnvConfigType, key: string) => void;
+}
+
+/** `state` with `patch` applied to `key`'s view state: unchanged (so no subscriber is notified)
+ * when every field already holds its value. Insets compare by value. */
+function withViewState(
+  state: ReaderStore,
+  key: string,
+  patch: Partial<ViewState>,
+): ReaderStore | Partial<ReaderStore> {
+  const current = state.viewStates[key];
+  const same = (a: unknown, b: unknown) =>
+    a === b ||
+    (!!a &&
+      !!b &&
+      typeof a === 'object' &&
+      typeof b === 'object' &&
+      Object.keys(a).length === Object.keys(b).length &&
+      Object.entries(a).every(([k, v]) => (b as Record<string, unknown>)[k] === v));
+  if (current && Object.entries(patch).every(([k, v]) => same(current[k as keyof ViewState], v)))
+    return state;
+  return { viewStates: { ...state.viewStates, [key]: { ...current!, ...patch } } };
 }
 
 export const useReaderStore = create<ReaderStore>((set, get) => ({
@@ -278,6 +300,20 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
           docFormat = doc.format;
           if (doc.format === 'CBZ') config.widePages = getWidePages(bookDoc.sections);
         }
+      }
+      // KOReader keys a book by its file's partial MD5, but an Audiobookshelf
+      // ebook's hash comes from its abs:// path: keep the file's own id with
+      // the book for KOReader Sync (#7088). Hashed on every open, since the
+      // server can replace an item's file, and waited for only briefly: a
+      // stalled range read must not keep the book from opening.
+      if (file && isAbsEbook(book)) {
+        const hashing = partialMD5(file).then(
+          (hash) => {
+            book.metadata!.absFileHash = hash;
+          },
+          (err) => console.warn('Failed to hash the Audiobookshelf ebook', err),
+        );
+        await Promise.race([hashing, new Promise((resolve) => setTimeout(resolve, 5000))]);
       }
       const config = await configPromise;
       // Import annotations from third-party readers on first open. The
@@ -542,105 +578,33 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
     } as BookProgress);
   },
   setBookmarkRibbonVisibility: (key: string, visible: boolean) =>
-    set((state) => ({
-      viewStates: {
-        ...state.viewStates,
-        [key]: {
-          ...state.viewStates[key]!,
-          ribbonVisible: visible,
-        },
-      },
-    })),
+    set((state) => withViewState(state, key, { ribbonVisible: visible })),
 
   setTTSEnabled: (key: string, enabled: boolean) =>
-    set((state) => ({
-      viewStates: {
-        ...state.viewStates,
-        [key]: {
-          ...state.viewStates[key]!,
-          ttsEnabled: enabled,
-        },
-      },
-    })),
+    set((state) => withViewState(state, key, { ttsEnabled: enabled })),
 
   setDrawingEnabled: (key: string, enabled: boolean) =>
-    set((state) => ({
-      viewStates: {
-        ...state.viewStates,
-        [key]: {
-          ...state.viewStates[key]!,
-          drawingEnabled: enabled,
-        },
-      },
-    })),
+    set((state) => withViewState(state, key, { drawingEnabled: enabled })),
 
   setAutoScrollEnabled: (key: string, enabled: boolean) =>
-    set((state) => ({
-      viewStates: {
-        ...state.viewStates,
-        [key]: {
-          ...state.viewStates[key]!,
-          autoScrollEnabled: enabled,
-        },
-      },
-    })),
+    set((state) => withViewState(state, key, { autoScrollEnabled: enabled })),
 
   setIsLoading: (key: string, loading: boolean) =>
-    set((state) => ({
-      viewStates: {
-        ...state.viewStates,
-        [key]: {
-          ...state.viewStates[key]!,
-          loading,
-        },
-      },
-    })),
+    set((state) => withViewState(state, key, { loading: loading })),
 
   setIsSyncing: (key: string, syncing: boolean) =>
-    set((state) => ({
-      viewStates: {
-        ...state.viewStates,
-        [key]: {
-          ...state.viewStates[key]!,
-          syncing,
-        },
-      },
-    })),
+    set((state) => withViewState(state, key, { syncing: syncing })),
 
   getGridInsets: (key: string) =>
     get().viewStates[key]?.gridInsets || { top: 0, right: 0, bottom: 0, left: 0 },
   setGridInsets: (key: string, insets: Insets | null) =>
-    set((state) => ({
-      viewStates: {
-        ...state.viewStates,
-        [key]: {
-          ...state.viewStates[key]!,
-          gridInsets: insets,
-        },
-      },
-    })),
+    set((state) => withViewState(state, key, { gridInsets: insets })),
 
   setViewInited: (key: string, inited: boolean) =>
-    set((state) => ({
-      viewStates: {
-        ...state.viewStates,
-        [key]: {
-          ...state.viewStates[key]!,
-          inited,
-        },
-      },
-    })),
+    set((state) => withViewState(state, key, { inited: inited })),
 
   setPreviewMode: (key: string, previewMode: boolean) =>
-    set((state) => ({
-      viewStates: {
-        ...state.viewStates,
-        [key]: {
-          ...state.viewStates[key]!,
-          previewMode,
-        },
-      },
-    })),
+    set((state) => withViewState(state, key, { previewMode: previewMode })),
 
   recreateViewer: (envConfig: EnvConfigType, key: string) => {
     if (!key || get().viewStates[key]?.key !== key) return;

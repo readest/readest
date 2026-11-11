@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, test } from 'vitest';
 import {
   MAX_PLUGIN_RESOURCE_BYTES,

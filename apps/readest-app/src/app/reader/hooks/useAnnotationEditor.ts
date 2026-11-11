@@ -31,7 +31,9 @@ export const useAnnotationEditor = ({
 }: UseAnnotationEditorProps) => {
   const { envConfig } = useEnv();
   const { settings } = useSettingsStore();
-  const { getConfig, saveConfig, updateBooknotes } = useBookDataStore();
+  const getConfig = useBookDataStore((s) => s.getConfig);
+  const saveConfig = useBookDataStore((s) => s.saveConfig);
+  const updateBooknotes = useBookDataStore((s) => s.updateBooknotes);
   const { getView, getProgress, getViewsById } = useReaderStore();
 
   const view = getView(bookKey);
@@ -82,6 +84,12 @@ export const useAnnotationEditor = ({
             ...existingAnnotation,
             cfi: newCfi,
             text: newText,
+            // Anchors of the old range: the next push sets them for this one.
+            // Null, not undefined, which the push would drop: the server must
+            // forget the old range even if the new one can't be anchored.
+            xpointer0: null,
+            xpointer1: null,
+            crosspoint: null,
             updatedAt: nextBooknoteStamp(existingAnnotation),
           };
 

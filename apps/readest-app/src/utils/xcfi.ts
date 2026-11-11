@@ -798,13 +798,22 @@ export const getCFIFromXPointer = (
 export const getCFIFromXPointerRange = (start: string, end: string, bookDoc?: BookDoc) =>
   convertXPointer(start, end, undefined, undefined, bookDoc);
 
+/**
+ * Newer crengine (137cba4, in KOReader nightlies) writes `[1]` on a step even when it has no
+ * same-name sibling: `/body[1]/DocFragment[23]/body[1]/div[1]/p[4]/text()[1].0`. `tag[1]` is the
+ * same step as `tag`, so read both one way. `text()[1]` stays: the parser reads it as is.
+ */
+const dropFirstStepIndexes = (xpointer: string) => xpointer.replace(/([\w-]+)\[1\]/g, '$1');
+
 const convertXPointer = async (
-  xpointer: string,
-  endXPointer: string | undefined,
+  rawXPointer: string,
+  rawEndXPointer: string | undefined,
   doc?: Document,
   index?: number,
   bookDoc?: BookDoc,
 ) => {
+  const xpointer = dropFirstStepIndexes(rawXPointer);
+  const endXPointer = rawEndXPointer && dropFirstStepIndexes(rawEndXPointer);
   if (xpointer.startsWith('/FictionBook')) {
     if (!bookDoc) throw new Error('FB2 XPointer conversion needs the book.');
     const fb2Index = await getFB2SectionIndex(xpointer, bookDoc);

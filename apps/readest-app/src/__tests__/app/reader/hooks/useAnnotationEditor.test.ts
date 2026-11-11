@@ -1,3 +1,5 @@
+// @vitest-environment happy-dom
+import { bookDataStoreHooks } from '@/__tests__/helpers/book-data-store-mock';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { cleanup, renderHook } from '@testing-library/react';
 import type { BookNote } from '@/types/book';
@@ -18,11 +20,11 @@ const h = vi.hoisted(() => ({
 vi.mock('@/context/EnvContext', () => ({ useEnv: () => ({ envConfig: {} }) }));
 vi.mock('@/store/settingsStore', () => ({ useSettingsStore: () => ({ settings: {} }) }));
 vi.mock('@/store/bookDataStore', () => ({
-  useBookDataStore: () => ({
+  ...bookDataStoreHooks(() => ({
     getConfig: () => ({ booknotes: h.annotations }),
     saveConfig: h.saveConfig,
     updateBooknotes: h.updateBooknotes,
-  }),
+  })),
 }));
 vi.mock('@/store/readerStore', () => ({
   useReaderStore: () => ({
@@ -94,6 +96,29 @@ describe('useAnnotationEditor applyAnnotationRange', () => {
     expect(setSelection).toHaveBeenCalledWith(
       expect.objectContaining({ cfi: 'new-cfi', text: 'edited text', range, annotated: true }),
     );
+  });
+
+  test('a moved range drops the KOReader and CrossPoint anchors of the old one', async () => {
+    h.annotations = [
+      {
+        ...annotation,
+        xpointer0: '/body/DocFragment[2]/body/p[1]/text().0',
+        xpointer1: '/body/DocFragment[2]/body/p[1]/text().3',
+        crosspoint: { spine: 1, start_offset: 0, end_offset: 3 },
+      },
+    ];
+    const { result } = setup();
+
+    await result.current.applyAnnotationRange(range, 2, false, false);
+
+    // The next push anchors the new range for both readers again. Cleared as
+    // null, not dropped, so the server forgets the old range even when the
+    // new one can't be anchored.
+    const [, [saved]] = h.updateBooknotes.mock.calls.at(-1) as unknown as [string, BookNote[]];
+    expect(saved).toMatchObject({ cfi: 'new-cfi', text: 'edited text' });
+    expect(saved!.xpointer0).toBeNull();
+    expect(saved!.xpointer1).toBeNull();
+    expect(saved!.crosspoint).toBeNull();
   });
 
   // #6390: a range in the footnote popup's document means nothing to the main

@@ -18,7 +18,7 @@ The light-theme attachment contains Samsung's private MP4 metadata, even though 
 not ask for the phone model:
 
 - `mdlnSM-A266B`
-- `com.samsung.android.utc_offset=+0400`
+- a Samsung UTC-offset tag (in [[private-selection-black-rects-android-6025]], local only)
 - `Samsung_Capture_Info=Screen recording`
 - encoded dimensions `1080x2340`, matching the physical display
 

@@ -1,3 +1,4 @@
+import { mergeTTSPacks } from '@/utils/ttsPacks';
 import { useCallback, useEffect, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useEnv } from '@/context/EnvContext';
@@ -47,6 +48,7 @@ export const useProgressSync = (bookKey: string) => {
   // to the WHOLE bookDataStore — saveConfig writes booksData on every
   // throttled save and would otherwise re-render the entire reader subtree.
   const getConfig = useBookDataStore((s) => s.getConfig);
+  const setConfig = useBookDataStore((s) => s.setConfig);
   const saveConfig = useBookDataStore((s) => s.saveConfig);
   const getBookData = useBookDataStore((s) => s.getBookData);
   const getView = useReaderStore((s) => s.getView);
@@ -66,6 +68,9 @@ export const useProgressSync = (bookKey: string) => {
 
   const configPulled = useRef(false);
   const hasPulledConfigOnce = useRef(false);
+  const initialPullConfig = useRef<{ location: BookConfig['location']; updatedAt: number } | null>(
+    null,
+  );
   const pullAttempt = useRef(0);
   const pullInFlight = useRef(false);
   const pendingResumePull = useRef(false);
@@ -142,6 +147,7 @@ export const useProgressSync = (bookKey: string) => {
       // protects the cross-device case (a stale local push with an older
       // updated_at will lose to a fresher server record).
       configPulled.current = true;
+      initialPullConfig.current = null;
       return;
     }
     const delay = PULL_RETRY_DELAYS_MS[pullAttempt.current]!;
@@ -282,9 +288,28 @@ export const useProgressSync = (bookKey: string) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [progress?.location]);
 
+  // Writing-direction detection can stamp updatedAt before the first relocate.
+  useEffect(() => {
+    const config = getConfig(bookKey);
+    if (config && !config.updatedAt) {
+      initialPullConfig.current = { location: config.location, updatedAt: 0 };
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bookKey]);
+
   // Pull: pull progress once when the book is opened, with retry on failure
   useEffect(() => {
-    if (!progress || hasPulledConfigOnce.current) return;
+    const config = getConfig(bookKey);
+    if (!progress) return;
+    if (!hasPulledConfigOnce.current && initialPullConfig.current) {
+      initialPullConfig.current.location = config?.location;
+    }
+    // A round trip is still a reading change; returning to the initial page
+    // must not revive the zero-timestamp exception while the pull is pending.
+    if (initialPullConfig.current && config?.location !== initialPullConfig.current.location) {
+      initialPullConfig.current = null;
+    }
+    if (hasPulledConfigOnce.current) return;
     hasPulledConfigOnce.current = true;
     pullWithRetry();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -302,6 +327,8 @@ export const useProgressSync = (bookKey: string) => {
   const applyRemoteProgress = async (syncedConfigs: BookConfig[]) => {
     const config = getConfig(bookKey);
     const book = getBookData(bookKey)?.book;
+    const initialConfig = initialPullConfig.current;
+    initialPullConfig.current = null;
     if (!syncedConfigs || syncedConfigs.length === 0 || !config || !book) return;
 
     const bookHash = bookKey.split('-')[0]!;
@@ -329,6 +356,16 @@ export const useProgressSync = (bookKey: string) => {
     // Base config for the device-agnostic viewSettings merge below (proofread
     // rules, reference page count). Prefer the exact same-file config.
     const syncedConfig = matches.find((c) => c.bookHash === bookHash) ?? matches[0];
+    // Read-aloud packs merge as a union, with no save that would bump
+    // updatedAt: recording audio must never move reading progress. Only this
+    // file's config counts; a sibling hash keeps its audio in another folder.
+    const ttsPacks = mergeTTSPacks(
+      config.ttsPacks,
+      matches.find((c) => c.bookHash === bookHash)?.ttsPacks,
+    );
+    if (ttsPacks && JSON.stringify(ttsPacks) !== JSON.stringify(config.ttsPacks)) {
+      setConfig(bookKey, { ttsPacks });
+    }
     if (syncedConfig) {
       const bookData = getBookData(bookKey);
       const view = getView(bookKey);
@@ -348,11 +385,20 @@ export const useProgressSync = (bookKey: string) => {
       if (exactConfig?.location && isMalformedLocationCfi(exactConfig.location)) {
         exactConfig = { ...exactConfig, location: undefined };
       }
-      // Furthest reading fraction among sibling copies (same metaHash, different
-      // book_hash). progress[0]/progress[1] compares across re-packaged copies
-      // of the same work; a CFI does not.
+      // Only a sibling newer than this file's local AND cloud saves may move
+      // it forward. Otherwise an old duplicate keeps pulling a deliberate
+      // rewind (or a purged position) back to its furthest page (#7092).
+      // Across different files only the reading fraction is comparable, not CFI.
+      // A fresh copy can autosave its initial page before the first pull lands.
+      // That timestamp is not a reading change. Once the location moves, use
+      // its current timestamp so a deliberate rewind still wins.
+      const localSavedAt =
+        initialConfig && config.location === initialConfig.location
+          ? initialConfig.updatedAt
+          : (config.updatedAt ?? 0);
+      const savedAt = Math.max(localSavedAt, exactConfig?.updatedAt ?? 0);
       const siblingFraction = matches
-        .filter((c) => c.bookHash !== bookHash)
+        .filter((c) => c.bookHash !== bookHash && (c.updatedAt ?? 0) > savedAt)
         .reduce((best, c) => Math.max(best, getConfigFraction(c) ?? 0), 0);
       const exactFraction = exactConfig ? (getConfigFraction(exactConfig) ?? 0) : 0;
       const localFraction = getBookProgress(bookKey)?.fraction ?? getConfigFraction(config) ?? 0;

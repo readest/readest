@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { HlcGenerator } from '@/libs/crdt';
 import { useSettingsStore } from '@/store/settingsStore';

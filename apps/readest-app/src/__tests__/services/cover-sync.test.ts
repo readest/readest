@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, test, expect, vi, beforeEach } from 'vitest';
 import { Book, BookFormat } from '@/types/book';
 import { FileSystem } from '@/types/system';

@@ -1,3 +1,4 @@
+import { bookDataStoreHooks } from '@/__tests__/helpers/book-data-store-mock';
 import React from 'react';
 import {
   act,
@@ -12,6 +13,7 @@ import ParagraphOverlay from '@/app/reader/components/paragraph/ParagraphOverlay
 import { useParagraphMode } from '@/app/reader/hooks/useParagraphMode';
 import type { FoliateView } from '@/types/view';
 import { eventDispatcher } from '@/utils/event';
+import { ParagraphIterator } from '@/utils/paragraph';
 import {
   getParagraphActionForKey,
   getParagraphActionForZone,
@@ -48,13 +50,13 @@ let mockIsFixedLayout = false;
 const mockBooksData: Record<string, { config?: { booknotes?: unknown[] } }> = {};
 
 vi.mock('@/store/bookDataStore', () => ({
-  useBookDataStore: (selector?: (state: unknown) => unknown) => {
+  ...bookDataStoreHooks((selector?: (state: unknown) => unknown) => {
     const state = {
       getBookData: () => ({ isFixedLayout: mockIsFixedLayout }),
       booksData: mockBooksData,
     };
     return selector ? selector(state) : state;
-  },
+  }),
 }));
 
 vi.mock('@/context/EnvContext', () => ({
@@ -110,6 +112,8 @@ function createMockView(docs: Document[], initialPrimaryIndex: number) {
 
   const renderer = {
     primaryIndex: initialPrimaryIndex,
+    atStart: false,
+    atEnd: false,
     getContents: vi.fn(() => contents),
     nextSection: vi.fn(async () => {
       renderer.primaryIndex = Math.min(renderer.primaryIndex + 1, contents.length - 1);
@@ -239,6 +243,136 @@ describe('paragraph mode', () => {
     await waitFor(() => {
       expect(renderer.goTo).toHaveBeenLastCalledWith(expect.objectContaining({ index: 1 }));
     });
+  });
+
+  it.each([
+    'next',
+    'prev',
+  ] as const)('preserves repeated %s paragraph events during a section transition', async (direction) => {
+    const firstDoc = createDoc('<p>First A</p><p>First B</p>');
+    const secondDoc = createDoc('<p>Second A</p><p>Second B</p>');
+    const { view, renderer } = createMockView([firstDoc, secondDoc], direction === 'next' ? 0 : 1);
+    let finishTransition: (() => void) | undefined;
+    const transition = direction === 'next' ? renderer.nextSection : renderer.prevSection;
+    transition.mockImplementation(
+      () =>
+        new Promise<void>((resolve) => {
+          finishTransition = () => {
+            renderer.primaryIndex = direction === 'next' ? 1 : 0;
+            resolve();
+          };
+        }),
+    );
+    const viewRef = { current: view } as React.RefObject<FoliateView | null>;
+    render(<HookHarness view={viewRef} />);
+    await waitFor(() => expect(hookApi?.paragraphState.currentRange).toBeTruthy());
+    if (direction === 'next') {
+      await act(async () => {
+        await hookApi?.goToNextParagraph();
+      });
+    }
+
+    let firstPress = Promise.resolve();
+    let secondPress = Promise.resolve();
+    await act(async () => {
+      firstPress = eventDispatcher.dispatch(`paragraph-${direction}`, { bookKey: 'book-1' });
+    });
+    await waitFor(() => expect(transition).toHaveBeenCalledOnce());
+    await act(async () => {
+      secondPress = eventDispatcher.dispatch(`paragraph-${direction}`, { bookKey: 'book-1' });
+      finishTransition!();
+      await Promise.all([firstPress, secondPress]);
+    });
+    await waitFor(() => {
+      expect(hookApi?.paragraphState.currentRange?.toString()).toBe(
+        direction === 'next' ? 'Second B' : 'First A',
+      );
+    });
+    expect(transition).toHaveBeenCalledOnce();
+  });
+
+  it.each([
+    'next',
+    'prev',
+  ] as const)('does not wait on repeated %s book-boundary events before reversing', async (direction) => {
+    const timers = vi
+      .spyOn(globalThis, 'setTimeout')
+      .mockImplementation((handler, timeout) =>
+        realSetTimeout(handler, typeof timeout === 'number' && timeout < 1000 ? 0 : timeout),
+      );
+    const doc = createDoc('<p>First</p><p>Last</p>');
+    const { view, renderer } = createMockView([doc], 0);
+    renderer.atStart = true;
+    renderer.atEnd = true;
+    render(<HookHarness view={{ current: view }} />);
+    await waitFor(() => expect(hookApi?.paragraphState.currentRange).toBeTruthy());
+    if (direction === 'next') {
+      await act(async () => {
+        await hookApi?.goToNextParagraph();
+      });
+    }
+    timers.mockClear();
+    await act(async () => {
+      await Promise.all([
+        eventDispatcher.dispatch(`paragraph-${direction}`, { bookKey: 'book-1' }),
+        eventDispatcher.dispatch(`paragraph-${direction}`, { bookKey: 'book-1' }),
+        eventDispatcher.dispatch(direction === 'next' ? 'paragraph-prev' : 'paragraph-next', {
+          bookKey: 'book-1',
+        }),
+      ]);
+    });
+    expect(hookApi?.paragraphState.currentRange?.toString()).toBe(
+      direction === 'next' ? 'First' : 'Last',
+    );
+    expect(timers).not.toHaveBeenCalledWith(expect.any(Function), 750);
+  });
+
+  it.each([
+    'next',
+    'prev',
+  ] as const)('waits for an existing page turn when the %s section move returns early', async (direction) => {
+    const firstDoc = createDoc('<p>First A</p><p>First B</p>');
+    const secondDoc = createDoc('<p>Second A</p><p>Second B</p>');
+    const { view, renderer } = createMockView([firstDoc, secondDoc], direction === 'next' ? 0 : 1);
+    const transition = direction === 'next' ? renderer.nextSection : renderer.prevSection;
+    transition.mockImplementation(async () => {
+      setTimeout(() => {
+        renderer.primaryIndex = direction === 'next' ? 1 : 0;
+      }, 0);
+    });
+    render(<HookHarness view={{ current: view }} />);
+    await waitFor(() => expect(hookApi?.paragraphState.currentRange).toBeTruthy());
+    if (direction === 'next') {
+      await act(async () => {
+        await hookApi?.goToNextParagraph();
+      });
+    }
+    await act(async () => {
+      await eventDispatcher.dispatch(`paragraph-${direction}`, { bookKey: 'book-1' });
+    });
+    expect(hookApi?.paragraphState.currentRange?.toString()).toBe(
+      direction === 'next' ? 'Second A' : 'First B',
+    );
+  });
+
+  it('reports a failed paragraph event and still runs the next event', async () => {
+    const doc = createDoc('<p>First</p><p>Second</p><p>Third</p>');
+    const { view } = createMockView([doc], 0);
+    render(<HookHarness view={{ current: view }} />);
+    await waitFor(() => expect(hookApi?.paragraphState.currentRange?.toString()).toBe('First'));
+    const failure = new Error('Paragraph move failed');
+    vi.spyOn(ParagraphIterator.prototype, 'next').mockImplementationOnce(() => {
+      throw failure;
+    });
+    await act(async () => {
+      await expect(eventDispatcher.dispatch('paragraph-next', { bookKey: 'book-1' })).rejects.toBe(
+        failure,
+      );
+    });
+    await act(async () => {
+      await eventDispatcher.dispatch('paragraph-next', { bookKey: 'book-1' });
+    });
+    expect(hookApi?.paragraphState.currentRange?.toString()).toBe('Second');
   });
 
   it('moves across the chunks of a section rendered in chunks', async () => {

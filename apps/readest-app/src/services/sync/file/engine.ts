@@ -34,9 +34,22 @@ import {
 
 export type SyncStrategy = 'silent' | 'send' | 'receive';
 
+const noteStamp = ({ id, updatedAt, deletedAt }: BookNote) =>
+  `${id}:${updatedAt}:${deletedAt ?? 0}`;
+
+/** Whether a merge changed what this device has, not just read the remote. */
+const configChanged = (local: BookConfig, merged: BookConfig, notes: BookNote[]) => {
+  if (merged.location !== local.location) return true;
+  if (merged.progress?.[0] !== local.progress?.[0]) return true;
+  const known = new Set((local.booknotes ?? []).map(noteStamp));
+  return notes.length !== known.size || notes.some((note) => !known.has(noteStamp(note)));
+};
+
 export interface PullResult {
   /** True when the remote had a config and we merged something into local. */
   applied: boolean;
+  /** True when the merge moved the reading position or changed a note. */
+  changed?: boolean;
   /** The merged config to be written back into the local store. */
   mergedConfig?: BookConfig;
   /** When non-empty, these are the notes after merge — use them to update the live view. */
@@ -305,6 +318,7 @@ export class FileSyncEngine {
     const { config, notes } = mergeBookConfig(localConfig, remote);
     return {
       applied: true,
+      changed: configChanged(localConfig, config, notes),
       mergedConfig: config,
       mergedNotes: notes,
       remoteDeviceId: remote.writerDeviceId,
@@ -804,7 +818,7 @@ export class FileSyncEngine {
               const pull = await this.pullBookConfig(merged, localConfig);
               if (pull.applied && pull.mergedConfig) {
                 await this.store.saveBookConfig(merged, pull.mergedConfig);
-                result.configsDownloaded += 1;
+                if (pull.changed) result.configsDownloaded += 1;
               }
             } catch (e) {
               noteAbort(e);
@@ -1102,7 +1116,7 @@ export class FileSyncEngine {
               const pullResult = await this.pullBookConfig(rb, emptyLocal);
               if (pullResult.applied && pullResult.mergedConfig) {
                 await this.store.saveBookConfig(rb, pullResult.mergedConfig);
-                result.configsDownloaded += 1;
+                if (pullResult.changed) result.configsDownloaded += 1;
               }
             } catch (e) {
               console.warn('file sync: config download failed', rb.hash, e);

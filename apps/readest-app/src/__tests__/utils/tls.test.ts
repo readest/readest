@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it, vi } from 'vitest';
 import type { ClientOptions } from '@tauri-apps/plugin-http';
 import { allowsSelfSignedCert, tlsFetch, tlsFetchOptions } from '@/utils/tls';

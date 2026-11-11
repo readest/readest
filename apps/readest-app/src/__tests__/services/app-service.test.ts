@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
 import { BaseDir, FileSystem, ResolvedPath } from '@/types/system';
 import { DatabaseOpts, DatabaseService } from '@/types/database';
@@ -564,9 +565,12 @@ describe('BaseAppService', () => {
       expect(Settings.saveSettings).toHaveBeenCalledWith(mockFs, settings);
     });
 
-    test('getDefaultViewSettings delegates', () => {
+    test('getDefaultViewSettings passes the desktop-app flag for spread defaults', () => {
+      service.isDesktopApp = true;
       const result = service.getDefaultViewSettings();
-      expect(Settings.getDefaultViewSettings).toHaveBeenCalled();
+      expect(Settings.getDefaultViewSettings).toHaveBeenCalledWith(
+        expect.objectContaining({ isDesktopApp: true }),
+      );
       expect(result).toEqual({ theme: 'light' });
     });
   });

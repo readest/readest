@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { wiktionaryProvider } from '@/services/dictionaries/providers/wiktionaryProvider';
 import { BUILTIN_PROVIDER_IDS } from '@/services/dictionaries/types';

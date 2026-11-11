@@ -77,9 +77,13 @@ const useShortcuts = (
   const unifiedHandleKeyDown = (event: KeyboardEvent | MessageEvent) => {
     if (document.querySelector('[data-shortcut-recording="true"]')) return;
 
-    // Check if the focus is on an input, textarea, or contenteditable element
+    // Check if the key is typed in an input, textarea, or contenteditable
+    // element: the focused one, or the one it was typed in, which its own
+    // handler may already have removed (the vim find line on Enter).
     const activeElement = document.activeElement as HTMLElement | null;
-    const isInteractiveElement = isInteractiveTarget(activeElement);
+    const isInteractiveElement =
+      isInteractiveTarget(activeElement) ||
+      (event instanceof KeyboardEvent && isInteractiveTarget(event.target));
     const iframeInteractiveTarget =
       event instanceof MessageEvent &&
       event.data?.type === 'iframe-keydown' &&

@@ -10,7 +10,7 @@ body:
           <img src="https://github.com/readest/readest/blob/main/apps/readest-app/src-tauri/icons/icon.png?raw=true" alt="Readest Logo" width="20%" />
         </p>
 
-        Please replace the **`BUG DESCRPTION`** template above with a clear and concise description of what the current behvaior is.
+        Please replace the **`BUG DESCRIPTION`** template above with a clear and concise description of what the current behavior is.
 
         An example of a good bug report title would look like:
         ```plaintext
@@ -26,7 +26,7 @@ body:
         A clear and concise description of what the current behavior is.
 
         Please also add **screenshots** of the issue if applicable.
-      placeholder: "E.g: In DarkMode, when scrollbar are displayed, we see a blank square in the bottom right corner"
+      placeholder: "E.g: In DarkMode, when scrollbars are displayed, we see a blank square in the bottom right corner"
     validations:
       required: true
   - type: "textarea"
@@ -38,7 +38,7 @@ body:
     validations:
       required: true
   - type: "textarea"
-    id: "expected_behvaior"
+    id: "expected_behavior"
     attributes:
       label: "Expected Behavior"
       description: |

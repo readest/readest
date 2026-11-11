@@ -45,6 +45,7 @@ vi.mock('@/services/tts/WebAudioPlayer', async (importActual) => ({
 vi.mock('@/services/tts/TTSUtils', () => ({
   TTSUtils: {
     getPreferredClient: vi.fn().mockReturnValue(null),
+    getPreferredClientForLang: vi.fn().mockReturnValue(null),
     setPreferredClient: vi.fn(),
     setPreferredVoice: vi.fn(),
     getPreferredVoice: vi.fn().mockReturnValue(null),
@@ -275,7 +276,32 @@ describe('TTSController', () => {
       expect(c.ttsNativeClient).not.toBeNull();
     });
 
-    test('does not create native client when neither Android nor iOS', () => {
+    test('creates and selects Linux system voices offline', async () => {
+      const linuxService = { ...createMockAppService(), isLinuxApp: true };
+      const c = new TTSController(linuxService, mockView);
+      expect(c.ttsNativeClient).not.toBeNull();
+      const voices = [{ id: 'speechd:espeak-ng:English', name: 'English', lang: 'en' }];
+      vi.mocked(c.ttsNativeClient!.getAllVoices).mockResolvedValue(voices);
+      vi.mocked(c.ttsEdgeClient.init).mockResolvedValue(false);
+      vi.mocked(c.ttsWebClient.init).mockResolvedValue(false);
+      await c.init();
+      expect(c.ttsNativeVoices).toEqual(voices);
+      expect(c.ttsClient).toBe(c.ttsNativeClient);
+      await c.setVoice(voices[0]!.id, 'en');
+      expect(c.ttsNativeClient!.setVoice).toHaveBeenCalledWith(voices[0]!.id);
+    });
+
+    test('keeps the other engines available when speech-dispatcher is unavailable', async () => {
+      const linuxService = { ...createMockAppService(), isLinuxApp: true };
+      const c = new TTSController(linuxService, mockView);
+      expect(c.ttsNativeClient).not.toBeNull();
+      vi.mocked(c.ttsNativeClient!.init).mockResolvedValue(false);
+      await c.init();
+      expect(c.ttsNativeVoices).toEqual([]);
+      expect(c.ttsClient).toBe(c.ttsEdgeClient);
+    });
+
+    test('does not create native client on other desktop platforms or web', () => {
       expect(controller.ttsNativeClient).toBeNull();
     });
 
@@ -389,7 +415,7 @@ describe('TTSController', () => {
 
       expect(controller.ttsClient.name).toBe('edge');
       expect(controller.state).toBe('setvoice-paused');
-      expect(TTSUtils.setPreferredClient).toHaveBeenCalledWith('edge');
+      expect(TTSUtils.setPreferredClient).toHaveBeenCalledWith('edge', '');
       expect(TTSUtils.setPreferredVoice).toHaveBeenCalledWith('edge', 'en', 'edge-voice-1');
     });
 
@@ -2243,6 +2269,65 @@ describe('TTSController', () => {
 
       expect(stopKeepAlive).toHaveBeenCalled();
     });
+  });
+
+  test.each([
+    'preload',
+    'preprocess',
+  ] as const)('a skipped utterance awaiting %s cannot abort the speech that replaced it (#7065)', async (pendingStage) => {
+    await controller.initViewTTS(0);
+    controller.ttsClient = controller.ttsEdgeClient;
+    vi.spyOn(controller, 'preloadNextSSML').mockResolvedValue();
+    let finishOldPreload!: () => void;
+    const oldPreload = new Promise<void>((resolve) => {
+      finishOldPreload = resolve;
+    });
+    const preprocess = vi.fn(async (ssml: string) => {
+      if (pendingStage === 'preprocess' && ssml.includes('old')) await oldPreload;
+      return ssml;
+    });
+    controller.preprocessCallback = preprocess;
+    const playbackSignals: AbortSignal[] = [];
+    vi.mocked(controller.ttsClient.speak).mockImplementation(
+      async function* (ssml, signal, preload) {
+        if (preload) {
+          if (pendingStage === 'preload' && ssml.includes('old')) await oldPreload;
+          return;
+        }
+        playbackSignals.push(signal);
+        yield { code: 'boundary', mark: '0' };
+        if (!signal.aborted) {
+          await new Promise<void>((resolve) =>
+            signal.addEventListener('abort', () => resolve(), { once: true }),
+          );
+        }
+      },
+    );
+
+    await controller.speak('<speak>old uncached sentence</speak>');
+    await vi.waitFor(() => {
+      if (pendingStage === 'preload') {
+        expect(controller.ttsClient.speak).toHaveBeenCalledWith(
+          '<speak>old uncached sentence</speak>',
+          expect.anything(),
+          true,
+        );
+      } else {
+        expect(preprocess).toHaveBeenCalledWith('<speak>old uncached sentence</speak>');
+      }
+    });
+    await controller.forward(true);
+    await vi.waitFor(() => expect(playbackSignals).toHaveLength(1));
+    expect(playbackSignals[0]!.aborted).toBe(false);
+
+    finishOldPreload();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(
+      playbackSignals[0]!.aborted,
+      'finishing a skipped preload must leave the new utterance playing',
+    ).toBe(false);
+    expect(controller.state).toBe('playing');
+    expect(playbackSignals).toHaveLength(1);
   });
 
   describe('preloadSSML', () => {

@@ -162,7 +162,6 @@ export default function AuthPage() {
   };
 
   const handleOAuthUrl = async (url: string) => {
-    console.log('Handle OAuth URL:', url);
     const { accessToken, refreshToken, type, next, error, errorCode, errorDescription } =
       parseOAuthCallbackUrl(url);
     if (error) {
@@ -194,8 +193,7 @@ export default function AuthPage() {
       ) {
         const { getCurrentWindow } = await import('@tauri-apps/api/window');
         const currentWindow = getCurrentWindow();
-        currentWindow.listen('single-instance', ({ event, payload }) => {
-          console.log('Received deep link:', event, payload);
+        currentWindow.listen('single-instance', ({ payload }) => {
           const { args } = payload as SingleInstancePayload;
           if (args?.[1]) {
             handleOAuthUrl(args[1]);

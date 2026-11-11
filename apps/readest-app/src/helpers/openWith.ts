@@ -47,14 +47,23 @@ const parseCLIOpenWithFiles = async () => {
 };
 
 const parseIntentOpenWithFiles = async (appService: AppService | null) => {
-  const urls = await getCurrent();
+  let urls;
+  try {
+    urls = await getCurrent();
+  } catch (err) {
+    // A runtime without the deep-link plugin (Readest Lite) rejects here. Treat it
+    // as "no intent files": the library init awaiting this would skip loading the
+    // library and show it empty.
+    console.warn('Failed to read open-with intent URLs', err);
+    return null;
+  }
   if (urls && urls.length > 0) {
     console.log('Intent Open with URL:', urls);
     return urls
       .map((url) => {
         if (url.startsWith('file://')) {
           if (appService?.isIOSApp) {
-            return decodeURI(url);
+            return url;
           } else {
             return decodeURI(url.replace('file://', ''));
           }

@@ -30,6 +30,7 @@ jobs:
         id: get-release
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
         with:
+          retries: 3
           script: |
             const { data } = await github.rest.repos.getLatestRelease({
               owner: context.repo.owner,
@@ -69,6 +70,7 @@ jobs:
           release_tag: ${{ needs.get-release.outputs.release_tag }}
           release_note: ${{ needs.get-release.outputs.release_note }}
         with:
+          retries: 3
           script: |
             const { data } = await github.rest.repos.generateReleaseNotes({
               owner: context.repo.owner,
@@ -208,7 +210,7 @@ jobs:
           cd ..
 
           echo "Uploading ${plugin_zip} to GitHub release"
-          gh release upload ${{ needs.get-release.outputs.release_tag }} ${plugin_zip} --clobber
+          .github/scripts/retry.sh gh release upload ${{ needs.get-release.outputs.release_tag }} ${plugin_zip} --clobber
 
   build-calibre-plugin:
     needs: get-release
@@ -235,7 +237,7 @@ jobs:
           plugin_zip="apps/readest-calibre-plugin/dist/Readest-${version}.calibre-plugin.zip"
 
           echo "Uploading ${plugin_zip} to GitHub release"
-          gh release upload ${{ needs.get-release.outputs.release_tag }} ${plugin_zip} --clobber
+          .github/scripts/retry.sh gh release upload ${{ needs.get-release.outputs.release_tag }} ${plugin_zip} --clobber
 
   build-crosspoint-plugin:
     needs: get-release
@@ -271,7 +273,7 @@ jobs:
           cd ../..
 
           echo "Uploading ${plugin_zip} to GitHub release"
-          gh release upload ${{ needs.get-release.outputs.release_tag }} ${plugin_zip} --clobber
+          .github/scripts/retry.sh gh release upload ${{ needs.get-release.outputs.release_tag }} ${plugin_zip} --clobber
 
   build-browser-extension:
     needs: get-release
@@ -303,7 +305,7 @@ jobs:
           extension_zip="apps/readest-app/extensions/send-to-readest/send-to-readest-${extension_version}.zip"
 
           echo "Uploading ${extension_zip} to GitHub release"
-          gh release upload "${{ needs.get-release.outputs.release_tag }}" "${extension_zip}" --clobber
+          .github/scripts/retry.sh gh release upload "${{ needs.get-release.outputs.release_tag }}" "${extension_zip}" --clobber
 
   build-tauri:
     needs: get-release
@@ -438,14 +440,14 @@ jobs:
         if: contains(matrix.config.os, 'ubuntu') && matrix.config.release != 'android' && matrix.config.arch != 'armhf'
         run: |
           sudo apt-get update
-          sudo apt-get install -y pkg-config libfontconfig-dev libgtk-3-dev libwebkit2gtk-4.1 libwebkit2gtk-4.1-dev libjavascriptcoregtk-4.1 libjavascriptcoregtk-4.1-dev gir1.2-javascriptcoregtk-4.1 gir1.2-webkit2-4.1 libappindicator3-dev librsvg2-dev patchelf xdg-utils
+          sudo apt-get install -y pkg-config libasound2-dev libclang-dev g++ libfontconfig-dev libgtk-3-dev libwebkit2gtk-4.1 libwebkit2gtk-4.1-dev libjavascriptcoregtk-4.1 libjavascriptcoregtk-4.1-dev gir1.2-javascriptcoregtk-4.1 gir1.2-webkit2-4.1 libappindicator3-dev librsvg2-dev patchelf xdg-utils
 
       - name: install dependencies (ubuntu only - armhf specific)
         if: contains(matrix.config.os, 'ubuntu') && matrix.config.arch == 'armhf'
         run: |
           sudo dpkg --add-architecture armhf
           sudo apt-get update
-          sudo apt-get install -y pkg-config libfontconfig-dev:armhf libgtk-3-dev:armhf libwebkit2gtk-4.1-dev:armhf libappindicator3-dev:armhf librsvg2-dev:armhf gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf
+          sudo apt-get install -y pkg-config libasound2-dev:armhf libclang-dev libfontconfig-dev:armhf libgtk-3-dev:armhf libwebkit2gtk-4.1-dev:armhf libappindicator3-dev:armhf librsvg2-dev:armhf gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf
           echo 'PKG_CONFIG_ALLOW_CROSS=1' >> $GITHUB_ENV
           echo 'PKG_CONFIG_PATH=/usr/lib/arm-linux-gnueabihf/pkgconfig:/usr/share/pkgconfig' >> $GITHUB_ENV
           echo 'PKG_CONFIG_SYSROOT_DIR=/usr/arm-linux-gnueabihf' >> $GITHUB_ENV
@@ -534,10 +536,10 @@ jobs:
           fi
 
           echo "Uploading $apk to GitHub release"
-          gh release upload ${{ needs.get-release.outputs.release_tag }} $apk --clobber
+          ../../.github/scripts/retry.sh gh release upload ${{ needs.get-release.outputs.release_tag }} $apk --clobber
           echo "Uploading signature to GitHub release"
           pnpm tauri signer sign $apk
-          gh release upload ${{ needs.get-release.outputs.release_tag }} $apk.sig --clobber
+          ../../.github/scripts/retry.sh gh release upload ${{ needs.get-release.outputs.release_tag }} $apk.sig --clobber
 
       - name: attest Android apk
         if: matrix.config.release == 'android'
@@ -574,6 +576,10 @@ jobs:
           releaseId: ${{ needs.get-release.outputs.release_id }}
           releaseBody: ${{ needs.get-release.outputs.release_note }}
           args: ${{ matrix.config.args || '' }}
+          # Retries each asset upload and the latest.json merge on a transient
+          # GitHub error. It also reruns a failed build, which is incremental
+          # and so fails again quickly when the failure is real.
+          retryAttempts: 2
 
       # quick-sharun skips what it cannot find without failing; catch that
       # before it ships.
@@ -609,9 +615,12 @@ jobs:
       - name: upload release notes to GitHub release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        # Runs on every leg; Windows would default to pwsh, which cannot run
+        # the retry script.
+        shell: bash
         run: |
           echo "Uploading release notes to GitHub release"
-          gh release upload ${{ needs.get-release.outputs.release_tag }} apps/readest-app/release-notes.json --clobber
+          .github/scripts/retry.sh gh release upload ${{ needs.get-release.outputs.release_tag }} apps/readest-app/release-notes.json --clobber
 
       - name: build and upload portable binaries (Windows only)
         if: matrix.config.os == 'windows-latest'
@@ -649,14 +658,14 @@ jobs:
           cp $exe_file $bin_file
 
           echo "Uploading $bin_file to GitHub release"
-          gh release upload ${{ needs.get-release.outputs.release_tag }} $bin_file --clobber
+          .github/scripts/retry.sh gh release upload ${{ needs.get-release.outputs.release_tag }} $bin_file --clobber
 
           echo "Signing portable binary"
           pushd apps/readest-app/
           pnpm tauri signer sign "../../$bin_file"
           popd
           echo "Uploading signature to GitHub release"
-          gh release upload ${{ needs.get-release.outputs.release_tag }} $bin_file.sig --clobber
+          .github/scripts/retry.sh gh release upload ${{ needs.get-release.outputs.release_tag }} $bin_file.sig --clobber
 
       # The portable rebuild above is not produced by tauri-action, so it is not
       # covered by the "attest desktop bundles" step; attest it here. Exactly one
@@ -677,7 +686,7 @@ jobs:
           # ("Not Found") into latest.json and clobbering the release asset with
           # invalid JSON, which then breaks tauri-action's updater merge on every
           # subsequent build.
-          if ! curl -fsSL https://github.com/readest/readest/releases/latest/download/latest.json -o latest.json; then
+          if ! curl -fsSL --retry 5 --retry-all-errors https://github.com/readest/readest/releases/latest/download/latest.json -o latest.json; then
             echo "::error::Failed to download existing latest.json; aborting to avoid clobbering the release asset."
             exit 1
           fi
@@ -709,7 +718,7 @@ jobs:
               '.platforms[$key] = {signature: $sig, url: $url}' latest.json > tmp.$$.json && mv tmp.$$.json latest.json
 
           echo "Uploading updated latest.json to GitHub release"
-          gh release upload ${{ needs.get-release.outputs.release_tag }} latest.json --clobber
+          .github/scripts/retry.sh gh release upload ${{ needs.get-release.outputs.release_tag }} latest.json --clobber
 
   # Runs once after every build leg, so the three Android legs (and the
   # desktop legs that also rewrite latest.json) never race on the asset.
@@ -720,6 +729,10 @@ jobs:
       contents: write
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          sparse-checkout: .github/scripts
+
       - name: download and update latest.json for Android release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -730,7 +743,7 @@ jobs:
           # ("Not Found") into latest.json and clobbering the release asset with
           # invalid JSON, which then breaks tauri-action's updater merge on every
           # subsequent build.
-          if ! curl -fsSL https://github.com/readest/readest/releases/latest/download/latest.json -o latest.json; then
+          if ! curl -fsSL --retry 5 --retry-all-errors https://github.com/readest/readest/releases/latest/download/latest.json -o latest.json; then
             echo "::error::Failed to download existing latest.json; aborting to avoid clobbering the release asset."
             exit 1
           fi
@@ -741,7 +754,7 @@ jobs:
 
           tag=${{ needs.get-release.outputs.release_tag }}
           version=${{ needs.get-release.outputs.release_version }}
-          gh release download "$tag" --pattern "Readest_${version}_*.apk.sig"
+          .github/scripts/retry.sh gh release download "$tag" --pattern "Readest_${version}_*.apk.sig" --clobber
 
           for arch in arm64 armv7 legacy; do
             apk=Readest_${version}_${arch}.apk
@@ -757,7 +770,7 @@ jobs:
           jq '.platforms["android-universal"] = .platforms["android-armv7"]' latest.json > tmp.$$.json && mv tmp.$$.json latest.json
 
           echo "Uploading updated latest.json to GitHub release"
-          gh release upload "$tag" latest.json --clobber
+          .github/scripts/retry.sh gh release upload "$tag" latest.json --clobber
 
   upload-to-r2:
     needs: [get-release, build-tauri, update-android-latest-json]

@@ -249,6 +249,64 @@ pub(crate) async fn show_lookup_popover<R: Runtime>(
 }
 
 #[command]
+pub(crate) async fn get_lookup_apps<R: Runtime>(
+    app: AppHandle<R>,
+) -> Result<GetLookupAppsResponse> {
+    app.native_bridge().get_lookup_apps()
+}
+
+#[command]
+pub(crate) async fn set_lookup_app<R: Runtime>(
+    app: AppHandle<R>,
+    payload: SetLookupAppRequest,
+) -> Result<()> {
+    app.native_bridge().set_lookup_app(payload)
+}
+
+#[command]
+pub(crate) async fn anki_status<R: Runtime>(app: AppHandle<R>) -> Result<AnkiStatusResponse> {
+    app.native_bridge().anki_status()
+}
+
+#[command]
+pub(crate) async fn anki_request_permission<R: Runtime>(
+    app: AppHandle<R>,
+) -> Result<AnkiPermissionResponse> {
+    app.native_bridge().anki_request_permission()
+}
+
+#[command]
+pub(crate) async fn anki_list_decks<R: Runtime>(
+    app: AppHandle<R>,
+) -> Result<AnkiListDecksResponse> {
+    app.native_bridge().anki_list_decks()
+}
+
+#[command]
+pub(crate) async fn anki_read_deck<R: Runtime>(
+    app: AppHandle<R>,
+    payload: AnkiReadDeckRequest,
+) -> Result<AnkiReadDeckResponse> {
+    app.native_bridge().anki_read_deck(payload)
+}
+
+#[command]
+pub(crate) async fn anki_add_notes<R: Runtime>(
+    app: AppHandle<R>,
+    payload: AnkiAddNotesRequest,
+) -> Result<AnkiAddNotesResponse> {
+    app.native_bridge().anki_add_notes(payload)
+}
+
+#[command]
+pub(crate) async fn anki_update_tags<R: Runtime>(
+    app: AppHandle<R>,
+    payload: AnkiUpdateTagsRequest,
+) -> Result<AnkiUpdateTagsResponse> {
+    app.native_bridge().anki_update_tags(payload)
+}
+
+#[command]
 pub(crate) async fn select_directory<R: Runtime>(
     app: AppHandle<R>,
     callback_state: State<'_, DirectoryCallbackState<R>>,
@@ -461,22 +519,24 @@ pub(crate) async fn paper_curl<R: Runtime>(
 
 /// Freeze the on-screen pixels of a webview region behind a native layer
 /// that `capture_webview_region` does not see, for the two-column page curl
-/// (#6106). iOS only so far; other platforms reject and the JS side keeps
-/// a paper back on the leaf.
+/// (#6106) and a backward turn's previous page. Android, iOS and macOS;
+/// other platforms reject.
 #[command]
 pub(crate) async fn cover_webview_region<R: Runtime>(
     app: AppHandle<R>,
+    window: tauri::WebviewWindow<R>,
     payload: CaptureWebviewRegionRequest,
 ) -> Result<CoverWebviewRegionResponse> {
-    app.native_bridge().cover_webview_region(payload)
+    app.native_bridge().cover_webview_region(&window, payload)
 }
 
 #[command]
 pub(crate) async fn uncover_webview_region<R: Runtime>(
     app: AppHandle<R>,
+    window: tauri::WebviewWindow<R>,
     payload: UncoverWebviewRegionRequest,
 ) -> Result<()> {
-    app.native_bridge().uncover_webview_region(payload)
+    app.native_bridge().uncover_webview_region(&window, payload)
 }
 
 #[command]

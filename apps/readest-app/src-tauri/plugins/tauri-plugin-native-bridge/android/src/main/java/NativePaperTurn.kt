@@ -12,6 +12,7 @@ import android.view.Choreographer
 import android.view.Gravity
 import android.view.MotionEvent
 import android.view.PixelCopy
+import android.view.WindowManager
 import android.webkit.WebView
 import android.widget.PopupWindow
 import app.tauri.annotation.InvokeArg
@@ -37,6 +38,7 @@ class NativePaperArgs {
     var progress = 0f; var grabY = 0.5f
     var commit = false; var velocity = 0f
     var columns = 1
+    var flip = false
 }
 
 /** CSS px -> WebView px as [left, top, width, height]. The CSS viewport can
@@ -52,7 +54,7 @@ internal fun webViewRegion(x: Float, y: Float, width: Float, height: Float, dens
     return intArrayOf(left, top, right - left, bottom - top)
 }
 
-/** Lossless native pages -> resident ES2 textures -> native touch/vsync.
+/** Lossless native pages -> resident GL textures -> native touch/vsync.
  * Only commands, page identities and completion acknowledgements cross IPC. */
 internal class NativePaperTurn(private val activity: Activity, private val webView: WebView) {
     private val main = Handler(Looper.getMainLooper())
@@ -84,6 +86,13 @@ internal class NativePaperTurn(private val activity: Activity, private val webVi
     private var animation: Choreographer.FrameCallback? = null
     private var animationPending: Pending? = null
     private var animationTarget = 0f
+    // Page Flip: the sheet's physics run here; the view only draws its frames.
+    private val flip = PageFlipModel()
+    private val flipFrame = FloatArray(PageFlipModel.FRAME_SIZE)
+    private var flipping = false
+    private var flipVisible = true
+    private var flipGrabX = 0.9
+    private var regionX = 0
     private val pending = LinkedHashSet<Pending>()
     private val captures = ConcurrentHashMap<Int, Pending>()
     private val latestCapture = ConcurrentHashMap<String, Int>()
@@ -168,12 +177,15 @@ internal class NativePaperTurn(private val activity: Activity, private val webVi
             popup = PopupWindow(canvas, w, h, false).apply {
                 animationStyle = 0; enterTransition = null; exitTransition = null
                 isTouchable = false; isClippingEnabled = false
+                // Stay under the keyboard: Android drops IME touches that pass through this window (#7171).
+                inputMethodMode = PopupWindow.INPUT_METHOD_NEEDED
+                softInputMode = WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING
                 setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
                 if (Build.VERSION.SDK_INT >= 29) setIsLaidOutInScreen(true)
                 showAtLocation(webView, Gravity.TOP or Gravity.LEFT, left, top)
             }
         } else popup?.update(left, top, w, h)
-        width = w; height = h
+        width = w; height = h; regionX = x
         return true
     }
 
@@ -219,6 +231,7 @@ internal class NativePaperTurn(private val activity: Activity, private val webVi
                     turnId = args.turnId
                     dragging = false
                     current = args.key; destination = current; forward = true; progress = 0f; grabY = 0.5f
+                    flipping = false; view?.setFlip(null)
                     view!!.scene(current, current, true, false, 0f, 0.5f, 1) { error ->
                         if (!p.live) return@scene
                         if (error != null) failAll(error.message ?: "Native cover failed")
@@ -243,6 +256,20 @@ internal class NativePaperTurn(private val activity: Activity, private val webVi
                     trackNativeTouch = finger && !args.released
                     bufferedRelease = args.released && progress > 0f
                     if (bufferedRelease) progress = progress.coerceAtMost(0.5f)
+                    // A spread turns as a curl.
+                    flipping = args.flip && args.columns < 2 && view?.supportsFlip == true
+                    if (flipping) {
+                        // A forward sheet is held where the finger took it; a
+                        // backward one is taken by its free edge, off the page.
+                        flipGrabX = when {
+                            !forward -> 1.0
+                            trackNativeTouch -> ((downX - regionX) / width).toDouble().coerceIn(0.0, 1.0).let { if (rtl) 1 - it else it }
+                            else -> 0.9
+                        }
+                        if (args.released) flip.reset()
+                        else { flip.beginDrag(flipGrabX, grabY.toDouble(), seconds()); dragFlip() }
+                        pushFlip()
+                    } else view?.setFlip(null)
                     if (trackNativeTouch) updateFinger()
                     view!!.scene(current, destination, forward, rtl, progress, grabY, args.columns) { error ->
                         if (!p.live) return@scene
@@ -261,17 +288,23 @@ internal class NativePaperTurn(private val activity: Activity, private val webVi
                 }
                 "move" -> {
                     if (active && dragging && !finger && animationPending == null) {
-                        progress = args.progress; grabY = args.grabY; requestDraw()
+                        progress = args.progress; grabY = args.grabY
+                        if (flipping) dragFlip()
+                        requestDraw()
                     }
                     p.resolve()
                 }
-                "animate" -> animate(args, p)
+                "animate" -> if (flipping) animateFlip(args, p) else animate(args, p)
                 "complete" -> { completeRequested = true; p.resolve() }
                 "cancel" -> {
                     dragging = false
                     cancelled = true; animationTarget = 0f
                     if (animationPending != null) completeAnimation()
-                    else { progress = 0f; view?.alpha = 0f; requestDraw() }
+                    else {
+                        progress = 0f
+                        if (flipping) { flip.reset(); pushFlip() }
+                        view?.alpha = 0f; requestDraw()
+                    }
                     p.resolve()
                 }
                 "finish" -> {
@@ -365,6 +398,19 @@ internal class NativePaperTurn(private val activity: Activity, private val webVi
         val distance = if (forward != rtl) downX - lastX else lastX - downX
         progress = (distance / width).coerceIn(0f, 1f)
         grabY = 0.5f + (lastY - downY) / height
+        if (flipping) dragFlip()
+    }
+    private fun seconds() = System.nanoTime() / 1e9
+    /** Drag the flipped sheet. A backward one arrives past its fold, so it shows from the first move. */
+    private fun dragFlip() {
+        val x = if (forward) flipGrabX - progress
+            else PageFlipModel.MIN_PRESSED_EDGE_X - (1 + PageFlipModel.MIN_PRESSED_EDGE_X) * progress
+        flip.moveDrag(x, grabY.toDouble(), seconds())
+    }
+    /** Hand the sheet's current frame to the view, noting whether any of it is on the page. */
+    private fun pushFlip() {
+        flipVisible = flip.frame(flipFrame, !forward)
+        view?.setFlip(flipFrame)
     }
     /** Coalesce finger-follow poses into one Choreographer update. */
     private fun requestDraw() {
@@ -372,7 +418,7 @@ internal class NativePaperTurn(private val activity: Activity, private val webVi
         drawScheduled = true
         choreographer.postFrameCallback {
             drawScheduled = false
-            if (active && animationPending == null) view?.draw(progress, grabY)
+            if (active && animationPending == null) { if (flipping) pushFlip(); view?.draw(progress, grabY) }
         }
     }
     /** Settle the released sheet, advancing only after each native pose is presented. */
@@ -417,11 +463,52 @@ internal class NativePaperTurn(private val activity: Activity, private val webVi
         }
         animation = callback; choreographer.postFrameCallback(callback)
     }
+    /** Settle the released flipped sheet, stepping its physics on every vsync. */
+    private fun animateFlip(args: NativePaperArgs, p: Pending) {
+        if (!active) { p.resolve(JSObject().put("cancelled", true)); return }
+        if (animationPending != null) { p.reject("Native paper already settling"); return }
+        dragging = false
+        animationPending = p
+        val commit = args.commit && !cancelled
+        animationTarget = if (commit) 1f else 0f
+        flip.release(commit, seconds())
+        pushFlip()
+        // A turned page leaves over the spine, and a cancelled backward sheet
+        // returns there: stop once nothing of it is left on the page. A
+        // backward sheet arrives from there: skip the poses before it shows.
+        val endsOffPage = commit == forward
+        var moving = true
+        var skipped = 0
+        while (!endsOffPage && !flipVisible && moving && skipped++ < 240) { moving = flip.advance(1 / 120.0); pushFlip() }
+        var last = 0L
+        val callback = object : Choreographer.FrameCallback {
+            override fun doFrame(now: Long) {
+                if (animationPending !== p || !p.live) return
+                if (last != 0L) {
+                    val dt = (now - last) / 1e9
+                    // A following gesture hurries the tail rather than cutting it.
+                    moving = flip.advance(if (completeRequested) dt * 2 else dt)
+                    pushFlip()
+                }
+                last = now
+                if (moving && (flipVisible || !endsOffPage)) { view?.draw(progress, grabY); choreographer.postFrameCallback(this) }
+                else completeAnimation()
+            }
+        }
+        animation = callback; choreographer.postFrameCallback(callback)
+    }
     /** Present the terminal pose before acknowledging settlement. */
     private fun completeAnimation() {
         val p = animationPending ?: return
         animation?.let { choreographer.removeFrameCallback(it) }; animation = null
         progress = animationTarget
+        if (flipping) {
+            // Lay the sheet flat: on the page for a turned-back or cancelled
+            // forward sheet, off it otherwise.
+            flip.reset()
+            flipVisible = flip.frame(flipFrame, (animationTarget == 1f) == forward)
+            view?.setFlip(flipFrame)
+        }
         view?.discardPresentation()
         view?.drawPresented(progress, grabY) { error ->
             if (error != null) failAll(error.message ?: "Native final frame failed")

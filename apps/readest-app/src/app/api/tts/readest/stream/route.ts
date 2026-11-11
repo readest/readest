@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server';
 import { getTTSQuota } from '@/utils/access';
+import { READEST_VOICE_PREVIEW_DAILY_CHARS } from '@/services/constants';
 import { readNDJSON } from '@/utils/ndjson';
 import { USAGE_TYPES, UsageStatsManager } from '@/utils/usage';
 import { errorResponse, gateReadestVoice } from '@/libs/readestVoice/gate';
@@ -14,6 +15,9 @@ import { checkVoices, parseWindow, type WindowRequest } from '@/libs/readestVoic
 // change). A window this route gives up on (client gone, stream broken) is
 // ended in the service with releaseWindow, which stops its synthesis: a
 // stream cancelled across the service binding may not reach the service.
+// A voice preview is a one-sentence listening window that any signed-in
+// reader may send for any offered voice, within a small daily allowance; it
+// queues as its own client so it never replaces the device's listening window.
 
 const BUSY_RETRY_AFTER_SEC = 5;
 
@@ -28,21 +32,28 @@ const encoder = new TextEncoder();
 const ndjsonLine = (value: unknown) => encoder.encode(`${JSON.stringify(value)}\n`);
 
 export async function POST(request: NextRequest) {
-  const gate = await gateReadestVoice(request);
-  if (!gate.ok) return gate.response;
-  const { user, plan, service, catalog } = gate.ctx;
-
-  let window: WindowRequest | null = null;
+  let input: unknown = null;
   try {
-    window = parseWindow(await request.json());
+    input = await request.json();
   } catch {
     // Unparseable body: same flat code as an invalid window.
   }
+  const window: WindowRequest | null = parseWindow(input);
+  // Read from the body itself, so an invalid preview is told INVALID_INPUT
+  // rather than PLAN_REQUIRED.
+  const preview = (input as { lane?: unknown } | null)?.lane === 'preview';
+  const gate = await gateReadestVoice(request, { anyPlan: preview });
+  if (!gate.ok) return gate.response;
+  const { user, plan, service, catalog } = gate.ctx;
+
   if (!window) return errorResponse('INVALID_INPUT', 400);
   const { clientId, lane, lang, segments } = window;
 
-  const voices = checkVoices(catalog, plan, segments);
+  const voices = checkVoices(catalog, plan, segments, preview);
   if ('error' in voices) return errorResponse(voices.error, voices.status);
+  const quota = preview
+    ? Math.max(getTTSQuota(plan), READEST_VOICE_PREVIEW_DAILY_CHARS)
+    : getTTSQuota(plan);
 
   // Every round trip before the window starts is heard as delay, so the
   // quota check and the slot run together. Check before starting; charge
@@ -57,7 +68,12 @@ export async function POST(request: NextRequest) {
   try {
     [used, admitted] = await Promise.all([
       UsageStatsManager.getCurrentUsage(user.id, USAGE_TYPES.TTS_CHARS, 'daily'),
-      service.admitWindow({ token, userId: user.id, clientId, lane }),
+      service.admitWindow({
+        token,
+        userId: user.id,
+        clientId: preview ? `${clientId}:preview` : clientId,
+        lane: lane === 'preview' ? 'listen' : lane,
+      }),
     ]);
   } catch (error) {
     console.error('Readest Voice admission failed:', error);
@@ -70,7 +86,7 @@ export async function POST(request: NextRequest) {
     if (admitted.acquired) release();
     return errorResponse('CANCELLED', 499);
   }
-  if (used + admitted.pendingChars + windowChars > getTTSQuota(plan)) {
+  if (used + admitted.pendingChars + windowChars > quota) {
     if (admitted.acquired) release();
     return errorResponse('DAILY_QUOTA_EXCEEDED', 429);
   }

@@ -168,6 +168,49 @@ describe('S3Provider — transport', () => {
     ]);
   });
 
+  // Regression: bucket-root listings request `/<bucket>/` with a
+  // trailing slash. MinIO canonicalizes a bucket-only path with the
+  // slash appended in its SigV4 verification, so a listing signed
+  // over `/<bucket>` fails with SignatureDoesNotMatch; AWS S3 and R2
+  // accept the trailing-slash form. Invariant: the path on the wire
+  // is the path that was signed.
+  test('lists the bucket root over a trailing-slash path that matches the signed path', async () => {
+    const h = makeS3();
+    h.fetchMock.mockResolvedValueOnce(xml(emptyList));
+
+    await h.provider.list('/');
+    const listUrl = h.url(0);
+    expect(new URL(listUrl).pathname).toBe('/readest/');
+    expect(listUrl).toContain('list-type=2');
+    expect(new URL(listUrl).pathname).toBe(
+      new AwsV4Signer({ url: listUrl, method: 'GET', service: 's3', ...config }).encodedPath,
+    );
+  });
+
+  test('deleteDir scans the bucket root with a trailing slash and deletes ordinary keys', async () => {
+    const h = makeS3();
+    const keys = new Set(['library.json', 'Readest/books/h1/config.json']);
+    h.fetchMock.mockImplementation(async (url: string, init?: RequestInit) => {
+      const requestUrl = new URL(url);
+      if (init?.method === 'DELETE') {
+        keys.delete(decodeURIComponent(requestUrl.pathname.slice('/readest/'.length)));
+        return new Response(null, { status: 204 });
+      }
+      const prefix = requestUrl.searchParams.get('prefix') ?? '';
+      return xml(
+        listPage({
+          keys: [...keys].filter((key) => key.startsWith(prefix)).map((key) => ({ key })),
+        }),
+      );
+    });
+
+    await h.provider.deleteDir('/');
+    expect(new URL(h.url(0)).pathname).toBe('/readest/');
+    expect(h.url(0)).toContain('list-type=2');
+    expect([...keys]).toEqual([]);
+    expect(new URL(h.url(0)).searchParams.get('prefix')).toBe('');
+  });
+
   test('writeText PUTs the body with its content type; ensureDir never fetches', async () => {
     const h = makeS3();
     await h.provider.ensureDir(['/Readest', '/Readest/books']);

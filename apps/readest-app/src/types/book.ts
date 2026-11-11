@@ -1,3 +1,4 @@
+import type { TTSPacks } from '@/utils/ttsPacks';
 import type { InkStroke } from '@/services/handwriting/model';
 import { BookMetadata } from '@/libs/document';
 import { TTSHighlightOptions } from '@/services/tts/types';
@@ -42,6 +43,8 @@ export type ReadingRulerColor = 'transparent' | 'yellow' | 'green' | 'blue' | 'r
 export interface ParagraphModeConfig {
   enabled: boolean;
 }
+
+export type ImageViewerGesture = 'tap' | 'longPress';
 
 export const FIXED_LAYOUT_FORMATS: Set<BookFormat> = new Set(['PDF', 'CBZ']);
 
@@ -112,7 +115,8 @@ export interface Book {
   // Metadata md5 hash, used to aggregate different versions of the same book
   metaHash?: string;
   format: BookFormat;
-  title: string; // editable title from metadata
+  title: string; // editable title, defaulting to the filename stem for PDFs
+  originalFilename?: string; // original import basename, including the extension
   sourceTitle?: string; // parsed when the book is imported and used to locate the file
   author: string;
   group?: string; // deprecated in favor of groupId and groupName
@@ -207,8 +211,8 @@ export interface BookNote {
   id: string;
   type: BookNoteType;
   cfi: string; // Canonicalized CFI for the note location
-  xpointer0?: string; // Start XPointer for the note location
-  xpointer1?: string; // End XPointer for the note location
+  xpointer0?: string | null; // Start XPointer for the note location
+  xpointer1?: string | null; // End XPointer for the note location
   page?: number;
   text?: string;
   style?: HighlightStyle;
@@ -228,10 +232,29 @@ export interface BookNote {
    * services/handwriting.
    */
   ink?: InkStroke[];
+  /**
+   * Where a CrossPoint reader anchors this highlight, the way `xpointer0` is
+   * KOReader's. Set on a clipping a reader synced, or by a Readest app for a
+   * highlight in an EPUB. See utils/crosspointClipping.
+   */
+  crosspoint?: CrossPointAnchor | null;
 
   createdAt: number;
   updatedAt: number;
   deletedAt?: number | null;
+}
+
+/**
+ * A CrossPoint clipping's position: its spine index and the [start, end) code
+ * points it covers in that section's text. The firmware's own clippings also
+ * carry its layout hints (pages, words, paragraph, chapter title), kept as
+ * sent so the reader gets them back unchanged.
+ */
+export interface CrossPointAnchor {
+  spine: number;
+  start_offset?: number;
+  end_offset?: number;
+  [hint: string]: unknown;
 }
 
 export interface BooknoteGroup {
@@ -258,6 +281,9 @@ export interface BookLayout {
   /* Centre gap of a two-column spread in px; 0 derives it from the margins
      and gapPercent as before. */
   columnGapPx: number;
+  /* iPhone Duo, inner display in landscape: show two pages, one on each side
+     of the hinge (true), or a single page (false). Ignored in other poses. */
+  duoBookMode: boolean;
   scrolled: boolean;
   scrolledDirection: 'vertical' | 'horizontal';
   webtoonMode: boolean;
@@ -271,6 +297,9 @@ export interface BookLayout {
   fullscreenClickArea: boolean;
   swapClickArea: boolean;
   disableDoubleClick: boolean;
+  /* What opens the image viewer on an image (#7145). Set per book; unset means
+     long press in fixed-layout books and tap in the others. */
+  imageViewerGesture?: ImageViewerGesture;
   volumeKeysToFlip: boolean;
   maxColumnCount: number;
   maxInlineSize: number;
@@ -311,6 +340,7 @@ export interface BookStyle {
   dialogueHighlightCustomTextColor: boolean;
   dialogueHighlightTextColor: string;
   dialogueHighlightItalic: boolean;
+  dialogueHighlightWeight: 'normal' | 'slightly-heavier' | 'bold';
   userStylesheet: string;
   userUIStylesheet: string;
 
@@ -324,6 +354,7 @@ export interface BookStyle {
   spreadMode: 'auto' | 'none';
   keepCoverSpread: boolean;
   invertImgColorInDark: boolean;
+  transparentImageBackground: boolean;
   applyThemeToPDF: boolean;
   contrast: number;
 }
@@ -332,6 +363,8 @@ export interface BookFont {
   serifFont: string;
   sansSerifFont: string;
   monospaceFont: string;
+  // Generic families whose book font lists resolve to the reader's font (#7276).
+  ignorePublisherFonts: ('serif' | 'sans-serif' | 'monospace')[];
   defaultFont: string;
   defaultCJKFont: string;
   defaultFontSize: number;
@@ -357,7 +390,9 @@ export interface BookLanguage {
 
 // 'push' slides the whole strip; 'slide' and 'curl' layer the outgoing page
 // over the still incoming page (Apple Books style, needs View Transitions).
-export type PageTurnStyle = 'push' | 'slide' | 'curl';
+// 'flip' lifts the whole sheet over the spine. The apps' captured and native
+// turns draw it; a spread and the web turn it as a 'curl'.
+export type PageTurnStyle = 'push' | 'slide' | 'curl' | 'flip';
 export interface ViewConfig {
   sideBarTab: string;
   uiLanguage: string;
@@ -417,6 +452,9 @@ export interface ViewConfig {
   readingRulerPosition: number;
   readingRulerOpacity: number;
   readingRulerColor: ReadingRulerColor;
+  readingRulerStyle: 'band' | 'line';
+  readingRulerLineColor: string;
+  readingRulerLineThickness: number;
 }
 
 export interface TTSConfig {
@@ -695,6 +733,14 @@ export interface BookConfig {
   audiobook?: PairedAudiobook;
   hardcover?: HardcoverBookLink;
   pagebound?: PageboundBookLink;
+  /**
+   * Downloaded read-aloud packs each sync destination holds, by destination
+   * id. Both syncs carry it and merge it as a union, never by updatedAt, so
+   * recording audio can't move reading progress. A device lists a destination
+   * only when this says it has audio the device lacks, or lacks audio the
+   * device has.
+   */
+  ttsPacks?: TTSPacks;
   /**
    * The pages of a comic laid out as spreads of their own (wide images), by
    * page path: a device-local cache of measuring them, so a later open skips

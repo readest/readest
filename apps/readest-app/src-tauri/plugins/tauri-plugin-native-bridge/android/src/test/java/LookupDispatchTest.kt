@@ -33,6 +33,26 @@ class LookupDispatchTest {
     }
 
     @Test
+    fun noBrowserPresent_chosenApp_launchesChosenDirectly() {
+        // Issue #4937: the app picked in Settings must win even when no
+        // browser handles the intent, or a search app the OS doesn't count
+        // as a browser (Baidu, Toutiao on HyperOS) stays the default.
+        assertEquals(
+            LookupDispatch.DispatchExplicit(goldendict),
+            decideLookupDispatch(listOf(eudic, goldendict), browsers, remembered = goldendict),
+        )
+    }
+
+    @Test
+    fun noBrowserPresent_staleChoice_dispatchesImplicitly() {
+        val stale = LookupHandler("com.removed.dict", ".Main")
+        assertEquals(
+            LookupDispatch.DispatchImplicit,
+            decideLookupDispatch(listOf(eudic, goldendict), browsers, remembered = stale),
+        )
+    }
+
+    @Test
     fun browserOnly_isUnavailable() {
         // The VIVO case with no dictionary installed: don't dump the user
         // into the browser — report unavailable so the TS layer hints.
