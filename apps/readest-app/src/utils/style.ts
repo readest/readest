@@ -435,10 +435,10 @@ const getColorStyles = (
     }
     /* inline images and gaiji */
     *:has(> img.has-text-siblings):not(body) {
-      ${overrideColor ? `background-color: ${bg};` : ''}
+      ${overrideColor ? `background-color: ${overrideBg};` : ''}
     }
     *:has(> img[class*="gaiji"]):not(body) {
-      ${overrideColor ? `background-color: ${bg};` : ''}
+      ${overrideColor ? `background-color: ${overrideBg};` : ''}
     }
     p img.has-text-siblings,
     span img.has-text-siblings,
@@ -1833,7 +1833,6 @@ const INLINE_IMAGE_CONTAINER_TAGS = new Set([
   'ruby',
   'rt',
   'rp',
-  'a',
   'em',
   'strong',
   'b',
@@ -1853,23 +1852,22 @@ const hasInlineTextSibling = (container: Element, targetNode: Node): boolean => 
   const idx = childNodes.indexOf(targetNode as ChildNode);
   if (idx === -1) return false;
 
-  for (let i = idx - 1; i >= 0; i--) {
-    const node = childNodes[i]!;
-    if (node.nodeType === Node.ELEMENT_NODE && (node as Element).tagName.toUpperCase() === 'BR') {
-      break;
-    }
-    if (node.nodeType === Node.TEXT_NODE && node.textContent?.trim()) {
-      return true;
-    }
-  }
-
-  for (let i = idx + 1; i < childNodes.length; i++) {
-    const node = childNodes[i]!;
-    if (node.nodeType === Node.ELEMENT_NODE && (node as Element).tagName.toUpperCase() === 'BR') {
-      break;
-    }
-    if (node.nodeType === Node.TEXT_NODE && node.textContent?.trim()) {
-      return true;
+  for (const step of [-1, 1]) {
+    for (let i = idx + step; i >= 0 && i < childNodes.length; i += step) {
+      const node = childNodes[i]!;
+      if (node.nodeType === Node.TEXT_NODE && node.textContent?.trim()) {
+        return true;
+      }
+      if (node.nodeType === Node.ELEMENT_NODE) {
+        const el = node as Element;
+        const tag = el.tagName.toLowerCase();
+        if (tag === 'br' || el.querySelector('br')) {
+          break;
+        }
+        if (INLINE_IMAGE_CONTAINER_TAGS.has(tag) && el.textContent?.trim()) {
+          return true;
+        }
+      }
     }
   }
 

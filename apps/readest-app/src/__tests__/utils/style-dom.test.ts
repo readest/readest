@@ -529,6 +529,34 @@ describe('getStyles', () => {
     );
     expect(css).toMatch(/img\[class\*="gaiji"\]\s*\{[^}]*mix-blend-mode:\s*screen;/);
   });
+
+  it('keeps inline and gaiji parent backgrounds transparent over a background texture (#7373)', () => {
+    const vs = makeViewSettings({ overrideColor: true, backgroundTextureId: 'leaves' });
+    const themeCode: ThemeCode = {
+      bg: '#171717',
+      fg: '#ffffff',
+      primary: '#0066cc',
+      palette: {
+        'base-100': '#171717',
+        'base-200': '#222222',
+        'base-300': '#333333',
+        'base-content': '#ffffff',
+        neutral: '#cccccc',
+        'neutral-content': '#444444',
+        primary: '#0066cc',
+        secondary: '#3399ff',
+        accent: '#0055aa',
+      },
+      isDarkMode: true,
+    };
+    const css = getStyles(vs, themeCode);
+    expect(css).toMatch(
+      /\*:has\(>\s*img\.has-text-siblings\):not\(body\)\s*\{[^}]*background-color:\s*transparent;/,
+    );
+    expect(css).toMatch(
+      /\*:has\(>\s*img\[class\*="gaiji"\]\):not\(body\)\s*\{[^}]*background-color:\s*transparent;/,
+    );
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -669,6 +697,35 @@ describe('applyImageStyle', () => {
     applyImageStyle(document);
     const img = document.querySelector('img')!;
     expect(img.classList.contains('has-text-siblings')).toBe(true);
+  });
+
+  it('does not add has-text-siblings through link ancestors (#7373)', () => {
+    document.body.innerHTML = '<p>Figure 1 <a href="#"><img src="photo.jpg"></a></p>';
+    applyImageStyle(document);
+    const img = document.querySelector('img')!;
+    expect(img.classList.contains('has-text-siblings')).toBe(false);
+  });
+
+  it('still adds has-text-siblings to gaiji inside a link (#7373)', () => {
+    document.body.innerHTML = '<p><a href="#"><img class="gaiji" src="glyph.png"></a></p>';
+    applyImageStyle(document);
+    const img = document.querySelector('img')!;
+    expect(img.classList.contains('has-text-siblings')).toBe(true);
+  });
+
+  it('adds has-text-siblings when adjacent inline element has text siblings (#7373)', () => {
+    document.body.innerHTML =
+      '<p><span class="koboSpan">Text</span><span><img src="glyph.png"></span></p>';
+    applyImageStyle(document);
+    const img = document.querySelector('img')!;
+    expect(img.classList.contains('has-text-siblings')).toBe(true);
+  });
+
+  it('does not add has-text-siblings when adjacent inline element contains a BR (#7373)', () => {
+    document.body.innerHTML = '<p><span>Caption<br></span><span><img src="photo.jpg"></span></p>';
+    applyImageStyle(document);
+    const img = document.querySelector('img')!;
+    expect(img.classList.contains('has-text-siblings')).toBe(false);
   });
 
   it('sets pointer-events: none on img[zy-enlarge-src="none"] and keeps the attribute', () => {
