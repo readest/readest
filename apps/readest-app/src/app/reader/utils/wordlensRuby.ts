@@ -109,9 +109,14 @@ export const applyGlosses = (
   }
 };
 
-/** Unwrap every injected gloss, restoring the original text. */
+/**
+ * Unwrap every injected gloss, restoring the original text. A section without
+ * glosses is left as it is: this runs for every loaded section after each
+ * section load, Word Lens on or off.
+ */
 export const clearGlosses = (doc: Document): void => {
   const rubies = doc.querySelectorAll(`ruby.${GLOSS_CLASS}`);
+  if (!rubies.length) return;
   rubies.forEach((ruby) => {
     ruby.querySelectorAll('rt').forEach((rt) => rt.remove());
     const parent = ruby.parentNode;
