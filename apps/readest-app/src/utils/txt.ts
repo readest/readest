@@ -108,8 +108,10 @@ const zipWriteOptions = {
 const LARGE_TXT_THRESHOLD_BYTES = 8 * 1024 * 1024;
 const HEADER_TEXT_MAX_CHARS = 1024;
 // The language is read from a longer sample than the author: a downloader's
-// header of links can fill the first 1024 characters by itself (#7435).
-const LANGUAGE_SAMPLE_MAX_CHARS = 8192;
+// header of links can run for thousands of characters (#7435). 32768 characters
+// fit in HEADER_TEXT_MAX_BYTES even at 4 bytes each, so both paths see the same
+// sample.
+const LANGUAGE_SAMPLE_MAX_CHARS = 32768;
 const HEADER_TEXT_MAX_BYTES = 128 * 1024;
 const ENCODING_HEAD_SAMPLE_BYTES = 64 * 1024;
 const ENCODING_MID_SAMPLE_BYTES = 8192;

@@ -192,9 +192,9 @@ describe('TxtToEpubConverter', () => {
     expect(segments).toEqual(['Segment A', 'Segment B']);
   });
 
-  // #7435: a header of links can fill the first 1024 characters by itself.
+  // #7435: a header of links can run past the first 8192 characters.
   const linkHeader = Array.from(
-    { length: 20 },
+    { length: 200 },
     (_, i) => `![https://i.example.com/a${i}/cover.png](chapter-${i}.png)`,
   ).join('\n');
   const chineseBody =
@@ -210,7 +210,7 @@ describe('TxtToEpubConverter', () => {
       return [{ title: 'A', content: 'a', isVolume: false }];
     };
 
-    expect(linkHeader.length).toBeGreaterThan(1024);
+    expect(linkHeader.length).toBeGreaterThan(8192);
     await converter.convert({ file: new File([linkHeader + chineseBody], 'book.txt') });
 
     expect(languages[0]).toBe('zh');

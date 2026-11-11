@@ -164,14 +164,17 @@ export const inferLangFromScript = (text: string, lang: string): string => {
 // about the book's language. TXT files saved by downloader tools open with a
 // header full of them, which pushed franc to guess Spanish, Italian or
 // Portuguese for a Chinese book. See issue #7435.
-// A URL ends at the first non-ASCII character, so prose written right after it
-// (`…/1.html，这是…`) is kept. The scheme length is capped so a long unbroken
-// word is scanned in linear time. The hex run is delimited without a lookbehind,
-// which older WebKit can't parse (`pnpm check:lookbehind-regex`).
+// A URL ends at whitespace or CJK punctuation, so a Chinese path (`/封面图片`)
+// goes with it but prose after `…/1.html，` is kept. The scheme length is capped
+// so a long unbroken word is scanned in linear time. The hex run is delimited
+// without a lookbehind, which older WebKit can't parse
+// (`pnpm check:lookbehind-regex`). Whitespace is collapsed last so the gaps
+// left by removed URLs don't fill the sample.
 const stripLanguageNoise = (text: string): string =>
   text
-    .replace(/[a-z][a-z\d+.-]{0,31}:\/\/[!-~]+/gi, ' ')
-    .replace(/(^|[^\da-f])[\da-f]{16,}(?![\da-f])/gi, '$1 ');
+    .replace(/[a-z][a-z\d+.-]{0,31}:\/\/[^\s　-〿＀-￯]+/gi, ' ')
+    .replace(/(^|[^\da-f])[\da-f]{16,}(?![\da-f])/gi, '$1 ')
+    .replace(/\s+/g, ' ');
 
 export const detectLanguage = (content: string): string => {
   try {

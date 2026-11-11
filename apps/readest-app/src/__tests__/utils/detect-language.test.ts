@@ -333,6 +333,18 @@ describe('detectLanguage - URLs and hashed file names (#7435)', () => {
     expect(detectLanguage(downloaderHeader.slice(0, 1024))).toBe('zh');
   });
 
+  it('drops Chinese characters inside a link path', () => {
+    const links = 'https://example.com/封面图片\n'.repeat(50);
+    expect(detectLanguage(`${links}It was the best of times, it was the worst of times.`)).toBe(
+      'en',
+    );
+  });
+
+  it('does not let the space left by removed links fill the sample', () => {
+    const links = 'https://a.co/x\n'.repeat(500);
+    expect(detectLanguage(`${links}这是一个中文文本的示例，用于语言检测测试。`)).toBe('zh');
+  });
+
   it('keeps Chinese text written right after a link', () => {
     expect(
       detectLanguage(
