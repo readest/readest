@@ -306,5 +306,28 @@ describe('imageClassifier', () => {
       const css = getStyles(makeViewSettings(), lightTheme);
       expect(css).not.toContain('monochrome-diagram');
     });
+
+    it('uses screen blending instead of multiply for monochrome-diagram inside p[width][height]', () => {
+      const style = document.createElement('style');
+      style.textContent = getStyles(
+        makeViewSettings({ transparentImageBackground: false, invertImgColorInDark: false }),
+        darkTheme,
+      );
+      document.head.append(style);
+      try {
+        document.body.innerHTML = `
+          <p width="100" height="100"><img id="sized-diag" class="monochrome-diagram" src="diag.png" /></p>
+          <p width="100" height="100"><img id="sized-photo" src="photo.png" /></p>
+        `;
+
+        const diag = document.getElementById('sized-diag')!;
+        const photo = document.getElementById('sized-photo')!;
+        expect(window.getComputedStyle(photo).mixBlendMode).toBe('multiply');
+        expect(window.getComputedStyle(diag).mixBlendMode).toBe('screen');
+      } finally {
+        style.remove();
+        document.body.innerHTML = '';
+      }
+    });
   });
 });

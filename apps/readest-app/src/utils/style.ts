@@ -453,6 +453,9 @@ const getColorStyles = (
           : ''
       }
       mix-blend-mode: screen;
+    }
+    p[width][height] > img.monochrome-diagram:only-child {
+      mix-blend-mode: screen;
     }`
         : ''
     }
