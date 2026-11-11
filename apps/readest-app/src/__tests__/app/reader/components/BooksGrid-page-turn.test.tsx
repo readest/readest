@@ -89,13 +89,13 @@ import BooksGrid from '@/app/reader/components/BooksGrid';
 import { clearBookProgress, setBookProgress } from '@/store/readerProgressStore';
 import type { BookProgress } from '@/types/book';
 
-const turnTo = (page: number, sectionLabel: string) =>
+const turnTo = (page: number, sectionLabel: string, pages = 40) =>
   act(() => {
     setBookProgress('book-1', {
       location: `cfi-${page}`,
       sectionLabel,
       section: { current: 0, total: 3 },
-      pageinfo: { current: page, total: 40 },
+      pageinfo: { current: page, total: pages },
     } as unknown as BookProgress);
   });
 
@@ -136,8 +136,9 @@ describe('BooksGrid on a page turn', () => {
     turnTo(1, 'Chapter 1');
     expect(h.columnGaps.at(-1)).toBe(0);
 
+    // two columns to a page halve the section's page count
     h.view.renderer.columnCount = 2;
-    turnTo(1, 'Chapter 1');
+    turnTo(1, 'Chapter 1', 20);
 
     expect(h.columnGaps.at(-1)).toBe(24);
   });
