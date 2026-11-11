@@ -15,10 +15,13 @@ const PAGE_HTML = `<!doctype html><html><head><style>
   html, body { margin: 0; height: 1000px; background: #eee; }
 </style></head><body></body></html>`;
 
-const makeBook = () => ({
+const makeBook = (spread = 'none', count = 1, width = 600, height = 1000) => ({
   dir: 'ltr',
-  rendition: { viewport: { width: 600, height: 1000 }, spread: 'none' },
-  sections: [{ load: async () => ({ src: 'srcdoc', data: PAGE_HTML }), linear: 'yes' }],
+  rendition: { viewport: { width, height }, spread },
+  sections: Array.from({ length: count }, () => ({
+    load: async () => ({ src: 'srcdoc', data: PAGE_HTML }),
+    linear: 'yes',
+  })),
 });
 
 const waitFor = async <T>(fn: () => T | null | undefined, timeout = 4000): Promise<T> => {
@@ -38,23 +41,20 @@ afterEach(() => {
   renderer = null;
 });
 
-const mount = async (zoom: string) => {
+const mount = async (
+  zoom: string,
+  { width = '392.7273px', height = '700px', book = makeBook(), spread = 0, side = 'center' } = {},
+) => {
   renderer = document.createElement('foliate-fxl');
-  Object.assign(renderer.style, {
-    position: 'fixed',
-    left: '0',
-    top: '0',
-    width: '392.7273px',
-    height: '700px',
-  });
+  Object.assign(renderer.style, { position: 'fixed', left: '0', top: '0', width, height });
   renderer.setAttribute('zoom', zoom);
   document.body.append(renderer);
   const paginated = renderer as unknown as {
     open(book: unknown): void;
     goToSpread(index: number, side: string): Promise<void>;
   };
-  paginated.open(makeBook());
-  await paginated.goToSpread(0, 'center');
+  paginated.open(book);
+  await paginated.goToSpread(spread, side);
   await waitFor(() => {
     const f = renderer!.shadowRoot?.querySelector<HTMLIFrameElement>('iframe');
     return f && f.style.display !== 'none' && f.getBoundingClientRect().width ? f : null;
@@ -74,6 +74,27 @@ describe('fixed-layout page that fits the view', () => {
     );
     const style = getComputedStyle(host);
     expect([style.overflowX, style.overflowY], 'the reader can scroll a fitted page').toEqual([
+      'hidden',
+      'hidden',
+    ]);
+  });
+
+  it('gives the reader nothing to scroll when a two-page spread fits', async () => {
+    // Two 392.5px pages fill a 785px client box; each rounds up to 393px on its
+    // own, but together they fit.
+    const host = await mount('fit-page', {
+      width: '785.4545px',
+      height: '500px',
+      book: makeBook('auto', 3, 1000, 600),
+      spread: 1,
+      side: 'left',
+    });
+    const frames = [...host.shadowRoot!.querySelectorAll('iframe')].filter(
+      (f) => f.parentElement!.style.visibility !== 'hidden' && f.getBoundingClientRect().width > 0,
+    );
+    expect(frames.map((f) => f.getBoundingClientRect().width)).toEqual([392.5, 392.5]);
+    const style = getComputedStyle(host);
+    expect([style.overflowX, style.overflowY], 'the reader can scroll a fitted spread').toEqual([
       'hidden',
       'hidden',
     ]);
