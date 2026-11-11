@@ -55,10 +55,11 @@ const mount = async (
   };
   paginated.open(book);
   await paginated.goToSpread(spread, side);
-  await waitFor(() => {
-    const f = renderer!.shadowRoot?.querySelector<HTMLIFrameElement>('iframe');
-    return f && f.style.display !== 'none' && f.getBoundingClientRect().width ? f : null;
-  });
+  await waitFor(() =>
+    [...(renderer!.shadowRoot?.querySelectorAll<HTMLIFrameElement>('iframe') ?? [])].find(
+      (f) => f.style.display !== 'none' && f.getBoundingClientRect().width,
+    ),
+  );
   await new Promise((r) => setTimeout(r, 100));
   return renderer;
 };
@@ -98,6 +99,18 @@ describe('fixed-layout page that fits the view', () => {
       'hidden',
       'hidden',
     ]);
+  });
+
+  it('counts only the page shown when a portrait view shows one page of a spread', async () => {
+    for (const side of ['left', 'right']) {
+      const host = await mount('fit-page', { book: makeBook('auto', 3), spread: 1, side });
+      const style = getComputedStyle(host);
+      expect(
+        [style.overflowX, style.overflowY],
+        `the ${side} page counts its hidden sibling`,
+      ).toEqual(['hidden', 'hidden']);
+      host.remove();
+    }
   });
 
   it('still lets the reader pan a page zoomed past the view', async () => {
