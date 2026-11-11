@@ -238,6 +238,45 @@ describe('PDF render with page colors (#6548)', () => {
     expect(snapshots().map((args) => args.slice(0, 4))).toEqual([[51, 601, 199, 99]]);
   });
 
+  it('keeps the seam between image strips that meet inside a pixel', async () => {
+    // Scanned pages often arrive as a stack of strips. Two 300x100.6 strips meet
+    // at device y 200.6, so the pixel row 200 is covered by images only.
+    operatorList = {
+      fnArray: [OPS.transform, OPS.paintImageXObject, OPS.transform, OPS.paintImageXObject],
+      argsArray: [
+        [300, 0, 0, 100.6, 150, 599.4],
+        ['strip_1', 1, 1],
+        // relative to the first transform: one strip lower
+        [1, 0, 0, 1, 0, -1],
+        ['strip_2', 1, 1],
+      ],
+    };
+    await renderWith({ foreground: '#e0e0e0', background: '#222222', keepImages: true });
+    const kept = new Set(
+      snapshots().flatMap(([, y, , h]) => Array.from({ length: h! }, (_, i) => y! + i)),
+    );
+    // rows 101..300 lie fully inside the two strips
+    const themed = Array.from({ length: 200 }, (_, i) => 101 + i).filter((y) => !kept.has(y));
+    expect(themed, 'no row between the strips may take the theme color').toEqual([]);
+  });
+
+  it('keeps the seams of a picture stored as a grid of tiles', async () => {
+    // 2x2 tiles of 100.5x100.5 from device (100.25, 100.25): seams at 200.75.
+    const at = (x: number, y: number) => [100.5, 0, 0, 100.5, x, 800 - y - 100.5];
+    operatorList = {
+      fnArray: Array(4).fill([OPS.save, OPS.transform, OPS.paintImageXObject, OPS.restore]).flat(),
+      argsArray: [
+        [100.25, 100.25],
+        [200.75, 200.75],
+        [200.75, 100.25],
+        [100.25, 200.75],
+      ].flatMap(([x, y]) => [[], at(x!, y!), ['tile', 1, 1], []]),
+    };
+    await renderWith({ foreground: '#e0e0e0', background: '#222222', keepImages: true });
+    // one picture: only its outer edge pixels are themed
+    expect(snapshots().map((args) => args.slice(0, 4))).toEqual([[101, 101, 200, 200]]);
+  });
+
   it('follows form and annotation transforms to the image', async () => {
     operatorList = {
       fnArray: [
