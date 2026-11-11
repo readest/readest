@@ -364,6 +364,9 @@ const getColorStyles = (
   // Over a background texture, Override Book Color still forces the text
   // colors but fills backgrounds with transparent so the texture shows (#6712).
   const overrideBg = hasBackgroundTexture ? 'transparent' : bg;
+  // Tables keep the darker tint they get in dark mode (see `blockquote, table *`).
+  const tableBg =
+    hasBackgroundTexture || !isDarkMode ? overrideBg : `color-mix(in srgb, ${bg} 80%, #000)`;
   const colorStyles = `
     html {
       --bg-texture-id: ${backgroundTextureId};
@@ -389,11 +392,22 @@ const getColorStyles = (
       ${texturedFootnote && overrideColor ? 'background-color: transparent !important;' : ''}
     }
     section, aside, blockquote, article, nav, header, footer, main, figure,
-    div, p, font, h1, h2, h3, h4, h5, h6, li, span,
-    table, thead, tbody, tfoot, tr, th, td, caption {
+    div, p, font, h1, h2, h3, h4, h5, h6, li, span {
       ${overrideColor ? `background-color: ${overrideBg} !important;` : ''}
       ${overrideColor ? `color: ${fg} !important;` : ''}
       ${overrideColor ? `border-color: ${fg} !important;` : ''}
+    }
+    /* A book's own cell, row and column colors and background images give way
+       too (#7415). Whatever sits inside a cell is transparent, so it shows the
+       cell's color (or the texture) instead of a second shade behind the text. */
+    table, colgroup, col, thead, tbody, tfoot, tr, th, td, caption {
+      ${overrideColor ? `background-color: ${tableBg} !important;` : ''}
+      ${overrideColor ? 'background-image: none !important;' : ''}
+      ${overrideColor ? `color: ${fg} !important;` : ''}
+      ${overrideColor ? `border-color: ${fg} !important;` : ''}
+    }
+    :is(th, td, caption) * {
+      ${overrideColor ? 'background-color: transparent !important;' : ''}
     }
     pre, span { /* inline code blocks */
       ${overrideColor ? `background-color: ${overrideBg} !important;` : ''}
