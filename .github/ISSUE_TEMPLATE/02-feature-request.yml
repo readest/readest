@@ -28,7 +28,7 @@ body:
       label: "Describe the solution you'd like."
       description: |
         A clear and concise description of the solution you would like.
-      placeholder: "E.g: I think it takes too many steps to [...]"
+      placeholder: "E.g: Add a shortcut that lets me [...] in one step"
     validations:
       required: true
   - type: "textarea"
