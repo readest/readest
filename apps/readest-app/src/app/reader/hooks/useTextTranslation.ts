@@ -75,6 +75,9 @@ export const createTranslationTargetNode = ({
 
   if (content) {
     wrapper.appendChild(content);
+    // Unwrapped tags and joined chunks leave adjacent text nodes, which split
+    // a word for selection and Word Lens.
+    wrapper.normalize();
   } else {
     wrapper.appendChild(document.createTextNode(translatedText ?? ''));
   }
