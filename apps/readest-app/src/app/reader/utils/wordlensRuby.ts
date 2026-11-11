@@ -110,13 +110,14 @@ export const applyGlosses = (
 };
 
 /**
- * Unwrap every injected gloss, restoring the original text. A section without
- * glosses is left as it is: this runs for every loaded section after each
- * section load, Word Lens on or off.
+ * Unwrap every injected gloss and join the text nodes, restoring the original
+ * text. A section without glosses is left as it is unless `joinText` asks for
+ * the join: this runs for every loaded section after each section load, Word
+ * Lens on or off.
  */
-export const clearGlosses = (doc: Document): void => {
+export const clearGlosses = (doc: Document, joinText = false): void => {
   const rubies = doc.querySelectorAll(`ruby.${GLOSS_CLASS}`);
-  if (!rubies.length) return;
+  if (!rubies.length && !joinText) return;
   rubies.forEach((ruby) => {
     ruby.querySelectorAll('rt').forEach((rt) => rt.remove());
     const parent = ruby.parentNode;
