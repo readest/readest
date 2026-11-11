@@ -461,7 +461,7 @@ export const useKOSync = (bookKey: string, provider: KosyncProgressProvider = ko
   );
 
   const pullProgress = useCallback(
-    async () => {
+    async ({ onResume = false } = {}) => {
       if (!progress?.location || !appService || !kosyncClient) return;
 
       const bookData = getBookData(bookKey);
@@ -530,7 +530,11 @@ export const useKOSync = (bookKey: string, provider: KosyncProgressProvider = ko
           resolved.percentage === remoteProgress.percentage &&
           resolved.timestamp === remoteProgress.timestamp &&
           resolved.device_id === remoteProgress.device_id;
-        if (isAlreadyResolved) {
+        // The server can echo a position this reader just sent on backgrounding.
+        // Local progress may differ by the time the reader is visible again.
+        const isOwnResumePosition =
+          onResume && !!remoteProgress.device_id && remoteProgress.device_id === config.deviceId;
+        if (isAlreadyResolved || isOwnResumePosition) {
           setSyncState('synced');
           return;
         }
@@ -628,7 +632,7 @@ export const useKOSync = (bookKey: string, provider: KosyncProgressProvider = ko
 
     if (isActive) {
       hasPulledOnce.current = false;
-      pullProgress();
+      pullProgress({ onResume: true });
     } else {
       // Nothing is ever pending in manual mode, so this pair would be the one
       // automatic push that still got through — schedule then flush.

@@ -663,6 +663,44 @@ describe('useKOSync — no phantom re-prompt after resolving (#5527)', () => {
     expect(result.current.conflictDetails).toBeNull();
   });
 
+  test('ignores a changed server position from this device when the reader becomes visible again', async () => {
+    const { result } = renderHook(() => useKOSync('h1-view1'));
+    await settle();
+    expect(result.current.syncState).toBe('conflict');
+
+    await act(async () => {
+      result.current.resolveWithLocal();
+      await flushMicrotasks();
+    });
+
+    const echo = {
+      ...h.remote,
+      percentage: 0.12,
+      device: 'Readest (Android)',
+      device_id: 'this-device',
+    };
+    h.getProgressMock.mockResolvedValue(echo);
+    await act(async () => {
+      h.activeCallback?.(false);
+      h.activeCallback?.(true);
+      await flushMicrotasks();
+    });
+
+    expect(result.current.syncState).toBe('synced');
+    expect(result.current.conflictDetails).toBeNull();
+    expect(h.goTo).not.toHaveBeenCalled();
+
+    h.getProgressMock.mockResolvedValue({ ...echo, device_id: 'other-device' });
+    await act(async () => {
+      h.activeCallback?.(false);
+      h.activeCallback?.(true);
+      await flushMicrotasks();
+    });
+
+    expect(result.current.syncState).toBe('conflict');
+    expect(result.current.conflictDetails?.remote.device_id).toBe('other-device');
+  });
+
   test('a NEW remote report after resolution still prompts', async () => {
     const { result } = renderHook(() => useKOSync('h1-view1'));
     await settle();
