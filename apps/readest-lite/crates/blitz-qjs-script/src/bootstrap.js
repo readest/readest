@@ -395,14 +395,14 @@
       return p || (this.nodeType === 9 ? this.defaultView : null);
     }
     get nodeType() {
-      return n.kind(this._id);
+      return this._kind ?? n.kind(this._id);
     }
     // Node's own, for any node (DOMPurify reads it from Node.prototype); subclasses' match it.
     get nodeName() {
       const t = this.nodeType;
       if (t === 1) {
-        const l = n.local(this._id);
-        return n.ns(this._id) === HTML_NS ? l.toUpperCase() : l;
+        const l = this._local ?? n.local(this._id);
+        return (this._ns ?? n.ns(this._id)) === HTML_NS ? l.toUpperCase() : l;
       }
       return { 3: '#text', 8: '#comment', 9: '#document', 11: '#document-fragment' }[t] ?? '';
     }
@@ -413,7 +413,7 @@
     }
     get parentNode() {
       const p = n.parent(this._id);
-      return p == null ? null : wrap(p);
+      return p == null ? null : wrapIn(p, ownerOf(this));
     }
     get parentElement() {
       const p = this.parentNode;
@@ -421,26 +421,27 @@
     }
     // A host's shadow root is its first native child (attachShadow), not one of its children.
     get childNodes() {
-      const c = n.children(this._id).map(wrap);
+      const o = ownerOf(this);
+      const c = n.children(this._id).map((id) => wrapIn(id, o));
       if (this._shadow) c.shift();
       return withItem(c);
     }
     get firstChild() {
       let c = n.first(this._id);
       if (this._shadow && c != null) c = n.sibling(c, 1);
-      return c == null ? null : wrap(c);
+      return c == null ? null : wrapIn(c, ownerOf(this));
     }
     get lastChild() {
       const c = n.last(this._id);
-      return c == null || c === this._shadow?._id ? null : wrap(c);
+      return c == null || c === this._shadow?._id ? null : wrapIn(c, ownerOf(this));
     }
     get nextSibling() {
       const c = n.sibling(this._id, 1);
-      return c == null ? null : wrap(c);
+      return c == null ? null : wrapIn(c, ownerOf(this));
     }
     get previousSibling() {
       const c = n.sibling(this._id, -1);
-      return c == null || shadowIds.has(c) ? null : wrap(c);
+      return c == null || shadowIds.has(c) ? null : wrapIn(c, ownerOf(this));
     }
     // Shadow-including: shadow trees are in the native tree under their hosts.
     get isConnected() {
@@ -736,14 +737,14 @@
       return this.tagName;
     }
     get tagName() {
-      const l = n.local(this._id);
+      const l = this.localName;
       return this.namespaceURI === HTML_NS ? l.toUpperCase() : l;
     }
     get localName() {
-      return n.local(this._id);
+      return this._local ?? n.local(this._id);
     }
     get namespaceURI() {
-      return n.ns(this._id);
+      return this._ns ?? n.ns(this._id);
     }
     get style() {
       return this._style || (this._style = makeStyle(this));
@@ -923,7 +924,9 @@
       return withItem(this.childNodes.filter((c) => c.nodeType === 1));
     }
     get firstElementChild() {
-      return this.children[0] || null;
+      let c = this.firstChild;
+      while (c && c.nodeType !== 1) c = c.nextSibling;
+      return c;
     }
     get lastElementChild() {
       const c = this.children;
@@ -955,10 +958,11 @@
     }
     querySelector(s) {
       const r = n.query(this._id, s);
-      return r == null ? null : wrap(r);
+      return r == null ? null : wrapIn(r, ownerOf(this));
     }
     querySelectorAll(s) {
-      return withItem(n.queryAll(this._id, s).map(wrap));
+      const o = ownerOf(this);
+      return withItem(n.queryAll(this._id, s).map((id) => wrapIn(id, o)));
     }
     getElementsByTagName(t) {
       return this.querySelectorAll(t);
@@ -1464,14 +1468,15 @@
     }
     getElementById(id) {
       const r = n.query(this._id, '#' + CSS.escape(String(id)));
-      return r == null ? null : wrap(r);
+      return r == null ? null : wrapIn(r, ownerOf(this));
     }
     querySelector(s) {
       const r = n.query(this._id, s);
-      return r == null ? null : wrap(r);
+      return r == null ? null : wrapIn(r, ownerOf(this));
     }
     querySelectorAll(s) {
-      return withItem(n.queryAll(this._id, s).map(wrap));
+      const o = ownerOf(this);
+      return withItem(n.queryAll(this._id, s).map((id) => wrapIn(id, o)));
     }
     getElementsByTagName(t) {
       return this.querySelectorAll(t);
@@ -1490,12 +1495,18 @@
     }
   }
 
+  // The document of its own that node wrapper `w` is in, if any.
+  const ownerOf = (w) => w._owner || (w._nodes ? w : undefined);
   function wrap(id) {
-    let w = wrappers.get(id);
+    return wrapIn(id);
+  }
+  // `owner`, when known, is the document of its own that node `id` is in: a node's parent,
+  // children and siblings are in its own document, so its getters pass it on.
+  function wrapIn(id, owner) {
+    let cache = owner ? owner._nodes : wrappers;
+    let w = cache.get(id);
     if (w) return w;
-    let cache = wrappers;
-    let owner = null;
-    if (id < -1 && ownedDocs.size) {
+    if (!owner && id < -1 && ownedDocs.size) {
       const tag = n.ownedTag(id);
       owner = (tag && ownedDocs.get(tag)?.deref()) || null;
       if (owner) {
@@ -1506,14 +1517,29 @@
     }
     const k = n.kind(id);
     let cls = Node;
+    let ns, local;
     if (k === 9) cls = Document;
     else if (k === 3) cls = Text;
     else if (k === 8) cls = Comment;
-    else if (k === 1) cls = n.ns(id) === HTML_NS ? byTag[n.local(id)] || HTMLElement : SVGElement;
+    else if (k === 1) {
+      ns = n.ns(id);
+      local = n.local(id);
+      cls = ns === HTML_NS ? byTag[local] || HTMLElement : SVGElement;
+    }
     w = Object.create(cls.prototype);
     w._id = id;
-    // A node keeps its document alive (and with it the Blitz document).
-    if (owner) w._owner = owner;
+    // A node keeps its document alive (and with it the Blitz document). In a document of its
+    // own, parsed once and only rearranged (DOMPurify), it also keeps its type and name, which
+    // DOMPurify reads several times a node. The page's nodes read them each time: a node the
+    // page drops can leave its id to a new one.
+    if (owner) {
+      w._owner = owner;
+      w._kind = k;
+      if (k === 1) {
+        w._ns = ns;
+        w._local = local;
+      }
+    }
     cache.set(id, w);
     return w;
   }
@@ -1530,6 +1556,7 @@
     const h = n.parseHtml(String(html));
     const d = Object.create(Document.prototype);
     d._id = h;
+    d._kind = 9;
     d._nodes = new Map([[h, d]]);
     d._ready = 'complete';
     const tag = n.ownedTag(h);

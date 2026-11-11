@@ -102,3 +102,43 @@ fn a_node_iterator_goes_on_after_its_node_is_removed() {
     // as the DOM does: removing `a` leaves the iterator after `div`, so `b` comes next
     assert_eq!(out, ["div,a,b,c <c></c>", "c,div"]);
 }
+
+#[test]
+fn a_parsed_documents_nodes_are_found_and_named_without_asking_again() {
+    // DOMPurify reads each node's type and name several times as it walks a chapter parsed as
+    // text/html. Each read was a native call, and each wrapper lookup in that document asked
+    // natively which document the node is in first: about 20,000 calls for one chapter, most
+    // of the sanitizer's half second on a Kindle.
+    let mut doc = page();
+    let out = logs(
+        &mut doc,
+        "const d = __blitzParseHTML('<body>' + '<p class=\"c\">one <b>two</b> three</p><svg><rect/></svg>'.repeat(20) + '</body>');
+        const calls = new Map();
+        for (const k of ['ownedTag', 'kind', 'ns', 'local', 'children']) {
+            const f = __n[k];
+            __n[k] = (...a) => { calls.set(k, (calls.get(k) || 0) + 1); return f(...a); };
+        }
+        const walk = () => {
+            const it = d.createNodeIterator(d.documentElement, NodeFilter.SHOW_ALL);
+            const seen = [];
+            for (let x; (x = it.nextNode()); ) {
+                if (x.nodeType !== 1) continue;
+                const first = x.firstElementChild;
+                seen.push(x.nodeName + ':' + x.localName + ':' + x.namespaceURI.slice(-3) + ':' + (first ? first.tagName : '-') + ':' + (x.parentNode.nodeType));
+            }
+            return seen;
+        };
+        const before = walk().join(' ');
+        calls.clear();
+        const again = walk().join(' ');
+        console.log(again === before, before.split(' ').slice(0, 6).join(' '));
+        console.log(['ownedTag', 'kind', 'ns', 'local', 'children'].map((k) => k + '=' + (calls.get(k) || 0)).join(' '));",
+    );
+    assert_eq!(
+        out,
+        [
+            "true HTML:html:tml:HEAD:9 HEAD:head:tml:-:1 BODY:body:tml:P:1 P:p:tml:B:1 B:b:tml:-:1 svg:svg:svg:rect:1",
+            "ownedTag=0 kind=0 ns=0 local=0 children=0",
+        ]
+    );
+}
