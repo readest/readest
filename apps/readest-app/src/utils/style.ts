@@ -397,20 +397,26 @@ const getColorStyles = (
       ${overrideColor ? `color: ${fg} !important;` : ''}
       ${overrideColor ? `border-color: ${fg} !important;` : ''}
     }
-    /* A book's own cell, row and column colors and background images give way
-       too (#7415). Whatever sits inside a cell is transparent, so it shows the
-       cell's color (or the texture) instead of a second shade behind the text. */
-    table, colgroup, col, thead, tbody, tfoot, tr, th, td, caption {
-      ${overrideColor ? `background-color: ${tableBg} !important;` : ''}
-      ${overrideColor ? 'background-image: none !important;' : ''}
-      ${overrideColor ? `color: ${fg} !important;` : ''}
-      ${overrideColor ? `border-color: ${fg} !important;` : ''}
-    }
-    :is(th, td, caption) * {
-      ${overrideColor ? 'background-color: transparent !important;' : ''}
-    }
     pre, span { /* inline code blocks */
       ${overrideColor ? `background-color: ${overrideBg} !important;` : ''}
+    }${
+      overrideColor
+        ? `
+    /* A book's own cell, row and column colors and background images give
+       way too (#7415). Whatever sits inside a cell is transparent, so it shows
+       the cell's color (or the texture) instead of a second shade behind the
+       text. The cell rule ties on specificity with p, span and pre above, so it
+       must come after them. */
+    table, colgroup, col, thead, tbody, tfoot, tr, th, td, caption {
+      background-color: ${tableBg} !important;
+      background-image: none !important;
+      color: ${fg} !important;
+      border-color: ${fg} !important;
+    }
+    :is(th, td, caption) * {
+      background-color: transparent !important;
+    }`
+        : ''
     }
     a:any-link {
       ${overrideColor ? `color: ${primary} !important;` : isDarkMode ? `color: lightblue;` : ''}

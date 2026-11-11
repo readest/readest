@@ -45,7 +45,7 @@ const BOOK_CSS = `
   col { background-color: #ff0000; }
   tr { background-color: #00ff00; }
   td { background-color: #ffcc00; }
-  b { background-color: #0000ff; }
+  b, span, pre { background-color: #0000ff; }
 `;
 
 const TABLE_HTML = `
@@ -53,7 +53,7 @@ const TABLE_HTML = `
     <colgroup><col id="col"></colgroup>
     <tr id="tr">
       <td id="td" style="background-image: linear-gradient(#ffffff, #ffffff)">
-        <b id="b">bold</b><p id="p">text</p>
+        <b id="b">bold</b><span id="span">span</span><p id="p">text</p><pre id="pre">code</pre>
       </td>
     </tr>
   </table>
@@ -110,7 +110,8 @@ describe('Override Book Color on tables (#7415)', () => {
         { overrideColor: true, backgroundTextureId: 'paper' },
         isDarkMode,
       );
-      for (const id of ['col', 'tr', 'td', 'b', 'p']) expect(bg(id), id).toBe(TRANSPARENT);
+      for (const id of ['col', 'tr', 'td', 'b', 'span', 'p', 'pre'])
+        expect(bg(id), id).toBe(TRANSPARENT);
       expect(image('td')).toBe('none');
     }
   });
@@ -118,7 +119,6 @@ describe('Override Book Color on tables (#7415)', () => {
   test('paints no second shade behind text inside a cell in dark mode', () => {
     const { bg } = renderTable({ overrideColor: true }, true);
     expect(bg('td')).not.toBe('rgb(255, 204, 0)');
-    expect(bg('b')).toBe(TRANSPARENT);
-    expect(bg('p')).toBe(TRANSPARENT);
+    for (const id of ['b', 'span', 'p', 'pre']) expect(bg(id), id).toBe(TRANSPARENT);
   });
 });
