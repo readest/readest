@@ -1,3 +1,5 @@
+// @vitest-environment happy-dom
+import { bookDataStoreHooks } from '@/__tests__/helpers/book-data-store-mock';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -63,7 +65,7 @@ vi.mock('@/store/readerStore', () => ({
   }),
 }));
 vi.mock('@/store/bookDataStore', () => ({
-  useBookDataStore: () => ({ getConfig: () => ({}), getBookData: () => mockBookData }),
+  ...bookDataStoreHooks(() => ({ getConfig: () => ({}), getBookData: () => mockBookData })),
 }));
 vi.mock('@/store/settingsStore', () => ({
   useSettingsStore: () => ({
@@ -79,6 +81,9 @@ vi.mock('@/hooks/useCloudSyncStatus', () => ({
   useCloudSyncStatus: () => mockSyncStatus,
 }));
 vi.mock('@/helpers/settings', () => ({ saveViewSettings: vi.fn() }));
+vi.mock('@/components/vocabulary/VocabularyDialog', () => ({
+  setVocabularyDialogVisible: vi.fn(),
+}));
 vi.mock('@/services/constants', () => ({
   MAX_ZOOM_LEVEL: 200,
   MIN_ZOOM_LEVEL: 50,

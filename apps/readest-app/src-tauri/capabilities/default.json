@@ -223,6 +223,8 @@
     "allow-is-updater-disabled",
     "allow-allow-paths-in-scopes",
     "allow-optimize-cover-thumbnails",
+    "allow-get-explorer-thumbnails-enabled",
+    "allow-set-explorer-thumbnails-enabled",
     "allow-read-dir",
     "allow-write-backup-zip",
     "allow-extract-backup-zip",

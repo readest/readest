@@ -1,3 +1,4 @@
+import { bookDataStoreHooks } from '@/__tests__/helpers/book-data-store-mock';
 import { afterEach, beforeEach, describe, expect, onTestFinished, test, vi } from 'vitest';
 import { act, cleanup, render } from '@testing-library/react';
 
@@ -29,10 +30,10 @@ vi.mock('@/store/readerStore', () => ({
   useReaderStore: () => ({ getView: () => null, getViewSettings: () => h.viewSettings }),
 }));
 vi.mock('@/store/bookDataStore', () => {
-  const store = (selector?: (s: unknown) => unknown) =>
-    selector ? selector({ booksData: {} }) : { getBookData: () => ({ book: {} }) };
-  store.getState = () => ({ booksData: {} });
-  return { useBookDataStore: store };
+  const state = { booksData: {}, getBookData: () => ({ book: {} }) };
+  const store = (selector?: (s: unknown) => unknown) => (selector ? selector(state) : state);
+  store.getState = () => state;
+  return { ...bookDataStoreHooks(store) };
 });
 vi.mock('@/store/settingsStore', () => ({
   useSettingsStore: { getState: () => ({ settings: {} }) },

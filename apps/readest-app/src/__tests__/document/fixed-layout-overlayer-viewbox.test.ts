@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 // Regression test for: TTS highlight overlay is off the text boxes in
 // fixed-layout EPUBs when the page is scaled up.
 //

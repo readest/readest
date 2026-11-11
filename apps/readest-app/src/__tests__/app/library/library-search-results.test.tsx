@@ -1,7 +1,14 @@
+// @vitest-environment happy-dom
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import LibrarySearchResults from '@/app/library/components/LibrarySearchResults';
+import {
+  addLibrarySearchHistory,
+  clearLibrarySearchHistory,
+  loadLibrarySearchHistory,
+  removeLibrarySearchHistory,
+} from '@/app/library/utils/searchHistory';
 import type { LibrarySearchEvent } from '@/services/librarySearchService';
 import type { Book, LibrarySearchConfig } from '@/types/book';
 
@@ -103,6 +110,49 @@ describe('LibrarySearchResults', () => {
     expect(searchMock).toHaveBeenCalledOnce();
     unmount();
     expect(sessionClose).toHaveBeenCalledOnce();
+  });
+
+  it.each([
+    'clear',
+    'remove',
+    'remove-other',
+  ] as const)('keeps history deletion effective through scan completion: %s', async (action) => {
+    localStorage.clear();
+    const query = `pending-${action}`;
+    addLibrarySearchHistory(query);
+    addLibrarySearchHistory('other');
+    let finish!: () => void;
+    const pending = new Promise<void>((resolve) => {
+      finish = resolve;
+    });
+    searchMock.mockImplementation(async function* () {
+      await pending;
+      yield {
+        type: 'completed',
+        searchedBooks: 1,
+        skippedBooks: 0,
+        erroredBooks: 0,
+        matchCount: 1,
+      };
+    });
+    const props = {
+      appService: {} as never,
+      books: [book],
+      query,
+      config,
+      onSelectResult: vi.fn(),
+    };
+    const { rerender } = render(<LibrarySearchResults {...props} />);
+    await waitFor(() => expect(searchMock).toHaveBeenCalledOnce());
+    if (action === 'clear') clearLibrarySearchHistory();
+    else removeLibrarySearchHistory(action === 'remove' ? query : 'other', 'text');
+    finish();
+    await screen.findByText('No results found');
+    expect(loadLibrarySearchHistory().includes(query)).toBe(action === 'remove-other');
+
+    // A later scan for the same query can intentionally save it again.
+    rerender(<LibrarySearchResults {...props} config={{ ...config, matchCase: true }} />);
+    await waitFor(() => expect(loadLibrarySearchHistory()).toContain(query));
   });
 
   it('labels a capped result set as partial', async () => {

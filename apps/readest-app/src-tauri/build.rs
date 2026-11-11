@@ -44,6 +44,8 @@ fn main() {
             "is_updater_disabled",
             "allow_paths_in_scopes",
             "optimize_cover_thumbnails",
+            "get_explorer_thumbnails_enabled",
+            "set_explorer_thumbnails_enabled",
             "read_dir",
             "write_backup_zip",
             "extract_backup_zip",

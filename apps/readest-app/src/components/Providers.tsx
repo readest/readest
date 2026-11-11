@@ -38,7 +38,6 @@ import { CommandPaletteProvider, CommandPalette } from '@/components/command-pal
 import AtmosphereOverlay from '@/components/AtmosphereOverlay';
 import AppLockScreen from '@/components/AppLockScreen';
 import CarMediaLibraryBridge from '@/components/CarMediaLibraryBridge';
-import FileSyncReport from '@/components/FileSyncReport';
 import AppLockDialog from '@/components/settings/AppLockDialog';
 import { VocabularyDialog } from '@/components/vocabulary/VocabularyDialog';
 import PassphrasePrompt from '@/components/PassphrasePrompt';
@@ -275,7 +274,6 @@ const Providers = ({ children }: { children: React.ReactNode }) => {
                   <CommandPalette />
                   <AtmosphereOverlay />
                   <PassphrasePrompt />
-                  {!appShellHidden && <FileSyncReport />}
                   <WindowResizeHandles />
                 </div>
                 <AppLockDialog />

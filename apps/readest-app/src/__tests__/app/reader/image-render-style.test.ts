@@ -1,5 +1,7 @@
+// @vitest-environment happy-dom
 import { describe, expect, it } from 'vitest';
 import {
+  captureImageRenderStyle,
   isLightColor,
   isTransparentColor,
   plateColorFromBoxShadow,
@@ -75,6 +77,16 @@ describe('readImageRenderStyle', () => {
     expect(style.filter).toBe('invert(100%)');
   });
 
+  it('reads the filter from an SVG-wrapped bitmap (#7045)', () => {
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    const image = document.createElementNS('http://www.w3.org/2000/svg', 'image');
+    image.setAttribute('style', 'filter: invert(100%)');
+    svg.appendChild(image);
+    document.body.appendChild(svg);
+    expect(readImageRenderStyle(image).filter).toBe('invert(100%)');
+    svg.remove();
+  });
+
   it('prefers the element background over a shadow', () => {
     const style = readImageRenderStyle(
       makeImage('background-color: rgb(250, 250, 250); box-shadow: inset 0 0 0 999px #fff;'),
@@ -83,9 +95,44 @@ describe('readImageRenderStyle', () => {
   });
 });
 
+describe('captureImageRenderStyle for SVG images (#7045)', () => {
+  it('keeps the previous viewer behavior unless white transparency is enabled', () => {
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    const image = document.createElementNS('http://www.w3.org/2000/svg', 'image');
+    image.setAttribute('href', 'blob:diagram');
+    image.setAttribute('style', 'filter: invert(100%)');
+    svg.appendChild(image);
+    document.body.appendChild(svg);
+    const view = {
+      renderer: { getContents: () => [{ doc: document }] },
+    } as unknown as Parameters<typeof captureImageRenderStyle>[0];
+    try {
+      expect(captureImageRenderStyle(view, 'blob:diagram')).toBeNull();
+      image.style.filter = 'url("#readest-white-transparent") invert(100%)';
+      expect(captureImageRenderStyle(view, 'blob:diagram')?.filter).toContain(
+        'readest-white-transparent',
+      );
+      image.style.filter = 'invert(100%)';
+      expect(captureImageRenderStyle(view, 'blob:diagram')).toBeNull();
+    } finally {
+      svg.remove();
+    }
+  });
+});
+
 describe('resolveImagePlate', () => {
   const lineArt = { transparentRatio: 0.7, darkInkRatio: 0.95 };
   const photo = { transparentRatio: 0, darkInkRatio: 0.1 };
+
+  it('does not restore paper behind intentionally transparent image backgrounds (#7045)', () => {
+    expect(
+      resolveImagePlate({
+        pagePlate: '#ffffff',
+        filter: 'url("data:image/svg+xml,...#readest-white-transparent")',
+        ink: lineArt,
+      }),
+    ).toBeNull();
+  });
 
   it('uses the page plate whenever the page had one', () => {
     expect(resolveImagePlate({ pagePlate: 'rgb(250, 250, 250)', filter: 'none', ink: photo })).toBe(

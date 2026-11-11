@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect } from 'vitest';
 import { reconcileAbsBooks } from '@/services/audiobookshelf/librarySync';
 import { makeAbsFilePath } from '@/utils/audiobook';

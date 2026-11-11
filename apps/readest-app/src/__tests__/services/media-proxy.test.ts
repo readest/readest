@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
@@ -5,6 +6,7 @@ const mocks = vi.hoisted(() => ({
   stat: vi.fn(),
   isTauriAppPlatform: vi.fn(() => false),
   isIOSApp: false,
+  isLinuxApp: false,
   servers: [] as Array<{ url: string; deletedAt?: number; allowSelfSignedCert?: boolean }>,
   settingsServers: [] as Array<{ url: string; deletedAt?: number; allowSelfSignedCert?: boolean }>,
   bookorbit: undefined as
@@ -20,7 +22,7 @@ vi.mock('@/services/environment', async (importOriginal) => {
   return {
     ...actual,
     isTauriAppPlatform: mocks.isTauriAppPlatform,
-    getInitializedAppService: () => ({ isIOSApp: mocks.isIOSApp }),
+    getInitializedAppService: () => ({ isIOSApp: mocks.isIOSApp, isLinuxApp: mocks.isLinuxApp }),
   };
 });
 
@@ -38,6 +40,7 @@ vi.mock('@/store/settingsStore', () => ({
 
 import {
   getLocalMediaUrl,
+  getMediaFileUrl,
   getMediaProxyBase,
   proxiedMediaUrl,
 } from '@/services/audiobook/mediaProxy';
@@ -224,6 +227,30 @@ describe('proxiedMediaUrl', () => {
     expect(proxiedMediaUrl('http://127.0.0.1:41234/s3cret', upstream)).toBe(
       `http://127.0.0.1:41234/s3cret/media?u=${encodeURIComponent(upstream)}`,
     );
+  });
+});
+
+describe('Linux AAC playback (#7084)', () => {
+  beforeEach(() => {
+    mocks.invoke.mockReset();
+    mocks.isTauriAppPlatform.mockReturnValue(true);
+    mocks.isIOSApp = false;
+    mocks.isLinuxApp = true;
+  });
+
+  afterEach(() => {
+    mocks.isLinuxApp = false;
+  });
+
+  it('preserves the original byte stream for HTML audio callers on Linux', async () => {
+    mocks.invoke.mockResolvedValue('http://127.0.0.1:5/s/file/raw');
+    await getMediaFileUrl('/books/book.epub', 100, 600, 'audio/mp4');
+    expect(mocks.invoke).toHaveBeenCalledWith('get_media_file_url', {
+      path: '/books/book.epub',
+      start: 100,
+      end: 600,
+      contentType: 'audio/mp4',
+    });
   });
 });
 

@@ -190,6 +190,8 @@ struct VoiceData: Encodable {
   let name: String
   let lang: String
   let disabled: Bool
+  // "female" / "male"; omitted when the voice does not say.
+  let gender: String?
 }
 
 struct GetVoicesResponse: Encodable {
@@ -448,7 +450,8 @@ class NativeTTSPlugin: Plugin, AVSpeechSynthesizerDelegate {
         id: voice.identifier,
         name: name,
         lang: voice.language,
-        disabled: false
+        disabled: false,
+        gender: voice.gender == .female ? "female" : voice.gender == .male ? "male" : nil
       )
     }
     invoke.resolve(GetVoicesResponse(voices: voices))
@@ -1239,8 +1242,11 @@ class NativeTTSPlugin: Plugin, AVSpeechSynthesizerDelegate {
           return
         }
         self.playoutAnalysisQueue.async {
+          // AVURLAsset picks its decoder by extension; custom speech services
+          // may answer in WAV.
+          let ext = data.starts(with: Data("RIFF".utf8)) ? "wav" : "mp3"
           let url = FileManager.default.temporaryDirectory.appendingPathComponent(
-            "tts-playout-\(args.session)-\(args.index).mp3")
+            "tts-playout-\(args.session)-\(args.index).\(ext)")
           do {
             try data.write(to: url)
           } catch {

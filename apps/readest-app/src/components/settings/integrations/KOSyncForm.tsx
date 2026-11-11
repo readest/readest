@@ -16,7 +16,7 @@ import {
   parseCustomHeadersInput,
 } from '@/utils/customHeaders';
 import SubPageHeader from '../SubPageHeader';
-import { SectionTitle, SettingLabel, SettingsSelect } from '../primitives';
+import { SectionTitle, SettingLabel, SettingsSelect, Tips } from '../primitives';
 import { Toggle } from '@/components/primitives/toggle';
 import { allowsSelfSignedCert } from '@/utils/tls';
 import SelfSignedCertSwitch from './SelfSignedCertSwitch';
@@ -256,7 +256,10 @@ const KOSyncForm: React.FC<KOSyncFormProps> = ({ onBack }) => {
                   value={settings.kosync.checksumMethod}
                   onChange={handleChecksumMethodChange}
                   ariaLabel={_('Checksum Method')}
-                  options={[{ value: 'binary', label: _('File Content') }]}
+                  options={[
+                    { value: 'binary', label: _('File Content') },
+                    { value: 'filename', label: _('File Name') },
+                  ]}
                 />
               </div>
               {/* Mirrors KOReader's "Send document metadata" setting: include
@@ -282,6 +285,12 @@ const KOSyncForm: React.FC<KOSyncFormProps> = ({ onBack }) => {
               </div>
             </div>
           </div>
+
+          {settings.kosync.checksumMethod === 'filename' && (
+            <Tips>
+              <li>{_('File Name uses the original filename, including its extension.')}</li>
+            </Tips>
+          )}
 
           <SelfSignedCertSwitch
             checked={allowsSelfSignedCert(settings.kosync)}

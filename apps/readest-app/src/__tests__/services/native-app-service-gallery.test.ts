@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
 
 // Saving an image to the Android gallery goes: ImageViewer -> NativeAppService ->

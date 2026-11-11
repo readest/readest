@@ -10,7 +10,7 @@ import type { CustomTranslator } from '@/types/translation';
 import { md5Fingerprint } from '@/utils/md5';
 import { renderPrompt } from '@/services/translators/custom/prompts';
 import {
-  createChatModel,
+  generateChatText,
   loadSDK,
   stripReasoning,
 } from '@/services/translators/custom/openaiCompatible';
@@ -47,7 +47,15 @@ export interface ContextLookupInput {
   bookAuthor?: string;
 }
 
+export interface ContextLookupOptions {
+  systemPrompt?: string;
+  maxOutputTokens?: number;
+  onUpdate?: (entry: ContextEntry) => void;
+}
+
 export interface ContextEntry {
+  /** Custom prompts return free-form Markdown instead of the built-in JSON entry. */
+  markdown?: string;
   headword: string;
   pronunciation?: string;
   grammar?: string;
@@ -120,6 +128,10 @@ export const parseContextEntry = (reply: string): ContextEntry => {
   } catch {
     throw new Error('The AI provider returned an invalid reply.');
   }
+  return readContextEntry(parsed);
+};
+
+const readContextEntry = (parsed: unknown): ContextEntry => {
   if (!isRecord(parsed)) throw new Error('The AI provider returned an invalid reply.');
   const definition = readString(parsed, 'definition');
   if (!definition) throw new Error('The AI provider returned an incomplete entry.');
@@ -148,11 +160,19 @@ export const lookupInContext = async (
   translator: CustomTranslator,
   input: ContextLookupInput,
   signal: AbortSignal,
+  options: ContextLookupOptions = {},
 ): Promise<ContextEntry> => {
-  const system = renderPrompt(CONTEXT_DICTIONARY_PROMPT, {
+  const customPrompt = options.systemPrompt?.trim();
+  const system = renderPrompt(customPrompt || CONTEXT_DICTIONARY_PROMPT, {
     sourceLang: input.sourceLang || 'AUTO',
     targetLang: input.targetLang,
+    bookTitle: input.bookTitle,
+    bookAuthor: input.bookAuthor,
   });
+  const maxOutputTokens =
+    Number.isSafeInteger(options.maxOutputTokens) && options.maxOutputTokens! > 0
+      ? options.maxOutputTokens
+      : undefined;
   const prompt = JSON.stringify({
     selectedText: input.text,
     before: input.before,
@@ -161,7 +181,14 @@ export const lookupInContext = async (
     bookAuthor: input.bookAuthor ?? '',
   });
   const key = md5Fingerprint(
-    JSON.stringify([translator.id, translator.updatedAt, translator.model, system, prompt]),
+    JSON.stringify([
+      translator.id,
+      translator.updatedAt,
+      translator.model,
+      system,
+      prompt,
+      maxOutputTokens,
+    ]),
   );
   const cached = cache.get(key);
   if (cached) return cached;
@@ -172,19 +199,49 @@ export const lookupInContext = async (
   // finished request's signal fires (see openaiCompatible.ts).
   const controller = new AbortController();
   const abort = () => controller.abort();
-  const timer = setTimeout(abort, REQUEST_TIMEOUT_MS);
+  let timer = setTimeout(abort, REQUEST_TIMEOUT_MS);
+  const onProgress = () => {
+    clearTimeout(timer);
+    timer = setTimeout(abort, REQUEST_TIMEOUT_MS);
+  };
   signal.addEventListener('abort', abort, { once: true });
   try {
-    const [{ generateText }] = await loadSDK();
-    const { text } = await generateText({
-      model: await createChatModel(translator),
+    const [{ parsePartialJson }] = await loadSDK();
+    const text = await generateChatText(translator, {
       system,
       prompt,
-      temperature: translator.temperature,
+      maxOutputTokens,
       maxRetries: 1,
       abortSignal: controller.signal,
+      onProgress,
+      onText: async (reply) => {
+        if (!options.onUpdate || signal.aborted) return;
+        const markdown = stripReasoning(reply);
+        // A leading reasoning block may itself arrive across several chunks.
+        if (!markdown || '<think>'.startsWith(markdown) || markdown.startsWith('<think>')) return;
+        if (customPrompt) {
+          options.onUpdate({
+            headword: input.text,
+            definition: '',
+            examples: [],
+            synonyms: [],
+            markdown,
+          });
+          return;
+        }
+        const start = markdown.indexOf('{');
+        if (start < 0) return;
+        const { value } = await parsePartialJson(markdown.slice(start).replace(/\s*```\s*$/, ''));
+        if (!isRecord(value) || !readString(value, 'definition') || signal.aborted) return;
+        options.onUpdate(readContextEntry(value));
+      },
     });
-    const entry = parseContextEntry(text);
+    signal.throwIfAborted();
+    const markdown = stripReasoning(text);
+    if (!markdown) throw new Error('The AI provider returned an incomplete entry.');
+    const entry: ContextEntry = customPrompt
+      ? { headword: input.text, definition: '', examples: [], synonyms: [], markdown }
+      : parseContextEntry(text);
     if (cache.size >= MAX_CACHE_ENTRIES) cache.delete(cache.keys().next().value!);
     cache.set(key, entry);
     return entry;

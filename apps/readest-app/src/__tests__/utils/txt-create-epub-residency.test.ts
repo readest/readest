@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect, vi } from 'vitest';
 import { TxtToEpubConverter } from '@/utils/txt';
 

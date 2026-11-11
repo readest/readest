@@ -28,7 +28,10 @@ or JavaScript image buffers.
 
 The native view lives in a non-touchable PopupWindow. PixelCopy reads the
 Activity window underneath it, so preparing a neighbour does not capture the
-visible cover. JavaScript prepares adjacent paginator positions while idle,
+visible cover. The window is kept below the keyboard
+(`INPUT_METHOD_NEEDED`): a not-focusable window otherwise sits above the IME,
+and Android drops keyboard touches that pass through another app's window.
+JavaScript prepares adjacent paginator positions while idle,
 using cancellable previews that restore the reading position without adding
 history or relocation events. Theme changes, reflow, backgrounding, and owner
 changes invalidate cached pixels; a reader-state write that changes no field

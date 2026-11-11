@@ -1,55 +1,98 @@
-use tauri::{command, AppHandle, Runtime};
+use tauri::{command, AppHandle, Manager, Runtime};
 
 use crate::models::*;
 use crate::NativeTtsExt;
 use crate::Result;
 
+// Linux speech is scoped to the invoking window and uses blocking socket I/O.
+// Mobile and the other desktops keep their existing plugin calls.
+macro_rules! speech_command {
+    ($webview:ident, $method:ident $(, $payload:ident)?) => {{
+        let app = $webview.app_handle().clone();
+        #[cfg(target_os = "linux")]
+        {
+            tauri::async_runtime::spawn_blocking(move || {
+                app.native_tts().$method($webview.label() $(, $payload)?)
+            })
+            .await
+            .map_err(|error| crate::Error::NativeTTSError(error.to_string()))?
+        }
+        #[cfg(not(target_os = "linux"))]
+        {
+            app.native_tts().$method($($payload)?)
+        }
+    }};
+}
+
 #[command]
-pub(crate) async fn init<R: Runtime>(app: AppHandle<R>) -> Result<InitResponse> {
-    app.native_tts().init()
+pub(crate) async fn init<R: Runtime>(webview: tauri::Webview<R>) -> Result<InitResponse> {
+    speech_command!(webview, init)
 }
 
 #[command]
 pub(crate) async fn speak<R: Runtime>(
-    app: AppHandle<R>,
+    webview: tauri::Webview<R>,
     payload: SpeakArgs,
 ) -> Result<SpeakResponse> {
-    app.native_tts().speak(payload)
+    speech_command!(webview, speak, payload)
 }
 
 #[command]
-pub(crate) async fn pause<R: Runtime>(app: AppHandle<R>) -> Result<()> {
-    app.native_tts().pause()
+pub(crate) async fn pause<R: Runtime>(webview: tauri::Webview<R>) -> Result<()> {
+    speech_command!(webview, pause)
 }
 
 #[command]
-pub(crate) async fn resume<R: Runtime>(app: AppHandle<R>) -> Result<()> {
-    app.native_tts().resume()
+pub(crate) async fn resume<R: Runtime>(webview: tauri::Webview<R>) -> Result<()> {
+    speech_command!(webview, resume)
 }
 
 #[command]
-pub(crate) async fn stop<R: Runtime>(app: AppHandle<R>) -> Result<()> {
-    app.native_tts().stop()
+pub(crate) async fn stop<R: Runtime>(
+    webview: tauri::Webview<R>,
+    payload: Option<StopArgs>,
+) -> Result<()> {
+    #[cfg(target_os = "linux")]
+    {
+        let payload = payload.unwrap_or_default();
+        speech_command!(webview, stop, payload)
+    }
+    #[cfg(not(target_os = "linux"))]
+    {
+        let _ = payload;
+        speech_command!(webview, stop)
+    }
 }
 
 #[command]
-pub(crate) async fn set_rate<R: Runtime>(app: AppHandle<R>, payload: SetRateArgs) -> Result<()> {
-    app.native_tts().set_rate(payload)
+pub(crate) async fn set_rate<R: Runtime>(
+    webview: tauri::Webview<R>,
+    payload: SetRateArgs,
+) -> Result<()> {
+    speech_command!(webview, set_rate, payload)
 }
 
 #[command]
-pub(crate) async fn set_pitch<R: Runtime>(app: AppHandle<R>, payload: SetPitchArgs) -> Result<()> {
-    app.native_tts().set_pitch(payload)
+pub(crate) async fn set_pitch<R: Runtime>(
+    webview: tauri::Webview<R>,
+    payload: SetPitchArgs,
+) -> Result<()> {
+    speech_command!(webview, set_pitch, payload)
 }
 
 #[command]
-pub(crate) async fn set_voice<R: Runtime>(app: AppHandle<R>, payload: SetVoiceArgs) -> Result<()> {
-    app.native_tts().set_voice(payload)
+pub(crate) async fn set_voice<R: Runtime>(
+    webview: tauri::Webview<R>,
+    payload: SetVoiceArgs,
+) -> Result<()> {
+    speech_command!(webview, set_voice, payload)
 }
 
 #[command]
-pub(crate) async fn get_all_voices<R: Runtime>(app: AppHandle<R>) -> Result<GetVoicesResponse> {
-    app.native_tts().get_all_voices()
+pub(crate) async fn get_all_voices<R: Runtime>(
+    webview: tauri::Webview<R>,
+) -> Result<GetVoicesResponse> {
+    speech_command!(webview, get_all_voices)
 }
 
 #[command]
@@ -100,6 +143,46 @@ pub(crate) async fn playout_enqueue<R: Runtime>(
     app.native_tts().playout_enqueue(payload)
 }
 
+// Called directly by the Linux IPC handler: async command macros defer even
+// the first line to independently scheduled tasks, which can reorder controls.
+#[cfg(target_os = "linux")]
+pub(crate) fn playout_control<R: Runtime>(invoke: tauri::ipc::Invoke<R>) {
+    use tauri::ipc::{CommandArg, CommandItem};
+    use tauri::Manager;
+
+    let payload = PlayoutControlRequest::from_command(CommandItem {
+        plugin: Some("native-tts"),
+        name: "playout_control",
+        key: "payload",
+        message: &invoke.message,
+        acl: &invoke.acl,
+    });
+    let reply = payload.and_then(|payload| {
+        invoke
+            .message
+            .webview()
+            .app_handle()
+            .native_tts()
+            .playout_control_enqueue(payload)
+            .map_err(Into::into)
+    });
+    match reply {
+        Ok(reply) => invoke.resolver.respond_async(async move {
+            tauri::async_runtime::spawn_blocking(move || {
+                reply
+                    .recv()
+                    .map_err(|error| crate::Error::NativeTTSError(error.to_string()))?
+                    .map_err(crate::Error::NativeTTSError)
+            })
+            .await
+            .map_err(|error| crate::Error::NativeTTSError(error.to_string()))?
+            .map_err(Into::into)
+        }),
+        Err(error) => invoke.resolver.invoke_error(error),
+    }
+}
+
+#[cfg(not(target_os = "linux"))]
 #[command]
 pub(crate) async fn playout_control<R: Runtime>(
     app: AppHandle<R>,

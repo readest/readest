@@ -37,7 +37,7 @@ on device, same URL / same instant / same `client=gtx`: `window.fetch` (the
 webview's Chromium stack) answered **200 five times in a row** while `tauriFetch`
 answered **429**. Google's abuse page is "your computer or network may be sending
 automated queries". The block on the Rust client outlived a restart and 4+ min of
-polling; the Mac on the SAME exit IP (103.181.1.46) was fine for a while and then
+polling; the Mac on the SAME exit IP was fine for a while and then
 got 429'd too -- anything that is not a real browser eventually gets flagged.
 FIX SHIPPED: google.ts now always uses `window.fetch`, never the Tauri HTTP
 plugin. The endpoint is CORS-open (body readable cross-origin) and

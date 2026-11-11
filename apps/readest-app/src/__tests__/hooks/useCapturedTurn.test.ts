@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { describe, it, expect, afterEach, vi } from 'vitest';
 import { applyPageTurnAttributes, getCapturedTurnStyle } from '@/app/reader/hooks/useCapturedTurn';
 import type { FoliateView } from '@/types/view';
@@ -147,6 +148,24 @@ describe('getCapturedTurnStyle', () => {
     stubEngine({ startViewTransition: true, nestedGroups: false });
     expect(getCapturedTurnStyle(settings('slide'), false)).toBeNull();
     expect(getCapturedTurnStyle(settings('curl'), false)).toBeNull();
+  });
+});
+
+describe('Page Flip', () => {
+  // The captured curl pipeline draws the flip; NativePageTurn asks the host.
+  it('runs the captured curl pipeline on Tauri', () => {
+    vi.stubEnv('NEXT_PUBLIC_APP_PLATFORM', 'tauri');
+    stubEngine({ startViewTransition: true, nestedGroups: true });
+    expect(getCapturedTurnStyle(settings('flip'), false, false)).toBe('curl');
+    expect(getCapturedTurnStyle(settings('flip'), true, false)).toBe('curl');
+  });
+
+  it('runs the View Transition curl on web engines', () => {
+    vi.stubEnv('NEXT_PUBLIC_APP_PLATFORM', 'web');
+    stubEngine({ startViewTransition: true, nestedGroups: true });
+    const { view, renderer } = makeView();
+    applyPageTurnAttributes(view, settings('flip'), false, false);
+    expect(renderer.getAttribute('turn-style')).toBe('curl');
   });
 });
 

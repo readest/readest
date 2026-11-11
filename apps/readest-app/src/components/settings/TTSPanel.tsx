@@ -18,6 +18,11 @@ import {
   TTSPlayerStyle,
 } from '@/services/tts/types';
 import { getTTSCacheConfig, setTTSCacheConfig } from '@/services/tts/providers/bookCacheStore';
+import { TTSUtils } from '@/services/tts/TTSUtils';
+import { loadVoiceLibrary, type VoiceLibrary } from '@/services/tts/voiceLibrary';
+import { getEnabledCustomTTSServices } from '@/store/customTTSStore';
+import { useBookDataStore } from '@/store/bookDataStore';
+import { getVoiceLanguageName } from '@/components/tts/VoiceList';
 import {
   BoxedList,
   NavigationRow,
@@ -26,15 +31,23 @@ import {
   SettingsSwitchRow,
 } from './primitives';
 import CustomTTSServices from './CustomTTSServices';
+import TTSVoicesPage from './TTSVoicesPage';
 import TTSHighlightStyleEditor, { TTSHighlightStyle } from './theme/TTSHighlightStyleEditor';
 
 const TTSPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset }) => {
   const _ = useTranslation();
-  const { envConfig } = useEnv();
+  const { envConfig, appService } = useEnv();
   const router = useAppRouter();
   const { token, user } = useAuth();
   const hasPremium = isCustomTTSAllowed(token);
   const [showCustomServices, setShowCustomServices] = useState(false);
+  const [showVoices, setShowVoices] = useState(false);
+  const [voiceLibrary, setVoiceLibrary] = useState<VoiceLibrary | null>(null);
+  const [defaultVoiceName, setDefaultVoiceName] = useState<string | null>(null);
+  const { getBookData } = useBookDataStore();
+  // With a book open, its language; else the UI language.
+  const voiceLang =
+    (bookKey && getBookData(bookKey)?.book?.primaryLanguage) || getLocale().split('-')[0]!;
   const { getViewSettings } = useReaderStore();
   const { settings, setSettings, saveSettings } = useSettingsStore();
   const viewSettings = getViewSettings(bookKey) || settings.globalViewSettings;
@@ -131,6 +144,34 @@ const TTSPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset }
     onCancel: () => setShowCustomServices(false),
   });
 
+  // Every engine's voices, for the Voices page and to name the default here.
+  useEffect(() => {
+    let current = true;
+    loadVoiceLibrary({
+      appService,
+      customServices: getEnabledCustomTTSServices,
+      customAllowed: hasPremium,
+    }).then((library) => current && setVoiceLibrary(library));
+    return () => {
+      current = false;
+    };
+  }, [appService, hasPremium]);
+
+  const refreshDefaultVoiceName = async () => {
+    const chosen = TTSUtils.getDefaultVoice(voiceLang);
+    if (!voiceLibrary || !chosen) return setDefaultVoiceName(null);
+    const voice = (await voiceLibrary.getVoices(voiceLang))
+      .filter((group) => group.engine === chosen.engine)
+      .flatMap((group) => group.voices)
+      .find((v) => v.id === chosen.voiceId);
+    setDefaultVoiceName(voice ? (voice.literalName ? voice.name : _(voice.name)) : null);
+  };
+
+  useEffect(() => {
+    void refreshDefaultVoiceName();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [voiceLibrary, voiceLang]);
+
   // Custom TTS services are premium: everyone else is routed to the plans page
   // (or sign-in) instead of the sub-page.
   const handleOpenCustomServices = () => {
@@ -174,6 +215,20 @@ const TTSPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset }
     setTtsHighlightGranularity(granularity);
   };
 
+  if (showVoices) {
+    return (
+      <div className='w-full'>
+        <TTSVoicesPage
+          library={voiceLibrary}
+          lang={voiceLang}
+          bookKey={bookKey || null}
+          onBack={() => setShowVoices(false)}
+          onDefaultChange={refreshDefaultVoiceName}
+        />
+      </div>
+    );
+  }
+
   if (showCustomServices) {
     return (
       <div className='w-full'>
@@ -185,6 +240,12 @@ const TTSPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset }
   return (
     <div className='my-4 w-full space-y-6'>
       <BoxedList title={_('Voices')} cardClassName='overflow-hidden'>
+        <NavigationRow
+          title={_('Voice Library')}
+          status={`${getVoiceLanguageName(voiceLang)} · ${defaultVoiceName ?? _('Automatic')}`}
+          onClick={() => setShowVoices(true)}
+          data-setting-id='settings.tts.voices'
+        />
         <NavigationRow
           title={_('Custom TTS Services')}
           status={_('Use your own OpenAI-compatible speech service')}
@@ -253,16 +314,6 @@ const TTSPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset }
             updateTTSCacheConfig({ ...ttsCacheConfig, enabled: !ttsCacheConfig.enabled })
           }
           data-setting-id='settings.tts.audioCacheEnabled'
-        />
-        <SettingsSwitchRow
-          label={_('Sync Audio Cache')}
-          description={_('Share section audio between your devices through your file sync service')}
-          checked={ttsCacheConfig.syncEnabled}
-          disabled={!ttsCacheConfig.enabled}
-          onChange={() =>
-            updateTTSCacheConfig({ ...ttsCacheConfig, syncEnabled: !ttsCacheConfig.syncEnabled })
-          }
-          data-setting-id='settings.tts.audioCacheSync'
         />
         <SettingsRow label={_('Storage Limit')}>
           <SettingsSelect

@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Book } from '@/types/book';
 import type { ClosableFile } from '@/utils/file';
@@ -154,7 +155,7 @@ describe('importBook DOCX/RTF conversion', () => {
 
     const result = await service.importBook('/library/report.docx', books);
 
-    expect(result).not.toBeNull();
+    expect(result).toMatchObject({ originalFilename: 'report.docx', format: 'EPUB' });
     expect(mockConvertDocx).toHaveBeenCalledTimes(1);
     expect(mockConvertDocx).toHaveBeenCalledWith({
       kind: 'docx',

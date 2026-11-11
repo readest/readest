@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 // Regression test for readest/readest issue #3470.
 //
 // Opening a large PDF makes pdf.js request hundreds of small byte ranges at

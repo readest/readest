@@ -4,7 +4,7 @@ import BookshelvesDialog from './components/BookshelvesDialog';
 
 import clsx from 'clsx';
 import * as React from 'react';
-import { MdChevronRight, MdClose } from 'react-icons/md';
+import { MdChevronRight } from 'react-icons/md';
 import { useState, useRef, useEffect, Suspense, useCallback } from 'react';
 import { ReadonlyURLSearchParams, useSearchParams } from 'next/navigation';
 
@@ -22,9 +22,9 @@ import { debounce } from '@/utils/debounce';
 import { createSerialRunner, runWithConcurrency } from '@/utils/concurrency';
 import { createThrottledCheckpoint } from '@/utils/checkpoint';
 import { DEFAULT_NEARBY_WORDS } from '@/utils/searchConfig';
-import { clearLibrarySearchHistory, loadLibrarySearchHistory } from './utils/searchHistory';
+import { addLibrarySearchHistory } from './utils/searchHistory';
 import type { LibrarySearchTarget } from '@/types/book';
-import { navigateToLibrary, navigateToLogin, navigateToReader } from '@/utils/nav';
+import { navigateToLibrary, navigateToReader } from '@/utils/nav';
 import { splitLibraryOpenIds } from '@/utils/audiobook';
 import { listFormater, markBookDeleted } from '@/utils/book';
 import { getImportErrorMessage } from '@/services/errors';
@@ -53,7 +53,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useLibraryStore } from '@/store/libraryStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
-import { usePullToRefresh } from '@/hooks/usePullToRefresh';
+import { useLibraryRefresh } from './hooks/useLibraryRefresh';
 import { useTheme } from '@/hooks/useTheme';
 import { useUICSS } from '@/hooks/useUICSS';
 import { useDemoBooks } from './hooks/useDemoBooks';
@@ -63,8 +63,6 @@ import { useBookTransferActions } from './hooks/useBookTransferActions';
 import { useAbsOfflineDownload } from './hooks/useAbsOfflineDownload';
 import { useAutoImportFolders } from './hooks/useAutoImportFolders';
 import { useInboxDrainer } from '@/hooks/useInboxDrainer';
-import { useOPDSSubscriptions } from '@/hooks/useOPDSSubscriptions';
-import { useABSSync } from '@/hooks/useABSSync';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useTransferStore } from '@/store/transferStore';
 import { useBackgroundTexture } from '@/hooks/useBackgroundTexture';
@@ -96,6 +94,7 @@ import { LibraryGroupByType } from '@/types/settings';
 import { BookMetadata } from '@/libs/document';
 import { AboutWindow } from '@/components/AboutWindow';
 import ReadingStatsDialog from '@/components/stats/ReadingStatsDialog';
+import { VocabularyDialog } from '@/components/vocabulary/VocabularyDialog';
 import { KeyboardShortcutsHelp } from '@/components/KeyboardShortcutsHelp';
 import LocalSendManager from '@/components/localsend/LocalSendManager';
 import { BookDetailModal } from '@/components/metadata';
@@ -288,18 +287,12 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   const [librarySearchQuery, setLibrarySearchQuery] = useState(searchParams?.get('q') ?? '');
   const pendingLibrarySearchQueryRef = useRef<string | null>(null);
   const [librarySearchProgress, setLibrarySearchProgress] = useState<number | null>(null);
-  const [librarySearchHistory, setLibrarySearchHistory] = useState<string[]>([]);
   const [librarySearchTarget, setLibrarySearchTarget] = useState<LibrarySearchTarget>(() =>
     ['contents', 'text'].includes(searchParams?.get('search') ?? '') ? 'text' : 'books',
   );
   const [librarySearchConfig, setLibrarySearchConfig] = useState<LibrarySearchConfig>(() =>
     getLibrarySearchConfig(searchParams),
   );
-  useEffect(() => {
-    if (librarySearchTarget === 'text' && !librarySearchQuery.trim()) {
-      setLibrarySearchHistory(loadLibrarySearchHistory());
-    }
-  }, [librarySearchTarget, librarySearchQuery]);
   const librarySearchTargetRef = useRef(librarySearchTarget);
   const librarySearchConfigRef = useRef(librarySearchConfig);
   const [showDetailsBook, setShowDetailsBook] = useState<Book | null>(null);
@@ -405,30 +398,9 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   // Google Drive): keeps library.json current on import / delete / book-close,
   // parity with useBooksSync. No-op when no provider is enabled.
   useLibraryFileSync();
-  const { checkOPDSSubscriptions } = useOPDSSubscriptions();
-  useABSSync();
+  useLibraryRefresh(scrollRef, pullLibrary);
   useInboxDrainer();
   const { isDragging } = useDragDropImport();
-
-  usePullToRefresh(
-    scrollRef,
-    async () => {
-      if (!user) {
-        navigateToLogin(router);
-        return;
-      }
-      await pullLibrary(false, true);
-      checkOPDSSubscriptions(true);
-    },
-    async () => {
-      if (!user) {
-        navigateToLogin(router);
-        return;
-      }
-      await pullLibrary(true, true);
-      checkOPDSSubscriptions(true);
-    },
-  );
   useShortcuts({
     onToggleFullscreen: () => {
       if (!isTauriAppPlatform()) return false;
@@ -1878,6 +1850,12 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   const updateLibrarySearchUrl = (target: LibrarySearchTarget, config: LibrarySearchConfig) => {
     const params = new URLSearchParams(window.location.search);
     const query = pendingLibrarySearchQueryRef.current ?? librarySearchQuery;
+    if (
+      target === 'books' &&
+      (query !== (params.get('q') ?? '') || params.get('search') === 'text')
+    ) {
+      addLibrarySearchHistory(query, target);
+    }
     if (query) params.set('q', query);
     else params.delete('q');
     if (target === 'text') params.set('search', 'text');
@@ -1923,11 +1901,10 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   );
   useEffect(() => () => debouncedSearchUrlUpdate.cancel(), [debouncedSearchUrlUpdate]);
 
-  // Immediate variant for history pills and other one-shot applications.
+  // Apply history selections and Enter immediately.
   const handleSearchQueryApply = (query: string) => {
     debouncedSearchUrlUpdate.cancel();
-    const urlQuery = new URLSearchParams(window.location.search).get('q') ?? '';
-    pendingLibrarySearchQueryRef.current = query === urlQuery ? null : query;
+    pendingLibrarySearchQueryRef.current = query;
     setLibrarySearchQuery(query);
     updateLibrarySearchUrl(librarySearchTargetRef.current, librarySearchConfigRef.current);
   };
@@ -2020,6 +1997,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
           searchConfig={librarySearchConfig}
           onSearchConfigChange={handleSearchConfigChange}
           onSearchQueryChange={handleSearchQueryChange}
+          onSearchQueryApply={handleSearchQueryApply}
           onSearchTargetChange={handleSearchTargetChange}
         />
         <progress
@@ -2048,36 +2026,6 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
           <Spinner loading />
         </div>
       )}
-      {librarySearchTarget === 'text' &&
-        !librarySearchQuery.trim() &&
-        librarySearchHistory.length > 0 && (
-          <div className='relative my-1 flex shrink-0 items-center px-4 sm:px-6'>
-            <div className='no-scrollbar not-eink:[mask-image:linear-gradient(to_right,transparent,black_12px,black_calc(100%_-_12px),transparent)] flex flex-1 gap-1.5 overflow-x-auto'>
-              {librarySearchHistory.map((term) => (
-                <button
-                  key={term}
-                  type='button'
-                  onClick={() => handleSearchQueryApply(term)}
-                  className='bg-base-300/45 hover:bg-base-300/70 text-base-content/70 max-w-[60%] shrink-0 whitespace-nowrap rounded-full px-3 py-0.5 text-xs'
-                >
-                  <p className='truncate'>{term}</p>
-                </button>
-              ))}
-            </div>
-            <button
-              type='button'
-              onClick={() => {
-                clearLibrarySearchHistory();
-                setLibrarySearchHistory([]);
-              }}
-              title={_('Clear search history')}
-              aria-label={_('Clear search history')}
-              className='text-base-content/50 hover:text-base-content/80 flex h-6 w-8 shrink-0 items-center justify-center'
-            >
-              <MdClose className='h-4 w-4' />
-            </button>
-          </div>
-        )}
       {currentGroupPath && (
         <div
           className={`transition-all duration-300 ease-in-out ${
@@ -2145,6 +2093,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
               handleBookDownload={handleBookDownload}
               handleBookDelete={handleBookDelete('both')}
               handleBookPurge={handleBookDelete('purge')}
+              handleBookDeleteLocalCopy={handleBookDelete('local')}
               handleSetSelectMode={handleSetSelectMode}
               handleShowDetailsBook={handleShowDetailsBook}
               handleLibraryNavigation={handleLibraryNavigation}
@@ -2208,6 +2157,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
       )}
       <AboutWindow />
       <ReadingStatsDialog />
+      <VocabularyDialog />
       <KeyboardShortcutsHelp />
       <LocalSendManager />
       <UpdaterWindow />

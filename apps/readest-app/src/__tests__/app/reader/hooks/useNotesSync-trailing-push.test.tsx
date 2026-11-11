@@ -1,3 +1,5 @@
+// @vitest-environment happy-dom
+import { bookDataStoreHooks } from '@/__tests__/helpers/book-data-store-mock';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { act, cleanup, renderHook } from '@testing-library/react';
 
@@ -40,15 +42,22 @@ vi.mock('@/context/AuthContext', () => ({
 // The cursor stays where it is: the sync after a highlight's round trip pulls
 // nothing new, so lastSyncedAtNotes (and syncNotes) don't change.
 vi.mock('@/hooks/useSync', () => ({
-  useSync: () => ({ syncedNotes: null, syncNotes: h.syncNotesMock, lastSyncedAtNotes: 2000 }),
+  useSync: () => ({
+    syncedNotes: null,
+    syncNotes: h.syncNotesMock,
+    lastSyncedAtNotes: 2000,
+    useSyncInited: true,
+  }),
 }));
 
 vi.mock('@/store/bookDataStore', () => ({
-  useBookDataStore: h.makeStore({
-    getConfig: () => h.state.config,
-    setConfig: vi.fn(),
-    getBookData: () => ({ book: { hash: 'h1', format: 'EPUB', metaHash: 'm1' } }),
-  }),
+  ...bookDataStoreHooks(
+    h.makeStore({
+      getConfig: () => h.state.config,
+      setConfig: vi.fn(),
+      getBookData: () => ({ book: { hash: 'h1', format: 'EPUB', metaHash: 'm1' } }),
+    }),
+  ),
 }));
 
 vi.mock('@/store/readerStore', () => ({

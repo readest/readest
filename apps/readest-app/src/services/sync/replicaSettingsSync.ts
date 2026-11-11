@@ -464,6 +464,9 @@ const mergeSettings = (current: SystemSettings, patch: Partial<SystemSettings>):
   if (patch.bookorbit) {
     out.bookorbit = { ...current.bookorbit, ...patch.bookorbit };
   }
+  if (patch.grimmory) {
+    out.grimmory = { ...current.grimmory, ...patch.grimmory };
+  }
   if (patch.readwise) {
     out.readwise = { ...current.readwise, ...patch.readwise };
   }

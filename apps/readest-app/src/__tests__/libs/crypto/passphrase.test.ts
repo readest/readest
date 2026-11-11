@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 
 const invokeMock = vi.fn<(...args: unknown[]) => Promise<unknown>>();

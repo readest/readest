@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 'use client';
 
 import { render, act, cleanup } from '@testing-library/react';

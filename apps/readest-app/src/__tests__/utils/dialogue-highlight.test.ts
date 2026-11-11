@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { describe, it, expect } from 'vitest';
 import { vi } from 'vitest';
 import {
@@ -76,6 +77,79 @@ describe('dialogueHighlight default', () => {
 
   it('leaves italic text unmarked by default', () => {
     expect(DEFAULT_BOOK_STYLE.dialogueHighlightItalic).toBe(false);
+  });
+});
+
+describe('dialogue weight', () => {
+  it('preserves the book weight by default', () => {
+    expect(DEFAULT_BOOK_STYLE).toHaveProperty('dialogueHighlightWeight', 'normal');
+  });
+
+  it.each([
+    'slightly-heavier',
+    'bold',
+  ] as const)('marks dialogue with only %s enabled', (weight) => {
+    const doc = makeDoc('<p>She said “Hello.” Then left.</p><p>— Goodbye.</p>');
+    const settings = makeViewSettings({
+      dialogueHighlightWeight: weight,
+    });
+    manageDialogueHighlight(doc, settings);
+    expect(doc.querySelector(`.${DIALOGUE_SPAN_CLASS}`)?.textContent).toBe('“Hello.”');
+    expect(doc.querySelector(`.${DIALOGUE_BLOCK_CLASS}`)?.textContent).toBe('— Goodbye.');
+    manageDialogueHighlight(doc, makeViewSettings());
+    expect(doc.querySelector(`.${DIALOGUE_SPAN_CLASS}, .${DIALOGUE_BLOCK_CLASS}`)).toBeNull();
+    expect(doc.body.textContent).toBe('She said “Hello.” Then left.— Goodbye.');
+  });
+
+  it.each([
+    ['slightly-heavier', '-webkit-text-stroke: 0.2px currentColor !important'],
+    ['bold', 'font-weight: bold !important'],
+  ] as const)('styles quotes, dash dialogue and italic text with %s alone', (weight, declaration) => {
+    const css = getStyles(
+      makeViewSettings({
+        dialogueHighlightWeight: weight,
+        dialogueHighlightItalic: true,
+      }),
+      themeCode,
+    );
+    const rules =
+      css.match(/^ {2}(?:\.readest-dialogue(?:-block)?|:is\(i, em\))\s*\{[^}]*\}/gm) ?? [];
+    expect(rules).toHaveLength(3);
+    for (const rule of rules) {
+      expect(rule).toContain(declaration);
+      expect(rule).not.toContain('background-color');
+      expect(rule).not.toMatch(/\n\s+color:/);
+      if (weight === 'slightly-heavier') expect(rule).not.toContain('font-weight');
+      else expect(rule).not.toContain('-webkit-text-stroke');
+    }
+  });
+
+  it('bolds explicitly regular text inside dash-led dialogue', () => {
+    const settings = makeViewSettings({ dialogueHighlightWeight: 'bold' });
+    const doc = makeDoc('<p>— <span style="font-weight: 400">Hello.</span></p>');
+    manageDialogueHighlight(doc, settings);
+    const container = document.createElement('div');
+    const style = document.createElement('style');
+    style.textContent = (
+      getStyles(settings, themeCode).match(/\.readest-dialogue-block[^}]*\}/g) ?? []
+    ).join('\n');
+    container.append(style, document.importNode(doc.body.firstElementChild!, true));
+    document.body.append(container);
+    try {
+      expect(getComputedStyle(container.querySelector('span')!).fontWeight).toBe('bold');
+    } finally {
+      container.remove();
+    }
+  });
+
+  it('leaves existing styling unchanged for missing or normal weight', () => {
+    const legacy = makeViewSettings({ dialogueHighlight: true });
+    delete (legacy as Partial<ViewSettings>).dialogueHighlightWeight;
+    const normal = makeViewSettings({
+      dialogueHighlight: true,
+      dialogueHighlightWeight: 'normal',
+    });
+    expect(getStyles(normal, themeCode)).toBe(getStyles(legacy, themeCode));
   });
 });
 
@@ -441,6 +515,138 @@ describe('manageDialogueHighlight', () => {
     manageDialogueHighlight(doc, makeViewSettings({ dialogueHighlight: true }));
     const spans = [...doc.querySelectorAll(`.${DIALOGUE_SPAN_CLASS}`)].map((s) => s.textContent);
     expect(spans).toEqual(quotes);
+  });
+
+  it.each([
+    301, 304, 600, 2048,
+  ])('wraps punctuated single-quoted dialogue of %i characters', (length) => {
+    const quote = `‘${'x'.repeat(length - 3)}.’`;
+    const doc = makeDoc(`<p>Narration. ${quote} Narration.</p>`);
+    manageDialogueHighlight(doc, makeViewSettings({ dialogueHighlight: true }));
+    const spans = [...doc.querySelectorAll(`.${DIALOGUE_SPAN_CLASS}`)].map((s) => s.textContent);
+    expect(spans).toEqual([quote]);
+  });
+
+  it('keeps apostrophes and inline markup in long single-quoted dialogue', () => {
+    const first = `‘We’re goin’ home with the lads’ boots. ${'Keep walking. '.repeat(30)}`;
+    const last = ' and a bunch o’ rope,’';
+    const doc = makeDoc(`<p>${first}<em>carefully</em>${last} she said.</p>`);
+    manageDialogueHighlight(doc, makeViewSettings({ dialogueHighlight: true }));
+    const spans = [...doc.querySelectorAll(`.${DIALOGUE_SPAN_CLASS}`)].map((s) => s.textContent);
+    expect(spans).toEqual([first, 'carefully', last]);
+  });
+
+  it('keeps the short fallback for single quotes without closing punctuation', () => {
+    const short = `‘${'x'.repeat(300)}’`;
+    const long = `‘${'x'.repeat(301)}’`;
+    const doc = makeDoc(`<p>${short}</p><p>${long}</p><p>‘Later.’</p>`);
+    manageDialogueHighlight(doc, makeViewSettings({ dialogueHighlight: true }));
+    const spans = [...doc.querySelectorAll(`.${DIALOGUE_SPAN_CLASS}`)].map((s) => s.textContent);
+    expect(spans).toEqual([short, '‘Later.’']);
+  });
+
+  it('keeps a short fallback quote before an oversized punctuated match', () => {
+    const doc = makeDoc(`<p>‘Hello’ ${'narration '.repeat(240)}.’</p>`);
+    manageDialogueHighlight(doc, makeViewSettings({ dialogueHighlight: true }));
+    const spans = [...doc.querySelectorAll(`.${DIALOGUE_SPAN_CLASS}`)].map((s) => s.textContent);
+    expect(spans).toEqual(['‘Hello’']);
+  });
+
+  it('does not extend long single-quoted dialogue across a paragraph boundary', () => {
+    const doc = makeDoc(`<p>The ‘80s ${'narration '.repeat(40)}</p><p>continues here.’</p>`);
+    manageDialogueHighlight(doc, makeViewSettings({ dialogueHighlight: true }));
+    expect(doc.querySelectorAll(`.${DIALOGUE_SPAN_CLASS}`)).toHaveLength(0);
+  });
+
+  it('skips single-quoted dialogue over 2048 characters but keeps inner and later quotes', () => {
+    const quote = `‘${'x'.repeat(2040)} «oui».’`;
+    expect(quote).toHaveLength(2049);
+    const doc = makeDoc(`<p>${quote} Narration. ‘Later.’</p>`);
+    manageDialogueHighlight(doc, makeViewSettings({ dialogueHighlight: true }));
+    const spans = [...doc.querySelectorAll(`.${DIALOGUE_SPAN_CLASS}`)].map((s) => s.textContent);
+    expect(spans).toEqual(['«oui»', '‘Later.’']);
+  });
+
+  it.each([
+    ['“', '”'],
+    ['‘', '’'],
+    ['„', '“'],
+    ['«', '»'],
+    ['「', '」'],
+    ['『', '』'],
+  ])('wraps every paragraph of a speech continued with %s', (open, close) => {
+    const first = `${open}First paragraph, with no closing mark.`;
+    const second = `${open}Second paragraph, still no closing mark.`;
+    const last = `${open}Final paragraph, which closes the speech.${close}`;
+    const doc = makeDoc(
+      `<p>Narration before ${first}</p>\n  <p>  ${second}</p>\n  <p>${last} Narration after.</p>`,
+    );
+    manageDialogueHighlight(doc, makeViewSettings({ dialogueHighlight: true }));
+    const spans = [...doc.querySelectorAll(`.${DIALOGUE_SPAN_CLASS}`)].map((s) => s.textContent);
+    expect(spans).toEqual([first, second, last]);
+  });
+
+  it.each([
+    '<style>p { color: black }</style>',
+    '<script>const example = 1;</script>',
+  ])('ignores non-rendered text between continued paragraphs: %s', (between) => {
+    const doc = makeDoc(`<p>“First.</p>${between}<p>“Second.”</p>`);
+    manageDialogueHighlight(doc, makeViewSettings({ dialogueHighlight: true }));
+    const spans = [...doc.querySelectorAll(`.${DIALOGUE_SPAN_CLASS}`)].map((s) => s.textContent);
+    expect(spans).toEqual(['“First.', '“Second.”']);
+  });
+
+  it('keeps inline markup and apostrophes in continued single-quoted dialogue', () => {
+    const doc = makeDoc(
+      `<p>‘We’re going <em>home</em> with their boots.</p>` +
+        `<p><b>‘We’ll</b> be there soon.’ Narration.</p>`,
+    );
+    const original = doc.body.innerHTML;
+    const settings = makeViewSettings({ dialogueHighlight: true });
+    manageDialogueHighlight(doc, settings);
+    manageDialogueHighlight(doc, settings);
+    const spans = [...doc.querySelectorAll(`.${DIALOGUE_SPAN_CLASS}`)].map((s) => s.textContent);
+    expect(spans).toEqual([
+      '‘We’re going ',
+      'home',
+      ' with their boots.',
+      '‘We’ll',
+      ' be there soon.’',
+    ]);
+    expect(
+      [...doc.querySelectorAll(`.${DIALOGUE_SPAN_CLASS}`)].every((s) => s.hasAttribute('cfi-skip')),
+    ).toBe(true);
+    clearDialogueHighlight(doc);
+    expect(doc.body.innerHTML).toBe(original);
+  });
+
+  it.each([
+    '<p>“Unclosed.</p><p>Narration.</p><p>“Later.”</p>',
+    '<p>“Unclosed.</p><p><code>Narration.</code></p><p>“Later.”</p>',
+    '<p>“Unclosed.</p><p><code>Example:</code>“Later.”</p>',
+    '<p>“Unclosed.</p><p><code>“Example.”</code></p>',
+    '<p>“Unclosed.</p><p><code>“Example.”</code>“Later.”</p>',
+    '<p>“Unclosed.</p><p> <code>Example:</code> “Later.”</p>',
+    '<p>“Unclosed.</p><p>‘Different marks.’</p>',
+    '<p>“Unclosed.\n“Another line.”</p>',
+    '<p>“Closed.” Narration.</p><p>“Next.”</p>',
+    '<p>‘Closed’ Narration.</p><p>‘Next.’</p>',
+    '<p>“Unclosed.</p><p>Narration “quoted”.</p>',
+  ])('leaves the unmatched quote fallback unchanged: %s', (html) => {
+    const doc = makeDoc(html);
+    manageDialogueHighlight(doc, makeViewSettings({ dialogueHighlight: true }));
+    const spans = [...doc.querySelectorAll(`.${DIALOGUE_SPAN_CLASS}`)].map((s) => s.textContent);
+    expect(spans.some((text) => text?.includes('Unclosed'))).toBe(false);
+    expect(spans.some((text) => text?.includes('Narration'))).toBe(false);
+  });
+
+  it('keeps the length limits for continued dialogue', () => {
+    const doc = makeDoc(
+      `<p>“${'x'.repeat(2100)}</p><p>“Next.”</p>` + `<p>‘${'x'.repeat(310)}</p><p>‘Next.’</p>`,
+    );
+    manageDialogueHighlight(doc, makeViewSettings({ dialogueHighlight: true }));
+    const spans = [...doc.querySelectorAll(`.${DIALOGUE_SPAN_CLASS}`)].map((s) => s.textContent);
+    expect(spans).toEqual(['“Next.”', '‘Next.’']);
   });
 
   it('does not let an unclosed quote swallow the next one', () => {

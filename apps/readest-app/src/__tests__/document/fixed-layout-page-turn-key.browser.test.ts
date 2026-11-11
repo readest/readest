@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 // Registers the <foliate-fxl> custom element (the fixed-layout / PDF renderer).
 import 'foliate-js/fixed-layout.js';
@@ -85,6 +85,32 @@ describe('fixed-layout page-turn keys', () => {
       expect(new Set(seen).size).toBe(4);
     });
   }
+
+  it('waits for PDF redraws when turning between portrait pages in one spread', async () => {
+    renderer = document.createElement('foliate-fxl') as Renderer;
+    Object.assign(renderer.style, { width: '400px', height: '1000px' });
+    document.body.append(renderer);
+    let rendering: Promise<void> | undefined;
+    const book = makeBook(7, 'ltr');
+    for (const section of book.sections) {
+      section.load = async () => ({ src: 'srcdoc', data: PAGE_HTML, onZoom: () => rendering });
+    }
+    renderer.open(book);
+    await renderer.goToSpread(1, 'left', 'page');
+    let finish!: () => void;
+    rendering = new Promise<void>((resolve) => {
+      finish = resolve;
+    });
+    const ready = vi.fn();
+    const turn = renderer.goToSpread(1, 'right', 'page').then(ready);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    try {
+      expect(ready).not.toHaveBeenCalled();
+    } finally {
+      finish();
+      await turn;
+    }
+  });
 
   it('predicts single-page spreads', async () => {
     const seen = await walk(await mount(400, 1000, 'ltr', 'none'));

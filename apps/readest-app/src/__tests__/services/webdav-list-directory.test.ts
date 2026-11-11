@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { listDirectory, type WebDAVConfig } from '@/services/sync/providers/webdav/client';
 

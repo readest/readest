@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 
 // Offline: every Edge transport probe rejects.
@@ -36,7 +37,7 @@ const noopStore = {
   close: vi.fn().mockResolvedValue(undefined),
 };
 vi.mock('@/services/tts/providers/bookCacheStore', () => ({
-  getTTSCacheConfig: vi.fn(() => ({ enabled: cacheEnabled, budgetMB: 200, syncEnabled: false })),
+  getTTSCacheConfig: vi.fn(() => ({ enabled: cacheEnabled, budgetMB: 200 })),
   createBookTTSCacheStore: vi.fn((appService: unknown) =>
     appService && cacheEnabled ? { ...noopStore } : null,
   ),

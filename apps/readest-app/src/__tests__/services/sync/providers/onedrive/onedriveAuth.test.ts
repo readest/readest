@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, test } from 'vitest';
 import { resolveOneDriveAccountLabel } from '@/services/sync/providers/onedrive/onedriveAuth';
 import type { FetchFn } from '@/services/sync/providers/oauth/tokenEndpoint';

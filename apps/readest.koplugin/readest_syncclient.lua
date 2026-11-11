@@ -10,6 +10,8 @@ local RETRY_TIMEOUTS = { 10, 20 }
 local READ_METHODS = { pullChanges = true, pullBooks = true, getDownloadUrl = true, listFiles = true }
 local response_seq = 0
 local swept_stale_responses = false
+-- Forked workers not yet collected, by pid.
+local workers = {}
 
 -- LuaSec reports TLS handshake timeouts as "wantread"/"wantwrite";
 -- Spore wraps these strings with a source location. Only retry transport
@@ -70,7 +72,10 @@ function ReadestSyncClient:_prepare()
     self.client:reset_middlewares()
     self.client:enable("Format.JSON")
     self.client:enable("ReadestHeaders", {})
-    self.client:enable("ReadestAuth", { access_token = self.access_token })
+    -- Sign-in requests (requestDeviceCode, pollDeviceToken) have no token yet.
+    if self.access_token then
+        self.client:enable("ReadestAuth", { access_token = self.access_token })
+    end
 end
 
 -- macOS 26+ crashes a fork()ed child in getaddrinfo when an AF_UNSPEC
@@ -88,6 +93,44 @@ function ReadestSyncClient.useIPv4InWorker()
         sock:settimeout(socketutil.total_timeout, "t")
         return sock
     end
+end
+
+-- Workers record their pid here so KOReader's exit can wait for them, with
+-- the poll that delivers their result when they have one.
+function ReadestSyncClient.trackWorker(pid, collect) workers[pid] = collect or true end
+function ReadestSyncClient.untrackWorker(pid) workers[pid] = nil end
+
+-- Exiting from a book quits about a second after the close-time pushes
+-- start, before their polls run (#6685). Give running workers up to 5 s:
+-- a finished worker's result is delivered here, so a rotated refresh token
+-- is still saved. Then kill and collect the rest before KOReader tears
+-- down, so no worker outlives it (a Kindle reported segfaults at exit then).
+local quit = UIManager.quit
+UIManager.quit = function(...)
+    if next(workers) then
+        local FFIUtil = require("ffi/util")
+        logger.info("ReadestSyncClient: waiting for sync workers before exit")
+        for _ = 1, 50 do
+            local done = {}
+            for pid in pairs(workers) do
+                if FFIUtil.isSubProcessDone(pid) then done[#done + 1] = pid end
+            end
+            for _, pid in ipairs(done) do
+                local collect = workers[pid]
+                workers[pid] = nil
+                if type(collect) == "function" then pcall(collect) end
+            end
+            if not next(workers) then break end
+            FFIUtil.usleep(100000)
+        end
+        for pid in pairs(workers) do
+            logger.warn("ReadestSyncClient: killing sync worker", pid, "at exit")
+            FFIUtil.terminateSubProcess(pid)
+            FFIUtil.isSubProcessDone(pid, true)
+            workers[pid] = nil
+        end
+    end
+    return quit(...)
 end
 
 -- Internal: dispatch a Spore RPC and invoke `callback(success, body, status)`
@@ -167,6 +210,7 @@ function ReadestSyncClient:_dispatchInSubprocess(name, args, timeouts, receive, 
             UIManager:scheduleIn(0.1, poll)
             return
         end
+        ReadestSyncClient.untrackWorker(pid)
         local f = io.open(result_path, "rb")
         local data = f and f:read("*a")
         if f then f:close() end
@@ -179,6 +223,7 @@ function ReadestSyncClient:_dispatchInSubprocess(name, args, timeouts, receive, 
             receive(false, "sync worker returned no response")
         end
     end
+    ReadestSyncClient.trackWorker(pid, poll)
     UIManager:scheduleIn(0.1, poll)
 end
 
@@ -283,6 +328,19 @@ function ReadestSyncClient:getUploadUrl(params, callback)
         fileSize = params.fileSize,
         bookHash = params.bookHash,
     }, callback)
+end
+
+-- Sign-in with a code (no access token): the server answers like an OAuth
+-- device authorization grant. requestDeviceCode returns { device_code,
+-- user_code, verification_uri, verification_uri_complete, expires_in,
+-- interval }; pollDeviceToken answers 400 { error = "authorization_pending" }
+-- until the code is approved on the web, then a Readest session once.
+function ReadestSyncClient:requestDeviceCode(callback)
+    self:_dispatch("requestDeviceCode", {}, callback)
+end
+
+function ReadestSyncClient:pollDeviceToken(device_code, callback)
+    self:_dispatch("pollDeviceToken", { device_code = device_code, grant = "session" }, callback)
 end
 
 return ReadestSyncClient

@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 vi.mock('@/services/sync/replicaPublish', () => ({
@@ -895,6 +896,100 @@ describe('customDictionaryStore — autoPlayPronunciation (#6265)', () => {
   });
 });
 
+describe('customDictionaryStore — saveLookupsToVocabulary (#789)', () => {
+  it('setSaveLookupsToVocabulary updates the setting', () => {
+    useCustomDictionaryStore.getState().setSaveLookupsToVocabulary(false);
+    expect(useCustomDictionaryStore.getState().settings.saveLookupsToVocabulary).toBe(false);
+  });
+
+  it('loadCustomDictionaries keeps a persisted off value', async () => {
+    type SettingsState = ReturnType<typeof useSettingsStore.getState>;
+    useSettingsStore.setState({
+      settings: {
+        customDictionaries: [],
+        dictionarySettings: {
+          providerOrder: ['builtin:wikipedia'],
+          providerEnabled: { 'builtin:wikipedia': true },
+          webSearches: [],
+          saveLookupsToVocabulary: false,
+        },
+      } as unknown as SettingsState['settings'],
+    } as unknown as SettingsState);
+    const fakeEnv = {
+      getAppService: () => Promise.resolve({ exists: vi.fn().mockResolvedValue(false) }),
+    } as unknown as EnvConfigType;
+    await useCustomDictionaryStore.getState().loadCustomDictionaries(fakeEnv);
+    expect(useCustomDictionaryStore.getState().settings.saveLookupsToVocabulary).toBe(false);
+  });
+});
+
+describe('customDictionaryStore — system dictionary fullscreen (#7101)', () => {
+  it.each([true, false])('keeps fullscreen=%s saved during a pending load', async (enabled) => {
+    type SettingsState = ReturnType<typeof useSettingsStore.getState>;
+    const dictionary: ImportedDictionary = {
+      id: 'slow-dictionary',
+      contentId: 'slow-dictionary',
+      kind: 'mdict',
+      name: 'Slow Dictionary',
+      bundleDir: 'slow-dictionary',
+      files: { mdx: 'dictionary.mdx' },
+      addedAt: 1,
+    };
+    const settings = {
+      providerOrder: [dictionary.id],
+      providerEnabled: { [dictionary.id]: true },
+      systemDictionaryFullscreen: !enabled,
+    };
+    useSettingsStore.setState({
+      settings: {
+        customDictionaries: [dictionary],
+        dictionarySettings: settings,
+      } as unknown as SettingsState['settings'],
+      saveSettings: vi.fn().mockResolvedValue(undefined),
+    });
+    useCustomDictionaryStore.setState({ dictionaries: [dictionary], settings });
+    let finishLookup!: (exists: boolean) => void;
+    const exists = vi.fn(
+      () =>
+        new Promise<boolean>((resolve) => {
+          finishLookup = resolve;
+        }),
+    );
+    const fakeEnv = {
+      getAppService: () => Promise.resolve({ exists }),
+    } as unknown as EnvConfigType;
+    const loading = useCustomDictionaryStore.getState().loadCustomDictionaries(fakeEnv);
+    await vi.waitFor(() => expect(exists).toHaveBeenCalledOnce());
+    useCustomDictionaryStore.getState().setSystemDictionaryFullscreen(enabled);
+    await useCustomDictionaryStore.getState().saveCustomDictionaries(fakeEnv);
+    finishLookup(true);
+    await loading;
+    expect(useCustomDictionaryStore.getState().settings.systemDictionaryFullscreen).toBe(enabled);
+    await useCustomDictionaryStore.getState().saveCustomDictionaries(fakeEnv);
+    expect(useSettingsStore.getState().settings.dictionarySettings.systemDictionaryFullscreen).toBe(
+      enabled,
+    );
+  });
+
+  it.each([true, false])('preserves fullscreen=%s through a save and reload', async (enabled) => {
+    type SettingsState = ReturnType<typeof useSettingsStore.getState>;
+    useSettingsStore.setState({
+      settings: {
+        customDictionaries: [],
+        dictionarySettings: {},
+      } as unknown as SettingsState['settings'],
+      saveSettings: vi.fn().mockResolvedValue(undefined),
+    });
+    const fakeEnv = {
+      getAppService: () => Promise.resolve({ exists: vi.fn().mockResolvedValue(false) }),
+    } as unknown as EnvConfigType;
+    useCustomDictionaryStore.getState().setSystemDictionaryFullscreen(enabled);
+    await useCustomDictionaryStore.getState().saveCustomDictionaries(fakeEnv);
+    await useCustomDictionaryStore.getState().loadCustomDictionaries(fakeEnv);
+    expect(useCustomDictionaryStore.getState().settings.systemDictionaryFullscreen).toBe(enabled);
+  });
+});
+
 describe('customDictionaryStore — context dictionary (#5544)', () => {
   type SettingsState = ReturnType<typeof useSettingsStore.getState>;
   const fakeEnv = {
@@ -917,6 +1012,25 @@ describe('customDictionaryStore — context dictionary (#5544)', () => {
     const { settings } = useCustomDictionaryStore.getState();
     expect(settings.providerOrder).toContain('builtin:context');
     expect(settings.providerEnabled['builtin:context']).toBe(false);
+  });
+
+  it('keeps dictionary instructions and output limits across loads, including resets', async () => {
+    const options = {
+      contextPromptId: 'custom',
+      contextSystemPrompt: 'Explain historical context.',
+      contextMaxOutputTokens: 4096,
+    };
+    seedPersisted({ providerOrder: [], providerEnabled: {}, ...options });
+    await useCustomDictionaryStore.getState().loadCustomDictionaries(fakeEnv);
+    expect(useCustomDictionaryStore.getState().settings).toMatchObject(options);
+    useCustomDictionaryStore
+      .getState()
+      .setContextOptions({ contextPromptId: 'default', contextMaxOutputTokens: 0 });
+    expect(useCustomDictionaryStore.getState().settings).toMatchObject({
+      contextPromptId: 'default',
+      contextMaxOutputTokens: 0,
+      contextSystemPrompt: options.contextSystemPrompt,
+    });
   });
 
   it('keeps the chosen translator across loads and updates it', async () => {

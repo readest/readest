@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { journalBookshelfOperation } from '@/services/bookshelves/journal';
 import { describe, it, expect } from 'vitest';
 import {
@@ -162,6 +163,15 @@ describe('sanitizeSettingsForBackup - blacklist', () => {
     expect(out['savedBookCoverForLockScreenPath']).toBeUndefined();
   });
 
+  it('strips the per-device Obsidian vault settings', () => {
+    const out = rec(
+      sanitizeSettingsForBackup(
+        makeSettings({ obsidian: { enabled: true, folder: '/Users/me/Vault/Readest' } }),
+      ),
+    );
+    expect(out['obsidian']).toBeUndefined();
+  });
+
   it('strips per-device identity fields', () => {
     const out = rec(sanitizeSettingsForBackup(makeSettings()));
     expect(out['replicaDeviceId']).toBeUndefined();
@@ -262,6 +272,22 @@ describe('sanitizeSettingsForBackup - credentials', () => {
     expect(out.customTranslators![0]!.baseUrl).toBe('https://api.example.com/v1');
     expect(out.customTTSServices![0]!.apiKey).toBeUndefined();
     expect(out.customTTSServices![0]!.baseUrl).toBe('https://tts.example.com/v1');
+  });
+
+  it('strips Grimmory custom headers, which can hold access secrets', () => {
+    const settings = makeSettings();
+    const out = sanitizeSettingsForBackup({
+      ...settings,
+      grimmory: {
+        ...settings.grimmory,
+        serverUrl: 'https://grimmory.example',
+        password: 'gpass',
+        customHeaders: { 'CF-Access-Client-Secret': 'secret' },
+      },
+    });
+    expect(rec(out.grimmory)['password']).toBeUndefined();
+    expect(rec(out.grimmory)['customHeaders']).toBeUndefined();
+    expect(out.grimmory.serverUrl).toBe('https://grimmory.example');
   });
 
   it('keeps non-credential OPDS catalog fields when stripping credentials', () => {

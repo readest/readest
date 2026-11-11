@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { describe, expect, it, vi } from 'vitest';
 
 // Audio must never be relayed through Readest's own proxy: an audiobook is

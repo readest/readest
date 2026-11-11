@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { needsCoverRefresh, pickFresherCover } from '@/app/library/utils/libraryUtils';
 import type { Book } from '@/types/book';

@@ -244,6 +244,15 @@ export const selectAbsOfflineBooks = (
   );
 };
 
+/**
+ * Whether a bulk "Remove from Device Only" may drop this book's local file
+ * (#7318): only when the book stays somewhere else — the cloud, or the
+ * Audiobookshelf server for an offline ABS download — so the library keeps a
+ * copy to download again.
+ */
+export const canRemoveFromDeviceOnly = (book: Book): boolean =>
+  (!!book.downloadedAt && !!book.uploadedAt) || !!book.absDownloadedAt;
+
 // Calibre custom column names and values, flattened for searching (#4811).
 const getCalibreColumnsText = (item: Book) =>
   (item.metadata?.calibreColumns ?? [])
@@ -453,6 +462,9 @@ const compareTitles = (a: string, b: string, uiLanguage: string): number => {
   return collator.compare(a, b);
 };
 
+const getTitleSortValue = (book: Book): string =>
+  formatTitle(book.title).replace(/^\s*(?:a|an|the)\s+(?=\S)/i, '');
+
 const compareBookByKey = (
   a: Book,
   b: Book,
@@ -462,8 +474,8 @@ const compareBookByKey = (
 ): number => {
   switch (sortBy) {
     case LibrarySortByType.Title: {
-      const aTitle = formatTitle(a.title);
-      const bTitle = formatTitle(b.title);
+      const aTitle = getTitleSortValue(a);
+      const bTitle = getTitleSortValue(b);
       return compareTitles(aTitle, bTitle, uiLanguage);
     }
     case LibrarySortByType.Author: {
@@ -887,7 +899,7 @@ export const createWithinGroupSorter =
 export const getBookSortValue = (book: Book, sortBy: LibrarySortByType): number | string => {
   switch (sortBy) {
     case LibrarySortByType.Title:
-      return formatTitle(book.title);
+      return getTitleSortValue(book);
 
     case LibrarySortByType.Author:
       return formatAuthors(book.author, book?.primaryLanguage || 'en', true);

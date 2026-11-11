@@ -14,9 +14,7 @@ BookOrbit integrations, mainly for Cloudflare Access service tokens. It moved
 by OPDS + KOSync + BookOrbit. Reviewed 2026-08-08; review fix pushed as
 `3f152d895`; **MERGED 2026-08-08 as `eaadf5443`**. Worktree removed.
 
-**The SSRF fix below is NOT merged** — it lives on local branch
-`fix/kosync-proxy-endpoint-allowlist` (commit `cf631d985`) and still needs its own
-PR off `main`. The hole is live in production.
+(Status of the kosync proxy hardening: [[private-custom-headers-kosync-bookorbit-5570]], local only.)
 
 **Pushing to a contributor's PR:** `pnpm worktree:new <pr#>` rebases onto current
 `origin/main`, so the local branch does NOT share the author's base — pushing it
@@ -62,22 +60,20 @@ consumes those at the edge, so an echo service behind Cloudflare reports them
 absent whether or not the proxy forwarded them. Use a neutral `X-Probe-Header`
 and always run the direct-to-target control first.
 
-**FIXED while verifying: the kosync proxy was an open relay.** Its
-`validEndpoints` regexes were **unanchored**, so any path merely CONTAINING an
-allowed substring passed — `endpoint = "/get?probe=/users/auth"` reaches `/get`
-on any public host with caller-controlled headers/body, response relayed back.
-Demonstrated live against production. `bookorbit.ts` (newer) already anchored
-its patterns; kosync's SSRF fix #3793 added the `isLanAddress` host gate but left
-the path patterns loose, and `kosync-ssrf.test.ts` only covered `isLanAddress`,
-never the allowlist. Anchored + `isValidKoSyncEndpoint` exported for tests.
+**Kosync proxy endpoint allowlist:** `bookorbit.ts` anchors its endpoint
+patterns and `isValidKoSyncEndpoint` is exported for tests; the kosync
+hardening notes are in [[private-custom-headers-kosync-bookorbit-5570]] (local only).
 
 **Open, not fixed:**
-- `/api/bookorbit` returns **404 in production** while `/api/kosync` returns 405.
-  Source is on main (#5487) — the web deploy is simply behind, so BookOrbit sync
-  over web does not work at all yet, headers or no headers.
-- OPDS catalog `customHeaders` still sync as **plaintext** — `adapters/opdsCatalog.ts`
-  has `encryptedFields: ['username','password']` only. Same secret class as the
-  KOSync/BookOrbit ones this PR encrypts. Worth a follow-up.
+- `/api/bookorbit` 500'd on EVERY request in production (#7291): it used
+  `redirect: 'error'`, which Cloudflare Workers rejects ("Invalid redirect
+  value, must be one of follow or manual"). Unit tests stub fetch, so they never
+  saw it. Fix PR #7296 switches to `publicFetch` (manual) + refuses 3xx;
+  verified on `pnpm preview` (local workerd). Server code on the web build must
+  never pass `redirect: 'error'`. Probe prod with a POST to `/api/bookorbit`
+  `{serverUrl:"https://httpbin.org",endpoint:"/users/auth",method:"GET"}`: a
+  relayed 404 = works, a 500 with `details` = broken.
+- OPDS catalog `customHeaders` sync follow-up: [[private-custom-headers-kosync-bookorbit-5570]] (local only).
 - Error strings from `parseCustomHeadersInput` are hardcoded English rendered raw
   (pre-existing from OPDS, now also in Settings).
 

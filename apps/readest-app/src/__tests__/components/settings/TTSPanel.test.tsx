@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { ViewSettings } from '@/types/book';
@@ -62,7 +63,7 @@ vi.mock('@/helpers/settings', () => ({
 }));
 
 vi.mock('@/services/tts/providers/bookCacheStore', () => ({
-  getTTSCacheConfig: () => ({ enabled: false, syncEnabled: false, budgetMB: 200 }),
+  getTTSCacheConfig: () => ({ enabled: false, budgetMB: 200 }),
   setTTSCacheConfig: vi.fn(),
 }));
 
@@ -70,8 +71,47 @@ vi.mock('@/components/settings/theme/TTSHighlightStyleEditor', () => ({
   default: () => null,
 }));
 
+const ARIA = { id: 'en-US-AriaNeural', name: 'Aria', lang: 'en-US', gender: 'female' as const };
+vi.mock('@/services/tts/voiceLibrary', () => ({
+  loadVoiceLibrary: async () => ({
+    languages: ['en', 'fr'],
+    getVoices: async (lang: string) =>
+      lang === 'en'
+        ? [{ id: 'edge-tts', name: 'Edge TTS', engine: 'edge-tts', voices: [ARIA] }]
+        : [],
+  }),
+}));
+
 import { saveViewSettings } from '@/helpers/settings';
+import { TTSUtils } from '@/services/tts/TTSUtils';
 import TTSPanel from '@/components/settings/TTSPanel';
+
+describe('TTSPanel voice library row', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    state.uiLocale = 'en-US';
+  });
+
+  afterEach(cleanup);
+
+  it("names the language's default voice, else says it is automatic", async () => {
+    const { unmount } = render(<TTSPanel bookKey='' onRegisterReset={vi.fn()} />);
+    expect(await screen.findByText('English · Automatic')).toBeTruthy();
+    unmount();
+    TTSUtils.setDefaultVoice('edge-tts', 'en', ARIA.id);
+    render(<TTSPanel bookKey='' onRegisterReset={vi.fn()} />);
+    expect(await screen.findByText('English · Aria')).toBeTruthy();
+  });
+
+  it('opens the voice library, whose pick names the new default on return', async () => {
+    render(<TTSPanel bookKey='' onRegisterReset={vi.fn()} />);
+    fireEvent.click(await screen.findByText('Voice Library'));
+    fireEvent.click(await screen.findByText('Aria'));
+    expect(TTSUtils.getDefaultVoice('en')).toEqual({ engine: 'edge-tts', voiceId: ARIA.id });
+    fireEvent.click(screen.getByText('TTS'));
+    expect(await screen.findByText('English · Aria')).toBeTruthy();
+  });
+});
 
 describe('TTSPanel inline reading annotations', () => {
   beforeEach(() => {
@@ -127,6 +167,16 @@ const getCustomServicesRow = () =>
 
 // Custom TTS services are premium: free and signed-out readers see the row
 // with a Premium badge that routes to the upgrade page or sign-in.
+describe('TTSPanel audio cache', () => {
+  afterEach(cleanup);
+
+  it('has no audio sync switch of its own (Book Data sync covers it)', () => {
+    const { container } = render(<TTSPanel bookKey='book-1' onRegisterReset={vi.fn()} />);
+    expect(container.querySelector("[data-setting-id='settings.tts.audioCache']")).not.toBeNull();
+    expect(container.querySelector("[data-setting-id='settings.tts.audioCacheSync']")).toBeNull();
+  });
+});
+
 describe('TTSPanel custom TTS services premium gate', () => {
   beforeEach(() => {
     state.token = null;

@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, test, expect, beforeEach } from 'vitest';
 import {
   selectActiveBookDownloadProgress,
@@ -17,6 +18,42 @@ const initialState = {
 
 beforeEach(() => {
   useTransferStore.setState(initialState);
+});
+
+describe('provider file history', () => {
+  test('file log entries cannot be retried or consume queue slots', () => {
+    const store = useTransferStore.getState();
+    const id = store.addFileTransfer('s3', '/Readest/library.json', 'download');
+    expect(store.getPendingTransfers()).toEqual([]);
+    expect(store.getActiveTransfers()).toEqual([]);
+    store.setTransferStatus(id, 'failed', 'Offline');
+    store.retryTransfer(id);
+    expect(useTransferStore.getState().transfers[id]?.status).toBe('failed');
+    expect(store.getFailedTransfers()).toHaveLength(1);
+  });
+
+  test('bounds completed file history while retaining active files and queued jobs', () => {
+    const store = useTransferStore.getState();
+    const queued = store.addTransfer('hash', 'Book', 'download');
+    const active = store.addFileTransfer('s3', '/Readest/active.json', 'download');
+    for (let i = 0; i < 510; i++) {
+      const id = store.addFileTransfer('s3', `/Readest/${i}.json`, 'upload');
+      store.setTransferStatus(id, 'completed');
+    }
+    store.addFileTransfer('s3', '/Readest/latest.json', 'download');
+    const transfers = useTransferStore.getState().transfers;
+    expect(Object.values(transfers).filter((row) => row.status === 'completed')).toHaveLength(500);
+    expect(transfers[queued]?.status).toBe('pending');
+    expect(transfers[active]?.status).toBe('in_progress');
+  });
+
+  test('restores interrupted file activity as cancelled history, never pending work', () => {
+    const store = useTransferStore.getState();
+    const id = store.addFileTransfer('s3', '/Readest/library.json', 'upload');
+    store.restoreTransfers(useTransferStore.getState().transfers, false);
+    expect(useTransferStore.getState().transfers[id]).toMatchObject({ status: 'cancelled' });
+    expect(store.getPendingTransfers()).toEqual([]);
+  });
 });
 
 describe('transferStore', () => {

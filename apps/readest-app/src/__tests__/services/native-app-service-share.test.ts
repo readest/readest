@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { describe, test, expect, vi, beforeEach } from 'vitest';
 
 const osTypeMock = vi.fn().mockReturnValue('macos');
@@ -8,6 +9,7 @@ const saveDialogMock = vi.fn().mockResolvedValue('/tmp/exported.md');
 const shareFileMock = vi.fn().mockResolvedValue(undefined);
 const copyURIToPathMock = vi.fn().mockResolvedValue({ success: true });
 const removeMock = vi.fn().mockResolvedValue(undefined);
+const basenameMock = vi.fn((p: string) => Promise.resolve(p.split('/').pop() ?? p));
 
 vi.mock('@tauri-apps/plugin-os', () => ({
   type: () => osTypeMock(),
@@ -40,7 +42,7 @@ vi.mock('@tauri-apps/plugin-dialog', () => ({
 
 vi.mock('@tauri-apps/api/path', () => ({
   join: (...parts: string[]) => Promise.resolve(parts.join('/')),
-  basename: (p: string) => Promise.resolve(p.split('/').pop() ?? p),
+  basename: (p: string) => basenameMock(p),
   appDataDir: () => Promise.resolve('/tmp/app-data'),
   appConfigDir: () => Promise.resolve('/tmp/app-config'),
   appCacheDir: () => Promise.resolve('/tmp/app-cache'),
@@ -60,11 +62,25 @@ vi.mock('@/utils/bridge', () => ({
 
 vi.mock('@/utils/file', () => ({
   NativeFile: class {
+    constructor(
+      public path: string,
+      public name: string,
+    ) {}
+
     async open() {
       return this;
     }
   },
-  RemoteFile: class {},
+  RemoteFile: class {
+    constructor(
+      public url: string,
+      public name: string,
+    ) {}
+
+    async open() {
+      return this;
+    }
+  },
 }));
 
 vi.mock('@/utils/files', () => ({
@@ -93,6 +109,65 @@ describe('NativeAppService.saveFile share gating', () => {
     shareFileMock.mockClear();
     copyURIToPathMock.mockClear();
     removeMock.mockClear();
+  });
+
+  test.each([
+    'content://com.android.externalstorage.documents/document/primary%3Aopaque-id',
+    'content://com.android.providers.downloads.documents/document/7421',
+  ])('resolves the provider display name with basename for %s', async (uri) => {
+    const service = await loadServiceWithOS('android');
+    basenameMock.mockResolvedValueOnce('Original Manual.pdf');
+
+    const file = await service.openFile(uri, 'None');
+
+    expect(basenameMock).toHaveBeenCalledWith(uri);
+    expect(file.name).toBe('Original Manual.pdf');
+  });
+
+  test.each([
+    ['A%23B.epub', 'A#B.epub'],
+    ['100%25.epub', '100%.epub'],
+    ['Report%2520Final.epub', 'Report%20Final.epub'],
+    ['A%3FB.epub', 'A?B.epub'],
+    ['%E4%B8%89%E4%BD%93%20book.epub', '三体 book.epub'],
+  ])('decodes an iOS import basename exactly once: %s', async (encodedName, expected) => {
+    const service = await loadServiceWithOS('ios');
+    const uri = `file:///private/var/Inbox/${encodedName}`;
+    const file = await service.openFile(uri, 'None');
+    expect(file.name).toBe(expected);
+    const request = copyURIToPathMock.mock.calls[0]![0] as { uri: string; dst: string };
+    expect(request.uri).toBe(uri);
+    expect(request.dst.endsWith(`-${expected}`)).toBe(true);
+  });
+
+  test.each([
+    ['https://example.com/manual.pdf#zoom=1.25', undefined, 'manual.pdf'],
+    ['https://example.com/C%2B%2B.pdf?type=application/pdf', undefined, 'C++.pdf'],
+    ['https://example.com/one%5Cpart.pdf', undefined, 'one\\part.pdf'],
+    ['https://example.com/manual%FF.pdf', undefined, 'manual%FF.pdf'],
+    ['https://example.com/manual.pdf#page=2', 'Original%20Name.pdf', 'Original%20Name.pdf'],
+  ])('resolves native URL fallback names for %s with override %s', async (url, name, expected) => {
+    const service = await loadServiceWithOS('android');
+
+    const file = await service['fs'].openFile(url, 'None', name);
+
+    expect(file.name).toBe(expected);
+  });
+
+  test.each([
+    ['linux', '/books/first\\chapter.pdf', undefined, 'first\\chapter.pdf'],
+    ['linux', '/books/manual?rev1.pdf', undefined, 'manual?rev1.pdf'],
+    ['linux', '/books/Report%20Final.pdf', undefined, 'Report%20Final.pdf'],
+    ['windows', 'C:\\books\\Device_Manual.pdf', undefined, 'Device_Manual.pdf'],
+    ['windows', 'chapters\\manual.pdf', undefined, 'manual.pdf'],
+    ['windows', '\\chapters\\manual.pdf', undefined, 'manual.pdf'],
+    ['linux', 'chapters\\manual.pdf', undefined, 'chapters\\manual.pdf'],
+    ['windows', '\\\\server\\books\\Device_Manual.pdf', undefined, 'Device_Manual.pdf'],
+    ['macos', '/books/book.pdf', 'Original%20Name.pdf', 'Original%20Name.pdf'],
+  ] as const)('resolves local %s names for %s', async (os, path, name, expected) => {
+    const service = await loadServiceWithOS(os);
+    const file = await service['fs'].openFile(path, 'None', name);
+    expect(file.name).toBe(expected);
   });
 
   test('uses a unique cache path for same-named content-provider files', async () => {

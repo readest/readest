@@ -48,8 +48,12 @@ local function notifyCallbacks(pending, success, err)
     end
 end
 
+-- An expired access token is not a lost session: the saved refresh token
+-- renews it on the next sync (#7186).
 function SyncAuth:needsLogin(settings)
-    return settings.auth_required or not settings.access_token or not settings.expires_at
+    if settings.auth_required then return true end
+    if settings.refresh_token then return false end
+    return not settings.access_token or not settings.expires_at
         or settings.expires_at < os.time() + 60
 end
 
@@ -338,6 +342,15 @@ function SyncAuth:login(settings, path, title, menu)
                     end,
                 },
             },
+            {
+                {
+                    text = _("Sign in with a code"),
+                    callback = function()
+                        UIManager:close(dialog)
+                        self:loginWithCode(settings, path)
+                    end,
+                },
+            },
         },
     }
     UIManager:show(dialog)
@@ -364,31 +377,101 @@ function SyncAuth:doLogin(settings, path, email, password, menu)
     Device:setIgnoreInput(false)
 
     if success then
-        settings.auth_required = nil
-        settings.user_email = email
-        settings.user_id = response.user.id
-        settings.user_name = response.user.user_metadata.user_name or email
-        settings.access_token = response.access_token
-        settings.refresh_token = response.refresh_token
-        settings.expires_at = response.expires_in and (os.time() + response.expires_in) or response.expires_at
-        settings.expires_in = response.expires_in
-        G_reader_settings:saveSetting("readest_sync", settings)
-        if login_prompts[settings] then UIManager:close(login_prompts[settings]); login_prompts[settings] = nil end
-
-        if menu then
-            menu:updateItems()
-        end
-
-        UIManager:show(InfoMessage:new{
-            text = _("Successfully logged in to Readest"),
-            timeout = 3,
-        })
+        self:saveSession(settings, response, email, menu)
     else
         UIManager:show(InfoMessage:new{
             text = T(_("Login failed: %1"), SyncError.reason(response, status)),
             timeout = 3,
         })
     end
+end
+
+function SyncAuth:saveSession(settings, response, email, menu)
+    settings.auth_required = nil
+    settings.user_email = email
+    settings.user_id = response.user.id
+    settings.user_name = (response.user.user_metadata or {}).user_name or email
+    settings.access_token = response.access_token
+    settings.refresh_token = response.refresh_token
+    settings.expires_at = response.expires_in and (os.time() + response.expires_in) or response.expires_at
+    settings.expires_in = response.expires_in
+    G_reader_settings:saveSetting("readest_sync", settings)
+    G_reader_settings:flush() -- a new session must survive an unclean exit
+    if login_prompts[settings] then UIManager:close(login_prompts[settings]); login_prompts[settings] = nil end
+
+    if menu then
+        menu:updateItems()
+    end
+
+    UIManager:show(InfoMessage:new{
+        text = _("Successfully logged in to Readest"),
+        timeout = 3,
+    })
+end
+
+function SyncAuth:getSignInClient(path)
+    return require("readest_syncclient"):new{ service_spec = path .. "/readest-sync-api.json" }
+end
+
+-- The QR code for the approval link, or nil where KOReader has no QRWidget.
+local function qrImage(text)
+    local ok, QRWidget = pcall(require, "ui/widget/qrwidget")
+    if not ok then return nil end
+    local size = Device.screen:scaleBySize(160)
+    return QRWidget:new{ text = text, width = size, height = size }.image
+end
+
+-- Signs in with a code approved on a device already signed in to Readest
+-- (the web app's /link page), like the CrossPoint plugin. Works for every
+-- sign-in method, since KOReader never sees a password.
+function SyncAuth:loginWithCode(settings, path)
+    if NetworkMgr:willRerunWhenOnline(function() self:loginWithCode(settings, path) end) then
+        return
+    end
+    local client = self:getSignInClient(path)
+    client:requestDeviceCode(function(ok, code, status)
+        if not ok or type(code) ~= "table" or not code.device_code then
+            UIManager:show(InfoMessage:new{
+                text = T(_("Login failed: %1"), SyncError.reason(code, status)),
+                timeout = 3,
+            })
+            return
+        end
+        local waiting = true
+        local message = InfoMessage:new{
+            text = T(_("Scan the QR code with a phone signed in to Readest, or open %1 and enter this code:\n\n%2"),
+                code.verification_uri, code.user_code),
+            image = qrImage(code.verification_uri_complete or code.verification_uri),
+            dismiss_callback = function() waiting = false end,
+        }
+        UIManager:show(message)
+        local interval = code.interval or 5
+        local deadline = os.time() + (code.expires_in or 600)
+        local function stop(text)
+            waiting = false
+            UIManager:close(message)
+            if text then UIManager:show(InfoMessage:new{ text = text, timeout = 3 }) end
+        end
+        local poll
+        poll = function()
+            if not waiting then return end
+            client:pollDeviceToken(code.device_code, function(got, body)
+                if not waiting then return end
+                if got and type(body) == "table" and body.access_token and body.user then
+                    stop()
+                    -- No menu refresh: the menu that started this closed long
+                    -- ago, and updating it shows it again under the reader's taps.
+                    self:saveSession(settings, body, body.user.email or settings.user_email)
+                elseif (type(body) == "table" and body.error == "expired_token") or os.time() >= deadline then
+                    stop(_("The code expired. Please try again."))
+                else
+                    -- Not approved yet, or the network failed: ask again.
+                    UIManager:scheduleIn(interval, poll)
+                end
+            end)
+        end
+        UIManager:scheduleIn(interval, poll)
+    end)
 end
 
 function SyncAuth:logout(settings, path, menu)

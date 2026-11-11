@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { act, cleanup, render, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { BookProgress } from '@/types/book';

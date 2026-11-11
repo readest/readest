@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useMemo } from 'react';
 import { useSettingsStore } from '@/store/settingsStore';
-import { useBookDataStore } from '@/store/bookDataStore';
+import { useBookDataStore, useBookConfig } from '@/store/bookDataStore';
 import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
 import { eventDispatcher } from '@/utils/event';
 import { debounce } from '@/utils/debounce';
 import { findTocItemBS } from '@/services/nav';
 import { NotionClient, NotionSyncStore } from '@/services/notion';
+import { recordFlow } from '@/services/sync/dataFlow/log';
 import { BookNote } from '@/types/book';
 
 const NOTION_SYNC_DEBOUNCE_MS = 5000;
@@ -33,7 +34,8 @@ const enqueueSync = (task: () => Promise<boolean>): Promise<boolean> => {
 export const useNotionSync = (bookKey: string) => {
   const _ = useTranslation();
   const { envConfig } = useEnv();
-  const { getConfig, getBookData } = useBookDataStore();
+  const getConfig = useBookDataStore((s) => s.getConfig);
+  const getBookData = useBookDataStore((s) => s.getBookData);
 
   const updateLastSyncedAt = useCallback(
     async (timestamp: number) => {
@@ -86,6 +88,14 @@ export const useNotionSync = (bookKey: string) => {
           config.booknotes,
           chapterForNote,
         );
+        recordFlow({
+          connector: 'notion',
+          direction: 'push',
+          kind: 'notes',
+          bookTitle: bookData.book.title,
+          count: result.success ? result.inserted + result.updated + result.deleted : 0,
+          error: result.success ? undefined : result.message,
+        });
         if (result.success) {
           await updateLastSyncedAt(Date.now());
           return true;
@@ -167,7 +177,7 @@ export const useNotionSync = (bookKey: string) => {
   }, [bookKey, pushAllHighlights]);
 
   // Auto-sync whenever booknotes change; debouncedPush reads enabled state internally
-  const config = getConfig(bookKey);
+  const config = useBookConfig(bookKey);
   useEffect(() => {
     debouncedPush();
     // eslint-disable-next-line react-hooks/exhaustive-deps

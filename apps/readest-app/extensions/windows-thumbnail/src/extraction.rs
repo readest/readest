@@ -35,7 +35,7 @@ pub fn extract_epub_cover_bytes<R: Read + Seek>(reader: R) -> Result<Vec<u8>> {
     let mut candidates: Vec<(usize, String, u64)> = Vec::new();
     for i in 0..archive.len() {
         let file = archive.by_index(i)?;
-        let name = file.name().to_lowercase();
+        let name = file.name()?.to_lowercase();
         let size = file.size();
         drop(file);
 
@@ -93,7 +93,7 @@ pub fn extract_epub_cover_bytes<R: Read + Seek>(reader: R) -> Result<Vec<u8>> {
     let mut largest: Option<(usize, u64)> = None;
     for i in 0..archive.len() {
         let file = archive.by_index(i)?;
-        let name = file.name().to_lowercase();
+        let name = file.name()?.to_lowercase();
         let size = file.size();
         drop(file);
 
@@ -253,7 +253,7 @@ pub fn extract_cbz_cover_bytes<R: Read + Seek>(reader: R) -> Result<Vec<u8>> {
     let mut images: Vec<(usize, String)> = Vec::new();
     for i in 0..archive.len() {
         let file = archive.by_index(i)?;
-        let name = file.name().to_string();
+        let name = file.name()?.into_owned();
         drop(file);
 
         if is_image_extension(&name.to_lowercase()) {

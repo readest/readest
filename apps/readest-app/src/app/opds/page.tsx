@@ -8,6 +8,7 @@ import { openUrl } from '@tauri-apps/plugin-opener';
 import { useEnv } from '@/context/EnvContext';
 import { useAuth } from '@/context/AuthContext';
 import { isWebAppPlatform } from '@/services/environment';
+import { recordFlow } from '@/services/sync/dataFlow/log';
 import { downloadFile } from '@/libs/storage';
 import { Toast } from '@/components/Toast';
 import { useThemeStore } from '@/store/themeStore';
@@ -662,6 +663,13 @@ export default function BrowserPage() {
           const { library, setLibrary } = useLibraryStore.getState();
           try {
             const book = await appService.importBook(dstFilePath, library);
+            recordFlow({
+              connector: 'opds',
+              direction: 'pull',
+              kind: 'books',
+              bookTitle: book?.title,
+              count: book ? 1 : 0,
+            });
             // The catalog's curated metadata wins over the file's embedded
             // record (#5270) — applied before the cloud upload is queued so
             // peers get the same fields. `publication` already carries the
@@ -746,6 +754,12 @@ export default function BrowserPage() {
         }
       } catch (e) {
         console.error('Download error:', e);
+        recordFlow({
+          connector: 'opds',
+          direction: 'pull',
+          kind: 'books',
+          error: e instanceof Error ? e.message : String(e),
+        });
         throw e;
       }
     },

@@ -16,6 +16,8 @@
   "{{count}} pages left in chapter_other": "<0>{{count}}</0><1> pages left in chapter</1>",
   "{{count}} pages left in book_one": "<0>{{count}}</0><1> page left in book</1>",
   "{{count}} pages left in book_other": "<0>{{count}}</0><1> pages left in book</1>",
+  "{{count}} pages_one": "{{count}} page",
+  "{{count}} pages_other": "{{count}} pages",
   "Deleted {{count}} file(s)_one": "Deleted {{count}} file",
   "Deleted {{count}} file(s)_other": "Deleted {{count}} files",
   "{{count}} files_one": "{{count}} file",
@@ -131,5 +133,16 @@
   "{{count}} book(s) omitted (file not available locally)_one": "{{count}} book omitted (file not available locally)",
   "{{count}} book(s) omitted (file not available locally)_other": "{{count}} books omitted (files not available locally)",
   "Restored collection \"{{name}}\" ({{count}} books)_one": "Restored collection \"{{name}}\" ({{count}} book)",
-  "Restored collection \"{{name}}\" ({{count}} books)_other": "Restored collection \"{{name}}\" ({{count}} books)"
+  "Restored collection \"{{name}}\" ({{count}} books)_other": "Restored collection \"{{name}}\" ({{count}} books)",
+  "Lookup App": "Lookup App",
+  "Remove the downloaded files of {{count}} book(s) and keep them in the cloud._one": "Remove the downloaded file of {{count}} book and keep it in the cloud.",
+  "Remove the downloaded files of {{count}} book(s) and keep them in the cloud._other": "Remove the downloaded files of {{count}} books and keep them in the cloud.",
+  "Added {{count}} words to Anki_one": "Added {{count}} word to Anki",
+  "Added {{count}} words to Anki_other": "Added {{count}} words to Anki",
+  "{{count}} skipped_one": "{{count}} skipped",
+  "{{count}} skipped_other": "{{count}} skipped",
+  "Imported {{count}} new words_one": "Imported {{count}} new word",
+  "Imported {{count}} new words_other": "Imported {{count}} new words",
+  "{{count}} now Mastered_one": "{{count}} now Mastered",
+  "{{count}} now Mastered_other": "{{count}} now Mastered"
 }

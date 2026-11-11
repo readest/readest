@@ -27,8 +27,15 @@ import { isTauriAppPlatform } from '@/services/environment';
 import { useResetViewSettings } from '@/hooks/useResetSettings';
 import { useKeyDownActions } from '@/hooks/useKeyDownActions';
 import { saveViewSettings } from '@/helpers/settings';
+import type { ViewSettings } from '@/types/book';
 import { SettingsPanelPanelProp } from './SettingsDialog';
-import { BoxedList, NavigationRow, SettingLabel, SettingsRow } from './primitives';
+import {
+  BoxedList,
+  NavigationRow,
+  SettingLabel,
+  SettingsRow,
+  SettingsSwitchRow,
+} from './primitives';
 import NumberInput from './NumberInput';
 import FontDropdown from './FontDropDown';
 import CustomFonts from './CustomFonts';
@@ -142,6 +149,9 @@ const FontPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
   const [serifFont, setSerifFont] = useState(viewSettings.serifFont);
   const [sansSerifFont, setSansSerifFont] = useState(viewSettings.sansSerifFont);
   const [monospaceFont, setMonospaceFont] = useState(viewSettings.monospaceFont);
+  const [ignorePublisherFonts, setIgnorePublisherFonts] = useState(
+    viewSettings.ignorePublisherFonts ?? [],
+  );
   const [fontWeight, setFontWeight] = useState(viewSettings.fontWeight);
 
   const [customFonts, setCustomFonts] = useState<string[]>(getFontFamilies());
@@ -161,6 +171,7 @@ const FontPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
       serifFont: setSerifFont,
       sansSerifFont: setSansSerifFont,
       monospaceFont: setMonospaceFont,
+      ignorePublisherFonts: setIgnorePublisherFonts,
       fontWeight: setFontWeight,
     });
   };
@@ -275,6 +286,11 @@ const FontPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
   }, [monospaceFont]);
 
   useEffect(() => {
+    saveViewSettings(envConfig, bookKey, 'ignorePublisherFonts', ignorePublisherFonts);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ignorePublisherFonts]);
+
+  useEffect(() => {
     saveViewSettings(envConfig, bookKey, 'overrideFont', overrideFont);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [overrideFont]);
@@ -291,6 +307,28 @@ const FontPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
         return '';
     }
   };
+
+  const ignorePublisherFontsRow = (
+    family: ViewSettings['ignorePublisherFonts'][number],
+    fontLabel: string,
+  ) => (
+    <SettingsSwitchRow
+      label={
+        <>
+          {_('Ignore publisher font names')}
+          <span className='sr-only'>: {fontLabel}</span>
+        </>
+      }
+      checked={ignorePublisherFonts.includes(family)}
+      onChange={() =>
+        setIgnorePublisherFonts((families) =>
+          families.includes(family) ? families.filter((f) => f !== family) : [...families, family],
+        )
+      }
+      disabled={overrideFont}
+      data-setting-id={`settings.font.ignorePublisherFonts.${family}`}
+    />
+  );
 
   if (fontPanelView === 'custom-fonts') {
     return (
@@ -365,6 +403,7 @@ const FontPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
             onSelect={setSerifFont}
             data-setting-id='settings.font.serifFont'
           />
+          {ignorePublisherFontsRow('serif', _('Serif Font'))}
           <FontFace
             family='sans-serif'
             label={_('Sans-Serif Font')}
@@ -378,6 +417,7 @@ const FontPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
             onSelect={setSansSerifFont}
             data-setting-id='settings.font.sansSerifFont'
           />
+          {ignorePublisherFontsRow('sans-serif', _('Sans-Serif Font'))}
           <FontFace
             family='monospace'
             label={_('Monospace Font')}
@@ -387,6 +427,7 @@ const FontPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
             onSelect={setMonospaceFont}
             data-setting-id='settings.font.monospaceFont'
           />
+          {ignorePublisherFontsRow('monospace', _('Monospace Font'))}
         </div>
       </BoxedList>
 

@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { beforeEach, describe, expect, test } from 'vitest';
 import { useFileSyncStore } from '@/store/fileSyncStore';
 
@@ -57,6 +58,18 @@ describe('fileSyncStore', () => {
     // A later successful run clears it.
     setLastError('webdav', null);
     expect(useFileSyncStore.getState().lastErrorByKind.webdav).toBeNull();
+  });
+});
+
+describe('fileSyncStore error reporting', () => {
+  test('a sync error updates the health status and queues no popup', () => {
+    useFileSyncStore.getState().setLastError('webdav', 'GET failed with status 502');
+
+    const state = useFileSyncStore.getState();
+    expect(state.lastErrorByKind.webdav).toBe('GET failed with status 502');
+    // The error used to fill a report that opened a blocking "Sync failed"
+    // dialog over whatever the user was doing. Nothing may queue one now.
+    expect(state).not.toHaveProperty('reportByKind');
   });
 });
 

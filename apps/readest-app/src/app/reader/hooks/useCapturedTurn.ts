@@ -18,11 +18,13 @@ import { TURN_GESTURE_LEFT_INSET_ATTRIBUTE } from '../utils/brightnessGesture';
 import { isLayeredTurnTouchActive, setLayeredTurnTouchClaimed } from '../utils/iframeEventHandlers';
 import { CapturedPageTurn, CapturedTurnStyle, type CapturedTurnHost } from '../utils/capturedTurn';
 import { NativePageTurn, type NativePaperResult } from '../utils/nativePageTurn';
+import { RetainedPageTurn } from '../utils/retainedPageTurn';
 import { PageTurnBuffer } from '../utils/pageTurnBuffer';
 import {
   createTurnGestureIntent as createArenaIntent,
   NATIVE_CAPTURED_TURN_ATTRIBUTE,
   NATIVE_PROGRAMMATIC_TURN_ATTRIBUTE,
+  isDragPastPanEdge,
   shouldClaimTurnGesture as shouldClaimArenaGesture,
   TURN_EDGE_ZONE_RATIO,
   type TurnGestureIntent,
@@ -33,6 +35,10 @@ import {
   type TouchDetail,
   useTouchInterceptor,
 } from './useTouchInterceptor';
+import { setFixedLayoutZoom } from './usePagination';
+import { hasReaderOverlay, subscribeReaderOverlays } from '../utils/readerOverlay';
+import { eventDispatcher } from '@/utils/event';
+import type { NativeTouchEventType } from '@/types/system';
 
 // Once the native snapshot fails (older webview, capture bug), stop trying
 // for the rest of the session: the renderer's own `turn-style` animations
@@ -48,6 +54,13 @@ let captureBroken = false;
 const isPanningFixedLayout = (viewSettings: ViewSettings) =>
   viewSettings.zoomLevel > 100 || viewSettings.zoomMode !== 'fit-page';
 
+const canCaptureTurn = (viewSettings: ViewSettings) =>
+  isTauriAppPlatform() &&
+  !captureBroken &&
+  viewSettings.animated &&
+  !viewSettings.scrolled &&
+  !viewSettings.isEink;
+
 /**
  * The turn style the captured-page pipeline should drive for this view, or
  * null when the renderer's own turns apply. The pipeline needs a native
@@ -57,25 +70,20 @@ const isPanningFixedLayout = (viewSettings: ViewSettings) =>
  * surface can be prepared while the page is idle. Desktop and web builds
  * retain the browser View Transition implementation when it is available.
  *
- * Fixed-layout books (PDF, CBZ/CBR, fixed-layout EPUB/MOBI) ride the same
- * pipeline for every style, push included: `fixed-layout.js` animates nothing
- * itself, and its next()/prev() are already the instant jump the overlay
- * hides. They only drop out while the view is panning — the web/desktop View
- * Transition turns live in `paginator.js` alone, so off Tauri they stay on an
- * instant push.
+ * Fixed-layout books also use this gesture pipeline for push. Their retained
+ * backend moves the actual page views; curl/flip use captured textures. They
+ * drop out while the view is panning.
  */
 export const getCapturedTurnStyle = (
   viewSettings: ViewSettings,
   isFixedLayout: boolean,
   prepareNativeSlide = getInitializedAppService()?.isMobileApp === true,
 ): CapturedTurnStyle | null => {
-  if (!isTauriAppPlatform() || captureBroken) return null;
-  if (!viewSettings.animated || viewSettings.scrolled || viewSettings.isEink) return null;
+  if (!canCaptureTurn(viewSettings)) return null;
   if (isFixedLayout && isPanningFixedLayout(viewSettings)) return null;
-  if (viewSettings.pageTurnStyle === 'curl') return 'curl';
-  // `fixed-layout.js` has no strip to scroll, so its push is an instant swap;
-  // the captured pipeline pushes the live view in beside the outgoing
-  // capture instead. Reflowable books keep the paginator's native push.
+  if (viewSettings.pageTurnStyle === 'curl' || viewSettings.pageTurnStyle === 'flip') return 'curl';
+  // Fixed-layout push uses retained page views. Reflowable books keep the
+  // paginator's own push.
   if (viewSettings.pageTurnStyle === 'push') return isFixedLayout ? 'push' : null;
   if (
     viewSettings.pageTurnStyle === 'slide' &&
@@ -102,7 +110,7 @@ export const applyPageTurnAttributes = (
   prepareNativeSlide = getInitializedAppService()?.isMobileApp === true,
 ) => {
   const captured = getCapturedTurnStyle(viewSettings, isFixedLayout, prepareNativeSlide);
-  const style = viewSettings.pageTurnStyle;
+  const style = viewSettings.pageTurnStyle === 'flip' ? 'curl' : viewSettings.pageTurnStyle;
   if (style && style !== 'push' && !captured && detectViewTransitionGroup()) {
     view.renderer.setAttribute('turn-style', style);
   } else {
@@ -120,9 +128,19 @@ export const applyPageTurnAttributes = (
   }
 };
 
+/** The zoomed page an edge drag turns away from (see isDragPastPanEdge). */
+interface EdgeTurn {
+  forward: boolean;
+  zoomLevel: number;
+  scrollLeft: number;
+  scrollTop: number;
+}
+
 interface DragState {
   style: CapturedTurnStyle;
   forward: boolean;
+  /** Set when the drag pulled a zoomed page past its edge. */
+  edgeTurn: EdgeTurn | null;
   width: number;
   height: number;
   /** The width a release must cross half of to turn (see getPagesWidth). */
@@ -133,6 +151,8 @@ interface DragState {
   grabY: number;
   releaseSamples: { distance: number; time: number }[];
   lastMovementTime: number;
+  lastDomSampleAt: number;
+  nativeStart: NativeTouchEventType | null;
 }
 
 const RELEASE_VELOCITY_WINDOW_MS = 90;
@@ -140,31 +160,15 @@ const RELEASE_PAUSE_THRESHOLD_MS = 80;
 const SLIDE_RELEASE_PROJECTION_MS = 240;
 const PREPARED_CAPTURE_DELAY_MS = 160;
 const PREPARED_CAPTURE_CHROME_DELAY_MS = 360;
+const NATIVE_LIFT_GRACE_MS = 250;
+const DOM_MOVE_GRACE_MS = 50;
 
-// Native webview capture sees composited pixels, not just the reader cell.
-// Keep renderer-ready surfaces out of any host UI that visually covers the
-// page. These selectors intentionally follow shared HTML/ARIA state instead
-// of subscribing to every dialog or popup store independently.
-const CAPTURE_BLOCKING_OVERLAY_SELECTOR = [
-  'dialog[open]',
-  'dialog.modal-open',
-  '[role="dialog"][aria-modal="true"]:not([aria-hidden="true"])',
-  '[role="dialog"].modal-open',
-  '[role="alertdialog"]:not([aria-hidden="true"])',
-  '[aria-haspopup][aria-expanded="true"]',
-  '[role="menu"][data-state="open"]',
-  '[role="listbox"][data-state="open"]',
-  '[data-capture-blocking-overlay="true"]',
-  '.fixed.inset-0 [role="alert"]:not([aria-hidden="true"])',
-].join(',');
 const CAPTURE_INVALIDATING_OVERLAY_SELECTOR = '[data-capture-invalidating-overlay="true"]';
 const PIXEL_CAPTURE_FILTER_CLASS = 'captured-turn-filter-transient-overlays';
 let pixelCaptureFilterDepth = 0;
 
 const isCapturedSurfaceBlockedByOverlay = () =>
-  useSettingsStore.getState().isSettingsDialogOpen ||
-  (typeof document !== 'undefined' &&
-    document.querySelector(CAPTURE_BLOCKING_OVERLAY_SELECTOR) !== null);
+  useSettingsStore.getState().isSettingsDialogOpen || hasReaderOverlay();
 
 // Transient, non-interactive chrome (for example Toast) must invalidate idle
 // work but must not disable a Slide/Curl gesture while paginator no-swipe is
@@ -195,46 +199,17 @@ const acquirePixelCaptureFilter = () => {
   };
 };
 
-const captureBlockingOverlayListeners = new Set<() => void>();
-let captureBlockingOverlayObserver: MutationObserver | null = null;
-
-/** Share one document observer across every mounted reader cell. */
-const subscribeCaptureBlockingOverlay = (listener: () => void) => {
-  captureBlockingOverlayListeners.add(listener);
-  if (
-    !captureBlockingOverlayObserver &&
-    typeof MutationObserver !== 'undefined' &&
-    typeof document !== 'undefined' &&
-    document.body
-  ) {
-    captureBlockingOverlayObserver = new MutationObserver(() => {
-      for (const notify of captureBlockingOverlayListeners) notify();
-    });
-    captureBlockingOverlayObserver.observe(document.body, {
-      childList: true,
-      subtree: true,
-      attributes: true,
-      // Static role/class semantics are observed through mount/unmount. Watch
-      // only state attributes here so ordinary React class updates do not make
-      // every mounted reader cell rescan the full document for overlays.
-      attributeFilter: [
-        'open',
-        'aria-expanded',
-        'aria-hidden',
-        'data-state',
-        'data-capture-blocking-overlay',
-        'data-capture-invalidating-overlay',
-      ],
-    });
-  }
-  return () => {
-    captureBlockingOverlayListeners.delete(listener);
-    if (captureBlockingOverlayListeners.size === 0) {
-      captureBlockingOverlayObserver?.disconnect();
-      captureBlockingOverlayObserver = null;
-    }
-  };
-};
+/** Wait for a rezoomed PDF's overlayer, capped at one second if no event arrives. */
+const waitForPdfRedraw = (renderer: EventTarget) =>
+  new Promise<void>((resolve) => {
+    const done = () => {
+      clearTimeout(timer);
+      renderer.removeEventListener('create-overlayer', done);
+      resolve();
+    };
+    const timer = setTimeout(done, 1000);
+    renderer.addEventListener('create-overlayer', done);
+  });
 
 // Whether the visible section's document holds a non-collapsed selection —
 // the same condition the paginator's native swipe bows out on (#onTouchMove
@@ -255,10 +230,19 @@ const hasActiveSelection = (view: FoliateView) => {
  */
 export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<FoliateView | null>) => {
   const { getViewSettings, setHoveredBookKey } = useReaderStore();
-  const { getBookData } = useBookDataStore();
+  const getBookData = useBookDataStore((s) => s.getBookData);
   const controllerRef = useRef<CapturedPageTurn | null>(null);
   const dragRef = useRef<DragState | null>(null);
+  const nativeTouchStartRef = useRef<NativeTouchEventType | null>(null);
   const gestureIntentRef = useRef<TurnGestureIntent | null>(null);
+  // Horizontal pan fraction of a panning fixed-layout page when the touch
+  // began (null: no sideways overflow); undefined when the page fits.
+  const panXAtStartRef = useRef<number | null | undefined>(undefined);
+  // An edge drag whose turn has not yet navigated off its zoomed page.
+  const edgeTurnRef = useRef<EdgeTurn | null>(null);
+  // The zoomed page an edge turn navigated off, kept until that drag settles
+  // so a cancel returns to it even after the next drag has started.
+  const leftZoomedPageRef = useRef<EdgeTurn | null>(null);
   const programmaticTurnsInFlightRef = useRef(new Set<symbol>());
   const schedulePreparedCaptureRef = useRef<(() => void) | null>(null);
   const cancelPreparedCaptureScheduleRef = useRef<(() => void) | null>(null);
@@ -273,17 +257,18 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
   // - a layered turn already recognized it (including at a book boundary),
   //   or a programmatic turn took ownership while the finger was still down.
   const gestureClaimed = useRef(false);
+  const turnOwnsTouch = useRef(false);
   const restoreToolbarOnCancelRef = useRef(false);
   const view = viewRef.current;
 
   const isFixedLayout = () => !!getBookData(bookKey)?.isFixedLayout;
 
-  const markCaptureBroken = (error: unknown) => {
+  const markCaptureBroken = (error: unknown, style: CapturedTurnStyle) => {
     const viewSettings = getViewSettings(bookKey);
-    const style = viewSettings ? getCapturedTurnStyle(viewSettings, isFixedLayout()) : null;
     if (
       controllerRef.current instanceof NativePageTurn &&
-      controllerRef.current.canQueueNativeTurn(style)
+      ((controllerRef.current instanceof RetainedPageTurn && style === 'push') ||
+        controllerRef.current.canQueueNativeTurn(style))
     ) {
       // The native controller releases the failed scene and recreates its
       // texture bank. A transient interruption must not disable future turns.
@@ -397,7 +382,7 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
       getInitializedAppService()?.isAndroidApp || getInitializedAppService()?.isIOSApp;
     const bufferedPagesEnabled = () =>
       nativePaper &&
-      getViewSettings(bookKey)?.pageTurnStyle === 'curl' &&
+      ['curl', 'flip'].includes(getViewSettings(bookKey)?.pageTurnStyle ?? '') &&
       !getViewSettings(bookKey)?.vertical &&
       // The native paper also turns a two-column spread as one leaf, and
       // fixed layouts, which name their pages but cannot preview them.
@@ -451,10 +436,13 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
       getColumnCount: () =>
         getViewSettings(bookKey)?.vertical ? 1 : (view.renderer.columnCount ?? 1),
       // The leaf's back shows the incoming column, captured under the overlay
-      // behind a native cover on iOS and Android. The same cover protects
-      // the full previous-page capture for a backward curl.
+      // behind a native cover on iOS, Android and macOS. The same cover
+      // protects the full previous-page capture for a backward turn, which
+      // otherwise shows that page before the sheet arrives.
       coverRegion:
-        getInitializedAppService()?.isIOSApp || getInitializedAppService()?.isAndroidApp
+        getInitializedAppService()?.isIOSApp ||
+        getInitializedAppService()?.isAndroidApp ||
+        getInitializedAppService()?.isMacOSApp
           ? async (rect) => {
               const { token } = await coverWebviewRegion(rect);
               return () => uncoverWebviewRegion({ token });
@@ -492,9 +480,20 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
         restoreToolbarOnCancelRef.current = false;
         if (shouldRestore) await syncToolbarVisibility(true);
       },
+      isPageFlip: () => getViewSettings(bookKey)?.pageTurnStyle === 'flip',
       navigate: async (forward: boolean) => {
         if (pageBuffer.preparing) await pageBuffer.preparing;
         await navigationPending;
+        // A zoomed page dragged past its edge turns to a page at 100% zoom,
+        // like Photos. The reset happens here, under the captured outgoing
+        // page, so the incoming one slides in already fitted.
+        const leftPage = leftZoomedPageRef.current;
+        const edgeTurn = edgeTurnRef.current;
+        if (edgeTurn?.forward === forward) {
+          edgeTurnRef.current = null;
+          leftZoomedPageRef.current = edgeTurn;
+          setFixedLayoutZoom(bookKey, view, 100);
+        }
         // The paginator's animated paths (push slide and the layered VT
         // turns) all gate on the `animated` attribute; dropping it makes
         // the underlying turn an instant jump hidden by the overlay.
@@ -534,16 +533,47 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
         // relocation. Their completed navigation remains the fallback.
         if (nativeCommit) await navigation;
         else await Promise.race([relocated, navigation]);
+        // A cancelled edge turn returns to the zoomed page as it was left.
+        if (leftPage && leftPage.forward !== forward) {
+          leftZoomedPageRef.current = null;
+          await navigation;
+          // Hold the overlay until the page is drawn at its zoom again, or
+          // the page flashes at the old scale before it zooms back in.
+          const redrawn =
+            getBookData(bookKey)?.book?.format === 'PDF' &&
+            getViewSettings(bookKey)?.zoomLevel !== leftPage.zoomLevel
+              ? waitForPdfRedraw(view.renderer)
+              : undefined;
+          setFixedLayoutZoom(bookKey, view, leftPage.zoomLevel);
+          view.renderer.scrollLeft = leftPage.scrollLeft;
+          view.renderer.scrollTop = leftPage.scrollTop;
+          await redrawn;
+        }
       },
     };
-    const controller = nativePaper
-      ? new NativePageTurn(turnHost, {
-          renderer: view.renderer,
-          enabled: () =>
-            !getViewSettings(bookKey)?.vertical && (view.renderer.columnCount ?? 1) <= 2,
-          call: (command) => paperCurl<NativePaperResult>(command),
-        })
-      : new CapturedPageTurn(turnHost);
+    const nativeOptions = {
+      renderer: view.renderer,
+      enabled: () =>
+        !!nativePaper &&
+        !getViewSettings(bookKey)?.vertical &&
+        (view.renderer.columnCount ?? 1) <= 2,
+      call: (command: Parameters<typeof paperCurl<NativePaperResult>>[0]) =>
+        paperCurl<NativePaperResult>(command),
+    };
+    /** Persist the fit-page reset after a panning edge turn; retain ordinary selected zoom. */
+    const onRetainedCommit = () => {
+      const settings = getViewSettings(bookKey);
+      if (settings && settings.zoomLevel !== 100 && isPanningFixedLayout(settings)) {
+        settings.zoomLevel = 100;
+        useReaderStore.getState().setViewSettings(bookKey, settings);
+      }
+    };
+    const controller =
+      isFixedLayout() && view.renderer.beginPageTurn
+        ? new RetainedPageTurn(turnHost, nativeOptions, onRetainedCommit)
+        : nativePaper
+          ? new NativePageTurn(turnHost, nativeOptions)
+          : new CapturedPageTurn(turnHost);
     const invalidatePagePixels = () => {
       pageBuffer.clear();
       if (controller instanceof NativePageTurn) controller.invalidateNativePages();
@@ -653,9 +683,30 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
     // An overlay is attached after foliate's create-overlay event, so pick up
     // new ones on the surface changes below instead. Reports whether a new
     // overlay already had highlights drawn before it was observed.
+    // A PDF page draws its sharp layer only once on screen, after its native
+    // sheet was taken under the cover of the turn that brought it there.
+    const canvasDocs = new WeakSet<Document>();
+    const canvasObserver = new MutationObserver((records) => {
+      if (!(controller instanceof NativePageTurn)) return;
+      const shown = records.some((record) =>
+        Array.from(record.addedNodes).some((node) => {
+          const frame = node.ownerDocument?.defaultView?.frameElement;
+          return (
+            node.nodeName === 'CANVAS' && !!frame && getComputedStyle(frame).visibility !== 'hidden'
+          );
+        }),
+      );
+      if (!shown) return;
+      controller.refreshCurrentPage();
+      schedulePreparedCapture();
+    });
     const observeOverlays = () => {
       let drawn = false;
-      for (const { overlayer } of view.renderer.getContents()) {
+      for (const { doc, overlayer } of view.renderer.getContents()) {
+        if (controller instanceof NativePageTurn && doc?.body && !canvasDocs.has(doc)) {
+          canvasDocs.add(doc);
+          canvasObserver.observe(doc.body, { childList: true, subtree: true });
+        }
         const overlay = (overlayer as { element?: Element } | undefined)?.element;
         if (!overlay || overlayMarkup.has(overlay)) continue;
         overlayMarkup.set(overlay, markupOf(overlay));
@@ -707,10 +758,9 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
           ));
       const readerPixelsChanged = toolbarChanged || toolbarContentChanged || viewStateChanged;
       if (readerPixelsChanged) {
-        // Native textures cover only the renderer, not the toolbar.
-        // Hiding chrome as a turn starts must not destroy its selected sheets.
-        if (!(controller instanceof NativePageTurn && bufferedPagesEnabled()) || viewStateChanged)
-          invalidatePagePixels();
+        // Captured pages span the reader cell, so they hold the toolbars and
+        // the open panel. A turn in progress keeps its own native sheets.
+        invalidatePagePixels();
         invalidateAndSchedulePreparedCapture(
           toolbarChanged || toolbarContentChanged
             ? PREPARED_CAPTURE_CHROME_DELAY_MS
@@ -772,7 +822,7 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
       // shared gate closed until the mutation observer sees it leave the DOM.
       syncCaptureBlockingOverlay();
     });
-    const unsubscribeBlockingOverlay = subscribeCaptureBlockingOverlay(syncCaptureBlockingOverlay);
+    const unsubscribeBlockingOverlay = subscribeReaderOverlays(syncCaptureBlockingOverlay);
     const handleVisibilityChange = () => {
       if (document.hidden) {
         cancelPreparedCaptureSchedule();
@@ -809,12 +859,13 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
         dragRef.current = null;
         gestureIntentRef.current = null;
         gestureClaimed.current = true;
+        turnOwnsTouch.current = true;
         if (rawTouchActive) setLayeredTurnTouchClaimed(bookKey, true);
       }
       try {
         await controller.turn(forward, viewSettings.rtl, style);
       } catch (error) {
-        markCaptureBroken(error);
+        markCaptureBroken(error, style);
         return forward ? originals.next() : originals.prev();
       } finally {
         programmaticTurnsInFlightRef.current.delete(programmaticTurn);
@@ -824,6 +875,64 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
         schedulePreparedCapture();
       }
     };
+
+    // Redrawing/hiding the outgoing PDF can cost WebKit the rest of its DOM
+    // touch sequence. Continue an already-claimed edge turn from UIKit, using
+    // displacement from its own touchstart (device pixels, not screen CSS px).
+    // Recent DOM samples remain authoritative; native lift waits briefly for
+    // the DOM release before using the same release rules at the native point.
+    let liftTimer: ReturnType<typeof setTimeout> | undefined;
+    const handleNativeTouch = (event: CustomEvent) => {
+      const touch = event.detail as NativeTouchEventType;
+      if (touch.type === 'touchstart') {
+        nativeTouchStartRef.current = touch;
+        if (dragRef.current?.edgeTurn) {
+          dragRef.current.nativeStart = touch;
+        }
+        return;
+      }
+      const state = dragRef.current;
+      const start = state?.nativeStart;
+      const canContinue =
+        getInitializedAppService()?.isIOSApp &&
+        state?.edgeTurn &&
+        start &&
+        start === nativeTouchStartRef.current &&
+        start.pointerId === touch.pointerId &&
+        touch.pointerCount === 1;
+      let detail: TouchDetail | null = null;
+      if (canContinue) {
+        const dpr = window.devicePixelRatio || 1;
+        detail = {
+          phase: touch.type === 'touchmove' ? 'move' : touch.type === 'touchend' ? 'end' : 'cancel',
+          touchStart: { screenX: start.x / dpr, screenY: start.y / dpr },
+          touch: { screenX: touch.x / dpr, screenY: touch.y / dpr },
+          deltaX: (touch.x - start.x) / dpr,
+          deltaY: (touch.y - start.y) / dpr,
+          deltaT: touch.timestamp - start.timestamp,
+        };
+      }
+      if (touch.type === 'touchmove') {
+        if (detail && state && performance.now() - state.lastDomSampleAt >= DOM_MOVE_GRACE_MS) {
+          continueDrag(state, detail);
+        }
+        return;
+      }
+      nativeTouchStartRef.current = null;
+      if (!state) return;
+      clearTimeout(liftTimer);
+      liftTimer = setTimeout(() => {
+        if (dragRef.current !== state) return;
+        if (detail) {
+          continueDrag(state, detail);
+        } else {
+          dragRef.current = null;
+          afterDrag(state, controller.endDrag(false));
+        }
+      }, NATIVE_LIFT_GRACE_MS);
+    };
+    eventDispatcher.on('native-touch', handleNativeTouch);
+
     // Return the turn's promise (the foliate originals do too, despite the
     // published void type): the corner auto-turn awaits it to hold its
     // isAutoTurning guard up until the turn settles — discarding it resolves
@@ -834,6 +943,9 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
 
     return () => {
       cleanedUp = true;
+      eventDispatcher.off('native-touch', handleNativeTouch);
+      clearTimeout(liftTimer);
+      nativeTouchStartRef.current = null;
       cancelPreparedCaptureSchedule();
       prepareNotBefore = 0;
       if (schedulePreparedCaptureRef.current === schedulePreparedCapture) {
@@ -850,6 +962,7 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       view.removeEventListener('relocate', handleCapturedSurfaceChange);
       overlayObserver.disconnect();
+      canvasObserver.disconnect();
       view.removeEventListener('show-annotation', handleCapturedSurfaceChange);
       view.renderer.removeEventListener('stabilized', handleCapturedSurfaceChange);
       view.prev = originals.prev;
@@ -862,10 +975,62 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
       dragRef.current = null;
       gestureIntentRef.current = null;
       gestureClaimed.current = false;
+      turnOwnsTouch.current = false;
       controllerRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [view, bookKey]);
+
+  // Forget a drag's edge turn once the drag has settled or failed to start.
+  const forgetEdgeTurn = ({ edgeTurn }: DragState) => {
+    if (!edgeTurn) return;
+    if (edgeTurnRef.current === edgeTurn) edgeTurnRef.current = null;
+    if (leftZoomedPageRef.current === edgeTurn) leftZoomedPageRef.current = null;
+  };
+  const afterDrag = (state: DragState, ending: Promise<void>) => {
+    ending
+      .finally(() => {
+        forgetEdgeTurn(state);
+        schedulePreparedCaptureRef.current?.();
+      })
+      .catch(() => {});
+  };
+
+  const continueDrag = (state: DragState, detail: TouchDetail) => {
+    const controller = controllerRef.current;
+    if (!controller) return;
+    const viewSettings = getViewSettings(bookKey);
+    updateDragSample(state, detail, viewSettings?.rtl ?? false);
+    // Store the release position before endDrag joins the controller's
+    // serialized queue. This ordering also covers touchcancel.
+    controller.moveDrag(state.progress, state.grabY);
+    if (detail.phase === 'move') return;
+    dragRef.current = null;
+    if (detail.phase === 'cancel') {
+      afterDrag(state, controller.endDrag(false));
+      return;
+    }
+    const signed = dragDistance(state, detail.deltaX, viewSettings?.rtl ?? false);
+    const fullGestureVelocity = signed / (detail.deltaT || 1);
+    const releaseVelocity = getReleaseVelocity(state);
+    // Slide and push project the release velocity forward over a short
+    // horizon: distance and speed contribute continuously instead of
+    // crossing two independent hard thresholds. Curl preserves the existing
+    // whole-gesture 0.3px/ms-or-halfway rule.
+    const releaseProgress = Math.max(0, Math.min(1, signed / state.releaseWidth));
+    const projectedProgress =
+      releaseProgress + (releaseVelocity * SLIDE_RELEASE_PROJECTION_MS) / state.releaseWidth;
+    const commit =
+      state.style !== 'curl'
+        ? projectedProgress > 0.5
+        : fullGestureVelocity > 0.3
+          ? true
+          : releaseProgress > 0.5;
+    // CapturedPageTurn serializes endDrag behind an in-flight beginDrag, so
+    // queue release immediately. This also keeps a following gesture behind
+    // the complete begin/end pair instead of letting it supersede the turn.
+    afterDrag(state, controller.endDrag(commit, releaseVelocity));
+  };
 
   useTouchInterceptor(
     `captured-turn-${bookKey}`,
@@ -884,12 +1049,7 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
         // delivering the previous touchend. Cancel the old drag before its
         // state is replaced so it cannot remain over, or settle onto, the
         // following page.
-        if (dragRef.current) {
-          controller
-            .endDrag(false)
-            .finally(() => schedulePreparedCaptureRef.current?.())
-            .catch(() => {});
-        }
+        if (dragRef.current) afterDrag(dragRef.current, controller.endDrag(false));
         dragRef.current = null;
         const intent = createTurnGestureIntent(bookKey, currentView, detail);
         gestureIntentRef.current = intent;
@@ -897,6 +1057,10 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
         const overlayBlocksCapture = isCapturedSurfaceBlockedByOverlay();
         const preparedPixelsBlocked = isPreparedSurfaceBlockedByOverlay();
         const viewSettings = getViewSettings(bookKey);
+        panXAtStartRef.current =
+          viewSettings && isFixedLayout() && isPanningFixedLayout(viewSettings)
+            ? (currentView.renderer.panX ?? null)
+            : undefined;
         const programmaticInputBlocked =
           programmaticTurnsInFlightRef.current.size > 0 &&
           !(
@@ -907,6 +1071,7 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
           );
         gestureClaimed.current =
           programmaticInputBlocked || selectionActive || overlayBlocksCapture;
+        turnOwnsTouch.current = programmaticInputBlocked;
 
         // These interactions can change the live pixels while the finger is
         // down. Remove a low-alpha idle surface immediately rather than leave
@@ -961,6 +1126,7 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
       }
 
       const viewSettings = getViewSettings(bookKey);
+      if (dragRef.current) dragRef.current.lastDomSampleAt = performance.now();
       if (detail.phase === 'move') {
         const state = dragRef.current;
         if (!state) {
@@ -995,10 +1161,22 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
             controller.releasePreparedCapture();
             return false;
           }
-          const style = getCapturedTurnStyle(viewSettings, isFixedLayout());
+          const panXAtStart = panXAtStartRef.current;
+          // A zoomed page dragged past its edge always pushes: it slides out
+          // with the next page beside it, the way Photos moves between photos.
+          const style =
+            panXAtStart === undefined
+              ? getCapturedTurnStyle(viewSettings, isFixedLayout())
+              : canCaptureTurn(viewSettings)
+                ? 'push'
+                : null;
           if (!style) {
             gestureIntentRef.current = null;
             controller.releasePreparedCapture();
+            return false;
+          }
+          // Short of the edge the drag pans the zoomed page.
+          if (panXAtStart !== undefined && !isDragPastPanEdge(panXAtStart, detail.deltaX)) {
             return false;
           }
           const intent =
@@ -1020,6 +1198,7 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
           // be replayed as a synthesized toolbar click on release.
           setLayeredTurnTouchClaimed(bookKey, true);
           gestureClaimed.current = true;
+          turnOwnsTouch.current = true;
           if (forward ? currentView.renderer.atEnd : currentView.renderer.atStart) {
             controller.releasePreparedCapture();
             return true;
@@ -1029,6 +1208,15 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
           const startedState: DragState = {
             style,
             forward,
+            edgeTurn:
+              panXAtStart === undefined
+                ? null
+                : {
+                    forward,
+                    zoomLevel: viewSettings.zoomLevel,
+                    scrollLeft: currentView.renderer.scrollLeft,
+                    scrollTop: currentView.renderer.scrollTop,
+                  },
             width,
             height: rect?.height || window.innerHeight,
             releaseWidth: isFixedLayout() ? getPagesWidth(currentView, width) : width,
@@ -1037,6 +1225,8 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
             grabY: 0.5,
             releaseSamples: [{ distance: 0, time: 0 }],
             lastMovementTime: 0,
+            lastDomSampleAt: performance.now(),
+            nativeStart: nativeTouchStartRef.current,
           };
           if (style !== 'curl') {
             startedState.visualOriginDistance = Math.max(
@@ -1046,6 +1236,7 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
           }
           updateDragSample(startedState, detail, viewSettings.rtl);
           dragRef.current = startedState;
+          if (startedState.edgeTurn) edgeTurnRef.current = startedState.edgeTurn;
           const beginning = controller.beginDrag(forward, viewSettings.rtl, style);
           // moveDrag buffers this initial sample even while native capture is
           // pending, then applies it before a queued release can settle.
@@ -1054,16 +1245,17 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
             .then((ok) => {
               if (!ok) {
                 if (dragRef.current === startedState) dragRef.current = null;
+                forgetEdgeTurn(startedState);
               }
             })
             .catch((error) => {
               if (dragRef.current === startedState) dragRef.current = null;
-              markCaptureBroken(error);
+              forgetEdgeTurn(startedState);
+              markCaptureBroken(error, style);
             });
           return true;
         }
-        updateDragSample(state, detail, viewSettings?.rtl ?? false);
-        controller.moveDrag(state.progress, state.grabY);
+        continueDrag(state, detail);
         return true;
       }
 
@@ -1073,43 +1265,11 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
       if (!state) {
         controller.releasePreparedCapture();
         schedulePreparedCaptureRef.current?.();
-        return false;
+        // Native tracking may have already released this claimed gesture.
+        // Consume its late DOM release so the swipe fallback cannot turn again.
+        return turnOwnsTouch.current;
       }
-      dragRef.current = null;
-      updateDragSample(state, detail, viewSettings?.rtl ?? false);
-      // Store the release position before endDrag joins the controller's
-      // serialized queue. This ordering also covers touchcancel.
-      controller.moveDrag(state.progress, state.grabY);
-      if (detail.phase === 'cancel') {
-        controller
-          .endDrag(false)
-          .finally(() => schedulePreparedCaptureRef.current?.())
-          .catch(() => {});
-        return true;
-      }
-      const signed = dragDistance(state, detail.deltaX, viewSettings?.rtl ?? false);
-      const fullGestureVelocity = signed / (detail.deltaT || 1);
-      const releaseVelocity = getReleaseVelocity(state);
-      // Slide and push project the release velocity forward over a short
-      // horizon: distance and speed contribute continuously instead of
-      // crossing two independent hard thresholds. Curl preserves the existing
-      // whole-gesture 0.3px/ms-or-halfway rule.
-      const releaseProgress = Math.max(0, Math.min(1, signed / state.releaseWidth));
-      const projectedProgress =
-        releaseProgress + (releaseVelocity * SLIDE_RELEASE_PROJECTION_MS) / state.releaseWidth;
-      const commit =
-        state.style !== 'curl'
-          ? projectedProgress > 0.5
-          : fullGestureVelocity > 0.3
-            ? true
-            : releaseProgress > 0.5;
-      // CapturedPageTurn serializes endDrag behind an in-flight beginDrag, so
-      // queue release immediately. This also keeps a following gesture behind
-      // the complete begin/end pair instead of letting it supersede the turn.
-      controller
-        .endDrag(commit, releaseVelocity)
-        .finally(() => schedulePreparedCaptureRef.current?.())
-        .catch(() => {});
+      continueDrag(state, detail);
       return true;
     },
     // Above the fixed-layout swipe-flip (0), below the reading ruler (10).
