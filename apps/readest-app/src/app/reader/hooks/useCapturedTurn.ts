@@ -683,9 +683,30 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
     // An overlay is attached after foliate's create-overlay event, so pick up
     // new ones on the surface changes below instead. Reports whether a new
     // overlay already had highlights drawn before it was observed.
+    // A PDF page draws its sharp layer only once on screen, after its native
+    // sheet was taken under the cover of the turn that brought it there.
+    const canvasDocs = new WeakSet<Document>();
+    const canvasObserver = new MutationObserver((records) => {
+      if (!(controller instanceof NativePageTurn)) return;
+      const shown = records.some((record) =>
+        Array.from(record.addedNodes).some((node) => {
+          const frame = node.ownerDocument?.defaultView?.frameElement;
+          return (
+            node.nodeName === 'CANVAS' && !!frame && getComputedStyle(frame).visibility !== 'hidden'
+          );
+        }),
+      );
+      if (!shown) return;
+      controller.refreshCurrentPage();
+      schedulePreparedCapture();
+    });
     const observeOverlays = () => {
       let drawn = false;
-      for (const { overlayer } of view.renderer.getContents()) {
+      for (const { doc, overlayer } of view.renderer.getContents()) {
+        if (controller instanceof NativePageTurn && doc?.body && !canvasDocs.has(doc)) {
+          canvasDocs.add(doc);
+          canvasObserver.observe(doc.body, { childList: true, subtree: true });
+        }
         const overlay = (overlayer as { element?: Element } | undefined)?.element;
         if (!overlay || overlayMarkup.has(overlay)) continue;
         overlayMarkup.set(overlay, markupOf(overlay));
@@ -941,6 +962,7 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       view.removeEventListener('relocate', handleCapturedSurfaceChange);
       overlayObserver.disconnect();
+      canvasObserver.disconnect();
       view.removeEventListener('show-annotation', handleCapturedSurfaceChange);
       view.renderer.removeEventListener('stabilized', handleCapturedSurfaceChange);
       view.prev = originals.prev;
