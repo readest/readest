@@ -389,7 +389,8 @@ const getColorStyles = (
       ${texturedFootnote && overrideColor ? 'background-color: transparent !important;' : ''}
     }
     section, aside, blockquote, article, nav, header, footer, main, figure,
-    div, p, font, h1, h2, h3, h4, h5, h6, li, span {
+    div, p, font, h1, h2, h3, h4, h5, h6, li, span,
+    table, thead, tbody, tfoot, tr, th, td, caption {
       ${overrideColor ? `background-color: ${overrideBg} !important;` : ''}
       ${overrideColor ? `color: ${fg} !important;` : ''}
       ${overrideColor ? `border-color: ${fg} !important;` : ''}

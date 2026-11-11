@@ -550,6 +550,30 @@ describe('getColorStyles branches (via getStyles)', () => {
     expect(css).toContain('border-color: #000 !important');
   });
 
+  // #7415: a book's own table backgrounds stayed on top of the theme.
+  const overrideRuleSelectors = (css: string, bg: string) => {
+    const rule = [...css.matchAll(/([^{}]+)\{([^}]*)\}/g)].find(
+      (m) => m[2]!.includes(`background-color: ${bg} !important`) && m[1]!.includes('div'),
+    );
+    return (rule?.[1] ?? '').split(',').map((s) => s.trim());
+  };
+
+  it('forces the theme colors on table cells when overrideColor is true (#7415)', () => {
+    const vs = makeViewSettings({ overrideColor: true });
+    const css = getStyles(vs, makeThemeCode({ bg: '#fff', fg: '#000' }));
+    expect(overrideRuleSelectors(css, '#fff')).toEqual(
+      expect.arrayContaining(['table', 'thead', 'tbody', 'tfoot', 'tr', 'th', 'td', 'caption']),
+    );
+  });
+
+  it('makes table cells transparent over a background texture (#7415)', () => {
+    const vs = makeViewSettings({ overrideColor: true, backgroundTextureId: 'paper' });
+    const css = getStyles(vs, makeThemeCode({ bg: '#fff', fg: '#000' }));
+    expect(overrideRuleSelectors(css, 'transparent')).toEqual(
+      expect.arrayContaining(['table', 'th', 'td']),
+    );
+  });
+
   it('does not force color overrides when overrideColor is false', () => {
     const vs = makeViewSettings({ overrideColor: false });
     const theme = makeThemeCode({ bg: '#fff', fg: '#000' });
