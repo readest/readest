@@ -333,6 +333,22 @@ describe('detectLanguage - URLs and hashed file names (#7435)', () => {
     expect(detectLanguage(downloaderHeader.slice(0, 1024))).toBe('zh');
   });
 
+  it('keeps Chinese text written right after a link', () => {
+    expect(
+      detectLanguage(
+        'https://www.example.com/book/1.html，这是一个中文文本的示例，用于语言检测测试。',
+      ),
+    ).toBe('zh');
+  });
+
+  it('drops hashed file names joined to other words by underscores', () => {
+    const hashedNames = Array.from(
+      { length: 12 },
+      (_, i) => `9f2c1d7e4b6a8c0d3e5f7a9b1c2d4e${i}f_640`,
+    ).join('\n');
+    expect(detectLanguage(`${hashedNames}\n天下大势，分久必合，合久必分。`)).toBe('zh');
+  });
+
   it('still detects English text that contains links', () => {
     const englishWithLinks =
       'Source: https://www.example.com/books/9f2c1d7e4b6a8c0d3e5f7a9b1c2d4e6f.html\n' +

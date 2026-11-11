@@ -192,6 +192,53 @@ describe('TxtToEpubConverter', () => {
     expect(segments).toEqual(['Segment A', 'Segment B']);
   });
 
+  // #7435: a header of links can fill the first 1024 characters by itself.
+  const linkHeader = Array.from(
+    { length: 20 },
+    (_, i) => `![https://i.example.com/a${i}/cover.png](chapter-${i}.png)`,
+  ).join('\n');
+  const chineseBody =
+    '\n\n第一回 甄士隐梦幻识通灵\n此开卷第一回也。作者自云：因曾历过一番梦幻之后，故将真事隐去。\n';
+
+  it('convert should detect the language past a header of links (#7435)', async () => {
+    const converter = new TxtToEpubConverter() as unknown as TxtConverterFlowPrivateAPI;
+    const languages: string[] = [];
+    converter.createEpub = async () => new Blob();
+    converter.probeChapterCount = () => 2;
+    converter.extractChapters = (_, metadata) => {
+      languages.push(metadata.language);
+      return [{ title: 'A', content: 'a', isVolume: false }];
+    };
+
+    expect(linkHeader.length).toBeGreaterThan(1024);
+    await converter.convert({ file: new File([linkHeader + chineseBody], 'book.txt') });
+
+    expect(languages[0]).toBe('zh');
+  });
+
+  it('convert large file should detect the language past a header of links (#7435)', async () => {
+    const converter = new TxtToEpubConverter() as unknown as TxtConverterFlowPrivateAPI;
+    const languages: string[] = [];
+    const backingBlob = new Blob([linkHeader + chineseBody]);
+    const largeFile = {
+      name: 'large.txt',
+      size: 9 * 1024 * 1024,
+      slice: (start?: number, end?: number) => backingBlob.slice(start, end),
+      stream: () => backingBlob.stream(),
+    } as unknown as File;
+    converter.detectEncodingFromFile = async () => 'utf-8';
+    converter.createEpub = async () => new Blob();
+    converter.probeChapterCountFromFileBySegments = async () => 2;
+    converter.extractChaptersFromFileBySegments = async (_, __, metadata) => {
+      languages.push(metadata.language);
+      return [{ title: 'A', content: 'a', isVolume: false }];
+    };
+
+    await converter.convert({ file: largeFile });
+
+    expect(languages[0]).toBe('zh');
+  });
+
   it('convert should use chunked path for large files without calling file.arrayBuffer', async () => {
     const converter = new TxtToEpubConverter() as unknown as TxtConverterFlowPrivateAPI;
     const calls: number[] = [];
