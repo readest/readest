@@ -25,7 +25,7 @@ export const bookDataStoreHooks = <H extends Hook>(hook: H) => {
     useBookConfig: (key: string | null) => {
       const config = stubs().getConfig?.(key) as Record<string, unknown> | null | undefined;
       if (!config) return null;
-      const { progress: _progress, location: _location, ...rest } = config;
+      const { progress: _progress, location: _location, updatedAt: _updatedAt, ...rest } = config;
       return rest;
     },
   };

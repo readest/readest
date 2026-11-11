@@ -28,8 +28,10 @@ export const useNotesSync = (bookKey: string) => {
   const anchorTriedRef = useRef(new Map<string, string>());
 
   const config = useBookConfig(bookKey);
-  // Each page turn moves it; the sync passes below follow it.
-  const location = useBookDataStore((s) => s.getConfig(bookKey)?.location);
+  // A book's first reading position is saved after its notes load, and that
+  // write keeps the same booknotes array, so the push below re-runs once it
+  // appears. Only whether there is one: every page turn moves it.
+  const hasLocation = useBookDataStore((s) => !!s.getConfig(bookKey)?.location);
 
   // A note pulled from another copy of the book has no row under this one:
   // pushing it for an xpointer or an anchor would insert a row stamped now, and
@@ -257,9 +259,6 @@ export const useNotesSync = (bookKey: string) => {
     [syncNotes],
   );
 
-  // A book's first reading position is saved after its notes load, and that
-  // write keeps the same booknotes array, so re-run once it appears.
-  const hasLocation = !!location;
   // The first push of a book goes out before the view exists.
   const hasView = !!getView(bookKey);
   useEffect(() => {

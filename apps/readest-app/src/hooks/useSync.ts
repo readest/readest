@@ -128,9 +128,9 @@ export function useSync(bookKey?: string) {
   const router = useRouter();
   const { envConfig } = useEnv();
   const { settings, setSettings, saveSettings } = useSettingsStore();
-  const { getConfig, setConfig } = useBookDataStore();
+  const getConfig = useBookDataStore((s) => s.getConfig);
+  const setConfig = useBookDataStore((s) => s.setConfig);
   const { setIsSyncing } = useReaderStore();
-  const config = bookKey ? getConfig(bookKey) : null;
 
   const [syncingBooks, setSyncingBooks] = useState(false);
   const [syncingConfigs, setSyncingConfigs] = useState(false);
@@ -140,6 +140,12 @@ export function useSync(bookKey?: string) {
   const [lastSyncedAtConfigs, setLastSyncedAtConfigs] = useState<number>(0);
   const [lastSyncedAtNotes, setLastSyncedAtNotes] = useState<number>(0);
   const [lastSyncedAtInited, setLastSyncedAtInited] = useState(false);
+  // The book's config only matters until the first sync is set up below: every
+  // page turn and progress save replaces it, which would re-render the viewer
+  // and annotator this hook runs in.
+  const config = useBookDataStore((s) =>
+    bookKey && !lastSyncedAtInited ? s.getConfig(bookKey) : null,
+  );
 
   const [syncing, setSyncing] = useState(false);
   // null means unsynced, empty array means synced no changes
