@@ -35,6 +35,7 @@ vi.mock('@/utils/misc', async (importActual) => {
 });
 
 import { useTextSelector } from '@/app/reader/hooks/useTextSelector';
+import { handleClickCapture, handleMousedown } from '@/app/reader/utils/iframeEventHandlers';
 
 const mousePointer = (x: number, y: number) =>
   ({ pointerType: 'mouse', button: 0, clientX: x, clientY: y }) as PointerEvent;
@@ -79,6 +80,37 @@ afterEach(() => {
 });
 
 describe('a mouse release that leaves no selection', () => {
+  test.each([
+    true,
+    false,
+  ])('consumes only the dismissing click (browser emits click: %s)', async (emitsClick) => {
+    const { result, handleDismissPopup } = setup();
+    selectText();
+    result.current.isTextSelected.current = true;
+
+    const target = document.body;
+    const onMouseDown = (event: MouseEvent) => handleMousedown('book-1', event);
+    const onClick = (event: MouseEvent) => handleClickCapture('book-1', event);
+    const click = () =>
+      target.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, detail: 1 }));
+    document.addEventListener('mousedown', onMouseDown);
+    document.addEventListener('click', onClick, true);
+
+    try {
+      result.current.handlePointerDown(document, 0, mousePointer(5, 5));
+      document.getSelection()!.removeAllRanges();
+      await result.current.handlePointerUp(document, 0, mousePointer(5, 5));
+      expect(handleDismissPopup).toHaveBeenCalledOnce();
+      if (emitsClick) expect(click()).toBe(false);
+
+      target.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+      expect(click()).toBe(true);
+    } finally {
+      document.removeEventListener('mousedown', onMouseDown);
+      document.removeEventListener('click', onClick, true);
+    }
+  });
+
   test('dismisses the selection toolbar', async () => {
     const { result, handleDismissPopup } = setup();
     selectText();

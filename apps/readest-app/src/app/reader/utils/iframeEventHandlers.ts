@@ -193,7 +193,18 @@ const suppressDomClick = (event: MouseEvent) => {
   event.stopImmediatePropagation();
 };
 
+const selectionDismissClicks = new WeakSet<EventTarget>();
+
+export const suppressSelectionDismissClick = (doc: Document) => {
+  selectionDismissClicks.add(doc);
+};
+
 const consumeSuppressedDomClick = (bookKey: string, event: MouseEvent, now: number) => {
+  const doc = event.currentTarget;
+  if (doc && event.button === 0 && event.detail > 0 && selectionDismissClicks.delete(doc)) {
+    suppressDomClick(event);
+    return true;
+  }
   const imageHold = imageHoldClicks.get(bookKey);
   if (imageHold) {
     imageHoldClicks.delete(bookKey);
@@ -378,6 +389,8 @@ export const handleKeyup = (bookKey: string, event: KeyboardEvent) => {
 };
 
 export const handleMousedown = (bookKey: string, event: MouseEvent) => {
+  // Some PDF releases dismiss the selection without generating a click.
+  if (event.currentTarget) selectionDismissClicks.delete(event.currentTarget);
   isMouseDown = true;
   if (longHoldTimeout) clearTimeout(longHoldTimeout);
   longHoldTimeout = setTimeout(() => {

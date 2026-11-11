@@ -20,6 +20,45 @@ test.describe('Annotation', () => {
     await expect(reader.annotationItems).toHaveCount(1);
   });
 
+  for (const popup of ['text selection', 'existing highlight']) {
+    test(`clicking outside the ${popup} toolbar dismisses it before turning the page`, async ({
+      openBook,
+    }) => {
+      const reader = await openBook();
+      await reader.selectText();
+      if (popup === 'existing highlight') {
+        await reader.highlightSelection();
+        await reader.dismissPopup();
+        const highlight = reader.foliateView.locator('svg g path').first();
+        await highlight.waitFor({ state: 'attached' });
+        const highlightBounds = await highlight.boundingBox();
+        if (!highlightBounds) throw new Error('highlight has no visible bounds');
+        await reader.page.mouse.click(highlightBounds.x + 4, highlightBounds.y + 4);
+      }
+      await expect(reader.annotationPopup).toBeVisible();
+      if (popup === 'existing highlight') {
+        // This is a separate click after opening the highlight, not a double-click.
+        await reader.page.waitForTimeout(600);
+      }
+      await expect.poll(() => reader.readingProgress()).toBeGreaterThan(0);
+      const position = await reader.readingProgress();
+      const bounds = await reader.foliateView.boundingBox();
+      if (!bounds) throw new Error('reader has no visible page bounds');
+      const clickPageTurnZone = () =>
+        reader.page.mouse.click(bounds.x + bounds.width * 0.8, bounds.y + bounds.height * 0.65);
+
+      await clickPageTurnZone();
+      await expect(reader.annotationPopup).toBeHidden();
+      // Allow the single-click and popup-dismiss timers to run before checking
+      // the position or making a separate click in the same page-turn zone.
+      await reader.page.waitForTimeout(600);
+      expect(await reader.readingProgress()).toBe(position);
+
+      await clickPageTurnZone();
+      await expect.poll(() => reader.readingProgress()).toBeGreaterThan(position);
+    });
+  }
+
   test('closing the dictionary popup returns to the selection toolbar (#5213)', async ({
     openBook,
   }) => {
