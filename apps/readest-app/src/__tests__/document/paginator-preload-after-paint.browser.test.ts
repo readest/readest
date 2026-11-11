@@ -8,6 +8,11 @@ import type { Renderer } from '@/types/view';
 // that left fewer than five pages loaded ahead started preloading the next
 // section from the container's scroll listener, before the turned page was
 // painted, and the next turns waited behind the rest of that load.
+//
+// Holding a preload back until no page had turned for a second then made a
+// reader turning pages faster than that reach the end of the loaded pages
+// with the next section not started: that turn waited for all of its load,
+// about 4 s on a Kindle.
 
 // A section of `columns` columns, one block each.
 const makeColumns = (name: string, columns: number) => {
@@ -85,7 +90,7 @@ describe('Paginator preload', () => {
     expect(startedBeforePaint).toBe(false);
   });
 
-  it('holds a preload back while pages keep turning', async () => {
+  it('preloads between page turns, without waiting for them to stop', async () => {
     let loaded = false;
     await open(() => (loaded = true));
 
@@ -94,25 +99,6 @@ describe('Paginator preload', () => {
       await paginator.next();
       await wait(200);
     }
-    expect(loaded).toBe(false);
-    await vi.waitFor(() => expect(loaded).toBe(true), { timeout: 3000 });
-  });
-
-  it('loads a held-back section at once for the turn that needs it', async () => {
-    let loaded = false;
-    await open(() => (loaded = true));
-    let index: number | undefined;
-    paginator.addEventListener('relocate', (e) => {
-      index = (e as CustomEvent<{ index: number }>).detail.index;
-    });
-
-    for (let turn = 0; turn < 5; turn++) await paginator.next();
-    expect(loaded).toBe(false);
-    expect(index).toBe(1);
-    // Page 5 is ch2's last: the next turn goes on into ch3.
-    const start = performance.now();
-    await paginator.next();
-    expect(performance.now() - start).toBeLessThan(600);
-    expect(index).toBe(2);
+    expect(loaded).toBe(true);
   });
 });

@@ -65,8 +65,8 @@ describe('Paginator turn during fill', () => {
   });
 
   // One column a page: ch0 is eight pages, ch1 to ch6 one each, each taking
-  // 400 ms to load. Opens at ch0.
-  const openSlowBook = async () => {
+  // 400 ms to load (ch1 `ch1Delay`). Opens at ch0.
+  const openSlowBook = async (ch1Delay = 400) => {
     paginator = document.createElement('foliate-paginator') as Renderer;
     Object.assign(paginator.style, {
       width: '800px',
@@ -77,10 +77,10 @@ describe('Paginator turn during fill', () => {
     });
     paginator.setAttribute('max-column-count', '1');
     document.body.appendChild(paginator);
-    const slow = (section: ReturnType<typeof makeColumns>) => ({
+    const slow = (section: ReturnType<typeof makeColumns>, delay = 400) => ({
       ...section,
       load: async () => {
-        await wait(400);
+        await wait(delay);
         return section.load();
       },
     });
@@ -88,7 +88,9 @@ describe('Paginator turn during fill', () => {
       dir: 'ltr',
       sections: [
         makeColumns('ch0', 8),
-        ...Array.from({ length: 6 }, (_, i) => slow(makeColumns(`ch${i + 1}`, 1))),
+        ...Array.from({ length: 6 }, (_, i) =>
+          slow(makeColumns(`ch${i + 1}`, 1), i ? 400 : ch1Delay),
+        ),
       ],
     } as unknown as Parameters<Renderer['open']>[0]);
     const book = { index: undefined as number | undefined, loaded: [] as number[] };
@@ -110,7 +112,7 @@ describe('Paginator turn during fill', () => {
   // (7 s on a Kindle).
   it('turns once the section it needs is loaded, not the ones after it', async () => {
     const book = await openSlowBook();
-    // Turning keeps the loads ahead held back: ch1 loads for the turn into it.
+    // ch1 loads while the pages turn.
     for (let turn = 0; turn < 8; turn++) await paginator.next();
     expect(book.index).toBe(1);
     expect(book.loaded).toEqual([1]);
@@ -125,7 +127,8 @@ describe('Paginator turn during fill', () => {
   // kept waiting after the last turn stopped: the load was held back again,
   // as for any page turn, until the taps stopped (13 s on a Kindle).
   it('loads at once for a turn that starts as the last waiting one ends', async () => {
-    const book = await openSlowBook();
+    // ch1 is still loading when the turns reach it.
+    const book = await openSlowBook(1500);
     for (let turn = 0; turn < 7; turn++) await paginator.next();
     expect(book.index).toBe(0);
     const tap = () => paginator.next(undefined, { discrete: true });
