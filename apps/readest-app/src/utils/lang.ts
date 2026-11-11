@@ -166,11 +166,12 @@ export const inferLangFromScript = (text: string, lang: string): string => {
 // Portuguese for a Chinese book. See issue #7435.
 // A URL ends at the first non-ASCII character, so prose written right after it
 // (`…/1.html，这是…`) is kept. The scheme length is capped so a long unbroken
-// word is scanned in linear time.
+// word is scanned in linear time. The hex run is delimited without a lookbehind,
+// which older WebKit can't parse (`pnpm check:lookbehind-regex`).
 const stripLanguageNoise = (text: string): string =>
   text
     .replace(/[a-z][a-z\d+.-]{0,31}:\/\/[!-~]+/gi, ' ')
-    .replace(/(?<![\da-f])[\da-f]{16,}(?![\da-f])/gi, ' ');
+    .replace(/(^|[^\da-f])[\da-f]{16,}(?![\da-f])/gi, '$1 ');
 
 export const detectLanguage = (content: string): string => {
   try {
