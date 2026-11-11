@@ -4,13 +4,18 @@ import { afterEach, describe, expect, test, vi } from 'vitest';
 
 import { clearBookProgress, setBookProgress, useBookProgress } from '@/store/readerProgressStore';
 import type { BookProgress } from '@/types/book';
+import type { TextSelection } from '@/utils/sel';
 
 // A page turn writes the book's progress. Annotator draws the new page's highlights and the sync
 // hooks that push the reading position follow it, but Annotator itself, with its popups and
 // toolbars, must not re-render on each turn.
 
 const h = vi.hoisted(() => ({
-  appService: { isAndroidApp: true, isMobile: true },
+  appService: {
+    isAndroidApp: true,
+    isMobile: true,
+    getCoverImageBlobUrl: () => new Promise<string>((resolve) => (h.cover = resolve)),
+  },
   config: {
     booknotes: [
       {
@@ -28,7 +33,7 @@ const h = vi.hoisted(() => ({
     viewSettings: {},
   },
   viewSettings: {
-    annotationToolbarItems: [] as string[],
+    annotationToolbarItems: ['quotecard'] as string[],
     noteExportConfig: {},
     copyToNotebook: false,
     rtl: false,
@@ -36,12 +41,18 @@ const h = vi.hoisted(() => ({
   },
   view: {
     addAnnotation: vi.fn(),
+    deselect: () => {},
+    getCFI: () => 'epubcfi(/6/4!/4/2,/1:0,/1:9)',
     addEventListener: () => {},
     removeEventListener: () => {},
     renderer: { getContents: () => [], addEventListener: () => {}, removeEventListener: () => {} },
   },
   renders: 0,
   followers: 0,
+  setSelection: null as null | ((selection: TextSelection) => void),
+  buttons: [] as { tooltipText: string; onClick: () => void }[],
+  quoteCard: null as null | { chapter?: string },
+  cover: null as null | ((url: string) => void),
 }));
 
 const settings = {
@@ -78,7 +89,10 @@ vi.mock('@/store/settingsStore', () => ({
 }));
 
 vi.mock('@/store/themeStore', () => ({
-  useThemeStore: () => ({ isDarkMode: false }),
+  useThemeStore: () => ({
+    isDarkMode: false,
+    themeCode: { bg: '#fff', fg: '#000', primary: '#00f' },
+  }),
 }));
 
 vi.mock('@/store/bookDataStore', () => {
@@ -171,8 +185,9 @@ vi.mock('@/app/reader/hooks/useRendererInputListeners', () => ({
 }));
 
 vi.mock('@/app/reader/hooks/useTextSelector', () => ({
-  useTextSelector: () => {
+  useTextSelector: (_key: string, _insets: unknown, setSelection: (s: TextSelection) => void) => {
     h.renders++;
+    h.setSelection = setSelection;
     return {
       isTextSelected: { current: false },
       isInstantAnnotating: { current: false },
@@ -200,6 +215,17 @@ vi.mock('@/app/reader/hooks/useTextSelector', () => ({
   },
 }));
 
+// happy-dom lays nothing out, so the real popup positioning bails on a zero rect
+// and the toolbar never renders. Feed it fixed anchor points instead.
+vi.mock('@/utils/sel', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/utils/sel')>();
+  return {
+    ...actual,
+    getPosition: () => ({ point: { x: 120, y: 200 }, dir: 'up' as const }),
+    getPopupPosition: () => ({ point: { x: 120, y: 140 }, dir: 'up' as const }),
+  };
+});
+
 vi.mock('@/services/transformService', () => ({
   transformContent: ({ content }: { content: string }) => Promise.resolve(content),
 }));
@@ -210,7 +236,18 @@ vi.mock('@/utils/clipboard', () => ({
 
 vi.mock('@/app/reader/components/annotator/AnnotationRangeEditor', () => ({ default: () => null }));
 vi.mock('@/app/reader/components/annotator/SelectionRangeEditor', () => ({ default: () => null }));
-vi.mock('@/app/reader/components/annotator/AnnotationPopup', () => ({ default: () => null }));
+vi.mock('@/app/reader/components/annotator/AnnotationPopup', () => ({
+  default: ({ buttons }: { buttons: typeof h.buttons }) => {
+    h.buttons = buttons;
+    return null;
+  },
+}));
+vi.mock('@/app/reader/components/annotator/QuoteCardDialog', () => ({
+  default: ({ content }: { content: { chapter?: string } }) => {
+    h.quoteCard = content;
+    return null;
+  },
+}));
 vi.mock('@/app/reader/components/annotator/DictionaryPopup', () => ({ default: () => null }));
 vi.mock('@/app/reader/components/annotator/DictionarySheet', () => ({ default: () => null }));
 vi.mock('@/app/reader/components/annotator/TranslatorPopup', () => ({ default: () => null }));
@@ -222,9 +259,14 @@ vi.mock('@/app/reader/components/annotator/ImportAnnotationsDialog', () => ({
 
 import Annotator from '@/app/reader/components/annotator/Annotator';
 
-const turnTo = (location: string, page: number) =>
+const turnTo = (location: string, page: number, sectionLabel = 'Chapter 2') =>
   act(() =>
-    setBookProgress('book-1', { location, page, sectionHref: 'ch2.xhtml' } as BookProgress),
+    setBookProgress('book-1', {
+      location,
+      page,
+      sectionHref: 'ch2.xhtml',
+      sectionLabel,
+    } as BookProgress),
   );
 
 describe('Annotator on a page turn', () => {
@@ -245,5 +287,37 @@ describe('Annotator on a page turn', () => {
     expect(h.view.addAnnotation).toHaveBeenCalledWith(expect.objectContaining({ id: 'a1' }));
     expect(h.followers).toBeGreaterThan(followers);
     expect(h.renders).toBe(renders);
+  });
+
+  test('makes a quote card with the chapter of its passage, though the page turns meanwhile', async () => {
+    turnTo('epubcfi(/6/4!/4,/2/1:0,/8/1:9)', 2, 'Chapter 2');
+    const gridCell = document.createElement('div');
+    gridCell.id = 'gridcell-book-1';
+    document.body.appendChild(gridCell);
+    render(<Annotator bookKey='book-1' contentInsets={{ top: 0, right: 0, bottom: 0, left: 0 }} />);
+    const doc = document.implementation.createHTMLDocument('page');
+    doc.body.innerHTML = '<p>a passage</p>';
+    const range = doc.createRange();
+    range.selectNodeContents(doc.body.firstChild!);
+    act(() =>
+      h.setSelection!({
+        key: 'book-1',
+        text: 'a passage',
+        page: 2,
+        range,
+        index: 2,
+        cfi: 'epubcfi(/6/4!/4/2,/1:0,/1:9)',
+      }),
+    );
+    const quote = h.buttons.find((b) => b.tooltipText === 'Quote Card');
+    expect(quote).toBeDefined();
+
+    act(() => quote!.onClick());
+    // the page turns into the next chapter while the card loads the cover
+    turnTo('epubcfi(/6/6!/4,/2/1:0,/8/1:9)', 3, 'Chapter 3');
+    await act(async () => h.cover!('blob:cover'));
+
+    expect(h.quoteCard?.chapter).toBe('Chapter 2');
+    gridCell.remove();
   });
 });
