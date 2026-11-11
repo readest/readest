@@ -1633,6 +1633,8 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
     // Cameras open the HTTPS form; App Links hand it to an installed app.
     const qrUrl = getSelectionLink('web') ?? undefined;
     const { book } = bookData;
+    // The passage's chapter, before the page can turn while the cover loads.
+    const chapter = getBookProgress(bookKey)?.sectionLabel;
     handleDismissPopupAndSelection();
     let coverUrl: string | undefined;
     try {
@@ -1646,7 +1648,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
         text,
         title: book?.title,
         author: book?.author,
-        chapter: getBookProgress(bookKey)?.sectionLabel,
+        chapter,
         date: new Date().toLocaleDateString(getLocale(), {
           year: 'numeric',
           month: 'short',
