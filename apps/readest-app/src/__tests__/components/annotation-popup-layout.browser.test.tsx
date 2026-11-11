@@ -462,6 +462,19 @@ describe('five-action toolbar', () => {
   });
 });
 
+// The row scrolls sideways when its buttons don't fit (all 11 tools need more
+// than the toolbar's 300px), but never up and down: the invisible daisyUI
+// tooltip tail under each button reaches the row's bottom edge, and in Safari
+// that let a wheel nudge the row by a pixel (#7434).
+describe('toolbar button row', () => {
+  it('scrolls sideways only', () => {
+    const { container } = renderPopup();
+    const row = container.querySelector<HTMLElement>('.selection-buttons')!;
+    expect(getComputedStyle(row).overflowX).toBe('auto');
+    expect(getComputedStyle(row).overflowY).toBe('hidden');
+  });
+});
+
 // A note opens as its own bordered card inside the toolbar's popup box. The
 // card must cover that box exactly: inset by the box's 1px border it left the
 // box's frame showing around it, and with the triangle below, the triangle's

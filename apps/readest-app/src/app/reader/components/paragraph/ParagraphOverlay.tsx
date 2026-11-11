@@ -541,8 +541,9 @@ const ParagraphOverlay: React.FC<ParagraphOverlayProps> = ({
       }
     };
 
-    window.addEventListener('wheel', handleWheel, { passive: false, capture: true });
-    return () => window.removeEventListener('wheel', handleWheel, true);
+    const overlay = containerRef.current;
+    overlay?.addEventListener('wheel', handleWheel, { passive: false });
+    return () => overlay?.removeEventListener('wheel', handleWheel);
   }, [isVisible, bookKey]);
 
   // Watch the document selection while the overlay is up (#6200). A settled
