@@ -228,6 +228,53 @@ describe('imageClassifier', () => {
       expect(cache.has('https://example.com/original.png')).toBe(false);
       expect(img.classList.contains('monochrome-diagram')).toBe(true);
     });
+
+    it('caches failed replacement source without reattaching pending listeners', async () => {
+      const cache = getDiagramClassificationCache();
+      document.body.innerHTML = `
+        <p><img id="failed-replaced-img" src="https://example.com/original-before-error.png" /></p>
+      `;
+      classifyAndTagStandaloneDiagrams(document, true, false);
+      await new Promise((resolve) => setTimeout(resolve, 20));
+
+      const img = document.getElementById('failed-replaced-img') as HTMLImageElement;
+      expect(img.getAttribute('data-diagram-pending')).toBe('true');
+
+      img.src = 'https://example.com/broken-replacement.png';
+      // In DOM spec (and happy-dom), a failed replacement image has complete=true and naturalWidth=0.
+      img.dispatchEvent(new Event('error'));
+
+      expect(img.hasAttribute('data-diagram-pending')).toBe(false);
+      expect(cache.has('https://example.com/original-before-error.png')).toBe(false);
+      expect(cache.get('https://example.com/broken-replacement.png')).toBe(false);
+      expect(img.classList.contains('monochrome-diagram')).toBe(false);
+    });
+
+    it('removes tags on switch to light mode and ignores stale pending callbacks', async () => {
+      const cache = getDiagramClassificationCache();
+      cache.set('https://example.com/cached-diag.png', true);
+
+      document.body.innerHTML = `
+        <p><img id="cached-img" src="https://example.com/cached-diag.png" /></p>
+        <p><img id="raced-img" src="https://example.com/uncached-later.png" /></p>
+      `;
+      classifyAndTagStandaloneDiagrams(document, true, false);
+      await new Promise((resolve) => setTimeout(resolve, 20));
+
+      const cachedImg = document.getElementById('cached-img') as HTMLImageElement;
+      const racedImg = document.getElementById('raced-img') as HTMLImageElement;
+      expect(cachedImg.classList.contains('monochrome-diagram')).toBe(true);
+      expect(racedImg.getAttribute('data-diagram-pending')).toBe('true');
+
+      // Switch to light mode before pending image finishes loading
+      classifyAndTagStandaloneDiagrams(document, false, false);
+      expect(cachedImg.classList.contains('monochrome-diagram')).toBe(false);
+
+      cache.set('https://example.com/uncached-later.png', true);
+      racedImg.dispatchEvent(new Event('load'));
+      expect(racedImg.hasAttribute('data-diagram-pending')).toBe(false);
+      expect(racedImg.classList.contains('monochrome-diagram')).toBe(false);
+    });
   });
 
   describe('CSS styling for monochrome diagrams in dark mode', () => {
@@ -239,11 +286,25 @@ describe('imageClassifier', () => {
       expect(css).toMatch(/img\.monochrome-diagram\s*\{[^}]*mix-blend-mode:\s*screen;/);
     });
 
-    it('does not apply invert filter to img.monochrome-diagram in light mode', () => {
-      const css = getStyles(makeViewSettings(), lightTheme);
-      expect(css).not.toMatch(
-        /img\.monochrome-diagram\s*\{[^}]*filter:\s*invert\(1\)\s*hue-rotate\(180deg\);/,
+    it('keeps background transparent over a background texture when overrideColor is enabled', () => {
+      const css = getStyles(
+        makeViewSettings({ overrideColor: true, backgroundTextureId: 'paper' }),
+        darkTheme,
       );
+      expect(css).toMatch(
+        /\*:has\(>\s*img\.monochrome-diagram\):not\(body\)\s*\{[^}]*background-color:\s*transparent;/,
+      );
+    });
+
+    it('keeps mix-blend-mode: screen without overriding invert filter when invertImgColorInDark is true', () => {
+      const css = getStyles(makeViewSettings({ invertImgColorInDark: true }), darkTheme);
+      expect(css).toMatch(/img\.monochrome-diagram\s*\{[^}]*mix-blend-mode:\s*screen;/);
+      expect(css).not.toMatch(/img\.monochrome-diagram\s*\{[^}]*filter:/);
+    });
+
+    it('omits monochrome-diagram CSS rules completely in light mode', () => {
+      const css = getStyles(makeViewSettings(), lightTheme);
+      expect(css).not.toContain('monochrome-diagram');
     });
   });
 });

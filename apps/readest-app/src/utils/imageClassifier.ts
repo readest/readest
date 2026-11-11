@@ -38,6 +38,9 @@ const getSharedContext = ():
 // In-memory cache mapping image src URL to classification result (boolean).
 // Avoids touching canvas repeatedly on page turns.
 const classificationCache = new Map<string, boolean>();
+// Tracks whether dark-mode classification is currently enabled for each document
+// so pending idle/load callbacks skip tagging after a switch to light mode or FXL.
+const activeClassifierDocs = new WeakMap<Document, boolean>();
 
 export const getDiagramClassificationCache = () => classificationCache;
 export const clearDiagramClassificationCache = () => classificationCache.clear();
@@ -154,8 +157,16 @@ export const classifyAndTagStandaloneDiagrams = (
   isDarkMode: boolean,
   isFixedLayout = false,
 ) => {
-  // Never run in light mode or for fixed-layout manga / comics
-  if (!isDarkMode || isFixedLayout) return;
+  const enabled = isDarkMode && !isFixedLayout;
+  activeClassifierDocs.set(document, enabled);
+
+  // Never run in light mode or for fixed-layout / comic / manga books; clear any stale tags.
+  if (!enabled) {
+    document.querySelectorAll('img.monochrome-diagram').forEach((img) => {
+      img.classList.remove('monochrome-diagram');
+    });
+    return;
+  }
 
   const win = document.defaultView ?? window;
 
@@ -223,6 +234,7 @@ export const classifyAndTagStandaloneDiagrams = (
       };
       const onLoad = () => {
         cleanup();
+        if (!activeClassifierDocs.get(document)) return;
         const currentSrc = img.currentSrc || img.src;
         if (currentSrc !== src) {
           processUncachedImage(img);
@@ -236,7 +248,14 @@ export const classifyAndTagStandaloneDiagrams = (
         cleanup();
         const currentSrc = img.currentSrc || img.src;
         if (currentSrc !== src) {
-          processUncachedImage(img);
+          if (!currentSrc) return;
+          // If the replacement source finished failing (complete with zero width), cache
+          // its failure instead of reattaching listeners for an event that will never fire.
+          if (img.complete && img.naturalWidth === 0) {
+            classificationCache.set(currentSrc, false);
+          } else if (activeClassifierDocs.get(document)) {
+            processUncachedImage(img);
+          }
           return;
         }
         classificationCache.set(src, false);
@@ -252,6 +271,7 @@ export const classifyAndTagStandaloneDiagrams = (
       : (cb: () => void) => win.setTimeout(cb, 1);
 
   schedule(() => {
+    if (!activeClassifierDocs.get(document)) return;
     for (const img of uncached) {
       processUncachedImage(img);
     }

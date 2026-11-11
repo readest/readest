@@ -441,16 +441,20 @@ const getColorStyles = (
     p img.has-text-siblings, span img.has-text-siblings, sup img.has-text-siblings {
       mix-blend-mode: ${isDarkMode ? 'screen' : 'multiply'};
     }
-    *:has(> img.monochrome-diagram):not(body) {
-      ${overrideColor ? `background-color: ${bg};` : ''}
+    ${
+      isDarkMode
+        ? `*:has(> img.monochrome-diagram):not(body) {
+      ${overrideColor ? `background-color: ${overrideBg};` : ''}
     }
     img.monochrome-diagram {
       ${
-        isDarkMode && !invertImgColorInDark
+        !invertImgColorInDark
           ? `filter: ${transparentImageBackground ? `${WHITE_TRANSPARENCY_FILTER} ` : ''}invert(1) hue-rotate(180deg);`
           : ''
       }
-      mix-blend-mode: ${isDarkMode ? 'screen' : 'multiply'};
+      mix-blend-mode: screen;
+    }`
+        : ''
     }
     table:has(> colgroup) {
       table-layout: fixed;
