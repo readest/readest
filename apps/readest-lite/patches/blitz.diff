@@ -1797,6 +1797,57 @@ diff -ruN blitz/packages/blitz-dom/src/layout/inline/build.rs blitz/packages/bli
 diff -ruN blitz/packages/blitz-dom/src/layout/inline/layout.rs blitz/packages/blitz-dom/src/layout/inline/layout.rs
 --- blitz/packages/blitz-dom/src/layout/inline/layout.rs
 +++ blitz/packages/blitz-dom/src/layout/inline/layout.rs
+@@ -302,37 +302,37 @@
+         }
+     }
+ 
+-    /// The out-of-flow positions for which an inline span between the inline box `box_id` and its
+-    /// inline root `root_id` is a containing block (as `SPAN_*_CB` flags)
+-    fn inline_span_cb_flags(&self, root_id: NodeId, box_id: NodeId) -> StyleFlags {
++    /// The inline span between the out-of-flow box `box_id` (with `position`) and its inline root
++    /// `root_id` that is the box's containing block (the nearest one claiming it), with its claims.
++    fn inline_span_containing_block(
++        &self,
++        root_id: NodeId,
++        box_id: NodeId,
++        position: taffy::Position,
++    ) -> Option<(NodeId, taffy::ContainingBlockClaims)> {
+         let root = &self.nodes[root_id];
+         // The spans of an anonymous inline root are descendants of its parent
+         let root_parent = root.is_anonymous().then_some(root.parent).flatten();
+ 
+-        let mut flags = StyleFlags::empty();
+         let mut current = self.nodes[box_id].parent;
+         while let Some(id) = current {
+             if id == root_id || Some(id) == root_parent {
+-                return flags;
++                return None;
+             }
+             let ancestor = &self.nodes[id];
+             if let Some(style) = ancestor.primary_styles() {
+                 let display = style.clone_display();
++                let claims = stylo_taffy::convert::inline_containing_block_claims(&style);
+                 if display.outside() == DisplayOutside::Inline
+                     && display.inside() == DisplayInside::Flow
++                    && claims.for_position(position)
+                 {
+-                    let claims = stylo_taffy::convert::inline_containing_block_claims(&style);
+-                    if claims.absolute {
+-                        flags |= StyleFlags::SPAN_ABSOLUTE_CB;
+-                    }
+-                    if claims.fixed {
+-                        flags |= StyleFlags::SPAN_FIXED_CB;
+-                    }
++                    return Some((id, claims));
+                 }
+             }
+             current = ancestor.parent;
+         }
+-        StyleFlags::empty()
++        None
+     }
+ 
+     fn compute_inline_layout_inner(
 @@ -1030,6 +1030,23 @@
              }
          }
@@ -1821,6 +1872,119 @@ diff -ruN blitz/packages/blitz-dom/src/layout/inline/layout.rs blitz/packages/bl
          #[cfg(feature = "floats")]
          {
              if is_bfc_root {
+@@ -1086,7 +1103,6 @@
+         // Store sizes and positions of inline boxes. Walking a line's items builds every
+         // glyph run on it, so lines are only walked when there are boxes to find.
+         let mut ibox_order: u32 = 0;
+-        let mut span_cb_flags = StyleFlags::empty();
+         let has_inline_boxes = inline_layout.layout.inline_boxes().len() > 0;
+         let lines = has_inline_boxes.then(|| inline_layout.layout.lines());
+         for line in lines.into_iter().flatten() {
+@@ -1094,10 +1110,6 @@
+                 if let parley::layout::PositionedLayoutItem::InlineBox(ibox) = item {
+                     let order = ibox_order;
+                     ibox_order += 1;
+-                    if inputs.run_mode == RunMode::PerformLayout {
+-                        span_cb_flags |=
+-                            self.inline_span_cb_flags(node_id, NodeId::from_u64(ibox.id));
+-                    }
+                     let node = &self.nodes[NodeId::from_u64(ibox.id)];
+                     let style = self.child_layout_style(node);
+                     let padding = style
+@@ -1283,8 +1295,82 @@
+             .flatten()
+             .map(line_baseline);
+ 
++        // An out-of-flow box whose containing block is an inline span here (a positioned link)
++        // is laid out against that span's box, the bounding box of its fragments (CSS 2 §10.1),
++        // not this root's. The span has no layout node to own the box, so this root keeps it as
++        // a hoisted child, as it does the boxes it is the containing block of.
++        let mut span_overflow: Option<taffy::Rect<f32>> = None;
+         if inputs.run_mode == RunMode::PerformLayout {
+-            inline_layout.span_cb_flags = span_cb_flags;
++            let mut spans: Vec<(NodeId, taffy::ContainingBlockClaims, Vec<OofCandidate>)> =
++                Vec::new();
++            let mut rest = OofCandidates::new();
++            for &candidate in oof_candidates.iter() {
++                let box_id = NodeId::from_u64(u64::from(candidate.node));
++                match self.inline_span_containing_block(node_id, box_id, candidate.position) {
++                    Some((span, claims)) => match spans.iter_mut().find(|s| s.0 == span) {
++                        Some(s) => s.2.push(candidate),
++                        None => spans.push((span, claims, vec![candidate])),
++                    },
++                    None => rest.push(candidate),
++                }
++            }
++            let origin = Point {
++                x: container_pb.left,
++                y: line_box_top,
++            };
++            inline_layout.span_hoisted.clear();
++            for (span, claims, candidates) in spans {
++                let area = crate::node::inline_fragments(
++                    &self.nodes,
++                    &inline_layout.layout,
++                    node_id,
++                    span,
++                    origin,
++                )
++                .reduce(|a, b| taffy::Rect {
++                    left: a.left.min(b.left),
++                    top: a.top.min(b.top),
++                    right: a.right.max(b.right),
++                    bottom: a.bottom.max(b.bottom),
++                });
++                // A span holding a box has a fragment; without one the boxes go on up.
++                let Some(area) = area else {
++                    candidates.into_iter().for_each(|c| rest.push(c));
++                    continue;
++                };
++                let direction = self.child_layout_style(&self.nodes[span]).direction();
++                let result = taffy::compute_oof_layout_for_area(
++                    self,
++                    taffy::NodeId::from(node_id.as_u64()),
++                    &candidates,
++                    OofPositioningArea {
++                        size: Size {
++                            width: area.right - area.left,
++                            height: area.bottom - area.top,
++                        },
++                        offset: Point {
++                            x: area.left,
++                            y: area.top,
++                        },
++                    },
++                    direction,
++                    claims,
++                );
++                inline_layout.span_hoisted.extend(result.hoisted);
++                let mut unclaimed = result.unclaimed;
++                rest.append(&mut unclaimed);
++                // Relative to the area; this root's overflow is relative to its padding box.
++                let r = result.scrollable_overflow_rect;
++                let (dx, dy) = (area.left - border.left, area.top - border.top);
++                let r = taffy::Rect {
++                    left: r.left + dx,
++                    right: r.right + dx,
++                    top: r.top + dy,
++                    bottom: r.bottom + dy,
++                };
++                span_overflow = Some(span_overflow.map_or(r, |o| o.union(r)));
++            }
++            oof_candidates = rest;
+         }
+ 
+         // Put layout back
+@@ -1325,6 +1411,9 @@
+                     rect.left = if is_rtl { rect.left } else { 0.0 };
+                     rect.top = 0.0;
+                 }
++                if let Some(span_overflow) = span_overflow {
++                    rect = rect.union(span_overflow);
++                }
+                 taffy::ScrollableOverflow::new(
+                     rect,
+                     taffy::Point {
 diff -ruN blitz/packages/blitz-dom/src/layout/inline/mod.rs blitz/packages/blitz-dom/src/layout/inline/mod.rs
 --- blitz/packages/blitz-dom/src/layout/inline/mod.rs
 +++ blitz/packages/blitz-dom/src/layout/inline/mod.rs
@@ -1848,7 +2012,24 @@ diff -ruN blitz/packages/blitz-dom/src/layout/mod.rs blitz/packages/blitz-dom/sr
  pub(crate) mod table;
  pub(crate) mod text_transform;
  #[cfg(feature = "writing-mode")]
-@@ -317,11 +319,13 @@
+@@ -194,6 +196,16 @@
+         let mut output = self.dispatch_child_layout(node_id, inputs, block_ctx);
+         if inputs.run_mode == RunMode::PerformLayout {
+             compute_oof_layout(self, node_id, &mut output);
++            // Boxes inline layout laid out against an inline span's box stay hoisted here too
++            let span_hoisted = self
++                .node_from_id(node_id)
++                .element_data()
++                .and_then(|el| el.inline_layout_data.as_ref())
++                .map(|text| text.span_hoisted.clone())
++                .unwrap_or_default();
++            if !span_hoisted.is_empty() {
++                self.add_hoisted_children(node_id, &span_hoisted);
++            }
+         }
+         output
+     }
+@@ -317,11 +329,13 @@
                              .downcast_element_mut()
                              .and_then(|el| el.text_input_data_mut())
                          {
@@ -2343,7 +2524,17 @@ diff -ruN blitz/packages/blitz-dom/src/node/node.rs blitz/packages/blitz-dom/src
  }
  
  impl Node {
-@@ -1421,6 +1427,66 @@
+@@ -1175,9 +1181,6 @@
+             if el.is_button_input() {
+                 flags |= stylo_taffy::StyleFlags::IS_BUTTON_INPUT;
+             }
+-            if let Some(inline_layout) = el.inline_layout_data.as_deref() {
+-                flags |= inline_layout.span_cb_flags;
+-            }
+         }
+ 
+         #[cfg(feature = "writing-mode")]
+@@ -1421,6 +1424,66 @@
          self.hit_inner(x, y, scale, &mut None)
      }
  
@@ -2410,7 +2601,7 @@ diff -ruN blitz/packages/blitz-dom/src/node/node.rs blitz/packages/blitz-dom/src
      /// [`hit`](Self::hit), also resolving the innermost overlay scrollbar
      /// thumb under the point into `scrollbar` during the same descent (so
      /// thumb hit-testing shares the exact coordinate handling — transforms
-@@ -1460,6 +1526,19 @@
+@@ -1460,6 +1523,19 @@
              y = (p.y / scale) as f32;
          }
  
@@ -2430,20 +2621,72 @@ diff -ruN blitz/packages/blitz-dom/src/node/node.rs blitz/packages/blitz-dom/src
          let size = self.final_layout().size;
          let matches_self = !(x < self.scroll_offset().x as f32
              || x > size.width + self.scroll_offset().x as f32
-@@ -1840,8 +1919,8 @@
+@@ -1787,103 +1863,24 @@
+     ///
+     /// Returns `None` for nodes that have their own layout box.
+     pub fn inline_fragment_boxes(&self) -> Option<impl Iterator<Item = taffy::Rect<f32>> + '_> {
+-        use parley::PositionedLayoutItem;
+-
+         if !self.is_non_atomic_inline() {
+             return None;
+         }
  
-         // One rect per line box: the union of all of the target's fragments on that line
-         Some(layout.lines().filter_map(move |line| {
+         let inline_root = self.inline_root_ancestor()?;
+         let inline_layout = inline_root.element_data()?.inline_layout_data.as_ref()?;
+-        let layout = &inline_layout.layout;
+-        let scale = layout.scale();
+-
+-        // Walk up the DOM parent chain from `id` to check whether it is (or is
+-        // inside) the target node, stopping at the inline root.
+-        let inline_root_id = inline_root.id;
+-        let is_in_target = move |mut id: NodeId| -> bool {
+-            loop {
+-                if id == self.id {
+-                    return true;
+-                }
+-                if id == inline_root_id {
+-                    return false;
+-                }
+-                match self.with(id).parent {
+-                    Some(parent) => id = parent,
+-                    None => return false,
+-                }
+-            }
+-        };
+-
+         let root_layout = inline_root.unrounded_layout();
+         let content_box_inset = root_layout.padding + root_layout.border;
+-        let origin_x = content_box_inset.left;
+-        let origin_y = content_box_inset.top + inline_layout.block_offset;
+-
+-        fn union(acc: &mut Option<taffy::Rect<f32>>, left: f32, top: f32, right: f32, bottom: f32) {
+-            *acc = Some(match *acc {
+-                Some(rect) => taffy::Rect {
+-                    left: rect.left.min(left),
+-                    top: rect.top.min(top),
+-                    right: rect.right.max(right),
+-                    bottom: rect.bottom.max(bottom),
+-                },
+-                None => taffy::Rect {
+-                    left,
+-                    top,
+-                    right,
+-                    bottom,
+-                },
+-            });
+-        }
+-
+-        // One rect per line box: the union of all of the target's fragments on that line
+-        Some(layout.lines().filter_map(move |line| {
 -            let line_metrics = line.metrics();
-             let mut line_rect: Option<taffy::Rect<f32>> = None;
-+            let (lo, hi) = crate::util::line_extent(layout, &line);
- 
-             for item in line.items() {
-                 match item {
-@@ -1849,15 +1928,13 @@
-                         if !is_in_target(glyph_run.style().brush.id) {
-                             continue;
-                         }
+-            let mut line_rect: Option<taffy::Rect<f32>> = None;
+-
+-            for item in line.items() {
+-                match item {
+-                    PositionedLayoutItem::GlyphRun(glyph_run) => {
+-                        if !is_in_target(glyph_run.style().brush.id) {
+-                            continue;
+-                        }
 -                        let x0 = glyph_run.offset();
 -                        let x1 = x0 + glyph_run.advance();
 -                        // Use the line box's block extent rather than the
@@ -2453,17 +2696,46 @@ diff -ruN blitz/packages/blitz-dom/src/node/node.rs blitz/packages/blitz-dom/src
 -                        // geometry used for text selection highlights.
 -                        let y0 = line_metrics.block_min_coord;
 -                        let y1 = line_metrics.block_max_coord;
-+                        let x0 = glyph_run.offset().clamp(lo, hi);
-+                        let x1 = (glyph_run.offset() + glyph_run.advance()).clamp(lo, hi);
-+                        // A run wholly in the space removed at the line's end has no box.
-+                        if x1 == x0 && glyph_run.advance() > 0.0 {
-+                            continue;
-+                        }
-+                        let (y0, y1) = crate::util::content_area(&glyph_run);
-                         union(&mut line_rect, x0, y0, x1, y1);
-                     }
-                     PositionedLayoutItem::InlineBox(inline_box) => {
-@@ -1962,6 +2039,15 @@
+-                        union(&mut line_rect, x0, y0, x1, y1);
+-                    }
+-                    PositionedLayoutItem::InlineBox(inline_box) => {
+-                        if !is_in_target(NodeId::from_u64(inline_box.id)) {
+-                            continue;
+-                        }
+-                        let x0 = inline_box.x;
+-                        let y0 = inline_box.y;
+-                        union(
+-                            &mut line_rect,
+-                            x0,
+-                            y0,
+-                            x0 + inline_box.width,
+-                            y0 + inline_box.height,
+-                        );
+-                    }
+-                }
+-            }
+-
+-            line_rect.map(|rect| taffy::Rect {
+-                left: origin_x + rect.left / scale,
+-                top: origin_y + rect.top / scale,
+-                right: origin_x + rect.right / scale,
+-                bottom: origin_y + rect.bottom / scale,
+-            })
+-        }))
++        Some(inline_fragments(
++            self.tree(),
++            &inline_layout.layout,
++            inline_root.id,
++            self.id,
++            taffy::Point {
++                x: content_box_inset.left,
++                y: content_box_inset.top + inline_layout.block_offset,
++            },
++        ))
+     }
+ 
+     /// CSSOM View's `offsetLeft`/`offsetTop`: the offset of this node's border box from the
+@@ -1962,6 +1959,15 @@
  
      fn cssom_scroll_size(&self) -> taffy::Size<f32> {
          let layout = self.final_layout();
@@ -2479,6 +2751,104 @@ diff -ruN blitz/packages/blitz-dom/src/node/node.rs blitz/packages/blitz-dom/src
          if self.primary_styles().is_none() {
              return taffy::Size {
                  width: self.client_width() + layout.scroll_width(),
+@@ -2211,3 +2217,97 @@
+         );
+     }
+ }
++
++/// The per-line-box fragment boxes of the non-atomic inline element `target` in `layout`, the
++/// text layout of its inline root `root_id`, in CSS pixels from `origin`: where that root's line
++/// boxes start, relative to its border box.
++pub(crate) fn inline_fragments<'a>(
++    tree: &'a crate::NodeTree,
++    layout: &'a parley::Layout<crate::node::TextBrush>,
++    root_id: NodeId,
++    target: NodeId,
++    origin: taffy::Point<f32>,
++) -> impl Iterator<Item = taffy::Rect<f32>> + 'a {
++    use parley::PositionedLayoutItem;
++
++    let scale = layout.scale();
++
++    // Walk up the DOM parent chain from `id` to check whether it is (or is
++    // inside) the target node, stopping at the inline root.
++    let is_in_target = move |mut id: NodeId| -> bool {
++        loop {
++            if id == target {
++                return true;
++            }
++            if id == root_id {
++                return false;
++            }
++            match tree.get(id).and_then(|node| node.parent) {
++                Some(parent) => id = parent,
++                None => return false,
++            }
++        }
++    };
++
++    fn union(acc: &mut Option<taffy::Rect<f32>>, left: f32, top: f32, right: f32, bottom: f32) {
++        *acc = Some(match *acc {
++            Some(rect) => taffy::Rect {
++                left: rect.left.min(left),
++                top: rect.top.min(top),
++                right: rect.right.max(right),
++                bottom: rect.bottom.max(bottom),
++            },
++            None => taffy::Rect {
++                left,
++                top,
++                right,
++                bottom,
++            },
++        });
++    }
++
++    // One rect per line box: the union of all of the target's fragments on that line
++    layout.lines().filter_map(move |line| {
++        let mut line_rect: Option<taffy::Rect<f32>> = None;
++        let (lo, hi) = crate::util::line_extent(layout, &line);
++
++        for item in line.items() {
++            match item {
++                PositionedLayoutItem::GlyphRun(glyph_run) => {
++                    if !is_in_target(glyph_run.style().brush.id) {
++                        continue;
++                    }
++                    let x0 = glyph_run.offset().clamp(lo, hi);
++                    let x1 = (glyph_run.offset() + glyph_run.advance()).clamp(lo, hi);
++                    // A run wholly in the space removed at the line's end has no box.
++                    if x1 == x0 && glyph_run.advance() > 0.0 {
++                        continue;
++                    }
++                    let (y0, y1) = crate::util::content_area(&glyph_run);
++                    union(&mut line_rect, x0, y0, x1, y1);
++                }
++                PositionedLayoutItem::InlineBox(inline_box) => {
++                    if !is_in_target(NodeId::from_u64(inline_box.id)) {
++                        continue;
++                    }
++                    let x0 = inline_box.x;
++                    let y0 = inline_box.y;
++                    union(
++                        &mut line_rect,
++                        x0,
++                        y0,
++                        x0 + inline_box.width,
++                        y0 + inline_box.height,
++                    );
++                }
++            }
++        }
++
++        line_rect.map(|rect| taffy::Rect {
++            left: origin.x + rect.left / scale,
++            top: origin.y + rect.top / scale,
++            right: origin.x + rect.right / scale,
++            bottom: origin.y + rect.bottom / scale,
++        })
++    })
++}
 diff -ruN blitz/packages/blitz-dom/src/node/serialize.rs blitz/packages/blitz-dom/src/node/serialize.rs
 --- blitz/packages/blitz-dom/src/node/serialize.rs
 +++ blitz/packages/blitz-dom/src/node/serialize.rs
@@ -2571,7 +2941,19 @@ diff -ruN blitz/packages/blitz-dom/src/node/svg.rs blitz/packages/blitz-dom/src/
 diff -ruN blitz/packages/blitz-dom/src/node/text.rs blitz/packages/blitz-dom/src/node/text.rs
 --- blitz/packages/blitz-dom/src/node/text.rs
 +++ blitz/packages/blitz-dom/src/node/text.rs
-@@ -37,6 +37,10 @@
+@@ -29,14 +29,18 @@
+     /// Block-axis offset (in CSS px) of the line boxes from the top of the container's content
+     /// box, as applied by `align-content`.
+     pub block_offset: f32,
+-    /// The out-of-flow positions for which some inline span with an inline box below it is a
+-    /// containing block (as `SPAN_*_CB` flags). The inline root claims those boxes in its place.
+-    /// Set by each `RunMode::PerformLayout` run of inline layout.
+-    pub span_cb_flags: stylo_taffy::StyleFlags,
++    /// The out-of-flow boxes whose containing block is an inline span laid out here, laid out
++    /// against that span's box by inline layout. They are the inline root's hoisted children
++    /// with those it is the containing block of. Set by each `RunMode::PerformLayout` run.
++    pub span_hoisted: Vec<taffy::NodeId>,
+     /// Offset (in physical CSS px) of the unrounded content box origin from the rounded one in
      /// `final_layout`. Paint draws text from the unrounded origin so that it keeps its sub-pixel
      /// position while box edges stay snapped. Set by the `writing-mode` layout pass; zero otherwise.
      pub content_box_subpixel_offset: taffy::Point<f32>,
@@ -2983,7 +3365,7 @@ diff -ruN blitz/packages/blitz-dom/src/util.rs blitz/packages/blitz-dom/src/util
 diff -ruN blitz/packages/blitz-html/src/html_document.rs blitz/packages/blitz-html/src/html_document.rs
 --- blitz/packages/blitz-html/src/html_document.rs
 +++ blitz/packages/blitz-html/src/html_document.rs
-@@ -68,3 +68,747 @@
+@@ -68,3 +68,788 @@
          self.into()
      }
  }
@@ -3264,6 +3646,47 @@ diff -ruN blitz/packages/blitz-html/src/html_document.rs blitz/packages/blitz-ht
 +        // A range of only that space has no rects, as in browsers: foliate-js bisects a page's
 +        // visible range with them, and ends it before the space.
 +        assert_eq!(doc.text_rects(text, 3, 4), [], "the range \" \"");
++    }
++
++    #[test]
++    fn an_absolute_box_in_a_positioned_inline_is_sized_from_that_inline() {
++        // Readest enlarges a link's hit area with `a::before { position: absolute; inset:
++        // -10px }` on a `position: relative` link. The link is the box's containing block
++        // (CSS 2 §10.1), so the area is the link's box grown by 10px, wherever the link sits:
++        // alone in a block (a table of contents entry) or in a paragraph's line. The rest of
++        // the link's line is not the link's.
++        let config = DocumentConfig {
++            html_parser_provider: Some(Arc::new(HtmlProvider)),
++            viewport: Some(Viewport::new(800, 600, 1.0, ColorScheme::Light)),
++            ..Default::default()
++        };
++        let mut doc = HtmlDocument::from_html(
++            "<html><head><style>a { position: relative } \
++             a::before { content: ''; position: absolute; inset: -10px }</style></head>\
++             <body style='margin:0'><div id='d' style='margin:20px 0 0 30px;width:400px;font-size:20px'>\
++             <a id='a' href='#'>Chapter 3</a></div>\
++             <p style='margin:0;width:400px;font-size:20px'>some text <a id='f' href='#'>*</a> \
++             more text that runs onto a second line of this paragraph</p></body></html>",
++            config,
++        );
++        doc.resolve(0.0);
++        for id in ["a", "f"] {
++            let a = doc.get_element_by_id(id).unwrap();
++            let link = doc.get_client_bounding_rect(a).unwrap();
++            let before = doc.get_node(a).unwrap().before().unwrap();
++            let area = doc.get_client_bounding_rect(before).unwrap();
++            let want = (link.x - 10.0, link.y - 10.0, link.width + 20.0, link.height + 20.0);
++            let got = (area.x, area.y, area.width, area.height);
++            assert!(
++                [got.0 - want.0, got.1 - want.1, got.2 - want.2, got.3 - want.3]
++                    .iter()
++                    .all(|d| d.abs() < 0.02),
++                "{id}: hit area {got:?}, the link {link:?} grown by 10px is {want:?}"
++            );
++        }
++        let link = doc.get_client_bounding_rect(doc.get_element_by_id("a").unwrap()).unwrap();
++        let (x, y) = ((link.x + link.width) as f32 + 100.0, link.y as f32 + 5.0);
++        assert_eq!(doc.element_from_point(x, y), doc.get_element_by_id("d"), "at {x}, {y}");
 +    }
 +}
 +
@@ -4342,3 +4765,31 @@ diff -ruN blitz/packages/stylo_taffy/src/convert.rs blitz/packages/stylo_taffy/s
              }
              stylo::UnpackedLengthPercentage::Percentage(percentage) => {
                  taffy::Dimension::fit_content_percent(percentage.0)
+diff -ruN blitz/packages/stylo_taffy/src/wrapper.rs blitz/packages/stylo_taffy/src/wrapper.rs
+--- blitz/packages/stylo_taffy/src/wrapper.rs
++++ blitz/packages/stylo_taffy/src/wrapper.rs
+@@ -24,12 +24,6 @@
+     pub struct StyleFlags: u8 {
+         /// Whether the node is a replaced element (e.g. an image or form control)
+         const IS_REPLACED = 1 << 0;
+-        /// Whether an inline span laid out by the node (an inline root) is a containing block
+-        /// for `position: absolute` boxes
+-        const SPAN_ABSOLUTE_CB = 1 << 1;
+-        /// Whether an inline span laid out by the node (an inline root) is a containing block
+-        /// for `position: fixed` boxes
+-        const SPAN_FIXED_CB = 1 << 2;
+         /// Whether the node is a button element
+         const IS_BUTTON = 1 << 3;
+         /// Whether the node is a button-type input whose label always uses block layout
+@@ -236,10 +230,7 @@
+ 
+     #[inline]
+     fn is_containing_block(&self) -> taffy::ContainingBlockClaims {
+-        let mut claims = convert::containing_block_claims(&self.style);
+-        claims.absolute |= self.flags.contains(StyleFlags::SPAN_ABSOLUTE_CB);
+-        claims.fixed |= self.flags.contains(StyleFlags::SPAN_FIXED_CB);
+-        claims
++        convert::containing_block_claims(&self.style)
+     }
+ 
+     #[inline]
