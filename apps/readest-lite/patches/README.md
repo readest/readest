@@ -98,6 +98,15 @@
   is a 0x0 box at the root's content start; it had no rect. Range rects walk each
   shaped run's clusters once: spans that change only the brush share one shaped run, which was
   walked again from every span's offset, shifting the rects of text after a span.
+- `blitz-dom` layout/inline/layout, layout, node, node/text; `stylo_taffy` wrapper: an
+  absolutely positioned box whose containing block is an inline span (a `position: relative`
+  link) is laid out against that span's box, the bounding box of its fragments (CSS 2 §10.1),
+  by Taffy's `compute_oof_layout_for_area`. Upstream's inline root claimed the box itself
+  (`SPAN_*_CB` flags, removed) and laid it out against its own padding box, so Readest's link
+  hit area (`a::before { inset: -10px }`) covered the whole line of a link alone in its block:
+  a tap anywhere on a table of contents entry, page-turn zones included, followed the link. The
+  root keeps the box as a hoisted child (`TextLayout::span_hoisted`), so paint and hit testing
+  find it where they did.
 - `blitz-dom` layout/construct, layout/inline/build, document, node, stylo, traversal, damage,
   resolve: `::first-letter` (CSS Pseudo-Elements 4 §2.3). A block container whose own inline
   content starts with text gets an anonymous box after `::before` holding the first letter with
