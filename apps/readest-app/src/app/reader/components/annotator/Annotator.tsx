@@ -84,7 +84,11 @@ import {
   removeEmptyAnnotationPlaceholder,
   resolveAnnotationClick,
 } from '../../utils/annotatorUtil';
-import { buildAnnotationIndex, selectLocationAnnotations } from '../../utils/annotationIndex';
+import {
+  type AnnotationIndex,
+  buildAnnotationIndex,
+  selectLocationAnnotations,
+} from '../../utils/annotationIndex';
 import { findContentAtPoint } from '../../utils/crossDocSelection';
 import {
   expandAllRenderedSections,
@@ -142,6 +146,58 @@ const isSameRange = (a: Range, b: Range) =>
   a.endContainer === b.endContainer &&
   a.endOffset === b.endOffset;
 
+// A page turn writes the book's progress and location. What follows them, drawing the shown page's
+// annotations, the BookOrbit and Grimmory notes passes and the Hardcover and Pagebound position
+// pushes, lives here, so a turn re-renders this and not the annotator with its popups and toolbars.
+const PositionFollowers: React.FC<{
+  bookKey: string;
+  annotationIndex: AnnotationIndex;
+  translationEpoch: number;
+}> = ({ bookKey, annotationIndex, translationEpoch }) => {
+  const getView = useReaderStore((s) => s.getView);
+  const progress = useBookProgress(bookKey);
+  useBookOrbitNotesSync(bookKey);
+  useGrimmoryNotesSync(bookKey);
+  useHardcoverSync(bookKey);
+  usePageboundSync(bookKey);
+
+  useEffect(() => {
+    if (!progress) return;
+    const { location } = progress;
+    const view = getView(bookKey);
+    // Single pass over the *current chapter's* candidates: classify each
+    // one into the in-page annotations / notes lists. Using the bucket
+    // keeps this fast even when the user has thousands of highlights
+    // elsewhere in the book.
+    const { annotations, notes } = selectLocationAnnotations(annotationIndex, location);
+
+    try {
+      Promise.all(annotations.map((annotation) => view?.addAnnotation(annotation)));
+      Promise.all(
+        notes.map((note) => view?.addAnnotation({ ...note, value: `${NOTE_PREFIX}${note.cfi}` })),
+      );
+      // Fan-out for any annotation flagged `global`. Semantics is
+      // book-wide, so we don't filter by `location` here: every note
+      // with `global=true` gets expanded across every section that
+      // happens to be rendered right now. Sections rendered later are
+      // covered by `onCreateOverlay`. Using the pre-built `globals`
+      // array avoids re-walking booknotes per page turn.
+      for (const annotation of annotationIndex.globals) {
+        // Same stale-index guard as selectLocationAnnotations: a global deleted
+        // in place after the memoized index was built must not be re-fanned out
+        // across sections, which would orphan its overlays (#4773).
+        if (annotation.deletedAt) continue;
+        if (view) expandAllRenderedSections(view, annotation);
+      }
+    } catch (e) {
+      console.warn(e);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [progress, annotationIndex, translationEpoch]);
+
+  return null;
+};
+
 const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?: Insets }> = ({
   bookKey,
   contentInsets,
@@ -171,11 +227,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
   const saveBooknoteNoteText = useSaveBooknoteNoteText(bookKey);
 
   useNotesSync(bookKey);
-  useBookOrbitNotesSync(bookKey);
-  useGrimmoryNotesSync(bookKey);
   useReadwiseSync(bookKey);
-  useHardcoverSync(bookKey);
-  usePageboundSync(bookKey);
   useNotionSync(bookKey);
   useObsidianSync(bookKey);
 
@@ -188,11 +240,6 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
 
   const osPlatform = getOSPlatform();
   const config = getConfig(bookKey)!;
-  // Reactive: subscribe to THIS book's progress via the dedicated
-  // progress store. This is the only piece of data we need to react to
-  // per page turn — the `useEffect(..., [progress])` below uses it to
-  // re-apply local-page annotations after each relocate.
-  const progress = useBookProgress(bookKey)!;
   const bookData = getBookData(bookKey)!;
   const view = getView(bookKey);
   const viewSettings = getViewSettings(bookKey)!;
@@ -1425,39 +1472,6 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
     [config.booknotes],
   );
 
-  useEffect(() => {
-    if (!progress) return;
-    const { location } = progress;
-    // Single pass over the *current chapter's* candidates: classify each
-    // one into the in-page annotations / notes lists. Using the bucket
-    // keeps this fast even when the user has thousands of highlights
-    // elsewhere in the book.
-    const { annotations, notes } = selectLocationAnnotations(annotationIndex, location);
-
-    try {
-      Promise.all(annotations.map((annotation) => view?.addAnnotation(annotation)));
-      Promise.all(
-        notes.map((note) => view?.addAnnotation({ ...note, value: `${NOTE_PREFIX}${note.cfi}` })),
-      );
-      // Fan-out for any annotation flagged `global`. Semantics is
-      // book-wide, so we don't filter by `location` here: every note
-      // with `global=true` gets expanded across every section that
-      // happens to be rendered right now. Sections rendered later are
-      // covered by `onCreateOverlay`. Using the pre-built `globals`
-      // array avoids re-walking booknotes per page turn.
-      for (const annotation of annotationIndex.globals) {
-        // Same stale-index guard as selectLocationAnnotations: a global deleted
-        // in place after the memoized index was built must not be re-fanned out
-        // across sections, which would orphan its overlays (#4773).
-        if (annotation.deletedAt) continue;
-        if (view) expandAllRenderedSections(view, annotation);
-      }
-    } catch (e) {
-      console.warn(e);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [progress, annotationIndex, translationEpoch]);
-
   // Translations are appended long after a section's annotations were drawn, so
   // a highlight anchored inside translated text has nothing to attach to at
   // draw time. Bumping this re-runs the draw effect above once the inserts
@@ -1632,7 +1646,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
         text,
         title: book?.title,
         author: book?.author,
-        chapter: progress?.sectionLabel,
+        chapter: getBookProgress(bookKey)?.sectionLabel,
         date: new Date().toLocaleDateString(getLocale(), {
           year: 'numeric',
           month: 'short',
@@ -1711,7 +1725,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
         color,
         text: part.text,
         note: '',
-        page: progress.page,
+        page: getBookProgress(bookKey)?.page,
         createdAt: Date.now(),
         updatedAt: Date.now(),
       };
@@ -1855,8 +1869,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
     // A popup selection already carries the footnote target's href; the
     // current reading position would file the note under the wrong section.
     if (!selection.popup) {
-      const { sectionHref: href } = progress;
-      selection.href = href;
+      selection.href = getBookProgress(bookKey)?.sectionHref;
     }
     // A note goes onto an existing highlight as it is, without restyling it to
     // the last used style and color; only unhighlighted parts get a highlight.
@@ -2755,6 +2768,11 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
   return (
     <div ref={containerRef} role='toolbar' tabIndex={-1}>
       <PageTurnHint bookKey={bookKey} contentInsets={contentInsets} hint={turnHint} />
+      <PositionFollowers
+        bookKey={bookKey}
+        annotationIndex={annotationIndex}
+        translationEpoch={translationEpoch}
+      />
       {showDictionaryPopup &&
         (() => {
           // Below `sm` (or short landscape) we present the dictionary as a
