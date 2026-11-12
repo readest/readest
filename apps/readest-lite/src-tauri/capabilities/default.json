@@ -1,10 +1,11 @@
 {
   "identifier": "default",
-  "description": "Readest's default capability, cut to the plugins Readest Lite registers (core, fs, os, and its own dialog)",
+  "description": "Readest's default capability, cut to the plugins Readest Lite registers (core, fs, os, turso, and its own dialog)",
   "windows": ["main"],
   "permissions": [
     "core:default",
     "dialog:default",
+    "turso:default",
     "fs:default",
     "fs:read-meta",
     "fs:allow-open",
