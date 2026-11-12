@@ -463,7 +463,7 @@ const Dialog: React.FC<DialogProps> = ({
           ) : (
             <div className='flex h-11 w-full items-center justify-between'>
               <button
-                aria-label={_('Close')}
+                aria-label={onBack ? _('Back') : _('Close')}
                 aria-hidden={!isOpen}
                 onClick={onBack ?? onClose}
                 disabled={!dismissible}

@@ -205,6 +205,13 @@ describe('ReadingStatsDialog', () => {
     expect(screen.queryByRole('group', { name: 'Reading Calendar' })).toBeNull();
     expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Reading Calendar' }));
 
+    // The mobile header arrow is named for what it does on each page.
+    expect(screen.queryByRole('button', { name: 'Back' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Reading Calendar' }));
+    await screen.findByRole('group', { name: 'Reading Calendar' });
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    expect(await screen.findByText('All Time')).toBeTruthy();
+
     const dialog = document.getElementById('reading_stats_window')!;
     expect(dialog.hasAttribute('open')).toBe(true);
     fireEvent.keyDown(window, { key: 'Escape' });
