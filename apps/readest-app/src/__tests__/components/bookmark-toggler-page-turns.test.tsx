@@ -8,6 +8,14 @@ import BookmarkToggler from '@/app/reader/components/BookmarkToggler';
 import { clearBookProgress, setBookProgress } from '@/store/readerProgressStore';
 import type { BookProgress } from '@/types/book';
 
+// A store hook called with a selector, or without one for the whole state.
+const { storeHook } = vi.hoisted(() => ({
+  storeHook:
+    <T extends object>(state: () => T) =>
+    (select?: (s: T) => unknown) =>
+      select ? select(state()) : state(),
+}));
+
 // The bookmark button sits in the hidden header and shows whether the page is
 // bookmarked. Every page turn writes a new progress; a turn that leaves the
 // page as bookmarked (or not) as before must not re-render the button.
@@ -22,10 +30,11 @@ vi.mock('@/hooks/useResponsiveSize', () => ({ useResponsiveSize: (size: number) 
 vi.mock('@/context/EnvContext', () => ({ useEnv: () => ({ envConfig: {} }) }));
 vi.mock('@/store/settingsStore', () => {
   const state = { settings: {} };
-  return { useSettingsStore: () => state };
+  return { useSettingsStore: storeHook(() => state) };
 });
 vi.mock('@/store/readerStore', () => {
   const state = {
+    viewStates: {},
     getProgress: () => null,
     getViewState: () => null,
     setBookmarkRibbonVisibility: (...args: unknown[]) => h.setRibbon(...args),

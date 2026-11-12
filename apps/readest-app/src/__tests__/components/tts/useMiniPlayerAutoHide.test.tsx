@@ -2,11 +2,19 @@
 import { act, cleanup, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+// A store hook called with a selector, or without one for the whole state.
+const { storeHook } = vi.hoisted(() => ({
+  storeHook:
+    <T extends object>(state: () => T) =>
+    (select?: (s: T) => unknown) =>
+      select ? select(state()) : state(),
+}));
+
 // The hook reads only hoveredBookKey off the reader store; mock the store so
 // the test can drive toolbar visibility without mounting the reader.
 let hoveredBookKey: string | null = null;
 vi.mock('@/store/readerStore', () => ({
-  useReaderStore: () => ({ hoveredBookKey }),
+  useReaderStore: storeHook(() => ({ hoveredBookKey })),
 }));
 
 const { useMiniPlayerAutoHide } = await import('@/app/reader/components/tts/useMiniPlayerAutoHide');

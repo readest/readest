@@ -5,6 +5,7 @@ import { RiArrowLeftSLine, RiArrowRightSLine } from 'react-icons/ri';
 import { RiArrowGoBackLine, RiArrowGoForwardLine } from 'react-icons/ri';
 import { RiArrowLeftDoubleLine, RiArrowRightDoubleLine } from 'react-icons/ri';
 import { useReaderStore } from '@/store/readerStore';
+import { useBookViewState } from '@/app/reader/hooks/useBookViewState';
 import { useTranslation } from '@/hooks/useTranslation';
 import type { FooterBarChildProps } from './types';
 import { getNavigationIcon } from './utils';
@@ -21,7 +22,12 @@ const DesktopFooterBar: React.FC<FooterBarChildProps> = ({
   onSpeakText,
 }) => {
   const _ = useTranslation();
-  const { hoveredBookKey, getView, getViewState, getProgress, getViewSettings } = useReaderStore();
+  const hoveredBookKey = useReaderStore((s) => s.hoveredBookKey);
+  const getView = useReaderStore((s) => s.getView);
+  const getViewState = useReaderStore((s) => s.getViewState);
+  const getProgress = useReaderStore((s) => s.getProgress);
+  const getViewSettings = useReaderStore((s) => s.getViewSettings);
+  useBookViewState(bookKey);
   const view = getView(bookKey);
   const progress = getProgress(bookKey);
   const viewState = getViewState(bookKey);

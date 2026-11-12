@@ -8,6 +8,14 @@ import HeaderBar from '@/app/reader/components/HeaderBar';
 import { useTrafficLight } from '@/hooks/useTrafficLight';
 import { useTrafficLightStore } from '@/store/trafficLightStore';
 
+// A store hook called with a selector, or without one for the whole state.
+const { storeHook } = vi.hoisted(() => ({
+  storeHook:
+    <T extends object>(state: () => T) =>
+    (select?: (s: T) => unknown) =>
+      select ? select(state()) : state(),
+}));
+
 // jsdom ships no ResizeObserver, and both HeaderBar and useTrafficLight
 // construct one. `observe()` is a no-op here: the traffic-light hook falls
 // back to the store's standard h-11 height when the observer never fires,
@@ -46,9 +54,9 @@ vi.mock('@/context/EnvContext', () => ({
 }));
 
 vi.mock('@/store/settingsStore', () => ({
-  useSettingsStore: () => ({
+  useSettingsStore: storeHook(() => ({
     settings: { globalReadSettings: { highlightStyle: 'highlight', highlightStyles: {} } },
-  }),
+  })),
 }));
 vi.mock('@/store/themeStore', () => ({
   useThemeStore: () => ({ isDarkMode: false, systemUIVisible: true, statusBarHeight: 0 }),
@@ -56,20 +64,21 @@ vi.mock('@/store/themeStore', () => ({
 // The reader is showing a single book with the sidebar closed — the state in
 // which HeaderBar owns the traffic lights and hides them when unhovered.
 vi.mock('@/store/sidebarStore', () => ({
-  useSidebarStore: () => ({ isSideBarVisible: false, getIsSideBarVisible: () => false }),
+  useSidebarStore: storeHook(() => ({ isSideBarVisible: false, getIsSideBarVisible: () => false })),
 }));
 
 // `null` is what WindowButtons' close handler writes before it closes the last
 // book and routes back to the library.
 let hoveredBookKey: string | null = null;
 vi.mock('@/store/readerStore', () => ({
-  useReaderStore: () => ({
+  useReaderStore: storeHook(() => ({
+    viewStates: {},
     bookKeys: ['book-1'],
     hoveredBookKey,
     getView: () => null,
     getViewSettings: () => ({ enableAnnotationQuickActions: false }),
     setHoveredBookKey: vi.fn(),
-  }),
+  })),
 }));
 vi.mock('@/store/bookDataStore', () => ({
   ...bookDataStoreHooks(() => ({ getBookData: () => null, getConfig: () => null })),

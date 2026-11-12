@@ -8,6 +8,14 @@ import PageJumpInput from '@/app/reader/components/footerbar/PageJumpInput';
 import { clearBookProgress, setBookProgress } from '@/store/readerProgressStore';
 import type { BookProgress } from '@/types/book';
 
+// A store hook called with a selector, or without one for the whole state.
+const { storeHook } = vi.hoisted(() => ({
+  storeHook:
+    <T extends object>(state: () => T) =>
+    (select?: (s: T) => unknown) =>
+      select ? select(state()) : state(),
+}));
+
 // The footer's page label is the reader's position readout, and on desktop a
 // hidden footer only fades out: the label stays in the page and the
 // accessibility tree. It has to follow the position while hidden, with nothing
@@ -17,11 +25,12 @@ import type { BookProgress } from '@/types/book';
 vi.mock('@/hooks/useTranslation', () => ({ useTranslation: () => (s: string) => s }));
 vi.mock('@/store/readerStore', () => {
   const state = {
+    viewStates: {},
     hoveredBookKey: '',
     getView: () => null,
     getViewSettings: () => ({ progressStyle: 'fraction' }),
   };
-  return { useReaderStore: () => state };
+  return { useReaderStore: storeHook(() => state) };
 });
 vi.mock('@/store/bookDataStore', () => ({
   ...bookDataStoreHooks(() => ({ getBookData: () => ({ isFixedLayout: false, bookDoc: {} }) })),

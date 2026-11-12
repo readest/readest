@@ -4,6 +4,14 @@ import { Profiler } from 'react';
 import { render, cleanup, fireEvent } from '@testing-library/react';
 import { NavigationPanel } from '@/app/reader/components/footerbar/NavigationPanel';
 
+// A store hook called with a selector, or without one for the whole state.
+const { storeHook } = vi.hoisted(() => ({
+  storeHook:
+    <T extends object>(state: () => T) =>
+    (select?: (s: T) => unknown) =>
+      select ? select(state()) : state(),
+}));
+
 const mocks = vi.hoisted(() => ({ progress: {} as object }));
 
 vi.mock('@/hooks/useTranslation', () => ({
@@ -15,11 +23,12 @@ vi.mock('@/context/EnvContext', () => ({
 }));
 
 vi.mock('@/store/readerStore', () => ({
-  useReaderStore: () => ({
+  useReaderStore: storeHook(() => ({
+    viewStates: {},
     getView: () => null,
     getProgress: () => mocks.progress,
     getViewSettings: () => null,
-  }),
+  })),
 }));
 
 vi.mock('@/app/reader/components/footerbar/PageJumpInput', () => ({

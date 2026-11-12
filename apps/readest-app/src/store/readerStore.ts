@@ -39,7 +39,7 @@ import { clearBookProgress, getBookProgress, setBookProgress } from './readerPro
 import { uniqueId } from '@/utils/misc';
 import { getWidePages, type WidePagesOptions } from '@/utils/spread';
 
-interface ViewState {
+export interface ViewState {
   /* Unique key for each book view */
   key: string;
   view: FoliateView | null;

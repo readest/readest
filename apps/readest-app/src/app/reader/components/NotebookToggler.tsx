@@ -16,9 +16,11 @@ interface NotebookTogglerProps {
 const NotebookToggler: React.FC<NotebookTogglerProps> = ({ bookKey }) => {
   const _ = useTranslation();
   const { appService } = useEnv();
-  const { setHoveredBookKey } = useReaderStore();
-  const { sideBarBookKey, setSideBarBookKey } = useSidebarStore();
-  const { isNotebookVisible, toggleNotebook } = useNotebookStore();
+  const setHoveredBookKey = useReaderStore((s) => s.setHoveredBookKey);
+  const sideBarBookKey = useSidebarStore((s) => s.sideBarBookKey);
+  const setSideBarBookKey = useSidebarStore((s) => s.setSideBarBookKey);
+  const isNotebookVisible = useNotebookStore((s) => s.isNotebookVisible);
+  const toggleNotebook = useNotebookStore((s) => s.toggleNotebook);
   const iconSize18 = useResponsiveSize(18);
 
   const handleToggleSidebar = () => {

@@ -5,6 +5,7 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { useBookDataStore, useBookConfig } from '@/store/bookDataStore';
 import { useBookProgressValue } from '@/store/readerProgressStore';
 import { useReaderStore } from '@/store/readerStore';
+import { useBookViewState } from '@/app/reader/hooks/useBookViewState';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useEnv } from '@/context/EnvContext';
 import { BookNote } from '@/types/book';
@@ -28,7 +29,10 @@ const BookmarkToggler: React.FC<BookmarkTogglerProps> = ({ bookKey }) => {
   const saveConfig = useBookDataStore((s) => s.saveConfig);
   const getBookData = useBookDataStore((s) => s.getBookData);
   const updateBooknotes = useBookDataStore((s) => s.updateBooknotes);
-  const { getProgress, getViewState, setBookmarkRibbonVisibility } = useReaderStore();
+  const getProgress = useReaderStore((s) => s.getProgress);
+  const getViewState = useReaderStore((s) => s.getViewState);
+  const setBookmarkRibbonVisibility = useReaderStore((s) => s.setBookmarkRibbonVisibility);
+  useBookViewState(bookKey);
   const [isBookmarked, setIsBookmarked] = useState(false);
   const config = useBookConfig(bookKey);
   // Whether the shown page is bookmarked, worked out as the progress changes: a page turn

@@ -7,6 +7,14 @@ import HeaderBar from '@/app/reader/components/HeaderBar';
 import SidebarHeader from '@/app/reader/components/sidebar/Header';
 import '@/styles/globals.css';
 
+// A store hook called with a selector, or without one for the whole state.
+const { storeHook } = vi.hoisted(() => ({
+  storeHook:
+    <T extends object>(state: () => T) =>
+    (select?: (s: T) => unknown) =>
+      select ? select(state()) : state(),
+}));
+
 vi.mock('@/hooks/useTranslation', () => ({
   useTranslation: () => (key: string) => key,
 }));
@@ -16,24 +24,26 @@ vi.mock('@/context/EnvContext', () => ({
   useEnv: () => ({ envConfig: {}, appService: { isMobile: false, hasTrafficLight } }),
 }));
 vi.mock('@/store/settingsStore', () => ({
-  useSettingsStore: () => ({
+  useSettingsStore: storeHook(() => ({
     settings: { globalReadSettings: { highlightStyle: 'highlight', highlightStyles: {} } },
-  }),
+  })),
 }));
 vi.mock('@/store/themeStore', () => ({
   useThemeStore: () => ({ isDarkMode: false, systemUIVisible: true, statusBarHeight: 0 }),
 }));
 vi.mock('@/store/sidebarStore', () => ({
-  useSidebarStore: () => ({ isSideBarVisible: false, getIsSideBarVisible: () => false }),
+  useSidebarStore: storeHook(() => ({ isSideBarVisible: false, getIsSideBarVisible: () => false })),
 }));
 vi.mock('@/store/readerStore', () => ({
-  useReaderStore: () => ({
+  useReaderStore: storeHook(() => ({
+    // a book whose first page is on screen
+    viewStates: { 'book-1': { inited: true } },
     bookKeys: ['book-1'],
     hoveredBookKey: 'book-1',
     getView: () => null,
     getViewSettings: () => ({ enableAnnotationQuickActions: false, marginTopPx: 44 }),
     setHoveredBookKey: vi.fn(),
-  }),
+  })),
 }));
 vi.mock('@/store/bookDataStore', async () => {
   const { bookDataStoreHooks } = await import('@/__tests__/helpers/book-data-store-mock');

@@ -29,6 +29,7 @@ vi.mock('@/store/readerStore', () => {
     goTo,
   };
   const state = {
+    viewStates: {},
     hoveredBookKey: 'book-1',
     setHoveredBookKey: vi.fn(),
     bottomBarTab: '',
@@ -38,7 +39,9 @@ vi.mock('@/store/readerStore', () => {
     getProgress: () => null,
     getViewSettings: () => viewSettings,
   };
-  return { useReaderStore: () => state };
+  return {
+    useReaderStore: (select?: (s: typeof state) => unknown) => (select ? select(state) : state),
+  };
 });
 // Three chapters of 3000, 3000 and 6000 bytes.
 const bookData = vi.hoisted(() => ({
@@ -52,19 +55,19 @@ vi.mock('@/store/bookDataStore', () => ({
     getBookData: () => bookData,
   })),
 }));
-vi.mock('@/store/sidebarStore', () => ({
-  useSidebarStore: () => ({
-    isSideBarVisible: false,
-    isSideBarPinned: false,
-    setSideBarVisible: vi.fn(),
-  }),
-}));
-vi.mock('@/store/deviceStore', () => ({
-  useDeviceControlStore: () => ({
-    acquireBackKeyInterception: vi.fn(),
-    releaseBackKeyInterception: vi.fn(),
-  }),
-}));
+vi.mock('@/store/sidebarStore', () => {
+  const state = { isSideBarVisible: false, isSideBarPinned: false, setSideBarVisible: vi.fn() };
+  return {
+    useSidebarStore: (select?: (s: typeof state) => unknown) => (select ? select(state) : state),
+  };
+});
+vi.mock('@/store/deviceStore', () => {
+  const state = { acquireBackKeyInterception: vi.fn(), releaseBackKeyInterception: vi.fn() };
+  return {
+    useDeviceControlStore: (select?: (s: typeof state) => unknown) =>
+      select ? select(state) : state,
+  };
+});
 vi.mock('@/store/themeStore', () => ({
   useThemeStore: (select: (s: { isIPhoneDuo: boolean }) => unknown) =>
     select({ isIPhoneDuo: false }),

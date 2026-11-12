@@ -2,6 +2,7 @@ import clsx from 'clsx';
 import React, { useEffect, useRef, useState } from 'react';
 import { useThemeStore } from '@/store/themeStore';
 import { useReaderStore } from '@/store/readerStore';
+import { useBookViewState } from '@/app/reader/hooks/useBookViewState';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useTTSControl } from '@/app/reader/hooks/useTTSControl';
 import { useTTSDownloads } from '@/app/reader/hooks/useTTSDownloads';
@@ -19,7 +20,8 @@ interface TTSControlProps {
 const TTSControl: React.FC<TTSControlProps> = ({ bookKey, gridInsets }) => {
   const _ = useTranslation();
   const { safeAreaInsets } = useThemeStore();
-  const { getViewSettings } = useReaderStore();
+  const getViewSettings = useReaderStore((s) => s.getViewSettings);
+  useBookViewState(bookKey);
 
   const [showPlayerSheet, setShowPlayerSheet] = useState(false);
   const backButtonTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
