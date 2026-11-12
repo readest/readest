@@ -132,3 +132,55 @@ fn computed_writing_mode_is_horizontal() {
     assert_eq!(doc.take_js_errors(), Vec::<String>::new());
     assert_eq!(logs, ["log: horizontal-tb horizontal-tb horizontal-tb"]);
 }
+
+// Settings measures each tab label on a hidden clone of its button (SettingsDialog's
+// checkButtonWidths); the footnote popup and Word Lens ruby clone nodes too.
+#[test]
+fn clone_node() {
+    let html = "<!DOCTYPE html><html><body>\
+        <button id='b' class='tab' data-x='1'><svg viewBox='0 0 1 1'><path d='M0 0'/></svg><span class='hidden'>Font</span></button>\
+        <p id='p'>a<!--c--><i>b</i></p><div id='h'></div></body></html>";
+    let mut doc = QjsDocument::from_html(html, DocumentConfig::default());
+    doc.eval(
+        "const b = document.getElementById('b');
+        const c = b.cloneNode(true);
+        c.style.position = 'absolute';
+        const span = c.querySelector('span');
+        span.classList.remove('hidden');
+        span.textContent = 'Layout';
+        document.body.appendChild(c);
+        console.log(c !== b, c.parentNode === document.body, c.id, c.className, c.dataset.x, c.childNodes.length);
+        console.log(c.firstChild.namespaceURI === 'http://www.w3.org/2000/svg', c.firstChild.firstChild.localName, c.firstChild.firstChild.getAttribute('d'));
+        console.log(b.querySelector('span').className, b.querySelector('span').textContent, span.textContent, c.scrollWidth > 0);
+        document.body.removeChild(c);
+        const shallow = b.cloneNode();
+        console.log(shallow.childNodes.length, shallow.getAttribute('class'), shallow.parentNode);
+        const p = document.getElementById('p').cloneNode(true);
+        console.log(p.childNodes.length, p.childNodes[0].data, p.childNodes[1].nodeType, p.childNodes[1].data, p.textContent);
+        const h = document.getElementById('h');
+        h.attachShadow({ mode: 'open' }).append(document.createElement('b'));
+        h.append('light');
+        const hc = h.cloneNode(true);
+        console.log(hc.shadowRoot, hc.childNodes.length, hc.textContent, hc.getAttributeNames().join());
+        const f = document.createDocumentFragment();
+        f.appendChild(document.createElement('u'));
+        f.appendChild(document.createTextNode('x'));
+        const fc = f.cloneNode(true);
+        console.log(fc.nodeType, fc.childNodes.length, fc.firstChild.localName, f.childNodes.length);",
+        "test",
+    );
+    let logs = doc.take_messages();
+    assert_eq!(doc.take_js_errors(), Vec::<String>::new());
+    assert_eq!(
+        logs,
+        [
+            "log: true true b tab 1 2",
+            "log: true path M0 0",
+            "log: hidden Font Layout true",
+            "log: 0 tab null",
+            "log: 3 a 8 c ab",
+            "log: null 1 light id",
+            "log: 11 2 u 2",
+        ]
+    );
+}

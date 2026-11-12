@@ -567,8 +567,25 @@
       const k = this.nodeType;
       if (k === 3 || k === 8) setData(this, String(v));
     }
-    cloneNode() {
-      throw new Error('cloneNode is not implemented');
+    // A copy in the same document, made through the shim's own API, so a host's shadow root and
+    // its marker attribute (hidden from childNodes and getAttributeNames) are not copied.
+    cloneNode(deep = false) {
+      const t = this.nodeType;
+      const doc = docOf(this);
+      if (t === 3) return doc.createTextNode(this.data);
+      if (t === 8) return doc.createComment(this.data);
+      let copy;
+      if (t === 11) copy = doc.createDocumentFragment();
+      else if (t === 1) {
+        const ns = this.namespaceURI;
+        copy =
+          ns === HTML_NS
+            ? doc.createElement(this.localName)
+            : doc.createElementNS(ns, this.localName);
+        for (const k of this.getAttributeNames()) copy.setAttribute(k, this.getAttribute(k));
+      } else throw new Error(`cloneNode of a node of type ${t} is not implemented`);
+      if (deep) for (const c of this.childNodes) copy.appendChild(c.cloneNode(true));
+      return copy;
     }
     isSameNode(o) {
       return o === this;
