@@ -110,7 +110,6 @@ const renderHeader = () =>
         />
         <SectionInfo
           bookKey='book-1'
-          section='Chapter One'
           showDoubleBorder={false}
           isScrolled={false}
           isVertical={false}

@@ -136,3 +136,18 @@ export const clearBookProgress = (key: string) => {
 export const useBookProgress = (key: string | null): BookProgress | null => {
   return useReaderProgressStore((s) => (key ? (s.progresses[key] ?? null) : null));
 };
+
+/**
+ * What `select` takes from this book's progress (undefined before the first relocate, and for a
+ * null key): re-renders only when that value changes. A page turn writes a new progress object,
+ * so a component that shows only the section, or nothing until a feature is in use (a null key),
+ * skips the turns that leave its value alone.
+ */
+export const useBookProgressValue = <T>(
+  key: string | null,
+  select: (progress: BookProgress) => T,
+): T | undefined =>
+  useReaderProgressStore((s) => {
+    const progress = key ? s.progresses[key] : null;
+    return progress ? select(progress) : undefined;
+  });

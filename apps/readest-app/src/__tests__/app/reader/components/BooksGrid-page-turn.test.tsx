@@ -4,14 +4,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 /**
  * A page turn writes the book's progress. The cell re-renders only for what it
- * shows from it (the section label, the column gap); the chrome around the page
- * subscribes to what it needs, so a turn within a section does not re-render
- * it through the cell.
+ * takes from it (the column gap); the chrome around the page, the section title
+ * included, subscribes to what it needs, so a turn does not re-render it
+ * through the cell.
  */
 
 const h = vi.hoisted(() => {
   const renders = { HeaderBar: 0, Annotator: 0, FootnotePopup: 0, HandwritingOverlay: 0 };
-  const sectionLabels: Array<string | undefined> = [];
   const columnGaps: number[] = [];
   const view = { renderer: { columnCount: 1 } };
   const viewSettings = { columnGapPx: 24, gapPercent: 5, showHeader: true, showFooter: true };
@@ -23,7 +22,7 @@ const h = vi.hoisted(() => {
     },
   });
   const stub = { default: () => null };
-  return { renders, sectionLabels, columnGaps, view, viewState, counted, stub };
+  return { renders, columnGaps, view, viewState, counted, stub };
 });
 
 vi.mock('@/context/EnvContext', () => ({ useEnv: () => ({ appService: {} }) }));
@@ -61,12 +60,7 @@ vi.mock('@/app/reader/components/FootnotePopup', () => h.counted('FootnotePopup'
 vi.mock('@/app/reader/components/handwriting/HandwritingOverlay', () =>
   h.counted('HandwritingOverlay'),
 );
-vi.mock('@/app/reader/components/SectionInfo', () => ({
-  default: ({ section }: { section?: string }) => {
-    h.sectionLabels.push(section);
-    return null;
-  },
-}));
+vi.mock('@/app/reader/components/SectionInfo', () => h.stub);
 vi.mock('@/app/reader/components/HintInfo', () => ({
   default: ({ columnGap }: { columnGap: number }) => {
     h.columnGaps.push(columnGap);
@@ -101,7 +95,6 @@ const turnTo = (page: number, sectionLabel: string, pages = 40) =>
 
 beforeEach(() => {
   for (const k of Object.keys(h.renders) as Array<keyof typeof h.renders>) h.renders[k] = 0;
-  h.sectionLabels.length = 0;
   h.columnGaps.length = 0;
   h.view.renderer.columnCount = 1;
   clearBookProgress('book-1');
@@ -123,12 +116,15 @@ describe('BooksGrid on a page turn', () => {
     expect(h.renders).toEqual(before);
   });
 
-  it('shows the new section label after a turn into the next section', () => {
+  it('does not re-render the page chrome for a turn into the next section', () => {
     renderGrid();
     turnTo(1, 'Chapter 1');
-    turnTo(2, 'Chapter 2');
+    const before = { ...h.renders };
 
-    expect(h.sectionLabels.at(-1)).toBe('Chapter 2');
+    turnTo(2, 'Chapter 2');
+    turnTo(3, 'Chapter 3');
+
+    expect(h.renders).toEqual(before);
   });
 
   it('picks up a re-layout to two columns on the next relocate', () => {
