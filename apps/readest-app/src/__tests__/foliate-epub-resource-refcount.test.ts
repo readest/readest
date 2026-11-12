@@ -164,3 +164,88 @@ describe('EPUB resource refcounting across a second view on the same book', () =
     expect(live.size).toBe(0);
   });
 });
+
+// Two sections that link one stylesheet, loaded at once: the reader opens a
+// section and preloads its neighbours together, and a jump does the same. Both
+// loads found the stylesheet missing from the cache, both made a copy, and each
+// copy set the count to 1, so the stylesheet counted one section where two held
+// it. Unloading one (a preload the reader no longer wants) revoked the
+// stylesheet the other was still showing, and the next section to link it had
+// to load and transform it again.
+const SHARED_CSS_OPF = `<?xml version="1.0" encoding="UTF-8"?>
+<package xmlns="http://www.idpf.org/2007/opf" unique-identifier="BookID" version="3.0">
+  <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
+    <dc:title>Chapters With One Stylesheet</dc:title>
+    <dc:language>en</dc:language>
+    <dc:identifier id="BookID">urn:uuid:67890</dc:identifier>
+  </metadata>
+  <manifest>
+    <item id="c1" href="c1.xhtml" media-type="application/xhtml+xml"/>
+    <item id="c2" href="c2.xhtml" media-type="application/xhtml+xml"/>
+    <item id="c3" href="c3.xhtml" media-type="application/xhtml+xml"/>
+    <item id="css" href="style.css" media-type="text/css"/>
+  </manifest>
+  <spine>
+    <itemref idref="c1"/>
+    <itemref idref="c2"/>
+    <itemref idref="c3"/>
+  </spine>
+</package>`;
+
+const chapterLinking = (n: number) => `<?xml version="1.0" encoding="UTF-8"?>
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head><link rel="stylesheet" type="text/css" href="style.css"/></head>
+  <body><p>chapter ${n}</p></body>
+</html>`;
+
+const SHARED_CSS_FILES: Record<string, string> = {
+  'META-INF/container.xml': CONTAINER,
+  'OEBPS/content.opf': SHARED_CSS_OPF,
+  'OEBPS/c1.xhtml': chapterLinking(1),
+  'OEBPS/c2.xhtml': chapterLinking(2),
+  'OEBPS/c3.xhtml': chapterLinking(3),
+  'OEBPS/style.css': 'p { margin: 0 }',
+};
+
+describe('EPUB resource refcounting across sections loaded at once', () => {
+  it('keeps a stylesheet two sections share while either still holds it', async () => {
+    // Reading a file takes a moment, as reading it from the zip does, so the
+    // two loads overlap.
+    const files = SHARED_CSS_FILES;
+    const epub = new EPUB({
+      entries: Object.keys(files).map((filename) => ({ filename })),
+      loadText: (name: string) =>
+        new Promise<string | null>((resolve) => setTimeout(() => resolve(files[name] ?? null), 5)),
+      loadBlob: async (name: string) => (files[name] == null ? null : new Blob([files[name]!])),
+      getSize: (name: string) => files[name]?.length ?? 0,
+      sha1: undefined,
+    });
+    await epub.init();
+    const [c1, c2, c3] = (epub.sections ?? []) as Section[];
+    const cssUrls = new Set<string>();
+    const create = URL.createObjectURL;
+    URL.createObjectURL = (blob: Blob) => {
+      const url = create(blob);
+      if (blob.type === 'text/css') cssUrls.add(url);
+      return url;
+    };
+    const stylesheets = () => [...live].filter((url) => cssUrls.has(url));
+
+    await Promise.all([c1!.load(), c2!.load()]);
+    expect(stylesheets(), 'live copies of the stylesheet').toHaveLength(1);
+    const shared = stylesheets()[0]!;
+
+    // The reader lets go of one; the other still shows the stylesheet.
+    c1!.unload();
+    expect(live.has(shared), 'stylesheet still live after unloading one of the two').toBe(true);
+
+    // The next section reuses it rather than loading it again.
+    const copies = cssUrls.size;
+    await c3!.load();
+    expect(cssUrls.size, 'copies of the stylesheet made').toBe(copies);
+
+    c2!.unload();
+    c3!.unload();
+    expect(live.size).toBe(0);
+  });
+});
