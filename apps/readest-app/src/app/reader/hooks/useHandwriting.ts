@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useBookDataStore, useBookConfig, useBookData } from '@/store/bookDataStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useSettingsStore } from '@/store/settingsStore';
-import { useBookProgress } from '@/store/readerProgressStore';
+import { useBookProgressValue } from '@/store/readerProgressStore';
 import { useEnv } from '@/context/EnvContext';
 import { saveSysSettings } from '@/helpers/settings';
 import { HandwritingEditor } from '@/services/handwriting/editor';
@@ -80,7 +80,6 @@ export function useHandwriting(bookKey: string) {
   const { getView, getViewSettings } = useReaderStore();
   const { settings } = useSettingsStore();
   const { envConfig } = useEnv();
-  const progress = useBookProgress(bookKey);
   const isFixedLayout = !!useBookData(bookKey)?.isFixedLayout;
   // Scrolled views show several pages at once; strokes are routed per page.
   const scrolled = !!getViewSettings(bookKey)?.scrolled;
@@ -119,8 +118,16 @@ export function useHandwriting(bookKey: string) {
 
   if (!editorRef.current) loadEditor();
 
-  const location = progress?.location;
-  const sectionIndex = progress?.section?.current;
+  // Ink is re-anchored to the text whenever the layout may have moved it. A
+  // page turn writes styles across the paginator many times, so with no ink in
+  // the book and the pen off (nothing to place, no stroke to anchor) that work
+  // and its re-renders are skipped.
+  const needsAnchoring = enabled || editorRef.current!.pageKeys().length > 0;
+  // The section picks the ink to show. The page within it matters only while ink
+  // is placed or drawn: with none and the pen off, a turn within a section
+  // re-renders nothing here.
+  const sectionIndex = useBookProgressValue(bookKey, (p) => p.section?.current);
+  const location = useBookProgressValue(needsAnchoring ? bookKey : null, (p) => p.location);
   // Fixed layout pins ink to the page; reflowable ink is kept per section and
   // each stroke is bound to the text or element under it.
   const pageKey =
@@ -130,11 +137,6 @@ export function useHandwriting(bookKey: string) {
         ? fixedPageKey(sectionIndex)
         : sectionPageKey(sectionIndex);
 
-  // Ink is re-anchored to the text whenever the layout may have moved it. A
-  // page turn writes styles across the paginator many times, so with no ink in
-  // the book and the pen off (nothing to place, no stroke to anchor) that work
-  // and its re-renders are skipped.
-  const needsAnchoring = enabled || editorRef.current!.pageKeys().length > 0;
   const needsAnchoringRef = useRef(needsAnchoring);
   useEffect(() => {
     needsAnchoringRef.current = needsAnchoring;
