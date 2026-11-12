@@ -6,11 +6,15 @@ import {
 } from '@/types/settings';
 import {
   formatAuthors,
+  formatDescription,
+  formatLanguage,
+  formatPublisher,
   formatTitle,
   getBookPageCount,
   getContributorNames,
   isCurrentlyReadingBook,
 } from '@/utils/book';
+import { matchesFieldedQuery, parseFieldedQuery } from './fieldedQuery';
 import { md5Fingerprint } from '@/utils/md5';
 import type { TranslationFunc } from '@/hooks/useTranslation';
 import { stubTranslation as _ } from '@/utils/misc';
@@ -309,7 +313,84 @@ export const applyBookTagEdits = (
 const getBookValuesText = (book: Book): string =>
   [...getBookTags(book), ...getBookSubjects(book)].join(' ');
 
-export const createBookFilter = (queryTerm: string | null) => (item: Book) => {
+const present = (...values: (string | undefined | null)[]): string[] =>
+  values.filter((value): value is string => !!value);
+
+const getCalibreColumnValues = (book: Book, label: string): string[] =>
+  (book.metadata?.calibreColumns ?? [])
+    .filter((column) => column.label.toLowerCase() === label)
+    .flatMap(({ value }) => (Array.isArray(value) ? value : [String(value)]));
+
+const getBookLanguages = (book: Book): string[] => {
+  const language = book.metadata?.language;
+  const codes = (Array.isArray(language) ? language : [language]).filter(
+    (code): code is string => !!code,
+  );
+  return [...codes, ...codes.map((code) => formatLanguage(code))];
+};
+
+/**
+ * The values a fielded search term reads (#7370); `null` is a bare word, which
+ * reads the same fields as the plain search. `#label` is a calibre column.
+ */
+const getBookFieldValues = (book: Book, field: string | null): string[] => {
+  const metadata = book.metadata;
+  switch (field) {
+    case null:
+      return present(
+        formatTitle(book.title),
+        formatAuthors(book.author),
+        book.format,
+        book.groupName,
+        metadata?.description,
+        getBookValuesText(book),
+        getCalibreColumnsText(book),
+      );
+    case 'title':
+      return [formatTitle(book.title)];
+    case 'author':
+      return [
+        ...new Set([formatAuthors(book.author), ...getContributorNames(metadata?.author)]),
+      ].filter(Boolean);
+    case 'tag':
+      // Calibre writes its tags as EPUB subjects, so tag: reads both.
+      return [...getBookTags(book), ...getBookSubjects(book)];
+    case 'subject':
+      return getBookSubjects(book);
+    case 'series':
+      return present(metadata?.series);
+    case 'publisher':
+      return present(metadata?.publisher && formatPublisher(metadata.publisher));
+    case 'language':
+      return getBookLanguages(book);
+    case 'format':
+      return [book.format];
+    case 'description':
+      return present(metadata?.description && formatDescription(metadata.description));
+    case 'group':
+      return present(book.groupName);
+    case 'isbn':
+      return present(metadata?.isbn);
+    case 'identifier':
+      return present(metadata?.identifier, metadata?.isbn);
+    default:
+      return field.startsWith('#') ? getCalibreColumnValues(book, field.slice(1)) : [];
+  }
+};
+
+/**
+ * Library search. A query naming a field (`author:herbert and tags:scifi`)
+ * runs as a calibre-like fielded search (#7370); any other query keeps the
+ * plain search below.
+ */
+export const createBookFilter = (queryTerm: string | null) => {
+  const fielded = queryTerm ? parseFieldedQuery(queryTerm) : null;
+  if (!fielded) return createPlainBookFilter(queryTerm);
+  return (item: Book): boolean =>
+    !item.deletedAt && matchesFieldedQuery(fielded, (field) => getBookFieldValues(item, field));
+};
+
+const createPlainBookFilter = (queryTerm: string | null) => (item: Book) => {
   if (!queryTerm) return true;
   if (item.deletedAt) return false;
   let searchTerm: RegExp;
