@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 
 // The provider delegates to EdgeSpeechTTS; mock at the lib boundary exactly

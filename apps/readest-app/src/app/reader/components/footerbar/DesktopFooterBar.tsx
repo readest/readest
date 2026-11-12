@@ -21,8 +21,9 @@ const DesktopFooterBar: React.FC<FooterBarChildProps> = ({
   onSpeakText,
 }) => {
   const _ = useTranslation();
-  const { hoveredBookKey, getView, getViewState, getViewSettings } = useReaderStore();
+  const { hoveredBookKey, getView, getViewState, getProgress, getViewSettings } = useReaderStore();
   const view = getView(bookKey);
+  const progress = getProgress(bookKey);
   const viewState = getViewState(bookKey);
   const viewSettings = getViewSettings(bookKey);
 
@@ -40,16 +41,26 @@ const DesktopFooterBar: React.FC<FooterBarChildProps> = ({
     }
   }, [hoveredBookKey, bookKey]);
 
+  // Synced during render, so a footer shown after page turns shows the current
+  // position in the commit that shows it.
+  const [shownFraction, setShownFraction] = React.useState<number | null>(null);
+  if (progressValid && progressFraction !== shownFraction) {
+    setShownFraction(progressFraction);
+    setProgressValue(progressFraction * 100);
+  }
+
+  // The page label previews the slider while it is dragged, until the reader
+  // relocates and reports the real page.
+  const [previewFraction, setPreviewFraction] = React.useState<number | null>(null);
   useEffect(() => {
-    if (progressValid) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setProgressValue(progressFraction * 100);
-    }
-  }, [progressValid, progressFraction]);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setPreviewFraction(null);
+  }, [progress]);
 
   const handleProgressChange = useCallback(
     (value: number) => {
       setProgressValue(value);
+      setPreviewFraction(value / 100);
       navigationHandlers.onProgressChange(value);
     },
     [navigationHandlers],
@@ -99,7 +110,7 @@ const DesktopFooterBar: React.FC<FooterBarChildProps> = ({
         label={_('Go Forward')}
         disabled={!view?.history.canGoForward}
       />
-      <PageJumpInput bookKey={bookKey} className='mx-2 text-sm' />
+      <PageJumpInput bookKey={bookKey} previewFraction={previewFraction} className='mx-2 text-sm' />
       <input
         ref={rangeInputRef}
         type='range'
@@ -137,4 +148,6 @@ const DesktopFooterBar: React.FC<FooterBarChildProps> = ({
   );
 };
 
-export default DesktopFooterBar;
+// Memoized so a footer that keeps its props (hidden, between page turns) skips
+// its panels and buttons.
+export default React.memo(DesktopFooterBar);

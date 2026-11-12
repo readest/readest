@@ -16,6 +16,7 @@ vi.mock('@/utils/simplecc', () => ({
 }));
 
 import { refreshSectionGlosses } from '@/app/reader/utils/wordlensSection';
+import { applyGlosses, buildSectionTextModel, clearGlosses } from '@/app/reader/utils/wordlensRuby';
 import { loadGlossIndex } from '@/services/wordlens/glossPacks';
 import type { GlossIndex } from '@/services/wordlens/glossIndex';
 import { runSimpleCC } from '@/utils/simplecc';
@@ -109,5 +110,184 @@ describe('refreshSectionGlosses Traditional Chinese hints', () => {
     expect(await glossOf('', 'zh-TW')).toBe('s2twp:电脑');
     expect(await glossOf('', 'zh-Hant-TW')).toBe('s2twp:电脑'); // Android / iOS locale shape
     expect(await glossOf('', 'zh-Hans-CN')).toBe('电脑');
+  });
+});
+
+describe('refreshSectionGlosses vocabulary marks (#6613)', () => {
+  const marks = (learning: [string, string | undefined][], mastered: string[] = []) => ({
+    learning: new Map(learning),
+    mastered: new Set(mastered),
+  });
+  const render = async (vs: ViewSettings, extra: Record<string, unknown>) => {
+    const doc = document.implementation.createHTMLDocument('t');
+    doc.body.innerHTML = '<p>Captain Nemo smiled.</p>';
+    await refreshSectionGlosses(doc, vs, ctx({ appLang: 'zh-CN', ...extra }));
+    return [...doc.querySelectorAll('ruby.wl-gloss > rt')].map((rt) => rt.textContent);
+  };
+
+  it('hints a Learning word with a saved hint even when no pack is available', async () => {
+    mockedLoad.mockResolvedValue(null);
+    expect(await render(viewSettings(), { vocabulary: marks([['nemo', '尼莫']]) })).toEqual([
+      '尼莫',
+    ]);
+  });
+
+  it('draws nothing when Word Lens is off', async () => {
+    const vs = viewSettings({ wordLensEnabled: false });
+    expect(await render(vs, { vocabulary: marks([['nemo', '尼莫']]) })).toEqual([]);
+    expect(mockedLoad).not.toHaveBeenCalled();
+  });
+
+  // Marking a word can start a refresh; a reader may select text while the pack
+  // index loads, and drawing hints then would close the dictionary popup.
+  const selectDuringLoad = (doc: Document) => {
+    const fake = { isCollapsed: true, rangeCount: 0 };
+    vi.spyOn(doc, 'getSelection').mockReturnValue(fake as unknown as Selection);
+    mockedLoad.mockImplementation(async () => {
+      fake.isCollapsed = false;
+      fake.rangeCount = 1;
+      return null;
+    });
+    return () => {
+      fake.isCollapsed = true;
+      doc.dispatchEvent(new Event('selectionchange'));
+    };
+  };
+  const hintsIn = (doc: Document) =>
+    [...doc.querySelectorAll('ruby.wl-gloss > rt')].map((rt) => rt.textContent);
+
+  it('waits to draw hints when a selection starts while the pack loads', async () => {
+    const doc = document.implementation.createHTMLDocument('t');
+    doc.body.innerHTML = '<p>Captain Nemo smiled.</p>';
+    const clearSelection = selectDuringLoad(doc);
+    const vocabulary = marks([['nemo', '尼莫']]);
+    await refreshSectionGlosses(doc, viewSettings(), ctx({ appLang: 'zh-CN', vocabulary }));
+    expect(hintsIn(doc)).toEqual([]);
+    clearSelection();
+    expect(hintsIn(doc)).toEqual(['尼莫']);
+  });
+
+  it('leaves drawn hints alone until a live selection clears', async () => {
+    const doc = document.implementation.createHTMLDocument('t');
+    doc.body.innerHTML = '<p>Captain Nemo smiled.</p>';
+    const vocabulary = marks([['nemo', '尼莫']]);
+    await refreshSectionGlosses(doc, viewSettings(), ctx({ appLang: 'zh-CN', vocabulary }));
+    expect(hintsIn(doc)).toEqual(['尼莫']);
+    const fake = { isCollapsed: false, rangeCount: 1 };
+    vi.spyOn(doc, 'getSelection').mockReturnValue(fake as unknown as Selection);
+    const off = viewSettings({ wordLensEnabled: false });
+    await refreshSectionGlosses(doc, off, ctx({ appLang: 'zh-CN', vocabulary }));
+    expect(hintsIn(doc)).toEqual(['尼莫']);
+    fake.isCollapsed = true;
+    doc.dispatchEvent(new Event('selectionchange'));
+    await vi.waitFor(() => expect(hintsIn(doc)).toEqual([]));
+  });
+
+  it('drops a waiting draw once a newer refresh has run', async () => {
+    const doc = document.implementation.createHTMLDocument('t');
+    doc.body.innerHTML = '<p>Captain Nemo smiled.</p>';
+    const clearSelection = selectDuringLoad(doc);
+    const vocabulary = marks([['nemo', '尼莫']]);
+    await refreshSectionGlosses(doc, viewSettings(), ctx({ appLang: 'zh-CN', vocabulary }));
+    const off = viewSettings({ wordLensEnabled: false });
+    await refreshSectionGlosses(doc, off, ctx({ appLang: 'zh-CN', vocabulary }));
+    clearSelection();
+    expect(hintsIn(doc)).toEqual([]);
+  });
+
+  it('hints a Learning phrase inside one text node (#7325)', async () => {
+    const doc = document.implementation.createHTMLDocument('t');
+    doc.body.innerHTML = '<p>The matter is decreed, Divine aid is at hand.</p>';
+    const vocabulary = marks([['matter is decreed', 'test']]);
+    await refreshSectionGlosses(doc, viewSettings(), ctx({ appLang: 'zh-CN', vocabulary }));
+    expect(doc.querySelector('ruby.wl-gloss')?.firstChild?.textContent).toBe('matter is decreed');
+  });
+
+  it('keeps the word hints of a phrase split across inline markup', async () => {
+    const pack = {
+      lookup: (w: string) =>
+        w.toLowerCase() === 'cryptic' ? { rank: 99999, gloss: '晦涩' } : null,
+    } as unknown as GlossIndex;
+    mockedLoad.mockResolvedValue(pack);
+    const doc = document.implementation.createHTMLDocument('t');
+    doc.body.innerHTML = '<p>A cryptic <i>note</i>.</p>';
+    const vocabulary = marks([['cryptic note', '密信']]);
+    await refreshSectionGlosses(doc, viewSettings(), ctx({ appLang: 'zh-CN', vocabulary }));
+    expect(hintsIn(doc)).toEqual(['晦涩']);
+  });
+
+  it('skips a Mastered word the pack would hint', async () => {
+    const pack = {
+      lookup: (w: string) => (w.toLowerCase() === 'smiled' ? { rank: 99999, gloss: '笑' } : null),
+    } as unknown as GlossIndex;
+    mockedLoad.mockResolvedValue(pack);
+    expect(await render(viewSettings(), {})).toEqual(['笑']);
+    expect(await render(viewSettings(), { vocabulary: marks([], ['smiled']) })).toEqual([]);
+  });
+});
+
+describe('whenSelectionClears', () => {
+  // Re-rendering hints unwraps <ruby> around the selected word, which collapses
+  // the selection and closes the dictionary popup the reader is using.
+  it('runs at once without a selection, otherwise after it collapses', async () => {
+    const { whenSelectionClears } = await import('@/app/reader/utils/wordlensSection');
+    const doc = document.implementation.createHTMLDocument('t');
+    doc.body.innerHTML = '<p>Captain Nemo smiled.</p>';
+    const run = vi.fn();
+    const fake = { isCollapsed: false, rangeCount: 1 };
+    vi.spyOn(doc, 'getSelection').mockReturnValue(fake as unknown as Selection);
+
+    whenSelectionClears(doc, run);
+    expect(run).not.toHaveBeenCalled();
+    doc.dispatchEvent(new Event('selectionchange'));
+    expect(run).not.toHaveBeenCalled();
+    fake.isCollapsed = true;
+    doc.dispatchEvent(new Event('selectionchange'));
+    expect(run).toHaveBeenCalledTimes(1);
+    doc.dispatchEvent(new Event('selectionchange'));
+    expect(run).toHaveBeenCalledTimes(1);
+
+    const now = vi.fn();
+    whenSelectionClears(doc, now);
+    expect(now).toHaveBeenCalledTimes(1);
+  });
+});
+
+// The reader refreshes the hints of every loaded section after each section
+// load, with Word Lens on or off. Clearing then joined the text nodes of the
+// whole section every time, which in Readest Lite is a walk over every node
+// of every loaded section.
+describe('clearing hints', () => {
+  it('leaves a section without hints untouched', async () => {
+    const doc = document.implementation.createHTMLDocument('t');
+    const p = doc.createElement('p');
+    p.append(doc.createTextNode('Captain '), doc.createTextNode('Nemo smiled.'));
+    doc.body.append(p);
+    await refreshSectionGlosses(doc, viewSettings({ wordLensEnabled: false }), ctx());
+    expect(p.childNodes.length).toBe(2);
+  });
+
+  it('hints a word split across adjacent text nodes when Word Lens is on', async () => {
+    // A translation's unwrapped tags leave its text in adjacent text nodes.
+    const doc = document.implementation.createHTMLDocument('t');
+    const p = doc.createElement('p');
+    p.append(doc.createTextNode('Captain Ne'), doc.createTextNode('mo smiled.'));
+    doc.body.append(p);
+    const vocabulary = { learning: new Map([['nemo', '尼莫']]), mastered: new Set<string>() };
+    await refreshSectionGlosses(doc, viewSettings(), ctx({ appLang: 'zh-CN', vocabulary }));
+    expect(doc.querySelector('ruby.wl-gloss > rt')?.textContent).toBe('尼莫');
+  });
+
+  it('joins the text a hint split back into one node', () => {
+    const doc = document.implementation.createHTMLDocument('t');
+    doc.body.innerHTML = '<p>The quick fox</p>';
+    const p = doc.querySelector('p')!;
+    applyGlosses(doc, buildSectionTextModel(doc), [
+      { start: 4, end: 9, word: 'quick', gloss: '敏捷' },
+    ]);
+    expect(p.childNodes.length).toBe(3);
+    clearGlosses(doc);
+    expect(p.childNodes.length).toBe(1);
+    expect(p.textContent).toBe('The quick fox');
   });
 });

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { MdClose, MdPauseCircleFilled, MdPlayCircleFilled } from 'react-icons/md';
 import { ttsSessionManager, TTSSession } from '@/services/tts';
 import { asAudiobookController } from '@/services/audiobook/AudiobookController';
+import { resumePlayback } from '@/services/playback/playbackSource';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useLibraryStore } from '@/store/libraryStore';
@@ -117,7 +118,7 @@ const NowPlayingBar = ({ isSelectMode }: NowPlayingBarProps) => {
     if (controller.state === 'playing') {
       void controller.pause();
     } else if (controller.state.includes('paused')) {
-      void controller.start();
+      void resumePlayback(controller);
     }
   };
 

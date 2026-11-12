@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { useEnv } from '@/context/EnvContext';
 import { FoliateView } from '@/types/view';
 import { ViewSettings } from '@/types/book';
@@ -19,6 +19,8 @@ import { isTauriAppPlatform } from '@/services/environment';
 import { tauriGetWindowLogicalPosition } from '@/utils/window';
 import { getReadingRulerMoveDirection } from '../utils/readingRuler';
 import { isPageOverflowing } from '../utils/pageOverflow';
+import { isDragPastPanEdge } from '../utils/turnGestureArena';
+import { hasReaderOverlay, subscribeReaderOverlays } from '../utils/readerOverlay';
 import { useTouchInterceptor } from './useTouchInterceptor';
 
 export type ScrollSource = 'touch' | 'mouse';
@@ -46,6 +48,16 @@ const hasHorizontalPanning = (
 ) => {
   if (!view || !viewSettings) return false;
   return isPanningView(view, viewSettings) && view.isOverflowX();
+};
+
+// Zoom a fixed-layout page and keep the saved setting in step, as a pinch does.
+export const setFixedLayoutZoom = (bookKey: string, view: FoliateView, zoomLevel: number) => {
+  const { getViewSettings, setViewSettings } = useReaderStore.getState();
+  const viewSettings = getViewSettings(bookKey);
+  if (!viewSettings || viewSettings.zoomLevel === zoomLevel) return;
+  view.renderer.setAttribute('scale-factor', zoomLevel);
+  viewSettings.zoomLevel = zoomLevel;
+  setViewSettings(bookKey, viewSettings);
 };
 
 export const hasVerticalPanning = (
@@ -274,7 +286,7 @@ export const usePagination = (
   containerRef: React.RefObject<HTMLDivElement | null>,
 ) => {
   const { appService } = useEnv();
-  const { getBookData } = useBookDataStore();
+  const getBookData = useBookDataStore((s) => s.getBookData);
   const { getViewSettings, getViewState } = useReaderStore();
   const { hoveredBookKey, setHoveredBookKey } = useReaderStore();
   const {
@@ -287,6 +299,9 @@ export const usePagination = (
   // Reactive subscription: drives the effect dependency array below. The
   // handlers themselves re-read via getState() to avoid stale closures.
   const hardwarePageTurner = useSettingsStore((s) => s.settings.hardwarePageTurner);
+  const isSettingsDialogOpen = useSettingsStore((s) => s.isSettingsDialogOpen);
+  const overlayOpen = useSyncExternalStore(subscribeReaderOverlays, hasReaderOverlay, () => false);
+  const readerControlsOpen = !!hoveredBookKey || isSettingsDialogOpen || overlayOpen;
   // While this book's TTS is actively playing, the volume keys must control the
   // system volume instead of flipping pages (#4691). A paused or stopped session
   // hands them back to the page-flip interception. Safe on iOS because the
@@ -439,16 +454,27 @@ export const usePagination = (
       }
     } else if (msg instanceof CustomEvent) {
       const viewSettings = getViewSettings(bookKey);
-      // While TTS is playing, volume keys control the volume, not pagination.
-      // The native layer still forwards the key here (iOS via a lingering KVO,
-      // Android calls onNativeKeyDown unconditionally), so guard it here too.
+      // Native volume events can still arrive after interception is released.
+      // Read current controls state here: this listener is registered once.
       if (
         msg.type === 'native-key-down' &&
         viewSettings?.volumeKeysToFlip &&
-        !ttsPlayingRef.current
+        !ttsPlayingRef.current &&
+        !useReaderStore.getState().hoveredBookKey &&
+        !useSettingsStore.getState().isSettingsDialogOpen &&
+        !hasReaderOverlay()
       ) {
         const { keyName } = msg.detail;
         setHoveredBookKey('');
+        if (
+          viewSettings.paragraphMode?.enabled &&
+          (keyName === 'VolumeUp' || keyName === 'VolumeDown')
+        ) {
+          eventDispatcher.dispatch(keyName === 'VolumeUp' ? 'paragraph-prev' : 'paragraph-next', {
+            bookKey,
+          });
+          return;
+        }
         if (keyName === 'VolumeUp') {
           if (viewSettings.readingRulerEnabled && dispatchReadingRulerMove('up')) {
             return;
@@ -627,20 +653,19 @@ export const usePagination = (
   }, [bookKey]);
 
   // Volume-key page-flip interception (mobile only). Acquired only while the
-  // setting is on and TTS isn't playing; the matching release on re-run/unmount
+  // setting is on, controls are hidden and TTS is idle; release on re-run/unmount
   // keeps the reference count balanced.
+  const volumeKeysToFlip = !!getViewSettings(bookKey)?.volumeKeysToFlip;
   useEffect(() => {
     if (!appService?.isMobileApp) return;
-
-    const viewSettings = getViewSettings(bookKey);
-    if (!viewSettings?.volumeKeysToFlip || ttsPlaying) return;
+    if (!volumeKeysToFlip || ttsPlaying || readerControlsOpen) return;
 
     acquireVolumeKeyInterception();
     return () => {
       releaseVolumeKeyInterception();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ttsPlaying]);
+  }, [volumeKeysToFlip, ttsPlaying, readerControlsOpen]);
 
   // Hardware page turner: native-key + DOM-key listeners and native
   // media-key interception, re-evaluated whenever the setting changes.
@@ -691,21 +716,43 @@ export const usePagination = (
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hardwarePageTurner]);
 
+  // Horizontal pan of a zoomed page when the current touch began (see below);
+  // undefined when this interceptor did not see the touch start.
+  const swipeStartPanXRef = useRef<number | null | undefined>(undefined);
+
   // Touch swipe page flip for fixed-layout books — registered as a touch interceptor
   // so it participates in the priority-based consumption chain.
   useTouchInterceptor(
     `swipe-flip-${bookKey}`,
     (bk, detail) => {
-      if (bk !== bookKey || detail.phase !== 'end') return false;
+      if (bk !== bookKey) return false;
+      if (detail.phase === 'start') {
+        swipeStartPanXRef.current = viewRef.current?.renderer.panX ?? null;
+        return false;
+      }
+      if (detail.phase !== 'end') return false;
+      const startPanX = swipeStartPanXRef.current;
+      swipeStartPanXRef.current = undefined;
       const bookData = getBookData(bookKey);
       const viewSettings = getViewSettings(bookKey);
       if (!bookData?.isFixedLayout || viewSettings?.scrolled) return false;
       if (viewSettings?.disableSwipe) return false;
-      if (isPanningView(viewRef.current, viewSettings)) return false;
 
       const { deltaX, deltaY, deltaT } = detail;
+      // A zoomed page pans under a drag, unless it is pulled past its edge.
+      const panning = isPanningView(viewRef.current, viewSettings);
+      if (panning) {
+        if (startPanX === undefined || !isDragPastPanEdge(startPanX, deltaX)) return false;
+      }
       const vx = Math.abs(deltaX / (deltaT || 1));
       if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 30 && vx > 0.2) {
+        // Like Photos, the page turned to opens at 100% zoom. A swipe at the
+        // book's first or last page turns nowhere and keeps the zoom.
+        const view = viewRef.current;
+        const forward = viewSettings?.rtl ? deltaX > 0 : deltaX < 0;
+        if (panning && view && !(forward ? view.renderer.atEnd : view.renderer.atStart)) {
+          setFixedLayoutZoom(bookKey, view, 100);
+        }
         viewPagination(viewRef.current, viewSettings, deltaX > 0 ? 'left' : 'right');
         return true;
       }

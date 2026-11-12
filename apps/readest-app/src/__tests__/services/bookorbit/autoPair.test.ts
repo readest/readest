@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it, vi } from 'vitest';
 import { autoPairBookOrbitAudiobook } from '@/services/bookorbit/autoPair';
 import { MANIFEST_SCHEMA, SUPPORTED_SCHEMA_VERSION } from '@/services/bookorbit/manifest';

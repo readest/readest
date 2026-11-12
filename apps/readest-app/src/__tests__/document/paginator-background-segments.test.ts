@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 // Regression test for the swipe page-turn background flash.
 //
 // In paginated mode each rendered view paints a full-bleed background segment

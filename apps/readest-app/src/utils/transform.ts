@@ -9,9 +9,15 @@ import {
   ReadingStatus,
 } from '@/types/book';
 import { DBBookConfig, DBBook, DBBookNote } from '@/types/records';
-import { sanitizeString } from './sanitize';
 import { buildFeedBookUrl } from '@/services/rss/feedBookUrl';
 import { restoreAbsBookFields } from './audiobook';
+
+// Postgres text columns reject NUL. Kept here rather than in sanitize.ts, which
+// loads DOMPurify: the sync API route imports this module on every cold start.
+const sanitizeString = (str?: string) => {
+  if (!str) return str;
+  return str.replace(/\u0000/g, '');
+};
 
 export const transformBookConfigToDB = (bookConfig: unknown, userId: string): DBBookConfig => {
   const {
@@ -23,6 +29,7 @@ export const transformBookConfigToDB = (bookConfig: unknown, userId: string): DB
     rsvpPosition,
     searchConfig,
     viewSettings,
+    ttsPacks,
     updatedAt,
   } = bookConfig as BookConfig;
 
@@ -36,6 +43,8 @@ export const transformBookConfigToDB = (bookConfig: unknown, userId: string): DB
     rsvp_position: rsvpPosition && JSON.stringify(rsvpPosition),
     search_config: searchConfig && JSON.stringify(searchConfig),
     view_settings: viewSettings && JSON.stringify(viewSettings),
+    // Only a book with Read Aloud history writes the column.
+    ...(ttsPacks ? { tts_packs: JSON.stringify(ttsPacks) } : {}),
     updated_at: new Date(updatedAt ?? Date.now()).toISOString(),
   };
 };
@@ -50,6 +59,7 @@ export const transformBookConfigFromDB = (dbBookConfig: DBBookConfig): BookConfi
     rsvp_position,
     search_config,
     view_settings,
+    tts_packs,
     updated_at,
   } = dbBookConfig;
   return {
@@ -61,6 +71,7 @@ export const transformBookConfigFromDB = (dbBookConfig: DBBookConfig): BookConfi
     rsvpPosition: rsvp_position && JSON.parse(rsvp_position),
     searchConfig: search_config && JSON.parse(search_config),
     viewSettings: view_settings && JSON.parse(view_settings),
+    ...(tts_packs ? { ttsPacks: JSON.parse(tts_packs) } : {}),
     updatedAt: new Date(updated_at!).getTime(),
   } as BookConfig;
 };
@@ -72,6 +83,7 @@ export const transformBookToDB = (book: unknown, userId: string): DBBook => {
     format,
     title,
     sourceTitle,
+    originalFilename,
     author,
     groupId,
     groupName,
@@ -111,6 +123,7 @@ export const transformBookToDB = (book: unknown, userId: string): DBBook => {
     cover_updated_at: coverUpdatedAt ? new Date(coverUpdatedAt).toISOString() : null,
     page_count: pageCount ?? null,
     source_title: sanitizeString(sourceTitle),
+    original_filename: sanitizeString(originalFilename),
     metadata: metadata ? sanitizeString(JSON.stringify(metadata)) : null,
     metadata_updated_at: metadataUpdatedAt ? new Date(metadataUpdatedAt).toISOString() : null,
     created_at: new Date(createdAt ?? Date.now()).toISOString(),
@@ -138,6 +151,7 @@ export const transformBookFromDB = (dbBook: DBBook): Book => {
     cover_updated_at,
     page_count,
     source_title,
+    original_filename,
     metadata,
     metadata_updated_at,
     created_at,
@@ -174,6 +188,7 @@ export const transformBookFromDB = (dbBook: DBBook): Book => {
   // Only when set: an undefined key would wipe the local count in the pull
   // merge's `{ ...local, ...remote }` spread.
   if (page_count != null) book.pageCount = page_count;
+  if (original_filename != null) book.originalFilename = original_filename;
   // Native cloud DBBook has no `url` column; a feed book carries its feed URL in
   // metadata so the reader can rebuild the feed:// descriptor here.
   if (!book.url && book.metadata?.feedUrl) {
@@ -204,6 +219,7 @@ export const transformBookNoteToDB = (bookNote: unknown, userId: string): DBBook
     note,
     global,
     ink,
+    crosspoint,
     createdAt,
     updatedAt,
     deletedAt,
@@ -226,6 +242,8 @@ export const transformBookNoteToDB = (bookNote: unknown, userId: string): DBBook
     global,
     // Absent for other notes, so an upsert never clears stored strokes.
     ink,
+    // Absent until a reader or app anchors the highlight for CrossPoint.
+    crosspoint,
     created_at: new Date(createdAt ?? Date.now()).toISOString(),
     updated_at: new Date(updatedAt ?? Date.now()).toISOString(),
     // note that only null deleted_at is updated to the database, undefined is not
@@ -249,6 +267,7 @@ export const transformBookNoteFromDB = (dbBookNote: DBBookNote): BookNote => {
     note,
     global,
     ink,
+    crosspoint,
     created_at,
     updated_at,
     deleted_at,
@@ -271,6 +290,7 @@ export const transformBookNoteFromDB = (dbBookNote: DBBookNote): BookNote => {
     // No key without strokes: a pulled note is merged over the local one, and
     // a server without the column must not wipe strokes held locally.
     ...(ink ? { ink } : {}),
+    ...(crosspoint ? { crosspoint } : {}),
     createdAt: new Date(created_at!).getTime(),
     updatedAt: new Date(updated_at!).getTime(),
     deletedAt: deleted_at ? new Date(deleted_at).getTime() : null,

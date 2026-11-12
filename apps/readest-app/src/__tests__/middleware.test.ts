@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect } from 'vitest';
 import { NextRequest } from 'next/server';
 import { middleware } from '@/middleware';
@@ -34,6 +35,13 @@ describe('middleware CORS preflight', () => {
   it('allows Authorization and Content-Type when the preflight requests no headers', () => {
     const res = preflight();
     expect(res.headers.get('Access-Control-Allow-Headers')).toBe('Authorization, Content-Type');
+  });
+
+  it('allows PATCH so the native apps can approve a pending Send to Readest sender', () => {
+    // The apps call this API cross-origin, so the webview drops any method
+    // missing from this list before the request reaches the route.
+    const methods = preflight().headers.get('Access-Control-Allow-Methods')?.split(', ');
+    expect(methods).toContain('PATCH');
   });
 });
 

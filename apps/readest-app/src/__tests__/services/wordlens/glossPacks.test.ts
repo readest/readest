@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import type { AppService, BaseDir } from '@/types/system';
 import type { GlossIndexData } from '@/services/wordlens/types';

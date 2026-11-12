@@ -28,6 +28,10 @@ local API_CALL_DEBOUNCE_DELAY = 30
 -- settle after wake (kosync uses the same 1s), and coalesces rapid triggers
 -- into a single pull for the book you settle on (#5006).
 local BACKGROUND_PULL_DELAY = 1
+-- How often, and how many times, the wake pull checks for the network first
+-- (up to 60 s; a Kindle took 3 to 11 s to get Wi-Fi back, #7159).
+local WAKE_NETWORK_CHECK_INTERVAL = 2
+local WAKE_NETWORK_CHECKS = 30
 
 -- KOReader's "Action when Wi-Fi is off" (Network settings). nil is "prompt",
 -- the default; "turn on" brings Wi-Fi up without asking; "ignore" (Android)
@@ -142,6 +146,32 @@ function ReadestSync:scheduleBackgroundPull(delay)
         end
     end
     UIManager:scheduleIn(delay, self.background_pull_task)
+end
+
+-- The wake pull waits until Wi-Fi has an address and a default route. On a
+-- Kindle the firmware brings Wi-Fi back a few seconds after wake, and unless
+-- "Restore Wi-Fi connection on resume" is on, KOReader sends no
+-- NetworkConnected to rerun a pull that ran too early. isOnline (a DNS
+-- lookup) can say yes before there is a route, so it isn't enough (#7159).
+-- After the last check the pull runs anyway, and its offline handling applies.
+-- The wait is held in background_pull_task, so other triggers replace it and
+-- closing cancels it.
+function ReadestSync:scheduleWakePull(checks)
+    if checks < WAKE_NETWORK_CHECKS
+            and not (NetworkMgr:isConnected() and NetworkMgr:hasDefaultRoute()) then
+        if self.background_pull_task then
+            UIManager:unschedule(self.background_pull_task)
+        end
+        self.background_pull_task = function()
+            self.background_pull_task = nil
+            if self.settings.auto_sync and self.settings.access_token and self.ui.document then
+                self:scheduleWakePull(checks + 1)
+            end
+        end
+        UIManager:scheduleIn(WAKE_NETWORK_CHECK_INTERVAL, self.background_pull_task)
+        return
+    end
+    self:scheduleBackgroundPull(BACKGROUND_PULL_DELAY)
 end
 
 -- Reverse-lookup table: file extension (lowercase) → Readest format
@@ -1159,13 +1189,10 @@ function ReadestSync:onPageUpdate(page)
 end
 
 -- Waking the device with a book already open should pull like reopening
--- the book does (issue #4924). Delayed because Wi-Fi is usually still
--- coming back up right after wake; with "Action when Wi-Fi is off: prompt"
--- the pull skips if it isn't, and onNetworkConnected reruns it (KOReader
--- turns Wi-Fi off on suspend, so on Kobo/Kindle that rerun, once "Restore
--- Wi-Fi connection on resume" has finished, is the path that actually
--- pulls). On devices where Suspend/Resume also fire on focus changes
--- (Android), the debounce keeps this from hammering the API.
+-- the book does (issue #4924). It waits for the network first, since Wi-Fi
+-- is usually still coming back up right after wake (see scheduleWakePull).
+-- On devices where Suspend/Resume also fire on focus changes (Android), the
+-- debounce keeps this from hammering the API.
 function ReadestSync:onResume()
     -- Guarded because some tests construct a plugin table without calling
     -- init() (see onCloseWidget). The service kept running while suspended
@@ -1184,7 +1211,7 @@ function ReadestSync:onResume()
         return
     end
     self.last_resume_sync_timestamp = now
-    self:scheduleBackgroundPull(BACKGROUND_PULL_DELAY)
+    self:scheduleWakePull(0)
 end
 
 function ReadestSync:onAnnotationsModified(items)
@@ -1203,6 +1230,8 @@ function ReadestSync:onAnnotationsModified(items)
     end
 end
 
+-- Retry a skipped pull on reconnect, preserving any pending wake wait's
+-- route checks and original limit.
 function ReadestSync:onNetworkConnected()
     if self.settings.localsend_enabled then
         self.localsend:startService(true)
@@ -1219,7 +1248,11 @@ function ReadestSync:onNetworkConnected()
         return
     end
     self.pull_pending_offline = nil
-    self:scheduleBackgroundPull(BACKGROUND_PULL_DELAY)
+    -- A pending wake wait already checks for an address and a route. Keep
+    -- its original limit: NetworkConnected can arrive before routing is ready.
+    if not self.background_pull_task then
+        self:scheduleBackgroundPull(BACKGROUND_PULL_DELAY)
+    end
 end
 
 function ReadestSync:onNetworkDisconnected()

@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { Book } from '@/types/book';
 import { createBookshelf, defaultBookshelves } from '@/services/bookshelves/definitions';
@@ -37,6 +38,45 @@ describe('bookshelf presentation parity', () => {
         ascending ? expected : [...expected].reverse(),
       );
     }
+  });
+
+  it.each([
+    true,
+    false,
+  ])('sorts subgroups by their own name among the books of a parent group (ascending: %s)', (ascending) => {
+    const languageBooks: Book[] = (
+      [
+        ['Writing Systems', 'Languages'],
+        ['Introduction to Linguistics', 'Languages'],
+        ['Etymology', 'Languages'],
+        ['Mandarin Basics', 'Languages/Chinese'],
+        ['French Grammar', 'Languages/French'],
+      ] as const
+    ).map(([title, groupName], index) => ({ ...books[0]!, hash: `${index}`, title, groupName }));
+    const expected = [
+      'Chinese',
+      'Etymology',
+      'French',
+      'Introduction to Linguistics',
+      'Writing Systems',
+    ];
+    const definition = {
+      ...createBookshelf('', 'default'),
+      sort: { by: 'title' as const, ascending, thenBy: 'none' as const, thenAscending: true },
+    };
+    const result = evaluateBookshelves(languageBooks, [definition], 'en')[0]!;
+    const presented = presentBookshelf(
+      result,
+      { libraryGroupBy: 'group' },
+      'en',
+      undefined,
+      'languages',
+      'Languages',
+    );
+
+    expect(presented.map((item) => ('books' in item ? item.displayName : item.title))).toEqual(
+      ascending ? expected : [...expected].reverse(),
+    );
   });
 
   it('applies global grouping to every shelf and layout while retaining all books', () => {

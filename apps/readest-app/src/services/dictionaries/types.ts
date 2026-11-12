@@ -24,6 +24,8 @@ export interface DictionaryLookupContext {
   signal: AbortSignal;
   /** Tab pane to render into. Provider populates this; never touch `document` selectors. */
   container: HTMLElement;
+  /** Reveal content written while an incremental lookup is still running. */
+  onUpdate?(): void;
   /**
    * Called when the provider intercepts an in-popup link click and wants the
    * shell to navigate (push to per-tab history). Optional — providers without
@@ -234,10 +236,22 @@ export interface DictionarySettings {
    */
   autoPlayPronunciation?: boolean;
   /**
+   * Save every word looked up in the dictionary popup to the vocabulary
+   * builder with its sentence (#789). Unset means on.
+   */
+  saveLookupsToVocabulary?: boolean;
+  /** Use a full-screen native dictionary on iOS; unset keeps the compact presentation. */
+  systemDictionaryFullscreen?: boolean;
+  /**
    * Custom translator (OpenAI-compatible) the context dictionary asks
    * (#5544). Unset or stale ids fall back to the first available one.
    */
   contextTranslatorId?: string;
+  /** 'default', 'custom', or the id of a saved Custom Translator prompt. */
+  contextPromptId?: string;
+  contextSystemPrompt?: string;
+  /** Dictionary-only output cap. Zero means the provider's default. */
+  contextMaxOutputTokens?: number;
 }
 
 /** Stable ids for the built-in providers. */

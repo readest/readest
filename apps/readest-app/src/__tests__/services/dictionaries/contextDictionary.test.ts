@@ -1,10 +1,20 @@
+// @vitest-environment happy-dom
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const { generateTextMock } = vi.hoisted(() => ({ generateTextMock: vi.fn() }));
 
 vi.mock('ai', async (importOriginal) => {
   const actual = await importOriginal<typeof import('ai')>();
-  return { ...actual, generateText: generateTextMock };
+  return {
+    ...actual,
+    generateText: generateTextMock,
+    streamText: (args: unknown) => ({
+      fullStream: (async function* () {
+        const { text } = await generateTextMock(args);
+        yield { type: 'text-delta', text };
+      })(),
+    }),
+  };
 });
 vi.mock('@/services/ai/utils/httpFetch', () => ({ getAIFetch: () => vi.fn() }));
 
@@ -136,6 +146,56 @@ describe('lookupInContext', () => {
       bookTitle: 'River',
       bookAuthor: 'Ann',
     });
+  });
+
+  it('uses custom instructions with book and language variables and accepts a prose reply', async () => {
+    generateTextMock.mockResolvedValue({
+      text: '<think>reasoning</think>\n## History\nA river bank.',
+    });
+    const result = await lookupInContext(translator, input, new AbortController().signal, {
+      systemPrompt:
+        'Explain {{sourceLang}} in {{targetLang}} for {{bookTitle}} by {{bookAuthor}}. Focus on etymology.',
+      maxOutputTokens: 4096,
+    });
+    expect(result).toMatchObject({ headword: 'bank', markdown: '## History\nA river bank.' });
+    expect(generateTextMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        system: 'Explain English in French for River by Ann. Focus on etymology.',
+        maxOutputTokens: 4096,
+      }),
+    );
+  });
+
+  it('does not reuse a response after instructions or the output limit changes', async () => {
+    generateTextMock.mockResolvedValue({ text: 'History of the word.' });
+    const signal = new AbortController().signal;
+    await lookupInContext(translator, input, signal, {
+      systemPrompt: 'History',
+      maxOutputTokens: 512,
+    });
+    await lookupInContext(translator, input, signal, {
+      systemPrompt: 'History',
+      maxOutputTokens: 512,
+    });
+    expect(generateTextMock).toHaveBeenCalledTimes(1);
+    await lookupInContext(translator, input, signal, {
+      systemPrompt: 'Origins',
+      maxOutputTokens: 512,
+    });
+    await lookupInContext(translator, input, signal, {
+      systemPrompt: 'Origins',
+      maxOutputTokens: 4096,
+    });
+    expect(generateTextMock).toHaveBeenCalledTimes(3);
+  });
+
+  it('rejects an empty custom response', async () => {
+    generateTextMock.mockResolvedValue({ text: '<think>reasoning</think>' });
+    await expect(
+      lookupInContext(translator, input, new AbortController().signal, {
+        systemPrompt: 'Explain the history.',
+      }),
+    ).rejects.toThrow('The AI provider returned an incomplete entry.');
   });
 
   it('answers a repeated lookup from the cache', async () => {

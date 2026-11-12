@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useEnv } from '@/context/EnvContext';
 import { useSettingsStore } from '@/store/settingsStore';
-import { useBookDataStore } from '@/store/bookDataStore';
+import { useBookDataStore, useBookConfig } from '@/store/bookDataStore';
 import { useHardcoverSyncStore } from '@/store/hardcoverSyncStore';
 import { useBookProgress } from '@/store/readerProgressStore';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -15,11 +15,16 @@ import {
   isHardcoverConnected,
   createHardcoverTokenStore,
 } from '@/services/hardcover';
+import { recordFlow } from '@/services/sync/dataFlow/log';
+import type { FlowKind } from '@/services/sync/dataFlow/types';
 import { BookNote, HardcoverBookLink } from '@/types/book';
 
 // The "currently reading" status + reading-session progress Hardcover tracks
 // doesn't need second-by-second accuracy, so the auto-sync debounce is coarse.
 const HARDCOVER_SYNC_DEBOUNCE_MS = 10000;
+
+const recordPush = (bookTitle: string, kind: FlowKind, count: number, error?: string) =>
+  recordFlow({ connector: 'hardcover', direction: 'push', kind, bookTitle, count, error });
 
 interface PushOptions {
   // Auto-sync runs silently (errors → console only) so we don't toast on every
@@ -30,7 +35,10 @@ interface PushOptions {
 export const useHardcoverSync = (bookKey: string) => {
   const _ = useTranslation();
   const { envConfig } = useEnv();
-  const { getConfig, getBookData, setConfig, saveConfig } = useBookDataStore();
+  const getConfig = useBookDataStore((s) => s.getConfig);
+  const getBookData = useBookDataStore((s) => s.getBookData);
+  const setConfig = useBookDataStore((s) => s.setConfig);
+  const saveConfig = useBookDataStore((s) => s.saveConfig);
   // Reactive page-turn signal — drives the auto-push effect below. The host
   // (Annotator) already subscribes to this, so it adds no extra renders.
   const progress = useBookProgress(bookKey);
@@ -130,6 +138,7 @@ export const useHardcoverSync = (bookKey: string) => {
         begin(bookKey);
         try {
           const result = await client.syncBookNotes(book, config);
+          recordPush(book.title, 'notes', result.inserted + result.updated);
           await rememberLink(result.link);
           await updateLastSyncedAt(Date.now());
           if (!silent) {
@@ -152,7 +161,10 @@ export const useHardcoverSync = (bookKey: string) => {
           console.error('Hardcover notes sync failed:', error);
           const message = error instanceof Error ? error.message : String(error);
           // A book Hardcover cannot sync is not a broken sync.
-          if (!(error instanceof HardcoverUnmatchedError)) failure = message;
+          if (!(error instanceof HardcoverUnmatchedError)) {
+            failure = message;
+            recordPush(book.title, 'notes', 0, message);
+          }
           if (!silent) {
             eventDispatcher.dispatch('toast', {
               message:
@@ -195,6 +207,7 @@ export const useHardcoverSync = (bookKey: string) => {
       begin(bookKey);
       try {
         const link = await client.pushProgress(book, config);
+        recordPush(book.title, 'progress', 1);
         await rememberLink(link);
         await updateLastSyncedAt(Date.now());
         if (!silent) {
@@ -207,7 +220,10 @@ export const useHardcoverSync = (bookKey: string) => {
         console.error('Hardcover progress sync failed:', error);
         const message = error instanceof Error ? error.message : String(error);
         // A book Hardcover cannot sync is not a broken sync.
-        if (!(error instanceof HardcoverUnmatchedError)) failure = message;
+        if (!(error instanceof HardcoverUnmatchedError)) {
+          failure = message;
+          recordPush(book.title, 'progress', 0, message);
+        }
         if (!silent) {
           eventDispatcher.dispatch('toast', {
             message:
@@ -297,7 +313,7 @@ export const useHardcoverSync = (bookKey: string) => {
   }, [progress?.location]);
 
   // Auto-push notes when annotations/excerpts change.
-  const config = getConfig(bookKey);
+  const config = useBookConfig(bookKey);
   useEffect(() => {
     debouncedAutoPushNotes();
     // eslint-disable-next-line react-hooks/exhaustive-deps

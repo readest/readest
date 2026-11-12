@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { describe, it, expect } from 'vitest';
 import { getMetadataHash, getMetadataHashInfo, getStableMetadataHash } from '@/utils/book';
 import type { BookMetadata } from '@/libs/document';

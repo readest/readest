@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, test, expect, vi, beforeEach } from 'vitest';
 import { HardcoverSyncMapStore } from '@/services/hardcover/HardcoverSyncMapStore';
 import type { AppService } from '@/types/system';

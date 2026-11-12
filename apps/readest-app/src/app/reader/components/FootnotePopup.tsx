@@ -9,6 +9,8 @@ import { useReaderStore } from '@/store/readerStore';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useThemeStore } from '@/store/themeStore';
+import { useVocabularyStore } from '@/store/vocabularyStore';
+import { vocabularyLang } from '@/services/vocabulary/entry';
 import { useFoliateEvents } from '../hooks/useFoliateEvents';
 import { useCustomFontStore } from '@/store/customFontStore';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
@@ -32,6 +34,7 @@ import { getCfiSpinePrefix } from '@/utils/cfi';
 import { isLinkTargetVisible, shouldCheckAsFootnote } from '../utils/footnoteHeuristics';
 import { showTransientHighlight } from '../utils/transientHighlight';
 import { drawAnnotationOverlay } from '../utils/annotatorUtil';
+import { refreshSectionGlosses } from '../utils/wordlensSection';
 import {
   FootnoteExtractMapping,
   getFootnoteLocalCfi,
@@ -39,6 +42,7 @@ import {
 } from '../utils/footnoteCfi';
 import { FoliateView, NOTE_PREFIX } from '@/types/view';
 import { isCJKLang } from '@/utils/lang';
+import { getLocale } from '@/utils/misc';
 import { Overlay } from '@/components/Overlay';
 import Popup from '@/components/Popup';
 
@@ -105,7 +109,7 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
 
   const _ = useTranslation();
   const { appService } = useEnv();
-  const { getBookData } = useBookDataStore();
+  const getBookData = useBookDataStore((s) => s.getBookData);
   const { getView, getViewSettings } = useReaderStore();
   const { getLoadedFonts } = useCustomFontStore();
   const view = getView(bookKey);
@@ -125,6 +129,16 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
   // booknote id, so the sync effect below can restyle/remove them.
   const drawnNotesRef = useRef(new Map<string, { value: string; updatedAt: number }>());
   const [popupContentEpoch, setPopupContentEpoch] = useState(0);
+  // Redraw the open popup's Word Lens hints when this language's Learning /
+  // Mastered marks change, as the main view does: a word looked up from the
+  // popup can be marked while the popup stays open.
+  const bookLang = useBookDataStore(
+    (s) => s.booksData[bookKey.split('-')[0]!]?.book?.primaryLanguage,
+  );
+  const vocabularyMarksSignature = useVocabularyStore((s) => {
+    const { learning, mastered } = s.getLearningAndMastered(vocabularyLang(bookLang));
+    return JSON.stringify([[...learning], [...mastered]]);
+  });
   const booknotes = useBookDataStore((s) => s.booksData[bookKey.split('-')[0]!]?.config?.booknotes);
 
   // Point the popup at a new (or no) source document: drop the CFI mapping and
@@ -267,6 +281,28 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
     contentSizeObserverRef.current = null;
   };
 
+  // Draw the Word Lens hints the main view would, from cached packs only:
+  // opening a footnote never starts a pack download.
+  const refreshPopupGlosses = (doc: Document) => {
+    const viewSettings = getViewSettings(bookKey);
+    if (!appService || !viewSettings?.wordLensEnabled) return;
+    if (bookDoc.rendition?.layout === 'pre-paginated') return;
+    const bookLang = getBookData(bookKey)?.book?.primaryLanguage;
+    void refreshSectionGlosses(doc, viewSettings, {
+      appService,
+      bookLang,
+      appLang: getLocale(),
+      allowDownload: false,
+      vocabulary: useVocabularyStore.getState().getLearningAndMastered(vocabularyLang(bookLang)),
+    });
+  };
+
+  useEffect(() => {
+    const doc = footnoteViewRef.current?.renderer.getContents?.()[0]?.doc;
+    if (doc) refreshPopupGlosses(doc);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [vocabularyMarksSignature]);
+
   useEffect(() => {
     const getHashFromHref = (href: string | null) => {
       if (!href) return null;
@@ -395,6 +431,7 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
           popupMapRef.current = { ...info, doc };
         }
         trackPopupContentSize(popupView, doc);
+        refreshPopupGlosses(doc);
         setPopupContentEpoch((epoch) => epoch + 1);
       });
       // Style callback for annotation overlays drawn in the popup document
@@ -451,7 +488,11 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
       const viewSettings = getViewSettings(bookKey)!;
       renderer.setAttribute('flow', 'scrolled');
       renderer.setAttribute('no-preload', '');
-      renderer.setAttribute('no-background', '');
+      // Foliate moves authored body backgrounds onto its view surface. Let it
+      // paint those above the texture instead of discarding them with the fill.
+      if (!viewSettings.backgroundTextureId || viewSettings.backgroundTextureId === 'none') {
+        renderer.setAttribute('no-background', '');
+      }
       renderer.setAttribute('margin-top', '0px');
       renderer.setAttribute('margin-right', '0px');
       renderer.setAttribute('margin-bottom', '0px');
@@ -464,7 +505,7 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
         const backgroundColor = getComputedStyle(popupContainer).backgroundColor;
         popupTheme.bg = backgroundColor;
       }
-      const mainStyles = getStyles(viewSettings, popupTheme, getLoadedFonts());
+      const mainStyles = getStyles(viewSettings, popupTheme, getLoadedFonts(), true);
       const footnoteStyles = getFootnoteStyles();
       renderer.setStyles?.(`${mainStyles}\n${footnoteStyles}`);
     };
@@ -939,17 +980,8 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
           height={responsiveHeight}
           position={showPopup ? popupPosition! : undefined}
           trianglePosition={showPopup ? anchor! : undefined}
-          // Scroll along the note's block axis and clip the other one. A note
-          // that wraps can never need a horizontal scrollbar, but leaving that
-          // axis `visible` promotes it to `auto` (CSS resolves `visible` to
-          // `auto` next to a non-`visible` value), so any stray pixel of
-          // cross-axis overflow bought a second scrollbar (#5999).
-          className={clsx(
-            'select-text pointer-events-auto',
-            viewSettings.vertical
-              ? 'overflow-x-auto overflow-y-hidden'
-              : 'overflow-y-auto overflow-x-hidden',
-          )}
+          // Keep the texture surface stationary while the note scrolls inside it.
+          className='footnote-popup select-text pointer-events-auto overflow-clip'
           onDismiss={handleDismissPopup}
         >
           {canGoBack && (
@@ -995,7 +1027,16 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
           )}
           {/* Fill the popup's content box rather than restating its border-box
               size, which overflowed it by the border on both axes (#5999). */}
-          <div className='footnote-content h-full w-full' ref={footnoteRef}></div>
+          <div
+            className={clsx(
+              'footnote-content h-full w-full',
+              // Clip the cross axis so it cannot gain a second scrollbar (#5999).
+              viewSettings.vertical
+                ? 'overflow-x-auto overflow-y-hidden'
+                : 'overflow-y-auto overflow-x-hidden',
+            )}
+            ref={footnoteRef}
+          ></div>
         </Popup>
       </div>
     </div>

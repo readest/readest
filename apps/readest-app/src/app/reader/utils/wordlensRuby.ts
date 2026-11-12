@@ -11,6 +11,8 @@ interface Segment {
 export interface SectionTextModel {
   text: string;
   locate(offset: number): { node: Text; offset: number };
+  /** Whether [start, end) lies in one text node, the only span applyGlosses wraps. */
+  canRender(start: number, end: number): boolean;
 }
 
 const isEligible = (node: Text): boolean => {
@@ -60,7 +62,10 @@ export const buildSectionTextModel = (doc: Document): SectionTextModel => {
     }
     return { node: seg.node, offset: offset - seg.start };
   };
-  return { text, locate };
+  // Locate the last character, not the exclusive end: a word ending where its
+  // text node ends (`<i>word</i>`, `word<sup>`) would resolve into the next node.
+  const canRender = (start: number, end: number) => locate(start).node === locate(end - 1).node;
+  return { text, locate, canRender };
 };
 
 const occurrenceRange = (
@@ -68,12 +73,12 @@ const occurrenceRange = (
   model: SectionTextModel,
   occ: GlossOccurrence,
 ): Range | null => {
+  if (!model.canRender(occ.start, occ.end)) return null;
   const s = model.locate(occ.start);
-  const e = model.locate(occ.end);
-  if (s.node !== e.node) return null;
+  const e = model.locate(occ.end - 1);
   const range = doc.createRange();
   range.setStart(s.node, s.offset);
-  range.setEnd(e.node, e.offset);
+  range.setEnd(e.node, e.offset + 1);
   return range;
 };
 
@@ -104,9 +109,15 @@ export const applyGlosses = (
   }
 };
 
-/** Unwrap every injected gloss, restoring the original text. */
-export const clearGlosses = (doc: Document): void => {
+/**
+ * Unwrap every injected gloss and join the text nodes, restoring the original
+ * text. A section without glosses is left as it is unless `joinText` asks for
+ * the join: this runs for every loaded section after each section load, Word
+ * Lens on or off.
+ */
+export const clearGlosses = (doc: Document, joinText = false): void => {
   const rubies = doc.querySelectorAll(`ruby.${GLOSS_CLASS}`);
+  if (!rubies.length && !joinText) return;
   rubies.forEach((ruby) => {
     ruby.querySelectorAll('rt').forEach((rt) => rt.remove());
     const parent = ruby.parentNode;

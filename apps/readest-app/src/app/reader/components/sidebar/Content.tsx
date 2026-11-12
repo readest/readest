@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { BookDoc } from '@/libs/document';
 import { useReaderStore } from '@/store/readerStore';
 import { useSidebarStore } from '@/store/sidebarStore';
-import { useBookDataStore } from '@/store/bookDataStore';
+import { useBookDataStore, useBookConfig } from '@/store/bookDataStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { OverlayScrollbarsComponent } from 'overlayscrollbars-react';
 import 'overlayscrollbars/overlayscrollbars.css';
@@ -20,9 +20,10 @@ const SidebarContent: React.FC<{
 }> = ({ bookDoc, sideBarBookKey }) => {
   const { setHoveredBookKey } = useReaderStore();
   const { setSideBarVisible, setSearchBarVisible } = useSidebarStore();
-  const { getConfig, setConfig } = useBookDataStore();
+  const getConfig = useBookDataStore((s) => s.getConfig);
+  const setConfig = useBookDataStore((s) => s.setConfig);
   const { settings } = useSettingsStore();
-  const config = getConfig(sideBarBookKey);
+  const config = useBookConfig(sideBarBookKey);
   const [activeTab, setActiveTab] = useState(config?.viewSettings?.sideBarTab || 'toc');
   const [fade, setFade] = useState(false);
   const [targetTab, setTargetTab] = useState(activeTab);

@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, test, vi, beforeEach } from 'vitest';
 
 const authenticateMock = vi.fn();

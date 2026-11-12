@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 vi.mock('@/utils/misc', async (importOriginal) => {
@@ -303,6 +304,21 @@ describe('getThemeCode', () => {
     expect(getThemeCode().isDarkMode).toBe(true);
   });
 
+  // On an e-ink device the reader starts on the Contrast theme until a theme
+  // is picked. The book has to get the same black text, not the Default
+  // theme's #171717, which an e-ink screen shows as gray.
+  it('gives the book the contrast theme on an e-ink device with no theme picked', () => {
+    window.__READEST_IS_EINK = true;
+    try {
+      expect(getThemeCode()).toMatchObject({ fg: '#000000', bg: '#ffffff' });
+
+      localStorage.setItem('themeColor', 'default');
+      expect(getThemeCode().fg).toBe('#171717');
+    } finally {
+      delete window.__READEST_IS_EINK;
+    }
+  });
+
   it('falls back to default theme when custom themeColor not found', () => {
     localStorage.setItem('themeColor', 'nonexistent-theme-xyz');
     localStorage.setItem('themeMode', 'light');
@@ -528,6 +544,24 @@ describe('applyImageStyle', () => {
     const img = document.querySelector('img')!;
     expect(img.hasAttribute('height')).toBe(false);
     expect(img.style.height).toBeTruthy();
+  });
+
+  it('preserves aspect ratio with object-fit: contain when both width and height percentages are specified', () => {
+    document.body.innerHTML = '<div><img width="100%" height="100%" /></div>';
+    applyImageStyle(document);
+    const img = document.querySelector('img')!;
+    expect(img.hasAttribute('width')).toBe(false);
+    expect(img.hasAttribute('height')).toBe(false);
+    expect(img.style.objectFit).toBe('contain');
+  });
+
+  it('uses --available-height for %-based height calculation when defined', () => {
+    document.documentElement.style.setProperty('--available-height', '800');
+    document.body.innerHTML = '<div><img height="50%" /></div>';
+    applyImageStyle(document);
+    const img = document.querySelector('img')!;
+    expect(img.style.height).toBe('400px');
+    document.documentElement.style.removeProperty('--available-height');
   });
 
   it('does not convert pixel-based width attributes', () => {

@@ -53,14 +53,37 @@ import {
 } from './bookContent';
 
 /**
+ * Formats whose metaHash is salted with the import filename, because their
+ * metadata often doesn't tell files apart: PDF boilerplate like "PowerPoint
+ * Presentation" (issue #5411), and HTML chapters a web-novel downloader saves
+ * one per file under the book's title and author (issue #7313). A library row
+ * no longer knows its import filename, so the salted hash is never recomputed.
+ * Keep in sync with FILENAME_SALTED in readest.koplugin/readest_syncconfig.lua.
+ */
+function isFilenameSalted(format: Book['format']) {
+  return format === 'PDF' || format === 'HTML';
+}
+
+/**
+ * Whether a bare UUID identifier of this format can be dropped from the
+ * import-time dedup key (issue #5959).
+ *
+ * Filename-salted formats are left out: their identity is deliberately scoped
+ * to the filename.
+ * FB2/FBZ are left out: their document-info id is a GUID minted once for the
+ * document and kept across revisions, so it is what tells two FB2s of the
+ * same title apart (issue #7150).
+ */
+function hasVolatileIdentifiers(format: Book['format']) {
+  return !isFilenameSalted(format) && format !== 'FB2' && format !== 'FBZ';
+}
+
+/**
  * Import-time fallback key for a book already in the library, or undefined when
  * its `metaHash` is already stable across re-exports (issue #5959).
- *
- * PDFs are left out: #5411 deliberately scopes their identity to the filename,
- * and a library row no longer knows the filename it was imported from.
  */
 function getStableBookHash(book: Book) {
-  if (book.format === 'PDF' || !book.metadata) return undefined;
+  if (!hasVolatileIdentifiers(book.format) || !book.metadata) return undefined;
   return getStableMetadataHash(book.metadata);
 }
 
@@ -537,6 +560,11 @@ export async function importBook(
     lookupIndex,
     osPlatform,
   } = options;
+  // In-place is only meaningful for formats the reader can parse natively.
+  // DOCX/RTF are converted to EPUB and must be persisted into Books/ — the
+  // converted artifact is the only readable form, so binding the book to the
+  // original document path would break reader opens and sync uploads.
+  let effectiveInPlace = inPlace;
   const isPseStream = typeof file === 'string' && isPseStreamFileName(file);
 
   let loadedBook: BookDoc | undefined;
@@ -560,6 +588,7 @@ export async function importBook(
   try {
     let format: BookFormat;
     let filename: string;
+    let originalFilename: string | undefined;
     // When the Rust EPUB parser succeeds it gives us the partialMD5 for free,
     // so we can short-circuit the JS hashing pass below.
     let nativeHash: string | undefined;
@@ -574,13 +603,9 @@ export async function importBook(
         ({ book: loadedBook, format } = await openPseStreamBook(data));
         filename = file as string;
       } else {
-        if (typeof file === 'string') {
-          fileobj = await fs.openFile(file, 'None');
-          filename = fileobj.name || getFilename(file);
-        } else {
-          fileobj = file;
-          filename = file.name;
-        }
+        fileobj = typeof file === 'string' ? await fs.openFile(file, 'None') : file;
+        filename = fileobj.name;
+        originalFilename = filename;
         // A download saved as "novel.txt (1)" is still a TXT, and its title
         // should not read "novel.txt" either. Drop the duplicate marker before
         // anything downstream classifies or names the book (issue #5959).
@@ -597,6 +622,49 @@ export async function importBook(
             // Convert consumes the source; release RemoteFile/NativeFile
             // immediately so DocumentLoader / cover / write do not keep the
             // path handle pinned. Outer `finally` stays an idempotent net.
+            if (openedSource?.close) {
+              try {
+                await openedSource.close();
+              } catch {}
+            }
+            openedSource = undefined;
+          }
+        }
+        // DOCX/RTF have no native reader either: convert to EPUB up front so
+        // everything downstream (native parse, hash, metadata, storage, sync)
+        // sees an ordinary EPUB import. Same consume-the-source contract as
+        // the TXT conversion above; the conversion stays silent — no UI, no
+        // new strings — consistent with how the Send inbox already converts
+        // documents through the same worker.
+        if (/\.(docx|rtf)$/i.test(filename)) {
+          // Fall back to a managed copy: the reader can only open the
+          // converted EPUB, so an in-place binding to the source document
+          // would be unreadable.
+          if (effectiveInPlace) {
+            effectiveInPlace = false;
+          }
+          // Transient open-with cannot work either: nothing is persisted in
+          // transient mode, so there is nowhere readable to put the EPUB.
+          // Fail fast instead of returning a book bound to the raw document.
+          if (transient) {
+            throw new Error(
+              'DOCX/RTF files must be imported (converted to EPUB) before they can be read; transient open is not supported.',
+            );
+          }
+          // Dynamic import: the conversion stack (mammoth, Readability, EPUB
+          // assembly) stays out of the main bundle via code splitting.
+          const { convertToEpubWithWorker } = await import(
+            '@/services/send/conversion/conversionWorker'
+          );
+          try {
+            const bytes = await fileobj.arrayBuffer();
+            const { file: convertedFile } = await convertToEpubWithWorker({
+              kind: /\.docx$/i.test(filename) ? 'docx' : 'rtf',
+              bytes,
+              fileName: filename,
+            });
+            fileobj = convertedFile;
+          } finally {
             if (openedSource?.close) {
               try {
                 await openedSource.close();
@@ -627,7 +695,10 @@ export async function importBook(
         // tests.
         let nativeBookDoc: BookDoc | undefined;
         let nativeFormat: BookFormat | undefined;
-        if (typeof file === 'string' && !/\.txt$/i.test(filename)) {
+        // TXT/DOCX/RTF fileobj was converted in memory above, so the bytes at
+        // `path` are still the original document — don't hand those to the
+        // path-based native parsers.
+        if (typeof file === 'string' && !/(\.txt|\.docx|\.rtf)$/i.test(filename)) {
           const nativePdf = await tryNativeParsePdf(file, fileobj, osPlatform);
           if (nativePdf) {
             nativeBookDoc = nativePdf.bookDoc;
@@ -669,19 +740,19 @@ export async function importBook(
     }
 
     const hash = isPseStream ? md5(file as string) : (nativeHash ?? (await partialMD5(fileobj!)));
-
-    // PDF metadata is often generic boilerplate (e.g. every PowerPoint export
-    // is titled "PowerPoint Presentation" by the same author), so metadata
-    // alone wrongly collapses distinct files into one book (issue #5411).
-    // Salt the hash with the original filename so only same-named PDFs dedupe.
-    const metaHash = getMetadataHash(
-      loadedBook.metadata,
-      format === 'PDF' ? getBaseFilename(filename) : undefined,
-    );
-    const stableHash = format === 'PDF' ? undefined : getStableMetadataHash(loadedBook.metadata);
     let existingBook = lookupIndex
       ? lookupIndex.byHash.get(hash)
       : books.find((b) => b.hash === hash);
+    const metaHash =
+      isFilenameSalted(format) && existingBook?.metaHash
+        ? existingBook.metaHash
+        : getMetadataHash(
+            loadedBook.metadata,
+            isFilenameSalted(format) ? getBaseFilename(filename) : undefined,
+          );
+    const stableHash = hasVolatileIdentifiers(format)
+      ? getStableMetadataHash(loadedBook.metadata)
+      : undefined;
     let metaHashMatch = false;
     let oldBookDir: string | undefined;
     if (existingBook) {
@@ -742,7 +813,11 @@ export async function importBook(
       hash,
       format,
       metaHash,
-      title: formatTitle(loadedBook.metadata.title),
+      title:
+        format === 'PDF'
+          ? (existingBook?.title ?? filename.replace(/\.[^.]*$/, ''))
+          : formatTitle(loadedBook.metadata.title),
+      originalFilename: existingBook ? existingBook.originalFilename : originalFilename,
       sourceTitle: formatTitle(loadedBook.metadata.title),
       primaryLanguage,
       author: formatAuthors(loadedBook.metadata.author, primaryLanguage),
@@ -801,6 +876,7 @@ export async function importBook(
       existingBook.format = book.format;
       existingBook.metaHash = metaHash;
       existingBook.title = book.title;
+      existingBook.originalFilename = book.originalFilename;
       existingBook.sourceTitle = book.sourceTitle;
       existingBook.author = book.author;
       existingBook.primaryLanguage = book.primaryLanguage;
@@ -815,6 +891,7 @@ export async function importBook(
       existingBook.format = book.format;
       existingBook.metaHash = metaHash;
       existingBook.title = book.title;
+      existingBook.originalFilename = book.originalFilename;
       existingBook.sourceTitle = book.sourceTitle;
       existingBook.author = book.author;
       existingBook.primaryLanguage = book.primaryLanguage;
@@ -834,12 +911,15 @@ export async function importBook(
     const willWriteBookFile =
       saveBook &&
       !transient &&
-      !inPlace &&
+      !effectiveInPlace &&
       !!fileobj &&
       (!(await fs.exists(bookFilename, 'Books')) ||
         (overwrite && file !== `${await fs.getPrefix('Books')}/${bookFilename}`));
     if (willWriteBookFile && fileobj) {
-      if (/\.txt$/i.test(filename)) {
+      if (/(\.txt|\.docx|\.rtf)$/i.test(filename)) {
+        // The import converted fileobj in memory; the file at `path` still
+        // holds the original document, so write the EPUB bytes — never copy
+        // the source path into Books.
         await fs.writeFile(bookFilename, 'Books', fileobj);
       } else if (typeof file === 'string' && isContentURI(file)) {
         // openFile has already materialized opaque providers into a seekable
@@ -1024,7 +1104,7 @@ export async function importBook(
       if (isValidURL(file)) {
         book.url = file;
         if (existingBook) existingBook.url = file;
-      } else if (transient || inPlace) {
+      } else if (transient || effectiveInPlace) {
         // transient: source file is loaded directly, never persisted in Books/.
         // inPlace: source file is inside the user's library root and we read it
         // there directly instead of duplicating it under Books/<hash>/.
@@ -1034,11 +1114,20 @@ export async function importBook(
           // Keep the path it is losing so the auto-import scan knows both
           // files are accounted for (transient previews are never persisted,
           // so there is nothing to remember for them).
-          if (inPlace && !transient) {
+          if (effectiveInPlace && !transient) {
             displaceSourcePath(existingBook, file, osPlatform);
           }
           existingBook.filePath = file;
         }
+      } else if (inPlace) {
+        // A converted DOCX/RTF lives in Books/; remember its watched source so
+        // the auto-import scan doesn't convert it again on every pass.
+        const target = existingBook || book;
+        const key = normalizeFilePathForIndex(file, osPlatform);
+        const known = (target.altFilePaths ?? []).map((p) =>
+          normalizeFilePathForIndex(p, osPlatform),
+        );
+        if (!known.includes(key)) target.altFilePaths = [...(target.altFilePaths ?? []), file];
       }
     }
     // Now that `filePath` is set, keep the path index in sync so later files
@@ -1046,7 +1135,7 @@ export async function importBook(
     // in-place fast path. Only persistent in-place imports go into the
     // index — transient previews are short-lived and never persisted to
     // the library so indexing them would just leak references.
-    if (lookupIndex && inPlace && !transient && typeof file === 'string') {
+    if (lookupIndex && effectiveInPlace && !transient && typeof file === 'string') {
       const indexedBook = existingBook || book;
       if (indexedBook.filePath) {
         const key = normalizeFilePathForIndex(indexedBook.filePath, osPlatform);
@@ -1247,9 +1336,9 @@ export async function refreshBookMetadata(fs: FileSystem, book: Book): Promise<b
     if (!bookDoc) return false;
 
     book.metadata = bookDoc.metadata;
-    // PDF metaHash is salted with the original import filename (issue #5411),
-    // which is lost after import — keep the value stamped at import time.
-    if (book.format !== 'PDF' || !book.metaHash) {
+    // A filename-salted metaHash can't be reproduced after import (the
+    // original filename is lost), so keep the value stamped at import time.
+    if (!isFilenameSalted(book.format) || !book.metaHash) {
       book.metaHash = getMetadataHash(bookDoc.metadata);
     }
     const primaryLanguage = getPrimaryLanguage(bookDoc.metadata.language);

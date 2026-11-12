@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 /**
  * AboutWindow — the version label doubles as a copy-to-clipboard control.
  *

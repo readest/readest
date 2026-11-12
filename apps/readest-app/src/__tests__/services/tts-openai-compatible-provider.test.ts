@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { fetchMock } = vi.hoisted(() => ({ fetchMock: vi.fn() }));
@@ -29,6 +30,27 @@ const audioResponse = (bytes = [1, 2, 3]) =>
   new Response(new Uint8Array(bytes), { status: 200, headers: { 'Content-Type': 'audio/mpeg' } });
 
 const req = (voice: string, text = 'Hello there.') => ({ lang: 'en', text, voice, pitch: 1 });
+
+// A RIFF/WAVE file of the given chunks, padded to even lengths as RIFF requires.
+const wav = (chunks: [string, number[]][]): Uint8Array<ArrayBuffer> => {
+  const body = chunks.flatMap(([id, payload]) => {
+    const size = payload.length;
+    const sizeBytes = [size & 0xff, (size >> 8) & 0xff, (size >> 16) & 0xff, size >>> 24];
+    return [...id].map((c) => c.charCodeAt(0)).concat(sizeBytes, payload, size & 1 ? [0] : []);
+  });
+  const size = body.length + 4;
+  return new Uint8Array([
+    ...[...'RIFF'].map((c) => c.charCodeAt(0)),
+    ...[size & 0xff, (size >> 8) & 0xff, (size >> 16) & 0xff, size >>> 24],
+    ...[...'WAVE'].map((c) => c.charCodeAt(0)),
+    ...body,
+  ]);
+};
+// PCM, mono, 24 kHz, 16-bit: what Gemini TTS returns.
+const PCM_FMT = [1, 0, 1, 0, 0xc0, 0x5d, 0, 0, 0x80, 0xbb, 0, 0, 2, 0, 16, 0];
+
+const wavResponse = (bytes: Uint8Array<ArrayBuffer>) =>
+  new Response(bytes, { status: 200, headers: { 'Content-Type': 'audio/wav' } });
 
 describe('OpenAICompatibleSpeechProvider', () => {
   let services: CustomTTSService[];
@@ -86,10 +108,53 @@ describe('OpenAICompatibleSpeechProvider', () => {
     ]);
   });
 
+  it("tells a Kokoro voice's gender from its name; others state none", async () => {
+    fetchMock.mockResolvedValue(Response.json({ voices: ['af_heart', 'jm_kumo', 'nova'] }));
+    const voices = await provider.getAllVoices();
+    expect(voices.map((v) => [v.name, v.gender])).toEqual([
+      ['af_heart', 'female'],
+      ['jm_kumo', 'male'],
+      ['nova', undefined],
+    ]);
+  });
+
+  it("shows a listed voice's name but speaks with its id", async () => {
+    fetchMock.mockResolvedValueOnce(
+      Response.json({
+        voices: [
+          { id: 'voice-7f3a', name: 'Narrator', lang: 'en-US' },
+          { id: 'F1', lang: 'en-US' },
+        ],
+      }),
+    );
+    const voices = await provider.getAllVoices();
+    expect(voices.map((v) => [v.id, v.name])).toEqual([
+      ['s1:voice-7f3a', 'Narrator'],
+      ['s1:F1', 'F1'],
+    ]);
+    // The service names its voices: the picker shows them untranslated.
+    expect(voices.every((v) => v.literalName)).toBe(true);
+    fetchMock.mockResolvedValueOnce(audioResponse());
+    await provider.synthesize(req(voices[0]!.id), new AbortController().signal);
+    const [, init] = fetchMock.mock.calls.at(-1)!;
+    expect(JSON.parse(init.body).voice).toBe('voice-7f3a');
+  });
+
   it('falls back to the standard OpenAI voices when the listing fails', async () => {
     fetchMock.mockRejectedValue(new TypeError('Failed to fetch'));
     const voices = await provider.getAllVoices();
     expect(voices.map((v) => v.name)).toEqual(OPENAI_TTS_VOICES);
+  });
+
+  it('uses the voice names typed for a service instead of asking it', async () => {
+    services = [service({ voices: ' Kore, Puck ,, Zephyr ' })];
+    const voices = await provider.getAllVoices();
+    expect(voices.map((v) => [v.id, v.name])).toEqual([
+      ['s1:Kore', 'Kore'],
+      ['s1:Puck', 'Puck'],
+      ['s1:Zephyr', 'Zephyr'],
+    ]);
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it('queries no service without premium', async () => {
@@ -127,6 +192,50 @@ describe('OpenAICompatibleSpeechProvider', () => {
       response_format: 'mp3',
       instructions: 'Calm narrator.',
     });
+  });
+
+  it('requests the configured audio format, or none for the service default', async () => {
+    fetchMock.mockImplementation(async () => audioResponse());
+    const sentBody = async (responseFormat?: CustomTTSService['responseFormat']) => {
+      services = [service({ responseFormat })];
+      fetchMock.mockClear();
+      await provider.synthesize(req('s1:nova'), new AbortController().signal);
+      return JSON.parse(fetchMock.mock.calls[0]![1].body);
+    };
+    expect((await sentBody(undefined)).response_format).toBe('mp3');
+    expect((await sentBody('wav')).response_format).toBe('wav');
+    expect(await sentBody('none')).not.toHaveProperty('response_format');
+  });
+
+  it('hands back, unchanged, the WAV a proxy wrapped in another WAV', async () => {
+    // LiteLLM wraps Gemini's whole WAV, C2PA manifest included, as PCM samples.
+    const gemini = wav([
+      ['fmt ', PCM_FMT],
+      ['data', [1, 2, 3, 4, 5, 6]],
+      ['C2PA', [9, 9, 9]],
+    ]);
+    fetchMock.mockResolvedValue(
+      wavResponse(
+        wav([
+          ['fmt ', PCM_FMT],
+          ['data', [...gemini]],
+        ]),
+      ),
+    );
+    const result = await provider.synthesize(req('s1:Kore'), new AbortController().signal);
+    expect(new Uint8Array(result.audio)).toEqual(gemini);
+  });
+  it('passes other audio through untouched', async () => {
+    const plain = wav([
+      ['fmt ', PCM_FMT],
+      ['data', [1, 2, 3, 4]],
+      ['C2PA', [9, 9, 9]],
+    ]);
+    for (const bytes of [plain, new Uint8Array([0xff, 0xf3, 1, 2])]) {
+      fetchMock.mockResolvedValueOnce(wavResponse(bytes));
+      const result = await provider.synthesize(req('s1:Kore'), new AbortController().signal);
+      expect(new Uint8Array(result.audio)).toEqual(bytes);
+    }
   });
 
   it('accepts a base URL pasted with the endpoint on it', async () => {
@@ -224,5 +333,9 @@ describe('OpenAICompatibleSpeechProvider', () => {
     const instructions = scope();
     services = [service({ model: 'tts-1', instructions: 'Whisper.', apiKey: 'other' })];
     expect(scope()).toBe(instructions);
+    services = [service({ model: 'tts-1', instructions: 'Whisper.', responseFormat: 'mp3' })];
+    expect(scope()).toBe(instructions);
+    services = [service({ model: 'tts-1', instructions: 'Whisper.', responseFormat: 'none' })];
+    expect(scope()).not.toBe(instructions);
   });
 });

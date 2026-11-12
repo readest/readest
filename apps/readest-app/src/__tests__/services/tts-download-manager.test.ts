@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { useTTSDownloadStore } from '@/store/ttsDownloadStore';
 import { TTSDownloadManager } from '@/services/tts/ttsDownloadManager';

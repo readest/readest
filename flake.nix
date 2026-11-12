@@ -73,7 +73,7 @@
             wrapGAppsHook4
             playwright-driver.browsers
             self.formatter.${pkgs.stdenv.hostPlatform.system}
-          ];
+          ] ++ optionals (!isDarwin) [ rustPlatform.bindgenHook ];
 
           commonBuildInputs = with pkgs; [
             at-spi2-atk

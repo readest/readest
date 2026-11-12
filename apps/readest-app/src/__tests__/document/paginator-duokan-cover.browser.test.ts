@@ -1,7 +1,20 @@
 import { describe, it, expect, beforeAll, afterEach } from 'vitest';
 import { DocumentLoader } from '@/libs/document';
 import type { BookDoc } from '@/libs/document';
+import type { ViewSettings } from '@/types/book';
 import type { Renderer } from '@/types/view';
+import { applyImageStyle, applyScrollModeClass, getStyles } from '@/utils/style';
+import {
+  DEFAULT_BOOK_FONT,
+  DEFAULT_BOOK_LAYOUT,
+  DEFAULT_BOOK_STYLE,
+  DEFAULT_BOOK_LANGUAGE,
+  DEFAULT_VIEW_CONFIG,
+  DEFAULT_TTS_CONFIG,
+  DEFAULT_TRANSLATOR_CONFIG,
+  DEFAULT_ANNOTATOR_CONFIG,
+  DEFAULT_SCREEN_CONFIG,
+} from '@/services/constants';
 
 // repro-4379: a Duokan/DangDang full-page cover — `data-duokan-page-fullscreen`
 // on <html> with a dimensionless <img> inside a `.cover` wrapper. The paginator
@@ -17,6 +30,12 @@ const EPUB_5263_URL = new URL('../fixtures/data/repro-5263.epub', import.meta.ur
 // packs a tall `cover~slim.png` (200x444) beside `cover.png` (200x300) for
 // phone-shaped screens.
 const EPUB_6513_URL = new URL('../fixtures/data/repro-6513.epub', import.meta.url).href;
+// The repro-4379 cover with `width="100%" height="100%"` on the <img>, which
+// Readest's applyImageStyle turns into pixel sizes at load time.
+const EPUB_PERCENT_URL = new URL(
+  '../fixtures/data/repro-duokan-cover-percent.epub',
+  import.meta.url,
+).href;
 
 let book: BookDoc;
 
@@ -221,4 +240,99 @@ describe('Paginator Duokan fullscreen cover (#4379)', () => {
     Object.assign(paginator.style, { width: '900px', height: '600px' });
     await expect.poll(() => img!.naturalHeight, { timeout: 5000 }).toBe(300);
   });
+});
+
+const makeViewSettings = (): ViewSettings =>
+  ({
+    ...DEFAULT_BOOK_FONT,
+    ...DEFAULT_BOOK_LAYOUT,
+    ...DEFAULT_BOOK_STYLE,
+    ...DEFAULT_BOOK_LANGUAGE,
+    ...DEFAULT_VIEW_CONFIG,
+    ...DEFAULT_TTS_CONFIG,
+    ...DEFAULT_TRANSLATOR_CONFIG,
+    ...DEFAULT_ANNOTATOR_CONFIG,
+    ...DEFAULT_SCREEN_CONFIG,
+  }) as ViewSettings;
+
+// The cover again, rendered the way the reader renders it: Readest's styles,
+// page margins, and the load-time fix-ups FoliateViewer runs on each section.
+describe('Paginator Duokan fullscreen cover with Readest styles', () => {
+  let paginator: Renderer;
+
+  beforeAll(async () => {
+    await import('foliate-js/paginator.js');
+  }, 30000);
+
+  const openCover = async (url: string, scrolled: boolean) => {
+    const el = document.createElement('foliate-paginator') as Renderer;
+    Object.assign(el.style, {
+      width: '800px',
+      height: '600px',
+      position: 'absolute',
+      left: '0',
+      top: '0',
+    });
+    el.setAttribute('gap', '5%');
+    for (const side of ['top', 'right', 'bottom', 'left']) {
+      el.setAttribute(`margin-${side}`, '44px');
+    }
+    if (scrolled) el.setAttribute('flow', 'scrolled');
+    el.addEventListener('load', (e) => {
+      const { doc } = (e as CustomEvent<{ doc: Document }>).detail;
+      applyImageStyle(doc);
+      applyScrollModeClass(doc, scrolled);
+    });
+    document.body.appendChild(el);
+    el.open(await loadEPUB(url));
+    el.setStyles?.(getStyles(makeViewSettings(), undefined, []));
+    paginator = el;
+
+    const stabilized = waitForStabilized(el);
+    await el.goTo({ index: 0 });
+    await stabilized;
+    const img = getCoverImg(el);
+    expect(img).toBeTruthy();
+    await waitForImgLoaded(img!);
+    await waitForVisibleHeight(img!);
+    return img!;
+  };
+
+  afterEach(() => {
+    if (paginator) {
+      try {
+        paginator.destroy();
+      } catch {
+        /* iframe body may already be torn down */
+      }
+      paginator.remove();
+    }
+  });
+
+  for (const [name, url] of [
+    ['dimensionless', EPUB_URL],
+    ['percent-sized', EPUB_PERCENT_URL],
+  ] as const) {
+    it(`fills the whole page in paginated mode, past the margins (${name})`, async () => {
+      const img = await openCover(url, false);
+      const cs = img.ownerDocument.defaultView!.getComputedStyle(img);
+      expect(cs.objectFit).toBe('contain');
+      expect(cs.backgroundColor).toBe('rgb(0, 0, 0)');
+      // Pinned to the page edges, not inset by the 44px margins...
+      const rect = img.getBoundingClientRect();
+      expect(rect.top).toBeLessThanOrEqual(1);
+      expect(rect.height).toBeGreaterThanOrEqual(599);
+      // ...and nothing of it spills onto a second page.
+      expect(rect.bottom).toBeLessThanOrEqual(601);
+      expect(paginator.pages).toBe(1);
+    });
+
+    it(`keeps the cover's aspect ratio within the viewport in scrolled mode (${name})`, async () => {
+      const img = await openCover(url, true);
+      const rect = img.getBoundingClientRect();
+      expect(rect.height).toBeGreaterThan(0);
+      expect(rect.height).toBeLessThanOrEqual(600);
+      expect(rect.width / rect.height).toBeCloseTo(img.naturalWidth / img.naturalHeight, 2);
+    });
+  }
 });

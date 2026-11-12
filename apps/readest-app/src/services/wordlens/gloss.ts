@@ -15,7 +15,7 @@ const SYNONYM_SEPARATORS = /[,，、]/;
 // regenerating the gloss packs — they store the full hint and this trims it.
 const MAX_GLOSS_LEN = 24;
 
-const capForDisplay = (s: string): string =>
+export const capForDisplay = (s: string): string =>
   s.length <= MAX_GLOSS_LEN ? s : s.slice(0, MAX_GLOSS_LEN - 1).trimEnd() + '…';
 
 /**

@@ -1,6 +1,7 @@
 import { md5 } from 'js-md5';
 import { NextResponse } from 'next/server';
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { isAbsEbook } from '@/utils/audiobook';
 
 // Server side of the CrossPoint SD plugin (routes under /api/crosspoint). A
 // reader links to an account with a device code, then authenticates every
@@ -68,11 +69,13 @@ export const authenticateDevice = async (
 };
 
 // A reader's KOSync document id is the partial MD5 of its file. CrossPoint's
-// "Optimize EPUB" upload rewrites a book, so that copy's id matches no Readest
-// book. Its first progress upload links it to the library book by title and
-// author (sent with KOSync "Send metadata"); later syncs and reading
-// sessions follow the link. Both helpers report a database error, like a
-// query, so a route never syncs a linked copy under its own id instead.
+// "Optimize EPUB" upload rewrites a book, and an ebook streamed from
+// Audiobookshelf is keyed by its abs:// path rather than its bytes, so the
+// copy's id matches no Readest book. Its first progress upload links it to
+// the library book by title and author (sent with KOSync "Send metadata");
+// later syncs and reading sessions follow the link. Both helpers report a
+// database error, like a query, so a route never syncs a linked copy under its
+// own id instead.
 
 interface Link {
   bookHash: string | null;
@@ -82,7 +85,7 @@ interface Link {
 const NO_LINK: Link = { bookHash: null, error: null };
 
 /** The library book a rewritten copy was linked to (null if none). */
-export const linkedBook = async (
+const linkedBook = async (
   supabase: SupabaseClient,
   userId: string,
   document: string,
@@ -96,14 +99,99 @@ export const linkedBook = async (
   return { bookHash: (data?.book_hash as string | undefined) ?? null, error };
 };
 
+const recent = (book: { updated_at?: unknown }) => Date.parse(String(book.updated_at)) || 0;
+
+const saveLink = async (
+  supabase: SupabaseClient,
+  userId: string,
+  document: string,
+  bookHash: string,
+): Promise<Link> => {
+  // The reader syncs clippings before progress, so the copy's first clippings
+  // were saved under its own id. They move before the link is saved: once
+  // linked, the copy's id is never read again, so a failed move fails this
+  // sync and the next one tries again.
+  const { error: moveError } = await supabase
+    .from('book_notes')
+    .update({ book_hash: bookHash, updated_at: new Date().toISOString() })
+    .eq('user_id', userId)
+    .eq('book_hash', document)
+    .not('crosspoint', 'is', null);
+  if (moveError) return { bookHash: null, error: moveError };
+  const { error: linkError } = await supabase
+    .from('crosspoint_documents')
+    .upsert(
+      { user_id: userId, document, book_hash: bookHash },
+      { onConflict: 'user_id,document', ignoreDuplicates: true },
+    );
+  return linkError ? { bookHash: null, error: linkError } : { bookHash, error: null };
+};
+
+// PostgREST answers at most this many rows a request (Supabase's db-max-rows).
+const PAGE_ROWS = 1000;
+
+/**
+ * The library book a reader's document is (null if none, or if it is the
+ * book's own id): a linked copy, or the book imported under the file name it
+ * is the md5 of. A reader set to match documents by file name sends that, as
+ * KOReader does, and its first request links it.
+ */
+export const resolveDocument = async (
+  supabase: SupabaseClient,
+  userId: string,
+  document: string,
+): Promise<Link> => {
+  const link = await linkedBook(supabase, userId, document);
+  if (link.error || link.bookHash) return link;
+  const { data: own, error: ownError } = await supabase
+    .from('books')
+    .select('book_hash')
+    .eq('user_id', userId)
+    .eq('book_hash', document)
+    .maybeSingle();
+  if (ownError) return { bookHash: null, error: ownError };
+  if (own?.book_hash === document) return NO_LINK;
+  const named: { book_hash: string; updated_at?: unknown }[] = [];
+  for (let from = 0; ; from += PAGE_ROWS) {
+    const { data, error } = await supabase
+      .from('books')
+      .select('book_hash, original_filename, updated_at')
+      .eq('user_id', userId)
+      .not('original_filename', 'is', null)
+      .is('deleted_at', null)
+      .order('book_hash')
+      .range(from, from + PAGE_ROWS - 1);
+    if (error) return { bookHash: null, error };
+    const page = data ?? [];
+    named.push(
+      ...page.filter(
+        (b) => typeof b.original_filename === 'string' && md5(b.original_filename) === document,
+      ),
+    );
+    if (page.length < PAGE_ROWS) break;
+  }
+  const [book] = named.sort((a, b) => recent(b) - recent(a));
+  return book ? saveLink(supabase, userId, document, book.book_hash) : NO_LINK;
+};
+
+// The books row stores metadata as a JSON string.
+const parseMetadata = (value: unknown) => {
+  try {
+    return typeof value === 'string' ? JSON.parse(value) : value;
+  } catch {
+    return null;
+  }
+};
+
 const normalizeText = (value: unknown) =>
   typeof value === 'string' ? value.normalize('NFC').replace(/\s+/g, ' ').trim().toLowerCase() : '';
 
 /**
- * Links a copy to the library EPUB with its title. When titles collide, the
- * book must also share the copy's first author, and of several such books
- * (the same book imported twice, another edition) the most recently read one
- * wins. No book when the copy is Readest's own file or none fits.
+ * Links a copy to the library EPUB or Audiobookshelf ebook with its title.
+ * When titles collide, the book must also share the copy's first author, and
+ * of several such books (the same book imported twice, another edition) the
+ * most recently read one wins. No book when the copy is Readest's own file or
+ * none fits.
  */
 export const linkCopy = async (
   supabase: SupabaseClient,
@@ -122,15 +210,19 @@ export const linkCopy = async (
     .replace(/[,()%*\\"]/g, '_');
   const { data, error } = await supabase
     .from('books')
-    .select('book_hash, title, source_title, author, updated_at')
+    .select('book_hash, title, source_title, author, updated_at, format, metadata')
     .eq('user_id', userId)
     .or(`book_hash.eq.${document},source_title.ilike.${pattern},title.ilike.${pattern}`)
-    .eq('format', 'EPUB')
+    .in('format', ['EPUB', 'ABS'])
     .is('deleted_at', null);
   if (error) return { bookHash: null, error };
   if (!data || data.some((book) => book.book_hash === document)) return NO_LINK;
+  // An Audiobookshelf audiobook of the same title is not the copy's book.
   let matches = data.filter(
-    (book) => normalizeText(book.source_title) === wanted || normalizeText(book.title) === wanted,
+    (book) =>
+      (book.format === 'EPUB' ||
+        isAbsEbook({ format: book.format, metadata: parseMetadata(book.metadata) })) &&
+      (normalizeText(book.source_title) === wanted || normalizeText(book.title) === wanted),
   );
   // The reader joins every dc:creator with ", "; Readest lists a book's
   // authors with ", ", " and ", " & " or "、" between them.
@@ -140,17 +232,8 @@ export const linkCopy = async (
   if (matches.length > 1) {
     matches = author ? matches.filter((book) => firstAuthor(book) === author) : [];
   }
-  const recent = (book: (typeof matches)[number]) => Date.parse(String(book.updated_at)) || 0;
   const [book] = matches.sort((a, b) => recent(b) - recent(a));
-  if (!book) return NO_LINK;
-  const bookHash = book.book_hash as string;
-  const { error: linkError } = await supabase
-    .from('crosspoint_documents')
-    .upsert(
-      { user_id: userId, document, book_hash: bookHash },
-      { onConflict: 'user_id,document', ignoreDuplicates: true },
-    );
-  return linkError ? { bookHash: null, error: linkError } : { bookHash, error: null };
+  return book ? saveLink(supabase, userId, document, book.book_hash as string) : NO_LINK;
 };
 
 /** A book config's `[current, total]` progress, stored as a JSON string. */

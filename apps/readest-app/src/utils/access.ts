@@ -7,7 +7,7 @@ import {
   DEFAULT_STORAGE_QUOTA,
 } from '@/services/constants';
 import { isWebAppPlatform } from '@/services/environment';
-import { getDailyUsage } from '@/services/translators/utils';
+import { getDailyUsage } from '@/services/translators/dailyUsage';
 import { getRuntimeConfig } from '@/services/runtimeConfig';
 
 interface Token {
@@ -121,6 +121,17 @@ export const ABS_OFFLINE_REQUIRES_PREMIUM = true;
 
 export const isAbsOfflineAllowed = (plan: UserPlan, customizationPurchased: boolean): boolean =>
   !ABS_OFFLINE_REQUIRES_PREMIUM || isAbsOfflineInPlan(plan, customizationPurchased);
+
+/**
+ * Master switch for the Anki paywall: sending words to AnkiDroid, importing a
+ * deck back, and the Anki file export are premium ({@link isCustomizationAllowed}).
+ * CSV export stays free. Client-side gate, like the TTS cache. Flipping it off
+ * ungates every plan.
+ */
+export const ANKI_REQUIRES_PREMIUM = true;
+
+export const isAnkiAllowed = (plan: UserPlan, customizationPurchased: boolean): boolean =>
+  !ANKI_REQUIRES_PREMIUM || isCustomizationAllowed(plan, customizationPurchased);
 
 /**
  * Plans that include Nearby BookDrop device pairing — trusted devices whose

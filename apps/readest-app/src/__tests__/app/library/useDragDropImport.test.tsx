@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, renderHook, waitFor } from '@testing-library/react';
 
@@ -101,7 +102,8 @@ describe('useDragDropImport skipped-file toast', () => {
   it('names the skipped files of a mixed drop and imports the rest', async () => {
     const spy = vi.spyOn(eventDispatcher, 'dispatch');
     renderHook(() => useDragDropImport());
-    await dropTauriPaths(['C:\\Library\\a.epub', 'C:\\Library\\b.exe', 'C:\\Library\\c.docx']);
+    // .doc stays unsupported; .docx converts to EPUB on import and is accepted.
+    await dropTauriPaths(['C:\\Library\\a.epub', 'C:\\Library\\b.exe', 'C:\\Library\\c.doc']);
 
     await waitFor(() =>
       expect(spy).toHaveBeenCalledWith(
@@ -113,7 +115,7 @@ describe('useDragDropImport skipped-file toast', () => {
     const toasts = toastPayloads(spy);
     expect(toasts).toHaveLength(1);
     expect(toasts[0]!.type).toBe('error');
-    expect(toasts[0]!.message).toBe('Failed to import book(s): b.exe, c.docx');
+    expect(toasts[0]!.message).toBe('Failed to import book(s): b.exe, c.doc');
 
     const importPayload = spy.mock.calls.find((call) => call[0] === 'import-book-files')?.[1] as {
       files: { file?: File; path?: string }[];

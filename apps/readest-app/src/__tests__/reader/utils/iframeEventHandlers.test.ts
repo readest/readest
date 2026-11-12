@@ -402,6 +402,83 @@ describe('single-tap opens image gallery / table zoom in reflowable books (#4584
     expect(types).not.toContain('iframe-open-media');
   });
 
+  // foliate's FootnoteHandler opens these in a popup; their image is a marker
+  // (a 「註」 glyph on every note in some annotated classics), not an illustration.
+  describe('note-reference markers open the note, not the image viewer', () => {
+    const OPS = 'http://www.idpf.org/2007/ops';
+    const cases: [string, (a: HTMLAnchorElement, img: HTMLImageElement) => void][] = [
+      ['XHTML epub:type="noteref"', (a) => a.setAttributeNS(OPS, 'epub:type', 'noteref')],
+      ['HTML epub:type="noteref"', (a) => a.setAttribute('epub:type', 'noteref')],
+      ['role="doc-noteref"', (a) => a.setAttribute('role', 'doc-noteref')],
+      ['epub:type="biblioref"', (a) => a.setAttributeNS(OPS, 'epub:type', 'biblioref')],
+      ['a link inside <sup>', (a) => document.createElement('sup').appendChild(a)],
+      ['a link set as superscript', (a) => (a.style.verticalAlign = 'super')],
+      ['a marker set as superscript', (_a, img) => (img.style.verticalAlign = 'super')],
+      ['a.footnote', (a) => a.classList.add('footnote')],
+      ['a.footnote-link', (a) => a.classList.add('footnote-link')],
+    ];
+
+    for (const [label, mark] of cases) {
+      test(label, async () => {
+        const handlers = await importHandlers();
+        const anchor = document.createElement('a');
+        anchor.href = '#note-1';
+        const img = document.createElement('img');
+        img.src = 'blob:http://localhost/note-marker';
+        anchor.appendChild(img);
+        mark(anchor, img);
+
+        tap(handlers, false, img);
+
+        const types = postedMessages().map((m) => m['type']);
+        expect(types).not.toContain('iframe-open-media');
+        expect(types).not.toContain('iframe-single-click');
+      });
+    }
+  });
+
+  describe('a table running past two pages is the text, not media', () => {
+    beforeEach(() => {
+      document.documentElement.style.setProperty('--available-width', '800');
+      document.documentElement.style.setProperty('--available-height', '1200');
+    });
+
+    afterEach(() => {
+      document.documentElement.style.removeProperty('--available-width');
+      document.documentElement.style.removeProperty('--available-height');
+    });
+
+    const sizedTable = (width: number, height: number) => {
+      const table = document.createElement('table');
+      const cell = document.createElement('td');
+      table.appendChild(cell);
+      table.getBoundingClientRect = () => ({ width, height }) as DOMRect;
+      return { table, cell };
+    };
+
+    test('a chapter laid out in one table turns the page', async () => {
+      const handlers = await importHandlers();
+      const { cell } = sizedTable(800, 1200 * 20);
+
+      tap(handlers, false, cell);
+
+      const messages = postedMessages();
+      expect(messages.map((m) => m['type'])).not.toContain('iframe-open-media');
+      const click = messages.find((m) => m['type'] === 'iframe-single-click')!;
+      expect(click['media']).toBeUndefined();
+    });
+
+    test('a data table on one page still zooms', async () => {
+      const handlers = await importHandlers();
+      const { table, cell } = sizedTable(400, 400);
+
+      tap(handlers, false, cell);
+
+      const media = postedMessages().find((m) => m['type'] === 'iframe-open-media')!;
+      expect(media['html']).toBe(table.outerHTML);
+    });
+  });
+
   describe('page-filling media leaves the tap to the page-turn zones (#6424)', () => {
     // foliate publishes the page's content box on the root element.
     beforeEach(() => {
@@ -502,6 +579,69 @@ describe('iframeEventHandlers touch forwarding', () => {
       }),
       '*',
     );
+  });
+
+  describe('a touch whose start element is removed mid-gesture', () => {
+    // A zoom change rebuilds a PDF page's pdf.js text layer. A touch that began
+    // on one of its spans keeps targeting that span after it is detached, so its
+    // later events never reach the document's listeners.
+    const touchDomEvent = (type: string, touches: Touch[], changedTouches = touches) => {
+      const event = new Event(type, { bubbles: true, cancelable: true });
+      Object.defineProperties(event, {
+        touches: { value: touches },
+        changedTouches: { value: changedTouches },
+      });
+      return event as TouchEvent;
+    };
+    let span: HTMLSpanElement;
+    let listeners: [string, (event: Event) => void][];
+
+    beforeEach(async () => {
+      const { handleTouchStart, handleTouchMove, handleTouchEnd, handleTouchCancel } =
+        await importHandlers();
+      listeners = [
+        ['touchstart', (e) => handleTouchStart('book-1', e as TouchEvent)],
+        ['touchmove', (e) => handleTouchMove('book-1', e as TouchEvent)],
+        ['touchend', (e) => handleTouchEnd('book-1', e as TouchEvent)],
+        ['touchcancel', (e) => handleTouchCancel('book-1', e as TouchEvent)],
+      ];
+      for (const [type, listener] of listeners) document.addEventListener(type, listener);
+      span = document.createElement('span');
+      document.body.appendChild(span);
+    });
+
+    afterEach(() => {
+      for (const [type, listener] of listeners) document.removeEventListener(type, listener);
+      span.remove();
+    });
+
+    test('its moves and release still reach the reader', () => {
+      span.dispatchEvent(touchDomEvent('touchstart', [touchPoint(300, 100)]));
+      span.remove();
+      span.dispatchEvent(touchDomEvent('touchmove', [touchPoint(200, 100)]));
+      span.dispatchEvent(touchDomEvent('touchend', [], [touchPoint(100, 100)]));
+
+      expect(postedTypes(postSpy)).toEqual([
+        'iframe-touchstart',
+        'iframe-touchmove',
+        'iframe-touchend',
+      ]);
+    });
+
+    test('a touch on a connected element is forwarded once', () => {
+      span.dispatchEvent(touchDomEvent('touchstart', [touchPoint(300, 100)]));
+      span.dispatchEvent(touchDomEvent('touchmove', [touchPoint(200, 100)]));
+      span.dispatchEvent(touchDomEvent('touchend', [], [touchPoint(100, 100)]));
+      // A later touch elsewhere is not forwarded by the earlier start element.
+      span.remove();
+      span.dispatchEvent(touchDomEvent('touchmove', [touchPoint(200, 100)]));
+
+      expect(postedTypes(postSpy)).toEqual([
+        'iframe-touchstart',
+        'iframe-touchmove',
+        'iframe-touchend',
+      ]);
+    });
   });
 
   test('touchcancel forwards the released finger and clears the gesture', async () => {
@@ -814,5 +954,260 @@ describe('handleWheel on a fit-width PDF page (#6552)', () => {
     handleWheel('book-1', wheelEvent(100));
     expect((spy.mock.calls.at(-1)![0] as { nativeScrollY: boolean }).nativeScrollY).toBe(false);
     spy.mockRestore();
+  });
+});
+
+// #7145: whether a tap or a long press opens the image viewer is set per book.
+// Fixed-layout books (comics, PDFs) default to long press, so a tap on the page
+// always turns it or shows the toolbar; other books keep the tap.
+describe('image viewer gesture (#7145)', () => {
+  let postSpy: ReturnType<typeof vi.spyOn>;
+
+  beforeEach(() => {
+    vi.resetModules();
+    vi.useFakeTimers();
+    postSpy = vi.spyOn(window, 'postMessage').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.restoreAllMocks();
+    document.body.innerHTML = '';
+    document.getSelection()?.removeAllRanges();
+    vi.doUnmock('@/app/reader/utils/crossDocSelection');
+  });
+
+  const postedMessages = (): Record<string, unknown>[] =>
+    postSpy.mock.calls.map((c: unknown[]) => c[0] as Record<string, unknown>);
+
+  const click = (
+    handlers: Awaited<ReturnType<typeof importHandlers>>,
+    isFixedLayout: boolean,
+    target: EventTarget,
+    holdMs = 0,
+  ) => {
+    const { handleClick, handleMousedown, handleMouseup } = handlers;
+    handleMousedown('book-1', mouseEvent());
+    vi.advanceTimersByTime(holdMs);
+    handleMouseup('book-1', mouseEvent());
+    handleClick('book-1', { current: false }, isFixedLayout, false, mouseEvent({ target }));
+    vi.advanceTimersByTime(260);
+  };
+
+  const image = () => {
+    const img = document.createElement('img');
+    img.src = 'blob:http://localhost/figure';
+    return img;
+  };
+
+  test('defaults to long press in fixed-layout books and tap elsewhere', async () => {
+    const { resolveImageViewerGesture } = await importHandlers();
+    expect(resolveImageViewerGesture({}, true)).toBe('longPress');
+    expect(resolveImageViewerGesture({}, false)).toBe('tap');
+    expect(resolveImageViewerGesture({ imageViewerGesture: 'tap' }, true)).toBe('tap');
+    expect(resolveImageViewerGesture({ imageViewerGesture: 'longPress' }, false)).toBe('longPress');
+  });
+
+  test('long press: a tap on an image in a reflowable book is a plain tap', async () => {
+    const handlers = await importHandlers();
+    handlers.setImageViewerGesture('book-1', 'longPress');
+
+    click(handlers, false, image());
+
+    const messages = postedMessages();
+    expect(messages.map((m) => m['type'])).not.toContain('iframe-open-media');
+    const single = messages.find((m) => m['type'] === 'iframe-single-click')!;
+    expect(single['media']).toBeUndefined();
+  });
+
+  test('long press: a center tap on a fixed-layout page carries no image', async () => {
+    const handlers = await importHandlers();
+    handlers.setImageViewerGesture('book-1', 'longPress');
+
+    click(handlers, true, image());
+
+    const single = postedMessages().find((m) => m['type'] === 'iframe-single-click')!;
+    expect(single['media']).toBeUndefined();
+  });
+
+  test('long press: a held mouse button on an image opens the viewer', async () => {
+    const handlers = await importHandlers();
+    handlers.setImageViewerGesture('book-1', 'longPress');
+    const img = image();
+
+    click(handlers, false, img, 600);
+
+    const messages = postedMessages();
+    expect(messages.find((m) => m['type'] === 'iframe-open-media')).toMatchObject({
+      elementType: 'image',
+      src: img.src,
+    });
+    expect(messages.map((m) => m['type'])).not.toContain('iframe-single-click');
+  });
+
+  test.each([
+    false,
+    true,
+  ])('long press: a 300ms press stays a page click (fixed layout: %s)', async (isFixedLayout) => {
+    const handlers = await importHandlers();
+    handlers.setImageViewerGesture('book-1', 'longPress');
+
+    click(handlers, isFixedLayout, image(), 300);
+
+    expect(postedMessages().map((m) => m['type'])).not.toContain('iframe-open-media');
+    expect(postedMessages()).toContainEqual(
+      expect.objectContaining({ type: 'iframe-single-click' }),
+    );
+  });
+
+  test.each([0, 600])('long press: linked images open only after a hold (%sms)', async (holdMs) => {
+    const handlers = await importHandlers();
+    handlers.setImageViewerGesture('book-1', 'longPress');
+    const img = image();
+    const link = document.createElement('a');
+    link.href = 'https://example.com/figure';
+    link.appendChild(img);
+
+    click(handlers, false, img, holdMs);
+
+    const opened = postedMessages().filter((m) => m['type'] === 'iframe-open-media');
+    expect(opened).toHaveLength(holdMs ? 1 : 0);
+    expect(postedMessages().map((m) => m['type'])).not.toContain('iframe-single-click');
+  });
+
+  test('long press: an earlier timer cannot turn a second short press into a hold', async () => {
+    const handlers = await importHandlers();
+    handlers.setImageViewerGesture('book-1', 'longPress');
+    const img = image();
+
+    click(handlers, false, img);
+    click(handlers, false, img, 400);
+
+    expect(postedMessages().filter((m) => m['type'] === 'iframe-single-click')).toHaveLength(2);
+    expect(postedMessages().map((m) => m['type'])).not.toContain('iframe-open-media');
+  });
+
+  test.each([
+    { holdMs: 0, isFixedLayout: false, note: false, opens: false },
+    { holdMs: 600, isFixedLayout: false, note: false, opens: true },
+    { holdMs: 600, isFixedLayout: true, note: false, opens: false },
+    { holdMs: 600, isFixedLayout: false, note: true, opens: false },
+  ])('linked DOM click: $holdMs ms, fixed: $isFixedLayout, note: $note', async ({
+    holdMs,
+    isFixedLayout,
+    note,
+    opens,
+  }) => {
+    const handlers = await importHandlers();
+    handlers.setImageViewerGesture('book-1', 'longPress');
+    const link = document.createElement('a');
+    link.href = '#figure';
+    if (note) link.setAttribute('role', 'doc-noteref');
+    const img = image();
+    link.append(img);
+    document.body.append(link);
+    const navigate = vi.fn((event: Event) => event.preventDefault());
+    const capture = (event: MouseEvent) =>
+      handlers.handleClickCapture('book-1', event, isFixedLayout);
+    const bubble = (event: MouseEvent) =>
+      handlers.handleClick('book-1', { current: false }, isFixedLayout, false, event);
+    // Foliate installs its bubble listener before the reader's load listeners.
+    document.addEventListener('click', navigate);
+    document.addEventListener('click', capture, true);
+    document.addEventListener('click', bubble);
+    try {
+      handlers.handleMousedown('book-1', mouseEvent({ target: img }));
+      vi.advanceTimersByTime(holdMs);
+      handlers.handleMouseup('book-1', mouseEvent({ target: img }));
+      img.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+      vi.advanceTimersByTime(260);
+      expect(navigate).toHaveBeenCalledTimes(opens ? 0 : 1);
+      expect(postedMessages().filter((m) => m['type'] === 'iframe-open-media')).toHaveLength(
+        opens ? 1 : 0,
+      );
+    } finally {
+      document.removeEventListener('click', navigate);
+      document.removeEventListener('click', capture, true);
+      document.removeEventListener('click', bubble);
+      link.remove();
+    }
+  });
+
+  test('tap: a held mouse button on an image opens nothing', async () => {
+    const handlers = await importHandlers();
+    handlers.setImageViewerGesture('book-1', 'tap');
+
+    click(handlers, false, image(), 600);
+
+    expect(postedMessages().map((m) => m['type'])).not.toContain('iframe-open-media');
+  });
+
+  // #6872: tables follow the same gesture as images.
+  const tableCell = () => {
+    const table = document.createElement('table');
+    const cell = document.createElement('td');
+    table.appendChild(cell);
+    document.body.appendChild(table);
+    return cell;
+  };
+
+  test('tap: a tap on a table opens the table zoom', async () => {
+    const handlers = await importHandlers();
+    handlers.setImageViewerGesture('book-1', 'tap');
+
+    click(handlers, false, tableCell());
+
+    const media = postedMessages().find((m) => m['type'] === 'iframe-open-media')!;
+    expect(media['elementType']).toBe('table');
+  });
+
+  test('long press: a tap on a table is a plain tap', async () => {
+    const handlers = await importHandlers();
+    handlers.setImageViewerGesture('book-1', 'longPress');
+
+    click(handlers, false, tableCell());
+
+    const messages = postedMessages();
+    expect(messages.map((m) => m['type'])).not.toContain('iframe-open-media');
+    const single = messages.find((m) => m['type'] === 'iframe-single-click')!;
+    expect(single['media']).toBeUndefined();
+  });
+
+  test('long press: a held mouse button on blank table space opens the table zoom', async () => {
+    const handlers = await importHandlers();
+    handlers.setImageViewerGesture('book-1', 'longPress');
+
+    click(handlers, false, tableCell(), 600);
+
+    const messages = postedMessages();
+    expect(messages.find((m) => m['type'] === 'iframe-open-media')).toMatchObject({
+      elementType: 'table',
+    });
+    expect(messages.map((m) => m['type'])).not.toContain('iframe-single-click');
+  });
+
+  test('long press: a held mouse button on table text opens nothing', async () => {
+    vi.doMock('@/app/reader/utils/crossDocSelection', async (importActual) => ({
+      ...(await importActual<object>()),
+      isTextAtPoint: () => true,
+    }));
+    const handlers = await importHandlers();
+    handlers.setImageViewerGesture('book-1', 'longPress');
+
+    click(handlers, false, tableCell(), 600);
+
+    expect(postedMessages().map((m) => m['type'])).not.toContain('iframe-open-media');
+  });
+
+  test('long press: a drag that selects table text opens nothing', async () => {
+    const handlers = await importHandlers();
+    handlers.setImageViewerGesture('book-1', 'longPress');
+    const cell = tableCell();
+    cell.textContent = 'Selected text';
+    document.getSelection()!.selectAllChildren(cell);
+
+    click(handlers, false, cell, 600);
+
+    expect(postedMessages().map((m) => m['type'])).not.toContain('iframe-open-media');
   });
 });

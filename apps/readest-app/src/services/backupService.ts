@@ -7,10 +7,19 @@ import { Book, BookConfig, BookNote } from '@/types/book';
 import { SystemSettings } from '@/types/settings';
 import type { PageStatEvent, StatBook } from '@/types/statistics';
 import { StatisticsDb } from '@/services/statistics/statisticsDb';
-import { getBookDirOfPath, getLibraryFilename } from '@/utils/book';
+import { getBookDirOfPath, getLibraryFilename, getLocalBookFilename } from '@/utils/book';
 import { getAbsOfflineDir } from '@/utils/audiobook';
 import { stampBookConfigSchema } from '@/utils/serializer';
 import { configureZip } from '@/utils/zip';
+import { mergeEntries } from '@/services/vocabulary/entry';
+import {
+  VOCABULARY_FILENAME,
+  parseVocabularyFile,
+  readVocabularyFile,
+  serializeVocabulary,
+  writeVocabularyFile,
+} from '@/services/vocabulary/persistence';
+import { useVocabularyStore } from '@/store/vocabularyStore';
 
 /** Book file extensions for identifying book files in backup directories. */
 const BOOK_EXTS = new Set(Object.values(EXTS));
@@ -52,6 +61,7 @@ export const BACKUP_SETTINGS_BLACKLIST = [
   'autoImportFolders',
   'autoImportFlattenFolders',
   'savedBookCoverForLockScreenPath',
+  'obsidian',
   // Per-device identity — restoring causes sync identity / HLC collisions.
   'replicaDeviceId',
   'kosync.deviceId',
@@ -105,6 +115,10 @@ export const BACKUP_SETTINGS_CREDENTIAL_FIELDS = [
   'bookorbit.username',
   'bookorbit.userkey',
   'bookorbit.password',
+  'grimmory.username',
+  'grimmory.password',
+  // Custom headers can carry access secrets (e.g. CF-Access-Client-Secret).
+  'grimmory.customHeaders',
   'readwise.accessToken',
   'hardcover.accessToken',
   'hardcover.oauth',
@@ -359,6 +373,18 @@ async function collectBackupEntries(
     console.warn('Skipping statistics backup:', error);
   }
 
+  // The vocabulary builder's words live in the Data dir too. Save any change
+  // still waiting for the delayed save first.
+  try {
+    await useVocabularyStore.getState().flush();
+    const entries = await readVocabularyFile(appService);
+    if (entries.length) {
+      texts.push({ name: VOCABULARY_FILENAME, content: serializeVocabulary(entries) });
+    }
+  } catch (error) {
+    console.warn('Skipping vocabulary backup:', error);
+  }
+
   // Add the files of every live library book. Only a book's own `<hash>/`
   // dir is exported: the Books/ tree also holds root-level library metadata
   // and dirs no live row references — a soft-deleted book whose file
@@ -386,7 +412,17 @@ async function collectBackupEntries(
     .filter(({ entryName }) => !isAbsOfflineEntry(entryName))
     // A restore killed mid-file leaves its `.part` temp file behind.
     .filter(({ entryName }) => !entryName.endsWith('.part'));
-  return { texts, files: bookFiles };
+  // A book's search index is rebuilt from its file on demand, so leave it out
+  // when that file is in this backup (#7390). A cloud-only or external book
+  // keeps its index: library search reads it without the file.
+  const entryNames = new Set(bookFiles.map(({ entryName }) => entryName));
+  const bookByHash = new Map(books.map((book) => [book.hash, book]));
+  const isRebuildableIndex = (entryName: string) => {
+    if (!/^[^/]+\/search\.db(?:-(?:wal|shm|journal))?$/.test(entryName)) return false;
+    const book = bookByHash.get(getBookDirOfPath(entryName)!);
+    return !!book && entryNames.has(getLocalBookFilename(book));
+  };
+  return { texts, files: bookFiles.filter(({ entryName }) => !isRebuildableIndex(entryName)) };
 }
 
 /**
@@ -738,6 +774,30 @@ export async function restoreFromBackupZip(
       await stats.applyRemoteEvents(books, events);
     } catch (error) {
       console.warn('Failed to restore statistics from backup:', error);
+    }
+  }
+
+  // Merge vocabulary like a sync pull, and mark the backed-up words dirty so
+  // the next sync pushes them (the server merge makes a repeat push harmless).
+  const vocabularyEntry = fileEntries.find((e) => e.filename === VOCABULARY_FILENAME);
+  if (vocabularyEntry) {
+    try {
+      const data = await vocabularyEntry.getData!(new Uint8ArrayWriter());
+      const backup = parseVocabularyFile(new TextDecoder().decode(data));
+      // Let pending saves finish first, so none lands over the restored list.
+      await useVocabularyStore.getState().flush();
+      const merged = new Map((await readVocabularyFile(appService)).map((e) => [e.id, e]));
+      for (const b of backup) {
+        const local = merged.get(b.id);
+        merged.set(b.id, { ...(local ? mergeEntries(local, b) : b), dirty: true });
+      }
+      await writeVocabularyFile(appService, [...merged.values()]);
+      if (useVocabularyStore.getState().loaded) {
+        useVocabularyStore.setState({ loaded: false });
+        await useVocabularyStore.getState().load(appService);
+      }
+    } catch (error) {
+      console.warn('Failed to restore vocabulary from backup:', error);
     }
   }
 

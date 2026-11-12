@@ -63,9 +63,13 @@ export const buildBasePath = (rootPath: string): string =>
 export const buildBookDirPath = (rootPath: string, bookHash: string): string =>
   join(buildBasePath(rootPath), SYNC_BOOKS_DIR, bookHash);
 
+/** Absolute path of one kind of a book's synced data (e.g. `tts`). */
+export const buildBookKindDirPath = (rootPath: string, bookHash: string, kind: string): string =>
+  join(buildBookDirPath(rootPath, bookHash), kind);
+
 /** Absolute path of the per-book TTS pack directory. */
 export const buildBookTTSDirPath = (rootPath: string, bookHash: string): string =>
-  join(buildBookDirPath(rootPath, bookHash), SYNC_BOOK_TTS_DIR);
+  buildBookKindDirPath(rootPath, bookHash, SYNC_BOOK_TTS_DIR);
 
 /** Absolute path of one TTS pack file (or sidecar) inside the tts dir. */
 export const buildBookTTSFilePath = (rootPath: string, bookHash: string, name: string): string =>

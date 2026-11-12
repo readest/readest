@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect } from 'vitest';
 import { genSSMLRaw, findSSMLMark, filterSSMLWithLang } from '@/utils/ssml';
 import { TTSMark } from '@/services/tts/types';

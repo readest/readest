@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { beforeEach, describe, it, expect, vi } from 'vitest';
 import { HlcGenerator } from '@/libs/crdt';
 import {

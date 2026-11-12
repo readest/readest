@@ -16,6 +16,8 @@ import type { UserHighlightColor } from '@/types/book';
 
 // ── Tailwind / DaisyUI styles ───────────────────────────────────────────
 import '@/styles/globals.css';
+// The note card's relative timestamp needs dayjs's relativeTime plugin.
+import '@/utils/time';
 
 // ── Per-test state read by mocks ────────────────────────────────────────
 let mockUserColors: UserHighlightColor[] = [];
@@ -457,5 +459,95 @@ describe('five-action toolbar', () => {
     expect(strip.getBoundingClientRect()[end]).toBeLessThanOrEqual(
       options.getBoundingClientRect()[end],
     );
+  });
+});
+
+// A note opens as its own bordered card inside the toolbar's popup box. The
+// card must cover that box exactly: inset by the box's 1px border it left the
+// box's frame showing around it, and with the triangle below, the triangle's
+// fill missed the card's border and drew a line across its base.
+describe('note card over the popup box', () => {
+  const NOTE_Y = 200;
+  const note = {
+    id: 'n1',
+    type: 'annotation' as const,
+    cfi: 'epubcfi(/6/4!/4)',
+    note: 'The curious girl who falls down the rabbit hole',
+    text: 'Alice',
+    createdAt: 1,
+    updatedAt: 1,
+  };
+  type Dir = 'up' | 'down' | 'left' | 'right';
+  const renderNote = (dir: Dir, eink: boolean, editor = false) => {
+    // Horizontal text: the box sits above the text (triangle 'up', pointing
+    // down at it from the box's bottom) or below it ('down'). Vertical text:
+    // the box sits to the text's left ('left', triangle on the box's right)
+    // or right ('right'). The vertical box swaps the toolbar's width and height.
+    const isVertical = dir === 'left' || dir === 'right';
+    const boxW = isVertical ? POPUP_H : POPUP_W;
+    const boxH = isVertical ? POPUP_W : POPUP_H;
+    const at = { x: 200, y: NOTE_Y };
+    const position = {
+      up: { x: at.x, y: at.y - boxH },
+      down: { x: at.x, y: at.y },
+      left: { x: at.x - boxW, y: 20 },
+      right: { x: at.x, y: 20 },
+    }[dir];
+    const triangle = {
+      up: { x: at.x + boxW / 2, y: at.y },
+      down: { x: at.x + boxW / 2, y: at.y - 7 },
+      left: { x: at.x, y: 20 + boxH / 2 },
+      right: { x: at.x - 7, y: 20 + boxH / 2 },
+    }[dir];
+    return render(
+      <div data-theme='default-light' data-eink={eink ? 'true' : undefined}>
+        <AnnotationPopup
+          bookKey='test'
+          dir='ltr'
+          isVertical={isVertical}
+          buttons={toolButtons}
+          notes={editor ? [] : [note]}
+          noteEditor={editor ? { value: note.note, onSave: vi.fn(), onCancel: vi.fn() } : null}
+          position={{ dir, point: position }}
+          trianglePosition={{ dir, point: triangle }}
+          highlightOptionsVisible={false}
+          selectedStyle='highlight'
+          selectedColor='yellow'
+          popupWidth={POPUP_W}
+          popupHeight={POPUP_H}
+          onHighlight={vi.fn()}
+          onDismiss={vi.fn()}
+        />
+      </div>,
+    );
+  };
+
+  // The triangle's edge, and the two edges across from it, must coincide.
+  const edges = {
+    up: ['bottom', 'left', 'right'],
+    down: ['top', 'left', 'right'],
+    left: ['right', 'top', 'bottom'],
+    right: ['left', 'top', 'bottom'],
+  } as const;
+
+  it.each(
+    (['up', 'down', 'left', 'right'] as const).flatMap((dir) =>
+      [false, true].map((eink) => [dir, eink] as const),
+    ),
+  )('triangle %s, e-ink %s: the card and the editor cover the box', (dir, eink) => {
+    // The note card, then the note editor that opens in the same box.
+    for (const [editor, selector] of [
+      [false, '.annotation-notes .popup-container'],
+      [true, '.annotation-note-editor'],
+    ] as const) {
+      const { container, unmount } = renderNote(dir, eink, editor);
+      const box = (
+        container.querySelector('#popup-container') as HTMLElement
+      ).getBoundingClientRect();
+      const panel = (container.querySelector(selector) as HTMLElement).getBoundingClientRect();
+      const pick = (r: DOMRect) => Object.fromEntries(edges[dir].map((e) => [e, r[e]]));
+      expect({ selector, ...pick(panel) }).toEqual({ selector, ...pick(box) });
+      unmount();
+    }
   });
 });

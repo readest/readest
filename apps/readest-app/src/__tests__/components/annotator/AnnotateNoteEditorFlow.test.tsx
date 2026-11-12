@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 /**
  * #5987 / #5957 — "Annotate" used to highlight the selection and then hand the
  * note off to the annotations sidebar, which lists notes in reading order and
@@ -187,6 +188,7 @@ vi.mock('@/hooks/useFileSelector', () => ({
 
 vi.mock('@/app/reader/hooks/useNotesSync', () => ({ useNotesSync: () => {} }));
 vi.mock('@/app/reader/hooks/useBookOrbitNotesSync', () => ({ useBookOrbitNotesSync: () => {} }));
+vi.mock('@/app/reader/hooks/useGrimmoryNotesSync', () => ({ useGrimmoryNotesSync: () => {} }));
 vi.mock('@/app/reader/hooks/useReadwiseSync', () => ({ useReadwiseSync: () => {} }));
 vi.mock('@/app/reader/hooks/useHardcoverSync', () => ({ useHardcoverSync: () => {} }));
 vi.mock('@/app/reader/hooks/usePageboundSync', () => ({ usePageboundSync: () => {} }));
@@ -571,6 +573,28 @@ describe('Annotate opens the note editor at the selection', () => {
 
     expect(screen.queryByTestId('note-editor-popup')).toBeNull();
     expect(liveAnnotations()).toHaveLength(0);
+  });
+
+  test('keeps the style and colour of the highlight it adds a note to', async () => {
+    h.config.booknotes = [
+      {
+        id: 'existing',
+        type: 'annotation',
+        cfi: 'epubcfi(/6/2!/4/2)',
+        style: 'underline',
+        color: 'violet',
+        text: 'selected text',
+        note: '',
+        createdAt: 1,
+        updatedAt: 1,
+      } as BookNote,
+    ];
+
+    await annotate();
+
+    expect(liveAnnotations()).toEqual([
+      expect.objectContaining({ id: 'existing', style: 'underline', color: 'violet' }),
+    ]);
   });
 
   test('cancelling keeps a highlight that already existed before Annotate', async () => {

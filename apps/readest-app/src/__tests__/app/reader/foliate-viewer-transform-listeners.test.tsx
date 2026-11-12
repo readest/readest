@@ -28,7 +28,12 @@ vi.mock('@/store/parallelViewStore', () => ({ useParallelViewStore: () => () => 
 vi.mock('@/store/settingsStore', () => ({
   useSettingsStore: Object.assign(() => ({ settings: {} }), { getState: () => ({ settings: {} }) }),
 }));
-vi.mock('@/store/themeStore', () => ({ useThemeStore: () => ({}) }));
+vi.mock('@/store/themeStore', () => {
+  const state = { isIPhoneDuo: false, duoFold: null, safeAreaInsets: null };
+  const useThemeStore = (selector?: (s: typeof state) => unknown) =>
+    selector ? selector(state) : state;
+  return { useThemeStore: Object.assign(useThemeStore, { getState: () => state }) };
+});
 vi.mock('@/store/customFontStore', () => ({
   useCustomFontStore: () => ({ getLoadedFonts: () => [], getAvailableFonts: () => [] }),
 }));
@@ -92,6 +97,7 @@ vi.mock('@/hooks/useEinkMode', () => ({ useEinkMode: () => ({ applyEinkMode: () 
 vi.mock('@/hooks/useUICSS', () => ({ useUICSS: () => {} }));
 vi.mock('@/hooks/useDiscordPresence', () => ({ useDiscordPresence: () => {} }));
 vi.mock('@/app/reader/hooks/bookOrbitProgressProvider', () => ({ bookOrbitProgressProvider: {} }));
+vi.mock('@/app/reader/hooks/grimmoryProgressProvider', () => ({ grimmoryProgressProvider: {} }));
 vi.mock('@/app/reader/components/paragraph', () => ({ ParagraphControl: () => null }));
 vi.mock('@/app/reader/components/BrightnessOverlay', () => ({ default: () => null }));
 vi.mock('@/app/reader/components/ImageViewer', () => ({ default: () => null }));

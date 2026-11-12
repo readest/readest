@@ -1009,6 +1009,51 @@ function M.handleHold(item, opts)
         end)
     end
 
+    -- Remove the book from the library everywhere. keep_file leaves the file
+    -- on this device: the tombstone hides the row, and Add to Readest can
+    -- bring the file back later.
+    local function removeFromLibrary(keep_file)
+        local function finish_local()
+            if on_local and not keep_file then removeLocalFile(row) end
+            -- Tombstone push: matches Readest's `book.deletedAt =
+            -- Date.now() + pushLibrary()` for the 'both' delete.
+            -- Peers pulling /sync see deleted_at and stop showing
+            -- the row, even though we already removed our local
+            -- copy + cloud objects.
+            local now = math.floor(os.time() * 1000)
+            M._store:upsertBook({
+                hash                  = row.hash,
+                title                 = row.title,
+                cloud_present         = 0,
+                local_present         = keep_file and 1 or 0,
+                deleted_at            = now,
+                _force_cloud_present  = true,
+                _clear_fields         = { "uploaded_at" },
+            })
+            -- Build a tombstone wire row from the in-memory entry
+            -- row (which already has format/meta_hash/etc) plus
+            -- the deleted_at + bumped updated_at.
+            local tombstone = {}
+            for k, v in pairs(row) do tombstone[k] = v end
+            tombstone.deleted_at = now
+            tombstone.updated_at = now
+            tombstone.uploaded_at = nil
+            syncbooks.pushBook(tombstone, {
+                sync_auth = opts.sync_auth,
+                sync_path = opts.sync_path,
+                settings  = opts.settings,
+            }, function() M.refresh() end)
+            M.refresh()
+        end
+        if on_cloud then
+            doCloudDelete(function(success)
+                if success then finish_local() end
+            end)
+        else
+            finish_local()
+        end
+    end
+
     -- Delete sub-options (parity with BookDetailView's three-item dropdown).
     add_row(_("Remove from Cloud & Device"), function()
         close()
@@ -1016,45 +1061,23 @@ function M.handleHold(item, opts)
             text = _("Remove this book from cloud and device?")
                 .. "\n\n" .. (row.title or ""),
             ok_text = _("Remove"),
-            ok_callback = function()
-                local function finish_local()
-                    if on_local then removeLocalFile(row) end
-                    -- Tombstone push: matches Readest's `book.deletedAt =
-                    -- Date.now() + pushLibrary()` for the 'both' delete.
-                    -- Peers pulling /sync see deleted_at and stop showing
-                    -- the row, even though we already removed our local
-                    -- copy + cloud objects.
-                    local now = math.floor(os.time() * 1000)
-                    M._store:upsertBook({
-                        hash                  = row.hash,
-                        title                 = row.title,
-                        cloud_present         = 0,
-                        local_present         = 0,
-                        deleted_at            = now,
-                        _force_cloud_present  = true,
-                    })
-                    -- Build a tombstone wire row from the in-memory entry
-                    -- row (which already has format/meta_hash/etc) plus
-                    -- the deleted_at + bumped updated_at.
-                    local tombstone = {}
-                    for k, v in pairs(row) do tombstone[k] = v end
-                    tombstone.deleted_at = now
-                    tombstone.updated_at = now
-                    syncbooks.pushBook(tombstone, {
-                        sync_auth = opts.sync_auth,
-                        sync_path = opts.sync_path,
-                        settings  = opts.settings,
-                    }, function() M.refresh() end)
-                    M.refresh()
-                end
-                if on_cloud then
-                    doCloudDelete(function() finish_local() end)
-                else
-                    finish_local()
-                end
-            end,
+            ok_callback = function() removeFromLibrary(false) end,
         })
     end)
+    -- local_present can outlive the file, and this action removes the cloud
+    -- copy, so check the file itself: it may be the only copy left.
+    local lfs = require("libs/libkoreader-lfs")
+    if row.file_path and lfs.attributes(row.file_path, "mode") == "file" then
+        add_row(_("Remove from Library, Keep File"), function()
+            close()
+            UIManager:show(ConfirmBox:new{
+                text = _("Remove this book from your library and the cloud? The file stays on this device.")
+                    .. "\n\n" .. (row.title or ""),
+                ok_text = _("Remove"),
+                ok_callback = function() removeFromLibrary(true) end,
+            })
+        end)
+    end
     if on_cloud then
         add_row(_("Remove from Cloud Only"), function()
             close()

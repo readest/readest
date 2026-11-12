@@ -1,9 +1,10 @@
+// @vitest-environment happy-dom
 import { cleanup, render } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 /**
- * The reading page keeps the side insets recorded with the status bar hidden,
- * so showing the toolbar (and iPhone Duo's side strip) does not re-paginate
+ * The reading page keeps the top and side insets recorded with the status bar
+ * hidden, so showing the toolbar (and iPhone Duo's status strip) does not re-paginate
  * (#6307). Only the Duo has a strip with an inset of its own: every other
  * device lays the page out against its live insets, record or not.
  */
@@ -28,7 +29,10 @@ vi.mock('@/store/readerStore', () => ({
       getView: () => null,
     }),
 }));
-vi.mock('@/store/readerProgressStore', () => ({ useBookProgress: () => null }));
+vi.mock('@/store/readerProgressStore', () => ({
+  useReaderProgressStore: (select: (state: { progresses: object }) => unknown) =>
+    select({ progresses: {} }),
+}));
 vi.mock('@/store/sidebarStore', () => ({ useSidebarStore: () => null }));
 vi.mock('@/store/bookDataStore', () => ({
   useBookDataStore: (select: (state: Record<string, unknown>) => unknown) =>
@@ -65,10 +69,13 @@ beforeEach(() => {
   useThemeStore.setState({
     safeAreaInsets: live,
     statusBarHiddenInsets: {
-      width: window.innerWidth,
-      height: window.innerHeight,
-      left: 0,
-      right: 0,
+      [`${window.innerWidth}x${window.innerHeight}`]: {
+        width: window.innerWidth,
+        height: window.innerHeight,
+        top: 0,
+        left: 0,
+        right: 0,
+      },
     },
     isIPhoneDuo: false,
   });

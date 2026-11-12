@@ -1,3 +1,4 @@
+// @vitest-environment node
 // The wide pages of a comic (double-page spreads laid out on their own) are
 // cached in the book config: an open that finds them saves measuring them on
 // the next, and a streamed comic, which can only measure a page as it loads,

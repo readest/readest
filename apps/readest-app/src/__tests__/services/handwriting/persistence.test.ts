@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect } from 'vitest';
 
 import { inkSignature, loadInkEditor, withInkNotes } from '@/services/handwriting/persistence';

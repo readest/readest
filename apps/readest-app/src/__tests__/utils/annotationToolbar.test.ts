@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, test, expect } from 'vitest';
 import { annotationToolButtons } from '@/app/reader/components/annotator/AnnotationTools';
 import {

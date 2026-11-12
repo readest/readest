@@ -185,6 +185,12 @@ msgstr "Dit boek uit cloud en apparaat verwijderen?"
 msgid "Remove"
 msgstr "Verwijderen"
 
+msgid "Remove from Library, Keep File"
+msgstr "Uit bibliotheek verwijderen, bestand behouden"
+
+msgid "Remove this book from your library and the cloud? The file stays on this device."
+msgstr "Dit boek uit je bibliotheek en de cloud verwijderen? Het bestand blijft op dit apparaat staan."
+
 msgid "Remove from Cloud Only"
 msgstr "Alleen uit cloud verwijderen"
 
@@ -287,14 +293,14 @@ msgstr "Geen boek geopend"
 msgid "Uploaded to Readest:"
 msgstr "Geüpload naar Readest:"
 
+msgid "Auto sync"
+msgstr "Automatische synchronisatie"
+
 msgid "Log in Readest Account"
 msgstr "Aanmelden bij Readest-account"
 
 msgid "Log out as %1"
 msgstr "Afmelden als %1"
-
-msgid "Auto sync"
-msgstr "Automatische synchronisatie"
 
 msgid "Readest library"
 msgstr "Readest-bibliotheek"
@@ -524,17 +530,26 @@ msgstr "Aanmelden"
 msgid "Please enter both email and password"
 msgstr "Voer e-mail en wachtwoord in"
 
+msgid "Sign in with a code"
+msgstr "Inloggen met een code"
+
 msgid "Please configure Supabase URL and API key first"
 msgstr "Configureer eerst Supabase-URL en API-sleutel"
 
 msgid "Logging in..."
 msgstr "Aanmelden…"
 
+msgid "Login failed: %1"
+msgstr "Aanmelden mislukt: %1"
+
 msgid "Successfully logged in to Readest"
 msgstr "Aangemeld bij Readest"
 
-msgid "Login failed: %1"
-msgstr "Aanmelden mislukt: %1"
+msgid "Scan the QR code with a phone signed in to Readest, or open %1 and enter this code:\n\n%2"
+msgstr "Scan de QR-code met een telefoon die is ingelogd bij Readest, of open %1 en voer deze code in:\n\n%2"
+
+msgid "The code expired. Please try again."
+msgstr "De code is verlopen. Probeer het opnieuw."
 
 msgid "Logged out from Readest"
 msgstr "Afgemeld bij Readest"

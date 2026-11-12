@@ -9,6 +9,7 @@ import {
 import { BookFormat, FIXED_LAYOUT_FORMATS, ViewSettings } from '@/types/book';
 import {
   themes,
+  getDefaultThemeColor,
   Palette,
   CustomTheme,
   generateLightPalette,
@@ -19,6 +20,7 @@ import { isDialogueHighlightActive } from './dialogueHighlight';
 import { readStoredAmbientIsDarkMode } from './ambientLight';
 import { INLINE_FORMATTING_SELECTOR } from './inlineTags';
 import { getOSPlatform } from './misc';
+import { WHITE_TRANSPARENCY_FILTER } from './imageBackground';
 import {
   LINK_HIT_AREA_CLASS,
   LINK_HIT_AREA_PX,
@@ -122,6 +124,7 @@ const getFontStyles = (
   minFontSize: number,
   fontWeight: number,
   overrideFont: boolean,
+  ignorePublisherFonts: string[],
 ) => {
   const families = buildFontFamilyLists(serif, sansSerif, monospace, defaultCJKFont);
   const defaultFontFamily = defaultFont.toLowerCase() === 'serif' ? '--serif' : '--sans-serif';
@@ -140,6 +143,7 @@ const getFontStyles = (
       --serif: ${families.serif};
       --sans-serif: ${families.sansSerif};
       --monospace: ${families.monospace};
+      ${overrideFont ? '' : ignorePublisherFonts.map((f) => `--book-${f}: var(--${f});`).join(' ')}
       --font-size: ${fontSize}px;
       --min-font-size: ${minFontSize}px;
       --font-weight: ${fontWeight};
@@ -301,30 +305,44 @@ const getDialogueHighlightStyles = (viewSettings: ViewSettings, themeCode: Theme
     viewSettings.dialogueHighlightCustomTextColor && viewSettings.dialogueHighlightTextColor
       ? `\n    color: ${viewSettings.dialogueHighlightTextColor} !important;`
       : '';
+  // A thin outline works even when the font has only regular/bold faces.
+  const weight =
+    viewSettings.dialogueHighlightWeight === 'slightly-heavier'
+      ? '\n    -webkit-text-stroke: 0.2px currentColor !important;'
+      : viewSettings.dialogueHighlightWeight === 'bold'
+        ? '\n    font-weight: bold !important;'
+        : '';
   return `
   /* Dialogue lines tinted with the custom color or, by default, the theme's
      primary color. !important so the tint survives "Override Book Color",
      which repaints spans/paragraphs with the theme background at the same
      importance level but lower specificity. */
-  .readest-dialogue {${bgDecl(22)}${text}
+  .readest-dialogue {${bgDecl(22)}${text}${weight}
     border-radius: 0.2em;
     box-decoration-break: clone;
     -webkit-box-decoration-break: clone;
   }
-  .readest-dialogue-block {${bgDecl(12)}${text}
+  .readest-dialogue-block {${bgDecl(12)}${text}${weight}
     border-radius: 0.3em;
   }${
     viewSettings.dialogueHighlightItalic
       ? `
   /* Italic runs marked like quoted dialogue; nested marks drop their own
      tint so overlapping translucent backgrounds don't stack. */
-  :is(i, em) {${bgDecl(22)}${text}
+  :is(i, em) {${bgDecl(22)}${text}${weight}
     border-radius: 0.2em;
     box-decoration-break: clone;
     -webkit-box-decoration-break: clone;
   }
   :is(i, em) :is(i, em, .readest-dialogue), .readest-dialogue :is(i, em) {
     background-color: transparent !important;
+  }`
+      : ''
+  }${
+    viewSettings.dialogueHighlightWeight === 'bold'
+      ? `
+  .readest-dialogue-block *, .readest-dialogue *${viewSettings.dialogueHighlightItalic ? ', :is(i, em) *' : ''} {
+    font-weight: bold !important;
   }`
       : ''
   }
@@ -337,9 +355,12 @@ const getColorStyles = (
   themeCode: ThemeCode,
   backgroundTextureId: string,
   isEink: boolean,
+  isFootnote: boolean,
+  transparentImageBackground: boolean,
 ) => {
   const { bg, fg, primary, isDarkMode } = themeCode;
   const hasBackgroundTexture = !!backgroundTextureId && backgroundTextureId !== 'none';
+  const texturedFootnote = isFootnote && hasBackgroundTexture;
   // Over a background texture, Override Book Color still forces the text
   // colors but fills backgrounds with transparent so the texture shows (#6712).
   const overrideBg = hasBackgroundTexture ? 'transparent' : bg;
@@ -352,7 +373,7 @@ const getColorStyles = (
       --override-color: ${overrideColor};
       color-scheme: ${isDarkMode ? 'dark' : 'light'};
     }
-    html, body {
+    ${texturedFootnote && !overrideColor ? 'html' : 'html, body'} {
       color: ${fg};
     }
     ${isEink ? getEinkSelectionStyles() : isDarkMode ? getDarkSelectionStyles(primary) : ''}
@@ -364,7 +385,8 @@ const getColorStyles = (
       background: var(--background-set, none);
     }
     body {
-      ${isEink ? `background-color: ${bg} !important;` : ''}
+      ${isEink && !texturedFootnote ? `background-color: ${bg} !important;` : ''}
+      ${texturedFootnote && overrideColor ? 'background-color: transparent !important;' : ''}
     }
     section, aside, blockquote, article, nav, header, footer, main, figure,
     div, p, font, h1, h2, h3, h4, h5, h6, li, span {
@@ -383,15 +405,21 @@ const getColorStyles = (
       text-decoration: ${isEink ? 'underline' : 'none'};
     }
     body.pbg {
-      ${isDarkMode ? `background-color: ${bg} !important;` : ''}
+      ${isDarkMode && !texturedFootnote ? `background-color: ${bg} !important;` : ''}
     }
     /* When inverting in dark mode, invert(100%) must stay the effective filter
        (a later filter declaration would discard it), and multiply must not
        apply: multiply with a dark page background erases the image (#5250). */
     img {
-      ${isDarkMode && invertImgColorInDark ? 'filter: invert(100%);' : ''}
-      ${isDarkMode && !invertImgColorInDark && overrideColor ? 'filter: grayscale(100%) contrast(1.2) brightness(1.2);' : ''}
-      ${overrideColor && !(isDarkMode && invertImgColorInDark) ? 'mix-blend-mode: multiply;' : ''}
+      ${transparentImageBackground ? `filter: ${WHITE_TRANSPARENCY_FILTER}${isDarkMode && invertImgColorInDark ? ' invert(100%)' : ''};` : isDarkMode && invertImgColorInDark ? 'filter: invert(100%);' : ''}
+      ${!transparentImageBackground && isDarkMode && !invertImgColorInDark && overrideColor ? 'filter: grayscale(100%) contrast(1.2) brightness(1.2);' : ''}
+      ${!transparentImageBackground && overrideColor && !(isDarkMode && invertImgColorInDark) ? 'mix-blend-mode: multiply;' : ''}
+    }
+    ${
+      transparentImageBackground
+        ? `svg image { filter: ${WHITE_TRANSPARENCY_FILTER}${isDarkMode && invertImgColorInDark ? ' invert(100%)' : ''}; }
+    img, svg image { mix-blend-mode: normal !important; background-color: transparent !important; }`
+        : ''
     }
     svg, img {
       ${overrideColor ? `background-color: transparent !important;` : ''};
@@ -491,6 +519,10 @@ const getPageLayoutStyles = (
   vertical: boolean,
 ) => `
   html {
+    /* The paginator forces this on the root in paginated mode only; scrolled
+       mode needs it too or a long URL runs past the viewport (#7154).
+       break-word, not anywhere: see the td, th rule (#5681). */
+    overflow-wrap: break-word !important;
     --margin-top: ${marginTop}px;
     --margin-right: ${marginRight}px;
     --margin-bottom: ${marginBottom}px;
@@ -501,6 +533,13 @@ const getPageLayoutStyles = (
     max-height: unset;
     -webkit-touch-callout: none;
     -webkit-user-select: text;
+  }
+  /* EBPAJ matter pages (title, credits, notices) put a vertical full-height box
+     in a horizontal root. Orthogonal to the root, its 100% is the whole
+     viewport, so end-aligned credits fall past the bottom margin (#7372).
+     Size it to the paginator's content box, which is right in any writing mode. */
+  body.paginated-mode > .main.vrtl.height-100per {
+    height: calc(var(--available-height) * 1px) !important;
   }
   body {
     overflow: unset;
@@ -519,6 +558,11 @@ const getPageLayoutStyles = (
      link long press starts no selection (#6242); set while a touch is held */
   html.${LINK_TOUCH_HOLD_CLASS} a[href] {
     pointer-events: none !important;
+  }
+  /* Linked images must still receive Android's long-press contextmenu. */
+  html.${LINK_TOUCH_HOLD_CLASS} a[href] img:not([zy-enlarge-src="none"]),
+  html.${LINK_TOUCH_HOLD_CLASS} a[href] svg:not([zy-enlarge-src="none"]) image {
+    pointer-events: auto !important;
   }
   svg:where(:not([width])), img:where(:not([width])) {
     width: auto;
@@ -609,6 +653,22 @@ const getPageLayoutStyles = (
 
   body.paginated-mode td:has(img), body.paginated-mode td :has(img) {
     max-height: calc(var(--available-height) * 0.8 * 1px);
+  }
+
+  body.paginated-mode img {
+    max-width: 100%;
+    max-height: calc(var(--available-height) * 1px);
+    object-fit: contain;
+  }
+
+  body.paginated-mode svg {
+    max-width: 100%;
+    max-height: calc(var(--available-height) * 1px);
+  }
+
+  body.scroll-mode img {
+    max-width: 100%;
+    object-fit: contain;
   }
 
   figure.code {
@@ -740,11 +800,19 @@ const getParagraphLayoutStyles = (
     hanging-punctuation: allow-end last;
     widows: 2;
   }
+  /* A book's li { margin: 0 2em } narrows the text again at every list level.
+     Override Book Layout drops the end side only: with ul { padding: 0 } the
+     start side is what keeps an outside marker on the page. */
   li {
     line-height: ${lineSpacing} ${overrideLayout ? '!important' : ''};
     -webkit-hyphens: ${hyphenate ? 'auto' : 'manual'} ${overrideLayout ? '!important' : ''};
     hyphens: ${hyphenate ? 'auto' : 'manual'} ${overrideLayout ? '!important' : ''};
+    ${overrideLayout ? 'margin-inline-end: unset !important;' : ''}
   }
+  /* Shrinks the browser's 40px list padding, and never grows it at large font
+     sizes. The layer loses to every unlayered book rule, a reset like
+     * { padding: 0 } included, and still beats the browser's. */
+  ${overrideLayout ? '@layer list-indent { ul, ol { padding-inline-start: min(1.5em, 40px); } }' : ''}
   p.aligned-center, blockquote.aligned-center,
   dd.aligned-center, div.aligned-center {
     text-align: center ${overrideLayout ? '!important' : ''};
@@ -1079,7 +1147,7 @@ export const getThemeCode = () => {
   let ambientIsDarkMode = false;
   let customThemes: CustomTheme[] = [];
   if (typeof window !== 'undefined') {
-    themeColor = localStorage.getItem('themeColor') || 'default';
+    themeColor = localStorage.getItem('themeColor') || getDefaultThemeColor();
     themeMode = localStorage.getItem('themeMode') || 'auto';
     systemIsDarkMode = localStorage.getItem('systemIsDarkMode') === 'true';
     ambientIsDarkMode = readStoredAmbientIsDarkMode(
@@ -1121,6 +1189,7 @@ export const getStyles = (
   viewSettings: ViewSettings,
   themeCode?: ThemeCode,
   customFonts: CustomFont[] = [],
+  isFootnote = false,
 ) => {
   if (!themeCode) {
     themeCode = getThemeCode();
@@ -1157,6 +1226,7 @@ export const getStyles = (
     viewSettings.minimumFontSize!,
     viewSettings.fontWeight!,
     viewSettings.overrideFont!,
+    viewSettings.ignorePublisherFonts ?? [],
   );
   // Inline `@font-face` rules for the caller-supplied custom fonts so
   // they ship to the iframe synchronously with the rest of the
@@ -1172,6 +1242,8 @@ export const getStyles = (
     themeCode,
     viewSettings.backgroundTextureId,
     viewSettings.isEink,
+    isFootnote,
+    !!viewSettings.transparentImageBackground,
   );
   const translationStyles = getTranslationStyles(viewSettings);
   const warichuStyles = getWarichuStyles();
@@ -1222,6 +1294,83 @@ export const applyTranslationStyle = (viewSettings: ViewSettings) => {
 
   document.head.appendChild(styleElement);
 };
+
+// "Ignore publisher font names" (#7276): a list that names a generic family is
+// wrapped as `var(--book-serif, Palatino, serif)`. --book-serif is only defined
+// while that category's switch is on, so until then the book's list applies.
+const wrapPublisherFonts = (families: string, rewriteGenerics = false) => {
+  // Strings, comments and escapes are indivisible; commas inside functions
+  // also belong to the current family. Use the same tokens for detection and
+  // replacement so quoted names and comment text stay byte-for-byte intact.
+  const tokens =
+    families.match(
+      /\/\*[\s\S]*?\*\/|"(?:\\[\s\S]|[^"\\])*"|'(?:\\[\s\S]|[^'\\])*'|\\(?:[0-9a-fA-F]{1,6}\s?|[^\n\r\f])|[\w-]+|\s+|[^\s]/g,
+    ) ?? [];
+  const generics = new Set<string>();
+  let depth = 0;
+  let start = 0;
+  const finishFamily = (end: number) => {
+    const names: number[] = [];
+    for (let i = start; i < end; i++) {
+      if (!/^\s+$|^\/\*/.test(tokens[i]!)) names.push(i);
+    }
+    const index = names[0];
+    if (
+      names.length === 1 &&
+      index !== undefined &&
+      /^(serif|sans-serif|monospace)$/i.test(tokens[index]!)
+    ) {
+      const name = tokens[index]!.toLowerCase();
+      generics.add(name);
+      if (rewriteGenerics) tokens[index] = `var(--${name}, ${name})`;
+    }
+  };
+  for (let i = 0; i < tokens.length; i++) {
+    if (tokens[i] === '(') depth++;
+    else if (tokens[i] === ')') depth--;
+    else if (tokens[i] === ',' && depth === 0) {
+      finishFamily(i);
+      start = i + 1;
+    }
+  }
+  finishFamily(tokens.length);
+  if (!generics.size) return families;
+  const rewritten = tokens.join('');
+  const list = rewritten.trim();
+  const lead = rewritten.slice(0, rewritten.indexOf(list));
+  const wrapped = [...generics].reduceRight(
+    (fallback, name) => `var(--book-${name}, ${fallback})`,
+    list,
+  );
+  return lead + wrapped + rewritten.slice(lead.length + list.length);
+};
+
+const FONT_SIZE =
+  /^(?:(?:\d+(?:\.\d+)?|\.\d+)(?:[a-z]+|%)|x*-?(?:small|large)|medium|smaller|larger)$/i;
+
+// In a `font` shorthand the family list comes last, after the size and an
+// optional `/line-height`, e.g. `font: italic 1em/1.2 Palatino, serif`.
+const wrapFontShorthand = (match: string, prefix: string, value: string) => {
+  const [main = '', ...important] = value.split('!');
+  const words = [...main.matchAll(/[^\s/]+|\//g)];
+  const size = words.findIndex((word) => FONT_SIZE.test(word[0]));
+  if (size < 0) return match;
+  const start = words[words[size + 1]?.[0] === '/' ? size + 3 : size + 1]?.index;
+  if (start === undefined) return match;
+  const wrapped = wrapPublisherFonts(main.slice(start));
+  return [prefix + main.slice(0, start) + wrapped, ...important].join('!');
+};
+
+const FONT_SHORTHAND_REGEX = /((?:^|[\s;{])font\s*:)([^;{}]*)/gi;
+
+const wrapFontFamily = (_match: string, prefix: string, families: string) =>
+  prefix + wrapPublisherFonts(families);
+
+// `style` attributes don't pass through transformStylesheet.
+export const transformInlineFonts = (css: string) =>
+  css
+    .replace(/(font-family\s*:)([^;{}!]*)/gi, wrapFontFamily)
+    .replace(FONT_SHORTHAND_REGEX, wrapFontShorthand);
 
 export const transformStylesheet = (
   css: string,
@@ -1544,16 +1693,7 @@ export const transformStylesheet = (
     .replace(/(font-family\s*:\s*)([^;{}]*)/gi, (_match: string, prefix: string, value: string) => {
       const important = /\s*!\s*important\s*$/i.exec(value);
       const families = important ? value.slice(0, important.index) : value;
-      const rewritten = families
-        .split(',')
-        .map((family: string) => {
-          const generic = /^(serif|sans-serif|monospace)$/i.exec(family.trim());
-          if (!generic) return family;
-          const name = generic[1]!.toLowerCase();
-          return family.replace(generic[1]!, `var(--${name}, ${name})`);
-        })
-        .join(',');
-      return prefix + rewritten + (important ? important[0] : '');
+      return prefix + wrapPublisherFonts(families, true) + (important ? important[0] : '');
     })
     .replace(/([\s;])font-weight\s*:\s*normal/gi, '$1font-weight: var(--font-weight)')
     .replace(/([\s;])color\s*:\s*black/gi, '$1color: var(--theme-fg-color)')
@@ -1579,7 +1719,7 @@ export const transformStylesheet = (
     });
   }
 
-  return css;
+  return css.replace(FONT_SHORTHAND_REGEX, wrapFontShorthand);
 };
 
 export const applyThemeModeClass = (document: Document, isDarkMode: boolean) => {
@@ -1717,7 +1857,13 @@ export const applyImageStyle = (document: Document) => {
       const isInline = childNodes.every(
         (node) => node.nodeType !== Node.ELEMENT_NODE || (node as Element).tagName !== 'BR',
       );
-      inlineWithText = hasTextSiblings && isInline;
+      // A glyph image standing in for a character is never sized as a share
+      // of the line; a title image the book sizes that way keeps it (#7039).
+      // computedStyleMap keeps the percentage that getComputedStyle resolves,
+      // also inside a calc() (serialized as e.g. `calc(30% - 1px)`).
+      const width = img.computedStyleMap?.().get('width');
+      const percentSized = !!width && width.toString().includes('%');
+      inlineWithText = hasTextSiblings && isInline && !percentSized;
       if (inlineWithText) {
         // Only supply Readest's baseline default when the book leaves
         // vertical-align at its initial value; an author-set value (e.g. a CJK
@@ -1738,6 +1884,23 @@ export const applyImageStyle = (document: Document) => {
     };
   });
 
+  const rootStyle = document.documentElement?.style;
+  const availableHeight = rootStyle
+    ? parseFloat(rootStyle.getPropertyValue('--available-height'))
+    : NaN;
+  const baseHeight =
+    !isNaN(availableHeight) && availableHeight > 0
+      ? availableHeight
+      : (win?.innerHeight ?? window.innerHeight);
+
+  const availableWidth = rootStyle
+    ? parseFloat(rootStyle.getPropertyValue('--available-width'))
+    : NaN;
+  const baseWidth =
+    !isNaN(availableWidth) && availableWidth > 0
+      ? availableWidth
+      : (win?.innerWidth ?? window.innerWidth);
+
   for (const {
     img,
     percentWidth,
@@ -1749,12 +1912,15 @@ export const applyImageStyle = (document: Document) => {
   } of plans) {
     leadingImageParagraph?.classList.add('leading-image');
     if (!isNaN(percentWidth)) {
-      img.style.width = `${(percentWidth / 100) * window.innerWidth}px`;
+      img.style.width = `${(percentWidth / 100) * baseWidth}px`;
       img.removeAttribute('width');
     }
     if (!isNaN(percentHeight)) {
-      img.style.height = `${(percentHeight / 100) * window.innerHeight}px`;
+      img.style.height = `${(percentHeight / 100) * baseHeight}px`;
       img.removeAttribute('height');
+    }
+    if (!isNaN(percentWidth) && !isNaN(percentHeight)) {
+      img.style.objectFit = 'contain';
     }
     if (inlineWithText) {
       img.classList.add('has-text-siblings');
@@ -1894,6 +2060,8 @@ export const applyFixedlayoutStyles = (
   // are to be inverted; inverting or blending it again would darken or flip the
   // theme colors (#6548).
   const isThemedPDF = format === 'PDF' && viewSettings.applyThemeToPDF;
+  const transparentImages = !!viewSettings.transparentImageBackground && format !== 'PDF';
+  if (transparentImages) imgFilters.push(WHITE_TRANSPARENCY_FILTER);
   // hue-rotate flips the hues back, so a blue link stays blue
   if (isDarkMode && invertImgColorInDark && !isThemedPDF) {
     imgFilters.push('invert(100%) hue-rotate(180deg)');
@@ -1932,7 +2100,13 @@ export const applyFixedlayoutStyles = (
     }
     img, canvas {
       ${imgFilter}
-      ${overrideColor && !isThemedPDF ? `mix-blend-mode: ${isDarkMode ? darkMixBlendMode : 'multiply'};` : ''}
+      ${!transparentImages && overrideColor && !isThemedPDF ? `mix-blend-mode: ${isDarkMode ? darkMixBlendMode : 'multiply'};` : ''}
+    }
+    ${
+      transparentImages
+        ? `svg image { ${imgFilter} }
+    img, svg image { mix-blend-mode: normal !important; background-color: transparent !important; }`
+        : ''
     }
     img.singlePage {
       position: relative;
