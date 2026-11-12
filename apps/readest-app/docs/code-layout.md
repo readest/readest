@@ -266,10 +266,12 @@ Host-owned infrastructure for bundled plugins.
 - manifest, request, result, and semantic-content contracts
 - Worker request routing and host capability calls
 - scoped source reads and bounded SQL access through opaque handles
-- bundled plugin discovery and lookup/build worker lifecycles
+- bundled plugin discovery and lookup/build/recognition worker lifecycles
 
 Plugin implementations live separately under `src/plugins`; currently the
 Yomitan plugin accepts raw `.zip` dictionaries and portable `.rdict` indexes.
+`src/plugins/ocr` owns recognition engines, image processing and model downloads.
+The reader retains page scheduling and selectable overlays.
 
 ### `src/services/annotation`
 
