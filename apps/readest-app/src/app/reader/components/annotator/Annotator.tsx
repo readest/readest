@@ -1,3 +1,4 @@
+import dynamic from 'next/dynamic';
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { RiDeleteBinLine } from 'react-icons/ri';
 
@@ -24,6 +25,7 @@ import { useCustomDictionaryStore } from '@/store/customDictionaryStore';
 import { isSystemDictionaryEnabled } from '@/services/dictionaries/registry';
 import { invokeSystemDictionary } from '@/services/dictionaries/systemDictionary';
 import { buildSelectionContext } from '@/services/dictionaries/contextDictionary';
+import { hasXRayCredentials } from '@/services/ai/xray/utils';
 import type { DictionarySelectionContext } from '@/services/dictionaries/types';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
@@ -95,7 +97,7 @@ import {
   expandGlobalAnnotation,
   removeGlobalAnnotationOverlays,
 } from '../../utils/globalAnnotations';
-import { annotationToolButtons } from './AnnotationTools';
+import { annotationToolButtons, xrayToolButton } from './AnnotationTools';
 import AnnotationRangeEditor from './AnnotationRangeEditor';
 import PageTurnHint from './PageTurnHint';
 import SelectionRangeEditor from './SelectionRangeEditor';
@@ -137,6 +139,15 @@ import {
   parseReadEraBackup,
 } from '@/utils/readera';
 import { convertReadEraDocToBookNotes } from '@/services/annotation/providers/readera';
+
+const XRayPopup = dynamic(() => import('./XRayPopup'), { ssr: false });
+
+const XRayPopupWithProgress = (
+  props: Omit<React.ComponentProps<typeof XRayPopup>, 'currentCfi'>,
+) => {
+  const progress = useBookProgress(props.bookKey);
+  return progress?.location ? <XRayPopup {...props} currentCfi={progress.location} /> : null;
+};
 
 const ZERO_INSETS: Insets = { top: 0, right: 0, bottom: 0, left: 0 };
 
@@ -251,6 +262,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
   const [translationEpoch, setTranslationEpoch] = useState(0);
   const [showAnnotPopup, setShowAnnotPopup] = useState(false);
   const [showDictionaryPopup, setShowDictionaryPopup] = useState(false);
+  const [showXRayPopup, setShowXRayPopup] = useState(false);
   const [showDeepLPopup, setShowDeepLPopup] = useState(false);
   const [showProofreadPopup, setShowProofreadPopup] = useState(false);
   const [trianglePosition, setTrianglePosition] = useState<Position>();
@@ -319,14 +331,18 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
   // cleared without the dismiss that closes them: the instant highlight quick
   // action clears it on a tap (#6419). Close them in the same render, before
   // they can render without text.
-  if (!selection && (showDictionaryPopup || showDeepLPopup || showProofreadPopup)) {
+  if (
+    !selection &&
+    (showDictionaryPopup || showXRayPopup || showDeepLPopup || showProofreadPopup)
+  ) {
     setShowDictionaryPopup(false);
+    setShowXRayPopup(false);
     setShowDeepLPopup(false);
     setShowProofreadPopup(false);
   }
 
   const showingPopup =
-    showAnnotPopup || showDictionaryPopup || showDeepLPopup || showProofreadPopup;
+    showAnnotPopup || showDictionaryPopup || showXRayPopup || showDeepLPopup || showProofreadPopup;
 
   const popupPadding = useResponsiveSize(10);
   const trianglePadding = popupPadding * 2 + 6;
@@ -342,6 +358,13 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
   const proofreadPopupWidth = Math.min(440, maxWidth);
   const proofreadPopupHeight = Math.min(200, maxHeight);
   const canShare = canShareText(appService);
+  // X-Ray is a runtime-only Tauri action, not part of synced toolbar preferences.
+  const xrayAvailable =
+    appService?.appPlatform === 'tauri' &&
+    !!settings.aiSettings?.enabled &&
+    !!settings.aiSettings.reedy?.enabled &&
+    hasXRayCredentials(settings.aiSettings) &&
+    !!getBookProgress(bookKey)?.location;
   // For the ✓ (global) toggle in HighlightOptions: figure out whether
   // the booknote anchored at the current selection is currently global,
   // and whether the toggle should be shown at all (only meaningful for
@@ -361,6 +384,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
   const annotPopupMaxWidth = Math.min(useResponsiveSize(300), maxWidth);
   const annotPopupToolSize = useResponsiveSize(44);
   const toolbarToolTypes = getToolbarToolTypes(viewSettings.annotationToolbarItems, canShare);
+  const visibleToolCount = toolbarToolTypes.length + (xrayAvailable ? 1 : 0);
   const highlightOptionsGap = toolbarToolTypes.length <= 4 ? 4 : 8;
   // Three 30px styles, a four- or five-color pill (100px or 122px), and three gaps;
   // the global toggle adds a 30px button and a gap. Keep in sync with HighlightOptions.
@@ -377,7 +401,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
       ? annotPopupMaxWidth
       : Math.min(
           Math.max(
-            Math.max(toolbarToolTypes.length, 1) * annotPopupToolSize,
+            Math.max(visibleToolCount, 1) * annotPopupToolSize,
             highlightOptionsAvailable ? highlightOptionsMinWidth : 0,
           ),
           annotPopupMaxWidth,
@@ -573,6 +597,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
       setShowAnnotationNotes(false);
       setAnnotationNotes([]);
       setShowDictionaryPopup(false);
+      setShowXRayPopup(false);
       setShowDeepLPopup(false);
       setShowProofreadPopup(false);
       setEditingAnnotation(null);
@@ -1432,7 +1457,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
       // answering it with the toolbar (or, worse, re-running the quick action)
       // closed the surface on the frame it opened (#6018). Nothing can select
       // new text while one of these is up — they all sit over the page.
-      if (showDictionaryPopup || showDeepLPopup || showProofreadPopup) return;
+      if (showDictionaryPopup || showXRayPopup || showDeepLPopup || showProofreadPopup) return;
 
       const { enableAnnotationQuickActions, annotationQuickAction } = viewSettings;
       if (wantWordLensDict) {
@@ -1511,6 +1536,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
     setShowAnnotPopup(true);
     setShowDeepLPopup(false);
     setShowDictionaryPopup(false);
+    setShowXRayPopup(false);
     setShowProofreadPopup(false);
   };
 
@@ -1991,13 +2017,25 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
       return;
     }
     setShowAnnotPopup(false);
+    setShowXRayPopup(false);
     void suppressNativeSelectionHandles();
     setShowDictionaryPopup(true);
+  };
+
+  const handleXRay = () => {
+    if (!selection?.text || !xrayAvailable) return;
+    setShowAnnotPopup(false);
+    setShowDictionaryPopup(false);
+    setShowDeepLPopup(false);
+    setShowProofreadPopup(false);
+    void suppressNativeSelectionHandles();
+    setShowXRayPopup(true);
   };
 
   const handleTranslation = () => {
     if (!selection || !selection.text) return;
     setShowAnnotPopup(false);
+    setShowXRayPopup(false);
     void suppressNativeSelectionHandles();
     setShowDeepLPopup(true);
   };
@@ -2037,6 +2075,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
     // attribute footnotes) has nothing to attach to.
     if (selection.popup && !selection.cfi) return;
     setShowAnnotPopup(false);
+    setShowXRayPopup(false);
     void suppressNativeSelectionHandles();
     setShowProofreadPopup(true);
 
@@ -2711,6 +2750,14 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
   const toolButtons = toolbarToolTypes
     .map(buildToolButton)
     .filter((button): button is NonNullable<typeof button> => button !== null);
+  if (xrayAvailable) {
+    const dictionaryIndex = toolbarToolTypes.indexOf('dictionary');
+    toolButtons.splice(dictionaryIndex < 0 ? toolButtons.length : dictionaryIndex + 1, 0, {
+      tooltipText: _(xrayToolButton.label),
+      Icon: xrayToolButton.Icon,
+      onClick: handleXRay,
+    });
+  }
 
   // The lookup popups never deselect (handleDictionary / handleTranslation /
   // handleProofread only flip popup flags), so a genuine selection is still
@@ -2755,7 +2802,11 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
   // toolbar: hide them while any of those is open, and let them come back with
   // the toolbar (or go with the dismiss).
   const overlaySurfaceOpen =
-    showDictionaryPopup || showDeepLPopup || showProofreadPopup || !!noteEditorTarget;
+    showDictionaryPopup ||
+    showXRayPopup ||
+    showDeepLPopup ||
+    showProofreadPopup ||
+    !!noteEditorTarget;
 
   // Below `sm` (or short landscape) the note editor is a bottom sheet rather
   // than a popup pinned to the selection: an anchored editor would sit under
@@ -2818,6 +2869,18 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
             />
           );
         })()}
+      {showXRayPopup && trianglePosition && dictPopupPosition && (
+        <XRayPopupWithProgress
+          term={selection?.text as string}
+          bookKey={bookKey}
+          language={primaryLang}
+          position={dictPopupPosition}
+          trianglePosition={trianglePosition}
+          popupWidth={dictPopupWidth}
+          popupHeight={dictPopupHeight}
+          onDismiss={handleDismissPopupShowToolbar}
+        />
+      )}
       {showDeepLPopup && trianglePosition && translatorPopupPosition && (
         <TranslatorPopup
           bookKey={bookKey}

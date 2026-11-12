@@ -29,6 +29,7 @@ import { useFoliateEvents } from '../hooks/useFoliateEvents';
 import { useProgressSync } from '../hooks/useProgressSync';
 import { useABSProgressSync } from '../hooks/useABSProgressSync';
 import { useProgressAutoSave } from '../hooks/useProgressAutoSave';
+import { useXRayAutoUpdate } from '../hooks/useXRayAutoUpdate';
 import {
   CHUNKED_SECTION_THRESHOLD,
   clearChapterScreens,
@@ -152,6 +153,7 @@ const PositionFollowers: React.FC<{
   useProgressSync(bookKey);
   useABSProgressSync(bookKey);
   useProgressAutoSave(bookKey);
+  useXRayAutoUpdate(bookKey);
   const syncs = [
     useKOSync(bookKey),
     useKOSync(bookKey, bookOrbitProgressProvider),

@@ -9,7 +9,7 @@ import type { BookProgress } from '@/types/book';
 // file sync, translation) must, but the viewer and what it holds (paragraph mode, overlays, menus)
 // must not re-render with them.
 
-const counts = vi.hoisted(() => ({ followers: 0, paragraph: 0 }));
+const counts = vi.hoisted(() => ({ followers: 0, xray: 0, paragraph: 0 }));
 const readerState = vi.hoisted(() => ({
   setProgress: vi.fn(),
   getViewState: () => ({}),
@@ -88,6 +88,12 @@ vi.mock('@/app/reader/hooks/useProgressAutoSave', () => ({
     useBookProgress(key);
   },
 }));
+vi.mock('@/app/reader/hooks/useXRayAutoUpdate', () => ({
+  useXRayAutoUpdate: (key: string) => {
+    counts.xray++;
+    useBookProgress(key);
+  },
+}));
 vi.mock('@/app/reader/hooks/useAutoSaveBookCover', () => ({ useBookCoverAutoSave: () => {} }));
 vi.mock('@/app/reader/hooks/useFileSync', () => ({
   useFileSync: (key: string) => {
@@ -145,12 +151,13 @@ describe('FoliateViewer on a page turn', () => {
   it('re-renders only the hooks that follow the reading position', () => {
     render(<FoliateViewer {...props} />);
     turnTo(1);
-    const { followers, paragraph } = counts;
+    const { followers, xray, paragraph } = counts;
 
     turnTo(2);
     turnTo(3);
 
     expect(counts.followers).toBeGreaterThan(followers);
+    expect(counts.xray).toBeGreaterThan(xray);
     expect(counts.paragraph).toBe(paragraph);
   });
 });
