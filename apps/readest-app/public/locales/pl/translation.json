@@ -2972,5 +2972,8 @@
   "Books uploaded": "Przesłane książki",
   "Reset Counts": "Resetuj liczniki",
   "Reset the counts and sync history on this device?": "Zresetować liczniki i historię synchronizacji na tym urządzeniu?",
-  "Folder not available": "Folder niedostępny"
+  "Folder not available": "Folder niedostępny",
+  "Words per Flash": "Słowa na błysk",
+  "Warm-up": "Rozgrzewka",
+  "Long Word Delay": "Opóźnienie przy długich słowach"
 }

@@ -2826,5 +2826,8 @@
   "Books uploaded": "Feltöltött könyvek",
   "Reset Counts": "Számlálók nullázása",
   "Reset the counts and sync history on this device?": "Nullázza a számlálókat és a szinkronizálási előzményeket ezen az eszközön?",
-  "Folder not available": "A mappa nem érhető el"
+  "Folder not available": "A mappa nem érhető el",
+  "Words per Flash": "Szó villanásonként",
+  "Warm-up": "Bemelegítés",
+  "Long Word Delay": "Késleltetés hosszú szavaknál"
 }

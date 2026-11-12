@@ -2826,5 +2826,8 @@
   "Books uploaded": "আপলোড করা বই",
   "Reset Counts": "গণনা রিসেট করুন",
   "Reset the counts and sync history on this device?": "এই ডিভাইসের গণনা ও সিঙ্ক ইতিহাস রিসেট করবেন?",
-  "Folder not available": "ফোল্ডার উপলব্ধ নেই"
+  "Folder not available": "ফোল্ডার উপলব্ধ নেই",
+  "Words per Flash": "প্রতি ফ্ল্যাশে শব্দ",
+  "Warm-up": "ওয়ার্ম-আপ",
+  "Long Word Delay": "দীর্ঘ শব্দে বিলম্ব"
 }

@@ -2899,5 +2899,8 @@
   "Books uploaded": "ספרים שהועלו",
   "Reset Counts": "איפוס ספירות",
   "Reset the counts and sync history on this device?": "לאפס את הספירות ואת היסטוריית הסנכרון במכשיר הזה?",
-  "Folder not available": "התיקייה אינה זמינה"
+  "Folder not available": "התיקייה אינה זמינה",
+  "Words per Flash": "מילים בכל הבזק",
+  "Warm-up": "חימום",
+  "Long Word Delay": "השהיה במילים ארוכות"
 }

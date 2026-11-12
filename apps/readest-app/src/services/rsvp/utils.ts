@@ -2,14 +2,7 @@
  * Utility functions for CJK (Chinese, Japanese, Korean) text processing
  */
 import { cutZh, isJiebaReady } from '@/utils/jieba';
-import { RsvpWord } from './types';
-
-export const CHUNK_SIZE_OPTIONS = [1, 2, 3, 4, 5];
-export const DEFAULT_CHUNK_SIZE = 1;
-
-export const STORAGE_KEY_CHUNK_SIZE = 'readest_rsvp_chunk_size';
-export const STORAGE_KEY_WARMUP = 'readest_rsvp_warmup';
-export const STORAGE_KEY_ADAPTIVE_DELAY = 'readest_rsvp_adaptive_delay';
+import type { RsvpWord } from './types';
 
 /**
  * Check if a character is a CJK character
@@ -94,62 +87,47 @@ export function isCJKPunctuation(text: string): boolean {
   return cjkPunctuationPattern.test(text);
 }
 
+export const CHUNK_SIZE_OPTIONS = [1, 2, 3, 4, 5];
+
+// A word ending a sentence or clause, optionally followed by closing quotes or
+// brackets: `go.`, `Right?!`, `said."`, `end—`.
+const SENTENCE_END = /[.!?;\u2014\u2013。！？；][)"'”’»]*$/;
+
+const endsChunk = (word: RsvpWord) => !!word.blockEnd || SENTENCE_END.test(word.text);
+
 /**
- * Check if text ends with terminal sentence/clause punctuation,
- * taking into account possible trailing quotes/parentheses.
+ * End index (exclusive) of the chunk of up to `chunkSize` words that starts at
+ * `start`. A chunk ends after a word that ends a sentence or a block, so the
+ * next sentence or paragraph starts a new chunk. Blank frames between repeated words are not
+ * counted as words.
  */
-export function isTerminalPunctuation(text: string): boolean {
-  if (!text) return false;
-  const trimmed = text.trim();
-  // Match terminal English/Latin/General punctuation or CJK terminal punctuation
-  return /[.!?;\u2014\u2013。！？；][)"'”’»]*$/.test(trimmed);
+export function getChunkEnd(words: RsvpWord[], start: number, chunkSize: number): number {
+  let end = start;
+  let count = 0;
+  while (end < words.length && count < chunkSize) {
+    const word = words[end]!;
+    end++;
+    if (!word.text.trim()) continue;
+    count++;
+    if (endsChunk(word)) break;
+  }
+  return end;
 }
 
 /**
- * Check if word is unusually long (>= 9 characters) or is/contains numbers (>= 3 digits).
+ * Start of the chunk before the one at `index`. Chunks restart at every
+ * sentence, so replay the chunking from the start of the sentence that holds
+ * the previous word.
  */
-export function isLongWordOrNumber(text: string): boolean {
-  if (!text) return false;
-  const clean = text.replace(/[^\p{L}\p{N}]/gu, '');
-  return clean.length >= 9 || /\d{3,}/.test(text);
-}
-
-/**
- * Get a chunk of words starting at `startIndex` up to `chunkSize`.
- * Employs smart boundary breaking: if an intermediate word ends with terminal
- * punctuation (period, question mark, exclamation, etc.), the chunk ends immediately
- * after that word so the next sentence starts cleanly in the next flash.
- */
-export function getChunkForIndex(
-  words: RsvpWord[],
-  startIndex: number,
-  chunkSize: number,
-): { words: RsvpWord[]; indices: number[]; endsWithBoundary: boolean } {
-  if (!words || words.length === 0 || startIndex < 0 || startIndex >= words.length) {
-    return { words: [], indices: [], endsWithBoundary: false };
+export function getPrevChunkStart(words: RsvpWord[], index: number, chunkSize: number): number {
+  if (index <= 0) return 0;
+  let start = index - 1;
+  while (start > 0 && !endsChunk(words[start - 1]!)) start--;
+  for (;;) {
+    const end = getChunkEnd(words, start, chunkSize);
+    if (end >= index) return start;
+    start = end;
   }
-
-  const validChunkSize = Math.max(1, Math.min(5, chunkSize || 1));
-  const chunkWords: RsvpWord[] = [];
-  const chunkIndices: number[] = [];
-
-  for (let i = 0; i < validChunkSize && startIndex + i < words.length; i++) {
-    const idx = startIndex + i;
-    const word = words[idx]!;
-    chunkWords.push(word);
-    chunkIndices.push(idx);
-
-    // If an intermediate word ends with terminal punctuation, break early so the next
-    // sentence begins in the subsequent chunk.
-    if (i < validChunkSize - 1 && isTerminalPunctuation(word.text)) {
-      return { words: chunkWords, indices: chunkIndices, endsWithBoundary: true };
-    }
-  }
-
-  const lastWord = chunkWords[chunkWords.length - 1];
-  const endsWithBoundary = lastWord ? isTerminalPunctuation(lastWord.text) : false;
-
-  return { words: chunkWords, indices: chunkIndices, endsWithBoundary };
 }
 
 /**

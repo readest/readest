@@ -61,22 +61,9 @@ const run = (file, args, cleanup = () => {}) => {
   });
 };
 
-// For local builds without signing secrets, disable updater artifacts so `tauri build` succeeds out-of-the-box.
-const hasSigningKey = Boolean(
-  process.env['TAURI_SIGNING_PRIVATE_KEY'] ||
-  process.env['TAURI_PRIVATE_KEY'] ||
-  process.env['TAURI_SIGNING_PRIVATE_KEY_PATH'],
-);
-const hasConfigArg = rest.some((arg) => arg === '-c' || arg === '--config');
-const extraBuildArgs =
-  command === 'build' && !hasSigningKey && !hasConfigArg
-    ? ['--config', JSON.stringify({ bundle: { createUpdaterArtifacts: false }, plugins: { updater: { pubkey: '' } } })]
-    : [];
-
 if (!useCef) {
   const tauriCli = createRequire(import.meta.url).resolve('@tauri-apps/cli/tauri.js');
-  const tauriArgs = command ? [command, ...extraBuildArgs, ...rest] : [];
-  run('node', [tauriCli, ...tauriArgs]);
+  run('node', [tauriCli, ...process.argv.slice(2)]);
 } else {
   const split = rest.indexOf('--');
   const tauriArgs = split === -1 ? rest : rest.slice(0, split);

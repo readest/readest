@@ -2753,5 +2753,8 @@
   "Books uploaded": "アップロードした本",
   "Reset Counts": "カウントをリセット",
   "Reset the counts and sync history on this device?": "このデバイスのカウントと同期履歴をリセットしますか？",
-  "Folder not available": "フォルダーを利用できません"
+  "Folder not available": "フォルダーを利用できません",
+  "Words per Flash": "1回の表示語数",
+  "Warm-up": "ウォームアップ",
+  "Long Word Delay": "長い単語で遅延"
 }

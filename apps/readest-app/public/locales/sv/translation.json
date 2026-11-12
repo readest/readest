@@ -2826,5 +2826,8 @@
   "Books uploaded": "Uppladdade böcker",
   "Reset Counts": "Nollställ räknare",
   "Reset the counts and sync history on this device?": "Nollställ räknare och synkroniseringshistorik på den här enheten?",
-  "Folder not available": "Mappen är inte tillgänglig"
+  "Folder not available": "Mappen är inte tillgänglig",
+  "Words per Flash": "Ord per visning",
+  "Warm-up": "Uppvärmning",
+  "Long Word Delay": "Fördröjning för långa ord"
 }

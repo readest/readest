@@ -1,7 +1,8 @@
 import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
 import { RSVPController } from '@/services/rsvp/RSVPController';
 import { FoliateView } from '@/types/view';
-import { getChunkForIndex, isTerminalPunctuation, isLongWordOrNumber } from '@/services/rsvp/utils';
+import { RsvpWord } from '@/services/rsvp/types';
+import { getChunkEnd, getPrevChunkStart } from '@/services/rsvp/utils';
 
 function makeDoc(text: string): Document {
   const textNode = { nodeType: Node.TEXT_NODE, textContent: text } as unknown as Text;
@@ -9,30 +10,24 @@ function makeDoc(text: string): Document {
     nodeType: Node.ELEMENT_NODE,
     tagName: 'BODY',
     childNodes: [textNode],
-    ownerDocument: null as unknown as Document,
   } as unknown as HTMLElement;
-
   const doc = {
     body,
-    createRange: vi.fn().mockReturnValue({
-      setStart: vi.fn(),
-      setEnd: vi.fn(),
-    }),
+    createRange: vi.fn().mockReturnValue({ setStart: vi.fn(), setEnd: vi.fn() }),
     defaultView: {
       getComputedStyle: vi.fn().mockReturnValue({ display: 'block', visibility: 'visible' }),
     },
   } as unknown as Document;
-
   (body as unknown as { ownerDocument: Document }).ownerDocument = doc;
   (textNode as unknown as { ownerDocument: Document }).ownerDocument = doc;
   return doc;
 }
 
-function createMockView(primaryIndex: number, docs: Document[]): FoliateView {
-  return {
+function makeController(text: string, bookKey = 'book'): RSVPController {
+  const view = {
     renderer: {
-      primaryIndex,
-      getContents: vi.fn().mockReturnValue(docs.map((doc, i) => ({ doc, index: i }))),
+      primaryIndex: 0,
+      getContents: vi.fn().mockReturnValue([{ doc: makeDoc(text), index: 0 }]),
     },
     book: { toc: [] },
     language: { isCJK: false },
@@ -40,9 +35,53 @@ function createMockView(primaryIndex: number, docs: Document[]): FoliateView {
     getCFI: vi.fn().mockReturnValue('epubcfi(/6/4!/4/2/1:0)'),
     resolveCFI: vi.fn().mockReturnValue({ anchor: vi.fn().mockReturnValue(new Range()) }),
   } as unknown as FoliateView;
+  return new RSVPController(view, bookKey);
 }
 
-describe('RSVP Multi-Word Chunking & Pacing', () => {
+const words = (...texts: string[]): RsvpWord[] =>
+  texts.map((text) => ({ text, orpIndex: 0, pauseMultiplier: 1 }));
+
+const chunkTexts = (c: RSVPController) =>
+  c.currentChunkIndices.map((i) => c.currentState.words[i]!.text);
+
+describe('RSVP chunking utils', () => {
+  test('getChunkEnd takes up to chunkSize words', () => {
+    const w = words('One', 'Two', 'Three', 'Four');
+    expect(getChunkEnd(w, 0, 1)).toBe(1);
+    expect(getChunkEnd(w, 0, 3)).toBe(3);
+    expect(getChunkEnd(w, 2, 3)).toBe(4);
+  });
+
+  test('getChunkEnd ends a chunk after a sentence end, closing quotes included', () => {
+    expect(getChunkEnd(words('Stop.', 'Then', 'go.'), 0, 3)).toBe(1);
+    expect(getChunkEnd(words('said', 'Peter."', 'Then'), 0, 3)).toBe(2);
+    expect(getChunkEnd(words('Right?!', 'Then'), 0, 3)).toBe(1);
+    expect(getChunkEnd(words('Hello,', 'there', 'friend'), 0, 3)).toBe(3);
+  });
+
+  test('getChunkEnd ends a chunk at the end of a heading or paragraph', () => {
+    const w = words('Rabbit', 'Hole', 'Alice', 'was', 'tired');
+    w[1]!.blockEnd = true;
+    expect(getChunkEnd(w, 0, 3)).toBe(2);
+    expect(getPrevChunkStart(w, 2, 3)).toBe(0);
+  });
+
+  test('getChunkEnd does not count the blank frame between repeated words', () => {
+    // extractWords inserts ' ' between identical consecutive words.
+    expect(getChunkEnd(words('the', ' ', 'the', 'end'), 0, 3)).toBe(4);
+  });
+
+  test('getPrevChunkStart steps back over the previous chunk, short or full', () => {
+    const w = words('Stop.', 'Then', 'go.', 'Next', 'one', 'here', 'now');
+    // Forward chunks from 0 with size 3: [0], [1,2], [3,4,5], [6]
+    expect(getPrevChunkStart(w, 6, 3)).toBe(3);
+    expect(getPrevChunkStart(w, 3, 3)).toBe(1);
+    expect(getPrevChunkStart(w, 1, 3)).toBe(0);
+    expect(getPrevChunkStart(w, 0, 3)).toBe(0);
+  });
+});
+
+describe('RSVPController chunking', () => {
   beforeEach(() => {
     vi.useFakeTimers({ toFake: ['setTimeout', 'setInterval', 'clearTimeout', 'clearInterval'] });
     localStorage.clear();
@@ -52,135 +91,164 @@ describe('RSVP Multi-Word Chunking & Pacing', () => {
     vi.useRealTimers();
   });
 
-  describe('getChunkForIndex utility', () => {
-    test('extracts single word when chunkSize is 1', () => {
-      const words = [
-        { text: 'One', orpIndex: 0, pauseMultiplier: 1 },
-        { text: 'Two', orpIndex: 0, pauseMultiplier: 1 },
-      ];
-      const res = getChunkForIndex(words, 0, 1);
-      expect(res.words.length).toBe(1);
-      expect(res.words[0]!.text).toBe('One');
-      expect(res.indices).toEqual([0]);
-    });
-
-    test('extracts multiple words up to chunkSize', () => {
-      const words = [
-        { text: 'One', orpIndex: 0, pauseMultiplier: 1 },
-        { text: 'Two', orpIndex: 0, pauseMultiplier: 1 },
-        { text: 'Three', orpIndex: 1, pauseMultiplier: 1 },
-        { text: 'Four', orpIndex: 1, pauseMultiplier: 1 },
-      ];
-      const res = getChunkForIndex(words, 0, 3);
-      expect(res.words.length).toBe(3);
-      expect(res.words.map((w) => w.text)).toEqual(['One', 'Two', 'Three']);
-      expect(res.indices).toEqual([0, 1, 2]);
-    });
-
-    test('breaks early on terminal punctuation so sentences do not cross chunks', () => {
-      const words = [
-        { text: 'Stop.', orpIndex: 1, pauseMultiplier: 1 },
-        { text: 'Then', orpIndex: 1, pauseMultiplier: 1 },
-        { text: 'go.', orpIndex: 0, pauseMultiplier: 1 },
-      ];
-      const res = getChunkForIndex(words, 0, 3);
-      expect(res.words.length).toBe(1);
-      expect(res.words[0]!.text).toBe('Stop.');
-      expect(res.endsWithBoundary).toBe(true);
-
-      // Next chunk begins cleanly with "Then"
-      const nextChunk = getChunkForIndex(words, 1, 3);
-      expect(nextChunk.words.map((w) => w.text)).toEqual(['Then', 'go.']);
-    });
-
-    test('recognizes dialogue quotes with terminal punctuation', () => {
-      expect(isTerminalPunctuation('said Peter."')).toBe(true);
-      expect(isTerminalPunctuation('Right?!')).toBe(true);
-      expect(isTerminalPunctuation('Hello,')).toBe(false);
-    });
-
-    test('recognizes long words and numbers', () => {
-      expect(isLongWordOrNumber('unbelievable')).toBe(true); // 12 chars
-      expect(isLongWordOrNumber('1984')).toBe(true); // 4 digits
-      expect(isLongWordOrNumber('short')).toBe(false); // 5 chars
-    });
+  test('currentChunkIndices follows the chunk size', () => {
+    const c = makeController('The quick brown fox jumps over the lazy dog');
+    c.start();
+    expect(chunkTexts(c)).toEqual(['The']);
+    c.setChunkSize(3);
+    expect(chunkTexts(c)).toEqual(['The', 'quick', 'brown']);
   });
 
-  describe('RSVPController chunk navigation', () => {
-    test('currentChunk reflects configured chunkSize', () => {
-      const doc = makeDoc('The quick brown fox jumps over the lazy dog');
-      const view = createMockView(0, [doc]);
-      const controller = new RSVPController(view, 'test-chunk-1');
+  test('prevWord retraces exactly the chunks nextWord visited', () => {
+    const c = makeController('Stop. Then go now. Next one here and more words. End.');
+    c.setChunkSize(3);
+    c.start();
+    const starts = [c.currentState.currentIndex];
+    // Chunks: [Stop.] [Then go now.] [Next one here] [and more words.] [End.]
+    for (let i = 0; i < 4; i++) {
+      c.nextWord();
+      starts.push(c.currentState.currentIndex);
+    }
+    expect(new Set(starts).size).toBe(starts.length);
+    for (let i = starts.length - 2; i >= 0; i--) {
+      c.prevWord();
+      expect(c.currentState.currentIndex).toBe(starts[i]);
+    }
+  });
 
-      controller.setChunkSize(3);
-      controller.start();
+  test('nextWord on the last chunk stays on it', () => {
+    const c = makeController('one two three four five');
+    c.setChunkSize(3);
+    c.start();
+    c.nextWord();
+    expect(chunkTexts(c)).toEqual(['four', 'five']);
+    c.nextWord();
+    expect(chunkTexts(c)).toEqual(['four', 'five']);
+  });
 
-      expect(controller.currentState.chunkSize).toBe(3);
-      expect(controller.currentChunk.length).toBe(3);
-      expect(controller.currentChunk.map((w) => w.text)).toEqual(['The', 'quick', 'brown']);
-      expect(controller.currentChunkIndices).toEqual([0, 1, 2]);
+  test('a hyphenated word alone in a chunk is shown whole', () => {
+    const c = makeController('End. state-of-the-art. More words here');
+    c.setSplitHyphens(true);
+    c.setChunkSize(3);
+    c.start();
+    c.nextWord();
+    expect(chunkTexts(c)).toEqual(['state-of-the-art.']);
+    expect(c.currentDisplayWord!.text).toBe('state-of-the-art.');
+  });
+
+  test('changing the chunk size keeps the WPM', () => {
+    const c = makeController('a b c');
+    c.setWpm(500);
+    c.setChunkSize(5);
+    expect(c.currentState.wpm).toBe(500);
+    c.setChunkSize(1);
+    expect(c.currentState.wpm).toBe(500);
+  });
+
+  test('chunk size is clamped to the options and persists across books', () => {
+    const c = makeController('a b c', 'book1');
+    c.setChunkSize(9);
+    expect(c.currentState.chunkSize).toBe(5);
+    c.setChunkSize(0);
+    expect(c.currentState.chunkSize).toBe(1);
+    c.setChunkSize(4);
+    expect(makeController('a b c', 'book2').currentState.chunkSize).toBe(4);
+  });
+
+  test('a chunk is shown for the sum of its words and playback steps by chunk', () => {
+    const c = makeController('aa bb cc dd ee ff');
+    c.setStartDelay(0);
+    c.setWpm(300); // 200 ms per word
+    c.setChunkSize(2);
+    c.start();
+    vi.advanceTimersByTime(395);
+    expect(c.currentState.currentIndex).toBe(0);
+    vi.advanceTimersByTime(10);
+    expect(c.currentState.currentIndex).toBe(2);
+    expect(chunkTexts(c)).toEqual(['cc', 'dd']);
+  });
+
+  test('CJK sections and TTS-driven reading show one word at a time', () => {
+    const cjk = makeController('这是一个测试。然后继续阅读。');
+    cjk.setChunkSize(3);
+    cjk.start();
+    expect(cjk.currentState.hasCJK).toBe(true);
+    expect(cjk.currentChunkIndices).toEqual([0]);
+
+    const tts = makeController('The quick brown fox jumps');
+    tts.setChunkSize(3);
+    tts.start();
+    tts.setExternallyDriven(true);
+    expect(tts.currentChunkIndices).toEqual([0]);
+  });
+});
+
+describe('RSVPController pacing options', () => {
+  beforeEach(() => {
+    vi.useFakeTimers({
+      toFake: ['setTimeout', 'setInterval', 'clearTimeout', 'clearInterval', 'Date'],
     });
+    localStorage.clear();
+  });
 
-    test('nextWord() and prevWord() step by chunk size when chunkSize > 1', () => {
-      const doc = makeDoc('The quick brown fox jumps over');
-      const view = createMockView(0, [doc]);
-      const controller = new RSVPController(view, 'test-chunk-2');
+  afterEach(() => {
+    vi.useRealTimers();
+  });
 
-      controller.setChunkSize(3);
-      controller.start();
+  const play = (text: string, setup: (c: RSVPController) => void = () => {}) => {
+    const c = makeController(text);
+    c.setStartDelay(0);
+    c.setWpm(300); // 200 ms per word
+    setup(c);
+    c.start();
+    return c;
+  };
+  const distinctWords = Array.from({ length: 60 }, (_, i) => `w${i}`).join(' ');
 
-      expect(controller.currentState.currentIndex).toBe(0);
+  test('long-word delay is off by default, so pacing matches the plain word timing', () => {
+    // "unbelievable" already gets the built-in 1.1x long-word multiplier: 220 ms.
+    const c = play('unbelievable next words');
+    vi.advanceTimersByTime(225);
+    expect(c.currentState.currentIndex).toBe(1);
+  });
 
-      // Step forward by chunk
-      controller.nextWord();
-      expect(controller.currentState.currentIndex).toBe(3);
-      expect(controller.currentChunk.map((w) => w.text)).toEqual(['fox', 'jumps', 'over']);
+  test('long-word delay adds 60 ms to long words and numbers', () => {
+    const c = play('unbelievable 1984 next', (c) => c.setLongWordDelay(true));
+    vi.advanceTimersByTime(275);
+    expect(c.currentState.currentIndex).toBe(0);
+    vi.advanceTimersByTime(10); // 280 ms
+    expect(c.currentState.currentIndex).toBe(1);
+    vi.advanceTimersByTime(250); // 1984: 200 + 60 = 260 ms
+    expect(c.currentState.currentIndex).toBe(1);
+    vi.advanceTimersByTime(10);
+    expect(c.currentState.currentIndex).toBe(2);
+  });
 
-      // Step backward by chunk
-      controller.prevWord();
-      expect(controller.currentState.currentIndex).toBe(0);
-      expect(controller.currentChunk.map((w) => w.text)).toEqual(['The', 'quick', 'brown']);
-    });
+  test('warm-up starts at 70% speed, reaches full speed, and restarts after a pause', () => {
+    const c = play(distinctWords, (c) => c.setWarmup(true));
+    vi.advanceTimersByTime(280); // first word: 200 / 0.7 = 286 ms
+    expect(c.currentState.currentIndex).toBe(0);
+    vi.advanceTimersByTime(10);
+    expect(c.currentState.currentIndex).toBe(1);
 
-    test('persists chunk size and settings globally in localStorage', () => {
-      const doc = makeDoc('Testing settings persistence');
-      const view = createMockView(0, [doc]);
-      const controller1 = new RSVPController(view, 'book-1');
+    vi.advanceTimersByTime(4500);
+    const before = c.currentState.currentIndex;
+    vi.advanceTimersByTime(2000);
+    expect(c.currentState.currentIndex - before).toBe(10);
 
-      controller1.setChunkSize(4);
-      controller1.setEnableWarmup(true);
-      controller1.setAdaptiveLongWordDelay(true);
+    c.pause();
+    c.resume();
+    const resumedAt = c.currentState.currentIndex;
+    vi.advanceTimersByTime(280);
+    expect(c.currentState.currentIndex).toBe(resumedAt);
+    vi.advanceTimersByTime(10);
+    expect(c.currentState.currentIndex).toBe(resumedAt + 1);
+  });
 
-      expect(controller1.currentState.chunkSize).toBe(4);
-      expect(controller1.currentState.enableWarmup).toBe(true);
-
-      // New controller instance for a different book loads the global preferences
-      const controller2 = new RSVPController(view, 'book-2');
-      expect(controller2.currentState.chunkSize).toBe(4);
-      expect(controller2.currentState.enableWarmup).toBe(true);
-      expect(controller2.currentState.adaptiveLongWordDelay).toBe(true);
-    });
-
-    test('scales WPM proportionally when chunkSize changes', () => {
-      const doc = makeDoc('Testing wpm scaling with chunk size');
-      const view = createMockView(0, [doc]);
-      const controller = new RSVPController(view, 'book-wpm-scale');
-
-      controller.setWpm(300);
-      controller.setChunkSize(1);
-      expect(controller.currentState.wpm).toBe(300);
-
-      // Increase to 2 words per flash -> WPM doubles to 600
-      controller.setChunkSize(2);
-      expect(controller.currentState.wpm).toBe(600);
-
-      // Increase to 3 words per flash -> WPM scales by 3/2 to 900
-      controller.setChunkSize(3);
-      expect(controller.currentState.wpm).toBe(900);
-
-      // Decrease back to 1 word per flash -> WPM scales back to 300
-      controller.setChunkSize(1);
-      expect(controller.currentState.wpm).toBe(300);
-    });
+  test('WPM goes up to 2000', () => {
+    const c = makeController('a b c');
+    c.setWpm(5000);
+    expect(c.currentState.wpm).toBe(2000);
+    expect(c.getWpmOptions().at(-1)).toBe(2000);
   });
 });

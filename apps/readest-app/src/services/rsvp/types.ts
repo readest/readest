@@ -5,6 +5,7 @@ export interface RsvpWord {
   range?: Range;
   docIndex?: number;
   cfi?: string; // Canonical Fragment Identifier for precise position tracking
+  blockEnd?: boolean; // Last word of a paragraph, heading or other block
 }
 
 export interface RsvpState {
@@ -21,8 +22,8 @@ export interface RsvpState {
   hasCJK: boolean;
   progress: number;
   chunkSize: number;
-  enableWarmup: boolean;
-  adaptiveLongWordDelay: boolean;
+  warmup: boolean;
+  longWordDelay: boolean;
 }
 
 export interface RsvpPosition {
