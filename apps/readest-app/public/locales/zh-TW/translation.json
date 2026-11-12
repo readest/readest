@@ -2753,5 +2753,8 @@
   "Books uploaded": "已上傳書籍",
   "Reset Counts": "重設計數",
   "Reset the counts and sync history on this device?": "要重設此裝置上的計數和同步紀錄嗎？",
-  "Folder not available": "資料夾無法使用"
+  "Folder not available": "資料夾無法使用",
+  "Words per Flash": "每次顯示詞數",
+  "Warm-up": "漸進加速",
+  "Long Word Delay": "長詞延時"
 }

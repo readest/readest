@@ -2826,5 +2826,8 @@
   "Books uploaded": "Hochgeladene Bücher",
   "Reset Counts": "Zähler zurücksetzen",
   "Reset the counts and sync history on this device?": "Zähler und Synchronisierungsverlauf auf diesem Gerät zurücksetzen?",
-  "Folder not available": "Ordner nicht verfügbar"
+  "Folder not available": "Ordner nicht verfügbar",
+  "Words per Flash": "Wörter pro Einblendung",
+  "Warm-up": "Aufwärmen",
+  "Long Word Delay": "Verzögerung bei langen Wörtern"
 }

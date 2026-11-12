@@ -2972,5 +2972,8 @@
   "Books uploaded": "Загруженные книги",
   "Reset Counts": "Сбросить счётчики",
   "Reset the counts and sync history on this device?": "Сбросить счётчики и историю синхронизации на этом устройстве?",
-  "Folder not available": "Папка недоступна"
+  "Folder not available": "Папка недоступна",
+  "Words per Flash": "Слов за показ",
+  "Warm-up": "Разгон",
+  "Long Word Delay": "Задержка на длинных словах"
 }
