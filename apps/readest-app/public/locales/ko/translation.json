@@ -2757,6 +2757,11 @@
   "Words per Flash": "한 번에 표시할 단어 수",
   "Warm-up": "워밍업",
   "Long Word Delay": "긴 단어 지연",
+  "Reading Calendar": "독서 달력",
+  "Previous Month": "이전 달",
+  "Next Month": "다음 달",
+  "No reading activity on this day": "이 날의 독서 기록이 없습니다",
+  "See which books you read each day and for how long": "매일 읽은 책과 독서 시간을 확인하세요",
   "Move to parent group": "상위 그룹으로 이동",
   "Done": "완료"
 }

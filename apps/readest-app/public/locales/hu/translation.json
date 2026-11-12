@@ -2830,6 +2830,11 @@
   "Words per Flash": "Szó villanásonként",
   "Warm-up": "Bemelegítés",
   "Long Word Delay": "Késleltetés hosszú szavaknál",
+  "Reading Calendar": "Olvasási naptár",
+  "Previous Month": "Előző hónap",
+  "Next Month": "Következő hónap",
+  "No reading activity on this day": "Ezen a napon nincs olvasási tevékenység",
+  "See which books you read each day and for how long": "Nézd meg, mely könyveket olvastad az egyes napokon és mennyi ideig",
   "Move to parent group": "Áthelyezés a szülőcsoportba",
   "Done": "Kész"
 }

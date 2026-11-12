@@ -2757,6 +2757,11 @@
   "Words per Flash": "จำนวนคำต่อการแสดง",
   "Warm-up": "วอร์มอัพ",
   "Long Word Delay": "หน่วงคำยาว",
+  "Reading Calendar": "ปฏิทินการอ่าน",
+  "Previous Month": "เดือนก่อนหน้า",
+  "Next Month": "เดือนถัดไป",
+  "No reading activity on this day": "ไม่มีกิจกรรมการอ่านในวันนี้",
+  "See which books you read each day and for how long": "ดูว่าคุณอ่านหนังสือเล่มใดในแต่ละวันและใช้เวลาเท่าใด",
   "Move to parent group": "ย้ายไปยังกลุ่มหลัก",
   "Done": "เสร็จสิ้น"
 }

@@ -2830,6 +2830,11 @@
   "Words per Flash": "প্রতি ফ্ল্যাশে শব্দ",
   "Warm-up": "ওয়ার্ম-আপ",
   "Long Word Delay": "দীর্ঘ শব্দে বিলম্ব",
+  "Reading Calendar": "পড়ার ক্যালেন্ডার",
+  "Previous Month": "আগের মাস",
+  "Next Month": "পরের মাস",
+  "No reading activity on this day": "এই দিনে কোনো পড়ার কার্যকলাপ নেই",
+  "See which books you read each day and for how long": "প্রতিদিন কোন বই পড়েছেন এবং কতক্ষণ পড়েছেন তা দেখুন",
   "Move to parent group": "মূল গ্রুপে সরান",
   "Done": "সম্পন্ন"
 }

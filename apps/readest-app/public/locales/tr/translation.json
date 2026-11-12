@@ -2830,6 +2830,11 @@
   "Words per Flash": "Gösterim başına kelime",
   "Warm-up": "Isınma",
   "Long Word Delay": "Uzun kelime gecikmesi",
+  "Reading Calendar": "Okuma takvimi",
+  "Previous Month": "Önceki ay",
+  "Next Month": "Sonraki ay",
+  "No reading activity on this day": "Bu gün için okuma etkinliği yok",
+  "See which books you read each day and for how long": "Her gün hangi kitapları ne kadar süreyle okuduğunuzu görün",
   "Move to parent group": "Üst gruba taşı",
   "Done": "Tamam"
 }

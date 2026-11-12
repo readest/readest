@@ -2830,6 +2830,11 @@
   "Words per Flash": "واژه در هر نمایش",
   "Warm-up": "گرم‌کردن",
   "Long Word Delay": "تأخیر برای واژه‌های بلند",
+  "Reading Calendar": "تقویم مطالعه",
+  "Previous Month": "ماه قبل",
+  "Next Month": "ماه بعد",
+  "No reading activity on this day": "در این روز مطالعه‌ای ثبت نشده است",
+  "See which books you read each day and for how long": "ببینید هر روز چه کتاب‌هایی خوانده‌اید و چه مدت مطالعه کرده‌اید",
   "Move to parent group": "انتقال به گروه بالاتر",
   "Done": "انجام شد"
 }

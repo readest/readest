@@ -2757,6 +2757,11 @@
   "Words per Flash": "ཐེངས་རེར་མངོན་པའི་ཚིག",
   "Warm-up": "སྔོན་སྦྱོང་།",
   "Long Word Delay": "ཚིག་རིང་པོར་འགོར་འཕེལ།",
+  "Reading Calendar": "ཀློག་འདོན་ཟླ་ཐོ",
+  "Previous Month": "ཟླ་བ་སྔ་མ",
+  "Next Month": "ཟླ་བ་རྗེས་མ",
+  "No reading activity on this day": "ཉིན་འདིར་ཀློག་འདོན་ཟིན་ཐོ་མེད",
+  "See which books you read each day and for how long": "ཉིན་རེར་དཔེ་དེབ་གང་ཀློག་པ་དང་དུས་ཚོད་ག་ཚོད་བཀོལ་བ་ལ་བལྟ་བ",
   "Move to parent group": "Move to parent group",
   "Done": "ལེགས་གྲུབ།"
 }
