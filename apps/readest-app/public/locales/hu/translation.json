@@ -2829,5 +2829,6 @@
   "Folder not available": "A mappa nem érhető el",
   "Words per Flash": "Szó villanásonként",
   "Warm-up": "Bemelegítés",
-  "Long Word Delay": "Késleltetés hosszú szavaknál"
+  "Long Word Delay": "Késleltetés hosszú szavaknál",
+  "Solid Footer in Scrolled Mode": "Tömör lábléc görgetett módban"
 }

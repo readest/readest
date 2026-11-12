@@ -408,6 +408,8 @@ export interface ViewConfig {
   showRemainingPages: boolean;
   showProgressInfo: boolean;
   showStickyProgressBar: boolean;
+  /** Scrolled mode reserves the footer band, like paginated mode (#6793). */
+  solidScrolledFooter: boolean;
   showCurrentTime: boolean;
   use24HourClock: boolean;
   showCurrentBatteryStatus: boolean;

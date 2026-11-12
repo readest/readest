@@ -2829,5 +2829,6 @@
   "Folder not available": "Map niet beschikbaar",
   "Words per Flash": "Woorden per flits",
   "Warm-up": "Opwarmen",
-  "Long Word Delay": "Vertraging bij lange woorden"
+  "Long Word Delay": "Vertraging bij lange woorden",
+  "Solid Footer in Scrolled Mode": "Volle voettekstbalk in scroll-modus"
 }

@@ -2756,5 +2756,6 @@
   "Folder not available": "Thư mục không khả dụng",
   "Words per Flash": "Số từ mỗi lần hiển thị",
   "Warm-up": "Khởi động",
-  "Long Word Delay": "Trễ với từ dài"
+  "Long Word Delay": "Trễ với từ dài",
+  "Solid Footer in Scrolled Mode": "Chân trang liền khối ở chế độ cuộn"
 }

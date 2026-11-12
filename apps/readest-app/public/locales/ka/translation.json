@@ -2829,5 +2829,6 @@
   "Folder not available": "საქაღალდე მიუწვდომელია",
   "Words per Flash": "სიტყვა თითო ჩვენებაზე",
   "Warm-up": "გახურება",
-  "Long Word Delay": "დაყოვნება გრძელ სიტყვებზე"
+  "Long Word Delay": "დაყოვნება გრძელ სიტყვებზე",
+  "Solid Footer in Scrolled Mode": "მყარი ქვედა კოლონტიტული გადაადგილების რეჟიმში"
 }

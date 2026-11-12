@@ -170,6 +170,10 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
 
   // Sticky progress bar is horizontal-only; vertical mode keeps its side footer.
   const stickyBarActive = viewSettings.showStickyProgressBar && !isVertical;
+  // Solid Footer (#6793) reserves the band in scrolled mode too, so the info
+  // sits on it like the sticky bar's instead of floating over the text.
+  const scrolledBandReserved =
+    !!viewSettings.scrolled && !!viewSettings.solidScrolledFooter && !isVertical;
   const tickFractions = useMemo(
     () => (stickyBarActive ? getChapterTickFractions(view, bookData?.bookDoc?.toc) : []),
     [stickyBarActive, view, bookData?.bookDoc?.toc],
@@ -291,27 +295,29 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
   // pills in scrolled mode, see below) is a tap target.
   const [dismissed, setDismissed] = useState(false);
 
-  // Scrolled mode reserves no bottom band (footerReservesBand) — the info
-  // floats over the book text, so each segment carries its own shrink-wrapped
-  // pill backdrop to stay legible instead of a full-width bar. The pills
-  // double as the tap targets there: making the whole strip tappable would
-  // swallow taps and text selection over the last lines of the page, so the
-  // strip is only a target where it sits on reserved margin space (paginated
-  // band, sticky-bar band, vertical side column).
+  // Scrolled mode reserves no bottom band by default (footerReservesBand) —
+  // the info floats over the book text, so each segment carries its own
+  // shrink-wrapped pill backdrop to stay legible instead of a full-width bar.
+  // The pills double as the tap targets there: making the whole strip
+  // tappable would swallow taps and text selection over the last lines of the
+  // page, so the strip is only a target where it sits on reserved margin space
+  // (paginated band, sticky-bar band, Solid Footer band, vertical side column).
   const hasFooterContent = stickyBarActive || footerInfoVisible(viewSettings);
   const stripTappable = hasFooterContent && (isVertical || footerReservesBand(viewSettings));
-  // The sticky bar reserves the band again, so `auto` needs no pill there; a
+  // The sticky bar and Solid Footer reserve the band again, so `auto` needs no
+  // pill there; a
   // color the reader chose still paints, since they asked to see it (#5938).
   const chip = getChromeChip(viewSettings, 'footer', {
     isEink,
     isScrolled: !!viewSettings.scrolled,
     isVertical: !!isVertical,
-    bandReserved: stickyBarActive,
+    bandReserved: stickyBarActive || scrolledBandReserved,
   });
   // The segment is the tap target for #5293 wherever the info floats over the
   // text -- that has to hold even when the reader turns the backdrop off, or
   // "Background: none" would silently take tap-to-toggle away with it.
-  const pillTappable = !!viewSettings.scrolled && !isVertical && !stickyBarActive;
+  const pillTappable =
+    !!viewSettings.scrolled && !isVertical && !stickyBarActive && !scrolledBandReserved;
   const pillClass =
     (pillTappable || chip) &&
     clsx(

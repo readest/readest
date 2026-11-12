@@ -3121,5 +3121,6 @@
   "Folder not available": "المجلد غير متاح",
   "Words per Flash": "كلمات في كل ومضة",
   "Warm-up": "الإحماء",
-  "Long Word Delay": "تأخير الكلمات الطويلة"
+  "Long Word Delay": "تأخير الكلمات الطويلة",
+  "Solid Footer in Scrolled Mode": "شريط تذييل مصمت في وضع التمرير"
 }

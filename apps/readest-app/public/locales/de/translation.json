@@ -2829,5 +2829,6 @@
   "Folder not available": "Ordner nicht verfügbar",
   "Words per Flash": "Wörter pro Einblendung",
   "Warm-up": "Aufwärmen",
-  "Long Word Delay": "Verzögerung bei langen Wörtern"
+  "Long Word Delay": "Verzögerung bei langen Wörtern",
+  "Solid Footer in Scrolled Mode": "Durchgehende Fußzeilenleiste im Scroll-Modus"
 }

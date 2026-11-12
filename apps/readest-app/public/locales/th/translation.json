@@ -2756,5 +2756,6 @@
   "Folder not available": "โฟลเดอร์ไม่พร้อมใช้งาน",
   "Words per Flash": "จำนวนคำต่อการแสดง",
   "Warm-up": "วอร์มอัพ",
-  "Long Word Delay": "หน่วงคำยาว"
+  "Long Word Delay": "หน่วงคำยาว",
+  "Solid Footer in Scrolled Mode": "ท้ายกระดาษแบบทึบในโหมดเลื่อน"
 }

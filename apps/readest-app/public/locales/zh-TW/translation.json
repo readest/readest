@@ -2756,5 +2756,6 @@
   "Folder not available": "資料夾無法使用",
   "Words per Flash": "每次顯示詞數",
   "Warm-up": "漸進加速",
-  "Long Word Delay": "長詞延時"
+  "Long Word Delay": "長詞延時",
+  "Solid Footer in Scrolled Mode": "滾動模式下使用實心頁腳"
 }
