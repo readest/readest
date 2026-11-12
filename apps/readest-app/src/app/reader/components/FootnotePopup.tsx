@@ -132,10 +132,11 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
   // Redraw the open popup's Word Lens hints when this language's Learning /
   // Mastered marks change, as the main view does: a word looked up from the
   // popup can be marked while the popup stays open.
+  const bookLang = useBookDataStore(
+    (s) => s.booksData[bookKey.split('-')[0]!]?.book?.primaryLanguage,
+  );
   const vocabularyMarksSignature = useVocabularyStore((s) => {
-    const { learning, mastered } = s.getLearningAndMastered(
-      vocabularyLang(getBookData(bookKey)?.book?.primaryLanguage),
-    );
+    const { learning, mastered } = s.getLearningAndMastered(vocabularyLang(bookLang));
     return JSON.stringify([[...learning], [...mastered]]);
   });
   const booknotes = useBookDataStore((s) => s.booksData[bookKey.split('-')[0]!]?.config?.booknotes);
