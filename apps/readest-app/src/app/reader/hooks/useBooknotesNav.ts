@@ -2,7 +2,7 @@ import { useCallback, useMemo } from 'react';
 import * as CFI from 'foliate-js/epubcfi.js';
 import { useSidebarStore } from '@/store/sidebarStore';
 import { useReaderStore } from '@/store/readerStore';
-import { useBookProgress } from '@/store/readerProgressStore';
+import { useBookProgressValue } from '@/store/readerProgressStore';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { createCfiLocationMatcher } from '@/utils/cfi';
 import { findTocItemBS } from '@/services/nav';
@@ -24,11 +24,6 @@ export function useBooknotesNav(bookKey: string, toc: TOCItem[]) {
   const booknotesNavState = getBooknotesNavState(bookKey);
   const { activeBooknoteType, booknoteResults, booknoteIndex } = booknotesNavState;
 
-  // Reactive: re-derives current-page boundaries when the user turns
-  // the page. Reads from readerProgressStore only.
-  const progress = useBookProgress(bookKey);
-  const currentLocation = progress?.location;
-
   // Get booknotes from config and filter by type
   const allBooknotes = useMemo(() => {
     const config = getConfig(bookKey);
@@ -40,6 +35,14 @@ export function useBooknotesNav(bookKey: string, toc: TOCItem[]) {
     if (!booknoteResults) return [];
     return [...booknoteResults].sort((a, b) => CFI.compare(a.cfi, b.cfi));
   }, [booknoteResults]);
+
+  // Reactive: re-derives current-page boundaries when the user turns the
+  // page, while there are booknotes to find: without any, a turn re-renders
+  // nothing here.
+  const currentLocation = useBookProgressValue(
+    sortedBooknotes.length ? bookKey : null,
+    (p) => p.location,
+  );
 
   const totalResults = sortedBooknotes.length;
   const hasBooknotes = booknoteResults && totalResults > 0;
