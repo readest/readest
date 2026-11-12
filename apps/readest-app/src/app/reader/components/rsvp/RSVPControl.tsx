@@ -12,7 +12,7 @@ import {
 import { vocabularyLang } from '@/services/vocabulary/entry';
 import { createPortal } from 'react-dom';
 import { useReaderStore } from '@/store/readerStore';
-import { useBookProgress } from '@/store/readerProgressStore';
+import { useBookProgressValue } from '@/store/readerProgressStore';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useThemeStore } from '@/store/themeStore';
@@ -1054,11 +1054,11 @@ const RSVPControl = forwardRef<RSVPControlHandle, RSVPControlProps>(function RSV
   }, [bookKey, getProgress, getView, removeRsvpHighlight]);
 
   // Get current chapter info — reactive subscription so the RSVP overlay's
-  // chapter pointer follows page turns. Reads from readerProgressStore.
-  const progress = useBookProgress(bookKey);
+  // chapter pointer follows the chapter; a turn within one re-renders nothing.
+  const sectionHref = useBookProgressValue(bookKey, (p) => p.sectionHref);
   const bookData = getBookData(bookKey);
   const chapters = bookData?.bookDoc?.toc || [];
-  const currentChapterHref = rsvpChapterHrefRef.current ?? progress?.sectionHref ?? null;
+  const currentChapterHref = rsvpChapterHrefRef.current ?? sectionHref ?? null;
 
   // Mirror the reader's font face/family settings on the RSVP word. The overlay
   // renders in the top document where the configured (and custom) fonts are
