@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect } from 'vitest';
 
 import { getDrawingDockClearance } from '@/app/reader/utils/drawingDock';

@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, test, expect, beforeEach, vi } from 'vitest';
 import { useCustomOPDSStore } from '@/store/customOPDSStore';
 import { useSettingsStore } from '@/store/settingsStore';

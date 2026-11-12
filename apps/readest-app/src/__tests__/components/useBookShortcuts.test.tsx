@@ -1,7 +1,10 @@
-import { cleanup, render } from '@testing-library/react';
+// @vitest-environment happy-dom
+import { Profiler } from 'react';
+import { act, cleanup, render } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import useBookShortcuts from '@/app/reader/hooks/useBookShortcuts';
 import { eventDispatcher } from '@/utils/event';
+import { useBookDataStore } from '@/store/bookDataStore';
 
 const shortcutState = {
   actions: null as Record<
@@ -110,13 +113,17 @@ vi.mock('@/context/EnvContext', () => ({
   useEnv: () => ({ envConfig: { appPlatform: 'web' } }),
 }));
 
-vi.mock('@/store/bookDataStore', () => ({
-  useBookDataStore: () => ({
-    getBookData: () => currentBookData,
-    getConfig: mockGetConfig,
-    setConfig: mockSetConfig,
-  }),
-}));
+vi.mock('@/store/bookDataStore', async () => {
+  const { create } = await import('zustand');
+  return {
+    useBookDataStore: create(() => ({
+      booksData: {},
+      getBookData: () => currentBookData,
+      getConfig: (...args: unknown[]) => (mockGetConfig as (...a: unknown[]) => unknown)(...args),
+      setConfig: (...args: unknown[]) => mockSetConfig(...args),
+    })),
+  };
+});
 
 vi.mock('@/store/notebookStore', () => ({
   useNotebookStore: () => ({
@@ -495,5 +502,22 @@ describe('useBookShortcuts', () => {
       expect(mockView.history.back).not.toHaveBeenCalled();
       expect(event.defaultPrevented).toBe(false);
     });
+  });
+});
+
+describe('useBookShortcuts subscriptions', () => {
+  afterEach(cleanup);
+
+  // The reader calls this hook; every page turn writes the book's progress into the book data
+  it('a book-data change does not re-render the component using it', () => {
+    const onRender = vi.fn();
+    render(
+      <Profiler id='shortcuts' onRender={onRender}>
+        <Harness />
+      </Profiler>,
+    );
+    onRender.mockClear();
+    act(() => useBookDataStore.setState({ booksData: {} }));
+    expect(onRender).not.toHaveBeenCalled();
   });
 });

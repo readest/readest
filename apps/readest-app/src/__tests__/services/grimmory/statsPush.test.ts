@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, test, vi } from 'vitest';
 import type { PageStatEvent } from '@/types/statistics';
 import { GrimmoryRequestError } from '@/services/grimmory/GrimmoryClient';

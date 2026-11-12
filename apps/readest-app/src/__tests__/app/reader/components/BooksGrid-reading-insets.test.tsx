@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { cleanup, render } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -28,7 +29,10 @@ vi.mock('@/store/readerStore', () => ({
       getView: () => null,
     }),
 }));
-vi.mock('@/store/readerProgressStore', () => ({ useBookProgress: () => null }));
+vi.mock('@/store/readerProgressStore', () => ({
+  useReaderProgressStore: (select: (state: { progresses: object }) => unknown) =>
+    select({ progresses: {} }),
+}));
 vi.mock('@/store/sidebarStore', () => ({ useSidebarStore: () => null }));
 vi.mock('@/store/bookDataStore', () => ({
   useBookDataStore: (select: (state: Record<string, unknown>) => unknown) =>

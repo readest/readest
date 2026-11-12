@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { describe, expect, it } from 'vitest';
 import { refreshFeedManifest, openFeedBookDoc } from '@/services/rss/feedReader';
 import { slotForArticleId } from '@/services/rss/feedManifest';

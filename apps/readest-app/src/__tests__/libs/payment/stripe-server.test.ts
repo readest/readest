@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // When a user upgrades Plus -> Pro on Stripe, both subscriptions stay active

@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { migrateLibraryThenSort } from '@/services/settingsService';
 import { LibrarySortByType, type SystemSettings } from '@/types/settings';

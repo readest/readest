@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, test, expect, beforeAll } from 'vitest';
 import init, { simplecc } from '@simplecc/simplecc_wasm';
 import { readFile } from 'fs/promises';

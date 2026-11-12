@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { describe, it, expect } from 'vitest';
 import * as CFI from 'foliate-js/epubcfi.js';
 

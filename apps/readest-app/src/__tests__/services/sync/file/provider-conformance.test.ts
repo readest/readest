@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { createWebDAVProvider } from '@/services/sync/providers/webdav/WebDAVProvider';
 import { FileSyncError } from '@/services/sync/file/provider';

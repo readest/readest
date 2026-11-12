@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 
 // #6224: replaying an OPDS audiobook must work more than once. The session

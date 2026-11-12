@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const CLOUD_URL = 'https://vbsyxfusjjqdxkjqlysc.supabase.co';

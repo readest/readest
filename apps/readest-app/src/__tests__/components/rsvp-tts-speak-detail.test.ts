@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { describe, test, expect } from 'vitest';
 import { buildRsvpTtsSpeakDetail } from '@/app/reader/components/rsvp/rsvpTts';
 import type { RsvpWord } from '@/services/rsvp';

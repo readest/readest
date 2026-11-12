@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { act, cleanup, render } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import type { NoteExportFormat } from '@/types/book';

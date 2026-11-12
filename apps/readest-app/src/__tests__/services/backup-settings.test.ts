@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { journalBookshelfOperation } from '@/services/bookshelves/journal';
 import { describe, it, expect } from 'vitest';
 import {

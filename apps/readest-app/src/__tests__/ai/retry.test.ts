@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, test, expect, vi } from 'vitest';
 import { withRetry, withTimeout, AI_TIMEOUTS, AI_RETRY_CONFIGS } from '@/services/ai/utils/retry';
 

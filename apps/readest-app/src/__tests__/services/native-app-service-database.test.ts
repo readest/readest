@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { describe, test, expect, vi, beforeEach } from 'vitest';
 
 // Turso opens a database file but never creates its folder: a path whose

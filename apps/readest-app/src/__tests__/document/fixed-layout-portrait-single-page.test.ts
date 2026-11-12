@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 // Regression test for readest/readest issue #4984.
 //
 // In auto-spread mode a portrait viewport shows only one page of the two-page

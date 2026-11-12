@@ -113,6 +113,21 @@ export const useKOSync = (bookKey: string, provider: KosyncProgressProvider = ko
   // returns this exact unchanged report must not re-open the dialog — only a
   // report that changed since is a new conflict (#5527).
   const resolvedRemoteRef = useRef<KoSyncProgress | null>(null);
+  // Whether this device had a reading position for the book when it was
+  // opened, read before the view opens: the relocate that opens the book
+  // writes config.location, and only then can the first pull run. A book
+  // just added to this device has none, yet its record counts as newer than
+  // any server report: its updatedAt is stamped when the record is created
+  // on this open, after the other device's last sync. Under 'silent' that
+  // kept the empty local record, left the reader at the start of the book
+  // and pushed that start over the other device's position. Used only by the
+  // first pull that gets an answer: after it, the device has a position of
+  // its own (the server's, or the one read here) and the timestamps decide.
+  const noLocalProgressRef = useRef(false);
+  useEffect(() => {
+    const config = getConfig(bookKey);
+    if (config && !config.location) noLocalProgressRef.current = true;
+  }, [bookKey, getConfig]);
 
   // Reactive subscription: drives the auto-push effect and the initial
   // pull-on-open effect below. Reads from readerProgressStore.
@@ -466,10 +481,17 @@ export const useKOSync = (bookKey: string, provider: KosyncProgressProvider = ko
       }
 
       setSyncState('checking');
+      const locationAtPull = getProgress(bookKey)?.location;
       await pendingPut.current;
       if (generation !== checksumGeneration.current) return;
       const remoteProgress = await kosyncClient.getProgress(book);
       if (generation !== checksumGeneration.current) return;
+      // Only the first answer after open can find the device without a
+      // position; from then on the timestamps decide, even if it was empty.
+      // Reading on while it was on its way gives the device a position too.
+      const noLocalProgress =
+        noLocalProgressRef.current && getProgress(bookKey)?.location === locationAtPull;
+      noLocalProgressRef.current = false;
       recordFlow({
         connector: provider.name,
         direction: 'pull',
@@ -493,7 +515,10 @@ export const useKOSync = (bookKey: string, provider: KosyncProgressProvider = ko
         ? remoteProgress.timestamp * 1000
         : Date.now();
       const remoteIsNewer = remoteTimestamp > localTimestamp;
-      if (strategy === 'receive' || (strategy === 'silent' && remoteIsNewer)) {
+      // A record created on this open holds no position for the timestamps
+      // to protect: take the server's.
+      const takeRemote = remoteIsNewer || noLocalProgress;
+      if (strategy === 'receive' || (strategy === 'silent' && takeRemote)) {
         const applied = await applyRemoteProgress(book, bookDoc, remoteProgress, generation);
         if (generation !== checksumGeneration.current) return;
         setSyncState(applied ? 'synced' : 'error');

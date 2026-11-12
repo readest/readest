@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 /**
  * CustomDictionaries — system-dictionary exclusivity lock.
  *

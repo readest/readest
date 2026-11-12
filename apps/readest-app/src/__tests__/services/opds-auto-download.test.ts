@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { readFlowState } from '@/services/sync/dataFlow/log';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { Book } from '@/types/book';

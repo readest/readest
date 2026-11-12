@@ -1,3 +1,4 @@
+// @vitest-environment node
 // Regression test for readest/readest issue #4594.
 //
 // In fulltext search, a match that falls inside inline-styled text (e.g. a word

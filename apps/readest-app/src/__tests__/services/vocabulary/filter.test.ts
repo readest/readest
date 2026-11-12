@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { filterEntries, listBooks } from '@/services/vocabulary/filter';
 import type { VocabularyEntry } from '@/services/vocabulary/types';
@@ -36,6 +37,13 @@ const entries = [
 describe('filterEntries', () => {
   it('lists live words newest first', () => {
     expect(filterEntries(entries, {}).map((e) => e.key)).toEqual(['spice', 'ball', 'sandworm']);
+  });
+
+  it('orders words added together (one Anki import) by word under the date-added sorts', () => {
+    const batch = [entry('zebra'), entry('mango'), entry('apple')];
+    for (const sort of ['newest', 'oldest'] as const) {
+      expect(filterEntries(batch, {}, sort).map((e) => e.key)).toEqual(['apple', 'mango', 'zebra']);
+    }
   });
   it('filters by state', () => {
     expect(filterEntries(entries, { state: 'learning' }).map((e) => e.key)).toEqual(['spice']);

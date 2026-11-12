@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { describe, expect, it } from 'vitest';
 
 import { DEFAULT_BOOK_LAYOUT } from '@/services/constants';

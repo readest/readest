@@ -134,6 +134,7 @@ const DictionaryPopup: React.FC<DictionaryPopupProps> = ({
           onSpeak={state.speakWord}
           speaking={state.isSpeaking}
           vocabularyLang={state.vocabularyLang}
+          manualVocabularyOccurrence={state.manualVocabularyOccurrence}
         />
         {/* pb-5 ends the body's scrollbar above the resize grip and its hit
             area, which would otherwise cover its down arrow. */}

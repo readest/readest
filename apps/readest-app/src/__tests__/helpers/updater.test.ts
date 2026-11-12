@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
 import semver from 'semver';
 

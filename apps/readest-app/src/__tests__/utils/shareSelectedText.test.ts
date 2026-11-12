@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
 
 const shareTextMock = vi.fn().mockResolvedValue(undefined);

@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { OPDSAcquisitionLink } from '@/types/opds';
 import { REL } from '@/types/opds';
