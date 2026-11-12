@@ -1140,8 +1140,8 @@ const FoliateViewer: React.FC<{
     const showDoubleBorderFooter = showDoubleBorder && viewSettings.showFooter;
     const showTopHeader = viewSettings.showHeader && !viewSettings.vertical;
     // The bottom band is reserved only while the footer displays something
-    // there (and never in scrolled mode, where the info floats in pills) —
-    // see footerReservesBand. Otherwise the empty reservation shows as a
+    // there (and in scrolled mode only with Solid Footer on; otherwise the
+    // info floats in pills) — see footerReservesBand. Otherwise the empty reservation shows as a
     // full-width blank bar that steals space from the book text.
     const showBottomFooter = footerReservesBand(viewSettings) && !viewSettings.vertical;
     const moreTopInset = showTopHeader ? Math.max(0, 16 - insets.top) : 0;
@@ -1486,6 +1486,7 @@ const FoliateViewer: React.FC<{
     // footerReservesBand inputs: the band must collapse/return live when the
     // user flips these settings.
     viewSettings?.showStickyProgressBar,
+    viewSettings?.solidScrolledFooter,
     viewSettings?.showRemainingTime,
     viewSettings?.showRemainingPages,
     viewSettings?.showProgressInfo,

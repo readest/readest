@@ -2975,5 +2975,6 @@
   "Folder not available": "Папка недоступна",
   "Words per Flash": "Слів за показ",
   "Warm-up": "Розгін",
-  "Long Word Delay": "Затримка на довгих словах"
+  "Long Word Delay": "Затримка на довгих словах",
+  "Solid Footer in Scrolled Mode": "Суцільна нижня частина в режимі прокрутки"
 }

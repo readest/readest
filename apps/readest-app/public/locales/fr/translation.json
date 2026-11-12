@@ -2902,5 +2902,6 @@
   "Folder not available": "Dossier indisponible",
   "Words per Flash": "Mots par affichage",
   "Warm-up": "Échauffement",
-  "Long Word Delay": "Délai pour les mots longs"
+  "Long Word Delay": "Délai pour les mots longs",
+  "Solid Footer in Scrolled Mode": "Pied de page plein en mode défilement"
 }

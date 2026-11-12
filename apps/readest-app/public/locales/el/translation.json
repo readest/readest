@@ -2829,5 +2829,6 @@
   "Folder not available": "Ο φάκελος δεν είναι διαθέσιμος",
   "Words per Flash": "Λέξεις ανά εμφάνιση",
   "Warm-up": "Προθέρμανση",
-  "Long Word Delay": "Καθυστέρηση μεγάλων λέξεων"
+  "Long Word Delay": "Καθυστέρηση μεγάλων λέξεων",
+  "Solid Footer in Scrolled Mode": "Συμπαγές υποσέλιδο σε λειτουργία κύλισης"
 }

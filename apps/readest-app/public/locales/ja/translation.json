@@ -2756,5 +2756,6 @@
   "Folder not available": "フォルダーを利用できません",
   "Words per Flash": "1回の表示語数",
   "Warm-up": "ウォームアップ",
-  "Long Word Delay": "長い単語で遅延"
+  "Long Word Delay": "長い単語で遅延",
+  "Solid Footer in Scrolled Mode": "スクロールモードの固定フッター"
 }

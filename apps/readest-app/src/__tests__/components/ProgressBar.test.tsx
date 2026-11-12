@@ -456,6 +456,15 @@ describe('ProgressBar — footer overlay pointer contract', () => {
     }
   });
 
+  it('drops the pill backdrops in scrolled mode with Solid Footer on (#6793)', () => {
+    // The band is reserved, so the info sits on it instead of over the text.
+    readerSettings({ scrolled: true, showRemainingPages: true, solidScrolledFooter: true });
+
+    const { container } = renderProgressBar();
+
+    expect(container.querySelector('.progress-pill')).toBeNull();
+  });
+
   it('does not add pill backdrops in paginated mode (band holds the info)', () => {
     readerSettings({ scrolled: false, showRemainingPages: true });
 
@@ -550,6 +559,15 @@ describe('ProgressBar — tap to toggle visibility (#5293)', () => {
 
   it('makes the whole strip tappable in scrolled mode when the sticky bar reserves the band', () => {
     readerSettings({ scrolled: true, showStickyProgressBar: true });
+
+    const { container } = renderProgressBar();
+
+    const strip = container.querySelector('.progress-strip') as HTMLElement;
+    expect(strip.classList.contains('pointer-events-auto')).toBe(true);
+  });
+
+  it('makes the whole strip tappable in scrolled mode with Solid Footer on (#6793)', () => {
+    readerSettings({ scrolled: true, showRemainingPages: true, solidScrolledFooter: true });
 
     const { container } = renderProgressBar();
 
