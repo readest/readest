@@ -733,11 +733,20 @@ export const getDirection = (doc: Document) => {
   // `vertical-rl` (Japanese/Chinese vertical) advances columns right-to-left even
   // though its computed `direction` stays `ltr`, so the writing mode itself marks
   // it RTL. Without this the reading ruler and page turns run backwards (#4865).
+  const docLang = (doc.documentElement.lang || doc.body.getAttribute('lang') || '').toLowerCase();
+  const isRtlLang =
+    docLang.startsWith('he') ||
+    docLang.startsWith('ar') ||
+    docLang.startsWith('fa') ||
+    docLang.startsWith('yi');
+  const hasHebrewOrArabicChars = /[\u0590-\u05FF\u0600-\u06FF]/.test(doc.body.textContent || '');
   const rtl =
     writingMode === 'vertical-rl' ||
     doc.body.dir === 'rtl' ||
     direction === 'rtl' ||
-    doc.documentElement.dir === 'rtl';
+    doc.documentElement.dir === 'rtl' ||
+    isRtlLang ||
+    hasHebrewOrArabicChars;
   return { vertical, rtl };
 };
 

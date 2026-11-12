@@ -4,7 +4,7 @@ import { FiCopy } from 'react-icons/fi';
 import { FiLink } from 'react-icons/fi';
 import { FiShare } from 'react-icons/fi';
 import { FiImage } from 'react-icons/fi';
-import { PiHighlighterFill } from 'react-icons/pi';
+import { PiHighlighterFill, PiCards } from 'react-icons/pi';
 import { LuBookA } from 'react-icons/lu';
 import { BsPencilSquare } from 'react-icons/bs';
 import { BsTranslate } from 'react-icons/bs';
@@ -110,6 +110,13 @@ export const annotationToolButtons = createAnnotationToolButtons([
     label: _('Quote Card'),
     tooltip: _('Create a quote card image from the selection'),
     Icon: FiImage,
+  },
+  {
+    type: 'wordtabs',
+    label: _('Add to Word Tabs'),
+    tooltip: _('Add selection to Word Tabs'),
+    Icon: PiCards,
+    quickAction: true,
   },
 ]);
 

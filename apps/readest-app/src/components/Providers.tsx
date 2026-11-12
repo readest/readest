@@ -39,6 +39,7 @@ import AtmosphereOverlay from '@/components/AtmosphereOverlay';
 import AppLockScreen from '@/components/AppLockScreen';
 import CarMediaLibraryBridge from '@/components/CarMediaLibraryBridge';
 import AppLockDialog from '@/components/settings/AppLockDialog';
+import { VocabularyDialog } from '@/components/vocabulary/VocabularyDialog';
 import PassphrasePrompt from '@/components/PassphrasePrompt';
 import TelemetryConsentDialog from '@/components/TelemetryConsentDialog';
 import { upgradeToKeychainIfAvailable } from '@/libs/crypto/passphrase';
@@ -129,8 +130,8 @@ const Providers = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     const handlerLanguageChanged = (lng: string) => {
       document.documentElement.lang = lng;
-      // Set RTL class on document for targeted styling without affecting layout
       const dir = getDirFromUILanguage();
+      document.documentElement.dir = dir === 'rtl' ? 'rtl' : 'ltr';
       if (dir === 'rtl') {
         document.documentElement.classList.add('ui-rtl');
       } else {
@@ -276,6 +277,7 @@ const Providers = ({ children }: { children: React.ReactNode }) => {
                   <WindowResizeHandles />
                 </div>
                 <AppLockDialog />
+                <VocabularyDialog />
                 <TelemetryConsentDialog
                   open={showTelemetryConsent}
                   onClose={() => setShowTelemetryConsent(false)}

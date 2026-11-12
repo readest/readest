@@ -92,7 +92,6 @@ import {
 import { getCurrentRendererLayout, useDuoPose } from '@/hooks/useDuoPose';
 import { applyRendererLayout } from '@/utils/duo';
 import { getLockedPanX } from '../utils/lockedPan';
-import { getDirFromUILanguage } from '@/utils/rtl';
 import { isTauriAppPlatform } from '@/services/environment';
 import { TransformContext } from '@/services/transformers/types';
 import { transformContent } from '@/services/transformService';
@@ -579,15 +578,25 @@ const FoliateViewer: React.FC<{
 
       const newVertical =
         writingDir?.vertical || viewSettings.writingMode.includes('vertical') || false;
-      // Fixed-layout books carry no writing mode; their direction may come
-      // from the document itself (PDF ViewerPreferences /Direction /R2L). The
-      // UI language is the last resort, for a book that says nothing at all.
-      const documentRtl = writingDir?.rtl || getDirFromUILanguage() === 'rtl' || false;
-      const newRtl = getPageProgressionRTL(viewSettings.writingMode, bookDoc.dir, documentRtl);
+      // Determine RTL from the book's explicit direction or actual content language
+      const isBookContentRtl = !!writingDir?.rtl;
+      const newRtl = getPageProgressionRTL(viewSettings.writingMode, bookDoc.dir, isBookContentRtl);
       if (viewSettings.vertical !== newVertical || viewSettings.rtl !== newRtl) {
         viewSettings.vertical = newVertical;
         viewSettings.rtl = newRtl;
         setViewSettings(bookKey, { ...viewSettings });
+      }
+
+      if (isBookContentRtl) {
+        detail.doc.documentElement.setAttribute('dir', 'rtl');
+        detail.doc.body.setAttribute('dir', 'rtl');
+        detail.doc.documentElement.classList.add('rtl');
+        detail.doc.body.classList.add('rtl');
+      } else {
+        detail.doc.documentElement.setAttribute('dir', 'ltr');
+        detail.doc.body.setAttribute('dir', 'ltr');
+        detail.doc.documentElement.classList.remove('rtl');
+        detail.doc.body.classList.remove('rtl');
       }
 
       if (!bookData?.isFixedLayout) {

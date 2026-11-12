@@ -19,6 +19,7 @@ export const ALL_ANNOTATION_TOOL_TYPES: AnnotationToolType[] = [
   'search',
   'dictionary',
   'translate',
+  'wordtabs',
   'tts',
   'proofread',
   'share',
@@ -36,6 +37,7 @@ export const DEFAULT_ANNOTATION_TOOLBAR_ITEMS: AnnotationToolType[] = [
   'search',
   'dictionary',
   'translate',
+  'wordtabs',
   'tts',
   'proofread',
 ];

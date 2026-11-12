@@ -18,6 +18,8 @@ import {
   isTranslatorAvailable,
 } from '@/services/translators';
 import Select from '@/components/Select';
+import { useVocabularyStore } from '@/store/vocabularyStore';
+import { PiBookmarkSimple, PiBookmarkSimpleFill } from 'react-icons/pi';
 
 const notSupportedLangs = [''];
 
@@ -75,6 +77,24 @@ const TranslatorPopup: React.FC<TranslatorPopupProps> = ({
   // diagnosed from the popup itself (#5823).
   const [errorDetail, setErrorDetail] = useState<string | null>(null);
   const book = useBookDataStore((s) => s.getBookData(bookKey)?.book);
+  const { addWord, removeWord, items } = useVocabularyStore();
+  const savedItem = items.find((it) => it.word.toLowerCase() === text.trim().toLowerCase());
+  const isSaved = !!savedItem;
+
+  const handleToggleSaveVocabulary = () => {
+    if (isSaved && savedItem) {
+      removeWord(savedItem.id);
+    } else if (translation) {
+      addWord({
+        word: text.trim(),
+        translation: translation.trim(),
+        bookKey,
+        bookTitle: book?.title,
+        sourceLang,
+        targetLang,
+      });
+    }
+  };
   const { translate, translator, translators } = useTranslator({
     provider,
     sourceLang,
@@ -184,7 +204,26 @@ const TranslatorPopup: React.FC<TranslatorPopupProps> = ({
       >
         <div className='overflow-y-auto p-4 font-sans'>
           <div className='mb-2 flex items-center justify-between'>
-            <h1 className='text-sm font-medium'>{_('Original Text')}</h1>
+            <div className='flex items-center gap-2'>
+              <h1 className='text-sm font-medium'>{_('Original Text')}</h1>
+              {translation && !loading && !error && (
+                <button
+                  type='button'
+                  onClick={handleToggleSaveVocabulary}
+                  className='btn btn-ghost btn-xs flex items-center gap-1 text-primary hover:bg-base-300/50'
+                  title={isSaved ? _('Saved to Vocabulary') : _('Save to Vocabulary')}
+                >
+                  {isSaved ? (
+                    <PiBookmarkSimpleFill className='h-4 w-4' />
+                  ) : (
+                    <PiBookmarkSimple className='h-4 w-4' />
+                  )}
+                  <span className='text-xs font-normal'>
+                    {isSaved ? _('Saved to Vocabulary') : _('Save to Vocabulary')}
+                  </span>
+                </button>
+              )}
+            </div>
             <Select
               value={sourceLang}
               onChange={handleSourceLangChange}
@@ -203,7 +242,9 @@ const TranslatorPopup: React.FC<TranslatorPopupProps> = ({
               ]}
             />
           </div>
-          <p className='text-base'>{text}</p>
+          <p dir='auto' className='text-base'>
+            {text}
+          </p>
         </div>
 
         <div className='mx-4 shrink-0 border-t border-base-content/20'></div>
@@ -234,7 +275,9 @@ const TranslatorPopup: React.FC<TranslatorPopupProps> = ({
                   )}
                 </div>
               ) : (
-                <p className='text-base'>{translation || _('No translation available.')}</p>
+                <p dir='auto' className='text-base'>
+                  {translation || _('No translation available.')}
+                </p>
               )}
             </div>
           )}

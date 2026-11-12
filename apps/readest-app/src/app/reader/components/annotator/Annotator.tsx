@@ -20,6 +20,9 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useNotebookStore } from '@/store/notebookStore';
 import { useSidebarStore } from '@/store/sidebarStore';
+import { useVocabularyStore } from '@/store/vocabularyStore';
+import { translateSingleText } from '@/services/translators/quickTranslate';
+import { detectLanguage } from '@/utils/lang';
 import { useCustomDictionaryStore } from '@/store/customDictionaryStore';
 import { isSystemDictionaryEnabled } from '@/services/dictionaries/registry';
 import { invokeSystemDictionary } from '@/services/dictionaries/systemDictionary';
@@ -2002,6 +2005,59 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
     setShowDeepLPopup(true);
   };
 
+  const handleAddToWordTabs = async () => {
+    if (!selection || !selection.text) return;
+    const text = selection.text.trim();
+    if (!text) return;
+
+    const isHebrew = /[\p{Script=Hebrew}]/u.test(text);
+    const detectedLang = isHebrew ? 'he' : detectLanguage(text) || 'en';
+    const uiLang = ((getLocale() || 'en').split('-')[0] || 'en').toLowerCase();
+
+    let translation = '';
+    // Only translate automatically if UI language differs from word language
+    if (detectedLang !== uiLang) {
+      try {
+        const res = await translateSingleText(text, detectedLang, uiLang);
+        translation = res.translated;
+      } catch (e) {
+        console.warn('Word tabs auto-translation failed:', e);
+      }
+    }
+
+    let contextSentence = text;
+    if (selection.range) {
+      try {
+        const ctx = buildSelectionContext(selection.range, 120);
+        const fullCtx = `${ctx.before} ${text} ${ctx.after}`.trim();
+        if (fullCtx) {
+          contextSentence = fullCtx;
+        }
+      } catch {
+        // keep text
+      }
+    }
+
+    useVocabularyStore.getState().addWord({
+      word: text,
+      translation,
+      contextSentence,
+      bookKey,
+      bookTitle: bookData.book?.title,
+      sourceLang: detectedLang,
+      targetLang: uiLang,
+    });
+
+    eventDispatcher.dispatch('toast', {
+      type: 'info',
+      message: _('Added to Word Tabs'),
+      className: 'whitespace-nowrap',
+      timeout: 2500,
+    });
+
+    setShowAnnotPopup(false);
+  };
+
   // `oneTime` is required rather than defaulted: it decides whether this reads
   // the selection and stops or starts an open-ended session from it, and every
   // entry point here means the former. Defaulting it silently turned Ctrl/Cmd+R
@@ -2685,6 +2741,8 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
         return { tooltipText: _(label), Icon, onClick: handleDictionary };
       case 'translate':
         return { tooltipText: _(label), Icon, onClick: handleTranslation };
+      case 'wordtabs':
+        return { tooltipText: _(label), Icon, onClick: handleAddToWordTabs };
       case 'tts':
         return {
           tooltipText: _(label),
