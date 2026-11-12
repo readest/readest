@@ -42,6 +42,7 @@ fn main() {
     tauri::Builder::<tauri_runtime_blitz::BlitzRuntime>::new()
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_os::init())
+        .plugin(tauri_plugin_turso::init())
         .plugin(picker::init())
         .invoke_handler(tauri::generate_handler![
             get_executable_dir,

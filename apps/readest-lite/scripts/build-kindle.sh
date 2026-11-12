@@ -101,8 +101,11 @@ export CFLAGS_$TU="${ARCH_FLAGS[*]} --sysroot=$SYSROOT"
 export BINDGEN_EXTRA_CLANG_ARGS_$TU="${ARCH_FLAGS[*]} --sysroot=$SYSROOT"
 export CARGO_TARGET_${TUC}_LINKER=clang
 unset RUSTFLAGS CARGO_ENCODED_RUSTFLAGS   # either would replace the target's flags below
+# io_uring_skip_arch_check: turso always builds io-uring, which ships no armv7 bindings. Its io_uring
+# backend is only used when a database asks for that VFS (Readest never does; Linux 3.0 has none).
 export CARGO_TARGET_${TUC}_RUSTFLAGS="-C target-feature=+crt-static,+neon -C link-self-contained=yes \
--C link-arg=--target=$T -C link-arg=-fuse-ld=lld -C link-arg=--sysroot=$SYSROOT -L native=$PREFIX/lib"
+-C link-arg=--target=$T -C link-arg=-fuse-ld=lld -C link-arg=--sysroot=$SYSROOT -L native=$PREFIX/lib \
+--cfg io_uring_skip_arch_check"
 export PKG_CONFIG_LIBDIR_$TU=$PREFIX/lib/pkgconfig PKG_CONFIG_ALLOW_CROSS=1 PKG_CONFIG_ALL_STATIC=1
 export SYSTEM_DEPS_LINK=static
 export CARGO_TARGET_DIR=$WORK/target   # off the host build's target/ lock
