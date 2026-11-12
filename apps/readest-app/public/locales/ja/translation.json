@@ -2761,5 +2761,7 @@
   "Previous Month": "前の月",
   "Next Month": "次の月",
   "No reading activity on this day": "この日の読書記録はありません",
-  "See which books you read each day and for how long": "毎日読んだ本と読書時間を確認できます"
+  "See which books you read each day and for how long": "毎日読んだ本と読書時間を確認できます",
+  "Move to parent group": "上位グループに移動",
+  "Done": "完了"
 }

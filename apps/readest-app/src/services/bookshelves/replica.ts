@@ -2,7 +2,8 @@ import { hlcMax, mergeFields } from '@/libs/crdt';
 import type { BookshelfReplicaRow } from '@/types/bookshelf';
 import { z } from 'zod';
 import type { Hlc, ReplicaRow } from '@/types/replica';
-import { bookshelfIdSchema, bookshelfSchema, isBuiltinBookshelf } from './definitions';
+import { bookshelfIdSchema, persistedBookshelfSchema, isBuiltinBookshelf } from './definitions';
+import { bookshelfItemOrderSchema, bookshelfOrderModeSchema } from './orderRecords';
 
 const timestamp = z
   .string()
@@ -11,8 +12,10 @@ const timestamp = z
 const envelope = z.object({ t: timestamp, s: z.string().min(1), v: z.unknown() });
 export const bookshelfFieldsSchema = z
   .object({
-    definition: envelope.extend({ v: bookshelfSchema }).optional(),
+    definition: envelope.extend({ v: persistedBookshelfSchema }).optional(),
     position: envelope.extend({ v: z.number().finite() }).optional(),
+    itemOrder: envelope.extend({ v: bookshelfItemOrderSchema }).optional(),
+    itemOrderMode: envelope.extend({ v: bookshelfOrderModeSchema }).optional(),
   })
   .strict();
 export const bookshelfReplicaSchema: z.ZodType<ReplicaRow> = z

@@ -1,6 +1,8 @@
 import { eventDispatcher } from '@/utils/event';
 import { BOOKSHELF_GROUP_LABELS, BOOKSHELF_SORT_LABELS } from '@/services/bookshelves/definitions';
 import { getGlobalBookshelfSort } from '@/services/bookshelves/sorting';
+import { updateBookshelf } from '@/services/bookshelves/persistence';
+import { readBookshelves } from '@/services/bookshelves/state';
 import React from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEnv } from '@/context/EnvContext';
@@ -24,6 +26,7 @@ interface ViewMenuProps {
 }
 
 const SORT_BY_ORDER: LibrarySortByType[] = [
+  LibrarySortByType.Custom,
   LibrarySortByType.Title,
   LibrarySortByType.Author,
   LibrarySortByType.Format,
@@ -48,20 +51,29 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
   const columns = settings.libraryColumns;
   const groupBy = ensureLibraryGroupByType(searchParams?.get('groupBy'), settings.libraryGroupBy);
   const globalSort = getGlobalBookshelfSort(settings, searchParams);
-  const sortBy = globalSort.by;
-  const isAscending = globalSort.ascending;
-  const primaryEffective = globalSort.by;
+  const customShelf = readBookshelves(settings).find(
+    (shelf) =>
+      shelf.id === (searchParams?.get('shelf') || 'default') &&
+      shelf.useGlobalSort === false &&
+      shelf.sort.by === 'custom',
+  );
+  const displayedSort = customShelf?.sort ?? globalSort;
+  const sortBy = displayedSort.by;
+  const isAscending = displayedSort.ascending;
+  const primaryEffective = displayedSort.by;
   const primaryIsImplicit =
+    !customShelf &&
     !searchParams?.get('sort') &&
     (settings.librarySortByAuto ?? true) &&
     globalSort.by !== settings.librarySortBy;
-  const thenSortBy = globalSort.thenBy;
-  const secondaryEffective = globalSort.thenBy;
+  const thenSortBy = displayedSort.thenBy;
+  const secondaryEffective = displayedSort.thenBy;
   const secondaryIsImplicit =
+    !customShelf &&
     !searchParams?.get('thenSort') &&
     (!settings.libraryThenSortBy || settings.libraryThenSortBy === 'none') &&
     globalSort.thenBy !== 'none';
-  const isThenAscending = globalSort.thenAscending;
+  const isThenAscending = displayedSort.thenAscending;
 
   const viewOptions = [
     { label: _('List'), value: 'list' },
@@ -81,7 +93,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
 
   const thenSortByOptions: { label: string; value: LibrarySecondarySortByType }[] = [
     { label: _('None'), value: 'none' },
-    ...sortByOptions,
+    ...sortByOptions.filter((option) => option.value !== 'custom'),
   ];
 
   const sortingOptions = [
@@ -123,12 +135,18 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
   };
 
   const handleSetSortBy = async (value: LibrarySortByType) => {
-    await saveSysSettings(envConfig, 'librarySortBy', value);
+    const custom = value === LibrarySortByType.Custom;
+    await saveSysSettings(envConfig, 'librarySortCustom', custom);
+    if (!custom) await saveSysSettings(envConfig, 'librarySortBy', value);
     // Any explicit primary pick locks in the choice and disables the auto
     // smart-default so future groupBy changes don't override the user.
     await saveSysSettings(envConfig, 'librarySortByAuto', false);
 
     const params = new URLSearchParams(window.location.search);
+    // An explicit menu choice also exits the custom order enabled by a drop.
+    await updateBookshelf(envConfig, params.get('shelf') || 'default', (shelf) =>
+      shelf.sort.by === 'custom' ? { ...shelf, useGlobalSort: true } : shelf,
+    );
     params.set('sort', value);
     navigateToLibrary(router, `${params.toString()}`);
   };
@@ -259,6 +277,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
               label={option.label}
               buttonClass='min-h-8 py-1!'
               toggled={isAscending === option.value}
+              disabled={sortBy === 'custom'}
               onClick={() => handleSetSortAscending(option.value)}
               transient
             />
@@ -268,7 +287,12 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
 
       {/* Then by - secondary sort, collapsible */}
       <hr aria-hidden='true' className='border-base-200 my-1' />
-      <MenuItem label={_('Then by...')} detailsOpen={false} buttonClass='py-1!'>
+      <MenuItem
+        label={_('Then by...')}
+        disabled={sortBy === 'custom'}
+        detailsOpen={false}
+        buttonClass='py-1!'
+      >
         <ul className='ms-0 flex flex-col ps-0 before:hidden'>
           {thenSortByOptions.map((option) => {
             const isImplicit = secondaryIsImplicit && option.value === secondaryEffective;

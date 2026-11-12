@@ -61,11 +61,35 @@ The **Sorting** box starts with **Use global sorting**, enabled by default for e
 including older saved definitions. These shelves follow the View menu’s primary and secondary
 sorts, directions, and grouping-based smart defaults. The four individual controls show the
 inherited values and remain disabled. Turn off the switch to use the shelf’s own sorting;
-switching it back on retains those individual choices for later. View-menu sorting changes
-never rewrite shelf definitions. Preview and library use the same resolved sorting, and global
-search always follows the View menu.
+switching it back on retains those individual choices for later. Choosing a primary sort in
+the View menu exits Custom order for the currently opened shelf, or Default when no shelf is
+specified, by restoring global sorting for that shelf. Other shelf sorting choices stay independent.
+Preview and library use the same resolved sorting, and global search always follows the View menu.
 New shelves and Reset use Date Read descending, no secondary sort, and secondary ascending
 enabled as their individual sorting defaults.
+
+Drag books or groups near another card's edge to reorder them; on touchscreens, long-press
+before dragging. Keyboard users can focus a card and use Alt + Left/Right/Up/Down. Reordering
+enables Custom sorting for that shelf and saves an independent order for each opened group.
+Use **Select Books** in the header for multiple selection on desktop and mobile; long-press
+remains available for dragging on touchscreens.
+On screens up to 360px wide, searching keeps Clear Search and Select Books available;
+clearing the query restores the header's Import Books action.
+Items updated after the last manual rearrangement, including newly read books, appear first
+by recency; remaining items retain their manual relative order. The next drag starts from the
+visible order. The previous metadata sort remains the fallback for new items and reading-time labels.
+Pause over a card's center to create or join a manually managed group. Inside a group, drop onto
+**Move to parent group**, or use Alt + Shift + Up, to move a book or nested group to its parent.
+Grouping alone preserves metadata sorting. Insertion and settling feedback respects RTL,
+reduced-motion preferences and e-ink mode.
+Interrupted group moves recover their membership and affected orders when the library loads,
+including offline and anonymous sessions. A move that cannot save because storage access was
+denied reports the failure and restores its previous order. Recovery preserves reading progress,
+imported books, deletion tombstones and newer independent ordering changes.
+If storage remains readable but cannot be written, the library stays visible and the pending
+move is retried on a later load after write access is restored.
+Custom item orders are stored in separate bounded replica rows rather than adding fields to
+the strict shelf definition, so older clients can continue reading the existing shelf configuration.
 
 Filters use nested All (AND) and Any (OR) groups. An empty root matches all books. Incomplete
 conditions and empty nested groups cannot be saved. A shelf definition is limited to 60,000 bytes

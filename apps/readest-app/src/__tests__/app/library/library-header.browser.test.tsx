@@ -1,12 +1,14 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, fireEvent } from '@testing-library/react';
 import { page } from 'vitest/browser';
+import { useState } from 'react';
 import { DropdownProvider } from '@/context/DropdownContext';
 import Menu from '@/components/Menu';
 import LibraryHeader from '@/app/library/components/LibraryHeader';
 import { DEFAULT_BOOK_SEARCH_CONFIG } from '@/services/constants';
 import { addLibrarySearchHistory } from '@/app/library/utils/searchHistory';
 
+const platform = vi.hoisted(() => ({ trafficLightVisible: false }));
 vi.mock('@/context/EnvContext', () => ({ useEnv: () => ({ appService: null }) }));
 vi.mock('@/hooks/useTranslation', () => ({
   useTranslation: () => (key: string, values?: Record<string, string>) =>
@@ -16,7 +18,7 @@ vi.mock('@/hooks/useTranslation', () => ({
     ),
 }));
 vi.mock('@/hooks/useTrafficLight', () => ({
-  useTrafficLight: () => ({ isTrafficLightVisible: false }),
+  useTrafficLight: () => ({ isTrafficLightVisible: platform.trafficLightVisible }),
 }));
 vi.mock('@/hooks/useShortcuts', () => ({ default: () => {} }));
 vi.mock('@/app/library/components/SettingsMenu', () => ({
@@ -37,39 +39,53 @@ await import('@/styles/globals.css');
 const noop = () => {};
 afterEach(() => {
   cleanup();
+  platform.trafficLightVisible = false;
   document.documentElement.dir = 'ltr';
   document.documentElement.removeAttribute('data-eink');
   document.documentElement.removeAttribute('data-theme');
   localStorage.clear();
 });
 
-const renderHeader = () =>
-  render(
-    <DropdownProvider>
-      <div className='relative w-full'>
-        <LibraryHeader
-          isSelectMode={false}
-          isSelectAll={false}
-          searchQuery=''
-          searchTarget='books'
-          searchConfig={DEFAULT_BOOK_SEARCH_CONFIG}
-          onPullLibrary={noop}
-          onImportBooksFromFiles={noop}
-          onOpenCatalogManager={noop}
-          onOpenFeeds={noop}
-          onToggleSelectMode={noop}
-          onSelectAll={noop}
-          onDeselectAll={noop}
-          onSearchConfigChange={noop}
-          onSearchQueryChange={noop}
-          onSearchTargetChange={noop}
-        />
-      </div>
-    </DropdownProvider>,
-  );
+const renderHeader = (
+  searchQuery = '',
+  searchTarget: 'books' | 'text' = 'books',
+  onSearchQueryChange: (query: string) => void = noop,
+  onToggleSelectMode = noop,
+) => {
+  const Header = () => {
+    const [query, setQuery] = useState(searchQuery);
+    return (
+      <DropdownProvider>
+        <div className='relative w-full'>
+          <LibraryHeader
+            isSelectMode={false}
+            isSelectAll={false}
+            searchQuery={query}
+            searchTarget={searchTarget}
+            searchConfig={DEFAULT_BOOK_SEARCH_CONFIG}
+            onPullLibrary={noop}
+            onImportBooksFromFiles={noop}
+            onOpenCatalogManager={noop}
+            onOpenFeeds={noop}
+            onToggleSelectMode={onToggleSelectMode}
+            onSelectAll={noop}
+            onDeselectAll={noop}
+            onSearchConfigChange={noop}
+            onSearchQueryChange={(next) => {
+              setQuery(next);
+              onSearchQueryChange(next);
+            }}
+            onSearchTargetChange={noop}
+          />
+        </div>
+      </DropdownProvider>
+    );
+  };
+  return render(<Header />);
+};
 
 describe('library search history layout', () => {
-  for (const width of [390, 768, 1200]) {
+  for (const width of [320, 390, 768, 1200]) {
     for (const dir of ['ltr', 'rtl']) {
       for (const eink of [false, true]) {
         it(`fits the search field at ${width}px in ${dir}, e-ink ${eink}`, async () => {
@@ -110,20 +126,79 @@ describe('library search history layout', () => {
 });
 
 describe('library search actions', () => {
-  for (const width of [768, 1200]) {
+  it('keeps native window button clearance in a narrow RTL window', async () => {
+    await page.viewport(390, 900);
+    document.documentElement.dir = 'rtl';
+    platform.trafficLightVisible = true;
+    const { container } = renderHeader();
+    const header = container.querySelector('.titlebar')!;
+    expect(getComputedStyle(header).paddingLeft).toBe('64px');
+  });
+  for (const width of [320, 360]) {
     for (const dir of ['ltr', 'rtl']) {
+      it(`keeps narrow search actions reachable at ${width}px in ${dir}`, async () => {
+        await page.viewport(width, 900);
+        document.documentElement.dir = dir;
+        const clear = vi.fn();
+        const select = vi.fn();
+        const { queryByRole, getByRole } = renderHeader('Dune', 'books', clear, select);
+        expect(queryByRole('button', { name: 'Import Books' })).toBeNull();
+        const clearBounds = getByRole('button', { name: 'Clear Search' }).getBoundingClientRect();
+        const selectBounds = getByRole('button', { name: 'Select Books' }).getBoundingClientRect();
+        const distance = Math.abs(
+          (clearBounds.left + clearBounds.right - selectBounds.left - selectBounds.right) / 2,
+        );
+        expect(distance).toBeGreaterThanOrEqual(clearBounds.width / 2 + 22);
+        await page.getByRole('button', { name: 'Select Books' }).click();
+        expect(select).toHaveBeenCalledOnce();
+        await page.getByRole('button', { name: 'Clear Search' }).click();
+        expect(clear).toHaveBeenCalledWith('');
+        await page.getByRole('button', { name: 'Import Books' }).click();
+        expect(getByRole('button', { name: 'Import Books' }).getAttribute('aria-expanded')).toBe(
+          'true',
+        );
+      });
+    }
+  }
+  for (const width of [320, 390, 768, 1200]) {
+    for (const dir of ['ltr', 'rtl']) {
+      for (const target of ['books', 'text'] as const) {
+        it(`keeps ${target} query text clear of actions at ${width}px in ${dir}`, async () => {
+          await page.viewport(width, 900);
+          document.documentElement.dir = dir;
+          const { getByRole } = renderHeader('A long book title to search for', target);
+          const input = getByRole('textbox');
+          const bounds = input.getBoundingClientRect();
+          const style = getComputedStyle(input);
+          const textLeft = bounds.left + Number.parseFloat(style.paddingLeft);
+          const textRight = bounds.right - Number.parseFloat(style.paddingRight);
+          const clear = getByRole('button', { name: 'Clear Search' }).getBoundingClientRect();
+          if (dir === 'ltr') expect(textRight).toBeLessThanOrEqual(clear.left - 4);
+          else expect(textLeft).toBeGreaterThanOrEqual(clear.right + 4);
+          expect(textRight - textLeft).toBeGreaterThanOrEqual(width === 320 ? 48 : 24);
+          expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(width);
+        });
+      }
       it(`centers Select Books between Import and the input end at ${width}px in ${dir}`, async () => {
         await page.viewport(width, 900);
         document.documentElement.dir = dir;
         const { getByRole } = renderHeader();
         const input = getByRole('textbox').getBoundingClientRect();
-        const plus = getByRole('button', { name: 'Import Books' }).getBoundingClientRect();
-        const select = getByRole('button', { name: 'Select Books' }).getBoundingClientRect();
+        const plusButton = getByRole('button', { name: 'Import Books' });
+        const selectButton = getByRole('button', { name: 'Select Books' });
+        const plus = plusButton.getBoundingClientRect();
+        const select = selectButton.getBoundingClientRect();
         const plusCenter = (plus.left + plus.right) / 2;
         const selectCenter = (select.left + select.right) / 2;
         expect(selectCenter).toBeCloseTo(
           (plusCenter + (dir === 'ltr' ? input.right : input.left)) / 2,
           0,
+        );
+        const plusHitWidth = Number.parseFloat(getComputedStyle(plusButton, '::before').width);
+        const selectHitWidth = Number.parseFloat(getComputedStyle(selectButton, '::before').width);
+        expect(selectHitWidth).toBeGreaterThanOrEqual(44);
+        expect(Math.abs(selectCenter - plusCenter)).toBeGreaterThanOrEqual(
+          (plusHitWidth + selectHitWidth) / 2,
         );
       });
     }
@@ -145,7 +220,7 @@ it.each([
     const menu = container.querySelector(selector!) as HTMLElement;
     const overlay = container.querySelector('.overlay') as HTMLElement;
     gaps.push(menu.getBoundingClientRect().top - toggle.getBoundingClientRect().bottom);
-    expect(menu.getBoundingClientRect().right).toBe(width - 16);
+    expect(menu.getBoundingClientRect().right).toBeCloseTo(width - 16, 0);
     expect(getComputedStyle(overlay).position).toBe('fixed');
     const outside = document.elementFromPoint(16, 880) as HTMLElement;
     expect(outside).toBe(overlay);

@@ -49,7 +49,11 @@ import { useEnsureSettingsLoaded } from '@/hooks/useEnsureSettingsLoaded';
 import { useEnv } from '@/context/EnvContext';
 import { eventDispatcher } from '@/utils/event';
 import { getDirFromUILanguage } from '@/utils/rtl';
-import { getGlobalBookshelfSort, resolveBookshelfSort } from '@/services/bookshelves/sorting';
+import {
+  getGlobalBookshelfSort,
+  resolveBookshelfMetadataSort,
+  resolveBookshelfSort,
+} from '@/services/bookshelves/sorting';
 import { resolveBookshelfGroupBy } from '@/services/bookshelves/grouping';
 import { ensureLibraryGroupByType } from '../utils/libraryUtils';
 import {
@@ -398,9 +402,10 @@ export function BookshelvesEditor({
   );
   const pageDurations = useMedianPageDurationsSecs(
     library,
-    previewDefinitions.some(
-      (s) => s.enabled && (s.sort.by === 'timeRemaining' || s.sort.thenBy === 'timeRemaining'),
-    ),
+    previewDefinitions.some((s) => {
+      const sort = resolveBookshelfMetadataSort(s);
+      return s.enabled && (sort.by === 'timeRemaining' || sort.thenBy === 'timeRemaining');
+    }),
   );
   const today = useBookshelfDate(previewDefinitions);
   const preview = useMemo(
@@ -537,7 +542,8 @@ export function BookshelvesEditor({
           handleLibraryNavigation={noop}
           handleUpdateReadingStatus={noop}
           showTimeRemaining={
-            shelf.sort.by === 'timeRemaining' || shelf.sort.thenBy === 'timeRemaining'
+            resolveBookshelfMetadataSort(shelf).by === 'timeRemaining' ||
+            resolveBookshelfMetadataSort(shelf).thenBy === 'timeRemaining'
           }
         />
       </div>
@@ -768,22 +774,30 @@ export function BookshelvesEditor({
                 </SettingsRow>
                 <SettingsSwitchRow
                   label={_('Ascending')}
-                  disabled={useGlobalSort}
+                  disabled={useGlobalSort || selectedSort.by === 'custom'}
                   checked={selectedSort.ascending}
                   onChange={() => sort({ ascending: !selected.sort.ascending })}
                 />
-                <SettingsRow label={_('Then by')} disabled={useGlobalSort}>
+                <SettingsRow
+                  label={_('Then by')}
+                  disabled={useGlobalSort || selectedSort.by === 'custom'}
+                >
                   <SettingsSelect
                     ariaLabel={_('Then by')}
-                    disabled={useGlobalSort}
+                    disabled={useGlobalSort || selectedSort.by === 'custom'}
                     value={selectedSort.thenBy}
-                    options={[{ value: 'none', label: _('None') }, ...sortOptions]}
+                    options={[
+                      { value: 'none', label: _('None') },
+                      ...sortOptions.filter((option) => option.value !== 'custom'),
+                    ]}
                     onChange={(e) => sort({ thenBy: e.target.value as BookshelfSort['thenBy'] })}
                   />
                 </SettingsRow>
                 <SettingsSwitchRow
                   label={_('Secondary sort ascending')}
-                  disabled={useGlobalSort || selectedSort.thenBy === 'none'}
+                  disabled={
+                    useGlobalSort || selectedSort.by === 'custom' || selectedSort.thenBy === 'none'
+                  }
                   checked={selectedSort.thenAscending}
                   onChange={() => sort({ thenAscending: !selected.sort.thenAscending })}
                 />

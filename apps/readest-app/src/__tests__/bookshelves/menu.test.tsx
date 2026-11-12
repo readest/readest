@@ -9,6 +9,7 @@ import { BOOKSHELF_SORT_LABELS, createBookshelf } from '@/services/bookshelves/d
 import { readBookshelves } from '@/services/bookshelves/state';
 import { saveBookshelfDraft } from '@/services/bookshelves/persistence';
 import { readPendingBookshelves } from '@/services/bookshelves/journal';
+import { getGlobalBookshelfSort } from '@/services/bookshelves/sorting';
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: vi.fn() }),
@@ -36,6 +37,55 @@ beforeEach(() => {
 afterEach(cleanup);
 const env = {} as EnvConfigType;
 describe('bookshelf layouts from the View menu', () => {
+  it('shows custom order and exits it through a normal sort choice without discarding saved positions', async () => {
+    const base = readBookshelves(useSettingsStore.getState().settings);
+    await saveBookshelfDraft(
+      env,
+      base,
+      base.map((shelf) =>
+        shelf.id === 'default'
+          ? {
+              ...shelf,
+              useGlobalSort: false,
+              sort: { by: 'custom', ascending: true, thenBy: 'none', thenAscending: true },
+              manualOrder: { 'group:': ['b:second', 'b:first'] },
+            }
+          : shelf,
+      ),
+    );
+    render(<ViewMenu />);
+    const custom = screen.getByText('Custom').closest('button')!;
+    expect(custom.querySelector('svg')).toBeTruthy();
+    fireEvent.click(screen.getAllByText('Title')[0]!);
+    await waitFor(() =>
+      expect(
+        readBookshelves(useSettingsStore.getState().settings).find(
+          (shelf) => shelf.id === 'default',
+        )?.useGlobalSort,
+      ).toBe(true),
+    );
+    expect(
+      readBookshelves(useSettingsStore.getState().settings).find((shelf) => shelf.id === 'default')
+        ?.manualOrder,
+    ).toEqual({ 'group:': ['b:second', 'b:first'] });
+  });
+
+  it('keeps Custom out of the sort setting that older versions read', async () => {
+    // Releases before custom order give every shelf an unknown sort no books,
+    // so a downgrade would open on an empty library.
+    render(<ViewMenu />);
+    fireEvent.click(screen.getByText('Custom'));
+    await waitFor(() =>
+      expect(getGlobalBookshelfSort(useSettingsStore.getState().settings).by).toBe('custom'),
+    );
+    expect(useSettingsStore.getState().settings.librarySortBy).toBe('updated');
+    fireEvent.click(screen.getAllByText('Title')[0]!);
+    await waitFor(() =>
+      expect(getGlobalBookshelfSort(useSettingsStore.getState().settings).by).toBe('title'),
+    );
+    expect(useSettingsStore.getState().settings.librarySortBy).toBe('title');
+  });
+
   it('changes global sorting without rewriting shelf definitions or their pending edits', async () => {
     const base = readBookshelves(useSettingsStore.getState().settings);
     await saveBookshelfDraft(
