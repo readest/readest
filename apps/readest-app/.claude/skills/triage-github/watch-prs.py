@@ -28,7 +28,14 @@ RED = {"failure", "cancelled", "timed_out", "action_required", "startup_failure"
 
 def gh(path):
     # One page (per_page=100) covers a PR's runs, reviews and comments; gh 2.46 has no --slurp.
-    out = subprocess.run(["gh", "api", path], capture_output=True, text=True, timeout=60)
+    # A proxy can answer a call with a 5xx or cut it ("unexpected EOF", "TLS handshake timeout"),
+    # and a pass makes several calls, so one dropped call failed the whole check. Retry all
+    # but a 4xx.
+    for attempt in range(4):
+        out = subprocess.run(["gh", "api", path], capture_output=True, text=True, timeout=60)
+        if out.returncode == 0 or "HTTP 4" in out.stderr:
+            break
+        time.sleep(2 + 3 * attempt)
     if out.returncode != 0:
         first_line = (out.stderr.strip().splitlines() or ["no output"])[0]
         raise RuntimeError(f"gh api {path}: {first_line[:200]}")
