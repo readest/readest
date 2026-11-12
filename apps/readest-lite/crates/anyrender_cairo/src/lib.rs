@@ -54,6 +54,8 @@ pub struct Caches {
     /// By font, index, synthetic bold and variation coordinates (trailing defaults dropped).
     fonts: HashMap<(u64, u32, bool, Vec<NormalizedCoord>), (cairo::FontFace, peniko::Blob<u8>)>,
     images: HashMap<u64, ImageSurface>,
+    /// By image: its last shrunk copy (see [`Caches::shrunk`]), with the matrix it was made for.
+    shrunk: HashMap<u64, ([f64; 4], cairo::Filter, CExtend, ImageSurface)>,
 }
 
 impl Default for Caches {
@@ -71,12 +73,14 @@ impl Caches {
             ft,
             fonts: HashMap::new(),
             images: HashMap::new(),
+            shrunk: HashMap::new(),
         }
     }
 
     /// A new chapter document: its images are new blobs, so the old ones go.
     pub fn new_chapter(&mut self) {
         self.images.clear();
+        self.shrunk.clear();
         eprintln!("cairo caches: {} font faces", self.fonts.len());
     }
 
@@ -158,6 +162,54 @@ impl Caches {
         s.mark_dirty();
         self.images.insert(img.data.id(), s.clone());
         Some(s)
+    }
+
+    /// Image `id` (`src`) as `m` (image to device) draws it with `filter` and `extend`, rendered
+    /// into device pixels from the whole pixel `(x, y)` returned with it: the same pixels, made
+    /// once. Only for a shrink along the axes, which cairo's Good and Best filters do by
+    /// convolution on every frame (~600 ms for a book cover on a Kindle); the copy is then
+    /// composited 1:1.
+    fn shrunk(
+        &mut self,
+        id: u64,
+        src: &ImageSurface,
+        m: Matrix,
+        filter: cairo::Filter,
+        extend: CExtend,
+    ) -> Option<(ImageSurface, f64, f64)> {
+        let (sx, sy) = (m.xx(), m.yy());
+        if filter == cairo::Filter::Fast
+            || m.yx() != 0.0
+            || m.xy() != 0.0
+            || !(sx > 0.0 && sy > 0.0)
+            || (sx >= 1.0 && sy >= 1.0)
+        {
+            return None;
+        }
+        let (x, y) = (m.x0().floor(), m.y0().floor());
+        let key = [sx, sy, m.x0() - x, m.y0() - y];
+        if let Some((k, f, e, s)) = self.shrunk.get(&id)
+            && (*k, *f, *e) == (key, filter, extend)
+        {
+            return Some((s.clone(), x, y));
+        }
+        let w = (key[2] + f64::from(src.width()) * sx).ceil().max(1.0) as i32;
+        let h = (key[3] + f64::from(src.height()) * sy).ceil().max(1.0) as i32;
+        let out = ImageSurface::create(Format::ARgb32, w, h).ok()?;
+        {
+            let cr = Context::new(&out).ok()?;
+            cr.translate(key[2], key[3]);
+            cr.scale(sx, sy);
+            let p = cairo::SurfacePattern::create(src);
+            p.set_filter(filter);
+            p.set_extend(extend);
+            cr.set_source(&p).ok()?;
+            cr.set_operator(Operator::Source);
+            cr.paint().ok()?;
+        }
+        out.flush();
+        self.shrunk.insert(id, (key, filter, extend, out.clone()));
+        Some((out, x, y))
     }
 }
 
@@ -241,8 +293,14 @@ impl<'a> CairoScene<'a> {
         }
     }
 
-    /// Sets the source; returns false when there is nothing to draw.
-    fn source(&mut self, paint: PaintRef<'_>, brush_transform: Option<Affine>) -> bool {
+    /// Sets the source; returns false when there is nothing to draw. `own_rect`: an image is
+    /// drawn in exactly its own rect (an `<img>`), not tiled, so a shrunk copy can stand in.
+    fn source(
+        &mut self,
+        paint: PaintRef<'_>,
+        brush_transform: Option<Affine>,
+        own_rect: bool,
+    ) -> bool {
         let bt = brush_transform.map(|t| Self::matrix(t.inverse()));
         match paint {
             Paint::Solid(c) => {
@@ -293,16 +351,40 @@ impl<'a> CairoScene<'a> {
                 let Some(surface) = self.caches.image(img.image) else {
                     return false;
                 };
-                let p = cairo::SurfacePattern::create(&surface);
-                p.set_extend(Self::extend(img.sampler.x_extend));
-                p.set_filter(match img.sampler.quality {
+                let filter = match img.sampler.quality {
                     ImageQuality::Low => cairo::Filter::Fast,
                     ImageQuality::Medium => cairo::Filter::Good,
                     ImageQuality::High => cairo::Filter::Best,
-                });
-                if let Some(m) = bt {
-                    p.set_matrix(m);
-                }
+                };
+                let ctm = self.cr.matrix();
+                let to_device =
+                    brush_transform.map_or(ctm, |t| Matrix::multiply(&Self::matrix(t), &ctm));
+                let extend = Self::extend(img.sampler.x_extend);
+                let shrunk = own_rect
+                    .then(|| {
+                        let id = img.image.data.id();
+                        self.caches.shrunk(id, &surface, to_device, filter, extend)
+                    })
+                    .flatten();
+                let p = if let Some((copy, x, y)) = shrunk {
+                    // User space to device pixels, then to the copy's.
+                    let p = cairo::SurfacePattern::create(&copy);
+                    p.set_extend(CExtend::Pad);
+                    p.set_filter(cairo::Filter::Fast);
+                    p.set_matrix(Matrix::multiply(
+                        &ctm,
+                        &Matrix::new(1.0, 0.0, 0.0, 1.0, -x, -y),
+                    ));
+                    p
+                } else {
+                    let p = cairo::SurfacePattern::create(&surface);
+                    p.set_extend(extend);
+                    p.set_filter(filter);
+                    if let Some(m) = bt {
+                        p.set_matrix(m);
+                    }
+                    p
+                };
                 let _ = self.cr.set_source(&p);
                 img.sampler.alpha > 0.0
             }
@@ -394,7 +476,7 @@ impl PaintScene for CairoScene<'_> {
         shape: &impl Shape,
     ) {
         self.cr.set_matrix(Self::matrix(transform));
-        if !self.source(brush.into(), brush_transform) {
+        if !self.source(brush.into(), brush_transform, false) {
             return;
         }
         let cr = &self.cr;
@@ -430,7 +512,14 @@ impl PaintScene for CairoScene<'_> {
             Paint::Image(i) => i.sampler.alpha,
             _ => 1.0,
         };
-        if !self.source(paint, brush_transform) {
+        let own_rect = match &paint {
+            Paint::Image(i) => {
+                let (w, h) = (f64::from(i.image.width), f64::from(i.image.height));
+                brush_transform.is_none() && shape.as_rect() == Some(Rect::new(0.0, 0.0, w, h))
+            }
+            _ => false,
+        };
+        if !self.source(paint, brush_transform, own_rect) {
             return;
         }
         self.cr.set_operator(Operator::Over);
@@ -464,7 +553,7 @@ impl PaintScene for CairoScene<'_> {
             return;
         };
         self.cr.set_matrix(Self::matrix(transform));
-        if !self.source(brush.into(), None) {
+        if !self.source(brush.into(), None, false) {
             return;
         }
         let cr = &self.cr;
