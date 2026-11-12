@@ -2827,5 +2827,8 @@
   "Reset Counts": "Hisoblagichlarni tiklash",
   "Reset the counts and sync history on this device?": "Bu qurilmadagi hisoblagichlar va sinxronlash tarixi tiklansinmi?",
   "Folder not available": "Jild mavjud emas",
+  "Words per Flash": "Har koʻrinishdagi soʻzlar",
+  "Warm-up": "Qizish",
+  "Long Word Delay": "Uzun soʻzlarda kechikish",
   "Move to parent group": "Yuqori guruhga koʻchirish"
 }

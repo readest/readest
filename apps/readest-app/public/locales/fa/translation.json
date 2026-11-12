@@ -2827,5 +2827,8 @@
   "Reset Counts": "بازنشانی شمارش‌ها",
   "Reset the counts and sync history on this device?": "شمارش‌ها و تاریخچه همگام‌سازی در این دستگاه بازنشانی شوند؟",
   "Folder not available": "پوشه در دسترس نیست",
+  "Words per Flash": "واژه در هر نمایش",
+  "Warm-up": "گرم‌کردن",
+  "Long Word Delay": "تأخیر برای واژه‌های بلند",
   "Move to parent group": "انتقال به گروه بالاتر"
 }

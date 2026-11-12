@@ -7,7 +7,7 @@ import { BookOrbitSyncStore } from '@/services/bookorbit/BookOrbitSyncStore';
 import { isBookOrbitPassEnabled, runBookOrbitNotesPass } from '@/services/bookorbit/notesPass';
 import { SYNC_NOTES_INTERVAL_SEC } from '@/services/constants';
 import { findTocItemBS } from '@/services/nav';
-import { useBookDataStore } from '@/store/bookDataStore';
+import { useBookDataStore, useBookConfig } from '@/store/bookDataStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -28,10 +28,14 @@ export const useBookOrbitNotesSync = (bookKey: string) => {
   const _ = useTranslation();
   const { appService } = useEnv();
   const { settings } = useSettingsStore();
-  const { getConfig, setConfig, getBookData } = useBookDataStore();
+  const getConfig = useBookDataStore((s) => s.getConfig);
+  const setConfig = useBookDataStore((s) => s.setConfig);
+  const getBookData = useBookDataStore((s) => s.getBookData);
   const { getView } = useReaderStore();
 
-  const config = getConfig(bookKey);
+  const config = useBookConfig(bookKey);
+  // Each page turn moves it; the sync passes below follow it.
+  const location = useBookDataStore((s) => s.getConfig(bookKey)?.location);
   const passRunning = useRef(false);
   const unmatchedHinted = useRef(false);
   const storeRef = useRef<BookOrbitSyncStore | null>(null);
@@ -256,10 +260,10 @@ export const useBookOrbitNotesSync = (bookKey: string) => {
   );
 
   useEffect(() => {
-    if (!client || !config?.location) return;
+    if (!client || !location) return;
     throttledPass();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [client, config?.location, config?.booknotes, throttledPass]);
+  }, [client, location, config?.booknotes, throttledPass]);
 
   useWindowActiveChanged((isActive) => {
     if (!isActive) runPassRef.current();

@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 
 vi.mock('@/utils/image', () => ({

@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import clsx from 'clsx';
-import { MdArrowDropDown, MdSearch } from 'react-icons/md';
+import { MdArrowDropDown, MdSearch, MdSort } from 'react-icons/md';
 import { IoMdCloseCircle } from 'react-icons/io';
 import {
   PiArrowsClockwise,
@@ -15,7 +15,12 @@ import {
 import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useVocabularyStore } from '@/store/vocabularyStore';
-import { filterEntries, lastSeen, listBooks } from '@/services/vocabulary/filter';
+import {
+  filterEntries,
+  lastSeen,
+  listBooks,
+  type VocabularySort,
+} from '@/services/vocabulary/filter';
 import { toAnkiText, toCsv } from '@/services/vocabulary/export';
 import type { VocabularyState } from '@/services/vocabulary/types';
 import { eventDispatcher } from '@/utils/event';
@@ -39,14 +44,15 @@ const VocabularyView: React.FC<VocabularyViewProps> = ({ onOpenBook }) => {
   const [state, setState] = useState<VocabularyState | undefined>();
   const [bookHash, setBookHash] = useState('');
   const [query, setQuery] = useState('');
+  const [sort, setSort] = useState<VocabularySort>('recent');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const anki = useAnkiLink();
 
   const all = useMemo(() => Object.values(entries), [entries]);
   const books = useMemo(() => listBooks(all), [all]);
   const byBook = useMemo(
-    () => filterEntries(all, { bookHash: bookHash || undefined, query }),
-    [all, bookHash, query],
+    () => filterEntries(all, { bookHash: bookHash || undefined, query }, sort),
+    [all, bookHash, query, sort],
   );
   const shown = useMemo(
     () => (state ? byBook.filter((e) => e.state === state) : byBook),
@@ -60,6 +66,14 @@ const VocabularyView: React.FC<VocabularyViewProps> = ({ onOpenBook }) => {
     { state: 'none', label: _('Looked Up') },
     { state: 'learning', label: _('Learning') },
     { state: 'mastered', label: _('Mastered') },
+  ];
+  const sortOptions: { value: VocabularySort; label: string }[] = [
+    { value: 'recent', label: _('Last Looked Up') },
+    { value: 'occurrences', label: _('Most Saved Sentences') },
+    { value: 'newest', label: _('Newest Added') },
+    { value: 'oldest', label: _('Oldest Added') },
+    { value: 'az', label: _('Alphabetical A-Z') },
+    { value: 'za', label: _('Alphabetical Z-A') },
   ];
 
   const revealChip = (chip: Element | null) =>
@@ -145,6 +159,24 @@ const VocabularyView: React.FC<VocabularyViewProps> = ({ onOpenBook }) => {
             <PiArrowsClockwise className='h-5 w-5' />
           </button>
         )}
+        <Dropdown
+          label={_('Sort by')}
+          className='dropdown-bottom dropdown-end'
+          buttonClassName='btn btn-ghost btn-circle eink-bordered bg-base-200 h-10 min-h-10 w-10 p-0'
+          toggleButton={<MdSort aria-hidden='true' className='h-5 w-5' />}
+        >
+          <Menu className='dropdown-content no-triangle border-base-300 bg-base-100 z-20 mt-1 min-w-48 rounded-lg border shadow-lg'>
+            {sortOptions.map(({ value, label }) => (
+              <MenuItem
+                key={value}
+                label={label}
+                toggled={sort === value}
+                transient
+                onClick={() => setSort(value)}
+              />
+            ))}
+          </Menu>
+        </Dropdown>
         <Dropdown
           // With AnkiDroid the menu also imports, so it isn't only Export.
           label={anki.available ? _('More') : _('Export')}
@@ -306,7 +338,7 @@ const VocabularyView: React.FC<VocabularyViewProps> = ({ onOpenBook }) => {
                 </li>
               )}
             </ul>
-            <div className={clsx('min-h-0 flex-1', detail ? 'flex' : 'hidden sm:flex')}>
+            <div className={clsx('min-h-0 min-w-0 flex-1', detail ? 'flex' : 'hidden sm:flex')}>
               {detail ? (
                 <VocabularyDetail
                   entry={detail}

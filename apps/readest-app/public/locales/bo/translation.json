@@ -2754,5 +2754,8 @@
   "Reset Counts": "གྲངས་ཚད་བསྐྱར་སྒྲིག",
   "Reset the counts and sync history on this device?": "སྒྲིག་ཆས་འདིའི་གྲངས་ཚད་དང་མཉམ་སྡེབ་ལོ་རྒྱུས་བསྐྱར་སྒྲིག་བྱེད་དམ།",
   "Folder not available": "ཡིག་སྣོད་མི་རག",
+  "Words per Flash": "ཐེངས་རེར་མངོན་པའི་ཚིག",
+  "Warm-up": "སྔོན་སྦྱོང་།",
+  "Long Word Delay": "ཚིག་རིང་པོར་འགོར་འཕེལ།",
   "Move to parent group": "Move to parent group"
 }

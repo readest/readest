@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { act, cleanup, renderHook } from '@testing-library/react';
 import type { SyncData } from '@/libs/sync';
@@ -73,9 +74,12 @@ vi.mock('@/store/settingsStore', () => {
   return { useSettingsStore };
 });
 
-vi.mock('@/store/bookDataStore', () => ({
-  useBookDataStore: () => ({ getConfig: () => h.bookConfig, setConfig: vi.fn() }),
-}));
+vi.mock('@/store/bookDataStore', () => {
+  const state = { getConfig: () => h.bookConfig, setConfig: vi.fn() };
+  return {
+    useBookDataStore: (select?: (s: typeof state) => unknown) => (select ? select(state) : state),
+  };
+});
 
 vi.mock('@/store/readerStore', () => ({
   useReaderStore: () => ({ setIsSyncing: vi.fn() }),

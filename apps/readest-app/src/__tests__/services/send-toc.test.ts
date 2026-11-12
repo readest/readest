@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { describe, expect, test } from 'vitest';
 import { buildNavMap, extractHeadings } from '@/services/send/conversion/toc';
 

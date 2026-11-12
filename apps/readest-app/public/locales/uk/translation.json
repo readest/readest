@@ -2973,5 +2973,8 @@
   "Reset Counts": "Скинути лічильники",
   "Reset the counts and sync history on this device?": "Скинути лічильники та історію синхронізації на цьому пристрої?",
   "Folder not available": "Папка недоступна",
+  "Words per Flash": "Слів за показ",
+  "Warm-up": "Розгін",
+  "Long Word Delay": "Затримка на довгих словах",
   "Move to parent group": "Перемістити до батьківської групи"
 }

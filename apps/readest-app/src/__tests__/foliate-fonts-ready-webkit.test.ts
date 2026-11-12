@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 // Regression test for the iOS <= 16 WebContent crash on book open.
 //
 // WebKit before Safari 17 (branch 7615 and earlier) resolves the

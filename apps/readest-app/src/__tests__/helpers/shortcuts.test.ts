@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { beforeEach, describe, it, expect, vi } from 'vitest';
 
 const getModule = async () => {

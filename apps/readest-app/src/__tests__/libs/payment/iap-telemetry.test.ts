@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 // IAP webhook telemetry: a structured log line (for `wrangler tail`) plus a

@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, test } from 'vitest';
 import { isBlockedHost } from '@/pages/api/send/fetch-url';
 

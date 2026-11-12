@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AppService, OsPlatform } from '@/types/system';
 import type { Book } from '@/types/book';

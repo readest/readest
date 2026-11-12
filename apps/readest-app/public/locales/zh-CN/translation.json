@@ -2754,5 +2754,8 @@
   "Reset Counts": "重置计数",
   "Reset the counts and sync history on this device?": "要重置此设备上的计数和同步记录吗？",
   "Folder not available": "文件夹不可用",
+  "Words per Flash": "每次显示词数",
+  "Warm-up": "渐进加速",
+  "Long Word Delay": "长词延时",
   "Move to parent group": "移到上层"
 }

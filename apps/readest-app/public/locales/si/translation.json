@@ -2827,5 +2827,8 @@
   "Reset Counts": "ගණන් යළි සකසන්න",
   "Reset the counts and sync history on this device?": "මෙම උපාංගයේ ගණන් සහ සමමුහුර්ත ඉතිහාසය යළි සකසන්නද?",
   "Folder not available": "ෆෝල්ඩරය ලබා ගත නොහැක",
+  "Words per Flash": "එක් දර්ශනයකට වචන",
+  "Warm-up": "උණුසුම් කිරීම",
+  "Long Word Delay": "දිගු වචනවලට ප්‍රමාදය",
   "Move to parent group": "Move to parent group"
 }

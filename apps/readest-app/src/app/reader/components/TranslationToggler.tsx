@@ -4,7 +4,7 @@ import { RiTranslate } from 'react-icons/ri';
 import { useEnv } from '@/context/EnvContext';
 import { useReaderStore } from '@/store/readerStore';
 import { useTranslation } from '@/hooks/useTranslation';
-import { useBookDataStore } from '@/store/bookDataStore';
+import { useBookData } from '@/store/bookDataStore';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { saveViewSettings } from '@/helpers/settings';
 import { isTranslationAvailable } from '@/services/translators/utils';
@@ -13,11 +13,10 @@ import Button from '@/components/Button';
 const TranslationToggler = ({ bookKey }: { bookKey: string }) => {
   const _ = useTranslation();
   const { envConfig, appService } = useEnv();
-  const { getBookData } = useBookDataStore();
   const { getViewSettings, setViewSettings, setHoveredBookKey } = useReaderStore();
 
   const iconSize20 = useResponsiveSize(20);
-  const bookData = getBookData(bookKey);
+  const bookData = useBookData(bookKey);
   const viewSettings = getViewSettings(bookKey)!;
   const [translationEnabled, setTranslationEnabled] = useState(viewSettings.translationEnabled!);
   const [translationAvailable, setTranslationAvailable] = useState(

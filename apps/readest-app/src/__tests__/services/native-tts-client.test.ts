@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
 
 vi.mock('@tauri-apps/api/core', () => ({
@@ -35,6 +36,24 @@ describe('NativeTTSClient event delivery', () => {
   } satisfies PluginListener;
   afterEach(() => {
     vi.useRealTimers();
+  });
+
+  test('times out Android initialization and ignores a late success', async () => {
+    vi.useFakeTimers();
+    let reply!: (result: { success: boolean }) => void;
+    vi.mocked(invoke).mockReturnValueOnce(new Promise((resolve) => (reply = resolve)));
+    const controller = { appService: { isAndroidApp: true } } as unknown as TTSController;
+    const client = new NativeTTSClient(controller);
+    let initialized: boolean | undefined;
+    const init = client.init().then((result) => (initialized = result));
+
+    await vi.advanceTimersByTimeAsync(7_999);
+    expect(initialized).toBeUndefined();
+    await vi.advanceTimersByTimeAsync(1);
+    expect(initialized).toBe(false);
+    reply({ success: true });
+    await init;
+    expect(client.initialized).toBe(false);
   });
 
   test('waits for event registration before initialization completes', async () => {

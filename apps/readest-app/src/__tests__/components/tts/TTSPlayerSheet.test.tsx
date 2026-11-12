@@ -1,3 +1,4 @@
+import { bookDataStoreHooks } from '@/__tests__/helpers/book-data-store-mock';
 import React from 'react';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import {
@@ -67,7 +68,7 @@ vi.mock('@/store/settingsStore', () => ({
 
 const getBookData = vi.fn();
 vi.mock('@/store/bookDataStore', () => ({
-  useBookDataStore: () => ({ getBookData }),
+  ...bookDataStoreHooks(() => ({ getBookData })),
 }));
 
 const saveViewSettings = vi.fn();

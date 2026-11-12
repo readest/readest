@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect } from 'vitest';
 import { selectRecentShelfBooks } from '../../../app/library/utils/libraryUtils';
 import { Book } from '../../../types/book';

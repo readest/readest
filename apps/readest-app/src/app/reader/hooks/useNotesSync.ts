@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useSync } from '@/hooks/useSync';
 import { BookNote, FIXED_LAYOUT_FORMATS } from '@/types/book';
-import { useBookDataStore } from '@/store/bookDataStore';
+import { useBookDataStore, useBookConfig } from '@/store/bookDataStore';
 import { useReaderStore } from '@/store/readerStore';
 import { SYNC_NOTES_INTERVAL_SEC } from '@/services/constants';
 import { throttle } from '@/utils/throttle';
@@ -15,7 +15,9 @@ import { removeBookNoteOverlays } from '../utils/annotatorUtil';
 export const useNotesSync = (bookKey: string) => {
   const { user } = useAuth();
   const { syncedNotes, syncNotes, lastSyncedAtNotes, useSyncInited } = useSync(bookKey);
-  const { getConfig, setConfig, getBookData } = useBookDataStore();
+  const getConfig = useBookDataStore((s) => s.getConfig);
+  const setConfig = useBookDataStore((s) => s.setConfig);
+  const getBookData = useBookDataStore((s) => s.getBookData);
   const { getView, getViewsById } = useReaderStore();
   // The updatedAt of each note's oldest push not yet answered by the server.
   const pushedAtRef = useRef(new Map<string, number>());
@@ -25,7 +27,11 @@ export const useNotesSync = (bookKey: string) => {
   const xpointerTriedRef = useRef(new Map<string, string>());
   const anchorTriedRef = useRef(new Map<string, string>());
 
-  const config = getConfig(bookKey);
+  const config = useBookConfig(bookKey);
+  // A book's first reading position is saved after its notes load, and that
+  // write keeps the same booknotes array, so the push below re-runs once it
+  // appears. Only whether there is one: every page turn moves it.
+  const hasLocation = useBookDataStore((s) => !!s.getConfig(bookKey)?.location);
 
   // A note pulled from another copy of the book has no row under this one:
   // pushing it for an xpointer or an anchor would insert a row stamped now, and
@@ -253,9 +259,6 @@ export const useNotesSync = (bookKey: string) => {
     [syncNotes],
   );
 
-  // A book's first reading position is saved after its notes load, and that
-  // write keeps the same booknotes array, so re-run once it appears.
-  const hasLocation = !!config?.location;
   // The first push of a book goes out before the view exists.
   const hasView = !!getView(bookKey);
   useEffect(() => {

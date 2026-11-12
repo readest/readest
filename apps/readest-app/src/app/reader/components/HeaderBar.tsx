@@ -7,7 +7,7 @@ import { Insets } from '@/types/misc';
 import { useEnv } from '@/context/EnvContext';
 import { useThemeStore } from '@/store/themeStore';
 import { useReaderStore } from '@/store/readerStore';
-import { useBookDataStore } from '@/store/bookDataStore';
+import { useBookData, useBookDataStore } from '@/store/bookDataStore';
 import { useSidebarStore } from '@/store/sidebarStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useSettingsStore } from '@/store/settingsStore';
@@ -69,21 +69,24 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
   const { isDarkMode, systemUIVisible, statusBarHeight, isIPhoneDuo } = useThemeStore();
   const { isSideBarVisible, getIsSideBarVisible } = useSidebarStore();
   const { getView, getViewSettings, setHoveredBookKey } = useReaderStore();
-  const { getBookData, getConfig } = useBookDataStore();
   const viewSettings = getViewSettings(bookKey);
-  const bookData = getBookData(bookKey);
-  const bookConfig = getConfig(bookKey);
+  const bookData = useBookData(bookKey);
   // Readest Cloud's per-book stamps. Includes the PUSH stamps so this agrees
   // with the View menu's sync row, which has always counted them — otherwise
   // the row could read "Synced 2 minutes ago" while this dialog said "Never
-  // synced" for the same book.
-  const nativeLastSyncedAt =
-    Math.max(
-      bookConfig?.lastSyncedAtConfig || 0,
-      bookConfig?.lastSyncedAtNotes || 0,
-      bookConfig?.lastPushedAtConfig || 0,
-      bookConfig?.lastPushedAtNotes || 0,
-    ) || undefined;
+  // synced" for the same book. Selected as one number: the config itself
+  // changes on every progress save (updatedAt), which the header doesn't show.
+  const nativeLastSyncedAt = useBookDataStore((s) => {
+    const bookConfig = s.getConfig(bookKey);
+    return (
+      Math.max(
+        bookConfig?.lastSyncedAtConfig || 0,
+        bookConfig?.lastSyncedAtNotes || 0,
+        bookConfig?.lastPushedAtConfig || 0,
+        bookConfig?.lastPushedAtNotes || 0,
+      ) || undefined
+    );
+  });
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isMetaHashDialogOpen, setIsMetaHashDialogOpen] = useState(false);
@@ -394,4 +397,6 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
   );
 };
 
-export default HeaderBar;
+// Memoized: its props hold still while pages turn, so a turn's re-render of the
+// book cell skips the header and its buttons.
+export default React.memo(HeaderBar);

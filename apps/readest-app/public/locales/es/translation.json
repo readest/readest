@@ -2900,5 +2900,8 @@
   "Reset Counts": "Restablecer contadores",
   "Reset the counts and sync history on this device?": "¿Restablecer los contadores y el historial de sincronización en este dispositivo?",
   "Folder not available": "Carpeta no disponible",
+  "Words per Flash": "Palabras por destello",
+  "Warm-up": "Calentamiento",
+  "Long Word Delay": "Retraso en palabras largas",
   "Move to parent group": "Mover al grupo superior"
 }

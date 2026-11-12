@@ -2827,5 +2827,8 @@
   "Reset Counts": "Tellers resetten",
   "Reset the counts and sync history on this device?": "Tellers en synchronisatiegeschiedenis op dit apparaat resetten?",
   "Folder not available": "Map niet beschikbaar",
+  "Words per Flash": "Woorden per flits",
+  "Warm-up": "Opwarmen",
+  "Long Word Delay": "Vertraging bij lange woorden",
   "Move to parent group": "Naar bovenliggende groep verplaatsen"
 }

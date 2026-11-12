@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { afterEach, describe, it, expect, vi } from 'vitest';
 import { cleanup, renderHook, waitFor } from '@testing-library/react';
 import {
@@ -9,6 +10,8 @@ import {
   setSourceVisibility,
   useTextTranslation,
 } from '@/app/reader/hooks/useTextTranslation';
+import { sanitizeTranslatedMarkup } from '@/app/reader/utils/translationMarkup';
+import { getWordRangeAt } from '@/utils/sel';
 import { walkTextNodes } from '@/utils/walk';
 
 const translate = vi.hoisted(() => vi.fn(async (texts: string[]) => texts.map(() => '我读汉字。')));
@@ -280,6 +283,21 @@ describe('createTranslationTargetNode', () => {
 
     expect(wrapper.textContent).toBe('那只敏捷的狐狸');
     expect(wrapper.querySelector('b')?.textContent).toBe('敏捷');
+  });
+
+  it('keeps a word whose tags the sanitizer unwrapped in one text node', () => {
+    const content = sanitizeTranslatedMarkup('Captain Ne<div>mo</div> smiled.', new Set());
+    const wrapper = createTranslationTargetNode({
+      content: content!,
+      lang: 'en',
+      targetBlockClassName: 'translation-target-block',
+      hidden: false,
+      widthLineBreak: false,
+    });
+
+    // A long-press or double-tap on "Ne" selects the word under it.
+    const text = wrapper.firstChild!;
+    expect(getWordRangeAt(text, text.textContent!.indexOf('Ne'))?.toString()).toBe('Nemo');
   });
 
   it('marks the wrapper hidden when hidden is true', () => {

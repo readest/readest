@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { recordLibraryPass, recordLibraryPassFailure } from '@/services/sync/file/runLibrarySync';
 import type { SyncLibraryResult } from '@/services/sync/file/engine';

@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, test } from 'vitest';
 import {
   SETTINGS_DICTIONARY_FIELDS,

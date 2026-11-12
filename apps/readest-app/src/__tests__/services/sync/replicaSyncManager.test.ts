@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { HlcGenerator, hlcPack } from '@/libs/crdt';
 import { SyncError } from '@/libs/errors';

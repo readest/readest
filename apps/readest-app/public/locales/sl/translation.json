@@ -2973,5 +2973,8 @@
   "Reset Counts": "Ponastavi števce",
   "Reset the counts and sync history on this device?": "Želite ponastaviti števce in zgodovino sinhronizacije v tej napravi?",
   "Folder not available": "Mapa ni na voljo",
+  "Words per Flash": "Besede na prikaz",
+  "Warm-up": "Ogrevanje",
+  "Long Word Delay": "Zamik pri dolgih besedah",
   "Move to parent group": "Move to parent group"
 }

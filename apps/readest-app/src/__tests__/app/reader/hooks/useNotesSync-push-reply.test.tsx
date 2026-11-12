@@ -1,3 +1,5 @@
+// @vitest-environment happy-dom
+import { bookDataStoreHooks } from '@/__tests__/helpers/book-data-store-mock';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { cleanup, renderHook, waitFor } from '@testing-library/react';
 import type { BookNote } from '@/types/book';
@@ -52,11 +54,13 @@ vi.mock('@/hooks/useSync', () => ({
 }));
 
 vi.mock('@/store/bookDataStore', () => ({
-  useBookDataStore: h.makeStore({
-    getConfig: () => h.state.config,
-    setConfig: h.setConfigMock,
-    getBookData: () => ({ book: { hash: 'h1', format: 'EPUB', metaHash: 'm1' } }),
-  }),
+  ...bookDataStoreHooks(
+    h.makeStore({
+      getConfig: () => h.state.config,
+      setConfig: h.setConfigMock,
+      getBookData: () => ({ book: { hash: 'h1', format: 'EPUB', metaHash: 'm1' } }),
+    }),
+  ),
 }));
 
 // Push on every change, so two pushes of one drawing can be in flight at once.

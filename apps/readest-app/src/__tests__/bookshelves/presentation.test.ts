@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { Book } from '@/types/book';
 import { createBookshelf, defaultBookshelves } from '@/services/bookshelves/definitions';

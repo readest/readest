@@ -76,7 +76,7 @@ const ExportMarkdownDialog: React.FC<ExportMarkdownDialogProps> = ({
   const _ = useTranslation();
   const { envConfig, appService } = useEnv();
   const { settings } = useSettingsStore();
-  const { getBookData } = useBookDataStore();
+  const getBookData = useBookDataStore((s) => s.getBookData);
   const { getViewSettings } = useReaderStore();
   const viewSettings = getViewSettings(bookKey);
 

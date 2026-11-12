@@ -2900,5 +2900,8 @@
   "Reset Counts": "Réinitialiser les compteurs",
   "Reset the counts and sync history on this device?": "Réinitialiser les compteurs et l'historique de synchronisation sur cet appareil ?",
   "Folder not available": "Dossier indisponible",
+  "Words per Flash": "Mots par affichage",
+  "Warm-up": "Échauffement",
+  "Long Word Delay": "Délai pour les mots longs",
   "Move to parent group": "Déplacer vers le groupe parent"
 }

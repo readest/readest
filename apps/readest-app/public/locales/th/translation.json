@@ -2754,5 +2754,8 @@
   "Reset Counts": "รีเซ็ตจำนวน",
   "Reset the counts and sync history on this device?": "รีเซ็ตจำนวนและประวัติการซิงค์บนอุปกรณ์นี้หรือไม่",
   "Folder not available": "โฟลเดอร์ไม่พร้อมใช้งาน",
+  "Words per Flash": "จำนวนคำต่อการแสดง",
+  "Warm-up": "วอร์มอัพ",
+  "Long Word Delay": "หน่วงคำยาว",
   "Move to parent group": "ย้ายไปยังกลุ่มหลัก"
 }

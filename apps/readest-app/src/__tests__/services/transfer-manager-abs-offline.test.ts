@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
 import { useTransferStore } from '@/store/transferStore';
 import { useSettingsStore } from '@/store/settingsStore';

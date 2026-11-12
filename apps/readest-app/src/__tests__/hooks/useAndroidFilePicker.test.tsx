@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { cleanup, renderHook, waitFor } from '@testing-library/react';
 import type { AppService } from '@/types/system';

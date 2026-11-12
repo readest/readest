@@ -2827,5 +2827,8 @@
   "Reset Counts": "गिनती रीसेट करें",
   "Reset the counts and sync history on this device?": "इस डिवाइस की गिनती और सिंक इतिहास रीसेट करें?",
   "Folder not available": "फ़ोल्डर उपलब्ध नहीं है",
+  "Words per Flash": "प्रति फ़्लैश शब्द",
+  "Warm-up": "वार्म-अप",
+  "Long Word Delay": "लंबे शब्दों पर विलंब",
   "Move to parent group": "ऊपरी समूह में ले जाएँ"
 }

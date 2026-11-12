@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { describe, expect, it, vi } from 'vitest';
 import handler, { isValidBookOrbitEndpoint } from '@/pages/api/bookorbit';
 import { isLanAddress } from '@/utils/network';

@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { describe, expect, it } from 'vitest';
 import { render } from '@testing-library/react';
 import StatusBadge from '@/app/library/components/StatusBadge';

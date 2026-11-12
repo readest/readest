@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, test, expect, vi, beforeEach } from 'vitest';
 
 // A fake cloudflare:sockets TLS socket: the test queues what the server

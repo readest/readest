@@ -2827,5 +2827,8 @@
   "Reset Counts": "Επαναφορά μετρητών",
   "Reset the counts and sync history on this device?": "Επαναφορά των μετρητών και του ιστορικού συγχρονισμού σε αυτήν τη συσκευή;",
   "Folder not available": "Ο φάκελος δεν είναι διαθέσιμος",
+  "Words per Flash": "Λέξεις ανά εμφάνιση",
+  "Warm-up": "Προθέρμανση",
+  "Long Word Delay": "Καθυστέρηση μεγάλων λέξεων",
   "Move to parent group": "Μετακίνηση στην ανώτερη ομάδα"
 }

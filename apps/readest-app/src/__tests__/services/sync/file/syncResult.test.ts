@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { expect, test } from 'vitest';
 import { formatSyncFailure } from '@/services/sync/file/syncResult';
 import type { SyncLibraryResult } from '@/services/sync/file/engine';
