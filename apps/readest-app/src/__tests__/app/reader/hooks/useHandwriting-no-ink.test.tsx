@@ -49,9 +49,13 @@ vi.mock('@/store/bookDataStore', () => ({
     saveConfig: vi.fn(),
   })),
 }));
-vi.mock('@/store/readerProgressStore', () => ({
-  useBookProgress: () => ({ location: 'epubcfi(/6/4!/4/2)', section: { current: 1 } }),
-}));
+vi.mock('@/store/readerProgressStore', () => {
+  const progress = { location: 'epubcfi(/6/4!/4/2)', section: { current: 1 } };
+  return {
+    useBookProgressValue: (key: string | null, select: (p: typeof progress) => unknown) =>
+      key ? select(progress) : undefined,
+  };
+});
 vi.mock('@/context/EnvContext', () => ({ useEnv: () => ({ envConfig: {} }) }));
 const createInkAnchoring = vi.hoisted(() => vi.fn(() => ({ place: () => null })));
 vi.mock('@/app/reader/utils/inkAnchoring', () => ({ createInkAnchoring }));

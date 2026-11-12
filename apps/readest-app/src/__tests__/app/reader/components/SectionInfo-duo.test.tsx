@@ -39,7 +39,6 @@ const bandStyle = (isIPhoneDuo: boolean) => {
   const { container } = render(
     <SectionInfo
       bookKey='book-1'
-      section='Chapter 1'
       showDoubleBorder={false}
       isScrolled={false}
       isVertical={false}
