@@ -249,6 +249,37 @@ describe('bookshelf dragging', () => {
     },
   );
 
+  it('keeps the drag label on screen when dragging from the column at the screen edge', async () => {
+    const { innerWidth, innerHeight } = window;
+    await page.viewport(360, 800);
+    try {
+      mount();
+      await new Promise<void>((resolve) =>
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+      );
+      for (const name of ['Alpha', 'Gamma']) {
+        const source = card(name);
+        const rect = source.getBoundingClientRect();
+        const point = { clientX: rect.x + rect.width / 2, clientY: rect.y + 30, button: 0 };
+        fireEvent.pointerDown(source, { ...point, pointerType: 'mouse', pointerId: 1 });
+        fireEvent.mouseDown(source, point);
+        fireEvent.mouseMove(document, { ...point, clientX: point.clientX + 8 });
+        await waitFor(() => expect(document.querySelector('.bookshelf-drag-action')).toBeTruthy());
+        await new Promise<void>((resolve) =>
+          requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+        );
+        const label = document.querySelector('.bookshelf-drag-action')!.getBoundingClientRect();
+        expect(label.left).toBeGreaterThanOrEqual(0);
+        expect(label.right).toBeLessThanOrEqual(360);
+        fireEvent.keyDown(document, { key: 'Escape', code: 'Escape' });
+        fireEvent.mouseUp(document, point);
+        await waitFor(() => expect(document.querySelector('[data-dragging=true]')).toBeNull());
+      }
+    } finally {
+      await page.viewport(innerWidth, innerHeight);
+    }
+  });
+
   it('does not open a book on release after a small drag is cancelled with Escape', async () => {
     mount();
     await new Promise<void>((resolve) =>

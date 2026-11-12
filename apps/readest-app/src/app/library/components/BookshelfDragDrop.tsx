@@ -84,6 +84,7 @@ export const BookshelfDragDrop = ({
   const pointer = useRef<{ x: number; y: number } | null>(null);
   const root = useRef<HTMLDivElement>(null);
   const overlay = useRef<HTMLDivElement>(null);
+  const label = useRef<HTMLParagraphElement>(null);
   const skipReturnAnimation = useRef(false);
   const fadingOverlays = useRef(new Set<{ node: HTMLElement; animation: Animation }>());
   const fadeIntoDestination = () => {
@@ -157,6 +158,27 @@ export const BookshelfDragDrop = ({
     });
     return () => animations.forEach((animation) => animation.cancel());
   }, [sections, disabled]);
+  // The label is wider than a phone-sized cover, so it can spill past the
+  // screen edge while the preview follows the pointer; shift it back inside.
+  const dragging = !!active;
+  useEffect(() => {
+    if (!dragging) return;
+    let shift = 0;
+    let frame = requestAnimationFrame(function keepLabelOnScreen() {
+      const node = label.current;
+      if (node) {
+        const rect = node.getBoundingClientRect();
+        const left = rect.left - shift;
+        const right = rect.right - shift;
+        const edge = document.documentElement.clientWidth - 8;
+        const next = left < 8 ? 8 - left : right > edge ? edge - right : 0;
+        if (next !== shift) node.style.transform = next ? `translateX(${next}px)` : '';
+        shift = next;
+      }
+      frame = requestAnimationFrame(keepLabelOnScreen);
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [dragging]);
   const items = useMemo(
     () =>
       new Map(
@@ -428,6 +450,7 @@ export const BookshelfDragDrop = ({
               )}
             </div>
             <p
+              ref={label}
               role='status'
               className='bookshelf-drag-action eink-bordered bg-base-100 border-base-content/15 absolute start-1/2 top-full mt-2 flex w-max max-w-60 -translate-x-1/2 items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium rtl:translate-x-1/2'
             >

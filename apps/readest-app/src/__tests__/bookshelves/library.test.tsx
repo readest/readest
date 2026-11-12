@@ -94,8 +94,10 @@ vi.mock('@/app/library/components/BookshelfItem', () => ({
     handleLibraryNavigation,
     showSeriesIndex,
     showTimeRemaining,
+    dragEnabled,
   }: {
     item: Book | BooksGroup;
+    dragEnabled?: boolean;
     toggleSelection: (id: string) => void;
     itemSelected: boolean;
     coverFit: string;
@@ -124,6 +126,7 @@ vi.mock('@/app/library/components/BookshelfItem', () => ({
         data-show-page-count={showPageCount}
         data-show-series-index={showSeriesIndex}
         data-show-time-remaining={showTimeRemaining}
+        data-drag-enabled={dragEnabled}
         aria-pressed={itemSelected}
         onClick={onClick}
       >
@@ -540,6 +543,107 @@ describe('library bookshelf integration', () => {
         readBookshelves(useSettingsStore.getState().settings).find((s) => s.id === 'default')
           ?.manualOrder?.['group:A/B'],
       ).toEqual(['b:1', 'b:0']);
+    } finally {
+      useLibraryStore.setState({ updateBooks: originalUpdate });
+      useSettingsStore.setState({ saveSettings: originalSave });
+      localStorage.clear();
+    }
+  });
+
+  it('enables dragging only on shelves sorted in Custom order', async () => {
+    localStorage.clear();
+    mocks.appService = {};
+    const originalSave = useSettingsStore.getState().saveSettings;
+    const dragStates = (id: string) =>
+      within(screen.getByTestId(id))
+        .getAllByRole('button')
+        .map((card) => card.getAttribute('data-drag-enabled'));
+    configure(defaultBookshelves({ ...DEFAULT_SYSTEM_SETTINGS, libraryRecentShelfEnabled: true }));
+    useSettingsStore.setState({ saveSettings: vi.fn(async () => {}) });
+    try {
+      const view = render(<Bookshelf {...props} isSelectMode={false} />);
+      expect(new Set(dragStates('default'))).toEqual(new Set(['false']));
+      expect(new Set(dragStates('recent'))).toEqual(new Set(['false']));
+      view.unmount();
+      const base = readBookshelves(useSettingsStore.getState().settings);
+      await saveBookshelfDraft(
+        mocks.env as Parameters<typeof saveBookshelfDraft>[0],
+        base,
+        base.map((s) =>
+          s.id === 'default'
+            ? {
+                ...s,
+                useGlobalSort: false,
+                sort: { by: 'custom', ascending: true, thenBy: 'none', thenAscending: true },
+              }
+            : s,
+        ),
+      );
+      render(<Bookshelf {...props} isSelectMode={false} />);
+      expect(new Set(dragStates('default'))).toEqual(new Set(['true']));
+      expect(new Set(dragStates('recent'))).toEqual(new Set(['false']));
+    } finally {
+      useSettingsStore.setState({ saveSettings: originalSave });
+      localStorage.clear();
+    }
+  });
+
+  it.each([
+    'a saved',
+    'no saved',
+  ] as const)('places a book moved out of a group right after that group with %s parent order', async (saved) => {
+    localStorage.clear();
+    mocks.appService = {};
+    const groupKey = `g:${md5Fingerprint('Fiction')}`;
+    const library = books
+      .slice(0, 6)
+      .map((book, index) =>
+        index < 2 ? { ...book, groupName: 'Fiction', groupId: md5Fingerprint('Fiction') } : book,
+      );
+    useLibraryStore.getState().setLibrary(library);
+    useLibraryStore.getState().refreshGroups();
+    mocks.params = new URLSearchParams({ group: md5Fingerprint('Fiction'), shelf: 'default' });
+    const originalUpdate = useLibraryStore.getState().updateBooks;
+    const originalSave = useSettingsStore.getState().saveSettings;
+    useLibraryStore.setState({ updateBooks: vi.fn(async () => {}) });
+    useSettingsStore.setState({
+      settings: {
+        ...DEFAULT_SYSTEM_SETTINGS,
+        libraryGroupBy: 'group',
+        libraryRecentShelfEnabled: false,
+      },
+      saveSettings: vi.fn(async () => {}),
+    });
+    try {
+      const base = readBookshelves(useSettingsStore.getState().settings);
+      await saveBookshelfDraft(
+        mocks.env as Parameters<typeof saveBookshelfDraft>[0],
+        base,
+        base.map((s) =>
+          s.id === 'default'
+            ? {
+                ...s,
+                useGlobalSort: false,
+                sort: { by: 'custom', ascending: true, thenBy: 'none', thenAscending: true },
+                manualOrder:
+                  saved === 'a saved' ? { 'group:': ['b:5', groupKey, 'b:4', 'b:3', 'b:2'] } : {},
+              }
+            : s,
+        ),
+      );
+      render(<Bookshelf {...props} libraryBooks={library} isSelectMode={false} />);
+      const shelf = readBookshelves(useSettingsStore.getState().settings).find(
+        (s) => s.id === 'default',
+      )!;
+      expect(shelf.sort.by).toBe('custom');
+      await act(async () => {
+        await mocks.drop!({ source: library[0]!, shelf, mode: 'parent' });
+      });
+      const order = readBookshelves(useSettingsStore.getState().settings).find(
+        (s) => s.id === 'default',
+      )?.manualOrder?.['group:'];
+      expect(order?.indexOf('b:0')).toBe((order?.indexOf(groupKey) ?? -2) + 1);
+      if (saved === 'a saved') expect(order).toEqual(['b:5', groupKey, 'b:0', 'b:4', 'b:3', 'b:2']);
     } finally {
       useLibraryStore.setState({ updateBooks: originalUpdate });
       useSettingsStore.setState({ saveSettings: originalSave });

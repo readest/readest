@@ -1032,13 +1032,13 @@ const Bookshelf: React.FC<BookshelfProps> = ({
                   section.items,
                   renamed[scope],
                 ).filter((id) => id !== bookshelfItemId(source) && id !== moved.itemId);
-              if (renamed?.[parentScope])
-                manualOrder[parentScope] = [
-                  ...mergeBookshelfVisibleOrder(parentItems, renamed[parentScope]).filter(
-                    (id) => id !== moved.itemId,
-                  ),
-                  moved.itemId,
-                ];
+              // The moved item lands right after the group it left.
+              const order = mergeBookshelfVisibleOrder(parentItems, renamed?.[parentScope]).filter(
+                (id) => id !== moved.itemId,
+              );
+              const group = order.indexOf(`g:${md5Fingerprint(manualGroupName)}`);
+              order.splice(group < 0 ? order.length : group + 1, 0, moved.itemId);
+              manualOrder[parentScope] = order;
             }
             return {
               ...current,
@@ -1148,9 +1148,13 @@ const Bookshelf: React.FC<BookshelfProps> = ({
 
   const renderBookshelfItem = useCallback(
     (item: Book | BooksGroup, mode: LibraryViewModeType, shelf: BookshelfDefinition) => (
-      <BookshelfDragItem item={item} shelf={shelf} disabled={dragDisabled}>
+      <BookshelfDragItem
+        item={item}
+        shelf={shelf}
+        disabled={dragDisabled || shelf.sort.by !== 'custom'}
+      >
         <BookshelfItem
-          dragEnabled={!dragDisabled}
+          dragEnabled={!dragDisabled && shelf.sort.by === 'custom'}
           item={item}
           mode={mode}
           coverFit={shelf.coverFit || 'crop'}
