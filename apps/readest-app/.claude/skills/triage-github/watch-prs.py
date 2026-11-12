@@ -32,7 +32,10 @@ def gh(path):
     # and a pass makes several calls, so one dropped call failed the whole check. Retry all
     # but a 4xx.
     for attempt in range(4):
-        out = subprocess.run(["gh", "api", path], capture_output=True, text=True, timeout=60)
+        try:
+            out = subprocess.run(["gh", "api", path], capture_output=True, text=True, timeout=60)
+        except subprocess.TimeoutExpired:
+            out = subprocess.CompletedProcess(["gh", "api", path], 124, "", "timed out after 60 s")
         if out.returncode == 0 or "HTTP 4" in out.stderr:
             break
         time.sleep(2 + 3 * attempt)
