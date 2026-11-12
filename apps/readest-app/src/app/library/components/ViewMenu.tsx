@@ -135,7 +135,9 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
   };
 
   const handleSetSortBy = async (value: LibrarySortByType) => {
-    await saveSysSettings(envConfig, 'librarySortBy', value);
+    const custom = value === LibrarySortByType.Custom;
+    await saveSysSettings(envConfig, 'librarySortCustom', custom);
+    if (!custom) await saveSysSettings(envConfig, 'librarySortBy', value);
     // Any explicit primary pick locks in the choice and disables the auto
     // smart-default so future groupBy changes don't override the user.
     await saveSysSettings(envConfig, 'librarySortByAuto', false);

@@ -546,6 +546,12 @@ export interface SystemSettings {
   bookshelves?: BookshelfState;
   libraryViewMode: LibraryViewModeType;
   librarySortBy: LibrarySortByType;
+  /**
+   * Custom order picked in the View menu. Kept out of `librarySortBy`, which
+   * stays a metadata sort: releases before custom order give every shelf with
+   * an unknown sort no books, so a downgrade would open on an empty library.
+   */
+  librarySortCustom?: boolean;
   librarySortAscending: boolean;
   /**
    * Whether the primary sort uses a smart default derived from `libraryGroupBy`.

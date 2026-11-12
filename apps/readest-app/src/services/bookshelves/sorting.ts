@@ -21,11 +21,13 @@ export function getGlobalBookshelfSort(
   return {
     by: ensureLibrarySortByType(
       params?.get('sort'),
-      resolveEffectivePrimarySort(
-        settings.librarySortBy || 'updated',
-        groupBy,
-        settings.librarySortByAuto ?? true,
-      ),
+      settings.librarySortCustom
+        ? 'custom'
+        : resolveEffectivePrimarySort(
+            settings.librarySortBy || 'updated',
+            groupBy,
+            settings.librarySortByAuto ?? true,
+          ),
     ),
     ascending:
       order === 'asc' || order === 'desc'

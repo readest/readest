@@ -182,6 +182,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
     [
       settings.libraryGroupBy,
       settings.librarySortBy,
+      settings.librarySortCustom,
       settings.librarySortByAuto,
       settings.librarySortAscending,
       settings.libraryThenSortBy,
