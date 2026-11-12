@@ -1364,7 +1364,7 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
           <div className='mt-3 flex flex-wrap items-center justify-evenly gap-x-8 gap-y-4 text-xs md:justify-center'>
             {/* Punctuation pause */}
             <label className='flex cursor-pointer items-center gap-1.5 font-medium opacity-80'>
-              <span className='mr-0.5 font-medium opacity-50'>{_('Punctuation Delay')}</span>
+              <span className='me-0.5 font-medium opacity-50'>{_('Punctuation Delay')}</span>
               <select
                 className='cursor-pointer rounded-sm border border-gray-500/30 bg-gray-500/20 px-1.5 py-1 text-xs font-medium transition-colors hover:border-gray-500/40 hover:bg-gray-500/30'
                 style={{ color: 'inherit' }}
@@ -1381,7 +1381,7 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
 
             {/* Pre-start countdown delay */}
             <label className='flex cursor-pointer items-center gap-1.5 font-medium opacity-80'>
-              <span className='mr-0.5 font-medium opacity-50'>{_('Start Delay')}</span>
+              <span className='me-0.5 font-medium opacity-50'>{_('Start Delay')}</span>
               <select
                 data-testid='rsvp-start-delay-select'
                 className='cursor-pointer rounded-sm border border-gray-500/30 bg-gray-500/20 px-1.5 py-1 text-xs font-medium transition-colors hover:border-gray-500/40 hover:bg-gray-500/30'
@@ -1400,7 +1400,7 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
             {/* Words per flash — CJK text is always shown one word at a time */}
             {!state.hasCJK && (
               <label className='flex cursor-pointer items-center gap-1.5 font-medium opacity-80'>
-                <span className='mr-0.5 font-medium opacity-50'>{_('Words per Flash')}</span>
+                <span className='me-0.5 font-medium opacity-50'>{_('Words per Flash')}</span>
                 <select
                   data-testid='rsvp-chunk-size-select'
                   className='cursor-pointer rounded-sm border border-gray-500/30 bg-gray-500/20 px-1.5 py-1 text-xs font-medium transition-colors hover:border-gray-500/40 hover:bg-gray-500/30'
@@ -1420,7 +1420,7 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
 
             {/* Font size */}
             <div className='flex items-center gap-0.5'>
-              <span className='mr-0.5 font-medium opacity-50'>{_('Font')}</span>
+              <span className='me-0.5 font-medium opacity-50'>{_('Font')}</span>
               <button
                 aria-label={_('Decrease font size')}
                 className='flex h-6 w-6 cursor-pointer items-center justify-center rounded-full border-none bg-transparent transition-colors hover:bg-gray-500/20 active:scale-95'
@@ -1497,7 +1497,7 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
 
             {/* ORP color */}
             <div className='flex items-center gap-1.5'>
-              <span className='mr-0.5 font-medium opacity-50'>{_('Focus')}</span>
+              <span className='me-0.5 font-medium opacity-50'>{_('Focus')}</span>
               {ORP_COLOR_OPTIONS.map((color, idx) => (
                 <button
                   key={idx}

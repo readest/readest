@@ -155,6 +155,17 @@ describe('RSVPController chunking', () => {
     expect(makeController('a b c', 'book2').currentState.chunkSize).toBe(4);
   });
 
+  test('warm-up and long-word delay persist across books', () => {
+    const c = makeController('a b c', 'book1');
+    expect(c.currentState.warmup).toBe(false);
+    expect(c.currentState.longWordDelay).toBe(false);
+    c.setWarmup(true);
+    c.setLongWordDelay(true);
+    const other = makeController('a b c', 'book2').currentState;
+    expect(other.warmup).toBe(true);
+    expect(other.longWordDelay).toBe(true);
+  });
+
   test('a chunk is shown for the sum of its words and playback steps by chunk', () => {
     const c = makeController('aa bb cc dd ee ff');
     c.setStartDelay(0);
