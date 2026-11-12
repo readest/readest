@@ -21,7 +21,7 @@ afterEach(() => {
   document.documentElement.removeAttribute('data-eink');
 });
 
-const openWindow = async (width: number) => {
+const openWindow = async (width: number, bookTitle?: string) => {
   await page.viewport(width, 800);
   useVocabularyStore.setState({
     entries: {
@@ -31,7 +31,7 @@ const openWindow = async (width: number) => {
         key: 'spice',
         word: 'spice',
         state: 'learning',
-        occurrences: [],
+        occurrences: bookTitle ? [{ bookTitle, sentence: 'Add some spice.', at: 2 }] : [],
         createdAt: 1,
         modifiedAt: 1,
         deletedAt: null,
@@ -70,6 +70,14 @@ describe('vocabulary window layout', () => {
     for (const name of ['Back', 'Look up', 'Delete']) {
       expect(size(screen.getByRole('button', { name })), name).toBeGreaterThanOrEqual(44);
     }
+  });
+
+  it('keeps the word list visible when a source book has a long unbroken title', async () => {
+    await openWindow(800, 'Academialacabrada'.repeat(15));
+    const list = screen.getByRole('list', { name: 'Words' });
+    const width = list.getBoundingClientRect().width;
+    fireEvent.click(screen.getByRole('button', { name: 'spice' }));
+    expect(list.getBoundingClientRect().width).toBeCloseTo(width, 0);
   });
 
   for (const eink of [false, true]) {

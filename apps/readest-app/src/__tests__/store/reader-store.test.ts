@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, test, expect, vi, beforeEach } from 'vitest';
 import type { FoliateView } from '@/types/view';
 import type { Insets } from '@/types/misc';
@@ -353,6 +354,30 @@ describe('readerStore', () => {
         bottom: 0,
         left: 0,
       });
+    });
+  });
+
+  describe('setting a value a view state already holds', () => {
+    // BookmarkToggler sets the ribbon after every page turn; each notification re-rendered every
+    // component subscribed to the whole store, the reader page included
+    test('notifies no subscriber', () => {
+      seedViewState('book-1', { gridInsets: { top: 1, right: 2, bottom: 3, left: 4 } });
+      const store = useReaderStore.getState();
+      const notified = vi.fn();
+      const unsubscribe = useReaderStore.subscribe(notified);
+      store.setBookmarkRibbonVisibility('book-1', false);
+      store.setTTSEnabled('book-1', false);
+      store.setDrawingEnabled('book-1', false);
+      store.setAutoScrollEnabled('book-1', false);
+      store.setIsLoading('book-1', false);
+      store.setIsSyncing('book-1', false);
+      store.setViewInited('book-1', false);
+      store.setPreviewMode('book-1', false);
+      store.setGridInsets('book-1', { top: 1, right: 2, bottom: 3, left: 4 });
+      expect(notified).not.toHaveBeenCalled();
+      store.setBookmarkRibbonVisibility('book-1', true);
+      expect(notified).toHaveBeenCalledTimes(1);
+      unsubscribe();
     });
   });
 

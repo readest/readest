@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect } from 'vitest';
 import { BookProgress } from '@/types/book';
 import { getLocalProgressPreview, getProgressPercentage } from '@/app/reader/hooks/kosyncPreview';

@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { describe, expect, test, vi } from 'vitest';
 import type { BookNote } from '@/types/book';
 import { md5, partialMD5Ranges } from '@/utils/md5';

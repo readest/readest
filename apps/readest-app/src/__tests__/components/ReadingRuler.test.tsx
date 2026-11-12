@@ -44,6 +44,7 @@ vi.mock('@/store/readerStore', () => {
   const store = { getProgress, getView };
   return { useReaderStore: () => store };
 });
+vi.mock('@/store/readerProgressStore', () => ({ useBookProgress: () => mockProgress }));
 
 // Evenly spaced single-column text lines in iframe-content coordinates.
 const makeLineRects = (count: number, pitch: number, height: number): RulerTestRect[] =>

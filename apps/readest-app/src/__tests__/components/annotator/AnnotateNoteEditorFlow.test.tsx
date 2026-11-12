@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 /**
  * #5987 / #5957 — "Annotate" used to highlight the selection and then hand the
  * note off to the annotations sidebar, which lists notes in reading order and

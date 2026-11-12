@@ -1,3 +1,4 @@
+import { bookDataStoreHooks } from '@/__tests__/helpers/book-data-store-mock';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { cleanup, renderHook } from '@testing-library/react';
 
@@ -29,12 +30,12 @@ const stores = vi.hoisted(() => ({
 }));
 
 vi.mock('@/store/bookDataStore', () => ({
-  useBookDataStore: () => ({
+  ...bookDataStoreHooks(() => ({
     getConfig: () => ({ booknotes: stores.booknotes }),
     getBookData: () => ({ isFixedLayout: stores.isFixedLayout }),
     saveConfig: stores.saveConfig,
     updateBooknotes: stores.updateBooknotes,
-  }),
+  })),
 }));
 vi.mock('@/store/readerStore', () => ({
   useReaderStore: () => ({

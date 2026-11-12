@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 
 import { formatProgressPercent, getChapterTickFractions } from '@/utils/progress';

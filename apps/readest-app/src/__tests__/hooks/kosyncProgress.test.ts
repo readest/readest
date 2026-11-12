@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect } from 'vitest';
 import { isXPointerProgress, getRemoteFraction } from '@/app/reader/hooks/kosyncProgress';
 

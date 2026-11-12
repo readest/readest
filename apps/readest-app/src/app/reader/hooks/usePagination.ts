@@ -286,7 +286,7 @@ export const usePagination = (
   containerRef: React.RefObject<HTMLDivElement | null>,
 ) => {
   const { appService } = useEnv();
-  const { getBookData } = useBookDataStore();
+  const getBookData = useBookDataStore((s) => s.getBookData);
   const { getViewSettings, getViewState } = useReaderStore();
   const { hoveredBookKey, setHoveredBookKey } = useReaderStore();
   const {

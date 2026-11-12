@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 
 // Both wasm-bindgen glues default to `new URL('<name>_bg.wasm', import.meta.url)`,

@@ -2,7 +2,7 @@ import clsx from 'clsx';
 import { useCallback, useEffect, useState } from 'react';
 
 import { useSettingsStore } from '@/store/settingsStore';
-import { useBookDataStore } from '@/store/bookDataStore';
+import { useBookData, useBookConfig } from '@/store/bookDataStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useSidebarStore } from '@/store/sidebarStore';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -36,7 +36,6 @@ const SideBar = ({}) => {
   const { isSearchBarVisible, setSearchBarVisible } = useSidebarStore();
   const searchNavState = sideBarBookKey ? getSearchNavState(sideBarBookKey) : null;
   const { searchResults = null } = searchNavState || {};
-  const { getBookData, getConfig } = useBookDataStore();
   const { getView, getViewSettings } = useReaderStore();
   const isMobile = window.innerWidth < 640;
   const [isFullHeightInMobile, setIsFullHeightInMobile] = useState(isMobile);
@@ -172,10 +171,11 @@ const SideBar = ({}) => {
     getView(sideBarBookKey)?.goTo(cfi);
   };
 
+  const bookData = useBookData(sideBarBookKey);
+  const bookConfig = useBookConfig(sideBarBookKey);
   if (!sideBarBookKey) return null;
 
   const viewSettings = getViewSettings(sideBarBookKey);
-  const bookData = getBookData(sideBarBookKey);
   if (!bookData || !bookData.book || !bookData.bookDoc) {
     return null;
   }
@@ -183,7 +183,7 @@ const SideBar = ({}) => {
   const languageDir = getBookDirFromLanguage(bookDoc.metadata.language);
   // On the annotations tab the header search icon drives the annotation
   // search in the toolbar instead of the in-book text search.
-  const isAnnotationsTab = getConfig(sideBarBookKey)?.viewSettings?.sideBarTab === 'annotations';
+  const isAnnotationsTab = bookConfig?.viewSettings?.sideBarTab === 'annotations';
 
   return isSideBarVisible ? (
     <>

@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { afterEach, beforeEach, describe, expect, test } from 'vitest';
 import { useTTSDownloadStore, TTSDownloadItem } from '@/store/ttsDownloadStore';
 import type { DownloadChapter } from '@/services/tts/downloadChapters';

@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import {
   BUILTIN_COVER_SEARCH_ENGINES,

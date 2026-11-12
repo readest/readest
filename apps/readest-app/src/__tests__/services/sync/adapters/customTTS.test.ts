@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, test } from 'vitest';
 import { CUSTOM_TTS_KIND, customTTSAdapter } from '@/services/sync/adapters/customTTS';
 import { KIND_ALLOWLIST } from '@/libs/replicaSchemas';

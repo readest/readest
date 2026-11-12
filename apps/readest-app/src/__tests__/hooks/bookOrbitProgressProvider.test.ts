@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { bookOrbitProgressProvider } from '@/app/reader/hooks/bookOrbitProgressProvider';
 import { DEFAULT_SYSTEM_SETTINGS } from '@/services/constants';

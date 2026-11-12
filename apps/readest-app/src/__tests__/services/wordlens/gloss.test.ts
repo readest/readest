@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect } from 'vitest';
 import { cleanGloss, baseFormCandidates, glossesShareMeaning } from '@/services/wordlens/gloss';
 

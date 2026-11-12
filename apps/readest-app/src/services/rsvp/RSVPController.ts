@@ -1,13 +1,21 @@
 import { FoliateView } from '@/types/view';
 import { RsvpWord, RsvpState, RsvpPosition, RsvpStopPosition, RsvpStartChoice } from './types';
-import { containsCJK, isCJKPunctuation, splitTextIntoWords, getHyphenParts } from './utils';
+import {
+  containsCJK,
+  isCJKPunctuation,
+  splitTextIntoWords,
+  getHyphenParts,
+  CHUNK_SIZE_OPTIONS,
+  getChunkEnd,
+  getPrevChunkStart,
+} from './utils';
 import { compare as compareCFI } from 'foliate-js/epubcfi.js';
 import { XCFI } from '@/utils/xcfi';
 import { isRangeLike } from '@/utils/range';
 
 const DEFAULT_WPM = 300;
 const MIN_WPM = 100;
-const MAX_WPM = 1000;
+const MAX_WPM = 2000;
 const WPM_STEP = 50;
 const DEFAULT_PUNCTUATION_PAUSE_MS = 100;
 const PUNCTUATION_PAUSE_OPTIONS = [25, 50, 75, 100, 125, 150, 175, 200];
@@ -35,6 +43,14 @@ const POSITION_KEY_PREFIX = 'readest_rsvp_pos_';
 const SPLIT_HYPHENS_KEY = 'readest_rsvp_split_hyphens';
 const CJK_CHAR_MODE_KEY = 'readest_rsvp_cjk_char_mode';
 const START_DELAY_KEY = 'readest_rsvp_start_delay';
+const CHUNK_SIZE_KEY = 'readest_rsvp_chunk_size';
+const WARMUP_KEY = 'readest_rsvp_warmup';
+const LONG_WORD_DELAY_KEY = 'readest_rsvp_long_word_delay';
+// Warm-up: start at 70% of the set speed and reach it over the first 4 s.
+const WARMUP_MS = 4000;
+const WARMUP_START_FACTOR = 0.7;
+// Long-word delay: extra time on words of 9+ letters or numbers of 3+ digits.
+const LONG_WORD_DELAY_MS = 60;
 
 // Section-only CFI (no '!') sorts before any word CFI in that section.
 const stripCfiPath = (cfi: string): string => cfi.replace(/!.*\)$/, ')');
@@ -58,12 +74,17 @@ export class RSVPController extends EventTarget {
     startDelaySeconds: DEFAULT_START_DELAY_SECONDS,
     hasCJK: false,
     progress: 0,
+    chunkSize: 1,
+    warmup: false,
+    longWordDelay: false,
   };
 
   private playbackTimer: ReturnType<typeof setTimeout> | null = null;
   private countdownTimer: ReturnType<typeof setInterval> | null = null;
   private pendingStartWordIndex: number | null = null;
   private countdown: number | null = null;
+  // When the current run of playback began, for the warm-up ramp.
+  private playbackStartTime: number | null = null;
   private cachedWords: { docIndex: number; doc: Document; words: RsvpWord[] } | null = null;
 
   // Slice 3a (#3235): externally-driven sync (e.g. TTS drives RSVP word display).
@@ -120,6 +141,14 @@ export class RSVPController extends EventTarget {
     if (savedStartDelay !== null) {
       this.state.startDelaySeconds = savedStartDelay;
     }
+    try {
+      const chunkSize = parseInt(localStorage.getItem(CHUNK_SIZE_KEY) ?? '', 10);
+      if (CHUNK_SIZE_OPTIONS.includes(chunkSize)) this.state.chunkSize = chunkSize;
+      this.state.warmup = localStorage.getItem(WARMUP_KEY) === '1';
+      this.state.longWordDelay = localStorage.getItem(LONG_WORD_DELAY_KEY) === '1';
+    } catch {
+      /* ignore */
+    }
   }
 
   get currentState(): RsvpState {
@@ -137,9 +166,80 @@ export class RSVPController extends EventTarget {
     return null;
   }
 
+  // Chunks are shown only for space-separated text the timer paces: CJK text
+  // has no spaces to lay words out by, and TTS speaks one word at a time.
+  get chunkingAvailable(): boolean {
+    return !this.state.hasCJK && !this.#externallyDriven;
+  }
+
+  private get chunkSize(): number {
+    return this.chunkingAvailable ? this.state.chunkSize : 1;
+  }
+
+  // Indices of the words shown together, starting at the current word. Blank
+  // frames between repeated words are left out.
+  get currentChunkIndices(): number[] {
+    const { words, currentIndex } = this.state;
+    if (currentIndex < 0 || currentIndex >= words.length) return [];
+    if (this.chunkSize === 1) return [currentIndex];
+    const indices: number[] = [];
+    for (let i = currentIndex; i < getChunkEnd(words, currentIndex, this.chunkSize); i++) {
+      if (words[i]!.text.trim()) indices.push(i);
+    }
+    return indices.length ? indices : [currentIndex];
+  }
+
+  private nextChunkStart(): number {
+    const { words, currentIndex } = this.state;
+    return this.chunkSize === 1
+      ? currentIndex + 1
+      : getChunkEnd(words, currentIndex, this.chunkSize);
+  }
+
+  getChunkSizeOptions(): number[] {
+    return CHUNK_SIZE_OPTIONS;
+  }
+
+  setChunkSize(size: number): void {
+    const clamped = Math.max(
+      CHUNK_SIZE_OPTIONS[0]!,
+      Math.min(CHUNK_SIZE_OPTIONS[CHUNK_SIZE_OPTIONS.length - 1]!, size),
+    );
+    if (clamped === this.state.chunkSize) return;
+    this.state.chunkSize = clamped;
+    this.state.currentPartIndex = 0;
+    this.saveSetting(CHUNK_SIZE_KEY, String(clamped));
+    this.emitStateChange();
+    // Re-time a flash already on screen; a countdown or pause has no timer.
+    if (this.playbackTimer) this.scheduleNextWord();
+  }
+
+  setWarmup(on: boolean): void {
+    this.state.warmup = on;
+    this.saveSetting(WARMUP_KEY, on ? '1' : '0');
+    this.emitStateChange();
+  }
+
+  setLongWordDelay(on: boolean): void {
+    this.state.longWordDelay = on;
+    this.saveSetting(LONG_WORD_DELAY_KEY, on ? '1' : '0');
+    this.emitStateChange();
+  }
+
+  private saveSetting(key: string, value: string): void {
+    try {
+      localStorage.setItem(key, value);
+    } catch {
+      /* ignore */
+    }
+  }
+
   get currentDisplayWord(): RsvpWord | null {
     const word = this.currentWord;
     if (!word) return null;
+    // A chunk can start on the blank frame between repeated words; show its
+    // first word instead.
+    if (this.chunkSize > 1) return this.state.words[this.currentChunkIndices[0]!]!;
     if (!this.state.splitHyphens) return word;
     const parts = getHyphenParts(word.text);
     if (parts.length <= 1) return word;
@@ -502,6 +602,7 @@ export class RSVPController extends EventTarget {
   pause(): void {
     this.clearTimer();
     this.clearCountdown();
+    this.playbackStartTime = null;
     this.state.playing = false;
     this.emitStateChange();
   }
@@ -522,9 +623,13 @@ export class RSVPController extends EventTarget {
     // owns pacing (externally driven, e.g. RSVP entered while TTS is playing),
     // there is nothing to "get ready" for, so skip it too — the spoken word
     // shows immediately and advancement is driven by syncToCfi.
+    const begin = () => {
+      this.playbackStartTime ??= Date.now();
+      onComplete();
+    };
     let count = this.state.startDelaySeconds;
     if (count <= 0 || this.#externallyDriven) {
-      onComplete();
+      begin();
       return;
     }
 
@@ -540,7 +645,7 @@ export class RSVPController extends EventTarget {
         this.emitCountdownChange();
       } else {
         this.clearCountdown();
-        onComplete();
+        begin();
       }
     }, 1000);
   }
@@ -582,6 +687,7 @@ export class RSVPController extends EventTarget {
 
     this.clearTimer();
     this.clearCountdown();
+    this.playbackStartTime = null;
     this.stopEstimator();
     this.#lastSyncIndex = -1;
     this.state = {
@@ -767,10 +873,8 @@ export class RSVPController extends EventTarget {
   // resume is left to the user.
   nextWord(): void {
     if (this.state.playing) this.pause();
-    this.state.currentIndex = Math.min(
-      Math.max(0, this.state.words.length - 1),
-      this.state.currentIndex + 1,
-    );
+    const next = this.nextChunkStart();
+    if (next < this.state.words.length) this.state.currentIndex = next;
     this.state.currentPartIndex = 0;
     this.emitManualNav();
     this.emitStateChange();
@@ -778,7 +882,10 @@ export class RSVPController extends EventTarget {
 
   prevWord(): void {
     if (this.state.playing) this.pause();
-    this.state.currentIndex = Math.max(0, this.state.currentIndex - 1);
+    this.state.currentIndex =
+      this.chunkSize === 1
+        ? Math.max(0, this.state.currentIndex - 1)
+        : getPrevChunkStart(this.state.words, this.state.currentIndex, this.chunkSize);
     this.state.currentPartIndex = 0;
     this.emitManualNav();
     this.emitStateChange();
@@ -1123,8 +1230,13 @@ export class RSVPController extends EventTarget {
       return;
     }
 
-    const displayWord = this.currentDisplayWord!;
-    const duration = this.getWordDisplayDuration(displayWord, this.state.wpm);
+    const duration =
+      this.chunkSize === 1
+        ? this.getWordDisplayDuration(this.currentDisplayWord!, this.state.wpm)
+        : this.currentChunkIndices.reduce(
+            (sum, i) => sum + this.getWordDisplayDuration(this.state.words[i]!, this.state.wpm),
+            0,
+          );
 
     this.playbackTimer = setTimeout(() => {
       this.advanceToNextWord();
@@ -1133,7 +1245,7 @@ export class RSVPController extends EventTarget {
 
   private advanceToNextWord(): void {
     const word = this.currentWord;
-    if (word && this.state.splitHyphens) {
+    if (word && this.state.splitHyphens && this.chunkSize === 1) {
       const parts = getHyphenParts(word.text);
       if (this.state.currentPartIndex < parts.length - 1) {
         this.state.currentPartIndex += 1;
@@ -1143,7 +1255,7 @@ export class RSVPController extends EventTarget {
       }
     }
 
-    const newIndex = this.state.currentIndex + 1;
+    const newIndex = this.nextChunkStart();
 
     if (newIndex >= this.state.words.length) {
       this.dispatchEvent(new CustomEvent('rsvp-request-next-page'));
@@ -1248,6 +1360,9 @@ export class RSVPController extends EventTarget {
       for (const child of Array.from(el.childNodes)) {
         walk(child);
       }
+      // A multi-word chunk never runs past the end of a paragraph or heading.
+      const last = words[words.length - 1];
+      if (last && style && !/^(inline|contents|ruby)/.test(style.display)) last.blockEnd = true;
     };
 
     walk(element);
@@ -1304,8 +1419,17 @@ export class RSVPController extends EventTarget {
   }
 
   private getWordDisplayDuration(word: RsvpWord, wpm: number): number {
-    const baseMs = 60000 / wpm;
+    let baseMs = 60000 / wpm;
+    if (this.state.warmup && this.playbackStartTime !== null) {
+      const ramp = Math.min(1, (Date.now() - this.playbackStartTime) / WARMUP_MS);
+      baseMs /= WARMUP_START_FACTOR + (1 - WARMUP_START_FACTOR) * ramp;
+    }
     let duration = baseMs * word.pauseMultiplier;
+
+    if (this.state.longWordDelay) {
+      const letters = word.text.replace(/[^\p{L}\p{N}]/gu, '');
+      if (letters.length >= 9 || /\p{Nd}{3,}/u.test(word.text)) duration += LONG_WORD_DELAY_MS;
+    }
 
     if (/[.!?,;:–—]$/.test(word.text)) {
       duration += this.state.punctuationPauseMs;

@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { toAnkiText, toCsv } from '@/services/vocabulary/export';
 import type { VocabularyEntry } from '@/services/vocabulary/types';
