@@ -202,14 +202,18 @@ export function useHandwriting(bookKey: string) {
     };
   }, [editorVersion, bookKey, envConfig, getConfig, getView, setConfig, saveConfig]);
 
+  // The rects last measured. An unchanged rect sets no state: right after a
+  // render React can't drop an equal update unseen, and each took a commit.
+  const rectsRef = useRef({ cell: EMPTY_RECT, page: EMPTY_RECT });
   const measure = useCallback(() => {
     if (!cellEl) return;
     const cell = toRect(cellEl.getBoundingClientRect());
     // A scrolled view shows many pages: input spans the whole view and each
     // stroke is routed to the page it is drawn over.
     const page = (isFixedLayout && !scrolled && measureFixedPage(getView(bookKey))) || cell;
-    setCellRect((prev) => (sameRect(prev, cell) ? prev : cell));
-    setPageRect((prev) => (sameRect(prev, page) ? prev : page));
+    const rects = rectsRef.current;
+    if (!sameRect(rects.cell, cell)) setCellRect((rects.cell = cell));
+    if (!sameRect(rects.page, page)) setPageRect((rects.page = page));
   }, [cellEl, isFixedLayout, getView, bookKey, scrolled, sectionIndex]);
 
   // Re-measure on layout changes: window/cell resize, a page turn, scrolling,
