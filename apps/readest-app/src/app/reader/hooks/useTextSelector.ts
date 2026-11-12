@@ -1008,13 +1008,7 @@ export const useTextSelector = (
       const p = pointerPos.current;
       const localPoint = p ? toDocPoint(doc, p) : null;
       const clamped = localPoint
-        ? rangeFromAnchorToPoint(
-            doc,
-            initial.node,
-            initial.offset,
-            localPoint.x,
-            localPoint.y,
-          )
+        ? rangeFromAnchorToPoint(doc, initial.node, initial.offset, localPoint.x, localPoint.y)
         : null;
       const repaired = clamped ?? repairJumpedSelectionRange(sel, initial.node, initial.offset);
       if (repaired) finalRange = repaired;
