@@ -5,6 +5,7 @@ import { RxLineHeight } from 'react-icons/rx';
 import { PiGear } from 'react-icons/pi';
 import { useEnv } from '@/context/EnvContext';
 import { useReaderStore } from '@/store/readerStore';
+import { useBookViewState } from '@/app/reader/hooks/useBookViewState';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { saveViewSettings } from '@/helpers/settings';
@@ -49,7 +50,10 @@ export const FontLayoutPanel: React.FC<FontLayoutPanelProps> = ({
 }) => {
   const _ = useTranslation();
   const { envConfig, appService } = useEnv();
-  const { getView, getViewSettings, setHoveredBookKey } = useReaderStore();
+  const getView = useReaderStore((s) => s.getView);
+  const getViewSettings = useReaderStore((s) => s.getViewSettings);
+  const setHoveredBookKey = useReaderStore((s) => s.setHoveredBookKey);
+  useBookViewState(bookKey);
   const { setSettingsDialogBookKey, setSettingsDialogOpen, setRequestedPanel } = useSettingsStore();
   const viewSettings = getViewSettings(bookKey);
   const view = getView(bookKey);

@@ -5,6 +5,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import HeaderBar from '@/app/reader/components/HeaderBar';
 
+// A store hook called with a selector, or without one for the whole state.
+const { storeHook } = vi.hoisted(() => ({
+  storeHook:
+    <T extends object>(state: () => T) =>
+    (select?: (s: T) => unknown) =>
+      select ? select(state()) : state(),
+}));
+
 // jsdom ships no ResizeObserver, and HeaderBar constructs one to track its own
 // width. Same stub pattern as popup-resting-triangle.test.
 class MockResizeObserver {
@@ -23,9 +31,9 @@ vi.mock('@/context/EnvContext', () => ({
 }));
 
 vi.mock('@/store/settingsStore', () => ({
-  useSettingsStore: () => ({
+  useSettingsStore: storeHook(() => ({
     settings: { globalReadSettings: { highlightStyle: 'highlight', highlightStyles: {} } },
-  }),
+  })),
 }));
 let isIPhoneDuo = false;
 vi.mock('@/store/themeStore', () => ({
@@ -37,17 +45,18 @@ vi.mock('@/store/themeStore', () => ({
   }),
 }));
 vi.mock('@/store/sidebarStore', () => ({
-  useSidebarStore: () => ({ isSideBarVisible: false, getIsSideBarVisible: () => false }),
+  useSidebarStore: storeHook(() => ({ isSideBarVisible: false, getIsSideBarVisible: () => false })),
 }));
 const setHoveredBookKey = vi.hoisted(() => vi.fn());
 vi.mock('@/store/readerStore', () => ({
-  useReaderStore: () => ({
+  useReaderStore: storeHook(() => ({
+    viewStates: {},
     bookKeys: ['book-1'],
     hoveredBookKey: 'book-1',
     getView: () => null,
     getViewSettings: () => ({ enableAnnotationQuickActions: false }),
     setHoveredBookKey,
-  }),
+  })),
 }));
 let currentBookData: {
   book?: { title: string; metadata?: { series?: string; seriesIndex?: number } };

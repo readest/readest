@@ -5,6 +5,8 @@ import { useSpatialNavigation } from '@/app/reader/hooks/useSpatialNavigation';
 import { useWindowFocusRestore } from '@/app/reader/hooks/useWindowFocusRestore';
 import { getBookProgress, useReaderProgressStore } from '@/store/readerProgressStore';
 import { useReaderStore } from '@/store/readerStore';
+import { useBookViewState } from '@/app/reader/hooks/useBookViewState';
+import { useFirstPageShown } from '@/app/reader/hooks/useFirstPageShown';
 import { useSidebarStore } from '@/store/sidebarStore';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { FIXED_LAYOUT_FORMATS } from '@/types/book';
@@ -35,10 +37,22 @@ const FooterBar: React.FC<FooterBarProps> = ({
   const getConfig = useBookDataStore((s) => s.getConfig);
   const setConfig = useBookDataStore((s) => s.setConfig);
   const isFixedLayout = useBookDataStore((s) => !!s.getBookData(bookKey)?.isFixedLayout);
-  const { hoveredBookKey, setHoveredBookKey, bottomBarTab, setBottomBarTab } = useReaderStore();
-  const { getView, getViewState, getViewSettings } = useReaderStore();
-  const { isSideBarVisible, isSideBarPinned, setSideBarVisible } = useSidebarStore();
-  const { acquireBackKeyInterception, releaseBackKeyInterception } = useDeviceControlStore();
+  // Selected, not whole stores: an opening book updates the reader store many times, and this
+  // re-renders with its panels and buttons. It follows its book's view state (settings, the view).
+  const hoveredBookKey = useReaderStore((s) => s.hoveredBookKey);
+  const setHoveredBookKey = useReaderStore((s) => s.setHoveredBookKey);
+  const bottomBarTab = useReaderStore((s) => s.bottomBarTab);
+  const setBottomBarTab = useReaderStore((s) => s.setBottomBarTab);
+  const getView = useReaderStore((s) => s.getView);
+  const getViewState = useReaderStore((s) => s.getViewState);
+  const getViewSettings = useReaderStore((s) => s.getViewSettings);
+  useBookViewState(bookKey);
+  const firstPageShown = useFirstPageShown(bookKey);
+  const isSideBarVisible = useSidebarStore((s) => s.isSideBarVisible);
+  const isSideBarPinned = useSidebarStore((s) => s.isSideBarPinned);
+  const setSideBarVisible = useSidebarStore((s) => s.setSideBarVisible);
+  const acquireBackKeyInterception = useDeviceControlStore((s) => s.acquireBackKeyInterception);
+  const releaseBackKeyInterception = useDeviceControlStore((s) => s.releaseBackKeyInterception);
 
   const view = getView(bookKey);
   const viewState = getViewState(bookKey);
@@ -46,6 +60,9 @@ const FooterBar: React.FC<FooterBarProps> = ({
 
   const actionTab = hoveredBookKey === bookKey ? bottomBarTab : '';
   const isVisible = hoveredBookKey === bookKey;
+  // The hidden footer builds its bars and panels once the book's first page is on screen, so they
+  // don't hold the page back (or at once if shown before that).
+  const showTools = firstPageShown || isVisible;
 
   const docs = view?.renderer.getContents() ?? [];
   const pointerInDoc = docs.some(({ doc }) => doc?.body?.style.cursor === 'pointer');
@@ -292,8 +309,12 @@ const FooterBar: React.FC<FooterBarProps> = ({
         }
         onMouseLeave={() => window.innerWidth >= 640 && setHoveredBookKey('')}
       >
-        <MobileFooterBar {...commonProps} />
-        <DesktopFooterBar {...commonProps} />
+        {showTools && (
+          <>
+            <MobileFooterBar {...commonProps} />
+            <DesktopFooterBar {...commonProps} />
+          </>
+        )}
       </div>
       {isVisible && needHorizontalScroll && (
         <div className='bg-base-100 pointer-events-none absolute bottom-0 left-0 hidden h-3 w-full sm:block' />

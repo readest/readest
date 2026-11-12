@@ -16,11 +16,13 @@ const useBooksManager = () => {
   const searchParams = useSearchParams();
   const _ = useTranslation();
   const { envConfig } = useEnv();
-  const { bookKeys } = useReaderStore();
-  const { setBookKeys, initViewState } = useReaderStore();
-  const { sideBarBookKey, setSideBarBookKey } = useSidebarStore();
+  const bookKeys = useReaderStore((s) => s.bookKeys);
+  const setBookKeys = useReaderStore((s) => s.setBookKeys);
+  const initViewState = useReaderStore((s) => s.initViewState);
+  const sideBarBookKey = useSidebarStore((s) => s.sideBarBookKey);
+  const setSideBarBookKey = useSidebarStore((s) => s.setSideBarBookKey);
   const [shouldUpdateSearchParams, setShouldUpdateSearchParams] = useState(false);
-  const { setParallel } = useParallelViewStore();
+  const setParallel = useParallelViewStore((s) => s.setParallel);
 
   useEffect(() => {
     if (shouldUpdateSearchParams) {

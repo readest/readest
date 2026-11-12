@@ -41,7 +41,7 @@ export const useMiniPlayerAutoHide = (
   mounted: boolean,
   buffering = false,
 ) => {
-  const { hoveredBookKey } = useReaderStore();
+  const hoveredBookKey = useReaderStore((s) => s.hoveredBookKey);
   const [visible, setVisible] = useState(true);
 
   useEffect(() => {

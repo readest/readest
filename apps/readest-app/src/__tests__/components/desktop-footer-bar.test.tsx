@@ -4,6 +4,14 @@ import { render, cleanup, fireEvent } from '@testing-library/react';
 import DesktopFooterBar from '@/app/reader/components/footerbar/DesktopFooterBar';
 import type { FooterBarChildProps } from '@/app/reader/components/footerbar/types';
 
+// A store hook called with a selector, or without one for the whole state.
+const { storeHook } = vi.hoisted(() => ({
+  storeHook:
+    <T extends object>(state: () => T) =>
+    (select?: (s: T) => unknown) =>
+      select ? select(state()) : state(),
+}));
+
 vi.mock('@/hooks/useTranslation', () => ({
   useTranslation: () => (s: string) => s,
 }));
@@ -15,13 +23,14 @@ vi.mock('@/context/EnvContext', () => ({
 const mocks = vi.hoisted(() => ({ progress: {} as object }));
 
 vi.mock('@/store/readerStore', () => ({
-  useReaderStore: () => ({
+  useReaderStore: storeHook(() => ({
+    viewStates: {},
     hoveredBookKey: 'book1',
     getView: () => null,
     getViewState: () => null,
     getProgress: () => mocks.progress,
     getViewSettings: () => null,
-  }),
+  })),
 }));
 
 vi.mock('@/app/reader/components/footerbar/PageJumpInput', () => ({

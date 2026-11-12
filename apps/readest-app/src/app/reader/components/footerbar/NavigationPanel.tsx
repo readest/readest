@@ -5,6 +5,7 @@ import { RiArrowGoBackLine, RiArrowGoForwardLine } from 'react-icons/ri';
 import { RiArrowLeftDoubleLine, RiArrowRightDoubleLine } from 'react-icons/ri';
 import { useEnv } from '@/context/EnvContext';
 import { useReaderStore } from '@/store/readerStore';
+import { useBookViewState } from '@/app/reader/hooks/useBookViewState';
 import { useTranslation } from '@/hooks/useTranslation';
 import { NavigationHandlers } from './types';
 import { getNavigationIcon } from './utils';
@@ -38,7 +39,10 @@ export const NavigationPanel: React.FC<NavigationPanelProps> = ({
 }) => {
   const _ = useTranslation();
   const { appService } = useEnv();
-  const { getView, getProgress, getViewSettings } = useReaderStore();
+  const getView = useReaderStore((s) => s.getView);
+  const getProgress = useReaderStore((s) => s.getProgress);
+  const getViewSettings = useReaderStore((s) => s.getViewSettings);
+  useBookViewState(bookKey);
   const view = getView(bookKey);
   const progress = getProgress(bookKey);
   const viewSettings = getViewSettings(bookKey);

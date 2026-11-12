@@ -5,6 +5,15 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import useBookShortcuts from '@/app/reader/hooks/useBookShortcuts';
 import { eventDispatcher } from '@/utils/event';
 import { useBookDataStore } from '@/store/bookDataStore';
+import { useReaderStore } from '@/store/readerStore';
+
+// A store hook called with a selector, or without one for the whole state.
+const { storeHook } = vi.hoisted(() => ({
+  storeHook:
+    <T extends object>(state: () => T) =>
+    (select?: (s: T) => unknown) =>
+      select ? select(state()) : state(),
+}));
 
 const shortcutState = {
   actions: null as Record<
@@ -65,24 +74,28 @@ const mockGetConfig = vi.fn(() => ({
 }));
 const mockSetConfig = vi.fn();
 
-vi.mock('@/store/readerStore', () => ({
-  useReaderStore: () => ({
-    getView: () => mockView,
-    getViewState: () => currentViewState,
-    getViewSettings: () => currentViewSettings,
-    setViewSettings: vi.fn(),
-    setHoveredBookKey: mockSetHoveredBookKey,
-  }),
-}));
+vi.mock('@/store/readerStore', async () => {
+  const { create } = await import('zustand');
+  return {
+    useReaderStore: create(() => ({
+      viewStates: {} as Record<string, unknown>,
+      getView: () => mockView,
+      getViewState: () => currentViewState,
+      getViewSettings: () => currentViewSettings,
+      setViewSettings: vi.fn(),
+      setHoveredBookKey: (...args: unknown[]) => mockSetHoveredBookKey(...args),
+    })),
+  };
+});
 
 vi.mock('@/store/sidebarStore', () => ({
   useSidebarStore: Object.assign(
-    () => ({
+    storeHook(() => ({
       toggleSideBar: mockToggleSideBar,
       setSideBarBookKey: mockSetSideBarBookKey,
       setSideBarVisible: mockSetSideBarVisible,
       setSearchBarVisible: mockSetSearchBarVisible,
-    }),
+    })),
     { getState: () => sideBarState },
   ),
 }));
@@ -91,11 +104,11 @@ const mockSetSettingsDialogOpen = vi.fn();
 const mockSetSettingsDialogBookKey = vi.fn();
 const globalViewSettings = { defaultFontSize: 16 };
 vi.mock('@/store/settingsStore', () => ({
-  useSettingsStore: () => ({
+  useSettingsStore: storeHook(() => ({
     settings: { globalViewSettings },
     setSettingsDialogOpen: mockSetSettingsDialogOpen,
     setSettingsDialogBookKey: mockSetSettingsDialogBookKey,
-  }),
+  })),
 }));
 
 const mockSaveViewSettings = vi.fn();
@@ -120,9 +133,7 @@ vi.mock('@/store/bookDataStore', async () => {
 });
 
 vi.mock('@/store/notebookStore', () => ({
-  useNotebookStore: () => ({
-    toggleNotebook: vi.fn(),
-  }),
+  useNotebookStore: storeHook(() => ({ toggleNotebook: vi.fn() })),
 }));
 
 vi.mock('@/store/themeStore', () => ({
@@ -493,6 +504,23 @@ describe('useBookShortcuts subscriptions', () => {
     );
     onRender.mockClear();
     act(() => useBookDataStore.setState({ booksData: {} }));
+    expect(onRender).not.toHaveBeenCalled();
+  });
+
+  // ...and an opening book updates its view state many times
+  it('a view state change does not re-render the component using it', () => {
+    const onRender = vi.fn();
+    render(
+      <Profiler id='shortcuts' onRender={onRender}>
+        <Harness />
+      </Profiler>,
+    );
+    onRender.mockClear();
+    // The mocked store keeps only what the hook reads; this view state is just something new.
+    const viewStates = { 'book-1': { loading: false } } as unknown as ReturnType<
+      typeof useReaderStore.getState
+    >['viewStates'];
+    act(() => useReaderStore.setState({ viewStates }));
     expect(onRender).not.toHaveBeenCalled();
   });
 });

@@ -7,6 +7,8 @@ import { Insets } from '@/types/misc';
 import { useEnv } from '@/context/EnvContext';
 import { useThemeStore } from '@/store/themeStore';
 import { useReaderStore } from '@/store/readerStore';
+import { useBookViewState } from '@/app/reader/hooks/useBookViewState';
+import { useFirstPageShown } from '@/app/reader/hooks/useFirstPageShown';
 import { useBookData, useBookDataStore } from '@/store/bookDataStore';
 import { useSidebarStore } from '@/store/sidebarStore';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -65,10 +67,18 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
   const headerRef = useRef<HTMLDivElement>(null);
   const { isTrafficLightVisible } = useTrafficLight(headerRef);
   const { trafficLightInFullscreen, setTrafficLightVisibility } = useTrafficLightStore();
-  const { bookKeys, hoveredBookKey } = useReaderStore();
+  // Selected, not whole stores: an opening book updates the reader store many times, and this
+  // re-renders with all its buttons. It follows its book's view state (its settings, the view).
+  const bookKeys = useReaderStore((s) => s.bookKeys);
+  const hoveredBookKey = useReaderStore((s) => s.hoveredBookKey);
+  const getView = useReaderStore((s) => s.getView);
+  const getViewSettings = useReaderStore((s) => s.getViewSettings);
+  const setHoveredBookKey = useReaderStore((s) => s.setHoveredBookKey);
+  useBookViewState(bookKey);
+  const firstPageShown = useFirstPageShown(bookKey);
   const { isDarkMode, systemUIVisible, statusBarHeight, isIPhoneDuo } = useThemeStore();
-  const { isSideBarVisible, getIsSideBarVisible } = useSidebarStore();
-  const { getView, getViewSettings, setHoveredBookKey } = useReaderStore();
+  const isSideBarVisible = useSidebarStore((s) => s.isSideBarVisible);
+  const getIsSideBarVisible = useSidebarStore((s) => s.getIsSideBarVisible);
   const viewSettings = getViewSettings(bookKey);
   const bookData = useBookData(bookKey);
   // Readest Cloud's per-book stamps. Includes the PUSH stamps so this agrees
@@ -168,6 +178,10 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
   const isHeaderCompact = headerWidth > 0 && headerWidth < 350;
   const insets = window.innerWidth < 640 ? screenInsets : gridInsets;
   const isHeaderVisible = hoveredBookKey === bookKey || isDropdownOpen;
+  // The hidden header builds its tools once the book's first page is on screen, so they don't
+  // hold the page back (or at once if shown before that). The bookmark toggler marks the page's
+  // bookmark and takes the bookmark shortcut, so it is there from the start.
+  const showTools = firstPageShown || isHeaderVisible;
   const isMobile = appService?.isMobile || window.innerWidth < 640;
   const forceMobileLayout = isForcedMobileLayout(appService?.isMobile, isIPhoneDuo);
   const triggerHeight = viewSettings ? getHeaderTriggerHeight(gridInsets.top, viewSettings) : 0;
@@ -278,23 +292,25 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
                 it sits on desktop, so it is not mistaken for Go to Library
                 (#7292). Phones are hidden by `sm:`; iPhone Duo keeps the
                 phone bars, whose TOC tab opens this sidebar (#5634). */}
-            {!isSideBarVisible && !(forceMobileLayout && isIPhoneDuo) && (
+            {showTools && !isSideBarVisible && !(forceMobileLayout && isIPhoneDuo) && (
               <div className='hidden sm:flex'>
                 <SidebarToggler bookKey={bookKey} />
               </div>
             )}
-            <button
-              title={_('Go to Library')}
-              className='btn btn-ghost hidden h-8 min-h-8 w-8 p-0 sm:flex'
-              onClick={onGoToLibrary}
-            >
-              <VscLibrary size={iconSize18} className='fill-base-content' />
-            </button>
+            {showTools && (
+              <button
+                title={_('Go to Library')}
+                className='btn btn-ghost hidden h-8 min-h-8 w-8 p-0 sm:flex'
+                onClick={onGoToLibrary}
+              >
+                <VscLibrary size={iconSize18} className='fill-base-content' />
+              </button>
+            )}
             <BookmarkToggler bookKey={bookKey} />
-            <TranslationToggler bookKey={bookKey} />
-            <DuoBookModeToggler bookKey={bookKey} />
+            {showTools && <TranslationToggler bookKey={bookKey} />}
+            {showTools && <DuoBookModeToggler bookKey={bookKey} />}
           </div>
-          {enableAnnotationQuickActions && (
+          {showTools && enableAnnotationQuickActions && (
             <Dropdown
               label={
                 annotationQuickAction
@@ -332,66 +348,70 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
           )}
         </div>
 
-        <div
-          role='contentinfo'
-          aria-label={_('Title') + ' - ' + bookTitle}
-          className={clsx(
-            'header-title z-15 bg-base-100 pointer-events-none hidden flex-1 items-center justify-center sm:flex',
-            !windowButtonVisible && 'absolute inset-0',
-            isHeaderCompact && 'hidden!',
-          )}
-          {...getBookDataAttributes(bookTitle, bookData?.book?.metadata)}
-        >
-          <div
-            aria-hidden='true'
-            className={clsx(
-              'line-clamp-1 text-center text-xs font-semibold',
-              !windowButtonVisible && 'max-w-[50%]',
-            )}
-          >
-            {bookTitle}
-          </div>
-        </div>
+        {showTools && (
+          <>
+            <div
+              role='contentinfo'
+              aria-label={_('Title') + ' - ' + bookTitle}
+              className={clsx(
+                'header-title z-15 bg-base-100 pointer-events-none hidden flex-1 items-center justify-center sm:flex',
+                !windowButtonVisible && 'absolute inset-0',
+                isHeaderCompact && 'hidden!',
+              )}
+              {...getBookDataAttributes(bookTitle, bookData?.book?.metadata)}
+            >
+              <div
+                aria-hidden='true'
+                className={clsx(
+                  'line-clamp-1 text-center text-xs font-semibold',
+                  !windowButtonVisible && 'max-w-[50%]',
+                )}
+              >
+                {bookTitle}
+              </div>
+            </div>
 
-        <div className='header-tools-end bg-base-100 z-20 ms-auto flex h-full min-w-max items-center gap-x-4 ps-2 max-[350px]:gap-x-2'>
-          <NotebookToggler bookKey={bookKey} />
-          <Dropdown
-            label={_('View Options')}
-            containerClassName='h-8'
-            className='exclude-title-bar-mousedown dropdown-bottom dropdown-end'
-            buttonClassName='btn btn-ghost h-8 min-h-8 w-8 p-0 mt-0'
-            toggleButton={<MdOutlineMenu />}
-            onToggle={handleToggleDropdown}
-          >
-            <ViewMenu
-              bookKey={bookKey}
-              onShowMetaHashDialog={() => setIsMetaHashDialogOpen(true)}
-            />
-          </Dropdown>
-          {isMetaHashDialogOpen && (
-            <ModalPortal showOverlay={false}>
-              <SyncInfoDialog
-                isOpen={isMetaHashDialogOpen}
-                bookKey={bookKey}
-                metadata={bookData?.bookDoc?.metadata ?? bookData?.book?.metadata}
-                storedMetaHash={bookData?.book?.metaHash}
-                nativeLastSyncedAt={nativeLastSyncedAt}
-                onClose={() => setIsMetaHashDialogOpen(false)}
+            <div className='header-tools-end bg-base-100 z-20 ms-auto flex h-full min-w-max items-center gap-x-4 ps-2 max-[350px]:gap-x-2'>
+              <NotebookToggler bookKey={bookKey} />
+              <Dropdown
+                label={_('View Options')}
+                containerClassName='h-8'
+                className='exclude-title-bar-mousedown dropdown-bottom dropdown-end'
+                buttonClassName='btn btn-ghost h-8 min-h-8 w-8 p-0 mt-0'
+                toggleButton={<MdOutlineMenu />}
+                onToggle={handleToggleDropdown}
+              >
+                <ViewMenu
+                  bookKey={bookKey}
+                  onShowMetaHashDialog={() => setIsMetaHashDialogOpen(true)}
+                />
+              </Dropdown>
+              {isMetaHashDialogOpen && (
+                <ModalPortal showOverlay={false}>
+                  <SyncInfoDialog
+                    isOpen={isMetaHashDialogOpen}
+                    bookKey={bookKey}
+                    metadata={bookData?.bookDoc?.metadata ?? bookData?.book?.metadata}
+                    storedMetaHash={bookData?.book?.metaHash}
+                    nativeLastSyncedAt={nativeLastSyncedAt}
+                    onClose={() => setIsMetaHashDialogOpen(false)}
+                  />
+                </ModalPortal>
+              )}
+              <WindowButtons
+                className='window-buttons flex items-center'
+                headerRef={headerRef}
+                showMinimize={bookKeys.length == 1 && windowButtonVisible}
+                showMaximize={bookKeys.length == 1 && windowButtonVisible}
+                closeButtonLabel={_('Close Book')}
+                onClose={() => {
+                  setHoveredBookKey(null);
+                  onCloseBook(bookKey);
+                }}
               />
-            </ModalPortal>
-          )}
-          <WindowButtons
-            className='window-buttons flex items-center'
-            headerRef={headerRef}
-            showMinimize={bookKeys.length == 1 && windowButtonVisible}
-            showMaximize={bookKeys.length == 1 && windowButtonVisible}
-            closeButtonLabel={_('Close Book')}
-            onClose={() => {
-              setHoveredBookKey(null);
-              onCloseBook(bookKey);
-            }}
-          />
-        </div>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

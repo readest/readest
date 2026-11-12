@@ -2,6 +2,7 @@ import clsx from 'clsx';
 import React, { useEffect, useRef, useState } from 'react';
 import { useBookProgress } from '@/store/readerProgressStore';
 import { useReaderStore } from '@/store/readerStore';
+import { useBookViewState } from '@/app/reader/hooks/useBookViewState';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useBookData } from '@/store/bookDataStore';
 import type { PageInfo } from '@/types/book';
@@ -37,7 +38,10 @@ const PageJumpInput: React.FC<PageJumpInputProps> = ({
   className,
 }) => {
   const _ = useTranslation();
-  const { hoveredBookKey, getView, getViewSettings } = useReaderStore();
+  const hoveredBookKey = useReaderStore((s) => s.hoveredBookKey);
+  const getView = useReaderStore((s) => s.getView);
+  const getViewSettings = useReaderStore((s) => s.getViewSettings);
+  useBookViewState(bookKey);
   const view = getView(bookKey);
   const bookData = useBookData(bookKey);
   const progress = useBookProgress(bookKey);

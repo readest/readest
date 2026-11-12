@@ -58,17 +58,12 @@ Z-Index Layering Guide:
 const Reader: React.FC<{ ids?: string }> = ({ ids }) => {
   const router = useRouter();
   const { appService } = useEnv();
-  const { settings } = useSettingsStore();
+  // Only what the page renders or reacts to: it renders the whole reader, so a change to a book's
+  // view state or to the sidebar must not re-render it (an opening book changes them many times).
+  const settings = useSettingsStore((s) => s.settings);
   const { libraryLoaded } = useLibrary();
-  const { sideBarBookKey } = useSidebarStore();
-  const { hoveredBookKey } = useReaderStore();
-  const { showSystemUI, dismissSystemUI } = useThemeStore();
-  const { acquireBackKeyInterception, releaseBackKeyInterception } = useDeviceControlStore();
-  const { isSideBarVisible, isSideBarPinned } = useSidebarStore();
-  const { getIsSideBarVisible, setSideBarVisible } = useSidebarStore();
-  const { isNotebookVisible, isNotebookPinned } = useNotebookStore();
-  const { getIsNotebookVisible, setNotebookVisible } = useNotebookStore();
-  const { isDarkMode, systemUIAlwaysHidden, isRoundedWindow } = useThemeStore();
+  const hoveredBookKey = useReaderStore((s) => s.hoveredBookKey);
+  const isRoundedWindow = useThemeStore((s) => s.isRoundedWindow);
 
   const { onUpdateInsets } = useTheme({
     systemUIVisible: settings.alwaysShowStatusBar,
@@ -94,54 +89,47 @@ const Reader: React.FC<{ ids?: string }> = ({ ids }) => {
     initDayjs(getLocale());
   }, []);
 
-  const handleKeyDown = (event: CustomEvent) => {
-    if (event.detail.keyName === 'Back') {
+  useEffect(() => {
+    if (!appService?.isAndroidApp) return;
+    const { acquireBackKeyInterception, releaseBackKeyInterception } =
+      useDeviceControlStore.getState();
+    acquireBackKeyInterception();
+    return () => {
+      releaseBackKeyInterception();
+    };
+  }, [appService?.isAndroidApp]);
+
+  useEffect(() => {
+    if (!appService?.isAndroidApp) return;
+    // Reads the panels as they are when Back is pressed.
+    const handleKeyDown = (event: CustomEvent) => {
+      if (event.detail.keyName !== 'Back') return false;
       const { hoveredBookKey, setHoveredBookKey } = useReaderStore.getState();
+      const { isSideBarVisible, isSideBarPinned, setSideBarVisible } = useSidebarStore.getState();
+      const { isNotebookVisible, isNotebookPinned, setNotebookVisible } =
+        useNotebookStore.getState();
       if (hoveredBookKey) {
         setHoveredBookKey('');
         (document.activeElement as HTMLElement)?.blur();
-      } else if (getIsSideBarVisible() && !isSideBarPinned) {
+      } else if (isSideBarVisible && !isSideBarPinned) {
         setSideBarVisible(false);
-      } else if (getIsNotebookVisible() && !isNotebookPinned) {
+      } else if (isNotebookVisible && !isNotebookPinned) {
         setNotebookVisible(false);
       } else {
         void eventDispatcher.dispatch('close-reader', { onClose: () => router.back() });
       }
       return true;
-    }
-    return false;
-  };
-
-  useEffect(() => {
-    if (!appService?.isAndroidApp) return;
-    acquireBackKeyInterception();
-    return () => {
-      releaseBackKeyInterception();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [appService?.isAndroidApp]);
-
-  useEffect(() => {
-    if (appService?.isAndroidApp) {
-      eventDispatcher.onSync('native-key-down', handleKeyDown);
-    }
+    eventDispatcher.onSync('native-key-down', handleKeyDown);
     return () => {
-      if (appService?.isAndroidApp) {
-        eventDispatcher.offSync('native-key-down', handleKeyDown);
-      }
+      eventDispatcher.offSync('native-key-down', handleKeyDown);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    appService?.isAndroidApp,
-    sideBarBookKey,
-    isSideBarPinned,
-    isSideBarVisible,
-    isNotebookPinned,
-    isNotebookVisible,
-  ]);
+  }, [appService?.isAndroidApp, router]);
 
   useEffect(() => {
     if (!appService?.isMobileApp) return;
+    const { isDarkMode, systemUIAlwaysHidden, showSystemUI, dismissSystemUI } =
+      useThemeStore.getState();
     const systemUIVisible = !!hoveredBookKey || settings.alwaysShowStatusBar;
     const visible = !!(systemUIVisible && !systemUIAlwaysHidden);
     setSystemUIVisibility({ visible, darkMode: isDarkMode }).then(() => {

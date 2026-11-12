@@ -8,6 +8,14 @@ import SectionInfo from '@/app/reader/components/SectionInfo';
 import { page } from 'vitest/browser';
 import '@/styles/globals.css';
 
+// A store hook called with a selector, or without one for the whole state.
+const { storeHook } = vi.hoisted(() => ({
+  storeHook:
+    <T extends object>(state: () => T) =>
+    (select?: (s: T) => unknown) =>
+      select ? select(state()) : state(),
+}));
+
 vi.mock('@/hooks/useTranslation', () => ({
   useTranslation: () => (key: string) => key,
 }));
@@ -18,9 +26,9 @@ vi.mock('@/context/EnvContext', () => ({
 }));
 
 vi.mock('@/store/settingsStore', () => ({
-  useSettingsStore: () => ({
+  useSettingsStore: storeHook(() => ({
     settings: { globalReadSettings: { highlightStyle: 'highlight', highlightStyles: {} } },
-  }),
+  })),
 }));
 let statusBarHeight = 36 / 1.4875000715255737;
 vi.mock('@/store/themeStore', () => ({
@@ -31,17 +39,19 @@ vi.mock('@/store/themeStore', () => ({
   }),
 }));
 vi.mock('@/store/sidebarStore', () => ({
-  useSidebarStore: () => ({ isSideBarVisible: false, getIsSideBarVisible: () => false }),
+  useSidebarStore: storeHook(() => ({ isSideBarVisible: false, getIsSideBarVisible: () => false })),
 }));
 let hoveredBookKey = 'book-1';
 vi.mock('@/store/readerStore', () => ({
-  useReaderStore: () => ({
+  useReaderStore: storeHook(() => ({
+    // a book whose first page is on screen
+    viewStates: { 'book-1': { inited: true } },
     bookKeys: ['book-1'],
     hoveredBookKey,
     getView: () => null,
     getViewSettings: () => ({ enableAnnotationQuickActions: false, marginTopPx: 44 }),
     setHoveredBookKey: vi.fn(),
-  }),
+  })),
 }));
 vi.mock('@/store/bookDataStore', async () => {
   const { bookDataStoreHooks } = await import('@/__tests__/helpers/book-data-store-mock');

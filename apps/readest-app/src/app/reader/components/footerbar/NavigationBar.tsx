@@ -7,6 +7,7 @@ import { PiSun as ColorIcon } from 'react-icons/pi';
 import { MdOutlineHeadphones as TTSIcon } from 'react-icons/md';
 import { useEnv } from '@/context/EnvContext';
 import { useReaderStore } from '@/store/readerStore';
+import { useBookViewState } from '@/app/reader/hooks/useBookViewState';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useSidebarStore } from '@/store/sidebarStore';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
@@ -34,8 +35,10 @@ export const NavigationBar: React.FC<NavigationBarProps> = ({
   const isMobile = forceMobileLayout || window.innerWidth < 640 || window.innerHeight < 640;
   const _ = useTranslation();
   const { appService } = useEnv();
-  const { getViewState } = useReaderStore();
-  const { isSideBarVisible, isSideBarPinned } = useSidebarStore();
+  const getViewState = useReaderStore((s) => s.getViewState);
+  useBookViewState(bookKey);
+  const isSideBarVisible = useSidebarStore((s) => s.isSideBarVisible);
+  const isSideBarPinned = useSidebarStore((s) => s.isSideBarPinned);
 
   const viewState = getViewState(bookKey);
   const tocIconSize = useResponsiveSize(23);

@@ -5,6 +5,14 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { FontLayoutPanel } from '@/app/reader/components/footerbar/FontLayoutPanel';
 import { useSettingsStore } from '@/store/settingsStore';
 
+// A store hook called with a selector, or without one for the whole state.
+const { storeHook } = vi.hoisted(() => ({
+  storeHook:
+    <T extends object>(state: () => T) =>
+    (select?: (s: T) => unknown) =>
+      select ? select(state()) : state(),
+}));
+
 vi.mock('@/hooks/useTranslation', () => ({
   useTranslation: () => (key: string) => key,
 }));
@@ -17,7 +25,8 @@ vi.mock('@/helpers/settings', () => ({ saveViewSettings: vi.fn() }));
 
 const setHoveredBookKeyMock = vi.fn();
 vi.mock('@/store/readerStore', () => ({
-  useReaderStore: () => ({
+  useReaderStore: storeHook(() => ({
+    viewStates: {},
     getView: () => null,
     getViewSettings: () => ({
       defaultFontSize: 16,
@@ -26,7 +35,7 @@ vi.mock('@/store/readerStore', () => ({
       gapPercent: 5,
     }),
     setHoveredBookKey: setHoveredBookKeyMock,
-  }),
+  })),
 }));
 
 afterEach(() => {

@@ -29,11 +29,12 @@ vi.mock('@/hooks/useTranslation', () => ({
 }));
 vi.mock('@/store/readerStore', () => ({
   useReaderStore: Object.assign(
-    () => ({
-      bookKeys: h.bookKeys,
-      setBookKeys: h.setBookKeysMock,
-      initViewState: h.initViewStateMock,
-    }),
+    (select: (s: object) => unknown) =>
+      select({
+        bookKeys: h.bookKeys,
+        setBookKeys: h.setBookKeysMock,
+        initViewState: h.initViewStateMock,
+      }),
     {
       getState: () => ({
         getView: () => null,
@@ -54,10 +55,11 @@ vi.mock('@/store/readerProgressStore', () => ({
   },
 }));
 vi.mock('@/store/sidebarStore', () => ({
-  useSidebarStore: () => ({ sideBarBookKey: null, setSideBarBookKey: h.setSideBarBookKeyMock }),
+  useSidebarStore: (select: (s: object) => unknown) =>
+    select({ sideBarBookKey: null, setSideBarBookKey: h.setSideBarBookKeyMock }),
 }));
 vi.mock('@/store/parallelViewStore', () => ({
-  useParallelViewStore: () => ({ setParallel: vi.fn() }),
+  useParallelViewStore: (select: (s: object) => unknown) => select({ setParallel: vi.fn() }),
 }));
 vi.mock('@/utils/nav', () => ({ navigateToReader: vi.fn() }));
 

@@ -192,4 +192,29 @@ describe('ReaderContent subscriptions', () => {
     expect(onRender).toHaveBeenCalled();
     expect(container.querySelector('.reader-content')).toBeNull();
   });
+
+  // An opening book updates its view state many times (loading, progress, the view); the reader
+  // below re-renders only when the first book's view settings come or go
+  test('a view state update does not re-render it; view settings going away does', async () => {
+    const onRender = vi.fn();
+    const { container } = render(
+      <Profiler id='reader' onRender={onRender}>
+        <ReaderContent settings={{} as SystemSettings} />
+      </Profiler>,
+    );
+    await waitFor(() => expect(container.querySelector('.reader-content')).not.toBeNull());
+    await act(async () => {});
+    onRender.mockClear();
+    const viewState = useReaderStore.getState().viewStates['h1-k1']!;
+    act(() =>
+      useReaderStore.setState({ viewStates: { 'h1-k1': { ...viewState, loading: false } } }),
+    );
+    act(() => useReaderStore.setState({ hoveredBookKey: 'h1-k1' }));
+    expect(onRender).not.toHaveBeenCalled();
+    act(() =>
+      useReaderStore.setState({ viewStates: { 'h1-k1': { ...viewState, viewSettings: null } } }),
+    );
+    expect(onRender).toHaveBeenCalled();
+    expect(container.querySelector('.reader-content')).toBeNull();
+  });
 });

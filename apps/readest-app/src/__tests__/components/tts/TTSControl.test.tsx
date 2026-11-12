@@ -11,10 +11,11 @@ vi.mock('@/store/themeStore', () => ({
 }));
 
 vi.mock('@/store/readerStore', () => ({
-  useReaderStore: () => ({
+  useReaderStore: storeHook(() => ({
+    viewStates: {},
     hoveredBookKey: '',
     getViewSettings: () => ({ isEink: false, rtl: false }),
-  }),
+  })),
 }));
 
 const ttsState: Record<string, unknown> = {};
@@ -73,6 +74,14 @@ vi.mock('@/app/reader/components/tts/TTSPlayerSheet', () => ({
 }));
 
 import TTSControl from '@/app/reader/components/tts/TTSControl';
+
+// A store hook called with a selector, or without one for the whole state.
+const { storeHook } = vi.hoisted(() => ({
+  storeHook:
+    <T extends object>(state: () => T) =>
+    (select?: (s: T) => unknown) =>
+      select ? select(state()) : state(),
+}));
 
 const gridInsets = { top: 0, right: 0, bottom: 0, left: 0 };
 

@@ -27,10 +27,11 @@ vi.mock('@/app/reader/hooks/useScreenBrightness', () => ({ useScreenBrightness: 
 vi.mock('@/hooks/useTransferQueue', () => ({ useTransferQueue: vi.fn() }));
 vi.mock('@/hooks/useReplicaPull', () => ({ useReplicaPull: vi.fn() }));
 vi.mock('@/store/settingsStore', () => ({
-  useSettingsStore: () => ({ settings: { alwaysShowStatusBar: false } }),
+  useSettingsStore: (select: (s: object) => unknown) =>
+    select({ settings: { alwaysShowStatusBar: false } }),
 }));
 vi.mock('@/store/readerStore', () => ({
-  useReaderStore: () => ({ hoveredBookKey: h.hoveredBookKey }),
+  useReaderStore: (select: (s: object) => unknown) => select({ hoveredBookKey: h.hoveredBookKey }),
 }));
 vi.mock('@/store/sidebarStore', () => ({
   useSidebarStore: () => ({ getIsSideBarVisible: () => false }),

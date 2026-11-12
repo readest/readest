@@ -36,16 +36,25 @@ interface UseBookShortcutsProps {
 }
 
 const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) => {
-  const { getView, getViewState, getViewSettings, setViewSettings, setHoveredBookKey } =
-    useReaderStore();
-  const { toggleSideBar, setSideBarBookKey, setSideBarVisible, setSearchBarVisible } =
-    useSidebarStore();
-  const { settings, setSettingsDialogOpen, setSettingsDialogBookKey } = useSettingsStore();
+  // Selected, not whole stores: the reader page calls this, and an opening book updates the reader
+  // store many times. The shortcuts are registered again only when the books change (below).
+  const getView = useReaderStore((s) => s.getView);
+  const getViewState = useReaderStore((s) => s.getViewState);
+  const getViewSettings = useReaderStore((s) => s.getViewSettings);
+  const setViewSettings = useReaderStore((s) => s.setViewSettings);
+  const setHoveredBookKey = useReaderStore((s) => s.setHoveredBookKey);
+  const toggleSideBar = useSidebarStore((s) => s.toggleSideBar);
+  const setSideBarBookKey = useSidebarStore((s) => s.setSideBarBookKey);
+  const setSideBarVisible = useSidebarStore((s) => s.setSideBarVisible);
+  const setSearchBarVisible = useSidebarStore((s) => s.setSearchBarVisible);
+  const settings = useSettingsStore((s) => s.settings);
+  const setSettingsDialogOpen = useSettingsStore((s) => s.setSettingsDialogOpen);
+  const setSettingsDialogBookKey = useSettingsStore((s) => s.setSettingsDialogBookKey);
   const { envConfig } = useEnv();
   const getBookData = useBookDataStore((s) => s.getBookData);
   const getConfig = useBookDataStore((s) => s.getConfig);
   const setConfig = useBookDataStore((s) => s.setConfig);
-  const { toggleNotebook } = useNotebookStore();
+  const toggleNotebook = useNotebookStore((s) => s.toggleNotebook);
   const { getNextBookKey } = useBooksManager();
   const lastParagraphToggleRef = useRef(0);
   const viewSettings = getViewSettings(sideBarBookKey ?? '');

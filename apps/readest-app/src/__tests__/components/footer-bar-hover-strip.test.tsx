@@ -5,6 +5,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import FooterBar from '@/app/reader/components/footerbar/FooterBar';
 
+// A store hook called with a selector, or without one for the whole state.
+const { storeHook } = vi.hoisted(() => ({
+  storeHook:
+    <T extends object>(state: () => T) =>
+    (select?: (s: T) => unknown) =>
+      select ? select(state()) : state(),
+}));
+
 vi.mock('@/hooks/useTranslation', () => ({
   useTranslation: () => (key: string) => key,
 }));
@@ -13,7 +21,8 @@ vi.mock('@/context/EnvContext', () => ({
 }));
 const setHoveredBookKey = vi.hoisted(() => vi.fn());
 vi.mock('@/store/readerStore', () => ({
-  useReaderStore: () => ({
+  useReaderStore: storeHook(() => ({
+    viewStates: {},
     hoveredBookKey: 'book-1',
     setHoveredBookKey,
     bottomBarTab: '',
@@ -22,7 +31,7 @@ vi.mock('@/store/readerStore', () => ({
     getViewState: () => null,
     getProgress: () => null,
     getViewSettings: () => null,
-  }),
+  })),
 }));
 vi.mock('@/store/bookDataStore', () => ({
   ...bookDataStoreHooks(() => ({
@@ -32,17 +41,17 @@ vi.mock('@/store/bookDataStore', () => ({
   })),
 }));
 vi.mock('@/store/sidebarStore', () => ({
-  useSidebarStore: () => ({
+  useSidebarStore: storeHook(() => ({
     isSideBarVisible: false,
     isSideBarPinned: false,
     setSideBarVisible: vi.fn(),
-  }),
+  })),
 }));
 vi.mock('@/store/deviceStore', () => ({
-  useDeviceControlStore: () => ({
+  useDeviceControlStore: storeHook(() => ({
     acquireBackKeyInterception: vi.fn(),
     releaseBackKeyInterception: vi.fn(),
-  }),
+  })),
 }));
 vi.mock('@/store/themeStore', () => ({
   useThemeStore: (select: (s: { isIPhoneDuo: boolean }) => unknown) =>

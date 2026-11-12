@@ -4,6 +4,14 @@ import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
 import { render, cleanup, fireEvent } from '@testing-library/react';
 import PageJumpInput from '@/app/reader/components/footerbar/PageJumpInput';
 
+// A store hook called with a selector, or without one for the whole state.
+const { storeHook } = vi.hoisted(() => ({
+  storeHook:
+    <T extends object>(state: () => T) =>
+    (select?: (s: T) => unknown) =>
+      select ? select(state()) : state(),
+}));
+
 interface MockState {
   progress: unknown;
   viewSettings: unknown;
@@ -31,11 +39,12 @@ vi.mock('@/store/readerProgressStore', () => ({
 }));
 
 vi.mock('@/store/readerStore', () => ({
-  useReaderStore: () => ({
+  useReaderStore: storeHook(() => ({
+    viewStates: {},
     hoveredBookKey: mocks.state.hoveredBookKey,
     getView: () => mocks.view,
     getViewSettings: () => mocks.state.viewSettings,
-  }),
+  })),
 }));
 
 vi.mock('@/store/bookDataStore', () => ({

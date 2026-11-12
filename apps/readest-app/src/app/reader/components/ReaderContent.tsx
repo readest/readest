@@ -75,15 +75,23 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
   const searchParams = useSearchParams();
   const { envConfig, appService } = useEnv();
   const { bookKeys, dismissBook, getNextBookKey } = useBooksManager();
-  const { sideBarBookKey, setSideBarBookKey } = useSidebarStore();
-  const { saveSettings } = useSettingsStore();
+  // Selected, not whole stores: this renders the whole reader, and an opening book updates the
+  // reader store many times.
+  const sideBarBookKey = useSidebarStore((s) => s.sideBarBookKey);
+  const setSideBarBookKey = useSidebarStore((s) => s.setSideBarBookKey);
+  const saveSettings = useSettingsStore((s) => s.saveSettings);
   const getConfig = useBookDataStore((s) => s.getConfig);
   const setConfig = useBookDataStore((s) => s.setConfig);
   const getBookData = useBookDataStore((s) => s.getBookData);
   const saveConfig = useBookDataStore((s) => s.saveConfig);
-  const { getView, setBookKeys, getViewSettings } = useReaderStore();
-  const { initViewState, getViewState, clearViewState } = useReaderStore();
-  const { isSettingsDialogOpen, settingsDialogBookKey } = useSettingsStore();
+  const getView = useReaderStore((s) => s.getView);
+  const setBookKeys = useReaderStore((s) => s.setBookKeys);
+  const getViewSettings = useReaderStore((s) => s.getViewSettings);
+  const initViewState = useReaderStore((s) => s.initViewState);
+  const getViewState = useReaderStore((s) => s.getViewState);
+  const clearViewState = useReaderStore((s) => s.clearViewState);
+  const isSettingsDialogOpen = useSettingsStore((s) => s.isSettingsDialogOpen);
+  const settingsDialogBookKey = useSettingsStore((s) => s.settingsDialogBookKey);
   const [showDetailsBook, setShowDetailsBook] = useState<Book | null>(null);
   const [audiobookBookKey, setAudiobookBookKey] = useState<string | null>(null);
   const [hardcoverLinkBookKey, setHardcoverLinkBookKey] = useState<string | null>(null);
@@ -92,6 +100,8 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
   // change on every page turn.
   useBookDataStore((s) => s.getBookData(bookKeys?.[0] ?? '')?.book);
   useBookDataStore((s) => s.getBookData(bookKeys?.[0] ?? '')?.bookDoc);
+  // ...and whether the first book's view settings are ready.
+  useReaderStore((s) => !!s.viewStates[bookKeys?.[0] ?? '']?.viewSettings);
   useBookDataStore((s) => (audiobookBookKey ? s.getBookData(audiobookBookKey)?.bookDoc : null));
   const [shareDialogState, setShareDialogState] = useState<{
     book: Book;
