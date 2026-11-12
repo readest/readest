@@ -1,5 +1,5 @@
-//! Compiles `src/bootstrap.js` to QuickJS bytecode (no source, no debug info) in `OUT_DIR`, so the
-//! runtime reads it instead of parsing ~26 KB of JS at every launch.
+//! Compiles `src/bootstrap.js` to QuickJS bytecode (no source; debug info kept, so stacks name
+//! bootstrap.js lines) in `OUT_DIR`, so the runtime reads it instead of parsing it at every launch.
 
 use rquickjs::{Context, Runtime, qjs};
 
@@ -23,9 +23,7 @@ fn main() {
                 panic!("bootstrap.js does not compile: {:?}", ctx.catch());
             }
             let mut len = 0usize;
-            let flags = qjs::JS_WRITE_OBJ_BYTECODE
-                | qjs::JS_WRITE_OBJ_STRIP_SOURCE
-                | qjs::JS_WRITE_OBJ_STRIP_DEBUG;
+            let flags = qjs::JS_WRITE_OBJ_BYTECODE | qjs::JS_WRITE_OBJ_STRIP_SOURCE;
             let buf = qjs::JS_WriteObject(raw, (&mut len as *mut usize).cast(), f, flags as _);
             assert!(!buf.is_null(), "JS_WriteObject failed");
             let out = std::slice::from_raw_parts(buf, len).to_vec();

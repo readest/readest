@@ -2,7 +2,7 @@
 //! different split: Rust exposes a small set of node-id operations (`__n.*`, in [`ops`]) over
 //! `blitz-dom`, and `bootstrap.js` builds the DOM in JavaScript on top of them (Node, Element,
 //! Text, Document, CSSStyleDeclaration, EventTarget with capture/target/bubble dispatch, timers,
-//! window). `bootstrap.js` is compiled to bytecode at build time (build.rs) and embedded. Page scripts can be run from bytecode (written without source or debug info): with [`QjsDocument::bytecode_cache`] on, each
+//! window). `bootstrap.js` is compiled to bytecode at build time (build.rs) and embedded. Page scripts can be run from bytecode (written without source, with debug info): with [`QjsDocument::bytecode_cache`] on, each
 //! external script is compiled once to `<script>.qjsc` next to it and later launches read that
 //! instead of parsing.
 //!
@@ -30,7 +30,7 @@ use rquickjs::{Array, CatchResultExt, Context, Ctx, Function, Object, Runtime, V
 use url::Url;
 
 const BOOTSTRAP_JS: &str = include_str!("bootstrap.js");
-/// `bootstrap.js` compiled by build.rs (stripped of source and debug info).
+/// `bootstrap.js` compiled by build.rs (without its source).
 const BOOTSTRAP_QJSC: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/bootstrap.qjsc"));
 
 /// Times of the last [`QjsDocument::execute_scripts`], in milliseconds.
@@ -100,7 +100,7 @@ struct Loaded {
 }
 
 /// A global script ready to run: read from `bytecode` when this build can read it, else compiled
-/// from `src()` (and, with `write_to`, written there without source or debug info).
+/// from `src()` (and, with `write_to`, written there without the source).
 /// Returns `None` when there is no source; the value may be an exception.
 ///
 /// SAFETY: `raw` is a live context; the caller frees or consumes the returned value.
@@ -146,9 +146,7 @@ unsafe fn load(
             && !qjs::JS_IsException(f)
         {
             let mut len = 0usize;
-            let flags = qjs::JS_WRITE_OBJ_BYTECODE
-                | qjs::JS_WRITE_OBJ_STRIP_SOURCE
-                | qjs::JS_WRITE_OBJ_STRIP_DEBUG;
+            let flags = qjs::JS_WRITE_OBJ_BYTECODE | qjs::JS_WRITE_OBJ_STRIP_SOURCE;
             let buf = qjs::JS_WriteObject(raw, (&mut len as *mut usize).cast(), f, flags as _);
             if !buf.is_null() {
                 let _ = std::fs::write(cache, std::slice::from_raw_parts(buf, len));
@@ -162,7 +160,7 @@ unsafe fn load(
 
 /// Runs a script from the embedder's loader: its shipped bytecode `<url>.qjsc` if the loader has
 /// one this QuickJS can read (`qjs-precompile` output), else its source through [`eval_cached`].
-/// `BLITZ_QJS_SHIPPED=off` skips shipped bytecode (stripped: its stacks have no file or line).
+/// `BLITZ_QJS_SHIPPED=off` skips shipped bytecode.
 pub(crate) fn run_loader_script(
     ctx: &Ctx<'_>,
     shared: &Rc<RefCell<Shared>>,
@@ -578,8 +576,8 @@ impl QjsDocument {
         self.shared.borrow_mut().loader = Some(loader);
     }
 
-    /// Scripts from the loader (parse-time `src` and runtime-inserted ones) run from stripped
-    /// bytecode cached in `dir`, keyed by URL + source hash, compiled on first use.
+    /// Scripts from the loader (parse-time `src` and runtime-inserted ones) run from bytecode
+    /// cached in `dir`, keyed by URL + source hash, compiled on first use.
     pub fn set_bytecode_cache_dir(&mut self, dir: Option<PathBuf>) {
         if let Some(d) = &dir {
             let _ = std::fs::create_dir_all(d);
