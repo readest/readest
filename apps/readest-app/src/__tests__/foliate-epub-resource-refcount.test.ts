@@ -249,3 +249,37 @@ describe('EPUB resource refcounting across sections loaded at once', () => {
     expect(live.size).toBe(0);
   });
 });
+
+// A stylesheet that imports itself: the loader breaks the loop with an
+// untransformed copy, cached for the inner request only. The section must
+// still link the transformed stylesheet, whose relative images resolve.
+describe('EPUB stylesheet that imports itself', () => {
+  it('links the transformed stylesheet, not the copy that breaks the loop', async () => {
+    const opf = SHARED_CSS_OPF.replace(
+      '<item id="css" href="style.css" media-type="text/css"/>',
+      '<item id="css" href="style.css" media-type="text/css"/>\n    <item id="pic" href="pic.png" media-type="image/png"/>',
+    );
+    const files: Record<string, string> = {
+      ...SHARED_CSS_FILES,
+      'OEBPS/content.opf': opf,
+      'OEBPS/style.css': '@import url("style.css");\np { background: url("pic.png") }',
+      'OEBPS/pic.png': 'PNG-BYTES',
+    };
+    const blobs = new Map<string, Blob>();
+    const create = URL.createObjectURL;
+    URL.createObjectURL = (blob: Blob) => {
+      const url = create(blob);
+      blobs.set(url, blob);
+      return url;
+    };
+    const { sections } = await openEpub(files);
+
+    const chapterUrl = await sections[0]!.load();
+    const chapter = await blobs.get(chapterUrl)!.text();
+    const cssUrl = chapter.match(/href="(blob:[^"]+)"/)?.[1];
+    expect(cssUrl, 'the chapter links a stylesheet blob').toBeTruthy();
+    const css = await blobs.get(cssUrl!)!.text();
+    expect(css, 'the linked stylesheet').not.toContain('pic.png');
+    expect(css).toMatch(/url\("?blob:/);
+  });
+});
