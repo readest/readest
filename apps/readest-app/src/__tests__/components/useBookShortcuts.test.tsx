@@ -101,7 +101,6 @@ vi.mock('@/store/settingsStore', () => ({
 
 const mockSaveViewSettings = vi.fn();
 const mockApplyPageTurnAttributes = vi.fn();
-// 仅替换翻页属性应用器以验证快捷键调用；真实手势与 no-swipe 行为由浏览器回归覆盖。
 vi.mock('@/app/reader/hooks/useCapturedTurn', () => ({
   applyPageTurnAttributes: (...args: unknown[]) => mockApplyPageTurnAttributes(...args),
 }));
@@ -210,7 +209,6 @@ describe('useBookShortcuts', () => {
     cleanup();
   });
 
-  // 可重排与固定版式都应在切换滚动模式时重算翻页属性，避免单章边界手势被旧状态阻断。
   it.each([
     false,
     true,

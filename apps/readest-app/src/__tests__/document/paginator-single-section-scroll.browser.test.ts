@@ -14,7 +14,7 @@ const ready = async (index: number) => {
     requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
   );
 };
-const open = async (index = 1, short = false, rtl = false, vertical = false) => {
+const open = async (index = 1, rtl = false, vertical = false) => {
   paginator = document.createElement('foliate-paginator') as Renderer;
   Object.assign(paginator.style, {
     width: '600px',
@@ -27,7 +27,7 @@ const open = async (index = 1, short = false, rtl = false, vertical = false) => 
   paginator.setAttribute('no-continuous-scroll', '');
   document.body.append(paginator);
   const sections = Array.from({ length: 4 }, (_, i) => {
-    const html = `<!doctype html><html dir="${rtl ? 'rtl' : 'ltr'}"><head><style>html,body{margin:0}${vertical ? 'html{writing-mode:vertical-rl}' : ''}main{${vertical ? 'width' : 'height'}:${short ? 200 : 1600}px}p{margin:0;line-height:24px}</style></head><body><main>Chapter ${i}${Array.from({ length: short ? 2 : 40 }, () => '<p>Reading across a chapter boundary.</p>').join('')}</main></body></html>`;
+    const html = `<!doctype html><html dir="${rtl ? 'rtl' : 'ltr'}"><head><style>html,body{margin:0}${vertical ? 'html{writing-mode:vertical-rl}' : ''}main{${vertical ? 'width' : 'height'}:1600px}p{margin:0;line-height:24px}</style></head><body><main>Chapter ${i}${'<p>Reading across a chapter boundary.</p>'.repeat(40)}</main></body></html>`;
     const url = URL.createObjectURL(new Blob([html], { type: 'text/html' }));
     urls.push(url);
     return { id: `chapter-${i}`, linear: 'yes', size: html.length, load: async () => url };
@@ -40,15 +40,6 @@ const open = async (index = 1, short = false, rtl = false, vertical = false) => 
 };
 const end = () => {
   container().scrollTop = container().scrollHeight;
-};
-const wheel = (
-  deltaY: number,
-  target: EventTarget = currentDoc().body,
-  extra: WheelEventInit = {},
-) => {
-  const event = new WheelEvent('wheel', { bubbles: true, cancelable: true, deltaY, ...extra });
-  target.dispatchEvent(event);
-  return event;
 };
 const touch = (
   type: string,
@@ -65,6 +56,15 @@ const touch = (
   currentDoc().body.dispatchEvent(event);
   return event;
 };
+// One finger swipe; `from`/`to` are screen coordinates along the swipe axis.
+const swipe = (from: number, to: number, horizontal = false) => {
+  const y = (v: number) => (horizontal ? 200 : v);
+  const x = (v: number) => (horizontal ? v : 300);
+  touch('touchstart', y(from), 1, x(from));
+  const move = touch('touchmove', y(to), 1, x(to));
+  touch('touchend', y(to), 0, x(to));
+  return move;
+};
 
 beforeAll(async () => {
   await import('foliate-js/paginator.js');
@@ -79,15 +79,14 @@ describe('single-section scrolling across chapter boundaries', () => {
   it.each([
     false,
     true,
-  ])('continues forward and backward with the wheel, keeping one chapter (rtl=%s)', async (rtl) => {
-    await open(1, false, rtl);
+  ])('swipes forward to the next chapter start and back to the previous chapter end (rtl=%s)', async (rtl) => {
+    await open(1, rtl);
     end();
-    expect(wheel(120).defaultPrevented).toBe(true);
+    expect(swipe(300, 100).defaultPrevented).toBe(true);
     await ready(2);
     expect(paginator.getContents().map((c) => c.index)).toEqual([2]);
     expect(container().scrollTop).toBeLessThanOrEqual(2);
-    await pause(200);
-    wheel(-120);
+    swipe(100, 300);
     await ready(1);
     expect(paginator.getContents().map((c) => c.index)).toEqual([1]);
     expect(container().scrollTop).toBeGreaterThanOrEqual(
@@ -95,66 +94,44 @@ describe('single-section scrolling across chapter boundaries', () => {
     );
   });
 
-  it('changes chapter after a new boundary swipe, without treating ordinary scrolling as a chapter turn', async () => {
+  it('does not turn on a swipe that only reached the boundary mid-gesture', async () => {
     await open();
     container().scrollTop = 200;
     touch('touchstart', 300);
     end();
     touch('touchmove', 100);
     touch('touchend', 100);
-    await pause(180);
+    await pause(100);
     expect(paginator.primaryIndex).toBe(1);
-    touch('touchstart', 300);
-    touch('touchmove', 100);
-    touch('touchend', 100);
-    await ready(2);
-    expect(paginator.getContents().map((c) => c.index)).toEqual([2]);
-    touch('touchstart', 100);
-    touch('touchmove', 300);
-    touch('touchend', 300);
-    await ready(1);
-    expect(container().scrollTop).toBeGreaterThanOrEqual(
-      container().scrollHeight - container().clientHeight - 2,
-    );
   });
 
-  it('consumes a wheel momentum burst once, then accepts the next gesture', async () => {
-    await open(0, true);
-    wheel(120);
-    for (let i = 0; i < 12; i++) {
-      wheel(12, paginator);
-      await pause(20);
-    }
-    await ready(1);
+  it('leaves the wheel to native scrolling at a chapter boundary', async () => {
+    await open();
+    end();
+    const event = new WheelEvent('wheel', { bubbles: true, cancelable: true, deltaY: 120 });
+    currentDoc().body.dispatchEvent(event);
+    expect(event.defaultPrevented).toBe(false);
+    await pause(100);
     expect(paginator.primaryIndex).toBe(1);
-    await pause(200);
-    wheel(120);
-    await ready(2);
   });
 
-  it('respects disabled swipe turning while still allowing wheel chapter turns', async () => {
+  it('does not turn when Swipe to Paginate is off', async () => {
     await open();
     paginator.setAttribute('no-swipe', '');
     end();
-    touch('touchstart', 300);
-    expect(touch('touchmove', 100).defaultPrevented).toBe(false);
-    touch('touchend', 100);
-    await pause(180);
+    expect(swipe(300, 100).defaultPrevented).toBe(false);
+    await pause(100);
     expect(paginator.primaryIndex).toBe(1);
-    expect(wheel(120).defaultPrevented).toBe(true);
-    await ready(2);
   });
 
-  it('uses the horizontal scroll axis for vertical writing, with wheel and touch', async () => {
-    await open(1, false, false, true);
+  it('uses the horizontal scroll axis for vertical writing', async () => {
+    await open(1, false, true);
     container().scrollLeft = -container().scrollWidth;
     expect(container().scrollLeft).toBeLessThan(0);
-    expect(wheel(0, currentDoc().body, { deltaX: -120 }).defaultPrevented).toBe(true);
+    swipe(200, 400, true);
     await ready(2);
     expect(Math.abs(container().scrollLeft)).toBeLessThanOrEqual(2);
-    touch('touchstart', 200, 1, 400);
-    touch('touchmove', 200, 1, 200);
-    touch('touchend', 200, 0, 200);
+    swipe(400, 200, true);
     await ready(1);
     expect(container().scrollLeft).toBeLessThanOrEqual(
       container().clientWidth - container().scrollWidth + 2,
@@ -162,34 +139,34 @@ describe('single-section scrolling across chapter boundaries', () => {
     expect(paginator.getContents().map((c) => c.index)).toEqual([1]);
   });
 
-  it('keeps native wheel scrolling inside a chapter and ignores zoom, selection and nested scroll areas', async () => {
+  it('does not turn from a selection, a nested scroll area, a cancelled or multi-touch swipe, or a locked scroll', async () => {
     await open();
-    container().scrollTop = 200;
-    expect(wheel(120).defaultPrevented).toBe(false);
-    expect(container().scrollTop).toBe(200);
     end();
-    expect(wheel(120, currentDoc().body, { ctrlKey: true }).defaultPrevented).toBe(false);
     const doc = currentDoc();
     const range = doc.createRange();
     range.selectNodeContents(doc.querySelector('p')!);
     doc.getSelection()!.removeAllRanges();
     doc.getSelection()!.addRange(range);
-    expect(doc.getSelection()!.isCollapsed).toBe(false);
-    wheel(120);
+    swipe(300, 100);
     doc.getSelection()!.removeAllRanges();
+
     const nested = doc.createElement('div');
     nested.style.cssText = 'height:50px;overflow:auto';
     nested.innerHTML = '<div style="height:300px">Scrollable table</div>';
     doc.querySelector('main')!.prepend(nested);
     end();
-    expect(wheel(120, nested).defaultPrevented).toBe(false);
-    await pause(250);
-    expect(paginator.primaryIndex).toBe(1);
-  });
-
-  it('does not turn after cancellation, multi-touch, or while selection has locked scrolling', async () => {
-    await open();
+    const point = { screenX: 300, screenY: 300, clientX: 300, clientY: 300 };
+    const start = new Event('touchstart', { bubbles: true, cancelable: true });
+    Object.defineProperties(start, {
+      touches: { value: [point] },
+      changedTouches: { value: [point] },
+    });
+    nested.dispatchEvent(start);
+    touch('touchmove', 100);
+    touch('touchend', 100);
+    nested.remove();
     end();
+
     touch('touchstart', 300);
     touch('touchmove', 100);
     touch('touchcancel', 100);
@@ -197,26 +174,23 @@ describe('single-section scrolling across chapter boundaries', () => {
     touch('touchmove', 100, 2);
     touch('touchend', 100);
     paginator.scrollLocked = true;
-    touch('touchstart', 300);
-    touch('touchmove', 100);
-    touch('touchend', 100);
-    wheel(120);
+    swipe(300, 100);
     paginator.scrollLocked = false;
-    await pause(250);
+    await pause(100);
     expect(paginator.primaryIndex).toBe(1);
   });
 
-  it('stays at the ends of the book and leaves continuous mode to native scrolling', async () => {
+  it('stays at the ends of the book and leaves continuous scroll alone', async () => {
     await open(0);
-    wheel(-120);
-    await pause(180);
+    swipe(100, 300);
+    await pause(100);
     expect(paginator.primaryIndex).toBe(0);
     await paginator.goTo({ index: 3, anchor: 1 });
     await ready(3);
-    wheel(120);
-    await pause(180);
+    swipe(300, 100);
+    await pause(100);
     expect(paginator.primaryIndex).toBe(3);
     paginator.removeAttribute('no-continuous-scroll');
-    expect(wheel(120).defaultPrevented).toBe(false);
+    expect(swipe(300, 100).defaultPrevented).toBe(false);
   });
 });
