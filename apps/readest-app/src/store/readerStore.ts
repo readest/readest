@@ -132,6 +132,27 @@ interface ReaderStore {
   recreateViewer: (envConfig: EnvConfigType, key: string) => void;
 }
 
+/** `state` with `patch` applied to `key`'s view state: unchanged (so no subscriber is notified)
+ * when every field already holds its value. Insets compare by value. */
+function withViewState(
+  state: ReaderStore,
+  key: string,
+  patch: Partial<ViewState>,
+): ReaderStore | Partial<ReaderStore> {
+  const current = state.viewStates[key];
+  const same = (a: unknown, b: unknown) =>
+    a === b ||
+    (!!a &&
+      !!b &&
+      typeof a === 'object' &&
+      typeof b === 'object' &&
+      Object.keys(a).length === Object.keys(b).length &&
+      Object.entries(a).every(([k, v]) => (b as Record<string, unknown>)[k] === v));
+  if (current && Object.entries(patch).every(([k, v]) => same(current[k as keyof ViewState], v)))
+    return state;
+  return { viewStates: { ...state.viewStates, [key]: { ...current!, ...patch } } };
+}
+
 export const useReaderStore = create<ReaderStore>((set, get) => ({
   viewStates: {},
   bookKeys: [],
@@ -569,48 +590,16 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
     } as BookProgress);
   },
   setBookmarkRibbonVisibility: (key: string, visible: boolean) =>
-    set((state) => ({
-      viewStates: {
-        ...state.viewStates,
-        [key]: {
-          ...state.viewStates[key]!,
-          ribbonVisible: visible,
-        },
-      },
-    })),
+    set((state) => withViewState(state, key, { ribbonVisible: visible })),
 
   setTTSEnabled: (key: string, enabled: boolean) =>
-    set((state) => ({
-      viewStates: {
-        ...state.viewStates,
-        [key]: {
-          ...state.viewStates[key]!,
-          ttsEnabled: enabled,
-        },
-      },
-    })),
+    set((state) => withViewState(state, key, { ttsEnabled: enabled })),
 
   setDrawingEnabled: (key: string, enabled: boolean) =>
-    set((state) => ({
-      viewStates: {
-        ...state.viewStates,
-        [key]: {
-          ...state.viewStates[key]!,
-          drawingEnabled: enabled,
-        },
-      },
-    })),
+    set((state) => withViewState(state, key, { drawingEnabled: enabled })),
 
   setAutoScrollEnabled: (key: string, enabled: boolean) =>
-    set((state) => ({
-      viewStates: {
-        ...state.viewStates,
-        [key]: {
-          ...state.viewStates[key]!,
-          autoScrollEnabled: enabled,
-        },
-      },
-    })),
+    set((state) => withViewState(state, key, { autoScrollEnabled: enabled })),
 
   setOcrEnabled: (key: string, enabled: boolean) =>
     set((state) => ({
@@ -635,61 +624,21 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
     })),
 
   setIsLoading: (key: string, loading: boolean) =>
-    set((state) => ({
-      viewStates: {
-        ...state.viewStates,
-        [key]: {
-          ...state.viewStates[key]!,
-          loading,
-        },
-      },
-    })),
+    set((state) => withViewState(state, key, { loading: loading })),
 
   setIsSyncing: (key: string, syncing: boolean) =>
-    set((state) => ({
-      viewStates: {
-        ...state.viewStates,
-        [key]: {
-          ...state.viewStates[key]!,
-          syncing,
-        },
-      },
-    })),
+    set((state) => withViewState(state, key, { syncing: syncing })),
 
   getGridInsets: (key: string) =>
     get().viewStates[key]?.gridInsets || { top: 0, right: 0, bottom: 0, left: 0 },
   setGridInsets: (key: string, insets: Insets | null) =>
-    set((state) => ({
-      viewStates: {
-        ...state.viewStates,
-        [key]: {
-          ...state.viewStates[key]!,
-          gridInsets: insets,
-        },
-      },
-    })),
+    set((state) => withViewState(state, key, { gridInsets: insets })),
 
   setViewInited: (key: string, inited: boolean) =>
-    set((state) => ({
-      viewStates: {
-        ...state.viewStates,
-        [key]: {
-          ...state.viewStates[key]!,
-          inited,
-        },
-      },
-    })),
+    set((state) => withViewState(state, key, { inited: inited })),
 
   setPreviewMode: (key: string, previewMode: boolean) =>
-    set((state) => ({
-      viewStates: {
-        ...state.viewStates,
-        [key]: {
-          ...state.viewStates[key]!,
-          previewMode,
-        },
-      },
-    })),
+    set((state) => withViewState(state, key, { previewMode: previewMode })),
 
   recreateViewer: (envConfig: EnvConfigType, key: string) => {
     if (!key || get().viewStates[key]?.key !== key) return;

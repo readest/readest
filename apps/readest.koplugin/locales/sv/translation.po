@@ -185,6 +185,12 @@ msgstr "Ta bort den här boken från moln och enhet?"
 msgid "Remove"
 msgstr "Ta bort"
 
+msgid "Remove from Library, Keep File"
+msgstr "Ta bort från biblioteket, behåll filen"
+
+msgid "Remove this book from your library and the cloud? The file stays on this device."
+msgstr "Ta bort den här boken från biblioteket och molnet? Filen finns kvar på den här enheten."
+
 msgid "Remove from Cloud Only"
 msgstr "Ta bort enbart från moln"
 

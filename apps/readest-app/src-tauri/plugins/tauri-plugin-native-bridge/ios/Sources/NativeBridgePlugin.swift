@@ -383,10 +383,13 @@ private final class SelectionTouchObserver: UIGestureRecognizer {
     forward("touchstart", touch: touch)
   }
 
+  /// Forwards the tracked finger at up to 60 Hz so claimed edge turns can
+  /// continue when WebKit suppresses DOM touch events. Other touches are ignored.
   override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent) {
     guard let touch = trackedTouch, touches.contains(touch) else { return }
-    // Match Android's ~10/s bridge rate; start/end/cancel are never throttled.
-    guard touch.timestamp - lastMoveTime >= 0.1 else { return }
+    // Edge page turns also use this stream when WebKit loses the DOM touch.
+    // Keep their fallback finger tracking at display cadence, rather than 10Hz.
+    guard touch.timestamp - lastMoveTime >= 1.0 / 60.0 else { return }
     lastMoveTime = touch.timestamp
     forward("touchmove", touch: touch)
   }
@@ -1969,11 +1972,12 @@ class NativeBridgePlugin: Plugin {
         if let error = event.error { data["error"] = error }
         self?.trigger("web-browser-download", data: data)
       }
-      controller.onFinish = { [weak self] hash, page in
+      controller.onFinish = { [weak self] hash, page, image in
         self?.activeWebBrowser = nil
         var ret = JSObject()
         if let hash = hash { ret["openBookHash"] = hash }
         if let page = page { ret["page"] = ["url": page.url, "html": page.html] }
+        if let image = image { ret["image"] = ["url": image.url, "pageUrl": image.pageUrl] }
         invoke.resolve(ret)
       }
       self.activeWebBrowser = controller

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createSupabaseAdminClient } from '@/utils/supabase';
-import { authenticateDevice, linkedBook, parseConfigProgress } from '@/libs/crosspoint';
+import { authenticateDevice, parseConfigProgress, resolveDocument } from '@/libs/crosspoint';
 
 // GET /api/crosspoint/syncs/progress/:document — the XPointer Readest last
 // synced for the book (document = partial MD5 = book_hash, or a rewritten
@@ -11,7 +11,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ docu
   if (typeof userId !== 'string') return userId;
 
   const { document } = await params;
-  const link = await linkedBook(supabase, userId, document);
+  const link = await resolveDocument(supabase, userId, document);
   if (link.error) return NextResponse.json({ message: 'Could not read progress' }, { status: 500 });
   const bookHash = link.bookHash ?? document;
   const { data, error } = await supabase

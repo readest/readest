@@ -12,6 +12,9 @@ import { DEFAULT_STATS_TRACKING_CONFIG } from '@/types/statistics';
 import { SyncClient } from '@/libs/sync';
 import { BookOrbitClient } from '@/services/bookorbit/BookOrbitClient';
 import { pushStatsToBookOrbit } from '@/services/bookorbit/statsPush';
+import { GrimmoryClient, grimmoryAccountKey } from '@/services/grimmory/GrimmoryClient';
+import { GrimmorySyncStore } from '@/services/grimmory/GrimmorySyncStore';
+import { pushStatsToGrimmory } from '@/services/grimmory/statsPush';
 import { pushStats, pullStats } from '@/services/statistics/statsSync';
 import { isSyncCategoryEnabled } from '@/services/sync/syncCategories';
 import { useSettingsStore } from '@/store/settingsStore';
@@ -73,10 +76,36 @@ export default function ReadingStatsTracker({ bookKey }: { bookKey: string }) {
     return pushStatsToBookOrbit(db, new BookOrbitClient(bookorbit));
   };
 
-  const pushToAllTargets = (db: StatisticsDb) => {
+  // Sessions go to Grimmory only for books matched there by the reader's pass.
+  const grimmoryStatsPush = (db: StatisticsDb, closing: boolean) => {
+    const { settings } = useSettingsStore.getState();
+    const grimmory = settings.grimmory;
+    if (
+      !appService ||
+      !grimmory.enabled ||
+      !grimmory.syncStats ||
+      !grimmory.serverUrl ||
+      !grimmory.username ||
+      !grimmory.password
+    ) {
+      return undefined;
+    }
+    return pushStatsToGrimmory({
+      db,
+      client: new GrimmoryClient(grimmory),
+      store: new GrimmorySyncStore(appService),
+      account: grimmoryAccountKey(grimmory),
+      now: nowSec(),
+      readingHash: closing ? undefined : bookMd5,
+    });
+  };
+
+  const pushToAllTargets = (db: StatisticsDb, closing = false) => {
     if (syncEnabled()) runBestEffort(pushStats(db, new SyncClient()));
     const bookOrbitPush = bookOrbitStatsPush(db);
     if (bookOrbitPush) runBestEffort(bookOrbitPush);
+    const grimmoryPush = grimmoryStatsPush(db, closing);
+    if (grimmoryPush) runBestEffort(grimmoryPush);
   };
 
   const schedulePush = () => {
@@ -185,7 +214,7 @@ export default function ReadingStatsTracker({ bookKey }: { bookKey: string }) {
       if (pushTimerRef.current) clearTimeout(pushTimerRef.current);
       runBestEffort(
         persist(coreRef.current.onClose(nowSec())).then(() => {
-          if (dbRef.current) pushToAllTargets(dbRef.current);
+          if (dbRef.current) pushToAllTargets(dbRef.current, true);
           return undefined;
         }),
       );

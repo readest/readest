@@ -211,8 +211,8 @@ export interface BookNote {
   id: string;
   type: BookNoteType;
   cfi: string; // Canonicalized CFI for the note location
-  xpointer0?: string; // Start XPointer for the note location
-  xpointer1?: string; // End XPointer for the note location
+  xpointer0?: string | null; // Start XPointer for the note location
+  xpointer1?: string | null; // End XPointer for the note location
   page?: number;
   text?: string;
   style?: HighlightStyle;
@@ -232,10 +232,29 @@ export interface BookNote {
    * services/handwriting.
    */
   ink?: InkStroke[];
+  /**
+   * Where a CrossPoint reader anchors this highlight, the way `xpointer0` is
+   * KOReader's. Set on a clipping a reader synced, or by a Readest app for a
+   * highlight in an EPUB. See utils/crosspointClipping.
+   */
+  crosspoint?: CrossPointAnchor | null;
 
   createdAt: number;
   updatedAt: number;
   deletedAt?: number | null;
+}
+
+/**
+ * A CrossPoint clipping's position: its spine index and the [start, end) code
+ * points it covers in that section's text. The firmware's own clippings also
+ * carry its layout hints (pages, words, paragraph, chapter title), kept as
+ * sent so the reader gets them back unchanged.
+ */
+export interface CrossPointAnchor {
+  spine: number;
+  start_offset?: number;
+  end_offset?: number;
+  [hint: string]: unknown;
 }
 
 export interface BooknoteGroup {
@@ -344,6 +363,8 @@ export interface BookFont {
   serifFont: string;
   sansSerifFont: string;
   monospaceFont: string;
+  // Generic families whose book font lists resolve to the reader's font (#7276).
+  ignorePublisherFonts: ('serif' | 'sans-serif' | 'monospace')[];
   defaultFont: string;
   defaultCJKFont: string;
   defaultFontSize: number;
@@ -431,6 +452,9 @@ export interface ViewConfig {
   readingRulerPosition: number;
   readingRulerOpacity: number;
   readingRulerColor: ReadingRulerColor;
+  readingRulerStyle: 'band' | 'line';
+  readingRulerLineColor: string;
+  readingRulerLineThickness: number;
 }
 
 export interface TTSConfig {

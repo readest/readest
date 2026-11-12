@@ -1,3 +1,5 @@
+// @vitest-environment happy-dom
+import { bookDataStoreHooks } from '@/__tests__/helpers/book-data-store-mock';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { cleanup, renderHook } from '@testing-library/react';
 
@@ -33,7 +35,7 @@ vi.mock('@/store/readerStore', () => ({
   }),
 }));
 vi.mock('@/store/bookDataStore', () => ({
-  useBookDataStore: () => ({ getBookData: () => ({}) }),
+  ...bookDataStoreHooks(() => ({ getBookData: () => ({}) })),
 }));
 vi.mock('@/utils/event', () => ({
   eventDispatcher: {
@@ -339,6 +341,68 @@ describe('useTextSelector long press opens the image viewer (#7145)', () => {
         src: 'blob:http://localhost/figure',
       },
     ]);
+  });
+
+  // #6872: tables follow the same gesture; a long press on their text selects it.
+  test.each([
+    { textAtPoint: false, opens: true },
+    { textAtPoint: true, opens: false },
+  ])('an Android long press on a table (on text: $textAtPoint)', ({ textAtPoint, opens }) => {
+    h.appService = { isAndroidApp: true, isMobile: true };
+    h.textAtPoint = textAtPoint;
+    listen();
+    document.body.innerHTML = '<table><tr><td>Cell</td></tr></table>';
+    rightClick(document.querySelector('td')!, 50, 50, 'touch');
+    expect(imageMenus()).toEqual([]);
+    expect(openedMedia()).toEqual(
+      opens ? [expect.objectContaining({ type: 'iframe-open-media', elementType: 'table' })] : [],
+    );
+  });
+
+  test('an Android long press on blank table space while text is selected opens nothing', () => {
+    h.appService = { isAndroidApp: true, isMobile: true };
+    listen();
+    document.body.innerHTML = '<p>Intro</p><table><tr><td>Cell</td></tr></table>';
+    document.getSelection()!.selectAllChildren(document.querySelector('p')!);
+    try {
+      rightClick(document.querySelector('td')!, 50, 50, 'touch');
+      expect(openedMedia()).toEqual([]);
+    } finally {
+      document.getSelection()!.removeAllRanges();
+    }
+  });
+
+  test('an iOS touch hold on blank table space opens the table zoom', () => {
+    vi.useFakeTimers();
+    try {
+      h.appService = { isIOSApp: true, isMobile: true };
+      h.osPlatform = 'ios';
+      document.body.innerHTML = '<table><tr><td>Cell</td></tr></table>';
+      const { result } = setup(vi.fn());
+      result.current.handlePointerDown(document, 0, {
+        target: document.querySelector('td'),
+        pointerType: 'touch',
+        clientX: 30,
+        clientY: 40,
+        button: 0,
+      } as unknown as PointerEvent);
+      vi.advanceTimersByTime(500);
+      expect(openedMedia()).toEqual([
+        expect.objectContaining({ type: 'iframe-open-media', elementType: 'table' }),
+      ]);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  test('a long press on a table in a book set to Tap opens nothing', async () => {
+    const { setImageViewerGesture } = await import('@/app/reader/utils/iframeEventHandlers');
+    setImageViewerGesture('book-1', 'tap');
+    h.appService = { isAndroidApp: true, isMobile: true };
+    listen();
+    document.body.innerHTML = '<table><tr><td>Cell</td></tr></table>';
+    rightClick(document.querySelector('td')!, 50, 50, 'touch');
+    expect(openedMedia()).toEqual([]);
   });
 
   test.each([true, false])('an iOS touch hold opens the viewer (native app: %s)', (isIOSApp) => {

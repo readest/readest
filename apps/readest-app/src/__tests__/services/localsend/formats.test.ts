@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { partitionSupportedFiles } from '@/services/localsend/formats';
 import type { LocalSendFile } from '@/services/localsend/types';

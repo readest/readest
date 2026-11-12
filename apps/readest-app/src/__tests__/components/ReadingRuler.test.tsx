@@ -44,6 +44,7 @@ vi.mock('@/store/readerStore', () => {
   const store = { getProgress, getView };
   return { useReaderStore: () => store };
 });
+vi.mock('@/store/readerProgressStore', () => ({ useBookProgress: () => mockProgress }));
 
 // Evenly spaced single-column text lines in iframe-content coordinates.
 const makeLineRects = (count: number, pitch: number, height: number): RulerTestRect[] =>
@@ -662,6 +663,223 @@ describe('ReadingRuler', () => {
       expect(rulerTop()).toBeGreaterThan(before);
     });
   });
+  describe('line presentation', () => {
+    const lineProps = {
+      bookKey: 'book-1',
+      isVertical: false,
+      rtl: false,
+      lines: 2,
+      position: 33,
+      opacity: 0.5,
+      color: 'transparent' as const,
+      bookFormat: 'EPUB' as BookFormat,
+      gridInsets: { top: 0, right: 0, bottom: 0, left: 0 },
+    };
+
+    it('resizes immediately when changing style in scrolled mode', () => {
+      mockProgress = { range: {}, location: 'page-1', fraction: 0.1, pageinfo: { current: 0 } };
+      mockContents = makeScrolledContents(0, makeLineRects(30, 30, 20));
+      const settings = { ...viewSettings, scrolled: true, readingRulerStyle: 'line' as const };
+      const { container, rerender } = render(
+        <ReadingRuler {...lineProps} viewSettings={settings} />,
+      );
+      const lineHeight = parseFloat(
+        (container.querySelector('.ruler') as HTMLElement).style.height,
+      );
+      rerender(
+        <ReadingRuler {...lineProps} viewSettings={{ ...settings, readingRulerStyle: 'band' }} />,
+      );
+      expect(
+        parseFloat((container.querySelector('.ruler') as HTMLElement).style.height),
+      ).toBeGreaterThan(lineHeight);
+    });
+
+    it.each([
+      'band',
+      'line',
+    ] as const)('resizes immediately after moving a fixed-layout %s ruler and changing style', async (style) => {
+      const settings = { ...viewSettings, readingRulerStyle: style };
+      const { container, rerender } = render(
+        <ReadingRuler {...lineProps} bookFormat='PDF' viewSettings={settings} />,
+      );
+      eventDispatcher.dispatchSync('reading-ruler-move', {
+        bookKey: 'book-1',
+        direction: 'forward',
+      });
+      const ruler = () => container.querySelector('.ruler') as HTMLElement;
+      await waitFor(() =>
+        expect(parseFloat(ruler().style.height)).toBe(style === 'band' ? 56 : 28),
+      );
+      rerender(
+        <ReadingRuler
+          {...lineProps}
+          bookFormat='PDF'
+          viewSettings={{ ...settings, readingRulerStyle: style === 'band' ? 'line' : 'band' }}
+        />,
+      );
+      expect(parseFloat(ruler().style.height)).toBe(style === 'band' ? 28 : 56);
+    });
+
+    it('places the line after the complete height of large text', () => {
+      const content = makePaginatedContent(0, 800, [
+        { top: 300, bottom: 400, left: 50, right: 750, width: 700, height: 100 },
+      ]);
+      mockProgress = {
+        range: content.range,
+        location: 'page-1',
+        fraction: 0.1,
+        pageinfo: { current: 0 },
+      };
+      const { container } = render(
+        <ReadingRuler
+          {...lineProps}
+          viewSettings={{ ...viewSettings, readingRulerStyle: 'line' }}
+        />,
+      );
+      const ruler = container.querySelector('.ruler') as HTMLElement;
+      expect(
+        parseFloat(ruler.style.height),
+        'the line tracks the uncapped text block',
+      ).toBeGreaterThanOrEqual(100);
+    });
+
+    it.each([
+      { isVertical: false, rtl: false },
+      { isVertical: true, rtl: false },
+      { isVertical: true, rtl: true },
+    ])('keeps the line visible at a fixed-layout boundary: $isVertical / $rtl', ({
+      isVertical,
+      rtl,
+    }) => {
+      const { container } = render(
+        <ReadingRuler
+          {...lineProps}
+          isVertical={isVertical}
+          rtl={rtl}
+          position={99}
+          bookFormat='PDF'
+          viewSettings={{ ...viewSettings, readingRulerStyle: 'line' }}
+        />,
+      );
+      const ruler = container.querySelector('.ruler') as HTMLElement;
+      const line = container.querySelector('.ruler-line') as HTMLElement;
+      const dimension = isVertical ? 800 : 1000;
+      const start =
+        (parseFloat(isVertical ? ruler.style.left : ruler.style.top) / 100) * dimension -
+        parseFloat(isVertical ? ruler.style.width : ruler.style.height) / 2;
+      const lineStart = start + parseFloat(isVertical ? line.style.left : line.style.top);
+      expect(lineStart).toBeGreaterThanOrEqual(0);
+      expect(lineStart + 2).toBeLessThanOrEqual(dimension);
+    });
+
+    it.each([
+      { isVertical: false, rtl: false },
+      { isVertical: true, rtl: true },
+      { isVertical: true, rtl: false },
+    ])('draws only a colored line for $isVertical / $rtl', ({ isVertical, rtl }) => {
+      const { container } = render(
+        <ReadingRuler
+          bookKey='book-1'
+          isVertical={isVertical}
+          rtl={rtl}
+          lines={2}
+          position={33}
+          opacity={0.5}
+          color='yellow'
+          bookFormat='EPUB'
+          viewSettings={{
+            ...viewSettings,
+            readingRulerStyle: 'line',
+            readingRulerLineColor: '#123456',
+            readingRulerLineThickness: 3,
+          }}
+          gridInsets={{ top: 0, right: 0, bottom: 0, left: 0 }}
+        />,
+      );
+      const line = container.querySelector('.ruler-line') as HTMLDivElement;
+      expect(line, 'the line style renders a straight guide').not.toBeNull();
+      expect(
+        container.querySelectorAll('.bg-base-100'),
+        'surrounding text stays undimmed',
+      ).toHaveLength(0);
+      expect(line.style.backgroundColor).toBe('rgb(18, 52, 86)');
+      expect(isVertical ? line.style.width : line.style.height).toBe('3px');
+      expect(line.getAttribute('style')).not.toContain('sepia');
+      expect(container.querySelector('.ruler')?.className).toContain('pointer-events-none');
+      expect(
+        container.querySelectorAll(isVertical ? '.cursor-col-resize' : '.cursor-row-resize'),
+      ).toHaveLength(1);
+    });
+
+    it('keeps a monochrome e-ink line in the theme foreground', () => {
+      const { container } = render(
+        <ReadingRuler
+          bookKey='book-1'
+          isVertical={false}
+          rtl={false}
+          lines={1}
+          position={33}
+          opacity={0.5}
+          color='yellow'
+          bookFormat='EPUB'
+          viewSettings={{ ...viewSettings, readingRulerStyle: 'line', isEink: true }}
+          gridInsets={{ top: 0, right: 0, bottom: 0, left: 0 }}
+        />,
+      );
+      const line = container.querySelector('.ruler-line') as HTMLDivElement;
+      expect(line).not.toBeNull();
+      expect(line.style.backgroundColor).toBe('var(--color-base-content)');
+      expect(line.style.opacity).toBe('1');
+    });
+
+    it('follows the active column and advances to the next text line', async () => {
+      mockColumnCount = 2;
+      const left = makePaginatedContent(
+        0,
+        400,
+        makeLineRects(3, 100, 40).map((r) => ({ ...r, right: 350, width: 300 })),
+      );
+      const right = makePaginatedContent(
+        400,
+        400,
+        makeLineRects(3, 100, 40).map((r) => ({ ...r, right: 350, width: 300 })),
+      );
+      mockContents = [{ doc: left.doc }, { doc: right.doc }];
+      mockProgress = {
+        range: left.range,
+        location: 'page-1',
+        fraction: 0.1,
+        pageinfo: { current: 0 },
+      };
+      const { container } = render(
+        <ReadingRuler
+          bookKey='book-1'
+          isVertical={false}
+          rtl={false}
+          lines={1}
+          position={10}
+          opacity={0.5}
+          color='transparent'
+          bookFormat='EPUB'
+          viewSettings={{ ...viewSettings, readingRulerStyle: 'line' }}
+          gridInsets={{ top: 0, right: 0, bottom: 0, left: 0 }}
+        />,
+      );
+      const ruler = container.querySelector('.ruler') as HTMLDivElement;
+      expect(container.querySelector('.ruler-line')).not.toBeNull();
+      expect(parseFloat(ruler.style.width)).toBeLessThan(400);
+      const before = parseFloat(ruler.style.top);
+      expect(
+        eventDispatcher.dispatchSync('reading-ruler-move', {
+          bookKey: 'book-1',
+          direction: 'forward',
+        }),
+      ).toBe(true);
+      await waitFor(() => expect(parseFloat(ruler.style.top)).toBeGreaterThan(before));
+      expect(container.querySelectorAll('.bg-base-100')).toHaveLength(0);
+    });
+  });
+
   describe('band presentation', () => {
     const renderRuler = (settings: ViewSettings, color: 'transparent' | 'yellow') =>
       render(

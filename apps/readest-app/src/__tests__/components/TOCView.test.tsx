@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { render, act, cleanup } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
 
@@ -14,14 +15,15 @@ let scrollToIndexSpy: Mock<(arg: unknown) => void>;
 let capturedInitialized:
   | ((instance: { elements: () => { viewport: HTMLElement } }) => void)
   | undefined;
-let mockProgress: { sectionHref: string; location: string } | null;
 
 // ---------- Mocks ----------
-vi.mock('@/store/readerStore', () => {
+// Progress lives in the real progress store; getProgress reads it as in the app.
+vi.mock('@/store/readerStore', async () => {
+  const { getBookProgress } = await import('@/store/readerProgressStore');
   const state = {
     getView: () => undefined,
     getViewSettings: () => ({ isEink: false }),
-    getProgress: () => mockProgress,
+    getProgress: (key: string) => getBookProgress(key),
   };
   return {
     useReaderStore: <R,>(selector?: (s: typeof state) => R) => (selector ? selector(state) : state),
@@ -81,6 +83,16 @@ vi.mock('overlayscrollbars-react', () => ({
 
 // eslint-disable-next-line import/first
 import TOCView from '@/app/reader/components/sidebar/TOCView';
+// eslint-disable-next-line import/first
+import { clearBookProgress, setBookProgress } from '@/store/readerProgressStore';
+// eslint-disable-next-line import/first
+import type { BookProgress } from '@/types/book';
+
+const setProgress = (progress: { sectionHref: string; location: string }) => {
+  act(() => {
+    setBookProgress('book1', progress as unknown as BookProgress);
+  });
+};
 
 const makeFlatToc = (count: number): TOCItem[] =>
   Array.from({ length: count }, (_, i) => ({
@@ -99,7 +111,7 @@ const fireOverlayScrollbarsInitialized = () => {
 beforeEach(() => {
   scrollToIndexSpy = vi.fn<(arg: unknown) => void>();
   capturedInitialized = undefined;
-  mockProgress = null;
+  clearBookProgress('book1');
   // Run rAF synchronously so the callback's scroll happens inside act().
   vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => {
     cb(0);
@@ -119,13 +131,12 @@ describe('TOCView — OverlayScrollbars init does not rewind the TOC to the top'
 
     // Fresh refresh: TOCView mounts before the first relocate, so `progress`
     // (and thus the mount-time initialScrollTarget) has no reading position.
-    mockProgress = null;
     const { rerender } = render(<TOCView bookKey='book1' bookDoc={bookDoc} toc={toc} />);
 
     // The relocate arrives → the normal auto-scroll effect centers the active
     // chapter. (OverlayScrollbars' deferred init, which resets scrollTop to 0,
     // has not fired yet.)
-    mockProgress = { sectionHref: activeHref, location: 'epubcfi(/6/12!/4/1:0)' };
+    setProgress({ sectionHref: activeHref, location: 'epubcfi(/6/12!/4/1:0)' });
     act(() => {
       rerender(<TOCView bookKey='book1' bookDoc={bookDoc} toc={toc} />);
     });
@@ -142,12 +153,26 @@ describe('TOCView — OverlayScrollbars init does not rewind the TOC to the top'
   it('does not force a scroll on OverlayScrollbars init when there is no reading position', () => {
     const toc = makeFlatToc(8);
 
-    mockProgress = null;
     render(<TOCView bookKey='book1' bookDoc={bookDoc} toc={toc} />);
 
     scrollToIndexSpy.mockClear();
     fireOverlayScrollbarsInitialized();
 
     expect(scrollToIndexSpy).not.toHaveBeenCalled();
+  });
+});
+
+describe('TOCView follows the reading position', () => {
+  it('scrolls to the new chapter when progress changes with no parent re-render', () => {
+    const toc = makeFlatToc(8);
+    setProgress({ sectionHref: 'ch1.html', location: 'epubcfi(/6/4!/4/1:0)' });
+    render(<TOCView bookKey='book1' bookDoc={bookDoc} toc={toc} />);
+    fireOverlayScrollbarsInitialized();
+    scrollToIndexSpy.mockClear();
+
+    // A page turn into chapter 6: only the progress store changes.
+    setProgress({ sectionHref: 'ch6.html', location: 'epubcfi(/6/14!/4/1:0)' });
+
+    expect(scrollToIndexSpy).toHaveBeenCalledWith(expect.objectContaining({ index: 6 }));
   });
 });

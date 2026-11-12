@@ -185,6 +185,12 @@ msgstr "Buang buku ini daripada awan dan peranti?"
 msgid "Remove"
 msgstr "Buang"
 
+msgid "Remove from Library, Keep File"
+msgstr "Buang daripada pustaka, kekalkan fail"
+
+msgid "Remove this book from your library and the cloud? The file stays on this device."
+msgstr "Buang buku ini daripada pustaka dan awan anda? Fail kekal pada peranti ini."
+
 msgid "Remove from Cloud Only"
 msgstr "Buang dari Awan Sahaja"
 

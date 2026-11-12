@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { NextRequest } from 'next/server';
 
@@ -84,12 +85,14 @@ describe('GET /api/tts/readest', () => {
   it('lists Kokoro for Plus, Kokoro and OmniVoice for Pro', async () => {
     m.getSubscriptionPlan.mockReturnValue('plus');
     expect(await (await GET(req('GET'))).json()).toEqual({
-      voices: [{ id: 'kokoro:af_heart', name: 'Heart', lang: 'en-US', tier: 'plus' }],
+      voices: [
+        { id: 'kokoro:af_heart', name: 'Heart', lang: 'en-US', tier: 'plus', gender: 'female' },
+      ],
     });
     m.getSubscriptionPlan.mockReturnValue('pro');
     expect(await (await GET(req('GET'))).json()).toEqual({
       voices: [
-        { id: 'kokoro:af_heart', name: 'Heart', lang: 'en-US', tier: 'plus' },
+        { id: 'kokoro:af_heart', name: 'Heart', lang: 'en-US', tier: 'plus', gender: 'female' },
         { id: 'omnivoice:clara', name: 'Clara', lang: 'en-US', tier: 'pro' },
       ],
     });
@@ -104,7 +107,7 @@ describe('GET /api/tts/readest?all=1', () => {
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({
       voices: [
-        { id: 'kokoro:af_heart', name: 'Heart', lang: 'en-US', tier: 'plus' },
+        { id: 'kokoro:af_heart', name: 'Heart', lang: 'en-US', tier: 'plus', gender: 'female' },
         { id: 'omnivoice:clara', name: 'Clara', lang: 'en-US', tier: 'pro' },
       ],
     });

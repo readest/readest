@@ -1,3 +1,4 @@
+// @vitest-environment node
 // #5230: on the Tauri transport, an Edge-side close (or a plugin read error)
 // before `turn.end` must reject the synthesis promise. The old listener only
 // handled Text/Binary messages, so the promise never settled, the retry/skip

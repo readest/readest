@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { describe, it, expect, afterEach } from 'vitest';
 import { classifyPdfLineBreaks, getPdfTextFromRange, type PdfLine } from '@/utils/pdfText';
 import { getTextFromRange } from '@/utils/sel';

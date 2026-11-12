@@ -535,6 +535,76 @@ export const extendSelectionFromContents = (
   return false;
 };
 
+// Vim visual-mode motions (#7281): move the selection's moving end (its focus)
+// the way vim moves the cursor. Directions are logical, so RTL text follows.
+type Direction = 'forward' | 'backward';
+const VIM_MOTIONS: Record<string, [Direction, string]> = {
+  h: ['backward', 'character'],
+  l: ['forward', 'character'],
+  b: ['backward', 'word'],
+  j: ['forward', 'line'],
+  k: ['backward', 'line'],
+  $: ['forward', 'lineboundary'],
+  '(': ['backward', 'sentence'],
+  ')': ['forward', 'sentence'],
+};
+
+const isSpaceAtFocus = (sel: Selection, dir: Direction) => {
+  const node = sel.focusNode;
+  if (node?.nodeType !== Node.TEXT_NODE) return false;
+  const text = node.textContent ?? '';
+  const ch = dir === 'forward' ? text[sel.focusOffset] : text[sel.focusOffset - 1];
+  return !!ch && /\s/.test(ch);
+};
+
+const skipSpaces = (sel: Selection, dir: Direction) => {
+  while (isSpaceAtFocus(sel, dir)) {
+    const { focusNode, focusOffset } = sel;
+    sel.modify('extend', dir, 'character');
+    if (sel.focusNode === focusNode && sel.focusOffset === focusOffset) return;
+  }
+};
+
+export const applyVimMotion = (sel: Selection, key: string): boolean => {
+  if (key === 'o') {
+    const { anchorNode, anchorOffset, focusNode, focusOffset } = sel;
+    if (!anchorNode || !focusNode) return false;
+    sel.setBaseAndExtent(focusNode, focusOffset, anchorNode, anchorOffset);
+  } else if (key === 'w') {
+    // Start of the next word. A forward word step lands on the word's end on
+    // macOS and past the next space on Windows; skipping spaces evens them out.
+    if (!isSpaceAtFocus(sel, 'forward')) sel.modify('extend', 'forward', 'word');
+    skipSpaces(sel, 'forward');
+  } else if (key === 'e') {
+    // End of the next word, without the space Windows' word step takes along.
+    skipSpaces(sel, 'forward');
+    sel.modify('extend', 'forward', 'word');
+    skipSpaces(sel, 'backward');
+  } else if (key === '}') {
+    // End of the paragraph, then the next one on a repeat. Chromium's
+    // `paragraph` step keeps the caret's x like a line step, so step over the
+    // edge and go to the boundary instead.
+    sel.modify('extend', 'forward', 'character');
+    sel.modify('extend', 'forward', 'paragraphboundary');
+  } else if (key === '0' || key === '{') {
+    // Start of the line, or of the paragraph (the one before on a repeat).
+    // Chromium won't extend a forward selection back to a boundary, so move a
+    // collapsed caret there and re-extend from the anchor.
+    const { anchorNode, anchorOffset, focusNode } = sel;
+    if (!anchorNode || !focusNode) return false;
+    sel.collapse(focusNode, sel.focusOffset);
+    if (key === '{') sel.modify('move', 'backward', 'character');
+    sel.modify('move', 'backward', key === '0' ? 'lineboundary' : 'paragraphboundary');
+    if (!sel.focusNode) return false;
+    sel.setBaseAndExtent(anchorNode, anchorOffset, sel.focusNode, sel.focusOffset);
+  } else {
+    const motion = VIM_MOTIONS[key];
+    if (!motion) return false;
+    sel.modify('extend', motion[0], motion[1]);
+  }
+  return true;
+};
+
 export const snapRangeToWords = (range: Range): void => {
   if (typeof Intl === 'undefined' || !Intl.Segmenter) return;
 

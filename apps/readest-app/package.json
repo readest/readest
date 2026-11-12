@@ -1,6 +1,6 @@
 {
   "name": "@readest/readest-app",
-  "version": "0.12.16",
+  "version": "0.12.20",
   "private": true,
   "type": "module",
   "scripts": {
@@ -270,6 +270,7 @@
     "daisyui": "^5.7.22",
     "dotenv-cli": "^7.4.4",
     "fast-check": "^4.8.0",
+    "happy-dom": "21.0.4",
     "i18next-scanner": "^4.6.0",
     "jsdom": "^28.1.0",
     "mkdirp": "^3.0.1",

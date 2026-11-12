@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, test } from 'vitest';
 import { bookshelfAdapter } from '@/services/sync/adapters/bookshelf';
 import { createBookshelf } from '@/services/bookshelves/definitions';

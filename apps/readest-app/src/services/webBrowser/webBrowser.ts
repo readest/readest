@@ -34,6 +34,8 @@ export interface WebBrowserResult {
   openBookHash?: string;
   /** Rendered page at the moment the user chooses Clip Page. */
   page?: WebBrowserPage;
+  /** Explicitly selected HTTP(S) image and the page displaying it. */
+  image?: { url: string; pageUrl: string };
 }
 
 export interface WebBrowserPage {

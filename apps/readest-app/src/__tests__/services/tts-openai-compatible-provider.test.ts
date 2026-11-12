@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { fetchMock } = vi.hoisted(() => ({ fetchMock: vi.fn() }));
@@ -104,6 +105,16 @@ describe('OpenAICompatibleSpeechProvider', () => {
       ['zf_xiaobei', 'zh-CN'],
       ['jm_kumo', 'ja-JP'],
       ['nova', 'mul'],
+    ]);
+  });
+
+  it("tells a Kokoro voice's gender from its name; others state none", async () => {
+    fetchMock.mockResolvedValue(Response.json({ voices: ['af_heart', 'jm_kumo', 'nova'] }));
+    const voices = await provider.getAllVoices();
+    expect(voices.map((v) => [v.name, v.gender])).toEqual([
+      ['af_heart', 'female'],
+      ['jm_kumo', 'male'],
+      ['nova', undefined],
     ]);
   });
 

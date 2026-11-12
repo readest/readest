@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 vi.mock('@/utils/misc', async (importOriginal) => {
@@ -301,6 +302,21 @@ describe('getThemeCode', () => {
     localStorage.setItem('systemIsDarkMode', 'true');
     localStorage.removeItem('ambientIsDarkMode');
     expect(getThemeCode().isDarkMode).toBe(true);
+  });
+
+  // On an e-ink device the reader starts on the Contrast theme until a theme
+  // is picked. The book has to get the same black text, not the Default
+  // theme's #171717, which an e-ink screen shows as gray.
+  it('gives the book the contrast theme on an e-ink device with no theme picked', () => {
+    window.__READEST_IS_EINK = true;
+    try {
+      expect(getThemeCode()).toMatchObject({ fg: '#000000', bg: '#ffffff' });
+
+      localStorage.setItem('themeColor', 'default');
+      expect(getThemeCode().fg).toBe('#171717');
+    } finally {
+      delete window.__READEST_IS_EINK;
+    }
   });
 
   it('falls back to default theme when custom themeColor not found', () => {

@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect, beforeEach } from 'vitest';
 import { migrate, MigrationEntry } from '@/services/database/migrate';
 import { DatabaseService, DatabaseExecResult, DatabaseRow } from '@/types/database';

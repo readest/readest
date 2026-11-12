@@ -1,8 +1,9 @@
 import clsx from 'clsx';
 import React, { useEffect, useRef, useState } from 'react';
+import { useBookProgress } from '@/store/readerProgressStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useTranslation } from '@/hooks/useTranslation';
-import { useBookDataStore } from '@/store/bookDataStore';
+import { useBookData } from '@/store/bookDataStore';
 import type { PageInfo } from '@/types/book';
 import {
   collectLabels,
@@ -36,11 +37,10 @@ const PageJumpInput: React.FC<PageJumpInputProps> = ({
   className,
 }) => {
   const _ = useTranslation();
-  const { hoveredBookKey, getView, getProgress, getViewSettings } = useReaderStore();
-  const { getBookData } = useBookDataStore();
+  const { hoveredBookKey, getView, getViewSettings } = useReaderStore();
   const view = getView(bookKey);
-  const bookData = getBookData(bookKey);
-  const progress = getProgress(bookKey);
+  const bookData = useBookData(bookKey);
+  const progress = useBookProgress(bookKey);
   const viewSettings = getViewSettings(bookKey);
   const progressStyle = viewSettings?.progressStyle || 'percentage';
 

@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CatalogVoice } from '@/libs/readestVoice/catalog';
 
@@ -78,10 +79,10 @@ describe('plan filtering', () => {
     // Qwen3 voices are blocked for every plan, even though the catalog lists them.
     const { voicesForPlan } = await load();
     expect(voicesForPlan(CATALOG, 'plus')).toEqual([
-      { id: 'kokoro:af_heart', name: 'Heart', lang: 'en-US', tier: 'plus' },
+      { id: 'kokoro:af_heart', name: 'Heart', lang: 'en-US', tier: 'plus', gender: 'female' },
     ]);
     expect(voicesForPlan(CATALOG, 'pro')).toEqual([
-      { id: 'kokoro:af_heart', name: 'Heart', lang: 'en-US', tier: 'plus' },
+      { id: 'kokoro:af_heart', name: 'Heart', lang: 'en-US', tier: 'plus', gender: 'female' },
       { id: 'omnivoice:clara', name: 'Clara', lang: 'en-US', tier: 'pro' },
     ]);
     expect(voicesForPlan(CATALOG, 'free')).toEqual([]);
@@ -91,6 +92,27 @@ describe('plan filtering', () => {
   it('hides engines without a configured minimum plan (fail closed)', async () => {
     const { isVoiceInPlan } = await load();
     expect(isVoiceInPlan(CATALOG[2]!, 'pro')).toBe(false);
+  });
+
+  it("states each voice's gender: the catalog's, else the one a Kokoro id spells", async () => {
+    const { offeredVoices, getCatalog } = await load();
+    fetchMock.mockResolvedValueOnce(
+      Response.json({
+        voices: [
+          { ...CATALOG[3], gender: 'female' },
+          { id: 'kokoro:bm_george', engine: 'kokoro', name: 'George', langs: ['en-GB'] },
+          { id: 'kokoro:zf_001', engine: 'kokoro', name: 'Zifang', langs: ['zh-CN'] },
+          { id: 'omnivoice:x', engine: 'omnivoice', name: 'X', langs: ['en-US'], gender: 'robot' },
+        ],
+      }),
+    );
+    const genders = offeredVoices((await getCatalog())!).map(({ id, gender }) => [id, gender]);
+    expect(genders).toEqual([
+      ['omnivoice:clara', 'female'],
+      ['kokoro:bm_george', 'male'],
+      ['kokoro:zf_001', 'female'],
+      ['omnivoice:x', undefined],
+    ]);
   });
 
   it('finds voices by id', async () => {

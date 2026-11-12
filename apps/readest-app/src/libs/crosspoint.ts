@@ -85,7 +85,7 @@ interface Link {
 const NO_LINK: Link = { bookHash: null, error: null };
 
 /** The library book a rewritten copy was linked to (null if none). */
-export const linkedBook = async (
+const linkedBook = async (
   supabase: SupabaseClient,
   userId: string,
   document: string,
@@ -97,6 +97,81 @@ export const linkedBook = async (
     .eq('document', document)
     .maybeSingle();
   return { bookHash: (data?.book_hash as string | undefined) ?? null, error };
+};
+
+const recent = (book: { updated_at?: unknown }) => Date.parse(String(book.updated_at)) || 0;
+
+const saveLink = async (
+  supabase: SupabaseClient,
+  userId: string,
+  document: string,
+  bookHash: string,
+): Promise<Link> => {
+  // The reader syncs clippings before progress, so the copy's first clippings
+  // were saved under its own id. They move before the link is saved: once
+  // linked, the copy's id is never read again, so a failed move fails this
+  // sync and the next one tries again.
+  const { error: moveError } = await supabase
+    .from('book_notes')
+    .update({ book_hash: bookHash, updated_at: new Date().toISOString() })
+    .eq('user_id', userId)
+    .eq('book_hash', document)
+    .not('crosspoint', 'is', null);
+  if (moveError) return { bookHash: null, error: moveError };
+  const { error: linkError } = await supabase
+    .from('crosspoint_documents')
+    .upsert(
+      { user_id: userId, document, book_hash: bookHash },
+      { onConflict: 'user_id,document', ignoreDuplicates: true },
+    );
+  return linkError ? { bookHash: null, error: linkError } : { bookHash, error: null };
+};
+
+// PostgREST answers at most this many rows a request (Supabase's db-max-rows).
+const PAGE_ROWS = 1000;
+
+/**
+ * The library book a reader's document is (null if none, or if it is the
+ * book's own id): a linked copy, or the book imported under the file name it
+ * is the md5 of. A reader set to match documents by file name sends that, as
+ * KOReader does, and its first request links it.
+ */
+export const resolveDocument = async (
+  supabase: SupabaseClient,
+  userId: string,
+  document: string,
+): Promise<Link> => {
+  const link = await linkedBook(supabase, userId, document);
+  if (link.error || link.bookHash) return link;
+  const { data: own, error: ownError } = await supabase
+    .from('books')
+    .select('book_hash')
+    .eq('user_id', userId)
+    .eq('book_hash', document)
+    .maybeSingle();
+  if (ownError) return { bookHash: null, error: ownError };
+  if (own?.book_hash === document) return NO_LINK;
+  const named: { book_hash: string; updated_at?: unknown }[] = [];
+  for (let from = 0; ; from += PAGE_ROWS) {
+    const { data, error } = await supabase
+      .from('books')
+      .select('book_hash, original_filename, updated_at')
+      .eq('user_id', userId)
+      .not('original_filename', 'is', null)
+      .is('deleted_at', null)
+      .order('book_hash')
+      .range(from, from + PAGE_ROWS - 1);
+    if (error) return { bookHash: null, error };
+    const page = data ?? [];
+    named.push(
+      ...page.filter(
+        (b) => typeof b.original_filename === 'string' && md5(b.original_filename) === document,
+      ),
+    );
+    if (page.length < PAGE_ROWS) break;
+  }
+  const [book] = named.sort((a, b) => recent(b) - recent(a));
+  return book ? saveLink(supabase, userId, document, book.book_hash) : NO_LINK;
 };
 
 // The books row stores metadata as a JSON string.
@@ -157,17 +232,8 @@ export const linkCopy = async (
   if (matches.length > 1) {
     matches = author ? matches.filter((book) => firstAuthor(book) === author) : [];
   }
-  const recent = (book: (typeof matches)[number]) => Date.parse(String(book.updated_at)) || 0;
   const [book] = matches.sort((a, b) => recent(b) - recent(a));
-  if (!book) return NO_LINK;
-  const bookHash = book.book_hash as string;
-  const { error: linkError } = await supabase
-    .from('crosspoint_documents')
-    .upsert(
-      { user_id: userId, document, book_hash: bookHash },
-      { onConflict: 'user_id,document', ignoreDuplicates: true },
-    );
-  return linkError ? { bookHash: null, error: linkError } : { bookHash, error: null };
+  return book ? saveLink(supabase, userId, document, book.book_hash as string) : NO_LINK;
 };
 
 /** A book config's `[current, total]` progress, stored as a JSON string. */

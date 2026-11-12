@@ -13,6 +13,8 @@ mod linux;
 mod mobile;
 #[cfg(desktop)]
 mod now_playing;
+#[cfg(target_os = "linux")]
+mod speech_dispatcher;
 
 mod commands;
 mod error;
@@ -91,6 +93,19 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
             let native_tts = desktop::init(app, api)?;
             app.manage(native_tts);
             Ok(())
+        })
+        .on_event(|app, event| {
+            #[cfg(target_os = "linux")]
+            if let tauri::RunEvent::WindowEvent {
+                label,
+                event: tauri::WindowEvent::Destroyed,
+                ..
+            } = event
+            {
+                app.native_tts().remove_speech_session(label);
+            }
+            #[cfg(not(target_os = "linux"))]
+            let _ = (app, event);
         })
         .build()
 }

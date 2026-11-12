@@ -9,6 +9,7 @@ import {
 import { BookFormat, FIXED_LAYOUT_FORMATS, ViewSettings } from '@/types/book';
 import {
   themes,
+  getDefaultThemeColor,
   Palette,
   CustomTheme,
   generateLightPalette,
@@ -123,6 +124,7 @@ const getFontStyles = (
   minFontSize: number,
   fontWeight: number,
   overrideFont: boolean,
+  ignorePublisherFonts: string[],
 ) => {
   const families = buildFontFamilyLists(serif, sansSerif, monospace, defaultCJKFont);
   const defaultFontFamily = defaultFont.toLowerCase() === 'serif' ? '--serif' : '--sans-serif';
@@ -141,6 +143,7 @@ const getFontStyles = (
       --serif: ${families.serif};
       --sans-serif: ${families.sansSerif};
       --monospace: ${families.monospace};
+      ${overrideFont ? '' : ignorePublisherFonts.map((f) => `--book-${f}: var(--${f});`).join(' ')}
       --font-size: ${fontSize}px;
       --min-font-size: ${minFontSize}px;
       --font-weight: ${fontWeight};
@@ -790,11 +793,19 @@ const getParagraphLayoutStyles = (
     hanging-punctuation: allow-end last;
     widows: 2;
   }
+  /* A book's li { margin: 0 2em } narrows the text again at every list level.
+     Override Book Layout drops the end side only: with ul { padding: 0 } the
+     start side is what keeps an outside marker on the page. */
   li {
     line-height: ${lineSpacing} ${overrideLayout ? '!important' : ''};
     -webkit-hyphens: ${hyphenate ? 'auto' : 'manual'} ${overrideLayout ? '!important' : ''};
     hyphens: ${hyphenate ? 'auto' : 'manual'} ${overrideLayout ? '!important' : ''};
+    ${overrideLayout ? 'margin-inline-end: unset !important;' : ''}
   }
+  /* Shrinks the browser's 40px list padding, and never grows it at large font
+     sizes. The layer loses to every unlayered book rule, a reset like
+     * { padding: 0 } included, and still beats the browser's. */
+  ${overrideLayout ? '@layer list-indent { ul, ol { padding-inline-start: min(1.5em, 40px); } }' : ''}
   p.aligned-center, blockquote.aligned-center,
   dd.aligned-center, div.aligned-center {
     text-align: center ${overrideLayout ? '!important' : ''};
@@ -1129,7 +1140,7 @@ export const getThemeCode = () => {
   let ambientIsDarkMode = false;
   let customThemes: CustomTheme[] = [];
   if (typeof window !== 'undefined') {
-    themeColor = localStorage.getItem('themeColor') || 'default';
+    themeColor = localStorage.getItem('themeColor') || getDefaultThemeColor();
     themeMode = localStorage.getItem('themeMode') || 'auto';
     systemIsDarkMode = localStorage.getItem('systemIsDarkMode') === 'true';
     ambientIsDarkMode = readStoredAmbientIsDarkMode(
@@ -1208,6 +1219,7 @@ export const getStyles = (
     viewSettings.minimumFontSize!,
     viewSettings.fontWeight!,
     viewSettings.overrideFont!,
+    viewSettings.ignorePublisherFonts ?? [],
   );
   // Inline `@font-face` rules for the caller-supplied custom fonts so
   // they ship to the iframe synchronously with the rest of the
@@ -1275,6 +1287,83 @@ export const applyTranslationStyle = (viewSettings: ViewSettings) => {
 
   document.head.appendChild(styleElement);
 };
+
+// "Ignore publisher font names" (#7276): a list that names a generic family is
+// wrapped as `var(--book-serif, Palatino, serif)`. --book-serif is only defined
+// while that category's switch is on, so until then the book's list applies.
+const wrapPublisherFonts = (families: string, rewriteGenerics = false) => {
+  // Strings, comments and escapes are indivisible; commas inside functions
+  // also belong to the current family. Use the same tokens for detection and
+  // replacement so quoted names and comment text stay byte-for-byte intact.
+  const tokens =
+    families.match(
+      /\/\*[\s\S]*?\*\/|"(?:\\[\s\S]|[^"\\])*"|'(?:\\[\s\S]|[^'\\])*'|\\(?:[0-9a-fA-F]{1,6}\s?|[^\n\r\f])|[\w-]+|\s+|[^\s]/g,
+    ) ?? [];
+  const generics = new Set<string>();
+  let depth = 0;
+  let start = 0;
+  const finishFamily = (end: number) => {
+    const names: number[] = [];
+    for (let i = start; i < end; i++) {
+      if (!/^\s+$|^\/\*/.test(tokens[i]!)) names.push(i);
+    }
+    const index = names[0];
+    if (
+      names.length === 1 &&
+      index !== undefined &&
+      /^(serif|sans-serif|monospace)$/i.test(tokens[index]!)
+    ) {
+      const name = tokens[index]!.toLowerCase();
+      generics.add(name);
+      if (rewriteGenerics) tokens[index] = `var(--${name}, ${name})`;
+    }
+  };
+  for (let i = 0; i < tokens.length; i++) {
+    if (tokens[i] === '(') depth++;
+    else if (tokens[i] === ')') depth--;
+    else if (tokens[i] === ',' && depth === 0) {
+      finishFamily(i);
+      start = i + 1;
+    }
+  }
+  finishFamily(tokens.length);
+  if (!generics.size) return families;
+  const rewritten = tokens.join('');
+  const list = rewritten.trim();
+  const lead = rewritten.slice(0, rewritten.indexOf(list));
+  const wrapped = [...generics].reduceRight(
+    (fallback, name) => `var(--book-${name}, ${fallback})`,
+    list,
+  );
+  return lead + wrapped + rewritten.slice(lead.length + list.length);
+};
+
+const FONT_SIZE =
+  /^(?:(?:\d+(?:\.\d+)?|\.\d+)(?:[a-z]+|%)|x*-?(?:small|large)|medium|smaller|larger)$/i;
+
+// In a `font` shorthand the family list comes last, after the size and an
+// optional `/line-height`, e.g. `font: italic 1em/1.2 Palatino, serif`.
+const wrapFontShorthand = (match: string, prefix: string, value: string) => {
+  const [main = '', ...important] = value.split('!');
+  const words = [...main.matchAll(/[^\s/]+|\//g)];
+  const size = words.findIndex((word) => FONT_SIZE.test(word[0]));
+  if (size < 0) return match;
+  const start = words[words[size + 1]?.[0] === '/' ? size + 3 : size + 1]?.index;
+  if (start === undefined) return match;
+  const wrapped = wrapPublisherFonts(main.slice(start));
+  return [prefix + main.slice(0, start) + wrapped, ...important].join('!');
+};
+
+const FONT_SHORTHAND_REGEX = /((?:^|[\s;{])font\s*:)([^;{}]*)/gi;
+
+const wrapFontFamily = (_match: string, prefix: string, families: string) =>
+  prefix + wrapPublisherFonts(families);
+
+// `style` attributes don't pass through transformStylesheet.
+export const transformInlineFonts = (css: string) =>
+  css
+    .replace(/(font-family\s*:)([^;{}!]*)/gi, wrapFontFamily)
+    .replace(FONT_SHORTHAND_REGEX, wrapFontShorthand);
 
 export const transformStylesheet = (
   css: string,
@@ -1597,16 +1686,7 @@ export const transformStylesheet = (
     .replace(/(font-family\s*:\s*)([^;{}]*)/gi, (_match: string, prefix: string, value: string) => {
       const important = /\s*!\s*important\s*$/i.exec(value);
       const families = important ? value.slice(0, important.index) : value;
-      const rewritten = families
-        .split(',')
-        .map((family: string) => {
-          const generic = /^(serif|sans-serif|monospace)$/i.exec(family.trim());
-          if (!generic) return family;
-          const name = generic[1]!.toLowerCase();
-          return family.replace(generic[1]!, `var(--${name}, ${name})`);
-        })
-        .join(',');
-      return prefix + rewritten + (important ? important[0] : '');
+      return prefix + wrapPublisherFonts(families, true) + (important ? important[0] : '');
     })
     .replace(/([\s;])font-weight\s*:\s*normal/gi, '$1font-weight: var(--font-weight)')
     .replace(/([\s;])color\s*:\s*black/gi, '$1color: var(--theme-fg-color)')
@@ -1632,7 +1712,7 @@ export const transformStylesheet = (
     });
   }
 
-  return css;
+  return css.replace(FONT_SHORTHAND_REGEX, wrapFontShorthand);
 };
 
 export const applyThemeModeClass = (document: Document, isDarkMode: boolean) => {

@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { describe, test, expect, beforeAll, beforeEach, afterEach, vi } from 'vitest';
 
 // Pins the foliate-js CursorAutohider contract the reader wiring relies on

@@ -190,6 +190,8 @@ struct VoiceData: Encodable {
   let name: String
   let lang: String
   let disabled: Bool
+  // "female" / "male"; omitted when the voice does not say.
+  let gender: String?
 }
 
 struct GetVoicesResponse: Encodable {
@@ -448,7 +450,8 @@ class NativeTTSPlugin: Plugin, AVSpeechSynthesizerDelegate {
         id: voice.identifier,
         name: name,
         lang: voice.language,
-        disabled: false
+        disabled: false,
+        gender: voice.gender == .female ? "female" : voice.gender == .male ? "male" : nil
       )
     }
     invoke.resolve(GetVoicesResponse(voices: voices))

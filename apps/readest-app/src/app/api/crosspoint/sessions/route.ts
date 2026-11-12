@@ -4,7 +4,7 @@ import { DEFAULT_STATS_TRACKING_CONFIG } from '@/types/statistics';
 import {
   authenticateDevice,
   BOOK_HASH,
-  linkedBook,
+  resolveDocument,
   parseConfigProgress,
   PERCENT_PAGES,
 } from '@/libs/crosspoint';
@@ -44,7 +44,7 @@ export async function POST(request: Request) {
   }
 
   // A rewritten copy counts toward the library book it is linked to.
-  const link = await linkedBook(supabase, userId, document);
+  const link = await resolveDocument(supabase, userId, document);
   if (link.error) return NextResponse.json({ error: 'Could not read the book' }, { status: 500 });
   const bookHash = link.bookHash ?? document;
 

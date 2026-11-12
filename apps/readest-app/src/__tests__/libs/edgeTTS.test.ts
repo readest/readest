@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
 
 // Mock isomorphic-ws so that if the legacy (non-fetch) path is hit on
@@ -369,6 +370,7 @@ describe('EdgeSpeechTTS.voices', () => {
       name: 'Andrew',
       lang: 'en-US',
       variant: 'multilingual',
+      gender: 'male',
     });
     expect(byId('en-IN-NeerjaExpressiveNeural')).toMatchObject({
       name: 'Neerja',
@@ -378,7 +380,16 @@ describe('EdgeSpeechTTS.voices', () => {
       id: 'en-US-AndrewNeural',
       name: 'Andrew',
       lang: 'en-US',
+      gender: 'male',
     });
+  });
+
+  test('every voice carries its gender', async () => {
+    const { EdgeSpeechTTS } = await import('@/libs/edgeTTS');
+    const byId = (id: string) => EdgeSpeechTTS.voices.find((v) => v.id === id)!;
+    expect(byId('en-US-AriaNeural').gender).toBe('female');
+    expect(byId('zh-CN-YunxiNeural').gender).toBe('male');
+    expect(EdgeSpeechTTS.voices.filter((v) => !v.gender).map((v) => v.id)).toEqual([]);
   });
 });
 

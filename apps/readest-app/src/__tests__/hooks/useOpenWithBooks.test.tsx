@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { afterEach, describe, expect, test, vi } from 'vitest';
 import { act, cleanup, renderHook, waitFor } from '@testing-library/react';
 
@@ -18,9 +19,15 @@ vi.mock('@tauri-apps/api/window', () => ({
 }));
 vi.mock('@/context/EnvContext', () => ({ useEnv: () => ({ appService: h.appService }) }));
 vi.mock('@/services/environment', () => ({ isTauriAppPlatform: () => true }));
-vi.mock('@/store/libraryStore', () => ({
-  useLibraryStore: () => ({ setCheckOpenWithBooks: h.setCheckOpenWithBooks }),
-}));
+vi.mock('@/store/libraryStore', async () => {
+  const { create } = await import('zustand');
+  return {
+    useLibraryStore: create(() => ({
+      library: [],
+      setCheckOpenWithBooks: h.setCheckOpenWithBooks,
+    })),
+  };
+});
 vi.mock('@/utils/nav', () => ({
   navigateToLibrary: h.navigateToLibrary,
   navigateToReader: vi.fn(),
@@ -30,6 +37,7 @@ vi.mock('@/utils/md5', () => ({ partialMD5: vi.fn() }));
 
 import { useOpenWithBooks } from '@/hooks/useOpenWithBooks';
 import { eventDispatcher } from '@/utils/event';
+import { useLibraryStore } from '@/store/libraryStore';
 
 afterEach(() => {
   cleanup();
@@ -52,5 +60,19 @@ describe('useOpenWithBooks iOS file URL ingress', () => {
     await waitFor(() => expect(h.navigateToLibrary).toHaveBeenCalledTimes(1));
     expect(window.OPEN_WITH_FILES).toEqual([uri]);
     expect(h.setCheckOpenWithBooks).toHaveBeenCalledWith(true);
+  });
+});
+
+describe('useOpenWithBooks subscriptions', () => {
+  // The reader page calls this hook; the library changes on every page turn (the book's progress)
+  test('a library change does not re-render the component using it', () => {
+    let renders = 0;
+    renderHook(() => {
+      renders++;
+      useOpenWithBooks();
+    });
+    const before = renders;
+    act(() => useLibraryStore.setState({ library: [] }));
+    expect(renders).toBe(before);
   });
 });

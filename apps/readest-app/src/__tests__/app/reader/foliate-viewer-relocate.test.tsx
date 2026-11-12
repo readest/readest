@@ -9,13 +9,13 @@ import { eventDispatcher } from '@/utils/event';
 const { processOcrDocument, setProgress, readerState, view, bookData } = vi.hoisted(() => {
   const processOcrDocument = vi.fn().mockResolvedValue(null);
   const doc = {} as Document;
-  const renderer = {
+  const renderer = Object.assign(document.createElement('div'), {
     atEnd: false,
     getContents: vi.fn(() => [{ doc, index: 0 }]),
     removeAttribute: vi.fn(),
     setAttribute: vi.fn(),
     setStyles: vi.fn(),
-  };
+  });
   const view = Object.assign(document.createElement('foliate-view'), {
     book: {},
     goToFraction: vi.fn().mockResolvedValue(undefined),
@@ -116,6 +116,7 @@ vi.mock('@/hooks/useEinkMode', () => ({ useEinkMode: () => ({ applyEinkMode: vi.
 vi.mock('@/hooks/useUICSS', () => ({ useUICSS: () => {} }));
 vi.mock('@/hooks/useDiscordPresence', () => ({ useDiscordPresence: () => {} }));
 vi.mock('@/app/reader/hooks/bookOrbitProgressProvider', () => ({ bookOrbitProgressProvider: {} }));
+vi.mock('@/app/reader/hooks/grimmoryProgressProvider', () => ({ grimmoryProgressProvider: {} }));
 vi.mock('@/app/reader/components/paragraph', () => ({ ParagraphControl: () => null }));
 vi.mock('@/app/reader/components/BrightnessOverlay', () => ({ default: () => null }));
 vi.mock('@/app/reader/components/ImageViewer', () => ({ default: () => null }));

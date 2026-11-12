@@ -185,6 +185,12 @@ msgstr "Αφαίρεση αυτού του βιβλίου από cloud και σ
 msgid "Remove"
 msgstr "Αφαίρεση"
 
+msgid "Remove from Library, Keep File"
+msgstr "Αφαίρεση από τη βιβλιοθήκη, διατήρηση αρχείου"
+
+msgid "Remove this book from your library and the cloud? The file stays on this device."
+msgstr "Αφαίρεση αυτού του βιβλίου από τη βιβλιοθήκη και το cloud; Το αρχείο παραμένει σε αυτήν τη συσκευή."
+
 msgid "Remove from Cloud Only"
 msgstr "Αφαίρεση μόνο από cloud"
 

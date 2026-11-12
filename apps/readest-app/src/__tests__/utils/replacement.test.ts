@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { describe, test, expect, vi, afterEach } from 'vitest';
 // MUST BE FIRST — before imports
 vi.mock('@/services/translators/cache', () => ({

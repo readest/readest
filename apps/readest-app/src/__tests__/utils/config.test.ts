@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { getMaxInlineSize } from '@/utils/config';
 import type { ViewSettings } from '@/types/book';

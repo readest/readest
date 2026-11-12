@@ -25,6 +25,7 @@ import { isTauriAppPlatform } from '@/services/environment';
 import { getSysFontsList, setSystemUIVisibility } from '@/utils/bridge';
 import { AboutWindow } from '@/components/AboutWindow';
 import ReadingStatsDialog from '@/components/stats/ReadingStatsDialog';
+import { VocabularyDialog } from '@/components/vocabulary/VocabularyDialog';
 import { KeyboardShortcutsHelp } from '@/components/KeyboardShortcutsHelp';
 import { UpdaterWindow } from '@/components/UpdaterWindow';
 import { ProofreadRulesManager } from './ProofreadRules';
@@ -168,6 +169,7 @@ const Reader: React.FC<{ ids?: string }> = ({ ids }) => {
         <ReaderContent ids={ids} settings={settings} />
         <AboutWindow />
         <ReadingStatsDialog />
+        <VocabularyDialog />
         <KeyboardShortcutsHelp />
         <UpdaterWindow />
         <ProofreadRulesManager />

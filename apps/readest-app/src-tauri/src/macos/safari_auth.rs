@@ -169,7 +169,8 @@ pub async fn auth_with_safari<R: Runtime>(
                     nsstring_to_string(abs_str)
                 };
 
-                log::info!("Auth session callback URL: {}", url_string_value);
+                // The URL fragment carries the session tokens: never log it.
+                log::info!("Auth session callback received");
 
                 if let Some(session) = &auth_session.auth_session {
                     unsafe {

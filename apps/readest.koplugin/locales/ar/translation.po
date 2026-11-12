@@ -185,6 +185,12 @@ msgstr "إزالة هذا الكتاب من السحابة والجهاز؟"
 msgid "Remove"
 msgstr "إزالة"
 
+msgid "Remove from Library, Keep File"
+msgstr "إزالة من المكتبة مع الاحتفاظ بالملف"
+
+msgid "Remove this book from your library and the cloud? The file stays on this device."
+msgstr "هل تريد إزالة هذا الكتاب من مكتبتك ومن السحابة؟ سيبقى الملف على هذا الجهاز."
+
 msgid "Remove from Cloud Only"
 msgstr "إزالة من السحابة فقط"
 

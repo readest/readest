@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 import type { AppService } from '@/types/system';
 

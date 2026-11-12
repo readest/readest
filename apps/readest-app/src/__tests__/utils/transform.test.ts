@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect } from 'vitest';
 import {
   transformBookNoteToDB,
@@ -56,6 +57,40 @@ describe('transformBookNoteToDB with handwriting', () => {
     const pulled = transformBookNoteFromDB(row);
     expect('ink' in pulled).toBe(false);
     expect({ ...ink, ...pulled }.ink).toEqual(ink.ink);
+  });
+});
+
+describe('transformBookNoteToDB with a CrossPoint anchor', () => {
+  const highlight: BookNote = {
+    bookHash: 'abc123',
+    id: 'k3j9x0a',
+    type: 'annotation',
+    cfi: 'epubcfi(/6/4!/4/2,/1:0,/1:5)',
+    text: 'words',
+    note: '',
+    crosspoint: { spine: 1, start_offset: 10, end_offset: 15, pages: 19 },
+    createdAt: 1700000000000,
+    updatedAt: 1700000001000,
+  };
+
+  it('carries the anchor in the crosspoint column, both ways', () => {
+    const db = transformBookNoteToDB(highlight, 'user1');
+    expect(db.crosspoint).toEqual(highlight.crosspoint);
+    expect(transformBookNoteFromDB(db).crosspoint).toEqual(highlight.crosspoint);
+  });
+
+  it('never sends or pulls a key that would clear an anchor', () => {
+    const db = transformBookNoteToDB({ ...highlight, crosspoint: undefined }, 'user1');
+    expect('crosspoint' in JSON.parse(JSON.stringify(db))).toBe(false);
+    const pulled = transformBookNoteFromDB({ ...db, crosspoint: null });
+    expect('crosspoint' in pulled).toBe(false);
+    expect({ ...highlight, ...pulled }.crosspoint).toEqual(highlight.crosspoint);
+  });
+
+  it('sends anchors cleared by a moved range as null, so the server forgets them', () => {
+    const moved = { ...highlight, xpointer0: null, xpointer1: null, crosspoint: null };
+    const db = JSON.parse(JSON.stringify(transformBookNoteToDB(moved, 'user1')));
+    expect(db).toMatchObject({ xpointer0: null, xpointer1: null, crosspoint: null });
   });
 });
 

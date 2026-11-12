@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // `plans.plan` is written by the Stripe webhooks AND by the Google/Apple IAP

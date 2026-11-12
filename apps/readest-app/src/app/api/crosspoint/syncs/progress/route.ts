@@ -4,7 +4,7 @@ import {
   authenticateDevice,
   BOOK_HASH,
   linkCopy,
-  linkedBook,
+  resolveDocument,
   parseConfigProgress,
   PERCENT_PAGES,
 } from '@/libs/crosspoint';
@@ -31,8 +31,9 @@ export async function PUT(request: Request) {
     return NextResponse.json({ message: 'Invalid progress' }, { status: 400 });
   }
 
-  // A rewritten copy syncs as the library book it is (or now gets) linked to.
-  const linked = await linkedBook(supabase, userId, document);
+  // A rewritten copy, or a file-name document, syncs as the library book it is
+  // (or now gets) linked to.
+  const linked = await resolveDocument(supabase, userId, document);
   if (linked.error)
     return NextResponse.json({ message: 'Could not save progress' }, { status: 500 });
   let newLink: string | null = null;

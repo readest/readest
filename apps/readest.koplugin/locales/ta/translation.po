@@ -185,6 +185,12 @@ msgstr "இந்த புத்தகத்தை கிளவுட் & ச�
 msgid "Remove"
 msgstr "நீக்கு"
 
+msgid "Remove from Library, Keep File"
+msgstr "நூலகத்திலிருந்து அகற்று, கோப்பை வைத்திரு"
+
+msgid "Remove this book from your library and the cloud? The file stays on this device."
+msgstr "இந்த நூலை உங்கள் நூலகம் மற்றும் மேகக்கணியிலிருந்து அகற்றவா? கோப்பு இந்த சாதனத்தில் இருக்கும்."
+
 msgid "Remove from Cloud Only"
 msgstr "கிளவுட்டிலிருந்து மட்டும் நீக்கு"
 

@@ -185,6 +185,12 @@ msgstr "이 책을 클라우드와 기기에서 제거하시겠습니까?"
 msgid "Remove"
 msgstr "제거"
 
+msgid "Remove from Library, Keep File"
+msgstr "라이브러리에서 제거, 파일 유지"
+
+msgid "Remove this book from your library and the cloud? The file stays on this device."
+msgstr "이 책을 라이브러리와 클라우드에서 제거할까요? 파일은 이 기기에 남습니다."
+
 msgid "Remove from Cloud Only"
 msgstr "클라우드에서만 제거"
 

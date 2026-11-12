@@ -123,6 +123,17 @@ export const isAbsOfflineAllowed = (plan: UserPlan, customizationPurchased: bool
   !ABS_OFFLINE_REQUIRES_PREMIUM || isAbsOfflineInPlan(plan, customizationPurchased);
 
 /**
+ * Master switch for the Anki paywall: sending words to AnkiDroid, importing a
+ * deck back, and the Anki file export are premium ({@link isCustomizationAllowed}).
+ * CSV export stays free. Client-side gate, like the TTS cache. Flipping it off
+ * ungates every plan.
+ */
+export const ANKI_REQUIRES_PREMIUM = true;
+
+export const isAnkiAllowed = (plan: UserPlan, customizationPurchased: boolean): boolean =>
+  !ANKI_REQUIRES_PREMIUM || isCustomizationAllowed(plan, customizationPurchased);
+
+/**
  * Plans that include Nearby BookDrop device pairing — trusted devices whose
  * drops skip the per-transfer confirmation dialog: any paid plan (Plus, Pro,
  * and Lifetime `purchase`). Free users see the pairing affordance with a

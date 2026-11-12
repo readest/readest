@@ -125,6 +125,7 @@ interface DictionaryStoreState {
   setFontScale(scale: number): void;
   /** Auto-play a looked-up word's bundled pronunciation audio (#6265). */
   setAutoPlayPronunciation(enabled: boolean): void;
+  setSaveLookupsToVocabulary(enabled: boolean): void;
   setSystemDictionaryFullscreen(enabled: boolean): void;
   /** Pick the custom translator the context dictionary asks (#5544). */
   setContextTranslatorId(id: string): void;
@@ -467,6 +468,12 @@ export const useCustomDictionaryStore = create<DictionaryStoreState>((set, get) 
     }));
   },
 
+  setSaveLookupsToVocabulary: (enabled) => {
+    set((state) => ({
+      settings: { ...state.settings, saveLookupsToVocabulary: enabled },
+    }));
+  },
+
   setSystemDictionaryFullscreen: (enabled) => {
     set((state) => ({
       settings: { ...state.settings, systemDictionaryFullscreen: enabled },
@@ -670,6 +677,7 @@ export const useCustomDictionaryStore = create<DictionaryStoreState>((set, get) 
         autoPlayPronunciation:
           persistedSettings.autoPlayPronunciation ??
           DEFAULT_DICTIONARY_SETTINGS.autoPlayPronunciation,
+        saveLookupsToVocabulary: persistedSettings.saveLookupsToVocabulary,
         systemDictionaryFullscreen: persistedSettings.systemDictionaryFullscreen ?? false,
         contextTranslatorId: persistedSettings.contextTranslatorId,
         contextPromptId: persistedSettings.contextPromptId,

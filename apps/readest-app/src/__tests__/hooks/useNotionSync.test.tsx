@@ -1,3 +1,5 @@
+// @vitest-environment happy-dom
+import { bookDataStoreHooks } from '@/__tests__/helpers/book-data-store-mock';
 import { act, cleanup, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import type { BookNote } from '@/types/book';
@@ -55,13 +57,15 @@ vi.mock('@/store/settingsStore', () => ({
 }));
 
 vi.mock('@/store/bookDataStore', () => ({
-  useBookDataStore: h.makeStore({
-    getConfig: () => h.config,
-    getBookData: () => ({
-      book: { hash: 'book-hash', title: 'Book title' },
-      bookDoc: { toc: [] },
+  ...bookDataStoreHooks(
+    h.makeStore({
+      getConfig: () => h.config,
+      getBookData: () => ({
+        book: { hash: 'book-hash', title: 'Book title' },
+        bookDoc: { toc: [] },
+      }),
     }),
-  }),
+  ),
 }));
 
 vi.mock('@/services/notion', () => ({

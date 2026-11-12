@@ -1,4 +1,5 @@
 import type { InkStroke } from '@/services/handwriting/model';
+import type { CrossPointAnchor } from '@/types/book';
 export interface DBBook {
   user_id: string;
   book_hash: string;
@@ -52,8 +53,8 @@ export interface DBBookNote {
   id: string;
   type: string;
   cfi?: string;
-  xpointer0?: string;
-  xpointer1?: string;
+  xpointer0?: string | null;
+  xpointer1?: string | null;
   page?: number;
   text?: string;
   style?: string;
@@ -62,6 +63,8 @@ export interface DBBookNote {
   global?: boolean;
   /** Handwriting strokes of an `ink` note; null for every other type. */
   ink?: InkStroke[] | null;
+  /** Where a CrossPoint reader anchors the highlight; null until one is known. */
+  crosspoint?: CrossPointAnchor | null;
 
   created_at?: string;
   updated_at?: string;

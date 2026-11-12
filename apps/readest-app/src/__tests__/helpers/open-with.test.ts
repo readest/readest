@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
 
 // ── Mocks ────────────────────────────────────────────────────────
@@ -243,6 +244,15 @@ describe('parseOpenWithFiles', () => {
       const result = await parseOpenWithFiles(null);
 
       expect(result).toBeNull();
+    });
+
+    test('returns null when the deep-link plugin rejects', async () => {
+      // A runtime without the deep-link plugin (Readest Lite) rejects getCurrent();
+      // the library init that awaits this must still load the library.
+      vi.spyOn(console, 'warn').mockImplementation(() => {});
+      mockGetCurrent.mockRejectedValue('Command plugin:deep-link|get_current not allowed by ACL');
+
+      await expect(parseOpenWithFiles(null)).resolves.toBeNull();
     });
   });
 

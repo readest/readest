@@ -41,6 +41,9 @@ jobs:
       actions: read
       contents: read
 
+      # lets dorny/paths-filter list a PR's changed files via the REST API
+      pull-requests: read
+
     strategy:
       fail-fast: false
       matrix:
@@ -48,6 +51,8 @@ jobs:
           - language: actions
             build-mode: none
           - language: javascript-typescript
+            build-mode: none
+          - language: python
             build-mode: none
           - language: rust
             build-mode: none
@@ -63,6 +68,19 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
+      # Rust analysis takes ~7 minutes; on PRs, run it only when Rust changed.
+      # Pushes to main and the weekly schedule always analyze Rust.
+      - name: Detect Rust changes
+        id: changes
+        if: matrix.language == 'rust' && github.event_name == 'pull_request'
+        uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4
+        with:
+          filters: |
+            rust:
+              - '**/*.rs'
+              - '**/Cargo.toml'
+              - '**/Cargo.lock'
+
       # Add any setup steps before running the `github/codeql-action/init` action.
       # This includes steps like installing compilers or runtimes (`actions/setup-node`
       # or others). This is typically only required for manual builds.
@@ -71,6 +89,7 @@ jobs:
 
       # Initializes the CodeQL tools for scanning.
       - name: Initialize CodeQL
+        if: steps.changes.outputs.rust != 'false'
         uses: github/codeql-action/init@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4
         with:
           languages: ${{ matrix.language }}
@@ -100,6 +119,22 @@ jobs:
           exit 1
 
       - name: Perform CodeQL Analysis
+        if: steps.changes.outputs.rust != 'false'
         uses: github/codeql-action/analyze@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4
         with:
           category: '/language:${{matrix.language}}'
+
+      # A skipped category would leave the PR's code scanning check unable to
+      # compare with main ("1 configuration not found"). Upload an empty Rust
+      # result so the configuration is still present.
+      - name: Write empty Rust SARIF
+        if: steps.changes.outputs.rust == 'false'
+        run: |
+          echo '{"version":"2.1.0","$schema":"https://json.schemastore.org/sarif-2.1.0.json","runs":[{"tool":{"driver":{"name":"CodeQL"}},"results":[]}]}' > "$RUNNER_TEMP/empty-rust.sarif"
+
+      - name: Upload empty Rust SARIF
+        if: steps.changes.outputs.rust == 'false'
+        uses: github/codeql-action/upload-sarif@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4
+        with:
+          sarif_file: ${{ runner.temp }}/empty-rust.sarif
+          category: '/language:rust'

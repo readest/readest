@@ -7,6 +7,7 @@ import { genSSML } from '@/utils/ssml';
 import { fetchWithAuth } from '@/utils/fetch';
 import { getAPIBaseUrl, isTauriAppPlatform } from '@/services/environment';
 import type { TTSVoice } from '@/services/tts/types';
+import { EDGE_VOICE_GENDERS } from './edgeTTSGenders';
 
 // Cloudflare Workers expose a global `WebSocketPair` that is not available in
 // browsers or Node.js. The Node `ws` package (used transitively via
@@ -312,14 +313,11 @@ const genVoiceList = (voices: Record<string, string[]>) => {
     return voices.map((id) => {
       const name = id.replace(`${lang}-`, '').replace('Neural', '');
       const variant = name.match(/(Multilingual|Expressive)$/)?.[1];
-      return variant
-        ? {
-            name: name.slice(0, -variant.length),
-            id,
-            lang,
-            variant: variant.toLowerCase() as TTSVoice['variant'],
-          }
-        : { name, id, lang };
+      const voice: TTSVoice = { name: variant ? name.slice(0, -variant.length) : name, id, lang };
+      if (variant) voice.variant = variant.toLowerCase() as TTSVoice['variant'];
+      const gender = EDGE_VOICE_GENDERS[id];
+      if (gender) voice.gender = gender;
+      return voice;
     });
   });
 };

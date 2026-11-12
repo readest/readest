@@ -349,6 +349,11 @@ const CustomDictionaries: React.FC<CustomDictionariesProps> = ({ onBack }) => {
     await saveCustomDictionaries(envConfig);
   };
 
+  const handleSaveLookupsChange = async (enabled: boolean) => {
+    useCustomDictionaryStore.getState().setSaveLookupsToVocabulary(enabled);
+    await saveCustomDictionaries(envConfig);
+  };
+
   const lookupAppKey = (app: LookupApp) => `${app.packageName}/${app.className}`;
   const selectedLookupApp = lookupApps.find((app) => app.selected);
   const handleLookupAppChange = async (event: React.ChangeEvent<HTMLSelectElement>) => {
@@ -1011,6 +1016,18 @@ const CustomDictionaries: React.FC<CustomDictionariesProps> = ({ onBack }) => {
           label={_('Auto-play Pronunciation')}
           checked={settings.autoPlayPronunciation ?? false}
           onChange={() => void handleAutoPlayPronunciationChange(!settings.autoPlayPronunciation)}
+        />
+      </BoxedList>
+
+      <BoxedList
+        className='mt-4'
+        title={_('Vocabulary')}
+        description={_('Keeps each looked-up word with its sentence for review and export.')}
+      >
+        <SettingsSwitchRow
+          label={_('Save Looked-up Words')}
+          checked={settings.saveLookupsToVocabulary ?? true}
+          onChange={() => void handleSaveLookupsChange(!(settings.saveLookupsToVocabulary ?? true))}
         />
       </BoxedList>
 

@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { describe, expect, test, vi } from 'vitest';
 
 import type { Book, BookConfig } from '@/types/book';
@@ -1162,5 +1163,48 @@ describe('FileSyncEngine — ensureDir session cache', () => {
     // Three book pushes race to ensure /Readest, but the in-flight lock collapses
     // them to a single create.
     expect(maxInFlightReadest).toBe(1);
+  });
+
+  describe('pullBookConfig', () => {
+    const remote = (config: Partial<BookConfig>, booknotes: BookConfig['booknotes'] = []) => ({
+      readText: async () =>
+        JSON.stringify({
+          schemaVersion: 1,
+          bookHash: 'h1',
+          metaHash: 'm1',
+          updatedAt: 100,
+          writerDeviceId: 'other',
+          config: { updatedAt: 100, ...config },
+          booknotes,
+        }),
+    });
+    const pull = (provider: Partial<FileSyncProvider>, local: BookConfig) =>
+      new FileSyncEngine(fakeProvider(provider), fakeStore()).pullBookConfig(makeBook('h1'), local);
+
+    test('says nothing changed when the remote holds what this device has', async () => {
+      const note = { id: 'n1', type: 'annotation', cfi: 'c', updatedAt: 5 } as never;
+      const local = { updatedAt: 100, location: 'epubcfi(/6/4)', booknotes: [note] } as BookConfig;
+
+      const result = await pull(remote({ location: 'epubcfi(/6/4)' }, [note]), local);
+
+      expect(result).toMatchObject({ applied: true, changed: false });
+    });
+
+    test('says something changed when the remote moved the reading position', async () => {
+      const local = { updatedAt: 1, location: 'epubcfi(/6/4)', booknotes: [] } as BookConfig;
+
+      const result = await pull(remote({ location: 'epubcfi(/6/8)' }), local);
+
+      expect(result).toMatchObject({ applied: true, changed: true });
+    });
+
+    test('says something changed when the remote brought a note', async () => {
+      const note = { id: 'n1', type: 'annotation', cfi: 'c', updatedAt: 5 } as never;
+      const local = { updatedAt: 100, location: 'epubcfi(/6/4)', booknotes: [] } as BookConfig;
+
+      const result = await pull(remote({ location: 'epubcfi(/6/4)' }, [note]), local);
+
+      expect(result).toMatchObject({ applied: true, changed: true });
+    });
   });
 });

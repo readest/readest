@@ -24,7 +24,7 @@ import { createThrottledCheckpoint } from '@/utils/checkpoint';
 import { DEFAULT_NEARBY_WORDS } from '@/utils/searchConfig';
 import { addLibrarySearchHistory } from './utils/searchHistory';
 import type { LibrarySearchTarget } from '@/types/book';
-import { navigateToLibrary, navigateToLogin, navigateToReader } from '@/utils/nav';
+import { navigateToLibrary, navigateToReader } from '@/utils/nav';
 import { splitLibraryOpenIds } from '@/utils/audiobook';
 import { listFormater, markBookDeleted } from '@/utils/book';
 import { getImportErrorMessage } from '@/services/errors';
@@ -53,7 +53,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useLibraryStore } from '@/store/libraryStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
-import { usePullToRefresh } from '@/hooks/usePullToRefresh';
+import { useLibraryRefresh } from './hooks/useLibraryRefresh';
 import { useTheme } from '@/hooks/useTheme';
 import { useUICSS } from '@/hooks/useUICSS';
 import { useDemoBooks } from './hooks/useDemoBooks';
@@ -63,8 +63,6 @@ import { useBookTransferActions } from './hooks/useBookTransferActions';
 import { useAbsOfflineDownload } from './hooks/useAbsOfflineDownload';
 import { useAutoImportFolders } from './hooks/useAutoImportFolders';
 import { useInboxDrainer } from '@/hooks/useInboxDrainer';
-import { useOPDSSubscriptions } from '@/hooks/useOPDSSubscriptions';
-import { useABSSync } from '@/hooks/useABSSync';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useTransferStore } from '@/store/transferStore';
 import { useBackgroundTexture } from '@/hooks/useBackgroundTexture';
@@ -96,6 +94,7 @@ import { LibraryGroupByType } from '@/types/settings';
 import { BookMetadata } from '@/libs/document';
 import { AboutWindow } from '@/components/AboutWindow';
 import ReadingStatsDialog from '@/components/stats/ReadingStatsDialog';
+import { VocabularyDialog } from '@/components/vocabulary/VocabularyDialog';
 import { KeyboardShortcutsHelp } from '@/components/KeyboardShortcutsHelp';
 import LocalSendManager from '@/components/localsend/LocalSendManager';
 import { BookDetailModal } from '@/components/metadata';
@@ -399,30 +398,9 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   // Google Drive): keeps library.json current on import / delete / book-close,
   // parity with useBooksSync. No-op when no provider is enabled.
   useLibraryFileSync();
-  const { checkOPDSSubscriptions } = useOPDSSubscriptions();
-  useABSSync();
+  useLibraryRefresh(scrollRef, pullLibrary);
   useInboxDrainer();
   const { isDragging } = useDragDropImport();
-
-  usePullToRefresh(
-    scrollRef,
-    async () => {
-      if (!user) {
-        navigateToLogin(router);
-        return;
-      }
-      await pullLibrary(false, true);
-      checkOPDSSubscriptions(true);
-    },
-    async () => {
-      if (!user) {
-        navigateToLogin(router);
-        return;
-      }
-      await pullLibrary(true, true);
-      checkOPDSSubscriptions(true);
-    },
-  );
   useShortcuts({
     onToggleFullscreen: () => {
       if (!isTauriAppPlatform()) return false;
@@ -2115,6 +2093,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
               handleBookDownload={handleBookDownload}
               handleBookDelete={handleBookDelete('both')}
               handleBookPurge={handleBookDelete('purge')}
+              handleBookDeleteLocalCopy={handleBookDelete('local')}
               handleSetSelectMode={handleSetSelectMode}
               handleShowDetailsBook={handleShowDetailsBook}
               handleLibraryNavigation={handleLibraryNavigation}
@@ -2178,6 +2157,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
       )}
       <AboutWindow />
       <ReadingStatsDialog />
+      <VocabularyDialog />
       <KeyboardShortcutsHelp />
       <LocalSendManager />
       <UpdaterWindow />

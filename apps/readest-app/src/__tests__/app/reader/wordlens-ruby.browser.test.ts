@@ -45,6 +45,28 @@ describe('wordlensRuby', () => {
     expect(document.getElementById('p')!.textContent).toBe('The quick fox');
   });
 
+  // #7332: a word ending where its text node ends (`<i>word</i> `, `word<sup>`)
+  // was dropped because its end offset resolved into the next text node.
+  it('glosses a word that ends at an element boundary', () => {
+    document.body.innerHTML =
+      `<p id="a">amet, <i>kañ</i> God</p>` +
+      `<p id="b">labore <i>highlight</i> magna</p>` +
+      `<p id="c">this word: footnote<sup><a>1</a></sup></p>`;
+    const model = buildSectionTextModel(document);
+    const occ = ['kañ', 'highlight', 'footnote'].map((word) => {
+      const start = model.text.indexOf(word);
+      return { start, end: start + word.length, word, gloss: 'g' };
+    });
+    applyGlosses(document, model, occ);
+
+    const glossed = [...document.querySelectorAll('ruby.wl-gloss')].map(
+      (r) => r.firstChild?.textContent,
+    );
+    expect(glossed).toEqual(['kañ', 'highlight', 'footnote']);
+    expect(document.getElementById('a')!.textContent).toBe('amet, kañg God');
+    expect(document.getElementById('c')!.textContent).toBe('this word: footnoteg1');
+  });
+
   it('finds the base word for a tap inside a gloss', () => {
     document.body.innerHTML = `<p>The quick fox</p>`;
     const model = buildSectionTextModel(document);

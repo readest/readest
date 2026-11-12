@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { describe, expect, it } from 'vitest';
 import { getStyles, applyFixedlayoutStyles, type ThemeCode } from '@/utils/style';
 import {

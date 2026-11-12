@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, test, expect } from 'vitest';
 import type { ProofreadRule } from '@/types/book';
 import { ensureRuleId, mergeProofreadRules } from '@/utils/proofread';
