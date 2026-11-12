@@ -10,6 +10,7 @@ import {
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import ParagraphOverlay from '@/app/reader/components/paragraph/ParagraphOverlay';
+import Popup from '@/components/Popup';
 import { useParagraphMode } from '@/app/reader/hooks/useParagraphMode';
 import type { FoliateView } from '@/types/view';
 import { eventDispatcher } from '@/utils/event';
@@ -86,7 +87,10 @@ global.ResizeObserver = class ResizeObserver {
   constructor(private readonly callback: ResizeObserverCallback) {}
 
   observe(target: Element) {
-    this.callback([{ target } as ResizeObserverEntry], this);
+    this.callback(
+      [{ target, contentRect: target.getBoundingClientRect() } as ResizeObserverEntry],
+      this,
+    );
   }
 
   disconnect() {}
@@ -721,6 +725,50 @@ describe('paragraph mode', () => {
     fireEvent.keyDown(getDialog(container), { key: 'x' });
 
     expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it('leaves a wheel outside the overlay alone (#7434)', async () => {
+    const dispatchSpy = vi.spyOn(eventDispatcher, 'dispatch');
+    const { container, overlayBookKey } = await renderVisibleOverlay(vi.fn());
+    const dialog = await waitFor(() => getDialog(container));
+    // The dictionary popup is rendered by the annotator, outside the overlay,
+    // like any other UI shown over paragraph mode.
+    const { getByText } = render(
+      <>
+        <Popup width={300}>
+          <p>Popup entry</p>
+        </Popup>
+        <div>Other UI</div>
+      </>,
+    );
+    dispatchSpy.mockClear();
+
+    expect(fireEvent.wheel(getByText('Popup entry'), { deltaY: 100 })).toBe(true);
+    expect(fireEvent.wheel(getByText('Other UI'), { deltaY: 100 })).toBe(true);
+    expect(dispatchSpy).not.toHaveBeenCalledWith('paragraph-next', { bookKey: overlayBookKey });
+
+    expect(fireEvent.wheel(dialog, { deltaY: 100 })).toBe(false);
+    expect(dispatchSpy).toHaveBeenCalledWith('paragraph-next', { bookKey: overlayBookKey });
+  });
+
+  it('still changes paragraphs on a wheel over a paragraph taller than its frame (#7434)', async () => {
+    const dispatchSpy = vi.spyOn(eventDispatcher, 'dispatch');
+    const { container, overlayBookKey } = await renderVisibleOverlay(vi.fn());
+    const paragraphContent = await waitFor(() => {
+      const node = container.querySelector('.paragraph-content') as HTMLDivElement | null;
+      expect(node).not.toBeNull();
+      return node!;
+    });
+    dispatchSpy.mockClear();
+
+    // A long paragraph overflows its `overflow-auto` frame inside the overlay.
+    const frame = paragraphContent.parentElement as HTMLDivElement;
+    frame.style.overflowY = 'auto';
+    Object.defineProperty(frame, 'scrollHeight', { value: 700 });
+    Object.defineProperty(frame, 'clientHeight', { value: 600 });
+
+    expect(fireEvent.wheel(paragraphContent, { deltaY: 100 })).toBe(false);
+    expect(dispatchSpy).toHaveBeenCalledWith('paragraph-next', { bookKey: overlayBookKey });
   });
 });
 
