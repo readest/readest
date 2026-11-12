@@ -115,9 +115,7 @@ const drag = async (
   });
   fireEvent.mouseDown(source, { clientX: start.x + 20, clientY: start.y + 30, button: 0 });
   fireEvent.mouseMove(document, { clientX: start.x + 30, clientY: start.y + 30 });
-  await waitFor(() =>
-    expect(document.querySelector('[data-bookshelf-drag-id].opacity-30')).toBeTruthy(),
-  );
+  await waitFor(() => expect(document.querySelector('[data-drag-source]')).toBeTruthy());
   await new Promise<void>((resolve) =>
     requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
   );
@@ -239,9 +237,11 @@ describe('bookshelf dragging', () => {
       touch(source, 'touchmove', target.x + target.width / 2, target.y + target.height / 2);
       await waitFor(() => expect(document.querySelector('[data-drop-intent=group]')).toBeTruthy());
       const indicator = document.querySelector<HTMLElement>('[data-drop-intent=group]')!;
-      expect(
-        getComputedStyle(indicator.querySelector('.bookshelf-group-target')!).borderStyle,
-      ).toBe('solid');
+      const ring = getComputedStyle(indicator.querySelector('.bookshelf-group-target')!);
+      expect(ring.borderStyle).toBe('solid');
+      // The ring must not paint over the book it would group with.
+      expect(ring.backgroundColor).toBe('rgba(0, 0, 0, 0)');
+      expect(ring.borderTopWidth).toBe('2px');
       expect(getComputedStyle(indicator).opacity).toBe('1');
       touch(source, 'touchcancel', target.x, target.y);
       expect(mocks.drop).not.toHaveBeenCalled();
@@ -249,7 +249,7 @@ describe('bookshelf dragging', () => {
     },
   );
 
-  it('keeps the drag label on screen when dragging from the column at the screen edge', async () => {
+  it('lifts the cover from exactly where it sits and leaves an empty slot behind', async () => {
     const { innerWidth, innerHeight } = window;
     await page.viewport(360, 800);
     try {
@@ -259,18 +259,24 @@ describe('bookshelf dragging', () => {
       );
       for (const name of ['Alpha', 'Gamma']) {
         const source = card(name);
-        const rect = source.getBoundingClientRect();
-        const point = { clientX: rect.x + rect.width / 2, clientY: rect.y + 30, button: 0 };
+        const cover = source.querySelector('.bookitem-main')!.getBoundingClientRect();
+        const point = { clientX: cover.x + cover.width / 2, clientY: cover.y + 30, button: 0 };
         fireEvent.pointerDown(source, { ...point, pointerType: 'mouse', pointerId: 1 });
         fireEvent.mouseDown(source, point);
         fireEvent.mouseMove(document, { ...point, clientX: point.clientX + 8 });
-        await waitFor(() => expect(document.querySelector('.bookshelf-drag-action')).toBeTruthy());
+        await waitFor(() => expect(document.querySelector('.bookshelf-drag-preview')).toBeTruthy());
+        fireEvent.mouseMove(document, { ...point, clientX: point.clientX + 12 });
         await new Promise<void>((resolve) =>
           requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
         );
-        const label = document.querySelector('.bookshelf-drag-action')!.getBoundingClientRect();
-        expect(label.left).toBeGreaterThanOrEqual(0);
-        expect(label.right).toBeLessThanOrEqual(360);
+        const preview = document.querySelector('.bookshelf-drag-preview')!;
+        const lifted = preview.getBoundingClientRect();
+        expect(Math.abs(lifted.left - (cover.left + 12))).toBeLessThan(1.5);
+        expect(Math.abs(lifted.top - cover.top)).toBeLessThan(1.5);
+        expect(Math.abs(lifted.width - cover.width)).toBeLessThan(1.5);
+        expect(preview.querySelector('[role=status]')).toBeNull();
+        const slot = document.querySelector('.bookshelf-drag-slot')!.getBoundingClientRect();
+        expect(Math.abs(slot.width - cover.width)).toBeLessThan(1.5);
         fireEvent.keyDown(document, { key: 'Escape', code: 'Escape' });
         fireEvent.mouseUp(document, point);
         await waitFor(() => expect(document.querySelector('[data-dragging=true]')).toBeNull());

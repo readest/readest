@@ -24,9 +24,11 @@ import {
 } from '@dnd-kit/core';
 import { SortableContext, useSortable, type SortingStrategy } from '@dnd-kit/sortable';
 import { CSS as DndCSS } from '@dnd-kit/utilities';
-import { MdDragIndicator, MdArrowUpward, MdOutlineFolder, MdFolder, MdCheck } from 'react-icons/md';
+import { MdArrowUpward } from 'react-icons/md';
+import { impactFeedback } from '@tauri-apps/plugin-haptics';
 import BookCover from '@/components/BookCover';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useEnv } from '@/context/EnvContext';
 import type { Book, BooksGroup } from '@/types/book';
 import type { BookshelfDefinition } from '@/types/bookshelf';
 import { resolveBookshelfGroupBy } from '@/services/bookshelves/grouping';
@@ -47,6 +49,17 @@ interface Intent {
   id: string;
   mode: DropMode | 'group-pending' | 'parent';
 }
+type CoverBox = { top: number; left: number; width: number; height: number };
+/** The cover's box inside its cell, so the lifted copy starts exactly over it. */
+const measureCover = (cell: Element | null | undefined): CoverBox | null => {
+  const cover = cell?.querySelector('.bookitem-main, .groupitem-main');
+  if (!cell || !cover) return null;
+  const outer = cell.getBoundingClientRect();
+  const rect = cover.getBoundingClientRect();
+  // A group row in list view is a strip of covers; lift one cover-sized tile.
+  const width = rect.width > rect.height ? (rect.height * 28) / 41 : rect.width;
+  return { top: rect.top - outer.top, left: rect.left - outer.left, width, height: rect.height };
+};
 const dragId = (shelf: BookshelfDefinition, item: Book | BooksGroup) =>
   JSON.stringify([shelf.id, bookshelfItemId(item)]);
 const parentDropId = (shelf: BookshelfDefinition) => `parent:${shelf.id}`;
@@ -76,7 +89,8 @@ export const BookshelfDragDrop = ({
   parentGroupName?: string;
 }) => {
   const _ = useTranslation();
-  const [active, setActive] = useState<(DragItem & { width: number }) | null>(null);
+  const { appService } = useEnv();
+  const [active, setActive] = useState<(DragItem & { cover: CoverBox | null }) | null>(null);
   const [intent, setIntent] = useState<Intent | null>(null);
   const intentRef = useRef<Intent | null>(null);
   const pending = useRef<string | null>(null);
@@ -84,7 +98,6 @@ export const BookshelfDragDrop = ({
   const pointer = useRef<{ x: number; y: number } | null>(null);
   const root = useRef<HTMLDivElement>(null);
   const overlay = useRef<HTMLDivElement>(null);
-  const label = useRef<HTMLParagraphElement>(null);
   const skipReturnAnimation = useRef(false);
   const fadingOverlays = useRef(new Set<{ node: HTMLElement; animation: Animation }>());
   const fadeIntoDestination = () => {
@@ -158,27 +171,6 @@ export const BookshelfDragDrop = ({
     });
     return () => animations.forEach((animation) => animation.cancel());
   }, [sections, disabled]);
-  // The label is wider than a phone-sized cover, so it can spill past the
-  // screen edge while the preview follows the pointer; shift it back inside.
-  const dragging = !!active;
-  useEffect(() => {
-    if (!dragging) return;
-    let shift = 0;
-    let frame = requestAnimationFrame(function keepLabelOnScreen() {
-      const node = label.current;
-      if (node) {
-        const rect = node.getBoundingClientRect();
-        const left = rect.left - shift;
-        const right = rect.right - shift;
-        const edge = document.documentElement.clientWidth - 8;
-        const next = left < 8 ? 8 - left : right > edge ? edge - right : 0;
-        if (next !== shift) node.style.transform = next ? `translateX(${next}px)` : '';
-        shift = next;
-      }
-      frame = requestAnimationFrame(keepLabelOnScreen);
-    });
-    return () => cancelAnimationFrame(frame);
-  }, [dragging]);
   const items = useMemo(
     () =>
       new Map(
@@ -279,7 +271,10 @@ export const BookshelfDragDrop = ({
     clearPending();
     pending.current = id;
     showIntent({ id, mode: 'group-pending' });
-    timer.current = setTimeout(() => showIntent({ id, mode: 'group' }), 450);
+    timer.current = setTimeout(() => {
+      showIntent({ id, mode: 'group' });
+      if (appService?.hasHaptics) void impactFeedback('light');
+    }, 450);
   };
   const move = (shelf: BookshelfDefinition, item: Book | BooksGroup, step: number) => {
     if (disabled || active) return;
@@ -321,9 +316,9 @@ export const BookshelfDragDrop = ({
     const direction = intent.mode === 'before' ? 1 : -1;
     const offset =
       args.index === target
-        ? direction * 6
+        ? direction * 8
         : args.index === target - direction
-          ? -direction * 6
+          ? -direction * 8
           : 0;
     if (!offset || items.get(itemIds[args.index]!)?.shelf.id !== active.shelf.id) return null;
     const list = items.get(intent.id)?.shelf.layout === 'list';
@@ -331,15 +326,7 @@ export const BookshelfDragDrop = ({
     return { x: list ? 0 : offset * (rtl ? -1 : 1), y: list ? offset : 0, scaleX: 1, scaleY: 1 };
   };
   const parentName = parentGroupName.slice(0, Math.max(0, parentGroupName.lastIndexOf('/')));
-  const grouping = intent?.mode === 'group' || intent?.mode === 'group-pending';
-  const ActionIcon =
-    intent?.mode === 'parent' ? MdArrowUpward : grouping ? MdOutlineFolder : MdDragIndicator;
-  const actionLabel =
-    intent?.mode === 'parent'
-      ? _('Move to parent group')
-      : grouping
-        ? _('Group Books')
-        : _('Drag to reorder');
+  const shrinking = intent?.mode === 'group' || intent?.mode === 'parent';
   return (
     <DndContext
       sensors={sensors}
@@ -359,8 +346,12 @@ export const BookshelfDragDrop = ({
       onDragStart={(event) => {
         skipReturnAnimation.current = false;
         const data = items.get(String(event.active.id));
-        if (data && !disabled)
-          setActive({ ...data, width: event.active.rect.current.initial?.width ?? 120 });
+        if (!data || disabled) return;
+        const cell = root.current?.querySelector(
+          `[data-bookshelf-drag-id="${CSS.escape(String(event.active.id))}"]`,
+        );
+        setActive({ ...data, cover: measureCover(cell) });
+        if (appService?.hasHaptics) void impactFeedback('medium');
       }}
       onDragMove={updateIntent}
       onDragOver={updateIntent}
@@ -428,13 +419,13 @@ export const BookshelfDragDrop = ({
         {active && (
           <div
             ref={overlay}
-            className='bookshelf-drag-preview pointer-events-none relative mx-auto'
-            data-grouping={grouping || undefined}
-            style={{ width: Math.min(active.width * 0.86, 164) }}
+            className='bookshelf-drag-preview pointer-events-none absolute'
+            data-shrink={shrinking || undefined}
+            style={active.cover ?? { top: 8, left: '7%', width: '86%', aspectRatio: '28 / 41' }}
           >
             <div
               className={clsx(
-                'bookshelf-drag-cover bg-base-100 aspect-28/41 w-full overflow-hidden rounded-sm',
+                'bookshelf-drag-cover bg-base-100 h-full w-full overflow-hidden rounded-sm',
                 'books' in active.item && 'bg-base-200 grid grid-cols-2 grid-rows-2 gap-1 p-1',
               )}
             >
@@ -449,14 +440,6 @@ export const BookshelfDragDrop = ({
                 ),
               )}
             </div>
-            <p
-              ref={label}
-              role='status'
-              className='bookshelf-drag-action eink-bordered bg-base-100 border-base-content/15 absolute start-1/2 top-full mt-2 flex w-max max-w-60 -translate-x-1/2 items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium rtl:translate-x-1/2'
-            >
-              <ActionIcon aria-hidden className='size-4 shrink-0' />
-              <span className='truncate'>{actionLabel}</span>
-            </p>
           </div>
         )}
       </DragOverlay>
@@ -474,18 +457,13 @@ const BookshelfParentDrop = ({ shelf, name }: { shelf: BookshelfDefinition; name
       aria-label={_('Move to parent group')}
       data-parent-drop
       data-over={isOver || undefined}
-      className='bookshelf-parent-drop eink-bordered bg-base-100 border-base-content/15 absolute inset-x-4 top-2 z-30 mx-auto flex min-h-16 max-w-sm items-center gap-3 rounded-xl border px-4 py-2 text-sm'
+      className='bookshelf-parent-drop bg-base-100 border-base-content/15 absolute start-1/2 top-3 z-30 flex h-11 max-w-[calc(100%-2rem)] -translate-x-1/2 items-center gap-2 rounded-full border px-4 text-sm rtl:translate-x-1/2'
     >
-      <span className='bg-base-200 flex size-8 shrink-0 items-center justify-center rounded-full'>
-        <MdArrowUpward aria-hidden className='size-5' />
+      <MdArrowUpward aria-hidden className='size-4 shrink-0' />
+      <span className='shrink-0 font-medium'>{_('Move to parent group')}</span>
+      <span className='bookshelf-parent-name min-w-0 truncate' dir='auto'>
+        {name}
       </span>
-      <span className='min-w-0 flex-1'>
-        <span className='block font-medium'>{_('Move to parent group')}</span>
-        <span className='text-base-content/60 block truncate text-xs' dir='auto'>
-          {name}
-        </span>
-      </span>
-      {isOver && <MdCheck aria-hidden className='size-5' />}
     </div>
   );
 };
@@ -503,9 +481,15 @@ export const BookshelfDragItem = ({
   const { setNodeRef, listeners, isDragging, transform } = useSortable({ id, disabled });
   const { intent, move, moveParent } = useContext(DropContext);
   const target = intent?.id === id ? intent.mode : null;
+  const cell = useRef<HTMLDivElement | null>(null);
+  const [slot, setSlot] = useState<CoverBox | null>(null);
+  useLayoutEffect(() => setSlot(isDragging ? measureCover(cell.current) : null), [isDragging]);
   return (
     <div
-      ref={setNodeRef}
+      ref={(node) => {
+        cell.current = node;
+        setNodeRef(node);
+      }}
       {...listeners}
       onMouseDown={(event) => {
         if (event.button !== 0) return;
@@ -526,14 +510,15 @@ export const BookshelfDragItem = ({
       }}
       data-bookshelf-drag-id={id}
       data-drop-intent={target ?? undefined}
+      data-drag-source={isDragging || undefined}
       style={{
         transform: !isDragging
           ? DndCSS.Transform.toString(transform ? { ...transform, scaleX: 1, scaleY: 1 } : null)
           : undefined,
       }}
       className={clsx(
-        'bookshelf-drag-item group/drag relative h-full min-w-0',
-        isDragging && 'opacity-30 eink:opacity-100',
+        'bookshelf-drag-item relative h-full min-w-0',
+        !disabled && '[@media(pointer:fine)]:cursor-grab',
       )}
       onDragStart={(event) => event.preventDefault()}
       onContextMenuCapture={(event) => {
@@ -573,10 +558,11 @@ export const BookshelfDragItem = ({
       }}
     >
       {children}
-      {!disabled && (
-        <MdDragIndicator
+      {isDragging && slot && (
+        <div
           aria-hidden
-          className='text-base-content/60 pointer-events-none absolute start-1 top-3 size-5 opacity-0 group-hover/drag:opacity-100 group-focus-within/drag:opacity-100'
+          className='bookshelf-drag-slot pointer-events-none absolute'
+          style={slot}
         />
       )}
       {(target === 'before' || target === 'after') && (
@@ -585,27 +571,16 @@ export const BookshelfDragItem = ({
           className={clsx(
             'bookshelf-drop-marker bg-base-content pointer-events-none absolute rounded-full',
             shelf.layout === 'list'
-              ? `inset-x-2 h-0.5 ${target === 'before' ? 'top-0' : 'bottom-0'}`
-              : `inset-y-3 w-0.5 ${target === 'before' ? '-start-1' : '-end-1'}`,
+              ? `inset-x-3 h-[3px] ${target === 'before' ? '-top-px' : '-bottom-px'}`
+              : `inset-y-4 w-[3px] ${target === 'before' ? '-start-1' : '-end-1'}`,
           )}
         />
       )}
       {(target === 'group' || target === 'group-pending') && (
         <div
           aria-hidden
-          className='bookshelf-group-target eink-bordered border-base-content/25 pointer-events-none absolute inset-1 rounded-xl border'
-        >
-          <span className='bookshelf-group-hint eink-bordered bg-base-100 border-base-content/15 absolute end-2 top-2 flex size-10 items-center justify-center overflow-hidden rounded-full border'>
-            {target === 'group' ? (
-              <MdFolder className='size-5' />
-            ) : (
-              <MdOutlineFolder className='size-5' />
-            )}
-            {target === 'group-pending' && (
-              <span className='bookshelf-group-progress bg-base-content absolute inset-x-1 bottom-1 h-0.5 rounded-full' />
-            )}
-          </span>
-        </div>
+          className='bookshelf-group-target pointer-events-none absolute inset-1 rounded-xl border'
+        />
       )}
     </div>
   );
