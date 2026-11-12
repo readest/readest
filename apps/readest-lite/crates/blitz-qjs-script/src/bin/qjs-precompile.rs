@@ -1,6 +1,7 @@
 //! `qjs-precompile DIR`: writes `<file>.qjsc` next to every `.js` under DIR: the script compiled as
-//! a global script by this QuickJS build, as stripped bytecode (no source, no debug info). Shipped
-//! with a frontend, it spares the device the compile on first launch: blitz-qjs-script asks the
+//! a global script by this QuickJS build, as bytecode without the source. It keeps debug info, so a
+//! stack names the script by its path under DIR (as the source maps do) with line and column.
+//! Shipped with a frontend, it spares the device the compile on first launch: blitz-qjs-script asks the
 //! loader for `<url>.qjsc` before `<url>`. Bytecode depends on the QuickJS version, not the CPU
 //! (x86-64 output runs on armv7), and a mismatched file is detected on read and skipped.
 
@@ -29,7 +30,8 @@ fn main() {
             let mut src = std::fs::read(f).unwrap();
             src_bytes += src.len();
             src.push(0);
-            let name = std::ffi::CString::new(f.display().to_string()).unwrap();
+            let rel = f.strip_prefix(&dir).unwrap().to_string_lossy();
+            let name = std::ffi::CString::new(format!("/{rel}")).unwrap();
             // SAFETY: raw QuickJS calls on this context; values are freed below.
             unsafe {
                 let func = qjs::JS_Eval(
@@ -45,9 +47,7 @@ fn main() {
                     continue;
                 }
                 let mut len = 0usize;
-                let flags = qjs::JS_WRITE_OBJ_BYTECODE
-                    | qjs::JS_WRITE_OBJ_STRIP_SOURCE
-                    | qjs::JS_WRITE_OBJ_STRIP_DEBUG;
+                let flags = qjs::JS_WRITE_OBJ_BYTECODE | qjs::JS_WRITE_OBJ_STRIP_SOURCE;
                 let buf =
                     qjs::JS_WriteObject(raw, (&mut len as *mut usize).cast(), func, flags as _);
                 std::fs::write(
