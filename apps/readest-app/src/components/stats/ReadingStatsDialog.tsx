@@ -31,29 +31,32 @@ interface ReadingStats {
   totals: { seconds: number; books: number; pages: number };
 }
 
-const ReadingStatsContent: React.FC = () => {
+interface ReadingStatsContentProps {
+  showCalendar: boolean;
+  onShowCalendar: (visible: boolean) => void;
+}
+
+const ReadingStatsContent: React.FC<ReadingStatsContentProps> = ({
+  showCalendar,
+  onShowCalendar,
+}) => {
   const _ = useTranslation();
   const { appService } = useEnv();
   const { user } = useAuth();
   const [stats, setStats] = useState<ReadingStats | null>(null);
   const [failed, setFailed] = useState(false);
-  const [showCalendar, setShowCalendar] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
-  const navigationPending = useRef(false);
+  const shownCalendar = useRef(showCalendar);
 
-  const navigateCalendar = (visible: boolean) => {
-    navigationPending.current = true;
-    setShowCalendar(visible);
-  };
-
+  // Move focus only on navigation, not when the dialog first renders.
   useEffect(() => {
-    if (!navigationPending.current) return;
+    if (shownCalendar.current === showCalendar) return;
+    shownCalendar.current = showCalendar;
     const target = contentRef.current?.querySelector<HTMLElement>(
       showCalendar ? '[data-calendar-heading]' : '[data-setting-id="stats.readingCalendar"]',
     );
     target?.focus();
     if (showCalendar) target?.scrollIntoView?.({ block: 'start' });
-    navigationPending.current = false;
   }, [showCalendar]);
 
   useEffect(() => {
@@ -115,7 +118,7 @@ const ReadingStatsContent: React.FC = () => {
             parentLabel={_('Reading Statistics')}
             currentLabel={_('Reading Calendar')}
             description={_('See which books you read each day and for how long')}
-            onBack={() => navigateCalendar(false)}
+            onBack={() => onShowCalendar(false)}
           />
         </div>
         <BoxedList innerClassName='px-2! py-3'>
@@ -137,7 +140,7 @@ const ReadingStatsContent: React.FC = () => {
         <NavigationRow
           title={_('Reading Calendar')}
           icon={MdCalendarMonth}
-          onClick={() => navigateCalendar(true)}
+          onClick={() => onShowCalendar(true)}
           data-setting-id='stats.readingCalendar'
           className='pe-0 text-start'
         />
@@ -171,10 +174,12 @@ const ReadingStatsContent: React.FC = () => {
 export const ReadingStatsDialog: React.FC = () => {
   const _ = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
+  const [showCalendar, setShowCalendar] = useState(false);
 
   useEffect(() => {
     const handleCustomEvent = (event: CustomEvent) => {
       setIsOpen(event.detail.visible);
+      setShowCalendar(false);
     };
 
     const el = document.getElementById('reading_stats_window');
@@ -195,11 +200,14 @@ export const ReadingStatsDialog: React.FC = () => {
       isOpen={isOpen}
       title={_('Reading Statistics')}
       onClose={() => setIsOpen(false)}
+      onBack={showCalendar ? () => setShowCalendar(false) : undefined}
       useOverlayScroll
       boxClassName='sm:h-[85%]! sm:w-[560px]! sm:max-w-(--breakpoint-sm)!'
       contentClassName='px-4! sm:px-6!'
     >
-      {isOpen && <ReadingStatsContent />}
+      {isOpen && (
+        <ReadingStatsContent showCalendar={showCalendar} onShowCalendar={setShowCalendar} />
+      )}
     </Dialog>
   );
 };

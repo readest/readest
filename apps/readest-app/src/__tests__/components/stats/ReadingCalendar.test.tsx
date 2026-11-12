@@ -5,7 +5,8 @@ import type { StatisticsDb } from '@/services/statistics/statisticsDb';
 import type { BookQuarterHourDuration } from '@/services/statistics/readingStats';
 
 vi.mock('@/hooks/useTranslation', () => ({ useTranslation: () => (key: string) => key }));
-vi.mock('@/utils/misc', () => ({ getLocale: () => 'en-US' }));
+const locale = vi.hoisted(() => ({ value: 'en-US' }));
+vi.mock('@/utils/misc', () => ({ getLocale: () => locale.value }));
 vi.mock('@/store/libraryStore', () => ({
   useLibraryStore: (select: (state: { library: [] }) => unknown) => select({ library: [] }),
 }));
@@ -64,6 +65,7 @@ beforeEach(() => {
 afterEach(() => {
   cleanup();
   vi.useRealTimers();
+  locale.value = 'en-US';
 });
 
 describe('ReadingCalendar', () => {
@@ -248,6 +250,30 @@ describe('ReadingCalendar', () => {
       container.querySelector('[aria-current="date"]')?.getAttribute('data-calendar-date'),
     ).toBe('2026-11-07');
     expect(screen.getByRole('button', { name: 'Next Month' }).hasAttribute('disabled')).toBe(true);
+  });
+
+  it('shows bare day numbers in CJK locales, weeks from Sunday, and an LTR overflow count', async () => {
+    locale.value = 'zh-CN';
+    query.mockResolvedValue(
+      Array.from({ length: 5 }, (_, i) => quarter('2026-11-06', `b${i}`, `Book ${i}`)),
+    );
+    const { container } = render(<ReadingCalendar db={db} daily={daily} />);
+    const first = container.querySelector('[data-calendar-date="2026-11-01"]')!;
+    expect(first.firstElementChild?.textContent).toBe('1');
+    const grid = first.parentElement!;
+    expect(grid.firstElementChild).toBe(first);
+    expect(container.querySelector('[aria-hidden="true"].grid-cols-7')?.textContent?.[0]).toBe(
+      '日',
+    );
+    const badge = await waitFor(() => {
+      // The innermost span holding the count, not the cover stack around it.
+      const el = [...container.querySelectorAll('span')]
+        .filter((s) => s.textContent === '+2')
+        .at(-1);
+      if (!el) throw new Error('no badge');
+      return el;
+    });
+    expect(badge.getAttribute('dir')).toBe('ltr');
   });
 
   it('switches both ways across a year boundary even with no history, without a date picker', async () => {

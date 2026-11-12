@@ -220,6 +220,9 @@ describe('reading calendar in the statistics dialog', () => {
       )!;
       expect(getComputedStyle(selected).outlineStyle).toBe('solid');
       expect(getComputedStyle(selected).outlineWidth).toBe('1px');
+      // E-ink drops the selected fill, so the selected day's number is inverted instead.
+      const dayNumber = getComputedStyle(selected.firstElementChild!);
+      expect(dayNumber.backgroundColor === 'rgba(0, 0, 0, 0)').toBe(!eink);
       expect(selected.querySelectorAll('.book-cover-container')).toHaveLength(2);
       for (const label of ['Previous Month', 'Next Month', 'Today']) {
         const bounds = screen.getByRole('button', { name: label }).getBoundingClientRect();

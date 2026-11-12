@@ -377,7 +377,7 @@ const ReadingCalendar: React.FC<ReadingCalendarProps> = ({ db, daily }) => {
           >
             {Array.from({ length: 7 }, (_, index) => (
               <span key={index}>
-                {new Date(2026, 10, 2 + index).toLocaleDateString(locale, { weekday: 'narrow' })}
+                {new Date(2026, 10, 1 + index).toLocaleDateString(locale, { weekday: 'narrow' })}
               </span>
             ))}
           </div>
@@ -407,11 +407,14 @@ const ReadingCalendar: React.FC<ReadingCalendarProps> = ({ db, daily }) => {
                 >
                   <span
                     className={clsx(
-                      'self-center tabular-nums',
+                      'self-center rounded-sm tabular-nums',
                       key === today && 'font-bold underline',
+                      // E-ink drops the selected fill, so invert the day number instead.
+                      selected === key && 'eink:bg-base-content eink:text-base-100 eink:px-1',
                     )}
                   >
-                    {day.toLocaleDateString(locale, { day: 'numeric' })}
+                    {/* Not toLocaleDateString: CJK locales would add 日 to every cell. */}
+                    {day.getDate().toLocaleString(locale)}
                   </span>
                   <span aria-hidden='true' className='relative block aspect-[2/3] w-full'>
                     {books.slice(0, 3).map((reading, bookIndex) => (
@@ -431,7 +434,10 @@ const ReadingCalendar: React.FC<ReadingCalendarProps> = ({ db, daily }) => {
                       </span>
                     ))}
                     {books.length > 3 && (
-                      <span className='eink-bordered bg-base-100 absolute bottom-0 end-0 rounded-sm border px-0.5 text-[10px]'>
+                      <span
+                        dir='ltr'
+                        className='eink-bordered bg-base-100 absolute bottom-0 end-0 rounded-sm border px-0.5 text-[10px]'
+                      >
                         +{(books.length - 3).toLocaleString(locale)}
                       </span>
                     )}

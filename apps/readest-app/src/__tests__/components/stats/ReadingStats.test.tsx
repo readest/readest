@@ -189,4 +189,25 @@ describe('ReadingStatsDialog', () => {
     expect(screen.queryByRole('group', { name: 'Reading Calendar' })).toBeNull();
     expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Reading Calendar' }));
   });
+  it('goes back to statistics, not out of the dialog, when closed from the calendar', async () => {
+    db.open.mockResolvedValue({
+      getQuarterHourDurations: async () => [],
+      getBookQuarterHourDurations: async () => [],
+      getReadingTotals: async () => ({ seconds: 0, books: 0, pages: 0 }),
+    });
+    await openDialog();
+    fireEvent.click(await screen.findByRole('button', { name: 'Reading Calendar' }));
+    await screen.findByRole('group', { name: 'Reading Calendar' });
+
+    // Escape, the Android back key and the mobile header arrow all call Dialog's onClose.
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(await screen.findByText('All Time')).toBeTruthy();
+    expect(screen.queryByRole('group', { name: 'Reading Calendar' })).toBeNull();
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Reading Calendar' }));
+
+    const dialog = document.getElementById('reading_stats_window')!;
+    expect(dialog.hasAttribute('open')).toBe(true);
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(dialog.hasAttribute('open')).toBe(false);
+  });
 });

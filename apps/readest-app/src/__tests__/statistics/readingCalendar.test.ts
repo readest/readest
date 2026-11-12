@@ -67,20 +67,27 @@ describe('reading calendar data', () => {
 });
 
 describe('calendar month layout', () => {
-  it('includes leap day and complete Monday-first weeks', () => {
+  it('includes leap day and complete Sunday-first weeks, like the heatmap', () => {
     const days = getCalendarDays(new Date(2024, 1, 1));
-    expect(days.slice(0, 3)).toEqual([null, null, null]);
+    expect(days.slice(0, 4)).toEqual([null, null, null, null]);
+    expect(days[4] && toDateKey(days[4])).toBe('2024-02-01');
     expect(days.filter(Boolean)).toHaveLength(29);
     expect(days.filter(Boolean).map((day) => toDateKey(day!))).toContain('2024-02-29');
     expect(days).toHaveLength(35);
   });
 
   it('fits six-week months without leaking adjacent-month dates', () => {
-    const days = getCalendarDays(new Date(2026, 10, 1));
+    const days = getCalendarDays(new Date(2026, 7, 1));
     expect(days).toHaveLength(42);
     expect(days.slice(0, 6)).toEqual(Array(6).fill(null));
-    expect(days.filter(Boolean).map((day) => toDateKey(day!))).toHaveLength(30);
-    expect(days[6] && toDateKey(days[6])).toBe('2026-11-01');
+    expect(days.filter(Boolean).map((day) => toDateKey(day!))).toHaveLength(31);
+    expect(days[6] && toDateKey(days[6])).toBe('2026-08-01');
+  });
+
+  it('starts a month that begins on Sunday in the first cell', () => {
+    const days = getCalendarDays(new Date(2026, 10, 1));
+    expect(days[0] && toDateKey(days[0])).toBe('2026-11-01');
+    expect(days).toHaveLength(35);
   });
 
   it('keeps every local day through daylight-saving changes', () => {

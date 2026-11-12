@@ -66,10 +66,10 @@ export const getDailyBookReadings = (
   );
 };
 
-/** Monday-first month, padded to complete weeks; dates stay in local time. */
+/** Sunday-first month like the heatmap, padded to complete weeks; dates stay in local time. */
 export const getCalendarDays = (month: Date): (Date | null)[] => {
   const first = new Date(month.getFullYear(), month.getMonth(), 1);
-  const offset = (first.getDay() + 6) % 7;
+  const offset = first.getDay();
   const length = new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate();
   return Array.from({ length: Math.ceil((offset + length) / 7) * 7 }, (_, index) =>
     index < offset || index >= offset + length
