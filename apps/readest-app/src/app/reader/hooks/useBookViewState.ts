@@ -12,17 +12,22 @@ const UNRENDERED: ReadonlySet<string> = new Set<keyof ViewState>(['gridInsets', 
  * changed in place (the same settings object in a new view state).
  */
 export const useBookViewState = (bookKey: string) => {
-  const last = useRef<ViewState | undefined>(undefined);
+  // Each update is compared with the one before it, not with the state last shown: after a
+  // skipped update the two differ in the skipped fields, which would hide an in-place save.
+  const seen = useRef<ViewState | undefined>(undefined);
+  const shown = useRef<ViewState | undefined>(undefined);
   return useReaderStore((s) => {
     const next = s.viewStates[bookKey];
-    const prev = last.current;
-    if (prev && next && prev !== next) {
+    const prev = seen.current;
+    if (next === prev) return shown.current;
+    seen.current = next;
+    if (prev && next) {
       const changed = Object.keys(next).filter(
         (k) => prev[k as keyof ViewState] !== next[k as keyof ViewState],
       );
-      if (changed.length > 0 && changed.every((k) => UNRENDERED.has(k))) return prev;
+      if (changed.length > 0 && changed.every((k) => UNRENDERED.has(k))) return shown.current;
     }
-    last.current = next;
+    shown.current = next;
     return next;
   });
 };

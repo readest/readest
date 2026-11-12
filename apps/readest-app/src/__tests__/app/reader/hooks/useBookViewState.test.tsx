@@ -79,6 +79,18 @@ describe('useBookViewState', () => {
     expect(renders).toBe(2);
   });
 
+  // A book open sets the insets first, so every later save comes after a skipped update
+  it('re-renders when view settings changed in place are saved after the insets were set', () => {
+    const settings = { showHeader: true } as NonNullable<ViewState['viewSettings']>;
+    useReaderStore.setState({ viewStates: { 'book-1': viewState({ viewSettings: settings }) } });
+    render(<Chrome />);
+    update({ gridInsets: { top: 10, right: 0, bottom: 10, left: 0 } });
+    expect(renders).toBe(1);
+    settings.showHeader = false;
+    update({ viewSettings: settings });
+    expect(renders).toBe(2);
+  });
+
   it('re-renders when another book opens in its place', () => {
     render(<Chrome />);
     act(() => useReaderStore.setState({ viewStates: {} }));
