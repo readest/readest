@@ -426,6 +426,8 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
           break;
         case '[':
         case ']':
+          // Same rule as the Words per Flash picker, hidden or disabled here.
+          if (!controller.chunkingAvailable) break;
           event.preventDefault();
           event.stopPropagation();
           controller.setChunkSize(controller.currentState.chunkSize + (event.key === ']' ? 1 : -1));
@@ -1366,7 +1368,7 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
             <label className='flex cursor-pointer items-center gap-1.5 font-medium opacity-80'>
               <span className='me-0.5 font-medium opacity-50'>{_('Punctuation Delay')}</span>
               <select
-                className='cursor-pointer rounded-sm border border-gray-500/30 bg-gray-500/20 px-1.5 py-1 text-xs font-medium transition-colors hover:border-gray-500/40 hover:bg-gray-500/30'
+                className='eink-bordered cursor-pointer rounded-sm border border-gray-500/30 bg-gray-500/20 px-1.5 py-1 text-xs font-medium transition-colors hover:border-gray-500/40 hover:bg-gray-500/30'
                 style={{ color: 'inherit' }}
                 value={state.punctuationPauseMs}
                 onChange={(e) => controller.setPunctuationPause(parseInt(e.target.value, 10))}
@@ -1384,7 +1386,7 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
               <span className='me-0.5 font-medium opacity-50'>{_('Start Delay')}</span>
               <select
                 data-testid='rsvp-start-delay-select'
-                className='cursor-pointer rounded-sm border border-gray-500/30 bg-gray-500/20 px-1.5 py-1 text-xs font-medium transition-colors hover:border-gray-500/40 hover:bg-gray-500/30'
+                className='eink-bordered cursor-pointer rounded-sm border border-gray-500/30 bg-gray-500/20 px-1.5 py-1 text-xs font-medium transition-colors hover:border-gray-500/40 hover:bg-gray-500/30'
                 style={{ color: 'inherit' }}
                 value={state.startDelaySeconds}
                 onChange={(e) => controller.setStartDelay(parseInt(e.target.value, 10))}
@@ -1403,7 +1405,7 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
                 <span className='me-0.5 font-medium opacity-50'>{_('Words per Flash')}</span>
                 <select
                   data-testid='rsvp-chunk-size-select'
-                  className='cursor-pointer rounded-sm border border-gray-500/30 bg-gray-500/20 px-1.5 py-1 text-xs font-medium transition-colors hover:border-gray-500/40 hover:bg-gray-500/30'
+                  className='eink-bordered cursor-pointer rounded-sm border border-gray-500/30 bg-gray-500/20 px-1.5 py-1 text-xs font-medium transition-colors hover:border-gray-500/40 hover:bg-gray-500/30'
                   style={{ color: 'inherit' }}
                   value={state.chunkSize}
                   disabled={ttsDriven}

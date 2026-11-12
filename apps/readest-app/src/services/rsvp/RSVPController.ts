@@ -168,8 +168,12 @@ export class RSVPController extends EventTarget {
 
   // Chunks are shown only for space-separated text the timer paces: CJK text
   // has no spaces to lay words out by, and TTS speaks one word at a time.
+  get chunkingAvailable(): boolean {
+    return !this.state.hasCJK && !this.#externallyDriven;
+  }
+
   private get chunkSize(): number {
-    return this.state.hasCJK || this.#externallyDriven ? 1 : this.state.chunkSize;
+    return this.chunkingAvailable ? this.state.chunkSize : 1;
   }
 
   // Indices of the words shown together, starting at the current word. Blank
@@ -206,6 +210,8 @@ export class RSVPController extends EventTarget {
     this.state.currentPartIndex = 0;
     this.saveSetting(CHUNK_SIZE_KEY, String(clamped));
     this.emitStateChange();
+    // Re-time a flash already on screen; a countdown or pause has no timer.
+    if (this.playbackTimer) this.scheduleNextWord();
   }
 
   setWarmup(on: boolean): void {
@@ -231,7 +237,10 @@ export class RSVPController extends EventTarget {
   get currentDisplayWord(): RsvpWord | null {
     const word = this.currentWord;
     if (!word) return null;
-    if (!this.state.splitHyphens || this.chunkSize > 1) return word;
+    // A chunk can start on the blank frame between repeated words; show its
+    // first word instead.
+    if (this.chunkSize > 1) return this.state.words[this.currentChunkIndices[0]!]!;
+    if (!this.state.splitHyphens) return word;
     const parts = getHyphenParts(word.text);
     if (parts.length <= 1) return word;
     const partText = parts[this.state.currentPartIndex] ?? word.text;
@@ -1419,7 +1428,7 @@ export class RSVPController extends EventTarget {
 
     if (this.state.longWordDelay) {
       const letters = word.text.replace(/[^\p{L}\p{N}]/gu, '');
-      if (letters.length >= 9 || /\d{3,}/.test(word.text)) duration += LONG_WORD_DELAY_MS;
+      if (letters.length >= 9 || /\p{Nd}{3,}/u.test(word.text)) duration += LONG_WORD_DELAY_MS;
     }
 
     if (/[.!?,;:–—]$/.test(word.text)) {

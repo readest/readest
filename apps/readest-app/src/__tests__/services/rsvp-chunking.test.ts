@@ -4,13 +4,18 @@ import { FoliateView } from '@/types/view';
 import { RsvpWord } from '@/services/rsvp/types';
 import { getChunkEnd, getPrevChunkStart } from '@/services/rsvp/utils';
 
-function makeDoc(text: string): Document {
-  const textNode = { nodeType: Node.TEXT_NODE, textContent: text } as unknown as Text;
-  const body = {
-    nodeType: Node.ELEMENT_NODE,
-    tagName: 'BODY',
-    childNodes: [textNode],
-  } as unknown as HTMLElement;
+// A string is one text node in <body>; an array is one block element per entry.
+function makeDoc(content: string | string[]): Document {
+  const textNode = (text: string) =>
+    ({ nodeType: Node.TEXT_NODE, textContent: text }) as unknown as Text;
+  const element = (tagName: string, childNodes: Node[]) =>
+    ({ nodeType: Node.ELEMENT_NODE, tagName, childNodes }) as unknown as HTMLElement;
+  const children =
+    typeof content === 'string'
+      ? [textNode(content)]
+      : content.map((text) => element('P', [textNode(text)]));
+  const nodes: Node[] = [...children, ...children.flatMap((c) => [...(c.childNodes ?? [])])];
+  const body = element('BODY', children);
   const doc = {
     body,
     createRange: vi.fn().mockReturnValue({ setStart: vi.fn(), setEnd: vi.fn() }),
@@ -18,12 +23,13 @@ function makeDoc(text: string): Document {
       getComputedStyle: vi.fn().mockReturnValue({ display: 'block', visibility: 'visible' }),
     },
   } as unknown as Document;
-  (body as unknown as { ownerDocument: Document }).ownerDocument = doc;
-  (textNode as unknown as { ownerDocument: Document }).ownerDocument = doc;
+  for (const node of [body, ...nodes]) {
+    (node as unknown as { ownerDocument: Document }).ownerDocument = doc;
+  }
   return doc;
 }
 
-function makeController(text: string, bookKey = 'book'): RSVPController {
+function makeController(text: string | string[], bookKey = 'book'): RSVPController {
   const view = {
     renderer: {
       primaryIndex: 0,
@@ -114,6 +120,60 @@ describe('RSVPController chunking', () => {
       c.prevWord();
       expect(c.currentState.currentIndex).toBe(starts[i]);
     }
+  });
+
+  test('a chunk never spans two paragraphs or a heading and a paragraph', () => {
+    const c = makeController(['Down the Rabbit Hole', 'Alice was beginning to get']);
+    c.setChunkSize(3);
+    c.start();
+    const seen = [chunkTexts(c)];
+    for (let i = 0; i < 3; i++) {
+      c.nextWord();
+      seen.push(chunkTexts(c));
+    }
+    expect(seen).toEqual([
+      ['Down', 'the', 'Rabbit'],
+      ['Hole'],
+      ['Alice', 'was', 'beginning'],
+      ['to', 'get'],
+    ]);
+  });
+
+  test('a chunk that starts on the blank frame between repeated words shows the word', () => {
+    // "a b b" is extracted as [a, b, ' ', b]; the second chunk starts on the blank.
+    const c = makeController('a b b');
+    c.setChunkSize(2);
+    c.start();
+    c.nextWord();
+    expect(chunkTexts(c)).toEqual(['b']);
+    expect(c.currentDisplayWord!.text).toBe('b');
+  });
+
+  test('changing the chunk size mid-flash re-times the flash', () => {
+    const c = makeController('aa bb cc dd ee ff gg');
+    c.setStartDelay(0);
+    c.setWpm(300); // 200 ms per word
+    c.start();
+    vi.advanceTimersByTime(100);
+    c.setChunkSize(3); // the 3-word flash now runs 600 ms from here
+    vi.advanceTimersByTime(300);
+    expect(c.currentState.currentIndex).toBe(0);
+    vi.advanceTimersByTime(305);
+    expect(c.currentState.currentIndex).toBe(3);
+  });
+
+  test('changing the chunk size while paused or counting down does not start playback', () => {
+    const c = makeController('aa bb cc dd');
+    c.setStartDelay(3);
+    c.start();
+    c.setChunkSize(2);
+    vi.advanceTimersByTime(1000);
+    expect(c.currentCountdown).toBe(2);
+    expect(c.currentState.currentIndex).toBe(0);
+    c.pause();
+    c.setChunkSize(3);
+    vi.advanceTimersByTime(5000);
+    expect(c.currentState.currentIndex).toBe(0);
   });
 
   test('nextWord on the last chunk stays on it', () => {
@@ -233,6 +293,14 @@ describe('RSVPController pacing options', () => {
     expect(c.currentState.currentIndex).toBe(1);
     vi.advanceTimersByTime(10);
     expect(c.currentState.currentIndex).toBe(2);
+  });
+
+  test('long-word delay counts digits in any script', () => {
+    const c = play('١٢٣ next words', (c) => c.setLongWordDelay(true));
+    vi.advanceTimersByTime(255); // 200 + 60 = 260 ms
+    expect(c.currentState.currentIndex).toBe(0);
+    vi.advanceTimersByTime(10);
+    expect(c.currentState.currentIndex).toBe(1);
   });
 
   test('warm-up starts at 70% speed, reaches full speed, and restarts after a pause', () => {

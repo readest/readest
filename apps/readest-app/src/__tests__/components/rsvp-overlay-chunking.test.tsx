@@ -108,6 +108,26 @@ describe('RSVPOverlay multi-word chunks', () => {
     expect(controller.currentState.chunkSize).toBe(2);
   });
 
+  test('[ and ] do nothing where the chunk size does not apply (CJK text)', () => {
+    const controller = makeController('这是一个测试。然后继续阅读。');
+    controller.start();
+    controller.pause();
+    renderOverlay(controller);
+
+    act(() => void fireEvent.keyDown(document, { key: ']' }));
+    expect(controller.currentState.chunkSize).toBe(1);
+  });
+
+  test('a one-word chunk after a blank frame shows the word, not the blank', () => {
+    const controller = makeController('a b b');
+    controller.setChunkSize(2);
+    controller.start();
+    controller.pause();
+    controller.nextWord();
+    const { container } = renderOverlay(controller);
+    expect(container.querySelector('.rsvp-word')!.textContent).toBe('b');
+  });
+
   test('the settings select changes the chunk size', () => {
     const controller = makeController('The quick brown fox jumps');
     controller.start();
