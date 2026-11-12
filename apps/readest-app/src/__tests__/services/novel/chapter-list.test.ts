@@ -241,6 +241,7 @@ ${[6, 7, 8].map((n) => blogChapter(`2025/03/0${n}/chapter-${n}`, `Chapter ${n}`)
 ${blogChapter('2025/03/14/epilogue-2', 'Epilogue')}
 <p><a href="https://serial.example.com/summary/">Summary</a></p>
 <a href="https://serial.example.com/table-of-contents/?share=twitter">Share on X</a>
+<a href="https://serial.example.com/2025/03/14/epilogue-2/?share=twitter">Share the Epilogue on X</a>
 </div>
 </body></html>`;
     const toc = parseChapterList(page, 'https://serial.example.com/table-of-contents/')!;
@@ -280,6 +281,24 @@ ${blogChapter('2013/11/09/teneral-e-3', 'E.3')}
       'E.1',
       'Teneral e.2',
       'E.3',
+    ]);
+  });
+
+  it('does not let the date in an unnumbered post URL reverse the list', () => {
+    // "E.x" carries no number, so the order vote would read the day (19) out
+    // of its URL and count 30 -> 19 as a newest-first list.
+    const page = `<!DOCTYPE html><html><head><title>Serial</title></head><body><div>
+${[1, 2, 3, 4, 5].map((n) => blogChapter(`2013/10/1${n}/speck-30-${n}`, `30.${n}`)).join('\n')}
+${blogChapter('2013/11/19/interlude-end', 'E.x (Interlude: End)')}
+</div></body></html>`;
+    const toc = parseChapterList(page, 'https://serial.example.com/table-of-contents/')!;
+    expect(toc.chapters.map((c) => c.title)).toEqual([
+      '30.1',
+      '30.2',
+      '30.3',
+      '30.4',
+      '30.5',
+      'E.x (Interlude: End)',
     ]);
   });
 

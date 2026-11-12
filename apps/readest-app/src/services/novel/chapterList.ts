@@ -123,7 +123,8 @@ const majorityTemplate = (entries: LinkEntry[]): { template: string; count: numb
  */
 const DATED_PERMALINK = /^\/[0-9]{4}\/[0-9]{2}\/(?:[0-9]{2}\/)?[^/]*[^/0-9][^/]*\/?$/;
 
-const isDatedPost = (url: URL): boolean => DATED_PERMALINK.test(url.pathname);
+/** A query makes it an action on the post (`?share=twitter`), not the post. */
+const isDatedPost = (url: URL): boolean => !url.search && DATED_PERMALINK.test(url.pathname);
 
 /**
  * The origin whose dated posts make up the chapter list, or null when the
@@ -216,8 +217,8 @@ const parseChineseNumber = (numeral: string): number => {
 
 /** Chapter number in the title (the last 第N, arabic or Chinese, so 第一卷
  *  第六章 reads 6), else the last digit run in the URL path — used only to
- *  detect newest-first ordering. */
-const chapterNumber = (entry: LinkEntry): number | null => {
+ *  detect newest-first ordering. `readPath: false` skips the URL fallback. */
+const chapterNumber = (entry: LinkEntry, readPath = true): number | null => {
   // Full-width digits (第１２頁) read as ASCII.
   const text = entry.text.replace(/[０-９]/g, (d) => String.fromCharCode(d.charCodeAt(0) - 0xfee0));
   const numeral = [
@@ -228,17 +229,23 @@ const chapterNumber = (entry: LinkEntry): number | null => {
     text.match(/(?:\bchapter|\bch\.?|\bepisode)\s*([0-9]+)/i) ||
     text.match(/^([0-9]+)\s*[、.．:：\-]/);
   if (numbered?.[1]) return parseInt(numbered[1], 10);
+  if (!readPath) return null;
   const pathDigits = entry.url.pathname.match(/([0-9]+)(?=[^0-9]*$)/);
   return pathDigits?.[1] ? parseInt(pathDigits[1], 10) : null;
 };
 
-/** Newest-first lists read backwards — reverse when numbers mostly descend. */
-const orderChapters = (entries: LinkEntry[]): LinkEntry[] => {
+/**
+ * Newest-first lists read backwards — reverse when numbers mostly descend.
+ * `datedOnly` entries were admitted only as blog posts: the last digit run in
+ * their URL is the day or a slug suffix (`/2013/11/19/interlude-end/`), not a
+ * chapter number, so they vote only with a number in their title.
+ */
+const orderChapters = (entries: LinkEntry[], datedOnly: Set<LinkEntry>): LinkEntry[] => {
   let descending = 0;
   let ascending = 0;
   let prev: number | null = null;
   for (const entry of entries) {
-    const num = chapterNumber(entry);
+    const num = chapterNumber(entry, !datedOnly.has(entry));
     if (num !== null && prev !== null) {
       if (num < prev) descending++;
       else if (num > prev) ascending++;
@@ -416,22 +423,22 @@ export function parseChapterList(html: string, pageUrl: string): NovelToc | null
   const candidateSet = new Set(candidates);
   const template = majorityTemplate(candidates)?.template;
   const blogOrigin = datedPostOrigin(candidates.filter((entry) => container.contains(entry.el)));
-  const isChapterLink = (entry: LinkEntry): boolean =>
-    candidateSet.has(entry) ||
-    entry.template === template ||
-    (entry.url.origin === blogOrigin && isDatedPost(entry.url));
   const seen = new Set<string>();
   const contained: LinkEntry[] = [];
+  const datedOnly = new Set<LinkEntry>();
   for (const entry of links) {
     if (!container.contains(entry.el)) continue;
-    if (!isChapterLink(entry)) continue;
+    const matched = candidateSet.has(entry) || entry.template === template;
+    const blogPost = entry.url.origin === blogOrigin && isDatedPost(entry.url);
+    if (!matched && !blogPost) continue;
     if (seen.has(entry.url.href)) continue;
     seen.add(entry.url.href);
     contained.push(entry);
+    if (!matched) datedOnly.add(entry);
   }
   if (contained.length < MIN_CHAPTER_LINKS) return null;
 
-  const ordered = orderChapters(contained);
+  const ordered = orderChapters(contained, datedOnly);
   return {
     ...extractMetadata(doc, pageUrl),
     chapters: ordered.map((entry) => ({ title: entry.text, url: entry.url.href })),
