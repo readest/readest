@@ -28,6 +28,7 @@ const h = vi.hoisted(() => ({
   osPlatform: 'ios',
   viewSettings: { scrolled: false },
   isFixedLayout: false,
+  format: 'EPUB',
 }));
 
 vi.mock('@/context/EnvContext', () => ({
@@ -41,7 +42,9 @@ vi.mock('@/store/readerStore', () => ({
   }),
 }));
 vi.mock('@/store/bookDataStore', () => ({
-  ...bookDataStoreHooks(() => ({ getBookData: () => ({ isFixedLayout: h.isFixedLayout }) })),
+  ...bookDataStoreHooks(() => ({
+    getBookData: () => ({ isFixedLayout: h.isFixedLayout, book: { format: h.format } }),
+  })),
 }));
 vi.mock('@/utils/event', () => ({
   eventDispatcher: { onSync: vi.fn(), offSync: vi.fn(), on: vi.fn(), off: vi.fn() },
@@ -111,6 +114,7 @@ beforeEach(() => {
   h.osPlatform = 'ios';
   h.viewSettings = { scrolled: false };
   h.isFixedLayout = false;
+  h.format = 'EPUB';
 });
 
 afterEach(() => {
@@ -185,6 +189,37 @@ describe('suppressNativeSelectionHandles', () => {
     await flush();
 
     expect(setSelection).not.toHaveBeenCalled();
+  });
+});
+
+describe('Android PDF endpoint handles', () => {
+  test.each([
+    'PDF',
+    'EPUB',
+  ])('publishes app handles only for a paginated %s selection', async (format) => {
+    h.appService = { isAndroidApp: true, isMobile: true };
+    h.osPlatform = 'android';
+    h.format = format;
+    h.isFixedLayout = format === 'PDF';
+    const page = makeSelectedPage('a selected phrase', 3);
+    const win = page.doc.defaultView as Window & typeof globalThis;
+    win.Range.prototype.getClientRects = () => [] as unknown as DOMRectList;
+    win.Range.prototype.getBoundingClientRect = () => new DOMRect(10, 10, 100, 20);
+    h.contents = [page];
+    const { result, setSelection } = setup();
+    result.current.handleTouchStart();
+    result.current.handleSelectionchange(page.doc, page.index);
+    await flush();
+    await result.current.handlePointerUp(page.doc, page.index);
+    await flush();
+    expect(page.doc.getSelection()!.toString()).toBe('a selected phrase');
+    const published = setSelection.mock.calls
+      .map(([value]) => value)
+      .filter((value) => typeof value !== 'function');
+    expect(published.at(-1)).toMatchObject({
+      text: 'a selected phrase',
+      handlesSuppressed: format === 'PDF',
+    });
   });
 });
 

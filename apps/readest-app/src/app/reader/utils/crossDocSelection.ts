@@ -1,4 +1,5 @@
 import { Point } from '@/utils/sel';
+import { getPdfCaretPosition } from '@/utils/pdfText';
 
 // A selection that runs across section documents (#5809). Fixed-layout books
 // render every PDF page in its own iframe, and a DOM Selection cannot leave its
@@ -66,6 +67,18 @@ export const toDocPoint = (doc: Document, point: Point): Point | null => {
   const sx = frame.clientWidth ? frame.clientWidth / rect.width : 1;
   const sy = frame.clientHeight ? frame.clientHeight / rect.height : 1;
   return { x: (point.x - rect.left) * sx, y: (point.y - rect.top) * sy };
+};
+
+// Translate a caret/handle point in a PDF iframe back into window coordinates.
+// PDF pages are often displayed at a CSS transform scale different from 1.
+// This is the inverse of toDocPoint and must be used for all draggable handles.
+export const toWindowPoint = (doc: Document, point: Point): Point | null => {
+  const frame = frameOf(doc);
+  const rect = frame?.getBoundingClientRect();
+  if (!frame || !rect || rect.width === 0 || rect.height === 0) return null;
+  const sx = frame.clientWidth ? rect.width / frame.clientWidth : 1;
+  const sy = frame.clientHeight ? rect.height / frame.clientHeight : 1;
+  return { x: rect.left + point.x * sx, y: rect.top + point.y * sy };
 };
 
 export const getCaretPosition = (doc: Document, x: number, y: number): DocPosition | null => {
@@ -144,7 +157,7 @@ export const getCaretPositionInText = (doc: Document, x: number, y: number): Doc
   }
   if (y < top) return bounds.start;
   if (y > bottom) return bounds.end;
-  return getCaretPosition(doc, x, y);
+  return getPdfCaretPosition(doc, x, y) ?? getCaretPosition(doc, x, y);
 };
 
 // The range between two positions of a document, whichever comes first.

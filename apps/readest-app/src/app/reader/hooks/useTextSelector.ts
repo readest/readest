@@ -346,14 +346,16 @@ export const useTextSelector = (
       // Single-document drag (reflowable books, paginated fixed layout): the
       // range runs from the anchor to the caret under the point in the anchor's
       // own document, exactly as the handles always worked.
-      const feRect = anchor.doc.defaultView?.frameElement?.getBoundingClientRect();
-      const range = rangeFromAnchorToPoint(
-        anchor.doc,
-        anchor.pos.node,
-        anchor.pos.offset,
-        point.x - (feRect?.left ?? 0),
-        point.y - (feRect?.top ?? 0),
-      );
+      const localPoint = toDocPoint(anchor.doc, point);
+      const range = localPoint
+        ? rangeFromAnchorToPoint(
+            anchor.doc,
+            anchor.pos.node,
+            anchor.pos.offset,
+            localPoint.x,
+            localPoint.y,
+          )
+        : null;
       if (!range) return commit ? commitLive() : null;
       await applyProgrammaticSelection(range, anchor.index, commit);
       return rangeBounds(anchor.doc, anchor.index, range);
@@ -424,7 +426,7 @@ export const useTextSelector = (
   // programmatically doesn't bring them back (the engine only draws them for a
   // user-initiated selection). `handlesSuppressed` then hands the job to the
   // app's own handles, which do stack below the popup.
-  const suppressNativeSelectionHandles = async () => {
+  const suppressNativeSelectionHandles = async (publishIndex?: number) => {
     // Desktop has no grabbers to take away, and the dance would only churn the
     // selection the popup is anchored to.
     if (!appService?.isMobile) return;
@@ -450,7 +452,11 @@ export const useTextSelector = (
     }
     sel.addRange(range);
     releaseProgrammaticSelection();
-    setSelection((prev) => (prev ? { ...prev, handlesSuppressed: true } : prev));
+    if (publishIndex !== undefined) {
+      await makeSelection(sel, publishIndex, false, true);
+    } else {
+      setSelection((prev) => (prev ? { ...prev, handlesSuppressed: true } : prev));
+    }
   };
 
   // Put back a selection the app dropped itself (#6213). The instant dictionary
@@ -1000,14 +1006,14 @@ export const useTextSelector = (
       // touchstart and fed by native touchmove): rebuild between those when
       // the gesture moved; otherwise fall back to the anchor-jump repair.
       const p = pointerPos.current;
-      const feRect = win.frameElement?.getBoundingClientRect();
-      const clamped = p
+      const localPoint = p ? toDocPoint(doc, p) : null;
+      const clamped = localPoint
         ? rangeFromAnchorToPoint(
             doc,
             initial.node,
             initial.offset,
-            p.x - (feRect?.left ?? 0),
-            p.y - (feRect?.top ?? 0),
+            localPoint.x,
+            localPoint.y,
           )
         : null;
       const repaired = clamped ?? repairJumpedSelectionRange(sel, initial.node, initial.offset);
@@ -1182,6 +1188,20 @@ export const useTextSelector = (
     if (osPlatform === 'android' && appService?.isAndroidApp) {
       await sanitizeAndroidHyphenSelection(doc, index);
       await suppressNativeHandlesForPages();
+
+      // PDF.js text runs are absolutely positioned. On some Android WebViews
+      // native selection handles jump between runs while the finger drags.
+      // After the initial selection, use Readest's own SelectionRangeEditor
+      // handles for subsequent endpoint adjustments. Cross-page mode already
+      // replaces them; do not interfere with it or with a plain tap.
+      if (
+        bookData?.book?.format === 'PDF' &&
+        !crossPageEnabled() &&
+        gestureInitialRef.current &&
+        !sanitizedGestureRef.current
+      ) {
+        await suppressNativeSelectionHandles(index);
+      }
     }
   };
   const handleTouchStart = () => {

@@ -215,6 +215,75 @@ export const getPdfTextLayer = (range: Range): Element | null => {
   return el?.closest('.textLayer') ?? null;
 };
 
+/** Resolve app-handle points by glyph geometry, not pdf.js's gap cover.
+ * `.endOfContent` intentionally hit-tests to the previous selection endpoint
+ * for native handles. Reusing that result for app handles makes them jump back
+ * whenever the pointer leaves an absolutely positioned text run.
+ */
+export const getPdfCaretPosition = (
+  doc: Document,
+  x: number,
+  y: number,
+): { node: Node; offset: number } | null => {
+  const layer = doc.querySelector('.textLayer');
+  if (!layer) return null;
+  const distance = (rect: DOMRect) =>
+    Math.max(rect.left - x, 0, x - rect.right) ** 2 +
+    Math.max(rect.top - y, 0, y - rect.bottom) ** 2;
+  const probe = doc.createRange();
+  const nativePosition = doc.caretPositionFromPoint?.(x, y);
+  const nativeRange = nativePosition ? null : doc.caretRangeFromPoint?.(x, y);
+  const nativeNode = nativePosition?.offsetNode ?? nativeRange?.startContainer;
+  const nativeOffset = nativePosition?.offset ?? nativeRange?.startOffset;
+  if (nativeNode?.nodeType === Node.TEXT_NODE && layer.contains(nativeNode)) {
+    probe.selectNodeContents(nativeNode);
+    // Preserve the engine's glyph/bidi hit-testing when actually over text.
+    // A caret returned for a gap may point to an unrelated run, so require
+    // the point to lie within that run before trusting it.
+    if (
+      [...probe.getClientRects()].some(
+        (rect) => x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom,
+      )
+    )
+      return { node: nativeNode, offset: nativeOffset! };
+  }
+  const walker = doc.createTreeWalker(layer, NodeFilter.SHOW_TEXT);
+  let nearest: Text | null = null;
+  let best = Infinity;
+  for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+    if (!node.textContent?.trim()) continue;
+    probe.selectNodeContents(node);
+    for (const rect of probe.getClientRects()) {
+      if (!rect.width || !rect.height) continue;
+      const d = distance(rect);
+      if (d < best) {
+        best = d;
+        nearest = node as Text;
+      }
+    }
+  }
+  if (!nearest) return null;
+  // Collapsed ranges give the engine's caret positions, including RTL runs.
+  // Inspect only the closest run; do not measure every character on the page.
+  best = Infinity;
+  let offset = 0;
+  for (let i = 0; i <= nearest.length; i++) {
+    // Never put a caret inside a UTF-16 surrogate pair.
+    if (i > 0 && i < nearest.length && /[\uDC00-\uDFFF]/u.test(nearest.data[i]!)) continue;
+    probe.setStart(nearest, i);
+    probe.collapse(true);
+    for (const rect of probe.getClientRects()) {
+      if (!rect.height && !rect.width) continue;
+      const d = distance(rect);
+      if (d < best) {
+        best = d;
+        offset = i;
+      }
+    }
+  }
+  return { node: nearest, offset };
+};
+
 /** Text of `range` with the text layer's line wraps joined back into paragraphs. */
 export const getPdfTextFromRange = (range: Range, textLayer: Element): string => {
   const rows = splitRows(textLayer);
