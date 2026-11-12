@@ -109,14 +109,24 @@ describe('Vertical-rl pagination (browser)', () => {
     expect(getDirection(doc)).toEqual({ vertical: true, rtl: true });
   });
 
-  it('keeps a bottom-aligned EBPAJ title-page credit inside the page margins', async () => {
+  // readest#7372: EBPAJ matter pages (title, credits, notices) put a vertical
+  // `.main.height-100per` box inside a horizontal root. That box is orthogonal
+  // to the root, so `height: 100%` resolves against the whole viewport, not the
+  // root's padded content box, and end-aligned credits fall past the bottom
+  // margin. Under Readest's Writing Mode override the box is no longer
+  // orthogonal and must keep filling exactly the content box.
+  it.each([
+    ['title page', 'p-titlepage', 'auto'],
+    ['credits page', 'p-text', 'auto'],
+    ['title page under the vertical-rl Writing Mode override', 'p-titlepage', 'vertical-rl'],
+  ] as const)('sizes an EBPAJ %s to the page content box', async (_, bodyClass, writingMode) => {
     const source = URL.createObjectURL(
       new Blob(
         [
           '<!doctype html><html class="hltr" lang="ja"><head><style>' +
             '.vrtl { writing-mode: vertical-rl; } .height-100per { height: 100%; }' +
             '.align-end { text-align: end; margin: 0; }</style></head>' +
-            '<body class="p-titlepage"><div class="main vrtl height-100per">' +
+            `<body class="${bodyClass}"><div class="main vrtl height-100per">` +
             '<p class="align-end"><span id="credit">著者</span></p></div></body></html>',
         ],
         { type: 'text/html' },
@@ -132,6 +142,7 @@ describe('Vertical-rl pagination (browser)', () => {
           ...DEFAULT_BOOK_LAYOUT,
           ...DEFAULT_BOOK_STYLE,
           vertical: true,
+          writingMode,
         } as ViewSettings),
       );
       paginator.addEventListener('load', (event) => {
@@ -149,9 +160,14 @@ describe('Vertical-rl pagination (browser)', () => {
       const { doc } = paginator.getContents()[0]!;
       const root = doc.documentElement;
       const bottomMargin = parseFloat(doc.defaultView!.getComputedStyle(root).paddingBottom);
+      const contentBottom = root.getBoundingClientRect().bottom - bottomMargin;
       expect(bottomMargin).toBeGreaterThan(0);
+      expect(doc.querySelector('.main')!.getBoundingClientRect().bottom).toBeCloseTo(
+        contentBottom,
+        0,
+      );
       expect(doc.getElementById('credit')!.getBoundingClientRect().bottom).toBeLessThanOrEqual(
-        root.getBoundingClientRect().bottom - bottomMargin + 1,
+        contentBottom + 1,
       );
     } finally {
       URL.revokeObjectURL(source);
