@@ -1245,8 +1245,82 @@
   }
   reflect(HTMLInputElement, ['type', 'name', 'placeholder']);
   class HTMLTextAreaElement extends HTMLInputElement {}
-  class HTMLSelectElement extends HTMLInputElement {}
-  class HTMLOptionElement extends HTMLInputElement {}
+  // A select's options are its <option> descendants. An option is selected while it carries the
+  // `selected` attribute (selected and defaultSelected are one here, enough for React's
+  // updateOptions); choosing one in a single select clears the others. A single select with none
+  // chosen shows its first enabled option, unless a value matching no option cleared it.
+  class HTMLSelectElement extends HTMLInputElement {
+    get options() {
+      return this.querySelectorAll('option');
+    }
+    get length() {
+      return this.options.length;
+    }
+    get multiple() {
+      return this.hasAttribute('multiple');
+    }
+    set multiple(v) {
+      if (v) this.setAttribute('multiple', '');
+      else this.removeAttribute('multiple');
+    }
+    get selectedIndex() {
+      const o = this.options;
+      for (let i = 0; i < o.length; i++) if (o[i].hasAttribute('selected')) return i;
+      if (this._cleared || this.multiple) return -1;
+      for (let i = 0; i < o.length; i++) if (!o[i].disabled) return i;
+      return -1;
+    }
+    set selectedIndex(v) {
+      const i = Number(v);
+      const o = this.options;
+      for (let k = 0; k < o.length; k++) {
+        if (k === i) o[k].setAttribute('selected', '');
+        else o[k].removeAttribute('selected');
+      }
+      this._cleared = !(i >= 0 && i < o.length);
+    }
+    get value() {
+      const i = this.selectedIndex;
+      return i < 0 ? '' : this.options[i].value;
+    }
+    set value(v) {
+      const s = String(v);
+      const i = Array.prototype.findIndex.call(this.options, (o) => o.value === s);
+      this.selectedIndex = i;
+    }
+  }
+  class HTMLOptionElement extends HTMLInputElement {
+    get value() {
+      return this.hasAttribute('value') ? this.getAttribute('value') : this.text;
+    }
+    set value(v) {
+      this.setAttribute('value', v);
+    }
+    get text() {
+      return (this.textContent || '').replace(/\s+/g, ' ').trim();
+    }
+    set text(v) {
+      this.textContent = v;
+    }
+    get selected() {
+      return this.hasAttribute('selected');
+    }
+    set selected(v) {
+      if (!v) return this.removeAttribute('selected');
+      const select = this.closest('select');
+      if (select && !select.multiple)
+        for (const o of select.options) if (o !== this) o.removeAttribute('selected');
+      if (select) select._cleared = false;
+      this.setAttribute('selected', '');
+    }
+    get defaultSelected() {
+      return this.hasAttribute('selected');
+    }
+    set defaultSelected(v) {
+      if (v) this.setAttribute('selected', '');
+      else this.removeAttribute('selected');
+    }
+  }
   class HTMLButtonElement extends HTMLElement {
     get disabled() {
       return this.hasAttribute('disabled');

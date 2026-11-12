@@ -184,3 +184,45 @@ fn clone_node() {
         ]
     );
 }
+
+// React renders a controlled <select> by walking `select.options` (updateOptions), setting
+// `selected`/`defaultSelected` on the option whose value matches; Settings' dropdowns (the Theme
+// panel's among them) read `select.value` back in onChange.
+#[test]
+fn select_options() {
+    let html = "<!DOCTYPE html><html><body>\
+        <select id='s'><option value='a'>A</option><optgroup label='g'><option>b</option></optgroup><option value='c' selected>C</option></select>\
+        <select id='m' multiple><option value='x'>X</option><option value='y'>Y</option></select></body></html>";
+    let mut doc = QjsDocument::from_html(html, DocumentConfig::default());
+    doc.eval(
+        "const s = document.getElementById('s');
+        const o = s.options;
+        console.log(o.length, s.length, o[1].value, o[1].text, s.value, s.selectedIndex, s.multiple);
+        for (let i = 0; i < o.length; i++) if (o[i].value === 'a') { o[i].selected = true; o[i].defaultSelected = true; }
+        console.log(s.value, s.selectedIndex, o[0].selected, o[2].selected);
+        s.value = 'b';
+        console.log(s.value, s.selectedIndex, o[0].selected, o[1].selected);
+        s.selectedIndex = 2;
+        console.log(s.value, o[2].selected, o[1].selected);
+        s.value = 'none';
+        console.log(s.selectedIndex, s.value === '');
+        const m = document.getElementById('m');
+        m.options[0].selected = true;
+        m.options[1].selected = true;
+        console.log(m.multiple, m.options[0].selected, m.options[1].selected, m.value);",
+        "test",
+    );
+    let logs = doc.take_messages();
+    assert_eq!(doc.take_js_errors(), Vec::<String>::new());
+    assert_eq!(
+        logs,
+        [
+            "log: 3 3 b b c 2 false",
+            "log: a 0 true false",
+            "log: b 1 false true",
+            "log: c true false",
+            "log: -1 true",
+            "log: true true true x",
+        ]
+    );
+}
