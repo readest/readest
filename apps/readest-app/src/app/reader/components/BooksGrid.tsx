@@ -21,6 +21,7 @@ import {
 } from '@/utils/insets';
 import { tauriSetWindowTitle } from '@/utils/window';
 import { useContentInsets } from '../hooks/useContentInsets';
+import { useFirstPageShown } from '../hooks/useFirstPageShown';
 import { usePageOverflow } from '../hooks/usePageOverflow';
 import { type BottomCornerRadii, getCellCornerRadii, NO_CORNERS } from '../utils/footerBand';
 import SearchResultsNav from './sidebar/SearchResultsNav';
@@ -128,6 +129,7 @@ const BookCellInner: React.FC<BookCellProps> = ({
   // subscribes to them itself. `viewStates[key]` only bumps on low-frequency
   // events (settings toggles, ribbon, init, sync), never on a page turn.
   const viewState = useReaderStore((s) => s.viewStates[bookKey]);
+  const firstPageShown = useFirstPageShown(bookKey);
   const getView = useReaderStore((s) => s.getView);
   // Of the reading position, the cell renders only the column count and window
   // width that the relocate after a re-layout brings. A turn changes neither, so
@@ -290,17 +292,19 @@ const BookCellInner: React.FC<BookCellProps> = ({
             hidden={pageOverflowing}
           />
         )}
-        <HintInfo
-          bookKey={bookKey}
-          showDoubleBorder={viewSettings.vertical && viewSettings.doubleBorder}
-          isScrolled={viewSettings.scrolled}
-          isVertical={viewSettings.vertical}
-          isEink={viewSettings.isEink}
-          horizontalGap={horizontalGapPercent}
-          contentInsets={contentInsets}
-          gridInsets={gridInsets}
-          columnGap={columnGap}
-        />
+        {firstPageShown && (
+          <HintInfo
+            bookKey={bookKey}
+            showDoubleBorder={viewSettings.vertical && viewSettings.doubleBorder}
+            isScrolled={viewSettings.scrolled}
+            isVertical={viewSettings.vertical}
+            isEink={viewSettings.isEink}
+            horizontalGap={horizontalGapPercent}
+            contentInsets={contentInsets}
+            gridInsets={gridInsets}
+            columnGap={columnGap}
+          />
+        )}
         {viewSettings.readingRulerEnabled && viewState?.inited && (
           <ReadingRuler
             bookKey={bookKey}
@@ -327,26 +331,30 @@ const BookCellInner: React.FC<BookCellProps> = ({
           />
         )}
       </div>
-      {/* After the page chrome so it can't paint over ink near the edges. */}
-      <HandwritingOverlay bookKey={bookKey} gridInsets={gridInsets} />
-      <BookmarkPullDown bookKey={bookKey} ribbonHidden={!!hoveredBookKey} slideRef={slideRef} />
-      <PageNavigationButtons bookKey={bookKey} isDropdownOpen={isDropdownOpen} />
-      <SearchResultsNav bookKey={bookKey} gridInsets={gridInsets} />
-      <VimCommandLine bookKey={bookKey} gridInsets={gridInsets} />
-      <BooknotesNav bookKey={bookKey} gridInsets={gridInsets} toc={bookDoc.toc || []} />
-      <FootnotePopup bookKey={bookKey} bookDoc={bookDoc} gridInsets={gridInsets} />
-      {/* After FootnotePopup so the lookup popups stack above the footnote
+      {firstPageShown && (
+        <>
+          {/* After the page chrome so it can't paint over ink near the edges. */}
+          <HandwritingOverlay bookKey={bookKey} gridInsets={gridInsets} />
+          <BookmarkPullDown bookKey={bookKey} ribbonHidden={!!hoveredBookKey} slideRef={slideRef} />
+          <PageNavigationButtons bookKey={bookKey} isDropdownOpen={isDropdownOpen} />
+          <SearchResultsNav bookKey={bookKey} gridInsets={gridInsets} />
+          <VimCommandLine bookKey={bookKey} gridInsets={gridInsets} />
+          <BooknotesNav bookKey={bookKey} gridInsets={gridInsets} toc={bookDoc.toc || []} />
+          <FootnotePopup bookKey={bookKey} bookDoc={bookDoc} gridInsets={gridInsets} />
+          {/* After FootnotePopup so the lookup popups stack above the footnote
           popup (and its dismiss overlay) when the user selects text inside it.
           The selection toolbar no longer rides on this order — it has its own
           z-[43] band, above the footnote popup's z-[42] (#6145). */}
-      <Annotator bookKey={bookKey} contentInsets={contentInsets} gridInsets={gridInsets} />
+          <Annotator bookKey={bookKey} contentInsets={contentInsets} gridInsets={gridInsets} />
+        </>
+      )}
       <FooterBar
         bookKey={bookKey}
         bookFormat={book.format}
         isHoveredAnim={false}
         gridInsets={chromeGridInsets}
       />
-      <ReadingStatsTracker bookKey={bookKey} />
+      {firstPageShown && <ReadingStatsTracker bookKey={bookKey} />}
     </div>
   );
 };

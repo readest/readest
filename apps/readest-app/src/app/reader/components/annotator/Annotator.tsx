@@ -983,6 +983,18 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
     onRendererRelocate: handleRendererRelocate,
   });
 
+  // The reader mounts this once the book's first page is on screen (BooksGrid). The pages loaded by
+  // then, shown and preloaded, had their `load` and `create-overlay` before the listeners above:
+  // set them up now. Pages loaded later come through the events.
+  useEffect(() => {
+    for (const { doc, index } of view?.renderer?.getContents?.() ?? []) {
+      if (!doc) continue;
+      onLoad(new CustomEvent('load', { detail: { doc, index } }));
+      onCreateOverlay(new CustomEvent('create-overlay', { detail: { index } }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [view]);
+
   // Mobile native-touch handler (Android MainActivity / iOS touch observer).
   // Registered once per view by useRendererInputListeners; it
   // resolves the CURRENT primary section's doc/index at fire time rather than
