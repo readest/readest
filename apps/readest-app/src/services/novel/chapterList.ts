@@ -65,14 +65,32 @@ interface LinkEntry {
   template: string;
 }
 
+/**
+ * An href that names the page's own host but drops the scheme
+ * (`parahumans.wordpress.com/2013/11/19/interlude-end/`) reads as a path
+ * relative to the page; the author meant the host, and the site redirects it
+ * there, so read it as a link to the host.
+ */
+const withSchemeRestored = (href: string, pageHost: string): string =>
+  pageHost && href.toLowerCase().startsWith(`${pageHost}/`) ? `//${href}` : href;
+
+const hostnameOf = (pageUrl: string): string => {
+  try {
+    return new URL(pageUrl).hostname.toLowerCase();
+  } catch {
+    return '';
+  }
+};
+
 const collectLinks = (doc: Document, pageUrl: string): LinkEntry[] => {
   const entries: LinkEntry[] = [];
+  const pageHost = hostnameOf(pageUrl);
   for (const el of doc.querySelectorAll('a[href]')) {
     const href = el.getAttribute('href') || '';
     if (!href || href.startsWith('#')) continue;
     let url: URL;
     try {
-      url = new URL(href, pageUrl);
+      url = new URL(withSchemeRestored(href, pageHost), pageUrl);
     } catch {
       continue;
     }
@@ -92,6 +110,38 @@ const majorityTemplate = (entries: LinkEntry[]): { template: string; count: numb
   let best: { template: string; count: number } | null = null;
   for (const [template, count] of counts) {
     if (!best || count > best.count) best = { template, count };
+  }
+  return best;
+};
+
+/**
+ * A blog post's permalink: `/2025/03/14/epilogue-2/` (WordPress) or
+ * `/2013/11/slug.html` (Blogger). Serials hosted on a blog give every chapter
+ * one, and the slug is free text, so "Epilogue" or "E.1" shares neither a
+ * numbered title nor an href template with the chapters around it. The slug
+ * needs a non-digit, so a day archive (`/2025/03/14/`) isn't read as a post.
+ */
+const DATED_PERMALINK = /^\/[0-9]{4}\/[0-9]{2}\/(?:[0-9]{2}\/)?[^/]*[^/0-9][^/]*\/?$/;
+
+const isDatedPost = (url: URL): boolean => DATED_PERMALINK.test(url.pathname);
+
+/**
+ * The origin whose dated posts make up the chapter list, or null when the
+ * chapters aren't blog posts. Needs `MIN_CHAPTER_LINKS` of them, so one dated
+ * link on an ordinary novel site doesn't make every post on it a chapter.
+ */
+const datedPostOrigin = (chapters: LinkEntry[]): string | null => {
+  const counts = new Map<string, number>();
+  for (const { url } of chapters) {
+    if (isDatedPost(url)) counts.set(url.origin, (counts.get(url.origin) || 0) + 1);
+  }
+  let best: string | null = null;
+  let bestCount = MIN_CHAPTER_LINKS - 1;
+  for (const [origin, count] of counts) {
+    if (count > bestCount) {
+      best = origin;
+      bestCount = count;
+    }
   }
   return best;
 };
@@ -360,14 +410,21 @@ export function parseChapterList(html: string, pageUrl: string): NovelToc | null
 
   // Keep the container's chapter-like links in document order; also admit
   // same-template links whose titles didn't match (a "Prologue" row inside a
-  // numbered list). Dedup by URL — many lists repeat entries.
+  // numbered list), and, when the chapters are posts on a blog, the other
+  // posts the list links to (an "Epilogue" whose slug matches no template).
+  // Dedup by URL — many lists repeat entries.
   const candidateSet = new Set(candidates);
   const template = majorityTemplate(candidates)?.template;
+  const blogOrigin = datedPostOrigin(candidates.filter((entry) => container.contains(entry.el)));
+  const isChapterLink = (entry: LinkEntry): boolean =>
+    candidateSet.has(entry) ||
+    entry.template === template ||
+    (entry.url.origin === blogOrigin && isDatedPost(entry.url));
   const seen = new Set<string>();
   const contained: LinkEntry[] = [];
   for (const entry of links) {
     if (!container.contains(entry.el)) continue;
-    if (!candidateSet.has(entry) && entry.template !== template) continue;
+    if (!isChapterLink(entry)) continue;
     if (seen.has(entry.url.href)) continue;
     seen.add(entry.url.href);
     contained.push(entry);
