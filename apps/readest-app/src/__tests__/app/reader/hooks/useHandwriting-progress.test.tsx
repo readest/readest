@@ -53,6 +53,14 @@ vi.mock('@/store/bookDataStore', () => ({
 }));
 vi.mock('@/context/EnvContext', () => ({ useEnv: () => ({ envConfig: {} }) }));
 
+vi.stubGlobal(
+  'ResizeObserver',
+  class {
+    observe() {}
+    disconnect() {}
+  },
+);
+
 const turnTo = (page: number, section: number) =>
   act(() =>
     setBookProgress('book-1', {
@@ -108,5 +116,32 @@ describe('useHandwriting on a page turn', () => {
     turnTo(2, 3);
 
     expect(renders()).toBeGreaterThan(before);
+  });
+
+  it('renders a turn into the next section once, when the page has not moved', async () => {
+    turnTo(1, 3);
+    let renders = 0;
+    const { result } = renderHook(() => {
+      renders++;
+      return useHandwriting('book-1');
+    });
+    const cell = document.createElement('div');
+    vi.spyOn(cell, 'getBoundingClientRect').mockReturnValue({
+      left: 0,
+      top: 0,
+      width: 600,
+      height: 800,
+      right: 600,
+      bottom: 800,
+    } as DOMRect);
+    act(() => result.current.containerRef(cell));
+    await act(() => new Promise((resolve) => setTimeout(resolve, 100)));
+    renders = 0;
+
+    turnTo(0, 4);
+    await act(() => new Promise((resolve) => setTimeout(resolve, 100)));
+
+    // the turn itself; re-measuring the same rects must not take more commits
+    expect(renders).toBe(1);
   });
 });

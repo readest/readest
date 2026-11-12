@@ -275,11 +275,17 @@ export class HandwritingService {
   /** Retarget the session at a new page (page turn / section change). */
   setPage(page: string) {
     if (page === this.page) return;
+    // With no ink on either page and no stroke in progress the canvas stays
+    // empty: no repaint (every turn of a PDF is a page change).
+    const repaint =
+      this.live.length > 0 ||
+      this.editor.strokes(this.page).length > 0 ||
+      this.editor.strokes(page).length > 0;
     this.page = page;
     // An in-progress stroke belongs to the page it started on; drop it rather
     // than committing it to the page the reader just turned to.
     this.live = [];
-    this.onRender?.();
+    if (repaint) this.onRender?.();
   }
 
   onGesture(listener: (gesture: InkGesture) => void) {
