@@ -8,20 +8,16 @@ metadata:
   modified: 2026-08-25T07:15:22.530Z
 ---
 
-Reported 2026-08-25 by the user on their own test account (b3d61257, book hash
-c2464d2fa6807845daaf446a549389d6, imported on the Mac desktop app).
+Reported 2026-08-25 by the user on their own test account (book imported on the
+Mac desktop app; account and hash in [[private-books-sync-inflight-change-dropped]], local only).
 
-**Prod signature (Supabase, admin key via PostgREST, recipe in
-[[progress-loss-android-tauri-plugin-deadlock-5859]]):** `books` row existed with
-`uploaded_at = NULL`, `created_at` 06:47:35.753 (client), `updated_at` 06:47:38.195
-(SERVER stamp: `sync.ts` POST rewrites `updated_at = now()` on a first-time INSERT),
-`synced_at` 06:47:38.910; the `files` row (written at PRESIGN time, not completion)
-landed at 06:47:39.011, 100 ms AFTER the books row. Local `library.json` on the Mac
-had `uploadedAt = updatedAt = 06:47:41.346` and NO `syncedAt`, i.e. the book was
-eligible for push the whole time. Nothing was pushed for 18 min until the user opened
-the book (progress bump -> library change -> auto-sync carried `uploaded_at`).
-Mac clock within ~0.2 s of the server, so clock skew is NOT the cause. 23 other live
-books of this user show the same NULL-uploaded_at-with-files-row signature.
+**Prod signature (details in [[private-books-sync-inflight-change-dropped]], local only):** the `books` row existed with
+`uploaded_at = NULL` (SERVER stamp: `sync.ts` POST rewrites `updated_at = now()` on a
+first-time INSERT); the `files` row (written at PRESIGN time, not completion) landed
+just after it. Local `library.json` on the Mac had `uploadedAt` set and NO `syncedAt`,
+i.e. the book was eligible for push the whole time. Nothing was pushed until the user
+opened the book (progress bump -> library change -> auto-sync carried `uploaded_at`).
+Clock skew was ruled out.
 
 **Root cause:** `useBooksSync.ts` guarded BOTH the `[user, library, handleAutoSync]`
 effect and the throttled `handleAutoSync` body with `if (isPullingRef.current) return`
@@ -51,7 +47,7 @@ OLD CODE: 2.4 MB + 9 s delay -> PUT ended inside the chain's FINAL pull (the one
 nothing) -> no further POST, `uploaded_at` still NULL 42 s later (bug reproduced). Old code
 SURVIVES when the upload lands during GET #1 (its response carries the new row -> cursor change ->
 fresh throttle instance re-reads the library), so tune the delay so completion falls in the last pull.
-QA books left in the test account: 6aee887a, b64d018c, 7d9f4fb5, 5f1f5d5f (titles "Inflight ...").
+QA books left in the test account (titles "Inflight ..."; hashes in [[private-books-sync-inflight-change-dropped]]).
 
 **How to apply:** verify on a second device (import on A while signed in, B should
 shelve it within the sync interval without opening on A); then rebase + PR per

@@ -1,6 +1,7 @@
+// @vitest-environment happy-dom
 import React from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type { Book, BooksGroup } from '@/types/book';
 import type { ShelfSection } from '@/app/library/components/BookshelfStream';
 import type { BookshelfDefinition } from '@/types/bookshelf';
@@ -19,6 +20,7 @@ import { applyBookshelfDraft } from '@/services/bookshelves/state';
 import { createBookGroups } from '@/app/library/utils/libraryUtils';
 import { LibraryGroupByType } from '@/types/settings';
 import Bookshelf from '@/app/library/components/Bookshelf';
+import { eventDispatcher } from '@/utils/event';
 const mocks = vi.hoisted(() => ({
   params: new URLSearchParams(),
   env: {},
@@ -162,6 +164,7 @@ const props = {
   handleBookUpload: async () => true,
   handleBookDelete: async () => true,
   handleBookPurge: async () => true,
+  handleBookDeleteLocalCopy: async () => true,
   handleSetSelectMode: noop,
   handleShowDetailsBook: noop,
   handleLibraryNavigation: noop,
@@ -529,6 +532,48 @@ describe('library bookshelf integration', () => {
         .getAllByRole('button', { name: 'Book 19' })
         .every((b) => b.getAttribute('aria-pressed') === 'true'),
     ).toBe(true);
+  });
+  it('deletes the books after an earlier delete confirmation was cancelled', async () => {
+    const handleBookDelete = vi.fn(async () => true);
+    render(<Bookshelf {...props} handleBookDelete={handleBookDelete} />);
+    const openDelete = async () => {
+      await act(() => eventDispatcher.dispatch('delete-books', { ids: ['1', '2'] }));
+      return within(document.querySelector('.delete-alert') as HTMLElement);
+    };
+    fireEvent.click((await openDelete()).getByRole('button', { name: 'Cancel' }));
+    await waitFor(() => expect(document.querySelector('.delete-alert')).toBeNull());
+    fireEvent.click((await openDelete()).getByRole('button', { name: 'Delete' }));
+    await waitFor(() => expect(document.querySelector('.delete-alert')).toBeNull());
+    expect(handleBookDelete).toHaveBeenCalledTimes(2);
+  });
+  it('stops a cancelled deletion even when another one starts before its batch ends', async () => {
+    const many = Array.from({ length: 41 }, (_, i) => ({
+      ...books[0]!,
+      hash: `m${i}`,
+      title: `M ${i}`,
+    }));
+    useLibraryStore.setState({ library: many });
+    const pending: (() => void)[] = [];
+    const handleBookDelete = vi.fn(
+      () => new Promise<boolean>((resolve) => pending.push(() => resolve(true))),
+    );
+    render(<Bookshelf {...props} libraryBooks={many} handleBookDelete={handleBookDelete} />);
+    const confirmDelete = async (ids: string[]) => {
+      await act(() => eventDispatcher.dispatch('delete-books', { ids }));
+      const alert = within(document.querySelector('.delete-alert') as HTMLElement);
+      fireEvent.click(alert.getByRole('button', { name: 'Delete' }));
+      return alert;
+    };
+    // Two batches of 20; cancel while the first is still running.
+    const first = await confirmDelete(many.slice(0, 40).map((b) => b.hash));
+    await waitFor(() => expect(handleBookDelete).toHaveBeenCalledTimes(20));
+    fireEvent.click(first.getByRole('button', { name: 'Cancel' }));
+    await waitFor(() => expect(document.querySelector('.delete-alert')).toBeNull());
+    await confirmDelete(['m40']);
+    await waitFor(() => expect(handleBookDelete).toHaveBeenCalledTimes(21));
+    await act(async () => pending.splice(0).forEach((resolve) => resolve()));
+    await act(async () => pending.splice(0).forEach((resolve) => resolve()));
+    expect(handleBookDelete).toHaveBeenCalledTimes(21);
   });
   it('includes every group member in selection and toggles overlapping cards together', async () => {
     const grouped = books.map((b) => ({ ...b, groupName: 'Fiction/Stories' }));

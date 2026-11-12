@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 /**
  * wordPronouncer — pronounces a single dictionary word.
  *

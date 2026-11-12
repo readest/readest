@@ -45,6 +45,12 @@
     </array>
     <key>LSSupportsOpeningDocumentsInPlace</key>
     <true/>
+    <!-- Keeps Read Aloud and audiobook playback running when the app is
+         backgrounded or the screen is locked. -->
+    <key>UIBackgroundModes</key>
+    <array>
+      <string>audio</string>
+    </array>
     <!-- Add-only Photos access. Readest never reads the library, but the
          WebView's "Add to Photos" image callout and the share sheet's
          "Save Image" activity both write through PHPhotoLibrary in-process;

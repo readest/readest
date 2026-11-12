@@ -35,13 +35,7 @@ import { PREDEFINED_TEXTURES } from '@/styles/textures';
 import { useAtmosphereStore } from '@/store/atmosphereStore';
 import { DefaultHighlightColor, HighlightColor, UserHighlightColor } from '@/types/book';
 import clsx from 'clsx';
-import {
-  BoxedList,
-  SettingsSwitchRow,
-  ScopeSwitch,
-  SectionTitle,
-  SettingLabel,
-} from './primitives';
+import { ScopeSwitch, SectionTitle, SettingLabel } from './primitives';
 import { HIGHLIGHT_COLOR_HEX } from '@/services/constants';
 import ThemeEditor from './theme/ThemeEditor';
 import ThemeModeSelector from './theme/ThemeModeSelector';
@@ -69,6 +63,8 @@ const ThemePanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
   const { settings, setSettings, saveSettings } = useSettingsStore();
   const { getView, getViewSettings } = useReaderStore();
   const viewSettings = getViewSettings(bookKey) || settings.globalViewSettings;
+  const isPDF =
+    !!bookKey && useBookDataStore.getState().getBookData(bookKey)?.book?.format === 'PDF';
 
   // The Background Image picker edits one of two scopes (issue #5306): the
   // library's own texture (#4743 fields, per-field fallback to reader/global)
@@ -146,6 +142,15 @@ const ThemePanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
   const [readingRulerLines, setReadingRulerLines] = useState(viewSettings.readingRulerLines);
   const [readingRulerOpacity, setReadingRulerOpacity] = useState(viewSettings.readingRulerOpacity);
   const [readingRulerColor, setReadingRulerColor] = useState(viewSettings.readingRulerColor);
+  const [readingRulerStyle, setReadingRulerStyle] = useState(
+    viewSettings.readingRulerStyle ?? 'band',
+  );
+  const [readingRulerLineColor, setReadingRulerLineColor] = useState(
+    viewSettings.readingRulerLineColor ?? '#808080',
+  );
+  const [readingRulerLineThickness, setReadingRulerLineThickness] = useState(
+    viewSettings.readingRulerLineThickness ?? 2,
+  );
 
   const {
     textures: customTextures,
@@ -178,6 +183,9 @@ const ThemePanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
       readingRulerEnabled: setReadingRulerEnabled,
       readingRulerLines: setReadingRulerLines,
       readingRulerOpacity: setReadingRulerOpacity,
+      readingRulerStyle: setReadingRulerStyle,
+      readingRulerLineColor: setReadingRulerLineColor,
+      readingRulerLineThickness: setReadingRulerLineThickness,
     });
     resetThemeScopes();
     setSelectedTextureId('none');
@@ -422,6 +430,35 @@ const ThemePanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [readingRulerColor]);
 
+  useEffect(() => {
+    saveViewSettings(envConfig, bookKey, 'readingRulerStyle', readingRulerStyle, false, false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [readingRulerStyle]);
+
+  useEffect(() => {
+    saveViewSettings(
+      envConfig,
+      bookKey,
+      'readingRulerLineColor',
+      readingRulerLineColor,
+      false,
+      false,
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [readingRulerLineColor]);
+
+  useEffect(() => {
+    saveViewSettings(
+      envConfig,
+      bookKey,
+      'readingRulerLineThickness',
+      readingRulerLineThickness,
+      false,
+      false,
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [readingRulerLineThickness]);
+
   // Re-apply the CURRENT page's resolved texture rather than the edited
   // values: editing the other page's scope must not repaint this page (the
   // shared #background-texture style element belongs to the mounted page,
@@ -593,21 +630,20 @@ const ThemePanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
             />
           </label>
 
-          <BoxedList>
-            <SettingsSwitchRow
-              data-setting-id='settings.color.transparentImageBackground'
-              label={_('Make White Image Backgrounds Transparent')}
-              description={_(
-                'Remove white and near-white pixels from images while preserving other colors',
-              )}
+          <label
+            data-setting-id='settings.color.transparentImageBackground'
+            className={clsx(
+              'flex items-center justify-between px-4',
+              isPDF ? 'cursor-not-allowed opacity-50' : 'cursor-pointer',
+            )}
+          >
+            <SettingLabel>{_('Transparent Image Background')}</SettingLabel>
+            <Toggle
               checked={transparentImageBackground}
-              disabled={
-                !!bookKey &&
-                useBookDataStore.getState().getBookData(bookKey)?.book?.format === 'PDF'
-              }
+              disabled={isPDF}
               onChange={() => setTransparentImageBackground(!transparentImageBackground)}
             />
-          </BoxedList>
+          </label>
 
           <label
             data-setting-id='settings.color.overrideBookColor'
@@ -650,6 +686,12 @@ const ThemePanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
             lines={readingRulerLines}
             opacity={readingRulerOpacity}
             color={readingRulerColor}
+            rulerStyle={readingRulerStyle}
+            lineColor={readingRulerLineColor}
+            lineThickness={readingRulerLineThickness}
+            onStyleChange={setReadingRulerStyle}
+            onLineColorChange={setReadingRulerLineColor}
+            onLineThicknessChange={setReadingRulerLineThickness}
             onEnabledChange={setReadingRulerEnabled}
             onLinesChange={setReadingRulerLines}
             onOpacityChange={setReadingRulerOpacity}

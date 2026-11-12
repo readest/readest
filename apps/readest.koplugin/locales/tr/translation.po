@@ -185,6 +185,12 @@ msgstr "Bu kitap buluttan ve cihazdan kaldırılsın mı?"
 msgid "Remove"
 msgstr "Kaldır"
 
+msgid "Remove from Library, Keep File"
+msgstr "Kitaplıktan kaldır, dosyayı koru"
+
+msgid "Remove this book from your library and the cloud? The file stays on this device."
+msgstr "Bu kitap kitaplığınızdan ve buluttan kaldırılsın mı? Dosya bu cihazda kalır."
+
 msgid "Remove from Cloud Only"
 msgstr "Yalnızca buluttan kaldır"
 

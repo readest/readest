@@ -3,7 +3,7 @@
 -- that must stay CONSISTENT with Readest's getMetadataHashInfo in
 -- apps/readest-app/src/utils/book.ts. The hash-source fixtures here mirror
 -- src/__tests__/utils/metadata-hash-info.test.ts: same inputs must produce
--- the same "title|authors|identifiers[|pdf-filename]" string on both sides,
+-- the same "title|authors|identifiers[|pdf-or-html-filename]" string on both sides,
 -- because md5 of that string is the fleet-wide book identity.
 --
 -- Expected hashes are computed through the same (stubbed) ffi/sha2 module the
@@ -82,6 +82,21 @@ describe("SyncConfig:getMetadataHashInfo", function()
             doc_props = props, doc_path = "/books/lecture-02.pdf",
         }))
         assert.are_not.equal(a.meta_hash, b.meta_hash)
+    end)
+
+    it("gives per-chapter HTML files of one book distinct hashes (issue #7313)", function()
+        -- legado.koplugin caches each chapter as its own .html file and
+        -- reports the book's title and author for every one of them.
+        local props = { title = "Sword Coming", authors = "Fenghuo Xizhuhou" }
+        local hashes = {}
+        for _, name in ipairs({ "0001.html", "0002.htm", "0003.xhtml", "0004.xhtm", "0005.mhtml", "0006.mht" }) do
+            local info = SyncConfig:getMetadataHashInfo(fakeUI({
+                doc_props = props, doc_path = "/legado/cache/" .. name,
+            }))
+            assert.are.equal("Sword Coming|Fenghuo Xizhuhou||" .. name:match("^(.*)%."), info.hash_source)
+            assert.is_nil(hashes[info.meta_hash])
+            hashes[info.meta_hash] = true
+        end
     end)
 
     it("keeps the salt when the title already fell back to the filename", function()

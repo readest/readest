@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, test } from 'vitest';
 import { CURRENT_ALG, decryptFromEnvelope, encryptToEnvelope } from '@/libs/crypto/envelope';
 import { derivePbkdf2Key } from '@/libs/crypto/derive';

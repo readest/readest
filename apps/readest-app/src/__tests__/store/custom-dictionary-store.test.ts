@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 vi.mock('@/services/sync/replicaPublish', () => ({
@@ -892,6 +893,33 @@ describe('customDictionaryStore — autoPlayPronunciation (#6265)', () => {
 
     await useCustomDictionaryStore.getState().loadCustomDictionaries(fakeEnv);
     expect(useCustomDictionaryStore.getState().settings.autoPlayPronunciation).toBe(true);
+  });
+});
+
+describe('customDictionaryStore — saveLookupsToVocabulary (#789)', () => {
+  it('setSaveLookupsToVocabulary updates the setting', () => {
+    useCustomDictionaryStore.getState().setSaveLookupsToVocabulary(false);
+    expect(useCustomDictionaryStore.getState().settings.saveLookupsToVocabulary).toBe(false);
+  });
+
+  it('loadCustomDictionaries keeps a persisted off value', async () => {
+    type SettingsState = ReturnType<typeof useSettingsStore.getState>;
+    useSettingsStore.setState({
+      settings: {
+        customDictionaries: [],
+        dictionarySettings: {
+          providerOrder: ['builtin:wikipedia'],
+          providerEnabled: { 'builtin:wikipedia': true },
+          webSearches: [],
+          saveLookupsToVocabulary: false,
+        },
+      } as unknown as SettingsState['settings'],
+    } as unknown as SettingsState);
+    const fakeEnv = {
+      getAppService: () => Promise.resolve({ exists: vi.fn().mockResolvedValue(false) }),
+    } as unknown as EnvConfigType;
+    await useCustomDictionaryStore.getState().loadCustomDictionaries(fakeEnv);
+    expect(useCustomDictionaryStore.getState().settings.saveLookupsToVocabulary).toBe(false);
   });
 });
 

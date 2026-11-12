@@ -185,6 +185,12 @@ msgstr "Eltávolítod ezt a könyvet a felhőből és az eszközről?"
 msgid "Remove"
 msgstr "Eltávolítás"
 
+msgid "Remove from Library, Keep File"
+msgstr "Eltávolítás a könyvtárból, fájl megtartása"
+
+msgid "Remove this book from your library and the cloud? The file stays on this device."
+msgstr "Eltávolítod ezt a könyvet a könyvtáradból és a felhőből? A fájl ezen az eszközön marad."
+
 msgid "Remove from Cloud Only"
 msgstr "Csak a felhőből távolítsd el"
 

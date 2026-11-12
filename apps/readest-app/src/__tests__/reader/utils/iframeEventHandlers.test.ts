@@ -972,6 +972,9 @@ describe('image viewer gesture (#7145)', () => {
   afterEach(() => {
     vi.useRealTimers();
     vi.restoreAllMocks();
+    document.body.innerHTML = '';
+    document.getSelection()?.removeAllRanges();
+    vi.doUnmock('@/app/reader/utils/crossDocSelection');
   });
 
   const postedMessages = (): Record<string, unknown>[] =>
@@ -1139,16 +1142,72 @@ describe('image viewer gesture (#7145)', () => {
     expect(postedMessages().map((m) => m['type'])).not.toContain('iframe-open-media');
   });
 
-  test('long press: a tap on a table still opens the table zoom', async () => {
-    const handlers = await importHandlers();
-    handlers.setImageViewerGesture('book-1', 'longPress');
+  // #6872: tables follow the same gesture as images.
+  const tableCell = () => {
     const table = document.createElement('table');
     const cell = document.createElement('td');
     table.appendChild(cell);
+    document.body.appendChild(table);
+    return cell;
+  };
 
-    click(handlers, false, cell);
+  test('tap: a tap on a table opens the table zoom', async () => {
+    const handlers = await importHandlers();
+    handlers.setImageViewerGesture('book-1', 'tap');
+
+    click(handlers, false, tableCell());
 
     const media = postedMessages().find((m) => m['type'] === 'iframe-open-media')!;
     expect(media['elementType']).toBe('table');
+  });
+
+  test('long press: a tap on a table is a plain tap', async () => {
+    const handlers = await importHandlers();
+    handlers.setImageViewerGesture('book-1', 'longPress');
+
+    click(handlers, false, tableCell());
+
+    const messages = postedMessages();
+    expect(messages.map((m) => m['type'])).not.toContain('iframe-open-media');
+    const single = messages.find((m) => m['type'] === 'iframe-single-click')!;
+    expect(single['media']).toBeUndefined();
+  });
+
+  test('long press: a held mouse button on blank table space opens the table zoom', async () => {
+    const handlers = await importHandlers();
+    handlers.setImageViewerGesture('book-1', 'longPress');
+
+    click(handlers, false, tableCell(), 600);
+
+    const messages = postedMessages();
+    expect(messages.find((m) => m['type'] === 'iframe-open-media')).toMatchObject({
+      elementType: 'table',
+    });
+    expect(messages.map((m) => m['type'])).not.toContain('iframe-single-click');
+  });
+
+  test('long press: a held mouse button on table text opens nothing', async () => {
+    vi.doMock('@/app/reader/utils/crossDocSelection', async (importActual) => ({
+      ...(await importActual<object>()),
+      isTextAtPoint: () => true,
+    }));
+    const handlers = await importHandlers();
+    handlers.setImageViewerGesture('book-1', 'longPress');
+
+    click(handlers, false, tableCell(), 600);
+
+    expect(postedMessages().map((m) => m['type'])).not.toContain('iframe-open-media');
+  });
+
+  test('long press: a drag that selects table text opens nothing', async () => {
+    const handlers = await importHandlers();
+    handlers.setImageViewerGesture('book-1', 'longPress');
+    const cell = tableCell();
+    cell.textContent = 'Selected text';
+    document.getSelection()!.selectAllChildren(cell);
+
+    click(handlers, false, cell, 600);
+
+    expect(postedMessages().map((m) => m['type'])).not.toContain('iframe-open-media');
   });
 });

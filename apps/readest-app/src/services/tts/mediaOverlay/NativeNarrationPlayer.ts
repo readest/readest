@@ -9,7 +9,7 @@
 
 import { addPluginListener, invoke, PluginListener } from '@tauri-apps/api/core';
 import { appCacheDir, join } from '@tauri-apps/api/path';
-import { BaseDirectory, remove, writeFile } from '@tauri-apps/plugin-fs';
+import { BaseDirectory, remove, writeFile, type WriteFileOptions } from '@tauri-apps/plugin-fs';
 import type { BookMediaSource } from '@/libs/document';
 import type { AppService } from '@/types/system';
 
@@ -86,6 +86,10 @@ export class NativeNarrationPlayer {
   #loads = 0;
   // Staged copies of book audio this player wrote, by href.
   #staged = new Map<string, string>();
+  // Writes in flight, by href. Streaming a chapter takes long enough for a
+  // load to overtake its queued preload; a second write would truncate the
+  // file under the first, and the first would hand the player a partial one.
+  #staging = new Map<string, Promise<string>>();
   #rate = 1;
   #userPaused = true;
   #ended = false;
@@ -409,11 +413,26 @@ export class NativeNarrationPlayer {
     // file (possibly the whole book) and is never staged or removed.
     const staged = this.#staged.get(href);
     if (staged) return staged;
+    let staging = this.#staging.get(href);
+    if (!staging) {
+      staging = this.#writeStaged(href, blob).finally(() => this.#staging.delete(href));
+      this.#staging.set(href, staging);
+    }
+    return staging;
+  }
+
+  async #writeStaged(href: string, blob: Blob): Promise<string> {
     const name = `mo-narration-${hashHref(href)}.${fileExtension(href)}`;
-    const bytes = new Uint8Array(await blob.arrayBuffer());
+    // Streamed: Android's IPC sends bytes as JSON, so one write of a 67 MB
+    // chapter took gigabytes and Android killed the WebView, and the app with
+    // it. Truncated: writing a stream opens the file, and a shorter recording
+    // would keep the end of one staged earlier under the same name.
     // App cache, not Temp: older Android versions resolve Temp to the
     // unwritable /data/local/tmp.
-    await writeFile(name, bytes, { baseDir: BaseDirectory.AppCache });
+    await writeFile(name, blob.stream(), {
+      baseDir: BaseDirectory.AppCache,
+      truncate: true,
+    } as WriteFileOptions);
     const path = await join(await appCacheDir(), name);
     this.#staged.set(href, path);
     return path;

@@ -357,6 +357,11 @@ export class HardcoverClient {
     this.privacySettingId = me.account_privacy_setting_id ?? this.privacySettingId;
   }
 
+  /** Throws when the token no longer identifies a Hardcover user. */
+  async checkConnection(): Promise<void> {
+    await this.authenticate();
+  }
+
   private normalizeIdentifier(identifier: string): string {
     if (identifier.includes('urn:')) {
       return identifier.match(/[^:]+$/)?.[0] || '';

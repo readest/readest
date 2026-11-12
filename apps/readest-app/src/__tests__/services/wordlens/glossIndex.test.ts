@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect } from 'vitest';
 import { GlossIndex } from '@/services/wordlens/glossIndex';
 import fixture from '../../fixtures/wordlens/en-zh.fixture.json';
@@ -15,6 +16,11 @@ describe('GlossIndex', () => {
   it('resolves inflected forms to the lemma', () => {
     expect(index.lookup('running')).toEqual({ rank: 312, gloss: '跑；经营' });
     expect(index.lookup('RAN')).toEqual({ rank: 312, gloss: '跑；经营' });
+  });
+  it('names the headword an inflected form comes from', () => {
+    expect(index.lemma('Running')).toBe('run');
+    expect(index.lemma('run')).toBe('run');
+    expect(index.lemma('zzzq')).toBeNull();
   });
   it('returns null for unknown words', () => {
     expect(index.lookup('zzzq')).toBeNull();

@@ -13,6 +13,7 @@ import {
 } from '@/services/sync/cloudSyncProvider';
 import { isSyncCategoryEnabled } from '@/services/sync/syncCategories';
 import { runFileBookDownload, runFileBookUpload } from '@/services/sync/file/runLibrarySync';
+import { recordFlow } from '@/services/sync/dataFlow/log';
 
 /**
  * One throttle runs per in-flight transfer, and every emit re-renders the
@@ -29,6 +30,8 @@ interface BookDownloadOptions {
   // hundreds.
   silent?: boolean;
 }
+
+const CLOUD_DOWNLOAD = { connector: 'readest-cloud', direction: 'pull', kind: 'books' } as const;
 
 /**
  * Explicit per-book Upload/Download routing (#5062) — cloud sync providers are
@@ -192,6 +195,7 @@ export const useBookTransferActions = (
         const tracker = trackProgress(book.hash);
         try {
           await appService?.downloadBook(book, false, redownload, tracker.onProgress);
+          recordFlow({ ...CLOUD_DOWNLOAD, bookTitle: book.title });
           tracker.done();
           await updateBook(envConfig, book);
           if (!silent) {
@@ -204,7 +208,12 @@ export const useBookTransferActions = (
             });
           }
           return true;
-        } catch {
+        } catch (error) {
+          recordFlow({
+            ...CLOUD_DOWNLOAD,
+            bookTitle: book.title,
+            error: error instanceof Error ? error.message : String(error),
+          });
           tracker.done();
           if (!silent) {
             eventDispatcher.dispatch('toast', {

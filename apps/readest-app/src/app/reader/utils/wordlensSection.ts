@@ -4,6 +4,7 @@ import type { ProgressHandler } from '@/utils/transfer';
 import { canTokenizeSource, getRankCutoff } from '@/services/wordlens/difficulty';
 import { loadGlossIndex } from '@/services/wordlens/glossPacks';
 import { planGlosses } from '@/services/wordlens/planner';
+import type { GlossSource, VocabularyMarks } from '@/services/wordlens/types';
 import { buildSectionTextModel, applyGlosses, clearGlosses } from '@/app/reader/utils/wordlensRuby';
 import { cutZh, isJiebaReady, initJieba } from '@/utils/jieba';
 import { initSimpleCC, runSimpleCC } from '@/utils/simplecc';
@@ -43,7 +44,11 @@ interface RefreshContext {
    */
   allowDownload?: boolean;
   onProgress?: ProgressHandler;
+  /** The reader's Learning / Mastered words for the book's language. */
+  vocabulary?: VocabularyMarks;
 }
+
+const NO_PACK: GlossSource = { lookup: () => null };
 
 // Per-document generation counter. Dragging the difficulty slider fires the
 // settings effect repeatedly, producing overlapping refresh calls. A later call
@@ -65,7 +70,16 @@ export const refreshSectionGlosses = async (
   try {
     const myGen = (refreshGen.get(doc) ?? 0) + 1;
     refreshGen.set(doc, myGen);
-    clearGlosses(doc);
+    // Clearing unwraps the <ruby> under a live selection; redo the whole
+    // refresh once it clears. The bump above drops any older pending draw.
+    if (hasLiveSelection(doc)) {
+      whenSelectionClears(doc, () => void refreshSectionGlosses(doc, viewSettings, ctx));
+      return;
+    }
+    // With Word Lens on, join the text even without hints to clear: a word
+    // split across adjacent text nodes (a translation's unwrapped tags leave
+    // them) can't be hinted.
+    clearGlosses(doc, viewSettings.wordLensEnabled);
     if (!viewSettings.wordLensEnabled) return;
     const source = toWordLensSource(ctx.bookLang);
     if (!source || !canTokenizeSource(source)) return;
@@ -79,7 +93,8 @@ export const refreshSectionGlosses = async (
       allowDownload: ctx.allowDownload,
     });
     if (refreshGen.get(doc) !== myGen) return; // a newer refresh superseded us
-    if (!index) return;
+    // Without a pack, only Learning words with a saved hint can be drawn.
+    if (!index && !ctx.vocabulary?.learning.size) return;
     if (source === 'zh' && !isJiebaReady()) {
       void initJieba();
       return;
@@ -89,16 +104,62 @@ export const refreshSectionGlosses = async (
       await initSimpleCC();
       if (refreshGen.get(doc) !== myGen) return;
     }
-    const model = buildSectionTextModel(doc);
-    const occ = planGlosses(model.text, index, {
-      sourceLang: source,
-      rankCutoff: getRankCutoff(source, viewSettings.wordLensLevel),
-      cutZh: source === 'zh' ? cutZh : undefined,
-      monolingual: hint === source, // en-en: gloss is a build-formatted definition
+    const apply = () => {
+      if (refreshGen.get(doc) !== myGen) return;
+      const model = buildSectionTextModel(doc);
+      const occ = planGlosses(model.text, index ?? NO_PACK, {
+        sourceLang: source,
+        rankCutoff: getRankCutoff(source, viewSettings.wordLensLevel),
+        cutZh: source === 'zh' ? cutZh : undefined,
+        monolingual: hint === source, // en-en: gloss is a build-formatted definition
+        vocabulary: ctx.vocabulary,
+        canRender: model.canRender,
+      });
+      if (zhVariant) for (const o of occ) o.gloss = runSimpleCC(o.gloss, zhVariant);
+      if (occ.length) applyGlosses(doc, model, occ);
+    };
+    // The reader may have selected text while the pack loaded.
+    whenSelectionClears(doc, () => {
+      try {
+        apply();
+      } catch (err) {
+        console.warn('[wordlens] refresh failed', err);
+      }
     });
-    if (zhVariant) for (const o of occ) o.gloss = runSimpleCC(o.gloss, zhVariant);
-    if (occ.length) applyGlosses(doc, model, occ);
   } catch (err) {
     console.warn('[wordlens] refresh failed', err);
   }
+};
+
+// Latest deferred refresh per document; a newer one replaces it.
+const pendingUntilClear = new WeakMap<Document, () => void>();
+
+/**
+ * Run `fn` now, or once the document's selection collapses. Re-rendering hints
+ * unwraps the <ruby> around a hinted word, so doing it under a live selection
+ * (marking a word in the dictionary popup) would collapse the selection and
+ * close the popup the reader is using.
+ */
+const hasLiveSelection = (doc: Document) => {
+  const sel = doc.getSelection();
+  return !!sel && !sel.isCollapsed && sel.rangeCount > 0;
+};
+
+export const whenSelectionClears = (doc: Document, fn: () => void): void => {
+  if (!hasLiveSelection(doc)) {
+    pendingUntilClear.delete(doc);
+    fn();
+    return;
+  }
+  const waiting = pendingUntilClear.has(doc);
+  pendingUntilClear.set(doc, fn);
+  if (waiting) return;
+  const onChange = () => {
+    if (hasLiveSelection(doc)) return;
+    doc.removeEventListener('selectionchange', onChange);
+    const run = pendingUntilClear.get(doc);
+    pendingUntilClear.delete(doc);
+    run?.();
+  };
+  doc.addEventListener('selectionchange', onChange);
 };

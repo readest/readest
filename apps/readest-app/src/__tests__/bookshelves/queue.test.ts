@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { afterEach, expect, it, vi } from 'vitest';
 import { HlcGenerator, hlcPack, hlcParse } from '@/libs/crdt';
 import { createBookshelf } from '@/services/bookshelves/definitions';

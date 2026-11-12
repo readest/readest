@@ -76,6 +76,7 @@ const props = {
   handleBookUpload: async () => true,
   handleBookDelete: async () => true,
   handleBookPurge: async () => true,
+  handleBookDeleteLocalCopy: async () => true,
   handleSetSelectMode: noop,
   handleShowDetailsBook: noop,
   handleLibraryNavigation: noop,

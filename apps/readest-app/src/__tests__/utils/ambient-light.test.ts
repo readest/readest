@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import {
   AMBIENT_DARK_LUX_THRESHOLD,

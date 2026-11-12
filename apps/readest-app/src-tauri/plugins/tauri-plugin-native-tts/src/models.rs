@@ -38,6 +38,12 @@ pub struct SpeakResponse {
     pub utterance_id: String,
 }
 
+#[derive(Debug, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct StopArgs {
+    pub utterance_id: Option<String>,
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SetRateArgs {

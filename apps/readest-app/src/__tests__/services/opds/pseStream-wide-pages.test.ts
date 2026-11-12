@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 // An OPDS-PSE comic streams one page per request, so its pages can't be
 // measured up front: each is measured as its image arrives, and a wide one
 // (a double-page spread) is laid out on its own.

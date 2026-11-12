@@ -43,6 +43,7 @@ import { useAutoFocus } from '@/hooks/useAutoFocus';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useEinkMode } from '@/hooks/useEinkMode';
 import { bookOrbitProgressProvider } from '../hooks/bookOrbitProgressProvider';
+import { grimmoryProgressProvider } from '../hooks/grimmoryProgressProvider';
 import { useKOSync } from '../hooks/useKOSync';
 import { useFileSync } from '../hooks/useFileSync';
 import {
@@ -65,7 +66,10 @@ import {
 import { applyScrollableStyle, applyTableTouchScroll } from '@/utils/scrollable';
 import { mountAdditionalFonts, mountCustomFont } from '@/styles/fonts';
 import { layoutWarichu, relayoutWarichu } from '@/utils/warichu';
-import { refreshSectionGlosses } from '@/app/reader/utils/wordlensSection';
+import { refreshSectionGlosses, whenSelectionClears } from '@/app/reader/utils/wordlensSection';
+import { useVocabularyStore } from '@/store/vocabularyStore';
+import { vocabularyLang } from '@/services/vocabulary/entry';
+import { initVocabularySync } from '@/services/vocabulary/vocabularySync';
 import { getBookDirFromLanguage, getBookDirFromWritingMode } from '@/utils/book';
 import { getIndexFromCfi } from '@/utils/cfi';
 import { useUICSS } from '@/hooks/useUICSS';
@@ -138,6 +142,38 @@ declare global {
     eval(script: string): void;
   }
 }
+
+// The hooks that follow the reading position (progress sync and save, KOSync, file sync, the
+// translation of the shown page) subscribe to the progress, which every page turn writes. Here they
+// re-render on a turn without the viewer and everything it holds.
+const PositionFollowers: React.FC<{
+  bookKey: string;
+  viewRef: React.RefObject<FoliateView | null>;
+}> = ({ bookKey, viewRef }) => {
+  useProgressSync(bookKey);
+  useABSProgressSync(bookKey);
+  useProgressAutoSave(bookKey);
+  useXRayAutoUpdate(bookKey);
+  const syncs = [
+    useKOSync(bookKey),
+    useKOSync(bookKey, bookOrbitProgressProvider),
+    useKOSync(bookKey, grimmoryProgressProvider),
+  ];
+  useFileSync(bookKey);
+  useTextTranslation(bookKey, viewRef.current);
+
+  return syncs.map((sync, i) =>
+    sync.syncState === 'conflict' && sync.conflictDetails ? (
+      <KOSyncConflictResolver
+        key={i}
+        details={sync.conflictDetails}
+        onResolveWithLocal={sync.resolveWithLocal}
+        onResolveWithRemote={sync.resolveWithRemote}
+        onClose={sync.resolveWithLocal}
+      />
+    ) : null,
+  );
+};
 
 const FoliateViewer: React.FC<{
   bookKey: string;
@@ -230,15 +266,7 @@ const FoliateViewer: React.FC<{
   }, [toastMessage]);
 
   useUICSS(bookKey);
-  useProgressSync(bookKey);
-  useABSProgressSync(bookKey);
-  useProgressAutoSave(bookKey);
-  useXRayAutoUpdate(bookKey);
   useBookCoverAutoSave(bookKey);
-  const { syncState, conflictDetails, resolveWithLocal, resolveWithRemote } = useKOSync(bookKey);
-  const bookOrbitSync = useKOSync(bookKey, bookOrbitProgressProvider);
-  useFileSync(bookKey);
-  useTextTranslation(bookKey, viewRef.current);
 
   // Coalesce setProgress writes within a single animation frame.
   //
@@ -702,6 +730,21 @@ const FoliateViewer: React.FC<{
   // lives in the Word Lens settings panel). `wordLensToastShownRef` de-dupes the
   // toast across the multiple section docs a refresh pass touches.
   const wordLensToastShownRef = useRef(false);
+  // Re-render hints when this language's Learning / Mastered marks change, not
+  // on every lookup the vocabulary records.
+  const vocabularyMarksSignature = useVocabularyStore((s) => {
+    const { learning, mastered } = s.getLearningAndMastered(
+      vocabularyLang(getBookData(bookKey)?.book?.primaryLanguage),
+    );
+    return JSON.stringify([[...learning], [...mastered]]);
+  });
+  useEffect(() => {
+    if (!appService) return;
+    void useVocabularyStore
+      .getState()
+      .load(appService)
+      .then(() => initVocabularySync());
+  }, [appService]);
   const buildWordLensCtx = (bookLang?: string | null) => {
     // Read the live setting (not the first-render `settings` snapshot closed over
     // by the empty-deps `stabilizedHandler`) so toggling Auto-download mid-session
@@ -714,6 +757,7 @@ const FoliateViewer: React.FC<{
       bookLang,
       appLang: getLocale(),
       allowDownload,
+      vocabulary: useVocabularyStore.getState().getLearningAndMastered(vocabularyLang(bookLang)),
       onProgress: () => {
         if (wordLensToastShownRef.current) return;
         wordLensToastShownRef.current = true;
@@ -1000,11 +1044,7 @@ const FoliateViewer: React.FC<{
       if (appService?.isMobileApp) {
         await lockScreenOrientation({ orientation: screenOrientation });
       }
-      if (animated) {
-        view.renderer.setAttribute('animated', '');
-      } else {
-        view.renderer.removeAttribute('animated');
-      }
+      view.renderer.toggleAttribute('animated', animated && !eink);
       // Arms the foliate CursorAutohider — goes on the view element itself,
       // not the renderer, and is re-checked on every mousemove so the
       // ControlPanel toggle takes effect without recreating the view.
@@ -1315,10 +1355,19 @@ const FoliateViewer: React.FC<{
     // one-time "Downloading…" toast fire again for it.
     wordLensToastShownRef.current = false;
     for (const { doc } of contents) {
-      if (doc) void refreshSectionGlosses(doc, vs, buildWordLensCtx(bookLang));
+      if (!doc) continue;
+      whenSelectionClears(doc, () => {
+        const latest = getViewSettings(bookKey);
+        if (latest) void refreshSectionGlosses(doc, latest, buildWordLensCtx(bookLang));
+      });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [viewSettings?.wordLensEnabled, viewSettings?.wordLensLevel, viewSettings?.wordLensHintLang]);
+  }, [
+    viewSettings?.wordLensEnabled,
+    viewSettings?.wordLensLevel,
+    viewSettings?.wordLensHintLang,
+    vocabularyMarksSignature,
+  ]);
 
   useEffect(() => {
     const mountCustomFonts = async () => {
@@ -1513,22 +1562,7 @@ const FoliateViewer: React.FC<{
           <Spinner loading={true} />
         </div>
       )}
-      {syncState === 'conflict' && conflictDetails && (
-        <KOSyncConflictResolver
-          details={conflictDetails}
-          onResolveWithLocal={resolveWithLocal}
-          onResolveWithRemote={resolveWithRemote}
-          onClose={resolveWithLocal}
-        />
-      )}
-      {bookOrbitSync.syncState === 'conflict' && bookOrbitSync.conflictDetails && (
-        <KOSyncConflictResolver
-          details={bookOrbitSync.conflictDetails}
-          onResolveWithLocal={bookOrbitSync.resolveWithLocal}
-          onResolveWithRemote={bookOrbitSync.resolveWithRemote}
-          onClose={bookOrbitSync.resolveWithLocal}
-        />
-      )}
+      <PositionFollowers bookKey={bookKey} viewRef={viewRef} />
     </>
   );
 };

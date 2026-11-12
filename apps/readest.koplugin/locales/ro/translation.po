@@ -185,6 +185,12 @@ msgstr "Elimini această carte din cloud și de pe dispozitiv?"
 msgid "Remove"
 msgstr "Elimină"
 
+msgid "Remove from Library, Keep File"
+msgstr "Elimină din bibliotecă, păstrează fișierul"
+
+msgid "Remove this book from your library and the cloud? The file stays on this device."
+msgstr "Elimini această carte din bibliotecă și din cloud? Fișierul rămâne pe acest dispozitiv."
+
 msgid "Remove from Cloud Only"
 msgstr "Elimină numai din cloud"
 

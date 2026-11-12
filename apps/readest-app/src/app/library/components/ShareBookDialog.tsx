@@ -9,6 +9,7 @@ import {
 } from 'react-icons/io5';
 import Dialog from '@/components/Dialog';
 import SegmentedControl from '@/components/SegmentedControl';
+import { recordFlow } from '@/services/sync/dataFlow/log';
 import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
 import { eventDispatcher } from '@/utils/event';
@@ -109,6 +110,21 @@ const ShareBookDialog: React.FC<ShareBookDialogProps> = ({ isOpen, book, cfi, on
           await appService.uploadBook(book, (progress) => {
             setUploadProgress((progress.progress / progress.total) * 100);
           });
+          recordFlow({
+            connector: 'readest-cloud',
+            direction: 'push',
+            kind: 'books',
+            bookTitle: book.title,
+          });
+        } catch (error) {
+          recordFlow({
+            connector: 'readest-cloud',
+            direction: 'push',
+            kind: 'books',
+            bookTitle: book.title,
+            error: error instanceof Error ? error.message : String(error),
+          });
+          throw error;
         } finally {
           setUploadProgress(null);
         }

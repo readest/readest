@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { act, cleanup, renderHook } from '@testing-library/react';
 import type { Book } from '@/types/book';
@@ -34,7 +35,7 @@ const h = vi.hoisted(() => {
     hash: 'h1',
     title: 'Old title',
     originalFilename: '',
-    format: 'EPUB',
+    format: 'EPUB' as string,
     updatedAt: 1,
   };
   const bookDoc = {};
@@ -65,7 +66,13 @@ const h = vi.hoisted(() => {
       pageinfo: { current: 13, total: 100 },
       section: { current: 0, total: 0 },
     } as Record<string, unknown> | null,
-    config: { updatedAt: 1, xpointer: '' as string | undefined },
+    // No `location` by default: nothing has been read in this book on this
+    // device. Tests that model a device with a position of its own set one.
+    config: {
+      updatedAt: 1,
+      xpointer: '' as string | undefined,
+      location: undefined as string | undefined,
+    },
     // Remote payload returned by the server on GET.
     remote: {
       progress: XPOINTER,
@@ -76,7 +83,8 @@ const h = vi.hoisted(() => {
     // Whether the XPointer→CFI conversion succeeds.
     cfiResolves: true,
     getProgressMock: vi.fn(),
-    updateProgressMock: vi.fn(async (..._args: unknown[]) => {}),
+    updateProgressMock: vi.fn(async (..._args: unknown[]): Promise<boolean | void> => {}),
+    clientError: null as string | null,
     eventListeners: new Map<string, Set<(e: CustomEvent) => void>>(),
     // Captured useWindowActiveChanged callback — lets tests simulate the
     // window losing/regaining visibility (e.g. a system dictionary popup).
@@ -89,7 +97,10 @@ vi.mock('@/context/EnvContext', () => ({
 }));
 
 vi.mock('@/hooks/useTranslation', () => ({
-  useTranslation: () => (s: string) => s,
+  useTranslation: () => (s: string, params?: Record<string, unknown>) =>
+    s.replace(/\{\{(\w+)\}\}/g, (m, k: string) =>
+      params?.[k] !== undefined ? String(params[k]) : m,
+    ),
 }));
 
 vi.mock('@/app/reader/hooks/useWindowActiveChanged', () => ({
@@ -116,7 +127,12 @@ vi.mock('@/store/readerStore', () => ({
 
 vi.mock('@/store/bookDataStore', () => ({
   useBookDataStore: h.makeStore({
-    getBookData: () => ({ book: h.book, bookDoc: h.bookDoc, config: h.config }),
+    getBookData: () => ({
+      book: h.book,
+      bookDoc: h.bookDoc,
+      config: h.config,
+      isFixedLayout: h.book.format === 'PDF',
+    }),
     getConfig: () => h.config,
     setConfig: (_key: string, patch: Record<string, unknown>) => Object.assign(h.config, patch),
   }),
@@ -153,6 +169,9 @@ vi.mock('@/services/sync/KOSyncClient', async (importOriginal) => {
       updateProgress(...args: unknown[]) {
         return h.updateProgressMock(...args);
       }
+      get lastError() {
+        return h.clientError;
+      }
     },
   };
 });
@@ -172,6 +191,7 @@ vi.mock('@/utils/event', () => ({
 }));
 
 import { useKOSync, type KosyncProgressProvider } from '@/app/reader/hooks/useKOSync';
+import { readFlowState } from '@/services/sync/dataFlow/log';
 import { getCFIFromXPointer, getXPointerFromCFI } from '@/utils/xcfi';
 
 const flushMicrotasks = async () => {
@@ -207,7 +227,7 @@ beforeEach(() => {
     pageinfo: { current: 13, total: 100 },
     section: { current: 0, total: 0 },
   };
-  h.config = { updatedAt: 1, xpointer: '' };
+  h.config = { updatedAt: 1, xpointer: '', location: undefined };
   h.remote = {
     progress: h.XPOINTER,
     percentage: 0.14,
@@ -216,12 +236,16 @@ beforeEach(() => {
   };
   h.book.title = 'Old title';
   h.book.originalFilename = '';
+  h.book.format = 'EPUB';
   h.cfiResolves = true;
+  h.clientError = null;
+  localStorage.clear();
   h.getProgressMock.mockReset();
   h.getProgressMock.mockResolvedValue(h.remote);
   h.updateProgressMock.mockClear();
   h.goTo.mockClear();
   h.goToFraction.mockClear();
+  h.view.select.mockClear();
   h.eventListeners.clear();
   h.activeCallback = null;
 });
@@ -789,5 +813,421 @@ describe('useKOSync — provider-scoped manual sync events (#6029)', () => {
     await fire('pull-kosync', { bookKey: 'h1-view1', provider: 'bookorbit' });
 
     expect(h.getProgressMock).not.toHaveBeenCalled();
+  });
+});
+
+describe('useKOSync — a book just added to this device (silent strategy)', () => {
+  // The book was read on another device, which left its position on the
+  // server. It is then added to this device and opened under "Always use
+  // latest" (silent). The record this device creates for it has no position,
+  // and its updatedAt is stamped when the record is created, later than the
+  // server's last sync. So the timestamp rule kept the empty local record: the
+  // reader stayed at the start of the book, then pushed that start to the
+  // server, which dragged the other device back to the start as well.
+  const START_CFI = 'epubcfi(/6/2!/4/2/2)';
+  const REMOTE_CFI = 'epubcfi(/6/650!/4/2/6)';
+  const SAVED_CFI = 'epubcfi(/6/4!/4/2/2)';
+  const startProgress = () => ({
+    location: START_CFI,
+    sectionLabel: 'Chapter 1',
+    pageinfo: { current: 0, total: 100 },
+    section: { current: 0, total: 0 },
+  });
+
+  beforeEach(() => {
+    h.settings.kosync.strategy = 'silent';
+    // Created on this open: the local record is newer than the server's report.
+    h.config = { updatedAt: Date.now(), xpointer: '', location: undefined };
+    h.remote = {
+      progress: h.XPOINTER,
+      percentage: 0.6,
+      timestamp: Math.floor(Date.now() / 1000) - 3600,
+      device_id: 'other-device',
+    };
+    h.getProgressMock.mockResolvedValue(h.remote);
+  });
+
+  // Opening the book: the view's first relocate writes the start of the book
+  // into both the config and the progress store, and only then can the pull
+  // run. Whether this device had a position must be read before that.
+  const openAtStart = async (rerender: () => void) => {
+    h.config.location = START_CFI;
+    h.localProgress = startProgress();
+    rerender();
+    await settle();
+  };
+
+  test('applies the server position when this device has none, although the local record is newer', async () => {
+    h.localProgress = null;
+    const { rerender } = renderHook(() => useKOSync('h1-view1'));
+    await settle();
+    expect(h.getProgressMock).not.toHaveBeenCalled();
+
+    await openAtStart(rerender);
+
+    expect(h.getProgressMock).toHaveBeenCalled();
+    expect(h.goTo).toHaveBeenCalledWith(REMOTE_CFI);
+  });
+
+  test('keeps a position this device already has when the local record is newer', async () => {
+    h.config.location = SAVED_CFI;
+    const { result } = renderHook(() => useKOSync('h1-view1'));
+    await settle();
+
+    expect(h.getProgressMock).toHaveBeenCalled();
+    expect(h.goTo).not.toHaveBeenCalled();
+    expect(result.current.syncState).toBe('synced');
+  });
+
+  test('still applies a newer server position over a position this device has', async () => {
+    h.config.location = SAVED_CFI;
+    h.remote = { ...h.remote, timestamp: Math.floor(Date.now() / 1000) + 10_000 };
+    h.getProgressMock.mockResolvedValue(h.remote);
+    renderHook(() => useKOSync('h1-view1'));
+    await settle();
+
+    expect(h.goTo).toHaveBeenCalledWith(REMOTE_CFI);
+  });
+
+  test('after the server position is applied, a re-pull is back on the timestamp rule', async () => {
+    h.localProgress = null;
+    const { rerender } = renderHook(() => useKOSync('h1-view1'));
+    await settle();
+    await openAtStart(rerender);
+    expect(h.goTo).toHaveBeenCalledTimes(1);
+
+    // The device now has a position of its own. The window loses and regains
+    // focus, which pulls again; the server still holds the older report, and
+    // it must not move the reader a second time.
+    await act(async () => {
+      h.activeCallback?.(false);
+      await flushMicrotasks();
+    });
+    await act(async () => {
+      h.activeCallback?.(true);
+      await flushMicrotasks();
+    });
+
+    expect(h.goTo).toHaveBeenCalledTimes(1);
+  });
+
+  test('when the first pull finds nothing, a later older report does not move the reader', async () => {
+    // Opened with no position here and none on the server; the user then reads
+    // on this device. A report older than that reading arrives afterwards: the
+    // timestamps decide, as for any book with a position.
+    h.getProgressMock.mockResolvedValueOnce(null);
+    h.localProgress = null;
+    const { rerender } = renderHook(() => useKOSync('h1-view1'));
+    await settle();
+    await openAtStart(rerender);
+    expect(h.goTo).not.toHaveBeenCalled();
+
+    h.config.updatedAt = Date.now() + 1000;
+    await act(async () => {
+      h.activeCallback?.(false);
+      await flushMicrotasks();
+    });
+    await act(async () => {
+      h.activeCallback?.(true);
+      await flushMicrotasks();
+    });
+
+    expect(h.getProgressMock).toHaveBeenCalledTimes(2);
+    expect(h.goTo).not.toHaveBeenCalled();
+  });
+
+  test('reading on while the first pull is on its way keeps the new position', async () => {
+    let answer: (value: typeof h.remote) => void = () => {};
+    h.getProgressMock.mockReturnValueOnce(new Promise((resolve) => (answer = resolve)));
+    h.localProgress = null;
+    const { rerender } = renderHook(() => useKOSync('h1-view1'));
+    await settle();
+    await openAtStart(rerender);
+    expect(h.getProgressMock).toHaveBeenCalledTimes(1);
+
+    // The user turns a page before the server answers.
+    h.localProgress = { ...startProgress(), location: SAVED_CFI };
+    await act(async () => {
+      answer(h.remote);
+      await flushMicrotasks();
+    });
+
+    expect(h.goTo).not.toHaveBeenCalled();
+  });
+});
+
+describe('useKOSync — a remote position with only a percentage (#7330)', () => {
+  // Grimmory reports progress made in its own reader as a percentage with
+  // `progress: null`; for PDFs it never has a page to send. The pull must
+  // still move the reader there instead of treating it as "no progress" and
+  // letting the next page turn push the stale local page over it.
+  beforeEach(() => {
+    h.book.format = 'PDF';
+    h.localProgress = {
+      location: '0',
+      pageinfo: { current: 0, total: 70 },
+      section: { current: 0, total: 70 },
+    };
+    // Grimmory's reader saves page / total: page 27 of 70.
+    h.remote = { ...h.remote, progress: null, percentage: 0.386, device_id: 'Grimmory' };
+    h.getProgressMock.mockResolvedValue(h.remote);
+  });
+
+  test('silent: goes to the page the percentage names', async () => {
+    h.settings.kosync.strategy = 'silent';
+    const { result } = renderHook(() => useKOSync('h1-view1'));
+    await settle();
+
+    expect(h.view.select).toHaveBeenCalledWith(26);
+    expect(result.current.syncState).toBe('synced');
+  });
+
+  test('prompt: offers the page, and taking it goes there', async () => {
+    const { result } = renderHook(() => useKOSync('h1-view1'));
+    await settle();
+
+    expect(result.current.syncState).toBe('conflict');
+    // The page comes from the local page count, so it is only approximate.
+    expect(result.current.conflictDetails?.remote.preview).toBe(
+      'Approximately page 27 of 70 (38.60%)',
+    );
+    await act(async () => {
+      await result.current.resolveWithRemote();
+    });
+    expect(h.view.select).toHaveBeenCalledWith(26);
+  });
+
+  test('prompt: the page count shown is the local one', async () => {
+    h.localProgress = { ...h.localProgress, section: { current: 26, total: 70 } };
+    h.remote = { ...h.remote, percentage: 0.001 };
+    h.getProgressMock.mockResolvedValue(h.remote);
+    const { result } = renderHook(() => useKOSync('h1-view1'));
+    await settle();
+
+    expect(result.current.conflictDetails?.remote.preview).toBe(
+      'Approximately page 1 of 70 (0.10%)',
+    );
+  });
+
+  test('prompt: no conflict when the percentage names the page already open', async () => {
+    h.localProgress = { ...h.localProgress, section: { current: 26, total: 70 } };
+    const { result } = renderHook(() => useKOSync('h1-view1'));
+    await settle();
+
+    expect(result.current.syncState).toBe('synced');
+    expect(h.view.select).not.toHaveBeenCalled();
+  });
+
+  test('does not push the stale local page over it', async () => {
+    renderHook(() => useKOSync('h1-view1'));
+    await settle();
+    await advance(KOSYNC_PUSH_DEBOUNCE_MS + 500);
+
+    expect(h.updateProgressMock).not.toHaveBeenCalled();
+  });
+
+  test('prompt: a new percentage after resolving prompts again, even with no timestamp', async () => {
+    h.remote = { ...h.remote, timestamp: undefined };
+    h.getProgressMock.mockResolvedValue(h.remote);
+    const { result } = renderHook(() => useKOSync('h1-view1'));
+    await settle();
+    expect(result.current.syncState).toBe('conflict');
+
+    await act(async () => {
+      result.current.resolveWithLocal();
+      await flushMicrotasks();
+    });
+    expect(result.current.syncState).toBe('synced');
+
+    h.getProgressMock.mockResolvedValue({ ...h.remote, percentage: 0.5 });
+    await act(async () => {
+      h.activeCallback?.(false);
+      await flushMicrotasks();
+    });
+    await act(async () => {
+      h.activeCallback?.(true);
+      await flushMicrotasks();
+    });
+
+    expect(result.current.syncState).toBe('conflict');
+  });
+
+  test('reflowable: goes to the fraction', async () => {
+    h.book.format = 'EPUB';
+    h.localProgress = {
+      location: 'epubcfi(/6/4!/4/2/2)',
+      sectionLabel: 'Chapter 9',
+      pageinfo: { current: 13, total: 100 },
+      section: { current: 0, total: 0 },
+    };
+    h.settings.kosync.strategy = 'silent';
+    renderHook(() => useKOSync('h1-view1'));
+    await settle();
+
+    expect(h.goToFraction).toHaveBeenCalledWith(0.386);
+  });
+});
+
+describe('useKOSync — fixed-layout page numbers (#7330)', () => {
+  // KOReader's progress for a PDF is the 1-based page number, which is also
+  // what the pull reads. Pushing the 0-based index put every other reader one
+  // page back, and Readest itself stepped back a page on each round trip.
+  test('pushes the 1-based page number', async () => {
+    h.book.format = 'PDF';
+    h.localProgress = {
+      location: '26',
+      pageinfo: { current: 26, total: 70 },
+      section: { current: 26, total: 70 },
+    };
+    h.getProgressMock.mockResolvedValue(null);
+    renderHook(() => useKOSync('h1-view1'));
+    await settle();
+    await advance(KOSYNC_PUSH_DEBOUNCE_MS + 500);
+
+    expect(h.updateProgressMock).toHaveBeenCalledWith(h.book, '27', 27 / 70);
+  });
+});
+
+describe('useKOSync — a provider with its own client and CFI positions (#7337)', () => {
+  // Grimmory stores the EPUB CFI its own foliate-based reader writes, so a
+  // Grimmory position is pushed and applied as a CFI, never as an XPointer.
+  const REMOTE_CFI = 'epubcfi(/6/8!/4/2/10)';
+  const cfiProvider: KosyncProgressProvider = {
+    name: 'grimmory',
+    selectConfig: (settings) => settings.kosync,
+    positions: 'cfi',
+    createClient: () => ({
+      getDocumentDigest: (book: Book) => book.hash,
+      getProgress: () => h.getProgressMock(),
+      updateProgress: (...args: unknown[]) => h.updateProgressMock(...args),
+    }),
+  };
+
+  test('pushes the CFI, not an XPointer', async () => {
+    vi.mocked(getXPointerFromCFI).mockClear();
+    h.getProgressMock.mockResolvedValue(null);
+    renderHook(() => useKOSync('h1-view1', cfiProvider));
+    await settle();
+    await advance(KOSYNC_PUSH_DEBOUNCE_MS + 500);
+
+    expect(h.updateProgressMock).toHaveBeenCalledWith(h.book, 'epubcfi(/6/4!/4/2/2)', 0.14);
+    expect(getXPointerFromCFI).not.toHaveBeenCalled();
+  });
+
+  test('silent: goes to the remote CFI', async () => {
+    h.settings.kosync.strategy = 'silent';
+    h.getProgressMock.mockResolvedValue({ ...h.remote, progress: REMOTE_CFI, percentage: 0.5 });
+    renderHook(() => useKOSync('h1-view1', cfiProvider));
+    await settle();
+
+    expect(h.goTo).toHaveBeenCalledWith(REMOTE_CFI);
+    expect(h.goToFraction).not.toHaveBeenCalled();
+  });
+
+  test('prompt: compares where the CFI is in this copy, not the remote percentage', async () => {
+    // The remote reader paginates differently: 50% there is this page here.
+    h.view.getCFIProgress.mockResolvedValueOnce({ fraction: 0.14 });
+    h.getProgressMock.mockResolvedValue({ ...h.remote, progress: REMOTE_CFI, percentage: 0.5 });
+    const { result } = renderHook(() => useKOSync('h1-view1', cfiProvider));
+    await settle();
+
+    expect(h.view.getCFIProgress).toHaveBeenCalledWith(REMOTE_CFI);
+    expect(result.current.syncState).toBe('synced');
+  });
+
+  test('prompt: a remote CFI on the page shown here is not a conflict', async () => {
+    // Our own earlier push read back: the CFI's start sits a page before the
+    // page-end percentage this device reports, but it is the same page.
+    h.localProgress = {
+      ...(h.localProgress as Record<string, unknown>),
+      location: 'epubcfi(/6/8!/4/2,/10/1:0,/12/1:40)',
+    };
+    h.view.getCFIProgress.mockResolvedValueOnce({ fraction: 0.13 });
+    h.getProgressMock.mockResolvedValue({
+      ...h.remote,
+      progress: 'epubcfi(/6/8!/4/2,/10/1:0,/12/1:40)',
+      percentage: 0.14,
+    });
+    const { result } = renderHook(() => useKOSync('h1-view1', cfiProvider));
+    await settle();
+
+    expect(result.current.conflictDetails).toBeNull();
+    expect(result.current.syncState).toBe('synced');
+  });
+});
+
+describe('useKOSync — data flow', () => {
+  const bookOrbit: KosyncProgressProvider = {
+    name: 'bookorbit',
+    selectConfig: (settings) => settings.kosync,
+  };
+
+  const turnPage = async (rerender: () => void) => {
+    h.localProgress = {
+      ...(h.localProgress as Record<string, unknown>),
+      location: 'epubcfi(/6/4!/4/2/8)',
+    };
+    rerender();
+    await advance(KOSYNC_PUSH_DEBOUNCE_MS + 500);
+  };
+
+  test('records a remote position it applied', async () => {
+    h.settings.kosync.strategy = 'silent';
+    renderHook(() => useKOSync('h1-view1'));
+    await settle();
+
+    expect(readFlowState().entries[0]).toMatchObject({
+      connector: 'kosync',
+      direction: 'pull',
+      kind: 'progress',
+      count: 1,
+      bookTitle: 'Old title',
+    });
+  });
+
+  test('records a pull that found nothing new as working, with nothing moved', async () => {
+    h.settings.kosync.strategy = 'silent';
+    h.getProgressMock.mockResolvedValue(null);
+    renderHook(() => useKOSync('h1-view1'));
+    await settle();
+
+    const state = readFlowState();
+    expect(state.entries).toEqual([]);
+    expect(state.totals['kosync:pull:progress']?.lastSuccessAt).toBeGreaterThan(0);
+  });
+
+  test('records a failed pull', async () => {
+    h.settings.kosync.strategy = 'silent';
+    h.getProgressMock.mockResolvedValue(null);
+    h.clientError = 'HTTP 500';
+    renderHook(() => useKOSync('h1-view1'));
+    await settle();
+
+    expect(readFlowState().entries[0]).toMatchObject({ direction: 'pull', error: 'HTTP 500' });
+  });
+
+  test('records a push under the connector that made it', async () => {
+    h.settings.kosync.strategy = 'send';
+    h.updateProgressMock.mockResolvedValue(true);
+    const { rerender } = renderHook(() => useKOSync('h1-view1', bookOrbit));
+    await settle();
+    await turnPage(rerender);
+
+    const [entry] = readFlowState().entries;
+    expect(entry).toMatchObject({ connector: 'bookorbit', direction: 'push' });
+    expect(entry?.count).toBeGreaterThan(0);
+  });
+
+  test('records a refused push', async () => {
+    h.settings.kosync.strategy = 'send';
+    h.updateProgressMock.mockImplementation(async () => {
+      h.clientError = 'HTTP 403';
+      return false;
+    });
+    const { rerender } = renderHook(() => useKOSync('h1-view1'));
+    await settle();
+    await turnPage(rerender);
+
+    expect(readFlowState().entries[0]).toMatchObject({ direction: 'push', error: 'HTTP 403' });
   });
 });

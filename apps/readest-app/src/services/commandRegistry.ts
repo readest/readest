@@ -378,7 +378,7 @@ const colorPanelItems = [
   },
   {
     id: 'settings.color.transparentImageBackground',
-    labelKey: _('Make White Image Backgrounds Transparent'),
+    labelKey: _('Transparent Image Background'),
     keywords: ['image', 'white', 'background', 'transparent', 'diagram'],
     section: 'Theme',
   },
@@ -416,6 +416,12 @@ const colorPanelItems = [
     id: 'settings.tts.mediaMetadata',
     labelKey: _('TTS Media Info Update Frequency'),
     keywords: ['tts', 'media', 'metadata', 'bluetooth', 'notification', 'chapter', 'paragraph'],
+    section: 'TTS',
+  },
+  {
+    id: 'settings.tts.voices',
+    labelKey: _('Voice Library'),
+    keywords: ['tts', 'voice', 'preview', 'default', 'language', 'gender', 'read aloud'],
     section: 'TTS',
   },
   {
@@ -573,6 +579,12 @@ const controlPanelItems = [
     id: 'settings.control.hideBookshelfPageButtons',
     labelKey: _('Hide Bookshelf Buttons'),
     keywords: ['eink', 'e-ink', 'library', 'bookshelf', 'previous', 'next', 'page', 'buttons'],
+    section: 'Device',
+  },
+  {
+    id: 'settings.control.alwaysShowStatusBar',
+    labelKey: _('Always Show Status Bar'),
+    keywords: ['status', 'bar', 'system', 'clock', 'battery', 'fullscreen'],
     section: 'Device',
   },
   {

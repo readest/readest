@@ -26,7 +26,10 @@ export const useInstantAnnotation = ({
 }: UseInstantAnnotationProps) => {
   const { envConfig } = useEnv();
   const { settings } = useSettingsStore();
-  const { getConfig, getBookData, saveConfig, updateBooknotes } = useBookDataStore();
+  const getConfig = useBookDataStore((s) => s.getConfig);
+  const getBookData = useBookDataStore((s) => s.getBookData);
+  const saveConfig = useBookDataStore((s) => s.saveConfig);
+  const updateBooknotes = useBookDataStore((s) => s.updateBooknotes);
   const { getView, getViewsById, getViewSettings, getProgress } = useReaderStore();
 
   const startPointRef = useRef<Point | null>(null);

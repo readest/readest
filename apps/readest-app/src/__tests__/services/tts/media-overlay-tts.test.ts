@@ -8,6 +8,7 @@ import {
 } from '@/services/tts/mediaOverlay/MediaOverlaySection';
 import { MediaOverlayTTS } from '@/services/tts/mediaOverlay/MediaOverlayTTS';
 import { parseSSMLMarks } from '@/utils/ssml';
+import * as CFI from 'foliate-js/epubcfi.js';
 
 const par = (id: string, begin: number, end: number) =>
   `<par><text src="ch1.xhtml#${id}"/><audio src="ch1.mp3" clipBegin="${begin}s" clipEnd="${end}s"/></par>`;
@@ -190,6 +191,32 @@ describe('MediaOverlayTTS', () => {
     target.setEnd(text, 16);
 
     expect(marksOf(tts.from(target))).toEqual(['3']);
+  });
+
+  // #7342: a title page drawn as a picture is narrated, then playback carries on.
+  test('plays an image-only par in order and resumes onto it', async () => {
+    const imageDoc = new DOMParser().parseFromString(
+      '<html><body><div><span id="title"><img src="title.jpg" alt="Title. Author."/></span></div>' +
+        '<p id="s1">First sentence.</p></body></html>',
+      'text/html',
+    );
+    const book = {
+      sections: [{ mediaOverlay: { href: 'OEBPS/ch1.smil', id: 'smil1' } }],
+      loadText: async () =>
+        `<smil><body>${par('title', 13.192, 22.036)}${par('s1', 22.036, 25)}</body></smil>`,
+    } as unknown as BookDoc;
+    const imageSection = (await loadMediaOverlaySection(book, 0, imageDoc, 'en'))!;
+    const tts = new MediaOverlayTTS(imageDoc, imageSection, highlight);
+
+    expect(marksOf(tts.start())).toEqual(['0']);
+    expect(marksOf(tts.next())).toEqual(['1']);
+    // A location saved while the image played is its range's CFI, read back.
+    const cfi = CFI.fromRange(imageSection.pars[0]!.range);
+    expect(marksOf(tts.from(CFI.toRange(imageDoc, CFI.parse(cfi)) as Range))).toEqual(['0']);
+    // So is the start of the title page.
+    const page = imageDoc.createRange();
+    page.setStart(imageDoc.body, 0);
+    expect(marksOf(tts.from(page))).toEqual(['0']);
   });
 
   test('from(range) finds body text after an interleaved end-of-chapter footnote', async () => {

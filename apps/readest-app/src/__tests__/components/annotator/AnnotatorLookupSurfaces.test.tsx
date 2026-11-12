@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 /**
  * When a lookup surface (dictionary / translator / proofread) may open, and when
  * it must stay shut.
@@ -133,7 +134,7 @@ vi.mock('@/store/readerStore', () => {
 });
 
 vi.mock('@/store/readerProgressStore', () => ({
-  getBookProgress: () => ({ page: 1 }),
+  getBookProgress: () => ({ page: 1, location: 'epubcfi(/6/2!/4/2)' }),
   useBookProgress: () => ({
     page: 1,
     sectionHref: 'chapter.xhtml',
@@ -176,6 +177,7 @@ vi.mock('@/hooks/useFileSelector', () => ({
 
 vi.mock('@/app/reader/hooks/useNotesSync', () => ({ useNotesSync: () => {} }));
 vi.mock('@/app/reader/hooks/useBookOrbitNotesSync', () => ({ useBookOrbitNotesSync: () => {} }));
+vi.mock('@/app/reader/hooks/useGrimmoryNotesSync', () => ({ useGrimmoryNotesSync: () => {} }));
 vi.mock('@/app/reader/hooks/useReadwiseSync', () => ({ useReadwiseSync: () => {} }));
 vi.mock('@/app/reader/hooks/useHardcoverSync', () => ({ useHardcoverSync: () => {} }));
 vi.mock('@/app/reader/hooks/usePageboundSync', () => ({ usePageboundSync: () => {} }));

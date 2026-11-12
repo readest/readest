@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, test } from 'vitest';
 import { CUSTOM_TTS_KIND, customTTSAdapter } from '@/services/sync/adapters/customTTS';
 import { KIND_ALLOWLIST } from '@/libs/replicaSchemas';
@@ -60,6 +61,20 @@ describe('customTTSAdapter', () => {
     expect(packed['apiKey']).toBe('');
     const unpacked = customTTSAdapter.unpackRow(row(packed, { replica_id: 's-1' }), '');
     expect(unpacked!.apiKey).toBe('');
+  });
+
+  test.each([
+    'instructions',
+    'responseFormat',
+    'voices',
+    'disabled',
+  ] as const)('clearing %s reaches other devices', (key) => {
+    const before = customTTSAdapter.pack(service);
+    const after = customTTSAdapter.pack({ ...service, [key]: undefined });
+    // undefined would pass `toHaveProperty` but is dropped by JSON.
+    expect(after[key]).toBe(key === 'disabled' ? false : null);
+    const unpacked = customTTSAdapter.unpackRow(row({ ...before, ...after }), '');
+    expect(unpacked).not.toHaveProperty(key);
   });
 
   test('rejects rows without a name, base URL or model', () => {

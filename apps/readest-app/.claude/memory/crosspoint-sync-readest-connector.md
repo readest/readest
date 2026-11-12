@@ -13,6 +13,10 @@ other services (Hardcover, Readwise, BookFusion, BookOrbit, Audiobookshelf, anot
 **Conflict:** a CrossPoint device has ONE KOSync server. Readest plugin sign-in points it at Readest's
 `/api/crosspoint`, so those users lose crosspoint-sync's connectors; users staying on crosspoint-sync get no Readest sync.
 
+**2026-11-03:** the CrossPoint maintainer emailed that they will build the connector on the crosspoint-sync side; chrox chose to
+point them at the existing endpoints (device-code link, Bearer/x-auth-key, KOSync progress, clippings v2 once
+[[crosspoint-2-clippings-highlights]] ships, sessions). No Readest-side connector work.
+
 **Decision 2026-10-20 (chrox): build nothing now.** The Readest plugin already covers library, two-way progress and
 stats. Revisit only if users ask to keep crosspoint-sync AND sync with Readest.
 

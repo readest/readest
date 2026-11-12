@@ -354,6 +354,22 @@ async function crawlFeeds(
   return items;
 }
 
+/** Throws, or resolves false, when the catalog's root feed can't be read. */
+export async function checkCatalogFeed(catalog: OPDSCatalog): Promise<boolean> {
+  const customHeaders = normalizeCustomHeaders(catalog.customHeaders);
+  const root = await fetchFeed(
+    catalog.url,
+    catalog.username ?? '',
+    catalog.password ?? '',
+    customHeaders,
+    catalog,
+  );
+  if (!root) return false;
+  // JSON is cast to a feed unchecked, so any JSON page would otherwise pass.
+  const { navigation, publications, groups, links } = root.feed;
+  return [navigation, publications, groups, links].some(Array.isArray);
+}
+
 /**
  * Check a catalog for new items. Pure discovery — no downloads, no state
  * mutations.

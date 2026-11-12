@@ -87,6 +87,7 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
   // "Auto Full Refresh" row is only offered when true, so it never appears on
   // panels (or phones) where the deep refresh silently does nothing.
   const einkRefreshSupported = useEinkRefreshSupported();
+  const [alwaysShowStatusBar, setAlwaysShowStatusBar] = useState(settings.alwaysShowStatusBar);
   const [autoScreenBrightness, setAutoScreenBrightness] = useState(settings.autoScreenBrightness);
   const [swipeBrightnessGesture, setSwipeBrightnessGesture] = useState(
     settings.swipeBrightnessGesture,
@@ -336,15 +337,19 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
 
   useEffect(() => {
     saveViewSettings(envConfig, bookKey, 'animated', animated, false, false);
-    if (animated) {
-      getView(bookKey)?.renderer.setAttribute('animated', '');
-    } else {
-      getView(bookKey)?.renderer.removeAttribute('animated');
-    }
     // Mesh-curl eligibility depends on `animated`.
     applyTurnAttributes();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [animated]);
+
+  useEffect(() => {
+    if (animated && !isEink) {
+      getView(bookKey)?.renderer.setAttribute('animated', '');
+    } else {
+      getView(bookKey)?.renderer.removeAttribute('animated');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [animated, isEink]);
 
   useEffect(() => {
     saveViewSettings(envConfig, bookKey, 'pageTurnStyle', pageTurnStyle, false, false);
@@ -353,7 +358,13 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
   }, [pageTurnStyle]);
 
   useEffect(() => {
-    saveViewSettings(envConfig, bookKey, 'isEink', isEink);
+    const saveEink = async () => {
+      await saveViewSettings(envConfig, bookKey, 'isEink', isEink);
+      // Captured turns are off in e-ink mode. A global save reaches this book
+      // after the ones before it, so refresh once the save is done.
+      applyTurnAttributes();
+    };
+    saveEink();
     if (isEink) {
       getView(bookKey)?.renderer.setAttribute('eink', '');
     } else {
@@ -380,6 +391,12 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [einkAutoRefreshInterval]);
+
+  useEffect(() => {
+    if (alwaysShowStatusBar === settings.alwaysShowStatusBar) return;
+    saveSysSettings(envConfig, 'alwaysShowStatusBar', alwaysShowStatusBar);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [alwaysShowStatusBar]);
 
   useEffect(() => {
     if (autoScreenBrightness === settings.autoScreenBrightness) return;
@@ -503,7 +520,7 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
   const handleSelectImageViewerGesture = (event: React.ChangeEvent<HTMLSelectElement>) => {
     const gesture = event.target.value as ImageViewerGesture;
     setImageViewerGesture(gesture);
-    saveViewSettings(envConfig, bookKey, 'imageViewerGesture', gesture, true, false);
+    saveViewSettings(envConfig, bookKey, 'imageViewerGesture', gesture, false, false);
   };
 
   const handleSelectAnnotationQuickAction = (event: React.ChangeEvent<HTMLSelectElement>) => {
@@ -596,7 +613,6 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
         {bookData && (
           <SettingsRow
             label={_('Open Images')}
-            description={_('For this book only')}
             data-setting-id='settings.control.imageViewerGesture'
           >
             <SettingsSelect
@@ -689,8 +705,9 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
       <BoxedList title={_('Animation')} data-setting-id='settings.control.pagingAnimation'>
         <SettingsSwitchRow
           label={_('Paging Animation')}
-          checked={animated}
+          checked={animated && !isEink}
           onChange={() => setAnimated(!animated)}
+          disabled={isEink}
         />
         <SettingsRow label={_('Animation Style')} data-setting-id='settings.control.pageTurnStyle'>
           <SettingsSelect
@@ -702,7 +719,7 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
             onChange={(e) => setPageTurnStyle(e.target.value as PageTurnStyle)}
             ariaLabel={_('Animation Style')}
             options={turnStyleOptions}
-            disabled={!animated}
+            disabled={!animated || isEink}
           />
         </SettingsRow>
       </BoxedList>
@@ -745,6 +762,14 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
           onChange={() => setHideBookshelfPageButtons(!hideBookshelfPageButtons)}
           data-setting-id='settings.control.hideBookshelfPageButtons'
         />
+        {appService?.isMobileApp && (
+          <SettingsSwitchRow
+            label={_('Always Show Status Bar')}
+            checked={alwaysShowStatusBar}
+            onChange={() => setAlwaysShowStatusBar(!alwaysShowStatusBar)}
+            data-setting-id='settings.control.alwaysShowStatusBar'
+          />
+        )}
         {appService?.isMobileApp && (
           <SettingsSwitchRow
             label={_('System Screen Brightness')}

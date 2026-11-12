@@ -9,6 +9,8 @@ import { useReaderStore } from '@/store/readerStore';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useThemeStore } from '@/store/themeStore';
+import { useVocabularyStore } from '@/store/vocabularyStore';
+import { vocabularyLang } from '@/services/vocabulary/entry';
 import { useFoliateEvents } from '../hooks/useFoliateEvents';
 import { useCustomFontStore } from '@/store/customFontStore';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
@@ -32,6 +34,7 @@ import { getCfiSpinePrefix } from '@/utils/cfi';
 import { isLinkTargetVisible, shouldCheckAsFootnote } from '../utils/footnoteHeuristics';
 import { showTransientHighlight } from '../utils/transientHighlight';
 import { drawAnnotationOverlay } from '../utils/annotatorUtil';
+import { refreshSectionGlosses } from '../utils/wordlensSection';
 import {
   FootnoteExtractMapping,
   getFootnoteLocalCfi,
@@ -39,6 +42,7 @@ import {
 } from '../utils/footnoteCfi';
 import { FoliateView, NOTE_PREFIX } from '@/types/view';
 import { isCJKLang } from '@/utils/lang';
+import { getLocale } from '@/utils/misc';
 import { Overlay } from '@/components/Overlay';
 import Popup from '@/components/Popup';
 
@@ -105,7 +109,7 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
 
   const _ = useTranslation();
   const { appService } = useEnv();
-  const { getBookData } = useBookDataStore();
+  const getBookData = useBookDataStore((s) => s.getBookData);
   const { getView, getViewSettings } = useReaderStore();
   const { getLoadedFonts } = useCustomFontStore();
   const view = getView(bookKey);
@@ -125,6 +129,16 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
   // booknote id, so the sync effect below can restyle/remove them.
   const drawnNotesRef = useRef(new Map<string, { value: string; updatedAt: number }>());
   const [popupContentEpoch, setPopupContentEpoch] = useState(0);
+  // Redraw the open popup's Word Lens hints when this language's Learning /
+  // Mastered marks change, as the main view does: a word looked up from the
+  // popup can be marked while the popup stays open.
+  const bookLang = useBookDataStore(
+    (s) => s.booksData[bookKey.split('-')[0]!]?.book?.primaryLanguage,
+  );
+  const vocabularyMarksSignature = useVocabularyStore((s) => {
+    const { learning, mastered } = s.getLearningAndMastered(vocabularyLang(bookLang));
+    return JSON.stringify([[...learning], [...mastered]]);
+  });
   const booknotes = useBookDataStore((s) => s.booksData[bookKey.split('-')[0]!]?.config?.booknotes);
 
   // Point the popup at a new (or no) source document: drop the CFI mapping and
@@ -267,6 +281,28 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
     contentSizeObserverRef.current = null;
   };
 
+  // Draw the Word Lens hints the main view would, from cached packs only:
+  // opening a footnote never starts a pack download.
+  const refreshPopupGlosses = (doc: Document) => {
+    const viewSettings = getViewSettings(bookKey);
+    if (!appService || !viewSettings?.wordLensEnabled) return;
+    if (bookDoc.rendition?.layout === 'pre-paginated') return;
+    const bookLang = getBookData(bookKey)?.book?.primaryLanguage;
+    void refreshSectionGlosses(doc, viewSettings, {
+      appService,
+      bookLang,
+      appLang: getLocale(),
+      allowDownload: false,
+      vocabulary: useVocabularyStore.getState().getLearningAndMastered(vocabularyLang(bookLang)),
+    });
+  };
+
+  useEffect(() => {
+    const doc = footnoteViewRef.current?.renderer.getContents?.()[0]?.doc;
+    if (doc) refreshPopupGlosses(doc);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [vocabularyMarksSignature]);
+
   useEffect(() => {
     const getHashFromHref = (href: string | null) => {
       if (!href) return null;
@@ -395,6 +431,7 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
           popupMapRef.current = { ...info, doc };
         }
         trackPopupContentSize(popupView, doc);
+        refreshPopupGlosses(doc);
         setPopupContentEpoch((epoch) => epoch + 1);
       });
       // Style callback for annotation overlays drawn in the popup document

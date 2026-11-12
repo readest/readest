@@ -1,13 +1,12 @@
-import { getUserLocale } from '@/utils/misc';
-import { isSameLang } from '@/utils/lang';
 import { NativeAudioPlayer } from './NativeAudioPlayer';
 import { TTSClient, TTSCapabilities, TTSMessageEvent } from './TTSClient';
 import { TTSWordBoundary } from '@/libs/edgeTTS';
-import { MULTILINGUAL_LANG, TTSGranularity, TTSMark, TTSVoice, TTSVoicesGroup } from './types';
+import { MULTILINGUAL_LANG, TTSGranularity, TTSMark, TTSVoice } from './types';
 import { AppService } from '@/types/system';
 import { parseSSMLMarks } from '@/utils/ssml';
 import type { TTSController } from './TTSController';
 import { TTSUtils } from './TTSUtils';
+import { groupProviderVoices } from './voiceGroups';
 import { alignBoundariesToSpeech, findBoundaryIndexAtTime } from './wordHighlight';
 import { applyEdgeFade, findSpeechBounds } from './pcm';
 import { timeStretch } from './timeStretch';
@@ -900,32 +899,13 @@ export class BufferedTTSClient implements TTSClient {
   }
 
   async getVoices(lang: string) {
-    const locale = lang === 'en' ? getUserLocale(lang) || lang : lang;
-    const voices = await this.getAllVoices();
-    if (this.provider.groupVoices) {
-      // Each group offers the book language's voices and the multilingual ones.
-      const spoken = voices.filter((v) => v.lang === MULTILINGUAL_LANG || isSameLang(v.lang, lang));
-      return this.provider
-        .groupVoices(spoken)
-        .map((group) => ({ ...group, disabled: !this.initialized }));
-    }
-    // Match by primary language so the voice set stays the same across a book
-    // whose sections mix region variants (e.g. en-US front matter and en-GB
-    // body text); the requested locale's voices sort first. See #4033.
-    const filteredVoices = voices.filter((v) => isSameLang(v.lang, lang));
-
-    const voicesGroup: TTSVoicesGroup = {
-      id: this.name,
-      name: this.provider.label,
-      voices: filteredVoices.sort(
-        this.provider.compareVoices
-          ? (a, b) => this.provider.compareVoices!(a, b)
-          : TTSUtils.sortVoicesPreferLocaleFunc(locale),
-      ),
-      disabled: !this.initialized || filteredVoices.length === 0,
-    };
-
-    return [voicesGroup];
+    return groupProviderVoices(
+      this.provider,
+      this.name,
+      await this.getAllVoices(),
+      lang,
+      !this.initialized,
+    );
   }
 
   setPrimaryLang(lang: string) {

@@ -1632,6 +1632,50 @@ describe('importBook PDF filename-aware dedup', () => {
     expect(book).toMatchObject({ originalFilename: 'manual.pdf (1)', title: 'manual' });
   });
 
+  // Issue #7313: web-novel downloaders save each chapter as its own HTML file
+  // carrying the book's title and author, so metadata alone merges chapters.
+  it('imports HTML chapters with identical metadata as separate books', async () => {
+    const books: Book[] = [];
+    for (const name of ['0001.html', '0002.htm']) {
+      mockPartialMD5.mockResolvedValue(`html-${name}`);
+      mockOpen.mockResolvedValue({
+        book: { metadata: { ...PDF_METADATA }, getCover: vi.fn().mockResolvedValue(null) },
+        format: 'HTML',
+      });
+      const book = await service.importBook(new File(['chapter'], name), books);
+      expect(book!.metaHash).toBe(getMetadataHash(PDF_METADATA, name.replace(/\..*$/, '')));
+    }
+    expect(books.filter((b) => !b.deletedAt)).toHaveLength(2);
+  });
+
+  it('salts the metaHash when re-importing an HTML book that has none', async () => {
+    const books: Book[] = [makeBook({ hash: 'html-old', format: 'HTML' })];
+    mockPartialMD5.mockResolvedValue('html-old');
+    mockOpen.mockResolvedValue({
+      book: { metadata: { ...PDF_METADATA }, getCover: vi.fn().mockResolvedValue(null) },
+      format: 'HTML',
+    });
+
+    const book = await service.importBook(new File(['chapter'], '0003.html'), books);
+
+    expect(book!.metaHash).toBe(getMetadataHash(PDF_METADATA, '0003'));
+  });
+
+  it('refreshBookMetadata preserves the salted metaHash for HTML', async () => {
+    const book = makeBook({ hash: 'html-hash', format: 'HTML', metaHash: 'salted-import-hash' });
+    const fs = service.getFs();
+    fs.exists.mockResolvedValue(true);
+    fs.openFile.mockResolvedValue(new File(['html'], 'Test Book.html'));
+    mockOpen.mockResolvedValue({
+      book: { metadata: { ...PDF_METADATA }, getCover: vi.fn().mockResolvedValue(null) },
+      format: 'HTML',
+    });
+
+    await refreshBookMetadata(fs as unknown as Parameters<typeof refreshBookMetadata>[0], book);
+
+    expect(book.metaHash).toBe('salted-import-hash');
+  });
+
   it('refreshBookMetadata preserves the salted metaHash for PDFs', async () => {
     // The original filename is lost after import (files are stored under the
     // metadata title), so re-parsing the file cannot reproduce the salt and

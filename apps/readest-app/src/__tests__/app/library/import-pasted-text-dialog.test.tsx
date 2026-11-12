@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import ImportPastedTextDialog from '@/app/library/components/ImportPastedTextDialog';

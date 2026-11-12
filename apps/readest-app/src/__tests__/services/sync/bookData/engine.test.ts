@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, test, vi } from 'vitest';
 
 import { pullBookData, pushBookData, type BookDataKind } from '@/services/sync/bookData/engine';

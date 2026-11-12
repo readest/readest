@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { describe, it, expect, vi } from 'vitest';
 import { PointerHandwritingBackend } from '@/services/handwriting/pointerBackend';
 import type { InkPoint } from '@/services/handwriting/model';

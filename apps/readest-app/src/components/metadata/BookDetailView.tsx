@@ -45,6 +45,7 @@ interface BookDetailViewProps {
   fileSize: number | null;
   shareEnabled?: boolean;
   onEdit?: () => void;
+  onRefreshMetadata?: () => void;
   onDelete?: () => void;
   onDeleteCloudBackup?: () => void;
   onDeleteLocalCopy?: () => void;
@@ -65,6 +66,7 @@ const BookDetailView: React.FC<BookDetailViewProps> = ({
   fileSize,
   shareEnabled,
   onEdit,
+  onRefreshMetadata,
   onDelete,
   onDeleteCloudBackup,
   onDeleteLocalCopy,
@@ -239,6 +241,15 @@ const BookDetailView: React.FC<BookDetailViewProps> = ({
                     openExternalUrl(getGoodreadsSearchUrl(getBookGoodreadsQuery(book)))
                   }
                 />
+                {onRefreshMetadata && (
+                  <MenuItem
+                    noIcon
+                    transient
+                    label={_('Refresh Metadata')}
+                    disabled={!hasLocalFile}
+                    onClick={onRefreshMetadata}
+                  />
+                )}
                 {onShare && (
                   <MenuItem
                     noIcon

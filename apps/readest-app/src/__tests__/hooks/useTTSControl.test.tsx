@@ -1,4 +1,5 @@
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+// @vitest-environment happy-dom
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // --- Dependency mocks (must be set up before importing the hook) ---
@@ -449,6 +450,29 @@ describe('useTTSControl changing the voice', () => {
       await hookApi!.handleSetVoice('edge:en-US-AvaNeural', 'en');
     });
     expect(mockDownloadManager.restartBook).toHaveBeenCalledWith('book');
+  });
+
+  it('reads on with the new voice when asked to, though reading is stopped', async () => {
+    render(<ApiHarness />);
+    await act(async () => {
+      const started = eventDispatcher.dispatch('tts-speak', { bookKey: 'book-1' });
+      for (let i = 0; i < 10; i++) await Promise.resolve();
+      while (pendingInitResolvers.length > 0) pendingInitResolvers.shift()!();
+      await started;
+    });
+    const controller = ttsControllerInstances.at(-1) as {
+      state: string;
+      start: ReturnType<typeof vi.fn>;
+      setVoice: ReturnType<typeof vi.fn>;
+    };
+    // A voice preview stopped reading.
+    controller.state = 'stop-paused';
+    controller.start.mockClear();
+    await act(async () => {
+      await hookApi!.handleSetVoice('edge:en-US-GuyNeural', 'en', true);
+    });
+    expect(controller.setVoice).toHaveBeenCalledWith('edge:en-US-GuyNeural', 'en');
+    await waitFor(() => expect(controller.start).toHaveBeenCalled());
   });
 });
 

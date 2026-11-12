@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 import { act, cleanup, renderHook } from '@testing-library/react';
 
@@ -44,6 +45,7 @@ vi.mock('@/store/bookDataStore', () => ({
 }));
 vi.mock('@/store/readerProgressStore', () => ({ useBookProgress: () => null }));
 vi.mock('@/services/pagebound', () => ({
+  PageboundBookError: class extends Error {},
   PageboundClient: class {
     constructor(_session: unknown, onSessionChange: typeof h.onSessionChange) {
       h.onSessionChange = onSessionChange;

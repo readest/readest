@@ -185,6 +185,12 @@ msgstr "Hapus buku ini dari cloud dan perangkat?"
 msgid "Remove"
 msgstr "Hapus"
 
+msgid "Remove from Library, Keep File"
+msgstr "Hapus dari perpustakaan, simpan file"
+
+msgid "Remove this book from your library and the cloud? The file stays on this device."
+msgstr "Hapus buku ini dari perpustakaan dan cloud? File tetap ada di perangkat ini."
+
 msgid "Remove from Cloud Only"
 msgstr "Hapus dari Cloud Saja"
 

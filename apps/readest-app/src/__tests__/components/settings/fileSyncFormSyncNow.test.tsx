@@ -1,3 +1,5 @@
+// @vitest-environment happy-dom
+import { readFlowState } from '@/services/sync/dataFlow/log';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 
@@ -90,6 +92,36 @@ describe('FileSyncForm — Sync now health reporting', () => {
     expect(syncLibrary).toHaveBeenCalledTimes(1);
     // Mutex released.
     expect(useFileSyncStore.getState().byKind.webdav?.isSyncing ?? false).toBe(false);
+  });
+
+  test('Sync now reports what moved to Data Flow', async () => {
+    localStorage.clear();
+    syncLibrary.mockResolvedValueOnce({
+      booksSynced: 1,
+      failures: 0,
+      totalBooks: 1,
+      failedBooks: [],
+      configsUploaded: 2,
+    });
+    renderForm();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Sync now' }));
+
+    await waitFor(() => {
+      expect(readFlowState().totals['webdav:push:progress']?.count).toBe(2);
+    });
+  });
+
+  test('a failed Sync now reaches Data Flow', async () => {
+    localStorage.clear();
+    syncLibrary.mockRejectedValueOnce(new Error('boom'));
+    renderForm();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Sync now' }));
+
+    await waitFor(() => {
+      expect(readFlowState().entries[0]).toMatchObject({ connector: 'webdav', error: 'boom' });
+    });
   });
 
   test('a failed run records lastError for the health surfaces', async () => {

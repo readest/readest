@@ -3,7 +3,7 @@ import React, { useEffect } from 'react';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { BiMoon, BiSun } from 'react-icons/bi';
-import { PiGear, PiChartBar } from 'react-icons/pi';
+import { PiGear, PiChartBar, PiCardsThree } from 'react-icons/pi';
 import { TbSunMoon } from 'react-icons/tb';
 import { MdZoomOut, MdZoomIn, MdCheck, MdInfoOutline, MdOutlineSensors } from 'react-icons/md';
 import { MdRemove, MdAdd, MdContrast } from 'react-icons/md';
@@ -11,6 +11,7 @@ import { MdSync, MdSyncProblem } from 'react-icons/md';
 import { IoMdExpand } from 'react-icons/io';
 import { IoShareOutline } from 'react-icons/io5';
 import { setReadingStatsDialogVisible } from '@/components/stats/ReadingStatsDialog';
+import { setVocabularyDialogVisible } from '@/components/vocabulary/VocabularyDialog';
 import { TbArrowAutofitWidth } from 'react-icons/tb';
 import { TbColumns1, TbColumns2 } from 'react-icons/tb';
 import { TbCarouselVertical, TbCarouselHorizontal } from 'react-icons/tb';
@@ -27,7 +28,7 @@ import { useEnv } from '@/context/EnvContext';
 import { useAuth } from '@/context/AuthContext';
 import { useThemeStore } from '@/store/themeStore';
 import { useReaderStore } from '@/store/readerStore';
-import { useBookDataStore } from '@/store/bookDataStore';
+import { useBookConfig, useBookData } from '@/store/bookDataStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useCloudSyncStatus } from '@/hooks/useCloudSyncStatus';
@@ -59,16 +60,15 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
   const router = useRouter();
   const { user } = useAuth();
   const { envConfig, appService } = useEnv();
-  const { getConfig, getBookData } = useBookDataStore();
   const { setSettingsDialogOpen, setSettingsDialogBookKey } = useSettingsStore();
   const { getView, getViewSettings, getViewState, getProgress, setViewSettings, recreateViewer } =
     useReaderStore();
-  const config = getConfig(bookKey)!;
-  const bookData = getBookData(bookKey)!;
+  const config = useBookConfig(bookKey)!;
+  const bookData = useBookData(bookKey)!;
   const viewSettings = getViewSettings(bookKey)!;
   const viewState = getViewState(bookKey);
 
-  const { themeMode, isDarkMode, setThemeMode } = useThemeStore();
+  const { themeMode, setThemeMode } = useThemeStore();
   const [isScrolledMode, setScrolledMode] = useState(viewSettings!.scrolled);
   const [scrolledDirection, setScrolledDirection] = useState(
     viewSettings!.scrolledDirection ?? 'vertical',
@@ -98,12 +98,6 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
     }
   };
   const [keepCoverSpread, setKeepCoverSpread] = useState(viewSettings!.keepCoverSpread!);
-  const [invertImgColorInDark, setInvertImgColorInDark] = useState(
-    viewSettings!.invertImgColorInDark,
-  );
-  const [transparentImageBackground, setTransparentImageBackground] = useState(
-    !!viewSettings.transparentImageBackground,
-  );
   const [applyThemeToPDF, setApplyThemeToPDF] = useState(viewSettings!.applyThemeToPDF!);
   const [rtlSpread, setRtlSpread] = useState(bookData?.bookDoc?.dir === 'rtl');
 
@@ -127,6 +121,11 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
   const openReadingStats = () => {
     setIsDropdownOpen?.(false);
     setReadingStatsDialogVisible(true);
+  };
+
+  const openVocabulary = () => {
+    setIsDropdownOpen?.(false);
+    setVocabularyDialogVisible(true);
   };
 
   const openSettingsDialog = () => {
@@ -171,6 +170,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
     // did nothing at all.
     eventDispatcher.dispatch('sync-book-progress', { bookKey });
     eventDispatcher.dispatch('flush-notion-sync', { bookKey });
+    eventDispatcher.dispatch('flush-obsidian-sync', { bookKey });
     eventDispatcher.dispatch('push-file-sync', { bookKey });
     eventDispatcher.dispatch('pull-file-sync', { bookKey });
     eventDispatcher.dispatch('flush-kosync', { bookKey });
@@ -276,25 +276,6 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
     saveViewSettings(envConfig, bookKey, 'contrast', contrast, true, true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [contrast]);
-
-  useEffect(() => {
-    if (invertImgColorInDark === viewSettings.invertImgColorInDark) return;
-    saveViewSettings(envConfig, bookKey, 'invertImgColorInDark', invertImgColorInDark, true, true);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [invertImgColorInDark]);
-
-  useEffect(() => {
-    if (transparentImageBackground === !!viewSettings.transparentImageBackground) return;
-    saveViewSettings(
-      envConfig,
-      bookKey,
-      'transparentImageBackground',
-      transparentImageBackground,
-      true,
-      true,
-    );
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [transparentImageBackground]);
 
   useEffect(() => {
     if (applyThemeToPDF === viewSettings.applyThemeToPDF) return;
@@ -558,20 +539,6 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
           onClick={() => setApplyThemeToPDF(!applyThemeToPDF)}
         />
       )}
-      <MenuItem
-        label={_('Invert Image In Dark Mode')}
-        disabled={!isDarkMode}
-        Icon={invertImgColorInDark ? MdCheck : undefined}
-        onClick={() => setInvertImgColorInDark(!invertImgColorInDark)}
-      />
-
-      {bookData.book?.format !== 'PDF' && (
-        <MenuItem
-          label={_('Make White Image Backgrounds Transparent')}
-          toggled={transparentImageBackground}
-          onClick={() => setTransparentImageBackground(!transparentImageBackground)}
-        />
-      )}
 
       <hr aria-hidden='true' className='border-base-300 my-1' />
 
@@ -653,6 +620,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
         onClick={cycleThemeMode}
       />
       <MenuItem label={_('Reading Statistics')} Icon={PiChartBar} onClick={openReadingStats} />
+      <MenuItem label={_('Vocabulary')} Icon={PiCardsThree} onClick={openVocabulary} />
       <MenuItem label={_('Settings')} Icon={PiGear} onClick={openSettingsDialog} />
       <hr aria-hidden='true' className='border-base-300 my-1' />
 

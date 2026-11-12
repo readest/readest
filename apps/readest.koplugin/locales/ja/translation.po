@@ -185,6 +185,12 @@ msgstr "この書籍をクラウドと端末から削除しますか？"
 msgid "Remove"
 msgstr "削除"
 
+msgid "Remove from Library, Keep File"
+msgstr "ライブラリから削除(ファイルは保持)"
+
+msgid "Remove this book from your library and the cloud? The file stays on this device."
+msgstr "この本をライブラリとクラウドから削除しますか?ファイルはこの端末に残ります。"
+
 msgid "Remove from Cloud Only"
 msgstr "クラウドからのみ削除"
 

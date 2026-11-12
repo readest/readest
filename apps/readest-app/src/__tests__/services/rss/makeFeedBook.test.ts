@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { describe, expect, it } from 'vitest';
 import { makeFeedBook } from '@/services/rss/makeFeedBook';
 import { CFI } from '@/libs/document';

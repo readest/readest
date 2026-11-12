@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, test } from 'vitest';
 import { getTransferMessages } from '@/services/transferMessages';
 import type { TransferItem } from '@/store/transferStore';

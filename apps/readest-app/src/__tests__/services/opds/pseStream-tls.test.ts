@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 // A streamed comic page is fetched with its catalog's certificate choice, which
 // is on unless the user turned it off - including for a feed opened without a
 // saved catalog.

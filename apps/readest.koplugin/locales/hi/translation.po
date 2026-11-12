@@ -185,6 +185,12 @@ msgstr "क्या इस पुस्तक को क्लाउड और 
 msgid "Remove"
 msgstr "हटाएँ"
 
+msgid "Remove from Library, Keep File"
+msgstr "लाइब्रेरी से हटाएँ, फ़ाइल रखें"
+
+msgid "Remove this book from your library and the cloud? The file stays on this device."
+msgstr "इस पुस्तक को अपनी लाइब्रेरी और क्लाउड से हटाएँ? फ़ाइल इस डिवाइस पर बनी रहेगी।"
+
 msgid "Remove from Cloud Only"
 msgstr "केवल क्लाउड से हटाएँ"
 
