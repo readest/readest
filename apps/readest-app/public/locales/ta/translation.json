@@ -2829,5 +2829,10 @@
   "Folder not available": "கோப்புறை கிடைக்கவில்லை",
   "Words per Flash": "ஒரு காட்சிக்கு சொற்கள்",
   "Warm-up": "தயார்நிலை",
-  "Long Word Delay": "நீண்ட சொற்களுக்கு தாமதம்"
+  "Long Word Delay": "நீண்ட சொற்களுக்கு தாமதம்",
+  "Reading Calendar": "வாசிப்பு நாட்காட்டி",
+  "Previous Month": "முந்தைய மாதம்",
+  "Next Month": "அடுத்த மாதம்",
+  "No reading activity on this day": "இந்த நாளில் வாசிப்புச் செயல்பாடு இல்லை",
+  "See which books you read each day and for how long": "ஒவ்வொரு நாளும் எந்தப் புத்தகங்களை எவ்வளவு நேரம் படித்தீர்கள் என்பதைப் பாருங்கள்"
 }

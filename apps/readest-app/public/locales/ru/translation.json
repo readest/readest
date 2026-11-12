@@ -2975,5 +2975,10 @@
   "Folder not available": "Папка недоступна",
   "Words per Flash": "Слов за показ",
   "Warm-up": "Разгон",
-  "Long Word Delay": "Задержка на длинных словах"
+  "Long Word Delay": "Задержка на длинных словах",
+  "Reading Calendar": "Календарь чтения",
+  "Previous Month": "Предыдущий месяц",
+  "Next Month": "Следующий месяц",
+  "No reading activity on this day": "В этот день нет записей о чтении",
+  "See which books you read each day and for how long": "Посмотрите, какие книги вы читали каждый день и сколько времени"
 }

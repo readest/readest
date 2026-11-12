@@ -2829,5 +2829,10 @@
   "Folder not available": "ෆෝල්ඩරය ලබා ගත නොහැක",
   "Words per Flash": "එක් දර්ශනයකට වචන",
   "Warm-up": "උණුසුම් කිරීම",
-  "Long Word Delay": "දිගු වචනවලට ප්‍රමාදය"
+  "Long Word Delay": "දිගු වචනවලට ප්‍රමාදය",
+  "Reading Calendar": "කියවීමේ දින දර්ශනය",
+  "Previous Month": "පෙර මාසය",
+  "Next Month": "ඊළඟ මාසය",
+  "No reading activity on this day": "මෙම දිනයේ කියවීමේ ක්‍රියාකාරකම් නැත",
+  "See which books you read each day and for how long": "ඔබ දිනපතා කියවූ පොත් සහ කියවීමට ගත කළ කාලය බලන්න"
 }

@@ -2829,5 +2829,10 @@
   "Folder not available": "फ़ोल्डर उपलब्ध नहीं है",
   "Words per Flash": "प्रति फ़्लैश शब्द",
   "Warm-up": "वार्म-अप",
-  "Long Word Delay": "लंबे शब्दों पर विलंब"
+  "Long Word Delay": "लंबे शब्दों पर विलंब",
+  "Reading Calendar": "पठन कैलेंडर",
+  "Previous Month": "पिछला महीना",
+  "Next Month": "अगला महीना",
+  "No reading activity on this day": "इस दिन कोई पठन गतिविधि नहीं है",
+  "See which books you read each day and for how long": "देखें कि आपने हर दिन कौन सी किताबें पढ़ीं और कितनी देर तक"
 }

@@ -2829,5 +2829,10 @@
   "Folder not available": "Mappen är inte tillgänglig",
   "Words per Flash": "Ord per visning",
   "Warm-up": "Uppvärmning",
-  "Long Word Delay": "Fördröjning för långa ord"
+  "Long Word Delay": "Fördröjning för långa ord",
+  "Reading Calendar": "Läskalender",
+  "Previous Month": "Föregående månad",
+  "Next Month": "Nästa månad",
+  "No reading activity on this day": "Ingen läsaktivitet denna dag",
+  "See which books you read each day and for how long": "Se vilka böcker du läste varje dag och hur länge"
 }

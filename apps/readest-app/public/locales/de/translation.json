@@ -2829,5 +2829,10 @@
   "Folder not available": "Ordner nicht verfügbar",
   "Words per Flash": "Wörter pro Einblendung",
   "Warm-up": "Aufwärmen",
-  "Long Word Delay": "Verzögerung bei langen Wörtern"
+  "Long Word Delay": "Verzögerung bei langen Wörtern",
+  "Reading Calendar": "Lesekalender",
+  "Previous Month": "Vorheriger Monat",
+  "Next Month": "Nächster Monat",
+  "No reading activity on this day": "Keine Leseaktivität an diesem Tag",
+  "See which books you read each day and for how long": "Sieh nach, welche Bücher du täglich gelesen hast und wie lange"
 }
