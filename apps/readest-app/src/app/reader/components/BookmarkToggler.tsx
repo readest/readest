@@ -3,7 +3,7 @@ import { RiBookmarkLine, RiBookmarkFill } from 'react-icons/ri';
 
 import { useSettingsStore } from '@/store/settingsStore';
 import { useBookDataStore, useBookConfig } from '@/store/bookDataStore';
-import { useBookProgress } from '@/store/readerProgressStore';
+import { useBookProgressValue } from '@/store/readerProgressStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useEnv } from '@/context/EnvContext';
@@ -31,7 +31,19 @@ const BookmarkToggler: React.FC<BookmarkTogglerProps> = ({ bookKey }) => {
   const { getProgress, getViewState, setBookmarkRibbonVisibility } = useReaderStore();
   const [isBookmarked, setIsBookmarked] = useState(false);
   const config = useBookConfig(bookKey);
-  const progress = useBookProgress(bookKey);
+  // Whether the shown page is bookmarked, worked out as the progress changes: a page turn
+  // re-renders the button only when that changes.
+  const booknotes = config?.booknotes;
+  const locationBookmarked = useBookProgressValue(bookKey, ({ location }) =>
+    location
+      ? (booknotes ?? []).some(
+          (booknote) =>
+            booknote.type === 'bookmark' &&
+            !booknote.deletedAt &&
+            isCfiInLocation(booknote.cfi, location),
+        )
+      : undefined,
+  );
   const iconSize18 = useResponsiveSize(18);
 
   const toggleBookmark = () => {
@@ -101,17 +113,11 @@ const BookmarkToggler: React.FC<BookmarkTogglerProps> = ({ bookKey }) => {
   }, [bookKey]);
 
   useEffect(() => {
-    const { booknotes = [] } = config || {};
-    const { location: cfi } = progress || {};
-    if (!cfi) return;
-
-    const locationBookmarked = booknotes
-      .filter((booknote) => booknote.type === 'bookmark' && !booknote.deletedAt)
-      .some((item) => isCfiInLocation(item.cfi, cfi));
+    if (locationBookmarked === undefined) return;
     setIsBookmarked(locationBookmarked);
     setBookmarkRibbonVisibility(bookKey, locationBookmarked);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [config, progress]);
+  }, [locationBookmarked]);
 
   return (
     <Button
