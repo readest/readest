@@ -94,6 +94,100 @@ describe('single-section scrolling across chapter boundaries', () => {
     );
   });
 
+  describe('with Paging Animation on', () => {
+    const indices = () => paginator.getContents().map((c) => c.index);
+    const maxScroll = () => container().scrollHeight - container().clientHeight;
+    // Start a swipe at a boundary and wait for the adjacent chapter to load
+    // under the finger.
+    const grab = async (y: number, step: number, both: number[]) => {
+      touch('touchstart', y);
+      touch('touchmove', y + step);
+      await expect.poll(indices).toEqual(both);
+    };
+
+    it('pulls the next chapter up with the finger and settles on it', async () => {
+      await open();
+      paginator.setAttribute('animated', '');
+      end();
+      const boundary = container().scrollTop;
+      await grab(300, -10, [1, 2]);
+      expect(touch('touchmove', 200).defaultPrevented).toBe(true);
+      expect(container().scrollTop).toBeCloseTo(boundary + 90, -1);
+      expect(paginator.primaryIndex).toBe(1);
+      touch('touchend', 200);
+      await ready(2);
+      await expect.poll(indices).toEqual([2]);
+      expect(container().scrollTop).toBeLessThanOrEqual(2);
+    });
+
+    it('pulls the previous chapter down with the finger and settles on its end', async () => {
+      await open(2);
+      paginator.setAttribute('animated', '');
+      // The previous chapter loads above without moving the page in view, in
+      // any frame: an unanchored placeholder would flash a blank screen.
+      const page = container().firstElementChild!;
+      const top = () => page.getBoundingClientRect().top - container().getBoundingClientRect().top;
+      const drift: number[] = [];
+      let watching = true;
+      const watch = () => {
+        drift.push(Math.round(top()));
+        if (watching) requestAnimationFrame(watch);
+      };
+      watch();
+      await grab(100, 10, [1, 2]);
+      watching = false;
+      expect(drift.filter((d) => Math.abs(d) > 2)).toEqual([]);
+      const boundary = container().scrollTop;
+      expect(boundary).toBeGreaterThan(0);
+      expect(currentDoc().body.textContent).toContain('Chapter 2');
+      touch('touchmove', 200);
+      expect(container().scrollTop).toBeCloseTo(boundary - 90, -1);
+      touch('touchend', 200);
+      await ready(1);
+      await expect.poll(indices).toEqual([1]);
+      expect(container().scrollTop).toBeGreaterThanOrEqual(maxScroll() - 2);
+    });
+
+    it('springs back and drops the next chapter on a short pull', async () => {
+      await open();
+      paginator.setAttribute('animated', '');
+      end();
+      const boundary = container().scrollTop;
+      await grab(300, -10, [1, 2]);
+      touch('touchmove', 270);
+      touch('touchend', 270);
+      await expect.poll(indices).toEqual([1]);
+      expect(paginator.primaryIndex).toBe(1);
+      expect(container().scrollTop).toBeCloseTo(boundary, -1);
+    });
+
+    it('drops the pulled chapter when a second finger lands', async () => {
+      await open();
+      paginator.setAttribute('animated', '');
+      end();
+      await grab(300, -10, [1, 2]);
+      touch('touchmove', 200);
+      touch('touchmove', 150, 2);
+      touch('touchend', 150);
+      await expect.poll(indices).toEqual([1]);
+      expect(paginator.primaryIndex).toBe(1);
+    });
+
+    it('turns without pulling under e-ink', async () => {
+      await open();
+      paginator.setAttribute('animated', '');
+      paginator.setAttribute('eink', '');
+      end();
+      touch('touchstart', 300);
+      touch('touchmove', 290);
+      await pause(100);
+      expect(indices()).toEqual([1]);
+      touch('touchmove', 200);
+      touch('touchend', 200);
+      await ready(2);
+    });
+  });
+
   it('does not turn on a swipe that only reached the boundary mid-gesture', async () => {
     await open();
     container().scrollTop = 200;
