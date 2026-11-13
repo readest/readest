@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   decideAnnotationDraw,
+  getHandlePositionsFromRange,
   drawAnnotationOverlay,
   filterBooknotes,
   filterExportGroups,
@@ -405,6 +406,26 @@ describe('getAnnotationOverlayColor', () => {
       expect(
         getAnnotationOverlayColor(style, '#fef08a', { isBwEink: false, isDarkMode: true }),
       ).toBe('#fef08a');
+    }
+  });
+});
+
+describe('annotation handle coordinate spaces', () => {
+  it('keeps host-document popup handle positions in viewport coordinates', () => {
+    const grid = document.createElement('div');
+    grid.id = 'gridcell-popup-book';
+    grid.textContent = 'popup annotation';
+    document.body.append(grid);
+    try {
+      const range = document.createRange();
+      range.selectNodeContents(grid.firstChild!);
+      range.getClientRects = () => [new DOMRect(10, 20, 100, 20)] as unknown as DOMRectList;
+      expect(getHandlePositionsFromRange('popup-book', range, false)).toEqual({
+        start: { x: 10, y: 20 },
+        end: { x: 110, y: 40 },
+      });
+    } finally {
+      grid.remove();
     }
   });
 });

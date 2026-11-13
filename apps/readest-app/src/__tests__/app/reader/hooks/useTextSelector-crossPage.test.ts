@@ -96,7 +96,14 @@ const makePage = (top: number, text: string, caretOffset: number, index: number)
   // whole page.
   const win = iframe.contentWindow as Window & typeof globalThis;
   const pageBox = { left: 0, top: 0, right: 400, bottom: 400, width: 400, height: 400 };
-  win.Range.prototype.getClientRects = () => [pageBox] as unknown as DOMRectList;
+  win.Range.prototype.getClientRects = function (this: Range) {
+    // Keep the synthetic caret at caretOffset for the page's fixed x=60
+    // hit-test, including when a single-document drag is below the page.
+    const x = 60 + (this.startOffset - caretOffset) * 10;
+    return [
+      this.collapsed ? { ...pageBox, left: x, right: x, width: 0 } : pageBox,
+    ] as unknown as DOMRectList;
+  };
   win.Range.prototype.getBoundingClientRect = () => pageBox as DOMRect;
   win.requestAnimationFrame = (cb: FrameRequestCallback) => setTimeout(() => cb(0), 0) as never;
   doc.body.innerHTML = `<div id="canvas"></div><div class="textLayer"><span>${text}</span><div class="endOfContent"></div></div>`;

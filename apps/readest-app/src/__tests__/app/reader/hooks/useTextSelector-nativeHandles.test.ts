@@ -28,6 +28,7 @@ const h = vi.hoisted(() => ({
   osPlatform: 'ios',
   viewSettings: { scrolled: false },
   isFixedLayout: false,
+  format: 'EPUB',
 }));
 
 vi.mock('@/context/EnvContext', () => ({
@@ -41,7 +42,9 @@ vi.mock('@/store/readerStore', () => ({
   }),
 }));
 vi.mock('@/store/bookDataStore', () => ({
-  ...bookDataStoreHooks(() => ({ getBookData: () => ({ isFixedLayout: h.isFixedLayout }) })),
+  ...bookDataStoreHooks(() => ({
+    getBookData: () => ({ isFixedLayout: h.isFixedLayout, book: { format: h.format } }),
+  })),
 }));
 vi.mock('@/utils/event', () => ({
   eventDispatcher: { onSync: vi.fn(), offSync: vi.fn(), on: vi.fn(), off: vi.fn() },
@@ -70,7 +73,9 @@ import type { TextSelection } from '@/utils/sel';
 
 const ZERO_INSETS = { top: 0, right: 0, bottom: 0, left: 0 };
 
-const setup = () => {
+const setup = (
+  getAnnotationText: (range: Range) => Promise<string> = async (range) => range.toString(),
+) => {
   const setSelection = vi.fn();
   const noop = vi.fn();
   const hook = renderHook(() =>
@@ -80,7 +85,7 @@ const setup = () => {
       setSelection as never,
       noop,
       noop,
-      vi.fn(async (range: Range) => range.toString()),
+      getAnnotationText,
       noop,
     ),
   );
@@ -111,6 +116,7 @@ beforeEach(() => {
   h.osPlatform = 'ios';
   h.viewSettings = { scrolled: false };
   h.isFixedLayout = false;
+  h.format = 'EPUB';
 });
 
 afterEach(() => {
@@ -185,6 +191,69 @@ describe('suppressNativeSelectionHandles', () => {
     await flush();
 
     expect(setSelection).not.toHaveBeenCalled();
+  });
+});
+
+describe('Android PDF endpoint handles', () => {
+  test('an older asynchronous selection cannot replace the released PDF app handles', async () => {
+    h.appService = { isAndroidApp: true, isMobile: true };
+    h.osPlatform = 'android';
+    h.format = 'PDF';
+    h.isFixedLayout = true;
+    const page = makeSelectedPage('a selected phrase', 3);
+    const win = page.doc.defaultView as Window & typeof globalThis;
+    win.Range.prototype.getClientRects = () => [] as unknown as DOMRectList;
+    win.Range.prototype.getBoundingClientRect = () => new DOMRect(10, 10, 100, 20);
+    h.contents = [page];
+    let finishOld!: (text: string) => void;
+    const text = vi
+      .fn<(range: Range) => Promise<string>>()
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            finishOld = resolve;
+          }),
+      )
+      .mockImplementation(async (range) => range.toString());
+    const { result, setSelection } = setup(text);
+    result.current.handleTouchStart();
+    result.current.handleSelectionchange(page.doc, page.index);
+    expect(text).toHaveBeenCalledTimes(1);
+    await result.current.handlePointerUp(page.doc, page.index);
+    await flush();
+    expect(setSelection.mock.calls.at(-1)![0]).toMatchObject({ handlesSuppressed: true });
+    finishOld('a selected phrase');
+    await flush();
+    expect(setSelection.mock.calls.at(-1)![0]).toMatchObject({ handlesSuppressed: true });
+  });
+
+  test.each([
+    'PDF',
+    'EPUB',
+  ])('publishes app handles only for a paginated %s selection', async (format) => {
+    h.appService = { isAndroidApp: true, isMobile: true };
+    h.osPlatform = 'android';
+    h.format = format;
+    h.isFixedLayout = format === 'PDF';
+    const page = makeSelectedPage('a selected phrase', 3);
+    const win = page.doc.defaultView as Window & typeof globalThis;
+    win.Range.prototype.getClientRects = () => [] as unknown as DOMRectList;
+    win.Range.prototype.getBoundingClientRect = () => new DOMRect(10, 10, 100, 20);
+    h.contents = [page];
+    const { result, setSelection } = setup();
+    result.current.handleTouchStart();
+    result.current.handleSelectionchange(page.doc, page.index);
+    await flush();
+    await result.current.handlePointerUp(page.doc, page.index);
+    await flush();
+    expect(page.doc.getSelection()!.toString()).toBe('a selected phrase');
+    const published = setSelection.mock.calls
+      .map(([value]) => value)
+      .filter((value) => typeof value !== 'function');
+    expect(published.at(-1)).toMatchObject({
+      text: 'a selected phrase',
+      handlesSuppressed: format === 'PDF',
+    });
   });
 });
 
