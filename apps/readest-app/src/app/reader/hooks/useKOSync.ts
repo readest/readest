@@ -24,6 +24,7 @@ import {
   decideRemoteConflict,
   getRemoteFraction,
   getRemotePage,
+  getRemoteTotalPages,
   isCfiOnPage,
   isCfiProgress,
   isXPointerProgress,
@@ -323,14 +324,22 @@ export const useKOSync = (bookKey: string, provider: KosyncProgressProvider = ko
     if (isFixedLayout) {
       const localPageInfo = local.section;
       const remotePage = getRemotePage(remote, localPageInfo?.total ?? 0);
-      if (remotePage !== undefined && remotePercentage > 0) {
-        const localTotalPages = localPageInfo?.total ?? 0;
-        const hasRemotePage = !isNaN(parseInt(remote.progress ?? '', 10));
+      const localTotalPages = localPageInfo?.total ?? 0;
+      const hasRemotePage = !isNaN(parseInt(remote.progress ?? '', 10));
+      // A numeric remote page with a zero percentage is a server that reports
+      // (page - 1) / total (#7503, Kavita on page 1): the total can only come
+      // from the local copy, and there is no division to do.
+      if (
+        remotePage !== undefined &&
+        (remotePercentage > 0 || (hasRemotePage && localTotalPages > 0))
+      ) {
         // A page derived from a percentage alone is a page of the local copy,
         // and only approximate.
-        const remoteTotalPages = hasRemotePage
-          ? Math.round(remotePage / remotePercentage)
-          : localTotalPages;
+        const remoteTotalPages =
+          remotePercentage > 0 && hasRemotePage
+            ? (getRemoteTotalPages(remotePage, remotePercentage, localTotalPages) ??
+              localTotalPages)
+            : localTotalPages;
         const pagesMatch = hasRemotePage && Math.abs(localTotalPages - remoteTotalPages) <= 1;
 
         if (pagesMatch) {
@@ -347,8 +356,12 @@ export const useKOSync = (bookKey: string, provider: KosyncProgressProvider = ko
           });
         }
         // A rounded percentage won't equal the local one even on the same
-        // page, so compare the page it names.
-        showConflictDetails = hasRemotePage
+        // page, so compare the page it names — except for a report echoed
+        // from this same device, where the 1% tolerance still applies
+        // (#7503: Kavita's percentage is (page - 1) / total, so the same
+        // page differs by 1 / total and would otherwise prompt on every
+        // pull).
+        showConflictDetails = isSameDevice
           ? Math.abs(localPercentage - remotePercentage) > conflictProgressDiffThreshold
           : remotePage !== (localPageInfo?.current ?? 0) + 1;
       } else {
