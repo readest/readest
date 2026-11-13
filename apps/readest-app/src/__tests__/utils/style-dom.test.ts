@@ -22,6 +22,8 @@ import {
   applyThemeModeClass,
   applyScrollModeClass,
   applyEinkModeAttribute,
+  applyOrientationAttribute,
+  resolveReadingAreaOrientation,
   applyScrollbarStyle,
   applyTranslationStyle,
   getThemeCode,
@@ -143,6 +145,59 @@ describe('applyEinkModeAttribute', () => {
     applyEinkModeAttribute(document, false);
     expect(p.matches(einkOnly)).toBe(false);
     p.remove();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Reading-area orientation (adaptive bilingual layout)
+// ---------------------------------------------------------------------------
+describe('applyOrientationAttribute', () => {
+  afterEach(() => {
+    document.documentElement.removeAttribute('data-orientation');
+  });
+
+  it('writes the measured reading-area orientation on the book document root', () => {
+    applyOrientationAttribute(document, 'landscape');
+    expect(document.documentElement.getAttribute('data-orientation')).toBe('landscape');
+    applyOrientationAttribute(document, 'portrait');
+    expect(document.documentElement.getAttribute('data-orientation')).toBe('portrait');
+  });
+
+  it('lets a user stylesheet switch a bilingual column block on html[data-orientation]', () => {
+    const paracol = document.createElement('section');
+    paracol.className = 'paracol';
+    document.body.appendChild(paracol);
+    const portraitRule = "html[data-orientation='portrait'] .paracol";
+    // Query the document rather than the element: happy-dom memoises
+    // `Element.matches()` per element and never invalidates the entry when an
+    // ancestor's attribute changes, so the second call keeps answering with the
+    // first result. `document.querySelector` re-evaluates every time, and it is
+    // also what a stylesheet does to the book content.
+    applyOrientationAttribute(document, 'landscape');
+    expect(document.querySelector(portraitRule)).toBeNull();
+    applyOrientationAttribute(document, 'portrait');
+    expect(document.querySelector(portraitRule)).toBe(paracol);
+    paracol.remove();
+  });
+});
+
+describe('resolveReadingAreaOrientation', () => {
+  it('reads a landscape box as landscape and a portrait box as portrait', () => {
+    expect(resolveReadingAreaOrientation(1000, 800)).toBe('landscape');
+    expect(resolveReadingAreaOrientation(800, 1000)).toBe('portrait');
+    expect(resolveReadingAreaOrientation(900, 900)).toBe('landscape');
+  });
+
+  it('holds the previous value inside the hysteresis band', () => {
+    expect(resolveReadingAreaOrientation(990, 1000, 'landscape')).toBe('landscape');
+    expect(resolveReadingAreaOrientation(1010, 1000, 'portrait')).toBe('portrait');
+    expect(resolveReadingAreaOrientation(950, 1000, 'landscape')).toBe('portrait');
+    expect(resolveReadingAreaOrientation(1050, 1000, 'portrait')).toBe('landscape');
+  });
+
+  it('returns null for an unmounted or zero-sized reading area', () => {
+    expect(resolveReadingAreaOrientation(0, 0)).toBeNull();
+    expect(resolveReadingAreaOrientation(-1, 800)).toBeNull();
   });
 });
 
