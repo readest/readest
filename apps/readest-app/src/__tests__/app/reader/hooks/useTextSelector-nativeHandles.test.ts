@@ -73,7 +73,9 @@ import type { TextSelection } from '@/utils/sel';
 
 const ZERO_INSETS = { top: 0, right: 0, bottom: 0, left: 0 };
 
-const setup = () => {
+const setup = (
+  getAnnotationText: (range: Range) => Promise<string> = async (range) => range.toString(),
+) => {
   const setSelection = vi.fn();
   const noop = vi.fn();
   const hook = renderHook(() =>
@@ -83,7 +85,7 @@ const setup = () => {
       setSelection as never,
       noop,
       noop,
-      vi.fn(async (range: Range) => range.toString()),
+      getAnnotationText,
       noop,
     ),
   );
@@ -193,6 +195,38 @@ describe('suppressNativeSelectionHandles', () => {
 });
 
 describe('Android PDF endpoint handles', () => {
+  test('an older asynchronous selection cannot replace the released PDF app handles', async () => {
+    h.appService = { isAndroidApp: true, isMobile: true };
+    h.osPlatform = 'android';
+    h.format = 'PDF';
+    h.isFixedLayout = true;
+    const page = makeSelectedPage('a selected phrase', 3);
+    const win = page.doc.defaultView as Window & typeof globalThis;
+    win.Range.prototype.getClientRects = () => [] as unknown as DOMRectList;
+    win.Range.prototype.getBoundingClientRect = () => new DOMRect(10, 10, 100, 20);
+    h.contents = [page];
+    let finishOld!: (text: string) => void;
+    const text = vi
+      .fn<(range: Range) => Promise<string>>()
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            finishOld = resolve;
+          }),
+      )
+      .mockImplementation(async (range) => range.toString());
+    const { result, setSelection } = setup(text);
+    result.current.handleTouchStart();
+    result.current.handleSelectionchange(page.doc, page.index);
+    expect(text).toHaveBeenCalledTimes(1);
+    await result.current.handlePointerUp(page.doc, page.index);
+    await flush();
+    expect(setSelection.mock.calls.at(-1)![0]).toMatchObject({ handlesSuppressed: true });
+    finishOld('a selected phrase');
+    await flush();
+    expect(setSelection.mock.calls.at(-1)![0]).toMatchObject({ handlesSuppressed: true });
+  });
+
   test.each([
     'PDF',
     'EPUB',

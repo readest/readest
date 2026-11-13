@@ -176,6 +176,8 @@ export const useTextSelector = (
   // handleSelectionchange must ignore them. Cleared on a delay because
   // selectionchange dispatches a task after the mutation.
   const programmaticSelectionRef = useRef(false);
+  // Text extraction may finish out of order; only the newest selection may publish.
+  const selectionPublicationId = useRef(0);
   const programmaticClearTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   // `view.select()` (vim find, #7281) selects its target from the relocate it
   // fires, before that selection's selectionchange. A selection made by
@@ -276,6 +278,7 @@ export const useTextSelector = (
   // Publish the per-page parts as one selection: all their text joined, the
   // range/cfi/index anchored on the first part (#5809).
   const makeCrossDocSelection = async (segments: CrossDocSegment[], handlesSuppressed = false) => {
+    const publication = ++selectionPublicationId.current;
     const parts: { range: Range; index: number; text: string }[] = [];
     for (const segment of segments) {
       const range = rangeFromPositions(segment.doc, segment.start, segment.end);
@@ -285,7 +288,7 @@ export const useTextSelector = (
       parts.push({ range, index: segment.index, text });
     }
     const first = parts[0];
-    if (!first) return false;
+    if (!first || publication !== selectionPublicationId.current) return false;
     isTextSelected.current = true;
     const progress = getProgress(bookKey);
     setSelection({
@@ -528,6 +531,7 @@ export const useTextSelector = (
     trimPoint?: { node: Node; offset: number } | null,
     wordGesture = false,
   ) => {
+    const publication = ++selectionPublicationId.current;
     isTextSelected.current = true;
     const navigated = navigatedSelectionRef.current;
     const liveRange = sel.getRangeAt(0);
@@ -566,10 +570,12 @@ export const useTextSelector = (
     const range = trimPoint || wordGesture ? liveRange.cloneRange() : liveRange;
     if (trimPoint) trimRangeWhitespaceAroundPoint(range, trimPoint.node, trimPoint.offset);
     if (wordGesture) trimNoteMarkersFromWordRange(range);
+    const text = await getAnnotationText(range);
+    if (publication !== selectionPublicationId.current) return;
     const progress = getProgress(bookKey);
     setSelection({
       key: bookKey,
-      text: await getAnnotationText(range),
+      text,
       cfi: view?.getCFI(index, range),
       page: bookData?.isFixedLayout ? index + 1 : progress?.page || 0,
       range,
@@ -1335,7 +1341,8 @@ export const useTextSelector = (
       makeSelection(sel, index, false, false, null, touchWordGesture);
     } else {
       // Selection cleared (e.g. clicking outside the selection).
-      // Dismiss immediately on all platforms.
+      // Dismiss immediately on all platforms; invalidate pending text extraction.
+      selectionPublicationId.current++;
       navigatedSelectionRef.current = false;
       if (isTextSelected.current) {
         handleDismissPopup();

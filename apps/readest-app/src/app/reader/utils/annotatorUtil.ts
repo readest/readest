@@ -160,14 +160,18 @@ export function getHandlePositionsFromRange(
   // The PDF page iframe is often scaled to fit the screen. getClientRects()
   // returns coordinates in the iframe's unscaled CSS space; use the inverse
   // transform from the selection drag hit-testing path to position both handles.
-  const start = toWindowPoint(doc, {
+  const startPoint = {
     x: isVertical ? firstRect.right : firstRect.left,
     y: firstRect.top,
-  });
-  const end = toWindowPoint(doc, {
+  };
+  const endPoint = {
     x: isVertical ? lastRect.left : lastRect.right,
     y: lastRect.bottom,
-  });
+  };
+  // Popup/paragraph ranges may live in the host document, already in viewport space.
+  const inFrame = !!doc.defaultView?.frameElement;
+  const start = inFrame ? toWindowPoint(doc, startPoint) : startPoint;
+  const end = inFrame ? toWindowPoint(doc, endPoint) : endPoint;
   if (!start || !end) return null;
   return { start, end };
 }
