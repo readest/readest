@@ -52,27 +52,62 @@ export type FieldedQuery = QueryNode;
 /** Values of one field of the item being matched; `null` asks for every field. */
 export type FieldValues = (field: string | null) => string[];
 
-// A quoted value, optionally after `field:`; otherwise a run up to a space or
-// a parenthesis. Sticky, so each match starts where the last one ended.
-const TOKEN = /\s*(?:(\()|(\))|((?:[^\s()"]*:)?"[^"]*"?)|([^\s()]+))/y;
+const isSpace = (ch: string): boolean => /\s/.test(ch);
+
+/**
+ * One word starting at `start`: a quoted value, optionally after `field:`, or
+ * a run up to a space or a parenthesis. After `field:` the value keeps its
+ * balanced parentheses, so `title:~(dune|hobbit)` stays one regex value while
+ * a `)` it didn't open still closes the enclosing group.
+ */
+const readWord = (query: string, start: number): { text: string; quoted: boolean; end: number } => {
+  let i = start;
+  let inField = false;
+  let depth = 0;
+  while (i < query.length) {
+    const ch = query[i]!;
+    if (ch === '"') {
+      const close = query.indexOf('"', i + 1);
+      const end = close === -1 ? query.length : close + 1;
+      return { text: query.slice(start, end), quoted: true, end };
+    }
+    if (isSpace(ch)) break;
+    if (ch === ':' && !inField) inField = true;
+    else if (ch === '(') {
+      if (!inField) break;
+      depth++;
+    } else if (ch === ')') {
+      if (depth === 0) break;
+      depth--;
+    }
+    i++;
+  }
+  return { text: query.slice(start, i), quoted: false, end: i };
+};
 
 const tokenize = (query: string): Token[] => {
   const tokens: Token[] = [];
   let depth = 0;
-  TOKEN.lastIndex = 0;
-  for (let match = TOKEN.exec(query); match?.[0]; match = TOKEN.exec(query)) {
-    if (match[1]) {
+  let i = 0;
+  while (i < query.length) {
+    const ch = query[i]!;
+    if (isSpace(ch)) {
+      i++;
+    } else if (ch === '(') {
       depth++;
       tokens.push({ type: '(' });
-    } else if (match[2]) {
+      i++;
+    } else if (ch === ')') {
       // A stray ")" closes nothing; drop it rather than end the query there.
-      if (depth === 0) continue;
-      depth--;
-      tokens.push({ type: ')' });
-    } else if (match[3]) {
-      tokens.push({ type: 'word', text: match[3], quoted: true });
-    } else if (match[4]) {
-      tokens.push({ type: 'word', text: match[4], quoted: false });
+      if (depth > 0) {
+        depth--;
+        tokens.push({ type: ')' });
+      }
+      i++;
+    } else {
+      const word = readWord(query, i);
+      tokens.push({ type: 'word', text: word.text, quoted: word.quoted });
+      i = word.end;
     }
   }
   return tokens;

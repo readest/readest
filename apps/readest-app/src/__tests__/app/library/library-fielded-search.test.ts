@@ -48,7 +48,12 @@ const library: Book[] = [
   makeBook(
     'threebody',
     { title: 'The Three-Body Problem', author: '刘慈欣' },
-    { subject: ['Science Fiction'], language: 'zh', description: '<p>First contact.</p>' },
+    {
+      subject: ['Science Fiction'],
+      language: 'zh',
+      description: '<p>First contact.</p>',
+      altIdentifier: { scheme: 'uuid', value: 'urn:uuid:3b0d1e' },
+    },
   ),
   makeBook('rezero', { title: 'Re:Zero', author: 'Tappei Nagatsuki' }),
   makeBook('langbio', { title: 'Language: A Biography', author: 'Ann Writer' }),
@@ -85,6 +90,16 @@ describe('createBookFilter fielded search (#7370)', () => {
     expect(search('series:"~^dune$"')).toEqual(['dune', 'messiah']);
   });
 
+  it('keeps parentheses inside a field value, and groups with standalone ones', () => {
+    expect(search('title:~(dune|hobbit)')).toEqual(['dune', 'messiah', 'hobbit']);
+    expect(search('title:~^(the|re)')).toEqual(['hobbit', 'threebody', 'rezero']);
+    expect(search('(title:~(dune|hobbit)) and author:tolkien')).toEqual(['hobbit']);
+    expect(search('(title:~(dune|hobbit) or language:zh) and not author:herbert')).toEqual([
+      'hobbit',
+      'threebody',
+    ]);
+  });
+
   it('reads tags, subjects, series, publisher, language, format, group, isbn and description', () => {
     expect(search('tags:favorite')).toEqual(['dune']);
     expect(search('tag:fantasy')).toEqual(['hobbit']); // calibre tags arrive as subjects
@@ -96,6 +111,8 @@ describe('createBookFilter fielded search (#7370)', () => {
     expect(search('format:pdf')).toEqual(['hobbit']);
     expect(search('group:childhood')).toEqual(['hobbit']);
     expect(search('isbn:9780441013593')).toEqual(['dune']);
+    expect(search('identifier:9780441013593')).toEqual(['dune']);
+    expect(search('identifier:3b0d1e')).toEqual(['threebody']); // an alternate identifier
     expect(search('description:contact')).toEqual(['threebody']);
   });
 
@@ -108,6 +125,10 @@ describe('createBookFilter fielded search (#7370)', () => {
   it('matches bare words next to fields against every field', () => {
     expect(search('author:herbert messiah')).toEqual(['messiah']);
     expect(search('"dune messiah" or title:hobbit')).toEqual(['messiah', 'hobbit']);
+    expect(search('author:herbert putnam')).toEqual(['messiah']); // publisher
+    expect(search('title:~^the middle-earth')).toEqual(['hobbit']); // series
+    expect(search('subject:fiction 中文')).toEqual(['threebody']); // language
+    expect(search('subject:fiction 3b0d1e')).toEqual(['threebody']); // identifier
   });
 
   it('tolerates a dangling operator or an unclosed parenthesis', () => {

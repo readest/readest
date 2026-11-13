@@ -329,9 +329,17 @@ const getBookLanguages = (book: Book): string[] => {
   return [...codes, ...codes.map((code) => formatLanguage(code))];
 };
 
+const getBookIdentifiers = (book: Book): string[] => {
+  const metadata = book.metadata;
+  const alternates = [metadata?.altIdentifier ?? []]
+    .flat()
+    .map((id) => (typeof id === 'string' ? id : id.value));
+  return present(metadata?.identifier, metadata?.isbn, ...alternates);
+};
+
 /**
- * The values a fielded search term reads (#7370); `null` is a bare word, which
- * reads the same fields as the plain search. `#label` is a calibre column.
+ * The values a fielded search term reads (#7370). `null` is a bare word next
+ * to fields, which reads every field below; `#label` is a calibre column.
  */
 const getBookFieldValues = (book: Book, field: string | null): string[] => {
   const metadata = book.metadata;
@@ -345,6 +353,10 @@ const getBookFieldValues = (book: Book, field: string | null): string[] => {
         metadata?.description,
         getBookValuesText(book),
         getCalibreColumnsText(book),
+        metadata?.series,
+        metadata?.publisher && formatPublisher(metadata.publisher),
+        ...getBookLanguages(book),
+        ...getBookIdentifiers(book),
       );
     case 'title':
       return [formatTitle(book.title)];
@@ -372,7 +384,7 @@ const getBookFieldValues = (book: Book, field: string | null): string[] => {
     case 'isbn':
       return present(metadata?.isbn);
     case 'identifier':
-      return present(metadata?.identifier, metadata?.isbn);
+      return getBookIdentifiers(book);
     default:
       return field.startsWith('#') ? getCalibreColumnValues(book, field.slice(1)) : [];
   }
