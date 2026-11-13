@@ -1364,6 +1364,11 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
   };
 
   useEffect(() => {
+    // The note editor has taken over the popup for this selection: the
+    // highlight Annotate just created re-publishes the selection with its
+    // CFI stamped, and answering that with the toolbar would yank focus back
+    // onto the toolbar container the editor's textarea just took (#7511).
+    if (noteEditorTarget) return;
     // One-tap highlighting (#5983): with the highlight tool on the toolbar the
     // style/color strip opens with the popup, so a color pick highlights the
     // fresh selection directly (HighlightOptions calls handleHighlight, which
@@ -1452,7 +1457,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selection, bookKey]);
+  }, [selection, bookKey, noteEditorTarget]);
 
   // Index live annotations by the CFI spine prefix (the chapter id) so
   // each page turn only scans the bucket for the current chapter rather
