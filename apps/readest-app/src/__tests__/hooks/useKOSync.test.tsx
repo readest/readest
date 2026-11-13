@@ -1088,6 +1088,78 @@ describe('useKOSync — fixed-layout page numbers (#7330)', () => {
   });
 });
 
+describe('useKOSync — Kavita zero-based percentage (#7503)', () => {
+  // Kavita reports a 1-based page number with a 0-based percentage
+  // ((page - 1) / total), while KOReader reports page / total. Deriving the
+  // total as page / percentage doubles it for Kavita: 2 / 0.09090909 = 22
+  // for an 11-page PDF.
+  const setupKavita = (localPage: number, remotePage: string, remotePercentage: number) => {
+    h.book.format = 'PDF';
+    h.localProgress = {
+      location: '0',
+      pageinfo: { current: localPage - 1, total: 11 },
+      section: { current: localPage - 1, total: 11 },
+    };
+    h.remote = {
+      ...h.remote,
+      progress: remotePage,
+      percentage: remotePercentage,
+      device: 'Kavita',
+    };
+    h.getProgressMock.mockResolvedValue(h.remote);
+  };
+
+  test('prompt: shows the real page count for page 2', async () => {
+    setupKavita(1, '2', 0.09090909);
+    const { result } = renderHook(() => useKOSync('h1-view1'));
+    await settle();
+
+    expect(result.current.syncState).toBe('conflict');
+    expect(result.current.conflictDetails?.remote.preview).toBe('Page 2 of 11 (9.09%)');
+  });
+
+  test('prompt: shows the real page count for page 5', async () => {
+    setupKavita(1, '5', 0.36363637);
+    const { result } = renderHook(() => useKOSync('h1-view1'));
+    await settle();
+
+    expect(result.current.conflictDetails?.remote.preview).toBe('Page 5 of 11 (36.36%)');
+  });
+
+  test('prompt: shows the real page count for page 10', async () => {
+    setupKavita(1, '10', 0.8181818);
+    const { result } = renderHook(() => useKOSync('h1-view1'));
+    await settle();
+
+    expect(result.current.conflictDetails?.remote.preview).toBe('Page 10 of 11 (81.82%)');
+  });
+
+  test('prompt: handles the first page, where the percentage is zero', async () => {
+    setupKavita(5, '1', 0);
+    const { result } = renderHook(() => useKOSync('h1-view1'));
+    await settle();
+
+    expect(result.current.syncState).toBe('conflict');
+    expect(result.current.conflictDetails?.remote.preview).toBe('Page 1 of 11 (0.00%)');
+  });
+
+  test('prompt: a KOReader-style report still shows the real page count', async () => {
+    setupKavita(1, '2', 2 / 11);
+    const { result } = renderHook(() => useKOSync('h1-view1'));
+    await settle();
+
+    expect(result.current.conflictDetails?.remote.preview).toBe('Page 2 of 11 (18.18%)');
+  });
+
+  test('prompt: no phantom conflict when the report names the page already open', async () => {
+    setupKavita(2, '2', 0.09090909);
+    const { result } = renderHook(() => useKOSync('h1-view1'));
+    await settle();
+
+    expect(result.current.syncState).toBe('synced');
+  });
+});
+
 describe('useKOSync — a provider with its own client and CFI positions (#7337)', () => {
   // Grimmory stores the EPUB CFI its own foliate-based reader writes, so a
   // Grimmory position is pushed and applied as a CFI, never as an XPointer.
