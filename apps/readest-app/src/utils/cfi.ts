@@ -163,7 +163,7 @@ const normalizeRangeStart = (container: Node, offset: number): { node: Node; off
   while (isElementNode(node) && at > 0) {
     const children = node.childNodes;
     const next = at < children.length ? children[at]! : null;
-    if (isCfiContentNode(next)) return { node: next, offset: 0 };
+    if (next && isCfiContentNode(next)) return { node: next, offset: 0 };
     let prev: Node | null = null;
     for (let i = Math.min(at, children.length) - 1; i >= 0; i--) {
       if (isCfiContentNode(children[i]!)) {

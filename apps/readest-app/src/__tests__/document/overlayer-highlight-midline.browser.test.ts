@@ -163,7 +163,7 @@ describe('Overlayer highlight of a mid-line selection (#7482)', () => {
     range.setEnd(text, end);
 
     const cfi = epubcfi.fromRange(range);
-    const resolved = epubcfi.toRange(doc, epubcfi.parse(cfi));
+    const resolved = epubcfi.toRange(doc, epubcfi.parse(cfi)) as Range | null;
     expect(resolved).not.toBeNull();
     expect(resolved!.toString()).toBe(range.toString());
 
