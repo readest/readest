@@ -58,6 +58,7 @@ const library: Book[] = [
   makeBook('rezero', { title: 'Re:Zero', author: 'Tappei Nagatsuki' }),
   makeBook('langbio', { title: 'Language: A Biography', author: 'Ann Writer' }),
   makeBook('notes', { title: 'Notes (Part 2)', author: 'Sam Clerk' }),
+  makeBook('draft', { title: 'Notes [Draft', author: 'Sam Clerk' }),
 ];
 
 const search = (query: string): string[] =>
@@ -106,6 +107,11 @@ describe('createBookFilter fielded search (#7370)', () => {
     expect(search('title:~2\\)')).toEqual(['notes']);
     expect(search('title:~[(]part')).toEqual(['notes']);
     expect(search('(title:~2\\) or title:hobbit) and not author:tolkien')).toEqual(['notes']);
+  });
+
+  it('reads [ and \\ in a plain value as text, so a group still closes after it', () => {
+    expect(search('(title:[draft) or title:hobbit')).toEqual(['hobbit', 'draft']);
+    expect(search('title:[draft')).toEqual(['draft']);
   });
 
   it('reads tags, subjects, series, publisher, language, format, group, isbn and description', () => {
