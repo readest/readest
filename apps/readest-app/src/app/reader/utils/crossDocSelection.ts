@@ -1,4 +1,5 @@
 import { Point } from '@/utils/sel';
+import { normalizeRangeForCfi } from '@/utils/cfi';
 
 // A selection that runs across section documents (#5809). Fixed-layout books
 // render every PDF page in its own iframe, and a DOM Selection cannot leave its
@@ -169,7 +170,12 @@ export const rangeFromPositions = (doc: Document, start: DocPosition, end: DocPo
   } catch {
     return null;
   }
-  return range.collapsed ? null : range;
+  if (range.collapsed) return null;
+  // A start on an element boundary (caretPositionFromPoint reports one after
+  // an inline element) is invisible to CFI — the saved highlight would paint
+  // from the start of the line (#7482). Normalize it into the text node the
+  // start sits in; the end needs no equivalent, foliate moves it already.
+  return normalizeRangeForCfi(range);
 };
 
 // The per-section segments of a selection anchored at `anchor` whose other

@@ -8,6 +8,7 @@ import { getOSPlatform } from '@/utils/misc';
 import { eventDispatcher } from '@/utils/event';
 import { LONG_HOLD_THRESHOLD } from '@/services/constants';
 import { setSelectionSuppressed } from '@/utils/bridge';
+import { normalizeRangeForCfi } from '@/utils/cfi';
 import { LINK_TOUCH_HOLD_CLASS, TEXT_SELECTED_CLASS } from '@/utils/style';
 import {
   focusCaretWindowPos,
@@ -560,13 +561,20 @@ export const useTextSelector = (
     const range = trimPoint || wordGesture ? liveRange.cloneRange() : liveRange;
     if (trimPoint) trimRangeWhitespaceAroundPoint(range, trimPoint.node, trimPoint.offset);
     if (wordGesture) trimNoteMarkersFromWordRange(range);
+    // A start on an element boundary (WebKit reports a selection starting
+    // right after an inline element as (parent, childIndex)) is invisible to
+    // CFI, so the saved highlight would paint from the start of the line
+    // (#7482). Normalize into the text node the start sits in — the same
+    // selected text — and store the clone, leaving the native selection
+    // and its handles untouched.
+    const cfiRange = normalizeRangeForCfi(range);
     const progress = getProgress(bookKey);
     setSelection({
       key: bookKey,
-      text: await getAnnotationText(range),
-      cfi: view?.getCFI(index, range),
+      text: await getAnnotationText(cfiRange),
+      cfi: view?.getCFI(index, cfiRange),
       page: bookData?.isFixedLayout ? index + 1 : progress?.page || 0,
-      range,
+      range: cfiRange,
       index,
       handlesSuppressed,
       ...(navigated && { quickActionHandled: true }),

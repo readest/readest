@@ -1,6 +1,7 @@
 import { useCallback, useRef } from 'react';
 import { BookNote } from '@/types/book';
 import { Point, TextSelection, getWordRangeFromPoint, snapRangeToWords } from '@/utils/sel';
+import { normalizeRangeForCfi } from '@/utils/cfi';
 import { useEnv } from '@/context/EnvContext';
 import { useReaderStore } from '@/store/readerStore';
 import { useSettingsStore } from '@/store/settingsStore';
@@ -163,7 +164,11 @@ export const useInstantAnnotation = ({
         }
 
         snapRangeToWords(newRange);
-        return newRange;
+        // A start on an element boundary (caretPositionFromPoint reports one
+        // after an inline element) is invisible to CFI — the saved highlight
+        // would paint from the start of the line (#7482). Normalize it into
+        // the text node the start sits in; the preview draws the same text.
+        return normalizeRangeForCfi(newRange);
       } catch (e) {
         console.warn('Failed to create range:', e);
         return null;

@@ -141,6 +141,67 @@ export function getIndexFromCfi(cfi: string): number | null {
   }
 }
 
+const isTextNode = (node: Node | null | undefined): node is Text =>
+  node?.nodeType === Node.TEXT_NODE || node?.nodeType === Node.CDATA_SECTION_NODE;
+const isElementNode = (node: Node | null | undefined): node is Element =>
+  node?.nodeType === Node.ELEMENT_NODE;
+// Content a CFI can see: text, and elements that aren't cfi-inert (foliate
+// drops inert subtrees from its child index).
+const isCfiContentNode = (node: Node | null | undefined): boolean =>
+  isTextNode(node) || (isElementNode(node) && !node.hasAttribute('cfi-inert'));
+const endOffsetOf = (node: Node): number =>
+  isTextNode(node) ? node.length : node.childNodes.length;
+
+/**
+ * Same DOM position as (container, offset), expressed inside a text node
+ * when possible: the child the offset points before, at its start, else the
+ * end of the previous content child.
+ */
+const normalizeRangeStart = (container: Node, offset: number): { node: Node; offset: number } => {
+  let node: Node = container;
+  let at = offset;
+  while (isElementNode(node) && at > 0) {
+    const children = node.childNodes;
+    const next = at < children.length ? children[at]! : null;
+    if (isCfiContentNode(next)) return { node: next, offset: 0 };
+    let prev: Node | null = null;
+    for (let i = Math.min(at, children.length) - 1; i >= 0; i--) {
+      if (isCfiContentNode(children[i]!)) {
+        prev = children[i]!;
+        break;
+      }
+    }
+    if (!prev) return { node, offset: at };
+    node = prev;
+    at = endOffsetOf(prev);
+  }
+  return { node, offset: at };
+};
+
+/**
+ * A range start on an element boundary is invisible to CFI: foliate's
+ * nodeToParts keeps an offset only for text, so a start at (element, i) is
+ * written as the element and read back as its start. WebKit reports a
+ * selection starting right after an inline element exactly that way, so a
+ * highlight of such a selection paints from the start of the line instead
+ * of from the selected word (readest/readest#7482). The end needs no
+ * equivalent: foliate's endInsideChild already moves it into the child
+ * before it.
+ *
+ * Move the start into the content child the offset points before, or into
+ * the end of the previous content child when there is none — the same DOM
+ * position, expressed with a text container, so fromRange round-trips it.
+ * Returns a clone; the input range is untouched. A collapsed range stays
+ * collapsed.
+ */
+export const normalizeRangeForCfi = (range: Range): Range => {
+  const clone = range.cloneRange();
+  const start = normalizeRangeStart(range.startContainer, range.startOffset);
+  clone.setStart(start.node, start.offset);
+  if (range.collapsed) clone.setEnd(start.node, start.offset);
+  return clone;
+};
+
 /**
  * Extract the EPUB CFI "spine prefix" — the portion that identifies the
  * spine item (chapter / section) without descending into the in-document
