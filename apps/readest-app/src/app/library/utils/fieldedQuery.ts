@@ -58,11 +58,14 @@ const isSpace = (ch: string): boolean => /\s/.test(ch);
  * One word starting at `start`: a quoted value, optionally after `field:`, or
  * a run up to a space or a parenthesis. After `field:` the value keeps its
  * balanced parentheses, so `title:~(dune|hobbit)` stays one regex value while
- * a `)` it didn't open still closes the enclosing group.
+ * a `)` it didn't open still closes the enclosing group. As in a regular
+ * expression, a backslash escapes the next character and `[...]` is a class,
+ * so `title:~\)` and `title:~[)]` keep their `)`.
  */
 const readWord = (query: string, start: number): { text: string; quoted: boolean; end: number } => {
   let i = start;
   let inField = false;
+  let inClass = false;
   let depth = 0;
   while (i < query.length) {
     const ch = query[i]!;
@@ -72,7 +75,14 @@ const readWord = (query: string, start: number): { text: string; quoted: boolean
       return { text: query.slice(start, end), quoted: true, end };
     }
     if (isSpace(ch)) break;
-    if (ch === ':' && !inField) inField = true;
+    if (inField && ch === '\\') {
+      i += 2;
+      continue;
+    }
+    if (inClass) {
+      if (ch === ']') inClass = false;
+    } else if (ch === ':' && !inField) inField = true;
+    else if (inField && ch === '[') inClass = true;
     else if (ch === '(') {
       if (!inField) break;
       depth++;

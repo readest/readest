@@ -57,6 +57,7 @@ const library: Book[] = [
   ),
   makeBook('rezero', { title: 'Re:Zero', author: 'Tappei Nagatsuki' }),
   makeBook('langbio', { title: 'Language: A Biography', author: 'Ann Writer' }),
+  makeBook('notes', { title: 'Notes (Part 2)', author: 'Sam Clerk' }),
 ];
 
 const search = (query: string): string[] =>
@@ -98,6 +99,13 @@ describe('createBookFilter fielded search (#7370)', () => {
       'hobbit',
       'threebody',
     ]);
+  });
+
+  it('keeps an escaped ) or a ) in a character class inside a regex value', () => {
+    expect(search('title:~[)]')).toEqual(['notes']);
+    expect(search('title:~2\\)')).toEqual(['notes']);
+    expect(search('title:~[(]part')).toEqual(['notes']);
+    expect(search('(title:~2\\) or title:hobbit) and not author:tolkien')).toEqual(['notes']);
   });
 
   it('reads tags, subjects, series, publisher, language, format, group, isbn and description', () => {
