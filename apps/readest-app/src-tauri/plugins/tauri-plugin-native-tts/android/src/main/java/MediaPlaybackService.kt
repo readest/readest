@@ -1111,7 +1111,6 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
     // Guards against rewriting the cache file on every (per-sentence) metadata
     // build: the URI is only re-published when the cover bitmap itself changes.
     private var artworkUriSource: Bitmap? = null
-    private var artworkUriVersion = 0
     private var artworkUriFile: File? = null
 
     // A selected book has to reach the WebView, wait for library hydration,
@@ -1191,12 +1190,13 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
     // Materialize currentArtwork as a stable content:// URI (once per cover) so
     // clients cache it instead of reloading the bitmap on every metadata update.
     // A fresh filename per cover keeps the URI stable within a book but changed
-    // across books, so a new cover still refreshes. Cheap no-op while unchanged.
+    // across books AND service restarts: car clients can retain cached URIs
+    // after this service is recreated. Cheap no-op while unchanged.
     private fun refreshArtworkUri() {
         val art = currentArtwork ?: return
         if (art !== artworkUriSource || currentArtworkUri == null) {
             try {
-                val file = File(cacheDir, "tts_cover_${artworkUriVersion++}.png")
+                val file = File.createTempFile("tts_cover_", ".png", cacheDir)
                 FileOutputStream(file).use { out -> art.compress(Bitmap.CompressFormat.PNG, 100, out) }
                 artworkUriFile?.delete()
                 artworkUriFile = file
