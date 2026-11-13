@@ -59,13 +59,17 @@ async function downloadAndImport(
   // re-import anyway.
   const catalogIds = [...new Set([catalog.contentId, catalog.id].filter(Boolean) as string[])];
   let existing: Book | null = null;
-  for (const catalogId of catalogIds) {
-    existing = await findBookByOPDSSources(appService, {
-      catalogId,
-      sourceUrls: [url],
-      library: books,
-    });
-    if (existing) break;
+  try {
+    for (const catalogId of catalogIds) {
+      existing = await findBookByOPDSSources(appService, {
+        catalogId,
+        sourceUrls: [url],
+        library: books,
+      });
+      if (existing) break;
+    }
+  } catch (e) {
+    console.warn(`[OPDS] identity gate failed, proceeding without it:`, e);
   }
   if (existing) {
     console.log(`[OPDS] "${item.title}" already imported for this source — skipping re-download`);

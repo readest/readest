@@ -340,6 +340,44 @@ describe('OPDS auto-download orchestrator', () => {
     expect(total?.lastSuccessAt).toBeGreaterThan(0);
   });
 
+  it('downloads anyway when the identity-gate lookup rejects', async () => {
+    // The gate's SQLite lives in OPFS on the web app, where connect can fail
+    // (corrupt/empty file, single-handle lock races). The lookup is an
+    // optimization — a rejection must not abort the download (#7489).
+    localStorage.clear();
+    const catalogs: OPDSCatalog[] = [
+      { id: 'cat-1', name: 'Shelf', url: 'https://shelf.example.com/opds', autoDownload: true },
+    ];
+    vi.mocked(checkFeedForNewItems).mockResolvedValue([
+      {
+        entryId: 'urn:shelf:1',
+        title: 'Issue 1',
+        acquisitionHref: '/dl/1.epub',
+        mimeType: 'application/epub+zip',
+        baseURL: 'https://shelf.example.com/opds',
+      },
+    ]);
+    vi.mocked(findBookByOPDSSources).mockRejectedValueOnce(
+      new Error('failed to connect: I/O error: short read on page 1'),
+    );
+
+    const result = await syncSubscribedCatalogs(catalogs, appService, []);
+
+    expect(result.totalNewBooks).toBe(1);
+    expect(result.errors).toHaveLength(0);
+
+    const savedState = vi
+      .mocked(saveSubscriptionState)
+      .mock.calls.at(-1)![1] as OPDSSubscriptionState;
+    expect(savedState.knownEntryIds).toContain('urn:shelf:1');
+    // Only the test's own entry must be absent from failures — the shared
+    // state mock may carry leftover failures from earlier tests in the file.
+    expect(savedState.failedEntries.map((fe) => fe.entryId)).not.toContain('urn:shelf:1');
+
+    const total = readFlowState().totals['opds:pull:books'];
+    expect(total?.count).toBe(1);
+  });
+
   it('records the error message, without an Error prefix', async () => {
     localStorage.clear();
     const catalogs: OPDSCatalog[] = [
