@@ -144,7 +144,7 @@ const TextEditor = forwardRef<TextEditorRef, TextEditorProps>(
         aria-label={ariaLabel}
         onChange={handleChange}
         onBlur={onBlur}
-        onKeyDown={handleKeyDown}
+        onKeyDownCapture={handleKeyDown}
         onSelect={(event) =>
           onSelect?.(event.currentTarget.selectionStart, event.currentTarget.selectionEnd)
         }
