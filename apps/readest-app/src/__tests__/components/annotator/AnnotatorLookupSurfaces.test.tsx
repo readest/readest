@@ -38,6 +38,12 @@ const h = vi.hoisted(() => ({
   updateBooknotes: vi.fn(),
   deselect: vi.fn(),
   restoreSelectionRange: vi.fn(() => true),
+  lookupSettings: {
+    providerEnabled: {} as Record<string, boolean>,
+    saveLookupsToVocabulary: true,
+  },
+  invokeSystemDictionary: vi.fn(),
+  recordLookup: vi.fn(),
   isTextSelected: { current: true },
   appService: {} as { isIOSApp?: boolean },
   onNativeTouch: null as null | ((ev: { type: string; x: number; y: number }) => void),
@@ -151,8 +157,18 @@ vi.mock('@/store/sidebarStore', () => ({
 vi.mock('@/store/customDictionaryStore', () => ({
   useCustomDictionaryStore: Object.assign(
     () => ({ loadCustomDictionaries: vi.fn().mockResolvedValue(undefined) }),
-    { getState: () => ({ settings: { providerEnabled: {} } }) },
+    { getState: () => ({ settings: h.lookupSettings }) },
   ),
+}));
+
+vi.mock('@/services/dictionaries/systemDictionary', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/services/dictionaries/systemDictionary')>()),
+  isSystemDictionarySupported: () => true,
+  invokeSystemDictionary: h.invokeSystemDictionary,
+}));
+
+vi.mock('@/store/vocabularyStore', () => ({
+  useVocabularyStore: { getState: () => ({ recordLookup: h.recordLookup }) },
 }));
 
 vi.mock('@/store/deviceStore', () => ({
@@ -274,7 +290,7 @@ vi.mock('@/app/reader/components/annotator/ProofreadPopup', () => ({
 
 import Annotator from '@/app/reader/components/annotator/Annotator';
 
-const selectText = async () => {
+const selectText = async (text = 'selected text') => {
   // The selection effect needs the book's grid cell to measure against.
   if (!document.querySelector('#gridcell-book-1')) {
     const gridCell = document.createElement('div');
@@ -282,7 +298,7 @@ const selectText = async () => {
     document.body.append(gridCell);
   }
   const paragraph = document.createElement('p');
-  paragraph.textContent = 'selected text';
+  paragraph.textContent = text;
   document.body.append(paragraph);
   const range = document.createRange();
   range.selectNodeContents(paragraph);
@@ -311,6 +327,8 @@ beforeEach(() => {
   h.foliateHandlers = null;
   h.config.booknotes = [];
   h.isTextSelected.current = true;
+  h.lookupSettings.providerEnabled = {};
+  h.lookupSettings.saveLookupsToVocabulary = true;
   h.setSelection = null;
   h.viewSettings.enableAnnotationQuickActions = false;
   h.viewSettings.annotationQuickAction = '';
@@ -320,6 +338,37 @@ beforeEach(() => {
 });
 
 afterEach(cleanup);
+
+test.each([
+  [true, true, true],
+  [true, false, false],
+  [false, true, false],
+])('system dictionary saves lookups when enabled (%s) and launched (%s)', async (saveLookups, launched, saved) => {
+  h.lookupSettings.providerEnabled = { 'builtin:system': true };
+  h.lookupSettings.saveLookupsToVocabulary = saveLookups;
+  h.invokeSystemDictionary.mockResolvedValue(launched);
+  render(<Annotator bookKey='book-1' contentInsets={{ top: 0, right: 0, bottom: 0, left: 0 }} />);
+  await selectText('serendipity');
+
+  await act(async () => {
+    h.actions?.['onDictionarySelection']?.();
+  });
+
+  expect(h.invokeSystemDictionary.mock.calls[0]?.[0]).toBe('serendipity');
+  expect(screen.queryByTestId('dictionary-surface')).toBeNull();
+  if (saved) {
+    expect(h.recordLookup).toHaveBeenCalledWith({
+      word: 'serendipity',
+      lang: 'en',
+      occurrence: expect.objectContaining({
+        cfi: 'epubcfi(/6/2!/4/2)',
+        sentence: 'serendipity',
+      }),
+    });
+  } else {
+    expect(h.recordLookup).not.toHaveBeenCalled();
+  }
+});
 
 describe('a lookup surface survives the selection it is anchored to being republished', () => {
   test.each([
