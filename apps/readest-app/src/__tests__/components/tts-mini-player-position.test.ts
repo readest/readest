@@ -119,15 +119,32 @@ describe('getTTSMiniPlayerBottomOffset', () => {
   });
 });
 
-// Clearance is the band of book text the player is allowed to cover. Only the
-// persistent 'minimal' card earns one: the 'full' card is tied to the toolbar
-// and auto-hides with it (#5310), so reserving a band for it would permanently
-// steal a line of text for a card that is usually not on screen.
+// Persistent cards reserve a band of book text: the minimal card and a full
+// card opted into staying visible. Auto-hiding full cards still overlap the
+// text briefly instead of permanently stealing a line (#5310).
 describe('getTTSMiniPlayerClearance', () => {
   it('reserves offset + card height + safe area for the minimal player', () => {
     expect(getTTSMiniPlayerClearance(settings({ ttsPlayerStyle: 'minimal' }), 12)).toBe(
       DEFAULT_BOOK_LAYOUT.marginBottomPx + TTS_MINI_PLAYER_HEIGHT + 12,
     );
+  });
+
+  it('reserves space for a full player that is kept visible', () => {
+    expect(
+      getTTSMiniPlayerClearance(
+        settings({ ttsPlayerStyle: 'full', ttsKeepMiniPlayerVisible: true }),
+        12,
+      ),
+    ).toBe(DEFAULT_BOOK_LAYOUT.marginBottomPx + TTS_MINI_PLAYER_HEIGHT + 12);
+  });
+
+  it('reserves space for a pinned player with a legacy unset style and no footer', () => {
+    expect(
+      getTTSMiniPlayerClearance(
+        settings({ ttsPlayerStyle: undefined, ttsKeepMiniPlayerVisible: true, showFooter: false }),
+        0,
+      ),
+    ).toBe(16 + TTS_MINI_PLAYER_HEIGHT);
   });
 
   it('reserves nothing for the full player', () => {

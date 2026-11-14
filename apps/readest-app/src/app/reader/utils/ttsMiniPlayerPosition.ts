@@ -41,15 +41,17 @@ export const getTTSMiniPlayerBottomOffset = (
  * active, measured at the card's resting position (bottom bar dismissed).
  * FoliateViewer consumes it via applyMarginAndGap.
  *
- * Only the 'minimal' card earns one. The 'full' card follows the toolbar and
- * auto-hides with it (#5310), so a permanent reservation would cost a line of
- * text for a card that is off screen most of the session; it overlaps the text
- * during its brief visible window instead, exactly as the toolbars do.
+ * Persistent cards earn one: the 'minimal' card and a 'full' card that the
+ * user opted to keep visible. Otherwise the 'full' card auto-hides with the
+ * toolbar (#5310) and overlaps the text during its brief visible window
+ * instead, exactly as the toolbars do.
  */
 export const getTTSMiniPlayerClearance = (
   viewSettings: ViewSettings,
   safeAreaBottom: number,
 ): number => {
-  if (viewSettings.ttsPlayerStyle !== 'minimal') return 0;
+  if (viewSettings.ttsPlayerStyle !== 'minimal' && !viewSettings.ttsKeepMiniPlayerVisible) {
+    return 0;
+  }
   return getTTSMiniPlayerBottomOffset(viewSettings) + TTS_MINI_PLAYER_HEIGHT + safeAreaBottom;
 };

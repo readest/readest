@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 
 vi.mock('@/hooks/useTranslation', () => ({
   useTranslation: () => (key: string) => key,
@@ -9,10 +9,12 @@ vi.mock('@/store/themeStore', () => ({
   useThemeStore: () => ({ safeAreaInsets: { top: 0, right: 0, bottom: 0, left: 0 } }),
 }));
 
+const viewSettings = { isEink: false, rtl: false, ttsKeepMiniPlayerVisible: false };
+
 vi.mock('@/store/readerStore', () => ({
   useReaderStore: () => ({
     hoveredBookKey: '',
-    getViewSettings: () => ({ isEink: false, rtl: false }),
+    getViewSettings: () => viewSettings,
   }),
 }));
 
@@ -46,8 +48,21 @@ vi.mock('@/store/readerProgressStore', () => ({
 
 vi.mock('@/app/reader/components/tts/TTSMiniPlayer', () => ({
   __esModule: true,
-  default: ({ onExpand, buffering }: { onExpand: () => void; buffering: boolean }) => (
-    <div data-testid='mini-player' aria-busy={buffering} onClick={onExpand} />
+  default: ({
+    onExpand,
+    buffering,
+    visible,
+  }: {
+    onExpand: () => void;
+    buffering: boolean;
+    visible: boolean;
+  }) => (
+    <div
+      data-testid='mini-player'
+      aria-busy={buffering}
+      data-visible={String(visible)}
+      onClick={onExpand}
+    />
   ),
 }));
 
@@ -77,6 +92,7 @@ const gridInsets = { top: 0, right: 0, bottom: 0, left: 0 };
 
 describe('TTSControl', () => {
   beforeEach(() => {
+    viewSettings.ttsKeepMiniPlayerVisible = false;
     Object.assign(ttsState, {
       isPlaying: true,
       buffering: false,
@@ -111,12 +127,36 @@ describe('TTSControl', () => {
   afterEach(() => {
     cleanup();
     vi.clearAllMocks();
+    vi.useRealTimers();
   });
 
   test('mounts the mini player while a session is active', () => {
     render(<TTSControl bookKey='b1' gridInsets={gridInsets} />);
     expect(screen.getByTestId('mini-player')).toBeTruthy();
     expect(screen.queryByTestId('player-sheet')).toBeNull();
+  });
+
+  test.each([
+    true,
+    false,
+  ])('keeps the player visible with isPlaying=%s when opted in', (isPlaying) => {
+    vi.useFakeTimers();
+    viewSettings.ttsKeepMiniPlayerVisible = true;
+    ttsState['isPlaying'] = isPlaying;
+    const { rerender } = render(<TTSControl bookKey='b1' gridInsets={gridInsets} />);
+    act(() => vi.advanceTimersByTime(60_000));
+    expect(screen.getByTestId('mini-player').getAttribute('data-visible')).toBe('true');
+
+    ttsState['showIndicator'] = false;
+    rerender(<TTSControl bookKey='b1' gridInsets={gridInsets} />);
+    expect(screen.queryByTestId('mini-player')).toBeNull();
+  });
+
+  test('still hides the full player by default', () => {
+    vi.useFakeTimers();
+    render(<TTSControl bookKey='b1' gridInsets={gridInsets} />);
+    act(() => vi.advanceTimersByTime(5000));
+    expect(screen.getByTestId('mini-player').getAttribute('data-visible')).toBe('false');
   });
 
   test('renders nothing while no session is active', () => {

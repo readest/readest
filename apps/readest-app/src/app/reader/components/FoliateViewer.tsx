@@ -935,8 +935,8 @@ const FoliateViewer: React.FC<{
     // full-width blank bar that steals space from the book text.
     const showBottomFooter = footerReservesBand(viewSettings) && !viewSettings.vertical;
     const moreTopInset = showTopHeader ? Math.max(0, 16 - insets.top) : 0;
-    // Only the persistent 'minimal' card reserves a band; the 'full' one
-    // auto-hides with the toolbar and overlaps instead (#5310).
+    // Persistent mini players reserve a band; an auto-hiding full card
+    // overlaps with the toolbar instead (#5310).
     const miniPlayerClearance = viewState?.ttsEnabled
       ? getTTSMiniPlayerClearance(viewSettings, gridInsets.bottom * 0.33)
       : 0;
@@ -1193,8 +1193,9 @@ const FoliateViewer: React.FC<{
     viewSettings?.noContinuousScroll,
     viewState?.ttsEnabled,
     viewState?.drawingEnabled,
-    // Switching Player Style changes whether a band is reserved at all.
+    // Player style and visibility preference determine whether a band is reserved.
     viewSettings?.ttsPlayerStyle,
+    viewSettings?.ttsKeepMiniPlayerVisible,
     // footerReservesBand inputs: the band must collapse/return live when the
     // user flips these settings.
     viewSettings?.showStickyProgressBar,

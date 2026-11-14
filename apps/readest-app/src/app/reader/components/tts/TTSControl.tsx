@@ -51,6 +51,7 @@ const TTSControl: React.FC<TTSControlProps> = ({ bookKey, gridInsets }) => {
     playerStyle,
     miniPlayerMounted,
     buffering,
+    viewSettings?.ttsKeepMiniPlayerVisible ?? false,
   );
 
   useEffect(() => {

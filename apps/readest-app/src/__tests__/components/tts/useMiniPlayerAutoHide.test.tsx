@@ -42,6 +42,46 @@ describe('useMiniPlayerAutoHide', () => {
     expect(result.current).toBe(false);
   });
 
+  it('keeps the full player visible when the preference is enabled', () => {
+    const { result } = renderHook(() => useMiniPlayerAutoHide(BOOK, 'full', true, false, true));
+    act(() => vi.advanceTimersByTime(60_000));
+    expect(result.current).toBe(true);
+  });
+
+  it('re-shows a hidden player when the preference is enabled', () => {
+    let keepVisible = false;
+    const { result, rerender } = renderHook(() =>
+      useMiniPlayerAutoHide(BOOK, 'full', true, false, keepVisible),
+    );
+    act(() => vi.advanceTimersByTime(5000));
+    expect(result.current).toBe(false);
+
+    keepVisible = true;
+    rerender();
+    expect(result.current).toBe(true);
+    act(() => vi.advanceTimersByTime(60_000));
+    expect(result.current).toBe(true);
+  });
+
+  it('cancels an existing countdown and starts a fresh one when unpinned', () => {
+    let keepVisible = false;
+    const { result, rerender } = renderHook(() =>
+      useMiniPlayerAutoHide(BOOK, 'full', true, false, keepVisible),
+    );
+    act(() => vi.advanceTimersByTime(4000));
+    keepVisible = true;
+    rerender();
+    act(() => vi.advanceTimersByTime(60_000));
+    expect(result.current).toBe(true);
+
+    keepVisible = false;
+    rerender();
+    act(() => vi.advanceTimersByTime(4999));
+    expect(result.current).toBe(true);
+    act(() => vi.advanceTimersByTime(1));
+    expect(result.current).toBe(false);
+  });
+
   it('keeps the full player up while buffering, then hides 5s after audio starts', () => {
     // A cold GPU worker can take far longer than 5s for the first sentence: the
     // spinning play button must stay in sight until something is heard.

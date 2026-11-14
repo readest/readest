@@ -11,7 +11,8 @@ const BUFFERING_SHOW_DELAY_MS = 500;
  * Whether the TTS mini player should be on screen (#5310).
  *
  * The 'minimal' card is the eyes-off transport: it stays up for the whole
- * session. The 'full' card rides with the reader chrome instead -- visible
+ * session, as does the 'full' card when `keepVisible` is enabled. Otherwise
+ * the 'full' card rides with the reader chrome instead -- visible
  * while the toolbar is, then lingering 5s after it clears so a dismissing tap
  * doesn't yank it away mid-glance. That's what lets the reader text stop
  * reserving a band for it (see getTTSMiniPlayerClearance).
@@ -40,12 +41,13 @@ export const useMiniPlayerAutoHide = (
   playerStyle: TTSPlayerStyle,
   mounted: boolean,
   buffering = false,
+  keepVisible = false,
 ) => {
   const { hoveredBookKey } = useReaderStore();
   const [visible, setVisible] = useState(true);
 
   useEffect(() => {
-    if (!mounted || playerStyle === 'minimal' || hoveredBookKey === bookKey) {
+    if (!mounted || keepVisible || playerStyle === 'minimal' || hoveredBookKey === bookKey) {
       setVisible(true);
       return;
     }
@@ -55,7 +57,7 @@ export const useMiniPlayerAutoHide = (
     }
     const timeout = setTimeout(() => setVisible(false), LINGER_MS);
     return () => clearTimeout(timeout);
-  }, [mounted, playerStyle, hoveredBookKey, bookKey, buffering]);
+  }, [mounted, playerStyle, hoveredBookKey, bookKey, buffering, keepVisible]);
 
   return visible;
 };

@@ -532,6 +532,7 @@ export const DEFAULT_TTS_CONFIG: TTSConfig = {
   ttsHighlightGranularity: 'word',
   ttsMediaMetadata: 'sentence',
   ttsPlayerStyle: 'full',
+  ttsKeepMiniPlayerVisible: false,
   ttsSkipInlineAnnotations: false,
   ttsPauseAfterSentence: false,
 };
