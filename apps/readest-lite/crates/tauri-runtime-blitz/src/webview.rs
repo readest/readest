@@ -822,8 +822,13 @@ impl BlitzWebview {
         }
         // BLITZ_TAURI_TRACE_HEAP=1: the JS heap size too. Measuring it walks every JS object
         // (~20 ms on the host, more than a paint on a Kindle), so not on every frame by default.
+        // And the images: cairo's surfaces, of those the ones of images gone, decoded pixels.
         let mut heap = std::env::var_os("BLITZ_TAURI_TRACE_HEAP").map_or(String::new(), |_| {
-            format!(", \"js_heap_kb\": {}", doc.js_memory().0 / 1024)
+            let (img, gone, px) = self.caches.image_kb();
+            format!(
+                ", \"js_heap_kb\": {}, \"img_kb\": {img}, \"img_gone_kb\": {gone}, \"img_px_kb\": {px}",
+                doc.js_memory().0 / 1024
+            )
         });
         if std::env::var_os("BLITZ_TAURI_TRACE_LOOP").is_some() {
             heap += &format!(", \"cause\": \"{}\"", std::mem::take(&mut self.causes));

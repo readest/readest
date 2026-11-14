@@ -14,7 +14,7 @@ use cairo::{
 };
 use peniko::{
     BlendMode, Color, Compose, Extend, Fill, FontData, GradientKind, ImageAlphaType, ImageFormat,
-    ImageQuality, Mix, StyleRef,
+    ImageQuality, Mix, StyleRef, WeakBlob,
     kurbo::{Affine, Cap, Join, PathEl, Rect, Shape, Stroke},
 };
 
@@ -53,9 +53,20 @@ pub struct Caches {
     ft: *mut c_void,
     /// By font, index, synthetic bold and variation coordinates (trailing defaults dropped).
     fonts: HashMap<(u64, u32, bool, Vec<NormalizedCoord>), (cairo::FontFace, peniko::Blob<u8>)>,
-    images: HashMap<u64, ImageSurface>,
-    /// By image: its last shrunk copy (see [`Caches::shrunk`]), with the matrix it was made for.
-    shrunk: HashMap<u64, ([f64; 4], cairo::Filter, CExtend, ImageSurface)>,
+    /// By the id of the image's pixels.
+    images: HashMap<u64, Image>,
+}
+
+/// An image drawn before: its pixels (held by its document), as a cairo surface and as its last
+/// shrunk copy (see [`Caches::shrunk`]), with the matrix that copy was made for.
+struct Image {
+    pixels: WeakBlob<u8>,
+    full: Option<ImageSurface>,
+    shrunk: Option<([f64; 4], cairo::Filter, CExtend, ImageSurface)>,
+}
+
+fn surface_kb(s: &ImageSurface) -> usize {
+    s.stride() as usize * s.height() as usize / 1024
 }
 
 impl Default for Caches {
@@ -73,15 +84,23 @@ impl Caches {
             ft,
             fonts: HashMap::new(),
             images: HashMap::new(),
-            shrunk: HashMap::new(),
         }
     }
 
-    /// A new chapter document: its images are new blobs, so the old ones go.
-    pub fn new_chapter(&mut self) {
-        self.images.clear();
-        self.shrunk.clear();
-        eprintln!("cairo caches: {} font faces", self.fonts.len());
+    /// Kilobytes of image surfaces held, of those the ones whose image is gone, and the decoded
+    /// pixels of the images still alive (their documents' own copies).
+    pub fn image_kb(&self) -> (usize, usize, usize) {
+        let (mut held, mut gone, mut pixels) = (0, 0, 0);
+        for i in self.images.values() {
+            let kb = i.full.as_ref().map_or(0, surface_kb)
+                + i.shrunk.as_ref().map_or(0, |(.., s)| surface_kb(s));
+            held += kb;
+            match i.pixels.upgrade() {
+                Some(p) => pixels += p.len() / 1024,
+                None => gone += kb,
+            }
+        }
+        (held, gone, pixels)
     }
 
     /// A face of `font` at variation coordinates `coords` (normalized, after `avar`: as shaping
@@ -129,7 +148,11 @@ impl Caches {
     }
 
     fn image(&mut self, img: &peniko::ImageData) -> Option<ImageSurface> {
-        if let Some(s) = self.images.get(&img.data.id()) {
+        if let Some(s) = self
+            .images
+            .get(&img.data.id())
+            .and_then(|i| i.full.as_ref())
+        {
             return Some(s.clone());
         }
         let (w, h) = (img.width as i32, img.height as i32);
@@ -160,19 +183,24 @@ impl Caches {
             }
         }
         s.mark_dirty();
-        self.images.insert(img.data.id(), s.clone());
+        self.images
+            .entry(img.data.id())
+            .or_insert_with(|| Image {
+                pixels: img.data.downgrade(),
+                full: None,
+                shrunk: None,
+            })
+            .full = Some(s.clone());
         Some(s)
     }
 
-    /// Image `id` (`src`) as `m` (image to device) draws it with `filter` and `extend`, rendered
-    /// into device pixels from the whole pixel `(x, y)` returned with it: the same pixels, made
-    /// once. Only for a shrink along the axes, which cairo's Good and Best filters do by
-    /// convolution on every frame (~600 ms for a book cover on a Kindle); the copy is then
-    /// composited 1:1.
+    /// `img` as `m` (image to device) draws it with `filter` and `extend`, rendered into device
+    /// pixels from the whole pixel `(x, y)` returned with it: the same pixels, made once. Only for
+    /// a shrink along the axes, which cairo's Good and Best filters do by convolution on every
+    /// frame (~600 ms for a book cover on a Kindle); the copy is then composited 1:1.
     fn shrunk(
         &mut self,
-        id: u64,
-        src: &ImageSurface,
+        img: &peniko::ImageData,
         m: Matrix,
         filter: cairo::Filter,
         extend: CExtend,
@@ -188,11 +216,13 @@ impl Caches {
         }
         let (x, y) = (m.x0().floor(), m.y0().floor());
         let key = [sx, sy, m.x0() - x, m.y0() - y];
-        if let Some((k, f, e, s)) = self.shrunk.get(&id)
+        let id = img.data.id();
+        if let Some((k, f, e, s)) = self.images.get(&id).and_then(|i| i.shrunk.as_ref())
             && (*k, *f, *e) == (key, filter, extend)
         {
             return Some((s.clone(), x, y));
         }
+        let src = self.image(img)?;
         let w = (key[2] + f64::from(src.width()) * sx).ceil().max(1.0) as i32;
         let h = (key[3] + f64::from(src.height()) * sy).ceil().max(1.0) as i32;
         let out = ImageSurface::create(Format::ARgb32, w, h).ok()?;
@@ -200,7 +230,7 @@ impl Caches {
             let cr = Context::new(&out).ok()?;
             cr.translate(key[2], key[3]);
             cr.scale(sx, sy);
-            let p = cairo::SurfacePattern::create(src);
+            let p = cairo::SurfacePattern::create(&src);
             p.set_filter(filter);
             p.set_extend(extend);
             cr.set_source(&p).ok()?;
@@ -208,7 +238,14 @@ impl Caches {
             cr.paint().ok()?;
         }
         out.flush();
-        self.shrunk.insert(id, (key, filter, extend, out.clone()));
+        let i = self.images.get_mut(&id)?;
+        // The copy stands in for the image's surface, as large as its pixels (14 MB for a
+        // 1413x2475 title page). An image shrunk again (moved by a fraction of a pixel, resized)
+        // keeps it, so as not to convert it each time.
+        if i.shrunk.is_none() {
+            i.full = None;
+        }
+        i.shrunk = Some((key, filter, extend, out.clone()));
         Some((out, x, y))
     }
 }
@@ -222,6 +259,8 @@ pub struct CairoScene<'a> {
 
 impl<'a> CairoScene<'a> {
     pub fn new(cr: Context, caches: &'a mut Caches) -> Self {
+        // An image's pixels go with its document, and its surfaces with them.
+        caches.images.retain(|_, i| i.pixels.upgrade().is_some());
         CairoScene {
             cr,
             caches,
@@ -348,9 +387,6 @@ impl<'a> CairoScene<'a> {
                 true
             }
             Paint::Image(img) => {
-                let Some(surface) = self.caches.image(img.image) else {
-                    return false;
-                };
                 let filter = match img.sampler.quality {
                     ImageQuality::Low => cairo::Filter::Fast,
                     ImageQuality::Medium => cairo::Filter::Good,
@@ -361,10 +397,7 @@ impl<'a> CairoScene<'a> {
                     brush_transform.map_or(ctm, |t| Matrix::multiply(&Self::matrix(t), &ctm));
                 let extend = Self::extend(img.sampler.x_extend);
                 let shrunk = own_rect
-                    .then(|| {
-                        let id = img.image.data.id();
-                        self.caches.shrunk(id, &surface, to_device, filter, extend)
-                    })
+                    .then(|| self.caches.shrunk(img.image, to_device, filter, extend))
                     .flatten();
                 let p = if let Some((copy, x, y)) = shrunk {
                     // User space to device pixels, then to the copy's.
@@ -377,6 +410,9 @@ impl<'a> CairoScene<'a> {
                     ));
                     p
                 } else {
+                    let Some(surface) = self.caches.image(img.image) else {
+                        return false;
+                    };
                     let p = cairo::SurfacePattern::create(&surface);
                     p.set_extend(extend);
                     p.set_filter(filter);
