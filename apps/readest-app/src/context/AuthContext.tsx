@@ -9,7 +9,7 @@ import {
   ReactNode,
   useEffect,
 } from 'react';
-import { User } from '@supabase/supabase-js';
+import { isAuthRetryableFetchError, User } from '@supabase/supabase-js';
 import { supabase } from '@/utils/supabase';
 import posthog from 'posthog-js';
 
@@ -63,12 +63,42 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       try {
         await supabase.auth.refreshSession();
       } catch {
-        syncSession(null);
+        // A failed startup refresh must not sign the user out: the stored
+        // access token may still be valid and the failure may be transient
+        // (offline at launch, proxy hiccup). Keep the stored session; the
+        // next refresh will retry.
       }
     };
 
-    const { data: subscription } = supabase.auth.onAuthStateChange((_, session) => {
-      syncSession(session);
+    const { data: subscription } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (session) {
+        syncSession(session);
+        return;
+      }
+      if (event === 'INITIAL_SESSION') {
+        // Supabase drops its own stored session at client init when the
+        // startup refresh fails (e.g. a transient network error on
+        // WebView2 at launch) and then reports a null INITIAL_SESSION.
+        // The app's stored refresh token may still be valid, so try to
+        // re-establish the session from it before signing the user out.
+        const refreshToken = localStorage.getItem('refresh_token');
+        if (refreshToken) {
+          try {
+            const { error } = await supabase.auth.refreshSession({ refresh_token: refreshToken });
+            if (!error) return;
+            if (isAuthRetryableFetchError(error)) {
+              // Transient failure (offline at launch, proxy hiccup): keep
+              // the stored session so the user stays signed in on the
+              // existing access token; the next refresh will retry.
+              return;
+            }
+          } catch {
+            // A thrown refresh must not sign the user out either.
+            return;
+          }
+        }
+      }
+      syncSession(null);
     });
 
     refreshSession();
