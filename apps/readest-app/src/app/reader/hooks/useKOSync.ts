@@ -136,6 +136,13 @@ export const useKOSync = (bookKey: string, provider: KosyncProgressProvider = ko
   const checksumMethod = provider.selectConfig(settings)?.checksumMethod;
   const checksumGeneration = useRef(0);
   const pendingPut = useRef<Promise<unknown>>(Promise.resolve());
+  const pendingResumePush = useRef<Promise<unknown>>(Promise.resolve());
+  const lastSentPosition = useRef<{
+    client: ProgressSyncClient;
+    generation: number;
+    progress: string;
+    percentage: number;
+  } | null>(null);
   const documentDigest = kosyncClient && book ? kosyncClient.getDocumentDigest(book) : null;
   const previousDocumentDigest = useRef(documentDigest);
 
@@ -432,29 +439,40 @@ export const useKOSync = (bookKey: string, provider: KosyncProgressProvider = ko
         const generation = checksumGeneration.current;
         const currentBook = getBookData(bookKey)?.book;
         if (!currentBook || kosyncClient.getDocumentDigest(currentBook) !== documentDigest) return;
-        const progress = await generateKOProgress();
-        if (generation !== checksumGeneration.current) return;
-        if (!progress || !progress.koProgress) return;
-
-        const put = pendingPut.current.then(async () => {
-          if (generation !== checksumGeneration.current) return;
-          console.log('[KOSync] Pushing progress');
-          const sent = await kosyncClient.updateProgress(
-            currentBook,
-            progress.koProgress,
-            progress.percentage,
-          );
-          recordFlow({
-            connector: provider.name,
-            direction: 'push',
-            kind: 'progress',
-            bookTitle: currentBook.title,
-            count: sent ? 1 : 0,
-            error: kosyncClient.lastError ?? undefined,
+        const push = async () => {
+          const progress = await generateKOProgress();
+          if (generation !== checksumGeneration.current || !progress?.koProgress) return;
+          const put = pendingPut.current.then(async () => {
+            if (generation !== checksumGeneration.current) return;
+            console.log('[KOSync] Pushing progress');
+            const sent = await kosyncClient.updateProgress(
+              currentBook,
+              progress.koProgress,
+              progress.percentage,
+            );
+            if (sent && generation === checksumGeneration.current) {
+              lastSentPosition.current = {
+                client: kosyncClient,
+                generation,
+                progress: progress.koProgress,
+                percentage: progress.percentage,
+              };
+            }
+            recordFlow({
+              connector: provider.name,
+              direction: 'push',
+              kind: 'progress',
+              bookTitle: currentBook.title,
+              count: sent ? 1 : 0,
+              error: kosyncClient.lastError ?? undefined,
+            });
           });
-        });
-        pendingPut.current = put.catch(() => undefined);
-        await put;
+          pendingPut.current = put.catch(() => undefined);
+          await put;
+        };
+        const task = push();
+        pendingResumePush.current = task.catch(() => undefined);
+        await task;
       }, 5000),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [bookKey, appService, kosyncClient, documentDigest],
@@ -482,6 +500,7 @@ export const useKOSync = (bookKey: string, provider: KosyncProgressProvider = ko
 
       setSyncState('checking');
       const locationAtPull = getProgress(bookKey)?.location;
+      if (onResume) await pendingResumePush.current;
       await pendingPut.current;
       if (generation !== checksumGeneration.current) return;
       const remoteProgress = await kosyncClient.getProgress(book);
@@ -530,10 +549,17 @@ export const useKOSync = (bookKey: string, provider: KosyncProgressProvider = ko
           resolved.percentage === remoteProgress.percentage &&
           resolved.timestamp === remoteProgress.timestamp &&
           resolved.device_id === remoteProgress.device_id;
-        // The server can echo a position this reader just sent on backgrounding.
-        // Local progress may differ by the time the reader is visible again.
+        // Parallel views share a device ID. Only ignore an echo of a position
+        // this view successfully sent to the current sync destination.
+        const lastSent = lastSentPosition.current;
         const isOwnResumePosition =
-          onResume && !!remoteProgress.device_id && remoteProgress.device_id === config.deviceId;
+          onResume &&
+          !!remoteProgress.device_id &&
+          remoteProgress.device_id === config.deviceId &&
+          lastSent?.client === kosyncClient &&
+          lastSent.generation === generation &&
+          lastSent.progress === remoteProgress.progress &&
+          lastSent.percentage === remoteProgress.percentage;
         if (isAlreadyResolved || isOwnResumePosition) {
           setSyncState('synced');
           return;
@@ -542,13 +568,14 @@ export const useKOSync = (bookKey: string, provider: KosyncProgressProvider = ko
         // resolve; otherwise return to 'synced' so auto-push keeps working.
         const hasConflict = await promptedSync(book, bookDoc, progress, remoteProgress, generation);
         if (generation !== checksumGeneration.current) return;
+        if (hasConflict) pushProgress.cancel();
         setSyncState(hasConflict ? 'conflict' : 'synced');
       } else {
         setSyncState('synced');
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [bookKey, appService, kosyncClient, settings, progress],
+    [bookKey, appService, kosyncClient, settings, progress, pushProgress],
   );
 
   // use a ref to track the current push/pull functions so they can change without triggering effects
@@ -628,6 +655,7 @@ export const useKOSync = (bookKey: string, provider: KosyncProgressProvider = ko
   }, [progress, syncState, settings, bookKey]);
 
   useWindowActiveChanged((isActive) => {
+    if (syncState === 'conflict') return;
     const { pushProgress, pullProgress } = syncRefs.current;
 
     if (isActive) {

@@ -242,7 +242,7 @@ beforeEach(() => {
   localStorage.clear();
   h.getProgressMock.mockReset();
   h.getProgressMock.mockResolvedValue(h.remote);
-  h.updateProgressMock.mockClear();
+  h.updateProgressMock.mockReset();
   h.goTo.mockClear();
   h.goToFraction.mockClear();
   h.view.select.mockClear();
@@ -663,7 +663,7 @@ describe('useKOSync — no phantom re-prompt after resolving (#5527)', () => {
     expect(result.current.conflictDetails).toBeNull();
   });
 
-  test('ignores a changed server position from this device when the reader becomes visible again', async () => {
+  test('ignores only an acknowledged push by this reader on resume', async () => {
     const { result } = renderHook(() => useKOSync('h1-view1'));
     await settle();
     expect(result.current.syncState).toBe('conflict');
@@ -675,13 +675,21 @@ describe('useKOSync — no phantom re-prompt after resolving (#5527)', () => {
 
     const echo = {
       ...h.remote,
-      percentage: 0.12,
+      timestamp: Number(h.remote['timestamp']) + 1,
       device: 'Readest (Android)',
       device_id: 'this-device',
     };
-    h.getProgressMock.mockResolvedValue(echo);
+    h.updateProgressMock.mockImplementation(async (_book, progress, percentage) => {
+      h.getProgressMock.mockResolvedValue({ ...echo, progress, percentage });
+      return true;
+    });
+    h.localProgress = { ...h.localProgress, pageinfo: { current: 11, total: 100 } };
     await act(async () => {
       h.activeCallback?.(false);
+      await flushMicrotasks();
+    });
+    h.localProgress = { ...h.localProgress, pageinfo: { current: 13, total: 100 } };
+    await act(async () => {
       h.activeCallback?.(true);
       await flushMicrotasks();
     });
@@ -692,13 +700,50 @@ describe('useKOSync — no phantom re-prompt after resolving (#5527)', () => {
 
     h.getProgressMock.mockResolvedValue({ ...echo, device_id: 'other-device' });
     await act(async () => {
-      h.activeCallback?.(false);
       h.activeCallback?.(true);
       await flushMicrotasks();
     });
 
     expect(result.current.syncState).toBe('conflict');
     expect(result.current.conflictDetails?.remote.device_id).toBe('other-device');
+  });
+
+  test('a same-device position this view did not send still prompts on resume', async () => {
+    h.getProgressMock.mockResolvedValue(null);
+    h.updateProgressMock.mockResolvedValue(true);
+    const { result } = renderHook(() => useKOSync('h1-view1'));
+    await settle();
+    await advance(KOSYNC_PUSH_DEBOUNCE_MS);
+
+    const remote = { ...h.remote, device_id: 'this-device', percentage: 0.6 };
+    h.getProgressMock.mockResolvedValue(remote);
+    await act(async () => {
+      h.activeCallback?.(true);
+      await flushMicrotasks();
+    });
+
+    expect(result.current.syncState).toBe('conflict');
+    expect(result.current.conflictDetails?.remote.percentage).toBe(0.6);
+  });
+
+  test('backgrounding and resuming preserves an unresolved same-device conflict', async () => {
+    h.getProgressMock.mockResolvedValue({ ...h.remote, device_id: 'this-device', percentage: 0.6 });
+    h.updateProgressMock.mockResolvedValue(false);
+    const { result } = renderHook(() => useKOSync('h1-view1'));
+    await settle();
+    expect(result.current.syncState).toBe('conflict');
+    const conflict = result.current.conflictDetails;
+
+    await act(async () => {
+      h.activeCallback?.(false);
+      h.activeCallback?.(true);
+      await flushMicrotasks();
+    });
+    await advance(KOSYNC_PUSH_DEBOUNCE_MS);
+
+    expect(result.current.syncState).toBe('conflict');
+    expect(result.current.conflictDetails).toBe(conflict);
+    expect(h.updateProgressMock).not.toHaveBeenCalled();
   });
 
   test('a NEW remote report after resolution still prompts', async () => {
