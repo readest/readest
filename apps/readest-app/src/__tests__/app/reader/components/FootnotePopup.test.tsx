@@ -15,6 +15,12 @@ import type { BookDoc } from '@/libs/document';
 import { eventDispatcher } from '@/utils/event';
 
 const BOOK_KEY = 'bookid-0';
+
+type VocabularyMarks = { learning: Map<string, string>; mastered: Set<string> };
+type VocabularyMock = {
+  marks: VocabularyMarks;
+  getLearningAndMastered: () => VocabularyMarks;
+};
 const HREF = 'text/part0012.xhtml#appendix-c';
 
 const hoisted = vi.hoisted(() => ({
@@ -24,6 +30,9 @@ const hoisted = vi.hoisted(() => ({
   showTransientHighlight: vi.fn(),
   isLinkTargetVisible: vi.fn(),
   applyLinkHitArea: vi.fn(),
+  wordLensEnabled: false,
+  loadGlossIndex: vi.fn().mockResolvedValue(null),
+  vocabulary: { learning: new Map([['spice', 'seasoning']]), mastered: new Set<string>() },
 }));
 
 vi.mock('foliate-js/footnotes.js', () => {
@@ -55,6 +64,19 @@ vi.mock('@/context/EnvContext', () => ({
   useEnv: () => ({ appService: { isMobile: false } }),
 }));
 
+vi.mock('@/services/wordlens/glossPacks', () => ({
+  loadGlossIndex: hoisted.loadGlossIndex,
+}));
+
+vi.mock('@/store/vocabularyStore', async () => {
+  const { create } = await import('zustand');
+  const useVocabularyStore = create<VocabularyMock>()((_set, get) => ({
+    marks: hoisted.vocabulary,
+    getLearningAndMastered: () => get().marks,
+  }));
+  return { useVocabularyStore };
+});
+
 const bookDataState = {
   booksData: { bookid: { config: { booknotes: [] } } },
   getBookData: () => ({ book: { primaryLanguage: 'en' } }),
@@ -77,6 +99,7 @@ vi.mock('@/store/readerStore', () => ({
       defaultFontSize: 22,
       lineHeight: 1.8,
       fontWeight: 300,
+      wordLensEnabled: hoisted.wordLensEnabled,
     }),
   }),
 }));
@@ -244,6 +267,73 @@ describe('FootnotePopup link hit area', () => {
     });
 
     expect(hoisted.applyLinkHitArea).toHaveBeenCalledWith(doc);
+  });
+});
+
+describe('FootnotePopup Word Lens hints', () => {
+  beforeEach(() => {
+    document.body.replaceChildren();
+    hoisted.handlers.length = 0;
+    hoisted.onLinkClick.current = null;
+    hoisted.wordLensEnabled = true;
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        observe() {}
+        disconnect() {}
+      },
+    );
+  });
+
+  const setVocabulary = async (marks: VocabularyMarks) => {
+    const { useVocabularyStore } = await import('@/store/vocabularyStore');
+    (useVocabularyStore as unknown as { setState: (s: Partial<VocabularyMock>) => void }).setState({
+      marks,
+    });
+  };
+
+  afterEach(async () => {
+    hoisted.wordLensEnabled = false;
+    vi.unstubAllGlobals();
+    await setVocabulary(hoisted.vocabulary);
+  });
+
+  const loadPopupDoc = async (view: HTMLElement, html: string) => {
+    const doc = document.implementation.createHTMLDocument();
+    doc.body.innerHTML = html;
+    Object.assign((view as unknown as { renderer: object }).renderer, {
+      getContents: () => [{ doc, index: 3 }],
+    });
+    await act(async () => {
+      view.dispatchEvent(new CustomEvent('load', { detail: { doc, index: 3 } }));
+    });
+    return doc;
+  };
+
+  it('renders existing Word Lens hints in the active footnote without downloading a pack', async () => {
+    await renderPopup();
+    const view = await openFootnotePopup();
+    const doc = await loadPopupDoc(view, '<p>Add some spice.</p>');
+    expect(doc.querySelector('.wl-gloss rt')?.textContent).toBe('seasoning');
+    expect(hoisted.loadGlossIndex).toHaveBeenCalledWith(
+      expect.anything(),
+      'en',
+      expect.any(String),
+      expect.objectContaining({ allowDownload: false }),
+    );
+  });
+
+  it('shows a hint saved while the footnote stays open', async () => {
+    await renderPopup();
+    const view = await openFootnotePopup();
+    const doc = await loadPopupDoc(view, '<p>Worth more than gold.</p>');
+    expect(doc.querySelector('.wl-gloss')).toBeNull();
+
+    await act(async () => {
+      await setVocabulary({ learning: new Map([['gold', '黄金']]), mastered: new Set<string>() });
+    });
+
+    expect(doc.querySelector('.wl-gloss rt')?.textContent).toBe('黄金');
   });
 });
 

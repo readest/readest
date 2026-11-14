@@ -1,5 +1,6 @@
 // @vitest-environment happy-dom
 import { bookDataStoreHooks } from '@/__tests__/helpers/book-data-store-mock';
+import { Profiler } from 'react';
 import { act, cleanup, render } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -47,5 +48,34 @@ describe('PageJumpInput in a hidden footer', () => {
 
     act(() => setBookProgress('book1', at(10)));
     expect(label()).toBe('11 / 251');
+  });
+
+  it('follows a page turn in the commit that writes it', () => {
+    // A second commit per turn (the label's last valid page saved from an
+    // effect) walks the whole tree from the root again: on the Kindle, tens of
+    // milliseconds a turn.
+    act(() => setBookProgress('book1', at(9)));
+    const onRender = vi.fn();
+    render(
+      <Profiler id='label' onRender={onRender}>
+        <PageJumpInput bookKey='book1' />
+      </Profiler>,
+    );
+    onRender.mockClear();
+
+    act(() => setBookProgress('book1', at(10)));
+
+    expect(onRender).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps the last valid page while a relocation reports none (#6646)', () => {
+    act(() => setBookProgress('book1', at(9)));
+    const { queryByRole } = render(<PageJumpInput bookKey='book1' />);
+
+    act(() => setBookProgress('book1', at(-1)));
+
+    expect((queryByRole('textbox', { name: 'Go to Page' }) as HTMLInputElement).value).toBe(
+      '10 / 251',
+    );
   });
 });

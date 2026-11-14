@@ -534,6 +534,13 @@ const getPageLayoutStyles = (
     -webkit-touch-callout: none;
     -webkit-user-select: text;
   }
+  /* EBPAJ matter pages (title, credits, notices) put a vertical full-height box
+     in a horizontal root. Orthogonal to the root, its 100% is the whole
+     viewport, so end-aligned credits fall past the bottom margin (#7372).
+     Size it to the paginator's content box, which is right in any writing mode. */
+  body.paginated-mode > .main.vrtl.height-100per {
+    height: calc(var(--available-height) * 1px) !important;
+  }
   body {
     overflow: unset;
     zoom: ${zoomLevel};

@@ -2,6 +2,7 @@ import type { AppService } from '@/types/system';
 import type { DatabaseService, DatabaseRow } from '@/types/database';
 import { DEFAULT_STATS_TRACKING_CONFIG } from '@/types/statistics';
 import type { PageStatEvent, StatBook } from '@/types/statistics';
+import type { BookQuarterHourDuration } from './readingStats';
 
 interface BookRow extends DatabaseRow {
   id: number;
@@ -207,6 +208,21 @@ export class StatisticsDb {
     return this.db.select<{ quarter: number; seconds: number }>(
       `SELECT start_time / 900 AS quarter, SUM(duration) AS seconds
        FROM page_stat_data GROUP BY quarter ORDER BY quarter`,
+    );
+  }
+
+  /** Bounded month query shared by native Turso and browser WASM databases. */
+  async getBookQuarterHourDurations(
+    startTime: number,
+    endTime: number,
+  ): Promise<BookQuarterHourDuration[]> {
+    return this.db.select<BookQuarterHourDuration>(
+      `SELECT b.md5 AS bookMd5, b.title, b.authors,
+              p.start_time / 900 AS quarter, SUM(p.duration) AS seconds
+       FROM page_stat_data p JOIN book b ON b.id = p.id_book
+       WHERE p.start_time >= ? AND p.start_time < ? AND p.duration > 0
+       GROUP BY b.md5, b.title, b.authors, quarter ORDER BY quarter, b.md5`,
+      [startTime, endTime],
     );
   }
 

@@ -2972,5 +2972,13 @@
   "Books uploaded": "Вивантажені книги",
   "Reset Counts": "Скинути лічильники",
   "Reset the counts and sync history on this device?": "Скинути лічильники та історію синхронізації на цьому пристрої?",
-  "Folder not available": "Папка недоступна"
+  "Folder not available": "Папка недоступна",
+  "Words per Flash": "Слів за показ",
+  "Warm-up": "Розгін",
+  "Long Word Delay": "Затримка на довгих словах",
+  "Reading Calendar": "Календар читання",
+  "Previous Month": "Попередній місяць",
+  "Next Month": "Наступний місяць",
+  "No reading activity on this day": "Цього дня немає записів про читання",
+  "See which books you read each day and for how long": "Перегляньте, які книги ви читали щодня та скільки часу"
 }

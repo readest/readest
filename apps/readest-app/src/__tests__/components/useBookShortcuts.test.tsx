@@ -39,6 +39,7 @@ const currentBookData = {
 };
 
 const currentViewSettings = {
+  scrolled: false,
   defaultFontSize: 16,
   zoomLevel: 100,
   lineHeight: 1.5,
@@ -99,6 +100,10 @@ vi.mock('@/store/settingsStore', () => ({
 }));
 
 const mockSaveViewSettings = vi.fn();
+const mockApplyPageTurnAttributes = vi.fn();
+vi.mock('@/app/reader/hooks/useCapturedTurn', () => ({
+  applyPageTurnAttributes: (...args: unknown[]) => mockApplyPageTurnAttributes(...args),
+}));
 vi.mock('@/helpers/settings', () => ({
   saveViewSettings: (...args: unknown[]) => mockSaveViewSettings(...args),
 }));
@@ -183,6 +188,7 @@ describe('useBookShortcuts', () => {
     vi.clearAllMocks();
     shortcutState.actions = null;
     currentViewSettings.readingRulerEnabled = true;
+    currentViewSettings.scrolled = false;
     currentViewSettings.writingMode = 'horizontal-tb';
     currentViewSettings.vertical = false;
     currentViewSettings.rtl = false;
@@ -201,6 +207,23 @@ describe('useBookShortcuts', () => {
 
   afterEach(() => {
     cleanup();
+  });
+
+  it.each([
+    false,
+    true,
+  ])('keeps scroll-mode shortcut gestures in step for fixed layout=%s', (fixed) => {
+    currentBookData.isFixedLayout = fixed;
+    render(<Harness />);
+    shortcutState.actions?.['onToggleScrollMode']?.();
+    expect(currentViewSettings.scrolled).toBe(true);
+    expect(mockView.renderer.setAttribute).toHaveBeenCalledWith('flow', 'scrolled');
+    expect(mockApplyPageTurnAttributes).toHaveBeenCalledWith(mockView, currentViewSettings, fixed);
+    mockApplyPageTurnAttributes.mockClear();
+    shortcutState.actions?.['onToggleScrollMode']?.();
+    expect(currentViewSettings.scrolled).toBe(false);
+    expect(mockView.renderer.setAttribute).toHaveBeenCalledWith('flow', 'paginated');
+    expect(mockApplyPageTurnAttributes).toHaveBeenCalledWith(mockView, currentViewSettings, fixed);
   });
 
   it('routes page-turn shortcuts to reading ruler movement when enabled', () => {

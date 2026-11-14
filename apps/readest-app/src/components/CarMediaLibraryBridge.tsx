@@ -90,7 +90,7 @@ export const getCarMediaPlaybackSourceKey = (
   return JSON.stringify(sourceKeys);
 };
 
-const CarMediaLibraryBridge = () => {
+const CarMediaLibraryPublisher = () => {
   const library = useLibraryStore((state) => state.library);
   const libraryLoaded = useLibraryStore((state) => state.libraryLoaded);
   const coverThumbnails = useLibraryStore((state) => state.coverThumbnails);
@@ -253,5 +253,12 @@ const CarMediaLibraryBridge = () => {
 
   return null;
 };
+
+// Only Android Auto and the iOS car UI read the published library; elsewhere every effect above
+// returns early, yet each library write (a page turn's progress among them) re-rendered it.
+const CarMediaLibraryBridge = () =>
+  isTauriAppPlatform() && ['android', 'ios'].includes(getOSPlatform()) ? (
+    <CarMediaLibraryPublisher />
+  ) : null;
 
 export default CarMediaLibraryBridge;
