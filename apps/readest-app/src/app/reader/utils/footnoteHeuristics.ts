@@ -41,6 +41,52 @@ export const shouldCheckAsFootnote = (anchor: HTMLAnchorElement): boolean => {
   return true;
 };
 
+// Whether an element is set as a superscript, mirroring foliate-js
+// `isSuper` (footnotes.js): a `<sup>` element, or a computed vertical-align
+// of super/top/text-top/a length (e.g. `super`, `0.5em`).
+const isSuperscriptElement = (el: Element | null | undefined): boolean => {
+  if (!el) return false;
+  if (el.matches('sup')) return true;
+  const view = el.ownerDocument?.defaultView;
+  const verticalAlign = view?.getComputedStyle(el)?.verticalAlign ?? '';
+  return (
+    verticalAlign === 'super' ||
+    verticalAlign === 'top' ||
+    verticalAlign === 'text-top' ||
+    /^\d/.test(verticalAlign)
+  );
+};
+
+const getTypes = (el: Element): Set<string> =>
+  new Set([
+    ...(el.getAttributeNS('http://www.idpf.org/2007/ops', 'type')?.split(' ') ?? []),
+    ...(el.getAttribute('epub:type')?.split(' ') ?? []),
+  ]);
+
+const getRoles = (el: Element): Set<string> => new Set(el.getAttribute('role')?.split(' '));
+
+// Whether foliate-js already recognises this link as a footnote reference by
+// its superscript marker shape (`isFootnoteReference` / `maybe()` in
+// foliate-js footnotes.js): the anchor itself, its single child, or its
+// parent is set as a superscript, and it is not a note backlink.
+//
+// A link like that needs no strict `check` validation: the marker shape is
+// independent confirmation that it is a footnote reference, while `check`
+// makes foliate reject any extracted note body with more than three element
+// children — a false positive for a richly formatted note (backlink +
+// marker + emphasis runs, #7537), which then falls back to jumping the main
+// view to the note instead of showing the popup.
+export const isSuperscriptFootnoteMarker = (anchor: HTMLAnchorElement): boolean => {
+  const types = getTypes(anchor);
+  const roles = getRoles(anchor);
+  if (types.has('backlink') || roles.has('doc-backlink')) return false;
+  return (
+    isSuperscriptElement(anchor) ||
+    (anchor.children.length === 1 && isSuperscriptElement(anchor.children[0] as Element)) ||
+    isSuperscriptElement(anchor.parentElement)
+  );
+};
+
 // The reader hides inline footnote bodies in `getLayoutStyles`
 // (`.duokan-footnote-content`, `.epubtype-footnote`, `aside[epub|type~=note]`
 // and friends), so a link pointing at one leads to a spot the reader cannot

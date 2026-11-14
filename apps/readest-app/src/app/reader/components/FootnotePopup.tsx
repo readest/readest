@@ -31,7 +31,7 @@ import { FootnoteHandler } from 'foliate-js/footnotes.js';
 import { mountAdditionalFonts, mountCustomFont } from '@/styles/fonts';
 import { eventDispatcher } from '@/utils/event';
 import { getCfiSpinePrefix } from '@/utils/cfi';
-import { isLinkTargetVisible, shouldCheckAsFootnote } from '../utils/footnoteHeuristics';
+import { isLinkTargetVisible, isSuperscriptFootnoteMarker, shouldCheckAsFootnote } from '../utils/footnoteHeuristics';
 import { showTransientHighlight } from '../utils/transientHighlight';
 import { drawAnnotationOverlay } from '../utils/annotatorUtil';
 import { refreshSectionGlosses } from '../utils/wordlensSection';
@@ -646,7 +646,13 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
     if (footnoteClasses.some((cls) => anchor.classList.contains(cls))) {
       detail['follow'] = true;
     }
-    if (shouldCheckAsFootnote(anchor)) {
+    // A superscript marker already confirms the reference (foliate's own
+    // `maybe()`), so asking foliate to strictly validate it would reject a
+    // correctly extracted note whose body is richly formatted (#7537): the
+    // strict check rejects any note body with more than three element
+    // children, which backlink + marker + emphasis runs already exceed.
+    // Only a bare numeric marker, detected by text alone, earns the check.
+    if (shouldCheckAsFootnote(anchor) && !isSuperscriptFootnoteMarker(anchor)) {
       detail['check'] = true;
     }
     historyRef.current = { items: [detail], index: 0 };
