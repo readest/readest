@@ -1,5 +1,6 @@
 package com.readest.native_tts
 
+import java.io.File
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
@@ -10,6 +11,25 @@ import org.junit.rules.TemporaryFolder
 class MediaArtworkFilesTest {
     @get:Rule
     val temporaryFolder = TemporaryFolder()
+
+    @Test
+    fun startupPrunesOnlyAbandonedPlaybackArtwork() {
+        val cacheDir = temporaryFolder.newFolder("cache")
+        val abandoned = MediaArtworkFiles().create(cacheDir)
+        val legacyCover = File(cacheDir, "tts_cover_1.png").apply { writeText("old cover") }
+        val unrelated = File(cacheDir, "tts_cover_notes.png").apply { writeText("other cache") }
+        val thumbnailDir = File(cacheDir, "cover-thumbnails").apply { mkdir() }
+        val thumbnail = File(thumbnailDir, "book.jpg").apply { writeText("library cover") }
+
+        val artworkFiles = MediaArtworkFiles()
+        artworkFiles.pruneAbandoned(cacheDir)
+        val currentCover = artworkFiles.create(cacheDir)
+
+        assertEquals(setOf(unrelated, thumbnailDir, currentCover), cacheDir.listFiles()!!.toSet())
+        assertEquals("library cover", thumbnail.readText())
+        assertNotEquals(abandoned.toURI(), currentCover.toURI())
+        assertNotEquals(legacyCover.toURI(), currentCover.toURI())
+    }
 
     @Test
     fun recreatedServiceDoesNotOverwritePreviousCover() {

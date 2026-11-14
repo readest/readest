@@ -6,4 +6,14 @@ import java.io.File
 // can be tested on the JVM without constructing a MediaBrowserService.
 internal class MediaArtworkFiles {
     fun create(cacheDir: File): File = File.createTempFile("tts_cover_", ".png", cacheDir)
+
+    fun pruneAbandoned(cacheDir: File) {
+        cacheDir.listFiles()?.forEach { file ->
+            if (file.isFile && COVER_FILENAME.matches(file.name)) file.delete()
+        }
+    }
+
+    private companion object {
+        val COVER_FILENAME = Regex("tts_cover_[0-9]+\\.png")
+    }
 }

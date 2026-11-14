@@ -536,6 +536,9 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
 
     override fun onCreate() {
         super.onCreate()
+        // The previous instance is gone. Prune its covers before publishing
+        // this instance or serving any artwork to clients.
+        artworkFiles.pruneAbandoned(cacheDir)
         instance = this
         // Android Auto binds this service cold (no session); restore the
         // persisted library and last-book fallback before it requests a root.
@@ -1591,6 +1594,11 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
         abandonFocus()
         player.release()
         mediaSession?.release()
+        artworkUriFile?.let {
+            currentArtworkUri = null
+            it.delete()
+        }
+        artworkUriFile = null
         super.onDestroy()
     }
 }
