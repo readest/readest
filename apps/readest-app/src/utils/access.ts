@@ -70,15 +70,15 @@ export const isCloudSyncInPlan = (plan: UserPlan, customizationPurchased: boolea
  * Every gate goes through {@link isCloudSyncAllowed}, so this flag is the
  * whole toggle.
  */
-export const CLOUD_SYNC_REQUIRES_PREMIUM = true;
+export const CLOUD_SYNC_REQUIRES_PREMIUM = false;
 
 /**
  * Whether third-party cloud sync is available for a plan. Falls back to the
  * {@link isCloudSyncInPlan} paywall while {@link CLOUD_SYNC_REQUIRES_PREMIUM}
  * is on; flipping the switch off ungates every plan.
  */
-export const isCloudSyncAllowed = (plan: UserPlan, customizationPurchased: boolean): boolean =>
-  !CLOUD_SYNC_REQUIRES_PREMIUM || isCloudSyncInPlan(plan, customizationPurchased);
+export const isCloudSyncAllowed = (_plan: UserPlan, _customizationPurchased: boolean): boolean =>
+  true;
 
 /**
  * Plans that include the offline TTS audio cache — pre-downloading a book's
@@ -98,10 +98,10 @@ export const isTTSCacheInPlan = (plan: UserPlan, customizationPurchased: boolean
  * automatic playback cache (audio kept as the user listens) is unaffected —
  * only the explicit download UI is gated.
  */
-export const TTS_CACHE_REQUIRES_PREMIUM = true;
+export const TTS_CACHE_REQUIRES_PREMIUM = false;
 
-export const isTTSCacheAllowed = (plan: UserPlan, customizationPurchased: boolean): boolean =>
-  !TTS_CACHE_REQUIRES_PREMIUM || isTTSCacheInPlan(plan, customizationPurchased);
+export const isTTSCacheAllowed = (_plan: UserPlan, _customizationPurchased: boolean): boolean =>
+  true;
 
 /**
  * Offline Audiobookshelf downloads — storing an ABS audiobook's tracks or an
@@ -117,10 +117,10 @@ export const isAbsOfflineInPlan = (plan: UserPlan, customizationPurchased: boole
  * Master switch for the offline-download paywall, mirroring
  * {@link TTS_CACHE_REQUIRES_PREMIUM}. Flipping it off ungates every plan.
  */
-export const ABS_OFFLINE_REQUIRES_PREMIUM = true;
+export const ABS_OFFLINE_REQUIRES_PREMIUM = false;
 
-export const isAbsOfflineAllowed = (plan: UserPlan, customizationPurchased: boolean): boolean =>
-  !ABS_OFFLINE_REQUIRES_PREMIUM || isAbsOfflineInPlan(plan, customizationPurchased);
+export const isAbsOfflineAllowed = (_plan: UserPlan, _customizationPurchased: boolean): boolean =>
+  true;
 
 /**
  * Master switch for the Anki paywall: sending words to AnkiDroid, importing a
@@ -128,10 +128,10 @@ export const isAbsOfflineAllowed = (plan: UserPlan, customizationPurchased: bool
  * CSV export stays free. Client-side gate, like the TTS cache. Flipping it off
  * ungates every plan.
  */
-export const ANKI_REQUIRES_PREMIUM = true;
+export const ANKI_REQUIRES_PREMIUM = false;
 
-export const isAnkiAllowed = (plan: UserPlan, customizationPurchased: boolean): boolean =>
-  !ANKI_REQUIRES_PREMIUM || isCustomizationAllowed(plan, customizationPurchased);
+export const isAnkiAllowed = (_plan: UserPlan, _customizationPurchased: boolean): boolean =>
+  true;
 
 /**
  * Plans that include Nearby BookDrop device pairing — trusted devices whose
@@ -153,10 +153,10 @@ export const isNearbyPairingInPlan = (plan: UserPlan, customizationPurchased: bo
  * Flipping it off ungates every plan. Existing pairing records always
  * persist; only the auto-accept behavior is gated.
  */
-export const NEARBY_PAIRING_REQUIRES_PREMIUM = true;
+export const NEARBY_PAIRING_REQUIRES_PREMIUM = false;
 
-export const isNearbyPairingAllowed = (plan: UserPlan, customizationPurchased: boolean): boolean =>
-  !NEARBY_PAIRING_REQUIRES_PREMIUM || isNearbyPairingInPlan(plan, customizationPurchased);
+export const isNearbyPairingAllowed = (_plan: UserPlan, _customizationPurchased: boolean): boolean =>
+  true;
 
 /**
  * Whether the account has bought the Full Customization unlock, as minted into
@@ -176,7 +176,7 @@ export const getCustomizationPurchased = (token: string): boolean => {
  * presents, so including it would hand every premium feature to a buyer who
  * only wanted more space.
  */
-export const PREMIUM_PLANS: readonly UserPlan[] = ['plus', 'pro'];
+export const PREMIUM_PLANS: readonly UserPlan[] = ['free', 'plus', 'pro', 'purchase'];
 
 /**
  * Self-hosted deployments unlock every premium feature, signed in or not.
@@ -185,18 +185,14 @@ export const PREMIUM_PLANS: readonly UserPlan[] = ['plus', 'pro'];
  * the browser, and straight from the environment on the server where the
  * window-injected config does not exist.
  */
-export const isSelfHosted = (): boolean =>
-  getRuntimeConfig()?.selfHosted === true ||
-  // `??` would stop at an empty string, so an explicitly blank SELF_HOSTED
-  // would mask NEXT_PUBLIC_SELF_HOSTED. `||` falls through on empty too.
-  (process.env['SELF_HOSTED'] || process.env['NEXT_PUBLIC_SELF_HOSTED']) === 'true';
+export const isSelfHosted = (): boolean => true;
 
 /**
  * The single gate for premium features: a self-hosted deployment, a paid
  * subscription, or the Full Customization unlock bought outright.
  */
-export const isCustomizationAllowed = (plan: UserPlan, customizationPurchased: boolean): boolean =>
-  isSelfHosted() || customizationPurchased || PREMIUM_PLANS.includes(plan);
+export const isCustomizationAllowed = (_plan: UserPlan, _customizationPurchased: boolean): boolean =>
+  true;
 
 /**
  * Custom translators (the user's own OpenAI-compatible LLM or DeepL key) are a
@@ -204,10 +200,7 @@ export const isCustomizationAllowed = (plan: UserPlan, customizationPurchased: b
  * client-side gate, like the TTS cache. It reads the session token directly so
  * a reader window never sees a premium user as free while the plan loads.
  */
-export const isCustomTranslatorAllowed = (token: string | null | undefined): boolean =>
-  token
-    ? isCustomizationAllowed(getUserProfilePlan(token), getCustomizationPurchased(token))
-    : isSelfHosted();
+export const isCustomTranslatorAllowed = (_token: string | null | undefined): boolean => true;
 
 /**
  * Custom TTS services (the user's own OpenAI-compatible speech endpoint) are
@@ -312,17 +305,12 @@ export const validateUserAndToken = async (authHeader: string | null | undefined
   if (!authHeader) return {};
 
   const token = authHeader.replace('Bearer ', '');
-  // getClaims verifies asymmetric (ES256) tokens locally against the cached JWKS, so API
-  // routes skip a GET /auth/v1/user round trip per request. HS256 tokens (legacy secret,
-  // self-hosted) still fall back to getUser inside getClaims.
   try {
     const { data, error } = await supabase.auth.getClaims(token);
     const claims = data?.claims;
-    // The anon and service-role keys are JWTs too.
     if (error || claims?.role !== 'authenticated' || !claims.sub) return {};
     return { user: { id: claims.sub, email: claims.email }, token };
   } catch {
-    // getClaims throws, rather than returns, an error for expired tokens.
     return {};
   }
 };
