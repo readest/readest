@@ -395,6 +395,40 @@ describe('MediaOverlayClient capabilities', () => {
     expect(audio().src).toBe('blob:audio');
   });
 
+  // The media proxy's loopback URL is unreachable from the WebView in the
+  // Flatpak (#7521): the element errors on the proxy URL even though the
+  // proxy answered. Fall back to the blob for that file and keep narrating
+  // instead of ending the session.
+  test('falls back to the blob when the media proxy URL fails to play', async () => {
+    await setup();
+    (book as { getMediaSource?: unknown }).getMediaSource = vi.fn(async () => ({
+      path: '/books/narrated.epub',
+      start: 120,
+      end: 4216,
+    }));
+    client.attachBook(book);
+    mediaFileUrl.mockClear();
+    mediaFileUrl.mockResolvedValue('http://127.0.0.1:9/s/file/f1');
+    try {
+      const iter = client.speak(section.ssmlForBlock(0)!, new AbortController().signal);
+      expect((await iter.next()).value).toMatchObject({ code: 'boundary' });
+      expect(audio().src).toBe('http://127.0.0.1:9/s/file/f1');
+
+      // The element errors on the proxy URL: reload the same file from the
+      // blob and keep narrating instead of ending the session.
+      const pending = iter.next();
+      audio().fireError();
+      await vi.waitFor(() => expect(FakeAudio.instances).toHaveLength(2));
+      expect(mediaFileUrl).toHaveBeenCalledTimes(1);
+      expect(book.loadBlob).toHaveBeenCalledWith('OEBPS/ch1.mp3');
+      expect(audio().src).toBe('blob:audio');
+      audio().advanceTo(1);
+      expect((await pending).value).toMatchObject({ code: 'boundary', mark: '1' });
+    } finally {
+      mediaFileUrl.mockResolvedValue(null);
+    }
+  });
+
   // A recording split across files (an Audiobookshelf item) is one timeline
   // to the client: the clip's global time picks the file and in-file offset.
   test('plays a multi-track source from the file holding the clip', async () => {

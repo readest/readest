@@ -165,6 +165,15 @@ export class MediaOverlayClient implements TTSClient {
   #audio: NarrationClock | null = null;
   #audioHref: string | null = null;
   #objectUrl: string | null = null;
+  // The media-proxy URL the current element plays, if any. A load failure
+  // on it falls back to the blob once per file (see speak()): the proxy's
+  // loopback listener is unreachable from some WebViews (Flatpak, #7521),
+  // while the same file plays fine from a blob URL.
+  #proxyUrl: string | null = null;
+  // Hrefs whose proxy URL already failed to play: their next load skips the
+  // proxy and goes straight to the blob. Cleared when a new source is
+  // attached; a file that plays through the proxy keeps using it.
+  #proxyFailed = new Set<string>();
   #audioLoad: { href: string; promise: Promise<NarrationClock> } | null = null;
   #currentPar: NarrationPar | null = null;
   // Last par the recording actually rode, kept across the handover that ends
@@ -220,6 +229,7 @@ export class MediaOverlayClient implements TTSClient {
   attachSource(source: NarrationAudioSource | null): void {
     this.#source = source;
     this.#nextChunkPosition = null;
+    this.#proxyFailed.clear();
   }
 
   // The narration index for the section now playing; rebuilt on every section
@@ -285,6 +295,9 @@ export class MediaOverlayClient implements TTSClient {
 
   async #loadAudio(href: string): Promise<NarrationClock> {
     if (!this.#source) throw new Error('Book cannot load narration audio');
+    // Only the HTML branch below plays a proxy URL; every other branch
+    // leaves this null so a failure there never triggers the blob retry.
+    this.#proxyUrl = null;
 
     const signal = this.#player?.cancelsPendingLoads ? this.#playback.signal : undefined;
     const tracks = await this.#source.resolveTracks?.(href).catch(() => null);
@@ -341,13 +354,16 @@ export class MediaOverlayClient implements TTSClient {
       ? null
       : await this.#source.getMediaSource?.(href, audioType(href)).catch(() => null);
     const mediaUrl =
-      media && 'start' in media
+      media && 'start' in media && !this.#proxyFailed.has(href)
         ? await (await import('@/services/audiobook/mediaProxy'))
             .getMediaFileUrl(media.path, media.start, media.end, audioType(href))
             .catch(() => null)
         : null;
     this.#releaseAudio();
     let url = directUrl ?? mediaUrl;
+    // Remember whether this element plays through the media proxy, so a
+    // load failure on it can fall back to the blob (see speak()).
+    this.#proxyUrl = mediaUrl;
     if (!url) {
       const blob =
         media && 'blob' in media
@@ -391,6 +407,7 @@ export class MediaOverlayClient implements TTSClient {
     this.#audio = null;
     this.#audioHref = null;
     this.#objectUrl = null;
+    this.#proxyUrl = null;
     this.#playedPar = null;
     this.#rolledInto = null;
     if (this.#player && (this.#player.supportsStreaming || this.#player.href)) {
@@ -419,6 +436,7 @@ export class MediaOverlayClient implements TTSClient {
       URL.revokeObjectURL(this.#objectUrl);
       this.#objectUrl = null;
     }
+    this.#proxyUrl = null;
     if (this.#player) {
       this.#player.invalidateSession();
     }
@@ -599,7 +617,41 @@ export class MediaOverlayClient implements TTSClient {
         });
         yield { code: 'boundary', mark: par.markName, message: 'narration' };
 
-        const outcome = await this.#waitUntil(audio, par.clipEnd, signal, run.audioHref);
+        let outcome = await this.#waitUntil(audio, par.clipEnd, signal, run.audioHref);
+        if (outcome === 'error' && this.#proxyUrl && !this.#proxyFailed.has(run.audioHref)) {
+          // The media proxy's loopback URL does not play in this WebView
+          // (the Flatpak sandbox keeps it from the media element, #7521):
+          // reload the same file from the blob once instead of ending the
+          // session. Files that play through the proxy keep using it.
+          this.#proxyFailed.add(run.audioHref);
+          try {
+            this.#releaseAudio();
+            audio = await this.#ensureAudio(run.audioHref);
+          } catch (e) {
+            if (
+              signal.aborted ||
+              playbackSignal.aborted ||
+              (e instanceof DOMException && e.name === 'AbortError')
+            ) {
+              return;
+            }
+            yield {
+              code: 'error',
+              message: e instanceof Error ? e.message : 'Narration unavailable',
+            };
+            return;
+          }
+          if (signal.aborted) return;
+          await setClockRate(audio, this.#rate);
+          await seekClock(audio, par.clipBegin);
+          try {
+            await audio.play();
+          } catch (e) {
+            yield { code: 'error', message: e instanceof Error ? e.message : 'Playback blocked' };
+            return;
+          }
+          outcome = await this.#waitUntil(audio, par.clipEnd, signal, run.audioHref);
+        }
         if (outcome === 'aborted') {
           audio.pause();
           return;
