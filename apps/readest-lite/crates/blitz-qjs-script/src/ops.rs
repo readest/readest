@@ -904,6 +904,10 @@ pub(crate) fn install(ctx: &Ctx<'_>, shared: Rc<RefCell<Shared>>, base: Option<&
     let sh = shared.clone();
     op!("error", move |s: String| sh.borrow_mut().errors.push(s));
     // A script inserted after parsing: read through the embedder's loader and run; false if unreadable.
+    // One whose URL already ran is not run again: Turbopack loads a route's chunks, then React adds
+    // the same chunks as <script async> (it looks for script[async][src], which Turbopack's tags
+    // lack). A browser runs them twice and Turbopack ignores the second run; here each run means
+    // decompressing and evaluating the chunk's bytecode again.
     let sh = shared.clone();
     n.set(
         "loadScript",
@@ -916,9 +920,15 @@ pub(crate) fn install(ctx: &Ctx<'_>, shared: Rc<RefCell<Shared>>, base: Option<&
                     .or_else(|| Url::parse(&src).ok())
             };
             let Some(url) = url else { return false };
+            if sh.borrow().ran_scripts.contains(&url) {
+                return true;
+            }
             if url.scheme() != "file" {
                 return match crate::run_loader_script(&ctx, &sh, &url) {
-                    Ok(()) => true,
+                    Ok(()) => {
+                        sh.borrow_mut().ran_scripts.insert(url);
+                        true
+                    }
                     Err(e) => {
                         sh.borrow_mut().errors.push(format!("{url}: {e}"));
                         e != "cannot load"
@@ -933,6 +943,7 @@ pub(crate) fn install(ctx: &Ctx<'_>, shared: Rc<RefCell<Shared>>, base: Option<&
             {
                 sh.borrow_mut().errors.push(format!("{url}: {e}"));
             }
+            sh.borrow_mut().ran_scripts.insert(url);
             true
         })
         .unwrap()

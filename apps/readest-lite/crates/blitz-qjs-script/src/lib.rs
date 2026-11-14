@@ -71,6 +71,8 @@ pub(crate) struct Shared {
     pub messages: Vec<String>,
     /// The page's and its iframes' node handles (set by `ops::install`).
     pub docs: Option<ops::Docs>,
+    /// Scripts inserted after parsing that loaded and ran (`loadScript` doesn't run them again).
+    pub ran_scripts: std::collections::HashSet<Url>,
 }
 
 pub struct QjsDocument {
@@ -457,6 +459,7 @@ impl QjsDocument {
             errors: Vec::new(),
             messages: Vec::new(),
             docs: None,
+            ran_scripts: Default::default(),
         }));
         let rt = Runtime::new().expect("a QuickJS runtime");
         // BLITZ_QJS_INTERRUPT_MS=N: from N ms after the document is made, abort all JS (diagnostics:
