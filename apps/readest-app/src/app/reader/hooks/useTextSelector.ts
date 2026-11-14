@@ -46,6 +46,7 @@ import {
   getImageViewerGesture,
   releaseImageHoldClick,
   setImageHoldClick,
+  suppressSelectionDismissClick,
 } from '../utils/iframeEventHandlers';
 
 // Instant-highlight quick action: on touch a plain tap and a swipe are both
@@ -1170,13 +1171,16 @@ export const useTextSelector = (
       } else if (appService?.isAndroidApp) {
         isUpToPopup.current = false;
       }
-    } else if (ev?.pointerType === 'mouse' && isTextSelected.current) {
+    } else if (ev?.pointerType === 'mouse' && (isTextSelected.current || isPopuped.current)) {
       // The press cleared the selection and its selectionchange was deferred
-      // to this release. The click would dismiss the toolbar, but on a blank
-      // part of a PDF page pdf.js moves `.endOfContent` under the pointer as
-      // the selection collapses, and Chromium then sends no click (#6958).
+      // to this release. On a blank PDF page, pdf.js can move `.endOfContent`
+      // under the pointer and Chromium sends no click (#6958). When a click
+      // does follow, consume it before it reaches the reader's page-turn zones.
       handleDismissPopup();
       isTextSelected.current = false;
+      isPopuped.current = false;
+      isUpToPopup.current = false;
+      if (ev.button === 0) suppressSelectionDismissClick(doc);
     }
 
     if (osPlatform === 'android' && appService?.isAndroidApp) {
@@ -1349,12 +1353,12 @@ export const useTextSelector = (
   };
 
   const handleShowPopup = (showPopup: boolean) => {
-    setTimeout(() => {
-      if (showPopup && !isPopuped.current) {
+    if (showPopup && !isPopuped.current) {
+      setTimeout(() => {
         isUpToPopup.current = false;
-      }
-      isPopuped.current = showPopup;
-    }, 500);
+      }, 500);
+    }
+    isPopuped.current = showPopup;
   };
 
   const handleUpToPopup = () => {
