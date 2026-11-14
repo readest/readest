@@ -462,6 +462,13 @@ impl QjsDocument {
             ran_scripts: Default::default(),
         }));
         let rt = Runtime::new().expect("a QuickJS runtime");
+        // QuickJS collects cycles when the heap passes a threshold: 256 KB at first, then 1.5x the heap
+        // left after each collection. Lite starts and opens a book with a heap that is nearly all live
+        // (on a Kindle: 7 collections while it starts and a ~300 ms one when a book opens, all freeing
+        // little), so the first one waits for 64 MB, which a Kindle reaches after ~80 page turns. The
+        // 1.5x rule holds after it. The heap peaks up to ~15 MB higher than before, so this is meant
+        // for devices with 512 MB of RAM or more.
+        rt.set_gc_threshold(64 << 20);
         // BLITZ_QJS_INTERRUPT_MS=N: from N ms after the document is made, abort all JS (diagnostics:
         // a hang then surfaces as errors with JS stacks, even where app code catches and retries).
         if let Some(ms) = std::env::var("BLITZ_QJS_INTERRUPT_MS")
