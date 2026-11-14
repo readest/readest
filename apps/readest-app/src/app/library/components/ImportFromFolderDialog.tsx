@@ -217,8 +217,9 @@ const ImportFromFolderDialog: React.FC<ImportFromFolderDialogProps> = ({
   // the caller-persisted last choice. An explicit click overrides both —
   // unchecking a registered folder makes OK report `readInPlace: false`,
   // which the caller turns into an unregistration (#5680). Picking a
-  // different folder resets the override so the box snaps back to that
-  // folder's actual state.
+  // different folder keeps an explicit choice made in this dialog (#7519);
+  // the box only snaps back to the folder's actual state while the user
+  // hasn't touched it.
   const [readInPlaceChoice, setReadInPlaceChoice] = useState<boolean | null>(null);
   // "Auto-import new books from this folder" — a sub-option of "Read in
   // place". Auto-import scans the folder on every open/focus and reads its
@@ -284,10 +285,10 @@ const ImportFromFolderDialog: React.FC<ImportFromFolderDialogProps> = ({
       const picked = await onPickDirectory();
       if (picked) {
         setDirectory(picked);
-        // A different folder is a different context: drop any explicit
-        // read-in-place override so the box shows the picked folder's
+        // Keep any explicit read-in-place choice made in this dialog:
+        // picking a folder must not silently drop it (#7519). With no
+        // explicit choice the box still follows the picked folder's
         // actual state (ON when registered, last choice otherwise).
-        setReadInPlaceChoice(null);
       }
     } finally {
       setPicking(false);
