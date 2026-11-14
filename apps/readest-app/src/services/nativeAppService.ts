@@ -615,10 +615,10 @@ export class NativeAppService extends BaseAppService {
   // CustomizeRootDir has a blocker on macOS App Store builds due to Security Scoped Resource restrictions.
   // See: https://github.com/tauri-apps/tauri/issues/3716
   override canCustomizeRootDir = DIST_CHANNEL !== 'appstore';
-  // Android builds — Play Store included — declare MANAGE_EXTERNAL_STORAGE, so
-  // absolute-path reads outside the app sandbox work once the user grants All
-  // Files Access. Apple offers no equivalent, so App Store builds stay gated.
-  override canReadExternalDir = DIST_CHANNEL !== 'appstore';
+  // iOS grants access to user-selected folders through the native document
+  // picker; the bridge persists security-scoped bookmarks across launches.
+  // Keep the macOS App Store restriction separate from that iOS path.
+  override canReadExternalDir = OS_TYPE === 'ios' || DIST_CHANNEL !== 'appstore';
   override supportsCoverThumbnailOptimization = true;
   // WKWebView ignores `CanvasRenderingContext2D.filter`, so the Apple
   // platforms stay gated; Windows, Android and Linux are all Chromium.

@@ -30,6 +30,9 @@ const buildState = (text: string, orpIndex: number, hasCJK = false): RsvpState =
   startDelaySeconds: 3,
   hasCJK,
   progress: 0,
+  chunkSize: 1,
+  warmup: false,
+  longWordDelay: false,
 });
 
 const renderWord = (text: string, orpIndex: number, hasCJK = false) => {
@@ -41,12 +44,19 @@ const renderWord = (text: string, orpIndex: number, hasCJK = false) => {
     get currentDisplayWord() {
       return state.words[0];
     },
+    get currentChunkIndices() {
+      return [state.currentIndex];
+    },
     get currentCountdown() {
       return null;
     },
     getWpmOptions: vi.fn(() => [100, 200, 300]),
     getPunctuationPauseOptions: vi.fn(() => [25, 50, 100]),
     getStartDelayOptions: vi.fn(() => [0, 1, 2, 3]),
+    getChunkSizeOptions: vi.fn(() => [1, 2, 3, 4, 5]),
+    setChunkSize: vi.fn(),
+    setWarmup: vi.fn(),
+    setLongWordDelay: vi.fn(),
     addEventListener: vi.fn(),
     removeEventListener: vi.fn(),
   };
