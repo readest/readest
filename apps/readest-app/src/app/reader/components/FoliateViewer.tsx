@@ -142,6 +142,12 @@ declare global {
   }
 }
 
+const setBookViewport = (doc: Document, width: number, height: number) => {
+  if (width <= 0 || height <= 0) return;
+  doc.documentElement.style.setProperty('--readest-vw', `${width / 100}px`);
+  doc.documentElement.style.setProperty('--readest-vh', `${height / 100}px`);
+};
+
 // The hooks that follow the reading position (progress sync and save, KOSync, file sync, the
 // translation of the shown page) subscribe to the progress, which every page turn writes. Here they
 // re-render on a turn without the viewer and everything it holds.
@@ -473,7 +479,13 @@ const FoliateViewer: React.FC<{
       if (typeof ResizeObserver === 'undefined') return;
       const el = viewRef.current;
       if (el) {
-        observer = new ResizeObserver(() => invalidateChapterScreens());
+        observer = new ResizeObserver(([entry]) => {
+          if (entry && bookDoc.rendition?.layout !== 'pre-paginated') {
+            const { width, height } = entry.contentRect;
+            for (const { doc } of el.renderer.getContents()) setBookViewport(doc, width, height);
+          }
+          invalidateChapterScreens();
+        });
         observer.observe(el);
         return;
       }
@@ -484,7 +496,7 @@ const FoliateViewer: React.FC<{
       cancelAnimationFrame(raf);
       observer?.disconnect();
     };
-  }, [bookKey, invalidateChapterScreens]);
+  }, [bookKey, bookDoc.rendition?.layout, invalidateChapterScreens]);
 
   const getDocTransformHandler = ({ width, height }: { width: number; height: number }) => {
     return (event: Event) => {
@@ -591,6 +603,8 @@ const FoliateViewer: React.FC<{
       }
 
       if (!bookData?.isFixedLayout) {
+        const view = viewRef.current;
+        if (view) setBookViewport(detail.doc, view.clientWidth, view.clientHeight);
         mountAdditionalFonts(detail.doc, isCJKLang(bookData.book?.primaryLanguage));
       }
 

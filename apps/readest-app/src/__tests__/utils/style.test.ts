@@ -163,18 +163,31 @@ describe('transformStylesheet', () => {
   });
 
   describe('vw/vh replacement', () => {
-    it('replaces vw with computed px', () => {
+    it('resolves vw against the live reader width with an initial fallback', () => {
       const css = '.w { width: 10vw; }';
       const result = transformStylesheet(css, VW, VH, VERTICAL);
-      // 10 * 1000 / 100 = 100px
-      expect(result).toContain('100px');
+      expect(result).toContain('calc(10 * var(--readest-vw, 10px))');
     });
 
-    it('replaces vh with computed px', () => {
-      const css = '.h { height: 50vh; }';
+    it('keeps negative and fractional viewport lengths valid', () => {
+      const css =
+        '.h { margin-top: -0.5vh; font-size: 5vh; content: "50vh"; background-image: url(50vh.png); }';
       const result = transformStylesheet(css, VW, VH, VERTICAL);
-      // 50 * 800 / 100 = 400px
-      expect(result).toContain('400px');
+      expect(result).toContain('margin-top: calc(-0.5 * var(--readest-vh, 8px))');
+      expect(result).toContain('font-size: calc(5 * var(--readest-vh, 8px))');
+      expect(result).toContain('content: "50vh"');
+      expect(result).toContain('url(50vh.png)');
+    });
+
+    it('keeps media query lengths independent of CSS variables', () => {
+      const result = transformStylesheet(
+        '@media (max-width: 50vw) { p { width: 20vw; } }',
+        VW,
+        VH,
+        VERTICAL,
+      );
+      expect(result).toContain('@media (max-width: 500px)');
+      expect(result).toContain('width: calc(20 * var(--readest-vw, 10px))');
     });
   });
 

@@ -1641,7 +1641,27 @@ export const transformStylesheet = (
         },
       ),
   );
-  css = css.replace(/READEST_STR_(\d+)_PLACEHOLDER/g, (_, i) => quoted[+i]!);
+  // A section iframe spans its own columns, so its native vw/vh can depend
+  // on the number of pages. Resolve declaration values against the reader.
+  const viewportUnit = /(?<![\w.-])(-?(?:\d*\.)?\d+)(vw|vh)\b/gi;
+  css = css
+    .replace(
+      /@(?:media|supports|container)\b[^{]*|url\([^)]*\)|\/\*[\s\S]*?\*\/|(?<![\w.-])(-?(?:\d*\.)?\d+)(vw|vh)\b/gi,
+      (match, amount, unit?: string) => {
+        if (/^@media\b/i.test(match)) {
+          // Media query conditions cannot read CSS custom properties.
+          return match.replace(viewportUnit, (_, value, axis: string) => {
+            const dimension = axis.toLowerCase() === 'vw' ? vw : vh;
+            return `${(Number(value) * dimension) / 100}px`;
+          });
+        }
+        if (!unit) return match;
+        const axis = unit.toLowerCase();
+        const dimension = axis === 'vw' ? vw : vh;
+        return `calc(${amount} * var(--readest-${axis}, ${dimension / 100}px))`;
+      },
+    )
+    .replace(/READEST_STR_(\d+)_PLACEHOLDER/g, (_, i) => quoted[+i]!);
 
   // replace absolute font sizes with rem units
   // replace vw and vh as they cause problems with layout
@@ -1668,8 +1688,6 @@ export const transformStylesheet = (
     })
     // remove no-op backdrop-filter: brightness(100%); see #3895
     .replace(/backdrop-filter\s*:\s*brightness\(100%\)\s*[;]?/gi, '')
-    .replace(/(\d*\.?\d+)vw/gi, (_, d) => (parseFloat(d) * vw) / 100 + 'px')
-    .replace(/(\d*\.?\d+)vh/gi, (_, d) => (parseFloat(d) * vh) / 100 + 'px')
     .replace(/([\s;])-webkit-user-select\s*:\s*none/gi, '$1-webkit-user-select: unset')
     .replace(/([\s;])-moz-user-select\s*:\s*none/gi, '$1-moz-user-select: unset')
     .replace(/([\s;])-ms-user-select\s*:\s*none/gi, '$1-ms-user-select: unset')
