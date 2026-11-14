@@ -36,6 +36,7 @@ vi.mock('@/utils/misc', async (importActual) => {
 
 import { useTextSelector } from '@/app/reader/hooks/useTextSelector';
 import { handleClickCapture, handleMousedown } from '@/app/reader/utils/iframeEventHandlers';
+import { eventDispatcher } from '@/utils/event';
 
 const mousePointer = (x: number, y: number) =>
   ({ pointerType: 'mouse', button: 0, clientX: x, clientY: y }) as PointerEvent;
@@ -80,6 +81,17 @@ afterEach(() => {
 });
 
 describe('a mouse release that leaves no selection', () => {
+  test('a separate click is not consumed by the previous popup-opening gesture', async () => {
+    const { result, handleDismissPopup } = setup();
+    result.current.handleUpToPopup();
+    result.current.isTextSelected.current = true;
+    await result.current.handlePointerUp(document, 0, mousePointer(5, 5));
+
+    expect(handleDismissPopup).toHaveBeenCalledOnce();
+    const clickListener = vi.mocked(eventDispatcher.onSync).mock.calls.at(-1)?.[1];
+    expect(clickListener?.(new CustomEvent('iframe-single-click'))).toBe(false);
+  });
+
   test.each([
     true,
     false,

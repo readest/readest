@@ -1179,6 +1179,7 @@ export const useTextSelector = (
       handleDismissPopup();
       isTextSelected.current = false;
       isPopuped.current = false;
+      isUpToPopup.current = false;
       if (ev.button === 0) suppressSelectionDismissClick(doc);
     }
 
