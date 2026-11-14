@@ -310,7 +310,10 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
     // dismiss) let a live TTS session continue in the background;
     // webview-destroying closes (quit, window close, reload) hard-stop so the
     // media session and Android foreground service tear down with the page.
-    eventDispatcher.dispatch(keepTTSAlive ? 'tts-close-book' : 'tts-stop', {
+    // Await the dispatch: the window-close path only resolves the close after
+    // this returns, so the stop must complete before the webview is destroyed
+    // or the native player outlives the page and keeps playing (#7523).
+    await eventDispatcher.dispatch(keepTTSAlive ? 'tts-close-book' : 'tts-stop', {
       bookKey,
     });
     await saveBookConfig(bookKey);
@@ -410,10 +413,12 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
 
   const handleCloseBook = async (bookKey: string) => {
     // Header X / pane close: an SPA-side close on web and the main window.
-    // The Tauri reader-window branches below destroy their webview, which
-    // takes the per-window TTS with it either way.
-    const closeBook = async () => {
-      await saveConfigAndCloseBook(bookKey, true);
+    // The Tauri reader-window branches below destroy their webview, so a live
+    // TTS session must be stopped here: once the book is dismissed the
+    // window-close listener runs with empty bookKeys and no 'tts-stop' is
+    // ever dispatched, leaving the native player orphaned (#7523).
+    const closeBook = async (keepTTSAlive = true) => {
+      await saveConfigAndCloseBook(bookKey, keepTTSAlive);
       if (sideBarBookKey === bookKey) {
         setSideBarBookKey(getNextBookKey(sideBarBookKey));
       }
@@ -429,9 +434,18 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
         });
         return;
       }
-      await closeBook();
+      // Decide before closing: the last book in a reader window (or one
+      // opened with files) destroys the webview, so the narration cannot
+      // continue headless there. Other closes keep the webview alive and
+      // detach the session so it can keep playing in the background.
+      let destroysWindow = false;
+      let openWithFiles: string[] = [];
+      if (isLastBook && appService?.hasWindow) {
+        openWithFiles = (await parseOpenWithFiles(appService)) || [];
+        destroysWindow = openWithFiles.length > 0 || getCurrentWindow().label.startsWith('reader');
+      }
+      await closeBook(!destroysWindow);
       if (isLastBook) {
-        const openWithFiles = (await parseOpenWithFiles(appService)) || [];
         if (appService?.hasWindow) {
           if (openWithFiles.length > 0) {
             void tauriHandleOnCloseWindow(handleCloseBooks).catch((error) => {
