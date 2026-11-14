@@ -94,4 +94,33 @@ describe('Import-from-Folder dialog: read-in-place toggle (#5680)', () => {
     expect(checkbox.checked).toBe(false);
     expect(checkbox.disabled).toBe(false);
   });
+
+  it('keeps an explicit in-place choice when picking an unregistered folder (#7519)', async () => {
+    const { props } = setup({
+      initialDirectory: '/Users/me/Downloads',
+      initialReadInPlace: false,
+      onPickDirectory: vi.fn().mockResolvedValue('/Users/me/Books2'),
+    });
+
+    // Enable "Read books in place" before picking the folder.
+    fireEvent.click(getReadInPlaceCheckbox());
+    expect(getReadInPlaceCheckbox().checked).toBe(true);
+
+    // Pick a folder that is not registered as an external library.
+    fireEvent.click(screen.getByLabelText('Choose a folder'));
+    // Wait for the pick to finish (the shown folder changes) before asserting.
+    await waitFor(() =>
+      expect(screen.getByLabelText('Choose a folder').getAttribute('title')).toBe(
+        '/Users/me/Books2',
+      ),
+    );
+
+    // The explicit choice must survive the folder pick.
+    expect(getReadInPlaceCheckbox().checked).toBe(true);
+
+    fireEvent.click(screen.getByText('OK'));
+    expect(props.onConfirm).toHaveBeenCalledWith(
+      expect.objectContaining({ directory: '/Users/me/Books2', readInPlace: true }),
+    );
+  });
 });
