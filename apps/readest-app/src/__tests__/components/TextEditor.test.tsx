@@ -66,4 +66,33 @@ describe('TextEditor', () => {
     const editor = screen.getByRole('textbox', { name: 'Annotation note' });
     expect(editor.hasAttribute('data-note-editor')).toBe(true);
   });
+  it.each([
+    { shortcut: 'Ctrl+Enter', ctrlKey: true, metaKey: false },
+    { shortcut: 'Cmd+Enter', ctrlKey: false, metaKey: true },
+  ])('saves with $shortcut when a parent stops keydown propagation', ({ ctrlKey, metaKey }) => {
+    const onSave = vi.fn();
+    const parentRef = createRef<HTMLDivElement>();
+
+    render(
+      <div ref={parentRef}>
+        <TextEditor
+          value='My annotation'
+          onChange={vi.fn()}
+          onSave={onSave}
+          ariaLabel='Annotation note'
+        />
+      </div>,
+    );
+
+    const stopPropagation = vi.fn((event: KeyboardEvent) => {
+      event.stopPropagation();
+    });
+    parentRef.current!.addEventListener('keydown', stopPropagation);
+
+    const editor = screen.getByRole('textbox', { name: 'Annotation note' });
+    fireEvent.keyDown(editor, { key: 'Enter', ctrlKey, metaKey });
+
+    expect(stopPropagation).toHaveBeenCalledOnce();
+    expect(onSave).toHaveBeenCalledOnce();
+  });
 });
