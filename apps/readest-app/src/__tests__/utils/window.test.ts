@@ -129,6 +129,61 @@ describe('tauriHandleOnCloseWindow', () => {
     vi.advanceTimersByTime(300);
     expect(win.destroy).toHaveBeenCalled();
   });
+
+  test('a second close request while the first is still cleaning up destroys only once (#7516)', async () => {
+    // Ctrl+W on Linux (CEF): a held key auto-repeats, and the first close
+    // takes seconds (book save + Notion flush), so a second close request
+    // lands while the first is still awaiting its callback. Each request
+    // used to schedule its own destroy(), and destroying an already
+    // destroying CEF window crashes the app.
+    vi.mocked(osType).mockReturnValue('linux');
+    const { win, trigger } = makeWindow('reader-0');
+    vi.mocked(getCurrentWindow).mockReturnValue(
+      win as unknown as ReturnType<typeof getCurrentWindow>,
+    );
+
+    let resolveCallback: () => void = () => {};
+    const callback = vi.fn(
+      () =>
+        new Promise<void>((resolve) => {
+          resolveCallback = resolve;
+        }),
+    );
+    await tauriHandleOnCloseWindow(callback);
+
+    const first = trigger();
+    const second = trigger();
+    resolveCallback();
+    await first;
+    await second;
+    vi.advanceTimersByTime(300);
+
+    expect(callback).toHaveBeenCalledTimes(1);
+    expect(win.destroy).toHaveBeenCalledTimes(1);
+  });
+
+  test('a failed cleanup leaves the window closable on the next request', async () => {
+    vi.mocked(osType).mockReturnValue('linux');
+    const { win, trigger } = makeWindow('reader-0');
+    vi.mocked(getCurrentWindow).mockReturnValue(
+      win as unknown as ReturnType<typeof getCurrentWindow>,
+    );
+
+    const callback = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('save failed'))
+      .mockResolvedValue(undefined);
+    await tauriHandleOnCloseWindow(callback);
+
+    await trigger();
+    expect(win.destroy).not.toHaveBeenCalled();
+
+    await trigger();
+    vi.advanceTimersByTime(300);
+
+    expect(callback).toHaveBeenCalledTimes(2);
+    expect(win.destroy).toHaveBeenCalledTimes(1);
+  });
 });
 
 function makeFullscreenWindow({

@@ -125,23 +125,52 @@ export const tauriHandleClose = async () => {
   getCurrentWindow().close();
 };
 
+// Whether a close is already running for this window. A close request can
+// arrive twice for one user gesture — a held Ctrl+W auto-repeats, and the
+// first close takes seconds (book save + Notion flush) while the window stays
+// open — and each request used to schedule its own destroy(). Destroying an
+// already-destroying CEF window crashes the app (#7516), so a second request
+// while one is in flight is ignored. The flag is released when the close is
+// abandoned (macOS hide-only, failed cleanup, no destroyable window) or once
+// the destroy has been issued, so a later close still works.
+let closeInProgress = false;
+
 export const tauriHandleOnCloseWindow = async (callback: () => void) => {
   const currentWindow = getCurrentWindow();
   return await currentWindow.onCloseRequested(async (event) => {
     event.preventDefault();
+    // Set before the first await: two requests arriving together would both
+    // pass the check if it sat after `await osType()`.
+    if (closeInProgress) return;
+    closeInProgress = true;
     // On macOS, the main window's close is intercepted by the Rust backend
     // to hide the window (close-to-hide), keeping the app in the dock. Skip
     // the in-app cleanup — the user is just minimizing the window and
     // expects the active book to still be there when the window reopens.
     if (currentWindow.label === 'main' && (await osType()) === 'macos') {
+      closeInProgress = false;
       return;
     }
-    await callback();
+    try {
+      await callback();
+    } catch (error) {
+      // A failed cleanup must not wedge the window open: release the guard
+      // so the next close request can retry.
+      console.info('Close cleanup failed, leaving the window open:', error);
+      closeInProgress = false;
+      return;
+    }
     if (currentWindow.label.startsWith('reader')) {
       await emitTo('main', 'close-reader-window', { label: currentWindow.label });
-      setTimeout(() => currentWindow.destroy(), 300);
+      setTimeout(() => {
+        currentWindow.destroy();
+        closeInProgress = false;
+      }, 300);
     } else if (currentWindow.label === 'main') {
       await currentWindow.destroy();
+      closeInProgress = false;
+    } else {
+      closeInProgress = false;
     }
   });
 };
