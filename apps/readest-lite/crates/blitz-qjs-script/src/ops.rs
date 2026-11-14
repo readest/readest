@@ -69,6 +69,15 @@ impl Docs {
         -(k as f64)
     }
 
+    /// Node `n`'s handle in the document tagged `tag`, if JS has one (it can hold no wrapper of a
+    /// node without one).
+    fn handle(&self, tag: u32, n: NodeId) -> Option<f64> {
+        if tag == 0 {
+            return Some(n.as_u64() as f64);
+        }
+        self.handles.borrow().of.get(&(tag, n)).copied()
+    }
+
     /// A handle no document knows decodes to a tag with no frame.
     fn dec(&self, h: f64) -> (u32, NodeId) {
         if h >= 0.0 {
@@ -521,6 +530,57 @@ pub(crate) fn install(ctx: &Ctx<'_>, shared: Rc<RefCell<Shared>>, base: Option<&
         d.with(h, |doc, n, _| {
             if doc.get_node(n).is_some_and(|c| c.parent.is_some()) {
                 doc.mutate().remove_node(n);
+            }
+        });
+    });
+    let d = docs.clone();
+    // Whether node `h` is in its document (shadow trees are under their hosts natively).
+    op!("connected", move |h: f64| -> bool {
+        d.with(h, |doc, n, _| {
+            let mut id = n;
+            while let Some(p) = doc.get_node(id).and_then(|n| n.parent) {
+                id = p;
+            }
+            doc.get_node(n).is_some() && id == doc.root_node().id
+        })
+        .unwrap_or(false)
+    });
+    let d = docs.clone();
+    // The handles of node `h` and of the nodes under it that JS has reached.
+    op!("subtree", move |h: f64| -> Vec<f64> {
+        d.with(h, |doc, n, tag| {
+            let mut out = Vec::new();
+            let mut stack = vec![n];
+            while let Some(id) = stack.pop() {
+                let Some(node) = doc.get_node(id) else {
+                    continue;
+                };
+                out.extend(d.handle(tag, id));
+                stack.extend(node.children.iter().copied());
+            }
+            out
+        })
+        .unwrap_or_default()
+    });
+    let d = docs.clone();
+    // Frees node `h` and the nodes under it: the root of a tree out of the document, which JS
+    // reaches no node of (bootstrap.js's `sweep`).
+    op!("dropTree", move |h: f64| {
+        d.with(h, |doc, n, tag| {
+            let root = doc.root_node().id;
+            if n == root || doc.get_node(n).is_none_or(|n| n.parent.is_some()) {
+                return;
+            }
+            let mut dropped = Vec::new();
+            doc.mutate()
+                .remove_and_drop_node_with(n, &mut |id| dropped.push(id));
+            if tag != 0 {
+                let mut hs = d.handles.borrow_mut();
+                for id in dropped {
+                    if let Some(v) = hs.of.remove(&(tag, id)) {
+                        hs.at.remove(&(-v as u64));
+                    }
+                }
             }
         });
     });

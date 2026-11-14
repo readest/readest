@@ -4,7 +4,61 @@
   'use strict';
   const n = globalThis.__n;
   const HTML_NS = 'http://www.w3.org/1999/xhtml';
+  // Wrappers of nodes in their document. Those of nodes out of it (made and not inserted yet, or
+  // removed) are held only weakly, in `loose`: once JS reaches no node of a tree out of the
+  // document, a collection frees the tree natively (`sweep`), with what it holds (decoded images).
   const wrappers = new Map();
+  const loose = new Map();
+  // Ids of collected loose wrappers, for the sweep after the collection. A wrapper is registered
+  // each time it goes loose, with no unregister token: QuickJS-NG holds tokens strongly.
+  const swept = new Set();
+  const looseFree = new FinalizationRegistry((id) => {
+    if (loose.get(id)?.deref() === undefined) loose.delete(id);
+    if (!swept.size) resolved.then(sweep);
+    swept.add(id);
+  });
+  const known = (id) => wrappers.get(id) ?? loose.get(id)?.deref();
+  function loosely(id, w) {
+    loose.set(id, new WeakRef(w));
+    looseFree.register(w, id);
+  }
+  // Keeps a new wrapper by whether its node is in the document.
+  function keep(id, w) {
+    if (n.connected(id)) wrappers.set(id, w);
+    else loosely(id, w);
+  }
+  // The tree of node `id` went into the document: its wrappers are held.
+  function tighten(id) {
+    if (!loose.size) return;
+    for (const k of n.subtree(id)) {
+      const w = loose.get(k)?.deref();
+      if (!w) continue;
+      loose.delete(k);
+      wrappers.set(k, w);
+    }
+  }
+  // The tree of node `id` left the document: its wrappers are held weakly.
+  function loosen(id) {
+    for (const k of n.subtree(id)) {
+      const w = wrappers.get(k);
+      if (!w) continue;
+      wrappers.delete(k);
+      loosely(k, w);
+    }
+  }
+  // Frees the trees out of the document that collected wrappers were in, when JS reaches none of
+  // their nodes. A node's id, once freed, is never another node's (ids carry a generation).
+  function sweep() {
+    const roots = new Set();
+    for (const id of swept) {
+      let r = id;
+      for (let p = n.parent(r); p != null; p = n.parent(p)) r = p;
+      const k = n.kind(r);
+      if (k !== 0 && k !== 9) roots.add(r);
+    }
+    swept.clear();
+    for (const r of roots) if (!n.subtree(r).some(known)) n.dropTree(r);
+  }
   // Documents of their own by tag (WeakRefs) and live NodeIterators (WeakRefs); see below.
   const ownedDocs = new Map();
   const liveIterators = new Set();
@@ -65,6 +119,7 @@
   // children are detached first, so the records' nodes stay readable (the native replace frees
   // the children it drops).
   function replaceAll(el, replace) {
+    if (n.connected(el._id)) for (const c of n.children(el._id)) if (!shadowIds.has(c)) loosen(c);
     const obs = mutationObservers(el._id, 'childList');
     const removedNodes = obs ? [...el.childNodes] : null;
     if (obs) for (const c of removedNodes) n.remove(c._id);
@@ -498,7 +553,8 @@
           });
         return c;
       }
-      const moved = defs.size > 0 && c.nodeType === 1 && c.isConnected;
+      const was = n.connected(c._id);
+      const moved = defs.size > 0 && c.nodeType === 1 && was;
       if (liveIterators.size && c.parentNode) preRemove(c);
       const removed = removal(c);
       // A node from another document is adopted only when it is a lone text or comment node.
@@ -507,6 +563,9 @@
         !(adopt(c, docOf(this)) && n.insert(this._id, c._id, ref ? ref._id : null))
       )
         throw domError('The node belongs to another document', 'WrongDocumentError');
+      const now = n.connected(c._id);
+      if (now && !was) tighten(c._id);
+      else if (was && !now) loosen(c._id);
       if (removed) queueMutation(...removed);
       const obs = quiet ? null : mutationObservers(this._id, 'childList');
       if (obs)
@@ -517,7 +576,7 @@
           previousSibling: c.previousSibling,
           nextSibling: c.nextSibling,
         });
-      if (c.nodeType !== 1 || !c.isConnected) return c;
+      if (c.nodeType !== 1 || !now) return c;
       if (!c._started) {
         const tag = n.local(c._id);
         if (tag === 'script') startScript(c);
@@ -532,7 +591,9 @@
     removeChild(c) {
       if (liveIterators.size) preRemove(c);
       const removed = removal(c);
+      const was = n.connected(c._id);
       n.remove(c._id);
+      if (was) loosen(c._id);
       if (removed) queueMutation(...removed);
       if (connectedCustom.size) disconnectCustom();
       return c;
@@ -545,7 +606,9 @@
     remove() {
       if (liveIterators.size && this.parentNode) preRemove(this);
       const removed = removal(this);
+      const was = n.connected(this._id);
       n.remove(this._id);
+      if (was) loosen(this._id);
       if (removed) queueMutation(...removed);
       if (connectedCustom.size) disconnectCustom();
     }
@@ -651,7 +714,9 @@
     insertBefore(c, ref) {
       if (liveIterators.size && c.parentNode) preRemove(c);
       const removed = removal(c);
+      const was = n.connected(c._id);
       n.remove(c._id);
+      if (was) loosen(c._id);
       if (removed) queueMutation(...removed);
       const i = ref ? this._kids.indexOf(ref) : -1;
       if (i < 0) this._kids.push(c);
@@ -778,7 +843,7 @@
       n.insert(this._id, id, n.first(this._id));
       const r = Object.create(ShadowRoot.prototype);
       Object.assign(r, { _id: id, _key: key, host: this, mode: init.mode });
-      wrappers.set(id, r);
+      keep(id, r);
       shadowIds.add(id);
       this._shadow = r;
       return r;
@@ -1594,8 +1659,8 @@
   // `owner`, when known, is the document of its own that node `id` is in: a node's parent,
   // children and siblings are in its own document, so its getters pass it on.
   function wrapIn(id, owner) {
-    let cache = owner ? owner._nodes : wrappers;
-    let w = cache.get(id);
+    let cache = owner ? owner._nodes : null;
+    let w = cache ? cache.get(id) : known(id);
     if (w) return w;
     if (!owner && id < -1 && ownedDocs.size) {
       const tag = n.ownedTag(id);
@@ -1631,7 +1696,8 @@
         w._local = local;
       }
     }
-    cache.set(id, w);
+    if (cache) cache.set(id, w);
+    else keep(id, w);
     return w;
   }
 
@@ -1673,10 +1739,12 @@
     const t = c.nodeType;
     if ((t !== 3 && t !== 8) || c.parentNode || docOf(c) === doc) return false;
     const copy = t === 3 ? n.createText(doc._id, c.data) : n.createComment(doc._id, c.data);
-    (c._owner ? c._owner._nodes : wrappers).delete(c._id);
+    if (c._owner) c._owner._nodes.delete(c._id);
+    else if (!wrappers.delete(c._id)) loose.delete(c._id);
     c._id = copy;
     c._owner = doc._nodes ? doc : undefined;
-    (doc._nodes ?? wrappers).set(copy, c);
+    if (doc._nodes) doc._nodes.set(copy, c);
+    else keep(copy, c);
     return true;
   }
 
@@ -2794,8 +2862,11 @@
       resizeObservers.add(this);
       addTimer(() => this._check(), 0, [], false);
     }
+    // An observer with nothing to observe is kept only by its user, as in browsers: react-virtuoso
+    // only unobserves, and its observers' callbacks hold the list's scroller.
     unobserve(el) {
       this._targets.delete(el);
+      if (!this._targets.size) resizeObservers.delete(this);
     }
     disconnect() {
       this._targets.clear();
