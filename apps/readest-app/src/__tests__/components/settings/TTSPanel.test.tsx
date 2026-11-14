@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { ViewSettings } from '@/types/book';
 
 const state = vi.hoisted(() => ({
@@ -15,6 +15,7 @@ const state = vi.hoisted(() => ({
   token: null as string | null,
   user: null as { id: string } | null,
   push: vi.fn(),
+  resetViewSettings: vi.fn(),
 }));
 
 vi.mock('@/context/AuthContext', () => ({
@@ -55,7 +56,7 @@ vi.mock('@/store/settingsStore', () => {
 });
 
 vi.mock('@/hooks/useResetSettings', () => ({
-  useResetViewSettings: () => vi.fn(),
+  useResetViewSettings: () => state.resetViewSettings,
 }));
 
 vi.mock('@/helpers/settings', () => ({
@@ -211,5 +212,98 @@ describe('TTSPanel custom TTS services premium gate', () => {
     expect(state.push).not.toHaveBeenCalled();
     fireEvent.click(screen.getByText('Add TTS Service'));
     expect(screen.getByLabelText('Base URL')).toBeTruthy();
+  });
+});
+
+describe('TTSPanel mini player visibility preference', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    state.viewSettings.ttsPlayerStyle = 'full';
+    state.viewSettings.ttsKeepMiniPlayerVisible = false;
+  });
+
+  afterEach(() => {
+    cleanup();
+    state.viewSettings.ttsPlayerStyle = 'full';
+  });
+
+  it('places an opt-in switch below Player Style and persists changes', async () => {
+    render(<TTSPanel bookKey='book-1' onRegisterReset={vi.fn()} />);
+    const toggle = screen.getByRole('checkbox', { name: /Keep Mini Player Visible/ });
+    expect((toggle as HTMLInputElement).checked).toBe(false);
+    expect(
+      screen.getByRole('combobox', { name: 'Player Style' }).compareDocumentPosition(toggle) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    fireEvent.click(toggle);
+    await waitFor(() =>
+      expect(saveViewSettings).toHaveBeenCalledWith(
+        {},
+        'book-1',
+        'ttsKeepMiniPlayerVisible',
+        true,
+        false,
+        false,
+      ),
+    );
+  });
+
+  it('loads a saved preference', () => {
+    state.viewSettings.ttsKeepMiniPlayerVisible = true;
+    render(<TTSPanel bookKey='book-1' onRegisterReset={vi.fn()} />);
+    expect(
+      (screen.getByRole('checkbox', { name: /Keep Mini Player Visible/ }) as HTMLInputElement)
+        .checked,
+    ).toBe(true);
+  });
+
+  it('treats a missing legacy preference as disabled', () => {
+    Object.assign(state.viewSettings, { ttsKeepMiniPlayerVisible: undefined });
+    render(<TTSPanel bookKey='book-1' onRegisterReset={vi.fn()} />);
+    expect(
+      (screen.getByRole('checkbox', { name: /Keep Mini Player Visible/ }) as HTMLInputElement)
+        .checked,
+    ).toBe(false);
+  });
+
+  it('hides the switch for minimal style and preserves the preference when switching back', () => {
+    state.viewSettings.ttsKeepMiniPlayerVisible = true;
+    render(<TTSPanel bookKey='book-1' onRegisterReset={vi.fn()} />);
+    const select = screen.getByRole('combobox', { name: 'Player Style' });
+    fireEvent.change(select, { target: { value: 'minimal' } });
+    expect(screen.queryByRole('checkbox', { name: /Keep Mini Player Visible/ })).toBeNull();
+    fireEvent.change(select, { target: { value: 'full' } });
+    expect(
+      (screen.getByRole('checkbox', { name: /Keep Mini Player Visible/ }) as HTMLInputElement)
+        .checked,
+    ).toBe(true);
+  });
+
+  it('resets the preference to disabled and saves the default', async () => {
+    state.viewSettings.ttsKeepMiniPlayerVisible = true;
+    state.resetViewSettings.mockImplementationOnce(
+      (setters: { ttsKeepMiniPlayerVisible: (value: boolean) => void }) =>
+        setters.ttsKeepMiniPlayerVisible(false),
+    );
+    const onRegisterReset = vi.fn();
+    render(<TTSPanel bookKey='book-1' onRegisterReset={onRegisterReset} />);
+    act(() => onRegisterReset.mock.calls[0]![0]());
+    expect(state.resetViewSettings).toHaveBeenCalledWith(
+      expect.objectContaining({ ttsKeepMiniPlayerVisible: expect.any(Function) }),
+    );
+    expect(
+      (screen.getByRole('checkbox', { name: /Keep Mini Player Visible/ }) as HTMLInputElement)
+        .checked,
+    ).toBe(false);
+    await waitFor(() =>
+      expect(saveViewSettings).toHaveBeenCalledWith(
+        {},
+        'book-1',
+        'ttsKeepMiniPlayerVisible',
+        false,
+        false,
+        false,
+      ),
+    );
   });
 });

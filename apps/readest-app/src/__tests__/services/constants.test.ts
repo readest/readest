@@ -665,6 +665,7 @@ describe('services/constants', () => {
       expect(typeof DEFAULT_TTS_CONFIG.ttsLocation).toBe('string');
       expect(typeof DEFAULT_TTS_CONFIG.ttsMediaMetadata).toBe('string');
       expect(DEFAULT_TTS_CONFIG.ttsSkipInlineAnnotations).toBe(false);
+      expect(DEFAULT_TTS_CONFIG.ttsKeepMiniPlayerVisible).toBe(false);
     });
 
     it('has ttsHighlightOptions with style and color', () => {

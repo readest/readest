@@ -473,6 +473,7 @@ export interface TTSConfig {
   ttsHighlightGranularity: TTSHighlightGranularity;
   ttsMediaMetadata: TTSMediaMetadataMode;
   ttsPlayerStyle: TTSPlayerStyle;
+  ttsKeepMiniPlayerVisible: boolean;
   ttsSkipInlineAnnotations: boolean;
   // Sentence-by-sentence Read Aloud: pause after every sentence (#5233).
   ttsPauseAfterSentence: boolean;

@@ -59,6 +59,9 @@ const TTSPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset }
   const [ttsPlayerStyle, setTtsPlayerStyle] = useState<TTSPlayerStyle>(
     viewSettings.ttsPlayerStyle ?? 'full',
   );
+  const [ttsKeepMiniPlayerVisible, setTtsKeepMiniPlayerVisible] = useState(
+    viewSettings.ttsKeepMiniPlayerVisible ?? false,
+  );
   const [ttsHighlightGranularity, setTtsHighlightGranularity] = useState<TTSHighlightGranularity>(
     viewSettings.ttsHighlightGranularity ?? 'word',
   );
@@ -88,6 +91,7 @@ const TTSPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset }
     resetToDefaults({
       ttsMediaMetadata: setTtsMediaMetadata as React.Dispatch<React.SetStateAction<string>>,
       ttsPlayerStyle: setTtsPlayerStyle as React.Dispatch<React.SetStateAction<string>>,
+      ttsKeepMiniPlayerVisible: setTtsKeepMiniPlayerVisible,
       ttsHighlightGranularity: setTtsHighlightGranularity as React.Dispatch<
         React.SetStateAction<string>
       >,
@@ -111,6 +115,19 @@ const TTSPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset }
     saveViewSettings(envConfig, bookKey, 'ttsPlayerStyle', ttsPlayerStyle, false, false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ttsPlayerStyle]);
+
+  useEffect(() => {
+    if (ttsKeepMiniPlayerVisible === viewSettings.ttsKeepMiniPlayerVisible) return;
+    saveViewSettings(
+      envConfig,
+      bookKey,
+      'ttsKeepMiniPlayerVisible',
+      ttsKeepMiniPlayerVisible,
+      false,
+      false,
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ttsKeepMiniPlayerVisible]);
 
   useEffect(() => {
     if (ttsHighlightGranularity === viewSettings.ttsHighlightGranularity) return;
@@ -291,6 +308,15 @@ const TTSPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset }
             ]}
           />
         </SettingsRow>
+        {ttsPlayerStyle === 'full' && (
+          <SettingsSwitchRow
+            label={_('Keep Mini Player Visible')}
+            description={_('Keep the player visible while reading aloud')}
+            checked={ttsKeepMiniPlayerVisible}
+            onChange={() => setTtsKeepMiniPlayerVisible(!ttsKeepMiniPlayerVisible)}
+            data-setting-id='settings.tts.keepMiniPlayerVisible'
+          />
+        )}
         <SettingsRow label={_('Update Frequency')}>
           <SettingsSelect
             value={ttsMediaMetadata}

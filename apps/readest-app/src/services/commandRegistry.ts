@@ -437,6 +437,12 @@ const colorPanelItems = [
     section: 'TTS',
   },
   {
+    id: 'settings.tts.keepMiniPlayerVisible',
+    labelKey: _('Keep Mini Player Visible'),
+    keywords: ['tts', 'player', 'mini', 'visible', 'always', 'pin', 'hide'],
+    section: 'TTS',
+  },
+  {
     id: 'settings.color.readingRuler',
     labelKey: _('Reading Ruler'),
     keywords: ['reading', 'ruler', 'line', 'guide', 'focus'],
