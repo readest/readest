@@ -53,6 +53,8 @@ interface DialogProps {
    */
   aboveKeyboard?: boolean;
   onClose: () => void;
+  /** A sub-page's way back: the mobile back arrow, Escape and Android Back. Defaults to onClose. */
+  onBack?: () => void;
 }
 
 // Scrollable content owns the whole gesture, including at its edges where
@@ -91,6 +93,7 @@ const Dialog: React.FC<DialogProps> = ({
   useOverlayScroll = false,
   aboveKeyboard = false,
   onClose,
+  onBack,
 }) => {
   const _ = useTranslation();
   const { appService } = useEnv();
@@ -108,6 +111,9 @@ const Dialog: React.FC<DialogProps> = ({
   const dragOffsetRef = useRef(0);
   const pendingSwipeRef = useRef<{ x: number; y: number } | null>(null);
   const previousActiveElementRef = useRef<HTMLElement | null>(null);
+  // The key listeners below are bound once per open, so they read the latest onBack here.
+  const onBackRef = useRef(onBack);
+  onBackRef.current = onBack;
   const iconSize22 = useResponsiveSize(22);
   const isMobile = window.innerWidth < 640 || window.innerHeight < 640;
   const [keyboardInset, setKeyboardInset] = useState(0);
@@ -182,12 +188,12 @@ const Dialog: React.FC<DialogProps> = ({
     if (dialogRef.current?.querySelector('dialog[open]')) return false;
     if (event instanceof CustomEvent) {
       if (event.detail.keyName === 'Back') {
-        onClose();
+        (onBackRef.current ?? onClose)();
         return true;
       }
     } else {
       if (event.key === 'Escape') {
-        onClose();
+        (onBackRef.current ?? onClose)();
       }
       event.stopPropagation();
     }
@@ -457,9 +463,9 @@ const Dialog: React.FC<DialogProps> = ({
           ) : (
             <div className='flex h-11 w-full items-center justify-between'>
               <button
-                aria-label={_('Close')}
+                aria-label={onBack ? _('Back') : _('Close')}
                 aria-hidden={!isOpen}
-                onClick={onClose}
+                onClick={onBack ?? onClose}
                 disabled={!dismissible}
                 className={clsx(
                   'btn btn-ghost btn-circle h-8 min-h-8 w-8 hover:bg-transparent focus:outline-hidden disabled:bg-transparent sm:hidden',

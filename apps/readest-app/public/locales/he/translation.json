@@ -2711,7 +2711,6 @@
   "Variables: {{variables}}": "משתנים: {{variables}}",
   "Stable Page Numbers": "מספרי עמודים קבועים",
   "Turn off to count pages by the screens of this device": "כבו כדי לספור עמודים לפי המסכים של מכשיר זה",
-  "Vocabulary": "אוצר מילים",
   "Vocabulary Builder": "אוצר מילים ולמידה",
   "Save to Vocabulary": "שמור לאוצר מילים",
   "Saved to Vocabulary": "נשמר באוצר המילים",
@@ -2719,8 +2718,6 @@
   "Flashcards": "כרטיסיות זיכרון",
   "Flashcard Study": "תרגול כרטיסיות",
   "Mastery": "רמת שליטה",
-  "Mastered": "שלטתי",
-  "Learning": "בלמידה",
   "New": "חדש",
   "Flip Card": "הפוך כרטיסייה",
   "Show Answer": "הצג תשובה",
@@ -2732,7 +2729,7 @@
   "Goal Reached!": "היעד הושג בהצלחה!",
   "minutes today": "דקות היום",
   "Start Focus": "התחל מיקוד",
-  "Next Session": "הסבב הבא"
+  "Next Session": "הסבב הבא",
   "Page Flip": "הפיכת דף",
   "{{count}} pages_one": "עמוד אחד",
   "{{count}} pages_two": "{{count}} עמודים",
@@ -2921,5 +2918,15 @@
   "Books uploaded": "ספרים שהועלו",
   "Reset Counts": "איפוס ספירות",
   "Reset the counts and sync history on this device?": "לאפס את הספירות ואת היסטוריית הסנכרון במכשיר הזה?",
-  "Folder not available": "התיקייה אינה זמינה"
+  "Folder not available": "התיקייה אינה זמינה",
+  "Words per Flash": "מילים בכל הבזק",
+  "Warm-up": "חימום",
+  "Long Word Delay": "השהיה במילים ארוכות",
+  "Reading Calendar": "יומן קריאה",
+  "Previous Month": "החודש הקודם",
+  "Next Month": "החודש הבא",
+  "No reading activity on this day": "אין פעילות קריאה ביום הזה",
+  "See which books you read each day and for how long": "ראו אילו ספרים קראתם בכל יום ולמשך כמה זמן",
+  "Move to parent group": "העברה לקבוצת האב",
+  "Done": "בוצע"
 }

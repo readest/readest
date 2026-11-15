@@ -90,7 +90,7 @@ jobs:
       # Initializes the CodeQL tools for scanning.
       - name: Initialize CodeQL
         if: steps.changes.outputs.rust != 'false'
-        uses: github/codeql-action/init@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4
+        uses: github/codeql-action/init@33d7b85da1a04171e211befe2c739303b9a4c066 # v4
         with:
           languages: ${{ matrix.language }}
           build-mode: ${{ matrix.build-mode }}
@@ -120,7 +120,7 @@ jobs:
 
       - name: Perform CodeQL Analysis
         if: steps.changes.outputs.rust != 'false'
-        uses: github/codeql-action/analyze@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4
+        uses: github/codeql-action/analyze@33d7b85da1a04171e211befe2c739303b9a4c066 # v4
         with:
           category: '/language:${{matrix.language}}'
 
@@ -134,7 +134,7 @@ jobs:
 
       - name: Upload empty Rust SARIF
         if: steps.changes.outputs.rust == 'false'
-        uses: github/codeql-action/upload-sarif@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4
+        uses: github/codeql-action/upload-sarif@33d7b85da1a04171e211befe2c739303b9a4c066 # v4
         with:
           sarif_file: ${{ runner.temp }}/empty-rust.sarif
           category: '/language:rust'

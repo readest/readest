@@ -86,6 +86,11 @@ export interface SaveLibraryBooksOptions {
    * default merge-floor protects against silently dropping books on disk.
    */
   replace?: boolean;
+  /**
+   * Reject when Android storage permission is denied instead of only logging.
+   * Use when subsequent state changes depend on this write having completed.
+   */
+  throwOnFailure?: boolean;
 }
 
 export interface AppService {

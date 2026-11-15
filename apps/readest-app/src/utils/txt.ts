@@ -1,6 +1,6 @@
 import { partialMD5 } from './md5';
 import { getBaseFilename } from './path';
-import { detectLanguage } from './lang';
+import { detectLanguage, LANGUAGE_SAMPLE_MAX_CHARS } from './lang';
 import { configureZip } from './zip';
 
 interface Metadata {
@@ -168,7 +168,7 @@ export class TxtToEpubConverter {
     } catch {}
     const headerAuthor = isPlausibleAuthorName(matchedAuthor) ? matchedAuthor : '';
     const author = headerAuthor || filenameMeta.author || providedAuthor || '';
-    const language = providedLanguage || detectLanguage(fileHeader);
+    const language = providedLanguage || detectLanguage(txtContent);
     // console.log(`Detected language: ${language}`);
     const identifier = await partialMD5(txtFile);
     const metadata = { bookTitle, author, language, identifier };
@@ -214,10 +214,13 @@ export class TxtToEpubConverter {
     const filenameMeta = extractTxtFilenameMetadata(txtFile.name);
     const bookTitle = filenameMeta.title;
     const fileName = `${bookTitle}.epub`;
+    // The language is read from a longer sample than the author (#7435).
+    // LANGUAGE_SAMPLE_MAX_CHARS fits in HEADER_TEXT_MAX_BYTES even at 4 bytes a
+    // character, so both paths see the same sample.
     const fileHeader = await this.readHeaderTextFromFile(
       txtFile,
       runtimeEncoding,
-      HEADER_TEXT_MAX_CHARS,
+      LANGUAGE_SAMPLE_MAX_CHARS,
       HEADER_TEXT_MAX_BYTES,
     );
 
@@ -559,9 +562,10 @@ export class TxtToEpubConverter {
     providedAuthor?: string,
     providedLanguage?: string,
   ): { author: string; language: string } {
+    const authorHeader = fileHeader.slice(0, HEADER_TEXT_MAX_CHARS);
     const authorMatch =
-      fileHeader.match(/[【\[]?作者[】\]]?[:：\s]\s*(.+)\r?\n/) ||
-      fileHeader.match(/[【\[]?\s*(.+)\s+著\s*[】\]]?\r?\n/);
+      authorHeader.match(/[【\[]?作者[】\]]?[:：\s]\s*(.+)\r?\n/) ||
+      authorHeader.match(/[【\[]?\s*(.+)\s+著\s*[】\]]?\r?\n/);
     let matchedAuthor = authorMatch ? authorMatch[1]!.trim() : '';
     try {
       matchedAuthor = matchedAuthor.replace(/^[\p{P}\p{S}]+|[\p{P}\p{S}]+$/gu, '');
