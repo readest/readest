@@ -2836,5 +2836,6 @@
   "No reading activity on this day": "இந்த நாளில் வாசிப்புச் செயல்பாடு இல்லை",
   "See which books you read each day and for how long": "ஒவ்வொரு நாளும் எந்தப் புத்தகங்களை எவ்வளவு நேரம் படித்தீர்கள் என்பதைப் பாருங்கள்",
   "Move to parent group": "மேல்நிலைக் குழுவிற்கு நகர்த்து",
-  "Done": "முடிந்தது"
+  "Done": "முடிந்தது",
+  "Solid Footer in Scrolled Mode": "உருட்டல் பயன்முறையில் திடமான அடிக்குறிப்பு"
 }

@@ -2836,5 +2836,6 @@
   "No reading activity on this day": "Δεν υπάρχει δραστηριότητα ανάγνωσης αυτή την ημέρα",
   "See which books you read each day and for how long": "Δείτε ποια βιβλία διαβάσατε κάθε μέρα και για πόση ώρα",
   "Move to parent group": "Μετακίνηση στην ανώτερη ομάδα",
-  "Done": "Ολοκληρώθηκε"
+  "Done": "Ολοκληρώθηκε",
+  "Solid Footer in Scrolled Mode": "Συμπαγές υποσέλιδο σε λειτουργία κύλισης"
 }
