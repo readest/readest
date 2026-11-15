@@ -24,6 +24,7 @@ import { applyVimMotion, extendSelectionFromContents, KeyModifiers } from '@/uti
 import { getLiveVimFind, useVimFindStore } from '@/store/vimFindStore';
 import { getReadingAreaRect, keyboardTurnDirection } from './useAutoPageTurn';
 import { viewPagination } from './usePagination';
+import { applyPageTurnAttributes } from './useCapturedTurn';
 import useShortcuts from '@/hooks/useShortcuts';
 import { loadShortcuts } from '@/helpers/shortcuts';
 import { matchesShortcut } from '@/utils/shortcutKeys';
@@ -79,7 +80,12 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
       }
       setViewSettings(sideBarBookKey, viewSettings!);
       const flowMode = viewSettings.scrolled ? 'scrolled' : 'paginated';
-      getView(sideBarBookKey)?.renderer.setAttribute('flow', flowMode);
+      const view = getView(sideBarBookKey);
+      view?.renderer.setAttribute('flow', flowMode);
+      // Recompute no-swipe as ViewMenu does: a captured paginated turn's
+      // no-swipe would otherwise block single-section boundary swipes.
+      if (view)
+        applyPageTurnAttributes(view, viewSettings, !!getBookData(sideBarBookKey)?.isFixedLayout);
     }
     return true;
   };

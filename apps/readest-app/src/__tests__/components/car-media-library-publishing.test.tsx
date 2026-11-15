@@ -1,4 +1,5 @@
 // @vitest-environment happy-dom
+import { Profiler } from 'react';
 import { act, cleanup, render, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import CarMediaLibraryBridge from '@/components/CarMediaLibraryBridge';
@@ -66,5 +67,29 @@ describe.each(['ios', 'android'])('car library on %s', (platform) => {
         payload: { booksJson: '[]' },
       }),
     );
+  });
+});
+
+describe('car library elsewhere', () => {
+  // Each page turn writes the book's progress into the library. Off Android
+  // and iOS there is no car to publish to, so that must not re-render the bridge.
+  it.each(['macos', 'windows', 'linux'])('does not follow the library on %s', (platform) => {
+    mocks.platform = platform;
+    const onRender = vi.fn();
+    render(
+      <Profiler id='bridge' onRender={onRender}>
+        <CarMediaLibraryBridge />
+      </Profiler>,
+    );
+    onRender.mockClear();
+
+    act(() =>
+      useLibraryStore.setState({
+        library: useLibraryStore.getState().library.map((book) => ({ ...book, updatedAt: 2 })),
+      }),
+    );
+
+    expect(onRender).not.toHaveBeenCalled();
+    expect(mocks.invoke).not.toHaveBeenCalled();
   });
 });
