@@ -2834,5 +2834,7 @@
   "Previous Month": "წინა თვე",
   "Next Month": "შემდეგი თვე",
   "No reading activity on this day": "ამ დღეს კითხვა არ დაფიქსირებულა",
-  "See which books you read each day and for how long": "ნახეთ, რომელ წიგნებს კითხულობდით ყოველდღე და რამდენ ხანს"
+  "See which books you read each day and for how long": "ნახეთ, რომელ წიგნებს კითხულობდით ყოველდღე და რამდენ ხანს",
+  "Move to parent group": "Move to parent group",
+  "Done": "მზადაა"
 }
