@@ -8,11 +8,11 @@ import type { ReaderPage } from '../pages/ReaderPage';
  *
  * The book uses `@media (orientation: landscape/portrait)` to switch a
  * bilingual `.paracol` block between side-by-side (flex) and stacked (block).
- * Readest resolves those queries against the section iframe, which is a
- * multi-column strip in paginated mode and a full content height in scrolled
- * mode, so the transform rewrites them into rules gated on the host's
- * `html[data-orientation]` attribute. These assertions read the live computed
- * style inside the section iframe, on both sides of a window resize.
+ * The section iframe is a multi-column strip in paginated mode and a full
+ * content height in scrolled mode, so Readest resolves those queries against
+ * the reading area (applyOrientationMedia) and again when it turns. These
+ * assertions read the live computed style inside the section iframe, on both
+ * sides of a window resize.
  *
  * Two further regressions are covered: the two-page spread must follow the
  * reading area without splitting an English/Chinese pair across two pages, and
@@ -54,7 +54,8 @@ const probe = (page: Page, wantedAnchor: string | null): Promise<LayoutState> =>
     ) as HTMLInputElement | null;
     const frames = Array.from(shadow?.querySelectorAll('iframe') ?? []) as HTMLIFrameElement[];
 
-    let orientation: string | null = null;
+    // The reading area's own shape, which the book's queries must follow.
+    const orientation = rect ? (rect.width > rect.height ? 'landscape' : 'portrait') : null;
     let display: string | null = null;
     let anchor: string | null = null;
     let anchorVisible = false;
@@ -69,7 +70,6 @@ const probe = (page: Page, wantedAnchor: string | null): Promise<LayoutState> =>
       // is not parsed yet when the resize observer is still re-laying out.
       if (!doc?.documentElement) continue;
       const fr = frame.getBoundingClientRect();
-      orientation = doc.documentElement.getAttribute('data-orientation');
       const paracol = doc.querySelector('.paracol');
       if (paracol && !display) display = getComputedStyle(paracol).display;
       for (const el of Array.from(doc.querySelectorAll('.yuanwen'))) {

@@ -47,11 +47,11 @@ import { useKOSync } from '../hooks/useKOSync';
 import { useFileSync } from '../hooks/useFileSync';
 import {
   applyEinkModeAttribute,
+  applyOrientationMedia,
   applyFixedlayoutStyles,
   applyImageStyle,
   applyNamespacedAttributes,
   applyLinkHitArea,
-  applyOrientationAttribute,
   applyScrollbarStyle,
   applyScrollModeClass,
   applyThemeModeClass,
@@ -61,9 +61,7 @@ import {
   getStyles,
   getThemeCode,
   keepTextAlignment,
-  resolveReadingAreaOrientation,
   transformStylesheet,
-  type ReadingAreaOrientation,
 } from '@/utils/style';
 import { applyScrollableStyle, applyTableTouchScroll } from '@/utils/scrollable';
 import { mountAdditionalFonts, mountCustomFont } from '@/styles/fonts';
@@ -144,6 +142,13 @@ declare global {
     eval(script: string): void;
   }
 }
+
+// The reading area is the foliate-view box: the sidebars overlay it, and the
+// section iframes inside it are sized to their content.
+const isLandscapeBox = (el: Element) => {
+  const { width, height } = el.getBoundingClientRect();
+  return width > height;
+};
 
 const FoliateViewer: React.FC<{
   bookKey: string;
@@ -453,62 +458,19 @@ const FoliateViewer: React.FC<{
       if (typeof ResizeObserver === 'undefined') return;
       const el = viewRef.current;
       if (el) {
-        observer = new ResizeObserver(() => invalidateChapterScreens());
+        // The same resize can turn the reading area, which the book's
+        // `(orientation: ...)` rules follow (see applyOrientationMedia).
+        let landscape = isLandscapeBox(el);
+        observer = new ResizeObserver(() => {
+          invalidateChapterScreens();
+          if (isLandscapeBox(el) === landscape) return;
+          landscape = !landscape;
+          for (const { doc } of el.renderer.getContents()) applyOrientationMedia(doc, landscape);
+        });
         observer.observe(el);
         return;
       }
       raf = requestAnimationFrame(attach);
-    };
-    attach();
-    return () => {
-      cancelAnimationFrame(raf);
-      observer?.disconnect();
-    };
-  }, [bookKey, invalidateChapterScreens]);
-
-  // A section iframe cannot tell whether the reader is landscape: in paginated
-  // mode it spans the whole multi-column strip, in scrolled mode it is as tall
-  // as the chapter. Measure the reading area itself (the foliate-view box, i.e.
-  // what is actually shown, excluding sidebars and chrome) and mirror it onto
-  // every section document. transformStylesheet freezes @media (orientation)
-  // at open-book time, so book stylesheets and userStylesheet branch live on
-  // html[data-orientation='portrait'] instead.
-  const orientationRef = useRef<ReadingAreaOrientation | null>(
-    typeof window === 'undefined'
-      ? null
-      : resolveReadingAreaOrientation(window.innerWidth, window.innerHeight),
-  );
-  useEffect(() => {
-    let observer: ResizeObserver | undefined;
-    let raf = 0;
-    let first = true;
-    const sync = (orientation: ReadingAreaOrientation) => {
-      const contents = viewRef.current?.renderer?.getContents?.() ?? [];
-      for (const { doc } of contents) {
-        if (doc?.documentElement) applyOrientationAttribute(doc, orientation);
-      }
-      invalidateChapterScreens();
-    };
-    const attach = () => {
-      // jsdom has no ResizeObserver; the attribute keeps its open-book value.
-      if (typeof ResizeObserver === 'undefined') return;
-      const el = viewRef.current;
-      if (!el) {
-        raf = requestAnimationFrame(attach);
-        return;
-      }
-      const measure = () => {
-        const { width, height } = el.getBoundingClientRect();
-        const next = resolveReadingAreaOrientation(width, height, orientationRef.current);
-        if (next && (first || next !== orientationRef.current)) {
-          orientationRef.current = next;
-          sync(next);
-        }
-        first = false;
-      };
-      observer = new ResizeObserver(measure);
-      observer.observe(el);
-      measure();
     };
     attach();
     return () => {
@@ -645,7 +607,7 @@ const FoliateViewer: React.FC<{
       applyThemeModeClass(detail.doc, useThemeStore.getState().isDarkMode);
       applyScrollModeClass(detail.doc, viewSettings.scrolled || false);
       applyEinkModeAttribute(detail.doc, viewSettings.isEink || false);
-      applyOrientationAttribute(detail.doc, orientationRef.current ?? 'landscape');
+      if (viewRef.current) applyOrientationMedia(detail.doc, isLandscapeBox(viewRef.current));
       applyScrollbarStyle(document, viewSettings.hideScrollbar || false);
       keepTextAlignment(detail.doc);
       handleA11yNavigation(viewRef.current, detail.doc, {
@@ -1326,7 +1288,6 @@ const FoliateViewer: React.FC<{
         applyThemeModeClass(doc, isDarkMode);
         applyScrollModeClass(doc, viewSettings.scrolled || false);
         applyEinkModeAttribute(doc, viewSettings.isEink || false);
-        applyOrientationAttribute(doc, orientationRef.current ?? 'landscape');
         applyScrollbarStyle(document, viewSettings.hideScrollbar || false);
       });
 
