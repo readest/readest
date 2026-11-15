@@ -405,10 +405,10 @@ const getColorStyles = (
     /* A book's own cell, row and column colors and background images give
        way too (#7415). Whatever sits inside a cell is transparent, so it shows
        the cell's color (or the texture) instead of a second shade behind the
-       text, and takes the theme text color, so white text set for a dark cell
-       stays readable (links keep theirs: a:any-link is more specific). The
-       cell rule ties on specificity with p, span and pre above, so it must
-       come after them. */
+       text, and inherits its text color (the theme color from the cell, the
+       link color inside a link), so white text set for a dark cell stays
+       readable. The cell rule ties on specificity with p, span and pre above,
+       so it must come after them. */
     table, colgroup, col, thead, tbody, tfoot, tr, th, td, caption {
       background-color: ${tableBg} !important;
       background-image: none !important;
@@ -417,7 +417,7 @@ const getColorStyles = (
     }
     :is(th, td, caption) * {
       background-color: transparent !important;
-      color: ${fg} !important;
+      color: inherit !important;
     }`
         : ''
     }

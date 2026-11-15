@@ -54,7 +54,7 @@ const TABLE_HTML = `
     <colgroup><col id="col"></colgroup>
     <tr id="tr">
       <td id="td" style="background-image: linear-gradient(#ffffff, #ffffff)">
-        <b id="b">bold</b><span id="span">span</span><p id="p">text</p><pre id="pre">code</pre><a id="a" href="#a">link</a>
+        <b id="b">bold</b><span id="span">span</span><p id="p">text</p><pre id="pre">code</pre><a id="a" href="#a">link <em id="em">em</em></a>
       </td>
     </tr>
   </table>
@@ -122,6 +122,7 @@ describe('Override Book Color on tables (#7415)', () => {
     const { color } = renderTable({ overrideColor: true });
     expect(color('b')).toBe('rgb(17, 17, 17)');
     expect(color('a')).toBe('rgb(51, 102, 204)');
+    expect(color('em')).toBe('rgb(51, 102, 204)');
     expect(renderTable({ overrideColor: false }).color('b')).toBe('rgb(255, 255, 255)');
   });
 
