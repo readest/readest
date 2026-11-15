@@ -61,7 +61,7 @@ fn open_location<R: Runtime>(
     location: &str,
     opts: OpenOptions,
 ) -> Result<File, String> {
-    let file_path = FilePath::from_str(location).map_err(|e| e.to_string())?;
+    let Ok(file_path) = FilePath::from_str(location);
     match &file_path {
         FilePath::Path(path) => {
             ensure_path_allowed(app, &path.to_string_lossy()).map_err(|e| e.to_string())?;
