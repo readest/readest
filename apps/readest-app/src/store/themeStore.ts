@@ -15,7 +15,7 @@ import {
   resolveThemeIsDarkMode,
 } from '@/utils/ambientLight';
 import { getCurrentWindow } from '@tauri-apps/api/window';
-import { CustomTheme, Palette, ThemeMode, ThemeScope } from '@/styles/themes';
+import { CustomTheme, getDefaultThemeColor, Palette, ThemeMode, ThemeScope } from '@/styles/themes';
 import { EnvConfigType, isWebAppPlatform } from '@/services/environment';
 import { SystemSettings } from '@/types/settings';
 import type { DuoFoldState } from '@/utils/bridge';
@@ -133,8 +133,7 @@ const getInitialThemeMode = (): ThemeMode => {
 
 const getInitialThemeColor = (): string => {
   if (typeof window !== 'undefined' && localStorage) {
-    const defaultColor = window.__READEST_IS_EINK ? 'contrast' : 'default';
-    return localStorage.getItem('themeColor') || defaultColor;
+    return localStorage.getItem('themeColor') || getDefaultThemeColor();
   }
   return 'default';
 };

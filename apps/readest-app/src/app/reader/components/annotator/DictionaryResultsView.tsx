@@ -97,6 +97,7 @@ export interface DictionaryResultsState {
   speakWord: () => void;
   /** Vocabulary language for the header chips; unset hides them. */
   vocabularyLang?: string;
+  manualVocabularyOccurrence?: VocabularyOccurrence;
 }
 
 /**
@@ -498,6 +499,8 @@ export function useDictionaryResults({
     isSpeaking,
     speakWord,
     vocabularyLang: capture?.lang,
+    manualVocabularyOccurrence:
+      !saveLookups && historyStack.length === 1 ? capture?.occurrence : undefined,
   };
 }
 
@@ -513,9 +516,14 @@ interface DictionaryResultsHeaderProps {
   speaking?: boolean;
   /** Shows the Learning / Mastered chips for `currentWord` in this language. */
   vocabularyLang?: string;
+  manualVocabularyOccurrence?: VocabularyOccurrence;
 }
 
-export const VocabularyChips: React.FC<{ word: string; lang: string }> = ({ word, lang }) => {
+export const VocabularyChips: React.FC<{
+  word: string;
+  lang: string;
+  occurrence?: VocabularyOccurrence;
+}> = ({ word, lang, occurrence }) => {
   const _ = useTranslation();
   const id = entryId(lang, normalizeWordKey(word));
   const state = useVocabularyStore((s) => {
@@ -524,7 +532,9 @@ export const VocabularyChips: React.FC<{ word: string; lang: string }> = ({ word
   });
   const toggle = (target: VocabularyState) => {
     const store = useVocabularyStore.getState();
-    store.setState(store.ensureEntry(word, lang), state === target ? 'none' : target);
+    const next = state === target ? 'none' : target;
+    if (next !== 'none' && occurrence) store.recordLookup({ word, lang, occurrence });
+    store.setState(store.ensureEntry(word, lang), next);
   };
   const chips: { state: VocabularyState; label: string }[] = [
     { state: 'learning', label: _('Learning') },
@@ -619,6 +629,7 @@ export const DictionaryResultsHeader: React.FC<DictionaryResultsHeaderProps> = (
   onSpeak,
   speaking,
   vocabularyLang,
+  manualVocabularyOccurrence,
 }) => {
   const _ = useTranslation();
   return (
@@ -674,7 +685,11 @@ export const DictionaryResultsHeader: React.FC<DictionaryResultsHeaderProps> = (
       </div>
       {vocabularyLang && normalizeWordKey(currentWord) ? (
         <>
-          <VocabularyChips word={currentWord} lang={vocabularyLang} />
+          <VocabularyChips
+            word={currentWord}
+            lang={vocabularyLang}
+            occurrence={manualVocabularyOccurrence}
+          />
           <LearningHintField key={currentWord} word={currentWord} lang={vocabularyLang} />
         </>
       ) : null}

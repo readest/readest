@@ -51,7 +51,7 @@ const renderBands = (marginTopPx: number) => {
   const contentInsets = { ...baseProps.contentInsets, top: baseProps.gridInsets.top + marginTopPx };
   const props = { ...baseProps, contentInsets };
   const hint = render(<HintInfo {...props} />).container.querySelector('.hintinfo') as HTMLElement;
-  const section = render(<SectionInfo {...props} section='Chapter 4' />).container.querySelector(
+  const section = render(<SectionInfo {...props} />).container.querySelector(
     '.sectioninfo',
   ) as HTMLElement;
   return { hint, section };

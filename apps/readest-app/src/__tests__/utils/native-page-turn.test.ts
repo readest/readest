@@ -166,6 +166,47 @@ describe('Android native page-turn pipeline', () => {
     }
   });
 
+  // A PDF page draws its sharp layer only once on screen. Its sheet was taken
+  // while it was the neighbour being turned to, so the next touch would show
+  // that softer copy over the live page.
+  it('retakes the current page once its pixels change after a turn', async () => {
+    const f = fixture();
+    const { controller } = f;
+    // The native bank keeps three sheets, never evicting the one on screen.
+    const bank: string[] = [];
+    let shown = '';
+    const call = f.call.getMockImplementation()!;
+    f.call.mockImplementation(async (args) => {
+      const result = await call(args);
+      if (args.op === 'cover') shown = args.key!;
+      if (args.op === 'start') shown = args.destination!;
+      if (args.op !== 'capture') return result;
+      if (bank.includes(args.key!)) bank.splice(bank.indexOf(args.key!), 1);
+      bank.push(args.key!);
+      while (bank.length > 3)
+        bank.splice(
+          bank.findIndex((key) => key !== shown),
+          1,
+        );
+      return { ...result, keys: [...bank] };
+    });
+    try {
+      await controller.prepareCapture('curl');
+      expect(await controller.turn(true, false)).toBe(true);
+      await controller.prepareCapture('curl');
+      f.call.mockClear();
+      (controller as unknown as { refreshCurrentPage?: () => void }).refreshCurrentPage?.();
+      await controller.prepareCapture('curl');
+      const captured = f.call.mock.calls.filter(([args]) => args.op === 'capture');
+      expect(
+        captured.map(([args]) => args.key),
+        'the page now on screen is captured again',
+      ).toContain('2');
+    } finally {
+      controller.dispose();
+    }
+  });
+
   describe('resident pages reported during a held invalidation', () => {
     // The native bank lists every resident page, including those the held
     // invalidation is about to delete.

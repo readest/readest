@@ -41,12 +41,13 @@ const DesktopFooterBar: React.FC<FooterBarChildProps> = ({
     }
   }, [hoveredBookKey, bookKey]);
 
-  useEffect(() => {
-    if (progressValid) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setProgressValue(progressFraction * 100);
-    }
-  }, [progressValid, progressFraction]);
+  // Synced during render, so a footer shown after page turns shows the current
+  // position in the commit that shows it.
+  const [shownFraction, setShownFraction] = React.useState<number | null>(null);
+  if (progressValid && progressFraction !== shownFraction) {
+    setShownFraction(progressFraction);
+    setProgressValue(progressFraction * 100);
+  }
 
   // The page label previews the slider while it is dragged, until the reader
   // relocates and reports the real page.
@@ -147,4 +148,6 @@ const DesktopFooterBar: React.FC<FooterBarChildProps> = ({
   );
 };
 
-export default DesktopFooterBar;
+// Memoized so a footer that keeps its props (hidden, between page turns) skips
+// its panels and buttons.
+export default React.memo(DesktopFooterBar);

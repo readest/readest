@@ -1,7 +1,9 @@
-import { describe, test, expect, vi } from 'vitest';
+import { afterEach, describe, test, expect, vi } from 'vitest';
 import type { Book } from '@/types/book';
 
 const osTypeMock = vi.fn().mockReturnValue('macos');
+const selectDirectoryMock = vi.fn<() => Promise<{ path?: string; cancelled: boolean }>>();
+const openDialogMock = vi.fn().mockResolvedValue(null);
 const invokeMock = vi.fn<(command: string, args?: unknown) => Promise<unknown>>();
 invokeMock.mockResolvedValue(undefined);
 type CoverEventCallback = (event: {
@@ -71,7 +73,7 @@ vi.mock('@/store/libraryStore', () => ({
 }));
 
 vi.mock('@tauri-apps/plugin-dialog', () => ({
-  open: vi.fn().mockResolvedValue(null),
+  open: (...args: unknown[]) => openDialogMock(...args),
   save: vi.fn().mockResolvedValue(null),
   ask: vi.fn().mockResolvedValue(true),
 }));
@@ -87,6 +89,7 @@ vi.mock('@tauri-apps/api/path', () => ({
 }));
 
 vi.mock('@/utils/bridge', () => ({
+  selectDirectory: () => selectDirectoryMock(),
   copyURIToPath: vi.fn().mockResolvedValue({ path: '' }),
   getStorefrontRegionCode: vi.fn().mockResolvedValue({ regionCode: null }),
   hasAmbientLightSensor: vi.fn().mockResolvedValue({ available: false }),
@@ -332,5 +335,55 @@ describe('NativeAppService rounded-window capability', () => {
   test('Windows does not use a rounded (transparent) window', async () => {
     const service = await loadServiceWithOS('windows');
     expect(service.hasRoundedWindow).toBe(false);
+  });
+});
+
+afterEach(() => {
+  vi.unstubAllEnvs();
+});
+
+describe('NativeAppService folder import', () => {
+  test.each([
+    ['ios', 'appstore', true],
+    ['ios', 'readest', true],
+    ['macos', 'appstore', false],
+    ['macos', 'readest', true],
+    ['android', 'playstore', true],
+    ['android', 'readest', true],
+    ['windows', 'readest', true],
+    ['linux', 'readest', true],
+  ] as const)('%s / %s: directory import is %s', async (os, channel, enabled) => {
+    vi.stubEnv('NEXT_PUBLIC_DIST_CHANNEL', channel);
+    const service = await loadServiceWithOS(os);
+    expect(service.canReadExternalDir).toBe(enabled);
+    if (channel === 'appstore') {
+      expect(service.canCustomizeRootDir).toBe(false);
+    }
+  });
+
+  test('iOS App Store folder selection uses the native picker and grants the selected path', async () => {
+    vi.stubEnv('NEXT_PUBLIC_DIST_CHANNEL', 'appstore');
+    const service = await loadServiceWithOS('ios');
+    const path = '/private/var/mobile/Library/Mobile Documents/example/Books';
+    selectDirectoryMock.mockResolvedValueOnce({ path, cancelled: false });
+    invokeMock.mockClear();
+    openDialogMock.mockClear();
+
+    expect(await service.selectDirectory()).toBe(path);
+    expect(selectDirectoryMock).toHaveBeenCalled();
+    expect(openDialogMock).not.toHaveBeenCalled();
+    expect(invokeMock).toHaveBeenCalledWith('allow_paths_in_scopes', {
+      paths: [path],
+      isDirectory: true,
+    });
+  });
+
+  test('cancelling the iOS folder picker grants no path', async () => {
+    const service = await loadServiceWithOS('ios');
+    selectDirectoryMock.mockResolvedValueOnce({ cancelled: true });
+    invokeMock.mockClear();
+
+    expect(await service.selectDirectory()).toBe('');
+    expect(invokeMock).not.toHaveBeenCalledWith('allow_paths_in_scopes', expect.anything());
   });
 });

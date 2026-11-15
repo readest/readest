@@ -5,6 +5,7 @@ import { BookFormat, FIXED_LAYOUT_FORMATS, ViewSettings } from '@/types/book';
 import { FoliateView } from '@/types/view';
 import { useEnv } from '@/context/EnvContext';
 import { useReaderStore } from '@/store/readerStore';
+import { useBookProgress } from '@/store/readerProgressStore';
 import { saveViewSettings } from '@/helpers/settings';
 import { READING_RULER_COLORS } from '@/services/constants';
 import { throttle } from '@/utils/throttle';
@@ -227,7 +228,7 @@ const ReadingRuler: React.FC<ReadingRulerProps> = ({
   const lines = viewSettings.readingRulerStyle === 'line' ? 1 : configuredLines;
   const { envConfig } = useEnv();
   const { getProgress, getView } = useReaderStore();
-  const progress = getProgress(bookKey);
+  const progress = useBookProgress(bookKey);
   const containerRef = useRef<HTMLDivElement>(null);
   const [currentPosition, setCurrentPosition] = useState(position);
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });

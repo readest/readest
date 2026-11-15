@@ -76,7 +76,10 @@ export const refreshSectionGlosses = async (
       whenSelectionClears(doc, () => void refreshSectionGlosses(doc, viewSettings, ctx));
       return;
     }
-    clearGlosses(doc);
+    // With Word Lens on, join the text even without hints to clear: a word
+    // split across adjacent text nodes (a translation's unwrapped tags leave
+    // them) can't be hinted.
+    clearGlosses(doc, viewSettings.wordLensEnabled);
     if (!viewSettings.wordLensEnabled) return;
     const source = toWordLensSource(ctx.bookLang);
     if (!source || !canTokenizeSource(source)) return;

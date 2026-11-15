@@ -95,14 +95,17 @@ describe('dictionary vocabulary chips', () => {
     );
   });
 
-  it('records nothing with capture turned off until a chip is tapped', () => {
+  it.each([
+    ['Learning', 'learning'],
+    ['Mastered', 'mastered'],
+  ])('saves the source on an explicit %s mark with auto-save off', (label, state) => {
     useCustomDictionaryStore.setState({
       settings: { ...useCustomDictionaryStore.getState().settings, saveLookupsToVocabulary: false },
     });
     sheet({ capture });
     expect(entries()).toHaveLength(0);
-    fireEvent.click(screen.getByRole('button', { name: 'Mastered' }));
-    expect(entries()[0]).toMatchObject({ state: 'mastered', occurrences: [] });
+    fireEvent.click(screen.getByRole('button', { name: label }));
+    expect(entries()[0]).toMatchObject({ state, occurrences: [capture.occurrence] });
   });
 
   it('shows chips without recording when the capture has no sentence', () => {

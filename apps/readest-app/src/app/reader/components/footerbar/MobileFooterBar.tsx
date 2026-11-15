@@ -67,4 +67,6 @@ const MobileFooterBar: React.FC<FooterBarChildProps> = ({
   );
 };
 
-export default MobileFooterBar;
+// Memoized so a footer that keeps its props (hidden, between page turns) skips
+// its panels and buttons.
+export default React.memo(MobileFooterBar);

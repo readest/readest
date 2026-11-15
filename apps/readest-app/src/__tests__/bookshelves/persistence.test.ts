@@ -1,17 +1,19 @@
 // @vitest-environment happy-dom
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { z } from 'zod';
 import { HlcGenerator } from '@/libs/crdt';
 import { useSettingsStore } from '@/store/settingsStore';
 import type { EnvConfigType } from '@/services/environment';
 import type { SystemSettings } from '@/types/settings';
 import type { ReplicaRow } from '@/types/replica';
 import { DEFAULT_SYSTEM_SETTINGS } from '@/services/constants';
-import { createBookshelf } from '@/services/bookshelves/definitions';
+import { bookshelfSchema, createBookshelf } from '@/services/bookshelves/definitions';
 import { mergeBookshelfStates, readBookshelves } from '@/services/bookshelves/state';
 import {
   applyRemoteBookshelfRows,
   replayBookshelfOperations,
   saveBookshelfDraft,
+  updateBookshelf,
 } from '@/services/bookshelves/persistence';
 import {
   acknowledgeBookshelfOperation,
@@ -47,6 +49,257 @@ beforeEach(() => {
   });
 });
 describe('bookshelf persistence and sync integration', () => {
+  it('exposes planned revision stamps before writing settings, HLC or journal rows', async () => {
+    const base = readBookshelves(useSettingsStore.getState().settings);
+    const entries = () =>
+      Array.from({ length: localStorage.length }, (_, index) => {
+        const key = localStorage.key(index)!;
+        return [key, localStorage.getItem(key)];
+      });
+    const previous = entries();
+    const settings = useSettingsStore.getState().settings;
+    const prepared = vi.fn((state) => {
+      expect(state.rows['default']?.fields_jsonb['definition']?.t).toBeDefined();
+      expect(entries()).toEqual(previous);
+      throw new Error('intent unavailable');
+    });
+    await expect(
+      saveBookshelfDraft(
+        env,
+        base,
+        base.map((s) => (s.id === 'default' ? { ...s, useGlobalSort: false } : s)),
+        prepared,
+      ),
+    ).rejects.toThrow('intent unavailable');
+    expect(prepared).toHaveBeenCalledTimes(1);
+    expect(useSettingsStore.getState().settings).toBe(settings);
+    expect(entries()).toEqual(previous);
+    expect(mocks.saveSettings).not.toHaveBeenCalled();
+  });
+
+  it('keeps reordered definitions readable by legacy clients and roundtrips custom mode separately', async () => {
+    // The pre-custom client rejects unknown keys and sort enum values.
+    const legacySort = z
+      .object({
+        by: z.enum([
+          'title',
+          'author',
+          'updated',
+          'created',
+          'series',
+          'size',
+          'format',
+          'published',
+          'progress',
+          'pages',
+          'timeRemaining',
+        ]),
+        ascending: z.boolean(),
+        thenBy: z.literal('none'),
+        thenAscending: z.boolean(),
+      })
+      .strict();
+    const legacyDefinition = z
+      .object({
+        id: z.string(),
+        name: z.string(),
+        enabled: z.boolean(),
+        layout: z.string(),
+        hideCovers: z.boolean(),
+        coverFit: z.string(),
+        skeuomorphicCovers: z.boolean(),
+        filters: z.object({ type: z.string(), match: z.string(), children: z.array(z.unknown()) }),
+        useGlobalGrouping: z.boolean(),
+        groupBy: z.string(),
+        useGlobalSort: z.boolean(),
+        sort: legacySort,
+        exclusive: z.boolean(),
+        includeExclusiveBooks: z.boolean(),
+      })
+      .strict();
+    const base = readBookshelves(useSettingsStore.getState().settings);
+    const baseline = {
+      by: 'title' as const,
+      ascending: true,
+      thenBy: 'none' as const,
+      thenAscending: true,
+    };
+    const custom = { ...createBookshelf('Fiction'), sort: baseline, useGlobalSort: false };
+    await saveBookshelfDraft(env, base, [...base, custom]);
+    await updateBookshelf(env, custom.id, (shelf) => ({
+      ...shelf,
+      sort: { ...baseline, by: 'custom' },
+      customSortFallback: baseline,
+      manualOrder: { 'group:': ['b:second', 'b:first'] },
+      manualOrderUpdatedAt: { 'group:': 100 },
+    }));
+    const definition =
+      useSettingsStore.getState().settings.bookshelves!.rows[custom.id]!.fields_jsonb['definition']!
+        .v;
+    expect(legacyDefinition.safeParse(definition).success).toBe(true);
+    const read = () =>
+      readBookshelves(useSettingsStore.getState().settings).find((s) => s.id === custom.id)!;
+    expect(read().sort.by).toBe('custom');
+    expect(read().customSortFallback).toEqual(baseline);
+    expect(read().manualOrderUpdatedAt?.['group:']).toBe(100);
+    await updateBookshelf(env, custom.id, (shelf) => ({ ...shelf, name: 'Renamed' }));
+    expect(read().sort.by).toBe('custom');
+    expect(read().manualOrderUpdatedAt?.['group:']).toBe(100);
+    await updateBookshelf(env, custom.id, (shelf) => ({ ...shelf, sort: baseline }));
+    expect(read().sort.by).toBe('title');
+    expect(read().manualOrder?.['group:']).toEqual(['b:second', 'b:first']);
+    await updateBookshelf(env, custom.id, (shelf) => ({
+      ...shelf,
+      sort: { ...baseline, by: 'custom' },
+      customSortFallback: baseline,
+    }));
+    expect(read().sort.by).toBe('custom');
+    await updateBookshelf(env, custom.id, (shelf) => ({ ...shelf, useGlobalSort: true }));
+    expect(read().useGlobalSort).toBe(true);
+    expect(read().sort.by).toBe('title');
+    await updateBookshelf(env, custom.id, (shelf) => ({
+      ...shelf,
+      useGlobalSort: false,
+      sort: { ...baseline, by: 'custom' },
+      customSortFallback: baseline,
+    }));
+    expect(read().sort.by).toBe('custom');
+    const current = useSettingsStore.getState().settings.bookshelves!.rows[custom.id]!;
+    const clock = new HlcGenerator('legacy');
+    clock.observe(current.updated_at_ts);
+    const t = clock.next();
+    const legacyEdit = {
+      ...current,
+      fields_jsonb: {
+        definition: {
+          v: { ...(current.fields_jsonb['definition']!.v as object), name: 'From an older client' },
+          t,
+          s: 'legacy',
+        },
+      },
+      updated_at_ts: t,
+    };
+    await applyRemoteBookshelfRows(env, [legacyEdit]);
+    expect(read().name).toBe('From an older client');
+    expect(read().sort.by).toBe('title');
+    expect(read().manualOrder?.['group:']).toEqual(['b:second', 'b:first']);
+  });
+  it.each([
+    false,
+    true,
+  ])('recovers a whole order after a crash interrupts chunk journal writes (anonymous: %s)', async (anonymous) => {
+    if (anonymous) {
+      localStorage.removeItem('user');
+      mocks.userId = '';
+    }
+    const ids = Array.from({ length: 600 }, (_, i) => `b:${i.toString(16).padStart(32, '0')}`);
+    await updateBookshelf(env, 'default', (shelf) => ({
+      ...shelf,
+      manualOrder: { 'group:': ids },
+    }));
+    const previous = JSON.parse(JSON.stringify(useSettingsStore.getState().settings));
+    const storage = localStorage;
+    const write = storage.setItem.bind(storage);
+    let count = 0;
+    const interrupted = vi.fn((key: string, value: string) => {
+      if (key.startsWith('readest.bookshelf.pending.v1:') && ++count === 2)
+        throw new DOMException('Interrupted write', 'QuotaExceededError');
+      write(key, value);
+    });
+    // happy-dom binds Storage methods before this test installs its failure;
+    // a prototype spy would miss those calls. Delegate to the real storage.
+    vi.stubGlobal('localStorage', {
+      getItem: storage.getItem.bind(storage),
+      setItem: interrupted,
+      removeItem: storage.removeItem.bind(storage),
+      clear: storage.clear.bind(storage),
+      key: storage.key.bind(storage),
+      get length() {
+        return storage.length;
+      },
+    });
+    try {
+      await expect(
+        updateBookshelf(env, 'default', (shelf) => ({
+          ...shelf,
+          manualOrder: { 'group:': [...ids].reverse() },
+        })),
+      ).rejects.toThrow('Interrupted write');
+    } finally {
+      vi.unstubAllGlobals();
+    }
+    useSettingsStore.setState({ settings: previous });
+    await replayBookshelfOperations(env);
+    expect(
+      readBookshelves(useSettingsStore.getState().settings).find((shelf) => shelf.id === 'default')
+        ?.manualOrder?.['group:'],
+    ).toEqual([...ids].reverse());
+    expect(
+      Array.from({ length: localStorage.length }, (_, index) => localStorage.key(index)).some(
+        (key) => key?.startsWith('readest.bookshelf.batch.v1:'),
+      ),
+    ).toBe(false);
+    if (anonymous) {
+      mocks.userId = 'account';
+      localStorage.setItem('user', JSON.stringify({ id: 'account' }));
+      mocks.connected = true;
+      await replayBookshelfOperations(env);
+      expect(
+        readBookshelves(useSettingsStore.getState().settings).find(
+          (shelf) => shelf.id === 'default',
+        )?.manualOrder?.['group:'],
+      ).toEqual([...ids].reverse());
+    }
+  });
+
+  it('saves the order of 2000 books without exceeding the replica row size cap', async () => {
+    const ids = Array.from({ length: 2000 }, (_, i) => `b:${i.toString(16).padStart(32, '0')}`);
+    await expect(
+      updateBookshelf(env, 'default', (shelf) => ({ ...shelf, manualOrder: { 'group:': ids } })),
+    ).resolves.toBeUndefined();
+    const saved = readBookshelves(useSettingsStore.getState().settings);
+    expect(saved.find((shelf) => shelf.id === 'default')?.manualOrder?.['group:']).toEqual(ids);
+    expect(saved).toHaveLength(5);
+    expect(bookshelfSchema.safeParse(saved.find((shelf) => shelf.id === 'default')).success).toBe(
+      true,
+    );
+    for (const row of Object.values(useSettingsStore.getState().settings.bookshelves?.rows ?? {})) {
+      expect(new TextEncoder().encode(JSON.stringify(row.fields_jsonb)).length).toBeLessThan(65536);
+    }
+  });
+
+  it('durably journals custom item order and publishes it through the existing bookshelf sync', async () => {
+    await updateBookshelf(env, 'default', (shelf) => ({
+      ...shelf,
+      useGlobalSort: false,
+      sort: { by: 'custom', ascending: true, thenBy: 'none', thenAscending: true },
+      manualOrder: { 'group:': ['b:second', 'b:first'], 'group:Fiction': ['b:third'] },
+    }));
+    const reloaded = JSON.parse(JSON.stringify(useSettingsStore.getState().settings));
+    const saved = readBookshelves(reloaded).find((shelf) => shelf.id === 'default')!;
+    expect(saved.sort.by).toBe('custom');
+    expect(saved.manualOrder).toEqual({
+      'group:': ['b:second', 'b:first'],
+      'group:Fiction': ['b:third'],
+    });
+    expect(mocks.saveSettings).toHaveBeenCalled();
+    mocks.connected = true;
+    await replayBookshelfOperations(env);
+    expect(mocks.markDirty).toHaveBeenCalledWith(
+      expect.objectContaining({
+        fields_jsonb: expect.objectContaining({
+          itemOrder: expect.objectContaining({
+            v: expect.objectContaining({
+              shelfId: 'default',
+              scope: 'group:',
+              ids: saved.manualOrder?.['group:'],
+            }),
+          }),
+        }),
+      }),
+    );
+  });
+
   it.each([
     false,
     true,

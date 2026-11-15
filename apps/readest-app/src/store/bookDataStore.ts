@@ -221,8 +221,9 @@ export const useBookDataStore = create<BookDataState>((set, get) => ({
 }));
 
 // Every page turn writes the book's progress and location into its config, which replaces the
-// book's entry and config objects. Components that render from them subscribe with these hooks:
-// each re-renders only when a field it returns changes.
+// book's entry and config objects, and the auto-save after it stamps the config's updatedAt.
+// Components that render from them subscribe with these hooks: each re-renders only when a field
+// it returns changes.
 
 /** A book's data without its config (see useBookConfig). */
 export const useBookData = (key: string | null): Omit<BookData, 'config'> | null =>
@@ -235,15 +236,16 @@ export const useBookData = (key: string | null): Omit<BookData, 'config'> | null
     }),
   );
 
-/** A book's config without the progress and location a page turn writes (useBookProgress has them). */
+/** A book's config without what a page turn writes: the progress and location (useBookProgress
+ * has them) and the auto-save's updatedAt. */
 export const useBookConfig = (
   key: string | null,
-): Omit<BookConfig, 'progress' | 'location'> | null =>
+): Omit<BookConfig, 'progress' | 'location' | 'updatedAt'> | null =>
   useBookDataStore(
     useShallow((s) => {
       const config = s.getConfig(key);
       if (!config) return null;
-      const { progress: _progress, location: _location, ...rest } = config;
+      const { progress: _progress, location: _location, updatedAt: _updatedAt, ...rest } = config;
       return rest;
     }),
   );
