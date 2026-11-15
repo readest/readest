@@ -151,8 +151,6 @@ export const inferLangFromScript = (text: string, lang: string): string => {
   if (!lang || lang === 'en') {
     if (/[\p{Script=Hebrew}]/u.test(text)) {
       return 'he';
-    } else if (/[\p{Script=Arabic}]/u.test(text)) {
-      return 'ar';
     } else if (/[\p{Script=Hangul}]/u.test(text)) {
       return 'ko';
     } else if (/[\p{Script=Hiragana}\p{Script=Katakana}]/u.test(text)) {
