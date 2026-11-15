@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
+import dynamic from 'next/dynamic';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 import { Book } from '@/types/book';
@@ -50,12 +51,16 @@ import SideBar from './sidebar/SideBar';
 import Notebook from './notebook/Notebook';
 import LocalSendManager from '@/components/localsend/LocalSendManager';
 import BooksGrid from './BooksGrid';
-import SettingsDialog from '@/components/settings/SettingsDialog';
 import AudiobookPairingDialog from './audiobook/AudiobookPairingDialog';
 import HardcoverLinkDialog from './hardcover/HardcoverLinkDialog';
 import PageboundLinkDialog from './pagebound/PageboundLinkDialog';
 import ModalPortal from '@/components/ModalPortal';
 import NotebookTransitionAlert from './notebook/NotebookTransitionAlert';
+
+// Loaded when it opens: it brings the AI providers, highlight.js and the Notion export with it.
+const SettingsDialog = dynamic(() => import('@/components/settings/SettingsDialog'), {
+  ssr: false,
+});
 
 /**
  * How long the close path waits for the Notion flush before giving up on it.

@@ -105,7 +105,6 @@ import { lockScreenOrientation, setSelectionSuppressed } from '@/utils/bridge';
 import { useTextTranslation } from '../hooks/useTextTranslation';
 import { useBookCoverAutoSave } from '../hooks/useAutoSaveBookCover';
 import { useDiscordPresence } from '@/hooks/useDiscordPresence';
-import { manageSyntaxHighlighting } from '@/utils/highlightjs';
 import { isDialogueHighlightActive, manageDialogueHighlight } from '@/utils/dialogueHighlight';
 import { getViewInsets } from '@/utils/insets';
 import { collectDocumentImages, DocumentImage } from '../utils/documentImages';
@@ -637,7 +636,10 @@ const FoliateViewer: React.FC<{
 
       // only call on load if we have highlighting turned on.
       if (viewSettings.codeHighlighting) {
-        manageSyntaxHighlighting(detail.doc, viewSettings);
+        // highlight.js loads with the first section that highlights code
+        void import('@/utils/highlightjs').then(({ manageSyntaxHighlighting }) =>
+          manageSyntaxHighlighting(detail.doc, viewSettings),
+        );
       }
 
       if (isDialogueHighlightActive(viewSettings)) {

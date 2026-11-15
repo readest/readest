@@ -1,5 +1,6 @@
 import clsx from 'clsx';
 import React, { useCallback, useEffect, useState } from 'react';
+import dynamic from 'next/dynamic';
 
 import { useSettingsStore } from '@/store/settingsStore';
 import { useBookDataStore, useBookData, useBookConfig } from '@/store/bookDataStore';
@@ -24,10 +25,12 @@ import {
   flushNotebookDocument,
   useNotebookDocumentCoordinator,
 } from '../../hooks/useNotebookDocumentCoordinator';
-import AIAssistant from './AIAssistant';
 import NotebookHeader from './Header';
 import NotebookEditor from './NotebookEditor';
 import NotebookTabNavigation from './NotebookTabNavigation';
+
+// Loaded on the AI tab: it brings the AI SDKs and assistant-ui with it.
+const AIAssistant = dynamic(() => import('./AIAssistant'), { ssr: false });
 
 const MIN_NOTEBOOK_WIDTH = 0.15;
 const MAX_NOTEBOOK_WIDTH = 0.45;
