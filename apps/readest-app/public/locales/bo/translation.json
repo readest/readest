@@ -2761,5 +2761,7 @@
   "Previous Month": "ཟླ་བ་སྔ་མ",
   "Next Month": "ཟླ་བ་རྗེས་མ",
   "No reading activity on this day": "ཉིན་འདིར་ཀློག་འདོན་ཟིན་ཐོ་མེད",
-  "See which books you read each day and for how long": "ཉིན་རེར་དཔེ་དེབ་གང་ཀློག་པ་དང་དུས་ཚོད་ག་ཚོད་བཀོལ་བ་ལ་བལྟ་བ"
+  "See which books you read each day and for how long": "ཉིན་རེར་དཔེ་དེབ་གང་ཀློག་པ་དང་དུས་ཚོད་ག་ཚོད་བཀོལ་བ་ལ་བལྟ་བ",
+  "Move to parent group": "Move to parent group",
+  "Done": "ལེགས་གྲུབ།"
 }

@@ -64,6 +64,11 @@ export interface BookshelfDefinition {
   /** Missing on older definitions; all shelves inherit global sorting by default. */
   useGlobalSort?: boolean;
   sort: BookshelfSort;
+  /** Hydrated from separate bounded replica records; never embedded in a definition. */
+  manualOrder?: Record<string, string[]>;
+  /** Original reorder time per scope, hydrated from item-order records. */
+  manualOrderUpdatedAt?: Record<string, number>;
+  customSortFallback?: BookshelfSort;
   /** Retained for older saved definitions; carousel results are no longer capped. */
   limit?: number;
   exclusive: boolean;
