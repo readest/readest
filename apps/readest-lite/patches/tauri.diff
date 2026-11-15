@@ -406,6 +406,38 @@ diff -ruN tauri/crates/tauri/src/window/mod.rs tauri/crates/tauri/src/window/mod
    pub fn default_vbox(&self) -> crate::Result<gtk::Box> {
      self.window.dispatcher.default_vbox().map_err(Into::into)
    }
+diff -ruN tauri/crates/tauri-codegen/src/embedded_assets.rs tauri/crates/tauri-codegen/src/embedded_assets.rs
+--- tauri/crates/tauri-codegen/src/embedded_assets.rs
++++ tauri/crates/tauri-codegen/src/embedded_assets.rs
+@@ -345,7 +345,10 @@
+     let hash = crate::checksum(&input).map_err(EmbeddedAssetsError::Hex)?;
+ 
+     // use the content hash to determine filename, keep extensions that exist
+-    let out_path = if let Some(ext) = path.extension().and_then(|e| e.to_str()) {
++    let out_path = if tauri_utils::assets::stored_raw(key.as_ref()) {
++      // not a name an earlier, compressed build of the same input wrote
++      out_dir.join(format!("{hash}.raw"))
++    } else if let Some(ext) = path.extension().and_then(|e| e.to_str()) {
+       out_dir.join(format!("{hash}.{ext}"))
+     } else {
+       out_dir.join(hash)
+@@ -372,7 +375,15 @@
+       }
+ 
+       #[cfg(feature = "compression")]
+-      {
++      if tauri_utils::assets::stored_raw(key.as_ref()) {
++        use std::io::Write;
++        out_file
++          .write_all(&input)
++          .map_err(|error| EmbeddedAssetsError::AssetWrite {
++            path: path.to_owned(),
++            error,
++          })?;
++      } else {
+         let mut input = std::io::Cursor::new(input);
+         // entirely write input to the output file path with compression
+         brotli::BrotliCompress(&mut input, &mut out_file, &Self::compression_settings()).map_err(
 diff -ruN tauri/crates/tauri-runtime/Cargo.toml tauri/crates/tauri-runtime/Cargo.toml
 --- tauri/crates/tauri-runtime/Cargo.toml
 +++ tauri/crates/tauri-runtime/Cargo.toml
@@ -655,3 +687,52 @@ diff -ruN tauri/crates/tauri-runtime/src/window.rs tauri/crates/tauri-runtime/sr
    pub default_vbox: Option<&'a gtk::Box>,
    pub _marker: &'a PhantomData<()>,
  }
+diff -ruN tauri/crates/tauri-utils/src/assets.rs tauri/crates/tauri-utils/src/assets.rs
+--- tauri/crates/tauri-utils/src/assets.rs
++++ tauri/crates/tauri-utils/src/assets.rs
+@@ -151,6 +151,13 @@
+   }
+ }
+ 
++/// Assets embedded as they are under the `compression` feature: QuickJS bytecode (`.qjsc`), which
++/// a script load reads whole on the main thread. Decompressing the page's 7.4 MB of it took ~0.7 s
++/// of a single-core Kindle's launch.
++pub fn stored_raw(key: &str) -> bool {
++  key.ends_with(".qjsc")
++}
++
+ impl EmbeddedAssets {
+   /// Creates a new instance from the given asset map and script hash list.
+   pub const fn new(
+@@ -169,6 +176,9 @@
+   #[cfg(feature = "compression")]
+   pub fn get(&self, key: &AssetKey) -> Option<Cow<'_, [u8]>> {
+     let &(mut asdf) = self.assets.get(key.as_ref())?;
++    if stored_raw(key.as_ref()) {
++      return Some(Cow::Borrowed(asdf));
++    }
+     // with the exception of extremely small files, output should usually be
+     // at least as large as the compressed version.
+     let mut buf = Vec::with_capacity(asdf.len());
+@@ -210,3 +220,21 @@
+     )
+   }
+ }
++
++#[cfg(all(test, feature = "compression"))]
++mod stored_raw_tests {
++  use super::{AssetKey, EmbeddedAssets};
++  use std::borrow::Cow;
++
++  #[test]
++  fn bytecode_is_served_as_embedded() {
++    const BYTECODE: &[u8] = b"\x13not brotli: QuickJS bytecode";
++    let assets = EmbeddedAssets::new(
++      phf::phf_map! { "/_next/static/chunks/a.js.qjsc" => BYTECODE },
++      &[],
++      phf::phf_map! {},
++    );
++    let got = assets.get(&AssetKey::from("/_next/static/chunks/a.js.qjsc"));
++    assert!(matches!(got, Some(Cow::Borrowed(b)) if b == BYTECODE));
++  }
++}
