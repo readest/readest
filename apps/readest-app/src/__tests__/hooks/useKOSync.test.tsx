@@ -746,6 +746,39 @@ describe('useKOSync — no phantom re-prompt after resolving (#5527)', () => {
     expect(h.updateProgressMock).not.toHaveBeenCalled();
   });
 
+  test('returning right after leaving waits for the push sent on leaving (#7472)', async () => {
+    let server: Record<string, unknown> | null = null;
+    // A GET reads the server when sent and answers a little later, so an
+    // upload can land in between.
+    h.getProgressMock.mockImplementation(async () => {
+      const reply = server;
+      for (let i = 0; i < 10; i++) await Promise.resolve();
+      return reply;
+    });
+    h.updateProgressMock.mockImplementation(async (_book, progress, percentage) => {
+      server = { progress, percentage, timestamp: 1, device_id: 'this-device' };
+      return true;
+    });
+    h.localProgress = { ...h.localProgress, pageinfo: { current: 11, total: 100 } };
+    const { result, rerender } = renderHook(() => useKOSync('h1-view1'));
+    await settle();
+    await advance(KOSYNC_PUSH_DEBOUNCE_MS);
+    expect(server).toMatchObject({ percentage: 0.12 });
+
+    // Read Aloud moves the reader 2% on before the app is left and reopened.
+    h.localProgress = { ...h.localProgress, pageinfo: { current: 13, total: 100 } };
+    rerender();
+    await act(async () => {
+      h.activeCallback?.(false);
+      h.activeCallback?.(true);
+      await flushMicrotasks();
+    });
+
+    expect(server).toMatchObject({ percentage: 0.14 });
+    expect(result.current.syncState).toBe('synced');
+    expect(result.current.conflictDetails).toBeNull();
+  });
+
   test('a NEW remote report after resolution still prompts', async () => {
     const { result } = renderHook(() => useKOSync('h1-view1'));
     await settle();
