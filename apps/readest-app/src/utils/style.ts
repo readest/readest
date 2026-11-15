@@ -21,6 +21,7 @@ import { readStoredAmbientIsDarkMode } from './ambientLight';
 import { INLINE_FORMATTING_SELECTOR } from './inlineTags';
 import { getOSPlatform } from './misc';
 import { WHITE_TRANSPARENCY_FILTER } from './imageBackground';
+import { classifyAndTagStandaloneDiagrams } from './imageClassifier';
 import {
   LINK_HIT_AREA_CLASS,
   LINK_HIT_AREA_PX,
@@ -452,6 +453,24 @@ const getColorStyles = (
           : ''
       }
       mix-blend-mode: ${isDarkMode ? 'screen' : 'multiply'};
+    }
+    ${
+      isDarkMode
+        ? `*:has(> img.monochrome-diagram):not(body) {
+      ${overrideColor ? `background-color: ${overrideBg};` : ''}
+    }
+    img.monochrome-diagram {
+      ${
+        !invertImgColorInDark
+          ? `filter: ${transparentImageBackground ? `${WHITE_TRANSPARENCY_FILTER} ` : ''}invert(1) hue-rotate(180deg);`
+          : ''
+      }
+      mix-blend-mode: screen;
+    }
+    p[width][height] > img.monochrome-diagram:only-child {
+      mix-blend-mode: screen;
+    }`
+        : ''
     }
     table:has(> colgroup) {
       table-layout: fixed;
@@ -1882,7 +1901,7 @@ const hasInlineTextSibling = (container: Element, targetNode: Node): boolean => 
   return false;
 };
 
-export const applyImageStyle = (document: Document) => {
+export const applyImageStyle = (document: Document, isDarkMode = false, isFixedLayout = false) => {
   const win = document.defaultView ?? window;
   // Two-phase (read then write): reading getComputedStyle after a class/style
   // write forces a style recalc, so gather every decision first and apply the
@@ -2015,6 +2034,7 @@ export const applyImageStyle = (document: Document) => {
       hr.classList.add('background-img');
     }
   });
+  classifyAndTagStandaloneDiagrams(document, isDarkMode, isFixedLayout);
 };
 
 // The enlarged link hit area positions every link and its ::before box, and
