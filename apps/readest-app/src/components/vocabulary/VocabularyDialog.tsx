@@ -1,10 +1,13 @@
 import React, { useEffect, useState } from 'react';
+import dynamic from 'next/dynamic';
 import Dialog from '@/components/Dialog';
 import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useVocabularyStore } from '@/store/vocabularyStore';
 import { initVocabularySync } from '@/services/vocabulary/vocabularySync';
-import VocabularyView from './VocabularyView';
+
+// Loaded when the window opens: it brings the dictionary providers (fflate, marked, KaTeX) with it.
+const VocabularyView = dynamic(() => import('./VocabularyView'), { ssr: false });
 
 const DIALOG_ID = 'vocabulary_window';
 

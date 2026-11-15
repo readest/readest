@@ -1,5 +1,4 @@
 import { invoke } from '@tauri-apps/api/core';
-import { Inflate } from 'fflate';
 import type { Entry } from '@zip.js/zip.js';
 
 import type { BookDoc, SectionItem } from '@/libs/document';
@@ -31,7 +30,8 @@ const readPageSize = async (file: File, entry: Entry): Promise<[number, number] 
     head.set(kept, length);
     length += kept.length;
   };
-  const inflate = compressionMethod === 8 ? new Inflate(append) : null;
+  // fflate builds its tables as it loads: only once a page is deflated.
+  const inflate = compressionMethod === 8 ? new (await import('fflate')).Inflate(append) : null;
   for (let pos = start; pos < end && length < HEAD_LIMIT; pos += HEAD_STEP) {
     const chunk = new Uint8Array(
       await file.slice(pos, Math.min(pos + HEAD_STEP, end)).arrayBuffer(),

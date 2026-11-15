@@ -120,24 +120,28 @@ export const CommandPaletteProvider: React.FC<CommandPaletteProviderProps> = ({ 
     [setSettingsDialogOpen, setActiveSettingsItemId],
   );
 
-  // build command registry
+  // build command registry, only while the palette is open: it is closed nearly always, and the
+  // list costs ~140 ms on an e-ink reader at each launch and each language or settings change
   const commandItems = useMemo(
     () =>
-      buildCommandRegistry({
-        _,
-        openSettingsPanel,
-        toggleTheme,
-        toggleFullscreen,
-        toggleAlwaysOnTop,
-        toggleScreenWakeLock,
-        reloadPage,
-        toggleOpenLastBooks,
-        showAbout,
-        toggleTelemetry,
-        isDesktop,
-      }),
+      isOpen
+        ? buildCommandRegistry({
+            _,
+            openSettingsPanel,
+            toggleTheme,
+            toggleFullscreen,
+            toggleAlwaysOnTop,
+            toggleScreenWakeLock,
+            reloadPage,
+            toggleOpenLastBooks,
+            showAbout,
+            toggleTelemetry,
+            isDesktop,
+          })
+        : [],
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [
+      isOpen,
       _,
       openSettingsPanel,
       toggleTheme,

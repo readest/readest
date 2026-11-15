@@ -6,6 +6,7 @@ import clsx from 'clsx';
 import * as React from 'react';
 import { MdChevronRight } from 'react-icons/md';
 import { useState, useRef, useEffect, Suspense, useCallback } from 'react';
+import dynamic from 'next/dynamic';
 import { ReadonlyURLSearchParams, useSearchParams } from 'next/navigation';
 
 import { Book, BooksGroup, type LibrarySearchConfig } from '@/types/book';
@@ -141,9 +142,13 @@ import useShortcuts from '@/hooks/useShortcuts';
 import { useReplicaPull } from '@/hooks/useReplicaPull';
 import { useCustomFonts } from '@/hooks/useCustomFonts';
 import DropIndicator from '@/components/DropIndicator';
-import SettingsDialog from '@/components/settings/SettingsDialog';
 import ModalPortal from '@/components/ModalPortal';
 import TransferQueuePanel from './components/TransferQueuePanel';
+
+// Loaded when it opens: it brings the AI providers, highlight.js and the Notion export with it.
+const SettingsDialog = dynamic(() => import('@/components/settings/SettingsDialog'), {
+  ssr: false,
+});
 
 /** Skip tiny non-book artifacts during folder auto-scan (matches the manual import dialog default). */
 const AUTO_IMPORT_MIN_SIZE_BYTES = 20 * 1024;

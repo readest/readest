@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import dynamic from 'next/dynamic';
 import { RiDeleteBinLine } from 'react-icons/ri';
 
 import * as CFI from 'foliate-js/epubcfi.js';
@@ -123,7 +124,6 @@ import TranslatorPopup from './TranslatorPopup';
 import useShortcuts from '@/hooks/useShortcuts';
 import ProofreadPopup from './ProofreadPopup';
 import { setProofreadRulesVisibility } from '@/app/reader/components/ProofreadRules';
-import ExportMarkdownDialog from './ExportMarkdownDialog';
 import Dialog from '@/components/Dialog';
 import { getQRCodeDataUrl } from '@/components/settings/integrations/QRCode';
 import QuoteCardDialog from './QuoteCardDialog';
@@ -152,6 +152,9 @@ import {
   parseReadEraBackup,
 } from '@/utils/readera';
 import { convertReadEraDocToBookNotes } from '@/services/annotation/providers/readera';
+
+// Loaded when it opens: it brings the export templates (nunjucks) and the Notion client with it.
+const ExportMarkdownDialog = dynamic(() => import('./ExportMarkdownDialog'), { ssr: false });
 
 const ZERO_INSETS: Insets = { top: 0, right: 0, bottom: 0, left: 0 };
 
