@@ -502,6 +502,49 @@ export class MediaOverlayClient implements TTSClient {
     return audio === this.#player && this.#player.playedPast(href);
   }
 
+  // One-time blob recovery for a media-proxy URL that failed to play: reload
+  // the file from the blob, seek to `resumeAt`, and hand back the new clock.
+  // Returns null when the session was aborted or invalidated while the blob
+  // loaded — the caller ends silently, and the stale element is dropped
+  // without ever playing. Throws when the blob itself cannot load.
+  async #recoverFromProxyFailure(
+    run: ClipRun,
+    resumeAt: number,
+    signal: AbortSignal,
+    playbackSignal: AbortSignal,
+  ): Promise<NarrationClock | null> {
+    this.#proxyFailed.add(run.audioHref);
+    this.#releaseAudio();
+    let audio: NarrationClock;
+    try {
+      audio = await this.#ensureAudio(run.audioHref);
+    } catch (e) {
+      if (
+        signal.aborted ||
+        playbackSignal.aborted ||
+        (e instanceof DOMException && e.name === 'AbortError')
+      ) {
+        return null;
+      }
+      throw e;
+    }
+    // Invalidated while the blob loaded (or the client shut down): the old
+    // invocation must not start playback afterwards. Drop the stale element —
+    // revoking its blob URL — unless a newer invocation already claimed the
+    // shared load.
+    if (signal.aborted || playbackSignal.aborted) {
+      if (this.#audio === audio) this.#releaseAudio();
+      return null;
+    }
+    await setClockRate(audio, this.#rate);
+    await seekClock(audio, resumeAt);
+    if (signal.aborted || playbackSignal.aborted) {
+      if (this.#audio === audio) this.#releaseAudio();
+      return null;
+    }
+    return audio;
+  }
+
   async *speak(
     ssml: string,
     signal: AbortSignal,
@@ -595,10 +638,47 @@ export class MediaOverlayClient implements TTSClient {
       try {
         await audio.play();
       } catch (e) {
-        // An autoplay rejection is terminal for this attempt; the session's
-        // gesture-time unblockAudio() is what normally prevents it.
-        yield { code: 'error', message: e instanceof Error ? e.message : 'Playback blocked' };
-        return;
+        // A proxy URL that fails before playback starts rejects play() with
+        // NotSupportedError instead of reaching the clip wait below: route it
+        // through the same one-time blob recovery. An autoplay rejection
+        // (NotAllowedError) stays terminal; the session's gesture-time
+        // unblockAudio() is what normally prevents it.
+        if (
+          this.#proxyUrl &&
+          !this.#proxyFailed.has(run.audioHref) &&
+          e instanceof DOMException &&
+          e.name === 'NotSupportedError'
+        ) {
+          let recovered: NarrationClock | null;
+          try {
+            recovered = await this.#recoverFromProxyFailure(
+              run,
+              requestedPosition ?? first.clipBegin,
+              signal,
+              playbackSignal,
+            );
+          } catch (loadError) {
+            yield {
+              code: 'error',
+              message: loadError instanceof Error ? loadError.message : 'Narration unavailable',
+            };
+            return;
+          }
+          if (!recovered) return;
+          audio = recovered;
+          try {
+            await audio.play();
+          } catch (playError) {
+            yield {
+              code: 'error',
+              message: playError instanceof Error ? playError.message : 'Playback blocked',
+            };
+            return;
+          }
+        } else {
+          yield { code: 'error', message: e instanceof Error ? e.message : 'Playback blocked' };
+          return;
+        }
       }
 
       for (const par of run.pars) {
@@ -623,27 +703,27 @@ export class MediaOverlayClient implements TTSClient {
           // (the Flatpak sandbox keeps it from the media element, #7521):
           // reload the same file from the blob once instead of ending the
           // session. Files that play through the proxy keep using it.
-          this.#proxyFailed.add(run.audioHref);
+          // Resume where the listener was: the requested position for the
+          // first clip, the failed element's playhead for a later one.
+          const failedAt = audio.currentTime;
+          const resumeAt =
+            par === first && requestedPosition !== null
+              ? requestedPosition
+              : Number.isFinite(failedAt)
+                ? Math.min(Math.max(failedAt, par.clipBegin), par.clipEnd)
+                : par.clipBegin;
+          let recovered: NarrationClock | null;
           try {
-            this.#releaseAudio();
-            audio = await this.#ensureAudio(run.audioHref);
+            recovered = await this.#recoverFromProxyFailure(run, resumeAt, signal, playbackSignal);
           } catch (e) {
-            if (
-              signal.aborted ||
-              playbackSignal.aborted ||
-              (e instanceof DOMException && e.name === 'AbortError')
-            ) {
-              return;
-            }
             yield {
               code: 'error',
               message: e instanceof Error ? e.message : 'Narration unavailable',
             };
             return;
           }
-          if (signal.aborted) return;
-          await setClockRate(audio, this.#rate);
-          await seekClock(audio, par.clipBegin);
+          if (!recovered) return;
+          audio = recovered;
           try {
             await audio.play();
           } catch (e) {
