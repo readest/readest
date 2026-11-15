@@ -210,6 +210,11 @@ one of each).
 - `tauri` and `tauri-runtime`: GTK 3 is an optional, default-on `gtk` feature. Without it the
   runtime trait has no GTK types (`gtk_window`, `default_vbox`, `transient_for`) and menus
   keep their state without native widgets, so a runtime with no GTK can implement the trait.
+- `tauri-utils` assets, `tauri-codegen` embedded_assets: under the `compression` feature, QuickJS
+  bytecode (`.qjsc`, `stored_raw`) is embedded as it is and served without a copy. A script load
+  reads it whole on the main thread, and decompressing the page's 7.4 MB of it took ~0.7 s of a
+  single-core Kindle's launch. Its codegen output is named `<hash>.raw`, so a build doesn't reuse
+  the compressed file an earlier build wrote for the same input.
 
 ## muda.diff (crates.io 0.19.3)
 
