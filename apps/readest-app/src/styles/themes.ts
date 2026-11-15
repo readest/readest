@@ -140,96 +140,87 @@ export const generateDarkPalette = ({ bg, fg, primary }: BaseColor) => {
 
 const _ = (stubKey: string) => stubKey;
 
-export const themes = [
-  {
-    name: 'default',
-    label: _('Default'),
-    colors: {
-      light: generateLightPalette({ fg: '#171717', bg: '#ffffff', primary: '#0066cc' }),
-      dark: generateDarkPalette({ fg: '#e0e0e0', bg: '#222222', primary: '#77bbee' }),
+// Each theme's palettes are worked out when first read: a page shows one theme, and the tinycolor
+// math for all eleven cost an e-ink reader ~0.1 s of every launch.
+const theme = (name: string, label: string, light: BaseColor, dark: BaseColor): Theme => {
+  let colors: Theme['colors'] | undefined;
+  return {
+    name,
+    label,
+    get colors() {
+      return (colors ??= { light: generateLightPalette(light), dark: generateDarkPalette(dark) });
     },
-  },
-  {
-    name: 'gray',
-    label: _('Gray'),
-    colors: {
-      light: generateLightPalette({ fg: '#222222', bg: '#e0e0e0', primary: '#4488cc' }),
-      dark: generateDarkPalette({ fg: '#c6c6c6', bg: '#444444', primary: '#88ccee' }),
-    },
-  },
-  {
-    name: 'sepia',
-    label: _('Sepia'),
-    colors: {
-      light: generateLightPalette({ fg: '#5b4636', bg: '#f1e8d0', primary: '#008b8b' }),
-      dark: generateDarkPalette({ fg: '#ffd595', bg: '#342e25', primary: '#48d1cc' }),
-    },
-  },
-  {
-    name: 'grass',
-    label: _('Grass'),
-    colors: {
-      light: generateLightPalette({ fg: '#232c16', bg: '#d7dbbd', primary: '#177b4d' }),
-      dark: generateDarkPalette({ fg: '#d8deba', bg: '#333627', primary: '#a6d608' }),
-    },
-  },
-  {
-    name: 'cherry',
-    label: _('Cherry'),
-    colors: {
-      light: generateLightPalette({ fg: '#4e1609', bg: '#f0d1d5', primary: '#de3838' }),
-      dark: generateDarkPalette({ fg: '#e5c4c8', bg: '#462f32', primary: '#ff646e' }),
-    },
-  },
-  {
-    name: 'sky',
-    label: _('Sky'),
-    colors: {
-      light: generateLightPalette({ fg: '#262d48', bg: '#cedef5', primary: '#2d53e5' }),
-      dark: generateDarkPalette({ fg: '#babee1', bg: '#282e47', primary: '#ff646e' }),
-    },
-  },
-  {
-    name: 'solarized',
-    label: _('Solarized'),
-    colors: {
-      light: generateLightPalette({ fg: '#586e75', bg: '#fdf6e3', primary: '#268bd2' }),
-      dark: generateDarkPalette({ fg: '#93a1a1', bg: '#002b36', primary: '#268bd2' }),
-    },
-  },
-  {
-    name: 'gruvbox',
-    label: _('Gruvbox'),
-    colors: {
-      light: generateLightPalette({ fg: '#3c3836', bg: '#fbf1c7', primary: '#076678' }),
-      dark: generateDarkPalette({ fg: '#ebdbb2', bg: '#282828', primary: '#83a598' }),
-    },
-  },
-  {
-    name: 'nord',
-    label: _('Nord'),
-    colors: {
-      light: generateLightPalette({ fg: '#2e3440', bg: '#eceff4', primary: '#5e81ac' }),
-      dark: generateDarkPalette({ fg: '#d8dee9', bg: '#2e3440', primary: '#88c0d0' }),
-    },
-  },
-  {
-    name: 'contrast',
-    label: _('Contrast'),
-    colors: {
-      light: generateLightPalette({ fg: '#000000', bg: '#ffffff', primary: '#4488cc' }),
-      dark: generateDarkPalette({ fg: '#ffffff', bg: '#000000', primary: '#88ccee' }),
-    },
-  },
-  {
-    name: 'sunset',
-    label: _('Sunset'),
-    colors: {
-      light: generateLightPalette({ fg: '#423126', bg: '#fff7f0', primary: '#fe6b64' }),
-      dark: generateDarkPalette({ fg: '#f6e1d7', bg: '#3c2b25', primary: '#ff9c94' }),
-    },
-  },
-] as Theme[];
+  };
+};
+
+export const themes: Theme[] = [
+  theme(
+    'default',
+    _('Default'),
+    { fg: '#171717', bg: '#ffffff', primary: '#0066cc' },
+    { fg: '#e0e0e0', bg: '#222222', primary: '#77bbee' },
+  ),
+  theme(
+    'gray',
+    _('Gray'),
+    { fg: '#222222', bg: '#e0e0e0', primary: '#4488cc' },
+    { fg: '#c6c6c6', bg: '#444444', primary: '#88ccee' },
+  ),
+  theme(
+    'sepia',
+    _('Sepia'),
+    { fg: '#5b4636', bg: '#f1e8d0', primary: '#008b8b' },
+    { fg: '#ffd595', bg: '#342e25', primary: '#48d1cc' },
+  ),
+  theme(
+    'grass',
+    _('Grass'),
+    { fg: '#232c16', bg: '#d7dbbd', primary: '#177b4d' },
+    { fg: '#d8deba', bg: '#333627', primary: '#a6d608' },
+  ),
+  theme(
+    'cherry',
+    _('Cherry'),
+    { fg: '#4e1609', bg: '#f0d1d5', primary: '#de3838' },
+    { fg: '#e5c4c8', bg: '#462f32', primary: '#ff646e' },
+  ),
+  theme(
+    'sky',
+    _('Sky'),
+    { fg: '#262d48', bg: '#cedef5', primary: '#2d53e5' },
+    { fg: '#babee1', bg: '#282e47', primary: '#ff646e' },
+  ),
+  theme(
+    'solarized',
+    _('Solarized'),
+    { fg: '#586e75', bg: '#fdf6e3', primary: '#268bd2' },
+    { fg: '#93a1a1', bg: '#002b36', primary: '#268bd2' },
+  ),
+  theme(
+    'gruvbox',
+    _('Gruvbox'),
+    { fg: '#3c3836', bg: '#fbf1c7', primary: '#076678' },
+    { fg: '#ebdbb2', bg: '#282828', primary: '#83a598' },
+  ),
+  theme(
+    'nord',
+    _('Nord'),
+    { fg: '#2e3440', bg: '#eceff4', primary: '#5e81ac' },
+    { fg: '#d8dee9', bg: '#2e3440', primary: '#88c0d0' },
+  ),
+  theme(
+    'contrast',
+    _('Contrast'),
+    { fg: '#000000', bg: '#ffffff', primary: '#4488cc' },
+    { fg: '#ffffff', bg: '#000000', primary: '#88ccee' },
+  ),
+  theme(
+    'sunset',
+    _('Sunset'),
+    { fg: '#423126', bg: '#fff7f0', primary: '#fe6b64' },
+    { fg: '#f6e1d7', bg: '#3c2b25', primary: '#ff9c94' },
+  ),
+];
 
 // The reader theme until one is picked: Contrast on e-ink devices.
 export const getDefaultThemeColor = () =>
