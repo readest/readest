@@ -181,7 +181,10 @@ const clickLink = async (anchorHtml: string, href: string) => {
   });
   const call = hoisted.handle.mock.calls.at(-1);
   expect(call).toBeDefined();
-  return (call![1] as CustomEvent).detail as { check?: boolean; follow?: boolean };
+  return (call as unknown as [unknown, CustomEvent])[1].detail as {
+    check?: boolean;
+    follow?: boolean;
+  };
 };
 
 describe('FootnotePopup strict-check gating (#7537)', () => {
