@@ -672,13 +672,10 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
     appliedGridInsetsRef.current = gridInsets;
     popupBoundsRef.current = bounds;
     setPopupBounds(bounds);
+    setResponsiveWidth((w) => Math.min(w, getMaxWidth()));
+    setResponsiveHeight((h) => Math.min(h, getMaxHeight()));
     const view = footnoteViewRef.current;
-    if (view) {
-      fitPopupToContent(view);
-    } else {
-      setResponsiveWidth((w) => Math.min(w, getMaxWidth()));
-      setResponsiveHeight((h) => Math.min(h, getMaxHeight()));
-    }
+    if (view) fitPopupToContent(view);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showPopup, bookKey, gridInsets.top, gridInsets.right, gridInsets.bottom, gridInsets.left]);
 
