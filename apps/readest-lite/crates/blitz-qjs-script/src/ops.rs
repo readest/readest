@@ -33,6 +33,8 @@ struct Handles {
     of: HashMap<(u32, NodeId), f64>,
     at: HashMap<u64, (u32, NodeId)>,
     next: u64,
+    /// Handles freed with a frame's document since JS last asked (`goneHandles`).
+    gone: Vec<f64>,
 }
 
 /// An iframe's document: the iframe (in the document tagged `parent`) and the sub-document's id;
@@ -164,10 +166,19 @@ impl Docs {
         self.forget(&[tag]);
     }
 
-    fn forget(&self, dead: &[u32]) {
+    /// Frees the handles of the documents tagged `dead`; returns them.
+    fn forget(&self, dead: &[u32]) -> Vec<f64> {
         let mut h = self.handles.borrow_mut();
-        h.of.retain(|(t, _), _| !dead.contains(t));
+        let mut freed = Vec::new();
+        h.of.retain(|(t, _), v| {
+            let keep = !dead.contains(t);
+            if !keep {
+                freed.push(*v);
+            }
+            keep
+        });
         h.at.retain(|_, (t, _)| !dead.contains(t));
+        freed
     }
 
     /// Forgets the frames whose document is gone (iframe removed or navigated, or a frame above
@@ -193,7 +204,8 @@ impl Docs {
             }
         }
         if !dead.is_empty() {
-            self.forget(&dead);
+            let freed = self.forget(&dead);
+            self.handles.borrow_mut().gone.extend(freed);
         }
     }
 
@@ -902,6 +914,13 @@ pub(crate) fn install(ctx: &Ctx<'_>, shared: Rc<RefCell<Shared>>, base: Option<&
     });
     let d = docs.clone();
     op!("dropDoc", move |tag: u32| d.drop_own(tag));
+    let d = docs.clone();
+    // The handles freed with an iframe's document (iframe removed or navigated) since the last
+    // call: JS lets go of their wrappers.
+    op!("goneHandles", move || -> Vec<f64> {
+        d.prune();
+        std::mem::take(&mut d.handles.borrow_mut().gone)
+    });
     let d = docs.clone();
     // The id of an iframe's document once it is attached with its stylesheets loaded (its `load`).
     op!("subdocReady", move |iframe: f64| -> Option<f64> {
