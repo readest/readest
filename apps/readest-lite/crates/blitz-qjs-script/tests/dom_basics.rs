@@ -226,3 +226,31 @@ fn select_options() {
         ]
     );
 }
+
+#[test]
+fn document_title_is_written() {
+    // readest-app names the page after the open book (BooksGrid): with no setter, the assignment
+    // threw in the bundle's strict code and took the reader down.
+    for (head, before) in [("<title>Readest</title>", "Readest"), ("", "")] {
+        let html = format!("<!DOCTYPE html><html><head>{head}</head><body></body></html>");
+        let mut doc = QjsDocument::from_html(&html, DocumentConfig::default());
+        doc.eval(
+            "(() => {
+                'use strict';
+                console.log(JSON.stringify(document.title));
+                document.title = 'Dune  Messiah ';
+                const t = document.querySelectorAll('title');
+                console.log(document.title, t.length, t[0].parentNode.localName);
+            })();",
+            "test",
+        );
+        assert_eq!(doc.take_js_errors(), Vec::<String>::new());
+        assert_eq!(
+            doc.take_messages(),
+            [
+                format!("log: \"{before}\""),
+                "log: Dune Messiah 1 head".into()
+            ]
+        );
+    }
+}
