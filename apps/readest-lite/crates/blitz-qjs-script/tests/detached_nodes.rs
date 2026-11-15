@@ -197,6 +197,62 @@ fn a_removed_shadow_host_is_freed() {
 }
 
 #[test]
+fn the_observers_of_a_freed_node_are_let_go() {
+    let mut doc = QjsDocument::from_html(PAGE, DocumentConfig::default());
+    step(
+        &mut doc,
+        "(() => {
+            const s = document.createElement('section');
+            s.innerHTML = '<p>a</p>';
+            document.getElementById('c').append(s);
+            const o = new MutationObserver(() => {});
+            o.observe(s.firstChild, { attributes: true });
+            globalThis.observer = new WeakRef(o);
+        })();",
+    );
+    step(&mut doc, "document.querySelector('section').remove();");
+    // The first collection frees the section, the next its observer.
+    collect(&mut doc);
+    collect(&mut doc);
+    step(&mut doc, "console.log(observer.deref() === undefined);");
+    assert_eq!(doc.take_js_errors(), Vec::<String>::new());
+    assert_eq!(doc.take_messages(), ["log: true"]);
+}
+
+#[test]
+fn a_removed_iframes_document_is_let_go_with_its_view() {
+    // foliate-js removes a section's view with its iframe, and Readest observes the section's
+    // document for resources its scripts add: that document's wrappers, and through it the
+    // iframe and its view, stayed for the rest of the session.
+    const VIEW: &str = r#"<!DOCTYPE html><html><body><div id="v"><iframe srcdoc="<p id='x'>hi</p>"></iframe></div></body></html>"#;
+    let mut doc = QjsDocument::from_html(VIEW, DocumentConfig::default());
+    step(
+        &mut doc,
+        "(() => {
+            const f = document.querySelector('iframe');
+            const d = f.contentDocument;
+            new MutationObserver(() => d.title).observe(d, { childList: true, subtree: true });
+            globalThis.refs = [d, d.getElementById('x'), f].map((w) => new WeakRef(w));
+            console.log('id ' + f.parentNode._id);
+        })();",
+    );
+    let view = ids(&mut doc)[0];
+    step(&mut doc, "document.getElementById('v').remove();");
+    collect(&mut doc);
+    collect(&mut doc);
+    step(
+        &mut doc,
+        "console.log(refs.map((r) => r.deref() === undefined).join());",
+    );
+    assert_eq!(doc.take_js_errors(), Vec::<String>::new());
+    assert_eq!(doc.take_messages(), ["log: true,true,true"]);
+    assert!(
+        !allocated(&doc, view),
+        "the removed view is still allocated"
+    );
+}
+
+#[test]
 fn a_removed_images_pixels_are_freed() {
     let mut doc = QjsDocument::from_html(PAGE, DocumentConfig::default());
     doc.inner_mut().load_resource(ResourceLoadResponse {

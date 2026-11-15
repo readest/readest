@@ -57,7 +57,22 @@
       if (k !== 0 && k !== 9) roots.add(r);
     }
     swept.clear();
-    for (const r of roots) if (!n.subtree(r).some(known)) n.dropTree(r);
+    for (const r of roots) {
+      const ids = n.subtree(r);
+      if (ids.some(known)) continue;
+      for (const id of ids) forget(id);
+      n.dropTree(r);
+    }
+  }
+  // Lets go of node `id`, freed or gone with its frame's document: its wrapper and the
+  // MutationObserver registrations on it (which hold the observers, and what their callbacks do).
+  function forget(id) {
+    wrappers.delete(id);
+    loose.delete(id);
+    const regs = mutationTargets.get(id);
+    if (!regs) return;
+    mutationTargets.delete(id);
+    for (const o of regs.keys()) o._targets.delete(id);
   }
   // Documents of their own by tag (WeakRefs) and live NodeIterators (WeakRefs); see below.
   const ownedDocs = new Map();
@@ -3053,6 +3068,7 @@
     ResizeObserver,
     // Called by the host after a layout: delivers ResizeObserver changes; returns how many fired.
     __blitzAfterLayout() {
+      for (const h of n.goneHandles()) forget(h);
       let k = pendingSheets.size ? checkSheets() : 0;
       if (loadingFrames.size) k += checkFrames();
       for (const o of resizeObservers) k += o._check();
