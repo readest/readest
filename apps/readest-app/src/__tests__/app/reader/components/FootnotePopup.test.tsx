@@ -24,7 +24,7 @@ type VocabularyMock = {
 const HREF = 'text/part0012.xhtml#appendix-c';
 
 const hoisted = vi.hoisted(() => ({
-  handlers: [] as EventTarget[],
+  handlers: [] as (EventTarget & { handle: ReturnType<typeof vi.fn> })[],
   onLinkClick: { current: null as ((event: Event) => void) | null },
   goTo: vi.fn(),
   showTransientHighlight: vi.fn(),
@@ -724,7 +724,7 @@ describe('FootnotePopup jump to location', () => {
         hoisted.onLinkClick.current?.(event);
       });
 
-      const handler = hoisted.handlers.at(-1) as { handle: ReturnType<typeof vi.fn> };
+      const handler = hoisted.handlers.at(-1)!;
       expect(handler.handle).toHaveBeenCalledWith(
         expect.anything(),
         expect.objectContaining({
