@@ -43,6 +43,11 @@ interface TouchInterceptorEntry {
 // Module-level registry — interceptors are called in descending priority order.
 // The first interceptor that returns true consumes the gesture.
 const interceptors = new Map<string, TouchInterceptorEntry>();
+let sortedInterceptors: TouchInterceptorEntry[] = [];
+
+const rebuildSortedInterceptors = () => {
+  sortedInterceptors = [...interceptors.values()].sort((a, b) => b.priority - a.priority);
+};
 
 export const registerTouchInterceptor = (
   id: string,
@@ -50,14 +55,15 @@ export const registerTouchInterceptor = (
   priority = 0,
 ): (() => void) => {
   interceptors.set(id, { handler, priority });
+  rebuildSortedInterceptors();
   return () => {
     interceptors.delete(id);
+    rebuildSortedInterceptors();
   };
 };
 
 export const dispatchTouchInterceptors = (bookKey: string, detail: TouchDetail): boolean => {
-  const sorted = [...interceptors.values()].sort((a, b) => b.priority - a.priority);
-  for (const { handler } of sorted) {
+  for (const { handler } of sortedInterceptors) {
     if (handler(bookKey, detail)) return true;
   }
   return false;

@@ -234,6 +234,12 @@ export function useHandwriting(bookKey: string) {
     update();
     const ro = new ResizeObserver(update);
     ro.observe(cellEl);
+    if (!needsAnchoring) {
+      return () => {
+        cancelAnimationFrame(frameRequest);
+        ro.disconnect();
+      };
+    }
     const view = getView(bookKey);
     const renderer = view?.renderer;
     for (const frame of isFixedLayout ? pageFrames(view) : []) ro.observe(frame);
@@ -255,7 +261,7 @@ export function useHandwriting(bookKey: string) {
       mo.disconnect();
       renderer?.removeEventListener('scroll', update);
     };
-  }, [cellEl, measure, isFixedLayout, getView, bookKey, location, sectionIndex]);
+  }, [cellEl, measure, needsAnchoring, isFixedLayout, getView, bookKey, location, sectionIndex]);
 
   /**
    * In scrolled mode every loaded page or section on screen shows its ink,

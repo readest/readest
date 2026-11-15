@@ -842,6 +842,14 @@ export const useTextSelector = (
     if (hold && Math.hypot(ev.clientX - hold.x, ev.clientY - hold.y) > INSTANT_HOLD_MOVE_PX) {
       cancelImageHold();
     }
+    const isAndroid = osPlatform === 'android' && appService?.isAndroidApp;
+    const dragAnchor = dragAnchorRef.current;
+    const needsPointerPos =
+      !isAndroid ||
+      !!instantHoldTimer.current ||
+      isInstantAnnotating.current ||
+      Boolean(dragAnchor && ev.pointerType === 'mouse' && ev.buttons & 1);
+    if (!needsPointerPos) return;
     // The listener lives on the book iframe's document, so ev.clientX/Y are in
     // the (very wide, multi-column) iframe viewport. Map to window coordinates
     // via the iframe element's on-screen rect, like the selection caret.
@@ -886,7 +894,6 @@ export const useTextSelector = (
     // Over another page, extend the selection into it and freeze the origin
     // page's native drag (which would otherwise chase the out-of-frame pointer);
     // back over the origin page the native drag resumes.
-    const dragAnchor = dragAnchorRef.current;
     if (dragAnchor && ev.pointerType === 'mouse' && ev.buttons & 1 && pointerPos.current) {
       if (extendCrossDocTo(dragAnchor, pointerPos.current)) {
         const state = crossDocRef.current;
@@ -902,7 +909,6 @@ export const useTextSelector = (
     // caret in handleSelectionchange (no pointermove during a selection drag).
     // Android uses native touchmove (handleNativeTouchMove) — the iframe
     // pointermove doesn't fire there during a native selection drag.
-    const isAndroid = osPlatform === 'android' && appService?.isAndroidApp;
     if (isAndroid) return;
     const viewSettings = getViewSettings(bookKey);
     const sel = doc.getSelection();
