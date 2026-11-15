@@ -639,4 +639,76 @@ describe('foliate-paginator mobile portrait EBPAJ mixed direction (#7374)', () =
       el.remove();
     }
   });
+
+  it('applies book language RTL default before preloading sections without explicit dir', async () => {
+    await import('foliate-js/view.js');
+    type ViewEl = HTMLElement & {
+      open(book: unknown): Promise<void>;
+      goTo(target: number | string): Promise<void>;
+      close(): void;
+      renderer: HTMLElement & {
+        setStyles?(styles: unknown): void;
+        getContents(): Array<{ index: number; doc: Document }>;
+        destroy(): void;
+      };
+    };
+
+    const view = document.createElement('foliate-view') as ViewEl;
+    Object.assign(view.style, {
+      display: 'block',
+      width: '393px',
+      height: '852px',
+    });
+    document.body.append(view);
+
+    const loads: Array<{ index: number; isPreload?: boolean }> = [];
+    view.addEventListener('load', (event: Event) => {
+      const { index, isPreload } = (event as CustomEvent<{ index: number; isPreload?: boolean }>)
+        .detail;
+      loads.push({ index, isPreload });
+    });
+
+    const plainChapter = (text: string) =>
+      `<!doctype html><html><body><p>${text}</p></body></html>`;
+    const explicitLtrChapter = `<!doctype html><html dir="ltr"><body><p>English appendix</p></body></html>`;
+
+    try {
+      await view.open({
+        metadata: { language: 'ar' },
+        sections: [
+          makeBlobSection(plainChapter('الفصل الأول')),
+          makeBlobSection(plainChapter('الفصل الثاني')),
+          makeBlobSection(explicitLtrChapter),
+        ],
+      });
+      view.renderer.setAttribute('max-column-count', '1');
+      view.renderer.setAttribute('max-inline-size', '720px');
+
+      const stabilized = waitStabilized(view.renderer);
+      await view.goTo(0);
+      await stabilized;
+      await new Promise((r) => setTimeout(r, 200));
+      await waitFrames(4);
+
+      expect(view.renderer.getAttribute('dir')).toBe('rtl');
+      expect(loads).toContainEqual({ index: 0, isPreload: undefined });
+      expect(loads).toContainEqual({ index: 1, isPreload: true });
+
+      const ch2 = view.renderer.getContents().find((c) => c.index === 1);
+      expect(ch2?.doc.documentElement.getAttribute('dir')).toBe('rtl');
+
+      // Navigate to chapter 2; chapter 3 explicitly declares dir="ltr" so it is not preloaded.
+      loads.length = 0;
+      const ch2Stabilized = waitStabilized(view.renderer);
+      await view.goTo(1);
+      await ch2Stabilized;
+      await new Promise((r) => setTimeout(r, 200));
+      await waitFrames(4);
+
+      expect(loads.some((e) => e.index === 2 && e.isPreload === true)).toBe(false);
+    } finally {
+      view.close?.();
+      view.remove();
+    }
+  });
 });
