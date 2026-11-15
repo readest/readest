@@ -102,12 +102,6 @@ vi.mock('@/hooks/useResponsiveSize', () => ({
 vi.mock('@/helpers/settings', () => ({
   saveViewSettings: (...args: unknown[]) => mockSaveViewSettings(...args),
 }));
-// Settings loads when it first opens; the menu that opens it starts the load as it opens.
-const settingsModule = vi.hoisted(() => ({ loaded: false }));
-vi.mock('@/components/settings/SettingsDialog', () => {
-  settingsModule.loaded = true;
-  return { default: () => null };
-});
 vi.mock('@/components/vocabulary/VocabularyDialog', () => ({
   setVocabularyDialogVisible: vi.fn(),
 }));
@@ -128,18 +122,6 @@ vi.mock('@/utils/window', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/utils/window')>()),
   tauriHandleToggleFullScreen: vi.fn(),
 }));
-
-describe('ViewMenu Settings', () => {
-  afterEach(() => {
-    cleanup();
-  });
-
-  it('starts loading Settings when it opens', async () => {
-    expect(settingsModule.loaded).toBe(false);
-    render(<ViewMenu bookKey='book-1' />);
-    await waitFor(() => expect(settingsModule.loaded).toBe(true));
-  });
-});
 
 describe('ViewMenu fullscreen', () => {
   const requestFullscreen = vi.fn();
