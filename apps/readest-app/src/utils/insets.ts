@@ -219,18 +219,18 @@ export interface PopupBounds {
  * The rect a popup is clamped to, and the origin its points must be shifted by.
  *
  * `getPosition`/`getPopupPosition` return points relative to the rect's
- * top-left, but popups render relative to the book cell. Off the Duo the rect
- * is the raw cell (main's behaviour, no shift). On iPhone Duo it is the cell's
- * safe region, so a popup never sits under the status strip, and `origin` is
- * the safe region's offset inside the cell: shift the results by it with
- * {@link offsetPosition} to get back to cell coordinates.
+ * top-left, but popups render relative to the book cell. When `applyInsets` is
+ * false the rect is the raw cell (no shift). When true it is the cell's safe
+ * region, so a popup never sits under a safe-area inset / status strip, and
+ * `origin` is the safe region's offset inside the cell: shift the results by
+ * it with {@link offsetPosition} to get back to cell coordinates.
  */
 export const getPopupBounds = (
   cellRect: Rect,
   insets: Insets,
-  isIPhoneDuo: boolean,
+  applyInsets: boolean,
 ): PopupBounds => {
-  if (!isIPhoneDuo) return { rect: cellRect, origin: { x: 0, y: 0 } };
+  if (!applyInsets) return { rect: cellRect, origin: { x: 0, y: 0 } };
   const left = cellRect.left + insets.left;
   const top = cellRect.top + insets.top;
   return {

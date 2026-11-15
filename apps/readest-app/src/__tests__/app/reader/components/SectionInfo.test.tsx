@@ -257,3 +257,31 @@ describe('SectionInfo book metadata data attributes (#5776)', () => {
     expect(info.hasAttribute('data-book-series-index')).toBe(false);
   });
 });
+
+describe('SectionInfo vertical safe-area top (#7389)', () => {
+  it('anchors the vertical section title below gridInsets.top plus 1.5x margin', () => {
+    const { container } = render(
+      <SectionInfo
+        {...baseProps}
+        isVertical
+        gridInsets={{ top: 59, right: 0, bottom: 0, left: 0 }}
+        contentInsets={{ top: 75, right: 0, bottom: 0, left: 0 }}
+      />,
+    );
+    const info = container.querySelector('.sectioninfo') as HTMLElement;
+    expect(info.style.top).toBe('83px');
+  });
+
+  it('keeps the 1.5x vertical margin when gridInsets.top is zero', () => {
+    const { container } = render(
+      <SectionInfo
+        {...baseProps}
+        isVertical
+        gridInsets={{ top: 0, right: 0, bottom: 0, left: 0 }}
+        contentInsets={{ top: 16, right: 0, bottom: 0, left: 0 }}
+      />,
+    );
+    const info = container.querySelector('.sectioninfo') as HTMLElement;
+    expect(info.style.top).toBe('24px');
+  });
+});

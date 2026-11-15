@@ -102,6 +102,7 @@ import type { BookDoc } from '@/libs/document';
 import type { Insets } from '@/types/misc';
 
 const NOTE = 'A short note that the popup shows for the tapped footnote marker.';
+const LONG_NOTE = Array.from({ length: 24 }, (_, i) => `${i + 1}. ${NOTE}`).join('\n');
 const NO_INSETS: Insets = { top: 0, right: 0, bottom: 0, left: 0 };
 const PHONE_TOP: Insets = { top: 59, right: 0, bottom: 34, left: 0 };
 
@@ -112,6 +113,7 @@ let anchor: HTMLElement;
 beforeEach(async () => {
   await page.viewport(393, 852);
   h.isIPhoneDuo = false;
+  h.viewSettings = { vertical: false, rtl: false, scrolled: false };
   h.handlers.length = 0;
   // The book cell: origin at the viewport's, the insets lie inside it.
   cell = document.createElement('div');
@@ -131,12 +133,12 @@ afterEach(() => {
 });
 
 /** Open the popup on the anchor and measure the triangle and popup boxes. */
-const openPopup = (gridInsets: Insets) => {
+const openPopup = (gridInsets: Insets, footnote = NOTE) => {
   render(<FootnotePopup bookKey='book-1' bookDoc={{} as BookDoc} gridInsets={gridInsets} />, {
     container: host,
   });
   act(() => {
-    h.dispatchFootnote({ bookKey: 'book-1', element: anchor, footnote: NOTE });
+    h.dispatchFootnote({ bookKey: 'book-1', element: anchor, footnote });
   });
   const triangle = host
     .querySelector<HTMLElement>('.popup-triangle-outer')!
@@ -205,5 +207,29 @@ describe('popup placement with a 59px top safe-area inset (393x852)', () => {
     const raw = getPosition(anchor, cell.getBoundingClientRect(), 10);
     const unshifted = getPosition(anchor, rect, 10);
     expect(raw.point.y - unshifted.point.y).toBe(PHONE_TOP.top);
+  });
+
+  test('vertical writing mode keeps tall footnote popups below gridInsets.top (#7389)', () => {
+    h.viewSettings = { vertical: true, rtl: true, scrolled: false };
+    anchor.style.cssText =
+      'position:absolute;left:220px;top:90px;font-size:16px;writing-mode:vertical-rl;';
+    const { popup } = openPopup(PHONE_TOP, LONG_NOTE);
+    expect(popup.top).toBeGreaterThanOrEqual(PHONE_TOP.top + 10);
+    expect(popup.bottom).toBeLessThanOrEqual(852 - PHONE_TOP.bottom - 10);
+  });
+
+  test('horizontal upward popup clamps top below gridInsets.top (#7389)', () => {
+    anchor.style.cssText = 'position:absolute;left:150px;top:600px;font-size:16px;';
+    const { popup, dir } = openPopup(PHONE_TOP, LONG_NOTE);
+    expect(dir).toBe('up');
+    expect(popup.top).toBeGreaterThanOrEqual(PHONE_TOP.top + 10);
+  });
+
+  test('horizontal downward popup near top fits inside safe area bounds (#7389)', () => {
+    anchor.style.cssText = 'position:absolute;left:150px;top:90px;font-size:16px;';
+    const { popup, dir } = openPopup(PHONE_TOP, LONG_NOTE);
+    expect(dir).toBe('down');
+    expect(popup.top).toBeGreaterThanOrEqual(PHONE_TOP.top + 10);
+    expect(popup.bottom).toBeLessThanOrEqual(852 - PHONE_TOP.bottom - 10);
   });
 });

@@ -140,7 +140,7 @@ const SectionInfo: React.FC<SectionInfoProps> = ({
           ...(textColor ? { color: textColor } : {}),
           ...(isVertical
             ? {
-                top: `${(contentInsets.top - gridInsets.top) * 1.5}px`,
+                top: `${gridInsets.top + (contentInsets.top - gridInsets.top) * 1.5}px`,
                 bottom: `${(contentInsets.bottom - gridInsets.bottom) * 1.5}px`,
                 right: showDoubleBorder
                   ? `calc(${contentInsets.right}px)`

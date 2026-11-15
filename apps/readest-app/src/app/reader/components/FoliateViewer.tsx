@@ -1176,7 +1176,13 @@ const FoliateViewer: React.FC<{
     // The drawing dock stays up for the whole drawing session, so the text
     // makes room for it instead of running underneath.
     const drawingDock = viewState?.drawingEnabled ? getDrawingDockClearance(gridInsets) : null;
-    const topMargin = (showTopHeader ? insets.top : viewInsets.top) + moreTopInset;
+    // Vertical mode cannot scroll lines vertically out from under a top safe-area
+    // inset (Dynamic Island/notch). Preserve gridInsets.top while dividing out
+    // foliate-js's 1.5x vertical marginTop multiplier so effective padding-top is
+    // gridInsets.top + viewInsets.top * 1.5, leaving horizontal mode unchanged.
+    const topMargin = viewSettings.vertical
+      ? gridInsets.top / 1.5 + viewInsets.top
+      : (showTopHeader ? insets.top : viewInsets.top) + moreTopInset;
     // On iPhone Duo the horizontal safe-area insets are applied to the viewer
     // container itself (see the render below), not folded into these margins:
     // the paginator treats a horizontal margin as a gutter and puts only half
