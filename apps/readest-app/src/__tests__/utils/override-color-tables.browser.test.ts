@@ -46,6 +46,7 @@ const BOOK_CSS = `
   tr { background-color: #00ff00; }
   td { background-color: #ffcc00; }
   b, span, pre { background-color: #0000ff; }
+  b, a { color: #ffffff; }
 `;
 
 const TABLE_HTML = `
@@ -53,7 +54,7 @@ const TABLE_HTML = `
     <colgroup><col id="col"></colgroup>
     <tr id="tr">
       <td id="td" style="background-image: linear-gradient(#ffffff, #ffffff)">
-        <b id="b">bold</b><span id="span">span</span><p id="p">text</p><pre id="pre">code</pre>
+        <b id="b">bold</b><span id="span">span</span><p id="p">text</p><pre id="pre">code</pre><a id="a" href="#a">link</a>
       </td>
     </tr>
   </table>
@@ -80,6 +81,7 @@ const renderTable = (settings: Partial<ViewSettings>, isDarkMode = false) => {
   return {
     bg: (id: string) => style(id).backgroundColor,
     image: (id: string) => style(id).backgroundImage,
+    color: (id: string) => style(id).color,
   };
 };
 
@@ -114,6 +116,13 @@ describe('Override Book Color on tables (#7415)', () => {
         expect(bg(id), id).toBe(TRANSPARENT);
       expect(image('td')).toBe('none');
     }
+  });
+
+  test('gives text inside a cell the theme color, and links the link color', () => {
+    const { color } = renderTable({ overrideColor: true });
+    expect(color('b')).toBe('rgb(17, 17, 17)');
+    expect(color('a')).toBe('rgb(51, 102, 204)');
+    expect(renderTable({ overrideColor: false }).color('b')).toBe('rgb(255, 255, 255)');
   });
 
   test('paints no second shade behind text inside a cell in dark mode', () => {
