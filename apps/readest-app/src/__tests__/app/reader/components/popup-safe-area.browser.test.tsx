@@ -134,9 +134,12 @@ afterEach(() => {
 
 /** Open the popup on the anchor and measure the triangle and popup boxes. */
 const openPopup = (gridInsets: Insets, footnote = NOTE) => {
-  render(<FootnotePopup bookKey='book-1' bookDoc={{} as BookDoc} gridInsets={gridInsets} />, {
-    container: host,
-  });
+  const rendered = render(
+    <FootnotePopup bookKey='book-1' bookDoc={{} as BookDoc} gridInsets={gridInsets} />,
+    {
+      container: host,
+    },
+  );
   act(() => {
     h.dispatchFootnote({ bookKey: 'book-1', element: anchor, footnote });
   });
@@ -151,7 +154,7 @@ const openPopup = (gridInsets: Insets, footnote = NOTE) => {
     x: triangle.left + triangle.width / 2,
     y: dir === 'down' ? triangle.top : triangle.bottom,
   };
-  return { triangle, popup, text, tip, dir };
+  return { triangle, popup, text, tip, dir, rerender: rendered.rerender };
 };
 
 const expectPointerOnText = ({ tip, text, popup, dir }: ReturnType<typeof openPopup>) => {
@@ -231,5 +234,16 @@ describe('popup placement with a 59px top safe-area inset (393x852)', () => {
     expect(dir).toBe('down');
     expect(popup.top).toBeGreaterThanOrEqual(PHONE_TOP.top + 10);
     expect(popup.bottom).toBeLessThanOrEqual(852 - PHONE_TOP.bottom - 10);
+  });
+
+  test('recomputes bounds when gridInsets increases while a vertical popup is open (#7389)', () => {
+    h.viewSettings = { vertical: true, rtl: true, scrolled: false };
+    anchor.style.cssText =
+      'position:absolute;left:220px;top:90px;font-size:16px;writing-mode:vertical-rl;';
+    const { rerender } = openPopup(NO_INSETS, LONG_NOTE);
+    rerender(<FootnotePopup bookKey='book-1' bookDoc={{} as BookDoc} gridInsets={PHONE_TOP} />);
+    const updated = host.querySelector<HTMLElement>('#popup-container')!.getBoundingClientRect();
+    expect(updated.top).toBeGreaterThanOrEqual(PHONE_TOP.top + 10);
+    expect(updated.bottom).toBeLessThanOrEqual(852 - PHONE_TOP.bottom - 10);
   });
 });

@@ -182,6 +182,7 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
 
   const [popupBounds, setPopupBounds] = useState<PopupBounds | null>(null);
   const popupBoundsRef = useRef<PopupBounds | null>(null);
+  const appliedGridInsetsRef = useRef<Insets | null>(null);
   const [responsiveWidth, setResponsiveWidth] = useState(popupWidth);
   const [responsiveHeight, setResponsiveHeight] = useState(popupHeight);
   const sizeAdjustCountRef = useRef(0);
@@ -653,6 +654,34 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
     }
   }, [anchor, popupBounds, responsiveWidth, responsiveHeight, popupPadding]);
 
+  useEffect(() => {
+    if (!showPopup) return;
+    const prev = appliedGridInsetsRef.current;
+    if (
+      prev &&
+      prev.top === gridInsets.top &&
+      prev.right === gridInsets.right &&
+      prev.bottom === gridInsets.bottom &&
+      prev.left === gridInsets.left
+    ) {
+      return;
+    }
+    const gridFrame = document.querySelector(`#gridcell-${bookKey}`);
+    if (!gridFrame) return;
+    const bounds = getPopupBounds(gridFrame.getBoundingClientRect(), gridInsets, true);
+    appliedGridInsetsRef.current = gridInsets;
+    popupBoundsRef.current = bounds;
+    setPopupBounds(bounds);
+    const view = footnoteViewRef.current;
+    if (view) {
+      fitPopupToContent(view);
+    } else {
+      setResponsiveWidth((w) => Math.min(w, getMaxWidth()));
+      setResponsiveHeight((h) => Math.min(h, getMaxHeight()));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showPopup, bookKey, gridInsets.top, gridInsets.right, gridInsets.bottom, gridInsets.left]);
+
   const docLinkHandler = async (event: Event) => {
     const detail = (event as CustomEvent).detail;
     // console.log('doc link click', detail);
@@ -667,6 +696,7 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
       bounds.origin,
     );
     stopTrackingPopupContentSize();
+    appliedGridInsetsRef.current = gridInsetsRef.current;
     popupBoundsRef.current = bounds;
     trianglePositionRef.current = triangPos;
     seedPopupSize(viewSettings.vertical);
@@ -744,6 +774,7 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
     sizeAdjustCountRef.current = 0;
     trianglePositionRef.current = null;
     setCanGoBack(false);
+    appliedGridInsetsRef.current = null;
     popupBoundsRef.current = null;
     setPopupBounds(null);
     setPopupPosition(null);
@@ -782,6 +813,7 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
       getPosition(element, bounds.rect, popupPadding, viewSettings.vertical),
       bounds.origin,
     );
+    appliedGridInsetsRef.current = gridInsetsRef.current;
     popupBoundsRef.current = bounds;
     trianglePositionRef.current = triangPos;
     const seed = seedPopupSize(viewSettings.vertical);
