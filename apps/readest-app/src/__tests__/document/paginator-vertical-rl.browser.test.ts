@@ -596,4 +596,67 @@ describe('foliate-paginator mobile portrait EBPAJ mixed direction (#7374)', () =
       sameDirEl.remove();
     }
   });
+
+  it('caps vertical portrait pagination at one column even with max-column-count=2 and max-inline-size=720px', async () => {
+    await import('foliate-js/paginator.js');
+    const el = createPortraitPaginator(2, 720);
+    try {
+      el.open({
+        dir: 'rtl',
+        sections: [makeBlobSection(verticalHtml(ebpajLongParagraphs))],
+      });
+      const stabilized = waitStabilized(el);
+      await el.goTo({ index: 0 });
+      await stabilized;
+      await waitFrames(4);
+
+      expect(el.columnCount).toBe(1);
+    } finally {
+      el.destroy();
+      el.remove();
+    }
+  });
+
+  it('drops cross-progression horizontal preloads and emits primary load when navigating to an RTL section', async () => {
+    await import('foliate-js/paginator.js');
+    const el = createPortraitPaginator(1, 720);
+    const loads: Array<{ index: number; isPreload?: boolean }> = [];
+    el.addEventListener('load', (event: Event) => {
+      const { index, isPreload } = (event as CustomEvent<{ index: number; isPreload?: boolean }>)
+        .detail;
+      loads.push({ index, isPreload });
+    });
+
+    const rtlHorizontalHtml = `<!doctype html><html dir="rtl"><body><p>פרק א</p></body></html>`;
+    try {
+      el.open({
+        sections: [
+          makeBlobSection(horizontalHtml('Chapter 1')),
+          makeBlobSection(rtlHorizontalHtml),
+        ],
+      });
+      const firstStabilized = waitStabilized(el);
+      await el.goTo({ index: 0 });
+      await firstStabilized;
+      await new Promise((r) => setTimeout(r, 200));
+      await waitFrames(4);
+
+      expect(loads).toEqual([{ index: 0, isPreload: undefined }]);
+      expect(el.getAttribute('dir')).toBe('ltr');
+
+      const secondStabilized = waitStabilized(el);
+      await el.goTo({ index: 1 });
+      await secondStabilized;
+      await waitFrames(4);
+
+      expect(loads).toEqual([
+        { index: 0, isPreload: undefined },
+        { index: 1, isPreload: undefined },
+      ]);
+      expect(el.getAttribute('dir')).toBe('rtl');
+    } finally {
+      el.destroy();
+      el.remove();
+    }
+  });
 });
