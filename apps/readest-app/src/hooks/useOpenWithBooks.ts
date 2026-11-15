@@ -7,7 +7,7 @@ import { isTauriAppPlatform } from '@/services/environment';
 import { navigateToLibrary, navigateToReader, showLibraryWindow } from '@/utils/nav';
 import { eventDispatcher } from '@/utils/event';
 import { partialMD5 } from '@/utils/md5';
-import { shouldOpenTransient } from '@/helpers/openWith';
+import { decodeFileUrlPath, shouldOpenTransient } from '@/helpers/openWith';
 
 /**
  * Handle "Open with Readest" file imports. Consumes the `app-incoming-url`
@@ -62,7 +62,7 @@ export function useOpenWithBooks() {
       const filePaths: string[] = [];
       for (let url of urls) {
         if (url.startsWith('file://')) {
-          url = appService?.isIOSApp ? url : decodeURI(url.replace('file://', ''));
+          url = appService?.isIOSApp ? url : decodeFileUrlPath(url);
         }
         if (!/^(https?:|data:|blob:|readest:)/i.test(url)) {
           filePaths.push(url);
