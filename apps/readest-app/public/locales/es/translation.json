@@ -2941,5 +2941,10 @@
   "Merge Statistics": "Combinar estadísticas",
   "Merge statistics of {{title}}": "Combinar las estadísticas de {{title}}",
   "No other books have reading statistics": "Ningún otro libro tiene estadísticas de lectura",
-  "Merge another entry into this book:": "Combinar otra entrada en este libro:"
+  "Merge another entry into this book:": "Combinar otra entrada en este libro:",
+  "Remove {{voice}} from favorites": "Quitar {{voice}} de favoritas",
+  "Add {{voice}} to favorites": "Añadir {{voice}} a favoritas",
+  "Remove from favorites": "Quitar de favoritas",
+  "Add to favorites": "Añadir a favoritas",
+  "Favorites": "Favoritas"
 }

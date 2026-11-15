@@ -2868,5 +2868,10 @@
   "Merge Statistics": "ادغام آمار",
   "Merge statistics of {{title}}": "ادغام آمار {{title}}",
   "No other books have reading statistics": "کتاب دیگری آمار مطالعه ندارد",
-  "Merge another entry into this book:": "ادغام مورد دیگری در این کتاب:"
+  "Merge another entry into this book:": "ادغام مورد دیگری در این کتاب:",
+  "Remove {{voice}} from favorites": "حذف {{voice}} از علاقه‌مندی‌ها",
+  "Add {{voice}} to favorites": "افزودن {{voice}} به علاقه‌مندی‌ها",
+  "Remove from favorites": "حذف از علاقه‌مندی‌ها",
+  "Add to favorites": "افزودن به علاقه‌مندی‌ها",
+  "Favorites": "علاقه‌مندی‌ها"
 }

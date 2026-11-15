@@ -2795,5 +2795,10 @@
   "Merge Statistics": "Gabungkan Statistik",
   "Merge statistics of {{title}}": "Gabungkan statistik {{title}}",
   "No other books have reading statistics": "Tiada buku lain yang mempunyai statistik membaca",
-  "Merge another entry into this book:": "Gabungkan entri lain ke dalam buku ini:"
+  "Merge another entry into this book:": "Gabungkan entri lain ke dalam buku ini:",
+  "Remove {{voice}} from favorites": "Alih keluar {{voice}} daripada kegemaran",
+  "Add {{voice}} to favorites": "Tambah {{voice}} ke kegemaran",
+  "Remove from favorites": "Alih keluar daripada kegemaran",
+  "Add to favorites": "Tambah ke kegemaran",
+  "Favorites": "Kegemaran"
 }

@@ -3160,5 +3160,10 @@
   "Merge Statistics": "دمج الإحصاءات",
   "Merge statistics of {{title}}": "دمج إحصاءات {{title}}",
   "No other books have reading statistics": "لا توجد كتب أخرى لها إحصاءات قراءة",
-  "Merge another entry into this book:": "دمج إدخال آخر في هذا الكتاب:"
+  "Merge another entry into this book:": "دمج إدخال آخر في هذا الكتاب:",
+  "Remove {{voice}} from favorites": "إزالة {{voice}} من المفضلة",
+  "Add {{voice}} to favorites": "إضافة {{voice}} إلى المفضلة",
+  "Remove from favorites": "إزالة من المفضلة",
+  "Add to favorites": "إضافة إلى المفضلة",
+  "Favorites": "المفضلة"
 }

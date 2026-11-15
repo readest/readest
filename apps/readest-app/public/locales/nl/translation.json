@@ -2868,5 +2868,10 @@
   "Merge Statistics": "Statistieken samenvoegen",
   "Merge statistics of {{title}}": "Statistieken van {{title}} samenvoegen",
   "No other books have reading statistics": "Geen andere boeken hebben leesstatistieken",
-  "Merge another entry into this book:": "Een ander item in dit boek samenvoegen:"
+  "Merge another entry into this book:": "Een ander item in dit boek samenvoegen:",
+  "Remove {{voice}} from favorites": "{{voice}} verwijderen uit favorieten",
+  "Add {{voice}} to favorites": "{{voice}} toevoegen aan favorieten",
+  "Remove from favorites": "Verwijderen uit favorieten",
+  "Add to favorites": "Toevoegen aan favorieten",
+  "Favorites": "Favorieten"
 }

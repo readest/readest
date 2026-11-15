@@ -2868,5 +2868,10 @@
   "Merge Statistics": "Statistikani birlashtirish",
   "Merge statistics of {{title}}": "{{title}} statistikasini birlashtirish",
   "No other books have reading statistics": "Boshqa hech bir kitobda oʻqish statistikasi yoʻq",
-  "Merge another entry into this book:": "Bu kitobga boshqa yozuvni birlashtirish:"
+  "Merge another entry into this book:": "Bu kitobga boshqa yozuvni birlashtirish:",
+  "Remove {{voice}} from favorites": "{{voice}} ni sevimlilardan olib tashlash",
+  "Add {{voice}} to favorites": "{{voice}} ni sevimlilarga qoʻshish",
+  "Remove from favorites": "Sevimlilardan olib tashlash",
+  "Add to favorites": "Sevimlilarga qoʻshish",
+  "Favorites": "Sevimlilar"
 }

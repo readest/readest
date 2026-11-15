@@ -2795,5 +2795,10 @@
   "Merge Statistics": "合并统计",
   "Merge statistics of {{title}}": "合并《{{title}}》的统计",
   "No other books have reading statistics": "没有其他书籍有阅读统计",
-  "Merge another entry into this book:": "将其他条目合并到这本书："
+  "Merge another entry into this book:": "将其他条目合并到这本书：",
+  "Remove {{voice}} from favorites": "将 {{voice}} 移出收藏",
+  "Add {{voice}} to favorites": "将 {{voice}} 加入收藏",
+  "Remove from favorites": "移出收藏",
+  "Add to favorites": "加入收藏",
+  "Favorites": "收藏"
 }

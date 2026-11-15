@@ -2868,5 +2868,10 @@
   "Merge Statistics": "İstatistikleri Birleştir",
   "Merge statistics of {{title}}": "{{title}} istatistiklerini birleştir",
   "No other books have reading statistics": "Başka hiçbir kitabın okuma istatistiği yok",
-  "Merge another entry into this book:": "Bu kitapla birleştirilecek başka bir kayıt:"
+  "Merge another entry into this book:": "Bu kitapla birleştirilecek başka bir kayıt:",
+  "Remove {{voice}} from favorites": "{{voice}} sesini favorilerden kaldır",
+  "Add {{voice}} to favorites": "{{voice}} sesini favorilere ekle",
+  "Remove from favorites": "Favorilerden kaldır",
+  "Add to favorites": "Favorilere ekle",
+  "Favorites": "Favoriler"
 }

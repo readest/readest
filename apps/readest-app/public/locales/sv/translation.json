@@ -2868,5 +2868,10 @@
   "Merge Statistics": "Slå ihop statistik",
   "Merge statistics of {{title}}": "Slå ihop statistik för {{title}}",
   "No other books have reading statistics": "Inga andra böcker har lässtatistik",
-  "Merge another entry into this book:": "Slå ihop en annan post med den här boken:"
+  "Merge another entry into this book:": "Slå ihop en annan post med den här boken:",
+  "Remove {{voice}} from favorites": "Ta bort {{voice}} från favoriter",
+  "Add {{voice}} to favorites": "Lägg till {{voice}} i favoriter",
+  "Remove from favorites": "Ta bort från favoriter",
+  "Add to favorites": "Lägg till i favoriter",
+  "Favorites": "Favoriter"
 }

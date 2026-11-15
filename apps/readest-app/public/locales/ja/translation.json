@@ -2795,5 +2795,10 @@
   "Merge Statistics": "統計を統合",
   "Merge statistics of {{title}}": "{{title}}の統計を統合",
   "No other books have reading statistics": "読書統計のある本がほかにありません",
-  "Merge another entry into this book:": "この本に統合する項目:"
+  "Merge another entry into this book:": "この本に統合する項目:",
+  "Remove {{voice}} from favorites": "{{voice}}をお気に入りから削除",
+  "Add {{voice}} to favorites": "{{voice}}をお気に入りに追加",
+  "Remove from favorites": "お気に入りから削除",
+  "Add to favorites": "お気に入りに追加",
+  "Favorites": "お気に入り"
 }

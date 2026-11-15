@@ -3014,5 +3014,10 @@
   "Merge Statistics": "Об’єднати статистику",
   "Merge statistics of {{title}}": "Об’єднати статистику: {{title}}",
   "No other books have reading statistics": "Інші книги не мають статистики читання",
-  "Merge another entry into this book:": "Об’єднати інший запис із цією книгою:"
+  "Merge another entry into this book:": "Об’єднати інший запис із цією книгою:",
+  "Remove {{voice}} from favorites": "Видалити {{voice}} з обраного",
+  "Add {{voice}} to favorites": "Додати {{voice}} до обраного",
+  "Remove from favorites": "Видалити з обраного",
+  "Add to favorites": "Додати до обраного",
+  "Favorites": "Обране"
 }

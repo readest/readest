@@ -2868,5 +2868,10 @@
   "Merge Statistics": "आँकड़े मिलाएं",
   "Merge statistics of {{title}}": "{{title}} के आँकड़े मिलाएं",
   "No other books have reading statistics": "किसी और किताब के पढ़ने के आँकड़े नहीं हैं",
-  "Merge another entry into this book:": "इस किताब में कोई और प्रविष्टि मिलाएं:"
+  "Merge another entry into this book:": "इस किताब में कोई और प्रविष्टि मिलाएं:",
+  "Remove {{voice}} from favorites": "{{voice}} को पसंदीदा से हटाएँ",
+  "Add {{voice}} to favorites": "{{voice}} को पसंदीदा में जोड़ें",
+  "Remove from favorites": "पसंदीदा से हटाएँ",
+  "Add to favorites": "पसंदीदा में जोड़ें",
+  "Favorites": "पसंदीदा"
 }

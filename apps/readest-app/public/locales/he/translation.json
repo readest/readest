@@ -2941,5 +2941,10 @@
   "Merge Statistics": "מיזוג סטטיסטיקה",
   "Merge statistics of {{title}}": "מיזוג הסטטיסטיקה של {{title}}",
   "No other books have reading statistics": "לאף ספר אחר אין סטטיסטיקת קריאה",
-  "Merge another entry into this book:": "מיזוג רשומה אחרת לתוך הספר הזה:"
+  "Merge another entry into this book:": "מיזוג רשומה אחרת לתוך הספר הזה:",
+  "Remove {{voice}} from favorites": "הסרת {{voice}} מהמועדפים",
+  "Add {{voice}} to favorites": "הוספת {{voice}} למועדפים",
+  "Remove from favorites": "הסרה מהמועדפים",
+  "Add to favorites": "הוספה למועדפים",
+  "Favorites": "מועדפים"
 }
