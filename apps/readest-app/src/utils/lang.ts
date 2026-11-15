@@ -160,6 +160,11 @@ export const inferLangFromScript = (text: string, lang: string): string => {
   return lang;
 };
 
+// How much text detectLanguage reads before stripping noise. Callers may pass a
+// whole book, so the scan is capped; it is long enough to reach past a
+// downloader's header of links (#7435).
+export const LANGUAGE_SAMPLE_MAX_CHARS = 32768;
+
 // URLs and long hex runs (hashed file names) are Latin letters that say nothing
 // about the book's language. TXT files saved by downloader tools open with a
 // header full of them, which pushed franc to guess Spanish, Italian or
@@ -172,13 +177,14 @@ export const inferLangFromScript = (text: string, lang: string): string => {
 // left by removed URLs don't fill the sample.
 const stripLanguageNoise = (text: string): string =>
   text
-    .replace(/[a-z][a-z\d+.-]{0,31}:\/\/[^\s　-〿＀-￯]+/gi, ' ')
+    .replace(/[a-z][a-z\d+.-]{0,31}:\/\/[^\s\u3000-\u303f\uff00-\uffef]+/gi, ' ')
     .replace(/(^|[^\da-f])[\da-f]{16,}(?![\da-f])/gi, '$1 ')
     .replace(/\s+/g, ' ');
 
 export const detectLanguage = (content: string): string => {
   try {
-    const sample = stripLanguageNoise(content).substring(0, 1000);
+    const head = content.substring(0, LANGUAGE_SAMPLE_MAX_CHARS);
+    const sample = stripLanguageNoise(head).substring(0, 1000);
     const iso6393Lang = franc(sample);
     const iso6391Lang = code6393to6391(iso6393Lang);
     if (iso6391Lang) return iso6391Lang;

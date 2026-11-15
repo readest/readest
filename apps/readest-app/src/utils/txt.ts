@@ -1,6 +1,6 @@
 import { partialMD5 } from './md5';
 import { getBaseFilename } from './path';
-import { detectLanguage } from './lang';
+import { detectLanguage, LANGUAGE_SAMPLE_MAX_CHARS } from './lang';
 import { configureZip } from './zip';
 
 interface Metadata {
@@ -107,11 +107,6 @@ const zipWriteOptions = {
 
 const LARGE_TXT_THRESHOLD_BYTES = 8 * 1024 * 1024;
 const HEADER_TEXT_MAX_CHARS = 1024;
-// The language is read from a longer sample than the author: a downloader's
-// header of links can run for thousands of characters (#7435). 32768 characters
-// fit in HEADER_TEXT_MAX_BYTES even at 4 bytes each, so both paths see the same
-// sample.
-const LANGUAGE_SAMPLE_MAX_CHARS = 32768;
 const HEADER_TEXT_MAX_BYTES = 128 * 1024;
 const ENCODING_HEAD_SAMPLE_BYTES = 64 * 1024;
 const ENCODING_MID_SAMPLE_BYTES = 8192;
@@ -173,8 +168,7 @@ export class TxtToEpubConverter {
     } catch {}
     const headerAuthor = isPlausibleAuthorName(matchedAuthor) ? matchedAuthor : '';
     const author = headerAuthor || filenameMeta.author || providedAuthor || '';
-    const language =
-      providedLanguage || detectLanguage(txtContent.slice(0, LANGUAGE_SAMPLE_MAX_CHARS));
+    const language = providedLanguage || detectLanguage(txtContent);
     // console.log(`Detected language: ${language}`);
     const identifier = await partialMD5(txtFile);
     const metadata = { bookTitle, author, language, identifier };
@@ -220,6 +214,9 @@ export class TxtToEpubConverter {
     const filenameMeta = extractTxtFilenameMetadata(txtFile.name);
     const bookTitle = filenameMeta.title;
     const fileName = `${bookTitle}.epub`;
+    // The language is read from a longer sample than the author (#7435).
+    // LANGUAGE_SAMPLE_MAX_CHARS fits in HEADER_TEXT_MAX_BYTES even at 4 bytes a
+    // character, so both paths see the same sample.
     const fileHeader = await this.readHeaderTextFromFile(
       txtFile,
       runtimeEncoding,

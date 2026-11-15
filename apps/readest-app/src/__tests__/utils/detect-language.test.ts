@@ -1,7 +1,7 @@
 // @vitest-environment node
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 
-import { detectLanguage, getPDFSpeechLang } from '@/utils/lang';
+import { detectLanguage, getPDFSpeechLang, LANGUAGE_SAMPLE_MAX_CHARS } from '@/utils/lang';
 
 describe('detectLanguage - Result Tests', () => {
   describe('English text detection', () => {
@@ -359,6 +359,19 @@ describe('detectLanguage - URLs and hashed file names (#7435)', () => {
       (_, i) => `9f2c1d7e4b6a8c0d3e5f7a9b1c2d4e${i}f_640`,
     ).join('\n');
     expect(detectLanguage(`${hashedNames}\n天下大势，分久必合，合久必分。`)).toBe('zh');
+  });
+
+  it('scans only the first LANGUAGE_SAMPLE_MAX_CHARS of a whole book', () => {
+    // An HTML import passes the whole book body; the noise scan must not grow with it.
+    const book = 'It was the best of times, it was the worst of times.\n'.repeat(100_000);
+    const replace = vi.spyOn(String.prototype, 'replace');
+    try {
+      expect(detectLanguage(book)).toBe('en');
+      const scanned = replace.mock.contexts.map((text) => String(text).length);
+      expect(Math.max(...scanned)).toBeLessThanOrEqual(LANGUAGE_SAMPLE_MAX_CHARS);
+    } finally {
+      replace.mockRestore();
+    }
   });
 
   it('still detects English text that contains links', () => {
