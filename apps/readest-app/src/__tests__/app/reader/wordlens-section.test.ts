@@ -16,6 +16,7 @@ vi.mock('@/utils/simplecc', () => ({
 }));
 
 import { refreshSectionGlosses } from '@/app/reader/utils/wordlensSection';
+import { applyGlosses, buildSectionTextModel, clearGlosses } from '@/app/reader/utils/wordlensRuby';
 import { loadGlossIndex } from '@/services/wordlens/glossPacks';
 import type { GlossIndex } from '@/services/wordlens/glossIndex';
 import { runSimpleCC } from '@/utils/simplecc';
@@ -249,5 +250,44 @@ describe('whenSelectionClears', () => {
     const now = vi.fn();
     whenSelectionClears(doc, now);
     expect(now).toHaveBeenCalledTimes(1);
+  });
+});
+
+// The reader refreshes the hints of every loaded section after each section
+// load, with Word Lens on or off. Clearing then joined the text nodes of the
+// whole section every time, which in Readest Lite is a walk over every node
+// of every loaded section.
+describe('clearing hints', () => {
+  it('leaves a section without hints untouched', async () => {
+    const doc = document.implementation.createHTMLDocument('t');
+    const p = doc.createElement('p');
+    p.append(doc.createTextNode('Captain '), doc.createTextNode('Nemo smiled.'));
+    doc.body.append(p);
+    await refreshSectionGlosses(doc, viewSettings({ wordLensEnabled: false }), ctx());
+    expect(p.childNodes.length).toBe(2);
+  });
+
+  it('hints a word split across adjacent text nodes when Word Lens is on', async () => {
+    // A translation's unwrapped tags leave its text in adjacent text nodes.
+    const doc = document.implementation.createHTMLDocument('t');
+    const p = doc.createElement('p');
+    p.append(doc.createTextNode('Captain Ne'), doc.createTextNode('mo smiled.'));
+    doc.body.append(p);
+    const vocabulary = { learning: new Map([['nemo', '尼莫']]), mastered: new Set<string>() };
+    await refreshSectionGlosses(doc, viewSettings(), ctx({ appLang: 'zh-CN', vocabulary }));
+    expect(doc.querySelector('ruby.wl-gloss > rt')?.textContent).toBe('尼莫');
+  });
+
+  it('joins the text a hint split back into one node', () => {
+    const doc = document.implementation.createHTMLDocument('t');
+    doc.body.innerHTML = '<p>The quick fox</p>';
+    const p = doc.querySelector('p')!;
+    applyGlosses(doc, buildSectionTextModel(doc), [
+      { start: 4, end: 9, word: 'quick', gloss: '敏捷' },
+    ]);
+    expect(p.childNodes.length).toBe(3);
+    clearGlosses(doc);
+    expect(p.childNodes.length).toBe(1);
+    expect(p.textContent).toBe('The quick fox');
   });
 });

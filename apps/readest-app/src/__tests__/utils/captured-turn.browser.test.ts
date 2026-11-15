@@ -5,6 +5,8 @@ import {
   type CapturedTurnStyle,
 } from '@/app/reader/utils/capturedTurn';
 import { PageCurlRenderer } from '@/utils/pageCurl';
+import { PagePushRenderer } from '@/utils/pagePush';
+import { PageSlideRenderer } from '@/utils/pageSlide';
 
 // Choreography tests for the captured page-turn controller (readest#555):
 // capture the page → overlay the captured bitmap → instantly navigate the
@@ -395,6 +397,27 @@ describe('CapturedPageTurn (browser)', () => {
     expect(gl.isContextLost()).toBe(false);
     controller.dispose();
     await vi.waitFor(() => expect(gl.isContextLost()).toBe(true));
+  });
+
+  it.each([
+    'push',
+    'slide',
+  ] as const)('coalesces %s touch bursts once per display frame', async (style) => {
+    expect(await controller.beginDrag(true, false, style)).toBe(true);
+    const render = vi.spyOn(
+      style === 'push' ? PagePushRenderer.prototype : PageSlideRenderer.prototype,
+      'render',
+    );
+    try {
+      for (let i = 1; i <= 10; i++) controller.moveDrag(i / 20, 0.5);
+      expect(render).not.toHaveBeenCalled();
+      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+      expect(render).toHaveBeenCalledOnce();
+      expect(render).toHaveBeenLastCalledWith(0.5, { x: 1, y: 0.5 }, false);
+      await controller.endDrag(true);
+    } finally {
+      render.mockRestore();
+    }
   });
 
   it('coalesces Curl touch bursts into one display frame using the latest position', async () => {
@@ -1529,6 +1552,7 @@ describe('CapturedPageTurn (browser)', () => {
     expect(began).toBe(true);
     const sheet = slideSheet();
     controller.moveDrag(0.5, 0.5);
+    await waitForPaint();
     expect(new DOMMatrixReadOnly(getComputedStyle(sheet).transform).e).toBeCloseTo(-W / 2, 0);
     await controller.endDrag(true);
     expect(navigate).toHaveBeenCalledTimes(1);
@@ -1866,6 +1890,7 @@ describe('CapturedPageTurn (browser)', () => {
     const ending = slow.endDrag(true);
 
     slow.moveDrag(0.9, 0.5);
+    await Promise.resolve();
     expect(new DOMMatrixReadOnly(getComputedStyle(sheet).transform).e).toBeCloseTo(-W * 0.25, 0);
 
     slow.dispose();

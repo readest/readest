@@ -4,10 +4,11 @@ import { create, type StoreApi } from 'zustand';
 import { useShallow } from 'zustand/react/shallow';
 
 import FooterBar from '@/app/reader/components/footerbar/FooterBar';
-import type { PageInfo } from '@/types/book';
+import { clearBookProgress, setBookProgress } from '@/store/readerProgressStore';
+import type { BookProgress, PageInfo } from '@/types/book';
 
-// The footer bar is hidden while reading. A page turn hands it a new position
-// and writes the book's progress into bookDataStore, and a progress save
+// The footer bar is hidden while reading. A page turn writes a new position
+// and the book's progress into bookDataStore, and a progress save
 // writes it again; re-rendering the hidden bar's panels and ~40 buttons on
 // each of those cost the Kindle ~1 s of CPU per turn.
 
@@ -110,29 +111,30 @@ const { useBookDataStore } = (await import('@/store/bookDataStore')) as unknown 
 
 const insets = { top: 0, right: 0, bottom: 0, left: 0 };
 const page = (current: number): PageInfo => ({ current, total: 100 });
-const footer = (pageinfo: PageInfo) => (
-  <FooterBar
-    bookKey='book-1'
-    bookFormat='EPUB'
-    section={page(0)}
-    pageinfo={pageinfo}
-    isHoveredAnim={false}
-    gridInsets={insets}
-  />
+const footer = () => (
+  <FooterBar bookKey='book-1' bookFormat='EPUB' isHoveredAnim={false} gridInsets={insets} />
 );
+const turnTo = (current: number) =>
+  setBookProgress('book-1', { section: page(0), pageinfo: page(current) } as BookProgress);
 
-afterEach(() => cleanup());
+afterEach(() => {
+  cleanup();
+  clearBookProgress('book-1');
+});
 
 describe('FooterBar while hidden', () => {
   it('re-renders none of its panels or buttons on page turns and progress saves', () => {
-    const { rerender } = render(footer(page(1)));
+    act(() => turnTo(1));
+    render(footer());
     expect(counts.buttons).toBeGreaterThan(0);
     counts.buttons = 0;
     counts.panels = 0;
 
     // a page turn: a new position, and the progress written into the book's config
-    act(() => useBookDataStore.setState({ config: { progress: [3, 100], location: 'b' } }));
-    rerender(footer(page(2)));
+    act(() => {
+      turnTo(2);
+      useBookDataStore.setState({ config: { progress: [3, 100], location: 'b' } });
+    });
     // the progress save that follows
     act(() => useBookDataStore.setState({ config: { progress: [3, 100], updatedAt: 1 } }));
 

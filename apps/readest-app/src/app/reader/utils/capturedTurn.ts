@@ -567,10 +567,6 @@ export class CapturedPageTurn {
     // A following drag can be queued while the previous overlay is settling.
     // Never paint the new gesture's sample onto that older page.
     if (!active || active.dragSession !== session) return;
-    if (active.style !== 'curl') {
-      this.#applyDragSession(active, session);
-      return;
-    }
     // WebView can deliver several forwarded touch samples between paints.
     // Buffer the latest pose and submit one mesh per display frame instead
     // of making the GPU draw every intermediate, already obsolete position.

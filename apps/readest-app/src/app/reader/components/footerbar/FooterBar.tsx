@@ -3,7 +3,7 @@ import React, { useCallback, useMemo, useEffect, useRef, useState } from 'react'
 import { useEnv } from '@/context/EnvContext';
 import { useSpatialNavigation } from '@/app/reader/hooks/useSpatialNavigation';
 import { useWindowFocusRestore } from '@/app/reader/hooks/useWindowFocusRestore';
-import { getBookProgress } from '@/store/readerProgressStore';
+import { getBookProgress, useReaderProgressStore } from '@/store/readerProgressStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useSidebarStore } from '@/store/sidebarStore';
 import { useBookDataStore } from '@/store/bookDataStore';
@@ -24,8 +24,6 @@ import TTSControl from '../tts/TTSControl';
 const FooterBar: React.FC<FooterBarProps> = ({
   bookKey,
   bookFormat,
-  section,
-  pageinfo,
   isHoveredAnim,
   gridInsets,
 }) => {
@@ -55,13 +53,13 @@ const FooterBar: React.FC<FooterBarProps> = ({
 
   // A hidden footer keeps the position it last showed and catches up in the
   // render that shows it: following every page turn re-rendered all its
-  // panels and buttons for nothing.
-  const [shown, setShown] = useState({ section, pageinfo });
-  if (isVisible && (shown.section !== section || shown.pageinfo !== pageinfo)) {
-    setShown({ section, pageinfo });
-  }
-  const shownSection = isVisible ? section : shown.section;
-  const shownPageinfo = isVisible ? pageinfo : shown.pageinfo;
+  // panels and buttons for nothing. A shown footer follows the turns.
+  const progress = useReaderProgressStore((s) =>
+    isVisible ? (s.progresses[bookKey] ?? null) : null,
+  );
+  const [shown, setShown] = useState(() => getBookProgress(bookKey));
+  if (isVisible && progress !== shown) setShown(progress);
+  const { section: shownSection, pageinfo: shownPageinfo } = (isVisible ? progress : shown) ?? {};
   const progressInfo = useMemo(
     () => (FIXED_LAYOUT_FORMATS.has(bookFormat) ? shownSection : shownPageinfo),
     [bookFormat, shownSection, shownPageinfo],
