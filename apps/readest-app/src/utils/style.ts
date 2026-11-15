@@ -1629,23 +1629,17 @@ export const transformStylesheet = (
     return match;
   });
 
-  // `@media (orientation: ...)` inside a section is evaluated against the
+  // Width and height media features inside a section are evaluated against the
   // iframe, and the paginator sizes that iframe to the whole multi-column strip
-  // rather than to a page: a one-page section reports portrait and a two-page
-  // section landscape. The strip width is itself derived from the content, so a
-  // rule that changes the content's height — `column-count: 2` in the IDPF
-  // media-query sample — flips the query, which flips the page count, which
-  // flips the query straight back, and the layout never settles (#6038).
-  // Resolve the feature against the reader's own viewport, the same thing the
-  // vw/vh rewrite below does and for the same reason, so the book gets the
-  // orientation the reader is actually in and the cycle cannot form.
-  // Width and height features are the same trap: a two-page section makes the
-  // strip twice as wide, so the sample's `(max-width: 480px)` block flips on the
-  // page count it is itself deciding. Both rewrites are confined to the prelude,
-  // between `@media` and the `{` that opens its block, so the same literal in a
-  // declaration value or an attribute selector is left as the book wrote it. The
-  // two sentinels below resolve to themselves, so the passes are order-free.
-  const isLandscape = vw > vh;
+  // rather than to a page. A two-page section makes the strip twice as wide, so
+  // the IDPF sample's `(max-width: 480px)` block flips on the page count it is
+  // itself deciding (#6038). Resolve them against the reader's own viewport,
+  // the same thing the vw/vh rewrite below does and for the same reason.
+  // `(orientation: ...)` is the same trap, but the reading area can turn while
+  // the book is open, so it is left for applyOrientationMedia to resolve on the
+  // parsed sheets. The rewrite is confined to the prelude, between `@media` and
+  // the `{` that opens its block, so the same literal in a declaration value or
+  // an attribute selector is left as the book wrote it.
   const always = '(min-width: 0px)';
   const never = '(min-width: 999999px)';
   // Park quoted values first, the same way the url() pass above does, so an
@@ -1656,24 +1650,20 @@ export const transformStylesheet = (
     return `READEST_STR_${quoted.length - 1}_PLACEHOLDER`;
   });
   css = css.replace(/@media[^{]*/gi, (prelude) =>
-    prelude
-      .replace(/\(\s*orientation\s*:\s*(landscape|portrait)\s*\)/gi, (_, mode: string) =>
-        (mode.toLowerCase() === 'landscape') === isLandscape ? always : never,
-      )
-      .replace(
-        /\(\s*(min|max)-(width|height)\s*:\s*([^)]+?)\s*\)/gi,
-        (feature, bound: string, axis: string, length: string) => {
-          // Only lengths that are already px can be resolved without guessing at
-          // the book's root font size; anything else keeps the authored feature.
-          const px = /^(\d*\.?\d+)(?:px)?$/.exec(length);
-          if (!px) return feature;
-          const viewport = axis.toLowerCase() === 'width' ? vw : vh;
-          const bounds = parseFloat(px[1]!);
-          return (bound.toLowerCase() === 'min' ? viewport >= bounds : viewport <= bounds)
-            ? always
-            : never;
-        },
-      ),
+    prelude.replace(
+      /\(\s*(min|max)-(width|height)\s*:\s*([^)]+?)\s*\)/gi,
+      (feature, bound: string, axis: string, length: string) => {
+        // Only lengths that are already px can be resolved without guessing at
+        // the book's root font size; anything else keeps the authored feature.
+        const px = /^(\d*\.?\d+)(?:px)?$/.exec(length);
+        if (!px) return feature;
+        const viewport = axis.toLowerCase() === 'width' ? vw : vh;
+        const bounds = parseFloat(px[1]!);
+        return (bound.toLowerCase() === 'min' ? viewport >= bounds : viewport <= bounds)
+          ? always
+          : never;
+      },
+    ),
   );
   css = css.replace(/READEST_STR_(\d+)_PLACEHOLDER/g, (_, i) => quoted[+i]!);
 
@@ -1831,6 +1821,44 @@ export const applyNamespacedAttributes = (document: Document) => {
  */
 export const applyEinkModeAttribute = (document: Document, isEink: boolean) => {
   document.documentElement.setAttribute('data-eink', isEink ? 'true' : 'false');
+};
+
+type MediaNode = { media?: MediaList; styleSheet?: CSSStyleSheet | null; cssRules?: CSSRuleList };
+const authoredMedia = new WeakMap<MediaList, string>();
+
+/**
+ * Resolve the book's `@media (orientation: ...)` against the reading area.
+ *
+ * Inside a section the feature would describe the iframe, which the paginator
+ * sizes to the column strip or the chapter height, so the query and the
+ * content feed each other (#6038). Each feature in the parsed sheets is set to
+ * an always/never condition instead, and re-resolved from the authored text
+ * when the reading area turns. Only the media condition changes: selectors,
+ * specificity and the rest of the query stay as the book wrote them.
+ */
+export const applyOrientationMedia = (document: Document, isLandscape: boolean) => {
+  const visit = ({ media, styleSheet, cssRules }: MediaNode) => {
+    const authored = media ? (authoredMedia.get(media) ?? media.mediaText) : '';
+    if (media && /\(\s*orientation\s*:/i.test(authored)) {
+      authoredMedia.set(media, authored);
+      media.mediaText = authored.replace(
+        /\(\s*orientation\s*:\s*(landscape|portrait)\s*\)/gi,
+        (_, mode: string) =>
+          (mode.toLowerCase() === 'landscape') === isLandscape
+            ? '(min-width: 0px)'
+            : '(min-width: 999999px)',
+      );
+    }
+    if (styleSheet) visit(styleSheet);
+    for (const rule of Array.from(cssRules ?? [])) visit(rule as MediaNode);
+  };
+  for (const sheet of Array.from(document.styleSheets)) {
+    try {
+      visit(sheet);
+    } catch {
+      // A cross-origin sheet's rules can't be read; it keeps its own queries.
+    }
+  }
 };
 
 /**

@@ -47,6 +47,7 @@ import { useKOSync } from '../hooks/useKOSync';
 import { useFileSync } from '../hooks/useFileSync';
 import {
   applyEinkModeAttribute,
+  applyOrientationMedia,
   applyFixedlayoutStyles,
   applyImageStyle,
   applyNamespacedAttributes,
@@ -142,6 +143,13 @@ declare global {
     eval(script: string): void;
   }
 }
+
+// The reading area is the foliate-view box: the sidebars overlay it, and the
+// section iframes inside it are sized to their content.
+const isLandscapeBox = (el: Element) => {
+  const { width, height } = el.getBoundingClientRect();
+  return width > height;
+};
 
 // The hooks that follow the reading position (progress sync and save, KOSync, file sync, the
 // translation of the shown page) subscribe to the progress, which every page turn writes. Here they
@@ -474,7 +482,15 @@ const FoliateViewer: React.FC<{
       if (typeof ResizeObserver === 'undefined') return;
       const el = viewRef.current;
       if (el) {
-        observer = new ResizeObserver(() => invalidateChapterScreens());
+        // The same resize can turn the reading area, which the book's
+        // `(orientation: ...)` rules follow (see applyOrientationMedia).
+        let landscape = isLandscapeBox(el);
+        observer = new ResizeObserver(() => {
+          invalidateChapterScreens();
+          if (isLandscapeBox(el) === landscape) return;
+          landscape = !landscape;
+          for (const { doc } of el.renderer.getContents()) applyOrientationMedia(doc, landscape);
+        });
         observer.observe(el);
         return;
       }
@@ -615,6 +631,7 @@ const FoliateViewer: React.FC<{
       applyThemeModeClass(detail.doc, useThemeStore.getState().isDarkMode);
       applyScrollModeClass(detail.doc, viewSettings.scrolled || false);
       applyEinkModeAttribute(detail.doc, viewSettings.isEink || false);
+      if (viewRef.current) applyOrientationMedia(detail.doc, isLandscapeBox(viewRef.current));
       applyScrollbarStyle(document, viewSettings.hideScrollbar || false);
       keepTextAlignment(detail.doc);
       handleA11yNavigation(viewRef.current, detail.doc, {
