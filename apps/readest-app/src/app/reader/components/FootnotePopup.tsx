@@ -31,7 +31,11 @@ import { FootnoteHandler } from 'foliate-js/footnotes.js';
 import { mountAdditionalFonts, mountCustomFont } from '@/styles/fonts';
 import { eventDispatcher } from '@/utils/event';
 import { getCfiSpinePrefix } from '@/utils/cfi';
-import { isLinkTargetVisible, isSuperscriptFootnoteMarker, shouldCheckAsFootnote } from '../utils/footnoteHeuristics';
+import {
+  isLinkTargetVisible,
+  isSuperscriptFootnoteMarker,
+  shouldCheckAsFootnote,
+} from '../utils/footnoteHeuristics';
 import { showTransientHighlight } from '../utils/transientHighlight';
 import { drawAnnotationOverlay } from '../utils/annotatorUtil';
 import { refreshSectionGlosses } from '../utils/wordlensSection';

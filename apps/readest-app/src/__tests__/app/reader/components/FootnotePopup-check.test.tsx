@@ -222,7 +222,10 @@ describe('FootnotePopup strict-check gating (#7537)', () => {
 
   it('still asks for strict validation for a bare numeric link', async () => {
     await renderPopup();
-    const detail = await clickLink('Body text<a href="#n1">1</a> more text', 'text/chapter.html#n1');
+    const detail = await clickLink(
+      'Body text<a href="#n1">1</a> more text',
+      'text/chapter.html#n1',
+    );
     expect(detail.check).toBe(true);
   });
 });

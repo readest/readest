@@ -1,6 +1,9 @@
 // @vitest-environment happy-dom
 import { describe, it, expect } from 'vitest';
-import { isSuperscriptFootnoteMarker, shouldCheckAsFootnote } from '@/app/reader/utils/footnoteHeuristics';
+import {
+  isSuperscriptFootnoteMarker,
+  shouldCheckAsFootnote,
+} from '@/app/reader/utils/footnoteHeuristics';
 
 const parseHtml = (html: string) => {
   const doc = new DOMParser().parseFromString(html, 'text/html');
@@ -116,4 +119,3 @@ describe('isSuperscriptFootnoteMarker', () => {
     expect(isSuperscriptFootnoteMarker(a)).toBe(false);
   });
 });
-
