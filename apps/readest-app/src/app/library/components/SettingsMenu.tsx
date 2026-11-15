@@ -10,6 +10,7 @@ import { isTauriAppPlatform, isWebAppPlatform } from '@/services/environment';
 import { DOWNLOAD_READEST_URL } from '@/services/constants';
 import { setReadingStatsDialogVisible } from '@/components/stats/ReadingStatsDialog';
 import { setVocabularyDialogVisible } from '@/components/vocabulary/VocabularyDialog';
+import { preloadSettingsDialog } from '@/components/settings/preloadSettingsDialog';
 import { setBackupDialogVisible } from '@/app/library/components/BackupWindow';
 import { setCacheManagerDialogVisible } from '@/app/library/components/CacheManagerWindow';
 import { useAuth } from '@/context/AuthContext';
@@ -72,6 +73,10 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
   const [biometricAvailable, setBiometricAvailable] = useState(false);
   const [biometryLabelKey, setBiometryLabelKey] = useState('');
   const showBiometricToggle = !!appService?.isMobileApp && isPinEnabled && biometricAvailable;
+
+  useEffect(() => {
+    preloadSettingsDialog();
+  }, []);
 
   useEffect(() => {
     if (!isBiometricSupported(appService) || !isPinEnabled) return;
