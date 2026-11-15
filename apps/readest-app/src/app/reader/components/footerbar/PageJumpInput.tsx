@@ -76,15 +76,13 @@ const PageJumpInput: React.FC<PageJumpInputProps> = ({
   const livePageInfo = bookData?.isFixedLayout ? section : pageinfo;
   const liveValid = !!livePageInfo && livePageInfo.total > 0 && livePageInfo.current >= 0;
 
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (liveValid) setLastPageInfo(livePageInfo);
-  }, [liveValid, livePageInfo]);
-
   // Keep showing the last valid page while a relocation briefly reports an
   // invalid one: unmounting the label widens the progress slider under a
   // dragging cursor, which jumps somewhere else and brings the label back,
-  // looping into a jitter (#6646).
+  // looping into a jitter (#6646). Remembered while rendering, as React
+  // re-renders this alone at once: from an effect, every page turn took a
+  // second commit through the whole tree.
+  if (liveValid && livePageInfo !== lastPageInfo) setLastPageInfo(livePageInfo);
   const pageInfo = liveValid ? livePageInfo : lastPageInfo;
   if (!pageInfo) return null;
 

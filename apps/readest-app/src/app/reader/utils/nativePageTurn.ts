@@ -233,6 +233,13 @@ export class NativePageTurn extends CapturedPageTurn {
       void this.#call({ op: 'cancel', turnId: this.#scene.session.id }).catch(() => {});
     super.invalidatePreparedCapture();
   }
+  /** Retake the page on screen at the next warm-up. Its pixels changed after its
+   * sheet was taken, as when a PDF page draws its sharp layer only once shown. */
+  refreshCurrentPage() {
+    this.#stopWarm();
+    const key = this.#key();
+    if (key) this.#keys.delete(key);
+  }
   /** Advance the pixel generation and serialize invalidation of resident native textures.
    * Native invalidation lifts the cover and deletes its sheet, so it waits while a warm-up or
    * turn may hold them: the live page under the cover can be parked on a neighbouring page. */

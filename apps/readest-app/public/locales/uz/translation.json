@@ -2826,5 +2826,13 @@
   "Books uploaded": "Yuklangan kitoblar",
   "Reset Counts": "Hisoblagichlarni tiklash",
   "Reset the counts and sync history on this device?": "Bu qurilmadagi hisoblagichlar va sinxronlash tarixi tiklansinmi?",
-  "Folder not available": "Jild mavjud emas"
+  "Folder not available": "Jild mavjud emas",
+  "Words per Flash": "Har koʻrinishdagi soʻzlar",
+  "Warm-up": "Qizish",
+  "Long Word Delay": "Uzun soʻzlarda kechikish",
+  "Reading Calendar": "Mutolaa taqvimi",
+  "Previous Month": "Oldingi oy",
+  "Next Month": "Keyingi oy",
+  "No reading activity on this day": "Bu kuni mutolaa qayd etilmagan",
+  "See which books you read each day and for how long": "Har kuni qaysi kitoblarni va qancha vaqt oʻqiganingizni koʻring"
 }

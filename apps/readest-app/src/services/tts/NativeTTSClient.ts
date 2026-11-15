@@ -13,6 +13,8 @@ type TTSEventPayload = {
   utteranceId: string;
 } & TTSMessageEvent;
 
+const ANDROID_INIT_TIMEOUT_MS = 8_000;
+
 const TTSEngines = {
   default: 'System TTS',
   msctts: 'Msc TTS',
@@ -98,7 +100,17 @@ export class NativeTTSClient implements TTSClient {
   }
 
   async init(): Promise<boolean> {
-    const result = await invoke<{ success: boolean }>('plugin:native-tts|init');
+    const isAndroid = this.controller?.appService?.isAndroidApp ?? getOSPlatform() === 'android';
+    let timeout: ReturnType<typeof setTimeout> | undefined;
+    const request = invoke<{ success: boolean }>('plugin:native-tts|init');
+    const result = await (isAndroid
+      ? Promise.race([
+          request,
+          new Promise<{ success: boolean }>((resolve) => {
+            timeout = setTimeout(() => resolve({ success: false }), ANDROID_INIT_TIMEOUT_MS);
+          }),
+        ]).finally(() => clearTimeout(timeout))
+      : request);
     this.initialized = result.success;
     if (this.initialized) {
       await this.setupEventListener();

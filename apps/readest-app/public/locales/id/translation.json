@@ -2753,5 +2753,13 @@
   "Books uploaded": "Buku diunggah",
   "Reset Counts": "Atur Ulang Hitungan",
   "Reset the counts and sync history on this device?": "Atur ulang hitungan dan riwayat sinkronisasi di perangkat ini?",
-  "Folder not available": "Folder tidak tersedia"
+  "Folder not available": "Folder tidak tersedia",
+  "Words per Flash": "Kata per tampilan",
+  "Warm-up": "Pemanasan",
+  "Long Word Delay": "Jeda kata panjang",
+  "Reading Calendar": "Kalender membaca",
+  "Previous Month": "Bulan sebelumnya",
+  "Next Month": "Bulan berikutnya",
+  "No reading activity on this day": "Tidak ada aktivitas membaca pada hari ini",
+  "See which books you read each day and for how long": "Lihat buku yang Anda baca setiap hari dan lama membacanya"
 }

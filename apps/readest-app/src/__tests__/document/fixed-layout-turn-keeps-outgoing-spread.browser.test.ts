@@ -93,12 +93,13 @@ describe('fixed-layout page turn keeps the outgoing spread', () => {
 
   // The cache is a memory budget for heavy PDF pages; keeping the outgoing
   // spread alive must not turn it into a leak.
-  it('still trims spreads that are two turns behind', async () => {
-    const r = await mountAt(2);
-    const twoBack = frameOf(r, 2)!;
+  it('bounds the cache to current, previous and next spreads', async () => {
+    const r = await mountAt(3);
+    const older = frameOf(r, 3)!;
     await r.prev();
     await r.prev();
-    await waitFor(() => !twoBack.isConnected);
-    expect(twoBack.isConnected).toBe(false);
+    await r.prev();
+    await waitFor(() => !older.isConnected);
+    expect(older.isConnected).toBe(false);
   });
 });

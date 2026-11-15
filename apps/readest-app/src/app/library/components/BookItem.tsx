@@ -145,7 +145,7 @@ const BookItem: React.FC<BookItemProps> = ({
           !fitCoverInGrid && 'aspect-28/41',
           coverFit === 'crop' && 'shadow-md',
           mode === 'grid' && 'items-end',
-          mode === 'list' && 'min-w-20 items-center',
+          mode === 'list' && 'w-20 shrink-0 items-center',
         )}
         style={bookitemMainStyle}
       >

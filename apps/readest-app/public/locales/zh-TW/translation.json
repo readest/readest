@@ -2753,5 +2753,13 @@
   "Books uploaded": "已上傳書籍",
   "Reset Counts": "重設計數",
   "Reset the counts and sync history on this device?": "要重設此裝置上的計數和同步紀錄嗎？",
-  "Folder not available": "資料夾無法使用"
+  "Folder not available": "資料夾無法使用",
+  "Words per Flash": "每次顯示詞數",
+  "Warm-up": "漸進加速",
+  "Long Word Delay": "長詞延時",
+  "Reading Calendar": "閱讀日曆",
+  "Previous Month": "上個月",
+  "Next Month": "下個月",
+  "No reading activity on this day": "當天沒有閱讀記錄",
+  "See which books you read each day and for how long": "查看每天閱讀的書籍和花費的時間"
 }

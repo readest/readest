@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { render, cleanup, fireEvent, waitFor, screen } from '@testing-library/react';
+import { act, render, cleanup, fireEvent, waitFor, screen } from '@testing-library/react';
 
 import { Book } from '@/types/book';
 import BookDetailModal from '@/components/metadata/BookDetailModal';
@@ -9,9 +9,15 @@ vi.mock('@/hooks/useTranslation', () => ({
   useTranslation: () => (s: string) => s,
 }));
 
+const fileMetadata = { title: 'Title from file', author: 'File Author', language: 'en' };
+
 const appSvc = {
   getBookFileSize: vi.fn(async () => 1024),
   fetchBookDetails: vi.fn(async () => null),
+  refreshBookMetadata: vi.fn(async (book: Book) => {
+    book.metadata = { ...fileMetadata };
+    return true;
+  }),
 };
 
 vi.mock('@/context/EnvContext', () => ({
@@ -112,6 +118,62 @@ const makeBook = (): Book =>
       coverImageUrl: 'old-cover',
     },
   }) as Book;
+
+it('refreshes metadata from the current book file and saves it through the edit path', async () => {
+  const book = { ...makeBook(), tags: ['keep'] };
+  const onUpdate = vi.fn();
+  render(
+    <DropdownProvider>
+      <BookDetailModal book={book} isOpen onClose={vi.fn()} handleBookMetadataUpdate={onUpdate} />
+    </DropdownProvider>,
+  );
+  fireEvent.click(screen.getByRole('button', { name: 'More Actions' }));
+  const action = await screen.findByRole('menuitem', { name: 'Refresh Metadata' });
+  fireEvent.click(action);
+  await waitFor(() =>
+    expect(onUpdate).toHaveBeenCalledExactlyOnceWith(book, fileMetadata, ['keep']),
+  );
+  expect(await screen.findByText('Title from file')).toBeTruthy();
+  expect(book.metadata?.title).toBe('Old Title');
+});
+
+it('keeps a refresh that finishes after switching books out of the new book', async () => {
+  let finishRead!: () => void;
+  appSvc.refreshBookMetadata.mockImplementationOnce(async (book: Book) => {
+    await new Promise<void>((resolve) => {
+      finishRead = resolve;
+    });
+    book.metadata = { ...fileMetadata };
+    return true;
+  });
+  const first = makeBook();
+  const second = {
+    ...makeBook(),
+    hash: 'def456',
+    title: 'Second Book',
+    metadata: { title: 'Second Book', author: 'Second Author', language: 'en' },
+  } as Book;
+  const onUpdate = vi.fn();
+  const renderModal = (book: Book) => (
+    <DropdownProvider>
+      <BookDetailModal book={book} isOpen onClose={vi.fn()} handleBookMetadataUpdate={onUpdate} />
+    </DropdownProvider>
+  );
+  const { rerender } = render(renderModal(first));
+  fireEvent.click(screen.getByRole('button', { name: 'More Actions' }));
+  fireEvent.click(await screen.findByRole('menuitem', { name: 'Refresh Metadata' }));
+  await waitFor(() => expect(finishRead).toBeTypeOf('function'));
+
+  rerender(renderModal(second));
+  await act(async () => {
+    finishRead();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  });
+
+  expect(onUpdate).toHaveBeenCalledExactlyOnceWith(first, fileMetadata, []);
+  expect(screen.getByText('Second Book')).toBeTruthy();
+  expect(screen.queryByText('Title from file')).toBeNull();
+});
 
 describe('BookDetailModal cover refresh after save', () => {
   it('updates the Book Details view cover when the cover is edited and saved', async () => {

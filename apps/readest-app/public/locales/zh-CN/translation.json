@@ -2753,5 +2753,13 @@
   "Books uploaded": "已上传书籍",
   "Reset Counts": "重置计数",
   "Reset the counts and sync history on this device?": "要重置此设备上的计数和同步记录吗？",
-  "Folder not available": "文件夹不可用"
+  "Folder not available": "文件夹不可用",
+  "Words per Flash": "每次显示词数",
+  "Warm-up": "渐进加速",
+  "Long Word Delay": "长词延时",
+  "Reading Calendar": "读书日历",
+  "Previous Month": "上个月",
+  "Next Month": "下个月",
+  "No reading activity on this day": "当天没有阅读记录",
+  "See which books you read each day and for how long": "查看每天读过的书籍和阅读时长"
 }

@@ -75,6 +75,9 @@ export const createTranslationTargetNode = ({
 
   if (content) {
     wrapper.appendChild(content);
+    // Unwrapped tags and joined chunks leave adjacent text nodes, which split
+    // a word for selection and Word Lens.
+    wrapper.normalize();
   } else {
     wrapper.appendChild(document.createTextNode(translatedText ?? ''));
   }
@@ -295,7 +298,9 @@ export function useTextTranslation(
   const observeTextNodes = () => {
     if (!view || !enabled.current) return;
 
-    const nodes = resolveTranslationSourceNodes(walkTextNodes(view, ['pre', 'code', 'math']));
+    const nodes = resolveTranslationSourceNodes(
+      walkTextNodes(view, ['pre', 'code', 'math', 'rt', 'rp']),
+    );
     console.log(
       'Observing text nodes for translation:',
       nodes.length,

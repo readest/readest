@@ -3118,5 +3118,13 @@
   "Books uploaded": "الكتب التي تم رفعها",
   "Reset Counts": "إعادة تعيين العدادات",
   "Reset the counts and sync history on this device?": "هل تريد إعادة تعيين العدادات وسجل المزامنة على هذا الجهاز؟",
-  "Folder not available": "المجلد غير متاح"
+  "Folder not available": "المجلد غير متاح",
+  "Words per Flash": "كلمات في كل ومضة",
+  "Warm-up": "الإحماء",
+  "Long Word Delay": "تأخير الكلمات الطويلة",
+  "Reading Calendar": "تقويم القراءة",
+  "Previous Month": "الشهر السابق",
+  "Next Month": "الشهر التالي",
+  "No reading activity on this day": "لا يوجد نشاط قراءة في هذا اليوم",
+  "See which books you read each day and for how long": "اطّلع على الكتب التي قرأتها كل يوم والوقت الذي قضيته في قراءتها"
 }

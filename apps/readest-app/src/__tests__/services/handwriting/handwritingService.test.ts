@@ -39,7 +39,9 @@ describe('HandwritingService page scoping', () => {
   });
 
   it('notifies listeners on a page change so the canvas repaints', () => {
-    const service = new HandwritingService(new HandwritingEditor(), 'pdf:1', rect);
+    const editor = new HandwritingEditor();
+    editor.addStroke('pdf:1', { id: 'a', color: '#000', width: 0.004, points: [[0.1, 0.1]] });
+    const service = new HandwritingService(editor, 'pdf:1', rect);
     let renders = 0;
     service.onNeedsRender(() => renders++);
 
@@ -49,6 +51,24 @@ describe('HandwritingService page scoping', () => {
     // Same page again is a no-op: no repaint, no retarget.
     service.setPage('pdf:2');
     expect(renders).toBe(1);
+
+    // onto a page with ink
+    service.setPage('pdf:1');
+    expect(renders).toBe(2);
+  });
+
+  it('does not repaint a page change between pages without ink', () => {
+    // Every turn of a PDF is a page change: with nothing drawn on either page,
+    // a repaint draws the same empty canvas and costs the overlay a render.
+    const service = new HandwritingService(new HandwritingEditor(), 'pdf:1', rect);
+    let renders = 0;
+    service.onNeedsRender(() => renders++);
+
+    service.setPage('pdf:2');
+    service.setPage('pdf:3');
+
+    expect(renders).toBe(0);
+    expect(service.strokesForRender()).toEqual([]);
   });
 
   it('drops an in-progress stroke when the page changes mid-stroke', () => {

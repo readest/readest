@@ -31,6 +31,53 @@ export const getDailySeconds = (
   return daily;
 };
 
+export type BookReading = {
+  bookMd5: string;
+  title: string;
+  authors: string;
+  seconds: number;
+};
+
+export type BookQuarterHourDuration = BookReading & { quarter: number };
+
+/** Keep book identity while folding the same quarter-hour buckets as the charts. */
+export const getDailyBookReadings = (
+  quarters: BookQuarterHourDuration[],
+): Map<string, BookReading[]> => {
+  const days = new Map<string, Map<string, BookReading>>();
+  for (const { quarter, ...reading } of quarters) {
+    if (reading.seconds <= 0) continue;
+    const key = toDateKey(new Date(quarter * 900 * 1000));
+    const books = days.get(key) ?? new Map<string, BookReading>();
+    const previous = books.get(reading.bookMd5);
+    books.set(reading.bookMd5, {
+      ...reading,
+      seconds: (previous?.seconds ?? 0) + reading.seconds,
+    });
+    days.set(key, books);
+  }
+  return new Map(
+    [...days].map(([key, books]) => [
+      key,
+      [...books.values()].sort(
+        (a, b) => b.seconds - a.seconds || a.bookMd5.localeCompare(b.bookMd5),
+      ),
+    ]),
+  );
+};
+
+/** Sunday-first month like the heatmap, padded to complete weeks; dates stay in local time. */
+export const getCalendarDays = (month: Date): (Date | null)[] => {
+  const first = new Date(month.getFullYear(), month.getMonth(), 1);
+  const offset = first.getDay();
+  const length = new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate();
+  return Array.from({ length: Math.ceil((offset + length) / 7) * 7 }, (_, index) =>
+    index < offset || index >= offset + length
+      ? null
+      : new Date(month.getFullYear(), month.getMonth(), index - offset + 1),
+  );
+};
+
 /** The current streak runs to today, or to yesterday until today counts. */
 export const getStreaks = (daily: Map<string, number>, today = new Date()) => {
   const isReadingDay = (date: Date) => (daily.get(toDateKey(date)) ?? 0) >= MIN_STREAK_SECONDS;

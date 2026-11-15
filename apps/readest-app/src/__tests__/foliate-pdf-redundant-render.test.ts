@@ -25,6 +25,7 @@ const PAGE_TEXT = ['Magnus Pym got out of his elderly country taxicab. ', 'No on
 
 // Counts how many times a text layer was actually built.
 let textLayerBuilds = 0;
+let bitmapRender = Promise.resolve();
 
 vi.mock('@pdfjs/pdf.min.mjs', () => {
   class PDFDataRangeTransport {
@@ -59,7 +60,7 @@ vi.mock('@pdfjs/pdf.min.mjs', () => {
 
   const makePage = () => ({
     getViewport: ({ scale }: { scale: number }) => ({ width: 600 * scale, height: 800 * scale }),
-    render: () => ({ promise: Promise.resolve(), cancel: vi.fn() }),
+    render: () => ({ promise: bitmapRender, cancel: vi.fn() }),
     streamTextContent: vi.fn(async () => ({})),
     getTextContent: vi.fn(async () => ({ items: [] })),
     getAnnotations: vi.fn(async () => []),
@@ -135,6 +136,7 @@ const openFirstPage = async () => {
 
 beforeEach(() => {
   textLayerBuilds = 0;
+  bitmapRender = Promise.resolve();
   // jsdom has no 2d context; `render` hands it to page.render(), which the fake
   // pdf.js ignores, and recolors through it for page colours. Stub it so the run
   // stays free of jsdom "Not implemented".
@@ -175,6 +177,26 @@ describe('PDF re-render (#6071)', () => {
     // yields empty text, which is what makes TTS skip the paragraph.
     expect(spoken.isConnected).toBe(true);
     expect(textLayerBuilds).toBe(1);
+  });
+
+  it('waits for the current PDF bitmap when the same zoom is requested again', async () => {
+    const { onZoom, doc } = await openFirstPage();
+    let draw!: () => void;
+    bitmapRender = new Promise<void>((resolve) => {
+      draw = resolve;
+    });
+    const first = onZoom({ doc, scale: 2 });
+    const ready = vi.fn();
+    const second = Promise.resolve(onZoom({ doc, scale: 2 })).then(ready);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    try {
+      expect(ready).not.toHaveBeenCalled();
+    } finally {
+      draw();
+      await Promise.all([first, second]);
+    }
+    expect(textLayerBuilds).toBe(1);
+    expect(doc.querySelector('#canvas canvas')).not.toBeNull();
   });
 
   it('rebuilds the text layer when the zoom changes', async () => {

@@ -153,7 +153,7 @@ function LocalSend:stopService()
         self.sock = nil
         os.execute("pkill -f localsend-helper >/dev/null 2>&1")
     end
-    Firewall.close()
+    if self.running then Firewall.close() end
     self.running = false
 end
 
