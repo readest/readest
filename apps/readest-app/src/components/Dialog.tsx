@@ -182,6 +182,11 @@ const Dialog: React.FC<DialogProps> = ({
   const lastBodyRef = useRef<ReactNode>(null);
   const [isBodyHoldOver, setIsBodyHoldOver] = useState(false);
   if (isOpen) lastBodyRef.current = children;
+  // On e-ink (no open animation to keep) a dialog that has never opened is its element alone:
+  // callers find it by id to open it, and the library's dozen closed ones took ~0.5 s of a Kindle's
+  // launch with their chrome.
+  const hasOpenedRef = useRef(isOpen || !window.__READEST_IS_EINK);
+  if (isOpen) hasOpenedRef.current = true;
   const body = isOpen ? children : isBodyHoldOver ? null : lastBodyRef.current;
 
   useEffect(() => {
@@ -469,20 +474,23 @@ const Dialog: React.FC<DialogProps> = ({
     pendingSwipeRef.current = null;
   };
 
+  const dialogProps = {
+    ref: dialogRef,
+    id: id ?? 'dialog',
+    tabIndex: -1,
+    open: isOpen,
+    'aria-label': title,
+    'aria-hidden': !isOpen,
+    className: clsx(
+      'modal sm:min-w-90 z-50 h-full w-full items-start! bg-transparent! sm:w-full sm:items-center!',
+      className,
+    ),
+    dir: isRtl ? 'rtl' : undefined,
+  };
+  if (!hasOpenedRef.current) return <dialog {...dialogProps} />;
+
   return (
-    <dialog
-      ref={dialogRef}
-      id={id ?? 'dialog'}
-      tabIndex={-1}
-      open={isOpen}
-      aria-label={title}
-      aria-hidden={!isOpen}
-      className={clsx(
-        'modal sm:min-w-90 z-50 h-full w-full items-start! bg-transparent! sm:w-full sm:items-center!',
-        className,
-      )}
-      dir={isRtl ? 'rtl' : undefined}
-    >
+    <dialog {...dialogProps}>
       <Overlay
         captureBlocking={isOpen}
         className={clsx(
