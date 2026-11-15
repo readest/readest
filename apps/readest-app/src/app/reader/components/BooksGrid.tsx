@@ -129,12 +129,11 @@ const BookCellInner: React.FC<BookCellProps> = ({
   // events (settings toggles, ribbon, init, sync), never on a page turn.
   const viewState = useReaderStore((s) => s.viewStates[bookKey]);
   const getView = useReaderStore((s) => s.getView);
-  // Of the reading position, the cell renders only the section label, plus the
-  // column count and window width that the relocate after a re-layout brings.
-  // A turn within a section changes none of them, so it re-renders neither the
-  // cell nor the chrome it holds: FooterBar, ProgressBar, ReadingRuler and the
-  // rest subscribe to the progress they show.
-  const sectionLabel = useReaderProgressStore((s) => s.progresses[bookKey]?.sectionLabel);
+  // Of the reading position, the cell renders only the column count and window
+  // width that the relocate after a re-layout brings. A turn changes neither, so
+  // it re-renders neither the cell nor the chrome it holds: SectionInfo,
+  // FooterBar, ProgressBar, ReadingRuler and the rest subscribe to the progress
+  // they show.
   const columnCount = useReaderProgressStore(() => getView(bookKey)?.renderer?.columnCount ?? 1);
   const windowWidth = useReaderProgressStore(() => window.innerWidth);
   const viewSettings = viewState?.viewSettings ?? null;
@@ -280,7 +279,6 @@ const BookCellInner: React.FC<BookCellProps> = ({
         {showHeader && (
           <SectionInfo
             bookKey={bookKey}
-            section={sectionLabel}
             showDoubleBorder={viewSettings.vertical && viewSettings.doubleBorder}
             isScrolled={viewSettings.scrolled}
             isVertical={viewSettings.vertical}
