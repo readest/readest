@@ -434,11 +434,23 @@ const getColorStyles = (
     p[width][height] > img:only-child {
       mix-blend-mode: multiply;
     }
-    /* inline images */
+    /* inline images and gaiji */
     *:has(> img.has-text-siblings):not(body) {
-      ${overrideColor ? `background-color: ${bg};` : ''}
+      ${overrideColor ? `background-color: ${overrideBg};` : ''}
     }
-    p img.has-text-siblings, span img.has-text-siblings, sup img.has-text-siblings {
+    *:has(> img[class*="gaiji"]):not(body) {
+      ${overrideColor ? `background-color: ${overrideBg};` : ''}
+    }
+    p img.has-text-siblings,
+    span img.has-text-siblings,
+    sup img.has-text-siblings,
+    img.has-text-siblings,
+    img[class*="gaiji"] {
+      ${
+        isDarkMode && !invertImgColorInDark
+          ? `filter: ${transparentImageBackground ? `${WHITE_TRANSPARENCY_FILTER} ` : ''}invert(1) hue-rotate(180deg);`
+          : ''
+      }
       mix-blend-mode: ${isDarkMode ? 'screen' : 'multiply'};
     }
     table:has(> colgroup) {
@@ -689,6 +701,9 @@ const getPageLayoutStyles = (
     height: 1em;
   }
   img.has-text-siblings {
+    ${vertical ? 'width: 1em;' : 'height: 1em;'}
+  }
+  img[class*="gaiji"] {
     ${vertical ? 'width: 1em;' : 'height: 1em;'}
   }
   /* Baseline is only Readest's default: applyImageStyle adds this class when the
@@ -1820,6 +1835,53 @@ export const applyScrollbarStyle = (document: Document, hideScrollbar: boolean) 
   }
 };
 
+const INLINE_IMAGE_CONTAINER_TAGS = new Set([
+  'span',
+  'rb',
+  'ruby',
+  'rt',
+  'rp',
+  'em',
+  'strong',
+  'b',
+  'i',
+  'u',
+  's',
+  'small',
+  'sub',
+  'sup',
+  'mark',
+  'cite',
+  'q',
+]);
+
+const hasInlineTextSibling = (container: Element, targetNode: Node): boolean => {
+  const childNodes = Array.from(container.childNodes);
+  const idx = childNodes.indexOf(targetNode as ChildNode);
+  if (idx === -1) return false;
+
+  for (const step of [-1, 1]) {
+    for (let i = idx + step; i >= 0 && i < childNodes.length; i += step) {
+      const node = childNodes[i]!;
+      if (node.nodeType === Node.TEXT_NODE && node.textContent?.trim()) {
+        return true;
+      }
+      if (node.nodeType === Node.ELEMENT_NODE) {
+        const el = node as Element;
+        const tag = el.tagName.toLowerCase();
+        if (tag === 'br' || el.querySelector('br')) {
+          break;
+        }
+        if (INLINE_IMAGE_CONTAINER_TAGS.has(tag) && el.textContent?.trim()) {
+          return true;
+        }
+      }
+    }
+  }
+
+  return false;
+};
+
 export const applyImageStyle = (document: Document) => {
   const win = document.defaultView ?? window;
   // Two-phase (read then write): reading getComputedStyle after a class/style
@@ -1848,22 +1910,39 @@ export const applyImageStyle = (document: Document) => {
 
     let inlineWithText = false;
     let keepBaseline = false;
+    const isGaiji = !!(img.className && /(?:^|\s)gaiji(?:-|\s|$)/i.test(img.className));
     const parent = img.parentNode;
     if (parent && parent.nodeType === Node.ELEMENT_NODE) {
-      const childNodes = Array.from(parent.childNodes);
-      const hasTextSiblings = childNodes.some(
-        (node) => node.nodeType === Node.TEXT_NODE && node.textContent?.trim(),
-      );
-      const isInline = childNodes.every(
-        (node) => node.nodeType !== Node.ELEMENT_NODE || (node as Element).tagName !== 'BR',
-      );
+      let hasTextSiblings = false;
+      let targetNode: Node = img;
+      let container: Element | null = parent as Element;
+
+      while (container) {
+        if (hasInlineTextSibling(container, targetNode)) {
+          hasTextSiblings = true;
+          break;
+        }
+        const hasBrInWrapper = Array.from(container.childNodes).some(
+          (node) =>
+            node.nodeType === Node.ELEMENT_NODE && (node as Element).tagName.toUpperCase() === 'BR',
+        );
+        if (hasBrInWrapper) break;
+
+        const parentElem: Element | null = container.parentElement;
+        if (parentElem && INLINE_IMAGE_CONTAINER_TAGS.has(container.tagName.toLowerCase())) {
+          targetNode = container;
+          container = parentElem;
+        } else {
+          break;
+        }
+      }
       // A glyph image standing in for a character is never sized as a share
       // of the line; a title image the book sizes that way keeps it (#7039).
       // computedStyleMap keeps the percentage that getComputedStyle resolves,
       // also inside a calc() (serialized as e.g. `calc(30% - 1px)`).
       const width = img.computedStyleMap?.().get('width');
       const percentSized = !!width && width.toString().includes('%');
-      inlineWithText = hasTextSiblings && isInline && !percentSized;
+      inlineWithText = (hasTextSiblings || isGaiji) && !percentSized;
       if (inlineWithText) {
         // Only supply Readest's baseline default when the book leaves
         // vertical-align at its initial value; an author-set value (e.g. a CJK
