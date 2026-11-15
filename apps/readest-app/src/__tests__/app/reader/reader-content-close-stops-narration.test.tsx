@@ -91,6 +91,7 @@ vi.mock('@/components/metadata', () => ({ BookDetailModal: () => null }));
 vi.mock('@/app/library/components/ShareBookDialog', () => ({ default: () => null }));
 
 import ReaderContent from '@/app/reader/components/ReaderContent';
+import { ttsSessionManager } from '@/services/tts/TTSSessionManager';
 import { eventDispatcher } from '@/utils/event';
 import { flushPendingLibrarySave, useBookDataStore } from '@/store/bookDataStore';
 import { useLibraryStore } from '@/store/libraryStore';
@@ -214,5 +215,66 @@ describe('ReaderContent closing a book stops narration when the window dies', ()
 
     expect(dispatchSpy).toHaveBeenCalledWith('tts-stop', { bookKey: 'h1-k1' });
     expect(dispatchSpy).not.toHaveBeenCalledWith('tts-close-book', expect.anything());
+  });
+
+  // A session detached by closing book A keeps playing while B stays
+  // open; closing B as the last book destroys the window, so it must
+  // stop A's session too — the tts-stop for B only matches B's hash.
+  test('closing the last book stops a detached narration session', async () => {
+    const stopActiveSpy = vi.spyOn(ttsSessionManager, 'stopActive');
+    try {
+      h.bookKeys = ['h1-k1', 'h2-k2'];
+      const first = render(<ReaderContent settings={{} as SystemSettings} />);
+      await waitFor(() => expect(h.captured.onCloseBook).toBeDefined());
+      await act(async () => {
+        await h.captured.onCloseBook!('h1-k1');
+      });
+      expect(dispatchSpy).toHaveBeenCalledWith('tts-close-book', { bookKey: 'h1-k1' });
+      expect(stopActiveSpy).not.toHaveBeenCalled();
+      first.unmount();
+      h.bookKeys = ['h2-k2'];
+      h.captured.onCloseBook = undefined;
+      render(<ReaderContent settings={{} as SystemSettings} />);
+      await waitFor(() => expect(h.captured.onCloseBook).toBeDefined());
+      await act(async () => {
+        await h.captured.onCloseBook!('h2-k2');
+      });
+      expect(dispatchSpy).toHaveBeenCalledWith('tts-stop', { bookKey: 'h2-k2' });
+      expect(stopActiveSpy).toHaveBeenCalledWith('user');
+      expect(h.closeWindow).toHaveBeenCalled();
+    } finally {
+      stopActiveSpy.mockRestore();
+    }
+  });
+
+  // The stop must complete before the book is dismissed and the window
+  // closes: hold the tts-stop dispatch pending and assert nothing moves
+  // until it resolves (the old immediately-resolving spy could not catch
+  // a dropped await).
+  test('the window does not close until the narration stop completes', async () => {
+    let resolveStop!: () => void;
+    const stopPending = new Promise<void>((resolve) => {
+      resolveStop = resolve;
+    });
+    dispatchSpy.mockImplementation(async (event: string) => {
+      if (event === 'tts-stop') await stopPending;
+    });
+    render(<ReaderContent settings={{} as SystemSettings} />);
+    await waitFor(() => expect(h.captured.onCloseBook).toBeDefined());
+    let closePromise!: Promise<void>;
+    await act(async () => {
+      // The BooksGrid prop types onCloseBook as returning void, but the real
+      // handler is async: capture its promise to await the close below.
+      closePromise = h.captured.onCloseBook!('h1-k1') as unknown as Promise<void>;
+    });
+    expect(h.dismissBook).not.toHaveBeenCalled();
+    expect(h.closeWindow).not.toHaveBeenCalled();
+    await act(async () => {
+      resolveStop();
+      await closePromise;
+    });
+    expect(dispatchSpy).toHaveBeenCalledWith('tts-stop', { bookKey: 'h1-k1' });
+    expect(h.dismissBook).toHaveBeenCalledWith('h1-k1');
+    expect(h.closeWindow).toHaveBeenCalled();
   });
 });

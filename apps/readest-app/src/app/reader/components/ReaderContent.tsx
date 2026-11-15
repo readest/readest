@@ -19,6 +19,7 @@ import { getCurrentWindow } from '@tauri-apps/api/window';
 import { UnlistenFn } from '@tauri-apps/api/event';
 import { tauriHandleClose, tauriHandleOnCloseWindow } from '@/utils/window';
 import { isTauriAppPlatform } from '@/services/environment';
+import { ttsSessionManager } from '@/services/tts/TTSSessionManager';
 import { splitLibraryOpenIds } from '@/utils/audiobook';
 import { uniqueId } from '@/utils/misc';
 import { eventDispatcher } from '@/utils/event';
@@ -445,6 +446,13 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
         destroysWindow = openWithFiles.length > 0 || getCurrentWindow().label.startsWith('reader');
       }
       await closeBook(!destroysWindow);
+      if (destroysWindow) {
+        // A session detached by an earlier close still owns the
+        // manager's single slot: the tts-stop above only matches
+        // this book's hash, so stop whatever is live before the
+        // window — and its webview — is destroyed (#7523 follow-up).
+        await ttsSessionManager.stopActive('user');
+      }
       if (isLastBook) {
         if (appService?.hasWindow) {
           if (openWithFiles.length > 0) {
