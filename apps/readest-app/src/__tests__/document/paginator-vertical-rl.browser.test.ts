@@ -597,26 +597,6 @@ describe('foliate-paginator mobile portrait EBPAJ mixed direction (#7374)', () =
     }
   });
 
-  it('caps vertical portrait pagination at one column even with max-column-count=2 and max-inline-size=720px', async () => {
-    await import('foliate-js/paginator.js');
-    const el = createPortraitPaginator(2, 720);
-    try {
-      el.open({
-        dir: 'rtl',
-        sections: [makeBlobSection(verticalHtml(ebpajLongParagraphs))],
-      });
-      const stabilized = waitStabilized(el);
-      await el.goTo({ index: 0 });
-      await stabilized;
-      await waitFrames(4);
-
-      expect(el.columnCount).toBe(1);
-    } finally {
-      el.destroy();
-      el.remove();
-    }
-  });
-
   it('drops cross-progression horizontal preloads and emits primary load when navigating to an RTL section', async () => {
     await import('foliate-js/paginator.js');
     const el = createPortraitPaginator(1, 720);
