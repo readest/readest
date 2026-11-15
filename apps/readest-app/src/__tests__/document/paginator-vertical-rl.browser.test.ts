@@ -371,3 +371,229 @@ describe('Vertical-rl pagination (browser)', () => {
     expect(paginator.page).toBe(page + 1);
   });
 });
+
+describe('foliate-paginator mobile portrait EBPAJ mixed direction (#7374)', () => {
+  type PortraitPaginator = HTMLElement & {
+    columnCount: number;
+    open: (book: {
+      dir?: string;
+      sections: Array<{ load: () => Promise<string>; unload?: () => void }>;
+    }) => void;
+    goTo: (target: { index: number }) => Promise<void>;
+    setStyles?: (styles: string) => void;
+    getContents: () => Array<{ index: number; doc: Document }>;
+    destroy: () => void;
+  };
+
+  const makeBlobSection = (html: string) => {
+    let url = '';
+    return {
+      load: async () => {
+        url = URL.createObjectURL(new Blob([html], { type: 'text/html' }));
+        return url;
+      },
+      unload: () => {
+        if (url) URL.revokeObjectURL(url);
+        url = '';
+      },
+    };
+  };
+
+  const waitStabilized = (el: HTMLElement, timeout = 5000) =>
+    new Promise<void>((resolve, reject) => {
+      const timer = setTimeout(() => reject(new Error('stabilized timeout')), timeout);
+      el.addEventListener(
+        'stabilized',
+        () => {
+          clearTimeout(timer);
+          resolve();
+        },
+        { once: true },
+      );
+    });
+
+  const waitFrames = async (count: number) => {
+    for (let i = 0; i < count; i++) {
+      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    }
+  };
+
+  const createPortraitPaginator = (maxColumns: number, maxInlineSize: number) => {
+    const el = document.createElement('foliate-paginator') as PortraitPaginator;
+    Object.assign(el.style, {
+      width: '393px',
+      height: '852px',
+      position: 'absolute',
+      left: '0',
+      top: '0',
+    });
+    el.setAttribute('max-column-count', String(maxColumns));
+    el.setAttribute('max-inline-size', `${maxInlineSize}px`);
+    el.setAttribute('gap', '5%');
+    for (const side of ['top', 'right', 'bottom', 'left']) {
+      el.setAttribute(`margin-${side}`, '16px');
+    }
+    document.body.appendChild(el);
+    return el;
+  };
+
+  const horizontalHtml = (title: string) => `<!doctype html>
+<html>
+  <head>
+    <style>
+      html, body { margin: 0; padding: 0; }
+      .hltr { writing-mode: horizontal-tb; -webkit-writing-mode: horizontal-tb; }
+    </style>
+  </head>
+  <body><div class="hltr"><p>${title}</p></div></body>
+</html>`;
+
+  const verticalHtml = (bodyText: string) => `<!doctype html>
+<html>
+  <head>
+    <style>
+      html, body { margin: 0; padding: 0; }
+      .vrtl { writing-mode: vertical-rl; -webkit-writing-mode: vertical-rl; font-size: 18px; line-height: 1.7; }
+    </style>
+  </head>
+  <body><div class="vrtl">${bodyText}</div></body>
+</html>`;
+
+  const ebpajLongParagraphs = Array.from(
+    { length: 24 },
+    (_, i) => `<p>${i + 1}. 吾輩は猫である。名前はまだ無い。どこで生れたかとんと見当がつかぬ。</p>`,
+  ).join('');
+
+  it('keeps single column in mobile portrait when max-column-count is 1 even with stale 720px max-inline-size', async () => {
+    await import('foliate-js/paginator.js');
+    const el = createPortraitPaginator(1, 720);
+    try {
+      el.open({
+        dir: 'rtl',
+        sections: [
+          makeBlobSection(horizontalHtml('表題')),
+          makeBlobSection(verticalHtml(ebpajLongParagraphs)),
+        ],
+      });
+
+      const firstStabilized = waitStabilized(el);
+      await el.goTo({ index: 0 });
+      await firstStabilized;
+
+      const secondStabilized = waitStabilized(el);
+      await el.goTo({ index: 1 });
+      await secondStabilized;
+      await waitFrames(4);
+
+      expect(el.columnCount).toBe(1);
+    } finally {
+      el.destroy();
+      el.remove();
+    }
+  });
+
+  it('keeps single column in mobile portrait with max-column-count=2 once vertical max-inline-size is updated on load', async () => {
+    await import('foliate-js/paginator.js');
+    const el = createPortraitPaginator(2, 720);
+    const loadHandler = (event: Event) => {
+      const detail = (event as CustomEvent<{ doc: Document; isPreload?: boolean }>).detail;
+      if (detail.isPreload) return;
+      const body = detail.doc.body;
+      const writingMode = body.querySelector('.vrtl')
+        ? 'vertical-rl'
+        : detail.doc.defaultView!.getComputedStyle(body).writingMode;
+      if (writingMode.startsWith('vertical')) {
+        el.setAttribute('max-inline-size', '852px');
+      }
+    };
+    el.addEventListener('load', loadHandler);
+    try {
+      el.open({
+        dir: 'rtl',
+        sections: [
+          makeBlobSection(horizontalHtml('カバー')),
+          makeBlobSection(verticalHtml(ebpajLongParagraphs)),
+        ],
+      });
+
+      const firstStabilized = waitStabilized(el);
+      await el.goTo({ index: 0 });
+      await firstStabilized;
+
+      const secondStabilized = waitStabilized(el);
+      await el.goTo({ index: 1 });
+      await secondStabilized;
+      await waitFrames(4);
+
+      expect(el.columnCount).toBe(1);
+    } finally {
+      el.removeEventListener('load', loadHandler);
+      el.destroy();
+      el.remove();
+    }
+  });
+
+  it('destroys mismatched-direction preloads before dispatching load and marks same-direction preloads', async () => {
+    await import('foliate-js/paginator.js');
+
+    const mixedEl = createPortraitPaginator(1, 852);
+    const mixedLoads: Array<{ index: number; isPreload?: boolean }> = [];
+    mixedEl.addEventListener('load', (event: Event) => {
+      const { index, isPreload } = (event as CustomEvent<{ index: number; isPreload?: boolean }>)
+        .detail;
+      mixedLoads.push({ index, isPreload });
+    });
+
+    try {
+      mixedEl.open({
+        dir: 'rtl',
+        sections: [
+          makeBlobSection(horizontalHtml('前付')),
+          makeBlobSection(verticalHtml('<p>短い本文一段落。</p>')),
+          makeBlobSection(horizontalHtml('奥付')),
+        ],
+      });
+      const stabilized = waitStabilized(mixedEl);
+      await mixedEl.goTo({ index: 1 });
+      await stabilized;
+      await new Promise((r) => setTimeout(r, 200));
+      await waitFrames(4);
+
+      expect(mixedLoads).toEqual([{ index: 1, isPreload: undefined }]);
+      expect(mixedEl.getContents().map((c) => c.index)).toEqual([1]);
+    } finally {
+      mixedEl.destroy();
+      mixedEl.remove();
+    }
+
+    const sameDirEl = createPortraitPaginator(1, 852);
+    const sameDirLoads: Array<{ index: number; isPreload?: boolean }> = [];
+    sameDirEl.addEventListener('load', (event: Event) => {
+      const { index, isPreload } = (event as CustomEvent<{ index: number; isPreload?: boolean }>)
+        .detail;
+      sameDirLoads.push({ index, isPreload });
+    });
+
+    try {
+      sameDirEl.open({
+        dir: 'rtl',
+        sections: [
+          makeBlobSection(verticalHtml('<p>序章</p>')),
+          makeBlobSection(verticalHtml('<p>第一章 短い本文。</p>')),
+          makeBlobSection(verticalHtml('<p>第二章 続きの本文。</p>')),
+        ],
+      });
+      const stabilized = waitStabilized(sameDirEl);
+      await sameDirEl.goTo({ index: 1 });
+      await stabilized;
+      await new Promise((r) => setTimeout(r, 200));
+      await waitFrames(4);
+
+      expect(sameDirLoads[0]).toEqual({ index: 1, isPreload: undefined });
+      expect(sameDirLoads.some((e) => e.index === 2 && e.isPreload === true)).toBe(true);
+    } finally {
+      sameDirEl.destroy();
+      sameDirEl.remove();
+    }
+  });
+});
