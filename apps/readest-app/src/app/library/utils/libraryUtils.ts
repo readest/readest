@@ -15,6 +15,7 @@ import {
   isCurrentlyReadingBook,
 } from '@/utils/book';
 import { matchesFieldedQuery, parseFieldedQuery } from './fieldedQuery';
+import { code6392to6391, normalizedLangCode } from '@/utils/lang';
 import { md5Fingerprint } from '@/utils/md5';
 import type { TranslationFunc } from '@/hooks/useTranslation';
 import { stubTranslation as _ } from '@/utils/misc';
@@ -326,7 +327,12 @@ const getBookLanguages = (book: Book): string[] => {
   const codes = (Array.isArray(language) ? language : [language]).filter(
     (code): code is string => !!code,
   );
-  return [...codes, ...codes.map((code) => formatLanguage(code))];
+  // "en-US" and "eng" are named by their base language, as "en" is.
+  const names = codes.map((code) => {
+    const base = normalizedLangCode(code);
+    return formatLanguage(code6392to6391(base) || base);
+  });
+  return [...codes, ...names];
 };
 
 const getBookIdentifiers = (book: Book): string[] => {

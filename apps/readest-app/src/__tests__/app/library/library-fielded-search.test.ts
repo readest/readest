@@ -130,6 +130,15 @@ describe('createBookFilter fielded search (#7370)', () => {
     expect(search('description:contact')).toEqual(['threebody']);
   });
 
+  it('names a regional or three-letter language code by its language', () => {
+    const american = makeBook('american', {}, { language: 'en-US' });
+    const french = makeBook('french', {}, { language: 'fre' });
+    expect(createBookFilter('language:english')(american)).toBe(true);
+    expect(createBookFilter('language:en-us')(american)).toBe(true);
+    expect(createBookFilter('language:français')(french)).toBe(true);
+    expect(createBookFilter('language:english')(french)).toBe(false);
+  });
+
   it('reads calibre custom columns by #label', () => {
     expect(search('#genre:"space opera"')).toEqual(['dune']);
     expect(search('#genre:fantasy')).toEqual([]);
