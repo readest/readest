@@ -400,15 +400,20 @@ export class TTSSessionManager extends EventTarget {
   // Headless position persistence goes through the book CONFIG on disk:
   // clearViewState deletes the view/progress store entries (their setters
   // no-op for a closed book) and a reopen reloads config from disk, so
-  // store-only writes would be lost. While a view is attached the reader
-  // hook persists via its own path.
+  // store-only writes would be lost. While a view is attached and on screen
+  // the reader hook persists via its own path. The reading location follows
+  // the voice too: with no view, or with the app in the background, nothing
+  // else saves it, so a killed app reopened where listening started.
   #persistLocation(cfi: string): void {
     const session = this.#session;
-    if (!session || session.controller.isViewAttached) return;
+    if (!session) return;
+    const hidden = typeof document !== 'undefined' && document.visibilityState === 'hidden';
+    if (session.controller.isViewAttached && !hidden) return;
     this.#pendingLocation = cfi;
     const { getConfig, setConfig } = useBookDataStore.getState();
     const config = getConfig(session.bookKey);
     setConfig(session.bookKey, {
+      location: cfi,
       viewSettings: { ...(config?.viewSettings ?? {}), ttsLocation: cfi },
     });
     const now = Date.now();
