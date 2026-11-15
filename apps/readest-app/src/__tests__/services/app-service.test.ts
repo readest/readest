@@ -318,6 +318,42 @@ describe('BaseAppService', () => {
       expect(LibrarySvc.saveLibraryBooks).toHaveBeenCalledTimes(1);
     });
 
+    test('reports a denied Android save to callers that require persistence', async () => {
+      service.isAndroidApp = true;
+      const error = permError();
+      vi.mocked(LibrarySvc.saveLibraryBooks).mockRejectedValue(error);
+      vi.mocked(requestStoragePermission).mockResolvedValue(false);
+
+      await expect(service.saveLibraryBooks([], { throwOnFailure: true })).rejects.toBe(error);
+      expect(LibrarySvc.saveLibraryBooks).toHaveBeenCalledTimes(1);
+      expect(requestStoragePermission).toHaveBeenCalledTimes(1);
+    });
+
+    test('reports later required saves without prompting again after permission was denied', async () => {
+      service.isAndroidApp = true;
+      const error = permError();
+      vi.mocked(LibrarySvc.saveLibraryBooks).mockRejectedValue(error);
+      vi.mocked(requestStoragePermission).mockResolvedValue(false);
+
+      await expect(service.saveLibraryBooks([])).resolves.toBeUndefined();
+      await expect(service.saveLibraryBooks([], { throwOnFailure: true })).rejects.toBe(error);
+      expect(LibrarySvc.saveLibraryBooks).toHaveBeenCalledTimes(2);
+      expect(requestStoragePermission).toHaveBeenCalledTimes(1);
+    });
+
+    test('propagates a retry failure after Android storage permission is granted', async () => {
+      service.isAndroidApp = true;
+      const retryError = new Error('disk full');
+      vi.mocked(LibrarySvc.saveLibraryBooks)
+        .mockRejectedValueOnce(permError())
+        .mockRejectedValueOnce(retryError);
+      vi.mocked(requestStoragePermission).mockResolvedValue(true);
+
+      await expect(service.saveLibraryBooks([], { throwOnFailure: true })).rejects.toBe(retryError);
+      expect(LibrarySvc.saveLibraryBooks).toHaveBeenCalledTimes(2);
+      expect(requestStoragePermission).toHaveBeenCalledTimes(1);
+    });
+
     test('only prompts once per session across repeated failing saves', async () => {
       service.isAndroidApp = true;
       vi.mocked(LibrarySvc.saveLibraryBooks).mockRejectedValue(permError());

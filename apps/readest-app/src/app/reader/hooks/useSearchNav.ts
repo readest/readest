@@ -1,7 +1,7 @@
 import { useCallback, useMemo } from 'react';
 import { useSidebarStore } from '@/store/sidebarStore';
 import { useReaderStore } from '@/store/readerStore';
-import { useBookProgress } from '@/store/readerProgressStore';
+import { useBookProgressValue } from '@/store/readerProgressStore';
 import { createCfiLocationMatcher } from '@/utils/cfi';
 import { flattenSearchResults } from '../components/sidebar/SearchResultsNav';
 
@@ -13,19 +13,19 @@ export function useSearchNav(bookKey: string) {
   const searchNavState = getSearchNavState(bookKey);
   const { searchTerm, searchResults, searchResultIndex, searchProgress } = searchNavState;
 
-  // Reactive: search nav re-derives current-page boundaries when the user
-  // turns the page. Subscribes to readerProgressStore only.
-  const progress = useBookProgress(bookKey);
-
-  const currentLocation = useMemo(() => {
-    return progress?.location;
-  }, [progress]);
-
   // Flatten search results for navigation
   const flattenedResults = useMemo(() => {
     if (!searchResults) return [];
     return flattenSearchResults(searchResults);
   }, [searchResults]);
+
+  // Reactive: search nav re-derives current-page boundaries when the user
+  // turns the page, while there are results: without any, a turn re-renders
+  // nothing here.
+  const currentLocation = useBookProgressValue(
+    flattenedResults.length ? bookKey : null,
+    (p) => p.location,
+  );
 
   const totalResults = flattenedResults.length;
   const hasSearchResults = searchResults && totalResults > 0;
