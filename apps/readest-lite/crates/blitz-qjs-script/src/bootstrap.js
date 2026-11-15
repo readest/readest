@@ -1603,9 +1603,19 @@
     get referrer() {
       return '';
     }
+    // The first <title>'s text, its whitespace collapsed; set, it replaces that text, or adds a
+    // <title> to the head (readest-app names the page after the open book).
     get title() {
       const t = this.querySelector('title');
-      return t ? t.textContent : '';
+      return t ? t.textContent.replace(/[\t\n\f\r ]+/g, ' ').trim() : '';
+    }
+    set title(v) {
+      let t = this.querySelector('title');
+      if (!t) {
+        if (!this.head) return;
+        t = this.head.appendChild(this.createElement('title'));
+      }
+      t.textContent = String(v);
     }
     get visibilityState() {
       return 'visible';
