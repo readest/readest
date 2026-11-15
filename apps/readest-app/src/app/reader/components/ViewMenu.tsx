@@ -12,6 +12,7 @@ import { IoMdExpand } from 'react-icons/io';
 import { IoShareOutline } from 'react-icons/io5';
 import { setReadingStatsDialogVisible } from '@/components/stats/ReadingStatsDialog';
 import { setVocabularyDialogVisible } from '@/components/vocabulary/VocabularyDialog';
+import { preloadSettingsDialog } from '@/components/settings/preloadSettingsDialog';
 import { TbArrowAutofitWidth } from 'react-icons/tb';
 import { TbColumns1, TbColumns2 } from 'react-icons/tb';
 import { TbCarouselVertical, TbCarouselHorizontal } from 'react-icons/tb';
@@ -203,6 +204,10 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
       cfi: progress?.location ?? null,
     });
   };
+
+  useEffect(() => {
+    preloadSettingsDialog();
+  }, []);
 
   useEffect(() => {
     if (scrolledDirection === (viewSettings.scrolledDirection ?? 'vertical')) return;
