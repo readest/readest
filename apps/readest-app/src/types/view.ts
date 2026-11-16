@@ -3,6 +3,7 @@ import { BookNote, BookSearchConfig, BookSearchResult } from '@/types/book';
 import { TTSGranularity } from '@/services/tts';
 import { TTS } from 'foliate-js/tts.js';
 import type { MediaOverlayTTS } from '@/services/tts/mediaOverlay/MediaOverlayTTS';
+import type { PageCache } from '@/services/pageCache';
 import { LocaleWithTextInfo } from './misc';
 
 // The mark source driving Read Aloud: foliate's text segmentation for
@@ -54,6 +55,7 @@ export interface Renderer extends HTMLElement {
   render?: () => Promise<void>;
   goTo: (params: { index: number; anchor?: number | RangeAnchor }) => Promise<void>;
   setStyles?: (css: string) => void;
+  setPageCache?: (cache: PageCache | null) => void;
   primaryIndex: number;
   getContents: () => {
     doc: Document;
