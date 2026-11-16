@@ -148,6 +148,26 @@ afterEach(() => {
 });
 
 describe('cross-page mouse drag in a fixed-layout book', () => {
+  // A page shown at half size: its events report iframe CSS pixels, which
+  // have to be scaled down, not just offset, to find the page under them.
+  test('a drag over a page shown at half size reaches the next page', async () => {
+    for (const [page, top] of [
+      [pageA, 0],
+      [pageB, 202],
+    ] as const) {
+      const iframe = page.doc.defaultView!.frameElement as HTMLIFrameElement;
+      Object.defineProperty(iframe, 'clientWidth', { value: 400 });
+      Object.defineProperty(iframe, 'clientHeight', { value: 400 });
+      iframe.getBoundingClientRect = () =>
+        ({ left: 0, top, right: 200, bottom: top + 200, width: 200, height: 200 }) as DOMRect;
+    }
+    const { result } = setup();
+    result.current.handlePointerDown(pageA.doc, 1, mouse(50, 50));
+    // Window y 300 is over page B: 600 iframe pixels at half size.
+    result.current.handlePointerMove(pageA.doc, 1, mouse(60, 600));
+    expect(pageB.doc.getSelection()!.toString()).toBe('second');
+  });
+
   test('a drag onto the next page selects both parts and commits one segmented selection', async () => {
     const { result, setSelection } = setup();
     result.current.handlePointerDown(pageA.doc, 1, mouse(50, 50));

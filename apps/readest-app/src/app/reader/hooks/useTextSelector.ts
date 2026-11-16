@@ -38,6 +38,7 @@ import {
   SelectionBounds,
   setNativeDragFrozen,
   toDocPoint,
+  toWindowPoint,
 } from '../utils/crossDocSelection';
 import { toParentViewportPoint } from '../utils/annotatorUtil';
 import {
@@ -65,6 +66,12 @@ const SELECTION_DRAG_SLOP_PX = 10;
 // Ignore tiny pointer jitter, but preserve a deliberate double-click-drag even
 // when it only extends the selection into adjacent whitespace.
 const DOUBLE_CLICK_DRAG_MOVE_PX = 3;
+
+// Window coordinates of a pointer event in a section document. A fixed-layout
+// page can be shown at a CSS scale, so undo it as well as the frame's offset
+// (the inverse of toDocPoint).
+const windowPointOf = (doc: Document, ev: PointerEvent): Point =>
+  toWindowPoint(doc, { x: ev.clientX, y: ev.clientY }) ?? { x: ev.clientX, y: ev.clientY };
 
 export const useTextSelector = (
   bookKey: string,
@@ -655,13 +662,9 @@ export const useTextSelector = (
   // JS-applied user-select at pointer-down proved too late for iOS WebKit's
   // long-press recognizer.
   const armInstantHold = (doc: Document, index: number, ev: PointerEvent) => {
-    const feRect = doc.defaultView?.frameElement?.getBoundingClientRect();
     instantHoldTarget.current = ev.target as HTMLElement;
     instantHoldStartClient.current = { x: ev.clientX, y: ev.clientY };
-    instantHoldStartWindow.current = {
-      x: ev.clientX + (feRect?.left ?? 0),
-      y: ev.clientY + (feRect?.top ?? 0),
-    };
+    instantHoldStartWindow.current = windowPointOf(doc, ev);
     if (instantHoldTimer.current) clearTimeout(instantHoldTimer.current);
     instantHoldTimer.current = setTimeout(() => {
       instantHoldTimer.current = null;
@@ -861,12 +864,8 @@ export const useTextSelector = (
     }
     // The listener lives on the book iframe's document, so ev.clientX/Y are in
     // the (very wide, multi-column) iframe viewport. Map to window coordinates
-    // via the iframe element's on-screen rect, like the selection caret.
-    const feRect = doc.defaultView?.frameElement?.getBoundingClientRect();
-    pointerPos.current = {
-      x: ev.clientX + (feRect?.left ?? 0),
-      y: ev.clientY + (feRect?.top ?? 0),
-    };
+    // via the iframe element's on-screen rect and scale, like the selection caret.
+    pointerPos.current = windowPointOf(doc, ev);
     maybeCancelInstantHoldOnMove();
     if (isInstantAnnotating.current) {
       // In scroll mode, detect gesture direction before committing to annotation.
@@ -1101,11 +1100,7 @@ export const useTextSelector = (
     if (crossDocRef.current) {
       const { anchor } = crossDocRef.current;
       if (ev) {
-        const feRect = doc.defaultView?.frameElement?.getBoundingClientRect();
-        extendCrossDocTo(anchor, {
-          x: ev.clientX + (feRect?.left ?? 0),
-          y: ev.clientY + (feRect?.top ?? 0),
-        });
+        extendCrossDocTo(anchor, windowPointOf(doc, ev));
       }
       const segments = crossDocRef.current?.segments ?? [];
       if (segments.length > 0) {
@@ -1252,6 +1247,8 @@ export const useTextSelector = (
       }
       makeSelection(sel, index, false, false, null, isTouchWordSelection(sel));
     } else if (isTextSelected.current) {
+      // Text extraction from the last touch may still be pending; drop it.
+      selectionPublicationId.current++;
       handleDismissPopup();
       isTextSelected.current = false;
     }

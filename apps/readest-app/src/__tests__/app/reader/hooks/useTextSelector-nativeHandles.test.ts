@@ -366,3 +366,32 @@ describe('restoreSelectionRange', () => {
     expect(page.doc.getSelection()!.rangeCount).toBe(0);
   });
 });
+
+// A paginated iOS touch defers selectionchange to touchend. A touch that clears
+// the selection while the last one is still extracting its text must not let
+// that extraction publish the selection it just dismissed.
+test('a touch that clears the selection drops a text extraction still pending', async () => {
+  const page = makeSelectedPage('a selected phrase', 3);
+  h.contents = [page];
+  let finishText!: (text: string) => void;
+  const text = vi.fn(
+    () =>
+      new Promise<string>((resolve) => {
+        finishText = resolve;
+      }),
+  );
+  const { result, setSelection } = setup(text);
+  result.current.handleTouchStart();
+  result.current.handleSelectionchange(page.doc, page.index);
+  result.current.handleTouchEnd(page.doc, page.index);
+  expect(text).toHaveBeenCalledOnce();
+
+  result.current.handleTouchStart();
+  page.doc.getSelection()!.removeAllRanges();
+  result.current.handleSelectionchange(page.doc, page.index);
+  result.current.handleTouchEnd(page.doc, page.index);
+
+  finishText('a selected phrase');
+  await flush();
+  expect(setSelection).not.toHaveBeenCalled();
+});
