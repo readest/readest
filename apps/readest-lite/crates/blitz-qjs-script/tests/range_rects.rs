@@ -205,3 +205,30 @@ fn measuring_a_long_chapter_visits_each_node_a_bounded_number_of_times() {
     );
     assert_eq!(logs, ["true true"]);
 }
+
+#[test]
+fn measuring_part_of_a_long_chapter_does_not_walk_the_rest() {
+    // foliate-js finds a reopened book's page from the boxes of its saved range, a page of a
+    // section that can hold hundreds of paragraphs: placing each paragraph outside the range must
+    // not list its parent's children (a Kindle spent a good part of opening a book there)
+    let paragraphs = "<p style='margin:0'>•• <b>◦◦</b></p>".repeat(400);
+    let logs = run(
+        &paragraphs,
+        "",
+        &format!(
+            "{SELECTION_ORACLE}
+            const p = document.body.childNodes;
+            const shapes = [
+                range(document.body, 200, 201),
+                range(p[100].firstChild, 1, 1, p[300].lastChild.firstChild),
+            ];
+            const children = __n.children;
+            let listed = 0;
+            __n.children = (id) => {{ const c = children(id); listed += c.length; return c; }};
+            const bounded = shapes.map((r) => {{ listed = 0; r.getClientRects(); return listed <= 4 * 400; }});
+            __n.children = children;
+            console.log(bounded.join(','), shapes.map(same).join(','));"
+        ),
+    );
+    assert_eq!(logs, ["true,true true,true"]);
+}

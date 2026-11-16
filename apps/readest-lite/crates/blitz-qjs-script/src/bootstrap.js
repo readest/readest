@@ -2118,20 +2118,36 @@
       const out = [];
       if (sc.nodeType === 3) out.push(...n.textRects(sc._id, so, sc.length));
       // One walk in tree order. The range selects a node when it holds (parent, index) to
-      // (parent, index + 1); all under a selected node is selected, so only the children of
-      // unselected nodes are compared with the boundary points (foliate-js measures a section by
-      // a range over its whole body: per node comparisons cost a Kindle seconds).
+      // (parent, index + 1). All under a selected node is selected, and nothing under a node that
+      // is neither selected nor on the way down to a boundary point is, so only those nodes on
+      // the way are walked partly. Whether one of their children is selected follows from where
+      // it sits against the boundary point or the child on the way to it: comparing positions
+      // counts siblings, and foliate-js measures a page's range in sections of hundreds of
+      // paragraphs (and a whole body's when it sizes one).
+      const toward = (node) => {
+        const m = new Map();
+        for (let c = node, p = c.parentNode; p; c = p, p = p.parentNode) m.set(p, c);
+        return m;
+      };
+      const toStart = toward(sc),
+        toEnd = toward(ec);
       const visit = (parent, parentSelected) => {
+        const s = toStart.get(parent),
+          e = toEnd.get(parent);
+        let afterStart = !s,
+          beforeEnd = true;
         let i = 0;
         for (let x = parent.firstChild; x; x = x.nextSibling, i++) {
-          const selected =
-            parentSelected ||
-            (comparePoints(parent, i, sc, so) >= 0 && comparePoints(parent, i + 1, ec, eo) <= 0);
+          if (parent === sc) afterStart = i >= so;
+          if (parent === ec) beforeEnd = i < eo;
+          else if (x === e) beforeEnd = false;
+          const selected = parentSelected || (afterStart && beforeEnd);
           if (selected && x !== sc && x !== ec) {
             if (x.nodeType === 3) out.push(...n.textRects(x._id, 0, x.length));
             else if (x.nodeType === 1 && !parentSelected) out.push(...n.rects(x._id));
           }
-          if (x.firstChild) visit(x, selected);
+          if (x.firstChild && (selected || x === s || x === e)) visit(x, selected);
+          if (x === s) afterStart = true;
         }
       };
       visit(this.commonAncestorContainer, false);
