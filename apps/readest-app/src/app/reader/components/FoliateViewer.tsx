@@ -1442,6 +1442,47 @@ const FoliateViewer: React.FC<{
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [viewSettings?.vertical]);
 
+  // A window resize changes the ceiling the page should be laid out against:
+  // `getMaxInlineSize` derives it from the window (a near-square window reduces
+  // it, and a vertical book measures the longer screen axis), but that value
+  // reaches the renderer only when the book opens or a setting changes --
+  // neither of which a resize is. So a window that grows keeps the old ceiling
+  // and the page stops filling it, leaving a band on each side until some
+  // setting is nudged and the attribute is rewritten.
+  //
+  // Written only when the value actually changed: each write re-lays out the
+  // page and drops the reading position mid-scroll, so a drag that does not
+  // move the ceiling must stay silent. Debounced like the Duo effect below, so
+  // a drag is resolved once it settles rather than on every frame.
+  useEffect(() => {
+    if (!viewSettings || bookDoc.rendition?.layout === 'pre-paginated') return;
+    const apply = () => {
+      const renderer = viewRef.current?.renderer;
+      if (!renderer) return;
+      const next = `${getCurrentRendererLayout(viewSettings).maxInlineSize}px`;
+      if (renderer.getAttribute('max-inline-size') !== next) {
+        renderer.setAttribute('max-inline-size', next);
+      }
+    };
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const handleResize = () => {
+      clearTimeout(timer);
+      timer = setTimeout(apply, 150);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      clearTimeout(timer);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    viewSettings?.vertical,
+    viewSettings?.maxInlineSize,
+    viewSettings?.maxColumnCount,
+    viewSettings?.scrolled,
+    bookDoc.rendition?.layout,
+  ]);
+
   // iPhone Duo: folding, unfolding, turning the device or flipping book mode
   // changes how many pages the display shows. The paginator keeps the
   // reading position across the re-layout. The layout is resolved here from
