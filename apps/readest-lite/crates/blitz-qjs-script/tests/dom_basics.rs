@@ -254,3 +254,32 @@ fn document_title_is_written() {
         );
     }
 }
+
+#[test]
+fn last_element_child_does_not_list_the_children() {
+    // Readest puts a chapter's next-section skip link in its last element, found by following
+    // lastElementChild down from <body>: through a parent of hundreds of paragraphs, that must
+    // not list them all (a Kindle spent ~40 ms there opening a book at a chapter)
+    let html = format!(
+        "<!DOCTYPE html><html><body><div id='d'>{}<b>x</b> text <!--c--></div>\
+        <div id='e'> <!--c--> </div></body></html>",
+        "<p>p</p>\n".repeat(400)
+    );
+    let mut doc = QjsDocument::from_html(&html, DocumentConfig::default());
+    doc.eval(
+        "const children = __n.children;
+        let listed = 0;
+        __n.children = (id) => { const c = children(id); listed += c.length; return c; };
+        const last = document.getElementById('d').lastElementChild;
+        const none = document.getElementById('e').lastElementChild;
+        __n.children = children;
+        const host = document.createElement('div');
+        host.attachShadow({ mode: 'open' }).append(document.createElement('i'));
+        const empty = host.lastElementChild;
+        host.append(document.createElement('u'), 'text');
+        console.log(last.localName, listed, none, empty, host.lastElementChild.localName);",
+        "test",
+    );
+    assert_eq!(doc.take_js_errors(), Vec::<String>::new());
+    assert_eq!(doc.take_messages(), ["log: b 0 null null u"]);
+}

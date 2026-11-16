@@ -1026,8 +1026,9 @@
       return c;
     }
     get lastElementChild() {
-      const c = this.children;
-      return c[c.length - 1] || null;
+      let c = this.lastChild;
+      while (c && c.nodeType !== 1) c = c.previousSibling;
+      return c;
     }
     get nextElementSibling() {
       let s = this.nextSibling;
