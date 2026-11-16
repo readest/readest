@@ -138,3 +138,51 @@ it('keeps a handle in the adjacent line of a rendered two-column PDF', async () 
     book.destroy?.();
   }
 });
+
+// pdf.js ends every printed line with a <br>. Blink lays a <br> out in the
+// text layer's own line flow whatever its CSS position, so they stacked down
+// the layer's left edge: a press in the margin landed on one of them, a line
+// far from the pointer, and their boxes dragged the popup and handles there.
+it('keeps the line breaks of a rendered PDF page at the end of their lines', async () => {
+  const response = await fetch(new URL('../fixtures/data/sample-paper.pdf', import.meta.url));
+  const file = new File([await response.arrayBuffer()], 'sample-paper.pdf', {
+    type: 'application/pdf',
+  });
+  const book = (await makePDF(file)) as unknown as PDFBook;
+  try {
+    const page = await book.sections[0]!.load();
+    iframe = document.createElement('iframe');
+    iframe.style.cssText = 'width:612px;height:792px;border:0';
+    const loaded = new Promise((resolve) =>
+      iframe.addEventListener('load', resolve, { once: true }),
+    );
+    iframe.src = page.src;
+    document.body.append(iframe);
+    await loaded;
+    const doc = iframe.contentDocument!;
+    await page.onZoom({ doc, scale: 1, pageColors: undefined });
+    const line = (start: string) =>
+      [...doc.querySelectorAll('.textLayer span')].find((span) =>
+        span.textContent?.startsWith(start),
+      )!;
+    const first = line('These guidelines');
+    const last = line('6900 or email');
+    const range = doc.createRange();
+    range.setStart(first.firstChild!, 0);
+    range.setEnd(last.firstChild!, last.firstChild!.textContent!.length);
+    const top = first.getBoundingClientRect();
+    const bottom = last.getBoundingClientRect();
+    for (const rect of range.getClientRects()) {
+      expect(rect.left).toBeGreaterThanOrEqual(top.left - 1);
+      expect(rect.top).toBeGreaterThanOrEqual(top.top - top.height / 2);
+      expect(rect.bottom).toBeLessThanOrEqual(bottom.bottom + bottom.height / 2);
+    }
+    // The breaks still separate the lines of the copied text.
+    const selection = doc.getSelection()!;
+    selection.removeAllRanges();
+    selection.addRange(range);
+    expect(selection.toString()).toContain('fonts,\nspacing');
+  } finally {
+    book.destroy?.();
+  }
+});

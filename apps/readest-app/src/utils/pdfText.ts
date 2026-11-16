@@ -150,8 +150,10 @@ const splitRows = (textLayer: Element): TextLayerRow[] => {
   const rows: TextLayerRow[] = [];
   let row: TextLayerRow = { spans: [], br: null };
   for (const child of Array.from(textLayer.children)) {
-    if (child.tagName === 'BR') {
-      row.br = child;
+    // foliate-js wraps each <br> in a span placed at the end of its line.
+    const br = child.tagName === 'BR' ? child : child.querySelector(':scope > br');
+    if (br) {
+      row.br = br;
       rows.push(row);
       row = { spans: [], br: null };
     } else {
