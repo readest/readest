@@ -11,6 +11,7 @@ import { useEnv } from '@/context/EnvContext';
 import { useTheme } from '@/hooks/useTheme';
 import { useThemeStore } from '@/store/themeStore';
 import { useSettingsStore } from '@/store/settingsStore';
+import { useReaderStore } from '@/store/readerStore';
 import { useEnsureSettingsLoaded } from '@/hooks/useEnsureSettingsLoaded';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useTrafficLightStore } from '@/store/trafficLightStore';
@@ -249,7 +250,22 @@ export default function AuthPage() {
     })();
     const redirectTo = new URLSearchParams(window.location.search).get('redirect');
     if (redirectTo) {
-      router.push(redirectTo);
+      // This page is normally pushed over a live reader (navigateToLogin from
+      // the voice preview). Going back restores that reader entry with its
+      // open books intact — the same pattern the reader already supports for
+      // pages opened over it (#6607). Navigating forward to a new /reader
+      // entry instead strands the original one below in the history stack:
+      // when the Android back key closes the book from the new entry
+      // (close-reader tears down the view states), router.back() lands on the
+      // original entry whose mount-only init never re-runs, leaving it stuck
+      // on the loading spinner forever. Only navigate forward when no reader
+      // is actually open (a cold-loaded /auth?redirect=... with nothing to go
+      // back to), and replace there so /auth doesn't linger on the stack.
+      if (Object.keys(useReaderStore.getState().viewStates).length > 0) {
+        router.back();
+      } else {
+        router.replace(redirectTo);
+      }
     } else {
       router.back();
     }
@@ -284,7 +300,23 @@ export default function AuthPage() {
         const now = Date.now();
         localStorage.setItem(lastRedirectAtKey, now.toString());
         if (now - lastRedirectAt > 3000) {
-          router.push(redirectTo ?? '/library');
+          // Prefer going back to the reader that pushed this login page over
+          // itself (see handleGoBack above): back restores that entry with its
+          // open books intact. Forward-navigating to a fresh /reader entry
+          // leaves the original stranded below the stack, and the Android
+          // back key then lands on it after close-reader has torn its view
+          // state down — stuck on the loading spinner. Fall back to replace
+          // only when no reader is open (or the redirect target is the
+          // library): a page reload wipes the in-memory reader store, so a
+          // cold OAuth callback landing here naturally takes this branch.
+          if (
+            redirectTo &&
+            Object.keys(useReaderStore.getState().viewStates).length > 0
+          ) {
+            router.back();
+          } else {
+            router.replace(redirectTo ?? '/library');
+          }
         }
       }
     });
