@@ -1450,19 +1450,19 @@ const FoliateViewer: React.FC<{
   // and the page stops filling it, leaving a band on each side until some
   // setting is nudged and the attribute is rewritten.
   //
-  // Written only when the value actually changed: each write re-lays out the
-  // page and drops the reading position mid-scroll, so a drag that does not
-  // move the ceiling must stay silent. Debounced like the Duo effect below, so
-  // a drag is resolved once it settles rather than on every frame.
+  // Handed to the renderer through `applyRendererLayout`, which writes only the
+  // attributes that changed: each write re-lays out the page and drops the
+  // reading position mid-scroll, so a drag that does not move the ceiling must
+  // stay silent. The column count travels with it because the Duo's book pose
+  // derives it from the page width rather than from the setting. Debounced like
+  // the Duo effect below, so a drag is resolved once it settles rather than on
+  // every frame.
   useEffect(() => {
     if (!viewSettings || bookDoc.rendition?.layout === 'pre-paginated') return;
     const apply = () => {
       const renderer = viewRef.current?.renderer;
       if (!renderer) return;
-      const next = `${getCurrentRendererLayout(viewSettings).maxInlineSize}px`;
-      if (renderer.getAttribute('max-inline-size') !== next) {
-        renderer.setAttribute('max-inline-size', next);
-      }
+      applyRendererLayout(renderer, getCurrentRendererLayout(viewSettings), bookDoc.rendition);
     };
     let timer: ReturnType<typeof setTimeout> | undefined;
     const handleResize = () => {
@@ -1480,6 +1480,9 @@ const FoliateViewer: React.FC<{
     viewSettings?.maxInlineSize,
     viewSettings?.maxColumnCount,
     viewSettings?.scrolled,
+    // The Duo's book pose resolves the column count from the page width, so the
+    // callback would otherwise reuse the settings captured in the other pose.
+    viewSettings?.duoBookMode,
     bookDoc.rendition?.layout,
   ]);
 
