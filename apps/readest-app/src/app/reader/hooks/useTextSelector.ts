@@ -433,8 +433,13 @@ export const useTextSelector = (
     // Desktop has no grabbers to take away, and the dance would only churn the
     // selection the popup is anchored to.
     if (!appService?.isMobile) return;
+    // A republish takes the page it is published for: the other page of a
+    // spread can still hold an older selection.
     const content = getContents().find(
-      (c) => c.doc && c.index != null && isValidSelection(c.doc.getSelection()!),
+      (c) =>
+        c.doc &&
+        (publishIndex === undefined ? c.index != null : c.index === publishIndex) &&
+        isValidSelection(c.doc.getSelection()!),
     );
     if (!content) return;
     const doc = content.doc;
@@ -1193,10 +1198,16 @@ export const useTextSelector = (
       // native selection handles jump between runs while the finger drags.
       // After the initial selection, use Readest's own SelectionRangeEditor
       // handles for subsequent endpoint adjustments. Cross-page mode already
-      // replaces them; do not interfere with it or with a plain tap.
+      // replaces them; do not interfere with it or with a plain tap. An armed
+      // quick action has already run on this selection, and republishing it
+      // would run the action again, so those keep the native handles.
+      const viewSettings = getViewSettings(bookKey);
+      const quickActionArmed =
+        !!viewSettings?.enableAnnotationQuickActions && !!viewSettings.annotationQuickAction;
       if (
         bookData?.book?.format === 'PDF' &&
         !crossPageEnabled() &&
+        !quickActionArmed &&
         gestureInitialRef.current &&
         !sanitizedGestureRef.current
       ) {

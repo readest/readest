@@ -26,7 +26,11 @@ const h = vi.hoisted(() => ({
   },
   appService: { isAndroidApp: false, isMobile: true },
   osPlatform: 'ios',
-  viewSettings: { scrolled: false },
+  viewSettings: { scrolled: false } as {
+    scrolled: boolean;
+    enableAnnotationQuickActions?: boolean;
+    annotationQuickAction?: string;
+  },
   isFixedLayout: false,
   format: 'EPUB',
 }));
@@ -254,6 +258,65 @@ describe('Android PDF endpoint handles', () => {
       text: 'a selected phrase',
       handlesSuppressed: format === 'PDF',
     });
+  });
+
+  // A spread shows two pages, and the other page can still hold an older
+  // selection when the finger lifts on this one.
+  test('publishes the selection of the page the touch was released on', async () => {
+    h.appService = { isAndroidApp: true, isMobile: true };
+    h.osPlatform = 'android';
+    h.format = 'PDF';
+    h.isFixedLayout = true;
+    const other = makeSelectedPage('an older phrase', 2);
+    const page = makeSelectedPage('a selected phrase', 3);
+    for (const { win } of [other, page]) {
+      win.Range.prototype.getClientRects = () => [] as unknown as DOMRectList;
+      win.Range.prototype.getBoundingClientRect = () => new DOMRect(10, 10, 100, 20);
+    }
+    h.contents = [other, page];
+    const { result, setSelection } = setup();
+    result.current.handleTouchStart();
+    result.current.handleSelectionchange(page.doc, page.index);
+    await flush();
+    await result.current.handlePointerUp(page.doc, page.index);
+    await flush();
+    const published = setSelection.mock.calls
+      .map(([value]) => value)
+      .filter((value) => typeof value !== 'function');
+    expect(published.at(-1)).toMatchObject({
+      text: 'a selected phrase',
+      index: 3,
+      handlesSuppressed: true,
+    });
+  });
+
+  // An armed quick action already ran on the first publish; publishing the
+  // same selection again would run it a second time.
+  test('keeps the native handles when a quick action is armed', async () => {
+    h.appService = { isAndroidApp: true, isMobile: true };
+    h.osPlatform = 'android';
+    h.format = 'PDF';
+    h.isFixedLayout = true;
+    h.viewSettings = {
+      scrolled: false,
+      enableAnnotationQuickActions: true,
+      annotationQuickAction: 'search',
+    };
+    const page = makeSelectedPage('a selected phrase', 3);
+    page.win.Range.prototype.getClientRects = () => [] as unknown as DOMRectList;
+    page.win.Range.prototype.getBoundingClientRect = () => new DOMRect(10, 10, 100, 20);
+    h.contents = [page];
+    const { result, setSelection } = setup();
+    result.current.handleTouchStart();
+    result.current.handleSelectionchange(page.doc, page.index);
+    await flush();
+    await result.current.handlePointerUp(page.doc, page.index);
+    await flush();
+    const published = setSelection.mock.calls
+      .map(([value]) => value)
+      .filter((value) => typeof value !== 'function');
+    expect(published).toHaveLength(1);
+    expect(published[0]).toMatchObject({ text: 'a selected phrase', handlesSuppressed: false });
   });
 });
 
