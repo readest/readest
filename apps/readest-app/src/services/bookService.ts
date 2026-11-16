@@ -28,6 +28,7 @@ import {
 } from '@/utils/book';
 import type { BookNav } from '@/services/nav';
 import { partialMD5, md5 } from '@/utils/md5';
+import { getAppVersion } from '@/utils/version';
 import { getBaseFilename, getFilename, stripDuplicateMarker } from '@/utils/path';
 import { BookDoc, DocumentLoader } from '@/libs/document';
 import { hasMediaOverlays } from '@/services/tts/mediaOverlay';
@@ -1295,6 +1296,71 @@ export async function loadBookNav(fs: FileSystem, book: Book): Promise<BookNav |
 
 export async function saveBookNav(fs: FileSystem, book: Book, nav: BookNav): Promise<void> {
   await fs.writeFile(getBookNavFilename(book), 'Books', JSON.stringify(nav));
+}
+
+// The app's cache folder, not the book's: backups and sync leave it out.
+const getBookCachePath = (book: Book, name: string) => `book-cache/${book.hash}/${name}`;
+
+/**
+ * What an open of the book kept under `name` for its next open, or null when nothing was kept or
+ * another version of the app kept it: its parsing and transforms may differ.
+ */
+export async function loadBookCache(
+  fs: FileSystem,
+  book: Book,
+  name: string,
+): Promise<string | null> {
+  try {
+    const kept = (await fs.readFile(getBookCachePath(book, name), 'Cache', 'text')) as string;
+    const version = `${getAppVersion()}\n`;
+    return kept.startsWith(version) ? kept.slice(version.length) : null;
+  } catch {
+    return null;
+  }
+}
+
+// All books' caches together stay under this; the books that kept something longest ago go first.
+const BOOK_CACHE_LIMIT = 128 * 1024 * 1024;
+// { [book hash]: { size: bytes on disk, used: when it last kept something } }
+const BOOK_CACHE_INDEX = 'book-cache/index.json';
+type BookCacheIndex = Record<string, { size: number; used: number }>;
+let bookCacheIndexing: Promise<void> = Promise.resolve();
+
+const updateBookCacheIndex = async (fs: FileSystem, hash: string, added: number) => {
+  let index: BookCacheIndex = {};
+  try {
+    index = JSON.parse((await fs.readFile(BOOK_CACHE_INDEX, 'Cache', 'text')) as string);
+  } catch {}
+  index[hash] = { size: (index[hash]?.size ?? 0) + added, used: Date.now() };
+  let total = Object.values(index).reduce((sum, { size }) => sum + size, 0);
+  const oldest = Object.keys(index)
+    .filter((h) => h !== hash)
+    .sort((a, b) => index[a]!.used - index[b]!.used);
+  for (const h of oldest) {
+    if (total <= BOOK_CACHE_LIMIT) break;
+    await fs.removeDir(`book-cache/${h}`, 'Cache', true).catch(() => {});
+    total -= index[h]!.size;
+    delete index[h];
+  }
+  await fs.writeFile(BOOK_CACHE_INDEX, 'Cache', JSON.stringify(index));
+};
+
+export async function saveBookCache(
+  fs: FileSystem,
+  book: Book,
+  name: string,
+  data: string,
+): Promise<void> {
+  const path = getBookCachePath(book, name);
+  const size = async () => (await fs.stats(path, 'Cache').catch(() => null))?.size ?? 0;
+  const replaced = await size();
+  await fs.writeFile(path, 'Cache', `${getAppVersion()}\n${data}`);
+  const added = (await size()) - replaced;
+  // one at a time, each reading what the last one wrote
+  bookCacheIndexing = bookCacheIndexing
+    .then(() => updateBookCacheIndex(fs, book.hash, added))
+    .catch((e) => console.warn('Failed to update the book cache index', e));
+  await bookCacheIndexing;
 }
 
 export async function fetchBookDetails(

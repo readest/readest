@@ -280,22 +280,33 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
           bookDoc = await openFeedBookDoc(fs, book.hash, feedUrl, book.title);
           file = null;
         } else {
+          // An EPUB keeps what its first open parsed from its package and
+          // navigation, restored on later opens instead of parsed again (not an
+          // Audiobookshelf ebook, format ABS: the server can replace its file).
+          const keepsSnapshot = book.format === 'EPUB';
           // resolveNativeBookFilePath only reads `book` (it feeds the Rust
           // EPUB prefetch), so it can race the content load instead of
           // queueing behind it.
-          const [content, nativeFilePath] = await Promise.all([
+          const [content, nativeFilePath, epubSnapshot] = await Promise.all([
             appService.loadBookContent(book) as Promise<BookContent>,
             appService.resolveNativeBookFilePath(book).catch((err: unknown) => {
               console.warn('resolveNativeBookFilePath failed', err);
               return null;
             }),
+            keepsSnapshot ? appService.loadBookCache(book, 'epub.json') : undefined,
           ]);
           file = content.file;
           const config = await configPromise;
           const doc = await new DocumentLoader(file, {
             nativeFilePath: nativeFilePath ?? undefined,
             widePages: makeWidePages(config),
+            epubSnapshot,
           }).open();
+          if (keepsSnapshot && doc.epubSnapshot) {
+            appService
+              .saveBookCache(book, 'epub.json', doc.epubSnapshot)
+              .catch((e: unknown) => console.warn('Failed to keep the parsed EPUB', e));
+          }
           bookDoc = doc.book;
           docFormat = doc.format;
           if (doc.format === 'CBZ') config.widePages = getWidePages(bookDoc.sections);

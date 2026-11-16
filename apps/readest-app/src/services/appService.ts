@@ -639,6 +639,14 @@ export abstract class BaseAppService implements AppService {
     return BookSvc.saveBookNav(this.fs, book, nav);
   }
 
+  async loadBookCache(book: Book, name: string) {
+    return BookSvc.loadBookCache(this.fs, book, name);
+  }
+
+  async saveBookCache(book: Book, name: string, data: string) {
+    return BookSvc.saveBookCache(this.fs, book, name, data);
+  }
+
   async loadFeeds(): Promise<RssFeed[]> {
     return loadFeedsFromDisk(this.fs);
   }

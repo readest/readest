@@ -6,6 +6,7 @@ import { installPDFImageShrink } from '@/libs/pdfImageShrink';
 import { stripDuplicateMarker } from '@/utils/path';
 import type { WidePagesOptions } from '@/utils/spread';
 import * as epubcfi from 'foliate-js/epubcfi.js';
+import type { ResourceCache } from '@/services/resourceCache';
 
 export const CFI = epubcfi;
 
@@ -137,6 +138,8 @@ export interface BookDoc {
   pageList?: Array<TOCItem>;
   sections: Array<SectionItem>;
   transformTarget?: EventTarget;
+  // Present on EPUB: keeps prepared sections and stylesheets for the next open.
+  setResourceCache?(cache: ResourceCache | null): void;
   splitTOCHref(href: string): Array<string | number>;
   isExternal?(href: string): boolean;
   getCover(): Promise<Blob | null>;
@@ -221,6 +224,13 @@ export interface DocumentLoaderOptions {
    * each again as it loads, which `onFound` hears of. Only the reader asks.
    */
   widePages?: WidePagesOptions;
+  /**
+   * An EPUB's parsed container, package and navigation documents, as an
+   * earlier open handed them back (`epubSnapshot` of `open()`): restored
+   * instead of read and parsed again. Without one, `open()` hands back a
+   * snapshot of what it parsed for the caller to keep.
+   */
+  epubSnapshot?: string | null;
 }
 
 type PDFJSGlobal = {
@@ -321,11 +331,13 @@ export class DocumentLoader {
   private file: File;
   private nativeFilePath?: string;
   private widePages?: WidePagesOptions;
+  private epubSnapshot?: string | null;
 
   constructor(file: File, options: DocumentLoaderOptions = {}) {
     this.file = file;
     this.nativeFilePath = options.nativeFilePath;
     this.widePages = options.widePages;
+    this.epubSnapshot = options.epubSnapshot;
   }
 
   private async isZip(): Promise<boolean> {
@@ -599,9 +611,10 @@ export class DocumentLoader {
     );
   }
 
-  public async open(): Promise<{ book: BookDoc; format: BookFormat }> {
+  public async open(): Promise<{ book: BookDoc; format: BookFormat; epubSnapshot?: string }> {
     let book = null;
     let format: BookFormat = 'EPUB';
+    let epubSnapshot: string | undefined;
     if (!this.file.size) {
       throw new Error('File is empty');
     }
@@ -646,7 +659,8 @@ export class DocumentLoader {
         // and the catch in open().
         entriesPromise?.catch(() => undefined);
         let prefetch: { textCache: Map<string, string>; sizes: Map<string, number> } | undefined;
-        if (isEPUBLike && this.nativeFilePath) {
+        // A snapshot holds what the prefetch reads.
+        if (isEPUBLike && this.nativeFilePath && !this.epubSnapshot) {
           const { tryNativePrefetchEpub } = await import('@/utils/tauriEpubBridge');
           const native = await tryNativePrefetchEpub(this.nativeFilePath);
           if (native) {
@@ -679,9 +693,12 @@ export class DocumentLoader {
           format = 'FBZ';
         } else {
           const { EPUB } = await import('foliate-js/epub.js');
-          book = Object.assign(await new EPUB(loader).init(), {
-            getMediaSource: loader.getMediaSource,
+          const epub = await new EPUB(loader).init({
+            snapshot: this.epubSnapshot,
+            takeSnapshot: !this.epubSnapshot,
           });
+          epubSnapshot = epub.snapshot;
+          book = Object.assign(epub, { getMediaSource: loader.getMediaSource });
           format = 'EPUB';
         }
       } else if (await this.isPDF()) {
@@ -716,7 +733,11 @@ export class DocumentLoader {
       }
       throw e;
     }
-    return { book, format } as { book: BookDoc; format: BookFormat };
+    return { book, format, epubSnapshot } as {
+      book: BookDoc;
+      format: BookFormat;
+      epubSnapshot?: string;
+    };
   }
 }
 

@@ -75,8 +75,10 @@ const open = async (id = 'feed') => {
     loadBookConfig: vi.fn(async () => ({ viewSettings: {}, updatedAt: 0 })),
     loadBookContent: vi.fn(async () => ({ file: new File([], 'book.epub') })),
     loadBookNav: vi.fn(async () => cachedNav),
+    loadBookCache: vi.fn(async () => null),
     resolveNativeBookFilePath: vi.fn(async () => null),
     saveBookNav: vi.fn(),
+    saveBookCache: vi.fn(async () => {}),
   };
   await useReaderStore
     .getState()
