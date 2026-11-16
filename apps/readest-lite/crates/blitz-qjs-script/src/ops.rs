@@ -209,9 +209,11 @@ impl Docs {
         }
     }
 
-    /// Styles and lays out the page and, through it, every iframe document.
-    fn resolve(&self) {
+    /// Styles and lays out the page and, through it, every iframe document, for the read `op`.
+    fn resolve(&self, op: &'static str) {
+        let t = std::time::Instant::now();
         self.main.borrow_mut().resolve(crate::animation_time());
+        crate::note_forced_layout(op, t.elapsed().as_secs_f64() * 1000.0);
     }
 }
 
@@ -713,7 +715,7 @@ pub(crate) fn install(ctx: &Ctx<'_>, shared: Rc<RefCell<Shared>>, base: Option<&
     let d = docs.clone();
     // In the coordinates of the node's document (an iframe's viewport for its content).
     op!("rect", move |h: f64| -> Vec<f64> {
-        d.resolve();
+        d.resolve("rect");
         d.with(h, |doc, n, _| {
             doc.get_client_bounding_rect(n)
                 .map(|r| vec![r.x, r.y, r.width, r.height])
@@ -724,7 +726,7 @@ pub(crate) fn install(ctx: &Ctx<'_>, shared: Rc<RefCell<Shared>>, base: Option<&
     let d = docs.clone();
     // CSSOM View's offsetLeft/Top/Width/Height: untransformed, from the offsetParent.
     op!("offset", move |h: f64| -> Vec<f64> {
-        d.resolve();
+        d.resolve("offset");
         d.with(h, |doc, n, _| {
             doc.offset_rect(n)
                 .map(|r| vec![r.x, r.y, r.width, r.height])
@@ -736,7 +738,7 @@ pub(crate) fn install(ctx: &Ctx<'_>, shared: Rc<RefCell<Shared>>, base: Option<&
     // CSSOM View's offsetParent: none for an element that is not rendered, the root, `body` or a
     // fixed box.
     op!("offsetParent", move |h: f64| -> Option<f64> {
-        d.resolve();
+        d.resolve("offsetParent");
         d.with(h, |doc, n, tag| {
             use style::computed_values::position::T as Position;
             let node = doc.get_node(n)?;
@@ -760,7 +762,7 @@ pub(crate) fn install(ctx: &Ctx<'_>, shared: Rc<RefCell<Shared>>, base: Option<&
     // The layout's boxes, untransformed (ResizeObserver): [border-box width, height, content-box
     // x, y (the padding's left and top), width, height]; zeros for a box with no layout.
     op!("boxSizes", move |h: f64| -> Vec<f64> {
-        d.resolve();
+        d.resolve("boxSizes");
         d.with(h, |doc, n, _| {
             let node = doc.get_node(n)?;
             node.element_data()?;
@@ -785,7 +787,7 @@ pub(crate) fn install(ctx: &Ctx<'_>, shared: Rc<RefCell<Shared>>, base: Option<&
     let d = docs.clone();
     // An element's box fragments (one per line for an inline): [x0, y0, w0, h0, x1, ...].
     op!("rects", move |h: f64| -> Vec<f64> {
-        d.resolve();
+        d.resolve("rects");
         d.with(h, |doc, n, _| flat(doc.node_client_rects(n)))
             .unwrap_or_default()
     });
@@ -795,7 +797,7 @@ pub(crate) fn install(ctx: &Ctx<'_>, shared: Rc<RefCell<Shared>>, base: Option<&
                            start: f64,
                            end: f64|
           -> Vec<f64> {
-        d.resolve();
+        d.resolve("textRects");
         d.with(h, |doc, n, _| {
             let Some(NodeData::Text(t)) = doc.get_node(n).map(|n| &n.data) else {
                 return Vec::new();
@@ -830,7 +832,7 @@ pub(crate) fn install(ctx: &Ctx<'_>, shared: Rc<RefCell<Shared>>, base: Option<&
     let d = docs.clone();
     // Scrolls an element to (x, y) CSS px, clamped to what it can scroll; false when it did not move.
     op!("scrollTo", move |h: f64, x: f64, y: f64| -> bool {
-        d.resolve();
+        d.resolve("scrollTo");
         d.with(h, |doc, n, _| {
             let before = doc.get_node(n).map(|node| *node.scroll_offset());
             doc.scroll_to(n, x, y, blitz_dom::ScrollBehavior::Instant);
@@ -841,7 +843,7 @@ pub(crate) fn install(ctx: &Ctx<'_>, shared: Rc<RefCell<Shared>>, base: Option<&
     let d = docs.clone();
     // CSSOM View sizes: [clientWidth, clientHeight, scrollWidth, scrollHeight].
     op!("sizes", move |h: f64| -> Vec<f64> {
-        d.resolve();
+        d.resolve("sizes");
         d.with(h, |doc, n, _| {
             let node = doc.get_node(n)?;
             // The root element's client size is the viewport's (CSSOM View).
@@ -945,7 +947,7 @@ pub(crate) fn install(ctx: &Ctx<'_>, shared: Rc<RefCell<Shared>>, base: Option<&
         let Err(decl) = id.as_shorthand() else {
             return String::new();
         };
-        d.resolve();
+        d.resolve("computed");
         d.with(h, |doc, n, _| {
             doc.get_node(n)
                 .and_then(|node| node.primary_styles())
@@ -959,7 +961,7 @@ pub(crate) fn install(ctx: &Ctx<'_>, shared: Rc<RefCell<Shared>>, base: Option<&
     op!("viewport", move |h: Opt<f64>| -> Vec<f64> {
         // An iframe document's viewport is its iframe's box, set by layout.
         if h.0.is_some_and(|h| h < 0.0) {
-            d.resolve();
+            d.resolve("viewport");
         }
         d.with(h.0.unwrap_or(0.0), |doc, _, _| {
             let v = doc.viewport();
