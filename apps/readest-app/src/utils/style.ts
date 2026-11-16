@@ -1973,7 +1973,9 @@ export const applyNamespacedAttributes = (document: Document) => {
     return null;
   };
   for (const element of document.querySelectorAll('*')) {
-    for (const { name, value } of Array.from(element.attributes)) {
+    // the names alone: most elements have no prefixed attribute, and an e-ink reader's DOM
+    // (Readest Lite) builds each attribute of `attributes` with a native call
+    for (const name of element.getAttributeNames()) {
       const [, prefix, localName] = PREFIXED_ATTR_REGEX.exec(name) ?? [];
       if (!prefix) continue;
       // Foliate can hand us a section fragment rather than the source XHTML
@@ -1987,7 +1989,7 @@ export const applyNamespacedAttributes = (document: Document) => {
           ? XML_NAMESPACE
           : (lookupNamespace(element, prefix) ?? (prefix === 'epub' ? EPUB_OPS_NAMESPACE : null));
       if (uri && !element.hasAttributeNS(uri, localName!)) {
-        element.setAttributeNS(uri, name, value);
+        element.setAttributeNS(uri, name, element.getAttribute(name)!);
       }
     }
   }
@@ -2354,7 +2356,8 @@ export const keepTextAlignment = (document: Document) => {
   // computes style once for the whole document on the first call, then
   // every subsequent getComputedStyle in this pass reuses that result.
   for (let i = 0; i < els.length; i++) {
-    const align = win.getComputedStyle(els[i]!).textAlign;
+    // by its CSS name: an e-ink reader's DOM (Readest Lite) converts a camelCase one each read
+    const align = win.getComputedStyle(els[i]!).getPropertyValue('text-align');
     if (align === 'center') alignClasses[i] = 'aligned-center';
     else if (align === 'left') alignClasses[i] = 'aligned-left';
     else if (align === 'right') alignClasses[i] = 'aligned-right';
