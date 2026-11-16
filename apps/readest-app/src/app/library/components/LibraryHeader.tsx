@@ -391,6 +391,12 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
                     </li>
                   ))}
                 </ul>
+                {searchTarget === 'books' && (
+                  <p className='text-base-content/65 px-3 py-2 text-[0.85em]'>
+                    {_('Search by field:')}{' '}
+                    <code dir='ltr'>author:tolkien or tag:"science fiction"</code>
+                  </p>
+                )}
               </BoxedList>
             </div>
           )}
