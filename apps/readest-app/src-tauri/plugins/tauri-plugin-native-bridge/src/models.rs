@@ -596,6 +596,11 @@ pub struct SyncKeychainAvailableResponse {
 pub struct SetSecureItemRequest {
     pub key: String,
     pub value: String,
+    /// When true, the item is stored device-bound (iOS: ThisDeviceOnly
+    /// accessibility) so it does not migrate to another device (#7558).
+    /// Absent for existing callers, which keep the default storage.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub device_bound: Option<bool>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
