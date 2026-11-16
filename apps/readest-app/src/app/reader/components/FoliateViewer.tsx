@@ -96,6 +96,7 @@ import { getDirFromUILanguage } from '@/utils/rtl';
 import { isTauriAppPlatform } from '@/services/environment';
 import { TransformContext } from '@/services/transformers/types';
 import { transformContent } from '@/services/transformService';
+import { createResourceCache } from '@/services/resourceCache';
 import {
   getSectionDocumentType,
   normalizeMediaType,
@@ -1027,9 +1028,29 @@ const FoliateViewer: React.FC<{
       const handleTransformData = getDocTransformHandler({ width, height });
       book.transformTarget?.addEventListener('load', handleTransformLoad);
       book.transformTarget?.addEventListener('data', handleTransformData);
+      // Keep what handleTransformData prepares for the next open of the book (not for an
+      // Audiobookshelf ebook, format ABS: the server can replace its file).
+      const bookRecord = getBookData(bookKey)?.book;
+      if (appService && bookRecord?.format === 'EPUB') {
+        // everything handleTransformData's transforms read
+        const getTransformInputs = () => {
+          const bookData = getBookData(bookKey);
+          return [
+            getViewSettings(bookKey),
+            useSettingsStore.getState().settings?.globalViewSettings?.proofreadRules,
+            width,
+            height,
+            bookData?.isFixedLayout,
+            bookData?.book?.primaryLanguage,
+            getLocale(),
+          ];
+        };
+        book.setResourceCache?.(createResourceCache(appService, bookRecord, getTransformInputs));
+      }
       removeTransformListenersRef.current = () => {
         book.transformTarget?.removeEventListener('load', handleTransformLoad);
         book.transformTarget?.removeEventListener('data', handleTransformData);
+        book.setResourceCache?.(null);
       };
       // The reader can close while view.open() is pending; its cleanup has run.
       if (unmountedRef.current) removeTransformListenersRef.current();

@@ -71,13 +71,15 @@ export async function deleteBook(
       if (await fs.exists(dir, 'Books')) {
         await fs.removeDir(dir, 'Books', true);
       }
-      // The per-book TTS audio cache lives under Cache (kept out of Books/
-      // so backups and sync never pick it up); purge erases every trace of
-      // the book, so drop it too. Non-purge deletes leave it: like
-      // config.json, a re-downloaded book resumes with a warm audio cache.
-      const ttsCacheDir = `tts-cache/${book.hash}`;
-      if (await fs.exists(ttsCacheDir, 'Cache')) {
-        await fs.removeDir(ttsCacheDir, 'Cache', true);
+      // The per-book TTS audio cache, and what an open kept for the next one
+      // (the parsed EPUB, its prepared sections), live under Cache (kept out
+      // of Books/ so backups and sync never pick them up); purge erases every
+      // trace of the book, so drop them too. Non-purge deletes leave them:
+      // like config.json, a re-downloaded book resumes with warm caches.
+      for (const cacheDir of [`tts-cache/${book.hash}`, `book-cache/${book.hash}`]) {
+        if (await fs.exists(cacheDir, 'Cache')) {
+          await fs.removeDir(cacheDir, 'Cache', true);
+        }
       }
     }
 

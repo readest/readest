@@ -245,6 +245,8 @@ export interface AppService {
   saveBookConfig(book: Book, config: BookConfig, settings?: SystemSettings): Promise<void>;
   loadBookNav(book: Book): Promise<BookNav | null>;
   saveBookNav(book: Book, nav: BookNav): Promise<void>;
+  loadBookCache(book: Book, name: string): Promise<string | null>;
+  saveBookCache(book: Book, name: string, data: string): Promise<void>;
   loadBookContent(book: Book): Promise<BookContent>;
   resolveNativeBookFilePath(book: Book): Promise<string | null>;
   loadFeeds(): Promise<RssFeed[]>;
