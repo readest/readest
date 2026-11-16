@@ -11,7 +11,6 @@ import { useEnv } from '@/context/EnvContext';
 import { useTheme } from '@/hooks/useTheme';
 import { useThemeStore } from '@/store/themeStore';
 import { useSettingsStore } from '@/store/settingsStore';
-import { useReaderStore } from '@/store/readerStore';
 import { useEnsureSettingsLoaded } from '@/hooks/useEnsureSettingsLoaded';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useTrafficLightStore } from '@/store/trafficLightStore';
@@ -37,6 +36,21 @@ interface SingleInstancePayload {
 const WEB_AUTH_CALLBACK = `${getBaseUrl()}/auth/callback`;
 const DEEPLINK_CALLBACK = 'readest://auth-callback';
 const USE_APPLE_SIGN_IN = process.env['NEXT_PUBLIC_USE_APPLE_SIGN_IN'] === 'true';
+
+// Whether a reader entry is alive beneath this page in the history stack
+// (books pushed this login page over themselves and their view states still
+// exist). The reader store is imported lazily: a top-level import would pull
+// the OPDS dependency chain (pseStream → opdsReq → getAPIBaseUrl, evaluated
+// at module load) into this page's module graph, which the auth tests' partial
+// "@/services/environment" mock does not define.
+async function isReaderAliveBeneath(): Promise<boolean> {
+  try {
+    const { useReaderStore } = await import('@/store/readerStore');
+    return Object.keys(useReaderStore.getState().viewStates).length > 0;
+  } catch {
+    return false;
+  }
+}
 
 export default function AuthPage() {
   const _ = useTranslation();
@@ -231,7 +245,7 @@ export default function AuthPage() {
     }
   };
 
-  const handleGoBack = () => {
+  const handleGoBack = async () => {
     // Keep login false to avoid infinite loop to redirect to the login page.
     // On a cold load the store is still an empty object, so read through to
     // disk first: persisting that would overwrite the real settings file with
@@ -261,7 +275,7 @@ export default function AuthPage() {
       // on the loading spinner forever. Only navigate forward when no reader
       // is actually open (a cold-loaded /auth?redirect=... with nothing to go
       // back to), and replace there so /auth doesn't linger on the stack.
-      if (Object.keys(useReaderStore.getState().viewStates).length > 0) {
+      if (await isReaderAliveBeneath()) {
         router.back();
       } else {
         router.replace(redirectTo);
@@ -291,7 +305,7 @@ export default function AuthPage() {
   }, []);
 
   useEffect(() => {
-    const { data: subscription } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: subscription } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (session?.access_token && session.user) {
         login(session.access_token, session.user);
         const redirectTo = new URLSearchParams(window.location.search).get('redirect');
@@ -309,7 +323,7 @@ export default function AuthPage() {
           // only when no reader is open (or the redirect target is the
           // library): a page reload wipes the in-memory reader store, so a
           // cold OAuth callback landing here naturally takes this branch.
-          if (redirectTo && Object.keys(useReaderStore.getState().viewStates).length > 0) {
+          if (redirectTo && (await isReaderAliveBeneath())) {
             router.back();
           } else {
             router.replace(redirectTo ?? '/library');
