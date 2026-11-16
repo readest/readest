@@ -252,6 +252,13 @@ const FooterBar: React.FC<FooterBarProps> = ({
 
   const isMobile = appService?.isMobile || window.innerWidth < 640;
 
+  // The mobile footer chrome (the bar and the panels above it) carries no
+  // page-progression semantics of its own, so a vertical-rl book must not
+  // mirror it: keep the same order as the horizontal layout. A horizontal
+  // RTL book keeps today's mirroring.
+  const isVerticalRtl = !!viewSettings?.vertical && !!viewSettings?.rtl;
+  const footerDir = viewSettings?.rtl && !(isMobile && isVerticalRtl) ? 'rtl' : 'ltr';
+
   return (
     <>
       {/* Hover trigger area */}
@@ -286,7 +293,7 @@ const FooterBar: React.FC<FooterBarProps> = ({
         role='contentinfo'
         aria-label={_('Footer Bar')}
         className={containerClasses}
-        dir={viewSettings?.rtl ? 'rtl' : 'ltr'}
+        dir={footerDir}
         onFocus={() =>
           !appService?.isMobile && !isWindowFocusRestore() && setHoveredBookKey(bookKey)
         }

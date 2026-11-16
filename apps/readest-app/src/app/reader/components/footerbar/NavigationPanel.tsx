@@ -42,6 +42,11 @@ export const NavigationPanel: React.FC<NavigationPanelProps> = ({
   const view = getView(bookKey);
   const progress = getProgress(bookKey);
   const viewSettings = getViewSettings(bookKey);
+  // The mobile footer opts out of the vertical-rl mirroring (FooterBar keeps
+  // dir='ltr' for it), so the nav icons must not be swapped either — keep the
+  // panel exactly as it looks in the horizontal layout.
+  const isVerticalRtl = !!viewSettings?.vertical && !!viewSettings?.rtl;
+  const navRtl = isVerticalRtl ? false : viewSettings?.rtl;
 
   const [progressValue, setProgressValue] = React.useState(
     progressValid ? progressFraction * 100 : 0,
@@ -117,50 +122,34 @@ export const NavigationPanel: React.FC<NavigationPanelProps> = ({
       </div>
       <div className='flex w-full items-center justify-between gap-x-6'>
         <Button
-          icon={getNavigationIcon(
-            viewSettings?.rtl,
-            <RiArrowLeftDoubleLine />,
-            <RiArrowRightDoubleLine />,
-          )}
+          icon={getNavigationIcon(navRtl, <RiArrowLeftDoubleLine />, <RiArrowRightDoubleLine />)}
           onClick={navigationHandlers.onPrevSection}
           label={_('Previous Section')}
         />
         <Button
-          icon={getNavigationIcon(viewSettings?.rtl, <RiArrowLeftSLine />, <RiArrowRightSLine />)}
+          icon={getNavigationIcon(navRtl, <RiArrowLeftSLine />, <RiArrowRightSLine />)}
           onClick={navigationHandlers.onPrevPage}
           label={_('Previous Page')}
         />
         <Button
-          icon={getNavigationIcon(
-            viewSettings?.rtl,
-            <RiArrowGoBackLine />,
-            <RiArrowGoForwardLine />,
-          )}
+          icon={getNavigationIcon(navRtl, <RiArrowGoBackLine />, <RiArrowGoForwardLine />)}
           onClick={navigationHandlers.onGoBack}
           label={_('Go Back')}
           disabled={!view?.history.canGoBack}
         />
         <Button
-          icon={getNavigationIcon(
-            viewSettings?.rtl,
-            <RiArrowGoForwardLine />,
-            <RiArrowGoBackLine />,
-          )}
+          icon={getNavigationIcon(navRtl, <RiArrowGoForwardLine />, <RiArrowGoBackLine />)}
           onClick={navigationHandlers.onGoForward}
           label={_('Go Forward')}
           disabled={!view?.history.canGoForward}
         />
         <Button
-          icon={getNavigationIcon(viewSettings?.rtl, <RiArrowRightSLine />, <RiArrowLeftSLine />)}
+          icon={getNavigationIcon(navRtl, <RiArrowRightSLine />, <RiArrowLeftSLine />)}
           onClick={navigationHandlers.onNextPage}
           label={_('Next Page')}
         />
         <Button
-          icon={getNavigationIcon(
-            viewSettings?.rtl,
-            <RiArrowRightDoubleLine />,
-            <RiArrowLeftDoubleLine />,
-          )}
+          icon={getNavigationIcon(navRtl, <RiArrowRightDoubleLine />, <RiArrowLeftDoubleLine />)}
           onClick={navigationHandlers.onNextSection}
           label={_('Next Section')}
         />
