@@ -1186,6 +1186,8 @@ export const useTextSelector = (
       // to this release. The click would dismiss the toolbar, but on a blank
       // part of a PDF page pdf.js moves `.endOfContent` under the pointer as
       // the selection collapses, and Chromium then sends no click (#6958).
+      // Text extraction from the last release may still be pending; drop it.
+      selectionPublicationId.current++;
       handleDismissPopup();
       isTextSelected.current = false;
     }
