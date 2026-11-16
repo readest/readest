@@ -1,6 +1,7 @@
 import { execSync, type StdioOptions } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
+import { mergeMainIntoPr } from './worktree-merge-main';
 
 // Submodules skipped during worktree setup (shared via symlinks or pre-built)
 const SKIPPED_SUBMODULES = [
@@ -137,11 +138,8 @@ if (isPr) {
   // tree that will land. A rebased checkout hid conflicts with main until
   // after a push (#7502).
   console.error('\n--- Merging origin/main into the PR ---');
-  try {
-    execSync('git merge --no-edit origin/main', { stdio: gitStdio, cwd: worktreePath });
-  } catch {
-    // Finish setup on the PR head so the conflict can be resolved in place.
-    execSync('git merge --abort', { stdio: gitStdio, cwd: worktreePath });
+  // On a conflict, finish setup on the PR head so it can be resolved in place.
+  if (!mergeMainIntoPr(worktreePath, gitStdio)) {
     console.error(
       '\n*** This PR conflicts with origin/main. Setup continues on the PR head; ' +
         'run `git merge origin/main` in the worktree and resolve before pushing. ***',
