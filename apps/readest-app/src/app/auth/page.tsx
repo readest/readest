@@ -309,10 +309,7 @@ export default function AuthPage() {
           // only when no reader is open (or the redirect target is the
           // library): a page reload wipes the in-memory reader store, so a
           // cold OAuth callback landing here naturally takes this branch.
-          if (
-            redirectTo &&
-            Object.keys(useReaderStore.getState().viewStates).length > 0
-          ) {
+          if (redirectTo && Object.keys(useReaderStore.getState().viewStates).length > 0) {
             router.back();
           } else {
             router.replace(redirectTo ?? '/library');
