@@ -647,11 +647,13 @@ impl BlitzWebview {
             self.paint();
         }
         // BLITZ_TAURI_TRACE_LOOP=1: turns over 5 ms, split into resources, timers and their jobs
-        // (poll), input and a paint (whose own line follows).
+        // (poll), input and a paint (whose own line follows); `forced_ms` is the part of the turn
+        // spent on style and layout that JS read, `forced_n` the reads that did work.
         let end = t_ms();
+        let (forced_ms, forced_n) = blitz_qjs_script::take_forced_layout();
         if std::env::var_os("BLITZ_TAURI_TRACE_LOOP").is_some() && end - t_start > 5.0 {
             eprintln!(
-                "{{\"label\": \"tick\", \"t_ms\": {t_start:.1}, \"net_ms\": {:.1}, \"poll_ms\": {:.1}, \"input_ms\": {:.1}, \"paint_ms\": {:.1}, \"dirty\": {}}}",
+                "{{\"label\": \"tick\", \"t_ms\": {t_start:.1}, \"net_ms\": {:.1}, \"poll_ms\": {:.1}, \"input_ms\": {:.1}, \"paint_ms\": {:.1}, \"forced_ms\": {forced_ms:.1}, \"forced_n\": {forced_n}, \"dirty\": {}}}",
                 t_net - t_start,
                 t_poll - t_net,
                 t_input - t_poll,

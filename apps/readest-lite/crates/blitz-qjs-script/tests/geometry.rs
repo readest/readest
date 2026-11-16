@@ -59,3 +59,14 @@ fn offset_parent_and_offsets() {
     );
     assert_eq!(logs, ["p 7 7 10", "body 3 null null null"]);
 }
+
+// BLITZ_TAURI_TRACE_LOOP's tick lines take the time JS waited on the layout it read since the last
+// tick, which on a Kindle is most of opening a chapter.
+#[test]
+fn reads_that_lay_out_are_timed_until_taken() {
+    blitz_qjs_script::take_forced_layout();
+    run(BOX, "$('b').style.width = '200px'; console.log($('b').offsetWidth);");
+    let (ms, _) = blitz_qjs_script::take_forced_layout();
+    assert!(ms > 0.0, "{ms}");
+    assert_eq!(blitz_qjs_script::take_forced_layout(), (0.0, 0));
+}

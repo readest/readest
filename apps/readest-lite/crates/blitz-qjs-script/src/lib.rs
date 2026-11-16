@@ -286,6 +286,29 @@ fn describe<'js>(ctx: &Ctx<'js>, v: Value<'js>) -> String {
     format!("{v:?}")
 }
 
+thread_local! {
+    /// Forced layouts since [`take_forced_layout`]: their milliseconds and how many did work.
+    static FORCED_LAYOUT: std::cell::Cell<(f64, u32)> = const { std::cell::Cell::new((0.0, 0)) };
+}
+
+/// A style or layout read from JS resolved the page first, taking `ms`. With
+/// BLITZ_TAURI_TRACE_LOOP=1, one over 20 ms gets a line naming the read.
+pub(crate) fn note_forced_layout(op: &str, ms: f64) {
+    FORCED_LAYOUT.with(|f| {
+        let (sum, n) = f.get();
+        f.set((sum + ms, n + u32::from(ms >= 1.0)));
+    });
+    if ms >= 20.0 && std::env::var_os("BLITZ_TAURI_TRACE_LOOP").is_some() {
+        eprintln!("{{\"label\": \"forced-layout\", \"op\": \"{op}\", \"ms\": {ms:.1}}}");
+    }
+}
+
+/// The time JS spent waiting on style and layout it read, in milliseconds, and how many of those
+/// reads did work (1 ms or more), since the last call.
+pub fn take_forced_layout() -> (f64, u32) {
+    FORCED_LAYOUT.with(|f| f.replace((0.0, 0)))
+}
+
 /// The clock for CSS animations and transitions, in seconds: pass it to `resolve` everywhere (a
 /// constant freezes every transition at its first frame).
 pub fn animation_time() -> f64 {
