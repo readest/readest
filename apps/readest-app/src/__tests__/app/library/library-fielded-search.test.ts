@@ -139,6 +139,13 @@ describe('createBookFilter fielded search (#7370)', () => {
     expect(createBookFilter('language:english')(french)).toBe(false);
   });
 
+  it('reads a field as the bookshelf rules do', () => {
+    // A bookshelf language rule falls back to the detected primary language.
+    const detected = makeBook('detected', { primaryLanguage: 'ja' }, { language: '' });
+    expect(createBookFilter('language:ja')(detected)).toBe(true);
+    expect(createBookFilter('language:日本語')(detected)).toBe(true);
+  });
+
   it('reads calibre custom columns by #label', () => {
     expect(search('#genre:"space opera"')).toEqual(['dune']);
     expect(search('#genre:fantasy')).toEqual([]);

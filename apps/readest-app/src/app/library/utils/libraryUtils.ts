@@ -15,6 +15,7 @@ import {
   isCurrentlyReadingBook,
 } from '@/utils/book';
 import { matchesFieldedQuery, parseFieldedQuery } from './fieldedQuery';
+import { getBookshelfField, textList } from '@/services/bookshelves/fields';
 import { code6392to6391, normalizedLangCode } from '@/utils/lang';
 import { md5Fingerprint } from '@/utils/md5';
 import type { TranslationFunc } from '@/hooks/useTranslation';
@@ -322,11 +323,11 @@ const getCalibreColumnValues = (book: Book, label: string): string[] =>
     .filter((column) => column.label.toLowerCase() === label)
     .flatMap(({ value }) => (Array.isArray(value) ? value : [String(value)]));
 
+const readShelfField = (book: Book, id: string): string[] =>
+  textList(getBookshelfField(id)?.read(book)).filter(Boolean);
+
 const getBookLanguages = (book: Book): string[] => {
-  const language = book.metadata?.language;
-  const codes = (Array.isArray(language) ? language : [language]).filter(
-    (code): code is string => !!code,
-  );
+  const codes = readShelfField(book, 'language');
   // "en-US" and "eng" are named by their base language, as "en" is.
   const names = codes.map((code) => {
     const base = normalizedLangCode(code);
@@ -343,56 +344,56 @@ const getBookIdentifiers = (book: Book): string[] => {
   return present(metadata?.identifier, metadata?.isbn, ...alternates);
 };
 
+/** The fields a bare word next to fielded terms reads, besides calibre columns. */
+const BARE_WORD_FIELDS = [
+  'title',
+  'author',
+  'tags',
+  'series',
+  'publisher',
+  'language',
+  'format',
+  'description',
+  'group',
+  'identifier',
+];
+
 /**
- * The values a fielded search term reads (#7370). `null` is a bare word next
- * to fields, which reads every field below; `#label` is a calibre column.
+ * The values a fielded search term reads (#7370). A field reads the bookshelf
+ * field of the same id (src/services/bookshelves/fields.ts), so search and
+ * bookshelf rules agree on what a book's series or group is. The cases below
+ * add what search needs on top. `null` is a bare word next to fields, and
+ * `#label` is a calibre column.
  */
 const getBookFieldValues = (book: Book, field: string | null): string[] => {
   const metadata = book.metadata;
   switch (field) {
     case null:
-      return present(
-        formatTitle(book.title),
-        formatAuthors(book.author),
-        book.format,
-        book.groupName,
-        metadata?.description,
-        getBookValuesText(book),
-        getCalibreColumnsText(book),
-        metadata?.series,
-        metadata?.publisher && formatPublisher(metadata.publisher),
-        ...getBookLanguages(book),
-        ...getBookIdentifiers(book),
-      );
-    case 'title':
-      return [formatTitle(book.title)];
-    case 'author':
       return [
-        ...new Set([formatAuthors(book.author), ...getContributorNames(metadata?.author)]),
+        ...BARE_WORD_FIELDS.flatMap((name) => getBookFieldValues(book, name)),
+        getCalibreColumnsText(book),
+      ];
+    case 'author':
+      // Each contributor too, so author:="j. r. r. tolkien" matches a co-author.
+      return [
+        ...new Set([...readShelfField(book, 'author'), ...getContributorNames(metadata?.author)]),
       ].filter(Boolean);
-    case 'tag':
+    case 'tags':
       // Calibre writes its tags as EPUB subjects, so tag: reads both.
-      return [...getBookTags(book), ...getBookSubjects(book)];
-    case 'subject':
-      return getBookSubjects(book);
-    case 'series':
-      return present(metadata?.series);
+      return [...readShelfField(book, 'tags'), ...readShelfField(book, 'subjects')];
     case 'publisher':
+      // The bookshelf field drops a publisher stored as a language map.
       return present(metadata?.publisher && formatPublisher(metadata.publisher));
     case 'language':
       return getBookLanguages(book);
-    case 'format':
-      return [book.format];
     case 'description':
-      return present(metadata?.description && formatDescription(metadata.description));
-    case 'group':
-      return present(book.groupName);
-    case 'isbn':
-      return present(metadata?.isbn);
+      return readShelfField(book, 'description').map((text) => formatDescription(text));
     case 'identifier':
       return getBookIdentifiers(book);
     default:
-      return field.startsWith('#') ? getCalibreColumnValues(book, field.slice(1)) : [];
+      return field.startsWith('#')
+        ? getCalibreColumnValues(book, field.slice(1))
+        : readShelfField(book, field);
   }
 };
 

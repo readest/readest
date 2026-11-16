@@ -13,15 +13,18 @@
  * "Re:Zero" or a regular expression is searched exactly as before.
  */
 
-/** Canonical field names and the aliases calibre users type for them. */
+/**
+ * The aliases calibre users type, mapped to the field they read: a bookshelf
+ * field id (src/services/bookshelves/fields.ts), or `identifier`.
+ */
 const FIELD_ALIASES: Record<string, string> = {
   title: 'title',
   author: 'author',
   authors: 'author',
-  tag: 'tag',
-  tags: 'tag',
-  subject: 'subject',
-  subjects: 'subject',
+  tag: 'tags',
+  tags: 'tags',
+  subject: 'subjects',
+  subjects: 'subjects',
   series: 'series',
   publisher: 'publisher',
   language: 'language',
