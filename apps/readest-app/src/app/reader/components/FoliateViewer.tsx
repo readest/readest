@@ -102,6 +102,7 @@ import { getDirFromUILanguage } from '@/utils/rtl';
 import { isTauriAppPlatform } from '@/services/environment';
 import { TransformContext } from '@/services/transformers/types';
 import { transformContent } from '@/services/transformService';
+import { createPageCache } from '@/services/pageCache';
 import { createResourceCache } from '@/services/resourceCache';
 import {
   getSectionDocumentType,
@@ -1153,6 +1154,7 @@ const FoliateViewer: React.FC<{
           ];
         };
         book.setResourceCache?.(createResourceCache(appService, bookRecord, getTransformInputs));
+        view.renderer.setPageCache?.(createPageCache(appService, bookRecord));
       }
       removeTransformListenersRef.current = () => {
         book.transformTarget?.removeEventListener('load', handleTransformLoad);
