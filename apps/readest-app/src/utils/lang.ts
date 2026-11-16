@@ -149,7 +149,9 @@ export const getLanguageName = (code: string): string => {
 
 export const inferLangFromScript = (text: string, lang: string): string => {
   if (!lang || lang === 'en') {
-    if (/[\p{Script=Hangul}]/u.test(text)) {
+    if (/[\p{Script=Hebrew}]/u.test(text)) {
+      return 'he';
+    } else if (/[\p{Script=Hangul}]/u.test(text)) {
       return 'ko';
     } else if (/[\p{Script=Hiragana}\p{Script=Katakana}]/u.test(text)) {
       return 'ja';
@@ -160,9 +162,31 @@ export const inferLangFromScript = (text: string, lang: string): string => {
   return lang;
 };
 
+// How much text detectLanguage reads before stripping noise. Callers may pass a
+// whole book, so the scan is capped; it is long enough to reach past a
+// downloader's header of links (#7435).
+export const LANGUAGE_SAMPLE_MAX_CHARS = 32768;
+
+// URLs and long hex runs (hashed file names) are Latin letters that say nothing
+// about the book's language. TXT files saved by downloader tools open with a
+// header full of them, which pushed franc to guess Spanish, Italian or
+// Portuguese for a Chinese book. See issue #7435.
+// A URL ends at whitespace or CJK punctuation, so a Chinese path (`/封面图片`)
+// goes with it but prose after `…/1.html，` is kept. The scheme length is capped
+// so a long unbroken word is scanned in linear time. The hex run is delimited
+// without a lookbehind, which older WebKit can't parse
+// (`pnpm check:lookbehind-regex`). Whitespace is collapsed last so the gaps
+// left by removed URLs don't fill the sample.
+const stripLanguageNoise = (text: string): string =>
+  text
+    .replace(/[a-z][a-z\d+.-]{0,31}:\/\/[^\s\u3000-\u303f\uff00-\uffef]+/gi, ' ')
+    .replace(/(^|[^\da-f])[\da-f]{16,}(?![\da-f])/gi, '$1 ')
+    .replace(/\s+/g, ' ');
+
 export const detectLanguage = (content: string): string => {
   try {
-    const sample = content.substring(0, 1000);
+    const head = content.substring(0, LANGUAGE_SAMPLE_MAX_CHARS);
+    const sample = stripLanguageNoise(head).substring(0, 1000);
     const iso6393Lang = franc(sample);
     const iso6391Lang = code6393to6391(iso6393Lang);
     if (iso6391Lang) return iso6391Lang;
