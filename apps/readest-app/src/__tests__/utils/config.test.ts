@@ -37,4 +37,26 @@ describe('getMaxInlineSize', () => {
 
     expect(getMaxInlineSize(viewSettings(false))).toBe(576);
   });
+
+  // iPadOS reports a desktop ("Macintosh") user agent. Split View on an iPad
+  // is one of the near-square layouts the factor is for.
+  it('still trims in iPad Split View', () => {
+    vi.stubGlobal('navigator', {
+      userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)',
+      maxTouchPoints: 5,
+    });
+    vi.stubGlobal('window', { innerWidth: 981, innerHeight: 1024 });
+
+    expect(getMaxInlineSize(viewSettings(false))).toBe(576);
+  });
+
+  it('keeps the configured width in a near-square Mac window', () => {
+    vi.stubGlobal('navigator', {
+      userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)',
+      maxTouchPoints: 0,
+    });
+    vi.stubGlobal('window', { innerWidth: 1000, innerHeight: 900 });
+
+    expect(getMaxInlineSize(viewSettings(false))).toBe(720);
+  });
 });

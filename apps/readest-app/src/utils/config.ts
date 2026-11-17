@@ -2,36 +2,17 @@ import { ViewSettings } from '@/types/book';
 import { getOSPlatform } from '@/utils/misc';
 
 /**
- * Whether a near-square *window* should reduce the reader's own max inline size.
- *
- * The 0.8 factor below is for unfolded foldables and tablets, where a
- * full-width single column is too wide to read. It is evaluated from the window
- * on every platform, so a desktop window that merely happens to be near-square
- * is reduced as well -- and because the factor depends on the window size, a
- * book opened in such a window keeps the reduced ceiling after the window
- * grows, which leaves a band on both sides until a setting is nudged.
- *
- * On a desktop the window is the user's to size and the setting is a number
- * they chose, so it is honoured verbatim there. `getOSPlatform` reports iPadOS
- * in desktop mode as `macos`; that is harmless, its ratios (4:3 and the
- * split-view halves) sit outside the band anyway.
+ * Whether a near-square window trims the reader's max inline size. The 0.8
+ * factor is for unfolded foldables, tablets and split screen, where a
+ * full-width column is too wide to read. A desktop window is one the user
+ * sized, so the setting is kept verbatim there (#7510). iPadOS reports a
+ * desktop ("Macintosh") user agent; touch points give it away.
  */
-// Keyed on the user agent rather than resolved once: `getMaxInlineSize` runs on
-// every layout pass and the regexes in `getOSPlatform` are wasted work there,
-// but a cached *answer* would outlive a test that stubs another platform.
-let trimsNearSquareScreenCache: { userAgent: string; trims: boolean } | null = null;
-
 const trimsNearSquareScreen = () => {
   if (typeof navigator === 'undefined') return false;
-  const userAgent = navigator.userAgent;
-  if (trimsNearSquareScreenCache?.userAgent !== userAgent) {
-    const os = getOSPlatform();
-    trimsNearSquareScreenCache = {
-      userAgent,
-      trims: os !== 'windows' && os !== 'macos' && os !== 'linux',
-    };
-  }
-  return trimsNearSquareScreenCache.trims;
+  const os = getOSPlatform();
+  if (os === 'macos') return navigator.maxTouchPoints > 1;
+  return os !== 'windows' && os !== 'linux';
 };
 
 export const getMaxInlineSize = (viewSettings: ViewSettings) => {

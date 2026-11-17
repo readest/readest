@@ -1450,32 +1450,23 @@ const FoliateViewer: React.FC<{
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [viewSettings?.vertical]);
 
-  // A window resize changes the ceiling the page should be laid out against:
-  // `getMaxInlineSize` derives it from the window (a near-square window reduces
-  // it, and a vertical book measures the longer screen axis), but that value
-  // reaches the renderer only when the book opens or a setting changes --
-  // neither of which a resize is. So a window that grows keeps the old ceiling
-  // and the page stops filling it, leaving a band on each side until some
-  // setting is nudged and the attribute is rewritten.
-  //
-  // Handed to the renderer through `applyRendererLayout`, which writes only the
-  // attributes that changed: each write re-lays out the page and drops the
-  // reading position mid-scroll, so a drag that does not move the ceiling must
-  // stay silent. The column count travels with it because the Duo's book pose
-  // derives it from the page width rather than from the setting. Debounced like
-  // the Duo effect below, so a drag is resolved once it settles rather than on
-  // every frame.
+  // The max inline size depends on the window (a near-square window trims it
+  // on touch devices, and vertical writing measures the longer screen axis),
+  // so a resize re-resolves it; otherwise a maximized window keeps the ceiling
+  // the book opened with and leaves a band on each side (#7510). Only a changed
+  // value is written, since each write re-lays out the page, and a drag is
+  // resolved once it settles. Settings are read when it fires, not captured.
   useEffect(() => {
-    if (!viewSettings || bookDoc.rendition?.layout === 'pre-paginated') return;
-    const apply = () => {
-      const renderer = viewRef.current?.renderer;
-      if (!renderer) return;
-      applyRendererLayout(renderer, getCurrentRendererLayout(viewSettings), bookDoc.rendition);
-    };
+    if (bookDoc.rendition?.layout === 'pre-paginated') return;
     let timer: ReturnType<typeof setTimeout> | undefined;
     const handleResize = () => {
       clearTimeout(timer);
-      timer = setTimeout(apply, 150);
+      timer = setTimeout(() => {
+        const renderer = viewRef.current?.renderer;
+        const viewSettings = getViewSettings(bookKey);
+        if (!renderer || !viewSettings) return;
+        applyRendererLayout(renderer, getCurrentRendererLayout(viewSettings), bookDoc.rendition);
+      }, 150);
     };
     window.addEventListener('resize', handleResize);
     return () => {
@@ -1483,16 +1474,7 @@ const FoliateViewer: React.FC<{
       clearTimeout(timer);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    viewSettings?.vertical,
-    viewSettings?.maxInlineSize,
-    viewSettings?.maxColumnCount,
-    viewSettings?.scrolled,
-    // The Duo's book pose resolves the column count from the page width, so the
-    // callback would otherwise reuse the settings captured in the other pose.
-    viewSettings?.duoBookMode,
-    bookDoc.rendition?.layout,
-  ]);
+  }, [bookKey, bookDoc]);
 
   // iPhone Duo: folding, unfolding, turning the device or flipping book mode
   // changes how many pages the display shows. The paginator keeps the
