@@ -36,6 +36,8 @@ mod backup_zip;
 #[cfg(target_os = "macos")]
 mod browser_cookies_macos;
 mod browser_fetch;
+#[cfg(all(target_os = "linux", any(feature = "cef", test)))]
+mod cef_local_network;
 mod clip_url;
 mod comic_parser;
 mod cover_thumbnail;
@@ -654,7 +656,9 @@ pub fn run() {
             }),
             _ => cef,
         };
-        builder.runtime(cef)
+        builder
+            .runtime(cef)
+            .on_page_load(cef_local_network::allow_for_app_page)
     };
 
     let builder = builder

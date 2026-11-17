@@ -3128,5 +3128,7 @@
   "No reading activity on this day": "لا يوجد نشاط قراءة في هذا اليوم",
   "See which books you read each day and for how long": "اطّلع على الكتب التي قرأتها كل يوم والوقت الذي قضيته في قراءتها",
   "Move to parent group": "نقل إلى المجموعة الأعلى",
-  "Done": "تم"
+  "Done": "تم",
+  "Solid Footer in Scrolled Mode": "شريط تذييل مصمت في وضع التمرير",
+  "Search by field:": "البحث حسب الحقل:"
 }

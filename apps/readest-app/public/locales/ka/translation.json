@@ -2836,5 +2836,7 @@
   "No reading activity on this day": "ამ დღეს კითხვა არ დაფიქსირებულა",
   "See which books you read each day and for how long": "ნახეთ, რომელ წიგნებს კითხულობდით ყოველდღე და რამდენ ხანს",
   "Move to parent group": "Move to parent group",
-  "Done": "მზადაა"
+  "Done": "მზადაა",
+  "Solid Footer in Scrolled Mode": "მყარი ქვედა კოლონტიტული გადაადგილების რეჟიმში",
+  "Search by field:": "ველის მიხედვით ძიება:"
 }

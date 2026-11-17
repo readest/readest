@@ -48,7 +48,9 @@ vi.mock('@/store/settingsStore', () => {
       globalViewSettings: state.viewSettings,
       globalReadSettings: { customTtsHighlightColors: [] },
     },
-    setSettings: vi.fn(),
+    setSettings: vi.fn((settings: typeof store.settings) => {
+      store.settings = settings;
+    }),
     saveSettings: vi.fn(),
   };
   return { useSettingsStore: Object.assign(() => store, { getState: () => store }) };
@@ -68,7 +70,9 @@ vi.mock('@/services/tts/providers/bookCacheStore', () => ({
 }));
 
 vi.mock('@/components/settings/theme/TTSHighlightStyleEditor', () => ({
-  default: () => null,
+  default: ({ onCustomColorsChange }: { onCustomColorsChange: (colors: string[]) => void }) => (
+    <button onClick={() => onCustomColorsChange(['#123456'])}>Add TTS color</button>
+  ),
 }));
 
 const ARIA = { id: 'en-US-AriaNeural', name: 'Aria', lang: 'en-US', gender: 'female' as const };
@@ -83,6 +87,7 @@ vi.mock('@/services/tts/voiceLibrary', () => ({
 }));
 
 import { saveViewSettings } from '@/helpers/settings';
+import { useSettingsStore } from '@/store/settingsStore';
 import { TTSUtils } from '@/services/tts/TTSUtils';
 import TTSPanel from '@/components/settings/TTSPanel';
 
@@ -211,5 +216,22 @@ describe('TTSPanel custom TTS services premium gate', () => {
     expect(state.push).not.toHaveBeenCalled();
     fireEvent.click(screen.getByText('Add TTS Service'));
     expect(screen.getByLabelText('Base URL')).toBeTruthy();
+  });
+});
+
+describe('TTSPanel custom highlight colors (#7490)', () => {
+  afterEach(cleanup);
+
+  it('hands the store a new settings snapshot so account sync publishes it', () => {
+    const store = useSettingsStore.getState();
+    const previous = store.settings;
+    render(<TTSPanel bookKey='' onRegisterReset={vi.fn()} />);
+    fireEvent.click(screen.getByText('Add TTS color'));
+
+    const next = useSettingsStore.getState().settings;
+    expect(next).not.toBe(previous);
+    expect(next.globalReadSettings.customTtsHighlightColors).toEqual(['#123456']);
+    expect(previous.globalReadSettings.customTtsHighlightColors).toEqual([]);
+    expect(store.saveSettings).toHaveBeenLastCalledWith({}, next);
   });
 });

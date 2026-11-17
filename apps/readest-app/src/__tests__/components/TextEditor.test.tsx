@@ -66,4 +66,76 @@ describe('TextEditor', () => {
     const editor = screen.getByRole('textbox', { name: 'Annotation note' });
     expect(editor.hasAttribute('data-note-editor')).toBe(true);
   });
+
+  it.each([
+    { shortcut: 'Ctrl+Enter', ctrlKey: true, metaKey: false },
+    { shortcut: 'Cmd+Enter', ctrlKey: false, metaKey: true },
+  ])('saves with $shortcut when a parent stops keydown propagation', ({ ctrlKey, metaKey }) => {
+    const onSave = vi.fn();
+    const parentRef = createRef<HTMLDivElement>();
+
+    render(
+      <div ref={parentRef}>
+        <TextEditor
+          value='My annotation'
+          onChange={vi.fn()}
+          onSave={onSave}
+          ariaLabel='Annotation note'
+        />
+      </div>,
+    );
+
+    const parentListener = vi.fn((event: KeyboardEvent) => {
+      event.stopPropagation();
+    });
+    parentRef.current!.addEventListener('keydown', parentListener);
+
+    const editor = screen.getByRole('textbox', { name: 'Annotation note' });
+    fireEvent.keyDown(editor, { key: 'Enter', ctrlKey, metaKey });
+
+    expect(onSave).toHaveBeenCalledOnce();
+    expect(parentListener).not.toHaveBeenCalled();
+  });
+
+  // Most browsers flag a key typed into an IME composition with isComposing;
+  // Safari's key that commits one only carries keyCode 229.
+  it.each([
+    { browser: 'isComposing', init: { isComposing: true } },
+    { browser: 'keyCode 229', init: { keyCode: 229 } },
+  ])('does not save on Ctrl+Enter while an IME composes ($browser)', ({ init }) => {
+    const onSave = vi.fn();
+    render(<TextEditor value='' onChange={vi.fn()} onSave={onSave} ariaLabel='Annotation note' />);
+
+    const editor = screen.getByRole('textbox', { name: 'Annotation note' });
+    fireEvent.keyDown(editor, { key: 'Enter', ctrlKey: true, ...init });
+
+    expect(onSave).not.toHaveBeenCalled();
+  });
+
+  // The note popup (Popup) and sheet (Dialog) close on Escape themselves, with
+  // the same cancel the editor runs: Escape must cancel once, not twice.
+  it('cancels once on Escape inside a host that also closes on Escape', () => {
+    const cancel = vi.fn();
+    const parentRef = createRef<HTMLDivElement>();
+
+    render(
+      <div ref={parentRef}>
+        <TextEditor value='' onChange={vi.fn()} onEscape={cancel} ariaLabel='Annotation note' />
+      </div>,
+    );
+
+    const hostListener = vi.fn((event: KeyboardEvent) => {
+      if (event.key === 'Escape') cancel();
+      event.stopPropagation();
+    });
+    parentRef.current!.addEventListener('keydown', hostListener);
+
+    const editor = screen.getByRole('textbox', { name: 'Annotation note' });
+    fireEvent.keyDown(editor, { key: 'Escape' });
+    expect(cancel).toHaveBeenCalledOnce();
+
+    // Keys the editor doesn't handle still reach the host.
+    fireEvent.keyDown(editor, { key: 'a' });
+    expect(hostListener).toHaveBeenCalledOnce();
+  });
 });

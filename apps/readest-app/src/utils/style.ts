@@ -1404,7 +1404,7 @@ const wrapPublisherFonts = (families: string, rewriteGenerics = false) => {
 };
 
 const FONT_SIZE =
-  /^(?:(?:\d+(?:\.\d+)?|\.\d+)(?:[a-z]+|%)|x*-?(?:small|large)|medium|smaller|larger)$/i;
+  /^(?:(?:\d+(?:\.\d+)?|\.\d+)(?:[a-z]+|%)|x*-?(?:small|large)|medium|smaller|larger|calc\([^\s/]*\))$/i;
 
 // In a `font` shorthand the family list comes last, after the size and an
 // optional `/line-height`, e.g. `font: italic 1em/1.2 Palatino, serif`.
@@ -1689,6 +1689,32 @@ export const transformStylesheet = (
       },
     ),
   );
+  // A section iframe spans its own columns, so its native vw/vh can depend
+  // on the number of pages. Resolve declaration values against the reader.
+  // Whole tokens are matched, so a name like `.a-10vw` is left alone (the web
+  // build rejects lookbehind, which older iOS WebViews cannot parse). The calc
+  // has no spaces so a `font` shorthand still reads it as one size token.
+  const viewportLength = /^([+-]?(?:\d*\.)?\d+(?:e[+-]?\d+)?)(vw|vh)$/i;
+  const tokens = /url\([^)]*\)|\/\*[\s\S]*?\*\/|[\w.+-]+/gi;
+  const resolveLength = (token: string, inCondition: boolean) => {
+    const length = viewportLength.exec(token);
+    if (!length) return token;
+    const axis = length[2]!.toLowerCase();
+    const unit = (axis === 'vw' ? vw : vh) / 100;
+    return inCondition
+      ? `${Number(length[1]) * unit}px`
+      : `calc(${length[1]}*var(--readest-${axis},${unit}px))`;
+  };
+  if (/\d(?:vw|vh)/i.test(css)) {
+    css = css.replace(
+      new RegExp(`@(?:media|supports|container|import)\\b[^{;]*|${tokens.source}`, 'gi'),
+      (token) =>
+        // At-rule conditions cannot read CSS custom properties.
+        token.startsWith('@')
+          ? token.replace(tokens, (word) => resolveLength(word, true))
+          : resolveLength(token, false),
+    );
+  }
   css = css.replace(/READEST_STR_(\d+)_PLACEHOLDER/g, (_, i) => quoted[+i]!);
 
   // replace absolute font sizes with rem units
@@ -1716,8 +1742,6 @@ export const transformStylesheet = (
     })
     // remove no-op backdrop-filter: brightness(100%); see #3895
     .replace(/backdrop-filter\s*:\s*brightness\(100%\)\s*[;]?/gi, '')
-    .replace(/(\d*\.?\d+)vw/gi, (_, d) => (parseFloat(d) * vw) / 100 + 'px')
-    .replace(/(\d*\.?\d+)vh/gi, (_, d) => (parseFloat(d) * vh) / 100 + 'px')
     .replace(/([\s;])-webkit-user-select\s*:\s*none/gi, '$1-webkit-user-select: unset')
     .replace(/([\s;])-moz-user-select\s*:\s*none/gi, '$1-moz-user-select: unset')
     .replace(/([\s;])-ms-user-select\s*:\s*none/gi, '$1-ms-user-select: unset')
@@ -1845,6 +1869,15 @@ export const applyNamespacedAttributes = (document: Document) => {
  */
 export const applyEinkModeAttribute = (document: Document, isEink: boolean) => {
   document.documentElement.setAttribute('data-eink', isEink ? 'true' : 'false');
+};
+
+// The reading area's size, for the vw/vh lengths transformStylesheet rewrites.
+export const applyViewportUnits = (document: Document, width: number, height: number) => {
+  // A section document can briefly have no root while the reader remounts.
+  const root = document.documentElement as HTMLElement | null;
+  if (!root || width <= 0 || height <= 0) return;
+  root.style.setProperty('--readest-vw', `${width / 100}px`);
+  root.style.setProperty('--readest-vh', `${height / 100}px`);
 };
 
 type MediaNode = { media?: MediaList; styleSheet?: CSSStyleSheet | null; cssRules?: CSSRuleList };

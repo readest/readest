@@ -2909,5 +2909,7 @@
   "No reading activity on this day": "No hay actividad de lectura este día",
   "See which books you read each day and for how long": "Consulta qué libros leíste cada día y durante cuánto tiempo",
   "Move to parent group": "Mover al grupo superior",
-  "Done": "Hecho"
+  "Done": "Hecho",
+  "Solid Footer in Scrolled Mode": "Pie de página sólido en modo desplazamiento",
+  "Search by field:": "Buscar por campo:"
 }

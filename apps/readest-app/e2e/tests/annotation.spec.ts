@@ -20,6 +20,43 @@ test.describe('Annotation', () => {
     await expect(reader.annotationItems).toHaveCount(1);
   });
 
+  for (const popup of ['text selection', 'existing highlight']) {
+    test(`clicking outside the ${popup} toolbar dismisses it before turning the page`, async ({
+      openBook,
+    }) => {
+      const reader = await openBook();
+      await reader.selectText();
+      if (popup === 'existing highlight') {
+        await reader.highlightSelection();
+        await reader.dismissPopup();
+        // Let the previous popup's close settle before reopening the highlight.
+        await reader.page.waitForTimeout(600);
+        await reader.clickHighlight();
+      }
+      await expect(reader.annotationPopup).toBeVisible();
+      if (popup === 'existing highlight') {
+        // This is a separate click after opening the highlight, not a double-click.
+        await reader.page.waitForTimeout(600);
+      }
+      await expect.poll(() => reader.readingProgress()).toBeGreaterThan(0);
+      const position = await reader.readingProgress();
+      const bounds = await reader.foliateView.boundingBox();
+      if (!bounds) throw new Error('reader has no visible page bounds');
+      const clickPageTurnZone = () =>
+        reader.page.mouse.click(bounds.x + bounds.width * 0.8, bounds.y + bounds.height * 0.65);
+
+      await clickPageTurnZone();
+      await expect(reader.annotationPopup).toBeHidden();
+      // Allow the single-click and popup-dismiss timers to run before checking
+      // the position or making a separate click in the same page-turn zone.
+      await reader.page.waitForTimeout(600);
+      expect(await reader.readingProgress()).toBe(position);
+
+      await clickPageTurnZone();
+      await expect.poll(() => reader.readingProgress()).toBeGreaterThan(position);
+    });
+  }
+
   test('closing the dictionary popup returns to the selection toolbar (#5213)', async ({
     openBook,
   }) => {
@@ -232,19 +269,24 @@ test.describe('Annotation', () => {
     const noteBubbles = reader.foliateView.locator('svg > g:has(line)');
     const clickHighlight = async () => {
       // Restyling appends the highlight after its bubble, so target the
-      // highlight explicitly instead of whichever SVG path comes first.
-      await reader.foliateView
-        .locator('svg > g:not(:has(line)) path')
-        .first()
-        .evaluate((node) => {
-          const path = node as SVGPathElement;
-          const box = path.getBBox();
-          const doc = path.ownerSVGElement?.parentElement?.querySelector('iframe')?.contentDocument;
-          if (!doc) throw new Error('highlight overlay has no section document');
-          doc.body.dispatchEvent(
-            new MouseEvent('click', { clientX: box.x + 4, clientY: box.y + 4, bubbles: true }),
-          );
-        });
+      // highlight explicitly instead of whichever SVG path comes first. Saving
+      // the note redraws the highlight, so a path found just before that is
+      // detached when clicked: find it again.
+      await expect(async () => {
+        await reader.foliateView
+          .locator('svg > g:not(:has(line)) path')
+          .first()
+          .evaluate((node) => {
+            const path = node as SVGPathElement;
+            const box = path.getBBox();
+            const doc =
+              path.ownerSVGElement?.parentElement?.querySelector('iframe')?.contentDocument;
+            if (!doc) throw new Error('highlight overlay has no section document');
+            doc.body.dispatchEvent(
+              new MouseEvent('click', { clientX: box.x + 4, clientY: box.y + 4, bubbles: true }),
+            );
+          });
+      }).toPass();
     };
 
     await reader.selectText();
@@ -256,6 +298,10 @@ test.describe('Annotation', () => {
     await reader.selectHighlightColor('green');
     await expect(noteBubbles).toHaveCount(1);
 
+    // A click on the book within 250 ms of the last one is a double-click
+    // (DOUBLE_CLICK_INTERVAL_THRESHOLD_MS), which selects a word instead of
+    // opening the highlight. No one picks a color and comes back that fast.
+    await reader.page.waitForTimeout(250);
     await clickHighlight();
     await reader.popupTool('Delete Highlight').click();
 

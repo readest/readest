@@ -48,6 +48,7 @@ import { useFileSync } from '../hooks/useFileSync';
 import {
   applyEinkModeAttribute,
   applyOrientationMedia,
+  applyViewportUnits,
   applyFixedlayoutStyles,
   applyImageStyle,
   applyNamespacedAttributes,
@@ -484,10 +485,15 @@ const FoliateViewer: React.FC<{
       const el = viewRef.current;
       if (el) {
         // The same resize can turn the reading area, which the book's
-        // `(orientation: ...)` rules follow (see applyOrientationMedia).
+        // `(orientation: ...)` rules follow (see applyOrientationMedia), and
+        // changes what the book's vw/vh lengths resolve to.
         let landscape = isLandscapeBox(el);
-        observer = new ResizeObserver(() => {
+        observer = new ResizeObserver(([entry]) => {
           invalidateChapterScreens();
+          if (entry && !getBookData(bookKey)?.isFixedLayout) {
+            const { width, height } = entry.contentRect;
+            for (const { doc } of el.renderer.getContents()) applyViewportUnits(doc, width, height);
+          }
           if (isLandscapeBox(el) === landscape) return;
           landscape = !landscape;
           for (const { doc } of el.renderer.getContents()) applyOrientationMedia(doc, landscape);
@@ -625,6 +631,8 @@ const FoliateViewer: React.FC<{
       }
 
       if (!bookData?.isFixedLayout) {
+        const view = viewRef.current;
+        if (view) applyViewportUnits(detail.doc, view.clientWidth, view.clientHeight);
         mountAdditionalFonts(detail.doc, isCJKLang(bookData.book?.primaryLanguage));
       }
 
@@ -1175,9 +1183,10 @@ const FoliateViewer: React.FC<{
     const showDoubleBorderFooter = showDoubleBorder && viewSettings.showFooter;
     const showTopHeader = viewSettings.showHeader && !viewSettings.vertical;
     // The bottom band is reserved only while the footer displays something
-    // there (and never in scrolled mode, where the info floats in pills) —
-    // see footerReservesBand. Otherwise the empty reservation shows as a
-    // full-width blank bar that steals space from the book text.
+    // there (and in scrolled mode only with Solid Footer on; otherwise the
+    // info floats in pills) — see footerReservesBand. Otherwise the empty
+    // reservation shows as a full-width blank bar that steals space from the
+    // book text.
     const showBottomFooter = footerReservesBand(viewSettings) && !viewSettings.vertical;
     const moreTopInset = showTopHeader ? Math.max(0, 16 - insets.top) : 0;
     // Only the persistent 'minimal' card reserves a band; the 'full' one
@@ -1522,6 +1531,7 @@ const FoliateViewer: React.FC<{
     // footerReservesBand inputs: the band must collapse/return live when the
     // user flips these settings.
     viewSettings?.showStickyProgressBar,
+    viewSettings?.solidScrolledFooter,
     viewSettings?.showRemainingTime,
     viewSettings?.showRemainingPages,
     viewSettings?.showProgressInfo,

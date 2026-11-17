@@ -2763,5 +2763,7 @@
   "No reading activity on this day": "이 날의 독서 기록이 없습니다",
   "See which books you read each day and for how long": "매일 읽은 책과 독서 시간을 확인하세요",
   "Move to parent group": "상위 그룹으로 이동",
-  "Done": "완료"
+  "Done": "완료",
+  "Solid Footer in Scrolled Mode": "스크롤 모드에서 단색 푸터 띠",
+  "Search by field:": "필드로 검색:"
 }
