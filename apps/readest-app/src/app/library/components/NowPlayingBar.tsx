@@ -78,7 +78,13 @@ const NowPlayingBar = ({ isSelectMode }: NowPlayingBarProps) => {
   const hasSession = !!session;
   useEffect(() => {
     if (!hasWindow || !hasSession) return;
-    const stop = () => ttsSessionManager.stopActive('quit');
+    // Bounded like TTSController.stop: a stalled native teardown must not
+    // keep the window open or the app running.
+    const stop = () =>
+      Promise.race([
+        ttsSessionManager.stopActive('quit'),
+        new Promise<void>((resolve) => setTimeout(resolve, 3000)),
+      ]);
     const unlisten = tauriHandleOnCloseWindow(stop).catch((error) => {
       console.info('Failed to register close-window listener:', error);
       return () => {};

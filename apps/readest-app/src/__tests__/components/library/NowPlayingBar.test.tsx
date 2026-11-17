@@ -209,6 +209,26 @@ describe('NowPlayingBar', () => {
     expect(mockManager.stopActive).toHaveBeenCalledWith('quit');
   });
 
+  // A stalled native teardown must not keep the window open.
+  test('a stalled stop does not hold the window close', async () => {
+    vi.useFakeTimers();
+    try {
+      env.appService.hasWindow = true;
+      mockManager.session = makeSession();
+      mockManager.stopActive.mockReturnValueOnce(new Promise<void>(() => {}));
+      render(<NowPlayingBar isSelectMode={false} />);
+
+      let closed = false;
+      void Promise.resolve(tauriHandleOnCloseWindow.mock.calls[0]![0]()).then(() => {
+        closed = true;
+      });
+      await vi.advanceTimersByTimeAsync(3000);
+      expect(closed).toBe(true);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   // Quit exits the process without closing the window first.
   test('quitting the app stops a live session', async () => {
     env.appService.hasWindow = true;
