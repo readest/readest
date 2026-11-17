@@ -10,6 +10,8 @@ const h = vi.hoisted(() => ({
   setHoveredBookKey: vi.fn(),
   setSearchBarVisible: vi.fn(),
   setSideBarVisible: vi.fn(),
+  // The tabs whose module has been evaluated
+  loaded: new Set<string>(),
 }));
 
 vi.mock('@/store/readerStore', () => ({
@@ -42,13 +44,15 @@ vi.mock('@/app/reader/components/sidebar/TOCView', () => ({
   default: () => <div>toc content</div>,
 }));
 
-vi.mock('@/app/reader/components/sidebar/BooknoteView', () => ({
-  default: ({ type }: { type: string }) => <div>{type} content</div>,
-}));
+vi.mock('@/app/reader/components/sidebar/BooknoteView', () => {
+  h.loaded.add('BooknoteView');
+  return { default: ({ type }: { type: string }) => <div>{type} content</div> };
+});
 
-vi.mock('@/app/reader/components/sidebar/ChatHistoryView', () => ({
-  default: () => <div>history content</div>,
-}));
+vi.mock('@/app/reader/components/sidebar/ChatHistoryView', () => {
+  h.loaded.add('ChatHistoryView');
+  return { default: () => <div>history content</div> };
+});
 
 vi.mock('@/app/reader/components/sidebar/TabNavigation', () => ({
   default: ({
@@ -84,7 +88,23 @@ describe('SidebarContent tab transitions', () => {
     vi.useRealTimers();
   });
 
-  test('keeps the old tab faded until the delayed swap is persisted', () => {
+  // The notes tab brings the Markdown and math renderers; the contents tab doesn't need them.
+  test('loads the other tabs only when one is first shown', async () => {
+    render(<SidebarContent bookDoc={{ toc: [] } as never} sideBarBookKey='book-1' />);
+    expect(screen.getByText('toc content')).toBeTruthy();
+    expect(h.loaded.has('BooknoteView')).toBe(false);
+    expect(h.loaded.has('ChatHistoryView')).toBe(false);
+
+    fireEvent.click(screen.getByRole('button', { name: 'annotations tab' }));
+    await act(async () => {
+      vi.advanceTimersByTime(300);
+      await vi.dynamicImportSettled();
+    });
+    expect(h.loaded.has('BooknoteView')).toBe(true);
+    expect(screen.getByText('annotation content')).toBeTruthy();
+  });
+
+  test('keeps the old tab faded until the delayed swap is persisted', async () => {
     const { container } = render(
       <SidebarContent bookDoc={{ toc: [] } as never} sideBarBookKey='book-1' />,
     );
@@ -100,7 +120,11 @@ describe('SidebarContent tab transitions', () => {
     expect(screen.getByText('toc content')).toBeTruthy();
     expect(h.setConfig).not.toHaveBeenCalled();
 
-    act(() => vi.advanceTimersByTime(1));
+    // The notes tab's code loads when it is first shown.
+    await act(async () => {
+      vi.advanceTimersByTime(1);
+      await vi.dynamicImportSettled();
+    });
     expect(screen.getByText('annotation content')).toBeTruthy();
     expect(container.querySelector('.scroll-container')?.className).toContain('opacity-100');
     expect(h.setConfig).toHaveBeenCalledOnce();

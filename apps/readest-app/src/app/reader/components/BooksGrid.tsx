@@ -1,4 +1,5 @@
 import clsx from 'clsx';
+import dynamic from 'next/dynamic';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import type { Insets } from '@/types/misc';
@@ -24,23 +25,29 @@ import { useContentInsets } from '../hooks/useContentInsets';
 import { useFirstPageShown } from '../hooks/useFirstPageShown';
 import { usePageOverflow } from '../hooks/usePageOverflow';
 import { type BottomCornerRadii, getCellCornerRadii, NO_CORNERS } from '../utils/footerBand';
-import SearchResultsNav from './sidebar/SearchResultsNav';
-import VimCommandLine from './VimCommandLine';
-import BooknotesNav from './sidebar/BooknotesNav';
 import FoliateViewer from './FoliateViewer';
-import HandwritingOverlay from './handwriting/HandwritingOverlay';
 import SectionInfo from './SectionInfo';
 import HeaderBar from './HeaderBar';
-import PageNavigationButtons from './PageNavigationButtons';
 import FooterBar from './footerbar/FooterBar';
 import ProgressBar from './ProgressBar';
-import BookmarkPullDown from './BookmarkPullDown';
-import Annotator from './annotator/Annotator';
-import FootnotePopup from './FootnotePopup';
-import HintInfo from './HintInfo';
 import ReadingRuler from './ReadingRuler';
 import DoubleBorder from './DoubleBorder';
-import ReadingStatsTracker from './ReadingStatsTracker';
+
+// Built only once the first page is shown (useFirstPageShown), so their code loads then too:
+// evaluating it with the reader's own on an e-ink reader running QuickJS (Readest Lite) delayed
+// the book's first page.
+const SearchResultsNav = dynamic(() => import('./sidebar/SearchResultsNav'), { ssr: false });
+const VimCommandLine = dynamic(() => import('./VimCommandLine'), { ssr: false });
+const BooknotesNav = dynamic(() => import('./sidebar/BooknotesNav'), { ssr: false });
+const HandwritingOverlay = dynamic(() => import('./handwriting/HandwritingOverlay'), {
+  ssr: false,
+});
+const PageNavigationButtons = dynamic(() => import('./PageNavigationButtons'), { ssr: false });
+const BookmarkPullDown = dynamic(() => import('./BookmarkPullDown'), { ssr: false });
+const Annotator = dynamic(() => import('./annotator/Annotator'), { ssr: false });
+const FootnotePopup = dynamic(() => import('./FootnotePopup'), { ssr: false });
+const HintInfo = dynamic(() => import('./HintInfo'), { ssr: false });
+const ReadingStatsTracker = dynamic(() => import('./ReadingStatsTracker'), { ssr: false });
 
 interface BooksGridProps {
   bookKeys: string[];

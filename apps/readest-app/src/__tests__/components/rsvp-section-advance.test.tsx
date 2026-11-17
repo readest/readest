@@ -17,14 +17,20 @@ const loadedSections: number[] = [];
 const controllerEventListeners = new Map<string, EventListener[]>();
 let capturedOnRequestNextPage: (() => Promise<void>) | null = null;
 
+// Whether the overlay's module has been evaluated
+const overlay = vi.hoisted(() => ({ loaded: false }));
+
 // ---------- Mocks ----------
 
-vi.mock('@/app/reader/components/rsvp/RSVPOverlay', () => ({
-  default: vi.fn(({ onRequestNextPage }: { onRequestNextPage: () => Promise<void> }) => {
-    capturedOnRequestNextPage = onRequestNextPage;
-    return null;
-  }),
-}));
+vi.mock('@/app/reader/components/rsvp/RSVPOverlay', () => {
+  overlay.loaded = true;
+  return {
+    default: vi.fn(({ onRequestNextPage }: { onRequestNextPage: () => Promise<void> }) => {
+      capturedOnRequestNextPage = onRequestNextPage;
+      return null;
+    }),
+  };
+});
 
 vi.mock('@/app/reader/components/rsvp/RSVPStartDialog', () => ({
   default: () => null,
@@ -179,6 +185,21 @@ describe('RSVPControl — section advance tracking', () => {
 
   afterEach(() => {
     cleanup();
+  });
+
+  // The overlay brings the dictionary; a reader that never speed-reads doesn't load it.
+  test('loads the overlay only when speed reading starts', async () => {
+    render(
+      <RSVPControl bookKey='test-book' gridInsets={{ top: 0, bottom: 0, left: 0, right: 0 }} />,
+    );
+    expect(overlay.loaded).toBe(false);
+
+    await act(async () => {
+      eventDispatcher.dispatch('rsvp-start', { bookKey: 'test-book' });
+      await new Promise<void>((r) => setTimeout(r, 20));
+    });
+    expect(overlay.loaded).toBe(true);
+    expect(capturedOnRequestNextPage).not.toBeNull();
   });
 
   test('advances directly to rsvpSectionRef+1, loading section 6 on second advance', async () => {
