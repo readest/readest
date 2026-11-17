@@ -65,7 +65,7 @@ describe('Readest Cloud auth routing (#6416)', () => {
     await supabase.auth.signInWithPassword({ email: 'a@b.c', password: 'pw' });
     fetchMock.mockClear();
     fetchMock.mockImplementation(async (input) => {
-      if (String(input).startsWith(PROXY_URL)) throw new TypeError('Failed to fetch');
+      if (new URL(String(input)).origin === PROXY_URL) throw new TypeError('Failed to fetch');
       return new Response(JSON.stringify({ ...session, access_token: 'access-2' }), {
         status: 200,
       });
