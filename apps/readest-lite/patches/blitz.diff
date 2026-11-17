@@ -2995,24 +2995,35 @@ diff -ruN blitz/packages/blitz-dom/src/node/text.rs blitz/packages/blitz-dom/src
 diff -ruN blitz/packages/blitz-dom/src/resolve.rs blitz/packages/blitz-dom/src/resolve.rs
 --- blitz/packages/blitz-dom/src/resolve.rs
 +++ blitz/packages/blitz-dom/src/resolve.rs
-@@ -35,8 +35,16 @@
+@@ -35,8 +35,26 @@
  };
  
  impl BaseDocument {
+-    /// Restyle the tree and then relayout it
 +    /// Whether the last `resolve` damaged any node, here or in a subdocument: if not, the
 +    /// document paints as it did before it (see `ShellProvider::request_restyle`).
 +    pub fn damaged_by_last_resolve(&self) -> bool {
 +        self.damaged_by_last_resolve
 +    }
 +
-     /// Restyle the tree and then relayout it
++    /// Restyle the tree and then relayout it, with the documents of the iframes it shows.
      pub fn resolve(&mut self, current_time_for_animations: f64) {
++        self.resolve_with(current_time_for_animations, true);
++    }
++
++    /// Restyle and relayout this document alone: what reading its own layout needs (an iframe's
++    /// size comes from this document, never from the document in it).
++    pub fn resolve_own(&mut self, current_time_for_animations: f64) {
++        self.resolve_with(current_time_for_animations, false);
++    }
++
++    fn resolve_with(&mut self, current_time_for_animations: f64, subdocs: bool) {
 +        // Until this resolve has run to the end, assume it changed the output.
 +        self.damaged_by_last_resolve = true;
          if TDocument::as_node(&self.root_node())
              .first_element_child()
              .is_none()
-@@ -49,6 +57,15 @@
+@@ -49,6 +67,15 @@
          // Process messages that have been sent to our message channel (e.g. loaded resource)
          self.handle_messages();
  
@@ -3028,21 +3039,22 @@ diff -ruN blitz/packages/blitz-dom/src/resolve.rs blitz/packages/blitz-dom/src/r
          // While render-blocking resources (e.g. stylesheets linked from the `<head>`) are
          // still loading, don't resolve styles or layout (matching how browsers block
          // rendering). Resolving styles before the document's stylesheets have loaded would
-@@ -72,6 +89,13 @@
+@@ -72,6 +99,14 @@
                  .retain(|_, last| last.elapsed() < FADE_DELAY + FADE_DURATION);
          }
  
 +        // Nothing changed since the last resolve: its styles and layout stand. Only the iframes
 +        // may have changed on their own.
 +        if self.is_resolved() {
-+            self.damaged_by_last_resolve = self.resolve_subdocs(current_time_for_animations);
++            self.damaged_by_last_resolve =
++                subdocs && self.resolve_subdocs(current_time_for_animations);
 +            return;
 +        }
 +
          let root_node_id = self.root_element().id;
          debug_timer!(timer, feature = "log-phase-times");
  
-@@ -92,7 +116,10 @@
+@@ -92,7 +127,10 @@
          }
  
          // Propagate damage flags (from mutation and restyles) up and down the tree
@@ -3054,7 +3066,7 @@ diff -ruN blitz/packages/blitz-dom/src/resolve.rs blitz/packages/blitz-dom/src/r
          timer.record_time("damage");
  
          // Fix up tree for layout (insert anonymous blocks as necessary, etc)
-@@ -115,6 +142,10 @@
+@@ -115,6 +153,10 @@
  
          // Resolve transforms
          self.resolve_transforms(root_node_id);
@@ -3065,7 +3077,7 @@ diff -ruN blitz/packages/blitz-dom/src/resolve.rs blitz/packages/blitz-dom/src/r
          timer.record_time("transform");
  
          // Build paint children / stacking contexts for damaged subtrees. Runs
-@@ -123,10 +154,18 @@
+@@ -123,10 +165,18 @@
          self.build_paint_tree(root_node_id);
          timer.record_time("paint_tree");
  
@@ -3084,11 +3096,29 @@ diff -ruN blitz/packages/blitz-dom/src/resolve.rs blitz/packages/blitz-dom/src/r
          timer.record_time("c_damage");
  
          // Re-resolve the hover node from the pointer position against the fresh
-@@ -138,7 +177,33 @@
+@@ -138,34 +188,81 @@
          // if the hovered node actually changes.
          self.refresh_hover();
  
-+        let subdocs_damaged = self.resolve_subdocs(current_time_for_animations);
+-        let mut subdoc_is_animating = false;
+-        for &node_id in &self.sub_document_nodes {
+-            let node = &mut self.nodes[node_id];
+-            let size = node.final_layout().size;
+-            if let Some(mut sub_doc) = node.subdoc_mut().map(|doc| doc.inner_mut()) {
+-                // Set viewport
+-                // viewport_mut handles change detection. So we just unconditionally set the values;
+-                let mut sub_viewport = sub_doc.viewport_mut();
+-                sub_viewport.hidpi_scale = self.viewport.hidpi_scale;
+-                sub_viewport.zoom = self.viewport.zoom;
+-                sub_viewport.color_scheme = self.viewport.color_scheme;
+-
+-                let viewport_scale = self.viewport.scale();
+-                sub_viewport.window_size = (
+-                    (size.width * viewport_scale) as u32,
+-                    (size.height * viewport_scale) as u32,
+-                );
+-                drop(sub_viewport);
++        let subdocs_damaged = subdocs && self.resolve_subdocs(current_time_for_animations);
 +        self.damaged_by_last_resolve = !damage.is_empty() || subdocs_damaged;
 +        timer.record_time("subdocs");
 +
@@ -3110,31 +3140,65 @@ diff -ruN blitz/packages/blitz-dom/src/resolve.rs blitz/packages/blitz-dom/src/r
 +            && self.deferred_construction_nodes.is_empty()
 +            && self.pending_style_image_nodes.is_empty()
 +    }
-+
-+    /// Resolves the iframes' documents; whether any of them was damaged.
-+    fn resolve_subdocs(&mut self, current_time_for_animations: f64) -> bool {
-         let mut subdoc_is_animating = false;
-+        let mut damaged = false;
-         for &node_id in &self.sub_document_nodes {
-             let node = &mut self.nodes[node_id];
-             let size = node.final_layout().size;
-@@ -159,13 +224,12 @@
  
++    /// Resolves the documents of the iframes that show; whether any of them was damaged. A
++    /// hidden iframe paints nothing, so its document is laid out only when read (or shown); it
++    /// still takes in its loaded resources, as its `load` waits on its stylesheets.
++    fn resolve_subdocs(&mut self, current_time_for_animations: f64) -> bool {
++        use style::computed_values::visibility::T as Visibility;
++        let mut subdoc_is_animating = false;
++        let mut damaged = false;
++        let nodes = std::mem::take(&mut self.sub_document_nodes);
++        for &node_id in &nodes {
++            let shown = self.nodes[node_id]
++                .primary_styles()
++                .is_none_or(|s| s.get_inherited_box().visibility == Visibility::Visible);
++            if !shown {
++                if let Some(mut sub_doc) = self.nodes[node_id].subdoc_mut().map(|d| d.inner_mut()) {
++                    sub_doc.handle_messages();
++                }
++                continue;
++            }
++            self.size_subdoc(node_id);
++            if let Some(mut sub_doc) = self.nodes[node_id].subdoc_mut().map(|doc| doc.inner_mut()) {
                  sub_doc.resolve(current_time_for_animations);
  
 +                damaged |= sub_doc.damaged_by_last_resolve();
                  subdoc_is_animating |= sub_doc.is_animating();
              }
          }
++        self.sub_document_nodes = nodes;
          self.subdoc_is_animating = subdoc_is_animating;
 -        timer.record_time("subdocs");
--
--        timer.print_times(&format!("Resolve({}): ", self.id()));
 +        damaged
++    }
+ 
+-        timer.print_times(&format!("Resolve({}): ", self.id()));
++    /// Sizes the viewport of the document in the iframe `node_id` to the iframe's laid out box.
++    pub fn size_subdoc(&mut self, node_id: NodeId) {
++        let hidpi_scale = self.viewport.hidpi_scale;
++        let zoom = self.viewport.zoom;
++        let color_scheme = self.viewport.color_scheme;
++        let viewport_scale = self.viewport.scale();
++        let Some(node) = self.nodes.get_mut(node_id) else {
++            return;
++        };
++        let size = node.final_layout().size;
++        if let Some(mut sub_doc) = node.subdoc_mut().map(|doc| doc.inner_mut()) {
++            // viewport_mut handles change detection. So we just unconditionally set the values;
++            let mut sub_viewport = sub_doc.viewport_mut();
++            sub_viewport.hidpi_scale = hidpi_scale;
++            sub_viewport.zoom = zoom;
++            sub_viewport.color_scheme = color_scheme;
++            sub_viewport.window_size = (
++                (size.width * viewport_scale) as u32,
++                (size.height * viewport_scale) as u32,
++            );
++        }
      }
  
      fn resolve_transforms(&mut self, node_id: NodeId) -> Rect {
-@@ -222,7 +286,8 @@
+@@ -222,7 +319,8 @@
              overflow = overflow.union(child_rect_in_self);
          }
          *self.nodes[node_id].hoisted_children.borrow_mut() = hoisted_children;
@@ -3144,7 +3208,7 @@ diff -ruN blitz/packages/blitz-dom/src/resolve.rs blitz/packages/blitz-dom/src/r
              let Some(pseudo) = pseudo else { continue };
              if self.nodes[pseudo].is_out_of_flow() {
                  continue;
-@@ -462,3 +527,70 @@
+@@ -462,3 +560,70 @@
          // taffy::print_tree(self, root_node_id)
      }
  }
