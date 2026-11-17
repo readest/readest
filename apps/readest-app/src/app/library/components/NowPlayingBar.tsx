@@ -73,19 +73,20 @@ const NowPlayingBar = ({ isSelectMode }: NowPlayingBarProps) => {
 
   // The session outlives its book but not this window: native narration
   // would keep playing after the webview is gone, so stop it when the window
-  // closes, as the reader does (#7523).
+  // closes or the app quits, as the reader does (#7523).
   const hasWindow = !!appService?.hasWindow;
   const hasSession = !!session;
   useEffect(() => {
     if (!hasWindow || !hasSession) return;
-    const unlisten = tauriHandleOnCloseWindow(() => ttsSessionManager.stopActive('quit')).catch(
-      (error) => {
-        console.info('Failed to register close-window listener:', error);
-        return () => {};
-      },
-    );
+    const stop = () => ttsSessionManager.stopActive('quit');
+    const unlisten = tauriHandleOnCloseWindow(stop).catch((error) => {
+      console.info('Failed to register close-window listener:', error);
+      return () => {};
+    });
+    eventDispatcher.on('quit-app', stop);
     return () => {
       void unlisten.then((fn) => fn());
+      eventDispatcher.off('quit-app', stop);
     };
   }, [hasWindow, hasSession]);
 

@@ -209,6 +209,16 @@ describe('NowPlayingBar', () => {
     expect(mockManager.stopActive).toHaveBeenCalledWith('quit');
   });
 
+  // Quit exits the process without closing the window first.
+  test('quitting the app stops a live session', async () => {
+    env.appService.hasWindow = true;
+    mockManager.session = makeSession();
+    render(<NowPlayingBar isSelectMode={false} />);
+
+    await eventDispatcher.dispatch('quit-app');
+    expect(mockManager.stopActive).toHaveBeenCalledWith('quit');
+  });
+
   test('leaves the window close alone without a session or a window', () => {
     env.appService.hasWindow = true;
     render(<NowPlayingBar isSelectMode={false} />);
