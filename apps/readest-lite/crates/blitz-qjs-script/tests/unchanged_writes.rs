@@ -78,7 +78,9 @@ fn clearing_and_restoring_an_input_name_repaints_only_if_a_selector_sees_it() {
         ..DocumentConfig::default()
     };
     let mut doc = QjsDocument::from_html(html, config);
+    // the first paint
     doc.inner_mut().resolve(0.0);
+    doc.inner_mut().take_damage();
     let counts = || {
         (
             requests.redraws.load(Ordering::Relaxed),
@@ -95,13 +97,13 @@ fn clearing_and_restoring_an_input_name_repaints_only_if_a_selector_sees_it() {
     assert_eq!(after_redraws, redraws);
     assert!(after_restyles > restyles);
     doc.inner_mut().resolve(0.0);
-    assert!(!doc.inner().damaged_by_last_resolve());
+    assert!(!doc.inner_mut().take_damage());
 
     // a name a selector matches restyles the input, and that damages it
     doc.eval("i.name = 'q';", "test");
     assert_eq!(counts(), (redraws, after_restyles + 1));
     doc.inner_mut().resolve(0.0);
-    assert!(doc.inner().damaged_by_last_resolve());
+    assert!(doc.inner_mut().take_damage());
 }
 
 // foliate-js's paginator marks the views it hides from assistive tech with `aria-hidden` on every
@@ -119,7 +121,9 @@ fn attributes_only_selectors_read_repaint_only_if_a_selector_sees_them() {
         ..DocumentConfig::default()
     };
     let mut doc = QjsDocument::from_html(html, config);
+    // the first paint
     doc.inner_mut().resolve(0.0);
+    doc.inner_mut().take_damage();
     let redraws = || requests.redraws.load(Ordering::Relaxed);
     let before = redraws();
     doc.eval(
@@ -132,7 +136,7 @@ fn attributes_only_selectors_read_repaint_only_if_a_selector_sees_them() {
     assert_eq!(doc.take_js_errors(), Vec::<String>::new());
     assert_eq!(redraws(), before);
     doc.inner_mut().resolve(0.0);
-    assert!(!doc.inner().damaged_by_last_resolve());
+    assert!(!doc.inner_mut().take_damage());
 
     // the same attributes, now matched by a selector, damage the element
     for change in [
@@ -141,11 +145,36 @@ fn attributes_only_selectors_read_repaint_only_if_a_selector_sees_them() {
     ] {
         doc.eval(change, "test");
         doc.inner_mut().resolve(0.0);
-        assert!(doc.inner().damaged_by_last_resolve(), "{change}");
+        assert!(doc.inner_mut().take_damage(), "{change}");
         doc.eval(
             "d.removeAttribute('aria-hidden'); d.className = '';",
             "test",
         );
         doc.inner_mut().resolve(0.0);
+        doc.inner_mut().take_damage();
     }
+}
+
+// The host paints a restyle only if resolving it damages something. A layout read between the
+// change and the paint resolved it first, so the paint's own resolve found nothing to do and the
+// change stayed off the screen: a class set and then measured (as React does) never showed.
+#[test]
+fn a_restyle_that_a_read_resolved_before_the_paint_still_paints() {
+    let html = "<!DOCTYPE html><html><head><style>.red { color: red }</style></head>\
+        <body><div id='d'>text</div></body></html>";
+    let mut doc = QjsDocument::from_html(html, DocumentConfig::default());
+    // the first paint
+    doc.inner_mut().resolve(0.0);
+    doc.inner_mut().take_damage();
+    doc.eval(
+        "const d = document.getElementById('d'); d.className = 'red'; d.offsetWidth;",
+        "test",
+    );
+    assert_eq!(doc.take_js_errors(), Vec::<String>::new());
+    // the paint: its own resolve has nothing left to do
+    doc.inner_mut().resolve(0.0);
+    assert!(doc.inner_mut().take_damage());
+    // and the next one has nothing new to paint
+    doc.inner_mut().resolve(0.0);
+    assert!(!doc.inner_mut().take_damage());
 }
