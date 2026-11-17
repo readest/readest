@@ -76,6 +76,34 @@ const library: VoiceLibrary = {
   getVoices: async (lang) => VOICES[lang] ?? [],
 };
 
+// Each custom service is a group of its own under the one custom engine.
+const customLibrary: VoiceLibrary = {
+  languages: ['en'],
+  getVoices: async () => [
+    {
+      id: 'custom-tts:kokoro',
+      name: 'Kokoro',
+      literalName: true,
+      engine: 'custom-tts',
+      voices: [{ id: 'kokoro:bella', name: 'Bella', lang: 'en-US', literalName: true }],
+    },
+    {
+      id: 'custom-tts:openai',
+      name: 'OpenAI',
+      literalName: true,
+      engine: 'custom-tts',
+      voices: [{ id: 'openai:alloy', name: 'Alloy', lang: 'en-US', literalName: true }],
+    },
+    ...VOICES['en']!.filter((group) => group.engine === 'edge-tts'),
+  ],
+};
+
+const engineSelect = () => screen.getByLabelText('Voice Engine') as HTMLSelectElement;
+const pickEngine = (label: string) => {
+  const option = [...engineSelect().options].find((o) => o.text === label)!;
+  fireEvent.change(engineSelect(), { target: { value: option.value } });
+};
+
 const renderPage = (props: Partial<React.ComponentProps<typeof TTSVoicesPage>> = {}) => {
   const onDefaultChange = vi.fn();
   render(
@@ -85,6 +113,7 @@ const renderPage = (props: Partial<React.ComponentProps<typeof TTSVoicesPage>> =
       bookKey={null}
       onBack={vi.fn()}
       onDefaultChange={onDefaultChange}
+      initialSection=''
       onLeave={vi.fn()}
       {...props}
     />,
@@ -147,7 +176,7 @@ describe('TTSVoicesPage', () => {
     state.range = doc.createRange();
     state.range.selectNodeContents(doc.getElementById('p')!);
     renderPage({ bookKey: 'book-1' });
-    expect(screen.queryByRole('combobox')).toBeNull();
+    expect(screen.queryByLabelText('Language')).toBeNull();
     expect(screen.getByText('English')).toBeTruthy();
     fireEvent.click(await screen.findByLabelText('Preview Heart'));
     await waitFor(() => expect(state.play).toHaveBeenCalled());
@@ -165,5 +194,90 @@ describe('TTSVoicesPage', () => {
     expect(state.play).not.toHaveBeenCalled();
     fireEvent.click(screen.getByLabelText('Preview Ryan'));
     await waitFor(() => expect(state.play).toHaveBeenCalled());
+  });
+
+  it('lists every engine at first; the engine picker narrows the list to one', async () => {
+    renderPage();
+    expect(await screen.findByText('Heart')).toBeTruthy();
+    expect(screen.getByText('Ryan')).toBeTruthy();
+    expect(engineSelect().selectedOptions[0]!.text).toBe('All');
+
+    pickEngine('Edge TTS');
+    expect(screen.getByText('Ryan')).toBeTruthy();
+    expect(screen.queryByText('Heart')).toBeNull();
+
+    pickEngine('All');
+    expect(screen.getByText('Heart')).toBeTruthy();
+  });
+
+  it('offers each custom service on its own, by its name', async () => {
+    renderPage({ library: customLibrary });
+    await screen.findByText('Alloy');
+    expect([...engineSelect().options].map((o) => o.text)).toEqual([
+      'All',
+      'Kokoro',
+      'OpenAI',
+      'Edge TTS',
+    ]);
+    pickEngine('OpenAI');
+    expect(screen.getByText('Alloy')).toBeTruthy();
+    expect(screen.queryByText('Bella')).toBeNull();
+  });
+
+  it('the filter finds voices by name or language across every engine', async () => {
+    renderPage();
+    await screen.findByText('Heart');
+    fireEvent.change(screen.getByLabelText('Filter voices'), { target: { value: 'ryan' } });
+    expect(screen.getByText('Ryan')).toBeTruthy();
+    expect(screen.queryByText('Heart')).toBeNull();
+
+    fireEvent.change(screen.getByLabelText('Filter voices'), {
+      target: { value: 'united kingdom' },
+    });
+    expect(screen.getByText('Ryan')).toBeTruthy();
+    expect(screen.queryByText('Heart')).toBeNull();
+
+    fireEvent.click(screen.getByLabelText('Clear'));
+    expect(screen.getByText('Heart')).toBeTruthy();
+    expect((screen.getByLabelText('Filter voices') as HTMLInputElement).value).toBe('');
+  });
+
+  it('the filter and the gender tab narrow the list together', async () => {
+    renderPage();
+    await screen.findByText('Heart');
+    fireEvent.click(screen.getByRole('radio', { name: 'Female' }));
+    fireEvent.change(screen.getByLabelText('Filter voices'), { target: { value: 'ethan' } });
+    expect(screen.queryByText('Ethan')).toBeNull();
+    expect(screen.getByText('No voices match this filter')).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('radio', { name: 'All' }));
+    expect(screen.getByText('Ethan')).toBeTruthy();
+  });
+
+  it('switching engines resets the gender filter to all', async () => {
+    renderPage();
+    await screen.findByText('Heart');
+    fireEvent.click(screen.getByRole('radio', { name: 'Female' }));
+    expect(screen.queryByText('Ethan')).toBeNull();
+
+    pickEngine('Readest Voice');
+    expect(screen.getByText('Ethan')).toBeTruthy();
+    expect(screen.getByRole('radio', { name: 'All' }).getAttribute('aria-checked')).toBe('true');
+  });
+
+  it('reports the engine on show when it leaves, and starts on the one it is given', async () => {
+    const onLeave = vi.fn();
+    renderPage({ onLeave });
+    await screen.findByText('Heart');
+    pickEngine('Readest Voice');
+    const shown = engineSelect().value;
+    fireEvent.click(screen.getByText('Ethan'));
+    expect(onLeave).toHaveBeenCalledWith(shown);
+    cleanup();
+
+    renderPage({ initialSection: shown });
+    expect(await screen.findByText('Heart')).toBeTruthy();
+    expect(screen.queryByText('Ryan')).toBeNull();
+    expect(engineSelect().selectedOptions[0]!.text).toBe('Readest Voice');
   });
 });

@@ -2838,5 +2838,7 @@
   "Move to parent group": "Move to parent group",
   "Done": "მზადაა",
   "Solid Footer in Scrolled Mode": "მყარი ქვედა კოლონტიტული გადაადგილების რეჟიმში",
-  "Search by field:": "ველის მიხედვით ძიება:"
+  "Search by field:": "ველის მიხედვით ძიება:",
+  "Voice Engine": "ხმის ძრავა",
+  "Filter voices": "ხმების გაფილტვრა"
 }

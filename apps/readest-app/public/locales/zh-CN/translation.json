@@ -2765,5 +2765,7 @@
   "Move to parent group": "移到上层",
   "Done": "完成",
   "Solid Footer in Scrolled Mode": "滚动模式下使用实心页脚",
-  "Search by field:": "按字段搜索："
+  "Search by field:": "按字段搜索：",
+  "Voice Engine": "发音引擎",
+  "Filter voices": "筛选发音人"
 }

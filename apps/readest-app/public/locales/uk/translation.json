@@ -2984,5 +2984,7 @@
   "Move to parent group": "Перемістити до батьківської групи",
   "Done": "Готово",
   "Solid Footer in Scrolled Mode": "Суцільна нижня частина в режимі прокрутки",
-  "Search by field:": "Пошук за полем:"
+  "Search by field:": "Пошук за полем:",
+  "Voice Engine": "Голосовий рушій",
+  "Filter voices": "Фільтр голосів"
 }

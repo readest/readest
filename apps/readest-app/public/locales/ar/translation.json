@@ -3130,5 +3130,7 @@
   "Move to parent group": "نقل إلى المجموعة الأعلى",
   "Done": "تم",
   "Solid Footer in Scrolled Mode": "شريط تذييل مصمت في وضع التمرير",
-  "Search by field:": "البحث حسب الحقل:"
+  "Search by field:": "البحث حسب الحقل:",
+  "Voice Engine": "محرك الصوت",
+  "Filter voices": "تصفية الأصوات"
 }

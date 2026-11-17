@@ -2838,5 +2838,7 @@
   "Move to parent group": "In die übergeordnete Gruppe verschieben",
   "Done": "Fertig",
   "Solid Footer in Scrolled Mode": "Durchgehende Fußzeilenleiste im Scroll-Modus",
-  "Search by field:": "Nach Feld suchen:"
+  "Search by field:": "Nach Feld suchen:",
+  "Voice Engine": "Sprach-Engine",
+  "Filter voices": "Stimmen filtern"
 }

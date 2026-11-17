@@ -2765,5 +2765,7 @@
   "Move to parent group": "상위 그룹으로 이동",
   "Done": "완료",
   "Solid Footer in Scrolled Mode": "스크롤 모드에서 단색 푸터 띠",
-  "Search by field:": "필드로 검색:"
+  "Search by field:": "필드로 검색:",
+  "Voice Engine": "음성 엔진",
+  "Filter voices": "음성 필터"
 }

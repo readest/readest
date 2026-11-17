@@ -2838,5 +2838,7 @@
   "Move to parent group": "Áthelyezés a szülőcsoportba",
   "Done": "Kész",
   "Solid Footer in Scrolled Mode": "Tömör lábléc görgetett módban",
-  "Search by field:": "Keresés mező szerint:"
+  "Search by field:": "Keresés mező szerint:",
+  "Voice Engine": "Hangmotor",
+  "Filter voices": "Hangok szűrése"
 }
