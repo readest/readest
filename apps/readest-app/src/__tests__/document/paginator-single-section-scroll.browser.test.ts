@@ -98,11 +98,17 @@ describe('single-section scrolling across chapter boundaries', () => {
     const indices = () => paginator.getContents().map((c) => c.index);
     const maxScroll = () => container().scrollHeight - container().clientHeight;
     // Start a swipe at a boundary and wait for the adjacent chapter to load
-    // under the finger.
+    // under the finger. The chapter shows in getContents() before its load
+    // finishes, and the pull only follows the finger after that: wait for
+    // the load's last event, then a task for the pull to take its start.
     const grab = async (y: number, step: number, both: number[]) => {
+      const loaded = new Promise((resolve) =>
+        paginator.addEventListener('create-overlayer', () => setTimeout(resolve), { once: true }),
+      );
       touch('touchstart', y);
       touch('touchmove', y + step);
-      await expect.poll(indices).toEqual(both);
+      await loaded;
+      expect(indices()).toEqual(both);
     };
 
     it('pulls the next chapter up with the finger and settles on it', async () => {
