@@ -10,6 +10,7 @@ import { BsPencilSquare } from 'react-icons/bs';
 import { BsTranslate } from 'react-icons/bs';
 import { FaHeadphones } from 'react-icons/fa6';
 import { IoIosBuild } from 'react-icons/io';
+import { LuScanSearch } from 'react-icons/lu';
 import { AnnotationToolType } from '@/types/annotator';
 import { stubTranslation as _ } from '@/utils/misc';
 
@@ -116,3 +117,8 @@ export const annotationToolButtons = createAnnotationToolButtons([
 export const annotationToolQuickActions = annotationToolButtons.filter(
   (button) => button.quickAction,
 );
+
+export const xrayToolButton = {
+  label: _('X-Ray'),
+  Icon: LuScanSearch,
+};

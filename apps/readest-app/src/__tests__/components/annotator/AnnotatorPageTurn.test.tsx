@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import { act, cleanup, render } from '@testing-library/react';
+import { act, cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, test, vi } from 'vitest';
 
 import { clearBookProgress, setBookProgress, useBookProgress } from '@/store/readerProgressStore';
@@ -12,6 +12,7 @@ import type { TextSelection } from '@/utils/sel';
 
 const h = vi.hoisted(() => ({
   appService: {
+    appPlatform: 'tauri',
     isAndroidApp: true,
     isMobile: true,
     getCoverImageBlobUrl: () => new Promise<string>((resolve) => (h.cover = resolve)),
@@ -56,6 +57,7 @@ const h = vi.hoisted(() => ({
 }));
 
 const settings = {
+  aiSettings: { enabled: false, reedy: { enabled: false }, aiGatewayApiKey: '' },
   globalReadSettings: {
     highlightStyle: 'highlight',
     highlightStyles: { highlight: 'yellow', underline: 'green', squiggly: 'blue' },
@@ -248,6 +250,11 @@ vi.mock('@/app/reader/components/annotator/QuoteCardDialog', () => ({
     return null;
   },
 }));
+vi.mock('@/app/reader/components/annotator/XRayPopup', () => ({
+  default: ({ currentCfi }: { currentCfi: string }) => (
+    <span data-testid='xray-location'>{currentCfi}</span>
+  ),
+}));
 vi.mock('@/app/reader/components/annotator/DictionaryPopup', () => ({ default: () => null }));
 vi.mock('@/app/reader/components/annotator/DictionarySheet', () => ({ default: () => null }));
 vi.mock('@/app/reader/components/annotator/TranslatorPopup', () => ({ default: () => null }));
@@ -273,6 +280,9 @@ describe('Annotator on a page turn', () => {
   afterEach(() => {
     cleanup();
     clearBookProgress('book-1');
+    settings.aiSettings.enabled = false;
+    settings.aiSettings.reedy.enabled = false;
+    settings.aiSettings.aiGatewayApiKey = '';
     vi.clearAllMocks();
   });
 
@@ -318,6 +328,49 @@ describe('Annotator on a page turn', () => {
     await act(async () => h.cover!('blob:cover'));
 
     expect(h.quoteCard?.chapter).toBe('Chapter 2');
+    gridCell.remove();
+  });
+
+  test('updates the open X-Ray popup on page turns without re-rendering its toolbar', async () => {
+    settings.aiSettings.enabled = true;
+    settings.aiSettings.reedy.enabled = true;
+    settings.aiSettings.aiGatewayApiKey = 'test-key';
+    const first = 'epubcfi(/6/4!/4,/2/1:0,/8/1:9)';
+    const second = 'epubcfi(/6/6!/4,/2/1:0,/8/1:9)';
+    turnTo(first, 2);
+    const gridCell = document.createElement('div');
+    gridCell.id = 'gridcell-book-1';
+    document.body.appendChild(gridCell);
+    render(<Annotator bookKey='book-1' contentInsets={{ top: 0, right: 0, bottom: 0, left: 0 }} />);
+    const doc = document.implementation.createHTMLDocument('page');
+    doc.body.innerHTML = '<p>a passage</p>';
+    const range = doc.createRange();
+    range.selectNodeContents(doc.body.firstChild!);
+    act(() =>
+      h.setSelection!({
+        key: 'book-1',
+        text: 'a passage',
+        page: 2,
+        range,
+        index: 2,
+        cfi: 'epubcfi(/6/4!/4/2,/1:0,/1:9)',
+      }),
+    );
+    const xray = h.buttons.find((button) => button.tooltipText === 'X-Ray');
+    expect(xray).toBeDefined();
+    act(() => xray!.onClick());
+    await vi.waitFor(() => expect(screen.getByTestId('xray-location').textContent).toBe(first));
+    const { renders } = h;
+
+    turnTo(second, 3);
+    await vi.waitFor(() => expect(screen.getByTestId('xray-location').textContent).toBe(second));
+    turnTo(first, 2);
+    await vi.waitFor(() => expect(screen.getByTestId('xray-location').textContent).toBe(first));
+    act(() => setBookProgress('book-1', null));
+    expect(screen.queryByTestId('xray-location')).toBeNull();
+    turnTo(second, 3);
+    await vi.waitFor(() => expect(screen.getByTestId('xray-location').textContent).toBe(second));
+    expect(h.renders).toBe(renders);
     gridCell.remove();
   });
 });
