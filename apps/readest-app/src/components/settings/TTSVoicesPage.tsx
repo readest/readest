@@ -25,6 +25,9 @@ interface TTSVoicesPageProps {
   bookKey: string | null;
   onBack: () => void;
   onDefaultChange: () => void;
+  // Runs just before the page leaves for sign-in or the plans page (a locked
+  // voice, or a Readest Voice preview signed out).
+  onLeave: () => void;
 }
 
 // Voices for one language, each previewable, one of them chosen as the voice
@@ -35,6 +38,7 @@ const TTSVoicesPage: React.FC<TTSVoicesPageProps> = ({
   bookKey,
   onBack,
   onDefaultChange,
+  onLeave,
 }) => {
   const _ = useTranslation();
   const router = useAppRouter();
@@ -63,7 +67,7 @@ const TTSVoicesPage: React.FC<TTSVoicesPageProps> = ({
     return pageText
       ? { text: pageText, lang }
       : { text: getSampleText(voiceLang), lang: voiceLang };
-  });
+  }, onLeave);
 
   const languages = useMemo(
     () =>
@@ -81,6 +85,7 @@ const TTSVoicesPage: React.FC<TTSVoicesPageProps> = ({
   };
 
   const handleUpgrade = () => {
+    onLeave();
     if (user) navigateToProfile(router);
     else navigateToLogin(router);
   };
