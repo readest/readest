@@ -84,6 +84,8 @@ const runHandler = (
   context: PluginWorkerOperationContext,
 ): Promise<unknown> => {
   switch (request.operation) {
+    case 'recognize':
+      return handlers.recognize?.(request.payload, context) ?? missingHandler(request.operation);
     case 'probe':
       return handlers.probe?.(request.payload, context) ?? missingHandler(request.operation);
     case 'inspect':

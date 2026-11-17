@@ -254,6 +254,7 @@ test.describe('Annotation', () => {
 
     await clickHighlight();
     await reader.selectHighlightColor('green');
+    await expect(reader.annotationPopup).toBeHidden();
     await expect(noteBubbles).toHaveCount(1);
 
     await clickHighlight();
