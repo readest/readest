@@ -42,6 +42,24 @@ describe('CFI of a range starting between children (#7482)', () => {
     expect(restored.intersectsNode(img)).toBe(true);
   });
 
+  // A cfi-skip wrapper (Word Lens, translation, dialogue spans) has no CFI
+  // step of its own: its children are indexed as the parent's.
+  it('keeps a start before a cfi-skip wrapper', () => {
+    const skipDoc = new DOMParser().parseFromString(
+      '<html xmlns="http://www.w3.org/1999/xhtml"><head><title></title></head><body>' +
+        '<p>Alpha <b>bravo</b><span cfi-skip="">charlie</span> delta</p>' +
+        '</body></html>',
+      'application/xhtml+xml',
+    );
+    const para = skipDoc.querySelector('p')!;
+    const range = skipDoc.createRange();
+    range.setStart(para, 2);
+    range.setEnd(skipDoc.querySelector('span')!.firstChild!, 'charlie'.length);
+    expect(range.toString()).toBe('charlie');
+    const restored = toRange(skipDoc, parse(fromRange(range))) as Range | null;
+    expect(restored?.toString()).toBe('charlie');
+  });
+
   it('keeps a collapsed range after an inline element at that point', () => {
     const range = doc.createRange();
     range.setStart(p, 2);
