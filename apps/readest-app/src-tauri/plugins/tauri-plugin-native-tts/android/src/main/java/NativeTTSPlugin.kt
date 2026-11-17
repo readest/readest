@@ -156,8 +156,9 @@ class NativeTTSPlugin(private val activity: Activity) : Plugin(activity) {
     private var isPaused = AtomicBoolean(false)
     private var isSpeaking = AtomicBoolean(false)
     private var currentRate = AtomicReference<Float>(1.0f)
-    private var currentPitch = AtomicReference<Float>(1.0f)
-
+    // null = never set by the app, so the engine keeps the user's system default pitch
+    private var currentPitch = AtomicReference<Float?>(null)
+    
     // Continuous local-file playback for EPUB Media Overlays and paired
     // audiobooks. The WebView cannot expose Android app-private files as a
     // seekable Blob without first reading the whole file into memory; ExoPlayer
@@ -356,7 +357,7 @@ class NativeTTSPlugin(private val activity: Activity) : Plugin(activity) {
             try {
                 textToSpeech?.apply {
                     setSpeechRate(currentRate.get())
-                    setPitch(currentPitch.get())
+                    currentPitch.get()?.let { setPitch(it) }
                 }
                 
                 val params = Bundle().apply {
