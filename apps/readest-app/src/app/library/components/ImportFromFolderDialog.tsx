@@ -290,13 +290,11 @@ const ImportFromFolderDialog: React.FC<ImportFromFolderDialogProps> = ({
         // OFF is the exception when the picked folder is registered: it
         // was chosen for another folder, and OK would unregister this one
         // and copy its books. Without a kept choice the box follows the
-        // picked folder (ON when registered, last choice otherwise).
-        if (
-          readInPlaceChoice === false &&
-          !isCurrentDirectory(picked) &&
-          isRegisteredExternalRoot?.(picked)
-        ) {
-          setReadInPlaceChoice(null);
+        // picked folder (ON when registered, last choice otherwise). The
+        // box stays clickable while the picker is open, so read the latest
+        // choice rather than the one from when the pick started.
+        if (!isCurrentDirectory(picked) && isRegisteredExternalRoot?.(picked)) {
+          setReadInPlaceChoice((choice) => (choice === false ? null : choice));
         }
       }
     } finally {

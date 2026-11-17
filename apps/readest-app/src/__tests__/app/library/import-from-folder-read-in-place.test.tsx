@@ -167,4 +167,29 @@ describe('Import-from-Folder dialog: read-in-place toggle (#5680)', () => {
       expect.objectContaining({ directory: REGISTERED, readInPlace: false }),
     );
   });
+
+  it('resets an OFF chosen while the folder picker is open (#7519)', async () => {
+    const OTHER = '/Users/me/Other';
+    let resolvePick: (dir: string) => void = () => {};
+    const { props } = setup({
+      isRegisteredExternalRoot: (dir: string) => dir === REGISTERED || dir === OTHER,
+      onPickDirectory: vi.fn(() => new Promise<string>((r) => (resolvePick = r))),
+    });
+
+    // Open the picker, then uncheck the box while it is still open.
+    fireEvent.click(screen.getByLabelText('Choose a folder'));
+    fireEvent.click(getReadInPlaceCheckbox());
+    expect(getReadInPlaceCheckbox().checked).toBe(false);
+
+    resolvePick(OTHER);
+    await waitFor(() =>
+      expect(screen.getByLabelText('Choose a folder').getAttribute('title')).toBe(OTHER),
+    );
+
+    expect(getReadInPlaceCheckbox().checked).toBe(true);
+    fireEvent.click(screen.getByText('OK'));
+    expect(props.onConfirm).toHaveBeenCalledWith(
+      expect.objectContaining({ directory: OTHER, readInPlace: true }),
+    );
+  });
 });
