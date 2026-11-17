@@ -90,6 +90,10 @@ import {
 } from '@/utils/window';
 
 import { getActiveBookshelfGroupBy } from '@/services/bookshelves/grouping';
+import {
+  BookshelfGroupRecoveryError,
+  recoverBookshelfGroupChanges,
+} from '@/services/bookshelves/groupChanges';
 import { LibraryGroupByType } from '@/types/settings';
 import { BookMetadata } from '@/libs/document';
 import { AboutWindow } from '@/components/AboutWindow';
@@ -790,7 +794,22 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
       }
 
       // Reuse the library from the store when we return from the reader
-      const library = hasCachedLibrary ? libraryBooks : await appService.loadLibraryBooks();
+      let library = hasCachedLibrary ? libraryBooks : await appService.loadLibraryBooks();
+      try {
+        library = await recoverBookshelfGroupChanges(envConfig, library);
+      } catch (error) {
+        // A readable library remains usable while an interrupted move waits for
+        // write access. Its recovery journal is retained for the next load.
+        if (error instanceof BookshelfGroupRecoveryError) library = error.library;
+        console.error(
+          'Failed to recover bookshelf group changes:',
+          error instanceof BookshelfGroupRecoveryError ? error.cause : error,
+        );
+        eventDispatcher.dispatch('toast', {
+          type: 'error',
+          message: _('Failed to save bookshelves.'),
+        });
+      }
       let opened = false;
       if (checkOpenWithBooks) {
         opened = await handleOpenWithBooks(appService, library);

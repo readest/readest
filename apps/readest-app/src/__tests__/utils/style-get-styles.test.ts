@@ -550,6 +550,21 @@ describe('getColorStyles branches (via getStyles)', () => {
     expect(css).toContain('border-color: #000 !important');
   });
 
+  // #7415: the resolved table colors are asserted in
+  // override-color-tables.browser.test.ts; this only pins the rule's gating.
+  const tableRule = (css: string) =>
+    css.match(/table, colgroup, col, thead, tbody, tfoot, tr, th, td, caption \{([^}]*)\}/)?.[1] ??
+    '';
+
+  it('overrides table backgrounds only when overrideColor is on (#7415)', () => {
+    const theme = makeThemeCode({ bg: '#fff', fg: '#000' });
+    const on = tableRule(getStyles(makeViewSettings({ overrideColor: true }), theme));
+    expect(on).toContain('background-color: #fff !important');
+    expect(on).toContain('background-image: none !important');
+    const off = tableRule(getStyles(makeViewSettings({ overrideColor: false }), theme));
+    expect(off).not.toContain('!important');
+  });
+
   it('does not force color overrides when overrideColor is false', () => {
     const vs = makeViewSettings({ overrideColor: false });
     const theme = makeThemeCode({ bg: '#fff', fg: '#000' });

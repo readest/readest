@@ -19,6 +19,16 @@ use tauri::TitleBarStyle;
 use std::path::PathBuf;
 use tauri::{AppHandle, Manager};
 use tauri_plugin_fs::FsExt;
+// These plugins only register on mobile, but capabilities/default.json names
+// their permissions and tauri-build resolves those on every target, so the
+// crates must stay dependencies everywhere. Mark them used so cargo's
+// unused_dependencies lint (Rust 1.100) doesn't flag them on desktop.
+#[cfg(desktop)]
+use tauri_plugin_biometric as _;
+#[cfg(desktop)]
+use tauri_plugin_haptics as _;
+#[cfg(not(target_os = "ios"))]
+use tauri_plugin_sign_in_with_apple as _;
 
 #[cfg(desktop)]
 use tauri::{Listener, Url};
@@ -26,6 +36,8 @@ mod backup_zip;
 #[cfg(target_os = "macos")]
 mod browser_cookies_macos;
 mod browser_fetch;
+#[cfg(all(target_os = "linux", any(feature = "cef", test)))]
+mod cef_local_network;
 mod clip_url;
 mod comic_parser;
 mod cover_thumbnail;
@@ -644,7 +656,9 @@ pub fn run() {
             }),
             _ => cef,
         };
-        builder.runtime(cef)
+        builder
+            .runtime(cef)
+            .on_page_load(cef_local_network::allow_for_app_page)
     };
 
     let builder = builder

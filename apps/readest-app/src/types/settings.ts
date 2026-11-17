@@ -17,6 +17,7 @@ import type { DictionarySettings, ImportedDictionary } from '@/services/dictiona
 export type ThemeType = 'light' | 'dark' | 'auto';
 export type LibraryViewModeType = 'grid' | 'list';
 export const LibrarySortByType = {
+  Custom: 'custom',
   Title: 'title',
   Author: 'author',
   Updated: 'updated',
@@ -545,6 +546,12 @@ export interface SystemSettings {
   bookshelves?: BookshelfState;
   libraryViewMode: LibraryViewModeType;
   librarySortBy: LibrarySortByType;
+  /**
+   * Custom order picked in the View menu. Kept out of `librarySortBy`, which
+   * stays a metadata sort: releases before custom order give every shelf with
+   * an unknown sort no books, so a downgrade would open on an empty library.
+   */
+  librarySortCustom?: boolean;
   librarySortAscending: boolean;
   /**
    * Whether the primary sort uses a smart default derived from `libraryGroupBy`.

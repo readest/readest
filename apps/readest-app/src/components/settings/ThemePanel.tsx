@@ -34,6 +34,7 @@ import { useFileSelector } from '@/hooks/useFileSelector';
 import { PREDEFINED_TEXTURES } from '@/styles/textures';
 import { useAtmosphereStore } from '@/store/atmosphereStore';
 import { DefaultHighlightColor, HighlightColor, UserHighlightColor } from '@/types/book';
+import type { SystemSettings } from '@/types/settings';
 import clsx from 'clsx';
 import { ScopeSwitch, SectionTitle, SettingLabel } from './primitives';
 import { HIGHLIGHT_COLOR_HEX } from '@/services/constants';
@@ -553,27 +554,32 @@ const ThemePanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
     saveCustomTextures(envConfig);
   };
 
+  const saveHighlightSettings = (patch: Partial<SystemSettings['globalReadSettings']>) => {
+    const { settings: current } = useSettingsStore.getState();
+    // Account sync publishes when the settings reference changes.
+    const next = {
+      ...current,
+      globalReadSettings: { ...current.globalReadSettings, ...patch },
+    };
+    setSettings(next);
+    void saveSettings(envConfig, next);
+  };
+
   const handleCustomHighlightColorsChange = (colors: Record<HighlightColor, string>) => {
     setCustomHighlightColors(colors);
-    settings.globalReadSettings.customHighlightColors = colors;
-    setSettings(settings);
-    saveSettings(envConfig, settings);
+    saveHighlightSettings({ customHighlightColors: colors });
   };
 
   const handleUserHighlightColorsChange = (colors: UserHighlightColor[]) => {
     setUserHighlightColors(colors);
-    settings.globalReadSettings.userHighlightColors = colors;
-    setSettings(settings);
-    saveSettings(envConfig, settings);
+    saveHighlightSettings({ userHighlightColors: colors });
   };
 
   const handleDefaultHighlightLabelsChange = (
     labels: Partial<Record<DefaultHighlightColor, string>>,
   ) => {
     setDefaultHighlightLabels(labels);
-    settings.globalReadSettings.defaultHighlightLabels = labels;
-    setSettings(settings);
-    saveSettings(envConfig, settings);
+    saveHighlightSettings({ defaultHighlightLabels: labels });
   };
 
   return (
