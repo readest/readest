@@ -1298,6 +1298,30 @@ describe('useKOSync — Kavita zero-based percentage (#7503)', () => {
       'Approximately page 2 of 40 (5.00%)',
     );
   });
+
+  test('prompt: a KOReader report is never read as zero-based', async () => {
+    // KOReader's page 2 of 22 has Kavita's numbers for page 2 of 11.
+    setupKavita(2, '2', 2 / 22);
+    h.remote = { ...h.remote, device: 'KOReader' };
+    h.getProgressMock.mockResolvedValue(h.remote);
+    const { result } = renderHook(() => useKOSync('h1-view1'));
+    await settle();
+
+    expect(result.current.syncState).toBe('conflict');
+    expect(result.current.conflictDetails?.remote.preview).toBe(
+      'Approximately page 2 of 22 (9.09%)',
+    );
+  });
+
+  test('prompt: the same page of a copy one page longer still prompts', async () => {
+    setupKavita(5, '5', 5 / 12);
+    h.remote = { ...h.remote, device: 'KOReader' };
+    h.getProgressMock.mockResolvedValue(h.remote);
+    const { result } = renderHook(() => useKOSync('h1-view1'));
+    await settle();
+
+    expect(result.current.syncState).toBe('conflict');
+  });
 });
 
 describe('useKOSync — a provider with its own client and CFI positions (#7337)', () => {

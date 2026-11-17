@@ -64,33 +64,38 @@ describe('getRemoteFraction', () => {
 describe('getRemoteTotalPages', () => {
   it('reads a Kavita report with the zero-based formula', () => {
     // Kavita: percentage = (page - 1) / total for an 11-page PDF.
-    expect(getRemoteTotalPages(2, 0.09090909, 11)).toBe(11);
-    expect(getRemoteTotalPages(5, 0.36363637, 11)).toBe(11);
-    expect(getRemoteTotalPages(10, 0.8181818, 11)).toBe(11);
-    expect(getRemoteTotalPages(11, 10 / 11, 11)).toBe(11);
+    expect(getRemoteTotalPages(2, 0.09090909, 11, true)).toBe(11);
+    expect(getRemoteTotalPages(5, 0.36363637, 11, true)).toBe(11);
+    expect(getRemoteTotalPages(10, 0.8181818, 11, true)).toBe(11);
+    expect(getRemoteTotalPages(11, 10 / 11, 11, true)).toBe(11);
   });
 
-  it('reads a KOReader report with the one-based formula', () => {
-    // KOReader: percentage = page / total for an 11-page PDF.
-    expect(getRemoteTotalPages(2, 2 / 11, 11)).toBe(11);
-    expect(getRemoteTotalPages(11, 1, 11)).toBe(11);
+  it('reads a one-based report from a server that may be zero-based', () => {
+    expect(getRemoteTotalPages(2, 2 / 11, 11, true)).toBe(11);
+    expect(getRemoteTotalPages(11, 1, 11, true)).toBe(11);
   });
 
-  it('keeps the KOReader reading with no local total to check against', () => {
-    expect(getRemoteTotalPages(2, 0.09090909, 0)).toBe(22);
+  it('never reads a KOReader report as zero-based', () => {
+    // KOReader's page 2 of 22 has the numbers of Kavita's page 2 of 11.
+    expect(getRemoteTotalPages(2, 2 / 22, 11, false)).toBe(22);
+    expect(getRemoteTotalPages(2, 2 / 11, 11, false)).toBe(11);
   });
 
-  it('keeps the KOReader reading when neither reading matches the local total', () => {
-    expect(getRemoteTotalPages(2, 0.09090909, 70)).toBe(22);
+  it('keeps the one-based reading with no local total to check against', () => {
+    expect(getRemoteTotalPages(2, 0.09090909, 0, true)).toBe(22);
+  });
+
+  it('keeps the one-based reading when neither reading matches the local total', () => {
+    expect(getRemoteTotalPages(2, 0.09090909, 70, true)).toBe(22);
     // The zero-based reading (16, or 0) is closer to 11 but still no match.
-    expect(getRemoteTotalPages(5, 0.25, 11)).toBe(20);
-    expect(getRemoteTotalPages(1, 0.01, 11)).toBe(100);
+    expect(getRemoteTotalPages(5, 0.25, 11, true)).toBe(20);
+    expect(getRemoteTotalPages(1, 0.01, 11, true)).toBe(100);
   });
 
   it('returns undefined when the percentage is unusable', () => {
-    expect(getRemoteTotalPages(2, 0, 11)).toBeUndefined();
-    expect(getRemoteTotalPages(2, -0.2, 11)).toBeUndefined();
-    expect(getRemoteTotalPages(2, NaN, 11)).toBeUndefined();
-    expect(getRemoteTotalPages(2, Infinity, 11)).toBeUndefined();
+    expect(getRemoteTotalPages(2, 0, 11, true)).toBeUndefined();
+    expect(getRemoteTotalPages(2, -0.2, 11, true)).toBeUndefined();
+    expect(getRemoteTotalPages(2, NaN, 11, true)).toBeUndefined();
+    expect(getRemoteTotalPages(2, Infinity, 11, true)).toBeUndefined();
   });
 });

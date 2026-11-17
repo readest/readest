@@ -344,8 +344,12 @@ export const useKOSync = (bookKey: string, provider: KosyncProgressProvider = ko
         // and only approximate.
         const remoteTotalPages =
           remotePercentage > 0 && hasRemotePage
-            ? (getRemoteTotalPages(remotePage, remotePercentage, localTotalPages) ??
-              localTotalPages)
+            ? (getRemoteTotalPages(
+                remotePage,
+                remotePercentage,
+                localTotalPages,
+                remote.device === 'Kavita',
+              ) ?? localTotalPages)
             : localTotalPages;
         const pagesMatch = hasRemotePage && Math.abs(localTotalPages - remoteTotalPages) <= 1;
 
@@ -362,18 +366,19 @@ export const useKOSync = (bookKey: string, provider: KosyncProgressProvider = ko
             percentage: formatProgressPercentage(remotePercentage),
           });
         }
-        // Where the page counts agree, or the page was derived from the local
-        // count, compare the page it names: a rounded percentage won't equal
-        // the local one even on the same page, and Kavita's (page - 1) / total
-        // is a page behind (#7503). This device's own reports keep the 1%
-        // tolerance on top. A page of a copy with another page count names a
-        // different place, so there the percentages are compared.
+        // Where the page counts are equal, or the page was derived from the
+        // local count, compare the page it names: a rounded percentage won't
+        // equal the local one even on the same page, and Kavita's
+        // (page - 1) / total is a page behind (#7503). This device's own
+        // reports keep the 1% tolerance on top. A page of a copy with another
+        // page count, even one page more, names a different place, so there
+        // the percentages are compared.
         const isOnRemotePage = remotePage === (localPageInfo?.current ?? 0) + 1;
         const percentageDiffers =
           Math.abs(localPercentage - remotePercentage) > conflictProgressDiffThreshold;
         if (!hasRemotePage) {
           showConflictDetails = !isOnRemotePage;
-        } else if (pagesMatch) {
+        } else if (remoteTotalPages === localTotalPages) {
           showConflictDetails = !isOnRemotePage && (!isSameDevice || percentageDiffers);
         } else {
           showConflictDetails = percentageDiffers;
