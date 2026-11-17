@@ -186,6 +186,7 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
   const sizeAdjustCountRef = useRef(0);
   const maxSizeAdjustCount = 3;
   const contentSizeObserverRef = useRef<ResizeObserver | null>(null);
+  const linkRequestRef = useRef(0);
   const contentSizeFrameRef = useRef<number | null>(null);
   const size18 = useResponsiveSize(18);
   const popupPadding = useResponsiveSize(10);
@@ -672,10 +673,17 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
     historyRef.current = { items: [detail], index: 0 };
     setCanGoBack(false);
     setToolbarBlock(null);
+    const request = ++linkRequestRef.current;
     const popupPromise = footnoteHandler.handle(bookDoc, event);
     if (popupPromise) {
       popupPromise.catch((err: unknown) => {
         console.warn(err);
+        // The rejected view loaded the whole section and started sizing the
+        // popup to it; keep it hidden (#7537). A newer link owns the popup.
+        if (request === linkRequestRef.current) {
+          stopTrackingPopupContentSize();
+          setShowPopup(false);
+        }
         const detail = (event as CustomEvent).detail;
         view?.goTo(detail.href);
         flashLinkTarget(detail.href);
@@ -754,6 +762,8 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
     // This popup shows text synthesized from a data/alt attribute in the host
     // document: there is no book document behind it, so no CFI mapping.
     footnoteViewRef.current = null;
+    // This popup now owns the box: a pending link request must not close it.
+    linkRequestRef.current += 1;
     setSourceHref(null);
     stopTrackingPopupContentSize();
     resetPopupAnnotationState();
