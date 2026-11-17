@@ -247,7 +247,17 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
 
   const containerRef = React.useRef<HTMLDivElement>(null);
 
-  const [selection, setSelection] = useState<TextSelection | null>(null);
+  const [selection, setSelectionState] = useState<TextSelection | null>(null);
+  // Counts the selections and tapped highlights shown, so a popup dismiss that
+  // its throttle held back can tell a popup opened after it was asked for.
+  const selectionShownRef = useRef(0);
+  const setSelection = useCallback<React.Dispatch<React.SetStateAction<TextSelection | null>>>(
+    (value) => {
+      if (value && typeof value !== 'function') selectionShownRef.current++;
+      setSelectionState(value);
+    },
+    [],
+  );
   const [translationEpoch, setTranslationEpoch] = useState(0);
   const [showAnnotPopup, setShowAnnotPopup] = useState(false);
   const [showDictionaryPopup, setShowDictionaryPopup] = useState(false);
@@ -564,9 +574,13 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
     [primaryLang, transformCtx],
   );
 
+  // Throttled for the scroll handler, which dismisses on every scroll event. A
+  // dismiss asked for within 500 ms of the last runs when that time is up, by
+  // when a new popup may be open: it closes only what was showing when asked.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const handleDismissPopup = useCallback(
-    throttle(() => {
+  const dismissPopup = useCallback(
+    throttle((selectionShown: number) => {
+      if (selectionShown !== selectionShownRef.current) return;
       instantLookupDeselectedRef.current = false;
       setSelection(null);
       setShowAnnotPopup(false);
@@ -579,6 +593,10 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
       setNoteEditorTarget(null);
     }, 500),
     [],
+  );
+  const handleDismissPopup = useCallback(
+    () => dismissPopup(selectionShownRef.current),
+    [dismissPopup],
   );
 
   const {
