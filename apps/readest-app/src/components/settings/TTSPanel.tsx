@@ -47,7 +47,7 @@ const TTSPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset }
   const { token, user } = useAuth();
   const hasPremium = isCustomTTSAllowed(token);
   const [showCustomServices, setShowCustomServices] = useState(false);
-  const [returnTo] = useState(() => returnToVoices);
+  const [returnTo, setReturnTo] = useState(() => returnToVoices);
   const [showVoices, setShowVoices] = useState(returnTo !== null);
   // Spent on this mount: a later open of Settings starts on this panel again.
   useEffect(() => {
@@ -238,7 +238,11 @@ const TTSPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset }
           library={voiceLibrary}
           lang={voiceLang}
           bookKey={bookKey || null}
-          onBack={() => setShowVoices(false)}
+          onBack={() => {
+            // The restored visit is over: the next one starts on every engine.
+            setReturnTo(null);
+            setShowVoices(false);
+          }}
           onDefaultChange={refreshDefaultVoiceName}
           initialSection={returnTo ?? ''}
           onLeave={(section) => {

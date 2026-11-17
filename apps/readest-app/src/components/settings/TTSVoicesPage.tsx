@@ -165,7 +165,7 @@ const TTSVoicesPage: React.FC<TTSVoicesPageProps> = ({
         </SettingsRow>
       </BoxedList>
       <div className='flex flex-col gap-4'>
-        <div className='eink-bordered bg-base-100 flex h-9 w-full items-center rounded-lg'>
+        <div className='eink-bordered bg-base-100 focus-within:ring-base-content/15 eink:focus-within:ring-base-content flex h-9 w-full items-center rounded-lg focus-within:ring-2'>
           <MdSearch className='text-base-content/50 ms-3 h-4 w-4 shrink-0' />
           <input
             type='text'

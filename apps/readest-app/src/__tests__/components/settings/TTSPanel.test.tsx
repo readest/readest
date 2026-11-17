@@ -197,7 +197,7 @@ describe('TTSPanel sign-in round trip from the voice library', () => {
     await expectVoiceLibrary();
   });
 
-  it('coming back shows the engine that was on show', async () => {
+  it('coming back shows the engine that was on show, for that visit only', async () => {
     const { unmount } = await openVoiceLibrary();
     const select = screen.getByLabelText('Voice Engine') as HTMLSelectElement;
     const readest = [...select.options].find((o) => o.text === 'Readest Voice')!;
@@ -211,6 +211,13 @@ describe('TTSPanel sign-in round trip from the voice library', () => {
     const restored = screen.getByLabelText('Voice Engine') as HTMLSelectElement;
     expect(restored.selectedOptions[0]!.text).toBe('Readest Voice');
     expect(screen.queryByText('Aria')).toBeNull();
+
+    // Back ends that visit: the next one starts on every engine again.
+    fireEvent.click(screen.getByText('TTS'));
+    fireEvent.click(await screen.findByText('Voice Library'));
+    await screen.findByText('Ethan');
+    const reopened = screen.getByLabelText('Voice Engine') as HTMLSelectElement;
+    expect(reopened.selectedOptions[0]!.text, 'reopens on All').toBe('All');
   });
 
   it('a preview that plays stays on the page, so a later open starts on the panel', async () => {
