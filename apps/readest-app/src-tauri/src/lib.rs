@@ -19,6 +19,16 @@ use tauri::TitleBarStyle;
 use std::path::PathBuf;
 use tauri::{AppHandle, Manager};
 use tauri_plugin_fs::FsExt;
+// These plugins only register on mobile, but capabilities/default.json names
+// their permissions and tauri-build resolves those on every target, so the
+// crates must stay dependencies everywhere. Mark them used so cargo's
+// unused_dependencies lint (Rust 1.100) doesn't flag them on desktop.
+#[cfg(desktop)]
+use tauri_plugin_biometric as _;
+#[cfg(desktop)]
+use tauri_plugin_haptics as _;
+#[cfg(not(target_os = "ios"))]
+use tauri_plugin_sign_in_with_apple as _;
 
 #[cfg(desktop)]
 use tauri::{Listener, Url};

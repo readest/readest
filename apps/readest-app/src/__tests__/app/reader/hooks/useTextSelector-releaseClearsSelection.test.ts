@@ -10,7 +10,7 @@ import { cleanup, renderHook } from '@testing-library/react';
 // never runs (#6958).
 
 const h = vi.hoisted(() => ({
-  view: { deselect: vi.fn(), renderer: { containerPosition: 0 } },
+  view: { deselect: vi.fn(), getCFI: vi.fn(() => 'cfi'), renderer: { containerPosition: 0 } },
 }));
 
 vi.mock('@/context/EnvContext', () => ({
@@ -150,4 +150,45 @@ describe('a mouse release that leaves no selection', () => {
     expect(handleDismissPopup).not.toHaveBeenCalled();
     expect(result.current.isTextSelected.current).toBe(true);
   });
+});
+
+// The press that clears the selection can land while the previous release is
+// still extracting the selected text. That extraction must not publish the
+// selection the release just dismissed.
+test('drops a text extraction still pending when a press clears the selection', async () => {
+  let finishText!: (text: string) => void;
+  const getAnnotationText = vi.fn(
+    () =>
+      new Promise<string>((resolve) => {
+        finishText = resolve;
+      }),
+  );
+  const setSelection = vi.fn();
+  const handleDismissPopup = vi.fn();
+  const noop = vi.fn();
+  const { result } = renderHook(() =>
+    useTextSelector(
+      'book-1',
+      { top: 0, right: 0, bottom: 0, left: 0 },
+      setSelection,
+      noop,
+      noop,
+      getAnnotationText,
+      handleDismissPopup,
+    ),
+  );
+  selectText();
+  result.current.handlePointerDown(document, 0, mousePointer(50, 50));
+  await result.current.handlePointerUp(document, 0, mousePointer(50, 50));
+  expect(getAnnotationText).toHaveBeenCalledOnce();
+
+  result.current.handlePointerDown(document, 0, mousePointer(5, 5));
+  document.getSelection()!.removeAllRanges();
+  result.current.handleSelectionchange(document, 0);
+  await result.current.handlePointerUp(document, 0, mousePointer(5, 5));
+  expect(handleDismissPopup).toHaveBeenCalledOnce();
+
+  finishText('Hello');
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  expect(setSelection).not.toHaveBeenCalled();
 });

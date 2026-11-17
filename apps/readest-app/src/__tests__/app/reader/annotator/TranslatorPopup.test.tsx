@@ -156,6 +156,17 @@ describe('TranslatorPopup translated text', () => {
   });
 });
 
+describe('TranslatorPopup text direction', () => {
+  it('lets the source and translated paragraphs take their direction from their text', async () => {
+    mockTranslate.mockResolvedValue(['שלום, עולם!']);
+    await renderPopup();
+
+    const translated = await screen.findByText('שלום, עולם!');
+    expect(translated.getAttribute('dir')).toBe('auto');
+    expect(screen.getByText('cohort').getAttribute('dir')).toBe('auto');
+  });
+});
+
 describe('TranslatorPopup source language', () => {
   beforeEach(() => {
     mockViewSettings = {};

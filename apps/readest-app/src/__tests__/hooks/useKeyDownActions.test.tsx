@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, renderHook } from '@testing-library/react';
+import { StrictMode, useRef } from 'react';
+import { cleanup, fireEvent, render, renderHook, screen } from '@testing-library/react';
 
 vi.mock('@/context/EnvContext', () => ({ useEnv: () => ({ appService: null }) }));
 vi.mock('@/store/deviceStore', () => ({ useDeviceControlStore: () => ({}) }));
@@ -25,5 +26,42 @@ describe('useKeyDownActions', () => {
     expect(latest.onCancel).toHaveBeenCalledTimes(1);
     expect(first.onConfirm).not.toHaveBeenCalled();
     expect(first.onCancel).not.toHaveBeenCalled();
+  });
+
+  // Popup and Menu pass their container as elementRef. Each time the effect
+  // runs (StrictMode in dev, or `enabled` turning off and on), the container
+  // must end with one listener, and none while disabled.
+  describe('with an element ref', () => {
+    const Host = ({ onCancel, enabled }: { onCancel: () => void; enabled: boolean }) => {
+      const ref = useRef<HTMLDivElement>(null);
+      useKeyDownActions({ onCancel, enabled, elementRef: ref });
+      return <div ref={ref} role='dialog' />;
+    };
+
+    it('cancels once on Escape under StrictMode', () => {
+      const onCancel = vi.fn();
+      render(
+        <StrictMode>
+          <Host onCancel={onCancel} enabled />
+        </StrictMode>,
+      );
+
+      fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' });
+
+      expect(onCancel).toHaveBeenCalledOnce();
+    });
+
+    it('cancels once after being disabled and enabled again', () => {
+      const onCancel = vi.fn();
+      const { rerender } = render(<Host onCancel={onCancel} enabled />);
+      rerender(<Host onCancel={onCancel} enabled={false} />);
+
+      fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' });
+      expect(onCancel).not.toHaveBeenCalled();
+
+      rerender(<Host onCancel={onCancel} enabled />);
+      fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' });
+      expect(onCancel).toHaveBeenCalledOnce();
+    });
   });
 });

@@ -6,11 +6,17 @@ import {
 } from '@/types/settings';
 import {
   formatAuthors,
+  formatDescription,
+  formatLanguage,
+  formatPublisher,
   formatTitle,
   getBookPageCount,
   getContributorNames,
   isCurrentlyReadingBook,
 } from '@/utils/book';
+import { matchesFieldedQuery, parseFieldedQuery } from './fieldedQuery';
+import { getBookshelfField, textList } from '@/services/bookshelves/fields';
+import { code6392to6391, normalizedLangCode } from '@/utils/lang';
 import { md5Fingerprint } from '@/utils/md5';
 import type { TranslationFunc } from '@/hooks/useTranslation';
 import { stubTranslation as _ } from '@/utils/misc';
@@ -309,7 +315,101 @@ export const applyBookTagEdits = (
 const getBookValuesText = (book: Book): string =>
   [...getBookTags(book), ...getBookSubjects(book)].join(' ');
 
-export const createBookFilter = (queryTerm: string | null) => (item: Book) => {
+const present = (...values: (string | undefined | null)[]): string[] =>
+  values.filter((value): value is string => !!value);
+
+const getCalibreColumnValues = (book: Book, label: string): string[] =>
+  (book.metadata?.calibreColumns ?? [])
+    .filter((column) => column.label.toLowerCase() === label)
+    .flatMap(({ value }) => (Array.isArray(value) ? value : [String(value)]));
+
+const readShelfField = (book: Book, id: string): string[] =>
+  textList(getBookshelfField(id)?.read(book)).filter(Boolean);
+
+const getBookLanguages = (book: Book): string[] => {
+  const codes = readShelfField(book, 'language');
+  // "en-US" and "eng" are named by their base language, as "en" is.
+  const names = codes.map((code) => {
+    const base = normalizedLangCode(code);
+    return formatLanguage(code6392to6391(base) || base);
+  });
+  return [...codes, ...names];
+};
+
+const getBookIdentifiers = (book: Book): string[] => {
+  const metadata = book.metadata;
+  const alternates = [metadata?.altIdentifier ?? []]
+    .flat()
+    .map((id) => (typeof id === 'string' ? id : id.value));
+  return present(metadata?.identifier, metadata?.isbn, ...alternates);
+};
+
+/** The fields a bare word next to fielded terms reads, besides calibre columns. */
+const BARE_WORD_FIELDS = [
+  'title',
+  'author',
+  'tags',
+  'series',
+  'publisher',
+  'language',
+  'format',
+  'description',
+  'group',
+  'identifier',
+];
+
+/**
+ * The values a fielded search term reads (#7370). A field reads the bookshelf
+ * field of the same id (src/services/bookshelves/fields.ts), so search and
+ * bookshelf rules agree on what a book's series or group is. The cases below
+ * add what search needs on top. `null` is a bare word next to fields, and
+ * `#label` is a calibre column.
+ */
+const getBookFieldValues = (book: Book, field: string | null): string[] => {
+  const metadata = book.metadata;
+  switch (field) {
+    case null:
+      return [
+        ...BARE_WORD_FIELDS.flatMap((name) => getBookFieldValues(book, name)),
+        getCalibreColumnsText(book),
+      ];
+    case 'author':
+      // Each contributor too, so author:="j. r. r. tolkien" matches a co-author.
+      return [
+        ...new Set([...readShelfField(book, 'author'), ...getContributorNames(metadata?.author)]),
+      ].filter(Boolean);
+    case 'tags':
+      // Calibre writes its tags as EPUB subjects, so tag: reads both.
+      return [...readShelfField(book, 'tags'), ...readShelfField(book, 'subjects')];
+    case 'publisher':
+      // The bookshelf field drops a publisher stored as a language map.
+      return present(metadata?.publisher && formatPublisher(metadata.publisher));
+    case 'language':
+      return getBookLanguages(book);
+    case 'description':
+      return readShelfField(book, 'description').map((text) => formatDescription(text));
+    case 'identifier':
+      return getBookIdentifiers(book);
+    default:
+      return field.startsWith('#')
+        ? getCalibreColumnValues(book, field.slice(1))
+        : readShelfField(book, field);
+  }
+};
+
+/**
+ * Library search. A query naming a field (`author:herbert and tags:scifi`)
+ * runs as a calibre-like fielded search (#7370); any other query keeps the
+ * plain search below.
+ */
+export const createBookFilter = (queryTerm: string | null) => {
+  const fielded = queryTerm ? parseFieldedQuery(queryTerm) : null;
+  if (!fielded) return createPlainBookFilter(queryTerm);
+  return (item: Book): boolean =>
+    !item.deletedAt && matchesFieldedQuery(fielded, (field) => getBookFieldValues(item, field));
+};
+
+const createPlainBookFilter = (queryTerm: string | null) => (item: Book) => {
   if (!queryTerm) return true;
   if (item.deletedAt) return false;
   let searchTerm: RegExp;
