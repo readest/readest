@@ -208,7 +208,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
   const { envConfig, appService } = useEnv();
   const { settings, setSettingsDialogBookKey, setSettingsDialogOpen, setActiveSettingsItemId } =
     useSettingsStore();
-  const { isDarkMode, isIPhoneDuo, themeCode } = useThemeStore();
+  const { isDarkMode, themeCode } = useThemeStore();
   // Per-field selectors — see store/readerProgressStore.ts header for the
   // "destructure-subscribes-the-whole-store" rationale.
   const getConfig = useBookDataStore((s) => s.getConfig);
@@ -424,14 +424,11 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
     if (!selection || !selection.text) return;
     const gridFrame = document.querySelector(`#gridcell-${bookKey}`);
     if (!gridFrame) return;
-    // On iPhone Duo clamp to the safe region, not the physical cell (its
-    // status-bar strip can otherwise sit under a popup, #6307). The points come
-    // back relative to that region; they are shifted to cell coordinates below.
-    const { rect, origin } = getPopupBounds(
-      gridFrame.getBoundingClientRect(),
-      gridInsets,
-      isIPhoneDuo,
-    );
+    // Clamp to the safe region, not the physical cell (the Dynamic Island, a
+    // cutout or iPhone Duo's status strip can otherwise sit under a popup,
+    // #6307, #7389). The points come back relative to that region; they are
+    // shifted to cell coordinates below.
+    const { rect, origin } = getPopupBounds(gridFrame.getBoundingClientRect(), gridInsets);
     const triangPos = getToolbarPosition(selection, rect);
     const annotPopupPos = getPopupPosition(
       triangPos,
@@ -471,13 +468,12 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
     setTranslatorPopupPosition(offsetPosition(transPopupPos, origin));
     setProofreadPopupPosition(offsetPosition(proofreadPopupPos, origin));
     setTrianglePosition(offsetPosition(triangPos, origin));
-    // Re-clamp when the cell's insets change, which only iPhone Duo uses;
-    // elsewhere the deps are unchanged.
+    // Re-clamp when the cell's insets change.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     selection,
     bookKey,
-    isIPhoneDuo && gridInsets,
+    gridInsets,
     viewSettings.vertical,
     annotPopupWidth,
     annotPopupHeight,
@@ -1397,14 +1393,11 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
       pendingWordLensDictRef.current = false;
       const gridFrame = document.querySelector(`#gridcell-${bookKey}`);
       if (!gridFrame) return;
-      // On iPhone Duo clamp to the safe region, not the physical cell (its
-      // status-bar strip can otherwise sit under a popup, #6307). The points come
-      // back relative to that region; they are shifted to cell coordinates below.
-      const { rect, origin } = getPopupBounds(
-        gridFrame.getBoundingClientRect(),
-        gridInsets,
-        isIPhoneDuo,
-      );
+      // Clamp to the safe region, not the physical cell (the Dynamic Island, a
+      // cutout or iPhone Duo's status strip can otherwise sit under a popup,
+      // #6307, #7389). The points come back relative to that region; they are
+      // shifted to cell coordinates below.
+      const { rect, origin } = getPopupBounds(gridFrame.getBoundingClientRect(), gridInsets);
       const triangPos = getToolbarPosition(selection, rect);
       const annotPopupPos = getPopupPosition(
         triangPos,

@@ -190,37 +190,54 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
   const size18 = useResponsiveSize(18);
   const popupPadding = useResponsiveSize(10);
 
+  // The window less the cell's safe-area insets, so the popup stays clear of
+  // the Dynamic Island, a camera cutout and the home indicator (#7389).
+  const getSafeArea = () => {
+    const { top, right, bottom, left } = gridInsetsRef.current;
+    return {
+      top,
+      left,
+      right: window.innerWidth - right,
+      bottom: window.innerHeight - bottom,
+      width: window.innerWidth - left - right,
+      height: window.innerHeight - top - bottom,
+    };
+  };
+
   const getMaxHeight = useCallback(() => {
-    let availableHeight = window.innerHeight - 2 * popupPadding;
+    const safe = getSafeArea();
+    let availableHeight = safe.height - 2 * popupPadding;
     if (trianglePositionRef.current?.dir === 'up') {
-      availableHeight = trianglePositionRef.current.point.y - popupPadding;
+      availableHeight = trianglePositionRef.current.point.y - safe.top - popupPadding;
     } else if (trianglePositionRef.current?.dir === 'down') {
-      availableHeight = window.innerHeight - trianglePositionRef.current.point.y - popupPadding;
+      availableHeight = safe.bottom - trianglePositionRef.current.point.y - popupPadding;
     }
     return availableHeight;
   }, [popupPadding]);
 
   const getMaxWidth = useCallback(() => {
-    let availableWidth = Math.min(window.innerWidth - 2 * popupPadding, 720);
+    const safe = getSafeArea();
+    let availableWidth = Math.min(safe.width - 2 * popupPadding, 720);
     if (trianglePositionRef.current?.dir === 'left') {
-      availableWidth = trianglePositionRef.current.point.x - popupPadding;
+      availableWidth = trianglePositionRef.current.point.x - safe.left - popupPadding;
     } else if (trianglePositionRef.current?.dir === 'right') {
-      availableWidth = window.innerWidth - trianglePositionRef.current.point.x - popupPadding;
+      availableWidth = safe.right - trianglePositionRef.current.point.x - popupPadding;
     }
     return availableWidth;
   }, [popupPadding]);
 
   const getResponsivePopupSize = (size: number, isVertical: boolean) => {
-    const maxSize = isVertical ? window.innerWidth : window.innerHeight;
+    const safe = getSafeArea();
+    const maxSize = isVertical ? safe.width : safe.height;
     return Math.min(size, maxSize - popupPadding - 12);
   };
 
   const clipPopupWith = (size: number) => {
-    return Math.min(size, window.innerWidth - popupPadding - 12);
+    return Math.min(size, getSafeArea().width - popupPadding - 12);
   };
 
   const clipPopupHeight = (size: number) => {
-    return Math.min(size, window.innerHeight - popupPadding - 12);
+    return Math.min(size, getSafeArea().height - popupPadding - 12);
   };
 
   // Imperative, not an effect keyed on the trigger position: that effect ran
@@ -623,13 +640,10 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
     // console.log('doc link click', detail);
     const gridFrame = document.querySelector(`#gridcell-${bookKey}`);
     if (!gridFrame) return;
-    // On iPhone Duo clamp to the safe region, not the physical cell: its
-    // status-bar strip can otherwise sit under a popup (#6307).
-    const bounds = getPopupBounds(
-      gridFrame.getBoundingClientRect(),
-      gridInsetsRef.current,
-      useThemeStore.getState().isIPhoneDuo,
-    );
+    // Clamp to the cell's safe region, not the physical cell: the Dynamic
+    // Island, a cutout or iPhone Duo's status strip can otherwise sit under
+    // the popup (#6307, #7389).
+    const bounds = getPopupBounds(gridFrame.getBoundingClientRect(), gridInsetsRef.current);
     const viewSettings = getViewSettings(bookKey)!;
     const triangPos = offsetPosition(
       getPosition(detail.a, bounds.rect, popupPadding, viewSettings.vertical),
@@ -743,11 +757,7 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
     setSourceHref(null);
     stopTrackingPopupContentSize();
     resetPopupAnnotationState();
-    const bounds = getPopupBounds(
-      gridFrame.getBoundingClientRect(),
-      gridInsetsRef.current,
-      useThemeStore.getState().isIPhoneDuo,
-    );
+    const bounds = getPopupBounds(gridFrame.getBoundingClientRect(), gridInsetsRef.current);
     const viewSettings = getViewSettings(bookKey)!;
     const triangPos = offsetPosition(
       getPosition(element, bounds.rect, popupPadding, viewSettings.vertical),
@@ -986,6 +996,7 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
           height={responsiveHeight}
           position={showPopup ? popupPosition! : undefined}
           trianglePosition={showPopup ? anchor! : undefined}
+          safeAreaInsets={gridInsets}
           // Keep the texture surface stationary while the note scrolls inside it.
           className='footnote-popup select-text pointer-events-auto overflow-clip'
           onDismiss={handleDismissPopup}

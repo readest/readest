@@ -273,7 +273,7 @@ const BookCellInner: React.FC<BookCellProps> = ({
             showFooter={showFooter}
             borderColor={viewSettings.borderColor}
             horizontalGap={horizontalGapPercent}
-            insets={viewInsets}
+            insets={{ ...viewInsets, top: gridInsets.top + viewInsets.top }}
           />
         )}
         {showHeader && (

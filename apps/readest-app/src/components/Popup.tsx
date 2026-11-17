@@ -1,5 +1,6 @@
 import clsx from 'clsx';
 import { Position, isPointInRect } from '@/utils/sel';
+import { Insets } from '@/types/misc';
 import { useEffect, useRef, useState } from 'react';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { useKeyDownActions } from '@/hooks/useKeyDownActions';
@@ -58,6 +59,7 @@ const Popup = ({
   className = '',
   additionalStyle = {},
   isOpen = true,
+  safeAreaInsets,
   onDismiss,
 }: {
   isOpen?: boolean;
@@ -70,6 +72,7 @@ const Popup = ({
   children: React.ReactNode;
   className?: string;
   additionalStyle?: React.CSSProperties;
+  safeAreaInsets?: Insets;
   onDismiss?: () => void;
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -79,12 +82,16 @@ const Popup = ({
   useKeyDownActions({ onCancel: onDismiss, elementRef: containerRef, enabled: isOpen });
 
   const popupPadding = useResponsiveSize(10);
-  let availableHeight = window.innerHeight - 2 * popupPadding;
+  const topInset = safeAreaInsets?.top ?? 0;
+  const bottomInset = safeAreaInsets?.bottom ?? 0;
+  const minTop = topInset + popupPadding;
+  let availableHeight = window.innerHeight - topInset - bottomInset - 2 * popupPadding;
   if (trianglePosition?.dir === 'up') {
-    availableHeight = trianglePosition.point.y - popupPadding;
+    availableHeight = trianglePosition.point.y - minTop;
   } else if (trianglePosition?.dir === 'down') {
-    availableHeight = window.innerHeight - trianglePosition.point.y - popupPadding;
+    availableHeight = window.innerHeight - bottomInset - trianglePosition.point.y - popupPadding;
   }
+  availableHeight = Math.max(0, availableHeight);
   maxHeight = Math.min(maxHeight || availableHeight, availableHeight);
 
   useEffect(() => {
@@ -123,11 +130,11 @@ const Popup = ({
       ...position,
       point: {
         ...position.point,
-        y: Math.max(popupPadding, trianglePosition.point.y - containerHeight),
+        y: Math.max(minTop, trianglePosition.point.y - containerHeight),
       },
     };
     setAdjustedPosition(newPosition);
-  }, [position, trianglePosition, popupPadding, childrenHeight]);
+  }, [position, trianglePosition, minTop, childrenHeight]);
 
   const triangleSize = 7;
   const outerTriangleStyles = getTriangleStyles(trianglePosition, triangleSize, 0);

@@ -377,7 +377,7 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
         ...(textColor ? { color: textColor } : {}),
         ...(isVertical
           ? {
-              top: `${(contentInsets.top - gridInsets.top) * 1.5}px`,
+              top: `${gridInsets.top + (contentInsets.top - gridInsets.top) * 1.5}px`,
               bottom: `${(contentInsets.bottom - gridInsets.bottom) * 1.5}px`,
               left: showDoubleBorder
                 ? `calc(${contentInsets.left}px)`
