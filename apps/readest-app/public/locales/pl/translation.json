@@ -2984,5 +2984,7 @@
   "Move to parent group": "Przenieś do grupy nadrzędnej",
   "Done": "Gotowe",
   "Solid Footer in Scrolled Mode": "Pełna stopka w trybie przewijania",
-  "Search by field:": "Szukaj według pola:"
+  "Search by field:": "Szukaj według pola:",
+  "Voice Engine": "Silnik głosu",
+  "Filter voices": "Filtruj głosy"
 }

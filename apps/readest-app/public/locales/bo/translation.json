@@ -2765,5 +2765,7 @@
   "Move to parent group": "Move to parent group",
   "Done": "ལེགས་གྲུབ།",
   "Solid Footer in Scrolled Mode": "འཁོར་རྒྱུག་རྣམ་པའི་ནང་ཤོག་ངོས་ཀྱི་མཇུག་བརྟན་པོ།",
-  "Search by field:": "ས་ཁོངས་ལྟར་འཚོལ།:"
+  "Search by field:": "ས་ཁོངས་ལྟར་འཚོལ།:",
+  "Voice Engine": "སྐད་གདངས་འཕྲུལ་ཆས།",
+  "Filter voices": "སྐད་གདངས་འཚག་འདེམས།"
 }

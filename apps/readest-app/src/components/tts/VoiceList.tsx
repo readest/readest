@@ -37,6 +37,9 @@ interface VoiceListProps {
     toggle: (group: TTSVoicesGroup, voice: TTSVoice) => void;
     statusOf: (group: TTSVoicesGroup, voice: TTSVoice) => VoicePreviewStatus | null;
   };
+  // Only the voices whose name or language contains it, in any case; the
+  // gender tab narrows them further.
+  query?: string;
 }
 
 // Voices by engine, one boxed list each, filterable by gender. A row's round
@@ -47,17 +50,20 @@ const VoiceList: React.FC<VoiceListProps> = ({
   onSelect,
   onUpgrade,
   preview,
+  query = '',
 }) => {
   const _ = useTranslation();
   const [gender, setGender] = useState<GenderFilter>('all');
   // A name a user's own service gave is shown as is; built-in names are UI strings.
   const nameOf = (item: TTSVoice | TTSVoicesGroup) => (item.literalName ? item.name : _(item.name));
   const hasGenders = groups.some((group) => group.voices.some((voice) => voice.gender));
+  const needle = query.trim().toLowerCase();
+  const matches = (voice: TTSVoice) =>
+    (gender === 'all' || voice.gender === gender) &&
+    (!needle ||
+      `${nameOf(voice)} ${getVoiceLanguageName(voice.lang)}`.toLowerCase().includes(needle));
   const shown = groups
-    .map((group) => ({
-      group,
-      voices: group.voices.filter((voice) => gender === 'all' || voice.gender === gender),
-    }))
+    .map((group) => ({ group, voices: group.voices.filter(matches) }))
     .filter(({ voices }) => voices.length > 0);
 
   const genderLabel = (value: TTSVoice['gender'] | GenderFilter) =>
@@ -93,7 +99,9 @@ const VoiceList: React.FC<VoiceListProps> = ({
       )}
       {shown.length === 0 && (
         <p className='text-base-content/70 px-4 py-6 text-center'>
-          {gender === 'all' ? _('No voices available') : _('No voices match this filter')}
+          {gender === 'all' && !needle
+            ? _('No voices available')
+            : _('No voices match this filter')}
         </p>
       )}
       {shown.map(({ group, voices }) => (

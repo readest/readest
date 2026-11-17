@@ -2838,5 +2838,7 @@
   "Move to parent group": "Flytta till överordnad grupp",
   "Done": "Klart",
   "Solid Footer in Scrolled Mode": "Heldragen sidfot i rullningsläge",
-  "Search by field:": "Sök efter fält:"
+  "Search by field:": "Sök efter fält:",
+  "Voice Engine": "Röstmotor",
+  "Filter voices": "Filtrera röster"
 }

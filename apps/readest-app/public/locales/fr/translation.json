@@ -2911,5 +2911,7 @@
   "Move to parent group": "Déplacer vers le groupe parent",
   "Done": "Terminé",
   "Solid Footer in Scrolled Mode": "Pied de page plein en mode défilement",
-  "Search by field:": "Rechercher par champ :"
+  "Search by field:": "Rechercher par champ :",
+  "Voice Engine": "Moteur de voix",
+  "Filter voices": "Filtrer les voix"
 }

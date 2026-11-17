@@ -2838,5 +2838,7 @@
   "Move to parent group": "Naar bovenliggende groep verplaatsen",
   "Done": "Klaar",
   "Solid Footer in Scrolled Mode": "Volle voettekstbalk in scroll-modus",
-  "Search by field:": "Zoeken op veld:"
+  "Search by field:": "Zoeken op veld:",
+  "Voice Engine": "Stemengine",
+  "Filter voices": "Stemmen filteren"
 }

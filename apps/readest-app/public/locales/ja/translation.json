@@ -2765,5 +2765,7 @@
   "Move to parent group": "上位グループに移動",
   "Done": "完了",
   "Solid Footer in Scrolled Mode": "スクロールモードで帯状のフッター",
-  "Search by field:": "フィールドで検索:"
+  "Search by field:": "フィールドで検索:",
+  "Voice Engine": "音声エンジン",
+  "Filter voices": "音声を絞り込む"
 }

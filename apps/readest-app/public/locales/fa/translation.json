@@ -2838,5 +2838,7 @@
   "Move to parent group": "انتقال به گروه بالاتر",
   "Done": "انجام شد",
   "Solid Footer in Scrolled Mode": "نوار پاورقی یکپارچه در حالت پیمایشی",
-  "Search by field:": "جستجو بر اساس فیلد:"
+  "Search by field:": "جستجو بر اساس فیلد:",
+  "Voice Engine": "موتور صدا",
+  "Filter voices": "فیلتر صداها"
 }

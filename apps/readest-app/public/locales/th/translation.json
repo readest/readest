@@ -2765,5 +2765,7 @@
   "Move to parent group": "ย้ายไปยังกลุ่มหลัก",
   "Done": "เสร็จสิ้น",
   "Solid Footer in Scrolled Mode": "ท้ายกระดาษแบบทึบในโหมดเลื่อน",
-  "Search by field:": "ค้นหาตามฟิลด์:"
+  "Search by field:": "ค้นหาตามฟิลด์:",
+  "Voice Engine": "เอนจินเสียง",
+  "Filter voices": "กรองเสียง"
 }

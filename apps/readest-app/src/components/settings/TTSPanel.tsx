@@ -34,10 +34,11 @@ import CustomTTSServices from './CustomTTSServices';
 import TTSVoicesPage from './TTSVoicesPage';
 import TTSHighlightStyleEditor, { TTSHighlightStyle } from './theme/TTSHighlightStyleEditor';
 
-// Set when the voice library leaves for sign-in or the plans page, so coming
-// back reopens it instead of this panel. It lives for this app run only, like
-// SettingsDialog's savedScroll: a full page load closes Settings anyway.
-let returnToVoices = false;
+// Set when the voice library leaves for sign-in or the plans page, to the
+// engine it had on show, so coming back reopens it instead of this panel. It
+// lives for this app run only, like SettingsDialog's savedScroll: a full page
+// load closes Settings anyway.
+let returnToVoices: string | null = null;
 
 const TTSPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset }) => {
   const _ = useTranslation();
@@ -46,10 +47,11 @@ const TTSPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset }
   const { token, user } = useAuth();
   const hasPremium = isCustomTTSAllowed(token);
   const [showCustomServices, setShowCustomServices] = useState(false);
-  const [showVoices, setShowVoices] = useState(() => returnToVoices);
+  const [returnTo] = useState(() => returnToVoices);
+  const [showVoices, setShowVoices] = useState(returnTo !== null);
   // Spent on this mount: a later open of Settings starts on this panel again.
   useEffect(() => {
-    returnToVoices = false;
+    returnToVoices = null;
   }, []);
   const [voiceLibrary, setVoiceLibrary] = useState<VoiceLibrary | null>(null);
   const [defaultVoiceName, setDefaultVoiceName] = useState<string | null>(null);
@@ -238,8 +240,9 @@ const TTSPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset }
           bookKey={bookKey || null}
           onBack={() => setShowVoices(false)}
           onDefaultChange={refreshDefaultVoiceName}
-          onLeave={() => {
-            returnToVoices = true;
+          initialSection={returnTo ?? ''}
+          onLeave={(section) => {
+            returnToVoices = section;
           }}
         />
       </div>
