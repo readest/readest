@@ -21,6 +21,7 @@ import { useReaderStore } from '@/store/readerStore';
 import { useNotebookStore } from '@/store/notebookStore';
 import { useSidebarStore } from '@/store/sidebarStore';
 import { useCustomDictionaryStore } from '@/store/customDictionaryStore';
+import { useVocabularyStore } from '@/store/vocabularyStore';
 import { isSystemDictionaryEnabled } from '@/services/dictionaries/registry';
 import { invokeSystemDictionary } from '@/services/dictionaries/systemDictionary';
 import { buildSelectionContext } from '@/services/dictionaries/contextDictionary';
@@ -247,7 +248,17 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
 
   const containerRef = React.useRef<HTMLDivElement>(null);
 
-  const [selection, setSelection] = useState<TextSelection | null>(null);
+  const [selection, setSelectionState] = useState<TextSelection | null>(null);
+  // Counts the selections and tapped highlights shown, so a popup dismiss that
+  // its throttle held back can tell a popup opened after it was asked for.
+  const selectionShownRef = useRef(0);
+  const setSelection = useCallback<React.Dispatch<React.SetStateAction<TextSelection | null>>>(
+    (value) => {
+      if (value && typeof value !== 'function') selectionShownRef.current++;
+      setSelectionState(value);
+    },
+    [],
+  );
   const [translationEpoch, setTranslationEpoch] = useState(0);
   const [showAnnotPopup, setShowAnnotPopup] = useState(false);
   const [showDictionaryPopup, setShowDictionaryPopup] = useState(false);
@@ -537,21 +548,22 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
   );
   // The lookup as the vocabulary builder saves it (#789), filed under the
   // same language Word Lens reads its marks from.
-  const dictionaryCapture = useMemo<VocabularyCapture | undefined>(
-    () =>
-      showDictionaryPopup && selection?.text
-        ? {
-            lang: vocabularyLang(bookData.book?.primaryLanguage),
-            occurrence: {
-              sentence: (selection.range && sentenceAt(selection.range)) || selection.text,
-              bookHash: bookData.book?.hash,
-              bookTitle: bookData.book?.title,
-              bookAuthor: bookData.book?.author,
-              cfi: selection.cfi,
-              at: Date.now(),
-            },
-          }
-        : undefined,
+  const getDictionaryCapture = (): VocabularyCapture | undefined =>
+    selection?.text
+      ? {
+          lang: vocabularyLang(bookData.book?.primaryLanguage),
+          occurrence: {
+            sentence: (selection.range && sentenceAt(selection.range)) || selection.text,
+            bookHash: bookData.book?.hash,
+            bookTitle: bookData.book?.title,
+            bookAuthor: bookData.book?.author,
+            cfi: selection.cfi,
+            at: Date.now(),
+          },
+        }
+      : undefined;
+  const dictionaryCapture = useMemo(
+    () => (showDictionaryPopup ? getDictionaryCapture() : undefined),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [showDictionaryPopup, selection],
   );
@@ -564,9 +576,13 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
     [primaryLang, transformCtx],
   );
 
+  // Throttled for the scroll handler, which dismisses on every scroll event. A
+  // dismiss asked for within 500 ms of the last runs when that time is up, by
+  // when a new popup may be open: it closes only what was showing when asked.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const handleDismissPopup = useCallback(
-    throttle(() => {
+  const dismissPopup = useCallback(
+    throttle((selectionShown: number) => {
+      if (selectionShown !== selectionShownRef.current) return;
       instantLookupDeselectedRef.current = false;
       setSelection(null);
       setShowAnnotPopup(false);
@@ -579,6 +595,10 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
       setNoteEditorTarget(null);
     }, 500),
     [],
+  );
+  const handleDismissPopup = useCallback(
+    () => dismissPopup(selectionShownRef.current),
+    [dismissPopup],
   );
 
   const {
@@ -1505,7 +1525,11 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
   }, [selection?.cfi, showAnnotationNotes, config.booknotes]);
 
   const handleShowAnnotPopup = () => {
-    if (!appService?.isMobile) {
+    // Not while the note editor is open: the highlight Annotate creates
+    // re-publishes the selection, and focusing the container here would take
+    // the caret from the editor's textarea, so typing ran the reader's
+    // shortcuts instead (#7511).
+    if (!appService?.isMobile && !noteEditorTarget) {
       containerRef.current?.focus();
     }
     setShowAnnotPopup(true);
@@ -1983,10 +2007,19 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
       // right-click → Look Up presentation).
       const rect = selection.range ? getRangeRectInWebview(selection.range) : null;
       const style = selection.range ? getRangeTextStyleInWebview(selection.range) : null;
-      void invokeSystemDictionary(
-        selection.text,
+      const word = selection.text;
+      const lookup = invokeSystemDictionary(
+        word,
         rect ? { rect, style: style ?? undefined } : undefined,
       );
+      const capture =
+        dictSettings.saveLookupsToVocabulary !== false ? getDictionaryCapture() : undefined;
+      if (capture?.occurrence) {
+        const { lang, occurrence } = capture;
+        void lookup.then((launched) => {
+          if (launched) useVocabularyStore.getState().recordLookup({ word, lang, occurrence });
+        });
+      }
       handleDismissPopupAndSelection();
       return;
     }

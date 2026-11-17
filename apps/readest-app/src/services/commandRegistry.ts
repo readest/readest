@@ -339,6 +339,12 @@ const layoutPanelItems = [
     section: 'Header & Footer',
   },
   {
+    id: 'settings.layout.solidScrolledFooter',
+    labelKey: _('Solid Footer in Scrolled Mode'),
+    keywords: ['footer', 'solid', 'scrolled', 'scroll', 'bottom', 'bar', 'band'],
+    section: 'Header & Footer',
+  },
+  {
     id: 'settings.layout.headerFooterFontSize',
     labelKey: _('Font Size'),
     keywords: ['font', 'size', 'header', 'footer', 'progress', 'page', 'number', 'text'],

@@ -2980,5 +2980,9 @@
   "Previous Month": "Poprzedni miesiąc",
   "Next Month": "Następny miesiąc",
   "No reading activity on this day": "Brak aktywności czytelniczej tego dnia",
-  "See which books you read each day and for how long": "Sprawdź, jakie książki czytasz każdego dnia i przez jaki czas"
+  "See which books you read each day and for how long": "Sprawdź, jakie książki czytasz każdego dnia i przez jaki czas",
+  "Move to parent group": "Przenieś do grupy nadrzędnej",
+  "Done": "Gotowe",
+  "Solid Footer in Scrolled Mode": "Pełna stopka w trybie przewijania",
+  "Search by field:": "Szukaj według pola:"
 }

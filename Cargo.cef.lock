@@ -8930,7 +8930,7 @@ checksum = "adb6935a6f5c20170eeceb1a3835a49e12e19d792f6dd344ccc76a985ca5a6ca"
 [[package]]
 name = "tauri"
 version = "2.11.5"
-source = "git+https://github.com/readest/tauri?branch=feat/cef#d6ef6e4c755228713e7358a27794a89cfd30969f"
+source = "git+https://github.com/readest/tauri?branch=feat/cef#c970d1f4b9b050aedccf49d7b68054825753585b"
 dependencies = [
  "anyhow",
  "bytes",
@@ -8978,7 +8978,7 @@ dependencies = [
 [[package]]
 name = "tauri-build"
 version = "2.6.3"
-source = "git+https://github.com/readest/tauri?branch=feat/cef#d6ef6e4c755228713e7358a27794a89cfd30969f"
+source = "git+https://github.com/readest/tauri?branch=feat/cef#c970d1f4b9b050aedccf49d7b68054825753585b"
 dependencies = [
  "anyhow",
  "cargo_toml",
@@ -8998,7 +8998,7 @@ dependencies = [
 [[package]]
 name = "tauri-codegen"
 version = "2.6.3"
-source = "git+https://github.com/readest/tauri?branch=feat/cef#d6ef6e4c755228713e7358a27794a89cfd30969f"
+source = "git+https://github.com/readest/tauri?branch=feat/cef#c970d1f4b9b050aedccf49d7b68054825753585b"
 dependencies = [
  "base64 0.22.1",
  "brotli",
@@ -9024,7 +9024,7 @@ dependencies = [
 [[package]]
 name = "tauri-macros"
 version = "2.6.3"
-source = "git+https://github.com/readest/tauri?branch=feat/cef#d6ef6e4c755228713e7358a27794a89cfd30969f"
+source = "git+https://github.com/readest/tauri?branch=feat/cef#c970d1f4b9b050aedccf49d7b68054825753585b"
 dependencies = [
  "heck 0.5.0",
  "proc-macro2",
@@ -9037,7 +9037,7 @@ dependencies = [
 [[package]]
 name = "tauri-plugin"
 version = "2.6.3"
-source = "git+https://github.com/readest/tauri?branch=feat/cef#d6ef6e4c755228713e7358a27794a89cfd30969f"
+source = "git+https://github.com/readest/tauri?branch=feat/cef#c970d1f4b9b050aedccf49d7b68054825753585b"
 dependencies = [
  "anyhow",
  "glob",
@@ -9559,7 +9559,7 @@ dependencies = [
 [[package]]
 name = "tauri-runtime"
 version = "2.11.3"
-source = "git+https://github.com/readest/tauri?branch=feat/cef#d6ef6e4c755228713e7358a27794a89cfd30969f"
+source = "git+https://github.com/readest/tauri?branch=feat/cef#c970d1f4b9b050aedccf49d7b68054825753585b"
 dependencies = [
  "cookie",
  "dpi",
@@ -9580,7 +9580,7 @@ dependencies = [
 [[package]]
 name = "tauri-runtime-cef"
 version = "0.1.0"
-source = "git+https://github.com/readest/tauri?branch=feat/cef#d6ef6e4c755228713e7358a27794a89cfd30969f"
+source = "git+https://github.com/readest/tauri?branch=feat/cef#c970d1f4b9b050aedccf49d7b68054825753585b"
 dependencies = [
  "base64 0.22.1",
  "cef",
@@ -9617,7 +9617,7 @@ dependencies = [
 [[package]]
 name = "tauri-utils"
 version = "2.9.3"
-source = "git+https://github.com/readest/tauri?branch=feat/cef#d6ef6e4c755228713e7358a27794a89cfd30969f"
+source = "git+https://github.com/readest/tauri?branch=feat/cef#c970d1f4b9b050aedccf49d7b68054825753585b"
 dependencies = [
  "anyhow",
  "brotli",
