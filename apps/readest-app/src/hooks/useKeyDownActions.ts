@@ -49,9 +49,8 @@ export const useKeyDownActions = ({
 
     window.addEventListener('keydown', handleKeyDown);
 
-    if (elementRef.current) {
-      elementRef.current.addEventListener('keydown', handleKeyDown);
-    }
+    const element = elementRef.current;
+    element?.addEventListener('keydown', handleKeyDown);
 
     if (appService?.isAndroidApp) {
       acquireBackKeyInterception?.();
@@ -60,6 +59,7 @@ export const useKeyDownActions = ({
 
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
+      element?.removeEventListener('keydown', handleKeyDown);
 
       if (appService?.isAndroidApp) {
         releaseBackKeyInterception?.();
