@@ -283,3 +283,39 @@ fn last_element_child_does_not_list_the_children() {
     assert_eq!(doc.take_js_errors(), Vec::<String>::new());
     assert_eq!(doc.take_messages(), ["log: b 0 null null u"]);
 }
+
+// Readest adds an alignment class to each paragraph of a chapter as it loads (keepTextAlignment),
+// a few hundred `classList.add`s on a Kindle's path to the page.
+#[test]
+fn class_list() {
+    let html =
+        "<!DOCTYPE html><html><body><p id='p' class='a  b\tc a'>x</p><p id='q'>y</p></body></html>";
+    let mut doc = QjsDocument::from_html(html, DocumentConfig::default());
+    doc.eval(
+        "const p = document.getElementById('p'), q = document.getElementById('q');
+        console.log(p.classList === p.classList, p.classList.contains('b'), p.classList.contains('d'));
+        p.classList.add('d', 'a');
+        console.log(p.className);
+        p.classList.remove('b', 'x');
+        console.log(p.className);
+        console.log(p.classList.toggle('a'), p.classList.toggle('e', true), p.classList.toggle('e', true), p.className);
+        q.classList.remove('a');
+        console.log(q.hasAttribute('class'));
+        q.classList.add('z');
+        console.log(q.className, q.classList.contains('z'));",
+        "test",
+    );
+    let logs = doc.take_messages();
+    assert_eq!(doc.take_js_errors(), Vec::<String>::new());
+    assert_eq!(
+        logs,
+        [
+            "log: true true false",
+            "log: a b c d",
+            "log: a c d",
+            "log: false true true c d e",
+            "log: false",
+            "log: z true",
+        ]
+    );
+}
