@@ -1136,10 +1136,11 @@ export default function BrowserPage() {
         .then((book) => {
           if (!cancelled && book) setExistingBookForPublication(book);
         })
-        .catch(() => {
+        .catch((error) => {
           // Best-effort lookup: if the source-map database is corrupt or
           // unavailable (web OPFS), skip the "Open & Read" badge rather
           // than emit an unhandled rejection on every page view.
+          console.warn('OPDS: source map lookup failed:', error);
         });
     }
     return () => {
