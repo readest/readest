@@ -100,3 +100,79 @@ fn a_change_in_an_iframe_is_laid_out_while_the_page_is_unchanged() {
     assert_eq!(errors, Vec::<String>::new());
     assert_eq!(logs, ["50", "80 300"]);
 }
+
+/// The width #x in the iframe's document was last laid out at (0 before any layout), read
+/// without laying anything out.
+fn laid_out_width(doc: &QjsDocument) -> f32 {
+    let page = doc.inner();
+    let iframe = page.query_selector("iframe").unwrap().unwrap();
+    let element = page.get_node(iframe).unwrap().element_data().unwrap();
+    let sub = element.sub_doc_data().unwrap().inner();
+    let x = sub.get_element_by_id("x").unwrap();
+    sub.get_node(x).unwrap().final_layout().size.width
+}
+
+// The reader reads its own layout many times while a chapter loads in its (hidden) iframe. Each
+// read laid out the chapter too: ~170 ms on a Kindle, once with only the book's CSS, thrown away
+// when Readest's styles went in.
+#[test]
+fn a_read_lays_out_its_own_document_and_not_the_iframes() {
+    let mut doc = QjsDocument::from_html(PAGE, DocumentConfig::default());
+    doc.inner_mut().resolve(0.0);
+    assert_eq!(laid_out_width(&doc), 50.0);
+    doc.eval(
+        "const f = document.querySelector('iframe');
+        const p = f.contentDocument.getElementById('x');
+        p.style.width = '80px';
+        console.log(f.getBoundingClientRect().width, f.offsetWidth);",
+        "test",
+    );
+    assert_eq!(laid_out_width(&doc), 50.0);
+    doc.eval("console.log(p.getBoundingClientRect().width);", "test");
+    assert_eq!(laid_out_width(&doc), 80.0);
+    assert_eq!(doc.take_js_errors(), Vec::<String>::new());
+    let logs: Vec<_> = doc.take_messages().into_iter().collect();
+    assert_eq!(logs, ["log: 300 300", "log: 80"]);
+}
+
+// foliate-js keeps a chapter's iframe `visibility: hidden` until it has put Readest's styles in.
+// Paint draws nothing of a hidden iframe, so laying its document out for paint was work thrown
+// away; a read in it, or showing it, lays it out.
+#[test]
+fn paint_lays_out_the_documents_of_shown_iframes_only() {
+    let hidden = PAGE.replace("border: 0\"", "border: 0; visibility: hidden\"");
+    let mut doc = QjsDocument::from_html(&hidden, DocumentConfig::default());
+    doc.inner_mut().resolve(0.0);
+    assert_eq!(laid_out_width(&doc), 0.0);
+    doc.eval(
+        "const f = document.querySelector('iframe');
+        const p = f.contentDocument.getElementById('x');
+        console.log(p.getBoundingClientRect().width);
+        p.style.width = '80px';",
+        "test",
+    );
+    doc.inner_mut().resolve(0.0);
+    assert_eq!(laid_out_width(&doc), 50.0);
+    doc.eval("f.style.visibility = 'visible';", "test");
+    doc.inner_mut().resolve(0.0);
+    assert_eq!(laid_out_width(&doc), 80.0);
+    assert_eq!(doc.take_js_errors(), Vec::<String>::new());
+    assert_eq!(doc.take_messages(), ["log: 50"]);
+}
+
+#[test]
+fn a_hidden_iframe_still_fires_load() {
+    let hidden = PAGE.replace("border: 0\"", "border: 0; visibility: hidden\"");
+    let mut doc = QjsDocument::from_html(&hidden, DocumentConfig::default());
+    doc.eval(
+        "const f = document.querySelector('iframe');
+        f.addEventListener('load', () => console.log('load', f.contentDocument.body.textContent));
+        f.srcdoc = '<p>two</p>';",
+        "test",
+    );
+    doc.run_jobs();
+    doc.inner_mut().resolve(0.0);
+    doc.call_global("__blitzAfterLayout", ());
+    assert_eq!(doc.take_js_errors(), Vec::<String>::new());
+    assert_eq!(doc.take_messages(), ["log: load two"]);
+}
