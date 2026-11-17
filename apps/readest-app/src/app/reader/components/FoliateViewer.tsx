@@ -48,6 +48,7 @@ import { useFileSync } from '../hooks/useFileSync';
 import {
   applyEinkModeAttribute,
   applyOrientationMedia,
+  applyViewportUnits,
   applyFixedlayoutStyles,
   applyImageStyle,
   applyNamespacedAttributes,
@@ -143,12 +144,6 @@ declare global {
     eval(script: string): void;
   }
 }
-
-const setBookViewport = (doc: Document, width: number, height: number) => {
-  if (width <= 0 || height <= 0) return;
-  doc.documentElement.style.setProperty('--readest-vw', `${width / 100}px`);
-  doc.documentElement.style.setProperty('--readest-vh', `${height / 100}px`);
-};
 
 // The reading area is the foliate-view box: the sidebars overlay it, and the
 // section iframes inside it are sized to their content.
@@ -496,7 +491,7 @@ const FoliateViewer: React.FC<{
           invalidateChapterScreens();
           if (entry && !getBookData(bookKey)?.isFixedLayout) {
             const { width, height } = entry.contentRect;
-            for (const { doc } of el.renderer.getContents()) setBookViewport(doc, width, height);
+            for (const { doc } of el.renderer.getContents()) applyViewportUnits(doc, width, height);
           }
           if (isLandscapeBox(el) === landscape) return;
           landscape = !landscape;
@@ -620,7 +615,7 @@ const FoliateViewer: React.FC<{
 
       if (!bookData?.isFixedLayout) {
         const view = viewRef.current;
-        if (view) setBookViewport(detail.doc, view.clientWidth, view.clientHeight);
+        if (view) applyViewportUnits(detail.doc, view.clientWidth, view.clientHeight);
         mountAdditionalFonts(detail.doc, isCJKLang(bookData.book?.primaryLanguage));
       }
 
