@@ -501,6 +501,40 @@ describe('Annotate opens the note editor at the selection', () => {
     expect(document.activeElement).not.toBe(toolbar);
   });
 
+  // The #7511 fix stops only the focus: the selection Annotate re-publishes
+  // still has to bring the popup up with the editor when the toolbar was
+  // hidden, here by an instant quick action a short touch press skipped.
+  test('Annotate with the toolbar hidden still shows the note editor', async () => {
+    Object.assign(h.viewSettings, {
+      enableAnnotationQuickActions: true,
+      annotationQuickAction: 'copy',
+    });
+    try {
+      render(
+        <Annotator bookKey='book-1' contentInsets={{ top: 0, right: 0, bottom: 0, left: 0 }} />,
+      );
+      await act(async () => {
+        await eventDispatcher.dispatch('footnote-pointerdown', {
+          key: 'book-1',
+          pointerType: 'touch',
+        });
+      });
+      await selectText();
+      expect(screen.queryByRole('button', { name: 'stub-cancel' })).toBeNull();
+
+      act(() => {
+        h.actions?.['onAnnotateSelection']?.();
+      });
+
+      expect(screen.getByTestId('note-editor-popup')).toBeTruthy();
+    } finally {
+      Object.assign(h.viewSettings, {
+        enableAnnotationQuickActions: undefined,
+        annotationQuickAction: undefined,
+      });
+    }
+  });
+
   // The other side of the boundary: a toolbar lookup keeps its selection so
   // dismissing it lands back on the selection toolbar (#5213). Only the note
   // editor consumes the selection; a lookup's handles are hidden for its
