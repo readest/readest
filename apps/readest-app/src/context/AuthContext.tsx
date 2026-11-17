@@ -63,42 +63,38 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       try {
         await supabase.auth.refreshSession();
       } catch {
-        // A failed startup refresh must not sign the user out: the stored
-        // access token may still be valid and the failure may be transient
-        // (offline at launch, proxy hiccup). Keep the stored session; the
-        // next refresh will retry.
+        // A thrown refresh is not the server rejecting the token: keep the
+        // stored session. A rejection signs out through SIGNED_OUT.
+      }
+    };
+    const restoreSession = async (refreshToken: string) => {
+      try {
+        const { error } = await supabase.auth.refreshSession({ refresh_token: refreshToken });
+        // Offline or a gateway error: keep the session rather than sign out.
+        if (error && !isAuthRetryableFetchError(error)) syncSession(null);
+      } catch {
+        // Not a rejection of the token either; keep the session.
       }
     };
 
-    const { data: subscription } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (session) {
+    const { data: subscription } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session || event !== 'INITIAL_SESSION') {
         syncSession(session);
         return;
       }
-      if (event === 'INITIAL_SESSION') {
-        // Supabase drops its own stored session at client init when the
-        // startup refresh fails (e.g. a transient network error on
-        // WebView2 at launch) and then reports a null INITIAL_SESSION.
-        // The app's stored refresh token may still be valid, so try to
-        // re-establish the session from it before signing the user out.
-        const refreshToken = localStorage.getItem('refresh_token');
-        if (refreshToken) {
-          try {
-            const { error } = await supabase.auth.refreshSession({ refresh_token: refreshToken });
-            if (!error) return;
-            if (isAuthRetryableFetchError(error)) {
-              // Transient failure (offline at launch, proxy hiccup): keep
-              // the stored session so the user stays signed in on the
-              // existing access token; the next refresh will retry.
-              return;
-            }
-          } catch {
-            // A thrown refresh must not sign the user out either.
-            return;
-          }
-        }
+      // A null INITIAL_SESSION doesn't mean signed out. When the startup
+      // refresh fails on the network (offline at launch), the SDK keeps its
+      // stored session but still reports null. When the SDK's own startup
+      // refresh fails with an error it doesn't retry, it drops its session
+      // before this listener exists, so that SIGNED_OUT never reaches the app.
+      // Ask the server about the app's refresh token before signing out.
+      // Not awaited: the SDK callback must not wait on another SDK call.
+      const refreshToken = localStorage.getItem('refresh_token');
+      if (refreshToken) {
+        void restoreSession(refreshToken);
+      } else {
+        syncSession(null);
       }
-      syncSession(null);
     });
 
     refreshSession();
