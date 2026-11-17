@@ -52,7 +52,7 @@ describe('Paginator opening at a position', () => {
     paginator.remove();
   });
 
-  const open = async () => {
+  const open = async (beforeOpen?: () => void) => {
     paginator = document.createElement('foliate-paginator') as Paginator;
     Object.assign(paginator.style, {
       width: '800px',
@@ -70,6 +70,7 @@ describe('Paginator opening at a position', () => {
     paginator.addEventListener('relocate', (e) => {
       relocates.push((e as CustomEvent<RelocateDetail>).detail);
     });
+    beforeOpen?.();
     paginator.open(book() as unknown as Parameters<Renderer['open']>[0]);
     await paginator.goTo({ index: 0, anchor });
     // past the section's first resize notification and the debounced scroll listener
@@ -93,6 +94,67 @@ describe('Paginator opening at a position', () => {
     await wait(800);
     expect(relocates.length).toBeGreaterThan(0);
     expect(relocates.at(-1)!.range.intersectsNode(target)).toBe(true);
+  });
+
+  // The visible range, its CFI and the host's relocate handlers change nothing on the page, as on
+  // a page turn: the page is shown, and painted, before it relocates.
+  it('shows the opened page before it relocates', async () => {
+    let frames = 0;
+    let counting = true;
+    const count = () => {
+      frames++;
+      if (counting) requestAnimationFrame(count);
+    };
+    requestAnimationFrame(count);
+    let shownAt = -1;
+    const atRelocate: { opacity: string; framesSinceShown: number }[] = [];
+    let watch: MutationObserver | undefined;
+    try {
+      await open(() => {
+        const container = paginator.shadowRoot!.getElementById('container')!;
+        watch = new MutationObserver(() => {
+          if (shownAt < 0 && container.style.opacity === '1') shownAt = frames;
+        });
+        watch.observe(container, { attributes: true, attributeFilter: ['style'] });
+        paginator.addEventListener('relocate', () => {
+          atRelocate.push({ opacity: container.style.opacity, framesSinceShown: frames - shownAt });
+        });
+      });
+    } finally {
+      counting = false;
+      watch?.disconnect();
+    }
+    expect(relocates.map((d) => d.reason)).toEqual(['navigation']);
+    expect(atRelocate[0]!.opacity).toBe('1');
+    expect(atRelocate[0]!.framesSinceShown).toBeGreaterThan(0);
+  });
+
+  it('relocates to a navigation that comes while the opened page paints', async () => {
+    let stabilized = 0;
+    let watch: MutationObserver | undefined;
+    // the middle of paragraph 160
+    const other = (doc: Document) => {
+      const range = doc.createRange();
+      range.selectNodeContents(doc.body.children[159]!.firstChild!);
+      return range;
+    };
+    await open(() => {
+      const container = paginator.shadowRoot!.getElementById('container')!;
+      paginator.addEventListener('stabilized', () => stabilized++);
+      watch = new MutationObserver(() => {
+        if (container.style.opacity !== '1' || !watch) return;
+        watch.disconnect();
+        watch = undefined;
+        void paginator.goTo({ index: 0, anchor: other });
+      });
+      watch.observe(container, { attributes: true, attributeFilter: ['style'] });
+    });
+    const doc = (paginator.getContents() as { doc: Document }[])[0]!.doc;
+    expect(relocates.map((d) => d.reason)).toEqual(['navigation', 'navigation']);
+    expect(relocates[0]!.range.intersectsNode(doc.body.children[119]!)).toBe(true);
+    expect(relocates[1]!.range.intersectsNode(doc.body.children[159]!)).toBe(true);
+    // the display and each fill send it: the reader waits for it to drop its loading state
+    expect(stabilized).toBeGreaterThan(0);
   });
 
   it('relocates on a scroll it did not make', async () => {
