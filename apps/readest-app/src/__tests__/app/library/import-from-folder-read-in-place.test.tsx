@@ -123,4 +123,48 @@ describe('Import-from-Folder dialog: read-in-place toggle (#5680)', () => {
       expect.objectContaining({ directory: '/Users/me/Books2', readInPlace: true }),
     );
   });
+
+  it('does not carry an explicit OFF over to a different registered folder (#7519)', async () => {
+    const OTHER = '/Users/me/Other';
+    const { props } = setup({
+      isRegisteredExternalRoot: (dir: string) => dir === REGISTERED || dir === OTHER,
+      onPickDirectory: vi.fn().mockResolvedValue(OTHER),
+    });
+
+    // Uncheck "Read books in place" on the registered folder shown first.
+    fireEvent.click(getReadInPlaceCheckbox());
+    expect(getReadInPlaceCheckbox().checked).toBe(false);
+
+    // Pick another folder that is also registered.
+    fireEvent.click(screen.getByLabelText('Choose a folder'));
+    await waitFor(() =>
+      expect(screen.getByLabelText('Choose a folder').getAttribute('title')).toBe(OTHER),
+    );
+
+    // OFF was chosen for the first folder; carrying it over would make OK
+    // unregister the second folder and copy its books.
+    expect(getReadInPlaceCheckbox().checked).toBe(true);
+
+    fireEvent.click(screen.getByText('OK'));
+    expect(props.onConfirm).toHaveBeenCalledWith(
+      expect.objectContaining({ directory: OTHER, readInPlace: true }),
+    );
+  });
+
+  it('keeps an explicit OFF when the same registered folder is picked again (#5680)', async () => {
+    const { props } = setup({ onPickDirectory: vi.fn().mockResolvedValue(REGISTERED) });
+
+    fireEvent.click(getReadInPlaceCheckbox());
+    fireEvent.click(screen.getByLabelText('Choose a folder'));
+    await waitFor(() => expect(props.onPickDirectory).toHaveBeenCalled());
+    await waitFor(() =>
+      expect((screen.getByLabelText('Choose a folder') as HTMLButtonElement).disabled).toBe(false),
+    );
+
+    expect(getReadInPlaceCheckbox().checked).toBe(false);
+    fireEvent.click(screen.getByText('OK'));
+    expect(props.onConfirm).toHaveBeenCalledWith(
+      expect.objectContaining({ directory: REGISTERED, readInPlace: false }),
+    );
+  });
 });
