@@ -1456,6 +1456,32 @@ const FoliateViewer: React.FC<{
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [viewSettings?.vertical]);
 
+  // The max inline size depends on the window (a near-square window trims it
+  // on touch devices, and vertical writing measures the longer screen axis),
+  // so a resize re-resolves it; otherwise a maximized window keeps the ceiling
+  // the book opened with and leaves a band on each side (#7510). Only a changed
+  // value is written, since each write re-lays out the page, and a drag is
+  // resolved once it settles. Settings are read when it fires, not captured.
+  useEffect(() => {
+    if (bookDoc.rendition?.layout === 'pre-paginated') return;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const handleResize = () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        const renderer = viewRef.current?.renderer;
+        const viewSettings = getViewSettings(bookKey);
+        if (!renderer || !viewSettings) return;
+        applyRendererLayout(renderer, getCurrentRendererLayout(viewSettings), bookDoc.rendition);
+      }, 150);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      clearTimeout(timer);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bookKey, bookDoc]);
+
   // iPhone Duo: folding, unfolding, turning the device or flipping book mode
   // changes how many pages the display shows. The paginator keeps the
   // reading position across the re-layout. The layout is resolved here from
