@@ -5,6 +5,7 @@ import { MdClose, MdPauseCircleFilled, MdPlayCircleFilled } from 'react-icons/md
 import { ttsSessionManager, TTSSession } from '@/services/tts';
 import { asAudiobookController } from '@/services/audiobook/AudiobookController';
 import { resumePlayback } from '@/services/playback/playbackSource';
+import { useEnv } from '@/context/EnvContext';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useLibraryStore } from '@/store/libraryStore';
@@ -12,6 +13,7 @@ import { useThemeStore } from '@/store/themeStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { eventDispatcher } from '@/utils/event';
 import { navigateToReader } from '@/utils/nav';
+import { tauriHandleOnCloseWindow } from '@/utils/window';
 
 const formatCountdown = (msLeft: number) => {
   const total = Math.max(0, Math.floor(msLeft / 1000));
@@ -32,6 +34,7 @@ interface NowPlayingBarProps {
 const NowPlayingBar = ({ isSelectMode }: NowPlayingBarProps) => {
   const _ = useTranslation();
   const router = useRouter();
+  const { appService } = useEnv();
   const { safeAreaInsets } = useThemeStore();
   const { getBookData } = useBookDataStore();
   const [session, setSession] = useState<TTSSession | null>(() =>
@@ -67,6 +70,31 @@ const NowPlayingBar = ({ isSelectMode }: NowPlayingBarProps) => {
       eventDispatcher.off('tts-playback-state', onPlaybackState);
     };
   }, []);
+
+  // The session outlives its book but not this window: native narration
+  // would keep playing after the webview is gone, so stop it when the window
+  // closes or the app quits, as the reader does (#7523).
+  const hasWindow = !!appService?.hasWindow;
+  const hasSession = !!session;
+  useEffect(() => {
+    if (!hasWindow || !hasSession) return;
+    // Bounded like TTSController.stop: a stalled native teardown must not
+    // keep the window open or the app running.
+    const stop = () =>
+      Promise.race([
+        ttsSessionManager.stopActive('quit'),
+        new Promise<void>((resolve) => setTimeout(resolve, 3000)),
+      ]);
+    const unlisten = tauriHandleOnCloseWindow(stop).catch((error) => {
+      console.info('Failed to register close-window listener:', error);
+      return () => {};
+    });
+    eventDispatcher.on('quit-app', stop);
+    return () => {
+      void unlisten.then((fn) => fn());
+      eventDispatcher.off('quit-app', stop);
+    };
+  }, [hasWindow, hasSession]);
 
   const visible = !!session && !stopping && !isSelectMode;
 
