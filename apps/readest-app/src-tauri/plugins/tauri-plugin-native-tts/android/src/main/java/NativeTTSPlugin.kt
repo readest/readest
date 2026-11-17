@@ -149,10 +149,8 @@ class NativeTTSPlugin(private val activity: Activity) : Plugin(activity) {
         private const val TAG = "NativeTTSPlugin"
         private const val CHANNEL_NAME = "tts_events"
         private const val IDLE_TIMEOUT_MS = 30L * 60 * 1000 // 30 minutes
-        // Longest sleep between A-B repeat checks, and how close to a file's
-        // end the loop end is clamped so the file cannot play out first.
+        // Longest sleep between A-B repeat checks.
         private const val LOOP_CHECK_MAX_MS = 200L
-        private const val LOOP_END_SLACK_MS = 40L
         var NOTIFICATION_TITLE = "Read Aloud"
         var NOTIFICATION_TEXT = "Ready to read aloud"
         var FOREGROUND_SERVICE_TITLE = "Read Aloud"
@@ -972,8 +970,7 @@ class NativeTTSPlugin(private val activity: Activity) : Plugin(activity) {
             playoutLoopPending = false
             return LOOP_CHECK_MAX_MS
         }
-        val duration = player.duration
-        val end = if (duration > 0) minOf(playoutLoopEndMs, duration - LOOP_END_SLACK_MS) else playoutLoopEndMs
+        val end = PlayoutLoopBounds.effectiveEnd(playoutLoopStartMs, playoutLoopEndMs, player.duration)
         val position = player.currentPosition
         if (position >= end) {
             if (playoutLoopPending) loopPlayoutBack(index)
