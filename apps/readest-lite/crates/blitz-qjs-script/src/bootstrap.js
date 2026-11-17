@@ -824,6 +824,47 @@
     });
   }
 
+  // An element's `classList`: one per element, reading and writing its class attribute. The
+  // attribute is written as a browser writes it (tokens once each, single spaces), unless
+  // removing from an element that has none.
+  const classTokens = (v) => {
+    const out = [];
+    if (!v) return out;
+    // single spaces are the common case, and a regex split costs several times a plain one
+    const plain = !/[\t\n\f\r]| {2}/.test(v);
+    for (const t of plain ? v.split(' ') : v.split(/[\t\n\f\r ]+/))
+      if (t && !out.includes(t)) out.push(t);
+    return out;
+  };
+  class ClassList {
+    constructor(el) {
+      this._el = el;
+    }
+    add(...c) {
+      const t = classTokens(this._el.getAttribute('class'));
+      for (const x of c) if (!t.includes(x)) t.push(x);
+      this._el.setAttribute('class', t.join(' '));
+    }
+    remove(...c) {
+      const v = this._el.getAttribute('class');
+      if (v === null) return;
+      this._el.setAttribute(
+        'class',
+        classTokens(v)
+          .filter((x) => !c.includes(x))
+          .join(' '),
+      );
+    }
+    toggle(c, force) {
+      const on = force === undefined ? !this.contains(c) : !!force;
+      if (on) this.add(c);
+      else this.remove(c);
+      return on;
+    }
+    contains(c) {
+      return classTokens(this._el.getAttribute('class')).includes(c);
+    }
+  }
   // A host's attributes, without the one its shadow root's styles select it by.
   const attrNames = (el) => {
     const a = n.attrNames(el._id);
@@ -983,26 +1024,7 @@
       this.setAttribute('class', v);
     }
     get classList() {
-      const el = this;
-      const get = () => el.className.split(/\s+/).filter(Boolean);
-      return {
-        add: (...c) => {
-          el.className = [...new Set([...get(), ...c])].join(' ');
-        },
-        remove: (...c) => {
-          el.className = get()
-            .filter((x) => !c.includes(x))
-            .join(' ');
-        },
-        toggle: (c, f) => {
-          const has = get().includes(c);
-          const on = f === undefined ? !has : f;
-          if (on) el.classList.add(c);
-          else el.classList.remove(c);
-          return on;
-        },
-        contains: (c) => get().includes(c),
-      };
+      return (this._classList ??= new ClassList(this));
     }
     get dataset() {
       const el = this;
