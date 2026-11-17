@@ -656,6 +656,12 @@ export interface SystemSettings {
    */
   replicaDeviceId?: string;
   /**
+   * iOS only: copy of the device-bound keychain anchor. When it differs from
+   * the keychain, settings.json came from another device and the sync device
+   * IDs above are replaced (#7558).
+   */
+  deviceAnchor?: string;
+  /**
    * Per-kind cursor for replica sync. Stores the HLC string of the last
    * pulled row per kind. Absent kinds pull from the beginning.
    */

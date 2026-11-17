@@ -28,9 +28,8 @@ import {
 } from './constants';
 import { DEFAULT_AI_SETTINGS } from './ai/constants';
 import { getTargetLang, isCJKEnv } from '@/utils/misc';
-import { isTauriAppPlatform } from '@/services/environment';
 import { safeLoadJSON, safeSaveJSON } from './persistence';
-import { createDeviceAnchorStore, ensureDeviceIdentity } from './deviceIdentity';
+import { ensureDeviceIdentity } from './deviceIdentity';
 
 export interface Context {
   fs: FileSystem;
@@ -38,6 +37,7 @@ export interface Context {
   isDesktopApp?: boolean;
   isEink: boolean;
   isAppDataSandbox: boolean;
+  isIOSApp?: boolean;
 }
 
 export function getDefaultViewSettings(ctx: Context): ViewSettings {
@@ -191,12 +191,6 @@ export async function loadSettings(ctx: Context): Promise<SystemSettings> {
 
   if (settings.bookshelves) settings.bookshelves = mergeBookshelfStates(settings.bookshelves);
 
-  // Whether a settings file already carried sync device IDs, captured
-  // before the mint-if-missing blocks below fill in any gaps.
-  const hadStoredDeviceIds = Boolean(
-    settings.kosync.deviceId || settings.bookorbit.deviceId || settings.replicaDeviceId,
-  );
-
   if (!settings.kosync.deviceId) {
     settings.kosync.deviceId = uuidv4();
     await saveSettings(ctx.fs, settings);
@@ -212,16 +206,9 @@ export async function loadSettings(ctx: Context): Promise<SystemSettings> {
     await saveSettings(ctx.fs, settings);
   }
 
-  // iOS device-to-device migration (#7558) copies settings.json to the new
-  // iPhone but not device-bound keychain items: stored sync IDs with no
-  // device anchor mean this container moved to another physical device, so
-  // the migrated install mints fresh sync identities instead of sharing
-  // the old device's. Web has no secure store to anchor against, so there
-  // is nothing to check there.
-  if (isTauriAppPlatform()) {
-    await ensureDeviceIdentity(settings, hadStoredDeviceIds, await createDeviceAnchorStore(), () =>
-      saveSettings(ctx.fs, settings),
-    );
+  // iOS device-to-device migration copies settings.json, sync IDs included (#7558).
+  if (ctx.isIOSApp && (await ensureDeviceIdentity(settings))) {
+    await saveSettings(ctx.fs, settings);
   }
 
   if (migrateBookshelfSettings(settings)) {

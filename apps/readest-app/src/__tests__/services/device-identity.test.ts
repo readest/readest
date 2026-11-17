@@ -1,227 +1,204 @@
-// @vitest-environment node
+// @vitest-environment happy-dom
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('@/utils/bridge', () => ({
+const bridge = vi.hoisted(() => ({
   getSecureItem: vi.fn(),
   setSecureItem: vi.fn(),
-  clearSecureItem: vi.fn(),
-  isSyncKeychainAvailable: vi.fn(),
+}));
+vi.mock('@/utils/bridge', () => bridge);
+// Every case runs inside the native app; only iOS has a device-bound keychain.
+vi.mock('@/services/environment', async (importOriginal) => ({
+  ...((await importOriginal()) as Record<string, unknown>),
+  isTauriAppPlatform: () => true,
 }));
 
-import { clearSecureItem, getSecureItem, setSecureItem } from '@/utils/bridge';
-import {
-  DEVICE_ANCHOR_KEY,
-  createDeviceAnchorStore,
-  ensureDeviceIdentity,
-  regenerateSyncDeviceIds,
-  type DeviceAnchorStore,
-} from '@/services/deviceIdentity';
+import { SETTINGS_FILENAME } from '@/services/constants';
+import type { Context } from '@/services/settingsService';
 import type { SystemSettings } from '@/types/settings';
+import type { FileSystem } from '@/types/system';
 
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const STORED_IDS = {
+  kosync: { deviceId: 'stored-kosync-id', deviceName: 'Old iPhone' },
+  bookorbit: { deviceId: 'stored-bookorbit-id', deviceName: 'Old iPhone' },
+  replicaDeviceId: 'stored-replica-id',
+};
 
-const settingsWithIds = (
-  kosync = 'old-kosync-id',
-  bookorbit = 'old-bookorbit-id',
-  replica = 'old-replica-id',
-) =>
-  ({
-    kosync: {
-      deviceId: kosync,
-      deviceName: 'My iPhone',
-      serverUrl: 'https://sync.example.com',
-      username: 'user',
+const makeFs = (stored?: Record<string, unknown>) => {
+  const files = new Map<string, string>();
+  if (stored) files.set(SETTINGS_FILENAME, JSON.stringify({ version: 1, ...stored }));
+  const fs = {
+    readFile: async (path: string) => {
+      const value = files.get(path);
+      if (value === undefined) throw new Error(`ENOENT: ${path}`);
+      return value;
     },
-    bookorbit: {
-      deviceId: bookorbit,
-      deviceName: 'My iPhone',
-      serverUrl: 'https://books.example.com',
-      username: 'user',
+    writeFile: async (path: string, _base: unknown, content: string) => {
+      files.set(path, content);
     },
-    replicaDeviceId: replica,
-    koreaderSyncDeviceId: 'untouched-koreader-id',
-  }) as unknown as SystemSettings;
+    getPrefix: async () => 'Books',
+  } as unknown as FileSystem;
+  const persisted = () => JSON.parse(files.get(SETTINGS_FILENAME)!) as SystemSettings;
+  return { fs, persisted };
+};
 
-const fakeStore = (anchor: { value?: string; error?: string } | Error = {}) => {
-  const saves: string[] = [];
-  let saveShouldThrow = false;
-  const store: DeviceAnchorStore = {
-    loadAnchor: async () => {
-      if (anchor instanceof Error) throw anchor;
-      return anchor;
-    },
-    saveAnchor: async (value: string) => {
-      if (saveShouldThrow) throw new Error('keychain locked');
-      saves.push(value);
-      return { success: true };
-    },
-    clearAnchor: async () => {},
-  };
-  return {
-    store,
-    saves,
-    failNextSave: () => {
-      saveShouldThrow = true;
-    },
-  };
+const ctx = (fs: FileSystem, isIOSApp = true): Context => ({
+  fs,
+  isMobile: true,
+  isDesktopApp: false,
+  isEink: false,
+  isAppDataSandbox: false,
+  isIOSApp,
+});
+
+const keychain = (value?: string) => bridge.getSecureItem.mockResolvedValue(value ? { value } : {});
+
+// The keychain check runs once per app session, so each case loads a fresh
+// settings module.
+const loadSettings = async (context: Context) => {
+  const settingsService = await import('@/services/settingsService');
+  return settingsService.loadSettings(context);
+};
+
+const expectStoredIds = (settings: SystemSettings) => {
+  expect(settings.kosync.deviceId).toBe('stored-kosync-id');
+  expect(settings.bookorbit.deviceId).toBe('stored-bookorbit-id');
+  expect(settings.replicaDeviceId).toBe('stored-replica-id');
+};
+
+const expectFreshIds = (settings: SystemSettings) => {
+  expect(settings.kosync.deviceId).toMatch(/^[0-9a-f-]{36}$/);
+  expect(settings.bookorbit.deviceId).toMatch(/^[0-9a-f-]{36}$/);
+  expect(settings.replicaDeviceId).toMatch(/^[0-9a-f-]{36}$/);
+  expect(settings.kosync.deviceId).not.toBe('stored-kosync-id');
+  expect(settings.bookorbit.deviceId).not.toBe('stored-bookorbit-id');
+  expect(settings.replicaDeviceId).not.toBe('stored-replica-id');
 };
 
 beforeEach(() => {
+  vi.resetModules();
   vi.clearAllMocks();
+  bridge.setSecureItem.mockResolvedValue({ success: true });
+  localStorage.clear();
 });
 
-describe('regenerateSyncDeviceIds', () => {
-  it('mints fresh UUIDs for the sync identities and leaves everything else alone', () => {
-    const settings = settingsWithIds();
+describe('loadSettings device identity on iOS (#7558)', () => {
+  it('keeps the stored IDs on the first launch after an update, and anchors the device', async () => {
+    keychain();
+    const { fs, persisted } = makeFs(STORED_IDS);
 
-    regenerateSyncDeviceIds(settings);
+    const settings = await loadSettings(ctx(fs));
 
-    expect(settings.kosync.deviceId).toMatch(UUID_RE);
-    expect(settings.bookorbit.deviceId).toMatch(UUID_RE);
-    expect(settings.replicaDeviceId).toMatch(UUID_RE);
-    expect(settings.kosync.deviceId).not.toBe('old-kosync-id');
-    expect(settings.bookorbit.deviceId).not.toBe('old-bookorbit-id');
-    expect(settings.replicaDeviceId).not.toBe('old-replica-id');
-    expect(
-      new Set([settings.kosync.deviceId, settings.bookorbit.deviceId, settings.replicaDeviceId])
-        .size,
-    ).toBe(3);
-    expect(settings.kosync.deviceName).toBe('My iPhone');
-    expect(settings.kosync.serverUrl).toBe('https://sync.example.com');
-    expect(settings.kosync.username).toBe('user');
-    expect((settings as unknown as { koreaderSyncDeviceId: string }).koreaderSyncDeviceId).toBe(
-      'untouched-koreader-id',
+    expectStoredIds(settings);
+    expect(bridge.setSecureItem).toHaveBeenCalledWith(
+      expect.objectContaining({ deviceBound: true, value: settings.deviceAnchor }),
     );
-  });
-});
-
-describe('ensureDeviceIdentity', () => {
-  it('leaves the IDs alone when the device anchor is present (same device)', async () => {
-    const settings = settingsWithIds();
-    const { store, saves } = fakeStore({ value: 'anchor-from-this-device' });
-    const saveSettings = vi.fn();
-
-    expect(await ensureDeviceIdentity(settings, true, store, saveSettings)).toBe(false);
-
-    expect(settings.kosync.deviceId).toBe('old-kosync-id');
-    expect(settings.bookorbit.deviceId).toBe('old-bookorbit-id');
-    expect(settings.replicaDeviceId).toBe('old-replica-id');
-    expect(saveSettings).not.toHaveBeenCalled();
-    expect(saves).toHaveLength(0);
+    expect(persisted().deviceAnchor).toBe(settings.deviceAnchor);
   });
 
-  it('anchors a fresh install without regenerating the just-minted IDs', async () => {
-    const settings = settingsWithIds('', '', '');
-    const { store, saves } = fakeStore({});
-    const saveSettings = vi.fn();
+  it('adopts the anchor a previous install left in the keychain', async () => {
+    keychain('anchor-from-earlier-install');
+    const { fs } = makeFs();
 
-    expect(await ensureDeviceIdentity(settings, false, store, saveSettings)).toBe(false);
+    const settings = await loadSettings(ctx(fs));
 
-    expect(settings.kosync.deviceId).toBe('');
-    expect(saveSettings).not.toHaveBeenCalled();
-    expect(saves).toHaveLength(1);
-    expect(saves[0]).toMatch(UUID_RE);
+    expect(settings.deviceAnchor).toBe('anchor-from-earlier-install');
+    expect(bridge.setSecureItem).not.toHaveBeenCalled();
   });
 
-  it('regenerates the IDs when stored IDs exist but the device anchor is missing (migration)', async () => {
-    const settings = settingsWithIds();
-    const { store, saves } = fakeStore({});
-    const saveSettings = vi.fn();
+  it('keeps the stored IDs when the keychain holds the same anchor (same device)', async () => {
+    keychain('this-device');
+    const { fs } = makeFs({ ...STORED_IDS, deviceAnchor: 'this-device' });
 
-    expect(await ensureDeviceIdentity(settings, true, store, saveSettings)).toBe(true);
+    const settings = await loadSettings(ctx(fs));
 
-    expect(settings.kosync.deviceId).toMatch(UUID_RE);
-    expect(settings.bookorbit.deviceId).toMatch(UUID_RE);
-    expect(settings.replicaDeviceId).toMatch(UUID_RE);
-    expect(settings.kosync.deviceId).not.toBe('old-kosync-id');
-    expect(settings.bookorbit.deviceId).not.toBe('old-bookorbit-id');
-    expect(settings.replicaDeviceId).not.toBe('old-replica-id');
-    expect(saveSettings).toHaveBeenCalledTimes(1);
-    expect(saves).toHaveLength(1);
-    expect(saves[0]).toMatch(UUID_RE);
+    expectStoredIds(settings);
+    expect(bridge.setSecureItem).not.toHaveBeenCalled();
   });
 
-  it('leaves the IDs alone when the anchor read fails (fail-soft, never breaks startup)', async () => {
-    const settings = settingsWithIds();
-    const { store, saves } = fakeStore(new Error('keychain unavailable'));
-    const saveSettings = vi.fn();
+  it('mints fresh IDs when settings.json came from another device', async () => {
+    keychain();
+    const { fs, persisted } = makeFs({ ...STORED_IDS, deviceAnchor: 'old-iphone' });
 
-    expect(await ensureDeviceIdentity(settings, true, store, saveSettings)).toBe(false);
+    const settings = await loadSettings(ctx(fs));
 
-    expect(settings.kosync.deviceId).toBe('old-kosync-id');
-    expect(saveSettings).not.toHaveBeenCalled();
-    expect(saves).toHaveLength(0);
+    expectFreshIds(settings);
+    // Only the identity changes; the rest of the settings move with the user.
+    expect(settings.kosync.deviceName).toBe('Old iPhone');
+    expect(settings.deviceAnchor).not.toBe('old-iphone');
+    expect(bridge.setSecureItem).toHaveBeenCalledWith(
+      expect.objectContaining({ deviceBound: true, value: settings.deviceAnchor }),
+    );
+    const saved = persisted();
+    expect(saved.deviceAnchor).toBe(settings.deviceAnchor);
+    expect(saved.kosync.deviceId).toBe(settings.kosync.deviceId);
+    expect(saved.bookorbit.deviceId).toBe(settings.bookorbit.deviceId);
+    expect(saved.replicaDeviceId).toBe(settings.replicaDeviceId);
   });
 
-  it('leaves the IDs alone when the anchor read returns an error', async () => {
-    const settings = settingsWithIds();
-    const { store, saves } = fakeStore({ error: 'OSStatus -34018' });
-    const saveSettings = vi.fn();
+  it('mints fresh IDs and adopts the anchor of a device that had Readest before', async () => {
+    keychain('new-iphone');
+    const { fs } = makeFs({ ...STORED_IDS, deviceAnchor: 'old-iphone' });
 
-    expect(await ensureDeviceIdentity(settings, true, store, saveSettings)).toBe(false);
+    const settings = await loadSettings(ctx(fs));
 
-    expect(settings.kosync.deviceId).toBe('old-kosync-id');
-    expect(saveSettings).not.toHaveBeenCalled();
-    expect(saves).toHaveLength(0);
+    expectFreshIds(settings);
+    expect(settings.deviceAnchor).toBe('new-iphone');
+    expect(bridge.setSecureItem).not.toHaveBeenCalled();
   });
 
-  it('does not throw when the anchor write fails on a fresh install', async () => {
-    const settings = settingsWithIds('', '', '');
-    const { store, saves, failNextSave } = fakeStore({});
-    const saveSettings = vi.fn();
-    failNextSave();
+  it('keeps the stored IDs when the anchor write fails, so they are not replaced every launch', async () => {
+    keychain();
+    bridge.setSecureItem.mockResolvedValue({ success: false, error: 'OSStatus -34018' });
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const { fs } = makeFs({ ...STORED_IDS, deviceAnchor: 'old-iphone' });
 
-    expect(await ensureDeviceIdentity(settings, false, store, saveSettings)).toBe(false);
+    const settings = await loadSettings(ctx(fs));
 
-    expect(saves).toHaveLength(0);
-    expect(warn).toHaveBeenCalled();
+    expectStoredIds(settings);
+    expect(settings.deviceAnchor).toBe('old-iphone');
     warn.mockRestore();
   });
 
-  it('does not store the anchor when the settings save fails during migration', async () => {
-    const settings = settingsWithIds();
-    const { store, saves } = fakeStore({});
-    const saveSettings = vi.fn().mockRejectedValueOnce(new Error('disk full'));
+  it('keeps the stored IDs when the keychain cannot be read', async () => {
+    bridge.getSecureItem.mockResolvedValue({ error: 'OSStatus -25308' });
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const { fs } = makeFs({ ...STORED_IDS, deviceAnchor: 'old-iphone' });
 
-    await expect(ensureDeviceIdentity(settings, true, store, saveSettings)).rejects.toThrow(
-      'disk full',
-    );
+    const settings = await loadSettings(ctx(fs));
 
-    expect(saves).toHaveLength(0);
-  });
-});
-
-describe('createDeviceAnchorStore', () => {
-  it('stores the anchor device-bound so it does not migrate with the app container', async () => {
-    vi.mocked(setSecureItem).mockResolvedValue({ success: true });
-
-    const store = await createDeviceAnchorStore();
-    await store.saveAnchor('new-anchor');
-
-    expect(setSecureItem).toHaveBeenCalledWith({
-      key: DEVICE_ANCHOR_KEY,
-      value: 'new-anchor',
-      deviceBound: true,
-    });
+    expectStoredIds(settings);
+    expect(bridge.setSecureItem).not.toHaveBeenCalled();
+    warn.mockRestore();
   });
 
-  it('reads the anchor through the keyed secure store', async () => {
-    vi.mocked(getSecureItem).mockResolvedValue({ value: 'stored-anchor' });
+  it('gives overlapping loads one identity and reads the keychain once', async () => {
+    keychain();
+    const { fs } = makeFs({ ...STORED_IDS, deviceAnchor: 'old-iphone' });
+    const settingsService = await import('@/services/settingsService');
 
-    const store = await createDeviceAnchorStore();
-    const res = await store.loadAnchor();
+    const [a, b] = await Promise.all([
+      settingsService.loadSettings(ctx(fs)),
+      settingsService.loadSettings(ctx(fs)),
+    ]);
+    const c = await settingsService.loadSettings(ctx(fs));
 
-    expect(getSecureItem).toHaveBeenCalledWith({ key: DEVICE_ANCHOR_KEY });
-    expect(res).toEqual({ value: 'stored-anchor' });
+    expectFreshIds(a);
+    for (const other of [b, c]) {
+      expect(other.deviceAnchor).toBe(a.deviceAnchor);
+      expect(other.kosync.deviceId).toBe(a.kosync.deviceId);
+      expect(other.bookorbit.deviceId).toBe(a.bookorbit.deviceId);
+      expect(other.replicaDeviceId).toBe(a.replicaDeviceId);
+    }
+    expect(bridge.getSecureItem).toHaveBeenCalledTimes(1);
   });
 
-  it('clears the anchor through the keyed secure store', async () => {
-    vi.mocked(clearSecureItem).mockResolvedValue({ success: true });
+  it('does not touch the keychain outside iOS', async () => {
+    const { fs } = makeFs({ ...STORED_IDS, deviceAnchor: 'old-iphone' });
 
-    const store = await createDeviceAnchorStore();
-    await store.clearAnchor();
+    const settings = await loadSettings(ctx(fs, false));
 
-    expect(clearSecureItem).toHaveBeenCalledWith({ key: DEVICE_ANCHOR_KEY });
+    expectStoredIds(settings);
+    expect(bridge.getSecureItem).not.toHaveBeenCalled();
+    expect(bridge.setSecureItem).not.toHaveBeenCalled();
   });
 });

@@ -1,115 +1,71 @@
 import { v4 as uuidv4 } from 'uuid';
+import { getSecureItem, setSecureItem } from '@/utils/bridge';
 import type { SystemSettings } from '@/types/settings';
 
 /**
- * Device identity vs. iOS device migration (#7558).
- *
- * Apple's device-to-device migration copies the app container wholesale —
- * settings.json included — so the KOSync / BookOrbit / replica device IDs
- * minted on the old iPhone arrive on the new one unchanged, and two
- * physical devices end up sharing one sync identity. Conflict detection
- * then treats them as the same device (1% threshold instead of 0.01%, and
- * no remote XPointer-to-CFI resolution).
- *
- * The anchor that tells the devices apart lives outside the migrating
- * container: a keychain item stored device-bound (iOS
- * `kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly`). Such items do not
- * transfer to another device, so a migrated install finds its stored IDs
- * but no anchor — and mints fresh ones. The anchor is only a marker; the
- * value is a throwaway UUID.
+ * iOS device-to-device migration copies the app container, settings.json
+ * included, so the new iPhone arrives with the old one's KOSync, BookOrbit
+ * and replica device IDs (#7558). A keychain item stored ThisDeviceOnly does
+ * not migrate, so each device keeps an anchor there and settings.json keeps a
+ * copy of it. When the two differ, settings.json came from another device.
  */
+const DEVICE_ANCHOR_KEY = 'readest.device-anchor';
 
-/** Secure-KV key holding the device-bound anchor. */
-export const DEVICE_ANCHOR_KEY = 'readest.device-anchor';
-
-export interface DeviceAnchorStore {
-  loadAnchor(): Promise<{ value?: string; error?: string }>;
-  saveAnchor(value: string): Promise<{ success: boolean; error?: string }>;
-  clearAnchor(): Promise<void>;
+interface DeviceIdentity {
+  anchor: string;
+  kosyncDeviceId: string;
+  bookorbitDeviceId: string;
+  replicaDeviceId: string;
 }
 
-/** Wires the anchor store to the OS keychain via the native bridge. */
-export const createDeviceAnchorStore = async (): Promise<DeviceAnchorStore> => {
-  const { clearSecureItem, getSecureItem, setSecureItem } = await import('@/utils/bridge');
+let identityCheck: Promise<DeviceIdentity | null> | null = null;
+
+async function checkDeviceIdentity(settings: SystemSettings): Promise<DeviceIdentity | null> {
+  const stored = await getSecureItem({ key: DEVICE_ANCHOR_KEY });
+  if (stored.error) throw new Error(stored.error);
+  if (stored.value && stored.value === settings.deviceAnchor) return null;
+
+  let anchor = stored.value;
+  if (!anchor) {
+    anchor = uuidv4();
+    const saved = await setSecureItem({ key: DEVICE_ANCHOR_KEY, value: anchor, deviceBound: true });
+    if (!saved.success) throw new Error(saved.error);
+  }
+  // No anchor in settings.json: a fresh install, or the first launch after
+  // updating to this check. The stored IDs were made on this device.
+  if (!settings.deviceAnchor) {
+    return {
+      anchor,
+      kosyncDeviceId: settings.kosync.deviceId,
+      bookorbitDeviceId: settings.bookorbit.deviceId,
+      replicaDeviceId: settings.replicaDeviceId!,
+    };
+  }
+  // settings.json carries another device's anchor: it was migrated here.
   return {
-    loadAnchor: () => getSecureItem({ key: DEVICE_ANCHOR_KEY }),
-    saveAnchor: (value: string) =>
-      setSecureItem({ key: DEVICE_ANCHOR_KEY, value, deviceBound: true }),
-    clearAnchor: async () => {
-      await clearSecureItem({ key: DEVICE_ANCHOR_KEY });
-    },
+    anchor,
+    kosyncDeviceId: uuidv4(),
+    bookorbitDeviceId: uuidv4(),
+    replicaDeviceId: uuidv4(),
   };
-};
-
-/**
- * Mint fresh per-device sync identities, preserving everything else
- * (books, annotations, account settings, device names). `koreaderSyncDeviceId`
- * is deliberately untouched: nothing reads it.
- */
-export function regenerateSyncDeviceIds(settings: SystemSettings): void {
-  settings.kosync.deviceId = uuidv4();
-  settings.bookorbit.deviceId = uuidv4();
-  settings.replicaDeviceId = uuidv4();
 }
 
 /**
- * Reconcile the stored sync identities with the physical device.
- *
- * `hadStoredDeviceIds` is true when the loaded settings already carried
- * sync device IDs (i.e. a settings file existed before this launch).
- * Returns true when the IDs were regenerated. Never throws for keychain
- * trouble — a keychain failure leaves the stored IDs alone so startup is
- * never blocked by secure storage; the check retries on the next launch.
+ * Gives this device its own sync IDs when settings.json came from another
+ * device. The keychain is checked once per app session; if it can't be read
+ * or written, the stored IDs stay and the next launch checks again. Returns
+ * true when `settings` changed and needs saving.
  */
-export async function ensureDeviceIdentity(
-  settings: SystemSettings,
-  hadStoredDeviceIds: boolean,
-  store: DeviceAnchorStore,
-  saveSettings: () => Promise<void>,
-): Promise<boolean> {
-  let anchor: { value?: string; error?: string };
-  try {
-    anchor = await store.loadAnchor();
-  } catch (err) {
-    console.warn('[deviceIdentity] device anchor read failed; keeping stored device IDs', err);
-    return false;
-  }
-  if (anchor.error) {
-    console.warn(
-      '[deviceIdentity] device anchor read failed; keeping stored device IDs',
-      anchor.error,
-    );
-    return false;
-  }
-  if (anchor.value) return false;
-
-  const freshAnchor = uuidv4();
-  if (!hadStoredDeviceIds) {
-    // Fresh install: the IDs were just minted, nothing to regenerate.
-    // Anchor this device so a later migration is detectable. Best-effort:
-    // a failed write retries on the next launch.
-    try {
-      await store.saveAnchor(freshAnchor);
-    } catch (err) {
-      console.warn('[deviceIdentity] device anchor write failed; will retry next launch', err);
-    }
-    return false;
-  }
-
-  // Stored device IDs but no device-bound anchor: this app container was
-  // migrated to another physical device. Mint fresh sync identities so
-  // this device stops impersonating the old one. Save first: if the anchor
-  // write then fails, the next launch regenerates again instead of keeping
-  // a duplicated identity.
-  regenerateSyncDeviceIds(settings);
-  await saveSettings();
-  try {
-    await store.saveAnchor(freshAnchor);
-  } catch (err) {
-    console.warn(
-      '[deviceIdentity] device anchor write failed; IDs were regenerated and will be re-anchored next launch',
-      err,
-    );
-  }
+export async function ensureDeviceIdentity(settings: SystemSettings): Promise<boolean> {
+  identityCheck ??= checkDeviceIdentity(settings).catch((err) => {
+    console.warn('[deviceIdentity] keychain check failed; keeping the stored device IDs', err);
+    return null;
+  });
+  const identity = await identityCheck;
+  if (!identity || settings.deviceAnchor === identity.anchor) return false;
+  settings.deviceAnchor = identity.anchor;
+  settings.kosync.deviceId = identity.kosyncDeviceId;
+  settings.bookorbit.deviceId = identity.bookorbitDeviceId;
+  settings.replicaDeviceId = identity.replicaDeviceId;
   return true;
 }
