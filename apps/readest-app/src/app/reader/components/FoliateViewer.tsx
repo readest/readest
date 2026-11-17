@@ -48,6 +48,7 @@ import { useFileSync } from '../hooks/useFileSync';
 import {
   applyEinkModeAttribute,
   applyOrientationMedia,
+  applyViewportUnits,
   applyFixedlayoutStyles,
   applyImageStyle,
   applyNamespacedAttributes,
@@ -483,10 +484,15 @@ const FoliateViewer: React.FC<{
       const el = viewRef.current;
       if (el) {
         // The same resize can turn the reading area, which the book's
-        // `(orientation: ...)` rules follow (see applyOrientationMedia).
+        // `(orientation: ...)` rules follow (see applyOrientationMedia), and
+        // changes what the book's vw/vh lengths resolve to.
         let landscape = isLandscapeBox(el);
-        observer = new ResizeObserver(() => {
+        observer = new ResizeObserver(([entry]) => {
           invalidateChapterScreens();
+          if (entry && !getBookData(bookKey)?.isFixedLayout) {
+            const { width, height } = entry.contentRect;
+            for (const { doc } of el.renderer.getContents()) applyViewportUnits(doc, width, height);
+          }
           if (isLandscapeBox(el) === landscape) return;
           landscape = !landscape;
           for (const { doc } of el.renderer.getContents()) applyOrientationMedia(doc, landscape);
@@ -608,6 +614,8 @@ const FoliateViewer: React.FC<{
       }
 
       if (!bookData?.isFixedLayout) {
+        const view = viewRef.current;
+        if (view) applyViewportUnits(detail.doc, view.clientWidth, view.clientHeight);
         mountAdditionalFonts(detail.doc, isCJKLang(bookData.book?.primaryLanguage));
       }
 

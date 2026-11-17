@@ -228,7 +228,15 @@ const ImageViewer: React.FC<ImageViewerProps> = ({
   const handleKeyDown = (e: React.KeyboardEvent) => {
     e.stopPropagation();
 
-    // Escape is handled by useKeyDownActions (also covers Android Back key).
+    // The viewer takes focus when it opens, so Escape starts here, and the
+    // line above keeps it from useKeyDownActions' window listener. Closing
+    // here also keeps Escape from a dialog underneath, such as book details
+    // under the cover viewer.
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      onClose();
+      return;
+    }
 
     // Arrow key navigation
     if (e.key === 'ArrowLeft' && onPrevious) {

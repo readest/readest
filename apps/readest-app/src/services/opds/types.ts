@@ -45,6 +45,8 @@ export interface PendingItem {
 export interface FailedEntry {
   entryId: string;
   href: string;
+  /** Feed page the href was found on; a relative href resolves against it. */
+  baseURL?: string;
   title: string;
   attempts: number;
   lastAttemptAt: number;
