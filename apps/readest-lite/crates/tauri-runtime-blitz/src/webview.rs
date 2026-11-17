@@ -693,10 +693,11 @@ impl BlitzWebview {
         let Some(doc) = self.doc.as_mut() else { return };
         let t = Instant::now();
         doc.inner_mut().resolve(blitz_qjs_script::animation_time());
+        let damaged = doc.inner_mut().take_damage();
         // Only a restyle was asked for, and it changed nothing on the page: nothing to paint.
         if self.restyled && !self.dirty {
             self.restyled = false;
-            if !doc.inner().damaged_by_last_resolve() {
+            if !damaged {
                 self.dirty_since = None;
                 if std::env::var_os("BLITZ_TAURI_TRACE_LOOP").is_some() {
                     eprintln!(

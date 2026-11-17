@@ -45,7 +45,9 @@ fn load(style: &str) -> (QjsDocument, Arc<Requests>) {
         ..DocumentConfig::default()
     };
     let mut doc = QjsDocument::from_html(&html, config);
+    // the first paint
     doc.inner_mut().resolve(0.0);
+    doc.inner_mut().take_damage();
     (doc, requests)
 }
 
@@ -94,7 +96,7 @@ fn a_tap_on_text_that_shows_no_hover_or_selection_paints_nothing() {
     assert_eq!(redraws(), before);
     // what a restyle request leaves to resolve damages nothing
     doc.inner_mut().resolve(0.0);
-    assert!(!doc.inner().damaged_by_last_resolve());
+    assert!(!doc.inner_mut().take_damage());
 }
 
 #[test]
@@ -106,7 +108,7 @@ fn a_tap_on_text_with_a_hover_style_repaints_it() {
     doc.handle_ui_event(finger(20.0, 5.0, true));
     assert!(paints() > before);
     doc.inner_mut().resolve(0.0);
-    assert!(doc.inner().damaged_by_last_resolve());
+    assert!(doc.inner_mut().take_damage());
 }
 
 #[test]

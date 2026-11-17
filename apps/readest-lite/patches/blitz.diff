@@ -228,8 +228,8 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      pub(crate) has_canvas: bool,
      /// Whether there are subdocuments that are animating (so we should re-render every frame)
      pub(crate) subdoc_is_animating: bool,
-+    /// See `damaged_by_last_resolve`.
-+    pub(crate) damaged_by_last_resolve: bool,
++    /// See `take_damage`.
++    pub(crate) damaged_since_taken: bool,
  
      /// Map of id attribute values to node IDs for fast lookups.
      /// May contain multiple nodes for the same id: `get_element_by_id`
@@ -256,7 +256,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
              mousedown_node_id: None,
              has_active_animations: false,
              subdoc_is_animating: false,
-+            damaged_by_last_resolve: true,
++            damaged_since_taken: true,
              has_canvas: false,
              sub_document_nodes: HashSet::new(),
 +            sticky_nodes: Vec::new(),
@@ -2995,15 +2995,16 @@ diff -ruN blitz/packages/blitz-dom/src/node/text.rs blitz/packages/blitz-dom/src
 diff -ruN blitz/packages/blitz-dom/src/resolve.rs blitz/packages/blitz-dom/src/resolve.rs
 --- blitz/packages/blitz-dom/src/resolve.rs
 +++ blitz/packages/blitz-dom/src/resolve.rs
-@@ -35,8 +35,26 @@
+@@ -35,8 +35,27 @@
  };
  
  impl BaseDocument {
 -    /// Restyle the tree and then relayout it
-+    /// Whether the last `resolve` damaged any node, here or in a subdocument: if not, the
-+    /// document paints as it did before it (see `ShellProvider::request_restyle`).
-+    pub fn damaged_by_last_resolve(&self) -> bool {
-+        self.damaged_by_last_resolve
++    /// Whether resolving has damaged any node, here or in the document of an iframe that shows,
++    /// since the last call: if not, the document paints as it did then (see
++    /// `ShellProvider::request_restyle`). That counts the resolves a layout read forced in between.
++    pub fn take_damage(&mut self) -> bool {
++        std::mem::take(&mut self.damaged_since_taken)
 +    }
 +
 +    /// Restyle the tree and then relayout it, with the documents of the iframes it shows.
@@ -3019,11 +3020,11 @@ diff -ruN blitz/packages/blitz-dom/src/resolve.rs blitz/packages/blitz-dom/src/r
 +
 +    fn resolve_with(&mut self, current_time_for_animations: f64, subdocs: bool) {
 +        // Until this resolve has run to the end, assume it changed the output.
-+        self.damaged_by_last_resolve = true;
++        let earlier = std::mem::replace(&mut self.damaged_since_taken, true);
          if TDocument::as_node(&self.root_node())
              .first_element_child()
              .is_none()
-@@ -49,6 +67,15 @@
+@@ -49,6 +68,15 @@
          // Process messages that have been sent to our message channel (e.g. loaded resource)
          self.handle_messages();
  
@@ -3039,22 +3040,22 @@ diff -ruN blitz/packages/blitz-dom/src/resolve.rs blitz/packages/blitz-dom/src/r
          // While render-blocking resources (e.g. stylesheets linked from the `<head>`) are
          // still loading, don't resolve styles or layout (matching how browsers block
          // rendering). Resolving styles before the document's stylesheets have loaded would
-@@ -72,6 +99,14 @@
+@@ -72,6 +100,14 @@
                  .retain(|_, last| last.elapsed() < FADE_DELAY + FADE_DURATION);
          }
  
 +        // Nothing changed since the last resolve: its styles and layout stand. Only the iframes
 +        // may have changed on their own.
 +        if self.is_resolved() {
-+            self.damaged_by_last_resolve =
-+                subdocs && self.resolve_subdocs(current_time_for_animations);
++            self.damaged_since_taken =
++                earlier || (subdocs && self.resolve_subdocs(current_time_for_animations));
 +            return;
 +        }
 +
          let root_node_id = self.root_element().id;
          debug_timer!(timer, feature = "log-phase-times");
  
-@@ -92,7 +127,10 @@
+@@ -92,7 +128,10 @@
          }
  
          // Propagate damage flags (from mutation and restyles) up and down the tree
@@ -3066,7 +3067,7 @@ diff -ruN blitz/packages/blitz-dom/src/resolve.rs blitz/packages/blitz-dom/src/r
          timer.record_time("damage");
  
          // Fix up tree for layout (insert anonymous blocks as necessary, etc)
-@@ -115,6 +153,10 @@
+@@ -115,6 +154,10 @@
  
          // Resolve transforms
          self.resolve_transforms(root_node_id);
@@ -3077,7 +3078,7 @@ diff -ruN blitz/packages/blitz-dom/src/resolve.rs blitz/packages/blitz-dom/src/r
          timer.record_time("transform");
  
          // Build paint children / stacking contexts for damaged subtrees. Runs
-@@ -123,10 +165,18 @@
+@@ -123,10 +166,18 @@
          self.build_paint_tree(root_node_id);
          timer.record_time("paint_tree");
  
@@ -3096,7 +3097,7 @@ diff -ruN blitz/packages/blitz-dom/src/resolve.rs blitz/packages/blitz-dom/src/r
          timer.record_time("c_damage");
  
          // Re-resolve the hover node from the pointer position against the fresh
-@@ -138,34 +188,81 @@
+@@ -138,34 +189,81 @@
          // if the hovered node actually changes.
          self.refresh_hover();
  
@@ -3119,7 +3120,7 @@ diff -ruN blitz/packages/blitz-dom/src/resolve.rs blitz/packages/blitz-dom/src/r
 -                );
 -                drop(sub_viewport);
 +        let subdocs_damaged = subdocs && self.resolve_subdocs(current_time_for_animations);
-+        self.damaged_by_last_resolve = !damage.is_empty() || subdocs_damaged;
++        self.damaged_since_taken = earlier || !damage.is_empty() || subdocs_damaged;
 +        timer.record_time("subdocs");
 +
 +        timer.print_times(&format!("Resolve({}): ", self.id()));
@@ -3163,7 +3164,7 @@ diff -ruN blitz/packages/blitz-dom/src/resolve.rs blitz/packages/blitz-dom/src/r
 +            if let Some(mut sub_doc) = self.nodes[node_id].subdoc_mut().map(|doc| doc.inner_mut()) {
                  sub_doc.resolve(current_time_for_animations);
  
-+                damaged |= sub_doc.damaged_by_last_resolve();
++                damaged |= sub_doc.take_damage();
                  subdoc_is_animating |= sub_doc.is_animating();
              }
          }
@@ -3198,7 +3199,7 @@ diff -ruN blitz/packages/blitz-dom/src/resolve.rs blitz/packages/blitz-dom/src/r
      }
  
      fn resolve_transforms(&mut self, node_id: NodeId) -> Rect {
-@@ -222,7 +319,8 @@
+@@ -222,7 +320,8 @@
              overflow = overflow.union(child_rect_in_self);
          }
          *self.nodes[node_id].hoisted_children.borrow_mut() = hoisted_children;
@@ -3208,7 +3209,7 @@ diff -ruN blitz/packages/blitz-dom/src/resolve.rs blitz/packages/blitz-dom/src/r
              let Some(pseudo) = pseudo else { continue };
              if self.nodes[pseudo].is_out_of_flow() {
                  continue;
-@@ -462,3 +560,70 @@
+@@ -462,3 +561,70 @@
          // taffy::print_tree(self, root_node_id)
      }
  }
@@ -4913,7 +4914,7 @@ diff -ruN blitz/packages/blitz-traits/src/shell.rs blitz/packages/blitz-traits/s
  pub trait ShellProvider: Send + Sync + 'static {
      fn request_redraw(&self) {}
 +    /// The document changed only in ways that reach the screen through the cascade: a redraw is
-+    /// needed only if resolving it damages something (`BaseDocument::damaged_by_last_resolve`).
++    /// needed only if resolving it damages something (`BaseDocument::take_damage`).
 +    fn request_restyle(&self) {
 +        self.request_redraw()
 +    }
