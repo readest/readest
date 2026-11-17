@@ -1105,7 +1105,12 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
               className={clsx(
                 chromeButtonClassName,
                 'absolute bottom-2 z-10',
-                isVertical || viewSettings.rtl ? 'left-2' : 'right-2',
+                // The corner follows the note's own layout when its document
+                // can be read, and the book's direction stays as the second
+                // signal: the popup renders a synthesized document that does
+                // not always carry the book's stylesheet, so a vertical book
+                // can hand us a note that reports horizontal.
+                isVertical || viewSettings.vertical || viewSettings.rtl ? 'left-2' : 'right-2',
               )}
             >
               <MdOutlineArrowOutward size={size18} />
