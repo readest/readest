@@ -12,6 +12,7 @@
 #[cfg(feature = "window")]
 mod display;
 mod fonts;
+mod frame;
 mod webview;
 
 use tauri_runtime::{
