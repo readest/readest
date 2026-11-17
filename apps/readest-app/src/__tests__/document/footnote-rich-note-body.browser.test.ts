@@ -14,17 +14,20 @@ import type { FoliateView } from '@/types/view';
 // Readest asks foliate to `check` any link whose text looks like a note
 // marker, and `check` rejects a note body with more than three element
 // children ("Failed to locate footnote content"). A superscript marker already
-// confirms the reference, so foliate must not apply `check` to it; a bare
-// numeric marker, recognised by its text alone, still earns it.
+// confirms the reference, so foliate must not apply `check` to it. A bare
+// numeric marker, recognised by its text alone, still earns it, and passes only
+// when its note links back to the reference (foliate-js#173).
 const SECTION_BODY = `
   <p class="c22"><strong>Title</strong></p>
   <p class="c23"><strong>The Author</strong></p>
   <p class="c24">DVD 6.3 (42:01)</p>
   <p class="c25">Lorem ipsum kañ sit amet, <i>kañ</i> God elit, sed do eiusmod tempor incididunt ut something et dolore magna aliqua. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor. In the name of God, ut labore et magna aliqua. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do Qāf tempor incididunt ut labore et dolore magna <em>aliqua</em><a id="id_11"></a><a href="#id_12"><sup>1</sup></a> also. Lorem ipsum dolor sit amet, consectetur adipiscing <em>elit</em>.”</p>
   <p>A bare<a id="id_21"></a><a href="#id_22">2</a> numeric marker.</p>
+  <p>Another bare<a href="#id_42">4</a> marker.</p>
   <hr/>
   <p class="p4"><a href="#id_11"></a><a id="id_12">1.</a><em> Lorem</em> ipsum <em>kañ</em> eiusmod tempor incididunt ut something et <em>aliqua</em>, eiusmod tempor incididunt ut something et <em>dolore</em> (aliqua). See <em>Lorem ipsum, kañ sit amet</em>, (16.113-115).</p>
   <p class="p4"><a href="#id_21"></a><a id="id_22">2.</a><em> Dolor</em> sit <em>amet</em>, <em>elit</em> and <em>tempor</em>.</p>
+  <p class="p4"><a id="id_42">4.</a><em> No</em> link <em>back</em> to <em>the</em> <em>reference</em>.</p>
   <h2 id="id_30">Chapter Two</h2>
 `;
 
@@ -38,6 +41,7 @@ const makeSection = (id: string, body: string) => {
     load: () => url,
     loadContent: () => content,
     unload: () => {},
+    resolveHref: (href: string) => (href.startsWith('#') ? `${id}${href}` : href),
   };
 };
 
@@ -101,10 +105,22 @@ describe('Footnote popup for a richly formatted note (#7537, browser)', () => {
     expect(text).not.toContain('DVD 6.3');
   });
 
-  it('still rejects a rich note for a bare numeric marker when check is requested', async () => {
-    const { handled } = await openPopup({
+  it('shows only the note for a bare numeric marker whose note links back to it', async () => {
+    const { handled, rendered } = await openPopup({
       a: getRefAnchor('id_22'),
       href: 'Section0001.html#id_22',
+      check: true,
+    });
+    await handled;
+    const view = await rendered;
+    const text = view.renderer.getContents()[0]!.doc.body.textContent!;
+    expect(text.trim()).toBe('2. Dolor sit amet, elit and tempor.');
+  });
+
+  it('still rejects a rich note that does not link back to a bare numeric marker', async () => {
+    const { handled } = await openPopup({
+      a: getRefAnchor('id_42'),
+      href: 'Section0001.html#id_42',
       check: true,
     });
     let error: unknown;

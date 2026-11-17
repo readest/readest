@@ -81,12 +81,12 @@ import FootnotePopup from '@/app/reader/components/FootnotePopup';
 import { BookDoc } from '@/libs/document';
 
 // A bare numeric reference, which earns `check`, to a note whose body has more
-// than three element children, which `check` rejects.
+// than three element children and no link back, which `check` rejects.
 const SECTION_BODY = `
   <h1>Chapter heading</h1>
   <p>Body text<a id="r1"></a><a href="#n1">1</a> more text.</p>
   <hr/>
-  <p><a href="#r1"></a><a id="n1">1.</a><em> Lorem</em> ipsum <em>dolor</em> sit
+  <p><a id="n1">1.</a><em> Lorem</em> ipsum <em>dolor</em> sit
   <em>amet</em>, see <em>Lorem ipsum</em>.</p>
   <p id="n2">A short second note.</p>
 `;
@@ -104,6 +104,7 @@ const makeBook = () => {
         load: () => url,
         loadContent: () => content,
         unload: () => {},
+        resolveHref: (href: string) => (href.startsWith('#') ? `chapter.html${href}` : href),
       },
     ],
     resolveHref: (href: string) => {
