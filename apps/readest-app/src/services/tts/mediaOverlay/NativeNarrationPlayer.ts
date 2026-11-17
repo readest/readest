@@ -112,6 +112,9 @@ export class NativeNarrationPlayer {
   #loop: NativeLoop | null = null;
   #loopRequest: NativeLoop | null = null;
   #loopCount = 0;
+  // What each href was handed to the plugin as, which is how the plugin names
+  // its playlist items: set-loop names the file its span belongs to with it.
+  #nativeFiles = new Map<string, { path: string; start?: number; end?: number }>();
 
   // The file the native player is on: the one loaded, or the queued one it
   // rolled into by itself.
@@ -207,6 +210,12 @@ export class NativeNarrationPlayer {
       this.#loopRequest = null;
       return;
     }
+    const file = want ? this.#nativeFiles.get(want.href) : undefined;
+    if (want && !file) {
+      this.#loop = null;
+      this.#loopRequest = null;
+      return;
+    }
     this.#loopRequest = want;
     try {
       await this.#nativeSession;
@@ -217,15 +226,33 @@ export class NativeNarrationPlayer {
         if (this.#loopRequest === want) this.#loop = null;
         return;
       }
+      // The plugin arms the span only if this file is still the one playing:
+      // playback may have rolled into the next file since `want` was taken.
       const res = await invoke<{ armed?: boolean }>('plugin:native-tts|playout_control', {
-        payload: { action: 'set-loop', loopStartMs: want.begin * 1000, loopEndMs: want.end * 1000 },
+        payload: {
+          action: 'set-loop',
+          ...file,
+          loopStartMs: want.begin * 1000,
+          loopEndMs: want.end * 1000,
+        },
       });
-      if (this.#loopRequest === want) this.#loop = res?.armed ? want : null;
+      if (this.#loopRequest === want) {
+        this.#loop = res?.armed ? want : null;
+        // Not armed: send it again once the file is playing.
+        if (!res?.armed) this.#loopRequest = null;
+      }
     } catch (e) {
       // Back to what Android is known to hold, so the next call retries.
       if (this.#loopRequest === want) this.#loopRequest = this.#loop;
       throw e;
     }
+  }
+
+  #rememberNativeFile(href: string, path: string, bytes?: FileSource): void {
+    this.#nativeFiles.set(
+      href,
+      bytes && 'start' in bytes ? { path, start: bytes.start, end: bytes.end } : { path },
+    );
   }
 
   #forgetLoop(): void {
@@ -358,6 +385,7 @@ export class NativeNarrationPlayer {
     // Checked with nothing awaited before the command: another file loaded
     // while this one resolved means it no longer follows what is playing.
     if (this.#href !== after || this.#playlist.includes(href)) return;
+    this.#rememberNativeFile(href, path, bytes);
     await invoke('plugin:native-tts|playout_control', {
       payload: { action: 'queue', path, ...bytes },
     });
@@ -399,6 +427,7 @@ export class NativeNarrationPlayer {
     this.#href = href;
     this.#ended = false;
     this.#loads++;
+    this.#rememberNativeFile(href, path, bytes);
     await invoke('plugin:native-tts|playout_control', {
       payload: {
         action: 'load',

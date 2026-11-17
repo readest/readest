@@ -114,7 +114,7 @@ describe('MediaOverlayClient A-B repeat on Android', () => {
     await utterance.next();
 
     expect(controlCalls.filter((call) => call['action'] === 'set-loop')).toEqual([
-      { action: 'set-loop', loopStartMs: 0, loopEndMs: 9000 },
+      { action: 'set-loop', path: '/books/hash/ch1.mp3', loopStartMs: 0, loopEndMs: 9000 },
     ]);
   });
 
@@ -187,7 +187,7 @@ describe('MediaOverlayClient A-B repeat on Android', () => {
     await setup();
     let failSetLoop = true;
     const base = vi.mocked(invoke).getMockImplementation()!;
-    vi.mocked(invoke).mockImplementation(async (command: string, args?: unknown) => {
+    vi.mocked(invoke).mockImplementation(async (command, args) => {
       const payload = (args as { payload?: Record<string, unknown> })?.payload ?? {};
       if (payload['action'] === 'set-loop' && failSetLoop) {
         controlCalls.push(payload);
@@ -203,13 +203,33 @@ describe('MediaOverlayClient A-B repeat on Android', () => {
     expect(controlCalls.filter((call) => call['action'] === 'set-loop')).toHaveLength(2);
   });
 
+  test('sends the span again when the plugin did not arm it', async () => {
+    await setup();
+    let armed = false; // playback had moved on to another file
+    const base = vi.mocked(invoke).getMockImplementation()!;
+    vi.mocked(invoke).mockImplementation(async (command, args) => {
+      const payload = (args as { payload?: Record<string, unknown> })?.payload ?? {};
+      if (payload['action'] === 'set-loop') {
+        controlCalls.push(payload);
+        return { session: 11, armed };
+      }
+      return base(command, args);
+    });
+    const utterance = client.speak(section.ssmlForBlock(1)!, new AbortController().signal);
+    await utterance.next();
+    armed = true;
+    await client.refreshLoop();
+
+    expect(controlCalls.filter((call) => call['action'] === 'set-loop')).toHaveLength(2);
+  });
+
   test('retries a clear-loop that failed, keeping the span until it succeeds', async () => {
     await setup();
     const utterance = client.speak(section.ssmlForBlock(1)!, new AbortController().signal);
     await utterance.next();
     let failClear = true;
     const base = vi.mocked(invoke).getMockImplementation()!;
-    vi.mocked(invoke).mockImplementation(async (command: string, args?: unknown) => {
+    vi.mocked(invoke).mockImplementation(async (command, args) => {
       const payload = (args as { payload?: Record<string, unknown> })?.payload ?? {};
       if (payload['action'] === 'clear-loop' && failClear) {
         controlCalls.push(payload);

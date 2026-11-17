@@ -132,7 +132,8 @@ class PlayoutControlArgs {
     // Byte window [start, end) of `path` to play as the whole track.
     var start: Long? = null
     var end: Long? = null
-    // set-loop: the A-B span, in ms of the file now playing.
+    // set-loop: the A-B span, in ms of the file named by `path` (and its
+    // byte window `start`/`end`, as it was loaded or queued).
     var loopStartMs: Double? = null
     var loopEndMs: Double? = null
 }
@@ -792,7 +793,11 @@ class NativeTTSPlugin(private val activity: Activity) : Plugin(activity) {
                         invoke.resolve(JSObject().apply { put("session", JSONObject.NULL) })
                     }
                     "set-loop" -> {
-                        val armed = setPlayoutLoop(args.loopStartMs, args.loopEndMs)
+                        val armed = setPlayoutLoop(
+                            args.path?.let { playoutKey(it, args.start, args.end) },
+                            args.loopStartMs,
+                            args.loopEndMs,
+                        )
                         invoke.resolve(JSObject().apply {
                             put("session", playoutSession)
                             put("armed", armed)
@@ -832,6 +837,10 @@ class NativeTTSPlugin(private val activity: Activity) : Plugin(activity) {
         }
     }
 
+    // How a playlist item is named: its path, plus the byte window it plays.
+    private fun playoutKey(path: String, start: Long?, end: Long?): String =
+        if (start != null && end != null) "$path#$start-$end" else path
+
     // One file to play: a whole file, or a window of one as its own source.
     private class PlayoutItem(val key: String, val item: MediaItem, val source: MediaSource?)
 
@@ -849,7 +858,7 @@ class NativeTTSPlugin(private val activity: Activity) : Plugin(activity) {
         // One book file holds many audio entries, so the window is part of
         // what is loaded.
         val window = if (start != null && end != null) start to end else null
-        val key = window?.let { "$path#${it.first}-${it.second}" } ?: path
+        val key = playoutKey(path, start, end)
         val item = MediaItem.fromUri(uri)
         if (window == null) return PlayoutItem(key, item, null)
         // A stored audio entry inside the book's zip: stream its bytes in
@@ -915,12 +924,15 @@ class NativeTTSPlugin(private val activity: Activity) : Plugin(activity) {
         playoutLoadedKeys.add(next.key)
     }
 
-    // Loop [startMs, endMs) of the file now playing. Returns whether it is set.
-    private fun setPlayoutLoop(startMs: Double?, endMs: Double?): Boolean {
+    // Loop [startMs, endMs) of the file `fileKey`, if it is the one now
+    // playing: JS takes the span from the file it last knew of, and playback
+    // may have rolled into the next file since. Returns whether it is set.
+    private fun setPlayoutLoop(fileKey: String?, startMs: Double?, endMs: Double?): Boolean {
         val player = playoutPlayer
         val index = player?.currentMediaItemIndex ?: -1
         val key = playoutLoadedKeys.getOrNull(index)
-        if (player == null || key == null || startMs == null || endMs == null || endMs <= startMs) {
+        if (player == null || key == null || key != fileKey ||
+            startMs == null || endMs == null || endMs <= startMs) {
             clearPlayoutLoop()
             return false
         }
