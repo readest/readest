@@ -221,7 +221,8 @@ async function syncCatalog(
     title: fe.title,
     acquisitionHref: fe.href,
     mimeType: 'application/octet-stream',
-    baseURL: catalog.url,
+    // Failures saved before baseURL was recorded fall back to the catalog root.
+    baseURL: fe.baseURL ?? catalog.url,
   }));
 
   // Dedupe: a retry-eligible failed entry can also reappear in pendingItems
@@ -288,6 +289,7 @@ async function syncCatalog(
             updatedFailedEntries.push({
               entryId: item.entryId,
               href: item.acquisitionHref,
+              baseURL: item.baseURL,
               title: item.title,
               attempts,
               lastAttemptAt: Date.now(),

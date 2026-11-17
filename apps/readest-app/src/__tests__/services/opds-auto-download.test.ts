@@ -541,6 +541,50 @@ describe('OPDS auto-download orchestrator', () => {
     expect(downloadFile).toHaveBeenCalledTimes(1);
   });
 
+  it('retries a relative link against the page it was found on, not the catalog root (#7489)', async () => {
+    // A link found on a sub-page and relative to it ("download/7/epub/") only
+    // resolves correctly against that page. Once the entry drops out of the
+    // feed, the retry is rebuilt from the saved failure alone.
+    const catalogs: OPDSCatalog[] = [
+      { id: 'cat-1', name: 'Shelf', url: 'https://shelf.example.com/opds', autoDownload: true },
+    ];
+    let saved: OPDSSubscriptionState = {
+      catalogId: 'cat-1',
+      lastCheckedAt: 0,
+      knownEntryIds: [],
+      failedEntries: [],
+    };
+    vi.mocked(loadSubscriptionState).mockImplementation(async () => structuredClone(saved));
+    vi.mocked(saveSubscriptionState).mockImplementation(async (_appService, state) => {
+      saved = structuredClone(state);
+    });
+    vi.mocked(checkFeedForNewItems).mockResolvedValueOnce([
+      {
+        entryId: 'urn:shelf:7',
+        title: 'Issue 7',
+        acquisitionHref: 'download/7/epub/',
+        mimeType: 'application/epub+zip',
+        baseURL: 'https://shelf.example.com/opds/new',
+      },
+    ]);
+    vi.mocked(downloadFile).mockRejectedValueOnce(new Error('network down'));
+
+    await syncSubscribedCatalogs(catalogs, appService, []);
+    expect(saved.failedEntries.map((fe) => fe.entryId)).toEqual(['urn:shelf:7']);
+
+    saved.failedEntries[0]!.lastAttemptAt = 0; // past the backoff
+    vi.mocked(checkFeedForNewItems).mockResolvedValueOnce([]);
+    vi.mocked(downloadFile).mockClear();
+
+    await syncSubscribedCatalogs(catalogs, appService, []);
+
+    expect(vi.mocked(downloadFile).mock.calls[0]![0]).toMatchObject({
+      url: 'https://shelf.example.com/opds/download/7/epub/',
+    });
+    expect(saved.knownEntryIds).toContain('urn:shelf:7');
+    expect(saved.failedEntries).toHaveLength(0);
+  });
+
   // The module-level loadSubscriptionState mock resolves one SHARED state
   // object that earlier tests' runs mutate (knownEntryIds grows across
   // tests); these tests need a pristine state per call.
