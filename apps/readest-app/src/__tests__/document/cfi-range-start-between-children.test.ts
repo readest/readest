@@ -14,23 +14,32 @@ const doc = new DOMParser().parseFromString(
 const p = doc.querySelector('p')!;
 const em = doc.querySelector('em')!;
 const b = doc.querySelector('b')!;
+const img = doc.querySelector('img')!;
 const tail = p.childNodes[2] as Text; // " delta "
 
-const roundTrip = (range: Range) =>
-  (toRange(doc, parse(fromRange(range))) as Range | null)?.toString();
+const roundTrip = (range: Range) => toRange(doc, parse(fromRange(range))) as Range | null;
 
 describe('CFI of a range starting between children (#7482)', () => {
   it.each([
     ['after an inline element', p, 2, tail, 6, ' delta'],
     ["after an inline element's last child", em, 2, tail, 6, ' delta'],
     ['after a nested inline element', b, 1, tail, 6, ' delta'],
-    ['before a void element', p, 3, p, 5, ' echo'],
   ] as const)('keeps a start %s', (_, startNode, startOffset, endNode, endOffset, text) => {
     const range = doc.createRange();
     range.setStart(startNode, startOffset);
     range.setEnd(endNode, endOffset);
     expect(range.toString()).toBe(text);
-    expect(roundTrip(range)).toBe(text);
+    expect(roundTrip(range)?.toString()).toBe(text);
+  });
+
+  // The image has no text, so the text alone can't show whether it was kept.
+  it('keeps a start before a void element', () => {
+    const range = doc.createRange();
+    range.setStart(p, 3);
+    range.setEnd(p, 5);
+    const restored = roundTrip(range)!;
+    expect(restored.toString()).toBe(' echo');
+    expect(restored.intersectsNode(img)).toBe(true);
   });
 
   it('keeps a collapsed range after an inline element at that point', () => {
