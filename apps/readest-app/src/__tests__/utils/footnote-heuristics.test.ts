@@ -1,9 +1,6 @@
 // @vitest-environment happy-dom
 import { describe, it, expect } from 'vitest';
-import {
-  isSuperscriptFootnoteMarker,
-  shouldCheckAsFootnote,
-} from '@/app/reader/utils/footnoteHeuristics';
+import { shouldCheckAsFootnote } from '@/app/reader/utils/footnoteHeuristics';
 
 const parseHtml = (html: string) => {
   const doc = new DOMParser().parseFromString(html, 'text/html');
@@ -155,45 +152,5 @@ describe('shouldCheckAsFootnote', () => {
       const a = getAnchorByText(body, text);
       expect(shouldCheckAsFootnote(a)).toBe(false);
     }
-  });
-});
-
-describe('isSuperscriptFootnoteMarker', () => {
-  it('returns true when the marker sits inside a <sup> (repro book part0005 ref 1)', () => {
-    const body = parseHtml(
-      '<p>learning word: footnote<sup><a href="part0005.html#f_1"><span id="n_1">1</span></a></sup></p>',
-    );
-    const a = getAnchorByText(body, '1');
-    expect(isSuperscriptFootnoteMarker(a)).toBe(true);
-  });
-
-  it('returns true when the marker is a <sup> child (repro book Section0001 ref)', () => {
-    const body = parseHtml(
-      '<p>Lorem ipsum dolor sit amet<a href="#id_12"><sup>1</sup></a> also.</p>',
-    );
-    const a = getAnchorByText(body, '1');
-    expect(isSuperscriptFootnoteMarker(a)).toBe(true);
-  });
-
-  it('returns true when the anchor itself is superscripted by style', () => {
-    const body = parseHtml(
-      '<p>Body text<a href="#n1" style="vertical-align: super">1</a> more text</p>',
-    );
-    const a = getAnchorByText(body, '1');
-    expect(isSuperscriptFootnoteMarker(a)).toBe(true);
-  });
-
-  it('returns false for a plain numeric link with no superscript shape', () => {
-    const body = parseHtml('<p>Body text<a href="#n1">1</a> more text</p>');
-    const a = getAnchorByText(body, '1');
-    expect(isSuperscriptFootnoteMarker(a)).toBe(false);
-  });
-
-  it('returns false for a superscripted backlink (foliate treats it as navigation)', () => {
-    const body = parseHtml(
-      '<p><a href="#n1" epub:type="backlink"><sup>1</sup></a>Footnote body.</p>',
-    );
-    const a = getAnchorByText(body, '1');
-    expect(isSuperscriptFootnoteMarker(a)).toBe(false);
   });
 });
