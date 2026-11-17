@@ -20,7 +20,7 @@ export interface BookshelfField {
   values?: string[];
   read: (book: Book) => FieldValue;
 }
-const textList = (value: unknown): string[] => {
+export const textList = (value: unknown): string[] => {
   if (Array.isArray(value)) return value.flatMap(textList);
   if (typeof value === 'string') return [value];
   if (value && typeof value === 'object' && 'name' in value) return textList(value.name);

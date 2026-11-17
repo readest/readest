@@ -47,6 +47,7 @@ import { useKOSync } from '../hooks/useKOSync';
 import { useFileSync } from '../hooks/useFileSync';
 import {
   applyEinkModeAttribute,
+  applyOrientationMedia,
   applyFixedlayoutStyles,
   applyImageStyle,
   applyNamespacedAttributes,
@@ -63,6 +64,7 @@ import {
   transformStylesheet,
 } from '@/utils/style';
 import { applyScrollableStyle, applyTableTouchScroll } from '@/utils/scrollable';
+import { classifyAndTagStandaloneDiagrams } from '@/utils/imageClassifier';
 import { mountAdditionalFonts, mountCustomFont } from '@/styles/fonts';
 import { layoutWarichu, relayoutWarichu } from '@/utils/warichu';
 import { refreshSectionGlosses, whenSelectionClears } from '@/app/reader/utils/wordlensSection';
@@ -141,6 +143,13 @@ declare global {
     eval(script: string): void;
   }
 }
+
+// The reading area is the foliate-view box: the sidebars overlay it, and the
+// section iframes inside it are sized to their content.
+const isLandscapeBox = (el: Element) => {
+  const { width, height } = el.getBoundingClientRect();
+  return width > height;
+};
 
 // The hooks that follow the reading position (progress sync and save, KOSync, file sync, the
 // translation of the shown page) subscribe to the progress, which every page turn writes. Here they
@@ -473,7 +482,15 @@ const FoliateViewer: React.FC<{
       if (typeof ResizeObserver === 'undefined') return;
       const el = viewRef.current;
       if (el) {
-        observer = new ResizeObserver(() => invalidateChapterScreens());
+        // The same resize can turn the reading area, which the book's
+        // `(orientation: ...)` rules follow (see applyOrientationMedia).
+        let landscape = isLandscapeBox(el);
+        observer = new ResizeObserver(() => {
+          invalidateChapterScreens();
+          if (isLandscapeBox(el) === landscape) return;
+          landscape = !landscape;
+          for (const { doc } of el.renderer.getContents()) applyOrientationMedia(doc, landscape);
+        });
         observer.observe(el);
         return;
       }
@@ -606,7 +623,7 @@ const FoliateViewer: React.FC<{
         }
       }
 
-      applyImageStyle(detail.doc);
+      applyImageStyle(detail.doc, useThemeStore.getState().isDarkMode, bookData?.isFixedLayout);
       applyScrollableStyle(detail.doc);
       applyTableTouchScroll(detail.doc);
       // Read the theme live: `useFoliateEvents` binds this handler once, so the
@@ -614,6 +631,7 @@ const FoliateViewer: React.FC<{
       applyThemeModeClass(detail.doc, useThemeStore.getState().isDarkMode);
       applyScrollModeClass(detail.doc, viewSettings.scrolled || false);
       applyEinkModeAttribute(detail.doc, viewSettings.isEink || false);
+      if (viewRef.current) applyOrientationMedia(detail.doc, isLandscapeBox(viewRef.current));
       applyScrollbarStyle(document, viewSettings.hideScrollbar || false);
       keepTextAlignment(detail.doc);
       handleA11yNavigation(viewRef.current, detail.doc, {
@@ -1140,9 +1158,10 @@ const FoliateViewer: React.FC<{
     const showDoubleBorderFooter = showDoubleBorder && viewSettings.showFooter;
     const showTopHeader = viewSettings.showHeader && !viewSettings.vertical;
     // The bottom band is reserved only while the footer displays something
-    // there (and never in scrolled mode, where the info floats in pills) —
-    // see footerReservesBand. Otherwise the empty reservation shows as a
-    // full-width blank bar that steals space from the book text.
+    // there (and in scrolled mode only with Solid Footer on; otherwise the
+    // info floats in pills) — see footerReservesBand. Otherwise the empty
+    // reservation shows as a full-width blank bar that steals space from the
+    // book text.
     const showBottomFooter = footerReservesBand(viewSettings) && !viewSettings.vertical;
     const moreTopInset = showTopHeader ? Math.max(0, 16 - insets.top) : 0;
     // Only the persistent 'minimal' card reserves a band; the 'full' one
@@ -1292,6 +1311,7 @@ const FoliateViewer: React.FC<{
           applyFixedlayoutStyles(doc, pageSettings, undefined, bookData?.book?.format);
         }
         applyThemeModeClass(doc, isDarkMode);
+        classifyAndTagStandaloneDiagrams(doc, isDarkMode, bookData?.isFixedLayout);
         applyScrollModeClass(doc, viewSettings.scrolled || false);
         applyEinkModeAttribute(doc, viewSettings.isEink || false);
         applyScrollbarStyle(document, viewSettings.hideScrollbar || false);
@@ -1486,6 +1506,7 @@ const FoliateViewer: React.FC<{
     // footerReservesBand inputs: the band must collapse/return live when the
     // user flips these settings.
     viewSettings?.showStickyProgressBar,
+    viewSettings?.solidScrolledFooter,
     viewSettings?.showRemainingTime,
     viewSettings?.showRemainingPages,
     viewSettings?.showProgressInfo,

@@ -389,6 +389,16 @@ describe('inferLangFromScript', () => {
     expect(inferLangFromScript('中文', 'en')).toBe('zh');
   });
 
+  it('should detect Hebrew from Hebrew characters when lang is empty or en', () => {
+    expect(inferLangFromScript('שלום עולם', '')).toBe('he');
+    expect(inferLangFromScript('בראשית ברא', 'en')).toBe('he');
+  });
+
+  it('should not guess a language from Arabic script, which Persian and Urdu share', () => {
+    expect(inferLangFromScript('کتاب خوب است', '')).toBe('');
+    expect(inferLangFromScript('السلام عليكم', 'en')).toBe('en');
+  });
+
   it('should prioritize Hangul over Han when both are present', () => {
     // Hangul check comes before Han, so Korean should win
     expect(inferLangFromScript('한자漢字', '')).toBe('ko');
