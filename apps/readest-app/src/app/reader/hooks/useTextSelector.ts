@@ -38,6 +38,7 @@ import {
   SelectionBounds,
   setNativeDragFrozen,
   toDocPoint,
+  toWindowPoint,
 } from '../utils/crossDocSelection';
 import { toParentViewportPoint } from '../utils/annotatorUtil';
 import {
@@ -65,6 +66,12 @@ const SELECTION_DRAG_SLOP_PX = 10;
 // Ignore tiny pointer jitter, but preserve a deliberate double-click-drag even
 // when it only extends the selection into adjacent whitespace.
 const DOUBLE_CLICK_DRAG_MOVE_PX = 3;
+
+// Window coordinates of a pointer event in a section document. A fixed-layout
+// page can be shown at a CSS scale, so undo it as well as the frame's offset
+// (the inverse of toDocPoint).
+const windowPointOf = (doc: Document, ev: PointerEvent): Point =>
+  toWindowPoint(doc, { x: ev.clientX, y: ev.clientY }) ?? { x: ev.clientX, y: ev.clientY };
 
 export const useTextSelector = (
   bookKey: string,
@@ -176,6 +183,8 @@ export const useTextSelector = (
   // handleSelectionchange must ignore them. Cleared on a delay because
   // selectionchange dispatches a task after the mutation.
   const programmaticSelectionRef = useRef(false);
+  // Text extraction may finish out of order; only the newest selection may publish.
+  const selectionPublicationId = useRef(0);
   const programmaticClearTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   // `view.select()` (vim find, #7281) selects its target from the relocate it
   // fires, before that selection's selectionchange. A selection made by
@@ -276,6 +285,7 @@ export const useTextSelector = (
   // Publish the per-page parts as one selection: all their text joined, the
   // range/cfi/index anchored on the first part (#5809).
   const makeCrossDocSelection = async (segments: CrossDocSegment[], handlesSuppressed = false) => {
+    const publication = ++selectionPublicationId.current;
     const parts: { range: Range; index: number; text: string }[] = [];
     for (const segment of segments) {
       const range = rangeFromPositions(segment.doc, segment.start, segment.end);
@@ -285,7 +295,7 @@ export const useTextSelector = (
       parts.push({ range, index: segment.index, text });
     }
     const first = parts[0];
-    if (!first) return false;
+    if (!first || publication !== selectionPublicationId.current) return false;
     isTextSelected.current = true;
     const progress = getProgress(bookKey);
     setSelection({
@@ -346,14 +356,16 @@ export const useTextSelector = (
       // Single-document drag (reflowable books, paginated fixed layout): the
       // range runs from the anchor to the caret under the point in the anchor's
       // own document, exactly as the handles always worked.
-      const feRect = anchor.doc.defaultView?.frameElement?.getBoundingClientRect();
-      const range = rangeFromAnchorToPoint(
-        anchor.doc,
-        anchor.pos.node,
-        anchor.pos.offset,
-        point.x - (feRect?.left ?? 0),
-        point.y - (feRect?.top ?? 0),
-      );
+      const localPoint = toDocPoint(anchor.doc, point);
+      const range = localPoint
+        ? rangeFromAnchorToPoint(
+            anchor.doc,
+            anchor.pos.node,
+            anchor.pos.offset,
+            localPoint.x,
+            localPoint.y,
+          )
+        : null;
       if (!range) return commit ? commitLive() : null;
       await applyProgrammaticSelection(range, anchor.index, commit);
       return rangeBounds(anchor.doc, anchor.index, range);
@@ -424,12 +436,17 @@ export const useTextSelector = (
   // programmatically doesn't bring them back (the engine only draws them for a
   // user-initiated selection). `handlesSuppressed` then hands the job to the
   // app's own handles, which do stack below the popup.
-  const suppressNativeSelectionHandles = async () => {
+  const suppressNativeSelectionHandles = async (publishIndex?: number) => {
     // Desktop has no grabbers to take away, and the dance would only churn the
     // selection the popup is anchored to.
     if (!appService?.isMobile) return;
+    // A republish takes the page it is published for: the other page of a
+    // spread can still hold an older selection.
     const content = getContents().find(
-      (c) => c.doc && c.index != null && isValidSelection(c.doc.getSelection()!),
+      (c) =>
+        c.doc &&
+        (publishIndex === undefined ? c.index != null : c.index === publishIndex) &&
+        isValidSelection(c.doc.getSelection()!),
     );
     if (!content) return;
     const doc = content.doc;
@@ -450,7 +467,11 @@ export const useTextSelector = (
     }
     sel.addRange(range);
     releaseProgrammaticSelection();
-    setSelection((prev) => (prev ? { ...prev, handlesSuppressed: true } : prev));
+    if (publishIndex !== undefined) {
+      await makeSelection(sel, publishIndex, false, true);
+    } else {
+      setSelection((prev) => (prev ? { ...prev, handlesSuppressed: true } : prev));
+    }
   };
 
   // Put back a selection the app dropped itself (#6213). The instant dictionary
@@ -522,6 +543,7 @@ export const useTextSelector = (
     trimPoint?: { node: Node; offset: number } | null,
     wordGesture = false,
   ) => {
+    const publication = ++selectionPublicationId.current;
     isTextSelected.current = true;
     const navigated = navigatedSelectionRef.current;
     const liveRange = sel.getRangeAt(0);
@@ -560,10 +582,12 @@ export const useTextSelector = (
     const range = trimPoint || wordGesture ? liveRange.cloneRange() : liveRange;
     if (trimPoint) trimRangeWhitespaceAroundPoint(range, trimPoint.node, trimPoint.offset);
     if (wordGesture) trimNoteMarkersFromWordRange(range);
+    const text = await getAnnotationText(range);
+    if (publication !== selectionPublicationId.current) return;
     const progress = getProgress(bookKey);
     setSelection({
       key: bookKey,
-      text: await getAnnotationText(range),
+      text,
       cfi: view?.getCFI(index, range),
       page: bookData?.isFixedLayout ? index + 1 : progress?.page || 0,
       range,
@@ -638,13 +662,9 @@ export const useTextSelector = (
   // JS-applied user-select at pointer-down proved too late for iOS WebKit's
   // long-press recognizer.
   const armInstantHold = (doc: Document, index: number, ev: PointerEvent) => {
-    const feRect = doc.defaultView?.frameElement?.getBoundingClientRect();
     instantHoldTarget.current = ev.target as HTMLElement;
     instantHoldStartClient.current = { x: ev.clientX, y: ev.clientY };
-    instantHoldStartWindow.current = {
-      x: ev.clientX + (feRect?.left ?? 0),
-      y: ev.clientY + (feRect?.top ?? 0),
-    };
+    instantHoldStartWindow.current = windowPointOf(doc, ev);
     if (instantHoldTimer.current) clearTimeout(instantHoldTimer.current);
     instantHoldTimer.current = setTimeout(() => {
       instantHoldTimer.current = null;
@@ -844,12 +864,8 @@ export const useTextSelector = (
     }
     // The listener lives on the book iframe's document, so ev.clientX/Y are in
     // the (very wide, multi-column) iframe viewport. Map to window coordinates
-    // via the iframe element's on-screen rect, like the selection caret.
-    const feRect = doc.defaultView?.frameElement?.getBoundingClientRect();
-    pointerPos.current = {
-      x: ev.clientX + (feRect?.left ?? 0),
-      y: ev.clientY + (feRect?.top ?? 0),
-    };
+    // via the iframe element's on-screen rect and scale, like the selection caret.
+    pointerPos.current = windowPointOf(doc, ev);
     maybeCancelInstantHoldOnMove();
     if (isInstantAnnotating.current) {
       // In scroll mode, detect gesture direction before committing to annotation.
@@ -1000,15 +1016,9 @@ export const useTextSelector = (
       // touchstart and fed by native touchmove): rebuild between those when
       // the gesture moved; otherwise fall back to the anchor-jump repair.
       const p = pointerPos.current;
-      const feRect = win.frameElement?.getBoundingClientRect();
-      const clamped = p
-        ? rangeFromAnchorToPoint(
-            doc,
-            initial.node,
-            initial.offset,
-            p.x - (feRect?.left ?? 0),
-            p.y - (feRect?.top ?? 0),
-          )
+      const localPoint = p ? toDocPoint(doc, p) : null;
+      const clamped = localPoint
+        ? rangeFromAnchorToPoint(doc, initial.node, initial.offset, localPoint.x, localPoint.y)
         : null;
       const repaired = clamped ?? repairJumpedSelectionRange(sel, initial.node, initial.offset);
       if (repaired) finalRange = repaired;
@@ -1090,11 +1100,7 @@ export const useTextSelector = (
     if (crossDocRef.current) {
       const { anchor } = crossDocRef.current;
       if (ev) {
-        const feRect = doc.defaultView?.frameElement?.getBoundingClientRect();
-        extendCrossDocTo(anchor, {
-          x: ev.clientX + (feRect?.left ?? 0),
-          y: ev.clientY + (feRect?.top ?? 0),
-        });
+        extendCrossDocTo(anchor, windowPointOf(doc, ev));
       }
       const segments = crossDocRef.current?.segments ?? [];
       if (segments.length > 0) {
@@ -1175,6 +1181,8 @@ export const useTextSelector = (
       // to this release. The click would dismiss the toolbar, but on a blank
       // part of a PDF page pdf.js moves `.endOfContent` under the pointer as
       // the selection collapses, and Chromium then sends no click (#6958).
+      // Text extraction from the last release may still be pending; drop it.
+      selectionPublicationId.current++;
       handleDismissPopup();
       isTextSelected.current = false;
     }
@@ -1182,6 +1190,26 @@ export const useTextSelector = (
     if (osPlatform === 'android' && appService?.isAndroidApp) {
       await sanitizeAndroidHyphenSelection(doc, index);
       await suppressNativeHandlesForPages();
+
+      // PDF.js text runs are absolutely positioned. On some Android WebViews
+      // native selection handles jump between runs while the finger drags.
+      // After the initial selection, use Readest's own SelectionRangeEditor
+      // handles for subsequent endpoint adjustments. Cross-page mode already
+      // replaces them; do not interfere with it or with a plain tap. An armed
+      // quick action has already run on this selection, and republishing it
+      // would run the action again, so those keep the native handles.
+      const viewSettings = getViewSettings(bookKey);
+      const quickActionArmed =
+        !!viewSettings?.enableAnnotationQuickActions && !!viewSettings.annotationQuickAction;
+      if (
+        bookData?.book?.format === 'PDF' &&
+        !crossPageEnabled() &&
+        !quickActionArmed &&
+        gestureInitialRef.current &&
+        !sanitizedGestureRef.current
+      ) {
+        await suppressNativeSelectionHandles(index);
+      }
     }
   };
   const handleTouchStart = () => {
@@ -1219,6 +1247,8 @@ export const useTextSelector = (
       }
       makeSelection(sel, index, false, false, null, isTouchWordSelection(sel));
     } else if (isTextSelected.current) {
+      // Text extraction from the last touch may still be pending; drop it.
+      selectionPublicationId.current++;
       handleDismissPopup();
       isTextSelected.current = false;
     }
@@ -1321,7 +1351,8 @@ export const useTextSelector = (
       makeSelection(sel, index, false, false, null, touchWordGesture);
     } else {
       // Selection cleared (e.g. clicking outside the selection).
-      // Dismiss immediately on all platforms.
+      // Dismiss immediately on all platforms; invalidate pending text extraction.
+      selectionPublicationId.current++;
       navigatedSelectionRef.current = false;
       if (isTextSelected.current) {
         handleDismissPopup();
