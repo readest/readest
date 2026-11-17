@@ -517,6 +517,7 @@ export const DEFAULT_VIEW_CONFIG: ViewConfig = {
   showRemainingPages: false,
   showProgressInfo: true,
   showStickyProgressBar: false,
+  solidScrolledFooter: false,
   showCurrentTime: false,
   showCurrentBatteryStatus: false,
   showBatteryPercentage: true,

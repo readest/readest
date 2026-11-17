@@ -232,19 +232,24 @@ test.describe('Annotation', () => {
     const noteBubbles = reader.foliateView.locator('svg > g:has(line)');
     const clickHighlight = async () => {
       // Restyling appends the highlight after its bubble, so target the
-      // highlight explicitly instead of whichever SVG path comes first.
-      await reader.foliateView
-        .locator('svg > g:not(:has(line)) path')
-        .first()
-        .evaluate((node) => {
-          const path = node as SVGPathElement;
-          const box = path.getBBox();
-          const doc = path.ownerSVGElement?.parentElement?.querySelector('iframe')?.contentDocument;
-          if (!doc) throw new Error('highlight overlay has no section document');
-          doc.body.dispatchEvent(
-            new MouseEvent('click', { clientX: box.x + 4, clientY: box.y + 4, bubbles: true }),
-          );
-        });
+      // highlight explicitly instead of whichever SVG path comes first. Saving
+      // the note redraws the highlight, so a path found just before that is
+      // detached when clicked: find it again.
+      await expect(async () => {
+        await reader.foliateView
+          .locator('svg > g:not(:has(line)) path')
+          .first()
+          .evaluate((node) => {
+            const path = node as SVGPathElement;
+            const box = path.getBBox();
+            const doc =
+              path.ownerSVGElement?.parentElement?.querySelector('iframe')?.contentDocument;
+            if (!doc) throw new Error('highlight overlay has no section document');
+            doc.body.dispatchEvent(
+              new MouseEvent('click', { clientX: box.x + 4, clientY: box.y + 4, bubbles: true }),
+            );
+          });
+      }).toPass();
     };
 
     await reader.selectText();
@@ -256,6 +261,10 @@ test.describe('Annotation', () => {
     await reader.selectHighlightColor('green');
     await expect(noteBubbles).toHaveCount(1);
 
+    // A click on the book within 250 ms of the last one is a double-click
+    // (DOUBLE_CLICK_INTERVAL_THRESHOLD_MS), which selects a word instead of
+    // opening the highlight. No one picks a color and comes back that fast.
+    await reader.page.waitForTimeout(250);
     await clickHighlight();
     await reader.popupTool('Delete Highlight').click();
 

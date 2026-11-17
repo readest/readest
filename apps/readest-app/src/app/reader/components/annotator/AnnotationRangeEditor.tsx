@@ -10,6 +10,7 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { useAnnotationEditor } from '../../hooks/useAnnotationEditor';
 import { getExternalDragHandle, getHighlightColorHex } from '../../utils/annotatorUtil';
+import { toDocPoint } from '../../utils/crossDocSelection';
 import MagnifierLoupe from './MagnifierLoupe';
 
 interface HandleProps {
@@ -240,14 +241,15 @@ const AnnotationRangeEditor: React.FC<AnnotationRangeEditorProps> = ({
       const doc = anchor.node.ownerDocument;
       const win = doc?.defaultView;
       if (!doc || !win) return;
-      const feRect = win.frameElement?.getBoundingClientRect();
+      const localPoint = win.frameElement ? toDocPoint(doc, point) : point;
+      if (!localPoint) return;
       const yBias = isVertical ? 0 : draggingRef.current === 'start' ? 2 : -2;
       const built = rangeFromAnchorToPoint(
         doc,
         anchor.node,
         anchor.offset,
-        point.x - (feRect?.left ?? 0),
-        point.y - (feRect?.top ?? 0) + yBias,
+        localPoint.x,
+        localPoint.y + yBias,
       );
       if (!built) return;
       lastBuiltRef.current = { range: built, index: selection.index };

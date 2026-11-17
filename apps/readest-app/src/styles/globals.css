@@ -1633,3 +1633,173 @@
 .tabular-nums {
   font-variant-numeric: tabular-nums;
 }
+
+/* Library drag and sort. The cover lifts in place, its cell becomes an empty
+   slot, neighbours part around a thin insertion line, and a group target sinks
+   while the pointer dwells on it. Neutral colours only; e-ink and reduced
+   motion keep every state but drop the movement. */
+.bookshelf-drag-item {
+  transition: transform 200ms cubic-bezier(0.2, 0, 0, 1);
+}
+.bookshelf-drag-item > :first-child {
+  transition:
+    transform 200ms cubic-bezier(0.2, 0, 0, 1),
+    opacity 150ms ease-out;
+}
+.bookshelf-drag-item[data-drag-source] > :first-child {
+  opacity: 0;
+}
+.bookshelf-drag-slot {
+  border-radius: 0.25rem;
+  background: color-mix(in srgb, var(--color-base-content) 7%, transparent);
+  animation: bookshelf-fade-in 150ms ease-out;
+}
+.bookshelf-drag-item[data-drop-intent='group-pending'] > :first-child {
+  transform: scale(0.95);
+  transition: transform 450ms linear;
+}
+.bookshelf-drag-item[data-drop-intent='group'] > :first-child {
+  transform: scale(0.9);
+}
+.bookshelf-group-target {
+  border-color: color-mix(in srgb, var(--color-base-content) 20%, transparent);
+  background: color-mix(in srgb, var(--color-base-content) 3%, transparent);
+  animation: bookshelf-fade-in 450ms linear;
+  transition:
+    background-color 150ms ease-out,
+    border-color 150ms ease-out;
+}
+[data-drop-intent='group'] .bookshelf-group-target {
+  border-color: color-mix(in srgb, var(--color-base-content) 70%, transparent);
+  background: color-mix(in srgb, var(--color-base-content) 7%, transparent);
+}
+.bookshelf-drop-marker {
+  opacity: 0.8;
+  animation: bookshelf-fade-in 150ms ease-out;
+}
+.bookshelf-drag-preview {
+  transition:
+    transform 200ms cubic-bezier(0.2, 0, 0, 1),
+    opacity 150ms ease-out;
+}
+.bookshelf-drag-preview[data-shrink='true'] {
+  transform: scale(0.8);
+  opacity: 0.85;
+}
+.bookshelf-drag-cover {
+  animation: bookshelf-lift 200ms cubic-bezier(0.2, 0, 0, 1) forwards;
+}
+.bookshelf-parent-drop {
+  box-shadow: 0 4px 16px rgb(0 0 0 / 0.12);
+  transition:
+    background-color 150ms ease-out,
+    color 150ms ease-out;
+  animation: bookshelf-parent-reveal 200ms cubic-bezier(0.2, 0, 0, 1);
+}
+.bookshelf-parent-name {
+  opacity: 0.6;
+}
+.bookshelf-parent-drop[data-over='true'] {
+  background: var(--color-base-content);
+  border-color: var(--color-base-content);
+  color: var(--color-base-100);
+}
+[data-dragging='true'],
+[data-dragging='true'] * {
+  cursor: grabbing !important;
+}
+@keyframes bookshelf-lift {
+  from {
+    transform: scale(1);
+    box-shadow: 0 1px 3px rgb(0 0 0 / 0.12);
+  }
+  to {
+    transform: scale(1.04);
+    box-shadow:
+      0 14px 32px rgb(0 0 0 / 0.22),
+      0 3px 8px rgb(0 0 0 / 0.12);
+  }
+}
+@keyframes bookshelf-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes bookshelf-parent-reveal {
+  from {
+    opacity: 0;
+    translate: -50% -8px;
+  }
+}
+[dir='rtl'] .bookshelf-parent-drop {
+  animation-name: bookshelf-parent-reveal-rtl;
+}
+@keyframes bookshelf-parent-reveal-rtl {
+  from {
+    opacity: 0;
+    translate: 50% -8px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bookshelf-drag-item,
+  .bookshelf-drag-item > :first-child,
+  .bookshelf-drag-preview {
+    transition: none;
+    transform: none !important;
+  }
+  .bookshelf-drag-cover,
+  .bookshelf-drag-slot,
+  .bookshelf-group-target,
+  .bookshelf-drop-marker,
+  .bookshelf-parent-drop {
+    animation: none;
+  }
+  .bookshelf-drag-cover {
+    box-shadow: 0 14px 32px rgb(0 0 0 / 0.22);
+  }
+}
+[data-eink='true'] .bookshelf-drag-item,
+[data-eink='true'] .bookshelf-drag-item > :first-child,
+[data-eink='true'] .bookshelf-drag-preview {
+  transition: none;
+  transform: none !important;
+  opacity: 1;
+}
+[data-eink='true'] .bookshelf-drag-item[data-drag-source] > :first-child {
+  opacity: 0;
+}
+[data-eink='true'] .bookshelf-drag-cover {
+  animation: none;
+  box-shadow: none;
+  border: 1px solid var(--color-base-content);
+}
+[data-eink='true'] .bookshelf-drag-slot {
+  animation: none;
+  background: transparent;
+  border: 1px dashed var(--color-base-content);
+}
+[data-eink='true'] .bookshelf-drop-marker {
+  animation: none;
+  opacity: 1;
+}
+[data-eink='true'] .bookshelf-parent-drop {
+  box-shadow: none;
+  border-color: var(--color-base-content);
+}
+[data-eink='true'] .bookshelf-group-target {
+  background: transparent;
+  border-style: dashed;
+  border-color: var(--color-base-content);
+}
+[data-eink='true'] [data-drop-intent='group'] .bookshelf-group-target {
+  border-style: solid;
+  border-width: 2px;
+}
+[data-eink='true'] .bookshelf-parent-name {
+  opacity: 1;
+}
+[data-eink='true'] .bookshelf-parent-drop,
+[data-eink='true'] .bookshelf-group-target {
+  animation: none;
+  transition: none;
+}

@@ -114,7 +114,9 @@ const AnnotationPopup: React.FC<AnnotationPopupProps> = ({
           <div
             className={clsx(
               'selection-buttons flex h-full w-full items-center justify-between p-2',
-              isVertical ? 'flex-col overflow-y-auto' : 'flex-row overflow-x-auto',
+              isVertical
+                ? 'flex-col overflow-y-auto'
+                : 'flex-row overflow-x-auto overflow-y-hidden',
               (notes.length > 0 || noteEditor) && 'hidden',
             )}
             style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}

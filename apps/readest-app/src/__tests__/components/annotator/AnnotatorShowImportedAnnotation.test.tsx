@@ -354,3 +354,73 @@ describe('tapping a copy of a global highlight without a note', () => {
     expect(queryByTestId('range-editor')).not.toBeNull();
   });
 });
+
+// The popup dismiss is throttled to 500 ms: one asked for sooner after the last
+// runs when that time is up. A toolbar opened in between was not there when it
+// was asked for, so the held-back dismiss must leave it open.
+describe('a popup dismiss held back by its throttle', () => {
+  const highlight = () => ({
+    id: 'highlight-1',
+    type: 'annotation',
+    cfi: IMPORTED_CFI,
+    text: 'Alice',
+    note: '',
+    style: 'highlight',
+    color: 'yellow',
+    page: 1,
+    createdAt: 1,
+    updatedAt: 1,
+  });
+  // Each page move dismisses the popup; the first relocate only sets the start.
+  const relocate = (cfi: string) =>
+    act(() => {
+      h.foliateHandlers?.['onRelocate']?.(new CustomEvent('relocate', { detail: { cfi } }));
+    });
+  const setup = () => {
+    vi.useFakeTimers();
+    // The toolbar is placed against the book's grid cell.
+    if (!document.querySelector('#gridcell-book-1')) {
+      const gridCell = document.createElement('div');
+      gridCell.id = 'gridcell-book-1';
+      document.body.append(gridCell);
+    }
+    h.progress = { page: 1 };
+    h.config.booknotes = [highlight()];
+    h.isTextSelected.current = false;
+    const view = render(
+      <Annotator bookKey='book-1' contentInsets={{ top: 0, right: 0, bottom: 0, left: 0 }} />,
+    );
+    relocate('epubcfi(/6/2)');
+    relocate('epubcfi(/6/4)');
+    return view;
+  };
+
+  afterEach(() => {
+    vi.useRealTimers();
+    h.isTextSelected.current = true;
+  });
+
+  test('leaves a toolbar opened after the dismiss was asked for', () => {
+    const { queryByTestId } = setup();
+    relocate('epubcfi(/6/6)');
+    tapAnnotation(IMPORTED_CFI);
+    expect(queryByTestId('annotation-toolbar')).not.toBeNull();
+
+    act(() => {
+      vi.advanceTimersByTime(500);
+    });
+    expect(queryByTestId('annotation-toolbar')).not.toBeNull();
+  });
+
+  test('still closes a toolbar that was open when the dismiss was asked for', () => {
+    const { queryByTestId } = setup();
+    tapAnnotation(IMPORTED_CFI);
+    relocate('epubcfi(/6/6)');
+    expect(queryByTestId('annotation-toolbar')).not.toBeNull();
+
+    act(() => {
+      vi.advanceTimersByTime(500);
+    });
+    expect(queryByTestId('annotation-toolbar')).toBeNull();
+  });
+});
