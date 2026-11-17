@@ -193,6 +193,14 @@ const suppressDomClick = (event: MouseEvent) => {
   event.stopImmediatePropagation();
 };
 
+// Documents whose last mouse release dismissed the selection toolbar. Its click
+// still reaches highlights and links, but doesn't turn the page (#7361).
+const selectionDismissClicks = new WeakSet<EventTarget>();
+
+export const markSelectionDismissClick = (doc: Document) => {
+  selectionDismissClicks.add(doc);
+};
+
 const consumeSuppressedDomClick = (bookKey: string, event: MouseEvent, now: number) => {
   const imageHold = imageHoldClicks.get(bookKey);
   if (imageHold) {
@@ -378,6 +386,8 @@ export const handleKeyup = (bookKey: string, event: KeyboardEvent) => {
 };
 
 export const handleMousedown = (bookKey: string, event: MouseEvent) => {
+  // Some PDF releases dismiss the selection without generating a click.
+  if (event.currentTarget) selectionDismissClicks.delete(event.currentTarget);
   isMouseDown = true;
   if (longHoldTimeout) clearTimeout(longHoldTimeout);
   longHoldTimeout = setTimeout(() => {
@@ -618,6 +628,11 @@ export const handleClick = (
 ) => {
   const now = Date.now();
   if (consumeSuppressedDomClick(bookKey, event, now)) return;
+  const dismissedSelection =
+    !!event.currentTarget &&
+    event.button === 0 &&
+    event.detail > 0 &&
+    selectionDismissClicks.delete(event.currentTarget);
   // Decide at release; waiting for a possible double-click must not extend a hold.
   const isLongHold = !longHoldTimeout;
 
@@ -752,6 +767,7 @@ export const handleClick = (
       return;
     }
 
+    if (dismissedSelection) return;
     window.postMessage(
       {
         type: 'iframe-single-click',

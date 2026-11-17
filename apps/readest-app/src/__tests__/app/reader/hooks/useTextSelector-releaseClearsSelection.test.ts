@@ -35,6 +35,12 @@ vi.mock('@/utils/misc', async (importActual) => {
 });
 
 import { useTextSelector } from '@/app/reader/hooks/useTextSelector';
+import {
+  handleClick,
+  handleMousedown,
+  handleMouseup,
+} from '@/app/reader/utils/iframeEventHandlers';
+import { eventDispatcher } from '@/utils/event';
 
 const mousePointer = (x: number, y: number) =>
   ({ pointerType: 'mouse', button: 0, clientX: x, clientY: y }) as PointerEvent;
@@ -79,6 +85,71 @@ afterEach(() => {
 });
 
 describe('a mouse release that leaves no selection', () => {
+  test('a separate click is not consumed by the previous popup-opening gesture', async () => {
+    const { result, handleDismissPopup } = setup();
+    result.current.handleUpToPopup();
+    result.current.isTextSelected.current = true;
+    await result.current.handlePointerUp(document, 0, mousePointer(5, 5));
+
+    expect(handleDismissPopup).toHaveBeenCalledOnce();
+    const clickListener = vi.mocked(eventDispatcher.onSync).mock.calls.at(-1)?.[1];
+    expect(clickListener?.(new CustomEvent('iframe-single-click'))).toBe(false);
+  });
+
+  test.each([
+    true,
+    false,
+  ])('only the dismissing click skips the page turn (browser emits click: %s)', async (emitsClick) => {
+    const { result, handleDismissPopup } = setup();
+    selectText();
+    result.current.isTextSelected.current = true;
+
+    // Foliate opens a highlight from its own click listener on the document.
+    const highlightListener = vi.fn();
+    const onMouseDown = (event: MouseEvent) => handleMousedown('book-1', event);
+    const onMouseUp = (event: MouseEvent) => handleMouseup('book-1', event);
+    const onClick = (event: MouseEvent) =>
+      handleClick('book-1', { current: true }, false, false, event);
+    const postMessage = vi.spyOn(window, 'postMessage');
+    const singleClicks = () =>
+      postMessage.mock.calls.filter(([msg]) => msg?.type === 'iframe-single-click').length;
+    const press = () => document.body.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+    const release = () => document.body.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
+    const click = () =>
+      document.body.dispatchEvent(
+        new MouseEvent('click', { bubbles: true, cancelable: true, detail: 1 }),
+      );
+    document.addEventListener('mousedown', onMouseDown);
+    document.addEventListener('mouseup', onMouseUp);
+    document.addEventListener('click', onClick);
+    document.addEventListener('click', highlightListener);
+
+    try {
+      press();
+      result.current.handlePointerDown(document, 0, mousePointer(5, 5));
+      document.getSelection()!.removeAllRanges();
+      await result.current.handlePointerUp(document, 0, mousePointer(5, 5));
+      release();
+      expect(handleDismissPopup).toHaveBeenCalledOnce();
+      if (emitsClick) {
+        expect(click()).toBe(true);
+        expect(highlightListener).toHaveBeenCalledOnce();
+        expect(singleClicks()).toBe(0);
+      }
+
+      press();
+      release();
+      click();
+      expect(singleClicks()).toBe(1);
+    } finally {
+      postMessage.mockRestore();
+      document.removeEventListener('mousedown', onMouseDown);
+      document.removeEventListener('mouseup', onMouseUp);
+      document.removeEventListener('click', onClick);
+      document.removeEventListener('click', highlightListener);
+    }
+  });
+
   test('dismisses the selection toolbar', async () => {
     const { result, handleDismissPopup } = setup();
     selectText();
