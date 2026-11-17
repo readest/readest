@@ -411,11 +411,9 @@ describe('Mixed-direction preloads (browser)', () => {
       onLoad?.(doc);
     });
     let settle = () => {};
+    let timer: ReturnType<typeof setTimeout> | undefined;
     const settled = new Promise<void>((resolve, reject) => {
-      const timer = setTimeout(
-        () => reject(new Error(`preload of ${neighbor} never settled`)),
-        10000,
-      );
+      timer = setTimeout(() => reject(new Error(`preload of ${neighbor} never settled`)), 10000);
       settle = () => {
         clearTimeout(timer);
         resolve();
@@ -438,8 +436,15 @@ describe('Mixed-direction preloads (browser)', () => {
         };
       }),
     } as unknown as BookDoc);
-    await el.goTo({ index });
-    await settled;
+    try {
+      await el.goTo({ index });
+      await settled;
+    } catch (e) {
+      clearTimeout(timer);
+      el.destroy();
+      el.remove();
+      throw e;
+    }
     return { el, loads };
   };
 
