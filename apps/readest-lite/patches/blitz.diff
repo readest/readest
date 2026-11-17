@@ -4447,6 +4447,24 @@ diff -ruN blitz/packages/blitz-paint/src/render/background.rs blitz/packages/bli
          );
  
          let bg_pos = compute_layer_position(
+@@ -987,11 +988,14 @@
+ }
+ 
+ /// Whether drawing the layer is guaranteed to paint nothing, making its clip
+-/// layer unnecessary
+-fn layer_paints_nothing(layer: &ImageLayerStyles) -> bool {
++/// layer unnecessary: no image, or one with nothing loaded (still loading, or
++/// failed to load or decode)
++pub(super) fn layer_paints_nothing(layer: &ImageLayerStyles) -> bool {
+     match layer.stylo_image {
+         GenericImage::None => true,
+-        GenericImage::Url(_) => layer.image_data.is_none(),
++        GenericImage::Url(_) => layer
++            .image_data
++            .is_none_or(|data| matches!(data.image, ImageData::None)),
+         _ => false,
+     }
+ }
 diff -ruN blitz/packages/blitz-paint/src/render/border.rs blitz/packages/blitz-paint/src/render/border.rs
 --- blitz/packages/blitz-paint/src/render/border.rs
 +++ blitz/packages/blitz-paint/src/render/border.rs
@@ -4478,6 +4496,64 @@ diff -ruN blitz/packages/blitz-paint/src/render/box_shadow.rs blitz/packages/bli
              }
  
              // TODO draw shadows with matching individual radii instead of averaging
+diff -ruN blitz/packages/blitz-paint/src/render/clip_path.rs blitz/packages/blitz-paint/src/render/clip_path.rs
+--- blitz/packages/blitz-paint/src/render/clip_path.rs
++++ blitz/packages/blitz-paint/src/render/clip_path.rs
+@@ -42,7 +42,8 @@
+     }
+ 
+     /// Compute the clip-path BezPath (if any) for this element.
+-    /// Returns `None` if clip-path is `none` or unsupported.
++    /// Returns `None` if clip-path is `none` or unsupported, and an empty path for a region that
++    /// is empty (which clips everything away).
+     pub(super) fn clip_path_shape(&self) -> Option<BezPath> {
+         match self.style.get_clip_path() {
+             ClipPath::None => None,
+@@ -159,8 +160,9 @@
+                 let x1 = ox + w - right;
+                 let y1 = oy + h - bottom;
+ 
++                // An empty region (`inset(50%)`, as Tailwind's `sr-only` uses) clips everything.
+                 if x1 <= x0 || y1 <= y0 {
+-                    return None;
++                    return Some(BezPath::new());
+                 }
+ 
+                 // TODO: Support border-radius on inset()
+diff -ruN blitz/packages/blitz-paint/src/render/mask.rs blitz/packages/blitz-paint/src/render/mask.rs
+--- blitz/packages/blitz-paint/src/render/mask.rs
++++ blitz/packages/blitz-paint/src/render/mask.rs
+@@ -14,7 +14,7 @@
+ //! The mask image layers themselves are positioned/sized/repeated using the same
+ //! code as `background-image` layers (see `background.rs`), as the `mask-*` and
+ //! `background-*` properties share computed value types.
+-use crate::render::background::get_cyclic;
++use crate::render::background::{get_cyclic, layer_paints_nothing};
+ 
+ use super::background::ImageLayerStyles;
+ use super::{ALMOST_OPAQUE, ElementCx};
+@@ -37,6 +37,21 @@
+             .any(|image| !matches!(image, GenericImage::None))
+     }
+ 
++    /// Whether the element has a CSS mask and none of its layers draws anything (no image, or an
++    /// image not loaded): a transparent mask, which shows nothing of what it masks.
++    pub(super) fn css_mask_hides_all(&self) -> bool {
++        let svg_styles = self.style.get_svg();
++        let layers = svg_styles.mask_image.0.len();
++        self.has_css_mask()
++            && (0..layers).all(|idx| {
++                layer_paints_nothing(&ImageLayerStyles::from_svg(
++                    svg_styles,
++                    &self.element.mask_images,
++                    idx,
++                ))
++            })
++    }
++
+     /// If the element has a CSS mask, push an isolation layer for the masked content
+     /// to be drawn into. Returns whether a layer was pushed, which should later be
+     /// passed to [`maybe_pop_css_mask_layer`](Self::maybe_pop_css_mask_layer).
 diff -ruN blitz/packages/blitz-paint/src/render.rs blitz/packages/blitz-paint/src/render.rs
 --- blitz/packages/blitz-paint/src/render.rs
 +++ blitz/packages/blitz-paint/src/render.rs
@@ -4549,7 +4625,32 @@ diff -ruN blitz/packages/blitz-paint/src/render.rs blitz/packages/blitz-paint/sr
          {
              return;
          }
-@@ -683,12 +708,12 @@
+@@ -541,6 +566,13 @@
+ 
+         // Compute clip-path (if any) and wrap all rendering in a clip layer
+         let clip_path_shape = cx.clip_path_shape();
++        // Nothing the element paints shows through an empty clip-path region
++        if clip_path_shape
++            .as_ref()
++            .is_some_and(kurbo::BezPath::is_empty)
++        {
++            return;
++        }
+         let has_clip_path = clip_path_shape.is_some();
+         let default_clip = cx.frame.border_box_path();
+         let mut clip_path_for_layer = clip_path_shape.unwrap_or(default_clip);
+@@ -601,6 +633,10 @@
+             None,
+             None,
+             |scene| {
++                // A mask with nothing to draw (its images not loaded) hides everything it masks
++                if cx.css_mask_hides_all() {
++                    return;
++                }
+                 // If the element has a CSS `mask`, then push an isolation layer for the
+                 // masked content. The mask is applied when the layer is popped below.
+                 let mask_layer_pushed = cx.maybe_push_css_mask_layer(scene);
+@@ -683,12 +719,12 @@
                                  cx.draw_svg(scene);
                                  #[cfg(feature = "custom-widget")]
                                  cx.draw_custom_widget(scene);
@@ -4564,7 +4665,7 @@ diff -ruN blitz/packages/blitz-paint/src/render.rs blitz/packages/blitz-paint/sr
                              },
                          );
  
-@@ -794,8 +819,13 @@
+@@ -794,8 +830,13 @@
  
  /// The transform from an SVG's rendered tree to a viewport of the given size.
  #[cfg(feature = "svg")]
@@ -4580,7 +4681,7 @@ diff -ruN blitz/packages/blitz-paint/src/render.rs blitz/packages/blitz-paint/sr
      Affine::new([t.sx, t.ky, t.kx, t.sy, t.tx, t.ty].map(f64::from))
  }
  
-@@ -1076,6 +1106,32 @@
+@@ -1076,6 +1117,32 @@
                  };
              }
  
@@ -4613,7 +4714,7 @@ diff -ruN blitz/packages/blitz-paint/src/render.rs blitz/packages/blitz-paint/sr
              // Render text
              let mut draw_text_context = self.context.draw_text_context.borrow_mut();
              crate::text::stroke_text(
-@@ -1152,6 +1208,63 @@
+@@ -1152,6 +1219,63 @@
          }
      }
  
@@ -4677,7 +4778,7 @@ diff -ruN blitz/packages/blitz-paint/src/render.rs blitz/packages/blitz-paint/sr
      fn draw_children(
          &self,
          scene: &mut impl PaintScene,
-@@ -1183,7 +1296,9 @@
+@@ -1183,7 +1307,9 @@
                  // the viewport and do not scroll with it, so cancel out the viewport
                  // scroll (applied in `paint_scene`). A fixed box contained by a
                  // transformed ancestor scrolls with it like any out-of-flow box.
@@ -4688,7 +4789,7 @@ diff -ruN blitz/packages/blitz-paint/src/render.rs blitz/packages/blitz-paint/sr
                  let child_transform = if child.taffy_position() == taffy::Position::Fixed
                      && Some(self.node.id) == self.context.root_element_id
                  {
-@@ -1193,6 +1308,15 @@
+@@ -1193,6 +1319,15 @@
                          y: scroll.y * self.scale,
                      })
                  } else if let Some(offset) = child.lifted_paint_offset(self.node.id) {
@@ -4704,7 +4805,7 @@ diff -ruN blitz/packages/blitz-paint/src/render.rs blitz/packages/blitz-paint/sr
                      parent_style_transform.pre_translate(kurbo::Vec2 {
                          x: offset.x as f64 * self.scale,
                          y: offset.y as f64 * self.scale,
-@@ -1200,7 +1324,37 @@
+@@ -1200,7 +1335,37 @@
                  } else {
                      parent_style_transform
                  };
@@ -4743,7 +4844,7 @@ diff -ruN blitz/packages/blitz-paint/src/render.rs blitz/packages/blitz-paint/sr
              }
          }
  
-@@ -1269,7 +1423,7 @@
+@@ -1269,7 +1434,7 @@
          let x = x + x_offset.px() as f64;
          let y = y + y_offset.px() as f64;
  
@@ -4752,7 +4853,7 @@ diff -ruN blitz/packages/blitz-paint/src/render.rs blitz/packages/blitz-paint/sr
          let transform = (self.transform * viewport).then_translate(Vec2 { x, y });
  
          self.with_replaced_content_clip(
-@@ -1377,7 +1531,8 @@
+@@ -1377,7 +1542,8 @@
          }
      }
  
@@ -4762,7 +4863,7 @@ diff -ruN blitz/packages/blitz-paint/src/render.rs blitz/packages/blitz-paint/sr
          if let Some(sub_doc) = self.element.sub_doc_data().map(|doc| doc.inner()) {
              let scale = self.scale;
              let width = self.frame.content_box.width() as u32;
-@@ -1389,7 +1544,7 @@
+@@ -1389,7 +1555,7 @@
              let initial_y = translation.y + self.frame.content_box.origin().y;
              // let transform = self.transform.then_translate(Vec2 { x, y });
  
@@ -4771,7 +4872,7 @@ diff -ruN blitz/packages/blitz-paint/src/render.rs blitz/packages/blitz-paint/sr
                  &sub_doc,
                  scale,
                  width,
-@@ -1398,6 +1553,15 @@
+@@ -1398,6 +1564,15 @@
                  initial_y,
                  self.custom_widget_scenes,
              );

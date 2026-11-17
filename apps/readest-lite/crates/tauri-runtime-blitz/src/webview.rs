@@ -718,9 +718,10 @@ impl BlitzWebview {
         }
         let Some(doc) = self.doc.as_mut() else { return };
         let layout_ms = t.elapsed().as_secs_f64() * 1000.0;
-        // The frame's drawing commands. When they are the last frame's, the page looks as it did
-        // (a section preloaded out of sight, a style written where it doesn't show): rasterizing
-        // and presenting it would change no pixel (~90 ms on a Kindle, where recording takes ~4).
+        // The frame's drawing commands. When they draw what the last frame's did, the page looks
+        // as it did (a section preloaded out of sight, a style written where it doesn't show, the
+        // blank reader of a book still opening): rasterizing and presenting it would change no
+        // pixel (~90 ms on a Kindle, where recording takes ~4).
         let mut commands = anyrender::Scene::new();
         paint_scene(
             &mut commands,
@@ -732,11 +733,9 @@ impl BlitzWebview {
             0,
         );
         let record_ms = t.elapsed().as_secs_f64() * 1000.0 - layout_ms;
-        if self
-            .last_scene
-            .as_ref()
-            .is_some_and(|(w, h, last)| (*w, *h) == (self.w, self.h) && *last == commands)
-        {
+        if self.last_scene.as_ref().is_some_and(|(w, h, last)| {
+            (*w, *h) == (self.w, self.h) && crate::frame::same_pixels(last, &commands)
+        }) {
             if std::env::var_os("BLITZ_TAURI_TRACE_LOOP").is_some() {
                 eprintln!(
                     "{{\"label\": \"skip\", \"t_ms\": {:.1}, \"layout_ms\": {layout_ms:.1}, \"record_ms\": {record_ms:.1}, \"same\": true, \"cause\": \"{}\"}}",
