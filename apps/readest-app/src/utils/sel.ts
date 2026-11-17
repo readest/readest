@@ -1,4 +1,4 @@
-import { getPdfTextFromRange, getPdfTextLayer } from '@/utils/pdfText';
+import { getPdfCaretPosition, getPdfTextFromRange, getPdfTextLayer } from '@/utils/pdfText';
 
 export interface Frame {
   top: number;
@@ -1015,7 +1015,11 @@ export const rangeFromAnchorToPoint = (
 ): Range | null => {
   let pointNode: Node | null = null;
   let pointOffset = 0;
-  if (doc.caretPositionFromPoint) {
+  const pdfCaret = getPdfCaretPosition(doc, x, y);
+  if (pdfCaret) {
+    pointNode = pdfCaret.node;
+    pointOffset = pdfCaret.offset;
+  } else if (doc.caretPositionFromPoint) {
     const pos = doc.caretPositionFromPoint(x, y);
     if (pos) {
       pointNode = pos.offsetNode;

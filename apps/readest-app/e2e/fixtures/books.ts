@@ -21,3 +21,15 @@ export const SAMPLE_PDF = path.join(
   fixturesDir,
   '../../src/__tests__/fixtures/data/sample-alice.pdf',
 );
+
+/**
+ * A 15 KB CC0 bilingual EPUB whose stylesheet is the point: every paragraph is
+ * a `.paracol` holding a `.yuanwen` (original) and a `.yiwen` (translation),
+ * laid out side by side under `@media (orientation: landscape)` and stacked
+ * under `@media (orientation: portrait)`.
+ *
+ * Small enough to read in a diff-free zip, with no images, fonts or scripts,
+ * so a failing assertion points at the reader rather than at the sample. Five
+ * spine items (cover, colophon, three chapters) so TOC jumps land in prose.
+ */
+export const ADAPTIVE_EPUB = path.join(fixturesDir, 'books/orientation-bilingual.epub');
