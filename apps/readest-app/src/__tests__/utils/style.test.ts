@@ -231,6 +231,13 @@ describe('transformStylesheet', () => {
       );
     });
 
+    it('reads exponent notation as one length', () => {
+      const result = transformStylesheet('p { width: 1e1vw; height: 2E-1vh; }', VW, VH, VERTICAL);
+      expect(result).toBe(
+        'p { width: calc(1e1*var(--readest-vw,10px)); height: calc(2E-1*var(--readest-vh,8px)); }',
+      );
+    });
+
     it('resolves @import media conditions to px', () => {
       const result = transformStylesheet(
         '@import url(extra.css) screen and (max-width: 50vw);\np { width: 1vw; }',

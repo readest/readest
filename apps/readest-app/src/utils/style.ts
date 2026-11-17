@@ -1694,7 +1694,7 @@ export const transformStylesheet = (
   // Whole tokens are matched, so a name like `.a-10vw` is left alone (the web
   // build rejects lookbehind, which older iOS WebViews cannot parse). The calc
   // has no spaces so a `font` shorthand still reads it as one size token.
-  const viewportLength = /^([+-]?(?:\d*\.)?\d+)(vw|vh)$/i;
+  const viewportLength = /^([+-]?(?:\d*\.)?\d+(?:e[+-]?\d+)?)(vw|vh)$/i;
   const tokens = /url\([^)]*\)|\/\*[\s\S]*?\*\/|[\w.+-]+/gi;
   const resolveLength = (token: string, inCondition: boolean) => {
     const length = viewportLength.exec(token);
