@@ -14,6 +14,7 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { useEnsureSettingsLoaded } from '@/hooks/useEnsureSettingsLoaded';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useTrafficLightStore } from '@/store/trafficLightStore';
+import { useReaderStore } from '@/store/readerStore';
 import { getBaseUrl, isTauriAppPlatform } from '@/services/environment';
 import { onOpenUrl } from '@tauri-apps/plugin-deep-link';
 import { start, cancel, onUrl, onInvalidUrl } from '@fabianlars/tauri-plugin-oauth';
@@ -37,20 +38,9 @@ const WEB_AUTH_CALLBACK = `${getBaseUrl()}/auth/callback`;
 const DEEPLINK_CALLBACK = 'readest://auth-callback';
 const USE_APPLE_SIGN_IN = process.env['NEXT_PUBLIC_USE_APPLE_SIGN_IN'] === 'true';
 
-// Whether a reader entry is alive beneath this page in the history stack
-// (books pushed this login page over themselves and their view states still
-// exist). The reader store is imported lazily: a top-level import would pull
-// the OPDS dependency chain (pseStream → opdsReq → getAPIBaseUrl, evaluated
-// at module load) into this page's module graph, which the auth tests' partial
-// "@/services/environment" mock does not define.
-async function isReaderAliveBeneath(): Promise<boolean> {
-  try {
-    const { useReaderStore } = await import('@/store/readerStore');
-    return Object.keys(useReaderStore.getState().viewStates).length > 0;
-  } catch {
-    return false;
-  }
-}
+// A book stays open in the reader beneath while the login page sits over it
+// (the reader keeps its books when a page opens on top, #6607).
+const isReaderBeneath = () => Object.keys(useReaderStore.getState().viewStates).length > 0;
 
 export default function AuthPage() {
   const _ = useTranslation();
@@ -245,7 +235,7 @@ export default function AuthPage() {
     }
   };
 
-  const handleGoBack = async () => {
+  const handleGoBack = () => {
     // Keep login false to avoid infinite loop to redirect to the login page.
     // On a cold load the store is still an empty object, so read through to
     // disk first: persisting that would overwrite the real settings file with
@@ -263,23 +253,12 @@ export default function AuthPage() {
       }
     })();
     const redirectTo = new URLSearchParams(window.location.search).get('redirect');
-    if (redirectTo) {
-      // This page is normally pushed over a live reader (navigateToLogin from
-      // the voice preview). Going back restores that reader entry with its
-      // open books intact — the same pattern the reader already supports for
-      // pages opened over it (#6607). Navigating forward to a new /reader
-      // entry instead strands the original one below in the history stack:
-      // when the Android back key closes the book from the new entry
-      // (close-reader tears down the view states), router.back() lands on the
-      // original entry whose mount-only init never re-runs, leaving it stuck
-      // on the loading spinner forever. Only navigate forward when no reader
-      // is actually open (a cold-loaded /auth?redirect=... with nothing to go
-      // back to), and replace there so /auth doesn't linger on the stack.
-      if (await isReaderAliveBeneath()) {
-        router.back();
-      } else {
-        router.replace(redirectTo);
-      }
+    // Go back to the reader rather than pushing the redirect over /auth: a
+    // pushed entry leaves /auth in the history, and the reader's Android back
+    // key reopens the login page from it (#7567). Replace when nothing is open
+    // beneath, e.g. a cold-loaded /auth?redirect=...
+    if (redirectTo && !isReaderBeneath()) {
+      router.replace(redirectTo);
     } else {
       router.back();
     }
@@ -305,7 +284,7 @@ export default function AuthPage() {
   }, []);
 
   useEffect(() => {
-    const { data: subscription } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    const { data: subscription } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.access_token && session.user) {
         login(session.access_token, session.user);
         const redirectTo = new URLSearchParams(window.location.search).get('redirect');
@@ -314,16 +293,8 @@ export default function AuthPage() {
         const now = Date.now();
         localStorage.setItem(lastRedirectAtKey, now.toString());
         if (now - lastRedirectAt > 3000) {
-          // Prefer going back to the reader that pushed this login page over
-          // itself (see handleGoBack above): back restores that entry with its
-          // open books intact. Forward-navigating to a fresh /reader entry
-          // leaves the original stranded below the stack, and the Android
-          // back key then lands on it after close-reader has torn its view
-          // state down — stuck on the loading spinner. Fall back to replace
-          // only when no reader is open (or the redirect target is the
-          // library): a page reload wipes the in-memory reader store, so a
-          // cold OAuth callback landing here naturally takes this branch.
-          if (redirectTo && (await isReaderAliveBeneath())) {
+          // Same as handleGoBack: never leave /auth on the history stack.
+          if (redirectTo && isReaderBeneath()) {
             router.back();
           } else {
             router.replace(redirectTo ?? '/library');

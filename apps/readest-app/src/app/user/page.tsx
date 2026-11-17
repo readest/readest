@@ -87,7 +87,8 @@ const ProfilePage = () => {
 
     const timer = setTimeout(() => {
       const redirect = searchParams?.get('redirect') || '/library';
-      router.push(`/auth?redirect=${encodeURIComponent(redirect)}`);
+      // Replace, so leaving the login page goes back to the opener (#7567).
+      router.replace(`/auth?redirect=${encodeURIComponent(redirect)}`);
     }, 1000);
 
     return () => clearTimeout(timer);
