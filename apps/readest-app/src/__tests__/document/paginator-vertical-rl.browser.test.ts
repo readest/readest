@@ -437,8 +437,8 @@ describe('Mixed-direction preloads (browser)', () => {
       }),
     } as unknown as BookDoc);
     try {
-      await el.goTo({ index });
-      await settled;
+      // Await both at once so a timeout during goTo is never left unhandled.
+      await Promise.all([el.goTo({ index }), settled]);
     } catch (e) {
       clearTimeout(timer);
       el.destroy();
