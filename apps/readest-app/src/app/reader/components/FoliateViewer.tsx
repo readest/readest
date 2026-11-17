@@ -607,7 +607,20 @@ const FoliateViewer: React.FC<{
       // UI language is the last resort, for a book that says nothing at all.
       const documentRtl = writingDir?.rtl || getDirFromUILanguage() === 'rtl' || false;
       const newRtl = getPageProgressionRTL(viewSettings.writingMode, bookDoc.dir, documentRtl);
-      if (viewSettings.vertical !== newVertical || viewSettings.rtl !== newRtl) {
+      // Continuous scrolling keeps the neighbouring sections mounted, and they
+      // finish loading *after* the one being read. A horizontal front matter
+      // landing last therefore used to rewrite a vertical book's writing mode
+      // to horizontal, and persist it: page turns, the scrollbar, the reading
+      // ruler and every overlay then disagreed with the text on screen (the
+      // footnote popup sized its box along the wrong axis for exactly this
+      // reason). Only the section the reader is actually on speaks for the
+      // book; a neighbour keeps its own direction locally, which is all the
+      // scrollbar position below needs from it.
+      const primaryDoc = renderer
+        ?.getContents?.()
+        .find((content) => content.index === renderer?.primaryIndex)?.doc;
+      const speaksForBook = !primaryDoc || primaryDoc === detail.doc;
+      if (speaksForBook && (viewSettings.vertical !== newVertical || viewSettings.rtl !== newRtl)) {
         viewSettings.vertical = newVertical;
         viewSettings.rtl = newRtl;
         setViewSettings(bookKey, { ...viewSettings });

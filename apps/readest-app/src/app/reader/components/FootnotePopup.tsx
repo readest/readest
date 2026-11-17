@@ -54,6 +54,30 @@ interface FootnotePopupProps {
 
 const ZERO_INSETS: Insets = { top: 0, right: 0, bottom: 0, left: 0 };
 
+// The note is laid out in its own document, so its writing mode is whatever
+// that document resolves — a book that declares `primary-writing-mode:
+// vertical-rl` (or just styles `body`) reads vertically even when the reader's
+// Writing Mode setting is `auto` and `viewSettings.vertical` is still false.
+// Sizing the box from the setting alone therefore measured a vertical note
+// along the wrong axis: `viewSize` (the inline size, i.e. the width of the
+// columns) went into the popup's *height*, the shorter box re-flowed the note
+// into one-character columns, that smaller inline size went back into the
+// height, and the two states flipped every frame -- a popup that jumped
+// between one line and one column, and between above and below its anchor.
+export const docIsVertical = (doc?: Document | null): boolean | null => {
+  const body = doc?.body;
+  if (!body || !doc?.defaultView) return null;
+  const { writingMode } = doc.defaultView.getComputedStyle(body);
+  if (!writingMode) return null;
+  // Some EPUBs put the writing mode on the first child of `body` instead.
+  if (writingMode === 'horizontal-tb') {
+    const firstChild = body.querySelector(':scope > :not([cfi-inert])');
+    const childMode = firstChild && doc.defaultView.getComputedStyle(firstChild).writingMode;
+    if (childMode?.startsWith('vertical')) return true;
+  }
+  return writingMode.startsWith('vertical');
+};
+
 const popupWidth = 360;
 const popupHeight = 88;
 // `#popup-container` sizes itself as a border box and draws a 1px border, so
@@ -104,8 +128,17 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
       ? { dir, point: { x: point.x, y: point.y + shift } }
       : { dir, point: { x: point.x + shift, y: point.y } };
   }, [trianglePosition, toolbarBlock]);
-  const [popupPosition, setPopupPosition] = useState<Position | null>();
   const [showPopup, setShowPopup] = useState(false);
+  // Whether this popup reads vertically, taken from the note's own document
+  // rather than from `viewSettings.vertical` alone (see `docIsVertical`).
+  // `null` until a document has been inspected, so the setting still decides
+  // before the first render.
+  const [popupVertical, setPopupVerticalState] = useState<boolean | null>(null);
+  const popupVerticalRef = useRef<boolean | null>(null);
+  const setPopupVertical = (vertical: boolean | null) => {
+    popupVerticalRef.current = vertical;
+    setPopupVerticalState(vertical);
+  };
 
   const _ = useTranslation();
   const { appService } = useEnv();
@@ -114,6 +147,9 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
   const { getLoadedFonts } = useCustomFontStore();
   const view = getView(bookKey);
   const viewSettings = getViewSettings(bookKey)!;
+  // What the popup lays itself out as: the note document's own writing mode
+  // once one has been read, else the reader setting.
+  const isVertical = popupVertical ?? !!viewSettings.vertical;
   const [footnoteHandler] = useState(() => new FootnoteHandler());
   const containerRef = useRef<HTMLDivElement>(null);
   const footnoteHrefRef = useRef<string | null>(null);
@@ -205,6 +241,26 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
     };
   };
 
+  // Derived, never stored: the box moves in the same commit that resizes it.
+  // Kept as state, the popup painted one frame at the size the content had
+  // measured and at the position the 88px seed had placed it at -- in a
+  // vertical book, where a long note measures 300-600px, that frame hung off
+  // the right edge of the screen before snapping back a frame later.
+  const popupPosition = useMemo(() => {
+    if (!anchor || !popupBounds) return null;
+    // The anchor is in cell coordinates; getPopupPosition works relative to the
+    // bounds' origin, so shift there and back (a no-op off the Duo).
+    const { rect, origin } = popupBounds;
+    const popupPos = getPopupPosition(
+      offsetPosition(anchor, { x: -origin.x, y: -origin.y }),
+      rect,
+      responsiveWidth,
+      responsiveHeight,
+      popupPadding,
+    );
+    return offsetPosition(popupPos, origin);
+  }, [anchor, popupBounds, responsiveWidth, responsiveHeight, popupPadding]);
+
   const getMaxHeight = useCallback(() => {
     const safe = getSafeArea();
     let availableHeight = safe.height - 2 * popupPadding;
@@ -262,7 +318,17 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
   const fitPopupToContent = (view: FoliateView) => {
     const { renderer } = view;
     if (!renderer) return 0;
-    const vertical = getViewSettings(bookKey)!.vertical;
+    // The document the renderer is laying out decides the axis: a note that
+    // reads vertically is measured along the inline (horizontal) axis even
+    // when the reader's Writing Mode setting left `vertical` false.
+    const contents = renderer.getContents?.()[0];
+    const docVertical = docIsVertical(contents?.doc);
+    if (docVertical !== null && docVertical !== popupVerticalRef.current) {
+      popupVerticalRef.current = docVertical;
+      setPopupVerticalState(docVertical);
+    }
+    const vertical =
+      docVertical ?? popupVerticalRef.current ?? !!getViewSettings(bookKey)!.vertical;
     const box = popupSizeForContent(renderer.viewSize);
     const size = vertical
       ? clipPopupWith(Math.min(getResponsivePopupSize(box, true), getMaxWidth()))
@@ -547,7 +613,7 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
           const viewSettings = getViewSettings(bookKey)!;
           const scrollRatio = renderer.viewSize / readingAxisSize;
           if (scrollRatio > 1.5) {
-            if (viewSettings.vertical) {
+            if (popupVerticalRef.current ?? viewSettings.vertical) {
               setResponsiveHeight(
                 clipPopupHeight(Math.min(popupWidth * scrollRatio, getMaxHeight())),
               );
@@ -595,7 +661,7 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
   }, [bookKey, anchorDir]);
 
   useEffect(() => {
-    if (!showPopup) seedPopupSize(viewSettings.vertical);
+    if (!showPopup) seedPopupSize(isVertical);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [viewSettings, showPopup]);
 
@@ -620,22 +686,6 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [anchor]);
 
-  useEffect(() => {
-    if (anchor && popupBounds) {
-      // The anchor is in cell coordinates; getPopupPosition works relative
-      // to the bounds' origin, so shift there and back (a no-op off the Duo).
-      const { rect, origin } = popupBounds;
-      const popupPos = getPopupPosition(
-        offsetPosition(anchor, { x: -origin.x, y: -origin.y }),
-        rect,
-        responsiveWidth,
-        responsiveHeight,
-        popupPadding,
-      );
-      setPopupPosition(offsetPosition(popupPos, origin));
-    }
-  }, [anchor, popupBounds, responsiveWidth, responsiveHeight, popupPadding]);
-
   const docLinkHandler = async (event: Event) => {
     const detail = (event as CustomEvent).detail;
     // console.log('doc link click', detail);
@@ -646,12 +696,17 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
     // the popup (#6307, #7389).
     const bounds = getPopupBounds(gridFrame.getBoundingClientRect(), gridInsetsRef.current);
     const viewSettings = getViewSettings(bookKey)!;
+    // The anchor's own document says how this note will be laid out; the
+    // reader's Writing Mode setting only speaks when it decides nothing.
+    const anchorDoc = (detail.a as HTMLAnchorElement | undefined)?.ownerDocument;
+    const vertical = docIsVertical(anchorDoc) ?? !!viewSettings.vertical;
+    setPopupVertical(vertical);
     const triangPos = offsetPosition(
-      getPosition(detail.a, bounds.rect, popupPadding, viewSettings.vertical),
+      getPosition(detail.a, bounds.rect, popupPadding, vertical),
       bounds.origin,
     );
     stopTrackingPopupContentSize();
-    seedPopupSize(viewSettings.vertical);
+    seedPopupSize(vertical);
     setPopupBounds(bounds);
     setTrianglePosition(triangPos);
     trianglePositionRef.current = triangPos;
@@ -735,7 +790,6 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
     trianglePositionRef.current = null;
     setCanGoBack(false);
     setPopupBounds(null);
-    setPopupPosition(null);
     setTrianglePosition(null);
     setToolbarBlock(null);
     setResponsiveWidth(popupWidth);
@@ -769,11 +823,16 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
     resetPopupAnnotationState();
     const bounds = getPopupBounds(gridFrame.getBoundingClientRect(), gridInsetsRef.current);
     const viewSettings = getViewSettings(bookKey)!;
+    // Synthesized from an attribute in the host document: that document's
+    // writing mode is the only thing that can say which way the note runs.
+    const vertical =
+      docIsVertical((element as Element | undefined)?.ownerDocument) ?? !!viewSettings.vertical;
+    setPopupVertical(vertical);
     const triangPos = offsetPosition(
-      getPosition(element, bounds.rect, popupPadding, viewSettings.vertical),
+      getPosition(element, bounds.rect, popupPadding, vertical),
       bounds.origin,
     );
-    const seed = seedPopupSize(viewSettings.vertical);
+    const seed = seedPopupSize(vertical);
     if (footnoteRef.current) {
       const elem = document.createElement('p');
       elem.textContent = footnote;
@@ -790,7 +849,7 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
       const fitToNote = () => {
         const probe = elem.cloneNode(true) as HTMLElement;
         probe.style.visibility = 'hidden';
-        if (viewSettings.vertical) {
+        if (vertical) {
           probe.style.height = `${seed.height - 2 * popupBorder}px`;
         } else {
           probe.style.width = `${seed.width - 2 * popupBorder}px`;
@@ -798,7 +857,7 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
         document.body.appendChild(probe);
         const popupSize = probe.getBoundingClientRect();
         probe.remove();
-        if (viewSettings.vertical) {
+        if (vertical) {
           setResponsiveWidth(getResponsivePopupSize(popupSizeForContent(popupSize.width), true));
         } else {
           setResponsiveHeight(getResponsivePopupSize(popupSizeForContent(popupSize.height), false));
@@ -1017,7 +1076,7 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
             <div
               className={clsx(
                 'pointer-events-none absolute z-10 flex gap-1',
-                viewSettings.vertical
+                isVertical
                   ? 'bottom-2 end-2 top-2 w-8 flex-col items-end'
                   : 'end-2 start-2 top-2 h-8 flex-row items-start',
               )}
@@ -1046,7 +1105,7 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
               className={clsx(
                 chromeButtonClassName,
                 'absolute bottom-2 z-10',
-                viewSettings.vertical || viewSettings.rtl ? 'left-2' : 'right-2',
+                isVertical || viewSettings.rtl ? 'left-2' : 'right-2',
               )}
             >
               <MdOutlineArrowOutward size={size18} />
@@ -1058,7 +1117,7 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
             className={clsx(
               'footnote-content h-full w-full',
               // Clip the cross axis so it cannot gain a second scrollbar (#5999).
-              viewSettings.vertical
+              isVertical
                 ? 'overflow-x-auto overflow-y-hidden'
                 : 'overflow-y-auto overflow-x-hidden',
             )}
