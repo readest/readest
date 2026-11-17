@@ -17,6 +17,9 @@ vi.mock('next/navigation', () => ({
   useSearchParams: () => new URLSearchParams({ redirect: '/reader?ids=book1' }),
 }));
 vi.mock('@/hooks/useAppRouter', () => ({ useAppRouter: () => mocks.router }));
+vi.mock('@/store/readerStore', () => ({
+  useReaderStore: { getState: () => ({ viewStates: {} }) },
+}));
 vi.mock('@/context/EnvContext', () => ({
   useEnv: () => ({ appService: { hasIAP: true } }),
 }));

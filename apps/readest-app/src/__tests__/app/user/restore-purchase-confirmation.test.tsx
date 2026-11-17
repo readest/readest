@@ -13,6 +13,9 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock('next/navigation', () => ({ useSearchParams: () => new URLSearchParams() }));
 vi.mock('@/hooks/useAppRouter', () => ({ useAppRouter: () => ({ push: vi.fn() }) }));
+vi.mock('@/store/readerStore', () => ({
+  useReaderStore: { getState: () => ({ viewStates: {} }) },
+}));
 vi.mock('@/context/EnvContext', () => ({
   useEnv: () => ({ appService: { hasIAP: true } }),
 }));

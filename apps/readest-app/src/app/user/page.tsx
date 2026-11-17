@@ -8,6 +8,7 @@ import { useEnv } from '@/context/EnvContext';
 import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/hooks/useTheme';
 import { useThemeStore } from '@/store/themeStore';
+import { useReaderStore } from '@/store/readerStore';
 import { useQuotaStats } from '@/hooks/useQuotaStats';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useUserActions } from '@/hooks/useUserActions';
@@ -129,7 +130,9 @@ const ProfilePage = () => {
     } else if (showSyncManager) {
       setShowSyncManager(false);
     } else {
-      navigateBackFromProfile(router, searchParams?.get('redirect'));
+      // A book stays open beneath while this page sits over it (#6607).
+      const readerBeneath = Object.keys(useReaderStore.getState().viewStates).length > 0;
+      navigateBackFromProfile(router, searchParams?.get('redirect'), readerBeneath);
     }
   };
 

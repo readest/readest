@@ -226,6 +226,33 @@ describe('navigateBackFromProfile', () => {
     expect(document.documentElement.getAttribute('data-nav-direction')).toBe('back');
   });
 
+  test('goes back to a book still open beneath instead of stacking a second reader', () => {
+    const router = mockRouter();
+    navigateBackFromProfile(router, '/reader?ids=book1', true);
+
+    expect(router.back).toHaveBeenCalledTimes(1);
+    expect(router.replace).not.toHaveBeenCalled();
+    expect(document.documentElement.getAttribute('data-nav-direction')).toBe('back');
+  });
+
+  test('slides back to the book where view transitions are supported', async () => {
+    const router = mockRouter();
+    document.body.appendChild(document.createElement('foliate-view'));
+    const startViewTransition = vi.fn((update: () => Promise<void>) => {
+      const updateCallbackDone = update();
+      return { ready: updateCallbackDone, finished: updateCallbackDone, updateCallbackDone };
+    });
+    Object.assign(document, { startViewTransition });
+    try {
+      navigateBackFromProfile(router, '/reader?ids=book1', true);
+      await vi.waitFor(() => expect(router.back).toHaveBeenCalledTimes(1));
+      expect(startViewTransition).toHaveBeenCalledTimes(1);
+    } finally {
+      delete (document as { startViewTransition?: unknown }).startViewTransition;
+      document.body.replaceChildren();
+    }
+  });
+
   test('falls back to /library without a redirect', () => {
     const router = mockRouter();
     navigateBackFromProfile(router, null);
