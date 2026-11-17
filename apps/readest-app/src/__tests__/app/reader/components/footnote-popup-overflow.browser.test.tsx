@@ -105,12 +105,25 @@ const popupContainer = () => document.querySelector<HTMLElement>('#popup-contain
 let cell: HTMLElement;
 let anchor: HTMLElement;
 
-/** Drive a link click in the book through to a rendered, document-backed popup. */
-const openLinkedFootnote = () => {
+/**
+ * Drive a link click in the book through to a rendered, document-backed popup.
+ * With `noteWritingMode`, the note gets a document of its own in that mode.
+ */
+const openLinkedFootnote = (noteWritingMode?: string) => {
   const href = 'text/part0012.xhtml#appendix-c';
   const view = document.createElement('div');
+  const note = noteWritingMode ? document.createElement('iframe') : null;
+  if (note) view.appendChild(note);
   Object.defineProperty(view, 'renderer', {
-    value: { viewSize: 220, setAttribute: () => {}, setStyles: () => {} },
+    value: {
+      viewSize: 220,
+      setAttribute: () => {},
+      // The popup has attached the view before styling its document.
+      setStyles: () => {
+        if (note) note.contentDocument!.body.style.writingMode = noteWritingMode!;
+      },
+      getContents: () => (note ? [{ doc: note.contentDocument!, index: 3 }] : []),
+    },
   });
   act(() => {
     h.onLinkClick.current?.(
@@ -228,6 +241,22 @@ describe('footnote popup box (#5999)', () => {
 
     const content = document.querySelector<HTMLElement>('.footnote-content')!;
     expect(content.clientHeight).toBe(220);
+  });
+
+  // The popup's paginator lays a note out by its own document. Sized by the
+  // book's setting instead, a vertical note's viewSize went into the height,
+  // the narrower box reflowed it, and the popup flipped size every frame
+  // (#7586).
+  test('measures a vertical note along its own axis when the book reads horizontally', () => {
+    render(<FootnotePopup bookKey='book-1' bookDoc={{} as BookDoc} />);
+    openLinkedFootnote('vertical-rl');
+
+    const content = document.querySelector<HTMLElement>('.footnote-content')!;
+    expect(content.clientWidth).toBe(220);
+    expect(getComputedStyle(content).overflowY).toBe('hidden');
+    // The cross axis is a vertical box's too, not the 88px line the book's
+    // horizontal seed gave it.
+    expect(content.clientHeight).toBeGreaterThan(content.clientWidth);
   });
 
   // At most one scrollbar, ever: a note too long for the box scrolls along its
