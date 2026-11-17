@@ -123,7 +123,8 @@ const TextEditor = forwardRef<TextEditorRef, TextEditorProps>(
         return;
       }
 
-      if (e.key === 'Enter' && (e.metaKey || e.ctrlKey) && onSave) {
+      const isComposing = e.nativeEvent.isComposing || e.keyCode === 229;
+      if (e.key === 'Enter' && (e.metaKey || e.ctrlKey) && onSave && !isComposing) {
         e.preventDefault();
         e.stopPropagation();
         onSave();

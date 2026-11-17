@@ -97,6 +97,21 @@ describe('TextEditor', () => {
     expect(parentListener).not.toHaveBeenCalled();
   });
 
+  // Most browsers flag a key typed into an IME composition with isComposing;
+  // Safari's key that commits one only carries keyCode 229.
+  it.each([
+    { browser: 'isComposing', init: { isComposing: true } },
+    { browser: 'keyCode 229', init: { keyCode: 229 } },
+  ])('does not save on Ctrl+Enter while an IME composes ($browser)', ({ init }) => {
+    const onSave = vi.fn();
+    render(<TextEditor value='' onChange={vi.fn()} onSave={onSave} ariaLabel='Annotation note' />);
+
+    const editor = screen.getByRole('textbox', { name: 'Annotation note' });
+    fireEvent.keyDown(editor, { key: 'Enter', ctrlKey: true, ...init });
+
+    expect(onSave).not.toHaveBeenCalled();
+  });
+
   // The note popup (Popup) and sheet (Dialog) close on Escape themselves, with
   // the same cancel the editor runs: Escape must cancel once, not twice.
   it('cancels once on Escape inside a host that also closes on Escape', () => {
