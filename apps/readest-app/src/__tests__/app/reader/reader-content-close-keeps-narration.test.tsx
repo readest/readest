@@ -4,6 +4,7 @@ import { act, cleanup, render, waitFor } from '@testing-library/react';
 
 import type { Book, BookConfig } from '@/types/book';
 import type { SystemSettings } from '@/types/settings';
+import type { TTSSession } from '@/services/tts/TTSSessionManager';
 
 const h = vi.hoisted(() => {
   const appService = {
@@ -16,12 +17,17 @@ const h = vi.hoisted(() => {
   return {
     appService,
     envConfig: { getAppService: async () => appService },
-    onCloseWindow: vi.fn(async (_callback: () => unknown) => () => {}),
+    tauriHandleClose: vi.fn(async () => {}),
     closeWindow: vi.fn(async () => {}),
+    navigateToLibrary: vi.fn(),
+    ensureMainLibraryWindow: vi.fn(async () => {}),
     windowLabel: 'reader-1',
     bookKeys: ['h1-k1'],
     dismissBook: vi.fn(),
-    captured: {} as { onCloseBook?: (bookKey: string) => void },
+    captured: {} as {
+      onCloseBook?: (bookKey: string) => void;
+      onGoToLibrary?: () => void;
+    },
     parseOpenWithFiles: vi.fn(async () => [] as string[]),
   };
 });
@@ -54,9 +60,19 @@ vi.mock('@/app/reader/hooks/useNotebookDocumentCoordinator', () => ({
 vi.mock('@/app/reader/services/notebookDocumentCoordinator', () => ({
   canTransitionWithNotebookRecovery: () => true,
 }));
+vi.mock('@/services/environment', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/services/environment')>()),
+  isTauriAppPlatform: () => true,
+}));
+vi.mock('@/utils/nav', () => ({
+  closeReaderWindowOrGoToLibrary: vi.fn(),
+  navigateToLibrary: h.navigateToLibrary,
+  ensureMainLibraryWindow: h.ensureMainLibraryWindow,
+}));
 vi.mock('@/utils/window', () => ({
-  tauriHandleClose: vi.fn(),
-  tauriHandleOnCloseWindow: h.onCloseWindow,
+  tauriHandleClose: h.tauriHandleClose,
+  tauriHandleOnCloseWindow: vi.fn(async () => () => {}),
+  isMainAppWindow: () => h.windowLabel === 'main',
 }));
 vi.mock('@tauri-apps/api/window', () => ({
   getCurrentWindow: () => ({ label: h.windowLabel, close: h.closeWindow }),
@@ -71,8 +87,9 @@ vi.mock('@/app/reader/components/notebook/NotebookTransitionAlert', () => ({
   default: () => null,
 }));
 vi.mock('@/app/reader/components/BooksGrid', () => ({
-  default: (props: { onCloseBook: (bookKey: string) => void }) => {
+  default: (props: { onCloseBook: (bookKey: string) => void; onGoToLibrary: () => void }) => {
     h.captured.onCloseBook = props.onCloseBook;
+    h.captured.onGoToLibrary = props.onGoToLibrary;
     return null;
   },
 }));
@@ -107,30 +124,32 @@ const book = {
   updatedAt: 1,
 } as Book;
 
-const book2 = {
-  hash: 'h2',
-  format: 'EPUB',
-  title: 'Book 2',
-  author: 'Author',
-  progress: [1, 10],
-  createdAt: 1,
-  updatedAt: 1,
-} as Book;
-
 type ViewState = NonNullable<
   ReturnType<ReturnType<typeof useReaderStore.getState>['getViewState']>
 >;
 
-describe('ReaderContent closing a book stops narration when the window dies', () => {
+// Read Aloud keeps playing after its book closes and shows the library's mini
+// player. Both live in this webview, so a reader window that would close
+// with its last book stays open on the library while a session is live (#7523).
+describe('ReaderContent closing the last book while Read Aloud is live', () => {
   let dispatchSpy: ReturnType<typeof vi.spyOn>;
+  let sessionSpy: ReturnType<typeof vi.spyOn>;
+
+  const setLiveSession = (live: boolean) =>
+    sessionSpy.mockReturnValue(
+      live ? ({ bookHash: 'h1', bookKey: 'h1-k1' } as unknown as TTSSession) : null,
+    );
 
   beforeEach(() => {
     vi.clearAllMocks();
     h.windowLabel = 'reader-1';
     h.bookKeys = ['h1-k1'];
     h.captured.onCloseBook = undefined;
+    h.captured.onGoToLibrary = undefined;
     h.parseOpenWithFiles.mockResolvedValue([]);
     dispatchSpy = vi.spyOn(eventDispatcher, 'dispatch').mockResolvedValue(undefined);
+    sessionSpy = vi.spyOn(ttsSessionManager, 'getActiveSession');
+    setLiveSession(true);
     useLibraryStore.getState().setLibrary([book]);
     useBookDataStore.setState({
       booksData: {
@@ -144,137 +163,81 @@ describe('ReaderContent closing a book stops narration when the window dies', ()
           >['bookDoc'],
           isFixedLayout: false,
         },
-        h2: {
-          id: 'h2',
-          book: book2,
-          file: null,
-          config: { progress: [1, 10], location: 'cfi-1', updatedAt: 1 } as BookConfig,
-          bookDoc: {} as NonNullable<
-            ReturnType<typeof useBookDataStore.getState>['booksData'][string]
-          >['bookDoc'],
-          isFixedLayout: false,
-        },
       },
     });
     useReaderStore.setState({
       viewStates: {
         'h1-k1': { key: 'h1-k1', isPrimary: true, viewSettings: {} } as ViewState,
-        'h2-k2': { key: 'h2-k2', isPrimary: false, viewSettings: {} } as ViewState,
       },
     });
   });
 
   afterEach(async () => {
     dispatchSpy.mockRestore();
+    sessionSpy.mockRestore();
     cleanup();
     await flushPendingLibrarySave();
   });
 
-  const closeBook = async (bookKey: string) => {
+  const renderReader = async () => {
     render(<ReaderContent settings={{} as SystemSettings} />);
     await waitFor(() => expect(h.captured.onCloseBook).toBeDefined());
+  };
+
+  const closeBook = async (bookKey: string) => {
+    await renderReader();
     await act(async () => {
       await h.captured.onCloseBook!(bookKey);
     });
   };
 
-  // Closing the last book in a reader window destroys its webview: the
-  // narration cannot continue headless there, so the close must stop it
-  // instead of detaching it (#7523).
-  test('closing the last book in a reader window stops the narration', async () => {
-    await closeBook('h1-k1');
-
-    expect(dispatchSpy).toHaveBeenCalledWith('tts-stop', { bookKey: 'h1-k1' });
-    expect(dispatchSpy).not.toHaveBeenCalledWith('tts-close-book', expect.anything());
-  });
-
-  // The main window stays alive behind the library: background playback is
-  // the intended behaviour there and must keep working.
-  test('closing the last book in the main window keeps narration playing', async () => {
-    h.windowLabel = 'main';
+  test('a reader window stays open on the library', async () => {
     await closeBook('h1-k1');
 
     expect(dispatchSpy).toHaveBeenCalledWith('tts-close-book', { bookKey: 'h1-k1' });
     expect(dispatchSpy).not.toHaveBeenCalledWith('tts-stop', expect.anything());
+    expect(h.closeWindow).not.toHaveBeenCalled();
+    expect(h.navigateToLibrary).toHaveBeenCalled();
   });
 
-  // Closing one pane leaves the webview (and the other book) alive.
-  test('closing one of two books keeps narration playing', async () => {
-    h.bookKeys = ['h1-k1', 'h2-k2'];
+  test('a reader window with no session closes as before', async () => {
+    setLiveSession(false);
     await closeBook('h1-k1');
 
-    expect(dispatchSpy).toHaveBeenCalledWith('tts-close-book', { bookKey: 'h1-k1' });
-    expect(dispatchSpy).not.toHaveBeenCalledWith('tts-stop', expect.anything());
+    expect(h.closeWindow).toHaveBeenCalled();
+    expect(h.navigateToLibrary).not.toHaveBeenCalled();
   });
 
-  // A book opened with files closes its window even from the main window.
-  test('closing a book opened with files stops the narration', async () => {
+  test('a book opened with files stays on the library instead of closing', async () => {
     h.windowLabel = 'main';
     h.parseOpenWithFiles.mockResolvedValue(['/tmp/moby-dick-mo.epub']);
     await closeBook('h1-k1');
 
-    expect(dispatchSpy).toHaveBeenCalledWith('tts-stop', { bookKey: 'h1-k1' });
-    expect(dispatchSpy).not.toHaveBeenCalledWith('tts-close-book', expect.anything());
+    expect(h.tauriHandleClose).not.toHaveBeenCalled();
+    expect(h.navigateToLibrary).toHaveBeenCalled();
   });
 
-  // A session detached by closing book A keeps playing while B stays
-  // open; closing B as the last book destroys the window, so it must
-  // stop A's session too — the tts-stop for B only matches B's hash.
-  test('closing the last book stops a detached narration session', async () => {
-    const stopActiveSpy = vi.spyOn(ttsSessionManager, 'stopActive');
-    try {
-      h.bookKeys = ['h1-k1', 'h2-k2'];
-      const first = render(<ReaderContent settings={{} as SystemSettings} />);
-      await waitFor(() => expect(h.captured.onCloseBook).toBeDefined());
-      await act(async () => {
-        await h.captured.onCloseBook!('h1-k1');
-      });
-      expect(dispatchSpy).toHaveBeenCalledWith('tts-close-book', { bookKey: 'h1-k1' });
-      expect(stopActiveSpy).not.toHaveBeenCalled();
-      first.unmount();
-      h.bookKeys = ['h2-k2'];
-      h.captured.onCloseBook = undefined;
-      render(<ReaderContent settings={{} as SystemSettings} />);
-      await waitFor(() => expect(h.captured.onCloseBook).toBeDefined());
-      await act(async () => {
-        await h.captured.onCloseBook!('h2-k2');
-      });
-      expect(dispatchSpy).toHaveBeenCalledWith('tts-stop', { bookKey: 'h2-k2' });
-      expect(stopActiveSpy).toHaveBeenCalledWith('user');
-      expect(h.closeWindow).toHaveBeenCalled();
-    } finally {
-      stopActiveSpy.mockRestore();
-    }
-  });
-
-  // The stop must complete before the book is dismissed and the window
-  // closes: hold the tts-stop dispatch pending and assert nothing moves
-  // until it resolves (the old immediately-resolving spy could not catch
-  // a dropped await).
-  test('the window does not close until the narration stop completes', async () => {
-    let resolveStop!: () => void;
-    const stopPending = new Promise<void>((resolve) => {
-      resolveStop = resolve;
-    });
-    dispatchSpy.mockImplementation(async (event: string) => {
-      if (event === 'tts-stop') await stopPending;
-    });
-    render(<ReaderContent settings={{} as SystemSettings} />);
-    await waitFor(() => expect(h.captured.onCloseBook).toBeDefined());
-    let closePromise!: Promise<void>;
+  test('Go to Library in a reader window stays open on the library', async () => {
+    await renderReader();
     await act(async () => {
-      // The BooksGrid prop types onCloseBook as returning void, but the real
-      // handler is async: capture its promise to await the close below.
-      closePromise = h.captured.onCloseBook!('h1-k1') as unknown as Promise<void>;
+      await h.captured.onGoToLibrary!();
     });
-    expect(h.dismissBook).not.toHaveBeenCalled();
+
+    expect(dispatchSpy).toHaveBeenCalledWith('tts-close-book', { bookKey: 'h1-k1' });
     expect(h.closeWindow).not.toHaveBeenCalled();
+    expect(h.ensureMainLibraryWindow).not.toHaveBeenCalled();
+    expect(h.navigateToLibrary).toHaveBeenCalled();
+  });
+
+  test('Go to Library in a reader window with no session closes it as before', async () => {
+    setLiveSession(false);
+    await renderReader();
     await act(async () => {
-      resolveStop();
-      await closePromise;
+      await h.captured.onGoToLibrary!();
     });
-    expect(dispatchSpy).toHaveBeenCalledWith('tts-stop', { bookKey: 'h1-k1' });
-    expect(h.dismissBook).toHaveBeenCalledWith('h1-k1');
+
+    expect(h.ensureMainLibraryWindow).toHaveBeenCalled();
     expect(h.closeWindow).toHaveBeenCalled();
+    expect(h.navigateToLibrary).not.toHaveBeenCalled();
   });
 });
