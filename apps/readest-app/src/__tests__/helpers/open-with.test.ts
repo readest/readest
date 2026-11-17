@@ -230,6 +230,31 @@ describe('parseOpenWithFiles', () => {
       expect(result).toEqual(['/path/to/my book.epub']);
     });
 
+    // #7553: a `;` (or `#`, `?`, `&`) in the filename arrives percent-encoded
+    // in the file:// URL macOS hands the app; decodeURI() leaves those
+    // reserved-character escapes untouched, so the path kept a literal `%3B`
+    // and named no real file.
+    test.each([
+      ['file:///path/to/Anne_Carson%3B.epub', '/path/to/Anne_Carson;.epub'],
+      ['file:///path/to/A%23B.epub', '/path/to/A#B.epub'],
+      ['file:///path/to/What%3F.epub', '/path/to/What?.epub'],
+      ['file:///path/to/A%26B.epub', '/path/to/A&B.epub'],
+    ])('decodes percent-encoded reserved characters in file paths: %s', async (url, expected) => {
+      mockGetCurrent.mockResolvedValue([url]);
+
+      const result = await parseOpenWithFiles(null);
+
+      expect(result).toEqual([expected]);
+    });
+
+    test('falls back to the raw path when the URL has a malformed escape', async () => {
+      mockGetCurrent.mockResolvedValue(['file:///path/to/100%zz.epub']);
+
+      const result = await parseOpenWithFiles(null);
+
+      expect(result).toEqual(['/path/to/100%zz.epub']);
+    });
+
     test('returns null when no deep link URLs', async () => {
       mockGetCurrent.mockResolvedValue(null);
 
