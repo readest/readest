@@ -155,15 +155,37 @@ impl NetProvider for Net {
 /// polling interval) must not cost a repaint, which on e-ink is a visible refresh.
 /// `restyle`: only attributes the cascade reads changed; paint only if resolving the document
 /// damages something.
+/// The third field is when the page first changed since the loop last took it.
 #[derive(Default)]
-struct Redraw(std::sync::atomic::AtomicBool, std::sync::atomic::AtomicBool);
+struct Redraw(
+    std::sync::atomic::AtomicBool,
+    std::sync::atomic::AtomicBool,
+    Mutex<Option<Instant>>,
+);
+
+impl Redraw {
+    fn changed(&self) {
+        self.2
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .get_or_insert_with(Instant::now);
+    }
+
+    fn take_changed_at(&self) -> Option<Instant> {
+        self.2.lock().unwrap_or_else(|e| e.into_inner()).take()
+    }
+}
 
 impl blitz_traits::shell::ShellProvider for Redraw {
     fn request_redraw(&self) {
-        self.0.store(true, std::sync::atomic::Ordering::Relaxed);
+        if !self.0.swap(true, std::sync::atomic::Ordering::Relaxed) {
+            self.changed();
+        }
     }
     fn request_restyle(&self) {
-        self.1.store(true, std::sync::atomic::Ordering::Relaxed);
+        if !self.1.swap(true, std::sync::atomic::Ordering::Relaxed) {
+            self.changed();
+        }
     }
 }
 
@@ -635,8 +657,11 @@ impl BlitzWebview {
         }
         self.report_js();
         let now = Instant::now();
+        // Dirty since the page changed, which may be well before the task that changed it ended.
+        let changed_at = self.redraw.take_changed_at();
         if self.dirty || self.restyled {
-            self.dirty_since.get_or_insert(now);
+            self.dirty_since
+                .get_or_insert(changed_at.map_or(now, |t| t.min(now)));
         }
         let next_timer = self.doc.as_ref().and_then(QjsDocument::next_timer_deadline);
         let t_input = t_ms();
@@ -711,11 +736,16 @@ impl BlitzWebview {
             cause(&mut self.causes, 's');
         }
         self.restyled = false;
-        // ResizeObserver callbacks see the new layout; if any fired, the page is about to change
-        // again, so paint once that settles (they only fire on size changes, so this ends).
+        // ResizeObserver callbacks see the new layout, as in a browser between layout and paint.
+        // If they changed the page, it is about to change again: paint once that settles (they
+        // only fire on size changes, so this ends). If not, this layout is the frame's.
         if doc.call_global("__blitzAfterLayout", ()).unwrap_or(0.0) > 0.0 {
             self.report_js();
-            return;
+            let changed =
+                |f: &std::sync::atomic::AtomicBool| f.load(std::sync::atomic::Ordering::Relaxed);
+            if changed(&self.redraw.0) || changed(&self.redraw.1) {
+                return;
+            }
         }
         let Some(doc) = self.doc.as_mut() else { return };
         let layout_ms = t.elapsed().as_secs_f64() * 1000.0;
@@ -884,8 +914,8 @@ fn page_is_quiet(
 /// Whether a dirty page paints now: right after input changed it or its rAF callbacks ran
 /// (`frame`: a page turn shows its page before the work it scheduled runs); once it has settled,
 /// with no JS timer due within a frame (each paint is a visible refresh on e-ink); or once it has
-/// waited 100 ms for timers that keep coming, as a browser paints at its next frame however many
-/// timers are queued.
+/// been changed for 100 ms, in the task that changed it or waiting for timers that keep coming,
+/// as a browser paints at its next frame however many timers are queued.
 fn should_paint(
     dirty_since: Option<Instant>,
     next_timer: Option<Instant>,
@@ -1261,6 +1291,111 @@ mod tests {
         }
         std::fs::remove_dir_all(&dir).ok();
         assert_eq!(painted, ["start", "turned", "measured"]);
+    }
+
+    // A task that changes the page and then runs on: a browser's next frame comes due while it
+    // runs, and the page paints as soon as it ends, before the timer it queued. A book opening
+    // shows its page that way: foliate reveals the page, then ~0.9 s of relocate work runs on a
+    // Kindle and queues React's render of the header and footer.
+    #[test]
+    fn a_page_changed_early_in_a_long_task_paints_when_the_task_ends() {
+        let dir = std::env::temp_dir().join(format!("blitz-long-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let file = dir.join("long.html");
+        std::fs::write(
+            &file,
+            "<!DOCTYPE html><html><body><p id='p'>start</p><script>
+            const p = document.getElementById('p');
+            setTimeout(() => {
+                p.textContent = 'shown';
+                const t = Date.now();
+                while (Date.now() - t < 150) {}
+                setTimeout(() => { p.textContent = 'rendered'; }, 0);
+            }, 50);
+            </script></body></html>",
+        )
+        .unwrap();
+        let mut wv = BlitzWebview::new(WebviewInit {
+            id: 0,
+            label: "test".into(),
+            url: Arc::new(Mutex::new(String::new())),
+            protocols: Arc::new(HashMap::new()),
+            ipc: None,
+            init_scripts: Vec::new(),
+            page_load: None,
+            tx: std::sync::mpsc::channel().0,
+        });
+        wv.navigate(Url::from_file_path(&file).unwrap().as_str());
+        let mut painted: Vec<String> = Vec::new();
+        let end = Instant::now() + Duration::from_secs(5);
+        while painted.last().is_none_or(|t| t != "rendered") && Instant::now() < end {
+            let frames = wv.frames;
+            wv.tick();
+            if wv.frames > frames {
+                let doc = wv.doc.as_ref().unwrap().inner();
+                let p = doc.get_element_by_id("p").unwrap();
+                painted.push(doc.get_node(p).unwrap().text_content());
+            }
+            if let Some(d) = wv.deadline() {
+                std::thread::sleep(d.saturating_duration_since(Instant::now()));
+            }
+        }
+        std::fs::remove_dir_all(&dir).ok();
+        assert_eq!(painted, ["start", "shown", "rendered"]);
+    }
+
+    // A browser runs ResizeObserver callbacks between layout and paint, and lays out again only
+    // if they changed something. foliate-js observes each section's body; on a Kindle its
+    // callback, which changed nothing, threw away the opened book's first frame, and the page
+    // waited for the next task's React render (~130 ms).
+    #[test]
+    fn a_resize_observer_that_changes_nothing_does_not_hold_the_frame_back() {
+        let dir = std::env::temp_dir().join(format!("blitz-ro-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let file = dir.join("ro.html");
+        std::fs::write(
+            &file,
+            "<!DOCTYPE html><html><body><p id='p'>start</p><div id='box' style='width: 10px'></div><script>
+            const p = document.getElementById('p');
+            const box = document.getElementById('box');
+            new ResizeObserver(() => {}).observe(box);
+            setTimeout(() => {
+                p.textContent = 'shown';
+                box.style.width = '20px';
+                const t = Date.now();
+                while (Date.now() - t < 150) {}
+                setTimeout(() => { p.textContent = 'rendered'; }, 0);
+            }, 50);
+            </script></body></html>",
+        )
+        .unwrap();
+        let mut wv = BlitzWebview::new(WebviewInit {
+            id: 0,
+            label: "test".into(),
+            url: Arc::new(Mutex::new(String::new())),
+            protocols: Arc::new(HashMap::new()),
+            ipc: None,
+            init_scripts: Vec::new(),
+            page_load: None,
+            tx: std::sync::mpsc::channel().0,
+        });
+        wv.navigate(Url::from_file_path(&file).unwrap().as_str());
+        let mut painted: Vec<String> = Vec::new();
+        let end = Instant::now() + Duration::from_secs(5);
+        while painted.last().is_none_or(|t| t != "rendered") && Instant::now() < end {
+            let frames = wv.frames;
+            wv.tick();
+            if wv.frames > frames {
+                let doc = wv.doc.as_ref().unwrap().inner();
+                let p = doc.get_element_by_id("p").unwrap();
+                painted.push(doc.get_node(p).unwrap().text_content());
+            }
+            if let Some(d) = wv.deadline() {
+                std::thread::sleep(d.saturating_duration_since(Instant::now()));
+            }
+        }
+        std::fs::remove_dir_all(&dir).ok();
+        assert_eq!(painted, ["start", "shown", "rendered"]);
     }
 
     // foliate-js lays out the section it preloads in a view scrolled out of sight, and each of
