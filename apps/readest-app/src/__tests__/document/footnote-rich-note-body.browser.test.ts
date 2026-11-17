@@ -25,6 +25,7 @@ const SECTION_BODY = `
   <hr/>
   <p class="p4"><a href="#id_11"></a><a id="id_12">1.</a><em> Lorem</em> ipsum <em>kañ</em> eiusmod tempor incididunt ut something et <em>aliqua</em>, eiusmod tempor incididunt ut something et <em>dolore</em> (aliqua). See <em>Lorem ipsum, kañ sit amet</em>, (16.113-115).</p>
   <p class="p4"><a href="#id_21"></a><a id="id_22">2.</a><em> Dolor</em> sit <em>amet</em>, <em>elit</em> and <em>tempor</em>.</p>
+  <h2 id="id_30">Chapter Two</h2>
 `;
 
 const makeSection = (id: string, body: string) => {
@@ -113,5 +114,23 @@ describe('Footnote popup for a richly formatted note (#7537, browser)', () => {
       error = e;
     }
     expect((error as Error)?.message).toContain('Failed to locate footnote content');
+  });
+
+  // `vertical-align: 0` computes to `0px`, which is the baseline, not a
+  // superscript: a numeric link set that way still earns the strict check.
+  it('still rejects a link to a heading for a numeric marker aligned at 0px', async () => {
+    const holder = document.createElement('p');
+    holder.innerHTML = 'See part<a href="#id_30" style="vertical-align: 0">3</a>.';
+    document.body.append(holder);
+    try {
+      const { handled } = await openPopup({
+        a: holder.querySelector('a')!,
+        href: 'Section0001.html#id_30',
+        check: true,
+      });
+      await expect(handled).rejects.toThrow('Failed to locate footnote content');
+    } finally {
+      holder.remove();
+    }
   });
 });

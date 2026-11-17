@@ -17,7 +17,20 @@ import '@/styles/globals.css';
 const h = vi.hoisted(() => ({
   goTo: vi.fn(),
   onLinkClick: { current: null as ((event: Event) => void) | null },
+  handlers: [] as { handle: (...args: unknown[]) => Promise<void> | undefined }[],
 }));
+
+// The real handler, recorded so a test can hold one request back.
+vi.mock('foliate-js/footnotes.js', async (importOriginal) => {
+  const mod = await importOriginal<typeof import('foliate-js/footnotes.js')>();
+  class RecordedFootnoteHandler extends mod.FootnoteHandler {
+    constructor() {
+      super();
+      h.handlers.push(this as unknown as (typeof h.handlers)[number]);
+    }
+  }
+  return { ...mod, FootnoteHandler: RecordedFootnoteHandler };
+});
 
 vi.mock('@/context/EnvContext', () => ({ useEnv: () => ({ appService: { isMobile: false } }) }));
 vi.mock('@/hooks/useTranslation', () => ({ useTranslation: () => (s: string) => s }));
@@ -75,6 +88,7 @@ const SECTION_BODY = `
   <hr/>
   <p><a href="#r1"></a><a id="n1">1.</a><em> Lorem</em> ipsum <em>dolor</em> sit
   <em>amet</em>, see <em>Lorem ipsum</em>.</p>
+  <p id="n2">A short second note.</p>
 `;
 
 const makeBook = () => {
@@ -108,13 +122,19 @@ beforeAll(async () => {
   await import('foliate-js/view.js');
 });
 
+const click = (a: HTMLAnchorElement, href: string) =>
+  act(() => {
+    h.onLinkClick.current?.(new CustomEvent('link', { detail: { a, href }, cancelable: true }));
+  });
+
 beforeEach(() => {
+  h.handlers.length = 0;
   h.goTo.mockClear();
   h.onLinkClick.current = null;
   cell = document.createElement('div');
   cell.id = 'gridcell-book-1';
   cell.style.cssText = 'position:fixed;inset:0;';
-  cell.innerHTML = '<p>Body text<a href="#n1">1</a> more text.</p>';
+  cell.innerHTML = '<p>Body text<a href="#n1">1</a> more text.<a href="#n2"><sup>2</sup></a></p>';
   anchor = cell.querySelector('a')!;
   document.body.appendChild(cell);
 });
@@ -144,5 +164,38 @@ describe('footnote rejected by check (#7537)', () => {
     await nextFrame();
     const popup = document.querySelector<HTMLElement>('#popup-container')!;
     expect(popup.getAttribute('aria-hidden')).toBe('true');
+  });
+
+  test('a superseded request that rejects leaves the newer popup open', async () => {
+    render(<FootnotePopup bookKey='book-1' bookDoc={makeBook() as unknown as BookDoc} />);
+    const handler = h.handlers.at(-1)!;
+    const realHandle = handler.handle.bind(handler);
+    let rejectFirst: (err: Error) => void = () => {};
+    vi.spyOn(handler, 'handle')
+      .mockImplementationOnce(
+        () =>
+          new Promise<void>((_, reject) => {
+            rejectFirst = reject;
+          }),
+      )
+      .mockImplementation(realHandle);
+
+    click(anchor, 'chapter.html#n1');
+    click(cell.querySelectorAll('a')[1]!, 'chapter.html#n2');
+    const popup = document.querySelector<HTMLElement>('#popup-container')!;
+    await vi.waitFor(() => expect(popup.getAttribute('aria-hidden')).toBe('false'));
+    for (let i = 0; i < 5; i++) await nextFrame();
+    // The newer popup can re-open itself on its next relocate, so record every
+    // change rather than sampling the end state.
+    const states: (string | null)[] = [];
+    const observer = new MutationObserver(() => states.push(popup.getAttribute('aria-hidden')));
+    observer.observe(popup, { attributes: true, attributeFilter: ['aria-hidden'] });
+
+    await act(async () => rejectFirst(new Error('Failed to locate footnote content')));
+    await nextFrame();
+    await nextFrame();
+    observer.disconnect();
+    expect(states).not.toContain('true');
+    expect(popup.getAttribute('aria-hidden')).toBe('false');
   });
 });
