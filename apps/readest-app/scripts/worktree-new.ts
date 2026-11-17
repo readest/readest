@@ -1,6 +1,7 @@
 import { execSync, type StdioOptions } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
+import { mergeMainIntoPr } from './worktree-merge-main';
 
 // Submodules skipped during worktree setup (shared via symlinks or pre-built)
 const SKIPPED_SUBMODULES = [
@@ -25,8 +26,9 @@ execSync('git fetch origin', { stdio: gitStdio, cwd: repoRoot });
 
 let localBranch: string;
 let worktreePath: string;
+const isPr = /^\d+$/.test(arg);
 
-if (/^\d+$/.test(arg)) {
+if (isPr) {
   // PR number -- fetch and set up remote tracking so `git push` works (even for forks)
   localBranch = `pr-${arg}`;
   worktreePath = path.join(path.dirname(repoRoot), `readest-${localBranch}`);
@@ -130,9 +132,24 @@ if (/^\d+$/.test(arg)) {
   }
 }
 
-// Rebase onto origin/main so the worktree starts from the latest upstream
-console.error('\n--- Rebasing onto origin/main ---');
-execSync('git rebase origin/main', { stdio: gitStdio, cwd: worktreePath });
+if (isPr) {
+  // Merge, never rebase, a PR: its commits stay as pushed, so `git push` is a
+  // fast-forward, and the worktree is the PR merged onto current main, the
+  // tree that will land. A rebased checkout hid conflicts with main until
+  // after a push (#7502).
+  console.error('\n--- Merging origin/main into the PR ---');
+  // On a conflict, finish setup on the PR head so it can be resolved in place.
+  if (!mergeMainIntoPr(worktreePath, gitStdio)) {
+    console.error(
+      '\n*** This PR conflicts with origin/main. Setup continues on the PR head; ' +
+        'run `git merge origin/main` in the worktree and resolve before pushing. ***',
+    );
+  }
+} else {
+  // Rebase onto origin/main so the worktree starts from the latest upstream
+  console.error('\n--- Rebasing onto origin/main ---');
+  execSync('git rebase origin/main', { stdio: gitStdio, cwd: worktreePath });
+}
 
 // Repoint submodule URLs to local .git/modules/ clones to avoid remote fetches.
 // Submodules without a local cache fall back to the remote URL.

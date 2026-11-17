@@ -46,6 +46,26 @@ const parseCLIOpenWithFiles = async () => {
   return files;
 };
 
+/**
+ * Turn a file:// URL the OS handed the app into a filesystem path.
+ *
+ * decodeURI leaves percent-encoded reserved characters (%3B for ;,
+ * %23 for #, ...) untouched, so a file whose name contains one kept the
+ * escape in its path and no longer named a real file: opening
+ * Anne_Carson;.epub from Finder or Calibre fell through to the library
+ * screen instead of the book (#7553). decodeURIComponent decodes them.
+ * A malformed escape (a literal % in the name) falls back to the raw
+ * string instead of throwing out of the whole open-with flow.
+ */
+export const decodeFileUrlPath = (url: string): string => {
+  const path = url.startsWith('file://') ? url.slice('file://'.length) : url;
+  try {
+    return decodeURIComponent(path);
+  } catch {
+    return path;
+  }
+};
+
 const parseIntentOpenWithFiles = async (appService: AppService | null) => {
   let urls;
   try {
@@ -65,7 +85,7 @@ const parseIntentOpenWithFiles = async (appService: AppService | null) => {
           if (appService?.isIOSApp) {
             return url;
           } else {
-            return decodeURI(url.replace('file://', ''));
+            return decodeFileUrlPath(url);
           }
         } else if (url.startsWith('content://')) {
           return url;

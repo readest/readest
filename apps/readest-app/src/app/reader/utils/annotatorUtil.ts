@@ -13,6 +13,7 @@ import { nextBooknoteStamp } from '@/utils/booknoteStamp';
 import { SystemSettings } from '@/types/settings';
 import { FoliateView, NOTE_PREFIX } from '@/types/view';
 import { Point, snapRangeToWords } from '@/utils/sel';
+import { toWindowPoint } from './crossDocSelection';
 import {
   isSyntheticGlobalValue,
   removeGlobalAnnotationOverlays,
@@ -154,19 +155,25 @@ export function getHandlePositionsFromRange(
 
   const firstRect = rects[0]!;
   const lastRect = rects[rects.length - 1]!;
-  const frameElement = range.commonAncestorContainer.ownerDocument?.defaultView?.frameElement;
-  const frameRect = frameElement?.getBoundingClientRect() ?? { top: 0, left: 0 };
-
-  return {
-    start: {
-      x: frameRect.left + (isVertical ? firstRect.right : firstRect.left),
-      y: frameRect.top + firstRect.top,
-    },
-    end: {
-      x: frameRect.left + (isVertical ? lastRect.left : lastRect.right),
-      y: frameRect.top + lastRect.bottom,
-    },
+  const doc = range.commonAncestorContainer.ownerDocument;
+  if (!doc) return null;
+  // The PDF page iframe is often scaled to fit the screen. getClientRects()
+  // returns coordinates in the iframe's unscaled CSS space; use the inverse
+  // transform from the selection drag hit-testing path to position both handles.
+  const startPoint = {
+    x: isVertical ? firstRect.right : firstRect.left,
+    y: firstRect.top,
   };
+  const endPoint = {
+    x: isVertical ? lastRect.left : lastRect.right,
+    y: lastRect.bottom,
+  };
+  // Popup/paragraph ranges may live in the host document, already in viewport space.
+  const inFrame = !!doc.defaultView?.frameElement;
+  const start = inFrame ? toWindowPoint(doc, startPoint) : startPoint;
+  const end = inFrame ? toWindowPoint(doc, endPoint) : endPoint;
+  if (!start || !end) return null;
+  return { start, end };
 }
 
 /**
