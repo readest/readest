@@ -113,14 +113,19 @@ const TextEditor = forwardRef<TextEditorRef, TextEditorProps>(
       onChange(e.target.value);
     };
 
+    // Runs in the capture phase: the note popup and sheet stop every keydown
+    // inside them. A key handled here stops too, or the host closes on the
+    // same Escape and the note is cancelled twice.
     const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
       if (e.key === 'Escape' && onEscape) {
+        e.stopPropagation();
         onEscape();
         return;
       }
 
       if (e.key === 'Enter' && (e.metaKey || e.ctrlKey) && onSave) {
         e.preventDefault();
+        e.stopPropagation();
         onSave();
         return;
       }

@@ -66,6 +66,7 @@ describe('TextEditor', () => {
     const editor = screen.getByRole('textbox', { name: 'Annotation note' });
     expect(editor.hasAttribute('data-note-editor')).toBe(true);
   });
+
   it.each([
     { shortcut: 'Ctrl+Enter', ctrlKey: true, metaKey: false },
     { shortcut: 'Cmd+Enter', ctrlKey: false, metaKey: true },
@@ -84,15 +85,42 @@ describe('TextEditor', () => {
       </div>,
     );
 
-    const stopPropagation = vi.fn((event: KeyboardEvent) => {
+    const parentListener = vi.fn((event: KeyboardEvent) => {
       event.stopPropagation();
     });
-    parentRef.current!.addEventListener('keydown', stopPropagation);
+    parentRef.current!.addEventListener('keydown', parentListener);
 
     const editor = screen.getByRole('textbox', { name: 'Annotation note' });
     fireEvent.keyDown(editor, { key: 'Enter', ctrlKey, metaKey });
 
-    expect(stopPropagation).toHaveBeenCalledOnce();
     expect(onSave).toHaveBeenCalledOnce();
+    expect(parentListener).not.toHaveBeenCalled();
+  });
+
+  // The note popup (Popup) and sheet (Dialog) close on Escape themselves, with
+  // the same cancel the editor runs: Escape must cancel once, not twice.
+  it('cancels once on Escape inside a host that also closes on Escape', () => {
+    const cancel = vi.fn();
+    const parentRef = createRef<HTMLDivElement>();
+
+    render(
+      <div ref={parentRef}>
+        <TextEditor value='' onChange={vi.fn()} onEscape={cancel} ariaLabel='Annotation note' />
+      </div>,
+    );
+
+    const hostListener = vi.fn((event: KeyboardEvent) => {
+      if (event.key === 'Escape') cancel();
+      event.stopPropagation();
+    });
+    parentRef.current!.addEventListener('keydown', hostListener);
+
+    const editor = screen.getByRole('textbox', { name: 'Annotation note' });
+    fireEvent.keyDown(editor, { key: 'Escape' });
+    expect(cancel).toHaveBeenCalledOnce();
+
+    // Keys the editor doesn't handle still reach the host.
+    fireEvent.keyDown(editor, { key: 'a' });
+    expect(hostListener).toHaveBeenCalledOnce();
   });
 });
