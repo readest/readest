@@ -189,6 +189,29 @@ describe('transformStylesheet', () => {
       expect(result).toContain('@media (max-width: 500px)');
       expect(result).toContain('width: calc(20 * var(--readest-vw, 10px))');
     });
+
+    it('resolves container query lengths against the reader, not the iframe', () => {
+      const result = transformStylesheet(
+        '@container (min-width: 40vw) { p { width: 1vw; } }',
+        VW,
+        VH,
+        VERTICAL,
+      );
+      expect(result).toContain('@container (min-width: 400px)');
+    });
+
+    it('rewrites every length in a value list and leaves identifiers alone', () => {
+      const result = transformStylesheet(
+        '.a-10vw, .x10vh { margin: 1vw 2.5vh,3vw; }',
+        VW,
+        VH,
+        VERTICAL,
+      );
+      expect(result).toBe(
+        '.a-10vw, .x10vh { margin: calc(1 * var(--readest-vw, 10px)) ' +
+          'calc(2.5 * var(--readest-vh, 8px)),calc(3 * var(--readest-vw, 10px)); }',
+      );
+    });
   });
 
   describe('user-select none to unset', () => {

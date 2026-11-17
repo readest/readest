@@ -1691,22 +1691,23 @@ export const transformStylesheet = (
   );
   // A section iframe spans its own columns, so its native vw/vh can depend
   // on the number of pages. Resolve declaration values against the reader.
-  const viewportUnit = /(?<![\w.-])(-?(?:\d*\.)?\d+)(vw|vh)\b/gi;
+  // The leading character is captured, not looked behind: the web build
+  // rejects lookbehind, which older iOS WebViews cannot parse.
+  const viewportUnit = /(^|[^\w.-])(-?(?:\d*\.)?\d+)(vw|vh)\b/gi;
   css = css
     .replace(
-      /@(?:media|supports|container)\b[^{]*|url\([^)]*\)|\/\*[\s\S]*?\*\/|(?<![\w.-])(-?(?:\d*\.)?\d+)(vw|vh)\b/gi,
-      (match, amount, unit?: string) => {
-        if (/^@media\b/i.test(match)) {
-          // Media query conditions cannot read CSS custom properties.
-          return match.replace(viewportUnit, (_, value, axis: string) => {
-            const dimension = axis.toLowerCase() === 'vw' ? vw : vh;
-            return `${(Number(value) * dimension) / 100}px`;
-          });
-        }
-        if (!unit) return match;
-        const axis = unit.toLowerCase();
-        const dimension = axis === 'vw' ? vw : vh;
-        return `calc(${amount} * var(--readest-${axis}, ${dimension / 100}px))`;
+      /@(?:media|supports|container)\b[^{]*|url\([^)]*\)|\/\*[\s\S]*?\*\/|(?:^|[^\w.-])-?(?:\d*\.)?\d+(?:vw|vh)\b/gi,
+      (match) => {
+        // At-rule conditions cannot read CSS custom properties.
+        const atRule = match.startsWith('@');
+        if (!atRule && /^(?:url\(|\/\*)/i.test(match)) return match;
+        return match.replace(viewportUnit, (_, prefix: string, amount: string, unit: string) => {
+          const axis = unit.toLowerCase();
+          const dimension = axis === 'vw' ? vw : vh;
+          return atRule
+            ? `${prefix}${(Number(amount) * dimension) / 100}px`
+            : `${prefix}calc(${amount} * var(--readest-${axis}, ${dimension / 100}px))`;
+        });
       },
     )
     .replace(/READEST_STR_(\d+)_PLACEHOLDER/g, (_, i) => quoted[+i]!);
