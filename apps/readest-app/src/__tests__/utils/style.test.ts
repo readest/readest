@@ -726,31 +726,19 @@ describe('transformStylesheet', () => {
   // The paginator sizes the section iframe to the whole multi-column strip, so
   // `(orientation: ...)` inside a section describes the strip, not a page — and
   // the strip is derived from the content, so the query and the page count feed
-  // each other and the layout never settles (#6038).
+  // each other and the layout never settles (#6038). The reading area can turn
+  // while the book is open, so applyOrientationMedia resolves the feature on the
+  // parsed sheet (style-orientation.browser.test.ts); the text pass leaves it.
   describe('orientation media queries', () => {
     const LANDSCAPE_CSS = '@media screen and (orientation: landscape) { div { column-count: 2; } }';
-    const PORTRAIT_CSS = '@media screen and (orientation:portrait) { div { column-count: 2; } }';
 
-    it('keeps a landscape block when the reader viewport is landscape', () => {
-      const result = transformStylesheet(LANDSCAPE_CSS, 1000, 800, VERTICAL);
-      expect(result).toContain('@media screen and (min-width: 0px)');
-      expect(result).not.toContain('orientation');
-    });
-
-    it('drops a landscape block when the reader viewport is portrait', () => {
-      const result = transformStylesheet(LANDSCAPE_CSS, 800, 1000, VERTICAL);
-      expect(result).toContain('@media screen and (min-width: 999999px)');
-      expect(result).not.toContain('orientation');
-    });
-
-    it('keeps a portrait block when the reader viewport is portrait', () => {
-      const result = transformStylesheet(PORTRAIT_CSS, 800, 1000, VERTICAL);
-      expect(result).toContain('@media screen and (min-width: 0px)');
-    });
-
-    it('drops a portrait block when the reader viewport is landscape', () => {
-      const result = transformStylesheet(PORTRAIT_CSS, 1000, 800, VERTICAL);
-      expect(result).toContain('@media screen and (min-width: 999999px)');
+    it('leaves the feature for the reader to resolve, whatever the open-book viewport', () => {
+      expect(transformStylesheet(LANDSCAPE_CSS, 1000, 800, VERTICAL)).toContain(
+        '@media screen and (orientation: landscape)',
+      );
+      expect(transformStylesheet(LANDSCAPE_CSS, 800, 1000, VERTICAL)).toContain(
+        '@media screen and (orientation: landscape)',
+      );
     });
 
     it('leaves the rest of the query and its declarations intact', () => {

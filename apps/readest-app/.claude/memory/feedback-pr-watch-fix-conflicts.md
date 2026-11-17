@@ -19,4 +19,6 @@ When monitoring a PR I opened, watch three things, not just reviews: (1) review/
 - After merging main, re-sync submodules (stale foliate-js = dozens of unrelated test failures).
 - Escalate non-obvious code conflicts instead of guessing.
 
-Related: [[feedback-pr-review-trust-policy]].
+- Applies to every push to any PR, contributor PRs included, not only PRs I opened. Before the push: `git merge-tree --write-tree HEAD origin/main` must be clean. After it: `gh pr view <n> --json mergeable` until it is not UNKNOWN; CONFLICTING means merge main now. #7502 (2026-11-16): my locale commit on the contributor's old-base branch conflicted with main's appended keys; I reported the PR updated without checking, chrox found it.
+
+Related: [[feedback-pr-review-trust-policy]], [[worktree-new-pr-rebases-onto-main]].

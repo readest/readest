@@ -146,7 +146,11 @@ export async function POST(request: NextRequest) {
           if (line.done) {
             error = line.error;
             ended = true;
-            break;
+            // Read on to the stream's end, which follows at once: the
+            // service's call returning it completes only then. Left unread,
+            // it is cut off with this request, and the runtime sometimes
+            // reports that as a hung Worker.
+            continue;
           }
           const length = typeof line.id === 'string' ? textLength.get(line.id) : undefined;
           if (length !== undefined && typeof line.audio === 'string') delivered += length;
