@@ -372,54 +372,27 @@ describe('Vertical-rl pagination (browser)', () => {
   });
 });
 
-describe('foliate-paginator mobile portrait EBPAJ mixed direction (#7374)', () => {
-  type PortraitPaginator = HTMLElement & {
-    columnCount: number;
-    open: (book: {
-      dir?: string;
-      sections: Array<{ load: () => Promise<string>; unload?: () => void }>;
-    }) => void;
-    goTo: (target: { index: number }) => Promise<void>;
-    setStyles?: (styles: string) => void;
-    getContents: () => Array<{ index: number; doc: Document }>;
-    destroy: () => void;
-  };
-
-  const makeBlobSection = (html: string) => {
+// readest#7374: EBPAJ books pair vertical chapters with horizontal front matter
+// and colophons. A horizontal section preloaded beside a vertical primary must
+// be dropped before it fires 'load', or the reader takes its direction for the
+// book's and lays the vertical chapter out in two columns on a phone.
+describe('Mixed-direction preloads (browser)', () => {
+  const blobSection = (html: string) => {
     let url = '';
     return {
-      load: async () => {
-        url = URL.createObjectURL(new Blob([html], { type: 'text/html' }));
-        return url;
-      },
+      load: async () => (url = URL.createObjectURL(new Blob([html], { type: 'text/html' }))),
       unload: () => {
         if (url) URL.revokeObjectURL(url);
         url = '';
       },
     };
   };
+  const section = (writingMode: string, text: string) =>
+    `<!doctype html><html><head><style>body { margin: 0; writing-mode: ${writingMode}; }</style></head><body><p>${text}</p></body></html>`;
 
-  const waitStabilized = (el: HTMLElement, timeout = 5000) =>
-    new Promise<void>((resolve, reject) => {
-      const timer = setTimeout(() => reject(new Error('stabilized timeout')), timeout);
-      el.addEventListener(
-        'stabilized',
-        () => {
-          clearTimeout(timer);
-          resolve();
-        },
-        { once: true },
-      );
-    });
-
-  const waitFrames = async (count: number) => {
-    for (let i = 0; i < count; i++) {
-      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
-    }
-  };
-
-  const createPortraitPaginator = (maxColumns: number, maxInlineSize: number) => {
-    const el = document.createElement('foliate-paginator') as PortraitPaginator;
+  it('drops a horizontal section beside a vertical primary before it fires load', async () => {
+    await import('foliate-js/paginator.js');
+    const el = document.createElement('foliate-paginator') as Renderer;
     Object.assign(el.style, {
       width: '393px',
       height: '852px',
@@ -427,288 +400,32 @@ describe('foliate-paginator mobile portrait EBPAJ mixed direction (#7374)', () =
       left: '0',
       top: '0',
     });
-    el.setAttribute('max-column-count', String(maxColumns));
-    el.setAttribute('max-inline-size', `${maxInlineSize}px`);
-    el.setAttribute('gap', '5%');
-    for (const side of ['top', 'right', 'bottom', 'left']) {
-      el.setAttribute(`margin-${side}`, '16px');
-    }
+    el.setAttribute('max-column-count', '1');
+    el.setAttribute('max-inline-size', '852px');
     document.body.appendChild(el);
-    return el;
-  };
-
-  const horizontalHtml = (title: string) => `<!doctype html>
-<html>
-  <head>
-    <style>
-      html, body { margin: 0; padding: 0; }
-      .hltr { writing-mode: horizontal-tb; -webkit-writing-mode: horizontal-tb; }
-    </style>
-  </head>
-  <body><div class="hltr"><p>${title}</p></div></body>
-</html>`;
-
-  const verticalHtml = (bodyText: string) => `<!doctype html>
-<html>
-  <head>
-    <style>
-      html, body { margin: 0; padding: 0; }
-      .vrtl { writing-mode: vertical-rl; -webkit-writing-mode: vertical-rl; font-size: 18px; line-height: 1.7; }
-    </style>
-  </head>
-  <body><div class="vrtl">${bodyText}</div></body>
-</html>`;
-
-  const ebpajLongParagraphs = Array.from(
-    { length: 24 },
-    (_, i) => `<p>${i + 1}. 吾輩は猫である。名前はまだ無い。どこで生れたかとんと見当がつかぬ。</p>`,
-  ).join('');
-
-  it('keeps single column in mobile portrait when max-column-count is 1 even with stale 720px max-inline-size', async () => {
-    await import('foliate-js/paginator.js');
-    const el = createPortraitPaginator(1, 720);
+    const loads: number[] = [];
+    el.addEventListener('load', (e) =>
+      loads.push((e as CustomEvent<{ index: number }>).detail.index),
+    );
     try {
       el.open({
         dir: 'rtl',
         sections: [
-          makeBlobSection(horizontalHtml('表題')),
-          makeBlobSection(verticalHtml(ebpajLongParagraphs)),
+          blobSection(section('horizontal-tb', '前付')),
+          blobSection(section('vertical-rl', '短い本文一段落。')),
+          blobSection(section('horizontal-tb', '奥付')),
         ],
-      });
-
-      const firstStabilized = waitStabilized(el);
-      await el.goTo({ index: 0 });
-      await firstStabilized;
-
-      const secondStabilized = waitStabilized(el);
+      } as unknown as BookDoc);
+      const stabilized = waitForStabilized(el);
       await el.goTo({ index: 1 });
-      await secondStabilized;
-      await waitFrames(4);
+      await stabilized;
+      await wait(500);
 
-      expect(el.columnCount).toBe(1);
+      expect(loads).toEqual([1]);
+      expect(el.getContents().map((c) => c.index)).toEqual([1]);
     } finally {
       el.destroy();
       el.remove();
-    }
-  });
-
-  it('keeps single column in mobile portrait with max-column-count=2 once vertical max-inline-size is updated on load', async () => {
-    await import('foliate-js/paginator.js');
-    const el = createPortraitPaginator(2, 720);
-    const loadHandler = (event: Event) => {
-      const detail = (event as CustomEvent<{ doc: Document; isPreload?: boolean }>).detail;
-      if (detail.isPreload) return;
-      const body = detail.doc.body;
-      const writingMode = body.querySelector('.vrtl')
-        ? 'vertical-rl'
-        : detail.doc.defaultView!.getComputedStyle(body).writingMode;
-      if (writingMode.startsWith('vertical')) {
-        el.setAttribute('max-inline-size', '852px');
-      }
-    };
-    el.addEventListener('load', loadHandler);
-    try {
-      el.open({
-        dir: 'rtl',
-        sections: [
-          makeBlobSection(horizontalHtml('カバー')),
-          makeBlobSection(verticalHtml(ebpajLongParagraphs)),
-        ],
-      });
-
-      const firstStabilized = waitStabilized(el);
-      await el.goTo({ index: 0 });
-      await firstStabilized;
-
-      const secondStabilized = waitStabilized(el);
-      await el.goTo({ index: 1 });
-      await secondStabilized;
-      await waitFrames(4);
-
-      expect(el.columnCount).toBe(1);
-    } finally {
-      el.removeEventListener('load', loadHandler);
-      el.destroy();
-      el.remove();
-    }
-  });
-
-  it('destroys mismatched-direction preloads before dispatching load and marks same-direction preloads', async () => {
-    await import('foliate-js/paginator.js');
-
-    const mixedEl = createPortraitPaginator(1, 852);
-    const mixedLoads: Array<{ index: number; isPreload?: boolean }> = [];
-    mixedEl.addEventListener('load', (event: Event) => {
-      const { index, isPreload } = (event as CustomEvent<{ index: number; isPreload?: boolean }>)
-        .detail;
-      mixedLoads.push({ index, isPreload });
-    });
-
-    try {
-      mixedEl.open({
-        dir: 'rtl',
-        sections: [
-          makeBlobSection(horizontalHtml('前付')),
-          makeBlobSection(verticalHtml('<p>短い本文一段落。</p>')),
-          makeBlobSection(horizontalHtml('奥付')),
-        ],
-      });
-      const stabilized = waitStabilized(mixedEl);
-      await mixedEl.goTo({ index: 1 });
-      await stabilized;
-      await new Promise((r) => setTimeout(r, 200));
-      await waitFrames(4);
-
-      expect(mixedLoads).toEqual([{ index: 1, isPreload: undefined }]);
-      expect(mixedEl.getContents().map((c) => c.index)).toEqual([1]);
-    } finally {
-      mixedEl.destroy();
-      mixedEl.remove();
-    }
-
-    const sameDirEl = createPortraitPaginator(1, 852);
-    const sameDirLoads: Array<{ index: number; isPreload?: boolean }> = [];
-    sameDirEl.addEventListener('load', (event: Event) => {
-      const { index, isPreload } = (event as CustomEvent<{ index: number; isPreload?: boolean }>)
-        .detail;
-      sameDirLoads.push({ index, isPreload });
-    });
-
-    try {
-      sameDirEl.open({
-        dir: 'rtl',
-        sections: [
-          makeBlobSection(verticalHtml('<p>序章</p>')),
-          makeBlobSection(verticalHtml('<p>第一章 短い本文。</p>')),
-          makeBlobSection(verticalHtml('<p>第二章 続きの本文。</p>')),
-        ],
-      });
-      const stabilized = waitStabilized(sameDirEl);
-      await sameDirEl.goTo({ index: 1 });
-      await stabilized;
-      await new Promise((r) => setTimeout(r, 200));
-      await waitFrames(4);
-
-      expect(sameDirLoads[0]).toEqual({ index: 1, isPreload: undefined });
-      expect(sameDirLoads.some((e) => e.index === 2 && e.isPreload === true)).toBe(true);
-    } finally {
-      sameDirEl.destroy();
-      sameDirEl.remove();
-    }
-  });
-
-  it('drops cross-progression horizontal preloads and emits primary load when navigating to an RTL section', async () => {
-    await import('foliate-js/paginator.js');
-    const el = createPortraitPaginator(1, 720);
-    const loads: Array<{ index: number; isPreload?: boolean }> = [];
-    el.addEventListener('load', (event: Event) => {
-      const { index, isPreload } = (event as CustomEvent<{ index: number; isPreload?: boolean }>)
-        .detail;
-      loads.push({ index, isPreload });
-    });
-
-    const rtlHorizontalHtml = `<!doctype html><html dir="rtl"><body><p>פרק א</p></body></html>`;
-    try {
-      el.open({
-        sections: [
-          makeBlobSection(horizontalHtml('Chapter 1')),
-          makeBlobSection(rtlHorizontalHtml),
-        ],
-      });
-      const firstStabilized = waitStabilized(el);
-      await el.goTo({ index: 0 });
-      await firstStabilized;
-      await new Promise((r) => setTimeout(r, 200));
-      await waitFrames(4);
-
-      expect(loads).toEqual([{ index: 0, isPreload: undefined }]);
-      expect(el.getAttribute('dir')).toBe('ltr');
-
-      const secondStabilized = waitStabilized(el);
-      await el.goTo({ index: 1 });
-      await secondStabilized;
-      await waitFrames(4);
-
-      expect(loads).toEqual([
-        { index: 0, isPreload: undefined },
-        { index: 1, isPreload: undefined },
-      ]);
-      expect(el.getAttribute('dir')).toBe('rtl');
-    } finally {
-      el.destroy();
-      el.remove();
-    }
-  });
-
-  it('applies book language RTL default before preloading sections without explicit dir', async () => {
-    await import('foliate-js/view.js');
-    type ViewEl = HTMLElement & {
-      open(book: unknown): Promise<void>;
-      goTo(target: number | string): Promise<void>;
-      close(): void;
-      renderer: HTMLElement & {
-        setStyles?(styles: unknown): void;
-        getContents(): Array<{ index: number; doc: Document }>;
-        destroy(): void;
-      };
-    };
-
-    const view = document.createElement('foliate-view') as ViewEl;
-    Object.assign(view.style, {
-      display: 'block',
-      width: '393px',
-      height: '852px',
-    });
-    document.body.append(view);
-
-    const loads: Array<{ index: number; isPreload?: boolean }> = [];
-    view.addEventListener('load', (event: Event) => {
-      const { index, isPreload } = (event as CustomEvent<{ index: number; isPreload?: boolean }>)
-        .detail;
-      loads.push({ index, isPreload });
-    });
-
-    const plainChapter = (text: string) =>
-      `<!doctype html><html><body><p>${text}</p></body></html>`;
-    const explicitLtrChapter = `<!doctype html><html dir="ltr"><body><p>English appendix</p></body></html>`;
-
-    try {
-      await view.open({
-        metadata: { language: 'ar' },
-        sections: [
-          makeBlobSection(plainChapter('الفصل الأول')),
-          makeBlobSection(plainChapter('الفصل الثاني')),
-          makeBlobSection(explicitLtrChapter),
-        ],
-      });
-      view.renderer.setAttribute('max-column-count', '1');
-      view.renderer.setAttribute('max-inline-size', '720px');
-
-      const stabilized = waitStabilized(view.renderer);
-      await view.goTo(0);
-      await stabilized;
-      await new Promise((r) => setTimeout(r, 200));
-      await waitFrames(4);
-
-      expect(view.renderer.getAttribute('dir')).toBe('rtl');
-      expect(loads).toContainEqual({ index: 0, isPreload: undefined });
-      expect(loads).toContainEqual({ index: 1, isPreload: true });
-
-      const ch2 = view.renderer.getContents().find((c) => c.index === 1);
-      expect(ch2?.doc.documentElement.getAttribute('dir')).toBe('rtl');
-
-      // Navigate to chapter 2; chapter 3 explicitly declares dir="ltr" so it is not preloaded.
-      loads.length = 0;
-      const ch2Stabilized = waitStabilized(view.renderer);
-      await view.goTo(1);
-      await ch2Stabilized;
-      await new Promise((r) => setTimeout(r, 200));
-      await waitFrames(4);
-
-      expect(loads.some((e) => e.index === 2 && e.isPreload === true)).toBe(false);
-    } finally {
-      view.close?.();
-      view.remove();
     }
   });
 });

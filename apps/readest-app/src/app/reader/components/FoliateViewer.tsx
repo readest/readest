@@ -219,8 +219,7 @@ const FoliateViewer: React.FC<{
     useBrightnessGesture(bookKey);
   const bookData = getBookData(bookKey);
   const viewState = getViewState(bookKey);
-  const storeViewSettings = useReaderStore((s) => s.viewStates?.[bookKey]?.viewSettings);
-  const viewSettings = storeViewSettings ?? getViewSettings(bookKey);
+  const viewSettings = getViewSettings(bookKey);
   // PDF theme colors reach the canvas through CanvasRenderingContext2D.filter,
   // which WebKit lacks, so a setting synced from another device can't apply here.
   const getPageViewSettings = (vs: ViewSettings): ViewSettings =>
@@ -598,36 +597,20 @@ const FoliateViewer: React.FC<{
       applyLinkHitArea(detail.doc);
       const renderer = viewRef.current?.renderer;
       const writingDir = renderer?.setStyles && getDirection(detail.doc);
-      let currentViewSettings = getViewSettings(bookKey)!;
+      const viewSettings = getViewSettings(bookKey)!;
       const bookData = getBookData(bookKey)!;
 
-      if (!detail.isPreload) {
-        const newVertical =
-          writingDir?.vertical || currentViewSettings.writingMode.includes('vertical') || false;
-        // Fixed-layout books carry no writing mode; their direction may come
-        // from the document itself (PDF ViewerPreferences /Direction /R2L). The
-        // UI language is the last resort, for a book that says nothing at all.
-        const documentRtl = writingDir?.rtl || getDirFromUILanguage() === 'rtl' || false;
-        const newRtl = getPageProgressionRTL(
-          currentViewSettings.writingMode,
-          bookDoc.dir,
-          documentRtl,
-        );
-        const verticalChanged = currentViewSettings.vertical !== newVertical;
-        if (verticalChanged || currentViewSettings.rtl !== newRtl) {
-          currentViewSettings = {
-            ...currentViewSettings,
-            vertical: newVertical,
-            rtl: newRtl,
-          };
-          setViewSettings(bookKey, currentViewSettings);
-          if (verticalChanged && renderer && bookDoc.rendition?.layout !== 'pre-paginated') {
-            const nextMaxInlineSize = `${getCurrentRendererLayout(currentViewSettings).maxInlineSize}px`;
-            if (renderer.getAttribute('max-inline-size') !== nextMaxInlineSize) {
-              renderer.setAttribute('max-inline-size', nextMaxInlineSize);
-            }
-          }
-        }
+      const newVertical =
+        writingDir?.vertical || viewSettings.writingMode.includes('vertical') || false;
+      // Fixed-layout books carry no writing mode; their direction may come
+      // from the document itself (PDF ViewerPreferences /Direction /R2L). The
+      // UI language is the last resort, for a book that says nothing at all.
+      const documentRtl = writingDir?.rtl || getDirFromUILanguage() === 'rtl' || false;
+      const newRtl = getPageProgressionRTL(viewSettings.writingMode, bookDoc.dir, documentRtl);
+      if (viewSettings.vertical !== newVertical || viewSettings.rtl !== newRtl) {
+        viewSettings.vertical = newVertical;
+        viewSettings.rtl = newRtl;
+        setViewSettings(bookKey, { ...viewSettings });
       }
 
       if (!bookData?.isFixedLayout) {
@@ -641,7 +624,7 @@ const FoliateViewer: React.FC<{
       });
 
       if (bookDoc.rendition?.layout === 'pre-paginated') {
-        const pageSettings = getPageViewSettings(currentViewSettings);
+        const pageSettings = getPageViewSettings(viewSettings);
         applyFixedlayoutStyles(detail.doc, pageSettings, undefined, bookData.book?.format);
         if (bookData.book?.format === 'PDF' && renderer) {
           renderer.pageColors = getPDFPageColors(pageSettings, getThemeCode());
@@ -654,10 +637,10 @@ const FoliateViewer: React.FC<{
       // Read the theme live: `useFoliateEvents` binds this handler once, so the
       // closed-over `isDarkMode` is the theme the reader mounted in.
       applyThemeModeClass(detail.doc, useThemeStore.getState().isDarkMode);
-      applyScrollModeClass(detail.doc, currentViewSettings.scrolled || false);
-      applyEinkModeAttribute(detail.doc, currentViewSettings.isEink || false);
+      applyScrollModeClass(detail.doc, viewSettings.scrolled || false);
+      applyEinkModeAttribute(detail.doc, viewSettings.isEink || false);
       if (viewRef.current) applyOrientationMedia(detail.doc, isLandscapeBox(viewRef.current));
-      applyScrollbarStyle(document, currentViewSettings.hideScrollbar || false);
+      applyScrollbarStyle(document, viewSettings.hideScrollbar || false);
       keepTextAlignment(detail.doc);
       handleA11yNavigation(viewRef.current, detail.doc, {
         skipToLastPosCallback: skipToReadingPosition,
@@ -666,7 +649,7 @@ const FoliateViewer: React.FC<{
         skipToNextSectionLabel: _('End of this section. Continue to the next.'),
       });
 
-      if (currentViewSettings.allowScript) {
+      if (viewSettings.allowScript) {
         // Book scripts may add media, or a background image, with a path
         // relative to the section long after foliate's load-time URL rewrite.
         const section = bookDoc.sections?.[detail.index];
@@ -674,17 +657,17 @@ const FoliateViewer: React.FC<{
       }
 
       // Inline scripts in tauri platforms are not executed by default
-      if (currentViewSettings.allowScript && isTauriAppPlatform()) {
+      if (viewSettings.allowScript && isTauriAppPlatform()) {
         evalInlineScripts(detail.doc);
       }
 
       // only call on load if we have highlighting turned on.
-      if (currentViewSettings.codeHighlighting) {
-        manageSyntaxHighlighting(detail.doc, currentViewSettings);
+      if (viewSettings.codeHighlighting) {
+        manageSyntaxHighlighting(detail.doc, viewSettings);
       }
 
-      if (isDialogueHighlightActive(currentViewSettings)) {
-        manageDialogueHighlight(detail.doc, currentViewSettings);
+      if (isDialogueHighlightActive(viewSettings)) {
+        manageDialogueHighlight(detail.doc, viewSettings);
       }
 
       setTimeout(() => {
@@ -1460,10 +1443,10 @@ const FoliateViewer: React.FC<{
   useEffect(() => {
     const renderer = viewRef.current?.renderer;
     if (!renderer || !viewSettings || bookDoc.rendition?.layout === 'pre-paginated') return;
-    const nextMaxInlineSize = `${getCurrentRendererLayout(viewSettings).maxInlineSize}px`;
-    if (renderer.getAttribute('max-inline-size') !== nextMaxInlineSize) {
-      renderer.setAttribute('max-inline-size', nextMaxInlineSize);
-    }
+    renderer.setAttribute(
+      'max-inline-size',
+      `${getCurrentRendererLayout(viewSettings).maxInlineSize}px`,
+    );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [viewSettings?.vertical]);
 
