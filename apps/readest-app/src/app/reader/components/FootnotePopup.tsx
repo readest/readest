@@ -181,8 +181,6 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
   };
 
   const [popupBounds, setPopupBounds] = useState<PopupBounds | null>(null);
-  const popupBoundsRef = useRef<PopupBounds | null>(null);
-  const appliedGridInsetsRef = useRef<Insets | null>(null);
   const [responsiveWidth, setResponsiveWidth] = useState(popupWidth);
   const [responsiveHeight, setResponsiveHeight] = useState(popupHeight);
   const sizeAdjustCountRef = useRef(0);
@@ -192,83 +190,66 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
   const size18 = useResponsiveSize(18);
   const popupPadding = useResponsiveSize(10);
 
-  const getSafeBoundsMetrics = () => {
-    const bounds = popupBoundsRef.current;
-    if (bounds && bounds.rect.right > bounds.rect.left && bounds.rect.bottom > bounds.rect.top) {
-      const { rect, origin } = bounds;
-      const safeWidth = rect.right - rect.left;
-      const safeHeight = rect.bottom - rect.top;
-      return {
-        safeTop: origin.y,
-        safeLeft: origin.x,
-        safeWidth,
-        safeHeight,
-        safeRight: origin.x + safeWidth,
-        safeBottom: origin.y + safeHeight,
-      };
-    }
-    const insets = gridInsetsRef.current;
-    const safeWidth = Math.max(0, window.innerWidth - insets.left - insets.right);
-    const safeHeight = Math.max(0, window.innerHeight - insets.top - insets.bottom);
+  // The window less the cell's safe-area insets, so the popup stays clear of
+  // the Dynamic Island, a camera cutout and the home indicator (#7389).
+  const getSafeArea = () => {
+    const { top, right, bottom, left } = gridInsetsRef.current;
     return {
-      safeTop: insets.top,
-      safeLeft: insets.left,
-      safeWidth,
-      safeHeight,
-      safeRight: insets.left + safeWidth,
-      safeBottom: insets.top + safeHeight,
+      top,
+      left,
+      right: window.innerWidth - right,
+      bottom: window.innerHeight - bottom,
+      width: window.innerWidth - left - right,
+      height: window.innerHeight - top - bottom,
     };
   };
 
   const getMaxHeight = useCallback(() => {
-    const { safeTop, safeBottom, safeHeight } = getSafeBoundsMetrics();
-    let availableHeight = safeHeight - 2 * popupPadding;
+    const safe = getSafeArea();
+    let availableHeight = safe.height - 2 * popupPadding;
     if (trianglePositionRef.current?.dir === 'up') {
-      availableHeight = trianglePositionRef.current.point.y - safeTop - popupPadding;
+      availableHeight = trianglePositionRef.current.point.y - safe.top - popupPadding;
     } else if (trianglePositionRef.current?.dir === 'down') {
-      availableHeight = safeBottom - trianglePositionRef.current.point.y - popupPadding;
+      availableHeight = safe.bottom - trianglePositionRef.current.point.y - popupPadding;
     }
-    return Math.max(0, availableHeight);
+    return availableHeight;
   }, [popupPadding]);
 
   const getMaxWidth = useCallback(() => {
-    const { safeLeft, safeRight, safeWidth } = getSafeBoundsMetrics();
-    let availableWidth = Math.min(safeWidth - 2 * popupPadding, 720);
+    const safe = getSafeArea();
+    let availableWidth = Math.min(safe.width - 2 * popupPadding, 720);
     if (trianglePositionRef.current?.dir === 'left') {
-      availableWidth = trianglePositionRef.current.point.x - safeLeft - popupPadding;
+      availableWidth = trianglePositionRef.current.point.x - safe.left - popupPadding;
     } else if (trianglePositionRef.current?.dir === 'right') {
-      availableWidth = safeRight - trianglePositionRef.current.point.x - popupPadding;
+      availableWidth = safe.right - trianglePositionRef.current.point.x - popupPadding;
     }
-    return Math.max(0, availableWidth);
+    return availableWidth;
   }, [popupPadding]);
 
   const getResponsivePopupSize = (size: number, isVertical: boolean) => {
-    const { safeWidth, safeHeight } = getSafeBoundsMetrics();
-    const maxSize = isVertical ? safeWidth : safeHeight;
-    return Math.min(size, Math.max(0, maxSize - popupPadding - 12));
+    const safe = getSafeArea();
+    const maxSize = isVertical ? safe.width : safe.height;
+    return Math.min(size, maxSize - popupPadding - 12);
   };
 
   const clipPopupWith = (size: number) => {
-    const { safeWidth } = getSafeBoundsMetrics();
-    return Math.min(size, Math.max(0, safeWidth - popupPadding - 12));
+    return Math.min(size, getSafeArea().width - popupPadding - 12);
   };
 
   const clipPopupHeight = (size: number) => {
-    const { safeHeight } = getSafeBoundsMetrics();
-    return Math.min(size, Math.max(0, safeHeight - popupPadding - 12));
+    return Math.min(size, getSafeArea().height - popupPadding - 12);
   };
 
   // Imperative, not an effect keyed on the trigger position: that effect ran
   // after the commit and overwrote the size just measured from the content.
   const seedPopupSize = (isVertical: boolean) => {
-    const { safeWidth, safeHeight } = getSafeBoundsMetrics();
     const size = isVertical
       ? {
           width: clipPopupWith(popupHeight),
-          height: clipPopupHeight(Math.max(popupWidth, safeHeight / 4)),
+          height: clipPopupHeight(Math.max(popupWidth, window.innerHeight / 4)),
         }
       : {
-          width: clipPopupWith(Math.max(popupWidth, safeWidth / 4)),
+          width: clipPopupWith(Math.max(popupWidth, window.innerWidth / 4)),
           height: clipPopupHeight(popupHeight),
         };
     setResponsiveWidth(size.width);
@@ -654,51 +635,25 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
     }
   }, [anchor, popupBounds, responsiveWidth, responsiveHeight, popupPadding]);
 
-  useEffect(() => {
-    if (!showPopup) return;
-    const prev = appliedGridInsetsRef.current;
-    if (
-      prev &&
-      prev.top === gridInsets.top &&
-      prev.right === gridInsets.right &&
-      prev.bottom === gridInsets.bottom &&
-      prev.left === gridInsets.left
-    ) {
-      return;
-    }
-    const gridFrame = document.querySelector(`#gridcell-${bookKey}`);
-    if (!gridFrame) return;
-    const bounds = getPopupBounds(gridFrame.getBoundingClientRect(), gridInsets, true);
-    appliedGridInsetsRef.current = gridInsets;
-    popupBoundsRef.current = bounds;
-    setPopupBounds(bounds);
-    setResponsiveWidth((w) => Math.min(w, getMaxWidth()));
-    setResponsiveHeight((h) => Math.min(h, getMaxHeight()));
-    const view = footnoteViewRef.current;
-    if (view) fitPopupToContent(view);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [showPopup, bookKey, gridInsets.top, gridInsets.right, gridInsets.bottom, gridInsets.left]);
-
   const docLinkHandler = async (event: Event) => {
     const detail = (event as CustomEvent).detail;
     // console.log('doc link click', detail);
     const gridFrame = document.querySelector(`#gridcell-${bookKey}`);
     if (!gridFrame) return;
-    // Clamp to the cell's safe region so popups never render underneath a
-    // top/bottom/side safe-area inset (Dynamic Island, home indicator, Duo strip).
-    const bounds = getPopupBounds(gridFrame.getBoundingClientRect(), gridInsetsRef.current, true);
+    // Clamp to the cell's safe region, not the physical cell: the Dynamic
+    // Island, a cutout or iPhone Duo's status strip can otherwise sit under
+    // the popup (#6307, #7389).
+    const bounds = getPopupBounds(gridFrame.getBoundingClientRect(), gridInsetsRef.current);
     const viewSettings = getViewSettings(bookKey)!;
     const triangPos = offsetPosition(
       getPosition(detail.a, bounds.rect, popupPadding, viewSettings.vertical),
       bounds.origin,
     );
     stopTrackingPopupContentSize();
-    appliedGridInsetsRef.current = gridInsetsRef.current;
-    popupBoundsRef.current = bounds;
-    trianglePositionRef.current = triangPos;
     seedPopupSize(viewSettings.vertical);
     setPopupBounds(bounds);
     setTrianglePosition(triangPos);
+    trianglePositionRef.current = triangPos;
 
     const { a: anchor } = detail as { a: HTMLAnchorElement };
     const footnoteClasses = [
@@ -771,8 +726,6 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
     sizeAdjustCountRef.current = 0;
     trianglePositionRef.current = null;
     setCanGoBack(false);
-    appliedGridInsetsRef.current = null;
-    popupBoundsRef.current = null;
     setPopupBounds(null);
     setPopupPosition(null);
     setTrianglePosition(null);
@@ -804,15 +757,12 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
     setSourceHref(null);
     stopTrackingPopupContentSize();
     resetPopupAnnotationState();
-    const bounds = getPopupBounds(gridFrame.getBoundingClientRect(), gridInsetsRef.current, true);
+    const bounds = getPopupBounds(gridFrame.getBoundingClientRect(), gridInsetsRef.current);
     const viewSettings = getViewSettings(bookKey)!;
     const triangPos = offsetPosition(
       getPosition(element, bounds.rect, popupPadding, viewSettings.vertical),
       bounds.origin,
     );
-    appliedGridInsetsRef.current = gridInsetsRef.current;
-    popupBoundsRef.current = bounds;
-    trianglePositionRef.current = triangPos;
     const seed = seedPopupSize(viewSettings.vertical);
     if (footnoteRef.current) {
       const elem = document.createElement('p');
@@ -839,23 +789,9 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
         const popupSize = probe.getBoundingClientRect();
         probe.remove();
         if (viewSettings.vertical) {
-          setResponsiveWidth(
-            clipPopupWith(
-              Math.min(
-                getResponsivePopupSize(popupSizeForContent(popupSize.width), true),
-                getMaxWidth(),
-              ),
-            ),
-          );
+          setResponsiveWidth(getResponsivePopupSize(popupSizeForContent(popupSize.width), true));
         } else {
-          setResponsiveHeight(
-            clipPopupHeight(
-              Math.min(
-                getResponsivePopupSize(popupSizeForContent(popupSize.height), false),
-                getMaxHeight(),
-              ),
-            ),
-          );
+          setResponsiveHeight(getResponsivePopupSize(popupSizeForContent(popupSize.height), false));
         }
       };
       fitToNote();
@@ -870,6 +806,7 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
       footnoteRef.current.replaceChildren(elem);
       setPopupBounds(bounds);
       setTrianglePosition(triangPos);
+      trianglePositionRef.current = triangPos;
       setShowPopup(true);
     }
   };

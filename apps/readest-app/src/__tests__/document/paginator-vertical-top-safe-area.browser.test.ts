@@ -1,3 +1,10 @@
+/**
+ * FoliateViewer sets a vertical book's margin-top to gridInsets.top / 1.5 +
+ * the margin, because the paginator pads vertical text by 1.5x its margin
+ * (#7389). This pins that multiplier in a real layout: if it changes, the
+ * text slides back under the Dynamic Island. The margin FoliateViewer
+ * computes is tested in foliate-viewer-open-margins.test.tsx.
+ */
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import type { Renderer } from '@/types/view';
 

@@ -5,8 +5,9 @@
  * `getPosition`/`getPopupPosition` return points relative to the rect they are
  * given, while the popup renders relative to the book cell. Clamping to an
  * inset rect without shifting the result back moved every popup up by the top
- * inset on an ordinary iPhone (59px), onto the selected word. Only iPhone Duo
- * clamps to the safe region; everything else uses the raw cell rect.
+ * inset on an ordinary iPhone (59px), onto the selected word. Every device
+ * clamps to the safe region, so no popup opens under the Dynamic Island
+ * (#7389).
  *
  * Driving the real Annotator needs a live foliate view and iframe selection,
  * so this exercises the same positioning path through FootnotePopup: the
@@ -21,7 +22,6 @@ import { page } from 'vitest/browser';
 import '@/styles/globals.css';
 
 const h = vi.hoisted(() => ({
-  isIPhoneDuo: false,
   viewSettings: { vertical: false, rtl: false, scrolled: false },
   dispatchFootnote: (() => {}) as (detail: unknown) => void,
   handlers: [] as EventTarget[],
@@ -45,7 +45,7 @@ vi.mock('@/store/settingsStore', () => ({
   useSettingsStore: { getState: () => ({ settings: {} }) },
 }));
 vi.mock('@/store/themeStore', () => ({
-  useThemeStore: { getState: () => ({ isDarkMode: false, isIPhoneDuo: h.isIPhoneDuo }) },
+  useThemeStore: { getState: () => ({ isDarkMode: false }) },
   getThemeCode: () => ({}),
 }));
 vi.mock('@/store/customFontStore', () => ({
@@ -112,7 +112,6 @@ let anchor: HTMLElement;
 
 beforeEach(async () => {
   await page.viewport(393, 852);
-  h.isIPhoneDuo = false;
   h.viewSettings = { vertical: false, rtl: false, scrolled: false };
   h.handlers.length = 0;
   // The book cell: origin at the viewport's, the insets lie inside it.
@@ -134,12 +133,9 @@ afterEach(() => {
 
 /** Open the popup on the anchor and measure the triangle and popup boxes. */
 const openPopup = (gridInsets: Insets, footnote = NOTE) => {
-  const rendered = render(
-    <FootnotePopup bookKey='book-1' bookDoc={{} as BookDoc} gridInsets={gridInsets} />,
-    {
-      container: host,
-    },
-  );
+  render(<FootnotePopup bookKey='book-1' bookDoc={{} as BookDoc} gridInsets={gridInsets} />, {
+    container: host,
+  });
   act(() => {
     h.dispatchFootnote({ bookKey: 'book-1', element: anchor, footnote });
   });
@@ -154,7 +150,7 @@ const openPopup = (gridInsets: Insets, footnote = NOTE) => {
     x: triangle.left + triangle.width / 2,
     y: dir === 'down' ? triangle.top : triangle.bottom,
   };
-  return { triangle, popup, text, tip, dir, rerender: rendered.rerender };
+  return { triangle, popup, text, tip, dir };
 };
 
 const expectPointerOnText = ({ tip, text, popup, dir }: ReturnType<typeof openPopup>) => {
@@ -176,16 +172,11 @@ const expectPointerOnText = ({ tip, text, popup, dir }: ReturnType<typeof openPo
 const box = (r: DOMRect) => ({ left: r.left, top: r.top, width: r.width, height: r.height });
 
 describe('popup placement with a 59px top safe-area inset (393x852)', () => {
-  test('off the Duo the pointer lands on the selected text', () => {
+  test('the pointer lands on the selected text', () => {
     expectPointerOnText(openPopup(PHONE_TOP));
   });
 
-  test('on the Duo the pointer lands on the selected text', () => {
-    h.isIPhoneDuo = true;
-    expectPointerOnText(openPopup(PHONE_TOP));
-  });
-
-  test('off the Duo the placement equals the no-inset computation', () => {
+  test('a target well inside the safe area is placed as with no inset', () => {
     const inset = openPopup(PHONE_TOP);
     cleanup();
     const none = openPopup(NO_INSETS);
@@ -193,20 +184,10 @@ describe('popup placement with a 59px top safe-area inset (393x852)', () => {
     expect(box(inset.popup)).toEqual(box(none.popup));
   });
 
-  test('on the Duo, a target well inside the safe area is placed as with no inset', () => {
-    h.isIPhoneDuo = true;
-    const duo = openPopup(PHONE_TOP);
-    cleanup();
-    h.isIPhoneDuo = false;
-    const none = openPopup(NO_INSETS);
-    expect(box(duo.triangle)).toEqual(box(none.triangle));
-    expect(box(duo.popup)).toEqual(box(none.popup));
-  });
-
   test('control: positions from an inset rect are not cell coordinates until shifted back', () => {
     // The bug this file guards against: the inset rect's result lands `top`
     // px above where the cell-relative result does.
-    const { rect } = getPopupBounds(cell.getBoundingClientRect(), PHONE_TOP, true);
+    const { rect } = getPopupBounds(cell.getBoundingClientRect(), PHONE_TOP);
     const raw = getPosition(anchor, cell.getBoundingClientRect(), 10);
     const unshifted = getPosition(anchor, rect, 10);
     expect(raw.point.y - unshifted.point.y).toBe(PHONE_TOP.top);
@@ -221,11 +202,23 @@ describe('popup placement with a 59px top safe-area inset (393x852)', () => {
     expect(popup.bottom).toBeLessThanOrEqual(852 - PHONE_TOP.bottom - 10);
   });
 
-  test('horizontal upward popup clamps top below gridInsets.top (#7389)', () => {
+  test('horizontal upward popup clamps top below gridInsets.top (#7389)', async () => {
     anchor.style.cssText = 'position:absolute;left:150px;top:600px;font-size:16px;';
     const { popup, dir } = openPopup(PHONE_TOP, LONG_NOTE);
     expect(dir).toBe('up');
-    expect(popup.top).toBeGreaterThanOrEqual(PHONE_TOP.top + 10);
+    // An upward popup opens at its seed height and moves up once Popup has
+    // measured the note, so measure where it settles.
+    const container = host.querySelector<HTMLElement>('#popup-container')!;
+    await expect.poll(() => container.getBoundingClientRect().top).not.toBe(popup.top);
+    expect(container.getBoundingClientRect().top).toBeGreaterThanOrEqual(PHONE_TOP.top + 10);
+  });
+
+  test('a cell narrower than the window keeps the window-sized popup', async () => {
+    // Desktop with the sidebar pinned: no insets, so nothing changes (#7389).
+    await page.viewport(1920, 1080);
+    cell.style.cssText = 'position:fixed;top:0;bottom:0;left:288px;width:1632px;';
+    const { popup } = openPopup(NO_INSETS);
+    expect(popup.width).toBe(1920 / 4);
   });
 
   test('horizontal downward popup near top fits inside safe area bounds (#7389)', () => {
@@ -234,16 +227,5 @@ describe('popup placement with a 59px top safe-area inset (393x852)', () => {
     expect(dir).toBe('down');
     expect(popup.top).toBeGreaterThanOrEqual(PHONE_TOP.top + 10);
     expect(popup.bottom).toBeLessThanOrEqual(852 - PHONE_TOP.bottom - 10);
-  });
-
-  test('recomputes bounds when gridInsets increases while a vertical popup is open (#7389)', () => {
-    h.viewSettings = { vertical: true, rtl: true, scrolled: false };
-    anchor.style.cssText =
-      'position:absolute;left:220px;top:90px;font-size:16px;writing-mode:vertical-rl;';
-    const { rerender } = openPopup(NO_INSETS, LONG_NOTE);
-    rerender(<FootnotePopup bookKey='book-1' bookDoc={{} as BookDoc} gridInsets={PHONE_TOP} />);
-    const updated = host.querySelector<HTMLElement>('#popup-container')!.getBoundingClientRect();
-    expect(updated.top).toBeGreaterThanOrEqual(PHONE_TOP.top + 10);
-    expect(updated.bottom).toBeLessThanOrEqual(852 - PHONE_TOP.bottom - 10);
   });
 });
