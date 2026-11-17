@@ -362,15 +362,22 @@ export const useKOSync = (bookKey: string, provider: KosyncProgressProvider = ko
             percentage: formatProgressPercentage(remotePercentage),
           });
         }
-        // A rounded percentage won't equal the local one even on the same
-        // page, so compare the page it names — except for a report echoed
-        // from this same device, where the 1% tolerance still applies
-        // (#7503: Kavita's percentage is (page - 1) / total, so the same
-        // page differs by 1 / total and would otherwise prompt on every
-        // pull).
-        showConflictDetails = isSameDevice
-          ? Math.abs(localPercentage - remotePercentage) > conflictProgressDiffThreshold
-          : remotePage !== (localPageInfo?.current ?? 0) + 1;
+        // Where the page counts agree, or the page was derived from the local
+        // count, compare the page it names: a rounded percentage won't equal
+        // the local one even on the same page, and Kavita's (page - 1) / total
+        // is a page behind (#7503). This device's own reports keep the 1%
+        // tolerance on top. A page of a copy with another page count names a
+        // different place, so there the percentages are compared.
+        const isOnRemotePage = remotePage === (localPageInfo?.current ?? 0) + 1;
+        const percentageDiffers =
+          Math.abs(localPercentage - remotePercentage) > conflictProgressDiffThreshold;
+        if (!hasRemotePage) {
+          showConflictDetails = !isOnRemotePage;
+        } else if (pagesMatch) {
+          showConflictDetails = !isOnRemotePage && (!isSameDevice || percentageDiffers);
+        } else {
+          showConflictDetails = percentageDiffers;
+        }
       } else {
         remotePreview = _('Approximately {{percentage}}%', {
           percentage: formatProgressPercentage(remotePercentage),

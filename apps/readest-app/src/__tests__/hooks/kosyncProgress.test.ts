@@ -82,6 +82,9 @@ describe('getRemoteTotalPages', () => {
 
   it('keeps the KOReader reading when neither reading matches the local total', () => {
     expect(getRemoteTotalPages(2, 0.09090909, 70)).toBe(22);
+    // The zero-based reading (16, or 0) is closer to 11 but still no match.
+    expect(getRemoteTotalPages(5, 0.25, 11)).toBe(20);
+    expect(getRemoteTotalPages(1, 0.01, 11)).toBe(100);
   });
 
   it('returns undefined when the percentage is unusable', () => {

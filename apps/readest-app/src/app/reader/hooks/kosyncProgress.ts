@@ -78,7 +78,8 @@ export const getRemotePage = (remote: KoSyncProgress, totalPages: number): numbe
  * KOReader-compatible endpoint reports `percentage = (page - 1) / total`
  * (0-based, #7503): reading a Kavita report with the KOReader formula
  * doubles the total (2 / 0.09090909 = 22 for an 11-page PDF). Both readings
- * are tried and the one consistent with the local copy's total wins. With
+ * are tried; the zero-based one wins only when it matches the local copy's
+ * total (within a page) and is closer to it than the other. With
  * no local total to check against, or when neither reading matches it, the
  * KOReader reading stands — it is the long-standing behaviour for every
  * other server. Returns `undefined` when the percentage is unusable.
@@ -92,7 +93,8 @@ export const getRemoteTotalPages = (
   const fromOneBased = Math.round(remotePage / remotePercentage);
   if (localTotalPages <= 0) return fromOneBased;
   const fromZeroBased = Math.round((remotePage - 1) / remotePercentage);
-  return Math.abs(fromZeroBased - localTotalPages) < Math.abs(fromOneBased - localTotalPages)
+  const zeroBasedDiff = Math.abs(fromZeroBased - localTotalPages);
+  return zeroBasedDiff <= 1 && zeroBasedDiff < Math.abs(fromOneBased - localTotalPages)
     ? fromZeroBased
     : fromOneBased;
 };
