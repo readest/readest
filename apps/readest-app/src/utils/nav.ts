@@ -5,6 +5,7 @@ import { isPWA, isTauriAppPlatform, isWebAppPlatform } from '@/services/environm
 import { BOOK_IDS_SEPARATOR } from '@/services/constants';
 import { AppService } from '@/types/system';
 import { windowNeedsClientOutline } from '@/utils/window';
+import { transitionAway } from '@/utils/viewTransition';
 
 // Labels handed out whose windows are not created yet, so two overlapping
 // launches that read the same window list do not pick the same label.
@@ -149,8 +150,20 @@ export const navigateToProfile = (router: ReturnType<typeof useRouter>) => {
 export const navigateBackFromProfile = (
   router: ReturnType<typeof useRouter>,
   redirect: string | null | undefined,
+  readerBeneath = false,
 ) => {
   document.documentElement.setAttribute('data-nav-direction', 'back');
+  // Go back to a book still open beneath. Replacing /user with a second reader
+  // entry stranded the first: the Android back key closed the book and landed
+  // on it, stuck on a spinner (#7567). The slide waits for the book to show.
+  if (redirect && readerBeneath) {
+    void transitionAway(
+      async () => router.back(),
+      () => !!document.querySelector('foliate-view'),
+      'back',
+    );
+    return;
+  }
   // Browsers read a backslash as '/', so a redirect like '/\host' leaves the app.
   if (redirect?.startsWith('/') && !redirect.startsWith('//') && !redirect.includes('\\')) {
     router.replace(redirect);
