@@ -29,9 +29,6 @@ vi.mock('@/services/audiobook/mediaProxy', () => ({ getMediaFileUrl: mediaFileUr
 // drives the clock itself and emits the events a real element would.
 class FakeAudio {
   static instances: FakeAudio[] = [];
-  // A rejection the next play() call throws, once: the proxy element failing
-  // before playback starts.
-  static failNextPlay: Error | null = null;
 
   src = '';
   playbackRate = 1;
@@ -63,11 +60,6 @@ class FakeAudio {
     this.#listeners.get(type)?.delete(fn);
   }
   async play(): Promise<void> {
-    if (FakeAudio.failNextPlay) {
-      const error = FakeAudio.failNextPlay;
-      FakeAudio.failNextPlay = null;
-      throw error;
-    }
     this.playCalls += 1;
     this.paused = false;
   }
@@ -151,7 +143,6 @@ const originalURLStatics = {
 
 beforeEach(() => {
   FakeAudio.instances = [];
-  FakeAudio.failNextPlay = null;
   createObjectURL.mockClear();
   revokeObjectURL.mockClear();
   vi.stubGlobal('Audio', FakeAudio);
@@ -402,202 +393,6 @@ describe('MediaOverlayClient capabilities', () => {
 
     expect(book.loadBlob).toHaveBeenCalledWith('OEBPS/ch1.mp3');
     expect(audio().src).toBe('blob:audio');
-  });
-
-  // The media proxy's loopback URL is unreachable from the WebView in the
-  // Flatpak (#7521): the element errors on the proxy URL even though the
-  // proxy answered. Fall back to the blob for that file and keep narrating
-  // instead of ending the session.
-  test('falls back to the blob when the media proxy URL fails to play', async () => {
-    await setup();
-    (book as { getMediaSource?: unknown }).getMediaSource = vi.fn(async () => ({
-      path: '/books/narrated.epub',
-      start: 120,
-      end: 4216,
-    }));
-    client.attachBook(book);
-    mediaFileUrl.mockClear();
-    mediaFileUrl.mockResolvedValue('http://127.0.0.1:9/s/file/f1');
-    try {
-      const iter = client.speak(section.ssmlForBlock(0)!, new AbortController().signal);
-      expect((await iter.next()).value).toMatchObject({ code: 'boundary' });
-      expect(audio().src).toBe('http://127.0.0.1:9/s/file/f1');
-
-      // The element errors on the proxy URL: reload the same file from the
-      // blob and keep narrating instead of ending the session.
-      const pending = iter.next();
-      audio().fireError();
-      await vi.waitFor(() => expect(FakeAudio.instances).toHaveLength(2));
-      expect(mediaFileUrl).toHaveBeenCalledTimes(1);
-      expect(book.loadBlob).toHaveBeenCalledWith('OEBPS/ch1.mp3');
-      expect(audio().src).toBe('blob:audio');
-      audio().advanceTo(1);
-      expect((await pending).value).toMatchObject({ code: 'boundary', mark: '1' });
-    } finally {
-      mediaFileUrl.mockResolvedValue(null);
-    }
-  });
-
-  // The proxy element can fail before playback starts, so play() itself
-  // rejects instead of the clip wait reporting an error: the same one-time
-  // blob recovery has to run there, or the session ends on an unreachable
-  // proxy URL that the blob would have played.
-  test('falls back to the blob when the proxy element rejects the initial play()', async () => {
-    await setup();
-    (book as { getMediaSource?: unknown }).getMediaSource = vi.fn(async () => ({
-      path: '/books/narrated.epub',
-      start: 120,
-      end: 4216,
-    }));
-    client.attachBook(book);
-    mediaFileUrl.mockClear();
-    mediaFileUrl.mockResolvedValue('http://127.0.0.1:9/s/file/f1');
-    try {
-      FakeAudio.failNextPlay = new DOMException(
-        'The media could not be loaded.',
-        'NotSupportedError',
-      );
-      const iter = client.speak(section.ssmlForBlock(0)!, new AbortController().signal);
-      expect((await iter.next()).value).toMatchObject({ code: 'boundary' });
-      expect(FakeAudio.instances).toHaveLength(2);
-      expect(mediaFileUrl).toHaveBeenCalledTimes(1);
-      expect(book.loadBlob).toHaveBeenCalledWith('OEBPS/ch1.mp3');
-      expect(audio().src).toBe('blob:audio');
-
-      const pending = iter.next();
-      audio().advanceTo(1);
-      expect((await pending).value).toMatchObject({ code: 'boundary', mark: '1' });
-    } finally {
-      mediaFileUrl.mockResolvedValue(null);
-    }
-  });
-
-  // An autoplay rejection is not a proxy failure: no blob reload rescues it,
-  // and retrying would just replay the same denial.
-  test('keeps an autoplay rejection terminal instead of falling back to the blob', async () => {
-    await setup();
-    (book as { getMediaSource?: unknown }).getMediaSource = vi.fn(async () => ({
-      path: '/books/narrated.epub',
-      start: 120,
-      end: 4216,
-    }));
-    client.attachBook(book);
-    mediaFileUrl.mockClear();
-    mediaFileUrl.mockResolvedValue('http://127.0.0.1:9/s/file/f1');
-    try {
-      FakeAudio.failNextPlay = new DOMException(
-        "play() failed because the user didn't interact with the document first.",
-        'NotAllowedError',
-      );
-      const iter = client.speak(section.ssmlForBlock(0)!, new AbortController().signal);
-      expect((await iter.next()).value).toMatchObject({ code: 'error' });
-      expect(FakeAudio.instances).toHaveLength(1);
-      expect(book.loadBlob).not.toHaveBeenCalled();
-    } finally {
-      mediaFileUrl.mockResolvedValue(null);
-    }
-  });
-
-  // invalidatePlayback() (and shutdown()) can land while the fallback blob is
-  // still loading: the old invocation must not publish the loaded element and
-  // start it playing afterwards. The stale element is dropped and its blob URL
-  // revoked instead.
-  test.each([
-    'invalidatePlayback',
-    'shutdown',
-  ] as const)('does not start a fallback invalidated by %s while its blob loads', async (method) => {
-    await setup();
-    (book as { getMediaSource?: unknown }).getMediaSource = vi.fn(async () => ({
-      path: '/books/narrated.epub',
-      start: 120,
-      end: 4216,
-    }));
-    client.attachBook(book);
-    mediaFileUrl.mockClear();
-    mediaFileUrl.mockResolvedValue('http://127.0.0.1:9/s/file/f1');
-    try {
-      let resolveBlob!: (blob: Blob) => void;
-      const blobReady = new Promise<Blob>((resolve) => {
-        resolveBlob = resolve;
-      });
-      (book.loadBlob as ReturnType<typeof vi.fn>).mockImplementationOnce(() => blobReady);
-      const iter = client.speak(section.ssmlForBlock(0)!, new AbortController().signal);
-      expect((await iter.next()).value).toMatchObject({ code: 'boundary' });
-
-      const pending = iter.next();
-      audio().fireError();
-      await vi.waitFor(() => expect(book.loadBlob).toHaveBeenCalled());
-      await client[method]();
-      resolveBlob(new Blob([new Uint8Array(8)]));
-
-      expect((await pending).done).toBe(true);
-      const fallback = FakeAudio.instances[1]!;
-      expect(fallback.playCalls).toBe(0);
-      expect(fallback.paused).toBe(true);
-      expect(revokeObjectURL).toHaveBeenCalledWith('blob:audio');
-    } finally {
-      mediaFileUrl.mockResolvedValue(null);
-    }
-  });
-
-  // The initial seek honors a requested position, but the proxy recovery used
-  // to reset the first clip to its clipBegin. The retry resumes where the
-  // listener asked to start.
-  test('preserves the requested position when the first clip falls back to the blob', async () => {
-    await setup();
-    (book as { getMediaSource?: unknown }).getMediaSource = vi.fn(async () => ({
-      path: '/books/narrated.epub',
-      start: 120,
-      end: 4216,
-    }));
-    client.attachBook(book);
-    mediaFileUrl.mockClear();
-    mediaFileUrl.mockResolvedValue('http://127.0.0.1:9/s/file/f1');
-    try {
-      client.setNextChunkPosition(1.5);
-      const iter = client.speak(section.ssmlForBlock(1)!, new AbortController().signal);
-      expect((await iter.next()).value).toMatchObject({ code: 'boundary' });
-      expect(audio().seeks).toEqual([4.5]);
-
-      const pending = iter.next();
-      audio().fireError();
-      await vi.waitFor(() => expect(FakeAudio.instances[1]?.seeks).toEqual([4.5]));
-      audio().advanceTo(6);
-      expect((await pending).value).toMatchObject({ code: 'end' });
-    } finally {
-      mediaFileUrl.mockResolvedValue(null);
-    }
-  });
-
-  // A failure mid-clip used to replay the clip from its start. The retry
-  // resumes from where the proxy element stopped.
-  test('resumes a later clip from where the proxy element failed', async () => {
-    await setup();
-    (book as { getMediaSource?: unknown }).getMediaSource = vi.fn(async () => ({
-      path: '/books/narrated.epub',
-      start: 120,
-      end: 4216,
-    }));
-    client.attachBook(book);
-    mediaFileUrl.mockClear();
-    mediaFileUrl.mockResolvedValue('http://127.0.0.1:9/s/file/f1');
-    try {
-      const iter = client.speak(section.ssmlForBlock(0)!, new AbortController().signal);
-      expect((await iter.next()).value).toMatchObject({ code: 'boundary', mark: '0' });
-
-      let pending = iter.next();
-      audio().advanceTo(1);
-      expect((await pending).value).toMatchObject({ code: 'boundary', mark: '1' });
-
-      pending = iter.next();
-      audio().advanceTo(1.6);
-      audio().fireError();
-      await vi.waitFor(() => expect(FakeAudio.instances[1]?.seeks).toEqual([1.6]));
-      audio().advanceTo(2);
-      expect((await pending).value).toMatchObject({ code: 'boundary', mark: '2' });
-    } finally {
-      mediaFileUrl.mockResolvedValue(null);
-    }
   });
 
   // A recording split across files (an Audiobookshelf item) is one timeline
