@@ -198,9 +198,14 @@ const TTSPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset }
 
   const handleCustomTtsColorsChange = (colors: string[]) => {
     setCustomTtsHighlightColors(colors);
-    settings.globalReadSettings.customTtsHighlightColors = colors;
-    setSettings(settings);
-    saveSettings(envConfig, settings);
+    const { settings: current } = useSettingsStore.getState();
+    // Account sync publishes when the settings reference changes.
+    const next = {
+      ...current,
+      globalReadSettings: { ...current.globalReadSettings, customTtsHighlightColors: colors },
+    };
+    setSettings(next);
+    void saveSettings(envConfig, next);
   };
 
   const handleMediaMetadataChange = (event: React.ChangeEvent<HTMLSelectElement>) => {

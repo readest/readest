@@ -104,31 +104,33 @@ describe('ThemePanel image rows (#7292)', () => {
   });
 });
 
-it('publishes each highlight settings edit to store subscribers (#7490)', () => {
-  const initial = initSettings();
-  const { saveSettings } = useSettingsStore.getState();
-  const onSettingsChange = vi.fn();
-  const unsubscribe = useSettingsStore.subscribe((state, previous) => {
-    if (state.settings.globalReadSettings !== previous.settings.globalReadSettings) {
-      onSettingsChange(state.settings);
+describe('ThemePanel highlight palette sync (#7490)', () => {
+  it('publishes each highlight settings edit to store subscribers (#7490)', () => {
+    const initial = initSettings();
+    const { saveSettings } = useSettingsStore.getState();
+    const onSettingsChange = vi.fn();
+    const unsubscribe = useSettingsStore.subscribe((state, previous) => {
+      if (state.settings.globalReadSettings !== previous.settings.globalReadSettings) {
+        onSettingsChange(state.settings);
+      }
+    });
+
+    try {
+      render(<ThemePanel bookKey='' onRegisterReset={vi.fn()} />);
+      onSettingsChange.mockClear();
+      fireEvent.click(screen.getByRole('button', { name: 'Update palette' }));
+
+      expect(onSettingsChange).toHaveBeenCalledTimes(3);
+      const current = useSettingsStore.getState().settings;
+      expect(current.globalReadSettings).toEqual({
+        customHighlightColors: { ...HIGHLIGHT_COLOR_HEX, red: '#123456' },
+        userHighlightColors: [{ hex: '#abcdef' }],
+        defaultHighlightLabels: { red: 'Important' },
+      });
+      expect(initial.globalReadSettings).toEqual({ customHighlightColors: HIGHLIGHT_COLOR_HEX });
+      expect(saveSettings).toHaveBeenLastCalledWith(expect.anything(), current);
+    } finally {
+      unsubscribe();
     }
   });
-
-  try {
-    render(<ThemePanel bookKey='' onRegisterReset={vi.fn()} />);
-    onSettingsChange.mockClear();
-    fireEvent.click(screen.getByRole('button', { name: 'Update palette' }));
-
-    expect(onSettingsChange).toHaveBeenCalledTimes(3);
-    const current = useSettingsStore.getState().settings;
-    expect(current.globalReadSettings).toEqual({
-      customHighlightColors: { ...HIGHLIGHT_COLOR_HEX, red: '#123456' },
-      userHighlightColors: [{ hex: '#abcdef' }],
-      defaultHighlightLabels: { red: 'Important' },
-    });
-    expect(initial.globalReadSettings).toEqual({ customHighlightColors: HIGHLIGHT_COLOR_HEX });
-    expect(saveSettings).toHaveBeenLastCalledWith(expect.anything(), current);
-  } finally {
-    unsubscribe();
-  }
 });
