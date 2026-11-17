@@ -31,17 +31,7 @@ test.describe('Annotation', () => {
         await reader.dismissPopup();
         // Let the previous popup's close settle before reopening the highlight.
         await reader.page.waitForTimeout(600);
-        const highlight = reader.foliateView.locator('svg g path').first();
-        await highlight.evaluate((node) => {
-          const path = node as SVGPathElement;
-          const box = path.getBBox();
-          const doc = path.ownerSVGElement?.parentElement?.querySelector('iframe')?.contentDocument;
-          doc
-            ?.elementFromPoint(box.x + 4, box.y + 4)
-            ?.dispatchEvent(
-              new MouseEvent('click', { clientX: box.x + 4, clientY: box.y + 4, bubbles: true }),
-            );
-        });
+        await reader.clickHighlight();
       }
       await expect(reader.annotationPopup).toBeVisible();
       if (popup === 'existing highlight') {

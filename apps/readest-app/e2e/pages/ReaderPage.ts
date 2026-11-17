@@ -518,8 +518,10 @@ export class ReaderPage extends BasePage {
       const box = path.getBBox();
       const doc = path.ownerSVGElement?.parentElement?.querySelector('iframe')?.contentDocument;
       if (!doc) throw new Error('highlight overlay has no section document');
-      doc.dispatchEvent(
-        new MouseEvent('click', { clientX: box.x + 4, clientY: box.y + 4, bubbles: true }),
+      // Dispatch on the text there: the reader's click handlers expect an element target.
+      const [x, y] = [box.x + 4, box.y + 4];
+      (doc.elementFromPoint(x, y) ?? doc).dispatchEvent(
+        new MouseEvent('click', { clientX: x, clientY: y, bubbles: true }),
       );
     });
   }

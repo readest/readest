@@ -47,7 +47,7 @@ import {
   getImageViewerGesture,
   releaseImageHoldClick,
   setImageHoldClick,
-  suppressSelectionDismissClick,
+  markSelectionDismissClick,
 } from '../utils/iframeEventHandlers';
 
 // Instant-highlight quick action: on touch a plain tap and a swipe are both
@@ -1181,14 +1181,13 @@ export const useTextSelector = (
       // The press cleared the selection and its selectionchange was deferred
       // to this release. On a blank PDF page, pdf.js can move `.endOfContent`
       // under the pointer and Chromium sends no click (#6958). When a click
-      // does follow, consume it before it reaches the reader's page-turn zones.
+      // does follow, it must not also turn the page.
       // Text extraction from the last release may still be pending; drop it.
       selectionPublicationId.current++;
       handleDismissPopup();
       isTextSelected.current = false;
-      isPopuped.current = false;
       isUpToPopup.current = false;
-      if (ev.button === 0) suppressSelectionDismissClick(doc);
+      if (ev.button === 0) markSelectionDismissClick(doc);
     }
 
     if (osPlatform === 'android' && appService?.isAndroidApp) {
