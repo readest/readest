@@ -1,7 +1,28 @@
 import type { Book } from '@/types/book';
+import type { DatabaseService } from '@/types/database';
 import type { AppService } from '@/types/system';
 
-const openOPDSDb = (appService: AppService) => appService.openDatabase('opds', 'opds.db', 'Data');
+// One connection at a time. On web opds.db is a single OPFS file with one
+// exclusive access handle, and auto-download looks up and records sources for
+// several books at once, so overlapping opens failed with "database is
+// locked" or raced a fresh file into "short read on page 1" (#7489).
+let queue: Promise<unknown> = Promise.resolve();
+
+const withOPDSDb = <T>(
+  appService: AppService,
+  fn: (db: DatabaseService) => Promise<T>,
+): Promise<T> => {
+  const run = queue.then(async () => {
+    const db = await appService.openDatabase('opds', 'opds.db', 'Data');
+    try {
+      return await fn(db);
+    } finally {
+      await db.close();
+    }
+  });
+  queue = run.catch(() => {});
+  return run;
+};
 
 export const upsertOPDSSourceMapping = async (
   appService: AppService,
@@ -9,9 +30,8 @@ export const upsertOPDSSourceMapping = async (
 ): Promise<void> => {
   if (!input.catalogId || !input.sourceUrl || !input.bookHash) return;
 
-  const db = await openOPDSDb(appService);
-  try {
-    await db.execute(
+  await withOPDSDb(appService, (db) =>
+    db.execute(
       `
         INSERT INTO opds_source_mappings (catalog_id, source_url, book_hash)
         VALUES (?, ?, ?)
@@ -19,10 +39,8 @@ export const upsertOPDSSourceMapping = async (
         DO UPDATE SET book_hash = excluded.book_hash
       `,
       [input.catalogId, input.sourceUrl, input.bookHash],
-    );
-  } finally {
-    await db.close();
-  }
+    ),
+  );
 };
 
 export const findBookByOPDSSources = async (
@@ -32,9 +50,8 @@ export const findBookByOPDSSources = async (
   const sourceUrls = Array.from(new Set(input.sourceUrls.filter(Boolean)));
   if (!input.catalogId || sourceUrls.length === 0 || input.library.length === 0) return null;
 
-  const db = await openOPDSDb(appService);
-  try {
-    const rows = await db.select<{ book_hash: string }>(
+  const rows = await withOPDSDb(appService, (db) =>
+    db.select<{ book_hash: string }>(
       `
         SELECT book_hash
         FROM opds_source_mappings
@@ -42,13 +59,11 @@ export const findBookByOPDSSources = async (
           AND source_url IN (${sourceUrls.map(() => '?').join(', ')})
       `,
       [input.catalogId, ...sourceUrls],
-    );
-    return (
-      rows
-        .map((row) => input.library.find((book) => book.hash === row.book_hash && !book.deletedAt))
-        .find(Boolean) ?? null
-    );
-  } finally {
-    await db.close();
-  }
+    ),
+  );
+  return (
+    rows
+      .map((row) => input.library.find((book) => book.hash === row.book_hash && !book.deletedAt))
+      .find(Boolean) ?? null
+  );
 };
