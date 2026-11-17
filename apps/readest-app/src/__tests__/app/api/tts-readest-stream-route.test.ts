@@ -375,6 +375,34 @@ describe('streaming', () => {
     });
   });
 
+  it('reads the service stream to its end after the done line', async () => {
+    // Pulled only when read: the service's call returning it completes once
+    // the stream is read to its end, and is cut off with this request if not.
+    const encoder = new TextEncoder();
+    const items = [{ id: 's0', audio: 'AAA', boundaries: B }, { done: true }];
+    let readToEnd = false;
+    const stream = new ReadableStream<Uint8Array>(
+      {
+        pull(controller) {
+          const item = items.shift();
+          if (item) {
+            controller.enqueue(encoder.encode(`${JSON.stringify(item)}\n`));
+          } else {
+            readToEnd = true;
+            controller.close();
+          }
+        },
+      },
+      { highWaterMark: 0 },
+    );
+    m.service.streamWindow.mockResolvedValueOnce({ ok: true, stream });
+    expect((await lines(await POST(post(listen(seg('s0')))))).at(-1)).toEqual({
+      done: true,
+      charged: 12,
+    });
+    expect(readToEnd).toBe(true);
+  });
+
   it('charges only what was delivered when the window fails mid-way', async () => {
     streams([
       { id: 's0', audio: 'AAA', boundaries: B },

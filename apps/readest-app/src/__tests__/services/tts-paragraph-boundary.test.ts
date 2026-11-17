@@ -1,4 +1,5 @@
 // @vitest-environment happy-dom
+import { setImmediate } from 'node:timers/promises';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 
 import type { TTSController } from '@/services/tts/TTSController';
@@ -179,18 +180,21 @@ describe('first sentences prepared ahead', () => {
         ctx = FakeAudioContext.instances.at(-1)!;
         decodeSec = DECODE_SEC;
       }
-      let preloaded = false;
+      let preload: Promise<void> | undefined;
       for (let step = 0; step < 2000 && !session.codes.includes('end'); step++) {
-        if (!preloaded && session.codes.length > 0) {
-          preloaded = true;
-          void (async () => {
+        if (!preload && session.codes.length > 0) {
+          preload = (async () => {
             for (const next of paragraphs.slice(p + 1, p + 5)) await run(next, true).done;
           })();
         }
+        // The fake provider and decoder complete through promises. Let them
+        // schedule audio before advancing the fake clock to the next tick.
+        await setImmediate();
         await ctx.advanceTo(ctx.currentTime + 0.05);
-        await flush();
       }
+      expect(session.codes, `paragraph ${p + 1} did not finish`).toContain('end');
       await session.done;
+      await preload;
     }
     const played = ctx!.sources
       .filter((s) => s.startedAt !== null && s.endedFired)
@@ -201,7 +205,7 @@ describe('first sentences prepared ahead', () => {
     }
     expect(played.length).toBe(16);
     expect(worst).toBeLessThanOrEqual(GAP_SEC + 0.01);
-  }, 60_000);
+  });
 
   test('preload finishes without waiting for the first sentence to be prepared', async () => {
     await makeClient();

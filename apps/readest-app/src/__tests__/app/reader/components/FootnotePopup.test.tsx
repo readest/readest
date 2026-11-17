@@ -24,7 +24,7 @@ type VocabularyMock = {
 const HREF = 'text/part0012.xhtml#appendix-c';
 
 const hoisted = vi.hoisted(() => ({
-  handlers: [] as EventTarget[],
+  handlers: [] as (EventTarget & { handle: ReturnType<typeof vi.fn> })[],
   onLinkClick: { current: null as ((event: Event) => void) | null },
   goTo: vi.fn(),
   showTransientHighlight: vi.fn(),
@@ -692,6 +692,45 @@ describe('FootnotePopup jump to location', () => {
       await block(null);
 
       expect(screen.getByTestId('popup').dataset['anchorY']).toBe('110');
+    });
+  });
+
+  describe('FootnotePopup follow flag on footnote class links', () => {
+    beforeEach(() => {
+      document.body.replaceChildren();
+      hoisted.handlers.length = 0;
+      hoisted.onLinkClick.current = null;
+    });
+
+    it.each([
+      'footnote-ref',
+      'noteref',
+      'duokan-footnote',
+      'footnote-link',
+      'footnote',
+    ])('sets detail.follow = true for links with class %s', async (cls) => {
+      await renderPopup();
+      const anchor = document.createElement('a');
+      anchor.setAttribute('href', HREF);
+      anchor.classList.add(cls);
+      document.body.appendChild(anchor);
+
+      const event = new CustomEvent('link', {
+        detail: { a: anchor, href: HREF },
+        cancelable: true,
+      });
+
+      await act(async () => {
+        hoisted.onLinkClick.current?.(event);
+      });
+
+      const handler = hoisted.handlers.at(-1)!;
+      expect(handler.handle).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          detail: expect.objectContaining({ follow: true }),
+        }),
+      );
     });
   });
 });
