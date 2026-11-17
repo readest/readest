@@ -151,6 +151,9 @@ describe('ReaderContent closing the last book while Read Aloud is live', () => {
     sessionSpy = vi.spyOn(ttsSessionManager, 'getActiveSession');
     setLiveSession(true);
     useLibraryStore.getState().setLibrary([book]);
+    // A reader window never mounted the library, so its launch-only restores
+    // (open-with files, last open books) are still armed.
+    useLibraryStore.setState({ checkOpenWithBooks: true, checkLastOpenBooks: true });
     useBookDataStore.setState({
       booksData: {
         h1: {
@@ -191,6 +194,12 @@ describe('ReaderContent closing the last book while Read Aloud is live', () => {
     });
   };
 
+  // Left armed, the library's first mount would reopen the book just closed.
+  const expectLaunchRestoresDisarmed = () => {
+    expect(useLibraryStore.getState().checkOpenWithBooks).toBe(false);
+    expect(useLibraryStore.getState().checkLastOpenBooks).toBe(false);
+  };
+
   test('a reader window stays open on the library', async () => {
     await closeBook('h1-k1');
 
@@ -198,6 +207,7 @@ describe('ReaderContent closing the last book while Read Aloud is live', () => {
     expect(dispatchSpy).not.toHaveBeenCalledWith('tts-stop', expect.anything());
     expect(h.closeWindow).not.toHaveBeenCalled();
     expect(h.navigateToLibrary).toHaveBeenCalled();
+    expectLaunchRestoresDisarmed();
   });
 
   test('a reader window with no session closes as before', async () => {
@@ -227,6 +237,7 @@ describe('ReaderContent closing the last book while Read Aloud is live', () => {
     expect(h.closeWindow).not.toHaveBeenCalled();
     expect(h.ensureMainLibraryWindow).not.toHaveBeenCalled();
     expect(h.navigateToLibrary).toHaveBeenCalled();
+    expectLaunchRestoresDisarmed();
   });
 
   test('Go to Library in a reader window with no session closes it as before', async () => {

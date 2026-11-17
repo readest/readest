@@ -319,6 +319,11 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
   };
 
   const navigateBackToLibrary = () => {
+    // A reader window never mounted the library, so its launch-only restores
+    // are still armed and would reopen the book just closed.
+    const { setCheckOpenWithBooks, setCheckLastOpenBooks } = useLibraryStore.getState();
+    setCheckOpenWithBooks(false);
+    setCheckLastOpenBooks(false);
     navigateToLibrary(router, '', undefined, true);
   };
 
