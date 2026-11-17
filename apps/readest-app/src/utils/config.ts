@@ -1,4 +1,19 @@
 import { ViewSettings } from '@/types/book';
+import { getOSPlatform } from '@/utils/misc';
+
+/**
+ * Whether a near-square window trims the reader's max inline size. The 0.8
+ * factor is for unfolded foldables, tablets and split screen, where a
+ * full-width column is too wide to read. A desktop window is one the user
+ * sized, so the setting is kept verbatim there (#7510). iPadOS reports a
+ * desktop ("Macintosh") user agent; touch points give it away.
+ */
+const trimsNearSquareScreen = () => {
+  if (typeof navigator === 'undefined') return false;
+  const os = getOSPlatform();
+  if (os === 'macos') return navigator.maxTouchPoints > 1;
+  return os !== 'windows' && os !== 'linux';
+};
 
 export const getMaxInlineSize = (viewSettings: ViewSettings) => {
   const isVertical = viewSettings.vertical;
@@ -6,7 +21,11 @@ export const getMaxInlineSize = (viewSettings: ViewSettings) => {
   const screenHeight = window.innerHeight;
 
   const screenAspectRatio = isVertical ? screenHeight / screenWidth : screenWidth / screenHeight;
-  const isUnfoldedScreen = screenAspectRatio < 1.3 && screenAspectRatio > 0.77 && screenWidth > 600;
+  const isUnfoldedScreen =
+    trimsNearSquareScreen() &&
+    screenAspectRatio < 1.3 &&
+    screenAspectRatio > 0.77 &&
+    screenWidth > 600;
 
   return isVertical
     ? Math.max(screenWidth, screenHeight, 720, viewSettings.maxInlineSize)

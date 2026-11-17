@@ -1,7 +1,8 @@
 /**
- * Footnote popup placement against the cell's safe area, which only iPhone Duo
- * uses (#6307). Points stay relative to the cell's origin, because that is
- * what the popup renders against; every other device gets the raw cell rect.
+ * Footnote popup placement against the cell's safe area (#6307, #7389).
+ * Points stay relative to the cell's origin, because that is what the popup
+ * renders against, while clamping to the cell's safe-area insets on both
+ * iPhone Duo and standard phones.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { act, render } from '@testing-library/react';
@@ -154,17 +155,17 @@ beforeEach(() => {
 });
 
 describe('FootnotePopup safe-area clamp', () => {
-  it('off the Duo positions against the raw cell rect, whatever the insets', async () => {
+  it('off the Duo also clamps to the inset rect and translates back to cell coordinates (#7389)', async () => {
     await renderPopup({ top: 59, right: 0, bottom: 34, left: 0 });
     await tapFootnoteLink();
     expect(hoisted.positionRects.at(-1)).toMatchObject({
       left: 0,
-      top: 0,
+      top: 59,
       right: CELL.width,
-      bottom: CELL.height,
+      bottom: CELL.height - 34,
     });
-    expect(hoisted.popupProps.current.trianglePosition?.point).toEqual({ x: 100, y: 100 });
-    expect(hoisted.popupProps.current.position?.point).toEqual({ x: 10, y: 10 });
+    expect(hoisted.popupProps.current.trianglePosition?.point).toEqual({ x: 100, y: 159 });
+    expect(hoisted.popupProps.current.position?.point).toEqual({ x: 10, y: 69 });
   });
 
   it('on the Duo clamps to the inset rect and translates back to cell coordinates', async () => {

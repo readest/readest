@@ -518,6 +518,13 @@ export async function isSyncKeychainAvailable(): Promise<SyncKeychainAvailableRe
 export interface SetSecureItemRequest {
   key: string;
   value: string;
+  /**
+   * iOS-only: store with ThisDeviceOnly accessibility so the item does not
+   * migrate with the app container to another device (#7558). Ignored on
+   * other platforms; existing callers omit it and keep the default
+   * migratable storage.
+   */
+  deviceBound?: boolean;
 }
 
 export interface GetSecureItemRequest {

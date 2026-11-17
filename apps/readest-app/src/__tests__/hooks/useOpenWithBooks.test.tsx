@@ -63,6 +63,26 @@ describe('useOpenWithBooks iOS file URL ingress', () => {
   });
 });
 
+describe('useOpenWithBooks non-iOS file URL ingress', () => {
+  // #7553: same reserved-character decode as parseOpenWithFiles, on the live
+  // `app-incoming-url` path (useOpenWithBooks.normalizeUrls).
+  test('decodes a percent-encoded semicolon in the filename', async () => {
+    h.appService.isIOSApp = false;
+    try {
+      const uri = 'file:///Users/x/Anne_Carson%3B.epub';
+      renderHook(() => useOpenWithBooks());
+      act(() => {
+        eventDispatcher.dispatch('app-incoming-url', { urls: [uri] });
+      });
+      await waitFor(() => expect(h.navigateToLibrary).toHaveBeenCalledTimes(1));
+      expect(window.OPEN_WITH_FILES).toEqual(['/Users/x/Anne_Carson;.epub']);
+      expect(h.setCheckOpenWithBooks).toHaveBeenCalledWith(true);
+    } finally {
+      h.appService.isIOSApp = true;
+    }
+  });
+});
+
 describe('useOpenWithBooks subscriptions', () => {
   // The reader page calls this hook; the library changes on every page turn (the book's progress)
   test('a library change does not re-render the component using it', () => {

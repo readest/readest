@@ -66,6 +66,7 @@ export const BACKUP_SETTINGS_BLACKLIST = [
   'replicaDeviceId',
   'kosync.deviceId',
   'bookorbit.deviceId',
+  'deviceAnchor',
   // Sync cursors — stale values make sync skip pulls or re-push everything.
   'lastSyncedAtBooks',
   'lastSyncedAtConfigs',

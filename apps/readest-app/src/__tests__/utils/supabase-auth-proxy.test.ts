@@ -33,6 +33,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  vi.useRealTimers();
   vi.unstubAllGlobals();
   vi.unstubAllEnvs();
 });
@@ -54,6 +55,48 @@ describe('Readest Cloud auth routing (#6416)', () => {
 
     await supabase.auth.refreshSession();
 
+    expect(requestedUrls()).toEqual([`${PROXY_URL}/auth/v1/token?grant_type=refresh_token`]);
+  });
+
+  // A network that blocks the proxy host must not stop the session refreshing
+  // (#7538): the refresh then goes to the Supabase host, as before the proxy.
+  it('refreshes on the Supabase host when the proxy cannot be reached', async () => {
+    const supabase = await loadClient(CLOUD_URL);
+    await supabase.auth.signInWithPassword({ email: 'a@b.c', password: 'pw' });
+    fetchMock.mockClear();
+    fetchMock.mockImplementation(async (input) => {
+      if (new URL(String(input)).origin === PROXY_URL) throw new TypeError('Failed to fetch');
+      return new Response(JSON.stringify({ ...session, access_token: 'access-2' }), {
+        status: 200,
+      });
+    });
+
+    // Fake timers run out the SDK's retries if the refresh keeps failing.
+    vi.useFakeTimers();
+    const refresh = supabase.auth.refreshSession();
+    await vi.advanceTimersByTimeAsync(35_000);
+    const { data, error } = await refresh;
+    vi.useRealTimers();
+
+    expect(error).toBeNull();
+    expect(data.session?.access_token).toBe('access-2');
+    expect(requestedUrls()).toEqual([
+      `${PROXY_URL}/auth/v1/token?grant_type=refresh_token`,
+      `${CLOUD_URL}/auth/v1/token?grant_type=refresh_token`,
+    ]);
+  });
+
+  it('keeps the proxy answer when the proxy can be reached', async () => {
+    const supabase = await loadClient(CLOUD_URL);
+    await supabase.auth.signInWithPassword({ email: 'a@b.c', password: 'pw' });
+    fetchMock.mockClear();
+    fetchMock.mockImplementation(async () =>
+      Response.json({ code: 'refresh_token_not_found', message: 'Invalid' }, { status: 400 }),
+    );
+
+    const { error } = await supabase.auth.refreshSession();
+
+    expect(error?.status).toBe(400);
     expect(requestedUrls()).toEqual([`${PROXY_URL}/auth/v1/token?grant_type=refresh_token`]);
   });
 

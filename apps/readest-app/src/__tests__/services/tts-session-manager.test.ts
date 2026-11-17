@@ -266,7 +266,7 @@ describe('TTSSessionManager', () => {
     expect(manager.getStopAtChapterEnd()).toBe(true);
   });
 
-  test('headless persistence writes through setConfig and flushes to disk on stop', async () => {
+  test('headless persistence moves the reading location with the voice and flushes to disk on stop', async () => {
     vi.useFakeTimers();
     claim();
     manager.detach('hashA');
@@ -274,6 +274,7 @@ describe('TTSSessionManager', () => {
     expect(setConfig).toHaveBeenCalledWith(
       'hashA-r1',
       expect.objectContaining({
+        location: 'epubcfi(/6/8!/4/2)',
         viewSettings: expect.objectContaining({ ttsLocation: 'epubcfi(/6/8!/4/2)' }),
       }),
     );
@@ -286,6 +287,18 @@ describe('TTSSessionManager', () => {
     claim();
     controller.emitMark('epubcfi(/6/8!/4/4)');
     expect(setConfig).not.toHaveBeenCalled();
+  });
+
+  test('an attached view in a backgrounded app moves the reading location and saves it', () => {
+    vi.stubGlobal('document', { visibilityState: 'hidden' });
+    claim();
+    controller.emitMark('epubcfi(/6/8!/4/6)');
+    expect(setConfig).toHaveBeenCalledWith(
+      'hashA-r1',
+      expect.objectContaining({ location: 'epubcfi(/6/8!/4/6)' }),
+    );
+    expect(saveConfig).toHaveBeenCalled();
+    vi.unstubAllGlobals();
   });
 
   test('release clears the slot without shutting the controller down', () => {

@@ -965,3 +965,33 @@ describe('ProgressBar — battery percentage follows a custom footer color (#679
     expect(statusInfoProps?.['inheritTextColor']).toBe(false);
   });
 });
+
+describe('ProgressBar vertical safe-area top (#7389)', () => {
+  it('anchors the vertical progress bar below gridInsets.top plus 1.5x margin', () => {
+    currentViewSettings = { ...baseSettings, vertical: true } as ViewSettings;
+    const { container } = render(
+      <ProgressBar
+        bookKey='book-1'
+        horizontalGap={0}
+        contentInsets={{ top: 75, right: 0, bottom: 0, left: 0 }}
+        gridInsets={{ top: 59, right: 0, bottom: 0, left: 0 }}
+      />,
+    );
+    const bar = container.querySelector('.progressinfo') as HTMLElement;
+    expect(bar.style.top).toBe('83px');
+  });
+
+  it('keeps the 1.5x vertical margin when gridInsets.top is zero', () => {
+    currentViewSettings = { ...baseSettings, vertical: true } as ViewSettings;
+    const { container } = render(
+      <ProgressBar
+        bookKey='book-1'
+        horizontalGap={0}
+        contentInsets={{ top: 16, right: 0, bottom: 0, left: 0 }}
+        gridInsets={{ top: 0, right: 0, bottom: 0, left: 0 }}
+      />,
+    );
+    const bar = container.querySelector('.progressinfo') as HTMLElement;
+    expect(bar.style.top).toBe('24px');
+  });
+});

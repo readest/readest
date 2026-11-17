@@ -11,7 +11,7 @@ import {
 import { getPopupPosition, getPosition } from '@/utils/sel';
 import type { Rect } from '@/utils/sel';
 
-// Devices whose behaviour must not change (#6307): everything but iPhone Duo.
+// Every device but iPhone Duo (#6307).
 const iPhonePortrait: Insets = { top: 59, right: 0, bottom: 34, left: 0 };
 const iPhoneLandscape: Insets = { top: 0, right: 62, bottom: 21, left: 62 };
 const iPad: Insets = { top: 0, right: 0, bottom: 0, left: 0 };
@@ -112,29 +112,29 @@ describe('getPageAreaInsets', () => {
 describe('getPopupBounds', () => {
   const cell: Rect = { left: 0, top: 0, right: 393, bottom: 852 };
 
+  // Every device, not only the Duo: a popup must not open under the Dynamic
+  // Island or a camera cutout either (#7389).
   it.each([
-    ['iPhone portrait', iPhonePortrait],
-    ['iPhone landscape', iPhoneLandscape],
-    ['iPad', iPad],
-    ['Android one-sided cutout', androidCutout],
-  ])('off the Duo is the raw cell rect with no origin shift for %s', (_name, insets) => {
-    const { rect, origin } = getPopupBounds(cell, insets, false);
-    expect(rect).toBe(cell);
-    expect(origin).toEqual({ x: 0, y: 0 });
+    ['iPhone portrait', iPhonePortrait, { left: 0, top: 59, right: 393, bottom: 818 }],
+    ['iPhone landscape', iPhoneLandscape, { left: 62, top: 0, right: 331, bottom: 831 }],
+    ['Android one-sided cutout', androidCutout, { left: 48, top: 24, right: 393, bottom: 852 }],
+    ['iPhone Duo inner display', duoInner, { left: 0, top: 0, right: 309, bottom: 818 }],
+  ])('shrinks the cell by the insets and shifts back by (left, top) for %s', (_name, insets, safe) => {
+    const { rect, origin } = getPopupBounds(cell, insets);
+    expect(rect).toEqual(safe);
+    expect(origin).toEqual({ x: insets.left, y: insets.top });
   });
 
-  it('on the Duo shrinks the cell by the insets and shifts back by (left, top)', () => {
-    const insets: Insets = { top: 59, right: 0, bottom: 34, left: 84 };
-    const { rect, origin } = getPopupBounds(cell, insets, true);
-    expect(rect).toEqual({ left: 84, top: 59, right: 393, bottom: 818 });
-    expect(origin).toEqual({ x: 84, y: 59 });
+  it('is the raw cell rect with no origin shift without insets (desktop, iPad)', () => {
+    const { rect, origin } = getPopupBounds(cell, iPad);
+    expect(rect).toEqual(cell);
+    expect(origin).toEqual({ x: 0, y: 0 });
   });
 
   it('never inverts when the insets exceed the cell', () => {
     const { rect } = getPopupBounds(
       { left: 0, top: 0, right: 100, bottom: 100 },
       { top: 0, right: 1000, bottom: 0, left: 0 },
-      true,
     );
     expect(rect.right).toBeGreaterThanOrEqual(rect.left);
   });
@@ -162,8 +162,8 @@ describe('popup coordinates stay relative to the cell origin', () => {
       [{ left: 180, right: 240, top: 100, bottom: 120 }] as unknown as DOMRectList;
     return el;
   };
-  const compute = (insets: Insets, isIPhoneDuo: boolean) => {
-    const { rect, origin } = getPopupBounds(cell, insets, isIPhoneDuo);
+  const compute = (insets: Insets) => {
+    const { rect, origin } = getPopupBounds(cell, insets);
     const triangle = getPosition(target(), rect, padding);
     const popup = getPopupPosition(triangle, rect, 200, 44, padding);
     return {
@@ -172,25 +172,20 @@ describe('popup coordinates stay relative to the cell origin', () => {
     };
   };
 
-  it('with Duo insets and a target well inside the safe area, equals the no-inset result', () => {
-    const none = compute({ top: 0, right: 0, bottom: 0, left: 0 }, true);
-    const duo = compute({ top: 59, right: 0, bottom: 0, left: 84 }, true);
-    expect(duo).toEqual(none);
+  it.each([
+    ['iPhone portrait', iPhonePortrait],
+    ['iPhone Duo', { top: 59, right: 0, bottom: 0, left: 84 }],
+  ])('with %s insets and a target well inside the safe area, equals the no-inset result', (_name, insets) => {
+    const none = compute({ top: 0, right: 0, bottom: 0, left: 0 });
+    expect(compute(insets)).toEqual(none);
   });
 
-  it('off the Duo, equals the raw-cell computation even with a 59px top inset', () => {
-    const raw = getPosition(target(), cell, padding);
-    const off = compute(iPhonePortrait, false);
-    expect(off.triangle).toEqual(raw);
-    expect(off.popup).toEqual(getPopupPosition(raw, cell, 200, 44, padding));
-  });
-
-  it('on the Duo, clamps a popup away from the status strip', () => {
+  it('clamps a popup away from a side status strip', () => {
     // Target near the left edge: the popup must clear the 84px strip.
     const nearEdge = document.createElement('span');
     nearEdge.getClientRects = () =>
       [{ left: 5, right: 25, top: 400, bottom: 420 }] as unknown as DOMRectList;
-    const { rect, origin } = getPopupBounds(cell, { top: 0, right: 0, bottom: 0, left: 84 }, true);
+    const { rect, origin } = getPopupBounds(cell, { top: 0, right: 0, bottom: 0, left: 84 });
     const popup = offsetPosition(
       getPopupPosition(getPosition(nearEdge, rect, padding), rect, 200, 44, padding),
       origin,
