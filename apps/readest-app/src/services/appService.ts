@@ -280,6 +280,7 @@ export abstract class BaseAppService implements AppService {
       isDesktopApp: this.isDesktopApp,
       isEink: this.isEink,
       isAppDataSandbox: this.isAppDataSandbox,
+      isIOSApp: this.isIOSApp,
     };
   }
 

@@ -29,6 +29,7 @@ import {
 import { DEFAULT_AI_SETTINGS } from './ai/constants';
 import { getTargetLang, isCJKEnv } from '@/utils/misc';
 import { safeLoadJSON, safeSaveJSON } from './persistence';
+import { ensureDeviceIdentity } from './deviceIdentity';
 
 export interface Context {
   fs: FileSystem;
@@ -36,6 +37,7 @@ export interface Context {
   isDesktopApp?: boolean;
   isEink: boolean;
   isAppDataSandbox: boolean;
+  isIOSApp?: boolean;
 }
 
 export function getDefaultViewSettings(ctx: Context): ViewSettings {
@@ -201,6 +203,11 @@ export async function loadSettings(ctx: Context): Promise<SystemSettings> {
 
   if (!settings.replicaDeviceId) {
     settings.replicaDeviceId = uuidv4();
+    await saveSettings(ctx.fs, settings);
+  }
+
+  // iOS device-to-device migration copies settings.json, sync IDs included (#7558).
+  if (ctx.isIOSApp && (await ensureDeviceIdentity(settings))) {
     await saveSettings(ctx.fs, settings);
   }
 

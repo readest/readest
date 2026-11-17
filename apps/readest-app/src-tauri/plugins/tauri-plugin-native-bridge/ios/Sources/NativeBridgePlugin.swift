@@ -1746,6 +1746,12 @@ class NativeBridgePlugin: Plugin {
       }
       var query = secureItemBaseQuery(args.key)
       query[kSecValueData as String] = data
+      if args.deviceBound == true {
+        // Device-bound items never migrate to another device (device-to-device
+        // transfer or restore), so their absence proves this app container
+        // moved to a new physical device (#7558).
+        query[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
+      }
       // Replace any existing entry. Delete-then-add keeps the
       // accessibility class consistent across SDK versions.
       SecItemDelete(query as CFDictionary)
@@ -2560,6 +2566,9 @@ class SyncPassphraseSetArgs: Decodable {
 class SecureItemSetArgs: Decodable {
   let key: String
   let value: String
+  // When true, store with ThisDeviceOnly accessibility so the item does
+  // not migrate with the app container to another device (#7558).
+  let deviceBound: Bool?
 }
 
 class SecureItemGetArgs: Decodable {
