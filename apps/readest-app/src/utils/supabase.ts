@@ -32,11 +32,19 @@ const isProxiedAuthRequest = ({ pathname, searchParams }: URL) =>
   (pathname === '/auth/v1/token' &&
     ['password', 'refresh_token'].includes(searchParams.get('grant_type') ?? ''));
 
-const proxyAuthFetch: typeof fetch = (input, init) => {
+// A network that can't reach the proxy host (a filter that blocks the new
+// domain) goes to the Supabase host instead, as before the proxy existed;
+// otherwise every refresh fails and the reader is signed out (#7538). Only a
+// failed connection falls back: an answer from the proxy is final.
+const proxyAuthFetch: typeof fetch = async (input, init) => {
   const url = new URL(input instanceof Request ? input.url : input);
-  return isProxiedAuthRequest(url)
-    ? fetch(`${AUTH_PROXY_URL}${url.pathname}${url.search}`, init)
-    : fetch(input, init);
+  if (!isProxiedAuthRequest(url)) return fetch(input, init);
+  try {
+    return await fetch(`${AUTH_PROXY_URL}${url.pathname}${url.search}`, init);
+  } catch (error) {
+    if (init?.signal?.aborted) throw error;
+    return fetch(input, init);
+  }
 };
 
 export const supabase = createClient(
