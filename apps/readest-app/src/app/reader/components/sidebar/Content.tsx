@@ -1,4 +1,5 @@
 import clsx from 'clsx';
+import dynamic from 'next/dynamic';
 import React, { useEffect, useRef, useState } from 'react';
 
 import { BookDoc } from '@/libs/document';
@@ -10,9 +11,11 @@ import { OverlayScrollbarsComponent } from 'overlayscrollbars-react';
 import 'overlayscrollbars/overlayscrollbars.css';
 
 import TOCView from './TOCView';
-import BooknoteView from './BooknoteView';
 import TabNavigation from './TabNavigation';
-import ChatHistoryView from './ChatHistoryView';
+
+// Tabs other than the contents load their code when first shown.
+const BooknoteView = dynamic(() => import('./BooknoteView'), { ssr: false });
+const ChatHistoryView = dynamic(() => import('./ChatHistoryView'), { ssr: false });
 
 const SidebarContent: React.FC<{
   bookDoc: BookDoc;

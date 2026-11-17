@@ -7,7 +7,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
  * the toolbars' always-on parts. The rest (the annotator, the footnote popup,
  * the ink layer, the page buttons and the hidden navigation bars) is built
  * once the first page has been painted: on an e-ink reader running QuickJS
- * (Readest Lite) building it with the page took ~0.8 s of a book open.
+ * (Readest Lite) building it with the page took ~0.8 s of a book open. Its
+ * code is loaded then too, so the reader doesn't evaluate it before the page.
  */
 
 const h = vi.hoisted(() => {
@@ -29,14 +30,19 @@ const h = vi.hoisted(() => {
     HeaderBar: false,
     FooterBar: false,
   };
+  // The modules whose code has been evaluated
+  const loaded = new Set<string>();
   const view = { renderer: { columnCount: 1 } };
-  const marker = (name: keyof typeof mounted) => ({
-    default: () => {
-      mounted[name] = true;
-      return null;
-    },
-  });
-  return { mounted, view, marker };
+  const marker = (name: keyof typeof mounted) => {
+    loaded.add(name);
+    return {
+      default: () => {
+        mounted[name] = true;
+        return null;
+      },
+    };
+  };
+  return { mounted, loaded, view, marker };
 });
 
 vi.mock('@/context/EnvContext', () => ({ useEnv: () => ({ appService: {} }) }));
@@ -139,7 +145,20 @@ describe('BooksGrid while a book opens', () => {
     for (const name of ON_FIRST_PAGE) expect(h.mounted[name], name).toBe(true);
   });
 
-  it('builds the rest once the first page has been painted', () => {
+  it('loads the code of the rest only once the first page has been painted', async () => {
+    renderGrid();
+    for (const name of AFTER_FIRST_PAGE) expect(h.loaded.has(name), name).toBe(false);
+
+    setInited(true);
+    act(() => vi.advanceTimersToNextFrame());
+    await act(async () => {
+      vi.runOnlyPendingTimers();
+      await vi.dynamicImportSettled();
+    });
+    for (const name of AFTER_FIRST_PAGE) expect(h.loaded.has(name), name).toBe(true);
+  });
+
+  it('builds the rest once the first page has been painted', async () => {
     renderGrid();
     for (const name of AFTER_FIRST_PAGE) expect(h.mounted[name], name).toBe(false);
 
@@ -147,14 +166,18 @@ describe('BooksGrid while a book opens', () => {
     setInited(true);
     act(() => vi.advanceTimersToNextFrame());
     for (const name of AFTER_FIRST_PAGE) expect(h.mounted[name], name).toBe(false);
-    act(() => vi.runOnlyPendingTimers());
+    await act(async () => {
+      vi.runOnlyPendingTimers();
+      await vi.dynamicImportSettled();
+    });
 
     for (const name of AFTER_FIRST_PAGE) expect(h.mounted[name], name).toBe(true);
   });
 
-  it('builds everything at once for a book whose first page is already shown', () => {
+  it('builds everything at once for a book whose first page is already shown', async () => {
     setInited(true);
     renderGrid();
+    await act(() => vi.dynamicImportSettled());
     for (const name of Object.keys(h.mounted)) {
       expect(h.mounted[name as keyof typeof h.mounted], name).toBe(true);
     }

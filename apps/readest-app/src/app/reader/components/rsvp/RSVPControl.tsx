@@ -1,5 +1,6 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import {
   useState,
   useRef,
@@ -33,8 +34,10 @@ import { BookNote, PageInfo } from '@/types/book';
 import { TOCItem } from '@/libs/document';
 import { Insets } from '@/types/misc';
 import { initJieba } from '@/utils/jieba';
-import RSVPOverlay from './RSVPOverlay';
-import RSVPStartDialog from './RSVPStartDialog';
+
+// Shown only while speed reading, so their code (the overlay brings the dictionary) loads then.
+const RSVPOverlay = dynamic(() => import('./RSVPOverlay'), { ssr: false });
+const RSVPStartDialog = dynamic(() => import('./RSVPStartDialog'), { ssr: false });
 
 interface RSVPControlProps {
   bookKey: string;
