@@ -373,24 +373,25 @@ describe('Vertical-rl pagination (browser)', () => {
 });
 
 // readest#7374: EBPAJ books pair vertical chapters with horizontal front matter
-// and colophons. A horizontal section preloaded beside a vertical primary must
-// be dropped before it fires 'load', or the reader takes its direction for the
-// book's and lays the vertical chapter out in two columns on a phone.
+// and colophons. A preload in the other writing mode must not stay beside the
+// primary, and must not fire 'load' when its mode is known before it: the
+// reader takes that event's direction for the book's and lays a vertical
+// chapter out in two columns on a phone.
 describe('Mixed-direction preloads (browser)', () => {
-  const blobSection = (html: string) => {
-    let url = '';
-    return {
-      load: async () => (url = URL.createObjectURL(new Blob([html], { type: 'text/html' }))),
-      unload: () => {
-        if (url) URL.revokeObjectURL(url);
-        url = '';
-      },
-    };
-  };
-  const section = (writingMode: string, text: string) =>
-    `<!doctype html><html><head><style>body { margin: 0; writing-mode: ${writingMode}; }</style></head><body><p>${text}</p></body></html>`;
+  const section = (style: string, text: string) =>
+    `<!doctype html><html><head><style>body { margin: 0; } ${style}</style></head><body><p>${text}</p></body></html>`;
+  const horizontal = (text: string) => section('', text);
+  const vertical = (text: string) => section('body { writing-mode: vertical-rl; }', text);
 
-  it('drops a horizontal section beside a vertical primary before it fires load', async () => {
+  // Opens the book at `index` and resolves once the preload of `neighbor` has
+  // settled: the paginator either dropped it (unloading its section) or kept
+  // it (creating its overlayer).
+  const openAt = async (
+    sections: string[],
+    index: number,
+    neighbor: number,
+    onLoad?: (doc: Document) => void,
+  ) => {
     await import('foliate-js/paginator.js');
     const el = document.createElement('foliate-paginator') as Renderer;
     Object.assign(el.style, {
@@ -404,25 +405,70 @@ describe('Mixed-direction preloads (browser)', () => {
     el.setAttribute('max-inline-size', '852px');
     document.body.appendChild(el);
     const loads: number[] = [];
-    el.addEventListener('load', (e) =>
-      loads.push((e as CustomEvent<{ index: number }>).detail.index),
+    el.addEventListener('load', (e) => {
+      const { doc, index } = (e as CustomEvent<{ doc: Document; index: number }>).detail;
+      loads.push(index);
+      onLoad?.(doc);
+    });
+    let settle = () => {};
+    const settled = new Promise<void>((resolve, reject) => {
+      const timer = setTimeout(
+        () => reject(new Error(`preload of ${neighbor} never settled`)),
+        10000,
+      );
+      settle = () => {
+        clearTimeout(timer);
+        resolve();
+      };
+    });
+    el.addEventListener('create-overlayer', (e) => {
+      if ((e as CustomEvent<{ index: number }>).detail.index === neighbor) settle();
+    });
+    el.open({
+      dir: 'rtl',
+      sections: sections.map((html, i) => {
+        let url = '';
+        return {
+          load: async () => (url = URL.createObjectURL(new Blob([html], { type: 'text/html' }))),
+          unload: () => {
+            if (url) URL.revokeObjectURL(url);
+            url = '';
+            if (i === neighbor) settle();
+          },
+        };
+      }),
+    } as unknown as BookDoc);
+    await el.goTo({ index });
+    await settled;
+    return { el, loads };
+  };
+
+  it('drops a horizontal section beside a vertical primary before it fires load', async () => {
+    const { el, loads } = await openAt(
+      [horizontal('前付'), vertical('短い本文一段落。'), horizontal('奥付')],
+      1,
+      2,
     );
     try {
-      el.open({
-        dir: 'rtl',
-        sections: [
-          blobSection(section('horizontal-tb', '前付')),
-          blobSection(section('vertical-rl', '短い本文一段落。')),
-          blobSection(section('horizontal-tb', '奥付')),
-        ],
-      } as unknown as BookDoc);
-      const stabilized = waitForStabilized(el);
-      await el.goTo({ index: 1 });
-      await stabilized;
-      await wait(500);
-
       expect(loads).toEqual([1]);
       expect(el.getContents().map((c) => c.index)).toEqual([1]);
+    } finally {
+      el.destroy();
+      el.remove();
+    }
+  });
+
+  it('drops a preload that a load listener turns vertical beside a horizontal primary', async () => {
+    // Readest's load handler repairs namespaced attributes, which a book's
+    // [epub|type] selectors may match; here a class stands in for that.
+    const { el } = await openAt(
+      [horizontal('前付'), section('html.prepared body { writing-mode: vertical-rl; }', '本文')],
+      0,
+      1,
+      (doc) => doc.documentElement.classList.add('prepared'),
+    );
+    try {
+      expect(el.getContents().map((c) => c.index)).toEqual([0]);
     } finally {
       el.destroy();
       el.remove();
