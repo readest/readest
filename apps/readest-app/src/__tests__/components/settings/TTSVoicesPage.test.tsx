@@ -85,6 +85,7 @@ const renderPage = (props: Partial<React.ComponentProps<typeof TTSVoicesPage>> =
       bookKey={null}
       onBack={vi.fn()}
       onDefaultChange={onDefaultChange}
+      onLeave={vi.fn()}
       {...props}
     />,
   );

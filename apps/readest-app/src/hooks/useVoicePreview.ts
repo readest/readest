@@ -20,8 +20,12 @@ const previewKey = (group: TTSVoicesGroup, voice: TTSVoice) => `${group.engine}\
 // One preview at a time: starting another, or tapping the playing one, stops
 // it, and so does leaving the list. A reading session playing at the time is
 // stopped first; `pausedReading` says whether a preview did that since reading
-// last played (the caller clears it with `clearPausedReading`).
-export const useVoicePreview = (getText: (voice: TTSVoice) => { text: string; lang: string }) => {
+// last played (the caller clears it with `clearPausedReading`). `onLeave` runs
+// just before a preview leaves for sign-in instead of playing.
+export const useVoicePreview = (
+  getText: (voice: TTSVoice) => { text: string; lang: string },
+  onLeave?: () => void,
+) => {
   const _ = useTranslation();
   const router = useAppRouter();
   const { user } = useAuth();
@@ -44,6 +48,7 @@ export const useVoicePreview = (getText: (voice: TTSVoice) => { text: string; la
     if (wasActive || !group.engine) return;
     // Readest Voice previews are synthesized for the reader's account.
     if (group.engine === READEST_TTS_ENGINE && !user) {
+      onLeave?.();
       navigateToLogin(router);
       return;
     }
