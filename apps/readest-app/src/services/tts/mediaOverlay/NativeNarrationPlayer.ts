@@ -200,21 +200,32 @@ export class NativeNarrationPlayer {
     ) {
       return;
     }
-    this.#loopRequest = want;
     if (!this.#nativeSession) {
+      // Nothing to send it to: no request is outstanding, so the next call
+      // for the same span still goes through.
       this.#loop = null;
+      this.#loopRequest = null;
       return;
     }
-    await this.#nativeSession;
-    if (!want) {
-      this.#loop = null;
-      await invoke('plugin:native-tts|playout_control', { payload: { action: 'clear-loop' } });
-      return;
+    this.#loopRequest = want;
+    try {
+      await this.#nativeSession;
+      if (!want) {
+        // The confirmed span stays until Android has dropped it: a failed
+        // clear leaves it repeating there.
+        await invoke('plugin:native-tts|playout_control', { payload: { action: 'clear-loop' } });
+        if (this.#loopRequest === want) this.#loop = null;
+        return;
+      }
+      const res = await invoke<{ armed?: boolean }>('plugin:native-tts|playout_control', {
+        payload: { action: 'set-loop', loopStartMs: want.begin * 1000, loopEndMs: want.end * 1000 },
+      });
+      if (this.#loopRequest === want) this.#loop = res?.armed ? want : null;
+    } catch (e) {
+      // Back to what Android is known to hold, so the next call retries.
+      if (this.#loopRequest === want) this.#loopRequest = this.#loop;
+      throw e;
     }
-    const res = await invoke<{ armed?: boolean }>('plugin:native-tts|playout_control', {
-      payload: { action: 'set-loop', loopStartMs: want.begin * 1000, loopEndMs: want.end * 1000 },
-    });
-    if (this.#loopRequest === want) this.#loop = res?.armed ? want : null;
   }
 
   #forgetLoop(): void {

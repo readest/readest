@@ -163,6 +163,72 @@ describe('MediaOverlayClient A-B repeat on Android', () => {
     expect(controlCalls.filter((call) => call['action'] === 'seek')).toHaveLength(seeksBefore);
   });
 
+  test('an explicit return to A still seeks while the playhead is inside the span', async () => {
+    await setup();
+    // B is sounding (6s) when the listener picks A: the controller aborts B.
+    const playingB = new AbortController();
+    const b = client.speak(section.ssmlForBlock(1)!, playingB.signal);
+    await b.next();
+    const bEnd = b.next();
+    positionMs = 6000;
+    await settle(300);
+    playingB.abort();
+    await bEnd;
+
+    const seeksBefore = controlCalls.filter((call) => call['action'] === 'seek').length;
+    const a = client.speak(section.ssmlForBlock(0)!, new AbortController().signal);
+    await a.next();
+    const seeks = controlCalls.filter((call) => call['action'] === 'seek');
+    expect(seeks).toHaveLength(seeksBefore + 1);
+    expect(seeks.at(-1)).toMatchObject({ positionMs: 0 });
+  });
+
+  test('retries a set-loop that failed', async () => {
+    await setup();
+    let failSetLoop = true;
+    const base = vi.mocked(invoke).getMockImplementation()!;
+    vi.mocked(invoke).mockImplementation(async (command: string, args?: unknown) => {
+      const payload = (args as { payload?: Record<string, unknown> })?.payload ?? {};
+      if (payload['action'] === 'set-loop' && failSetLoop) {
+        controlCalls.push(payload);
+        throw new Error('plugin busy');
+      }
+      return base(command, args);
+    });
+    const utterance = client.speak(section.ssmlForBlock(1)!, new AbortController().signal);
+    await utterance.next();
+    failSetLoop = false;
+    await client.refreshLoop();
+
+    expect(controlCalls.filter((call) => call['action'] === 'set-loop')).toHaveLength(2);
+  });
+
+  test('retries a clear-loop that failed, keeping the span until it succeeds', async () => {
+    await setup();
+    const utterance = client.speak(section.ssmlForBlock(1)!, new AbortController().signal);
+    await utterance.next();
+    let failClear = true;
+    const base = vi.mocked(invoke).getMockImplementation()!;
+    vi.mocked(invoke).mockImplementation(async (command: string, args?: unknown) => {
+      const payload = (args as { payload?: Record<string, unknown> })?.payload ?? {};
+      if (payload['action'] === 'clear-loop' && failClear) {
+        controlCalls.push(payload);
+        throw new Error('plugin busy');
+      }
+      return base(command, args);
+    });
+    loopSpan = null;
+    await client.refreshLoop();
+    // Android may still be repeating: B's end still waits on its jump.
+    const end = utterance.next();
+    positionMs = 9200;
+    expect(await settlesWithin(end, 400)).toBe(false);
+
+    failClear = false;
+    await client.refreshLoop();
+    expect(controlCalls.filter((call) => call['action'] === 'clear-loop')).toHaveLength(2);
+  });
+
   test('falls back to the clock if the native player never jumps', async () => {
     await setup();
     const utterance = client.speak(section.ssmlForBlock(1)!, new AbortController().signal);

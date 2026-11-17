@@ -43,7 +43,9 @@ export const MEDIA_OVERLAY_VOICE_ID = 'media-overlay';
 // are throttled with the screen off.
 const CLOCK_POLL_MS = 50;
 
-type WaitOutcome = 'reached' | 'ended' | 'aborted' | 'error';
+// 'looped': the clip ended because the native player jumped back to the start
+// of the A-B span it repeats.
+type WaitOutcome = 'reached' | 'looped' | 'ended' | 'aborted' | 'error';
 
 // How far the playhead may sit from a clip's start and still count as "already
 // rolling into it" rather than needing a seek. Covers the few milliseconds that
@@ -179,6 +181,9 @@ export class MediaOverlayClient implements TTSClient {
   // played, its position is where the recording is, like a stalled cursor.
   #rolledInto: string | null = null;
   #nextChunkPosition: number | null = null;
+  // B just ended on a native jump back to A, so the controller's return to A
+  // must join the recording where it is rather than seek.
+  #loopedBack = false;
   #handoverTimer: ReturnType<typeof setTimeout> | null = null;
   #rate = 1;
   #lang = 'en';
@@ -493,8 +498,8 @@ export class MediaOverlayClient implements TTSClient {
         const loop = this.#nativeLoopFor(audio, href);
         if (loop && Math.abs(until - loop.end) < 1e-3) {
           const time = audio.currentTime;
-          if (player!.loopCount !== loopsAtStart) return finish('reached');
-          if (time < from - CLIP_CONTINUITY_TOLERANCE_SEC) return finish('reached');
+          if (player!.loopCount !== loopsAtStart) return finish('looped');
+          if (time < from - CLIP_CONTINUITY_TOLERANCE_SEC) return finish('looped');
           if (time >= until + NATIVE_LOOP_FALLBACK_SEC) return finish('reached');
           return;
         }
@@ -550,6 +555,8 @@ export class MediaOverlayClient implements TTSClient {
     }
 
     const runs = toRuns(pars);
+    const loopedBack = this.#loopedBack;
+    this.#loopedBack = false;
     const requestedStart = this.#nextChunkPosition;
     this.#nextChunkPosition = null;
     for (const [runIndex, run] of runs.entries()) {
@@ -619,6 +626,8 @@ export class MediaOverlayClient implements TTSClient {
       // WebView fell behind it. Seeking would restart the span mid-way.
       const loop = this.#nativeLoopFor(audio, run.audioHref);
       const loopingNatively =
+        runIndex === 0 &&
+        loopedBack &&
         !!loop &&
         Math.abs(first.clipBegin - loop.begin) < 1e-3 &&
         playhead >= loop.begin - CLIP_CONTINUITY_TOLERANCE_SEC &&
@@ -661,6 +670,7 @@ export class MediaOverlayClient implements TTSClient {
           run.audioHref,
           par.clipBegin,
         );
+        if (outcome === 'looped') this.#loopedBack = true;
         if (outcome === 'aborted') {
           audio.pause();
           return;

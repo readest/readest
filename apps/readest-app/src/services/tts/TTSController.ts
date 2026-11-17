@@ -50,7 +50,6 @@ import {
   MediaOverlayClient,
   MediaOverlaySection,
   MediaOverlayTTS,
-  type NarrationPar,
   MEDIA_OVERLAY_VOICE_ID,
 } from './mediaOverlay';
 import {
@@ -2107,18 +2106,28 @@ export class TTSController extends EventTarget {
     if (cached && cached.a === a && cached.b === b && cached.section === section) {
       return cached.span;
     }
-    let first: NarrationPar | undefined;
-    let last: NarrationPar | undefined;
-    for (const par of section.pars) {
-      const cfi = this.#cfiOf(par.range);
-      if (!first && cfi === a.cfi) first = par;
-      if (!last && cfi === b.cfi) last = par;
-      if (first && last) break;
+    const pars = section.pars;
+    let from = -1;
+    let to = -1;
+    for (let i = 0; i < pars.length && (from < 0 || to < 0); i++) {
+      const cfi = this.#cfiOf(pars[i]!.range);
+      if (from < 0 && cfi === a.cfi) from = i;
+      if (to < 0 && cfi === b.cfi) to = i;
     }
-    const span =
-      first && last && first.audioHref === last.audioHref && first.clipBegin < last.clipEnd
-        ? { audioHref: first.audioHref, clipBegin: first.clipBegin, clipEnd: last.clipEnd }
-        : null;
+    const first = pars[from];
+    const last = pars[to];
+    let span: NarrationLoopSpan | null = null;
+    // One stretch of one file: every clip from A to B in that file, so a
+    // clip of another file in between is never skipped.
+    if (
+      first &&
+      last &&
+      from <= to &&
+      first.clipBegin < last.clipEnd &&
+      pars.slice(from, to + 1).every((par) => par.audioHref === first.audioHref)
+    ) {
+      span = { audioHref: first.audioHref, clipBegin: first.clipBegin, clipEnd: last.clipEnd };
+    }
     this.#narrationLoop = { a, b, section, span };
     return span;
   }
