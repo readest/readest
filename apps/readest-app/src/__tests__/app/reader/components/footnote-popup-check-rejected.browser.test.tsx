@@ -78,6 +78,7 @@ vi.mock('@/styles/fonts', () => ({
 }));
 
 import FootnotePopup from '@/app/reader/components/FootnotePopup';
+import { eventDispatcher } from '@/utils/event';
 import { BookDoc } from '@/libs/document';
 
 // A bare numeric reference, which earns `check`, to a note whose body has more
@@ -197,6 +198,33 @@ describe('footnote rejected by check (#7537)', () => {
     await nextFrame();
     observer.disconnect();
     expect(states).not.toContain('true');
+    expect(popup.getAttribute('aria-hidden')).toBe('false');
+  });
+
+  test('a pending link that rejects leaves a data-attribute popup open', async () => {
+    render(<FootnotePopup bookKey='book-1' bookDoc={makeBook() as unknown as BookDoc} />);
+    const handler = h.handlers.at(-1)!;
+    let rejectFirst: (err: Error) => void = () => {};
+    vi.spyOn(handler, 'handle').mockImplementationOnce(
+      () =>
+        new Promise<void>((_, reject) => {
+          rejectFirst = reject;
+        }),
+    );
+
+    click(anchor, 'chapter.html#n1');
+    await act(async () => {
+      await eventDispatcher.dispatch('footnote-popup', {
+        bookKey: 'book-1',
+        element: anchor,
+        footnote: 'A note kept in a data attribute.',
+      });
+    });
+    const popup = document.querySelector<HTMLElement>('#popup-container')!;
+    await vi.waitFor(() => expect(popup.getAttribute('aria-hidden')).toBe('false'));
+
+    await act(async () => rejectFirst(new Error('Failed to locate footnote content')));
+    await nextFrame();
     expect(popup.getAttribute('aria-hidden')).toBe('false');
   });
 });

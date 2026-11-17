@@ -762,6 +762,8 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
     // This popup shows text synthesized from a data/alt attribute in the host
     // document: there is no book document behind it, so no CFI mapping.
     footnoteViewRef.current = null;
+    // This popup now owns the box: a pending link request must not close it.
+    linkRequestRef.current += 1;
     setSourceHref(null);
     stopTrackingPopupContentSize();
     resetPopupAnnotationState();
