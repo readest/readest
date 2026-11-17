@@ -132,6 +132,9 @@ class PlayoutControlArgs {
     // Byte window [start, end) of `path` to play as the whole track.
     var start: Long? = null
     var end: Long? = null
+    // set-loop: the A-B span, in ms of the file now playing.
+    var loopStartMs: Double? = null
+    var loopEndMs: Double? = null
 }
 
 @TauriPlugin(
@@ -145,6 +148,10 @@ class NativeTTSPlugin(private val activity: Activity) : Plugin(activity) {
         private const val TAG = "NativeTTSPlugin"
         private const val CHANNEL_NAME = "tts_events"
         private const val IDLE_TIMEOUT_MS = 30L * 60 * 1000 // 30 minutes
+        // Longest sleep between A-B repeat checks, and how close to a file's
+        // end the loop end is clamped so the file cannot play out first.
+        private const val LOOP_CHECK_MAX_MS = 200L
+        private const val LOOP_END_SLACK_MS = 40L
         var NOTIFICATION_TITLE = "Read Aloud"
         var NOTIFICATION_TEXT = "Ready to read aloud"
         var FOREGROUND_SERVICE_TITLE = "Read Aloud"
@@ -175,8 +182,50 @@ class NativeTTSPlugin(private val activity: Activity) : Plugin(activity) {
     // suspended under screen lock while this player keeps going, so the next
     // section's file is queued here and played without it (#7193).
     private val playoutLoadedKeys = mutableListOf<String>()
+    // A-B repeat inside one file, kept here rather than in JS: once the screen
+    // has been off for a few minutes the WebView's timers fire about once a
+    // minute, so the JS check for the end of B came far too late and playback
+    // read on past it. The loop belongs to the playlist item it was set on
+    // (by key), so it lies dormant while another file plays.
+    private var playoutLoopKey: String? = null
+    private var playoutLoopStartMs = 0L
+    private var playoutLoopEndMs = 0L
+    // Whether the playhead was last seen inside the span: only playing on
+    // out of it loops back, never a seek or load that lands past B.
+    private var playoutLoopInside = false
+    private val playoutLoopHandler = Handler(Looper.getMainLooper())
+    private val playoutLoopTick = object : Runnable {
+        override fun run() {
+            playoutLoopHandler.removeCallbacks(this)
+            // Idle while paused; onIsPlayingChanged starts it again.
+            if (playoutLoopKey == null || playoutPlayer?.isPlaying != true) return
+            playoutLoopHandler.postDelayed(this, checkPlayoutLoop())
+        }
+    }
     private val playoutListener = object : Player.Listener {
+        override fun onPositionDiscontinuity(
+            oldPosition: Player.PositionInfo,
+            newPosition: Player.PositionInfo,
+            reason: Int,
+        ) {
+            if (reason == Player.DISCONTINUITY_REASON_SEEK ||
+                reason == Player.DISCONTINUITY_REASON_SEEK_ADJUSTMENT) {
+                playoutLoopInside = insidePlayoutLoop(newPosition.mediaItemIndex, newPosition.positionMs)
+            }
+        }
+
+        override fun onIsPlayingChanged(isPlaying: Boolean) {
+            if (isPlaying && playoutLoopKey != null) playoutLoopTick.run()
+        }
+
         override fun onPlaybackStateChanged(playbackState: Int) {
+            // The loop end was the file's very end and the file got there
+            // between checks: back to A instead of ending.
+            if (playbackState == Player.STATE_ENDED && playoutCurrentIndex >= 0 &&
+                playoutLoopInside && playoutLoopItem(playoutCurrentIndex)) {
+                loopPlayoutBack(playoutCurrentIndex)
+                return
+            }
             if (playbackState == Player.STATE_ENDED && playoutCurrentIndex >= 0) {
                 Log.d(TAG, "Narration playlist ended at item $playoutCurrentIndex")
                 playoutEndedIndex = playoutCurrentIndex
@@ -190,6 +239,11 @@ class NativeTTSPlugin(private val activity: Activity) : Plugin(activity) {
             // the index themselves.
             if (reason != Player.MEDIA_ITEM_TRANSITION_REASON_AUTO || playoutCurrentIndex < 0) return
             val previous = playoutCurrentIndex
+            // Same as at STATE_ENDED, with a next file queued.
+            if (playoutLoopInside && playoutLoopItem(previous)) {
+                loopPlayoutBack(previous)
+                return
+            }
             playoutCurrentIndex = playoutPlayer?.currentMediaItemIndex ?: return
             Log.d(TAG, "Narration rolled from item $previous into item $playoutCurrentIndex")
             emitPlayoutEvent("item-ended", previous)
@@ -737,6 +791,17 @@ class NativeTTSPlugin(private val activity: Activity) : Plugin(activity) {
                         }
                         invoke.resolve(JSObject().apply { put("session", JSONObject.NULL) })
                     }
+                    "set-loop" -> {
+                        val armed = setPlayoutLoop(args.loopStartMs, args.loopEndMs)
+                        invoke.resolve(JSObject().apply {
+                            put("session", playoutSession)
+                            put("armed", armed)
+                        })
+                    }
+                    "clear-loop" -> {
+                        clearPlayoutLoop()
+                        invoke.resolve(JSObject().apply { put("session", JSONObject.NULL) })
+                    }
                     else -> invoke.reject("Unknown playout action: $action")
                 }
             } catch (e: Exception) {
@@ -850,7 +915,70 @@ class NativeTTSPlugin(private val activity: Activity) : Plugin(activity) {
         playoutLoadedKeys.add(next.key)
     }
 
+    // Loop [startMs, endMs) of the file now playing. Returns whether it is set.
+    private fun setPlayoutLoop(startMs: Double?, endMs: Double?): Boolean {
+        val player = playoutPlayer
+        val index = player?.currentMediaItemIndex ?: -1
+        val key = playoutLoadedKeys.getOrNull(index)
+        if (player == null || key == null || startMs == null || endMs == null || endMs <= startMs) {
+            clearPlayoutLoop()
+            return false
+        }
+        playoutLoopKey = key
+        playoutLoopStartMs = startMs.coerceAtLeast(0.0).toLong()
+        playoutLoopEndMs = endMs.toLong()
+        playoutLoopInside = insidePlayoutLoop(index, player.currentPosition)
+        Log.d(TAG, "A-B loop set on item $index: $playoutLoopStartMs-$playoutLoopEndMs ms")
+        playoutLoopTick.run()
+        return true
+    }
+
+    private fun clearPlayoutLoop() {
+        playoutLoopKey = null
+        playoutLoopHandler.removeCallbacks(playoutLoopTick)
+    }
+
+    private fun playoutLoopItem(index: Int): Boolean =
+        playoutLoopKey != null && playoutLoadedKeys.getOrNull(index) == playoutLoopKey
+
+    private fun insidePlayoutLoop(index: Int, positionMs: Long): Boolean =
+        playoutLoopItem(index) && positionMs >= playoutLoopStartMs - LOOP_END_SLACK_MS &&
+            positionMs < playoutLoopEndMs
+
+    // Jump back to A once the playhead reaches B's end. Returns how long to
+    // wait before looking again: until B's end is due, capped so a seek or a
+    // rate change is noticed soon.
+    private fun checkPlayoutLoop(): Long {
+        val player = playoutPlayer ?: return LOOP_CHECK_MAX_MS
+        val index = player.currentMediaItemIndex
+        if (!player.isPlaying || playoutCurrentIndex < 0 || !playoutLoopItem(index)) {
+            return LOOP_CHECK_MAX_MS
+        }
+        val duration = player.duration
+        val end = if (duration > 0) minOf(playoutLoopEndMs, duration - LOOP_END_SLACK_MS) else playoutLoopEndMs
+        val position = player.currentPosition
+        if (position >= end) {
+            if (playoutLoopInside) loopPlayoutBack(index)
+            return LOOP_CHECK_MAX_MS
+        }
+        playoutLoopInside = position >= playoutLoopStartMs - LOOP_END_SLACK_MS
+        if (!playoutLoopInside) return LOOP_CHECK_MAX_MS
+        val speed = player.playbackParameters.speed.coerceAtLeast(0.1f)
+        return ((end - position) / speed).toLong().coerceIn(5L, LOOP_CHECK_MAX_MS)
+    }
+
+    private fun loopPlayoutBack(index: Int) {
+        val player = playoutPlayer ?: return
+        player.seekTo(index, playoutLoopStartMs)
+        playoutLoopInside = true
+        playoutCurrentIndex = index
+        playoutEndedIndex = -1
+        if (!player.playWhenReady) player.play()
+        emitPlayoutEvent("loop", index)
+    }
+
     private fun abortPlayout() {
+        clearPlayoutLoop()
         playoutCurrentIndex = -1
         playoutEndedIndex = -1
         playoutPlayer?.stop()

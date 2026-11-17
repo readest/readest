@@ -50,6 +50,7 @@ import {
   MediaOverlayClient,
   MediaOverlaySection,
   MediaOverlayTTS,
+  type NarrationPar,
   MEDIA_OVERLAY_VOICE_ID,
 } from './mediaOverlay';
 import {
@@ -130,6 +131,8 @@ type TTSState =
 // A sentence position for A-B repeat. A CFI rather than a Range: the section's
 // document is replaced on re-attach and section changes.
 type TTSLoopPoint = { sectionIndex: number; cfi: string };
+// An A-B span as a stretch of one narration file, in seconds of that file.
+export type NarrationLoopSpan = { audioHref: string; clipBegin: number; clipEnd: number };
 export type TTSLoopState = 'off' | 'a' | 'ab';
 
 const HIGHLIGHT_KEY = 'tts-highlight';
@@ -191,6 +194,13 @@ export class TTSController extends EventTarget {
   pauseAfterSentence: boolean = false;
   #loopA: TTSLoopPoint | null = null;
   #loopB: TTSLoopPoint | null = null;
+  // The A-B span as narration clips, for the section it was resolved in.
+  #narrationLoop: {
+    a: TTSLoopPoint;
+    b: TTSLoopPoint;
+    section: MediaOverlaySection;
+    span: NarrationLoopSpan | null;
+  } | null = null;
   #paragraphGapSec: number = DEFAULT_PARAGRAPH_GAP_SEC;
   #nossmlCnt: number = 0;
   // Consecutive native-TTS utterances that ended in a terminal 'error' without
@@ -2061,6 +2071,7 @@ export class TTSController extends EventTarget {
     if (this.#loopB) {
       this.#loopA = this.#loopB = null;
       this.drawLoopRange();
+      void this.ttsMediaOverlayClient.refreshLoop();
       return 'off';
     }
     const range = this.#getTts()?.getLastRange();
@@ -2076,7 +2087,40 @@ export class TTSController extends EventTarget {
       this.#loopB = point;
     }
     this.drawLoopRange();
+    void this.ttsMediaOverlayClient.refreshLoop();
     return this.loopState;
+  }
+
+  // The A-B span as one stretch of a narration recording: from the start of
+  // A's clip to the end of B's, when both are clips of the same file in the
+  // section now narrated. The native Android player repeats such a span by
+  // itself, so it keeps repeating while the WebView is throttled.
+  getNarrationLoop(): NarrationLoopSpan | null {
+    const a = this.#loopA;
+    const b = this.#loopB;
+    const section = this.#mediaOverlaySection;
+    if (!a || !b || !section) return null;
+    if (a.sectionIndex !== this.#ttsSectionIndex || b.sectionIndex !== this.#ttsSectionIndex) {
+      return null;
+    }
+    const cached = this.#narrationLoop;
+    if (cached && cached.a === a && cached.b === b && cached.section === section) {
+      return cached.span;
+    }
+    let first: NarrationPar | undefined;
+    let last: NarrationPar | undefined;
+    for (const par of section.pars) {
+      const cfi = this.#cfiOf(par.range);
+      if (!first && cfi === a.cfi) first = par;
+      if (!last && cfi === b.cfi) last = par;
+      if (first && last) break;
+    }
+    const span =
+      first && last && first.audioHref === last.audioHref && first.clipBegin < last.clipEnd
+        ? { audioHref: first.audioHref, clipBegin: first.clipBegin, clipEnd: last.clipEnd }
+        : null;
+    this.#narrationLoop = { a, b, section, span };
+    return span;
   }
 
   // Tint the A-B span (just A while B is unset) in every live view, so the
