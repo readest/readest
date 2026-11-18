@@ -252,4 +252,18 @@ describe('reader relocation during an Auto Scroll wipe', () => {
     act(() => wipe.commitRef?.current?.());
     expect(linked.goTo).toHaveBeenCalledWith({ index: 2, anchor: 0.5 });
   });
+
+  // Closing mid-wipe ends the wipe after the viewer is gone; the page it
+  // held back was never reached.
+  it('does not move a linked book to the held page when the book closes', () => {
+    linked.keys = new Set(['test-book', 'linked-book']);
+    const { unmount } = render(<FoliateViewer {...props} />);
+    wipe.ahead = true;
+    rendererRelocate({ reason: 'page', index: 2, fraction: 0.5 });
+    unmount();
+
+    wipe.ahead = false;
+    wipe.commitRef?.current?.();
+    expect(linked.goTo).not.toHaveBeenCalled();
+  });
 });
