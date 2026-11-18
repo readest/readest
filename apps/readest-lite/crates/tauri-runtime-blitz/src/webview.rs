@@ -18,6 +18,7 @@
 use anyrender_cairo as cairo_scene;
 
 use crate::fonts;
+use blitz_qjs_script::eline;
 
 use std::{
     borrow::Cow,
@@ -293,7 +294,7 @@ impl BlitzWebview {
                     if let crate::display::Input::Pointer { x, y, down } = input
                         && std::env::var_os("BLITZ_TAURI_TRACE_LOOP").is_some()
                     {
-                        eprintln!(
+                        eline!(
                             "{{\"label\": \"input\", \"t_ms\": {:.1}, \"unix_ms\": {}, \"down\": {down}, \"x\": {x:.0}, \"y\": {y:.0}}}",
                             t_ms(),
                             unix_ms()
@@ -446,7 +447,7 @@ impl BlitzWebview {
                 )
             });
         self.report_js();
-        eprintln!(
+        eline!(
             "{{\"label\": \"navigate\", \"t_ms\": {:.1}, \"url\": \"{url}\", \"html_ms\": {html_ms:.1}, \"scripts_ms\": {scripts_ms:.1}, \"total_ms\": {:.1}}}",
             t_ms(),
             t.elapsed().as_secs_f64() * 1000.0
@@ -465,7 +466,7 @@ impl BlitzWebview {
         if std::env::var_os("BLITZ_TAURI_TRACE_FETCH").is_some() {
             let body = String::from_utf8_lossy(&res.body()[..res.body().len().min(160)])
                 .replace('\n', " ");
-            eprintln!("fetch #{id} -> {status} @{:.1} {body}", t_ms());
+            eline!("fetch #{id} -> {status} @{:.1} {body}", t_ms());
         }
         let headers: Vec<String> = res
             .headers()
@@ -591,7 +592,7 @@ impl BlitzWebview {
             let ok = [true, false]
                 .into_iter()
                 .all(|down| send_key(doc, name, down));
-            eprintln!(
+            eline!(
                 "{{\"label\": \"key\", \"t_ms\": {t0:.1}, \"unix_ms\": {}, \"handler_ms\": {:.1}, \"key\": \"{name}\", \"ok\": {ok}}}",
                 unix0,
                 t_ms() - t0
@@ -616,7 +617,7 @@ impl BlitzWebview {
                 }
             };
             let Some((x, y)) = point else {
-                eprintln!(
+                eline!(
                     "{{\"label\": \"tap\", \"target\": \"{target}\", \"error\": \"not found\"}}"
                 );
                 self.next_tap = None;
@@ -629,7 +630,7 @@ impl BlitzWebview {
             for down in [true, false] {
                 send_pointer(doc, &self.pointers, x, y, down);
             }
-            eprintln!(
+            eline!(
                 "{{\"label\": \"tap\", \"t_ms\": {t0:.1}, \"unix_ms\": {}, \"handler_ms\": {:.1}, \"target\": \"{target}\", \"x\": {x:.0}, \"y\": {y:.0}}}",
                 unix0,
                 t_ms() - t0
@@ -677,7 +678,7 @@ impl BlitzWebview {
         let end = t_ms();
         let (forced_ms, forced_n) = blitz_qjs_script::take_forced_layout();
         if std::env::var_os("BLITZ_TAURI_TRACE_LOOP").is_some() && end - t_start > 5.0 {
-            eprintln!(
+            eline!(
                 "{{\"label\": \"tick\", \"t_ms\": {t_start:.1}, \"net_ms\": {:.1}, \"poll_ms\": {:.1}, \"input_ms\": {:.1}, \"paint_ms\": {:.1}, \"forced_ms\": {forced_ms:.1}, \"forced_n\": {forced_n}, \"dirty\": {}}}",
                 t_net - t_start,
                 t_poll - t_net,
@@ -697,7 +698,7 @@ impl BlitzWebview {
         send_pointer(doc, &self.pointers, x / self.scale, y / self.scale, down);
         self.input = true;
         if std::env::var_os("BLITZ_TAURI_TRACE_LOOP").is_some() {
-            eprintln!(
+            eline!(
                 "{{\"label\": \"pointer\", \"t_ms\": {t0:.1}, \"handler_ms\": {:.1}, \"down\": {down}}}",
                 t_ms() - t0
             );
@@ -707,10 +708,10 @@ impl BlitzWebview {
     fn report_js(&mut self) {
         let Some(doc) = self.doc.as_mut() else { return };
         for e in doc.take_js_errors() {
-            eprintln!("js error [{}]: {e}", self.label);
+            eline!("js error [{}]: {e}", self.label);
         }
         for m in doc.take_messages() {
-            eprintln!("console [{}]: {m}", self.label);
+            eline!("console [{}]: {m}", self.label);
         }
     }
 
@@ -725,7 +726,7 @@ impl BlitzWebview {
             if !damaged {
                 self.dirty_since = None;
                 if std::env::var_os("BLITZ_TAURI_TRACE_LOOP").is_some() {
-                    eprintln!(
+                    eline!(
                         "{{\"label\": \"skip\", \"t_ms\": {:.1}, \"layout_ms\": {:.1}}}",
                         t_ms(),
                         t.elapsed().as_secs_f64() * 1000.0
@@ -768,7 +769,7 @@ impl BlitzWebview {
             (*w, *h) == (self.w, self.h) && crate::frame::same_pixels(last, &commands)
         }) {
             if std::env::var_os("BLITZ_TAURI_TRACE_LOOP").is_some() {
-                eprintln!(
+                eline!(
                     "{{\"label\": \"skip\", \"t_ms\": {:.1}, \"layout_ms\": {layout_ms:.1}, \"record_ms\": {record_ms:.1}, \"same\": true, \"cause\": \"{}\"}}",
                     t_ms(),
                     std::mem::take(&mut self.causes)
@@ -865,7 +866,7 @@ impl BlitzWebview {
         if std::env::var_os("BLITZ_TAURI_TRACE_LOOP").is_some() {
             heap += &format!(", \"cause\": \"{}\"", std::mem::take(&mut self.causes));
         }
-        eprintln!(
+        eline!(
             "{{\"label\": \"frame\", \"t_ms\": {:.1}, \"n\": {}, \"layout_ms\": {layout_ms:.1}, \"record_ms\": {record_ms:.1}, \"paint_ms\": {paint_ms:.1}, \"present_ms\": {present_ms:.1}, \"sent\": {sent}{heap}}}",
             t_ms(),
             self.frames,
@@ -1146,7 +1147,7 @@ fn install_ops<'js>(ctx: &Ctx<'js>, st: Rc<OpState>, page: &Url) {
         let parsed = Url::parse(&url).ok()?;
         // BLITZ_TAURI_TRACE_FETCH=1: each fetch (Tauri IPC included) and its answer on stderr.
         if std::env::var_os("BLITZ_TAURI_TRACE_FETCH").is_some() {
-            eprintln!("fetch #{id} {method} @{:.1} {url}", t_ms());
+            eline!("fetch #{id} {method} @{:.1} {url}", t_ms());
         }
         let Some(handler) = s.protocols.get(parsed.scheme()) else {
             return Some(format!(
@@ -1173,7 +1174,7 @@ fn install_ops<'js>(ctx: &Ctx<'js>, st: Rc<OpState>, page: &Url) {
             req,
             Box::new(move |response| {
                 if std::env::var_os("BLITZ_TAURI_TRACE_FETCH").is_some() {
-                    eprintln!(
+                    eline!(
                         "fetch #{id} responded @{:.1} on {:?}",
                         t_ms(),
                         std::thread::current().name()
