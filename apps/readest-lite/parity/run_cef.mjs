@@ -98,6 +98,8 @@ const startUrl = page.url();
 await page.goto('about:blank');
 await cdp.send('Storage.clearDataForOrigin', { origin: new URL(startUrl).origin, storageTypes: 'all' });
 for (const f of ['settings.json', 'settings.json.bak']) fs.rmSync(`${configDir}/${f}`, { force: true });
+// The scenario's saved settings (run_lite.py starts Readest Lite with the same).
+if (scenario.settings) fs.writeFileSync(`${configDir}/settings.json`, JSON.stringify(scenario.settings));
 fs.rmSync(`${out}/home/.local/share/com.bilingify.readest/Readest`, { recursive: true, force: true });
 await page.goto(startUrl);
 await page.waitForLoadState('load');

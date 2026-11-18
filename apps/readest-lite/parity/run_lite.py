@@ -64,6 +64,9 @@ env.update(HOME=home, BLITZ_TAURI_SIZE=f'{w * scale}x{h * scale}', BLITZ_TAURI_S
            BLITZ_TAURI_TAP_MS=str(scenario.get('step_ms', 3000)))
 if scenario.get('eink'):  # Readest's e-ink mode, as the Kindle launcher starts it
     env['READEST_LITE_EINK'] = '1'
+if scenario.get('settings'):  # saved settings the app starts with (Readest fills in the rest)
+    os.makedirs(f'{home}/.config/com.bilingify.readest-lite')
+    json.dump(scenario['settings'], open(f'{home}/.config/com.bilingify.readest-lite/settings.json', 'w'))
 if scenario.get('fonts'):  # the only fonts installed (run_cef.mjs gives Readest the same)
     env['BLITZ_FONTS'] = scenario['fonts']
 args = ['dbus-run-session', '--', binary] + ([scenario['book']] if scenario.get('book') else [])

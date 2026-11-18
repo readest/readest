@@ -1,0 +1,32 @@
+{
+  "name": "kindle-library-book",
+  "book": "/run/media/chrox/Backup/dev/kindle-cef/share/books/novel.epub",
+  "size": [536, 724],
+  "scale": 2,
+  "eink": true,
+  "fonts": "/run/media/chrox/Backup/dev/kindle-cef/share/fonts/latin",
+  "settings": { "autoImportBooksOnOpen": true },
+  "steps": [
+    "wait:15000",
+    "520,400",
+    "268,362",
+    "[aria-label=\"Close Book\"]",
+    "wait:5000",
+    "[aria-label=\"Import Books\"]",
+    "key:Escape",
+    "[aria-label=\"Show Book Details\"]",
+    "key:Escape",
+    "[aria-label=\"Settings Menu\"]",
+    "text:Advanced Settings",
+    "text:About Readest",
+    "key:Escape",
+    "[aria-label=\"Settings Menu\"]",
+    "text:Reading Statistics",
+    "key:Escape",
+    "[aria-label=\"View Menu\"]",
+    "text:Bookshelves",
+    "key:Escape",
+    "[aria-label=\"View Menu\"]",
+    "key:Escape"
+  ]
+}
