@@ -143,12 +143,12 @@ fn keys_reach_the_focused_iframes_document() {
     doc.take_messages();
     doc.handle_ui_event(key("ArrowRight", true));
     doc.handle_ui_event(key("ArrowRight", false));
-    // With nothing focused Blitz targets the root element (a browser targets the body).
+    // With nothing focused in the frame, its body, as in a browser.
     assert_eq!(
         logs(&mut doc),
         [
-            "keydown html true true true ArrowRight",
-            "keyup html true true true ArrowRight",
+            "keydown body true true true ArrowRight",
+            "keyup body true true true ArrowRight",
         ]
     );
 }

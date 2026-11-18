@@ -1039,10 +1039,45 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
 +fn to_bounding_rect(r: kurbo::Rect) -> BoundingRect {
 +    BoundingRect { x: r.x0, y: r.y0, width: r.width(), height: r.height() }
 +}
+diff -ruN blitz/packages/blitz-dom/src/events/driver.rs blitz/packages/blitz-dom/src/events/driver.rs
+--- blitz/packages/blitz-dom/src/events/driver.rs
++++ blitz/packages/blitz-dom/src/events/driver.rs
+@@ -227,10 +227,27 @@
+             UiEvent::Paste(_) => focussed_node_id,
+             UiEvent::AppleStandardKeybinding(_) => focussed_node_id,
+         };
+-        // Fall back to the root element. A document without a root element (e.g. an
+-        // empty iframe sub-document) has no event target, so there is nothing to do.
+-        let Some(target) = target.or_else(|| self.doc.inner().try_root_element().map(|el| el.id))
+-        else {
++        // Fall back to the root element, or for keys to the body as in browsers. A document
++        // without a root element (e.g. an empty iframe sub-document) has no event target, so
++        // there is nothing to do.
++        let is_key = matches!(
++            event,
++            UiEvent::KeyUp(_)
++                | UiEvent::KeyDown(_)
++                | UiEvent::Ime(_)
++                | UiEvent::Paste(_)
++                | UiEvent::AppleStandardKeybinding(_)
++        );
++        let Some(target) = target.or_else(|| {
++            let doc = self.doc.inner();
++            let root = doc.try_root_element()?;
++            let body = root.children.iter().copied().find(|&id| {
++                doc.nodes[id]
++                    .data
++                    .is_element_with_tag_name(&markup5ever::local_name!("body"))
++            });
++            Some(body.filter(|_| is_key).unwrap_or(root.id))
++        }) else {
+             return;
+         };
+ 
 diff -ruN blitz/packages/blitz-dom/src/events/pointer.rs blitz/packages/blitz-dom/src/events/pointer.rs
 --- blitz/packages/blitz-dom/src/events/pointer.rs
 +++ blitz/packages/blitz-dom/src/events/pointer.rs
-@@ -499,13 +499,17 @@
+@@ -499,13 +499,20 @@
      match click_target {
          ClickTarget::Disabled => (),
          ClickTarget::SelectableText => {
@@ -1059,10 +1094,55 @@ diff -ruN blitz/packages/blitz-dom/src/events/pointer.rs blitz/packages/blitz-do
 +            if had_selection {
 +                doc.shell_provider.request_redraw();
 +            }
++            if button == MouseEventButton::Main {
++                focus_on_press(doc, actual_target, dispatch_event);
++            }
          }
          ClickTarget::TextInput {
              content_box_offset,
-@@ -598,6 +602,14 @@
+@@ -553,6 +560,41 @@
+     }
+ }
+ 
++/// Whether a press focuses `node`: a focusable element, but not a sub-document's container (a
++/// press in a frame is the frame's).
++fn is_press_focusable(node: &crate::Node) -> bool {
++    node.is_focusable_area()
++        && node
++            .element_data()
++            .is_some_and(|el| el.sub_doc_data().is_none())
++}
++
++/// A press focuses the nearest focusable element at or above `target`, or leaves none focused
++/// (HTML's focusing steps, run on mousedown: before the click, whose handlers may move focus or
++/// hide what showed itself on focus). Keys then go to the focused element.
++fn focus_on_press(
++    doc: &mut BaseDocument,
++    target: NodeId,
++    dispatch_event: &mut dyn FnMut(DomEvent),
++) {
++    let mut id = Some(target);
++    while let Some(node_id) = id
++        && !is_press_focusable(&doc.nodes[node_id])
++    {
++        id = doc.nodes[node_id].parent;
++    }
++    generate_focus_events(
++        doc,
++        &mut |doc| match id {
++            Some(node_id) => {
++                doc.set_focus_to(node_id);
++            }
++            None => doc.clear_focus(),
++        },
++        dispatch_event,
++    );
++}
++
+ pub(crate) fn handle_pointerup<F: FnMut(DomEvent)>(
+     doc: &mut BaseDocument,
+     target: NodeId,
+@@ -598,6 +640,14 @@
          }
      }
  
@@ -1077,6 +1157,18 @@ diff -ruN blitz/packages/blitz-dom/src/events/pointer.rs blitz/packages/blitz-do
      // Dispatch a click event
      if do_click && event.button == MouseEventButton::Main {
          dispatch_event(DomEvent::new(target, DomEventData::Click(event.clone())));
+@@ -804,6 +854,11 @@
+                 _ => {}
+             }
+ 
++            // The press focused it (`focus_on_press`): keep it focused.
++            if is_press_focusable(&doc.nodes[node_id]) {
++                break 'matched true;
++            }
++
+             // No match. Recurse up to parent.
+             maybe_node_id = doc.nodes[node_id].parent;
+         }
 diff -ruN blitz/packages/blitz-dom/src/layout/columns.rs blitz/packages/blitz-dom/src/layout/columns.rs
 --- blitz/packages/blitz-dom/src/layout/columns.rs
 +++ blitz/packages/blitz-dom/src/layout/columns.rs
@@ -3061,7 +3153,26 @@ diff -ruN blitz/packages/blitz-dom/src/node/node.rs blitz/packages/blitz-dom/src
      pub fn is_or_contains_block(&self) -> bool {
          let style = self.primary_styles();
          let style = style.as_ref();
-@@ -1175,9 +1188,6 @@
+@@ -578,6 +591,18 @@
+             .unwrap_or(false)
+     }
+ 
++    /// Whether a click or `focus()` can focus the element: a focusable one, or one whose
++    /// negative `tabindex` keeps it out of the tab order only.
++    pub fn is_focusable_area(&self) -> bool {
++        self.is_focussable()
++            || self.element_data().is_some_and(|el| {
++                el.attr(local_name!("disabled")).is_none()
++                    && el
++                        .attr(local_name!("tabindex"))
++                        .is_some_and(|v| v.trim().parse::<i32>().is_ok())
++            })
++    }
++
+     pub fn set_restyle_hint(&mut self, hint: RestyleHint) {
+         if let Some(stylo_element_data) = self.try_stylo_element_data_mut() {
+             if let Some(mut element_data) = stylo_element_data.get_mut() {
+@@ -1175,9 +1200,6 @@
              if el.is_button_input() {
                  flags |= stylo_taffy::StyleFlags::IS_BUTTON_INPUT;
              }
@@ -3071,7 +3182,7 @@ diff -ruN blitz/packages/blitz-dom/src/node/node.rs blitz/packages/blitz-dom/src
          }
  
          #[cfg(feature = "writing-mode")]
-@@ -1421,6 +1431,66 @@
+@@ -1421,6 +1443,66 @@
          self.hit_inner(x, y, scale, &mut None)
      }
  
@@ -3138,7 +3249,7 @@ diff -ruN blitz/packages/blitz-dom/src/node/node.rs blitz/packages/blitz-dom/src
      /// [`hit`](Self::hit), also resolving the innermost overlay scrollbar
      /// thumb under the point into `scrollbar` during the same descent (so
      /// thumb hit-testing shares the exact coordinate handling — transforms
-@@ -1460,6 +1530,19 @@
+@@ -1460,6 +1542,19 @@
              y = (p.y / scale) as f32;
          }
  
@@ -3158,7 +3269,7 @@ diff -ruN blitz/packages/blitz-dom/src/node/node.rs blitz/packages/blitz-dom/src
          let size = self.final_layout().size;
          let matches_self = !(x < self.scroll_offset().x as f32
              || x > size.width + self.scroll_offset().x as f32
-@@ -1523,6 +1606,16 @@
+@@ -1523,6 +1618,16 @@
              return None;
          }
  
@@ -3175,7 +3286,7 @@ diff -ruN blitz/packages/blitz-dom/src/node/node.rs blitz/packages/blitz-dom/src
          // Descendants overwrite, so the innermost scroll container's thumb
          // wins. Thumb coords are border-box relative (unscrolled).
          if matches_self
-@@ -1567,7 +1660,9 @@
+@@ -1567,7 +1672,9 @@
          }
  
          // Call `.hit()` on each child in turn. If any return `Some` then return that value. Else return `Some(self.id).
@@ -3186,7 +3297,7 @@ diff -ruN blitz/packages/blitz-dom/src/node/node.rs blitz/packages/blitz-dom/src
              let Some(child) = self.tree().get(*child_id) else {
                  continue;
              };
-@@ -1613,7 +1708,7 @@
+@@ -1613,7 +1720,7 @@
          }
  
          // Inline children
@@ -3195,7 +3306,7 @@ diff -ruN blitz/packages/blitz-dom/src/node/node.rs blitz/packages/blitz-dom/src
              let x = x - content_box_offset.x;
              let y = y - content_box_offset.y;
              let element_data = &self.element_data().unwrap();
-@@ -1655,6 +1750,32 @@
+@@ -1655,6 +1762,32 @@
          None
      }
  
@@ -3228,7 +3339,7 @@ diff -ruN blitz/packages/blitz-dom/src/node/node.rs blitz/packages/blitz-dom/src
      /// Find the inline root ancestor of this node (or self if this is an inline root).
      /// Returns None if no inline root ancestor exists.
      pub fn inline_root_ancestor(&self) -> Option<&Node> {
-@@ -1787,103 +1908,24 @@
+@@ -1787,103 +1920,24 @@
      ///
      /// Returns `None` for nodes that have their own layout box.
      pub fn inline_fragment_boxes(&self) -> Option<impl Iterator<Item = taffy::Rect<f32>> + '_> {
@@ -3342,7 +3453,7 @@ diff -ruN blitz/packages/blitz-dom/src/node/node.rs blitz/packages/blitz-dom/src
      }
  
      /// CSSOM View's `offsetLeft`/`offsetTop`: the offset of this node's border box from the
-@@ -1962,6 +2004,15 @@
+@@ -1962,6 +2016,15 @@
  
      fn cssom_scroll_size(&self) -> taffy::Size<f32> {
          let layout = self.final_layout();
@@ -3358,7 +3469,7 @@ diff -ruN blitz/packages/blitz-dom/src/node/node.rs blitz/packages/blitz-dom/src
          if self.primary_styles().is_none() {
              return taffy::Size {
                  width: self.client_width() + layout.scroll_width(),
-@@ -2211,3 +2262,97 @@
+@@ -2211,3 +2274,97 @@
          );
      }
  }

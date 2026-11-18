@@ -595,6 +595,29 @@ pub(crate) fn install(ctx: &Ctx<'_>, shared: Rc<RefCell<Shared>>, base: Option<&
         .unwrap_or(false)
     });
     let d = docs.clone();
+    // Focus moves to node `h` if it can take focus (`focus()`), or off it (`blur()`).
+    op!("focus", move |h: f64, on: bool| {
+        d.with(h, |doc, n, _| {
+            if !on {
+                if doc.get_focussed_node_id() == Some(n) {
+                    doc.clear_focus();
+                }
+            } else if doc.get_node(n).is_some_and(|node| node.is_focusable_area()) {
+                doc.set_focus_to(n);
+            }
+        });
+    });
+    let d = docs.clone();
+    // The focused element of the document of `h`, if any.
+    op!("focused", move |h: f64| -> Option<f64> {
+        d.with(h, |doc, _, tag| {
+            let root = doc.try_root_element().map(|el| el.id);
+            let id = doc.get_focussed_node_id().filter(|&id| Some(id) != root)?;
+            Some(d.enc(tag, id))
+        })
+        .flatten()
+    });
+    let d = docs.clone();
     // The handles of node `h` and of the nodes under it that JS has reached.
     op!("subtree", move |h: f64| -> Vec<f64> {
         d.with(h, |doc, n, tag| {
