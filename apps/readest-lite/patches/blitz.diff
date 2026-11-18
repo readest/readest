@@ -2469,7 +2469,25 @@ diff -ruN blitz/packages/blitz-dom/src/layout/mod.rs blitz/packages/blitz-dom/sr
  pub(crate) mod table;
  pub(crate) mod text_transform;
  #[cfg(feature = "writing-mode")]
-@@ -194,6 +196,16 @@
+@@ -101,6 +103,9 @@
+     /// size, against which its percentage padding resolves (see `layout::writing_mode`).
+     #[cfg(feature = "writing-mode")]
+     pub(crate) orthogonal_percent_basis: Option<(crate::NodeId, f32)>,
++    /// The space each fieldset's rendered legend takes beyond its top border, by fieldset: added
++    /// to the fieldset's top padding for its block algorithm (`compute_fieldset_layout`).
++    legend_space: std::collections::HashMap<crate::NodeId, f32>,
+ }
+ 
+ impl<'doc> LayoutPassState<'doc> {
+@@ -138,6 +143,7 @@
+             current_align_axis_is_inline: false,
+             #[cfg(feature = "writing-mode")]
+             orthogonal_percent_basis: None,
++            legend_space: std::collections::HashMap::new(),
+         }
+     }
+ }
+@@ -194,6 +200,16 @@
          let mut output = self.dispatch_child_layout(node_id, inputs, block_ctx);
          if inputs.run_mode == RunMode::PerformLayout {
              compute_oof_layout(self, node_id, &mut output);
@@ -2486,17 +2504,161 @@ diff -ruN blitz/packages/blitz-dom/src/layout/mod.rs blitz/packages/blitz-dom/sr
          }
          output
      }
-@@ -213,8 +225,53 @@
-         }
+@@ -206,15 +222,198 @@
+         node: &'a Node,
+     ) -> stylo_taffy::TaffyStyloStyle<ComputedStyleRef<'a>> {
+         #[cfg(feature = "writing-mode")]
+-        {
++        let mut style = {
+             let mut style = node.layout_style_in(self.layout_wm);
+             style.align_axis_is_inline = self.current_align_axis_is_inline;
+             style
+-        }
++        };
          #[cfg(not(feature = "writing-mode"))]
-         {
--            node.layout_style()
++        let mut style = {
 +            let mut style = node.layout_style();
 +            if self.in_indefinite_height(node) {
 +                style.flags |= stylo_taffy::StyleFlags::INDEFINITE_CB_HEIGHT;
 +            }
 +            style
++        };
++        if node
++            .layout_parent
++            .get()
++            .is_some_and(|parent| self.nodes[parent].rendered_legend() == Some(node.id))
+         {
+-            node.layout_style()
++            style.flags |= stylo_taffy::StyleFlags::RENDERED_LEGEND;
 +        }
++        style
++    }
++
++    /// A fieldset with a rendered legend (HTML's fieldset rendering, as Chromium lays it out).
++    /// The legend is as wide as its content, up to the fieldset's content box, and sits at that
++    /// box's inline start: centred on the top border when the border is the thicker, at the top
++    /// otherwise. The fieldset's content starts below whichever is lower (the legend's bottom
++    /// margin included): Taffy lays the fieldset out as a block without the legend and with that
++    /// much more top padding.
++    fn compute_fieldset_layout(
++        &mut self,
++        node_id: NodeId,
++        legend: crate::NodeId,
++        inputs: taffy::tree::LayoutInput,
++    ) -> taffy::tree::LayoutOutput {
++        use style::computed_values::direction::T as Direction;
++        let fieldset = dom_node_id(node_id);
++        let parent_width = inputs.parent_size.width;
++        let (border, padding, margin, rtl) = {
++            let node = &self.nodes[fieldset];
++            let style = node.layout_style();
++            let rtl = node
++                .primary_styles()
++                .is_some_and(|s| s.clone_direction() == Direction::Rtl);
++            (
++                style
++                    .border()
++                    .resolve_or_zero(parent_width, resolve_calc_value),
++                style
++                    .padding()
++                    .resolve_or_zero(parent_width, resolve_calc_value),
++                style
++                    .margin()
++                    .resolve_or_zero(parent_width, resolve_calc_value),
++                rtl,
++            )
++        };
++        let content_width = inputs
++            .known_dimensions
++            .width
++            .or(inputs
++                .available_space
++                .width
++                .into_option()
++                .map(|w| w - margin.horizontal_axis_sum()))
++            .map(|w| (w - border.horizontal_axis_sum() - padding.horizontal_axis_sum()).max(0.0));
++        let (legend_border, legend_padding, legend_margin) = {
++            let style = self.nodes[legend].layout_style();
++            (
++                style
++                    .border()
++                    .resolve_or_zero(content_width, resolve_calc_value),
++                style
++                    .padding()
++                    .resolve_or_zero(content_width, resolve_calc_value),
++                style
++                    .margin()
++                    .resolve_or_zero(content_width, resolve_calc_value),
++            )
++        };
++        let legend_id = taffy_node_id(legend);
++        let parent_size = Size {
++            width: content_width,
++            height: None,
++        };
++        let available_width = content_width.map_or(inputs.available_space.width, |w| {
++            AvailableSpace::Definite((w - legend_margin.horizontal_axis_sum()).max(0.0))
++        });
++        let input = |run_mode, known_dimensions, available_space| taffy::LayoutInput {
++            known_dimensions,
++            known_dimensions_are_definite: Size {
++                width: true,
++                height: true,
++            },
++            parent_size,
++            available_space,
++            sizing_mode: taffy::SizingMode::InherentSize,
++            axis: taffy::RequestedAxis::Both,
++            run_mode,
++            vertical_margins_are_collapsible: Line::FALSE,
++        };
++        let available = Size {
++            width: available_width,
++            height: AvailableSpace::MaxContent,
++        };
++        let size = self
++            .compute_child_layout(
++                legend_id,
++                input(RunMode::ComputeSize, Size::NONE, available),
++            )
++            .size;
++        let border_top = border.top;
++        let space = if border_top >= size.height {
++            0.0
++        } else {
++            size.height + legend_margin.bottom - border_top
++        };
++        self.legend_space.insert(fieldset, space);
++        let output = compute_block_layout(self, node_id, inputs, None);
++        if inputs.run_mode == RunMode::PerformLayout {
++            let known = input(
++                RunMode::PerformLayout,
++                size.map(Some),
++                size.map(AvailableSpace::Definite),
++            );
++            let laid_out = self.compute_child_layout(legend_id, known);
++            let x = if rtl {
++                output.size.width - border.right - padding.right - legend_margin.right - size.width
++            } else {
++                border.left + padding.left + legend_margin.left
++            };
++            let y = (border_top - size.height).max(0.0) / 2.0;
++            let order = self.nodes[legend].unrounded_layout().order;
++            self.set_unrounded_layout(
++                legend_id,
++                &taffy::Layout {
++                    order,
++                    location: taffy::Point { x, y },
++                    size,
++                    scrollable_overflow_rect: laid_out.scrollable_overflow_rect,
++                    scrollbar_size: Size::ZERO,
++                    border: legend_border,
++                    padding: legend_padding,
++                    margin: legend_margin,
++                },
++            );
+         }
++        output
 +    }
 +
 +    /// Whether `node` is `position: relative` with a percentage `top` or `bottom` and its
@@ -2528,7 +2690,7 @@ diff -ruN blitz/packages/blitz-dom/src/layout/mod.rs blitz/packages/blitz-dom/sr
 +        let position = style.get_position();
 +        if !position.height.is_auto() {
 +            return true;
-         }
++        }
 +        if matches!(style.clone_position(), Position::Absolute | Position::Fixed) {
 +            return !position.top.is_auto() && !position.bottom.is_auto();
 +        }
@@ -2536,12 +2698,15 @@ diff -ruN blitz/packages/blitz-dom/src/layout/mod.rs blitz/packages/blitz-dom/sr
 +            return false;
 +        };
 +        parent.primary_styles().is_some_and(|parent_style| {
-+            matches!(parent_style.clone_display().inside(), DisplayInside::Flex | DisplayInside::Grid)
++            matches!(
++                parent_style.clone_display().inside(),
++                DisplayInside::Flex | DisplayInside::Grid
++            )
 +        }) && self.height_is_definite(parent)
      }
  
      fn dispatch_child_layout(
-@@ -240,6 +297,7 @@
+@@ -240,6 +439,7 @@
          });
          let font_size = font_styles.map(|s| s.0);
          let resolved_line_height = font_styles.map(|s| s.1);
@@ -2549,7 +2714,7 @@ diff -ruN blitz/packages/blitz-dom/src/layout/mod.rs blitz/packages/blitz-dom/sr
  
          match &mut node.data {
              NodeData::Text(data) => {
-@@ -309,20 +367,7 @@
+@@ -309,20 +509,7 @@
                                      .resolve_or_zero(inputs.parent_size.width, resolve_calc_value)
                          };
                          let content_width = (output.size.width - pb.horizontal_axis_sum()).max(0.0);
@@ -2571,7 +2736,7 @@ diff -ruN blitz/packages/blitz-dom/src/layout/mod.rs blitz/packages/blitz-dom/sr
                      }
                      return output;
                  }
-@@ -333,7 +378,7 @@
+@@ -333,7 +520,7 @@
                          Some("hidden") => {
                              return taffy::LayoutOutput::HIDDEN;
                          }
@@ -2580,7 +2745,7 @@ diff -ruN blitz/packages/blitz-dom/src/layout/mod.rs blitz/packages/blitz-dom/sr
                              return compute_leaf_layout(
                                  inputs,
                                  &node.layout_style(),
-@@ -357,7 +402,7 @@
+@@ -357,7 +544,7 @@
                              );
                          }
                          None | Some("text" | "password" | "email" | "tel" | "url" | "search") => {
@@ -2589,7 +2754,7 @@ diff -ruN blitz/packages/blitz-dom/src/layout/mod.rs blitz/packages/blitz-dom/sr
                                  inputs,
                                  &node.layout_style(),
                                  resolve_calc_value,
-@@ -370,6 +415,28 @@
+@@ -370,6 +557,28 @@
                                      height: resolved_line_height.unwrap_or(16.0),
                                  },
                              );
@@ -2618,7 +2783,46 @@ diff -ruN blitz/packages/blitz-dom/src/layout/mod.rs blitz/packages/blitz-dom/sr
                          }
                          _ => {}
                      }
-@@ -846,13 +913,45 @@
+@@ -586,6 +795,10 @@
+                     return self.compute_inline_layout(dom_node_id(node_id), inputs, block_ctx);
+                 }
+ 
++                if let Some(legend) = node.rendered_legend() {
++                    return self.compute_fieldset_layout(node_id, legend, inputs);
++                }
++
+                 // The default CSS file will set
+                 match node.taffy_display() {
+                     Display::Block => compute_block_layout(self, node_id, inputs, block_ctx),
+@@ -652,18 +865,22 @@
+ 
+     fn get_core_container_style(&self, node_id: NodeId) -> Self::CoreContainerStyle<'_> {
+         #[cfg(feature = "writing-mode")]
+-        {
++        let mut style = {
+             // Container styles are read by the node's own algorithm (or, for the containing block
+             // of an out-of-flow box, by that box's algorithm) and are expressed in the node's writing mode.
+             let dom_id = dom_node_id(node_id);
+             let mut style = self.nodes[dom_id].layout_style_in(self.layout_wm_of(dom_id));
+             style.set_percent_basis(self.orthogonal_percent_basis_of(dom_id));
+             style
+-        }
++        };
+         #[cfg(not(feature = "writing-mode"))]
+-        {
+-            self.node_from_id(node_id).layout_style()
+-        }
++        let mut style = self.node_from_id(node_id).layout_style();
++        style.legend_space = self
++            .legend_space
++            .get(&dom_node_id(node_id))
++            .copied()
++            .unwrap_or(0.0);
++        style
+     }
+ 
+     fn set_unrounded_layout(&mut self, node_id: NodeId, layout: &Layout) {
+@@ -846,13 +1063,45 @@
      }
  }
  
@@ -2666,7 +2870,7 @@ diff -ruN blitz/packages/blitz-dom/src/layout/mod.rs blitz/packages/blitz-dom/sr
      }
  
      fn is_out_of_flow(&self, node_id: NodeId) -> bool {
-@@ -972,3 +1071,25 @@
+@@ -972,3 +1221,25 @@
          })
      }
  }
@@ -3484,10 +3688,39 @@ diff -ruN blitz/packages/blitz-dom/src/node/node.rs blitz/packages/blitz-dom/src
              let x = x - content_box_offset.x;
              let y = y - content_box_offset.y;
              let element_data = &self.element_data().unwrap();
-@@ -1655,6 +1762,32 @@
+@@ -1655,6 +1762,61 @@
          None
      }
  
++    /// This fieldset's rendered legend (HTML's fieldset rendering): its first `<legend>` child,
++    /// unless that floats, is absolutely positioned or has no box. Only a block fieldset places
++    /// one (others lay their legend out as any child).
++    pub fn rendered_legend(&self) -> Option<NodeId> {
++        use style::computed_values::float::T as Float;
++        use style::computed_values::position::T as Position;
++        use style::values::specified::box_::DisplayInside;
++        if !self.data.is_element_with_tag_name(&local_name!("fieldset")) {
++            return None;
++        }
++        let display = self.primary_styles()?.clone_display();
++        if !matches!(
++            display.inside(),
++            DisplayInside::Flow | DisplayInside::FlowRoot
++        ) {
++            return None;
++        }
++        let tree = self.tree();
++        let legend = self
++            .children
++            .iter()
++            .map(|&id| &tree[id])
++            .find(|n| n.data.is_element_with_tag_name(&local_name!("legend")))?;
++        let style = legend.primary_styles()?;
++        let out_of_flow = matches!(style.clone_position(), Position::Absolute | Position::Fixed);
++        (style.clone_float() == Float::None && !out_of_flow && !style.clone_display().is_none())
++            .then_some(legend.id)
++    }
++
 +    /// Whether paint clips this element's children and text to its padding box: `overflow` other
 +    /// than `visible`, or `contain: paint`. Not the root element, whose overflow is the viewport's.
 +    fn clips_overflow(&self) -> bool {
@@ -3517,7 +3750,7 @@ diff -ruN blitz/packages/blitz-dom/src/node/node.rs blitz/packages/blitz-dom/src
      /// Find the inline root ancestor of this node (or self if this is an inline root).
      /// Returns None if no inline root ancestor exists.
      pub fn inline_root_ancestor(&self) -> Option<&Node> {
-@@ -1787,103 +1920,24 @@
+@@ -1787,103 +1949,24 @@
      ///
      /// Returns `None` for nodes that have their own layout box.
      pub fn inline_fragment_boxes(&self) -> Option<impl Iterator<Item = taffy::Rect<f32>> + '_> {
@@ -3631,7 +3864,7 @@ diff -ruN blitz/packages/blitz-dom/src/node/node.rs blitz/packages/blitz-dom/src
      }
  
      /// CSSOM View's `offsetLeft`/`offsetTop`: the offset of this node's border box from the
-@@ -1962,6 +2016,15 @@
+@@ -1962,6 +2045,15 @@
  
      fn cssom_scroll_size(&self) -> taffy::Size<f32> {
          let layout = self.final_layout();
@@ -3647,7 +3880,7 @@ diff -ruN blitz/packages/blitz-dom/src/node/node.rs blitz/packages/blitz-dom/src
          if self.primary_styles().is_none() {
              return taffy::Size {
                  width: self.client_width() + layout.scroll_width(),
-@@ -2211,3 +2274,97 @@
+@@ -2211,3 +2303,97 @@
          );
      }
  }
@@ -5687,7 +5920,39 @@ diff -ruN blitz/packages/blitz-paint/src/render.rs blitz/packages/blitz-paint/sr
                  // If the element has a CSS `mask`, then push an isolation layer for the
                  // masked content. The mask is applied when the layer is popped below.
                  let mask_layer_pushed = cx.maybe_push_css_mask_layer(scene);
-@@ -683,12 +719,12 @@
+@@ -642,14 +678,28 @@
+                     filter,
+                     backdrop_filter,
+                     |scene| {
++                        // A fieldset paints its box under its legend.
++                        let fieldset = paints_own_box.then(|| cx.fieldset_box()).flatten();
++                        let box_cx = fieldset.as_ref().map(|(frame, _)| ElementCx {
++                            frame: frame.clone(),
++                            style: cx.style.clone(),
++                            ..cx
++                        });
++                        let box_cx = box_cx.as_ref().unwrap_or(&cx);
+                         if paints_own_box {
+-                            cx.draw_background(scene);
+-                            cx.draw_inset_box_shadow(scene);
++                            box_cx.draw_background(scene);
++                            box_cx.draw_inset_box_shadow(scene);
+                         }
+                         cx.draw_table_row_backgrounds(scene);
+                         cx.draw_table_borders(scene);
+                         if paints_own_box {
+-                            cx.draw_border(scene);
++                            if let Some((_, gap)) = &fieldset {
++                                scene.push_clip_layer(Fill::EvenOdd, cx.transform, gap);
++                            }
++                            box_cx.draw_border(scene);
++                            if fieldset.is_some() {
++                                scene.pop_layer();
++                            }
+                         }
+                         cx.stroke_devtools(scene);
+ 
+@@ -683,12 +733,12 @@
                                  cx.draw_svg(scene);
                                  #[cfg(feature = "custom-widget")]
                                  cx.draw_custom_widget(scene);
@@ -5702,7 +5967,7 @@ diff -ruN blitz/packages/blitz-paint/src/render.rs blitz/packages/blitz-paint/sr
                              },
                          );
  
-@@ -794,8 +830,13 @@
+@@ -794,8 +844,13 @@
  
  /// The transform from an SVG's rendered tree to a viewport of the given size.
  #[cfg(feature = "svg")]
@@ -5718,7 +5983,51 @@ diff -ruN blitz/packages/blitz-paint/src/render.rs blitz/packages/blitz-paint/sr
      Affine::new([t.sx, t.ky, t.kx, t.sy, t.tx, t.ty].map(f64::from))
  }
  
-@@ -1076,6 +1117,37 @@
+@@ -836,6 +891,43 @@
+     custom_widget_scene: Option<&'a Scene>,
+ }
+ 
++impl ElementCx<'_, '_> {
++    /// A fieldset with a rendered legend (HTML's fieldset rendering): the frame its background
++    /// and border are painted in, which starts at the legend's middle when the legend is taller
++    /// than the top border, and a clip leaving out where the legend's border box crosses that
++    /// border.
++    fn fieldset_box(&self) -> Option<(CssBox, kurbo::BezPath)> {
++        let legend = self.node.tree()[self.node.rendered_legend()?].final_layout();
++        let s = self.scale;
++        let frame = &self.frame;
++        let border_top = frame.border_width.y0;
++        let middle = (legend.location.y as f64 + legend.size.height as f64 / 2.0) * s;
++        let shift = (middle - border_top / 2.0).max(0.0);
++        let mut border_box = frame.border_box;
++        border_box.y0 += shift;
++        let mut padding = frame.padding_width;
++        padding.y0 = (padding.y0 - shift).max(0.0);
++        let painted = CssBox::new(
++            border_box,
++            frame.border_width,
++            padding,
++            frame.outline_width,
++            frame.border_radii,
++        );
++        let x0 = legend.location.x as f64 * s;
++        let gap = Rect::new(
++            x0,
++            frame.border_box.y0 - 1.0,
++            x0 + legend.size.width as f64 * s,
++            border_box.y0 + border_top,
++        );
++        // Even-odd: everything around the box but the gap.
++        let mut clip = frame.outline_box.inflate(1.0, 1.0).to_path(0.1);
++        clip.extend(gap.to_path(0.1));
++        Some((painted, clip))
++    }
++}
++
+ /// Converts parley BoundingBox into peniko Rect
+ fn convert_rect(rect: &parley::BoundingBox) -> kurbo::Rect {
+     peniko::kurbo::Rect::new(rect.x0, rect.y0, rect.x1, rect.y1)
+@@ -1076,6 +1168,37 @@
                  };
              }
  
@@ -5756,7 +6065,7 @@ diff -ruN blitz/packages/blitz-paint/src/render.rs blitz/packages/blitz-paint/sr
              // Render text
              let mut draw_text_context = self.context.draw_text_context.borrow_mut();
              crate::text::stroke_text(
-@@ -1152,6 +1224,63 @@
+@@ -1152,6 +1275,63 @@
          }
      }
  
@@ -5820,7 +6129,7 @@ diff -ruN blitz/packages/blitz-paint/src/render.rs blitz/packages/blitz-paint/sr
      fn draw_children(
          &self,
          scene: &mut impl PaintScene,
-@@ -1183,7 +1312,9 @@
+@@ -1183,7 +1363,9 @@
                  // the viewport and do not scroll with it, so cancel out the viewport
                  // scroll (applied in `paint_scene`). A fixed box contained by a
                  // transformed ancestor scrolls with it like any out-of-flow box.
@@ -5831,7 +6140,7 @@ diff -ruN blitz/packages/blitz-paint/src/render.rs blitz/packages/blitz-paint/sr
                  let child_transform = if child.taffy_position() == taffy::Position::Fixed
                      && Some(self.node.id) == self.context.root_element_id
                  {
-@@ -1193,6 +1324,15 @@
+@@ -1193,6 +1375,15 @@
                          y: scroll.y * self.scale,
                      })
                  } else if let Some(offset) = child.lifted_paint_offset(self.node.id) {
@@ -5847,7 +6156,7 @@ diff -ruN blitz/packages/blitz-paint/src/render.rs blitz/packages/blitz-paint/sr
                      parent_style_transform.pre_translate(kurbo::Vec2 {
                          x: offset.x as f64 * self.scale,
                          y: offset.y as f64 * self.scale,
-@@ -1200,7 +1340,37 @@
+@@ -1200,7 +1391,37 @@
                  } else {
                      parent_style_transform
                  };
@@ -5886,7 +6195,7 @@ diff -ruN blitz/packages/blitz-paint/src/render.rs blitz/packages/blitz-paint/sr
              }
          }
  
-@@ -1269,7 +1439,7 @@
+@@ -1269,7 +1490,7 @@
          let x = x + x_offset.px() as f64;
          let y = y + y_offset.px() as f64;
  
@@ -5895,7 +6204,7 @@ diff -ruN blitz/packages/blitz-paint/src/render.rs blitz/packages/blitz-paint/sr
          let transform = (self.transform * viewport).then_translate(Vec2 { x, y });
  
          self.with_replaced_content_clip(
-@@ -1377,7 +1547,8 @@
+@@ -1377,7 +1598,8 @@
          }
      }
  
@@ -5905,7 +6214,7 @@ diff -ruN blitz/packages/blitz-paint/src/render.rs blitz/packages/blitz-paint/sr
          if let Some(sub_doc) = self.element.sub_doc_data().map(|doc| doc.inner()) {
              let scale = self.scale;
              let width = self.frame.content_box.width() as u32;
-@@ -1389,7 +1560,7 @@
+@@ -1389,7 +1611,7 @@
              let initial_y = translation.y + self.frame.content_box.origin().y;
              // let transform = self.transform.then_translate(Vec2 { x, y });
  
@@ -5914,7 +6223,7 @@ diff -ruN blitz/packages/blitz-paint/src/render.rs blitz/packages/blitz-paint/sr
                  &sub_doc,
                  scale,
                  width,
-@@ -1398,6 +1569,15 @@
+@@ -1398,6 +1620,15 @@
                  initial_y,
                  self.custom_widget_scenes,
              );
@@ -6001,7 +6310,7 @@ diff -ruN blitz/packages/stylo_taffy/src/convert.rs blitz/packages/stylo_taffy/s
 diff -ruN blitz/packages/stylo_taffy/src/wrapper.rs blitz/packages/stylo_taffy/src/wrapper.rs
 --- blitz/packages/stylo_taffy/src/wrapper.rs
 +++ blitz/packages/stylo_taffy/src/wrapper.rs
-@@ -24,16 +24,14 @@
+@@ -24,16 +24,17 @@
      pub struct StyleFlags: u8 {
          /// Whether the node is a replaced element (e.g. an image or form control)
          const IS_REPLACED = 1 << 0;
@@ -6019,10 +6328,69 @@ diff -ruN blitz/packages/stylo_taffy/src/wrapper.rs blitz/packages/stylo_taffy/s
 +        /// indefinite: its percentage `top`/`bottom` then act as `auto` (CSS 2 §9.4.3), where
 +        /// Taffy would resolve them against the height the containing block ends up with.
 +        const INDEFINITE_CB_HEIGHT = 1 << 5;
++        /// Whether the node is a fieldset's rendered legend, which the fieldset places on its top
++        /// border itself (HTML's fieldset rendering): its block algorithm leaves it out.
++        const RENDERED_LEGEND = 1 << 6;
      }
  }
  
-@@ -236,15 +234,20 @@
+@@ -58,6 +59,8 @@
+     /// `parent_size.width`, i.e. the containing block's block size.
+     #[cfg(feature = "writing-mode")]
+     pub percent_basis: Option<f32>,
++    /// Added to the top padding: the space a fieldset's rendered legend takes beyond its top border.
++    pub legend_space: f32,
+ }
+ 
+ impl<T: Deref<Target = ComputedValues>> TaffyStyloStyle<T> {
+@@ -86,6 +89,7 @@
+             align_axis_is_inline: false,
+             #[cfg(feature = "writing-mode")]
+             percent_basis: None,
++            legend_space: 0.0,
+         }
+     }
+ 
+@@ -102,9 +106,28 @@
+             align_axis_is_inline: false,
+             #[cfg(feature = "writing-mode")]
+             percent_basis: None,
++            legend_space: 0.0,
+         }
+     }
+ 
++    /// `padding` with the top grown by `legend_space` (a percentage or calc() top padding becomes
++    /// that space alone).
++    fn with_legend_space(
++        &self,
++        mut padding: taffy::Rect<taffy::LengthPercentage>,
++    ) -> taffy::Rect<taffy::LengthPercentage> {
++        if self.legend_space > 0.0 {
++            let top = padding.top.into_raw();
++            let px = if top.tag() == taffy::CompactLength::LENGTH_TAG {
++                top.value()
++            } else {
++                0.0
++            };
++            padding.top = taffy::LengthPercentage::length(px + self.legend_space);
++        }
++        padding
++    }
++
+     /// The writing mode the getters are expressed in (the style's own without the feature)
+     #[inline(always)]
+     fn layout_wm(&self) -> WritingMode {
+@@ -178,6 +201,9 @@
+ 
+     #[inline]
+     fn box_generation_mode(&self) -> taffy::BoxGenerationMode {
++        if self.flags.contains(StyleFlags::RENDERED_LEGEND) {
++            return taffy::BoxGenerationMode::None;
++        }
+         convert::box_generation_mode(self.style.get_box().display)
+     }
+ 
+@@ -236,15 +262,20 @@
  
      #[inline]
      fn is_containing_block(&self) -> taffy::ContainingBlockClaims {
@@ -6045,6 +6413,30 @@ diff -ruN blitz/packages/stylo_taffy/src/wrapper.rs blitz/packages/stylo_taffy/s
 +            }
 +        }
 +        self.rect(inset)
+     }
+ 
+     #[inline]
+@@ -301,19 +332,19 @@
+                         .resolve_or_zero(Some(basis), convert::resolve_calc_value),
+                 )
+             };
+-            return self.rect(taffy::Rect {
++            return self.with_legend_space(self.rect(taffy::Rect {
+                 left: resolve(&padding_styles.padding_left.0),
+                 right: resolve(&padding_styles.padding_right.0),
+                 top: resolve(&padding_styles.padding_top.0),
+                 bottom: resolve(&padding_styles.padding_bottom.0),
+-            });
++            }));
+         }
+-        self.rect(taffy::Rect {
++        self.with_legend_space(self.rect(taffy::Rect {
+             left: convert::length_percentage(&padding_styles.padding_left.0),
+             right: convert::length_percentage(&padding_styles.padding_right.0),
+             top: convert::length_percentage(&padding_styles.padding_top.0),
+             bottom: convert::length_percentage(&padding_styles.padding_bottom.0),
+-        })
++        }))
      }
  
      #[inline]
