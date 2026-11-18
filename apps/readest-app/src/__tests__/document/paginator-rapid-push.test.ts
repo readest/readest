@@ -75,10 +75,11 @@ const setupPaginator = async () => {
   const container = root!.getElementById('container') as HTMLElement;
   const background = root!.getElementById('background') as HTMLElement;
   let scrollLeft = 0;
+  let clampTo = Infinity;
   Object.defineProperty(container, 'scrollLeft', {
     get: () => scrollLeft,
     set: (v: number) => {
-      scrollLeft = v;
+      scrollLeft = Math.min(v, clampTo);
     },
     configurable: true,
   });
@@ -129,6 +130,10 @@ const setupPaginator = async () => {
     scrollLeft: () => scrollLeft,
     setTx: (value: number) => {
       tx = value;
+    },
+    // WebKit's stale scroll extent right after the transforms clear (readest#5663).
+    setClamp: (value: number) => {
+      clampTo = value;
     },
     // Run the next animation frame (touchend defers its snap to one) and let
     // the turn's promise chain release the page-turn lock.
@@ -255,6 +260,29 @@ describe('push page-turn handover', () => {
         });
       }
     });
+
+    it('keeps a drag that starts before the clamp re-apply', async () => {
+      const rafQueue: FrameRequestCallback[] = [];
+      vi.spyOn(globalThis, 'requestAnimationFrame').mockImplementation((cb) => {
+        rafQueue.push(cb);
+        return rafQueue.length;
+      });
+      const { container, scrollPos, setScrollPos, setClamp, mockTransform } = setup(0);
+      setClamp(100);
+      const anim = startCssAnimateScroll(container, 'scrollLeft', 0, 400, 300, [], {
+        shouldReapplyClamp: () => true,
+      });
+      mockTransform(-220);
+      anim.interrupt('visual');
+      expect(scrollPos()).toBe(100);
+      // The finger drags 30px forward before the next frame.
+      setScrollPos(130);
+      setClamp(Infinity);
+      rafQueue.shift()!(16);
+      // The on-screen offset (220) plus the drag, not the clamped one.
+      expect(scrollPos()).toBe(250);
+      await expect(anim.promise).resolves.toBe(true);
+    });
   });
 
   it('startRafAnimateScroll stops rendering when interrupted', async () => {
@@ -379,6 +407,24 @@ describe('push page-turn handover', () => {
       expect(t.view().style.transform).toBe('translateX(-300px)');
       await t.endTransition();
       expect(t.scrollLeft()).toBe(400);
+      t.p.destroy();
+    });
+
+    it('keeps the on-screen offset when the finger moves before a WebKit clamp clears', async () => {
+      const t = await setupPaginator();
+      t.p.next();
+      await Promise.resolve();
+      t.setTx(-150);
+      t.setClamp(100);
+      t.p.dispatchEvent(touchEvent('touchstart', 300, 0));
+      expect(t.scrollLeft()).toBe(100);
+      // The stale extent clamps the first move too.
+      t.p.dispatchEvent(touchEvent('touchmove', 280, 200));
+      expect(t.scrollLeft()).toBe(100);
+      t.setClamp(Infinity);
+      await t.frame();
+      // Back to where the views were on screen, not left at the clamp.
+      expect(t.scrollLeft()).toBe(150);
       t.p.destroy();
     });
 
