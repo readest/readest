@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render } from '@testing-library/react';
-import BookCover from '@/components/BookCover';
+import BookCover, { PlainPlaceholderCoversContext } from '@/components/BookCover';
 import type { Book } from '@/types/book';
 
 await import('@/styles/globals.css');
@@ -112,4 +112,43 @@ describe('Classic placeholder covers', () => {
     expect(getComputedStyle(cover).visibility).toBe('visible');
     expect(getComputedStyle(cover).backgroundColor).toBe('rgb(161, 85, 67)');
   });
+});
+
+describe('plain placeholder covers (#7549)', () => {
+  for (const mode of ['grid', 'list', 'preview'] as const) {
+    it(`wraps a long unbroken title inside the cover in ${mode}`, () => {
+      const width = mode === 'grid' ? 150 : 72;
+      const { container } = render(
+        <PlainPlaceholderCoversContext.Provider value={true}>
+          <div style={{ width, height: (width * 41) / 28, fontSize: 20 }}>
+            <BookCover
+              book={{ ...book, title: 'Averylongfilenamethatkeepsgoingwithoutspaces.txt' }}
+              mode={mode === 'list' ? 'list' : 'grid'}
+              isPreview={mode === 'preview'}
+            />
+          </div>
+        </PlainPlaceholderCoversContext.Provider>,
+      );
+      const cover = container.querySelector<HTMLElement>('.fallback-cover')!;
+      expect(cover.style.backgroundColor).toBe('');
+
+      const title = cover.querySelector<HTMLElement>('span')!;
+      expect(getComputedStyle(title).visibility).toBe('visible');
+      const range = document.createRange();
+      range.selectNodeContents(title);
+      // line-clamp hides lines past the title's own box; count only the ones it shows.
+      const titleBox = title.getBoundingClientRect();
+      const lines = [...range.getClientRects()].filter(
+        (line) => line.top >= titleBox.top - 0.5 && line.bottom <= titleBox.bottom + 0.5,
+      );
+      const coverBox = cover.getBoundingClientRect();
+      expect(new Set(lines.map((line) => Math.round(line.top))).size).toBeGreaterThan(1);
+      for (const line of lines) {
+        expect(line.left).toBeGreaterThanOrEqual(coverBox.left - 0.5);
+        expect(line.right).toBeLessThanOrEqual(coverBox.right + 0.5);
+        expect(line.top).toBeGreaterThanOrEqual(coverBox.top - 0.5);
+        expect(line.bottom).toBeLessThanOrEqual(coverBox.bottom + 0.5);
+      }
+    });
+  }
 });

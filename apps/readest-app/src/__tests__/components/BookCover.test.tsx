@@ -12,7 +12,7 @@ vi.mock('@/services/environment', () => ({
   isTauriAppPlatform: () => true,
 }));
 
-import BookCover from '@/components/BookCover';
+import BookCover, { PlainPlaceholderCoversContext } from '@/components/BookCover';
 import { Book } from '@/types/book';
 import { SystemSettings } from '@/types/settings';
 import { useLibraryStore } from '@/store/libraryStore';
@@ -348,6 +348,36 @@ describe('BookCover', () => {
     act(() => reveal?.());
     expect(requestCoverThumbnailMock).toHaveBeenCalledWith(progressedBook);
     expect(unobserve).toHaveBeenCalledOnce();
+  });
+
+  describe('plain placeholder covers (#7549)', () => {
+    const renderPlain = (book: Book) =>
+      render(
+        <PlainPlaceholderCoversContext.Provider value={true}>
+          <BookCover book={book} coverFit='crop' />
+        </PlainPlaceholderCoversContext.Provider>,
+      );
+
+    it('renders the neutral title panel instead of a colored cover for a book without art', () => {
+      const { container } = renderPlain(makeBook({ format: 'TXT', coverImageUrl: null }));
+      const fallback = container.querySelector<HTMLElement>('.fallback-cover')!;
+
+      expect(fallback.style.backgroundColor).toBe('');
+      expect(fallback.classList.contains('bg-base-100')).toBe(true);
+      expect(fallback.classList.contains('text-neutral-content')).toBe(true);
+      expect(fallback.textContent).toContain('Test Book');
+      expect(fallback.textContent).toContain('Test Author');
+      expect(fallback.textContent).not.toContain('TXT');
+    });
+
+    it('keeps showing real cover art', () => {
+      const { container } = renderPlain(makeBook());
+
+      expect(container.querySelector('img.cover-image')).toBeTruthy();
+      expect(container.querySelector('.fallback-cover')?.classList.contains('invisible')).toBe(
+        true,
+      );
+    });
   });
 
   describe('hide covers', () => {

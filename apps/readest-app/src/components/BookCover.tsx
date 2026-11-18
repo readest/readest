@@ -10,6 +10,7 @@ import { useDefaultBookshelfCovers } from '@/hooks/useDefaultBookshelfCovers';
 import { useLibraryStore } from '@/store/libraryStore';
 
 export const HideBookCoversContext = createContext<boolean | undefined>(undefined);
+export const PlainPlaceholderCoversContext = createContext<boolean | undefined>(undefined);
 
 // Cover art keeps its color across themes and metadata edits. Keep this palette
 // and mapping stable so a synced book has the same cover on every device.
@@ -71,6 +72,10 @@ const BookCover: React.FC<BookCoverProps> = memo<BookCoverProps>(
     const defaultShelfCovers = useDefaultBookshelfCovers();
     const hideCovers = shelfHideCovers ?? defaultShelfCovers.hideCovers;
     const displayCoverUrl = hideCovers ? null : coverImageUrl;
+    const shelfPlainCovers = useContext(PlainPlaceholderCoversContext);
+    // Hidden covers and the plain option share the neutral title panel.
+    const plainFallback =
+      hideCovers || (shelfPlainCovers ?? defaultShelfCovers.plainPlaceholderCovers);
     const author = formatAuthors(book.author || book.metadata?.author || '');
 
     const shouldShowSpine = showSpine && !hideCovers && imageLoaded && !imageError;
@@ -201,13 +206,13 @@ const BookCover: React.FC<BookCoverProps> = memo<BookCoverProps>(
             'fallback-cover absolute inset-0',
             displayCoverUrl && !imageError && 'invisible',
             'text-center font-serif font-medium',
-            hideCovers
+            plainFallback
               ? ['text-neutral-content p-2', isPreview ? 'bg-base-200/50' : 'bg-base-100']
               : 'eink-bordered eink:text-base-content flex flex-col overflow-hidden border border-current/35 p-[10%] ps-[14%]',
             imageClassName,
           )}
           style={
-            hideCovers
+            plainFallback
               ? undefined
               : {
                   backgroundColor: getFallbackCoverColor(book.hash || ''),
@@ -215,11 +220,12 @@ const BookCover: React.FC<BookCoverProps> = memo<BookCoverProps>(
                 }
           }
         >
-          {hideCovers ? (
+          {plainFallback ? (
             <>
               <div className='flex h-1/2 items-center justify-center'>
                 <span
                   className={clsx(
+                    'w-full min-w-0 [overflow-wrap:anywhere]',
                     isPreview ? 'line-clamp-2' : mode === 'grid' ? 'line-clamp-3' : 'line-clamp-2',
                     isPreview ? 'text-[0.5em]' : mode === 'grid' ? 'text-lg' : 'text-sm',
                   )}
