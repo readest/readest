@@ -3389,7 +3389,65 @@ diff -ruN blitz/packages/blitz-dom/src/node/node.rs blitz/packages/blitz-dom/src
 diff -ruN blitz/packages/blitz-dom/src/node/serialize.rs blitz/packages/blitz-dom/src/node/serialize.rs
 --- blitz/packages/blitz-dom/src/node/serialize.rs
 +++ blitz/packages/blitz-dom/src/node/serialize.rs
-@@ -123,7 +123,9 @@
+@@ -114,6 +114,57 @@
+         output
+     }
+ 
++    /// The `fill` and `stroke` the page's CSS gives this SVG element, as declarations, where usvg
++    /// (which reads its attributes only) would miss them: set by a rule on the element (Blitz maps
++    /// no presentation attribute into the style, so the value then differs from the one it
++    /// inherits), or, on the `<svg>` itself, inherited from the page while no attribute of its own
++    /// overrides it. `url()` and context paints are left to the attributes.
++    fn svg_css_paints(&self, is_root: bool, has_attr: &dyn Fn(&str) -> bool) -> Vec<String> {
++        use style::values::computed::SVGPaint;
++        use style::values::generics::svg::SVGPaintKind;
++        let Some(style) = self.primary_styles() else {
++            return Vec::new();
++        };
++        let parent = self.parent.and_then(|id| self.tree()[id].primary_styles());
++        let color = style.clone_color();
++        let paints = [
++            (
++                "fill",
++                style.get_inherited_svg().fill.clone(),
++                parent.as_ref().map(|p| p.get_inherited_svg().fill.clone()),
++                SVGPaint::BLACK,
++            ),
++            (
++                "stroke",
++                style.get_inherited_svg().stroke.clone(),
++                parent
++                    .as_ref()
++                    .map(|p| p.get_inherited_svg().stroke.clone()),
++                SVGPaint::default(),
++            ),
++        ];
++        paints
++            .into_iter()
++            .filter(|(name, paint, inherited, initial)| {
++                inherited
++                    .as_ref()
++                    .is_some_and(|inherited| inherited != paint)
++                    || (is_root && !has_attr(name) && paint != initial)
++            })
++            .filter_map(|(name, paint, _, _)| {
++                let value = match paint.kind {
++                    SVGPaintKind::None => "none".to_owned(),
++                    SVGPaintKind::Color(c) => c
++                        .resolve_to_absolute(&color)
++                        .into_srgb_legacy()
++                        .to_css_string(),
++                    _ => return None,
++                };
++                Some(format!("{name}: {value}"))
++            })
++            .collect()
++    }
++
+     fn write_outer_html_in_style(&self, writer: &mut String, opts: SerializeOpts, nesting: usize) {
+         const INDENT: &str = "  ";
+         let style = opts.style;
+@@ -123,7 +174,9 @@
              .then(|| self.primary_styles())
              .flatten()
              .map(|style| style.clone_color())
@@ -3400,7 +3458,7 @@ diff -ruN blitz/packages/blitz-dom/src/node/serialize.rs blitz/packages/blitz-do
  
          match &self.data {
              NodeData::Document(_) => {}
-@@ -180,19 +182,46 @@
+@@ -180,19 +233,52 @@
                      writer.push('"');
                  }
  
@@ -3411,11 +3469,17 @@ diff -ruN blitz/packages/blitz-dom/src/node/serialize.rs blitz/packages/blitz-do
 +                    .then(|| self.primary_styles())
 +                    .flatten();
 +                let has = |name: &str| data.attrs().iter().any(|a| &*a.name.local == name);
-+                let mut blend = effects
++                let mut decls: Vec<String> = effects
 +                    .as_ref()
 +                    .map(|s| s.get_effects().mix_blend_mode)
 +                    .filter(|&m| m != style::computed_values::mix_blend_mode::T::Normal)
-+                    .map(|m| format!("mix-blend-mode: {}", m.to_css_string()));
++                    .map(|m| format!("mix-blend-mode: {}", m.to_css_string()))
++                    .into_iter()
++                    .collect();
++                if opts.resolve_current_color {
++                    decls.extend(self.svg_css_paints(nesting == 0, &has));
++                }
++                let mut blend = (!decls.is_empty()).then(|| decls.join("; "));
 +
                  for attr in data.attrs() {
                      writer.push(' ');
@@ -3439,7 +3503,7 @@ diff -ruN blitz/packages/blitz-dom/src/node/serialize.rs blitz/packages/blitz-do
 +                        && let Some(decl) = blend.take()
 +                    {
 +                        value = format!("{value}; {decl}").into();
-+                    }
+                     }
 +                    encode_quoted_attribute_to_string(&value, writer);
 +                    writer.push('"');
 +                }
@@ -3447,7 +3511,7 @@ diff -ruN blitz/packages/blitz-dom/src/node/serialize.rs blitz/packages/blitz-do
 +                    let opacity = style.get_effects().opacity;
 +                    if opacity < 1.0 && !has("opacity") {
 +                        writer.push_str(&format!(" opacity=\"{opacity}\""));
-                     }
++                    }
 +                }
 +                if let Some(decl) = blend {
 +                    writer.push_str(" style=\"");
