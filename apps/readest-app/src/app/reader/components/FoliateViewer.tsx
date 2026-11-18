@@ -403,7 +403,6 @@ const FoliateViewer: React.FC<{
       snapshotChapterScreens(bookKey);
     }
   }, [bookKey, setProgress, cancelRelocateScheduled, isWipeAhead]);
-  wipeCommitRef.current = commitRelocate;
 
   const progressRelocateHandler = (event: Event) => {
     // Foliate can emit a late relocation after close() clears its progress
@@ -864,6 +863,18 @@ const FoliateViewer: React.FC<{
     // can flow normally.
     setPreviewMode(bookKey, false);
 
+    // Linked books follow an Auto Scroll wipe's turn once the page is wiped
+    // in, like the reading position (#7575).
+    if (isWipeAhead()) {
+      heldParallelRelocateRef.current = detail;
+      return;
+    }
+    heldParallelRelocateRef.current = null;
+    syncParallelViews(detail);
+  };
+
+  const heldParallelRelocateRef = useRef<{ index: number; fraction: number } | null>(null);
+  const syncParallelViews = (detail: { index: number; fraction: number }) => {
     const parallelViews = getParallels(bookKey);
     if (parallelViews && parallelViews.size > 0) {
       parallelViews.forEach((key) => {
@@ -875,6 +886,14 @@ const FoliateViewer: React.FC<{
         }
       });
     }
+  };
+
+  // The page an Auto Scroll wipe brought in is the reading position now.
+  wipeCommitRef.current = () => {
+    commitRelocate();
+    const held = heldParallelRelocateRef.current;
+    heldParallelRelocateRef.current = null;
+    if (held) syncParallelViews(held);
   };
 
   const { handlePageFlip } = usePagination(bookKey, viewRef, containerRef);

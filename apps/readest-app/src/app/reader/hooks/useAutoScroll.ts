@@ -5,6 +5,7 @@ import { useReaderStore } from '@/store/readerStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useSidebarStore } from '@/store/sidebarStore';
 import { useNotebookStore } from '@/store/notebookStore';
+import { useThemeStore } from '@/store/themeStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { eventDispatcher } from '@/utils/event';
 import { saveViewSettings } from '@/helpers/settings';
@@ -92,6 +93,8 @@ export const useAutoScroll = (
   // reader navigating away.
   const ownTurnsRef = useRef(0);
   const lastCfiRef = useRef<string | undefined>(undefined);
+  // The view's own page turns, before a session routes them through its wipe.
+  const viewTurnsRef = useRef<Pick<FoliateView, 'next' | 'prev'> & { view: FoliateView }>(null);
 
   // Undoes the per-session window listeners; set on start.
   const sessionCleanupRef = useRef<(() => void) | null>(null);
@@ -308,7 +311,8 @@ export const useAutoScroll = (
   };
 
   const startWipe = (view: FoliateView) => {
-    const wiper = new PageWiper(wipeHostRef.current!);
+    // A stopped session may still be turning back: the new one waits for it.
+    const wiper = new PageWiper(wipeHostRef.current!, wiperRef.current?.idle);
     wiperRef.current = wiper;
     lastCfiRef.current = view.lastLocation?.cfi;
     // Navigating elsewhere (a key, a swipe, the TOC, a re-layout) starts the
@@ -327,34 +331,47 @@ export const useAutoScroll = (
     // not the page or a control. A press pauses, as a tap does otherwise.
     // That includes the moment the snapshot is being put away: on desktop the
     // move before a click shows the controls, which starts it.
-    // A touch on the right edge may be the speed swipe (FoliateViewer also
-    // listens for it on the document), so only a tap there pauses.
-    let edgeTouch: { id: number; x: number; y: number } | null = null;
+    // A touch on the right edge may be the speed swipe (useAutoScrollSpeedGesture
+    // also listens for it on the document), so only a tap there pauses.
+    let edgeTouch: { id: number; x: number; y: number; moved: boolean } | null = null;
     const onPointerDown = (event: PointerEvent) => {
       const scroller = scrollerRef.current!;
       if (event.target !== document.documentElement || !wiper.covering || scroller.paused) return;
       const { pointerId: id, screenX: x, screenY: y } = event;
+      // The swipe's zone ends before iPhone Duo's status strip (#6307).
+      const { isIPhoneDuo, safeAreaInsets } = useThemeStore.getState();
+      const inset = isIPhoneDuo ? safeAreaInsets?.right || 0 : 0;
       if (
         event.pointerType === 'touch' &&
-        isInRightEdge(x, window.innerWidth, AUTO_SCROLL_GESTURE_EDGE_RATIO)
+        isInRightEdge(x, window.innerWidth, AUTO_SCROLL_GESTURE_EDGE_RATIO, inset)
       ) {
-        edgeTouch = { id, x, y };
+        edgeTouch = { id, x, y, moved: false };
         return;
       }
       togglePause();
     };
+    // Once the swipe has moved far enough to take over, it stays a swipe.
+    const onPointerMove = (event: PointerEvent) => {
+      const touch = edgeTouch;
+      if (touch?.id !== event.pointerId) return;
+      touch.moved ||= shouldActivate(event.screenX - touch.x, event.screenY - touch.y);
+    };
     const onPointerUp = (event: PointerEvent) => {
       const touch = edgeTouch;
       if (touch?.id !== event.pointerId) return;
+      onPointerMove(event);
       edgeTouch = null;
-      const moved = shouldActivate(event.screenX - touch.x, event.screenY - touch.y);
-      if (!moved && !scrollerRef.current!.paused) togglePause();
+      if (!touch.moved && !scrollerRef.current!.paused) togglePause();
     };
     // Manual turns (keys, buttons, page-turner remotes) go through view.next
     // and view.prev; the wipe turns the renderer itself (see yieldTo).
-    const { next, prev } = view;
-    view.next = (distance?: number) => wiper.yieldTo(() => next.call(view, distance));
-    view.prev = (distance?: number) => wiper.yieldTo(() => prev.call(view, distance));
+    if (viewTurnsRef.current?.view !== view) {
+      viewTurnsRef.current = { view, next: view.next, prev: view.prev };
+    }
+    const { next, prev } = viewTurnsRef.current;
+    const wipeNext = (distance?: number) => wiper.yieldTo(() => next.call(view, distance));
+    const wipePrev = (distance?: number) => wiper.yieldTo(() => prev.call(view, distance));
+    Object.assign(view, { next: wipeNext, prev: wipePrev });
     overlayOpenRef.current = hasReaderOverlay();
     const unsubscribeOverlays = subscribeReaderOverlays(() => {
       overlayOpenRef.current = hasReaderOverlay();
@@ -362,12 +379,18 @@ export const useAutoScroll = (
     view.addEventListener('relocate', onRelocate);
     document.addEventListener('visibilitychange', onVisibilityChange);
     window.addEventListener('pointerdown', onPointerDown, true);
+    window.addEventListener('pointermove', onPointerMove, true);
     window.addEventListener('pointerup', onPointerUp, true);
     return () => {
-      Object.assign(view, { next, prev });
+      // Page turns keep waiting behind the stop's turn back, unless a new
+      // session has taken the view over by then.
+      void wiper.idle.then(() => {
+        if (view.next === wipeNext) Object.assign(view, { next, prev });
+      });
       view.removeEventListener('relocate', onRelocate);
       document.removeEventListener('visibilitychange', onVisibilityChange);
       window.removeEventListener('pointerdown', onPointerDown, true);
+      window.removeEventListener('pointermove', onPointerMove, true);
       window.removeEventListener('pointerup', onPointerUp, true);
       unsubscribeOverlays();
     };

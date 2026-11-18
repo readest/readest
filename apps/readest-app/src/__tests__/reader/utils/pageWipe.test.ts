@@ -282,6 +282,29 @@ describe('PageWiper', () => {
     warn.mockRestore();
   });
 
+  test('still runs a turn of the reader when turning back fails', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const { wiper, state, advance } = createHarness();
+    await advance(40);
+
+    state.failTurnBack = true;
+    const manual = vi.fn(async () => {});
+    await wiper.yieldTo(manual);
+    expect(manual).toHaveBeenCalledOnce();
+    warn.mockRestore();
+  });
+
+  // The next page stayed: it is the page being read now.
+  test('commits the next page when a failed reveal cannot turn back', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const { host, state, advance } = createHarness({ reveal: false });
+    state.failTurnBack = true;
+
+    await advance(1);
+    expect(host.onCommit).toHaveBeenCalledOnce();
+    warn.mockRestore();
+  });
+
   test('starts over at the top of a page the reader navigated to', async () => {
     const { wiper, host, reveals, advance } = createHarness();
     await advance(60);

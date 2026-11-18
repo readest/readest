@@ -99,8 +99,15 @@ export class PageWiper {
   #pending = 0;
   #queue: Promise<void> = Promise.resolve();
 
-  constructor(host: PageWiperHost) {
+  /** `after`: a previous session's wipe still turning back; this one waits for it. */
+  constructor(host: PageWiperHost, after?: Promise<void>) {
     this.#host = host;
+    if (after) void this.#enqueue(() => after);
+  }
+
+  /** Settles once every queued turn has. */
+  get idle() {
+    return this.#queue;
   }
 
   /** The snapshot is on screen, also while turning back before dropping it. */
@@ -156,7 +163,8 @@ export class PageWiper {
    */
   yieldTo(turn: () => Promise<void>) {
     return this.#enqueue(async () => {
-      await this.#revert();
+      // If turning back fails, the turn goes from the page left on screen.
+      await this.#revert().catch((error) => console.warn('Page wipe failed:', error));
       await turn();
     });
   }
@@ -207,10 +215,7 @@ export class PageWiper {
     }
     if (!reveal) {
       this.#broken = !document.hidden;
-      if (turned) {
-        this.#ahead = false;
-        await this.#host.turn(false);
-      }
+      if (turned) await this.#turnBack();
       return;
     }
     this.#reveal = reveal;
@@ -242,8 +247,16 @@ export class PageWiper {
 
   async #revert() {
     if (!this.#ahead) return;
-    this.#ahead = false;
     // Turn back under the snapshot, so dropping it changes nothing on screen.
+    try {
+      await this.#turnBack();
+    } finally {
+      this.#dropReveal();
+    }
+  }
+
+  async #turnBack() {
+    this.#ahead = false;
     try {
       await this.#host.turn(false);
     } catch (error) {
@@ -251,8 +264,6 @@ export class PageWiper {
       this.#progress = 0;
       this.#host.onCommit();
       throw error;
-    } finally {
-      this.#dropReveal();
     }
   }
 }

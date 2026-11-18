@@ -16,6 +16,7 @@ const h = vi.hoisted(() => ({
   previewMode: false,
   setAutoScrollEnabled: vi.fn(),
   saveViewSettings: vi.fn(),
+  theme: { isIPhoneDuo: false, safeAreaInsets: null as { right: number } | null },
 }));
 
 vi.mock('@/store/readerStore', () => {
@@ -35,6 +36,7 @@ vi.mock('@/store/readerStore', () => {
 vi.mock('@/context/EnvContext', () => ({ useEnv: () => ({ envConfig: {} }) }));
 vi.mock('@/hooks/useTranslation', () => ({ useTranslation: () => (s: string) => s }));
 vi.mock('@/helpers/settings', () => ({ saveViewSettings: h.saveViewSettings }));
+vi.mock('@/store/themeStore', () => ({ useThemeStore: { getState: () => h.theme } }));
 
 import { useAutoScroll } from '@/app/reader/hooks/useAutoScroll';
 import { revealPageWipe } from '@/app/reader/utils/pageWipe';
@@ -278,6 +280,7 @@ describe('useAutoScroll in paginated mode', () => {
       vi.unstubAllGlobals();
       Reflect.deleteProperty(document, 'startViewTransition');
       Reflect.deleteProperty(document.documentElement, 'animate');
+      h.theme = { isIPhoneDuo: false, safeAreaInsets: null };
     });
 
     const reveal = async () => {
@@ -394,6 +397,69 @@ describe('useAutoScroll in paginated mode', () => {
       press('pointerdown', x, 300);
       press('pointerup', x, 302);
       expect(result.current.paused).toBe(true);
+    });
+
+    test('a right-edge swipe that comes back near its start does not pause', async () => {
+      const { result } = renderHook(() => useAutoScroll(BOOK_KEY, paginatedRef));
+      await reveal();
+      const x = window.innerWidth - 5;
+
+      press('pointerdown', x, 300);
+      press('pointermove', x, 340);
+      press('pointerup', x, 302);
+      expect(result.current.paused).toBe(false);
+    });
+
+    // iPhone Duo's status strip is a right inset the swipe's zone ends before.
+    test('a swipe in the right-edge zone before an iPhone Duo inset does not pause', async () => {
+      h.theme = { isIPhoneDuo: true, safeAreaInsets: { right: 300 } };
+      const { result } = renderHook(() => useAutoScroll(BOOK_KEY, paginatedRef));
+      await reveal();
+
+      press('pointerdown', 700, 300);
+      expect(result.current.paused).toBe(false);
+      press('pointerup', 700, 420);
+      expect(result.current.paused).toBe(false);
+    });
+
+    // Stopping turns back under the snapshot; until that lands, a page turn
+    // or a new session would turn the same paginator.
+    test('keeps page turns and a new session behind the turn back of a stop', async () => {
+      const { result } = renderHook(() => useAutoScroll(BOOK_KEY, paginatedRef));
+      await reveal();
+      let turnedBack = () => {};
+      renderer.prev.mockImplementationOnce(
+        () =>
+          new Promise<void>((resolve) => {
+            turnedBack = resolve;
+          }),
+      );
+      try {
+        act(() => result.current.stop());
+        await act(() => vi.advanceTimersByTimeAsync(0));
+        expect(renderer.prev).toHaveBeenCalledOnce();
+
+        let turning: Promise<void> = Promise.resolve();
+        await act(async () => {
+          turning = paginatedRef.current!.next();
+          await vi.advanceTimersByTimeAsync(50);
+        });
+        expect(viewNext).not.toHaveBeenCalled();
+        await toggle();
+        await act(() => vi.advanceTimersByTimeAsync(200));
+        expect(renderer.next).toHaveBeenCalledOnce();
+
+        await act(async () => {
+          turnedBack();
+          await turning;
+          await vi.advanceTimersByTimeAsync(200);
+        });
+        expect(viewNext).toHaveBeenCalledOnce();
+        expect(renderer.next).toHaveBeenCalledTimes(2);
+      } finally {
+        // A failure above must not leave the snapshot holding the document.
+        await act(async () => turnedBack());
+      }
     });
 
     // The page turned to under the snapshot is committed as the reading
