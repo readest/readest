@@ -211,6 +211,18 @@ diff -ruN blitz/packages/blitz-dom/assets/default.css blitz/packages/blitz-dom/a
  input[type="radio"] {
      width: 14px;
      height: 14px;
+@@ -109,8 +124,10 @@
+ }
+ 
+ /* https://html.spec.whatwg.org/multipage/rendering.html#the-select-element-2
+-   (select only has native appearance here) */
++   (select only has native appearance here). An atomic inline, as in Chromium's html.css: a
++   drop-down select's box holds its selected option's label (layout/construct.rs). */
+ select {
++    display: inline-block;
+     letter-spacing: initial;
+     word-spacing: initial;
+     line-height: initial;
 diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/document.rs
 --- blitz/packages/blitz-dom/src/document.rs
 +++ blitz/packages/blitz-dom/src/document.rs
@@ -316,7 +328,28 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
              if let Some(after) = node.after() {
                  self.drop_node_ignoring_parent_with(after, on_drop);
              }
-@@ -1684,6 +1704,62 @@
+@@ -1124,6 +1144,20 @@
+         for nested_id in nested {
+             self.deallocate_anonymous_block(nested_id);
+         }
++        // And the nodes it owns (a select's label): the DOM nodes it wraps have another parent.
++        let owned: Vec<NodeId> = self.nodes[anon_id]
++            .children
++            .iter()
++            .copied()
++            .filter(|&id| {
++                self.nodes
++                    .get(id)
++                    .is_some_and(|n| n.parent == Some(anon_id))
++            })
++            .collect();
++        for id in owned {
++            self.remove_node_from_tree(id);
++        }
+ 
+         self.remove_node_from_tree(anon_id);
+     }
+@@ -1684,6 +1718,62 @@
              self.snapshot_node_state_only(node_id);
          }
          cb(&mut self.nodes[node_id]);
@@ -379,7 +412,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      }
  
      // Takes (x, y) co-ordinates (relative to the )
-@@ -2049,13 +2125,21 @@
+@@ -2049,13 +2139,21 @@
          }
  
          self.hover_node_id = hover_node_id;
@@ -404,7 +437,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      pub fn clear_hover(&mut self) -> bool {
          // The pointer is no longer over the document, so stop re-resolving
          // hover state against it.
-@@ -2073,9 +2157,7 @@
+@@ -2073,9 +2171,7 @@
  
          self.hover_node_id = None;
          self.hover_node_is_text = false;
@@ -415,7 +448,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
  
          true
      }
-@@ -2333,6 +2415,56 @@
+@@ -2333,6 +2429,56 @@
          self.stylist.device()
      }
  
@@ -472,7 +505,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      pub fn get_cursor(&self) -> Option<CursorIcon> {
          // Prefer the precise hit node: `cursor` and `user-select` may be set on
          // a pseudo-element or resolved on an anonymous box, and text hits carry
-@@ -2440,6 +2572,40 @@
+@@ -2440,6 +2586,40 @@
          (pos, *self.nodes[node_id].unrounded_layout())
      }
  
@@ -513,7 +546,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      /// Computes the size and position of the `Node` relative to the viewport
      pub fn get_client_bounding_rect(&self, node_id: NodeId) -> Option<BoundingRect> {
          // Non-atomic inline elements have no layout box of their own: return
-@@ -2447,17 +2613,27 @@
+@@ -2447,17 +2627,27 @@
          if let Some(rects) = self.inline_fragment_rects(node_id) {
              return rects.reduce(BoundingRect::union);
          }
@@ -551,7 +584,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      }
  
      /// CSSOM View's `offsetLeft`/`offsetTop`/`offsetWidth`/`offsetHeight` as a single rect:
-@@ -2528,7 +2704,7 @@
+@@ -2528,7 +2718,7 @@
      pub fn node_client_rects(&self, node_id: NodeId) -> Vec<BoundingRect> {
          match self.inline_fragment_rects(node_id) {
              Some(rects) => rects.collect(),
@@ -560,7 +593,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
          }
      }
  
-@@ -2543,20 +2719,329 @@
+@@ -2543,20 +2733,329 @@
  
          // Only non-atomic inline elements lack their own layout box: they are
          // flattened into the containing inline root's text layout as style spans.
@@ -902,7 +935,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      }
  
      /// The first element in tree order with the given tag name. The root element and
-@@ -2944,6 +3429,36 @@
+@@ -2944,6 +3443,36 @@
  /// Snap a CSSOM geometry value to a 1/64px grid (the precision of Blink's `LayoutUnit`).
  /// Layout values are accumulated in `f32`, so e.g. seven `55/7`-wide flex items would
  /// otherwise end at `55.0000005` and appear to overflow their 55px container.
@@ -939,7 +972,66 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
  fn snap_to_layout_unit(value: f64) -> f64 {
      (value * 64.0).round() / 64.0
  }
-@@ -3781,3 +4296,7 @@
+@@ -3508,6 +4037,58 @@
+ }
+ 
+ #[cfg(test)]
++mod select_label_tests {
++    use super::*;
++    use crate::qual_name;
++    use blitz_traits::shell::ColorScheme;
++
++    /// A select's label is rebuilt whenever its selected option changes, and the text node of the
++    /// old one is freed with the anonymous block that held it.
++    #[test]
++    fn a_select_label_is_freed_when_it_is_rebuilt() {
++        let mut doc = BaseDocument::new(DocumentConfig {
++            viewport: Some(Viewport::new(400, 300, 1.0, ColorScheme::Light)),
++            ..Default::default()
++        });
++        let root_id = doc.root_node().id;
++        let mut mutator = doc.mutate();
++        let html = mutator.create_element(qual_name!("html", html), vec![]);
++        let body = mutator.create_element(qual_name!("body", html), vec![]);
++        let select = mutator.create_element(qual_name!("select", html), vec![]);
++        let a = mutator.create_element(qual_name!("option", html), vec![]);
++        let b = mutator.create_element(qual_name!("option", html), vec![]);
++        let text_a = mutator.create_text_node("A");
++        let text_b = mutator.create_text_node("B");
++        mutator.append_children(a, &[text_a]);
++        mutator.append_children(b, &[text_b]);
++        mutator.append_children(select, &[a, b]);
++        mutator.append_children(body, &[select]);
++        mutator.append_children(html, &[body]);
++        mutator.append_children(root_id, &[html]);
++        drop(mutator);
++        doc.resolve(0.0);
++
++        let label = |doc: &BaseDocument| {
++            let block = doc.nodes[select].layout_children.borrow().as_ref().unwrap()[0];
++            let text = doc.nodes[block].children[0];
++            doc.nodes[text].text_data().unwrap().content.clone()
++        };
++        assert_eq!(label(&doc), "A");
++        let nodes = doc.nodes.len();
++        for (on, off) in [(b, a), (a, b), (b, a), (a, b)] {
++            let mut mutator = doc.mutate();
++            mutator.set_attribute(on, qual_name!("selected"), "");
++            mutator.clear_attribute(off, qual_name!("selected"));
++            drop(mutator);
++            doc.resolve(0.0);
++            let expected = if on == a { "A" } else { "B" };
++            assert_eq!(label(&doc), expected);
++        }
++        assert_eq!(doc.nodes.len(), nodes, "nodes after selecting 4 times");
++    }
++}
++
++#[cfg(test)]
+ mod inline_with_only_block_children_tests {
+     use super::*;
+     use crate::qual_name;
+@@ -3781,3 +4362,7 @@
          );
      }
  }
@@ -1374,6 +1466,15 @@ diff -ruN blitz/packages/blitz-dom/src/layout/columns.rs blitz/packages/blitz-do
 diff -ruN blitz/packages/blitz-dom/src/layout/construct.rs blitz/packages/blitz-dom/src/layout/construct.rs
 --- blitz/packages/blitz-dom/src/layout/construct.rs
 +++ blitz/packages/blitz-dom/src/layout/construct.rs
+@@ -3,7 +3,7 @@
+ use std::sync::Arc;
+ use stylo_taffy::CopyStyleGetters;
+ 
+-use markup5ever::{QualName, local_name, ns};
++use markup5ever::{LocalName, QualName, local_name, ns};
+ use parley::StyleProperty;
+ use style::{
+     computed_values::position::T as PositionProperty,
 @@ -180,6 +180,9 @@
      if let Some(before) = node.before() {
          layout_children.push(before);
@@ -1435,7 +1536,7 @@ diff -ruN blitz/packages/blitz-dom/src/layout/construct.rs blitz/packages/blitz-
          // Handle text inputs
          let tag_name = el.name.local.as_ref();
          if matches!(tag_name, "input" | "textarea") {
-@@ -438,9 +460,6 @@
+@@ -438,12 +460,23 @@
              ) {
                  create_text_editor(doc, container_node_id, false);
                  return;
@@ -1445,7 +1546,24 @@ diff -ruN blitz/packages/blitz-dom/src/layout/construct.rs blitz/packages/blitz-
              }
          }
  
-@@ -795,6 +814,177 @@
++        // A drop-down select shows its selected option's label (its options aren't rendered),
++        // in an anonymous block holding a text node it owns.
++        if tag_name == "select" && el.attr(local_name!("multiple")).is_none() {
++            let label = select_label(doc, container_node_id);
++            if !label.is_empty() {
++                out.create_anonymous_block(container_node_id, doc);
++                let block_id = out.anonymous_block_id.unwrap();
++                let text_id = doc.create_text_node(&label);
++                doc.nodes[text_id].parent = Some(block_id);
++                doc.nodes[block_id].children.push(text_id);
++            }
++            return;
++        }
++
+         #[cfg(feature = "svg")]
+         if matches!(tag_name, "svg") {
+             let outer_html = doc.get_node(container_node_id).unwrap().svg_source();
+@@ -795,6 +828,177 @@
              }
          }
      }
@@ -1623,7 +1741,60 @@ diff -ruN blitz/packages/blitz-dom/src/layout/construct.rs blitz/packages/blitz-
  }
  
  /// Handles the cases where there are text nodes or inline nodes that need to be wrapped in an anonymous block node
-@@ -875,6 +1065,10 @@
+@@ -854,6 +1058,52 @@
+     out.maybe_push_anon_block(doc);
+ }
+ 
++/// The label a drop-down select shows: its option carrying `selected`, or else its first enabled
++/// option (HTML's selectedness setting algorithm), as the option's `label` or its text with white
++/// space collapsed.
++fn select_label(doc: &BaseDocument, select_id: NodeId) -> String {
++    let is = |id: NodeId, name: LocalName| {
++        doc.nodes[id]
++            .element_data()
++            .is_some_and(|el| el.name.local == name)
++    };
++    let options = doc.nodes[select_id].children.iter().flat_map(|&id| {
++        let group = is(id, local_name!("optgroup"));
++        let ids = if group {
++            &doc.nodes[id].children[..]
++        } else {
++            std::slice::from_ref(&doc.nodes[id].id)
++        };
++        ids.iter()
++            .copied()
++            .filter(|&id| is(id, local_name!("option")))
++    });
++    let mut first_enabled = None;
++    let mut selected = None;
++    for id in options {
++        let el = doc.nodes[id].element_data().unwrap();
++        if el.attr(local_name!("selected")).is_some() {
++            selected = Some(id);
++            break;
++        }
++        if first_enabled.is_none() && el.attr(local_name!("disabled")).is_none() {
++            first_enabled = Some(id);
++        }
++    }
++    let Some(option_id) = selected.or(first_enabled) else {
++        return String::new();
++    };
++    let option = &doc.nodes[option_id];
++    match option.attr(local_name!("label")).filter(|l| !l.is_empty()) {
++        Some(label) => label.to_string(),
++        None => option
++            .text_content()
++            .split_whitespace()
++            .collect::<Vec<_>>()
++            .join(" "),
++    }
++}
++
+ fn create_text_editor(doc: &mut BaseDocument, input_element_id: NodeId, is_multiline: bool) {
+     let node = &mut doc.nodes[input_element_id];
+     let parley_style = node
+@@ -875,6 +1125,10 @@
      } else {
          node.attr(local_name!("value")).unwrap_or("").to_string()
      };
@@ -1634,7 +1805,7 @@ diff -ruN blitz/packages/blitz-dom/src/layout/construct.rs blitz/packages/blitz-
      let is_focussed = node.is_focussed();
      let element = &mut node.data.downcast_element_mut().unwrap();
      if !matches!(element.special_data, SpecialElementData::TextInput(_)) {
-@@ -894,33 +1088,59 @@
+@@ -894,33 +1148,59 @@
          unreachable!();
      };
  
@@ -2585,7 +2756,7 @@ diff -ruN blitz/packages/blitz-dom/src/mutator.rs blitz/packages/blitz-dom/src/m
              #[cfg(feature = "autofocus")]
              node_to_autofocus: None,
              #[cfg(feature = "devtools")]
-@@ -321,7 +328,15 @@
+@@ -321,10 +328,19 @@
  
      pub fn set_attribute(&mut self, node_id: NodeId, name: QualName, value: &str) {
          let node_is_in_document = self.doc.nodes[node_id].flags.is_in_document();
@@ -2602,7 +2773,11 @@ diff -ruN blitz/packages/blitz-dom/src/mutator.rs blitz/packages/blitz-dom/src/m
              self.doc.snapshot_node(node_id, &name.local);
  
              self.restyle_for_attribute_change(node_id, &name.local);
-@@ -345,7 +360,11 @@
++            self.maybe_record_option(node_id);
+         }
+ 
+         if name.local == local_name!("id") && node_is_in_document {
+@@ -345,7 +361,11 @@
              return;
          };
  
@@ -2615,7 +2790,7 @@ diff -ruN blitz/packages/blitz-dom/src/mutator.rs blitz/packages/blitz-dom/src/m
          // If element is a CustomWidget, then Ccall attribute_changed on it
          #[cfg(feature = "custom-widget")]
          if let SpecialElementData::CustomWidget(widget_data) = &mut element.special_data {
-@@ -455,6 +474,13 @@
+@@ -455,11 +475,19 @@
      }
  
      pub fn clear_attribute(&mut self, node_id: NodeId, name: QualName) {
@@ -2629,7 +2804,13 @@ diff -ruN blitz/packages/blitz-dom/src/mutator.rs blitz/packages/blitz-dom/src/m
          let node_is_in_document = self.doc.nodes[node_id].flags.is_in_document();
          if node_is_in_document {
              self.doc.snapshot_node(node_id, &name.local);
-@@ -482,7 +508,11 @@
+ 
+             self.restyle_for_attribute_change(node_id, &name.local);
++            self.maybe_record_option(node_id);
+         }
+ 
+         if name.local == local_name!("id") && node_is_in_document {
+@@ -482,7 +510,11 @@
          if !had_attr {
              return;
          }
@@ -2642,7 +2823,7 @@ diff -ruN blitz/packages/blitz-dom/src/mutator.rs blitz/packages/blitz-dom/src/m
          if node_is_in_document {
              devtools!(
                  self,
-@@ -563,14 +593,14 @@
+@@ -563,14 +595,14 @@
  
      pub fn set_style_property(&mut self, node_id: NodeId, name: &str, value: &str) {
          let node_is_in_document = self.doc.nodes[node_id].flags.is_in_document();
@@ -2661,7 +2842,7 @@ diff -ruN blitz/packages/blitz-dom/src/mutator.rs blitz/packages/blitz-dom/src/m
      }
  
      pub fn set_sub_document(&mut self, node_id: NodeId, sub_document: Box<dyn Document>) {
-@@ -744,6 +774,7 @@
+@@ -744,6 +776,7 @@
          }
          // Mark ancestors dirty so the style traversal visits this subtree.
          node.mark_ancestors_dirty();
@@ -2669,7 +2850,7 @@ diff -ruN blitz/packages/blitz-dom/src/mutator.rs blitz/packages/blitz-dom/src/m
      }
  
      /// Restyle an in-document element whose child list changed, `changed` being the position
-@@ -751,6 +782,8 @@
+@@ -751,6 +784,8 @@
      /// children are styled by the traversal regardless; the element and its other children
      /// only need restyling where its selector flags record a selector that depends on them.
      fn restyle_for_child_list_change(&mut self, parent_id: NodeId, changed: Range<usize>) {
@@ -2678,7 +2859,45 @@ diff -ruN blitz/packages/blitz-dom/src/mutator.rs blitz/packages/blitz-dom/src/m
          let parent = &self.doc.nodes[parent_id];
          let flags = parent.selector_flags().get();
          let mut hint = RestyleHint::empty();
-@@ -3084,3 +3117,14 @@
+@@ -1338,10 +1373,37 @@
+             "style" => {
+                 self.style_nodes.insert(node_id);
+             }
++            "option" | "optgroup" => self.reconstruct_select_of(node_id),
+             _ => {}
+         }
+     }
+ 
++    fn maybe_record_option(&mut self, node_id: NodeId) {
++        if self.doc.nodes[node_id]
++            .data
++            .is_element_with_tag_name(&local_name!("option"))
++        {
++            self.reconstruct_select_of(node_id);
++        }
++    }
++
++    /// A select shows its selected option's label (layout/construct.rs): rebuild the box of the
++    /// select holding the option or optgroup `node_id` when the option's text, its attributes or
++    /// the list changes. The option's own style may not change at all (it isn't rendered).
++    fn reconstruct_select_of(&mut self, node_id: NodeId) {
++        let mut id = self.doc.nodes[node_id].parent;
++        for _ in 0..2 {
++            let Some(parent_id) = id else { return };
++            let parent = &mut self.doc.nodes[parent_id];
++            if parent.data.is_element_with_tag_name(&local_name!("select")) {
++                parent.insert_damage(ALL_DAMAGE);
++                parent.mark_ancestors_dirty();
++                return;
++            }
++            id = parent.parent;
++        }
++    }
++
+     fn load_linked_stylesheet(&mut self, target_id: NodeId) {
+         let node = &self.doc.nodes[target_id];
+ 
+@@ -3084,3 +3146,14 @@
          );
      }
  }
