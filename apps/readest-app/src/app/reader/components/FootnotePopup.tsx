@@ -353,6 +353,12 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
       appLang: getLocale(),
       allowDownload: false,
       vocabulary: useVocabularyStore.getState().getLearningAndMastered(vocabularyLang(bookLang)),
+      // Hints drawn or removed move the text under the highlights mirrored
+      // here. Forget what was drawn so the next pass draws every one again.
+      onGlossesChanged: () => {
+        drawnNotesRef.current.clear();
+        setPopupContentEpoch((epoch) => epoch + 1);
+      },
     });
   };
 

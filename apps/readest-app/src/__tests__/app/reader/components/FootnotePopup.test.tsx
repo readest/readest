@@ -335,6 +335,57 @@ describe('FootnotePopup Word Lens hints', () => {
 
     expect(doc.querySelector('.wl-gloss rt')?.textContent).toBe('黄金');
   });
+
+  // A hint drawn or removed moves the text under the highlights mirrored into
+  // the popup, and nothing else redraws them while it stays open.
+  it('redraws its highlights when a hint changes while the footnote stays open', async () => {
+    const config = bookDataState.booksData.bookid.config as { booknotes: unknown[] };
+    config.booknotes = [
+      {
+        id: 'h1',
+        type: 'annotation',
+        cfi: 'epubcfi(/6/8!/4/2,/1:0,/1:5)',
+        style: 'highlight',
+        color: 'yellow',
+        updatedAt: 1,
+      },
+    ];
+    try {
+      await renderPopup();
+      const anchor = document.createElement('a');
+      anchor.setAttribute('href', HREF);
+      document.body.appendChild(anchor);
+      await act(async () => {
+        hoisted.onLinkClick.current?.(
+          new CustomEvent('link', { detail: { a: anchor, href: HREF }, cancelable: true }),
+        );
+      });
+      const view = Object.assign(createPopupView(), {
+        getCFI: () => 'epubcfi(/6/8!/4)',
+        addAnnotation: vi.fn(),
+      });
+      const handler = hoisted.handlers.at(-1)!;
+      await act(async () => {
+        handler.dispatchEvent(new CustomEvent('before-render', { detail: { view } }));
+        handler.dispatchEvent(
+          new CustomEvent('render', { detail: { view, href: HREF, index: 3, extract: {} } }),
+        );
+        view.dispatchEvent(new CustomEvent('relocate', { detail: {} }));
+      });
+      const doc = await loadPopupDoc(view, '<p>Worth more than gold.</p>');
+      expect(view.addAnnotation).toHaveBeenCalledWith(expect.objectContaining({ id: 'h1' }));
+      view.addAnnotation.mockClear();
+
+      await act(async () => {
+        await setVocabulary({ learning: new Map([['gold', '黄金']]), mastered: new Set<string>() });
+      });
+
+      expect(doc.querySelector('.wl-gloss rt')?.textContent).toBe('黄金');
+      expect(view.addAnnotation).toHaveBeenCalledWith(expect.objectContaining({ id: 'h1' }));
+    } finally {
+      config.booknotes = [];
+    }
+  });
 });
 
 describe('FootnotePopup jump to location', () => {
