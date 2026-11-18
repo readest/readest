@@ -529,7 +529,8 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
         shortcut='Shift+A'
         Icon={viewState?.autoScrollEnabled ? MdCheck : undefined}
         onClick={toggleAutoScroll}
-        disabled={!isScrolledMode}
+        // Paginated pages are wiped in along horizontal lines (#7575).
+        disabled={!isScrolledMode && (bookData.isFixedLayout || viewSettings.vertical)}
       />
 
       {bookData.book?.format === 'PDF' && appService?.supportsCanvasContext2DFilter && (
