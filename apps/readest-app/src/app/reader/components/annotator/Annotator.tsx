@@ -432,6 +432,16 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
   };
   const androidSelectionHandlerHeight = 0;
 
+  // The keyboard a popup's text field raises can shorten the window, and the
+  // popup stays a popup (#7570): place it again against the new size.
+  const [windowResizes, setWindowResizes] = useState(0);
+  useEffect(() => {
+    if (!showingPopup) return;
+    const onResize = () => setWindowResizes((count) => count + 1);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, [showingPopup]);
+
   // Reposition popups on scroll without dismissing them
   const repositionPopups = useCallback(() => {
     if (!selection || !selection.text) return;
@@ -491,6 +501,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
     annotPopupWidth,
     annotPopupHeight,
     footnotePopupDir,
+    windowResizes,
   ]);
 
   useEffect(() => {
