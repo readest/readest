@@ -508,7 +508,57 @@ describe('searchLibraryBooks', () => {
     files.set('in-place-session', makeFile('# Chapter\na needle here, and an edited needle'));
     expect(await search({ session })).toMatchObject({ type: 'completed', matchCount: 2 });
     // A later session is served from the index the rebuild wrote.
+    const loads = vi.mocked(service.loadBookContent).mock.calls.length;
     expect(await search({})).toMatchObject({ type: 'completed', matchCount: 2 });
+    expect(service.loadBookContent).toHaveBeenCalledTimes(loads);
+    await session.close();
+  });
+
+  // Here the file changes back after the search measured it, so the document
+  // the session reopens still holds the old text.
+  it('stores the size of the file whose text it indexed', async () => {
+    const book = makeBook('in-place-race', 'In Place');
+    const files = new Map([['in-place-race', makeFile('# Chapter\na needle here')]]);
+    const service = makeService(files);
+    const session = createLibrarySearchSession(service);
+    const search = async (options: { session?: typeof session }) => {
+      const events = [];
+      for await (const event of searchLibraryBooks(service, [book], 'needle', {
+        config,
+        ...options,
+      })) {
+        events.push(event);
+      }
+      return events.at(-1);
+    };
+
+    await search({ session });
+    const edited = makeFile('# Chapter\na needle here, and an edited needle');
+    vi.mocked(service.getBookFileSize).mockResolvedValueOnce(edited.size);
+    await search({ session });
+    await session.close();
+
+    files.set('in-place-race', edited);
+    expect(await search({})).toMatchObject({ type: 'completed', matchCount: 2 });
+  });
+
+  // On web, measuring a book reads the whole file, and in-book search resolves
+  // every chapter's results through the session.
+  it('resolves results without reading the book file again', async () => {
+    const book = makeBook('resolving', 'Resolving');
+    const service = makeService(new Map([['resolving', makeFile('# Chapter\na needle here')]]));
+    const session = createLibrarySearchSession(service);
+    const locators = [];
+    for await (const event of searchLibraryBooks(service, [book], 'needle', { config, session })) {
+      if (event.type === 'result') locators.push(...event.result.subitems.map((m) => m.locator));
+    }
+    const measured = vi.mocked(service.getBookFileSize).mock.calls.length;
+
+    for (let i = 0; i < 3; i++) await resolveSearchResultCfis(session, book, locators);
+
+    expect(locators).not.toHaveLength(0);
+    expect(service.getBookFileSize).toHaveBeenCalledTimes(measured);
+    expect(service.loadBookContent).toHaveBeenCalledOnce();
     await session.close();
   });
 

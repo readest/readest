@@ -298,10 +298,7 @@ const MAX_CACHED_BOOKS = 10;
 const MAX_OPEN_INDEX_DBS = 16;
 
 export const createLibrarySearchSession = (appService: LibrarySearchAppService) => {
-  const documents = new Map<
-    string,
-    { updatedAt: number; fileSize: number | null; pending: Promise<CachedSearchBook> }
-  >();
+  const documents = new Map<string, { updatedAt: number; pending: Promise<CachedSearchBook> }>();
   // One handle per search.db within the session: OPFS permits a single access
   // handle per file per origin, so concurrent opens of the same DB would throw.
   const indexDbs = new Map<string, Promise<DatabaseService | null>>();
@@ -318,12 +315,9 @@ export const createLibrarySearchSession = (appService: LibrarySearchAppService) 
     );
   };
 
-  // Keyed on the file size too: a book imported in place can have its file
-  // edited, which leaves book.updatedAt as it was.
-  const open = async (book: Book): Promise<CachedSearchBook> => {
-    const fileSize = await appService.getBookFileSize(book).catch(() => null);
+  const open = (book: Book) => {
     const existing = documents.get(book.hash);
-    if (existing?.updatedAt === book.updatedAt && existing.fileSize === fileSize) {
+    if (existing?.updatedAt === book.updatedAt) {
       documents.delete(book.hash);
       documents.set(book.hash, existing);
       return existing.pending;
@@ -347,7 +341,7 @@ export const createLibrarySearchSession = (appService: LibrarySearchAppService) 
         throw error;
       }
     })();
-    const entry = { updatedAt: book.updatedAt, fileSize, pending };
+    const entry = { updatedAt: book.updatedAt, pending };
     documents.set(book.hash, entry);
     void pending.catch(() => {
       if (documents.get(book.hash) === entry) documents.delete(book.hash);
@@ -390,6 +384,13 @@ export const createLibrarySearchSession = (appService: LibrarySearchAppService) 
     return pending;
   };
 
+  const dropDocument = (book: Book) => {
+    const existing = documents.get(book.hash);
+    if (!existing) return;
+    documents.delete(book.hash);
+    dispose(existing);
+  };
+
   const dropIndexDb = (book: Book) => {
     const pending = indexDbs.get(book.hash);
     if (!pending) return;
@@ -399,6 +400,7 @@ export const createLibrarySearchSession = (appService: LibrarySearchAppService) 
 
   return {
     open,
+    dropDocument,
     getIndexDb,
     dropIndexDb,
     getNavHash,
@@ -719,7 +721,13 @@ export async function* searchLibraryBooks(
         // Live path: extract text section by section, persist it to the
         // per-book index, and match the same extracted text.
         if (options.session) {
-          const cached = await options.session.open(book);
+          let cached = await options.session.open(book);
+          // A book imported in place can be edited without a book.updatedAt
+          // change, so the session may hold the document opened before it.
+          if (cached.file.size !== localSize) {
+            options.session.dropDocument(book);
+            cached = await options.session.open(book);
+          }
           file = cached.file;
           bookDoc = cached.bookDoc;
         } else {
@@ -748,7 +756,9 @@ export async function* searchLibraryBooks(
         const tocProgress = await createTOCProgress(bookDoc);
         const totalSections = bookDoc.sections.length;
         if (indexDb) {
-          await beginSearchIndex(indexDb, localSize, totalSections, usedNavHash).catch(() => {
+          // The opened file's own size, which matches the text indexed even if
+          // the file changed again after it was measured above.
+          await beginSearchIndex(indexDb, file.size, totalSections, usedNavHash).catch(() => {
             indexDb = null;
           });
         }
