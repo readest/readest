@@ -30,8 +30,10 @@ const NOTES_BODY = `
   </div><p class="p1">Следующее примечание.</p></span>
   <span class="wrap"><span id="id11"><div class="title1">
   <p class="p">57</p>
-  </div><p class="p1">Вложенное примечание.</p></span></span>
+  </div><p class="p1">Вложенное примечание.</p></span><p>Посторонний блок.</p></span>
   <span id="id9"><div class="title1"><p class="p">58</p></div><p class="p1">Примечание без пробелов.</p></span>
+  <span id="id3"><div class="title1"><p class="p"><span>6</span><span>1</span></p></div><p class="p1">Номер из двух частей.</p></span>
+  <span class="notes"><a id="id7"></a><p class="p1">62 Первое из общих.</p><a id="id5"></a><p class="p1">63 Второе из общих.</p></span>
   <div id="ch5"><h2>5. Глава</h2><p>Абзац.</p><p>Абзац.</p><p>Абзац.</p></div>
 `;
 
@@ -43,6 +45,8 @@ const TEXT_BODY = `
   <p class="p1">См. главу<a href="ch2.xhtml#ch5" class="a">[5]</a>.</p>
   <p class="p1">Вложенное<a href="ch2.xhtml#id11" class="a">[57]</a>.</p>
   <p class="p1">Без пробелов<a href="ch2.xhtml#id9" class="a">[58]</a>.</p>
+  <p class="p1">Номер частями<a href="ch2.xhtml#id3" class="a">[61]</a>.</p>
+  <p class="p1">Общая обёртка<a href="ch2.xhtml#id7" class="a">[62]</a>.</p>
 `;
 
 const xhtml = (body: string) =>
@@ -126,14 +130,27 @@ describe('Footnote popup for a note wrapped in a body-level span (#7564, browser
 
   it('shows a note whose span sits inside another inline wrapper', async () => {
     const { handled, rendered } = await openPopup('id11');
-    await handled;
+    await expect(handled, 'the nested note span opens').resolves.toBeUndefined();
     expect(popupText(await rendered)).toBe('57 Вложенное примечание.');
   });
 
   it('shows a note whose number block has no whitespace after it', async () => {
     const { handled, rendered } = await openPopup('id9');
-    await handled;
+    await expect(handled, 'the whitespace-free note opens').resolves.toBeUndefined();
     expect(popupText(await rendered)).toBe('58Примечание без пробелов.');
+  });
+
+  it('shows a note whose number is split across inline elements', async () => {
+    const { handled, rendered } = await openPopup('id3');
+    await expect(handled, 'the split-number note opens').resolves.toBeUndefined();
+    expect(popupText(await rendered)).toBe('61Номер из двух частей.');
+  });
+
+  // An empty anchor inside a span holding several notes is not a wrapped
+  // note: the span must not open whole with both notes in it.
+  it('does not open an inline wrapper holding several notes', async () => {
+    const { handled } = await openPopup('id7');
+    await expect(handled).rejects.toThrow('Failed to locate footnote content');
   });
 
   it('still rejects a note that does not start with the reference number', async () => {
