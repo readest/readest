@@ -146,6 +146,29 @@ describe('NativeNarrationPlayer source selection', () => {
     }
   });
 
+  // An .mp4 or .m4a does not say which codec it holds, and the Linux decoder
+  // has no Opus (#7560): the file is declined for the web view, which has.
+  test.each([
+    ['a book entry', { getMediaSource: async () => WINDOW }],
+    ['a paired audiobook', { resolvePath: async () => '/books/hash/audio.m4b' }],
+  ])('declines %s whose codec the Linux decoder lacks', async (_, resolvers) => {
+    const player = new NativeNarrationPlayer({ isLinuxApp: true } as AppService);
+    const loadBlob = vi.fn(async () => new Blob());
+    vi.mocked(invoke).mockImplementation(async (_cmd: string, args?: unknown) => {
+      const payload = (args as { payload?: Record<string, unknown> })?.payload ?? {};
+      if (payload['action'] === 'load') throw 'Native tts error: no supported audio track';
+      return (payload['action'] === 'start-session' ? { session: 7 } : undefined) as unknown;
+    });
+    try {
+      await expect(
+        player.loadSource('chapter.mp4', { loadBlob, ...resolvers }, 'audio/mp4'),
+      ).resolves.toBe(false);
+      expect(loadBlob).not.toHaveBeenCalled();
+    } finally {
+      await player.shutdown();
+    }
+  });
+
   test.each([
     'chapter.mp3',
     'chapter.opus',
@@ -207,6 +230,44 @@ describe('MediaOverlayClient on Linux Tauri', () => {
     });
     expect(book.loadBlob).not.toHaveBeenCalled();
     expect(writeFile).not.toHaveBeenCalled();
+  });
+
+  test('streams audio the Linux decoder declines through the media proxy', async () => {
+    await setup(WINDOW, linux);
+    const elements: Array<{ src: string }> = [];
+    vi.stubGlobal(
+      'Audio',
+      class {
+        src = '';
+        currentTime = 0;
+        playbackRate = 1;
+        preservesPitch = true;
+        paused = true;
+        constructor() {
+          elements.push(this);
+        }
+        async play() {
+          this.paused = false;
+        }
+        pause() {
+          this.paused = true;
+        }
+        addEventListener() {}
+        removeEventListener() {}
+      },
+    );
+    const control = vi.mocked(invoke).getMockImplementation()!;
+    vi.mocked(invoke).mockImplementation(async (cmd: string, args?: unknown) => {
+      const payload = (args as { payload?: Record<string, unknown> })?.payload;
+      if (payload?.['action'] === 'load') throw 'Native tts error: no supported audio track';
+      if (cmd === 'get_media_file_url') return 'http://127.0.0.1:4321/file/ch1.mp4' as unknown;
+      return control(cmd, args as Parameters<typeof invoke>[1]);
+    });
+    const iter = client.speak(section.ssmlForBlock(0)!, new AbortController().signal);
+
+    expect((await iter.next()).value?.code).toBe('boundary');
+    expect(elements.map((element) => element.src)).toEqual(['http://127.0.0.1:4321/file/ch1.mp4']);
+    expect(book.loadBlob).not.toHaveBeenCalled();
   });
 
   test('plays a paired local recording from its original path', async () => {
