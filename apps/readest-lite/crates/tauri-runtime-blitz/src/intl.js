@@ -2,7 +2,8 @@
 // locale data. Plural rules for the main language families; word, grapheme and sentence
 // segmentation by Unicode properties (Han is one word per character, as there is no dictionary);
 // collation by code point after the sensitivity's folding; English number, list, date and
-// relative-time formats; DisplayNames knows no names (callers fall back to the code).
+// relative-time formats, also behind Date's and Number's toLocale*String; DisplayNames knows no
+// names (callers fall back to the code).
 (() => {
   if (globalThis.Intl) return;
 
@@ -288,11 +289,17 @@
     format(date = Date.now()) {
       const d = new Date(date),
         o = this._o;
+      if (Number.isNaN(d.getTime())) throw new RangeError('Invalid time value');
       const dateStyle = o.dateStyle,
         timeStyle = o.timeStyle;
       const has = (k) => o[k] !== undefined;
       const anyDate = has('year') || has('month') || has('day') || has('weekday');
       const anyTime = has('hour') || has('minute') || has('second');
+      // The local time zone, or UTC (no other zone is known).
+      const utc = /^(Etc\/)?(UTC|GMT)$/i.test(o.timeZone ?? '');
+      const get = (k) => (utc ? d[`getUTC${k}`]() : d[`get${k}`]());
+      const num = (v, style) =>
+        style === '2-digit' ? String(v).padStart(2, '0').slice(-2) : `${v}`;
       const parts = [];
       if (dateStyle || anyDate || !(timeStyle || anyTime)) {
         const month =
@@ -301,29 +308,44 @@
             : dateStyle === 'medium'
               ? 'short'
               : o.month;
-        const y = d.getFullYear(),
-          m = d.getMonth(),
-          day = d.getDate();
+        const y = get('FullYear'),
+          m = get('Month'),
+          day = get('Date');
         let s;
-        if (month === 'long' || month === 'short') {
-          const name = month === 'long' ? MONTHS[m] : MONTHS[m].slice(0, 3);
-          s = [name, has('day') || dateStyle ? `${day}` : ''].filter(Boolean).join(' ');
+        if (month === 'long' || month === 'short' || month === 'narrow') {
+          const name =
+            month === 'long' ? MONTHS[m] : month === 'short' ? MONTHS[m].slice(0, 3) : MONTHS[m][0];
+          s = [name, has('day') || dateStyle ? num(day, o.day) : ''].filter(Boolean).join(' ');
           if (has('year') || dateStyle) s += s.includes(' ') ? `, ${y}` : ` ${y}`;
-        } else if (anyDate && !has('day') && !has('month')) s = has('year') ? `${y}` : '';
-        else s = `${m + 1}/${day}/${dateStyle === 'short' ? String(y).slice(2) : y}`;
+        } else {
+          // Numeric: the fields asked for, or all three.
+          const all = dateStyle === 'short' || !anyDate;
+          const year = dateStyle === 'short' || o.year === '2-digit' ? String(y).slice(-2) : `${y}`;
+          s = [
+            (all || has('month')) && num(m + 1, o.month),
+            (all || has('day')) && num(day, o.day),
+            (all || has('year')) && year,
+          ]
+            .filter(Boolean)
+            .join('/');
+        }
         if (has('weekday') || dateStyle === 'full') {
-          const w = o.weekday === 'short' ? DAYS[d.getDay()].slice(0, 3) : DAYS[d.getDay()];
+          const name = DAYS[get('Day')];
+          const w =
+            o.weekday === 'short' ? name.slice(0, 3) : o.weekday === 'narrow' ? name[0] : name;
           s = s ? `${w}, ${s}` : w;
         }
         if (s) parts.push(s);
       }
       if (timeStyle || anyTime) {
-        const h = d.getHours(),
-          min = String(d.getMinutes()).padStart(2, '0');
+        const h = get('Hours'),
+          min = String(get('Minutes')).padStart(2, '0');
         const h12 = o.hour12 ?? o.hourCycle !== 'h23';
-        let t = h12 ? `${h % 12 || 12}:${min}` : `${String(h).padStart(2, '0')}:${min}`;
+        let t = h12
+          ? `${num(h % 12 || 12, o.hour)}:${min}`
+          : `${String(h).padStart(2, '0')}:${min}`;
         if (has('second') || timeStyle === 'medium' || timeStyle === 'long')
-          t += `:${String(d.getSeconds()).padStart(2, '0')}`;
+          t += `:${String(get('Seconds')).padStart(2, '0')}`;
         parts.push(h12 ? `${t} ${h < 12 ? 'AM' : 'PM'}` : t);
       }
       return parts.join(', ');
@@ -432,4 +454,36 @@
     DisplayNames,
     Locale,
   };
+
+  // Date's and Number's toLocale*String format as Intl does (QuickJS's ignore their locales and
+  // options): a Date without date or time fields asked for gets numeric ones (ECMA-402's
+  // ToDateTimeOptions).
+  const DATE_FIELDS = ['weekday', 'year', 'month', 'day'],
+    TIME_FIELDS = ['hour', 'minute', 'second'];
+  const toLocale = (required, defaults) =>
+    function (locales, options) {
+      if (Number.isNaN(this.getTime())) return 'Invalid Date';
+      const o = { ...options };
+      const asked = (fields) => fields.some((k) => o[k] !== undefined);
+      if (
+        !(o.dateStyle || o.timeStyle) &&
+        !(required !== 'time' && asked(DATE_FIELDS)) &&
+        !(required !== 'date' && asked(TIME_FIELDS))
+      ) {
+        for (const k of defaults) o[k] = 'numeric';
+      }
+      return new DateTimeFormat(locales, o).format(this);
+    };
+  const method = (proto, name, fn) =>
+    Object.defineProperty(proto, name, { value: fn, writable: true, configurable: true });
+  method(Date.prototype, 'toLocaleDateString', toLocale('date', ['year', 'month', 'day']));
+  method(Date.prototype, 'toLocaleTimeString', toLocale('time', TIME_FIELDS));
+  method(
+    Date.prototype,
+    'toLocaleString',
+    toLocale('any', ['year', 'month', 'day', ...TIME_FIELDS]),
+  );
+  method(Number.prototype, 'toLocaleString', function (locales, options) {
+    return new NumberFormat(locales, options).format(this);
+  });
 })();

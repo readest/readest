@@ -102,3 +102,65 @@ fn collator_number_list_locale() {
         ]
     );
 }
+
+#[test]
+fn dates_format_as_their_options_ask() {
+    // Readest formats dates through Date's toLocale*String (Book Details, Reading Statistics,
+    // Vocabulary, the reader's clock): QuickJS ignored their locales and options. Expected
+    // values are Chromium's.
+    let logs = run(r#"
+        const out = (() => {
+const d = new Date(2008, 1, 5, 9, 5, 3), pm = new Date(2008, 1, 5, 13, 7, 0);
+const early = new Date(Date.UTC(2008, 1, 5, 0, 30)), late = new Date(Date.UTC(2008, 1, 5, 23, 30));
+const utc = { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' };
+return [
+  d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
+  d.toLocaleDateString(),
+  d.toLocaleDateString('en', { weekday: 'narrow' }),
+  d.toLocaleDateString('en', { month: 'narrow' }),
+  d.toLocaleDateString('en', { weekday: 'short', month: 'short', day: 'numeric' }),
+  d.toLocaleDateString('en', { month: 'short' }),
+  d.toLocaleDateString('en', { month: 'long', year: 'numeric' }),
+  d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }),
+  d.toLocaleDateString('en-US', { weekday: 'long' }),
+  d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }),
+  d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }),
+  pm.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }),
+  d.toLocaleTimeString(),
+  d.toLocaleString(),
+  d.toLocaleString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }),
+  d.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }),
+  early.toLocaleDateString('en', utc) + ' / ' + late.toLocaleDateString('en', utc),
+  new Date(NaN).toLocaleDateString() + ' / ' + new Date(NaN).toLocaleString(),
+  new Intl.DateTimeFormat('en', { weekday: 'narrow' }).format(d),
+];
+})();
+        for (const s of out) console.log(s);
+        console.log((1234).toLocaleString(), (1234567.891).toLocaleString('en'));
+    "#);
+    assert_eq!(
+        logs,
+        [
+            "February 5, 2008",
+            "2/5/2008",
+            "T",
+            "F",
+            "Tue, Feb 5",
+            "Feb",
+            "February 2008",
+            "Feb 5, 2008",
+            "Tuesday",
+            "09:05 AM",
+            "09:05",
+            "01:07 PM",
+            "9:05:03 AM",
+            "2/5/2008, 9:05:03 AM",
+            "Feb 5, 2008, 09:05 AM",
+            "Feb 5, 2008, 9:05 AM",
+            "February 5, 2008 / February 5, 2008",
+            "Invalid Date / Invalid Date",
+            "T",
+            "1,234 1,234,567.891",
+        ]
+    );
+}
