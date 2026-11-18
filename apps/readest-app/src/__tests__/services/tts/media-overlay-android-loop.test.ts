@@ -44,6 +44,7 @@ let controlCalls: Array<Record<string, unknown>>;
 let positionMs: number;
 let emit: (event: unknown) => void;
 let loopSpan: NarrationLoopSpan | null;
+let pauseAfterSentence: boolean;
 
 const source: NarrationAudioSource = {
   loadBlob: vi.fn(async () => new Blob([new Uint8Array(8)])),
@@ -62,7 +63,13 @@ const setup = async () => {
   } as unknown as BookDoc;
   section = (await loadMediaOverlaySection(book, 0, doc, 'en'))!;
   client = new MediaOverlayClient(
-    { dispatchSpeakMark: vi.fn(), getNarrationLoop: () => loopSpan } as unknown as TTSController,
+    {
+      dispatchSpeakMark: vi.fn(),
+      getNarrationLoop: () => loopSpan,
+      get pauseAfterSentence() {
+        return pauseAfterSentence;
+      },
+    } as unknown as TTSController,
     { isAndroidApp: true } as AppService,
   );
   await client.init();
@@ -82,6 +89,7 @@ beforeEach(() => {
   controlCalls = [];
   positionMs = 4000;
   loopSpan = { audioHref: 'ch1.mp3', clipBegin: 0, clipEnd: 9 };
+  pauseAfterSentence = false;
   vi.mocked(addPluginListener).mockImplementation(async (_plugin, _event, handler) => {
     emit = handler as (event: unknown) => void;
     return { unregister: vi.fn() } as unknown as PluginListener;
@@ -257,6 +265,19 @@ describe('MediaOverlayClient A-B repeat on Android', () => {
 
     positionMs = 10000;
     expect(await settlesWithin(end, 600)).toBe(true);
+  });
+
+  test('leaves B to the clock when playback pauses after every sentence', async () => {
+    // The controller pauses at B's end: a native jump would start A first.
+    pauseAfterSentence = true;
+    await setup();
+    const utterance = client.speak(section.ssmlForBlock(1)!, new AbortController().signal);
+    await utterance.next();
+    const end = utterance.next();
+
+    expect(controlCalls.filter((call) => call['action'] === 'set-loop')).toHaveLength(0);
+    positionMs = 9000;
+    expect(await settlesWithin(end, 300)).toBe(true);
   });
 
   test('clears the native loop when the span leaves the file', async () => {

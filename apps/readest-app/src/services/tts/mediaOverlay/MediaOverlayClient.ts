@@ -243,7 +243,11 @@ export class MediaOverlayClient implements TTSClient {
   async refreshLoop(): Promise<void> {
     const player = this.#player;
     if (!player?.loopsNatively || this.#audio !== player) return;
-    const span = this.controller?.getNarrationLoop?.() ?? null;
+    // Pausing after every sentence stops at B's end: a native jump would
+    // start A before the pause.
+    const span = this.controller?.pauseAfterSentence
+      ? null
+      : (this.controller?.getNarrationLoop?.() ?? null);
     const loop =
       span && span.audioHref === player.href ? { begin: span.clipBegin, end: span.clipEnd } : null;
     await player.setLoop(loop).catch(() => undefined);
