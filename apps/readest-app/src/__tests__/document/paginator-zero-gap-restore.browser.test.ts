@@ -46,20 +46,16 @@ const makeBook = () => ({
 type RelocateDetail = { reason: string; range: Range };
 
 // The next relocate a page turn reports; a scroll settling from an earlier
-// jump reports with another reason.
+// jump reports with another reason. The test's timeout bounds the wait, and
+// afterEach destroys the paginator the listener sits on.
 const nextPageRelocate = (el: HTMLElement) =>
-  new Promise<RelocateDetail>((resolve, reject) => {
+  new Promise<RelocateDetail>((resolve) => {
     const onRelocate = (e: Event) => {
       const { detail } = e as CustomEvent<RelocateDetail>;
       if (detail.reason !== 'page') return;
-      clearTimeout(timer);
       el.removeEventListener('relocate', onRelocate);
       resolve(detail);
     };
-    const timer = setTimeout(() => {
-      el.removeEventListener('relocate', onRelocate);
-      reject(new Error('relocate timeout'));
-    }, 5000);
     el.addEventListener('relocate', onRelocate);
   });
 
