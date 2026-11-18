@@ -224,6 +224,33 @@ describe('refreshSectionGlosses vocabulary marks (#6613)', () => {
     expect(await render(viewSettings(), {})).toEqual(['笑']);
     expect(await render(viewSettings(), { vocabulary: marks([], ['smiled']) })).toEqual([]);
   });
+
+  // A hint drawn or removed reflows the page under the highlights drawn on it,
+  // and nothing else tells the reader to redraw them: the section keeps its size.
+  it('reports each refresh that draws or removes hints', async () => {
+    const doc = document.implementation.createHTMLDocument('t');
+    doc.body.innerHTML = '<p>Captain Nemo smiled.</p>';
+    const onGlossesChanged = vi.fn();
+    const refresh = (vocabulary: ReturnType<typeof marks>) =>
+      refreshSectionGlosses(
+        doc,
+        viewSettings(),
+        ctx({ appLang: 'zh-CN', vocabulary, onGlossesChanged }),
+      );
+
+    await refresh(marks([['nemo', '尼莫']]));
+    expect(hintsIn(doc)).toEqual(['尼莫']);
+    expect(onGlossesChanged).toHaveBeenCalledTimes(1);
+
+    onGlossesChanged.mockClear();
+    await refresh(marks([], ['nemo']));
+    expect(hintsIn(doc)).toEqual([]);
+    expect(onGlossesChanged).toHaveBeenCalledTimes(1);
+
+    onGlossesChanged.mockClear();
+    await refresh(marks([], ['nemo']));
+    expect(onGlossesChanged).not.toHaveBeenCalled();
+  });
 });
 
 describe('whenSelectionClears', () => {

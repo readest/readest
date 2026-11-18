@@ -113,11 +113,11 @@ export const applyGlosses = (
  * Unwrap every injected gloss and join the text nodes, restoring the original
  * text. A section without glosses is left as it is unless `joinText` asks for
  * the join: this runs for every loaded section after each section load, Word
- * Lens on or off.
+ * Lens on or off. Returns whether any gloss was removed.
  */
-export const clearGlosses = (doc: Document, joinText = false): void => {
+export const clearGlosses = (doc: Document, joinText = false): boolean => {
   const rubies = doc.querySelectorAll(`ruby.${GLOSS_CLASS}`);
-  if (!rubies.length && !joinText) return;
+  if (!rubies.length && !joinText) return false;
   rubies.forEach((ruby) => {
     ruby.querySelectorAll('rt').forEach((rt) => rt.remove());
     const parent = ruby.parentNode;
@@ -126,6 +126,7 @@ export const clearGlosses = (doc: Document, joinText = false): void => {
     parent.removeChild(ruby);
   });
   (doc.body ?? doc.documentElement)?.normalize();
+  return rubies.length > 0;
 };
 
 /** Given a tap target, return the base word if it is inside a gloss, else null. */

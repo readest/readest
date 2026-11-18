@@ -153,8 +153,8 @@ const isSameRange = (a: Range, b: Range) =>
 const PositionFollowers: React.FC<{
   bookKey: string;
   annotationIndex: AnnotationIndex;
-  translationEpoch: number;
-}> = ({ bookKey, annotationIndex, translationEpoch }) => {
+  contentEpoch: number;
+}> = ({ bookKey, annotationIndex, contentEpoch }) => {
   const getView = useReaderStore((s) => s.getView);
   const progress = useBookProgress(bookKey);
   useBookOrbitNotesSync(bookKey);
@@ -194,7 +194,7 @@ const PositionFollowers: React.FC<{
       console.warn(e);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [progress, annotationIndex, translationEpoch]);
+  }, [progress, annotationIndex, contentEpoch]);
 
   return null;
 };
@@ -265,7 +265,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
     },
     [],
   );
-  const [translationEpoch, setTranslationEpoch] = useState(0);
+  const [contentEpoch, setContentEpoch] = useState(0);
   const [showAnnotPopup, setShowAnnotPopup] = useState(false);
   const [showDictionaryPopup, setShowDictionaryPopup] = useState(false);
   // Decided when the lookup opens, as for the note editor: the keyboard for a
@@ -1511,23 +1511,26 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
 
   // Translations are appended long after a section's annotations were drawn, so
   // a highlight anchored inside translated text has nothing to attach to at
-  // draw time. Bumping this re-runs the draw effect above once the inserts
-  // settle; they arrive in bursts, hence the debounce.
+  // draw time. Word Lens hints drawn or removed move the text under the
+  // highlights already drawn. Bumping this re-runs the draw effect above once
+  // the changes settle; they arrive in bursts, hence the debounce.
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | null = null;
-    const handleTranslationInserted = (event: CustomEvent) => {
+    const handleContentChanged = (event: CustomEvent) => {
       const detail = event.detail as { bookKey: string } | undefined;
       if (!detail || detail.bookKey !== bookKey) return;
       if (timer) clearTimeout(timer);
       timer = setTimeout(() => {
         timer = null;
-        setTranslationEpoch((epoch) => epoch + 1);
+        setContentEpoch((epoch) => epoch + 1);
       }, 150);
     };
-    eventDispatcher.on('translation-inserted', handleTranslationInserted);
+    eventDispatcher.on('translation-inserted', handleContentChanged);
+    eventDispatcher.on('wordlens-glosses-changed', handleContentChanged);
     return () => {
       if (timer) clearTimeout(timer);
-      eventDispatcher.off('translation-inserted', handleTranslationInserted);
+      eventDispatcher.off('translation-inserted', handleContentChanged);
+      eventDispatcher.off('wordlens-glosses-changed', handleContentChanged);
     };
   }, [bookKey]);
 
@@ -2825,7 +2828,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
       <PositionFollowers
         bookKey={bookKey}
         annotationIndex={annotationIndex}
-        translationEpoch={translationEpoch}
+        contentEpoch={contentEpoch}
       />
       {showDictionaryPopup &&
         (() => {
