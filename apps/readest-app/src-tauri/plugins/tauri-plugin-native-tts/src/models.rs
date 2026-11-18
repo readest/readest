@@ -154,12 +154,18 @@ pub struct PlayoutControlRequest {
     pub content_type: Option<String>,
     // Linux reads compressed narration directly from this ZIP entry.
     pub entry: Option<String>,
+    // Android "set-loop": the A-B span to repeat, in ms of `path`.
+    pub loop_start_ms: Option<f64>,
+    pub loop_end_ms: Option<f64>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PlayoutControlResponse {
     pub session: Option<i32>,
+    // Android "set-loop": whether the span was set on the file now playing.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub armed: Option<bool>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -172,4 +178,29 @@ pub struct PlayoutPositionResponse {
     // Android: the item the playlist ended on, once nothing is current.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub ended_index: Option<i32>,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // The plugin's Kotlin and Swift sides read the payload re-serialized from
+    // these structs, so a field missing here never reaches them.
+    #[test]
+    fn playout_control_keeps_the_a_b_loop_fields() {
+        let request: PlayoutControlRequest = serde_json::from_value(serde_json::json!({
+            "action": "set-loop",
+            "path": "/cache/ch1.mp3",
+            "loopStartMs": 65000.0,
+            "loopEndMs": 80000.0,
+        }))
+        .unwrap();
+        let forwarded = serde_json::to_value(&request).unwrap();
+        assert_eq!(forwarded["loopStartMs"], 65000.0);
+        assert_eq!(forwarded["loopEndMs"], 80000.0);
+
+        let response: PlayoutControlResponse =
+            serde_json::from_value(serde_json::json!({ "session": 3, "armed": true })).unwrap();
+        assert_eq!(serde_json::to_value(&response).unwrap()["armed"], true);
+    }
 }
