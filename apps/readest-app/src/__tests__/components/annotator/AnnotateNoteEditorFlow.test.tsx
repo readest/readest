@@ -71,6 +71,9 @@ const h = vi.hoisted(() => ({
   views: [] as { addAnnotation: ReturnType<typeof vi.fn> }[],
   isSideBarVisible: false,
   isTextSelected: { current: true },
+  // On for a test that lays the book cell and the selection out itself.
+  realPopupGeometry: false,
+  popupPlacement: null as null | { top: number; triangleY: number },
 }));
 
 const settings = {
@@ -231,8 +234,14 @@ vi.mock('@/utils/sel', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/utils/sel')>();
   return {
     ...actual,
-    getPosition: () => ({ point: { x: 120, y: 200 }, dir: 'up' as const }),
-    getPopupPosition: () => ({ point: { x: 120, y: 140 }, dir: 'up' as const }),
+    getPosition: (...args: Parameters<typeof actual.getPosition>) =>
+      h.realPopupGeometry
+        ? actual.getPosition(...args)
+        : { point: { x: 120, y: 200 }, dir: 'up' as const },
+    getPopupPosition: (...args: Parameters<typeof actual.getPopupPosition>) =>
+      h.realPopupGeometry
+        ? actual.getPopupPosition(...args)
+        : { point: { x: 120, y: 140 }, dir: 'up' as const },
   };
 });
 
@@ -268,7 +277,12 @@ vi.mock('@/app/reader/components/annotator/AnnotationPopup', () => ({
   default: (props: {
     noteEditor?: NoteEditorStub | null;
     onEditNote?: (note: { id: string }) => void;
-  }) => stub.render('popup', props.noteEditor, props.onEditNote),
+    position: { point: { y: number } };
+    trianglePosition: { point: { y: number } };
+  }) => {
+    h.popupPlacement = { top: props.position.point.y, triangleY: props.trianglePosition.point.y };
+    return stub.render('popup', props.noteEditor, props.onEditNote);
+  },
 }));
 vi.mock('@/app/reader/components/annotator/NoteEditorSheet', () => ({
   default: (props: NoteEditorStub) => stub.render('sheet', props),
@@ -351,6 +365,68 @@ describe('Annotate opens the note editor at the selection', () => {
 
     expect(screen.getByTestId('note-editor-sheet')).toBeTruthy();
     expect(screen.queryByTestId('note-editor-popup')).toBeNull();
+  });
+
+  test('keeps the editor in the popup when the on-screen keyboard shortens the window (#7570)', async () => {
+    // An iPad in landscape: the popup fits. Focusing its textarea raises the
+    // keyboard, which leaves the webview a window too short for the popup.
+    setViewport(1180, 820);
+    const insets = { top: 0, right: 0, bottom: 0, left: 0 };
+    const { rerender } = render(<Annotator bookKey='book-1' contentInsets={insets} />);
+    await selectText();
+    act(() => {
+      h.actions?.['onAnnotateSelection']?.();
+    });
+    expect(screen.getByTestId('note-editor-popup')).toBeTruthy();
+
+    setViewport(1180, 420);
+    rerender(<Annotator bookKey='book-1' contentInsets={{ ...insets }} />);
+
+    expect(screen.getByTestId('note-editor-popup')).toBeTruthy();
+    expect(screen.queryByTestId('note-editor-sheet')).toBeNull();
+  });
+
+  test('places the popup editor again inside the window the keyboard shortened (#7570)', async () => {
+    // The book cell fills the window, and the text sits on the page's last line
+    // wherever the page now ends: the keyboard shortens the page with the window.
+    let gridCell = document.querySelector<HTMLElement>('#gridcell-book-1');
+    if (!gridCell) {
+      gridCell = document.createElement('div');
+      gridCell.id = 'gridcell-book-1';
+      document.body.append(gridCell);
+    }
+    gridCell.getBoundingClientRect = () => new DOMRect(0, 0, window.innerWidth, window.innerHeight);
+    Object.defineProperty(Range.prototype, 'getClientRects', {
+      configurable: true,
+      value: () => [new DOMRect(500, window.innerHeight - 60, 100, 20)],
+    });
+    h.realPopupGeometry = true;
+    try {
+      setViewport(1180, 820);
+      render(
+        <Annotator bookKey='book-1' contentInsets={{ top: 0, right: 0, bottom: 0, left: 0 }} />,
+      );
+      await selectText();
+      act(() => {
+        h.actions?.['onAnnotateSelection']?.();
+      });
+      const editor = screen.getByTestId('note-editor-popup');
+
+      setViewport(1180, 420);
+      act(() => {
+        window.dispatchEvent(new Event('resize'));
+      });
+
+      // The same editor, not a remount, so its textarea keeps the focus.
+      expect(screen.getByTestId('note-editor-popup')).toBe(editor);
+      // The popup opens above its anchor, so the anchor is its bottom edge.
+      expect(h.popupPlacement?.top, 'popup top edge').toBeGreaterThanOrEqual(0);
+      expect(h.popupPlacement?.triangleY, 'popup anchor').toBeLessThanOrEqual(420);
+    } finally {
+      h.realPopupGeometry = false;
+      delete (Range.prototype as { getClientRects?: unknown }).getClientRects;
+      gridCell.remove();
+    }
   });
 
   test('leaves the sidebar alone', async () => {
