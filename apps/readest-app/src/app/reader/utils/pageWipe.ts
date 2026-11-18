@@ -79,6 +79,8 @@ export interface PageWiperHost {
   drawEdge: (edge: WipeEdge | null) => void;
   /** The last page has been wiped. */
   onEnd: () => void;
+  /** The page wiped in is now the page being read. */
+  onCommit: () => void;
 }
 
 export class PageWiper {
@@ -92,11 +94,31 @@ export class PageWiper {
   // rather than flipping the page back and forth on every frame.
   #broken = false;
   #stopped = false;
+  // Bumped when the reader navigates: a reveal begun before is stale.
+  #generation = 0;
+  // A stopped session's wipe, until its queue settles.
+  #previous: PageWiper | null = null;
   #pending = 0;
   #queue: Promise<void> = Promise.resolve();
 
-  constructor(host: PageWiperHost) {
+  /**
+   * `previous`: a stopped session's wipe, which may still be turning back.
+   * This one waits for it, and is ahead while it is.
+   */
+  constructor(host: PageWiperHost, previous?: PageWiper) {
     this.#host = host;
+    if (previous) {
+      this.#previous = previous;
+      void this.#enqueue(async () => {
+        await previous.idle;
+        this.#previous = null;
+      });
+    }
+  }
+
+  /** Settles once every queued turn has. */
+  get idle() {
+    return this.#queue;
   }
 
   /** The snapshot is on screen, also while turning back before dropping it. */
@@ -104,10 +126,20 @@ export class PageWiper {
     return this.#reveal !== null;
   }
 
+  /**
+   * The live view shows the next page, ahead of the page being read: from the
+   * turn under the snapshot until the page is wiped in or turned back.
+   */
+  get ahead(): boolean {
+    return this.#ahead || !!this.#previous?.ahead;
+  }
+
   /** Move the line on by whole pixels. */
   advance(delta: number) {
-    this.#progress += delta;
+    // Time spent turning (or loading the next chapter) doesn't count toward
+    // the next page's wipe.
     if (this.#pending) return;
+    this.#progress += delta;
     const layout = this.#host.getLayout();
     if (!layout) return;
     const length = getWipeLength(layout);
@@ -135,8 +167,22 @@ export class PageWiper {
     return this.#enqueue(() => this.#revert());
   }
 
+  /**
+   * Run a page turn of the reader's own (a key, a button): put the page being
+   * read back first, so the turn moves one page from it, and hold the wipe
+   * until the turn lands, as the paginator ignores another turn until then.
+   */
+  yieldTo(turn: () => Promise<void>) {
+    return this.#enqueue(async () => {
+      // If turning back fails, the turn goes from the page left on screen.
+      await this.#revert().catch((error) => console.warn('Page wipe failed:', error));
+      await turn();
+    });
+  }
+
   /** The reader moved elsewhere: the next wipe starts at the top of that page. */
   reset() {
+    this.#generation++;
     this.#progress = 0;
     this.#ahead = false;
     this.#dropReveal();
@@ -165,20 +211,33 @@ export class PageWiper {
 
   async #start() {
     if (this.#stopped) return;
+    const generation = this.#generation;
     let turned = false;
     const reveal = await this.#host.reveal(async () => {
+      if (generation !== this.#generation) return;
       turned = true;
+      this.#ahead = true;
       await this.#host.turn(true);
     });
-    if (!reveal) {
-      this.#broken = !document.hidden;
-      if (turned) await this.#host.turn(false);
+    // The reader went elsewhere meanwhile: leave them there.
+    if (generation !== this.#generation) {
+      reveal?.end();
       return;
     }
-    this.#ahead = true;
+    if (!reveal) {
+      this.#broken = !document.hidden;
+      if (turned) await this.#turnBack();
+      return;
+    }
     this.#reveal = reveal;
     void reveal.finished.then(() => {
-      if (this.#reveal === reveal) this.#reveal = null;
+      if (this.#reveal !== reveal) return;
+      // Ended by the engine, not the wipe (a viewport resize, a hidden
+      // document): put the page being read back. Unless hidden, keep to the
+      // line-only wipe, as a reveal that keeps ending would flip the page.
+      this.#reveal = null;
+      this.#broken = this.#broken || !document.hidden;
+      void this.#enqueue(() => this.#revert());
     });
     this.render();
   }
@@ -188,6 +247,7 @@ export class PageWiper {
       // The live view already shows the next page.
       this.#ahead = false;
       this.#dropReveal();
+      this.#host.onCommit();
     } else if (this.#host.atEnd()) {
       this.#host.onEnd();
     } else {
@@ -198,10 +258,27 @@ export class PageWiper {
 
   async #revert() {
     if (!this.#ahead) return;
-    this.#ahead = false;
     // Turn back under the snapshot, so dropping it changes nothing on screen.
-    await this.#host.turn(false);
-    this.#dropReveal();
+    try {
+      await this.#turnBack();
+    } finally {
+      this.#dropReveal();
+    }
+  }
+
+  // Stays ahead until the turn lands, so the page turned from never becomes
+  // the reading position meanwhile; then the page on screen is committed.
+  async #turnBack() {
+    try {
+      await this.#host.turn(false);
+    } catch (error) {
+      // The next page stays: it is the page being read now, from the top.
+      this.#progress = 0;
+      throw error;
+    } finally {
+      this.#ahead = false;
+      this.#host.onCommit();
+    }
   }
 }
 
@@ -209,6 +286,13 @@ const WIPE_NAME = 'readest-page-wipe';
 const ABOVE_CLASS = 'readest-page-wipe-above';
 
 export const supportsPageWipeReveal = detectViewTransitionGroup;
+
+// The document has one transition: a second book's reveal would end the first.
+let revealOwner: HTMLElement | null = null;
+
+/** Another book's wipe holds the document's transition. */
+export const isPageWipeRevealBusy = (cell: HTMLElement) =>
+  revealOwner !== null && revealOwner !== cell;
 
 const injectStyles = () => {
   const id = 'readest-page-wipe-styles';
@@ -241,7 +325,9 @@ export const revealPageWipe = async (
   turn: () => Promise<void>,
   background: string,
 ): Promise<PageWipeReveal | null> => {
+  if (isPageWipeRevealBusy(cell)) return null;
   injectStyles();
+  revealOwner = cell;
   const html = document.documentElement;
   const above = Array.from(cell.querySelectorAll<HTMLElement>('[data-page-wipe-above]'));
   const names = new Map<HTMLElement, string>([
@@ -261,6 +347,7 @@ export const revealPageWipe = async (
     for (const el of above) el.style.removeProperty('view-transition-class');
     html.classList.remove(WIPE_NAME);
     html.style.removeProperty('--readest-page-wipe-bg');
+    if (revealOwner === cell) revealOwner = null;
   };
 
   let transition: ViewTransition;
