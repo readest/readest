@@ -1215,6 +1215,32 @@
         behavior,
       });
     }
+    // Each scrolling ancestor, innermost first, scrolls to show the element where `block` and
+    // `inline` align it (`false`: block end). The viewport doesn't scroll.
+    scrollIntoView(arg) {
+      const o = arg === false ? { block: 'end' } : arg && typeof arg === 'object' ? arg : {};
+      // The scroll that puts the element's [start, end) at `align` in a `view`-long scrollport.
+      const by = (align, start, end, view) => {
+        if (align === 'start') return start;
+        if (align === 'end') return end - view;
+        if (align === 'center') return (start + end - view) / 2;
+        if ((start >= 0 && end <= view) || (start < 0 && end > view)) return 0;
+        return start < 0 === end - start <= view ? start : end - view;
+      };
+      for (let p = this.parentElement; p; p = p.parentElement) {
+        if (p.scrollHeight <= p.clientHeight && p.scrollWidth <= p.clientWidth) continue;
+        const cs = getComputedStyle(p);
+        if (cs.overflowX === 'visible' && cs.overflowY === 'visible') continue;
+        const r = this.getBoundingClientRect();
+        const c = p.getBoundingClientRect();
+        const top = c.top + (parseFloat(cs.borderTopWidth) || 0);
+        const left = c.left + (parseFloat(cs.borderLeftWidth) || 0);
+        const y = by(o.block ?? 'start', r.top - top, r.bottom - top, p.clientHeight);
+        const x = by(o.inline ?? 'nearest', r.left - left, r.right - left, p.clientWidth);
+        if (x || y)
+          p.scrollTo({ left: p.scrollLeft + x, top: p.scrollTop + y, behavior: o.behavior });
+      }
+    }
     // Blitz's focus: where key events go.
     focus() {
       n.focus(this._id, true);
