@@ -993,6 +993,7 @@ mod tests {
         std::fs::write(&path, b"existing book").unwrap();
         let written = std::sync::Arc::new(tokio::sync::Notify::new());
         let notified = written.clone();
+        let staging_dir = dir.to_path_buf();
         let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
         let port = listener.local_addr().unwrap().port();
         let server = tokio::spawn(async move {
@@ -1004,16 +1005,32 @@ mod tests {
                         .unwrap()
                         .unwrap();
                 let written = written.clone();
+                let staging_dir = staging_dir.clone();
                 tasks.push(tokio::spawn(async move {
                     let request = read_request(&mut stream).await;
                     let (range, body) = if request.contains("range: bytes=0-0\r\n") {
                         ("0-0", vec![b'a'])
                     } else if request.contains("range: bytes=0-1048575\r\n") {
                         ("0-1048575", vec![b'a'; 1024 * 1024])
-                    } else {
+                    } else if request.contains("range: bytes=1048576-1048579\r\n") {
                         tokio::time::timeout(std::time::Duration::from_secs(5), written.notified())
                             .await.expect("first part must reach staging before the failure");
+                        let staging = std::fs::read_dir(staging_dir).unwrap()
+                            .map(|entry| entry.unwrap())
+                            .find(|entry| entry.file_name().to_string_lossy().starts_with(".readest-download-"))
+                            .expect("download must have a staging file").path();
+                        tokio::time::timeout(std::time::Duration::from_secs(5), async {
+                            loop {
+                                let bytes = tokio::fs::read(&staging).await.unwrap();
+                                if bytes.get(..1024 * 1024).is_some_and(|part| part.iter().all(|b| *b == b'a')) {
+                                    break;
+                                }
+                                tokio::time::sleep(std::time::Duration::from_millis(10)).await;
+                            }
+                        }).await.expect("first part must be readable before the short response");
                         ("1048576-1048579", b"ab".to_vec())
+                    } else {
+                        panic!("unexpected range request");
                     };
                     let header = format!("HTTP/1.1 206 Partial Content\r\nAccept-Ranges: bytes\r\nContent-Range: bytes {range}/1048580\r\nContent-Length: {}\r\nConnection: close\r\n\r\n", body.len());
                     stream.write_all(header.as_bytes()).await.unwrap();
@@ -1039,8 +1056,9 @@ mod tests {
         .await;
         finish_fixture(server).await;
         assert!(
-            result.is_err(),
-            "a late short part must fail the whole download"
+            matches!(result, Err(super::Error::ContentLength(message))
+            if message == "download response has an unexpected byte length"),
+            "the late part must fail the byte-length check"
         );
         assert_eq!(std::fs::read(&path).unwrap(), b"existing book");
         assert_eq!(std::fs::read_dir(&dir).unwrap().count(), 1);
