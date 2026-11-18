@@ -42,7 +42,11 @@ vi.mock('@/utils/event', async (importOriginal) => ({
   eventDispatcher: { dispatch: vi.fn(), on: vi.fn(), off: vi.fn() },
 }));
 vi.mock('@/app/reader/hooks/useTextTranslation', () => ({ useTextTranslation: () => {} }));
-vi.mock('@/hooks/useTranslation', () => ({ useTranslation: () => (s: string) => s }));
+vi.mock('@/hooks/useTranslation', () => ({
+  useTranslation: () => (s: string, o?: Record<string, unknown>) =>
+    s.replace(/{{(\w+)}}/g, (_, k: string) => String(o?.[k] ?? '')),
+}));
+vi.mock('@/context/EnvContext', () => ({ useEnv: () => ({ appService: null }) }));
 
 const { default: TOCView } = await import('@/app/reader/components/sidebar/TOCView');
 const { clearBookProgress, setBookProgress } = await import('@/store/readerProgressStore');
@@ -260,5 +264,23 @@ describe('TOC keyboard navigation (#7571)', () => {
     ].filter((el) => el.tabIndex >= 0);
     expect(tabbable).toEqual([]);
     expect(container.querySelector('[role="tree"]')).toBeNull();
+  });
+
+  it('leaves Tab to the page thumbnails of a PDF without an outline', async () => {
+    const pdf = {
+      sections: Array.from({ length: 6 }, () => ({})),
+      rendition: {},
+      getPageThumbnail: async () => null,
+    } as unknown as BookDoc;
+    const { container } = render(
+      <div className='scroll-container' style={{ height: 400, width: 300 }}>
+        <TOCView bookKey='book1' bookDoc={pdf} toc={[]} />
+      </div>,
+    );
+    await expect.poll(() => container.querySelector('button[aria-label="Page 1"]')).toBeTruthy();
+    expect(container.querySelector('[role="tree"]')).toBeNull();
+
+    await userEvent.tab();
+    expect(document.activeElement?.getAttribute('aria-label')).toBe('Page 1');
   });
 });
