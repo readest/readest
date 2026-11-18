@@ -141,11 +141,12 @@ const SearchResultItem: React.FC<SearchResultItemProps> = ({
       tabIndex={0}
       onClick={() => onSelectResult(cfi)}
       onKeyDown={(e) => {
+        // Search in Book (Ctrl/Cmd+F) still reaches the reader so the search
+        // field selects its term.
+        if (matchesShortcut(e, loadShortcuts().onShowSearchBar.keys)) return;
         if (e.key === 'Enter' || e.key === ' ') {
           onSelectResult(cfi);
-        } else if (!matchesShortcut(e, loadShortcuts().onShowSearchBar.keys)) {
-          // Search in Book (Ctrl/Cmd+F) still reaches the reader so the search
-          // field selects its term.
+        } else {
           e.stopPropagation();
         }
       }}

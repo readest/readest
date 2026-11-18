@@ -223,26 +223,32 @@ describe('SearchBar', () => {
     expect(input.selectionEnd).toBe(input.value.length);
   });
 
-  // The in-field re-select follows the configured Search in Book keys, like
-  // the paths that open the bar through the shortcut layer.
-  it('re-selects the term with a rebound Search in Book key instead of Ctrl+F', async () => {
-    localStorage.setItem('customShortcuts', JSON.stringify({ onShowSearchBar: ['ctrl+e'] }));
+  // In the field only the standard Find chord re-selects: a rebound Search in
+  // Book key may be a character typed into the field, which is also why the
+  // shortcut layer skips text fields.
+  it('re-selects on Ctrl+F in the field but types a rebound printable key', async () => {
+    localStorage.setItem('customShortcuts', JSON.stringify({ onShowSearchBar: ['x'] }));
     try {
       await renderBar();
       const input = document.querySelector('input.search-input') as HTMLInputElement;
       input.focus();
       const press = async (init: KeyboardEventInit) => {
         input.setSelectionRange(input.value.length, input.value.length);
+        const event = new KeyboardEvent('keydown', { bubbles: true, cancelable: true, ...init });
         await act(async () => {
-          input.dispatchEvent(
-            new KeyboardEvent('keydown', { bubbles: true, cancelable: true, ...init }),
-          );
+          input.dispatchEvent(event);
         });
-        return [input.selectionStart, input.selectionEnd];
+        return {
+          selection: [input.selectionStart, input.selectionEnd],
+          prevented: event.defaultPrevented,
+        };
       };
 
-      expect(await press({ key: 'f', ctrlKey: true })).toEqual([5, 5]);
-      expect(await press({ key: 'e', ctrlKey: true })).toEqual([0, 5]);
+      expect(await press({ key: 'x' })).toEqual({ selection: [5, 5], prevented: false });
+      expect(await press({ key: 'f', ctrlKey: true })).toEqual({
+        selection: [0, 5],
+        prevented: true,
+      });
     } finally {
       localStorage.removeItem('customShortcuts');
     }

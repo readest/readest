@@ -12,8 +12,6 @@ import { useReaderStore } from '@/store/readerStore';
 import { useSidebarStore } from '@/store/sidebarStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { eventDispatcher } from '@/utils/event';
-import { loadShortcuts } from '@/helpers/shortcuts';
-import { matchesShortcut } from '@/utils/shortcutKeys';
 import {
   createLibrarySearchSession,
   resolveSearchResultCfis,
@@ -161,10 +159,12 @@ const SearchBar: React.FC<SearchBarProps> = ({ isVisible, bookKey, onHideSearchB
         } else {
           onHideSearchBar();
         }
-      } else if (isVisible && matchesShortcut(e, loadShortcuts().onShowSearchBar.keys)) {
-        // Search in Book (Ctrl+F) again while the search bar is up: select the current term
-        // so typing replaces it without clearing first. The bar stays mounted
-        // while hidden, so guard on visibility to leave Find alone otherwise.
+      } else if (isVisible && (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'f') {
+        // Ctrl/Cmd+F again while the search bar is up: select the current term
+        // so typing replaces it without clearing first. Only this Find chord: a
+        // rebound Search in Book key may be a character typed into the field,
+        // and the shortcut layer handles it everywhere else. The bar stays
+        // mounted while hidden, so guard on visibility to leave Find alone.
         if (!appService?.isMobile) {
           e.preventDefault();
           inputRef.current?.focus();

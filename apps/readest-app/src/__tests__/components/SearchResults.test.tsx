@@ -123,6 +123,24 @@ describe('SearchResults keyboard', () => {
     expect(onWindowKeyDown).toHaveBeenCalledTimes(reaches ? 1 : 0);
   });
 
+  it('lets Search in Book bound to Ctrl+Enter through without opening the result', () => {
+    localStorage.setItem('customShortcuts', JSON.stringify({ onShowSearchBar: ['ctrl+Enter'] }));
+    try {
+      const onSelectResult = vi.fn();
+      render(
+        <SearchResults bookKey='book-1' results={makeResults()} onSelectResult={onSelectResult} />,
+      );
+      const onWindowKeyDown = vi.fn();
+      window.addEventListener('keydown', onWindowKeyDown);
+      fireEvent.keyDown(resultItems()[0]!, { key: 'Enter', ctrlKey: true });
+      window.removeEventListener('keydown', onWindowKeyDown);
+      expect(onWindowKeyDown).toHaveBeenCalledTimes(1);
+      expect(onSelectResult).not.toHaveBeenCalled();
+    } finally {
+      localStorage.removeItem('customShortcuts');
+    }
+  });
+
   it('lets a rebound Search in Book key through instead of Ctrl+F', () => {
     localStorage.setItem('customShortcuts', JSON.stringify({ onShowSearchBar: ['ctrl+e'] }));
     try {
