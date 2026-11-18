@@ -241,9 +241,9 @@ describe.skipIf(!hasSwiftc)('ColdEpubText.swift', () => {
   });
 
   it('refuses a stored entry larger than it may read', () => {
+    // Only the stored size: the decoded size has its own case above.
     const epub = createEpub('First section text.', OPF, true);
-    declareSize(epub, 'OEBPS/one a.xhtml', () => 0x7fff_fff0, 20);
-    expect(readError(declareSize(epub, 'OEBPS/one a.xhtml', () => 0x7fff_fff0))).toMatch(
+    expect(readError(declareSize(epub, 'OEBPS/one a.xhtml', () => 0x7fff_fff0, 20))).toMatch(
       /too large/,
     );
   });

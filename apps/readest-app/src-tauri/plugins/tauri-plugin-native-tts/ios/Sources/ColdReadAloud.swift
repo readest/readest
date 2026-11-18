@@ -36,7 +36,8 @@ final class ColdReadAloud: NSObject, AVSpeechSynthesizerDelegate {
   /// instead. `playing` is whether it was meant to be playing.
   var onEnd: ((_ toReader: Bool, _ playing: Bool) -> Void)?
 
-  /// Nil unless the book has a downloaded EPUB in the default library.
+  /// Nil unless the book has a downloaded EPUB in the default library, and
+  /// App Lock is off: only the reader can unlock it.
   init?(bookHash: String, title: String, author: String) {
     guard !bookHash.isEmpty, bookHash.allSatisfy(\.isHexDigit),
       let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first,
@@ -44,6 +45,9 @@ final class ColdReadAloud: NSObject, AVSpeechSynthesizerDelegate {
     else { return nil }
     // Tauri's app data and config directory on iOS.
     let root = support.appendingPathComponent(bundleId, isDirectory: true)
+    let settingsURL = root.appendingPathComponent("settings.json")
+    guard let settings = Self.readJSON(settingsURL), settings["pinCodeEnabled"] as? Bool != true
+    else { return nil }
     let bookDir = root.appendingPathComponent("Readest/Books/\(bookHash)", isDirectory: true)
     guard
       let epub = (try? FileManager.default.contentsOfDirectory(at: bookDir, includingPropertiesForKeys: nil))?
@@ -55,7 +59,7 @@ final class ColdReadAloud: NSObject, AVSpeechSynthesizerDelegate {
     epubURL = epub
     coverURL = bookDir.appendingPathComponent("cover.png")
     configURL = bookDir.appendingPathComponent("config.json")
-    settingsURL = root.appendingPathComponent("settings.json")
+    self.settingsURL = settingsURL
     super.init()
     synthesizer.delegate = self
   }

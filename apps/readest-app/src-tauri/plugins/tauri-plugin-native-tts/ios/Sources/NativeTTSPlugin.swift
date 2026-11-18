@@ -845,6 +845,8 @@ class NativeTTSPlugin: Plugin, AVSpeechSynthesizerDelegate {
         return .success
       }
       keepAliveLog.log("pauseCommand")
+      // The driver's Pause cancels an interruption's pending resume.
+      if self.coldReadAloud != nil { self.interruptionForwarded = false }
       self.triggerMediaSession("media-session-pause")
       return .success
     }
@@ -859,6 +861,7 @@ class NativeTTSPlugin: Plugin, AVSpeechSynthesizerDelegate {
         return .success
       }
       keepAliveLog.log("toggleCommand")
+      if self.coldReadAloud?.isPlaying == true { self.interruptionForwarded = false }
       self.triggerMediaSession("media-session-toggle")
       return .success
     }
