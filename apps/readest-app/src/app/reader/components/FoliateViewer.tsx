@@ -1613,6 +1613,28 @@ const FoliateViewer: React.FC<{
         {...touchHandlers}
       />
       {autoscrollAnchor && <AutoscrollIndicator anchor={autoscrollAnchor} />}
+      {autoScroll.active && autoScroll.wipe && (
+        // The edge of a page wipe, moved by useAutoScroll every frame: the next
+        // page is pulled down over the page being read like a blind, and its
+        // edge casts a short shadow onto it, with a lit rim on dark themes.
+        // E-ink gets a plain 1px line (the global rule drops `shadow-`). The
+        // full-cell layer keeps the edge above the page snapshot.
+        <div
+          aria-hidden
+          data-page-wipe-above=''
+          className='pointer-events-none absolute inset-0 z-10 overflow-hidden'
+        >
+          <div
+            ref={autoScroll.wipeLineRef}
+            className={clsx(
+              'absolute left-0 top-0 h-2',
+              'not-eink:bg-linear-to-b theme-dark:from-black/55 from-black/30 to-transparent',
+              'theme-dark:shadow-[inset_0_1px_0_rgb(255_255_255/0.4)]',
+              'eink:border-base-content eink:border-t',
+            )}
+          />
+        </div>
+      )}
       {autoScroll.active && (
         <AutoScrollControl
           bookKey={bookKey}
