@@ -646,7 +646,7 @@ export async function* searchLibraryBooks(
       let bookMatches = 0;
       let bookTruncated = false;
 
-      if (indexDb && isSearchIndexFresh(meta) && nodesFresh) {
+      if (indexDb && isSearchIndexFresh(meta, localSize) && nodesFresh) {
         // Indexed path: search cached text; the book file is never opened.
         const usePrefilter = config.mode === 'contains' || config.mode === 'whole-words';
         let sections: SearchIndexSection[] = usePrefilter
@@ -742,7 +742,7 @@ export async function* searchLibraryBooks(
         const tocProgress = await createTOCProgress(bookDoc);
         const totalSections = bookDoc.sections.length;
         if (indexDb) {
-          await beginSearchIndex(indexDb, book, totalSections, usedNavHash).catch(() => {
+          await beginSearchIndex(indexDb, localSize, totalSections, usedNavHash).catch(() => {
             indexDb = null;
           });
         }

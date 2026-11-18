@@ -470,6 +470,23 @@ describe('searchLibraryBooks', () => {
     expect(service.loadBookContent).toHaveBeenCalledOnce();
   });
 
+  // A book imported in place is read from the user's own file, which can be
+  // edited (say, in Calibre) without the book getting a new hash.
+  it('rebuilds the index when the book file was edited in place', async () => {
+    const book = makeBook('in-place', 'In Place');
+    const files = new Map([['in-place', makeFile('# Chapter\na needle here')]]);
+    const service = makeService(files);
+    for await (const _ of searchLibraryBooks(service, [book], 'needle', { config })) {
+    }
+    files.set('in-place', makeFile('# Chapter\na needle here, and an edited needle'));
+    const events = [];
+    for await (const event of searchLibraryBooks(service, [book], 'needle', { config })) {
+      events.push(event);
+    }
+    expect(events.at(-1)).toMatchObject({ type: 'completed', matchCount: 2 });
+    expect(service.loadBookContent).toHaveBeenCalledTimes(2);
+  });
+
   it('stops worker-backed searches at the result limit', async () => {
     const book = makeBook('limit', 'Limit');
     const file = makeFile('# Chapter\ntext');
