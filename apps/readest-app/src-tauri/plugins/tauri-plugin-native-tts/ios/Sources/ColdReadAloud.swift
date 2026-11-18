@@ -31,9 +31,10 @@ final class ColdReadAloud: NSObject, AVSpeechSynthesizerDelegate {
 
   /// Playback started or paused.
   var onChange: (() -> Void)?
-  /// The book ended (false), or it is left to the reader (true): it couldn't
-  /// be read, or the reader would play its recorded narration instead.
-  var onEnd: ((_ toReader: Bool) -> Void)?
+  /// The book ended (toReader false), or it is left to the reader (true): it
+  /// couldn't be read, or the reader would play its recorded narration
+  /// instead. `playing` is whether it was meant to be playing.
+  var onEnd: ((_ toReader: Bool, _ playing: Bool) -> Void)?
 
   /// Nil unless the book has a downloaded EPUB in the default library.
   init?(bookHash: String, title: String, author: String) {
@@ -157,9 +158,10 @@ final class ColdReadAloud: NSObject, AVSpeechSynthesizerDelegate {
   }
 
   private func end(toReader: Bool) {
+    let playing = isPlaying
     stopped = true
     isPlaying = false
-    onEnd?(toReader)
+    onEnd?(toReader, playing)
   }
 
   func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish finished: AVSpeechUtterance) {

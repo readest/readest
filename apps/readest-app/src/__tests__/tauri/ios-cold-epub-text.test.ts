@@ -63,7 +63,7 @@ const epubFiles = (firstText: string, opf = OPF): Record<string, string> => ({
 
 // zipSync stores `mimetype` and deflates the rest, with sizes in the local
 // headers.
-const createEpub = (firstText = 'First section text.', opf = OPF) => {
+const createEpub = (firstText = 'First section text.', opf = OPF, stored = false) => {
   const files = epubFiles(firstText, opf);
   const path = join(dir, `book-${count++}.epub`);
   writeFileSync(
@@ -72,7 +72,7 @@ const createEpub = (firstText = 'First section text.', opf = OPF) => {
       Object.fromEntries(
         Object.entries(files).map(([name, text]) => [
           name,
-          [strToU8(text), { level: name === 'mimetype' ? 0 : 6 }],
+          [strToU8(text), { level: stored || name === 'mimetype' ? 0 : 6 }],
         ]),
       ),
     ),
@@ -99,8 +99,14 @@ const createStreamedEpub = () => {
   return path;
 };
 
-// Rewrites the decoded size the central directory declares for `entry`.
-const declareSize = (epub: string, entry: string, size: (actual: number) => number) => {
+// Rewrites a size the central directory declares for `entry`: the decoded
+// size (offset 24) or the stored, compressed one (offset 20).
+const declareSize = (
+  epub: string,
+  entry: string,
+  size: (actual: number) => number,
+  offset = 24,
+) => {
   const bytes = readFileSync(epub);
   const name = Buffer.from(entry);
   for (let i = bytes.length - 46; i >= 0; i--) {
@@ -108,7 +114,7 @@ const declareSize = (epub: string, entry: string, size: (actual: number) => numb
       bytes.readUInt32LE(i) === 0x02014b50 &&
       bytes.subarray(i + 46, i + 46 + name.length).equals(name)
     ) {
-      bytes.writeUInt32LE(size(bytes.readUInt32LE(i + 24)), i + 24);
+      bytes.writeUInt32LE(size(bytes.readUInt32LE(i + offset)), i + offset);
       writeFileSync(epub, bytes);
       return epub;
     }
@@ -234,6 +240,14 @@ describe.skipIf(!hasSwiftc)('ColdEpubText.swift', () => {
     expect(readError(epub)).toMatch(/too large/);
   });
 
+  it('refuses a stored entry larger than it may read', () => {
+    const epub = createEpub('First section text.', OPF, true);
+    declareSize(epub, 'OEBPS/one a.xhtml', () => 0x7fff_fff0, 20);
+    expect(readError(declareSize(epub, 'OEBPS/one a.xhtml', () => 0x7fff_fff0))).toMatch(
+      /too large/,
+    );
+  });
+
   it('refuses an entry that decodes to more than it declares', () => {
     const epub = declareSize(createEpub(), 'OEBPS/one a.xhtml', (actual) => actual - 10);
     expect(readError(epub)).toMatch(/Corrupt zip entry/);
@@ -246,6 +260,12 @@ describe.skipIf(!hasSwiftc)('ColdEpubText.swift', () => {
       '<item id="one" media-overlay="one-smil" href="one%20a.xhtml"',
     );
     expect(read(createEpub('First section text.', narrated)).hasMediaOverlays).toBe(true);
+    // Only spine items count, as for the reader (mediaOverlay/index.ts).
+    const offSpine = OPF.replace(
+      '</manifest>',
+      '<item id="extra" media-overlay="extra-smil" href="extra.xhtml" media-type="application/xhtml+xml"/></manifest>',
+    );
+    expect(read(createEpub('First section text.', offSpine)).hasMediaOverlays).toBe(false);
   });
 
   it('resumes at offsets inside an unbroken text node', () => {
@@ -300,6 +320,7 @@ describe.skipIf(!hasSwiftc)('ColdEpubText.swift', () => {
       [page, 'epubcfi(/6/2!/4/2/1:5)'],
       [page, 'epubcfi(/6/14!/4/2/1:5)'],
       [page, 'epubcfi(/6/4!/4/2/1:0)'],
+      [page, 'epubcfi(/6/4!/4/2/1)'],
       ['epubcfi(/6/4!/4/2/1:7)', 'epubcfi(/6/4!/4/2/1:7)'],
       ['epubcfi(/6/4!/4/2/1:7)', 'epubcfi(/6/4!/4/2/1:9)'],
       [page, ''],

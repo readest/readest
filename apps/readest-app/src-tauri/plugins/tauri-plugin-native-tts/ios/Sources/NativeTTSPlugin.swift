@@ -762,7 +762,8 @@ class NativeTTSPlugin: Plugin, AVSpeechSynthesizerDelegate {
         keepAliveLog.log("interruption began IGNORED (self-inflicted session op)")
         return
       }
-      interruptionForwarded = true
+      // A paused CarPlay player has nothing to resume when it ends.
+      interruptionForwarded = coldReadAloud?.isPlaying ?? true
       keepAliveLog.log("interruption began")
       triggerMediaSession("media-session-pause")
     case .ended:
@@ -1166,11 +1167,13 @@ class NativeTTSPlugin: Plugin, AVSpeechSynthesizerDelegate {
       guard let self = self, let cold = cold, self.coldReadAloud === cold else { return }
       self.publishPlaybackState(playing: cold.isPlaying, position: nil, duration: nil)
     }
-    cold.onEnd = { [weak self, weak cold] toReader in
+    cold.onEnd = { [weak self, weak cold] toReader, playing in
       guard let self = self, let cold = cold, self.coldReadAloud === cold else { return }
       self.stopColdReadAloud(keepMediaSession: false)
-      // A book left to the reader opens there once it can run, as before.
-      guard toReader, let url = URL(string: "readest://book/\(cold.bookHash)?autoplay=tts") else { return }
+      // A book left to the reader opens there once it can run, as before;
+      // it starts reading only if it wasn't paused meanwhile.
+      let query = playing ? "?autoplay=tts" : ""
+      guard toReader, let url = URL(string: "readest://book/\(cold.bookHash)\(query)") else { return }
       _ = UIApplication.shared.delegate?.application?(UIApplication.shared, open: url, options: [:])
     }
     activateRemoteCommands()

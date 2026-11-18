@@ -55,7 +55,8 @@ enum ColdEpubText {
         manifest[id] = resolveZipPath(base, href)
       }
     }
-    let spine = opf.descendants(named: "itemref").compactMap { $0.attributes["idref"].flatMap { manifest[$0] } }
+    let spineIds = opf.descendants(named: "itemref").compactMap { $0.attributes["idref"] }
+    let spine = spineIds.compactMap { manifest[$0] }
     guard !spine.isEmpty else { throw ColdEpubError("EPUB spine is empty") }
     let language = opf.descendants(named: "language").first?.textContent
       .trimmingCharacters(in: .whitespacesAndNewlines)
@@ -74,7 +75,10 @@ enum ColdEpubText {
     return ColdEpubSpeech(
       segments: segments, startSection: startSection,
       language: language?.isEmpty == false ? language : nil,
-      hasMediaOverlays: items.contains { $0.attributes["media-overlay"] != nil })
+      // Spine items only, as the reader decides (mediaOverlay/index.ts).
+      hasMediaOverlays: items.contains {
+        $0.attributes["media-overlay"] != nil && spineIds.contains($0.attributes["id"] ?? "")
+      })
   }
 
   static func spineIndex(fromCfi cfi: String?) -> Int {
@@ -571,6 +575,9 @@ private struct ZipArchive {
 
   func read(_ name: String) throws -> Data? {
     guard let entry = entries[name] else { return nil }
+    guard entry.size <= Self.maxEntrySize, entry.compressedSize <= Self.maxEntrySize else {
+      throw ColdEpubError("Zip entry \(name) is too large")
+    }
     let header = entry.offset
     guard header + 30 <= data.count, uint32(at: header) == 0x0403_4b50 else {
       throw ColdEpubError("Corrupt zip entry \(name)")
@@ -585,7 +592,6 @@ private struct ZipArchive {
       return Data(raw)
     case 8:
       if entry.size == 0 { return Data() }
-      guard entry.size <= Self.maxEntrySize else { throw ColdEpubError("Zip entry \(name) is too large") }
       guard !raw.isEmpty else { throw ColdEpubError("Corrupt zip entry \(name)") }
       // One byte of spare room: the decoder stops at the buffer's end, so a
       // stream longer than declared fills it and is caught here.
