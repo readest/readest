@@ -248,6 +248,11 @@ describe.skipIf(!hasSwiftc)('ColdEpubText.swift', () => {
     );
   });
 
+  it('refuses a chapter declared empty that has text', () => {
+    const epub = declareSize(createEpub(), 'OEBPS/one a.xhtml', () => 0);
+    expect(readError(epub)).toMatch(/Corrupt zip entry/);
+  });
+
   it('refuses an entry that decodes to more than it declares', () => {
     const epub = declareSize(createEpub(), 'OEBPS/one a.xhtml', (actual) => actual - 10);
     expect(readError(epub)).toMatch(/Corrupt zip entry/);

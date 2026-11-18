@@ -591,7 +591,9 @@ private struct ZipArchive {
     case 0:
       return Data(raw)
     case 8:
-      if entry.size == 0 { return Data() }
+      // An empty entry may store no stream at all; any stream is decoded and
+      // checked, so text behind a declared size of 0 is caught too.
+      if entry.size == 0 && raw.isEmpty { return Data() }
       guard !raw.isEmpty else { throw ColdEpubError("Corrupt zip entry \(name)") }
       // One byte of spare room: the decoder stops at the buffer's end, so a
       // stream longer than declared fills it and is caught here.

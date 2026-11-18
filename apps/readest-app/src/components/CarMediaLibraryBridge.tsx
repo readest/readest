@@ -6,6 +6,7 @@ import type { Book } from '@/types/book';
 import { useAppLockStore } from '@/store/appLockStore';
 import { useLibraryStore } from '@/store/libraryStore';
 import { useReaderStore } from '@/store/readerStore';
+import { clearBookProgress } from '@/store/readerProgressStore';
 import environmentConfig, {
   getInitializedAppService,
   isTauriAppPlatform,
@@ -272,9 +273,12 @@ const CarMediaLibraryPublisher = () => {
       );
       if (!bookHash) return;
       // recreateViewer, but each pane keeps whether it is the primary one.
+      // Its old progress goes first: autoplay starts once the view has
+      // progress, and the old page's would start it there.
       const { viewStates, initViewState } = useReaderStore.getState();
       for (const [key, viewState] of Object.entries(viewStates)) {
         if (key.startsWith(`${bookHash}-`) && viewState.key === key) {
+          clearBookProgress(key);
           void initViewState(environmentConfig, bookHash, key, viewState.isPrimary, true);
         }
       }

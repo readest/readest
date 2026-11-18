@@ -6,6 +6,8 @@ import CarMediaLibraryBridge from '@/components/CarMediaLibraryBridge';
 import { useAppLockStore } from '@/store/appLockStore';
 import { useLibraryStore } from '@/store/libraryStore';
 import { useReaderStore } from '@/store/readerStore';
+import { getBookProgress, setBookProgress } from '@/store/readerProgressStore';
+import type { BookProgress } from '@/types/book';
 import { eventDispatcher } from '@/utils/event';
 
 const TAKE = 'plugin:native-tts|take_cold_playback';
@@ -145,6 +147,20 @@ describe('CarPlay Read Aloud takeover on iOS', () => {
     expect(initViewState.mock.invocationCallOrder[0]).toBeLessThan(
       dispatch.mock.invocationCallOrder[0]!,
     );
+  });
+
+  // Autoplay waits for the reloaded view's progress; the old view's would let
+  // it start from the page the reader showed before the native player moved on.
+  it('drops the old progress of an open copy before the reload', async () => {
+    setBookProgress('book-1', { location: 'epubcfi(/6/4!/4/2/1:0)' } as BookProgress);
+    let progressAtReload: BookProgress | null | undefined;
+    initViewState.mockImplementation(async () => {
+      progressAtReload = getBookProgress('book-1');
+    });
+    takeReturns({ bookHash: 'book', playing: true });
+    render(<CarMediaLibraryBridge />);
+    await waitFor(() => expect(initViewState).toHaveBeenCalled());
+    expect(progressAtReload ?? null).toBeNull();
   });
 
   it('only reloads the open book when the native player was paused', async () => {
