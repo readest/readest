@@ -138,6 +138,31 @@ describe('SearchBar', () => {
     expect(mocks.setSearchError).toHaveBeenLastCalledWith('book-1', null);
   });
 
+  // Every publish re-renders the reader and the results list, which redo work
+  // over all results so far; publishing each chapter's results as it arrived
+  // made a repeated search in a long book take minutes (#7584).
+  it('publishes chapters that arrive together in one update', async () => {
+    mocks.resolveSearchResultCfis.mockImplementation(async (_s, _b, locators: unknown[]) =>
+      locators.map((_, i) => ({ cfi: `cfi-${i}` })),
+    );
+    mocks.searchLibraryBooks.mockImplementation(async function* () {
+      for (let index = 0; index < 50; index++) {
+        yield { type: 'progress', bookProgress: index / 50 };
+        yield {
+          type: 'result',
+          result: { index, label: `Chapter ${index}`, subitems: [{ locator: {}, excerpt: 'm' }] },
+        };
+      }
+      yield { type: 'progress', bookProgress: 1 };
+      yield { type: 'book-completed', book: { hash: 'book-hash' }, matchCount: 50 };
+    });
+
+    await renderBar();
+
+    expect(mocks.setSearchResults.mock.calls.length).toBeLessThanOrEqual(3);
+    expect(mocks.setSearchResults.mock.lastCall![1]).toHaveLength(50);
+  });
+
   it('searches the whole book when progress is not available yet', async () => {
     mocks.progress = null;
     await renderBar();
