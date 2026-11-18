@@ -4485,7 +4485,26 @@ diff -ruN blitz/packages/blitz-paint/src/render/border.rs blitz/packages/blitz-p
 diff -ruN blitz/packages/blitz-paint/src/render/box_shadow.rs blitz/packages/blitz-paint/src/render/box_shadow.rs
 --- blitz/packages/blitz-paint/src/render/box_shadow.rs
 +++ blitz/packages/blitz-paint/src/render/box_shadow.rs
-@@ -104,8 +104,10 @@
+@@ -2,7 +2,7 @@
+ use crate::color::{Color, ToColorColor as _};
+ use anyrender::PaintScene;
+ use blitz_dom::CopyStyleGetters;
+-use kurbo::{Rect, Vec2};
++use kurbo::{Rect, Shape as _, Vec2};
+ use peniko::{Compose, Fill, Mix};
+ 
+ impl ElementCx<'_, '_> {
+@@ -55,7 +55,8 @@
+ 
+                     let alpha = shadow_color.components[3];
+                     if alpha != 0.0 {
+-                        let transform = self.transform.then_translate(Vec2 {
++                        // The offsets are in the element's own space: they turn with its transform.
++                        let transform = self.transform.pre_translate(Vec2 {
+                             x: shadow.base.horizontal.px() as f64 * self.scale,
+                             y: shadow.base.vertical.px() as f64 * self.scale,
+                         });
+@@ -104,16 +105,42 @@
                  .color
                  .resolve_to_absolute(&current_color)
                  .as_srgb_color();
@@ -4498,6 +4517,60 @@ diff -ruN blitz/packages/blitz-paint/src/render/box_shadow.rs blitz/packages/bli
              }
  
              // TODO draw shadows with matching individual radii instead of averaging
+             let radius = self.frame.border_radii.average();
+-            let transform = self.transform.then_translate(Vec2 {
+-                x: shadow.base.horizontal.px() as f64,
+-                y: shadow.base.vertical.px() as f64,
+-            });
++            // The offsets are in the element's own space (they turn with its transform), in CSS px.
++            let offset = Vec2 {
++                x: shadow.base.horizontal.px() as f64 * self.scale,
++                y: shadow.base.vertical.px() as f64 * self.scale,
++            };
++            let transform = self.transform.pre_translate(offset);
++            // The unshadowed area is the padding box shrunk by the spread radius
++            let spread = shadow.spread.px() as f64 * self.scale;
++            let hole = self.frame.padding_box.inflate(-spread, -spread);
++            let blur = shadow.base.blur.px() as f64 * self.scale;
++
++            // Without blur the shadow is exactly the padding box less the moved hole: fill all
++            // but the hole, clipped to the padding box. (Cutting the hole out of a filled padding
++            // box left a faint line where the hole crosses the box's anti-aliased edge.)
++            if blur == 0.0 {
++                let outer = self.frame.padding_box.inflate(
++                    offset.x.abs() + spread.abs() + 1.0,
++                    offset.y.abs() + spread.abs() + 1.0,
++                );
++                let mut shape = outer.to_path(0.1);
++                if hole.width() > 0.0 && hole.height() > 0.0 {
++                    shape.extend((hole + offset).to_rounded_rect(radius).path_elements(0.1));
++                }
++                scene.push_clip_layer(Fill::NonZero, self.transform, &padding_box);
++                scene.fill(Fill::EvenOdd, self.transform, shadow_color, None, &shape);
++                scene.pop_layer();
++                continue;
++            }
+ 
+             scene.push_layer(
+                 Fill::NonZero,
+@@ -141,16 +168,7 @@
+                 None,
+                 None,
+             );
+-            // The unshadowed area is the padding box shrunk by the spread radius
+-            let spread = shadow.spread.px() as f64 * self.scale;
+-            let hole = self.frame.padding_box.inflate(-spread, -spread);
+-            scene.draw_box_shadow(
+-                transform,
+-                hole,
+-                Color::WHITE,
+-                radius,
+-                shadow.base.blur.px() as f64 * self.scale,
+-            );
++            scene.draw_box_shadow(transform, hole, Color::WHITE, radius, blur);
+ 
+             scene.pop_layer();
+             scene.pop_layer();
 diff -ruN blitz/packages/blitz-paint/src/render/clip_path.rs blitz/packages/blitz-paint/src/render/clip_path.rs
 --- blitz/packages/blitz-paint/src/render/clip_path.rs
 +++ blitz/packages/blitz-paint/src/render/clip_path.rs
