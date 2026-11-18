@@ -18,6 +18,8 @@
     "key:Escape",
     "[aria-label=\"Settings Menu\"]",
     "text:Advanced Settings",
+    "key:Escape",
+    "[aria-label=\"Settings Menu\"]",
     "text:About Readest",
     "key:Escape",
     "[aria-label=\"Settings Menu\"]",
