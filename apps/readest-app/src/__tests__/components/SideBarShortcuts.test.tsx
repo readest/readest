@@ -207,17 +207,6 @@ describe('SideBar search behavior', () => {
     expect(h.setSearchBarVisible).toHaveBeenCalledWith(true);
   });
 
-  // resetSearch() leaves an empty results array behind when the term is
-  // cleared; an empty array is still truthy, so the results panel must be
-  // gated on the term to keep the TOC visible.
-  test('keeps the TOC when the term is empty even with reset empty results', () => {
-    h.searchNav = { searchTerm: '', searchResults: [] };
-    render(<SideBar />);
-
-    expect(screen.queryByTestId('search-results-panel')).toBeNull();
-    expect(screen.getByTestId('sidebar-content-panel')).toBeDefined();
-  });
-
   test('mounts the results panel once a term is set', () => {
     h.searchNav = { searchTerm: 'alice', searchResults: [{ label: 'Chapter' }] };
     render(<SideBar />);

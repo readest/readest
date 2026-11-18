@@ -174,7 +174,6 @@ const SearchBar: React.FC<SearchBarProps> = ({ isVisible, bookKey, onHideSearchB
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [onHideSearchBar, appService, isVisible]);
 
   // Ctrl+F issued while focus is elsewhere (book iframe, sidebar buttons)
@@ -358,7 +357,9 @@ const SearchBar: React.FC<SearchBarProps> = ({ isVisible, bookKey, onHideSearchB
 
   const resetSearch = useCallback(() => {
     searchControllerRef.current?.abort();
-    setSearchResults(bookKey, []);
+    // null, not []: no search ran, so the sidebar keeps the table of contents
+    // instead of reading an empty array as "No results found".
+    setSearchResults(bookKey, null);
     view?.clearSearch();
   }, [bookKey, view, setSearchResults]);
 

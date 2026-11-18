@@ -141,7 +141,8 @@ const SearchResultItem: React.FC<SearchResultItemProps> = ({
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
           onSelectResult(cfi);
-        } else {
+        } else if (!((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'f')) {
+          // Ctrl/Cmd+F still reaches the reader so the search field selects its term.
           e.stopPropagation();
         }
       }}

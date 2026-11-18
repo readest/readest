@@ -101,3 +101,25 @@ describe('SearchResults chapter sections', () => {
     expect(sticky.className).toContain('not-eink:bg-base-200');
   });
 });
+
+describe('SearchResults keyboard', () => {
+  afterEach(() => {
+    cleanup();
+  });
+
+  // A focused result keeps plain keys to itself, but Ctrl/Cmd+F must reach the
+  // reader's window handlers so a repeated Ctrl+F selects the search term.
+  it.each([
+    ['Ctrl+F', true, { key: 'f', ctrlKey: true }],
+    ['Cmd+F', true, { key: 'f', metaKey: true }],
+    ['F', false, { key: 'f' }],
+    ['ArrowDown', false, { key: 'ArrowDown' }],
+  ])('%s from a focused result reaches the window: %s', (_name, reaches, init) => {
+    renderResults();
+    const onWindowKeyDown = vi.fn();
+    window.addEventListener('keydown', onWindowKeyDown);
+    fireEvent.keyDown(resultItems()[0]!, init);
+    window.removeEventListener('keydown', onWindowKeyDown);
+    expect(onWindowKeyDown).toHaveBeenCalledTimes(reaches ? 1 : 0);
+  });
+});

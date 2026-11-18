@@ -9,6 +9,7 @@ import { eventDispatcher } from '@/utils/event';
 const mocks = vi.hoisted(() => ({
   // getProgress returns null until the book emits its first relocate event.
   progress: null as { section: { current: number } } | null,
+  searchTerm: 'alice',
   searchLibraryBooks: vi.fn(),
   viewSearch: vi.fn(),
   viewAvailable: true,
@@ -65,7 +66,7 @@ vi.mock('@/store/sidebarStore', () => ({
     setSearchError: mocks.setSearchError,
     setSearchStatus: vi.fn(),
     getSearchStatus: () => 'searching',
-    getSearchNavState: () => ({ searchTerm: 'alice', searchError: null }),
+    getSearchNavState: () => ({ searchTerm: mocks.searchTerm, searchError: null }),
   }),
 }));
 
@@ -81,6 +82,7 @@ describe('SearchBar', () => {
   beforeEach(() => {
     vi.useFakeTimers();
     mocks.viewAvailable = true;
+    mocks.searchTerm = 'alice';
     mocks.searchLibraryBooks.mockReset();
     mocks.searchLibraryBooks.mockImplementation(async function* () {
       yield { type: 'book-completed', book: { hash: 'book-hash' }, matchCount: 0 };
@@ -165,6 +167,17 @@ describe('SearchBar', () => {
     await renderBar();
 
     expect(mocks.searchLibraryBooks.mock.calls[0]![3].maxResultsPerBook).toBe(Infinity);
+  });
+
+  // An empty or too-short term runs no search. Its results must be cleared to
+  // null, not []: the sidebar reads an empty array as a finished search and
+  // shows "No results found" in place of the table of contents.
+  it.each(['', 'x'])('clears the results to null for the term "%s"', async (term) => {
+    mocks.searchTerm = term;
+    await renderBar();
+
+    expect(mocks.searchLibraryBooks).not.toHaveBeenCalled();
+    expect(mocks.setSearchResults).toHaveBeenLastCalledWith('book-1', null);
   });
 
   // Repeated Ctrl+F must let typing replace the old term instead of
