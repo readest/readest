@@ -2305,7 +2305,17 @@ diff -ruN blitz/packages/blitz-dom/src/layout/inline/layout.rs blitz/packages/bl
      }
  
      fn compute_inline_layout_inner(
-@@ -1030,6 +1030,23 @@
+@@ -603,7 +603,8 @@
+             indent_options,
+         );
+ 
+-        let pbw = container_pb.horizontal_components().sum() * scale;
++        // Lines break in the content box, which a vertical scrollbar's gutter narrows too.
++        let pbw = content_box_inset.horizontal_components().sum() * scale;
+         let width = known_dimensions
+             .width
+             .map(|w| (w * scale) - pbw)
+@@ -1030,6 +1031,23 @@
              }
          }
  
@@ -2329,7 +2339,7 @@ diff -ruN blitz/packages/blitz-dom/src/layout/inline/layout.rs blitz/packages/bl
          #[cfg(feature = "floats")]
          {
              if is_bfc_root {
-@@ -1086,7 +1103,6 @@
+@@ -1086,7 +1104,6 @@
          // Store sizes and positions of inline boxes. Walking a line's items builds every
          // glyph run on it, so lines are only walked when there are boxes to find.
          let mut ibox_order: u32 = 0;
@@ -2337,7 +2347,7 @@ diff -ruN blitz/packages/blitz-dom/src/layout/inline/layout.rs blitz/packages/bl
          let has_inline_boxes = inline_layout.layout.inline_boxes().len() > 0;
          let lines = has_inline_boxes.then(|| inline_layout.layout.lines());
          for line in lines.into_iter().flatten() {
-@@ -1094,10 +1110,6 @@
+@@ -1094,10 +1111,6 @@
                  if let parley::layout::PositionedLayoutItem::InlineBox(ibox) = item {
                      let order = ibox_order;
                      ibox_order += 1;
@@ -2348,7 +2358,7 @@ diff -ruN blitz/packages/blitz-dom/src/layout/inline/layout.rs blitz/packages/bl
                      let node = &self.nodes[NodeId::from_u64(ibox.id)];
                      let style = self.child_layout_style(node);
                      let padding = style
-@@ -1283,8 +1295,82 @@
+@@ -1283,8 +1296,82 @@
              .flatten()
              .map(line_baseline);
  
@@ -2432,7 +2442,7 @@ diff -ruN blitz/packages/blitz-dom/src/layout/inline/layout.rs blitz/packages/bl
          }
  
          // Put layout back
-@@ -1325,6 +1411,9 @@
+@@ -1325,6 +1412,9 @@
                      rect.left = if is_rtl { rect.left } else { 0.0 };
                      rect.top = 0.0;
                  }
@@ -2469,26 +2479,53 @@ diff -ruN blitz/packages/blitz-dom/src/layout/mod.rs blitz/packages/blitz-dom/sr
  pub(crate) mod table;
  pub(crate) mod text_transform;
  #[cfg(feature = "writing-mode")]
-@@ -101,6 +103,9 @@
+@@ -101,6 +103,12 @@
      /// size, against which its percentage padding resolves (see `layout::writing_mode`).
      #[cfg(feature = "writing-mode")]
      pub(crate) orthogonal_percent_basis: Option<(crate::NodeId, f32)>,
 +    /// The space each fieldset's rendered legend takes beyond its top border, by fieldset: added
 +    /// to the fieldset's top padding for its block algorithm (`compute_fieldset_layout`).
 +    legend_space: std::collections::HashMap<crate::NodeId, f32>,
++    /// The nodes whose `overflow: auto` scrollbars came or went in this pass: their ancestors
++    /// measured them with the old gutters (see `resolve_layout`).
++    pub(crate) scrollbars_changed: Vec<crate::NodeId>,
  }
  
  impl<'doc> LayoutPassState<'doc> {
-@@ -138,6 +143,7 @@
+@@ -138,6 +146,8 @@
              current_align_axis_is_inline: false,
              #[cfg(feature = "writing-mode")]
              orthogonal_percent_basis: None,
 +            legend_space: std::collections::HashMap::new(),
++            scrollbars_changed: Vec::new(),
          }
      }
  }
-@@ -194,6 +200,16 @@
-         let mut output = self.dispatch_child_layout(node_id, inputs, block_ctx);
+@@ -191,9 +201,38 @@
+         inputs: taffy::tree::LayoutInput,
+         block_ctx: Option<&mut BlockContext<'_>>,
+     ) -> taffy::tree::LayoutOutput {
+-        let mut output = self.dispatch_child_layout(node_id, inputs, block_ctx);
++        let mut block_ctx = block_ctx;
++        let mut output = self.dispatch_child_layout(node_id, inputs, block_ctx.as_deref_mut());
++        // A scroll container (its own formatting context) whose `overflow: auto` scrollbars come or
++        // go is laid out again with its new gutters. A gutter can make the other axis overflow, so
++        // up to three times, and a scrollbar added in this pass stays for it.
++        if inputs.run_mode == RunMode::PerformLayout && block_ctx.is_none() {
++            let dom_id = dom_node_id(node_id);
++            let mut added = 0;
++            for _ in 0..3 {
++                let Some(shown) = self.auto_scrollbars_needed(dom_id, &output, added) else {
++                    break;
++                };
++                let node = &self.nodes[dom_id];
++                added |= shown & !node.auto_scrollbars.get();
++                node.auto_scrollbars.set(shown);
++                self.nodes[dom_id].clear_layout_cache();
++                self.scrollbars_changed.push(dom_id);
++                output = self.dispatch_child_layout(node_id, inputs, None);
++            }
++        }
          if inputs.run_mode == RunMode::PerformLayout {
              compute_oof_layout(self, node_id, &mut output);
 +            // Boxes inline layout laid out against an inline span's box stay hoisted here too
@@ -2504,7 +2541,7 @@ diff -ruN blitz/packages/blitz-dom/src/layout/mod.rs blitz/packages/blitz-dom/sr
          }
          output
      }
-@@ -206,15 +222,198 @@
+@@ -206,15 +245,263 @@
          node: &'a Node,
      ) -> stylo_taffy::TaffyStyloStyle<ComputedStyleRef<'a>> {
          #[cfg(feature = "writing-mode")]
@@ -2532,6 +2569,71 @@ diff -ruN blitz/packages/blitz-dom/src/layout/mod.rs blitz/packages/blitz-dom/sr
 +            style.flags |= stylo_taffy::StyleFlags::RENDERED_LEGEND;
 +        }
 +        style
++    }
++
++    /// The `overflow: auto` scrollbars node `id` shows after laid out as `output`, if they differ
++    /// from those it was laid out with: one in each axis whose content overflows its scrollport,
++    /// plus `keep`. None for the root element, whose scrollbars would be the viewport's.
++    fn auto_scrollbars_needed(
++        &self,
++        id: crate::NodeId,
++        output: &taffy::LayoutOutput,
++        keep: u8,
++    ) -> Option<u8> {
++        use style::values::computed::Overflow;
++        let node = &self.nodes[id];
++        let current = node.auto_scrollbars.get();
++        let mut shown = keep;
++        if let Some(style) = node.primary_styles() {
++            // Overflow and scrollbars along Taffy's x and y, which a vertical writing mode swaps.
++            #[cfg(feature = "writing-mode")]
++            let swaps = stylo_taffy::WritingModeExt::swaps_axes(self.layout_wm_of(id));
++            #[cfg(not(feature = "writing-mode"))]
++            let swaps = false;
++            let horizontal = (style.clone_overflow_x(), Node::AUTO_SCROLLBAR_X);
++            let vertical = (style.clone_overflow_y(), Node::AUTO_SCROLLBAR_Y);
++            let ((x, bar_x), (y, bar_y)) = if swaps {
++                (vertical, horizontal)
++            } else {
++                (horizontal, vertical)
++            };
++            let gutter = stylo_taffy::convert::scrollbar_gutter(style.clone_scrollbar_width());
++            if gutter > 0.0
++                && (x == Overflow::Auto || y == Overflow::Auto)
++                && self.try_root_element().is_none_or(|root| root.id != id)
++            {
++                let border = node
++                    .layout_style()
++                    .border()
++                    .resolve_or_zero(None, resolve_calc_value);
++                let has = |bar, overflow| current & bar != 0 || overflow == Overflow::Scroll;
++                let width = output.size.width
++                    - border.horizontal_axis_sum()
++                    - if has(bar_y, y) { gutter } else { 0.0 };
++                let height = output.size.height
++                    - border.vertical_axis_sum()
++                    - if has(bar_x, x) { gutter } else { 0.0 };
++                let content = output.scrollable_overflow_rect;
++                let reversed = content.is_reversed();
++                let right = if reversed.x {
++                    -content.left()
++                } else {
++                    content.right()
++                };
++                let bottom = if reversed.y {
++                    -content.top()
++                } else {
++                    content.bottom()
++                };
++                if x == Overflow::Auto && right > width + 0.5 {
++                    shown |= bar_x;
++                }
++                if y == Overflow::Auto && bottom > height + 0.5 {
++                    shown |= bar_y;
++                }
++            }
+         }
++        (shown != current).then_some(shown)
 +    }
 +
 +    /// A fieldset with a rendered legend (HTML's fieldset rendering, as Chromium lays it out).
@@ -2657,7 +2759,7 @@ diff -ruN blitz/packages/blitz-dom/src/layout/mod.rs blitz/packages/blitz-dom/sr
 +                    margin: legend_margin,
 +                },
 +            );
-         }
++        }
 +        output
 +    }
 +
@@ -2706,7 +2808,7 @@ diff -ruN blitz/packages/blitz-dom/src/layout/mod.rs blitz/packages/blitz-dom/sr
      }
  
      fn dispatch_child_layout(
-@@ -240,6 +439,7 @@
+@@ -240,6 +527,7 @@
          });
          let font_size = font_styles.map(|s| s.0);
          let resolved_line_height = font_styles.map(|s| s.1);
@@ -2714,7 +2816,7 @@ diff -ruN blitz/packages/blitz-dom/src/layout/mod.rs blitz/packages/blitz-dom/sr
  
          match &mut node.data {
              NodeData::Text(data) => {
-@@ -309,20 +509,7 @@
+@@ -309,20 +597,7 @@
                                      .resolve_or_zero(inputs.parent_size.width, resolve_calc_value)
                          };
                          let content_width = (output.size.width - pb.horizontal_axis_sum()).max(0.0);
@@ -2736,7 +2838,7 @@ diff -ruN blitz/packages/blitz-dom/src/layout/mod.rs blitz/packages/blitz-dom/sr
                      }
                      return output;
                  }
-@@ -333,7 +520,7 @@
+@@ -333,7 +608,7 @@
                          Some("hidden") => {
                              return taffy::LayoutOutput::HIDDEN;
                          }
@@ -2745,7 +2847,7 @@ diff -ruN blitz/packages/blitz-dom/src/layout/mod.rs blitz/packages/blitz-dom/sr
                              return compute_leaf_layout(
                                  inputs,
                                  &node.layout_style(),
-@@ -357,7 +544,7 @@
+@@ -357,7 +632,7 @@
                              );
                          }
                          None | Some("text" | "password" | "email" | "tel" | "url" | "search") => {
@@ -2754,7 +2856,7 @@ diff -ruN blitz/packages/blitz-dom/src/layout/mod.rs blitz/packages/blitz-dom/sr
                                  inputs,
                                  &node.layout_style(),
                                  resolve_calc_value,
-@@ -370,6 +557,28 @@
+@@ -370,6 +645,28 @@
                                      height: resolved_line_height.unwrap_or(16.0),
                                  },
                              );
@@ -2783,7 +2885,7 @@ diff -ruN blitz/packages/blitz-dom/src/layout/mod.rs blitz/packages/blitz-dom/sr
                          }
                          _ => {}
                      }
-@@ -586,6 +795,10 @@
+@@ -586,6 +883,10 @@
                      return self.compute_inline_layout(dom_node_id(node_id), inputs, block_ctx);
                  }
  
@@ -2794,7 +2896,7 @@ diff -ruN blitz/packages/blitz-dom/src/layout/mod.rs blitz/packages/blitz-dom/sr
                  // The default CSS file will set
                  match node.taffy_display() {
                      Display::Block => compute_block_layout(self, node_id, inputs, block_ctx),
-@@ -652,18 +865,22 @@
+@@ -652,18 +953,22 @@
  
      fn get_core_container_style(&self, node_id: NodeId) -> Self::CoreContainerStyle<'_> {
          #[cfg(feature = "writing-mode")]
@@ -2822,7 +2924,7 @@ diff -ruN blitz/packages/blitz-dom/src/layout/mod.rs blitz/packages/blitz-dom/sr
      }
  
      fn set_unrounded_layout(&mut self, node_id: NodeId, layout: &Layout) {
-@@ -846,13 +1063,45 @@
+@@ -846,13 +1151,45 @@
      }
  }
  
@@ -2870,7 +2972,7 @@ diff -ruN blitz/packages/blitz-dom/src/layout/mod.rs blitz/packages/blitz-dom/sr
      }
  
      fn is_out_of_flow(&self, node_id: NodeId) -> bool {
-@@ -972,3 +1221,25 @@
+@@ -972,3 +1309,25 @@
          })
      }
  }
@@ -3508,7 +3610,18 @@ diff -ruN blitz/packages/blitz-dom/src/node/element.rs blitz/packages/blitz-dom/
 diff -ruN blitz/packages/blitz-dom/src/node/node.rs blitz/packages/blitz-dom/src/node/node.rs
 --- blitz/packages/blitz-dom/src/node/node.rs
 +++ blitz/packages/blitz-dom/src/node/node.rs
-@@ -391,6 +391,12 @@
+@@ -99,6 +99,10 @@
+     pub children: ThinVec<NodeId>,
+     /// Our parent in the layout hierachy: a separate list that includes anonymous collections of inline elements
+     pub layout_parent: Cell<Option<NodeId>>,
++    /// The axes whose `overflow: auto` shows a classic scrollbar, which takes a gutter
++    /// ([`AUTO_SCROLLBAR_X`](Self::AUTO_SCROLLBAR_X), [`AUTO_SCROLLBAR_Y`](Self::AUTO_SCROLLBAR_Y)):
++    /// set by layout when the content overflows, kept for the next layout.
++    pub(crate) auto_scrollbars: Cell<u8>,
+     /// A separate child list that includes anonymous collections of inline elements
+     pub layout_children: RefCell<Option<ThinVec<NodeId>>>,
+     /// Out-of-flow (absolutely/fixed positioned) boxes for which this node is the
+@@ -391,6 +395,12 @@
      pub fn after(&self) -> Option<NodeId> {
          self.element_data().and_then(|data| data.after)
      }
@@ -3521,7 +3634,15 @@ diff -ruN blitz/packages/blitz-dom/src/node/node.rs blitz/packages/blitz-dom/src
  }
  
  impl Node {
-@@ -489,6 +495,13 @@
+@@ -417,6 +427,7 @@
+             parent: None,
+             children: ThinVec::new(),
+             layout_parent: Cell::new(None),
++            auto_scrollbars: Cell::new(0),
+             oof_containing_block: Cell::new(None),
+             layout_children: RefCell::new(None),
+             hoisted_children: RefCell::new(ThinVec::new()),
+@@ -489,6 +500,13 @@
          )
      }
  
@@ -3535,7 +3656,7 @@ diff -ruN blitz/packages/blitz-dom/src/node/node.rs blitz/packages/blitz-dom/src
      pub fn is_or_contains_block(&self) -> bool {
          let style = self.primary_styles();
          let style = style.as_ref();
-@@ -578,6 +591,18 @@
+@@ -578,6 +596,18 @@
              .unwrap_or(false)
      }
  
@@ -3554,17 +3675,36 @@ diff -ruN blitz/packages/blitz-dom/src/node/node.rs blitz/packages/blitz-dom/src
      pub fn set_restyle_hint(&mut self, hint: RestyleHint) {
          if let Some(stylo_element_data) = self.try_stylo_element_data_mut() {
              if let Some(mut element_data) = stylo_element_data.get_mut() {
-@@ -1175,9 +1200,6 @@
+@@ -998,6 +1028,11 @@
+ // }
+ 
+ impl Node {
++    /// `auto_scrollbars`: a horizontal scrollbar.
++    pub(crate) const AUTO_SCROLLBAR_X: u8 = 1;
++    /// `auto_scrollbars`: a vertical scrollbar.
++    pub(crate) const AUTO_SCROLLBAR_Y: u8 = 2;
++
+     pub fn tree(&self) -> &crate::NodeTree {
+         unsafe { &*self.tree }
+     }
+@@ -1175,9 +1210,13 @@
              if el.is_button_input() {
                  flags |= stylo_taffy::StyleFlags::IS_BUTTON_INPUT;
              }
 -            if let Some(inline_layout) = el.inline_layout_data.as_deref() {
 -                flags |= inline_layout.span_cb_flags;
 -            }
++        }
++        let auto_scrollbars = self.auto_scrollbars.get();
++        if auto_scrollbars & Self::AUTO_SCROLLBAR_X != 0 {
++            flags |= stylo_taffy::StyleFlags::AUTO_SCROLLBAR_X;
++        }
++        if auto_scrollbars & Self::AUTO_SCROLLBAR_Y != 0 {
++            flags |= stylo_taffy::StyleFlags::AUTO_SCROLLBAR_Y;
          }
  
          #[cfg(feature = "writing-mode")]
-@@ -1421,6 +1443,66 @@
+@@ -1421,6 +1460,66 @@
          self.hit_inner(x, y, scale, &mut None)
      }
  
@@ -3631,7 +3771,7 @@ diff -ruN blitz/packages/blitz-dom/src/node/node.rs blitz/packages/blitz-dom/src
      /// [`hit`](Self::hit), also resolving the innermost overlay scrollbar
      /// thumb under the point into `scrollbar` during the same descent (so
      /// thumb hit-testing shares the exact coordinate handling — transforms
-@@ -1460,6 +1542,19 @@
+@@ -1460,6 +1559,19 @@
              y = (p.y / scale) as f32;
          }
  
@@ -3651,7 +3791,7 @@ diff -ruN blitz/packages/blitz-dom/src/node/node.rs blitz/packages/blitz-dom/src
          let size = self.final_layout().size;
          let matches_self = !(x < self.scroll_offset().x as f32
              || x > size.width + self.scroll_offset().x as f32
-@@ -1523,6 +1618,16 @@
+@@ -1523,6 +1635,16 @@
              return None;
          }
  
@@ -3668,7 +3808,7 @@ diff -ruN blitz/packages/blitz-dom/src/node/node.rs blitz/packages/blitz-dom/src
          // Descendants overwrite, so the innermost scroll container's thumb
          // wins. Thumb coords are border-box relative (unscrolled).
          if matches_self
-@@ -1567,7 +1672,9 @@
+@@ -1567,7 +1689,9 @@
          }
  
          // Call `.hit()` on each child in turn. If any return `Some` then return that value. Else return `Some(self.id).
@@ -3679,7 +3819,7 @@ diff -ruN blitz/packages/blitz-dom/src/node/node.rs blitz/packages/blitz-dom/src
              let Some(child) = self.tree().get(*child_id) else {
                  continue;
              };
-@@ -1613,7 +1720,7 @@
+@@ -1613,7 +1737,7 @@
          }
  
          // Inline children
@@ -3688,7 +3828,7 @@ diff -ruN blitz/packages/blitz-dom/src/node/node.rs blitz/packages/blitz-dom/src
              let x = x - content_box_offset.x;
              let y = y - content_box_offset.y;
              let element_data = &self.element_data().unwrap();
-@@ -1655,6 +1762,61 @@
+@@ -1655,6 +1779,61 @@
          None
      }
  
@@ -3750,7 +3890,7 @@ diff -ruN blitz/packages/blitz-dom/src/node/node.rs blitz/packages/blitz-dom/src
      /// Find the inline root ancestor of this node (or self if this is an inline root).
      /// Returns None if no inline root ancestor exists.
      pub fn inline_root_ancestor(&self) -> Option<&Node> {
-@@ -1787,103 +1949,24 @@
+@@ -1787,103 +1966,24 @@
      ///
      /// Returns `None` for nodes that have their own layout box.
      pub fn inline_fragment_boxes(&self) -> Option<impl Iterator<Item = taffy::Rect<f32>> + '_> {
@@ -3864,7 +4004,7 @@ diff -ruN blitz/packages/blitz-dom/src/node/node.rs blitz/packages/blitz-dom/src
      }
  
      /// CSSOM View's `offsetLeft`/`offsetTop`: the offset of this node's border box from the
-@@ -1962,6 +2045,15 @@
+@@ -1962,6 +2062,15 @@
  
      fn cssom_scroll_size(&self) -> taffy::Size<f32> {
          let layout = self.final_layout();
@@ -3880,7 +4020,7 @@ diff -ruN blitz/packages/blitz-dom/src/node/node.rs blitz/packages/blitz-dom/src
          if self.primary_styles().is_none() {
              return taffy::Size {
                  width: self.client_width() + layout.scroll_width(),
-@@ -2211,3 +2303,97 @@
+@@ -2211,3 +2320,97 @@
          );
      }
  }
@@ -4306,7 +4446,7 @@ diff -ruN blitz/packages/blitz-dom/src/resolve.rs blitz/packages/blitz-dom/src/r
 +        let subdocs_damaged = subdocs && self.resolve_subdocs(current_time_for_animations);
 +        self.damaged_since_taken = earlier || !damage.is_empty() || subdocs_damaged;
 +        timer.record_time("subdocs");
-+
+ 
 +        timer.print_times(&format!("Resolve({}): ", self.id()));
 +    }
 +
@@ -4325,7 +4465,7 @@ diff -ruN blitz/packages/blitz-dom/src/resolve.rs blitz/packages/blitz-dom/src/r
 +            && self.deferred_construction_nodes.is_empty()
 +            && self.pending_style_image_nodes.is_empty()
 +    }
- 
++
 +    /// Resolves the documents of the iframes that show; whether any of them was damaged. A
 +    /// hidden iframe paints nothing, so its document is laid out only when read (or shown); it
 +    /// still takes in its loaded resources, as its `load` waits on its stylesheets.
@@ -4393,7 +4533,30 @@ diff -ruN blitz/packages/blitz-dom/src/resolve.rs blitz/packages/blitz-dom/src/r
              let Some(pseudo) = pseudo else { continue };
              if self.nodes[pseudo].is_out_of_flow() {
                  continue;
-@@ -462,3 +562,70 @@
+@@ -453,6 +553,22 @@
+             }
+         };
+         taffy::compute_root_layout(&mut state, root_element_id, available_space);
++        // Where `overflow: auto` scrollbars came or went, the boxes around them measured them with
++        // their old gutters (a scrolling menu as wide as its items): lay those out again.
++        for _ in 0..2 {
++            let changed = std::mem::take(&mut state.scrollbars_changed);
++            if changed.is_empty() {
++                break;
++            }
++            for id in changed {
++                let mut current = Some(id);
++                while let Some(node) = current.and_then(|id| state.nodes.get_mut(id)) {
++                    node.clear_layout_cache();
++                    current = node.layout_parent.get();
++                }
++            }
++            taffy::compute_root_layout(&mut state, root_element_id, available_space);
++        }
+         #[cfg(feature = "writing-mode")]
+         state.physicalise_and_round_layout(root_element_id);
+         #[cfg(not(feature = "writing-mode"))]
+@@ -462,3 +578,70 @@
          // taffy::print_tree(self, root_node_id)
      }
  }
@@ -5824,10 +5987,202 @@ diff -ruN blitz/packages/blitz-paint/src/render/mask.rs blitz/packages/blitz-pai
      /// If the element has a CSS mask, push an isolation layer for the masked content
      /// to be drawn into. Returns whether a layer was pushed, which should later be
      /// passed to [`maybe_pop_css_mask_layer`](Self::maybe_pop_css_mask_layer).
+diff -ruN blitz/packages/blitz-paint/src/render/scrollbars.rs blitz/packages/blitz-paint/src/render/scrollbars.rs
+--- blitz/packages/blitz-paint/src/render/scrollbars.rs
++++ blitz/packages/blitz-paint/src/render/scrollbars.rs
+@@ -0,0 +1,180 @@
++//! Classic scrollbars, drawn as Chromium on Linux draws them: in the gutter layout reserved
++//! (`Layout::scrollbar_size`), a button at each end holding a triangle and a rounded thumb
++//! between them, in `scrollbar-color`'s thumb colour on its track colour.
++
++use super::ElementCx;
++use crate::color::{Color, ToColorColor};
++use anyrender::PaintScene;
++use blitz_dom::node::ScrollbarColor;
++use kurbo::{BezPath, Rect, RoundedRect, Shape};
++use peniko::Fill;
++
++/// Chromium's metrics for a gutter of 15px (`scrollbar-width: auto`) or 10px (`thin`), in CSS px:
++/// the thumb's thickness, how far its track starts from each end, and where each arrow's tip and
++/// base are from its end (up, down, left, right; negative from the far end).
++struct Metrics {
++    thumb: f64,
++    track_inset: f64,
++    up: (f64, f64),
++    down: (f64, f64),
++    left: (f64, f64),
++    right: (f64, f64),
++}
++
++const AUTO: Metrics = Metrics {
++    thumb: 9.0,
++    track_inset: 18.0,
++    up: (6.5, 11.0),
++    down: (-7.5, -12.0),
++    left: (5.5, 10.0),
++    right: (-6.5, -11.0),
++};
++
++const THIN: Metrics = Metrics {
++    thumb: 6.0,
++    track_inset: 12.0,
++    up: (3.5, 7.0),
++    down: (-3.5, -7.0),
++    left: (3.5, 7.0),
++    right: (-3.5, -7.0),
++};
++
++/// The shortest thumb, in CSS px.
++const MIN_THUMB: f64 = 17.0;
++
++impl ElementCx<'_, '_> {
++    pub(super) fn draw_classic_scrollbars(&self, scene: &mut impl PaintScene) {
++        use style::computed_values::direction::T as Direction;
++        let layout = self.node.final_layout();
++        let (bar_w, bar_h) = (
++            layout.scrollbar_size.width as f64,
++            layout.scrollbar_size.height as f64,
++        );
++        if bar_w <= 0.0 && bar_h <= 0.0 {
++            return;
++        }
++        let (thumb, track) = match self.node.scrollbar_color() {
++            ScrollbarColor::Colors { thumb, track } => {
++                (thumb.as_srgb_color(), track.as_srgb_color())
++            }
++            ScrollbarColor::Auto => (
++                Color::from_rgb8(139, 139, 139),
++                Color::from_rgb8(252, 252, 252),
++            ),
++        };
++        let rtl = self.style.get_inherited_box().direction == Direction::Rtl;
++        let (w, h) = (layout.size.width as f64, layout.size.height as f64);
++        let b = layout.border;
++        let (left, right) = (b.left as f64, w - b.right as f64);
++        let (top, bottom) = (b.top as f64, h - b.bottom as f64);
++        let vertical_x = if rtl { left } else { right - bar_w };
++        let s = self.scale;
++        let mut fill = |color: Color, path: BezPath| {
++            scene.fill(Fill::NonZero, self.transform, color, None, &path);
++        };
++        let scaled = |r: Rect| Rect::new(r.x0 * s, r.y0 * s, r.x1 * s, r.y1 * s);
++        let offset = self.node.scroll_offset();
++
++        if bar_w > 0.0 {
++            let bar = Rect::new(vertical_x, top, vertical_x + bar_w, bottom - bar_h);
++            let m = if bar_w < 15.0 { &THIN } else { &AUTO };
++            fill(track, scaled(bar).to_path(0.1));
++            let cx = (bar.x0 + bar.x1) / 2.0 * s;
++            fill(thumb, arrow(cx, bar.y0 * s, m.up, m.thumb / 2.0, s, false));
++            fill(
++                thumb,
++                arrow(cx, bar.y1 * s, m.down, m.thumb / 2.0, s, false),
++            );
++            let client = self.node.client_height() as f64;
++            let scroll = self.node.scroll_height() as f64;
++            if let Some((start, len)) = thumb_span(bar.y0, bar.y1, m, client, scroll, offset.y) {
++                let inset = (bar_w - m.thumb) / 2.0;
++                let r = Rect::new(bar.x0 + inset, start, bar.x1 - inset, start + len);
++                let rounded = RoundedRect::from_rect(scaled(r), m.thumb / 2.0 * s);
++                fill(thumb, rounded.to_path(0.1));
++            }
++        }
++        if bar_h > 0.0 {
++            let (x0, x1) = if rtl {
++                (left + bar_w, right)
++            } else {
++                (left, right - bar_w)
++            };
++            let bar = Rect::new(x0, bottom - bar_h, x1, bottom);
++            let m = if bar_h < 15.0 { &THIN } else { &AUTO };
++            fill(track, scaled(bar).to_path(0.1));
++            let cy = (bar.y0 + bar.y1) / 2.0 * s;
++            fill(thumb, arrow(cy, bar.x0 * s, m.left, m.thumb / 2.0, s, true));
++            fill(
++                thumb,
++                arrow(cy, bar.x1 * s, m.right, m.thumb / 2.0, s, true),
++            );
++            let client = self.node.client_width() as f64;
++            let scroll = self.node.scroll_width() as f64;
++            if let Some((start, len)) = thumb_span(bar.x0, bar.x1, m, client, scroll, offset.x) {
++                let inset = (bar_h - m.thumb) / 2.0;
++                let r = Rect::new(start, bar.y0 + inset, start + len, bar.y1 - inset);
++                let rounded = RoundedRect::from_rect(scaled(r), m.thumb / 2.0 * s);
++                fill(thumb, rounded.to_path(0.1));
++            }
++        }
++        if bar_w > 0.0 && bar_h > 0.0 {
++            let corner = Rect::new(vertical_x, bottom - bar_h, vertical_x + bar_w, bottom);
++            fill(track, scaled(corner).to_path(0.1));
++        }
++    }
++}
++
++/// Where the thumb starts and how long it is along a bar from `start` to `end` (CSS px), when
++/// the content (`scroll` long, `client` of it shown, scrolled by `offset`) overflows: a share of
++/// the track as long as the share of the content shown, at least `MIN_THUMB`, in whole pixels.
++fn thumb_span(
++    start: f64,
++    end: f64,
++    m: &Metrics,
++    client: f64,
++    scroll: f64,
++    offset: f64,
++) -> Option<(f64, f64)> {
++    let track = end - start - 2.0 * m.track_inset;
++    if scroll <= client || track < MIN_THUMB {
++        return None;
++    }
++    let len = (track * client / scroll).round().clamp(MIN_THUMB, track);
++    let progress = (offset / (scroll - client)).clamp(0.0, 1.0);
++    Some((
++        start + m.track_inset + ((track - len) * progress).round(),
++        len,
++    ))
++}
++
++/// A button's triangle, as Chromium rasters it: rows of whole device pixels from the tip, whose
++/// half-widths grow evenly to half the thumb's thickness (`half_base`, CSS px), centred on `centre`
++/// across the bar. `end` is the end of the bar it sits at (device px) and `(tip, base)` how far
++/// from it (CSS px, negative from the far end). `horizontal` turns it to point left or right.
++fn arrow(
++    centre: f64,
++    end: f64,
++    (tip, base): (f64, f64),
++    half_base: f64,
++    s: f64,
++    horizontal: bool,
++) -> BezPath {
++    let rows = ((base - tip).abs() * s).round() as usize;
++    let half_base = half_base * s;
++    // The row nearest the end: the tip's when it points there, the base's otherwise.
++    let first = (end + (if tip > 0.0 { tip } else { base }) * s).floor();
++    let mut path = BezPath::new();
++    for i in 0..rows {
++        let from_tip = if tip > 0.0 { i } else { rows - 1 - i };
++        let half = (half_base * (from_tip + 1) as f64 / rows as f64).round();
++        let along = first + i as f64;
++        let row = if horizontal {
++            Rect::new(along, centre - half, along + 1.0, centre + half)
++        } else {
++            Rect::new(centre - half, along, centre + half, along + 1.0)
++        };
++        path.extend(row.to_path(0.1));
++    }
++    path
++}
 diff -ruN blitz/packages/blitz-paint/src/render.rs blitz/packages/blitz-paint/src/render.rs
 --- blitz/packages/blitz-paint/src/render.rs
 +++ blitz/packages/blitz-paint/src/render.rs
-@@ -137,6 +137,9 @@
+@@ -4,6 +4,7 @@
+ mod clip_path;
+ mod form_controls;
+ mod mask;
++mod scrollbars;
+ 
+ use blitz_dom::CopyStyleGetters;
+ use std::cell::RefCell;
+@@ -137,6 +138,9 @@
  
      // Pre-computed `Scene`s for each CustomWidget
      pub(crate) custom_widget_scenes: &'a CustomWidgetSceneMap,
@@ -5837,7 +6192,7 @@ diff -ruN blitz/packages/blitz-paint/src/render.rs blitz/packages/blitz-paint/sr
  }
  
  impl<'dom, 'a> BlitzDomPainter<'dom, 'a> {
-@@ -175,6 +178,7 @@
+@@ -175,6 +179,7 @@
              draw_text_context: RefCell::new(DrawTextContext::default()),
              selection_ranges,
              custom_widget_scenes,
@@ -5845,7 +6200,7 @@ diff -ruN blitz/packages/blitz-paint/src/render.rs blitz/packages/blitz-paint/sr
          }
      }
  
-@@ -244,6 +248,9 @@
+@@ -244,6 +249,9 @@
          // initial offset already subtracted). Elements outside of this are culled, and
          // scrollports narrow this rectangle further for their descendants.
          let viewport_clip_rect = Rect::new(0.0, 0.0, self.width as f64, self.height as f64);
@@ -5855,7 +6210,7 @@ diff -ruN blitz/packages/blitz-paint/src/render.rs blitz/packages/blitz-paint/sr
  
          self.render_element(
              scene,
-@@ -288,6 +295,15 @@
+@@ -288,6 +296,15 @@
          }
      }
  
@@ -5871,7 +6226,7 @@ diff -ruN blitz/packages/blitz-paint/src/render.rs blitz/packages/blitz-paint/sr
      fn node_transform(&self, node: &Node, parent: Affine) -> Affine {
          let location = node.final_layout().location;
          parent
-@@ -482,10 +498,19 @@
+@@ -482,10 +499,19 @@
          // Cull elements that fall entirely outside the current clip rectangle. In addition to
          // the viewport, `clip_rect` is narrowed by any ancestor scrollport (see below), so this
          // also culls elements scrolled out of view inside a clipping/scrolling container.
@@ -5895,7 +6250,7 @@ diff -ruN blitz/packages/blitz-paint/src/render.rs blitz/packages/blitz-paint/sr
          {
              return;
          }
-@@ -541,6 +566,13 @@
+@@ -541,6 +567,13 @@
  
          // Compute clip-path (if any) and wrap all rendering in a clip layer
          let clip_path_shape = cx.clip_path_shape();
@@ -5909,7 +6264,7 @@ diff -ruN blitz/packages/blitz-paint/src/render.rs blitz/packages/blitz-paint/sr
          let has_clip_path = clip_path_shape.is_some();
          let default_clip = cx.frame.border_box_path();
          let mut clip_path_for_layer = clip_path_shape.unwrap_or(default_clip);
-@@ -601,6 +633,10 @@
+@@ -601,6 +634,10 @@
              None,
              None,
              |scene| {
@@ -5920,7 +6275,7 @@ diff -ruN blitz/packages/blitz-paint/src/render.rs blitz/packages/blitz-paint/sr
                  // If the element has a CSS `mask`, then push an isolation layer for the
                  // masked content. The mask is applied when the layer is popped below.
                  let mask_layer_pushed = cx.maybe_push_css_mask_layer(scene);
-@@ -642,14 +678,28 @@
+@@ -642,14 +679,28 @@
                      filter,
                      backdrop_filter,
                      |scene| {
@@ -5952,7 +6307,7 @@ diff -ruN blitz/packages/blitz-paint/src/render.rs blitz/packages/blitz-paint/sr
                          }
                          cx.stroke_devtools(scene);
  
-@@ -683,12 +733,12 @@
+@@ -683,12 +734,12 @@
                                  cx.draw_svg(scene);
                                  #[cfg(feature = "custom-widget")]
                                  cx.draw_custom_widget(scene);
@@ -5967,7 +6322,20 @@ diff -ruN blitz/packages/blitz-paint/src/render.rs blitz/packages/blitz-paint/sr
                              },
                          );
  
-@@ -794,8 +844,13 @@
+@@ -699,6 +750,12 @@
+                             cx.transform = unscrolled_transform;
+                             cx.draw_scrollbars(scene);
+                         }
++                        // Or classic ones, in the gutters layout reserved.
++                        #[cfg(not(feature = "scrollbars"))]
++                        {
++                            cx.transform = unscrolled_transform;
++                            cx.draw_classic_scrollbars(scene);
++                        }
+                     },
+                 );
+ 
+@@ -794,8 +851,13 @@
  
  /// The transform from an SVG's rendered tree to a viewport of the given size.
  #[cfg(feature = "svg")]
@@ -5983,7 +6351,7 @@ diff -ruN blitz/packages/blitz-paint/src/render.rs blitz/packages/blitz-paint/sr
      Affine::new([t.sx, t.ky, t.kx, t.sy, t.tx, t.ty].map(f64::from))
  }
  
-@@ -836,6 +891,43 @@
+@@ -836,6 +898,43 @@
      custom_widget_scene: Option<&'a Scene>,
  }
  
@@ -6027,7 +6395,7 @@ diff -ruN blitz/packages/blitz-paint/src/render.rs blitz/packages/blitz-paint/sr
  /// Converts parley BoundingBox into peniko Rect
  fn convert_rect(rect: &parley::BoundingBox) -> kurbo::Rect {
      peniko::kurbo::Rect::new(rect.x0, rect.y0, rect.x1, rect.y1)
-@@ -1076,6 +1168,37 @@
+@@ -1076,6 +1175,37 @@
                  };
              }
  
@@ -6065,7 +6433,7 @@ diff -ruN blitz/packages/blitz-paint/src/render.rs blitz/packages/blitz-paint/sr
              // Render text
              let mut draw_text_context = self.context.draw_text_context.borrow_mut();
              crate::text::stroke_text(
-@@ -1152,6 +1275,63 @@
+@@ -1152,6 +1282,63 @@
          }
      }
  
@@ -6129,7 +6497,7 @@ diff -ruN blitz/packages/blitz-paint/src/render.rs blitz/packages/blitz-paint/sr
      fn draw_children(
          &self,
          scene: &mut impl PaintScene,
-@@ -1183,7 +1363,9 @@
+@@ -1183,7 +1370,9 @@
                  // the viewport and do not scroll with it, so cancel out the viewport
                  // scroll (applied in `paint_scene`). A fixed box contained by a
                  // transformed ancestor scrolls with it like any out-of-flow box.
@@ -6140,7 +6508,7 @@ diff -ruN blitz/packages/blitz-paint/src/render.rs blitz/packages/blitz-paint/sr
                  let child_transform = if child.taffy_position() == taffy::Position::Fixed
                      && Some(self.node.id) == self.context.root_element_id
                  {
-@@ -1193,6 +1375,15 @@
+@@ -1193,6 +1382,15 @@
                          y: scroll.y * self.scale,
                      })
                  } else if let Some(offset) = child.lifted_paint_offset(self.node.id) {
@@ -6156,7 +6524,7 @@ diff -ruN blitz/packages/blitz-paint/src/render.rs blitz/packages/blitz-paint/sr
                      parent_style_transform.pre_translate(kurbo::Vec2 {
                          x: offset.x as f64 * self.scale,
                          y: offset.y as f64 * self.scale,
-@@ -1200,7 +1391,37 @@
+@@ -1200,7 +1398,37 @@
                  } else {
                      parent_style_transform
                  };
@@ -6195,7 +6563,7 @@ diff -ruN blitz/packages/blitz-paint/src/render.rs blitz/packages/blitz-paint/sr
              }
          }
  
-@@ -1269,7 +1490,7 @@
+@@ -1269,7 +1497,7 @@
          let x = x + x_offset.px() as f64;
          let y = y + y_offset.px() as f64;
  
@@ -6204,7 +6572,7 @@ diff -ruN blitz/packages/blitz-paint/src/render.rs blitz/packages/blitz-paint/sr
          let transform = (self.transform * viewport).then_translate(Vec2 { x, y });
  
          self.with_replaced_content_clip(
-@@ -1377,7 +1598,8 @@
+@@ -1377,7 +1605,8 @@
          }
      }
  
@@ -6214,7 +6582,7 @@ diff -ruN blitz/packages/blitz-paint/src/render.rs blitz/packages/blitz-paint/sr
          if let Some(sub_doc) = self.element.sub_doc_data().map(|doc| doc.inner()) {
              let scale = self.scale;
              let width = self.frame.content_box.width() as u32;
-@@ -1389,7 +1611,7 @@
+@@ -1389,7 +1618,7 @@
              let initial_y = translation.y + self.frame.content_box.origin().y;
              // let transform = self.transform.then_translate(Vec2 { x, y });
  
@@ -6223,7 +6591,7 @@ diff -ruN blitz/packages/blitz-paint/src/render.rs blitz/packages/blitz-paint/sr
                  &sub_doc,
                  scale,
                  width,
-@@ -1398,6 +1620,15 @@
+@@ -1398,6 +1627,15 @@
                  initial_y,
                  self.custom_widget_scenes,
              );
@@ -6307,10 +6675,29 @@ diff -ruN blitz/packages/stylo_taffy/src/convert.rs blitz/packages/stylo_taffy/s
              }
              stylo::UnpackedLengthPercentage::Percentage(percentage) => {
                  taffy::Dimension::fit_content_percent(percentage.0)
+@@ -415,6 +423,18 @@
+     }
+ }
+ 
++/// The width of a classic scrollbar's gutter for `scrollbar-width`, as Chromium on Linux has it.
++pub fn scrollbar_gutter(
++    width: style::properties::longhands::scrollbar_width::computed_value::T,
++) -> f32 {
++    use style::properties::longhands::scrollbar_width::computed_value::T as ScrollbarWidth;
++    match width {
++        ScrollbarWidth::Auto => 15.0,
++        ScrollbarWidth::Thin => 10.0,
++        ScrollbarWidth::None => 0.0,
++    }
++}
++
+ #[inline]
+ pub fn contain(input: stylo::Contain, display: stylo::Display) -> taffy::Contain {
+     // Layout and paint containment do not apply to non-atomic inline-level boxes
 diff -ruN blitz/packages/stylo_taffy/src/wrapper.rs blitz/packages/stylo_taffy/src/wrapper.rs
 --- blitz/packages/stylo_taffy/src/wrapper.rs
 +++ blitz/packages/stylo_taffy/src/wrapper.rs
-@@ -24,16 +24,17 @@
+@@ -24,16 +24,22 @@
      pub struct StyleFlags: u8 {
          /// Whether the node is a replaced element (e.g. an image or form control)
          const IS_REPLACED = 1 << 0;
@@ -6331,10 +6718,15 @@ diff -ruN blitz/packages/stylo_taffy/src/wrapper.rs blitz/packages/stylo_taffy/s
 +        /// Whether the node is a fieldset's rendered legend, which the fieldset places on its top
 +        /// border itself (HTML's fieldset rendering): its block algorithm leaves it out.
 +        const RENDERED_LEGEND = 1 << 6;
++        /// Whether the node's `overflow-x: auto` shows a scrollbar (its content overflows), which
++        /// takes a gutter as `scroll` does. Otherwise `auto` reserves none.
++        const AUTO_SCROLLBAR_X = 1 << 1;
++        /// Whether the node's `overflow-y: auto` shows a scrollbar.
++        const AUTO_SCROLLBAR_Y = 1 << 2;
      }
  }
  
-@@ -58,6 +59,8 @@
+@@ -58,6 +64,8 @@
      /// `parent_size.width`, i.e. the containing block's block size.
      #[cfg(feature = "writing-mode")]
      pub percent_basis: Option<f32>,
@@ -6343,7 +6735,7 @@ diff -ruN blitz/packages/stylo_taffy/src/wrapper.rs blitz/packages/stylo_taffy/s
  }
  
  impl<T: Deref<Target = ComputedValues>> TaffyStyloStyle<T> {
-@@ -86,6 +89,7 @@
+@@ -86,6 +94,7 @@
              align_axis_is_inline: false,
              #[cfg(feature = "writing-mode")]
              percent_basis: None,
@@ -6351,7 +6743,7 @@ diff -ruN blitz/packages/stylo_taffy/src/wrapper.rs blitz/packages/stylo_taffy/s
          }
      }
  
-@@ -102,9 +106,28 @@
+@@ -102,9 +111,28 @@
              align_axis_is_inline: false,
              #[cfg(feature = "writing-mode")]
              percent_basis: None,
@@ -6380,7 +6772,7 @@ diff -ruN blitz/packages/stylo_taffy/src/wrapper.rs blitz/packages/stylo_taffy/s
      /// The writing mode the getters are expressed in (the style's own without the feature)
      #[inline(always)]
      fn layout_wm(&self) -> WritingMode {
-@@ -178,6 +201,9 @@
+@@ -178,6 +206,9 @@
  
      #[inline]
      fn box_generation_mode(&self) -> taffy::BoxGenerationMode {
@@ -6390,7 +6782,40 @@ diff -ruN blitz/packages/stylo_taffy/src/wrapper.rs blitz/packages/stylo_taffy/s
          convert::box_generation_mode(self.style.get_box().display)
      }
  
-@@ -236,15 +262,20 @@
+@@ -211,16 +242,29 @@
+     #[inline]
+     fn overflow(&self) -> taffy::Point<taffy::Overflow> {
+         let box_styles = self.style.get_box();
++        // Taffy reserves a scrollbar gutter for `scroll` only: an `auto` axis is `scroll` while it
++        // shows a scrollbar and `hidden` (a scroll container all the same) otherwise.
++        let axis = |overflow, shows| match overflow {
++            stylo::Overflow::Auto if shows => taffy::Overflow::Scroll,
++            stylo::Overflow::Auto => taffy::Overflow::Hidden,
++            other => convert::overflow(other),
++        };
+         let overflow = taffy::Point {
+-            x: convert::overflow(box_styles.overflow_x),
+-            y: convert::overflow(box_styles.overflow_y),
++            x: axis(
++                box_styles.overflow_x,
++                self.flags.contains(StyleFlags::AUTO_SCROLLBAR_X),
++            ),
++            y: axis(
++                box_styles.overflow_y,
++                self.flags.contains(StyleFlags::AUTO_SCROLLBAR_Y),
++            ),
+         };
+         self.layout_wm().logical_point(overflow)
+     }
+ 
+     #[inline]
+     fn scrollbar_width(&self) -> f32 {
+-        0.0
++        convert::scrollbar_gutter(self.style.clone_scrollbar_width())
+     }
+ 
+     #[inline]
+@@ -236,15 +280,20 @@
  
      #[inline]
      fn is_containing_block(&self) -> taffy::ContainingBlockClaims {
@@ -6416,7 +6841,7 @@ diff -ruN blitz/packages/stylo_taffy/src/wrapper.rs blitz/packages/stylo_taffy/s
      }
  
      #[inline]
-@@ -301,19 +332,19 @@
+@@ -301,19 +350,19 @@
                          .resolve_or_zero(Some(basis), convert::resolve_calc_value),
                  )
              };
