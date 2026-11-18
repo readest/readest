@@ -32,8 +32,6 @@ const makeViewSettings = (overrides: Partial<ViewSettings> = {}): ViewSettings =
     ...overrides,
   }) as ViewSettings;
 
-const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
-
 const waitForStabilized = (el: HTMLElement, timeout = 10000) =>
   new Promise<void>((resolve, reject) => {
     const timer = setTimeout(() => reject(new Error('stabilized timeout')), timeout);
@@ -46,9 +44,6 @@ const waitForStabilized = (el: HTMLElement, timeout = 10000) =>
       { once: true },
     );
   });
-
-// Longer than the scroll listener's 250ms debounce and a font load.
-const SETTLE_MS = 800;
 
 describe('Scrolled mode keeps the text in view across a restyle (browser)', () => {
   let book: BookDoc;
@@ -70,6 +65,15 @@ describe('Scrolled mode keeps the text in view across a restyle (browser)', () =
     }
     paginator.remove();
   });
+
+  /**
+   * setStyles re-anchors once every document's fonts are ready and its view
+   * has expanded; wait for the same fonts, then two frames for the scroll.
+   */
+  const settled = async () => {
+    await Promise.all(paginator.getContents().map(({ doc }) => doc.fonts.ready));
+    await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+  };
 
   /** Open the longest section in scrolled mode, scrolled to its middle. */
   const openAtMiddle = async () => {
@@ -93,7 +97,7 @@ describe('Scrolled mode keeps the text in view across a restyle (browser)', () =
     const stabilized = waitForStabilized(paginator);
     await paginator.goTo({ index: idx, anchor: 0.5 });
     await stabilized;
-    await sleep(SETTLE_MS);
+    await settled();
     // The character 100px below the top of the viewport, as a one-character
     // range so it has a rect.
     const y = paginator.getBoundingClientRect().top + 100;
@@ -123,7 +127,7 @@ describe('Scrolled mode keeps the text in view across a restyle (browser)', () =
 
     for (const defaultFontSize of [24, 12]) {
       paginator.setStyles?.(getStyles(makeViewSettings({ defaultFontSize }), undefined, []));
-      await sleep(SETTLE_MS);
+      await settled();
       const top = topInViewport(range);
       expect(top, `top of the text in view at ${defaultFontSize}px`).toBeGreaterThanOrEqual(-30);
       expect(top, `top of the text in view at ${defaultFontSize}px`).toBeLessThan(600);
@@ -136,7 +140,7 @@ describe('Scrolled mode keeps the text in view across a restyle (browser)', () =
     paginator.setStyles?.(
       getStyles(makeViewSettings({ defaultFontSize: 16, overrideColor: true }), undefined, []),
     );
-    await sleep(SETTLE_MS);
+    await settled();
     expect(topInViewport(range)).toBeCloseTo(before, 0);
   }, 30000);
 });
