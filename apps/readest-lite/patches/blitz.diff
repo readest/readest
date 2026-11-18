@@ -415,10 +415,32 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
  
          true
      }
-@@ -2333,6 +2415,34 @@
+@@ -2333,6 +2415,56 @@
          self.stylist.device()
      }
  
++    /// The colour the page's `::placeholder` rules give the placeholder of the input `node_id`, if
++    /// any rule applies. Computed when painted: a rule's match can change without the input's own
++    /// style changing (an ancestor's attribute).
++    pub fn placeholder_color(&self, node_id: NodeId) -> Option<style::color::AbsoluteColor> {
++        use style::selector_parser::PseudoElement;
++        use style::stylist::RuleInclusion;
++        let node = &self.nodes[node_id];
++        let primary = node.primary_styles()?;
++        let read_guard = self.guard.read();
++        let guards = StylesheetGuards::same(&read_guard);
++        let style = self.stylist.lazily_compute_pseudo_element_style(
++            &guards,
++            node,
++            &PseudoElement::Placeholder,
++            RuleInclusion::All,
++            &primary,
++            true,
++            None,
++        )?;
++        Some(style.clone_color())
++    }
++
 +    /// Whether the media query list `query` matches, as `matchMedia` answers: evaluated against
 +    /// the document's device as its style sheets' `@media` rules are. A query that doesn't parse
 +    /// is `not all`.
@@ -450,7 +472,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      pub fn get_cursor(&self) -> Option<CursorIcon> {
          // Prefer the precise hit node: `cursor` and `user-select` may be set on
          // a pseudo-element or resolved on an anonymous box, and text hits carry
-@@ -2440,6 +2550,40 @@
+@@ -2440,6 +2572,40 @@
          (pos, *self.nodes[node_id].unrounded_layout())
      }
  
@@ -491,7 +513,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      /// Computes the size and position of the `Node` relative to the viewport
      pub fn get_client_bounding_rect(&self, node_id: NodeId) -> Option<BoundingRect> {
          // Non-atomic inline elements have no layout box of their own: return
-@@ -2447,17 +2591,27 @@
+@@ -2447,17 +2613,27 @@
          if let Some(rects) = self.inline_fragment_rects(node_id) {
              return rects.reduce(BoundingRect::union);
          }
@@ -529,7 +551,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      }
  
      /// CSSOM View's `offsetLeft`/`offsetTop`/`offsetWidth`/`offsetHeight` as a single rect:
-@@ -2528,7 +2682,7 @@
+@@ -2528,7 +2704,7 @@
      pub fn node_client_rects(&self, node_id: NodeId) -> Vec<BoundingRect> {
          match self.inline_fragment_rects(node_id) {
              Some(rects) => rects.collect(),
@@ -538,7 +560,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
          }
      }
  
-@@ -2543,20 +2697,329 @@
+@@ -2543,20 +2719,329 @@
  
          // Only non-atomic inline elements lack their own layout box: they are
          // flattened into the containing inline root's text layout as style spans.
@@ -880,7 +902,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      }
  
      /// The first element in tree order with the given tag name. The root element and
-@@ -2944,6 +3407,36 @@
+@@ -2944,6 +3429,36 @@
  /// Snap a CSSOM geometry value to a 1/64px grid (the precision of Blink's `LayoutUnit`).
  /// Layout values are accumulated in `f32`, so e.g. seven `55/7`-wide flex items would
  /// otherwise end at `55.0000005` and appear to overflow their 55px container.
@@ -917,7 +939,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
  fn snap_to_layout_unit(value: f64) -> f64 {
      (value * 64.0).round() / 64.0
  }
-@@ -3781,3 +4274,7 @@
+@@ -3781,3 +4296,7 @@
          );
      }
  }
@@ -4999,20 +5021,25 @@ diff -ruN blitz/packages/blitz-paint/src/render.rs blitz/packages/blitz-paint/sr
      Affine::new([t.sx, t.ky, t.kx, t.sy, t.tx, t.ty].map(f64::from))
  }
  
-@@ -1076,6 +1117,32 @@
+@@ -1076,6 +1117,37 @@
                  };
              }
  
-+            // An empty input shows its placeholder at half the text colour's opacity (the
-+            // default `::placeholder` look; `::placeholder` rules themselves aren't matched).
++            // An empty input shows its placeholder in the colour its `::placeholder` rules give it,
++            // or at half the text colour's opacity.
 +            let placeholder = input_data
 +                .placeholder
 +                .as_ref()
 +                .filter(|_| input_data.editor.raw_text().is_empty())
 +                .and_then(|ph| ph.try_layout());
 +            if let Some(layout) = placeholder {
-+                let color = self.style.clone_color().into_srgb_legacy().as_srgb_color();
-+                let color = color.with_alpha(color.components[3] * 0.5);
++                let color = match self.context.dom.placeholder_color(self.node.id) {
++                    Some(color) => color.into_srgb_legacy().as_srgb_color(),
++                    None => {
++                        let color = self.style.clone_color().into_srgb_legacy().as_srgb_color();
++                        color.with_alpha(color.components[3] * 0.5)
++                    }
++                };
 +                let mut draw_text_context = self.context.draw_text_context.borrow_mut();
 +                crate::text::stroke_text(
 +                    scene,
@@ -5032,7 +5059,7 @@ diff -ruN blitz/packages/blitz-paint/src/render.rs blitz/packages/blitz-paint/sr
              // Render text
              let mut draw_text_context = self.context.draw_text_context.borrow_mut();
              crate::text::stroke_text(
-@@ -1152,6 +1219,63 @@
+@@ -1152,6 +1224,63 @@
          }
      }
  
@@ -5096,7 +5123,7 @@ diff -ruN blitz/packages/blitz-paint/src/render.rs blitz/packages/blitz-paint/sr
      fn draw_children(
          &self,
          scene: &mut impl PaintScene,
-@@ -1183,7 +1307,9 @@
+@@ -1183,7 +1312,9 @@
                  // the viewport and do not scroll with it, so cancel out the viewport
                  // scroll (applied in `paint_scene`). A fixed box contained by a
                  // transformed ancestor scrolls with it like any out-of-flow box.
@@ -5107,7 +5134,7 @@ diff -ruN blitz/packages/blitz-paint/src/render.rs blitz/packages/blitz-paint/sr
                  let child_transform = if child.taffy_position() == taffy::Position::Fixed
                      && Some(self.node.id) == self.context.root_element_id
                  {
-@@ -1193,6 +1319,15 @@
+@@ -1193,6 +1324,15 @@
                          y: scroll.y * self.scale,
                      })
                  } else if let Some(offset) = child.lifted_paint_offset(self.node.id) {
@@ -5123,7 +5150,7 @@ diff -ruN blitz/packages/blitz-paint/src/render.rs blitz/packages/blitz-paint/sr
                      parent_style_transform.pre_translate(kurbo::Vec2 {
                          x: offset.x as f64 * self.scale,
                          y: offset.y as f64 * self.scale,
-@@ -1200,7 +1335,37 @@
+@@ -1200,7 +1340,37 @@
                  } else {
                      parent_style_transform
                  };
@@ -5162,7 +5189,7 @@ diff -ruN blitz/packages/blitz-paint/src/render.rs blitz/packages/blitz-paint/sr
              }
          }
  
-@@ -1269,7 +1434,7 @@
+@@ -1269,7 +1439,7 @@
          let x = x + x_offset.px() as f64;
          let y = y + y_offset.px() as f64;
  
@@ -5171,7 +5198,7 @@ diff -ruN blitz/packages/blitz-paint/src/render.rs blitz/packages/blitz-paint/sr
          let transform = (self.transform * viewport).then_translate(Vec2 { x, y });
  
          self.with_replaced_content_clip(
-@@ -1377,7 +1542,8 @@
+@@ -1377,7 +1547,8 @@
          }
      }
  
@@ -5181,7 +5208,7 @@ diff -ruN blitz/packages/blitz-paint/src/render.rs blitz/packages/blitz-paint/sr
          if let Some(sub_doc) = self.element.sub_doc_data().map(|doc| doc.inner()) {
              let scale = self.scale;
              let width = self.frame.content_box.width() as u32;
-@@ -1389,7 +1555,7 @@
+@@ -1389,7 +1560,7 @@
              let initial_y = translation.y + self.frame.content_box.origin().y;
              // let transform = self.transform.then_translate(Vec2 { x, y });
  
@@ -5190,7 +5217,7 @@ diff -ruN blitz/packages/blitz-paint/src/render.rs blitz/packages/blitz-paint/sr
                  &sub_doc,
                  scale,
                  width,
-@@ -1398,6 +1564,15 @@
+@@ -1398,6 +1569,15 @@
                  initial_y,
                  self.custom_widget_scenes,
              );
