@@ -298,7 +298,10 @@ const MAX_CACHED_BOOKS = 10;
 const MAX_OPEN_INDEX_DBS = 16;
 
 export const createLibrarySearchSession = (appService: LibrarySearchAppService) => {
-  const documents = new Map<string, { updatedAt: number; pending: Promise<CachedSearchBook> }>();
+  const documents = new Map<
+    string,
+    { updatedAt: number; fileSize: number | null; pending: Promise<CachedSearchBook> }
+  >();
   // One handle per search.db within the session: OPFS permits a single access
   // handle per file per origin, so concurrent opens of the same DB would throw.
   const indexDbs = new Map<string, Promise<DatabaseService | null>>();
@@ -315,9 +318,12 @@ export const createLibrarySearchSession = (appService: LibrarySearchAppService) 
     );
   };
 
-  const open = (book: Book) => {
+  // Keyed on the file size too: a book imported in place can have its file
+  // edited, which leaves book.updatedAt as it was.
+  const open = async (book: Book): Promise<CachedSearchBook> => {
+    const fileSize = await appService.getBookFileSize(book).catch(() => null);
     const existing = documents.get(book.hash);
-    if (existing?.updatedAt === book.updatedAt) {
+    if (existing?.updatedAt === book.updatedAt && existing.fileSize === fileSize) {
       documents.delete(book.hash);
       documents.set(book.hash, existing);
       return existing.pending;
@@ -341,7 +347,7 @@ export const createLibrarySearchSession = (appService: LibrarySearchAppService) 
         throw error;
       }
     })();
-    const entry = { updatedAt: book.updatedAt, pending };
+    const entry = { updatedAt: book.updatedAt, fileSize, pending };
     documents.set(book.hash, entry);
     void pending.catch(() => {
       if (documents.get(book.hash) === entry) documents.delete(book.hash);

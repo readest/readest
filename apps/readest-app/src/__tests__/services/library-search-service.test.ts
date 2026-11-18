@@ -487,6 +487,31 @@ describe('searchLibraryBooks', () => {
     expect(service.loadBookContent).toHaveBeenCalledTimes(2);
   });
 
+  // The session's open document still reads the file as it was before the edit.
+  it('rebuilds from the edited file when it changes during a session', async () => {
+    const book = makeBook('in-place-session', 'In Place');
+    const files = new Map([['in-place-session', makeFile('# Chapter\na needle here')]]);
+    const service = makeService(files);
+    const session = createLibrarySearchSession(service);
+    const search = async (options: { session?: typeof session }) => {
+      const events = [];
+      for await (const event of searchLibraryBooks(service, [book], 'needle', {
+        config,
+        ...options,
+      })) {
+        events.push(event);
+      }
+      return events.at(-1);
+    };
+
+    await search({ session });
+    files.set('in-place-session', makeFile('# Chapter\na needle here, and an edited needle'));
+    expect(await search({ session })).toMatchObject({ type: 'completed', matchCount: 2 });
+    // A later session is served from the index the rebuild wrote.
+    expect(await search({})).toMatchObject({ type: 'completed', matchCount: 2 });
+    await session.close();
+  });
+
   it('stops worker-backed searches at the result limit', async () => {
     const book = makeBook('limit', 'Limit');
     const file = makeFile('# Chapter\ntext');
