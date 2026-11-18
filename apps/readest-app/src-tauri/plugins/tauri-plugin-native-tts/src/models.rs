@@ -122,6 +122,15 @@ pub struct UpdateCarPlayStateRequest {
     pub author: Option<String>,
 }
 
+// iOS: the book CarPlay started reading natively while the WebView was
+// suspended, handed to the reader once the app is back on screen (#7566).
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TakeColdPlaybackResponse {
+    pub book_hash: Option<String>,
+    pub playing: bool,
+}
+
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PlayoutEnqueueRequest {

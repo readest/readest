@@ -182,6 +182,9 @@ impl<R: Runtime> NativeTts<R> {
     pub fn update_carplay_state(&self, _payload: UpdateCarPlayStateRequest) -> crate::Result<()> {
         Err(crate::Error::UnsupportedPlatformError)
     }
+    pub fn take_cold_playback(&self) -> crate::Result<TakeColdPlaybackResponse> {
+        Err(crate::Error::UnsupportedPlatformError)
+    }
 }
 
 impl<R: Runtime> NativeTts<R> {
