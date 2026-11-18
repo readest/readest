@@ -646,7 +646,7 @@ export async function* searchLibraryBooks(
       let bookMatches = 0;
       let bookTruncated = false;
 
-      if (indexDb && isSearchIndexFresh(meta, book) && nodesFresh) {
+      if (indexDb && isSearchIndexFresh(meta) && nodesFresh) {
         // Indexed path: search cached text; the book file is never opened.
         const usePrefilter = config.mode === 'contains' || config.mode === 'whole-words';
         let sections: SearchIndexSection[] = usePrefilter

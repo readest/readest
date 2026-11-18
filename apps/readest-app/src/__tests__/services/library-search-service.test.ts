@@ -455,6 +455,21 @@ describe('searchLibraryBooks', () => {
     expect(service.loadBookContent).toHaveBeenCalledOnce();
   });
 
+  it('keeps serving the index after reading bumps the book updatedAt', async () => {
+    const book = makeBook('reading', 'Reading');
+    const service = makeService(new Map([['reading', makeFile('# Chapter\na needle here')]]));
+    for await (const _ of searchLibraryBooks(service, [book], 'needle', { config })) {
+    }
+    // A page turn or progress save restamps the row; the file is unchanged.
+    const turned = { ...book, updatedAt: book.updatedAt + 1000 };
+    const events = [];
+    for await (const event of searchLibraryBooks(service, [turned], 'needle', { config })) {
+      events.push(event);
+    }
+    expect(events.at(-1)).toMatchObject({ type: 'completed', matchCount: 1 });
+    expect(service.loadBookContent).toHaveBeenCalledOnce();
+  });
+
   it('stops worker-backed searches at the result limit', async () => {
     const book = makeBook('limit', 'Limit');
     const file = makeFile('# Chapter\ntext');

@@ -76,11 +76,10 @@ export const readSearchIndexMeta = async (db: DatabaseService): Promise<SearchIn
   };
 };
 
-export const isSearchIndexFresh = (meta: SearchIndexMeta | null, book: Book): boolean =>
-  !!meta &&
-  meta.complete &&
-  meta.version === SEARCH_INDEX_VERSION &&
-  meta.updatedAt === book.updatedAt;
+// Not keyed on book.updatedAt: every progress save restamps it (#7584), while
+// the book directory is named by the file's content hash, so its text is fixed.
+export const isSearchIndexFresh = (meta: SearchIndexMeta | null): boolean =>
+  !!meta && meta.complete && meta.version === SEARCH_INDEX_VERSION;
 
 export const beginSearchIndex = async (
   db: DatabaseService,
