@@ -267,14 +267,14 @@ vi.mock('@/app/reader/components/annotator/AnnotationPopup', () => ({
 // the same way (#6419).
 vi.mock('@/app/reader/components/annotator/DictionaryPopup', () => ({
   default: ({ word, onDismiss }: { word: string; onDismiss: () => void }) => (
-    <div data-testid='dictionary-surface' data-word={word.trim()}>
+    <div data-testid='dictionary-surface' data-kind='popup' data-word={word.trim()}>
       <button type='button' data-testid='dictionary-dismiss' onClick={onDismiss} />
     </div>
   ),
 }));
 vi.mock('@/app/reader/components/annotator/DictionarySheet', () => ({
   default: ({ word, onDismiss }: { word: string; onDismiss: () => void }) => (
-    <div data-testid='dictionary-surface' data-word={word.trim()}>
+    <div data-testid='dictionary-surface' data-kind='sheet' data-word={word.trim()}>
       <button type='button' data-testid='dictionary-dismiss' onClick={onDismiss} />
     </div>
   ),
@@ -526,6 +526,29 @@ describe('the instant dictionary hands the selection back when it closes', () =>
     expect(screen.queryByTestId('annotation-toolbar')).toBeNull();
     expect(h.deselect).toHaveBeenCalled();
     expect(h.isTextSelected.current).toBe(false);
+  });
+
+  test('stays a popup when the keyboard for its hint field shortens the window (#7570)', async () => {
+    const setViewport = (width: number, height: number) => {
+      Object.defineProperty(window, 'innerWidth', { value: width, configurable: true });
+      Object.defineProperty(window, 'innerHeight', { value: height, configurable: true });
+    };
+    const { innerWidth, innerHeight } = window;
+    try {
+      // An iPad in landscape; typing a Learning word's hint raises the keyboard.
+      setViewport(1180, 820);
+      const insets = { top: 0, right: 0, bottom: 0, left: 0 };
+      const { rerender } = render(<Annotator bookKey='book-1' contentInsets={insets} />);
+      await selectWord();
+      expect(screen.getByTestId('dictionary-surface').dataset['kind']).toBe('popup');
+
+      setViewport(1180, 420);
+      rerender(<Annotator bookKey='book-1' contentInsets={{ ...insets }} />);
+
+      expect(screen.getByTestId('dictionary-surface').dataset['kind']).toBe('popup');
+    } finally {
+      setViewport(innerWidth, innerHeight);
+    }
   });
 
   test('restores the selection and returns the toolbar on dismiss', async () => {

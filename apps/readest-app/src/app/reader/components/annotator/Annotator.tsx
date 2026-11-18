@@ -199,6 +199,12 @@ const PositionFollowers: React.FC<{
   return null;
 };
 
+// Below `sm` (or short landscape) the note editor and the dictionary are bottom
+// sheets rather than popups pinned to the selection: an anchored editor would
+// sit under the on-screen keyboard, and the popup gets cramped. Matches the
+// `isMobile` heuristic used by `Dialog`.
+const isSheetViewport = () => window.innerWidth < 640 || window.innerHeight < 640;
+
 const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?: Insets }> = ({
   bookKey,
   contentInsets,
@@ -262,6 +268,9 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
   const [translationEpoch, setTranslationEpoch] = useState(0);
   const [showAnnotPopup, setShowAnnotPopup] = useState(false);
   const [showDictionaryPopup, setShowDictionaryPopup] = useState(false);
+  // Decided when the lookup opens, as for the note editor: the keyboard for a
+  // Learning word's hint field must not swap the popup for the sheet (#7570).
+  const [dictionaryInSheet, setDictionaryInSheet] = useState(false);
   const [showDeepLPopup, setShowDeepLPopup] = useState(false);
   const [showProofreadPopup, setShowProofreadPopup] = useState(false);
   const [trianglePosition, setTrianglePosition] = useState<Position>();
@@ -276,9 +285,13 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
   const [showAnnotationNotes, setShowAnnotationNotes] = useState(false);
   // The note the Annotate action is currently collecting, plus the highlights
   // it created on the way (#4791: those only live as long as this editor).
+  // `inSheet` is decided when the editor opens: the keyboard its textarea
+  // raises shortens the window, and re-deciding then swapped the popup for the
+  // sheet, which dropped the keyboard and swapped back, over and over (#7570).
   const [noteEditorTarget, setNoteEditorTarget] = useState<{
     annotationId: string;
     placeholderIds: string[];
+    inSheet: boolean;
   } | null>(null);
   const [annotationNotes, setAnnotationNotes] = useState<BookNote[]>([]);
   const [editingAnnotation, setEditingAnnotation] = useState<BookNote | null>(null);
@@ -1911,6 +1924,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
     setNoteEditorTarget({
       annotationId: target.id,
       placeholderIds: created.map((annotation) => annotation.id),
+      inSheet: isSheetViewport(),
     });
   };
 
@@ -1919,7 +1933,11 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
   // from. No placeholder to take back: the annotation already existed.
   const handleEditNote = (note: BookNote) => {
     dropSelectionForOverlay();
-    setNoteEditorTarget({ annotationId: note.id, placeholderIds: [] });
+    setNoteEditorTarget({
+      annotationId: note.id,
+      placeholderIds: [],
+      inSheet: isSheetViewport(),
+    });
   };
 
   // Takes back the highlight Annotate created for the note to hang on, but
@@ -2018,6 +2036,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
     }
     setShowAnnotPopup(false);
     void suppressNativeSelectionHandles();
+    setDictionaryInSheet(isSheetViewport());
     setShowDictionaryPopup(true);
   };
 
@@ -2783,11 +2802,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
   const overlaySurfaceOpen =
     showDictionaryPopup || showDeepLPopup || showProofreadPopup || !!noteEditorTarget;
 
-  // Below `sm` (or short landscape) the note editor is a bottom sheet rather
-  // than a popup pinned to the selection: an anchored editor would sit under
-  // the on-screen keyboard. Same heuristic the dictionary uses.
-  const noteEditorInSheet =
-    !!noteEditorTarget && (window.innerWidth < 640 || window.innerHeight < 640);
+  const noteEditorInSheet = !!noteEditorTarget?.inSheet;
   const noteEditorInPopup = !!noteEditorTarget && !noteEditorInSheet;
   const editedNoteText =
     config.booknotes?.find((annotation) => annotation.id === noteEditorTarget?.annotationId)
@@ -2803,10 +2818,6 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
       />
       {showDictionaryPopup &&
         (() => {
-          // Below `sm` (or short landscape) we present the dictionary as a
-          // bottom sheet — the anchored popup gets cramped at this size.
-          // Matches the `isMobile` heuristic used by `Dialog`.
-          const useSheet = window.innerWidth < 640 || window.innerHeight < 640;
           const onManage = () => {
             // Dismiss so the user returns to the reader cleanly when they
             // close settings; the dictionaries sub-page in SettingsDialog
@@ -2816,7 +2827,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
             setActiveSettingsItemId('settings.language.dictionaries.manage');
             setSettingsDialogOpen(true);
           };
-          if (useSheet) {
+          if (dictionaryInSheet) {
             return (
               <DictionarySheet
                 word={selection?.text as string}

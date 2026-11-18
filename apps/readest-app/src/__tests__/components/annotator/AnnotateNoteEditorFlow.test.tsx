@@ -353,6 +353,25 @@ describe('Annotate opens the note editor at the selection', () => {
     expect(screen.queryByTestId('note-editor-popup')).toBeNull();
   });
 
+  test('keeps the editor in the popup when the on-screen keyboard shortens the window (#7570)', async () => {
+    // An iPad in landscape: the popup fits. Focusing its textarea raises the
+    // keyboard, which leaves the webview a window too short for the popup.
+    setViewport(1180, 820);
+    const insets = { top: 0, right: 0, bottom: 0, left: 0 };
+    const { rerender } = render(<Annotator bookKey='book-1' contentInsets={insets} />);
+    await selectText();
+    act(() => {
+      h.actions?.['onAnnotateSelection']?.();
+    });
+    expect(screen.getByTestId('note-editor-popup')).toBeTruthy();
+
+    setViewport(1180, 420);
+    rerender(<Annotator bookKey='book-1' contentInsets={{ ...insets }} />);
+
+    expect(screen.getByTestId('note-editor-popup')).toBeTruthy();
+    expect(screen.queryByTestId('note-editor-sheet')).toBeNull();
+  });
+
   test('leaves the sidebar alone', async () => {
     await annotate();
 
