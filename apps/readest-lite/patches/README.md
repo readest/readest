@@ -254,8 +254,9 @@
   (`Node::auto_scrollbars`), lays the box out again with those gutters, and then re-runs the
   layout of its ancestors, which measured it without them. Inline content breaks its lines inside
   the gutter. Paint draws a triangle at each end and a rounded thumb between them in
-  `scrollbar-color`'s thumb colour on its track colour, with Chromium's sizes. Readest's dialogs
-  and menus laid their content 15px wider than Readest does.
+  `scrollbar-color`'s thumb colour on its track colour, with the sizes and thumb rounding Chromium
+  has at a real device scale of 2. Readest's dialogs and menus laid their content 15px wider than
+  Readest does.
 
 ## stylo.diff (servo/stylo 2dca34592, 0.23.0)
 
