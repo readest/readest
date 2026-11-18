@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { Virtuoso, VirtuosoHandle } from 'react-virtuoso';
 import { useOverlayScrollbars } from 'overlayscrollbars-react';
 import 'overlayscrollbars/overlayscrollbars.css';
@@ -8,6 +8,7 @@ import { BookProgress } from '@/types/book';
 import { useReaderStore } from '@/store/readerStore';
 import { useBookProgress } from '@/store/readerProgressStore';
 import { useSidebarStore } from '@/store/sidebarStore';
+import { useTranslation } from '@/hooks/useTranslation';
 import { eventDispatcher } from '@/utils/event';
 import { useTextTranslation } from '../../hooks/useTextTranslation';
 import {
@@ -28,8 +29,26 @@ import {
   flattenTOC,
   getItemIdentifier,
   getThumbnailsPerRow,
+  getTOCKeyTarget,
   PageRange,
 } from './tocTree';
+
+const TREE_KEYS = new Set([
+  'ArrowUp',
+  'ArrowDown',
+  'ArrowLeft',
+  'ArrowRight',
+  'Home',
+  'End',
+  'Enter',
+]);
+
+// The focused row: a heading, or 'current' for the "current position" row,
+// whose object is rebuilt on every render.
+type FocusedRow = TOCItem | 'current';
+
+const getFocusedRow = (row: TOCDisplayItem): FocusedRow | null =>
+  isCurrentPositionItem(row) ? 'current' : 'item' in row ? row.item : null;
 
 // A PDF without an outline lists all of its pages instead.
 const buildTOCListItems = (
@@ -72,6 +91,7 @@ const TOCView: React.FC<{
   bookDoc: BookDoc;
   toc: TOCItem[];
 }> = ({ bookKey, bookDoc, toc }) => {
+  const _ = useTranslation();
   const { getView, getViewSettings, getProgress } = useReaderStore();
   const { sideBarBookKey, isSideBarVisible } = useSidebarStore();
   const progress = useBookProgress(bookKey);
@@ -276,6 +296,48 @@ const TOCView: React.FC<{
     getView(bookKey)?.goTo(location);
   }, [bookKey, getView, getProgress]);
 
+  // The list is one Tab stop. Keys move a focus marker between rows
+  // (aria-activedescendant) rather than DOM focus, so it survives Virtuoso
+  // unmounting rows. It follows the row itself, not its index, as rows above it
+  // fold and unfold; it starts on the current chapter.
+  const treeId = useId();
+  const [focusedRow, setFocusedRow] = useState<FocusedRow | null>(null);
+  const focusIndex = useMemo(() => {
+    const find = (match: (row: TOCDisplayItem) => boolean) => displayItems.findIndex(match);
+    let idx = focusedRow ? find((row) => getFocusedRow(row) === focusedRow) : -1;
+    if (idx === -1) idx = find((row) => 'item' in row && row.item.href === activeHref);
+    if (idx === -1) idx = find((row) => !isPageThumbnailsItem(row));
+    return idx;
+  }, [displayItems, focusedRow, activeHref]);
+
+  const handleTreeKeyDown = (event: React.KeyboardEvent<HTMLElement>) => {
+    // A PDF without an outline lists only thumbnails, which have no row to focus.
+    const row = displayItems[focusIndex];
+    if (!row || event.target !== event.currentTarget || !TREE_KEYS.has(event.key)) return;
+    if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
+    // Keep the keys from the reader's shortcuts, which would turn the page.
+    event.preventDefault();
+    event.stopPropagation();
+    if (event.key === 'Enter') {
+      if (isCurrentPositionItem(row)) handleCurrentPositionClick();
+      else if ('item' in row && row.item.href) handleItemClick(row.item);
+      return;
+    }
+    const rtl = getComputedStyle(event.currentTarget).direction === 'rtl';
+    const target = getTOCKeyTarget(displayItems, focusIndex, event.key, rtl);
+    if (!target) return;
+    if ('toggle' in target) {
+      handleToggleExpand(target.toggle.item);
+    } else {
+      setFocusedRow(getFocusedRow(displayItems[target.focus]!));
+      virtuosoRef.current?.scrollIntoView({ index: target.focus });
+    }
+  };
+
+  const handleTreeFocus = (event: React.FocusEvent<HTMLElement>) => {
+    if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setFocusedRow(null);
+  };
+
   useEffect(() => {
     if (!isSideBarVisible || sideBarBookKey !== bookKey) {
       userScrolledRef.current = false;
@@ -338,11 +400,18 @@ const TOCView: React.FC<{
   }, [displayItems, activeHref, currentPage, isSideBarVisible, isEink]);
 
   return (
-    <div ref={containerRef} className='toc-list rounded-sm' role='tree'>
+    <div ref={containerRef} className='toc-list rounded-sm'>
       <div ref={osRootRef} data-overlayscrollbars-initialize='' style={{ height: containerHeight }}>
         <Virtuoso
           ref={virtuosoRef}
           scrollerRef={handleScrollerRef}
+          role='tree'
+          aria-label={_('Table of Contents')}
+          aria-activedescendant={focusIndex === -1 ? undefined : `${treeId}-${focusIndex}`}
+          tabIndex={0}
+          className='group outline-none'
+          onKeyDown={handleTreeKeyDown}
+          onFocus={handleTreeFocus}
           initialTopMostItemIndex={
             initialScrollTarget.index > 0
               ? { index: initialScrollTarget.index, align: 'center' }
@@ -384,9 +453,12 @@ const TOCView: React.FC<{
                 />
               );
             }
+            const id = `${treeId}-${index}`;
             if (isCurrentPositionItem(row)) {
               return (
                 <CurrentPositionRow
+                  id={id}
+                  isFocused={index === focusIndex}
                   depth={row.depth}
                   page={row.page}
                   onClick={handleCurrentPositionClick}
@@ -395,6 +467,8 @@ const TOCView: React.FC<{
             }
             return (
               <StaticListRow
+                id={id}
+                isFocused={index === focusIndex}
                 bookKey={bookKey}
                 flatItem={row}
                 activeHref={activeHref}

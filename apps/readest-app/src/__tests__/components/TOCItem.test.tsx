@@ -143,17 +143,21 @@ describe('aria-current on active treeitem', () => {
     expect(treeitem.hasAttribute('aria-current')).toBe(false);
   });
 
-  it('active treeitem is focusable (tabIndex=0)', () => {
-    const item = makeLeafItem({ href: 'chapter1.html' });
+  // The tree is the one Tab stop and points at the focused row by its id.
+  it('leaves Tab to the tree: neither the row nor its expand button is a Tab stop', () => {
+    const item = makeParentItem();
     render(
       <StaticListRow
         {...defaultProps}
-        activeHref='chapter1.html'
-        flatItem={{ item, depth: 0, index: 0 }}
+        id='toc-3'
+        flatItem={{ item, depth: 1, index: 0, isExpanded: false }}
       />,
     );
     const treeitem = screen.getByRole('treeitem');
-    expect(treeitem.getAttribute('tabindex')).toBe('0');
+    expect(treeitem.hasAttribute('tabindex')).toBe(false);
+    expect(screen.getByRole('button').tabIndex).toBe(-1);
+    expect(treeitem.id).toBe('toc-3');
+    expect(treeitem.getAttribute('aria-level')).toBe('2');
   });
 });
 
@@ -193,16 +197,12 @@ describe('CurrentPositionRow', () => {
     expect(onClick).toHaveBeenCalledTimes(1);
   });
 
-  it('calls onClick when Enter is pressed', () => {
-    const onClick = vi.fn();
-    render(<CurrentPositionRow depth={0} page={5} onClick={onClick} />);
-    fireEvent.keyDown(screen.getByRole('treeitem'), { key: 'Enter' });
-    expect(onClick).toHaveBeenCalledTimes(1);
-  });
-
-  it('is focusable (tabIndex=0) when an onClick is provided', () => {
-    render(<CurrentPositionRow depth={0} page={5} onClick={vi.fn()} />);
-    expect(screen.getByRole('treeitem').getAttribute('tabindex')).toBe('0');
+  it('leaves Tab to the tree: the row is not a Tab stop', () => {
+    render(<CurrentPositionRow id='toc-4' depth={2} page={5} onClick={vi.fn()} />);
+    const row = screen.getByRole('treeitem');
+    expect(row.hasAttribute('tabindex')).toBe(false);
+    expect(row.id).toBe('toc-4');
+    expect(row.getAttribute('aria-level')).toBe('3');
   });
 });
 

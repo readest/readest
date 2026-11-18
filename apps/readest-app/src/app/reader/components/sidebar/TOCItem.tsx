@@ -82,14 +82,21 @@ export const buildTOCDisplayItems = <T extends TOCListItem>(
   return result;
 };
 
+// The list (TOCView) holds keyboard focus and marks the focused row with
+// aria-activedescendant; the row shows the ring while the list is focused.
+const FOCUS_RING =
+  'group-focus-visible:ring-2 group-focus-visible:ring-inset group-focus-visible:ring-base-content/15 eink:group-focus-visible:ring-base-content';
+
 const TOCItemView = React.memo<{
+  id?: string;
+  isFocused?: boolean;
   bookKey: string;
   flatItem: FlatTOCItem;
   itemSize?: number;
   isActive: boolean;
   onToggleExpand: (item: TOCItem) => void;
   onItemClick: (item: TOCItem) => void;
-}>(({ flatItem, itemSize, isActive, onToggleExpand, onItemClick }) => {
+}>(({ id, isFocused, flatItem, itemSize, isActive, onToggleExpand, onItemClick }) => {
   const { item, depth } = flatItem;
   const expandable = !!item.subitems || !!flatItem.hasPages;
 
@@ -114,7 +121,7 @@ const TOCItemView = React.memo<{
   );
 
   const handleClickItem = useCallback(
-    (event: React.MouseEvent | React.KeyboardEvent) => {
+    (event: React.MouseEvent) => {
       event.preventDefault();
       onItemClick(item);
     },
@@ -123,17 +130,18 @@ const TOCItemView = React.memo<{
 
   return (
     <div
-      tabIndex={0}
+      id={id}
       role='treeitem'
       onClick={item.href ? handleClickItem : undefined}
-      onKeyDown={item.href ? (e) => e.key === 'Enter' && handleClickItem(e) : undefined}
       aria-label={ariaLabel}
+      aria-level={depth + 1}
       aria-current={isActive ? 'page' : undefined}
       aria-expanded={expandable ? (flatItem.isExpanded ? 'true' : 'false') : undefined}
       aria-selected={isActive ? 'true' : 'false'}
       data-href={item.href ? getContentMd5(item.href) : undefined}
       className={clsx(
         'flex w-full cursor-pointer items-center rounded-md py-4 sm:py-2 sm:hover:bg-base-300/75',
+        isFocused && FOCUS_RING,
       )}
       style={{
         height: itemSize ? `${itemSize}px` : 'auto',
@@ -142,6 +150,7 @@ const TOCItemView = React.memo<{
     >
       {expandable && (
         <button
+          tabIndex={-1}
           onClick={handleToggleExpand}
           onKeyDown={(e) => {
             e.stopPropagation();
@@ -172,6 +181,8 @@ const TOCItemView = React.memo<{
 TOCItemView.displayName = 'TOCItemView';
 
 interface ListRowProps {
+  id?: string;
+  isFocused?: boolean;
   bookKey: string;
   flatItem: FlatTOCItem;
   itemSize?: number;
@@ -181,6 +192,8 @@ interface ListRowProps {
 }
 
 export const StaticListRow: React.FC<ListRowProps> = ({
+  id,
+  isFocused,
   bookKey,
   flatItem,
   itemSize,
@@ -199,6 +212,8 @@ export const StaticListRow: React.FC<ListRowProps> = ({
       title={flatItem.item.label || ''}
     >
       <TOCItemView
+        id={id}
+        isFocused={isFocused}
         bookKey={bookKey}
         flatItem={flatItem}
         itemSize={itemSize}
@@ -211,15 +226,17 @@ export const StaticListRow: React.FC<ListRowProps> = ({
 };
 
 export const CurrentPositionRow: React.FC<{
+  id?: string;
+  isFocused?: boolean;
   depth: number;
   page: number;
   onClick?: () => void;
-}> = ({ depth, page, onClick }) => {
+}> = ({ id, isFocused, depth, page, onClick }) => {
   const _ = useTranslation();
   const label = _('Current position');
 
   const handleClick = useCallback(
-    (event: React.MouseEvent | React.KeyboardEvent) => {
+    (event: React.MouseEvent) => {
       event.preventDefault();
       onClick?.();
     },
@@ -235,16 +252,17 @@ export const CurrentPositionRow: React.FC<{
       title={label}
     >
       <div
-        tabIndex={onClick ? 0 : undefined}
+        id={id}
         role='treeitem'
         aria-current='true'
         aria-label={`${label}, ${page}`}
+        aria-level={depth + 1}
         onClick={onClick ? handleClick : undefined}
-        onKeyDown={onClick ? (e) => e.key === 'Enter' && handleClick(e) : undefined}
         className={clsx(
           'flex w-full items-center rounded-md py-4 sm:py-2',
           'text-bold-in-eink sm:bg-base-300/65 sm:text-base-content text-blue-500',
           onClick && 'cursor-pointer sm:hover:bg-base-300/75',
+          isFocused && FOCUS_RING,
         )}
         style={{ paddingInlineStart: `${depth * 12 + 8}px` }}
       >
