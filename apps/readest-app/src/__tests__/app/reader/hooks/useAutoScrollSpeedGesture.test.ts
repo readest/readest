@@ -16,6 +16,14 @@ const touch = (type: string, x: number, y: number, screen: { x: number; y: numbe
   document.documentElement.dispatchEvent(event);
 };
 
+const session = (setSpeed: () => void, covering: boolean) =>
+  ({
+    active: true,
+    speed: 100,
+    setSpeed,
+    isWipeCovering: () => covering,
+  }) as unknown as AutoScrollState;
+
 afterEach(() => {
   cleanup();
 });
@@ -25,13 +33,7 @@ afterEach(() => {
 describe('useAutoScrollSpeedGesture on the app document', () => {
   test('arms by the app viewport, not the screen', () => {
     const setSpeed = vi.fn();
-    renderHook(() =>
-      useAutoScrollSpeedGesture({
-        active: true,
-        speed: 100,
-        setSpeed,
-      } as unknown as AutoScrollState),
-    );
+    renderHook(() => useAutoScrollSpeedGesture(session(setSpeed, true)));
     const x = window.innerWidth - 5;
     // A window placed right of the screen origin: screen x is past the edge
     // for every touch, so only the viewport point tells the edge apart.
@@ -46,5 +48,20 @@ describe('useAutoScrollSpeedGesture on the app document', () => {
     touch('touchstart', 300, 300, { x: 300 + offset * 3, y: 300 });
     touch('touchmove', 300, 380, { x: 300 + offset * 3, y: 380 });
     expect(setSpeed).not.toHaveBeenCalled();
+  });
+
+  // Two books in Auto Scroll each listen on the app document; only one holds
+  // the snapshot the touch landed on.
+  test('changes the speed of the book holding the snapshot only', () => {
+    const other = vi.fn();
+    const owner = vi.fn();
+    renderHook(() => useAutoScrollSpeedGesture(session(other, false)));
+    renderHook(() => useAutoScrollSpeedGesture(session(owner, true)));
+    const x = window.innerWidth - 5;
+
+    touch('touchstart', x, 300, { x, y: 300 });
+    touch('touchmove', x, 380, { x, y: 380 });
+    expect(owner).toHaveBeenCalled();
+    expect(other).not.toHaveBeenCalled();
   });
 });

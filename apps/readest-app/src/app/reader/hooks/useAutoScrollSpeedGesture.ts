@@ -134,9 +134,14 @@ export const useAutoScrollSpeedGesture = (autoScroll: AutoScrollState) => {
   );
 
   // While a page wipe's snapshot is up, touches meant for the book land on
-  // the app document's root instead (#7575).
+  // the app document's root instead (#7575). Every book listens there; the
+  // touch is for the one holding the snapshot.
   useEffect(
-    () => registerSpeedListeners(document, (e) => e.target === document.documentElement),
+    () =>
+      registerSpeedListeners(
+        document,
+        (e) => e.target === document.documentElement && latestRef.current.isWipeCovering(),
+      ),
     [registerSpeedListeners],
   );
 

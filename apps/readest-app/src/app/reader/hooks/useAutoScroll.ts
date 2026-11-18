@@ -48,6 +48,8 @@ export interface AutoScrollState {
    * read: its relocation isn't the reading position yet.
    */
   isWipeAhead: () => boolean;
+  /** This book's wipe holds the document's snapshot (see revealPageWipe). */
+  isWipeCovering: () => boolean;
   togglePause: () => void;
   adjustSpeed: (dir: 1 | -1) => void;
   setSpeed: (value: number, persist?: boolean) => void;
@@ -251,6 +253,7 @@ export const useAutoScroll = (
   }
 
   const isWipeAhead = useCallback(() => !!wiperRef.current?.ahead, []);
+  const isWipeCovering = useCallback(() => !!wiperRef.current?.covering, []);
 
   const togglePause = () => {
     const scroller = scrollerRef.current!;
@@ -470,6 +473,7 @@ export const useAutoScroll = (
     wipe,
     wipeLineRef,
     isWipeAhead,
+    isWipeCovering,
     togglePause,
     adjustSpeed,
     setSpeed,

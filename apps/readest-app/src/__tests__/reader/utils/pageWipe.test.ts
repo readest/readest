@@ -288,8 +288,15 @@ describe('PageWiper', () => {
     const { wiper, host, state, advance } = createHarness();
     await advance(40);
 
-    await wiper.suspend();
-    expect(state.aheadWhileTurning).toEqual([true, true]);
+    const gate = deferred();
+    state.turnGate = gate.promise;
+    const suspended = wiper.suspend();
+    await vi.waitFor(() => expect(state.aheadWhileTurning).toEqual([true, true]));
+    expect(wiper.ahead).toBe(true);
+    expect(host.onCommit).not.toHaveBeenCalled();
+
+    gate.resolve();
+    await suspended;
     expect(wiper.ahead).toBe(false);
     expect(host.onCommit).toHaveBeenCalledOnce();
   });
