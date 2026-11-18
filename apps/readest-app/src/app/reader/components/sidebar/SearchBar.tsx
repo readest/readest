@@ -32,6 +32,11 @@ const SEARCH_HISTORY_KEY = 'search-history';
 const LEGACY_SEARCH_CACHE_DIR = 'search';
 let legacySearchCacheCleared = false;
 const MAX_SEARCH_HISTORY = 10;
+// Each publish re-renders the reader and the results list, and those redo
+// work over every result so far. Publishing per chapter made a search in a
+// long book cost chapters × results (#7584), so a running search publishes
+// its progress and results at most this often.
+const PUBLISH_INTERVAL_MS = 250;
 
 interface SearchBarProps {
   isVisible: boolean;
@@ -220,6 +225,32 @@ const SearchBar: React.FC<SearchBarProps> = ({ isVisible, bookKey, onHideSearchB
         controller.signal.aborted ||
         getSearchStatus(bookKey) === 'terminated' ||
         queuedSearchTerm.current !== term;
+      let progress = 0;
+      let progressChanged = false;
+      let resultsChanged = false;
+      let publishedAt = -Infinity;
+      let flushTimer: ReturnType<typeof setTimeout> | undefined;
+      const flush = () => {
+        clearTimeout(flushTimer);
+        flushTimer = undefined;
+        if (stopped()) return;
+        if (progressChanged) setSearchProgress(bookKey, progress);
+        if (resultsChanged) setSearchResults(bookKey, [...results]);
+        progressChanged = resultsChanged = false;
+        publishedAt = performance.now();
+      };
+      // Inside the interval, flush when it ends rather than at the next event:
+      // the next chapter can take seconds to search.
+      const publish = async () => {
+        if (!progressChanged && !resultsChanged) return;
+        const wait = PUBLISH_INTERVAL_MS - (performance.now() - publishedAt);
+        if (wait > 0) {
+          flushTimer ??= setTimeout(flush, wait);
+          return;
+        }
+        flush();
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      };
 
       try {
         for await (const event of searchLibraryBooks(appService, [book], term, {
@@ -234,7 +265,8 @@ const SearchBar: React.FC<SearchBarProps> = ({ isVisible, bookKey, onHideSearchB
         })) {
           if (stopped()) return;
           if (event.type === 'progress') {
-            setSearchProgress(bookKey, event.bookProgress);
+            progress = event.bookProgress;
+            progressChanged = true;
           } else if (event.type === 'result') {
             // Results carry text-offset locators; resolve them to CFIs section
             // by section so the list and in-page highlights can address the DOM.
@@ -256,7 +288,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ isVisible, bookKey, onHideSearchB
             });
             if (subitems.length) {
               results.push({ index: event.result.index, label: event.result.label, subitems });
-              setSearchResults(bookKey, [...results]);
+              resultsChanged = true;
             }
           } else if (event.type === 'book-error' || event.type === 'book-skipped') {
             const code = event.type === 'book-error' ? event.code : undefined;
@@ -280,12 +312,13 @@ const SearchBar: React.FC<SearchBarProps> = ({ isVisible, bookKey, onHideSearchB
             setSearchStatus(bookKey, 'completed');
             setSearchResults(bookKey, [...results]);
             setSearchProgress(bookKey, 1);
+            progressChanged = resultsChanged = false;
             if (results.length > 0) {
               addToHistory(term);
             }
             console.log('search done');
           }
-          await new Promise((resolve) => setTimeout(resolve, 0));
+          await publish();
         }
 
         // Replay the resolved matches through the view so every CFI gets its
@@ -304,6 +337,10 @@ const SearchBar: React.FC<SearchBarProps> = ({ isVisible, bookKey, onHideSearchB
         setSearchResults(bookKey, []);
         setSearchStatus(bookKey, 'completed');
         setSearchProgress(bookKey, 1);
+      } finally {
+        // A flush left over from an ended search must not write over its
+        // final or error state.
+        clearTimeout(flushTimer);
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps

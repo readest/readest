@@ -138,6 +138,81 @@ describe('SearchBar', () => {
     expect(mocks.setSearchError).toHaveBeenLastCalledWith('book-1', null);
   });
 
+  // Every publish re-renders the reader and the results list, which redo work
+  // over all results so far; publishing each chapter's results as it arrived
+  // made a repeated search in a long book take minutes (#7584).
+  it('publishes chapters that arrive together in one update', async () => {
+    mocks.resolveSearchResultCfis.mockImplementation(async (_s, _b, locators: unknown[]) =>
+      locators.map((_, i) => ({ cfi: `cfi-${i}` })),
+    );
+    mocks.searchLibraryBooks.mockImplementation(async function* () {
+      for (let index = 0; index < 50; index++) {
+        yield { type: 'progress', bookProgress: index / 50 };
+        yield {
+          type: 'result',
+          result: { index, label: `Chapter ${index}`, subitems: [{ locator: {}, excerpt: 'm' }] },
+        };
+      }
+      yield { type: 'progress', bookProgress: 1 };
+      yield { type: 'book-completed', book: { hash: 'book-hash' }, matchCount: 50 };
+    });
+
+    await renderBar();
+
+    expect(mocks.setSearchResults.mock.calls.length).toBeLessThanOrEqual(3);
+    expect(mocks.setSearchResults.mock.lastCall![1]).toHaveLength(50);
+  });
+
+  // A hit held back by the interval must not wait for the next chapter, which
+  // can take seconds to search.
+  it('shows a held-back hit when the interval ends, before the search completes', async () => {
+    let finish!: () => void;
+    const nextChapter = new Promise<void>((resolve) => (finish = resolve));
+    mocks.resolveSearchResultCfis.mockResolvedValue([{ cfi: 'cfi-0' }]);
+    mocks.searchLibraryBooks.mockImplementation(async function* () {
+      yield { type: 'progress', bookProgress: 0.5 };
+      yield {
+        type: 'result',
+        result: { index: 0, label: 'Chapter 0', subitems: [{ locator: {}, excerpt: 'm' }] },
+      };
+      await nextChapter;
+      yield { type: 'book-completed', book: { hash: 'book-hash' }, matchCount: 1 };
+    });
+
+    await renderBar();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(300);
+    });
+    expect(mocks.setSearchResults).toHaveBeenCalledWith('book-1', [
+      { index: 0, label: 'Chapter 0', subitems: [{ cfi: 'cfi-0', excerpt: 'm' }] },
+    ]);
+
+    finish();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(300);
+    });
+    expect(mocks.setSearchResults.mock.lastCall![1]).toHaveLength(1);
+  });
+
+  it('drops a held-back hit when the search fails before the interval ends', async () => {
+    mocks.resolveSearchResultCfis.mockResolvedValue([{ cfi: 'cfi-0' }]);
+    mocks.searchLibraryBooks.mockImplementation(async function* () {
+      yield { type: 'progress', bookProgress: 0.5 };
+      yield {
+        type: 'result',
+        result: { index: 0, label: 'Chapter 0', subitems: [{ locator: {}, excerpt: 'm' }] },
+      };
+      yield { type: 'book-error', book: { hash: 'book-hash' }, error: 'broken' };
+    });
+
+    await renderBar();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(300);
+    });
+    expect(mocks.setSearchResults).toHaveBeenCalledTimes(1);
+    expect(mocks.setSearchResults).toHaveBeenLastCalledWith('book-1', []);
+  });
+
   it('searches the whole book when progress is not available yet', async () => {
     mocks.progress = null;
     await renderBar();
