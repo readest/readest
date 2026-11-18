@@ -1612,7 +1612,7 @@ diff -ruN blitz/packages/blitz-dom/src/layout/construct.rs blitz/packages/blitz-
      let is_focussed = node.is_focussed();
      let element = &mut node.data.downcast_element_mut().unwrap();
      if !matches!(element.special_data, SpecialElementData::TextInput(_)) {
-@@ -894,33 +1088,54 @@
+@@ -894,33 +1088,59 @@
          unreachable!();
      };
  
@@ -1654,7 +1654,12 @@ diff -ruN blitz/packages/blitz-dom/src/layout/construct.rs blitz/packages/blitz-
 +        StyleProperty::LetterSpacing(parley_style.letter_spacing),
 +        StyleProperty::WordBreak(parley_style.word_break),
 +        StyleProperty::OverflowWrap(parley_style.overflow_wrap),
-+        StyleProperty::TextWrapMode(parley_style.text_wrap_mode),
++        // A single-line input's value is one line, however wide its content box.
++        StyleProperty::TextWrapMode(if is_multiline {
++            parley_style.text_wrap_mode
++        } else {
++            parley::TextWrapMode::NoWrap
++        }),
 +        StyleProperty::WhiteSpaceCollapse(parley_style.white_space_collapse),
 +        StyleProperty::Brush(parley_style.brush),
 +    ];
@@ -2126,25 +2131,29 @@ diff -ruN blitz/packages/blitz-dom/src/layout/mod.rs blitz/packages/blitz-dom/sr
  
          match &mut node.data {
              NodeData::Text(data) => {
-@@ -317,11 +330,13 @@
-                             .downcast_element_mut()
-                             .and_then(|el| el.text_input_data_mut())
-                         {
-+                            let mut font_ctx = doc.font_ctx.lock().unwrap();
-                             input.editor.set_width(Some(content_width * scale));
+@@ -309,20 +322,7 @@
+                                     .resolve_or_zero(inputs.parent_size.width, resolve_calc_value)
+                         };
+                         let content_width = (output.size.width - pb.horizontal_axis_sum()).max(0.0);
+-                        let doc = &mut *self.doc;
+-                        let scale = doc.viewport.scale();
+-                        let node = &mut doc.nodes[dom_node_id(node_id)];
+-                        if let Some(input) = node
+-                            .data
+-                            .downcast_element_mut()
+-                            .and_then(|el| el.text_input_data_mut())
+-                        {
+-                            input.editor.set_width(Some(content_width * scale));
 -                            input.editor.refresh_layout(
 -                                &mut doc.font_ctx.lock().unwrap(),
 -                                &mut doc.layout_ctx,
 -                            );
-+                            input.editor.refresh_layout(&mut font_ctx, &mut doc.layout_ctx);
-+                            if let Some(ph) = input.placeholder.as_mut() {
-+                                ph.set_width(Some(content_width * scale));
-+                                ph.refresh_layout(&mut font_ctx, &mut doc.layout_ctx);
-+                            }
-                         }
+-                        }
++                        set_text_editor_width(&mut self.doc, dom_node_id(node_id), content_width);
                      }
                      return output;
-@@ -333,7 +348,7 @@
+                 }
+@@ -333,7 +333,7 @@
                          Some("hidden") => {
                              return taffy::LayoutOutput::HIDDEN;
                          }
@@ -2153,6 +2162,70 @@ diff -ruN blitz/packages/blitz-dom/src/layout/mod.rs blitz/packages/blitz-dom/sr
                              return compute_leaf_layout(
                                  inputs,
                                  &node.layout_style(),
+@@ -357,7 +357,7 @@
+                             );
+                         }
+                         None | Some("text" | "password" | "email" | "tel" | "url" | "search") => {
+-                            return compute_leaf_layout(
++                            let output = compute_leaf_layout(
+                                 inputs,
+                                 &node.layout_style(),
+                                 resolve_calc_value,
+@@ -370,6 +370,28 @@
+                                     height: resolved_line_height.unwrap_or(16.0),
+                                 },
+                             );
++                            // The value across the content box (on one line, see
++                            // create_text_editor), so `text-align` places it in the box.
++                            if inputs.run_mode == RunMode::PerformLayout {
++                                let pb = {
++                                    let style = node.layout_style();
++                                    style.padding().resolve_or_zero(
++                                        inputs.parent_size.width,
++                                        resolve_calc_value,
++                                    ) + style.border().resolve_or_zero(
++                                        inputs.parent_size.width,
++                                        resolve_calc_value,
++                                    )
++                                };
++                                let content_width =
++                                    (output.size.width - pb.horizontal_axis_sum()).max(0.0);
++                                set_text_editor_width(
++                                    &mut self.doc,
++                                    dom_node_id(node_id),
++                                    content_width,
++                                );
++                            }
++                            return output;
+                         }
+                         _ => {}
+                     }
+@@ -972,3 +994,25 @@
+         })
+     }
+ }
++
++/// A text input's editor (and placeholder) lays its text out across the content box laid out for
++/// it, `content_width` CSS px.
++fn set_text_editor_width(doc: &mut BaseDocument, node_id: crate::NodeId, content_width: f32) {
++    let scale = doc.viewport.scale();
++    let node = &mut doc.nodes[node_id];
++    if let Some(input) = node
++        .data
++        .downcast_element_mut()
++        .and_then(|el| el.text_input_data_mut())
++    {
++        let mut font_ctx = doc.font_ctx.lock().unwrap();
++        input.editor.set_width(Some(content_width * scale));
++        input
++            .editor
++            .refresh_layout(&mut font_ctx, &mut doc.layout_ctx);
++        if let Some(ph) = input.placeholder.as_mut() {
++            ph.set_width(Some(content_width * scale));
++            ph.refresh_layout(&mut font_ctx, &mut doc.layout_ctx);
++        }
++    }
++}
 diff -ruN blitz/packages/blitz-dom/src/layout/paint_tree.rs blitz/packages/blitz-dom/src/layout/paint_tree.rs
 --- blitz/packages/blitz-dom/src/layout/paint_tree.rs
 +++ blitz/packages/blitz-dom/src/layout/paint_tree.rs
